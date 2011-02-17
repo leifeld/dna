@@ -1,0 +1,139 @@
+\documentclass[a4paper, 10pt]{article}
+\usepackage[OT1]{fontenc}
+\usepackage{color}
+\definecolor{darkred}{rgb}{0.9,0.1,0.1}
+\definecolor{darkblue}{rgb}{0.1,0.1,0.9}
+\usepackage[pdfpagelabels,bookmarks]{hyperref}
+\hypersetup{
+  pdftitle={rDNA. A Package to Control Discourse Network Analyzer from R},
+  pdfauthor={Philip Leifeld},
+  pdfkeywords={DNA, R, CRAN, Discourse Network Analyzer, Political Discourse, Content Analysis, Social Network Analysis, Manual},
+  breaklinks=true,
+  colorlinks=true,
+  urlcolor=darkblue,
+  linkcolor=darkblue,
+  citecolor=darkred,
+  bookmarksnumbered
+}
+
+\begin{document}
+
+\title{rDNA\vspace{0.3cm}\\\normalsize{A package to control Discourse Network Analyzer from R}}
+\author{Philip Leifeld}
+\date{2010-11-17}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+rDNA is an R package which allows the user to control the Java software Discourse Network Analyzer (DNA).\footnote{Download the Discourse Network Analyzer from \url{http://www.philipleifeld.de}.} DNA is a content analysis software for the extraction of social network data of actors and/or their concepts. rDNA facilitates the import of these network data directly from DNA into R. There is no need to save the data to a CSV file in between. This is very handy in situations where the data export should be integrated into an R script, e.\,g. in the appendix of a publication or during data analysis.
+
+\section{Requirements}
+rDNA requires the R package \texttt{rJava} and a Java Runtime Engine (at least version 1.6 or higher) running on the operating system.
+
+\section{Methods}
+
+\subsection{dna.init}
+\subsubsection*{Usage}
+\begin{verbatim}
+dna.init(dna.jar.file)
+\end{verbatim}
+\subsubsection*{Description}
+This method connects the rDNA package to DNA.
+\subsubsection*{Arguments}
+\begin{description}
+ \item[dna.jar.file] This is the name of the DNA JAR file (including its path). Make sure you put it into quotation marks. If the JAR file is in the current working directory, no path is needed. Example: \verb+dna.init("dna-1.23.jar")+.
+\end{description}
+
+\subsection{dna.gui}
+\subsubsection*{Usage}
+\begin{verbatim}
+dna.gui()
+\end{verbatim}
+\subsubsection*{Description}
+This method has no arguments. It starts the user interface of DNA. Files are \emph{not} automatically transferred to R, so make sure you save your work in a .dna file.
+
+\subsection{dna.network}
+\subsubsection*{Usage}
+\begin{verbatim}
+dna.network(infile, algorithm="cooccurrence", 
+agreement="combined", start.date="01.01.1900", 
+stop.date="31.12.2099", two.mode.type="oc", 
+one.mode.type="organizations", via="categories", 
+ignore.duplicates=TRUE, include.isolates=FALSE, 
+normalization=FALSE, window.size=100, step.size=1, 
+exclude.persons=c(""), exclude.organizations=c(""), 
+exclude.categories=c(""))
+\end{verbatim}
+\subsubsection*{Description}
+Extract a network from a .dna file and return it to R as a matrix object.
+\subsubsection*{Arguments}
+\begin{description}
+  \item[infile]{ The input .dna file as a string (i.e., enclosed in quotation marks). If the file is not in the current working directory, specify the path together with the file name. Include the file suffix. Example: \texttt{sample.dna}. }
+  \item[algorithm]{ The algorithm which should be used to create the network. Refer to the DNA manual at \url{http://www.philipleifeld.de} for details. Possible values are: \texttt{affiliation} (for a two-mode network of actors and concepts), \texttt{cooccurrence} (for an actor or concept co-occurrence/one-mode network), \texttt{timewindow} (for the time window algorithm) and \texttt{attenuation} (for the attenuation algorithm). }
+  \item[agreement]{ The agreement pattern to be used. Must be one of the following: \texttt{yes}, \texttt{no}, \texttt{combined} or \texttt{conflict}. }
+  \item[start.date]{ Only statements after this date will be retained. The start date is a character string of the form \texttt{dd.mm.yyyy}, where \texttt{dd} is the two-digit day, \texttt{mm} the two-digit month and \texttt{yyyy} the four-digit year.}
+  \item[stop.date]{ Only statements before this date will be retained. The stop date is a character string of the form \texttt{dd.mm.yyyy}, where \texttt{dd} is the two-digit day, \texttt{mm} the two-digit month and \texttt{yyyy} the four-digit year.}
+  \item[two.mode.type]{ If the \texttt{affiliation} algorithm is selected, this argument determines the vertex classes to be used. The following values are possible: \texttt{oc} (which stands for organizations x categories),  \texttt{pc} (persons x categories) and \texttt{po} (persons x organizations). }
+  \item[one.mode.type]{ If the \texttt{cooccurrence}, \texttt{timewindow} or \texttt{attenuation} algorithm is selected, this argument specifies the vertex class to be used. The following values are possible: \texttt{organizations} (which stands for organizations x organizations), \texttt{persons} (persons x persons) or \texttt{categories} (categories x categories). }
+  \item[via]{ If the one.mode.type argument is active (i.e., the \texttt{cooccurrence} algorithm, the \texttt{timewindow} algorithm or \texttt{attenuation} algorithm is used), this argument specifies via which variable a co-occurrence network is created. For example, if an organizations x organizations network is created, organizations can either be connected via their shared persons or categories. Valid values are thus \texttt{persons}, \texttt{organizations} and \texttt{categories}, but \textbf{not} the vertex type used in the \texttt{one.mode.type} argument. }
+  \item[ignore.duplicates]{ A boolean variable indicating whether two statements with the same actor, category, agreement pattern and date should be counted separately during network creation. For example, if a speaker re-iterates the same concepts in the same way over and over again in the same article, each of these statements increases the edge weight between this speaker and other speakers using the same argument if \texttt{ignore.duplicates} is switched off (i.e., set to \texttt{FALSE}). }
+  \item[include.isolates]{ If several time slices are exported, usually the network matrices will have different dimensions. If the \texttt{include.isolates} argument is set to \texttt{TRUE}, all actors - even if they are inactive in the current time slice - are included in the matrix. This guarantees that several time slices have the same dimensions and the same order of actors.}
+  \item[normalization]{ Some actors make statements more frequently than others, and this behavior is caused by their institutional position. These actors are likely to be at the center of the network. If \texttt{normalization} is set to \texttt{TRUE}, DNA tries to correct for institutional positions by dividing edge weights by the average total number of statements of both actors involved in an edge. For more details, please refer to the DNA manual at \url{http://www.philipleifeld.de}. }
+  \item[window.size]{If the \texttt{timewindow} algorithm is used, the \texttt{window.size} argument controls the size of the time window. Integer values are possible. Recommended values are somewhere between \texttt{10} and \texttt{2000} days, depending on the theory and the dataset. }
+  \item[step.size]{ If the \texttt{timewindow} algorithm is used, the \texttt{step.size} argument controls the rate at which the time window moves, i.e., the number of days by which the window is moved at each step. Using \texttt{1} day is recommended. For non-overlapping time windows, use the same value as in the window.size argument. }
+  \item[exclude.persons]{ Specify a list of persons to be excluded from the network. For example, \texttt{c("person 1", "person 2")}. Note that the names must appear exactly as they are used on the dataset. }
+  \item[exclude.organizations]{ Specify a list of organizations to be excluded from the network. For example, \texttt{c("organization 1", "organization 2")}. Note that the names must appear exactly as they are used on the dataset. }
+  \item[exclude.categories]{ Specify a list of categories to be excluded from the network. For example, \texttt{c("category 1", "category 2")}. Note that the concept names must appear exactly as they are used on the dataset. }
+\end{description}
+
+\subsection{dna.attributes}
+\subsubsection*{Usage}
+\begin{verbatim}
+dna.attributes(infile, organizations=TRUE)
+\end{verbatim}
+\subsubsection*{Desciption}
+Pull attribute data of actors as found in the bottom bar of DNA into R. Works with persons and organizations. The resulting matrix has four columns: \texttt{type} (the type of actor), \texttt{alias} (the alias/description variable in DNA), \texttt{note} (the notes field) and \texttt{color} (the RGB color used in DNA).
+\subsubsection*{Arguments}
+\begin{description}
+ \item[infile]{ The input .dna file as a string (i.e., enclosed in quotation marks). If the file is not in the current working directory, specify the path together with the file name. Include the file suffix. Example: \texttt{sample.dna}. }
+ \item[organizations]{If \texttt{TRUE}, the attributes of organizations will be returned. If \texttt{FALSE}, the attributes of persons will be returned.}
+\end{description}
+
+\section{Examples}
+The following code demonstrates how rDNA can be used in conjunction with clustering methods and the statnet package.
+\begin{verbatim}
+# download files and initialize DNA:
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/
+  dna-1.23.jar", destfile="dna-1.23.jar")
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/
+  sample.dna", destfile="sample.dna")
+library(rDNA)
+dna.init("dna-1.23.jar")
+
+# plot a congruence network using the statnet package:
+congruence <- dna.network("sample.dna", exclude.categories=
+  "There should be legislation to regulate emissions.")
+library(statnet)
+congruence.nw <- network(congruence)
+plot(congruence.nw, displaylabels=TRUE, label.cex=0.6, pad=0.8)
+
+# do a hierarchical cluster analysis with an affiliation network:
+affiliation.yes <- dna.network("sample.dna", algorithm=
+  "affiliation", agreement="yes", include.isolates=TRUE)
+affiliation.no <- dna.network("sample.dna", algorithm=
+  "affiliation", agreement="no", include.isolates=TRUE)
+affiliation <- cbind(affiliation.yes, affiliation.no)
+affiliation <- affiliation[rowSums(affiliation) > 0,]
+distances <- dist(affiliation, method="binary")
+clustering <- hclust(distances)
+plot(clustering)
+
+# open the GUI of DNA in order to manually work on the data
+dna.gui()
+
+\end{verbatim}
+
+
+\end{document}
