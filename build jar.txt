@@ -1,0 +1,1 @@
+jar cvfm dna-1.18.jar manifest.MF dna/*.class icons -C packages .
