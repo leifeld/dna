@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>DNA 1.25</name>
+	<name>DNA</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -15,10 +15,5 @@
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
 	<linkedResources>
-		<link>
-			<name>manual</name>
-			<type>2</type>
-			<location>/home/philip/Dokumente/MPI/Dissertation/DNA Manual/LaTeX</location>
-		</link>
 	</linkedResources>
 </projectDescription>
