@@ -105,7 +105,7 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
  * - auto-backup function
  * 
  * @author Philip Leifeld
- * @version 1.25 - 2010-12-06
+ * @version 1.25 - 2011-02-18
  */
 @SuppressWarnings("serial")
 public class Dna extends JFrame {
