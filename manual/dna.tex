@@ -76,7 +76,7 @@
 
 \author{Philip Leifeld\footnote{Max Planck Institute for Research on Collective Goods, Kurt-Schumacher-Str.~10, 53113 Bonn, Germany | \href{mailto:Leifeld@coll.mpg.de}{\texttt{Leifeld@coll.mpg.de}} | \url{http://www.philipleifeld.de}}}
 \title{\includegraphics[width=2cm]{dna32.pdf}\\ \vspace{0.5cm} Discourse Network Analyzer (DNA)\\ \vspace{0.3cm} \textbf{Manual}}
-\date{November 23, 2010\\ \vspace{0.3cm} (valid for version 1.24)}
+\date{March 18, 2011\\ \vspace{0.3cm} (valid for version 1.25)}
 
 \begin{document}
 \maketitle
@@ -92,7 +92,7 @@ It is complementary to semantic network analysis applications because it neither
 
 More information about the software can be found in \citet{leifeld2009die,leifeld2010political} and \citet{leifeld2010comparison}. The underlying conceptual model is elaborated in the book chapter of \citet{janning2009diskursnetzwerkanalyse.}. The beginner's tutorial in chapter~\ref{demo} is based on empirical data collected by \citet{fisher2009understanding}.
 
-If you would like to be informed about updates, please subscribe to the \dnashort\ newsletter at \url{http://www.philipleifeld.de}.
+If you would like to be informed about updates, please subscribe to the [DNA-help] mailing list at \url{http://www.philipleifeld.de}.
 
 
 \chapter{Installation}\label{installation}
@@ -556,8 +556,15 @@ There are three lists showing all the persons, organizations and categories from
 \chapter{rDNA. A Package to Control Discourse Network Analyzer from R}
 rDNA is an R package that allows to integrate the \dnalong\ into the statistical programming environment R.
 
+\section{Motivation}
+R is becoming increasingly popular as a platform for social network analysis (see, for example, the \href{http://www.statnetproject.org}{statnet project}). The focus of DNA is the extraction of network data from manually encoded textual discourses. Bringing together the data-generating software and the methods for processing these data therefore seems quite natural.
+
+Before the development of rDNA, the easiest way to get \dnashort\ data into R was to export a network to a CSV file and then import this CSV file in R using the \code{read.table()} command. This can quickly become tedious because every time even minor parts of the analysis are changed, the data have to be re-exported from \dnashort\ and re-imported into R. With rDNA, in contrast, the analyst can directly pull the desired network data from a .dna file without going through the whole user interface and export options of \dnashort. Or, if desired, rDNA allows to start the coding window of \dnashort from within R in order to provide an interactive content analysis solution for R (similar to the \href{http://rqda.r-forge.r-project.org}{RQDA project}, but with an additional focus on network analysis).
+
+Installation instructions are provided online.
+
 \section{Functionality}
-As of version 1.1, rDNA provides six R functions:
+As of version 1.2, rDNA provides seven R functions:
 \begin{description}
  \item[dna.init] initializes the connection between R and \dnashort.
  \item[dna.gui] starts the user interface of \dnashort\ directly from R.
@@ -565,21 +572,17 @@ As of version 1.1, rDNA provides six R functions:
  \item[dna.attributes] can import the attributes of persons or organizations from a .dna file into R (equivalent to the actor attribute export in \dnashort).
  \item[dna.timeseries] computes time series statistics with the options described in section~\ref{statistics}.
  \item[dna.density] computes the weighted or binary within- and between-block density of sociomatrices. Blocks are given as an optional argument.
+ \item[dna.categories] returns a list of all categories in the .dna file as a character vector.
 \end{description}
-
-\section{Motivation}
-R is becoming increasingly popular as a platform for social network analysis (see, for example, the \href{http://www.statnetproject.org}{statnet project}). The focus of DNA is the extraction of network data from manually encoded textual discourses. Bringing together the data-generating software and the methods for processing these data therefore seems quite natural.
-
-Before the development of rDNA, the easiest way to get \dnashort\ data into R was to export a network to a CSV file and then import this CSV file in R using the \code{read.table()} command. This can quickly become tedious because every time even minor parts of the analysis are changed, the data have to be re-exported from \dnashort\ and re-imported into R. With rDNA, in contrast, the analyst can directly pull the desired network data from a .dna file without going through the whole user interface and export options of \dnashort. Or, if desired, rDNA allows to start the coding window of \dnashort from within R in order to provide an interactive content analysis solution for R (similar to the \href{http://rqda.r-forge.r-project.org}{RQDA project}, but with an additional focus on network analysis).
 
 \section{Examples}
 The following R code is an introductory session which briefly demonstrates how rDNA works:
 
 \lstset{language=R,
 basicstyle=\ttfamily \color{black} \scriptsize,
-keywordstyle=\color{darkblue},
-identifierstyle=\color{gray},
-commentstyle=\color{green!50!black!100},
+keywordstyle=\color{black},
+identifierstyle=\color{darkblue},
+commentstyle=\color{gray},
 stringstyle= \color{red},
 breaklines=true,
 breakatwhitespace=true,
@@ -593,9 +596,9 @@ label={rDNA-examples}
 \begin{lstlisting}[breaklines=true,showstringspaces=false,frame=tlRB]
 # download files and initialize DNA:
 > library(rDNA)  #load the rDNA package
-> download.file("upload/Downloads/dna-1.23.jar", destfile="dna-1.23.jar")
-> download.file("upload/Downloads/sample.dna", destfile="sample.dna")
-> dna.init("dna-1.23.jar")  #connect R to DNA
+> download.file("upload/Downloads/dna-1.25.jar", destfile="dna-1.25.jar", mode="wb")
+> download.file("upload/Downloads/sample.dna", destfile="sample.dna", mode="wb")
+> dna.init("dna-1.25.jar")  #connect R to DNA
 
 # plot a congruence network using the statnet package:
 > congruence <- dna.network("sample.dna", exclude.categories="There should be legislation to regulate emissions.")  #create a congruence discourse network
@@ -615,13 +618,6 @@ label={rDNA-examples}
 # open the GUI of DNA in order to manually work on the data
 > dna.gui()
 \end{lstlisting}
-
-\section{Installation}
-The easy way: rDNA is on CRAN, which means it can be directly installed from R. To do this, simply enter the command \code{install.packages("rDNA")} in R, followed by \code{library(rDNA)} to load the package.
-
-The hard way: Alternatively, you can download a copy of the rDNA sources from \url{http://www.philipleifeld.de} and install rDNA manually. First, make sure that the \code{rJava} package is installed on your system. If not, enter \code{install.packages("rJava")} in your R console. Next, download the rDNA package to an empty folder on your hard drive. Call the following command: \code{R CMD INSTALL -l <folder> rDNA} (replace $<$folder$>$ by the path of your R package folder, for example something like \code{C:\textbackslash Program Files\textbackslash R\textbackslash R-2.12.0\textbackslash library\textbackslash} on Windows XP or something like \code{/home/user/R/i686-pc-linux-gnu-library/2.11/} on Linux). If your operating system does not find the R command, you may have to enter the full path, e.g. \code{C:\textbackslash Program Files\textbackslash R\textbackslash R-2.12.0\textbackslash bin\textbackslash R.exe} instead of \code{R}. Start R and type \code{library(rDNA)} to load the package.
-
-Make sure you have the latest version of \dnalong. rDNA requires version 1.24 of \dnashort\ or higher.
 
 \chapter{FAQ: Frequently Asked Questions}\label{faq}
 
@@ -663,6 +659,8 @@ Make sure you have the latest version of \dnalong. rDNA requires version 1.24 of
 \vspace{0.3cm} \newline
 \underline{Answer}: \dnalong\ does in fact work on a Mac. It has been tested successfully under MacOS 10.5 ``Leopard'' and MacOS 10.6 ``Snow Leopard''. However, Leopard comes with Java version 1.5 pre-installed, so you have to update Java before it is possible to run \dnashort. You can do this by executing the built-in software update of MacOS. One case was reported where this update caused trouble because two different Java versions, 1.5 and 1.6, were installed at the same time, and the former was used to start \dnashort, which of course failed. Generally, updating MacOS ``Leopard'' to the latest Java version should be hassle-free though. In any case, MacOS 10.6 ``Snow Leopard'' comes with Java 1.6, so there should be no problem. Please also take a look at FAQ entries~\ref{faq:unsupportedversion} and~\ref{faq:mainclass}.
 
+Please note, however, that rDNA is not working on MacOS right now (except for the \code{dna.network()} method. This may be fixed in a future version.
+
 \section{``Could not find the main class.''}\label{faq:mainclass}
 \underline{Question}: \textbf{I try to open DNA by double-clicking on the .jar file. But I get an error message saying ``Could not find the main class. Program will exit.'' What is happening?}
 \vspace{0.3cm} \newline
@@ -695,6 +693,15 @@ Make sure you have the latest version of \dnalong. rDNA requires version 1.24 of
 
 
 \chapter{Version history}
+
+\section*{DNA 1.25 -- 18 March 2011}
+\begin{itemize}
+ \item New feature: \code{dna.categories()} method in rDNA.
+ \item New feature: Added \code{invert.persons}, \code{invert.organizations}, \code{invert.categories} and \code{verbose} arguments to \code{dna.network()} and \code{dna.timeseries()} in rDNA.
+ \item Bugfix: ``Include lists'' in the time series statistics component had no effect in \dnashort.
+ \item Bugfix: Normalization did not work when exporting networks (neither in \dnashort\ nor in rDNA).
+ \item Bugfix: Fixed separate.actors argument in the \code{dna.timeseries()} method in rDNA.
+\end{itemize}
 
 \section*{DNA 1.24 -- 23 November 2010}
 \begin{itemize}
