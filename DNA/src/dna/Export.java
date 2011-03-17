@@ -121,6 +121,7 @@ public class Export {
 		this.via = via;
 		this.includeIsolates = includeIsolates;
 		this.ignoreDuplicates = ignoreDuplicates;
+		this.normalization = normalization;
 		this.windowSize = windowSize;
 		this.stepSize = stepSize;
 		this.soniaBackwardDays = soniaBackwardDays;
@@ -219,6 +220,7 @@ public class Export {
 		this.via = via;
 		this.includeIsolates = includeIsolates;
 		this.ignoreDuplicates = ignoreDuplicates;
+		this.normalization = normalization;
 		this.windowSize = windowSize;
 		this.stepSize = stepSize;
 		this.soniaBackwardDays = soniaBackwardDays;
