@@ -2,7 +2,7 @@ rDNA (http://www.philipleifeld.de)
 
 Version history:
 
-1.2 (2010-12-07)
+1.2 (2011-03-18)
 * New method: dna.categories().
 * Added invert.persons, invert.organizations, 
   invert.categories and verbose arguments to 

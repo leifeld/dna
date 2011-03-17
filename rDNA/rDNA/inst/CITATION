@@ -11,6 +11,8 @@ citEntry(entry="Manual",
   note = vers,
   organization = "Max Planck Institute for Research on Collective Goods",
   address = "Bonn",
-  textVersion = paste("Leifeld, Philip (", year, "). rDNA. A Package to Control Discourse Network Analyzer from R. Max Planck Institute for Research on Collective Goods. ", vers, ".", sep=""),
+  textVersion = paste("Leifeld, Philip (", year, "). rDNA. A Package to ", 
+    "Control Discourse Network Analyzer from R. Max Planck Institute for ", 
+    "Research on Collective Goods. ", vers, ".", sep=""),
   url = "http://www.philipleifeld.de"
 )

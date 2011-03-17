@@ -34,7 +34,7 @@ download.file(
   "http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
   destfile="sample.dna", mode="wb")
 dna.init("dna-1.25.jar")
-attributes <- dna.attributes("sample.dna", TRUE)
+attributes <- dna.attributes("sample.dna", organizations=TRUE)
 }
 \keyword{Programming|programming|interface}
 \keyword{Programming|IO}
