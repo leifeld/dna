@@ -86,26 +86,8 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
  * This is the main component of the Discourse Network Analyzer.
  * It instantiates the DNA coder.
  * 
- * done:
- * - Bugfix: selections in the include-lists in the time series statistics component had no effect
- * - 
- * 
- * to do:
- * - automatically remove and re-insert instructions in NewArticle window upon mouse click
- * - forbid quotation marks etc. in person/org/cat fields
- * - option to remove a type from the table in the actor attribute manager
- * - Show empty export options panel where appropriate
- * - Embed the bottom bar in a better way; with buttons inside the panes
- * - use colors and other attributes for Sonia and Commetrix export and possibly Ucinet/DL export
- * - network export options: select actors by their type; show colors of actors; binary choice whether name or alias is exported
- * - Gephi interoperability via GFX file format; dynamic data?
- * - concept hierarchy
- * - network export: two new options: exclude actors/concepts with less than n statements (or less than n different statements)
- * - check DNA files for strange symbols, double spaces etc.; this could be a problem because people use the XML import format
- * - auto-backup function
- * 
  * @author Philip Leifeld
- * @version 1.25 - 2011-02-18
+ * @version 1.25 - 2011-03-18
  */
 @SuppressWarnings("serial")
 public class Dna extends JFrame {

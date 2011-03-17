@@ -51,7 +51,7 @@ import javax.swing.filechooser.FileFilter;
  * graphML (visone) or CSV files (spreadsheet).
  * 
  * @author Philip Leifeld
- * @version 1.23 - 2010-11-17
+ * @version 1.25 - 2011-03-18
  */
 @SuppressWarnings("serial")
 public class ExportWindow extends JFrame {
@@ -1472,38 +1472,6 @@ public class ExportWindow extends JFrame {
 					networkName, //Commetrix
 					commetrixBackwardWindow //Commetrix
 					);
-			
-			/*
-			String[] excludeC2 = new String[3];
-			excludeC2[0] = "Kapitaldeckungsverfahren (als Ergänzung)";
-			excludeC2[1] = "Betriebliche Rente";
-			excludeC2[2] = "Wertschöpfungsabgabe";
-			new Export(
-					"/home/philip/Desktop/test.dna",
-					excludeP, 
-					excludeO, 
-					excludeC2, 
-					"01.01.1900", 
-					"31.12.2099", 
-					agreement, 
-					algorithm, 
-					twoModeType, 
-					oneModeType, 
-					via, 
-					includeIsolates, 
-					ignoreDuplicates, 
-					normalization,
-					windowSizeDouble, //time window algorithm
-					stepSizeDouble, //time window algorithm
-					forwardDays, //SONIA
-					backwardDays, //SONIA
-					networkName, //Commetrix
-					commetrixBackwardWindow, //Commetrix
-					false,
-					false,
-					false
-					);
-			*/
 			
 			progressFrame.dispose();
 			buttonPanel.export.setEnabled(true);
