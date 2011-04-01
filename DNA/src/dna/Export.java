@@ -636,67 +636,6 @@ public class Export {
 		}
 	}
 	
-	public class tabuItem {
-		
-		int sourceId, targetId;
-		String via;
-		
-		public tabuItem(int sourceId, int targetId, String via) {
-			this.sourceId = sourceId;
-			this.targetId = targetId;
-			this.via = via;
-		}
-
-		public int getSourceId() {
-			return sourceId;
-		}
-
-		public void setSourceId(int sourceId) {
-			this.sourceId = sourceId;
-		}
-
-		public int getTargetId() {
-			return targetId;
-		}
-
-		public void setTargetId(int targetId) {
-			this.targetId = targetId;
-		}
-
-		public String getVia() {
-			return via;
-		}
-
-		public void setVia(String via) {
-			this.via = via;
-		}
-	}
-	
-	public class tabuList {
-		
-		ArrayList<tabuItem> l;
-		
-		public tabuList() {
-			l = new ArrayList<tabuItem>();
-		}
-		
-		public boolean contains(int sourceId, int targetId, String via) {
-			boolean condition = false;
-			for (int i = 0; i < l.size(); i++) {
-				if (l.get(i).getSourceId() == sourceId && l.get(i).getTargetId() == targetId && l.get(i).getVia().equals(via)) {
-					condition = true;
-				}
-			}
-			return condition;
-		}
-		
-		public void add(tabuItem t) {
-			if (!l.contains(t)) {
-				l.add(t);
-			}
-		}
-	}
-	
 	public void prepareSimpleGraph() {
 		if (verbose == true) {
 			System.out.print("Creating vertices... ");
@@ -780,97 +719,222 @@ public class Export {
 	}
 	
 	/**
-	 * Generate a simple graph where edge weights are the number of different co-occurrences.
+	 * Congruence networks
 	 */
 	public void generateGraphCoOccurrence() {
 		
-		prepareSimpleGraph();
-		
 		if (verbose == true) {
-			System.out.print("Computing edge weights... ");
+			System.out.print("Creating graph and adding vertices... ");
 		}
-		tabuList tl = new tabuList();
-		int count = 0;
-		if (agreement.equals("conflict")) {
+		
+		graph = new DnaGraph();
+		graph.removeAllEdges();
+		graph.removeAllVertices();
+		
+		ArrayList<String> class1 = new ArrayList<String>();
+		ArrayList<String> class2 = new ArrayList<String>();
+		ArrayList<String> agList = new ArrayList<String>();
+		if (oneModeType.equals("persons")) {
+			if (includeIsolates == true) {
+				class1 = persIsolates;
+			} else {
+				class1 = sc.getPersonList();
+			}
 			for (int i = 0; i < class1.size(); i++) {
-				for (int j = 0; j < class1.size(); j++) {
-					if (class3.get(i).equals(class3.get(j))
-							&& !class1.get(i).equals(class1.get(j))
-							&& !class1.get(i).equals("")
-							&& !class1.get(j).equals("")
-							&& !class3.get(i).equals("")
-							&& !class3.get(j).equals("")
-							&& ! s_agree.get(i).equals(s_agree.get(j))) {
-						int sourceId = graph.getVertex(class1.get(i)).getId();
-						int targetId = graph.getVertex(class1.get(j)).getId();
-						if (graph.containsEdge(sourceId, targetId) && !tl.contains(sourceId, targetId, class3.get(i))) {
-							graph.getEdge(sourceId, targetId).addToWeight(1);
-						} else if (!graph.containsEdge(sourceId, targetId)) {
-							graph.addEdge(new DnaGraphEdge(count, 1, graph.getVertex(sourceId), graph.getVertex(targetId)));
-						}
-						if (ignoreDuplicates == true) {
-							tl.add(new tabuItem(sourceId, targetId, class3.get(i)));
-						}
-						count++;
-					}
-				}
+				graph.addVertex(new DnaGraphVertex(i+1, class1.get(i), "p"));
+			}
+		} else if (oneModeType.equals("organizations")) {
+			if (includeIsolates == true) {
+				class1 = orgIsolates;
+			} else {
+				class1 = sc.getOrganizationList();
+			}
+			for (int i = 0; i < class1.size(); i++) {
+				graph.addVertex(new DnaGraphVertex(i+1, class1.get(i), "o"));
 			}
 		} else {
+			if (includeIsolates == true) {
+				class1 = catIsolates;
+			} else {
+				class1 = sc.getCategoryList();
+			}
 			for (int i = 0; i < class1.size(); i++) {
-				for (int j = 0; j < class1.size(); j++) {
-					if (class3.get(i).equals(class3.get(j))
-							&& !class1.get(i).equals(class1.get(j))
-							&& !class1.get(i).equals("")
-							&& !class1.get(j).equals("")
-							&& !class3.get(i).equals("")
-							&& !class3.get(j).equals("")
-							&& s_agree.get(i).equals(s_agree.get(j))) {
-						int sourceId = graph.getVertex(class1.get(i)).getId();
-						int targetId = graph.getVertex(class1.get(j)).getId();
-						if (graph.containsEdge(sourceId, targetId) && !tl.contains(sourceId, targetId, class3.get(i))) {
-							graph.getEdge(sourceId, targetId).addToWeight(1);
-						} else if (!graph.containsEdge(sourceId, targetId)) {
-							graph.addEdge(new DnaGraphEdge(count, 1, graph.getVertex(sourceId), graph.getVertex(targetId)));
-						}
-						if (ignoreDuplicates == true) {
-							tl.add(new tabuItem(sourceId, targetId, class3.get(i)));
-						}
-						count++;
-					}
+				graph.addVertex(new DnaGraphVertex(i+1, class1.get(i), "c"));
+			}
+		}
+		if (via.equals("persons")) {
+			if (includeIsolates == true) {
+				class2 = persIsolates;
+			} else {
+				class2 = sc.getPersonList();
+			}
+		} else if (via.equals("organizations")) {
+			if (includeIsolates == true) {
+				class2 = orgIsolates;
+			} else {
+				class2 = sc.getOrganizationList();
+			}
+		} else {
+			if (includeIsolates == true) {
+				class2 = catIsolates;
+			} else {
+				class2 = sc.getCategoryList();
+			}
+		}
+		if (agreement.equals("yes")) {
+			agList.add("yes");
+		} else if (agreement.equals("no")) {
+			agList.add("no");
+		} else {
+			agList.add("yes");
+			agList.add("no");
+		}
+		
+		double[][][] threeMode = new double[class1.size()][class2.size()][2];
+		for (int i = 0; i < class1.size(); i++) {
+			for (int j = 0; j < class2.size(); j++) {
+				for (int k = 0; k < agList.size(); k++) {
+					threeMode[i][j][k] = 0;
 				}
+			}
+		}
+		
+		if (verbose == true) {
+			System.out.println("done.");
+			System.out.print("Converting statement list to three-dimensional array... ");
+		}
+		for (int i = 0; i < sc.size(); i ++) {
+			int c1 = -1;
+			int r = -1;
+			int c2 = -1;
+			
+			for (int j = 0; j < class1.size(); j++) {
+				if ( (sc.get(i).getCategory().equals(class1.get(j)) && oneModeType.equals("categories")) ||
+						(sc.get(i).getPerson().equals(class1.get(j)) && oneModeType.equals("persons")) ||
+						(sc.get(i).getOrganization().equals(class1.get(j)) && oneModeType.equals("organizations")) ) {
+					c1 = j;
+				}
+			}
+			for (int j = 0; j < class2.size(); j++) {
+				if ( (sc.get(i).getCategory().equals(class2.get(j)) && via.equals("categories")) ||
+						(sc.get(i).getPerson().equals(class2.get(j)) && via.equals("persons")) ||
+						(sc.get(i).getOrganization().equals(class2.get(j)) && via.equals("organizations")) ) {
+					c2 = j;
+				}
+			}
+			for (int j = 0; j < agList.size(); j++) {
+				if ( sc.get(i).getAgreement().equals(agList.get(j))) {
+					r = j;
+				}
+			}
+			
+			if (c1 > -1 && c2 > -1 && r > -1) {
+				threeMode[c1][c2][r] = threeMode[c1][c2][r] + 1;
 			}
 		}
 		if (verbose == true) {
-			System.out.println(graph.countEdges() + " edges with a mean edge weight of " + String.format(new Locale("en"), "%.2f", graph.getMeanWeight()) + " were created.");
+			System.out.println("done.");
+			System.out.print("Computing edge weights... ");
 		}
+
+		double[][] results = new double[class1.size()][class1.size()];
 		
-		//normalization procedure starts here
-		if (normalization == true) {
-			if (verbose == true) {
-				System.out.print("Normalization... ");
-			}
-			for (int i = 0; i < graph.e.size(); i++) {
-				sourceCounter = 0;
-				targetCounter = 0;
-				tabuSource.clear();
-				tabuTarget.clear();
-				sourceLabel = graph.e.get(i).getSource().getLabel();
-				targetLabel = graph.e.get(i).getTarget().getLabel();
-				for (int j = 0; j < class1.size(); j++) {
-					if (class1.get(j).equals(sourceLabel) && !tabuSource.contains(class3.get(j))) {
-						sourceCounter++;
-						tabuSource.add(class3.get(j));
-					}
-					if (class1.get(j).equals(targetLabel) && !tabuTarget.contains(class3.get(j))) {
-						targetCounter++;
-						tabuTarget.add(class3.get(j));
+		for (int i = 0; i < class1.size(); i++) {
+			for (int j = 0; j < class1.size(); j++) {
+				double frequency = 0;
+				if (!class1.get(i).equals(class1.get(j))) {
+					if (ignoreDuplicates == true) {
+						if (agreement.equals("conflict")) {
+							for (int k = 0; k < class2.size(); k++) {
+								if ( (threeMode[i][k][0] > 0 && threeMode[j][k][1] > 0) || (threeMode[i][k][1] > 0 && threeMode[j][k][0] > 0) ) {
+									frequency++;
+								}
+							}
+						} else {
+							for (int k = 0; k < class2.size(); k++) {
+								for (int m = 0; m < agList.size(); m++) {
+									if (threeMode[i][k][m] > 0 && threeMode[j][k][m] > 0) {
+										frequency++;
+									}
+								}
+							}
+						}
+					} else {
+						if (agreement.equals("conflict")) {
+							for (int k = 0; k < class2.size(); k++) {
+								if ( (threeMode[i][k][0] > 0 && threeMode[j][k][1] > 0) || (threeMode[i][k][1] > 0 && threeMode[j][k][0] > 0) ) {
+									frequency = frequency + (threeMode[i][k][0] * threeMode[j][k][1]) + (threeMode[i][k][1] * threeMode[j][k][0]);
+								}
+							}
+						} else {
+							for (int k = 0; k < class2.size(); k++) {
+								for (int m = 0; m < agList.size(); m++) {
+									if (threeMode[i][k][m] > 0 && threeMode[j][k][m] > 0) {
+										frequency = frequency + (threeMode[i][k][m] * threeMode[j][k][m]);
+									}
+								}
+							}
+						}
 					}
 				}
-				graph.e.get(i).setWeight(graph.e.get(i).getWeight() / ((sourceCounter + targetCounter) / 2)); //normalization
+				results[i][j] = frequency;
 			}
+		}
+		if (verbose == true) {
+			System.out.println("done.");
+		}
+		
+		if (normalization == true) {
+			
 			if (verbose == true) {
-				System.out.println("done. Mean edge weight: " + String.format(new Locale("en"), "%.2f", graph.getMeanWeight()) + ", median: " + String.format(new Locale("en"), "%.2f", graph.getMedianWeight()) + ", minimum: " + String.format(new Locale("en"), "%.2f", graph.getMinimumWeight()) + ", maximum: " + String.format(new Locale("en"), "%.2f", graph.getMaximumWeight()) + ".");
+				System.out.print("Normalizing congruence matrix... ");
 			}
+			
+			//compute binary degrees in affiliation network
+			double[] degrees = new double[class1.size()];
+			for (int i = 0; i < class1.size(); i++) {
+				double degree = 0;
+				for (int j = 0; j < class2.size(); j++) {
+					double bothR = 0;
+					for (int k = 0; k < agList.size(); k++) {
+						bothR = bothR + threeMode[i][j][k];
+					}
+					if (bothR > 0) {
+						degree = degree + 1;
+					}
+				}
+				degrees[i] = degree;
+			}
+			
+			//normalize
+			for (int i = 0; i < class1.size(); i++) {
+				for (int j = 0; j < class1.size(); j++) {
+					results[i][j] = results[i][j] / ((degrees[i] + degrees[j]) / 2);
+				}
+			}
+
+			if (verbose == true) {
+				System.out.println("done.");
+			}
+		}
+		
+		if (verbose == true) {
+			System.out.print("Adding edges from edge-weight matrix to the graph... ");
+		}
+		
+		int count = 1;
+		for (int i = 0; i < class1.size(); i++) {
+			for (int j = 0; j < class1.size(); j++) {
+				if (results[i][j] > 0) {
+					graph.addEdge(new DnaGraphEdge(count, results[i][j], graph.getVertex(i+1), graph.getVertex(j+1)));
+					count++;
+				}
+			}
+		}
+		
+		if (verbose == true) {
+			System.out.println("done.");
+			System.out.println(graph.countVertices() + " vertices and " + graph.countEdges() + " edges with a mean edge weight of " + String.format(new Locale("en"), "%.2f", graph.getMeanWeight()) + ".");
 		}
 	}
 	
@@ -962,6 +1026,8 @@ public class Export {
 	 * Generate a simple graph using the attenuation algorithm.
 	 */
 	public void generateGraphAttenuation() {
+		double lambda = 0.1;
+		
 		prepareSimpleGraph();
 		
 		ArrayList<String> concepts = sc.getCategoryList();
@@ -1053,9 +1119,9 @@ public class Export {
 											days = 1;
 										}
 										if (normalization == true) {
-											referrals[i][j][l] = referrals[i][j][l] + ((1/days) / actorList.get(i).conceptList.get(k).dateList.size());
+											referrals[i][j][l] = referrals[i][j][l] + ( Math.exp(days*lambda * (-1)) / actorList.get(i).conceptList.get(k).dateList.size() );
 										} else {
-											referrals[i][j][l] = referrals[i][j][l] + 1/days; //without normalization
+											referrals[i][j][l] = referrals[i][j][l] + Math.exp(days*lambda * (-1)); //without normalization
 										}
 									}
 									m++;
@@ -1066,9 +1132,9 @@ public class Export {
 										days = 1;
 									}
 									if (normalization == true) {
-										referrals[i][j][l] = referrals[i][j][l] + ((1/days) / actorList.get(i).conceptList.get(k).dateList.size());
+										referrals[i][j][l] = referrals[i][j][l] + ( Math.exp(days*lambda * (-1)) / actorList.get(i).conceptList.get(k).dateList.size());
 									} else {
-										referrals[i][j][l] = referrals[i][j][l] + 1/days; //without normalization
+										referrals[i][j][l] = referrals[i][j][l] + Math.exp(days*lambda * (-1)); //without normalization
 									}
 									m++;
 								} else if (actorList.get(i).conceptList.get(k).dateList.get(m).after(actorList.get(j).conceptList.get(k).dateList.get(n + 1))) {
@@ -2180,7 +2246,7 @@ public class Export {
 		}
 		
 		Element graphElement = new Element("graph", xmlns);
-		if (algorithm.equals("affiliation")) {
+		if (algorithm.equals("affiliation") || algorithm.equals("attenuation")) {
 			graphElement.setAttribute(new Attribute("edgedefault", "directed"));
 		} else {
 			graphElement.setAttribute(new Attribute("edgedefault", "undirected"));
@@ -2361,6 +2427,12 @@ public class Export {
 			visEdge.setAttribute("key", "e0");
 			Element visPolyLineEdge = new Element("polyLineEdge", visone);
 			Element yPolyLineEdge = new Element("PolyLineEdge", yNs);
+			if (algorithm.equals("attenuation")) {
+				Element yArrows = new Element("Arrows", yNs);
+				yArrows.setAttribute("source", "none");
+				yArrows.setAttribute("target", "StandardArrow");
+				yPolyLineEdge.addContent(yArrows);
+			}
 			Element yLineStyle = new Element("LineStyle", yNs);
 			if (algorithm.equals("affiliation") && ignoreDuplicates == true && ! twoModeType.equals("po")) {
 				if (agreement.equals("yes")) {

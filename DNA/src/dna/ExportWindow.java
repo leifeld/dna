@@ -70,6 +70,7 @@ public class ExportWindow extends JFrame {
 	TimeWindowPanel timeWindowPanel;
 	CommetrixPanel commetrixPanel;
 	SoniaPanel soniaPanel;
+	AttenuationPanel attenuationPanel;
 	CoOccurrencePanel coOccurrencePanel;
 	NormalizationPanel normalizationPanel;
 	//EmptyPanel emptyPanel;
@@ -109,6 +110,7 @@ public class ExportWindow extends JFrame {
 		normalizationPanel.reset();
 		commetrixPanel.reset();
 		soniaPanel.reset();
+		attenuationPanel.reset();
 		timeWindowPanel.reset();
 		coOccurrencePanel.reset();
 		formatPanel.reset();
@@ -295,12 +297,14 @@ public class ExportWindow extends JFrame {
 			timeWindowPanel = new TimeWindowPanel();
 			commetrixPanel = new CommetrixPanel();
 			soniaPanel = new SoniaPanel();
+			attenuationPanel = new AttenuationPanel();
 			//emptyPanel = new EmptyPanel();
 			coOccurrencePanel = new CoOccurrencePanel();
 			
 			add(timeWindowPanel, "timeWindowPanel");
 			add(commetrixPanel, "commetrixPanel");
 			add(soniaPanel, "soniaPanel");
+			add(attenuationPanel, "attenuationPanel");
 			//add(emptyPanel, "emptyPanel");
 			add(coOccurrencePanel, "coOccurrencePanel");
 		}
@@ -545,6 +549,43 @@ public class ExportWindow extends JFrame {
 			backwardWindow.setModel(backwardModel);
 			forwardModel = new SpinnerNumberModel(1, 1, datePanel.getDuration(), 1);
 			forwardWindow.setModel(forwardModel);
+		}
+	}
+
+	/**
+	 * Custom option panel for the attenuation algorithm.
+	 */
+	public class AttenuationPanel extends JPanel {
+		
+		JSpinner lambdaSpinner;
+		SpinnerNumberModel lambdaModel;
+		
+		public AttenuationPanel() {
+			
+			setLayout(new FlowLayout(FlowLayout.LEFT));
+			setBorder( new TitledBorder( new EtchedBorder(), "Custom options: Attenuation" ) );
+			
+			JLabel days1 = new JLabel(" days");
+			lambdaModel = new SpinnerNumberModel(0.10, 0.00, 9.99, 0.01);
+			lambdaSpinner = new JSpinner(lambdaModel);
+			JLabel lambdaLabel = new JLabel("Lambda decay constant ");
+			
+			String lambdaToolTipText = "<html>The lambda parameter controls the exponential  <br>" +
+					"decay of the duration between statements when <br>" +
+					"edges are established. Use smaller values to <br>" + 
+					"incorporate longer time periods or larger values <br>" + 
+					"for shorter interaction periods.</html>";
+			lambdaSpinner.setToolTipText(lambdaToolTipText);
+			lambdaLabel.setToolTipText(lambdaToolTipText);
+			days1.setToolTipText(lambdaToolTipText);
+			
+			this.add(lambdaLabel);
+			this.add(lambdaSpinner);
+		}
+		
+		public void reset() {
+			lambdaModel = new SpinnerNumberModel(0.10, 0.00, 9.99, 0.01);
+			lambdaSpinner.setModel(lambdaModel);
 		}
 	}
 	
@@ -889,7 +930,7 @@ public class ExportWindow extends JFrame {
 			}
 			agreementPanel.conflict.setEnabled(false);
 			CardLayout cl = (CardLayout)(cardPanel.getLayout());
-			cl.show(cardPanel, "emptyPanel");
+			cl.show(cardPanel, "attenuationPanel");
 			coOccurrencePanel.reset();
 			normalizationPanel.normalization.setEnabled(true);
 			oneModeTypePanel.oneModeCombo.removeItemAt(2);
