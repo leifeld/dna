@@ -36,6 +36,7 @@ public class Export {
 	double windowSize, stepSize, soniaForwardDays, soniaBackwardDays, commetrixBackwardWindow;
 	private boolean invertPersons, invertOrganizations, invertCategories;
 	private boolean verbose;
+	private double alpha, lambda;
 	
 	ArrayList<String> class1, class2, class3, s_agree, s_text;
 	ArrayList<GregorianCalendar> s_date;
@@ -77,6 +78,8 @@ public class Export {
 	 * @param normalization
 	 * @param windowSize
 	 * @param stepSize
+	 * @param alpha
+	 * @param lambda
 	 * @param soniaForwardDays
 	 * @param soniaBackwardDays
 	 * @param networkName
@@ -101,6 +104,8 @@ public class Export {
 			boolean normalization,
 			Double windowSize,
 			Double stepSize,
+			Double alpha,
+			Double lambda,
 			Double soniaForwardDays,
 			Double soniaBackwardDays,
 			String networkName,
@@ -124,6 +129,8 @@ public class Export {
 		this.normalization = normalization;
 		this.windowSize = windowSize;
 		this.stepSize = stepSize;
+		this.alpha = alpha;
+		this.lambda = lambda;
 		this.soniaBackwardDays = soniaBackwardDays;
 		this.soniaForwardDays = soniaForwardDays;
 		this.networkName = networkName;
@@ -157,6 +164,8 @@ public class Export {
 	 * @param normalization
 	 * @param windowSize
 	 * @param stepSize
+	 * @param alpha
+	 * @param lambda
 	 * @param soniaForwardDays
 	 * @param soniaBackwardDays
 	 * @param networkName
@@ -183,6 +192,8 @@ public class Export {
 			boolean normalization,
 			double windowSize,
 			double stepSize,
+			double alpha,
+			double lambda,
 			double soniaForwardDays,
 			double soniaBackwardDays,
 			String networkName,
@@ -223,6 +234,8 @@ public class Export {
 		this.normalization = normalization;
 		this.windowSize = windowSize;
 		this.stepSize = stepSize;
+		this.alpha = alpha;
+		this.lambda = lambda;
 		this.soniaBackwardDays = soniaBackwardDays;
 		this.soniaForwardDays = soniaForwardDays;
 		this.networkName = networkName;
@@ -312,30 +325,6 @@ public class Export {
 			}
 		}
 		
-		
-		/*
-		for (int i = sc.size() - 1; i >= 0; i--) {
-			boolean exclude = false;
-			for (int j = 0; j < excludePersons.length; j++) {
-				if ((sc.get(i).getPerson().equals(excludePersons[j]) && invertPersons == false) || (!sc.get(i).getPerson().equals(excludePersons[j]) && invertPersons == true)) {
-					exclude = true;
-				}
-			}
-			for (int j = 0; j < excludeOrganizations.length; j++) {
-				if ((sc.get(i).getOrganization().equals(excludeOrganizations[j]) && invertOrganizations == false) || (!sc.get(i).getOrganization().equals(excludeOrganizations[j]) && invertOrganizations == true)) {
-					exclude = true;
-				}
-			}
-			for (int j = 0; j < excludeCategories.length; j++) {
-				if ((sc.get(i).getCategory().equals(excludeCategories[j]) && invertCategories == false) || (!sc.get(i).getCategory().equals(excludeCategories[j]) && invertCategories == true)) {
-					exclude = true;
-				}
-			}
-			if (exclude == true) {
-				sc.remove(i);
-			}
-		}
-		*/
 		int newSize = sc.size();
 		if (verbose == true) {
 			System.out.println("Keeping " + newSize + " out of " + oldSize + " statements.");
@@ -790,7 +779,7 @@ public class Export {
 			agList.add("no");
 		}
 		
-		double[][][] threeMode = new double[class1.size()][class2.size()][2];
+		double[][][] threeMode = new double[class1.size()][class2.size()][agList.size()];
 		for (int i = 0; i < class1.size(); i++) {
 			for (int j = 0; j < class2.size(); j++) {
 				for (int k = 0; k < agList.size(); k++) {
@@ -939,86 +928,304 @@ public class Export {
 	}
 	
 	/**
-	 * Generate simple graph from lists of statements. Run a time window 
-	 * through the selected period and aggregate simple graph.
+	 * Time window algorithm
 	 */
 	public void generateGraphTimeWindow() {
-		prepareSimpleGraph();
 		
 		if (verbose == true) {
-			System.out.print("Computing edge weights... ");
+			System.out.print("Creating graph and adding vertices... ");
 		}
 		
+		graph = new DnaGraph();
+		graph.removeAllEdges();
+		graph.removeAllVertices();
+		
+		//initialize lists which are the basis for a 3D array
+		ArrayList<String> class1 = new ArrayList<String>();
+		ArrayList<String> class2 = new ArrayList<String>();
+		ArrayList<String> agList = new ArrayList<String>();
+		if (oneModeType.equals("persons")) {
+			if (includeIsolates == true) {
+				class1 = persIsolates;
+			} else {
+				class1 = sc.getPersonList();
+			}
+			for (int i = 0; i < class1.size(); i++) {
+				graph.addVertex(new DnaGraphVertex(i+1, class1.get(i), "p"));
+			}
+		} else if (oneModeType.equals("organizations")) {
+			if (includeIsolates == true) {
+				class1 = orgIsolates;
+			} else {
+				class1 = sc.getOrganizationList();
+			}
+			for (int i = 0; i < class1.size(); i++) {
+				graph.addVertex(new DnaGraphVertex(i+1, class1.get(i), "o"));
+			}
+		} else {
+			if (includeIsolates == true) {
+				class1 = catIsolates;
+			} else {
+				class1 = sc.getCategoryList();
+			}
+			for (int i = 0; i < class1.size(); i++) {
+				graph.addVertex(new DnaGraphVertex(i+1, class1.get(i), "c"));
+			}
+		}
+		if (via.equals("persons")) {
+			if (includeIsolates == true) {
+				class2 = persIsolates;
+			} else {
+				class2 = sc.getPersonList();
+			}
+		} else if (via.equals("organizations")) {
+			if (includeIsolates == true) {
+				class2 = orgIsolates;
+			} else {
+				class2 = sc.getOrganizationList();
+			}
+		} else {
+			if (includeIsolates == true) {
+				class2 = catIsolates;
+			} else {
+				class2 = sc.getCategoryList();
+			}
+		}
+		if (agreement.equals("yes")) {
+			agList.add("yes");
+		} else if (agreement.equals("no")) {
+			agList.add("no");
+		} else {
+			agList.add("yes");
+			agList.add("no");
+		}
+
+		double[][][] threeMode = new double[class1.size()][class2.size()][agList.size()];
+		double[][] results = new double[class1.size()][class1.size()];
+		for (int i = 0; i < class1.size(); i++) {
+			for (int j = 0; j < class2.size(); j++) {
+				results[i][j] = 0;
+			}
+		}
+		
+		//initialize counters for the time window
 		int windowSizeInt = new Double(windowSize).intValue();;
 		int stepSizeInt = new Double(stepSize).intValue();
-		int runningCount = 0;
 		GregorianCalendar startOfPeriod = (GregorianCalendar)start.clone();
 		startOfPeriod.add(Calendar.DATE, -windowSizeInt);
 		GregorianCalendar endOfPeriod = (GregorianCalendar)start.clone();
+
+		if (verbose == true) {
+			System.out.println("done.");
+			System.out.print("Starting to move a time window through the discourse... ");
+		}
+		
+		//do this at every time step
 		while (!startOfPeriod.after(stop)) {
+			
+			//reset the 3D array
 			for (int i = 0; i < class1.size(); i++) {
-				for (int j = 0; j < class1.size(); j++) {
-					if (class3.get(i).equals(class3.get(j))
-							&& !class1.get(i).equals(class1.get(j))
-							&& s_agree.get(i).equals(s_agree.get(j))
-							&& !startOfPeriod.after(s_date.get(i))
-							&& !s_date.get(i).after(endOfPeriod)
-							&& !startOfPeriod.after(s_date.get(j))
-							&& !s_date.get(j).after(endOfPeriod)
-							&& !class1.get(i).equals("")
-							&& !class1.get(j).equals("")
-							&& !class3.get(i).equals("")
-							&& !class3.get(j).equals("")) {
-						int sourceId = graph.getVertex(class1.get(i)).getId();
-						int targetId = graph.getVertex(class1.get(j)).getId();
-						if (graph.containsEdge(sourceId, targetId)) {
-							graph.getEdge(sourceId, targetId).addToWeight(1);
-						} else {
-							graph.addEdge(new DnaGraphEdge(runningCount, 1, graph.getVertex(sourceId), graph.getVertex(targetId)));
-						}
-						runningCount++;
+				for (int j = 0; j < class2.size(); j++) {
+					for (int k = 0; k < agList.size(); k++) {
+						threeMode[i][j][k] = 0;
 					}
 				}
 			}
+			
+			//extract those statements from the statement container which fall into the current time window
+			StatementContainer twsc = new StatementContainer();
+			for (int i = 0; i < sc.size(); i++) {
+				GregorianCalendar scGC = new GregorianCalendar();
+				scGC.setTime(sc.get(i).getDate());
+				if (!startOfPeriod.after(scGC) && !scGC.after(endOfPeriod)) {
+					try {
+						twsc.addStatement(sc.get(i));
+					} catch (DuplicateStatementIdException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			
+			//put the extracted statements as frequency counts into the 3D array
+			for (int i = 0; i < twsc.size(); i ++) {
+				int c1 = -1;
+				int r = -1;
+				int c2 = -1;
+				
+				for (int j = 0; j < class1.size(); j++) {
+					if ( (twsc.get(i).getCategory().equals(class1.get(j)) && oneModeType.equals("categories")) ||
+							(twsc.get(i).getPerson().equals(class1.get(j)) && oneModeType.equals("persons")) ||
+							(twsc.get(i).getOrganization().equals(class1.get(j)) && oneModeType.equals("organizations")) ) {
+						c1 = j;
+					}
+				}
+				for (int j = 0; j < class2.size(); j++) {
+					if ( (twsc.get(i).getCategory().equals(class2.get(j)) && via.equals("categories")) ||
+							(twsc.get(i).getPerson().equals(class2.get(j)) && via.equals("persons")) ||
+							(twsc.get(i).getOrganization().equals(class2.get(j)) && via.equals("organizations")) ) {
+						c2 = j;
+					}
+				}
+				for (int j = 0; j < agList.size(); j++) {
+					if ( twsc.get(i).getAgreement().equals(agList.get(j))) {
+						r = j;
+					}
+				}
+				
+				if (c1 > -1 && c2 > -1 && r > -1) {
+					threeMode[c1][c2][r] = threeMode[c1][c2][r] + 1;
+				}
+			}
+			
+			//run through the 3D array, create congruence network edges (the frequency variable), and add them to the result matrix
+			for (int i = 0; i < class1.size(); i++) {
+				for (int j = 0; j < class1.size(); j++) {
+					double frequency = 0;
+					if (!class1.get(i).equals(class1.get(j))) {
+						if (ignoreDuplicates == true) {
+							if (agreement.equals("conflict")) {
+								for (int k = 0; k < class2.size(); k++) {
+									if ( (threeMode[i][k][0] > 0 && threeMode[j][k][1] > 0) || (threeMode[i][k][1] > 0 && threeMode[j][k][0] > 0) ) {
+										frequency++;
+									}
+								}
+							} else {
+								for (int k = 0; k < class2.size(); k++) {
+									for (int m = 0; m < agList.size(); m++) {
+										if (threeMode[i][k][m] > 0 && threeMode[j][k][m] > 0) {
+											frequency++;
+										}
+									}
+								}
+							}
+						} else {
+							if (agreement.equals("conflict")) {
+								for (int k = 0; k < class2.size(); k++) {
+									if ( (threeMode[i][k][0] > 0 && threeMode[j][k][1] > 0) || (threeMode[i][k][1] > 0 && threeMode[j][k][0] > 0) ) {
+										frequency = frequency + (threeMode[i][k][0] * threeMode[j][k][1]) + (threeMode[i][k][1] * threeMode[j][k][0]);
+									}
+								}
+							} else {
+								for (int k = 0; k < class2.size(); k++) {
+									for (int m = 0; m < agList.size(); m++) {
+										if (threeMode[i][k][m] > 0 && threeMode[j][k][m] > 0) {
+											frequency = frequency + (threeMode[i][k][m] * threeMode[j][k][m]);
+										}
+									}
+								}
+							}
+						}
+					}
+					results[i][j] = results[i][j] + frequency;
+				}
+			}
+			
+			//move the time window forward
 			startOfPeriod.add(Calendar.DATE, stepSizeInt);
 			endOfPeriod.add(Calendar.DATE, stepSizeInt);
 		}
+		
 		if (verbose == true) {
-			System.out.println(graph.countEdges() + " edges with a mean edge weight of " + String.format(new Locale("en"), "%.2f", graph.getMeanWeight()) + " were created.");
+			System.out.println("done.");
 		}
 		
-		//time window normalization procedure starts here
+		//normalization
 		if (normalization == true) {
+			
 			if (verbose == true) {
-				System.out.print("Normalization... ");
+				System.out.print("Normalizing congruence matrix... ");
 			}
-			for (int i = 0; i < graph.e.size(); i++) {
-				sourceCounter = 0;
-				targetCounter = 0;
-				tabuSource.clear();
-				tabuTarget.clear();
-				sourceLabel = graph.e.get(i).getSource().getLabel();
-				targetLabel = graph.e.get(i).getTarget().getLabel();
-				for (int j = 0; j < class1.size(); j++) {
-					if (class1.get(j).equals(sourceLabel) && !tabuSource.contains(class3.get(j))) {
-						sourceCounter++;
-						tabuSource.add(class3.get(j));
-					}
-					if (class1.get(j).equals(targetLabel) && !tabuTarget.contains(class3.get(j))) {
-						targetCounter++;
-						tabuTarget.add(class3.get(j));
+			
+			//reset the 3D array
+			for (int i = 0; i < class1.size(); i++) {
+				for (int j = 0; j < class2.size(); j++) {
+					for (int k = 0; k < agList.size(); k++) {
+						threeMode[i][j][k] = 0;
 					}
 				}
-				double numerator = graph.e.get(i).getWeight();
-				double denom1 = (sourceCounter + targetCounter) / 2;
-				double dur = (stop.getTimeInMillis() - start.getTimeInMillis()) / (24*60*60*1000) + 1;
-				dur = Math.abs(dur);
-				double denom2 = (dur + windowSize) / stepSize;
-				graph.e.get(i).setWeight(numerator * 100 / (denom1 * denom2)); //normalization
 			}
+			
+			//fill the 3D array with complete affiliation data (not restricted to time window)
+			for (int i = 0; i < sc.size(); i ++) {
+				int c1 = -1;
+				int r = -1;
+				int c2 = -1;
+				
+				for (int j = 0; j < class1.size(); j++) {
+					if ( (sc.get(i).getCategory().equals(class1.get(j)) && oneModeType.equals("categories")) ||
+							(sc.get(i).getPerson().equals(class1.get(j)) && oneModeType.equals("persons")) ||
+							(sc.get(i).getOrganization().equals(class1.get(j)) && oneModeType.equals("organizations")) ) {
+						c1 = j;
+					}
+				}
+				for (int j = 0; j < class2.size(); j++) {
+					if ( (sc.get(i).getCategory().equals(class2.get(j)) && via.equals("categories")) ||
+							(sc.get(i).getPerson().equals(class2.get(j)) && via.equals("persons")) ||
+							(sc.get(i).getOrganization().equals(class2.get(j)) && via.equals("organizations")) ) {
+						c2 = j;
+					}
+				}
+				for (int j = 0; j < agList.size(); j++) {
+					if ( sc.get(i).getAgreement().equals(agList.get(j))) {
+						r = j;
+					}
+				}
+				
+				if (c1 > -1 && c2 > -1 && r > -1) {
+					threeMode[c1][c2][r] = threeMode[c1][c2][r] + 1;
+				}
+			}
+			
+			//compute binary degrees in affiliation network
+			double[] degrees = new double[class1.size()];
+			for (int i = 0; i < class1.size(); i++) {
+				double degree = 0;
+				for (int j = 0; j < class2.size(); j++) {
+					double bothR = 0;
+					for (int k = 0; k < agList.size(); k++) {
+						bothR = bothR + threeMode[i][j][k];
+					}
+					if (bothR > 0) {
+						degree = degree + 1;
+					}
+				}
+				degrees[i] = degree;
+			}
+			
+			//compute number of time steps
+			double dur = (stop.getTimeInMillis() - start.getTimeInMillis()) / (24*60*60*1000) + 1;
+			dur = Math.abs(dur);
+			double numTimeSteps = (dur + windowSize) / stepSize;
+			
+			//normalize
+			for (int i = 0; i < class1.size(); i++) {
+				for (int j = 0; j < class1.size(); j++) {
+					results[i][j] = (alpha * results[i][j]) / ( numTimeSteps * ((degrees[i] + degrees[j]) / 2));
+				}
+			}
+
 			if (verbose == true) {
-				System.out.println("done. Mean edge weight: " + String.format(new Locale("en"), "%.2f", graph.getMeanWeight()) + ", median: " + String.format(new Locale("en"), "%.2f", graph.getMedianWeight()) + ", minimum: " + String.format(new Locale("en"), "%.2f", graph.getMinimumWeight()) + ", maximum: " + String.format(new Locale("en"), "%.2f", graph.getMaximumWeight()) + ".");
+				System.out.println("done.");
 			}
+		}
+
+		if (verbose == true) {
+			System.out.print("Adding edges from edge-weight matrix to the graph... ");
+		}
+		
+		int count = 1;
+		for (int i = 0; i < class1.size(); i++) {
+			for (int j = 0; j < class1.size(); j++) {
+				if (results[i][j] > 0) {
+					graph.addEdge(new DnaGraphEdge(count, results[i][j], graph.getVertex(i+1), graph.getVertex(j+1)));
+					count++;
+				}
+			}
+		}
+		
+		if (verbose == true) {
+			System.out.println("done.");
+			System.out.println(graph.countEdges() + " edges with a mean edge weight of " + String.format(new Locale("en"), "%.2f", graph.getMeanWeight()) + " were created.");
 		}
 	}
 	
@@ -1026,7 +1233,6 @@ public class Export {
 	 * Generate a simple graph using the attenuation algorithm.
 	 */
 	public void generateGraphAttenuation() {
-		double lambda = 0.1;
 		
 		prepareSimpleGraph();
 		

@@ -51,7 +51,7 @@ import javax.swing.filechooser.FileFilter;
  * graphML (visone) or CSV files (spreadsheet).
  * 
  * @author Philip Leifeld
- * @version 1.25 - 2011-03-18
+ * @version 1.26 - 2011-04-01
  */
 @SuppressWarnings("serial")
 public class ExportWindow extends JFrame {
@@ -594,8 +594,8 @@ public class ExportWindow extends JFrame {
 	 */
 	public class TimeWindowPanel extends JPanel {
 		
-		JSpinner chain, shift;
-		SpinnerNumberModel chainModel, shiftModel;
+		JSpinner chain, shift, alphaSpinner;
+		SpinnerNumberModel chainModel, shiftModel, alphaModel;
 		
 		public TimeWindowPanel() {
 			
@@ -617,11 +617,10 @@ public class ExportWindow extends JFrame {
 				}
 			};
 			
-			JLabel days1 = new JLabel(" days,");
+			JLabel days1 = new JLabel(" window size    ");
 			chainModel = new SpinnerNumberModel(getChDur(), 1, datePanel.getDuration(), 1);
 			chain = new JSpinner(chainModel);
 			chain.addChangeListener(cl);
-			JLabel chainLabel = new JLabel("moving time window of");
 			
 			String chainToolTipText = "<html>When using the time window algorithm, there are two parameters. <br>" +
 					"This parameter is called the chaining parameter. It specifies the <br>" +
@@ -631,20 +630,11 @@ public class ExportWindow extends JFrame {
 					"because this often reflects the time until the debate changes.</html>";
 			
 			chain.setToolTipText(chainToolTipText);
-			chainLabel.setToolTipText(chainToolTipText);
 			days1.setToolTipText(chainToolTipText);
-			
-			top.add(chainLabel);
-			top.add(chain);
-			top.add(days1);
-			add(top, BorderLayout.NORTH);
-			
-			JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			
+
 			shiftModel = new SpinnerNumberModel(1, 1, datePanel.getDuration(), 1);
 			shift = new JSpinner(shiftModel);
-			JLabel shiftLabel = new JLabel("which is shifted by");
-			JLabel days2 = new JLabel(" days");
+			JLabel days2 = new JLabel(" step size");
 
 			String shiftToolTipText = "<html>The second parameter of the time window algorithm is the shift <br>" +
 			"parameter. It specifies by how many days the time window should <br>" +
@@ -655,12 +645,32 @@ public class ExportWindow extends JFrame {
 			"meter, which is the maximum possible value.</html>";
 			
 			shift.setToolTipText(shiftToolTipText);
-			shiftLabel.setToolTipText(shiftToolTipText);
 			days2.setToolTipText(shiftToolTipText);
 			
-			bottom.add(shiftLabel);
-			bottom.add(shift);
-			bottom.add(days2);
+			top.add(chain);
+			top.add(days1);
+			top.add(shift);
+			top.add(days2);
+			add(top, BorderLayout.NORTH);
+			
+			JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			
+			JLabel alphaLabel = new JLabel("alpha constant (for normalization)");
+			alphaModel = new SpinnerNumberModel(100.0, 1.0, 9999, 1.0);
+			alphaSpinner = new JSpinner(alphaModel);
+			
+			String alphaToolTipText = "<html>Use this parameter to adjust the normalization of edge weights. <br>" +
+			"The value is only used if normalization is checked. The alpha value <br>" +
+			"will multiply the normalized edge weights to make them larger. A <br>" +
+			"value of 100 should scale edge weights to about 1.0 in many real- <br>" +
+			"world discourse networks. </html>";
+			
+			alphaLabel.setToolTipText(alphaToolTipText);
+			alphaSpinner.setToolTipText(alphaToolTipText);
+			
+			bottom.add(alphaSpinner);
+			bottom.add(alphaLabel);
+			
 			add(bottom, BorderLayout.SOUTH);
 			shiftModel.setMaximum(getChDur());
 			
@@ -681,6 +691,8 @@ public class ExportWindow extends JFrame {
 			chain.setModel(chainModel);
 			shiftModel = new SpinnerNumberModel(1, 1, getChDur(), 1);
 			shift.setModel(shiftModel);
+			alphaModel = new SpinnerNumberModel(100.0, 1.0, 9999, 1.0);
+			alphaSpinner.setModel(alphaModel);
 		}
 	}
 	
@@ -1483,6 +1495,9 @@ public class ExportWindow extends JFrame {
 			Double windowSizeDouble = (Double)timeWindowPanel.chain.getValue();
 			Double stepSizeDouble = (Double)timeWindowPanel.shift.getValue();
 			
+			Double alpha = (Double)timeWindowPanel.alphaSpinner.getValue();
+			Double lambda = (Double)attenuationPanel.lambdaSpinner.getValue();
+			
 			Double forwardDays = (Double) soniaPanel.forwardWindow.getValue();
 			Double backwardDays = (Double) soniaPanel.backwardModel.getValue();
 			
@@ -1508,6 +1523,8 @@ public class ExportWindow extends JFrame {
 					normalization,
 					windowSizeDouble, //time window algorithm
 					stepSizeDouble, //time window algorithm
+					alpha,
+					lambda,
 					forwardDays, //SONIA
 					backwardDays, //SONIA
 					networkName, //Commetrix
