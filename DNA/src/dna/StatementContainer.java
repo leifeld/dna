@@ -136,13 +136,15 @@ public class StatementContainer implements TableModel {
 		Collections.sort(statements);
 	}
 	
-	public void addStatement(Statement s) throws DuplicateStatementIdException {
+	public void addStatement(Statement s, boolean sort) throws DuplicateStatementIdException {
 		if (containsId(s.id) == true) {
 			throw new DuplicateStatementIdException("A statement with ID " + s.id + " already exists. It will not be added.");
 		} else {
 			int id = s.getId();
 			statements.add(s);
-			sort();
+			if (sort == true) {
+				sort();
+			}
 			int index = getIndexById(id);
 			
 			//notify all listeners
@@ -170,6 +172,7 @@ public class StatementContainer implements TableModel {
 	}
 	
 	public int getFirstUnusedId() {
+		sort();
 		int unused = 1;
 		boolean accept = false;
 		while (accept == false) {
@@ -205,7 +208,7 @@ public class StatementContainer implements TableModel {
 			String text = st.getText();
 			Statement stm = new Statement(id, start, stop, date, text, articleTitle, person, organization, category, agreement);
 			try {
-				stc.addStatement(stm);
+				stc.addStatement(stm, false);
 			} catch (DuplicateStatementIdException e) {
 				try {
 					throw new DuplicateStatementIdException("A statement with ID " + id + " already exists. It will not be used.");

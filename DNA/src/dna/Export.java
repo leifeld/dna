@@ -27,6 +27,7 @@ import org.jdom.output.XMLOutputter;
 public class Export {
 	
 	private DnaContainer dc;
+	private StatementContainer statCont;
 	private StatementContainer sc;
 	private String[] excludePersons;
 	private String[] excludeOrganizations;
@@ -60,7 +61,7 @@ public class Export {
 	/**
 	 * Constructor with statement container (for internal use, e.g. from the Dna main class)
 	 * 
-	 * @param sc
+	 * @param statCont
 	 * @param outfile
 	 * @param excludePersons
 	 * @param excludeOrganizations
@@ -86,7 +87,7 @@ public class Export {
 	 * @param commetrixBackwardWindow
 	 */
 	public Export(
-			StatementContainer sc,
+			StatementContainer statCont,
 			String outfile,
 			String[] excludePersons,
 			String[] excludeOrganizations, 
@@ -111,7 +112,7 @@ public class Export {
 			String networkName,
 			Double commetrixBackwardWindow
 			) {
-		this.sc = sc;
+		this.statCont = statCont;
 		this.outfile = outfile;
 		this.excludePersons = excludePersons;
 		this.excludeOrganizations = excludeOrganizations;
@@ -139,6 +140,8 @@ public class Export {
 		this.invertOrganizations = false;
 		this.invertCategories = false;
 		this.verbose = true;
+		
+		sc = new StatementContainer();
 		
 		applyFilters();
 		createGraph();
@@ -244,7 +247,8 @@ public class Export {
 		this.verbose = verbose;
 		
 		dc = new ParseLatest(infile, verbose).getDc();
-		this.sc = dc.sc;
+		this.statCont = dc.sc;
+		sc = new StatementContainer();
 		
 		applyFilters();
 		createGraph();
@@ -259,138 +263,152 @@ public class Export {
 		dc = new ParseLatest(infile, verbose).getDc();
 	}
 	
-	@SuppressWarnings("unchecked")
 	public void applyFilters() {
 		
-		//apply exclude filter
-		if (verbose == true) {
-			System.out.print("Applying exclude list filter... ");
-		}
-		int oldSize = sc.size();
+		String regex1 = "'|^[ ]+|[ ]+$|[ ]*;|;[ ]*"; //required for undesirable character filter
+		String regex2 = "\\s+"; //required for undesirable character filter
 		
-		for (int i = sc.size() - 1; i >= 0; i--) {
+		if (includeIsolates == true) {
+			
+			if (verbose == true) {
+				System.out.print("Saving isolates in a separate list... ");
+			}
+			
+			persIsolates = statCont.getPersonList();
+			for (int i = 0; i < excludePersons.length; i++) {
+				for (int j = 0; j < persIsolates.size(); j++) {
+					if (persIsolates.get(j).equals(excludePersons[i])) {
+						persIsolates.remove(j);
+						continue;
+					}
+				}
+			}
+
+			orgIsolates = statCont.getOrganizationList();
+			for (int i = 0; i < excludeOrganizations.length; i++) {
+				for (int j = 0; j < orgIsolates.size(); j++) {
+					if (orgIsolates.get(j).equals(excludeOrganizations[i])) {
+						orgIsolates.remove(j);
+						continue;
+					}
+				}
+			}
+
+			catIsolates = statCont.getCategoryList();
+			for (int i = 0; i < excludeCategories.length; i++) {
+				for (int j = 0; j < catIsolates.size(); j++) {
+					if (catIsolates.get(j).equals(excludeCategories[i])) {
+						catIsolates.remove(j);
+						continue;
+					}
+				}
+			}
+			
+			for (int i = 0; i < persIsolates.size(); i++) {
+				persIsolates.set(i, persIsolates.get(i).replaceAll(regex1, "").replaceAll(regex2, " "));
+			}
+			for (int i = 0; i < orgIsolates.size(); i++) {
+				orgIsolates.set(i, orgIsolates.get(i).replaceAll(regex1, "").replaceAll(regex2, " "));
+			}
+			for (int i = 0; i < catIsolates.size(); i++) {
+				catIsolates.set(i, catIsolates.get(i).replaceAll(regex1, "").replaceAll(regex2, " "));
+			}
+			if (verbose == true) {
+				System.out.println("done.");
+			}
+		}
+		
+		//apply filters
+		if (verbose == true) {
+			System.out.print("Applying filters... ");
+		}
+		
+		for (int i = statCont.size() - 1; i >= 0; i--) {
 			boolean exclude = false;
 			boolean excludePerson = true;
 			boolean excludeOrganization = true;
 			boolean excludeCategory = true;
+			boolean excludeOther = false;
 			
+			//exclude list filter
 			if (invertPersons == true) {
 				for (int j = 0; j < excludePersons.length; j++) {
-					if (sc.get(i).getPerson().equals(excludePersons[j])) {
+					if (statCont.get(i).getPerson().equals(excludePersons[j])) {
 						excludePerson = false;
 					}
 				}
 			} else {
 				for (int j = 0; j < excludePersons.length; j++) {
-					if (sc.get(i).getPerson().equals(excludePersons[j])) {
+					if (statCont.get(i).getPerson().equals(excludePersons[j])) {
 						exclude = true;
 					}
 				}
 			}
-
 			if (invertOrganizations == true) {
 				for (int j = 0; j < excludeOrganizations.length; j++) {
-					if (sc.get(i).getOrganization().equals(excludeOrganizations[j])) {
+					if (statCont.get(i).getOrganization().equals(excludeOrganizations[j])) {
 						excludeOrganization = false;
 					}
 				}
 			} else {
 				for (int j = 0; j < excludeOrganizations.length; j++) {
-					if (sc.get(i).getOrganization().equals(excludeOrganizations[j])) {
+					if (statCont.get(i).getOrganization().equals(excludeOrganizations[j])) {
 						exclude = true;
 					}
 				}
 			}
-
 			if (invertCategories == true) {
 				for (int j = 0; j < excludeCategories.length; j++) {
-					if (sc.get(i).getCategory().equals(excludeCategories[j])) {
+					if (statCont.get(i).getCategory().equals(excludeCategories[j])) {
 						excludeCategory = false;
 					}
 				}
 			} else {
 				for (int j = 0; j < excludeCategories.length; j++) {
-					if (sc.get(i).getCategory().equals(excludeCategories[j])) {
+					if (statCont.get(i).getCategory().equals(excludeCategories[j])) {
 						exclude = true;
 					}
 				}
 			}
 			
-			if ( (invertPersons == true && excludePerson == true) || (invertOrganizations == true && excludeOrganization == true) || (invertCategories == true && excludeCategory == true)) {
+			//date filter
+			GregorianCalendar currentDate = new GregorianCalendar();
+			currentDate.setTime(statCont.get(i).getDate());
+			if (currentDate.before(start) || currentDate.after(stop)) {
+				excludeOther = true;
+			}
+			
+			//agreement filter
+			if ((statCont.get(i).getAgreement().equals("no") && agreement.equals("yes"))
+					|| (statCont.get(i).getAgreement().equals("yes") && agreement.equals("no"))) {
+				excludeOther = true;
+			}
+			
+			if ( 
+				(invertPersons == true && excludePerson == true) || 
+				(invertOrganizations == true && excludeOrganization == true) || 
+				(invertCategories == true && excludeCategory == true) ||
+				excludeOther == true
+			) {
 				exclude = true;
 			}
 			
-			if (exclude == true) {
-				sc.remove(i);
+			//add statement and apply undesirable character filter
+			if (exclude == false) {
+				try {
+					sc.addStatement(statCont.get(i), false);
+					sc.get(sc.size()-1).setPerson(sc.get(sc.size()-1).getPerson().replaceAll(regex1, "").replaceAll(regex2, " "));
+					sc.get(sc.size()-1).setOrganization(sc.get(sc.size()-1).getOrganization().replaceAll(regex1, "").replaceAll(regex2, " "));
+					sc.get(sc.size()-1).setCategory(sc.get(sc.size()-1).getCategory().replaceAll(regex1, "").replaceAll(regex2, " "));
+				} catch (DuplicateStatementIdException e) {
+					System.err.println(e.getStackTrace());
+				}
 			}
 		}
 		
-		int newSize = sc.size();
-		if (verbose == true) {
-			System.out.println("Keeping " + newSize + " out of " + oldSize + " statements.");
-		}
-		
-		//keep backup in case the includeIsolates option is enabled (must be between exclude and date filter)
-		persIsolates = (ArrayList<String>) sc.getPersonList().clone();
-		orgIsolates = (ArrayList<String>) sc.getOrganizationList().clone();
-		catIsolates = (ArrayList<String>) sc.getCategoryList().clone();
-		
-		//apply date filter
-		if (verbose == true) {
-			System.out.print("Applying date filter... ");
-		}
-		oldSize = sc.size();
-		
-		for (int i = sc.size() - 1; i >= 0; i--) {
-			GregorianCalendar currentDate = new GregorianCalendar();
-			currentDate.setTime(sc.get(i).getDate());
-			if (currentDate.before(start) || currentDate.after(stop)) {
-				sc.remove(i);
-			}
-		}
-		newSize = sc.size();
-		if (verbose == true) {
-			System.out.println("Keeping " + newSize + " out of " + oldSize + " statements.");
-		}
-		
-		//agreement filter
-		if (verbose == true) {
-			System.out.print("Applying agreement filter... ");
-		}
-		oldSize = sc.size();
-		for (int i = sc.size() - 1; i >= 0; i--) {
-			if ((sc.get(i).getAgreement().equals("no") && agreement.equals("yes"))
-					|| (sc.get(i).getAgreement().equals("yes") && agreement.equals("no"))) {
-				sc.remove(i);
-			}
-		}
-		newSize = sc.size();
-		if (verbose == true) {
-			System.out.println("Keeping " + newSize + " out of " + oldSize + " statements.");
-		}
-		
-		//undesirable character filter
-		if (verbose == true) {
-			System.out.print("Applying undesirable character filter... ");
-		}
-		String regex1 = "'|^[ ]+|[ ]+$|[ ]*;|;[ ]*";
-		String regex2 = "\\s+";
-		for (int i = 0; i < sc.size(); i++) {
-			sc.get(i).setPerson(sc.get(i).getPerson().replaceAll(regex1, "").replaceAll(regex2, " "));
-			sc.get(i).setOrganization(sc.get(i).getOrganization().replaceAll(regex1, "").replaceAll(regex2, " "));
-			sc.get(i).setCategory(sc.get(i).getCategory().replaceAll(regex1, "").replaceAll(regex2, " "));
-		}
-		for (int i = 0; i < persIsolates.size(); i++) {
-			persIsolates.set(i, persIsolates.get(i).replaceAll(regex1, "").replaceAll(regex2, " "));
-		}
-		for (int i = 0; i < orgIsolates.size(); i++) {
-			orgIsolates.set(i, orgIsolates.get(i).replaceAll(regex1, "").replaceAll(regex2, " "));
-		}
-		for (int i = 0; i < catIsolates.size(); i++) {
-			catIsolates.set(i, catIsolates.get(i).replaceAll(regex1, "").replaceAll(regex2, " "));
-		}
 		if (verbose == true) {
 			System.out.println("done.");
+			System.out.println("Keeping " + sc.size() + " out of " + statCont.size() + " statements.");
 		}
 	}
 	
@@ -1039,12 +1057,13 @@ public class Export {
 				scGC.setTime(sc.get(i).getDate());
 				if (!startOfPeriod.after(scGC) && !scGC.after(endOfPeriod)) {
 					try {
-						twsc.addStatement(sc.get(i));
+						twsc.addStatement(sc.get(i), false);
 					} catch (DuplicateStatementIdException e) {
 						e.printStackTrace();
 					}
 				}
 			}
+			sc.sort();
 			
 			//put the extracted statements as frequency counts into the 3D array
 			for (int i = 0; i < twsc.size(); i ++) {

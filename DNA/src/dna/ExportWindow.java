@@ -51,7 +51,7 @@ import javax.swing.filechooser.FileFilter;
  * graphML (visone) or CSV files (spreadsheet).
  * 
  * @author Philip Leifeld
- * @version 1.26 - 2011-04-01
+ * @version 1.26 - 2011-04-04
  */
 @SuppressWarnings("serial")
 public class ExportWindow extends JFrame {
@@ -1364,7 +1364,6 @@ public class ExportWindow extends JFrame {
 	
 	private class FileExporter implements Runnable {
 		
-		StatementContainer sc;
 		String outfile;
 		JFrame progressFrame;
 		
@@ -1375,12 +1374,7 @@ public class ExportWindow extends JFrame {
 		public void run() {
 			buttonPanel.export.setEnabled(false);
 			buttonPanel.reset.setEnabled(false);
-			System.out.println("Exporting - this can take a long time...");
 			showProgress();
-			
-			System.out.print("Creating internal copy of the statements... ");
-			sc = (StatementContainer)sCont.clone();
-			System.out.println("done.");
 			
 			Object[] excludePers = excludePanel.person.getSelectedValues();
 			Object[] excludeOrg = excludePanel.organization.getSelectedValues();
@@ -1505,7 +1499,7 @@ public class ExportWindow extends JFrame {
 			Double commetrixBackwardWindow = (Double)commetrixPanel.chain.getValue();
 			
 			new Export(
-					sc, 
+					sCont, 
 					outfile, 
 					excludeP, 
 					excludeO, 

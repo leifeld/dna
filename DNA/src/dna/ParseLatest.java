@@ -117,7 +117,7 @@ public class ParseLatest {
 				
 				if (verbose == true) {
 					System.out.println(" done.");
-					System.out.print("Parsing articles... ");
+					System.out.println("Parsing articles... ");
 				}
 				
 				Element articles = discourse.getChild("articles");
@@ -218,11 +218,11 @@ public class ParseLatest {
 				    	
 						//put statements into the statement list
 						try {
-							dc.sc.addStatement(new Statement(id, startInt, endInt, date, selection, title, person, organization, category, agreement));
+							dc.sc.addStatement(new Statement(id, startInt, endInt, date, selection, title, person, organization, category, agreement), false);
 						} catch (DuplicateStatementIdException e) {
 							try { //save up duplicate statements for later insertion
 								System.err.println("Duplicate statement with ID " + id + " detected. A new ID will be assigned.");
-								duplicateStatements.addStatement(new Statement(duplicateStatements.getFirstUnusedId(), startInt, endInt, date, selection, title, person, organization, category, agreement));
+								duplicateStatements.addStatement(new Statement(duplicateStatements.getFirstUnusedId(), startInt, endInt, date, selection, title, person, organization, category, agreement), false);
 							} catch (DuplicateStatementIdException e1) {
 								e1.printStackTrace();
 							}
@@ -248,11 +248,12 @@ public class ParseLatest {
 								duplicateStatements.get(i).getOrganization(), 
 								duplicateStatements.get(i).getCategory(), 
 								duplicateStatements.get(i).getAgreement()
-						));
+						), false);
 					} catch (DuplicateStatementIdException e) {
 						e.printStackTrace();
 					}
 				}
+				dc.sc.sort();
 				if (verbose == true) {
 					System.out.println("done. " + dc.ac.getRowCount() + " articles and " + dc.sc.size() + " statements parsed.");
 				}

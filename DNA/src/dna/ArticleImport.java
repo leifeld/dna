@@ -261,11 +261,12 @@ public class ArticleImport extends JFrame {
 					    	
 							//put statements into the statement list
 					    	try {
-								dna.Dna.mainProgram.dc.sc.addStatement(new Statement(id, startInt, endInt, date, selection, title, person, organization, category, agreement));
+								dna.Dna.mainProgram.dc.sc.addStatement(new Statement(id, startInt, endInt, date, selection, title, person, organization, category, agreement), false);
 							} catch (DuplicateStatementIdException e) {
 								e.printStackTrace();
 							}
 					    }
+					    dna.Dna.mainProgram.dc.sc.sort();
 					} catch (IOException e) {
 						System.err.println("Error while reading the file \"" + filename + "\".");
 						JOptionPane.showMessageDialog(dna.Dna.mainProgram, "Error while reading the file!");
@@ -302,7 +303,7 @@ public class ArticleImport extends JFrame {
 					aitm.addArticle(title, dateString, false);
 				}
 			} else if (v.equals("1.09")) {
-				System.err.println("Your file was saved in an earlier version of DNA. Please open the file, save it to a new file, and try to import it again.");
+				System.err.println("Your file was saved in an older version of DNA. Please open the file, save it to a new file, and try to import it again.");
 				JOptionPane.showMessageDialog(dna.Dna.mainProgram,	"Your file was saved in an earlier version of DNA.\nPlease open the file, save it to a new .dna file,\nand try to import it again.", "Confirmation required", JOptionPane.OK_OPTION);
 			} else {
 				System.err.println("Articles can only be imported from valid DNA files!");

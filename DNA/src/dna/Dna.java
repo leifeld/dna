@@ -87,7 +87,7 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
  * It instantiates the DNA coder.
  * 
  * @author Philip Leifeld
- * @version 1.26 - 2011-04-01
+ * @version 1.26 - 2011-04-04
  */
 @SuppressWarnings("serial")
 public class Dna extends JFrame {
@@ -1705,7 +1705,7 @@ public class Dna extends JFrame {
 					String articleTitle = dc.ac.get(articleTable.getSelectedRow()).getTitle();
 					int statementId = dc.sc.getFirstUnusedId();
 					try {
-						dc.sc.addStatement(new Statement(statementId, selectionStart, selectionEnd, date, selection, articleTitle, "", "", "", "yes"));
+						dc.sc.addStatement(new Statement(statementId, selectionStart, selectionEnd, date, selection, articleTitle, "", "", "", "yes"), true);
 					} catch (DuplicateStatementIdException e1) {
 						e1.printStackTrace();
 					}

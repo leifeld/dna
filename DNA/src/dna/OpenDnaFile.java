@@ -231,11 +231,12 @@ public class OpenDnaFile implements Runnable {
 				    	
 						//put statements into the statement list
 						try {
-							dna.Dna.mainProgram.dc.sc.addStatement(new Statement(id, startInt, endInt, date, selection, title, person, organization, category, agreement));
+							dna.Dna.mainProgram.dc.sc.addStatement(new Statement(id, startInt, endInt, date, selection, title, person, organization, category, agreement), false);
 						} catch (DuplicateStatementIdException e) {
 							try { //save up duplicate statements for later insertion
 								System.err.println("Duplicate statement with ID " + id + " detected. A new ID will be assigned.");
-								duplicateStatements.addStatement(new Statement(duplicateStatements.getFirstUnusedId(), startInt, endInt, date, selection, title, person, organization, category, agreement));
+								dna.Dna.mainProgram.dc.sc.sort();
+								duplicateStatements.addStatement(new Statement(duplicateStatements.getFirstUnusedId(), startInt, endInt, date, selection, title, person, organization, category, agreement), false);
 							} catch (DuplicateStatementIdException e1) {
 								e1.printStackTrace();
 							}
@@ -257,7 +258,7 @@ public class OpenDnaFile implements Runnable {
 								duplicateStatements.get(i).getOrganization(), 
 								duplicateStatements.get(i).getCategory(), 
 								duplicateStatements.get(i).getAgreement()
-						));
+						), false);
 					} catch (DuplicateStatementIdException e) {
 						e.printStackTrace();
 					}
@@ -338,13 +339,14 @@ public class OpenDnaFile implements Runnable {
 				    	
 						//put statements into the statement list
 						try {
-							dna.Dna.mainProgram.dc.sc.addStatement(new Statement(id, startInt, endInt, date, selection, title, person, organization, category, agreement));
+							dna.Dna.mainProgram.dc.sc.addStatement(new Statement(id, startInt, endInt, date, selection, title, person, organization, category, agreement), true);
 						} catch (DuplicateStatementIdException e) {
 							System.err.println("A statement with ID " + id + " already exists. It will not be added.");
 						}
 				    }
 				    progressMonitor.setProgress(i);
 				}
+				dna.Dna.mainProgram.dc.sc.sort();
 			} else {
 				System.out.println("An outdated version of the file format was found.");
 				int convertDialog = JOptionPane.showConfirmDialog(dna.Dna.mainProgram,
@@ -439,7 +441,7 @@ public class OpenDnaFile implements Runnable {
 									int id = dna.Dna.mainProgram.dc.sc.getFirstUnusedId();
 									articleText = articleText + text;
 									try {
-										dna.Dna.mainProgram.dc.sc.addStatement(new Statement(id, start, end, articleDate, text, title, person, organization, category, agreement));
+										dna.Dna.mainProgram.dc.sc.addStatement(new Statement(id, start, end, articleDate, text, title, person, organization, category, agreement), true);
 									} catch (DuplicateStatementIdException e) {
 										System.err.println("A statement with ID " + id + " already exists. It will not be added.");
 									}
@@ -459,6 +461,7 @@ public class OpenDnaFile implements Runnable {
 						dna.Dna.mainProgram.dc.ac.addArticle(art);
 						progressMonitor.setProgress(i);
 					}
+					dna.Dna.mainProgram.dc.sc.sort();
 					System.out.println("Note: Please use the save-as button if you don't want to overwrite the old file.");
 				}
 			}
