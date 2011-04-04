@@ -36,13 +36,13 @@ Philip Leifeld (\url{http://www.philipleifeld.de})
 \examples{
 # download files and initialize DNA:
 download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.25.jar", 
-  destfile="dna-1.25.jar", mode="wb")
+  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.26.jar", 
+  destfile="dna-1.26.jar", mode="wb")
 download.file(
   "http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
   destfile="sample.dna", mode="wb")
 library(rDNA)
-dna.init("dna-1.25.jar")
+dna.init("dna-1.26.jar")
 
 # create network matrix
 nw <- dna.network("sample.dna")

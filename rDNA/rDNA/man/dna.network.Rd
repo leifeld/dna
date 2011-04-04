@@ -3,16 +3,13 @@
 \title{Get network data}
 \description{Convert a .dna file into a sociomatrix and import it into R.}
 \usage{
-dna.network(infile, algorithm="cooccurrence", 
-  agreement="combined", start.date="01.01.1900", 
-  stop.date="31.12.2099", two.mode.type="oc", 
-  one.mode.type="organizations", via="categories", 
-  ignore.duplicates=TRUE, include.isolates=FALSE, 
-  normalization=FALSE, window.size=100, step.size=1, 
-  exclude.persons=c(""), exclude.organizations=c(""), 
-  exclude.categories=c(""), invert.persons=FALSE, 
-  invert.organizations=FALSE, invert.categories=FALSE, 
-  verbose=TRUE)
+dna.network(infile, algorithm="cooccurrence", agreement="combined", 
+  start.date="01.01.1900", stop.date="31.12.2099", two.mode.type="oc", 
+  one.mode.type="organizations", via="categories", ignore.duplicates=TRUE, 
+  include.isolates=FALSE, normalization=FALSE, window.size=100, step.size=1, 
+  alpha=100, lambda=0.1, exclude.persons=c(""), exclude.organizations=c(""), 
+  exclude.categories=c(""), invert.persons=FALSE, invert.organizations=FALSE, 
+  invert.categories=FALSE, verbose=TRUE)
 }
 \details{
 Specify an input .dna file, specify options for generating a network, 
@@ -30,8 +27,10 @@ and transfer the network as a matrix object into \R.
 \item{ignore.duplicates}{ A boolean variable indicating whether two statements with the same actor, category, agreement pattern and date should be counted separately during network creation. For example, if a speaker re-iterates the same concepts in the same way over and over again in the same article, each of these statements increases the edge weight between this speaker and other speakers using the same argument if \code{ignore.duplicates} is switched off (i.e., set to \code{FALSE}). }
 \item{include.isolates}{ If several time slices are exported, usually the network matrices will have different dimensions. If the \code{include.isolates} argument is set to \code{TRUE}, all actors - even if they are inactive in the current time slice - are included in the matrix. This guarantees that several time slices have the same dimensions and the same order of actors.}
 \item{normalization}{ Some actors make statements more frequently than others, and this behavior is caused by their institutional position. These actors are likely to be at the center of the network. If \code{normalization} is set to \code{TRUE}, \acronym{DNA} tries to correct for institutional positions by dividing edge weights by the average total number of statements of both actors involved in an edge. For more details, please refer to the \acronym{DNA} manual at \url{http://www.philipleifeld.de}. }
-\item{window.size}{If the \code{timewindow} algorithm is used, the \code{window.size} argument controls the size of the time window. Integer values are possible. Recommended values are somewhere between \code{10} and \code{2000} days, depending on the theory and the dataset. }
+\item{window.size}{ If the \code{timewindow} algorithm is used, the \code{window.size} argument controls the size of the time window. Integer values are possible. Recommended values are somewhere between \code{10} and \code{2000} days, depending on the theory and the dataset. }
 \item{step.size}{ If the \code{timewindow} algorithm is used, the \code{step.size} argument controls the rate at which the time window moves, i.e., the number of days by which the window is moved at each step. Using \code{1} day is recommended. For non-overlapping time windows, use the same value as in the window.size argument. }
+\item{alpha}{ If the \code{timewindow} algorithm is used and \code{normalization=TRUE}, the \code{step.size} argument provides a constant by which edge values are multiplied. This is useful because normalized edge weights in the time window algorithm may become quite small. }
+\item{lambda}{ If the \code{attenuation} algorithm is used, \code{lambda} provides the decay constant for the exponential decay function. The default value of \code{0.1} attributes relatively high weight to statements which are made within approximately five to ten days. }
 \item{exclude.persons}{ Specify a list of persons to be excluded from the network. For example, \code{c("person 1", "person 2")}. Note that the names must appear exactly as they are used on the dataset. }
 \item{exclude.organizations}{ Specify a list of organizations to be excluded from the network. For example, \code{c("organization 1", "organization 2")}. Note that the names must appear exactly as they are used on the dataset. }
 \item{exclude.categories}{ Specify a list of categories to be excluded from the network. For example, \code{c("category 1", "category 2")}. Note that the concept names must appear exactly as they are used on the dataset. }
@@ -53,13 +52,13 @@ Philip Leifeld (\url{http://www.philipleifeld.de})
 \examples{
 # download files and initialize DNA:
 download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.25.jar", 
-  destfile="dna-1.25.jar", mode="wb")
+  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.26.jar", 
+  destfile="dna-1.26.jar", mode="wb")
 download.file(
   "http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
   destfile="sample.dna", mode="wb")
 library(rDNA)
-dna.init("dna-1.25.jar")
+dna.init("dna-1.26.jar")
 
 \dontrun{
 # plot a congruence network using the statnet package:
