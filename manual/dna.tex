@@ -76,7 +76,7 @@
 
 \author{Philip Leifeld\footnote{Max Planck Institute for Research on Collective Goods, Kurt-Schumacher-Str.~10, 53113 Bonn, Germany | \href{mailto:Leifeld@coll.mpg.de}{\texttt{Leifeld@coll.mpg.de}} | \url{http://www.philipleifeld.de}}}
 \title{\includegraphics[width=2cm]{dna32.pdf}\\ \vspace{0.5cm} Discourse Network Analyzer (DNA)\\ \vspace{0.3cm} \textbf{Manual}}
-\date{March 18, 2011\\ \vspace{0.3cm} (valid for version 1.25)}
+\date{\today\\ \vspace{0.3cm} (valid for version 1.26)}
 
 \begin{document}
 \maketitle
@@ -436,74 +436,74 @@ Although the above examples are based on actors, it is as well possible to compu
 Statements are context-sensitive. If an actor refers to a category in 1995 and again in 2005, the meaning of the category in the discourse may have changed in the meantime. This leads to an overestimation of edges between actors and eventually to a higher density of the measured network. The time window algorithm offers a solution: It runs a time window of a specified size (the number of days is called the chaining parameter) chronologically through the discourse from the beginning to the end. Whenever two actors make a statement within the time window, an edge is created. If the edge has already been present, the edge weight is increased. If at least one of the statements is made outside of the time window, the link is not established. This guarantees context sensitivity of the resulting network. The drawback is that edge weights may become quite large, so you may consider to normalize or dichotomize the data. A second parameter, the shift parameter, governs the number of days by which the time window is moved at every step. If you prefer discrete, non-overlapping time units, you may set the shift parameter to the size of the chaining parameter (i.\,e. its maximum value). If you prefer a more precise continuous-time result, you may set the parameter to 1. Figure~\ref{timewindow} illustrates how the time window is moved through the discourse.
 
 \subsubsection{Attenuation}
-It may be interesting to add another assumption to the model: If actor 1 makes a statement, and a couple of days later, actor 2 makes the same statement, actor 2 is likely to refer to actor 1 by making this statement. It is thus possible to create a directed adjacency graph of referrals. The edge weight between actor 2 and actor 1 is proportional to the probability that actor 2 is really referring to actor 1. Now the trick is to infer this probability from the actual empirical data by using the time that has passed since the statement of actor 1. If, for example, actor 2 makes the same statement immediately on the next day, (s)he is very likely to refer to actor 1, so the edge weight should be large. If, in contrast, actor 2 makes the same statement two years later, (s)he is not very likely to refer to actor 1, so the edge weight should be small. The algorithm adds up the inverse duration since the last statement (e.g. a value of $\frac{1}{7}$ if it was seven days ago) to the existing edge weight, for all pairs of actors over all statements. This produces a very detailed network of referrals. However, you should be aware of the additional assumptions this kind of network is based upon. Figure~\ref{atten} provides an illustration for the two-player case.
+It may be interesting to add another assumption to the model: If actor 1 makes a statement, and a couple of days later, actor 2 makes the same statement, actor 2 is likely to refer to actor 1 by making this statement. It is thus possible to create a directed adjacency graph of referrals. The edge weight between actor 2 and actor 1 is proportional to the probability that actor 2 is really referring to actor 1. Now the trick is to infer this probability from the actual empirical data by using the time that has passed since the statement of actor 1. If, for example, actor 2 makes the same statement immediately on the next day, (s)he is very likely to refer to actor 1, so the edge weight should be large. If, in contrast, actor 2 makes the same statement two years later, (s)he is not very likely to refer to actor 1, so the edge weight should be small. The probability of referral is assumed to be declining exponentially with time, i.\,e., a statement which is made after five days is added to the edge weight as $e^{-\lambda \cdot 5}$, etc. The decay constant $\lambda$ can be set arbitrarily. A value of $0.1$ should work in many cases because it assigns a value greater than 0.5 to statements made within about one week after the initial statement. The exponentially transformed time is added to the existing edge weight, for all pairs of actors over all statements. This produces a very detailed network of referrals. However, you should be aware of the additional assumptions this kind of network is based upon. Figure~\ref{atten} provides an illustration for the two-player case.
 
 \begin{figure}
-  \centering
-  \begin{tikzpicture}
-  
-    \draw[line width=1pt] (0cm,0cm) -- (10cm,0cm)
-      node [right] {50 days}
-      node [left] at (0cm,0cm) {0};
-    \draw[line width=1pt] (0cm,-0.1cm) -- (0cm,0.1cm);
-    \draw[line width=1pt] (10cm,-0.1cm) -- (10cm,0.1cm);
-    \draw[line width=1pt, color=red] (0.2cm,-0.1cm) -- (0.2cm,0.1cm)
-      node [color = red, below=0.2cm] {$1$};
-    \draw[line width=1pt, color=red] (3.8cm,-0.1cm) -- (3.8cm,0.1cm)
-      node [color = red, below=0.2cm] {$19$};
-    \draw[line width=1pt, color=blue] (0.8cm,-0.1cm) -- (0.8cm,0.1cm)
-      node [color = blue, above] {$4$};
-    \draw[line width=1pt, color=blue] (1.6cm,-0.1cm) -- (1.6cm,0.1cm)
-      node [color = blue, above] {$8$};
-    \draw[line width=1pt, color=blue] (3cm,-0.1cm) -- (3cm,0.1cm)
-      node [color = blue, above=0.3cm, left=-0.2cm] {$15$};
-    \draw[line width=1pt, color=blue] (3.2cm,-0.1cm) -- (3.2cm,0.1cm)
-      node [color = blue, above=0.3cm, right=-0.2cm] {$16$};
-    \draw[line width=1pt, color=blue] (4.6cm,-0.1cm) -- (4.6cm,0.1cm)
-      node [color = blue, above] {$23$};
-    \draw[line width=1pt, color=blue] (8.4cm,-0.1cm) -- (8.4cm,0.1cm)
-      node [color = blue, above] {$42$};
-  
-    \draw[line width=1pt,color=blue] (0.2cm, 4cm) -- (0.8cm,4cm)
-      node [color = blue, above] at (0.5cm,4cm) {$\frac{1}{3}$};
-    \draw[line width=1pt,color=blue] (0.2cm, 3.9cm) -- (0.2cm,4cm);
-    \draw[line width=1pt,color=blue] (0.8cm, 3.9cm) -- (0.8cm,4cm);
-  
-    \draw[line width=1pt,color=blue] (0.2cm, 3cm) -- (1.6cm,3cm)
-      node [color = blue, above] at (0.9cm,3cm) {$+ \frac{1}{7}$};
-    \draw[line width=1pt,color=blue] (0.2cm, 2.9cm) -- (0.2cm,3cm);
-    \draw[line width=1pt,color=blue] (1.6cm, 2.9cm) -- (1.6cm,3cm);
-  
-    \draw[line width=1pt,color=blue] (0.2cm, 2cm) -- (3cm,2cm)
-      node [color = blue, above] at (1.4cm,2cm) {$+ \frac{1}{14}$};
-    \draw[line width=1pt,color=blue] (0.2cm, 1.9cm) -- (0.2cm,2cm);
-    \draw[line width=1pt,color=blue] (3cm, 1.9cm) -- (3cm,2cm);
-  
-    \draw[line width=1pt,color=blue] (0.2cm, 1cm) -- (3.2cm,1cm)
-      node [color = blue, above] at (1.5cm,1cm) {$+ \frac{1}{15}$};
-    \draw[line width=1pt,color=blue] (0.2cm, 0.9cm) -- (0.2cm,1cm);
-    \draw[line width=1pt,color=blue] (3.2cm, 0.9cm) -- (3.2cm,1cm);
-  
-    \draw[line width=1pt,color=blue] (3.8cm, 2cm) -- (4.6cm,2cm)
-      node [color = blue, above] at (4.2cm,2cm) {$+ \frac{1}{4}$};
-    \draw[line width=1pt,color=blue] (3.8cm, 1.9cm) -- (3.8cm,2cm);
-    \draw[line width=1pt,color=blue] (4.6cm, 1.9cm) -- (4.6cm,2cm);
-  
-    \draw[line width=1pt,color=blue] (3.8cm, 1cm) -- (8.4cm,1cm)
-      node [color = blue, above] at (6.1cm,1cm) {$+ \frac{1}{23}$}
-      node [color = blue, above] at (10cm,1cm) {$\approx 0.9$};
-    \draw[line width=1pt,color=blue] (3.8cm, 0.9cm) -- (3.8cm,1cm);
-    \draw[line width=1pt,color=blue] (8.4cm, 0.9cm) -- (8.4cm,1cm);
-  
-    \draw[line width=1pt,color=red] (3.2cm, -1cm) -- (3.8cm,-1cm)
-      node [color = red, below=0.2cm] at (3.5cm,-1cm) {$\frac{1}{3}$}
-      node [color = red, below=0.2cm] at (10cm,-1cm) {$\approx 0.3$};
-    \draw[line width=1pt,color=red] (3.2cm, -0.9cm) -- (3.2cm,-1cm);
-    \draw[line width=1pt,color=red] (3.8cm, -0.9cm) -- (3.8cm,-1cm);
-  
-  \end{tikzpicture}
-  \caption{An illustration of the attenuation algorithm}
-  \label{atten}
+\centering
+\begin{tikzpicture}
+
+  \draw[line width=1pt] (0cm,0cm) -- (10cm,0cm)
+    node [right] {50 days}
+    node [left] at (0cm,0cm) {0};
+  \draw[line width=1pt] (0cm,-0.1cm) -- (0cm,0.1cm);
+  \draw[line width=1pt] (10cm,-0.1cm) -- (10cm,0.1cm);
+  \draw[line width=1pt, color=red] (0.2cm,-0.1cm) -- (0.2cm,0.1cm)
+    node [color = red, below=0.2cm] {$1$};
+  \draw[line width=1pt, color=red] (3.8cm,-0.1cm) -- (3.8cm,0.1cm)
+    node [color = red, below=0.2cm] {$19$};
+  \draw[line width=1pt, color=blue] (0.8cm,-0.1cm) -- (0.8cm,0.1cm)
+    node [color = blue, above] {$4$};
+  \draw[line width=1pt, color=blue] (1.6cm,-0.1cm) -- (1.6cm,0.1cm)
+    node [color = blue, above] {$8$};
+  \draw[line width=1pt, color=blue] (3cm,-0.1cm) -- (3cm,0.1cm)
+    node [color = blue, above=0.3cm, left=-0.2cm] {$15$};
+  \draw[line width=1pt, color=blue] (3.2cm,-0.1cm) -- (3.2cm,0.1cm)
+    node [color = blue, above=0.3cm, right=-0.2cm] {$16$};
+  \draw[line width=1pt, color=blue] (4.6cm,-0.1cm) -- (4.6cm,0.1cm)
+    node [color = blue, above] {$23$};
+  \draw[line width=1pt, color=blue] (8.4cm,-0.1cm) -- (8.4cm,0.1cm)
+    node [color = blue, above] {$42$};
+
+  \draw[line width=1pt,color=blue] (0.2cm, 4cm) -- (0.8cm,4cm)
+    node [color = blue, above] at (0.5cm,4cm) {$0.74$};
+  \draw[line width=1pt,color=blue] (0.2cm, 3.9cm) -- (0.2cm,4cm);
+  \draw[line width=1pt,color=blue] (0.8cm, 3.9cm) -- (0.8cm,4cm);
+
+  \draw[line width=1pt,color=blue] (0.2cm, 3cm) -- (1.6cm,3cm)
+    node [color = blue, above] at (0.9cm,3cm) {$+ 0.50$};
+  \draw[line width=1pt,color=blue] (0.2cm, 2.9cm) -- (0.2cm,3cm);
+  \draw[line width=1pt,color=blue] (1.6cm, 2.9cm) -- (1.6cm,3cm);
+
+  \draw[line width=1pt,color=blue] (0.2cm, 2cm) -- (3cm,2cm)
+    node [color = blue, above] at (1.4cm,2cm) {$+ 0.25$};
+  \draw[line width=1pt,color=blue] (0.2cm, 1.9cm) -- (0.2cm,2cm);
+  \draw[line width=1pt,color=blue] (3cm, 1.9cm) -- (3cm,2cm);
+
+  \draw[line width=1pt,color=blue] (0.2cm, 1cm) -- (3.2cm,1cm)
+    node [color = blue, above] at (1.5cm,1cm) {$+ 0.22$};
+  \draw[line width=1pt,color=blue] (0.2cm, 0.9cm) -- (0.2cm,1cm);
+  \draw[line width=1pt,color=blue] (3.2cm, 0.9cm) -- (3.2cm,1cm);
+
+  \draw[line width=1pt,color=blue] (3.8cm, 2cm) -- (4.6cm,2cm)
+    node [color = blue, above] at (4.2cm,2cm) {$+ 0.67$};
+  \draw[line width=1pt,color=blue] (3.8cm, 1.9cm) -- (3.8cm,2cm);
+  \draw[line width=1pt,color=blue] (4.6cm, 1.9cm) -- (4.6cm,2cm);
+
+  \draw[line width=1pt,color=blue] (3.8cm, 1cm) -- (8.4cm,1cm)
+    node [color = blue, above] at (6.1cm,1cm) {$+ 0.10$}
+    node [color = blue, above] at (10cm,1cm) {$\approx 2.48$};
+  \draw[line width=1pt,color=blue] (3.8cm, 0.9cm) -- (3.8cm,1cm);
+  \draw[line width=1pt,color=blue] (8.4cm, 0.9cm) -- (8.4cm,1cm);
+
+  \draw[line width=1pt,color=red] (3.2cm, -1cm) -- (3.8cm,-1cm)
+    node [color = red, below=0.2cm] at (3.5cm,-1cm) {$e^{-0.1 \cdot 3}$}
+    node [color = red, below=0.2cm] at (10cm,-1cm) {$\approx 0.74$};
+  \draw[line width=1pt,color=red] (3.2cm, -0.9cm) -- (3.2cm,-1cm);
+  \draw[line width=1pt,color=red] (3.8cm, -0.9cm) -- (3.8cm,-1cm);
+
+\end{tikzpicture}
+\caption{An example of partial edge weights in the attenuation algorithm}
+\label{atten}
 \end{figure}
 
 \subsubsection{Dynamic visualization}
@@ -541,9 +541,9 @@ Only statements between the start date and the stop date will be considered for 
 Edge weights between actors are usually affected by the propensity of an actor to make a statement. For example, a government agency concerned with the labor market is more likely to make a statement about the pension system than an interest group concerned with gender equality. This difference is partly due to institutional roles. As a consequence, some actors will occupy central positions in the discourse network just because they are more mediagenic or because of their institutional role. If you want edge weights to be independent of this, you should use edge weight normalization. There are three different edge weight transformations, depending on the algorithm that you use:
 
 \begin{description}
- \item[Co-occurrence normalization:] Divide the edge weight by the average number of empirically observed statements of the source actor and the target actor, who are involved in an edge.
- \item[Time window normalization:] This works like the co-occurrence normalization, but on top of that, it divides the resulting value by the number of time steps taken by the time window, and multiply it by 100 in order to get an appropriate scale.
- \item[Attenuation normalization:] This is the most complicated normalization algorithm. Normalization is already carried out during edge weight calculation. Imagine a situation where actor 1 makes a statement on day 0, and actor 2 repeats the same statement on days 4, 10 and 15. According to the attenuation algorithm, the edge from actor 2 to actor 1 should have a weight of $\frac{1}{4} + \frac{1}{10} + \frac{1}{15} = 0.42$. The normalization option now divides this value by the number of equal statements that actor 2 makes, before adding up the values across statements and actors. We would thus add a value of $\frac{0.42}{3} = 0.14$, which corresponds to the \emph{average} inverse duration between actor 2 and actor 1 for this specific statement. The resulting values are added up for each statement that is shared by the two actors. This algorithm is far from being perfect, so please contact me if you have ideas on how to improve it.
+ \item[Co-occurrence normalization:] Divide the edge weight by the average number of distinct categories used by both actors involved in an edge.
+ \item[Time window normalization:] This works like the co-occurrence normalization, but on top of that, it divides the resulting value by the number of time steps taken by the time window, and multiply it by a constant called $\alpha$ in order to get an appropriate scale. $\alpha$ can be set in the custom options panel of the time window algorithm. Its default value is 100.
+ \item[Attenuation normalization:] This is the most complicated normalization algorithm. Normalization is already carried out during edge weight calculation. Imagine a situation where actor 1 makes a statement on day 0, and actor 2 repeats the same statement on days 4, 10 and 15. According to the attenuation algorithm, the edge from actor 2 to actor 1 should have a weight of $e^{-\lambda \cdot 4} + e^{-\lambda \cdot 10} + e^{-\lambda \cdot 15} = 1.26$ if $\lambda = 0.1$. The normalization option now divides this value by the number of equal statements that actor 2 makes, before adding up the values across statements and actors. We would thus add a value of $\frac{1.26}{3} = 0.42$, which corresponds to the \emph{average} attenuated duration between actor 2 and actor 1 for this specific statement. The resulting values are added up for each statement that is shared by the two actors.
 \end{description}
 Please be aware that the normalization algorithms are in an experimental stage, so they may produce biased results.
 
@@ -694,10 +694,20 @@ Please note, however, that rDNA is not working on MacOS right now (except for th
 
 \chapter{Version history}
 
+\section*{DNA 1.26 -- 4 April 2011}
+\begin{itemize}
+ \item New feature: The attenuation algorithm was modified: instead of adding inverse durations between statements to the edge weight, an exponential decay function with decay constant lambda is used.
+ \item New feature: When normalizing edge weights in the time window algorithm, a parameter alpha can be set, which multiplies edge weights by a constant. Previously, the alpha constant was fixed at 100.
+ \item Improved: The congruence and time window algorithms are much faster than before.
+ \item Improved: Loading .dna files is faster, especially for large files.
+ \item Improved: Network export is slightly faster in general.
+ \item Bugfix: After using the attenuation algorithm, graphML files have arrow heads for edges.
+\end{itemize}
+
 \section*{DNA 1.25 -- 18 March 2011}
 \begin{itemize}
  \item New feature: \code{dna.categories()} method in rDNA.
- \item New feature: Added \code{invert.persons}, \code{invert.organizations}, \code{invert.categories} and \code{verbose} arguments to \code{dna.network()} and \code{dna.timeseries()} in rDNA.
+ \item New feature: Added \code{verbose}, \code{invert.persons}, \code{invert.organizations}, and \code{invert.categories} arguments to \code{dna.network()} and \code{dna.timeseries()} in rDNA.
  \item Bugfix: ``Include lists'' in the time series statistics component had no effect in \dnashort.
  \item Bugfix: Normalization did not work when exporting networks (neither in \dnashort\ nor in rDNA).
  \item Bugfix: Fixed separate.actors argument in the \code{dna.timeseries()} method in rDNA.
