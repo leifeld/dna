@@ -738,8 +738,8 @@ public class Export {
 		graph.removeAllEdges();
 		graph.removeAllVertices();
 		
-		ArrayList<String> class1 = new ArrayList<String>();
-		ArrayList<String> class2 = new ArrayList<String>();
+		class1 = new ArrayList<String>();
+		class2 = new ArrayList<String>();
 		ArrayList<String> agList = new ArrayList<String>();
 		if (oneModeType.equals("persons")) {
 			if (includeIsolates == true) {
@@ -959,8 +959,8 @@ public class Export {
 		graph.removeAllVertices();
 		
 		//initialize lists which are the basis for a 3D array
-		ArrayList<String> class1 = new ArrayList<String>();
-		ArrayList<String> class2 = new ArrayList<String>();
+		class1 = new ArrayList<String>();
+		class2 = new ArrayList<String>();
 		ArrayList<String> agList = new ArrayList<String>();
 		if (oneModeType.equals("persons")) {
 			if (includeIsolates == true) {
@@ -2192,6 +2192,14 @@ public class Export {
 			int nc1 = graph.countVertices();
 			double[][] csvmat = new double[nc1][nc1];
 			
+			if (oneModeType.equals("categories")) {
+				isolatesList = catIsolates;
+			} else if (oneModeType.equals("persons")) {
+				isolatesList = persIsolates;
+			} else if (oneModeType.equals("organizations")) {
+				isolatesList = orgIsolates;
+			}
+			
 			if (includeIsolates == true) {
 				class1 = isolatesList;
 			}
@@ -2932,6 +2940,13 @@ public class Export {
 		if (!algorithm.equals("affiliation")) {
 			int nc1 = graph.countVertices();
 			csvmat = new double[nc1][nc1];
+			if (oneModeType.equals("categories")) {
+				isolatesList = catIsolates;
+			} else if (oneModeType.equals("persons")) {
+				isolatesList = persIsolates;
+			} else if (oneModeType.equals("organizations")) {
+				isolatesList = orgIsolates;
+			}
 			if (includeIsolates == true) {
 				class1 = isolatesList;
 			}
