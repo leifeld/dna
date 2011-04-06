@@ -1,5 +1,254 @@
 package dna;
 
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.swing.ButtonGroup;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JTextField;
+import javax.swing.RowFilter;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+@SuppressWarnings("serial")
+public class StatementFilter extends JPanel {
+	
+	JRadioButton showAll;
+	JRadioButton showCurrent;
+	JRadioButton showFilter;
+	JTextField personField;
+	JTextField organizationField;
+	JTextField categoryField;
+	JTextField agreementField;
+	JTextField idField;
+	JTextField textField;
+	JLabel personLabel;
+	JLabel organizationLabel;
+	JLabel categoryLabel;
+	JLabel agreementLabel;
+	JLabel idLabel;
+	JLabel textLabel;
+	
+	public StatementFilter() {
+		
+		this.setLayout(new BorderLayout());
+		
+		JPanel showPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		ButtonGroup showGroup = new ButtonGroup();
+		showAll = new JRadioButton("show all");
+		showAll.setSelected(true);
+		showCurrent = new JRadioButton("current");
+		showFilter = new JRadioButton("filter:");
+		showGroup.add(showAll);
+		showGroup.add(showCurrent);
+		showGroup.add(showFilter);
+		showPanel.add(showAll);
+		showPanel.add(showCurrent);
+		showPanel.add(showFilter);
+		
+		JPanel personPanel = new JPanel(new BorderLayout());
+		personLabel = new JLabel("person");
+		personField = new JTextField(13);
+		personPanel.add(personLabel, BorderLayout.WEST);
+		personPanel.add(personField, BorderLayout.EAST);
+		
+		JPanel organizationPanel = new JPanel(new BorderLayout());
+		organizationLabel = new JLabel("organization");
+		organizationField = new JTextField(13);
+		organizationPanel.add(organizationLabel, BorderLayout.WEST);
+		organizationPanel.add(organizationField, BorderLayout.EAST);
+		
+		JPanel categoryPanel = new JPanel(new BorderLayout());
+		categoryLabel = new JLabel("category");
+		categoryField = new JTextField(13);
+		categoryPanel.add(categoryLabel, BorderLayout.WEST);
+		categoryPanel.add(categoryField, BorderLayout.EAST);
+		
+		JPanel agreementPanel = new JPanel(new BorderLayout());
+		agreementLabel = new JLabel("agreement");
+		agreementField = new JTextField(13);
+		agreementPanel.add(agreementLabel, BorderLayout.WEST);
+		agreementPanel.add(agreementField, BorderLayout.EAST);
+		
+		JPanel idPanel = new JPanel(new BorderLayout());
+		idLabel = new JLabel("statement ID");
+		idField = new JTextField(13);
+		idPanel.add(idLabel, BorderLayout.WEST);
+		idPanel.add(idField, BorderLayout.EAST);
+		
+		JPanel textPanel = new JPanel(new BorderLayout());
+		textLabel = new JLabel("text");
+		textField = new JTextField(13);
+		textPanel.add(textLabel, BorderLayout.WEST);
+		textPanel.add(textField, BorderLayout.EAST);
+		
+		toggleEnabled(false);
+		
+		JPanel fieldsPanel = new JPanel(new GridLayout(6,1));
+		fieldsPanel.add(personPanel);
+		fieldsPanel.add(organizationPanel);
+		fieldsPanel.add(categoryPanel);
+		fieldsPanel.add(agreementPanel);
+		fieldsPanel.add(idPanel);
+		fieldsPanel.add(textPanel);
+		
+		this.add(showPanel, BorderLayout.NORTH);
+		this.add(fieldsPanel, BorderLayout.CENTER);
+		
+		ActionListener al = new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (e.getSource() == showAll) {
+					toggleEnabled(false);
+					allFilter();
+				} else if (e.getSource() == showCurrent) {
+					toggleEnabled(false);
+					allFilter();
+					articleFilter();
+				} else if (e.getSource() == showFilter) {
+					toggleEnabled(true);
+					filter();
+            	}
+				if (!(e.getSource() == showAll)) {
+					Dna.mainProgram.contradictionReporter.clearTree();
+				}
+			}
+		};
+		
+		showAll.addActionListener(al);
+		showCurrent.addActionListener(al);
+		showFilter.addActionListener(al);
+		
+		DocumentListener dl = new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) {
+            	applyFilter();
+            }
+            public void insertUpdate(DocumentEvent e) {
+            	applyFilter();
+            }
+            public void removeUpdate(DocumentEvent e) {
+            	applyFilter();
+            }
+            public void applyFilter() {
+            	filter();
+            }
+        };
+        
+        personField.getDocument().addDocumentListener(dl);
+        organizationField.getDocument().addDocumentListener(dl);
+        categoryField.getDocument().addDocumentListener(dl);
+        agreementField.getDocument().addDocumentListener(dl);
+        idField.getDocument().addDocumentListener(dl);
+        textField.getDocument().addDocumentListener(dl);
+        
+	}
+	
+	public void toggleEnabled(boolean enabled) {
+		personField.setEnabled(enabled);
+		organizationField.setEnabled(enabled);
+		categoryField.setEnabled(enabled);
+		agreementField.setEnabled(enabled);
+		idField.setEnabled(enabled);
+		textField.setEnabled(enabled);
+		personLabel.setEnabled(enabled);
+		organizationLabel.setEnabled(enabled);
+		categoryLabel.setEnabled(enabled);
+		agreementLabel.setEnabled(enabled);
+		idLabel.setEnabled(enabled);
+		textLabel.setEnabled(enabled);
+	}
+
+	public void allFilter() {
+		try {
+			RowFilter<StatementContainer, Object> rf = null;
+    		rf = RowFilter.regexFilter("");
+    		Dna.mainProgram.sorter.setRowFilter(rf);
+		} catch (java.util.regex.PatternSyntaxException pse) {
+			return;
+		}
+	}
+	
+	public void articleFilter() {
+		int row = Dna.mainProgram.articleTable.getSelectedRow();
+		String articleTitle = "";
+		if (row > -1) {
+			articleTitle = Dna.mainProgram.dc.ac.get(row).getTitle();
+		}
+		final String title = articleTitle;
+		try {
+			RowFilter<StatementContainer, Integer> articleFilter = new RowFilter<StatementContainer, Integer>() {
+    			public boolean include(Entry<? extends StatementContainer, ? extends Integer> entry) {
+    				StatementContainer stcont = entry.getModel();
+    				Statement st = stcont.get(entry.getIdentifier());
+    				if (st.getArticleTitle().equals(title)) {
+        				return true;
+        			}
+    				return false;
+    			}
+    		};
+    		Dna.mainProgram.sorter.setRowFilter(articleFilter);
+		} catch (java.util.regex.PatternSyntaxException pse) {
+			return;
+		}
+	}
+
+	private void filter() {
+		final String p = personField.getText();
+		final String o = organizationField.getText();
+		final String c = categoryField.getText();
+		final String a = agreementField.getText();
+		final String i = idField.getText();
+		final String t = textField.getText();
+		try {
+			RowFilter<StatementContainer, Integer> idFilter = new RowFilter<StatementContainer, Integer>() {
+				public boolean include(Entry<? extends StatementContainer, ? extends Integer> entry) {
+					StatementContainer stcont = entry.getModel();
+					Statement st = stcont.get(entry.getIdentifier());
+					
+					Pattern pPattern = Pattern.compile(p);
+					Matcher pMatcher = pPattern.matcher(st.getPerson());
+					boolean pBoolean = pMatcher.find();
+					
+					Pattern oPattern = Pattern.compile(o);
+					Matcher oMatcher = oPattern.matcher(st.getOrganization());
+					boolean oBoolean = oMatcher.find();
+					
+					Pattern cPattern = Pattern.compile(c);
+					Matcher cMatcher = cPattern.matcher(st.getCategory());
+					boolean cBoolean = cMatcher.find();
+					
+					Pattern aPattern = Pattern.compile(a);
+					Matcher aMatcher = aPattern.matcher(st.getAgreement());
+					boolean aBoolean = aMatcher.find();
+					
+					Pattern iPattern = Pattern.compile(i);
+					Matcher iMatcher = iPattern.matcher(new Integer(st.getId()).toString());
+					boolean iBoolean = iMatcher.find();
+					
+					Pattern tPattern = Pattern.compile(t);
+					Matcher tMatcher = tPattern.matcher(st.getText());
+					boolean tBoolean = tMatcher.find();
+					
+					if (pBoolean == true && oBoolean == true && cBoolean == true && aBoolean == true && iBoolean == true && tBoolean == true) {
+						return true;
+					}
+					return false;
+				}
+			};
+			Dna.mainProgram.sorter.setRowFilter(idFilter);
+		} catch (java.util.regex.PatternSyntaxException pse) {
+			return;
+		}
+	}
+}
+
+/*
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -324,3 +573,4 @@ public class StatementFilter extends JPanel {
 		}
 	}
 }
+*/

@@ -51,7 +51,7 @@ import javax.swing.filechooser.FileFilter;
  * graphML (visone) or CSV files (spreadsheet).
  * 
  * @author Philip Leifeld
- * @version 1.26 - 2011-04-04
+ * @version 1.27e1 - 2011-04-06
  */
 @SuppressWarnings("serial")
 public class ExportWindow extends JFrame {

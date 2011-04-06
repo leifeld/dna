@@ -87,7 +87,7 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
  * It instantiates the DNA coder.
  * 
  * @author Philip Leifeld
- * @version 1.26 - 2011-04-04
+ * @version 1.27e1 - 2011-04-06
  */
 @SuppressWarnings("serial")
 public class Dna extends JFrame {
@@ -765,7 +765,7 @@ public class Dna extends JFrame {
 		statementTable = new JTable( dc.sc );
 		statementTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		statementTableScrollPane = new JScrollPane(statementTable);
-		statementTableScrollPane.setPreferredSize(new Dimension(200, 360));
+		statementTableScrollPane.setPreferredSize(new Dimension(200, 240));
 		statementTable.getColumnModel().getColumn( 0 ).setPreferredWidth( 30 );
 		statementTable.getColumnModel().getColumn( 1 ).setPreferredWidth( 170 );
 		
@@ -804,15 +804,6 @@ public class Dna extends JFrame {
 		taskPaneScroller = new JScrollPane(tpc);
 		taskPaneScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		
-		sp = new SearchPanel();
-		JXTaskPane searchTaskPane = new JXTaskPane();
-		ImageIcon findIcon = new ImageIcon(getClass().getResource("/icons/find.png"));
-		searchTaskPane.setName("Search within article");
-		searchTaskPane.setTitle("Search within article");
-		searchTaskPane.setIcon(findIcon);
-		((Container)tpc).add(searchTaskPane);
-        searchTaskPane.add(sp);
-		
 		JXTaskPane statementTaskPane = new JXTaskPane();
 		ImageIcon statementIcon = new ImageIcon(getClass().getResource("/icons/comments.png"));
 		statementTaskPane.setName("Statements");
@@ -820,6 +811,16 @@ public class Dna extends JFrame {
 		statementTaskPane.setIcon(statementIcon);
         ((Container)tpc).add(statementTaskPane);
         statementTaskPane.add(statementPanel);
+        
+		sp = new SearchPanel();
+		JXTaskPane searchTaskPane = new JXTaskPane();
+		ImageIcon findIcon = new ImageIcon(getClass().getResource("/icons/find.png"));
+		searchTaskPane.setName("Search within article");
+		searchTaskPane.setTitle("Search within article");
+		searchTaskPane.setIcon(findIcon);
+		searchTaskPane.setCollapsed(true);
+		((Container)tpc).add(searchTaskPane);
+        searchTaskPane.add(sp);
 		
         contradictionReporter = new ContradictionReporter();
         JXTaskPane contradictionTaskPane = new JXTaskPane();
@@ -830,7 +831,7 @@ public class Dna extends JFrame {
         contradictionTaskPane.setCollapsed(true);
         contradictionTaskPane.add(contradictionReporter);
         ((Container)tpc).add(contradictionTaskPane);
-
+        
         JXTaskPane highlighterTaskPane = new JXTaskPane();
         regexManager = new RegexManager();
         ImageIcon tableEditIcon = new ImageIcon(getClass().getResource("/icons/color_swatch.png"));
@@ -877,7 +878,7 @@ public class Dna extends JFrame {
 			};
 	        statementTable.setRowSorter(sorter);
 		} else {
-			statementFilter.allMenuItem.setSelected(true);
+			statementFilter.showAll.setSelected(true);
     		statementTable.setRowSorter(null);
 		}
 	}
@@ -1054,7 +1055,7 @@ public class Dna extends JFrame {
 					textWindow.setText(dc.ac.get(selectedRow).getText());
 					textWindow.setEnabled(true);
 				}
-				if (statementFilter.articleMenuItem.isSelected()) {
+				if (statementFilter.showCurrent.isSelected()) {
 					statementFilter.articleFilter();
 				}
 				paintStatements();

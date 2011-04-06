@@ -56,9 +56,8 @@ public class ContradictionReporter extends JPanel {
 						node = node.replaceAll("no \\(", "");
 						int nodeInt = new Integer(node).intValue();
 						
-						Dna.mainProgram.statementFilter.allMenuItem.setSelected(true);
-						Dna.mainProgram.statementFilter.textField.setText("");
-						Dna.mainProgram.statementFilter.textField.setEnabled(false);
+						Dna.mainProgram.statementFilter.showAll.setSelected(true);
+						Dna.mainProgram.statementFilter.toggleEnabled(false);
 						Dna.mainProgram.statementFilter.allFilter();
 						
 						int viewId = Dna.mainProgram.statementTable.convertRowIndexToView(Dna.mainProgram.dc.sc.getIndexById(nodeInt));
