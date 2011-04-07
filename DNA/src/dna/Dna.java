@@ -167,7 +167,7 @@ public class Dna extends JFrame {
 
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-				exitSave();
+				closeDnaFile(true);
 			}
 		});
 		
@@ -896,32 +896,6 @@ public class Dna extends JFrame {
 		statusBar.add(loading, BorderLayout.EAST);
 	}
 	
-	/**
-	 * This method asks whether the current dna file should be
-	 * saved and then exits the application.
-	 */
-	private void exitSave() {
-		if (articleTable.getRowCount() == 0) {
-			dispose();
-		} else {
-			int question = JOptionPane.showConfirmDialog(Dna.
-					this, "Would you like to save your work?", 
-					"Save?", JOptionPane.YES_NO_CANCEL_OPTION);
-			if ( question == JOptionPane.YES_OPTION ) {
-				if ( dc.currentFileName.equals("") ) {
-					saveAsDialog();
-				} else {
-					new SaveDnaFile( dc.currentFileName );
-				}
-				dispose();
-			} else if ( question == JOptionPane.NO_OPTION ) {
-				dispose();
-			} else {
-				System.out.println("Canceled.");
-			}
-		}
-	}
-	
 	public String stripHtmlTags(String text, boolean htmlLineSep) {
 		String htmlContents = text.replaceAll("<br>", "\\[br\\]"); //JEditorPane converts <br/> internally into <br>
 		htmlContents = htmlContents.replaceAll("<br/>", "\\[br\\]");
@@ -987,11 +961,14 @@ public class Dna extends JFrame {
 	/**
 	 * Close the dna file that is currently open.
 	 */
-	private void closeDnaFile() {
+	private void closeDnaFile(boolean exit) {
 		if (articleTable.getRowCount() == 0) {
 			clearSpace();
 			dc.currentFileName = "";
 			currentFileLabel.setText("Current file: none");
+			if (exit == true) {
+				dispose();
+			}
 		} else {
 			int question = JOptionPane.showConfirmDialog(Dna.this, 
 					"Would you like to save your work?", "Save?", JOptionPane.
@@ -1004,9 +981,15 @@ public class Dna extends JFrame {
 				}
 				clearSpace();
 				System.out.println("File was closed.");
+				if (exit == true) {
+					dispose();
+				}
 			} else if ( question == JOptionPane.NO_OPTION ) {
 				clearSpace();
 				System.out.println("File was closed.");
+				if (exit == true) {
+					dispose();
+				}
 			} else {
 				System.out.println("Canceled closing file.");
 			}
@@ -1196,7 +1179,7 @@ public class Dna extends JFrame {
 		JMenuItem openMenuItem = new JMenuItem("Open DNA file...", openIcon);
 		openMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				closeDnaFile();
+				closeDnaFile(false);
 
 				//File filter
 				JFileChooser fc = new JFileChooser();
@@ -1288,7 +1271,7 @@ public class Dna extends JFrame {
 		fileMenu.add(closeFile);
 		closeFile.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				closeDnaFile();
+				closeDnaFile(false);
 			}
 		});
 
@@ -1299,8 +1282,7 @@ public class Dna extends JFrame {
 		fileMenu.add(exit);
 		exit.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				closeDnaFile();
-				dispose();
+				closeDnaFile(true);
 			}
 		});
 		
