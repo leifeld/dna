@@ -298,40 +298,16 @@ public class ExportWindow extends JFrame {
 			commetrixPanel = new CommetrixPanel();
 			soniaPanel = new SoniaPanel();
 			attenuationPanel = new AttenuationPanel();
-			//emptyPanel = new EmptyPanel();
 			coOccurrencePanel = new CoOccurrencePanel();
 			
 			add(timeWindowPanel, "timeWindowPanel");
 			add(commetrixPanel, "commetrixPanel");
 			add(soniaPanel, "soniaPanel");
 			add(attenuationPanel, "attenuationPanel");
-			//add(emptyPanel, "emptyPanel");
 			add(coOccurrencePanel, "coOccurrencePanel");
 		}
 		
 	}
-	
-	/**
-	 * Custom option panel without any options.
-	 */
-	/*
-	public class EmptyPanel extends JPanel {
-		
-		public EmptyPanel() {
-			
-			setLayout(new FlowLayout(FlowLayout.LEFT));
-			setBorder( new TitledBorder( new EtchedBorder(), "Custom options" ) );
-			
-			JLabel label = new JLabel("(no options available)");
-			
-			String toolTipText = "<html>This panel displays specific options for each algorithm. The <br>" +
-					"algorithm you have selected does not have any such parameters.</html>";
-			setToolTipText(toolTipText);
-			
-			add(label);
-		}
-	}
-	*/
 	
 	/**
 	 * Custom option panel for co-occurrence and attenuation options.
@@ -559,11 +535,14 @@ public class ExportWindow extends JFrame {
 		
 		JSpinner lambdaSpinner;
 		SpinnerNumberModel lambdaModel;
+		JCheckBox ignoreAgreeBox;
 		
 		public AttenuationPanel() {
 			
-			setLayout(new FlowLayout(FlowLayout.LEFT));
+			setLayout(new BorderLayout());
 			setBorder( new TitledBorder( new EtchedBorder(), "Custom options: Attenuation" ) );
+			
+			JPanel lambdaPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 			
 			JLabel days1 = new JLabel(" days");
 			lambdaModel = new SpinnerNumberModel(0.10, 0.00, 9.99, 0.01);
@@ -579,13 +558,24 @@ public class ExportWindow extends JFrame {
 			lambdaLabel.setToolTipText(lambdaToolTipText);
 			days1.setToolTipText(lambdaToolTipText);
 			
-			this.add(lambdaLabel);
-			this.add(lambdaSpinner);
+			lambdaPanel.add(lambdaLabel);
+			lambdaPanel.add(lambdaSpinner);
+			
+			ignoreAgreeBox = new JCheckBox("ignore agreement variable");
+			ignoreAgreeBox.setToolTipText("<html> If checked, the agreement pattern will be ignored. <br>" + 
+					"Instead, cross-agreement referrals will be counted. For <br>" +
+					"example, if the initial statement was positive, and the <br>" +
+					"other actor uses the same concept in a negative way, an <br>" +
+					"edge is established, and the decay function is applied.</html>");
+			
+			this.add(lambdaPanel, BorderLayout.NORTH);
+			this.add(ignoreAgreeBox, BorderLayout.SOUTH);
 		}
 		
 		public void reset() {
 			lambdaModel = new SpinnerNumberModel(0.10, 0.00, 9.99, 0.01);
 			lambdaSpinner.setModel(lambdaModel);
+			ignoreAgreeBox.setSelected(false);
 		}
 	}
 	
@@ -1489,9 +1479,15 @@ public class ExportWindow extends JFrame {
 			
 			Double windowSizeDouble = (Double)timeWindowPanel.chain.getValue();
 			Double stepSizeDouble = (Double)timeWindowPanel.shift.getValue();
-			
 			Double alpha = (Double)timeWindowPanel.alphaSpinner.getValue();
+			
 			Double lambda = (Double)attenuationPanel.lambdaSpinner.getValue();
+			boolean ignoreAgreement;
+			if (algorithmPanel.atten.isSelected() && attenuationPanel.ignoreAgreeBox.isSelected()) {
+				ignoreAgreement = true;
+			} else {
+				ignoreAgreement = false;
+			}
 			
 			Double forwardDays = (Double) soniaPanel.forwardWindow.getValue();
 			Double backwardDays = (Double) soniaPanel.backwardModel.getValue();
@@ -1520,6 +1516,7 @@ public class ExportWindow extends JFrame {
 					stepSizeDouble, //time window algorithm
 					alpha,
 					lambda,
+					ignoreAgreement,
 					forwardDays, //SONIA
 					backwardDays, //SONIA
 					networkName, //Commetrix

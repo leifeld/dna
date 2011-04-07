@@ -33,7 +33,7 @@ public class Export {
 	private String[] excludeOrganizations;
 	private String[] excludeCategories;
 	private String outfile, agreement, algorithm, format, twoModeType, oneModeType, via, networkName;
-	private boolean includeIsolates, ignoreDuplicates, normalization;
+	private boolean includeIsolates, ignoreDuplicates, normalization, ignoreAgreement;
 	double windowSize, stepSize, soniaForwardDays, soniaBackwardDays, commetrixBackwardWindow;
 	private boolean invertPersons, invertOrganizations, invertCategories;
 	private boolean verbose;
@@ -81,6 +81,7 @@ public class Export {
 	 * @param stepSize
 	 * @param alpha
 	 * @param lambda
+	 * @param ignoreAgreement
 	 * @param soniaForwardDays
 	 * @param soniaBackwardDays
 	 * @param networkName
@@ -107,6 +108,7 @@ public class Export {
 			Double stepSize,
 			Double alpha,
 			Double lambda,
+			boolean ignoreAgreement,
 			Double soniaForwardDays,
 			Double soniaBackwardDays,
 			String networkName,
@@ -132,6 +134,7 @@ public class Export {
 		this.stepSize = stepSize;
 		this.alpha = alpha;
 		this.lambda = lambda;
+		this.ignoreAgreement = ignoreAgreement;
 		this.soniaBackwardDays = soniaBackwardDays;
 		this.soniaForwardDays = soniaForwardDays;
 		this.networkName = networkName;
@@ -169,6 +172,7 @@ public class Export {
 	 * @param stepSize
 	 * @param alpha
 	 * @param lambda
+	 * @param ignoreAgreement
 	 * @param soniaForwardDays
 	 * @param soniaBackwardDays
 	 * @param networkName
@@ -197,6 +201,7 @@ public class Export {
 			double stepSize,
 			double alpha,
 			double lambda,
+			boolean ignoreAgreement,
 			double soniaForwardDays,
 			double soniaBackwardDays,
 			String networkName,
@@ -239,6 +244,7 @@ public class Export {
 		this.stepSize = stepSize;
 		this.alpha = alpha;
 		this.lambda = lambda;
+		this.ignoreAgreement = ignoreAgreement;
 		this.soniaBackwardDays = soniaBackwardDays;
 		this.soniaForwardDays = soniaForwardDays;
 		this.networkName = networkName;
@@ -1301,7 +1307,7 @@ public class Export {
 				}
 			} else {
 				agree = "no";
-				if (verbose == true) {
+				if (verbose == true && ignoreAgreement == false) {
 					System.out.print("Computing negative edge weights... ");
 				}
 			}
@@ -1315,7 +1321,7 @@ public class Export {
 			for (int i = 0; i < actorList.size(); i++) {
 				for (int j = 0; j < actorList.get(i).conceptList.size(); j++) {
 					for (int k = 0; k < class3.size(); k++) {
-						if (actorList.get(i).getId().equals(class1.get(k)) && actorList.get(i).conceptList.get(j).getName().equals(class3.get(k)) && s_agree.get(k).equals(agree)) {
+						if (actorList.get(i).getId().equals(class1.get(k)) && actorList.get(i).conceptList.get(j).getName().equals(class3.get(k)) && ( (s_agree.get(k).equals(agree) && ignoreAgreement == false) || (ignoreAgreement == true) ) ) {
 							actorList.get(i).conceptList.get(j).addDate(s_date.get(k));
 						}
 					}
@@ -1373,7 +1379,7 @@ public class Export {
 				}
 				
 			}
-			if (verbose == true) {
+			if (verbose == true && ( ignoreAgreement == false || (ignoreAgreement == true && l == 1) ) ) {
 				System.out.println("done.");
 			}
 		}
@@ -1382,7 +1388,7 @@ public class Export {
 			System.out.print("Assembling graph from edge-weight matrix... ");
 		}
 		int count = 0;
-		if (agreement.equals("yes")) {
+		if (agreement.equals("yes") || ignoreAgreement == true) {
 			for (int i = 0; i < referrals.length; i++) {
 				for (int j = 0; j < referrals[0].length; j++) {
 					if (referrals[i][j][0] > 0) {
