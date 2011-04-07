@@ -1336,7 +1336,7 @@ public class ExportWindow extends JFrame {
 				extension = ".son";
 				description = "SoNIA file (*.son)";
 			}
-			JFileChooser fc = new JFileChooser();
+			JFileChooser fc = new JFileChooser(dna.Dna.mainProgram.workingDirectory);
 			fc.setFileFilter(new FileFilter() {
 				public boolean accept(File f) {
 					return f.getName().toLowerCase().endsWith(extension) 
@@ -1350,6 +1350,7 @@ public class ExportWindow extends JFrame {
 			int returnVal = fc.showSaveDialog(ExportWindow.this);
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
 				File file = fc.getSelectedFile();
+				dna.Dna.mainProgram.workingDirectory = file.getParent();
 				String filename = new String(file.getPath());
 				if ( !file.getPath().endsWith(extension) ) {
 					filename = filename + extension;

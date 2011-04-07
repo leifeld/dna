@@ -193,7 +193,7 @@ public class TimeSeriesWindow extends JFrame {
 		private String getFileName() {
 			extension = ".csv";
 			description = "Comma-separated values (*.csv)";
-			JFileChooser fc = new JFileChooser();
+			JFileChooser fc = new JFileChooser(dna.Dna.mainProgram.workingDirectory);
 			fc.setFileFilter(new FileFilter() {
 				public boolean accept(File f) {
 					return f.getName().toLowerCase().endsWith(extension) 
@@ -207,6 +207,7 @@ public class TimeSeriesWindow extends JFrame {
 			int returnVal = fc.showSaveDialog(TimeSeriesWindow.this);
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
 				File file = fc.getSelectedFile();
+				dna.Dna.mainProgram.workingDirectory = file.getParent();
 				String filename = new String(file.getPath());
 				if ( !file.getPath().endsWith(extension) ) {
 					filename = filename + extension;

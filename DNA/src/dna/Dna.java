@@ -150,12 +150,16 @@ public class Dna extends JFrame {
 	JCheckBoxMenuItem editMode, toolTipColors;
 	
 	String strippedContents;
+	
+	String workingDirectory;
 
 	/**
 	 * This constructor opens up the main window and executes a
 	 * number of layout components.
 	 */
 	public Dna() {
+		
+		workingDirectory = System.getProperty("user.dir");
 		
 		dc = new DnaContainer();
 		
@@ -928,7 +932,7 @@ public class Dna extends JFrame {
 	 * Save-as file dialog.
 	 */
 	private void saveAsDialog() {
-		JFileChooser fc = new JFileChooser();
+		JFileChooser fc = new JFileChooser(workingDirectory);
 		fc.setFileFilter(new FileFilter() {
 			public boolean accept(File f) {
 				return f.getName().toLowerCase().endsWith(".dna") 
@@ -942,6 +946,7 @@ public class Dna extends JFrame {
 		int returnVal = fc.showSaveDialog(Dna.this);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
+			workingDirectory = file.getParent();
 			String filename = new String(file.getPath());
 			if ( !file.getPath().endsWith(".dna") ) {
 				filename = filename + ".dna";
@@ -1182,7 +1187,7 @@ public class Dna extends JFrame {
 				closeDnaFile(false);
 
 				//File filter
-				JFileChooser fc = new JFileChooser();
+				JFileChooser fc = new JFileChooser(workingDirectory);
 				fc.setFileFilter(new FileFilter() {
 					public boolean accept(File f) {
 						return f.getName().toLowerCase().endsWith(".dna") 
@@ -1196,6 +1201,7 @@ public class Dna extends JFrame {
 				int returnVal = fc.showOpenDialog(Dna.this);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
+					workingDirectory = file.getParent();
 					try {
 						Thread open = new Thread( new OpenDnaFile( file.getPath() ), "Open DNA file" );
 						open.start();
@@ -1219,7 +1225,7 @@ public class Dna extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				
 				//File filter
-				JFileChooser fc = new JFileChooser();
+				JFileChooser fc = new JFileChooser(workingDirectory);
 				fc.setFileFilter(new FileFilter() {
 					public boolean accept(File f) {
 						return f.getName().toLowerCase().endsWith(".dna") 
@@ -1233,6 +1239,7 @@ public class Dna extends JFrame {
 				int returnVal = fc.showOpenDialog(Dna.this);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
+					workingDirectory = file.getParent();
 					new ArticleImport(file.getPath());
 				}
 			}
@@ -1384,7 +1391,7 @@ public class Dna extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				extension = ".csv";
 				description = "Comma-separated values (*.csv)";
-				JFileChooser fc = new JFileChooser();
+				JFileChooser fc = new JFileChooser(workingDirectory);
 				fc.setFileFilter(new FileFilter() {
 					public boolean accept(File f) {
 						return f.getName().toLowerCase().endsWith(extension) || f.isDirectory();
@@ -1396,6 +1403,7 @@ public class Dna extends JFrame {
 				int returnVal = fc.showSaveDialog(Dna.this);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
+					workingDirectory = file.getParent();
 					String filename = new String(file.getPath());
 					if ( !file.getPath().endsWith(extension) ) {
 						filename = filename + extension;
@@ -1452,7 +1460,7 @@ public class Dna extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				extension = ".csv";
 				description = "Comma-separated values (*.csv)";
-				JFileChooser fc = new JFileChooser();
+				JFileChooser fc = new JFileChooser(workingDirectory);
 				fc.setFileFilter(new FileFilter() {
 					public boolean accept(File f) {
 						return f.getName().toLowerCase().endsWith(extension) || f.isDirectory();
@@ -1464,6 +1472,7 @@ public class Dna extends JFrame {
 				int returnVal = fc.showSaveDialog(Dna.this);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
+					workingDirectory = file.getParent();
 					String filename = new String(file.getPath());
 					if ( !file.getPath().endsWith(extension) ) {
 						filename = filename + extension;
@@ -1492,44 +1501,6 @@ public class Dna extends JFrame {
 				export = new ExportWindow();
 			}
 		});
-		
-		/*
-		 * Put in comments because the corresponding function is also disabled.
-		 * 
-		//Extras menu: import actor attributes from another DNA file
-		Icon actorImportIcon = new ImageIcon(getClass().getResource("/icons/page_white_get.png"));
-		JMenuItem actorImportButton = new JMenuItem("Import actor attributes", actorImportIcon);
-		actorImportButton.setToolTipText("import persons and organizations along with their \nattribute data from another .dna file...");
-		extrasMenu.add(actorImportButton);
-		
-		ActionListener ail = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				extension = ".dna";
-				description = "Discourse Network Analyzer files (*.dna)";
-				JFileChooser fc = new JFileChooser();
-				fc.setFileFilter(new FileFilter() {
-					public boolean accept(File f) {
-						return f.getName().toLowerCase().endsWith(extension) || f.isDirectory();
-					}
-					public String getDescription() {
-						return description;
-					}
-				});
-				int returnVal = fc.showSaveDialog(Dna.this);
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = fc.getSelectedFile();
-					String filename = new String(file.getPath());
-					if ( !file.getPath().endsWith(extension) ) {
-						filename = filename + extension;
-					}
-					importActorAttributes(filename); //do it!
-				} else {
-					System.out.println("Export cancelled.");
-				}
-			}
-		};
-		actorImportButton.addActionListener(ail);
-		*/
 		
 		extrasMenu.addSeparator();
 		
