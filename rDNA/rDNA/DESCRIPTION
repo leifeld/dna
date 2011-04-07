@@ -1,6 +1,6 @@
 Package: rDNA
-Version: 1.26
-Date: 2011-04-04
+Version: 1.27
+Date: 2011-04-07
 Title: R Bindings for the Discourse Network Analyzer
 Author: Philip Leifeld
 Maintainer: Philip Leifeld <Leifeld@coll.mpg.de>

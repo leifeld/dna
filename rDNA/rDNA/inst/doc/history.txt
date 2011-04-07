@@ -2,13 +2,18 @@ rDNA (http://www.philipleifeld.de)
 
 Version history:
 
+1.27 (2011-04-07)
+* Added ignore.agreement argument to dna.network().
+
+1.26 (2011-04-04)
+* Version number adjusted to DNA.
+* Added alpha and lambda parameters to the dna.network() function.
+
 1.2 (2011-03-18)
 * New method: dna.categories().
-* Added invert.persons, invert.organizations, 
-  invert.categories and verbose arguments to 
-  dna.network() and dna.timeseries().
-* Fixed separate.actors argument in the timeseries 
-  method.
+* Added invert.persons, invert.organizations, invert.categories and verbose 
+  arguments to dna.network() and dna.timeseries().
+* Fixed separate.actors argument in the timeseries method.
 * Works with DNA 1.25.
 
 1.1 (2010-11-23)
@@ -17,5 +22,5 @@ Version history:
 * Works with DNA 1.24.
 
 1.0 (2010-11-17)
-* First release. Includes dna.init(), dna.network(), 
-  dna.attributes() and dna.gui(). DNA 1.23.
+* First release. Includes dna.init(), dna.network(), dna.attributes() and 
+  dna.gui(). DNA 1.23.

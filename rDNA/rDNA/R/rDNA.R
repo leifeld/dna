@@ -1,7 +1,7 @@
-# rDNA 1.26
+# rDNA 1.27
 # http://www.philipleifeld.de
 # Philip Leifeld <Leifeld@coll.mpg.de>
-# 2011-04-04
+# 2011-04-07
 
 require(rJava)
 
@@ -17,9 +17,9 @@ dna.network <- function(infile, algorithm="cooccurrence", agreement="combined",
   start.date="01.01.1900", stop.date="31.12.2099", two.mode.type="oc", 
   one.mode.type="organizations", via="categories", ignore.duplicates=TRUE, 
   include.isolates=FALSE, normalization=FALSE, window.size=100, step.size=1, 
-  alpha=100, lambda=0.1, exclude.persons=c(""), exclude.organizations=c(""), 
-  exclude.categories=c(""), invert.persons=FALSE, invert.organizations=FALSE, 
-  invert.categories=FALSE, verbose=TRUE
+  alpha=100, lambda=0.1, ignore.agreement=FALSE, exclude.persons=c(""), 
+  exclude.organizations=c(""), exclude.categories=c(""), invert.persons=FALSE, 
+  invert.organizations=FALSE, invert.categories=FALSE, verbose=TRUE
 ) {
   check <- require(rJava)
   if (check == FALSE) {
@@ -56,8 +56,8 @@ dna.network <- function(infile, algorithm="cooccurrence", agreement="combined",
       exclude.organizations, exclude.categories, start.date, stop.date, 
       agreement, algorithm, two.mode.type, one.mode.type, via, 
       include.isolates, ignore.duplicates, normalization, window.size, 
-      step.size, 100.0, 0.1, 100, 100, "DNA_CMX", 100.0, invert.persons, 
-      invert.organizations, invert.categories, verbose)
+      step.size, 100.0, 0.1, ignore.agreement, 100, 100, "DNA_CMX", 100.0, 
+      invert.persons, invert.organizations, invert.categories, verbose)
     
     #pull the Java network data into a list of vectors in R
     matObj <- .jcall(export, "[[D", "matrixObject")
