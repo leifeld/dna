@@ -77,7 +77,7 @@
 
 \author{Philip Leifeld\footnote{Max Planck Institute for Research on Collective Goods, Kurt-Schumacher-Str.~10, 53113 Bonn, Germany | \href{mailto:Leifeld@coll.mpg.de}{\texttt{Leifeld@coll.mpg.de}} | \url{http://www.philipleifeld.de}}}
 \title{\includegraphics[width=2cm]{dna32.pdf}\\ \vspace{0.5cm} Discourse Network Analyzer (DNA)\\ \vspace{0.3cm} \textbf{Manual}}
-\date{\today\\ \vspace{0.3cm} (valid for version 1.26)}
+\date{version 1.27 (\today)}
 
 \begin{document}
 \maketitle
@@ -87,13 +87,13 @@
 \chapter{Introduction}
 \dnalong\ (\dnashort) is a Java-based software for qualitative, category-based content analysis (QDA) with a special emphasis on the extraction of quantitative network data. Its main purpose is the actor-based analysis of political discourses. Yet it may be used for other applications or paradigms.
 
-\dnashort\ involves two steps: coding statements of actors into categories, and converting these structured data into networks that are readable by \ucinet, \visone, \netminer, \gephi\ and other network-analytic software packages. The software can extract either bipartite (affiliation) networks or adjacency networks.
+\dnashort\ involves two steps: coding statements of actors into categories, and converting these structured data into networks that are readable by \ucinet, \visone, \netminer, \gephi\ and other network-analytic software packages. The software can extract either bipartite (affiliation) networks or co-occurrence networks.
 
-It is complementary to semantic network analysis applications because it neither relies on algorithms for automatic text processing, nor does it focus on the internal meaning or mental representation of a single text or document. Instead, tags are applied to the text data by manual inspection, thus rendering it more flexible, yet at the same time more work-intensive. \dnashort\ can be used to code a large body of text documents and then convert them into graphs.
+Tags are applied to the text data by manual inspection, yet there are some tools to support the coder, like a regular expression highlighter and a function that reports self-contradictions of actors. \dnashort\ can be used to code a bunch of text documents and then convert them into a single graph. The resulting network can provide an operationalization of epistemic communities, the Advocacy Coalition Framework, policy images, discourse coalitions, or similar policy theories, depending on the categories which are encoded.
 
-More information about the software can be found in \citet{leifeld2009die,leifeld2010political} and \citet{leifeld2010comparison}. The underlying conceptual model is elaborated in the book chapter of \citet{janning2009diskursnetzwerkanalyse.}. The beginner's tutorial in chapter~\ref{demo} is based on empirical data collected by \citet{fisher2009understanding}.
+More information about the software can be found in \citet{leifeld2009die,leifeld2010political} and \citet{leifeld2010comparison}. A literature review is provided in the book chapter of \citet{janning2009diskursnetzwerkanalyse.}. The beginner's tutorial in chapter~\ref{demo} is based on empirical data collected by \citet{fisher2009understanding}.
 
-If you would like to be informed about updates, please subscribe to the [DNA-help] mailing list at \url{http://www.philipleifeld.de}.
+If you would like to be informed about updates, or discuss bugs or research projects, please subscribe to the [DNA-help] mailing list at \url{http://www.philipleifeld.de}.
 
 
 \chapter{Installation}\label{installation}
@@ -694,6 +694,14 @@ Please note, however, that rDNA is not working on MacOS right now (except for th
 
 
 \chapter{Version history}
+
+\section*{DNA 1.27 -- 13 April 2011}
+\begin{itemize}
+ \item New feature: Combinations of statement filters are now possible.
+ \item New feature: \code{ignore.agreement} option for the attenuation algorithm (both in \dnashort\ and rDNA).
+ \item Improved: DNA remembers current working directory or last folder used (only within the current session)
+ \item Bugfix: DNA does not exit anymore after pressing cancel when closing a file or quitting \dnashort.
+\end{itemize}
 
 \section*{DNA 1.26 -- 4 April 2011}
 \begin{itemize}
