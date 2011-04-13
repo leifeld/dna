@@ -10,7 +10,6 @@ public class AboutWindow extends JFrame {
 	 * This class shows an about window with instructions.
 	 * 
 	 * @author Philip Leifeld
-     * @version 1.27e1 - 2011-04-06
 	 */
 	JPanel aboutInhalt;
     JEditorPane aboutText;
@@ -35,7 +34,7 @@ public class AboutWindow extends JFrame {
         aboutInhalt = new JPanel( new BorderLayout() );
         aboutText = new JEditorPane();
         aboutText.setContentType("text/html");
-        aboutText.setText("<p><b>Current version</b><br>1.27e1 (April 6, 2011)</p>"
+        aboutText.setText("<p><b>Current version</b><br>1.27 (April 13, 2011)</p>"
             + "<p><b>Copyright</b><br> Philip Leifeld (Max Planck Institute for "
             + "Research on Collective Goods, Bonn, Germany)</p>"
             + "<p><b>DNA homepage</b><br> <a href=\"http://www.philipleifeld.de\">"

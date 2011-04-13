@@ -87,7 +87,6 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
  * It instantiates the DNA coder.
  * 
  * @author Philip Leifeld
- * @version 1.27e1 - 2011-04-06
  */
 @SuppressWarnings("serial")
 public class Dna extends JFrame {
