@@ -3110,7 +3110,7 @@ public class Export {
 		} else if (column == 4 && org == false) {
 			list = new String[dc.pc.getRowCount()];
 			for (int i = 0; i < list.length; i++) {
-				String type = (String) dc.oc.getValueAt(i, 1);
+				String type = (String) dc.pc.getValueAt(i, 1);
 				Color color = Color.white;
 				for (int j = 0; j < dc.pt.size(); j++) {
 					if (((RegexTerm)dc.pt.get(j)).getPattern().equals(type)) {

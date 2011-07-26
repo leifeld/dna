@@ -177,12 +177,7 @@ public class TimeSeriesWindow extends JFrame {
 				String[] includedOrganizations = includePanel.getIncludedOrganizations();
 				String[] includedCategories = includePanel.getIncludedCategories();
 				
-				System.out.println(includedPersons.length);
-				
 				new TimeSeriesExporter(sc, filename, persons, timeUnit, ignoreDuplicates, onePerRow, start, stop, includedPersons, includedOrganizations, includedCategories);
-				//String[] test = new String[2];
-				//test[0] = "all";
-				//new TimeSeriesExporter("/home/philip/Desktop/test.dna", false, "month", "article", true, "first", "last", test, test, test);
 			}
 			
 			buttonPanel.export.setEnabled(true);
