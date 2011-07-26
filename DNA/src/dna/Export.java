@@ -2394,7 +2394,37 @@ public class Export {
 	 * @param name of the output file
 	 */
 	private void graphMl(String outfile) {
+		
 		if (verbose == true) {
+			System.out.print("Computing statement frequencies... ");
+		}
+		
+		HashMap<String,Integer> orgFreqMap = new HashMap<String,Integer>();
+		HashMap<String,Integer> persFreqMap = new HashMap<String,Integer>();
+		HashMap<String,Integer> catFreqMap = new HashMap<String,Integer>();
+		for (int i = 0; i < sc.size(); i++) {
+			String scOrg = sc.get(i).getOrganization();
+			String scPers = sc.get(i).getPerson();
+			String scCat = sc.get(i).getCategory();
+			if (!orgFreqMap.containsKey(scOrg)) {
+				orgFreqMap.put(scOrg, 1);
+			} else {
+				orgFreqMap.put(scOrg, 1+orgFreqMap.get(scOrg));
+			}
+			if (!persFreqMap.containsKey(scPers)) {
+				persFreqMap.put(scPers, 1);
+			} else {
+				persFreqMap.put(scPers, 1+persFreqMap.get(scPers));
+			}
+			if (!catFreqMap.containsKey(scCat)) {
+				catFreqMap.put(scCat, 1);
+			} else {
+				catFreqMap.put(scCat, 1+catFreqMap.get(scCat));
+			}
+		}
+		
+		if (verbose == true) {
+			System.out.println("done.");
 			System.out.print("Writing data to disk... ");
 		}
 		
@@ -2467,6 +2497,13 @@ public class Export {
 		keyClass.setAttribute(new Attribute("attr.name", "class"));
 		keyClass.setAttribute(new Attribute("attr.type", "string"));
 		graphml.addContent(keyClass);
+
+		Element keyFrequency = new Element("key", xmlns);
+		keyFrequency.setAttribute(new Attribute("id", "statementFrequency"));
+		keyFrequency.setAttribute(new Attribute("for", "node"));
+		keyFrequency.setAttribute(new Attribute("attr.name", "statementFrequency"));
+		keyFrequency.setAttribute(new Attribute("attr.type", "int"));
+		graphml.addContent(keyFrequency);
 		
 		if (algorithm.equals("affiliation") && ignoreDuplicates == true && ! twoModeType.equals("po")) {
 			Element keyAttribute = new Element("key", xmlns);
@@ -2522,6 +2559,10 @@ public class Export {
 			String org = graph.getVertices().get(i).getLabel();
 			String hex = "#000000";
 			Color col;
+
+			Element frequency = new Element("data", xmlns);
+			frequency.setAttribute(new Attribute("key", "statementFrequency"));
+			int f = 0;
 			
 			if (graph.getVertices().get(i).getType().equals("o") || 
 					graph.getVertices().get(i).getType().equals("p") ||
@@ -2546,12 +2587,14 @@ public class Export {
 					t = Dna.mainProgram.om.getActor(org).getType();
 					a = Dna.mainProgram.om.getActor(org).getAlias();
 					n = Dna.mainProgram.om.getActor(org).getNote();
+					f = orgFreqMap.get(Dna.mainProgram.om.getActor(org).getName());
 				} else {
 					col = Dna.mainProgram.pm.getColor(org);
 					hex = colToHex(col);
 					t = Dna.mainProgram.pm.getActor(org).getType();
 					a = Dna.mainProgram.pm.getActor(org).getAlias();
 					n = Dna.mainProgram.pm.getActor(org).getNote();
+					f = persFreqMap.get(Dna.mainProgram.om.getActor(org).getName());
 				}
 				
 				type.setText(t);
@@ -2566,12 +2609,15 @@ public class Export {
 			vClass.setAttribute(new Attribute("key", "class"));
 			if (graph.getVertices().get(i).getType().equals("c") || (! algorithm.equals("affiliation") && oneModeType.equals("categories"))) {
 				vClass.setText("concept");
+				f = catFreqMap.get(graph.getVertices().get(i).getLabel());
 			} else if (graph.getVertices().get(i).getType().equals("p") || (! algorithm.equals("affiliation") && oneModeType.equals("persons"))) {
 				vClass.setText("person");
 			} else if (graph.getVertices().get(i).getType().equals("o") || (! algorithm.equals("affiliation") && oneModeType.equals("organizations"))) {
 				vClass.setText("organization");
 			}
 			node.addContent(vClass);
+			frequency.setText(String.valueOf(f));
+			node.addContent(frequency);
 			
 			Element vis = new Element("data", xmlns);
 			vis.setAttribute(new Attribute("key", "d0"));
