@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Locale;
@@ -271,7 +272,12 @@ public class Export {
 	
 	public void applyFilters() {
 		
-		String regex1 = "'|^[ ]+|[ ]+$|[ ]*;|;[ ]*"; //required for undesirable character filter
+		String regex1; //do not filter out apostrophes for graphml files because the match with the org in the actor manager may not be established
+		if (this.format.equals("graphml")) {
+			regex1 = "^[ ]+|[ ]+$|[ ]*;|;[ ]*"; //required for undesirable character filter
+		} else {
+			regex1 = "'|^[ ]+|[ ]+$|[ ]*;|;[ ]*"; //required for undesirable character filter
+		}
 		String regex2 = "\\s+"; //required for undesirable character filter
 		
 		if (includeIsolates == true) {
@@ -2505,6 +2511,29 @@ public class Export {
 		keyFrequency.setAttribute(new Attribute("attr.type", "int"));
 		graphml.addContent(keyFrequency);
 		
+		/*
+		//Climatic Change paper:
+		Element keyEcon = new Element("key", xmlns);
+		keyEcon.setAttribute(new Attribute("id", "econ"));
+		keyEcon.setAttribute(new Attribute("for", "node"));
+		keyEcon.setAttribute(new Attribute("attr.name", "econ"));
+		keyEcon.setAttribute(new Attribute("attr.type", "int"));
+		graphml.addContent(keyEcon);
+		Element keyCap = new Element("key", xmlns);
+		keyCap.setAttribute(new Attribute("id", "cap"));
+		keyCap.setAttribute(new Attribute("for", "node"));
+		keyCap.setAttribute(new Attribute("attr.name", "cap"));
+		keyCap.setAttribute(new Attribute("attr.type", "int"));
+		graphml.addContent(keyCap);
+		Element keyCo2 = new Element("key", xmlns);
+		keyCo2.setAttribute(new Attribute("id", "co2"));
+		keyCo2.setAttribute(new Attribute("for", "node"));
+		keyCo2.setAttribute(new Attribute("attr.name", "co2"));
+		keyCo2.setAttribute(new Attribute("attr.type", "int"));
+		graphml.addContent(keyCo2);
+		//(until here)
+		*/
+		
 		if (algorithm.equals("affiliation") && ignoreDuplicates == true && ! twoModeType.equals("po")) {
 			Element keyAttribute = new Element("key", xmlns);
 			keyAttribute.setAttribute(new Attribute("id", "agreement"));
@@ -2584,17 +2613,57 @@ public class Export {
 				if (graph.getVertices().get(i).getType().equals("o") || (! algorithm.equals("affiliation") && oneModeType.equals("organizations"))) {
 					col = Dna.mainProgram.om.getColor(org);
 					hex = colToHex(col);
-					t = Dna.mainProgram.om.getActor(org).getType();
-					a = Dna.mainProgram.om.getActor(org).getAlias();
-					n = Dna.mainProgram.om.getActor(org).getNote();
-					f = orgFreqMap.get(Dna.mainProgram.om.getActor(org).getName());
+					try {
+						t = Dna.mainProgram.om.getActor(org).getType();
+					} catch (NullPointerException npe) {
+						System.err.println("Warning: actor type cannot be determined for: " + org);
+						t = "";
+					}
+					try {
+						a = Dna.mainProgram.om.getActor(org).getAlias();
+					} catch (NullPointerException npe) {
+						System.err.println("Warning: alias cannot be determined for: " + org);
+						a = "";
+					}
+					try {
+						n = Dna.mainProgram.om.getActor(org).getNote();
+					} catch (NullPointerException npe) {
+						System.err.println("Warning: note cannot be determined for: " + org);
+						n = "";
+					}
+					try {
+						f = orgFreqMap.get(Dna.mainProgram.om.getActor(org).getName());
+					} catch (NullPointerException npe) {
+						System.err.println("Warning: statement frequency cannot be determined for: " + org);
+						f = 0;
+					}
 				} else {
 					col = Dna.mainProgram.pm.getColor(org);
 					hex = colToHex(col);
-					t = Dna.mainProgram.pm.getActor(org).getType();
-					a = Dna.mainProgram.pm.getActor(org).getAlias();
-					n = Dna.mainProgram.pm.getActor(org).getNote();
-					f = persFreqMap.get(Dna.mainProgram.om.getActor(org).getName());
+					try {
+						t = Dna.mainProgram.pm.getActor(org).getType();
+					} catch (NullPointerException npe) {
+						System.err.println("Warning: actor type cannot be determined for: " + org);
+						t = "";
+					}
+					try {
+						a = Dna.mainProgram.pm.getActor(org).getAlias();
+					} catch (NullPointerException npe) {
+						System.err.println("Warning: alias cannot be determined for: " + org);
+						a = "";
+					}
+					try {
+						n = Dna.mainProgram.pm.getActor(org).getNote();
+					} catch (NullPointerException npe) {
+						System.err.println("Warning: note cannot be determined for: " + org);
+						n = "";
+					}
+					try {
+						f = persFreqMap.get(Dna.mainProgram.pm.getActor(org).getName());
+					} catch (NullPointerException npe) {
+						System.err.println("Warning: statement frequency cannot be determined for: " + org);
+						f = 0;
+					}
 				}
 				
 				type.setText(t);
@@ -2618,6 +2687,52 @@ public class Export {
 			node.addContent(vClass);
 			frequency.setText(String.valueOf(f));
 			node.addContent(frequency);
+			
+			/*
+			//Climatic Change paper:
+			String econString = "CO2 legislation will not hurt the economy.";
+			String capString = "Cap and trade is the solution.";
+			String co2String = "Emissions legislation should regulate CO2.";
+			Element econ = new Element("data", xmlns);
+			econ.setAttribute(new Attribute("key", "econ"));
+			int ec = 0;
+			Element cap = new Element("data", xmlns);
+			cap.setAttribute(new Attribute("key", "cap"));
+			int ca = 0;
+			Element co2 = new Element("data", xmlns);
+			co2.setAttribute(new Attribute("key", "co2"));
+			int co = 0;
+			GregorianCalendar startDateM = (GregorianCalendar) start.clone();
+			startDateM.add(Calendar.DATE, -1);
+			GregorianCalendar stopDateM = (GregorianCalendar) stop.clone();
+			stopDateM.add(Calendar.DATE, 1);
+			Date startDate = startDateM.getTime();
+			Date stopDate = stopDateM.getTime();
+			for (int j = 0; j < dna.Dna.mainProgram.dc.sc.statements.size(); j++) {
+				Statement s = dna.Dna.mainProgram.dc.sc.statements.get(j);
+				String label = graph.getVertices().get(i).getLabel();
+				if (s.getOrganization().equals(label) && s.getCategory().equals(econString) && s.getAgreement().equals("yes") && s.getDate().after(startDate) && s.getDate().before(stopDate)) {
+					ec++;
+				} else if (s.getOrganization().equals(label) && s.getCategory().equals(econString) && s.getAgreement().equals("no") && s.getDate().after(startDate) && s.getDate().before(stopDate)) {
+					ec--;
+				} else if (s.getOrganization().equals(label) && s.getCategory().equals(capString) && s.getAgreement().equals("yes") && s.getDate().after(startDate) && s.getDate().before(stopDate)) {
+					ca++;
+				} else if (s.getOrganization().equals(label) && s.getCategory().equals(capString) && s.getAgreement().equals("no") && s.getDate().after(startDate) && s.getDate().before(stopDate)) {
+					ca--;
+				} else if (s.getOrganization().equals(label) && s.getCategory().equals(co2String) && s.getAgreement().equals("yes") && s.getDate().after(startDate) && s.getDate().before(stopDate)) {
+					co++;
+				} else if (s.getOrganization().equals(label) && s.getCategory().equals(co2String) && s.getAgreement().equals("no") && s.getDate().after(startDate) && s.getDate().before(stopDate)) {
+					co--;
+				}
+			}
+			econ.setText(String.valueOf(ec));
+			node.addContent(econ);
+			cap.setText(String.valueOf(ca));
+			node.addContent(cap);
+			co2.setText(String.valueOf(co));
+			node.addContent(co2);
+			//(until here)
+			*/
 			
 			Element vis = new Element("data", xmlns);
 			vis.setAttribute(new Attribute("key", "d0"));
