@@ -77,7 +77,7 @@
 
 \author{Philip Leifeld\footnote{Max Planck Institute for Research on Collective Goods, Kurt-Schumacher-Str.~10, 53113 Bonn, Germany | \href{mailto:Leifeld@coll.mpg.de}{\texttt{Leifeld@coll.mpg.de}} | \url{http://www.philipleifeld.de}}}
 \title{\includegraphics[width=2cm]{dna32.pdf}\\ \vspace{0.5cm} Discourse Network Analyzer (DNA)\\ \vspace{0.3cm} \textbf{Manual}}
-\date{version 1.27 (\today)}
+\date{version 1.28 (\today)}
 
 \begin{document}
 \maketitle
@@ -138,7 +138,7 @@ Scroll down the text until you see a yellow text portion. This yellow text porti
 
 \section*{Step 4: Navigating through statements}
 \addcontentsline{toc}{section}{Step 4: Navigating through statements}
-The statement table in the sidebar on the right hand side shows all statements present in the current \dnashort\ file, together with their IDs. Click on an arbitrary statement. The corresponding article will be selected from the article table, the statement will be selected in the text window, and the statement popup window will be opened. Close the statement details again. If you click on the small wrench icon \includegraphics[height=9px]{bullet_wrench.png} underneath the statement table and then on \code{show statements in current article}, the list of statements will be filtered, and only those statements that occur within the currently selected article are shown. If you click on another article, this selection will change. It will always display the statements contained in the current article. The other filter options are based on regular expressions. Click the wrench icon \includegraphics[height=9px]{bullet_wrench.png} again, then \code{filter by category}, and enter the word ``economy'' into the text field right beside the button. Only statements with the category ``CO$_2$ legislation will not hurt the economy'' will be displayed. The statement filter works analogously for persons, organizations, statement IDs, and the text that is actually coded as a statement. The filters are based on regular expressions (see \url{http://www.regular-expressions.info} for details and instructions). For instance, if you type ``1[2-5]'' into the \code{statement ID} field, \dnashort\ will display all statements between 12 and 15.
+The statement table in the sidebar on the right hand side shows all statements present in the current \dnashort\ file, together with their IDs. Click on an arbitrary statement. The corresponding article will be selected from the article table, the statement will be selected in the text window, and the statement popup window will be opened. Close the statement details again. If you click on the radio button with the label \code{current} underneath the statement table, the list of statements will be filtered, and only those statements that occur within the currently selected article are shown. If you click on another article, this selection will change. It will always display the statements contained in the current article. The other filter options are based on regular expressions. Click on \code{filter:} and enter the word ``economy'' into the text field with the label \code{category}. Only statements with the category ``CO$_2$ legislation will not hurt the economy'' will be displayed. The statement filter works analogously for persons, organizations, statement IDs, and the text that is actually coded as a statement. The filters are based on regular expressions (see \url{http://www.regular-expressions.info} for details and instructions). For instance, if you type ``1[2-5]'' into the \code{statement ID} field, \dnashort\ will display all statements between 12 and 15. Clicking on \code{show all} will remove all statement filters.
 
 \section*{Step 5: Creating statements}
 \addcontentsline{toc}{section}{Step 5: Creating statements}
@@ -597,9 +597,9 @@ label={rDNA-examples}
 \begin{lstlisting}[breaklines=true,showstringspaces=false,frame=tlRB]
 # download files and initialize DNA:
 > library(rDNA)  #load the rDNA package
-> download.file("upload/Downloads/dna-1.25.jar", destfile="dna-1.25.jar", mode="wb")
+> download.file("upload/Downloads/dna-1.28.jar", destfile="dna-1.28.jar", mode="wb")
 > download.file("upload/Downloads/sample.dna", destfile="sample.dna", mode="wb")
-> dna.init("dna-1.25.jar")  #connect R to DNA
+> dna.init("dna-1.28.jar")  #connect R to DNA
 
 # plot a congruence network using the statnet package:
 > congruence <- dna.network("sample.dna", exclude.categories="There should be legislation to regulate emissions.")  #create a congruence discourse network
@@ -694,6 +694,15 @@ Please note, however, that rDNA is not working on MacOS right now (except for th
 
 
 \chapter{Version history}
+
+\section*{DNA 1.28 -- 11 September 2011}
+\begin{itemize}
+ \item Improved: Statement frequencies of actors are now exported as attributes to graphML files.
+ \item Bugfix: The graphML export was broken whenever the name of at least one actor contained an apostrophe.
+ \item Bugfix: When time series statistics were exported, the number of actors was erroneously printed to the command line.
+ \item Bugfix: The dna.gui() method was fixed because many DNA features did not work when DNA was started from within R.
+ \item Bugfix: The lambda attenuation parameter was erroneously fixed at a value of 0.1.
+\end{itemize}
 
 \section*{DNA 1.27 -- 13 April 2011}
 \begin{itemize}
