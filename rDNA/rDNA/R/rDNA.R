@@ -1,16 +1,12 @@
-# rDNA 1.27
+# rDNA 1.28
 # http://www.philipleifeld.de
 # Philip Leifeld <Leifeld@coll.mpg.de>
-# 2011-04-07
+# 2011-05
 
 require(rJava)
 
 dna.init <- function(dna.jar.file) {
   .jinit(dna.jar.file, force.init=TRUE)
-}
-
-dna.gui <- function() {
-  .jnew("dna/Dna")
 }
 
 dna.network <- function(infile, algorithm="cooccurrence", agreement="combined", 
@@ -56,7 +52,7 @@ dna.network <- function(infile, algorithm="cooccurrence", agreement="combined",
       exclude.organizations, exclude.categories, start.date, stop.date, 
       agreement, algorithm, two.mode.type, one.mode.type, via, 
       include.isolates, ignore.duplicates, normalization, window.size, 
-      step.size, 100.0, 0.1, ignore.agreement, 100, 100, "DNA_CMX", 100.0, 
+      step.size, 100.0, lambda, ignore.agreement, 100, 100, "DNA_CMX", 100.0, 
       invert.persons, invert.organizations, invert.categories, verbose)
     
     #pull the Java network data into a list of vectors in R

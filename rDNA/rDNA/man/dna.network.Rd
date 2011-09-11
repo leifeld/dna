@@ -6,9 +6,10 @@
 dna.network(infile, algorithm="cooccurrence", agreement="combined", 
   start.date="01.01.1900", stop.date="31.12.2099", two.mode.type="oc", 
   one.mode.type="organizations", via="categories", ignore.duplicates=TRUE, 
-  include.isolates=FALSE, normalization=FALSE, window.size=100, step.size=1, 
-  alpha=100, lambda=0.1, ignore.agreement=FALSE, exclude.persons=c(""), 
-  exclude.organizations=c(""), exclude.categories=c(""), invert.persons=FALSE, 
+  include.isolates=FALSE, normalization=FALSE, window.size=100, 
+  step.size=1, alpha=100, lambda=0.1, ignore.agreement=FALSE, 
+  exclude.persons=c(""), exclude.organizations=c(""), 
+  exclude.categories=c(""), invert.persons=FALSE, 
   invert.organizations=FALSE, invert.categories=FALSE, verbose=TRUE)
 }
 \details{
@@ -43,7 +44,6 @@ and transfer the network as a matrix object into \R.
 \seealso{
 \code{\link{rDNA}}
 \code{\link{dna.init}}
-\code{\link{dna.gui}}
 \code{\link{dna.attributes}}
 \code{\link{dna.categories}}
 }
@@ -53,13 +53,13 @@ Philip Leifeld (\url{http://www.philipleifeld.de})
 \examples{
 # download files and initialize DNA:
 download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.27.jar", 
-  destfile="dna-1.27.jar", mode="wb")
+  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.28.jar", 
+  destfile="dna-1.28.jar", mode="wb")
 download.file(
   "http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
   destfile="sample.dna", mode="wb")
 library(rDNA)
-dna.init("dna-1.27.jar")
+dna.init("dna-1.28.jar")
 
 \dontrun{
 # plot a congruence network using the statnet package:

@@ -2,6 +2,10 @@ rDNA (http://www.philipleifeld.de)
 
 Version history:
 
+1.28 (2011-05)
+* Removed dna.gui() method because it contained severe bugs and was superfluous.
+* Repaired lambda parameter (was fixed at 0.1).
+
 1.27 (2011-04-07)
 * Added ignore.agreement argument to dna.network().
 
