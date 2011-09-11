@@ -2,8 +2,8 @@ rDNA (http://www.philipleifeld.de)
 
 Version history:
 
-1.28 (2011-05)
-* Removed dna.gui() method because it contained severe bugs and was superfluous.
+1.28 (2011-09-11)
+* Repaired dna.gui() method because it contained severe bugs.
 * Repaired lambda parameter (was fixed at 0.1).
 
 1.27 (2011-04-07)

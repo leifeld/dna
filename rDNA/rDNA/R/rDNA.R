@@ -1,12 +1,24 @@
 # rDNA 1.28
 # http://www.philipleifeld.de
 # Philip Leifeld <Leifeld@coll.mpg.de>
-# 2011-05
+# 2011-09-11
 
 require(rJava)
 
+dnaEnvironment <- new.env(hash=TRUE, parent=emptyenv())
+
 dna.init <- function(dna.jar.file) {
+  assign("dnaJarString", dna.jar.file, pos=dnaEnvironment)
   .jinit(dna.jar.file, force.init=TRUE)
+}
+
+dna.gui <- function(memory=1024){
+  djs <- dnaEnvironment[["dnaJarString"]]
+  if (is.null(djs)) {
+    stop("You should run dna.init() first. See ?dna.init for details.")
+  } else {
+    system(paste("java -jar -Xmx", memory, "M ", djs, sep=""))
+  }
 }
 
 dna.network <- function(infile, algorithm="cooccurrence", agreement="combined", 

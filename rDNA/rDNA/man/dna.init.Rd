@@ -15,6 +15,7 @@ dna-1.28.jar file to the method.
 }
 \seealso{
 \code{\link{rDNA}}
+\code{\link{dna.gui}}
 \code{\link{dna.network}}
 \code{\link{dna.attributes}}
 }

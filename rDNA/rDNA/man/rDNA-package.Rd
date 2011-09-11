@@ -17,6 +17,7 @@ To display citation information, execute \code{citation("rDNA")}.
 }
 \seealso{
 \code{\link{dna.init}}
+\code{\link{dna.gui}}
 \code{\link{dna.attributes}}
 \code{\link{dna.network}}
 \code{\link{dna.timeseries}}
