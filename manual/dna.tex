@@ -75,9 +75,9 @@
 
 \newcommand{\code}[1]{\texttt{#1}}
 
-\author{Philip Leifeld\footnote{Max Planck Institute for Research on Collective Goods, Kurt-Schumacher-Str.~10, 53113 Bonn, Germany | \href{mailto:Leifeld@coll.mpg.de}{\texttt{Leifeld@coll.mpg.de}} | \url{http://www.philipleifeld.de}}}
-\title{\includegraphics[width=2cm]{dna32.pdf}\\ \vspace{0.5cm} Discourse Network Analyzer (DNA)\\ \vspace{0.3cm} \textbf{Manual}}
-\date{version 1.28 (\today)}
+\author{Philip Leifeld\footnote{Address for correspondence: \medskip \newline University of Konstanz \newline Department of Politics and Public Administration \newline Box D\,81 \newline 78457 Konstanz \newline Germany \medskip \newline \href{mailto:philip.leifeld@uni-konstanz.de}{\texttt{philip.leifeld@uni-konstanz.de}} \newline \url{http://www.philipleifeld.de}}}
+\title{\includegraphics[width=2cm]{dna32.pdf}\\ \vspace{0.5cm} Discourse Network Analyzer \\ \vspace{0.3cm} \textbf{Manual}}
+\date{version 1.29 (\today)}
 
 \begin{document}
 \maketitle
@@ -597,9 +597,9 @@ label={rDNA-examples}
 \begin{lstlisting}[breaklines=true,showstringspaces=false,frame=tlRB]
 # download files and initialize DNA:
 > library(rDNA)  #load the rDNA package
-> download.file("upload/Downloads/dna-1.28.jar", destfile="dna-1.28.jar", mode="wb")
-> download.file("upload/Downloads/sample.dna", destfile="sample.dna", mode="wb")
-> dna.init("dna-1.28.jar")  #connect R to DNA
+> download.file("http://philipleifeld.de/cms/upload/Downloads/dna-1.29.jar", destfile="dna-1.29.jar", mode="wb")
+> download.file("http://philipleifeld.de/cms/upload/Downloads/sample.dna", destfile="sample.dna", mode="wb")
+> dna.init("dna-1.29.jar")  #connect R to DNA
 
 # plot a congruence network using the statnet package:
 > congruence <- dna.network("sample.dna", exclude.categories="There should be legislation to regulate emissions.")  #create a congruence discourse network
@@ -687,6 +687,8 @@ Please note, however, that rDNA is not working on MacOS right now (except for th
 \vspace{0.3cm} \newline
 \underline{Answer}: Please make sure that your persons, organizations, categories and the encoded text do not contain a semicolon (;). The semicolon is used as a field separator.
 
+\enlargethispage{1cm}
+
 \section{Which network format do you recommend?}
 \underline{Question}: \textbf{There are CSV, DL and graphML files plus several dynamic formats. Which format should I use?}
 \vspace{0.3cm} \newline
@@ -695,12 +697,18 @@ Please note, however, that rDNA is not working on MacOS right now (except for th
 
 \chapter{Version history}
 
+\section*{DNA 1.29 -- 16 October 2011}
+\begin{itemize}
+  \item Bugfix: Running \code{dna.network()} and related rDNA methods multiple times is now possible. There was a memory/garbage collection problem.
+  \item Bugfix: The \code{include isolates} option was broken, causing multiple problems in DNA (e.\,g. with graphML export) and rDNA (``index out of bounds'' exception).
+\end{itemize}
+
 \section*{DNA 1.28 -- 11 September 2011}
 \begin{itemize}
  \item Improved: Statement frequencies of actors are now exported as attributes to graphML files.
  \item Bugfix: The graphML export was broken whenever the name of at least one actor contained an apostrophe.
  \item Bugfix: When time series statistics were exported, the number of actors was erroneously printed to the command line.
- \item Bugfix: The dna.gui() method was fixed because many DNA features did not work when DNA was started from within R.
+ \item Bugfix: The \code{dna.gui()} method was fixed because many DNA features did not work when DNA was started from within R.
  \item Bugfix: The lambda attenuation parameter was erroneously fixed at a value of 0.1.
 \end{itemize}
 
