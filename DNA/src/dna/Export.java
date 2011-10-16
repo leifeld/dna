@@ -10,7 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Locale;
@@ -258,7 +257,7 @@ public class Export {
 		sc = new StatementContainer();
 		
 		applyFilters();
-		createGraph();
+		createGraph();		
 	}
 	
 	/**
@@ -3296,6 +3295,40 @@ public class Export {
 			categories[i] = cat.get(i);
 		}
 		return categories;
+	}
+	
+	public void cleanUp() {
+		dc = null;
+		sc = null;
+		statCont = null;
+		excludePersons = null;
+		excludeCategories = null;
+		excludeOrganizations = null;
+		outfile = null;
+		agreement = null;
+		algorithm = null;
+		format = null;
+		twoModeType = null;
+		oneModeType = null;
+		via = null;
+		networkName = null;
+		class1 = null;
+		class2 = null;
+		class3 = null;
+		s_agree = null;
+		s_text = null;
+		s_date = null;
+		start = null;
+		stop = null;
+		graph = null;
+		sourceLabel = null;
+		targetLabel = null;
+		tabuSource = null;
+		tabuTarget = null;
+		persIsolates = null;
+		orgIsolates = null;
+		catIsolates = null;
+		isolatesList = null;
 	}
 	
 }

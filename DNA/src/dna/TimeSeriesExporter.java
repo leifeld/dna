@@ -467,4 +467,19 @@ public class TimeSeriesExporter {
 		}
 		return columnLabels;
 	}
+	
+	public void cleanUp() {
+		outfile = null;
+		sc = null;
+		timeUnit = null;
+		ignoreDuplicates = null;
+		start = null;
+		stop = null;
+		includedPersons = null;
+		includedOrganizations = null;
+		includedCategories = null;
+		agreement = null;
+		actors = null;
+		matrix = null;
+	}
 }
