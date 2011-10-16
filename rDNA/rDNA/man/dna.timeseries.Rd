@@ -46,12 +46,12 @@ Philip Leifeld (\url{http://www.philipleifeld.de})
 }
 \examples{
 download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.28.jar", 
-  destfile="dna-1.28.jar", mode="wb")
+  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.29.jar", 
+  destfile="dna-1.29.jar", mode="wb")
 download.file(
   "http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
   destfile="sample.dna", mode="wb")
-dna.init("dna-1.28.jar")
+dna.init("dna-1.29.jar")
 time.series <- dna.timeseries("sample.dna")
 }
 \keyword{Programming|programming|interface}

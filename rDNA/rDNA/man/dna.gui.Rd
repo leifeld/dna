@@ -25,9 +25,9 @@ Philip Leifeld (\url{http://www.philipleifeld.de})
 }
 \examples{
 download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.28.jar", 
-  destfile="dna-1.28.jar", mode="wb")
-dna.init("dna-1.28.jar")
+  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.29.jar", 
+  destfile="dna-1.29.jar", mode="wb")
+dna.init("dna-1.29.jar")
 \dontrun{
 dna.gui()
 }

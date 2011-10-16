@@ -2,6 +2,10 @@ rDNA (http://www.philipleifeld.de)
 
 Version history:
 
+1.29 (2011-10-16)
+* Fixed include.isolates option.
+* Fixed memory/garbage collection issue when running methods multiple times.
+
 1.28 (2011-09-11)
 * Repaired dna.gui() method because it contained severe bugs.
 * Repaired lambda parameter (was fixed at 0.1).

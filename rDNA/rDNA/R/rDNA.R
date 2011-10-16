@@ -1,7 +1,7 @@
-# rDNA 1.28
+# rDNA 1.29
 # http://www.philipleifeld.de
-# Philip Leifeld <Leifeld@coll.mpg.de>
-# 2011-09-11
+# Philip Leifeld <philip.leifeld@uni-konstanz.de>
+# 2011-10-16
 
 require(rJava)
 
@@ -82,6 +82,9 @@ dna.network <- function(infile, algorithm="cooccurrence", agreement="combined",
     col.labels <- .jcall(export, "[S", "getMatrixLabels", FALSE)
     rownames(mat) <- row.labels #assign the row labels to the matrix
     colnames(mat) <- col.labels #assign the column labels to the matrix
+    
+    clean <- .jcall(export, "V", "cleanUp")
+    
     return(mat) #return the matrix
     }
 }
@@ -103,6 +106,9 @@ dna.attributes <- function(infile, organizations=TRUE, verbose=TRUE) {
   }
   data <- cbind(type, alias, note, color)
   rownames(data) <- names
+  
+  clean <- .jcall(file, "V", "cleanUp")
+  
   return(data)
 }
 
@@ -296,11 +302,17 @@ dna.timeseries <- function(infile, persons=FALSE, time.unit="month",
   col.labels <- .jcall(export, "[S", "getColumnLabels") #pull the column labels
   rownames(mat) <- row.labels #assign the row labels to the matrix
   colnames(mat) <- col.labels #assign the column labels to the matrix
+  
+  clean <- .jcall(export, "V", "cleanUp")
+  
   return(mat) #return the matrix
 }
 
 dna.categories <- function(infile, verbose=TRUE) {
   file <- .jnew("dna/Export", infile, verbose)
   categories <- .jcall(file, "[S", "getCategories")
+  
+  clean <- .jcall(file, "V", "cleanUp")
+  
   return(categories)
 }
