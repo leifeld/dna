@@ -287,34 +287,8 @@ public class Export {
 			}
 			
 			persIsolates = statCont.getPersonList();
-			for (int i = 0; i < excludePersons.length; i++) {
-				for (int j = 0; j < persIsolates.size(); j++) {
-					if (persIsolates.get(j).equals(excludePersons[i])) {
-						persIsolates.remove(j);
-						continue;
-					}
-				}
-			}
-
 			orgIsolates = statCont.getOrganizationList();
-			for (int i = 0; i < excludeOrganizations.length; i++) {
-				for (int j = 0; j < orgIsolates.size(); j++) {
-					if (orgIsolates.get(j).equals(excludeOrganizations[i])) {
-						orgIsolates.remove(j);
-						continue;
-					}
-				}
-			}
-
 			catIsolates = statCont.getCategoryList();
-			for (int i = 0; i < excludeCategories.length; i++) {
-				for (int j = 0; j < catIsolates.size(); j++) {
-					if (catIsolates.get(j).equals(excludeCategories[i])) {
-						catIsolates.remove(j);
-						continue;
-					}
-				}
-			}
 			
 			for (int i = 0; i < persIsolates.size(); i++) {
 				persIsolates.set(i, persIsolates.get(i).replaceAll(regex1, "").replaceAll(regex2, " "));
@@ -2428,6 +2402,23 @@ public class Export {
 				catFreqMap.put(scCat, 1+catFreqMap.get(scCat));
 			}
 		}
+		if (includeIsolates == true) {
+			for (int i = 0; i < persIsolates.size(); i++) {
+				if (!persFreqMap.containsKey(persIsolates.get(i))) {
+					persFreqMap.put(persIsolates.get(i), 0);
+				}
+			}
+			for (int i = 0; i < orgIsolates.size(); i++) {
+				if (!orgFreqMap.containsKey(orgIsolates.get(i))) {
+					orgFreqMap.put(orgIsolates.get(i), 0);
+				}
+			}
+			for (int i = 0; i < catIsolates.size(); i++) {
+				if (!catFreqMap.containsKey(catIsolates.get(i))) {
+					catFreqMap.put(catIsolates.get(i), 0);
+				}
+			}
+		}
 		
 		if (verbose == true) {
 			System.out.println("done.");
@@ -3135,8 +3126,8 @@ public class Export {
 		} else {
 			int nc1 = 0;
 			int nc2 = 0;
-			ArrayList<String> c1list;
-			ArrayList<String> c2list;
+			ArrayList<String> c1list = new ArrayList<String>();
+			ArrayList<String> c2list = new ArrayList<String>();
 			if (twoModeType.equals("oc")) {
 				nc1 = graph.countVertexType("o");
 				nc2 = graph.countVertexType("c");
@@ -3178,8 +3169,9 @@ public class Export {
 						String sl = sv.label;
 						DnaGraphVertex tv = graph.e.get(k).getTarget();
 						String tl = tv.getLabel();
+						double weight = graph.e.get(k).getWeight();
 						if (c1list.get(i).equals(sl) && c2list.get(j).equals(tl)) {
-							csvmat[i][j] = graph.e.get(k).getWeight();
+							csvmat[i][j] = weight;
 						}
 					}
 				}

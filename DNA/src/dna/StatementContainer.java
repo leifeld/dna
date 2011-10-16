@@ -282,8 +282,17 @@ public class StatementContainer implements TableModel {
 	public ArrayList<String> getCategoryList() {
 		ArrayList<String> categories = new ArrayList<String>();
 		for (int i = 0; i < statements.size(); i++) {
-			if (!categories.contains(statements.get(i).getCategory()) && !statements.get(i).getCategory().equals("")) {
-				categories.add(statements.get(i).getCategory());
+			String c = statements.get(i).getCategory();
+			if (!c.equals("")) {
+				boolean cont = false;
+				for (int j = 0; j < categories.size(); j++) {
+					if (categories.get(j).equals(c)) {
+						cont = true;
+					}
+				}
+				if (cont == false) {
+					categories.add(c);
+				}
 			}
 		}
 		Collections.sort(categories);
