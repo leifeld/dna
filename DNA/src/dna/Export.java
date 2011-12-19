@@ -2599,7 +2599,7 @@ public class Export {
 				note.setAttribute(new Attribute("key", "note"));
 				
 				String t,a,n;
-				
+				/*
 				if (graph.getVertices().get(i).getType().equals("o") || (! algorithm.equals("affiliation") && oneModeType.equals("organizations"))) {
 					col = Dna.mainProgram.om.getColor(org);
 					hex = colToHex(col);
@@ -2662,6 +2662,7 @@ public class Export {
 				node.addContent(alias);
 				note.setText(n);
 				node.addContent(note);
+				*/
 			}
 			
 			Element vClass = new Element("data", xmlns);
@@ -2699,7 +2700,7 @@ public class Export {
 			Date startDate = startDateM.getTime();
 			Date stopDate = stopDateM.getTime();
 			for (int j = 0; j < dna.Dna.mainProgram.dc.sc.statements.size(); j++) {
-				Statement s = dna.Dna.mainProgram.dc.sc.statements.get(j);
+				DnaStatement s = dna.Dna.mainProgram.dc.sc.statements.get(j);
 				String label = graph.getVertices().get(i).getLabel();
 				if (s.getOrganization().equals(label) && s.getCategory().equals(econString) && s.getAgreement().equals("yes") && s.getDate().after(startDate) && s.getDate().before(stopDate)) {
 					ec++;
@@ -3241,7 +3242,7 @@ public class Export {
 			return colLabels;
 		}
 	}
-	
+	/*
 	public String[] exportAttributes(boolean org, double column) {
 		String[] list;
 		if (column == 4 && org == true) {
@@ -3287,7 +3288,7 @@ public class Export {
 		}
 		return list;
 	}
-	
+	*/
 	public String[] getCategories() {
 		ArrayList<String> cat =  dc.getSc().getCategoryList();
 		String[] categories = new String[cat.size()];

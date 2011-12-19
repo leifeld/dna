@@ -2,12 +2,12 @@ package dna;
 
 import java.util.Date;
 
-public class Statement implements Comparable<Statement> {		
+public class DnaStatement implements Comparable<DnaStatement> {		
 	int id, start, stop;
 	String text, person, organization, category, agreement, articleTitle;
 	Date date;
 	
-	public Statement(int id, int start, int stop, Date date, String text, String articleTitle, String person, String organization, String category, String agreement) {
+	public DnaStatement(int id, int start, int stop, Date date, String text, String articleTitle, String person, String organization, String category, String agreement) {
 		this.id = id;
 		this.start = start;
 		this.stop = stop;
@@ -101,7 +101,7 @@ public class Statement implements Comparable<Statement> {
 	}
 	
 	//this tells the array list how to sort Statements, i.e. by a combination of date, articleTitle and position
-	public int compareTo(Statement s) {
+	public int compareTo(DnaStatement s) {
 		if (this.getDate().compareTo(s.getDate()) < 0) {
 			return -1;
 		} else if (this.getDate().compareTo(s.getDate()) > 0) {
@@ -128,6 +128,6 @@ public class Statement implements Comparable<Statement> {
 		if (o == null) return false;
 		if (this == o) return true;
 		if (getClass() != o.getClass()) return false;
-		return compareTo((Statement) o) == 0;
+		return compareTo((DnaStatement) o) == 0;
 	}
 }

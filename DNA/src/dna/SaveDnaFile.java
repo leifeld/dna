@@ -54,7 +54,7 @@ public class SaveDnaFile {
 			regex.addContent(term);
 		}
 		metadata.addContent(regex);
-
+/*
 		//persons and their attributes
 		Element persons = new Element("persons");
 		for (int i = 0; i < Dna.mainProgram.pm.getActors().size(); i++) {
@@ -134,7 +134,7 @@ public class SaveDnaFile {
 			organizationTypes.addContent(type);
 		}
 		metadata.addContent(organizationTypes);
-		
+*/		
 		root.addContent(metadata);
 		
 		Element articles = new Element("articles");

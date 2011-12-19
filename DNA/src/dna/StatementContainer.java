@@ -13,7 +13,7 @@ import javax.swing.table.TableModel;
 public class StatementContainer implements TableModel {
 	
 	DuplicateStatementIdException dsie;
-	ArrayList<Statement> statements = new ArrayList<Statement>();
+	ArrayList<DnaStatement> statements = new ArrayList<DnaStatement>();
 	Vector<TableModelListener> listeners = new Vector<TableModelListener>();
 	
 	@Override
@@ -63,7 +63,7 @@ public class StatementContainer implements TableModel {
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		Statement s = statements.get(rowIndex);
+		DnaStatement s = statements.get(rowIndex);
 		
 		switch( columnIndex ){
 			case 0: return s.getId();
@@ -92,11 +92,11 @@ public class StatementContainer implements TableModel {
 	}
 	
 	
-	public Statement get(int index) {
+	public DnaStatement get(int index) {
 		return statements.get(index);
 	}
 	
-	public Statement getById(int id) throws NullPointerException {
+	public DnaStatement getById(int id) throws NullPointerException {
 		for (int i = 0; i < statements.size(); i++) {
 			if (statements.get(i).id == id) {
 				return statements.get(i);
@@ -136,7 +136,7 @@ public class StatementContainer implements TableModel {
 		Collections.sort(statements);
 	}
 	
-	public void addStatement(Statement s, boolean sort) throws DuplicateStatementIdException {
+	public void addStatement(DnaStatement s, boolean sort) throws DuplicateStatementIdException {
 		if (containsId(s.id) == true) {
 			throw new DuplicateStatementIdException("A statement with ID " + s.id + " already exists. It will not be added.");
 		} else {
@@ -195,7 +195,7 @@ public class StatementContainer implements TableModel {
 	protected StatementContainer clone() {
 		StatementContainer stc = new StatementContainer();
 		for (int i = 0; i < statements.size(); i++) {
-			Statement st = statements.get(i);
+			DnaStatement st = statements.get(i);
 			String articleTitle = st.getArticleTitle();
 			String agreement = st.getAgreement();
 			int start = st.getStart();
@@ -206,7 +206,7 @@ public class StatementContainer implements TableModel {
 			String category = st.getCategory();
 			Date date = st.getDate();
 			String text = st.getText();
-			Statement stm = new Statement(id, start, stop, date, text, articleTitle, person, organization, category, agreement);
+			DnaStatement stm = new DnaStatement(id, start, stop, date, text, articleTitle, person, organization, category, agreement);
 			try {
 				stc.addStatement(stm, false);
 			} catch (DuplicateStatementIdException e) {
@@ -303,7 +303,7 @@ public class StatementContainer implements TableModel {
 		if (statements.size() > 0) {
 			ArrayList<GregorianCalendar> dateList = new ArrayList<GregorianCalendar>();
 			for (int i = 0; i < statements.size(); i++) {
-				Statement s = statements.get(i);
+				DnaStatement s = statements.get(i);
 				GregorianCalendar g = new GregorianCalendar();
 				g.setTime(s.getDate());
 				dateList.add(g);
@@ -320,7 +320,7 @@ public class StatementContainer implements TableModel {
 		if (statements.size() > 0) {
 			ArrayList<GregorianCalendar> dateList = new ArrayList<GregorianCalendar>();
 			for (int i = 0; i < statements.size(); i++) {
-				Statement s = statements.get(i);
+				DnaStatement s = statements.get(i);
 				GregorianCalendar g = new GregorianCalendar();
 				g.setTime(s.getDate());
 				dateList.add(g);

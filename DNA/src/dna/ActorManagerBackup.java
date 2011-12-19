@@ -14,9 +14,16 @@ import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -49,10 +56,11 @@ import javax.swing.table.TableColumn;
  * 
  * @date 2010-11-17
  */
+/*
 @SuppressWarnings("serial")
-public class ActorManager extends JPanel {
+public class ActorManagerBackup extends JPanel {
 	
-	RegexListModel at;
+	REListModel at;
 	
 	JTable actorTable;
 	ActorContainer tableModel;
@@ -67,7 +75,7 @@ public class ActorManager extends JPanel {
 	JList typeList;
 	ListSelectionListener lsl;
 	
-	public ActorManager(final RegexListModel at) {
+	public ActorManagerBackup(final REListModel at) {
 		
 		this.at = at;
 		this.setLayout(new BorderLayout());
@@ -321,7 +329,7 @@ public class ActorManager extends JPanel {
 				Color cl = colorButton.getForeground();
 				String text = textField.getText();
 				RegexTerm rt = new RegexTerm(text,cl);
-				if (text.length() > 0 && ! ((RegexListModel) at).containsIdenticalRegexTerm(rt)) {
+				if (text.length() > 0 && ! ((REListModel) at).containsIdenticalRegexTerm(rt)) {
 					at.addElement(rt);
 				}
 				typeList.addListSelectionListener(lsl);
@@ -408,41 +416,6 @@ public class ActorManager extends JPanel {
 	public Actor getActor(String actor) {
 		return tableModel.getActor(actor);
 	}
-	
-	/*
-	 * This method might be buggy. It is needed for the actor import function in Dna.java, which is also disabled.
-	 * 
-	//set the color of a type in the type manager and the combo box
-	public boolean setTypeColor(String typeString, Color newColor) {
-		boolean success1 = false;
-		for (int i = 0; i < getTypes().size(); i++) {
-			if (getTypes().get(i).getPattern().equals(typeString)) {
-				getTypes().get(i).setColor(newColor);
-				((RegexTerm)comboBox.getModel().getElementAt(i)).setColor(newColor);
-				success1 = true;
-			}
-		}
-		tm.validate();
-		tm.repaint();
-		comboBox.validate();
-		comboBox.repaint();
-		
-		boolean success2 = false;
-		for (int i = 0; i < tableModel.getRowCount(); i++) {
-			String tab = (String) tableModel.getValueAt(i, 1);
-			if (tab.equals(typeString)) {
-				RegexTerm nrt = new RegexTerm(typeString, newColor);
-				tableModel.setValueAt(nrt, i, 1);
-			}
-		}
-		
-		if (success1 == true && success2 == true) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-	*/
 	
 	//get the color of an actor by the string name of the actor
 	public Color getColor(String actorName) {
@@ -565,11 +538,6 @@ public class ActorManager extends JPanel {
 		}
 	}
 	
-	/**
-	 * The renderer for all table cells except the type column. 
-	 * The background is color in light red in case an actor 
-	 * does not exist in the list of statements.
-	 */
 	private class ColorRenderer extends DefaultTableCellRenderer {
 		
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -596,10 +564,6 @@ public class ActorManager extends JPanel {
 		}
 	}
 	
-	/**
-	 * The renderer for the type column in the actor table. The 
-	 * foreground color is the color of the RegexTerm type.
-	 */
 	private class RegexTableCellRenderer extends DefaultTableCellRenderer {
 		
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -640,9 +604,6 @@ public class ActorManager extends JPanel {
 	    }
 	}
 	
-	/**
-	 * Listener which checks for changes in the selection of the table and enables/disables the remove button accordingly
-	 */
 	private class CustomTableSelectionListener implements ListSelectionListener {
 		
 		@Override
@@ -656,10 +617,6 @@ public class ActorManager extends JPanel {
 		}
 	}
 	
-	/**
-	 * This renderer displays the RegexTerm items in the comboBox which 
-	 * appears as the cell editor of the type column in the actor table.
-	 */
 	private class ComboBoxRenderer extends JLabel implements ListCellRenderer {
 		
 		@Override
@@ -686,10 +643,6 @@ public class ActorManager extends JPanel {
 		}
 	}
 	
-	/**
-	 * This class provides a small window where the name and the color 
-	 * of a RegexTerm in the type list can be changed.
-	 */
 	public class ChangeType extends JFrame {
 		
 		Container c;
@@ -805,4 +758,43 @@ public class ActorManager extends JPanel {
 			this.setVisible(true);
 		}
 	}
+	
+	public class REListModel extends DefaultListModel {
+		public boolean containsIdenticalRegexTerm(RegexTerm rt) {
+			for (int i = 0; i < size(); i++) {
+				if ( ((RegexTerm)getElementAt(i)).equals(rt) ) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+
+	public class ActorTypeListRenderer extends DefaultListCellRenderer {
+		public Component getListCellRendererComponent(JList list, Object value,	int index, boolean isSelected, boolean cellHasFocus) {
+			JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+			label.setText((String)value);
+			try {
+				Class.forName("org.h2.Driver");
+				Connection db = DriverManager.getConnection("jdbc:h2:" + dna.Dna.mainProgram.cf, 
+						"sa", "");
+				Statement s = db.createStatement();
+				ResultSet rs = s.executeQuery("SELECT * FROM REGEXES WHERE REGEX = '" + (String)value + "'");
+				rs.next();
+				int red = rs.getInt("RED");
+				int green = rs.getInt("GREEN");
+				int blue = rs.getInt("BLUE");
+				Color cl = new Color(red, green, blue);
+				label.setForeground(cl);
+				s.close();
+				db.close();
+			} catch (SQLException e2) {
+				e2.printStackTrace();
+			} catch (ClassNotFoundException e1) {
+				e1.printStackTrace();
+			}
+			return label;
+		}
+	}
 }
+*/

@@ -89,7 +89,7 @@ public class OpenDnaFile implements Runnable {
 						int blue = Integer.valueOf(type.getChildText("blue")).intValue();
 						Color color = new Color(red, green, blue);
 						RegexTerm rt = new RegexTerm(label, color);
-						Dna.mainProgram.pm.addType(rt);
+						//Dna.mainProgram.pm.addType(rt);
 					}
 					
 					//load persons and their attributes
@@ -101,7 +101,7 @@ public class OpenDnaFile implements Runnable {
 						String alias = person.getChildText("alias");
 						String note = person.getChildText("note");
 						Actor p = new Actor(name, type, alias, note, true);
-						Dna.mainProgram.pm.add(p);
+						//Dna.mainProgram.pm.add(p);
 					}
 
 					//load organization types
@@ -114,7 +114,7 @@ public class OpenDnaFile implements Runnable {
 						int blue = Integer.valueOf(type.getChildText("blue")).intValue();
 						Color color = new Color(red, green, blue);
 						RegexTerm rt = new RegexTerm(label, color);
-						Dna.mainProgram.om.addType(rt);
+						//Dna.mainProgram.om.addType(rt);
 					}
 					
 					//load organizations and their attributes
@@ -126,7 +126,7 @@ public class OpenDnaFile implements Runnable {
 						String alias = organization.getChildText("alias");
 						String note = organization.getChildText("note");
 						Actor o = new Actor(name, type, alias, note, true);
-						Dna.mainProgram.om.add(o);
+						//Dna.mainProgram.om.add(o);
 					}
 				}
 				
@@ -226,17 +226,17 @@ public class OpenDnaFile implements Runnable {
 				    		
 				    		selection = selection.substring(startInt-1, endInt-1);
 				    	} catch (StringIndexOutOfBoundsException e) {
-				    		System.out.println("Statement text of statement " + id + " could not be identified.");
+				    		System.out.println("DnaStatement text of statement " + id + " could not be identified.");
 				    	}
 				    	
 						//put statements into the statement list
 						try {
-							dna.Dna.mainProgram.dc.sc.addStatement(new Statement(id, startInt, endInt, date, selection, title, person, organization, category, agreement), false);
+							dna.Dna.mainProgram.dc.sc.addStatement(new DnaStatement(id, startInt, endInt, date, selection, title, person, organization, category, agreement), false);
 						} catch (DuplicateStatementIdException e) {
 							try { //save up duplicate statements for later insertion
 								System.err.println("Duplicate statement with ID " + id + " detected. A new ID will be assigned.");
 								dna.Dna.mainProgram.dc.sc.sort();
-								duplicateStatements.addStatement(new Statement(duplicateStatements.getFirstUnusedId(), startInt, endInt, date, selection, title, person, organization, category, agreement), false);
+								duplicateStatements.addStatement(new DnaStatement(duplicateStatements.getFirstUnusedId(), startInt, endInt, date, selection, title, person, organization, category, agreement), false);
 							} catch (DuplicateStatementIdException e1) {
 								e1.printStackTrace();
 							}
@@ -247,7 +247,7 @@ public class OpenDnaFile implements Runnable {
 				//insert duplicate statements
 				for (int i = 0; i < duplicateStatements.size(); i++) {
 					try {
-						Dna.mainProgram.dc.sc.addStatement(new Statement(
+						Dna.mainProgram.dc.sc.addStatement(new DnaStatement(
 								Dna.mainProgram.dc.sc.getFirstUnusedId(), 
 								duplicateStatements.get(i).getStart(), 
 								duplicateStatements.get(i).getStop(), 
@@ -334,12 +334,12 @@ public class OpenDnaFile implements Runnable {
 				    		
 				    		selection = selection.substring(startInt-1, endInt-1);
 				    	} catch (StringIndexOutOfBoundsException e) {
-				    		System.out.println("Statement text of statement " + id + " could not be identified.");
+				    		System.out.println("DnaStatement text of statement " + id + " could not be identified.");
 				    	}
 				    	
 						//put statements into the statement list
 						try {
-							dna.Dna.mainProgram.dc.sc.addStatement(new Statement(id, startInt, endInt, date, selection, title, person, organization, category, agreement), true);
+							dna.Dna.mainProgram.dc.sc.addStatement(new DnaStatement(id, startInt, endInt, date, selection, title, person, organization, category, agreement), true);
 						} catch (DuplicateStatementIdException e) {
 							System.err.println("A statement with ID " + id + " already exists. It will not be added.");
 						}
@@ -441,7 +441,7 @@ public class OpenDnaFile implements Runnable {
 									int id = dna.Dna.mainProgram.dc.sc.getFirstUnusedId();
 									articleText = articleText + text;
 									try {
-										dna.Dna.mainProgram.dc.sc.addStatement(new Statement(id, start, end, articleDate, text, title, person, organization, category, agreement), true);
+										dna.Dna.mainProgram.dc.sc.addStatement(new DnaStatement(id, start, end, articleDate, text, title, person, organization, category, agreement), true);
 									} catch (DuplicateStatementIdException e) {
 										System.err.println("A statement with ID " + id + " already exists. It will not be added.");
 									}
@@ -492,7 +492,7 @@ public class OpenDnaFile implements Runnable {
 		}
 		Dna.mainProgram.setRowSorterEnabled(true);
 		Dna.mainProgram.updateLists();
-		Dna.mainProgram.om.correctAppearance(Dna.mainProgram.dc.sc.getOrganizationList());
-		Dna.mainProgram.pm.correctAppearance(Dna.mainProgram.dc.sc.getPersonList());
+		//Dna.mainProgram.om.correctAppearance(Dna.mainProgram.dc.sc.getOrganizationList());
+		//Dna.mainProgram.pm.correctAppearance(Dna.mainProgram.dc.sc.getPersonList());
 	}
 }

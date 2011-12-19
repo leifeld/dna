@@ -185,7 +185,7 @@ public class StatementFilter extends JPanel {
 			RowFilter<StatementContainer, Integer> articleFilter = new RowFilter<StatementContainer, Integer>() {
     			public boolean include(Entry<? extends StatementContainer, ? extends Integer> entry) {
     				StatementContainer stcont = entry.getModel();
-    				Statement st = stcont.get(entry.getIdentifier());
+    				DnaStatement st = stcont.get(entry.getIdentifier());
     				if (st.getArticleTitle().equals(title)) {
         				return true;
         			}
@@ -209,7 +209,7 @@ public class StatementFilter extends JPanel {
 			RowFilter<StatementContainer, Integer> idFilter = new RowFilter<StatementContainer, Integer>() {
 				public boolean include(Entry<? extends StatementContainer, ? extends Integer> entry) {
 					StatementContainer stcont = entry.getModel();
-					Statement st = stcont.get(entry.getIdentifier());
+					DnaStatement st = stcont.get(entry.getIdentifier());
 					
 					Pattern pPattern = Pattern.compile(p);
 					Matcher pMatcher = pPattern.matcher(st.getPerson());
@@ -425,7 +425,7 @@ public class StatementFilter extends JPanel {
 			RowFilter<StatementContainer, Integer> idFilter = new RowFilter<StatementContainer, Integer>() {
 				public boolean include(Entry<? extends StatementContainer, ? extends Integer> entry) {
 					StatementContainer stcont = entry.getModel();
-					Statement st = stcont.get(entry.getIdentifier());
+					DnaStatement st = stcont.get(entry.getIdentifier());
 					Pattern p = Pattern.compile(regex);
 					Matcher m = p.matcher(new Integer(st.getId()).toString());
 					boolean b = m.find();
@@ -447,7 +447,7 @@ public class StatementFilter extends JPanel {
 			RowFilter<StatementContainer, Integer> agreementFilter = new RowFilter<StatementContainer, Integer>() {
 				public boolean include(Entry<? extends StatementContainer, ? extends Integer> entry) {
 					StatementContainer stcont = entry.getModel();
-					Statement st = stcont.get(entry.getIdentifier());
+					DnaStatement st = stcont.get(entry.getIdentifier());
 					Pattern p = Pattern.compile(regex);
 					Matcher m = p.matcher(st.getAgreement());
 					boolean b = m.find();
@@ -469,7 +469,7 @@ public class StatementFilter extends JPanel {
 			RowFilter<StatementContainer, Integer> personFilter = new RowFilter<StatementContainer, Integer>() {
 				public boolean include(Entry<? extends StatementContainer, ? extends Integer> entry) {
 					StatementContainer stcont = entry.getModel();
-					Statement st = stcont.get(entry.getIdentifier());
+					DnaStatement st = stcont.get(entry.getIdentifier());
 					Pattern p = Pattern.compile(regex);
 					Matcher m = p.matcher(st.getPerson());
 					boolean b = m.find();
@@ -491,7 +491,7 @@ public class StatementFilter extends JPanel {
 			RowFilter<StatementContainer, Integer> organizationFilter = new RowFilter<StatementContainer, Integer>() {
     			public boolean include(Entry<? extends StatementContainer, ? extends Integer> entry) {
     				StatementContainer stcont = entry.getModel();
-    				Statement st = stcont.get(entry.getIdentifier());
+    				DnaStatement st = stcont.get(entry.getIdentifier());
     				Pattern p = Pattern.compile(regex);
     				Matcher m = p.matcher(st.getOrganization());
     				boolean b = m.find();
@@ -513,7 +513,7 @@ public class StatementFilter extends JPanel {
 			RowFilter<StatementContainer, Integer> categoryFilter = new RowFilter<StatementContainer, Integer>() {
     			public boolean include(Entry<? extends StatementContainer, ? extends Integer> entry) {
     				StatementContainer stcont = entry.getModel();
-    				Statement st = stcont.get(entry.getIdentifier());
+    				DnaStatement st = stcont.get(entry.getIdentifier());
     				Pattern p = Pattern.compile(regex);
     				Matcher m = p.matcher(st.getCategory());
     				boolean b = m.find();
@@ -550,7 +550,7 @@ public class StatementFilter extends JPanel {
 			RowFilter<StatementContainer, Integer> articleFilter = new RowFilter<StatementContainer, Integer>() {
     			public boolean include(Entry<? extends StatementContainer, ? extends Integer> entry) {
     				StatementContainer stcont = entry.getModel();
-    				Statement st = stcont.get(entry.getIdentifier());
+    				DnaStatement st = stcont.get(entry.getIdentifier());
     				if (st.getArticleTitle().equals(title)) {
         				return true;
         			}
