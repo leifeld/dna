@@ -256,12 +256,12 @@ public class ArticleImport extends JFrame {
 					    		
 					    		selection = selection.substring(startInt-1, endInt-1);
 					    	} catch (StringIndexOutOfBoundsException e) {
-					    		System.err.println("DnaStatement text of statement " + id + " could not be identified.");
+					    		System.err.println("Statement text of statement " + id + " could not be identified.");
 					    	}
 					    	
 							//put statements into the statement list
 					    	try {
-								dna.Dna.mainProgram.dc.sc.addStatement(new DnaStatement(id, startInt, endInt, date, selection, title, person, organization, category, agreement), false);
+								dna.Dna.mainProgram.dc.sc.addStatement(new Statement(id, startInt, endInt, date, selection, title, person, organization, category, agreement), false);
 							} catch (DuplicateStatementIdException e) {
 								e.printStackTrace();
 							}

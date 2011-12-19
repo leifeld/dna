@@ -10,8 +10,8 @@ public class DnaContainer {
 	ArrayList<RegexTerm> regexTerms;
 	ActorContainer pc;
 	ActorContainer oc;
-	//REListModel pt;
-	//REListModel ot;
+	RegexListModel pt;
+	RegexListModel ot;
 	
 	public DnaContainer() {
 		currentFileName = new String("");
@@ -19,8 +19,8 @@ public class DnaContainer {
 		sc = new StatementContainer();
 		pc = new ActorContainer();
 		oc = new ActorContainer();
-		//pt = new REListModel();
-		//ot = new REListModel();
+		pt = new RegexListModel();
+		ot = new RegexListModel();
 		regexTerms = new ArrayList<RegexTerm>();
 	}
 	
@@ -31,26 +31,26 @@ public class DnaContainer {
 		regexTerms.clear();
 		pc.actorList.clear();
 		oc.actorList.clear();
-		//pt.removeAllElements();
-		//ot.removeAllElements();
+		pt.removeAllElements();
+		ot.removeAllElements();
 	}
-	/*
-	public REListModel getPt() {
+	
+	public RegexListModel getPt() {
 		return pt;
 	}
 
-	public void setPt(REListModel pt) {
+	public void setPt(RegexListModel pt) {
 		this.pt = pt;
 	}
 
-	public REListModel getOt() {
+	public RegexListModel getOt() {
 		return ot;
 	}
 
-	public void setOt(REListModel ot) {
+	public void setOt(RegexListModel ot) {
 		this.ot = ot;
 	}
-	*/
+	
 	public ArticleContainer getAc() {
 		return ac;
 	}

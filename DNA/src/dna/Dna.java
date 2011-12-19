@@ -35,7 +35,6 @@ import java.util.GregorianCalendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -83,8 +82,6 @@ import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
-import java.sql.*;
-
 /**
  * This is the main component of the Discourse Network Analyzer.
  * It instantiates the DNA coder.
@@ -105,17 +102,14 @@ public class Dna extends JFrame {
 	ArrayList<String> catListe = new ArrayList<String>();
 	ArrayList<String> persListe = new ArrayList<String>();
 	String[] agListe = new String[] {"yes", "no"};
-	OrganizationAttributes pm;
-	OrganizationAttributes om;
+	ActorManager pm;
+	ActorManager om;
 	
 	JPopupMenu popmen = new JPopupMenu();
 	ImageIcon addStatementIcon = new ImageIcon(getClass().getResource("/icons/comment_edit.png"));
 	JMenuItem menu1 = new JMenuItem( "Format as statement", addStatementIcon);
 
 	JLabel currentFileLabel;
-	String workingDirectory;
-	final static String cf = "/home/philip/dna-db3";
-	String currentFileName = cf;
 	JLabel loading;
 	
 	JPanel centralTextPanel;
@@ -155,14 +149,14 @@ public class Dna extends JFrame {
 	JCheckBoxMenuItem editMode, toolTipColors;
 	
 	String strippedContents;
+	
+	String workingDirectory;
 
 	/**
 	 * This constructor opens up the main window and executes a
 	 * number of layout components.
 	 */
 	public Dna() {
-
-		createDbStructure();
 		
 		workingDirectory = System.getProperty("user.dir");
 		
@@ -205,155 +199,12 @@ public class Dna extends JFrame {
 		this.setVisible(true);
 	}
 	
-	public void createDbStructure() {
-		try {
-			Class.forName("org.h2.Driver");
-			Connection db = DriverManager.getConnection("jdbc:h2:" + cf, 
-					"sa", "");
-
-	        Statement orgTypeTable = db.createStatement();
-	        orgTypeTable.execute(
-	        		"CREATE TABLE IF NOT EXISTS ORG_TYPES(" + 
-	        		"TYPE VARCHAR(255) NOT NULL, " +
-	        		"RED SMALLINT, " + 
-	        		"GREEN SMALLINT, " +
-	        		"BLUE SMALLINT, " + 
-	        		"primary key(TYPE))"
-	        );
-	        orgTypeTable.close();
-
-	        Statement persTypeTable = db.createStatement();
-	        persTypeTable.execute(
-	        		"CREATE TABLE IF NOT EXISTS PERS_TYPES(" + 
-	        		"TYPE VARCHAR(255) NOT NULL, " +
-	        		"RED SMALLINT, " + 
-	        		"GREEN SMALLINT, " +
-	        		"BLUE SMALLINT, " + 
-	        		"primary key(TYPE))"
-	        );
-	        persTypeTable.close();
-	        
-	        Statement personTable = db.createStatement();
-	        personTable.execute(
-	        		"CREATE TABLE IF NOT EXISTS PERSONS(" + 
-	        		"NAME VARCHAR(255) NOT NULL, " +
-	        		"TYPE VARCHAR(255), " + 
-	        		"ALIAS VARCHAR(255), " +
-	        		"NOTE VARCHAR(255), " +
-	        		"primary key(NAME), " + 
-	        		"foreign key(TYPE) references PERS_TYPES(TYPE))"
-	        );
-	        personTable.close();
-
-	        Statement organizationTable = db.createStatement();
-	        organizationTable.execute(
-	        		"CREATE TABLE IF NOT EXISTS ORGANIZATIONS(" + 
-	        		"NAME VARCHAR(255) NOT NULL, " +
-	        		"TYPE VARCHAR(255), " + 
-	        		"ALIAS VARCHAR(255), " +
-	        		"NOTE VARCHAR(255), " +
-	        		"primary key(NAME), " + 
-	        		"foreign key(TYPE) references ORG_TYPES(TYPE))"
-	        );
-	        organizationTable.close();
-	        
-			Statement articlesTable = db.createStatement();
-	        articlesTable.execute(
-	        		"CREATE TABLE IF NOT EXISTS ARTICLES(" +
-	        		"ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " + 
-	        		"TITLE VARCHAR(255) NOT NULL, " + 
-	        		"DATE TIMESTAMP NOT NULL, " + 
-	        		"TEXT CLOB, " + 
-	        		"SOURCE VARCHAR(255), " + 
-	        		"SECTION VARCHAR(255), " + 
-	        		"PAGE VARCHAR(20), " + 
-	        		"AUTHOR VARCHAR(255), " + 
-	        		"TYPE VARCHAR(255), " + 
-	        		"NOTES VARCHAR(255), " + 
-	        		"primary key(ID))"
-	        );
-	        articlesTable.close();//ID, TITLE, DATE, SOURCE, SECTION, PAGE, AUTHOR, TYPE, NOTES
-	        
-			Statement statementTable = db.createStatement();
-	        statementTable.execute(
-	        		"CREATE TABLE IF NOT EXISTS STATEMENTS(" + 
-	        		"ID SMALLINT NOT NULL, " + 
-	        		"ARTICLE SMALLINT NOT NULL, " + 
-	        		"START INT NOT NULL, " + 
-	        		"STOP INT NOT NULL, " + 
-	        		"TEXT VARCHAR(8000), " + 
-	        		"PERSON VARCHAR(255), " + 
-	        		"ORGANIZATION VARCHAR(255), " + 
-	        		"CATEGORY VARCHAR(255), " + 
-	        		"AGREEMENT VARCHAR(3), " + 
-	        		"primary key(ID), " + 
-	        		"foreign key(ARTICLE) references ARTICLES(ID), " + 
-	        		"foreign key(PERSON) references PERSONS(NAME), " + 
-	        		"foreign key(ORGANIZATION) references ORGANIZATIONS(NAME))"
-	        );
-	        statementTable.close();
-
-	        Statement regexTable = db.createStatement();
-	        regexTable.execute(
-	        		"CREATE TABLE IF NOT EXISTS REGEXES (" + 
-	        		"REGEX VARCHAR(255) NOT NULL, " +
-	        		"RED SMALLINT, " + 
-	        		"GREEN SMALLINT, " +
-	        		"BLUE SMALLINT, " + 
-	        		"primary key(REGEX))"
-	        );
-	        regexTable.close();
-	        
-	        DatabaseMetaData md = (DatabaseMetaData) db.getMetaData();
-	        ResultSet rs = md.getTables("myschema",null,null,null);
-	        while(rs.next())
-	        {
-	          System.out.println(rs.getString("TABLE_NAME"));
-	        }
-	        
-			db.close();
-			
-		} catch (ClassNotFoundException e1) {
-			e1.printStackTrace();
-		} catch (SQLException e) {
-			System.out.println("Warning: SQL exception!");
-			e.printStackTrace();
-		}
-	}
-	
 	public class RegexManager extends JPanel {
 		
 		JButton colorButton;
 		JTextField textField;
 		DefaultListModel listModel;
 		JList regexList;
-		
-		public class RegexListRenderer extends DefaultListCellRenderer {
-			public Component getListCellRendererComponent(JList list, Object value,	int index, boolean isSelected, boolean cellHasFocus) {
-				JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-				label.setText((String)value);
-				try {
-					Class.forName("org.h2.Driver");
-					Connection db = DriverManager.getConnection("jdbc:h2:" + dna.Dna.mainProgram.cf, 
-							"sa", "");
-					Statement s = db.createStatement();
-					ResultSet rs = s.executeQuery("SELECT * FROM REGEXES WHERE REGEX = '" + (String)value + "'");
-					rs.next();
-					int red = rs.getInt("RED");
-					int green = rs.getInt("GREEN");
-					int blue = rs.getInt("BLUE");
-					Color cl = new Color(red, green, blue);
-					label.setForeground(cl);
-					s.close();
-					db.close();
-				} catch (SQLException e2) {
-					e2.printStackTrace();
-				} catch (ClassNotFoundException e1) {
-					e1.printStackTrace();
-				}
-				return label;
-			}
-		}
 		
 		public RegexManager() {
 			this.setLayout(new BorderLayout());
@@ -363,7 +214,6 @@ public class Dna extends JFrame {
 				}
 			});
 			
-			//listModel = new RegexListModel();
 			listModel = new DefaultListModel();
 			regexList = new JList(listModel);
 			regexList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
@@ -373,9 +223,9 @@ public class Dna extends JFrame {
 			JScrollPane listScroller = new JScrollPane(regexList);
 			listScroller.setPreferredSize(new Dimension(50, 100));
 			
-			//for (int i = 0; i < dc.regexTerms.size(); i++) {
-			//	listModel.addElement(dc.regexTerms.get(i));
-			//}
+			for (int i = 0; i < dc.regexTerms.size(); i++) {
+				listModel.addElement(dc.regexTerms.get(i));
+			}
 			
 			this.add(listScroller, BorderLayout.NORTH);
 			
@@ -410,35 +260,11 @@ public class Dna extends JFrame {
 			JButton add = new JButton("add", addIcon);
 			add.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					int red = colorButton.getForeground().getRed();
-					int green = colorButton.getForeground().getGreen();
-					int blue = colorButton.getForeground().getBlue();
+					Color cl = colorButton.getForeground();
 					String text = textField.getText();
 					if (text.length() > 0) {
-						//dc.regexTerms.add(new RegexTerm(text, cl));
-						
-						//listModel.addRegex(text, red, green, blue);
-						try {
-							Class.forName("org.h2.Driver");
-							Connection db = DriverManager.getConnection("jdbc:h2:" + cf, 
-									"sa", "");
-							Statement s = db.createStatement();
-							s.execute("INSERT INTO REGEXES (REGEX, RED, GREEN, BLUE) VALUES ('" + text + "', " + red + ", " + green + ", " + blue + ")");
-							ResultSet sortedData = s.executeQuery("SELECT * FROM REGEXES ORDER BY REGEX");
-							listModel.clear();
-							while(sortedData.next()) {
-								listModel.addElement(sortedData.getString("REGEX"));
-							}
-							s.close();
-							db.close();
-						} catch (SQLException e2) {
-							e2.printStackTrace();
-						} catch (ClassNotFoundException e1) {
-							e1.printStackTrace();
-						}
-						
-						
-						//listModel.addElement(dc.regexTerms.get(dc.regexTerms.size()-1));
+						dc.regexTerms.add(new RegexTerm(text, cl));
+						listModel.addElement(dc.regexTerms.get(dc.regexTerms.size()-1));
 					}
 					Dna.mainProgram.paintStatements();
 				}
@@ -450,32 +276,9 @@ public class Dna extends JFrame {
 			remove.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					int index = regexList.getSelectedIndex();
-					String selected = (String)regexList.getSelectedValue();
 					if (index >= 0) {
-						//listModel.removeRegex(index);
-						
-					try {
-						Class.forName("org.h2.Driver");
-						Connection db = DriverManager.getConnection("jdbc:h2:" + cf, 
-								"sa", "");
-						Statement s = db.createStatement();
-						s.execute("DELETE FROM REGEXES WHERE REGEX = '" + selected + "'");
-						//ResultSet sortedData = s.executeQuery("SELECT * FROM REGEXES ORDER BY REGEX");
-						//listModel.clear();
-						listModel.removeElement(selected);
-						//while(sortedData.next()) {
-						//	listModel.removeElement(sortedData.getString("REGEX"));
-						//}
-						s.close();
-						db.close();
-						} catch (SQLException e2) {
-							e2.printStackTrace();
-						} catch (ClassNotFoundException e1) {
-							e1.printStackTrace();
-						}
-						
-					//	dc.regexTerms.remove(index);
-					//	listModel.remove(index);
+						dc.regexTerms.remove(index);
+						listModel.remove(index);
 					}
 					Dna.mainProgram.paintStatements();
 				}
@@ -498,8 +301,7 @@ public class Dna extends JFrame {
 		public void clear() {
 			dc.regexTerms.clear();
 			textField.setText("");
-			//listModel.removeAll();
-			listModel.clear();
+			listModel.removeAllElements();
 		}
 	}
 	
@@ -940,28 +742,8 @@ public class Dna extends JFrame {
 			int numArticles = dc.ac.getRowCount();
 			int numStatements = dc.sc.getRowCount();
 			updateLists();
-			int numOrg = 0;
-			int numPers = 0;
-			try {
-				Class.forName("org.h2.Driver");
-				Connection db = DriverManager.getConnection("jdbc:h2:" + cf, 
-						"sa", "");
-				Statement s = db.createStatement();
-				ResultSet rs = s.executeQuery("SELECT count(*) FROM ORGANIZATIONS");
-				rs.next();
-				numOrg = rs.getInt(1);
-				rs.close();
-				s.close();
-				db.close();
-			} catch (SQLException e) {
-				System.out.println("Warning: SQL exception in getSize!");
-				e.printStackTrace();
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			}
-			numPers = numOrg;
-			//int numOrg = om.getActors().size();
-			//int numPers = pm.getActors().size();
+			int numOrg = om.getActors().size();
+			int numPers = pm.getActors().size();
 			int numCat = catListe.size();
 			tf.setEditable(true);
 			tf.setText("Articles: " + numArticles + "\n"
@@ -1169,12 +951,12 @@ public class Dna extends JFrame {
 				filename = filename + ".dna";
 			}
 			if ( file.getPath().endsWith(".dna") ) {
-				currentFileName = file.getPath();
+				dc.currentFileName = file.getPath();
 			} else {
-				currentFileName = file.getPath() + ".dna";
+				dc.currentFileName = file.getPath() + ".dna";
 			}
-			new SaveDnaFile( currentFileName );
-			currentFileLabel.setText( "Current file: " + currentFileName );
+			new SaveDnaFile( dc.currentFileName );
+			currentFileLabel.setText( "Current file: " + dc.currentFileName );
 		} else {
 			System.out.println("Saving canceled.");
 		}
@@ -1186,7 +968,7 @@ public class Dna extends JFrame {
 	private void closeDnaFile(boolean exit) {
 		if (articleTable.getRowCount() == 0) {
 			clearSpace();
-			//currentFileName = "";
+			dc.currentFileName = "";
 			currentFileLabel.setText("Current file: none");
 			if (exit == true) {
 				dispose();
@@ -1196,10 +978,10 @@ public class Dna extends JFrame {
 					"Would you like to save your work?", "Save?", JOptionPane.
 					YES_NO_CANCEL_OPTION);
 			if ( question == JOptionPane.YES_OPTION ) {
-				if ( currentFileName.equals("") ) {
+				if ( dc.currentFileName.equals("") ) {
 					saveAsDialog();
 				} else {
-					new SaveDnaFile( currentFileName );
+					new SaveDnaFile( dc.currentFileName );
 				}
 				clearSpace();
 				System.out.println("File was closed.");
@@ -1223,8 +1005,8 @@ public class Dna extends JFrame {
 	 */
 	public void clearSpace() {
 		dc.clear();
-		//om.clear();
-		//pm.clear();
+		om.clear();
+		pm.clear();
 		currentFileLabel.setText("Current file: none");
 		textWindow.setEnabled(false);
 		regexManager.clear();
@@ -1298,11 +1080,10 @@ public class Dna extends JFrame {
 		
 		searchWindow = new SearchWindow();
 		collapsiblePane.add(searchWindow, "Full-text search");
-		om = new OrganizationAttributes();
+		om = new ActorManager(dc.ot);
 		collapsiblePane.add(om, "Organizations");
 		collapsiblePane.setCollapsed(true);
-		//pm = new ActorManager(dc.pt);
-		pm = new OrganizationAttributes();
+		pm = new ActorManager(dc.pt);
 		collapsiblePane.add(pm, "Persons");
 		collapsiblePane.setCollapsed(true);
 		
@@ -1397,47 +1178,9 @@ public class Dna extends JFrame {
 		extrasMenu = new JMenu("Extras");
 		menuBar.add(extrasMenu);
 		
-		//File menu: new file
-		Icon newFileIcon = new ImageIcon(getClass().getResource("/icons/page_white.png"));
-		JMenuItem newFileMenuItem = new JMenuItem("New DNA database file...", newFileIcon);
-		newFileMenuItem.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser fc = new JFileChooser(workingDirectory);
-				fc.setFileFilter(new FileFilter() {
-					public boolean accept(File f) {
-						return f.getName().toLowerCase().endsWith(".h2.db") 
-						|| f.isDirectory();
-					}
-					public String getDescription() {
-						return "DNA database files (*.h2.db)";
-					}
-				});
-
-				int returnVal = fc.showSaveDialog(Dna.this);
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = fc.getSelectedFile();
-					workingDirectory = file.getParent();
-					String filename = new String(file.getPath());
-					if ( !file.getPath().endsWith(".h2.db") ) {
-						filename = filename + ".h2.db";
-					}
-					if ( file.getPath().endsWith(".h2.db") ) {
-						currentFileName = file.getPath();
-					} else {
-						System.err.println("Warning: file does not end with .h2.db!");
-					}
-					createDbStructure();
-					currentFileLabel.setText( "Current file: " + currentFileName + ".h2.db" );
-				} else {
-					System.out.println("Saving canceled.");
-				}
-			}
-		});
-		fileMenu.add(newFileMenuItem);
-		
 		//File menu: open DNA file
 		Icon openIcon = new ImageIcon(getClass().getResource("/icons/folder.png"));
-		JMenuItem openMenuItem = new JMenuItem("Import .dna file...", openIcon);
+		JMenuItem openMenuItem = new JMenuItem("Open DNA file...", openIcon);
 		openMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				closeDnaFile(false);
@@ -1519,10 +1262,10 @@ public class Dna extends JFrame {
 		fileMenu.add(save);
 		save.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if ( currentFileName.equals("") ) {
+				if ( dc.currentFileName.equals("") ) {
 					saveAsDialog();                
 				} else {
-					new SaveDnaFile( currentFileName );
+					new SaveDnaFile( dc.currentFileName );
 				}
 			}
 		});
@@ -1734,9 +1477,9 @@ public class Dna extends JFrame {
 						filename = filename + extension;
 					}
 					if (e.getSource() == orgExportButton) {
-						//om.exportToCsv(filename);
+						om.exportToCsv(filename);
 					} else if (e.getSource() == persExportButton) {
-						//pm.exportToCsv(filename);
+						pm.exportToCsv(filename);
 					}
 				} else {
 					System.out.println("Export cancelled.");
@@ -1800,7 +1543,6 @@ public class Dna extends JFrame {
 		catListe.clear();
 		
 		for (int i = 0; i < dc.sc.getRowCount(); i++) {
-			/*
 			if(!pm.contains(dc.sc.get(i).getPerson()) && !dc.sc.get(i).getPerson().equals("")) {
 				pm.add(new Actor(dc.sc.get(i).getPerson(), true));
 			}
@@ -1810,7 +1552,6 @@ public class Dna extends JFrame {
 			if(!catListe.contains(dc.sc.get(i).getCategory())) {
 				catListe.add(dc.sc.get(i).getCategory());
 			}
-			*/
 		}
 		Collections.sort(catListe);
 	}
@@ -1917,7 +1658,7 @@ public class Dna extends JFrame {
 					String articleTitle = dc.ac.get(articleTable.getSelectedRow()).getTitle();
 					int statementId = dc.sc.getFirstUnusedId();
 					try {
-						dc.sc.addStatement(new DnaStatement(statementId, selectionStart, selectionEnd, date, selection, articleTitle, "", "", "", "yes"), true);
+						dc.sc.addStatement(new Statement(statementId, selectionStart, selectionEnd, date, selection, articleTitle, "", "", "", "yes"), true);
 					} catch (DuplicateStatementIdException e1) {
 						e1.printStackTrace();
 					}
@@ -1925,8 +1666,8 @@ public class Dna extends JFrame {
 					paintStatements();
 					textWindow.setCaretPosition(selectionStart);
 				} catch (OutOfMemoryError ome) {
-					System.err.println("Out of memory. DnaStatement has not been inserted. Please restart Java\nwith the -Xmx1024M option, where '1024' is the space you want\nto allocate to DNA. The manual provides further details.");
-					JOptionPane.showMessageDialog(Dna.this, "Out of memory. DnaStatement has not been inserted. Please restart Java\nwith the -Xmx1024M option, where '1024' is the space you want\nto allocate to DNA. The manual provides further details.");
+					System.err.println("Out of memory. Statement has not been inserted. Please restart Java\nwith the -Xmx1024M option, where '1024' is the space you want\nto allocate to DNA. The manual provides further details.");
+					JOptionPane.showMessageDialog(Dna.this, "Out of memory. Statement has not been inserted. Please restart Java\nwith the -Xmx1024M option, where '1024' is the space you want\nto allocate to DNA. The manual provides further details.");
 				}
 			}
 		});
@@ -1943,12 +1684,11 @@ public class Dna extends JFrame {
 				articleTable.changeSelection(currentArticle, 0, false, false);
 				paintStatements();
 				textWindow.setCaretPosition(caretPosition);
-				System.out.println("DnaStatement with ID " + id + " has been removed.");
+				System.out.println("Statement with ID " + id + " has been removed.");
 			}
 		}
 	}
-	
-	/*
+
 	private class ActorComboBoxRenderer extends JLabel implements ListCellRenderer {
 		
 		ActorManager am;
@@ -1993,8 +1733,7 @@ public class Dna extends JFrame {
 			return lab;
 		}
 	}
-	*/
-	
+		
 	public class ToolTip extends JFrame {
 		
 		Container c;
@@ -2007,7 +1746,7 @@ public class Dna extends JFrame {
 		String orgAtOpen, persAtOpen;
 		
 		public void showToolTip() {
-			this.setTitle("DnaStatement details");
+			this.setTitle("Statement details");
 			this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			ImageIcon addIcon = new ImageIcon(getClass().getResource("/icons/comment_edit.png"));
 			this.setIconImage(addIcon.getImage());
@@ -2038,25 +1777,23 @@ public class Dna extends JFrame {
 			
 			persAtOpen = dc.sc.getById(statementId).getPerson();
 			JLabel persLabel = new JLabel("person", JLabel.TRAILING);
-			//person = new JComboBox(pm.getActorNames().toArray());
-			person = new JComboBox();
+			person = new JComboBox(pm.getActorNames().toArray());
 			person.setEditable(true);
-			//ActorComboBoxRenderer persRenderer = new ActorComboBoxRenderer(pm);
-			//if (toolTipColors.isSelected()) {
-			//	person.setRenderer(persRenderer);
-			//}
+			ActorComboBoxRenderer persRenderer = new ActorComboBoxRenderer(pm);
+			if (toolTipColors.isSelected()) {
+				person.setRenderer(persRenderer);
+			}
 			person.setSelectedItem(dc.sc.getById(statementId).getPerson());
 			AutoCompleteDecorator.decorate(person);
 			
 			orgAtOpen = dc.sc.getById(statementId).getOrganization();
 			JLabel orgLabel = new JLabel("organization", JLabel.TRAILING);
-			//organization = new JComboBox(om.getActorNames().toArray());
-			organization = new JComboBox();
+			organization = new JComboBox(om.getActorNames().toArray());
 			organization.setEditable(true);
-			//ActorComboBoxRenderer orgRenderer = new ActorComboBoxRenderer(om);
-			//if (toolTipColors.isSelected()) {
-			//	organization.setRenderer(orgRenderer);
-			//}
+			ActorComboBoxRenderer orgRenderer = new ActorComboBoxRenderer(om);
+			if (toolTipColors.isSelected()) {
+				organization.setRenderer(orgRenderer);
+			}
 			organization.setSelectedItem(dc.sc.getById(statementId).getOrganization());
 			AutoCompleteDecorator.decorate(organization);
 			
@@ -2085,7 +1822,7 @@ public class Dna extends JFrame {
 								persStillExists = true;
 							}
 						}
-						/*
+						
 						try {
 							@SuppressWarnings("unused")
 							String aliasOrg = om.getActor(orgAtOpen).getAlias();
@@ -2119,7 +1856,7 @@ public class Dna extends JFrame {
 								pm.remove(persAtOpen);
 							}
 						}
-						*/
+						
 						removeStatement(statementId);
 						dispose();
 					}
@@ -2200,7 +1937,6 @@ public class Dna extends JFrame {
 			
 			addWindowFocusListener(new WindowAdapter() {
 				public void windowLostFocus(WindowEvent e) {
-					/*
 					try {
 						String p = (String)person.getEditor().getItem();
 						dc.sc.getById(statementId).setPerson(p);
@@ -2263,9 +1999,8 @@ public class Dna extends JFrame {
 						dc.sc.getById(statementId).setAgreement(a);
 						dispose();
 					} catch (NullPointerException npe) {
-						System.err.println("DnaStatement details could not be saved.");
+						System.err.println("Statement details could not be saved.");
 					}
-			    */
 			    }
 			});
 			

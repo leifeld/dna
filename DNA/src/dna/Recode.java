@@ -62,8 +62,8 @@ public class Recode extends JFrame {
 		catDesc = new JLabel("category", JLabel.TRAILING);
 		description = new JLabel("%p = person; %o = organization; %c = category");
 		
-		//persCombo = new JComboBox(Dna.mainProgram.pm.getActorNames().toArray());
-		//orgCombo = new JComboBox(Dna.mainProgram.om.getActorNames().toArray());
+		persCombo = new JComboBox(Dna.mainProgram.pm.getActorNames().toArray());
+		orgCombo = new JComboBox(Dna.mainProgram.om.getActorNames().toArray());
 		catCombo = new JComboBox(dna.Dna.mainProgram.catListe.toArray());
 		
 		Icon okIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
@@ -148,9 +148,9 @@ public class Recode extends JFrame {
 						}
 					}
 					Dna.mainProgram.updateLists();
-					//Dna.mainProgram.om.correctAppearance(Dna.mainProgram.dc.sc.getOrganizationList());
+					Dna.mainProgram.om.correctAppearance(Dna.mainProgram.dc.sc.getOrganizationList());
 					Dna.mainProgram.om.repaint();
-					//Dna.mainProgram.pm.correctAppearance(Dna.mainProgram.dc.sc.getPersonList());
+					Dna.mainProgram.pm.correctAppearance(Dna.mainProgram.dc.sc.getPersonList());
 					Dna.mainProgram.pm.repaint();
 					dispose();
 				}

@@ -75,7 +75,7 @@ public class ParseLatest {
 					int blue = Integer.valueOf(type.getChildText("blue")).intValue();
 					Color color = new Color(red, green, blue);
 					RegexTerm rt = new RegexTerm(label, color);
-					//dc.pt.addElement(rt);
+					dc.pt.addElement(rt);
 				}
 				
 				//load persons and their attributes
@@ -100,7 +100,7 @@ public class ParseLatest {
 					int blue = Integer.valueOf(type.getChildText("blue")).intValue();
 					Color color = new Color(red, green, blue);
 					RegexTerm rt = new RegexTerm(label, color);
-					//dc.ot.addElement(rt);
+					dc.ot.addElement(rt);
 				}
 				
 				//load organizations and their attributes
@@ -213,16 +213,16 @@ public class ParseLatest {
 				    		
 				    		selection = selection.substring(startInt-1, endInt-1);
 				    	} catch (StringIndexOutOfBoundsException e) {
-				    		System.err.println("DnaStatement text of statement " + id + " could not be identified.");
+				    		System.err.println("Statement text of statement " + id + " could not be identified.");
 				    	}
 				    	
 						//put statements into the statement list
 						try {
-							dc.sc.addStatement(new DnaStatement(id, startInt, endInt, date, selection, title, person, organization, category, agreement), false);
+							dc.sc.addStatement(new Statement(id, startInt, endInt, date, selection, title, person, organization, category, agreement), false);
 						} catch (DuplicateStatementIdException e) {
 							try { //save up duplicate statements for later insertion
 								System.err.println("Duplicate statement with ID " + id + " detected. A new ID will be assigned.");
-								duplicateStatements.addStatement(new DnaStatement(duplicateStatements.getFirstUnusedId(), startInt, endInt, date, selection, title, person, organization, category, agreement), false);
+								duplicateStatements.addStatement(new Statement(duplicateStatements.getFirstUnusedId(), startInt, endInt, date, selection, title, person, organization, category, agreement), false);
 							} catch (DuplicateStatementIdException e1) {
 								e1.printStackTrace();
 							}
@@ -237,7 +237,7 @@ public class ParseLatest {
 				//insert duplicate statements
 				for (int i = 0; i < duplicateStatements.size(); i++) {
 					try {
-						dc.sc.addStatement(new DnaStatement(
+						dc.sc.addStatement(new Statement(
 								dc.sc.getFirstUnusedId(), 
 								duplicateStatements.get(i).getStart(), 
 								duplicateStatements.get(i).getStop(), 
