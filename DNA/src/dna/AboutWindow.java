@@ -34,12 +34,12 @@ public class AboutWindow extends JFrame {
         aboutInhalt = new JPanel( new BorderLayout() );
         aboutText = new JEditorPane();
         aboutText.setContentType("text/html");
-        aboutText.setText("<p><b>Current version</b><br>1.29 (October 16, 2011)</p>"
-            + "<p><b>Copyright</b><br> Philip Leifeld (University of Konstanz, Germany)</p>"
+        aboutText.setText("<p><b>Current version</b><br>1.30 (September 23, 2012)</p>"
+            + "<p><b>Copyright</b><br> Philip Leifeld (Eawag & University of Bern)</p>"
             + "<p><b>DNA homepage</b><br> <a href=\"http://www.philipleifeld.de\">"
             + "http://www.philipleifeld.de</a><br/>Documentation, publications "
             + "and a mailing list can be found on this homepage.</p>"
-            + "<p><b>Contact</b><br><a href=\"mailto:philip.leifeld@uni-konstanz.de\">philip.leifeld@uni-konstanz.de</a></p>"
+            + "<p><b>Contact</b><br><a href=\"mailto:philip.leifeld@eawag.ch\">philip.leifeld@eawag.ch</a></p>"
             + "<p><b>Icons</b><br> taken from <a href=\"http://www.famfamfam.com/lab/icons/silk/\">"
             + "http://www.famfamfam.com/lab/icons/silk/</a>.</p>"
             );

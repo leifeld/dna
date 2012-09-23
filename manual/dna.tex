@@ -6,7 +6,7 @@
 \usepackage{booktabs}
 \usepackage{subfigure}
 \usepackage{tikz}
-\usepackage{scrhack}
+%\usepackage{scrhack}
 \usepackage{color}
 \usepackage[plainpages=false,pdfpagelabels,bookmarks]{hyperref}
 \hypersetup{
@@ -75,9 +75,9 @@
 
 \newcommand{\code}[1]{\texttt{#1}}
 
-\author{Philip Leifeld\footnote{Address for correspondence: \medskip \newline University of Konstanz \newline Department of Politics and Public Administration \newline Box D\,81 \newline 78457 Konstanz \newline Germany \medskip \newline \href{mailto:philip.leifeld@uni-konstanz.de}{\texttt{philip.leifeld@uni-konstanz.de}} \newline \url{http://www.philipleifeld.de}}}
+\author{Philip Leifeld\footnote{Address for correspondence: \medskip \newline Eawag \newline Überlandstr. 133 \newline 8600 Dübendorf \newline Switzerland \medskip \newline \href{mailto:philip.leifeld@eawag.ch}{\texttt{philip.leifeld@eawag.ch}} \newline \url{http://www.philipleifeld.de}}}
 \title{\includegraphics[width=2cm]{dna32.pdf}\\ \vspace{0.5cm} Discourse Network Analyzer \\ \vspace{0.3cm} \textbf{Manual}}
-\date{version 1.29 (\today)}
+\date{version 1.30 (\today)}
 
 \begin{document}
 \maketitle
@@ -85,13 +85,13 @@
 \tableofcontents
 
 \chapter{Introduction}
-\dnalong\ (\dnashort) is a Java-based software for qualitative, category-based content analysis (QDA) with a special emphasis on the extraction of quantitative network data. Its main purpose is the actor-based analysis of political discourses. Yet it may be used for other applications or paradigms.
+\dnalong\ (\dnashort) is a Java-based software for qualitative, category-based content analysis (QDA) with a special emphasis on the extraction of network data. Its main purpose is the actor-based analysis of political discourses. Yet it may be used for other applications or paradigms.
 
 \dnashort\ involves two steps: coding statements of actors into categories, and converting these structured data into networks that are readable by \ucinet, \visone, \netminer, \gephi\ and other network-analytic software packages. The software can extract either bipartite (affiliation) networks or co-occurrence networks.
 
 Tags are applied to the text data by manual inspection, yet there are some tools to support the coder, like a regular expression highlighter and a function that reports self-contradictions of actors. \dnashort\ can be used to code a bunch of text documents and then convert them into a single graph. The resulting network can provide an operationalization of epistemic communities, the Advocacy Coalition Framework, policy images, discourse coalitions, or similar policy theories, depending on the categories which are encoded.
 
-More information about the software can be found in \citet{leifeld2009die,leifeld2010political} and \citet{leifeld2010comparison}. A literature review is provided in the book chapter of \citet{janning2009diskursnetzwerkanalyse.}. The beginner's tutorial in chapter~\ref{demo} is based on empirical data collected by \citet{fisher2009understanding}.
+More information about the software can be found in \citet{leifeld2009die,leifeld2012political} and \citet{fisher2012mapping}. A literature review is provided in the book chapter of \citet{janning2009diskursnetzwerkanalyse.}. The beginner's tutorial in chapter~\ref{demo} is based on empirical data collected by \citet{fisher2012mapping}.
 
 If you would like to be informed about updates, or discuss bugs or research projects, please subscribe to the [DNA-help] mailing list at \url{http://www.philipleifeld.de}.
 
@@ -119,7 +119,7 @@ This section covers many of the basic coding concepts of \dnashort\ and the most
 \caption{The main window}
 \label{main}
 \end{figure}
-Figure~\ref{main} shows the main window of \dnashort\ where newspaper articles, interviews, position papers, parliamentary protocols or other qualitative material can be inserted. Download the file \href{http://www.philipleifeld.de/cms/upload/Downloads/sample.dna}{\texttt{sample.dna}} from the \dnashort\ documentation section at \href{http://www.philipleifeld.de/discourse-network-analyzer-dna/documentation/}{\texttt{http://www.philipleifeld.de}}. This is a sample file with a couple of articles and statements. The articles are actually congressional hearings about the issue of climate change, taken from \citet{fisher2009understanding}.\footnote{The author wishes to thank Dana R. Fisher for contributing the sample data set. More information about the full data set and the political discourse on climate change in the U.S. is provided by \citet{fisher2009understanding}. A full-text archive of U.S. congressional hearings can be found at \url{http://www.gpoaccess.gov/chearings/}.} First, open the file by clicking on the \includegraphics[height=9px]{icons-open.png} \code{Open DNA file...} menu item.
+Figure~\ref{main} shows the main window of \dnashort\ where newspaper articles, interviews, position papers, parliamentary protocols or other qualitative material can be inserted. Download the file \href{http://www.philipleifeld.de/cms/upload/Downloads/sample.dna}{\texttt{sample.dna}} from the \dnashort\ documentation section at \href{http://www.philipleifeld.de/discourse-network-analyzer-dna/documentation/}{\texttt{http://www.philipleifeld.de}}. This is a sample file with a couple of articles and statements. The articles are actually congressional hearings about the issue of climate change, taken from \citet{fisher2012mapping}.\footnote{The author wishes to thank Dana R. Fisher for contributing the sample data set. More information about the full data set and the political discourse on climate change in the U.S. is provided by \citet{fisher2012mapping}. A full-text archive of U.S. congressional hearings can be found at \url{http://www.gpoaccess.gov/chearings/}.} First, open the file by clicking on the \includegraphics[height=9px]{icons-open.png} \code{Open DNA file...} menu item.
 
 \section*{Step 2: Navigating through articles}
 \addcontentsline{toc}{section}{Step 2: Navigating through articles}
@@ -127,7 +127,7 @@ Once you have opened the file, you will see seven entries in the article table, 
 
 \section*{Step 3: Editing statements}
 \addcontentsline{toc}{section}{Step 3: Editing statements}
-Scroll down the text until you see a yellow text portion. This yellow text portion is called a ``statement''. A statement is a text portion where an actor reveals his/her opinion/belief/etc. about an issue. It depends on your theory what kind of information should be coded as statements. In the case of the sample file of \citet{fisher2009understanding}, different convictions about what should be done about climate change and how were coded as statements. Click on the yellow text starting with ``Energy Star\ldots'' now. A small window will pop up and reveal the details of the statement. The screenshot in figure~\ref{main} shows such a popup window roughly at the center of the screen. You will find four editable pieces of information:
+Scroll down the text until you see a yellow text portion. This yellow text portion is called a ``statement''. A statement is a text portion where an actor reveals his/her opinion/belief/etc. about an issue. It depends on your theory what kind of information should be coded as statements. In the case of the sample file of \citet{fisher2012mapping}, different convictions about what should be done about climate change and how were coded as statements. Click on the yellow text starting with ``Energy Star\ldots'' now. A small window will pop up and reveal the details of the statement. The screenshot in figure~\ref{main} shows such a popup window roughly at the center of the screen. You will find four editable pieces of information:
 \begin{itemize}
  \item the \emph{person} who makes the statement
  \item the \emph{organization} the speaker is affiliated with
@@ -693,231 +693,6 @@ Please note, however, that rDNA is not working on MacOS right now (except for th
 \underline{Question}: \textbf{There are CSV, DL and graphML files plus several dynamic formats. Which format should I use?}
 \vspace{0.3cm} \newline
 \underline{Answer}: The best implementation is provided for .graphML files and the software \visone. The .graphML export format includes actor attributes, vertex shapes, vertex colors and edge colors. You can download \visone\ from \url{http://www.visone.info}. For dynamic analyses (i.\,e., network animations), \commetrix\ works best. Please refer to section~\ref{cmx} for details.
-
-
-\chapter{Version history}
-
-\section*{DNA 1.29 -- 16 October 2011}
-\begin{itemize}
-  \item Bugfix: Running \code{dna.network()} and related rDNA methods multiple times is now possible. There was a memory/garbage collection problem.
-  \item Bugfix: The \code{include isolates} option was broken, causing multiple problems in DNA (e.\,g. with graphML export) and rDNA (``index out of bounds'' exception).
-\end{itemize}
-
-\section*{DNA 1.28 -- 11 September 2011}
-\begin{itemize}
- \item Improved: Statement frequencies of actors are now exported as attributes to graphML files.
- \item Bugfix: The graphML export was broken whenever the name of at least one actor contained an apostrophe.
- \item Bugfix: When time series statistics were exported, the number of actors was erroneously printed to the command line.
- \item Bugfix: The \code{dna.gui()} method was fixed because many DNA features did not work when DNA was started from within R.
- \item Bugfix: The lambda attenuation parameter was erroneously fixed at a value of 0.1.
-\end{itemize}
-
-\section*{DNA 1.27 -- 13 April 2011}
-\begin{itemize}
- \item New feature: Combinations of statement filters are now possible.
- \item New feature: \code{ignore.agreement} option for the attenuation algorithm (both in \dnashort\ and rDNA).
- \item Improved: DNA remembers current working directory or last folder used (only within the current session)
- \item Bugfix: DNA does not exit anymore after pressing cancel when closing a file or quitting \dnashort.
-\end{itemize}
-
-\section*{DNA 1.26 -- 4 April 2011}
-\begin{itemize}
- \item New feature: The attenuation algorithm was modified: instead of adding inverse durations between statements to the edge weight, an exponential decay function with decay constant lambda is used.
- \item New feature: When normalizing edge weights in the time window algorithm, a parameter alpha can be set, which multiplies edge weights by a constant. Previously, the alpha constant was fixed at 100.
- \item Improved: The congruence and time window algorithms are much faster than before.
- \item Improved: Loading .dna files is faster, especially for large files.
- \item Improved: Network export is slightly faster in general.
- \item Bugfix: After using the attenuation algorithm, graphML files have arrow heads for edges.
-\end{itemize}
-
-\section*{DNA 1.25 -- 18 March 2011}
-\begin{itemize}
- \item New feature: \code{dna.categories()} method in rDNA.
- \item New feature: Added \code{verbose}, \code{invert.persons}, \code{invert.organizations}, and \code{invert.categories} arguments to \code{dna.network()} and \code{dna.timeseries()} in rDNA.
- \item Bugfix: ``Include lists'' in the time series statistics component had no effect in \dnashort.
- \item Bugfix: Normalization did not work when exporting networks (neither in \dnashort\ nor in rDNA).
- \item Bugfix: Fixed separate.actors argument in the \code{dna.timeseries()} method in rDNA.
-\end{itemize}
-
-\section*{DNA 1.24 -- 23 November 2010}
-\begin{itemize}
- \item Bugfix: Recode function caused an exception when either the person, organization or category list in the statement popup window was empty.
- \item Improved: The time series statistics component was rewritten to make it compatible with rDNA.
-\end{itemize}
-
-\section*{DNA 1.23 -- 17 November 2010}
-\begin{itemize}
- \item New feature: R bindings. \dnashort\ can be integrated into the statistical programming environment R via the R package rDNA.
- \item Improved: Actors and concepts are now put in quotation marks when being exported to a CSV file.
- \item Improved: The search field within articles listens to enter key presses.
- \item Improved: Menu item \code{Exit} was added to the file menu.
- \item Bugfix: Exporting actor attributes caused an exception when there were actors without an associated actor type.
- \item Bugfix: The New Article window was not scrollable.
-\end{itemize}
-
-\section*{DNA 1.22 -- 17 September 2010}
-\begin{itemize}
- \item Bugfix: Under some circumstances, statements could not be removed anymore.
- \item Bugfix: Removing an unused actor from the organization or person attribute manager and subsequently clicking on another actor's entry sometimes caused an exception.
- \item Bugfix: When closing a file, the regular expressions were not cleared in the sidebar.
- \item New feature: Document statistics are shown in the sidebar.
-\end{itemize}
-
-\section*{DNA 1.21 -- 23 August 2010}
-\begin{itemize}
- \item New feature: Attributes can be entered for persons and organizations. These attributes include the type of actor (including a color), an alias name or description, and additional notes.
- \item New feature: CSV export facility for attributes of actors.
- \item Improved: GraphML export (for \visone) has been rewritten. It now includes colors, shapes and actor attributes.
- \item Improved: The combo box for actor or category selection in a statement popup has been improved. Overwriting entries is more intuitive, and colors can be used to show the type of actor.
- \item Improved: Exporting a list of all statements is now possible from the \code{Export} menu (used to be in the \code{Network export} window).
-\end{itemize}
-
-\section*{DNA 1.20 -- 17 July 2010}
-\begin{itemize}
- \item Bugfix: prohibit two concurrent search threads at the same time
- \item Bugfix: disable search button while searching
- \item Bugfix: saving upon close sometimes killed the current file
- \item Bugfix: regular expressions are now directly highlighted after adding them
- \item Improved: statement filter takes less space
- \item Improved: statement list has been replaced by a sidebar where many functions now reside
- \item Improved: toolbar replaced by a menu
- \item Improved: collapsible full-text search panel at the bottom of the main window
-\end{itemize}
-
-\section*{DNA 1.19 -- 15 June 2010}
-\begin{itemize}
- \item New feature: Full-text search function across articles.
- \item New feature: \sonia\ algorithm for the dynamic visualization of affiliation networks.
- \item Improved: \dnashort\ can try to repair corrupt .dna files automatically.
- \item Improved: Resizable layout. \dnashort\ can now be run in full-screen mode.
- \item Bugfix: after clicking on \code{show all statements}, one can now open and import files without exceptions being displayed.
-\end{itemize}
-
-\section*{DNA 1.18 -- 5 June 2010}
-\begin{itemize}
- \item New feature: Within-actor contradiction report.
- \item New feature: Keyword filter in the ``import articles'' function.
- \item New feature: Affiliation networks can be exported as CSV lists, a nodelist format.
- \item Improved: Added a progress bar for the ``import articles'' function.
- \item Bugfix: The ``import articles'' function imported the wrong articles.
-\end{itemize}
-
-\section*{DNA 1.17 -- 28 February 2010}
-\begin{itemize}
- \item New feature: Search function inside articles (in the upper right corner of the \dnashort\ window).
- \item Improved: Added an improved progress bar to the network export window.
- \item Improved: Error messages on the terminal are now shown in red color.
- \item Improved: The progress log in the network export window was replaced by more detailed progress messages on the terminal.
- \item Improved: The text window does not jump to the bottom anymore after inserting or removing statements.
- \item Bugfix: Spaces are not replaced by underscores anymore during DL file export.
- \item Bugfix: The ``import articles'' function was broken in version 1.16.
- \item Bugfix: The \code{out of memory} error message now works properly.
- \item Bugfix: Now displaying a more detailed error message when DNA can't open a file.
- \item Bugfix: The ``network export'' window is now loaded faster than before.
-\end{itemize}
-
-\section*{DNA 1.16 -- 23 February 2010}
-\begin{itemize}
- \item Improved: More flexible \code{recode} window with wildcards and more flexible statement selection.
- \item New feature: Regular expressions highlighter (can highlight keywords in the text).
- \item New feature: Progress bars are displayed when saving or loading big files.
- \item Bugfix: A message is now displayed when Java runs out of memory (i.\,e. Java Heap Space Error).
- \item Bugfix: A graphical error during the network export has been fixed. There is now a new status message log.
- \item The \code{DL edgelist} file format has been removed.
-\end{itemize}
-
-\section*{DNA 1.15 -- 31 December 2009}
-\begin{itemize}
- \item The \code{affiliation} algorithm has been modified: If the \code{combined} option is selected in the \code{agreement} panel, multiplex networks are now created.
- \item \code{Swap actor fields} option added to the \code{recode} function.
-\end{itemize}
-
-\section*{DNA 1.14 -- 30 November 2009}
-\begin{itemize}
- \item The combo boxes for actors and categories in the statement tooltips now have an autocomplete function. The corresponding list items are automatically selected if you enter some characters.
-\end{itemize}
-
-\section*{DNA 1.13 -- 30 October 2009}
-\begin{itemize}
- \item \code{ignore duplicates} option for the co-occurrence and affiliation algorithm
- \item \code{include isolates} option for the affiliation algorithm
-\end{itemize}
-
-\section*{DNA 1.12 -- 25 October 2009}
-\begin{itemize}
- \item \sonia\ export filter
- \item Article import function
- \item Statement ID regex filter
-\end{itemize}
-
-\section*{DNA 1.11 -- 22 September 2009}
-\begin{itemize}
- \item Export component for time series/frequency statistics
-\end{itemize}
-
-\section*{DNA 1.10 -- 17 September 2009}
-\begin{itemize}
- \item Statement recoding component
- \item Export option for isolates in the co-occurrence algorithm
-\end{itemize}
-
-\section*{DNA 1.09 -- 05 September 2009}
-\begin{itemize}
- \item Rewritten coding module
- \item New data structure with statements saved separately from the text
- \item Statement list in a sidebar
- \item Statement filters
-\end{itemize}
-
-\section*{DNA 1.08 -- 02 August 2009}
-\begin{itemize}
- \item CSV list export was corrupt (bugfix)
-\end{itemize}
-
-\section*{DNA 1.07 -- 15 July 2009}
-\begin{itemize}
- \item Filtering hidden control sequences in article (bugfix)
- \item Improved edgelist export
-\end{itemize}
-
-\section*{DNA 1.06 -- 04 July 2009}
-\begin{itemize}
- \item Redesigned export window
- \item Commetrix export filter
- \item Exclude lists in the network export window
-\end{itemize}
-
-\section*{DNA 1.05 -- 21 June 2009}
-\begin{itemize}
- \item Many small improvements in the coding window
- \item GraphML labels embedded
-\end{itemize}
-
-\section*{DNA 1.04 -- 18 June 2009}
-\begin{itemize}
- \item Preventing user from inserting $<$, $>$, and " into text window (bugfix)
-\end{itemize}
-
-\section*{DNA 1.03 -- 03 June 2009}
-\begin{itemize}
- \item Export filters for CSV matrix and DL fullmatrix
-\end{itemize}
-
-\section*{DNA 1.02 -- 28 May 2009}
-\begin{itemize}
- \item Support for Eastern languages was corrupt on non-Unix systems (bugfix)
-\end{itemize}
-
-\section*{DNA 1.01 -- 17 April 2009}
-\begin{itemize}
- \item Export window was not opened when range of dates was $<$ 20 (bugfix)
-\end{itemize}
-
-\section*{DNA 1.00 -- 16 April 2009}
-\begin{itemize}
- \item First public release of the \dnalong
-\end{itemize}
-
 
 \bibliographystyle{apalike}
 \bibliography{dna}

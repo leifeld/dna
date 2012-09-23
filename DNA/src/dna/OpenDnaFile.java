@@ -15,6 +15,8 @@ import java.util.regex.Pattern;
 import javax.swing.JEditorPane;
 import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
+import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLEditorKit;
 
 import org.jdom.CDATA;
 import org.jdom.Comment;
@@ -29,6 +31,7 @@ public class OpenDnaFile implements Runnable {
 	
 	String filename;
 	ProgressMonitor progressMonitor;
+	JEditorPane invisibleTextArea;
 	
 	public OpenDnaFile(String infile) {
 		this.filename = infile;
@@ -39,6 +42,14 @@ public class OpenDnaFile implements Runnable {
 		dna.Dna.mainProgram.clearSpace();
 		
 		Dna.mainProgram.setRowSorterEnabled(true);
+		
+    	invisibleTextArea = new JEditorPane();
+    	invisibleTextArea.setContentType("text/html");
+    	invisibleTextArea.setEditable(false);
+		HTMLEditorKit kit = new HTMLEditorKit();
+		HTMLDocument doc = (HTMLDocument)(kit.createDefaultDocument());
+		invisibleTextArea.setEditorKit(kit);
+		invisibleTextArea.setDocument(doc);
 		
 		try {
 			SAXBuilder builder = new SAXBuilder( false );
@@ -62,6 +73,11 @@ public class OpenDnaFile implements Runnable {
 						Color color = new Color(red, green, blue);
 						RegexTerm rt = new RegexTerm(pattern, color);
 						dna.Dna.mainProgram.dc.regexTerms.add(rt);
+
+						Dna.mainProgram.regexManager.listModel.removeAllElements();
+						for (int j = 0; j < Dna.mainProgram.dc.regexTerms.size(); j++) {
+							Dna.mainProgram.regexManager.listModel.addElement(Dna.mainProgram.dc.regexTerms.get(j));
+						}
 					}
 				} else if (v.equals("1.21")) {
 					Element metadata = discourse.getChild("metadata");
@@ -77,6 +93,11 @@ public class OpenDnaFile implements Runnable {
 						Color color = new Color(red, green, blue);
 						RegexTerm rt = new RegexTerm(pattern, color);
 						dna.Dna.mainProgram.dc.regexTerms.add(rt);
+						
+						Dna.mainProgram.regexManager.listModel.removeAllElements();
+						for (int j = 0; j < Dna.mainProgram.dc.regexTerms.size(); j++) {
+							Dna.mainProgram.regexManager.listModel.addElement(Dna.mainProgram.dc.regexTerms.get(j));
+						}
 					}
 					
 					//load person types
@@ -212,22 +233,12 @@ public class OpenDnaFile implements Runnable {
 				    	int startInt = Integer.valueOf( start ).intValue();
 				    	int endInt = Integer.valueOf( end ).intValue();
 				    	
-				    	String selection = articleText.replaceAll("<br />", "\n");
-				    	
-				    	try {
-				    		if (endInt > selection.length() + 1) {
-				    			endInt = selection.length() + 1;
-				    			System.out.println("End position of statement " + id + " was corrected.");
-				    		}
-				    		if (startInt > selection.length()) {
-				    			startInt = selection.length();
-				    			System.out.println("Start position of statement " + id + " was corrected.");
-				    		}
-				    		
-				    		selection = selection.substring(startInt-1, endInt-1);
-				    	} catch (StringIndexOutOfBoundsException e) {
-				    		System.out.println("Statement text of statement " + id + " could not be identified.");
-				    	}
+				    	int artRow = Dna.mainProgram.dc.ac.getRowIndexByTitle(title);
+				    	String artText = Dna.mainProgram.dc.ac.get(artRow).getText();
+				    	invisibleTextArea.setText(artText);
+				    	invisibleTextArea.setSelectionStart(startInt);
+				    	invisibleTextArea.setSelectionEnd(endInt);
+				    	String selection = invisibleTextArea.getSelectedText();
 				    	
 						//put statements into the statement list
 						try {

@@ -288,7 +288,7 @@ public class Dna extends JFrame {
 			this.add(newFields, BorderLayout.CENTER);
 			this.add(buttons, BorderLayout.SOUTH);
 		}
-
+		
 		public class ColorChooserDemo extends JPanel {
 			JColorChooser chooser;
 			public ColorChooserDemo() {
