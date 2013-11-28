@@ -859,6 +859,7 @@ public class ExportWindow extends JFrame {
 			formatPanel.comsql.setSelected(true);
 			formatPanel.son.setEnabled(true);
 			agreementPanel.conflict.setEnabled(true);
+			agreementPanel.subtract.setEnabled(true);
 			CardLayout cl = (CardLayout)(cardPanel.getLayout());
 		    cl.show(cardPanel, "commetrixPanel");
 		    CardLayout cntl = (CardLayout)(cardNetworkTypePanel.getLayout());
@@ -878,10 +879,11 @@ public class ExportWindow extends JFrame {
 			formatPanel.csv.setEnabled(true);
 			formatPanel.mat.setSelected(true);
 			formatPanel.son.setEnabled(true);
-			if (agreementPanel.conflict.isSelected()) {
+			if (agreementPanel.conflict.isSelected() || agreementPanel.subtract.isSelected()) {
 				agreementPanel.yes.setSelected(true);
 			}
 			agreementPanel.conflict.setEnabled(false);
+			agreementPanel.subtract.setEnabled(false);
 			CardLayout cntl = (CardLayout)(cardNetworkTypePanel.getLayout());
 		    cntl.show(cardNetworkTypePanel, "twoModeTypePanel");
 			cardNetworkTypePanel.setEnabled(true);
@@ -904,10 +906,11 @@ public class ExportWindow extends JFrame {
 			CardLayout cntl = (CardLayout)(cardNetworkTypePanel.getLayout());
 		    cntl.show(cardNetworkTypePanel, "oneModeTypePanel");
 			cardNetworkTypePanel.setEnabled(true);
-			if (agreementPanel.conflict.isSelected()) {
+			if (agreementPanel.conflict.isSelected() || agreementPanel.subtract.isSelected()) {
 				agreementPanel.comb.setSelected(true);
 			}
 			agreementPanel.conflict.setEnabled(false);
+			agreementPanel.subtract.setEnabled(false);
 			CardLayout cl = (CardLayout)(cardPanel.getLayout());
 		    cl.show(cardPanel, "timeWindowPanel");
 		    coOccurrencePanel.reset();
@@ -926,10 +929,11 @@ public class ExportWindow extends JFrame {
 			CardLayout cntl = (CardLayout)(cardNetworkTypePanel.getLayout());
 		    cntl.show(cardNetworkTypePanel, "oneModeTypePanel");
 			cardNetworkTypePanel.setEnabled(true);
-			if (agreementPanel.conflict.isSelected()) {
+			if (agreementPanel.conflict.isSelected() || agreementPanel.subtract.isSelected()) {
 				agreementPanel.comb.setSelected(true);
 			}
 			agreementPanel.conflict.setEnabled(false);
+			agreementPanel.subtract.setEnabled(false);
 			CardLayout cl = (CardLayout)(cardPanel.getLayout());
 			cl.show(cardPanel, "attenuationPanel");
 			coOccurrencePanel.reset();
@@ -951,6 +955,7 @@ public class ExportWindow extends JFrame {
 		    cntl.show(cardNetworkTypePanel, "oneModeTypePanel");
 			cardNetworkTypePanel.setEnabled(true);
 			agreementPanel.conflict.setEnabled(true);
+			agreementPanel.subtract.setEnabled(true);
 			CardLayout cl = (CardLayout)(cardPanel.getLayout());
 			cl.show(cardPanel, "coOccurrencePanel");
 			coOccurrencePanel.reset();
@@ -966,10 +971,10 @@ public class ExportWindow extends JFrame {
 	
 	public class AgreementPanel extends JPanel {
 		
-		JRadioButton yes, no, comb, conflict;
+		JRadioButton yes, no, comb, conflict, subtract;
 		
 		public AgreementPanel() {
-			setLayout(new GridLayout(4,1));
+			setLayout(new GridLayout(5,1));
 			setBorder( new TitledBorder( new EtchedBorder(), "Agreement" ) );
 
 			ActionListener agreementListener = new ActionListener() {
@@ -1002,6 +1007,13 @@ public class ExportWindow extends JFrame {
 					"yields a network of direct contradictions.</html>");
 			agreeGroup.add(conflict);
 			add(conflict);
+			subtract = new JRadioButton("subtract", false);
+			subtract.addActionListener(agreementListener);
+			subtract.setToolTipText("<html>Compute the 'combined' network and then <br>" +
+					"subtract the 'conflict' network from it. This yields a signed, <br>" +
+					"valued network containing both agreement and conflict.</html>");
+			agreeGroup.add(subtract);
+			add(subtract);
 		}
 		
 		public void reset() {
@@ -1396,6 +1408,8 @@ public class ExportWindow extends JFrame {
 				agreement = "combined";
 			} else if (agreementPanel.conflict.isSelected()) {
 				agreement = "conflict";
+			} else if (agreementPanel.subtract.isSelected()) {
+				agreement = "subtract";
 			}
 			
 			String algorithm = "";

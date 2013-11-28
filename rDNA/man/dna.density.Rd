@@ -3,8 +3,8 @@
 \title{Compute density for matrices}
 \description{Compute the within- and between-block density for weighted or binary network matrices.}
 \usage{
-dna.density(network.matrix, partitions="", weighted=FALSE, 
-  verbose=FALSE)
+dna.density(network.matrix, partitions = "", weighted = FALSE, 
+    verbose = FALSE)
 }
 \arguments{
 \item{network.matrix}{A co-occurrence or adjacency network which is saved as a matrix object. It should have the correct row and column labels assigned, otherwise partitions will not work.}
@@ -35,14 +35,11 @@ Philip Leifeld (\url{http://www.philipleifeld.de})
 }
 \examples{
 # download files and initialize DNA:
-download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.29.jar", 
-  destfile="dna-1.29.jar", mode="wb")
-download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
-  destfile="sample.dna", mode="wb")
-library(rDNA)
-dna.init("dna-1.29.jar")
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/dna-1.30.jar",
+    destfile = "dna-1.30.jar", mode = "wb")
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
+    destfile = "sample.dna", mode = "wb")
+dna.init("dna-1.30.jar")
 
 # create network matrix
 nw <- dna.network("sample.dna")
@@ -54,5 +51,5 @@ dna.density(nw)
 groups <- c("Con", "Con", "Con", "Pro", "Pro", "Pro", "Con")
 
 # compute (weighted) density by partition
-dna.density(nw, partitions=groups, weighted=TRUE)
+dna.density(nw, partitions = groups, weighted = TRUE)
 }

@@ -3,7 +3,7 @@
 \title{Start DNA GUI}
 \description{Start the GUI of the Java software Discourse Network Analyzer.}
 \usage{
-dna.gui(memory=1024)
+dna.gui(memory = 1024)
 }
 \arguments{
 \item{memory}{The amount of memory to allocate for DNA. By default, 1024 MB will be allocated. This should be enough for most .dna files. If your computer is low on memory, you may set it to 512 or 256. If your file is very large and your computer has enough RAM, you can allocate 2048 MB or more.}
@@ -24,10 +24,9 @@ to \R.
 Philip Leifeld (\url{http://www.philipleifeld.de})
 }
 \examples{
-download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.29.jar", 
-  destfile="dna-1.29.jar", mode="wb")
-dna.init("dna-1.29.jar")
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/dna-1.30.jar",
+    destfile = "dna-1.30.jar", mode = "wb")
+dna.init("dna-1.30.jar")
 \dontrun{
 dna.gui()
 }

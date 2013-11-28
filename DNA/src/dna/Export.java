@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Locale;
@@ -95,7 +96,7 @@ public class Export {
 			String[] excludeCategories,
 			GregorianCalendar start,
 			GregorianCalendar stop,
-			String agreement, //yes, no, combined, conflict
+			String agreement, //yes, no, combined, conflict, subtract
 			String algorithm, //affiliation, cooccurrence, timewindow, attenuation, dynamic, edgelist
 			String format, //csvmatrix, csvlist, dl, graphml, sonia, commetrix
 			String twoModeType, //oc, pc, po
@@ -842,12 +843,23 @@ public class Export {
 									frequency++;
 								}
 							}
-						} else {
+						} else if (agreement.equals("combined")) {
 							for (int k = 0; k < class2.size(); k++) {
 								for (int m = 0; m < agList.size(); m++) {
 									if (threeMode[i][k][m] > 0 && threeMode[j][k][m] > 0) {
 										frequency++;
 									}
+								}
+							}
+						} else if (agreement.equals("subtract")) {
+							for (int k = 0; k < class2.size(); k++) {
+								for (int m = 0; m < agList.size(); m++) {
+									if (threeMode[i][k][m] > 0 && threeMode[j][k][m] > 0) {
+										frequency++;
+									}
+								}
+								if ( (threeMode[i][k][0] > 0 && threeMode[j][k][1] > 0) || (threeMode[i][k][1] > 0 && threeMode[j][k][0] > 0) ) {
+									frequency--;
 								}
 							}
 						}
@@ -858,12 +870,23 @@ public class Export {
 									frequency = frequency + (threeMode[i][k][0] * threeMode[j][k][1]) + (threeMode[i][k][1] * threeMode[j][k][0]);
 								}
 							}
-						} else {
+						} else if (agreement.equals("combined")) {
 							for (int k = 0; k < class2.size(); k++) {
 								for (int m = 0; m < agList.size(); m++) {
 									if (threeMode[i][k][m] > 0 && threeMode[j][k][m] > 0) {
 										frequency = frequency + (threeMode[i][k][m] * threeMode[j][k][m]);
 									}
+								}
+							}
+						} else if (agreement.equals("subtract")) {
+							for (int k = 0; k < class2.size(); k++) {
+								for (int m = 0; m < agList.size(); m++) { //first, add 'combined' ties
+									if (threeMode[i][k][m] > 0 && threeMode[j][k][m] > 0) {
+										frequency = frequency + (threeMode[i][k][m] * threeMode[j][k][m]);
+									}
+								}
+								if ( (threeMode[i][k][0] > 0 && threeMode[j][k][1] > 0) || (threeMode[i][k][1] > 0 && threeMode[j][k][0] > 0) ) { //then, subtract conflict ties
+									frequency = frequency - (threeMode[i][k][0] * threeMode[j][k][1]) + (threeMode[i][k][1] * threeMode[j][k][0]);
 								}
 							}
 						}
@@ -872,6 +895,7 @@ public class Export {
 				results[i][j] = frequency;
 			}
 		}
+		
 		if (verbose == true) {
 			System.out.println("done.");
 		}
@@ -917,7 +941,7 @@ public class Export {
 		int count = 1;
 		for (int i = 0; i < class1.size(); i++) {
 			for (int j = 0; j < class1.size(); j++) {
-				if (results[i][j] > 0) {
+				if (results[i][j] != 0) {
 					graph.addEdge(new DnaGraphEdge(count, results[i][j], graph.getVertex(i+1), graph.getVertex(j+1)));
 					count++;
 				}
@@ -1233,6 +1257,64 @@ public class Export {
 		}
 	}
 	
+	//relational event code; inserted 2013-03-06
+	public class RelEvent {
+		
+		int time;
+		String source;
+		String target;
+		double weight;
+		String type;
+		
+		public RelEvent(int time, String source, String target, double weight, String type) {
+			this.time = time;
+			this.source = source;
+			this.target = target;
+			this.weight = weight;
+			this.type = type;
+		}
+		
+		public int getTime() {
+			return time;
+		}
+
+		public void setTime(int time) {
+			this.time = time;
+		}
+
+		public String getSource() {
+			return source;
+		}
+
+		public void setSource(String source) {
+			this.source = source;
+		}
+
+		public String getTarget() {
+			return target;
+		}
+
+		public void setTarget(String target) {
+			this.target = target;
+		}
+
+		public double getWeight() {
+			return weight;
+		}
+
+		public void setWeight(double weight) {
+			this.weight = weight;
+		}
+
+		public String getType() {
+			return type;
+		}
+
+		public void setType(String type) {
+			this.type = type;
+		}
+	}
+	
 	/**
 	 * Generate a simple graph using the attenuation algorithm.
 	 */
@@ -1276,6 +1358,13 @@ public class Export {
 		long time;
 		double days;
 		String agree;
+		
+		
+		
+		//relational event code; inserted 2013-03-06
+		ArrayList<RelEvent> eventlist = new ArrayList<RelEvent>();
+		
+		
 		
 		for (int l = 0; l < 2; l++) {
 			
@@ -1332,6 +1421,29 @@ public class Export {
 											referrals[i][j][l] = referrals[i][j][l] + ( Math.exp(days*lambda * (-1)) / actorList.get(i).conceptList.get(k).dateList.size() );
 										} else {
 											referrals[i][j][l] = referrals[i][j][l] + Math.exp(days*lambda * (-1)); //without normalization
+											
+											
+											
+											//relational event code; inserted 2013-03-06
+											GregorianCalendar evCal = actorList.get(i).conceptList.get(k).dateList.get(m);
+											Date dt = evCal.getTime();
+											SimpleDateFormat df = new SimpleDateFormat( "yyyyMMdd" );
+											String evTime = df.format( dt );
+											int evTimeInt = Integer.parseInt(evTime);
+											
+											double evWeight = Math.exp(days*lambda * (-1));
+											String evSource = actorList.get(i).getId();
+											String evTarget = actorList.get(j).getId();
+											String evType;
+											if (l == 0) {
+												evType = "congruence";
+											} else {
+												evType = "conflict";
+											}
+											eventlist.add(new RelEvent(evTimeInt, evSource, evTarget, evWeight, evType));
+											
+											
+											
 										}
 									}
 									m++;
@@ -1399,6 +1511,31 @@ public class Export {
 			System.out.println("done.");
 			System.out.println(graph.countVertices() + " vertices and " + graph.countEdges() + " edges with a mean edge weight of " + String.format(new Locale("en"), "%.2f", graph.getMeanWeight()) + ".");
 		}
+		
+		
+		//relational event code; inserted 2013-03-06
+		String of = "/home/philip/events.csv";
+		try {
+			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(of), "UTF8"));
+			out.write("time;source;target;weight;type\n");
+			for (int i = 0; i < eventlist.size(); i++) {
+				int t = eventlist.get(i).getTime();
+				double w = eventlist.get(i).getWeight();
+				String sc = eventlist.get(i).getSource();
+				String tg = eventlist.get(i).getTarget();
+				String ty = eventlist.get(i).getType();
+				out.write(t + ";" + sc + ";" + tg + ";" + w + ";" + ty + "\n");
+			}
+			out.close();
+			if (verbose == true) {
+				System.out.println("File has been exported to \"" + of + "\".");
+			}
+		} catch (IOException e) {
+			System.err.println("Error while saving CSV file.");
+		}
+		
+		
+		
 	}
 	
 	/**
@@ -3189,7 +3326,7 @@ public class Export {
 			
 			ArrayList<String> c1list = new ArrayList<String>();
 			for (int i = 0; i < class1.size(); i++) {
-				if (!c1list.contains(class1.get(i)) && !class1.get(i).equals("")) {
+				if (!c1list.contains(class1.get(i))) {
 					c1list.add(class1.get(i));
 				}
 			}

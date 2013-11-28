@@ -23,10 +23,9 @@ dna-1.29.jar file to the method.
 Philip Leifeld (\url{http://www.philipleifeld.de})
 }
 \examples{
-download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.29.jar", 
-  destfile="dna-1.29.jar", mode="wb")
-dna.init("dna-1.29.jar")
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/dna-1.30.jar",
+    destfile = "dna-1.30.jar", mode = "wb")
+dna.init("dna-1.30.jar")
 }
 \keyword{Programming|programming|interface}
 \keyword{Programming|IO}

@@ -3,14 +3,17 @@
 \title{Get network data}
 \description{Convert a .dna file into a sociomatrix and import it into R.}
 \usage{
-dna.network(infile, algorithm="cooccurrence", agreement="combined", 
-  start.date="01.01.1900", stop.date="31.12.2099", two.mode.type="oc", 
-  one.mode.type="organizations", via="categories", ignore.duplicates=TRUE, 
-  include.isolates=FALSE, normalization=FALSE, window.size=100, 
-  step.size=1, alpha=100, lambda=0.1, ignore.agreement=FALSE, 
-  exclude.persons=c(""), exclude.organizations=c(""), 
-  exclude.categories=c(""), invert.persons=FALSE, 
-  invert.organizations=FALSE, invert.categories=FALSE, verbose=TRUE)
+dna.network(infile, algorithm = "cooccurrence", 
+    agreement = "combined", start.date = "01.01.1900", 
+    stop.date = "31.12.2099", two.mode.type = "oc", 
+    one.mode.type = "organizations", via = "categories", 
+    ignore.duplicates = TRUE, include.isolates = FALSE, 
+    normalization = FALSE, window.size = 100, step.size = 1, 
+    alpha = 100, lambda = 0.1, ignore.agreement = FALSE, 
+    exclude.persons = c(""), exclude.organizations = c(""), 
+    exclude.categories = c(""), invert.persons = FALSE, 
+    invert.organizations = FALSE, invert.categories = FALSE, 
+    verbose = TRUE)
 }
 \details{
 Specify an input .dna file, specify options for generating a network, 
@@ -52,32 +55,29 @@ Philip Leifeld (\url{http://www.philipleifeld.de})
 }
 \examples{
 # download files and initialize DNA:
-download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.29.jar", 
-  destfile="dna-1.29.jar", mode="wb")
-download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
-  destfile="sample.dna", mode="wb")
-library(rDNA)
-dna.init("dna-1.29.jar")
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/dna-1.30.jar",
+    destfile = "dna-1.30.jar", mode = "wb")
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
+    destfile = "sample.dna", mode = "wb")
+dna.init("dna-1.30.jar")
 
 \dontrun{
 # plot a congruence network using the statnet package:
-congruence <- dna.network("sample.dna", exclude.categories=
+congruence <- dna.network("sample.dna", exclude.categories = 
   "There should be legislation to regulate emissions.")
-library(statnet)
+library("network")
 congruence.nw <- network(congruence)
-plot(congruence.nw, displaylabels=TRUE, label.cex=0.6, pad=0.8)
+plot(congruence.nw, displaylabels = TRUE, label.cex = 0.6, pad = 0.8)
 }
 
 # do a hierarchical cluster analysis with an affiliation network:
-affiliation.yes <- dna.network("sample.dna", algorithm="affiliation", 
-  agreement="yes", include.isolates=TRUE)
-affiliation.no <- dna.network("sample.dna", algorithm="affiliation", 
-  agreement="no", include.isolates=TRUE)
+affiliation.yes <- dna.network("sample.dna", algorithm = "affiliation", 
+    agreement = "yes", include.isolates = TRUE)
+affiliation.no <- dna.network("sample.dna", algorithm = "affiliation", 
+    agreement = "no", include.isolates = TRUE)
 affiliation <- cbind(affiliation.yes, affiliation.no)
-affiliation <- affiliation[rowSums(affiliation) > 0,] #remove isolates
-distances <- dist(affiliation, method="binary")
+affiliation <- affiliation[rowSums(affiliation) > 0, ] #remove isolates
+distances <- dist(affiliation, method = "binary")
 clustering <- hclust(distances)
 plot(clustering)
 }

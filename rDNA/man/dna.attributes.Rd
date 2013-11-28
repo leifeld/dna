@@ -3,7 +3,7 @@
 \title{Get actor attributes}
 \description{Transfer the attributes of persons or organizations to \R.}
 \usage{
-dna.attributes(infile, organizations=TRUE, verbose=TRUE)
+dna.attributes(infile, organizations = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{infile}{ The input .dna file as a string (i.e., enclosed in quotation marks). If the file is not in the current working directory, specify the path together with the file name. Include the file suffix. Example: \code{sample.dna}. }
@@ -26,14 +26,12 @@ and \code{color} (the \acronym{RGB} color used in \acronym{DNA}).
 Philip Leifeld (\url{http://www.philipleifeld.de})
 }
 \examples{
-download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/dna-1.29.jar", 
-  destfile="dna-1.29.jar", mode="wb")
-download.file(
-  "http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
-  destfile="sample.dna", mode="wb")
-dna.init("dna-1.29.jar")
-attributes <- dna.attributes("sample.dna", organizations=TRUE)
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/dna-1.30.jar",
+    destfile = "dna-1.30.jar", mode = "wb")
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
+    destfile = "sample.dna", mode = "wb")
+dna.init("dna-1.30.jar")
+attributes <- dna.attributes("sample.dna", organizations = TRUE)
 }
 \keyword{Programming|programming|interface}
 \keyword{Programming|IO}

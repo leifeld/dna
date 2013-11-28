@@ -1,47 +1,38 @@
-# rDNA 1.29
-# http://www.philipleifeld.de
-# Philip Leifeld <philip.leifeld@uni-konstanz.de>
-# 2011-10-16
 
-require(rJava)
-
-dnaEnvironment <- new.env(hash=TRUE, parent=emptyenv())
+dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 
 dna.init <- function(dna.jar.file) {
-  assign("dnaJarString", dna.jar.file, pos=dnaEnvironment)
-  .jinit(dna.jar.file, force.init=TRUE)
+  assign("dnaJarString", dna.jar.file, pos = dnaEnvironment)
+  .jinit(dna.jar.file, force.init = TRUE)
 }
 
-dna.gui <- function(memory=1024){
+dna.gui <- function(memory = 1024){
   djs <- dnaEnvironment[["dnaJarString"]]
   if (is.null(djs)) {
     stop("You should run dna.init() first. See ?dna.init for details.")
   } else {
-    system(paste("java -jar -Xmx", memory, "M ", djs, sep=""))
+    system(paste("java -jar -Xmx", memory, "M ", djs, sep = ""))
   }
 }
 
-dna.network <- function(infile, algorithm="cooccurrence", agreement="combined", 
-  start.date="01.01.1900", stop.date="31.12.2099", two.mode.type="oc", 
-  one.mode.type="organizations", via="categories", ignore.duplicates=TRUE, 
-  include.isolates=FALSE, normalization=FALSE, window.size=100, step.size=1, 
-  alpha=100, lambda=0.1, ignore.agreement=FALSE, exclude.persons=c(""), 
-  exclude.organizations=c(""), exclude.categories=c(""), invert.persons=FALSE, 
-  invert.organizations=FALSE, invert.categories=FALSE, verbose=TRUE
-) {
-  check <- require(rJava)
-  if (check == FALSE) {
-    stop(paste("DNA depends on the package rJava. Please ", 
-    "install rJava before using DNA."), sep="")
-  } else if (algorithm == "sonia") {
+dna.network <- function(infile, algorithm = "cooccurrence", 
+    agreement = "combined", start.date = "01.01.1900", stop.date = "31.12.2099",
+    two.mode.type = "oc", one.mode.type = "organizations", via = "categories", 
+    ignore.duplicates = TRUE, include.isolates = FALSE, normalization = FALSE, 
+    window.size = 100, step.size = 1, alpha = 100, lambda = 0.1, 
+    ignore.agreement = FALSE, exclude.persons = c(""), 
+    exclude.organizations = c(""), exclude.categories = c(""), 
+    invert.persons = FALSE, invert.organizations = FALSE, 
+    invert.categories = FALSE, verbose = TRUE) {
+  if (algorithm == "sonia") {
     stop(paste("SoNIA and rSoNIA are not supported. Please ", 
-    "use the GUI of DNA instead."), sep="")
+    "use the GUI of DNA instead."), sep = "")
   } else if (algorithm == "dynamic") {
     stop(paste("Dynamic algorithms like SoNIA and Commetrix ", 
-    "are not supported. Please use the GUI of DNA instead."), sep="")
+    "are not supported. Please use the GUI of DNA instead."), sep = "")
   } else if (algorithm == "commetrix") {
     stop(paste("Commetrix is not supported in the R version of DNA. ", 
-    "Please use the GUI of DNA instead."), sep="")
+    "Please use the GUI of DNA instead."), sep = "")
   } else {
     if (length(exclude.persons) == 0) {
       exclude.persons <- c("", "")
@@ -72,9 +63,9 @@ dna.network <- function(infile, algorithm="cooccurrence", agreement="combined",
     num.rows <- length(matObj) #calculate the number of rows of the sociomatrix
     num.cols <- length(matObj[[1]]) #calculate the number of columns of matrix
     #create a matrix with these dimensions
-    mat <- matrix(nrow=num.rows, ncol=num.cols)
+    mat <- matrix(nrow = num.rows, ncol = num.cols)
     for (i in 1:length(matObj)) {
-      mat[i,] <- .jevalArray(matObj[[i]]) #fill matrix with rows from the list
+      mat[i, ] <- .jevalArray(matObj[[i]]) #fill matrix with rows from the list
     }
     #pull the row labels into R
     row.labels <- .jcall(export, "[S", "getMatrixLabels", TRUE)
@@ -89,7 +80,7 @@ dna.network <- function(infile, algorithm="cooccurrence", agreement="combined",
     }
 }
 
-dna.attributes <- function(infile, organizations=TRUE, verbose=TRUE) {
+dna.attributes <- function(infile, organizations = TRUE, verbose = TRUE) {
   file <- .jnew("dna/Export", infile, verbose)
   if (organizations == TRUE) {
     names <- .jcall(file, "[S", "exportAttributes", TRUE, 0)
@@ -112,12 +103,11 @@ dna.attributes <- function(infile, organizations=TRUE, verbose=TRUE) {
   return(data)
 }
 
-dna.density <- function(network.matrix, partitions="", weighted=FALSE, 
-  verbose=FALSE
-) {
+dna.density <- function(network.matrix, partitions = "", weighted = FALSE, 
+    verbose = FALSE) {
   x <- dim(network.matrix)[1]
   y <- dim(network.matrix)[2]
-  numCells <- x*y
+  numCells <- x * y
   
   if (length(partitions) <= 1) {
     density <- 0
@@ -151,7 +141,7 @@ dna.density <- function(network.matrix, partitions="", weighted=FALSE,
       partitions <- matrix(partitions)
     }
     if (length(rownames(partitions)) == 0 && length(partitions) == 
-        length(network.matrix[,1])
+        length(network.matrix[, 1])
     ) {
       rownames(partitions) <- rownames(network.matrix)
     }
@@ -162,8 +152,9 @@ dna.density <- function(network.matrix, partitions="", weighted=FALSE,
       }
     }
     
-    groupDensityTable <- matrix(0, nrow=length(groups), ncol=length(groups))
-    groupFrequencyTable <- matrix(0, nrow=length(groups), ncol=length(groups))
+    groupDensityTable <- matrix(0, nrow = length(groups), ncol = length(groups))
+    groupFrequencyTable <- matrix(0, nrow = length(groups), 
+        ncol = length(groups))
     
     for (i in 1:x) {
       for (j in 1:y) {
@@ -189,19 +180,19 @@ dna.density <- function(network.matrix, partitions="", weighted=FALSE,
           }
         }
         if (weighted == TRUE) {
-          groupDensityTable[rowCounter,colCounter] <- 
-            groupDensityTable[rowCounter,colCounter] + network.matrix[i,j]
+          groupDensityTable[rowCounter, colCounter] <- 
+            groupDensityTable[rowCounter, colCounter] + network.matrix[i, j]
         } else if (weighted == FALSE) {
-          if (network.matrix[i,j] > 0) {
+          if (network.matrix[i, j] > 0) {
             value <- 1
           } else {
             value <- 0
           }
-          groupDensityTable[rowCounter,colCounter] <- 
-            groupDensityTable[rowCounter,colCounter] + value
+          groupDensityTable[rowCounter, colCounter] <- 
+            groupDensityTable[rowCounter, colCounter] + value
         }
-        groupFrequencyTable[rowCounter,colCounter] <- 
-          groupFrequencyTable[rowCounter,colCounter] + 1
+        groupFrequencyTable[rowCounter, colCounter] <- 
+          groupFrequencyTable[rowCounter, colCounter] + 1
       }
     }
     
@@ -237,21 +228,21 @@ dna.density <- function(network.matrix, partitions="", weighted=FALSE,
 }
 
 
-dna.timeseries <- function(infile, persons=FALSE, time.unit="month", 
-  ignore.duplicates="article", separate.actors=TRUE, start.date="first", 
-  stop.date="last", include.persons="all", include.organizations="all", 
-  include.categories="all", invert.persons=FALSE, invert.organizations=FALSE, 
-  invert.categories=FALSE, agreement="combined", verbose=TRUE
-) {
+dna.timeseries <- function(infile, persons = FALSE, time.unit = "month", 
+    ignore.duplicates = "article", separate.actors = TRUE, start.date = "first",
+    stop.date = "last", include.persons = "all", include.organizations = "all", 
+    include.categories = "all", invert.persons = FALSE, 
+    invert.organizations = FALSE, invert.categories = FALSE, 
+    agreement = "combined", verbose = TRUE) {
   if (time.unit != "month" && time.unit != "year" && time.unit != "total") {
     stop(parse("time.unit argument could not be parsed. Valid values ", 
-      "are: \"month\", \"year\", \"total\"."), sep="")
+      "are: \"month\", \"year\", \"total\"."), sep = "")
   }
   if (ignore.duplicates != "article" && ignore.duplicates != "month" 
     && ignore.duplicates != "off"
   ) {
     stop(paste("ignore.duplicates argument could not be parsed. Valid values ", 
-      "are: \"article\", \"month\", \"off\"."), sep="")
+      "are: \"article\", \"month\", \"off\"."), sep = "")
   }
   if (length(include.persons) == 1) {
     if (include.persons == "all") {
@@ -259,7 +250,7 @@ dna.timeseries <- function(infile, persons=FALSE, time.unit="month",
     } else if (class(include.persons) == "character") {
       include.persons <- c(include.persons, include.persons)
     } else {
-      stop("Try include.persons=c(\"name 1\", \"name 2\").")
+      stop("Try include.persons = c(\"name 1\", \"name 2\").")
     }
   }
   if (length(include.organizations) == 1) {
@@ -268,7 +259,7 @@ dna.timeseries <- function(infile, persons=FALSE, time.unit="month",
     } else if (class(include.organizations) == "character") {
       include.organizations <- c(include.organizations, include.organizations)
     } else {
-      stop("Try include.organizations=c(\"name 1\", \"name 2\").")
+      stop("Try include.organizations = c(\"name 1\", \"name 2\").")
     }
   }
   if (length(include.categories) == 1) {
@@ -282,7 +273,7 @@ dna.timeseries <- function(infile, persons=FALSE, time.unit="month",
   }
   if (agreement != "combined" && agreement != "yes" && agreement != "no") {
     stop(paste("agreement argument could not be parsed. Valid values ", 
-      "are: \"yes\", \"no\", \"combined\"."), sep="")
+      "are: \"yes\", \"no\", \"combined\"."), sep = "")
   }
   export <- .jnew("dna/TimeSeriesExporter", infile, persons, time.unit, 
     ignore.duplicates, separate.actors, start.date, stop.date, include.persons, 
@@ -294,9 +285,9 @@ dna.timeseries <- function(infile, persons=FALSE, time.unit="month",
   num.rows <- length(matObj) #calculate the number of rows of the sociomatrix
   num.cols <- length(matObj[[1]]) #calculate number of columns of the matrix
   #create a matrix with these dimensions
-  mat <- matrix(nrow=num.rows, ncol=num.cols)
+  mat <- matrix(nrow = num.rows, ncol = num.cols)
   for (i in 1:length(matObj)) {
-    mat[i,] <- .jevalArray(matObj[[i]]) #fill matrix with the rows from the list
+    mat[i, ] <- .jevalArray(matObj[[i]]) #fill matrix with rows from the list
   }
   row.labels <- .jcall(export, "[S", "getRowLabels") #pull the row labels into R
   col.labels <- .jcall(export, "[S", "getColumnLabels") #pull the column labels
@@ -308,7 +299,7 @@ dna.timeseries <- function(infile, persons=FALSE, time.unit="month",
   return(mat) #return the matrix
 }
 
-dna.categories <- function(infile, verbose=TRUE) {
+dna.categories <- function(infile, verbose = TRUE) {
   file <- .jnew("dna/Export", infile, verbose)
   categories <- .jcall(file, "[S", "getCategories")
   
