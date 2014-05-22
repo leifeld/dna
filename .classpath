@@ -4,5 +4,6 @@
 	<classpathentry kind="lib" path="DNA/lib/jdom.jar"/>
 	<classpathentry kind="lib" path="DNA/lib/swingx-core-1.6.2.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="DNA/lib/sqlite-jdbc-3.7.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
