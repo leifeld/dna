@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -74,6 +73,83 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
+	}
+	
+	/**
+	 * Execute a statement on the database and get the ID of the row.
+	 * 
+	 * @param myStatement  A string representation of the SQL statement.
+	 * @return             The ID of the row that was changed.
+	 */
+	public int executeStatementForId(String myStatement) {
+		Connection connection = null;
+		Statement statement = null;
+		ResultSet resultSet = null;
+		int id = -1;
+		try {
+			connection = getConnection();
+			statement = connection.createStatement();
+			statement.execute(myStatement);
+			resultSet = statement.executeQuery(
+					"SELECT sqlite3_last_insert_rowid()"
+					);
+			if (resultSet.next()) {
+				do {
+					id = resultSet.getInt(1);
+				} while (resultSet.next());
+			}
+			resultSet.close();
+			statement.close();
+			connection.close();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try { statement.close(); } catch(Exception e) {}
+			try { connection.close(); } catch(Exception e) {}
+		}
+		
+		if (id == -1) {
+			System.err.println("ID could not be retrieved.");
+		}
+		return(id);
+	}
+	
+	/**
+	 * Execute a query on the database.
+	 * 
+	 * @param myQuery  A string representation of an SQL query.
+	 * @return         An array list with objects.
+	 */
+	public ArrayList<Object> executeQuery(String myQuery) {
+		ArrayList<Object> al = new ArrayList<Object>();
+		
+		Connection connection = null;
+		Statement statement = null;
+		ResultSet resultSet = null;
+		try {
+			connection = getConnection();
+			statement = connection.createStatement();
+			resultSet = statement.executeQuery(myQuery);
+			if (resultSet.next()) {
+				do {
+					al.add(resultSet.getObject(1));
+				} while (resultSet.next());
+			}
+			resultSet.close();
+			statement.close();
+			connection.close();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try { statement.close(); } catch(Exception e) {}
+			try { connection.close(); } catch(Exception e) {}
+		}
+		
+		return(al);
 	}
 	
 	/**
@@ -211,6 +287,24 @@ public class DataAccess {
 			try { connection.close(); } catch(Exception e) {}
 		}
 	}
+
+	/**
+	 * Delete a statement type (if there are no statements of this type left).
+	 * 
+	 * @param label  The statement type to be removed.
+	 */
+	public void removeStatementType(String label) {
+		ArrayList<?> al = executeQuery(
+				"SELECT ID FROM STATEMENTS WHERE Type = " + label);
+		if (al.size() != 0) {
+			System.err.println("Statement type cannot be removed because " +
+					"there are still some statements of this type.");
+		} else {
+			executeStatement(
+					"DELETE FROM STATEMENTTYPE WHERE Label = " + label
+					);
+		}
+	}
 	
 	/**
 	 * Add a statement to the STATEMENTS table.
@@ -222,45 +316,14 @@ public class DataAccess {
 	 * @return               ID of the newly created statement.
 	 */
 	public int addStatement(String type, int doc, int start, int stop) {
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet resultSet = null;
-		int id = -1;
-		
-		try {
-			connection = getConnection();
-			statement = connection.createStatement();
-			statement.execute(
-					"INSERT INTO STATEMENTS (Type, Document, Start, Stop) " +
-					"VALUES(" + type + ", " + doc + ", " + start + ", " + 
-					stop + ")"
-					);
-			resultSet = statement.executeQuery(
-					"SELECT sqlite3_last_insert_rowid()"
-					);
-			if (resultSet.next()) {
-				do {
-					id = resultSet.getInt(1);
-				} while (resultSet.next());
-			}
-			statement.execute(
-					"INSERT INTO " + type + " (StatementID) VALUES (" + id + ")"
-					);
-			resultSet.close();
-			statement.close();
-			connection.close();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			try { statement.close(); } catch(Exception e) {}
-			try { connection.close(); } catch(Exception e) {}
-		}
-		
-		if (id == -1) {
-			System.err.println("Last statement ID could not be retrieved.");
-		}
+		int id = executeStatementForId(
+				"INSERT INTO STATEMENTS (Type, Document, Start, Stop) " +
+				"VALUES(" + type + ", " + doc + ", " + start + ", " + 
+				stop + ")"
+				);
+		executeStatement(
+				"INSERT INTO " + type + " (StatementID) VALUES (" + id + ")"
+				);
 		return id;
 	}
 	
@@ -271,39 +334,11 @@ public class DataAccess {
 	 * @return             Type of the statement in the STATEMENTS table.
 	 */
 	public String getStatementType(int statementId) {
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet resultSet = null;
-		String type = null;
-		
-		try {
-			connection = getConnection();
-			statement = connection.createStatement();
-			resultSet = statement.executeQuery(
-					"SELECT Type FROM STATEMENTS WHERE ID = " + statementId
-					);
-			if (resultSet.next()) {
-				do {
-					type = resultSet.getString(1);
-				} while (resultSet.next());
-			}
-			resultSet.close();
-			statement.close();
-			connection.close();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			try { statement.close(); } catch(Exception e) {}
-			try { connection.close(); } catch(Exception e) {}
-		}
-		
-		if (type == null) {
-			System.err.println("Statement type could not be retrieved for " +
-					"ID " + statementId + ".");
-		}
-		return type;
+		ArrayList<?> al = executeQuery(
+				"SELECT Type FROM STATEMENTS WHERE ID = " + statementId);
+		@SuppressWarnings("unchecked")
+		ArrayList<String> types = (ArrayList<String>) al;
+		return(types.get(1));
 	}
 	
 	/**
@@ -324,39 +359,11 @@ public class DataAccess {
 	 * @return            Data type of the variable from the VARIABLES table.
 	 */
 	public String getDataType(int variableId) {
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet resultSet = null;
-		String dataType = null;
-		
-		try {
-			connection = getConnection();
-			statement = connection.createStatement();
-			resultSet = statement.executeQuery(
-					"SELECT DataType FROM VARIABLES WHERE ID = " + variableId
-	        );
-			if (resultSet.next()) {
-				do {
-					dataType = resultSet.getString(1);
-				} while (resultSet.next());
-			}
-			resultSet.close();
-			statement.close();
-			connection.close();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			try { statement.close(); } catch(Exception e) {}
-			try { connection.close(); } catch(Exception e) {}
-		}
-
-		if (dataType == null) {
-			System.err.println("The data type of variable " + variableId + 
-					" could not be retrieved.");
-		}
-		return dataType;
+		ArrayList<?> al = executeQuery(
+				"SELECT DataType FROM VARIABLES WHERE ID = " + variableId);
+		@SuppressWarnings("unchecked")
+		ArrayList<String> dataTypes = (ArrayList<String>) al;
+		return(dataTypes.get(1));
 	}
 
 	/**
@@ -366,39 +373,11 @@ public class DataAccess {
 	 * @return            Name of the variable from the VARIABLES table.
 	 */
 	public String getVariableName(int variableId) {
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet resultSet = null;
-		String varName = null;
-		
-		try {
-			connection = getConnection();
-			statement = connection.createStatement();
-			resultSet = statement.executeQuery(
-					"SELECT Variable FROM VARIABLES WHERE ID = " + variableId
-	        );
-			if (resultSet.next()) {
-				do {
-					varName = resultSet.getString(1);
-				} while (resultSet.next());
-			}
-			resultSet.close();
-			statement.close();
-			connection.close();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			try { statement.close(); } catch(Exception e) {}
-			try { connection.close(); } catch(Exception e) {}
-		}
-		
-		if (varName == null) {
-			System.err.println("The name of variable " + variableId + 
-					" could not be retrieved.");
-		}
-		return varName;
+		ArrayList<?> al = executeQuery(
+				"SELECT Variable FROM VARIABLES WHERE ID = " + variableId);
+		@SuppressWarnings("unchecked")
+		ArrayList<String> varNames = (ArrayList<String>) al;
+		return(varNames.get(1));
 	}
 	
 	/**
@@ -456,36 +435,13 @@ public class DataAccess {
 	 * @return            ArrayList with the statement IDs.
 	 */
 	public ArrayList<Integer> getStatementIds(int documentId) {
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet resultSet = null;
-		ArrayList<Integer> ids = new ArrayList<Integer>();
-		
-		try {
-			connection = getConnection();
-			statement = connection.createStatement();
-			resultSet = statement.executeQuery(
-					"SELECT ID FROM STATEMENTS WHERE Document = " + documentId
-	        );
-			if (resultSet.next()) {
-				do {
-					ids.add(resultSet.getInt(1));
-				} while (resultSet.next());
-			}
-			resultSet.close();
-			statement.close();
-			connection.close();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			try { statement.close(); } catch(Exception e) {}
-			try { connection.close(); } catch(Exception e) {}
-		}
-		
-		return ids;
+		ArrayList<?> al = executeQuery(
+				"SELECT ID FROM STATEMENTS WHERE Document = " + documentId);
+		@SuppressWarnings("unchecked")
+		ArrayList<Integer> ids = (ArrayList<Integer>) al;
+		return(ids);
 	}
+	
 	
 	/**
 	 * Remove a document and all statements contained in the document.
@@ -514,51 +470,13 @@ public class DataAccess {
 	 */
 	public int addDocument(String title, String text, Date date, String coder, 
 			String source, String notes, String type) {
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet resultSet = null;
-		int id = -1;
-		
 		int intDate = (int) date.getTime();
-		executeStatement(
-				"INSERT INTO DOCUMENTS (Title, Text, Date, Coder, Source, " +
-				"Notes, Type) VALUES('" + title + "', '" + text + "', " + 
-				intDate + ", '" + coder + "', '" + source + "', '" + notes + 
-				"', '" + type + "')"
+		int id = executeStatementForId(
+				"INSERT INTO DOCUMENTS (Title, Text, Date, Coder, " +
+				"Source, Notes, Type) VALUES('" + title + "', '" + text + 
+				"', " + intDate + ", '" + coder + "', '" + source + 
+				"', '" + notes + "', '" + type + "')"
 				);
-		
-		try {
-			connection = getConnection();
-			statement = connection.createStatement();
-			statement.execute(
-					"INSERT INTO DOCUMENTS (Title, Text, Date, Coder, " +
-					"Source, Notes, Type) VALUES('" + title + "', '" + text + 
-					"', " + intDate + ", '" + coder + "', '" + source + 
-					"', '" + notes + "', '" + type + "')"
-					);
-			resultSet = statement.executeQuery(
-					"SELECT sqlite3_last_insert_rowid()"
-					);
-			if (resultSet.next()) {
-				do {
-					id = resultSet.getInt(1);
-				} while (resultSet.next());
-			}
-			resultSet.close();
-			statement.close();
-			connection.close();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			try { statement.close(); } catch(Exception e) {}
-			try { connection.close(); } catch(Exception e) {}
-		}
-		
-		if (id == -1) {
-			System.err.println("Last document ID could not be retrieved.");
-		}
 		return id;
 	}
 }
