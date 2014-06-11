@@ -7,7 +7,8 @@ class Document implements Comparable<Document> {
 	String title, text, coder, source, notes, type;
 	Date date;
 	
-	public Document( int id, String title, String text, Date date, String coder, String source, String notes, String type ) {
+	public Document( int id, String title, String text, Date date, 
+			String coder, String source, String notes, String type ) {
 		this.id = id;
 		this.title = title;
 		this.text = text;

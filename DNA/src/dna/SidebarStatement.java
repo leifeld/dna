@@ -7,15 +7,25 @@ public class SidebarStatement implements Comparable<SidebarStatement> {
 	int statementId, documentId, start, stop;
 	Date date;
 	Color color;
+	String type;
 	
 	public SidebarStatement(int statementId, int documentId, int start, 
-			int stop, Date date, Color color) {
+			int stop, Date date, Color color, String type) {
 		this.statementId = statementId;
 		this.documentId = documentId;
 		this.start = start;
 		this.stop = stop;
 		this.date = date;
 		this.color = color;
+		this.type = type;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 
 	public Color getColor() {

@@ -1,5 +1,7 @@
 package dna;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 
 public class Dna {
@@ -24,5 +26,22 @@ public class Dna {
 	
 	public static void main (String[] args) {
 		dna = new Dna();
+	}
+	
+	public void addDocument(String title, String text, Date date, String coder, 
+			String source, String notes, String type) {
+		int id = dna.db.addDocument(title, text, date, coder, source, notes, 
+				type);
+		Document d = Dna.dna.db.getDocument(id);
+		dna.gui.documentPanel.documentContainer.addDocument(d);
+	}
+	
+	public void openFile(String dbfile) {
+		Dna.dna.db.openFile(dbfile);
+		Dna.dna.gui.statusBar.resetLabel();
+		ArrayList<Document> docs = Dna.dna.db.getDocuments();
+		for (int i = 0; i < docs.size(); i++) {
+			Dna.dna.gui.documentPanel.documentContainer.addDocument(docs.get(i));
+		}
 	}
 }

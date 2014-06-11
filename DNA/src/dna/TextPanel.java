@@ -217,7 +217,9 @@ class TextPanel extends JPanel {
 					
 					Color color = Dna.dna.db.getStatementTypeColor(type);
 					Date date = Dna.dna.db.getDocumentDate(documentId);
-					SidebarStatement s = new SidebarStatement(statementId, documentId, selectionStart, selectionEnd, date, color);
+					SidebarStatement s = new SidebarStatement(statementId, 
+							documentId, selectionStart, selectionEnd, date, 
+							color, type);
 		    		Dna.dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
 				}
 			});

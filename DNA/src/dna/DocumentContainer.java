@@ -23,7 +23,7 @@ class DocumentContainer implements TableModel {
 		return contains;
 	}
 
-	public void addArticle( Document document ){
+	public void addDocument( Document document ){
 		int id = document.getId();
 		documents.add( document );
 		sort();
@@ -36,7 +36,7 @@ class DocumentContainer implements TableModel {
 			((TableModelListener)listeners.get( i )).tableChanged( e );
 		}
 	}
-
+	
 	public Document get(int index) {
 		return documents.get(index);
 	}
@@ -46,7 +46,7 @@ class DocumentContainer implements TableModel {
 		return 2;
 	}
 
-	//return number of articles in the table
+	//return number of documents in the table
 	public int getRowCount() {
 		return documents.size();
 	}

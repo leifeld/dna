@@ -3,17 +3,27 @@ package dna;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.ArrayList;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
 
 public class Gui extends JFrame {
 	
@@ -25,6 +35,8 @@ public class Gui extends JFrame {
 	StatusBar statusBar;
 	DocumentPanel documentPanel;
 	TextPanel textPanel;
+	SidebarPanel sidebarPanel;
+	MenuBar menuBar;
 
 	public Gui() {
 		c = getContentPane();
@@ -43,6 +55,23 @@ public class Gui extends JFrame {
 		documentPanel = new DocumentPanel();
 		textPanel = new TextPanel();
 
+		JPanel codingPanel = new JPanel(new BorderLayout());
+		JSplitPane codingSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, 
+				documentPanel, textPanel);
+		menuBar = new MenuBar();
+		codingPanel.add(menuBar, BorderLayout.NORTH);
+		statusBar = new StatusBar();
+		codingPanel.add(statusBar, BorderLayout.SOUTH);
+		
+		sidebarPanel = new SidebarPanel();
+
+		JPanel statementSplitPane = new JPanel(new BorderLayout());
+		statementSplitPane.add(codingSplitPane, BorderLayout.CENTER);
+		codingPanel.add(statementSplitPane, BorderLayout.CENTER);
+		codingPanel.add(sidebarPanel, BorderLayout.EAST);
+		
+		c.add(codingPanel);
+		
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
@@ -65,7 +94,7 @@ public class Gui extends JFrame {
 		
 		public void resetLabel() {
 			String fn = Dna.dna.db.getFileName();
-			if (fn.equals("")) {
+			if (fn == null) {
 				currentFileLabel.setText("Current file: none");
 			} else {
 				currentFileLabel.setText("Current file: " + fn);
@@ -74,11 +103,11 @@ public class Gui extends JFrame {
 	}
 	
 	
-	class DocumentPanel extends JScrollPane {
+	public class DocumentPanel extends JScrollPane {
 		
 		private static final long serialVersionUID = 1L;
-		DocumentTable documentTable;
 		DocumentContainer documentContainer;
+		DocumentTable documentTable;
 		
 		public DocumentPanel() {
 			documentContainer = new DocumentContainer();
@@ -88,7 +117,7 @@ public class Gui extends JFrame {
 			setPreferredSize(new Dimension(700, 100));
 		}
 		
-		class DocumentTable extends JTable {
+		public class DocumentTable extends JTable {
 			
 			private static final long serialVersionUID = 1L;
 
@@ -140,6 +169,148 @@ public class Gui extends JFrame {
 					articleContainer.addArticle(articles.get(i));
 				}
 			}
+			*/
+		}
+	}
+
+	class MenuBar extends JMenuBar {
+		
+		private static final long serialVersionUID = 1L;
+		
+		JMenu fileMenu,articleMenu;
+		JMenuItem newArticleButton,importOldButton;
+		
+		public MenuBar() {
+			fileMenu = new JMenu("File");
+			this.add(fileMenu);
+			articleMenu = new JMenu("Article");
+			this.add(articleMenu);
+			
+			//File menu: new DNA database file...
+			Icon databaseIcon = new ImageIcon(getClass().getResource(
+					"/icons/database_go.png"));
+			JMenuItem newDatabase = new JMenuItem("New database...", 
+					databaseIcon);
+			newDatabase.setToolTipText( "create a new database file..." );
+			fileMenu.add(newDatabase);
+			newDatabase.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					JFileChooser fc = new JFileChooser();
+					fc.setFileFilter(new FileFilter() {
+						public boolean accept(File f) {
+							return f.getName().toLowerCase().endsWith(".dna") 
+							|| f.isDirectory();
+						}
+						public String getDescription() {
+							return "Discourse Network Analyzer database " +
+									"(*.dna)";
+						}
+					});
+
+					int returnVal = fc.showSaveDialog(dna.Gui.this);
+					if (returnVal == JFileChooser.APPROVE_OPTION) {
+						File file = fc.getSelectedFile();
+						String filename = new String(file.getPath());
+						if (!filename.endsWith(".dna")) {
+							filename = filename + ".dna";
+						}
+						Dna.dna.openFile(filename);
+						Dna.dna.db.createTables();
+					}
+					//reloadDb();
+				}
+			});
+			
+			//File menu: open DNA file
+			Icon openIcon = new ImageIcon(getClass().getResource(
+					"/icons/folder.png"));
+			JMenuItem openMenuItem = new JMenuItem("Open database...", 
+					openIcon);
+			openMenuItem.setToolTipText( "open an existing database file..." );
+			openMenuItem.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					
+					//File filter
+					JFileChooser fc = new JFileChooser(); //TODO: THIS SHOULD REMEMBER THE LAST DIRECTORY USED (CAN BE PUT IN BRACKETS AS A STRING)
+					fc.setFileFilter(new FileFilter() {
+						public boolean accept(File f) {
+							return f.getName().toLowerCase().endsWith(".dna")
+							|| f.isDirectory();
+						}
+						public String getDescription() {
+							return "Discourse Network Analyzer database " +
+									"(*.dna)";
+						}
+					});
+
+					int returnVal = fc.showOpenDialog(dna.Gui.this);
+					if (returnVal == JFileChooser.APPROVE_OPTION) {
+						File file = fc.getSelectedFile();
+						String dbfile;
+						if (!file.getPath().endsWith(".dna")) {
+							dbfile = file.getPath() + ".dna";
+						} else {
+							dbfile = file.getPath();
+						}
+						Dna.dna.openFile(dbfile);
+					}
+					//reloadDb();
+				}
+			});
+			fileMenu.add(openMenuItem);
+
+			//File menu: close current database file
+			Icon closeIcon = new ImageIcon( getClass().getResource(
+					"/icons/cancel.png") );
+			JMenuItem closeFile = new JMenuItem("Close database", closeIcon);
+			closeFile.setToolTipText( "close current database file" );
+			fileMenu.add(closeFile);
+			closeFile.addActionListener( new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					Dna.dna.db.closeFile();
+					statusBar.resetLabel();
+					//reloadDb();
+				}
+			});
+
+			//File menu: exit
+			Icon exitIcon = new ImageIcon( getClass().getResource(
+					"/icons/door_out.png") );
+			JMenuItem exit = new JMenuItem("Exit", exitIcon);
+			exit.setToolTipText( "quit DNA" );
+			fileMenu.add(exit);
+			exit.addActionListener( new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					dispose();
+				}
+			});
+			
+			//Article menu: add new article
+			Icon newArticleIcon = new ImageIcon(getClass().getResource(
+					"/icons/table_add.png"));
+			newArticleButton = new JMenuItem("Add new article...", 
+					newArticleIcon);
+			newArticleButton.setToolTipText( "add new article..." );
+			articleMenu.add(newArticleButton);
+			newArticleButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					new NewDocumentWindow();
+				}
+			});
+
+			/*
+			//Article menu: import old DNA dataset
+			Icon importOldIcon = new ImageIcon(getClass().getResource(
+					"/icons/table_add.png"));
+			importOldButton = new JMenuItem("Import from old DNA file...", 
+					importOldIcon);
+			importOldButton.setToolTipText( "import from old DNA < 2.0 dataset..." );
+			articleMenu.add(importOldButton);
+			importOldButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					new ImportOldDna();
+				}
+			});
 			*/
 		}
 	}

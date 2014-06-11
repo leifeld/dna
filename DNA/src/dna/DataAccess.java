@@ -109,7 +109,7 @@ public class DataAccess {
 			statement = connection.createStatement();
 			statement.execute(myStatement);
 			resultSet = statement.executeQuery(
-					"SELECT sqlite3_last_insert_rowid()"
+					"SELECT last_insert_rowid()"
 					);
 			if (resultSet.next()) {
 				do {
@@ -529,6 +529,7 @@ public class DataAccess {
 		try {
 			connection = getConnection();
 			statement = connection.createStatement();
+			//System.out.println(documentId);
 			resultSet = statement.executeQuery("SELECT (ID, Type, Start, " +
 					"Stop) FROM STATEMENTS WHERE Document = " + documentId);
 			if (resultSet.next()) {
@@ -540,7 +541,7 @@ public class DataAccess {
 					Date d = getDocumentDate(documentId);
 					Color color = getStatementTypeColor(type);
 					SidebarStatement s = new SidebarStatement(id, documentId, 
-							start, stop, d, color);
+							start, stop, d, color, type);
 					statements.add(s);
 				} while (resultSet.next());
 			}
@@ -586,7 +587,7 @@ public class DataAccess {
 					Date d = getDocumentDate(documentId);
 					Color color = getStatementTypeColor(type);
 					SidebarStatement s = new SidebarStatement(id, documentId, 
-							start, stop, d, color);
+							start, stop, d, color, type);
 					statements.add(s);
 				} while (resultSet.next());
 			}
@@ -631,7 +632,7 @@ public class DataAccess {
 			Date d = getDocumentDate(documentId);
 			Color color = getStatementTypeColor(type);
 			s = new SidebarStatement(id, documentId, startCaret, stopCaret, d, 
-					color);
+					color, type);
 			resultSet.close();
 			statement.close();
 			connection.close();
@@ -850,6 +851,23 @@ public class DataAccess {
 	}
 	
 	/**
+	 * Retrieve the complete list of documents.
+	 * 
+	 * @return  ArrayList of all documents in the DOCUMENTS table.
+	 */
+	public ArrayList<Document> getDocuments() {
+		ArrayList<?> al = executeQueryForList("SELECT ID FROM DOCUMENTS");
+		@SuppressWarnings("unchecked")
+		ArrayList<Integer> ids = (ArrayList<Integer>) al;
+		ArrayList<Document> docs = new ArrayList<Document>();
+		for (int i = 0; i < ids.size(); i++) {
+			Document d = getDocument(ids.get(i));
+			docs.add(d);
+		}
+		return docs;
+	}
+	
+	/**
 	 * Add a regular expression to the REGEX table.
 	 * 
 	 * @param label  The label of the regular expression.
@@ -941,7 +959,7 @@ public class DataAccess {
 					Date d = getDocumentDate(documentId);
 					Color color = getStatementTypeColor(type);
 					s = new SidebarStatement(statementId, documentId, 
-							startCaret, stopCaret, d, color);
+							startCaret, stopCaret, d, color, type);
 				} while (resultSet.next());
 			}
 			resultSet.close();
