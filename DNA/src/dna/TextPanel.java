@@ -196,6 +196,7 @@ class TextPanel extends JPanel {
 		ArrayList<StatementType> st = Dna.dna.db.getStatementTypes();
 		for (int i = 0; i < st.size(); i++) {
 			String type = st.get(i).getLabel();
+			System.out.println("test");
     		menu1 = new JMenuItem( "Format as " + type);
 			popmen.add( menu1 );
 			
@@ -239,13 +240,15 @@ class TextPanel extends JPanel {
 				SidebarStatement s = 
 						Dna.dna.db.getStatementAtLocation(documentId, pos);
 				Point p = me.getPoint();
-				int statementId = s.getStatementId();
-				int startIndex = s.getStart();
-				int stopIndex = s.getStop();
-				Point location = textWindow.getLocationOnScreen();
-				textWindow.setSelectionStart(startIndex);
-				textWindow.setSelectionEnd(stopIndex);
-				new Popup(p, statementId, location);
+				if (s != null) {
+					int statementId = s.getStatementId();
+					int startIndex = s.getStart();
+					int stopIndex = s.getStop();
+					Point location = textWindow.getLocationOnScreen();
+					textWindow.setSelectionStart(startIndex);
+					textWindow.setSelectionEnd(stopIndex);
+					new Popup(p, statementId, location);
+				}
 			}
 		}
 	}

@@ -313,7 +313,7 @@ public class DataAccess {
 	public String getVariableStringEntry(int statementId, String key) {
 		String type = getStatementType(statementId);
 		String result = executeQueryForString(
-				"SELECT (" + key + ") FROM " + type + " WHERE StatementID = " + 
+				"SELECT " + key + " FROM " + type + " WHERE StatementID = " + 
 				statementId
 				);
 		return result;
@@ -329,7 +329,7 @@ public class DataAccess {
 	public int getVariableIntEntry(int statementId, String key) {
 		String type = getStatementType(statementId);
 		int result = executeQueryForInt(
-				"SELECT (" + key + ") FROM " + type + " WHERE StatementID = " + 
+				"SELECT " + key + " FROM " + type + " WHERE StatementID = " + 
 				statementId
 				);
 		return result;
@@ -343,8 +343,8 @@ public class DataAccess {
 	 * @return               Vector of int entries.
 	 */
 	public int[] getVariableIntEntries(String key, String statementType) {
-		ArrayList<?> al = executeQueryForList("SELECT DISTINCT (" + key + 
-				") FROM " + statementType);
+		ArrayList<?> al = executeQueryForList("SELECT DISTINCT " + key + 
+				" FROM " + statementType);
 		int[] entries = new int[al.size()];
 		for (int i = 0; i < al.size(); i++) {
 			entries[i] = (Integer) al.get(i);
@@ -360,8 +360,8 @@ public class DataAccess {
 	 * @return               Vector of strings with the entries.
 	 */
 	public String[] getVariableStringEntries(String key, String statementType) {
-		ArrayList<?> al = executeQueryForList("SELECT DISTINCT (" + key + 
-				") FROM " + statementType);
+		ArrayList<?> al = executeQueryForList("SELECT DISTINCT " + key + 
+				" FROM " + statementType);
 		String[] entries = new String[al.size()];
 		for (int i = 0; i < al.size(); i++) {
 			entries[i] = (String) al.get(i);
@@ -466,7 +466,7 @@ public class DataAccess {
 	public int addStatement(String type, int doc, int start, int stop) {
 		int id = executeStatementForId(
 				"INSERT INTO STATEMENTS (Type, Document, Start, Stop) " +
-				"VALUES(" + type + ", " + doc + ", " + start + ", " + 
+				"VALUES('" + type + "', " + doc + ", " + start + ", " + 
 				stop + ")"
 				);
 		executeStatement(
@@ -491,22 +491,23 @@ public class DataAccess {
 	}
 	
 	/**
-	 * Retrieve the color of a statement type from the STATEMENTTYPES table.
+	 * Retrieve the color of a statement type from the STATEMENTTYPE table.
 	 * 
 	 * @param statementType  A string representing the statement type label.
 	 * @return               The color of the statement type.
 	 */
 	public Color getStatementTypeColor(String statementType) {
 		int red = executeQueryForInt(
-				"SELECT Red FROM STATEMENTTYPES WHERE Label = " + statementType
+				"SELECT Red FROM STATEMENTTYPE WHERE Label = '" + 
+				statementType + "'"
 				);
 		int green = executeQueryForInt(
-				"SELECT Green FROM STATEMENTTYPES WHERE Label = " + 
-				statementType
+				"SELECT Green FROM STATEMENTTYPE WHERE Label = '" + 
+				statementType + "'"
 				);
 		int blue = executeQueryForInt(
-				"SELECT Blue FROM STATEMENTTYPES WHERE Label = " + 
-				statementType
+				"SELECT Blue FROM STATEMENTTYPE WHERE Label = '" + 
+				statementType + "'"
 				);
 		Color color = new Color(red, green, blue);
 		return color;
@@ -530,8 +531,8 @@ public class DataAccess {
 			connection = getConnection();
 			statement = connection.createStatement();
 			//System.out.println(documentId);
-			resultSet = statement.executeQuery("SELECT (ID, Type, Start, " +
-					"Stop) FROM STATEMENTS WHERE Document = " + documentId);
+			resultSet = statement.executeQuery("SELECT ID, Type, Start, " +
+					"Stop FROM STATEMENTS WHERE Document = " + documentId);
 			if (resultSet.next()) {
 				do {
 					int id = resultSet.getInt("ID");
@@ -576,8 +577,8 @@ public class DataAccess {
 		try {
 			connection = getConnection();
 			statement = connection.createStatement();
-			resultSet = statement.executeQuery("SELECT (ID, Document, " +
-					"Start, Stop) FROM STATEMENTS WHERE Type = " + type);
+			resultSet = statement.executeQuery("SELECT ID, Document, " +
+					"Start, Stop FROM STATEMENTS WHERE Type = " + type);
 			if (resultSet.next()) {
 				do {
 					int id = resultSet.getInt("ID");
@@ -622,17 +623,21 @@ public class DataAccess {
 		try {
 			connection = getConnection();
 			statement = connection.createStatement();
-			resultSet = statement.executeQuery("SELECT (ID, Type, Start, " +
-					"Stop) FROM STATEMENTS WHERE Document = " + documentId + 
+			resultSet = statement.executeQuery("SELECT ID, Type, Start, " +
+					"Stop FROM STATEMENTS WHERE Document = " + documentId + 
 					" AND Start < " + pos + " AND Stop > " + pos);
-			int id = resultSet.getInt("ID");
-			String type = resultSet.getString("Type");
-			int startCaret = resultSet.getInt("Start");
-			int stopCaret = resultSet.getInt("Stop");
-			Date d = getDocumentDate(documentId);
-			Color color = getStatementTypeColor(type);
-			s = new SidebarStatement(id, documentId, startCaret, stopCaret, d, 
-					color, type);
+			if (resultSet.next()) {
+				do {
+					int id = resultSet.getInt("ID");
+					String type = resultSet.getString("Type");
+					int startCaret = resultSet.getInt("Start");
+					int stopCaret = resultSet.getInt("Stop");
+					Date d = getDocumentDate(documentId);
+					Color color = getStatementTypeColor(type);
+					s = new SidebarStatement(id, documentId, startCaret, 
+							stopCaret, d, color, type);
+				} while (resultSet.next());
+			}
 			resultSet.close();
 			statement.close();
 			connection.close();
@@ -677,8 +682,8 @@ public class DataAccess {
 			connection = getConnection();
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(
-					"SELECT * FROM VARIABLES WHERE StatementType = " + 
-					statementType
+					"SELECT * FROM VARIABLES WHERE StatementType = '" + 
+					statementType + "'"
 					);
 			if (resultSet.next()) {
 				do {
@@ -797,9 +802,15 @@ public class DataAccess {
 			quotMark = "'";
 		}
 		
+		//executeStatement(
+		//		"INSERT INTO " + statementType + "(" + varName + 
+		//		") VALUES (" + quotMark + entry + quotMark + ")"
+		//		);
+		
 		executeStatement(
-				"INSERT INTO " + statementType + "(" + varName + 
-				") VALUES (" + quotMark + entry + quotMark + ")"
+				"UPDATE " + statementType + " SET " + varName + " = " + 
+				quotMark + entry + quotMark + " WHERE StatementId = " + 
+				statementId
 				);
 	}
 	

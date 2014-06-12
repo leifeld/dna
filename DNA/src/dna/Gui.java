@@ -188,7 +188,7 @@ public class Gui extends JFrame {
 			
 			//File menu: new DNA database file...
 			Icon databaseIcon = new ImageIcon(getClass().getResource(
-					"/icons/database_go.png"));
+					"/icons/database.png"));
 			JMenuItem newDatabase = new JMenuItem("New database...", 
 					databaseIcon);
 			newDatabase.setToolTipText( "create a new database file..." );
@@ -214,8 +214,7 @@ public class Gui extends JFrame {
 						if (!filename.endsWith(".dna")) {
 							filename = filename + ".dna";
 						}
-						Dna.dna.openFile(filename);
-						Dna.dna.db.createTables();
+						Dna.dna.newFile(filename);
 					}
 					//reloadDb();
 				}
@@ -267,9 +266,7 @@ public class Gui extends JFrame {
 			fileMenu.add(closeFile);
 			closeFile.addActionListener( new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					Dna.dna.db.closeFile();
-					statusBar.resetLabel();
-					//reloadDb();
+					Dna.dna.closeFile();
 				}
 			});
 
