@@ -129,7 +129,8 @@ public class Popup extends JDialog {
 		remove.setPreferredSize(new Dimension(16, 16));
 		remove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int question = JOptionPane.showConfirmDialog(Popup.this, "Are you sure you want to remove this statement?", 
+				int question = JOptionPane.showConfirmDialog(Popup.this, 
+						"Are you sure you want to remove this statement?", 
 						"Remove?", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
 					Dna.dna.db.removeStatement(Popup.this.statementId);

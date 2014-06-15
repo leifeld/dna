@@ -186,7 +186,11 @@ public class DataAccess {
 			connection = getConnection();
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(myQuery);
-			s = resultSet.getString(1);
+			if (resultSet.next()) {
+				do {
+					s = resultSet.getString(1);
+				} while (resultSet.next());
+			}
 			resultSet.close();
 			statement.close();
 			connection.close();
@@ -218,7 +222,11 @@ public class DataAccess {
 			connection = getConnection();
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(myQuery);
-			i = resultSet.getInt(1);
+			if (resultSet.next()) {
+				do {
+					i = resultSet.getInt(1);
+				} while (resultSet.next());
+			}
 			resultSet.close();
 			statement.close();
 			connection.close();
@@ -839,7 +847,7 @@ public class DataAccess {
 					String source = resultSet.getString("Source");
 					String notes = resultSet.getString("Notes");
 					String type = resultSet.getString("Type");
-					int intDate = resultSet.getInt("Date");
+					long intDate = resultSet.getLong("Date");
 					Date date = new Date();
 					date.setTime(intDate);
 					d = new Document(documentId, title, text, date, coder, 
@@ -1029,7 +1037,7 @@ public class DataAccess {
 	 */
 	public int addDocument(String title, String text, Date date, String coder, 
 			String source, String notes, String type) {
-		int intDate = (int) date.getTime();
+		long intDate = date.getTime();
 		int id = executeStatementForId(
 				"INSERT INTO DOCUMENTS (Title, Text, Date, Coder, " +
 				"Source, Notes, Type) VALUES('" + title + "', '" + text + 

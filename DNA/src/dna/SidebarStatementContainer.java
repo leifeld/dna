@@ -59,11 +59,17 @@ public class SidebarStatementContainer implements TableModel {
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
 		SidebarStatement s = statements.get(rowIndex);
-		
-		switch( columnIndex ){
-			case 0: return s.getStatementId();
-			case 1: return s.getType();
-			default: return null;
+		if (columnIndex == 0) {
+			return s.getStatementId();
+		} else if (columnIndex == 1) {
+			int start = s.getStart();
+			int stop = s.getStop();
+			int documentId = s.getDocumentId();
+			String text = Dna.dna.db.getDocument(documentId).getText().
+					substring(start, stop);
+			return text;
+		} else {
+			return null;
 		}
 	}
 

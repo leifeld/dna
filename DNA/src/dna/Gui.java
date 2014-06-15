@@ -6,7 +6,6 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.ArrayList;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -113,8 +112,10 @@ public class Gui extends JFrame {
 			documentContainer = new DocumentContainer();
 			documentTable = new DocumentTable();
 			documentTable.setModel(documentContainer);
-			this.setColumnHeaderView(documentTable);
+			this.setViewportView(documentTable);
 			setPreferredSize(new Dimension(700, 100));
+			documentTable.getColumnModel().getColumn(0).setPreferredWidth(700);
+			documentTable.getColumnModel().getColumn(1).setPreferredWidth(100);
 		}
 		
 		public class DocumentTable extends JTable {
@@ -124,8 +125,6 @@ public class Gui extends JFrame {
 			public DocumentTable() {
 				setModel(new DocumentContainer());
 				setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-				getColumnModel().getColumn( 0 ).setPreferredWidth( 620 );
-				getColumnModel().getColumn( 1 ).setPreferredWidth( 80 );
 				getTableHeader().setReorderingAllowed( false );
 				putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 				
@@ -136,7 +135,6 @@ public class Gui extends JFrame {
 						}
 						int selectedRow = getSelectedRow();
 						if (selectedRow == -1) {
-							//textPanel.textWindow.setText("");
 							textPanel.setDocumentText("");
 						} else {
 							int id = documentPanel.documentContainer.
@@ -145,7 +143,6 @@ public class Gui extends JFrame {
 							String text = document.getText();
 							textPanel.setDocumentId(id);
 					    	textPanel.setDocumentText(text);
-							//textPanel.textWindow.setEnabled(true);
 					    	textPanel.setEnabled(true);
 						}
 						//if (statementFilter.showCurrent.isSelected()) {
@@ -177,14 +174,16 @@ public class Gui extends JFrame {
 		
 		private static final long serialVersionUID = 1L;
 		
-		JMenu fileMenu,articleMenu;
-		JMenuItem newArticleButton,importOldButton;
+		JMenu fileMenu,articleMenu,settingsMenu;
+		JMenuItem newArticleButton,importOldButton,typeEditorButton;
 		
 		public MenuBar() {
 			fileMenu = new JMenu("File");
 			this.add(fileMenu);
 			articleMenu = new JMenu("Article");
 			this.add(articleMenu);
+			settingsMenu = new JMenu("Settings");
+			this.add(settingsMenu);
 			
 			//File menu: new DNA database file...
 			Icon databaseIcon = new ImageIcon(getClass().getResource(
@@ -309,6 +308,20 @@ public class Gui extends JFrame {
 				}
 			});
 			*/
+			
+			//Settings menu: edit statement types
+			Icon typeEditorIcon = new ImageIcon(getClass().getResource(
+					"/icons/application_form.png"));
+			typeEditorButton = new JMenuItem("Edit statement types...", 
+					typeEditorIcon);
+			typeEditorButton.setToolTipText( "edit statement types..." );
+			settingsMenu.add(typeEditorButton);
+			typeEditorButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					new StatementTypeEditor();
+				}
+			});
+
 		}
 	}
 	

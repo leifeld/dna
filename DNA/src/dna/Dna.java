@@ -53,7 +53,15 @@ public class Dna {
 		Dna.dna.gui.statusBar.resetLabel();
 		ArrayList<Document> docs = Dna.dna.db.getDocuments();
 		for (int i = 0; i < docs.size(); i++) {
-			Dna.dna.gui.documentPanel.documentContainer.addDocument(docs.get(i));
+			Dna.dna.gui.documentPanel.documentContainer.addDocument(docs.
+					get(i));
+			int documentId = docs.get(i).getId();
+			ArrayList<SidebarStatement> statements = Dna.dna.db.
+					getStatementsPerDocumentId(documentId);
+			for (int j = 0; j < statements.size(); j++) {
+				SidebarStatement s = statements.get(j);
+				Dna.dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
+			}
 		}
 	}
 	
@@ -66,7 +74,8 @@ public class Dna {
 	}
 	
 	public void newFile(String filename) {
-		openFile(filename);
+		Dna.dna.db.openFile(filename);
+		Dna.dna.gui.statusBar.resetLabel();
 		db.createTables();
 		HashMap<String, String> dnaStatementMap = new HashMap<String, String>();
 		dnaStatementMap.put("person", "short text");

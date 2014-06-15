@@ -1,16 +1,21 @@
 package dna;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 
 import org.jdesktop.swingx.JXTaskPane;
@@ -66,6 +71,21 @@ class SidebarPanel extends JScrollPane {
         */
 	}
 	
+	public class StatementCellRenderer extends DefaultTableCellRenderer {
+		private static final long serialVersionUID = 1L;
+		
+		public Component getTableCellRendererComponent(JTable table,
+				Object value, boolean isSelected, boolean hasFocus, int row, 
+				int column) {
+			Component c = super.getTableCellRendererComponent(table, value, 
+					isSelected, hasFocus, row, column);
+		    Color col = ((SidebarStatementContainer)table.getModel()).get(row)
+		    		.getColor();
+		    c.setBackground(col);
+		    return c;
+		}
+	}
+	
 	private void statementPanel() {
 		//TODO: statementPanel must be populated with statements or updated when the database is loaded or changed
 		
@@ -81,6 +101,9 @@ class SidebarPanel extends JScrollPane {
 		statementTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 		
 		setRowSorterEnabled(true);
+		
+		StatementCellRenderer statementCellRenderer = new StatementCellRenderer();
+		statementTable.getColumnModel().getColumn(0).setCellRenderer(statementCellRenderer);
 		
 		//TODO
 		//StatementFilter statementFilter = new StatementFilter();
