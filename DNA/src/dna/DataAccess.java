@@ -585,8 +585,8 @@ public class DataAccess {
 		try {
 			connection = getConnection();
 			statement = connection.createStatement();
-			resultSet = statement.executeQuery("SELECT ID, Document, " +
-					"Start, Stop FROM STATEMENTS WHERE Type = " + type);
+			resultSet = statement.executeQuery("SELECT ID, Document, " + 
+					"Start, Stop FROM STATEMENTS WHERE Type = '" + type + "'");
 			if (resultSet.next()) {
 				do {
 					int id = resultSet.getInt("ID");
@@ -716,6 +716,23 @@ public class DataAccess {
 	}
 	
 	/**
+	 * Alter a statement type with a given label.
+	 * 
+	 * @param label  The label in the STATEMENTTYPE table.
+	 * @param red    The red RGB value.
+	 * @param green  The green RGB value.
+	 * @param blue   The blue RGB value.
+	 */
+	public void changeStatementType(String label, int red, int green, 
+			int blue) {
+		executeStatement(
+				"UPDATE STATEMENTTYPE SET Label = '" + label + 
+				"', Red = " + red + ", Green = " + green + ", Blue = " + 
+				blue + " WHERE Label = '" + label + "'"
+				);
+	}
+	
+	/**
 	 * Retrieve all statement types including variables from the database.
 	 * 
 	 * @return  An array list of statement types.
@@ -809,11 +826,6 @@ public class DataAccess {
 		if (dataType.equals("short text") || dataType.equals("long text")) {
 			quotMark = "'";
 		}
-		
-		//executeStatement(
-		//		"INSERT INTO " + statementType + "(" + varName + 
-		//		") VALUES (" + quotMark + entry + quotMark + ")"
-		//		);
 		
 		executeStatement(
 				"UPDATE " + statementType + " SET " + varName + " = " + 

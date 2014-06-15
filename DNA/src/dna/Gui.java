@@ -321,6 +321,7 @@ public class Gui extends JFrame {
 					new StatementTypeEditor();
 				}
 			});
+			typeEditorButton.setEnabled(false);
 
 		}
 	}
