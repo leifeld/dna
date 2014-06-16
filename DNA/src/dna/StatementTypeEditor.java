@@ -13,39 +13,32 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import javax.swing.AbstractListModel;
-import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIDefaults;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-
-import dna.SidebarPanel.StatementCellRenderer;
 
 public class StatementTypeEditor extends JFrame {
 	
 	private static final long serialVersionUID = -7821187025150495806L;
 	StatementTypeContainer stc;
 	JTable typeTable, varTable;
-	JButton addColorButton;
+	JButton addColorButton, addTypeButton, applyTypeButton, removeTypeButton, 
+			addVariable, trashVariable, acceptVariable;
 	JTextField addTypeTextField, varTextField;
 	JRadioButton stext, ltext, integ, bool;
 
@@ -81,6 +74,53 @@ public class StatementTypeEditor extends JFrame {
 		// add/remove buttons
 		JPanel addTypePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		addTypeTextField = new JTextField(15);
+
+		addTypeTextField.getDocument().addDocumentListener(new 
+				DocumentListener() {
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				checkButton();
+			}
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				checkButton();
+			}
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				checkButton();
+			}
+			public void checkButton() {
+				String type = addTypeTextField.getText();
+				boolean validAdd = false;
+				boolean validApply = false;
+				if (type.equals("") || type.matches(".*\\s+.*")) {
+					validAdd = false;
+					validApply = false;
+				} else {
+					validAdd = true;
+					validApply = true;
+				}
+				for (int i = 0; i < stc.getRowCount(); i++) {
+					if (stc.get(i).getLabel().equals(type)) {
+						validAdd = false;
+					}
+				}
+				if (validAdd == true) {
+					addTypeButton.setEnabled(true);
+				} else {
+					addTypeButton.setEnabled(false);
+				}
+				if (validApply == true) {
+					applyTypeButton.setEnabled(true);
+					removeTypeButton.setEnabled(true);
+				} else {
+					applyTypeButton.setEnabled(false);
+					removeTypeButton.setEnabled(false);
+				}
+			}
+		});
+		
+        addTypeTextField.setEnabled(false);
 		@SuppressWarnings("serial")
 		JButton addColorButtonTemp = (new JButton() {
             public void paintComponent(Graphics g) {
@@ -102,21 +142,25 @@ public class StatementTypeEditor extends JFrame {
 				}
 			}
 		});
+		addColorButton.setEnabled(false);
 		ImageIcon addIcon = new ImageIcon(getClass().getResource(
 				"/icons/add.png"));
 		ImageIcon removeIcon = new ImageIcon(getClass().getResource(
 				"/icons/trash.png"));
 		ImageIcon applyIcon = new ImageIcon(getClass().getResource(
 				"/icons/accept.png"));
-		JButton applyTypeButton = new JButton(applyIcon);
+		applyTypeButton = new JButton(applyIcon);
 		applyTypeButton.setPreferredSize(new Dimension(18, 18));
 		applyTypeButton.setToolTipText("apply changes to this statement type");
-		JButton addTypeButton = new JButton(addIcon);
+        applyTypeButton.setEnabled(false);
+		addTypeButton = new JButton(addIcon);
 		addTypeButton.setPreferredSize(new Dimension(18, 18));
 		addTypeButton.setToolTipText("add this new statement type");
-		JButton removeTypeButton = new JButton(removeIcon);
+        addTypeButton.setEnabled(false);
+		removeTypeButton = new JButton(removeIcon);
 		removeTypeButton.setPreferredSize(new Dimension(18, 18));
 		removeTypeButton.setToolTipText("remove this statement type");
+        removeTypeButton.setEnabled(false);
 		addTypePanel.add(addColorButton);
 		addTypePanel.add(addTypeTextField);
 		addTypePanel.add(applyTypeButton);
@@ -151,6 +195,10 @@ public class StatementTypeEditor extends JFrame {
 		ltext = new JRadioButton("long text");
 		integ = new JRadioButton("integer");
 		bool = new JRadioButton("boolean");
+		stext.setEnabled(false);
+		ltext.setEnabled(false);
+		integ.setEnabled(false);
+		bool.setEnabled(false);
 		buttonGroup.add(stext);
 		buttonGroup.add(ltext);
 		buttonGroup.add(integ);
@@ -164,15 +212,68 @@ public class StatementTypeEditor extends JFrame {
 		JPanel varButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		
 		varTextField = new JTextField(10);
-		JButton addVariable = new JButton(addIcon);
+		varTextField.getDocument().addDocumentListener(new 
+				DocumentListener() {
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				checkButton();
+			}
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				checkButton();
+			}
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				checkButton();
+			}
+			public void checkButton() {
+				String var = varTextField.getText();
+				boolean validAdd = false;
+				boolean validApply = false;
+				if (var.equals("") || var.matches(".*\\s+.*")) {
+					validAdd = false;
+					validApply = false;
+				} else {
+					validAdd = true;
+					validApply = true;
+				}
+				HashMap<String, String> map = Dna.dna.db.getVariables(
+						stc.get(typeTable.getSelectedRow()).getLabel());
+				Object[] types = map.keySet().toArray();
+				for (int i = 0; i < types.length; i++) {
+					if (types[i].equals(var)) {
+						validAdd = false;
+					}
+				}
+				
+				if (validAdd == true) {
+					addVariable.setEnabled(true);
+				} else {
+					addVariable.setEnabled(false);
+				}
+				if (validApply == true) {
+					acceptVariable.setEnabled(true);
+					trashVariable.setEnabled(true);
+				} else {
+					acceptVariable.setEnabled(false);
+					trashVariable.setEnabled(false);
+				}
+			}
+		});
+		
+		varTextField.setEnabled(false);
+		addVariable = new JButton(addIcon);
 		addVariable.setPreferredSize(new Dimension(18, 18));
 		addVariable.setToolTipText("add this new variable to the list");
-		JButton trashVariable = new JButton(removeIcon);
+		addVariable.setEnabled(false);
+		trashVariable = new JButton(removeIcon);
 		trashVariable.setPreferredSize(new Dimension(18, 18));
 		trashVariable.setToolTipText("remove this variable from the list");
-		JButton acceptVariable = new JButton(applyIcon);
+		trashVariable.setEnabled(false);
+		acceptVariable = new JButton(applyIcon);
 		acceptVariable.setPreferredSize(new Dimension(18, 18));
 		acceptVariable.setToolTipText("apply changes made to this variable");
+		acceptVariable.setEnabled(false);
 		varButtonPanel.add(varTextField);
 		varButtonPanel.add(acceptVariable);
 		varButtonPanel.add(addVariable);
@@ -212,8 +313,13 @@ public class StatementTypeEditor extends JFrame {
 	    	}
 	        Color col = st.getColor();
 	        addColorButton.setForeground(col);
+			addColorButton.setEnabled(true);
 	        
 	        addTypeTextField.setText(st.getLabel());
+	        addTypeTextField.setEnabled(true);
+	        
+	        applyTypeButton.setEnabled(true);
+	        removeTypeButton.setEnabled(true);
 	    }
 	}
 	
@@ -234,11 +340,20 @@ public class StatementTypeEditor extends JFrame {
 	        	} else if (dataType.equals("boolean")) {
 	        		bool.setSelected(true);
 	        	}
+	        	
+	    		stext.setEnabled(true);
+	    		ltext.setEnabled(true);
+	    		integ.setEnabled(true);
+	    		bool.setEnabled(true);
+		        
+		        varTextField.setEnabled(true);
+				acceptVariable.setEnabled(true);
+				trashVariable.setEnabled(true);
 	    	}
 	    }
 	}
 	
-	// TODO: enable/disable components; write listener for buttons
+	// TODO: write listener for buttons
 	
 	public class TypeCellRenderer extends DefaultTableCellRenderer {
 		private static final long serialVersionUID = 1L;

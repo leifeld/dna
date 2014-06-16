@@ -64,6 +64,8 @@ public class Dna {
 			}
 		}
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
+		Dna.dna.gui.menuBar.newArticleButton.setEnabled(true);
+		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
 	}
 	
 	public void closeFile() {
@@ -73,6 +75,8 @@ public class Dna {
 		Dna.dna.gui.sidebarPanel.ssc.clear();
 		Dna.dna.gui.textPanel.setDocumentText("");
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(false);
+		Dna.dna.gui.menuBar.newArticleButton.setEnabled(false);
+		Dna.dna.gui.menuBar.closeFile.setEnabled(false);
 	}
 	
 	public void newFile(String filename) {
@@ -86,5 +90,7 @@ public class Dna {
 		dnaStatementMap.put("agreement", "boolean");
 		db.insertStatementType("DNAStatement", 255, 255, 0, dnaStatementMap);
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
+		Dna.dna.gui.menuBar.newArticleButton.setEnabled(true);
+		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
 	}
 }

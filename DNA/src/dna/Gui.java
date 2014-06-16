@@ -175,7 +175,7 @@ public class Gui extends JFrame {
 		private static final long serialVersionUID = 1L;
 		
 		JMenu fileMenu,articleMenu,settingsMenu;
-		JMenuItem newArticleButton,importOldButton,typeEditorButton;
+		JMenuItem closeFile, newArticleButton,typeEditorButton;
 		
 		public MenuBar() {
 			fileMenu = new JMenu("File");
@@ -260,7 +260,7 @@ public class Gui extends JFrame {
 			//File menu: close current database file
 			Icon closeIcon = new ImageIcon( getClass().getResource(
 					"/icons/cancel.png") );
-			JMenuItem closeFile = new JMenuItem("Close database", closeIcon);
+			closeFile = new JMenuItem("Close database", closeIcon);
 			closeFile.setToolTipText( "close current database file" );
 			fileMenu.add(closeFile);
 			closeFile.addActionListener( new ActionListener() {
@@ -268,6 +268,7 @@ public class Gui extends JFrame {
 					Dna.dna.closeFile();
 				}
 			});
+			closeFile.setEnabled(false);
 
 			//File menu: exit
 			Icon exitIcon = new ImageIcon( getClass().getResource(
@@ -293,6 +294,7 @@ public class Gui extends JFrame {
 					new NewDocumentWindow();
 				}
 			});
+			newArticleButton.setEnabled(false);
 
 			/*
 			//Article menu: import old DNA dataset
