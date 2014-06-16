@@ -6,11 +6,16 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 import javax.swing.AbstractListModel;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
@@ -18,12 +23,18 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
+import javax.swing.UIDefaults;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
@@ -32,7 +43,11 @@ import dna.SidebarPanel.StatementCellRenderer;
 public class StatementTypeEditor extends JFrame {
 	
 	private static final long serialVersionUID = -7821187025150495806L;
-	
+	StatementTypeContainer stc;
+	JTable typeTable, varTable;
+	JButton addColorButton;
+	JTextField addTypeTextField, varTextField;
+	JRadioButton stext, ltext, integ, bool;
 
 	public StatementTypeEditor() {
 		this.setTitle("Edit statement types...");
@@ -47,17 +62,15 @@ public class StatementTypeEditor extends JFrame {
 		ArrayList<StatementType> types = Dna.dna.db.getStatementTypes();
 		
 		// type panel
-		StatementTypeContainer stc = new StatementTypeContainer(types);
-		JTable typeTable = new JTable( stc );
+		stc = new StatementTypeContainer(types);
+		typeTable = new JTable( stc );
 		typeTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane typeTableScrollPane = new JScrollPane(typeTable);
 		typeTableScrollPane.setPreferredSize(new Dimension(200, 230));
 		typeTable.getColumnModel().getColumn( 0 ).setPreferredWidth( 155 );
 		typeTable.getColumnModel().getColumn( 1 ).setPreferredWidth( 45 );
-		
 		typeTable.getTableHeader().setReorderingAllowed( false );
 		typeTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
-		
 		TypeCellRenderer typeCellRenderer = new TypeCellRenderer();
 		typeTable.getColumnModel().getColumn(0).setCellRenderer(
 				typeCellRenderer);
@@ -67,20 +80,21 @@ public class StatementTypeEditor extends JFrame {
 		
 		// add/remove buttons
 		JPanel addTypePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		JTextField addTypeTextField = new JTextField(15);
+		addTypeTextField = new JTextField(15);
 		@SuppressWarnings("serial")
-		JButton addColorButton = (new JButton() {
+		JButton addColorButtonTemp = (new JButton() {
             public void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 g.setColor(this.getForeground());
                 g.fillRect(2, 2, 14, 14);
             }
         });
-		addColorButton.setForeground(Color.ORANGE);
+		addColorButton = addColorButtonTemp;
+		addColorButton.setForeground(Color.LIGHT_GRAY);
 		addColorButton.setPreferredSize(new Dimension(18, 18));
 		addColorButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Color actualColor = Color.ORANGE;
+				Color actualColor = ((JButton)e.getSource()).getForeground();
 				Color newColor = JColorChooser.showDialog(StatementTypeEditor.
 						this, "choose color...", actualColor);
 				if (newColor != null) {
@@ -88,19 +102,19 @@ public class StatementTypeEditor extends JFrame {
 				}
 			}
 		});
-		ImageIcon addTypeIcon = new ImageIcon(getClass().getResource(
+		ImageIcon addIcon = new ImageIcon(getClass().getResource(
 				"/icons/add.png"));
-		ImageIcon removeTypeIcon = new ImageIcon(getClass().getResource(
+		ImageIcon removeIcon = new ImageIcon(getClass().getResource(
 				"/icons/trash.png"));
-		ImageIcon applyTypeIcon = new ImageIcon(getClass().getResource(
+		ImageIcon applyIcon = new ImageIcon(getClass().getResource(
 				"/icons/accept.png"));
-		JButton applyTypeButton = new JButton(applyTypeIcon);
+		JButton applyTypeButton = new JButton(applyIcon);
 		applyTypeButton.setPreferredSize(new Dimension(18, 18));
 		applyTypeButton.setToolTipText("apply changes to this statement type");
-		JButton addTypeButton = new JButton(addTypeIcon);
+		JButton addTypeButton = new JButton(addIcon);
 		addTypeButton.setPreferredSize(new Dimension(18, 18));
 		addTypeButton.setToolTipText("add this new statement type");
-		JButton removeTypeButton = new JButton(removeTypeIcon);
+		JButton removeTypeButton = new JButton(removeIcon);
 		removeTypeButton.setPreferredSize(new Dimension(18, 18));
 		removeTypeButton.setToolTipText("remove this statement type");
 		addTypePanel.add(addColorButton);
@@ -113,53 +127,118 @@ public class StatementTypeEditor extends JFrame {
 		
 		
 		// RIGHT PANEL FOR VARIABLES
+		JPanel rightPanel = new JPanel(new BorderLayout());
 		
 		// variable table
 		String[] columnNames = {"variable name", "data type"};
 		DefaultTableModel varTableModel = new DefaultTableModel(columnNames, 0);
-		JTable varTable = new JTable(varTableModel);
-		varTable.setCellSelectionEnabled(false);
-		varTable.setRowSelectionAllowed(false);
-		varTable.setColumnSelectionAllowed(false);
+		varTable = new JTable(varTableModel);
+		varTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane varScrollPane = new JScrollPane(varTable);
-		varScrollPane.setPreferredSize(new Dimension(100, 200));
+		varScrollPane.setPreferredSize(new Dimension(100, 184));
 		varTable.getColumnModel().getColumn( 0 ).setPreferredWidth( 50 );
 		varTable.getColumnModel().getColumn( 1 ).setPreferredWidth( 50 );
+		Class<?> colClass = varTable.getColumnClass(0);
+	    varTable.setDefaultEditor(colClass, null);
+		colClass = varTable.getColumnClass(1);
+	    varTable.setDefaultEditor(colClass, null);
 		JPanel middleRightPanel = new JPanel(new BorderLayout());
 		middleRightPanel.add(varScrollPane, BorderLayout.NORTH);
+
+		JPanel radioButtonPanel = new JPanel(new GridLayout(2, 2));
+		ButtonGroup buttonGroup = new ButtonGroup();
+		stext = new JRadioButton("short text");
+		ltext = new JRadioButton("long text");
+		integ = new JRadioButton("integer");
+		bool = new JRadioButton("boolean");
+		buttonGroup.add(stext);
+		buttonGroup.add(ltext);
+		buttonGroup.add(integ);
+		buttonGroup.add(bool);
+		radioButtonPanel.add(stext);
+		radioButtonPanel.add(ltext);
+		radioButtonPanel.add(integ);
+		radioButtonPanel.add(bool);
 		
 		// variable buttons
 		JPanel varButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		
-		// TODO: reduce dimensions of the three var buttons and add a text 
-		// field for the var name and radio buttons or a combo box for the data 
-		// types
-		// TODO: connect buttons to tables, tables to database, and 
-		// enable/disable buttons; also add tooltips
-		
-		ImageIcon addIcon = new ImageIcon(getClass().getResource(
-				"/icons/layout_add.png"));
-		ImageIcon editIcon = new ImageIcon(getClass().getResource(
-				"/icons/layout_edit.png"));
-		ImageIcon removeIcon = new ImageIcon(getClass().getResource(
-				"/icons/layout_delete.png"));
-		JButton addVariable = new JButton("add...", addIcon);
-		JButton editVariable = new JButton("edit...", editIcon);
-		JButton removeVariable = new JButton("remove...", removeIcon);
+		varTextField = new JTextField(10);
+		JButton addVariable = new JButton(addIcon);
+		addVariable.setPreferredSize(new Dimension(18, 18));
+		addVariable.setToolTipText("add this new variable to the list");
+		JButton trashVariable = new JButton(removeIcon);
+		trashVariable.setPreferredSize(new Dimension(18, 18));
+		trashVariable.setToolTipText("remove this variable from the list");
+		JButton acceptVariable = new JButton(applyIcon);
+		acceptVariable.setPreferredSize(new Dimension(18, 18));
+		acceptVariable.setToolTipText("apply changes made to this variable");
+		varButtonPanel.add(varTextField);
+		varButtonPanel.add(acceptVariable);
 		varButtonPanel.add(addVariable);
-		varButtonPanel.add(editVariable);
-		varButtonPanel.add(removeVariable);
+		varButtonPanel.add(trashVariable);
 		
 		// assemble right panel
-		JPanel rightPanel = new JPanel(new BorderLayout());
 		rightPanel.add(middleRightPanel, BorderLayout.NORTH);
+		rightPanel.add(radioButtonPanel, BorderLayout.CENTER);
 		rightPanel.add(varButtonPanel, BorderLayout.SOUTH);
 		this.add(rightPanel);
+		
+		typeTable.getSelectionModel().addListSelectionListener(new 
+				TypeTableSelectionHandler());
+
+		varTable.getSelectionModel().addListSelectionListener(new 
+				VarTableSelectionHandler());
 		
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 	}
+
+	class TypeTableSelectionHandler implements ListSelectionListener {
+	    public void valueChanged(ListSelectionEvent e) {
+	        int typeRow = e.getFirstIndex();
+    		((DefaultTableModel)varTable.getModel()).setRowCount(0);
+	        StatementType st = stc.get(typeRow);
+	        HashMap<String, String> variables = st.getVariables();
+	        Iterator<String> keyIterator = variables.keySet().iterator();
+	        while (keyIterator.hasNext()){
+	    		String key = keyIterator.next();
+	    		String value = variables.get(key);
+	    		int varRows = varTable.getModel().getRowCount();
+	    		String[] newRow = {key, value};
+	    		((DefaultTableModel)varTable.getModel()).insertRow(varRows, 
+	    				newRow);
+	    	}
+	        Color col = st.getColor();
+	        addColorButton.setForeground(col);
+	        
+	        addTypeTextField.setText(st.getLabel());
+	    }
+	}
+	
+	class VarTableSelectionHandler implements ListSelectionListener {
+	    public void valueChanged(ListSelectionEvent e) {
+    		ListSelectionModel lsm = (ListSelectionModel)e.getSource();
+    		if (!lsm.getValueIsAdjusting()) {
+    			int varRow = lsm.getMinSelectionIndex();
+    			String varName = (String) varTable.getValueAt(varRow, 0);
+	    		varTextField.setText(varName);
+	    		String dataType = (String) varTable.getValueAt(varRow, 1);
+	        	if (dataType.equals("short text")) {
+	        		stext.setSelected(true);
+	        	} else if (dataType.equals("long text")) {
+	        		ltext.setSelected(true);
+	        	} else if (dataType.equals("integer")) {
+	        		integ.setSelected(true);
+	        	} else if (dataType.equals("boolean")) {
+	        		bool.setSelected(true);
+	        	}
+	    	}
+	    }
+	}
+	
+	// TODO: enable/disable components; write listener for buttons
 	
 	public class TypeCellRenderer extends DefaultTableCellRenderer {
 		private static final long serialVersionUID = 1L;
@@ -169,11 +248,15 @@ public class StatementTypeEditor extends JFrame {
 				int column) {
 			Component c = super.getTableCellRendererComponent(table, value, 
 					isSelected, hasFocus, row, column);
-		    Color col = ((StatementTypeContainer)table.getModel()).get(row).
-		    		getColor();
-		    c.setBackground(col);
+			Color col = ((StatementTypeContainer)table.getModel()).get(row).
+					getColor();
+			c.setBackground(col);
+		    if (isSelected && column != 1) {
+		    	UIDefaults defaults = javax.swing.UIManager.getDefaults();
+		    	Color bg = defaults.getColor("List.selectionBackground");
+		    	c.setBackground(bg);
+		    }
 		    return c;
 		}
 	}
-	
 }
