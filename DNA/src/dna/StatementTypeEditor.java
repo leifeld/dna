@@ -18,6 +18,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
@@ -38,7 +39,7 @@ public class StatementTypeEditor extends JFrame {
 	StatementTypeContainer stc;
 	JTable typeTable, varTable;
 	JButton addColorButton, addTypeButton, applyTypeButton, removeTypeButton, 
-			addVariable, trashVariable, acceptVariable;
+			addVariable, trashVariable;
 	JTextField addTypeTextField, varTextField;
 	JRadioButton stext, ltext, integ, bool;
 
@@ -98,11 +99,11 @@ public class StatementTypeEditor extends JFrame {
 					validApply = false;
 				} else {
 					validAdd = true;
-					validApply = true;
 				}
 				for (int i = 0; i < stc.getRowCount(); i++) {
 					if (stc.get(i).getLabel().equals(type)) {
 						validAdd = false;
+						validApply = true;
 					}
 				}
 				if (validAdd == true) {
@@ -120,7 +121,6 @@ public class StatementTypeEditor extends JFrame {
 			}
 		});
 		
-        addTypeTextField.setEnabled(false);
 		@SuppressWarnings("serial")
 		JButton addColorButtonTemp = (new JButton() {
             public void paintComponent(Graphics g) {
@@ -142,7 +142,6 @@ public class StatementTypeEditor extends JFrame {
 				}
 			}
 		});
-		addColorButton.setEnabled(false);
 		ImageIcon addIcon = new ImageIcon(getClass().getResource(
 				"/icons/add.png"));
 		ImageIcon removeIcon = new ImageIcon(getClass().getResource(
@@ -153,14 +152,116 @@ public class StatementTypeEditor extends JFrame {
 		applyTypeButton.setPreferredSize(new Dimension(18, 18));
 		applyTypeButton.setToolTipText("apply changes to this statement type");
         applyTypeButton.setEnabled(false);
+        applyTypeButton.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+				int dialog = JOptionPane.showConfirmDialog(
+						StatementTypeEditor.this, 
+						"Modify the statement type and all statements?", 
+						"Confirmation required", JOptionPane.OK_CANCEL_OPTION);
+				if (dialog == 0) {
+					// change in the database
+					Color newColor = addColorButton.getForeground();
+					int red = newColor.getRed();
+					int green = newColor.getGreen();
+					int blue = newColor.getBlue();
+					String newLabel = addTypeTextField.getText();
+					int oldTypeIndex = typeTable.getSelectedRow();
+					String oldLabel = stc.get(oldTypeIndex).getLabel();
+					Dna.dna.db.changeStatementType(oldLabel, newLabel, red, 
+							green, blue);
+					
+					// change in the table of the current window
+					stc.get(oldTypeIndex).setColor(newColor);
+					stc.get(oldTypeIndex).setLabel(newLabel);
+					typeTable.updateUI();
+					typeTable.getSelectionModel().setSelectionInterval(
+							oldTypeIndex, oldTypeIndex);
+					
+					//change the remaining GUI
+					Dna.dna.gui.textPanel.paintStatements();
+					for (int i = 0; i < Dna.dna.gui.sidebarPanel.ssc.size(); 
+							i++) {
+						Dna.dna.gui.sidebarPanel.ssc.get(i).setColor(newColor);
+						Dna.dna.gui.sidebarPanel.ssc.get(i).setType(newLabel);
+					}
+					Dna.dna.gui.sidebarPanel.statementTable.updateUI();
+				}
+        	}
+        });
+        
 		addTypeButton = new JButton(addIcon);
 		addTypeButton.setPreferredSize(new Dimension(18, 18));
 		addTypeButton.setToolTipText("add this new statement type");
         addTypeButton.setEnabled(false);
+        addTypeButton.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+				String newLabel = addTypeTextField.getText();
+        		int dialog = JOptionPane.showConfirmDialog(
+						StatementTypeEditor.this, 
+						"Add new statement type \"" + newLabel + "\"?", 
+						"Confirmation required", JOptionPane.OK_CANCEL_OPTION);
+				if (dialog == 0) {
+					// change in the database
+					Color newColor = addColorButton.getForeground();
+					int red = newColor.getRed();
+					int green = newColor.getGreen();
+					int blue = newColor.getBlue();
+					HashMap<String, String> emptyVar = new HashMap<String, 
+							String>();
+					Dna.dna.db.insertStatementType(newLabel, red, green, blue, 
+							emptyVar);
+					
+					// change in the table of the current window
+					StatementType statementType = new StatementType(newLabel, 
+							newColor, emptyVar);
+					stc.addStatementType(statementType);
+					typeTable.updateUI();
+					int newRow = stc.getIndexByLabel(newLabel);
+					typeTable.getSelectionModel().setSelectionInterval(
+							newRow, newRow);
+				}
+        	}
+        });
+        
 		removeTypeButton = new JButton(removeIcon);
 		removeTypeButton.setPreferredSize(new Dimension(18, 18));
 		removeTypeButton.setToolTipText("remove this statement type");
         removeTypeButton.setEnabled(false);
+        removeTypeButton.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+				int oldTypeIndex = typeTable.getSelectedRow();
+				String oldLabel = stc.get(oldTypeIndex).getLabel();
+        		int dialog = JOptionPane.showConfirmDialog(
+						StatementTypeEditor.this, 
+						"Really remove statement type \"" + oldLabel + 
+						"\" and all corresponding statements?", 
+						"Confirmation required", JOptionPane.OK_CANCEL_OPTION);
+				if (dialog == 0) {
+					// change in the database
+					Dna.dna.db.removeStatementType(oldLabel);
+					
+					// change in the tables of the current window
+					stc.remove(oldTypeIndex);
+					typeTable.updateUI();
+		    		((DefaultTableModel)varTable.getModel()).setRowCount(0);
+		    		stext.setSelected(true);
+
+					//change the remaining GUI
+					Dna.dna.gui.textPanel.paintStatements();
+					for (int i = Dna.dna.gui.sidebarPanel.ssc.size() - 1; 
+							i >= 0; i--) {
+						String currentType = Dna.dna.gui.sidebarPanel.ssc.
+								get(i).getType();
+						if (currentType.equals(oldLabel)) {
+							Dna.dna.gui.sidebarPanel.ssc.remove(i);
+						}
+					}
+					Dna.dna.gui.sidebarPanel.statementTable.updateUI();
+					addTypeTextField.setText("");
+				}
+        	}
+        });
+        
 		addTypePanel.add(addColorButton);
 		addTypePanel.add(addTypeTextField);
 		addTypePanel.add(applyTypeButton);
@@ -211,7 +312,7 @@ public class StatementTypeEditor extends JFrame {
 		// variable buttons
 		JPanel varButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		
-		varTextField = new JTextField(10);
+		varTextField = new JTextField(12);
 		varTextField.getDocument().addDocumentListener(new 
 				DocumentListener() {
 			@Override
@@ -235,27 +336,35 @@ public class StatementTypeEditor extends JFrame {
 					validApply = false;
 				} else {
 					validAdd = true;
-					validApply = true;
 				}
-				HashMap<String, String> map = Dna.dna.db.getVariables(
-						stc.get(typeTable.getSelectedRow()).getLabel());
-				Object[] types = map.keySet().toArray();
-				for (int i = 0; i < types.length; i++) {
-					if (types[i].equals(var)) {
-						validAdd = false;
+				int selRow = typeTable.getSelectedRow();
+				if (selRow > -1) {
+					HashMap<String, String> map = Dna.dna.db.getVariables(
+							stc.get(selRow).getLabel());
+					Object[] types = map.keySet().toArray();
+					for (int i = 0; i < types.length; i++) {
+						if (types[i].equals(var)) {
+							validAdd = false;
+							validApply = true;
+						}
 					}
+				} else {
+					validAdd = false;
+					validApply = false;
 				}
-				
+				if (!stext.isSelected() && !ltext.isSelected() && 
+						!integ.isSelected() && !bool.isSelected()) {
+					validAdd = false;
+					validApply = false;
+				}
 				if (validAdd == true) {
 					addVariable.setEnabled(true);
 				} else {
 					addVariable.setEnabled(false);
 				}
 				if (validApply == true) {
-					acceptVariable.setEnabled(true);
 					trashVariable.setEnabled(true);
 				} else {
-					acceptVariable.setEnabled(false);
 					trashVariable.setEnabled(false);
 				}
 			}
@@ -266,16 +375,82 @@ public class StatementTypeEditor extends JFrame {
 		addVariable.setPreferredSize(new Dimension(18, 18));
 		addVariable.setToolTipText("add this new variable to the list");
 		addVariable.setEnabled(false);
+        addVariable.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		// collect required data
+        		int typeRow = typeTable.getSelectedRow();
+        		String statementType = stc.get(typeRow).getLabel();
+        		String dataType = null;
+        		if (stext.isSelected()) {
+        			dataType = "short text";
+        		} else if (ltext.isSelected()) {
+        			dataType = "long text";
+        		} else if (integ.isSelected()) {
+        			dataType = "integer";
+        		} else if (bool.isSelected()) {
+        			dataType = "boolean";
+        		}
+        		String newVar = varTextField.getText();
+
+        		// update table in the current window
+	    		int varRows = varTable.getModel().getRowCount();
+	    		String[] newRow = {newVar, dataType};
+	    		((DefaultTableModel)varTable.getModel()).insertRow(
+	    				varRows, newRow);
+        		
+        		// update database
+        		Dna.dna.db.addVariable(newVar, dataType, statementType);
+        		
+        		// update statement type container
+        		HashMap<String, String> varMap = stc.get(typeRow).
+        				getVariables();
+        		varMap.put(newVar, dataType);
+        		stc.get(typeRow).setVariables(varMap);
+        	}
+        });
+        
 		trashVariable = new JButton(removeIcon);
 		trashVariable.setPreferredSize(new Dimension(18, 18));
 		trashVariable.setToolTipText("remove this variable from the list");
 		trashVariable.setEnabled(false);
-		acceptVariable = new JButton(applyIcon);
-		acceptVariable.setPreferredSize(new Dimension(18, 18));
-		acceptVariable.setToolTipText("apply changes made to this variable");
-		acceptVariable.setEnabled(false);
+        trashVariable.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		// collect data
+        		String varName = varTextField.getText();
+        		int typeRow = typeTable.getSelectedRow();
+        		String statementType = stc.get(typeRow).getLabel();
+        		
+        		// ask for confirmation
+        		int dialog = JOptionPane.showConfirmDialog(
+						StatementTypeEditor.this, 
+						"Really remove variable \"" + varName + 
+						"\" along with all data?", 
+						"Confirmation required", JOptionPane.OK_CANCEL_OPTION);
+        		
+        		if (dialog == 0) {
+            		// update statement type container
+            		HashMap<String, String> varMap = stc.get(typeRow).
+            				getVariables();
+            		varMap.remove(varName);
+            		stc.get(typeRow).setVariables(varMap);
+            		
+            		// update database
+            		Dna.dna.db.removeVariable(varName, statementType);
+            		
+            		// update table in the current window
+            		for (int i = varTable.getModel().getRowCount() - 1; i >= 0; 
+            				i--) {
+            			if (varTable.getModel().getValueAt(i, 0).equals(
+            					varName)) {
+            				((DefaultTableModel)varTable.getModel()).removeRow(
+            						i);
+            			}
+            		}
+        		}
+        	}
+        });
+        
 		varButtonPanel.add(varTextField);
-		varButtonPanel.add(acceptVariable);
 		varButtonPanel.add(addVariable);
 		varButtonPanel.add(trashVariable);
 		
@@ -298,28 +473,42 @@ public class StatementTypeEditor extends JFrame {
 
 	class TypeTableSelectionHandler implements ListSelectionListener {
 	    public void valueChanged(ListSelectionEvent e) {
-	        int typeRow = e.getFirstIndex();
-    		((DefaultTableModel)varTable.getModel()).setRowCount(0);
-	        StatementType st = stc.get(typeRow);
-	        HashMap<String, String> variables = st.getVariables();
-	        Iterator<String> keyIterator = variables.keySet().iterator();
-	        while (keyIterator.hasNext()){
-	    		String key = keyIterator.next();
-	    		String value = variables.get(key);
-	    		int varRows = varTable.getModel().getRowCount();
-	    		String[] newRow = {key, value};
-	    		((DefaultTableModel)varTable.getModel()).insertRow(varRows, 
-	    				newRow);
+	    	ListSelectionModel lsm = (ListSelectionModel)e.getSource();
+	    	if (!lsm.getValueIsAdjusting()) {
+    			int typeRow = lsm.getMinSelectionIndex();
+	    		((DefaultTableModel)varTable.getModel()).setRowCount(0);
+	    		if (typeRow > -1) {
+	    			StatementType st = stc.get(typeRow);
+			        HashMap<String, String> variables = st.getVariables();
+			        Iterator<String> keyIterator = variables.keySet().
+			        		iterator();
+			        while (keyIterator.hasNext()){
+			    		String key = keyIterator.next();
+			    		String value = variables.get(key);
+			    		int varRows = varTable.getModel().getRowCount();
+			    		String[] newRow = {key, value};
+			    		((DefaultTableModel)varTable.getModel()).insertRow(
+			    				varRows, newRow);
+			    	}
+			        Color col = st.getColor();
+			        addColorButton.setForeground(col);
+					addColorButton.setEnabled(true);
+			        
+			        addTypeTextField.setText(st.getLabel());
+			        addTypeTextField.setEnabled(true);
+			        
+			        applyTypeButton.setEnabled(true);
+			        removeTypeButton.setEnabled(true);
+			        
+			        varTextField.setEnabled(true);
+    				varTextField.setText(varTextField.getText());
+    	    		stext.setEnabled(true);
+    	    		ltext.setEnabled(true);
+    	    		integ.setEnabled(true);
+    	    		bool.setEnabled(true);
+    	    		stext.setSelected(true);
+	    		}
 	    	}
-	        Color col = st.getColor();
-	        addColorButton.setForeground(col);
-			addColorButton.setEnabled(true);
-	        
-	        addTypeTextField.setText(st.getLabel());
-	        addTypeTextField.setEnabled(true);
-	        
-	        applyTypeButton.setEnabled(true);
-	        removeTypeButton.setEnabled(true);
 	    }
 	}
 	
@@ -328,32 +517,34 @@ public class StatementTypeEditor extends JFrame {
     		ListSelectionModel lsm = (ListSelectionModel)e.getSource();
     		if (!lsm.getValueIsAdjusting()) {
     			int varRow = lsm.getMinSelectionIndex();
-    			String varName = (String) varTable.getValueAt(varRow, 0);
-	    		varTextField.setText(varName);
-	    		String dataType = (String) varTable.getValueAt(varRow, 1);
-	        	if (dataType.equals("short text")) {
-	        		stext.setSelected(true);
-	        	} else if (dataType.equals("long text")) {
-	        		ltext.setSelected(true);
-	        	} else if (dataType.equals("integer")) {
-	        		integ.setSelected(true);
-	        	} else if (dataType.equals("boolean")) {
-	        		bool.setSelected(true);
-	        	}
-	        	
-	    		stext.setEnabled(true);
-	    		ltext.setEnabled(true);
-	    		integ.setEnabled(true);
-	    		bool.setEnabled(true);
-		        
-		        varTextField.setEnabled(true);
-				acceptVariable.setEnabled(true);
-				trashVariable.setEnabled(true);
+    			if (varRow > -1) {
+    				String varName = (String) varTable.getValueAt(varRow, 0);
+    	    		varTextField.setText(varName);
+    	    		String dataType = (String) varTable.getValueAt(varRow, 1);
+    	        	if (dataType.equals("short text")) {
+    	        		stext.setSelected(true);
+    	        	} else if (dataType.equals("long text")) {
+    	        		ltext.setSelected(true);
+    	        	} else if (dataType.equals("integer")) {
+    	        		integ.setSelected(true);
+    	        	} else if (dataType.equals("boolean")) {
+    	        		bool.setSelected(true);
+    	        	}
+    	        	
+    	    		stext.setEnabled(true);
+    	    		ltext.setEnabled(true);
+    	    		integ.setEnabled(true);
+    	    		bool.setEnabled(true);
+    		        
+    		        varTextField.setEnabled(true);
+    				trashVariable.setEnabled(true);
+    			} else {
+    				stext.setSelected(true);
+    				varTextField.setText("");
+    			}
 	    	}
 	    }
 	}
-	
-	// TODO: write listener for buttons
 	
 	public class TypeCellRenderer extends DefaultTableCellRenderer {
 		private static final long serialVersionUID = 1L;

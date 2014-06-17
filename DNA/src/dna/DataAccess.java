@@ -286,18 +286,9 @@ public class DataAccess {
     			"ID INTEGER NOT NULL PRIMARY KEY, " + 
     	    	"Variable TEXT, " + 
     	    	"DataType TEXT, " +
-    	    	"StatementType INTEGER, " +
-    	    	"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(ID))"
+    	    	"StatementType TEXT, " +
+    	    	"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label))"
     	    	);
-		
-		executeStatement(
-				"CREATE TABLE IF NOT EXISTS VARIABLES(" + 
-		    	"ID INTEGER NOT NULL PRIMARY KEY, " + 
-		    	"Variable TEXT, " + 
-		    	"DataType TEXT, " +
-		    	"StatementType INTEGER, " +
-		    	"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(ID))"
-				);
 		
 		executeStatement(
 				"CREATE TABLE IF NOT EXISTS STATEMENTS(" +
@@ -451,15 +442,75 @@ public class DataAccess {
 	 */
 	public void removeStatementType(String label) {
 		ArrayList<?> al = executeQueryForList(
-				"SELECT ID FROM STATEMENTS WHERE Type = " + label);
-		if (al.size() != 0) {
-			System.err.println("SidebarStatement type cannot be removed because " +
-					"there are still some statements of this type.");
-		} else {
-			executeStatement(
-					"DELETE FROM STATEMENTTYPE WHERE Label = " + label
-					);
+				"SELECT ID FROM STATEMENTS WHERE Type = '" + label + "'");
+		
+		executeStatement("DELETE FROM STATEMENTS WHERE Type = '" + label + "'");
+		
+		executeStatement("DELETE FROM VARIABLES WHERE StatementType = '" + 
+				label + "'");
+		
+		executeStatement("DELETE FROM STATEMENTTYPE WHERE Label = '" + label + 
+				"'");
+		
+		executeStatement("DROP TABLE " + label);
+		
+		if (al.size() > 0) {
+			System.out.println(al.size() + " statements were removed.");
 		}
+	}
+	
+	/**
+	 * Add a variable to the VARIABLES table and the specific statement table.
+	 * 
+	 * @param varName        Name of the variable.
+	 * @param dataType       Data type of the variable.
+	 * @param statementType  The statement type to which this variable belongs.
+	 */
+	public void addVariable(String varName, String dataType, String 
+			statementType) {
+		
+		executeStatement("INSERT INTO VARIABLES (Variable, DataType, " +
+				"StatementType) VALUES('" + varName + "', '" + dataType + 
+				"', '" + statementType + "')");
+		
+		executeStatement("ALTER TABLE " + statementType + " ADD " + varName + 
+				" " + dataType);
+	}
+	
+	/**
+	 * Remove a variables from the VARIABLES table and the statement table.
+	 * 
+	 * @param varName        Name of the variable.
+	 * @param statementType  Statement type label.
+	 */
+	public void removeVariable(String varName, String statementType) {
+		// remove from VARIABLES table
+		executeStatement("DELETE FROM VARIABLES WHERE Variable = '" + varName + 
+				"' AND StatementType = '" + statementType + "'");
+		
+		// get names of remaining variables and concatenate them
+		ArrayList<?> al = executeQueryForList(
+				"SELECT Variable FROM VARIABLES WHERE StatementType = '" + 
+				statementType + "'");
+		@SuppressWarnings("unchecked")
+		ArrayList<String> varNames = (ArrayList<String>) al;
+		String varString = "StatementID";
+		for (int i = 0; i < varNames.size(); i++) {
+			if (!varName.equals(varNames.get(i))) {
+				varString = varString + "," + varNames.get(i);
+			}
+		}
+		
+		// replace statement-specific table by a version without the variable
+		executeStatement("CREATE TABLE t1_backup(" + varString + ")");
+		executeStatement("INSERT INTO t1_backup SELECT " + varString + 
+				" FROM " + statementType);
+		executeStatement("DROP TABLE " + statementType);
+		executeStatement("CREATE TABLE " + statementType + "(" + varString + 
+				")");
+		executeStatement("INSERT INTO " + statementType + " SELECT " + 
+				varString +	" FROM t1_backup");
+		executeStatement("DROP TABLE t1_backup");
 	}
 	
 	/**
@@ -723,13 +774,28 @@ public class DataAccess {
 	 * @param green  The green RGB value.
 	 * @param blue   The blue RGB value.
 	 */
-	public void changeStatementType(String label, int red, int green, 
-			int blue) {
+	public void changeStatementType(String oldLabel, String newLabel, int red, 
+			int green, int blue) {
 		executeStatement(
-				"UPDATE STATEMENTTYPE SET Label = '" + label + 
+				"UPDATE STATEMENTTYPE SET Label = '" + newLabel + 
 				"', Red = " + red + ", Green = " + green + ", Blue = " + 
-				blue + " WHERE Label = '" + label + "'"
+				blue + " WHERE Label = '" + oldLabel + "'"
 				);
+		
+		if (!oldLabel.equals(newLabel)) {
+			executeStatement(
+					"UPDATE STATEMENTS SET Type = '" + newLabel + 
+					"' WHERE Type = '" + oldLabel + "'"
+					);
+			
+			executeStatement(
+					"UPDATE VARIABLES SET StatementType = '" + newLabel + 
+					"' WHERE StatementType = '" + oldLabel + "'"
+					);
+			
+			executeStatement("ALTER TABLE " + oldLabel + " RENAME TO " + 
+					newLabel);
+		}
 	}
 	
 	/**

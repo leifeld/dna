@@ -77,16 +77,26 @@ public class StatementTypeContainer implements TableModel {
 	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
 		switch( columnIndex ){
 			case 0: 
-				String label = (String) aValue;
-				Color col = Dna.dna.db.getStatementTypeColor(label);
+				String newLabel = (String) aValue;
+				String oldLabel = types.get(rowIndex).getLabel();
+				Color col = Dna.dna.db.getStatementTypeColor(oldLabel);
 				int red = col.getRed();
 				int green = col.getGreen();
 				int blue = col.getBlue();
-				Dna.dna.db.changeStatementType(label, red, green, blue);
-				types.get(rowIndex).setLabel(label);
+				Dna.dna.db.changeStatementType(oldLabel, newLabel, red, green, 
+						blue);
+				types.get(rowIndex).setLabel(newLabel);
 				break;
 			case 1: 
 				break;
+		}
+	}
+
+	public void addStatementType(StatementType statementType) {
+		types.add(statementType);
+		TableModelEvent e = new TableModelEvent(this);
+		for( int i = 0, n = listeners.size(); i < n; i++ ){
+			((TableModelListener)listeners.get( i )).tableChanged( e );
 		}
 	}
 	
