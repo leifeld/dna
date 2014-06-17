@@ -191,7 +191,10 @@ class TextPanel extends JPanel {
 		ArrayList<StatementType> st = Dna.dna.db.getStatementTypes();
 		for (int i = 0; i < st.size(); i++) {
 			String type = st.get(i).getLabel();
+			Color col = st.get(i).getColor();
     		menu1 = new JMenuItem( "Format as " + type);
+    		menu1.setOpaque(true);
+    		menu1.setBackground(col);
 			popmen.add( menu1 );
 			
 			menu1.addActionListener(new ActionListener() {

@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -190,7 +191,6 @@ public class Popup extends JDialog {
 			} else if (value.equals("long text")) {
 				String entry = Dna.dna.db.getVariableStringEntry(statementId, 
 						key);
-				gbc.gridheight = 7;
     			JTextArea box = new JTextArea();
     			box.setEditable(true);
     			box.setWrapStyleWord(true);
@@ -208,7 +208,6 @@ public class Popup extends JDialog {
 				gridBagPanel.add(boxScroller, gbc);
 				gbc.gridx--;
 				gbc.gridy++;
-				gbc.gridheight = 1;
 			} else if (value.equals("boolean")) {
 				int entry = Dna.dna.db.getVariableIntEntry(statementId, key);
 				boolean val;
@@ -235,20 +234,21 @@ public class Popup extends JDialog {
 				gbc.insets = new Insets(3,3,3,3);
 				gbc.gridx--;
 				gbc.gridy++;
-				
 			} else if (value.equals("integer")) {
 				int entry = Dna.dna.db.getVariableIntEntry(statementId, key);
 				JSpinner jsp = new JSpinner();
 				jsp.setValue(entry);
-    			jsp.setPreferredSize(new Dimension(220, 20));
+    			jsp.setPreferredSize(new Dimension(70, 20));
     			jsp.setEnabled(true);
+    			JPanel jp = new JPanel(new FlowLayout(FlowLayout.LEFT));
+    			jp.add(jsp);
     			
 				gbc.anchor = GridBagConstraints.EAST;
 	    		gridBagPanel.add(label, gbc);
 				gbc.insets = new Insets(0,0,0,0);
 				gbc.anchor = GridBagConstraints.WEST;
 				gbc.gridx++;
-				gridBagPanel.add(jsp, gbc);
+				gridBagPanel.add(jp, gbc);
 				gbc.insets = new Insets(3,3,3,3);
 				gbc.gridx--;
 				gbc.gridy++;
