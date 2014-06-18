@@ -87,8 +87,6 @@ class SidebarPanel extends JScrollPane {
 	}
 	
 	private void statementPanel() {
-		//TODO: statementPanel must be populated with statements or updated when the database is loaded or changed
-		
 		ssc = new SidebarStatementContainer();
 		statementTable = new JTable( ssc );
 		statementTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -98,12 +96,15 @@ class SidebarPanel extends JScrollPane {
 		statementTable.getColumnModel().getColumn( 1 ).setPreferredWidth( 170 );
 		
 		statementTable.getTableHeader().setReorderingAllowed( false );
-		statementTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+		statementTable.putClientProperty("terminateEditOnFocusLost", 
+				Boolean.TRUE);
 		
 		setRowSorterEnabled(true);
 		
-		StatementCellRenderer statementCellRenderer = new StatementCellRenderer();
-		statementTable.getColumnModel().getColumn(0).setCellRenderer(statementCellRenderer);
+		StatementCellRenderer statementCellRenderer = new 
+				StatementCellRenderer();
+		statementTable.getColumnModel().getColumn(0).setCellRenderer(
+				statementCellRenderer);
 		
 		//TODO
 		//StatementFilter statementFilter = new StatementFilter();
@@ -122,17 +123,22 @@ class SidebarPanel extends JScrollPane {
 				if (row > -1) {
 					int statementId = ssc.get(row).getStatementId();
 					if (statementId != -1) {
-						//TODO
-						//highlightStatementInText(statementId);
-						//TODO
-						//new Popup(statementId);
+						highlightStatementInText(statementId);
 					}
 				}
 			}
 		});
-		
 	}
 
+	private void highlightStatementInText(int statementId) {
+		int docId = Dna.dna.db.getStatement(statementId).getDocumentId();
+		int docRow = Dna.dna.gui.documentPanel.documentContainer.
+				getRowIndexById(docId);
+		Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
+				setSelectionInterval(docRow, docRow);
+		Dna.dna.gui.textPanel.selectStatement(statementId, docId);
+	}
+	
 	public void setRowSorterEnabled(boolean enabled) {
 		if (enabled == true) {
 			TableRowSorter<SidebarStatementContainer> sorter = new TableRowSorter<SidebarStatementContainer>(ssc) {

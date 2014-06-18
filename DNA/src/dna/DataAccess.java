@@ -847,7 +847,7 @@ public class DataAccess {
 	 */
 	public void removeStatement(int id) {
 		String type = getStatementType(id);
-		executeStatement("DELETE FROM " + type + " WHERE ID = " + id);
+		executeStatement("DELETE FROM " + type + " WHERE StatementID = " + id);
 		executeStatement("DELETE FROM STATEMENTS WHERE ID = " + id);
 	}
 

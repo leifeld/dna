@@ -32,6 +32,7 @@ public class Dna {
 		dna.db.removeStatement(statementId);
 		int row = dna.gui.sidebarPanel.ssc.getIndexByStatementId(statementId);
 		dna.gui.sidebarPanel.ssc.remove(row);
+		dna.gui.sidebarPanel.statementTable.updateUI();
 	}
 	
 	public void addDocument(String title, String text, Date date, String coder, 

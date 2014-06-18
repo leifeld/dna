@@ -15,15 +15,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -39,15 +33,13 @@ import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
-import javax.swing.border.TitledBorder;
 
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
 public class Popup extends JDialog {
 	
+	private static final long serialVersionUID = 1L;
 	Container c;
 	Point point, los;
 	String type;
@@ -56,6 +48,12 @@ public class Popup extends JDialog {
 	JPanel gridBagPanel;
 	Connection conn;
 	Statement st6;
+	
+	public Popup(Point point, int statementId) {
+		//Point location = Dna.dna.gui.getLocationOnScreen();
+		Point location = new Point(0, 0);
+		new Popup(point, statementId, location);
+	}
 	
 	public Popup(Point point, int statementId, Point location) {
 		this.point = point;
@@ -130,14 +128,16 @@ public class Popup extends JDialog {
 		remove.setPreferredSize(new Dimension(16, 16));
 		remove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int question = JOptionPane.showConfirmDialog(Popup.this, 
+				int question = JOptionPane.showConfirmDialog(Dna.dna.gui, 
 						"Are you sure you want to remove this statement?", 
 						"Remove?", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
-					Dna.dna.db.removeStatement(Popup.this.statementId);
+					//Dna.dna.db.removeStatement(Popup.this.statementId);
+					Dna.dna.removeStatement(Popup.this.statementId);
 					Dna.dna.gui.textPanel.paintStatements();
 					dispose();
-					Dna.dna.gui.sidebarPanel.ssc.removeSidebarStatement(Popup.this.statementId);
+					
+					//Dna.dna.gui.sidebarPanel.ssc.removeSidebarStatement(Popup.this.statementId);
 				}
 			}
 		});
@@ -269,6 +269,7 @@ public class Popup extends JDialog {
 		this.setVisible(true);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void saveContents() {
 		Component[] com = gridBagPanel.getComponents();
 		HashMap<String, String> vars = Dna.dna.db.getVariables(type);
