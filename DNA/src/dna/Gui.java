@@ -42,7 +42,8 @@ public class Gui extends JFrame {
 		this.setTitle("Discourse Network Analyzer");
 		//this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		ImageIcon dna32Icon = new ImageIcon(getClass().getResource("/icons/dna32.png"));
+		ImageIcon dna32Icon = new ImageIcon(getClass().getResource(
+				"/icons/dna32.png"));
 		this.setIconImage(dna32Icon.getImage());
 
 		//addWindowListener(new WindowAdapter() {
@@ -128,7 +129,8 @@ public class Gui extends JFrame {
 				getTableHeader().setReorderingAllowed( false );
 				putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 				
-				getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+				getSelectionModel().addListSelectionListener(new 
+						ListSelectionListener() {
 					public void valueChanged(ListSelectionEvent e) {
 						if (e.getValueIsAdjusting()) {
 							return;
@@ -145,9 +147,11 @@ public class Gui extends JFrame {
 					    	textPanel.setDocumentText(text);
 					    	textPanel.setEnabled(true);
 						}
-						//if (statementFilter.showCurrent.isSelected()) {
-						//	statementFilter.articleFilter();
-						//}
+						if (Dna.dna.gui.sidebarPanel.statementFilter.
+									showCurrent.isSelected()) {
+							Dna.dna.gui.sidebarPanel.statementFilter.
+									documentFilter();
+						}
 						
 						if (Dna.dna.db.getFileName() != null) {
 							textPanel.paintStatements();
@@ -156,17 +160,6 @@ public class Gui extends JFrame {
 					}
 				});
 			}
-			
-			/*
-			public void rebuildTable() {
-				documentTable.clearSelection();
-				documentContainer.clear();
-				ArrayList<Document> documents = new SqlQuery(dbfile).getArticles();
-				for (int i = 0; i < articles.size(); i++) {
-					articleContainer.addArticle(articles.get(i));
-				}
-			}
-			*/
 		}
 	}
 
