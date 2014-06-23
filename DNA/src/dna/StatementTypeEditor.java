@@ -185,6 +185,7 @@ public class StatementTypeEditor extends JFrame {
 						Dna.dna.gui.sidebarPanel.ssc.get(i).setType(newLabel);
 					}
 					Dna.dna.gui.sidebarPanel.statementTable.updateUI();
+					Dna.dna.gui.sidebarPanel.updateStatementTypes();
 				}
         	}
         });
@@ -219,6 +220,7 @@ public class StatementTypeEditor extends JFrame {
 					int newRow = stc.getIndexByLabel(newLabel);
 					typeTable.getSelectionModel().setSelectionInterval(
 							newRow, newRow);
+					Dna.dna.gui.sidebarPanel.updateStatementTypes();
 				}
         	}
         });
@@ -258,6 +260,7 @@ public class StatementTypeEditor extends JFrame {
 					}
 					Dna.dna.gui.sidebarPanel.statementTable.updateUI();
 					addTypeTextField.setText("");
+					Dna.dna.gui.sidebarPanel.updateStatementTypes();
 				}
         	}
         });
@@ -406,6 +409,7 @@ public class StatementTypeEditor extends JFrame {
         				getVariables();
         		varMap.put(newVar, dataType);
         		stc.get(typeRow).setVariables(varMap);
+        		Dna.dna.gui.sidebarPanel.updateStatementTypes();
         	}
         });
         
@@ -446,6 +450,7 @@ public class StatementTypeEditor extends JFrame {
             						i);
             			}
             		}
+            		Dna.dna.gui.sidebarPanel.updateStatementTypes();
         		}
         	}
         });

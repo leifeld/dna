@@ -208,7 +208,6 @@ public class Gui extends JFrame {
 						}
 						Dna.dna.newFile(filename);
 					}
-					//reloadDb();
 				}
 			});
 			

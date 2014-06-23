@@ -67,6 +67,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
 		Dna.dna.gui.menuBar.newArticleButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
+		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
 	
 	public void closeFile() {
@@ -78,6 +79,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(false);
 		Dna.dna.gui.menuBar.newArticleButton.setEnabled(false);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(false);
+		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
 	
 	public void newFile(String filename) {
@@ -93,5 +95,6 @@ public class Dna {
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
 		Dna.dna.gui.menuBar.newArticleButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
+		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
 }

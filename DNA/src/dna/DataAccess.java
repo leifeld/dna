@@ -10,6 +10,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.sqlite.Function;
 
 public class DataAccess {
 	String dbfile;
@@ -317,7 +321,7 @@ public class DataAccess {
 				);
 		return result;
 	}
-
+	
 	/**
 	 * Retrieve a variable entry of type int from a custom statement table.
 	 * 
@@ -333,7 +337,75 @@ public class DataAccess {
 				);
 		return result;
 	}
-
+	
+	/**
+	 * Retrieve data type for a given statement type and variable name.
+	 * 
+	 * @param variable       String name of the variable.
+	 * @param statementType  String name of the statement type.
+	 * @return               Data type of the variable.
+	 */
+	public String getDataType(String variable, String statementType) {
+		String type = executeQueryForString(
+				"SELECT DataType FROM VARIABLES WHERE Variable = '" + 
+				variable + "' AND StatementType = '" + statementType + "'"
+				);
+		return type;
+	}
+	
+	/**
+	 * Match a variable against a pattern and return matching statement IDs.
+	 * 
+	 * @param statementType  Label of the statement type/name of the table.
+	 * @param variable       Name of the variable in the table.
+	 * @param pattern        Regex against which to compare the cell entry.
+	 * @return               An array list of matching statement IDs.
+	 */
+	public ArrayList<Integer> getStatementMatch(String statementType, 
+			String variable, String pattern) {
+		String dt = getDataType(variable, statementType);
+		ArrayList<Integer> idlist = new ArrayList<Integer>();
+		
+		Connection connection = null;
+		Statement statement = null;
+		ResultSet resultSet = null;
+		try {
+			connection = getConnection();
+			statement = connection.createStatement();
+			resultSet = statement.executeQuery("SELECT StatementID, " + 
+					variable + " FROM " + statementType);
+			if (resultSet.next()) {
+				do {
+					int id = resultSet.getInt("StatementID");
+					String s = "";
+					if (dt.equals("short text") || dt.equals("long text")) {
+						s = resultSet.getString(variable);
+					} else {
+						int i = resultSet.getInt(variable);
+						s = new Integer(i).toString();
+					}
+					Pattern p = Pattern.compile(pattern);
+					Matcher m = p.matcher(s);
+					boolean b = m.find();
+					if (b == true) {
+						idlist.add(id);
+					}
+				} while (resultSet.next());
+			}
+			resultSet.close();
+			statement.close();
+			connection.close();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try { statement.close(); } catch(Exception e) {}
+			try { connection.close(); } catch(Exception e) {}
+		}
+		return idlist;
+	}
+	
 	/**
 	 * Retrieve all variable entries of type int from a statement table.
 	 * 
