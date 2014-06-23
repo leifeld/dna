@@ -123,8 +123,8 @@ class SearchPanel extends JPanel {
 						false);
 			}
 			
-			int id = Dna.dna.gui.documentPanel.documentContainer.get(
-					Dna.dna.gui.documentPanel.documentTable.getSelectedRow()).getId();
+			//int id = Dna.dna.gui.documentPanel.documentContainer.get(
+			//		Dna.dna.gui.documentPanel.documentTable.getSelectedRow()).getId();
 			
 			String searchText = Dna.dna.gui.textPanel.getDocumentText();
 	    	//String searchText = new SqlQuery(dbfile).getArticleTextById(id);

@@ -622,6 +622,69 @@ public class DataAccess {
 	}
 	
 	/**
+	 * Retrieve a string array of unique document coder names in the database.
+	 * 
+	 * @return  String array of distinct coders.
+	 */
+	public String[] getDocumentCoders() {
+		ArrayList<?> al = executeQueryForList(
+				"SELECT DISTINCT Coder FROM DOCUMENTS"
+				);
+		@SuppressWarnings("unchecked")
+		ArrayList<String> a = (ArrayList<String>) al;
+		if (!a.contains("")) {
+			a.add(0, "");
+		}
+		String[] coders = new String[a.size()];
+		for (int i = 0; i < al.size(); i++) {
+			coders[i] = (String) al.get(i);
+		}
+		return coders;
+	}
+
+	/**
+	 * Retrieve a string array of unique document types in the database.
+	 * 
+	 * @return  String array of distinct types.
+	 */
+	public String[] getDocumentTypes() {
+		ArrayList<?> al = executeQueryForList(
+				"SELECT DISTINCT Type FROM DOCUMENTS"
+				);
+		@SuppressWarnings("unchecked")
+		ArrayList<String> a = (ArrayList<String>) al;
+		if (!a.contains("")) {
+			a.add(0, "");
+		}
+		String[] types = new String[a.size()];
+		for (int i = 0; i < al.size(); i++) {
+			types[i] = (String) al.get(i);
+		}
+		return types;
+	}
+
+	/**
+	 * Retrieve a string array of unique document sources in the database.
+	 * 
+	 * @return  String array of distinct sources.
+	 */
+	public String[] getDocumentSources() {
+		ArrayList<?> al = executeQueryForList(
+				"SELECT DISTINCT Type FROM DOCUMENTS"
+				);
+		@SuppressWarnings("unchecked")
+		ArrayList<String> a = (ArrayList<String>) al;
+		if (!a.contains("")) {
+			a.add(0, "");
+		}
+		String[] sources = new String[a.size()];
+		for (int i = 0; i < al.size(); i++) {
+			sources[i] = (String) al.get(i);
+		}
+		return sources;
+	}
+	
+	/**
 	 * Retrieve the color of a statement type from the STATEMENTTYPE table.
 	 * 
 	 * @param statementType  A string representing the statement type label.

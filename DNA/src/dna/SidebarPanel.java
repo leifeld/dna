@@ -73,13 +73,24 @@ class SidebarPanel extends JScrollPane {
 		statementTaskPane.setIcon(statementIcon);
         ((Container)tpc).add(statementTaskPane);
         statementTaskPane.add(statementPanel);
-        
+
+		DocumentProperties dp = new DocumentProperties();
+		JXTaskPane docTaskPane = new JXTaskPane();
+		ImageIcon docIcon = new ImageIcon(getClass().getResource(
+				"/icons/table_edit.png"));
+		docTaskPane.setName("Document properties");
+		docTaskPane.setTitle("Document properties");
+		docTaskPane.setIcon(docIcon);
+		docTaskPane.setCollapsed(true);
+		((Container)tpc).add(docTaskPane);
+        docTaskPane.add(dp);
+		
 		SearchPanel sp = new SearchPanel();
 		JXTaskPane searchTaskPane = new JXTaskPane();
 		ImageIcon findIcon = new ImageIcon(getClass().getResource(
 				"/icons/find.png"));
-		searchTaskPane.setName("Search within article");
-		searchTaskPane.setTitle("Search within article");
+		searchTaskPane.setName("Search within document");
+		searchTaskPane.setTitle("Search within document");
 		searchTaskPane.setIcon(findIcon);
 		searchTaskPane.setCollapsed(true);
 		((Container)tpc).add(searchTaskPane);
