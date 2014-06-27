@@ -129,7 +129,7 @@ class DocumentContainer implements TableModel {
 	}
 
 	//which type of object (i.e. class) shall be shown in the columns?
-	public Class getColumnClass(int columnIndex) {
+	public Class<?> getColumnClass(int columnIndex) {
 		switch( columnIndex ){
 			case 0: return String.class;
 			case 1: return Date.class;

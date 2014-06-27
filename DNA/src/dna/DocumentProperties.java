@@ -21,8 +21,6 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerDateModel;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 import org.jdesktop.swingx.JXTextArea;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;

@@ -269,7 +269,6 @@ public class Popup extends JDialog {
 			Object content = null;
 			String contentType = null;
 			String dataType = null;
-			//System.out.println(com[i].getClass().getName());
 			if (com[i].getClass().getName().equals("javax.swing.JComboBox")) {
 				contentType = ((JLabel)com[i-1]).getText();
 				dataType = vars.get(contentType);
@@ -279,7 +278,8 @@ public class Popup extends JDialog {
 				}
 				Dna.dna.db.changeStatement(statementId, contentType, 
 						(String) content, dataType);
-			} else if (com[i].getClass().getName().equals("javax.swing.JCheckBox")) {
+			} else if (com[i].getClass().getName().equals(
+					"javax.swing.JCheckBox")) {
 				contentType = ((JLabel)com[i-1]).getText();
 				dataType = vars.get(contentType);
 				content = ((JCheckBox)com[i]).isSelected();
@@ -291,20 +291,25 @@ public class Popup extends JDialog {
 				}
 				Dna.dna.db.changeStatement(statementId, contentType, intBool, 
 						dataType);
-			} else if (com[i].getClass().getName().equals("javax.swing.JTextArea")) {
+			} else if (com[i].getClass().getName().equals(
+					"javax.swing.JScrollPane")) {
 				contentType = ((JLabel)com[i-1]).getText();
 				dataType = vars.get(contentType);
-				content = ((JTextArea)com[i]).getText();
+				JScrollPane jsp = ((JScrollPane)com[i]);
+				JTextArea jta = (JTextArea) jsp.getViewport().getView();
+				content = jta.getText();
 				if (content == null) {
 					content = "";
 				}
-				//System.out.println("content: " + content);
 				Dna.dna.db.changeStatement(statementId, contentType, 
 						(String) content, dataType);
-			} else if (com[i].getClass().getName().equals("javax.swing.JSpinner")) {
+			} else if (com[i].getClass().getName().equals(
+					"javax.swing.JPanel")) {
 				contentType = ((JLabel)com[i-1]).getText();
 				dataType = vars.get(contentType);
-				content = ((JSpinner)com[i]).getValue();
+				JPanel jp = (JPanel) com[i];
+				JSpinner jsp = (JSpinner) jp.getComponent(0);
+				content = jsp.getValue();
 				Dna.dna.db.changeStatement(statementId, contentType, 
 						(Integer) content, dataType);
 			}
