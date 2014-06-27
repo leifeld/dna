@@ -48,14 +48,14 @@ class NewDocumentWindow extends JFrame {
 	
 	public NewDocumentWindow() {
 		
-		this.setTitle("Add new article...");
+		this.setTitle("Add new document...");
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		ImageIcon tableAddIcon = new ImageIcon(getClass().getResource(
 				"/icons/table_add.png"));
 		this.setIconImage(tableAddIcon.getImage());
 		this.setLayout(new FlowLayout(FlowLayout.LEFT));
 		
-		textArea = new JXTextArea("paste the contents of the article here " +
+		textArea = new JXTextArea("paste the contents of the document here " +
 				"using Ctrl-V...");
 		textArea.setLineWrap(true);
 		textArea.setWrapStyleWord(true);

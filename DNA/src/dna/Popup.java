@@ -269,6 +269,7 @@ public class Popup extends JDialog {
 			Object content = null;
 			String contentType = null;
 			String dataType = null;
+			//System.out.println(com[i].getClass().getName());
 			if (com[i].getClass().getName().equals("javax.swing.JComboBox")) {
 				contentType = ((JLabel)com[i-1]).getText();
 				dataType = vars.get(contentType);
@@ -297,6 +298,7 @@ public class Popup extends JDialog {
 				if (content == null) {
 					content = "";
 				}
+				//System.out.println("content: " + content);
 				Dna.dna.db.changeStatement(statementId, contentType, 
 						(String) content, dataType);
 			} else if (com[i].getClass().getName().equals("javax.swing.JSpinner")) {

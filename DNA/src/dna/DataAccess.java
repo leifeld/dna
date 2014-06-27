@@ -13,26 +13,51 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.sqlite.Function;
+import javax.swing.JOptionPane;
+
 
 public class DataAccess {
+	boolean sqlite = true;
 	String dbfile;
+	String login = "";
+	String password = "";
 
 	/**
-	 * Create a new DataAccess object, which manages SQLite database access.
+	 * Create a new DataAccess object, which manages database access.
+	 * 
+	 * @param sqlite  boolean indicating whether an SQLite file shall be used.
 	 */
-	public DataAccess() {
+	public DataAccess(boolean sqlite) {
 		//no file given; openFile() must be called first
-		dbfile = null;
+		this.dbfile = null;
+		this.sqlite = sqlite;
 	}
 	
 	/**
-	 * Create a new DataAccess object, which manages SQLite database access.
+	 * Create a new DataAccess object, which manages database access.
 	 * 
-	 * @param dbfile  The name of the .dna file to be accessed.
+	 * @param sqlite  true indicates an SQLite database, false a mySQL database.
+	 * @param dbfile  File name or URL of the database.
 	 */
-	public DataAccess(String dbfile) {
+	public DataAccess(boolean sqlite, String dbfile) {
 		this.dbfile = dbfile;
+		this.sqlite = sqlite;
+	}
+	
+	/**
+	 * Create a new DataAccess object, which manages database access.
+	 * 
+	 * @param sqlite    true indicates an SQLite database, false mySQL.
+	 * @param dbfile    File name or URL of the database.
+	 * @param login     User name of the database.
+	 * @param password  Password for the database.
+	 */
+	public DataAccess(boolean sqlite, String url, String userName, 
+			String password) {
+		this.dbfile = url;
+		this.sqlite = sqlite;
+		this.login = userName;
+		this.password = password;
 	}
 	
 	/**
@@ -42,9 +67,28 @@ public class DataAccess {
 	 * @throws ClassNotFoundException
 	 * @throws SQLException
 	 */
-	Connection getConnection() throws ClassNotFoundException, SQLException {    
+	Connection getSQLiteConnection() throws ClassNotFoundException, 
+			SQLException {    
 		Class.forName("org.sqlite.JDBC");
 		Connection conn= DriverManager.getConnection("jdbc:sqlite:" + dbfile);
+		return conn;
+	}
+	
+	/**
+	 * Establish the connection to a mySQL database on a server.
+	 * 
+	 * @return  The connection to the database.
+	 * @throws  ClassNotFoundException
+	 * @throws  SQLException
+	 */
+	Connection getMySQLConnection() throws ClassNotFoundException, 
+			SQLException {
+		Class.forName("com.mysql.jdbc.Driver");
+		//jdbc:mysql://philipleifeld.de/phillei_db3
+		//phillei_3
+		//ky5ueHe198viM6dF
+		Connection conn = DriverManager.getConnection("jdbc:" + dbfile, login, 
+				password);
 		return conn;
 	}
 	
@@ -52,7 +96,10 @@ public class DataAccess {
 	 * Forget the name of the current .dna file for data access.
 	 */
 	public void closeFile() {
-		dbfile = null;
+		this.dbfile = null;
+		this.sqlite = true;
+		this.login = null;
+		this.password = null;
 	}
 	
 	/**
@@ -61,7 +108,39 @@ public class DataAccess {
 	 * @param dnaFile  The file name of the new .dna file to be opened.
 	 */
 	public void openFile(String dnaFile) {
-		dbfile = dnaFile;
+		this.dbfile = dnaFile;
+		this.sqlite = true;
+		this.login = null;
+		this.password = null;
+	}
+
+	/**
+	 * Remember the credentials of a mySQL database for data access.
+	 * 
+	 * @param sqlite    true indicates an SQLite database, false mySQL.
+	 * @param dbfile    File name or URL of the database.
+	 * @param login     User name of the database.
+	 * @param password  Password for the database.
+	 */
+	public void openMySQL(boolean sqlite, String url, String userName, 
+			String password) {
+		this.dbfile = url;
+		this.sqlite = sqlite;
+		this.login = userName;
+		this.password = password;
+		
+		ArrayList<?> al = executeQueryForList("SHOW TABLES");
+		if (!al.contains("DOCUMENTS") || !al.contains("STATEMENTS")) {
+			int dialog = JOptionPane.showConfirmDialog(
+					Dna.dna.gui, 
+					"The database does not contain the DNA data structure. " +
+					"Create it?", "Confirmation required", 
+					JOptionPane.OK_CANCEL_OPTION);
+    		
+    		if (dialog == 0) {
+    			createTables();
+    		}
+		}
 	}
 	
 	/**
@@ -82,7 +161,11 @@ public class DataAccess {
 		Connection connection = null;
 		Statement statement = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			statement.execute(myStatement);
 			statement.close();
@@ -109,7 +192,11 @@ public class DataAccess {
 		ResultSet resultSet = null;
 		int id = -1;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			statement.execute(myStatement);
 			resultSet = statement.executeQuery(
@@ -151,7 +238,11 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(myQuery);
 			if (resultSet.next()) {
@@ -187,7 +278,11 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(myQuery);
 			if (resultSet.next()) {
@@ -223,7 +318,11 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(myQuery);
 			if (resultSet.next()) {
@@ -370,7 +469,11 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery("SELECT StatementID, " + 
 					variable + " FROM " + statementType);
@@ -455,7 +558,11 @@ public class DataAccess {
 		Statement statement = null;
 		
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 
 			statement.execute(
@@ -607,21 +714,6 @@ public class DataAccess {
 	}
 	
 	/**
-	 * Retrieve the date of a document from the DOCUMENTS table.
-	 * 
-	 * @param documentId  The ID of the document in the DOCUMENTS table.
-	 * @return            The date of the document.
-	 */
-	public Date getDocumentDate(int documentId) {
-		int intDate = executeQueryForInt(
-				"SELECT Date FROM DOCUMENTS WHERE ID = " + documentId
-				);
-		Date d = new Date();
-		d.setTime(intDate);
-		return d;
-	}
-	
-	/**
 	 * Retrieve a string array of unique document coder names in the database.
 	 * 
 	 * @return  String array of distinct coders.
@@ -670,7 +762,7 @@ public class DataAccess {
 	 */
 	public String[] getDocumentSources() {
 		ArrayList<?> al = executeQueryForList(
-				"SELECT DISTINCT Type FROM DOCUMENTS"
+				"SELECT DISTINCT Source FROM DOCUMENTS"
 				);
 		@SuppressWarnings("unchecked")
 		ArrayList<String> a = (ArrayList<String>) al;
@@ -722,9 +814,12 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
-			//System.out.println(documentId);
 			resultSet = statement.executeQuery("SELECT ID, Type, Start, " +
 					"Stop FROM STATEMENTS WHERE Document = " + documentId);
 			if (resultSet.next()) {
@@ -733,7 +828,7 @@ public class DataAccess {
 					String type = resultSet.getString("Type");
 					int start = resultSet.getInt("Start");
 					int stop = resultSet.getInt("Stop");
-					Date d = getDocumentDate(documentId);
+					Date d = getDocument(documentId).getDate();
 					Color color = getStatementTypeColor(type);
 					SidebarStatement s = new SidebarStatement(id, documentId, 
 							start, stop, d, color, type);
@@ -769,7 +864,11 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery("SELECT ID, Document, " + 
 					"Start, Stop FROM STATEMENTS WHERE Type = '" + type + "'");
@@ -779,7 +878,7 @@ public class DataAccess {
 					int documentId = resultSet.getInt("Document");
 					int start = resultSet.getInt("Start");
 					int stop = resultSet.getInt("Stop");
-					Date d = getDocumentDate(documentId);
+					Date d = getDocument(documentId).getDate();
 					Color color = getStatementTypeColor(type);
 					SidebarStatement s = new SidebarStatement(id, documentId, 
 							start, stop, d, color, type);
@@ -815,7 +914,11 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery("SELECT ID, Type, Start, " +
 					"Stop FROM STATEMENTS WHERE Document = " + documentId + 
@@ -826,7 +929,7 @@ public class DataAccess {
 					String type = resultSet.getString("Type");
 					int startCaret = resultSet.getInt("Start");
 					int stopCaret = resultSet.getInt("Stop");
-					Date d = getDocumentDate(documentId);
+					Date d = getDocument(documentId).getDate();
 					Color color = getStatementTypeColor(type);
 					s = new SidebarStatement(id, documentId, startCaret, 
 							stopCaret, d, color, type);
@@ -873,7 +976,11 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(
 					"SELECT * FROM VARIABLES WHERE StatementType = '" + 
@@ -945,7 +1052,11 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery("SELECT * FROM STATEMENTTYPE");
 			if (resultSet.next()) {
@@ -1047,7 +1158,11 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(
 					"SELECT * FROM DOCUMENTS WHERE ID = " + documentId
@@ -1136,7 +1251,11 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery("SELECT * FROM REGEX");
 			if (resultSet.next()) {
@@ -1177,7 +1296,11 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			connection = getConnection();
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(
 					"SELECT * FROM STATEMENTS WHERE ID = " + statementId
@@ -1188,7 +1311,7 @@ public class DataAccess {
 					String type = resultSet.getString("Type");
 					int startCaret = resultSet.getInt("Start");
 					int stopCaret = resultSet.getInt("Stop");
-					Date d = getDocumentDate(documentId);
+					Date d = getDocument(documentId).getDate();
 					Color color = getStatementTypeColor(type);
 					s = new SidebarStatement(statementId, documentId, 
 							startCaret, stopCaret, d, color, type);
@@ -1259,4 +1382,27 @@ public class DataAccess {
 				);
 		return id;
 	}
+
+	/**
+	 * Update the metadata of a document.
+	 * 
+	 * @param documentId  ID (not modified; used for identification of the doc).
+	 * @param title       The title of the document.
+	 * @param date        The date of the document.
+	 * @param coder       The coder of the document.
+	 * @param source      The source of the document.
+	 * @param notes       The notes of the document.
+	 * @param type        The type of the document.
+	 */
+	public void changeDocument(int documentId, String title, Date date, 
+			String coder, String source, String notes, String type) {
+		long dateInt = date.getTime();
+		executeStatement(
+				"UPDATE DOCUMENTS SET Title = '" + title + "', Date = " + 
+				dateInt + ", Coder = '" + coder + "', Source = '" + source + 
+				"', Notes = '" + notes + "', Type = '" + type + 
+				"' WHERE ID = " + documentId
+				);
+	}
+	
 }

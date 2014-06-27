@@ -5,5 +5,6 @@
 	<classpathentry kind="lib" path="DNA/lib/swingx-core-1.6.2.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="DNA/lib/sqlite-jdbc-3.7.2.jar"/>
+	<classpathentry kind="lib" path="DNA/lib/mysql-connector-java-5.1.24-bin.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

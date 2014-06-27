@@ -11,7 +11,7 @@ public class Dna {
 	Gui gui;
 	
 	public Dna () {
-		db = new DataAccess();
+		db = new DataAccess(true);
 		gui = new Gui();
 	}
 	
@@ -22,7 +22,7 @@ public class Dna {
 	public void addStatement(String type, int doc, int start, int stop) {
 		int statementId = dna.db.addStatement(type, doc, start, stop);
 		Color color = dna.db.getStatementTypeColor(type);
-		Date date = dna.db.getDocumentDate(doc);
+		Date date = dna.db.getDocument(doc).getDate();
 		SidebarStatement s = new SidebarStatement(statementId, doc, start, 
 				stop, date, color, type);
 		dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
@@ -65,7 +65,28 @@ public class Dna {
 			}
 		}
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
-		Dna.dna.gui.menuBar.newArticleButton.setEnabled(true);
+		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
+		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
+		Dna.dna.gui.sidebarPanel.updateStatementTypes();
+	}
+	
+	public void openMySQL(String url, String userName, String password) {
+		Dna.dna.db.openMySQL(false, url, userName, password);
+		Dna.dna.gui.statusBar.resetLabel();
+		ArrayList<Document> docs = Dna.dna.db.getDocuments();
+		for (int i = 0; i < docs.size(); i++) {
+			Dna.dna.gui.documentPanel.documentContainer.addDocument(docs.
+					get(i));
+			int documentId = docs.get(i).getId();
+			ArrayList<SidebarStatement> statements = Dna.dna.db.
+					getStatementsPerDocumentId(documentId);
+			for (int j = 0; j < statements.size(); j++) {
+				SidebarStatement s = statements.get(j);
+				Dna.dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
+			}
+		}
+		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
+		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
@@ -77,7 +98,7 @@ public class Dna {
 		Dna.dna.gui.sidebarPanel.ssc.clear();
 		Dna.dna.gui.textPanel.setDocumentText("");
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(false);
-		Dna.dna.gui.menuBar.newArticleButton.setEnabled(false);
+		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(false);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
@@ -93,7 +114,7 @@ public class Dna {
 		dnaStatementMap.put("agreement", "boolean");
 		db.insertStatementType("DNAStatement", 255, 255, 0, dnaStatementMap);
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
-		Dna.dna.gui.menuBar.newArticleButton.setEnabled(true);
+		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}

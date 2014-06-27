@@ -37,6 +37,17 @@ class DocumentContainer implements TableModel {
 		}
 	}
 	
+	public void changeDocument(int documentId, String title, Date date, 
+			String coder, String source, String notes, String type) {
+		int i = getRowIndexById(documentId);
+		documents.get(i).setTitle(title);
+		documents.get(i).setDate(date);
+		documents.get(i).setCoder(coder);
+		documents.get(i).setSource(source);
+		documents.get(i).setNotes(notes);
+		documents.get(i).setType(type);
+	}
+	
 	public Document get(int index) {
 		return documents.get(index);
 	}
@@ -59,7 +70,29 @@ class DocumentContainer implements TableModel {
 		}
 		throw new NullPointerException();
 	}
-
+	
+	public int getIdByRowIndex(int row) {
+		return documents.get(row).getId();
+	}
+	
+	/**
+	 * Check whether a given title is a duplicate of any existing doc title.
+	 * 
+	 * @param title       The title to be checked.
+	 * @param documentId  A document ID to be ignored during the check.
+	 * @return            Is the title a duplicate?
+	 */
+	public boolean existsDuplicateTitle(String title, int documentId) {
+		boolean duplicate = false;
+		for (int i = 0; i < documents.size(); i++) {
+			int id = documents.get(i).getId();
+			if (id != documentId && documents.get(i).getTitle().equals(title)) {
+				duplicate = true;
+			}
+		}
+		return duplicate;
+	}
+	
 	public void remove(int index) {
 		documents.remove(index);
 		TableModelEvent e = new TableModelEvent(this);

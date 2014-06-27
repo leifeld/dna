@@ -73,18 +73,7 @@ class SidebarPanel extends JScrollPane {
 		statementTaskPane.setIcon(statementIcon);
         ((Container)tpc).add(statementTaskPane);
         statementTaskPane.add(statementPanel);
-
-		DocumentProperties dp = new DocumentProperties();
-		JXTaskPane docTaskPane = new JXTaskPane();
-		ImageIcon docIcon = new ImageIcon(getClass().getResource(
-				"/icons/table_edit.png"));
-		docTaskPane.setName("Document properties");
-		docTaskPane.setTitle("Document properties");
-		docTaskPane.setIcon(docIcon);
-		docTaskPane.setCollapsed(true);
-		((Container)tpc).add(docTaskPane);
-        docTaskPane.add(dp);
-		
+        
 		SearchPanel sp = new SearchPanel();
 		JXTaskPane searchTaskPane = new JXTaskPane();
 		ImageIcon findIcon = new ImageIcon(getClass().getResource(
@@ -345,7 +334,9 @@ class SidebarPanel extends JScrollPane {
 			try {
 				RowFilter<SidebarStatementContainer, Object> rf = null;
 	    		rf = RowFilter.regexFilter("");
-	    		sorter.setRowFilter(rf);
+				if (showAll.isSelected()) {
+					sorter.setRowFilter(rf);
+				}
 			} catch (java.util.regex.PatternSyntaxException pse) {
 				return;
 			}
@@ -372,7 +363,9 @@ class SidebarPanel extends JScrollPane {
     				return false;
     			}
 			};
-			sorter.setRowFilter(documentFilter);
+			if (showCurrent.isSelected()) {
+				sorter.setRowFilter(documentFilter);
+			}
 		}
 		
 		private void filter() {
@@ -438,7 +431,9 @@ class SidebarPanel extends JScrollPane {
 							return false;
 						}
 					};
-					sorter.setRowFilter(idFilter);
+					if (showFilter.isSelected()) {
+						sorter.setRowFilter(idFilter);
+					}
 				}
 			}
 		}
