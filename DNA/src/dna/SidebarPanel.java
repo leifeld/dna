@@ -23,16 +23,21 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeSelectionModel;
 
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.jdesktop.swingx.JXTextField;
+
+import dna.SelfContradictionPanel.SelfContradictionFilter;
 
 class SidebarPanel extends JScrollPane {
 	
@@ -41,12 +46,14 @@ class SidebarPanel extends JScrollPane {
 	SidebarStatementContainer ssc;
 	JTable statementTable;
 	JScrollPane statementTableScrollPane;
-	JPanel statementPanel;
+	JPanel statementPanel, selfContPanel;
 	StatementFilter statementFilter;
 	TableRowSorter<SidebarStatementContainer> sorter;
 	JXTextField patternField1, patternField2;
-	JComboBox<String> typeComboBox1, typeComboBox2, variableComboBox1, 
-			variableComboBox2;
+	JComboBox typeComboBox1, typeComboBox1b, variableComboBox1, variableComboBox1b, 
+			variableComboBox2, variableComboBox2b, booleanComboBox1;
+	// LB.Change: JComboBox<String> typeComboBox1, typeComboBox2, variableComboBox1, 
+
 	
 	public SidebarPanel() {
 		this.setPreferredSize(new Dimension(260, 440));
@@ -76,6 +83,25 @@ class SidebarPanel extends JScrollPane {
 		((Container)tpc).add(searchTaskPane);
         searchTaskPane.add(sp);
 		
+        
+        /*
+         * LB.Add: Panel for Finding self-contradictions
+         * Class: SelfContradictionPanel()
+         */
+        //SelfContradictionPanel sc = new SelfContradictionPanel();
+		selfContradictionPanel();
+        JXTaskPane selfContradictionTaskPane = new JXTaskPane();
+		ImageIcon groupIcon = new ImageIcon(getClass().getResource(
+				"/icons/group.png"));
+		selfContradictionTaskPane.setName("Find self-contradictions");
+		selfContradictionTaskPane.setTitle("Find self-contradictions");
+		selfContradictionTaskPane.setIcon(groupIcon);
+		selfContradictionTaskPane.setCollapsed(true);
+		((Container)tpc).add(selfContradictionTaskPane);
+		//selfContradictionTaskPane.add(sc);
+		selfContradictionTaskPane.add(selfContPanel);
+        
+        
         /*
         JXTaskPane docStatisticsTaskPane = new JXTaskPane();
         DocStats docStats = new DocStats();
@@ -147,6 +173,123 @@ class SidebarPanel extends JScrollPane {
 		});
 	}
 
+	
+	/*
+	 * LB.Add: 
+	 */
+	private void  selfContradictionPanel() {
+
+		//create the tree
+		//this.setLayout(new BorderLayout());
+		selfContPanel = new JPanel(new BorderLayout());
+
+		JTree tree;
+		JScrollPane treeView;
+		DefaultMutableTreeNode top;
+		//JButton persButton, orgButton, clearButton;
+
+		SelfContradictionFilter scf;
+
+		top = new DefaultMutableTreeNode("Actors");
+		tree = new JTree(top);
+		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		tree.setExpandsSelectedPaths(true);
+		treeView = new JScrollPane(tree);
+		
+		treeView.setPreferredSize(new Dimension(120, 250));
+
+		// add TreeSectionListener
+		
+		selfContPanel.add(treeView, BorderLayout.CENTER);
+
+		// add Filters:
+		scf  = new SelfContradictionFilter();
+		selfContPanel.add(scf, BorderLayout.SOUTH);
+	
+}
+	
+	/*
+	 * LB.Add: 
+	 */
+	public class SelfContradictionFilter extends JPanel {
+
+		private static final long serialVersionUID = 1L;
+
+		public SelfContradictionFilter() {
+			
+
+			// add Buttons for Statement-Choice
+			typeComboBox1b = new JComboBox();
+			typeComboBox1b.setPreferredSize(new Dimension(208, 20));
+			typeComboBox1b.addItemListener(new ItemListener() {
+				public void itemStateChanged(ItemEvent e) {
+					updateSelfContFilterVars();
+				// je nach item soll was passieren:
+				//	updateVariables();
+				//	filter();
+				}
+				
+			});
+			
+			typeComboBox1b.setEnabled(true);
+			
+			variableComboBox1b = new JComboBox();
+			// LB.Change: variableComboBox2 = new JComboBox<String>();
+			variableComboBox1b.setPreferredSize(new Dimension(100, 20));
+			variableComboBox1b.addItemListener(new ItemListener() {
+				public void itemStateChanged(ItemEvent e) {
+				//	filter();
+				}
+			});
+			
+			variableComboBox2b = new JComboBox();
+			// LB.Change: variableComboBox2 = new JComboBox<String>();
+			variableComboBox2b.setPreferredSize(new Dimension(100, 20));
+			variableComboBox2b.addItemListener(new ItemListener() {
+				public void itemStateChanged(ItemEvent e) {
+				//	filter();
+				}
+			});
+
+
+			booleanComboBox1 = new JComboBox();
+			// LB.Change: variableComboBox1 = new JComboBox<String>();
+			booleanComboBox1.setPreferredSize(new Dimension(100, 20));
+			
+			booleanComboBox1.addItemListener(new ItemListener() {
+				public void itemStateChanged(ItemEvent e) {
+				//	filter();
+				}
+				
+			});
+
+			//toggleEnabled(false);
+
+			JPanel filterPanel0 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			filterPanel0.add(typeComboBox1b);
+			JPanel filterPanel1 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			filterPanel1.add(variableComboBox1b);
+			JPanel filterPanel2 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			filterPanel1.add(variableComboBox2b);
+			JPanel filterPanel3 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			filterPanel2.add(booleanComboBox1);
+			JPanel filterPanel = new JPanel(new BorderLayout());
+			filterPanel.add(filterPanel0, BorderLayout.NORTH);
+			filterPanel.add(filterPanel1, BorderLayout.CENTER);
+			filterPanel.add(filterPanel2, BorderLayout.SOUTH);
+			filterPanel.add(filterPanel3, BorderLayout.EAST);
+			//TODO: wie genau die 4 variablen ausrichten => BorderLayout.??
+			
+			//this.add(showPanel, BorderLayout.NORTH);
+			this.add(filterPanel, BorderLayout.CENTER);
+
+
+			
+				}
+			}
+
+
+
 	private void highlightStatementInText(int statementId) {
 		int docId = Dna.dna.db.getStatement(statementId).getDocumentId();
 		int docRow = Dna.dna.gui.documentPanel.documentContainer.
@@ -166,7 +309,19 @@ class SidebarPanel extends JScrollPane {
 			}
 			typeComboBox1.setSelectedIndex(0);
 		}
+		//LB.Add: dasselbe noch einmal für den SelfCont-Filter
+		typeComboBox1b.removeAllItems();
+		if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().
+				equals("")) {
+			ArrayList<StatementType> types = Dna.dna.db.getStatementTypes();
+			for (int i = 0; i < types.size(); i++) {
+				typeComboBox1b.addItem(types.get(i).getLabel());
+			}
+			typeComboBox1b.setSelectedIndex(0);
+		}
+
 	}
+	
 	
 	public void updateVariables() {
 		variableComboBox1.removeAllItems();
@@ -184,6 +339,29 @@ class SidebarPanel extends JScrollPane {
 			variableComboBox2.setSelectedIndex(0);
 		}
 	}
+	
+	/*
+	 * LB.Add:
+	 */
+	public void updateSelfContFilterVars() {
+		//TODO: wenn 1 item in variableComboBox1b/2b ausgewählt ist => darf dieses im 2. nicht erscheinen! => 
+		// search ComboBox => dort steht, wie man ein item aussschliessen kann
+		variableComboBox1b.removeAllItems();
+		variableComboBox2b.removeAllItems();
+		String type = (String) typeComboBox1b.getSelectedItem();
+		if (type != null && !type.equals("")) {
+			HashMap<String, String> variables = Dna.dna.db.getVariables(type);
+			Iterator<String> keyIterator = variables.keySet().iterator();
+			while (keyIterator.hasNext()){
+				String key = keyIterator.next();
+				variableComboBox1b.addItem(key);
+				variableComboBox2b.addItem(key);
+			}
+			variableComboBox1b.setSelectedIndex(0);
+			variableComboBox2b.setSelectedIndex(0);
+		}
+	}
+
 	
 	public void setRowSorterEnabled(boolean enabled) {
 		if (enabled == true) {
@@ -221,7 +399,8 @@ class SidebarPanel extends JScrollPane {
 			showPanel.add(showCurrent);
 			showPanel.add(showFilter);
 			
-			typeComboBox1 = new JComboBox<String>();
+			typeComboBox1 = new JComboBox();
+			//LB.Change: typeComboBox1 = new JComboBox<String>();
 			typeComboBox1.setPreferredSize(new Dimension(208, 20));
 			typeComboBox1.addItemListener(new ItemListener() {
 				public void itemStateChanged(ItemEvent e) {
@@ -231,7 +410,8 @@ class SidebarPanel extends JScrollPane {
 				
 			});
 			
-			variableComboBox1 = new JComboBox<String>();
+			variableComboBox1 = new JComboBox();
+			// LB.Change: variableComboBox1 = new JComboBox<String>();
 			variableComboBox1.setPreferredSize(new Dimension(100, 20));
 			
 			variableComboBox1.addItemListener(new ItemListener() {
@@ -243,7 +423,8 @@ class SidebarPanel extends JScrollPane {
 			patternField1 = new JXTextField("regex");
 			patternField1.setPreferredSize(new Dimension(104, 20));
 			
-			variableComboBox2 = new JComboBox<String>();
+			variableComboBox2 = new JComboBox();
+			// LB.Change: variableComboBox2 = new JComboBox<String>();
 			variableComboBox2.setPreferredSize(new Dimension(100, 20));
 			variableComboBox2.addItemListener(new ItemListener() {
 				public void itemStateChanged(ItemEvent e) {
