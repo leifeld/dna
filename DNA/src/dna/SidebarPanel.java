@@ -15,6 +15,8 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -28,16 +30,18 @@ import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeSelectionModel;
+import javax.swing.ProgressMonitor;
 
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.jdesktop.swingx.JXTextField;
 
-import dna.SelfContradictionPanel.SelfContradictionFilter;
 
 class SidebarPanel extends JScrollPane {
 	
@@ -50,9 +54,14 @@ class SidebarPanel extends JScrollPane {
 	StatementFilter statementFilter;
 	TableRowSorter<SidebarStatementContainer> sorter;
 	JXTextField patternField1, patternField2;
-	JComboBox typeComboBox1, typeComboBox1b, variableComboBox1, variableComboBox1b, 
-			variableComboBox2, variableComboBox2b, booleanComboBox1;
-	// LB.Change: JComboBox<String> typeComboBox1, typeComboBox2, variableComboBox1, 
+	JComboBox typeComboBox1, typeComboBox1b, variableComboBox1, 
+			variableComboBox2, booleanComboBox1, variableComboBox1b, variableComboBox2b;
+		// LB.Change: JComboBox<String> typeComboBox1, typeComboBox2, variableComboBox1, 
+
+	//For the JTree
+	JTree tree;
+	JScrollPane treeView;
+	DefaultMutableTreeNode top;
 
 	
 	public SidebarPanel() {
@@ -88,7 +97,6 @@ class SidebarPanel extends JScrollPane {
          * LB.Add: Panel for Finding self-contradictions
          * Class: SelfContradictionPanel()
          */
-        //SelfContradictionPanel sc = new SelfContradictionPanel();
 		selfContradictionPanel();
         JXTaskPane selfContradictionTaskPane = new JXTaskPane();
 		ImageIcon groupIcon = new ImageIcon(getClass().getResource(
@@ -178,19 +186,14 @@ class SidebarPanel extends JScrollPane {
 	 * LB.Add: 
 	 */
 	private void  selfContradictionPanel() {
-
+		
 		//create the tree
 		//this.setLayout(new BorderLayout());
 		selfContPanel = new JPanel(new BorderLayout());
 
-		JTree tree;
-		JScrollPane treeView;
-		DefaultMutableTreeNode top;
-		//JButton persButton, orgButton, clearButton;
-
 		SelfContradictionFilter scf;
 
-		top = new DefaultMutableTreeNode("Actors");
+		top = new DefaultMutableTreeNode("Variable 1");
 		tree = new JTree(top);
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 		tree.setExpandsSelectedPaths(true);
@@ -199,7 +202,38 @@ class SidebarPanel extends JScrollPane {
 		treeView.setPreferredSize(new Dimension(120, 250));
 
 		// add TreeSectionListener
+		tree.addTreeSelectionListener(new TreeSelectionListener() {
+			public void valueChanged(TreeSelectionEvent tse) {
+				try {
+					String node = (String) tree.getLastSelectedPathComponent().toString();
+					
+					Pattern p = Pattern.compile("(yes \\()|(no \\()");
+					Matcher m = p.matcher(node);
+					boolean b = m.find();
+					if (b == true) {
+						node = node.replaceAll("\\)", "");
+						node = node.replaceAll("yes \\(", "");
+						node = node.replaceAll("no \\(", "");
+						int nodeInt = new Integer(node).intValue();
+						
+						statementFilter.showAll.setSelected(true);
+						statementFilter.toggleEnabled(false);
+						statementFilter.allFilter();
+						
+						int viewId = statementTable.convertRowIndexToView(ssc.getIndexByStatementId(nodeInt));
+						if (viewId == -1) {
+							statementTable.clearSelection();
+						} else {
+							statementTable.changeSelection(viewId, 0, false, false);
+							highlightStatementInText(nodeInt);
+						}
+					}
+				} catch (NullPointerException npe) { }
+			}
+		});
 		
+		
+		//
 		selfContPanel.add(treeView, BorderLayout.CENTER);
 
 		// add Filters:
@@ -217,7 +251,6 @@ class SidebarPanel extends JScrollPane {
 
 		public SelfContradictionFilter() {
 			
-
 			// add Buttons for Statement-Choice
 			typeComboBox1b = new JComboBox();
 			typeComboBox1b.setPreferredSize(new Dimension(208, 20));
@@ -233,12 +266,15 @@ class SidebarPanel extends JScrollPane {
 			
 			typeComboBox1b.setEnabled(true);
 			
+			
 			variableComboBox1b = new JComboBox();
+			//variableComboBox1b = new JComboBox();
 			// LB.Change: variableComboBox2 = new JComboBox<String>();
 			variableComboBox1b.setPreferredSize(new Dimension(100, 20));
 			variableComboBox1b.addItemListener(new ItemListener() {
 				public void itemStateChanged(ItemEvent e) {
 				//	filter();
+		//			jComboBox1ItemStateChanged();
 				}
 			});
 			
@@ -248,6 +284,7 @@ class SidebarPanel extends JScrollPane {
 			variableComboBox2b.addItemListener(new ItemListener() {
 				public void itemStateChanged(ItemEvent e) {
 				//	filter();
+		//			jComboBox1ItemStateChanged();
 				}
 			});
 
@@ -278,13 +315,28 @@ class SidebarPanel extends JScrollPane {
 			filterPanel.add(filterPanel1, BorderLayout.CENTER);
 			filterPanel.add(filterPanel2, BorderLayout.SOUTH);
 			filterPanel.add(filterPanel3, BorderLayout.EAST);
-			//TODO: wie genau die 4 variablen ausrichten => BorderLayout.??
+			//TODO: wie genau die 4 variablen ausrichten => BorderLayout.?? + evtl anschreiben: Variable 1: AUSWAHLFELD..
 			
 			//this.add(showPanel, BorderLayout.NORTH);
 			this.add(filterPanel, BorderLayout.CENTER);
 
 
+			//Add an ActionListener to the two ComboBox-variables
+			ActionListener buttonListener = new ActionListener() {
+				public void actionPerformed(ActionEvent e) {					
+					if (e.getSource() == variableComboBox1b) {
+						Thread generateThread = new Thread( new ReportGenerator(true), "Create self-contradiction report" );
+						generateThread.start();
+					} else if (e.getSource() == variableComboBox2b) {
+						Thread generateThread = new Thread( new ReportGenerator(false), "Create self-contradiction report" );
+						generateThread.start();
+					}
+				}
+			};
 			
+			variableComboBox1b.addActionListener(buttonListener);
+			variableComboBox2b.addActionListener(buttonListener);
+
 				}
 			}
 
@@ -348,20 +400,70 @@ class SidebarPanel extends JScrollPane {
 		// search ComboBox => dort steht, wie man ein item aussschliessen kann
 		variableComboBox1b.removeAllItems();
 		variableComboBox2b.removeAllItems();
+		booleanComboBox1.removeAllItems();
 		String type = (String) typeComboBox1b.getSelectedItem();
 		if (type != null && !type.equals("")) {
 			HashMap<String, String> variables = Dna.dna.db.getVariables(type);
 			Iterator<String> keyIterator = variables.keySet().iterator();
-			while (keyIterator.hasNext()){
+		    while (keyIterator.hasNext()){
 				String key = keyIterator.next();
 				variableComboBox1b.addItem(key);
-				variableComboBox2b.addItem(key);
+				variableComboBox2b.addItem(key);				
+				//TODO: make sure you can only select one ! 
+				//String selectBox1b = (String) variableComboBox1b.getSelectedItem();
+				//variableComboBox2b.removeItem(selectBox1b);
 			}
-			variableComboBox1b.setSelectedIndex(0);
-			variableComboBox2b.setSelectedIndex(0);
+		    variableComboBox1b.setSelectedIndex(0);
+		    variableComboBox2b.setSelectedIndex(1);
+			//evtl. 2.Box auf (1) stellen??
+		}
+		// Get boolean variable activated:	
+		if (type != null && !type.equals("")) {
+			//LB.Add in DataAccess => new method to get Variables by variableType
+			HashMap<String, String> variables = Dna.dna.db.getVariablesByType(type, "boolean");
+			Iterator<String> keyIterator = variables.keySet().iterator();
+		    while (keyIterator.hasNext()){
+				String key = keyIterator.next();
+				booleanComboBox1.addItem(key);
+			}
+		    booleanComboBox1.setSelectedIndex(0);
 		}
 	}
 
+/*	
+	private void jComboBox1ItemStateChanged(java.awt.event.ItemEvent evt) {
+		
+		String[] options = {"-Select-", "Item 1", "Item 2", "Item 3", "Item 4"};
+		String[] selected = {"-Select-", "-Select-", "-Select-", "-Select-"};
+
+		//Loop through all of the comboboxes in comboBoxes
+	    for(int i = 0; i < varComboBoxes.length; i++) {
+	        //Check to see if the current combobox in the array matches the source of your event
+	        if(evt.getSource() == varComboBoxes[i]) {
+	            //Get the string value of the combobox that fired the event
+	            String currentSelection = (String)varComboBoxes[i].getSelectedItem();
+	                    //Add back the previous value to all comboboxes other than the one that fired the event
+	                    for(int j = 0; j < varComboBoxes.length; j++) {
+	                        if(j != i) {
+	                        	varComboBoxes[j].addItem(selected[i]);
+	                        }
+	                //If current value of the combobox is "-Select-" don't remove it from all other comboboxes
+	                if(!currentSelection.equals(options[0])) {
+	                    //Remove the current value from all comboboxes other than the one that fired the event
+	                    for(int j1 = 0; j1 < varComboBoxes.length; j1++) {
+	                        if(j1 != i) {
+	                        	varComboBoxes[j1].removeItem(varComboBoxes[i].getSelectedItem());
+	                        }
+	                    }
+	                }
+	            }
+	            //Set the selected item for the combobox that fired the event to the current value
+	            selected[i] = currentSelection;
+	        }
+	    }
+	}
+	
+*/
 	
 	public void setRowSorterEnabled(boolean enabled) {
 		if (enabled == true) {
@@ -611,4 +713,109 @@ class SidebarPanel extends JScrollPane {
 			}
 		}
 	}
+	
+	
+	/* NEW CLASS
+	 * LB Add: ReportGenerator-class
+	 */
+	class ReportGenerator implements Runnable {
+		
+		//what is that?
+		ProgressMonitor progressMonitor;
+		//???
+		boolean persons;
+		
+		//TODO: what does that do?
+		public ReportGenerator(boolean persons) {
+			this.persons = persons;
+		}
+		
+		public void run() {
+			
+			//LB.Add: 
+			String var1 = (String) variableComboBox1b.getSelectedItem();
+			String var2 = (String) variableComboBox2b.getSelectedItem();
+			String varBoolean = (String) booleanComboBox1.getSelectedItem();
+
+			
+			//TODO: ComboBox1 or Combobox1b??
+			variableComboBox1.setEnabled(false);
+			variableComboBox2.setEnabled(false);
+			
+			// get actors
+			ArrayList<String> actors;
+			if (persons == true) {
+				actors = Dna.mainProgram.dc.sc.getPersonList();
+			} else {
+				actors = Dna.mainProgram.dc.sc.getOrganizationList();
+			}
+			
+			progressMonitor = new ProgressMonitor(SidebarPanel.this, "Looking for within-actor contradictions...", "", 0, actors.size() - 1 );
+			progressMonitor.setMillisToDecideToPopup(1);
+			
+			//??
+			ArrayList<Integer> tabuId = new ArrayList<Integer>();
+			
+			//??
+			for (int i = 0; i < actors.size(); i++) {
+				DefaultMutableTreeNode actor = new DefaultMutableTreeNode(actors.get(i));
+				progressMonitor.setProgress(i);
+				if (progressMonitor.isCanceled()) {
+					break;
+				}
+				
+				// indices: misst wie viele contradictions es gibt?? => oder wie viele actors?
+				ArrayList<Integer> indices = new ArrayList<Integer>();
+				//TODO: get path to size() right
+				for (int j = 0; j < Dna.mainProgram.dc.sc.size(); j++) {
+					if (persons == true) {
+						//TODO: get path right => not Person => but get whatever is in var1
+						if (actors.get(i).equals(Dna.mainProgram.dc.sc.get(j).getPerson())) {
+							indices.add(j);
+						}
+					} else {
+						//TODO: get path right => not organization => but whatever is in var2
+						if (actors.get(i).equals(Dna.mainProgram.dc.sc.get(j).getOrganization())) {
+							indices.add(j);
+						}
+					}
+				}
+				// => here comes getCategory() => but we want Variable2
+				for (int j = 0; j < indices.size(); j++) {
+					for (int k = 0; k < indices.size(); k++) {
+						if (
+								indices.get(j) != indices.get(k) && 
+								! tabuId.contains(indices.get(j)) && 
+								! tabuId.contains(indices.get(k)) && 
+								Dna.mainProgram.dc.sc.get(indices.get(j)).getCategory().equals(Dna.mainProgram.dc.sc.get(indices.get(k)).getCategory()) && 
+								! Dna.mainProgram.dc.sc.get(indices.get(j)).getAgreement().equals(Dna.mainProgram.dc.sc.get(indices.get(k)).getAgreement())
+						) {
+							DefaultMutableTreeNode category = new DefaultMutableTreeNode(Dna.mainProgram.dc.sc.get(indices.get(j)).getCategory());
+							ArrayList<Integer> matches = new ArrayList<Integer>();
+							for (int l = 0; l < indices.size(); l++) {
+								if (Dna.mainProgram.dc.sc.get(indices.get(l)).getCategory().equals(Dna.mainProgram.dc.sc.get(indices.get(j)).getCategory())) {
+									matches.add(indices.get(l));
+									DefaultMutableTreeNode id = new DefaultMutableTreeNode(Dna.mainProgram.dc.sc.get(indices.get(l)).getAgreement() + " (" + Dna.mainProgram.dc.sc.get(indices.get(l)).getId() + ")");
+									category.add(id);
+								}
+							}
+							tabuId.addAll(matches);
+							if (category.getChildCount() > 0) {
+								actor.add(category);
+							}
+						}
+					}
+				}
+				if (actor.getChildCount() > 0) {
+					top.add(actor);
+				}
+			}
+			if (top.getChildCount() == 0) {
+				DefaultMutableTreeNode message = new DefaultMutableTreeNode("No contradictions found!");
+				top.add(message);
+			}
+			tree.expandRow(0);
+		}
+	}
+	
 }
