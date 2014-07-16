@@ -17,6 +17,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
@@ -30,16 +31,16 @@ import javax.swing.tree.TreeSelectionModel;
 public class ContradictionPanel extends JPanel {
 
 	private static final long serialVersionUID = 1L;
-	
+
 	JPanel selfContPanel;
 	JTree tree;
 	DefaultMutableTreeNode top;
 	JScrollPane treeView;	
 	JComboBox typeComboBox1b, variableComboBox1b, variableComboBox2b, booleanComboBox1;
 	JButton goButton,  clearButton;
-	
+
 	public ContradictionPanel() {
-		
+
 		selfContPanel = new JPanel(new BorderLayout());
 		this.setLayout(new BorderLayout());
 		top = new DefaultMutableTreeNode("Variable 1");
@@ -80,10 +81,11 @@ public class ContradictionPanel extends JPanel {
 				} catch (NullPointerException npe) { }
 			}
 		});
-	
+
+
 		this.add(treeView, BorderLayout.NORTH);
 
-		
+
 		// add ComboBox-Filters:
 		typeComboBox1b = new JComboBox();
 		typeComboBox1b.setPreferredSize(new Dimension(208, 20));
@@ -92,9 +94,10 @@ public class ContradictionPanel extends JPanel {
 				updateSelfContFilterVars();
 			}
 		});
-
 		typeComboBox1b.setEnabled(true);
 
+
+		JLabel variableComboBox1bLabel = new JLabel("Variable 1");
 		variableComboBox1b = new JComboBox();
 		variableComboBox1b.setPreferredSize(new Dimension(102, 20));
 		variableComboBox1b.addItemListener(new ItemListener() {
@@ -103,6 +106,7 @@ public class ContradictionPanel extends JPanel {
 			}
 		});
 
+		JLabel variableComboBox2bLabel = new JLabel("Variable 2");
 		variableComboBox2b = new JComboBox();
 		variableComboBox2b.setPreferredSize(new Dimension(102, 20));
 		variableComboBox2b.addItemListener(new ItemListener() {
@@ -111,29 +115,39 @@ public class ContradictionPanel extends JPanel {
 		});
 
 
+		JLabel booleanComboBox1Label = new JLabel("Boolean   ");
 		booleanComboBox1 = new JComboBox();
-		booleanComboBox1.setPreferredSize(new Dimension(208, 20));
+		booleanComboBox1.setPreferredSize(new Dimension(102, 20));
 		booleanComboBox1.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
 			}
 		});
 
 		//toggleEnabled(false);
-		JPanel filterPanel0 = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		filterPanel0.add(typeComboBox1b);
-		JPanel filterPanel1 = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		filterPanel1.add(variableComboBox1b);
-		filterPanel1.add(variableComboBox2b);
-		JPanel filterPanel2 = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		filterPanel2.add(booleanComboBox1);
-		JPanel filterPanel = new JPanel(new BorderLayout());
-		filterPanel.add(filterPanel0, BorderLayout.NORTH);
-		filterPanel.add(filterPanel1, BorderLayout.CENTER);
-		filterPanel.add(filterPanel2, BorderLayout.SOUTH);
 
+		JPanel varPanel1 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		varPanel1.add(variableComboBox1bLabel);
+		varPanel1.add(variableComboBox1b);
+		JPanel varPanel2 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		varPanel2.add(variableComboBox2bLabel);
+		varPanel2.add(variableComboBox2b);
+		JPanel varPanel3 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		varPanel3.add(booleanComboBox1Label);
+		varPanel3.add(booleanComboBox1);
+		JPanel varPanel = new JPanel(new BorderLayout());
+		varPanel.add(varPanel1, BorderLayout.NORTH);
+		varPanel.add(varPanel2, BorderLayout.CENTER);
+		varPanel.add(varPanel3, BorderLayout.SOUTH);
+
+		JPanel typePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		typePanel.add(typeComboBox1b);
+
+		JPanel filterPanel = new JPanel(new BorderLayout());
+		filterPanel.add(typePanel, BorderLayout.NORTH);
+		filterPanel.add(varPanel, BorderLayout.SOUTH);
 		this.add(filterPanel, BorderLayout.CENTER);
 
-		
+
 		// add two buttons
 		Icon tickIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
 		Icon clearIcon = new ImageIcon(getClass().getResource("/icons/arrow_rotate_clockwise.png"));
@@ -142,18 +156,19 @@ public class ContradictionPanel extends JPanel {
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		buttonPanel.add(goButton);
 		buttonPanel.add(clearButton);
-		
-			// add task for clear-button
+
+		// add task for clear-button
 		clearButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				clearTree();
 			}
 		});
-		
-			// add task for go-button
+
+		// add task for go-button
 		goButton.addActionListener(new  ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-			findContradictions();
+				findContradictions();
+				goButton.setEnabled(false);
 			}
 		});
 
@@ -170,25 +185,25 @@ public class ContradictionPanel extends JPanel {
 		if (type != null && !type.equals("")) {
 			HashMap<String, String> variables = Dna.dna.db.getVariables(type);
 			Iterator<String> keyIterator = variables.keySet().iterator();
-		    while (keyIterator.hasNext()){
+			while (keyIterator.hasNext()){
 				String key = keyIterator.next();
 				variableComboBox2b.addItem(key);				
 				variableComboBox1b.addItem(key);
 				//TODO: make sure you can only select one ! 
 			}
-		    variableComboBox1b.setSelectedIndex(-1);
-		    variableComboBox2b.setSelectedIndex(-1);
+			variableComboBox1b.setSelectedIndex(-1);
+			variableComboBox2b.setSelectedIndex(-1);
 		}
 		// Get boolean variable activated:	
 		if (type != null && !type.equals("")) {
 			HashMap<String, String> variables = Dna.dna.db.getVariablesByType(type, "boolean");
 			//LB.Add in DataAccess => new method to get Variables by variableType
 			Iterator<String> keyIterator = variables.keySet().iterator();
-		    while (keyIterator.hasNext()){
+			while (keyIterator.hasNext()){
 				String key = keyIterator.next();
 				booleanComboBox1.addItem(key);
 			}
-		    booleanComboBox1.setSelectedIndex(0);
+			booleanComboBox1.setSelectedIndex(0);
 		}
 	}
 
@@ -211,7 +226,7 @@ public class ContradictionPanel extends JPanel {
 			}
 		}
 	}
-	
+
 
 	public void clearTree() {
 		top = new DefaultMutableTreeNode(variableComboBox1b.getSelectedItem());
