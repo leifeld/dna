@@ -422,6 +422,26 @@ public class DataAccess {
 	}
 	
 	/**
+	 * LB.Add
+	 * Retrieve a variable entry of type String from a custom statement table.
+	 * Necessary because if two statement-types have a similar variable-name (such as person)
+	 * it causes problems in ContradictionPanel(-> findContradictions())
+	 * 
+	 * @param statementId  The ID of the statement for which to get the value.
+	 * @param key          The name of the variable for which to get the entry.
+	 * @param type		   Statement Type
+	 * @return             The cell entry corresponding to the variable.
+	 */
+	public String getVariableStringEntry2(int statementId, String key, String type) {
+		String result = executeQueryForString(
+				"SELECT " + key + " FROM " + type + " WHERE StatementID = " + 
+				statementId
+				);
+		return result;
+	}
+	
+	
+	/**
 	 * Retrieve a variable entry of type int from a custom statement table.
 	 * 
 	 * @param statementId  The ID of the statement for which to get the value.
@@ -542,6 +562,7 @@ public class DataAccess {
 		}
 		return entries;
 	}
+	
 	
 	/**
 	 * Insert a statement type into the STATEMENTTYPE table.
@@ -1008,6 +1029,58 @@ public class DataAccess {
 		return variables;
 	}
 	
+	
+	/**
+	 * LB.Add: 
+	 * get Variables for a specific variable type (+by statement type)
+	 * 
+	 * @param statementType 	The statement type from the STATEMENTTYPE table.
+	 * @param variableType		String indicating which variables should be fetched
+	 * @return					variables of a certain type
+	 */
+	public HashMap<String, String> getVariablesByType(String statementType, String variableType) {
+		HashMap<String, String> variables = new HashMap<String, String>();
+		
+		Connection connection = null;
+		Statement statement = null;
+		ResultSet resultSet = null;
+		try {
+			if (sqlite == true) {
+				connection = getSQLiteConnection();
+			} else {
+				connection = getMySQLConnection();
+			}
+			statement = connection.createStatement();
+			resultSet = statement.executeQuery(
+					"SELECT * FROM VARIABLES WHERE StatementType = '" + 
+					statementType + "'"
+					);
+			if (resultSet.next()) {
+				do {
+					String key = resultSet.getString("Variable");
+					String value = resultSet.getString("DataType");
+					if ( value.equals(variableType)){
+					variables.put(key, value);
+					}
+				} while (resultSet.next());
+			}
+			resultSet.close();
+			statement.close();
+			connection.close();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try { statement.close(); } catch(Exception e) {}
+			try { connection.close(); } catch(Exception e) {}
+		}
+		
+		return variables;
+	}
+	
+	
+	
 	/**
 	 * Alter a statement type with a given label.
 	 * 
@@ -1085,6 +1158,8 @@ public class DataAccess {
 		
 		return types;
 	}
+	
+	
 	
 	/**
 	 * Remove a statement from the STATEMENTS table.
@@ -1345,6 +1420,19 @@ public class DataAccess {
 		ArrayList<Integer> ids = (ArrayList<Integer>) al;
 		return(ids);
 	}
+	
+	/**
+	 * LB.Add: get all the Statement IDs
+	 * no parameters: get all the statement IDs, not just form specific document
+	 */
+	public ArrayList<Integer> getStatementIdsAll() {
+		ArrayList<?> al = executeQueryForList(
+				"SELECT ID FROM STATEMENTS");
+		@SuppressWarnings("unchecked")
+		ArrayList<Integer> ids = (ArrayList<Integer>) al;
+		return(ids);
+	}
+	
 	
 	/**
 	 * Remove a document and all statements contained in the document.

@@ -13,63 +13,58 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
-import javax.swing.ProgressMonitor;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
-
 
 
 public class ContradictionPanel extends JPanel {
 
-	//TODO: what is that?
 	private static final long serialVersionUID = 1L;
-	
 	
 	JPanel selfContPanel;
 	JTree tree;
 	DefaultMutableTreeNode top;
 	JScrollPane treeView;	
-	JComboBox typeComboBox1b;
-	JComboBox variableComboBox1b;
-	JComboBox variableComboBox2b;
-	JComboBox booleanComboBox1;
-
+	JComboBox typeComboBox1b, variableComboBox1b, variableComboBox2b, booleanComboBox1;
+	JButton goButton,  clearButton;
+	
 	public ContradictionPanel() {
 		
-
 		selfContPanel = new JPanel(new BorderLayout());
 		this.setLayout(new BorderLayout());
-		
 		top = new DefaultMutableTreeNode("Variable 1");
 		tree = new JTree(top);
+
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 		tree.setExpandsSelectedPaths(true);
 		treeView = new JScrollPane(tree);
 
 		treeView.setPreferredSize(new Dimension(120, 250));
 
-		// add TreeSectionListener
 		tree.addTreeSelectionListener(new TreeSelectionListener() {
 			public void valueChanged(TreeSelectionEvent tse) {
 				try {
 					String node = (String) tree.getLastSelectedPathComponent().toString();
 
-					Pattern p = Pattern.compile("(yes \\()|(no \\()");
+					Pattern p = Pattern.compile("(0 \\()|(1 \\()");
 					Matcher m = p.matcher(node);
 					boolean b = m.find();
 					if (b == true) {
 						node = node.replaceAll("\\)", "");
-						node = node.replaceAll("yes \\(", "");
-						node = node.replaceAll("no \\(", "");
+						node = node.replaceAll("1 \\(", "");
+						node = node.replaceAll("0 \\(", "");
 						int nodeInt = new Integer(node).intValue();
 
-						//TODO: prüfen ob das sinn macht noch so
 						Dna.dna.gui.sidebarPanel.statementFilter.showAll.setSelected(true);
 						Dna.dna.gui.sidebarPanel.statementFilter.toggleEnabled(false);
 						Dna.dna.gui.sidebarPanel.statementFilter.allFilter();
@@ -85,35 +80,26 @@ public class ContradictionPanel extends JPanel {
 				} catch (NullPointerException npe) { }
 			}
 		});
+	
+		this.add(treeView, BorderLayout.NORTH);
 
-
-		//
-		this.add(treeView, BorderLayout.CENTER);
-
-		// add Filters:
-		// add Buttons for Statement-Choice
+		
+		// add ComboBox-Filters:
 		typeComboBox1b = new JComboBox();
 		typeComboBox1b.setPreferredSize(new Dimension(208, 20));
 		typeComboBox1b.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
 				updateSelfContFilterVars();
-				// je nach item soll was passieren:
-				//	updateVariables();
-				//	filter();
 			}
-
 		});
 
 		typeComboBox1b.setEnabled(true);
-
 
 		variableComboBox1b = new JComboBox();
 		variableComboBox1b.setPreferredSize(new Dimension(102, 20));
 		variableComboBox1b.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
-				//TODO: give it a task
-				//	filter();
-				//			jComboBox1ItemStateChanged();
+				updateStatementVariables(e);
 			}
 		});
 
@@ -121,20 +107,15 @@ public class ContradictionPanel extends JPanel {
 		variableComboBox2b.setPreferredSize(new Dimension(102, 20));
 		variableComboBox2b.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
-				//	filter();
-				//			jComboBox1ItemStateChanged();
 			}
 		});
 
 
 		booleanComboBox1 = new JComboBox();
 		booleanComboBox1.setPreferredSize(new Dimension(208, 20));
-
 		booleanComboBox1.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
-				//	filter();
 			}
-
 		});
 
 		//toggleEnabled(false);
@@ -150,38 +131,38 @@ public class ContradictionPanel extends JPanel {
 		filterPanel.add(filterPanel1, BorderLayout.CENTER);
 		filterPanel.add(filterPanel2, BorderLayout.SOUTH);
 
-		this.add(filterPanel, BorderLayout.SOUTH);
+		this.add(filterPanel, BorderLayout.CENTER);
 
-
-		//LB:TODO: create a "go"-Button => and give him an action
-		//Add an ActionListener to the two ComboBox-variables
-		/*			ActionListener buttonListener = new ActionListener() {
-				public void actionPerformed(ActionEvent e) {					
-					if (e.getSource() == variableComboBox1b) {
-						Thread generateThread = new Thread( new ReportGenerator(true), "Create self-contradiction report" );
-						generateThread.start();
-					} else if (e.getSource() == variableComboBox2b) {
-						Thread generateThread = new Thread( new ReportGenerator(false), "Create self-contradiction report" );
-						generateThread.start();
-					}
-				}
-			};
-
-			variableComboBox1b.addActionListener(buttonListener);
-			variableComboBox2b.addActionListener(buttonListener);
-		 */
 		
+		// add two buttons
+		Icon tickIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
+		Icon clearIcon = new ImageIcon(getClass().getResource("/icons/arrow_rotate_clockwise.png"));
+		goButton = new JButton("go", tickIcon);
+		clearButton = new JButton("clear", clearIcon);
+		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		buttonPanel.add(goButton);
+		buttonPanel.add(clearButton);
+		
+			// add task for clear-button
+		clearButton.addActionListener( new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				clearTree();
+			}
+		});
+		
+			// add task for go-button
+		goButton.addActionListener(new  ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			findContradictions();
+			}
+		});
 
+		this.add(buttonPanel, BorderLayout.SOUTH);
 	}
 
 
-
-	/*
-	 * LB.Add:
-	 */
+	// method: update Self Contradiction Variables
 	public void updateSelfContFilterVars() {
-		//TODO: wenn 1 item in variableComboBox1b/2b ausgewählt ist => darf dieses im 2. nicht erscheinen! => 
-		// search ComboBox => dort steht, wie man ein item aussschliessen kann
 		variableComboBox1b.removeAllItems();
 		variableComboBox2b.removeAllItems();
 		booleanComboBox1.removeAllItems();
@@ -191,20 +172,17 @@ public class ContradictionPanel extends JPanel {
 			Iterator<String> keyIterator = variables.keySet().iterator();
 		    while (keyIterator.hasNext()){
 				String key = keyIterator.next();
-				variableComboBox1b.addItem(key);
 				variableComboBox2b.addItem(key);				
+				variableComboBox1b.addItem(key);
 				//TODO: make sure you can only select one ! 
-				//String selectBox1b = (String) variableComboBox1b.getSelectedItem();
-				//variableComboBox2b.removeItem(selectBox1b);
 			}
-		    variableComboBox1b.setSelectedIndex(0);
-		    variableComboBox2b.setSelectedIndex(1);
-			//evtl. 2.Box auf (1) stellen??
+		    variableComboBox1b.setSelectedIndex(-1);
+		    variableComboBox2b.setSelectedIndex(-1);
 		}
 		// Get boolean variable activated:	
 		if (type != null && !type.equals("")) {
-			//LB.Add in DataAccess => new method to get Variables by variableType
 			HashMap<String, String> variables = Dna.dna.db.getVariablesByType(type, "boolean");
+			//LB.Add in DataAccess => new method to get Variables by variableType
 			Iterator<String> keyIterator = variables.keySet().iterator();
 		    while (keyIterator.hasNext()){
 				String key = keyIterator.next();
@@ -214,110 +192,119 @@ public class ContradictionPanel extends JPanel {
 		}
 	}
 
-	
 
-	
-	
-	
-	/* NEW CLASS
-	 * LB Add: ReportGenerator-class
-	 * alternative: simple class
-	 */
-/*	class ReportGenerator implements Runnable {
-		
-		//what is that?
-		ProgressMonitor progressMonitor;
-		//???
-		boolean persons;
-		
-		//TODO: what does that do? => does it activate run()?
-		public ReportGenerator(boolean persons) {
-			this.persons = persons;
-		}
-		
-		public void run() {
-			
-			
-			//TODO: needed?
-			variableComboBox1b.setEnabled(false);
-			variableComboBox2b.setEnabled(false);
-
-			String statType = (String) typeComboBox1b.getSelectedItem();
-			String var1 = (String) variableComboBox1b.getSelectedItem();
-			String var2 = (String) variableComboBox2b.getSelectedItem();
-			String varBoolean = (String) booleanComboBox1.getSelectedItem();
-			
-			// get actors
-			String[] actors; //Problem if not ArrayList?
-			if (persons == true) {
-				//OLD: actors = Dna.mainProgram.dc.sc.getPersonList();				
-				// actors = entries from variable 1
-				actors = Dna.dna.db.getVariableStringEntries(var1, statType);
-			}
-			
-			progressMonitor = new ProgressMonitor(SidebarPanel.this, "Looking for within-actor contradictions...", "", 0, actors.length - 1 );
-			progressMonitor.setMillisToDecideToPopup(1);
-			
-			//??
-			ArrayList<Integer> tabuId = new ArrayList<Integer>();
-			
-			//??
-			for (int i = 0; i < actors.length; i++) {
-				DefaultMutableTreeNode actor = new DefaultMutableTreeNode(actors[i]);
-				progressMonitor.setProgress(i);
-				if (progressMonitor.isCanceled()) {
-					break;
-				}			
-				// indices: wie viele Personen mit mind. 2 statements??
-				ArrayList<Integer> indices = new ArrayList<Integer>();
-				//TODO: get path to size() right => statement size = ja! => is that right?
-				// ssc = sidebar statement container
-				for (int j = 0; j < ssc.size(); j++) {
-						//TODO: get path right => not Person => but get whatever is in var1
-						if (actors[i].equals(Dna.dna.db.getVariableStringEntries(var1, statType)[j])) {
-							indices.add(j);
-						}
-					} 
-			
-			
-				// => here comes getCategory() => but we want Variable2
-				for (int j = 0; j < indices.size(); j++) {
-					for (int k = 0; k < indices.size(); k++) {
-						if (
-								indices.get(j) != indices.get(k) && 
-								! tabuId.contains(indices.get(j)) && 
-								! tabuId.contains(indices.get(k)) && 
-								Dna.dna.db.getVariableStringEntries(var2, statType)[j].equals(Dna.dna.db.getVariableStringEntries(var1, statType)[k]) && 
-								! Dna.mainProgram.dc.sc.get(indices.get(j)).getAgreement().equals(Dna.mainProgram.dc.sc.get(indices.get(k)).getAgreement())
-						) {
-							DefaultMutableTreeNode category = new DefaultMutableTreeNode(Dna.dna.db.getVariableStringEntries(var1, statType)[j]);
-							ArrayList<Integer> matches = new ArrayList<Integer>();
-							//display agreement and in brackets the ID of the statement
-							for (int l = 0; l < indices.size(); l++) {
-								if (Dna.mainProgram.dc.sc.get(indices.get(l)).getCategory().equals(Dna.mainProgram.dc.sc.get(indices.get(j)).getCategory())) {
-									matches.add(indices.get(l));
-									DefaultMutableTreeNode id = new DefaultMutableTreeNode(Dna.mainProgram.dc.sc.get(indices.get(l)).getAgreement() + " (" + Dna.mainProgram.dc.sc.get(indices.get(l)).getId() + ")");
-									category.add(id);
-								}
-							}
-							tabuId.addAll(matches);
-							if (category.getChildCount() > 0) {
-								actor.add(category);
-							}
-						}
-					}
-				}
-				if (actor.getChildCount() > 0) {
-					top.add(actor);
+	// method updateStatementVariables() makes sure an item cannot be selected in Combobox1b and Combobox2b
+	public void updateStatementVariables(ItemEvent e) {		
+		if (e.getSource() == variableComboBox1b) {
+			String type = (String) typeComboBox1b.getSelectedItem();
+			if (type != null && !type.equals("")) {
+				HashMap<String, String> variables = Dna.dna.db.getVariables(type);
+				String variable1 = (String) variableComboBox1b.getSelectedItem();
+				// remove item from HashMap: http://stackoverflow.com/questions/6531132/java-hashmap-removing-key-value
+				variables.remove(variable1);
+				Iterator<String> keyIterator = variables.keySet().iterator();
+				variableComboBox2b.removeAllItems();
+				while (keyIterator.hasNext()){
+					String key = keyIterator.next();
+					variableComboBox2b.addItem(key);
 				}
 			}
-			if (top.getChildCount() == 0) {
-				DefaultMutableTreeNode message = new DefaultMutableTreeNode("No contradictions found!");
-				top.add(message);
-			}
-			tree.expandRow(0);
 		}
 	}
-*/	
-		
+	
+
+	public void clearTree() {
+		top = new DefaultMutableTreeNode(variableComboBox1b.getSelectedItem());
+		tree.setModel(new DefaultTreeModel(top));
+		goButton.setEnabled(true);
+		clearButton.setEnabled(true);
+	}
+
+
+	// method: find Contradictions (previously Thread ContradictionReporter)
+	//TODO get Int variable entries as well: getVariableIntEntry() // getVariableIntEntries()
+	//get data type of variable: getDataType()
+	public void findContradictions() {
+
+		String statType = (String) typeComboBox1b.getSelectedItem();
+		String var1 = (String) variableComboBox1b.getSelectedItem();
+		String var2 = (String) variableComboBox2b.getSelectedItem();
+		String varBoolean = (String) booleanComboBox1.getSelectedItem();
+
+		// get list of statement IDs 
+		ArrayList<Integer> ids;
+		ids = Dna.dna.db.getStatementIdsAll();
+		//LB.Add in DataAccess: getStatementIdsAll()
+
+		// get List of actors:
+		String[] actors; //Problem if not ArrayList?
+		actors = Dna.dna.db.getVariableStringEntries(var1, statType);
+
+		ArrayList<Integer> tabuId = new ArrayList<Integer>();
+
+		// actors-loop
+		for (int i = 0; i < actors.length; i++) {
+			DefaultMutableTreeNode actor = new DefaultMutableTreeNode(actors[i]);
+			ArrayList<Integer> indices = new ArrayList<Integer>();
+
+			// for j = statement IDs!
+			for (int j : ids){
+				if (actors[i].equals(Dna.dna.db.getVariableStringEntry2(j, var1, statType))) {
+					indices.add(j);
+				}
+			}
+
+			for (int j : indices) {
+				for (int k :indices) {
+					if (
+							j != k && 
+							! tabuId.contains(j) && 
+							! tabuId.contains(k) && 
+							Dna.dna.db.getVariableStringEntry2(j, var2, statType).equals(Dna.dna.db.getVariableStringEntry2(k, var2, statType)) && 
+							! Dna.dna.db.getVariableStringEntry2(j, varBoolean, statType).equals(Dna.dna.db.getVariableStringEntry2(k, varBoolean, statType))
+							) {
+						DefaultMutableTreeNode category = new DefaultMutableTreeNode(Dna.dna.db.getVariableStringEntry2(j, var2, statType));
+						ArrayList<Integer> matches = new ArrayList<Integer>();
+						for (int l: indices) {
+							if (Dna.dna.db.getVariableStringEntry2(l, var2, statType).equals(Dna.dna.db.getVariableStringEntry2(j, var2, statType))){
+								matches.add(l);
+								DefaultMutableTreeNode id = new DefaultMutableTreeNode(Dna.dna.db.getVariableStringEntry2(l, varBoolean, statType) + 	
+										" (" + l + ")");
+								category.add(id);
+							}
+						}
+						tabuId.addAll(matches);
+						if (category.getChildCount() > 0) {
+							actor.add(category);
+						}
+					}
+				}//closes k-loop
+			}//closes j-loop
+
+			if (actor.getChildCount() > 0) {
+				top.add(actor);
+			}
+		}//closes i-loop
+
+		if (top.getChildCount() == 0) {
+			DefaultMutableTreeNode message = new DefaultMutableTreeNode("No contradictions found!");
+			top.add(message);
+		}
+
+		// display first node in tree: 
+		tree.expandRow(0);
+
+		/*//display the entire tree:
+		 * for (int d = 0; d < tree.getRowCount(); d++) {
+		 * tree.expandRow(d);
+		 * }
+		 */
+	}
+
+
 }
+
+
+
+
+
