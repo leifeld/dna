@@ -124,7 +124,7 @@ public class Gui extends JFrame {
 			documentTable.setModel(documentContainer);
 			this.setViewportView(documentTable);
 			setPreferredSize(new Dimension(700, 100));
-			documentTable.getColumnModel().getColumn(0).setPreferredWidth(700);
+			documentTable.getColumnModel().getColumn(0).setPreferredWidth(680);
 			documentTable.getColumnModel().getColumn(1).setPreferredWidth(100);
 		}
 		
@@ -186,7 +186,8 @@ public class Gui extends JFrame {
 		
 		JMenu fileMenu,documentMenu,settingsMenu;
 		JMenuItem closeFile, newDocumentButton, typeEditorButton, 
-				changeDocumentButton, removeDocumentButton;
+				changeDocumentButton, removeDocumentButton, 
+				importOldButton, aboutButton;
 		
 		public MenuBar() {
 			fileMenu = new JMenu("File");
@@ -364,21 +365,44 @@ public class Gui extends JFrame {
 			});
 			removeDocumentButton.setEnabled(false);
 			
-			
-			/*
 			//Document menu: import old DNA dataset
 			Icon importOldIcon = new ImageIcon(getClass().getResource(
 					"/icons/table_add.png"));
-			importOldButton = new JMenuItem("Import from old DNA file...", 
-					importOldIcon);
-			importOldButton.setToolTipText( "import from old DNA < 2.0 dataset..." );
-			articleMenu.add(importOldButton);
+			importOldButton = new JMenuItem(
+					"Import from old DNA 1.xx file...", importOldIcon);
+			importOldButton.setToolTipText(
+					"import from old DNA < 2.0 XML dataset...");
+			documentMenu.add(importOldButton);
 			importOldButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					new ImportOldDna();
+					
+					//File filter
+					JFileChooser fc = new JFileChooser();
+					fc.setFileFilter(new FileFilter() {
+						public boolean accept(File f) {
+							return f.getName().toLowerCase().endsWith(".dna")
+							|| f.isDirectory();
+						}
+						public String getDescription() {
+							return "DNA 1.xx XML file " +
+									"(*.dna)";
+						}
+					});
+
+					int returnVal = fc.showOpenDialog(dna.Gui.this);
+					if (returnVal == JFileChooser.APPROVE_OPTION) {
+						File file = fc.getSelectedFile();
+						String dbfile;
+						if (!file.getPath().endsWith(".dna")) {
+							dbfile = file.getPath() + ".dna";
+						} else {
+							dbfile = file.getPath();
+						}
+						new ImportOldDNA1XML(dbfile);
+					}
 				}
 			});
-			*/
+			importOldButton.setEnabled(false);
 			
 			//Settings menu: edit statement types
 			Icon typeEditorIcon = new ImageIcon(getClass().getResource(
@@ -390,6 +414,20 @@ public class Gui extends JFrame {
 			typeEditorButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					new StatementTypeEditor();
+				}
+			});
+			typeEditorButton.setEnabled(false);
+
+			//Settings menu: about DNA
+			Icon aboutIcon = new ImageIcon(getClass().getResource(
+					"/icons/dna16.png"));
+			aboutButton = new JMenuItem("About DNA...", aboutIcon);
+			aboutButton.setToolTipText( "show information about the " +
+					"Discourse Network Analyzer..." );
+			settingsMenu.add(aboutButton);
+			aboutButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					new AboutWindow(Dna.dna.version, Dna.dna.date);
 				}
 			});
 			typeEditorButton.setEnabled(false);
@@ -413,8 +451,7 @@ public class Gui extends JFrame {
 			this.setLayout(new FlowLayout(FlowLayout.LEFT));
 			JPanel panel = new JPanel(new GridBagLayout());
 	        JLabel connectionLabel = new JLabel("URL:");
-	        //connectionField = new JTextField("mysql://");
-	        connectionField = new JTextField("mysql://philipleifeld.de/phillei_db3");
+	        connectionField = new JTextField("mysql://");
 	        connectionField.setColumns(30);
 	        GridBagConstraints gbc = new GridBagConstraints();
 	        gbc.insets = new Insets(3, 3, 3, 3);
@@ -453,7 +490,7 @@ public class Gui extends JFrame {
 	        panel.add(loginLabel, gbc);
 	        gbc.gridx++;
 	        loginField = new JTextField(10);
-	        loginField.setText("phillei_3");
+	        loginField.setText("");
 			loginField.getDocument().addDocumentListener(dl);
 	        panel.add(loginField, gbc);
 	        gbc.gridx++;
@@ -461,7 +498,7 @@ public class Gui extends JFrame {
 	        panel.add(pwLabel, gbc);
 	        gbc.gridx++;
 	        pwField = new JTextField(10);
-	        pwField.setText("ky5ueHe198viM6dF");
+	        pwField.setText("");
 			pwField.getDocument().addDocumentListener(dl);
 	        panel.add(pwField, gbc);
 	        gbc.gridx = 0;

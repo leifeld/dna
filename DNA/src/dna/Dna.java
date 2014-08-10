@@ -3,9 +3,10 @@ package dna;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 
 public class Dna {
+	String version = "2.0 alpha 1";
+	String date = "August 10, 2014";
 	static Dna dna;
 	DataAccess db;
 	Gui gui;
@@ -19,13 +20,14 @@ public class Dna {
 		dna = new Dna();
 	}
 	
-	public void addStatement(String type, int doc, int start, int stop) {
+	public int addStatement(String type, int doc, int start, int stop) {
 		int statementId = dna.db.addStatement(type, doc, start, stop);
 		Color color = dna.db.getStatementTypeColor(type);
 		Date date = dna.db.getDocument(doc).getDate();
 		SidebarStatement s = new SidebarStatement(statementId, doc, start, 
 				stop, date, color, type);
 		dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
+		return statementId;
 	}
 	
 	public void removeStatement(int statementId) {
@@ -35,15 +37,20 @@ public class Dna {
 		dna.gui.sidebarPanel.statementTable.updateUI();
 	}
 	
-	public void addDocument(String title, String text, Date date, String coder, 
-			String source, String notes, String type) {
-		int id = dna.db.addDocument(title, text, date, coder, source, notes, 
-				type);
+	public int addDocument(String title, String text, Date date, String coder, 
+			String source, String section, String notes, String type) {
+		int id = dna.db.addDocument(title, text, date, coder, source, section, 
+				notes, type);
 		Document d = Dna.dna.db.getDocument(id);
 		dna.gui.documentPanel.documentContainer.addDocument(d);
+		return id;
 	}
 
 	public void removeDocument(int documentId) {
+		ArrayList<SidebarStatement> al = dna.db.getStatementsPerDocumentId(documentId);
+		for (int i = 0; i < al.size(); i++) {
+			removeStatement(al.get(i).getStatementId());
+		}
 		int row = dna.gui.documentPanel.documentContainer.getRowIndexById(documentId);
 		dna.gui.documentPanel.documentContainer.remove(row);
 		dna.db.removeDocument(documentId);
@@ -67,6 +74,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
+		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
 	
@@ -88,6 +96,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
+		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
 	
@@ -100,6 +109,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(false);
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(false);
+		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
 	
@@ -107,15 +117,10 @@ public class Dna {
 		Dna.dna.db.openFile(filename);
 		Dna.dna.gui.statusBar.resetLabel();
 		db.createTables();
-		HashMap<String, String> dnaStatementMap = new HashMap<String, String>();
-		dnaStatementMap.put("person", "short text");
-		dnaStatementMap.put("organization", "short text");
-		dnaStatementMap.put("category", "short text");
-		dnaStatementMap.put("agreement", "boolean");
-		db.insertStatementType("DNAStatement", 255, 255, 0, dnaStatementMap);
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
+		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
 }

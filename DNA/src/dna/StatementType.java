@@ -1,16 +1,16 @@
 package dna;
 
 import java.awt.Color;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class StatementType {
 	
 	String label;
 	Color color;
-	HashMap<String, String> variables;
+	LinkedHashMap<String, String> variables;
 
 	public StatementType(String label, Color color, 
-			HashMap<String, String> variables) {
+			LinkedHashMap<String, String> variables) {
 		this.label = label;
 		this.color = color;
 		this.variables = variables;
@@ -57,7 +57,7 @@ public class StatementType {
 	 * 
 	 * @return  The variables.
 	 */
-	public HashMap<String, String> getVariables() {
+	public LinkedHashMap<String, String> getVariables() {
 		return variables;
 	}
 
@@ -66,7 +66,7 @@ public class StatementType {
 	 * 
 	 * @param variables  The variables to set.
 	 */
-	public void setVariables(HashMap<String, String> variables) {
+	public void setVariables(LinkedHashMap<String, String> variables) {
 		this.variables = variables;
 	}
 }

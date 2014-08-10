@@ -40,7 +40,7 @@ class NewDocumentWindow extends JFrame {
 	JPanel newArticlePanel;
 	JXTextField titleField;
 	JXTextArea textArea, notesArea;
-	JXComboBox coderBox, sourceBox, typeBox;
+	JXComboBox coderBox, sourceBox, sectionBox, typeBox;
 	
 	public NewDocumentWindow() {
 		
@@ -123,17 +123,16 @@ class NewDocumentWindow extends JFrame {
 		okButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String text = textArea.getText();
-				//TODO: check if the following line is necessary; use RTF document type instead?
-				//text = text.replaceAll("\n", "<br/>");
 				
 				String title = titleField.getText();
 				Date date = (Date)dateSpinner.getValue();
 				String coder = (String) coderBox.getModel().getSelectedItem();
 				String source = (String) sourceBox.getModel().getSelectedItem();
+				String section = (String) sectionBox.getModel().getSelectedItem();
 				String notes = notesArea.getText();
 				String type = (String) typeBox.getModel().getSelectedItem();
-				Dna.dna.addDocument(title, text, date, coder, source, notes, 
-						type);
+				Dna.dna.addDocument(title, text, date, coder, source, section, 
+						notes, type);
 				//TODO: change selection to new row
 				
 				int index = -1;
@@ -196,6 +195,19 @@ class NewDocumentWindow extends JFrame {
 		sourceBox.setSelectedItem("");
 		AutoCompleteDecorator.decorate(sourceBox);
 		fieldsPanel.add(sourceBox, gbc);
+
+		gbc.gridy++;
+		gbc.gridx--;
+		JLabel sectionLabel = new JLabel("section", JLabel.RIGHT);
+		fieldsPanel.add(sectionLabel, gbc);
+		
+		gbc.gridx++;
+		String[] sectionEntries = Dna.dna.db.getDocumentSections();
+		sectionBox = new JXComboBox(sectionEntries);
+		sectionBox.setEditable(true);
+		sectionBox.setSelectedItem("");
+		AutoCompleteDecorator.decorate(sectionBox);
+		fieldsPanel.add(sectionBox, gbc);
 		
 		gbc.gridy++;
 		gbc.gridx--;
@@ -213,7 +225,7 @@ class NewDocumentWindow extends JFrame {
 		
 		gbc.gridy = 1;
 		gbc.gridx = 2;
-		gbc.gridheight = 4;
+		gbc.gridheight = 5;
 		gbc.gridwidth = 2;
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.insets = new Insets(1, 0, 2, 0);

@@ -10,8 +10,8 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -207,7 +207,8 @@ public class StatementTypeEditor extends JFrame {
 					int red = newColor.getRed();
 					int green = newColor.getGreen();
 					int blue = newColor.getBlue();
-					HashMap<String, String> emptyVar = new HashMap<String, 
+					LinkedHashMap<String, String> emptyVar = new 
+							LinkedHashMap<String, 
 							String>();
 					Dna.dna.db.insertStatementType(newLabel, red, green, blue, 
 							emptyVar);
@@ -342,7 +343,7 @@ public class StatementTypeEditor extends JFrame {
 				}
 				int selRow = typeTable.getSelectedRow();
 				if (selRow > -1) {
-					HashMap<String, String> map = Dna.dna.db.getVariables(
+					LinkedHashMap<String, String> map = Dna.dna.db.getVariables(
 							stc.get(selRow).getLabel());
 					Object[] types = map.keySet().toArray();
 					for (int i = 0; i < types.length; i++) {
@@ -405,7 +406,7 @@ public class StatementTypeEditor extends JFrame {
         		Dna.dna.db.addVariable(newVar, dataType, statementType);
         		
         		// update statement type container
-        		HashMap<String, String> varMap = stc.get(typeRow).
+        		LinkedHashMap<String, String> varMap = stc.get(typeRow).
         				getVariables();
         		varMap.put(newVar, dataType);
         		stc.get(typeRow).setVariables(varMap);
@@ -433,7 +434,7 @@ public class StatementTypeEditor extends JFrame {
         		
         		if (dialog == 0) {
             		// update statement type container
-            		HashMap<String, String> varMap = stc.get(typeRow).
+            		LinkedHashMap<String, String> varMap = stc.get(typeRow).
             				getVariables();
             		varMap.remove(varName);
             		stc.get(typeRow).setVariables(varMap);
@@ -484,7 +485,7 @@ public class StatementTypeEditor extends JFrame {
 	    		((DefaultTableModel)varTable.getModel()).setRowCount(0);
 	    		if (typeRow > -1) {
 	    			StatementType st = stc.get(typeRow);
-			        HashMap<String, String> variables = st.getVariables();
+			        LinkedHashMap<String, String> variables = st.getVariables();
 			        Iterator<String> keyIterator = variables.keySet().
 			        		iterator();
 			        while (keyIterator.hasNext()){

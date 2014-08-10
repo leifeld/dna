@@ -16,6 +16,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.Connection;
 import java.sql.Statement;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -49,12 +50,12 @@ public class Popup extends JDialog {
 	Connection conn;
 	Statement st6;
 	
-	public Popup(Point point, int statementId, Point location) {
+	public Popup(Point point, final int statementId, Point location) {
 		this.point = point;
 		this.statementId = statementId;
 		this.los = location;
 		
-		SidebarStatement s = Dna.dna.db.getStatement(statementId);
+		final SidebarStatement s = Dna.dna.db.getStatement(statementId);
 		this.color = s.getColor();
 		this.type = Dna.dna.db.getStatementType(statementId);
 		
@@ -113,7 +114,28 @@ public class Popup extends JDialog {
 		JPanel colorPanel = new JPanel();
 		colorPanel.setBackground(color);
 		colorPanel.setPreferredSize(new Dimension(4,4));
-
+		
+		ImageIcon duplicateIcon = new ImageIcon(getClass().getResource(
+				"/icons/add.png"));
+		JButton duplicate = new JButton(duplicateIcon);
+		duplicate.setToolTipText("create a copy of this statement at the " +
+				"same location");
+		duplicate.setPreferredSize(new Dimension(16, 16));
+		duplicate.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int newStatementId = Dna.dna.db.duplicateStatement(statementId, 
+						s.getDocumentId(), s.getStart(), s.getStop());
+				Color color = Dna.dna.db.getStatementTypeColor(type);
+				Date date = Dna.dna.db.getDocument(s.getDocumentId()).getDate();
+				SidebarStatement st = new SidebarStatement(newStatementId, 
+						s.getDocumentId(), s.getStart(), s.getStop(), date, 
+						color, type);
+				Dna.dna.gui.sidebarPanel.ssc.addSidebarStatement(st, true);
+				Dna.dna.gui.textPanel.selectStatement(newStatementId, 
+						s.getDocumentId());
+			}
+		});
+		
 		ImageIcon removeIcon = 
 				new ImageIcon(getClass().getResource("/icons/trash.png"));
 		JButton remove = new JButton(removeIcon);
@@ -140,6 +162,7 @@ public class Popup extends JDialog {
 		idAndPositionPanel.add(ePosLabel);
 		idAndPositionPanel.add(endPos);
 		idAndPositionPanel.add(new JLabel("  "));
+		idAndPositionPanel.add(duplicate);
 		idAndPositionPanel.add(remove);
 		
 		titleDecorationPanel.add(idAndPositionPanel, BorderLayout.EAST);

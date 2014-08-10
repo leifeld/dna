@@ -38,12 +38,14 @@ class DocumentContainer implements TableModel {
 	}
 	
 	public void changeDocument(int documentId, String title, Date date, 
-			String coder, String source, String notes, String type) {
+			String coder, String source, String section, String notes, 
+			String type) {
 		int i = getRowIndexById(documentId);
 		documents.get(i).setTitle(title);
 		documents.get(i).setDate(date);
 		documents.get(i).setCoder(coder);
 		documents.get(i).setSource(source);
+		documents.get(i).setSection(section);
 		documents.get(i).setNotes(notes);
 		documents.get(i).setType(type);
 	}
@@ -128,7 +130,7 @@ class DocumentContainer implements TableModel {
 		}
 	}
 
-	//which type of object (i.e. class) shall be shown in the columns?
+	//which type of object (i.e., class) shall be shown in the columns?
 	public Class<?> getColumnClass(int columnIndex) {
 		switch( columnIndex ){
 			case 0: return String.class;

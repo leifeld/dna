@@ -4,17 +4,19 @@ import java.util.Date;
 
 class Document implements Comparable<Document> {
 	int id;
-	String title, text, coder, source, notes, type;
+	String title, text, coder, source, section, notes, type;
 	Date date;
 	
 	public Document( int id, String title, String text, Date date, 
-			String coder, String source, String notes, String type ) {
+			String coder, String source, String section, String notes, 
+			String type ) {
 		this.id = id;
 		this.title = title;
 		this.text = text;
 		this.date = date;
 		this.coder = coder;
 		this.source = source;
+		this.section = section;
 		this.notes = notes;
 		this.type = type;
 	}
@@ -53,6 +55,24 @@ class Document implements Comparable<Document> {
 	 */
 	public void setSource(String source) {
 		this.source = source;
+	}
+
+	/**
+	 * Retrieve the section of the document.
+	 * 
+	 * @return  The section.
+	 */
+	public String getSection() {
+		return section;
+	}
+
+	/**
+	 * Set the section of the document.
+	 * 
+	 * @param section  The section to set.
+	 */
+	public void setSection(String section) {
+		this.section = section;
 	}
 
 	/**

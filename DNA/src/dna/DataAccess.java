@@ -8,12 +8,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.swing.JOptionPane;
+
+//import com.microsoft.sqlserver.jdbc.SQLServerException;
 
 
 public class DataAccess {
@@ -73,7 +74,7 @@ public class DataAccess {
 		Connection conn= DriverManager.getConnection("jdbc:sqlite:" + dbfile);
 		return conn;
 	}
-	
+
 	/**
 	 * Establish the connection to a mySQL database on a server.
 	 * 
@@ -84,13 +85,36 @@ public class DataAccess {
 	Connection getMySQLConnection() throws ClassNotFoundException, 
 			SQLException {
 		Class.forName("com.mysql.jdbc.Driver");
-		//jdbc:mysql://philipleifeld.de/phillei_db3
-		//phillei_3
-		//ky5ueHe198viM6dF
+		//mysql://philipleifeld.de/phillei_db3
+		//phillei_3_w
+		//rzGbs6YuR3589SKP
 		Connection conn = DriverManager.getConnection("jdbc:" + dbfile, login, 
 				password);
 		return conn;
 	}
+	
+	/**
+	 * Establish the connection to a mySQL database on a server.
+	 * 
+	 * @return  The connection to the database.
+	 * @throws  ClassNotFoundException
+	 * @throws  SQLException
+	 */
+	/*Connection getMySQLConnection() throws ClassNotFoundException, 
+			SQLException {
+		//Class.forName("com.mysql.jdbc.Driver");
+		Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+		//sqlserver://eaw-sql2.eawag.wroot.emp-eaw.ch
+		//overlapuser
+		//sedPZ53TG
+		Connection conn = null;
+		try {
+			conn = DriverManager.getConnection("jdbc:" + dbfile + ";databaseName=Overlap;user=" + login + ";password=" + password + ";");
+		} catch(SQLServerException e) {
+			System.err.println("Error: connection to the database could not be established. Check your connection.");
+		}
+		return conn;
+	}*/
 	
 	/**
 	 * Forget the name of the current .dna file for data access.
@@ -113,7 +137,7 @@ public class DataAccess {
 		this.login = null;
 		this.password = null;
 	}
-
+	
 	/**
 	 * Remember the credentials of a mySQL database for data access.
 	 * 
@@ -199,9 +223,15 @@ public class DataAccess {
 			}
 			statement = connection.createStatement();
 			statement.execute(myStatement);
-			resultSet = statement.executeQuery(
-					"SELECT last_insert_rowid()"
-					);
+			if (sqlite == true) {
+				resultSet = statement.executeQuery(
+						"SELECT last_insert_rowid()"
+						);
+			} else {
+				resultSet = statement.executeQuery(
+						"SELECT LAST_INSERT_ID()"
+						);
+			}
 			if (resultSet.next()) {
 				do {
 					id = resultSet.getInt(1);
@@ -350,59 +380,154 @@ public class DataAccess {
 	 */
 	public void createTables() {
 		
-		executeStatement(
-				"CREATE TABLE IF NOT EXISTS SETTINGS(" + 
-    	        "Property TEXT PRIMARY KEY, " + 
-    	        "Value TEXT)"
-    	        );
+		if (sqlite == true) {  // sqlite tables
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS SETTINGS(" + 
+	    	        "Property TEXT PRIMARY KEY, " + 
+	    	        "Value TEXT)"
+	    	        );
+			
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS DOCUMENTS(" + 
+	        		"ID INTEGER NOT NULL PRIMARY KEY, " + 
+	        		"Title TEXT, " + 
+	        		"Text TEXT, " + 
+	        		"Date INTEGER, " + 
+	        		"Coder TEXT, " + 
+	        		"Source TEXT, " + 
+	        		"Section TEXT, " + 
+	        		"Notes TEXT, " + 
+	        		"Type TEXT)"
+	        		);
+			
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS REGEX(" + 
+	                "Label TEXT PRIMARY KEY, " + 
+	                "Red INTEGER, " +  
+	                "Green INTEGER, " + 
+	                "Blue INTEGER)"
+	                );
+			
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS STATEMENTTYPE(" + 
+	    			"Label TEXT PRIMARY KEY, " +
+	    			"Red INTEGER, " +
+	    			"Green INTEGER, " +
+	    			"Blue INTEGER)"
+	    			);
+			
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS VARIABLES(" + 
+	    			"ID INTEGER NOT NULL PRIMARY KEY, " + 
+	    	    	"Variable TEXT, " + 
+	    	    	"DataType TEXT, " +
+	    	    	"StatementType TEXT, " +
+	    	    	"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label))"
+	    	    	);
+			
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS STATEMENTS(" +
+	    			"ID INTEGER NOT NULL PRIMARY KEY, " +
+	    			"Type TEXT, " +
+	        		"Document INTEGER, " + 
+	        		"Start INTEGER, " + 
+	        		"Stop INTEGER, " + 
+	        		"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
+	        		"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID))"
+	        		);
+		} else {  // mysql tables
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS SETTINGS(" + 
+	    	        "Property VARCHAR(200), " + 
+	    	        "Value VARCHAR(200)," +
+	    	        "PRIMARY KEY (Property))"
+	    	        );
+
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS DOCUMENTS(" + 
+	        		"ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " + 
+	        		"Title VARCHAR(200), " + 
+	        		"Text MEDIUMTEXT, " + 
+	        		"Date BIGINT, " + 
+	        		"Coder VARCHAR(200), " + 
+	        		"Source VARCHAR(200), " + 
+	        		"Section VARCHAR(200), " + 
+	        		"Notes TEXT, " + 
+	        		"Type VARCHAR(200), " +
+	        		"PRIMARY KEY(ID))"
+	        		);
+			
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS REGEX(" + 
+	                "Label VARCHAR(200), " + 
+	                "Red SMALLINT UNSIGNED, " +  
+	                "Green SMALLINT UNSIGNED, " + 
+	                "Blue SMALLINT UNSIGNED, " +
+	                "PRIMARY KEY(Label))"
+	                );
+			
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS STATEMENTTYPE(" + 
+	    			"Label VARCHAR(200), " +
+	    			"Red SMALLINT UNSIGNED, " +
+	    			"Green SMALLINT UNSIGNED, " +
+	    			"Blue SMALLINT UNSIGNED, " +
+	    			"PRIMARY KEY(Label))"
+	    			);
+			
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS VARIABLES(" + 
+	    			"ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " + 
+	    	    	"Variable VARCHAR(200), " + 
+	    	    	"DataType VARCHAR(200), " +
+	    	    	"StatementType VARCHAR(200), " +
+	    	    	"FOREIGN KEY(StatementType) REFERENCES " +
+	    	    			"STATEMENTTYPE(Label), " +
+	    	    	"PRIMARY KEY(ID))"
+	    	    	);
+			
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS STATEMENTS(" +
+	    			"ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+	    			"Type VARCHAR(200), " +
+	        		"Document MEDIUMINT UNSIGNED NOT NULL, " + 
+	        		"Start BIGINT UNSIGNED, " + 
+	        		"Stop BIGINT UNSIGNED, " + 
+	        		"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
+	        		"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), " +
+	        		"PRIMARY KEY(ID))"
+	        		);
+		}
 		
-		executeStatement(
-				"CREATE TABLE IF NOT EXISTS DOCUMENTS(" + 
-        		"ID INTEGER NOT NULL PRIMARY KEY, " + 
-        		"Title TEXT, " + 
-        		"Text TEXT, " + 
-        		"Date INTEGER, " + 
-        		"Coder TEXT, " + 
-        		"Source TEXT, " + 
-        		"Notes TEXT, " + 
-        		"Type TEXT)"
-        		);
+		// add default statement types
 		
-		executeStatement(
-				"CREATE TABLE IF NOT EXISTS REGEX(" + 
-                "Label TEXT PRIMARY KEY, " + 
-                "Red INTEGER, " +  
-                "Green INTEGER, " + 
-                "Blue INTEGER)"
-                );
+		// DNAStatement
+		LinkedHashMap<String, String> dnaStatementMap = new 
+				LinkedHashMap<String, String>();
+		dnaStatementMap.put("person", "short text");
+		dnaStatementMap.put("organization", "short text");
+		dnaStatementMap.put("category", "short text");
+		dnaStatementMap.put("agreement", "boolean");
+		insertStatementType("DNAStatement", 255, 255, 100, dnaStatementMap);
 		
-		executeStatement(
-				"CREATE TABLE IF NOT EXISTS STATEMENTTYPE(" + 
-    			"Label TEXT PRIMARY KEY, " +
-    			"Red INTEGER, " +
-    			"Green INTEGER, " +
-    			"Blue INTEGER)"
-    			);
-		
-		executeStatement(
-				"CREATE TABLE IF NOT EXISTS VARIABLES(" + 
-    			"ID INTEGER NOT NULL PRIMARY KEY, " + 
-    	    	"Variable TEXT, " + 
-    	    	"DataType TEXT, " +
-    	    	"StatementType TEXT, " +
-    	    	"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label))"
-    	    	);
-		
-		executeStatement(
-				"CREATE TABLE IF NOT EXISTS STATEMENTS(" +
-    			"ID INTEGER NOT NULL PRIMARY KEY, " +
-    			"Type TEXT, " +
-        		"Document INTEGER, " + 
-        		"Start INTEGER, " + 
-        		"Stop INTEGER, " + 
-        		"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
-        		"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID))"
-        		);
+		// PoliticalClaim
+		LinkedHashMap<String, String> pcaMap = new LinkedHashMap<String, 
+				String>();
+		pcaMap.put("actor", "short text");
+		pcaMap.put("tone", "integer");
+		pcaMap.put("adressee", "short text");
+		pcaMap.put("objectActor", "short text");
+		pcaMap.put("form", "short text");
+		pcaMap.put("issue", "short text");
+		pcaMap.put("frame", "short text");
+		pcaMap.put("region", "short text");
+		insertStatementType("PoliticalClaim", 180, 255, 255, pcaMap);
+
+		// Annotation
+		LinkedHashMap<String, String> annotationMap = new LinkedHashMap<String, 
+				String>();
+		annotationMap.put("annotation", "long text");
+		insertStatementType("Annotation", 255, 180, 180, annotationMap);
 	}
 	
 	/**
@@ -550,10 +675,10 @@ public class DataAccess {
 	 * @param red        The red RGB component of the statement type color.
 	 * @param green      The green RGB component of the statement type color.
 	 * @param blue       The blue RGB component of the statement type color.
-	 * @param variables  A HashMap of variables and corresponding data types.
+	 * @param variables  A LinkedHashMap of variables and their data types.
 	 */
 	public void insertStatementType(String label, int red, int green, int blue, 
-			HashMap<String, String> variables) {
+			LinkedHashMap<String, String> variables) {
 		Connection connection = null;
 		Statement statement = null;
 		
@@ -571,20 +696,42 @@ public class DataAccess {
 					", " + blue + ")"
 	        );
 			
-			String tabString = "CREATE TABLE IF NOT EXISTS " + label + "(" + 
-					"StatementID INTEGER PRIMARY KEY";
+			String tabString;
+			if (sqlite == true) {
+				tabString = "CREATE TABLE IF NOT EXISTS " + label + "(" + 
+						"StatementID INTEGER PRIMARY KEY";
+			} else {
+				tabString = "CREATE TABLE IF NOT EXISTS " + label + "(" + 
+						"StatementID MEDIUMINT UNSIGNED NOT NULL, " +
+						"PRIMARY KEY(StatementID)";
+			}
 			
 			Iterator<String> keyIterator = variables.keySet().iterator();
 			while (keyIterator.hasNext()){
 				String key = keyIterator.next();
 				String value = variables.get(key);
 				String type;
-				if (value.equals("short text") || value.equals("long text")) {
-					type = "TEXT";
-				} else if (value.equals("boolean") || value.equals("integer")) {
-					type = "INTEGER";
+				if (sqlite == true) {
+					if (value.equals("short text") || value.equals(
+							"long text")) {
+						type = "TEXT";
+					} else if (value.equals("boolean") || value.equals(
+							"integer")) {
+						type = "INTEGER";
+					} else {
+						type = "INTEGER";
+					}
 				} else {
-					type = "INTEGER";
+					if (value.equals("short text")) {
+						type = "VARCHAR(200)";
+					} else if (value.equals("long text")) {
+						type = "TEXT";
+					} else if (value.equals("boolean") || value.equals(
+							"integer")) {
+						type = "SMALLINT";
+					} else {
+						type = "SMALLINT";
+					}
 				}
 				statement.execute(
 						"INSERT INTO VARIABLES (Variable, DataType, " + 
@@ -774,6 +921,27 @@ public class DataAccess {
 			sources[i] = (String) al.get(i);
 		}
 		return sources;
+	}
+
+	/**
+	 * Retrieve a string array of unique document sections in the database.
+	 * 
+	 * @return  String array of distinct sections.
+	 */
+	public String[] getDocumentSections() {
+		ArrayList<?> al = executeQueryForList(
+				"SELECT DISTINCT Section FROM DOCUMENTS"
+				);
+		@SuppressWarnings("unchecked")
+		ArrayList<String> a = (ArrayList<String>) al;
+		if (!a.contains("")) {
+			a.add(0, "");
+		}
+		String[] sections = new String[a.size()];
+		for (int i = 0; i < al.size(); i++) {
+			sections[i] = (String) al.get(i);
+		}
+		return sections;
 	}
 	
 	/**
@@ -969,8 +1137,9 @@ public class DataAccess {
 	 * @param statementType  The statement type from the STATEMENTTYPE table.
 	 * @return               A hash map of variable names and data types.
 	 */
-	public HashMap<String, String> getVariables(String statementType) {
-		HashMap<String, String> variables = new HashMap<String, String>();
+	public LinkedHashMap<String, String> getVariables(String statementType) {
+		LinkedHashMap<String, String> variables = new LinkedHashMap<String, 
+				String>();
 		
 		Connection connection = null;
 		Statement statement = null;
@@ -1066,7 +1235,7 @@ public class DataAccess {
 					int green = resultSet.getInt("Green");
 					int blue = resultSet.getInt("Blue");
 					Color color = new Color(red, green, blue);
-					HashMap<String, String> var = getVariables(label);
+					LinkedHashMap<String, String> var = getVariables(label);
 					StatementType t = new StatementType(label, color, var);
 					types.add(t);
 				} while (resultSet.next());
@@ -1141,7 +1310,7 @@ public class DataAccess {
 		
 		executeStatement(
 				"UPDATE " + statementType + " SET " + varName + " = " + 
-				quotMark + entry + quotMark + " WHERE StatementId = " + 
+				quotMark + entry + quotMark + " WHERE StatementID = " + 
 				statementId
 				);
 	}
@@ -1173,13 +1342,14 @@ public class DataAccess {
 					String text = resultSet.getString("Text");
 					String coder = resultSet.getString("Coder");
 					String source = resultSet.getString("Source");
+					String section = resultSet.getString("Section");
 					String notes = resultSet.getString("Notes");
 					String type = resultSet.getString("Type");
 					long intDate = resultSet.getLong("Date");
 					Date date = new Date();
 					date.setTime(intDate);
 					d = new Document(documentId, title, text, date, coder, 
-							source,	notes, type);
+							source,	section, notes, type);
 				} while (resultSet.next());
 			}
 			resultSet.close();
@@ -1372,13 +1542,13 @@ public class DataAccess {
 	 * @return        ID of the new document.
 	 */
 	public int addDocument(String title, String text, Date date, String coder, 
-			String source, String notes, String type) {
+			String source, String section, String notes, String type) {
 		long intDate = date.getTime();
 		int id = executeStatementForId(
 				"INSERT INTO DOCUMENTS (Title, Text, Date, Coder, " +
-				"Source, Notes, Type) VALUES('" + title + "', '" + text + 
-				"', " + intDate + ", '" + coder + "', '" + source + 
-				"', '" + notes + "', '" + type + "')"
+				"Source, Section, Notes, Type) VALUES('" + title + "', '" + 
+				text + "', " + intDate + ", '" + coder + "', '" + source + 
+				"', '" + section + "', '" + notes + "', '" + type + "')"
 				);
 		return id;
 	}
@@ -1395,14 +1565,63 @@ public class DataAccess {
 	 * @param type        The type of the document.
 	 */
 	public void changeDocument(int documentId, String title, Date date, 
-			String coder, String source, String notes, String type) {
+			String coder, String source, String section, String notes, 
+			String type) {
 		long dateInt = date.getTime();
 		executeStatement(
 				"UPDATE DOCUMENTS SET Title = '" + title + "', Date = " + 
 				dateInt + ", Coder = '" + coder + "', Source = '" + source + 
-				"', Notes = '" + notes + "', Type = '" + type + 
-				"' WHERE ID = " + documentId
+				"', Section = '" + section + "', Notes = '" + notes + 
+				"', Type = '" + type + "' WHERE ID = " + documentId
 				);
 	}
 	
+	/**
+	 * Create a copy of an existing statement with a given new statement ID
+	 * 
+	 * @param oldStatementId  Existing statement ID.
+	 * @param newStatementId  ID of the new statement.
+	 */
+	public int duplicateStatement(int oldStatementId, int documentId, 
+			int start, int stop) {
+		
+		String type = this.getStatementType(oldStatementId);
+		
+		int id = executeStatementForId(
+				"INSERT INTO STATEMENTS (Type, Document, Start, Stop) " +
+				"VALUES('" + type + "', " + documentId + ", " + start + ", " + 
+				stop + ")"
+				);
+		
+		executeStatement(
+				"INSERT INTO " + type + " (StatementID) VALUES (" + id + ")");
+		
+		LinkedHashMap<String, String> variables = this.getVariables(type);
+		
+		Iterator<String> keyIterator = variables.keySet().iterator();
+		while (keyIterator.hasNext()){
+			String key = keyIterator.next();
+			String value = variables.get(key);
+			String quotes;
+			if (value.equals("short text") || value.equals("long text")) {
+				quotes = "'";
+				String content = this.getVariableStringEntry(oldStatementId, 
+						key);
+				executeStatement(
+						"UPDATE " + type + " SET " + key + " = " + quotes + 
+						content + quotes + " WHERE StatementId = " + id
+		        );
+			} else {
+				quotes = "";
+				int content = this.getVariableIntEntry(oldStatementId, 
+						key);
+				executeStatement(
+						"UPDATE " + type + " SET " + key + " = " + quotes + 
+						content + quotes + " WHERE StatementId = " + id
+		        );
+			}
+		}
+		
+		return id;
+	}
 }

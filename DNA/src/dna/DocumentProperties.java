@@ -28,7 +28,7 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 public class DocumentProperties extends JFrame {
 	
 	private static final long serialVersionUID = 1L;
-	String dbfile, title, coder, type, source, notes;
+	String dbfile, title, coder, type, source, section, notes;
 	Date date;
 	SpinnerDateModel dateModel;
 	JSpinner dateSpinner;
@@ -36,7 +36,7 @@ public class DocumentProperties extends JFrame {
 	JPanel newArticlePanel;
 	JTextField titleField;
 	JXTextArea notesArea;
-	JComboBox<String> coderBox, sourceBox, typeBox;
+	JComboBox<String> coderBox, sourceBox, sectionBox, typeBox;
 	
 	public DocumentProperties(final int documentId) {
 		
@@ -52,6 +52,7 @@ public class DocumentProperties extends JFrame {
 		this.date = d.getDate();
 		this.coder = d.getCoder();
 		this.source = d.getSource();
+		this.section = d.getSection();
 		this.type = d.getType();
 		this.notes = d.getNotes();
 		
@@ -85,12 +86,15 @@ public class DocumentProperties extends JFrame {
 				Date date = (Date)dateSpinner.getValue();
 				String coder = (String) coderBox.getModel().getSelectedItem();
 				String source = (String) sourceBox.getModel().getSelectedItem();
+				String section = (String) sectionBox.getModel().
+						getSelectedItem();
 				String notes = notesArea.getText();
 				String type = (String) typeBox.getModel().getSelectedItem();
 				Dna.dna.db.changeDocument(documentId, title, date, coder, 
-						source, notes, type);
+						source, section, notes, type);
 				Dna.dna.gui.documentPanel.documentContainer.changeDocument(
-						documentId, title, date, coder, source, notes, type);
+						documentId, title, date, coder, source, section, notes, 
+						type);
 				Dna.dna.gui.documentPanel.documentContainer.sort();
 				int newRow = Dna.dna.gui.documentPanel.documentContainer.
 						getRowIndexById(documentId);
@@ -143,6 +147,19 @@ public class DocumentProperties extends JFrame {
 		sourceBox.setSelectedItem(this.source);
 		AutoCompleteDecorator.decorate(sourceBox);
 		fieldsPanel.add(sourceBox, gbc);
+
+		gbc.gridy++;
+		gbc.gridx--;
+		JLabel sectionLabel = new JLabel("section", JLabel.RIGHT);
+		fieldsPanel.add(sectionLabel, gbc);
+		
+		gbc.gridx++;
+		String[] sectionEntries = Dna.dna.db.getDocumentSections();
+		sectionBox = new JComboBox<String>(sectionEntries);
+		sectionBox.setEditable(true);
+		sectionBox.setSelectedItem(this.section);
+		AutoCompleteDecorator.decorate(sectionBox);
+		fieldsPanel.add(sectionBox, gbc);
 		
 		gbc.gridy++;
 		gbc.gridx--;
@@ -160,7 +177,7 @@ public class DocumentProperties extends JFrame {
 		
 		gbc.gridy = 1;
 		gbc.gridx = 2;
-		gbc.gridheight = 4;
+		gbc.gridheight = 5;
 		gbc.gridwidth = 2;
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.insets = new Insets(1, 0, 2, 0);
@@ -179,6 +196,7 @@ public class DocumentProperties extends JFrame {
 		dateSpinner.setPreferredSize(new Dimension(170, titleField.getHeight()));
 		typeBox.setPreferredSize(new Dimension(170, titleField.getHeight()));
 		sourceBox.setPreferredSize(new Dimension(170, titleField.getHeight()));
+		sectionBox.setPreferredSize(new Dimension(170, titleField.getHeight()));
 		coderBox.setPreferredSize(new Dimension(170, titleField.getHeight()));
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
