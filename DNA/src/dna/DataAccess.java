@@ -85,9 +85,6 @@ public class DataAccess {
 	Connection getMySQLConnection() throws ClassNotFoundException, 
 			SQLException {
 		Class.forName("com.mysql.jdbc.Driver");
-		//mysql://philipleifeld.de/phillei_db3
-		//phillei_3_w
-		//rzGbs6YuR3589SKP
 		Connection conn = DriverManager.getConnection("jdbc:" + dbfile, login, 
 				password);
 		return conn;
@@ -104,9 +101,6 @@ public class DataAccess {
 			SQLException {
 		//Class.forName("com.mysql.jdbc.Driver");
 		Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-		//sqlserver://eaw-sql2.eawag.wroot.emp-eaw.ch
-		//overlapuser
-		//sedPZ53TG
 		Connection conn = null;
 		try {
 			conn = DriverManager.getConnection("jdbc:" + dbfile + ";databaseName=Overlap;user=" + login + ";password=" + password + ";");
