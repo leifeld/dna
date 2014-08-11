@@ -945,6 +945,42 @@ public class DataAccess {
 	}
 	
 	/**
+	 * Retrieve the earliest date of a document in the database.
+	 * 
+	 * @return  Earliest date in the database.
+	 */
+	public Date getFirstDate() {
+		ArrayList<Document> d = this.getDocuments();
+		Date first = d.get(0).getDate();
+		if (d.size() > 1) {
+			for (int i = 1; i < d.size(); i++) {
+				if (d.get(i).getDate().before(first)) {
+					first = d.get(i).getDate();
+				}
+			}
+		}
+		return first;
+	}
+
+	/**
+	 * Retrieve the last date of a document in the database.
+	 * 
+	 * @return  Last date in the database.
+	 */
+	public Date getLastDate() {
+		ArrayList<Document> d = this.getDocuments();
+		Date last = d.get(0).getDate();
+		if (d.size() > 1) {
+			for (int i = 1; i < d.size(); i++) {
+				if (d.get(i).getDate().after(last)) {
+					last = d.get(i).getDate();
+				}
+			}
+		}
+		return last;
+	}
+	
+	/**
 	 * Retrieve the color of a statement type from the STATEMENTTYPE table.
 	 * 
 	 * @param statementType  A string representing the statement type label.

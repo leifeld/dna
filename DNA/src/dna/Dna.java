@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class Dna {
-	String version = "2.0 alpha 1";
-	String date = "August 10, 2014";
+	String version = "2.0 alpha 2";
+	String date = "August 11, 2014";
 	static Dna dna;
 	DataAccess db;
 	Gui gui;
@@ -75,6 +75,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
+		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
 	
@@ -97,6 +98,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
+		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
 	
@@ -110,6 +112,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(false);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
+		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
 	
@@ -121,6 +124,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
+		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
 }

@@ -184,16 +184,18 @@ public class Gui extends JFrame {
 		
 		private static final long serialVersionUID = 1L;
 		
-		JMenu fileMenu,documentMenu,settingsMenu;
+		JMenu fileMenu, documentMenu, exportMenu, settingsMenu;
 		JMenuItem closeFile, newDocumentButton, typeEditorButton, 
 				changeDocumentButton, removeDocumentButton, 
-				importOldButton, aboutButton;
+				importOldButton, networkButton, aboutButton;
 		
 		public MenuBar() {
 			fileMenu = new JMenu("File");
 			this.add(fileMenu);
 			documentMenu = new JMenu("Document");
 			this.add(documentMenu);
+			exportMenu = new JMenu("Export");
+			this.add(exportMenu);
 			settingsMenu = new JMenu("Settings");
 			this.add(settingsMenu);
 			
@@ -341,7 +343,7 @@ public class Gui extends JFrame {
 			changeDocumentButton.setEnabled(false);
 			
 
-			//Article menu: delete selected article
+			//Document menu: delete selected document
 			Icon removeDocumentIcon = new ImageIcon(getClass().getResource(
 					"/icons/table_delete.png"));
 			removeDocumentButton = new JMenuItem("Delete selected document", 
@@ -403,7 +405,20 @@ public class Gui extends JFrame {
 				}
 			});
 			importOldButton.setEnabled(false);
-			
+
+			//Export menu: network export
+			Icon networkIcon = new ImageIcon(getClass().getResource(
+					"/icons/chart_organisation.png"));
+			networkButton = new JMenuItem("Export network...", networkIcon);
+			networkButton.setToolTipText( "export a network file..." );
+			exportMenu.add(networkButton);
+			networkButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					new NetworkExporter();
+				}
+			});
+			networkButton.setEnabled(false);
+
 			//Settings menu: edit statement types
 			Icon typeEditorIcon = new ImageIcon(getClass().getResource(
 					"/icons/application_form.png"));
