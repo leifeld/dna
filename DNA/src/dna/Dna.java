@@ -6,13 +6,13 @@ import java.util.Date;
 
 public class Dna {
 	String version = "2.0 alpha 2";
-	String date = "August 11, 2014";
+	String date = "August 13, 2014";
 	static Dna dna;
 	DataAccess db;
 	Gui gui;
 	
 	public Dna () {
-		db = new DataAccess(true);
+		db = new DataAccess();
 		gui = new Gui();
 	}
 	
@@ -57,7 +57,7 @@ public class Dna {
 	}
 	
 	public void openFile(String dbfile) {
-		Dna.dna.db.openFile(dbfile);
+		Dna.dna.db.openSQLite(dbfile);
 		Dna.dna.gui.statusBar.resetLabel();
 		ArrayList<Document> docs = Dna.dna.db.getDocuments();
 		for (int i = 0; i < docs.size(); i++) {
@@ -80,7 +80,31 @@ public class Dna {
 	}
 	
 	public void openMySQL(String url, String userName, String password) {
-		Dna.dna.db.openMySQL(false, url, userName, password);
+		Dna.dna.db.openMySQL(url, userName, password);
+		Dna.dna.gui.statusBar.resetLabel();
+		ArrayList<Document> docs = Dna.dna.db.getDocuments();
+		for (int i = 0; i < docs.size(); i++) {
+			Dna.dna.gui.documentPanel.documentContainer.addDocument(docs.
+					get(i));
+			int documentId = docs.get(i).getId();
+			ArrayList<SidebarStatement> statements = Dna.dna.db.
+					getStatementsPerDocumentId(documentId);
+			for (int j = 0; j < statements.size(); j++) {
+				SidebarStatement s = statements.get(j);
+				Dna.dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
+			}
+		}
+		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
+		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
+		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
+		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
+		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
+		Dna.dna.gui.sidebarPanel.updateStatementTypes();
+	}
+
+	public void openMSSQL(String url, String dbname, String userName, 
+			String password) {
+		Dna.dna.db.openMSSQL(url, dbname, userName, password);
 		Dna.dna.gui.statusBar.resetLabel();
 		ArrayList<Document> docs = Dna.dna.db.getDocuments();
 		for (int i = 0; i < docs.size(); i++) {
@@ -117,9 +141,8 @@ public class Dna {
 	}
 	
 	public void newFile(String filename) {
-		Dna.dna.db.openFile(filename);
+		Dna.dna.db.openSQLite(filename);
 		Dna.dna.gui.statusBar.resetLabel();
-		db.createTables();
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);

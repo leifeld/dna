@@ -13,50 +13,66 @@ import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
-
-//import com.microsoft.sqlserver.jdbc.SQLServerException;
-
+import com.microsoft.sqlserver.jdbc.SQLServerException;
 
 public class DataAccess {
-	boolean sqlite = true;
+	String dbtype;
 	String dbfile;
+	String dbname;
 	String login = "";
 	String password = "";
 
 	/**
 	 * Create a new DataAccess object, which manages database access.
 	 * 
-	 * @param sqlite  boolean indicating whether an SQLite file shall be used.
+	 * @param dbtype  String indicating the type of database.
 	 */
-	public DataAccess(boolean sqlite) {
+	public DataAccess() {
 		//no file given; openFile() must be called first
 		this.dbfile = null;
-		this.sqlite = sqlite;
+		this.dbtype = null;
 	}
 	
 	/**
 	 * Create a new DataAccess object, which manages database access.
 	 * 
-	 * @param sqlite  true indicates an SQLite database, false a mySQL database.
+	 * @param dbtype  Can be "sqlite", "mysql" or "mssql".
 	 * @param dbfile  File name or URL of the database.
 	 */
-	public DataAccess(boolean sqlite, String dbfile) {
+	public DataAccess(String dbtype, String dbfile) {
 		this.dbfile = dbfile;
-		this.sqlite = sqlite;
+		this.dbtype = dbtype;
 	}
 	
 	/**
 	 * Create a new DataAccess object, which manages database access.
 	 * 
-	 * @param sqlite    true indicates an SQLite database, false mySQL.
+	 * @param dbtype    Can be "sqlite", "mysql" or "mssql".
 	 * @param dbfile    File name or URL of the database.
 	 * @param login     User name of the database.
 	 * @param password  Password for the database.
 	 */
-	public DataAccess(boolean sqlite, String url, String userName, 
+	public DataAccess(String dbtype, String url, String userName, 
 			String password) {
 		this.dbfile = url;
-		this.sqlite = sqlite;
+		this.dbtype = dbtype;
+		this.login = userName;
+		this.password = password;
+	}
+
+	/**
+	 * Create a new DataAccess object, which manages database access.
+	 * 
+	 * @param dbtype    Can be "sqlite", "mysql" or "mssql".
+	 * @param dbfile    File name or URL of the database.
+	 * @param login     User name of the database.
+	 * @param password  Password for the database.
+	 */
+	public DataAccess(String dbtype, String url, String dbname, 
+			String userName, String password) {
+		this.dbfile = url;
+		this.dbtype = dbtype;
+		this.dbname = dbname;
 		this.login = userName;
 		this.password = password;
 	}
@@ -69,7 +85,8 @@ public class DataAccess {
 	 * @throws SQLException
 	 */
 	Connection getSQLiteConnection() throws ClassNotFoundException, 
-			SQLException {    
+			SQLException {
+		this.dbtype = "sqlite"; 
 		Class.forName("org.sqlite.JDBC");
 		Connection conn= DriverManager.getConnection("jdbc:sqlite:" + dbfile);
 		return conn;
@@ -84,81 +101,347 @@ public class DataAccess {
 	 */
 	Connection getMySQLConnection() throws ClassNotFoundException, 
 			SQLException {
+		this.dbtype = "mysql";
 		Class.forName("com.mysql.jdbc.Driver");
-		Connection conn = DriverManager.getConnection("jdbc:" + dbfile, login, 
-				password);
+		Connection conn = DriverManager.getConnection("jdbc:mysql://" + dbfile, 
+				login, password);
 		return conn;
 	}
 	
 	/**
-	 * Establish the connection to a mySQL database on a server.
+	 * Establish the connection to an MSSQL database on a server.
 	 * 
 	 * @return  The connection to the database.
 	 * @throws  ClassNotFoundException
 	 * @throws  SQLException
 	 */
-	/*Connection getMySQLConnection() throws ClassNotFoundException, 
+	Connection getMSSQLConnection() throws ClassNotFoundException, 
 			SQLException {
-		//Class.forName("com.mysql.jdbc.Driver");
+		this.dbtype = "mssql";
 		Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 		Connection conn = null;
 		try {
-			conn = DriverManager.getConnection("jdbc:" + dbfile + ";databaseName=Overlap;user=" + login + ";password=" + password + ";");
+			conn = DriverManager.getConnection("jdbc:sqlserver://" + dbfile + 
+					";databaseName=" + dbname + ";user=" + login + 
+					";password=" + password + ";");
 		} catch(SQLServerException e) {
-			System.err.println("Error: connection to the database could not be established. Check your connection.");
+			System.err.println("Error: connection to the database could not " +
+					"be established. Check your connection.");
 		}
 		return conn;
-	}*/
+	}
 	
 	/**
 	 * Forget the name of the current .dna file for data access.
 	 */
 	public void closeFile() {
 		this.dbfile = null;
-		this.sqlite = true;
+		this.dbtype = "sqlite";
 		this.login = null;
 		this.password = null;
 	}
 	
 	/**
-	 * Remember the name of a new .dna file for data access.
+	 * Remember the name of a new .dna file for data access; create tables.
 	 * 
-	 * @param dnaFile  The file name of the new .dna file to be opened.
+	 * @param dnaFile  The file name of the .dna file to be opened.
 	 */
-	public void openFile(String dnaFile) {
+	public void openSQLite(String dnaFile) {
 		this.dbfile = dnaFile;
-		this.sqlite = true;
+		this.dbtype = "sqlite";
 		this.login = null;
 		this.password = null;
+		
+		boolean create = false;
+		ArrayList<Object> al = executeQueryForList(
+				"SELECT name FROM sqlite_master WHERE type='table'");
+		if (!al.contains("STATEMENTTYPE")) {
+			create = true;
+		}
+		
+		executeStatement(
+				"CREATE TABLE IF NOT EXISTS SETTINGS(" + 
+    	        "Property TEXT PRIMARY KEY, " + 
+    	        "Value TEXT)"
+    	        );
+		
+		executeStatement(
+				"CREATE TABLE IF NOT EXISTS DOCUMENTS(" + 
+        		"ID INTEGER NOT NULL PRIMARY KEY, " + 
+        		"Title TEXT, " + 
+        		"Text TEXT, " + 
+        		"Date INTEGER, " + 
+        		"Coder TEXT, " + 
+        		"Source TEXT, " + 
+        		"Section TEXT, " + 
+        		"Notes TEXT, " + 
+        		"Type TEXT)"
+        		);
+		
+		executeStatement(
+				"CREATE TABLE IF NOT EXISTS REGEX(" + 
+                "Label TEXT PRIMARY KEY, " + 
+                "Red INTEGER, " +  
+                "Green INTEGER, " + 
+                "Blue INTEGER)"
+                );
+
+		executeStatement(
+				"CREATE TABLE IF NOT EXISTS STATEMENTTYPE(" + 
+    			"Label TEXT PRIMARY KEY, " +
+    			"Red INTEGER, " +
+    			"Green INTEGER, " +
+    			"Blue INTEGER)"
+    			);
+		
+		executeStatement(
+				"CREATE TABLE IF NOT EXISTS VARIABLES(" + 
+    			"ID INTEGER NOT NULL PRIMARY KEY, " + 
+    	    	"Variable TEXT, " + 
+    	    	"DataType TEXT, " +
+    	    	"StatementType TEXT, " +
+    	    	"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label))"
+    	    	);
+		
+		executeStatement(
+				"CREATE TABLE IF NOT EXISTS STATEMENTS(" +
+    			"ID INTEGER NOT NULL PRIMARY KEY, " +
+    			"Type TEXT, " +
+        		"Document INTEGER, " + 
+        		"Start INTEGER, " + 
+        		"Stop INTEGER, " + 
+        		"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
+        		"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID))"
+        		);
+		
+		if (create == true) {
+			createDefaultTypes();
+			executeStatement("INSERT INTO SETTINGS (Property, Value) " +
+					"VALUES('version', '" + Dna.dna.version + "')");
+		}
 	}
 	
 	/**
-	 * Remember the credentials of a mySQL database for data access.
+	 * Remember the credentials of a mySQL database; create tables.
 	 * 
-	 * @param sqlite    true indicates an SQLite database, false mySQL.
 	 * @param dbfile    File name or URL of the database.
 	 * @param login     User name of the database.
 	 * @param password  Password for the database.
 	 */
-	public void openMySQL(boolean sqlite, String url, String userName, 
-			String password) {
+	public void openMySQL(String url, String userName, String password) {
 		this.dbfile = url;
-		this.sqlite = sqlite;
+		this.dbname = null;
+		this.dbtype = "mysql";
 		this.login = userName;
 		this.password = password;
 		
-		ArrayList<?> al = executeQueryForList("SHOW TABLES");
-		if (!al.contains("DOCUMENTS") || !al.contains("STATEMENTS")) {
-			int dialog = JOptionPane.showConfirmDialog(
-					Dna.dna.gui, 
-					"The database does not contain the DNA data structure. " +
-					"Create it?", "Confirmation required", 
-					JOptionPane.OK_CANCEL_OPTION);
-    		
-    		if (dialog == 0) {
-    			createTables();
-    		}
+		boolean create = false;
+		ArrayList<?> al = null;
+		al = executeQueryForList("SHOW TABLES");
+		if (!al.contains("SETTINGS")) {
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS SETTINGS(" + 
+	    	        "Property VARCHAR(200), " + 
+	    	        "Value VARCHAR(200)," +
+	    	        "PRIMARY KEY (Property))"
+	    	        );
 		}
+		if (!al.contains("DOCUMENTS")) {
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS DOCUMENTS(" + 
+	        		"ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " + 
+	        		"Title VARCHAR(200), " + 
+	        		"Text MEDIUMTEXT, " + 
+	        		"Date BIGINT, " + 
+	        		"Coder VARCHAR(200), " + 
+	        		"Source VARCHAR(200), " + 
+	        		"Section VARCHAR(200), " + 
+	        		"Notes TEXT, " + 
+	        		"Type VARCHAR(200), " +
+	        		"PRIMARY KEY(ID))"
+	        		);
+		}
+		if (!al.contains("REGEX")) {
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS REGEX(" + 
+	                "Label VARCHAR(200), " + 
+	                "Red SMALLINT UNSIGNED, " +  
+	                "Green SMALLINT UNSIGNED, " + 
+	                "Blue SMALLINT UNSIGNED, " +
+	                "PRIMARY KEY(Label))"
+	                );
+		}
+		if (!al.contains("STATEMENTTYPE")) {
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS STATEMENTTYPE(" + 
+	    			"Label VARCHAR(200), " +
+	    			"Red SMALLINT UNSIGNED, " +
+	    			"Green SMALLINT UNSIGNED, " +
+	    			"Blue SMALLINT UNSIGNED, " +
+	    			"PRIMARY KEY(Label))"
+	    			);
+			create = true;
+		}
+		if(!al.contains("VARIABLES")) {
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS VARIABLES(" + 
+	    			"ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " + 
+	    	    	"Variable VARCHAR(200), " + 
+	    	    	"DataType VARCHAR(200), " +
+	    	    	"StatementType VARCHAR(200), " +
+	    	    	"FOREIGN KEY(StatementType) REFERENCES " +
+	    	    			"STATEMENTTYPE(Label), " +
+	    	    	"PRIMARY KEY(ID))"
+	    	    	);
+		}
+		if(!al.contains("STATEMENTS")) {
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS STATEMENTS(" +
+	    			"ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+	    			"Type VARCHAR(200), " +
+	        		"Document MEDIUMINT UNSIGNED NOT NULL, " + 
+	        		"Start BIGINT UNSIGNED, " + 
+	        		"Stop BIGINT UNSIGNED, " + 
+	        		"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
+	        		"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), " +
+	        		"PRIMARY KEY(ID))"
+	        		);
+		}
+		
+		if (create == true) {
+			createDefaultTypes();
+			executeStatement("INSERT INTO SETTINGS (Property, Value) " +
+					"VALUES('version', '" + Dna.dna.version + "')");
+		}
+	}
+	
+	/**
+	 * Remember the credentials of a mySQL database; create tables.
+	 * 
+	 * @param dbfile    File name or URL of the database.
+	 * @param login     User name of the database.
+	 * @param password  Password for the database.
+	 */
+	public void openMSSQL(String url, String dbname, String userName, 
+			String password) {
+		this.dbfile = url;
+		this.dbname = dbname;
+		this.dbtype = "mssql";
+		this.login = userName;
+		this.password = password;
+		
+		boolean create = false;
+		ArrayList<?> al = null;
+		al = executeQueryForList(
+				"SELECT TABLE_NAME FROM information_schema.tables");
+		if (!al.contains("SETTINGS")) {
+			executeStatement(
+					"CREATE TABLE SETTINGS(" + 
+	    	        "Property NVARCHAR(200), " + 
+	    	        "Value NVARCHAR(200)," +
+	    	        "PRIMARY KEY (Property))"
+	    	        );
+		}
+		if (!al.contains("DOCUMENTS")) {
+			executeStatement(
+					"CREATE TABLE DOCUMENTS(" + 
+	        		"ID INT IDENTITY(1,1) NOT NULL, " + 
+	        		"Title NVARCHAR(200), " + 
+	        		"Text NTEXT, " + 
+	        		"Date BIGINT, " + 
+	        		"Coder NVARCHAR(200), " + 
+	        		"Source NVARCHAR(200), " + 
+	        		"Section NVARCHAR(200), " + 
+	        		"Notes NVARCHAR, " + 
+	        		"Type NVARCHAR(200), " +
+	        		"PRIMARY KEY(ID))"
+	        		);
+		}
+		if (!al.contains("REGEX")) {
+			executeStatement(
+					"CREATE TABLE REGEX(" + 
+	                "Label NVARCHAR(200), " + 
+	                "Red SMALLINT, " +  
+	                "Green SMALLINT, " + 
+	                "Blue SMALLINT, " +
+	                "PRIMARY KEY(Label))"
+	                );
+		}
+		if (!al.contains("STATEMENTTYPE")) {
+			executeStatement(
+					"CREATE TABLE STATEMENTTYPE(" + 
+	    			"Label NVARCHAR(200), " +
+	    			"Red SMALLINT, " +
+	    			"Green SMALLINT, " +
+	    			"Blue SMALLINT, " +
+	    			"PRIMARY KEY(Label))"
+	    			);
+			create = true;
+		}
+		if(!al.contains("VARIABLES")) {
+			executeStatement(
+					"CREATE TABLE VARIABLES(" + 
+	    			"ID SMALLINT IDENTITY(1,1) NOT NULL, " + 
+	    	    	"Variable NVARCHAR(200), " + 
+	    	    	"DataType NVARCHAR(200), " +
+	    	    	"StatementType NVARCHAR(200), " +
+	    	    	"FOREIGN KEY(StatementType) REFERENCES " +
+	    	    			"STATEMENTTYPE(Label), " +
+	    	    	"PRIMARY KEY(ID))"
+	    	    	);
+		}
+		if(!al.contains("STATEMENTS")) {
+			executeStatement(
+					"CREATE TABLE STATEMENTS(" +
+	    			"ID INT IDENTITY(1,1) NOT NULL, " +
+	    			"Type NVARCHAR(200), " +
+	        		"Document INT NOT NULL, " + 
+	        		"Start INT, " + 
+	        		"Stop INT, " + 
+	        		"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
+	        		"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), " +
+	        		"PRIMARY KEY(ID))"
+	        		);
+		}
+		
+		if (create == true) {
+			createDefaultTypes();
+			executeStatement("INSERT INTO SETTINGS (Property, Value) " +
+					"VALUES('version', '" + Dna.dna.version + "')");
+		}
+	}
+
+	/**
+	 * Create the default statement types in a new database file.
+	 */
+	public void createDefaultTypes() {
+		// DNAStatement
+		LinkedHashMap<String, String> dnaStatementMap = new 
+				LinkedHashMap<String, String>();
+		dnaStatementMap.put("person", "short text");
+		dnaStatementMap.put("organization", "short text");
+		dnaStatementMap.put("category", "short text");
+		dnaStatementMap.put("agreement", "boolean");
+		insertStatementType("DNAStatement", 255, 255, 100, dnaStatementMap);
+		
+		// PoliticalClaim
+		LinkedHashMap<String, String> pcaMap = new LinkedHashMap<String, 
+				String>();
+		pcaMap.put("actor", "short text");
+		pcaMap.put("tone", "integer");
+		pcaMap.put("adressee", "short text");
+		pcaMap.put("objectActor", "short text");
+		pcaMap.put("form", "short text");
+		pcaMap.put("issue", "short text");
+		pcaMap.put("frame", "short text");
+		pcaMap.put("region", "short text");
+		insertStatementType("PoliticalClaim", 180, 255, 255, pcaMap);
+
+		// Note
+		LinkedHashMap<String, String> annotationMap = new LinkedHashMap<String, 
+				String>();
+		annotationMap.put("note", "long text");
+		insertStatementType("Note", 255, 180, 180, annotationMap);
 	}
 	
 	/**
@@ -179,10 +462,14 @@ public class DataAccess {
 		Connection connection = null;
 		Statement statement = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			statement.execute(myStatement);
@@ -210,21 +497,29 @@ public class DataAccess {
 		ResultSet resultSet = null;
 		int id = -1;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			statement.execute(myStatement);
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				resultSet = statement.executeQuery(
 						"SELECT last_insert_rowid()"
 						);
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				resultSet = statement.executeQuery(
 						"SELECT LAST_INSERT_ID()"
 						);
+			} else if (dbtype.equals("mssql")) {
+				resultSet = statement.executeQuery("SELECT SCOPE_IDENTITY();");
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			if (resultSet.next()) {
 				do {
@@ -262,10 +557,14 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(myQuery);
@@ -302,10 +601,14 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(myQuery);
@@ -342,10 +645,14 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(myQuery);
@@ -367,161 +674,6 @@ public class DataAccess {
 		}
 		
 		return(i);
-	}
-	
-	/**
-	 * Create the table structure in a new database file.
-	 */
-	public void createTables() {
-		
-		if (sqlite == true) {  // sqlite tables
-			executeStatement(
-					"CREATE TABLE IF NOT EXISTS SETTINGS(" + 
-	    	        "Property TEXT PRIMARY KEY, " + 
-	    	        "Value TEXT)"
-	    	        );
-			
-			executeStatement(
-					"CREATE TABLE IF NOT EXISTS DOCUMENTS(" + 
-	        		"ID INTEGER NOT NULL PRIMARY KEY, " + 
-	        		"Title TEXT, " + 
-	        		"Text TEXT, " + 
-	        		"Date INTEGER, " + 
-	        		"Coder TEXT, " + 
-	        		"Source TEXT, " + 
-	        		"Section TEXT, " + 
-	        		"Notes TEXT, " + 
-	        		"Type TEXT)"
-	        		);
-			
-			executeStatement(
-					"CREATE TABLE IF NOT EXISTS REGEX(" + 
-	                "Label TEXT PRIMARY KEY, " + 
-	                "Red INTEGER, " +  
-	                "Green INTEGER, " + 
-	                "Blue INTEGER)"
-	                );
-			
-			executeStatement(
-					"CREATE TABLE IF NOT EXISTS STATEMENTTYPE(" + 
-	    			"Label TEXT PRIMARY KEY, " +
-	    			"Red INTEGER, " +
-	    			"Green INTEGER, " +
-	    			"Blue INTEGER)"
-	    			);
-			
-			executeStatement(
-					"CREATE TABLE IF NOT EXISTS VARIABLES(" + 
-	    			"ID INTEGER NOT NULL PRIMARY KEY, " + 
-	    	    	"Variable TEXT, " + 
-	    	    	"DataType TEXT, " +
-	    	    	"StatementType TEXT, " +
-	    	    	"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label))"
-	    	    	);
-			
-			executeStatement(
-					"CREATE TABLE IF NOT EXISTS STATEMENTS(" +
-	    			"ID INTEGER NOT NULL PRIMARY KEY, " +
-	    			"Type TEXT, " +
-	        		"Document INTEGER, " + 
-	        		"Start INTEGER, " + 
-	        		"Stop INTEGER, " + 
-	        		"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
-	        		"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID))"
-	        		);
-		} else {  // mysql tables
-			executeStatement(
-					"CREATE TABLE IF NOT EXISTS SETTINGS(" + 
-	    	        "Property VARCHAR(200), " + 
-	    	        "Value VARCHAR(200)," +
-	    	        "PRIMARY KEY (Property))"
-	    	        );
-
-			executeStatement(
-					"CREATE TABLE IF NOT EXISTS DOCUMENTS(" + 
-	        		"ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " + 
-	        		"Title VARCHAR(200), " + 
-	        		"Text MEDIUMTEXT, " + 
-	        		"Date BIGINT, " + 
-	        		"Coder VARCHAR(200), " + 
-	        		"Source VARCHAR(200), " + 
-	        		"Section VARCHAR(200), " + 
-	        		"Notes TEXT, " + 
-	        		"Type VARCHAR(200), " +
-	        		"PRIMARY KEY(ID))"
-	        		);
-			
-			executeStatement(
-					"CREATE TABLE IF NOT EXISTS REGEX(" + 
-	                "Label VARCHAR(200), " + 
-	                "Red SMALLINT UNSIGNED, " +  
-	                "Green SMALLINT UNSIGNED, " + 
-	                "Blue SMALLINT UNSIGNED, " +
-	                "PRIMARY KEY(Label))"
-	                );
-			
-			executeStatement(
-					"CREATE TABLE IF NOT EXISTS STATEMENTTYPE(" + 
-	    			"Label VARCHAR(200), " +
-	    			"Red SMALLINT UNSIGNED, " +
-	    			"Green SMALLINT UNSIGNED, " +
-	    			"Blue SMALLINT UNSIGNED, " +
-	    			"PRIMARY KEY(Label))"
-	    			);
-			
-			executeStatement(
-					"CREATE TABLE IF NOT EXISTS VARIABLES(" + 
-	    			"ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " + 
-	    	    	"Variable VARCHAR(200), " + 
-	    	    	"DataType VARCHAR(200), " +
-	    	    	"StatementType VARCHAR(200), " +
-	    	    	"FOREIGN KEY(StatementType) REFERENCES " +
-	    	    			"STATEMENTTYPE(Label), " +
-	    	    	"PRIMARY KEY(ID))"
-	    	    	);
-			
-			executeStatement(
-					"CREATE TABLE IF NOT EXISTS STATEMENTS(" +
-	    			"ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
-	    			"Type VARCHAR(200), " +
-	        		"Document MEDIUMINT UNSIGNED NOT NULL, " + 
-	        		"Start BIGINT UNSIGNED, " + 
-	        		"Stop BIGINT UNSIGNED, " + 
-	        		"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
-	        		"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), " +
-	        		"PRIMARY KEY(ID))"
-	        		);
-		}
-		
-		// add default statement types
-		
-		// DNAStatement
-		LinkedHashMap<String, String> dnaStatementMap = new 
-				LinkedHashMap<String, String>();
-		dnaStatementMap.put("person", "short text");
-		dnaStatementMap.put("organization", "short text");
-		dnaStatementMap.put("category", "short text");
-		dnaStatementMap.put("agreement", "boolean");
-		insertStatementType("DNAStatement", 255, 255, 100, dnaStatementMap);
-		
-		// PoliticalClaim
-		LinkedHashMap<String, String> pcaMap = new LinkedHashMap<String, 
-				String>();
-		pcaMap.put("actor", "short text");
-		pcaMap.put("tone", "integer");
-		pcaMap.put("adressee", "short text");
-		pcaMap.put("objectActor", "short text");
-		pcaMap.put("form", "short text");
-		pcaMap.put("issue", "short text");
-		pcaMap.put("frame", "short text");
-		pcaMap.put("region", "short text");
-		insertStatementType("PoliticalClaim", 180, 255, 255, pcaMap);
-
-		// Annotation
-		LinkedHashMap<String, String> annotationMap = new LinkedHashMap<String, 
-				String>();
-		annotationMap.put("annotation", "long text");
-		insertStatementType("Annotation", 255, 180, 180, annotationMap);
 	}
 	
 	/**
@@ -588,10 +740,14 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery("SELECT StatementID, " + 
@@ -677,10 +833,14 @@ public class DataAccess {
 		Statement statement = null;
 		
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 
@@ -690,14 +850,20 @@ public class DataAccess {
 					", " + blue + ")"
 	        );
 			
-			String tabString;
-			if (sqlite == true) {
+			String tabString = null;
+			if (dbtype.equals("sqlite")) {
 				tabString = "CREATE TABLE IF NOT EXISTS " + label + "(" + 
 						"StatementID INTEGER PRIMARY KEY";
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				tabString = "CREATE TABLE IF NOT EXISTS " + label + "(" + 
 						"StatementID MEDIUMINT UNSIGNED NOT NULL, " +
 						"PRIMARY KEY(StatementID)";
+			} else if (dbtype.equals("mssql")) {
+				tabString = "CREATE TABLE " + label + "(" + 
+						"StatementID INT NOT NULL, " +
+						"PRIMARY KEY(StatementID)";
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			
 			Iterator<String> keyIterator = variables.keySet().iterator();
@@ -705,7 +871,7 @@ public class DataAccess {
 				String key = keyIterator.next();
 				String value = variables.get(key);
 				String type;
-				if (sqlite == true) {
+				if (dbtype.equals("sqlite")) {
 					if (value.equals("short text") || value.equals(
 							"long text")) {
 						type = "TEXT";
@@ -715,7 +881,7 @@ public class DataAccess {
 					} else {
 						type = "INTEGER";
 					}
-				} else {
+				} else if (dbtype.equals("mysql")) {
 					if (value.equals("short text")) {
 						type = "VARCHAR(200)";
 					} else if (value.equals("long text")) {
@@ -726,6 +892,21 @@ public class DataAccess {
 					} else {
 						type = "SMALLINT";
 					}
+				} else if (dbtype.equals("mssql")) {
+					if (value.equals("short text")) {
+						type = "NVARCHAR(200)";
+					} else if (value.equals("long text")) {
+						type = "NTEXT";
+					} else if (value.equals("boolean") || value.equals(
+							"integer")) {
+						type = "SMALLINT";
+					} else {
+						type = "SMALLINT";
+					}
+				} else {
+					System.err.println(
+							"Type of remote database not recognized.");
+					type = null;
 				}
 				statement.execute(
 						"INSERT INTO VARIABLES (Variable, DataType, " + 
@@ -1012,10 +1193,14 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery("SELECT ID, Type, Start, " +
@@ -1062,10 +1247,14 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery("SELECT ID, Document, " + 
@@ -1112,10 +1301,14 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery("SELECT ID, Type, Start, " +
@@ -1175,10 +1368,14 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(
@@ -1251,10 +1448,14 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery("SELECT * FROM STATEMENTTYPE");
@@ -1357,10 +1558,14 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(
@@ -1451,10 +1656,14 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery("SELECT * FROM REGEX");
@@ -1496,10 +1705,14 @@ public class DataAccess {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		try {
-			if (sqlite == true) {
+			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
-			} else {
+			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(

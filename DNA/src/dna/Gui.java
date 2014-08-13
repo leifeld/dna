@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
+import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -22,6 +23,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
@@ -32,6 +34,8 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
+
+import org.jdesktop.swingx.JXTextField;
 
 public class Gui extends JFrame {
 	
@@ -269,19 +273,19 @@ public class Gui extends JFrame {
 			});
 			fileMenu.add(openMenuItem);
 			
-			//File menu: open mySQL database
-			Icon mysqlIcon = new ImageIcon(getClass().getResource(
+			//File menu: open remote database
+			Icon dbIcon = new ImageIcon(getClass().getResource(
 					"/icons/database_link.png"));
-			JMenuItem mysqlMenuItem = new JMenuItem("Open mySQL database...", 
-					mysqlIcon);
-			mysqlMenuItem.setToolTipText("establish a connection to a mySQL " +
-					"database...");
-			mysqlMenuItem.addActionListener(new ActionListener() {
+			JMenuItem dbMenuItem = new JMenuItem("Open remote database...", 
+					dbIcon);
+			dbMenuItem.setToolTipText("establish a connection to a mySQL " +
+					"or MS SQL Server database...");
+			dbMenuItem.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					new MySQLConnectionDialog();
+					new SQLConnectionDialog();
 				}
 			});
-			fileMenu.add(mysqlMenuItem);
+			fileMenu.add(dbMenuItem);
 			
 			//File menu: close current database file
 			Icon closeIcon = new ImageIcon( getClass().getResource(
@@ -450,14 +454,16 @@ public class Gui extends JFrame {
 		}
 	}
 	
-	public class MySQLConnectionDialog extends JFrame {
+	public class SQLConnectionDialog extends JFrame {
 		
 		private static final long serialVersionUID = 1L;
-		JTextField connectionField, loginField, pwField;
+		JTextField connectionField, loginField, pwField, dbField;
 		JButton connectButton, cancelButton;
+		JRadioButton mysqlButton, mssqlButton;
+		JLabel dbLabel, connectionLabel;
 		
-		public MySQLConnectionDialog () {
-	        this.setTitle("Enter mySQL connection details.");
+		public SQLConnectionDialog () {
+	        this.setTitle("Enter remote SQL connection details.");
 	        this.setDefaultCloseOperation(JFrame.
 	        		DISPOSE_ON_CLOSE);
 	        Icon mysqlIcon = new ImageIcon(getClass().getResource(
@@ -465,14 +471,53 @@ public class Gui extends JFrame {
 			this.setIconImage(((ImageIcon) mysqlIcon).getImage());
 			this.setLayout(new FlowLayout(FlowLayout.LEFT));
 			JPanel panel = new JPanel(new GridBagLayout());
-	        JLabel connectionLabel = new JLabel("URL:");
-	        connectionField = new JTextField("mysql://");
-	        connectionField.setColumns(30);
 	        GridBagConstraints gbc = new GridBagConstraints();
 	        gbc.insets = new Insets(3, 3, 3, 3);
 	        gbc.fill = GridBagConstraints.BOTH;
 	        gbc.gridx = 0;
 	        gbc.gridy = 0;
+
+	        connectionLabel = new JLabel("mysql://", JLabel.TRAILING);
+	        connectionField = new JTextField("");
+	        connectionField.setColumns(30);
+	        
+	        dbLabel = new JLabel("Database:", JLabel.TRAILING);
+	        dbField = new JTextField();
+	        
+	        JLabel typeLabel = new JLabel("DB type:", JLabel.TRAILING);
+	        panel.add(typeLabel, gbc);
+	        gbc.gridx++;
+			mysqlButton = new JRadioButton("mySQL");
+			mysqlButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					dbField.setText("");
+					dbField.setEnabled(false);
+					dbLabel.setEnabled(false);
+					connectionLabel.setText("mysql://");
+				}
+			});
+			mysqlButton.setSelected(true);
+			dbField.setEnabled(false);
+			dbLabel.setEnabled(false);
+			panel.add(mysqlButton, gbc);
+			gbc.gridx++;
+	        gbc.gridwidth = 2;
+			mssqlButton = new JRadioButton("MS SQL Server");
+			mssqlButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					dbField.setEnabled(true);
+					dbLabel.setEnabled(true);
+					connectionLabel.setText("sqlserver://");
+				}
+			});
+			panel.add(mssqlButton, gbc);
+			ButtonGroup buttonGroup = new ButtonGroup();
+			buttonGroup.add(mysqlButton);
+			buttonGroup.add(mssqlButton);
+			gbc.gridx = 0;
+			gbc.gridy++;
+	        gbc.gridwidth = 1;
+	        
 	        panel.add(connectionLabel, gbc);
 	        gbc.gridx++;
 	        gbc.gridwidth = 3;
@@ -492,16 +537,25 @@ public class Gui extends JFrame {
 					if (connectionField.getText().equals("") || loginField.
 							getText().equals("") || pwField.getText().
 							equals("") || connectionField.getText().equals(
-							"mysql://")) {
+							"mysql://") || (!mysqlButton.isSelected() && 
+							!mssqlButton.isSelected())) {
 						connectButton.setEnabled(false);
 					}
 				}
 			};
 			connectionField.getDocument().addDocumentListener(dl);
+			gbc.gridx--;
+			gbc.gridy++;
+	        gbc.gridwidth = 1;
+	        
+	        panel.add(dbLabel, gbc);
+	        gbc.gridx++;
+	        
+	        panel.add(dbField, gbc);
 	        gbc.gridwidth = 1;
 	        gbc.gridy++;
 	        gbc.gridx = 0;
-	        JLabel loginLabel = new JLabel("User name:");
+	        JLabel loginLabel = new JLabel("User name:", JLabel.TRAILING);
 	        panel.add(loginLabel, gbc);
 	        gbc.gridx++;
 	        loginField = new JTextField(10);
@@ -509,7 +563,7 @@ public class Gui extends JFrame {
 			loginField.getDocument().addDocumentListener(dl);
 	        panel.add(loginField, gbc);
 	        gbc.gridx++;
-	        JLabel pwLabel = new JLabel("Password:");
+	        JLabel pwLabel = new JLabel("Password:", JLabel.TRAILING);
 	        panel.add(pwLabel, gbc);
 	        gbc.gridx++;
 	        pwField = new JTextField(10);
@@ -522,8 +576,26 @@ public class Gui extends JFrame {
 	        connectButton = new JButton("Connect");
 	        connectButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					Dna.dna.openMySQL(connectionField.getText(), 
-							loginField.getText(), pwField.getText());
+					String url = connectionField.getText();
+					if (mysqlButton.isSelected()) {
+						if (dbField.getText() != null && !dbField.equals("")) {
+							if (url.endsWith("/")) {
+								url = url + dbField.getText();
+							} else {
+								url = url + "/" + dbField.getText();
+							}
+						}
+						Dna.dna.openMySQL(connectionField.getText(), 
+								loginField.getText(), pwField.getText());
+					} else if (mssqlButton.isSelected()) {
+						if (dbField.getText() == null || dbField.equals("")) {
+							System.err.println("A database name must be " +
+									"provided for MSSQL databases.");
+						}
+						Dna.dna.openMSSQL(connectionField.getText(), 
+								dbField.getText(), loginField.getText(), 
+								pwField.getText());
+					}
 					dispose();
 				}
 			});
