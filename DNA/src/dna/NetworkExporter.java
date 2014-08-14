@@ -5,8 +5,6 @@ import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -16,18 +14,15 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.BoxLayout;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerDateModel;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;

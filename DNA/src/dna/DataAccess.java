@@ -12,7 +12,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.swing.JOptionPane;
 import com.microsoft.sqlserver.jdbc.SQLServerException;
 
 public class DataAccess {
@@ -1186,8 +1185,11 @@ public class DataAccess {
 	 */
 	public ArrayList<SidebarStatement> getStatementsPerDocumentId(
 			int documentId) {
-		ArrayList<SidebarStatement> statements = 
-				new ArrayList<SidebarStatement>();
+		
+		ArrayList<Integer> ids = new ArrayList<Integer>();
+		ArrayList<String> types = new ArrayList<String>();
+		ArrayList<Integer> starts = new ArrayList<Integer>();
+		ArrayList<Integer> stops = new ArrayList<Integer>();
 		
 		Connection connection = null;
 		Statement statement = null;
@@ -1207,15 +1209,10 @@ public class DataAccess {
 					"Stop FROM STATEMENTS WHERE Document = " + documentId);
 			if (resultSet.next()) {
 				do {
-					int id = resultSet.getInt("ID");
-					String type = resultSet.getString("Type");
-					int start = resultSet.getInt("Start");
-					int stop = resultSet.getInt("Stop");
-					Date d = getDocument(documentId).getDate();
-					Color color = getStatementTypeColor(type);
-					SidebarStatement s = new SidebarStatement(id, documentId, 
-							start, stop, d, color, type);
-					statements.add(s);
+					ids.add(resultSet.getInt("ID"));
+					types.add(resultSet.getString("Type"));
+					starts.add(resultSet.getInt("Start"));
+					stops.add(resultSet.getInt("Stop"));
 				} while (resultSet.next());
 			}
 			resultSet.close();
@@ -1229,6 +1226,16 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
+
+		ArrayList<SidebarStatement> statements = 
+				new ArrayList<SidebarStatement>();
+		Date d = getDocument(documentId).getDate();
+		for (int i = 0; i < ids.size(); i++) {
+			Color color = getStatementTypeColor(types.get(i));
+			SidebarStatement s = new SidebarStatement(ids.get(i), documentId, 
+					starts.get(i), stops.get(i), d, color, types.get(i));
+			statements.add(s);
+		}
 		
 		return statements;
 	}
@@ -1240,8 +1247,11 @@ public class DataAccess {
 	 * @return      An array list of SidebarStatements.
 	 */
 	public ArrayList<SidebarStatement> getStatementsByType(String type) {
-		ArrayList<SidebarStatement> statements = 
-				new ArrayList<SidebarStatement>();
+		
+		ArrayList<Integer> ids = new ArrayList<Integer>();
+		ArrayList<Integer> documentIds = new ArrayList<Integer>();
+		ArrayList<Integer> starts = new ArrayList<Integer>();
+		ArrayList<Integer> stops = new ArrayList<Integer>();
 		
 		Connection connection = null;
 		Statement statement = null;
@@ -1261,15 +1271,10 @@ public class DataAccess {
 					"Start, Stop FROM STATEMENTS WHERE Type = '" + type + "'");
 			if (resultSet.next()) {
 				do {
-					int id = resultSet.getInt("ID");
-					int documentId = resultSet.getInt("Document");
-					int start = resultSet.getInt("Start");
-					int stop = resultSet.getInt("Stop");
-					Date d = getDocument(documentId).getDate();
-					Color color = getStatementTypeColor(type);
-					SidebarStatement s = new SidebarStatement(id, documentId, 
-							start, stop, d, color, type);
-					statements.add(s);
+					ids.add(resultSet.getInt("ID"));
+					documentIds.add(resultSet.getInt("Document"));
+					starts.add(resultSet.getInt("Start"));
+					stops.add(resultSet.getInt("Stop"));
 				} while (resultSet.next());
 			}
 			resultSet.close();
@@ -1282,6 +1287,17 @@ public class DataAccess {
 		} finally {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
+		}
+
+		ArrayList<SidebarStatement> statements = 
+				new ArrayList<SidebarStatement>();
+		for (int i = 0; i < ids.size(); i++) {
+			Color color = getStatementTypeColor(type);
+			Date d = getDocument(documentIds.get(i)).getDate();
+			SidebarStatement s = new SidebarStatement(ids.get(i), 
+					documentIds.get(i), starts.get(i), stops.get(i), d, color, 
+					type);
+			statements.add(s);
 		}
 		
 		return statements;
@@ -1296,6 +1312,12 @@ public class DataAccess {
 	 */
 	public SidebarStatement getStatementAtLocation(
 			int documentId, int pos) {
+		
+		int id = -1;
+		String type = null;
+		int startCaret = -1;
+		int stopCaret = -1;
+		
 		SidebarStatement s = null;
 		Connection connection = null;
 		Statement statement = null;
@@ -1316,14 +1338,10 @@ public class DataAccess {
 					" AND Start < " + pos + " AND Stop > " + pos);
 			if (resultSet.next()) {
 				do {
-					int id = resultSet.getInt("ID");
-					String type = resultSet.getString("Type");
-					int startCaret = resultSet.getInt("Start");
-					int stopCaret = resultSet.getInt("Stop");
-					Date d = getDocument(documentId).getDate();
-					Color color = getStatementTypeColor(type);
-					s = new SidebarStatement(id, documentId, startCaret, 
-							stopCaret, d, color, type);
+					id = resultSet.getInt("ID");
+					type = resultSet.getString("Type");
+					startCaret = resultSet.getInt("Start");
+					stopCaret = resultSet.getInt("Stop");
 				} while (resultSet.next());
 			}
 			resultSet.close();
@@ -1338,7 +1356,15 @@ public class DataAccess {
 			try { connection.close(); } catch(Exception e) {}
 		}
 		
-		return s;
+		Date d = getDocument(documentId).getDate();
+		if (startCaret == -1 || stopCaret == -1) {
+			return null;
+		} else {
+			Color color = getStatementTypeColor(type);
+			s = new SidebarStatement(id, documentId, startCaret, 
+					stopCaret, d, color, type);
+			return s;
+		}
 	}
 	
 	/**
@@ -1442,8 +1468,8 @@ public class DataAccess {
 	 * @return  An array list of statement types.
 	 */
 	public ArrayList<StatementType> getStatementTypes() {
-		ArrayList<StatementType> types = new ArrayList<StatementType>();
-		
+		ArrayList<Color> colors = new ArrayList<Color>();
+		ArrayList<String> labels = new ArrayList<String>();
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -1462,13 +1488,12 @@ public class DataAccess {
 			if (resultSet.next()) {
 				do {
 					String label = resultSet.getString("Label");
+					labels.add(label);
 					int red = resultSet.getInt("Red");
 					int green = resultSet.getInt("Green");
 					int blue = resultSet.getInt("Blue");
 					Color color = new Color(red, green, blue);
-					LinkedHashMap<String, String> var = getVariables(label);
-					StatementType t = new StatementType(label, color, var);
-					types.add(t);
+					colors.add(color);
 				} while (resultSet.next());
 			}
 			resultSet.close();
@@ -1481,6 +1506,15 @@ public class DataAccess {
 		} finally {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
+		}
+		
+		ArrayList<StatementType> types = new ArrayList<StatementType>();
+		for (int i = 0; i < labels.size(); i++) {
+			String label = labels.get(i);
+			Color color = colors.get(i);
+			LinkedHashMap<String, String> var = getVariables(label);
+			StatementType t = new StatementType(label, color, var);
+			types.add(t);
 		}
 		
 		return types;
@@ -1553,7 +1587,14 @@ public class DataAccess {
 	 * @return            A Document.
 	 */
 	public Document getDocument(int documentId) {
-		Document d = null;
+		String title = null;
+		String text = null;
+		Date date = new Date();
+		String coder = null;
+		String source = null;
+		String section = null;
+		String notes = null;
+		String type = null;
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -1573,18 +1614,15 @@ public class DataAccess {
 					);
 			if (resultSet.next()) {
 				do {
-					String title = resultSet.getString("Title");
-					String text = resultSet.getString("Text");
-					String coder = resultSet.getString("Coder");
-					String source = resultSet.getString("Source");
-					String section = resultSet.getString("Section");
-					String notes = resultSet.getString("Notes");
-					String type = resultSet.getString("Type");
+					title = resultSet.getString("Title");
+					text = resultSet.getString("Text");
+					coder = resultSet.getString("Coder");
+					source = resultSet.getString("Source");
+					section = resultSet.getString("Section");
+					notes = resultSet.getString("Notes");
+					type = resultSet.getString("Type");
 					long intDate = resultSet.getLong("Date");
-					Date date = new Date();
 					date.setTime(intDate);
-					d = new Document(documentId, title, text, date, coder, 
-							source,	section, notes, type);
 				} while (resultSet.next());
 			}
 			resultSet.close();
@@ -1599,6 +1637,8 @@ public class DataAccess {
 			try { connection.close(); } catch(Exception e) {}
 		}
 		
+		Document d = new Document(documentId, title, text, date, coder, 
+				source,	section, notes, type);
 		return d;
 	}
 	
@@ -1700,6 +1740,13 @@ public class DataAccess {
 	 * @return             A SidebarStatement.
 	 */
 	public SidebarStatement getStatement(int statementId) {
+		
+		int documentId = -1;
+		String type = null;
+		int startCaret = -1;
+		int stopCaret = -1;
+		
+		
 		SidebarStatement s = null;
 		Connection connection = null;
 		Statement statement = null;
@@ -1720,14 +1767,10 @@ public class DataAccess {
 					);
 			if (resultSet.next()) {
 				do {
-					int documentId = resultSet.getInt("Document");
-					String type = resultSet.getString("Type");
-					int startCaret = resultSet.getInt("Start");
-					int stopCaret = resultSet.getInt("Stop");
-					Date d = getDocument(documentId).getDate();
-					Color color = getStatementTypeColor(type);
-					s = new SidebarStatement(statementId, documentId, 
-							startCaret, stopCaret, d, color, type);
+					documentId = resultSet.getInt("Document");
+					type = resultSet.getString("Type");
+					startCaret = resultSet.getInt("Start");
+					stopCaret = resultSet.getInt("Stop");
 				} while (resultSet.next());
 			}
 			resultSet.close();
@@ -1741,6 +1784,11 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
+
+		Date d = getDocument(documentId).getDate();
+		Color color = getStatementTypeColor(type);
+		s = new SidebarStatement(statementId, documentId, 
+				startCaret, stopCaret, d, color, type);
 		
 		return s;
 	}

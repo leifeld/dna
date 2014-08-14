@@ -35,8 +35,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
-import org.jdesktop.swingx.JXTextField;
-
 public class Gui extends JFrame {
 	
 	/**
