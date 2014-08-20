@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import com.microsoft.sqlserver.jdbc.SQLServerException;
 
 public class DataAccess {
@@ -31,7 +32,7 @@ public class DataAccess {
 		this.dbfile = null;
 		this.dbtype = null;
 	}
-	
+
 	/**
 	 * Create a new DataAccess object, which manages database access.
 	 * 
@@ -42,7 +43,7 @@ public class DataAccess {
 		this.dbfile = dbfile;
 		this.dbtype = dbtype;
 	}
-	
+
 	/**
 	 * Create a new DataAccess object, which manages database access.
 	 * 
@@ -75,7 +76,7 @@ public class DataAccess {
 		this.login = userName;
 		this.password = password;
 	}
-	
+
 	/**
 	 * Establish the connection to a .dna SQLite database file.
 	 * 
@@ -84,7 +85,7 @@ public class DataAccess {
 	 * @throws SQLException
 	 */
 	Connection getSQLiteConnection() throws ClassNotFoundException, 
-			SQLException {
+	SQLException {
 		this.dbtype = "sqlite"; 
 		Class.forName("org.sqlite.JDBC");
 		Connection conn= DriverManager.getConnection("jdbc:sqlite:" + dbfile);
@@ -99,14 +100,14 @@ public class DataAccess {
 	 * @throws  SQLException
 	 */
 	Connection getMySQLConnection() throws ClassNotFoundException, 
-			SQLException {
+	SQLException {
 		this.dbtype = "mysql";
 		Class.forName("com.mysql.jdbc.Driver");
 		Connection conn = DriverManager.getConnection("jdbc:mysql://" + dbfile, 
 				login, password);
 		return conn;
 	}
-	
+
 	/**
 	 * Establish the connection to an MSSQL database on a server.
 	 * 
@@ -115,7 +116,7 @@ public class DataAccess {
 	 * @throws  SQLException
 	 */
 	Connection getMSSQLConnection() throws ClassNotFoundException, 
-			SQLException {
+	SQLException {
 		this.dbtype = "mssql";
 		Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 		Connection conn = null;
@@ -129,7 +130,7 @@ public class DataAccess {
 		}
 		return conn;
 	}
-	
+
 	/**
 	 * Forget the name of the current .dna file for data access.
 	 */
@@ -139,7 +140,7 @@ public class DataAccess {
 		this.login = null;
 		this.password = null;
 	}
-	
+
 	/**
 	 * Remember the name of a new .dna file for data access; create tables.
 	 * 
@@ -150,76 +151,76 @@ public class DataAccess {
 		this.dbtype = "sqlite";
 		this.login = null;
 		this.password = null;
-		
+
 		boolean create = false;
 		ArrayList<Object> al = executeQueryForList(
 				"SELECT name FROM sqlite_master WHERE type='table'");
 		if (!al.contains("STATEMENTTYPE")) {
 			create = true;
 		}
-		
+
 		executeStatement(
 				"CREATE TABLE IF NOT EXISTS SETTINGS(" + 
-    	        "Property TEXT PRIMARY KEY, " + 
-    	        "Value TEXT)"
-    	        );
-		
+						"Property TEXT PRIMARY KEY, " + 
+						"Value TEXT)"
+				);
+
 		executeStatement(
 				"CREATE TABLE IF NOT EXISTS DOCUMENTS(" + 
-        		"ID INTEGER NOT NULL PRIMARY KEY, " + 
-        		"Title TEXT, " + 
-        		"Text TEXT, " + 
-        		"Date INTEGER, " + 
-        		"Coder TEXT, " + 
-        		"Source TEXT, " + 
-        		"Section TEXT, " + 
-        		"Notes TEXT, " + 
-        		"Type TEXT)"
-        		);
-		
+						"ID INTEGER NOT NULL PRIMARY KEY, " + 
+						"Title TEXT, " + 
+						"Text TEXT, " + 
+						"Date INTEGER, " + 
+						"Coder TEXT, " + 
+						"Source TEXT, " + 
+						"Section TEXT, " + 
+						"Notes TEXT, " + 
+						"Type TEXT)"
+				);
+
 		executeStatement(
 				"CREATE TABLE IF NOT EXISTS REGEX(" + 
-                "Label TEXT PRIMARY KEY, " + 
-                "Red INTEGER, " +  
-                "Green INTEGER, " + 
-                "Blue INTEGER)"
-                );
+						"Label TEXT PRIMARY KEY, " + 
+						"Red INTEGER, " +  
+						"Green INTEGER, " + 
+						"Blue INTEGER)"
+				);
 
 		executeStatement(
 				"CREATE TABLE IF NOT EXISTS STATEMENTTYPE(" + 
-    			"Label TEXT PRIMARY KEY, " +
-    			"Red INTEGER, " +
-    			"Green INTEGER, " +
-    			"Blue INTEGER)"
-    			);
-		
+						"Label TEXT PRIMARY KEY, " +
+						"Red INTEGER, " +
+						"Green INTEGER, " +
+						"Blue INTEGER)"
+				);
+
 		executeStatement(
 				"CREATE TABLE IF NOT EXISTS VARIABLES(" + 
-    			"ID INTEGER NOT NULL PRIMARY KEY, " + 
-    	    	"Variable TEXT, " + 
-    	    	"DataType TEXT, " +
-    	    	"StatementType TEXT, " +
-    	    	"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label))"
-    	    	);
-		
+						"ID INTEGER NOT NULL PRIMARY KEY, " + 
+						"Variable TEXT, " + 
+						"DataType TEXT, " +
+						"StatementType TEXT, " +
+						"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label))"
+				);
+
 		executeStatement(
 				"CREATE TABLE IF NOT EXISTS STATEMENTS(" +
-    			"ID INTEGER NOT NULL PRIMARY KEY, " +
-    			"Type TEXT, " +
-        		"Document INTEGER, " + 
-        		"Start INTEGER, " + 
-        		"Stop INTEGER, " + 
-        		"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
-        		"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID))"
-        		);
-		
+						"ID INTEGER NOT NULL PRIMARY KEY, " +
+						"Type TEXT, " +
+						"Document INTEGER, " + 
+						"Start INTEGER, " + 
+						"Stop INTEGER, " + 
+						"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
+						"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID))"
+				);
+
 		if (create == true) {
 			createDefaultTypes();
 			executeStatement("INSERT INTO SETTINGS (Property, Value) " +
 					"VALUES('version', '" + Dna.dna.version + "')");
 		}
 	}
-	
+
 	/**
 	 * Remember the credentials of a mySQL database; create tables.
 	 * 
@@ -233,87 +234,87 @@ public class DataAccess {
 		this.dbtype = "mysql";
 		this.login = userName;
 		this.password = password;
-		
+
 		boolean create = false;
 		ArrayList<?> al = null;
 		al = executeQueryForList("SHOW TABLES");
 		if (!al.contains("SETTINGS")) {
 			executeStatement(
 					"CREATE TABLE IF NOT EXISTS SETTINGS(" + 
-	    	        "Property VARCHAR(200), " + 
-	    	        "Value VARCHAR(200)," +
-	    	        "PRIMARY KEY (Property))"
-	    	        );
+							"Property VARCHAR(200), " + 
+							"Value VARCHAR(200)," +
+							"PRIMARY KEY (Property))"
+					);
 		}
 		if (!al.contains("DOCUMENTS")) {
 			executeStatement(
 					"CREATE TABLE IF NOT EXISTS DOCUMENTS(" + 
-	        		"ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " + 
-	        		"Title VARCHAR(200), " + 
-	        		"Text MEDIUMTEXT, " + 
-	        		"Date BIGINT, " + 
-	        		"Coder VARCHAR(200), " + 
-	        		"Source VARCHAR(200), " + 
-	        		"Section VARCHAR(200), " + 
-	        		"Notes TEXT, " + 
-	        		"Type VARCHAR(200), " +
-	        		"PRIMARY KEY(ID))"
-	        		);
+							"ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " + 
+							"Title VARCHAR(200), " + 
+							"Text MEDIUMTEXT, " + 
+							"Date BIGINT, " + 
+							"Coder VARCHAR(200), " + 
+							"Source VARCHAR(200), " + 
+							"Section VARCHAR(200), " + 
+							"Notes TEXT, " + 
+							"Type VARCHAR(200), " +
+							"PRIMARY KEY(ID))"
+					);
 		}
 		if (!al.contains("REGEX")) {
 			executeStatement(
 					"CREATE TABLE IF NOT EXISTS REGEX(" + 
-	                "Label VARCHAR(200), " + 
-	                "Red SMALLINT UNSIGNED, " +  
-	                "Green SMALLINT UNSIGNED, " + 
-	                "Blue SMALLINT UNSIGNED, " +
-	                "PRIMARY KEY(Label))"
-	                );
+							"Label VARCHAR(200), " + 
+							"Red SMALLINT UNSIGNED, " +  
+							"Green SMALLINT UNSIGNED, " + 
+							"Blue SMALLINT UNSIGNED, " +
+							"PRIMARY KEY(Label))"
+					);
 		}
 		if (!al.contains("STATEMENTTYPE")) {
 			executeStatement(
 					"CREATE TABLE IF NOT EXISTS STATEMENTTYPE(" + 
-	    			"Label VARCHAR(200), " +
-	    			"Red SMALLINT UNSIGNED, " +
-	    			"Green SMALLINT UNSIGNED, " +
-	    			"Blue SMALLINT UNSIGNED, " +
-	    			"PRIMARY KEY(Label))"
-	    			);
+							"Label VARCHAR(200), " +
+							"Red SMALLINT UNSIGNED, " +
+							"Green SMALLINT UNSIGNED, " +
+							"Blue SMALLINT UNSIGNED, " +
+							"PRIMARY KEY(Label))"
+					);
 			create = true;
 		}
 		if(!al.contains("VARIABLES")) {
 			executeStatement(
 					"CREATE TABLE IF NOT EXISTS VARIABLES(" + 
-	    			"ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " + 
-	    	    	"Variable VARCHAR(200), " + 
-	    	    	"DataType VARCHAR(200), " +
-	    	    	"StatementType VARCHAR(200), " +
-	    	    	"FOREIGN KEY(StatementType) REFERENCES " +
-	    	    			"STATEMENTTYPE(Label), " +
-	    	    	"PRIMARY KEY(ID))"
-	    	    	);
+							"ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " + 
+							"Variable VARCHAR(200), " + 
+							"DataType VARCHAR(200), " +
+							"StatementType VARCHAR(200), " +
+							"FOREIGN KEY(StatementType) REFERENCES " +
+							"STATEMENTTYPE(Label), " +
+							"PRIMARY KEY(ID))"
+					);
 		}
 		if(!al.contains("STATEMENTS")) {
 			executeStatement(
 					"CREATE TABLE IF NOT EXISTS STATEMENTS(" +
-	    			"ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
-	    			"Type VARCHAR(200), " +
-	        		"Document MEDIUMINT UNSIGNED NOT NULL, " + 
-	        		"Start BIGINT UNSIGNED, " + 
-	        		"Stop BIGINT UNSIGNED, " + 
-	        		"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
-	        		"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), " +
-	        		"PRIMARY KEY(ID))"
-	        		);
+							"ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+							"Type VARCHAR(200), " +
+							"Document MEDIUMINT UNSIGNED NOT NULL, " + 
+							"Start BIGINT UNSIGNED, " + 
+							"Stop BIGINT UNSIGNED, " + 
+							"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
+							"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), " +
+							"PRIMARY KEY(ID))"
+					);
 		}
-		
+
 		if (create == true) {
 			createDefaultTypes();
 			executeStatement("INSERT INTO SETTINGS (Property, Value) " +
 					"VALUES('version', '" + Dna.dna.version + "')");
 		}
 	}
-	
+
 	/**
 	 * Remember the credentials of a mySQL database; create tables.
 	 * 
@@ -328,7 +329,7 @@ public class DataAccess {
 		this.dbtype = "mssql";
 		this.login = userName;
 		this.password = password;
-		
+
 		boolean create = false;
 		ArrayList<?> al = null;
 		al = executeQueryForList(
@@ -336,73 +337,73 @@ public class DataAccess {
 		if (!al.contains("SETTINGS")) {
 			executeStatement(
 					"CREATE TABLE SETTINGS(" + 
-	    	        "Property NVARCHAR(200), " + 
-	    	        "Value NVARCHAR(200)," +
-	    	        "PRIMARY KEY (Property))"
-	    	        );
+							"Property NVARCHAR(200), " + 
+							"Value NVARCHAR(200)," +
+							"PRIMARY KEY (Property))"
+					);
 		}
 		if (!al.contains("DOCUMENTS")) {
 			executeStatement(
 					"CREATE TABLE DOCUMENTS(" + 
-	        		"ID INT IDENTITY(1,1) NOT NULL, " + 
-	        		"Title NVARCHAR(200), " + 
-	        		"Text NTEXT, " + 
-	        		"Date BIGINT, " + 
-	        		"Coder NVARCHAR(200), " + 
-	        		"Source NVARCHAR(200), " + 
-	        		"Section NVARCHAR(200), " + 
-	        		"Notes NVARCHAR, " + 
-	        		"Type NVARCHAR(200), " +
-	        		"PRIMARY KEY(ID))"
-	        		);
+							"ID INT IDENTITY(1,1) NOT NULL, " + 
+							"Title NVARCHAR(200), " + 
+							"Text NTEXT, " + 
+							"Date BIGINT, " + 
+							"Coder NVARCHAR(200), " + 
+							"Source NVARCHAR(200), " + 
+							"Section NVARCHAR(200), " + 
+							"Notes NVARCHAR, " + 
+							"Type NVARCHAR(200), " +
+							"PRIMARY KEY(ID))"
+					);
 		}
 		if (!al.contains("REGEX")) {
 			executeStatement(
 					"CREATE TABLE REGEX(" + 
-	                "Label NVARCHAR(200), " + 
-	                "Red SMALLINT, " +  
-	                "Green SMALLINT, " + 
-	                "Blue SMALLINT, " +
-	                "PRIMARY KEY(Label))"
-	                );
+							"Label NVARCHAR(200), " + 
+							"Red SMALLINT, " +  
+							"Green SMALLINT, " + 
+							"Blue SMALLINT, " +
+							"PRIMARY KEY(Label))"
+					);
 		}
 		if (!al.contains("STATEMENTTYPE")) {
 			executeStatement(
 					"CREATE TABLE STATEMENTTYPE(" + 
-	    			"Label NVARCHAR(200), " +
-	    			"Red SMALLINT, " +
-	    			"Green SMALLINT, " +
-	    			"Blue SMALLINT, " +
-	    			"PRIMARY KEY(Label))"
-	    			);
+							"Label NVARCHAR(200), " +
+							"Red SMALLINT, " +
+							"Green SMALLINT, " +
+							"Blue SMALLINT, " +
+							"PRIMARY KEY(Label))"
+					);
 			create = true;
 		}
 		if(!al.contains("VARIABLES")) {
 			executeStatement(
 					"CREATE TABLE VARIABLES(" + 
-	    			"ID SMALLINT IDENTITY(1,1) NOT NULL, " + 
-	    	    	"Variable NVARCHAR(200), " + 
-	    	    	"DataType NVARCHAR(200), " +
-	    	    	"StatementType NVARCHAR(200), " +
-	    	    	"FOREIGN KEY(StatementType) REFERENCES " +
-	    	    			"STATEMENTTYPE(Label), " +
-	    	    	"PRIMARY KEY(ID))"
-	    	    	);
+							"ID SMALLINT IDENTITY(1,1) NOT NULL, " + 
+							"Variable NVARCHAR(200), " + 
+							"DataType NVARCHAR(200), " +
+							"StatementType NVARCHAR(200), " +
+							"FOREIGN KEY(StatementType) REFERENCES " +
+							"STATEMENTTYPE(Label), " +
+							"PRIMARY KEY(ID))"
+					);
 		}
 		if(!al.contains("STATEMENTS")) {
 			executeStatement(
 					"CREATE TABLE STATEMENTS(" +
-	    			"ID INT IDENTITY(1,1) NOT NULL, " +
-	    			"Type NVARCHAR(200), " +
-	        		"Document INT NOT NULL, " + 
-	        		"Start INT, " + 
-	        		"Stop INT, " + 
-	        		"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
-	        		"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), " +
-	        		"PRIMARY KEY(ID))"
-	        		);
+							"ID INT IDENTITY(1,1) NOT NULL, " +
+							"Type NVARCHAR(200), " +
+							"Document INT NOT NULL, " + 
+							"Start INT, " + 
+							"Stop INT, " + 
+							"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
+							"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), " +
+							"PRIMARY KEY(ID))"
+					);
 		}
-		
+
 		if (create == true) {
 			createDefaultTypes();
 			executeStatement("INSERT INTO SETTINGS (Property, Value) " +
@@ -422,7 +423,7 @@ public class DataAccess {
 		dnaStatementMap.put("category", "short text");
 		dnaStatementMap.put("agreement", "boolean");
 		insertStatementType("DNAStatement", 255, 255, 100, dnaStatementMap);
-		
+
 		// PoliticalClaim
 		LinkedHashMap<String, String> pcaMap = new LinkedHashMap<String, 
 				String>();
@@ -442,7 +443,7 @@ public class DataAccess {
 		annotationMap.put("note", "long text");
 		insertStatementType("Note", 255, 180, 180, annotationMap);
 	}
-	
+
 	/**
 	 * Return the file name of the database.
 	 * 
@@ -483,7 +484,7 @@ public class DataAccess {
 			try { connection.close(); } catch(Exception e) {}
 		}
 	}
-	
+
 	/**
 	 * Execute a statement on the database and get the ID of the row.
 	 * 
@@ -536,13 +537,13 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
-		
+
 		if (id == -1) {
 			System.err.println("ID could not be retrieved.");
 		}
 		return(id);
 	}
-	
+
 	/**
 	 * Execute a query on the database and return an array list.
 	 * 
@@ -551,7 +552,7 @@ public class DataAccess {
 	 */
 	public ArrayList<Object> executeQueryForList(String myQuery) {
 		ArrayList<Object> al = new ArrayList<Object>();
-		
+
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -583,10 +584,10 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
-		
+
 		return(al);
 	}
-	
+
 	/**
 	 * Execute a query on the database and return a string.
 	 * 
@@ -595,7 +596,7 @@ public class DataAccess {
 	 */
 	public String executeQueryForString(String myQuery) {
 		String s = null;
-		
+
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -627,7 +628,7 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
-		
+
 		return(s);
 	}
 
@@ -639,7 +640,7 @@ public class DataAccess {
 	 */
 	public int executeQueryForInt(String myQuery) {
 		int i = -1;
-		
+
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -671,10 +672,10 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
-		
+
 		return(i);
 	}
-	
+
 	/**
 	 * Retrieve a variable entry of type String from a custom statement table.
 	 * 
@@ -686,11 +687,30 @@ public class DataAccess {
 		String type = getStatementType(statementId);
 		String result = executeQueryForString(
 				"SELECT " + key + " FROM " + type + " WHERE StatementID = " + 
-				statementId
+						statementId
 				);
 		return result;
 	}
-	
+
+	/**
+	 * LB.Add
+	 * Retrieve a variable entry of type String from a custom statement table.
+	 * Necessary because if two statement-types have a similar variable-name (such as "person")
+	 * it causes problems in the ContradictionPanel (method findContradictions())
+	 * 
+	 * @param statementId  The ID of the statement for which to get the value.
+	 * @param key          The name of the variable for which to get the entry.
+	 * @param type		   Statement Type
+	 * @return             The cell entry corresponding to the variable.
+	 */
+	public String getVariableStringEntryWithType(int statementId, String key, String type) {
+		String result = executeQueryForString(
+				"SELECT " + key + " FROM " + type + " WHERE StatementID = " + 
+						statementId
+				);
+		return result;
+	}
+
 	/**
 	 * Retrieve a variable entry of type int from a custom statement table.
 	 * 
@@ -702,11 +722,11 @@ public class DataAccess {
 		String type = getStatementType(statementId);
 		int result = executeQueryForInt(
 				"SELECT " + key + " FROM " + type + " WHERE StatementID = " + 
-				statementId
+						statementId
 				);
 		return result;
 	}
-	
+
 	/**
 	 * Retrieve data type for a given statement type and variable name.
 	 * 
@@ -717,11 +737,11 @@ public class DataAccess {
 	public String getDataType(String variable, String statementType) {
 		String type = executeQueryForString(
 				"SELECT DataType FROM VARIABLES WHERE Variable = '" + 
-				variable + "' AND StatementType = '" + statementType + "'"
+						variable + "' AND StatementType = '" + statementType + "'"
 				);
 		return type;
 	}
-	
+
 	/**
 	 * Match a variable against a pattern and return matching statement IDs.
 	 * 
@@ -734,7 +754,7 @@ public class DataAccess {
 			String variable, String pattern) {
 		String dt = getDataType(variable, statementType);
 		ArrayList<Integer> idlist = new ArrayList<Integer>();
-		
+
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -782,7 +802,7 @@ public class DataAccess {
 		}
 		return idlist;
 	}
-	
+
 	/**
 	 * Retrieve all variable entries of type int from a statement table.
 	 * 
@@ -799,7 +819,7 @@ public class DataAccess {
 		}
 		return entries;
 	}
-	
+
 	/**
 	 * Retrieve all variable entries of type String from a statement table.
 	 * 
@@ -816,7 +836,7 @@ public class DataAccess {
 		}
 		return entries;
 	}
-	
+
 	/**
 	 * Insert a statement type into the STATEMENTTYPE table.
 	 * 
@@ -830,7 +850,7 @@ public class DataAccess {
 			LinkedHashMap<String, String> variables) {
 		Connection connection = null;
 		Statement statement = null;
-		
+
 		try {
 			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
@@ -845,10 +865,10 @@ public class DataAccess {
 
 			statement.execute(
 					"INSERT INTO STATEMENTTYPE (Label, Red, Green, Blue) " + 
-					"VALUES('" + label + "', " + red + ", " + green + 
-					", " + blue + ")"
-	        );
-			
+							"VALUES('" + label + "', " + red + ", " + green + 
+							", " + blue + ")"
+					);
+
 			String tabString = null;
 			if (dbtype.equals("sqlite")) {
 				tabString = "CREATE TABLE IF NOT EXISTS " + label + "(" + 
@@ -864,7 +884,7 @@ public class DataAccess {
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
-			
+
 			Iterator<String> keyIterator = variables.keySet().iterator();
 			while (keyIterator.hasNext()){
 				String key = keyIterator.next();
@@ -909,19 +929,19 @@ public class DataAccess {
 				}
 				statement.execute(
 						"INSERT INTO VARIABLES (Variable, DataType, " + 
-						"StatementType) VALUES('" + key + "','" + value + 
-						"', '" + label + "')"
-		        );
-				
+								"StatementType) VALUES('" + key + "','" + value + 
+								"', '" + label + "')"
+						);
+
 				tabString = tabString + ", " + key + " " + type;
 			}
-			
+
 			tabString = tabString + 
 					", FOREIGN KEY(StatementID) REFERENCES STATEMENTS(ID))";
 			statement.execute(tabString);
-			
-	    	statement.close();
-	    	connection.close();
+
+			statement.close();
+			connection.close();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
@@ -943,22 +963,22 @@ public class DataAccess {
 	public void removeStatementType(String label) {
 		ArrayList<?> al = executeQueryForList(
 				"SELECT ID FROM STATEMENTS WHERE Type = '" + label + "'");
-		
+
 		executeStatement("DELETE FROM STATEMENTS WHERE Type = '" + label + "'");
-		
+
 		executeStatement("DELETE FROM VARIABLES WHERE StatementType = '" + 
 				label + "'");
-		
+
 		executeStatement("DELETE FROM STATEMENTTYPE WHERE Label = '" + label + 
 				"'");
-		
+
 		executeStatement("DROP TABLE " + label);
-		
+
 		if (al.size() > 0) {
 			System.out.println(al.size() + " statements were removed.");
 		}
 	}
-	
+
 	/**
 	 * Add a variable to the VARIABLES table and the specific statement table.
 	 * 
@@ -968,15 +988,15 @@ public class DataAccess {
 	 */
 	public void addVariable(String varName, String dataType, String 
 			statementType) {
-		
+
 		executeStatement("INSERT INTO VARIABLES (Variable, DataType, " +
 				"StatementType) VALUES('" + varName + "', '" + dataType + 
 				"', '" + statementType + "')");
-		
+
 		executeStatement("ALTER TABLE " + statementType + " ADD " + varName + 
 				" " + dataType);
 	}
-	
+
 	/**
 	 * Remove a variables from the VARIABLES table and the statement table.
 	 * 
@@ -987,11 +1007,11 @@ public class DataAccess {
 		// remove from VARIABLES table
 		executeStatement("DELETE FROM VARIABLES WHERE Variable = '" + varName + 
 				"' AND StatementType = '" + statementType + "'");
-		
+
 		// get names of remaining variables and concatenate them
 		ArrayList<?> al = executeQueryForList(
 				"SELECT Variable FROM VARIABLES WHERE StatementType = '" + 
-				statementType + "'");
+						statementType + "'");
 		@SuppressWarnings("unchecked")
 		ArrayList<String> varNames = (ArrayList<String>) al;
 		String varString = "StatementID";
@@ -1000,7 +1020,7 @@ public class DataAccess {
 				varString = varString + "," + varNames.get(i);
 			}
 		}
-		
+
 		// replace statement-specific table by a version without the variable
 		executeStatement("CREATE TABLE t1_backup(" + varString + ")");
 		executeStatement("INSERT INTO t1_backup SELECT " + varString + 
@@ -1012,7 +1032,7 @@ public class DataAccess {
 				varString +	" FROM t1_backup");
 		executeStatement("DROP TABLE t1_backup");
 	}
-	
+
 	/**
 	 * Add a statement to the STATEMENTS table.
 	 * 
@@ -1025,15 +1045,15 @@ public class DataAccess {
 	public int addStatement(String type, int doc, int start, int stop) {
 		int id = executeStatementForId(
 				"INSERT INTO STATEMENTS (Type, Document, Start, Stop) " +
-				"VALUES('" + type + "', " + doc + ", " + start + ", " + 
-				stop + ")"
+						"VALUES('" + type + "', " + doc + ", " + start + ", " + 
+						stop + ")"
 				);
 		executeStatement(
 				"INSERT INTO " + type + " (StatementID) VALUES (" + id + ")"
 				);
 		return id;
 	}
-	
+
 	/**
 	 * Retrieve a string array of unique document coder names in the database.
 	 * 
@@ -1117,7 +1137,7 @@ public class DataAccess {
 		}
 		return sections;
 	}
-	
+
 	/**
 	 * Retrieve the earliest date of a document in the database.
 	 * 
@@ -1153,7 +1173,7 @@ public class DataAccess {
 		}
 		return last;
 	}
-	
+
 	/**
 	 * Retrieve the color of a statement type from the STATEMENTTYPE table.
 	 * 
@@ -1163,20 +1183,20 @@ public class DataAccess {
 	public Color getStatementTypeColor(String statementType) {
 		int red = executeQueryForInt(
 				"SELECT Red FROM STATEMENTTYPE WHERE Label = '" + 
-				statementType + "'"
+						statementType + "'"
 				);
 		int green = executeQueryForInt(
 				"SELECT Green FROM STATEMENTTYPE WHERE Label = '" + 
-				statementType + "'"
+						statementType + "'"
 				);
 		int blue = executeQueryForInt(
 				"SELECT Blue FROM STATEMENTTYPE WHERE Label = '" + 
-				statementType + "'"
+						statementType + "'"
 				);
 		Color color = new Color(red, green, blue);
 		return color;
 	}
-	
+
 	/**
 	 * Retrieve a list of statements from a document.
 	 * 
@@ -1185,12 +1205,12 @@ public class DataAccess {
 	 */
 	public ArrayList<SidebarStatement> getStatementsPerDocumentId(
 			int documentId) {
-		
+
 		ArrayList<Integer> ids = new ArrayList<Integer>();
 		ArrayList<String> types = new ArrayList<String>();
 		ArrayList<Integer> starts = new ArrayList<Integer>();
 		ArrayList<Integer> stops = new ArrayList<Integer>();
-		
+
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -1236,10 +1256,10 @@ public class DataAccess {
 					starts.get(i), stops.get(i), d, color, types.get(i));
 			statements.add(s);
 		}
-		
+
 		return statements;
 	}
-	
+
 	/**
 	 * Get an array list of statements of a specific statement type.
 	 * 
@@ -1247,12 +1267,12 @@ public class DataAccess {
 	 * @return      An array list of SidebarStatements.
 	 */
 	public ArrayList<SidebarStatement> getStatementsByType(String type) {
-		
+
 		ArrayList<Integer> ids = new ArrayList<Integer>();
 		ArrayList<Integer> documentIds = new ArrayList<Integer>();
 		ArrayList<Integer> starts = new ArrayList<Integer>();
 		ArrayList<Integer> stops = new ArrayList<Integer>();
-		
+
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -1299,10 +1319,10 @@ public class DataAccess {
 					type);
 			statements.add(s);
 		}
-		
+
 		return statements;
 	}
-	
+
 	/**
 	 * Retrieve first statement from a document at a specific caret position.
 	 * 
@@ -1312,12 +1332,12 @@ public class DataAccess {
 	 */
 	public SidebarStatement getStatementAtLocation(
 			int documentId, int pos) {
-		
+
 		int id = -1;
 		String type = null;
 		int startCaret = -1;
 		int stopCaret = -1;
-		
+
 		SidebarStatement s = null;
 		Connection connection = null;
 		Statement statement = null;
@@ -1355,7 +1375,7 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
-		
+
 		Date d = getDocument(documentId).getDate();
 		if (startCaret == -1 || stopCaret == -1) {
 			return null;
@@ -1366,7 +1386,7 @@ public class DataAccess {
 			return s;
 		}
 	}
-	
+
 	/**
 	 * Retrieve the type of a statement as a string.
 	 * 
@@ -1379,7 +1399,7 @@ public class DataAccess {
 				);
 		return(type);
 	}
-	
+
 	/**
 	 * Get the variable names and data types associated with a statement type.
 	 * 
@@ -1389,7 +1409,7 @@ public class DataAccess {
 	public LinkedHashMap<String, String> getVariables(String statementType) {
 		LinkedHashMap<String, String> variables = new LinkedHashMap<String, 
 				String>();
-		
+
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -1406,7 +1426,7 @@ public class DataAccess {
 			statement = connection.createStatement();
 			resultSet = statement.executeQuery(
 					"SELECT * FROM VARIABLES WHERE StatementType = '" + 
-					statementType + "'"
+							statementType + "'"
 					);
 			if (resultSet.next()) {
 				do {
@@ -1426,10 +1446,63 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
-		
+
 		return variables;
 	}
-	
+
+	/**
+	 * LB.Add: 
+	 * get Variables for a specific variable type (+by statement type)
+	 * 
+	 * @param statementType 	The statement type from the STATEMENTTYPE table.
+	 * @param variableType		String indicating which variables should be fetched
+	 * @return					variables of a certain type
+	 */
+	public LinkedHashMap<String, String> getVariablesByType(String statementType, String variableType) {
+		LinkedHashMap<String, String> variables = new LinkedHashMap<String, String>();
+		Connection connection = null;
+		Statement statement = null;
+		ResultSet resultSet = null;
+		try {
+			if (dbtype.equals("sqlite")) {
+				connection = getSQLiteConnection();
+			} else if (dbtype.equals("mysql")) {
+				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
+			}
+			statement = connection.createStatement();
+			resultSet = statement.executeQuery(
+					"SELECT * FROM VARIABLES WHERE StatementType = '" + 
+							statementType + "'"
+					);
+			if (resultSet.next()) {
+				do {
+					String key = resultSet.getString("Variable");
+					String value = resultSet.getString("DataType");
+					if ( value.equals(variableType)){
+						//problem if variable has no boolean
+						variables.put(key, value);
+					}
+				} while (resultSet.next());
+			}
+			resultSet.close();
+			statement.close();
+			connection.close();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try { statement.close(); } catch(Exception e) {}
+			try { connection.close(); } catch(Exception e) {}
+		}
+
+		return variables;
+	}
+
 	/**
 	 * Alter a statement type with a given label.
 	 * 
@@ -1445,23 +1518,23 @@ public class DataAccess {
 				"', Red = " + red + ", Green = " + green + ", Blue = " + 
 				blue + " WHERE Label = '" + oldLabel + "'"
 				);
-		
+
 		if (!oldLabel.equals(newLabel)) {
 			executeStatement(
 					"UPDATE STATEMENTS SET Type = '" + newLabel + 
 					"' WHERE Type = '" + oldLabel + "'"
 					);
-			
+
 			executeStatement(
 					"UPDATE VARIABLES SET StatementType = '" + newLabel + 
 					"' WHERE StatementType = '" + oldLabel + "'"
 					);
-			
+
 			executeStatement("ALTER TABLE " + oldLabel + " RENAME TO " + 
 					newLabel);
 		}
 	}
-	
+
 	/**
 	 * Retrieve all statement types including variables from the database.
 	 * 
@@ -1507,7 +1580,7 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
-		
+
 		ArrayList<StatementType> types = new ArrayList<StatementType>();
 		for (int i = 0; i < labels.size(); i++) {
 			String label = labels.get(i);
@@ -1516,10 +1589,10 @@ public class DataAccess {
 			StatementType t = new StatementType(label, color, var);
 			types.add(t);
 		}
-		
+
 		return types;
 	}
-	
+
 	/**
 	 * Remove a statement from the STATEMENTS table.
 	 * 
@@ -1556,7 +1629,7 @@ public class DataAccess {
 				);
 		return(varName);
 	}
-	
+
 	/**
 	 * Change a variable entry of an existing statement. 
 	 * 
@@ -1567,19 +1640,19 @@ public class DataAccess {
 	public void changeStatement(int statementId, String varName, Object entry, 
 			String dataType) {
 		String statementType = getStatementType(statementId);
-		
+
 		String quotMark = "";
 		if (dataType.equals("short text") || dataType.equals("long text")) {
 			quotMark = "'";
 		}
-		
+
 		executeStatement(
 				"UPDATE " + statementType + " SET " + varName + " = " + 
-				quotMark + entry + quotMark + " WHERE StatementID = " + 
-				statementId
+						quotMark + entry + quotMark + " WHERE StatementID = " + 
+						statementId
 				);
 	}
-	
+
 	/**
 	 * Retrieve a document from the DOCUMENTS table by its document ID.
 	 * 
@@ -1636,12 +1709,12 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
-		
+
 		Document d = new Document(documentId, title, text, date, coder, 
 				source,	section, notes, type);
 		return d;
 	}
-	
+
 	/**
 	 * Retrieve the complete list of documents.
 	 * 
@@ -1658,7 +1731,7 @@ public class DataAccess {
 		}
 		return docs;
 	}
-	
+
 	/**
 	 * Add a regular expression to the REGEX table.
 	 * 
@@ -1670,11 +1743,11 @@ public class DataAccess {
 	public void addRegex(String label, int red, int green, int blue) {
 		executeStatement(
 				"INSERT INTO REGEX (Label, Red, Green, Blue) " + 
-				"VALUES('" + label + "', " + red + ", " + green + 
-				", " + blue + ")"
+						"VALUES('" + label + "', " + red + ", " + green + 
+						", " + blue + ")"
 				);
 	}
-	
+
 	/**
 	 * Remove a regular expression from the REGEX table.
 	 * 
@@ -1683,7 +1756,7 @@ public class DataAccess {
 	public void removeRegex(String label) {
 		executeStatement("DELETE FROM REGEX WHERE Label = " + label);
 	}
-	
+
 	/**
 	 * Return the complete list of regular expressions from the REGEX table.
 	 * 
@@ -1691,7 +1764,7 @@ public class DataAccess {
 	 */
 	public ArrayList<Regex> getRegex() {
 		ArrayList<Regex> regex = new ArrayList<Regex>();
-		
+
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -1729,10 +1802,10 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
-		
+
 		return regex;
 	}
-	
+
 	/**
 	 * Retrieve a statement by providing its ID from the STATEMENTS table.
 	 * 
@@ -1740,13 +1813,13 @@ public class DataAccess {
 	 * @return             A SidebarStatement.
 	 */
 	public SidebarStatement getStatement(int statementId) {
-		
+
 		int documentId = -1;
 		String type = null;
 		int startCaret = -1;
 		int stopCaret = -1;
-		
-		
+
+
 		SidebarStatement s = null;
 		Connection connection = null;
 		Statement statement = null;
@@ -1789,10 +1862,10 @@ public class DataAccess {
 		Color color = getStatementTypeColor(type);
 		s = new SidebarStatement(statementId, documentId, 
 				startCaret, stopCaret, d, color, type);
-		
+
 		return s;
 	}
-	
+
 	/**
 	 * Retrieve the IDs of all statements within a document.
 	 * 
@@ -1806,7 +1879,19 @@ public class DataAccess {
 		ArrayList<Integer> ids = (ArrayList<Integer>) al;
 		return(ids);
 	}
-	
+
+	/**
+	 * LB.Add: get all the Statement IDs
+	 * no parameters: get all the statement IDs, not just from specific document
+	 */
+	public ArrayList<Integer> getStatementIdsAll() {
+		ArrayList<?> al = executeQueryForList(
+				"SELECT ID FROM STATEMENTS");
+		@SuppressWarnings("unchecked")
+		ArrayList<Integer> ids = (ArrayList<Integer>) al;
+		return(ids);
+	}
+
 	/**
 	 * Remove a document and all statements contained in the document.
 	 * 
@@ -1819,7 +1904,7 @@ public class DataAccess {
 		}
 		executeStatement("DELETE FROM DOCUMENTS WHERE ID = " + documentId);
 	}
-	
+
 	/**
 	 * Add a new document to the DOCUMENTS table.
 	 * 
@@ -1837,9 +1922,9 @@ public class DataAccess {
 		long intDate = date.getTime();
 		int id = executeStatementForId(
 				"INSERT INTO DOCUMENTS (Title, Text, Date, Coder, " +
-				"Source, Section, Notes, Type) VALUES('" + title + "', '" + 
-				text + "', " + intDate + ", '" + coder + "', '" + source + 
-				"', '" + section + "', '" + notes + "', '" + type + "')"
+						"Source, Section, Notes, Type) VALUES('" + title + "', '" + 
+						text + "', " + intDate + ", '" + coder + "', '" + source + 
+						"', '" + section + "', '" + notes + "', '" + type + "')"
 				);
 		return id;
 	}
@@ -1861,12 +1946,12 @@ public class DataAccess {
 		long dateInt = date.getTime();
 		executeStatement(
 				"UPDATE DOCUMENTS SET Title = '" + title + "', Date = " + 
-				dateInt + ", Coder = '" + coder + "', Source = '" + source + 
-				"', Section = '" + section + "', Notes = '" + notes + 
-				"', Type = '" + type + "' WHERE ID = " + documentId
+						dateInt + ", Coder = '" + coder + "', Source = '" + source + 
+						"', Section = '" + section + "', Notes = '" + notes + 
+						"', Type = '" + type + "' WHERE ID = " + documentId
 				);
 	}
-	
+
 	/**
 	 * Create a copy of an existing statement with a given new statement ID
 	 * 
@@ -1875,20 +1960,20 @@ public class DataAccess {
 	 */
 	public int duplicateStatement(int oldStatementId, int documentId, 
 			int start, int stop) {
-		
+
 		String type = this.getStatementType(oldStatementId);
-		
+
 		int id = executeStatementForId(
 				"INSERT INTO STATEMENTS (Type, Document, Start, Stop) " +
-				"VALUES('" + type + "', " + documentId + ", " + start + ", " + 
-				stop + ")"
+						"VALUES('" + type + "', " + documentId + ", " + start + ", " + 
+						stop + ")"
 				);
-		
+
 		executeStatement(
 				"INSERT INTO " + type + " (StatementID) VALUES (" + id + ")");
-		
+
 		LinkedHashMap<String, String> variables = this.getVariables(type);
-		
+
 		Iterator<String> keyIterator = variables.keySet().iterator();
 		while (keyIterator.hasNext()){
 			String key = keyIterator.next();
@@ -1901,7 +1986,7 @@ public class DataAccess {
 				executeStatement(
 						"UPDATE " + type + " SET " + key + " = " + quotes + 
 						content + quotes + " WHERE StatementId = " + id
-		        );
+						);
 			} else {
 				quotes = "";
 				int content = this.getVariableIntEntry(oldStatementId, 
@@ -1909,10 +1994,10 @@ public class DataAccess {
 				executeStatement(
 						"UPDATE " + type + " SET " + key + " = " + quotes + 
 						content + quotes + " WHERE StatementId = " + id
-		        );
+						);
 			}
 		}
-		
+
 		return id;
 	}
 }

@@ -5,21 +5,21 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class Dna {
-	String version = "2.0 alpha 3";
-	String date = "August 14, 2014";
+	String version = "2.0 alpha 4";
+	String date = "August 20, 2014";
 	static Dna dna;
 	DataAccess db;
 	Gui gui;
-	
+
 	public Dna () {
 		db = new DataAccess();
 		gui = new Gui();
 	}
-	
+
 	public static void main (String[] args) {
 		dna = new Dna();
 	}
-	
+
 	public int addStatement(String type, int doc, int start, int stop) {
 		int statementId = dna.db.addStatement(type, doc, start, stop);
 		Color color = dna.db.getStatementTypeColor(type);
@@ -29,14 +29,14 @@ public class Dna {
 		dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
 		return statementId;
 	}
-	
+
 	public void removeStatement(int statementId) {
 		dna.db.removeStatement(statementId);
 		int row = dna.gui.sidebarPanel.ssc.getIndexByStatementId(statementId);
 		dna.gui.sidebarPanel.ssc.remove(row);
 		dna.gui.sidebarPanel.statementTable.updateUI();
 	}
-	
+
 	public int addDocument(String title, String text, Date date, String coder, 
 			String source, String section, String notes, String type) {
 		int id = dna.db.addDocument(title, text, date, coder, source, section, 
@@ -55,7 +55,7 @@ public class Dna {
 		dna.gui.documentPanel.documentContainer.remove(row);
 		dna.db.removeDocument(documentId);
 	}
-	
+
 	public void openFile(String dbfile) {
 		Dna.dna.db.openSQLite(dbfile);
 		Dna.dna.gui.statusBar.resetLabel();
@@ -78,7 +78,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
-	
+
 	public void openMySQL(String url, String userName, String password) {
 		Dna.dna.db.openMySQL(url, userName, password);
 		Dna.dna.gui.statusBar.resetLabel();
@@ -125,7 +125,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
-	
+
 	public void closeFile() {
 		Dna.dna.db.closeFile();
 		Dna.dna.gui.statusBar.resetLabel();
@@ -139,7 +139,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 	}
-	
+
 	public void newFile(String filename) {
 		Dna.dna.db.openSQLite(filename);
 		Dna.dna.gui.statusBar.resetLabel();

@@ -35,10 +35,11 @@ import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.jdesktop.swingx.JXTextField;
 
 class SidebarPanel extends JScrollPane {
-	
+
 	private static final long serialVersionUID = 1L;
-	
+
 	SidebarStatementContainer ssc;
+	ContradictionPanel cp;
 	JTable statementTable;
 	JScrollPane statementTableScrollPane;
 	JPanel statementPanel;
@@ -46,8 +47,8 @@ class SidebarPanel extends JScrollPane {
 	TableRowSorter<SidebarStatementContainer> sorter;
 	JXTextField patternField1, patternField2;
 	JComboBox<String> typeComboBox1, typeComboBox2, variableComboBox1, 
-			variableComboBox2;
-	
+	variableComboBox2;
+
 	public SidebarPanel() {
 		this.setPreferredSize(new Dimension(260, 440));
 		//this.setVerticalScrollBarPolicy(JScrollPane.
@@ -55,16 +56,16 @@ class SidebarPanel extends JScrollPane {
 		JXTaskPaneContainer tpc = new JXTaskPaneContainer();
 		this.setColumnHeaderView(tpc);
 
-        statementPanel();
+		statementPanel();
 		JXTaskPane statementTaskPane = new JXTaskPane();
 		ImageIcon statementIcon = new ImageIcon(getClass().getResource(
 				"/icons/comments.png"));
 		statementTaskPane.setName("Statements");
 		statementTaskPane.setTitle("Statements");
 		statementTaskPane.setIcon(statementIcon);
-        ((Container)tpc).add(statementTaskPane);
-        statementTaskPane.add(statementPanel);
-        
+		((Container)tpc).add(statementTaskPane);
+		statementTaskPane.add(statementPanel);
+
 		SearchPanel sp = new SearchPanel();
 		JXTaskPane searchTaskPane = new JXTaskPane();
 		ImageIcon findIcon = new ImageIcon(getClass().getResource(
@@ -74,9 +75,24 @@ class SidebarPanel extends JScrollPane {
 		searchTaskPane.setIcon(findIcon);
 		searchTaskPane.setCollapsed(true);
 		((Container)tpc).add(searchTaskPane);
-        searchTaskPane.add(sp);
-		
-        /*
+		searchTaskPane.add(sp);
+
+		/*
+		 * LB.Add: Panel for Finding self-contradictions
+		 * Class: ContradictionPanel()
+		 */
+		cp = new ContradictionPanel();
+		JXTaskPane selfContradictionTaskPane = new JXTaskPane();
+		ImageIcon groupIcon = new ImageIcon(getClass().getResource(
+				"/icons/group.png"));
+		selfContradictionTaskPane.setName("Find self-contradictions");
+		selfContradictionTaskPane.setTitle("Find self-contradictions");
+		selfContradictionTaskPane.setIcon(groupIcon);
+		selfContradictionTaskPane.setCollapsed(true);
+		((Container)tpc).add(selfContradictionTaskPane);
+		selfContradictionTaskPane.add(cp);        
+
+		/*
         JXTaskPane docStatisticsTaskPane = new JXTaskPane();
         DocStats docStats = new DocStats();
         ImageIcon docStatisticsIcon = new ImageIcon(getClass().getResource("/icons/chart_bar.png"));
@@ -86,25 +102,25 @@ class SidebarPanel extends JScrollPane {
         docStatisticsTaskPane.setCollapsed(true);
         docStatisticsTaskPane.add(docStats);
         ((Container)tpc).add(docStatisticsTaskPane);
-        */
+		 */
 	}
-	
+
 	public class StatementCellRenderer extends DefaultTableCellRenderer {
 		private static final long serialVersionUID = 1L;
-		
+
 		public Component getTableCellRendererComponent(JTable table,
 				Object value, boolean isSelected, boolean hasFocus, int row, 
 				int column) {
 			Component c = super.getTableCellRendererComponent(table, value, 
 					isSelected, hasFocus, row, column);
 			int modelRow = table.convertRowIndexToModel(row);
-		    Color col = ((SidebarStatementContainer)table.getModel()).
-		    		get(modelRow).getColor();
-		    c.setBackground(col);
-		    return c;
+			Color col = ((SidebarStatementContainer)table.getModel()).
+					get(modelRow).getColor();
+			c.setBackground(col);
+			return c;
 		}
 	}
-	
+
 	private void statementPanel() {
 		ssc = new SidebarStatementContainer();
 		statementTable = new JTable( ssc );
@@ -113,30 +129,30 @@ class SidebarPanel extends JScrollPane {
 		statementTableScrollPane.setPreferredSize(new Dimension(200, 240));
 		statementTable.getColumnModel().getColumn( 0 ).setPreferredWidth( 30 );
 		statementTable.getColumnModel().getColumn( 1 ).setPreferredWidth( 170 );
-		
+
 		statementTable.getTableHeader().setReorderingAllowed( false );
 		statementTable.putClientProperty("terminateEditOnFocusLost", 
 				Boolean.TRUE);
-		
+
 		setRowSorterEnabled(true);
-		
+
 		StatementCellRenderer statementCellRenderer = new 
 				StatementCellRenderer();
 		statementTable.getColumnModel().getColumn(0).setCellRenderer(
 				statementCellRenderer);
-		
+
 		statementFilter = new StatementFilter();
-		
+
 		statementPanel = new JPanel(new BorderLayout());
 		statementPanel.add(statementTableScrollPane, BorderLayout.CENTER);
 		statementPanel.add(statementFilter, BorderLayout.SOUTH);
-		
+
 		statementTable.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
 				int row = -1;
 				row = statementTable.rowAtPoint(e.getPoint());
 				row = statementTable.convertRowIndexToModel(row);
-				
+
 				if (row > -1) {
 					int statementId = ssc.get(row).getStatementId();
 					if (statementId != -1) {
@@ -147,15 +163,17 @@ class SidebarPanel extends JScrollPane {
 		});
 	}
 
-	private void highlightStatementInText(int statementId) {
+	//TODO: use different function here ?
+	// Comment PL: "Please remove this function and use Dna.dna.gui.textPanel.selectStatement(statementId, documentId) instead. This should work much better than this function here."
+	public void highlightStatementInText(int statementId) {
 		int docId = Dna.dna.db.getStatement(statementId).getDocumentId();
 		int docRow = Dna.dna.gui.documentPanel.documentContainer.
 				getRowIndexById(docId);
 		Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
-				setSelectionInterval(docRow, docRow);
+		setSelectionInterval(docRow, docRow);
 		Dna.dna.gui.textPanel.selectStatement(statementId, docId);
 	}
-	
+
 	public void updateStatementTypes() {
 		typeComboBox1.removeAllItems();
 		if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().
@@ -166,8 +184,18 @@ class SidebarPanel extends JScrollPane {
 			}
 			typeComboBox1.setSelectedIndex(0);
 		}
+		//LB.Add: same for the Self-Contradiction Filter
+		cp.filterComboBoxType.removeAllItems();
+		if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().
+				equals("")) {
+			ArrayList<StatementType> types = Dna.dna.db.getStatementTypes();
+			for (int i = 0; i < types.size(); i++) {
+				cp.filterComboBoxType.addItem(types.get(i).getLabel());
+			}
+			cp.filterComboBoxType.setSelectedIndex(0);
+		}
 	}
-	
+
 	public void updateVariables() {
 		variableComboBox1.removeAllItems();
 		variableComboBox2.removeAllItems();
@@ -184,7 +212,7 @@ class SidebarPanel extends JScrollPane {
 			variableComboBox2.setSelectedIndex(0);
 		}
 	}
-	
+
 	public void setRowSorterEnabled(boolean enabled) {
 		if (enabled == true) {
 			sorter = new TableRowSorter<SidebarStatementContainer>(ssc) {
@@ -192,20 +220,20 @@ class SidebarPanel extends JScrollPane {
 					//leave blank; overwritten method makes the table unsortable
 				}
 			};
-	        statementTable.setRowSorter(sorter);
+			statementTable.setRowSorter(sorter);
 		} else {
 			statementFilter.showAll.setSelected(true);
-    		statementTable.setRowSorter(null);
+			statementTable.setRowSorter(null);
 		}
 	}
-	
+
 	public class StatementFilter extends JPanel {
-		
+
 		private static final long serialVersionUID = 1L;
 		JRadioButton showAll;
 		JRadioButton showCurrent;
 		JRadioButton showFilter;
-		
+
 		public StatementFilter() {
 			this.setLayout(new BorderLayout());
 			JPanel showPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -220,7 +248,7 @@ class SidebarPanel extends JScrollPane {
 			showPanel.add(showAll);
 			showPanel.add(showCurrent);
 			showPanel.add(showFilter);
-			
+
 			typeComboBox1 = new JComboBox<String>();
 			typeComboBox1.setPreferredSize(new Dimension(208, 20));
 			typeComboBox1.addItemListener(new ItemListener() {
@@ -228,34 +256,34 @@ class SidebarPanel extends JScrollPane {
 					updateVariables();
 					filter();
 				}
-				
+
 			});
-			
+
 			variableComboBox1 = new JComboBox<String>();
 			variableComboBox1.setPreferredSize(new Dimension(100, 20));
-			
+
 			variableComboBox1.addItemListener(new ItemListener() {
 				public void itemStateChanged(ItemEvent e) {
 					filter();
 				}
-				
+
 			});
 			patternField1 = new JXTextField("regex");
 			patternField1.setPreferredSize(new Dimension(104, 20));
-			
+
 			variableComboBox2 = new JComboBox<String>();
 			variableComboBox2.setPreferredSize(new Dimension(100, 20));
 			variableComboBox2.addItemListener(new ItemListener() {
 				public void itemStateChanged(ItemEvent e) {
 					filter();
 				}
-				
+
 			});
 			patternField2 = new JXTextField("regex");
 			patternField2.setPreferredSize(new Dimension(104, 20));
 
 			toggleEnabled(false);
-			
+
 			JPanel filterPanel0 = new JPanel(new FlowLayout(FlowLayout.LEFT));
 			filterPanel0.add(typeComboBox1);
 			JPanel filterPanel1 = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -268,7 +296,7 @@ class SidebarPanel extends JScrollPane {
 			filterPanel.add(filterPanel0, BorderLayout.NORTH);
 			filterPanel.add(filterPanel1, BorderLayout.CENTER);
 			filterPanel.add(filterPanel2, BorderLayout.SOUTH);
-			
+
 			this.add(showPanel, BorderLayout.NORTH);
 			this.add(filterPanel, BorderLayout.CENTER);
 
@@ -284,34 +312,34 @@ class SidebarPanel extends JScrollPane {
 					} else if (e.getSource() == showFilter) {
 						toggleEnabled(true);
 						filter();
-	            	}
+					}
 					//if (!(e.getSource() == showAll)) {
 					//	Dna.mainProgram.contradictionReporter.clearTree();
 					//}
 				}
 			};
-			
+
 			showAll.addActionListener(al);
 			showCurrent.addActionListener(al);
 			showFilter.addActionListener(al);
-			
+
 			DocumentListener dl = new DocumentListener() {
-	            public void changedUpdate(DocumentEvent e) {
-	            	applyFilter();
-	            }
-	            public void insertUpdate(DocumentEvent e) {
-	            	applyFilter();
-	            }
-	            public void removeUpdate(DocumentEvent e) {
-	            	applyFilter();
-	            }
-	            public void applyFilter() {
-	            	filter();
-	            }
-	        };
-	        
-	        patternField1.getDocument().addDocumentListener(dl);
-	        patternField2.getDocument().addDocumentListener(dl);
+				public void changedUpdate(DocumentEvent e) {
+					applyFilter();
+				}
+				public void insertUpdate(DocumentEvent e) {
+					applyFilter();
+				}
+				public void removeUpdate(DocumentEvent e) {
+					applyFilter();
+				}
+				public void applyFilter() {
+					filter();
+				}
+			};
+
+			patternField1.getDocument().addDocumentListener(dl);
+			patternField2.getDocument().addDocumentListener(dl);
 		}
 
 		public void toggleEnabled(boolean enabled) {
@@ -325,7 +353,7 @@ class SidebarPanel extends JScrollPane {
 		public void allFilter() {
 			try {
 				RowFilter<SidebarStatementContainer, Object> rf = null;
-	    		rf = RowFilter.regexFilter("");
+				rf = RowFilter.regexFilter("");
 				if (showAll.isSelected()) {
 					sorter.setRowFilter(rf);
 				}
@@ -342,30 +370,30 @@ class SidebarPanel extends JScrollPane {
 						getId();
 			}
 			final int documentId = docId;
-			
+
 			RowFilter<SidebarStatementContainer, Integer> documentFilter = new 
 					RowFilter<SidebarStatementContainer, Integer>() {
 				public boolean include(Entry<? extends 
 						SidebarStatementContainer, ? extends Integer> entry) {
-    				SidebarStatementContainer stcont = entry.getModel();
-    				SidebarStatement st = stcont.get(entry.getIdentifier());
-    				if (st.getDocumentId() == documentId) {
-        				return true;
-        			}
-    				return false;
-    			}
+					SidebarStatementContainer stcont = entry.getModel();
+					SidebarStatement st = stcont.get(entry.getIdentifier());
+					if (st.getDocumentId() == documentId) {
+						return true;
+					}
+					return false;
+				}
 			};
 			if (showCurrent.isSelected()) {
 				sorter.setRowFilter(documentFilter);
 			}
 		}
-		
+
 		private void filter() {
 			String fn = Dna.dna.db.getFileName();
 			if (fn != null && !fn.equals("")) {
 				String p1 = patternField1.getText();
 				String p2 = patternField2.getText();
-				
+
 				String t1 = (String) typeComboBox1.getSelectedItem();
 				String v1 = (String) variableComboBox1.getSelectedItem();
 				if (p1 == null) {
@@ -377,7 +405,7 @@ class SidebarPanel extends JScrollPane {
 				if (v1 == null) {
 					v1 = "";
 				}
-				
+
 				String v2 = (String) variableComboBox2.getSelectedItem();
 				if (p2 == null) {
 					p2 = "";
@@ -385,7 +413,7 @@ class SidebarPanel extends JScrollPane {
 				if (v2 == null) {
 					v2 = "";
 				}
-				
+
 				if (!t1.equals("") && ! v1.equals("") && !v2.equals("")) {
 					final ArrayList<Integer> ids1 = Dna.dna.db.
 							getStatementMatch(t1, v1, p1);
@@ -393,17 +421,17 @@ class SidebarPanel extends JScrollPane {
 							getStatementMatch(t1, v2, p2);
 					final String p1final = p1;
 					final String p2final = p2;
-					
+
 					RowFilter<SidebarStatementContainer, Integer> idFilter = 
 							new	RowFilter<SidebarStatementContainer, Integer>() 
 							{
 						public boolean include(Entry<? extends 
 								SidebarStatementContainer, ? extends Integer> 
-								entry) {
+						entry) {
 							SidebarStatementContainer stcont = entry.getModel();
 							SidebarStatement st = stcont.get(entry.
 									getIdentifier());
-							
+
 							boolean contentMatch;
 							if (ids1.contains(st.getStatementId()) && (ids2.
 									contains(st.getStatementId()) || p2final.
@@ -411,21 +439,21 @@ class SidebarPanel extends JScrollPane {
 								contentMatch = true;
 							} else if (ids2.contains(st.getStatementId()) && 
 									(ids1.contains(st.getStatementId()) || 
-									p1final.equals(""))) {
+											p1final.equals(""))) {
 								contentMatch = true;
 							} else {
 								contentMatch = false;
 							}
-							
+
 							if (contentMatch == true) {
 								return true;
 							}
 							return false;
 						}
-					};
-					if (showFilter.isSelected()) {
-						sorter.setRowFilter(idFilter);
-					}
+							};
+							if (showFilter.isSelected()) {
+								sorter.setRowFilter(idFilter);
+							}
 				}
 			}
 		}
