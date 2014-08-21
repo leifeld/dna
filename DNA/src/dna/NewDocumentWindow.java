@@ -123,14 +123,20 @@ class NewDocumentWindow extends JFrame {
 		okButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String text = textArea.getText();
-				
+				text = text.replaceAll("'", "''");
 				String title = titleField.getText();
+				title = title.replaceAll("'", "''");
 				Date date = (Date)dateSpinner.getValue();
 				String coder = (String) coderBox.getModel().getSelectedItem();
+				coder = coder.replaceAll("'", "''");
 				String source = (String) sourceBox.getModel().getSelectedItem();
+				source = source.replaceAll("'", "''");
 				String section = (String) sectionBox.getModel().getSelectedItem();
+				section = section.replaceAll("'", "''");
 				String notes = notesArea.getText();
+				notes = notes.replaceAll("'", "''");
 				String type = (String) typeBox.getModel().getSelectedItem();
+				type = type.replaceAll("'", "''");
 				Dna.dna.addDocument(title, text, date, coder, source, section, 
 						notes, type);
 				//TODO: change selection to new row

@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class Dna {
-	String version = "2.0 alpha 4";
-	String date = "August 20, 2014";
+	String version = "2.0 alpha 5";
+	String date = "August 21, 2014";
 	static Dna dna;
 	DataAccess db;
 	Gui gui;
