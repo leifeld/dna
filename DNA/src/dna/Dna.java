@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class Dna {
-	String version = "2.0 alpha 5";
-	String date = "August 21, 2014";
+	String version = "2.0 alpha 6";
+	String date = "August 31, 2014";
 	static Dna dna;
 	DataAccess db;
 	Gui gui;
@@ -77,6 +77,8 @@ public class Dna {
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
+		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
+		Dna.dna.gui.sidebarPanel.updateRegexManagerPanel();
 	}
 
 	public void openMySQL(String url, String userName, String password) {
@@ -100,6 +102,8 @@ public class Dna {
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
+		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
+		Dna.dna.gui.sidebarPanel.updateRegexManagerPanel();
 	}
 
 	public void openMSSQL(String url, String dbname, String userName, 
@@ -124,6 +128,8 @@ public class Dna {
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
+		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
+		Dna.dna.gui.sidebarPanel.updateRegexManagerPanel();
 	}
 
 	public void closeFile() {
@@ -138,6 +144,8 @@ public class Dna {
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
+		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(false);
+		Dna.dna.gui.sidebarPanel.rm.clear();
 	}
 
 	public void newFile(String filename) {
@@ -149,5 +157,6 @@ public class Dna {
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
+		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
 	}
 }

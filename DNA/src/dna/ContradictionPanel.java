@@ -28,7 +28,6 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
 
 public class ContradictionPanel extends JPanel {
-	//TODO: trim lines to 80 characters per line
 	private static final long serialVersionUID = 1L;
 
 	JPanel selfContPanel;
@@ -45,7 +44,8 @@ public class ContradictionPanel extends JPanel {
 		top = new DefaultMutableTreeNode("Variable 1");
 		tree = new JTree(top);
 
-		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		tree.getSelectionModel().setSelectionMode(
+				TreeSelectionModel.SINGLE_TREE_SELECTION);
 		tree.setExpandsSelectedPaths(true);
 		treeView = new JScrollPane(tree);
 		treeView.setPreferredSize(new Dimension(120, 250));
@@ -53,8 +53,8 @@ public class ContradictionPanel extends JPanel {
 		tree.addTreeSelectionListener(new TreeSelectionListener() {
 			public void valueChanged(TreeSelectionEvent tse) {
 				try {
-					String node = (String) tree.getLastSelectedPathComponent().toString();
-
+					String node = (String) tree.getLastSelectedPathComponent().
+							toString();
 					Pattern p = Pattern.compile("(0 \\()|(1 \\()");
 					Matcher m = p.matcher(node);
 					boolean b = m.find();
@@ -64,8 +64,10 @@ public class ContradictionPanel extends JPanel {
 						node = node.replaceAll("0 \\(", "");
 						int nodeInt = new Integer(node).intValue();
 
-						Dna.dna.gui.sidebarPanel.statementFilter.showAll.setSelected(true);
-						Dna.dna.gui.sidebarPanel.statementFilter.toggleEnabled(false);
+						Dna.dna.gui.sidebarPanel.statementFilter.showAll.
+								setSelected(true);
+						Dna.dna.gui.sidebarPanel.statementFilter.
+								toggleEnabled(false);
 						Dna.dna.gui.sidebarPanel.statementFilter.allFilter();
 
 						int viewId = Dna.dna.gui.sidebarPanel.statementTable
@@ -76,14 +78,15 @@ public class ContradictionPanel extends JPanel {
 						} else {
 							Dna.dna.gui.sidebarPanel.statementTable
 							.changeSelection(viewId, 0, false, false);
-							Dna.dna.gui.sidebarPanel.highlightStatementInText(nodeInt);
+							int docId = Dna.dna.db.getStatement(nodeInt).getDocumentId();
+							Dna.dna.gui.textPanel.selectStatement(nodeInt, docId);
 						}
 					}
 				} catch (NullPointerException npe) { }
 			}
 		});
 		this.add(treeView, BorderLayout.NORTH);
-
+		
 		// add ComboBox-Filters:
 		filterComboBoxType = new JComboBox<String>();
 		filterComboBoxType.setPreferredSize(new Dimension(208, 20));
@@ -99,7 +102,8 @@ public class ContradictionPanel extends JPanel {
 		filterComboBoxVar1.setPreferredSize(new Dimension(102, 20));
 		filterComboBoxVar1.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
-				top = new DefaultMutableTreeNode(filterComboBoxVar1.getSelectedItem());
+				top = new DefaultMutableTreeNode(
+						filterComboBoxVar1.getSelectedItem());
 				tree.setModel(new DefaultTreeModel(top));
 				updateStatementVariables(e);
 			}
@@ -137,7 +141,8 @@ public class ContradictionPanel extends JPanel {
 
 		// add two buttons
 		Icon tickIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
-		Icon clearIcon = new ImageIcon(getClass().getResource("/icons/arrow_rotate_clockwise.png"));
+		Icon clearIcon = new ImageIcon(getClass().getResource(
+				"/icons/arrow_rotate_clockwise.png"));
 		goButton = new JButton("go", tickIcon);
 		clearButton = new JButton("clear", clearIcon);
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -191,7 +196,8 @@ public class ContradictionPanel extends JPanel {
 	public void freezeOkButton() {
 		String type = (String) filterComboBoxType.getSelectedItem();
 		if (type != null && !type.equals("")) {
-			HashMap<String, String> variables = Dna.dna.db.getVariablesByType(type, "boolean");
+			HashMap<String, String> variables = Dna.dna.db.getVariablesByType(
+					type, "boolean");
 			//LB.Add in DataAccess => new method to get Variables by variableType
 			if (variables.isEmpty() == false) {
 				Iterator<String> keyIterator = variables.keySet().iterator();
@@ -266,7 +272,8 @@ public class ContradictionPanel extends JPanel {
 
 			// for j = statement IDs
 			for (int j : ids){
-				if (actors[i].equals(Dna.dna.db.getVariableStringEntryWithType(j, var1, statType))) {
+				if (actors[i].equals(Dna.dna.db.getVariableStringEntryWithType(
+							j, var1, statType))) {
 					indices.add(j);
 				}
 			}
@@ -276,21 +283,29 @@ public class ContradictionPanel extends JPanel {
 							j != k && 
 							! tabuId.contains(j) && 
 							! tabuId.contains(k) && 
-							Dna.dna.db.getVariableStringEntryWithType(j, var2, statType)
-							.equals(Dna.dna.db.getVariableStringEntryWithType(k, var2, statType)) && 
-							! Dna.dna.db.getVariableStringEntryWithType(j, varBoolean, statType)
-							.equals(Dna.dna.db.getVariableStringEntryWithType(k, varBoolean, statType))
+							Dna.dna.db.getVariableStringEntryWithType(
+									j, var2, statType)
+							.equals(Dna.dna.db.getVariableStringEntryWithType(
+									k, var2, statType)) && 
+							! Dna.dna.db.getVariableStringEntryWithType(
+									j, varBoolean, statType)
+							.equals(Dna.dna.db.getVariableStringEntryWithType(
+									k, varBoolean, statType))
 							) {
 						DefaultMutableTreeNode category = new DefaultMutableTreeNode(
-								Dna.dna.db.getVariableStringEntryWithType(j, var2, statType));
+								Dna.dna.db.getVariableStringEntryWithType(
+										j, var2, statType));
 						ArrayList<Integer> matches = new ArrayList<Integer>();
 						for (int l: indices) {
-							if (Dna.dna.db.getVariableStringEntryWithType(l, var2, statType)
-									.equals(Dna.dna.db.getVariableStringEntryWithType(j, var2, statType))){
+							if (Dna.dna.db.getVariableStringEntryWithType(
+									l, var2, statType)
+									.equals(Dna.dna.db.getVariableStringEntryWithType(
+											j, var2, statType))){
 								matches.add(l);
 								DefaultMutableTreeNode id = new DefaultMutableTreeNode(
-										Dna.dna.db.getVariableStringEntryWithType(l, varBoolean, statType) + 	
-										" (" + l + ")");
+										Dna.dna.db.getVariableStringEntryWithType(
+												l, varBoolean, statType) + 
+												" (" + l + ")");
 								category.add(id);
 							}
 						}

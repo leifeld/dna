@@ -38,7 +38,7 @@ class TextPanel extends JPanel {
 	JPopupMenu popmen;
 	JMenuItem menu1;
 	int documentId;
-	
+		
 	public void setDocumentId(int documentId) {
 		this.documentId = documentId;
 	}
@@ -135,11 +135,11 @@ class TextPanel extends JPanel {
 				}
 			}
 		});
-		
+
 	}
 	
 	public void paintStatements() {
-		 if (documentId > -1) {
+		 if (documentId > -1) {		
 			//remove all initial foreground color styles
 			int initialStart = 0;
 			int initialEnd = getDocumentText().length();
@@ -170,11 +170,12 @@ class TextPanel extends JPanel {
 				Pattern p = Pattern.compile(label, Pattern.CASE_INSENSITIVE);
 				Matcher m = p.matcher(getDocumentText());
 				while(m.find()) {
-					int start = m.start() + 1;
-					int end = m.end() + 1;
+					//LB.Change: removed + 1 in start and end
+					int start = m.start();
+					int end = m.end();
 					Style fgStyle = sc.addStyle("ConstantWidth", null);
 					StyleConstants.setForeground(fgStyle, color);
-					doc.setCharacterAttributes(start, end - start, 
+					doc.setCharacterAttributes(start, end-start, 
 							fgStyle, false);
 				}
 			}

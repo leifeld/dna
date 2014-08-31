@@ -1259,7 +1259,7 @@ public class DataAccess {
 
 		return statements;
 	}
-
+	
 	/**
 	 * Get an array list of statements of a specific statement type.
 	 * 
@@ -1458,7 +1458,8 @@ public class DataAccess {
 	 * @param variableType		String indicating which variables should be fetched
 	 * @return					variables of a certain type
 	 */
-	public LinkedHashMap<String, String> getVariablesByType(String statementType, String variableType) {
+	public LinkedHashMap<String, String> getVariablesByType(
+			String statementType, String variableType) {
 		LinkedHashMap<String, String> variables = new LinkedHashMap<String, String>();
 		Connection connection = null;
 		Statement statement = null;
@@ -1754,8 +1755,8 @@ public class DataAccess {
 	 * @param label  The label of the regular expression.
 	 */
 	public void removeRegex(String label) {
-		executeStatement("DELETE FROM REGEX WHERE Label = " + label);
-	}
+		executeStatement("DELETE FROM REGEX WHERE Label = '" + label + "'");	
+		}
 
 	/**
 	 * Return the complete list of regular expressions from the REGEX table.
@@ -1764,7 +1765,7 @@ public class DataAccess {
 	 */
 	public ArrayList<Regex> getRegex() {
 		ArrayList<Regex> regex = new ArrayList<Regex>();
-
+		
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -1802,7 +1803,6 @@ public class DataAccess {
 			try { statement.close(); } catch(Exception e) {}
 			try { connection.close(); } catch(Exception e) {}
 		}
-
 		return regex;
 	}
 

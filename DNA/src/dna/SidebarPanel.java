@@ -40,6 +40,7 @@ class SidebarPanel extends JScrollPane {
 
 	SidebarStatementContainer ssc;
 	ContradictionPanel cp;
+	RegexManagerPanel rm;
 	JTable statementTable;
 	JScrollPane statementTableScrollPane;
 	JPanel statementPanel;
@@ -92,6 +93,21 @@ class SidebarPanel extends JScrollPane {
 		((Container)tpc).add(selfContradictionTaskPane);
 		selfContradictionTaskPane.add(cp);        
 
+		/*
+		 * LB.Add: Panel for highlighting regular expressions
+		 * Class: RegexManagerPanel()
+		*/
+        rm = new RegexManagerPanel();
+        JXTaskPane highlighterTaskPane = new JXTaskPane();
+        ImageIcon tableEditIcon = new ImageIcon(getClass().
+        		getResource("/icons/color_swatch.png"));
+        highlighterTaskPane.setName("Regex highlighter");
+        highlighterTaskPane.setTitle("Regex highlighter");
+        highlighterTaskPane.setIcon(tableEditIcon);
+        highlighterTaskPane.setCollapsed(true);
+        ((Container)tpc).add(highlighterTaskPane);
+        highlighterTaskPane.add(rm);
+		 		
 		/*
         JXTaskPane docStatisticsTaskPane = new JXTaskPane();
         DocStats docStats = new DocStats();
@@ -156,22 +172,13 @@ class SidebarPanel extends JScrollPane {
 				if (row > -1) {
 					int statementId = ssc.get(row).getStatementId();
 					if (statementId != -1) {
-						highlightStatementInText(statementId);
+						int docId = Dna.dna.db.getStatement(statementId).
+								getDocumentId();
+						Dna.dna.gui.textPanel.selectStatement(statementId, docId);
 					}
 				}
 			}
 		});
-	}
-
-	//TODO: use different function here ?
-	// Comment PL: "Please remove this function and use Dna.dna.gui.textPanel.selectStatement(statementId, documentId) instead. This should work much better than this function here."
-	public void highlightStatementInText(int statementId) {
-		int docId = Dna.dna.db.getStatement(statementId).getDocumentId();
-		int docRow = Dna.dna.gui.documentPanel.documentContainer.
-				getRowIndexById(docId);
-		Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
-		setSelectionInterval(docRow, docRow);
-		Dna.dna.gui.textPanel.selectStatement(statementId, docId);
 	}
 
 	public void updateStatementTypes() {
@@ -225,6 +232,21 @@ class SidebarPanel extends JScrollPane {
 			statementFilter.showAll.setSelected(true);
 			statementTable.setRowSorter(null);
 		}
+	}
+	
+	/*
+	 * LB.Add: After a dataset is loaded this method will update the Regex-List
+	 * (listModel) in RegexManagerPanel-class
+	 */
+	public void updateRegexManagerPanel() {
+		ArrayList<Regex> regex = Dna.dna.db.getRegex();
+		for (int i = 0; i < regex.size(); i++) {
+			String label = regex.get(i).getLabel();
+			Color color	= regex.get(i).getColor();
+			Regex reg = new Regex(label, color);
+			Dna.dna.gui.sidebarPanel.rm.listModel.addElement(reg);
+		}
+		//Dna.dna.gui.textPanel.paintStatements();
 	}
 
 	public class StatementFilter extends JPanel {
