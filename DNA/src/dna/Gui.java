@@ -187,8 +187,8 @@ public class Gui extends JFrame {
 		private static final long serialVersionUID = 1L;
 		
 		JMenu fileMenu, documentMenu, exportMenu, settingsMenu;
-		JMenuItem closeFile, newDocumentButton, typeEditorButton, 
-				changeDocumentButton, removeDocumentButton, 
+		JMenuItem closeFile, newDocumentButton, importHTMLButton,  
+				typeEditorButton,changeDocumentButton, removeDocumentButton, 
 				importOldButton, networkButton, aboutButton;
 		
 		public MenuBar() {
@@ -324,6 +324,20 @@ public class Gui extends JFrame {
 				}
 			});
 			newDocumentButton.setEnabled(false);
+
+			//LB.Add: Document menu: import documents from html file
+			Icon importHTMLIcon = new ImageIcon(getClass().getResource(
+					"/icons/table_add.png"));
+			importHTMLButton = new JMenuItem("Import from  HTML-file(s)/URL(s)...", 
+					importHTMLIcon);
+			importHTMLButton.setToolTipText( "Import document(s) from html-file(s) or webpage(s)" );
+			documentMenu.add(importHTMLButton);
+			importHTMLButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					new ImportHTMLWebpageTab();
+				}
+			});
+			importHTMLButton.setEnabled(false);
 
 			//Document menu: change document properties
 			Icon changeDocumentIcon = new ImageIcon(getClass().getResource(

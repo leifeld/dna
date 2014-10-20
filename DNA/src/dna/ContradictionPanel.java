@@ -78,8 +78,9 @@ public class ContradictionPanel extends JPanel {
 						} else {
 							Dna.dna.gui.sidebarPanel.statementTable
 							.changeSelection(viewId, 0, false, false);
-							int docId = Dna.dna.db.getStatement(nodeInt).getDocumentId();
-							Dna.dna.gui.textPanel.selectStatement(nodeInt, docId);
+							Dna.dna.gui.sidebarPanel.highlightStatementInText(nodeInt);
+							//int docId = Dna.dna.db.getStatement(nodeInt).getDocumentId();
+							//Dna.dna.gui.textPanel.selectStatement(nodeInt, docId);
 						}
 					}
 				} catch (NullPointerException npe) { }
