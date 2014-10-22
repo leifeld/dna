@@ -26,7 +26,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
@@ -50,19 +52,19 @@ import org.jsoup.select.Elements;
  * Class: ImportWebpage 
  * Import one/multiple links and parse them into one/multiple documents
  */
-//TODO: Warning 'no internet connection'
+//TODO: Add Warning 'no internet connection'
 @SuppressWarnings("serial")
 class ImportWebpage extends JPanel {
 
 	String dbfile;
 	JPanel fieldsPanel, newHTMLPanel;
 	JLabel noteLabel, pathLabel, elementTitle, elementSection, elementTextBody, 
-			elementDate, coderLabel, sourceLabel, typeLabel;
+	elementDate, coderLabel, sourceLabel, typeLabel;
 	JXLabel explanationLabel;
 	JButton okButton, previewButton, importButton;
 	JRadioButton linkRadioButton, linkListRadioButton, dateRadioButton;
 	JTextField pathNameField, elementTitleField, elementSectionField, 
-			elementTextField, elementDateField;
+	elementTextField, elementDateField;
 	JTextField   fileName  = new JTextField(15);
 	SpinnerDateModel dateModel;
 	JSpinner dateSpinner;
@@ -154,9 +156,8 @@ class ImportWebpage extends JPanel {
 		gbc.gridx = 4;
 		gbc.gridwidth = 1; 
 		gbc.insets = new Insets(1, 0, 1, 0);
-		//TODO: get icon with document and magnifying glass
 		Icon previewIcon = new ImageIcon(getClass().
-				getResource("/icons/layout_edit.png"));
+				getResource("/icons/application_form_magnify.png"));
 		previewButton = new JButton("preview", previewIcon);
 		previewButton.setToolTipText( "preview one document based on the " +
 				"information you entered in this window" );
@@ -496,6 +497,7 @@ class ImportWebpage extends JPanel {
 			String dateElementPreview = elementDateField.getText();
 			DateExtractor de = new DateExtractor();
 			String datefull = file.select(dateElementPreview).text();
+			System.out.println("undlos");
 			dateHTML = (Date) de.extractDate(datefull);
 		}
 		else{
@@ -543,11 +545,20 @@ class ImportWebpage extends JPanel {
 		fieldsPanelPreview.add(dateLabelPreview, gbc);
 
 		gbc.gridx++;
-		JLabel datePreview = new JLabel(dateHTML.toString());
-		datePreview.setBackground(Color.white);
-		datePreview.setOpaque(true);
-		datePreview.setPreferredSize(new Dimension(480, 18));
-		fieldsPanelPreview.add(datePreview, gbc);
+		try{
+			JLabel datePreview = new JLabel(dateHTML.toString());
+			datePreview.setBackground(Color.white);
+			datePreview.setOpaque(true);
+			datePreview.setPreferredSize(new Dimension(480, 18));
+			fieldsPanelPreview.add(datePreview, gbc);
+		}
+		//TODO: Put warning into usual DNA-warnings format
+		catch(NullPointerException e) {
+			String message = "\n Date not extractable.\nUse 'set date"
+					+ " manually'-option."; 
+			JOptionPane.showMessageDialog(new JFrame(), message, "Warning",
+					JOptionPane.ERROR_MESSAGE);
+		}
 
 		// coder
 		gbc.gridy++;
@@ -636,7 +647,7 @@ class ImportWebpage extends JPanel {
 		previewJDialog.setVisible(true);
 		//previewJDialog.pack();
 	}
-	
+
 	/*
 	 * Method: read in file one line at a time
 	 */

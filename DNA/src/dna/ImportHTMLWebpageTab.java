@@ -14,7 +14,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 
-//TODO: Add buffering-symbol when importing documents
+// TODO: Add buffering-symbol when importing documents
+/* TODO: Error message if one of the xml-elements don't exist/are not found 
+ * in document (add try-catch for each of the elements where Strings are 
+ * extracted with?) */
+
 public class ImportHTMLWebpageTab extends JFrame {
 	private static final long serialVersionUID = 1L;
 

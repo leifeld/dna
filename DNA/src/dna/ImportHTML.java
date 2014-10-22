@@ -24,7 +24,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
@@ -149,9 +151,8 @@ class ImportHTML extends JPanel {
 		gbc.gridx = 4;
 		gbc.gridwidth = 1; 
 		gbc.insets = new Insets(1, 0, 1, 0);
-		//TODO: get icon with document and magnifying glass
 		Icon previewIcon = new ImageIcon(getClass().
-				getResource("/icons/layout_edit.png"));
+				getResource("/icons/application_form_magnify.png"));
 		previewButton = new JButton("preview", previewIcon);
 		previewButton.setToolTipText( "preview one document based on the " +
 				"information entered in this window" );
@@ -519,7 +520,7 @@ class ImportHTML extends JPanel {
 			String dateElementPreview = elementDateField.getText();
 			DateExtractor de = new DateExtractor();
 			String datefull = file.select(dateElementPreview).get(1).text();
-			dateHTML = (Date) de.extractDate(datefull);
+			dateHTML = (Date) de.extractDate(datefull);		
 		}
 		else{
 			dateHTML = (Date) dateSpinner.getValue();
@@ -566,11 +567,20 @@ class ImportHTML extends JPanel {
 		fieldsPanelPreview.add(dateLabelPreview, gbc);
 
 		gbc.gridx++;
-		JLabel datePreview = new JLabel(dateHTML.toString());
-		datePreview.setBackground(Color.white);
-		datePreview.setOpaque(true);
-		datePreview.setPreferredSize(new Dimension(480, 18));
-		fieldsPanelPreview.add(datePreview, gbc);
+		try{
+			JLabel datePreview = new JLabel(dateHTML.toString());
+			datePreview.setBackground(Color.white);
+			datePreview.setOpaque(true);
+			datePreview.setPreferredSize(new Dimension(480, 18));
+			fieldsPanelPreview.add(datePreview, gbc);
+		}
+		//TODO: Put warning into usual DNA-warnings format
+		catch(NullPointerException e) {
+			String message = "\n Date not extractable.\nUse 'set date"
+					+ " manually'-option."; 
+			JOptionPane.showMessageDialog(new JFrame(), message, "Warning",
+					JOptionPane.ERROR_MESSAGE);
+		}
 
 		// coder
 		gbc.gridy++;

@@ -7,13 +7,16 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class Dna {
-	String version = "2.0 alpha 7";
-	String date = "October 20, 2014";
+	String version = "2.0 alpha 8";
+	String date = "October 22, 2014";
 	static Dna dna;
 	DataAccess db;
 	Gui gui;
@@ -122,9 +125,18 @@ public class Dna {
 			if (dateManuallySelected == false){
 				DateExtractor de = new DateExtractor();
 				String datefull = file.select(dateElement).get(i).text();
-				Date dateHTML = (Date) de.extractDate(datefull);
-				addDocument(title, text, dateHTML, coder, source, section, 
-						notes, type);
+				try{
+					Date dateHTML = (Date) de.extractDate(datefull);
+					addDocument(title, text, dateHTML, coder, source, section, 
+							notes, type);
+				}
+				//TODO: Put warning into usual DNA-warnings format
+				catch(NullPointerException e) {
+					String message = "\n Date not extractable.\nUse 'set date"
+							+ " manually'-option."; 
+					JOptionPane.showMessageDialog(new JFrame(), message, "Warning",
+							JOptionPane.ERROR_MESSAGE);
+				}
 			}else{
 				addDocument(title, text, dateManually, coder, source, section, 
 						notes, type);
@@ -172,9 +184,18 @@ public class Dna {
 		if (dateManuallySelected == false){
 			DateExtractor de = new DateExtractor();
 			String datefull = file.select(dateElement).text();
-			Date dateHTML = (Date) de.extractDate(datefull);
-			addDocument(title, text, dateHTML, coder, source, section, notes, 
-					type);
+			try{
+				Date dateHTML = (Date) de.extractDate(datefull);
+				addDocument(title, text, dateHTML, coder, source, section, notes, 
+						type);
+			}
+			//TODO: Put warning into usual DNA-warnings format
+			catch(NullPointerException e) {
+				String message = "\n Date not extractable.\nUse 'set date"
+						+ " manually'-option."; 
+				JOptionPane.showMessageDialog(new JFrame(), message, "Warning",
+						JOptionPane.ERROR_MESSAGE);
+			}
 		}else{
 			addDocument(title, text, dateManually, coder, source, section, 
 					notes, type);
