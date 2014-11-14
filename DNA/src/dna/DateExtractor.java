@@ -16,7 +16,6 @@ public class DateExtractor {
 	 * @return Date object
 	 * @throws ParseException 
 	 */
-	//TODO: Update Warning "date not extractable. Choose 'set date manually'-option"
 	public Date extractDate(String text) throws ParseException {
 		Date date = null;
 		boolean dateFound = false;

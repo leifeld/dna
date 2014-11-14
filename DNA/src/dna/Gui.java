@@ -36,7 +36,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
 public class Gui extends JFrame {
-	
+
 	/**
 	 * DNA GUI
 	 */
@@ -62,7 +62,7 @@ public class Gui extends JFrame {
 		//		dispose();
 		//	}
 		//});
-		
+
 		documentPanel = new DocumentPanel();
 		textPanel = new TextPanel();
 
@@ -73,27 +73,27 @@ public class Gui extends JFrame {
 		codingPanel.add(menuBar, BorderLayout.NORTH);
 		statusBar = new StatusBar();
 		codingPanel.add(statusBar, BorderLayout.SOUTH);
-		
+
 		sidebarPanel = new SidebarPanel();
 
 		JPanel statementSplitPane = new JPanel(new BorderLayout());
 		statementSplitPane.add(codingSplitPane, BorderLayout.CENTER);
 		codingPanel.add(statementSplitPane, BorderLayout.CENTER);
 		codingPanel.add(sidebarPanel, BorderLayout.EAST);
-		
+
 		c.add(codingPanel);
-		
+
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
-		
+
 	}
 
 	class StatusBar extends JPanel {
-		
+
 		private static final long serialVersionUID = 1L;
 		JLabel currentFileLabel, loading;
-		
+
 		public StatusBar() {
 			this.setLayout( new BorderLayout() );
 			currentFileLabel = new JLabel("Current file: none");
@@ -102,7 +102,7 @@ public class Gui extends JFrame {
 			loading.setVisible(false);
 			this.add(loading, BorderLayout.EAST);
 		}
-		
+
 		public void resetLabel() {
 			String fn = Dna.dna.db.getFileName();
 			if (fn == null) {
@@ -112,14 +112,14 @@ public class Gui extends JFrame {
 			}
 		}
 	}
-	
-	
+
+
 	public class DocumentPanel extends JScrollPane {
-		
+
 		private static final long serialVersionUID = 1L;
 		DocumentContainer documentContainer;
 		DocumentTable documentTable;
-		
+
 		public DocumentPanel() {
 			documentContainer = new DocumentContainer();
 			documentTable = new DocumentTable();
@@ -129,9 +129,9 @@ public class Gui extends JFrame {
 			documentTable.getColumnModel().getColumn(0).setPreferredWidth(680);
 			documentTable.getColumnModel().getColumn(1).setPreferredWidth(100);
 		}
-		
+
 		public class DocumentTable extends JTable {
-			
+
 			private static final long serialVersionUID = 1L;
 
 			public DocumentTable() {
@@ -139,7 +139,7 @@ public class Gui extends JFrame {
 				setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 				getTableHeader().setReorderingAllowed( false );
 				putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
-				
+
 				getSelectionModel().addListSelectionListener(new 
 						ListSelectionListener() {
 					public void valueChanged(ListSelectionEvent e) {
@@ -150,28 +150,28 @@ public class Gui extends JFrame {
 						if (selectedRow == -1) {
 							textPanel.setDocumentText("");
 							Dna.dna.gui.menuBar.changeDocumentButton.
-									setEnabled(false);
+							setEnabled(false);
 							Dna.dna.gui.menuBar.removeDocumentButton.
-									setEnabled(false);
+							setEnabled(false);
 						} else {
 							int id = documentPanel.documentContainer.
 									get(selectedRow).getId();
 							Document document = Dna.dna.db.getDocument(id);
 							String text = document.getText();
 							textPanel.setDocumentId(id);
-					    	textPanel.setDocumentText(text);
-					    	textPanel.setEnabled(true);
+							textPanel.setDocumentText(text);
+							textPanel.setEnabled(true);
 							Dna.dna.gui.menuBar.changeDocumentButton.
-									setEnabled(true);
+							setEnabled(true);
 							Dna.dna.gui.menuBar.removeDocumentButton.
-									setEnabled(true);
+							setEnabled(true);
 						}
 						if (Dna.dna.gui.sidebarPanel.statementFilter.
-									showCurrent.isSelected()) {
+								showCurrent.isSelected()) {
 							Dna.dna.gui.sidebarPanel.statementFilter.
-									documentFilter();
+							documentFilter();
 						}
-						
+
 						if (Dna.dna.db.getFileName() != null) {
 							textPanel.paintStatements();
 						}
@@ -183,14 +183,15 @@ public class Gui extends JFrame {
 	}
 
 	class MenuBar extends JMenuBar {
-		
+
 		private static final long serialVersionUID = 1L;
-		
+
 		JMenu fileMenu, documentMenu, exportMenu, settingsMenu;
 		JMenuItem closeFile, newDocumentButton, importHTMLButton,  
-				typeEditorButton,changeDocumentButton, removeDocumentButton, 
-				importOldButton, networkButton, aboutButton;
-		
+		typeEditorButton,changeDocumentButton, removeDocumentButton, 
+		importOldButton, networkButton, aboutButton, 
+		recodeVariableButton;
+
 		public MenuBar() {
 			fileMenu = new JMenu("File");
 			this.add(fileMenu);
@@ -200,7 +201,7 @@ public class Gui extends JFrame {
 			this.add(exportMenu);
 			settingsMenu = new JMenu("Settings");
 			this.add(settingsMenu);
-			
+
 			//File menu: new DNA database file...
 			Icon databaseIcon = new ImageIcon(getClass().getResource(
 					"/icons/database.png"));
@@ -214,7 +215,7 @@ public class Gui extends JFrame {
 					fc.setFileFilter(new FileFilter() {
 						public boolean accept(File f) {
 							return f.getName().toLowerCase().endsWith(".dna") 
-							|| f.isDirectory();
+									|| f.isDirectory();
 						}
 						public String getDescription() {
 							return "Discourse Network Analyzer database " +
@@ -233,7 +234,7 @@ public class Gui extends JFrame {
 					}
 				}
 			});
-			
+
 			//File menu: open DNA file
 			Icon openIcon = new ImageIcon(getClass().getResource(
 					"/icons/folder.png"));
@@ -242,13 +243,13 @@ public class Gui extends JFrame {
 			openMenuItem.setToolTipText( "open an existing database file..." );
 			openMenuItem.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					
+
 					//File filter
 					JFileChooser fc = new JFileChooser(); //TODO: THIS SHOULD REMEMBER THE LAST DIRECTORY USED (CAN BE PUT IN BRACKETS AS A STRING)
 					fc.setFileFilter(new FileFilter() {
 						public boolean accept(File f) {
 							return f.getName().toLowerCase().endsWith(".dna")
-							|| f.isDirectory();
+									|| f.isDirectory();
 						}
 						public String getDescription() {
 							return "Discourse Network Analyzer database " +
@@ -270,7 +271,7 @@ public class Gui extends JFrame {
 				}
 			});
 			fileMenu.add(openMenuItem);
-			
+
 			//File menu: open remote database
 			Icon dbIcon = new ImageIcon(getClass().getResource(
 					"/icons/database_link.png"));
@@ -284,7 +285,7 @@ public class Gui extends JFrame {
 				}
 			});
 			fileMenu.add(dbMenuItem);
-			
+
 			//File menu: close current database file
 			Icon closeIcon = new ImageIcon( getClass().getResource(
 					"/icons/cancel.png") );
@@ -310,7 +311,7 @@ public class Gui extends JFrame {
 					dispose();
 				}
 			});
-			
+
 			//Document menu: add new document
 			Icon newDocumentIcon = new ImageIcon(getClass().getResource(
 					"/icons/table_add.png"));
@@ -357,7 +358,20 @@ public class Gui extends JFrame {
 				}
 			});
 			changeDocumentButton.setEnabled(false);
-			
+
+			//Document menu: recode variables
+			Icon recodeVariableIcon = new ImageIcon(getClass().getResource(
+					"/icons/pencil.png"));
+			//TODO: pencil-icon? or database_edit.png?
+			recodeVariableButton = new JMenuItem("Recode variables...", 
+					recodeVariableIcon);
+			recodeVariableButton.setToolTipText("recode variables");
+			documentMenu.add(recodeVariableButton);
+			recodeVariableButton.addActionListener(new ActionListener(){
+				public void actionPerformed(ActionEvent e){
+					new Recode();
+				}
+			});
 
 			//Document menu: delete selected document
 			Icon removeDocumentIcon = new ImageIcon(getClass().getResource(
@@ -370,8 +384,8 @@ public class Gui extends JFrame {
 				public void actionPerformed(ActionEvent e) {
 					int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, 
 							"Are you sure you want to delete the selected " +
-							"document?", "Confirmation required", 
-							JOptionPane.YES_NO_OPTION);
+									"document?", "Confirmation required", 
+									JOptionPane.YES_NO_OPTION);
 					int row = Dna.dna.gui.documentPanel.documentTable.
 							getSelectedRow();
 					if (row != -1 && dialog == 0) {
@@ -382,7 +396,7 @@ public class Gui extends JFrame {
 				}
 			});
 			removeDocumentButton.setEnabled(false);
-			
+
 			//Document menu: import old DNA dataset
 			Icon importOldIcon = new ImageIcon(getClass().getResource(
 					"/icons/table_add.png"));
@@ -393,13 +407,13 @@ public class Gui extends JFrame {
 			documentMenu.add(importOldButton);
 			importOldButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					
+
 					//File filter
 					JFileChooser fc = new JFileChooser();
 					fc.setFileFilter(new FileFilter() {
 						public boolean accept(File f) {
 							return f.getName().toLowerCase().endsWith(".dna")
-							|| f.isDirectory();
+									|| f.isDirectory();
 						}
 						public String getDescription() {
 							return "DNA 1.xx XML file " +
@@ -465,40 +479,40 @@ public class Gui extends JFrame {
 
 		}
 	}
-	
+
 	public class SQLConnectionDialog extends JFrame {
-		
+
 		private static final long serialVersionUID = 1L;
 		JTextField connectionField, loginField, pwField, dbField;
 		JButton connectButton, cancelButton;
 		JRadioButton mysqlButton, mssqlButton;
 		JLabel dbLabel, connectionLabel;
-		
+
 		public SQLConnectionDialog () {
-	        this.setTitle("Enter remote SQL connection details.");
-	        this.setDefaultCloseOperation(JFrame.
-	        		DISPOSE_ON_CLOSE);
-	        Icon mysqlIcon = new ImageIcon(getClass().getResource(
+			this.setTitle("Enter remote SQL connection details.");
+			this.setDefaultCloseOperation(JFrame.
+					DISPOSE_ON_CLOSE);
+			Icon mysqlIcon = new ImageIcon(getClass().getResource(
 					"/icons/database_link.png"));
 			this.setIconImage(((ImageIcon) mysqlIcon).getImage());
 			this.setLayout(new FlowLayout(FlowLayout.LEFT));
 			JPanel panel = new JPanel(new GridBagLayout());
-	        GridBagConstraints gbc = new GridBagConstraints();
-	        gbc.insets = new Insets(3, 3, 3, 3);
-	        gbc.fill = GridBagConstraints.BOTH;
-	        gbc.gridx = 0;
-	        gbc.gridy = 0;
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.insets = new Insets(3, 3, 3, 3);
+			gbc.fill = GridBagConstraints.BOTH;
+			gbc.gridx = 0;
+			gbc.gridy = 0;
 
-	        connectionLabel = new JLabel("mysql://", JLabel.TRAILING);
-	        connectionField = new JTextField("");
-	        connectionField.setColumns(30);
-	        
-	        dbLabel = new JLabel("Database:", JLabel.TRAILING);
-	        dbField = new JTextField();
-	        
-	        JLabel typeLabel = new JLabel("DB type:", JLabel.TRAILING);
-	        panel.add(typeLabel, gbc);
-	        gbc.gridx++;
+			connectionLabel = new JLabel("mysql://", JLabel.TRAILING);
+			connectionField = new JTextField("");
+			connectionField.setColumns(30);
+
+			dbLabel = new JLabel("Database:", JLabel.TRAILING);
+			dbField = new JTextField();
+
+			JLabel typeLabel = new JLabel("DB type:", JLabel.TRAILING);
+			panel.add(typeLabel, gbc);
+			gbc.gridx++;
 			mysqlButton = new JRadioButton("mySQL");
 			mysqlButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -513,7 +527,7 @@ public class Gui extends JFrame {
 			dbLabel.setEnabled(false);
 			panel.add(mysqlButton, gbc);
 			gbc.gridx++;
-	        gbc.gridwidth = 2;
+			gbc.gridwidth = 2;
 			mssqlButton = new JRadioButton("MS SQL Server");
 			mssqlButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -528,13 +542,13 @@ public class Gui extends JFrame {
 			buttonGroup.add(mssqlButton);
 			gbc.gridx = 0;
 			gbc.gridy++;
-	        gbc.gridwidth = 1;
-	        
-	        panel.add(connectionLabel, gbc);
-	        gbc.gridx++;
-	        gbc.gridwidth = 3;
-	        panel.add(connectionField, gbc);
-	        DocumentListener dl = new DocumentListener() {
+			gbc.gridwidth = 1;
+
+			panel.add(connectionLabel, gbc);
+			gbc.gridx++;
+			gbc.gridwidth = 3;
+			panel.add(connectionField, gbc);
+			DocumentListener dl = new DocumentListener() {
 				public void changedUpdate(DocumentEvent e) {
 					checkButton();
 				}
@@ -549,8 +563,8 @@ public class Gui extends JFrame {
 					if (connectionField.getText().equals("") || loginField.
 							getText().equals("") || pwField.getText().
 							equals("") || connectionField.getText().equals(
-							"mysql://") || (!mysqlButton.isSelected() && 
-							!mssqlButton.isSelected())) {
+									"mysql://") || (!mysqlButton.isSelected() && 
+											!mssqlButton.isSelected())) {
 						connectButton.setEnabled(false);
 					}
 				}
@@ -558,35 +572,35 @@ public class Gui extends JFrame {
 			connectionField.getDocument().addDocumentListener(dl);
 			gbc.gridx--;
 			gbc.gridy++;
-	        gbc.gridwidth = 1;
-	        
-	        panel.add(dbLabel, gbc);
-	        gbc.gridx++;
-	        
-	        panel.add(dbField, gbc);
-	        gbc.gridwidth = 1;
-	        gbc.gridy++;
-	        gbc.gridx = 0;
-	        JLabel loginLabel = new JLabel("User name:", JLabel.TRAILING);
-	        panel.add(loginLabel, gbc);
-	        gbc.gridx++;
-	        loginField = new JTextField(10);
-	        loginField.setText("");
+			gbc.gridwidth = 1;
+
+			panel.add(dbLabel, gbc);
+			gbc.gridx++;
+
+			panel.add(dbField, gbc);
+			gbc.gridwidth = 1;
+			gbc.gridy++;
+			gbc.gridx = 0;
+			JLabel loginLabel = new JLabel("User name:", JLabel.TRAILING);
+			panel.add(loginLabel, gbc);
+			gbc.gridx++;
+			loginField = new JTextField(10);
+			loginField.setText("");
 			loginField.getDocument().addDocumentListener(dl);
-	        panel.add(loginField, gbc);
-	        gbc.gridx++;
-	        JLabel pwLabel = new JLabel("Password:", JLabel.TRAILING);
-	        panel.add(pwLabel, gbc);
-	        gbc.gridx++;
-	        pwField = new JTextField(10);
-	        pwField.setText("");
+			panel.add(loginField, gbc);
+			gbc.gridx++;
+			JLabel pwLabel = new JLabel("Password:", JLabel.TRAILING);
+			panel.add(pwLabel, gbc);
+			gbc.gridx++;
+			pwField = new JTextField(10);
+			pwField.setText("");
 			pwField.getDocument().addDocumentListener(dl);
-	        panel.add(pwField, gbc);
-	        gbc.gridx = 0;
-	        gbc.gridy++;
-	        gbc.gridwidth = 2;
-	        connectButton = new JButton("Connect");
-	        connectButton.addActionListener(new ActionListener() {
+			panel.add(pwField, gbc);
+			gbc.gridx = 0;
+			gbc.gridy++;
+			gbc.gridwidth = 2;
+			connectButton = new JButton("Connect");
+			connectButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					String url = connectionField.getText();
 					if (mysqlButton.isSelected()) {
@@ -611,21 +625,21 @@ public class Gui extends JFrame {
 					dispose();
 				}
 			});
-	        connectButton.setEnabled(false);
-	        cancelButton = new JButton("Cancel");
-	        cancelButton.addActionListener(new ActionListener() {
+			connectButton.setEnabled(false);
+			cancelButton = new JButton("Cancel");
+			cancelButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					dispose();
 				}
 			});
-	        panel.add(connectButton, gbc);
-	        gbc.gridx++;
-	        gbc.gridx++;
-	        panel.add(cancelButton, gbc);
-	        this.add(panel);
+			panel.add(connectButton, gbc);
+			gbc.gridx++;
+			gbc.gridx++;
+			panel.add(cancelButton, gbc);
+			this.add(panel);
 			this.pack();
-	        this.setLocationRelativeTo(null);
-	        this.setVisible(true);
+			this.setLocationRelativeTo(null);
+			this.setVisible(true);
 		}
 	}
 }

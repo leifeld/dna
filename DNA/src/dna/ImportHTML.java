@@ -499,13 +499,13 @@ class ImportHTML extends JPanel {
 		org.jsoup.nodes.Document file = Jsoup.parse(input, "UTF-8");
 
 		// get input variables
-		String title = file.select(elementTitleField.getText()).get(1).text();
-		String section = file.select(elementSectionField.getText()).get(1).text();	
+		String title = file.select(elementTitleField.getText()).get(0).text();
+		String section = file.select(elementSectionField.getText()).get(0).text();	
 		String source = (String) sourceBox.getSelectedItem();
 		String coder = (String) coderBox.getSelectedItem();
 		String type = (String) typeBox.getSelectedItem();
 		String notes = (String) notesArea.getText();
-		Element textTemp = file.select(elementTextField.getText()).get(1);
+		Element textTemp = file.select(elementTextField.getText()).get(0);
 		textTemp.select("p").prepend("CODE_LINEBREAK_1234");
 		textTemp.select("br").append("CODE_LINEBREAK_1234");
 		String textTempString = textTemp.text();
@@ -519,7 +519,7 @@ class ImportHTML extends JPanel {
 		if (dateRadioButton.isSelected() == false){
 			String dateElementPreview = elementDateField.getText();
 			DateExtractor de = new DateExtractor();
-			String datefull = file.select(dateElementPreview).get(1).text();
+			String datefull = file.select(dateElementPreview).get(0).text();
 			dateHTML = (Date) de.extractDate(datefull);		
 		}
 		else{

@@ -213,6 +213,17 @@ public class DataAccess {
 						"FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), " + 
 						"FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID))"
 				);
+		//LB.Add:
+		executeStatement(
+				"CREATE TABLE IF NOT EXISTS VARIABLEENTRYLIST(" +
+						//LB.Comment: No primary key, otherwise you cannot add same label for different variable
+						//"Label TEXT NOT NULL PRIMARY KEY," +
+						"Label TEXT," +
+						"StatementType TEXT," +
+						"VariableName TEXT," +
+						"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label)," +
+						"FOREIGN KEY(VariableName) REFERENCES VARIABLE(Variable))"
+				);	
 
 		if (create == true) {
 			createDefaultTypes();
@@ -292,6 +303,17 @@ public class DataAccess {
 							"FOREIGN KEY(StatementType) REFERENCES " +
 							"STATEMENTTYPE(Label), " +
 							"PRIMARY KEY(ID))"
+					);
+		}
+		//LB.Add
+		if (!al.contains("VARIABLEENTRYLIST")) {
+			executeStatement(
+					"CREATE TABLE IF NOT EXISTS VARIABLEENTRYLIST(" + 
+							"Label VARCHAR(200), " + 
+							"StatementType VARCHAR(200), " +
+							"VariableName VARCHAR(200), " + 
+							"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label), " +
+							"FOREIGN KEY(VariableName) REFERENCES VARIABLES(Variable) " 
 					);
 		}
 		if(!al.contains("STATEMENTS")) {
@@ -388,6 +410,17 @@ public class DataAccess {
 							"FOREIGN KEY(StatementType) REFERENCES " +
 							"STATEMENTTYPE(Label), " +
 							"PRIMARY KEY(ID))"
+					);
+		}
+		//LB.Add:
+		if (!al.contains("VARIABLEENTRYLIST")) {
+			executeStatement(
+					"CREATE TABLE VARIABLEENTRYLIST(" + 
+							"Label NVARCHAR(200), " + 
+							"StatementType NVARCHAR(200), " +
+							"VariableName NVARCHAR(200), " + 
+							"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label), " +
+							"FOREIGN KEY(VariableName) REFERENCES VARIABLES(Variable)"
 					);
 		}
 		if(!al.contains("STATEMENTS")) {
@@ -803,6 +836,66 @@ public class DataAccess {
 		return idlist;
 	}
 
+	/**LB.Add:
+	 * TODO: fix stuff with brackets
+	 * Match a variable entry (full entry) against a pattern and return matching statement IDs.
+	 * 
+	 * @param statementType  Label of the statement type/name of the table.
+	 * @param variable       Name of the variable in the table.
+	 * @param pattern        Regex against which to compare the cell entry.
+	 * @return               An array list of matching statement IDs.
+	 */
+	public ArrayList<Integer> getVariableEntryMatch(String statementType, 
+			String variable, String pattern) {
+		String dt = getDataType(variable, statementType);
+		ArrayList<Integer> idlist = new ArrayList<Integer>();
+
+		Connection connection = null;
+		Statement statement = null;
+		ResultSet resultSet = null;
+		try {
+			if (dbtype.equals("sqlite")) {
+				connection = getSQLiteConnection();
+			} else if (dbtype.equals("mysql")) {
+				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
+			}
+			statement = connection.createStatement();
+			resultSet = statement.executeQuery("SELECT StatementID, " + 
+					variable + " FROM " + statementType);
+			if (resultSet.next()) {
+				do {
+					int id = resultSet.getInt("StatementID");
+					String s = "";
+					if (dt.equals("short text") || dt.equals("long text")) {
+						s = resultSet.getString(variable);
+					} else {
+						int i = resultSet.getInt(variable);
+						s = new Integer(i).toString();
+					}
+					//LB.Change: equals() instead of regex
+					if (s.equals(pattern)){
+						idlist.add(id);
+					}
+				} while (resultSet.next());
+			}
+			resultSet.close();
+			statement.close();
+			connection.close();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try { statement.close(); } catch(Exception e) {}
+			try { connection.close(); } catch(Exception e) {}
+		}
+		return idlist;
+	}
+
 	/**
 	 * Retrieve all variable entries of type int from a statement table.
 	 * 
@@ -811,6 +904,24 @@ public class DataAccess {
 	 * @return               Vector of int entries.
 	 */
 	public int[] getVariableIntEntries(String key, String statementType) {
+		ArrayList<?> al = executeQueryForList("SELECT DISTINCT " + key + 
+				" FROM " + statementType);
+		int[] entries = new int[al.size()];
+		for (int i = 0; i < al.size(); i++) {
+			entries[i] = (Integer) al.get(i);
+		}
+		return entries;
+	}
+
+	/**
+	 * Retrieve all variable entries (including repetitive entries) of type 
+	 * int from a statement table.
+	 * 
+	 * @param key			The name of the variable to be retrieved.
+	 * @param statementType	The type of statement (= the name of the table).
+	 * @return				Vector of int entries.
+	 */
+	public int[] getAllVariableIntEntries(String key, String statementType) {
 		ArrayList<?> al = executeQueryForList("SELECT DISTINCT " + key + 
 				" FROM " + statementType);
 		int[] entries = new int[al.size()];
@@ -830,6 +941,46 @@ public class DataAccess {
 	public String[] getVariableStringEntries(String key, String statementType) {
 		ArrayList<?> al = executeQueryForList("SELECT DISTINCT " + key + 
 				" FROM " + statementType);
+		String[] entries = new String[al.size()];
+		for (int i = 0; i < al.size(); i++) {
+			entries[i] = (String) al.get(i);
+		}
+		return entries;
+	}
+
+	/**
+	 * LB.Add
+	 * Retrieve all variable entries (including repetitive entries) of type 
+	 * String from a statement table.
+	 * 
+	 * @param key			The name of the variable to be retrieved.
+	 * @param statementType The type of statement (= the name of the table).
+	 * @return				Vector of strings with the entries (including duplicates).
+	 */
+	public String[] getAllVariableStringEntries(String key, String statementType) {
+		ArrayList<?> al = executeQueryForList("SELECT " + key + 
+				" FROM " + statementType);
+		String[] entries = new String[al.size()];
+		for (int i = 0; i < al.size(); i++) {
+			entries[i] = (String) al.get(i);
+		}
+		return entries;
+	}
+
+	/**
+	 * LB.Add
+	 * Retrieve all variable entries (including repetitive entries) of type 
+	 * String from a statement table.
+	 * 
+	 * @param key			The name of the variable to be retrieved.
+	 * @param statementType The type of statement (= the name of the table).
+	 * @return				Vector of strings with the entries (including duplicates).
+	 */
+	public String[] getAllVariableStringEntriesWithGivenValue(String key, 
+			String statementType, String variable, int value) {
+		ArrayList<?> al = executeQueryForList("SELECT " + key + 
+				" FROM " + statementType + " WHERE " + variable + " = " +
+				value);
 		String[] entries = new String[al.size()];
 		for (int i = 0; i < al.size(); i++) {
 			entries[i] = (String) al.get(i);
@@ -974,6 +1125,8 @@ public class DataAccess {
 
 		executeStatement("DROP TABLE " + label);
 
+		//TODO: LB delete all entries made in VariableENTRYLIST
+
 		if (al.size() > 0) {
 			System.out.println(al.size() + " statements were removed.");
 		}
@@ -994,7 +1147,18 @@ public class DataAccess {
 				"', '" + statementType + "')");
 
 		executeStatement("ALTER TABLE " + statementType + " ADD " + varName + 
-				" " + dataType);
+				" " + dataType);	
+
+		// LB.Add: if variable is added during coding => initialize variables
+		if (dataType.equals("short text") || dataType.equals("long text")) {
+			executeStatement("UPDATE " + statementType + " SET " + varName + " = ''");
+		}
+		if (dataType.equals("boolean")){
+			executeStatement("UPDATE " + statementType + " SET " + varName + " = -1");
+		}
+		if (dataType.equals("integer")){
+			executeStatement("UPDATE " + statementType + " SET " + varName + " = 0");
+		}
 	}
 
 	/**
@@ -1259,7 +1423,7 @@ public class DataAccess {
 
 		return statements;
 	}
-	
+
 	/**
 	 * Get an array list of statements of a specific statement type.
 	 * 
@@ -1484,7 +1648,59 @@ public class DataAccess {
 					String key = resultSet.getString("Variable");
 					String value = resultSet.getString("DataType");
 					if ( value.equals(variableType)){
-						//problem if variable has no boolean
+						variables.put(key, value);
+					}
+				} while (resultSet.next());
+			}
+			resultSet.close();
+			statement.close();
+			connection.close();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try { statement.close(); } catch(Exception e) {}
+			try { connection.close(); } catch(Exception e) {}
+		}
+
+		return variables;
+	}
+
+	/**
+	 * LB.Add: 
+	 * get Variables for 2 specific variable types (+ by statement type)
+	 * 
+	 * @param statementType 	The statement type from the STATEMENTTYPE table.
+	 * @param variableType		String indicating which variables should be fetched
+	 * @return					variables of a certain type
+	 */
+	public LinkedHashMap<String, String> getVariablesByTypes(
+			String statementType, String variableType1, String variableType2) {
+		LinkedHashMap<String, String> variables = new LinkedHashMap<String, String>();
+		Connection connection = null;
+		Statement statement = null;
+		ResultSet resultSet = null;
+		try {
+			if (dbtype.equals("sqlite")) {
+				connection = getSQLiteConnection();
+			} else if (dbtype.equals("mysql")) {
+				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
+			}
+			statement = connection.createStatement();
+			resultSet = statement.executeQuery(
+					"SELECT * FROM VARIABLES WHERE StatementType = '" + 
+							statementType + "'"
+					);
+			if (resultSet.next()) {
+				do {
+					String key = resultSet.getString("Variable");
+					String value = resultSet.getString("DataType");
+					if ( value.equals(variableType1) | value.equals(variableType2) ){
 						variables.put(key, value);
 					}
 				} while (resultSet.next());
@@ -1756,7 +1972,7 @@ public class DataAccess {
 	 */
 	public void removeRegex(String label) {
 		executeStatement("DELETE FROM REGEX WHERE Label = '" + label + "'");	
-		}
+	}
 
 	/**
 	 * Return the complete list of regular expressions from the REGEX table.
@@ -1765,7 +1981,7 @@ public class DataAccess {
 	 */
 	public ArrayList<Regex> getRegex() {
 		ArrayList<Regex> regex = new ArrayList<Regex>();
-		
+
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -1892,6 +2108,29 @@ public class DataAccess {
 		return(ids);
 	}
 
+	/**LB.Add:
+	 * Retrieve Statement IDs given variable entry and integer/boolean entry.
+	 * @param variableStatType			Statement type of variable
+	 * @param variableName				Variable name
+	 * @param variableEntry				Entry for given variable
+	 * @param integerVariableName		Name of boolean/integer variable
+	 * @param integerVariableEntry		boolean/integer entry for given variable
+	 * @return							List of Statement IDs
+	 */
+	public ArrayList<Integer> getStatementIdsWithVarAndValue(
+			String variableStatType, String variableName, 
+			String variableEntry, String integerVariableName, 
+			int integerVariableEntry) {
+		ArrayList<?> al = executeQueryForList(
+				"SELECT StatementID FROM " + variableStatType + " WHERE " + 
+						variableName +  " = '" + 
+						variableEntry + "' AND " + integerVariableName +
+						" = '" + integerVariableEntry + "'");
+		@SuppressWarnings("unchecked")
+		ArrayList<Integer> ids = (ArrayList<Integer>) al;
+		return(ids);
+	}
+
 	/**
 	 * Remove a document and all statements contained in the document.
 	 * 
@@ -1999,5 +2238,50 @@ public class DataAccess {
 		}
 
 		return id;
+	}
+
+	/**
+	 * Add a String to the VARIABLEENTRYLIST
+	 * @param label				String entry to be added to list
+	 * @param variableName		Name of statement type for variableName
+	 * @param statementType		Name of variable for which list is generated
+	 */
+	public void addEntryToVariableList(String label, String statementType, String variableName) {
+		label = label.replaceAll("'", "''");
+		executeStatement(
+				"INSERT INTO VARIABLEENTRYLIST (Label, StatementType, VariableName) " + 
+						"VALUES('" + label + "','" + statementType + "', '" + variableName + "')"
+				);
+	}
+
+	/**
+	 * Remove a String from the VARIABLEENTRYLIST
+	 * @param label				String entry to be removed from the list
+	 * @param statementType		Name of statement type for variableName
+	 * @param variableName		Name of variable for which list is generated
+	 */
+	public void removeEntryFromVariableList(String label, String statementType, String variableName) {
+		label = label.replaceAll("'", "''");
+		executeStatement("DELETE FROM VARIABLEENTRYLIST WHERE Label = '" + label + 
+				"' AND StatementType = '" + statementType  + 
+				"' AND VariableName = '" + variableName + "'" );
+	}
+
+	/**
+	 * Retrieve all variable entries of type String from a statement table.
+	 * 
+	 * @param key            The name of the variable to be retrieved.
+	 * @param statementType  The type of statement (= the name of the table).
+	 * @return               Vector of strings with the entries.
+	 */
+	public String[] getEntriesFromVariableList(String statementType, String variableName) {
+		ArrayList<?> al = executeQueryForList("SELECT Label" +
+				" FROM VARIABLEENTRYLIST WHERE StatementType = '" + statementType + 
+				"' AND VariableName = '" + variableName + "'" );
+		String[] entries = new String[al.size()];
+		for (int i = 0; i < al.size(); i++) {
+			entries[i] = (String) al.get(i);
+		}
+		return entries;
 	}
 }
