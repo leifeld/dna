@@ -15,8 +15,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class Dna {
-	String version = "2.0 alpha 9";
-	String date = "November 14, 2014"; 
+	String version = "2.0 alpha 10";
+	String date = "November 26, 2014"; 
 	static Dna dna;
 	DataAccess db;
 	Gui gui;
@@ -232,6 +232,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(true);
+		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
@@ -258,6 +259,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(true);
+		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
@@ -285,6 +287,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(true);
+		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
@@ -302,6 +305,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(false);
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
 		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(false);
+		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(false);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(false);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
@@ -316,6 +320,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(true);
+		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);

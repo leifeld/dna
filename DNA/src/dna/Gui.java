@@ -372,6 +372,7 @@ public class Gui extends JFrame {
 					new Recode();
 				}
 			});
+			recodeVariableButton.setEnabled(false);
 
 			//Document menu: delete selected document
 			Icon removeDocumentIcon = new ImageIcon(getClass().getResource(

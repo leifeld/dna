@@ -12,8 +12,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,7 +25,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Scanner;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
@@ -533,10 +534,7 @@ public class Recode extends JDialog {
 		JScrollPane scrollPaneRecode = new JScrollPane (tableRecode);
 		scrollPaneRecode.setPreferredSize(new Dimension(600, 300));
 		scrollPaneRecode.setVerticalScrollBarPolicy(
-				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED); // .VERTICAL_SCROLLBAR_ALWAYS);
-		//TODO: activate vertical scroller if variable entry = longer than table
-		scrollPaneRecode.setHorizontalScrollBarPolicy(
-				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED); 
 
 		// card 2.1: add table + tableHeader to panel
 		JPanel tableRecodeAndHeaderPanel = new JPanel(new BorderLayout());
@@ -678,12 +676,27 @@ public class Recode extends JDialog {
 
 		deleteAllButtonListEntry.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				String entries[] = Dna.dna.db.getEntriesFromVariableList(
-						statementType, newVariableName);
-				for(int i=0; i < entries.length; i++){
-					Dna.dna.db.removeEntryFromVariableList(entries[i],
+				String message = "Would you like to delete all entries from\n"
+						+ " the variable entry list?";
+				Object[] options = {"delete all", "cancel"};
+				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
+						"Warning", 
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE,
+						null,     //do not use a custom Icon
+						options,  //the titles of buttons
+						options[0]); //default button title
+				switch (result) {
+				case 0:
+					String entries[] = Dna.dna.db.getEntriesFromVariableList(
 							statementType, newVariableName);
-					listModel.removeElement(entries[i]);
+					for(int i=0; i < entries.length; i++){
+						Dna.dna.db.removeEntryFromVariableList(entries[i],
+								statementType, newVariableName);
+						listModel.removeElement(entries[i]);
+					}
+				case 1:
+					break;
 				}
 			}
 		});
@@ -758,7 +771,6 @@ public class Recode extends JDialog {
 						return f.getName().toLowerCase().endsWith(".txt")
 								|| f.isDirectory();
 					}
-					//TODO: expand this to .rtf-Documents/etc.
 					public String getDescription() {
 						return "Text file " +
 								"(*.txt)";
@@ -808,9 +820,15 @@ public class Recode extends JDialog {
 
 					// Datensatz bilden
 					boolean select = false;
-					for (int i = 0; i < linesImported.size(); i++) {
+					for (int i = 0; i < linesImported.size(); i++) {	
 						Object[] dataImportFromFile = {select, linesImported.get(i)};
-						tableModelImportFromFile.addRow(dataImportFromFile);
+						if (linesImported.get(i).startsWith("List of "
+								+ "meta-entries for variable") || 
+								linesImported.get(i).equals("")){
+							//do not add to table
+						}else{
+							tableModelImportFromFile.addRow(dataImportFromFile);
+						}
 					}
 
 					// button-panel
@@ -927,7 +945,7 @@ public class Recode extends JDialog {
 				String[] variableListEntries = Dna.dna.db.
 						getEntriesFromVariableList(statementType, 
 								newVariableName);
-				String writeEntries = "List of meta-categories for variable '" + 
+				String writeEntries = "List of meta-entries for variable '" + 
 						newVariableName + "'\n\n";
 				for (int i = 0; i < variableListEntries.length; i++){
 					writeEntries = writeEntries + variableListEntries[i] + "\n";
@@ -941,7 +959,6 @@ public class Recode extends JDialog {
 						return f.getName().toLowerCase().endsWith(".txt")
 								|| f.isDirectory();
 					}
-					//TODO: expand this to .rtf-Documents/etc.
 					public String getDescription() {
 						return "Text file " +
 								"(*.txt)";
@@ -953,9 +970,11 @@ public class Recode extends JDialog {
 				int userSelection = fileChooser.showSaveDialog(saveFilePanel);
 				if (userSelection == JFileChooser.APPROVE_OPTION) {
 					File fileToSave = fileChooser.getSelectedFile();
+					String file_name = fileToSave.toString();
+					if (!file_name.endsWith(".txt"))
+						file_name += ".txt";
 					try {
-						File newTextFile = new File(fileToSave.getAbsolutePath());
-						FileWriter fw = new FileWriter(newTextFile);
+						FileWriter fw = new FileWriter(file_name);
 						fw.write(writeEntries);
 						fw.close();
 
@@ -986,7 +1005,22 @@ public class Recode extends JDialog {
 
 		cancelButtonRecode.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				dispose();
+				String message = "\nWould you like to"
+						+ "close the recode window?\nChanges made will be lost.";
+				Object[] options ={"Yes, close window", "No, keep recoding"};
+				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
+						"Warning", 
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE,
+						null,     
+						options,  	
+						options[0]); 
+				switch (result) {
+				case 0:	
+					dispose();
+				case 1:
+					break;
+				}
 			}
 		});
 
@@ -1032,30 +1066,45 @@ public class Recode extends JDialog {
 
 		goButtonRecode.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// create new variable
-				if (createNewVariable.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableName, 
-							newVariableDataType, 
-							statementType);
-				}
-				// get values from table
-				for (int i = 0; i < tableRecode.getRowCount(); i++) {
-					String oldVarEntry = "";
-					oldVarEntry = (String) tableRecode.getModel().
-							getValueAt(i, 0); 
-					String newVarEntry = "";
-					newVarEntry = (String) tableRecode.getModel().
-							getValueAt(i, 2);
-					// get statement-ID-list where oldVarEntry is included
-					ArrayList<Integer> statIDList = Dna.dna.db.
-							getVariableEntryMatch(statementType, 
-									oldVariableName, oldVarEntry);
-					for (Integer ints: statIDList){
-						Dna.dna.db.changeStatement(ints, newVariableName, 
-								(String) newVarEntry, newVariableDataType);
+				String message = "Would you like to recode the variable(s) as "
+						+ "specified?";
+				Object[] options = {"recode", "cancel"};
+				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
+						"Warning", 
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE,
+						null,     //do not use a custom Icon
+						options,  //the titles of buttons
+						options[0]); //default button title
+				switch (result) {
+				case 0:
+					// create new variable
+					if (createNewVariable.isSelected() == true){
+						Dna.dna.db.addVariable(newVariableName, 
+								newVariableDataType, 
+								statementType);
 					}
+					// get values from table
+					for (int i = 0; i < tableRecode.getRowCount(); i++) {
+						String oldVarEntry = "";
+						oldVarEntry = (String) tableRecode.getModel().
+								getValueAt(i, 0); 
+						String newVarEntry = "";
+						newVarEntry = (String) tableRecode.getModel().
+								getValueAt(i, 2);
+						// get statement-ID-list where oldVarEntry is included
+						ArrayList<Integer> statIDList = Dna.dna.db.
+								getVariableEntryMatch(statementType, 
+										oldVariableName, oldVarEntry);
+						for (Integer ints: statIDList){
+							Dna.dna.db.changeStatement(ints, newVariableName, 
+									(String) newVarEntry, newVariableDataType);
+						}
+					}
+					dispose();
+				case 1:
+					break;
 				}
-				dispose();
 			}
 		});
 
@@ -1137,7 +1186,22 @@ public class Recode extends JDialog {
 
 		cancelButtonBoolean1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				dispose();
+				String message = "\nWould you like to"
+						+ "close the recode window?\nChanges made will be lost.";
+				Object[] options ={"Yes, close window", "No, keep recoding"};
+				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
+						"Warning", 
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE,
+						null,     
+						options,  	
+						options[0]); 
+				switch (result) {
+				case 0:	
+					dispose();
+				case 1:
+					break;
+				}
 			}
 		});
 
@@ -1179,45 +1243,60 @@ public class Recode extends JDialog {
 
 		goButtonBoolean1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				boolean breakNow = false;
-				// task 1: create new variable
-				if (createNewVariable.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableName, 
-							newVariableDataType, 
-							statementType);
-				}
-				if (createNewVariable1.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField1.getText(), 
-							boolean1NewDataType, 
-							statementType);
-				}
-				// task 2: recode boolean/int variables
-				breakNow = recodeBooleanVariables(tableBoolean1, 
-						tableModelBoolean1, boolean1OldName, 
-						boolean1NewName, breakNow);
-				System.out.println("breakNow = " + breakNow);
-				// do task 3 and 4 only if column 4 entries are integers:
-				// task 3: recode chosen variable
-				if (breakNow == false){
-					for (int i = 0; i < tableRecode.getRowCount(); i++) {
-						String oldVarEntry = "";
-						oldVarEntry = (String) tableRecode.getModel().
-								getValueAt(i, 0); //
-						String newVarEntry = "";
-						newVarEntry = (String) tableRecode.getModel().
-								getValueAt(i, 2);
-						// get statement-ID-list where oldVarEntry is included
-						ArrayList<Integer> statIDList = Dna.dna.db.
-								getVariableEntryMatch(statementType, 
-										oldVariableName, oldVarEntry);
-						for (Integer ints: statIDList){
-							Dna.dna.db.changeStatement(ints, 
-									newVariableName, (String) newVarEntry,
-									oldVarDataType);
-						}
+				String message = "Would you like to recode the variable(s) as "
+						+ "specified?";
+				Object[] options = {"recode", "cancel"};
+				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
+						"Warning", 
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE,
+						null,     //do not use a custom Icon
+						options,  //the titles of buttons
+						options[0]); //default button title
+				switch (result) {
+				case 0:
+					boolean breakNow = false;
+					// task 1: create new variable
+					if (createNewVariable.isSelected() == true){
+						Dna.dna.db.addVariable(newVariableName, 
+								newVariableDataType, 
+								statementType);
 					}
-					// task 4: close window
-					dispose();
+					if (createNewVariable1.isSelected() == true){
+						Dna.dna.db.addVariable(newVariableTextField1.getText(), 
+								boolean1NewDataType, 
+								statementType);
+					}
+					// task 2: recode boolean/int variables
+					breakNow = recodeBooleanVariables(tableBoolean1, 
+							tableModelBoolean1, boolean1OldName, 
+							boolean1NewName, breakNow);
+					System.out.println("breakNow = " + breakNow);
+					// do task 3 and 4 only if column 4 entries are integers:
+					// task 3: recode chosen variable
+					if (breakNow == false){
+						for (int i = 0; i < tableRecode.getRowCount(); i++) {
+							String oldVarEntry = "";
+							oldVarEntry = (String) tableRecode.getModel().
+									getValueAt(i, 0); //
+							String newVarEntry = "";
+							newVarEntry = (String) tableRecode.getModel().
+									getValueAt(i, 2);
+							// get statement-ID-list where oldVarEntry is included
+							ArrayList<Integer> statIDList = Dna.dna.db.
+									getVariableEntryMatch(statementType, 
+											oldVariableName, oldVarEntry);
+							for (Integer ints: statIDList){
+								Dna.dna.db.changeStatement(ints, 
+										newVariableName, (String) newVarEntry,
+										oldVarDataType);
+							}
+						}
+						// task 4: close window
+						dispose();
+					}
+				case 1:
+					break;
 				}
 			}
 		});
@@ -3493,16 +3572,23 @@ public class Recode extends JDialog {
 	 * @return							list with read-in lines (one by one)
 	 * @throws FileNotFoundException	
 	 */
-	//TODO: Why does this not work for PC generated txt-files?
 	public static ArrayList<String> getArrayListFromString(File f) 
 			throws FileNotFoundException {
-		Scanner s;
 		ArrayList<String> list = new ArrayList<String>();
-		s = new Scanner(f);
-		while (s.hasNext()) {
-			list.add(s.next());
-		}
-		s.close();
+		try {
+			BufferedReader input = new BufferedReader(new FileReader(f));
+			String row = input.readLine();
+			System.out.println(row);
+			while (row != null){
+				list.add(row);
+				row = input.readLine();
+			}
+			input.close();
+		} catch (IOException e) {
+			String message = "\n Error while reading the file."; 
+			JOptionPane.showMessageDialog(new JFrame(), message, "Warning",
+					JOptionPane.ERROR_MESSAGE);
+		}	
 		return list;
 	}
 

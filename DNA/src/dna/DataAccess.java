@@ -216,8 +216,7 @@ public class DataAccess {
 		//LB.Add:
 		executeStatement(
 				"CREATE TABLE IF NOT EXISTS VARIABLEENTRYLIST(" +
-						//LB.Comment: No primary key, otherwise you cannot add same label for different variable
-						//"Label TEXT NOT NULL PRIMARY KEY," +
+						"ID INTEGER NOT NULL PRIMARY KEY, " +
 						"Label TEXT," +
 						"StatementType TEXT," +
 						"VariableName TEXT," +
@@ -309,11 +308,13 @@ public class DataAccess {
 		if (!al.contains("VARIABLEENTRYLIST")) {
 			executeStatement(
 					"CREATE TABLE IF NOT EXISTS VARIABLEENTRYLIST(" + 
+							"ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
 							"Label VARCHAR(200), " + 
 							"StatementType VARCHAR(200), " +
 							"VariableName VARCHAR(200), " + 
 							"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label), " +
-							"FOREIGN KEY(VariableName) REFERENCES VARIABLES(Variable) " 
+							"FOREIGN KEY(VariableName) REFERENCES VARIABLES(Variable) "  +
+							"PRIMARY KEY(ID))"
 					);
 		}
 		if(!al.contains("STATEMENTS")) {
@@ -416,11 +417,13 @@ public class DataAccess {
 		if (!al.contains("VARIABLEENTRYLIST")) {
 			executeStatement(
 					"CREATE TABLE VARIABLEENTRYLIST(" + 
+							"ID INT IDENTITY(1,1) NOT NULL, " +
 							"Label NVARCHAR(200), " + 
 							"StatementType NVARCHAR(200), " +
 							"VariableName NVARCHAR(200), " + 
 							"FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label), " +
-							"FOREIGN KEY(VariableName) REFERENCES VARIABLES(Variable)"
+							"FOREIGN KEY(VariableName) REFERENCES VARIABLES(Variable)" +
+							"PRIMARY KEY(ID))"
 					);
 		}
 		if(!al.contains("STATEMENTS")) {
@@ -2246,12 +2249,13 @@ public class DataAccess {
 	 * @param variableName		Name of statement type for variableName
 	 * @param statementType		Name of variable for which list is generated
 	 */
-	public void addEntryToVariableList(String label, String statementType, String variableName) {
+	public int addEntryToVariableList(String label, String statementType, String variableName) {
 		label = label.replaceAll("'", "''");
-		executeStatement(
+		int id = executeStatementForId(
 				"INSERT INTO VARIABLEENTRYLIST (Label, StatementType, VariableName) " + 
 						"VALUES('" + label + "','" + statementType + "', '" + variableName + "')"
 				);
+		return id;
 	}
 
 	/**
