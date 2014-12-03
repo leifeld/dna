@@ -1,8 +1,6 @@
 package dna;
 
 import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -27,8 +25,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.swing.BorderFactory;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.DefaultListModel;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -42,7 +41,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.ToolTipManager;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -55,67 +56,39 @@ import org.jdesktop.swingx.JXTextField;
 public class Recode extends JDialog {
 	private static final long serialVersionUID = 1L;
 
-	CardLayout cl;
-	JPanel cards, chooseBooleanPanel, buttonCard2Next, buttonCard3Next, 
-	buttonCard4Next, buttonCard5Next, buttonCard6Next, buttonCard2Go, 
-	buttonCard3Go, buttonCard4Go, buttonCard5Go, buttonCard6Go, 
-	card2Panel, card3Panel, card4Panel, card5Panel, card6Panel, card7Panel,
-	metaListPanel;
-	JDialog openTableImportFromFile;
+	JPanel window2ButtonNext,  window2ButtonGo, metaListPanel, tableBooleanPanel;
+	JDialog openTableImportFromFile, window1, window2, window3;
 	GridBagConstraints gbc;
-	int booleanCounter = 0;
-	JComboBox<String> typeBox, variableBox, newVariableType, 
-	variableBoxOverwrite, newVariableType1, newVariableType2, newVariableType3,
-	newVariableType4, newVariableType5, variableBoxOverwrite1, 
-	variableBoxOverwrite2, variableBoxOverwrite3, variableBoxOverwrite4,
-	variableBoxOverwrite5, variableBox1, variableBox2, variableBox3, 
-	variableBox4, variableBox5;
+	/* LB.Note: Recode variable is called "variable". 
+	 * Additional numerical variable is called "boolean" */
+	JComboBox<String> typeBox, variableBox, newVariableDataTypeBox, 
+	variableOverwriteBox, newBooleanDataTypeBox, booleanOverwriteBox, booleanBox;
 	JList<String> variableEntryList;
-	JRadioButton createNewVariable, overwriteVariable, booleanAffectedButton, 
-	createNewVariable1, createNewVariable2, createNewVariable3, 
-	createNewVariable4, createNewVariable5, overwriteVariable1, 
-	overwriteVariable2, overwriteVariable3, overwriteVariable4,
-	overwriteVariable5;
-	JXTextField newVariableTextField, newVariableEntry, newVariableTextField1,
-	newVariableTextField2, newVariableTextField3, newVariableTextField4,
-	newVariableTextField5;
+	JRadioButton createNewVariable, overwriteVariable, 
+	createNewBoolean, overwriteBoolean;
+	JXTextField newVariableTextField, newBooleanTextField;
 	JButton addVariableButton, removeVariableButton, nextButton, 
-	cancelButtonRecode, previousButtonRecode, goButtonRecode, nextButtonRecode, 
-	cancelButtonBoolean1, previousButtonBoolean1, goButtonBoolean1, 
-	nextButtonBoolean1, cancelButtonBoolean2, previousButtonBoolean2, 
-	goButtonBoolean2, nextButtonBoolean2, cancelButtonBoolean3, 
-	previousButtonBoolean3, goButtonBoolean3, nextButtonBoolean3, 
-	cancelButtonBoolean4, previousButtonBoolean4, goButtonBoolean4, 
-	nextButtonBoolean4, cancelButtonBoolean5, previousButtonBoolean5, 
-	goButtonBoolean5, nextButtonBoolean5, okButtonListEntry;
-	String statementType, oldVariableName, oldVarDataType, oldVarColumnName,
-	newVariableName, newVarColumnName,
-	newVariableDataType, borderName, boolean1OldName, boolean2OldName,
-	boolean3OldName, boolean4OldName, boolean5OldName, boolean1NewName,
-	boolean2NewName, boolean3NewName, boolean4NewName, boolean5NewName,
-	boolean1DataType, boolean2DataType, boolean3DataType, boolean4DataType, 
-	boolean5DataType, boolean1NewColumnName, boolean1OldColumnName, 
-	boolean2OldColumnName, boolean2NewColumnName, boolean3OldColumnName,
-	boolean3NewColumnName, boolean4OldColumnName, boolean4NewColumnName, 
-	boolean5OldColumnName, boolean5NewColumnName, borderNameBoolean1, 
-	borderNameBoolean2, borderNameBoolean3, borderNameBoolean4, 
-	borderNameBoolean5, boolean1NewDataType, boolean2NewDataType, 
-	boolean3NewDataType, boolean4NewDataType, boolean5NewDataType;	
-	ImageIcon cancelIcon, nextIcon, addIcon;
-	DefaultTableModel tableModel, tableModelImportFromFile, tableModelBoolean1, 
-	tableModelBoolean2, tableModelBoolean3, tableModelBoolean4, 
-	tableModelBoolean5; 
-	JXTable tableRecode, tableBoolean1, tableBoolean2, tableBoolean3, 
-	tableBoolean4, tableBoolean5; 
-	DefaultListModel<String> listModel;
+	cancelButtonWindow2, previousButtonWindow2, goButtonWindow2, 
+	nextButtonWindow2, cancelButtonWindow3, previousButtonWindow3, 
+	goButtonWindow3;
+	String statementType, oldVariableName, oldVariableDataType, 
+	oldVariableColumnName, newVariableName, newVariableColumnName,
+	newVariableDataType, oldBooleanName, newBooleanName, booleanDataType, 
+	newBooleanColumnName, oldBooleanColumnName, booleanPanelBorderName, 
+	newBooleanDataType;
+	ImageIcon cancelIcon, nextIcon, addIcon, previousIcon, goIcon;
+	DefaultTableModel tableModel, tableMetaListModel, tableModelImportFromFile, 
+	tableModelBoolean;
+	JXTable tableRecode, tableMetaList, tableBoolean; 
 	File file;
 	ArrayList<String> linesImported;
 	public static String[] columnNames = new String[3];
-	public static String[] columnNamesBooleanPanel1 = new String[5];
-	public static String[] columnNamesBooleanPanel2 = new String[5];
-	public static String[] columnNamesBooleanPanel3 = new String[5];
-	public static String[] columnNamesBooleanPanel4 = new String[5];
-	public static String[] columnNamesBooleanPanel5 = new String[5];
+	public static String columnNameMetaList;
+	public static String[] columnNamesBooleanPanel = new String[5];
+
+	//-------------------------------------------------------------------------	
+	//-------------------------------------------------------------------------
+	//-------------------------------------------------------------------------	
 
 	public Recode() {
 
@@ -125,2016 +98,235 @@ public class Recode extends JDialog {
 				"/icons/pencil.png"));
 		this.setIconImage(networkIcon.getImage());
 		this.setLayout(new FlowLayout(FlowLayout.LEFT));
-		cl = new CardLayout();
-		cards = new JPanel(cl);
 
-		/*---------------------------------------------------------------------
-		 * CARD 1
-		 *--------------------------------------------------------------------*/
-
-		/*
-		 *  CARD 1.1: SELECT VARIABLE
-		 */
-		JPanel chooseVariablePanel = new JPanel(new GridBagLayout());
-		gbc = new GridBagConstraints();
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.insets = new Insets(1, 0, 1, 5);
-
-		// card 1.1: chose variable - label
-		gbc.gridy = 0;
-		gbc.gridx = 0;
-		gbc.gridwidth = 1;
-		gbc.gridheight = 1;
-		JLabel chooseVar = new JLabel("choose variable: ", JLabel.RIGHT);
-		chooseVariablePanel.add(chooseVar, gbc);
-
-		// card 1.1: choose variable type - ComboBox
-		gbc.gridy = 0;
-		gbc.gridx = 1;
-		ArrayList<StatementType> typeList = Dna.dna.db.getStatementTypes();
-		String[] types = new String[typeList.size()];
-		for (int i = 0; i < typeList.size(); i++) {
-			types[i] = typeList.get(i).getLabel();
-		}
-		typeBox = new JComboBox<String>(types);
-		statementType = typeBox.getSelectedItem().toString();
-		chooseVariablePanel.add(typeBox, gbc);
-
-		typeBox.addItemListener(new ItemListener() {
-			public void itemStateChanged(ItemEvent e) {	
-				variableBox.removeAllItems();
-				variableBoxOverwrite.removeAllItems();
-				String type = (String) typeBox.getSelectedItem();
-				if (type != null && !type.equals("")) {
-					HashMap<String, String> variables = Dna.dna.db.
-							getVariablesByTypes(type, "short text", "long text");
-					Iterator<String> keyIterator = variables.keySet().iterator();
-					while (keyIterator.hasNext()){
-						String key = keyIterator.next();
-						variableBox.addItem(key);
-						variableBoxOverwrite.addItem(key);
-					}
-					variableBox.setSelectedIndex(0);
-					variableBoxOverwrite.setSelectedIndex(0);
-				}
-				// if you change type: set boolean counter to false and remove 
-				// all boolean variables
-				booleanAffectedButton.setSelected(false);
-				booleanCounter = 0;
-				int maxComponentCount = (int) chooseBooleanPanel.
-						getComponentCount();
-				for (int i = 3; i < maxComponentCount; i++){
-					int countCompartments = (int) chooseBooleanPanel.
-							getComponentCount()-1;
-					chooseBooleanPanel.remove(countCompartments);
-				}
-				addVariableButton.setEnabled(false);
-				removeVariableButton.setEnabled(false);
-				pack();
-			}
-		});
-
-		// card 1.1: choose variable - ComboBox
-		gbc.gridy = 0;
-		gbc.gridx = 2; 
-		String type = typeBox.getSelectedItem().toString();
-		LinkedHashMap<String, String> variableList = Dna.dna.db.
-				getVariablesByTypes(type, "short text", "long text");
-		Object[] variableKeys = variableList.keySet().toArray();
-		String[] variables = new String[variableKeys.length];
-		for (int i = 0; i < variableKeys.length; i++) {
-			variables[i] = variableKeys[i].toString();
-		}
-		variableBox = new JComboBox<String>(variables);
-		chooseVariablePanel.add(variableBox, gbc);
-
-		// card 1.1: new variable - label
-		gbc.gridy++;
-		gbc.gridx = 0;
-		JLabel newVariableLabel = new JLabel("new variable: ", JLabel.RIGHT);
-		chooseVariablePanel.add(newVariableLabel, gbc);
-
-		// card 1.1: create new variable - radioButton
-		gbc.gridx = 1;
-		createNewVariable = new JRadioButton("create new variable");
-		chooseVariablePanel.add(createNewVariable, gbc);
-
-		createNewVariable.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {	
-				if (createNewVariable.isSelected()){
-					overwriteVariable.setEnabled(false);
-					newVariableTextField.setEnabled(true);
-					newVariableType.setEnabled(true);
-				}else{
-					overwriteVariable.setEnabled(true);
-					newVariableTextField.setEnabled(false);
-					newVariableType.setEnabled(false);
-				}
-				checkIfNextButtonCanBeActivated();
-			}			
-		});	
-
-		// card 1.1: overwrite existing variable - radioButton
-		gbc.gridx = 2;
-		overwriteVariable = new JRadioButton("overwrite existing variable");
-		chooseVariablePanel.add(overwriteVariable, gbc);
-
-		overwriteVariable.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {	
-				if (overwriteVariable.isSelected()){
-					createNewVariable.setEnabled(false);
-					variableBoxOverwrite.setEnabled(true);
-				}else{
-					createNewVariable.setEnabled(true);
-					variableBoxOverwrite.setEnabled(false);
-				}
-				checkIfNextButtonCanBeActivated();
-			}			
-		});
-
-		// card 1.1: set variable name/type - label
-		gbc.gridx = 0; 
-		gbc.gridy++; 
-		JLabel setVariableLabel = new JLabel("set name/type of variable: ", 
-				JLabel.RIGHT);
-		chooseVariablePanel.add(setVariableLabel, gbc);
-
-		// card 1.1: variable name - text field
-		gbc.gridx = 1; 
-		newVariableTextField = new JXTextField("name of new variable");
-		newVariableTextField.setColumns(12);
-		chooseVariablePanel.add(newVariableTextField, gbc);
-		newVariableTextField.setEnabled(false);
-
-		newVariableTextField.getDocument().addDocumentListener(new 
-				DocumentListener() {
-			@Override
-			public void changedUpdate(DocumentEvent e) {
-				checkIfNextButtonCanBeActivated();
-			}
-			@Override
-			public void insertUpdate(DocumentEvent e) {
-				checkIfNextButtonCanBeActivated();
-			}
-			@Override
-			public void removeUpdate(DocumentEvent e) {
-				checkIfNextButtonCanBeActivated();
-			}
-
-		});
-
-		// card 1.1: type for new variable  - comboBox
-		gbc.gridx = 2; 
-		newVariableType = new JComboBox<String>();
-		newVariableType.addItem("short text");
-		newVariableType.addItem("long text");
-		newVariableType.addItem("integer");
-		newVariableType.addItem("boolean");
-		chooseVariablePanel.add(newVariableType, gbc);
-		newVariableType.setEnabled(false);
-
-		// card 1.1: choose variable to be overwritten: 
-		// card 1.1: chose variable 2 - label
-		gbc.gridy++;
-		gbc.gridx = 0;
-		JLabel chooseVarOverwrite = new JLabel("variable to be overwritten: ", 
-				JLabel.RIGHT);
-		chooseVariablePanel.add(chooseVarOverwrite, gbc);
-
-		// card 1.1: choose variable 2 - ComboBox
-		gbc.gridx = 1; 
-		String typeOverwrite = typeBox.getSelectedItem().toString();
-		variableList = Dna.dna.db.getVariablesByTypes(typeOverwrite, 
-				"short text", "long text");
-		Object[] variableKeysOverwrite = variableList.keySet().toArray();
-		String[] variablesOverwrite = new String[variableKeysOverwrite.length];
-		for (int i = 0; i < variableKeysOverwrite.length; i++) {
-			variablesOverwrite[i] = variableKeysOverwrite[i].toString();
-		}
-		variableBoxOverwrite = new JComboBox<String>(variablesOverwrite);
-		chooseVariablePanel.add(variableBoxOverwrite, gbc);
-		variableBoxOverwrite.setEnabled(false);
-
-		// card 1.1: write border around chooseVariablePanel
-		TitledBorder chooseVariablePanelBorder = BorderFactory.
-				createTitledBorder("Choose variable that needs to be recoded");
-		chooseVariablePanel.setBorder(chooseVariablePanelBorder);	
-
-		/*
-		 * CARD 1.2: SET PANEL
-		 */
-		JPanel card1Panel = new JPanel(new BorderLayout());
-		card1Panel.add(chooseVariablePanel, BorderLayout.NORTH);
-
-		/*
-		 * CARD 1.3: BOOLEAN VARIABLE AFFECTED?
-		 */
-		chooseBooleanPanel = new JPanel(new GridBagLayout());
-
-		// card 1.3: is a boolean affected? - label 
-		gbc.gridx = 0; 
-		gbc.gridwidth = 4;
-
-		booleanAffectedButton = new JRadioButton("Are boolean"
-				+ " or integer (i.e. numerical) variables affected by"
-				+ " forthcoming changes?");
-		chooseBooleanPanel.add(booleanAffectedButton, gbc);
-
-		booleanAffectedButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {	
-				if (booleanAffectedButton.isSelected() == true){
-					// task 1: iterate boolean Counter (to 1)
-					booleanCounter++;	
-					// task 3: 
-					try{
-						addChooseVariableToPanel(gbc, chooseBooleanPanel, 
-								booleanCounter);
-					}
-					//TODO: why does warning message appear twice?
-					catch(ArrayIndexOutOfBoundsException iae){
-						// give warning
-						String message = "\n This statement type does not have "
-								+ "any numerical variables."; 
-						JOptionPane.showMessageDialog(new JFrame(), message, 
-								"Warning", JOptionPane.ERROR_MESSAGE);
-						booleanAffectedButton.setSelected(false);
-					}				
-					// task 4: enable Buttons
-					addVariableButton.setEnabled(true);
-					removeVariableButton.setEnabled(true);
-					// task 5: give warning if no boolean in this statement type
-					selectBooleanOrGiveWarning(variableBox1);
-					// task 6: call pack() on panel
-					pack();
-				}
-				if (booleanAffectedButton.isSelected() == false){
-					booleanCounter = 0;
-					int maxComponentCount = (int) chooseBooleanPanel.
-							getComponentCount();
-					for (int i = 3; i < maxComponentCount; i++){
-						int countCompartments = chooseBooleanPanel.
-								getComponentCount()-1;
-						chooseBooleanPanel.remove(countCompartments);
-					}
-					addVariableButton.setEnabled(false);
-					removeVariableButton.setEnabled(false);
-					pack();
-				}
-				checkIfNextButtonCanBeActivated();
-			}
-		});
-
-		// card 1.3: add boolean panel - button
-		gbc.gridx = 0; 
-		gbc.gridy++;
-		gbc.gridwidth = 1;
-		ImageIcon addVariableIcon = new ImageIcon(getClass().getResource(
-				"/icons/add.png"));
-		addVariableButton = new JButton("add boolean", addVariableIcon);
-		addVariableButton.setEnabled(false);
-		addVariableButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				booleanCounter++;	
-				addChooseVariableToPanel(gbc, chooseBooleanPanel,
-						booleanCounter);
-				if (booleanCounter == 5){
-					addVariableButton.setEnabled(false);
-				}
-				pack();
-				checkIfNextButtonCanBeActivated();
-			}
-		});
-		pack();
-		chooseBooleanPanel.add(addVariableButton, gbc);
-
-		// card 1.3: remove boolean panel - button
-		gbc.gridx = 0; 
-		gbc.gridy++;
-		ImageIcon removeVariableIcon = new ImageIcon(getClass().getResource(
-				"/icons/delete.png"));
-		removeVariableButton = new JButton("remove boolean", removeVariableIcon);
-		removeVariableButton.setEnabled(false);
-		removeVariableButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {			
-				//remove last 11 components from the JPanel
-				if (booleanCounter < 6){
-					addVariableButton.setEnabled(true);
-				}
-				for (int i = 1; i < 12; i++){
-					int countCompartments = chooseBooleanPanel.
-							getComponentCount()-1;
-					chooseBooleanPanel.remove(countCompartments);
-					pack();
-				}
-				pack();
-				booleanCounter = booleanCounter -1; 
-				if (booleanCounter == 0){
-					removeVariableButton.setEnabled(false);
-					booleanAffectedButton.setSelected(false);
-					addVariableButton.setEnabled(false);
-				}
-				pack();
-				checkIfNextButtonCanBeActivated();
-			}
-		});
-		pack();
-		chooseBooleanPanel.add(removeVariableButton, gbc);
-
-		// card 1.3: Button Panel Boolean
-		JPanel buttonCard1Panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-
-		// card 1.3: cancel - button
-		cancelIcon = new ImageIcon(getClass().getResource(
-				"/icons/cancel.png"));
-		JButton cancelButtonBoolean = new JButton("cancel", cancelIcon);
-		buttonCard1Panel.add(cancelButtonBoolean);
-
-		cancelButtonBoolean.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				dispose();
-			}
-		});
-
-		// card 1.3: next - button
-		nextIcon = new ImageIcon(getClass().getResource(
-				"/icons/resultset_next.png"));
-		nextButton = new JButton("next", nextIcon);
-		buttonCard1Panel.add(nextButton);
-		nextButton.setEnabled(false);
-
-		nextButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// task 1: update Names
-				updateVariableNames();
-				// task 2: update
-				buttonCard2Next = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-				buttonCard2Go = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-				nextOrGo(0, buttonCard2Go, buttonCard2Next, 
-						cancelButtonRecode, previousButtonRecode, 
-						goButtonRecode, nextButtonRecode, card2Panel);
-				// task 3: update ColumnHeader
-				updateTableHeaderColumnNames(tableRecode, columnNames);
-				// task 4: create data set
-				createDataSet();
-				// task 5: switch to next card
-				cl.next(cards);
-				// task 6: update meta-list for variable
-				updateVariableListModel();
-				// task 7: set border name for meta list:
-				TitledBorder metaListPanelBorder = BorderFactory.
-						createTitledBorder(borderName);
-				metaListPanel.setBorder(metaListPanelBorder);
-			}
-		});
-
-		// card 1.3: add vertical Scroller (first add panel so that it's not centered)
-		JPanel newPanel = new JPanel(new BorderLayout());
-		newPanel.add(chooseBooleanPanel, BorderLayout.NORTH); 
-		newPanel.setPreferredSize(new Dimension(800, 800));
-
-		// card 1.3: add border to chooseBooleanPanel
-		TitledBorder buttonPanelBooleanBorder = BorderFactory.createTitledBorder(
-				"Choose additional variable(s)");
-		newPanel.setBorder(buttonPanelBooleanBorder);	
-
-		JScrollPane scrollPane = new JScrollPane (newPanel);
-		scrollPane.setVerticalScrollBarPolicy(JScrollPane.
-				VERTICAL_SCROLLBAR_AS_NEEDED); //VERTICAL_SCROLLBAR_ALWAYS
-
-		card1Panel.add(scrollPane, BorderLayout.CENTER);
-		card1Panel.add(buttonCard1Panel, BorderLayout.SOUTH);
-		card1Panel.setPreferredSize(new Dimension(860, 600));
-		cards.add(card1Panel, "Boolean affected by recode?");
-
-		/*---------------------------------------------------------------------
-		 *  CARD 2: do the actual recoding
-		 *--------------------------------------------------------------------*/
-		card2Panel = new JPanel(new BorderLayout());	
-
-		/*
-		 *  CARD 2.1: CREATE THE TABLE
-		 */
-		tableModel = new DefaultTableModel(columnNames, 0); // 0 =nr of rows
-		tableRecode = new JXTable(tableModel);					
-
-		// card 2.1: get values in table => done w/createDataSet() under card2-nextButton	
-
-		// card 2.1: decide which columns are editable
-		tableRecode.getColumnExt(0).setEditable(false);
-		tableRecode.getColumnExt(1).setEditable(false);
-		tableRecode.getColumnExt(2).setEditable(true);
-
-		// card 2.1: drag&drop from column 0 to 2
-		tableRecode.setDragEnabled(true);
-		tableRecode.setDropMode(DropMode.USE_SELECTION);
-		//TS() creates my own TransferHandler
-		tableRecode.setTransferHandler(new TS());
-
-		// card 2.1: add vertical/horizontal Scroller
-		JScrollPane scrollPaneRecode = new JScrollPane (tableRecode);
-		scrollPaneRecode.setPreferredSize(new Dimension(600, 300));
-		scrollPaneRecode.setVerticalScrollBarPolicy(
-				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED); 
-
-		// card 2.1: add table + tableHeader to panel
-		JPanel tableRecodeAndHeaderPanel = new JPanel(new BorderLayout());
-		tableRecodeAndHeaderPanel.add(tableRecode.getTableHeader(), 
-				BorderLayout.NORTH);	
-		tableRecodeAndHeaderPanel.add(scrollPaneRecode, BorderLayout.WEST);
-
-		card2Panel.add(tableRecodeAndHeaderPanel, BorderLayout.WEST);
-
-		/*
-		 * CARD 2.2. META-LIST PANEL
-		 */
-		// card 2.2: List window
-		listModel = new DefaultListModel<String>();
-		variableEntryList = new JList<String>(listModel);
-		variableEntryList.setSelectionMode(ListSelectionModel.
-				SINGLE_INTERVAL_SELECTION);
-		variableEntryList.setLayoutOrientation(JList.VERTICAL);
-		variableEntryList.setVisibleRowCount(20);
-		variableEntryList.setCellRenderer(new DefaultListCellRenderer(){
-			private static final long serialVersionUID = 1L;
-			public Component getListCellRendererComponent(JList<?> list, 
-					Object value, int index, boolean isSelected, 
-					boolean cellHasFocus) {
-				String valueString = value.toString();
-				valueString = valueString.substring(valueString.
-						lastIndexOf('.')+1);
-				return super.getListCellRendererComponent(list, valueString, 
-						index, isSelected, cellHasFocus);
-			}
-		});
-
-		variableEntryList.setDragEnabled(true);
-		variableEntryList.setDropMode(DropMode.USE_SELECTION);
-
-		JScrollPane listScroller = new JScrollPane(variableEntryList);
-		listScroller.setPreferredSize(new Dimension(240, 300));
-
-		// card 2.2: set options
-		JPanel optionsMetaListPanel = new JPanel(new GridBagLayout());
-		GridBagConstraints gbclist = new GridBagConstraints();
-		gbclist.fill = GridBagConstraints.HORIZONTAL;
-		gbclist.insets = new Insets(1, 0, 1, 5);
-		optionsMetaListPanel.setPreferredSize(new Dimension (240, 230));
-
-
-		// card 2.2: new list entry - text field
-		gbclist.gridy = 0;
-		gbclist.gridx = 0; 
-		gbclist.gridwidth = 2; 
-		newVariableEntry = new JXTextField("new entry for meta-list");
-		//newVariableEntry.setMinimumSize(new Dimension(160, newVariableEntry.
-		//		getHeight()));
-		//newVariableEntry.setColumns(25);
-		optionsMetaListPanel.add(newVariableEntry, gbclist);
-
-		newVariableEntry.getDocument().addDocumentListener(new 
-				DocumentListener() {
-			@Override
-			public void changedUpdate(DocumentEvent e) {
-				checkButton();
-			}
-			@Override
-			public void insertUpdate(DocumentEvent e) {
-				checkButton();
-			}
-			@Override
-			public void removeUpdate(DocumentEvent e) {
-				checkButton();
-			}
-			public void checkButton() {
-				String var = newVariableEntry.getText().toString();
-				boolean validAdd = false;				
-				String[] variableListEntries = Dna.dna.db.
-						getEntriesFromVariableList(statementType, 
-								newVariableName);		
-				for (int i = 0; i < variableListEntries.length; i++) {
-					if (variableListEntries[i].equals(var)) {
-						validAdd = true;
-					}
-				}
-				if (validAdd == true) {
-					okButtonListEntry.setEnabled(false);
-				} else {
-					okButtonListEntry.setEnabled(true);
-				}
-			}
-		});
-
-		// card 2.2: add list entry - Button
-		gbclist.gridx = 2;
-		gbclist.gridwidth = 1;
-		addIcon = new ImageIcon(getClass().getResource(
-				"/icons/add.png"));
-		okButtonListEntry = new JButton("add", addIcon);
-		//okButtonListEntry.setEnabled(true);
-		optionsMetaListPanel.add(okButtonListEntry, gbclist);
-
-		okButtonListEntry.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String getListEntryText = (String) newVariableEntry.getText().
-						toString();
-				Dna.dna.db.addEntryToVariableList(getListEntryText,
-						statementType, newVariableName);
-				listModel.addElement(getListEntryText);
-				newVariableEntry.setText("");
-				okButtonListEntry.setEnabled(false);
-			}
-		});
-
-		// card 2.2: delete list entry - Button
-		gbclist.gridx = 0; 
-		gbclist.gridy++;
-		gbclist.gridwidth = 1;
-		ImageIcon deleteIcon = new ImageIcon(getClass().getResource(
-				"/icons/delete.png"));
-		JButton deleteButtonListEntry = new JButton("delete", deleteIcon);
-		optionsMetaListPanel.add(deleteButtonListEntry, gbclist);
-
-		deleteButtonListEntry.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e){
-				int index = variableEntryList.getSelectedIndex();
-				String entries[] = Dna.dna.db.getEntriesFromVariableList(
-						statementType, newVariableName);
-				String label = entries[index];	
-				if (index >= 0) {
-					Dna.dna.db.removeEntryFromVariableList(label,
-							statementType, newVariableName);
-					listModel.removeElementAt(index);
-				}
-			}
-		});
-
-		// card 2.2: delete all entries - Button
-		gbclist.gridx = 1;
-		gbclist.gridwidth = 2;
-		JButton deleteAllButtonListEntry = new JButton("delete all", deleteIcon);
-		optionsMetaListPanel.add(deleteAllButtonListEntry, gbclist);
-
-		deleteAllButtonListEntry.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e){
-				String message = "Would you like to delete all entries from\n"
-						+ " the variable entry list?";
-				Object[] options = {"delete all", "cancel"};
-				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
-						"Warning", 
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.QUESTION_MESSAGE,
-						null,     //do not use a custom Icon
-						options,  //the titles of buttons
-						options[0]); //default button title
-				switch (result) {
-				case 0:
-					String entries[] = Dna.dna.db.getEntriesFromVariableList(
-							statementType, newVariableName);
-					for(int i=0; i < entries.length; i++){
-						Dna.dna.db.removeEntryFromVariableList(entries[i],
-								statementType, newVariableName);
-						listModel.removeElement(entries[i]);
-					}
-				case 1:
-					break;
-				}
-			}
-		});
-
-		// card 2.2: import from oldVar - Button
-		gbclist.gridy++;
-		gbclist.gridx = 0; 
-		gbclist.gridwidth = 3;
-		ImageIcon getFromLeftIcon = new ImageIcon(getClass().getResource(
-				"/icons/application_side_expand.png"));
-		JButton importFromOldVar = new JButton("import entries from old "
-				+ "variable", getFromLeftIcon);
-		optionsMetaListPanel.add(importFromOldVar, gbclist);
-
-		importFromOldVar.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				// add table to JDialog
-				JDialog openTableImport = new JDialog();
-				openTableImport.setModal(true);
-				// true = import from old var; false = import from new var
-				Boolean importOldVariable = true;
-				openTableForImport(openTableImport, importOldVariable);
-				openTableImport.pack();
-				openTableImport.setLocationRelativeTo(null);
-				openTableImport.setVisible(true);	
-			}
-		});
-
-		// card 2.2: import from newVar - Button
-		gbclist.gridy++;
-		gbclist.gridx = 0; 
-		gbclist.gridwidth = 3;
-		JButton importFromNewVar = new JButton("import entries from new "
-				+ "variable", getFromLeftIcon);
-		optionsMetaListPanel.add(importFromNewVar, gbclist);
-
-		importFromNewVar.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				// add table to JDialog
-				JDialog openTableImport = new JDialog();
-				openTableImport.setModal(true);
-				// true = import from old var; false = import from new var
-				//boolean importOldVariable => oben definieren??
-				Boolean importOldVariable = false;
-				openTableForImport(openTableImport, importOldVariable);
-				openTableImport.pack();
-				openTableImport.setLocationRelativeTo(null);
-				openTableImport.setVisible(true);	
-			}
-		});
-
-		// card 2.2: load external list - Button
-		gbclist.gridx = 0;
-		gbclist.gridy++;
-		gbclist.gridwidth = 1;
-		ImageIcon importIcon = new ImageIcon(getClass().getResource(
-				"/icons/table_add.png"));
-		JButton importList = new JButton("import list", importIcon);
-		optionsMetaListPanel.add(importList, gbclist);
-
-		importList.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				// Panel für Import
-				openTableImportFromFile = new JDialog();
-				openTableImportFromFile.setModal(true);	
-				JPanel importTableExternalFile = new JPanel(new BorderLayout());
-
-				// Datei öffnen
-				JFileChooser fc = new JFileChooser();
-				fc.setFileFilter(new FileFilter() {
-					public boolean accept(File f) {
-						return f.getName().toLowerCase().endsWith(".txt")
-								|| f.isDirectory();
-					}
-					public String getDescription() {
-						return "Text file " +
-								"(*.txt)";
-					}
-				});
-				// show dialog window
-				int returnVal = fc.showOpenDialog(Recode.this);
-				if (returnVal == JFileChooser.CANCEL_OPTION) {
-					openTableImportFromFile.dispose();
-				}
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					file = fc.getSelectedFile();	
-					// Datei einlesen
-					try{
-						linesImported = getArrayListFromString(file);
-					}
-					catch(Exception en){
-						en.printStackTrace();
-					}
-
-					// Tabelle bilden
-					String[] columnNamesImportFromFile = new String[]
-							{"add entry", file.getName()};
-					tableModelImportFromFile = new 
-							DefaultTableModel(columnNamesImportFromFile, 0);
-					JXTable tableImportFromFile = new JXTable(
-							tableModelImportFromFile);
-					tableImportFromFile.getColumnModel().getColumn(0).
-					setCellRenderer(tableImportFromFile.getDefaultRenderer(
-							Boolean.class));
-					tableImportFromFile.getColumn(0).setMaxWidth(62); 
-					// make columns editable
-					tableImportFromFile.getColumnModel().getColumn(0).
-					setCellEditor(tableImportFromFile.
-							getDefaultEditor(Boolean.class));
-					tableImportFromFile.getColumnExt(1).setEditable(true);
-					// add vertical/horizontal scroller for table
-					JScrollPane scrollPaneImportPanel = new JScrollPane(
-							tableImportFromFile);
-					scrollPaneImportPanel.setVerticalScrollBarPolicy(
-							JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-					scrollPaneImportPanel.setHorizontalScrollBarPolicy(
-							JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);		
-
-					importTableExternalFile.add(scrollPaneImportPanel, 
-							BorderLayout.NORTH);	
-
-					// Datensatz bilden
-					boolean select = false;
-					for (int i = 0; i < linesImported.size(); i++) {	
-						Object[] dataImportFromFile = {select, linesImported.get(i)};
-						if (linesImported.get(i).startsWith("List of "
-								+ "meta-entries for variable") || 
-								linesImported.get(i).equals("")){
-							//do not add to table
-						}else{
-							tableModelImportFromFile.addRow(dataImportFromFile);
-						}
-					}
-
-					// button-panel
-					JPanel buttonImportEntriesFromFilePanel = new JPanel(new 
-							FlowLayout(FlowLayout.RIGHT));
-
-					// select all - button
-					JButton selectEntriesImportFromFile = new JButton("select all");
-					buttonImportEntriesFromFilePanel.add(
-							selectEntriesImportFromFile);
-
-					selectEntriesImportFromFile.addActionListener(
-							new ActionListener(){
-								public void actionPerformed(ActionEvent e){
-									for (int i = 0; i < tableModelImportFromFile.
-											getRowCount(); i++){
-										tableModelImportFromFile.setValueAt(true, 
-												i, 0);
-									}		
-								}
-							});
-
-					// deselect all - button
-					JButton unselectEntriesImportFromFile = new JButton(
-							"deselect all");
-					buttonImportEntriesFromFilePanel.add(
-							unselectEntriesImportFromFile);
-
-					unselectEntriesImportFromFile.addActionListener(
-							new ActionListener(){
-								public void actionPerformed(ActionEvent e){
-									for (int i = 0; i < tableModelImportFromFile.
-											getRowCount(); i++){
-										tableModelImportFromFile.setValueAt(false, 
-												i, 0);
-									}		
-								}
-							});
-
-					// cancel - button
-					JButton cancelImport = new JButton("cancel", cancelIcon);
-					buttonImportEntriesFromFilePanel.add(cancelImport);
-
-					cancelImport.addActionListener(new ActionListener(){
-						public void actionPerformed(ActionEvent e){
-							openTableImportFromFile.dispose();
-						}
-					});
-
-					// add entries
-					JButton addEntriesImportFromFile = new JButton(
-							"add selected entries", addIcon);
-					buttonImportEntriesFromFilePanel.add(addEntriesImportFromFile);
-
-					addEntriesImportFromFile.addActionListener(new ActionListener(){
-						public void actionPerformed(ActionEvent e){
-							for (int i = 0; i < tableModelImportFromFile.
-									getRowCount(); i++){
-								if (tableModelImportFromFile.getValueAt(i, 0).
-										equals(true)){//if the entry was chosen=true
-									String newEntry = (String) 
-											tableModelImportFromFile.
-											getValueAt(i, 1).toString();
-									String[] variableListEntries = Dna.dna.db.
-											getEntriesFromVariableList(
-													statementType, 
-													newVariableName);		
-									boolean validAdd = false;
-									if (variableListEntries.length == 0){
-										validAdd = false;
-									}else{
-										for (int j = 0; j < variableListEntries.
-												length; j++) {
-											if (variableListEntries[j].equals(
-													newEntry)){
-												validAdd = true;
-											}
-										}
-									}
-									if (validAdd == false) {
-										Dna.dna.db.addEntryToVariableList(newEntry,
-												statementType, 
-												newVariableName);
-										listModel.addElement(newEntry);
-									} 
-								}
-							}
-							openTableImportFromFile.dispose();
-						}
-					});
-
-					// add to JDialog-Window
-					openTableImportFromFile.add(importTableExternalFile, 
-							BorderLayout.NORTH);
-					openTableImportFromFile.add(buttonImportEntriesFromFilePanel, 
-							BorderLayout.SOUTH);
-					openTableImportFromFile.pack();
-					openTableImportFromFile.setLocationRelativeTo(null);
-					openTableImportFromFile.setVisible(true);
-				}
-			}
-		});
-
-		// card 2.2: export list - Button
-		gbclist.gridx = 1; 
-		gbclist.gridwidth = 2; 
-		ImageIcon exportIcon = new ImageIcon(getClass().getResource(
-				"/icons/table_go.png"));
-		JButton exportList = new JButton("export list", exportIcon);
-		optionsMetaListPanel.add(exportList, gbclist);
-
-		exportList.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				String[] variableListEntries = Dna.dna.db.
-						getEntriesFromVariableList(statementType, 
-								newVariableName);
-				String writeEntries = "List of meta-entries for variable '" + 
-						newVariableName + "'\n\n";
-				for (int i = 0; i < variableListEntries.length; i++){
-					writeEntries = writeEntries + variableListEntries[i] + "\n";
-				}
-				// save a file
-				// parent component of the dialog
-				JDialog saveFilePanel = new JDialog();		 
-				JFileChooser fileChooser = new JFileChooser();
-				fileChooser.setFileFilter(new FileFilter() {
-					public boolean accept(File f) {
-						return f.getName().toLowerCase().endsWith(".txt")
-								|| f.isDirectory();
-					}
-					public String getDescription() {
-						return "Text file " +
-								"(*.txt)";
-					}
-				});
-
-				// open file-chooser dialog and specify path/file name
-				fileChooser.setDialogTitle("Specify a file to save");   
-				int userSelection = fileChooser.showSaveDialog(saveFilePanel);
-				if (userSelection == JFileChooser.APPROVE_OPTION) {
-					File fileToSave = fileChooser.getSelectedFile();
-					String file_name = fileToSave.toString();
-					if (!file_name.endsWith(".txt"))
-						file_name += ".txt";
-					try {
-						FileWriter fw = new FileWriter(file_name);
-						fw.write(writeEntries);
-						fw.close();
-
-					} catch (IOException iox) {
-						iox.printStackTrace();
-					}
-				}
-
-
-			}
-		});
-
-		// card 2.2: add the panels:
-		pack();
-		metaListPanel = new JPanel(new BorderLayout());
-		metaListPanel.add(listScroller, BorderLayout.NORTH);
-		metaListPanel.add(optionsMetaListPanel, BorderLayout.SOUTH);
-
-		// card 2.2: add title to list-panel (done in: updateVariableNames())
-		// card 2.2: add metaListPanel to card 2
-		card2Panel.add(metaListPanel, BorderLayout.EAST);
-
-		/*
-		 * CARD 2.3. BUTTONS-PANEL
-		 */		
-		// card 2.3: cancel - button
-		cancelButtonRecode = new JButton("cancel", cancelIcon);
-
-		cancelButtonRecode.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String message = "\nWould you like to"
-						+ "close the recode window?\nChanges made will be lost.";
-				Object[] options ={"Yes, close window", "No, keep recoding"};
-				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
-						"Warning", 
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.QUESTION_MESSAGE,
-						null,     
-						options,  	
-						options[0]); 
-				switch (result) {
-				case 0:	
-					dispose();
-				case 1:
-					break;
-				}
-			}
-		});
-
-		// card 2.3: previous - button
-		ImageIcon previousIcon = new ImageIcon(getClass().getResource(
-				"/icons/resultset_previous.png"));
-		previousButtonRecode = new JButton("previous", previousIcon);
-
-		previousButtonRecode.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String message = "\n Would you like to go to the previous"
-						+ " window?\nAll changes you made in this window"
-						+ " will be lost.";
-				Object[] options = {"previous window",
-				"cancel"};
-				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
-						"Warning", 
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.QUESTION_MESSAGE,
-						null,     //do not use a custom Icon
-						options,  //the titles of buttons
-						options[0]); //default button title
-				switch (result) {
-				case 0:
-					// task 1: remove the panel: buttonCard2Next and buttonCard2Go
-					if (booleanCounter == 0){
-						card2Panel.remove(buttonCard2Go);
-					}else{
-						card2Panel.remove(buttonCard2Next);	
-					}
-					// task 2: show previous panel
-					cl.previous(cards);
-				case 1:
-					break;
-				}
-			}
-		});
-
-		// card 2.3: go-recode - button
-		ImageIcon goIcon = new ImageIcon(getClass().getResource(
-				"/icons/accept.png"));
-		goButtonRecode = new JButton("go", goIcon);
-
-		goButtonRecode.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String message = "Would you like to recode the variable(s) as "
-						+ "specified?";
-				Object[] options = {"recode", "cancel"};
-				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
-						"Warning", 
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.QUESTION_MESSAGE,
-						null,     //do not use a custom Icon
-						options,  //the titles of buttons
-						options[0]); //default button title
-				switch (result) {
-				case 0:
-					// create new variable
-					if (createNewVariable.isSelected() == true){
-						Dna.dna.db.addVariable(newVariableName, 
-								newVariableDataType, 
-								statementType);
-					}
-					// get values from table
-					for (int i = 0; i < tableRecode.getRowCount(); i++) {
-						String oldVarEntry = "";
-						oldVarEntry = (String) tableRecode.getModel().
-								getValueAt(i, 0); 
-						String newVarEntry = "";
-						newVarEntry = (String) tableRecode.getModel().
-								getValueAt(i, 2);
-						// get statement-ID-list where oldVarEntry is included
-						ArrayList<Integer> statIDList = Dna.dna.db.
-								getVariableEntryMatch(statementType, 
-										oldVariableName, oldVarEntry);
-						for (Integer ints: statIDList){
-							Dna.dna.db.changeStatement(ints, newVariableName, 
-									(String) newVarEntry, newVariableDataType);
-						}
-					}
-					dispose();
-				case 1:
-					break;
-				}
-			}
-		});
-
-		// card 2.3: next-button (if boolean is selected)
-		nextButtonRecode = new JButton("next", nextIcon);
-
-		nextButtonRecode.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {				
-				// task 1: create data set
-				createDataSetBoolean(tableModelBoolean1, boolean1OldName);
-				// task 2: update buttons-panel
-				buttonCard3Go = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-				buttonCard3Next = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-				nextOrGo(1, buttonCard3Go, buttonCard3Next, 
-						cancelButtonBoolean1, previousButtonBoolean1, 
-						goButtonBoolean1, nextButtonBoolean1, card3Panel);
-				// task 3: update table header
-				updateTableHeaderColumnNames(tableBoolean1, 
-						columnNamesBooleanPanel1);
-				// task 4: update border around Boolean1-Panel
-				TitledBorder card3PanelBorder = BorderFactory.
-						createTitledBorder(borderNameBoolean1);
-				card3Panel.setBorder(card3PanelBorder);
-				// task 5: show next window
-				cl.next(cards);			
-			}
-		});
-
-		cards.add(card2Panel, "Recode variables");
-
-		/*---------------------------------------------------------------------
-		 * CARD 3 - RECODE BOOLEAN PANEL #1
-		 *--------------------------------------------------------------------*/
-		card3Panel = new JPanel(new BorderLayout());
-
-		/*
-		 * CARD 3.1: Create table
-		 */	
-		// card 3.1: table
-		tableModelBoolean1 = new DefaultTableModel(columnNamesBooleanPanel1, 0);
-		tableBoolean1 = new JXTable(tableModelBoolean1);	
-
-		// card 3.1: get values in table => done w/createDataSetBoolean() under card2.3-nextButton
-
-		// card 3.1: decide which columns are editable
-		tableBoolean1.getColumnExt(0).setEditable(false);
-		tableBoolean1.getColumnExt(1).setEditable(false);
-		tableBoolean1.getColumnExt(2).setEditable(false);
-		tableBoolean1.getColumnExt(3).setEditable(true);
-		tableBoolean1.getColumnExt(4).setEditable(false);
-
-		// card 3.1: set column width of col 1, 2 and 3
-		tableBoolean1.getColumnModel().getColumn(1).setPreferredWidth(90);
-		tableBoolean1.getColumnModel().getColumn(2).setPreferredWidth(90);
-		tableBoolean1.getColumnModel().getColumn(3).setPreferredWidth(90);
-
-		// card 3.1: add vertical/horizontal Scroller
-		JScrollPane scrollPaneTableBoolean1 = new JScrollPane (tableBoolean1);
-		scrollPaneTableBoolean1.setPreferredSize(new Dimension(800, 520));
-		scrollPaneTableBoolean1.setVerticalScrollBarPolicy(
-				JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		scrollPaneTableBoolean1.setHorizontalScrollBarPolicy(
-				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-
-		// card 3.1: add table + tableHeader to panel
-		JPanel tableBoolean1AndHeaderPanel = new JPanel(new BorderLayout());
-		tableBoolean1AndHeaderPanel.add(tableBoolean1.getTableHeader(), 
-				BorderLayout.NORTH);	
-		tableBoolean1AndHeaderPanel.add(scrollPaneTableBoolean1, 
-				BorderLayout.WEST);
-
-		card3Panel.add(tableBoolean1AndHeaderPanel, BorderLayout.NORTH);
-
-		/*
-		 * CARD 3.2: BUTTONS PANEL FOR BOOLEAN TABLE 1
-		 */
-		// card 3.2: cancel button
-		cancelButtonBoolean1 = new JButton("cancel", cancelIcon);
-
-		cancelButtonBoolean1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String message = "\nWould you like to"
-						+ "close the recode window?\nChanges made will be lost.";
-				Object[] options ={"Yes, close window", "No, keep recoding"};
-				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
-						"Warning", 
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.QUESTION_MESSAGE,
-						null,     
-						options,  	
-						options[0]); 
-				switch (result) {
-				case 0:	
-					dispose();
-				case 1:
-					break;
-				}
-			}
-		});
-
-		// card 3.2: previous - button
-		previousButtonBoolean1 = new JButton("previous", previousIcon);
-
-		previousButtonBoolean1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String message = "\n Would you like to go to the previous"
-						+ " window?\nAll changes you made in this window"
-						+ " will be lost.";
-				Object[] options = {"previous window",
-				"cancel"};
-				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
-						"Warning", 
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.QUESTION_MESSAGE,
-						null,     //do not use a custom Icon
-						options,  //the titles of buttons
-						options[0]); //default button title
-				switch (result) {
-				case 0:	
-					// task 1: remove the panel: buttonCard3Next and buttonCard3Go
-					if (booleanCounter == 1){
-						card3Panel.remove(buttonCard3Go);
-					}else{
-						card3Panel.remove(buttonCard3Next);	
-					}
-					// task 2: show previous panel
-					cl.previous(cards);
-				case 1:
-					break;
-				}
-			}
-		});
-
-		// card 3.2: go - button
-		goButtonBoolean1 = new JButton("go", goIcon);
-
-		goButtonBoolean1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String message = "Would you like to recode the variable(s) as "
-						+ "specified?";
-				Object[] options = {"recode", "cancel"};
-				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
-						"Warning", 
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.QUESTION_MESSAGE,
-						null,     //do not use a custom Icon
-						options,  //the titles of buttons
-						options[0]); //default button title
-				switch (result) {
-				case 0:
-					boolean breakNow = false;
-					// task 1: create new variable
-					if (createNewVariable.isSelected() == true){
-						Dna.dna.db.addVariable(newVariableName, 
-								newVariableDataType, 
-								statementType);
-					}
-					if (createNewVariable1.isSelected() == true){
-						Dna.dna.db.addVariable(newVariableTextField1.getText(), 
-								boolean1NewDataType, 
-								statementType);
-					}
-					// task 2: recode boolean/int variables
-					breakNow = recodeBooleanVariables(tableBoolean1, 
-							tableModelBoolean1, boolean1OldName, 
-							boolean1NewName, breakNow);
-					System.out.println("breakNow = " + breakNow);
-					// do task 3 and 4 only if column 4 entries are integers:
-					// task 3: recode chosen variable
-					if (breakNow == false){
-						for (int i = 0; i < tableRecode.getRowCount(); i++) {
-							String oldVarEntry = "";
-							oldVarEntry = (String) tableRecode.getModel().
-									getValueAt(i, 0); //
-							String newVarEntry = "";
-							newVarEntry = (String) tableRecode.getModel().
-									getValueAt(i, 2);
-							// get statement-ID-list where oldVarEntry is included
-							ArrayList<Integer> statIDList = Dna.dna.db.
-									getVariableEntryMatch(statementType, 
-											oldVariableName, oldVarEntry);
-							for (Integer ints: statIDList){
-								Dna.dna.db.changeStatement(ints, 
-										newVariableName, (String) newVarEntry,
-										oldVarDataType);
-							}
-						}
-						// task 4: close window
-						dispose();
-					}
-				case 1:
-					break;
-				}
-			}
-		});
-
-		// card 3.2: next-button (if boolean #2 is selected)
-		nextButtonBoolean1 = new JButton("next", nextIcon);
-
-		nextButtonBoolean1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// task 1: check if all entries in table are integers
-				boolean breakNow = false;
-				for (int i = 0; i < tableModelBoolean1.getRowCount(); i++){
-					try{
-						Integer.parseInt(tableModelBoolean1.getValueAt(i, 3).
-								toString());
-					}catch(java.lang.NumberFormatException nfe){
-						String message = "\n The entries in column 4 are not all "
-								+ "integers.\nPlease check your entries before "
-								+ "moving on to the next variable."; 
-						JOptionPane.showMessageDialog(new JFrame(), message, 
-								"Warning", JOptionPane.ERROR_MESSAGE);
-						breakNow = true;
-					}
-				}
-				// task 2: create data set
-				if (breakNow == false){
-					createDataSetBoolean(tableModelBoolean2, boolean2OldName);
-					// task 3: update buttons-panel
-					buttonCard4Go = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-					buttonCard4Next = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-					nextOrGo(2, buttonCard4Go, buttonCard4Next, 
-							cancelButtonBoolean2, previousButtonBoolean2, 
-							goButtonBoolean2, nextButtonBoolean2, card4Panel);
-					// task 4: update table header
-					updateTableHeaderColumnNames(tableBoolean2, 
-							columnNamesBooleanPanel2);
-					// task 5: update border around Boolean1-Panel
-					TitledBorder card4PanelBorder = BorderFactory.
-							createTitledBorder(borderNameBoolean2);
-					card4Panel.setBorder(card4PanelBorder);
-					// task 6: show next window
-					cl.next(cards);
-				}
-			}
-		});
-
-		cards.add(card3Panel, "Recode additional variables");
-
-		/*---------------------------------------------------------------------
-		 * CARD 4 - RECODE BOOLEAN PANEL #2
-		 *--------------------------------------------------------------------*/
-		card4Panel = new JPanel(new BorderLayout());
-
-		/*
-		 * CARD 4.1: Create table
-		 */	
-		// card 4.1: table
-		tableModelBoolean2 = new DefaultTableModel(columnNamesBooleanPanel2, 0); 
-		tableBoolean2 = new JXTable(tableModelBoolean2);	
-
-		// card 4.1: get values in table => done w/createDataSetBoolean() under card3.2-nextButton
-
-		// card 4.1: decide which columns are editable
-		tableBoolean2.getColumnExt(0).setEditable(false);
-		tableBoolean2.getColumnExt(1).setEditable(false);
-		tableBoolean2.getColumnExt(2).setEditable(false);
-		tableBoolean2.getColumnExt(3).setEditable(true);
-		tableBoolean2.getColumnExt(4).setEditable(false);
-
-		// card 4.1: set column width of col 1, 2 and 3
-		tableBoolean2.getColumnModel().getColumn(1).setPreferredWidth(90);
-		tableBoolean2.getColumnModel().getColumn(2).setPreferredWidth(90);
-		tableBoolean2.getColumnModel().getColumn(3).setPreferredWidth(90);
-
-		// card 4.1: add vertical/horizontal Scroller
-		JScrollPane scrollPaneTableBoolean2 = new JScrollPane (tableBoolean2);
-		scrollPaneTableBoolean2.setPreferredSize(new Dimension(800, 520));
-		scrollPaneTableBoolean2.setVerticalScrollBarPolicy(
-				JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		scrollPaneTableBoolean2.setHorizontalScrollBarPolicy(
-				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-
-		// card 4.1: add table + tableHeader to panel
-		JPanel tableBoolean2AndHeaderPanel = new JPanel(new BorderLayout());
-		tableBoolean2AndHeaderPanel.add(tableBoolean2.getTableHeader(), 
-				BorderLayout.NORTH);	
-		tableBoolean2AndHeaderPanel.add(scrollPaneTableBoolean2, 
-				BorderLayout.WEST);
-
-		card4Panel.add(tableBoolean2AndHeaderPanel, BorderLayout.NORTH);
-
-		/*
-		 * CARD 4.2: BUTTONS PANEL FOR BOOLEAN TABLE 2
-		 */
-		// card 4.2: cancel button
-		cancelButtonBoolean2 = new JButton("cancel", cancelIcon);
-
-		cancelButtonBoolean2.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				dispose();
-			}
-		});
-
-		// card 4.2: previous - button
-		previousButtonBoolean2 = new JButton("previous", previousIcon);
-
-		previousButtonBoolean2.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String message = "\n Would you like to go to the previous"
-						+ " window?\nAll changes you made in this window"
-						+ " will be lost.";
-				Object[] options = {"previous window",
-				"cancel"};
-				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
-						"Warning", 
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.QUESTION_MESSAGE,
-						null,     //do not use a custom Icon
-						options,  //the titles of buttons
-						options[0]); //default button title
-				switch (result) {
-				case 0:
-					// task 1: remove the panel: buttonCard4Next and buttonCard4Go
-					if (booleanCounter == 2){
-						card4Panel.remove(buttonCard4Go);
-					}else{
-						card4Panel.remove(buttonCard4Next);	
-					}
-					// task 2: show previous panel
-					cl.previous(cards);
-				case 1:
-					break;
-				}
-			}
-		});
-
-		// card 4.2: go - button
-		goButtonBoolean2 = new JButton("go", goIcon);
-
-		goButtonBoolean2.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				boolean breakNow = false;
-				// task 1: create new variable
-				if (createNewVariable.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableName, 
-							newVariableDataType, 
-							statementType);
-				}
-				if (createNewVariable1.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField1.getText(), 
-							boolean1NewDataType, 
-							statementType); 
-				}
-				if (createNewVariable2.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField2.getText(), 
-							boolean2NewDataType, 
-							statementType); 
-				}
-				// task 2: recode boolean/int variables
-				breakNow = recodeBooleanVariables(tableBoolean2, 
-						tableModelBoolean2, boolean2OldName, 
-						boolean2NewName, breakNow);
-				// do task 3 and 4 only if column 4 entries are integers:
-				// task 3: recode chosen variable
-				if (breakNow == false){
-					for (int i = 0; i < tableRecode.getRowCount(); i++) {
-						String oldVarEntry = "";
-						oldVarEntry = (String) tableRecode.getModel().
-								getValueAt(i, 0); //
-						String newVarEntry = "";
-						newVarEntry = (String) tableRecode.getModel().
-								getValueAt(i, 2);
-						// get statement-ID-list where oldVarEntry is included
-						ArrayList<Integer> statIDList = Dna.dna.db.
-								getVariableEntryMatch(statementType, 
-										oldVariableName, oldVarEntry);
-						for (Integer ints: statIDList){
-							Dna.dna.db.changeStatement(ints, 
-									newVariableName, (String) newVarEntry,
-									oldVarDataType);
-						}
-					}
-					// task 4: close window
-					dispose();
-				}
-			}
-		});
-
-		// card 4.2: next-button (if boolean #2 is selected)
-		nextButtonBoolean2 = new JButton("next", nextIcon);
-
-		nextButtonBoolean2.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// task 1: check if all entries in table are integers
-				boolean breakNow = false;
-				for (int i = 0; i < tableModelBoolean2.getRowCount(); i++){
-					try{
-						Integer.parseInt(tableModelBoolean2.getValueAt(i, 3).
-								toString());
-					}catch(java.lang.NumberFormatException nfe){
-						String message = "\n The entries in column 4 are not all "
-								+ "integers.\nPlease check your entries before "
-								+ "moving on to the next variable."; 
-						JOptionPane.showMessageDialog(new JFrame(), message, "Warning",
-								JOptionPane.ERROR_MESSAGE);
-						breakNow = true;
-					}
-				}
-				// task 2: create data set
-				if (breakNow == false){
-					createDataSetBoolean(tableModelBoolean3, boolean3OldName);
-					// task 3: update buttons-panel
-					buttonCard5Go = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-					buttonCard5Next = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-					nextOrGo(3, buttonCard5Go, buttonCard5Next, 
-							cancelButtonBoolean3, previousButtonBoolean3, 
-							goButtonBoolean3, nextButtonBoolean3, card5Panel);
-					// task 4: update table header
-					updateTableHeaderColumnNames(tableBoolean3, 
-							columnNamesBooleanPanel3);
-					// task 5: update border around Boolean1-Panel
-					TitledBorder card5PanelBorder = BorderFactory.
-							createTitledBorder(borderNameBoolean3);
-					card5Panel.setBorder(card5PanelBorder);
-					// task 6: show next window
-					cl.next(cards);
-				}
-			}
-		});
-
-		cards.add(card4Panel, "Recode additional variables");
-
-		/*---------------------------------------------------------------------
-		 * CARD 5 - RECODE BOOLEAN PANEL #3
-		 *--------------------------------------------------------------------*/
-		card5Panel = new JPanel(new BorderLayout());
-
-		/*
-		 * CARD 5.1: Create table
-		 */	
-		// card 5.1: table
-		tableModelBoolean3 = new DefaultTableModel(columnNamesBooleanPanel3, 0);
-		tableBoolean3 = new JXTable(tableModelBoolean3);	
-
-		// card 5.1: get values in table => done w/createDataSetBoolean() under card3.2-nextButton
-
-		// card 5.1: decide which columns are editable
-		tableBoolean3.getColumnExt(0).setEditable(false);
-		tableBoolean3.getColumnExt(1).setEditable(false);
-		tableBoolean3.getColumnExt(2).setEditable(false);
-		tableBoolean3.getColumnExt(3).setEditable(true);
-		tableBoolean3.getColumnExt(4).setEditable(false);
-
-		// card 5.1: set column width of col 1, 2 and 3
-		tableBoolean3.getColumnModel().getColumn(1).setPreferredWidth(90);
-		tableBoolean3.getColumnModel().getColumn(2).setPreferredWidth(90);
-		tableBoolean3.getColumnModel().getColumn(3).setPreferredWidth(90);
-
-		// card 5.1: add vertical/horizontal Scroller
-		JScrollPane scrollPaneTableBoolean3 = new JScrollPane (tableBoolean3);
-		scrollPaneTableBoolean3.setPreferredSize(new Dimension(800, 520));
-		scrollPaneTableBoolean3.setVerticalScrollBarPolicy(
-				JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		scrollPaneTableBoolean3.setHorizontalScrollBarPolicy(
-				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-
-		// card 5.1: add table + tableHeader to panel
-		JPanel tableBoolean3AndHeaderPanel = new JPanel(new BorderLayout());
-		tableBoolean3AndHeaderPanel.add(tableBoolean3.getTableHeader(), 
-				BorderLayout.NORTH);	
-		tableBoolean3AndHeaderPanel.add(scrollPaneTableBoolean3, 
-				BorderLayout.WEST);
-
-		card5Panel.add(tableBoolean3AndHeaderPanel, BorderLayout.NORTH);
-
-		/*
-		 * CARD 5.2: BUTTONS PANEL FOR BOOLEAN TABLE 2
-		 */
-		// card 5.2: cancel button
-		cancelButtonBoolean3 = new JButton("cancel", cancelIcon);
-
-		cancelButtonBoolean3.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				dispose();
-			}
-		});
-
-		// card 5.2: previous - button
-		previousButtonBoolean3 = new JButton("previous", previousIcon);
-
-		previousButtonBoolean3.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String message = "\n Would you like to go to the previous"
-						+ " window?\nAll changes you made in this window"
-						+ " will be lost.";
-				Object[] options = {"previous window",
-				"cancel"};
-				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
-						"Warning", 
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.QUESTION_MESSAGE,
-						null,     //do not use a custom Icon
-						options,  //the titles of buttons
-						options[0]); //default button title
-				switch (result) {
-				case 0:
-					// task 1: remove the panel: buttonCard5Next and buttonCard5Go
-					if (booleanCounter == 3){
-						card5Panel.remove(buttonCard5Go);
-					}else{
-						card5Panel.remove(buttonCard5Next);	
-					}
-					// task 2: show previous panel
-					cl.previous(cards);
-				case 1:
-					break;
-				}
-			}
-		});
-
-		// card 5.2: go - button
-		goButtonBoolean3 = new JButton("go", goIcon);
-
-		goButtonBoolean3.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				boolean breakNow = false;
-				// task 1: create new variable
-				if (createNewVariable.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableName, 
-							newVariableDataType, 
-							statementType);
-				}
-				if (createNewVariable1.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField1.getText(), 
-							boolean1NewDataType, 
-							statementType); 
-				}
-				if (createNewVariable2.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField2.getText(), 
-							boolean2NewDataType, 
-							statementType); 
-				}
-				if (createNewVariable3.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField3.getText(), 
-							boolean3NewDataType, 
-							statementType); 
-				}
-				// task 2: recode boolean/int variables
-				breakNow = recodeBooleanVariables(tableBoolean3, 
-						tableModelBoolean3, boolean3OldName, 
-						boolean3NewName, breakNow);
-				// do task 3 and 4 only if column 4 entries are integers:
-				// task 3: recode chosen variable
-				if (breakNow == false){
-					for (int i = 0; i < tableRecode.getRowCount(); i++) {
-						String oldVarEntry = "";
-						oldVarEntry = (String) tableRecode.getModel().
-								getValueAt(i, 0); //
-						String newVarEntry = "";
-						newVarEntry = (String) tableRecode.getModel().
-								getValueAt(i, 2);
-						// get statement-ID-list where oldVarEntry is included
-						ArrayList<Integer> statIDList = Dna.dna.db.
-								getVariableEntryMatch(statementType, 
-										oldVariableName, oldVarEntry);
-						for (Integer ints: statIDList){
-							Dna.dna.db.changeStatement(ints, 
-									newVariableName, (String) newVarEntry,
-									oldVarDataType);
-						}
-					}
-					// task 4: close window
-					dispose();
-				}
-			}
-		});
-
-		// card 5.2: next-button (if boolean #2 is selected)
-		nextButtonBoolean3 = new JButton("next", nextIcon);
-
-		nextButtonBoolean3.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// task 1: check if all entries in table are integers
-				boolean breakNow = false;
-				for (int i = 0; i < tableModelBoolean3.getRowCount(); i++){
-					try{
-						Integer.parseInt(tableModelBoolean3.getValueAt(i, 3).
-								toString());
-					}catch(java.lang.NumberFormatException nfe){
-						String message = "\n The entries in column 4 are not all "
-								+ "integers.\nPlease check your entries before "
-								+ "moving on to the next variable."; 
-						JOptionPane.showMessageDialog(new JFrame(), message,
-								"Warning", JOptionPane.ERROR_MESSAGE);
-						breakNow = true;
-					}
-				}
-				// task 2: create data set
-				if (breakNow == false){
-					createDataSetBoolean(tableModelBoolean4, boolean4OldName);
-					// task 3: update buttons-panel
-					buttonCard6Go = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-					buttonCard6Next = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-					nextOrGo(4, buttonCard6Go, buttonCard6Next, 
-							cancelButtonBoolean4, previousButtonBoolean4, 
-							goButtonBoolean4, nextButtonBoolean4, card6Panel);
-					// task 4: update table header
-					updateTableHeaderColumnNames(tableBoolean4, 
-							columnNamesBooleanPanel4);
-					// task 5: update border around Boolean1-Panel
-					TitledBorder card6PanelBorder = BorderFactory.
-							createTitledBorder(borderNameBoolean4);
-					card6Panel.setBorder(card6PanelBorder);
-					// task 6: show next window
-					cl.next(cards);
-				}
-			}
-		});
-
-		cards.add(card5Panel, "Recode additional variables");
-
-		/*---------------------------------------------------------------------
-		 * CARD 6 - RECODE BOOLEAN PANEL #4
-		 *--------------------------------------------------------------------*/
-		card6Panel = new JPanel(new BorderLayout());
-
-		/*
-		 * CARD 6.1: Create table
-		 */	
-		// card 6.1: table
-		tableModelBoolean4 = new DefaultTableModel(columnNamesBooleanPanel4, 0);
-		tableBoolean4 = new JXTable(tableModelBoolean4);	
-
-		// card 6.1: get values in table => done w/createDataSetBoolean() under card3.2-nextButton
-
-		// card 6.1: decide which columns are editable
-		tableBoolean4.getColumnExt(0).setEditable(false);
-		tableBoolean4.getColumnExt(1).setEditable(false);
-		tableBoolean4.getColumnExt(2).setEditable(false);
-		tableBoolean4.getColumnExt(3).setEditable(true);
-		tableBoolean4.getColumnExt(4).setEditable(false);
-
-		// card 6.1: set column width of col 1, 2 and 3
-		tableBoolean4.getColumnModel().getColumn(1).setPreferredWidth(90);
-		tableBoolean4.getColumnModel().getColumn(2).setPreferredWidth(90);
-		tableBoolean4.getColumnModel().getColumn(3).setPreferredWidth(90);
-
-		// card 6.1: add vertical/horizontal Scroller
-		JScrollPane scrollPaneTableBoolean4 = new JScrollPane (tableBoolean4);
-		scrollPaneTableBoolean4.setPreferredSize(new Dimension(800, 520));
-		scrollPaneTableBoolean4.setVerticalScrollBarPolicy(
-				JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		scrollPaneTableBoolean4.setHorizontalScrollBarPolicy(
-				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-
-		// card 6.1: add table + tableHeader to panel
-		JPanel tableBoolean4AndHeaderPanel = new JPanel(new BorderLayout());
-		tableBoolean4AndHeaderPanel.add(tableBoolean4.getTableHeader(), 
-				BorderLayout.NORTH);	
-		tableBoolean4AndHeaderPanel.add(scrollPaneTableBoolean4, 
-				BorderLayout.WEST);
-
-		card6Panel.add(tableBoolean4AndHeaderPanel, BorderLayout.NORTH);
-
-		/*
-		 * CARD 6.2: BUTTONS PANEL FOR BOOLEAN TABLE 2
-		 */
-		// card 6.2: cancel button
-		cancelButtonBoolean4 = new JButton("cancel", cancelIcon);
-
-		cancelButtonBoolean4.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				dispose();
-			}
-		});
-
-		// card 6.2: previous - button
-		previousButtonBoolean4 = new JButton("previous", previousIcon);
-
-		previousButtonBoolean4.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String message = "\n Would you like to go to the previous"
-						+ " window?\nAll changes you made in this window"
-						+ " will be lost.";
-				Object[] options = {"previous window",
-				"cancel"};
-				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
-						"Warning", 
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.QUESTION_MESSAGE,
-						null,     //do not use a custom Icon
-						options,  //the titles of buttons
-						options[0]); //default button title
-				switch (result) {
-				case 0:
-					// task 1: remove the panel: buttonCard6Next and buttonCard6Go
-					if (booleanCounter == 4){
-						card6Panel.remove(buttonCard6Go);
-					}else{
-						card6Panel.remove(buttonCard6Next);	
-					}
-					// task 2: show previous panel
-					cl.previous(cards);
-				case 1:
-					break;
-				}
-			}
-		});
-
-		// card 6.2: go - button
-		goButtonBoolean4 = new JButton("go", goIcon);
-
-		goButtonBoolean4.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				boolean breakNow = false;
-				// task 1: create new variable
-				if (createNewVariable.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableName, 
-							newVariableDataType, 
-							statementType);
-				}
-				if (createNewVariable1.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField1.getText(), 
-							boolean1NewDataType, 
-							statementType); 
-				}
-				if (createNewVariable2.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField2.getText(), 
-							boolean2NewDataType, 
-							statementType); 
-				}
-				if (createNewVariable3.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField3.getText(), 
-							boolean3NewDataType, 
-							statementType); 
-				}
-				if (createNewVariable4.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField4.getText(), 
-							boolean4NewDataType, 
-							statementType); 
-				}
-				// task 2: recode boolean/int variables
-				breakNow = recodeBooleanVariables(tableBoolean4, 
-						tableModelBoolean4, boolean4OldName, 
-						boolean4NewName, breakNow);
-				// do task 3 and 4 only if column 4 entries are integers:
-				// task 3: recode chosen variable
-				if (breakNow == false){
-					for (int i = 0; i < tableRecode.getRowCount(); i++) {
-						String oldVarEntry = "";
-						oldVarEntry = (String) tableRecode.getModel().
-								getValueAt(i, 0); //
-						String newVarEntry = "";
-						newVarEntry = (String) tableRecode.getModel().
-								getValueAt(i, 2);
-						// get statement-ID-list where oldVarEntry is included
-						ArrayList<Integer> statIDList = Dna.dna.db.
-								getVariableEntryMatch(statementType, 
-										oldVariableName, oldVarEntry);
-						for (Integer ints: statIDList){
-							Dna.dna.db.changeStatement(ints, 
-									newVariableName, (String) newVarEntry,
-									oldVarDataType);
-						}
-					}
-					// task 4: close window
-					dispose();
-				}
-			}
-		});
-
-		// card 6.2: next-button (if boolean #2 is selected)
-		nextButtonBoolean4 = new JButton("next", nextIcon);
-
-		nextButtonBoolean4.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// task 1: check if all entries in table are integers
-				boolean breakNow = false;
-				for (int i = 0; i < tableModelBoolean4.getRowCount(); i++){
-					try{
-						Integer.parseInt(tableModelBoolean4.getValueAt(i, 3).
-								toString());
-					}catch(java.lang.NumberFormatException nfe){
-						String message = "\n The entries in column 4 are not all "
-								+ "integers.\nPlease check your entries before "
-								+ "moving on to the next variable."; 
-						JOptionPane.showMessageDialog(new JFrame(), message,
-								"Warning", JOptionPane.ERROR_MESSAGE);
-						breakNow = true;
-					}
-				}
-				// task 1: create data set
-				if (breakNow == false){
-					createDataSetBoolean(tableModelBoolean5, boolean5OldName);
-					// task 2: update table header
-					updateTableHeaderColumnNames(tableBoolean5, 
-							columnNamesBooleanPanel5);
-					// task 3: update border around Boolean1-Panel
-					TitledBorder card7PanelBorder = BorderFactory.
-							createTitledBorder(borderNameBoolean5);
-					card7Panel.setBorder(card7PanelBorder);
-					// task 4: show next window
-					cl.next(cards);
-				}
-			}
-		});
-
-		cards.add(card6Panel, "Recode additional variables");
-
-		/*---------------------------------------------------------------------
-		 * CARD 7 - RECODE BOOLEAN PANEL #5
-		 *--------------------------------------------------------------------*/
-		// task 2: update buttons-panel
-		card7Panel = new JPanel(new BorderLayout());
-
-		/*
-		 * CARD 7.1: Create table
-		 */	
-		// card 7.1: table
-		tableModelBoolean5 = new DefaultTableModel(columnNamesBooleanPanel5, 0);
-		tableBoolean5 = new JXTable(tableModelBoolean5);	
-
-		// card 7.1: get values in table => done w/createDataSetBoolean() under card3.2-nextButton
-
-		// card 7.1: decide which columns are editable
-		tableBoolean5.getColumnExt(0).setEditable(false);
-		tableBoolean5.getColumnExt(1).setEditable(false);
-		tableBoolean5.getColumnExt(2).setEditable(false);
-		tableBoolean5.getColumnExt(3).setEditable(true);
-		tableBoolean5.getColumnExt(4).setEditable(false);
-
-		// card 7.1: set column width of col 1, 2 and 3
-		tableBoolean5.getColumnModel().getColumn(1).setPreferredWidth(90);
-		tableBoolean5.getColumnModel().getColumn(2).setPreferredWidth(90);
-		tableBoolean5.getColumnModel().getColumn(3).setPreferredWidth(90);
-
-		// card 7.1: add vertical/horizontal Scroller
-		JScrollPane scrollPaneTableBoolean5 = new JScrollPane (tableBoolean5);
-		scrollPaneTableBoolean5.setPreferredSize(new Dimension(800, 520));
-		scrollPaneTableBoolean5.setVerticalScrollBarPolicy(
-				JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		scrollPaneTableBoolean5.setHorizontalScrollBarPolicy(
-				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-
-		// card 7.1: add table + tableHeader to panel
-		JPanel tableBoolean5AndHeaderPanel = new JPanel(new BorderLayout());
-		tableBoolean5AndHeaderPanel.add(tableBoolean5.getTableHeader(), 
-				BorderLayout.NORTH);	
-		tableBoolean5AndHeaderPanel.add(scrollPaneTableBoolean5, 
-				BorderLayout.WEST);
-
-		card7Panel.add(tableBoolean5AndHeaderPanel, BorderLayout.NORTH);
-
-		/*
-		 * CARD 7.2: BUTTONS PANEL FOR BOOLEAN TABLE 2
-		 */
-		JPanel buttonCard7Go = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-
-		// card 7.2: cancel button
-		cancelButtonBoolean5 = new JButton("cancel", cancelIcon);
-		buttonCard7Go.add(cancelButtonBoolean5);
-
-		cancelButtonBoolean5.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				dispose();
-			}
-		});
-
-		// card 7.2: previous - button
-		previousButtonBoolean5 = new JButton("previous", previousIcon);
-		buttonCard7Go.add(previousButtonBoolean5);
-
-		previousButtonBoolean5.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String message = "\n Would you like to go to the previous"
-						+ " window?\nAll changes you made in this window"
-						+ " will be lost.";
-				Object[] options = {"previous window",
-				"cancel"};
-				int result = JOptionPane.showOptionDialog(new JFrame(), message, 
-						"Warning", 
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.QUESTION_MESSAGE,
-						null,     //do not use a custom Icon
-						options,  //the titles of buttons
-						options[0]); //default button title
-				switch (result) {
-				case 0:
-					// task 1: show previous panel
-					cl.previous(cards);
-				case 1: 
-					break;
-				}
-			}
-		});
-
-		// card 7.2: go - button
-		goButtonBoolean5 = new JButton("go", goIcon);
-		buttonCard7Go.add(goButtonBoolean5);
-
-		goButtonBoolean5.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				boolean breakNow = false;
-				// task 1: create new variable
-				if (createNewVariable.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableName, 
-							newVariableDataType, 
-							statementType);
-				}
-				if (createNewVariable1.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField1.getText(), 
-							boolean1NewDataType, 
-							statementType); 
-				}
-				if (createNewVariable2.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField2.getText(), 
-							boolean2NewDataType, 
-							statementType); 
-				}
-				if (createNewVariable3.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField3.getText(), 
-							boolean3NewDataType, 
-							statementType); 
-				}
-				if (createNewVariable4.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField4.getText(), 
-							boolean4NewDataType, 
-							statementType); 
-				}
-				if (createNewVariable5.isSelected() == true){
-					Dna.dna.db.addVariable(newVariableTextField5.getText(), 
-							boolean5NewDataType, 
-							statementType); 
-				}
-				// task 2: recode boolean/int variables
-				breakNow = recodeBooleanVariables(tableBoolean5, 
-						tableModelBoolean5, boolean5OldName, 
-						boolean5NewName, breakNow);
-				// do task 3 and 4 only if column 4 entries are integers:
-				// task 3: recode chosen variable
-				if (breakNow == false){
-					for (int i = 0; i < tableRecode.getRowCount(); i++) {
-						String oldVarEntry = "";
-						oldVarEntry = (String) tableRecode.getModel().
-								getValueAt(i, 0); //
-						String newVarEntry = "";
-						newVarEntry = (String) tableRecode.getModel().
-								getValueAt(i, 2);
-						// get statement-ID-list where oldVarEntry is included
-						ArrayList<Integer> statIDList = Dna.dna.db.
-								getVariableEntryMatch(statementType, 
-										oldVariableName, oldVarEntry);
-						for (Integer ints: statIDList){
-							Dna.dna.db.changeStatement(ints, 
-									newVariableName, (String) newVarEntry,
-									oldVarDataType);
-						}
-					}
-					// task 4: close window
-					dispose();
-				}
-			}
-		});
-
-		card7Panel.add(buttonCard7Go, BorderLayout.SOUTH);
-		cards.add(card7Panel, "Recode additional variables");
-
-		/*
-		 * FINISH
-		 */
-		// Finish JDialog
-		this.add(cards, BorderLayout.NORTH);
-		this.pack();
-		this.setLocationRelativeTo(null);
-		this.setVisible(true);
-	}
-
-	//-------------------------------------------------------------------------	
-	//-------------------------------------------------------------------------
-	//-------------------------------------------------------------------------	
-
-	/**
-	 * Add panel to cardPanel - either NEXT-button or GO-button.
-	 * 
-	 * @param n					Integer, counts how many boolean variables are chosen
-	 * @param panelGo			Panel with CANCEL, PREVIOUS and GO-buttons
-	 * @param panelNext			Panel with CANCEL, PREVIOUS and NEXT-buttons
-	 * @param cancelButton		Button that calls dispose()
-	 * @param previousButton	Button that leads to previous card
-	 * @param goButton			Button that does the actual recoding
-	 * @param nextButton		Button that leads to next card
-	 */
-	public void nextOrGo(int n, JPanel panelGo, JPanel panelNext, 
-			JButton cancelButton, JButton previousButton, JButton goButton, 
-			JButton nextButton, JPanel cardPanel){
-		if (booleanCounter == n){
-			panelGo.add(cancelButton);
-			panelGo.add(previousButton);
-			panelGo.add(goButton);
-			cardPanel.add(panelGo, BorderLayout.SOUTH);
-			//pack();
-		}else{
-			panelNext.add(cancelButton);
-			panelNext.add(previousButton);
-			panelNext.add(nextButton);
-			cardPanel.add(panelNext, BorderLayout.SOUTH);
-			//pack();
-		}
+		// set tool tip time
+		ToolTipManager.sharedInstance().setInitialDelay(0);
+		//ToolTipManager.sharedInstance().setDismissDelay(500);
+
+		new SetVariablesWindow();
+		//this.add(window1, BorderLayout.NORTH);
+		window1.pack();
+		window1.setLocationRelativeTo(null);
+		window1.setVisible(true);
 
 	}
 
-	/**
-	 * Add boolean variables to lower-half of first card-panel.
-	 * 
-	 * @param gbc			Same gbc as used in booleanPanel
-	 * @param panel			Name of panel where variables are added to
-	 * @param counter		Counts how many boolean variables are chosen
-	 */
-	public void addChooseVariableToPanel(GridBagConstraints gbc, 
-			final JPanel panel, final int counter){
+	/*---------------------------------------------------------------------
+	 * WINDOW 1: SET VARIABLES
+	 *--------------------------------------------------------------------*/
+	class SetVariablesWindow  {
+		public SetVariablesWindow(){
+			/*
+			 *  WINDOW 1.1: SELECT VARIABLE
+			 */
+			JPanel chooseVariablePanel = new JPanel(new GridBagLayout());
+			chooseVariablePanel = new JPanel(new GridBagLayout());
+			gbc = new GridBagConstraints();
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			gbc.insets = new Insets(1, 0, 1, 5);
 
-		if (counter == 1){
-			// 1 - Variable # - label
+			// window 1.1: chose variable - label
+			gbc.gridy = 0;
+			gbc.gridx = 0;
+			gbc.gridwidth = 1;
+			gbc.gridheight = 1;
+			JLabel chooseVar = new JLabel("choose variable: ", JLabel.RIGHT);
+			chooseVariablePanel.add(chooseVar, gbc);
+
+			// window 1.1: choose variable type - ComboBox
+			gbc.gridy = 0;
+			gbc.gridx = 1;
+			ArrayList<StatementType> typeList = Dna.dna.db.getStatementTypes();
+			String[] types = new String[typeList.size()];
+			for (int i = 0; i < typeList.size(); i++) {
+				types[i] = typeList.get(i).getLabel();
+			}
+			typeBox = new JComboBox<String>(types);
+			statementType = typeBox.getSelectedItem().toString();
+			chooseVariablePanel.add(typeBox, gbc);
+
+			typeBox.addItemListener(new ItemListener() {
+				public void itemStateChanged(ItemEvent e) {	
+					variableBox.removeAllItems();
+					variableOverwriteBox.removeAllItems();
+					String type = (String) typeBox.getSelectedItem();
+					if (type != null && !type.equals("")) {
+						// task 1: set variable selection for recode variable
+						HashMap<String, String> variables = Dna.dna.db.
+								getVariablesByTypes(type, "short text", 
+										"long text");
+						Iterator<String> keyIterator = variables.keySet().
+								iterator();
+						while (keyIterator.hasNext()){
+							String key = keyIterator.next();
+							variableBox.addItem(key);
+							variableOverwriteBox.addItem(key);
+						}
+						variableBox.setSelectedIndex(0);
+						variableOverwriteBox.setSelectedIndex(0);
+						// task2: set variable selection for additional variable
+						booleanBox.removeAllItems();
+						HashMap<String, String> variablesBoolean = Dna.dna.db.
+								getVariablesByTypes(type, "boolean", "integer");
+						Iterator<String> keyIteratorBoolean = variablesBoolean.
+								keySet().iterator();
+						while (keyIteratorBoolean.hasNext()){
+							String key = keyIteratorBoolean.next();
+							booleanBox.addItem(key);
+						}
+						booleanBox.addItem("");
+						booleanBox.setSelectedItem("");
+					}
+				}
+			});	 
+
+			// window 1.1: choose variable - ComboBox
+			gbc.gridy = 0;
+			gbc.gridx = 2; 
+			String type = typeBox.getSelectedItem().toString();
+			LinkedHashMap<String, String> variableList = Dna.dna.db.
+					getVariablesByTypes(type, "short text", "long text");
+			Object[] variableKeys = variableList.keySet().toArray();
+			String[] variables = new String[variableKeys.length];
+			for (int i = 0; i < variableKeys.length; i++) {
+				variables[i] = variableKeys[i].toString();
+			}
+			variableBox = new JComboBox<String>(variables);
+			chooseVariablePanel.add(variableBox, gbc);
+
+			// window 1.1: new variable - label
+			gbc.gridy++;
+			gbc.gridx = 0;
+			JLabel newVariableLabel = new JLabel("new variable: ", JLabel.RIGHT);
+			chooseVariablePanel.add(newVariableLabel, gbc);
+
+			// window 1.1: create button group for overwrite vs. new
+			ButtonGroup overNewButtonGroup = new ButtonGroup();
+
+			// window 1.1: create new variable - radioButton
+			gbc.gridx = 1;
+			createNewVariable = new JRadioButton("create new variable");
+			overNewButtonGroup.add(createNewVariable);	
+			createNewVariable.setSelected(true);
+			chooseVariablePanel.add(createNewVariable, gbc);
+
+			createNewVariable.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {	
+					if (createNewVariable.isSelected()){
+						newVariableTextField.setEnabled(true);
+						newVariableDataTypeBox.setEnabled(true);
+						variableOverwriteBox.setEnabled(false);
+					}
+					checkIfNextButtonCanBeActivated();
+				}			
+			});	
+
+			// window 1.1: overwrite existing variable - radioButton
+			gbc.gridx = 2;
+			overwriteVariable = new JRadioButton("overwrite existing variable");
+			overNewButtonGroup.add(overwriteVariable);
+			chooseVariablePanel.add(overwriteVariable, gbc);
+
+			overwriteVariable.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {	
+					if (overwriteVariable.isSelected()){
+						newVariableTextField.setEnabled(false);
+						newVariableDataTypeBox.setEnabled(false);
+						variableOverwriteBox.setEnabled(true);
+					}
+					checkIfNextButtonCanBeActivated();
+				}			
+			});
+
+			// window 1.1: set variable name/type - label
 			gbc.gridx = 0; 
 			gbc.gridy++; 
-			gbc.gridwidth = 1;
-			JLabel numberLabel1 = new JLabel("Variable 1", JLabel.RIGHT);
-			panel.add(numberLabel1, gbc);
+			JLabel setVariableLabel = new JLabel("set name/type of variable: ", 
+					JLabel.RIGHT);
+			chooseVariablePanel.add(setVariableLabel, gbc);
 
-			// 1 - chose variable - label
+			// window 1.1: variable name - text field
+			gbc.gridx = 1; 
+			newVariableTextField = new JXTextField("name of new variable");
+			newVariableTextField.setColumns(12);
+			chooseVariablePanel.add(newVariableTextField, gbc);
+			newVariableTextField.setEnabled(true);
+
+			newVariableTextField.getDocument().addDocumentListener(new 
+					DocumentListener() {
+				@Override
+				public void changedUpdate(DocumentEvent e) {
+					checkIfNextButtonCanBeActivated();
+				}
+				@Override
+				public void insertUpdate(DocumentEvent e) {
+					checkIfNextButtonCanBeActivated();
+				}
+				@Override
+				public void removeUpdate(DocumentEvent e) {
+					checkIfNextButtonCanBeActivated();
+				}
+
+			});
+
+			// window 1.1: type for new variable  - comboBox
+			gbc.gridx = 2; 
+			newVariableDataTypeBox = new JComboBox<String>();
+			newVariableDataTypeBox.addItem("short text");
+			newVariableDataTypeBox.addItem("long text");
+			// LB.Note: not yet implemented
+			//newVariableDataTypeBox.addItem("integer");
+			//newVariableDataTypeBox.addItem("boolean");
+			chooseVariablePanel.add(newVariableDataTypeBox, gbc);
+			newVariableDataTypeBox.setEnabled(true);
+
+			// window 1.1: choose variable to be overwritten: 
+			gbc.gridy++;
+			gbc.gridx = 0;
+			JLabel chooseVarOverwrite = new JLabel("variable to be overwritten: ", 
+					JLabel.RIGHT);
+			chooseVariablePanel.add(chooseVarOverwrite, gbc);
+
+			// window 1.1: choose variable 2 - ComboBox
+			gbc.gridx = 1; 
+			String typeOverwrite = typeBox.getSelectedItem().toString();
+			variableList = Dna.dna.db.getVariablesByTypes(typeOverwrite, 
+					"short text", "long text");
+			Object[] variableKeysOverwrite = variableList.keySet().toArray();
+			String[] variablesOverwrite = new String[variableKeysOverwrite.
+			                                         length];
+			for (int i = 0; i < variableKeysOverwrite.length; i++) {
+				variablesOverwrite[i] = variableKeysOverwrite[i].toString();
+			}
+			variableOverwriteBox = new JComboBox<String>(variablesOverwrite);
+			chooseVariablePanel.add(variableOverwriteBox, gbc);
+			variableOverwriteBox.setEnabled(false);
+
+			// window 1.1: write border around chooseVariablePanel
+			TitledBorder chooseVariablePanelBorder = BorderFactory.
+					createTitledBorder("Choose variable to be recoded:");
+			chooseVariablePanel.setBorder(chooseVariablePanelBorder);	
+
+			/*
+			 * Window 1.2: BOOLEAN VARIABLE AFFECTED?
+			 */
+			JPanel chooseBooleanPanel = new JPanel(new GridBagLayout());
+			// window 1.1: write border around chooseBooleanPanel
+			TitledBorder chooseBooleanPanelBorder = BorderFactory.
+					createTitledBorder("Choose additional variable "
+							+ "affected by recoding the above specified "
+							+ "variable:");
+			chooseBooleanPanel.setBorder(chooseBooleanPanelBorder);	
+
+			// window 1.2: chose variable - label
 			gbc.gridy++;
 			gbc.gridx = 0;
 			gbc.gridwidth = 1;
 			gbc.gridheight = 1;
-			JLabel chooseVar1 = new JLabel("choose variable: ", JLabel.RIGHT);
-			panel.add(chooseVar1, gbc);
+			JLabel chooseVar1 = new JLabel("choose variable:", JLabel.RIGHT);
+			chooseBooleanPanel.add(chooseVar1, gbc);
 
-			// 1 - choose variable - ComboBox
+			// window 1.2: choose variable - ComboBox
 			gbc.gridx = 1; 
 			String type1 = typeBox.getSelectedItem().toString();
 			LinkedHashMap<String, String> variableList1 = Dna.dna.db.
@@ -2144,74 +336,92 @@ public class Recode extends JDialog {
 			for (int i = 0; i < variableKeys1.length; i++) {
 				variables1[i] = variableKeys1[i].toString();
 			}
-			variableBox1 = new JComboBox<String>(variables1);
-			panel.add(variableBox1, gbc);
+			booleanBox = new JComboBox<String>(variables1);
+			booleanBox.addItem("");
+			booleanBox.setSelectedItem("");
+			chooseBooleanPanel.add(booleanBox, gbc);
 
-			variableBox1.addActionListener(new ActionListener(){
+			booleanBox.addActionListener(new ActionListener(){
 				public void actionPerformed(ActionEvent e){
+					if (booleanBox.getSelectedItem() == ""){
+						createNewBoolean.setSelected(false);
+						createNewBoolean.setEnabled(false);
+						overwriteBoolean.setSelected(false);
+						overwriteBoolean.setEnabled(false);
+						newBooleanTextField.setText(null);
+						newBooleanTextField.setEnabled(false);
+						newBooleanDataTypeBox.setEnabled(false);
+						booleanOverwriteBox.setSelectedItem("");
+						booleanOverwriteBox.setEnabled(false);
+					}else{
+						createNewBoolean.setEnabled(true);
+						overwriteBoolean.setEnabled(true);
+					}
 					checkIfNextButtonCanBeActivated();
 				}
 			});
 
-			// 1 - new variable - label
+			// window 1.2: new variable - label
 			gbc.gridy++;
 			gbc.gridx = 0;
 			JLabel newVariableLabel1 = new JLabel("new variable: ",
 					JLabel.RIGHT);
-			panel.add(newVariableLabel1, gbc);
+			chooseBooleanPanel.add(newVariableLabel1, gbc);
 
-			// 1 - create new variable - radioButton
+			// window 1.2: create button group for overwrite vs. new
+			ButtonGroup overNewBooButtonGroup = new ButtonGroup();
+
+			// window 1.2: create new variable - radioButton
 			gbc.gridx = 1;
-			createNewVariable1 = new JRadioButton("create new variable");
-			panel.add(createNewVariable1, gbc);
+			createNewBoolean = new JRadioButton("create new variable");
+			chooseBooleanPanel.add(createNewBoolean, gbc);
+			createNewBoolean.setSelected(false);
+			createNewBoolean.setEnabled(false);
+			overNewBooButtonGroup.add(createNewBoolean);	
 
-			createNewVariable1.addActionListener(new ActionListener() {
+			createNewBoolean.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {	
-					if (createNewVariable1.isSelected()){
-						overwriteVariable1.setEnabled(false);
-						newVariableTextField1.setEnabled(true);
-						newVariableType1.setEnabled(true);
-					}else{
-						overwriteVariable1.setEnabled(true);
-						newVariableTextField1.setEnabled(false);
-						newVariableType1.setEnabled(false);
+					if (createNewBoolean.isSelected()){
+						newBooleanTextField.setEnabled(true);
+						newBooleanDataTypeBox.setEnabled(true);
+						booleanOverwriteBox.setEnabled(false);
 					}
 					checkIfNextButtonCanBeActivated();
 				}			
 			});	
 
-			// 1 - overwrite existing variable - radioButton
+			// window 1.2: overwrite existing variable - radioButton
 			gbc.gridx = 2;
-			overwriteVariable1 = new JRadioButton("overwrite existing variable");
-			panel.add(overwriteVariable1, gbc);
+			overwriteBoolean = new JRadioButton("overwrite existing variable");
+			overNewBooButtonGroup.add(overwriteBoolean);	
+			overwriteBoolean.setEnabled(false);
+			chooseBooleanPanel.add(overwriteBoolean, gbc);
 
-			overwriteVariable1.addActionListener(new ActionListener() {
+			overwriteBoolean.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {	
-					if (overwriteVariable1.isSelected()){
-						createNewVariable1.setEnabled(false);
-						variableBoxOverwrite1.setEnabled(true);
-					}else{
-						createNewVariable1.setEnabled(true);
-						variableBoxOverwrite1.setEnabled(false);
+					if (overwriteBoolean.isSelected()){
+						newBooleanTextField.setEnabled(false);
+						newBooleanDataTypeBox.setEnabled(false);
+						booleanOverwriteBox.setEnabled(true);
 					}
 					checkIfNextButtonCanBeActivated();
 				}			
 			});
 
-			// 1 - set variable name/type - label
+			// window 1.2: set variable name/type - label
 			gbc.gridx = 0; 
 			gbc.gridy++; 
 			JLabel setVariableLabel1 = new JLabel("set name of variable: ", 
 					JLabel.RIGHT);
-			panel.add(setVariableLabel1, gbc);
+			chooseBooleanPanel.add(setVariableLabel1, gbc);
 
-			// 1 - variable name - text field
+			// window 1.2: variable name - text field
 			gbc.gridx = 1; 
-			newVariableTextField1 = new JXTextField("name of new variable");
-			newVariableTextField1.setColumns(12);
-			panel.add(newVariableTextField1, gbc);
-			newVariableTextField1.setEnabled(false);
-			newVariableTextField1.getDocument().addDocumentListener(new 
+			newBooleanTextField = new JXTextField("name of new variable");
+			newBooleanTextField.setColumns(12);
+			chooseBooleanPanel.add(newBooleanTextField, gbc);
+			newBooleanTextField.setEnabled(true);
+			newBooleanTextField.getDocument().addDocumentListener(new 
 					DocumentListener() {
 				@Override
 				public void changedUpdate(DocumentEvent e) {
@@ -2231,36 +441,40 @@ public class Recode extends JDialog {
 
 			});
 
-			// 1 - type for new variable  - comboBox
+			// window 1.2: type for new variable  - comboBox
 			gbc.gridx = 2; 
-			newVariableType1 = new JComboBox<String>();
-			newVariableType1.addItem("integer");
-			newVariableType1.addItem("boolean");
-			panel.add(newVariableType1, gbc);
-			newVariableType1.setEnabled(false);
+			newBooleanDataTypeBox = new JComboBox<String>();
+			newBooleanDataTypeBox.addItem("integer");
+			newBooleanDataTypeBox.addItem("boolean");
+			chooseBooleanPanel.add(newBooleanDataTypeBox, gbc);
+			newBooleanDataTypeBox.setEnabled(false);
 
-			// 1 - set type/variable of overwrite-variable - label
+			// window 1.2: set type/variable of overwrite-variable - label
 			gbc.gridy++;
 			gbc.gridx = 0;
 			JLabel chooseVarOverwrite1 = new JLabel("variable to be "
 					+ "overwritten: ", JLabel.RIGHT);
-			panel.add(chooseVarOverwrite1, gbc);
+			chooseBooleanPanel.add(chooseVarOverwrite1, gbc);
 
-			// 1 - choose variable of overwrite-variable - ComboBox
+			// window 1.2: choose variable of overwrite-variable - ComboBox
 			gbc.gridx = 1; 
 			String typeOverwrite1 = typeBox.getSelectedItem().toString();
-			HashMap<String, String> variableList = Dna.dna.db.
+			HashMap<String, String> variableListBoolean = Dna.dna.db.
 					getVariablesByTypes(typeOverwrite1, "boolean", "integer");
-			Object[] variableKeysOverwrite = variableList.keySet().toArray();
-			String[] variablesOverwrite = new String[variableKeysOverwrite.length];
-			for (int i = 0; i < variableKeysOverwrite.length; i++) {
-				variablesOverwrite[i] = variableKeysOverwrite[i].toString();
+			Object[] variableKeysOverwriteBoolean = variableListBoolean.
+					keySet().toArray();
+			String[] variablesOverwriteBoolean = new 
+					String[variableKeysOverwriteBoolean.length];
+			for (int i = 0; i < variableKeysOverwriteBoolean.length; i++) {
+				variablesOverwriteBoolean[i] = variableKeysOverwriteBoolean[i].
+						toString();
 			}
-			variableBoxOverwrite1 = new JComboBox<String>(variablesOverwrite);
-			panel.add(variableBoxOverwrite1, gbc);
-			variableBoxOverwrite1.setEnabled(false);
+			booleanOverwriteBox = new JComboBox<String>(
+					variablesOverwriteBoolean);
+			chooseBooleanPanel.add(booleanOverwriteBox, gbc);
+			booleanOverwriteBox.setEnabled(false);
 
-			variableBoxOverwrite1.addActionListener(new ActionListener(){
+			booleanOverwriteBox.addActionListener(new ActionListener(){
 				public void actionPerformed(ActionEvent e){
 					checkIfNextButtonCanBeActivated();
 					if (nextButton.isEnabled() == true){
@@ -2269,611 +483,941 @@ public class Recode extends JDialog {
 					}
 				}
 			});	
-		}
-		if (counter == 2){
-			// 2 - Variable # - label
-			gbc.gridx = 0; 
-			gbc.gridy++; 
-			gbc.gridwidth = 1;
-			JLabel numberLabel2 = new JLabel("Variable 2", JLabel.RIGHT);
-			panel.add(numberLabel2, gbc);
 
-			// 2 - chose variable - label
-			gbc.gridy++;
-			gbc.gridx = 0;
-			gbc.gridwidth = 1;
-			gbc.gridheight = 1;
-			JLabel chooseVar2 = new JLabel("choose variable: ", JLabel.RIGHT);
-			panel.add(chooseVar2, gbc);
+			/*
+			 *  WINDOW 1.3: BUTTON PANEL
+			 */
+			// window 1.3: Button Panel Boolean
+			JPanel buttonCard1Panel = new JPanel(new FlowLayout(
+					FlowLayout.RIGHT));
 
-			// 2 - choose variable - ComboBox
-			gbc.gridx = 1; 
-			String type2 = typeBox.getSelectedItem().toString();
-			HashMap<String, String> variableList2 = Dna.dna.db.
-					getVariablesByTypes(type2, "boolean", "integer");
-			Object[] variableKeys2 = variableList2.keySet().toArray();
-			String[] variables2 = new String[variableKeys2.length];
-			for (int i = 0; i < variableKeys2.length; i++) {
-				variables2[i] = variableKeys2[i].toString();
-			}
-			variableBox2 = new JComboBox<String>(variables2);
-			panel.add(variableBox2, gbc);
+			// window 1.3: cancel - button
+			cancelIcon = new ImageIcon(getClass().getResource(
+					"/icons/cancel.png"));
+			JButton cancelButtonBoolean = new JButton("cancel", cancelIcon);
+			buttonCard1Panel.add(cancelButtonBoolean);
 
-			variableBox2.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					checkIfNextButtonCanBeActivated();
+			cancelButtonBoolean.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					window1.dispose();
 				}
 			});
 
-			// 2 - new variable - label
-			gbc.gridy++;
-			gbc.gridx = 0;
-			JLabel newVariableLabel2 = new JLabel("new variable: ", 
-					JLabel.RIGHT);
-			panel.add(newVariableLabel2, gbc);
+			// window 1.3: next - button
+			nextIcon = new ImageIcon(getClass().getResource(
+					"/icons/resultset_next.png"));
+			nextButton = new JButton("next", nextIcon);
+			buttonCard1Panel.add(nextButton);
+			nextButton.setEnabled(false);
 
-			// 2 - create new variable - radioButton
-			gbc.gridx = 1;
-			createNewVariable2 = new JRadioButton("create new variable");
-			panel.add(createNewVariable2, gbc);
-
-			createNewVariable2.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {	
-					if (createNewVariable2.isSelected()){
-						overwriteVariable2.setEnabled(false);
-						newVariableTextField2.setEnabled(true);
-						newVariableType2.setEnabled(true);
+			nextButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					// task 1: update Names
+					updateVariableNames();
+					// task 2: close window1
+					window1.dispose();
+					// task 2: create new Panel
+					new RecodeWindow();
+					// task 3: add previous/next-buttons to panel
+					window2ButtonGo = new JPanel(new FlowLayout(
+							FlowLayout.RIGHT));
+					window2ButtonNext = new JPanel(new FlowLayout(
+							FlowLayout.RIGHT));
+					if (booleanBox.getSelectedItem() == ""){
+						window2ButtonGo.add(cancelButtonWindow2);
+						window2ButtonGo.add(previousButtonWindow2);
+						window2ButtonGo.add(goButtonWindow2);
+						window2.add(window2ButtonGo, BorderLayout.SOUTH);
+						//pack();
 					}else{
-						overwriteVariable2.setEnabled(true);
-						newVariableTextField2.setEnabled(false);
-						newVariableType2.setEnabled(false);
-					}
-					checkIfNextButtonCanBeActivated();
-				}			
-			});	
-
-			// 2 - overwrite existing variable - radioButton
-			gbc.gridx = 2;
-			overwriteVariable2 = new JRadioButton("overwrite existing variable");
-			panel.add(overwriteVariable2, gbc);
-
-			overwriteVariable2.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {	
-					if (overwriteVariable2.isSelected()){
-						createNewVariable2.setEnabled(false);
-						variableBoxOverwrite2.setEnabled(true);
-					}else{
-						createNewVariable2.setEnabled(true);
-						variableBoxOverwrite2.setEnabled(false);
-					}
-					checkIfNextButtonCanBeActivated();
-				}			
-			});
-
-			// 2 - set variable name/type - label
-			gbc.gridx = 0; 
-			gbc.gridy++; 
-			JLabel setVariableLabel2 = new JLabel("set name of variable: ", 
-					JLabel.RIGHT);
-			panel.add(setVariableLabel2, gbc);
-
-			// 2 - variable name - text field
-			gbc.gridx = 1; 
-			newVariableTextField2 = new JXTextField("name of new variable");
-			newVariableTextField2.setColumns(12);
-			panel.add(newVariableTextField2, gbc);
-			newVariableTextField2.setEnabled(false);
-			newVariableTextField2.getDocument().addDocumentListener(new 
-					DocumentListener() {
-				@Override
-				public void changedUpdate(DocumentEvent e) {
-					checkIfNextButtonCanBeActivated();
-					updateVariableNames();
-				}
-				@Override
-				public void insertUpdate(DocumentEvent e) {
-					checkIfNextButtonCanBeActivated();
-					updateVariableNames();
-				}
-				@Override
-				public void removeUpdate(DocumentEvent e) {
-					checkIfNextButtonCanBeActivated();
-					updateVariableNames();
-				}
-
-			});
-
-			// 2 - type for new variable  - comboBox
-			gbc.gridx = 2; 
-			newVariableType2 = new JComboBox<String>();
-			newVariableType2.addItem("integer");
-			newVariableType2.addItem("boolean");
-			panel.add(newVariableType2, gbc);
-			newVariableType2.setEnabled(false);
-
-			// 2 - set type/variable of overwrite-variable - label
-			gbc.gridy++;
-			gbc.gridx = 0;
-			JLabel chooseVarOverwrite2 = new JLabel("variable to be "
-					+ "overwritten: ", JLabel.RIGHT);
-			panel.add(chooseVarOverwrite2, gbc);
-
-			// 2 - choose variable of overwrite-variable - ComboBox
-			gbc.gridx = 1; 
-			String typeOverwrite2 = typeBox.getSelectedItem().toString();
-			HashMap<String, String> variableList = Dna.dna.db.
-					getVariablesByTypes(typeOverwrite2, "boolean", "integer");
-			Object[] variableKeysOverwrite = variableList.keySet().toArray();
-			String[] variablesOverwrite = new String[variableKeysOverwrite.length];
-			for (int i = 0; i < variableKeysOverwrite.length; i++) {
-				variablesOverwrite[i] = variableKeysOverwrite[i].toString();
-			}
-			variableBoxOverwrite2 = new JComboBox<String>(variablesOverwrite);
-			panel.add(variableBoxOverwrite2, gbc);
-			variableBoxOverwrite2.setEnabled(false);
-
-			variableBoxOverwrite2.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					checkIfNextButtonCanBeActivated();
-					if (nextButton.isEnabled() == true){
-						updateVariableNames();
-					}
-				}
-			});	
-		}
-		if (counter == 3){
-			// 3 - Variable # - label
-			gbc.gridx = 0; 
-			gbc.gridy++; 
-			gbc.gridwidth = 1;
-			JLabel numberLabel3 = new JLabel("Variable 3", JLabel.RIGHT);
-			panel.add(numberLabel3, gbc);
-
-			// 3 - chose variable - label
-			gbc.gridy++;
-			gbc.gridx = 0;
-			gbc.gridwidth = 1;
-			gbc.gridheight = 1;
-			JLabel chooseVar3 = new JLabel("choose variable: ", JLabel.RIGHT);
-			panel.add(chooseVar3, gbc);
-
-			// 3 - choose variable - ComboBox
-			gbc.gridx = 1; 
-			String type3 = typeBox.getSelectedItem().toString();
-			HashMap<String, String> variableList3 = Dna.dna.db.
-					getVariablesByTypes(type3, "boolean", "integer");
-			Object[] variableKeys3 = variableList3.keySet().toArray();
-			String[] variables3 = new String[variableKeys3.length];
-			for (int i = 0; i < variableKeys3.length; i++) {
-				variables3[i] = variableKeys3[i].toString();
-			}
-			variableBox3 = new JComboBox<String>(variables3);
-			panel.add(variableBox3, gbc);
-
-			variableBox3.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					checkIfNextButtonCanBeActivated();
+						window2ButtonNext.add(cancelButtonWindow2);
+						window2ButtonNext.add(previousButtonWindow2);
+						window2ButtonNext.add(nextButtonWindow2);
+						window2.add(window2ButtonNext, BorderLayout.SOUTH);
+						//pack();
+					}					
+					// task 4: update ColumnHeader
+					updateTableHeaderColumnNames(tableRecode, columnNames);
+					// task 5: create data set
+					createDataSet();
+					// task 6: update meta-list for variable
+					updateMetaListTable();
+					// task 7: show the recode panel window
+					window2.pack();
+					window2.setLocationRelativeTo(null);
+					window2.setVisible(true);	
 				}
 			});
 
-			// 3 - new variable - label
-			gbc.gridy++;
-			gbc.gridx = 0;
-			JLabel newVariableLabel3 = new JLabel("new variable: ", 
-					JLabel.RIGHT);
-			panel.add(newVariableLabel3, gbc);
-
-			// 3 - create new variable - radioButton
-			gbc.gridx = 1;
-			createNewVariable3 = new JRadioButton("create new variable");
-			panel.add(createNewVariable3, gbc);
-
-			createNewVariable3.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {	
-					if (createNewVariable3.isSelected()){
-						overwriteVariable3.setEnabled(false);
-						newVariableTextField3.setEnabled(true);
-						newVariableType3.setEnabled(true);
-					}else{
-						overwriteVariable3.setEnabled(true);
-						newVariableTextField3.setEnabled(false);
-						newVariableType3.setEnabled(false);
-					}
-					checkIfNextButtonCanBeActivated();
-				}			
-			});	
-
-			// 3 - overwrite existing variable - radioButton
-			gbc.gridx = 2;
-			overwriteVariable3 = new JRadioButton("overwrite existing variable");
-			panel.add(overwriteVariable3, gbc);
-
-			overwriteVariable3.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {	
-					if (overwriteVariable3.isSelected()){
-						createNewVariable3.setEnabled(false);
-						variableBoxOverwrite3.setEnabled(true);
-					}else{
-						createNewVariable3.setEnabled(true);
-						variableBoxOverwrite3.setEnabled(false);
-					}
-					checkIfNextButtonCanBeActivated();
-				}			
-			});
-
-			// 3 - set variable name/type - label
-			gbc.gridx = 0; 
-			gbc.gridy++; 
-			JLabel setVariableLabel3 = new JLabel("set name of variable: ",
-					JLabel.RIGHT);
-			panel.add(setVariableLabel3, gbc);
-
-			// 3 - variable name - text field
-			gbc.gridx = 1; 
-			newVariableTextField3 = new JXTextField("name of new variable");
-			newVariableTextField3.setColumns(12);
-			panel.add(newVariableTextField3, gbc);
-			newVariableTextField3.setEnabled(false);
-			newVariableTextField3.getDocument().addDocumentListener(new 
-					DocumentListener() {
-				@Override
-				public void changedUpdate(DocumentEvent e) {
-					checkIfNextButtonCanBeActivated();
-					updateVariableNames();
-				}
-				@Override
-				public void insertUpdate(DocumentEvent e) {
-					checkIfNextButtonCanBeActivated();
-					updateVariableNames();
-				}
-				@Override
-				public void removeUpdate(DocumentEvent e) {
-					checkIfNextButtonCanBeActivated();
-					updateVariableNames();
-				}
-
-			});
-
-			// 3 - type for new variable  - comboBox
-			gbc.gridx = 2; 
-			newVariableType3 = new JComboBox<String>();
-			newVariableType3.addItem("integer");
-			newVariableType3.addItem("boolean");
-			panel.add(newVariableType3, gbc);
-			newVariableType3.setEnabled(false);
-
-			// 3 - set type/variable of overwrite-variable - label
-			gbc.gridy++;
-			gbc.gridx = 0;
-			JLabel chooseVarOverwrite3 = new JLabel("variable to be "
-					+ "overwritten: ", JLabel.RIGHT);
-			panel.add(chooseVarOverwrite3, gbc);
-
-			// 3 - choose variable of overwrite-variable - ComboBox
-			gbc.gridx = 1; 
-			String typeOverwrite3 = typeBox.getSelectedItem().toString();
-			HashMap<String, String> variableList = Dna.dna.db.
-					getVariablesByTypes(typeOverwrite3, "boolean", "integer");
-			Object[] variableKeysOverwrite = variableList.keySet().toArray();
-			String[] variablesOverwrite = new String[variableKeysOverwrite.length];
-			for (int i = 0; i < variableKeysOverwrite.length; i++) {
-				variablesOverwrite[i] = variableKeysOverwrite[i].toString();
-			}
-			variableBoxOverwrite3 = new JComboBox<String>(variablesOverwrite);
-			panel.add(variableBoxOverwrite3, gbc);
-			variableBoxOverwrite3.setEnabled(false);
-
-			variableBoxOverwrite3.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					checkIfNextButtonCanBeActivated();
-					if (nextButton.isEnabled() == true){
-						updateVariableNames();
-					}
-				}
-			});	
-		}
-		if (counter == 4){
-			// 4 - Variable # - label
-			gbc.gridx = 0; 
-			gbc.gridy++; 
-			gbc.gridwidth = 1;
-			JLabel numberLabel4 = new JLabel("Variable 4", JLabel.RIGHT);
-			panel.add(numberLabel4, gbc);
-
-			// 4 - chose variable - label
-			gbc.gridy++;
-			gbc.gridx = 0;
-			gbc.gridwidth = 1;
-			gbc.gridheight = 1;
-			JLabel chooseVar4 = new JLabel("choose variable: ", JLabel.RIGHT);
-			panel.add(chooseVar4, gbc);
-
-			// 4 - choose variable - ComboBox
-			gbc.gridx = 1; 
-			String type4 = typeBox.getSelectedItem().toString();
-			HashMap<String, String> variableList4 = Dna.dna.db.
-					getVariablesByTypes(type4, "boolean", "integer");
-			Object[] variableKeys4 = variableList4.keySet().toArray();
-			String[] variables4 = new String[variableKeys4.length];
-			for (int i = 0; i < variableKeys4.length; i++) {
-				variables4[i] = variableKeys4[i].toString();
-			}
-			variableBox4 = new JComboBox<String>(variables4);
-			panel.add(variableBox4, gbc);
-
-			variableBox4.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					checkIfNextButtonCanBeActivated();
-				}
-			});
-
-			// 4 - new variable - label
-			gbc.gridy++;
-			gbc.gridx = 0;
-			JLabel newVariableLabel4 = new JLabel("new variable: ",
-					JLabel.RIGHT);
-			panel.add(newVariableLabel4, gbc);
-
-			// 4 - create new variable - radioButton
-			gbc.gridx = 1;
-			createNewVariable4 = new JRadioButton("create new variable");
-			panel.add(createNewVariable4, gbc);
-
-			createNewVariable4.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {	
-					if (createNewVariable4.isSelected()){
-						overwriteVariable4.setEnabled(false);
-						newVariableTextField4.setEnabled(true);
-						newVariableType4.setEnabled(true);
-					}else{
-						overwriteVariable4.setEnabled(true);
-						newVariableTextField4.setEnabled(false);
-						newVariableType4.setEnabled(false);
-					}
-					checkIfNextButtonCanBeActivated();
-				}			
-			});	
-
-			// 4 - overwrite existing variable - radioButton
-			gbc.gridx = 2;
-			overwriteVariable4 = new JRadioButton("overwrite existing variable");
-			panel.add(overwriteVariable4, gbc);
-
-			overwriteVariable4.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {	
-					if (overwriteVariable4.isSelected()){
-						createNewVariable4.setEnabled(false);
-						variableBoxOverwrite4.setEnabled(true);
-					}else{
-						createNewVariable4.setEnabled(true);
-						variableBoxOverwrite4.setEnabled(false);
-					}
-					checkIfNextButtonCanBeActivated();
-				}			
-			});
-
-			// 4 - set variable name/type - label
-			gbc.gridx = 0; 
-			gbc.gridy++; 
-			JLabel setVariableLabel4 = new JLabel("set name of variable: ", 
-					JLabel.RIGHT);
-			panel.add(setVariableLabel4, gbc);
-
-			// 4 - variable name - text field
-			gbc.gridx = 1; 
-			newVariableTextField4 = new JXTextField("name of new variable");
-			newVariableTextField4.setColumns(12);
-			panel.add(newVariableTextField4, gbc);
-			newVariableTextField4.setEnabled(false);
-			newVariableTextField4.getDocument().addDocumentListener(new 
-					DocumentListener() {
-				@Override
-				public void changedUpdate(DocumentEvent e) {
-					checkIfNextButtonCanBeActivated();
-					updateVariableNames();
-				}
-				@Override
-				public void insertUpdate(DocumentEvent e) {
-					checkIfNextButtonCanBeActivated();
-					updateVariableNames();
-				}
-				@Override
-				public void removeUpdate(DocumentEvent e) {
-					checkIfNextButtonCanBeActivated();
-					updateVariableNames();
-				}
-
-			});
-
-			// 4 - type for new variable  - comboBox
-			gbc.gridx = 2; 
-			newVariableType4 = new JComboBox<String>();
-			newVariableType4.addItem("integer");
-			newVariableType4.addItem("boolean");
-			panel.add(newVariableType4, gbc);
-			newVariableType4.setEnabled(false);
-
-			// 4 - set type/variable of overwrite-variable - label
-			gbc.gridy++;
-			gbc.gridx = 0;
-			JLabel chooseVarOverwrite4 = new JLabel("variable to be "
-					+ "overwritten: ", JLabel.RIGHT);
-			panel.add(chooseVarOverwrite4, gbc);
-
-			// 4 - choose variable of overwrite-variable - ComboBox
-			gbc.gridx = 1; 
-			String typeOverwrite4 = typeBox.getSelectedItem().toString();
-			HashMap<String, String> variableList = Dna.dna.db.
-					getVariablesByTypes(typeOverwrite4, "boolean", "integer");
-			Object[] variableKeysOverwrite = variableList.keySet().toArray();
-			String[] variablesOverwrite = new String[variableKeysOverwrite.length];
-			for (int i = 0; i < variableKeysOverwrite.length; i++) {
-				variablesOverwrite[i] = variableKeysOverwrite[i].toString();
-			}
-			variableBoxOverwrite4 = new JComboBox<String>(variablesOverwrite);
-			panel.add(variableBoxOverwrite4, gbc);
-			variableBoxOverwrite4.setEnabled(false);
-
-			variableBoxOverwrite4.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					checkIfNextButtonCanBeActivated();
-					if (nextButton.isEnabled() == true){
-						updateVariableNames();
-					}
-				}
-			});	
-		}
-		if (counter == 5){
-			// 5 - Variable # - label
-			gbc.gridx = 0; 
-			gbc.gridy++; 
-			gbc.gridwidth = 1;
-			JLabel numberLabel5 = new JLabel("Variable 5", JLabel.RIGHT);
-			panel.add(numberLabel5, gbc);
-
-			// 5 - chose variable - label
-			gbc.gridy++;
-			gbc.gridx = 0;
-			gbc.gridwidth = 1;
-			gbc.gridheight = 1;
-			JLabel chooseVar5 = new JLabel("choose variable: ", JLabel.RIGHT);
-			panel.add(chooseVar5, gbc);
-
-			// 5 - choose variable - ComboBox
-			gbc.gridx = 1; 
-			String type5 = typeBox.getSelectedItem().toString();
-			HashMap<String, String> variableList5 = Dna.dna.db.
-					getVariablesByTypes(type5, "boolean", "integer");
-			Object[] variableKeys5 = variableList5.keySet().toArray();
-			String[] variables5 = new String[variableKeys5.length];
-			for (int i = 0; i < variableKeys5.length; i++) {
-				variables5[i] = variableKeys5[i].toString();
-			}
-			variableBox5 = new JComboBox<String>(variables5);
-			panel.add(variableBox5, gbc);
-
-			variableBox5.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					checkIfNextButtonCanBeActivated();
-				}
-			});
-
-			// 5 - new variable - label
-			gbc.gridy++;
-			gbc.gridx = 0;
-			JLabel newVariableLabel5 = new JLabel("new variable: ", 
-					JLabel.RIGHT);
-			panel.add(newVariableLabel5, gbc);
-
-			// 5 - create new variable - radioButton
-			gbc.gridx = 1;
-			createNewVariable5 = new JRadioButton("create new variable");
-			panel.add(createNewVariable5, gbc);
-
-			createNewVariable5.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {	
-					if (createNewVariable5.isSelected()){
-						overwriteVariable5.setEnabled(false);
-						newVariableTextField5.setEnabled(true);
-						newVariableType5.setEnabled(true);
-					}else{
-						overwriteVariable5.setEnabled(true);
-						newVariableTextField5.setEnabled(false);
-						newVariableType5.setEnabled(false);
-					}
-					checkIfNextButtonCanBeActivated();
-				}			
-			});	
-
-			// 5 - overwrite existing variable - radioButton
-			gbc.gridx = 2;
-			overwriteVariable5 = new JRadioButton("overwrite existing variable");
-			panel.add(overwriteVariable5, gbc);
-
-			overwriteVariable5.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {	
-					if (overwriteVariable5.isSelected()){
-						createNewVariable5.setEnabled(false);
-						variableBoxOverwrite5.setEnabled(true);
-					}else{
-						createNewVariable5.setEnabled(true);
-						variableBoxOverwrite5.setEnabled(false);
-					}
-					checkIfNextButtonCanBeActivated();
-				}			
-			});
-
-			// 5 - set variable name/type - label
-			gbc.gridx = 0; 
-			gbc.gridy++; 
-			JLabel setVariableLabel5 = new JLabel("set name of variable: ", 
-					JLabel.RIGHT);
-			panel.add(setVariableLabel5, gbc);
-
-			// 5 - variable name - text field
-			gbc.gridx = 1; 
-			newVariableTextField5 = new JXTextField("name of new variable");
-			newVariableTextField5.setColumns(12);
-			panel.add(newVariableTextField5, gbc);
-			newVariableTextField5.setEnabled(false);
-			newVariableTextField5.getDocument().addDocumentListener(new 
-					DocumentListener() {
-				@Override
-				public void changedUpdate(DocumentEvent e) {
-					checkIfNextButtonCanBeActivated();
-					updateVariableNames();
-				}
-				@Override
-				public void insertUpdate(DocumentEvent e) {
-					checkIfNextButtonCanBeActivated();
-					updateVariableNames();
-				}
-				@Override
-				public void removeUpdate(DocumentEvent e) {
-					checkIfNextButtonCanBeActivated();
-					updateVariableNames();
-				}
-
-			});
-
-			// 5 - type for new variable  - comboBox
-			gbc.gridx = 2; 
-			newVariableType5 = new JComboBox<String>();
-			newVariableType5.addItem("integer");
-			newVariableType5.addItem("boolean");
-			panel.add(newVariableType5, gbc);
-			newVariableType5.setEnabled(false);
-
-			// 5 - set type/variable of overwrite-variable - label
-			gbc.gridy++;
-			gbc.gridx = 0;
-			JLabel chooseVarOverwrite5 = new JLabel("variable to be "
-					+ "overwritten: ", JLabel.RIGHT);
-			panel.add(chooseVarOverwrite5, gbc);
-
-			// 5 - choose variable of overwrite-variable - ComboBox
-			gbc.gridx = 1; 
-			String typeOverwrite5 = typeBox.getSelectedItem().toString();
-			HashMap<String, String> variableList = Dna.dna.db.
-					getVariablesByTypes(typeOverwrite5, "boolean", "integer");
-			Object[] variableKeysOverwrite = variableList.keySet().toArray();
-			String[] variablesOverwrite = new String[variableKeysOverwrite.length];
-			for (int i = 0; i < variableKeysOverwrite.length; i++) {
-				variablesOverwrite[i] = variableKeysOverwrite[i].toString();
-			}
-			variableBoxOverwrite5 = new JComboBox<String>(variablesOverwrite);
-			panel.add(variableBoxOverwrite5, gbc);
-			variableBoxOverwrite5.setEnabled(false);
-
-			variableBoxOverwrite5.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					checkIfNextButtonCanBeActivated();
-					if (nextButton.isEnabled() == true){
-						updateVariableNames();
-					}
-				}
-			});	
+			/*
+			 * WINDOW 1.4: SET THE PANEL
+			 */
+			// window 1.4: 
+			//window1 = new JPanel(new BorderLayout());
+			window1 = new JDialog();
+			window1.setTitle("Recode variables: choose affected variable(s)");
+			window1.setModal(true);
+			window1.setLayout(new BorderLayout());
+			window1.add(chooseVariablePanel, BorderLayout.NORTH);
+			window1.add(chooseBooleanPanel, BorderLayout.CENTER);
+			window1.add(buttonCard1Panel, BorderLayout.SOUTH);
 		}	
+	}
+
+	/*---------------------------------------------------------------------
+	 *  WINDOW 2: DO THE ACTUAL RECODING
+	 *--------------------------------------------------------------------*/
+
+	class RecodeWindow extends JDialog {
+		private static final long serialVersionUID = 1L;
+		public RecodeWindow(){
+
+			window2 = new JDialog();
+			window2.setTitle("Recode variables");
+			window2.setModal(true);
+			window2.setLayout(new BorderLayout());
+
+			/*
+			 *  CARD 2.1: CREATE THE TABLE
+			 */
+			tableModel = new DefaultTableModel(columnNames, 0); 
+			tableRecode = new JXTable(tableModel);					
+
+			// window 2.1: get values in table => done w/createDataSet() under card2-nextButton	
+
+			// window 2.1: decide which columns are editable
+			tableRecode.getColumnExt(0).setEditable(false);
+			tableRecode.getColumnExt(1).setEditable(false);
+			tableRecode.getColumnExt(2).setEditable(true);
+
+			// window 2.1: drag&drop from column 0 to 2
+			tableRecode.setDragEnabled(true);
+			tableRecode.setDropMode(DropMode.USE_SELECTION);
+			//TS() creates my own TransferHandler
+			tableRecode.setTransferHandler(new TS());
+
+			// window 2.1: add vertical/horizontal Scroller
+			JScrollPane scrollPaneRecode = new JScrollPane(tableRecode);
+			scrollPaneRecode.setPreferredSize(new Dimension(700, 450));
+			scrollPaneRecode.setVerticalScrollBarPolicy(
+					JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED); 
+
+			// window 2.1: add table + tableHeader to panel
+			JPanel tableRecodeAndHeaderPanel = new JPanel(new BorderLayout());
+			tableRecodeAndHeaderPanel.add(tableRecode.getTableHeader(), 
+					BorderLayout.NORTH);	
+			tableRecodeAndHeaderPanel.add(scrollPaneRecode, BorderLayout.WEST);
+			TitledBorder recodePanelBorder = BorderFactory.createTitledBorder(
+					"recode from old variable to new variable");
+			tableRecodeAndHeaderPanel.setBorder(recodePanelBorder);
+			window2.add(tableRecodeAndHeaderPanel, BorderLayout.WEST);
+
+			/*
+			 * CARD 2.2. META-LIST PANEL
+			 */
+			// window 2.2: table
+			tableMetaListModel = new DefaultTableModel(1, 1); 
+			tableMetaList = new JXTable(tableMetaListModel);
+			tableMetaList.getColumn(0).setMinWidth(260);
+			//tableMetaList.setPreferredSize(new Dimension(400, 600));
+
+			// window 2.2: get values in table => done in updateMetaListTable()
+
+			// window 2.2: drag&drop (same as in recode-table)
+			tableMetaList.setDragEnabled(true);
+			tableMetaList.setDropMode(DropMode.USE_SELECTION);
+			tableMetaList.setTransferHandler(new TS());
+
+			// window 2.2: set selection mode
+			tableMetaList.setRowSelectionAllowed(true);
+			tableMetaList.setSelectionMode(ListSelectionModel.
+					MULTIPLE_INTERVAL_SELECTION);
+
+			// window 2.2: add vertical/horizontal Scroller
+			JScrollPane scrollPaneMetaList = new JScrollPane (tableMetaList);
+			scrollPaneMetaList.setVerticalScrollBarPolicy(
+					JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED); 
+			scrollPaneMetaList.setHorizontalScrollBarPolicy(
+					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+			//scrollPaneMetaList.setPreferredSize(new Dimension(260, 500));
+
+			// window 2.2: add table + tableHeader to panel
+			JPanel tableMetaListPanel = new JPanel(new BorderLayout());
+			TitledBorder metaListPanelBorder = BorderFactory.createTitledBorder(
+					"set meta list entries for new variable");
+			tableMetaListPanel.setBorder(metaListPanelBorder);
+			//tableMetaListPanel.add(tableMetaList.getTableHeader(), BorderLayout.NORTH);	
+			tableMetaListPanel.add(scrollPaneMetaList, BorderLayout.CENTER);
+
+			/*
+			 * CARD 2.3: META-LIST BUTTONS
+			 */
+			// window 2.3: save meta list - button
+			ImageIcon saveIcon = new ImageIcon(getClass().getResource(
+					"/icons/table_save.png"));
+			JButton saveMetaList = new JButton(saveIcon);
+			saveMetaList.setToolTipText("save changes made to the meta list");
+
+			saveMetaList.addActionListener(new ActionListener(){
+				public void actionPerformed(ActionEvent e) {
+					saveMetaListEntries();
+					String message = "Entries for the meta list have been saved."; 
+					JOptionPane.showMessageDialog(new JFrame(), message, 
+							"Information", JOptionPane.INFORMATION_MESSAGE);
+				}
+			});	
+
+			// window 2.3: add meta list table row - button
+			addIcon = new ImageIcon(getClass().getResource(
+					"/icons/add.png"));
+			JButton addRow = new JButton(addIcon);
+			addRow.setToolTipText("add new entry to meta list");
+
+			addRow.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					tableMetaListModel.addRow(new Object[]{""});
+				}
+			});
+
+			// window 2.3: delete meta list entry - button
+			ImageIcon deleteIcon = new ImageIcon(getClass().getResource(
+					"/icons/delete.png"));
+			JButton deleteRow = new JButton(deleteIcon);
+			deleteRow.setToolTipText("remove selected entry/ies");
+
+			deleteRow.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					// task 1: get ints of all selected items in table
+					int[] allSelectedEntries = tableMetaList.getSelectedRows();
+					// task 2: get all entries in meta list
+					ArrayList<String> entries = new ArrayList<String>(Arrays.
+							asList(Dna.dna.db.getEntriesFromVariableList(
+									statementType, newVariableName)));
+					// task 3: remove entries from meta list (Attention: sorting!)
+					for (int i : allSelectedEntries){
+						//convertRowIndexModel() fixes problem with sorting
+						int row = (int) tableMetaList.convertRowIndexToModel(i);
+						// task 1: get the label
+						String label = (String) tableMetaListModel.getValueAt(
+								row, 0);
+						// task 2: delete entry from Meta list in database (if it is in there)
+						if (label != "" && label != null && entries.contains(
+								label) == true){Dna.dna.db.
+							removeEntryFromVariableList(label, 
+									statementType, newVariableName);
+						}
+					}
+					// task 4: remove all rows from table ( + make sure sorting is not a problem)
+					int res = 0;
+					for(int i = 0; i < allSelectedEntries.length; i++) {
+						res += (i>0)?(allSelectedEntries[i]-
+								allSelectedEntries[i-1]-1):0;
+						int index = tableMetaList.convertRowIndexToModel(
+								allSelectedEntries[0]+res);
+						tableMetaListModel.removeRow(index);
+					}
+				}
+			});
+
+			// window 2.3: import from old var - button
+			ImageIcon importOldVarIcon = new ImageIcon(getClass().getResource(
+					"/icons/arrow_turn_left_down.png"));
+			JButton importFromOldVar = new JButton(importOldVarIcon);
+			importFromOldVar.setToolTipText("import entries from old variable "
+					+ "to meta list");
+
+			importFromOldVar.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					// add table to JDialog
+					JDialog openTableImport = new JDialog();
+					openTableImport.setModal(true);
+					// true = import from old var; false = import from new var
+					Boolean importOldVariable = true;
+					openTableForImport(openTableImport, importOldVariable);
+					openTableImport.pack();
+					openTableImport.setLocationRelativeTo(null);
+					openTableImport.setVisible(true);	
+				}
+			});
+
+			// window 2.3: import from new var - button
+			ImageIcon importNewVarIcon = new ImageIcon(getClass().getResource(
+					"/icons/arrow_turn_right_down.png"));
+			JButton importFromNewVar = new JButton(importNewVarIcon);
+			importFromNewVar.setToolTipText("import entries from new variable "
+					+ "to meta list");
+
+			importFromNewVar.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					// add table to JDialog
+					JDialog openTableImport = new JDialog();
+					openTableImport.setModal(true);
+					// true = import from old var; false = import from new var
+					//boolean importOldVariable => oben definieren??
+					Boolean importOldVariable = false;
+					openTableForImport(openTableImport, importOldVariable);
+					openTableImport.pack();
+					openTableImport.setLocationRelativeTo(null);
+					openTableImport.setVisible(true);	
+				}
+			});
+
+			// window 2.3: import external list - button
+			ImageIcon importIcon = new ImageIcon(getClass().getResource(
+					"/icons/table_add.png"));
+			JButton loadList = new JButton(importIcon);
+			loadList.setToolTipText("load .txt-file row by row and import "
+					+ "selected entries into meta list");
+
+			loadList.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					// Panel für Import
+					openTableImportFromFile = new JDialog();
+					openTableImportFromFile.setModal(true);	
+					JPanel importTableExternalFile = new JPanel(new BorderLayout());
+					// Datei öffnen
+					JFileChooser fc = new JFileChooser();
+					fc.setFileFilter(new FileFilter() {
+						public boolean accept(File f) {
+							return f.getName().toLowerCase().endsWith(".txt")
+									|| f.isDirectory();
+						}
+						public String getDescription() {
+							return "Text file " +
+									"(*.txt)";
+						}
+					});
+					// show dialog window
+					int returnVal = fc.showOpenDialog(Recode.this);
+					if (returnVal == JFileChooser.CANCEL_OPTION) {
+						openTableImportFromFile.dispose();
+					}
+					if (returnVal == JFileChooser.APPROVE_OPTION) {
+						file = fc.getSelectedFile();	
+						// Datei einlesen
+						try{
+							linesImported = getArrayListFromString(file);
+						}
+						catch(Exception en){
+							en.printStackTrace();
+						}
+
+						// Tabelle bilden
+						String[] columnNamesImportFromFile = new String[]
+								{"add entry", file.getName()};
+						tableModelImportFromFile = new 
+								DefaultTableModel(columnNamesImportFromFile, 0);
+						JXTable tableImportFromFile = new JXTable(
+								tableModelImportFromFile);
+						tableImportFromFile.getColumnModel().getColumn(0).
+						setCellRenderer(tableImportFromFile.getDefaultRenderer(
+								Boolean.class));
+						tableImportFromFile.getColumn(0).setMaxWidth(62); 
+						// make columns editable
+						tableImportFromFile.getColumnModel().getColumn(0).
+						setCellEditor(tableImportFromFile.
+								getDefaultEditor(Boolean.class));
+						tableImportFromFile.getColumnExt(1).setEditable(true);
+						// add vertical/horizontal scroller for table
+						JScrollPane scrollPaneImportPanel = new JScrollPane(
+								tableImportFromFile);
+						scrollPaneImportPanel.setVerticalScrollBarPolicy(
+								JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+						scrollPaneImportPanel.setHorizontalScrollBarPolicy(
+								JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);		
+
+						importTableExternalFile.add(scrollPaneImportPanel, 
+								BorderLayout.NORTH);	
+
+						// Datensatz bilden
+						boolean select = false;
+						for (int i = 0; i < linesImported.size(); i++) {	
+							Object[] dataImportFromFile = {select, 
+									linesImported.get(i)};
+							if (linesImported.get(i).startsWith("List of "
+									+ "meta-entries for variable") || 
+									linesImported.get(i).equals("")){
+								//do not add to table
+							}else{
+								tableModelImportFromFile.addRow(dataImportFromFile);
+							}
+						}
+
+						// button-panel
+						JPanel buttonImportEntriesFromFilePanel = new JPanel(new 
+								FlowLayout(FlowLayout.RIGHT));
+
+						// select all - button
+						JButton selectEntriesImportFromFile = new JButton(
+								"select all");
+						buttonImportEntriesFromFilePanel.add(
+								selectEntriesImportFromFile);
+
+						selectEntriesImportFromFile.addActionListener(
+								new ActionListener(){
+									public void actionPerformed(ActionEvent e){
+										for (int i = 0; i < tableModelImportFromFile.
+												getRowCount(); i++){
+											tableModelImportFromFile.setValueAt(
+													true, i, 0);
+										}		
+									}
+								});
+
+						// deselect all - button
+						JButton unselectEntriesImportFromFile = new JButton(
+								"deselect all");
+						buttonImportEntriesFromFilePanel.add(
+								unselectEntriesImportFromFile);
+
+						unselectEntriesImportFromFile.addActionListener(
+								new ActionListener(){
+									public void actionPerformed(ActionEvent e){
+										for (int i = 0; i < tableModelImportFromFile.
+												getRowCount(); i++){
+											tableModelImportFromFile.setValueAt(
+													false, i, 0);
+										}		
+									}
+								});
+
+						// cancel - button
+						JButton cancelImport = new JButton("cancel", cancelIcon);
+						buttonImportEntriesFromFilePanel.add(cancelImport);
+
+						cancelImport.addActionListener(new ActionListener(){
+							public void actionPerformed(ActionEvent e){
+								openTableImportFromFile.dispose();
+							}
+						});
+
+						// add entries
+						JButton addEntriesImportFromFile = new JButton(
+								"add selected entries", addIcon);
+						buttonImportEntriesFromFilePanel.add(
+								addEntriesImportFromFile);
+
+						addEntriesImportFromFile.addActionListener(new ActionListener(){
+							public void actionPerformed(ActionEvent e){
+								for (int i = 0; i < tableModelImportFromFile.
+										getRowCount(); i++){
+									if (tableModelImportFromFile.getValueAt(i, 0).
+											equals(true)){//if the entry was chosen=true
+										String newEntry = (String) 
+												tableModelImportFromFile.
+												getValueAt(i, 1).toString();
+										String[] variableListEntries = Dna.dna.db.
+												getEntriesFromVariableList(
+														statementType, 
+														newVariableName);		
+										boolean validAdd = false;
+										if (variableListEntries.length == 0){
+											validAdd = false;
+										}else{
+											for (int j = 0; j < variableListEntries.
+													length; j++) {
+												if (variableListEntries[j].equals(
+														newEntry)){
+													validAdd = true;
+												}
+											}
+										}
+										if (validAdd == false) {
+											Dna.dna.db.addEntryToVariableList(
+													newEntry, statementType, 
+													newVariableName);
+											Object[] data = {newEntry};
+											tableMetaListModel.addRow(data);
+										} 
+									}
+								}
+								openTableImportFromFile.dispose();
+							}
+						});
+
+						// add to JDialog-Window
+						openTableImportFromFile.add(importTableExternalFile, 
+								BorderLayout.NORTH);
+						openTableImportFromFile.add(buttonImportEntriesFromFilePanel, 
+								BorderLayout.SOUTH);
+						openTableImportFromFile.pack();
+						openTableImportFromFile.setLocationRelativeTo(null);
+						openTableImportFromFile.setVisible(true);
+					}
+				}
+			});
+
+			// window 2.3: export meta list - button
+			ImageIcon exportIcon = new ImageIcon(getClass().getResource(
+					"/icons/table_go.png"));
+			JButton exportList = new JButton(exportIcon);
+			exportList.setToolTipText("export meta list to .txt-file");
+
+			exportList.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					String[] variableListEntries = Dna.dna.db.
+							getEntriesFromVariableList(statementType, 
+									newVariableName);
+					String writeEntries = "List of meta-entries for variable '" + 
+							newVariableName + "'\n\n";
+					for (int i = 0; i < variableListEntries.length; i++){
+						writeEntries = writeEntries + variableListEntries[i] + "\n";
+					}
+					// save a file
+					// parent component of the dialog
+					JDialog saveFilePanel = new JDialog();		 
+					JFileChooser fileChooser = new JFileChooser();
+					fileChooser.setFileFilter(new FileFilter() {
+						public boolean accept(File f) {
+							return f.getName().toLowerCase().endsWith(".txt")
+									|| f.isDirectory();
+						}
+						public String getDescription() {
+							return "Text file " +
+									"(*.txt)";
+						}
+					});
+
+					// open file-chooser dialog and specify path/file name
+					fileChooser.setDialogTitle("Specify a file to save");   
+					int userSelection = fileChooser.showSaveDialog(saveFilePanel);
+					if (userSelection == JFileChooser.APPROVE_OPTION) {
+						File fileToSave = fileChooser.getSelectedFile();
+						String file_name = fileToSave.toString();
+						if (!file_name.endsWith(".txt"))
+							file_name += ".txt";
+						try {
+							FileWriter fw = new FileWriter(file_name);
+							fw.write(writeEntries);
+							fw.close();
+
+						} catch (IOException iox) {
+							iox.printStackTrace();
+						}
+					}
+				}
+			});
+
+			// window 2.3: add buttons to panel 
+			Box iconPanel = new Box(BoxLayout.Y_AXIS);
+			iconPanel.add(saveMetaList);
+			iconPanel.add(addRow);
+			iconPanel.add(deleteRow);
+			iconPanel.add(importFromOldVar);
+			iconPanel.add(importFromNewVar);
+			iconPanel.add(loadList);
+			iconPanel.add(exportList);
+			iconPanel.setVisible(true);		
+			tableMetaListPanel.add(iconPanel, BorderLayout.EAST);
+
+			// window 2.3: add meta-list-panel to card2 
+			window2.add(tableMetaListPanel, BorderLayout.CENTER);
+
+			/*
+			 * CARD 2.4. BUTTONS-PANEL
+			 */		
+			// window 2.4: cancel - button
+			cancelButtonWindow2 = new JButton("cancel", cancelIcon);
+
+			cancelButtonWindow2.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					// task 1: save meta list entries
+					saveMetaListEntries();
+					// task 2: close or not?
+					String message = "Would you like to close the recode window?\n"
+							+ "All changes will be lost.";
+					Object[] options ={"Yes, close window", "No, keep recoding"};
+					int result = JOptionPane.showOptionDialog(new JFrame(), 
+							message, "Warning", JOptionPane.YES_NO_OPTION,
+							JOptionPane.QUESTION_MESSAGE, null, options,  	
+							options[0]); 
+					switch (result) {
+					case 0:	
+						window2.dispose();
+					case 1:
+						break;
+					}
+				}
+			});
+
+			// window 2.4: previous - button
+			previousIcon = new ImageIcon(getClass().getResource(
+					"/icons/resultset_previous.png"));
+			previousButtonWindow2 = new JButton("previous", previousIcon);
+
+			previousButtonWindow2.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					// task 1: save meta list
+					saveMetaListEntries();
+					// task 2: want to go to previous window?
+					String message = "Would you like to go to the previous"
+							+ " window?\nAll changes you made in this window"
+							+ " will be lost.";
+					Object[] options = {"previous window",
+					"cancel"};
+					int result = JOptionPane.showOptionDialog(new JFrame(), 
+							message, "Warning", JOptionPane.YES_NO_OPTION,
+							JOptionPane.QUESTION_MESSAGE,
+							null,     		//do not use a custom Icon
+							options,  		//the titles of buttons
+							options[0]); 	//default button title
+					switch (result) {
+					case 0: // Goal: Want to return to SetVariables()-Window
+						// task 1: remove the panel: buttonCard2Next and buttonCard2Go
+						if (booleanBox.getSelectedItem() == ""){
+							window2.remove(window2ButtonGo);
+						}else{
+							window2.remove(window2ButtonNext);	
+						}
+						//
+						// task 2: save variable names => no need => just re-activate previous window
+						/*
+						String statTypPrev = statementType;
+						String oldVarNamePrev = oldVariableName;
+						boolean createNewVarPrev = createNewVariable.isSelected();
+						String newVarNamePrev = newVariableName;
+						String newVarDataTypePrev = newVariableDataType;
+						String oldBooNamePrev = boolean1OldName;
+						boolean createNewBooPrev = createNewVariable1.isSelected();
+						String newBooNamePrev = boolean1NewName;
+						String newBooDataTypePrev = boolean1NewDataType;
+						// task 2: show first window
+						new SetVariablesWindow();				
+						// task 3: set variables in window 1 as they were
+						typeBox.setSelectedItem(statTypPrev);
+						variableBox.setSelectedItem(oldVarNamePrev);
+						if (createNewVarPrev == true){
+							createNewVariable.setSelected(true);
+							newVariableTextField.setText(newVarNamePrev);
+							newVariableTextField.setEnabled(true);
+							newVariableType.setSelectedItem(newVarDataTypePrev);
+							newVariableType.setEnabled(true);
+							variableBoxOverwrite.setEnabled(false);
+						}else{
+							overwriteVariable.setSelected(true);
+							variableBoxOverwrite.setSelectedItem(newVarNamePrev);
+							variableBoxOverwrite.setEnabled(true);
+							newVariableTextField.setEnabled(false);
+							newVariableType.setEnabled(false);
+						}
+						if (oldBooNamePrev != ""){
+							variableBox1.setSelectedItem(oldBooNamePrev);
+							if (createNewBooPrev == true){
+								createNewVariable1.setSelected(true);
+								newVariableTextField1.setText(newBooNamePrev);
+								newVariableTextField1.setEnabled(true);
+								newVariableType1.setSelectedItem(newBooDataTypePrev);
+								newVariableType1.setEnabled(true);
+								variableBoxOverwrite1.setEnabled(false);
+							}
+							if (createNewBooPrev == false){
+								overwriteVariable1.setSelected(true);
+								variableBoxOverwrite1.setSelectedItem(newBooNamePrev);
+								variableBoxOverwrite1.setEnabled(true);
+								newVariableTextField1.setEnabled(false);
+								newVariableType1.setEnabled(false);
+							}
+						}else{
+							createNewVariable1.setSelected(false);
+							overwriteVariable1.setSelected(false);
+							createNewVariable1.setEnabled(false);
+							overwriteVariable1.setEnabled(false);
+							variableBoxOverwrite1.setEnabled(false);
+							newVariableTextField1.setEnabled(false);
+							newVariableType1.setEnabled(false);
+						}	
+						 */				
+						//task 4: close window 2
+						window2.dispose();
+						// task 5: make window 1 visible
+						window1.pack();
+						window1.setLocationRelativeTo(null);
+						window1.setVisible(true);
+					case 1:
+						break;
+					}
+				}
+			});
+
+			// window 2.4: go-recode - button
+			goIcon = new ImageIcon(getClass().getResource(
+					"/icons/accept.png"));
+			goButtonWindow2 = new JButton("go", goIcon);
+
+			goButtonWindow2.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					// task 1: save meta list
+					saveMetaListEntries();
+					// task 2: want to recode?
+					String message = "Would you like to recode the variable(s) as "
+							+ "specified?";
+					Object[] options = {"recode", "cancel"};
+					int result = JOptionPane.showOptionDialog(new JFrame(), 
+							message, "Warning", JOptionPane.YES_NO_OPTION,
+							JOptionPane.QUESTION_MESSAGE,
+							null,    	 //do not use a custom Icon
+							options, 	 //the titles of buttons
+							options[0]); //default button title
+					switch (result) {
+					case 0:
+						// create new variable
+						if (createNewVariable.isSelected() == true){
+							Dna.dna.db.addVariable(newVariableName, 
+									newVariableDataType, 
+									statementType);
+						}
+						// get values from table
+						/*
+						 * LB.Note: the sorting of the row does not matter as 
+						 * all three columns are sorted together + you go 
+						 * through each row one by one.
+						 */
+						for (int i = 0; i < tableRecode.getRowCount(); i++) {
+							String oldVarEntry = "";
+							oldVarEntry = (String) tableRecode.getModel().
+									getValueAt(i, 0); 
+							String newVarEntry = "";
+							newVarEntry = (String) tableRecode.getModel().
+									getValueAt(i, 2);
+							// get statement-ID-list where oldVarEntry is included
+							ArrayList<Integer> statIDList = Dna.dna.db.
+									getVariableEntryMatch(statementType, 
+											oldVariableName, oldVarEntry);
+							for (Integer ints: statIDList){
+								Dna.dna.db.changeStatement(ints, newVariableName, 
+										(String) newVarEntry, newVariableDataType);
+							}
+						}
+						window2.dispose();
+					case 1:
+						break;
+					}
+				}
+			});
+
+			// window 2.4: next-button (if boolean is selected)
+			nextButtonWindow2 = new JButton("next", nextIcon);
+
+			nextButtonWindow2.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {				
+					// task 1: save meta list
+					saveMetaListEntries();
+					// task 2: show next window
+					new BooleanWindow();
+					// task 3: create data set
+					createDataSetBoolean(tableModelBoolean, oldBooleanName);
+					// task 4: update table header
+					updateTableHeaderColumnNames(tableBoolean, 
+							columnNamesBooleanPanel);
+					// task 5: update border around Boolean1-Panel
+					TitledBorder window3PanelBorder = BorderFactory.
+							createTitledBorder(booleanPanelBorderName);
+					tableBooleanPanel.setBorder(window3PanelBorder);
+					// task 6: close this window
+					window2.dispose();	
+					// task 7: show new window
+					window3.pack();
+					window3.setLocationRelativeTo(null);
+					window3.setVisible(true);
+
+				}
+			});
+		}
+	}
+
+	/*---------------------------------------------------------------------
+	 * CARD 3 - RECODE BOOLEAN PANEL #1
+	 *--------------------------------------------------------------------*/
+
+	class BooleanWindow {
+		public BooleanWindow(){
+
+			window3 = new JDialog();
+			window3.setModal(true);
+			window3.setTitle("Recode variables: recode additional variable");
+			window3.setLayout(new BorderLayout());
+
+			/*
+			 * CARD 3.1: Create table
+			 */	
+			// window 3.1: table
+			tableModelBoolean = new DefaultTableModel(columnNamesBooleanPanel, 0);
+			tableBoolean = new JXTable(tableModelBoolean);	
+
+			// window 3.1: get values in table => done w/createDataSetBoolean() under card2.3-nextButton
+
+			// window 3.1: decide which columns are editable
+			tableBoolean.getColumnExt(0).setEditable(false);
+			tableBoolean.getColumnExt(1).setEditable(false);
+			tableBoolean.getColumnExt(2).setEditable(false);
+			tableBoolean.getColumnExt(3).setEditable(true);
+			tableBoolean.getColumnExt(4).setEditable(false);
+
+			// window 3.1: set column width of col 1, 2 and 3
+			tableBoolean.getColumnModel().getColumn(1).setPreferredWidth(90);
+			tableBoolean.getColumnModel().getColumn(2).setPreferredWidth(90);
+			tableBoolean.getColumnModel().getColumn(3).setPreferredWidth(90);
+
+			// window 3.1: add vertical/horizontal Scroller
+			JScrollPane scrollPaneTableBoolean1 = new JScrollPane (tableBoolean);
+			scrollPaneTableBoolean1.setPreferredSize(new Dimension(800, 520));
+			scrollPaneTableBoolean1.setVerticalScrollBarPolicy(
+					JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+			scrollPaneTableBoolean1.setHorizontalScrollBarPolicy(
+					JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+
+			// window 3.1: add table + tableHeader to panel
+			tableBooleanPanel = new JPanel(new BorderLayout());
+			tableBooleanPanel.add(tableBoolean.getTableHeader(), 
+					BorderLayout.NORTH);	
+			tableBooleanPanel.add(scrollPaneTableBoolean1, BorderLayout.WEST);
+
+			window3.add(tableBooleanPanel, BorderLayout.NORTH);
+
+			/*
+			 * CARD 3.2: BUTTONS PANEL FOR BOOLEAN TABLE 1
+			 */
+			// window 3.2: cancel button
+			JPanel buttonBooleanPanel =new JPanel(new FlowLayout(
+					FlowLayout.RIGHT));
+
+			cancelButtonWindow3 = new JButton("cancel", cancelIcon);
+			buttonBooleanPanel.add(cancelButtonWindow3);
+
+			cancelButtonWindow3.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					String message = "Would you like to close the recode window"
+							+ "?\nChanges made will be lost.";
+					Object[] options ={"Yes, close window", "No, keep recoding"};
+					int result = JOptionPane.showOptionDialog(new JFrame(), 
+							message, "Warning", JOptionPane.YES_NO_OPTION,
+							JOptionPane.QUESTION_MESSAGE, null, options,  	
+							options[0]); 
+					switch (result) {
+					case 0:	
+						window3.dispose();
+					case 1:
+						break;
+					}
+				}
+			});
+
+			// window 3.2: previous - button
+			previousButtonWindow3 = new JButton("previous", previousIcon);
+			buttonBooleanPanel.add(previousButtonWindow3);
+
+			previousButtonWindow3.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					String message = "Would you like to go to the previous"
+							+ " window?\nAll changes you made in this window"
+							+ " will be lost.";
+					Object[] options = {"previous window",
+					"cancel"};
+					int result = JOptionPane.showOptionDialog(new JFrame(),
+							message, "Warning", JOptionPane.YES_NO_OPTION,
+							JOptionPane.QUESTION_MESSAGE,
+							null,     //do not use a custom Icon
+							options,  //the titles of buttons
+							options[0]); //default button title
+					switch (result) {
+					case 0:	
+						// task 1: close this panel
+						window3.dispose();
+						// task 2: show previous panel
+						window2.pack();
+						window2.setLocationRelativeTo(null);
+						window2.setVisible(true);
+					case 1:
+						break;
+					}
+				}
+			});
+
+			// window 3.2: go - button
+			goButtonWindow3 = new JButton("go", goIcon);
+			buttonBooleanPanel.add(goButtonWindow3);
+
+			goButtonWindow3.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					String message = "Would you like to recode the variable(s) "
+							+ "as specified?";
+					Object[] options = {"recode", "cancel"};
+					int result = JOptionPane.showOptionDialog(new JFrame(), 
+							message, "Warning", JOptionPane.YES_NO_OPTION,
+							JOptionPane.QUESTION_MESSAGE, null, options, 
+							options[0]);
+					switch (result) {
+					case 0:
+						boolean breakNow = false;
+						// task 1: create new variable
+						if (createNewVariable.isSelected() == true){
+							Dna.dna.db.addVariable(newVariableName, 
+									newVariableDataType, 
+									statementType);
+						}
+						if (createNewBoolean.isSelected() == true){
+							Dna.dna.db.addVariable(newBooleanTextField.getText(), 
+									newBooleanDataType, 
+									statementType);
+						}
+						// task 2: recode boolean/int variables
+						breakNow = recodeBooleanVariables(tableBoolean, 
+								tableModelBoolean, oldBooleanName, 
+								newBooleanName, breakNow);
+						// do task 3 and 4 only if column 4 entries are integers:
+						// task 3: recode chosen variable
+						if (breakNow == false){
+							for (int i = 0; i < tableRecode.getRowCount(); i++) {
+								String oldVarEntry = "";
+								oldVarEntry = (String) tableRecode.getModel().
+										getValueAt(i, 0); //
+								String newVarEntry = "";
+								newVarEntry = (String) tableRecode.getModel().
+										getValueAt(i, 2);
+								// get statement-ID-list where oldVarEntry is included
+								ArrayList<Integer> statIDList = Dna.dna.db.
+										getVariableEntryMatch(statementType, 
+												oldVariableName, oldVarEntry);
+								for (Integer ints: statIDList){
+									Dna.dna.db.changeStatement(ints, 
+											newVariableName, (String) newVarEntry,
+											oldVariableDataType);
+								}
+							}
+							// task 4: close window3
+							window3.dispose();
+						}
+					case 1:
+						break;
+					}
+				}
+			});
+
+			// "Recode additional variables"
+			window3.add(tableBooleanPanel, BorderLayout.NORTH);
+			window3.add(buttonBooleanPanel, BorderLayout.SOUTH);
+		}
+	}
+
+	//-------------------------------------------------------------------------	
+	//-------------------------------------------------------------------------
+	//-------------------------------------------------------------------------	
+
+	/**
+	 * remove one or multiply-selected row(s) from table
+	 * 
+	 * @param table			Table from which selected items are removed
+	 */
+	public void removeSelectedFromTable(JTable table) {
+
+		DefaultTableModel model = (DefaultTableModel) table.getModel();
+		int indexes[] = table.getSelectedRows(); 
+		int res = 0;
+		for(int i = 0; i < indexes.length; i++) {
+			res += (i>0)?(indexes[i]-indexes[i-1]-1):0;
+			int index = table.convertRowIndexToModel(indexes[0]+res);
+			model.removeRow(index);
+		}
 	}
 
 	/**
@@ -2883,187 +1427,60 @@ public class Recode extends JDialog {
 		// old variable
 		statementType = (String) typeBox.getSelectedItem().toString();		
 		oldVariableName = (String) variableBox.getSelectedItem().toString();
-		oldVarDataType = (String) Dna.dna.db.getDataType(oldVariableName, 
+		oldVariableDataType = (String) Dna.dna.db.getDataType(oldVariableName, 
 				statementType);
-		oldVarColumnName = (String) "<html>old variable:<br>" + oldVariableName +
-				"</html";
+		oldVariableColumnName = (String) "<html>old variable:<br>" + 
+				oldVariableName + "</html";
 		// if overwrite/newVar is selected:
 		if (overwriteVariable.isSelected() == true){
-			newVariableName = (String) variableBoxOverwrite.
+			newVariableName = (String) variableOverwriteBox.
 					getSelectedItem().toString();
-			newVarColumnName = (String) "<html>new variable:<br>" + 
+			newVariableColumnName = (String) "<html>new variable:<br>" + 
 					newVariableName +"</html";
 			newVariableDataType = Dna.dna.db.getDataType(newVariableName, 
 					statementType);
-			borderName = (String) "<html>Meta list of entries for:<br>" + 
-					newVariableName +"</html>";
 		}
 		if (createNewVariable.isSelected() == true){
 			newVariableName = (String) newVariableTextField.getText().
 					toString();
-			newVarColumnName = (String) "<html>new variable:<br>" + 
+			newVariableColumnName = (String) "<html>new variable:<br>" + 
 					newVariableName +"</html";
-			newVariableDataType = newVariableType.getSelectedItem().toString(); 
-			borderName = (String) "<html>Meta list of entries for:<br>" + 
-					newVariableName +"</html>";
+			newVariableDataType = newVariableDataTypeBox.getSelectedItem().
+					toString(); 
 		}	
 		// columnNames
-		columnNames = new String[]{oldVarColumnName, 
-				"<html>number of<br>occurences</html>", newVarColumnName};
+		columnNames = new String[]{oldVariableColumnName, 
+				"<html>number of<br>occurences</html>", newVariableColumnName};
 		// columnNamesBooleanPanel1
-		if (booleanCounter >= 1){
-			boolean1OldName = variableBox1.getSelectedItem().toString();
-			boolean1DataType = Dna.dna.db.getDataType(boolean1OldName, 
+		oldBooleanName = booleanBox.getSelectedItem().toString();
+		if (booleanBox.getSelectedItem() != ""){
+			booleanDataType = Dna.dna.db.getDataType(oldBooleanName, 
 					statementType);
-			boolean1OldColumnName = (String) "<html>old variable:<br>" + 
-					boolean1OldName +"</html";
-			if (overwriteVariable1.isSelected() == true){
-				boolean1NewName = variableBoxOverwrite1.getSelectedItem().
+			oldBooleanColumnName = (String) "<html>old variable:<br>" + 
+					oldBooleanName +"</html";
+			if (overwriteBoolean.isSelected() == true){
+				newBooleanName = booleanOverwriteBox.getSelectedItem().
 						toString();
-				boolean1NewDataType = boolean1DataType;
-				boolean1NewColumnName = (String) "<html>new variable:<br>" + 
-						boolean1NewName + "</html";
-				borderNameBoolean1 = (String) "<html>Recode additional "
-						+ "variable: " + boolean1NewName + "</html>";
+				newBooleanDataType = booleanDataType;
+				newBooleanColumnName = (String) "<html>new variable:<br>" + 
+						newBooleanName + "</html";
+				booleanPanelBorderName = (String) "<html>Recode additional "
+						+ "variable: " + newBooleanName + "</html>";
 			}
-			if (createNewVariable1.isSelected() == true){
-				boolean1NewName = newVariableTextField1.getText().toString();
-				boolean1NewDataType = newVariableType1.getSelectedItem().
+			if (createNewBoolean.isSelected() == true){
+				newBooleanName = newBooleanTextField.getText().toString();
+				newBooleanDataType = newBooleanDataTypeBox.getSelectedItem().
 						toString();
-				boolean1NewColumnName = (String) "<html>new variable:<br>" + 
-						boolean1NewName + "</html";
-				borderNameBoolean1 = (String) "<html>Recode additional "
-						+ "variable: " + boolean1NewName + "</html>";
+				newBooleanColumnName = (String) "<html>new variable:<br>" + 
+						newBooleanName + "</html";
+				booleanPanelBorderName = (String) "<html>Recode additional "
+						+ "variable: " + newBooleanName + "</html>";
 			}
 			// oldVar, nr occur, boolean_old, boolean_new, newVar
-			columnNamesBooleanPanel1 = new String[]{oldVarColumnName, 
+			columnNamesBooleanPanel = new String[]{oldVariableColumnName, 
 					"<html>number of<br>occurences</html>", 
-					boolean1OldColumnName, 
-					boolean1NewColumnName, newVarColumnName};
-		}
-		// columnNamesBooleanPanel2
-		if (booleanCounter >= 2){
-			boolean2OldName = variableBox2.getSelectedItem().toString();
-			boolean2DataType = Dna.dna.db.getDataType(boolean2OldName, 
-					statementType);
-			boolean2OldColumnName = (String) "<html>old variable:<br>" + 
-					boolean2OldName +"</html";
-			if (overwriteVariable2.isSelected() == true){
-				boolean2NewName = variableBoxOverwrite2.getSelectedItem().
-						toString();
-				boolean2NewDataType = boolean2DataType;
-				boolean2NewColumnName = (String) "<html>new variable:<br>" + 
-						boolean2NewName + "</html";
-				borderNameBoolean2 = (String) "<html>Recode additional "
-						+ "variable: " + boolean2NewName + "</html>";
-			}
-			if (createNewVariable2.isSelected() == true){
-				boolean2NewName = newVariableTextField2.getText().toString();
-				boolean2NewDataType = newVariableType2.getSelectedItem().
-						toString();
-				boolean2NewColumnName = (String) "<html>new variable:<br>" + 
-						boolean2NewName + "</html";
-				borderNameBoolean2 = (String) "<html>Recode additional "
-						+ "variable: " + boolean2NewName + "</html>";
-			}
-			// oldVar, nr occur, boolean_old, boolean_new, newVar
-			columnNamesBooleanPanel2 = new String[]{oldVarColumnName, 
-					"<html>number of<br>occurences</html>", 
-					boolean2OldColumnName, 
-					boolean2NewColumnName, newVarColumnName};
-		}
-		// columnNamesBooleanPanel3
-		if (booleanCounter >= 3){
-			boolean3OldName = variableBox3.getSelectedItem().toString();
-			boolean3DataType = Dna.dna.db.getDataType(boolean3OldName, 
-					statementType);
-			boolean3OldColumnName = (String) "<html>old variable:<br>" + 
-					boolean3OldName +"</html";
-			if (overwriteVariable3.isSelected() == true){
-				boolean3NewName = variableBoxOverwrite3.getSelectedItem().
-						toString();
-				boolean3NewDataType = boolean3DataType;
-				boolean3NewColumnName = (String) "<html>new variable:<br>" + 
-						boolean3NewName + "</html";
-				borderNameBoolean3 = (String) "<html>Recode additional "
-						+ "variable: " + boolean3NewName + "</html>";
-			}
-			if (createNewVariable3.isSelected() == true){
-				boolean3NewName = newVariableTextField3.getText().toString();
-				boolean3NewDataType = newVariableType3.getSelectedItem().
-						toString();
-				boolean3NewColumnName = (String) "<html>new variable:<br>" + 
-						boolean3NewName + "</html";
-				borderNameBoolean3 = (String) "<html>Recode additional "
-						+ "variable: " + boolean3NewName + "</html>";
-			}
-			// oldVar, nr occur, boolean_old, boolean_new, newVar
-			columnNamesBooleanPanel3 = new String[]{oldVarColumnName, 
-					"<html>number of<br>occurences</html>", 
-					boolean3OldColumnName, 
-					boolean3NewColumnName, newVarColumnName};
-		}
-		// columnNamesBooleanPanel4
-		if (booleanCounter >= 4){
-			boolean4OldName = variableBox4.getSelectedItem().toString();
-			boolean4DataType = Dna.dna.db.getDataType(boolean4OldName, 
-					statementType);
-			boolean4OldColumnName = (String) "<html>old variable:<br>" + 
-					boolean4OldName +"</html";
-			if (overwriteVariable4.isSelected() == true){
-				boolean4NewName = variableBoxOverwrite4.getSelectedItem().
-						toString();
-				boolean4NewDataType = boolean4DataType;
-				boolean4NewColumnName = (String) "<html>new variable:<br>" + 
-						boolean4NewName + "</html";
-				borderNameBoolean4 = (String) "<html>Recode additional "
-						+ "variable: " + boolean4NewName + "</html>";
-			}
-			if (createNewVariable4.isSelected() == true){
-				boolean4NewName = newVariableTextField4.getText().toString();
-				boolean4NewDataType = newVariableType4.getSelectedItem().
-						toString();
-				boolean4NewColumnName = (String) "<html>new variable:<br>" + 
-						boolean4NewName + "</html";
-				borderNameBoolean4 = (String) "<html>Recode additional "
-						+ "variable: " + boolean4NewName + "</html>";
-			}
-			// oldVar, nr occur, boolean_old, boolean_new, newVar
-			columnNamesBooleanPanel4 = new String[]{oldVarColumnName, 
-					"<html>number of<br>occurences</html>", 
-					boolean4OldColumnName, 
-					boolean4NewColumnName, newVarColumnName};
-		}
-		// columnNamesBooleanPanel5
-		if (booleanCounter >= 5){
-			boolean5OldName = variableBox5.getSelectedItem().toString();
-			boolean5DataType = Dna.dna.db.getDataType(boolean5OldName, 
-					statementType);
-			boolean5OldColumnName = (String) "<html>old variable:<br>" + 
-					boolean5OldName +"</html";
-			if (overwriteVariable5.isSelected() == true){
-				boolean5NewName = variableBoxOverwrite5.getSelectedItem().
-						toString();
-				boolean5NewDataType = boolean5DataType;
-				boolean5NewColumnName = (String) "<html>new variable:<br>" + 
-						boolean5NewName + "</html";
-				borderNameBoolean5 = (String) "<html>Recode additional "
-						+ "variable: " + boolean5NewName + "</html>";
-			}
-			if (createNewVariable5.isSelected() == true){
-				boolean5NewName = newVariableTextField5.getText().toString();
-				boolean5NewDataType = newVariableType5.getSelectedItem().
-						toString();
-				boolean5NewColumnName = (String) "<html>new variable:<br>" + 
-						boolean5NewName + "</html";
-				borderNameBoolean5 = (String) "<html>Recode additional "
-						+ "variable: " + boolean5NewName + "</html>";
-			}
-			// oldVar, nr occur, boolean_old, boolean_new, newVar
-			columnNamesBooleanPanel5 = new String[]{oldVarColumnName, 
-					"<html>number of<br>occurences</html>", 
-					boolean5OldColumnName, 
-					boolean5NewColumnName, newVarColumnName};
+					oldBooleanColumnName, 
+					newBooleanColumnName, newVariableColumnName};
 		}
 	}
 
@@ -3089,8 +1506,8 @@ public class Recode extends JDialog {
 		// get values in table: 
 		String[] oldVarEntriesString = new String[Dna.dna.db.getVariableStringEntries(
 				oldVariableName, statementType).length];
-		oldVarEntriesString =  Dna.dna.db.getVariableStringEntries(oldVariableName, 
-				statementType);
+		oldVarEntriesString =  Dna.dna.db.getVariableStringEntries(
+				oldVariableName, statementType);
 		// get list with ALL entries (including duplicates) for a certain variable
 		List<String> oldVarAllEntriesStringList = Arrays.asList(Dna.dna.db.
 				getAllVariableStringEntries(oldVariableName, statementType));
@@ -3150,14 +1567,23 @@ public class Recode extends JDialog {
 	/**
 	 * Update the Variable-Meta-List (listModel).
 	 */
-	public void updateVariableListModel() {
-		listModel.clear();
+	public void updateMetaListTable() {
+		// task 1: update table data
+		if (tableMetaListModel.getRowCount() > 0) {
+			for (int i = tableMetaListModel.getRowCount() - 1; i > -1; i--) {
+				tableMetaListModel.removeRow(i);
+			}
+		}
 		String entries[] = Dna.dna.db.getEntriesFromVariableList(
 				statementType, newVariableName);
-		for (int i = 0; i < entries.length; i++) {
-			String label = entries[i];
-			listModel.addElement(label);
+		for (int i = 0; i < entries.length; i++){
+			Object[] data = {entries[i]};
+			tableMetaListModel.addRow(data);
 		}
+		// task 2: update table header
+		tableMetaList.getColumnModel().getColumn(0).setHeaderValue(
+				newVariableName);
+		tableMetaList.getTableHeader().resizeAndRepaint();
 	}
 
 	/**
@@ -3174,9 +1600,9 @@ public class Recode extends JDialog {
 		String[] columnNamesImport = null;
 		// create JTable
 		if (importOldVariable == false){
-			columnNamesImport = new String[]{"add entry", newVarColumnName};
+			columnNamesImport = new String[]{"add entry", newVariableColumnName};
 		}else{
-			columnNamesImport = new String[]{"add entry", oldVarColumnName};
+			columnNamesImport = new String[]{"add entry", oldVariableColumnName};
 		}
 		final DefaultTableModel tableModelImport = new DefaultTableModel(
 				columnNamesImport, 0);
@@ -3283,7 +1709,8 @@ public class Recode extends JDialog {
 							Dna.dna.db.addEntryToVariableList(newEntry,
 									statementType, 
 									newVariableName);
-							listModel.addElement(newEntry);
+							Object[] data = {newEntry};
+							tableMetaListModel.addRow(data);
 						} 
 					}
 				}
@@ -3382,6 +1809,7 @@ public class Recode extends JDialog {
 			}
 			// do not allow duplicate variable names			
 			boolean validApply = false;
+			boolean validApply2 = false;
 			LinkedHashMap<String, String> map = Dna.dna.db.getVariables(
 					statementType);
 			Object[] types = map.keySet().toArray();			
@@ -3390,7 +1818,13 @@ public class Recode extends JDialog {
 			}else{
 				validApply = true;
 			}
-			if (validApply == true && validAdd == true){
+			if (createNewVariable.isSelected() == true && 
+					newVariableTextField.getText().equals(var)){
+				validApply2 = false;
+			}else{
+				validApply2 = true;
+			}
+			if (validApply == true && validAdd == true && validApply2 == true){
 				correct = true;	
 			}else{
 				correct = false;
@@ -3406,109 +1840,25 @@ public class Recode extends JDialog {
 	 */
 	public boolean booleanSelectedRight(){
 		Boolean correct = false;
-		// step 1: is boolean-option chosen?
-		if (booleanAffectedButton.isSelected() == false){
+		// Is boolean-variable set?
+		if (booleanBox.getSelectedItem() == ""){
 			correct = true;
 		}else{
-			// step 2: 1 boolean variable selected 
-			if (booleanCounter == 1){
-				// see if everything selected/entered right
-				if (variableBox1.getSelectedIndex() != -1 &&
-						variableSelectedRight(createNewVariable1, 
-								overwriteVariable1, newVariableTextField1, 
-								variableBoxOverwrite1) == true &&
-								newBooleanVariableNameWrittenRight(
-										createNewVariable1, 
-										newVariableTextField1, 
-										statementType) == true){
-					correct = true;
-				}else{
-					correct = false;
-				}
-				if (createNewVariable1.isSelected() == false && 
-						overwriteVariable1.isSelected() == false){
-					correct = false;
-				}
+			// see if everything selected/entered right
+			if (variableSelectedRight(createNewBoolean, 
+					overwriteBoolean, newBooleanTextField, 
+					booleanOverwriteBox) == true &&
+					newBooleanVariableNameWrittenRight(
+							createNewBoolean, 
+							newBooleanTextField, 
+							statementType) == true){
+				correct = true;
+			}else{
+				correct = false;
 			}
-			// step 3: 2 boolean variables selected
-			if (booleanCounter == 2){
-				// see if everything selected/entered right
-				if (variableBox2.getSelectedIndex() != -1 &&
-						variableSelectedRight(createNewVariable2, 
-								overwriteVariable2, newVariableTextField2, 
-								variableBoxOverwrite2) == true &&
-								newBooleanVariableNameWrittenRight(
-										createNewVariable2, 
-										newVariableTextField2, 
-										statementType) == true){
-					correct = true;
-				}else{
-					correct = false;
-				}
-				if (createNewVariable2.isSelected() == false && 
-						overwriteVariable2.isSelected() == false){
-					correct = false;
-				}
-			}
-			// step 4: 3 boolean variables selected
-			if (booleanCounter == 3){
-				// see if everything selected/entered right
-				if (variableBox3.getSelectedIndex() != -1 &&
-						variableSelectedRight(createNewVariable3, 
-								overwriteVariable3, newVariableTextField3, 
-								variableBoxOverwrite3) == true &&
-								newBooleanVariableNameWrittenRight(
-										createNewVariable3, 
-										newVariableTextField3, 
-										statementType) == true){
-					correct = true;
-				}else{
-					correct = false;
-				}
-				if (createNewVariable3.isSelected() == false && 
-						overwriteVariable3.isSelected() == false){
-					correct = false;
-				}
-			}
-			// step 5: 4 boolean variables selected
-			if (booleanCounter == 4){
-				// see if everything selected/entered right
-				if (variableBox4.getSelectedIndex() != -1 &&
-						variableSelectedRight(createNewVariable4, 
-								overwriteVariable4, newVariableTextField4, 
-								variableBoxOverwrite4) == true &&
-								newBooleanVariableNameWrittenRight(
-										createNewVariable4, 
-										newVariableTextField4, 
-										statementType) == true){
-					correct = true;
-				}else{
-					correct = false;
-				}
-				if (createNewVariable4.isSelected() == false && 
-						overwriteVariable4.isSelected() == false){
-					correct = false;
-				}
-			}
-			// step 6: 5 boolean variables selected
-			if (booleanCounter == 5){
-				// see if everything selected/entered right
-				if (variableBox5.getSelectedIndex() != -1 &&
-						variableSelectedRight(createNewVariable5, 
-								overwriteVariable5, newVariableTextField5, 
-								variableBoxOverwrite5) == true &&
-								newBooleanVariableNameWrittenRight(
-										createNewVariable5, 
-										newVariableTextField5, 
-										statementType) == true){
-					correct = true;
-				}else{
-					correct = false;
-				}
-				if (createNewVariable5.isSelected() == false && 
-						overwriteVariable5.isSelected() == false){
-					correct = false;
-				}
+			if (createNewBoolean.isSelected() == false && 
+					overwriteBoolean.isSelected() == false){
+				correct = false;
 			}
 		}
 		return correct;
@@ -3525,43 +1875,13 @@ public class Recode extends JDialog {
 	public void checkIfNextButtonCanBeActivated(){
 		// can next-Button be activated?
 		boolean a = (boolean) variableSelectedRight(createNewVariable, 
-				overwriteVariable, newVariableTextField, variableBoxOverwrite);
+				overwriteVariable, newVariableTextField, variableOverwriteBox);
 		boolean b = (boolean) newVariableNameWrittenRight();
 		boolean c = (boolean) booleanSelectedRight();
 		if (a == true && b == true && c == true){
 			nextButton.setEnabled(true);
 		}else{
 			nextButton.setEnabled(false);
-		}
-	}
-
-	/**
-	 * Create warning if a statement type does not have a boolean/int variable.
-	 * 
-	 * @param varBox	ComboBox variable with various variables in it
-	 */
-	public void selectBooleanOrGiveWarning(JComboBox<String> varBox){
-		try{
-			varBox.removeAllItems();
-			String type = (String) typeBox.getSelectedItem();
-			if (type != null && !type.equals("")) {
-				HashMap<String, String> variables = Dna.dna.db.
-						getVariablesByTypes(type, "boolean", "integer");
-				Iterator<String> keyIterator = variables.keySet().iterator();
-				while (keyIterator.hasNext()){
-					String key = keyIterator.next();
-					varBox.addItem(key);	
-				}
-				varBox.setSelectedIndex(0);
-			}
-		}
-		catch(IllegalArgumentException iae){
-			// give warning
-			String message = "\n This statement type does not have any "
-					+ "boolean variables."; 
-			JOptionPane.showMessageDialog(new JFrame(), message, "Warning",
-					JOptionPane.ERROR_MESSAGE);
-			//TODO: set booleanSelected-button to false and remove all?
 		}
 	}
 
@@ -3578,14 +1898,13 @@ public class Recode extends JDialog {
 		try {
 			BufferedReader input = new BufferedReader(new FileReader(f));
 			String row = input.readLine();
-			System.out.println(row);
 			while (row != null){
 				list.add(row);
 				row = input.readLine();
 			}
 			input.close();
 		} catch (IOException e) {
-			String message = "\n Error while reading the file."; 
+			String message = "Error while reading the file."; 
 			JOptionPane.showMessageDialog(new JFrame(), message, "Warning",
 					JOptionPane.ERROR_MESSAGE);
 		}	
@@ -3659,7 +1978,7 @@ public class Recode extends JDialog {
 						getValueAt(i, 3).toString());
 			}catch(java.lang.NumberFormatException nfe){
 				breakNow = true;
-				String message = "\n The entries in column 4 are not all "
+				String message = "The entries in column 4 are not all "
 						+ "integers. Please check your entries."; 
 				JOptionPane.showMessageDialog(new JFrame(), message, "Warning",
 						JOptionPane.ERROR_MESSAGE);
@@ -3673,7 +1992,19 @@ public class Recode extends JDialog {
 						(int) booleanNewEntry, statementType);
 			}
 		}
-		System.out.println("breakNOw in loop = "+ breakNow);
 		return breakNow;
+	}
+
+	public void saveMetaListEntries(){
+		ArrayList<String> entries = new ArrayList<String>(Arrays.asList(
+				Dna.dna.db.getEntriesFromVariableList(statementType, 
+						newVariableName)));
+		for (int i = 0; i < tableMetaListModel.getRowCount(); i++){
+			String entry = (String) tableMetaListModel.getValueAt(i, 0);		
+			if (entry!= "" && entry != null && entries.contains(entry) == false){
+				Dna.dna.db.addEntryToVariableList(entry,
+						statementType, newVariableName);
+			}
+		}
 	}
 }
