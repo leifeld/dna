@@ -15,8 +15,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class Dna {
-	String version = "2.0 alpha 11";
-	String date = "December 03, 2014"; 
+	String version = "2.0 alpha 12";
+	String date = "December 29, 2014"; 
 	static Dna dna;
 	DataAccess db;
 	Gui gui;

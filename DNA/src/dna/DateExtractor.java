@@ -30,9 +30,18 @@ public class DateExtractor {
 		String second = null;
 		//String ampm = null;
 
-		String regexDelimiter = "[-:\\/.,]";
+		String regexDelimiter = "[-:\\/., ]";
 		String regexDay = "((?:[0-2]?\\d{1})|(?:[3][01]{1}))";
-		String regexMonth = "(?:([0]?[1-9]|[1][012])|(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?))";
+		//LB.Change: 
+		/*String regexMonth = "(?:([0]?[1-9]|[1][012])|(Jan(?:uary)?|Feb(?:ruary)?|"
+				+ "Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|"
+				+ "Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?))";
+		*/
+		String regexMonth = "(?:([0]?[1-9]|[1][012])|(Jan(?:uary)?|Feb(?:ruary)?|"
+				+ "Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|"
+				+ "Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|"
+				+ "Januar|Februar|M.rz|April|Mai|Juni|Juli|August|September|"
+				+ "Oktober|November|Dezember))";
 		String regexYear = "((?:[1]{1}\\d{1}\\d{1}\\d{1})|(?:[2]{1}\\d{3}))";
 		String regexHourMinuteSecond = "(?:(?:\\s)((?:[0-1][0-9])|(?:[2][0-3])|(?:[0-9])):([0-5][0-9])(?::([0-5][0-9]))?(?:\\s?(am|AM|pm|PM))?)?";
 		String regexEndswith = "(?![\\d])";
@@ -125,25 +134,17 @@ public class DateExtractor {
 				}
 			}
 
+			//LB.Add: Added Germany Locale
 			if(!dateFormatPattern.equals("") && !dateString.equals("")) {
-				//TODO: Support different locales
-				SimpleDateFormat dateFormat = new SimpleDateFormat(dateFormatPattern.trim(), Locale.US);
-				date = dateFormat.parse(dateString.trim());
-			}
-		}else{
-			//System.err.println("Date not extractable. Use 'set date manually'-option");
-			//LB.Add:
-			/*
-	    	if(!dateFound) {
-				m = checkDatePattern(regexToday, text);
-				if (m.find()) {
-					dateTodayFound = true;
+				//TODO support different locales
+				SimpleDateFormat dateFormatUS = new SimpleDateFormat(dateFormatPattern.trim(), Locale.US);
+				try{
+				date = dateFormatUS.parse(dateString.trim());
+				} catch (ParseException pe) {
+					SimpleDateFormat dateFormatDE = new SimpleDateFormat(dateFormatPattern.trim(), Locale.GERMANY);
+					date = dateFormatDE.parse(dateString.trim());
 				}
 			}
-			if(dateTodayFound){
-				date = new Date();
-			}
-			 */
 		}
 		return date;
 	}
