@@ -1,12 +1,12 @@
 package dna;
 //Source: http://stackoverflow.com/questions/6100353/extract-dates-from-web-page
 
-import java.util.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DateExtractor {
 
@@ -154,3 +154,5 @@ public class DateExtractor {
 		return p.matcher(text);
 	}
 }
+
+
