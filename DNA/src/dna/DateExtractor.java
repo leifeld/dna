@@ -154,5 +154,3 @@ public class DateExtractor {
 		return p.matcher(text);
 	}
 }
-
-
