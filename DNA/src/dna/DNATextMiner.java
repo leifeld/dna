@@ -10,7 +10,7 @@ public class DNATextMiner {
 	public static void main(String[] args) {
 		String file = "/Users/rockyrock/Desktop/file.dna";
 		DNATextMiner textMiner = new DNATextMiner( new SimpleDNATokenizer() );
-		textMiner.data_extractor(file);
+		textMiner.extract_data(file);
 	}
 	
 	private DNATokenizer tokenzier;
@@ -24,7 +24,7 @@ public class DNATextMiner {
 	 * The file will be saved in the same location but with a .csv extension.
 	 * @param filePath
 	 */
-	public void data_extractor( String filePath ) {
+	public void extract_data( String filePath ) {
 		
 		DataAccess dataAccess = new DataAccess("sqlite", filePath );
 		ArrayList<Document> documentsList = dataAccess.getDocuments();
