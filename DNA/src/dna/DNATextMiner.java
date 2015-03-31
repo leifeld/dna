@@ -11,6 +11,7 @@ public class DNATextMiner {
 		String file = "/Users/rockyrock/Desktop/file.dna";
 		DNATextMiner textMiner = new DNATextMiner( new SimpleDNATokenizer() );
 		textMiner.extract_data(file);
+//		test();
 	}
 	
 	private DNATokenizer tokenzier;
@@ -39,16 +40,28 @@ public class DNATextMiner {
 			
 			String docString = document.getText();
 			
+			//Store statements start and end positions
 			for (SidebarStatement st : statements) {
 				if (st.getType().equals("Person")) {
-					statements_positions.put(st.getStart(), st.getStop());
+					
+					if ( !statements_positions.containsKey( st.getStart() ) ) {
+						statements_positions.put(st.getStart(), st.getStop());
+					}
+					else {
+						//Store the statement with the larger range
+						if ( statements_positions.get( st.getStart() ) < st.getStop() ) {
+							statements_positions.put( st.getStart(),  st.getStop());
+						}
+					}
 				}
 			}
+			
+			statements_positions = removeInnerStatements( statements_positions );
 			
 			StringBuffer normalText = new StringBuffer();
 			StringBuffer statementText = new StringBuffer();
 			int normalTextStartPosition = 0;
-			
+			//buffer statements and normal text and then tokenize them
 			for( int index = 0; index < docString.length(); index++ ) {
 				if ( statements_positions.containsKey(index) ) {
 					
@@ -60,21 +73,24 @@ public class DNATextMiner {
 					//tokenize and flush the statement text and then clear its buffer.
 					int start_pos = index;
 					int end_pos = statements_positions.get(start_pos);
-					index = end_pos;// update index to continue buffering normal text after statement
-					
-					for (int j = start_pos; j <= end_pos; j++) {
-						statementText.append( docString.charAt(j));
-					}
+					index = end_pos-1;// update index to continue buffering normal text after statement
+					statementText.append( docString.substring( start_pos, end_pos ) );
 					
 					tokens.addAll( getTokenzier().tokenize(start_pos, statementText.toString()) );
 					statementText = new StringBuffer();
-					normalTextStartPosition = end_pos + 1;
+					normalTextStartPosition = end_pos;
 				}
 				else {
 					normalText.append( docString.charAt(index) );
 				}
 			}
 			
+			if ( normalText.length() > 0 ) {
+				tokens.addAll( getTokenzier().tokenize(normalTextStartPosition,
+						normalText.toString()) );
+				normalText = new StringBuffer();
+			}
+//			break;
 		}
 		
 		dataAccess.closeFile();
@@ -106,6 +122,33 @@ public class DNATextMiner {
 		return isFromType;
 		
 	}
+	
+	public static HashMap<Integer, Integer> removeInnerStatements( HashMap<Integer, Integer> 
+		statements_positions ) {
+		ArrayList<Integer> tobe_removed = new ArrayList<Integer>();
+		
+		for (Integer start : statements_positions.keySet()) {
+			int end = statements_positions.get(start);
+			
+			for (Integer temp_start : statements_positions.keySet()) {
+				int temp_end = statements_positions.get(temp_start);
+				
+				if ( ( start >= temp_start && end <= temp_end) && ( start != temp_start || end !=temp_end ) ) {
+					tobe_removed.add(start);
+				}
+				
+			}
+			
+		}
+		
+		for (int key : tobe_removed) {
+			statements_positions.remove(key);
+		}
+		
+//		System.out.println(statements_positions);
+		
+		return statements_positions;
+	}
 
 	public DNATokenizer getTokenzier() {
 		return tokenzier;
@@ -115,7 +158,26 @@ public class DNATextMiner {
 		this.tokenzier = tokenzier;
 	}
 
-	
+	public static void test() {
+		String file = "/Users/rockyrock/Desktop/file.dna";
+		DataAccess dataAccess = new DataAccess("sqlite", file );
+		ArrayList<Document> documentsList = dataAccess.getDocuments();
+		
+		for (Document document : documentsList) {
+			List<SidebarStatement> statements = 
+					dataAccess.getStatementsPerDocumentId(document.getId());
+			String docString = document.getText();
+			
+			for (SidebarStatement st : statements) {
+				if (st.getType().equals("Person")) {
+					String txt = docString.substring(st.getStart(), st.getStop());
+					System.out.println(txt);
+				}
+			}
+			
+			break;
+		}
+	}
 	
 }
 
