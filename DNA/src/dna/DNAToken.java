@@ -12,6 +12,7 @@ public class DNAToken {
 	private String label;
 	private List<Double> features;
 	private int id;
+	private int docId;
 	
 	public DNAToken() {
 		features = new ArrayList<Double>();
@@ -59,6 +60,15 @@ public class DNAToken {
 	public void setId(int id) {
 		this.id = id;
 	}
+
+	public int getDocId() {
+		return docId;
+	}
+
+	public void setDocId(int docId) {
+		this.docId = docId;
+	}
+	
 	
 
 }

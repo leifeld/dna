@@ -1,5 +1,9 @@
 package dna;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,7 +14,7 @@ public class DNATextMiner {
 	public static void main(String[] args) {
 		String file = "/Users/rockyrock/Desktop/file.dna";
 		DNATextMiner textMiner = new DNATextMiner( new SimpleDNATokenizer() );
-		textMiner.extract_data(file);
+		textMiner.extract_data(file, "Person");
 //		test();
 	}
 	
@@ -24,15 +28,17 @@ public class DNATextMiner {
 	 * Produces a CSV file from a DNA file with the tokens of the documents, their features and their labels. 
 	 * The file will be saved in the same location but with a .csv extension.
 	 * @param filePath
+	 * @param classLabel can be ('Person', 'Organization', 'Concept')
 	 */
-	public void extract_data( String filePath ) {
+	public void extract_data( String filePath, String classLabel ) {
 		
 		DataAccess dataAccess = new DataAccess("sqlite", filePath );
-		ArrayList<Document> documentsList = dataAccess.getDocuments();
-		ArrayList<DNAToken> tokens = new ArrayList<DNAToken>();
+		List<Document> documentsList = dataAccess.getDocuments();
+		List<DNAToken> allTokens = new ArrayList<DNAToken>();
 		
 		
 		for (Document document : documentsList) {
+			List<DNAToken> docTokens = new ArrayList<DNAToken>();
 			List<SidebarStatement> statements = 
 					dataAccess.getStatementsPerDocumentId(document.getId());
 			
@@ -42,7 +48,7 @@ public class DNATextMiner {
 			
 			//Store statements start and end positions
 			for (SidebarStatement st : statements) {
-				if (st.getType().equals("Person")) {
+				if (st.getType().equals(classLabel)) {
 					
 					if ( !statements_positions.containsKey( st.getStart() ) ) {
 						statements_positions.put(st.getStart(), st.getStop());
@@ -71,7 +77,7 @@ public class DNATextMiner {
 					List<DNAToken> temp_tokens = getTokenzier().tokenize(normalTextStartPosition,
 							normalText.toString());
 					temp_tokens = giveLabels(temp_tokens, "N");
-					tokens.addAll( temp_tokens );
+					docTokens.addAll( temp_tokens );
 					normalText = new StringBuffer();
 					
 					//tokenize and flush the statement text and then clear its buffer.
@@ -82,7 +88,7 @@ public class DNATextMiner {
 					
 					temp_tokens = getTokenzier().tokenize(start_pos, statementText.toString());
 					temp_tokens = giveLabels(temp_tokens, "P");
-					tokens.addAll( temp_tokens );
+					docTokens.addAll( temp_tokens );
 					statementText = new StringBuffer();
 					normalTextStartPosition = end_pos;
 				}
@@ -92,16 +98,28 @@ public class DNATextMiner {
 			}
 			
 			if ( normalText.length() > 0 ) {
-				tokens.addAll( getTokenzier().tokenize(normalTextStartPosition,
-						normalText.toString()) );
+				List<DNAToken> temp_tokens = getTokenzier().tokenize(normalTextStartPosition,
+						normalText.toString());
+				temp_tokens = giveLabels(temp_tokens, "N");
+				docTokens.addAll( temp_tokens );
 				normalText = new StringBuffer();
 			}
 			
+			for ( int i = 0; i < docTokens.size(); i++ ) {
+				DNAToken tok = docTokens.get(i);
+				tok.setDocId( document.getId() );
+				tok.setId(i);
+			}
+			
+			allTokens.addAll(docTokens);
+			break;
 		}
 		
 		dataAccess.closeFile();
 		
-		//TODO create features and then save as csv.
+		FeatureFactory featFact = new FeatureFactory(allTokens);
+		allTokens = featFact.addFeatures();
+		toCSVFile(allTokens, featFact.getNumberOfFeatures(), filePath);
 	}
 	
 	/**
@@ -199,6 +217,52 @@ public class DNATextMiner {
 			
 			break;
 		}
+	}
+	
+	public static void toCSVFile(List<DNAToken> tokens, int numberOfFeatures, String path) {
+		System.out.println("Saving as CSV file ...");
+		File oldFile = new File(path);
+		File csvFile = new File( oldFile.getAbsoluteFile() +  ".csv" );
+		System.out.println(csvFile.getAbsolutePath());
+		if (!csvFile.exists()) {
+			try {
+				csvFile.createNewFile();
+				
+				FileWriter fw = new FileWriter(csvFile.getAbsoluteFile());
+				
+				BufferedWriter bw = new BufferedWriter(fw);
+				
+				//Write header
+				bw.write("token,id,docId,start_position,end_position,");
+				
+				for (int i = 0; i < numberOfFeatures; i++) {
+					bw.write("f"+i+",");
+				}
+				
+				bw.write("label\n");
+				
+				for (DNAToken tok : tokens) {
+					bw.write(tok.getText() + "," + tok.getId() +
+							"," + tok.getDocId() + "," + tok.getStart_position() +
+							"," + tok.getEnd_position() + ",");
+					
+					for (Double f : tok.getFeatures()) {
+						bw.write(f.toString() + ",");
+					}
+					
+					bw.write(tok.getLabel() + "\n");
+				}
+				
+				bw.close();
+				System.out.println("Done.");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		else {
+			System.err.println("CSV file exists!");
+		}
+		
 	}
 	
 }
