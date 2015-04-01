@@ -8,5 +8,7 @@
 	<classpathentry kind="lib" path="DNA/lib/mysql-connector-java-5.1.24-bin.jar"/>
 	<classpathentry kind="lib" path="DNA/lib/sqljdbc4.jar"/>
 	<classpathentry kind="lib" path="DNA/lib/jsoup-1.8.1.jar"/>
+	<classpathentry kind="lib" path="/Users/rockyrock/Downloads/stan/stanford-corenlp-3.4.1-models.jar"/>
+	<classpathentry kind="lib" path="/Users/rockyrock/Downloads/stan/stanford-corenlp-3.4.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -56,6 +56,8 @@ public class DNATextMiner {
 				}
 			}
 			
+			//Remove the short highlighted statements inside a larger statement,
+			//i.e. just select the wider statement.
 			statements_positions = removeInnerStatements( statements_positions );
 			
 			StringBuffer normalText = new StringBuffer();
@@ -66,8 +68,10 @@ public class DNATextMiner {
 				if ( statements_positions.containsKey(index) ) {
 					
 					//tokenize and flush the normal text and clear its buffer.
-					tokens.addAll( getTokenzier().tokenize(normalTextStartPosition,
-							normalText.toString()) );
+					List<DNAToken> temp_tokens = getTokenzier().tokenize(normalTextStartPosition,
+							normalText.toString());
+					temp_tokens = giveLabels(temp_tokens, "N");
+					tokens.addAll( temp_tokens );
 					normalText = new StringBuffer();
 					
 					//tokenize and flush the statement text and then clear its buffer.
@@ -76,7 +80,9 @@ public class DNATextMiner {
 					index = end_pos-1;// update index to continue buffering normal text after statement
 					statementText.append( docString.substring( start_pos, end_pos ) );
 					
-					tokens.addAll( getTokenzier().tokenize(start_pos, statementText.toString()) );
+					temp_tokens = getTokenzier().tokenize(start_pos, statementText.toString());
+					temp_tokens = giveLabels(temp_tokens, "P");
+					tokens.addAll( temp_tokens );
 					statementText = new StringBuffer();
 					normalTextStartPosition = end_pos;
 				}
@@ -90,10 +96,12 @@ public class DNATextMiner {
 						normalText.toString()) );
 				normalText = new StringBuffer();
 			}
-//			break;
+			
 		}
 		
 		dataAccess.closeFile();
+		
+		//TODO create features and then save as csv.
 	}
 	
 	/**
@@ -123,6 +131,11 @@ public class DNATextMiner {
 		
 	}
 	
+	/**
+	 * Removes the statements that fall in a larger statement range.
+	 * @param statements_positions
+	 * @return
+	 */
 	public static HashMap<Integer, Integer> removeInnerStatements( HashMap<Integer, Integer> 
 		statements_positions ) {
 		ArrayList<Integer> tobe_removed = new ArrayList<Integer>();
@@ -156,6 +169,15 @@ public class DNATextMiner {
 
 	public void setTokenzier(DNATokenizer tokenzier) {
 		this.tokenzier = tokenzier;
+	}
+	
+	public static List<DNAToken> giveLabels( List<DNAToken> tokens, String label ) {
+		
+		for (DNAToken token : tokens) {
+			token.setLabel(label);
+		}
+		
+		return tokens;
 	}
 
 	public static void test() {
