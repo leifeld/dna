@@ -12,6 +12,7 @@ public class DNAToken {
 	private String label;
 	private List<Double> features;
 	private int id;
+	//The ID of the document that this token belongs to.
 	private int docId;
 	
 	public DNAToken() {
@@ -60,7 +61,10 @@ public class DNAToken {
 	public void setId(int id) {
 		this.id = id;
 	}
-
+	
+	/**
+	 * @return The ID of the document that this token belongs to.
+	 */
 	public int getDocId() {
 		return docId;
 	}
