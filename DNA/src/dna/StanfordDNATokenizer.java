@@ -11,7 +11,7 @@ import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.process.CoreLabelTokenFactory;
 import edu.stanford.nlp.process.PTBTokenizer;
 
-public class SimpleDNATokenizer implements DNATokenizer {
+public class StanfordDNATokenizer implements DNATokenizer {
 
 	@Override
 	public List<DNAToken> tokenize(int offset, String text) {

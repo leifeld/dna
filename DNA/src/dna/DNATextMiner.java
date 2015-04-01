@@ -13,24 +13,62 @@ public class DNATextMiner {
 
 	public static void main(String[] args) {
 		String file = "/Users/rockyrock/Desktop/file.dna";
-		DNATextMiner textMiner = new DNATextMiner( new SimpleDNATokenizer() );
-		textMiner.extract_data(file, "Person");
-//		test();
+		DNATextMiner textMiner = new DNATextMiner( new StanfordDNATokenizer() );
+		textMiner.exportToCSV(file, "Person");
 	}
 	
 	private DNATokenizer tokenzier;
 	
+	/**
+	 * @param tokenzier the tokenizer that shall be used to tokenize the text.
+	 */
 	public DNATextMiner(DNATokenizer tokenzier) {
 		this.tokenzier = tokenzier;
 	}
 	
 	/**
-	 * Produces a CSV file from a DNA file with the tokens of the documents, their features and their labels. 
-	 * The file will be saved in the same location but with a .csv extension.
-	 * @param filePath
-	 * @param classLabel can be ('Person', 'Organization', 'Concept')
+	 * Exports data of the dna file into a CSV file to be used for training.
+	 * @param filePath the path to a dna file
+	 * @param classLabel the named entity that shall be used as a positive class for training. 
+	 * the value of this parameter is either "Person", "Organization" or "Concept".
+	 * For example, the tokens of the statements in the dna file that are highlighted as "Person" 
+	 * will be given the positive class label, while the rest of the tokens will have the negative
+	 * class label.
 	 */
-	public void extract_data( String filePath, String classLabel ) {
+	public void exportToCSV(String filePath, String classLabel) {
+		extract_data(filePath, classLabel, true);
+	}
+	
+	/**
+	 * Takes as input a dna file, then it tokenizes the text and assign a label for each token.
+	 * Also the features of each token is generated.
+	 * 
+	 * @param filePath the path to a dna file
+	 * @param classLabel classLabel the named entity that shall be used as a positive class for training. 
+	 * the value of this parameter is either "Person", "Organization" or "Concept".
+	 * For example, the tokens of the statements in the dna file that are highlighted as "Person" 
+	 * will be given the positive class label, while the rest of the tokens will have the negative
+	 * class label.
+	 * @return a list that contains the tokens.
+	 */
+	public List<DNAToken> getTokens(String filePath, String classLabel) {
+		return extract_data(filePath, classLabel, false);
+	}
+	
+	/**
+	 * The method that does all the preprocessing for the dna file and generates the tokens 
+	 * and assign their labels.
+	 * 
+	 * @param filePath the path to a dna file
+	 * @param classLabel classLabel the named entity that shall be used as a positive class for training. 
+	 * the value of this parameter is either "Person", "Organization" or "Concept".
+	 * For example, the tokens of the statements in the dna file that are highlighted as "Person" 
+	 * will be given the positive class label, while the rest of the tokens will have the negative
+	 * class label.
+	 * @param exportToCSV to save the tokens to a CSV file or not.
+	 * @return a list that contains the tokens.
+	 */
+	private List<DNAToken> extract_data( String filePath, String classLabel, boolean exportToCSV ) {
 		
 		DataAccess dataAccess = new DataAccess("sqlite", filePath );
 		List<Document> documentsList = dataAccess.getDocuments();
@@ -63,7 +101,7 @@ public class DNATextMiner {
 			}
 			
 			//Remove the short highlighted statements inside a larger statement,
-			//i.e. just select the wider statement.
+			//i.e. just select the wider statement to avoid redundant tokens.
 			statements_positions = removeInnerStatements( statements_positions );
 			
 			StringBuffer normalText = new StringBuffer();
@@ -119,7 +157,11 @@ public class DNATextMiner {
 		
 		FeatureFactory featFact = new FeatureFactory(allTokens);
 		allTokens = featFact.addFeatures();
-		toCSVFile(allTokens, featFact.getNumberOfFeatures(), filePath);
+		
+		if(exportToCSV)
+			toCSVFile(allTokens, featFact.getNumberOfFeatures(), filePath);
+		
+		return allTokens;
 	}
 	
 	/**
@@ -129,7 +171,7 @@ public class DNATextMiner {
 	 * @param ranges an array that contains the start and end position for every highlighted class/statement in a document.
 	 * @return true if the word is in one of the ranges of the respective class.
 	 */
-	public static boolean isFromType( int wStart, int wStop, List<int[]> ranges ) {
+	private static boolean isFromType( int wStart, int wStop, List<int[]> ranges ) {
 		
 		boolean isFromType = false;
 		
@@ -150,11 +192,16 @@ public class DNATextMiner {
 	}
 	
 	/**
-	 * Removes the statements that fall in a larger statement range.
-	 * @param statements_positions
-	 * @return
+	 * Removes the statements that fall in a larger statement range. In other words,
+	 * if a statement is highlighted and is part of a wider highlighted statement from the same category,
+	 * then only the wider statement is used. For example, the statement "Mr.X" can be highlighted 
+	 * as a Person and the statement "The minister of defense Mr.X" is also highlighted as a statement.
+	 * This methods removes the extra "Mr.X" statement because its tokens are redundant.
+	 * @param statements_positions the keys of this hash table are the start caret positions
+	 * of the statements in the document text, while the values are the end positions.
+	 * @return the statement positions with the redundant statements removed.
 	 */
-	public static HashMap<Integer, Integer> removeInnerStatements( HashMap<Integer, Integer> 
+	private static HashMap<Integer, Integer> removeInnerStatements( HashMap<Integer, Integer> 
 		statements_positions ) {
 		ArrayList<Integer> tobe_removed = new ArrayList<Integer>();
 		
@@ -189,7 +236,7 @@ public class DNATextMiner {
 		this.tokenzier = tokenzier;
 	}
 	
-	public static List<DNAToken> giveLabels( List<DNAToken> tokens, String label ) {
+	private static List<DNAToken> giveLabels( List<DNAToken> tokens, String label ) {
 		
 		for (DNAToken token : tokens) {
 			token.setLabel(label);
@@ -219,7 +266,7 @@ public class DNATextMiner {
 		}
 	}
 	
-	public static void toCSVFile(List<DNAToken> tokens, int numberOfFeatures, String path) {
+	private static void toCSVFile(List<DNAToken> tokens, int numberOfFeatures, String path) {
 		System.out.println("Saving as CSV file ...");
 		File oldFile = new File(path);
 		File csvFile = new File( oldFile.getAbsoluteFile() +  ".csv" );
