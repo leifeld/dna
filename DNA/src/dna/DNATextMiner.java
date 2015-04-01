@@ -112,7 +112,7 @@ public class DNATextMiner {
 			}
 			
 			allTokens.addAll(docTokens);
-			break;
+//			break;
 		}
 		
 		dataAccess.closeFile();
