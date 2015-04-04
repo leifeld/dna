@@ -11,9 +11,14 @@ public class FeatureFactory {
 
 	private List<DNAToken> tokens;
 	private int numberOfFeatures;
+	private List<DNAFeature> features;
 	
 	public FeatureFactory(List<DNAToken> tokens) {
 		this.tokens = tokens;
+		this.features = new ArrayList<DNAFeature>();
+		//TODO add the features
+		this.numberOfFeatures = features.size();
+		
 	}
 	
 	/**
@@ -22,11 +27,8 @@ public class FeatureFactory {
 	 */
 	public List<DNAToken> addFeatures() {
 		
-		for (DNAToken tok : tokens) {
-			List<Double> features = new ArrayList<Double>();
-			features.add(5.5);
-			features.add(6.0);
-			tok.setFeatures(features);
+		for (DNAFeature feature : features) {
+			tokens = feature.buildFeature(tokens);
 		}
 		
 		return tokens;
@@ -35,5 +37,21 @@ public class FeatureFactory {
 	public int getNumberOfFeatures() {
 		return numberOfFeatures;
 	}
+	
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
