@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -16,6 +17,40 @@ import java.util.Set;
 import dna.DNAToken;
 
 public class Vocabulary {
+	
+	public static void main(String[] args) {
+		//test case
+		
+		List<DNAToken> tokens = new ArrayList<DNAToken>();
+		DNAToken tok1 = new DNAToken();
+		tok1.setText("Rakan");
+		
+		DNAToken tok2 = new DNAToken();
+		tok2.setText("writing");
+		
+		DNAToken tok3 = new DNAToken();
+		tok3.setText("haKAn");
+		
+		DNAToken tok4 = new DNAToken();
+		tok4.setText("is");
+		
+		DNAToken tok5 = new DNAToken();
+		tok5.setText("writing");
+		
+		tokens.add( tok1 );
+		tokens.add( tok2 );
+		tokens.add( tok3 );
+		tokens.add( tok4 );
+		tokens.add( tok5 );
+		
+		Vocabulary voc = new Vocabulary();
+		
+		for (String t : voc.getTokens()) {
+			System.out.println("->"+t);
+		}
+		
+	}
+	
 	private Map<String, Integer> vocab;
 	
 	public Vocabulary() {
@@ -60,7 +95,12 @@ public class Vocabulary {
 				BufferedReader br = new BufferedReader(fr);
 				String tok = "";
 				for( int i = 0; ( tok = br.readLine() ) != null; i++ ) {
-					vocab.put(tok, i);
+					if (!vocab.containsKey(tok)) {
+						vocab.put(tok, i);
+					}
+					else {
+						throw new RuntimeException("A duplicate in the tokens file!");
+					}
 				}
 
 			} catch (FileNotFoundException e) {
