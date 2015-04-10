@@ -915,7 +915,7 @@ public class DataAccess {
 		}
 		return entries;
 	}
-
+	
 	/**
 	 * Retrieve all variable entries (including repetitive entries) of type 
 	 * int from a statement table.
@@ -925,7 +925,7 @@ public class DataAccess {
 	 * @return				Vector of int entries.
 	 */
 	public int[] getAllVariableIntEntries(String key, String statementType) {
-		ArrayList<?> al = executeQueryForList("SELECT DISTINCT " + key + 
+		ArrayList<?> al = executeQueryForList("SELECT " + key + 
 				" FROM " + statementType);
 		int[] entries = new int[al.size()];
 		for (int i = 0; i < al.size(); i++) {
