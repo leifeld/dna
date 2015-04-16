@@ -13,8 +13,11 @@ public class DNATextMiner {
 
 	public static void main(String[] args) {
 		String file = "/Users/rockyrock/Desktop/file.dna";
+		String classLabel = "Person";
 		DNATextMiner textMiner = new DNATextMiner( new StanfordDNATokenizer() );
-		textMiner.exportToCSV(file, "Person");
+//		List<DNAToken> tokens = textMiner.extract_data(file, classLabel, false);
+//		Vocabulary.buildVocabularyFile(tokens);
+		textMiner.exportToCSV(file, classLabel);
 	}
 	
 	private DNATokenizer tokenzier;
