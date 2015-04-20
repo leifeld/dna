@@ -780,8 +780,7 @@ public class DataAccess {
 						int i = resultSet.getInt(variable);
 						s = new Integer(i).toString();
 					}
-
-					// Shraddha
+					
 					if (s != null) {
 						Pattern p = Pattern.compile(pattern);
 						Matcher m = p.matcher(s);
@@ -913,7 +912,7 @@ public class DataAccess {
 	 * @return Vector of int entries.
 	 */
 	public int[] getAllVariableIntEntries(String key, String statementType) {
-		ArrayList<?> al = executeQueryForList("SELECT DISTINCT " + key
+		ArrayList<?> al = executeQueryForList("SELECT " + key
 				+ " FROM " + statementType);
 		int[] entries = new int[al.size()];
 		for (int i = 0; i < al.size(); i++) {

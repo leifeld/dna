@@ -488,5 +488,4 @@ public class NetworkExporter extends JDialog {
 		}
 		return card;
 	}
-	
 }

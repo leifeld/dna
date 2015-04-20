@@ -19,7 +19,6 @@ import java.util.Iterator;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -27,7 +26,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
-import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -176,25 +174,18 @@ class SidebarPanel extends JScrollPane {
 				if (row > -1) {
 					int statementId = ssc.get(row).getStatementId();
 					if (statementId != -1) {
-						highlightStatementInText(statementId);
-						//int docId = Dna.dna.db.getStatement(statementId).getDocumentId();
-						//Dna.dna.gui.textPanel.selectStatement(statementId, docId);
+						int docId = Dna.dna.db.getStatement(statementId).getDocumentId();
+						int docRow = Dna.dna.gui.documentPanel.documentContainer.
+								getRowIndexById(docId);
+						Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
+						setSelectionInterval(docRow, docRow);
+						Dna.dna.gui.textPanel.selectStatement(statementId, docId);
 					}
 				}
 			}
 		});
 	}
-
-	//TODO: remove this function and implement it directly in the code where needed
-	public void highlightStatementInText(int statementId) {
-		int docId = Dna.dna.db.getStatement(statementId).getDocumentId();
-		int docRow = Dna.dna.gui.documentPanel.documentContainer.
-				getRowIndexById(docId);
-		Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
-		setSelectionInterval(docRow, docRow);
-		Dna.dna.gui.textPanel.selectStatement(statementId, docId);
-	}
-
+	
 	//called on click of filter radio button to update statement types
 	public void updateStatementTypes() {
 		typeComboBox1.removeAllItems();
