@@ -16,8 +16,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -25,6 +27,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -49,6 +52,7 @@ class SidebarPanel extends JScrollPane {
 	JXTextField patternField1, patternField2;
 	JComboBox<String> typeComboBox1, typeComboBox2, variableComboBox1, 
 	variableComboBox2;
+	//JButton executeButton;
 
 	public SidebarPanel() {
 		this.setPreferredSize(new Dimension(260, 440));
@@ -191,21 +195,30 @@ class SidebarPanel extends JScrollPane {
 		Dna.dna.gui.textPanel.selectStatement(statementId, docId);
 	}
 
+	//called on click of filter radio button to update statement types
 	public void updateStatementTypes() {
 		typeComboBox1.removeAllItems();
+		ArrayList<StatementType> types = new ArrayList<>();
 		if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().
 				equals("")) {
-			ArrayList<StatementType> types = Dna.dna.db.getStatementTypes();
+			types = Dna.dna.db.getStatementTypes();
 			for (int i = 0; i < types.size(); i++) {
-				typeComboBox1.addItem(types.get(i).getLabel());
+				
+				String type = types.get(i).getLabel().toString();
+				if(type!=null )
+				{
+					typeComboBox1.addItem(type.trim());
+				}
+				
 			}
 			typeComboBox1.setSelectedIndex(0);
 		}
+		
 		//LB.Add: same for the Self-Contradiction Filter
 		cp.filterComboBoxType.removeAllItems();
 		if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().
 				equals("")) {
-			ArrayList<StatementType> types = Dna.dna.db.getStatementTypes();
+			//types = Dna.dna.db.getStatementTypes();
 			for (int i = 0; i < types.size(); i++) {
 				cp.filterComboBoxType.addItem(types.get(i).getLabel());
 			}
@@ -313,6 +326,7 @@ class SidebarPanel extends JScrollPane {
 			});
 			patternField2 = new JXTextField("regex");
 			patternField2.setPreferredSize(new Dimension(104, 20));
+			
 
 			toggleEnabled(false);
 
@@ -324,19 +338,23 @@ class SidebarPanel extends JScrollPane {
 			JPanel filterPanel2 = new JPanel(new FlowLayout(FlowLayout.LEFT));
 			filterPanel2.add(variableComboBox2);
 			filterPanel2.add(patternField2);
-			JPanel filterPanel = new JPanel(new BorderLayout());
-			filterPanel.add(filterPanel0, BorderLayout.NORTH);
-			filterPanel.add(filterPanel1, BorderLayout.CENTER);
-			filterPanel.add(filterPanel2, BorderLayout.SOUTH);
+			
+			JPanel filterPanel = new JPanel();
+			filterPanel.setLayout(new BoxLayout(filterPanel,BoxLayout.Y_AXIS));
+			filterPanel.add(filterPanel0, Component.CENTER_ALIGNMENT);
+			filterPanel.add(filterPanel1, Component.CENTER_ALIGNMENT);
+			filterPanel.add(filterPanel2, Component.CENTER_ALIGNMENT);
+			
 
 			this.add(showPanel, BorderLayout.NORTH);
 			this.add(filterPanel, BorderLayout.CENTER);
 
 			ActionListener al = new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					if (e.getSource() == showAll) {
-						toggleEnabled(false);
+					if (e.getSource() == showAll) {				
 						allFilter();
+						toggleEnabled(false);
+						
 					} else if (e.getSource() == showCurrent) {
 						toggleEnabled(false);
 						allFilter();
@@ -344,6 +362,7 @@ class SidebarPanel extends JScrollPane {
 					} else if (e.getSource() == showFilter) {
 						toggleEnabled(true);
 						filter();
+						
 					}
 					//if (!(e.getSource() == showAll)) {
 					//	Dna.mainProgram.contradictionReporter.clearTree();
@@ -375,20 +394,27 @@ class SidebarPanel extends JScrollPane {
 		}
 
 		public void toggleEnabled(boolean enabled) {
+			patternField1.setText("");
+			patternField2.setText("");			
 			typeComboBox1.setEnabled(enabled);
 			variableComboBox1.setEnabled(enabled);
 			patternField1.setEnabled(enabled);
 			variableComboBox2.setEnabled(enabled);
 			patternField2.setEnabled(enabled);
+			if(enabled==true)
+			{
+				updateStatementTypes();
+			}
+			 this.updateUI();
 		}
 
 		public void allFilter() {
 			try {
-				RowFilter<SidebarStatementContainer, Object> rf = null;
-				rf = RowFilter.regexFilter("");
+				//RowFilter<SidebarStatementContainer, Object> rf = RowFilter.regexFilter("");
 				if (showAll.isSelected()) {
-					sorter.setRowFilter(rf);
+					sorter.setRowFilter(null);					
 				}
+				
 			} catch (java.util.regex.PatternSyntaxException pse) {
 				return;
 			}
@@ -422,7 +448,8 @@ class SidebarPanel extends JScrollPane {
 
 		private void filter() {
 			String fn = Dna.dna.db.getFileName();
-			if (fn != null && !fn.equals("")) {
+			if (fn != null && !fn.equals("")) 
+			{
 				String p1 = patternField1.getText();
 				String p2 = patternField2.getText();
 

@@ -15,8 +15,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class Dna {
-	String version = "2.0 alpha 12";
-	String date = "December 29, 2014"; 
+	String version = "2.0 beta 1";
+	String date = "April 20, 2015"; 
 	static Dna dna;
 	DataAccess db;
 	Gui gui;
@@ -218,13 +218,18 @@ public class Dna {
 		Dna.dna.db.openSQLite(dbfile);
 		Dna.dna.gui.statusBar.resetLabel();
 		ArrayList<Document> docs = Dna.dna.db.getDocuments();
+		
+		//System.out.println( "Total docs >> " + docs.size());
 		for (int i = 0; i < docs.size(); i++) {
-			Dna.dna.gui.documentPanel.documentContainer.addDocument(docs.
-					get(i));
+			
+
+			
+			Dna.dna.gui.documentPanel.documentContainer.addDocument(docs.get(i));
 			int documentId = docs.get(i).getId();
 			ArrayList<SidebarStatement> statements = Dna.dna.db.
 					getStatementsPerDocumentId(documentId);
 			for (int j = 0; j < statements.size(); j++) {
+				//
 				SidebarStatement s = statements.get(j);
 				Dna.dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
 			}
