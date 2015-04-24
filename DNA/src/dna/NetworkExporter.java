@@ -634,7 +634,7 @@ public class NetworkExporter extends JDialog {
 		public Edgelist() {
 			this.edgelist = new ArrayList<Edge>();
 		}
-				
+		
 		public void addEdge(Edge edge) {
 			int id = -1;
 			for (int i = 0; i < edgelist.size(); i++) {
@@ -648,6 +648,55 @@ public class NetworkExporter extends JDialog {
 				edgelist.get(id).setWeight(edge.getWeight());
 			}
 		}
+		
+		/**
+		 * @return unique String array of all source node names in the edge list
+		 */
+		public String[] getSources() {
+			ArrayList<String> sources = new ArrayList<String>();
+			String currentSource;
+			for (int i = 0; i < edgelist.size(); i++) {
+				currentSource = edgelist.get(i).getSource();
+				if (!sources.contains(currentSource)) {
+					sources.add(currentSource);
+				}
+			}
+			String[] s = new String[sources.size()]; // cast row names from array list to array
+			s = sources.toArray(s);
+			return s;
+		}
+
+		/**
+		 * @return unique String array of all target node names in the edge list
+		 */
+		public String[] getTargets() {
+			ArrayList<String> targets = new ArrayList<String>();
+			String currentTarget;
+			for (int i = 0; i < edgelist.size(); i++) {
+				currentTarget = edgelist.get(i).getTarget();
+				if (!targets.contains(currentTarget)) {
+					targets.add(currentTarget);
+				}
+			}
+			String[] t = new String[targets.size()]; // cast row names from array list to array
+			t = targets.toArray(t);
+			return t;
+		}
+
+		/**
+		 * @return the edgelist
+		 */
+		public ArrayList<Edge> getEdgelist() {
+			return edgelist;
+		}
+
+		/**
+		 * @param edgelist the edgelist to set
+		 */
+		public void setEdgelist(ArrayList<Edge> edgelist) {
+			this.edgelist = edgelist;
+		}
+
 	}
 	
 	/**
@@ -663,14 +712,46 @@ public class NetworkExporter extends JDialog {
 		Matrix matrix;
 		Edgelist edgelist;
 		
+		// constructor when only the matrix has been computed: also convert to edge list
 		public Network(Matrix matrix) {
 			this.matrix = matrix;
+			double[][] m = matrix.getMatrix();
+			String[] r = matrix.getRownames();
+			String[] c = matrix.getColnames();
+			ArrayList<Edge> el = new ArrayList<Edge>();
+			for (int i = 0; i < m.length; i++) {
+				for (int j = 0; j < m[0].length; j++) {
+					el.add(new Edge(r[i], c[j], m[i][j]));
+				}
+			}
+			this.edgelist = new Edgelist(el);
 		}
-
+		
+		// constructor when only the edge list has been computed: also convert to matrix
 		public Network(Edgelist edgelist) {
 			this.edgelist = edgelist;
+			String[] sources = edgelist.getSources();
+			String[] targets = edgelist.getTargets();
+			double[][] mat = new double[sources.length][targets.length];
+			int row = -1;
+			int col = -1;
+			ArrayList<Edge> el = edgelist.getEdgelist();
+			for (int i = 0; i < el.size(); i++) {
+				for (int j = 0; j < sources.length; j++) {
+					if (el.get(i).getSource().equals(sources[j])) {
+						row = j;
+					}
+				}
+				for (int j = 0; j < targets.length; j++) {
+					if (el.get(i).getTarget().equals(targets[j])) {
+						col = j;
+					}
+				}
+				mat[row][col] = el.get(i).getWeight();
+			}
 		}
-
+		
+		// constructor when both matrix and edge list are present
 		public Network(Matrix matrix, Edgelist edgelist) {
 			this.matrix = matrix;
 			this.edgelist = edgelist;
@@ -898,7 +979,6 @@ public class NetworkExporter extends JDialog {
 		Matrix matrix = new Matrix(cooc, labels, labels);
 		Network network = new Network(matrix);
 		return network;
-		// TODO: create edgelist automatically inside the Network class when only a matrix is provided and vice-versa
 		// TODO: take into account the type variable inside this function to create conflict networks
 		// TODO: allow for concept congruence networks; i.e., multiply numbers of nodes by qualifier selection size
 		// TODO: add normalization options (divide, subtract, Jaccard, cosine similarity)
