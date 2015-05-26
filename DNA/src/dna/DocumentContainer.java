@@ -10,9 +10,22 @@ import javax.swing.table.TableModel;
 
 class DocumentContainer implements TableModel {
 	private ArrayList<Document> documents = new ArrayList<Document> ();
-	private Vector<TableModelListener> listeners = 
-			new Vector<TableModelListener>();
+	private Vector<TableModelListener> listeners = 	new Vector<TableModelListener>();
 
+	//SK start
+	DocumentContainer(ArrayList<Document> documents)
+	{
+		this.documents = documents;	
+		sort();
+		
+	}
+	
+	DocumentContainer()
+	{
+		super();
+	}
+	//SK end
+	
 	public boolean containsTitle(String title) {
 		boolean contains = false;
 		for (int i = 0; i < documents.size(); i++) {
@@ -54,13 +67,25 @@ class DocumentContainer implements TableModel {
 		return documents.get(index);
 	}
 
+	public Document getDocumentByID(int id)
+	{
+		for(Document doc: documents )
+		{
+			if(doc.getId()==id)
+			{
+				return doc;
+			}
+		}
+		return null;
+	}
+	
 	//return number of columns
 	public int getColumnCount() {
 		return 2;
 	}
 
 	//return number of documents in the table
-	public int getRowCount() {
+	public int getRowCount() {		
 		return documents.size();
 	}
 
@@ -138,7 +163,7 @@ class DocumentContainer implements TableModel {
 			default: return null;
 		}	
 	}
-
+	
 	public void addTableModelListener(TableModelListener l) {
 		listeners.add( l );
 	}

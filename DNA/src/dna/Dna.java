@@ -21,7 +21,9 @@ public class Dna {
 	DataAccess db;
 	Gui gui;
 
+	ArrayList<Document> documents = new ArrayList<Document>(); //SK All changes w.r.t. documents list
 	public Dna () {
+		documents = new ArrayList<Document>(); //SK
 		db = new DataAccess();
 		gui = new Gui();
 	}
@@ -217,15 +219,13 @@ public class Dna {
 	public void openFile(String dbfile) {
 		Dna.dna.db.openSQLite(dbfile);
 		Dna.dna.gui.statusBar.resetLabel();
-		ArrayList<Document> docs = Dna.dna.db.getDocuments();
+		documents = Dna.dna.db.getDocuments();
 		
-		//System.out.println( "Total docs >> " + docs.size());
-		for (int i = 0; i < docs.size(); i++) {
-			
-
-			
-			Dna.dna.gui.documentPanel.documentContainer.addDocument(docs.get(i));
-			int documentId = docs.get(i).getId();
+		//System.out.println( "Total documents >> " + documents.size());
+		for (int i = 0; i < documents.size(); i++) {
+						
+			Dna.dna.gui.documentPanel.documentContainer.addDocument(documents.get(i));
+			int documentId = documents.get(i).getId();
 			ArrayList<SidebarStatement> statements = Dna.dna.db.
 					getStatementsPerDocumentId(documentId);
 			for (int j = 0; j < statements.size(); j++) {
@@ -249,11 +249,10 @@ public class Dna {
 	public void openMySQL(String url, String userName, String password) {
 		Dna.dna.db.openMySQL(url, userName, password);
 		Dna.dna.gui.statusBar.resetLabel();
-		ArrayList<Document> docs = Dna.dna.db.getDocuments();
-		for (int i = 0; i < docs.size(); i++) {
-			Dna.dna.gui.documentPanel.documentContainer.addDocument(docs.
-					get(i));
-			int documentId = docs.get(i).getId();
+		documents = Dna.dna.db.getDocuments();
+		for (int i = 0; i < documents.size(); i++) {
+			Dna.dna.gui.documentPanel.documentContainer.addDocument(documents.get(i));
+			int documentId = documents.get(i).getId();
 			ArrayList<SidebarStatement> statements = Dna.dna.db.
 					getStatementsPerDocumentId(documentId);
 			for (int j = 0; j < statements.size(); j++) {
@@ -277,11 +276,10 @@ public class Dna {
 			String password) {
 		Dna.dna.db.openMSSQL(url, dbname, userName, password);
 		Dna.dna.gui.statusBar.resetLabel();
-		ArrayList<Document> docs = Dna.dna.db.getDocuments();
-		for (int i = 0; i < docs.size(); i++) {
-			Dna.dna.gui.documentPanel.documentContainer.addDocument(docs.
-					get(i));
-			int documentId = docs.get(i).getId();
+		documents = Dna.dna.db.getDocuments();
+		for (int i = 0; i < documents.size(); i++) {
+			Dna.dna.gui.documentPanel.documentContainer.addDocument(documents.get(i));
+			int documentId = documents.get(i).getId();
 			ArrayList<SidebarStatement> statements = Dna.dna.db.
 					getStatementsPerDocumentId(documentId);
 			for (int j = 0; j < statements.size(); j++) {

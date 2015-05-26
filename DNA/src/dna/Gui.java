@@ -121,7 +121,12 @@ public class Gui extends JFrame {
 		DocumentTable documentTable;
 
 		public DocumentPanel() {
+			if(Dna.dna!=null)
+				documentContainer = new DocumentContainer(Dna.dna.documents); //SK
+			else 
 			documentContainer = new DocumentContainer();
+			
+			
 			documentTable = new DocumentTable();
 			documentTable.setModel(documentContainer);
 			this.setViewportView(documentTable);
@@ -134,8 +139,8 @@ public class Gui extends JFrame {
 
 			private static final long serialVersionUID = 1L;
 
-			public DocumentTable() {
-				setModel(new DocumentContainer());
+			public DocumentTable() {		
+//				setModel(new DocumentContainer()); //SK -- already set before
 				setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 				getTableHeader().setReorderingAllowed( false );
 				putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
@@ -154,9 +159,11 @@ public class Gui extends JFrame {
 							Dna.dna.gui.menuBar.removeDocumentButton.
 							setEnabled(false);
 						} else {
-							int id = documentPanel.documentContainer.
-									get(selectedRow).getId();
-							Document document = Dna.dna.db.getDocument(id);
+							int id = documentPanel.documentContainer.get(selectedRow).getId() ;
+							//SK Doc_ID and selected row index differs hence search by doc_id in documents list
+							Document document = documentContainer.getDocumentByID(id) ; 
+							//Dna.dna.db.getDocument(id); // No DB connection. get Document from retrieved data
+							
 							String text = document.getText();
 							textPanel.setDocumentId(id);
 							textPanel.setDocumentText(text);

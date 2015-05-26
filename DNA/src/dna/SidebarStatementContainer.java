@@ -65,8 +65,10 @@ public class SidebarStatementContainer implements TableModel {
 			int start = s.getStart();
 			int stop = s.getStop();
 			int documentId = s.getDocumentId();
-			String text = Dna.dna.db.getDocument(documentId).getText().
-					substring(start, stop);
+			//SK -------- start ------
+			//String text = Dna.dna.db.getDocument(documentId).getText().substring(start, stop);
+			String text = Dna.dna.gui.documentPanel.documentContainer.getDocumentByID(documentId).getText().substring(start, stop);
+			//SK -------- end ------
 			return text;
 		} else {
 			return null;
