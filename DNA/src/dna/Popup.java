@@ -15,6 +15,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.Connection;
+import java.sql.Statement;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -47,6 +48,7 @@ public class Popup extends JDialog {
 	int statementId;
 	JPanel gridBagPanel;
 	Connection conn;
+	Statement st6;
 	
 	public Popup(Point point, final int statementId, Point location) {
 		this.point = point;
