@@ -1,11 +1,15 @@
 package dna;
 
 import javax.swing.ImageIcon;
+
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -31,7 +35,15 @@ import java.awt.Insets;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 
+/**
+ * @author philip
+ *
+ */
 public class NetworkExporter extends JDialog {
 	
 	private static final long serialVersionUID = 1L;
@@ -487,5 +499,551 @@ public class NetworkExporter extends JDialog {
 			}
 		}
 		return card;
+	}
+
+	/**
+	 * @author philip
+	 *
+	 * A class for Matrix objects. As two-dimensional arrays do not store the row and column labels, 
+	 * this class stores both the two-dimensional array and its labels. Matrix objects are created 
+	 * by the different network algorithms. Some of the file export functions take Matrix objects as 
+	 * input data.
+	 *
+	 */
+	class Matrix {
+		double[][] matrix;
+		String[] rownames, colnames;
+		
+		public Matrix(double[][] matrix, String[] rownames, String[] colnames) {
+			this.matrix = matrix;
+			this.rownames = rownames;
+			this.colnames = colnames;
+		}
+
+		/**
+		 * @return the matrix
+		 */
+		public double[][] getMatrix() {
+			return matrix;
+		}
+
+		/**
+		 * @param matrix the matrix to set
+		 */
+		public void setMatrix(double[][] matrix) {
+			this.matrix = matrix;
+		}
+
+		/**
+		 * @return the rownames
+		 */
+		public String[] getRownames() {
+			return rownames;
+		}
+
+		/**
+		 * @param rownames the rownames to set
+		 */
+		public void setRownames(String[] rownames) {
+			this.rownames = rownames;
+		}
+
+		/**
+		 * @return the colnames
+		 */
+		public String[] getColnames() {
+			return colnames;
+		}
+
+		/**
+		 * @param colnames the colnames to set
+		 */
+		public void setColnames(String[] colnames) {
+			this.colnames = colnames;
+		}
+	}
+
+	/**
+	 * @author philip
+	 * 
+	 * A class for Edge objects. An edge consists of a source node, a target node, and an edge weight. 
+	 * Some of the export functions take Edgelist objects as input data. This class represents the edges in 
+	 * such an edge list.
+	 * 
+	 */
+	class Edge {
+		String source;
+		String target;
+		double weight;
+		
+		public Edge(String source, String target, double weight) {
+			this.source = source;
+			this.target = target;
+			this.weight = weight;
+		}
+
+		/**
+		 * @return the source
+		 */
+		public String getSource() {
+			return source;
+		}
+
+		/**
+		 * @param source the source to set
+		 */
+		public void setSource(String source) {
+			this.source = source;
+		}
+
+		/**
+		 * @return the target
+		 */
+		public String getTarget() {
+			return target;
+		}
+
+		/**
+		 * @param target the target to set
+		 */
+		public void setTarget(String target) {
+			this.target = target;
+		}
+
+		/**
+		 * @return the weight
+		 */
+		public double getWeight() {
+			return weight;
+		}
+
+		/**
+		 * @param weight the weight to set
+		 */
+		public void setWeight(double weight) {
+			this.weight = weight;
+		}
+	}
+		
+	/**
+	 * @author philip
+	 * 
+	 * A class for Edgelist objects. An edge list is a list of Edge objects and is an alternative to 
+	 * Matrix objects for storing network data. If an edge is added that is already part of the 
+	 * edge list, its weights is increased instead of adding a duplicate edge.
+	 */
+	class Edgelist {
+		ArrayList<Edge> edgelist;
+
+		public Edgelist(ArrayList<Edge> edgelist) {
+			this.edgelist = edgelist;
+		}
+		
+		public Edgelist() {
+			this.edgelist = new ArrayList<Edge>();
+		}
+		
+		public void addEdge(Edge edge) {
+			int id = -1;
+			for (int i = 0; i < edgelist.size(); i++) {
+				if (edgelist.get(i).getSource().equals(edge.getSource()) && edgelist.get(i).getTarget().equals(edge.getTarget())) {
+					id = i;
+				}
+			}
+			if (id == -1) {
+				edgelist.add(edge);
+			} else {
+				edgelist.get(id).setWeight(edge.getWeight());
+			}
+		}
+		
+		/**
+		 * @return unique String array of all source node names in the edge list
+		 */
+		public String[] getSources() {
+			ArrayList<String> sources = new ArrayList<String>();
+			String currentSource;
+			for (int i = 0; i < edgelist.size(); i++) {
+				currentSource = edgelist.get(i).getSource();
+				if (!sources.contains(currentSource)) {
+					sources.add(currentSource);
+				}
+			}
+			String[] s = new String[sources.size()]; // cast row names from array list to array
+			s = sources.toArray(s);
+			return s;
+		}
+
+		/**
+		 * @return unique String array of all target node names in the edge list
+		 */
+		public String[] getTargets() {
+			ArrayList<String> targets = new ArrayList<String>();
+			String currentTarget;
+			for (int i = 0; i < edgelist.size(); i++) {
+				currentTarget = edgelist.get(i).getTarget();
+				if (!targets.contains(currentTarget)) {
+					targets.add(currentTarget);
+				}
+			}
+			String[] t = new String[targets.size()]; // cast row names from array list to array
+			t = targets.toArray(t);
+			return t;
+		}
+
+		/**
+		 * @return the edgelist
+		 */
+		public ArrayList<Edge> getEdgelist() {
+			return edgelist;
+		}
+
+		/**
+		 * @param edgelist the edgelist to set
+		 */
+		public void setEdgelist(ArrayList<Edge> edgelist) {
+			this.edgelist = edgelist;
+		}
+
+	}
+	
+	/**
+	 * @author philip
+	 * 
+	 * A class for Network objects. A Network object is merely a container for Matrix objects and/or 
+	 * Edgelist objects. This container class is necessary because the export functions should be able 
+	 * to return either matrices or edgelists; but since only one data type can be returned by functions, 
+	 * this is going to be a Network object that contains either the matrix or the edge list or both.
+	 * 
+	 */
+	class Network {
+		Matrix matrix;
+		Edgelist edgelist;
+		
+		// constructor when only the matrix has been computed: also convert to edge list
+		public Network(Matrix matrix) {
+			this.matrix = matrix;
+			double[][] m = matrix.getMatrix();
+			String[] r = matrix.getRownames();
+			String[] c = matrix.getColnames();
+			ArrayList<Edge> el = new ArrayList<Edge>();
+			for (int i = 0; i < m.length; i++) {
+				for (int j = 0; j < m[0].length; j++) {
+					el.add(new Edge(r[i], c[j], m[i][j]));
+				}
+			}
+			this.edgelist = new Edgelist(el);
+		}
+		
+		// constructor when only the edge list has been computed: also convert to matrix
+		public Network(Edgelist edgelist) {
+			this.edgelist = edgelist;
+			String[] sources = edgelist.getSources();
+			String[] targets = edgelist.getTargets();
+			double[][] mat = new double[sources.length][targets.length];
+			int row = -1;
+			int col = -1;
+			ArrayList<Edge> el = edgelist.getEdgelist();
+			for (int i = 0; i < el.size(); i++) {
+				for (int j = 0; j < sources.length; j++) {
+					if (el.get(i).getSource().equals(sources[j])) {
+						row = j;
+					}
+				}
+				for (int j = 0; j < targets.length; j++) {
+					if (el.get(i).getTarget().equals(targets[j])) {
+						col = j;
+					}
+				}
+				mat[row][col] = el.get(i).getWeight();
+			}
+			this.matrix = new Matrix(mat, sources, targets);
+		}
+		
+		// constructor when both matrix and edge list are present
+		public Network(Matrix matrix, Edgelist edgelist) {
+			this.matrix = matrix;
+			this.edgelist = edgelist;
+		}
+
+		/**
+		 * @return the matrix
+		 */
+		public Matrix getMatrix() {
+			return matrix;
+		}
+
+		/**
+		 * @param matrix the matrix to set
+		 */
+		public void setMatrix(Matrix matrix) {
+			this.matrix = matrix;
+		}
+
+		/**
+		 * @return the edgelist
+		 */
+		public Edgelist getEdgelist() {
+			return edgelist;
+		}
+
+		/**
+		 * @param edgelist the edgelist to set
+		 */
+		public void setEdgelist(Edgelist edgelist) {
+			this.edgelist = edgelist;
+		}
+	}
+	
+	/**
+	 * This function computes the matrix product of two two-dimensional arrays.
+	 * 
+	 * @param mat1	Two-dimensional array with the first input matrix.
+	 * @param mat2	Two-dimensional array with the second input matrix.
+	 * @return		Two-dimensional array with the output matrix.
+	 */
+	public static double[][] multiply(double[][] mat1, double[][] mat2) {
+        int aRows = mat1.length;
+        int aColumns = mat1[0].length;
+        int bRows = mat2.length;
+        int bColumns = mat2[0].length;
+        
+        if (aColumns != bRows) {
+            throw new IllegalArgumentException("A:Rows: " + aColumns + " did not match B:Columns " + bRows + ".");
+        }
+        
+        double[][] mat3 = new double[aRows][bColumns];
+        
+        for (int i = 0; i < aRows; i++) { // aRow
+            for (int j = 0; j < bColumns; j++) { // bColumn
+                for (int k = 0; k < aColumns; k++) { // aColumn
+                    mat3[i][j] += mat1[i][k] * mat2[k][j];
+                }
+            }
+        }
+        
+        return mat3;
+    }
+	
+	/**
+	 * This function transposes a two-dimensional array.
+	 * 
+	 * @param mat	Two-dimensional array that should be transposed.
+	 * @return		Transposed two-dimensional array.
+	 */
+	public static double[][] transpose(double[][] mat) {
+	    int m = mat.length;
+	    int n = mat[0].length;
+
+	    double[][] t = new double[n][m];
+
+	    for(int i = 0; i < n; i++) {
+	    	for(int j = 0; j < m; j++) {
+	            t[i][j] = mat[j][i];
+	        }
+	    }
+	    return t;
+	}
+
+	/**
+	 * This function adds two two-dimensional arrays.
+	 * 
+	 * @param mat1	Two-dimensional array with the first input matrix.
+	 * @param mat2	Two-dimensional array with the second input matrix.
+	 * @return		Two-dimensional array with the output matrix.
+	 */
+	public static double[][] add(double[][] mat1, double[][] mat2) {
+        int aRows = mat1.length;
+        int aColumns = mat1[0].length;
+        int bRows = mat2.length;
+        int bColumns = mat2[0].length;
+
+        if (aRows != bRows) {
+            throw new IllegalArgumentException("Matrix dimensions do not match: " + aRows + " vs. " + bRows + " rows.");
+        }
+        if (aColumns != bColumns) {
+            throw new IllegalArgumentException("Matrix dimensions do not match: " + aColumns + " vs. " + bColumns + " columns.");
+        }
+        
+        double[][] mat3 = new double[aRows][aColumns];
+        
+        for (int i = 0; i < aRows; i++) {
+            for (int j = 0; j < aColumns; j++) {
+                mat3[i][j] = mat1[i][j] + mat2[i][j];
+            }
+        }
+        
+        return mat3;
+    }
+	
+	/**
+	 * This function accepts a list of statements that should be included in the network export, 
+	 * retrieves their actual contents from the database, and creates and returns a two-mode 
+	 * network matrix (= an affiliation matrix) or network based on the statement data. 
+	 * 
+	 * @param statements	An array list of SidebarStatement objects that should be included in the export.
+	 * @param variable1		The name of the first variable (for the row labels).
+	 * @param variable2		The name of the second variable (for the column labels).
+	 * @param qualifier		The name of the agreement variable that determines whether an edge should be established.
+	 * @param selection		The levels of the variable that should be taken into account during export.
+	 * @return				A Network object with an affiliation network.
+	 */
+	public Network affiliation(ArrayList<SidebarStatement> statements, String variable1, String variable2, String qualifier, int[] selection) {
+		ArrayList<String> names1 = new ArrayList<String>(); // unique row labels
+		ArrayList<String> names2 = new ArrayList<String>(); // unique column labels
+		ArrayList<String> entries1 = new ArrayList<String>(); // all variable 1 entries
+		ArrayList<String> entries2 = new ArrayList<String>(); // all variable 2 entries
+		ArrayList<Integer> qual = new ArrayList<Integer>(); // all qualifier entries
+		for (int i = 0; i < statements.size(); i++) { // retrieve the data for variables 1 and 2 from database
+			int statementId = statements.get(i).getStatementId();
+			String name1 = Dna.dna.db.getVariableStringEntry(statementId, variable1);
+			entries1.add(name1);
+			if (!names1.contains(name1)) {
+				names1.add(name1);
+			}
+			String name2 = Dna.dna.db.getVariableStringEntry(statementId, variable2);
+			entries2.add(name2);
+			if (!names2.contains(name2)) {
+				names2.add(name2);
+			}
+			if (qualifier != null) {
+				qual.add(Dna.dna.db.getVariableIntEntry(statementId, qualifier));
+			}
+		}
+		double[][] mat = new double[names1.size()][names2.size()]; // the resulting affiliation matrix; 0 by default
+		Edgelist edgelist = new Edgelist();
+		for (int i = 0; i < entries1.size(); i++) {
+			boolean selected = false; // figure out if the current agreement level should be included
+			if (qualifier == null) { // if null, do not regard the qualifier variable and process all statements
+				selected = true;
+			} else {
+				for (int j = 0; j < selection.length; j++) {
+					if (qual.get(i) == selection[j]) {
+						selected = true;
+					}
+				}
+			}
+			if (selected == true) { // if the agreement level is acceptable, add 1 to the matrix
+				int row = -1;
+				for (int j = 0; j < names1.size(); j++) {
+					if (entries1.get(i).equals(names1.get(j))) {
+						row = j;
+					}
+				}
+				int col = -1;
+				for (int j = 0; j < names2.size(); j++) {
+					if (entries2.get(i).equals(names2.get(j))) {
+						row = j;
+					}
+				}
+				mat[row][col] = mat[row][col] + 1; // populate matrix
+				edgelist.addEdge(new Edge(names1.get(i), names2.get(i), 1)); //populate edgelist
+			}
+		}
+		String[] rownames = new String[names1.size()]; // cast row names from array list to array
+		rownames = names1.toArray(rownames);
+		String[] colnames = new String[names2.size()]; // cast column names from array list to array
+		colnames = names2.toArray(colnames);
+		Matrix matrix = new Matrix(mat, rownames, colnames); // assemble the Matrix object with labels
+		Network network = new Network(matrix, edgelist);  // wrap matrix and edgelist in a network object
+		return(network);
+	}
+	
+	/**
+	 * This function accepts a list of statements that should be included in the network export, 
+	 * retrieves their actual contents from the database, and creates and returns a one-mode 
+	 * network matrix (co-occurrence/congruence or conflict matrix) based on the statement data.
+	 * 
+	 * @param statements	An array list of SidebarStatement objects that should be included in the export.
+	 * @param variable1		The name of the variable for which the new matrix should be created (e.g., actors).
+	 * @param variable2		The name of the variable via which the new matrix should be aggregated (e.g., concepts).
+	 * @param qualifier		The name of the agreement variable via which an edge should be established.
+	 * @param selection		The levels of the variable that should be taken into account during export.
+	 * @param type			A string with with type of one-mode matrix to be created. Can have values "congruence" or "conflict").
+	 * @return				A network object with a one-mode network.
+	 */
+	public Network oneModeNetwork(ArrayList<SidebarStatement> statements, String variable1, String variable2, String qualifier, int[] selection, String type) {
+		ArrayList<String> names1 = new ArrayList<String>(); // unique row labels
+		ArrayList<String> names2 = new ArrayList<String>(); // unique column labels
+		for (int i = 0; i < statements.size(); i++) { // retrieve the row and column names from database
+			int statementId = statements.get(i).getStatementId();
+			String name1 = Dna.dna.db.getVariableStringEntry(statementId, variable1);
+			if (!names1.contains(name1)) {
+				names1.add(name1);
+			}
+			String name2 = Dna.dna.db.getVariableStringEntry(statementId, variable2);
+			if (!names2.contains(name2)) {
+				names2.add(name2);
+			}
+		}
+		double[][] cooc = new double[names1.size()][names1.size()];
+		for (int i = 0; i < selection.length; i++) { // compute one-mode projections for each agreement level, then add up
+			int[] currentselection = new int[] { selection[i] };
+			double[][] mat = affiliation(statements, variable1, variable2, qualifier, currentselection).getMatrix().getMatrix();
+			mat = multiply(mat, transpose(mat));
+			cooc = add(cooc, mat);
+		}
+		String[] labels = new String[names1.size()]; // cast row names from array list to array
+		labels = names1.toArray(labels);
+		Matrix matrix = new Matrix(cooc, labels, labels);
+		Network network = new Network(matrix);
+		return network;
+		// TODO: take into account the type variable inside this function to create conflict networks
+		// TODO: allow for concept congruence networks; i.e., multiply numbers of nodes by qualifier selection size
+		// TODO: add normalization options (divide, subtract, Jaccard, cosine similarity)
+	}
+
+	/**
+	 * This function accepts a list of statements that should be included in the relational event export, 
+	 * and it exports the variables of all statements to a CSV file, along with the statement ID and a 
+	 * date/time stamp. There is one statement per row, and the number of columns is the number of variables 
+	 * present in the statement type.
+	 * 
+	 * @param statements	An array list of SidebarStatement objects (of the same statement type) that should be exported.
+	 * @param fileName		String with the file name of the CSV file to which the event list will be exported.
+	 */
+	public void releventCSV(ArrayList<SidebarStatement> statements, String fileName) {
+		String key, value;
+		int statementId;
+		Date d;
+		SimpleDateFormat dateFormat;
+		String statementType = statements.get(0).getType();
+		for (int i = 0; i < statements.size(); i++) {
+			if (!statements.get(i).getType().equals(statementType)) {
+				throw new IllegalArgumentException("More than one statement type was selected. Cannot export to a spreadsheet!");
+			}
+		}
+		HashMap<String, String> variables = Dna.dna.db.getVariables(statementType);
+		Iterator<String> keyIterator;
+		try {
+			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), "UTF8"));
+			keyIterator = variables.keySet().iterator();
+			out.write("\"ID\";\"time\"");
+			while (keyIterator.hasNext()){
+				out.write(";\"" + keyIterator.next() + "\"");
+			}
+			for (int i = 0; i < statements.size(); i++) {
+				out.newLine();
+				statementId = statements.get(i).getStatementId();
+				out.write(statementId);
+				d = statements.get(i).getDate();
+				dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+				out.write(";" + dateFormat.format(d));
+				keyIterator = variables.keySet().iterator();
+				while (keyIterator.hasNext()){
+					key = keyIterator.next();
+					value = variables.get(key);
+					if (value.equals("short text") || value.equals("long text")) {
+						out.write(";" + Dna.dna.db.getVariableStringEntry(statementId, key).replaceAll(";", ","));
+					} else if (value.equals("boolean") || value.equals("integer")) {
+						out.write(";" + Dna.dna.db.getVariableIntEntry(statementId, key));
+					}
+				}
+			}
+			out.close();
+			System.out.println("File has been exported to \"" + fileName + "\".");
+		} catch (IOException e) {
+			System.err.println("Error while saving CSV file: " + e);
+		}
 	}
 }
