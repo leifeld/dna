@@ -1,15 +1,11 @@
 package dna;
 
 import javax.swing.ImageIcon;
-
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -35,10 +31,6 @@ import java.awt.Insets;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
 
 /**
  * @author philip
@@ -757,7 +749,6 @@ public class NetworkExporter extends JDialog {
 				}
 				mat[row][col] = el.get(i).getWeight();
 			}
-			this.matrix = new Matrix(mat, sources, targets);
 		}
 		
 		// constructor when both matrix and edge list are present
@@ -879,7 +870,7 @@ public class NetworkExporter extends JDialog {
 	/**
 	 * This function accepts a list of statements that should be included in the network export, 
 	 * retrieves their actual contents from the database, and creates and returns a two-mode 
-	 * network matrix (= an affiliation matrix) or network based on the statement data. 
+	 * network matrix (= an affiliation matrix) based on the statement data. 
 	 * 
 	 * @param statements	An array list of SidebarStatement objects that should be included in the export.
 	 * @param variable1		The name of the first variable (for the row labels).
@@ -962,7 +953,7 @@ public class NetworkExporter extends JDialog {
 	 * @param type			A string with with type of one-mode matrix to be created. Can have values "congruence" or "conflict").
 	 * @return				A network object with a one-mode network.
 	 */
-	public Network oneModeNetwork(ArrayList<SidebarStatement> statements, String variable1, String variable2, String qualifier, int[] selection, String type) {
+	public Network oneModeMatrix(ArrayList<SidebarStatement> statements, String variable1, String variable2, String qualifier, int[] selection, String type) {
 		ArrayList<String> names1 = new ArrayList<String>(); // unique row labels
 		ArrayList<String> names2 = new ArrayList<String>(); // unique column labels
 		for (int i = 0; i < statements.size(); i++) { // retrieve the row and column names from database
@@ -991,59 +982,5 @@ public class NetworkExporter extends JDialog {
 		// TODO: take into account the type variable inside this function to create conflict networks
 		// TODO: allow for concept congruence networks; i.e., multiply numbers of nodes by qualifier selection size
 		// TODO: add normalization options (divide, subtract, Jaccard, cosine similarity)
-	}
-
-	/**
-	 * This function accepts a list of statements that should be included in the relational event export, 
-	 * and it exports the variables of all statements to a CSV file, along with the statement ID and a 
-	 * date/time stamp. There is one statement per row, and the number of columns is the number of variables 
-	 * present in the statement type.
-	 * 
-	 * @param statements	An array list of SidebarStatement objects (of the same statement type) that should be exported.
-	 * @param fileName		String with the file name of the CSV file to which the event list will be exported.
-	 */
-	public void releventCSV(ArrayList<SidebarStatement> statements, String fileName) {
-		String key, value;
-		int statementId;
-		Date d;
-		SimpleDateFormat dateFormat;
-		String statementType = statements.get(0).getType();
-		for (int i = 0; i < statements.size(); i++) {
-			if (!statements.get(i).getType().equals(statementType)) {
-				throw new IllegalArgumentException("More than one statement type was selected. Cannot export to a spreadsheet!");
-			}
-		}
-		HashMap<String, String> variables = Dna.dna.db.getVariables(statementType);
-		Iterator<String> keyIterator;
-		try {
-			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), "UTF8"));
-			keyIterator = variables.keySet().iterator();
-			out.write("\"ID\";\"time\"");
-			while (keyIterator.hasNext()){
-				out.write(";\"" + keyIterator.next() + "\"");
-			}
-			for (int i = 0; i < statements.size(); i++) {
-				out.newLine();
-				statementId = statements.get(i).getStatementId();
-				out.write(statementId);
-				d = statements.get(i).getDate();
-				dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-				out.write(";" + dateFormat.format(d));
-				keyIterator = variables.keySet().iterator();
-				while (keyIterator.hasNext()){
-					key = keyIterator.next();
-					value = variables.get(key);
-					if (value.equals("short text") || value.equals("long text")) {
-						out.write(";" + Dna.dna.db.getVariableStringEntry(statementId, key).replaceAll(";", ","));
-					} else if (value.equals("boolean") || value.equals("integer")) {
-						out.write(";" + Dna.dna.db.getVariableIntEntry(statementId, key));
-					}
-				}
-			}
-			out.close();
-			System.out.println("File has been exported to \"" + fileName + "\".");
-		} catch (IOException e) {
-			System.err.println("Error while saving CSV file: " + e);
-		}
 	}
 }
