@@ -55,6 +55,11 @@ public class SidebarStatementContainer implements TableModel {
 	public void remove(int index) {
 		statements.remove(index);
 	}
+	
+	// Ele
+	public ArrayList<SidebarStatement> getAll () {
+		return statements;
+	}
 
 	// Ele
 	public ArrayList<SidebarStatement> getAll () {
