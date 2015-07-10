@@ -154,19 +154,21 @@ public class NetworkExporter extends JDialog {
 		export.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				ArrayList<SidebarStatement> statements = filter(nt);
-				System.out.println();
-		
-				/* Question about oneModeMatrix
-				if (nt.getNetworkType().equals("oneMode"))
-					oneModeMatrix(statements,nt.getVar1mode(),nt.getVar1mode(), nt.getAgreeVar(), selection);
-				else if (nt.getNetworkType().equals("eventList"))
+				Network network;
+				
+			/*	if (nt.getNetworkType().equals("oneMode"))
+					network = oneModeMatrix(statements,nt.getVar1mode(),nt.getVar2mode(), nt.getAgreeVar(), nt.getAgreeValList(),nt.getAgreementPattern());
+				else */
+				if (nt.getNetworkType().equals("eventList"))
 					releventCSV(statements, fileName);
 				else
-					affiliation(statements, nt.getVar1mode(), nt.getVar2mode(), nt.getAgreeVar(), nt.getAgreeValList());
-				 */
+					network = affiliation(statements, nt.getVar1mode(), nt.getVar2mode(), nt.getAgreeVar(), nt.getAgreeValList());
+				 
 				// TODO write file with the network
 				
 			}
+
+			
 		});
 		
 		this.add(cards, BorderLayout.NORTH);
@@ -348,23 +350,7 @@ public class NetworkExporter extends JDialog {
 		var2List.setLayoutOrientation(JList.VERTICAL);
 		var2List.setVisibleRowCount(3);
 		var2List.setFixedCellWidth(180);
-		
-		/*
-		if (nt.getSt()!=null)
-		{
-			LinkedHashMap<String, String> variables = nt.getSt().getVariables();
-			Iterator<String> it = variables.keySet().iterator();
-			DefaultListModel<String> listData = new DefaultListModel<String>();
-			while (it.hasNext())
-			{
-			  listData.addElement(it.next());		  
-			}
-			
-			var1List.setModel(listData);
-			var2List.setModel(listData);
-		}
-		*/
-		//changed above for:
+
 		var1List.setModel(nt.getVariablesList());
 		var2List.setModel(nt.getVariablesList());
 		
@@ -471,6 +457,7 @@ public class NetworkExporter extends JDialog {
 		agreeVarList.setLayoutOrientation(JList.VERTICAL);
 		agreeVarList.setVisibleRowCount(3);
 		agreeVarList.setFixedCellWidth(120);
+		agreeVarList.setFixedCellHeight(10);
 		JScrollPane agreeVarScroller = new JScrollPane(agreeVarList);
 		agreePanel.add(agreeVarScroller, agreegbc);
 		agreegbc.gridx = 1;
@@ -486,6 +473,7 @@ public class NetworkExporter extends JDialog {
 		agreeValList.setLayoutOrientation(JList.VERTICAL);
 		agreeValList.setVisibleRowCount(3);
 		agreeValList.setFixedCellWidth(120);
+		agreeValList.setFixedCellHeight(10);
 		JScrollPane agreeValScroller = new JScrollPane(agreeValList);
 		agreePanel.add(agreeValScroller, agreegbc);
 		agreegbc.gridx = 2;
@@ -574,6 +562,12 @@ public class NetworkExporter extends JDialog {
 						nt.setValues(values);
 					}*/
 					agreeValList.setModel(nt.getValuesList());
+					int size = nt.getValuesList().size();
+					int[] indices = new int[size];
+					for (int i=0;i<size;i++)
+						indices[i]=i;
+					agreeValList.setSelectedIndices(indices);
+
 				}				
 			}
 		});
