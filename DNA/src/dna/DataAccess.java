@@ -201,7 +201,13 @@ public class DataAccess {
 				+ "StatementType TEXT," + "VariableName TEXT,"
 				+ "FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label),"
 				+ "FOREIGN KEY(VariableName) REFERENCES VARIABLE(Variable))");
-
+                //SK Add
+                executeStatement("CREATE TABLE IF NOT EXISTS LINKEDSTATEMENTS("
+				+ "ID INTEGER PRIMARY KEY NOT NULL, " 
+				+ "statement1 INTEGER NOT NULL, " + "statement2 INTEGER NOT NULL, "
+                                + "FOREIGN KEY(statement1) REFERENCES STATEMENTS(ID),"
+                                + "FOREIGN KEY(statement2) REFERENCES STATEMENTS(ID))");
+                
 		if (create == true) {
 			createDefaultTypes();
 			executeStatement("INSERT INTO SETTINGS (Property, Value) "
@@ -285,6 +291,16 @@ public class DataAccess {
 					+ "FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), "
 					+ "PRIMARY KEY(ID))");
 		}
+                
+                
+                if (!al.contains("LINKEDSTATEMENTS")) {
+                    executeStatement("CREATE TABLE IF NOT EXISTS LINKEDSTATEMENTS("
+				+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " 
+				+ "statement1 MEDIUMINT, " + "statement2 MEDIUMINT, "
+                                + "FOREIGN KEY(statement1) REFERENCES STATEMENTS(ID),"
+                                + "FOREIGN KEY(statement2) REFERENCES STATEMENTS(ID))");
+                }
+                
 
 		if (create == true) {
 			createDefaultTypes();
@@ -368,7 +384,15 @@ public class DataAccess {
 					+ "FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), "
 					+ "PRIMARY KEY(ID))");
 		}
-
+                
+                if (!al.contains("LINKEDSTATEMENTS")) {
+                    executeStatement("CREATE TABLE LINKEDSTATEMENTS("
+				+ "ID INT IDENTITY(1,1) NOT NULL, " 
+				+ "statement1 INT, " + "statement2 INT, "
+                                + "FOREIGN KEY(statement1) REFERENCES STATEMENTS(ID),"
+                                + "FOREIGN KEY(statement2) REFERENCES STATEMENTS(ID))");
+                }
+                
 		if (create == true) {
 			createDefaultTypes();
 			executeStatement("INSERT INTO SETTINGS (Property, Value) "
@@ -1248,6 +1272,75 @@ public class DataAccess {
 		return id;
 	}
 
+        /**
+	 * Add a statement to the STATEMENTS table.
+         * 
+	 * @param statement1
+	 *            statement ID for linking statements.
+	 * @param statement2
+	 *           statement ID for linking statements.
+	 * @return ID of the newly created link.
+	 */
+	public int addLinkedStatement( int statement1, int statement2) {
+
+		int id = executeStatementForId("INSERT INTO LINKEDSTATEMENTS (statement1, statement2) "
+				+ "VALUES("
+				+ statement1
+				+ ", "
+				+ statement2
+				+ ")");
+		
+		return id;
+	}
+        
+         /**
+	 * Get all LINKED STATEMENTS .
+         * 
+	 * @param statement1
+	 *            statement ID for linking statements.
+	 * @param statement2
+	 *           statement ID for linking statements.
+	 * @return ID of the newly created link.
+	 */
+	public ResultSet getAllLinkedStatements() {
+
+            Connection connection = null;
+            Statement statement = null;
+		ResultSet resultSet = null;
+		try {
+			if (dbtype.equals("sqlite")) {
+				connection = getSQLiteConnection();
+			} else if (dbtype.equals("mysql")) {
+				connection = getMySQLConnection();
+			} else if (dbtype.equals("mssql")) {
+				connection = getMSSQLConnection();
+			} else {
+				System.err.println("Type of remote database not recognized.");
+			}
+			statement = connection.createStatement();
+			resultSet = statement.executeQuery("SELECT *  FROM LINKEDSTATEMENTS");
+			
+//			resultSet.close();
+			statement.close();
+			connection.close();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				statement.close();
+			} catch (Exception e) {
+			}
+			try {
+				connection.close();
+			} catch (Exception e) {
+			}
+		}
+                return resultSet;
+
+	}
+        
 	/**
 	 * Retrieve a string array of unique document coder names in the database.
 	 * 
@@ -2179,6 +2272,23 @@ public class DataAccess {
 		@SuppressWarnings("unchecked")
 		ArrayList<Integer> ids = (ArrayList<Integer>) al;
 		return (ids);
+	}
+
+        /**
+	 * Retrieve the IDs of all statements within a document.
+	 * 
+	 * @param documentId
+	 *            ID of the document associated with a statement.
+	 * @return ArrayList with the statement IDs.
+	 */
+	public int getStatementId(String type, int documentId, int start, int stop) {
+		int statementId = executeQueryForInt("SELECT ID FROM STATEMENTS WHERE Document = "
+				+ documentId 
+                                + " AND start = " + start 
+                                + " AND stop = " + stop 
+                                + " AND type = '" + type + "'");
+
+		return statementId;
 	}
 
 	/**

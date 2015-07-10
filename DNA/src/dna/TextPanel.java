@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -197,9 +198,9 @@ class TextPanel extends JPanel {
 		for (int i = 0; i < st.size(); i++) {
 			String type = st.get(i).getLabel();
 			Color col = st.get(i).getColor();
-    		menu1 = new JMenuItem( "Format as " + type);
-    		menu1.setOpaque(true);
-    		menu1.setBackground(col);
+                    menu1 = new JMenuItem( "Format as " + type);
+                    menu1.setOpaque(true);
+                    menu1.setBackground(col);
 			popmen.add( menu1 );
 			
 			menu1.addActionListener(new ActionListener() {
@@ -212,11 +213,16 @@ class TextPanel extends JPanel {
 					
 					int selectionStart = textWindow.getSelectionStart();
 					int selectionEnd = textWindow.getSelectionEnd();
-					
-					Dna.dna.addStatement(type, documentId, selectionStart, 
-							selectionEnd);
+                                        String selectedText = textWindow.getText().substring(selectionStart, selectionEnd);
+                                        CreateStatementFrame createPanel = new CreateStatementFrame(type, col,documentId, selectionStart, selectionEnd,selectedText);
+                                        createPanel.setVisible(true);
+                                        
+                                        textWindow.setSelectionStart(selectionStart);
+                                        textWindow.setSelectionEnd(selectionEnd);
+                                                
+//					Dna.dna.addStatement(type, documentId, selectionStart, selectionEnd);
 					paintStatements();
-					textWindow.setCaretPosition(selectionStart);
+//					textWindow.setCaretPosition(selectionEnd);
 				}
 			});
 		}

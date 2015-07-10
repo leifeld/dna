@@ -56,6 +56,11 @@ public class SidebarStatementContainer implements TableModel {
 		statements.remove(index);
 	}
 
+	// Ele
+	public ArrayList<SidebarStatement> getAll () {
+		return statements;
+	}
+
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
 		SidebarStatement s = statements.get(rowIndex);

@@ -45,7 +45,7 @@ public class Popup extends JDialog {
 	Point point, los;
 	String type;
 	Color color;
-	int statementId;
+	static int statementId;
 	JPanel gridBagPanel;
 	Connection conn;
 	Statement st6;
@@ -74,7 +74,8 @@ public class Popup extends JDialog {
 		
 		this.addWindowFocusListener(new WindowAdapter() {
 			public void windowLostFocus(WindowEvent e) {
-				saveContents();
+                                                    saveContents(gridBagPanel, statementId, type);
+                                dispose();
 			}
 		});
 		
@@ -284,7 +285,7 @@ public class Popup extends JDialog {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public void saveContents() {
+	public static void saveContents(JPanel gridBagPanel, int statementID, String type) {
 		Component[] com = gridBagPanel.getComponents();
 		HashMap<String, String> vars = Dna.dna.db.getVariables(type);
 		
@@ -337,6 +338,6 @@ public class Popup extends JDialog {
 						(Integer) content, dataType);
 			}
 		}
-		dispose();
+		
 	}
 }
