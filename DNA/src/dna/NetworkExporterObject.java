@@ -11,7 +11,7 @@ import javax.swing.DefaultListModel;
 
 public class NetworkExporterObject {
 
-	private StatementType st;
+	private StatementType st; //Statement type
 	private String networkType; //One-mode network - Two-mode network - Event-List network
 	private String var1mode; // Card 2 - first mode (rows) person
 	private String var2mode; // Card 2 - second mode (columns) organization

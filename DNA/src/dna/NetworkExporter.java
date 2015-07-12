@@ -168,8 +168,14 @@ public class NetworkExporter extends JDialog {
 				if (nt.getNetworkType().equals("oneMode"))
 				{
 					network = oneModeNetwork(statements,nt.getVar1mode(),nt.getVar2mode(), nt.getAgreeVar(), nt.getAgreeValList(),nt.getAgreementPattern());
-				
-				// TODO write file with the network
+					
+					if(nt.getExportFormat().equals(".csv"))
+						exportCSV(network, fileName);
+					else if(nt.getExportFormat().equals(".dl"))
+						exportDL(network, fileName);
+					else if(nt.getExportFormat().equals(".graphml"))
+						exportGraphML(network, fileName);
+					
 					JOptionPane.showMessageDialog(null, "One-mode network exported successfully!", "Information",
                             JOptionPane.INFORMATION_MESSAGE);
 				}
@@ -183,14 +189,17 @@ public class NetworkExporter extends JDialog {
 				{
 					network = affiliation(statements, nt.getVar1mode(), nt.getVar2mode(), nt.getAgreeVar(), nt.getAgreeValList());
 					
-					// TODO write file with the network
+					if(nt.getExportFormat().equals(".csv"))
+						exportCSV(network, fileName);
+					else if(nt.getExportFormat().equals(".dl"))
+						exportDL(network, fileName);
+					else if(nt.getExportFormat().equals(".graphml"))
+						exportGraphML(network, fileName);
 					
-					releventCSV(statements, fileName);
 					JOptionPane.showMessageDialog(null, "Two-mode network exported successfully!", "Information",
                             JOptionPane.INFORMATION_MESSAGE);
 				}
-				
-				
+
 				dispose();
 			}
 
