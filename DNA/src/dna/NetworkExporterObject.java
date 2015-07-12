@@ -2,6 +2,7 @@ package dna;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
@@ -26,6 +27,8 @@ public class NetworkExporterObject {
 	private ArrayList<String> values;
 	private ArrayList<String> valuesVar1; // All values from var1mode (rows) without repetitions
 	private ArrayList<String> valuesVar2; // All values from var2mode (colums) without repetitions
+	private HashMap<String, ArrayList<String>> filterVariables; // All values from var2mode (colums) without repetitions
+
 	
 	public DefaultListModel<String> getValuesVar1() {
 		DefaultListModel<String> listData = new DefaultListModel<String>();
@@ -55,7 +58,7 @@ public class NetworkExporterObject {
 		if (valuesVar2.size() != 0)
 		{
 			for (int i=0; i< valuesVar2.size(); i++)
-			  listData.addElement(valuesVar2.get(i));		  
+			  listData.addElement(valuesVar2.get(i));
 		}
 		return listData;
 	}
@@ -93,6 +96,7 @@ ArrayList<String> listValues = new ArrayList<String>();
 		this.values = new ArrayList<String>();
 		this.valuesVar1 = new ArrayList<String>();
 		this.valuesVar2 = new ArrayList<String>();
+		this.filterVariables = new HashMap<String, ArrayList<String>>();
 	}
 
 	/**
@@ -115,6 +119,11 @@ ArrayList<String> listValues = new ArrayList<String>();
 		this.values = new ArrayList<String>();
 		this.valuesVar1 = new ArrayList<String>();
 		this.valuesVar2 = new ArrayList<String>();
+		this.filterVariables = new HashMap<String, ArrayList<String>>();
+	}
+	
+	public HashMap<String, ArrayList<String>> getFilterVariables(){
+		return filterVariables;
 	}
 
 	public void setValues(String[] values) {
@@ -127,6 +136,10 @@ ArrayList<String> listValues = new ArrayList<String>();
 		}
 		
 		this.values = listValues;
+	}
+	
+	public void setVarVal(ArrayList<String> values,String variable) {
+			this.filterVariables.put(variable, values);
 	}
 
 	public StatementType getSt() {
@@ -243,7 +256,8 @@ ArrayList<String> listValues = new ArrayList<String>();
 	}
 
 	public void setAgreeValList(ArrayList<String> agreeValList) {
-		this.agreeValList = agreeValList;
+					
+			this.agreeValList = agreeValList;
 	}
 
 	@Override
@@ -301,6 +315,24 @@ ArrayList<String> listValues = new ArrayList<String>();
 	
 	/**
 	 * This function returns a {@link DefaultListModel} with the values of a given Variable of a statementTipe, selected to fill a JList.
+	 * @return		{@link DefaultListModel<String>} with variables of the the statementTipe selected.
+	 */
+	public DefaultListModel<String> getVarVal (String variable)
+	{
+		DefaultListModel<String> listData = new DefaultListModel<String>();	
+		ArrayList<String> values = new ArrayList<String>();
+		
+		values = filterVariables.get(variable);
+			if (values != null)
+			{
+				for (int i=0; i< values.size(); i++)
+				  listData.addElement(values.get(i));		  
+			}
+			return listData;
+	}
+	
+	/**
+	 * This function returns a {@link DefaultListModel} with the values of a Variable of a statementTipe, selected to fill a JList.
 	 * @return		{@link DefaultListModel<String>} with variables of the the statementTipe selected.
 	 */
 	public DefaultListModel<String> getValuesList ()
