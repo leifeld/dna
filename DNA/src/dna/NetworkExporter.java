@@ -71,6 +71,7 @@ public class NetworkExporter extends JDialog {
 	JRadioButton oneModeButton, twoModeButton, eventListButton;
 	JRadioButton csvFormatButton, dlFormatButton, graphmlFormatButton;
 	JRadioButton congruenceButton, conflictButton, subtractButton, separateButton;
+	ButtonGroup agreeButtonGroup;
 	JRadioButton allAggButton, docAggButton, windowAggButton, yearAggButton;
 	JList<String> var1List, var2List, var3List,agreeVarList, agreeValList;
 	JLabel fileLabel, var1Label, var2Label,var3Label;
@@ -139,8 +140,10 @@ public class NetworkExporter extends JDialog {
 		back.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String current = getCurrentCard().getName();
-			    if ((current.equals("card3"))&&(nt.getNetworkType().equals("eventList")))
+				updateCards();
+			    if ((current.equals("card3"))&&(nt.getNetworkType().equals("eventList"))) {
 					cl.previous(cards);
+			    }
 				cl.previous(cards);
 			}
 		});
@@ -154,8 +157,9 @@ public class NetworkExporter extends JDialog {
 				}
 				updateCards();
 				//System.out.println(nt.toString());
-			  if ((current.equals("card1"))&&(nt.getNetworkType().equals("eventList")))
+				if ((current.equals("card1"))&&(nt.getNetworkType().equals("eventList"))) {
 					cl.next(cards);
+				}
 				cl.next(cards);
 			}
 		});
@@ -168,7 +172,6 @@ public class NetworkExporter extends JDialog {
 				if (nt.getNetworkType().equals("oneMode"))
 				{
 					network = oneModeNetwork(statements,nt.getVar1mode(),nt.getVar2mode(), nt.getAgreeVar(), nt.getAgreeValList(),nt.getAgreementPattern());
-					
 					if(nt.getExportFormat().equals(".csv"))
 						exportCSV(network, fileName);
 					else if(nt.getExportFormat().equals(".dl"))
@@ -220,11 +223,13 @@ public class NetworkExporter extends JDialog {
 		{
 			var1Label.setText("one-mode node type" );
 			var2Label.setText("via variable");
+			congruenceButton.setSelected(true);
 		}
 		else
 		{
 			var1Label.setText("first model (rows)");
 			var2Label.setText("second model (columns)");
+			agreeButtonGroup.clearSelection();
 		}
 			
 		var1List.setModel(nt.getVariablesList());
@@ -505,8 +510,7 @@ public class NetworkExporter extends JDialog {
 		agreegbc.gridy = 2;
 		agreegbc.gridheight = 4;
 		agreeValList = new JList<String>();
-		agreeValList.setSelectionMode(ListSelectionModel.
-				MULTIPLE_INTERVAL_SELECTION);
+		agreeValList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		agreeValList.setLayoutOrientation(JList.VERTICAL);
 		agreeValList.setVisibleRowCount(3);
 		agreeValList.setFixedCellWidth(120);
@@ -520,16 +524,14 @@ public class NetworkExporter extends JDialog {
 		agreePanel.add(agreeButtonLabel, agreegbc);
 		agreegbc.gridy = 2;
 		congruenceButton = new JRadioButton("congruence");
-		congruenceButton.setSelected(true);
 		conflictButton = new JRadioButton("conflict");
 		subtractButton = new JRadioButton("subtract");
 		separateButton = new JRadioButton("separate");
-		ButtonGroup agreeButtonGroup = new ButtonGroup();
+		agreeButtonGroup = new ButtonGroup();
 		agreeButtonGroup.add(congruenceButton);
 		agreeButtonGroup.add(conflictButton);
 		agreeButtonGroup.add(subtractButton);
 		agreeButtonGroup.add(separateButton);
-		agreeButtonGroup.clearSelection();
 		agreePanel.add(congruenceButton, agreegbc);
 		agreegbc.gridy = 3;
 		agreePanel.add(conflictButton, agreegbc);
@@ -577,7 +579,7 @@ public class NetworkExporter extends JDialog {
 			public void valueChanged(ListSelectionEvent e) {
 				JList<String> lsl = (JList<String>) e.getSource();
 				if (lsl.getSelectedValue()!=null)
-				{					
+				{
 					selectedVariable = lsl.getSelectedValue().toString();
 					agreeVarIndex = lsl.getSelectedIndex();
 					
@@ -682,7 +684,7 @@ public class NetworkExporter extends JDialog {
 		dategbc.gridy = 1;
 		dategbc.gridx = 1;
 		dategbc.insets = new Insets(0, 0, 0, 0);
-		allAggButton = new JRadioButton("whole date range");
+		allAggButton = new JRadioButton("across date range");
 		allAggButton.setSelected(true);
 		docAggButton = new JRadioButton("per document");
 		yearAggButton = new JRadioButton("per calendar year");
@@ -725,7 +727,6 @@ public class NetworkExporter extends JDialog {
 		TitledBorder dateBorder;
 		dateBorder = BorderFactory.createTitledBorder("4 / 6");
 		datePanel.setBorder(dateBorder);
-		
 		
 		cards.add(datePanel, "date");				
 	}
@@ -825,8 +826,27 @@ public class NetworkExporter extends JDialog {
 			}
 		});
 	}
-
-
+	
+	/*
+	 * alternative filter function that works faster (not ready yet)
+	private ArrayList<SidebarStatement> filter2(NetworkExporterObject nt) {
+		ArrayList<SidebarStatement> al = new ArrayList<SidebarStatement>();
+		for (int i = 0; i < Dna.dna.gui.sidebarPanel.ssc.size(); i++) {
+			boolean select = true;
+			SidebarStatement s = Dna.dna.gui.sidebarPanel.ssc.get(i);
+			if (s.getDate().before(nt.getStartDate())) {
+				select = false;
+			} else if (s.getDate().after(nt.getEndDate())) {
+				select = false;
+			}
+			
+			if (select == true) {
+				al.add(s);
+			}
+		}
+		return al;
+	}
+	*/
 	
 	private ArrayList<SidebarStatement> filter(NetworkExporterObject nt)
 	{
@@ -844,7 +864,7 @@ public class NetworkExporter extends JDialog {
 				filtStatements.add(st);
 		}
 		
-		if (!nt.getAgregationRule().equals("whole date range"))
+		if (!nt.getAgregationRule().equals("across date range"))
 		{		
 			for (int i = 0; i < filtStatements.size(); i++) { // filter by date
 				SidebarStatement statement = filtStatements.get(i);
@@ -956,7 +976,6 @@ public class NetworkExporter extends JDialog {
 					}
 				}
 			}
-			
 		}
 		
 		return filtStatements;
@@ -1206,6 +1225,9 @@ public class NetworkExporter extends JDialog {
 				}
 			}
 			this.edgelist = new Edgelist(el);
+			/*for (int i = 0; i < el.size(); i++) {
+				System.out.println(el.get(i).getSource() + " - " + el.get(i).getTarget() + ": " + el.get(i).getWeight());
+			}*/
 		}
 		
 		// constructor when only the edge list has been computed: also convert to matrix
