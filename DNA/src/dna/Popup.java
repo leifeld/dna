@@ -50,9 +50,9 @@ public class Popup extends JDialog {
 	Connection conn;
 	Statement st6;
 	
-	public Popup(Point point, final int statementId, Point location) {
+	public Popup(Point point, int statementId, Point location) {
 		this.point = point;
-		this.statementId = statementId;
+		Popup.statementId = statementId;
 		this.los = location;
 		
 		final SidebarStatement s = Dna.dna.db.getStatement(statementId);
@@ -149,7 +149,7 @@ public class Popup extends JDialog {
 						"Are you sure you want to remove this statement?", 
 						"Remove?", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
-					Dna.dna.removeStatement(Popup.this.statementId);
+					Dna.dna.removeStatement(statementId);
 					Dna.dna.gui.textPanel.paintStatements();
 					dispose();
 				}

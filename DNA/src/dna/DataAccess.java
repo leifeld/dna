@@ -836,7 +836,7 @@ public class DataAccess {
 		}
 		return idlist;
 	}
-
+	
 	/**
 	 * LB.Add: TODO: fix stuff with brackets Match a variable entry (full entry)
 	 * against a pattern and return matching statement IDs.
@@ -975,8 +975,7 @@ public class DataAccess {
 	 * @return Vector of strings with the entries (including duplicates).
 	 */
 	public String[] getAllVariableStringEntries(String key, String statementType) {
-		ArrayList<?> al = executeQueryForList("SELECT " + key + " FROM "
-				+ statementType);
+		ArrayList<?> al = executeQueryForList("SELECT " + key + " FROM " + statementType);
 		String[] entries = new String[al.size()];
 		for (int i = 0; i < al.size(); i++) {
 			entries[i] = (String) al.get(i);
@@ -1775,9 +1774,7 @@ public class DataAccess {
 				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
-			resultSet = statement
-					.executeQuery("SELECT * FROM VARIABLES WHERE StatementType = '"
-							+ statementType + "'");
+			resultSet = statement.executeQuery("SELECT * FROM VARIABLES WHERE StatementType = '" + statementType + "'");
 			if (resultSet.next()) {
 				do {
 					String key = resultSet.getString("Variable");

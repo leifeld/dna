@@ -9,11 +9,20 @@ public class StatementType {
 	Color color;
 	LinkedHashMap<String, String> variables;
 
-	public StatementType(String label, Color color, 
-			LinkedHashMap<String, String> variables) {
+	public StatementType(String label, Color color, LinkedHashMap<String, String> variables) {
 		this.label = label;
 		this.color = color;
 		this.variables = variables;
+	}
+	
+	/**
+	 * Retrieve data type of a variable contained in the statement type.
+	 * 
+	 * @param variable	Name of the variable.
+	 * @return			Data type.
+	 */
+	String getVariableDataType(String variable) {
+		return variables.get(variable);
 	}
 
 	/**

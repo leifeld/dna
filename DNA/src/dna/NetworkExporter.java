@@ -10,14 +10,17 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.stream.Stream;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -33,6 +36,8 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerDateModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.filechooser.FileFilter;
@@ -45,7 +50,6 @@ import org.jdom.Namespace;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
-import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
@@ -62,67 +66,63 @@ public class NetworkExporter extends JDialog {
 	
 	private static final long serialVersionUID = 1L;
 	
+	// export settings
+	String networkType; // [oneMode, twoMode, eventList]
+	StatementType statementType;
+	Date startDate, stopDate;
+	String var1;  // first variable (e.g., organizations)
+	String var2;  // second variable (e.g., concepts)
+	String qualifier;  // name of the agreeement qualifier variable
+	String agreementPattern;  // [ignore, congruence, conflict, subtract]
+	HashMap<String, int[]> excludeValIndices = new HashMap<String, int[]>();
+	String aggregationRule; // [across date range, per document, per calendar year, per time window]
+	String exportFormat; // [.csv, .dl, .graphml]
+	
+	// GUI components
 	JPanel cards;
 	CardLayout cl;
-	String statementType = null, selectedVariable = "" ;
 	ArrayList<StatementType> typeList;
 	JComboBox<String> typeBox;
 	JButton back, next, cancel, export;
 	JRadioButton oneModeButton, twoModeButton, eventListButton;
 	JRadioButton csvFormatButton, dlFormatButton, graphmlFormatButton;
-	JRadioButton congruenceButton, conflictButton, subtractButton, separateButton;
+	JRadioButton ignoreButton, congruenceButton, conflictButton, subtractButton, separateButton;
 	ButtonGroup agreeButtonGroup;
 	JRadioButton allAggButton, docAggButton, windowAggButton, yearAggButton;
-	JList<String> var1List, var2List, var3List,agreeVarList, agreeValList;
-	JLabel fileLabel, var1Label, var2Label,var3Label;
+	JList<String> var1List, var2List, var3List, excludeVarList, excludeValList;
+	JLabel fileLabel, var1Label, var2Label, variablesQuestion, agreementLabel;
 	JSpinner startSpinner, stopSpinner;
 	String fileName;
-	int [] exclude1Indices, exclude2Indices;
-	Color row = new Color(220,20,60), column= new Color(65,105,225), agreement= new Color(0,201,87);
-	int agreeVarIndex =0;
-	int var1modeIndex = 0, var2modeIndex = 0,var3modeIndex = 0;
-	HashMap<String, int[]> agreeValIndices = new HashMap<String, int[]>();
-	
-	
-	NetworkExporterObject nt;
-	
-	//Ele
-	boolean selected = false;
+	Color row = new Color(220, 20, 60), column = new Color(65, 105, 225), agreement = new Color(0, 201, 87);
+	int var1modeIndex = 0, var2modeIndex = 0, var3modeIndex = 0;
+	int currentCard = 1;
+	JPanel variablesPanel;
 	
 	public NetworkExporter() {
 		this.setTitle("Export data");
 		this.setModal(true);
-		ImageIcon networkIcon = new ImageIcon(getClass().getResource(
-				"/icons/chart_organisation.png"));
+		ImageIcon networkIcon = new ImageIcon(getClass().getResource("/icons/chart_organisation.png"));
 		this.setIconImage(networkIcon.getImage());
 		this.setLayout(new BorderLayout());
 		cl = new CardLayout();
 		cards = new JPanel(cl);
 		
 		loadCard1();
-		
-		if (!nt.getNetworkType().equals("eventList"))
-			loadCard2();
-				
+		loadCard2();
 		loadCard3();
-				
 		loadCard4();
-
-		//TODO card 5: other options: duplicates; normalization
-				
+		loadCard5();
+		// TODO: other options: duplicates; normalization
 		loadCard6();
 				
 		// buttons
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-		ImageIcon backIcon = new ImageIcon(getClass().getResource(
-				"/icons/resultset_previous.png"));
-		ImageIcon nextIcon = new ImageIcon(getClass().getResource(
-				"/icons/resultset_next.png"));
-		ImageIcon cancelIcon = new ImageIcon(getClass().getResource(
-				"/icons/cancel.png"));
-		ImageIcon exportIcon = new ImageIcon(getClass().getResource(
-				"/icons/accept.png"));
+		ImageIcon backIcon = new ImageIcon(getClass().getResource("/icons/resultset_previous.png"));
+		ImageIcon nextIcon = new ImageIcon(getClass().getResource("/icons/resultset_next.png"));
+		ImageIcon cancelIcon = new ImageIcon(getClass().getResource("/icons/cancel.png"));
+		ImageIcon exportIcon = new ImageIcon(getClass().getResource("/icons/accept.png"));
 		back = new JButton("back", backIcon);
+		back.setEnabled(false);
 		next = new JButton("next", nextIcon);
 		cancel = new JButton("cancel", cancelIcon);
 		export = new JButton("export", exportIcon);
@@ -137,76 +137,70 @@ public class NetworkExporter extends JDialog {
 				dispose();
 			}
 		});
+		
 		back.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String current = getCurrentCard().getName();
 				updateCards();
-			    if ((current.equals("card3"))&&(nt.getNetworkType().equals("eventList"))) {
-					cl.previous(cards);
-			    }
 				cl.previous(cards);
+				currentCard = currentCard - 1;
+				if (currentCard > 1) {
+					back.setEnabled(true);
+				} else {
+					back.setEnabled(false);
+				}
+				if (currentCard == 6) {
+					next.setEnabled(false);
+				} else {
+					next.setEnabled(true);
+				}
 			}
 		});
+		
 		next.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String current = getCurrentCard().getName();
-				if (current.equals("card5"))
-				{
-					nt.setStartDate((Date) startSpinner.getValue());
-					nt.setEndDate((Date) stopSpinner.getValue());
-				}
 				updateCards();
-				//System.out.println(nt.toString());
-				if ((current.equals("card1"))&&(nt.getNetworkType().equals("eventList"))) {
-					cl.next(cards);
-				}
 				cl.next(cards);
+				currentCard = currentCard + 1;
+				if (currentCard > 1) {
+					back.setEnabled(true);
+				} else {
+					back.setEnabled(false);
+				}
+				if (currentCard == 6) {
+					next.setEnabled(false);
+				} else {
+					next.setEnabled(true);
+				}
 			}
 		});
 		
 		export.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ArrayList<SidebarStatement> statements = filter(nt);
+				ArrayList<SidebarStatement> statements = filter();
 				Network network;
-				
-				if (nt.getNetworkType().equals("oneMode"))
-				{
-					network = oneModeNetwork(statements,nt.getVar1mode(),nt.getVar2mode(), nt.getAgreeVar(), nt.getAgreeValList(),nt.getAgreementPattern());
-					if(nt.getExportFormat().equals(".csv"))
+				if (networkType.equals("oneMode")) {
+					network = oneModeNetwork(statements, var1, var2, qualifier, agreementPattern);
+					if(exportFormat.equals(".csv"))
 						exportCSV(network, fileName);
-					else if(nt.getExportFormat().equals(".dl"))
+					else if(exportFormat.equals(".dl"))
 						exportDL(network, fileName);
-					else if(nt.getExportFormat().equals(".graphml"))
+					else if(exportFormat.equals(".graphml"))
 						exportGraphML(network, fileName);
-					
-					JOptionPane.showMessageDialog(null, "One-mode network exported successfully!", "Information",
-                            JOptionPane.INFORMATION_MESSAGE);
-				}
-				else if (nt.getNetworkType().equals("eventList"))
-				{
+					JOptionPane.showMessageDialog(null, "One-mode network exported successfully!", "Information", JOptionPane.INFORMATION_MESSAGE);
+				} else if (networkType.equals("eventList")) {
 					releventCSV(statements, fileName);
-					JOptionPane.showMessageDialog(null, "Event list network exported successfully!", "Information",
-                            JOptionPane.INFORMATION_MESSAGE);
-				}
-				else
-				{
-					network = affiliation(statements, nt.getVar1mode(), nt.getVar2mode(), nt.getAgreeVar(), nt.getAgreeValList());
-					
-					if(nt.getExportFormat().equals(".csv"))
+					JOptionPane.showMessageDialog(null, "Event list network exported successfully!", "Information", JOptionPane.INFORMATION_MESSAGE);
+				} else {
+					network = affiliation(statements, var1, var2, qualifier);
+					if(exportFormat.equals(".csv"))
 						exportCSV(network, fileName);
-					else if(nt.getExportFormat().equals(".dl"))
+					else if(exportFormat.equals(".dl"))
 						exportDL(network, fileName);
-					else if(nt.getExportFormat().equals(".graphml"))
+					else if(exportFormat.equals(".graphml"))
 						exportGraphML(network, fileName);
-					
-					JOptionPane.showMessageDialog(null, "Two-mode network exported successfully!", "Information",
-                            JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(null, "Two-mode network exported successfully!", "Information", JOptionPane.INFORMATION_MESSAGE);
 				}
-
-				dispose();
 			}
-
-			
 		});
 		
 		this.add(cards, BorderLayout.NORTH);
@@ -215,70 +209,90 @@ public class NetworkExporter extends JDialog {
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 	}
-
-	private void updateCards()
-	{
-		
-		if (nt.getNetworkType().equals("oneMode"))
-		{
+	
+	void updateCards() {
+		// card 2
+		if (networkType.equals("oneMode")) {
 			var1Label.setText("one-mode node type" );
 			var2Label.setText("via variable");
-			congruenceButton.setSelected(true);
-		}
-		else
-		{
+		} else {
 			var1Label.setText("first model (rows)");
 			var2Label.setText("second model (columns)");
 			agreeButtonGroup.clearSelection();
 		}
-			
-		var1List.setModel(nt.getVariablesList());
+		var1List.setModel(getVariablesList(false, true, false, false));
+		var2List.setModel(getVariablesList(false, true, false, false));
 		var1List.setSelectedIndex(var1modeIndex);
-		var2List.setModel(nt.getVariablesList());	
 		var2List.setSelectedIndex(var2modeIndex);
-		var3List.setSelectedIndex(var3modeIndex);
-		agreeVarList.setModel(nt.getVariablesList());
-		
-		if (selectedVariable.equalsIgnoreCase(nt.getAgreeVar()))
-			agreeValList.setModel(nt.getValuesList());
-		else if (selectedVariable.equalsIgnoreCase(nt.getVar1mode()))
-			agreeValList.setModel(nt.getValuesVar1());
-		else if (selectedVariable.equalsIgnoreCase(nt.getVar2mode()))
-			agreeValList.setModel(nt.getValuesVar2());
-		else 
-			agreeValList.setModel(nt.getVarVal(selectedVariable));
-		
-		if (agreeValIndices!=null)
-		{
-			if(agreeValIndices.containsKey(selectedVariable))
-				agreeValList.setSelectedIndices(agreeValIndices.get(selectedVariable));
+		if (networkType.equals("eventList")) {
+			variablesPanel.setEnabled(false);
+			var1List.setEnabled(false);
+			var2List.setEnabled(false);
+			variablesQuestion.setText("Event list: rows and columns cannot be defined.");
+			var1Label.setEnabled(false);
+			var2Label.setEnabled(false);
+		} else {
+			variablesPanel.setEnabled(true);
+			var1List.setEnabled(true);
+			var2List.setEnabled(true);
+			variablesQuestion.setText("Please select the variables for network creation.");
+			var1Label.setEnabled(true);
+			var2Label.setEnabled(true);
 		}
 		
-		boolean enableAgreement = nt.getEnable();
+		// card 3
+		if (networkType.equals("oneMode")) {
+			if (var3List.getSelectedValue() != null) {
+				ignoreButton.setEnabled(true);
+				congruenceButton.setEnabled(true);
+				conflictButton.setEnabled(true);
+				subtractButton.setEnabled(true);
+			}
+			if (agreementPattern.equals("ignore")) {
+				ignoreButton.setSelected(true);
+			} else if (agreementPattern.equals("congruence")) {
+				congruenceButton.setSelected(true);
+			} else if (agreementPattern.equals("conflict")) {
+				conflictButton.setSelected(true);
+			} else if (agreementPattern.equals("subtract")) {
+				subtractButton.setSelected(true);
+			}
+		} else {
+			ignoreButton.setSelected(true);
+			ignoreButton.setEnabled(true);
+			congruenceButton.setEnabled(false);
+			conflictButton.setEnabled(false);
+			subtractButton.setEnabled(false);
+		}
 		
-		congruenceButton.setEnabled(enableAgreement);
-		conflictButton.setEnabled(enableAgreement);
-		subtractButton.setEnabled(enableAgreement);
-		separateButton.setEnabled(enableAgreement);
-	
-		// Just .csv export format valid
-		if (nt.getNetworkType().equals("eventList"))
-		{
+		// card 4
+		updateExcludeList();
+		if (excludeValIndices.size() == 0) {
+			excludeValList.clearSelection();
+		}
+		
+		// card 5
+		if (networkType.equals("oneMode")) {
+			allAggButton.setEnabled(true);
+		} else {
+			allAggButton.setEnabled(false);
+		}
+		docAggButton.setEnabled(false); // disable for now
+		windowAggButton.setEnabled(false);
+		yearAggButton.setEnabled(false);
+		
+		// card 6
+		if (networkType.equals("eventList")) {
 			dlFormatButton.setEnabled(false);
 			graphmlFormatButton.setEnabled(false);
-		}
-		else
-		{
+			csvFormatButton.setSelected(true);
+		} else {
 			dlFormatButton.setEnabled(true);
 			graphmlFormatButton.setEnabled(true);
 		}
 		
-		allAggButton.setEnabled(enableAgreement);
-		/* Disable for now
-		docAggButton.setEnabled(enableAgreement);
-		windowAggButton.setEnabled(enableAgreement);
-		yearAggButton.setEnabled(enableAgreement);
-		*/	
+		// finally, adjust size of the window based on altered layout of components
+		this.pack();
 	}
 	
 	private void loadCard1() {
@@ -290,38 +304,42 @@ public class NetworkExporter extends JDialog {
 		scopegbc.fill = GridBagConstraints.NONE;
 		scopegbc.anchor = GridBagConstraints.WEST;
 		scopegbc.gridwidth = 3;
-		scopegbc.insets = new Insets(0, 0, 10, 0);
-		JLabel scopeQuestion = new JLabel("For which statement " +
-				"type would you like to create a network?");
+		scopegbc.insets = new Insets(10, 0, 10, 0);
+		JLabel scopeQuestion = new JLabel("For which statement type would you like to create a network?");
 		scopePanel.add(scopeQuestion, scopegbc);
 		scopegbc.gridy = 1;
-		//Get info from db
-		typeList = Dna.dna.db.getStatementTypes();
+		typeList = Dna.dna.db.getStatementTypes();  // get info from db
 		String[] types = new String[typeList.size()];
 		for (int i = 0; i < typeList.size(); i++) {
 			types[i] = typeList.get(i).getLabel();
 		}
+		statementType = typeList.get(0);
 		typeBox = new JComboBox<String>(types);
+		scopegbc.insets = new Insets(0, 0, 10, 0);
 		scopePanel.add(typeBox, scopegbc);
-		nt = new NetworkExporterObject(typeList.get(0));
 		ActionListener statementAL = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				nt = new NetworkExporterObject();
 				int stSelIndex = typeBox.getSelectedIndex();
-				nt.setSt(typeList.get(stSelIndex));
+				statementType = typeList.get(stSelIndex);
+				var1modeIndex = 0; // reset card 2 selection if new statement type is selected
+				var2modeIndex = 0;
+				excludeValIndices.clear();
+				excludeVarList.setModel(getVariablesList(true, true, true, true));
+				updateExcludeList();
 			}
-			
 		};
 		typeBox.addActionListener(statementAL);
-				
+		
 		scopegbc.gridy = 2;
-		JLabel modeQuestion = new JLabel("Which type of network would " +
-				"you like to export?");
+		JLabel modeQuestion = new JLabel("Which type of network would you like to export?");
+		scopegbc.insets = new Insets(10, 0, 10, 0);  // vertical space before the question
 		scopePanel.add(modeQuestion, scopegbc);
+		scopegbc.insets = new Insets(0, 0, 10, 0);
 		scopegbc.gridy = 3;
 		scopegbc.gridwidth = 1;
 		oneModeButton = new JRadioButton("one-mode network");
 		oneModeButton.setSelected(true);
+		networkType = "oneMode";  // select one-mode network by default
 		twoModeButton = new JRadioButton("two-mode network");
 		eventListButton = new JRadioButton("event list");
 		ButtonGroup bg = new ButtonGroup();
@@ -337,14 +355,13 @@ public class NetworkExporter extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				JRadioButton button = (JRadioButton) e.getSource();
 				if (button.getText().equalsIgnoreCase("one-mode network")) {
-					nt.setNetworkType("oneMode");
+					networkType = "oneMode";
 				} else if (button.getText().equals("two-mode network")) {
-					nt.setNetworkType("twoMode");					
+					networkType = "twoMode";					
 				} else if (button.getText().equals("event list")) {
-					nt.setNetworkType("eventList");
+					networkType = "eventList";
 				}
 			}
-			
 		};
 		oneModeButton.addActionListener(modeAL);
 		twoModeButton.addActionListener(modeAL);
@@ -356,17 +373,16 @@ public class NetworkExporter extends JDialog {
 	}
 
 	private void loadCard2() {
-		JPanel variablesPanel = new JPanel(new GridBagLayout());
+		variablesPanel = new JPanel(new GridBagLayout());
 		variablesPanel.setName("card2");
 		GridBagConstraints vargbc = new GridBagConstraints();
 		vargbc.gridx = 0;
 		vargbc.gridy = 0;
-		vargbc.fill = GridBagConstraints.NONE;
+		vargbc.anchor = GridBagConstraints.WEST;
 		vargbc.gridwidth = 3;
 
-		vargbc.insets = new Insets(0, 0, 10, 0);
-		JLabel variablesQuestion = new JLabel("Please select the variable(s) " +
-				"representing your nodes.");
+		vargbc.insets = new Insets(0, 0, 20, 0);
+		variablesQuestion = new JLabel("Please select the variables for network creation.");
 		variablesPanel.add(variablesQuestion, vargbc);
 		vargbc.gridwidth = 1;
 		vargbc.gridy = 1;
@@ -376,7 +392,7 @@ public class NetworkExporter extends JDialog {
 		var1List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		var1List.setSelectionForeground(row);
 		var1List.setLayoutOrientation(JList.VERTICAL);
-		var1List.setVisibleRowCount(3);
+		var1List.setVisibleRowCount(4);
 		var1List.setFixedCellWidth(180);
 		JScrollPane var1Scroller = new JScrollPane(var1List);
 		JPanel var1Panel = new JPanel(new GridBagLayout());
@@ -395,7 +411,7 @@ public class NetworkExporter extends JDialog {
 		var2List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		var2List.setSelectionForeground(column);
 		var2List.setLayoutOrientation(JList.VERTICAL);
-		var2List.setVisibleRowCount(3);
+		var2List.setVisibleRowCount(4);
 		var2List.setFixedCellWidth(180);
 
 		JScrollPane var2Scroller = new JScrollPane(var2List);
@@ -409,31 +425,9 @@ public class NetworkExporter extends JDialog {
 		var2gbc.gridy = 1;
 		var2Panel.add(var2Scroller, var2gbc);
 		variablesPanel.add(var2Panel, vargbc);
-		vargbc.gridx = 2;
-		
-		var3List = new JList<String>();
-		var3List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		var3List.setSelectionForeground(agreement);
-		var3List.setSelectedIndex(0);
-		var3List.setLayoutOrientation(JList.VERTICAL);
-		var3List.setVisibleRowCount(3);
-		var3List.setFixedCellWidth(180);
-		
-		JScrollPane var3Scroller = new JScrollPane(var3List);
-		JPanel var3Panel = new JPanel(new GridBagLayout());
-		GridBagConstraints var3gbc = new GridBagConstraints();
-		var3gbc.gridx = 0;
-		var3gbc.gridy = 0;
-		var3gbc.fill = GridBagConstraints.NONE;
-		var3Label = new JLabel("agreement qualifier");
-		var3Panel.add(var3Label, var3gbc);
-		var3gbc.gridy = 1;
-		var3Panel.add(var3Scroller, var3gbc);
-		variablesPanel.add(var3Panel, vargbc);
 
-		var1List.setModel(nt.getVariablesList());
-		var2List.setModel(nt.getVariablesList());	
-		var3List.setModel(nt.getBoolVariablesList());
+		var1List.setModel(getVariablesList(false, true, false, false));
+		var2List.setModel(getVariablesList(false, true, false, false));
 		
 		TitledBorder variablesBorder;
 		variablesBorder = BorderFactory.createTitledBorder("2 / 6");
@@ -442,195 +436,311 @@ public class NetworkExporter extends JDialog {
 		
 		var1List.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
-				JList<String> lsl = (JList<String>) e.getSource();
-				if (lsl.getSelectedValue()!=null)
-				{
-					nt.setVar1mode(lsl.getSelectedValue().toString());
-					var1modeIndex = lsl.getSelectedIndex();
-				}				
+				String selectedValue = var1List.getSelectedValue();
+				int selectedIndex = var1List.getSelectedIndex();
+				if (selectedValue != null) {
+					var1 = selectedValue;
+					var1modeIndex = selectedIndex;
+				}
 			}
-					
 		});
 		
 		var2List.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
-				JList<String> lsl = (JList<String>) e.getSource();
-				if (lsl.getSelectedValue()!=null){
-					var2modeIndex = lsl.getSelectedIndex();
-					nt.setVar2mode(lsl.getSelectedValue().toString());
-				}
-				
-			}
-		});
-		
-		var3List.addListSelectionListener(new ListSelectionListener() {
-			public void valueChanged(ListSelectionEvent e) {
-				JList<String> lsl = (JList<String>) e.getSource();
-				if (lsl.getSelectedValue()!=null){
-					var3modeIndex = lsl.getSelectedIndex();
-					nt.setAgreeVar(lsl.getSelectedValue().toString());
+				String selectedValue = var2List.getSelectedValue();
+				int selectedIndex = var2List.getSelectedIndex();
+				if (selectedValue != null) {
+					var2 = selectedValue;
+					var2modeIndex = selectedIndex;
 				}
 			}
 		});
 	}
 	
 	private void loadCard3() {
-		// card 3: agreement
-		JPanel agreePanel = new JPanel(new GridBagLayout());
-		agreePanel.setName("card3");
-		GridBagConstraints agreegbc = new GridBagConstraints();
-		agreegbc.gridx = 0;
-		agreegbc.gridy = 0;
-		agreegbc.fill = GridBagConstraints.NONE;
-		agreegbc.gridwidth = 3;
-		agreegbc.insets = new Insets(0, 0, 10, 0);
-		agreegbc.anchor = GridBagConstraints.WEST;
-		JLabel agreeQuestion = new JLabel("Define the values that you want to exclude");
-		agreePanel.add(agreeQuestion, agreegbc);
-		agreegbc.gridwidth = 1;
-		agreegbc.gridy = 1;
-		agreegbc.insets = new Insets(0, 0, 0, 10);
-		agreegbc.fill = GridBagConstraints.VERTICAL;
-		JLabel agreeVarLabel = new JLabel("variable");
-		agreePanel.add(agreeVarLabel, agreegbc);
-		agreegbc.gridy = 2;
-		agreegbc.gridheight = 4;
-		agreeVarList = new JList<String>();
-		agreeVarList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		agreeVarList.setLayoutOrientation(JList.VERTICAL);
-		agreeVarList.setVisibleRowCount(3);
-		agreeVarList.setFixedCellWidth(120);
-		JScrollPane agreeVarScroller = new JScrollPane(agreeVarList);
-		agreePanel.add(agreeVarScroller, agreegbc);
-		agreegbc.gridx = 1;
-		agreegbc.gridy = 1;
-		agreegbc.gridheight = 1;
-		JLabel agreeValLabel = new JLabel("exclude values");
-		agreePanel.add(agreeValLabel, agreegbc);
-		agreegbc.gridy = 2;
-		agreegbc.gridheight = 4;
-		agreeValList = new JList<String>();
-		agreeValList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-		agreeValList.setLayoutOrientation(JList.VERTICAL);
-		agreeValList.setVisibleRowCount(3);
-		agreeValList.setFixedCellWidth(120);
-		agreeValList.setSize(120, 100);
-		JScrollPane agreeValScroller = new JScrollPane(agreeValList);
-		agreePanel.add(agreeValScroller, agreegbc);
-		agreegbc.gridx = 2;
-		agreegbc.gridy = 1;
-		agreegbc.gridheight = 1;
-		JLabel agreeButtonLabel = new JLabel("agreement pattern");
-		agreePanel.add(agreeButtonLabel, agreegbc);
-		agreegbc.gridy = 2;
+		// card 3: agreement qualifier
+		JPanel panel = new JPanel(new GridBagLayout());
+		panel.setName("card4");
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.anchor = GridBagConstraints.WEST;
+
+		gbc.insets = new Insets(0, 0, 10, 0);
+		agreementLabel = new JLabel("Agreement qualifier:");
+		panel.add(agreementLabel, gbc);
+		gbc.gridx = 1;
+		gbc.insets = new Insets(0, 20, 10, 0);
+		JLabel agreeButtonLabel = new JLabel("Aggregation pattern:");
+		panel.add(agreeButtonLabel, gbc);
+		gbc.insets = new Insets(0, 0, 10, 0);
+		
+		var3List = new JList<String>();
+		var3List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		var3List.setSelectionForeground(agreement);
+		var3List.setSelectedIndex(0);
+		var3List.setLayoutOrientation(JList.VERTICAL);
+		var3List.setVisibleRowCount(3);
+		var3List.setFixedCellWidth(180);
+		var3List.setModel(getVariablesList(false, false, true, true));
+		
+		gbc.gridx = 0;
+		gbc.gridy = 1;
+		JScrollPane var3Scroller = new JScrollPane(var3List);
+		panel.add(var3Scroller, gbc);
+		panel.add(var3Scroller, gbc);
+		
+		JPanel patternPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints patterngbc = new GridBagConstraints();
+		patterngbc.gridx = 0;
+		patterngbc.gridy = 0;
+		patterngbc.anchor = GridBagConstraints.WEST;
+		patterngbc.insets = new Insets(0, 0, 1, 0);
+		ignoreButton = new JRadioButton("ignore");
+		ignoreButton.setEnabled(false);
 		congruenceButton = new JRadioButton("congruence");
+		congruenceButton.setEnabled(false);
 		conflictButton = new JRadioButton("conflict");
+		conflictButton.setEnabled(false);
 		subtractButton = new JRadioButton("subtract");
-		separateButton = new JRadioButton("separate");
+		subtractButton.setEnabled(false);
 		agreeButtonGroup = new ButtonGroup();
+		agreeButtonGroup.add(ignoreButton);
 		agreeButtonGroup.add(congruenceButton);
 		agreeButtonGroup.add(conflictButton);
 		agreeButtonGroup.add(subtractButton);
-		agreeButtonGroup.add(separateButton);
-		agreePanel.add(congruenceButton, agreegbc);
-		agreegbc.gridy = 3;
-		agreePanel.add(conflictButton, agreegbc);
-		agreegbc.gridy = 4;
-		agreePanel.add(subtractButton, agreegbc);
-		agreegbc.gridy = 5;
-		agreePanel.add(separateButton, agreegbc);
-		TitledBorder agreementBorder;
-		agreementBorder = BorderFactory.createTitledBorder("3 / 6");
-		agreePanel.setBorder(agreementBorder);
-		cards.add(agreePanel, "agreement");
+		patternPanel.add(ignoreButton, patterngbc);
+		patterngbc.gridy = 1;
+		patternPanel.add(congruenceButton, patterngbc);
+		patterngbc.gridx = 1;
+		patterngbc.gridy = 0;
+		patternPanel.add(conflictButton, patterngbc);
+		patterngbc.gridy = 1;
+		patternPanel.add(subtractButton, patterngbc);
+		gbc.gridx = 1;
+		gbc.gridheight = 1;
+		gbc.insets = new Insets(0, 20, 10, 0);
+		panel.add(patternPanel, gbc);
+		gbc.gridy = 2;
+		gbc.gridx = 0;
+		gbc.gridwidth = 2;
+		gbc.insets = new Insets(0, 0, 0, 0);
+		agreementLabel = new JLabel("The agreement qualifier can be used to connect nodes");
+		panel.add(agreementLabel, gbc);
+		gbc.gridy = 3;
+		JLabel agreementLabel2 = new JLabel("only if they agree or disagree on a third variable.");
+		panel.add(agreementLabel2, gbc);
+		agreementPattern = "ignore"; // set default value
 		
-		agreeVarList.setModel(nt.getVariablesList());
+		TitledBorder variablesBorder;
+		variablesBorder = BorderFactory.createTitledBorder("3 / 6");
+		panel.setBorder(variablesBorder);
+		cards.add(panel, "agreement");
 		
-		if (nt.getNetworkType().equalsIgnoreCase("eventList"))
-		{
+		var3List.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				String selectedValue = var3List.getSelectedValue();
+				int selectedIndex = var3List.getSelectedIndex();
+				if (selectedValue != null) {
+					qualifier = selectedValue;
+					var3modeIndex = selectedIndex;
+					ignoreButton.setEnabled(true);
+					if (networkType.equals("oneMode")) {
+						congruenceButton.setEnabled(true);
+						conflictButton.setEnabled(true);
+						subtractButton.setEnabled(true);
+					}
+				} else {
+					ignoreButton.setEnabled(false);
+					congruenceButton.setEnabled(false);
+					conflictButton.setEnabled(false);
+					subtractButton.setEnabled(false);
+				}
+			}
+		});
+
+		ignoreButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				agreementPattern = "ignore";
+			}
+		});
+		congruenceButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				agreementPattern = "congruence";
+			}
+		});
+		conflictButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				agreementPattern = "conflict";
+			}
+		});
+		subtractButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				agreementPattern = "subtract";
+			}
+		});
+	}
+
+	private void loadCard4() {
+		// card 4: exclude values
+		JPanel excludePanel = new JPanel(new GridBagLayout());
+		excludePanel.setName("card3");
+		GridBagConstraints excludegbc = new GridBagConstraints();
+		excludegbc.gridx = 0;
+		excludegbc.gridy = 0;
+		excludegbc.fill = GridBagConstraints.NONE;
+		excludegbc.gridwidth = 3;
+		excludegbc.insets = new Insets(0, 0, 0, 0);
+		excludegbc.anchor = GridBagConstraints.WEST;
+		JLabel agreeQuestion = new JLabel("Select values you want to exclude. This will ignore all");
+		JLabel agreeQuestion2 = new JLabel("statements matching your selection during export.");
+		excludePanel.add(agreeQuestion, excludegbc);
+		excludegbc.gridy = 1;
+		excludegbc.insets = new Insets(0, 0, 10, 0);
+		excludePanel.add(agreeQuestion2, excludegbc);
+		excludegbc.gridwidth = 1;
+		excludegbc.gridy = 2;
+		excludegbc.insets = new Insets(0, 0, 0, 10);
+		excludegbc.fill = GridBagConstraints.VERTICAL;
+		JLabel agreeVarLabel = new JLabel("variable");
+		excludePanel.add(agreeVarLabel, excludegbc);
+		excludegbc.gridy = 3;
+		excludegbc.gridheight = 4;
+		excludeVarList = new JList<String>();
+		excludeVarList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		excludeVarList.setLayoutOrientation(JList.VERTICAL);
+		excludeVarList.setVisibleRowCount(4);
+		excludeVarList.setFixedCellWidth(180);
+		JScrollPane excludeVarScroller = new JScrollPane(excludeVarList);
+		excludePanel.add(excludeVarScroller, excludegbc);
+		excludegbc.gridx = 1;
+		excludegbc.gridy = 2;
+		excludegbc.gridheight = 1;
+		JLabel excludeValLabel = new JLabel("exclude values");
+		excludePanel.add(excludeValLabel, excludegbc);
+		excludegbc.gridy = 3;
+		excludegbc.gridheight = 4;
+		excludeValList = new JList<String>();
+		excludeValList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		excludeValList.setLayoutOrientation(JList.VERTICAL);
+		excludeValList.setVisibleRowCount(4);
+		excludeValList.setFixedCellWidth(180);
+		excludeValList.setSize(180, 100);
+		JScrollPane excludeValScroller = new JScrollPane(excludeValList);
+		excludePanel.add(excludeValScroller, excludegbc);
+		
+		TitledBorder excludeBorder;
+		excludeBorder = BorderFactory.createTitledBorder("4 / 6");
+		excludePanel.setBorder(excludeBorder);
+		cards.add(excludePanel, "exclude");
+		
+		excludeVarList.setModel(getVariablesList(true, true, true, true));
+		
+		if (networkType.equalsIgnoreCase("eventList")) {
 			congruenceButton.setEnabled(false);
 			conflictButton.setEnabled(false);
 			subtractButton.setEnabled(false);
 			separateButton.setEnabled(false);
 		}
 		
-		congruenceButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				nt.setAgreementPattern("congruence");
-			}
-		});
-		conflictButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				nt.setAgreementPattern("conflict");
-			}
-		});
-		subtractButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				nt.setAgreementPattern("subtract");
-			}
-		});
-		separateButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				nt.setAgreementPattern("separate");
+		excludeVarList.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				updateExcludeList();
 			}
 		});
 		
-		agreeVarList.addListSelectionListener(new ListSelectionListener() {
+		excludeValList.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
-				JList<String> lsl = (JList<String>) e.getSource();
-				if (lsl.getSelectedValue()!=null)
-				{
-					selectedVariable = lsl.getSelectedValue().toString();
-					agreeVarIndex = lsl.getSelectedIndex();
-					
-					String type = Dna.dna.db.getDataType(selectedVariable, nt.getSt().getLabel());
-					if (type.equals("boolean")||type.equals("integer"))
-					{						
-						int [] intValues = Dna.dna.db.getAllVariableIntEntries(selectedVariable,nt.getSt().getLabel());
-						String [] values = new String [intValues.length];
-						for (int i=0; i<intValues.length; i++)
-							values[i] = Integer.toString(intValues[i]);
-						nt.setValues(values);
-					}
-					 else
-					{
-						String [] values = Dna.dna.db.getAllVariableStringEntries(selectedVariable,nt.getSt().getLabel());
-						nt.setValues(values);
-					}
-					
-					agreeValList.setModel(nt.getValuesList());
-					if (agreeValIndices.containsKey(selectedVariable))
-					{
-						int[] indices = agreeValIndices.get(selectedVariable);
-						agreeValList.setSelectedIndices(indices);
-					}
-				}				
-			}
-		});
-		
-		agreeValList.addListSelectionListener(new ListSelectionListener() {
-			public void valueChanged(ListSelectionEvent e) {
-				JList<String> lsl = (JList<String>) e.getSource();
-				if (lsl.getSelectedValue()!=null){
-					ArrayList<String> values = new ArrayList<String>();
-					values = (ArrayList<String>) lsl.getSelectedValuesList();
-					
-					if (selectedVariable.equalsIgnoreCase(nt.getAgreeVar()))
-						nt.setAgreeValList(values);
-					else if (selectedVariable.equalsIgnoreCase(nt.getVar1mode()))
-						nt.setExclude1List(values);
-					else if (selectedVariable.equalsIgnoreCase(nt.getVar2mode()))
-						nt.setExclude2List(values);
-					else
-						nt.setVarVal(values, selectedVariable);
-					
-					agreeValIndices.put(selectedVariable, lsl.getSelectedIndices());
+				String selectedVariable = excludeVarList.getSelectedValue();
+				String selectedValue = excludeValList.getSelectedValue();
+				if (selectedValue != null){
+					excludeValIndices.put(selectedVariable, excludeValList.getSelectedIndices());
 				}
 			}
 		});		
 	}
-
-	//TODO define interface to change colour in a jList
+	
+	// given a variable name, return its corresponding unique values (as strings, even 
+	// if they are integers); useful for filtering and JList population
+	private ArrayList<String> getUniqueValuesAsString(String var) {
+		String type = statementType.getVariableDataType(var);
+		ArrayList<String> values = new ArrayList<String>();
+		if (type.equals("boolean") || type.equals("integer")) {
+			int [] intValues = Dna.dna.db.getAllVariableIntEntries(var, statementType.getLabel());
+			for (int i = 0; i < intValues.length; i++) {
+				String obj = Integer.toString(intValues[i]);
+				if (!values.contains(obj)) {
+					values.add(obj);
+				}
+			}
+		} else {
+			String[] stringValues = Dna.dna.db.getAllVariableStringEntries(var, statementType.getLabel());
+			for (int i = 0; i < stringValues.length; i++) {
+				if (!values.contains(stringValues[i])) {
+					values.add(stringValues[i]);
+				}
+			}
+		}
+		Collections.sort(values);
+		return values;
+	}
+	
+	// given a variable name of an integer variable, return its corresponding values (useful for filtering)
+	private ArrayList<Integer> getUniqueIntValues(String var) {
+		String type = statementType.getVariableDataType(var);
+		if (type.equals("boolean") || type.equals("integer")) {
+			ArrayList<Integer> values = new ArrayList<Integer>();
+			int [] intValues = Dna.dna.db.getAllVariableIntEntries(var, statementType.getLabel());
+			for (int i = 0; i < intValues.length; i++) {
+				int obj = intValues[i];
+				if (!values.contains(obj)) {
+					values.add(obj);
+				}
+			}
+			Collections.sort(values);
+			return values;
+		} else {
+			System.err.println("Variable \"" + var + "\" is not integer!");
+			return null;
+		}
+	}
+	
+	// update the exclude lists in card 4
+	private void updateExcludeList() {
+		String selectedValue = excludeVarList.getSelectedValue();
+		if (selectedValue != null) {
+			ArrayList<String> values = (ArrayList<String>) getUniqueValuesAsString(selectedValue);
+			String[] valueArray = new String[values.size()];
+			for (int i = 0; i < values.size(); i++) {
+				valueArray[i] = values.get(i);
+			}
+			
+			excludeValList.setModel(getValuesList(valueArray));
+			if (excludeValIndices.containsKey(selectedValue)) {
+				int[] indices = excludeValIndices.get(selectedValue);
+				excludeValList.setSelectedIndices(indices);
+			}
+		} else {
+			String[] valueArray = new String[0];
+			excludeValList.setModel(getValuesList(valueArray));
+		}
+	}
+	
+	/**
+	 * Returns a {@link DefaultListModel} with the values of a variable, selected to fill a JList.
+	 * @return		{@link DefaultListModel<String>} with variables.
+	 */
+	public DefaultListModel<String> getValuesList (String[] values) {
+		DefaultListModel<String> listData = new DefaultListModel<String>();
+		if (values.length != 0)	{
+			for (int i = 0; i < values.length; i++) {
+				listData.addElement(values[i]);
+			}
+		}
+		return listData;
+	}
+	
+	//TODO Elena: define interface to change colour in a jList
 	/*
 	private void setListColour(JList jList)
 	{
@@ -638,8 +748,8 @@ public class NetworkExporter extends JDialog {
 			        {row, nt.getAgreeVar() }};	        
 	}*/
 	
-	private void loadCard4() {
-		// card 4: date range and aggregation
+	private void loadCard5() {
+		// card 5: date range and aggregation
 		JPanel datePanel = new JPanel(new GridBagLayout());
 		datePanel.setName("card5");
 		GridBagConstraints dategbc = new GridBagConstraints();
@@ -664,8 +774,7 @@ public class NetworkExporter extends JDialog {
 		startModel.setCalendarField(Calendar.DAY_OF_YEAR);
 		startSpinner.setModel(startModel);
 		startModel.setValue(Dna.dna.db.getFirstDate());
-		startSpinner.setEditor(new JSpinner.DateEditor(startSpinner, 
-				"yyyy-MM-dd  HH:mm:ss"));
+		startSpinner.setEditor(new JSpinner.DateEditor(startSpinner, "yyyy-MM-dd  HH:mm:ss"));
 		datePanel.add(startSpinner, dategbc);
 		dategbc.gridy = 3;
 		dategbc.gridx = 0;
@@ -677,9 +786,21 @@ public class NetworkExporter extends JDialog {
 		stopModel.setCalendarField(Calendar.DAY_OF_YEAR);
 		stopSpinner.setModel(stopModel);
 		stopModel.setValue(Dna.dna.db.getLastDate());
-		stopSpinner.setEditor(new JSpinner.DateEditor(stopSpinner, 
-				"yyyy-MM-dd  HH:mm:ss"));
+		stopSpinner.setEditor(new JSpinner.DateEditor(stopSpinner, "yyyy-MM-dd  HH:mm:ss"));
 		datePanel.add(stopSpinner, dategbc);
+		
+		startSpinner.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				startDate = (Date)startSpinner.getValue();
+			}
+		});
+
+		stopSpinner.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				stopDate = (Date)stopSpinner.getValue();
+			}
+		});
+		
 		dategbc.insets = new Insets(0, 0, 0, 30);
 		dategbc.gridy = 1;
 		dategbc.gridx = 1;
@@ -701,9 +822,9 @@ public class NetworkExporter extends JDialog {
 		ActionListener aggregation = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				JRadioButton button = (JRadioButton) e.getSource();
-				nt.setAgregationRule(button.getText());
-				nt.setStartDate((Date) startSpinner.getValue());
-				nt.setEndDate((Date) stopSpinner.getValue());
+				aggregationRule = button.getText();
+				startDate = (Date)startSpinner.getValue();
+				stopDate = (Date)stopSpinner.getValue();
 			}
 			
 		};
@@ -725,8 +846,10 @@ public class NetworkExporter extends JDialog {
 		windowDays.setEnabled(false);
 		datePanel.add(windowDays, dategbc);
 		TitledBorder dateBorder;
-		dateBorder = BorderFactory.createTitledBorder("4 / 6");
+		dateBorder = BorderFactory.createTitledBorder("5 / 6");
 		datePanel.setBorder(dateBorder);
+		startDate = (Date)startSpinner.getValue(); // set default values
+		stopDate = (Date)stopSpinner.getValue();
 		
 		cards.add(datePanel, "date");				
 	}
@@ -742,17 +865,13 @@ public class NetworkExporter extends JDialog {
 		outputgbc.anchor = GridBagConstraints.WEST;
 		outputgbc.insets = new Insets(0, 0, 10, 0);
 		outputgbc.gridwidth = 2;
-		JLabel outputQuestion = new JLabel("Please select the output format " +
-				"and file name.");
+		JLabel outputQuestion = new JLabel("Please select the output format and file name for export.");
 		outputPanel.add(outputQuestion, outputgbc);
 		outputgbc.gridy = 1;
 		outputgbc.insets = new Insets(0, 0, 0, 0);
-		csvFormatButton = new JRadioButton(
-				".csv (comma-separated values)");
-		dlFormatButton = new JRadioButton(
-				".dl (Ucinet DL fullmatrix)");
-		graphmlFormatButton = new JRadioButton(
-				".graphml (visone)");
+		csvFormatButton = new JRadioButton(".csv (comma-separated values)");
+		dlFormatButton = new JRadioButton(".dl (Ucinet DL fullmatrix)");
+		graphmlFormatButton = new JRadioButton(".graphml (visone)");
 		ButtonGroup outputButtonGroup = new ButtonGroup();
 		outputButtonGroup.add(csvFormatButton);
 		outputButtonGroup.add(dlFormatButton);
@@ -762,17 +881,16 @@ public class NetworkExporter extends JDialog {
 		outputPanel.add(dlFormatButton, outputgbc);
 		outputgbc.gridy = 3;
 		outputPanel.add(csvFormatButton, outputgbc);
-		csvFormatButton.setSelected(true);
 		
 		ActionListener modeFormat = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				JRadioButton button = (JRadioButton) e.getSource();
 				if (button.getText().equalsIgnoreCase(".csv (comma-separated values)")) {
-					nt.setExportFormat(".csv");
+					exportFormat = ".csv";
 				} else if (button.getText().equals(".dl (Ucinet DL fullmatrix)")) {
-					nt.setExportFormat(".dl");
+					exportFormat = ".dl";
 				} else if (button.getText().equals(".graphml (visone)")) {
-					nt.setExportFormat(".graphml");
+					exportFormat = ".graphml";
 				}
 			}
 			
@@ -780,12 +898,13 @@ public class NetworkExporter extends JDialog {
 		csvFormatButton.addActionListener(modeFormat);
 		dlFormatButton.addActionListener(modeFormat);
 		graphmlFormatButton.addActionListener(modeFormat);
-				
+		csvFormatButton.setSelected(true);
+		exportFormat = ".csv"; // set default value
+		
 		outputgbc.gridy = 4;
 		outputgbc.gridwidth = 1;
 		outputgbc.insets = new Insets(10, 0, 0, 10);
-		ImageIcon fileIcon = new ImageIcon(getClass().getResource(
-				"/icons/folder.png"));
+		ImageIcon fileIcon = new ImageIcon(getClass().getResource("/icons/folder.png"));
 		JButton fileButton = new JButton("...", fileIcon);
 		fileButton.setPreferredSize(new Dimension(44, 16));
 		outputPanel.add(fileButton, outputgbc);
@@ -802,12 +921,10 @@ public class NetworkExporter extends JDialog {
 				JFileChooser fc = new JFileChooser();
 				fc.setFileFilter(new FileFilter() {
 					public boolean accept(File f) {
-						return f.getName().toLowerCase().endsWith(nt.getExportFormat()) 
-								|| f.isDirectory();
+						return f.getName().toLowerCase().endsWith(exportFormat) || f.isDirectory();
 					}
 					public String getDescription() {
-						return "Network File " +
-								"(*.csv)";
+						return "Network File (*.csv)";
 					}
 				});
 
@@ -815,10 +932,9 @@ public class NetworkExporter extends JDialog {
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
 					fileName = new String(file.getPath());
-					if (!fileName.endsWith(nt.getExportFormat())) {
-						fileName = fileName + nt.getExportFormat();
+					if (!fileName.endsWith(exportFormat)) {
+						fileName = fileName + exportFormat;
 					}
-					//Dna.dna.newFile(fileName);
 					fileLabel.setText(fileName);
 				}
 				
@@ -828,160 +944,8 @@ public class NetworkExporter extends JDialog {
 	}
 	
 	/*
-	 * alternative filter function that works faster (not ready yet)
-	private ArrayList<SidebarStatement> filter2(NetworkExporterObject nt) {
-		ArrayList<SidebarStatement> al = new ArrayList<SidebarStatement>();
-		for (int i = 0; i < Dna.dna.gui.sidebarPanel.ssc.size(); i++) {
-			boolean select = true;
-			SidebarStatement s = Dna.dna.gui.sidebarPanel.ssc.get(i);
-			if (s.getDate().before(nt.getStartDate())) {
-				select = false;
-			} else if (s.getDate().after(nt.getEndDate())) {
-				select = false;
-			}
-			
-			if (select == true) {
-				al.add(s);
-			}
-		}
-		return al;
-	}
-	*/
-	
-	private ArrayList<SidebarStatement> filter(NetworkExporterObject nt)
-	{
-		ArrayList<SidebarStatement> filtStatements = new ArrayList<SidebarStatement>();
-		ArrayList<String> entries1 = new ArrayList<String>(); // all variable 1 entries
-		ArrayList<String> entries2 = new ArrayList<String>(); // all variable 2 entries
-		ArrayList<SidebarStatement> statements = Dna.dna.gui.sidebarPanel.ssc.getAll();
-		
-		entries1 = nt.getExclude1List();
-		entries2 = nt.getExclude2List();
-		
-		for (int i = 0; i < statements.size(); i++) { // filter statements by type
-			SidebarStatement st = statements.get(i);
-			if (st.type.equals(nt.getSt().label))
-				filtStatements.add(st);
-		}
-		
-		if (!nt.getAgregationRule().equals("across date range"))
-		{		
-			for (int i = 0; i < filtStatements.size(); i++) { // filter by date
-				SidebarStatement statement = filtStatements.get(i);
-				
-				if (!(statement.date.after(nt.getStartDate())&&statement.date.before(nt.getEndDate())))
-				{
-					System.out.println(statement.date);
-					filtStatements.remove(statement);
-				}
-			}
-		}
-		
-		if(nt.getNetworkType().equals("eventList"))
-		{
-			for (int i = 0; i < filtStatements.size(); i++) 
-			{ 
-				int statementId = filtStatements.get(i).getStatementId();
-				boolean removed = false;
-				HashMap<String, ArrayList<String>> otherVar = nt.getFilterVariables();
-				Iterator<String> keySetIterator = otherVar.keySet().iterator(); 
-				
-				while(keySetIterator.hasNext()&&(!removed))
-				{ 
-					String variable = keySetIterator.next(); 
-					String others = Dna.dna.db.getVariableStringEntry(statementId, variable);
-					ArrayList<String> values = otherVar.get(variable);
-					
-					for (int j=0; j<values.size(); j++)
-					{
-						if  (others.equalsIgnoreCase(values.get(j)))
-						{
-							filtStatements.remove(i);
-							i = i-1;
-							removed = true;
-							break;
-						}
-					}
-				}
-			}
-		}
-		else
-		{	
-			for (int i = 0; i < filtStatements.size(); i++) { 
-				int statementId = filtStatements.get(i).getStatementId();
-				boolean removed = false;
-	
-				String name1 = Dna.dna.db.getVariableStringEntry(statementId, nt.getVar1mode());
-				
-				for (int j=0; j<nt.getExclude1List().size(); j++)
-				{
-					if  (name1.equalsIgnoreCase(entries1.get(j)))
-					{
-						filtStatements.remove(i);
-						i = i-1;
-						removed = true;
-						break;
-					}
-				}
-				
-				if (!removed)
-				{
-					String name2 = Dna.dna.db.getVariableStringEntry(statementId, nt.getVar2mode());
-					
-					for (int j=0; j<nt.getExclude2List().size(); j++)
-					{
-						if  (name2.equalsIgnoreCase(entries2.get(j)))
-						{
-							
-						}
-					}
-					
-					if (!removed)
-					{
-						String name3 = Dna.dna.db.getVariableStringEntry(statementId, nt.getAgreeVar());
-						
-						for (int j=0; j<nt.getAgreeValList().length; j++)
-						{
-							if  (name3.equalsIgnoreCase(""+nt.getAgreeValList()[j]))
-							{
-								filtStatements.remove(i);
-								i = i-1;
-								removed = true;
-								break;
-							}
-						}
-						
-						if (!removed)
-						{
-							HashMap<String, ArrayList<String>> otherVar = nt.getFilterVariables();
-							Iterator<String> keySetIterator = otherVar.keySet().iterator(); 
-							
-							while(keySetIterator.hasNext()){ 
-								String variable = keySetIterator.next(); 
-								String others = Dna.dna.db.getVariableStringEntry(statementId, variable);
-								ArrayList<String> values = otherVar.get(variable);
-								
-								for (int j=0; j<values.size(); j++)
-								{
-									if  (others.equalsIgnoreCase(values.get(j)))
-									{
-										filtStatements.remove(i);
-										i = i-1;
-										removed = true;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		return filtStatements;
-	}
-	
-	public JPanel getCurrentCard() {
+	 * PL: currently not needed; but let's leave this here in case we need it in the future
+	private JPanel getCurrentCard() {
 		JPanel card = null;
 		for (Component comp : cards.getComponents() ) {
 			if (comp.isVisible() == true) {
@@ -990,7 +954,8 @@ public class NetworkExporter extends JDialog {
 		}
 		return card;
 	}
-
+	*/
+	
 	/**
 	 * @author philip
 	 *
@@ -1200,8 +1165,8 @@ public class NetworkExporter extends JDialog {
 	/**
 	 * @author philip
 	 * 
-	 * A class for Network objects. A Network object is merely a container for Matrix objects and/or 
-	 * Edgelist objects. This container class is necessary because the export functions should be able 
+	 * A class for Network objects. A Network object is merely a container for {@link Matrix} objects and/or 
+	 * {@link Edgelist} objects. This container class is necessary because the export functions should be able 
 	 * to return either matrices or edgelists; but since only one data type can be returned by functions, 
 	 * this is going to be a Network object that contains either the matrix or the edge list or both.
 	 * 
@@ -1221,13 +1186,12 @@ public class NetworkExporter extends JDialog {
 			ArrayList<Edge> el = new ArrayList<Edge>();
 			for (int i = 0; i < m.length; i++) {
 				for (int j = 0; j < m[0].length; j++) {
-					el.add(new Edge(r[i], c[j], m[i][j]));
+					if (i != j && m[i][j] != 0) {
+						el.add(new Edge(r[i], c[j], m[i][j]));
+					}
 				}
 			}
 			this.edgelist = new Edgelist(el);
-			/*for (int i = 0; i < el.size(); i++) {
-				System.out.println(el.get(i).getSource() + " - " + el.get(i).getTarget() + ": " + el.get(i).getWeight());
-			}*/
 		}
 		
 		// constructor when only the edge list has been computed: also convert to matrix
@@ -1307,7 +1271,7 @@ public class NetworkExporter extends JDialog {
 	}
 	
 	/**
-	 * This function computes the matrix product of two two-dimensional arrays.
+	 * Compute the matrix product of two two-dimensional arrays.
 	 * 
 	 * @param mat1	Two-dimensional array with the first input matrix.
 	 * @param mat2	Two-dimensional array with the second input matrix.
@@ -1337,7 +1301,7 @@ public class NetworkExporter extends JDialog {
     }
 	
 	/**
-	 * This function transposes a two-dimensional array.
+	 * Transpose a two-dimensional array.
 	 * 
 	 * @param mat	Two-dimensional array that should be transposed.
 	 * @return		Transposed two-dimensional array.
@@ -1357,7 +1321,7 @@ public class NetworkExporter extends JDialog {
 	}
 
 	/**
-	 * This function adds two two-dimensional arrays.
+	 * Add two two-dimensional arrays.
 	 * 
 	 * @param mat1	Two-dimensional array with the first input matrix.
 	 * @param mat2	Two-dimensional array with the second input matrix.
@@ -1396,59 +1360,53 @@ public class NetworkExporter extends JDialog {
 	 * @param variable1		The name of the first variable (for the row labels).
 	 * @param variable2		The name of the second variable (for the column labels).
 	 * @param qualifier		The name of the agreement variable that determines whether an edge should be established.
-	 * @param selection		The levels of the variable that should be taken into account during export.
 	 * @return				A Network object with an affiliation network.
 	 */
-	public Network affiliation(ArrayList<SidebarStatement> statements, String variable1, String variable2, String qualifier, int[] selection) {
+	public Network affiliation(ArrayList<SidebarStatement> statements, String variable1, String variable2, String qualifier) {
 		ArrayList<String> names1 = new ArrayList<String>(); // unique row labels
 		ArrayList<String> names2 = new ArrayList<String>(); // unique column labels
 		ArrayList<String> entries1 = new ArrayList<String>(); // all variable 1 entries
 		ArrayList<String> entries2 = new ArrayList<String>(); // all variable 2 entries
-		ArrayList<Integer> qual = new ArrayList<Integer>(); // all qualifier entries
+		ArrayList<Integer> qualifierValues = new ArrayList<Integer>(); // unique agreement qualifier values
 		for (int i = 0; i < statements.size(); i++) { // retrieve the data for variables 1 and 2 from database
 			int statementId = statements.get(i).getStatementId();
 			String name1 = Dna.dna.db.getVariableStringEntry(statementId, variable1);
-			entries1.add(name1);
-			if (!names1.contains(name1)) {
-				names1.add(name1);
+			if (name1 != null && !name1.equals("")) {
+				entries1.add(name1);
+				if (!names1.contains(name1)) {
+					names1.add(name1);
+				}
 			}
 			String name2 = Dna.dna.db.getVariableStringEntry(statementId, variable2);
-			entries2.add(name2);
-			if (!names2.contains(name2)) {
-				names2.add(name2);
+			if (name2 != null && !name2.equals("")) {
+				entries2.add(name2);
+				if (!names2.contains(name2)) {
+					names2.add(name2);
+				}
 			}
-			if (qualifier != null) {
-				qual.add(Dna.dna.db.getVariableIntEntry(statementId, qualifier));
+			int qual = Dna.dna.db.getVariableIntEntry(statementId, qualifier);
+			if (!qualifierValues.contains(qual)) {
+				qualifierValues.add(qual);
 			}
 		}
 		double[][] mat = new double[names1.size()][names2.size()]; // the resulting affiliation matrix; 0 by default
 		Edgelist edgelist = new Edgelist();
 		for (int i = 0; i < entries1.size(); i++) {
-			boolean selected = false; // figure out if the current agreement level should be included
-			if (qualifier == null) { // if null, do not regard the qualifier variable and process all statements
-				selected = true;
-			} else {
-				for (int j = 0; j < selection.length; j++) {
-					if (qual.get(i) == selection[j]) {
-						selected = true;
-					}
+			int row = -1;
+			for (int j = 0; j < names1.size(); j++) {
+				if (entries1.get(i).equals(names1.get(j))) {
+					row = j;
 				}
 			}
-			if (selected == true) { // if the agreement level is acceptable, add 1 to the matrix
-				int row = -1;
-				for (int j = 0; j < names1.size(); j++) {
-					if (entries1.get(i).equals(names1.get(j))) {
-						row = j;
-					}
+			int col = -1;
+			for (int j = 0; j < names2.size(); j++) {
+				if (entries2.get(i).equals(names2.get(j))) {
+					col = j;
 				}
-				int col = -1;
-				for (int j = 0; j < names2.size(); j++) {
-					if (entries2.get(i).equals(names2.get(j))) {
-						row = j;
-					}
-				}
+			}
+			if (row != -1 && col != -1) {
 				mat[row][col] = mat[row][col] + 1; // populate matrix
-				edgelist.addEdge(new Edge(names1.get(i), names2.get(i), 1)); //populate edgelist
+				edgelist.addEdge(new Edge(entries1.get(i), entries2.get(i), 1)); // populate edgelist
 			}
 		}
 		String[] rownames = new String[names1.size()]; // cast row names from array list to array
@@ -1470,30 +1428,40 @@ public class NetworkExporter extends JDialog {
 	 * @param variable1		The name of the variable for which the new matrix should be created (e.g., actors).
 	 * @param variable2		The name of the variable via which the new matrix should be aggregated (e.g., concepts).
 	 * @param qualifier		The name of the agreement variable via which an edge should be established.
-	 * @param selection		The levels of the variable that should be taken into account during export.
 	 * @param type			A string with with type of one-mode matrix to be created. Can have values "congruence" or "conflict").
 	 * @return				A network object with a one-mode network.
 	 */
-	public Network oneModeNetwork(ArrayList<SidebarStatement> statements, String variable1, String variable2, String qualifier, int[] selection, String type) {
+	public Network oneModeNetwork(ArrayList<SidebarStatement> statements, String variable1, String variable2, String qualifier, String type) {
 		ArrayList<String> names1 = new ArrayList<String>(); // unique row labels
 		ArrayList<String> names2 = new ArrayList<String>(); // unique column labels
+		ArrayList<Integer> qualifierValues = new ArrayList<Integer>(); // unique agreement qualifier values
 		for (int i = 0; i < statements.size(); i++) { // retrieve the row and column names from database
 			int statementId = statements.get(i).getStatementId();
 			String name1 = Dna.dna.db.getVariableStringEntry(statementId, variable1);
-			if (!names1.contains(name1)) {
-				names1.add(name1);
+			if (name1 != null && !name1.equals("")) {
+				if (!names1.contains(name1)) {
+					names1.add(name1);
+				}
 			}
 			String name2 = Dna.dna.db.getVariableStringEntry(statementId, variable2);
-			if (!names2.contains(name2)) {
-				names2.add(name2);
+			if (name2 != null && !name2.equals("")) {
+				if (!names2.contains(name2)) {
+					names2.add(name2);
+				}
+			}
+			int qual = Dna.dna.db.getVariableIntEntry(statementId, qualifier);
+			if (!qualifierValues.contains(qual)) {
+				qualifierValues.add(qual);
 			}
 		}
 		double[][] cooc = new double[names1.size()][names1.size()];
-		for (int i = 0; i < selection.length; i++) { // compute one-mode projections for each agreement level, then add up
-			int[] currentselection = new int[] { selection[i] };
-			double[][] mat = affiliation(statements, variable1, variable2, qualifier, currentselection).getMatrix().getMatrix();
+		for (int i = 0; i < qualifierValues.size(); i++) { // compute one-mode projections for each agreement level, then add up
+			double[][] mat = affiliation(statements, variable1, variable2, qualifier).getMatrix().getMatrix();
 			mat = multiply(mat, transpose(mat));
 			cooc = add(cooc, mat);
+		}
+		for (int i = 0; i < names1.size(); i++) {
+			cooc[i][i] = 0;
 		}
 		String[] labels = new String[names1.size()]; // cast row names from array list to array
 		labels = names1.toArray(labels);
@@ -1538,7 +1506,8 @@ public class NetworkExporter extends JDialog {
 			for (int i = 0; i < statements.size(); i++) {
 				out.newLine();
 				statementId = statements.get(i).getStatementId();
-				out.write(statementId);
+				String stringId = new Integer(statementId).toString();
+				out.write(stringId);
 				d = statements.get(i).getDate();
 				dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 				out.write(";" + dateFormat.format(d));
@@ -1547,7 +1516,7 @@ public class NetworkExporter extends JDialog {
 					key = keyIterator.next();
 					value = variables.get(key);
 					if (value.equals("short text") || value.equals("long text")) {
-						out.write(";" + Dna.dna.db.getVariableStringEntry(statementId, key).replaceAll(";", ","));
+						out.write(";\"" + Dna.dna.db.getVariableStringEntry(statementId, key).replaceAll(";", ",") + "\"");
 					} else if (value.equals("boolean") || value.equals("integer")) {
 						out.write(";" + Dna.dna.db.getVariableIntEntry(statementId, key));
 					}
@@ -1874,6 +1843,170 @@ public class NetworkExporter extends JDialog {
 		} catch (IOException e) {
 			System.err.println("Cannot save \"" + dnaFile + "\":" + e.getMessage());
 			JOptionPane.showMessageDialog(Dna.dna.gui, "Error while saving the file!\n" + e.getStackTrace());
+		}
+	}
+
+	/**
+	 * This function returns a {@link DefaultListModel} with the variables of the statementType selected to fill a JList.
+	 * 
+	 * @param longtext	boolean indicating whether long text variables should be included.
+	 * @param shorttext	boolean indicating whether short text variables should be included.
+	 * @param integer	boolean indicating whether integer variables should be included.
+	 * @param bool		boolean indicating whether boolean variables should be included.
+	 * @return			{@link DefaultListModel<String>} with variables of the the statementType selected.
+	 */
+	DefaultListModel<String> getVariablesList(boolean longtext, boolean shorttext, boolean integer, boolean bool) {
+		LinkedHashMap<String, String> variables = statementType.getVariables();
+		Iterator<String> it = variables.keySet().iterator();
+		DefaultListModel<String> listData = new DefaultListModel<String>();
+		while (it.hasNext()) {
+			String var = it.next();
+			if ((longtext == true && variables.get(var).equals("long text")) || 
+					(shorttext == true && variables.get(var).equals("short text")) ||
+					(integer == true && variables.get(var).equals("integer")) ||
+					(bool == true && variables.get(var).equals("boolean"))) {
+				listData.addElement(var);
+			}
+		}
+		return listData;
+	}
+
+	/**
+	 * Return a filtered list of {@link SidebarStatement}s based on the settings saved in the {@link NetworkExporterObject}.
+	 * 
+	 * @return	ArrayList of filtered {@link SidebarStatement}s
+	 */
+	ArrayList<SidebarStatement> filter() {
+		// step 1: get all statement IDs corresponding to date range and statement type
+		ArrayList<Integer> al = new ArrayList<Integer>();
+		for (int i = 0; i < Dna.dna.gui.sidebarPanel.ssc.size(); i++) {
+			boolean select = true;
+			SidebarStatement s = Dna.dna.gui.sidebarPanel.ssc.get(i);
+			if (s.getDate().before(startDate)) {
+				select = false;
+			} else if (s.getDate().after(stopDate)) {
+				select = false;
+			} else if (!s.getType().equals(statementType.getLabel())) {
+				select = false;
+			}
+			if (select == true) {
+				al.add(s.getStatementId());
+			}
+		}
+		
+		// step 2: identify variables with excluded values
+		ArrayList<ExcludeObject> exObj = new ArrayList<ExcludeObject>();
+		Iterator<String> keyIterator = excludeValIndices.keySet().iterator();
+		while (keyIterator.hasNext()) {
+			String key = keyIterator.next();
+			int[] value = excludeValIndices.get(key);
+			if (value.length > 0) {
+				String dt = statementType.getVariableDataType(key);
+				ExcludeObject eo;
+				if (dt.equals("short text") || dt.equals("long text")) {
+					ArrayList<String> values = getUniqueValuesAsString(key); // all values of a certain variable (as contained in the right JList in the exclude panel)
+					int[] selectedIndices = excludeValIndices.get(key);  // indices: which of them are selected to be excluded?
+					ArrayList<String> selectedValues = new ArrayList<String>();  // actual values: which of them are selected to be excluded?
+					for (int j = 0; j < selectedIndices.length; j++) {
+						selectedValues.add(values.get(selectedIndices[j]));
+					}
+					eo = new ExcludeObject(key, true, selectedValues);  // a variable along with its values to be excluded
+				} else {
+					ArrayList<Integer> values = getUniqueIntValues(key);
+					int[] selectedIndices = excludeValIndices.get(key);
+					ArrayList<Integer> selectedValues = new ArrayList<Integer>();
+					for (int j = 0; j < selectedIndices.length; j++) {
+						selectedValues.add(values.get(selectedIndices[j]));
+					}
+					eo = new ExcludeObject(key, false, selectedValues);
+				}
+				exObj.add(eo);
+			}
+		}
+		
+		// step 3: get all statements from database and check against values selected for inclusion
+		ArrayList<Integer> keepIds = new ArrayList<Integer>();
+		for (int i = 0; i < al.size(); i++) {
+			boolean select = true;
+			for (int j = 0; j < exObj.size(); j++) {
+				if ((exObj.get(j).isExStr() == true && exObj.get(j).getExVal().contains(Dna.dna.db.getVariableStringEntry(al.get(i), exObj.get(j).getExVar()))) || 
+						(exObj.get(j).isExStr() == false && exObj.get(j).getExVal().contains(Dna.dna.db.getVariableIntEntry(al.get(i), exObj.get(j).getExVar())))) {
+					select = false;
+				}
+			}
+			if (select == true) {
+				keepIds.add(al.get(i));
+			}
+		}
+		al = keepIds;
+		
+		// step 4: create reduced array list with SidebarStatements for the computations
+		ArrayList<SidebarStatement> l = new ArrayList<SidebarStatement>();
+		for (int i = 0; i < Dna.dna.gui.sidebarPanel.ssc.size(); i++) {
+			SidebarStatement s = Dna.dna.gui.sidebarPanel.ssc.get(i);
+			if (al.contains(s.getStatementId())) {
+				l.add(s);
+			}
+		}
+		return(l);
+	}
+	
+	/**
+	 * @author philip
+	 * 
+	 * Represents a variable along with information on which of its values should be excluded from export.
+	 */
+	class ExcludeObject {
+		ArrayList<?> exVal;	// values to be excluded
+		boolean exStr;		// type of values
+		String exVar;		// name of the variable to which the values belong
+
+		ExcludeObject(String exVar, boolean exStr, ArrayList<?> exVal) {
+			this.exVar = exVar;
+			this.exVal = exVal;
+			this.exStr = exStr;
+		}
+		
+		/**
+		 * @return the exVal
+		 */
+		public ArrayList<?> getExVal() {
+			return exVal;
+		}
+
+		/**
+		 * @param exVal the exVal to set
+		 */
+		public void setExVal(ArrayList<?> exVal) {
+			this.exVal = exVal;
+		}
+
+		/**
+		 * @return the exStr
+		 */
+		public boolean isExStr() {
+			return exStr;
+		}
+
+		/**
+		 * @param exStr the exStr to set
+		 */
+		public void setExStr(boolean exStr) {
+			this.exStr = exStr;
+		}
+
+		/**
+		 * @return the exVar
+		 */
+		public String getExVar() {
+			return exVar;
+		}
+
+		/**
+		 * @param exVar the exVar to set
+		 */
+		public void setExVar(String exVar) {
+			this.exVar = exVar;
 		}
 	}
 }
