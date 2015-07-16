@@ -1473,7 +1473,7 @@ public class NetworkExporter extends JDialog {
 		// TODO: add normalization options (divide, subtract, Jaccard, cosine similarity)
 		// TODO: consider not only matching agreement levels, but using distance measure, e.g., intensities 2 and 5 have a distance of 3.
 	}
-
+	
 	/**
 	 * This function accepts a list of statements that should be included in the relational event export, 
 	 * and it exports the variables of all statements to a CSV file, along with the statement ID and a 

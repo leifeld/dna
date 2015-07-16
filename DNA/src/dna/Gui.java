@@ -406,12 +406,9 @@ public class Gui extends JFrame {
 			removeDocumentButton.setEnabled(false);
 
 			//Document menu: import old DNA dataset
-			Icon importOldIcon = new ImageIcon(getClass().getResource(
-					"/icons/table_add.png"));
-			importOldButton = new JMenuItem(
-					"Import from old DNA 1.xx file...", importOldIcon);
-			importOldButton.setToolTipText(
-					"import from old DNA < 2.0 XML dataset...");
+			Icon importOldIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
+			importOldButton = new JMenuItem("Import from old DNA 1.xx file...", importOldIcon);
+			importOldButton.setToolTipText("import from old DNA < 2.0 XML dataset...");
 			documentMenu.add(importOldButton);
 			importOldButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -424,8 +421,7 @@ public class Gui extends JFrame {
 									|| f.isDirectory();
 						}
 						public String getDescription() {
-							return "DNA 1.xx XML file " +
-									"(*.dna)";
+							return "DNA 1.xx XML file (*.dna)";
 						}
 					});
 
@@ -445,8 +441,7 @@ public class Gui extends JFrame {
 			importOldButton.setEnabled(false);
 
 			//Export menu: network export
-			Icon networkIcon = new ImageIcon(getClass().getResource(
-					"/icons/chart_organisation.png"));
+			Icon networkIcon = new ImageIcon(getClass().getResource("/icons/chart_organisation.png"));
 			networkButton = new JMenuItem("Export network...", networkIcon);
 			networkButton.setToolTipText( "export a network file..." );
 			exportMenu.add(networkButton);
@@ -475,8 +470,7 @@ public class Gui extends JFrame {
 			Icon aboutIcon = new ImageIcon(getClass().getResource(
 					"/icons/dna16.png"));
 			aboutButton = new JMenuItem("About DNA...", aboutIcon);
-			aboutButton.setToolTipText( "show information about the " +
-					"Discourse Network Analyzer..." );
+			aboutButton.setToolTipText( "show information about the Discourse Network Analyzer..." );
 			settingsMenu.add(aboutButton);
 			aboutButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -498,10 +492,8 @@ public class Gui extends JFrame {
 
 		public SQLConnectionDialog () {
 			this.setTitle("Enter remote SQL connection details.");
-			this.setDefaultCloseOperation(JFrame.
-					DISPOSE_ON_CLOSE);
-			Icon mysqlIcon = new ImageIcon(getClass().getResource(
-					"/icons/database_link.png"));
+			this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			Icon mysqlIcon = new ImageIcon(getClass().getResource("/icons/database_link.png"));
 			this.setIconImage(((ImageIcon) mysqlIcon).getImage());
 			this.setLayout(new FlowLayout(FlowLayout.LEFT));
 			JPanel panel = new JPanel(new GridBagLayout());
@@ -570,9 +562,8 @@ public class Gui extends JFrame {
 					connectButton.setEnabled(true);
 					if (connectionField.getText().equals("") || loginField.
 							getText().equals("") || pwField.getText().
-							equals("") || connectionField.getText().equals(
-									"mysql://") || (!mysqlButton.isSelected() && 
-											!mssqlButton.isSelected())) {
+							equals("") || connectionField.getText().equals("mysql://") || 
+							(!mysqlButton.isSelected() && !mssqlButton.isSelected())) {
 						connectButton.setEnabled(false);
 					}
 				}

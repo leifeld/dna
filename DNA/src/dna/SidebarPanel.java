@@ -138,33 +138,33 @@ class SidebarPanel extends JScrollPane {
 			return c;
 		}
 	}
-
+	
 	private void statementPanel() {
 		ssc = new SidebarStatementContainer();
 		statementTable = new JTable( ssc );
 		statementTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		statementTableScrollPane = new JScrollPane(statementTable);
 		statementTableScrollPane.setPreferredSize(new Dimension(200, 240));
-		statementTable.getColumnModel().getColumn( 0 ).setPreferredWidth( 30 );
-		statementTable.getColumnModel().getColumn( 1 ).setPreferredWidth( 170 );
+		statementTable.getColumnModel().getColumn( 0 ).setPreferredWidth( 38 );
+		statementTable.getColumnModel().getColumn( 1 ).setPreferredWidth( 162 );
 
 		statementTable.getTableHeader().setReorderingAllowed( false );
 		statementTable.putClientProperty("terminateEditOnFocusLost", 
 				Boolean.TRUE);
-
+		
 		setRowSorterEnabled(true);
-
+		
 		StatementCellRenderer statementCellRenderer = new 
 				StatementCellRenderer();
 		statementTable.getColumnModel().getColumn(0).setCellRenderer(
 				statementCellRenderer);
-
+		
 		statementFilter = new StatementFilter();
-
+		
 		statementPanel = new JPanel(new BorderLayout());
 		statementPanel.add(statementTableScrollPane, BorderLayout.CENTER);
 		statementPanel.add(statementFilter, BorderLayout.SOUTH);
-
+		
 		statementTable.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
 				int row = -1;

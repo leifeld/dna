@@ -20,7 +20,7 @@ public class Dna {
 	static Dna dna;
 	DataAccess db;
 	Gui gui;
-
+	
 	ArrayList<Document> documents = new ArrayList<Document>(); //SK All changes w.r.t. documents list
 	public Dna () {
 		documents = new ArrayList<Document>(); //SK
