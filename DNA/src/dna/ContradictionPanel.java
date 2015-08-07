@@ -177,15 +177,15 @@ public class ContradictionPanel extends JPanel {
 	public void updateSelfContFilterVars() {
 		filterComboBoxVar1.removeAllItems();
 		filterComboBoxVar2.removeAllItems();
-		filterComboBoxBoolean.removeAllItems();
 		String type = (String) filterComboBoxType.getSelectedItem();
 		if (type != null && !type.equals("")) {
 			HashMap<String, String> variables = Dna.dna.db.getVariables(type);
 			Iterator<String> keyIterator = variables.keySet().iterator();
 			while (keyIterator.hasNext()){
 				String key = keyIterator.next();
-				filterComboBoxVar2.addItem(key);
 				filterComboBoxVar1.addItem(key);
+				//not necessary, filterComboBoxVar2 is filled in updateStatementVariables
+				//filterComboBoxVar2.addItem(key);
 			}
 			try{
 				filterComboBoxVar1.setSelectedIndex(0);
@@ -194,6 +194,7 @@ public class ContradictionPanel extends JPanel {
 				goButton.setEnabled(false);
 				clearButton.setEnabled(false);
 			}
+			/*
 			try{
 				filterComboBoxVar2.setSelectedIndex(0);
 			}
@@ -201,6 +202,7 @@ public class ContradictionPanel extends JPanel {
 				goButton.setEnabled(false);
 				clearButton.setEnabled(false);
 			}
+			*/
 			goButton.setEnabled(true);
 			clearButton.setEnabled(true);
 		}
@@ -213,6 +215,7 @@ public class ContradictionPanel extends JPanel {
 	 * the ok-button is not activated
 	 */
 	public void freezeOkButton() {
+		filterComboBoxBoolean.removeAllItems();
 		String type = (String) filterComboBoxType.getSelectedItem();
 		if (type != null && !type.equals("")) {
 			HashMap<String, String> variables = Dna.dna.db.getVariablesByType(
@@ -241,8 +244,9 @@ public class ContradictionPanel extends JPanel {
 	 * method updateStatementVariables() makes sure an item cannot be selected 
 	 * in filterComboBoxVar1 and filterComboBoxVar2
 	 */ 
-	public void updateStatementVariables(ItemEvent e) {		
+	public void updateStatementVariables(ItemEvent e) {	
 		if (e.getSource() == filterComboBoxVar1) {
+			filterComboBoxVar2.removeAllItems();
 			String type = (String) filterComboBoxType.getSelectedItem();
 			if (type != null && !type.equals("")) {
 				HashMap<String, String> variables = Dna.dna.db.getVariables(type);
@@ -250,7 +254,6 @@ public class ContradictionPanel extends JPanel {
 				// remove item from HashMap: http://stackoverflow.com/questions/6531132/java-hashmap-removing-key-value
 				variables.remove(variable1);
 				Iterator<String> keyIterator = variables.keySet().iterator();
-				filterComboBoxVar2.removeAllItems();
 				while (keyIterator.hasNext()){	
 					String key = keyIterator.next();
 					filterComboBoxVar2.addItem(key);
@@ -265,6 +268,8 @@ public class ContradictionPanel extends JPanel {
 	public void clearTree() {
 		top = new DefaultMutableTreeNode(filterComboBoxVar1.getSelectedItem());
 		tree.setModel(new DefaultTreeModel(top));
+		filterComboBoxVar1.setSelectedIndex(0);
+		filterComboBoxVar2.setSelectedIndex(0);
 		goButton.setEnabled(true);
 		freezeOkButton();
 		clearButton.setEnabled(true);
