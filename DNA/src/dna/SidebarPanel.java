@@ -138,7 +138,7 @@ class SidebarPanel extends JScrollPane {
 			return c;
 		}
 	}
-	
+
 	private void statementPanel() {
 		ssc = new SidebarStatementContainer();
 		statementTable = new JTable( ssc );
@@ -151,20 +151,20 @@ class SidebarPanel extends JScrollPane {
 		statementTable.getTableHeader().setReorderingAllowed( false );
 		statementTable.putClientProperty("terminateEditOnFocusLost", 
 				Boolean.TRUE);
-		
+
 		setRowSorterEnabled(true);
-		
+
 		StatementCellRenderer statementCellRenderer = new 
 				StatementCellRenderer();
 		statementTable.getColumnModel().getColumn(0).setCellRenderer(
 				statementCellRenderer);
-		
+
 		statementFilter = new StatementFilter();
-		
+
 		statementPanel = new JPanel(new BorderLayout());
 		statementPanel.add(statementTableScrollPane, BorderLayout.CENTER);
 		statementPanel.add(statementFilter, BorderLayout.SOUTH);
-		
+
 		statementTable.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
 				int row = -1;
@@ -185,26 +185,30 @@ class SidebarPanel extends JScrollPane {
 			}
 		});
 	}
-	
+
 	//called on click of filter radio button to update statement types
 	public void updateStatementTypes() {
 		typeComboBox1.removeAllItems();
-		ArrayList<StatementType> types = new ArrayList<>();
+		ArrayList<StatementType> types = new ArrayList<StatementType>();
 		if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().
 				equals("")) {
 			types = Dna.dna.db.getStatementTypes();
-			for (int i = 0; i < types.size(); i++) {
-				
+			for (int i = 0; i < types.size(); i++) {				
 				String type = types.get(i).getLabel().toString();
 				if(type!=null )
 				{
 					typeComboBox1.addItem(type.trim());
 				}
-				
+
 			}
-			typeComboBox1.setSelectedIndex(0);
+			try{
+				typeComboBox1.setSelectedIndex(0);
+			}
+			catch (IllegalArgumentException ex){
+				typeComboBox1.setSelectedIndex(-1);
+			}
 		}
-		
+
 		//LB.Add: same for the Self-Contradiction Filter
 		cp.filterComboBoxType.removeAllItems();
 		if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().
@@ -213,7 +217,33 @@ class SidebarPanel extends JScrollPane {
 			for (int i = 0; i < types.size(); i++) {
 				cp.filterComboBoxType.addItem(types.get(i).getLabel());
 			}
-			cp.filterComboBoxType.setSelectedIndex(0);
+			try{
+				cp.filterComboBoxType.setSelectedIndex(0);			
+			}
+			catch (Exception ex){
+				cp.filterComboBoxType.setSelectedIndex(-1);	
+				cp.goButton.setEnabled(false);
+				cp.clearButton.setEnabled(false);
+			}
+			try{
+				cp.filterComboBoxVar1.setSelectedIndex(0);
+			}
+			catch (IllegalArgumentException ex){
+				cp.goButton.setEnabled(false);
+				cp.clearButton.setEnabled(false);
+			}
+			try{
+				cp.filterComboBoxVar2.setSelectedIndex(0);
+			}
+			catch (IllegalArgumentException ex){
+				cp.goButton.setEnabled(false);
+				cp.clearButton.setEnabled(false);
+			}
+			cp.goButton.setEnabled(true);
+			cp.clearButton.setEnabled(true);
+		}else{
+			cp.goButton.setEnabled(false);
+			cp.clearButton.setEnabled(false);
 		}
 	}
 
@@ -229,8 +259,16 @@ class SidebarPanel extends JScrollPane {
 				variableComboBox1.addItem(key);
 				variableComboBox2.addItem(key);
 			}
-			variableComboBox1.setSelectedIndex(0);
-			variableComboBox2.setSelectedIndex(0);
+			try{
+				variableComboBox1.setSelectedIndex(0);
+			}
+			catch (IllegalArgumentException ex){
+			}
+			try{
+				variableComboBox2.setSelectedIndex(0);
+			}
+			catch (IllegalArgumentException ex){
+			}
 		}
 	}
 
@@ -317,7 +355,7 @@ class SidebarPanel extends JScrollPane {
 			});
 			patternField2 = new JXTextField("regex");
 			patternField2.setPreferredSize(new Dimension(104, 20));
-			
+
 
 			toggleEnabled(false);
 
@@ -329,13 +367,13 @@ class SidebarPanel extends JScrollPane {
 			JPanel filterPanel2 = new JPanel(new FlowLayout(FlowLayout.LEFT));
 			filterPanel2.add(variableComboBox2);
 			filterPanel2.add(patternField2);
-			
+
 			JPanel filterPanel = new JPanel();
 			filterPanel.setLayout(new BoxLayout(filterPanel,BoxLayout.Y_AXIS));
 			filterPanel.add(filterPanel0, Component.CENTER_ALIGNMENT);
 			filterPanel.add(filterPanel1, Component.CENTER_ALIGNMENT);
 			filterPanel.add(filterPanel2, Component.CENTER_ALIGNMENT);
-			
+
 
 			this.add(showPanel, BorderLayout.NORTH);
 			this.add(filterPanel, BorderLayout.CENTER);
@@ -345,7 +383,7 @@ class SidebarPanel extends JScrollPane {
 					if (e.getSource() == showAll) {				
 						allFilter();
 						toggleEnabled(false);
-						
+
 					} else if (e.getSource() == showCurrent) {
 						toggleEnabled(false);
 						allFilter();
@@ -353,7 +391,7 @@ class SidebarPanel extends JScrollPane {
 					} else if (e.getSource() == showFilter) {
 						toggleEnabled(true);
 						filter();
-						
+
 					}
 					//if (!(e.getSource() == showAll)) {
 					//	Dna.mainProgram.contradictionReporter.clearTree();
@@ -396,7 +434,7 @@ class SidebarPanel extends JScrollPane {
 			{
 				updateStatementTypes();
 			}
-			 this.updateUI();
+			this.updateUI();
 		}
 
 		public void allFilter() {
@@ -405,7 +443,7 @@ class SidebarPanel extends JScrollPane {
 				if (showAll.isSelected()) {
 					sorter.setRowFilter(null);					
 				}
-				
+
 			} catch (java.util.regex.PatternSyntaxException pse) {
 				return;
 			}

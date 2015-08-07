@@ -65,9 +65,9 @@ public class ContradictionPanel extends JPanel {
 						int nodeInt = new Integer(node).intValue();
 
 						Dna.dna.gui.sidebarPanel.statementFilter.showAll.
-								setSelected(true);
+						setSelected(true);
 						Dna.dna.gui.sidebarPanel.statementFilter.
-								toggleEnabled(false);
+						toggleEnabled(false);
 						Dna.dna.gui.sidebarPanel.statementFilter.allFilter();
 
 						int viewId = Dna.dna.gui.sidebarPanel.statementTable
@@ -89,7 +89,7 @@ public class ContradictionPanel extends JPanel {
 			}
 		});
 		this.add(treeView, BorderLayout.NORTH);
-		
+
 		// add ComboBox-Filters:
 		filterComboBoxType = new JComboBox<String>();
 		filterComboBoxType.setPreferredSize(new Dimension(208, 20));
@@ -151,6 +151,8 @@ public class ContradictionPanel extends JPanel {
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		buttonPanel.add(goButton);
 		buttonPanel.add(clearButton);
+		goButton.setEnabled(false);
+		clearButton.setEnabled(false);
 
 		// add task for clear-button
 		clearButton.addActionListener( new ActionListener() {
@@ -182,11 +184,25 @@ public class ContradictionPanel extends JPanel {
 			Iterator<String> keyIterator = variables.keySet().iterator();
 			while (keyIterator.hasNext()){
 				String key = keyIterator.next();
-				filterComboBoxVar2.addItem(key);				
+				filterComboBoxVar2.addItem(key);
 				filterComboBoxVar1.addItem(key);
 			}
-			filterComboBoxVar1.setSelectedIndex(-1);
-			filterComboBoxVar2.setSelectedIndex(-1);
+			try{
+				filterComboBoxVar1.setSelectedIndex(0);
+			}
+			catch (IllegalArgumentException ex){
+				goButton.setEnabled(false);
+				clearButton.setEnabled(false);
+			}
+			try{
+				filterComboBoxVar2.setSelectedIndex(0);
+			}
+			catch (IllegalArgumentException ex){
+				goButton.setEnabled(false);
+				clearButton.setEnabled(false);
+			}
+			goButton.setEnabled(true);
+			clearButton.setEnabled(true);
 		}
 		// Get boolean variable activated:	
 		freezeOkButton();
@@ -212,7 +228,12 @@ public class ContradictionPanel extends JPanel {
 			}
 			else {
 				goButton.setEnabled(false);
+				clearButton.setEnabled(false);
 			}
+		}
+		else {
+			goButton.setEnabled(false);
+			clearButton.setEnabled(false);
 		}
 	}
 
@@ -230,7 +251,7 @@ public class ContradictionPanel extends JPanel {
 				variables.remove(variable1);
 				Iterator<String> keyIterator = variables.keySet().iterator();
 				filterComboBoxVar2.removeAllItems();
-				while (keyIterator.hasNext()){
+				while (keyIterator.hasNext()){	
 					String key = keyIterator.next();
 					filterComboBoxVar2.addItem(key);
 				}
@@ -276,7 +297,7 @@ public class ContradictionPanel extends JPanel {
 			// for j = statement IDs
 			for (int j : ids){
 				if (actors[i].equals(Dna.dna.db.getVariableStringEntryWithType(
-							j, var1, statType))) {
+						j, var1, statType))) {
 					indices.add(j);
 				}
 			}
@@ -288,12 +309,12 @@ public class ContradictionPanel extends JPanel {
 							! tabuId.contains(k) && 
 							Dna.dna.db.getVariableStringEntryWithType(
 									j, var2, statType)
-							.equals(Dna.dna.db.getVariableStringEntryWithType(
-									k, var2, statType)) && 
-							! Dna.dna.db.getVariableStringEntryWithType(
-									j, varBoolean, statType)
-							.equals(Dna.dna.db.getVariableStringEntryWithType(
-									k, varBoolean, statType))
+									.equals(Dna.dna.db.getVariableStringEntryWithType(
+											k, var2, statType)) && 
+											! Dna.dna.db.getVariableStringEntryWithType(
+													j, varBoolean, statType)
+													.equals(Dna.dna.db.getVariableStringEntryWithType(
+															k, varBoolean, statType))
 							) {
 						DefaultMutableTreeNode category = new DefaultMutableTreeNode(
 								Dna.dna.db.getVariableStringEntryWithType(
