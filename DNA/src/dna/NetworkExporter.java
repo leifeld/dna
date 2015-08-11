@@ -5,6 +5,7 @@ import javax.swing.ImageIcon;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import java.util.stream.Stream;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -32,6 +34,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerDateModel;
 import javax.swing.SpinnerNumberModel;
@@ -77,7 +80,9 @@ public class NetworkExporter extends JDialog {
 	HashMap<String, int[]> excludeValIndices = new HashMap<String, int[]>();
 	String aggregationRule; // [across date range, per document, per calendar year, per time window]
 	String exportFormat; // [.csv, .dl, .graphml]
-	
+	String normalization; //[coocurrence,average,jaccard,cosine] "Coocurrence (no normalization)", "Divide by average activity", "Jaccard similarity", and "Cosine similarity"
+	String duplicates; //[ignore, count]
+	String nodes; //[current, all] 
 	// GUI components
 	JPanel cards;
 	CardLayout cl;
@@ -87,6 +92,7 @@ public class NetworkExporter extends JDialog {
 	JRadioButton oneModeButton, twoModeButton, eventListButton;
 	JRadioButton csvFormatButton, dlFormatButton, graphmlFormatButton;
 	JRadioButton ignoreButton, congruenceButton, conflictButton, subtractButton, separateButton;
+	JRadioButton coocurrenceButton,averageButton,jaccardButton,cosineButton,currentNodesButton,allNodesButton,countDuplicatesButton,ignoreDuplicatesButton;
 	ButtonGroup agreeButtonGroup;
 	JRadioButton allAggButton, docAggButton, windowAggButton, yearAggButton;
 	JList<String> var1List, var2List, var3List, excludeVarList, excludeValList;
@@ -112,8 +118,8 @@ public class NetworkExporter extends JDialog {
 		loadCard3();
 		loadCard4();
 		loadCard5();
-		// TODO: other options: duplicates; normalization
 		loadCard6();
+		loadCard7();
 				
 		// buttons
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -140,6 +146,11 @@ public class NetworkExporter extends JDialog {
 		
 		back.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if ((currentCard == 7)&&(networkType.equals("twoMode")||networkType.equals("eventList")))
+				{
+					cl.previous(cards);
+					currentCard = currentCard - 1;
+				}
 				updateCards();
 				cl.previous(cards);
 				currentCard = currentCard - 1;
@@ -148,7 +159,7 @@ public class NetworkExporter extends JDialog {
 				} else {
 					back.setEnabled(false);
 				}
-				if (currentCard == 6) {
+				if (currentCard == 7) {
 					next.setEnabled(false);
 				} else {
 					next.setEnabled(true);
@@ -158,6 +169,11 @@ public class NetworkExporter extends JDialog {
 		
 		next.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if ((currentCard == 5)&&(networkType.equals("twoMode")||networkType.equals("eventList")))
+				{
+					cl.next(cards);
+					currentCard = currentCard + 1;
+				}
 				updateCards();
 				cl.next(cards);
 				currentCard = currentCard + 1;
@@ -166,7 +182,8 @@ public class NetworkExporter extends JDialog {
 				} else {
 					back.setEnabled(false);
 				}
-				if (currentCard == 6) {
+				
+				if (currentCard == 7) {
 					next.setEnabled(false);
 				} else {
 					next.setEnabled(true);
@@ -266,6 +283,7 @@ public class NetworkExporter extends JDialog {
 		}
 		
 		// card 4
+		excludeVarList.setCellRenderer( new CustomCellRenderer( var1, var2,qualifier));
 		updateExcludeList();
 		if (excludeValIndices.size() == 0) {
 			excludeValList.clearSelection();
@@ -281,7 +299,7 @@ public class NetworkExporter extends JDialog {
 		windowAggButton.setEnabled(false);
 		yearAggButton.setEnabled(false);
 		
-		// card 6
+		// card 7
 		if (networkType.equals("eventList")) {
 			dlFormatButton.setEnabled(false);
 			graphmlFormatButton.setEnabled(false);
@@ -367,7 +385,7 @@ public class NetworkExporter extends JDialog {
 		twoModeButton.addActionListener(modeAL);
 		eventListButton.addActionListener(modeAL);
 		TitledBorder scopeBorder;
-		scopeBorder = BorderFactory.createTitledBorder("1 / 6");
+		scopeBorder = BorderFactory.createTitledBorder("1 / 7");
 		scopePanel.setBorder(scopeBorder);
 		cards.add(scopePanel, "statementType");
 	}
@@ -430,7 +448,7 @@ public class NetworkExporter extends JDialog {
 		var2List.setModel(getVariablesList(false, true, false, false));
 		
 		TitledBorder variablesBorder;
-		variablesBorder = BorderFactory.createTitledBorder("2 / 6");
+		variablesBorder = BorderFactory.createTitledBorder("2 / 7");
 		variablesPanel.setBorder(variablesBorder);
 		cards.add(variablesPanel, "variables");
 		
@@ -533,7 +551,7 @@ public class NetworkExporter extends JDialog {
 		agreementPattern = "ignore"; // set default value
 		
 		TitledBorder variablesBorder;
-		variablesBorder = BorderFactory.createTitledBorder("3 / 6");
+		variablesBorder = BorderFactory.createTitledBorder("3 / 7");
 		panel.setBorder(variablesBorder);
 		cards.add(panel, "agreement");
 		
@@ -590,17 +608,17 @@ public class NetworkExporter extends JDialog {
 		excludegbc.gridy = 0;
 		excludegbc.fill = GridBagConstraints.NONE;
 		excludegbc.gridwidth = 3;
-		excludegbc.insets = new Insets(0, 0, 0, 0);
+		excludegbc.insets = new Insets(0, 30, 0, 0);
 		excludegbc.anchor = GridBagConstraints.WEST;
 		JLabel agreeQuestion = new JLabel("Select values you want to exclude. This will ignore all");
 		JLabel agreeQuestion2 = new JLabel("statements matching your selection during export.");
 		excludePanel.add(agreeQuestion, excludegbc);
 		excludegbc.gridy = 1;
-		excludegbc.insets = new Insets(0, 0, 10, 0);
+		excludegbc.insets = new Insets(0, 30, 10, 0);
 		excludePanel.add(agreeQuestion2, excludegbc);
 		excludegbc.gridwidth = 1;
 		excludegbc.gridy = 2;
-		excludegbc.insets = new Insets(0, 0, 0, 10);
+		excludegbc.insets = new Insets(0, 30, 0, 10);
 		excludegbc.fill = GridBagConstraints.VERTICAL;
 		JLabel agreeVarLabel = new JLabel("variable");
 		excludePanel.add(agreeVarLabel, excludegbc);
@@ -608,6 +626,8 @@ public class NetworkExporter extends JDialog {
 		excludegbc.gridheight = 4;
 		excludeVarList = new JList<String>();
 		excludeVarList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		excludeVarList.setCellRenderer( new CustomCellRenderer( var1, var2,qualifier));
+
 		excludeVarList.setLayoutOrientation(JList.VERTICAL);
 		excludeVarList.setVisibleRowCount(4);
 		excludeVarList.setFixedCellWidth(180);
@@ -630,7 +650,7 @@ public class NetworkExporter extends JDialog {
 		excludePanel.add(excludeValScroller, excludegbc);
 		
 		TitledBorder excludeBorder;
-		excludeBorder = BorderFactory.createTitledBorder("4 / 6");
+		excludeBorder = BorderFactory.createTitledBorder("4 / 7");
 		excludePanel.setBorder(excludeBorder);
 		cards.add(excludePanel, "exclude");
 		
@@ -740,13 +760,6 @@ public class NetworkExporter extends JDialog {
 		return listData;
 	}
 	
-	//TODO Elena: define interface to change colour in a jList
-	/*
-	private void setListColour(JList jList)
-	{
-		 Object elements[][] = {
-			        {row, nt.getAgreeVar() }};	        
-	}*/
 	
 	private void loadCard5() {
 		// card 5: date range and aggregation
@@ -846,7 +859,7 @@ public class NetworkExporter extends JDialog {
 		windowDays.setEnabled(false);
 		datePanel.add(windowDays, dategbc);
 		TitledBorder dateBorder;
-		dateBorder = BorderFactory.createTitledBorder("5 / 6");
+		dateBorder = BorderFactory.createTitledBorder("5 / 7");
 		datePanel.setBorder(dateBorder);
 		startDate = (Date)startSpinner.getValue(); // set default values
 		stopDate = (Date)stopSpinner.getValue();
@@ -855,7 +868,151 @@ public class NetworkExporter extends JDialog {
 	}
 
 	private void loadCard6() {
-		// card 6: output format and file
+		// card 6: other options: duplicates; normalization
+		JPanel panel = new JPanel(new GridBagLayout());
+		panel.setName("card6");
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.anchor = GridBagConstraints.WEST;
+		gbc.insets = new Insets(0, 10, 0, 0);
+		JLabel normalizationLabel = new JLabel("Normalization:");
+		panel.add(normalizationLabel, gbc);
+		gbc.gridx = 0;
+		gbc.gridy = 1;
+		
+		JPanel normalizationPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints normgbc = new GridBagConstraints();
+		normgbc.gridx = 0;
+		normgbc.gridy = 0;
+		normgbc.anchor = GridBagConstraints.WEST;
+		normgbc.insets = new Insets(0, 0, 0, 0);
+		coocurrenceButton = new JRadioButton("Co-ocurrence");
+		averageButton = new JRadioButton("Divide by average activity");
+		jaccardButton = new JRadioButton("Jaccard similarity");
+		cosineButton = new JRadioButton("Cosine similarity");
+		ButtonGroup normButtonGroup = new ButtonGroup();
+		normButtonGroup.add(coocurrenceButton);
+		normButtonGroup.add(averageButton);
+		normButtonGroup.add(jaccardButton);
+		normButtonGroup.add(cosineButton);
+		normalizationPanel.add(coocurrenceButton, normgbc);
+		normgbc.gridy = 1;
+		normalizationPanel.add(averageButton, normgbc);
+		normgbc.gridx = 1;
+		normgbc.gridy = 0;
+		normgbc.insets = new Insets(0, 20, 0, 0);
+		normalizationPanel.add(jaccardButton, normgbc);
+		normgbc.gridy = 1;
+		normalizationPanel.add(cosineButton, normgbc);
+		gbc.gridheight = 1;
+		gbc.insets = new Insets(0, 20, 10, 0);
+		panel.add(normalizationPanel, gbc);
+		gbc.gridx = 0;
+		gbc.gridy = 2;
+		
+		JLabel isolatesLabel = new JLabel("Isolates:");
+		gbc.insets = new Insets(0, 10, 0, 0);
+		panel.add(isolatesLabel, gbc);
+		
+		gbc.gridx = 0;		
+		gbc.gridy = 3;
+		
+		JPanel isolatePanel = new JPanel(new GridBagLayout());
+		GridBagConstraints isolatesgbc = new GridBagConstraints();
+		isolatesgbc.gridx = 0;
+		isolatesgbc.gridy = 0;
+		isolatesgbc.anchor = GridBagConstraints.WEST;
+		isolatesgbc.insets = new Insets(0, 0, 1, 0);
+		currentNodesButton = new JRadioButton("Only include nodes of current time steps");
+		allNodesButton = new JRadioButton("Include all nodes across time steps");
+		ButtonGroup isolButtonGroup = new ButtonGroup();
+		isolButtonGroup.add(currentNodesButton);
+		isolButtonGroup.add(allNodesButton);
+		isolatePanel.add(currentNodesButton, isolatesgbc);
+		isolatesgbc.gridy = 1;
+		isolatePanel.add(allNodesButton, isolatesgbc);
+		gbc.gridheight = 1;
+		gbc.insets = new Insets(0, 20, 10, 0);
+		panel.add(isolatePanel, gbc);		
+		
+		gbc.insets = new Insets(0, 10, 0, 0);
+		agreementLabel = new JLabel("Duplicates:");
+		gbc.gridx = 0;		
+		gbc.gridy = 4;
+		panel.add(agreementLabel, gbc);
+		
+		JPanel duplicatePanel = new JPanel(new GridBagLayout());
+		GridBagConstraints duplicatesgbc = new GridBagConstraints();
+		duplicatesgbc.gridx = 0;
+		duplicatesgbc.gridy = 0;
+		duplicatesgbc.anchor = GridBagConstraints.WEST;
+		duplicatesgbc.insets = new Insets(0, 0, 1, 0);
+		countDuplicatesButton = new JRadioButton("Count duplicate statements");
+		ignoreDuplicatesButton = new JRadioButton("Ignore duplicate statements");
+		ButtonGroup duplicatesButtonGroup = new ButtonGroup();
+		duplicatesButtonGroup.add(countDuplicatesButton);
+		duplicatesButtonGroup.add(ignoreDuplicatesButton);
+		duplicatePanel.add(countDuplicatesButton, duplicatesgbc);
+		duplicatesgbc.gridx = 1;
+		duplicatePanel.add(ignoreDuplicatesButton, duplicatesgbc);
+		gbc.gridx = 0;
+		gbc.gridy = 5;
+		gbc.insets = new Insets(0, 20, 10, 0);
+		panel.add(duplicatePanel, gbc);
+		
+		
+		TitledBorder variablesBorder;
+		variablesBorder = BorderFactory.createTitledBorder("6 / 7");
+		panel.setBorder(variablesBorder);
+		cards.add(panel, "agreement");
+
+		coocurrenceButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				normalization = "coocurrence";
+			}
+		});
+		averageButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				normalization = "average";
+			}
+		});
+		jaccardButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				normalization = "jaccard";
+			}
+		});
+		cosineButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				normalization = "cosine";
+			}
+		});
+		
+		currentNodesButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				nodes = "current";
+			}
+		});
+		allNodesButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				nodes = "all";
+			}
+		});
+		
+		countDuplicatesButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				duplicates = "count";
+			}
+		});
+		ignoreDuplicatesButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				duplicates = "ignore";
+			}
+		});
+	}
+	
+	private void loadCard7() {
+		// card 7: output format and file
 		JPanel outputPanel = new JPanel(new GridBagLayout());
 		outputPanel.setName("card7");
 		GridBagConstraints outputgbc = new GridBagConstraints();
@@ -912,7 +1069,7 @@ public class NetworkExporter extends JDialog {
 		fileLabel = new JLabel("(no output file selected)");
 		outputPanel.add(fileLabel, outputgbc);
 		TitledBorder outputBorder;
-		outputBorder = BorderFactory.createTitledBorder("6 / 6");
+		outputBorder = BorderFactory.createTitledBorder("7 / 7");
 		outputPanel.setBorder(outputBorder);
 		cards.add(outputPanel, "output");
 		
@@ -2010,3 +2167,31 @@ public class NetworkExporter extends JDialog {
 		}
 	}
 }
+
+class CustomCellRenderer implements ListCellRenderer {
+	  protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
+
+	  private String var1, var2, agreement;
+	  public CustomCellRenderer( String mode1, String mode2, String agr ) {
+          super();
+          var1 = mode1;
+          var2 = mode2;
+          agreement = agr;
+      }
+	  
+	  public Component getListCellRendererComponent(JList list, Object value, int index,
+	      boolean isSelected, boolean cellHasFocus) {
+
+	    JLabel renderer = (JLabel) defaultRenderer.getListCellRendererComponent(list, value, index,
+	        isSelected, cellHasFocus);
+	    
+	    if (value.toString().equals(var1))
+	    	renderer.setForeground(new Color(220, 20, 60));
+	    else if (value.toString().equals(var2))
+	    	renderer.setForeground(new Color(65, 105, 225));
+	    else if (value.toString().equals(agreement))
+	    	renderer.setForeground(new Color(0, 201, 87));
+
+	    return renderer;
+	  }
+	}
