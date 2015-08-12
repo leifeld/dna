@@ -292,7 +292,7 @@ public class DataAccess {
 					+ "PRIMARY KEY(ID))");
 		}
                 
-                
+                //SK add
                 if (!al.contains("LINKEDSTATEMENTS")) {
                     executeStatement("CREATE TABLE IF NOT EXISTS LINKEDSTATEMENTS("
 				+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " 
@@ -385,6 +385,7 @@ public class DataAccess {
 					+ "PRIMARY KEY(ID))");
 		}
                 
+                //SK add
                 if (!al.contains("LINKEDSTATEMENTS")) {
                     executeStatement("CREATE TABLE LINKEDSTATEMENTS("
 				+ "ID INT IDENTITY(1,1) NOT NULL, " 
@@ -1281,31 +1282,74 @@ public class DataAccess {
 	 * @return ID of the newly created link.
 	 */
 	public int addLinkedStatement( int statement1, int statement2) {
+            
+            //Check if the link already exists
+            ArrayList ids = executeQueryForList("SELECT ID FROM LINKEDSTATEMENTS WHERE "
+                        + " (statement1 = " + statement1 + " AND " + " statement2 = " + statement2 + ")"
+                        + " OR "
+                        + " (statement1 = " + statement2 + " AND " + " statement2 = " + statement1 + ")");
 
-		int id = executeStatementForId("INSERT INTO LINKEDSTATEMENTS (statement1, statement2) "
+            System.out.println("ids size: " + ids.size());
+            int id = -1;
+            //do not add link if exist
+            if(ids.size()<=0)
+            {
+                id = executeStatementForId("INSERT INTO LINKEDSTATEMENTS (statement1, statement2) "
 				+ "VALUES("
 				+ statement1
 				+ ", "
 				+ statement2
 				+ ")");
+		System.out.println("id created: " + id);
+            }
 		
 		return id;
 	}
         
+        /**
+	 * @auther Shraddha
+         * Delete a link from LINKEDSTATEMENTS table.
+         * @param linkID
+	 *            statement ID for linking statements.
+	 */
+	public void removeLink( int linkID) {
+
+		executeStatement("DELETE FROM LINKEDSTATEMENTS WHERE ID = " + linkID);
+
+	}
+        
+        
+        /**
+	 * @auther Shraddha
+         * Delete links from LINKEDSTATEMENTS table containing statement of given ID.
+         * @param statementID
+	 *            statement ID for linking statements.
+	 */
+	public void removeLinksWithStatementID( int statementID) {
+
+		executeStatement("DELETE FROM LINKEDSTATEMENTS WHERE "
+                        + " statement1 = " + statementID
+                        + " OR "
+                        + " statement2 = " + statementID);
+
+	}
+        
+        
          /**
 	 * Get all LINKED STATEMENTS .
-         * 
+         * @auther Shraddha
 	 * @param statement1
 	 *            statement ID for linking statements.
 	 * @param statement2
 	 *           statement ID for linking statements.
 	 * @return ID of the newly created link.
 	 */
-	public ResultSet getAllLinkedStatements() {
+	public ArrayList<int[]> getAllLinkedStatements() {
 
             Connection connection = null;
             Statement statement = null;
 		ResultSet resultSet = null;
+                ArrayList<int[]> data = new ArrayList<>();
 		try {
 			if (dbtype.equals("sqlite")) {
 				connection = getSQLiteConnection();
@@ -1317,9 +1361,23 @@ public class DataAccess {
 				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
-			resultSet = statement.executeQuery("SELECT *  FROM LINKEDSTATEMENTS");
-			
-//			resultSet.close();
+			resultSet = statement.executeQuery("SELECT * FROM LINKEDSTATEMENTS");
+			                        
+                        if (resultSet.next()) 
+                        {
+                        int colNo = resultSet.getMetaData().getColumnCount();
+//                        System.out.println("rs.colNo  " + colNo);
+                        do {
+                             int[] row = new int[colNo];
+
+                            for (int i = 0; i < colNo; i++) {
+                                row[i] = resultSet.getInt(i + 1);                            
+                            }
+                            data.add(row);
+                        } while (resultSet.next());
+                        }
+//                         System.out.println("Data access data.size  " + data.size());
+			resultSet.close();
 			statement.close();
 			connection.close();
 		} catch (ClassNotFoundException e) {
@@ -1336,7 +1394,7 @@ public class DataAccess {
 			} catch (Exception e) {
 			}
 		}
-                return resultSet;
+                return data;
 
 	}
         
@@ -1970,6 +2028,10 @@ public class DataAccess {
 		String type = getStatementType(id);
 		executeStatement("DELETE FROM " + type + " WHERE StatementID = " + id);
 		executeStatement("DELETE FROM STATEMENTS WHERE ID = " + id);
+                
+                // Addition by Shraddha
+                // to remove links with removed statementid
+                removeLinksWithStatementID(id);
 	}
 
 	/**

@@ -18,17 +18,23 @@ import java.util.Iterator;
 
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.jdesktop.swingx.JXTaskPane;
@@ -51,6 +57,16 @@ class SidebarPanel extends JScrollPane {
 	JComboBox<String> typeComboBox1, typeComboBox2, variableComboBox1, 
 	variableComboBox2;
 	//JButton executeButton;
+	
+	  // SK added for linked statements
+    SidebarStatementContainer connectedSC;
+    JButton connectButton, clearButton, deleteButton;
+    JPanel connectedStatementPanel, viewLinkedStatementPanel;
+    JTable connectedStatementTable, linkedTable;
+    JTabbedPane linksTabPane;    
+    DefaultTableModel linkedTableModel;
+    JScrollPane  linkedTableScrollPane, viewLinkedTableScroll;
+    
 
 	public SidebarPanel() {
 		this.setPreferredSize(new Dimension(260, 440));
@@ -121,6 +137,30 @@ class SidebarPanel extends JScrollPane {
         docStatisticsTaskPane.add(docStats);
         ((Container)tpc).add(docStatisticsTaskPane);
 		 */
+		
+
+        /*
+         SK add : Panel to save details of Linked statements in database    
+         */
+        JXTaskPane saveRecordTaskPane = new JXTaskPane();
+        ImageIcon saveIcon = new ImageIcon(getClass().getResource("/icons/table_relationship.png"));
+        saveRecordTaskPane.setName("Linked Statements");
+        saveRecordTaskPane.setTitle("Linked Statements");
+        saveRecordTaskPane.setIcon(saveIcon);
+
+        createViewLinkedStatementPanel();
+        createConnectedStatementPanel();
+
+        ImageIcon ViewLinksIcon = new ImageIcon(getClass().getResource("/icons/table_link.png"));
+        ImageIcon createLinksIcon = new ImageIcon(getClass().getResource("/icons/link_add.png")); 
+        
+        linksTabPane = new JTabbedPane();
+        linksTabPane.addTab("View links", ViewLinksIcon,viewLinkedStatementPanel);
+        linksTabPane.addTab("Create link", createLinksIcon,connectedStatementPanel);
+
+        saveRecordTaskPane.add(linksTabPane);
+        saveRecordTaskPane.setCollapsed(false);
+        ((Container) tpc).add(saveRecordTaskPane);
 	}
 
 	public class StatementCellRenderer extends DefaultTableCellRenderer {
@@ -138,6 +178,35 @@ class SidebarPanel extends JScrollPane {
 			return c;
 		}
 	}
+	
+	public class LinksCellRenderer extends DefaultTableCellRenderer {
+
+        private static final long serialVersionUID = 1L;
+
+        public Component getTableCellRendererComponent(JTable table,
+                Object value, boolean isSelected, boolean hasFocus, int row,
+                int column) {
+            Component c = super.getTableCellRendererComponent(table, value,
+                    isSelected, hasFocus, row, column);
+            int modelRow = table.convertRowIndexToModel(row);
+            int modelColumn = table.convertColumnIndexToModel(column);
+            int statementID = (int) table.getModel().getValueAt(modelRow, modelColumn);
+
+            Color col = null;
+            for (SidebarStatement ss : ssc.statements) {
+                if (statementID == ss.statementId)  {
+                    col = ss.getColor();
+                }
+            }
+            if (!isSelected)
+            {
+                c.setBackground(col);
+            }
+            
+            return c;
+        }
+    }
+
 
 	private void statementPanel() {
 		ssc = new SidebarStatementContainer();
@@ -185,6 +254,239 @@ class SidebarPanel extends JScrollPane {
 			}
 		});
 	}
+
+	  /**
+     * @author Shraddha 
+     * Panel for creating Linked statements
+     */
+    private void createConnectedStatementPanel() {
+        connectedStatementTable = new JTable(ssc);
+        connectedStatementTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        linkedTableScrollPane = new JScrollPane(connectedStatementTable);
+        linkedTableScrollPane.setPreferredSize(new Dimension(200, 90));
+        connectedStatementTable.getColumnModel().getColumn(0).setPreferredWidth(30);
+//                connectedStatementTable.getColumnModel().getColumn( 1 ).setPreferredWidth( 30 );
+        connectedStatementTable.getColumnModel().getColumn(1).setPreferredWidth(170);
+
+        connectedStatementTable.getTableHeader().setReorderingAllowed(false);
+        connectedStatementTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+
+        setRowSorterEnabled(true);
+
+        StatementCellRenderer statementCellRenderer = new StatementCellRenderer();
+        connectedStatementTable.getColumnModel().getColumn(0).setCellRenderer(
+                statementCellRenderer);
+
+        // add two buttons
+        Icon tickIcon = new ImageIcon(getClass().getResource("/icons/link_go.png"));
+        Icon clearIcon = new ImageIcon(getClass().getResource(
+                "/icons/arrow_rotate_clockwise.png"));
+        connectButton = new JButton("Connect", tickIcon);
+        clearButton = new JButton("Clear", clearIcon);
+        connectButton.setEnabled(false);
+        clearButton.setEnabled(true);
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        buttonPanel.add(connectButton);
+        buttonPanel.add(clearButton);
+
+        // add task for clear-button
+        clearButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                connectedStatementTable.clearSelection();
+                connectButton.setEnabled(false);
+            }
+        });
+
+        // add task for save-links-button
+        connectButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                //save connection in DB
+                int[] selectedRows = connectedStatementTable.getSelectedRows();
+                if (selectedRows.length == 2) {
+                    int s1 = (int) connectedStatementTable.getModel().getValueAt(selectedRows[0], 0);
+                    int s2 = (int) connectedStatementTable.getModel().getValueAt(selectedRows[1], 0);
+
+//                                 System.out.println("selectecd ids: "+ s1 + " and " + s2);
+                    Dna.dna.db.addLinkedStatement(s1, s2);
+                    updateViewLinksTable();
+                } else {
+                    JOptionPane.showMessageDialog(Dna.dna.gui, "For linking, you must select exact 2 statemnts.");
+                }
+
+                connectButton.setEnabled(false);
+            }
+        });
+
+        connectedStatementPanel = new JPanel(new BorderLayout());
+        JLabel createLbl = new JLabel("Select 2 statements.");
+        connectedStatementPanel.add(createLbl, BorderLayout.NORTH);
+        connectedStatementPanel.add(linkedTableScrollPane, BorderLayout.CENTER);
+        connectedStatementPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        connectedStatementTable.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+
+                int selectedRowcount = connectedStatementTable.getSelectedRowCount();
+
+                if (selectedRowcount > 1) {
+                    connectButton.setEnabled(true);
+                }
+                int row = -1;
+                row = connectedStatementTable.rowAtPoint(e.getPoint());
+                row = connectedStatementTable.convertRowIndexToModel(row);
+
+                if (row > -1) {
+                    int statementId = ssc.get(row).getStatementId();
+                    if (statementId != -1) {
+                        int docId = Dna.dna.db.getStatement(statementId).getDocumentId();
+                        int docRow = Dna.dna.gui.documentPanel.documentContainer.
+                                getRowIndexById(docId);
+                        Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
+                                setSelectionInterval(docRow, docRow);
+//						Dna.dna.gui.textPanel.selectStatement(statementId, docId);
+                        Dna.dna.gui.textPanel.highlightSelectedStatement(statementId);
+                    }
+                }
+            }
+        });
+
+    }
+
+    /**
+     * @author Shraddha Panel for creating Linked statements
+     */
+     private void createViewLinkedStatementPanel() {
+
+        viewLinkedStatementPanel = new JPanel(new BorderLayout());
+        
+        String[] tableColumnsName = {"ID", "Statement 1", "Statement 2"};
+        linkedTableModel = new DefaultTableModel(null, tableColumnsName) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;//This causes all cells to be not editable
+            }
+        };
+
+        linkedTable = new JTable();
+        linkedTable.setModel(linkedTableModel);
+        linkedTable.getColumnModel().getColumn(0).setPreferredWidth(40);
+        linkedTable.setVisible(true);
+        linkedTable.updateUI();
+        
+        linkedTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) 
+            {
+                int selectedRowcount = linkedTable.getSelectedRowCount();
+//                        System.out.println("selectecd rows: "+ selectedRowcount);
+                if (selectedRowcount > 0) {
+                    deleteButton.setEnabled(true);
+                }
+                int selectedrow = linkedTable.getSelectedRow();
+                int selectedCol = linkedTable.getSelectedColumn();
+                if (selectedCol <= 0) {
+                    selectedCol = 1;
+
+                }
+
+                int statement1Id = (int) linkedTable.getModel().getValueAt(selectedrow, selectedCol);
+                if (statement1Id != -1) {
+                    int docId = Dna.dna.db.getStatement(statement1Id).getDocumentId();
+                    int docRow = Dna.dna.gui.documentPanel.documentContainer.
+                            getRowIndexById(docId);
+                    Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
+                            setSelectionInterval(docRow, docRow);
+//						Dna.dna.gui.textPanel.selectStatement(statementId, docId);
+                    Dna.dna.gui.textPanel.highlightSelectedStatement(statement1Id);
+                }
+            }
+
+        });
+
+        // add two buttons
+        Icon tickIcon = new ImageIcon(getClass().getResource("/icons/link_delete.png"));
+        Icon clearIcon = new ImageIcon(getClass().getResource(
+                "/icons/arrow_rotate_clockwise.png"));
+        deleteButton = new JButton("Delete", tickIcon);
+        clearButton = new JButton("Clear", clearIcon);
+        deleteButton.setEnabled(false);
+        clearButton.setEnabled(true);
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(clearButton);
+
+        // add task for clear-button
+        clearButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                linkedTable.clearSelection();
+                deleteButton.setEnabled(false);
+            }
+        });
+
+        // add task for delete-links-button
+        deleteButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                //delete connection in DB
+                
+                int question = JOptionPane.showConfirmDialog(Dna.dna.gui, 
+						"Are you sure you want to remove selected links?", 
+						"Remove?", JOptionPane.YES_NO_OPTION);
+				if (question == 0) {
+					int[] selectedRows = linkedTable.getSelectedRows();
+                                        for (int id : selectedRows) {
+                                            int linkID = (int) linkedTable.getModel().getValueAt(id, 0);
+                                            Dna.dna.db.removeLink(linkID);
+                        //                    System.out.println("selectecd rows: " + id + " and id: " + linkID);
+                                            updateViewLinksTable();
+                                        }
+				}
+                                
+                
+                linkedTable.clearSelection();
+                deleteButton.setEnabled(false);
+            }
+        });
+
+        viewLinkedStatementPanel.add(buttonPanel, BorderLayout.SOUTH);
+        viewLinkedTableScroll = new JScrollPane(linkedTable);
+        viewLinkedTableScroll.setPreferredSize(new Dimension(200, 90));
+        viewLinkedTableScroll.setVisible(true);
+        viewLinkedStatementPanel.add(viewLinkedTableScroll, BorderLayout.CENTER);
+        viewLinkedStatementPanel.revalidate();
+        viewLinkedStatementPanel.repaint();
+    }
+
+    public void updateViewLinksTable() {
+        linkedTableModel.setRowCount(0);
+        ArrayList<int[]> data = new ArrayList<>();
+        Integer[][] tableData = null;
+        if (Dna.dna != null) {
+            data = Dna.dna.db.getAllLinkedStatements();
+            tableData = new Integer[data.size()][3];
+//            System.out.println("rs. size " + data.size());
+            for (int i = 0; i < data.size(); i++) {
+
+                for (int j = 0; j < 3; j++) {
+                    tableData[i][j] = data.get(i)[j];
+                }
+                linkedTableModel.addRow(tableData[i]);
+                linkedTableModel.fireTableStructureChanged();
+            }
+        }
+        LinksCellRenderer linkedCellRenderer = new LinksCellRenderer();
+        linkedTable.getColumnModel().getColumn(1).setCellRenderer(linkedCellRenderer);
+        linkedTable.getColumnModel().getColumn(2).setCellRenderer(linkedCellRenderer);
+
+        linkedTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        linkedTable.setRowSelectionAllowed(true);
+        linkedTable.setColumnSelectionAllowed(false);
+        linkedTable.setCellSelectionEnabled(true);
+        linkedTable.revalidate();
+        linkedTable.repaint();
+
+    }
 
 	//called on click of filter radio button to update statement types
 	public void updateStatementTypes() {

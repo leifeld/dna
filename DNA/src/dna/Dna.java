@@ -244,6 +244,7 @@ public class Dna {
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateRegexManagerPanel();
+		Dna.dna.gui.sidebarPanel.updateViewLinksTable();
 	}
 
 	public void openMySQL(String url, String userName, String password) {

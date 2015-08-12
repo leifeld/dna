@@ -254,6 +254,7 @@ class TextPanel extends JPanel {
 		}
 	}
 	
+	
 	/**
 	 * Set text in the editor pane, select statement, and open popup window
 	 * 
@@ -298,5 +299,19 @@ class TextPanel extends JPanel {
 				new Popup(p, statementId, loc);
 			}
 		});
+	}
+	
+	/**
+	 * @author Shraddha Highlight text in the editor pane, select statement
+	 * @param statementId
+	 */
+	public void highlightSelectedStatement(final int statementId) {
+		textWindow.setText(Dna.dna.db.getDocument(documentId).getText());
+		paintStatements();
+
+		int start = Dna.dna.db.getStatement(statementId).getStart();
+		int stop = Dna.dna.db.getStatement(statementId).getStop();
+		textWindow.grabFocus();
+		textWindow.select(start, stop);
 	}
 }
