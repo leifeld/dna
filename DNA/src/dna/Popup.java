@@ -151,6 +151,11 @@ public class Popup extends JDialog {
 				if (question == 0) {
 					Dna.dna.removeStatement(statementId);
 					Dna.dna.gui.textPanel.paintStatements();
+					
+
+                    // update links table after removal of statements
+                    Dna.dna.gui.sidebarPanel.updateViewLinksTable();
+                    
 					dispose();
 				}
 			}
