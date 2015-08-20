@@ -237,6 +237,7 @@ public class NetworkExporter extends JDialog {
 			var2Label.setText("second model (columns)");
 			agreeButtonGroup.clearSelection();
 		}
+		
 		var1List.setModel(getVariablesList(false, true, false, false));
 		var2List.setModel(getVariablesList(false, true, false, false));
 		var1List.setSelectedIndex(var1modeIndex);
@@ -446,6 +447,8 @@ public class NetworkExporter extends JDialog {
 
 		var1List.setModel(getVariablesList(false, true, false, false));
 		var2List.setModel(getVariablesList(false, true, false, false));
+		var1List.clearSelection();
+		var2List.clearSelection();
 		
 		TitledBorder variablesBorder;
 		variablesBorder = BorderFactory.createTitledBorder("2 / 7");
@@ -459,7 +462,21 @@ public class NetworkExporter extends JDialog {
 				if (selectedValue != null) {
 					var1 = selectedValue;
 					var1modeIndex = selectedIndex;
+					
 				}
+				if (networkType.equalsIgnoreCase("twoMode")){
+					var1List.setModel(getVariablesList(false, true, false, false));
+							
+					DefaultListModel<String> model = getVariablesList(false, true, false, false);
+					model.removeElement(var1);
+					var2List.setModel(model);
+				}
+				if (selectedValue != null) {
+					var1 = selectedValue;
+					var1modeIndex = selectedIndex;
+					
+				}
+					
 			}
 		});
 		
@@ -467,6 +484,18 @@ public class NetworkExporter extends JDialog {
 			public void valueChanged(ListSelectionEvent e) {
 				String selectedValue = var2List.getSelectedValue();
 				int selectedIndex = var2List.getSelectedIndex();
+				if (selectedValue != null) {
+					var2 = selectedValue;
+					var2modeIndex = selectedIndex;
+				}
+				
+				if (networkType.equalsIgnoreCase("twoMode")){
+					var2List.setModel(getVariablesList(false, true, false, false));
+							
+					DefaultListModel<String> model = getVariablesList(false, true, false, false);
+					model.removeElement(var2);
+					var1List.setModel(model);
+				}
 				if (selectedValue != null) {
 					var2 = selectedValue;
 					var2modeIndex = selectedIndex;
@@ -2189,8 +2218,10 @@ class CustomCellRenderer implements ListCellRenderer {
 	    	renderer.setForeground(new Color(220, 20, 60));
 	    else if (value.toString().equals(var2))
 	    	renderer.setForeground(new Color(65, 105, 225));
-	    else if (value.toString().equals(agreement))
+	    else if (value.toString().equals(agreement)){
 	    	renderer.setForeground(new Color(0, 201, 87));
+	    }
+	    
 
 	    return renderer;
 	  }
