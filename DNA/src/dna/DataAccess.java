@@ -1005,6 +1005,26 @@ public class DataAccess {
 		return entries;
 	}
 
+	
+	/* Method added by shraddha*/
+	/**
+	 * Retrieve count of distinct variable entries of type int
+	 * from a statement table.
+	 * 
+	 * @param key
+	 *            The name of the variable to be retrieved.
+	 * @param statementType
+	 *            The type of statement (= the name of the table).
+	 * @return integer value- count of entries.
+	 */
+	public int getVariableEntriesCount(String key, String statementType)
+	{
+		int count = executeQueryForInt("select count (distinct(" + key + ")) FROM " + statementType);				
+		return count;
+	}
+	
+	
+	
 	/**
 	 * Insert a statement type into the STATEMENTTYPE table.
 	 * 

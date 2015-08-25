@@ -31,14 +31,19 @@ import org.jdesktop.swingx.JXCollapsiblePane;
 @SuppressWarnings("serial")
 class TextPanel extends JPanel {
 	
-	private JTextPane textWindow;
+	JTextPane textWindow;
 	JScrollPane textScrollPane;
 	private DefaultStyledDocument doc;
 	StyleContext sc;
 	JPopupMenu popmen;
 	JMenuItem menu1;
 	int documentId;
-		
+	
+	SearchWindow searchWindow ;
+	JXCollapsiblePane collapsiblePane;
+	
+	ArrayList<StatementType> statementTypes ;
+	
 	public void setDocumentId(int documentId) {
 		this.documentId = documentId;
 	}
@@ -105,10 +110,14 @@ class TextPanel extends JPanel {
 				JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		//textWindow.setEnabled(false);
 		
-		JXCollapsiblePane collapsiblePane = new JXCollapsiblePane(); 
+		collapsiblePane = new JXCollapsiblePane(); 
 		collapsiblePane.setName("Central Text Panel");
 		this.add(textScrollPane, BorderLayout.CENTER);
 		this.add(collapsiblePane, BorderLayout.SOUTH);
+		collapsiblePane.setCollapsed(true);
+		searchWindow = new SearchWindow();
+		collapsiblePane.add(searchWindow, "Full-text search");
+
 		
 		//MouseListener for text window; one method for Windows and one for Unix
 		textWindow.addMouseListener( new MouseAdapter() {
@@ -191,12 +200,15 @@ class TextPanel extends JPanel {
 		}
 	}
 	
-	public void popupMenu(Component comp, int x, int y) {
+	public void popupMenu(Component comp, int x, int y)
+	{
 		popmen = new JPopupMenu();
-		ArrayList<StatementType> st = Dna.dna.db.getStatementTypes();
-		for (int i = 0; i < st.size(); i++) {
-			String type = st.get(i).getLabel();
-			Color col = st.get(i).getColor();
+		// changed by SK
+		statementTypes = Dna.dna.db.getStatementTypes();
+		
+		for (int i = 0; i < statementTypes.size(); i++) {
+			String type = statementTypes.get(i).getLabel();
+			Color col = statementTypes.get(i).getColor();
                     menu1 = new JMenuItem( "Format as " + type);
                     menu1.setOpaque(true);
                     menu1.setBackground(col);

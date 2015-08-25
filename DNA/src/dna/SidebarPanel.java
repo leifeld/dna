@@ -67,6 +67,8 @@ class SidebarPanel extends JScrollPane {
     DefaultTableModel linkedTableModel;
     JScrollPane  linkedTableScrollPane, viewLinkedTableScroll;
     
+    DocStats docStats; //SK
+    
 
 	public SidebarPanel() {
 		this.setPreferredSize(new Dimension(260, 440));
@@ -125,42 +127,37 @@ class SidebarPanel extends JScrollPane {
 		highlighterTaskPane.setCollapsed(true);
 		((Container)tpc).add(highlighterTaskPane);
 		highlighterTaskPane.add(rm);
-
-		/*
-        JXTaskPane docStatisticsTaskPane = new JXTaskPane();
-        DocStats docStats = new DocStats();
-        ImageIcon docStatisticsIcon = new ImageIcon(getClass().getResource("/icons/chart_bar.png"));
-        docStatisticsTaskPane.setName("Document summary statistics");
-        docStatisticsTaskPane.setTitle("Document summary statistics");
-        docStatisticsTaskPane.setIcon(docStatisticsIcon);
-        docStatisticsTaskPane.setCollapsed(true);
-        docStatisticsTaskPane.add(docStats);
-        ((Container)tpc).add(docStatisticsTaskPane);
-		 */
 		
-
-        /*
-         SK add : Panel to save details of Linked statements in database    
-         */
+		/*
+        SK add : Panel to save details of Linked statements in database    
+        */      
         JXTaskPane saveRecordTaskPane = new JXTaskPane();
         ImageIcon saveIcon = new ImageIcon(getClass().getResource("/icons/table_relationship.png"));
         saveRecordTaskPane.setName("Linked Statements");
         saveRecordTaskPane.setTitle("Linked Statements");
         saveRecordTaskPane.setIcon(saveIcon);
-
         createViewLinkedStatementPanel();
         createConnectedStatementPanel();
-
         ImageIcon ViewLinksIcon = new ImageIcon(getClass().getResource("/icons/table_link.png"));
-        ImageIcon createLinksIcon = new ImageIcon(getClass().getResource("/icons/link_add.png")); 
-        
+        ImageIcon createLinksIcon = new ImageIcon(getClass().getResource("/icons/link_add.png"));         
         linksTabPane = new JTabbedPane();
         linksTabPane.addTab("View links", ViewLinksIcon,viewLinkedStatementPanel);
         linksTabPane.addTab("Create link", createLinksIcon,connectedStatementPanel);
-
         saveRecordTaskPane.add(linksTabPane);
-        saveRecordTaskPane.setCollapsed(false);
+        saveRecordTaskPane.setCollapsed(true);
         ((Container) tpc).add(saveRecordTaskPane);
+        
+        
+        JXTaskPane docStatisticsTaskPane = new JXTaskPane();
+        docStats = new DocStats();
+        ImageIcon docStatisticsIcon = new ImageIcon(getClass().getResource("/icons/chart_bar.png"));
+        docStatisticsTaskPane.setName("Document summary statistics");
+        docStatisticsTaskPane.setTitle("Document summary statistics");
+        docStatisticsTaskPane.setIcon(docStatisticsIcon);
+        docStatisticsTaskPane.setCollapsed(false);
+        docStatisticsTaskPane.add(docStats);
+        ((Container)tpc).add(docStatisticsTaskPane);
+        
 	}
 
 	public class StatementCellRenderer extends DefaultTableCellRenderer {

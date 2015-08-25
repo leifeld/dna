@@ -245,6 +245,8 @@ public class Dna {
 		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateRegexManagerPanel();
 		Dna.dna.gui.sidebarPanel.updateViewLinksTable();
+		Dna.dna.gui.sidebarPanel.docStats.updateStatistics();
+		Dna.dna.gui.menuBar.updateTeggleAction();
 	}
 
 	public void openMySQL(String url, String userName, String password) {
@@ -271,6 +273,9 @@ public class Dna {
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateRegexManagerPanel();
+		Dna.dna.gui.sidebarPanel.updateViewLinksTable();
+		Dna.dna.gui.sidebarPanel.docStats.updateStatistics();
+		Dna.dna.gui.menuBar.updateTeggleAction();
 	}
 
 	public void openMSSQL(String url, String dbname, String userName, 
@@ -298,6 +303,9 @@ public class Dna {
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateRegexManagerPanel();
+		Dna.dna.gui.sidebarPanel.updateViewLinksTable();
+		Dna.dna.gui.sidebarPanel.docStats.updateStatistics();
+		Dna.dna.gui.menuBar.updateTeggleAction();
 	}
 
 	public void closeFile() {
@@ -316,6 +324,10 @@ public class Dna {
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(false);
 		Dna.dna.gui.sidebarPanel.rm.clear();
+		Dna.dna.gui.sidebarPanel.linkedTableModel.setRowCount(0);
+		Dna.dna.gui.sidebarPanel.docStats.clear();
+		Dna.dna.gui.textPanel.collapsiblePane.setCollapsed(true);
+		Dna.dna.gui.menuBar.toggleBottomButton.setEnabled(false);
 	}
 
 	public void newFile(String filename) {
@@ -330,5 +342,8 @@ public class Dna {
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
 		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
+		Dna.dna.gui.sidebarPanel.updateViewLinksTable();
+		Dna.dna.gui.sidebarPanel.docStats.updateStatistics();
+		Dna.dna.gui.menuBar.updateTeggleAction();
 	}
 }

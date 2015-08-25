@@ -10,6 +10,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
 
 import javax.swing.ButtonGroup;
 import javax.swing.Icon;
@@ -35,6 +36,8 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
+import org.jdesktop.swingx.JXCollapsiblePane;
+
 public class Gui extends JFrame {
 
 	/**
@@ -47,7 +50,7 @@ public class Gui extends JFrame {
 	TextPanel textPanel;
 	SidebarPanel sidebarPanel;
 	MenuBar menuBar;
-
+	
 	public Gui() {
 		c = getContentPane();
 		this.setTitle("Discourse Network Analyzer");
@@ -65,7 +68,7 @@ public class Gui extends JFrame {
 
 		documentPanel = new DocumentPanel();
 		textPanel = new TextPanel();
-
+				
 		JPanel codingPanel = new JPanel(new BorderLayout());
 		JSplitPane codingSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, 
 				documentPanel, textPanel);
@@ -196,9 +199,9 @@ public class Gui extends JFrame {
 		JMenu fileMenu, documentMenu, exportMenu, settingsMenu;
 		JMenuItem closeFile, newDocumentButton, importHTMLButton,  
 		typeEditorButton,changeDocumentButton, removeDocumentButton, 
-		importOldButton, networkButton, aboutButton, 
+		importOldButton, networkButton, aboutButton, toggleBottomButton,
 		recodeVariableButton;
-
+		
 		public MenuBar() {
 			fileMenu = new JMenu("File");
 			this.add(fileMenu);
@@ -466,6 +469,13 @@ public class Gui extends JFrame {
 			});
 			typeEditorButton.setEnabled(false);
 
+			//Settings menu: toggle search bar
+			Icon bottomBarIcon = new ImageIcon(getClass().getResource("/icons/find.png"));
+			toggleBottomButton = new JMenuItem("Toggle Search Window (show/hide)", bottomBarIcon); 
+			settingsMenu.add(toggleBottomButton);
+			toggleBottomButton.setEnabled(false);
+			
+			
 			//Settings menu: about DNA
 			Icon aboutIcon = new ImageIcon(getClass().getResource(
 					"/icons/dna16.png"));
@@ -478,6 +488,13 @@ public class Gui extends JFrame {
 				}
 			});
 			typeEditorButton.setEnabled(false);
+			
+		}
+		
+		void updateTeggleAction()
+		{
+			toggleBottomButton.setEnabled(true);
+			toggleBottomButton.addActionListener(Dna.dna.gui.textPanel.collapsiblePane.getActionMap().get(JXCollapsiblePane.TOGGLE_ACTION));
 
 		}
 	}
