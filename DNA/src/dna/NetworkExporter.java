@@ -23,8 +23,10 @@ import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
+import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -103,6 +105,7 @@ public class NetworkExporter extends JDialog {
 	int var1modeIndex = 0, var2modeIndex = 0, var3modeIndex = 0;
 	int currentCard = 1;
 	JPanel variablesPanel;
+	String previousValue1, previousValue2;
 	
 	public NetworkExporter() {
 		this.setTitle("Export data");
@@ -188,6 +191,7 @@ public class NetworkExporter extends JDialog {
 				} else {
 					next.setEnabled(true);
 				}
+				System.out.println(var1 + var2);
 			}
 		});
 		
@@ -238,10 +242,24 @@ public class NetworkExporter extends JDialog {
 			agreeButtonGroup.clearSelection();
 		}
 		
-		var1List.setModel(getVariablesList(false, true, false, false));
-		var2List.setModel(getVariablesList(false, true, false, false));
+		if (!networkType.equals("twoMode"))
+		{
+			var1List.setModel(getVariablesList(false, true, false, false));
+			var2List.setModel(getVariablesList(false, true, false, false));
+		}
+		if (networkType.equals("twoMode"))
+		{		
+			String var1list = var1List.getSelectedValue();
+			String var2list = var2List.getSelectedValue();
+			if ((var1list!=null)&&(var2list!=null)&&(var1list.equals(var2list)))
+			{
+				DefaultListModel model = (DefaultListModel)var2List.getModel();		
+				model.removeElement(var1list);
+			}
+		}
 		var1List.setSelectedIndex(var1modeIndex);
 		var2List.setSelectedIndex(var2modeIndex);
+
 		if (networkType.equals("eventList")) {
 			variablesPanel.setEnabled(false);
 			var1List.setEnabled(false);
@@ -430,6 +448,7 @@ public class NetworkExporter extends JDialog {
 		var2List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		var2List.setSelectionForeground(column);
 		var2List.setLayoutOrientation(JList.VERTICAL);
+		
 		var2List.setVisibleRowCount(4);
 		var2List.setFixedCellWidth(180);
 
@@ -447,9 +466,6 @@ public class NetworkExporter extends JDialog {
 
 		var1List.setModel(getVariablesList(false, true, false, false));
 		var2List.setModel(getVariablesList(false, true, false, false));
-		var1List.clearSelection();
-		var2List.clearSelection();
-		
 		TitledBorder variablesBorder;
 		variablesBorder = BorderFactory.createTitledBorder("2 / 7");
 		variablesPanel.setBorder(variablesBorder);
@@ -461,22 +477,15 @@ public class NetworkExporter extends JDialog {
 				int selectedIndex = var1List.getSelectedIndex();
 				if (selectedValue != null) {
 					var1 = selectedValue;
-					var1modeIndex = selectedIndex;
-					
+					var1modeIndex = selectedIndex;					
 				}
 				if (networkType.equalsIgnoreCase("twoMode")){
-					var1List.setModel(getVariablesList(false, true, false, false));
-							
-					DefaultListModel<String> model = getVariablesList(false, true, false, false);
-					model.removeElement(var1);
-					var2List.setModel(model);
-				}
-				if (selectedValue != null) {
-					var1 = selectedValue;
-					var1modeIndex = selectedIndex;
-					
-				}
-					
+					DefaultListModel model = (DefaultListModel)var2List.getModel();		
+					if ((previousValue1!=null)&&(!model.contains(previousValue1)))
+						model.addElement(previousValue1);
+					model.removeElement(var1);					
+					previousValue1=selectedValue;
+				}	
 			}
 		});
 		
@@ -487,18 +496,14 @@ public class NetworkExporter extends JDialog {
 				if (selectedValue != null) {
 					var2 = selectedValue;
 					var2modeIndex = selectedIndex;
-				}
-				
-				if (networkType.equalsIgnoreCase("twoMode")){
-					var2List.setModel(getVariablesList(false, true, false, false));
-							
-					DefaultListModel<String> model = getVariablesList(false, true, false, false);
-					model.removeElement(var2);
-					var1List.setModel(model);
-				}
-				if (selectedValue != null) {
-					var2 = selectedValue;
-					var2modeIndex = selectedIndex;
+
+					if ((networkType.equalsIgnoreCase("twoMode"))){
+						DefaultListModel model = (DefaultListModel)var1List.getModel();	
+						if ((previousValue2!=null)&&(!model.contains(previousValue2)))
+							model.addElement(previousValue2);
+						model.removeElement(var2);
+						previousValue2=selectedValue;	
+					}	
 				}
 			}
 		});
@@ -2197,6 +2202,8 @@ public class NetworkExporter extends JDialog {
 	}
 }
 
+//Elena: Implement ListRenderer to change the colour of specific elements in JList
+
 class CustomCellRenderer implements ListCellRenderer {
 	  protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
 
@@ -2214,15 +2221,22 @@ class CustomCellRenderer implements ListCellRenderer {
 	    JLabel renderer = (JLabel) defaultRenderer.getListCellRendererComponent(list, value, index,
 	        isSelected, cellHasFocus);
 	    
-	    if (value.toString().equals(var1))
+	    if (value.toString().equals(var1)){
 	    	renderer.setForeground(new Color(220, 20, 60));
+	    }
 	    else if (value.toString().equals(var2))
 	    	renderer.setForeground(new Color(65, 105, 225));
 	    else if (value.toString().equals(agreement)){
 	    	renderer.setForeground(new Color(0, 201, 87));
 	    }
 	    
+	    
 
 	    return renderer;
 	  }
+	  
+	  
 	}
+
+
+
