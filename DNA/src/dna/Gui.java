@@ -78,6 +78,10 @@ public class Gui extends JFrame {
 		codingPanel.add(statusBar, BorderLayout.SOUTH);
 
 		sidebarPanel = new SidebarPanel();
+		
+//		JScrollPane sidebarScroll = new JScrollPane(sidebarPanel);
+//		sidebarScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+//		sidebarScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
 		JPanel statementSplitPane = new JPanel(new BorderLayout());
 		statementSplitPane.add(codingSplitPane, BorderLayout.CENTER);
@@ -161,6 +165,9 @@ public class Gui extends JFrame {
 							setEnabled(false);
 							Dna.dna.gui.menuBar.removeDocumentButton.
 							setEnabled(false);
+							//SK
+							Dna.dna.gui.sidebarPanel.editDocPanel.createEditDocumentPanel();
+							
 						} else {
 							int id = documentPanel.documentContainer.get(selectedRow).getId() ;
 							//SK Doc_ID and selected row index differs hence search by doc_id in documents list
@@ -175,6 +182,10 @@ public class Gui extends JFrame {
 							setEnabled(true);
 							Dna.dna.gui.menuBar.removeDocumentButton.
 							setEnabled(true);
+							
+							//SK
+							Dna.dna.gui.sidebarPanel.editDocPanel
+							.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
 						}
 						if (Dna.dna.gui.sidebarPanel.statementFilter.
 								showCurrent.isSelected()) {
@@ -470,7 +481,7 @@ public class Gui extends JFrame {
 			typeEditorButton.setEnabled(false);
 
 			//Settings menu: toggle search bar
-			Icon bottomBarIcon = new ImageIcon(getClass().getResource("/icons/find.png"));
+			Icon bottomBarIcon = new ImageIcon(getClass().getResource("/icons/application_form_magnify.png"));
 			toggleBottomButton = new JMenuItem("Toggle Search Window (show/hide)", bottomBarIcon); 
 			settingsMenu.add(toggleBottomButton);
 			toggleBottomButton.setEnabled(false);

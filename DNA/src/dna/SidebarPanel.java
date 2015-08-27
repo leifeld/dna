@@ -68,7 +68,7 @@ class SidebarPanel extends JScrollPane {
     JScrollPane  linkedTableScrollPane, viewLinkedTableScroll;
     
     DocStats docStats; //SK
-    
+    EditDocumentPanel editDocPanel;
 
 	public SidebarPanel() {
 		this.setPreferredSize(new Dimension(260, 440));
@@ -133,8 +133,8 @@ class SidebarPanel extends JScrollPane {
         */      
         JXTaskPane saveRecordTaskPane = new JXTaskPane();
         ImageIcon saveIcon = new ImageIcon(getClass().getResource("/icons/table_relationship.png"));
-        saveRecordTaskPane.setName("Linked Statements");
-        saveRecordTaskPane.setTitle("Linked Statements");
+        saveRecordTaskPane.setName("Linked statements");
+        saveRecordTaskPane.setTitle("Linked statements");
         saveRecordTaskPane.setIcon(saveIcon);
         createViewLinkedStatementPanel();
         createConnectedStatementPanel();
@@ -148,6 +148,16 @@ class SidebarPanel extends JScrollPane {
         ((Container) tpc).add(saveRecordTaskPane);
         
         
+        JXTaskPane docDetailsTaskPane = new JXTaskPane();
+        editDocPanel = new EditDocumentPanel();
+        ImageIcon docDetailsIcon = new ImageIcon(getClass().getResource("/icons/table_edit.png"));
+        docDetailsTaskPane.setName("Edit document details");
+        docDetailsTaskPane.setTitle("Edit document details");
+        docDetailsTaskPane.setIcon(docDetailsIcon);
+        docDetailsTaskPane.setCollapsed(true);
+        docDetailsTaskPane.add(editDocPanel);
+        ((Container)tpc).add(docDetailsTaskPane);
+        
         JXTaskPane docStatisticsTaskPane = new JXTaskPane();
         docStats = new DocStats();
         ImageIcon docStatisticsIcon = new ImageIcon(getClass().getResource("/icons/chart_bar.png"));
@@ -157,6 +167,7 @@ class SidebarPanel extends JScrollPane {
         docStatisticsTaskPane.setCollapsed(false);
         docStatisticsTaskPane.add(docStats);
         ((Container)tpc).add(docStatisticsTaskPane);
+        
         
 	}
 
@@ -351,7 +362,8 @@ class SidebarPanel extends JScrollPane {
     }
 
     /**
-     * @author Shraddha Panel for creating Linked statements
+     * @author Shraddha 
+     * Panel for creating Linked statements
      */
      private void createViewLinkedStatementPanel() {
 
