@@ -1309,7 +1309,7 @@ public class DataAccess {
                         + " OR "
                         + " (statement1 = " + statement2 + " AND " + " statement2 = " + statement1 + ")");
 
-            System.out.println("ids size: " + ids.size());
+            //System.out.println("ids size: " + ids.size());
             int id = -1;
             //do not add link if exist
             if(ids.size()<=0)
@@ -1320,7 +1320,7 @@ public class DataAccess {
 				+ ", "
 				+ statement2
 				+ ")");
-		System.out.println("id created: " + id);
+		//System.out.println("id created: " + id);
             }
 		
 		return id;

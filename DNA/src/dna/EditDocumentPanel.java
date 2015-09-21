@@ -8,6 +8,8 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -17,6 +19,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
@@ -37,8 +40,8 @@ public class EditDocumentPanel extends JPanel {
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	Dimension fieldSize = new Dimension(150, 25);
-	Dimension lableSize = new Dimension(50, 15);
+	Dimension fieldSize = new Dimension(120, 25);
+	Dimension lableSize = new Dimension(70, 15);
 
 	JXTextField titleField;
 	JXTextArea notesArea;
@@ -60,7 +63,7 @@ public class EditDocumentPanel extends JPanel {
 	 Document document;
 	EditDocumentPanel()
 	{
-		createEditDocumentPanel();
+		createEditDocumentPanel();		
 	}
 	
 	public void createEditDocumentPanel()
@@ -70,8 +73,9 @@ public class EditDocumentPanel extends JPanel {
 		 selectDoc.setEnabled(false);
 		 this.add(selectDoc);
 	}
+	
 	public void createEditDocumentPanel(Document doc)
-	{
+	{	
 		this.document = doc;
 		this.removeAll();
 		this.setLayout(new BoxLayout(this,BoxLayout.Y_AXIS));
@@ -220,37 +224,11 @@ public class EditDocumentPanel extends JPanel {
 		saveButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
-				String title = titleField.getText();
-				title = title.replaceAll("'", "''");
-				Date date = (Date)dateSpinner.getValue();
-				String coder = (String) coderBox.getModel().getSelectedItem();
-				coder = coder.replaceAll("'", "''");
-				String source = (String) sourceBox.getModel().getSelectedItem();
-				source = source.replaceAll("'", "''");
-				String section = (String) sectionBox.getModel().getSelectedItem();
-				section = section.replaceAll("'", "''");
-				String notes = notesArea.getText();
-				notes = notes.replaceAll("'", "''");
-				String type = (String) typeBox.getModel().getSelectedItem();
-				type = type.replaceAll("'", "''");
-
-				Dna.dna.db.changeDocument(document.id, title, date, coder, 
-						source, section, notes, type);
-				Dna.dna.gui.documentPanel.documentContainer.changeDocument(
-						document.id, title, date, coder, source, section, notes, 
-						type);
-				Dna.dna.gui.documentPanel.documentContainer.sort();
-				int newRow = Dna.dna.gui.documentPanel.documentContainer.
-						getRowIndexById(document.id);
-				Dna.dna.gui.documentPanel.documentTable.updateUI();
-				Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
-						setSelectionInterval(newRow, newRow);
-				
-				createEditDocumentPanel(document);
-				revalidate();
-				
+				saveDetails();
 			}
 		});
+		
+		
 		
 		this.add(buttonPanel);	
 		this.setEnabled(true);
@@ -294,7 +272,38 @@ public class EditDocumentPanel extends JPanel {
 	}
 	
 	
-	
+	void saveDetails()
+	{
+		String title = titleField.getText();
+		title = title.replaceAll("'", "''");
+		Date date = (Date)dateSpinner.getValue();
+		String coder = (String) coderBox.getModel().getSelectedItem();
+		coder = coder.replaceAll("'", "''");
+		String source = (String) sourceBox.getModel().getSelectedItem();
+		source = source.replaceAll("'", "''");
+		String section = (String) sectionBox.getModel().getSelectedItem();
+		section = section.replaceAll("'", "''");
+		String notes = notesArea.getText();
+		notes = notes.replaceAll("'", "''");
+		String type = (String) typeBox.getModel().getSelectedItem();
+		type = type.replaceAll("'", "''");
+
+		Dna.dna.db.changeDocument(document.id, title, date, coder, 
+				source, section, notes, type);
+		Dna.dna.gui.documentPanel.documentContainer.changeDocument(
+				document.id, title, date, coder, source, section, notes, 
+				type);
+		Dna.dna.gui.documentPanel.documentContainer.sort();
+		int newRow = Dna.dna.gui.documentPanel.documentContainer.
+				getRowIndexById(document.id);
+		Dna.dna.gui.documentPanel.documentTable.updateUI();
+		Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
+				setSelectionInterval(newRow, newRow);
+		
+		createEditDocumentPanel(document);
+		revalidate();
+
+	}
 	
 	
 }

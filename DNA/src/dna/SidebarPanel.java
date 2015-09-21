@@ -8,6 +8,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
@@ -141,18 +143,19 @@ class SidebarPanel extends JScrollPane {
         ImageIcon ViewLinksIcon = new ImageIcon(getClass().getResource("/icons/table_link.png"));
         ImageIcon createLinksIcon = new ImageIcon(getClass().getResource("/icons/link_add.png"));         
         linksTabPane = new JTabbedPane();
-        linksTabPane.addTab("View links", ViewLinksIcon,viewLinkedStatementPanel);
-        linksTabPane.addTab("Create link", createLinksIcon,connectedStatementPanel);
+        linksTabPane.addTab("View", ViewLinksIcon,viewLinkedStatementPanel);
+        linksTabPane.addTab("Create", createLinksIcon,connectedStatementPanel);
         saveRecordTaskPane.add(linksTabPane);
         saveRecordTaskPane.setCollapsed(true);
         ((Container) tpc).add(saveRecordTaskPane);
         
-        
+        // Panel to change document details
         JXTaskPane docDetailsTaskPane = new JXTaskPane();
         editDocPanel = new EditDocumentPanel();
         ImageIcon docDetailsIcon = new ImageIcon(getClass().getResource("/icons/table_edit.png"));
         docDetailsTaskPane.setName("Edit document details");
         docDetailsTaskPane.setTitle("Edit document details");
+
         docDetailsTaskPane.setIcon(docDetailsIcon);
         docDetailsTaskPane.setCollapsed(true);
         docDetailsTaskPane.add(editDocPanel);
@@ -164,7 +167,7 @@ class SidebarPanel extends JScrollPane {
         docStatisticsTaskPane.setName("Document summary statistics");
         docStatisticsTaskPane.setTitle("Document summary statistics");
         docStatisticsTaskPane.setIcon(docStatisticsIcon);
-        docStatisticsTaskPane.setCollapsed(false);
+        docStatisticsTaskPane.setCollapsed(true);
         docStatisticsTaskPane.add(docStats);
         ((Container)tpc).add(docStatisticsTaskPane);
         
@@ -317,8 +320,13 @@ class SidebarPanel extends JScrollPane {
 
 //                                 System.out.println("selectecd ids: "+ s1 + " and " + s2);
                     Dna.dna.db.addLinkedStatement(s1, s2);
+                    
                     updateViewLinksTable();
-                } else {
+                    connectedStatementTable.clearSelection();
+                    connectButton.setEnabled(false);
+                    
+                } 
+                else {
                     JOptionPane.showMessageDialog(Dna.dna.gui, "For linking, you must select exact 2 statemnts.");
                 }
 
@@ -327,8 +335,8 @@ class SidebarPanel extends JScrollPane {
         });
 
         connectedStatementPanel = new JPanel(new BorderLayout());
-        JLabel createLbl = new JLabel("Select 2 statements.");
-        connectedStatementPanel.add(createLbl, BorderLayout.NORTH);
+//        JLabel createLbl = new JLabel("Select 2 statements.");
+//        connectedStatementPanel.add(createLbl, BorderLayout.NORTH);
         connectedStatementPanel.add(linkedTableScrollPane, BorderLayout.CENTER);
         connectedStatementPanel.add(buttonPanel, BorderLayout.SOUTH);
 
@@ -337,8 +345,12 @@ class SidebarPanel extends JScrollPane {
 
                 int selectedRowcount = connectedStatementTable.getSelectedRowCount();
 
-                if (selectedRowcount > 1) {
+                if (selectedRowcount == 2) {
                     connectButton.setEnabled(true);
+                }
+                else
+                {
+                	connectButton.setEnabled(false);
                 }
                 int row = -1;
                 row = connectedStatementTable.rowAtPoint(e.getPoint());

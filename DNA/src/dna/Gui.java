@@ -51,6 +51,8 @@ public class Gui extends JFrame {
 	SidebarPanel sidebarPanel;
 	MenuBar menuBar;
 	
+	int previousDocID = -1;
+	
 	public Gui() {
 		c = getContentPane();
 		this.setTitle("Discourse Network Analyzer");
@@ -160,6 +162,7 @@ public class Gui extends JFrame {
 						}
 						int selectedRow = getSelectedRow();
 						if (selectedRow == -1) {
+							previousDocID = -1;
 							textPanel.setDocumentText("");
 							Dna.dna.gui.menuBar.changeDocumentButton.
 							setEnabled(false);
@@ -168,9 +171,11 @@ public class Gui extends JFrame {
 							//SK
 							Dna.dna.gui.sidebarPanel.editDocPanel.createEditDocumentPanel();
 							
-						} else {
+						} else 
+						{							
 							int id = documentPanel.documentContainer.get(selectedRow).getId() ;
 							//SK Doc_ID and selected row index differs hence search by doc_id in documents list
+							previousDocID = id;
 							Document document = documentContainer.getDocumentByID(id) ; 
 							//Dna.dna.db.getDocument(id); // No DB connection. get Document from retrieved data
 							
@@ -184,8 +189,7 @@ public class Gui extends JFrame {
 							setEnabled(true);
 							
 							//SK
-							Dna.dna.gui.sidebarPanel.editDocPanel
-							.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
+							Dna.dna.gui.sidebarPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
 						}
 						if (Dna.dna.gui.sidebarPanel.statementFilter.
 								showCurrent.isSelected()) {
