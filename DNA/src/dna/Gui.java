@@ -10,7 +10,6 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.ArrayList;
 
 import javax.swing.ButtonGroup;
 import javax.swing.Icon;
@@ -52,7 +51,7 @@ public class Gui extends JFrame {
 	MenuBar menuBar;
 	
 	int previousDocID = -1;
-	
+
 	public Gui() {
 		c = getContentPane();
 		this.setTitle("Discourse Network Analyzer");
