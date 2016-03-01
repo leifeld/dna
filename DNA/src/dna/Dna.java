@@ -229,7 +229,6 @@ public class Dna {
 			ArrayList<SidebarStatement> statements = Dna.dna.db.
 					getStatementsPerDocumentId(documentId);
 			for (int j = 0; j < statements.size(); j++) {
-				//
 				SidebarStatement s = statements.get(j);
 				Dna.dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
 			}
@@ -239,6 +238,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(true);
 		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
+		Dna.dna.gui.menuBar.importDnaButton.setEnabled(true);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
@@ -268,6 +268,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(true);
 		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
+		Dna.dna.gui.menuBar.importDnaButton.setEnabled(true);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
@@ -277,7 +278,8 @@ public class Dna {
 		Dna.dna.gui.sidebarPanel.docStats.updateStatistics();
 		Dna.dna.gui.menuBar.updateTeggleAction();
 	}
-
+	
+	/*
 	public void openMSSQL(String url, String dbname, String userName, 
 			String password) {
 		Dna.dna.db.openMSSQL(url, dbname, userName, password);
@@ -298,6 +300,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(true);
 		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
+		Dna.dna.gui.menuBar.importDnaButton.setEnabled(true);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
@@ -307,7 +310,8 @@ public class Dna {
 		Dna.dna.gui.sidebarPanel.docStats.updateStatistics();
 		Dna.dna.gui.menuBar.updateTeggleAction();
 	}
-
+	*/
+	
 	public void closeFile() {
 		Dna.dna.db.closeFile();
 		Dna.dna.gui.statusBar.resetLabel();
@@ -319,6 +323,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(false);
 		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(false);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(false);
+		Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();
@@ -338,6 +343,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(true);
 		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(true);
 		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
+		Dna.dna.gui.menuBar.importDnaButton.setEnabled(true);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.sidebarPanel.updateStatementTypes();

@@ -38,7 +38,7 @@ public class DataAccess {
 	 * Create a new DataAccess object, which manages database access.
 	 * 
 	 * @param dbtype
-	 *            Can be "sqlite", "mysql" or "mssql".
+	 *            Can be "sqlite" or "mysql".
 	 * @param dbfile
 	 *            File name or URL of the database.
 	 */
@@ -51,7 +51,7 @@ public class DataAccess {
 	 * Create a new DataAccess object, which manages database access.
 	 * 
 	 * @param dbtype
-	 *            Can be "sqlite", "mysql" or "mssql".
+	 *            Can be "sqlite" or "mysql".
 	 * @param dbfile
 	 *            File name or URL of the database.
 	 * @param login
@@ -71,7 +71,7 @@ public class DataAccess {
 	 * Create a new DataAccess object, which manages database access.
 	 * 
 	 * @param dbtype
-	 *            Can be "sqlite", "mysql" or "mssql".
+	 *            Can be "sqlite" or "mysql".
 	 * @param dbfile
 	 *            File name or URL of the database.
 	 * @param login
@@ -117,7 +117,7 @@ public class DataAccess {
 				login, password);
 		return conn;
 	}
-
+	
 	/**
 	 * Establish the connection to an MSSQL database on a server.
 	 * 
@@ -125,6 +125,7 @@ public class DataAccess {
 	 * @throws ClassNotFoundException
 	 * @throws SQLException
 	 */
+	/*
 	Connection getMSSQLConnection() throws ClassNotFoundException, SQLException {
 		this.dbtype = "mssql";
 		Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
@@ -139,6 +140,7 @@ public class DataAccess {
 		}
 		return conn;
 	}
+	*/
 
 	/**
 	 * Forget the name of the current .dna file for data access.
@@ -169,49 +171,97 @@ public class DataAccess {
 		}
 
 		executeStatement("CREATE TABLE IF NOT EXISTS SETTINGS("
-				+ "Property TEXT PRIMARY KEY, " + "Value TEXT)");
+				+ "Property TEXT PRIMARY KEY, " 
+				+ "Value TEXT)");
 
 		executeStatement("CREATE TABLE IF NOT EXISTS DOCUMENTS("
-				+ "ID INTEGER NOT NULL PRIMARY KEY, " + "Title TEXT, "
-				+ "Text TEXT, " + "Date INTEGER, " + "Coder TEXT, "
-				+ "Source TEXT, " + "Section TEXT, " + "Notes TEXT, "
-				+ "Type TEXT)");
+				+ "ID INTEGER NOT NULL PRIMARY KEY, " 
+				+ "Title TEXT, "
+				+ "Text TEXT, " 
+				+ "Date INTEGER, " 
+				+ "Coder INTEGER, "
+				+ "Source TEXT, " 
+				+ "Section TEXT, " 
+				+ "Notes TEXT, "
+				+ "Type TEXT, "
+				+ "FOREIGN KEY(Coder) REFERENCES CODER(ID))");
 
 		executeStatement("CREATE TABLE IF NOT EXISTS REGEX("
-				+ "Label TEXT PRIMARY KEY, " + "Red INTEGER, "
-				+ "Green INTEGER, " + "Blue INTEGER)");
+				+ "Label TEXT PRIMARY KEY, " 
+				+ "Red INTEGER, "
+				+ "Green INTEGER, " 
+				+ "Blue INTEGER)");
 
 		executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTTYPE("
-				+ "Label TEXT PRIMARY KEY, " + "Red INTEGER, "
-				+ "Green INTEGER, " + "Blue INTEGER)");
+				+ "Label TEXT PRIMARY KEY, " 
+				+ "Red INTEGER, "
+				+ "Green INTEGER, " 
+				+ "Blue INTEGER)");
 
 		executeStatement("CREATE TABLE IF NOT EXISTS VARIABLES("
-				+ "ID INTEGER NOT NULL PRIMARY KEY, " + "Variable TEXT, "
-				+ "DataType TEXT, " + "StatementType TEXT, "
+				+ "ID INTEGER NOT NULL PRIMARY KEY, " 
+				+ "Variable TEXT, "
+				+ "DataType TEXT, " 
+				+ "StatementType TEXT, "
 				+ "FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label))");
 
+		executeStatement("CREATE TABLE IF NOT EXISTS CODER("
+				+ "ID INTEGER NOT NULL PRIMARY KEY, " 
+				+ "Name TEXT, "
+				+ "Red INTEGER, "
+				+ "Green INTEGER, "
+				+ "Blue INTEGER, "
+				+ "Password TEXT, "
+				+ "EditOtherDocuments INTEGER, "
+				+ "EditOtherStatements INTEGER, "
+				+ "ViewOtherDocuments INTEGER, "
+				+ "ViewOtherStatements INTEGER, "
+				+ "EditStatementTypes INTEGER, "
+				+ "EditRegex INTEGER, "
+				+ "AddDocuments INTEGER, "
+				+ "AddStatements INTEGER, "
+				+ "EditCoders INTEGER)");
+
+		executeStatement("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
+				+ "ID INTEGER NOT NULL PRIMARY KEY, " 
+				+ "Coder INTEGER, "
+				+ "OtherCoder INTEGER, "
+				+ "Type TEXT, "
+				+ "Permission INTEGER, "
+				+ "FOREIGN KEY(Coder) REFERENCES CODER(ID), "
+				+ "FOREIGN KEY(OtherCoder) REFERENCES CODER(ID))");
+
 		executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTS("
-				+ "ID INTEGER NOT NULL PRIMARY KEY, " + "Type TEXT, "
-				+ "Document INTEGER, " + "Start INTEGER, " + "Stop INTEGER, "
+				+ "ID INTEGER NOT NULL PRIMARY KEY, " 
+				+ "Type TEXT, "
+				+ "Document INTEGER, " 
+				+ "Start INTEGER, " 
+				+ "Stop INTEGER, "
+				+ "Coder INTEGER, "
 				+ "FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), "
+				+ "FOREIGN KEY(Coder) REFERENCES CODER(ID), "
 				+ "FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID))");
+		
 		// LB.Add:
 		executeStatement("CREATE TABLE IF NOT EXISTS VARIABLEENTRYLIST("
-				+ "ID INTEGER NOT NULL PRIMARY KEY, " + "Label TEXT,"
-				+ "StatementType TEXT," + "VariableName TEXT,"
+				+ "ID INTEGER NOT NULL PRIMARY KEY, " 
+				+ "Label TEXT,"
+				+ "StatementType TEXT," 
+				+ "VariableName TEXT,"
 				+ "FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label),"
 				+ "FOREIGN KEY(VariableName) REFERENCES VARIABLE(Variable))");
-                //SK Add
-                executeStatement("CREATE TABLE IF NOT EXISTS LINKEDSTATEMENTS("
-				+ "ID INTEGER PRIMARY KEY NOT NULL, " 
-				+ "statement1 INTEGER NOT NULL, " + "statement2 INTEGER NOT NULL, "
-                                + "FOREIGN KEY(statement1) REFERENCES STATEMENTS(ID),"
-                                + "FOREIGN KEY(statement2) REFERENCES STATEMENTS(ID))");
+		
+        //SK Add
+        executeStatement("CREATE TABLE IF NOT EXISTS LINKEDSTATEMENTS("
+        		+ "ID INTEGER PRIMARY KEY NOT NULL, " 
+				+ "statement1 INTEGER NOT NULL, " 
+        		+ "statement2 INTEGER NOT NULL, "
+                + "FOREIGN KEY(statement1) REFERENCES STATEMENTS(ID),"
+                + "FOREIGN KEY(statement2) REFERENCES STATEMENTS(ID))");
                 
 		if (create == true) {
 			createDefaultTypes();
-			executeStatement("INSERT INTO SETTINGS (Property, Value) "
-					+ "VALUES('version', '" + Dna.dna.version + "')");
+			executeStatement("INSERT INTO SETTINGS (Property, Value) VALUES('version', '" + Dna.dna.version + "')");
 		}
 	}
 
@@ -237,39 +287,51 @@ public class DataAccess {
 		al = executeQueryForList("SHOW TABLES");
 		if (!al.contains("SETTINGS")) {
 			executeStatement("CREATE TABLE IF NOT EXISTS SETTINGS("
-					+ "Property VARCHAR(200), " + "Value VARCHAR(200),"
+					+ "Property VARCHAR(200), " 
+					+ "Value VARCHAR(200),"
 					+ "PRIMARY KEY (Property))");
 		}
 		if (!al.contains("DOCUMENTS")) {
 			executeStatement("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Title VARCHAR(200), " + "Text MEDIUMTEXT, "
-					+ "Date BIGINT, " + "Coder VARCHAR(200), "
-					+ "Source VARCHAR(200), " + "Section VARCHAR(200), "
-					+ "Notes TEXT, " + "Type VARCHAR(200), "
+					+ "Title VARCHAR(200), " 
+					+ "Text MEDIUMTEXT, "
+					+ "Date BIGINT, " 
+					+ "Coder SMALLINT UNSIGNED NOT NULL, "
+					+ "Source VARCHAR(200), " 
+					+ "Section VARCHAR(200), "
+					+ "Notes TEXT, " 
+					+ "Type VARCHAR(200), "
+					+ "FOREIGN KEY(Coder) REFERENCES CODER(ID), " 
 					+ "PRIMARY KEY(ID))");
 		}
 		if (!al.contains("REGEX")) {
 			executeStatement("CREATE TABLE IF NOT EXISTS REGEX("
-					+ "Label VARCHAR(200), " + "Red SMALLINT UNSIGNED, "
-					+ "Green SMALLINT UNSIGNED, " + "Blue SMALLINT UNSIGNED, "
+					+ "Label VARCHAR(200), " 
+					+ "Red SMALLINT UNSIGNED, "
+					+ "Green SMALLINT UNSIGNED, " 
+					+ "Blue SMALLINT UNSIGNED, "
 					+ "PRIMARY KEY(Label))");
 		}
 		if (!al.contains("STATEMENTTYPE")) {
 			executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTTYPE("
-					+ "Label VARCHAR(200), " + "Red SMALLINT UNSIGNED, "
-					+ "Green SMALLINT UNSIGNED, " + "Blue SMALLINT UNSIGNED, "
+					+ "Label VARCHAR(200), " 
+					+ "Red SMALLINT UNSIGNED, "
+					+ "Green SMALLINT UNSIGNED, " 
+					+ "Blue SMALLINT UNSIGNED, "
 					+ "PRIMARY KEY(Label))");
 			create = true;
 		}
 		if (!al.contains("VARIABLES")) {
 			executeStatement("CREATE TABLE IF NOT EXISTS VARIABLES("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Variable VARCHAR(200), " + "DataType VARCHAR(200), "
+					+ "Variable VARCHAR(200), " 
+					+ "DataType VARCHAR(200), "
 					+ "StatementType VARCHAR(200), "
-					+ "FOREIGN KEY(StatementType) REFERENCES "
-					+ "STATEMENTTYPE(Label), " + "PRIMARY KEY(ID))");
+					+ "FOREIGN KEY(StatementType) REFERENCES STATEMENTTYPE(Label), " 
+					+ "PRIMARY KEY(ID))");
 		}
+		
 		// LB.Add
 		if (!al.contains("VARIABLEENTRYLIST")) {
 			executeStatement("CREATE TABLE IF NOT EXISTS VARIABLEENTRYLIST("
@@ -281,26 +343,57 @@ public class DataAccess {
 					+ "FOREIGN KEY(VariableName) REFERENCES VARIABLES(Variable) "
 					+ "PRIMARY KEY(ID))");
 		}
+
+		executeStatement("CREATE TABLE IF NOT EXISTS CODER("
+				+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " 
+				+ "Name VARCHAR(200), "
+				+ "Red SMALLINT UNSIGNED, "
+				+ "Green SMALLINT UNSIGNED, "
+				+ "Blue SMALLINT UNSIGNED, "
+				+ "Password VARCHAR(50), "
+				+ "EditOtherDocuments SMALLINT UNSIGNED, "
+				+ "EditOtherStatements SMALLINT UNSIGNED, "
+				+ "ViewOtherDocuments SMALLINT UNSIGNED, "
+				+ "ViewOtherStatements SMALLINT UNSIGNED, "
+				+ "EditStatementTypes SMALLINT UNSIGNED, "
+				+ "EditRegex SMALLINT UNSIGNED, "
+				+ "AddDocuments SMALLINT UNSIGNED, "
+				+ "AddStatements SMALLINT UNSIGNED, "
+				+ "EditCoders SMALLINT UNSIGNED, "
+				+ "PRIMARY KEY(ID))");
+
+		executeStatement("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
+				+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " 
+				+ "Coder SMALLINT UNSIGNED NOT NULL, "
+				+ "OtherCoder SMALLINT UNSIGNED NOT NULL, "
+				+ "Type VARCHAR(50), "
+				+ "Permission SMALLINT UNSIGNED, "
+				+ "FOREIGN KEY(Coder) REFERENCES CODER(ID), "
+				+ "FOREIGN KEY(OtherCoder) REFERENCES CODER(ID))"
+				+ "PRIMARY KEY(ID))");
+		
 		if (!al.contains("STATEMENTS")) {
 			executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTS("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "Type VARCHAR(200), "
 					+ "Document MEDIUMINT UNSIGNED NOT NULL, "
-					+ "Start BIGINT UNSIGNED, " + "Stop BIGINT UNSIGNED, "
+					+ "Start BIGINT UNSIGNED, " 
+					+ "Stop BIGINT UNSIGNED, "
+					+ "Coder SMALLINT UNSIGNED NOT NULL, "
 					+ "FOREIGN KEY(Type) REFERENCES STATEMENTTYPE(Label), "
 					+ "FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), "
+					+ "FOREIGN KEY(Coder) REFERENCES CODER(ID), " 
 					+ "PRIMARY KEY(ID))");
 		}
-                
-                //SK add
-                if (!al.contains("LINKEDSTATEMENTS")) {
-                    executeStatement("CREATE TABLE IF NOT EXISTS LINKEDSTATEMENTS("
-				+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " 
-				+ "statement1 MEDIUMINT, " + "statement2 MEDIUMINT, "
-                                + "FOREIGN KEY(statement1) REFERENCES STATEMENTS(ID),"
-                                + "FOREIGN KEY(statement2) REFERENCES STATEMENTS(ID))");
-                }
-                
+        
+        //SK add
+	    if (!al.contains("LINKEDSTATEMENTS")) {
+	        executeStatement("CREATE TABLE IF NOT EXISTS LINKEDSTATEMENTS("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " 
+					+ "statement1 MEDIUMINT, " + "statement2 MEDIUMINT, "
+	                + "FOREIGN KEY(statement1) REFERENCES STATEMENTS(ID),"
+	                + "FOREIGN KEY(statement2) REFERENCES STATEMENTS(ID))");
+	    }
 
 		if (create == true) {
 			createDefaultTypes();
@@ -319,6 +412,7 @@ public class DataAccess {
 	 * @param password
 	 *            Password for the database.
 	 */
+	/*
 	public void openMSSQL(String url, String dbname, String userName,
 			String password) {
 		this.dbfile = url;
@@ -400,7 +494,8 @@ public class DataAccess {
 					+ "VALUES('version', '" + Dna.dna.version + "')");
 		}
 	}
-
+	*/
+	
 	/**
 	 * Create the default statement types in a new database file.
 	 */
@@ -454,8 +549,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -496,8 +591,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -508,8 +603,8 @@ public class DataAccess {
 						.executeQuery("SELECT last_insert_rowid()");
 			} else if (dbtype.equals("mysql")) {
 				resultSet = statement.executeQuery("SELECT LAST_INSERT_ID()");
-			} else if (dbtype.equals("mssql")) {
-				resultSet = statement.executeQuery("SELECT SCOPE_IDENTITY();");
+			//} else if (dbtype.equals("mssql")) {
+			//	resultSet = statement.executeQuery("SELECT SCOPE_IDENTITY();");
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -560,8 +655,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -611,8 +706,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -662,8 +757,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -787,8 +882,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -863,8 +958,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -917,8 +1012,7 @@ public class DataAccess {
 	 * @return Vector of int entries.
 	 */
 	public int[] getVariableIntEntries(String key, String statementType) {
-		ArrayList<?> al = executeQueryForList("SELECT DISTINCT " + key
-				+ " FROM " + statementType);
+		ArrayList<?> al = executeQueryForList("SELECT DISTINCT " + key + " FROM " + statementType);
 		int[] entries = new int[al.size()];
 		for (int i = 0; i < al.size(); i++) {
 			entries[i] = (Integer) al.get(i);
@@ -937,8 +1031,7 @@ public class DataAccess {
 	 * @return Vector of int entries.
 	 */
 	public int[] getAllVariableIntEntries(String key, String statementType) {
-		ArrayList<?> al = executeQueryForList("SELECT " + key
-				+ " FROM " + statementType);
+		ArrayList<?> al = executeQueryForList("SELECT " + key + " FROM " + statementType);
 		int[] entries = new int[al.size()];
 		for (int i = 0; i < al.size(); i++) {
 			entries[i] = (Integer) al.get(i);
@@ -1017,13 +1110,10 @@ public class DataAccess {
 	 *            The type of statement (= the name of the table).
 	 * @return integer value- count of entries.
 	 */
-	public int getVariableEntriesCount(String key, String statementType)
-	{
+	public int getVariableEntriesCount(String key, String statementType) {
 		int count = executeQueryForInt("select count (distinct(" + key + ")) FROM " + statementType);				
 		return count;
 	}
-	
-	
 	
 	/**
 	 * Insert a statement type into the STATEMENTTYPE table.
@@ -1049,15 +1139,14 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
 
-			statement
-					.execute("INSERT INTO STATEMENTTYPE (Label, Red, Green, Blue) "
+			statement.execute("INSERT INTO STATEMENTTYPE (Label, Red, Green, Blue) "
 							+ "VALUES('"
 							+ label
 							+ "', "
@@ -1074,10 +1163,10 @@ public class DataAccess {
 				tabString = "CREATE TABLE IF NOT EXISTS " + label + "("
 						+ "StatementID MEDIUMINT UNSIGNED NOT NULL, "
 						+ "PRIMARY KEY(StatementID)";
-			} else if (dbtype.equals("mssql")) {
-				tabString = "CREATE TABLE " + label + "("
-						+ "StatementID INT NOT NULL, "
-						+ "PRIMARY KEY(StatementID)";
+			//} else if (dbtype.equals("mssql")) {
+			//	tabString = "CREATE TABLE " + label + "("
+			//			+ "StatementID INT NOT NULL, "
+			//			+ "PRIMARY KEY(StatementID)";
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -1111,7 +1200,7 @@ public class DataAccess {
 					} else {
 						type = "SMALLINT DEFAULT 0";
 					}
-
+				/*
 				} else if (dbtype.equals("mssql")) {
 					if (value.equals("short text")) {
 						type = "NVARCHAR(200) DEFAULT ''";
@@ -1121,14 +1210,14 @@ public class DataAccess {
 					{
 						type = "SMALLINT DEFAULT -1";
 					}
-					else if( value.equals("integer")) {
+					else if ( value.equals("integer")) {
 						type = "SMALLINT DEFAULT 0";
 					} else {
 						type = "SMALLINT DEFAULT 0";
 					}
+				*/
 				} else {
-					System.err
-							.println("Type of remote database not recognized.");
+					System.err.println("Type of remote database not recognized.");
 					type = null;
 				}
 				statement.execute("INSERT INTO VARIABLES (Variable, DataType, "
@@ -1138,8 +1227,7 @@ public class DataAccess {
 				tabString = tabString + ", " + key + " " + type;
 			}
 
-			tabString = tabString
-					+ ", FOREIGN KEY(StatementID) REFERENCES STATEMENTS(ID))";
+			tabString = tabString + ", FOREIGN KEY(StatementID) REFERENCES STATEMENTS(ID))";
 			statement.execute(tabString);
 
 			statement.close();
@@ -1301,7 +1389,7 @@ public class DataAccess {
 	 *           statement ID for linking statements.
 	 * @return ID of the newly created link.
 	 */
-	public int addLinkedStatement( int statement1, int statement2) {
+	public int addLinkedStatement(int statement1, int statement2) {
             
             //Check if the link already exists
             ArrayList ids = executeQueryForList("SELECT ID FROM LINKEDSTATEMENTS WHERE "
@@ -1375,8 +1463,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -1570,8 +1658,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -1638,8 +1726,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -1712,8 +1800,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -1789,8 +1877,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -1846,8 +1934,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -1903,8 +1991,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -1989,8 +2077,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -2128,8 +2216,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -2234,8 +2322,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}
@@ -2295,8 +2383,8 @@ public class DataAccess {
 				connection = getSQLiteConnection();
 			} else if (dbtype.equals("mysql")) {
 				connection = getMySQLConnection();
-			} else if (dbtype.equals("mssql")) {
-				connection = getMSSQLConnection();
+			//} else if (dbtype.equals("mssql")) {
+			//	connection = getMSSQLConnection();
 			} else {
 				System.err.println("Type of remote database not recognized.");
 			}

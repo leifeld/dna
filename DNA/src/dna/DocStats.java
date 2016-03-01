@@ -13,6 +13,10 @@ import javax.swing.text.DefaultCaret;
 
 public class DocStats extends JPanel {
 	
+	/**
+	 * Document statistics side panel.
+	 */
+	private static final long serialVersionUID = 1L;
 	JTextArea tf;
 	JButton refreshButton, clearButton;
 	JScrollPane scroll;
@@ -21,8 +25,7 @@ public class DocStats extends JPanel {
 		this.setLayout(new BorderLayout());
 		
 		tf = new JTextArea(7, 12);
-		scroll = new JScrollPane (tf, 
-				   JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		scroll = new JScrollPane (tf, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		
 		DefaultCaret caret = (DefaultCaret) tf.getCaret();
 		caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
@@ -40,15 +43,11 @@ public class DocStats extends JPanel {
 		refreshButton.setEnabled(false);
 		refreshButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
-				if(Dna.dna.db != null)
-				{
+				if (Dna.dna.db != null) {
 					computeStats();
 				}
-				
 			}
 		});
-		
 		
 		this.add(scroll, BorderLayout.CENTER);
 		JPanel buttonPanel = new JPanel();
@@ -66,14 +65,10 @@ public class DocStats extends JPanel {
 				+ "Statements: " + numStatements + "\n"
 				+ "Statement Links: " + statementLinks + "\n";
 		
-		for(StatementType st: Dna.dna.db.getStatementTypes())
-		{
-			statText = statText + "\n\"" + st.label + "\" Variables: \n";
-			
-			for(String var : st.variables.keySet())
-			{
-				statText = statText + "     " + var + ": "
-							+ Dna.dna.db.getVariableEntriesCount(var, st.label)+ "\n";
+		for (StatementType st: Dna.dna.db.getStatementTypes()) {
+			statText = statText + "\n\"" + st.label + "\" Variables:\n";
+			for (String var : st.variables.keySet()) {
+				statText = statText + "     " + var + ": " + Dna.dna.db.getVariableEntriesCount(var, st.label) + "\n";
 			}
 		}
 
@@ -89,8 +84,7 @@ public class DocStats extends JPanel {
 		tf.revalidate();
 	}
 	
-	public void updateStatistics()
-	{
+	public void updateStatistics() {
 		clear();
 		refreshButton.setEnabled(true);
 		computeStats();

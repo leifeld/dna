@@ -213,8 +213,8 @@ public class Gui extends JFrame {
 		JMenu fileMenu, documentMenu, exportMenu, settingsMenu;
 		JMenuItem closeFile, newDocumentButton, importHTMLButton,  
 		typeEditorButton,changeDocumentButton, removeDocumentButton, 
-		importOldButton, networkButton, aboutButton, toggleBottomButton,
-		recodeVariableButton;
+		importDnaButton, importOldButton, networkButton, aboutButton, 
+		toggleBottomButton, recodeVariableButton;
 		
 		public MenuBar() {
 			fileMenu = new JMenu("File");
@@ -422,6 +422,41 @@ public class Gui extends JFrame {
 			});
 			removeDocumentButton.setEnabled(false);
 
+			//Document menu: import documents from another DNA database
+			Icon importDnaIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
+			importDnaButton = new JMenuItem("Import from DNA 2.xx file...", importDnaIcon);
+			importDnaButton.setToolTipText("import from DNA 2.0 file...");
+			documentMenu.add(importDnaButton);
+			importDnaButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+
+					//File filter
+					JFileChooser fc = new JFileChooser();
+					fc.setFileFilter(new FileFilter() {
+						public boolean accept(File f) {
+							return f.getName().toLowerCase().endsWith(".dna")
+									|| f.isDirectory();
+						}
+						public String getDescription() {
+							return "DNA 2.0 file (*.dna)";
+						}
+					});
+
+					int returnVal = fc.showOpenDialog(dna.Gui.this);
+					if (returnVal == JFileChooser.APPROVE_OPTION) {
+						File file = fc.getSelectedFile();
+						String dbfile;
+						if (!file.getPath().endsWith(".dna")) {
+							dbfile = file.getPath() + ".dna";
+						} else {
+							dbfile = file.getPath();
+						}
+						new ImportDnaDocuments(dbfile);
+					}
+				}
+			});
+			importDnaButton.setEnabled(false);
+
 			//Document menu: import old DNA dataset
 			Icon importOldIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
 			importOldButton = new JMenuItem("Import from old DNA 1.xx file...", importOldIcon);
@@ -518,7 +553,7 @@ public class Gui extends JFrame {
 		private static final long serialVersionUID = 1L;
 		JTextField connectionField, loginField, pwField, dbField;
 		JButton connectButton, cancelButton;
-		JRadioButton mysqlButton, mssqlButton;
+		//JRadioButton mysqlButton, mssqlButton;
 		JLabel dbLabel, connectionLabel;
 
 		public SQLConnectionDialog () {
@@ -540,7 +575,8 @@ public class Gui extends JFrame {
 
 			dbLabel = new JLabel("Database:", JLabel.TRAILING);
 			dbField = new JTextField();
-
+			
+			/*
 			JLabel typeLabel = new JLabel("DB type:", JLabel.TRAILING);
 			panel.add(typeLabel, gbc);
 			gbc.gridx++;
@@ -574,7 +610,8 @@ public class Gui extends JFrame {
 			gbc.gridx = 0;
 			gbc.gridy++;
 			gbc.gridwidth = 1;
-
+			*/
+			
 			panel.add(connectionLabel, gbc);
 			gbc.gridx++;
 			gbc.gridwidth = 3;
@@ -593,8 +630,9 @@ public class Gui extends JFrame {
 					connectButton.setEnabled(true);
 					if (connectionField.getText().equals("") || loginField.
 							getText().equals("") || pwField.getText().
-							equals("") || connectionField.getText().equals("mysql://") || 
-							(!mysqlButton.isSelected() && !mssqlButton.isSelected())) {
+							equals("") || connectionField.getText().equals("mysql://")) {
+							//equals("") || connectionField.getText().equals("mysql://") || 
+							//(!mysqlButton.isSelected() && !mssqlButton.isSelected())) {
 						connectButton.setEnabled(false);
 					}
 				}
@@ -633,7 +671,7 @@ public class Gui extends JFrame {
 			connectButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					String url = connectionField.getText();
-					if (mysqlButton.isSelected()) {
+					//if (mysqlButton.isSelected()) {
 						if (dbField.getText() != null && !dbField.equals("")) {
 							if (url.endsWith("/")) {
 								url = url + dbField.getText();
@@ -643,6 +681,7 @@ public class Gui extends JFrame {
 						}
 						Dna.dna.openMySQL(connectionField.getText(), 
 								loginField.getText(), pwField.getText());
+					/*
 					} else if (mssqlButton.isSelected()) {
 						if (dbField.getText() == null || dbField.equals("")) {
 							System.err.println("A database name must be " +
@@ -652,6 +691,7 @@ public class Gui extends JFrame {
 								dbField.getText(), loginField.getText(), 
 								pwField.getText());
 					}
+					*/
 					dispose();
 				}
 			});
