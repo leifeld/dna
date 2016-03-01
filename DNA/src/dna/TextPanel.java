@@ -1,5 +1,7 @@
 package dna;
 
+import dna.dataStructures.*;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -159,7 +161,7 @@ class TextPanel extends JPanel {
 				 initialEnd - initialStart, blackStyle, false);
 
 			//color statements
-			ArrayList<SidebarStatement> statements = 
+			ArrayList<Statement> statements = 
 					Dna.dna.db.getStatementsPerDocumentId(documentId);
 			for (int i = 0; i < statements.size(); i++) {
 				int start = statements.get(i).getStart();
@@ -250,11 +252,10 @@ class TextPanel extends JPanel {
 		} else {
 			if (Dna.dna.db.getFileName() != null) {
 				int pos = textWindow.getCaretPosition(); //click caret position
-				SidebarStatement s = 
-						Dna.dna.db.getStatementAtLocation(documentId, pos);
+				Statement s = Dna.dna.db.getStatementAtLocation(documentId, pos);
 				Point p = me.getPoint();
 				if (s != null) {
-					int statementId = s.getStatementId();
+					int statementId = s.getId();
 					int startIndex = s.getStart();
 					int stopIndex = s.getStop();
 					Point location = textWindow.getLocationOnScreen();

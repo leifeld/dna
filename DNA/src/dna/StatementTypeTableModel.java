@@ -8,9 +8,11 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
-public class StatementTypeContainer implements TableModel {
+import dna.dataStructures.Statement;
+import dna.dataStructures.StatementType;
+
+public class StatementTypeTableModel implements TableModel {
 	
-	ArrayList<StatementType> types = new ArrayList<StatementType>();
 	Vector<TableModelListener> listeners = new Vector<TableModelListener>();
 	
 	public void addTableModelListener(TableModelListener l) {
@@ -20,8 +22,8 @@ public class StatementTypeContainer implements TableModel {
 		listeners.remove( l );
 	}
 	
-	public StatementTypeContainer(ArrayList<StatementType> types) {
-		this.types = types;
+	public StatementTypeTableModel(ArrayList<StatementType> types) {
+		Dna.dna.data.setStatementTypes(types);
 	}
 	
 	public Class<?> getColumnClass(int columnIndex) {
@@ -45,24 +47,23 @@ public class StatementTypeContainer implements TableModel {
 	}
 	
 	public int getRowCount() {
-		return types.size();
+		return Dna.dna.data.getStatementTypes().size();
 	}
 	
 	public int size() {
-		return types.size();
+		return Dna.dna.data.getStatementTypes().size();
 	}
 	
 	public void remove(int index) {
-		types.remove(index);
+		Dna.dna.data.getStatementTypes().remove(index);
 	}
 	
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		StatementType t = types.get(rowIndex);
+		StatementType t = Dna.dna.data.getStatementTypes().get(rowIndex);
 		if (columnIndex == 0) {
 			return t.getLabel();
 		} else if (columnIndex == 1) {
-			ArrayList<SidebarStatement> s = Dna.dna.db.getStatementsByType(t.
-					getLabel());
+			ArrayList<Statement> s = Dna.dna.db.getStatementsByType(t.getLabel());
 			int count = s.size();
 			return count;
 		} else {
@@ -78,14 +79,14 @@ public class StatementTypeContainer implements TableModel {
 		switch( columnIndex ){
 			case 0: 
 				String newLabel = (String) aValue;
-				String oldLabel = types.get(rowIndex).getLabel();
+				String oldLabel = Dna.dna.data.getStatementTypes().get(rowIndex).getLabel();
 				Color col = Dna.dna.db.getStatementTypeColor(oldLabel);
 				int red = col.getRed();
 				int green = col.getGreen();
 				int blue = col.getBlue();
 				Dna.dna.db.changeStatementType(oldLabel, newLabel, red, green, 
 						blue);
-				types.get(rowIndex).setLabel(newLabel);
+				Dna.dna.data.getStatementTypes().get(rowIndex).setLabel(newLabel);
 				break;
 			case 1: 
 				break;
@@ -93,7 +94,7 @@ public class StatementTypeContainer implements TableModel {
 	}
 
 	public void addStatementType(StatementType statementType) {
-		types.add(statementType);
+		Dna.dna.data.getStatementTypes().add(statementType);
 		TableModelEvent e = new TableModelEvent(this);
 		for( int i = 0, n = listeners.size(); i < n; i++ ){
 			((TableModelListener)listeners.get( i )).tableChanged( e );
@@ -101,13 +102,13 @@ public class StatementTypeContainer implements TableModel {
 	}
 	
 	public StatementType get(int index) {
-		return types.get(index);
+		return Dna.dna.data.getStatementTypes().get(index);
 	}
 	
 	public StatementType get(String label) throws NullPointerException {
-		for (int i = 0; i < types.size(); i++) {
-			if (types.get(i).getLabel().equals(label)) {
-				return types.get(i);
+		for (int i = 0; i < Dna.dna.data.getStatementTypes().size(); i++) {
+			if (Dna.dna.data.getStatementTypes().get(i).getLabel().equals(label)) {
+				return Dna.dna.data.getStatementTypes().get(i);
 			}
 		}
 		throw new NullPointerException();
@@ -115,8 +116,8 @@ public class StatementTypeContainer implements TableModel {
 	
 	public int getIndexByLabel(String label) {
 		int index = -1;
-		for (int i = 0; i < types.size(); i++) {
-			if (types.get(i).getLabel().equals(label)) {
+		for (int i = 0; i < Dna.dna.data.getStatementTypes().size(); i++) {
+			if (Dna.dna.data.getStatementTypes().get(i).getLabel().equals(label)) {
 				index = i;
 			}
 		}
@@ -124,7 +125,7 @@ public class StatementTypeContainer implements TableModel {
 	}
 	
 	public void clear() {
-		types.clear();
+		Dna.dna.data.getStatementTypes().clear();
 		TableModelEvent e = new TableModelEvent(this);
 		for( int i = 0, n = listeners.size(); i < n; i++ ){
 			((TableModelListener)listeners.get( i )).tableChanged( e );

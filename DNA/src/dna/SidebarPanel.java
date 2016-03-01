@@ -43,25 +43,29 @@ import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.jdesktop.swingx.JXTextField;
 
+import dna.dataStructures.Regex;
+import dna.dataStructures.Statement;
+import dna.dataStructures.StatementType;
+
 class SidebarPanel extends JScrollPane {
 
 	private static final long serialVersionUID = 1L;
 
-	SidebarStatementContainer ssc;
+	StatementTableModel ssc;
 	ContradictionPanel cp;
 	RegexManagerPanel rm;
 	JTable statementTable;
 	JScrollPane statementTableScrollPane;
 	JPanel statementPanel;
 	StatementFilter statementFilter;
-	TableRowSorter<SidebarStatementContainer> sorter;
+	TableRowSorter<StatementTableModel> sorter;
 	JXTextField patternField1, patternField2;
 	JComboBox<String> typeComboBox1, typeComboBox2, variableComboBox1, 
 	variableComboBox2;
 	//JButton executeButton;
 	
 	  // SK added for linked statements
-    SidebarStatementContainer connectedSC;
+    StatementTableModel connectedSC;
     JButton connectButton, clearButton, deleteButton;
     JPanel connectedStatementPanel, viewLinkedStatementPanel;
     JTable connectedStatementTable, linkedTable;
@@ -183,7 +187,7 @@ class SidebarPanel extends JScrollPane {
 			Component c = super.getTableCellRendererComponent(table, value, 
 					isSelected, hasFocus, row, column);
 			int modelRow = table.convertRowIndexToModel(row);
-			Color col = ((SidebarStatementContainer)table.getModel()).
+			Color col = ((StatementTableModel)table.getModel()).
 					get(modelRow).getColor();
 			c.setBackground(col);
 			return c;
@@ -204,8 +208,8 @@ class SidebarPanel extends JScrollPane {
             int statementID = (int) table.getModel().getValueAt(modelRow, modelColumn);
 
             Color col = null;
-            for (SidebarStatement ss : ssc.statements) {
-                if (statementID == ss.statementId)  {
+            for (Statement ss : Dna.dna.data.getStatements()) {
+                if (statementID == ss.getId())  {
                     col = ss.getColor();
                 }
             }
@@ -220,7 +224,7 @@ class SidebarPanel extends JScrollPane {
 
 
 	private void statementPanel() {
-		ssc = new SidebarStatementContainer();
+		ssc = new StatementTableModel();
 		statementTable = new JTable( ssc );
 		statementTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		statementTableScrollPane = new JScrollPane(statementTable);
@@ -252,9 +256,9 @@ class SidebarPanel extends JScrollPane {
 				row = statementTable.convertRowIndexToModel(row);
 
 				if (row > -1) {
-					int statementId = ssc.get(row).getStatementId();
+					int statementId = ssc.get(row).getId();
 					if (statementId != -1) {
-						int docId = Dna.dna.db.getStatement(statementId).getDocumentId();
+						int docId = Dna.dna.db.getStatement(statementId).getDocument();
 						int docRow = Dna.dna.gui.documentPanel.documentContainer.
 								getRowIndexById(docId);
 						Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
@@ -357,9 +361,9 @@ class SidebarPanel extends JScrollPane {
                 row = connectedStatementTable.convertRowIndexToModel(row);
 
                 if (row > -1) {
-                    int statementId = ssc.get(row).getStatementId();
+                    int statementId = ssc.get(row).getId();
                     if (statementId != -1) {
-                        int docId = Dna.dna.db.getStatement(statementId).getDocumentId();
+                        int docId = Dna.dna.db.getStatement(statementId).getDocument();
                         int docRow = Dna.dna.gui.documentPanel.documentContainer.
                                 getRowIndexById(docId);
                         Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
@@ -413,7 +417,7 @@ class SidebarPanel extends JScrollPane {
 
                 int statement1Id = (int) linkedTable.getModel().getValueAt(selectedrow, selectedCol);
                 if (statement1Id != -1) {
-                    int docId = Dna.dna.db.getStatement(statement1Id).getDocumentId();
+                    int docId = Dna.dna.db.getStatement(statement1Id).getDocument();
                     int docRow = Dna.dna.gui.documentPanel.documentContainer.
                             getRowIndexById(docId);
                     Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
@@ -597,7 +601,7 @@ class SidebarPanel extends JScrollPane {
 
 	public void setRowSorterEnabled(boolean enabled) {
 		if (enabled == true) {
-			sorter = new TableRowSorter<SidebarStatementContainer>(ssc) {
+			sorter = new TableRowSorter<StatementTableModel>(ssc) {
 				public void toggleSortOrder(int i) {
 					//leave blank; overwritten method makes the table unsortable
 				}
@@ -762,7 +766,7 @@ class SidebarPanel extends JScrollPane {
 
 		public void allFilter() {
 			try {
-				//RowFilter<SidebarStatementContainer, Object> rf = RowFilter.regexFilter("");
+				//RowFilter<StatementTableModel, Object> rf = RowFilter.regexFilter("");
 				if (showAll.isSelected()) {
 					sorter.setRowFilter(null);					
 				}
@@ -781,13 +785,13 @@ class SidebarPanel extends JScrollPane {
 			}
 			final int documentId = docId;
 
-			RowFilter<SidebarStatementContainer, Integer> documentFilter = new 
-					RowFilter<SidebarStatementContainer, Integer>() {
+			RowFilter<StatementTableModel, Integer> documentFilter = new 
+					RowFilter<StatementTableModel, Integer>() {
 				public boolean include(Entry<? extends 
-						SidebarStatementContainer, ? extends Integer> entry) {
-					SidebarStatementContainer stcont = entry.getModel();
-					SidebarStatement st = stcont.get(entry.getIdentifier());
-					if (st.getDocumentId() == documentId) {
+						StatementTableModel, ? extends Integer> entry) {
+					StatementTableModel stcont = entry.getModel();
+					Statement st = stcont.get(entry.getIdentifier());
+					if (st.getDocument() == documentId) {
 						return true;
 					}
 					return false;
@@ -833,23 +837,23 @@ class SidebarPanel extends JScrollPane {
 					final String p1final = p1;
 					final String p2final = p2;
 
-					RowFilter<SidebarStatementContainer, Integer> idFilter = 
-							new	RowFilter<SidebarStatementContainer, Integer>() 
+					RowFilter<StatementTableModel, Integer> idFilter = 
+							new	RowFilter<StatementTableModel, Integer>() 
 							{
 						public boolean include(Entry<? extends 
-								SidebarStatementContainer, ? extends Integer> 
+								StatementTableModel, ? extends Integer> 
 						entry) {
-							SidebarStatementContainer stcont = entry.getModel();
-							SidebarStatement st = stcont.get(entry.
+							StatementTableModel stcont = entry.getModel();
+							Statement st = stcont.get(entry.
 									getIdentifier());
 
 							boolean contentMatch;
-							if (ids1.contains(st.getStatementId()) && (ids2.
-									contains(st.getStatementId()) || p2final.
+							if (ids1.contains(st.getId()) && (ids2.
+									contains(st.getId()) || p2final.
 									equals(""))) {
 								contentMatch = true;
-							} else if (ids2.contains(st.getStatementId()) && 
-									(ids1.contains(st.getStatementId()) || 
+							} else if (ids2.contains(st.getId()) && 
+									(ids1.contains(st.getId()) || 
 											p1final.equals(""))) {
 								contentMatch = true;
 							} else {

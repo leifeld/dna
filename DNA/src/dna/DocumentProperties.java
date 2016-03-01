@@ -22,13 +22,17 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerDateModel;
 
+import org.jdesktop.swingx.JXComboBox;
 import org.jdesktop.swingx.JXTextArea;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
+
+import dna.dataStructures.Document;
 
 public class DocumentProperties extends JFrame {
 	
 	private static final long serialVersionUID = 1L;
-	String dbfile, title, coder, type, source, section, notes;
+	String dbfile, title, type, source, section, notes;
+	int coder;
 	Date date;
 	SpinnerDateModel dateModel;
 	JSpinner dateSpinner;
@@ -36,7 +40,7 @@ public class DocumentProperties extends JFrame {
 	JPanel newArticlePanel;
 	JTextField titleField;
 	JXTextArea notesArea;
-	JComboBox<String> coderBox, sourceBox, sectionBox, typeBox;
+	JXComboBox coderBox, sourceBox, sectionBox, typeBox;
 	
 	public DocumentProperties(final int documentId) {
 		
@@ -84,7 +88,7 @@ public class DocumentProperties extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				String title = titleField.getText();
 				Date date = (Date)dateSpinner.getValue();
-				String coder = (String) coderBox.getModel().getSelectedItem();
+				int coder = (int) coderBox.getModel().getSelectedItem();
 				String source = (String) sourceBox.getModel().getSelectedItem();
 				String section = (String) sectionBox.getModel().
 						getSelectedItem();
@@ -128,8 +132,10 @@ public class DocumentProperties extends JFrame {
 		fieldsPanel.add(coderLabel, gbc);
 		
 		gbc.gridx++;
-		String[] coderEntries = Dna.dna.db.getDocumentCoders();
-		coderBox = new JComboBox<String>(coderEntries);
+		//String[] coderEntries = Dna.dna.db.getDocumentCoders();
+		coderBox = new JXComboBox(Dna.data.getCoders().toArray());
+		CoderComboBoxRenderer coderRenderer = new CoderComboBoxRenderer();
+		coderBox.setRenderer(coderRenderer);
 		coderBox.setEditable(true);
 		coderBox.setSelectedItem(this.coder);
 		AutoCompleteDecorator.decorate(coderBox);
@@ -142,7 +148,7 @@ public class DocumentProperties extends JFrame {
 		
 		gbc.gridx++;
 		String[] sourceEntries = Dna.dna.db.getDocumentSources();
-		sourceBox = new JComboBox<String>(sourceEntries);
+		sourceBox = new JXComboBox(sourceEntries);
 		sourceBox.setEditable(true);
 		sourceBox.setSelectedItem(this.source);
 		AutoCompleteDecorator.decorate(sourceBox);
@@ -155,7 +161,7 @@ public class DocumentProperties extends JFrame {
 		
 		gbc.gridx++;
 		String[] sectionEntries = Dna.dna.db.getDocumentSections();
-		sectionBox = new JComboBox<String>(sectionEntries);
+		sectionBox = new JXComboBox(sectionEntries);
 		sectionBox.setEditable(true);
 		sectionBox.setSelectedItem(this.section);
 		AutoCompleteDecorator.decorate(sectionBox);
@@ -169,7 +175,7 @@ public class DocumentProperties extends JFrame {
 		
 		gbc.gridx++;
 		String[] typeEntries = Dna.dna.db.getDocumentTypes();
-		typeBox = new JComboBox<String>(typeEntries);
+		typeBox = new JXComboBox(typeEntries);
 		typeBox.setEditable(true);
 		typeBox.setSelectedItem(this.type);
 		AutoCompleteDecorator.decorate(typeBox);

@@ -11,6 +11,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.text.DefaultCaret;
 
+import dna.dataStructures.StatementType;
+
 public class DocStats extends JPanel {
 	
 	/**
@@ -57,7 +59,7 @@ public class DocStats extends JPanel {
 	}
 	
 	public void computeStats() {
-		int numDocuments = Dna.dna.documents.size();
+		int numDocuments = Dna.dna.data.getDocuments().size();
 		int numStatements = Dna.dna.gui.sidebarPanel.ssc.getRowCount();
 		int statementLinks = Dna.dna.gui.sidebarPanel.linkedTableModel.getRowCount();
 		
@@ -66,9 +68,9 @@ public class DocStats extends JPanel {
 				+ "Statement Links: " + statementLinks + "\n";
 		
 		for (StatementType st: Dna.dna.db.getStatementTypes()) {
-			statText = statText + "\n\"" + st.label + "\" Variables:\n";
-			for (String var : st.variables.keySet()) {
-				statText = statText + "     " + var + ": " + Dna.dna.db.getVariableEntriesCount(var, st.label) + "\n";
+			statText = statText + "\n\"" + st.getLabel() + "\" Variables:\n";
+			for (String var : st.getVariables().keySet()) {
+				statText = statText + "     " + var + ": " + Dna.dna.db.getVariableEntriesCount(var, st.getLabel()) + "\n";
 			}
 		}
 

@@ -29,6 +29,8 @@ import javax.swing.ListSelectionModel;
  * gefügt, die sich von den bereits aufgelisteten unterscheiden.
  */
 
+import dna.dataStructures.Regex;
+
 public class RegexManagerPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	JButton colorButton, addButton;

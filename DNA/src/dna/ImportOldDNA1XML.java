@@ -232,12 +232,9 @@ public class ImportOldDNA1XML extends JFrame {
 						
 						int documentId = -1;
 						try {
-					    	SimpleDateFormat sdfToDate = new SimpleDateFormat(
-					    			"dd.MM.yyyy");
+					    	SimpleDateFormat sdfToDate = new SimpleDateFormat("dd.MM.yyyy");
 					    	date = sdfToDate.parse(dateString);
-					    	documentId = Dna.dna.addDocument(title, 
-					    			articleText, date, "", "", "", 
-					    			"Imported from DNA 1.xx.", "");
+					    	documentId = Dna.dna.addDocument(title, articleText, date, 0, "", "", "Imported from DNA 1.xx.", "");
 					    } catch (ParseException pe) {
 					    	pe.printStackTrace();
 					    }

@@ -55,7 +55,7 @@ public class Popup extends JDialog {
 		Popup.statementId = statementId;
 		this.los = location;
 		
-		final SidebarStatement s = Dna.dna.db.getStatement(statementId);
+		final dna.dataStructures.Statement s = Dna.dna.db.getStatement(statementId);
 		this.color = s.getColor();
 		this.type = Dna.dna.db.getStatementType(statementId);
 		
@@ -124,16 +124,15 @@ public class Popup extends JDialog {
 		duplicate.setPreferredSize(new Dimension(16, 16));
 		duplicate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int newStatementId = Dna.dna.db.duplicateStatement(statementId, 
-						s.getDocumentId(), s.getStart(), s.getStop());
+				int newStatementId = Dna.dna.db.duplicateStatement(statementId, s.getDocument(), s.getStart(), s.getStop());
 				Color color = Dna.dna.db.getStatementTypeColor(type);
-				Date date = Dna.dna.db.getDocument(s.getDocumentId()).getDate();
-				SidebarStatement st = new SidebarStatement(newStatementId, 
-						s.getDocumentId(), s.getStart(), s.getStop(), date, 
-						color, type);
-				Dna.dna.gui.sidebarPanel.ssc.addSidebarStatement(st, true);
-				Dna.dna.gui.textPanel.selectStatement(newStatementId, 
-						s.getDocumentId());
+				Date date = Dna.dna.db.getDocument(s.getDocument()).getDate();
+				int coder = Dna.dna.db.getStatement(statementId).getCoder();
+				dna.dataStructures.Statement st = new dna.dataStructures.Statement(newStatementId, 
+						s.getDocument(), s.getStart(), s.getStop(), date, 
+						color, type, coder);
+				Dna.dna.gui.sidebarPanel.ssc.addStatement(st, true);
+				Dna.dna.gui.textPanel.selectStatement(newStatementId, s.getDocument());
 			}
 		});
 		

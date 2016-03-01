@@ -1,5 +1,7 @@
 package dna;
 
+import dna.dataStructures.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
@@ -8,9 +10,8 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
-public class SidebarStatementContainer implements TableModel {
+public class StatementTableModel implements TableModel {
 	
-	ArrayList<SidebarStatement> statements = new ArrayList<SidebarStatement>();
 	Vector<TableModelListener> listeners = new Vector<TableModelListener>();
 	
 	@Override
@@ -45,31 +46,31 @@ public class SidebarStatementContainer implements TableModel {
 
 	@Override
 	public int getRowCount() { //same as size(); but needs to be implemented
-		return statements.size();
+		return Dna.dna.data.getStatements().size();
 	}
 	
 	public int size() { //same as getRowCount()
-		return statements.size();
+		return Dna.dna.data.getStatements().size();
 	}
 	
 	public void remove(int index) {
-		statements.remove(index);
+		Dna.dna.data.getStatements().remove(index);
 	}
 
 	// Ele
-	public ArrayList<SidebarStatement> getAll () {
-		return statements;
+	public ArrayList<Statement> getAll () {
+		return Dna.dna.data.getStatements();
 	}
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		SidebarStatement s = statements.get(rowIndex);
+		Statement s = Dna.dna.data.getStatements().get(rowIndex);
 		if (columnIndex == 0) {
-			return s.getStatementId();
+			return s.getId();
 		} else if (columnIndex == 1) {
 			int start = s.getStart();
 			int stop = s.getStop();
-			int documentId = s.getDocumentId();
+			int documentId = s.getDocument();
 			//SK -------- start ------
 			//String text = Dna.dna.db.getDocument(documentId).getText().substring(start, stop);
 			String text = Dna.dna.gui.documentPanel.documentContainer.getDocumentByID(documentId).getText().substring(start, stop);
@@ -87,11 +88,11 @@ public class SidebarStatementContainer implements TableModel {
 	
 	@Override
 	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-		int statementId = statements.get(rowIndex).getStatementId();
+		int statementId = Dna.dna.data.getStatements().get(rowIndex).getId();
 		
 		switch( columnIndex ){
 			case 0: 
-				getByStatementId(statementId).setStatementId((Integer) aValue);
+				getByStatementId(statementId).setId((Integer) aValue);
 				break;
 			case 1: 
 				getByStatementId(statementId).setType((String) aValue);
@@ -100,14 +101,14 @@ public class SidebarStatementContainer implements TableModel {
 	}
 	
 	
-	public SidebarStatement get(int index) {
-		return statements.get(index);
+	public Statement get(int index) {
+		return Dna.dna.data.getStatements().get(index);
 	}
 	
-	public SidebarStatement getByStatementId(int id) throws NullPointerException {
-		for (int i = 0; i < statements.size(); i++) {
-			if (statements.get(i).getStatementId() == id) {
-				return statements.get(i);
+	public Statement getByStatementId(int id) throws NullPointerException {
+		for (int i = 0; i < Dna.dna.data.getStatements().size(); i++) {
+			if (Dna.dna.data.getStatements().get(i).getId() == id) {
+				return Dna.dna.data.getStatements().get(i);
 			}
 		}
 		throw new NullPointerException();
@@ -115,8 +116,8 @@ public class SidebarStatementContainer implements TableModel {
 	
 	public int getIndexByStatementId(int id) {
 		int index = -1;
-		for (int i = 0; i < statements.size(); i++) {
-			if (statements.get(i).getStatementId() == id) {
+		for (int i = 0; i < Dna.dna.data.getStatements().size(); i++) {
+			if (Dna.dna.data.getStatements().get(i).getId() == id) {
 				index = i;
 			}
 		}
@@ -124,7 +125,7 @@ public class SidebarStatementContainer implements TableModel {
 	}
 	
 	public void clear() {
-		statements.clear();
+		Dna.dna.data.getStatements().clear();
 		TableModelEvent e = new TableModelEvent(this);
 		for( int i = 0, n = listeners.size(); i < n; i++ ){
 			((TableModelListener)listeners.get( i )).tableChanged( e );
@@ -132,8 +133,8 @@ public class SidebarStatementContainer implements TableModel {
 	}
 	
 	public boolean containsStatementId(int id) {
-		for (int i = 0; i < statements.size(); i++) {
-			if (statements.get(i).getStatementId() == id) {
+		for (int i = 0; i < Dna.dna.data.getStatements().size(); i++) {
+			if (Dna.dna.data.getStatements().get(i).getId() == id) {
 				return true;
 			}
 		}
@@ -141,16 +142,16 @@ public class SidebarStatementContainer implements TableModel {
 	}
 	
 	public void sort() {
-		Collections.sort(statements);
+		Collections.sort(Dna.dna.data.getStatements());
 	}
 	
-	public void addSidebarStatement(SidebarStatement s, boolean sort) {
-		if (containsStatementId(s.getStatementId()) == true) {
-			System.err.println("A statement with ID " + s.getStatementId() + 
+	public void addStatement(Statement s, boolean sort) {
+		if (containsStatementId(s.getId()) == true) {
+			System.err.println("A statement with ID " + s.getId() + 
 					" already exists. It will not be added.");
 		} else {
-			int statementId = s.getStatementId();
-			statements.add(s);
+			int statementId = s.getId();
+			Dna.dna.data.getStatements().add(s);
 			if (sort == true) {
 				sort();
 			}
@@ -167,9 +168,9 @@ public class SidebarStatementContainer implements TableModel {
 	}
 	
 	public void removeSidebarStatement(int statementId) {
-		for (int i = statements.size() - 1; i > -1 ; i--) {
-			if (statements.get(i).getStatementId() == statementId) {
-				statements.remove(i);
+		for (int i = Dna.dna.data.getStatements().size() - 1; i > -1 ; i--) {
+			if (Dna.dna.data.getStatements().get(i).getId() == statementId) {
+				Dna.dna.data.getStatements().remove(i);
 			}
 		}
 		
@@ -186,8 +187,8 @@ public class SidebarStatementContainer implements TableModel {
 		boolean accept = false;
 		while (accept == false) {
 			boolean used = false;
-			for (int i = 0; i < statements.size(); i++) {
-				if (unused == statements.get(i).getStatementId()) {
+			for (int i = 0; i < Dna.dna.data.getStatements().size(); i++) {
+				if (unused == Dna.dna.data.getStatements().get(i).getId()) {
 					used = true;
 				}
 			}

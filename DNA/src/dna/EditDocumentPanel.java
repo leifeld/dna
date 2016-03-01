@@ -1,5 +1,8 @@
 package dna;
 
+import dna.dataStructures.*;
+
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -15,15 +18,19 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 import javax.swing.BoxLayout;
+import javax.swing.ComboBoxModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.ListCellRenderer;
 import javax.swing.SpinnerDateModel;
+import javax.swing.event.ListDataListener;
 
 import org.jdesktop.swingx.JXComboBox;
 import org.jdesktop.swingx.JXTextArea;
@@ -87,7 +94,7 @@ public class EditDocumentPanel extends JPanel {
 		
 		
 		titleField = new JXTextField();
-		titleField.setText(document.title);
+		titleField.setText(document.getTitle());
 		titleField.setCaretPosition(0);
 		titleField.setPreferredSize(fieldSize);
 		titleField.setColumns(50);
@@ -110,7 +117,7 @@ public class EditDocumentPanel extends JPanel {
 		gc.set(Calendar.MINUTE, 0);
 		gc.set(Calendar.SECOND, 0);
 		gc.set(Calendar.MILLISECOND, 0);
-		dateModel.setValue(document.date);
+		dateModel.setValue(document.getDate());
 		dateSpinner.setEditor(new JSpinner.DateEditor(dateSpinner, 	"yyyy-MM-dd  HH:mm:ss"));
 		dateSpinner.setPreferredSize(fieldSize);
 		datePanel.add(dateSpinner);
@@ -122,11 +129,14 @@ public class EditDocumentPanel extends JPanel {
 		coderLabel.setPreferredSize(lableSize);
 		coderPanel.add(coderLabel);		
 
-		 coderEntries = Dna.dna.db.getDocumentCoders();
-		coderBox = new JXComboBox(coderEntries);
+		//coderEntries = Dna.dna.db.getDocumentCoders();
+		//coderBox = new JXComboBox(coderEntries);
+		coderBox = new JXComboBox(Dna.data.getCoders().toArray());
+		CoderComboBoxRenderer coderRenderer = new CoderComboBoxRenderer();
+		coderBox.setRenderer(coderRenderer);
 		coderBox.setPreferredSize(fieldSize);
 		coderBox.setEditable(true);
-		coderBox.setSelectedItem(document.coder);
+		coderBox.setSelectedItem(document.getCoder());
 		AutoCompleteDecorator.decorate(coderBox);
 		coderPanel.add(coderBox);
 		
@@ -142,7 +152,7 @@ public class EditDocumentPanel extends JPanel {
 		sourceBox = new JXComboBox(sourceEntries);
 		sourceBox.setPreferredSize(fieldSize);
 		sourceBox.setEditable(true);
-		sourceBox.setSelectedItem(document.source);
+		sourceBox.setSelectedItem(document.getSource());
 		AutoCompleteDecorator.decorate(sourceBox);
 		sourcePanel.add(sourceBox);
 		
@@ -159,7 +169,7 @@ public class EditDocumentPanel extends JPanel {
 		sectionBox = new JXComboBox(sectionEntries);
 		sectionBox.setPreferredSize(fieldSize);
 		sectionBox.setEditable(true);
-		sectionBox.setSelectedItem(document.section);
+		sectionBox.setSelectedItem(document.getSection());
 		AutoCompleteDecorator.decorate(sectionBox);
 		sectionPanel.add(sectionBox);
 		
@@ -175,7 +185,7 @@ public class EditDocumentPanel extends JPanel {
 		typeBox = new JXComboBox(typeEntries);
 		typeBox.setPreferredSize(fieldSize);
 		typeBox.setEditable(true);
-		typeBox.setSelectedItem(document.type);
+		typeBox.setSelectedItem(document.getType());
 		AutoCompleteDecorator.decorate(typeBox);
 		typePanel.add(typeBox);
 		
@@ -190,7 +200,7 @@ public class EditDocumentPanel extends JPanel {
 		
 		
 		notesArea = new JXTextArea();
-		notesArea.setText(document.notes);
+		notesArea.setText(document.getNotes());
 		notesArea.setCaretPosition(0);
 		notesArea.setBorder(titleField.getBorder());
 		notesArea.setRows(3);
@@ -236,7 +246,7 @@ public class EditDocumentPanel extends JPanel {
 		
 	}
 
-	String[] coderEntries;
+	//String[] coderEntries;
 	String[] sourceEntries ;
 	String[] sectionEntries;
 	String[] typeEntries;
@@ -277,8 +287,7 @@ public class EditDocumentPanel extends JPanel {
 		String title = titleField.getText();
 		title = title.replaceAll("'", "''");
 		Date date = (Date)dateSpinner.getValue();
-		String coder = (String) coderBox.getModel().getSelectedItem();
-		coder = coder.replaceAll("'", "''");
+		int coder = (int) coderBox.getModel().getSelectedItem();
 		String source = (String) sourceBox.getModel().getSelectedItem();
 		source = source.replaceAll("'", "''");
 		String section = (String) sectionBox.getModel().getSelectedItem();
@@ -288,14 +297,14 @@ public class EditDocumentPanel extends JPanel {
 		String type = (String) typeBox.getModel().getSelectedItem();
 		type = type.replaceAll("'", "''");
 
-		Dna.dna.db.changeDocument(document.id, title, date, coder, 
+		Dna.dna.db.changeDocument(document.getId(), title, date, coder, 
 				source, section, notes, type);
 		Dna.dna.gui.documentPanel.documentContainer.changeDocument(
-				document.id, title, date, coder, source, section, notes, 
+				document.getId(), title, date, coder, source, section, notes, 
 				type);
 		Dna.dna.gui.documentPanel.documentContainer.sort();
 		int newRow = Dna.dna.gui.documentPanel.documentContainer.
-				getRowIndexById(document.id);
+				getRowIndexById(document.getId());
 		Dna.dna.gui.documentPanel.documentTable.updateUI();
 		Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
 				setSelectionInterval(newRow, newRow);
@@ -304,6 +313,4 @@ public class EditDocumentPanel extends JPanel {
 		revalidate();
 
 	}
-	
-	
 }

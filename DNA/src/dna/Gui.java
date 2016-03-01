@@ -1,5 +1,7 @@
 package dna;
 
+import dna.dataStructures.*;
+
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -42,7 +44,7 @@ public class Gui extends JFrame {
 	/**
 	 * DNA GUI
 	 */
-	private static final long serialVersionUID = 6798727706826962027L;
+	//private static final long serialVersionUID = 6798727706826962027L;
 	Container c;
 	StatusBar statusBar;
 	DocumentPanel documentPanel;
@@ -57,10 +59,9 @@ public class Gui extends JFrame {
 		this.setTitle("Discourse Network Analyzer");
 		//this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		ImageIcon dna32Icon = new ImageIcon(getClass().getResource(
-				"/icons/dna32.png"));
+		ImageIcon dna32Icon = new ImageIcon(getClass().getResource("/icons/dna32.png"));
 		this.setIconImage(dna32Icon.getImage());
-
+		
 		//addWindowListener(new WindowAdapter() {
 		//	public void windowClosing(WindowEvent e) {
 		//		dispose();
@@ -125,14 +126,14 @@ public class Gui extends JFrame {
 	public class DocumentPanel extends JScrollPane {
 
 		private static final long serialVersionUID = 1L;
-		DocumentContainer documentContainer;
+		DocumentTableModel documentContainer;
 		DocumentTable documentTable;
 
 		public DocumentPanel() {
 			if(Dna.dna!=null)
-				documentContainer = new DocumentContainer(Dna.dna.documents); //SK
+				documentContainer = new DocumentTableModel(Dna.dna.data.getDocuments()); //SK
 			else 
-			documentContainer = new DocumentContainer();
+			documentContainer = new DocumentTableModel();
 			
 			
 			documentTable = new DocumentTable();
@@ -148,7 +149,7 @@ public class Gui extends JFrame {
 			private static final long serialVersionUID = 1L;
 
 			public DocumentTable() {		
-//				setModel(new DocumentContainer()); //SK -- already set before
+//				setModel(new DocumentTableModel()); //SK -- already set before
 				setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 				getTableHeader().setReorderingAllowed( false );
 				putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
@@ -526,18 +527,16 @@ public class Gui extends JFrame {
 			
 			
 			//Settings menu: about DNA
-			Icon aboutIcon = new ImageIcon(getClass().getResource(
-					"/icons/dna16.png"));
+			Icon aboutIcon = new ImageIcon(getClass().getResource("/icons/dna16.png"));
 			aboutButton = new JMenuItem("About DNA...", aboutIcon);
 			aboutButton.setToolTipText( "show information about the Discourse Network Analyzer..." );
 			settingsMenu.add(aboutButton);
 			aboutButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					new AboutWindow(Dna.dna.version, Dna.dna.date);
+					new AboutWindow(Dna.dna.getVersion(), Dna.dna.getDate());
 				}
 			});
 			typeEditorButton.setEnabled(false);
-			
 		}
 		
 		void updateTeggleAction()

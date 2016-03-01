@@ -1,4 +1,4 @@
-package dna;
+package dna.dataStructures;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;
@@ -21,7 +21,7 @@ public class StatementType {
 	 * @param variable	Name of the variable.
 	 * @return			Data type.
 	 */
-	String getVariableDataType(String variable) {
+	public String getVariableDataType(String variable) {
 		return variables.get(variable);
 	}
 

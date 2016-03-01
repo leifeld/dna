@@ -33,10 +33,12 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
+import dna.dataStructures.StatementType;
+
 public class StatementTypeEditor extends JFrame {
 	
 	private static final long serialVersionUID = -7821187025150495806L;
-	StatementTypeContainer stc;
+	StatementTypeTableModel stc;
 	JTable typeTable, varTable;
 	JButton addColorButton, addTypeButton, applyTypeButton, removeTypeButton, 
 			addVariable, trashVariable;
@@ -56,7 +58,7 @@ public class StatementTypeEditor extends JFrame {
 		ArrayList<StatementType> types = Dna.dna.db.getStatementTypes();
 		
 		// type panel
-		stc = new StatementTypeContainer(types);
+		stc = new StatementTypeTableModel(types);
 		typeTable = new JTable( stc );
 		typeTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane typeTableScrollPane = new JScrollPane(typeTable);
@@ -253,8 +255,7 @@ public class StatementTypeEditor extends JFrame {
 					Dna.dna.gui.textPanel.paintStatements();
 					for (int i = Dna.dna.gui.sidebarPanel.ssc.size() - 1; 
 							i >= 0; i--) {
-						String currentType = Dna.dna.gui.sidebarPanel.ssc.
-								get(i).getType();
+						String currentType = Dna.dna.gui.sidebarPanel.ssc.get(i).getType();
 						if (currentType.equals(oldLabel)) {
 							Dna.dna.gui.sidebarPanel.ssc.remove(i);
 						}
@@ -560,7 +561,7 @@ public class StatementTypeEditor extends JFrame {
 				int column) {
 			Component c = super.getTableCellRendererComponent(table, value, 
 					isSelected, hasFocus, row, column);
-			Color col = ((StatementTypeContainer)table.getModel()).get(row).
+			Color col = ((StatementTypeTableModel)table.getModel()).get(row).
 					getColor();
 			c.setBackground(col);
 		    if (isSelected && column != 1) {

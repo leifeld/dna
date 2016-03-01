@@ -1,14 +1,20 @@
-package dna;
+package dna.dataStructures;
 
 import java.util.Date;
 
-class Document implements Comparable<Document> {
+public class Document implements Comparable<Document> {
 	int id;
-	String title, text, coder, source, section, notes, type;
+	public String title;
+	String text;
+	int coder;
+	String source;
+	String section;
+	String notes;
+	String type;
 	Date date;
 	
 	public Document( int id, String title, String text, Date date, 
-			String coder, String source, String section, String notes, 
+			int coder, String source, String section, String notes, 
 			String type ) {
 		this.id = id;
 		this.title = title;
@@ -26,7 +32,7 @@ class Document implements Comparable<Document> {
 	 * 
 	 * @return  The coder.
 	 */
-	public String getCoder() {
+	public int getCoder() {
 		return coder;
 	}
 
@@ -35,7 +41,7 @@ class Document implements Comparable<Document> {
 	 * 
 	 * @param coder  The coder to set.
 	 */
-	public void setCoder(String coder) {
+	public void setCoder(int coder) {
 		this.coder = coder;
 	}
 

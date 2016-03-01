@@ -1,4 +1,4 @@
-package dna;
+package dna.dataStructures;
 
 import java.awt.Color;
 

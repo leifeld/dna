@@ -7,6 +7,8 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
 
+import dna.dataStructures.Regex;
+
 @SuppressWarnings("serial")
 public class RegexListRenderer extends DefaultListCellRenderer {
 	public Component getListCellRendererComponent(JList<?> list, Object value,	

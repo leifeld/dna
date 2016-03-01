@@ -127,8 +127,7 @@ class NewDocumentWindow extends JFrame {
 				String title = titleField.getText();
 				title = title.replaceAll("'", "''");
 				Date date = (Date)dateSpinner.getValue();
-				String coder = (String) coderBox.getModel().getSelectedItem();
-				coder = coder.replaceAll("'", "''");
+				int coder = (int) coderBox.getModel().getSelectedItem();
 				String source = (String) sourceBox.getModel().getSelectedItem();
 				source = source.replaceAll("'", "''");
 				String section = (String) sectionBox.getModel().getSelectedItem();
@@ -182,9 +181,11 @@ class NewDocumentWindow extends JFrame {
 		fieldsPanel.add(coderLabel, gbc);
 		
 		gbc.gridx++;
-		String[] coderEntries = Dna.dna.db.getDocumentCoders();
-		coderBox = new JXComboBox(coderEntries);
-		coderBox.setEditable(true);
+		//String[] coderEntries = Dna.dna.db.getDocumentCoders();
+		coderBox = new JXComboBox(Dna.data.getCoders().toArray());
+		CoderComboBoxRenderer coderRenderer = new CoderComboBoxRenderer();
+		coderBox.setRenderer(coderRenderer);
+		coderBox.setEditable(false);
 		coderBox.setSelectedItem("");
 		AutoCompleteDecorator.decorate(coderBox);
 		fieldsPanel.add(coderBox, gbc);

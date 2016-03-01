@@ -1,5 +1,7 @@
 package dna;
 
+import dna.dataStructures.*;
+
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
@@ -15,30 +17,54 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class Dna {
-	String version = "2.0 beta 3";
-	String date = "February 26, 2016"; 
+	static Data data = new Data();
 	static Dna dna;
 	DataAccess db;
 	Gui gui;
 	
-	ArrayList<Document> documents = new ArrayList<Document>(); //SK All changes w.r.t. documents list
+	//ArrayList<Document> documents = new ArrayList<Document>(); //SK All changes w.r.t. documents list
 	public Dna () {
-		documents = new ArrayList<Document>(); //SK
+		data.getSettings().add(new Setting("version", "2.0 beta 3"));
+		data.getSettings().add(new Setting("date", "2016-03-01"));
+		
+		//documents = new ArrayList<Document>(); //SK
 		db = new DataAccess();
 		gui = new Gui();
+		//new NewDatabaseDialog();
 	}
 	
 	public static void main (String[] args) {
 		dna = new Dna();
 	}
 
+	public String getVersion() {
+		for (int i = 0; i < data.getSettings().size(); i++) {
+			Setting s = data.getSettings().get(i);
+			if (s.getProperty().equals("version")) {
+				return(s.getValue());
+			}
+		}
+		return(null);
+	}
+
+	public String getDate() {
+		for (int i = 0; i < data.getSettings().size(); i++) {
+			Setting s = data.getSettings().get(i);
+			if (s.getProperty().equals("date")) {
+				return(s.getValue());
+			}
+		}
+		return(null);
+	}
+	
 	public int addStatement(String type, int doc, int start, int stop) {
 		int statementId = dna.db.addStatement(type, doc, start, stop);
 		Color color = dna.db.getStatementTypeColor(type);
 		Date date = dna.db.getDocument(doc).getDate();
-		SidebarStatement s = new SidebarStatement(statementId, doc, start, 
-				stop, date, color, type);
-		dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
+		int coder = dna.db.getStatement(statementId).getCoder();
+		Statement s = new Statement(statementId, doc, start, 
+				stop, date, color, type, coder);
+		dna.gui.sidebarPanel.ssc.addStatement(s, true);
 		return statementId;
 	}
 
@@ -49,12 +75,11 @@ public class Dna {
 		dna.gui.sidebarPanel.statementTable.updateUI();
 	}
 
-	public int addDocument(String title, String text, Date date, String coder, 
+	public int addDocument(String title, String text, Date date, int coder, 
 			String source, String section, String notes, String type) {
 		//TODO: do the replaceAll() here or in NewDOcumentWindow!
 		title = title.replaceAll("'", "''");
 		text = text.replaceAll("'", "''");
-		coder = coder.replaceAll("'", "''");
 		source = source.replaceAll("'", "''");
 		section = section.replaceAll("'", "''");
 		notes = notes.replaceAll("'", "''");
@@ -86,7 +111,7 @@ public class Dna {
 	 */
 	public void importDocumentsFromHTMLFile(String fileName, String pathName, 
 			String textElement, String titleElement, String dateElement, 
-			String sectionElement, String coder, String source, String type, 
+			String sectionElement, int coder, String source, String type, 
 			String notes, Date dateManually, boolean dateManuallySelected)
 					throws IOException, ParseException {
 
@@ -164,7 +189,7 @@ public class Dna {
 	 */
 	public void importDocumentsFromWebpage(String urlName, 
 			String textElement, String titleElement, String dateElement, 
-			String sectionElement, String coder, String source, String type, 
+			String sectionElement, int coder, String source, String type, 
 			String notes, Date dateManually, boolean dateManuallySelected) 
 					throws IOException, ParseException {
 
@@ -205,10 +230,10 @@ public class Dna {
 	}
 
 	public void removeDocument(int documentId) {
-		ArrayList<SidebarStatement> al = dna.db.
+		ArrayList<Statement> al = dna.db.
 				getStatementsPerDocumentId(documentId);
 		for (int i = 0; i < al.size(); i++) {
-			removeStatement(al.get(i).getStatementId());
+			removeStatement(al.get(i).getId());
 		}
 		int row = dna.gui.documentPanel.documentContainer.
 				getRowIndexById(documentId);
@@ -219,18 +244,18 @@ public class Dna {
 	public void openFile(String dbfile) {
 		Dna.dna.db.openSQLite(dbfile);
 		Dna.dna.gui.statusBar.resetLabel();
-		documents = Dna.dna.db.getDocuments();
+		Dna.dna.data.setDocuments(Dna.dna.db.getDocuments());
 		
 		//System.out.println( "Total documents >> " + documents.size());
-		for (int i = 0; i < documents.size(); i++) {
+		for (int i = 0; i < Dna.dna.data.getDocuments().size(); i++) {
 						
-			Dna.dna.gui.documentPanel.documentContainer.addDocument(documents.get(i));
-			int documentId = documents.get(i).getId();
-			ArrayList<SidebarStatement> statements = Dna.dna.db.
+			//Dna.dna.gui.documentPanel.documentContainer.addDocument(Dna.dna.data.getDocuments().get(i));
+			int documentId = Dna.dna.data.getDocuments().get(i).getId();
+			ArrayList<Statement> statements = Dna.dna.db.
 					getStatementsPerDocumentId(documentId);
 			for (int j = 0; j < statements.size(); j++) {
-				SidebarStatement s = statements.get(j);
-				Dna.dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
+				Statement s = statements.get(j);
+				Dna.dna.gui.sidebarPanel.ssc.addStatement(s, true);
 			}
 		}
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
@@ -252,15 +277,14 @@ public class Dna {
 	public void openMySQL(String url, String userName, String password) {
 		Dna.dna.db.openMySQL(url, userName, password);
 		Dna.dna.gui.statusBar.resetLabel();
-		documents = Dna.dna.db.getDocuments();
-		for (int i = 0; i < documents.size(); i++) {
-			Dna.dna.gui.documentPanel.documentContainer.addDocument(documents.get(i));
-			int documentId = documents.get(i).getId();
-			ArrayList<SidebarStatement> statements = Dna.dna.db.
-					getStatementsPerDocumentId(documentId);
+		Dna.dna.data.setDocuments(Dna.dna.db.getDocuments());
+		for (int i = 0; i < Dna.dna.data.getDocuments().size(); i++) {
+			//Dna.dna.gui.documentPanel.documentContainer.addDocument(Dna.dna.data.getDocuments().get(i));
+			int documentId = Dna.dna.data.getDocuments().get(i).getId();
+			ArrayList<Statement> statements = Dna.dna.db.getStatementsPerDocumentId(documentId);
 			for (int j = 0; j < statements.size(); j++) {
-				SidebarStatement s = statements.get(j);
-				Dna.dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
+				Statement s = statements.get(j);
+				Dna.dna.gui.sidebarPanel.ssc.addStatement(s, true);
 			}
 		}
 		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);

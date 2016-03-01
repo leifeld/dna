@@ -77,7 +77,7 @@ public class ContradictionPanel extends JPanel {
 							Dna.dna.gui.sidebarPanel.statementTable.clearSelection();
 						} else {
 							Dna.dna.gui.sidebarPanel.statementTable.changeSelection(viewId, 0, false, false);
-							int docId = Dna.dna.db.getStatement(nodeInt).getDocumentId();
+							int docId = Dna.dna.db.getStatement(nodeInt).getDocument();
 							int docRow = Dna.dna.gui.documentPanel.documentContainer.
 									getRowIndexById(docId);
 							Dna.dna.gui.documentPanel.documentTable.getSelectionModel().

@@ -1,5 +1,7 @@
 package dna;
 
+import dna.dataStructures.*;
+
 import javax.swing.ImageIcon;
 
 import java.awt.BorderLayout;
@@ -197,7 +199,7 @@ public class NetworkExporter extends JDialog {
 		
 		export.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ArrayList<SidebarStatement> statements = filter();
+				ArrayList<Statement> statements = filter();
 				Network network;
 				if (networkType.equals("oneMode")) {
 					network = oneModeNetwork(statements, var1, var2, qualifier, agreementPattern);
@@ -1553,14 +1555,14 @@ public class NetworkExporter extends JDialog {
 	 * @param qualifier		The name of the agreement variable that determines whether an edge should be established.
 	 * @return				A Network object with an affiliation network.
 	 */
-	public Network affiliation(ArrayList<SidebarStatement> statements, String variable1, String variable2, String qualifier) {
+	public Network affiliation(ArrayList<Statement> statements, String variable1, String variable2, String qualifier) {
 		ArrayList<String> names1 = new ArrayList<String>(); // unique row labels
 		ArrayList<String> names2 = new ArrayList<String>(); // unique column labels
 		ArrayList<String> entries1 = new ArrayList<String>(); // all variable 1 entries
 		ArrayList<String> entries2 = new ArrayList<String>(); // all variable 2 entries
 		ArrayList<Integer> qualifierValues = new ArrayList<Integer>(); // unique agreement qualifier values
 		for (int i = 0; i < statements.size(); i++) { // retrieve the data for variables 1 and 2 from database
-			int statementId = statements.get(i).getStatementId();
+			int statementId = statements.get(i).getId();
 			String name1 = Dna.dna.db.getVariableStringEntry(statementId, variable1);
 			if (name1 != null && !name1.equals("")) {
 				entries1.add(name1);
@@ -1622,12 +1624,12 @@ public class NetworkExporter extends JDialog {
 	 * @param type			A string with with type of one-mode matrix to be created. Can have values "congruence" or "conflict").
 	 * @return				A network object with a one-mode network.
 	 */
-	public Network oneModeNetwork(ArrayList<SidebarStatement> statements, String variable1, String variable2, String qualifier, String type) {
+	public Network oneModeNetwork(ArrayList<Statement> statements, String variable1, String variable2, String qualifier, String type) {
 		ArrayList<String> names1 = new ArrayList<String>(); // unique row labels
 		ArrayList<String> names2 = new ArrayList<String>(); // unique column labels
 		ArrayList<Integer> qualifierValues = new ArrayList<Integer>(); // unique agreement qualifier values
 		for (int i = 0; i < statements.size(); i++) { // retrieve the row and column names from database
-			int statementId = statements.get(i).getStatementId();
+			int statementId = statements.get(i).getId();
 			String name1 = Dna.dna.db.getVariableStringEntry(statementId, variable1);
 			if (name1 != null && !name1.equals("")) {
 				if (!names1.contains(name1)) {
@@ -1674,7 +1676,7 @@ public class NetworkExporter extends JDialog {
 	 * @param statements	An array list of SidebarStatement objects (of the same statement type) that should be exported.
 	 * @param fileName		String with the file name of the CSV file to which the event list will be exported.
 	 */
-	public void releventCSV(ArrayList<SidebarStatement> statements, String fileName) {
+	public void releventCSV(ArrayList<Statement> statements, String fileName) {
 		String key, value;
 		int statementId;
 		Date d;
@@ -1696,7 +1698,7 @@ public class NetworkExporter extends JDialog {
 			}
 			for (int i = 0; i < statements.size(); i++) {
 				out.newLine();
-				statementId = statements.get(i).getStatementId();
+				statementId = statements.get(i).getId();
 				String stringId = new Integer(statementId).toString();
 				out.write(stringId);
 				d = statements.get(i).getDate();
@@ -2067,12 +2069,12 @@ public class NetworkExporter extends JDialog {
 	 * 
 	 * @return	ArrayList of filtered {@link SidebarStatement}s
 	 */
-	ArrayList<SidebarStatement> filter() {
+	ArrayList<Statement> filter() {
 		// step 1: get all statement IDs corresponding to date range and statement type
 		ArrayList<Integer> al = new ArrayList<Integer>();
 		for (int i = 0; i < Dna.dna.gui.sidebarPanel.ssc.size(); i++) {
 			boolean select = true;
-			SidebarStatement s = Dna.dna.gui.sidebarPanel.ssc.get(i);
+			Statement s = Dna.dna.gui.sidebarPanel.ssc.get(i);
 			if (s.getDate().before(startDate)) {
 				select = false;
 			} else if (s.getDate().after(stopDate)) {
@@ -2081,7 +2083,7 @@ public class NetworkExporter extends JDialog {
 				select = false;
 			}
 			if (select == true) {
-				al.add(s.getStatementId());
+				al.add(s.getId());
 			}
 		}
 		
@@ -2132,10 +2134,10 @@ public class NetworkExporter extends JDialog {
 		al = keepIds;
 		
 		// step 4: create reduced array list with SidebarStatements for the computations
-		ArrayList<SidebarStatement> l = new ArrayList<SidebarStatement>();
+		ArrayList<Statement> l = new ArrayList<Statement>();
 		for (int i = 0; i < Dna.dna.gui.sidebarPanel.ssc.size(); i++) {
-			SidebarStatement s = Dna.dna.gui.sidebarPanel.ssc.get(i);
-			if (al.contains(s.getStatementId())) {
+			Statement s = Dna.dna.gui.sidebarPanel.ssc.get(i);
+			if (al.contains(s.getId())) {
 				l.add(s);
 			}
 		}

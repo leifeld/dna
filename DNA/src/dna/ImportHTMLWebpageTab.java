@@ -45,7 +45,7 @@ public class ImportHTMLWebpageTab extends JFrame {
 				String dateElement = (String) ihtml.elementDateField.getText() ;
 
 				String sourceAttElement = ihtml.elementSectionField.getText() ;
-				String coder = (String)  ihtml.coderBox.getModel().getSelectedItem() ;
+				int coder = (int) ihtml.coderBox.getModel().getSelectedItem() ;
 				String source = (String)  ihtml.sourceBox.getModel().getSelectedItem() ;
 				String type = (String)  ihtml.typeBox.getModel().getSelectedItem();
 				String notes = ihtml.notesArea.getText() ;
@@ -112,7 +112,7 @@ public class ImportHTMLWebpageTab extends JFrame {
 				boolean dateManuallySelected = iweb.dateRadioButton.isSelected();
 
 				String sectionElement = iweb.elementSectionField.getText() ;
-				String coder = (String)  iweb.coderBox.getModel().getSelectedItem() ;
+				int coder = (int) iweb.coderBox.getModel().getSelectedItem() ;
 				String source = (String)  iweb.sourceBox.getModel().getSelectedItem() ;
 				String type = (String)  iweb.typeBox.getModel().getSelectedItem();
 				String notes = iweb.notesArea.getText() ;

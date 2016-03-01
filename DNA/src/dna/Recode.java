@@ -53,6 +53,8 @@ import javax.swing.table.DefaultTableModel;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.JXTextField;
 
+import dna.dataStructures.StatementType;
+
 public class Recode extends JDialog {
 	private static final long serialVersionUID = 1L;
 

@@ -1,5 +1,7 @@
 package dna;
 
+import dna.dataStructures.*;
+
 import java.awt.Color;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -13,7 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.microsoft.sqlserver.jdbc.SQLServerException;
+//import com.microsoft.sqlserver.jdbc.SQLServerException;
 
 public class DataAccess {
 	String dbtype;
@@ -261,7 +263,7 @@ public class DataAccess {
                 
 		if (create == true) {
 			createDefaultTypes();
-			executeStatement("INSERT INTO SETTINGS (Property, Value) VALUES('version', '" + Dna.dna.version + "')");
+			executeStatement("INSERT INTO SETTINGS (Property, Value) VALUES('version', '" +  Dna.dna.getVersion() + "')");
 		}
 	}
 
@@ -398,7 +400,7 @@ public class DataAccess {
 		if (create == true) {
 			createDefaultTypes();
 			executeStatement("INSERT INTO SETTINGS (Property, Value) "
-					+ "VALUES('version', '" + Dna.dna.version + "')");
+					+ "VALUES('version', '" + Dna.dna.getVersion() + "')");
 		}
 	}
 
@@ -1643,12 +1645,13 @@ public class DataAccess {
 	 *            The ID of the document from the DOCUMENTS table.
 	 * @return An array list of SidebarStatements.
 	 */
-	public ArrayList<SidebarStatement> getStatementsPerDocumentId(int documentId) {
+	public ArrayList<dna.dataStructures.Statement> getStatementsPerDocumentId(int documentId) {
 
 		ArrayList<Integer> ids = new ArrayList<Integer>();
 		ArrayList<String> types = new ArrayList<String>();
 		ArrayList<Integer> starts = new ArrayList<Integer>();
 		ArrayList<Integer> stops = new ArrayList<Integer>();
+		ArrayList<Integer> coders = new ArrayList<Integer>();
 
 		Connection connection = null;
 		Statement statement = null;
@@ -1664,14 +1667,14 @@ public class DataAccess {
 				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
-			resultSet = statement.executeQuery("SELECT ID, Type, Start, "
-					+ "Stop FROM STATEMENTS WHERE Document = " + documentId);
+			resultSet = statement.executeQuery("SELECT ID, Type, Start, Stop, Coder FROM STATEMENTS WHERE Document = " + documentId);
 			if (resultSet.next()) {
 				do {
 					ids.add(resultSet.getInt("ID"));
 					types.add(resultSet.getString("Type"));
 					starts.add(resultSet.getInt("Start"));
 					stops.add(resultSet.getInt("Stop"));
+					coders.add(resultSet.getInt("Coder"));
 				} while (resultSet.next());
 			}
 			resultSet.close();
@@ -1692,12 +1695,11 @@ public class DataAccess {
 			}
 		}
 
-		ArrayList<SidebarStatement> statements = new ArrayList<SidebarStatement>();
+		ArrayList<dna.dataStructures.Statement> statements = new ArrayList<dna.dataStructures.Statement>();
 		Date d = getDocument(documentId).getDate();
 		for (int i = 0; i < ids.size(); i++) {
 			Color color = getStatementTypeColor(types.get(i));
-			SidebarStatement s = new SidebarStatement(ids.get(i), documentId,
-					starts.get(i), stops.get(i), d, color, types.get(i));
+			dna.dataStructures.Statement s = new dna.dataStructures.Statement(ids.get(i), documentId,	starts.get(i), stops.get(i), d, color, types.get(i), coders.get(i));
 			statements.add(s);
 		}
 
@@ -1711,12 +1713,13 @@ public class DataAccess {
 	 *            The statement type from the STATEMENTTYPE table.
 	 * @return An array list of SidebarStatements.
 	 */
-	public ArrayList<SidebarStatement> getStatementsByType(String type) {
+	public ArrayList<dna.dataStructures.Statement> getStatementsByType(String type) {
 
 		ArrayList<Integer> ids = new ArrayList<Integer>();
 		ArrayList<Integer> documentIds = new ArrayList<Integer>();
 		ArrayList<Integer> starts = new ArrayList<Integer>();
 		ArrayList<Integer> stops = new ArrayList<Integer>();
+		ArrayList<Integer> coders = new ArrayList<Integer>();
 
 		Connection connection = null;
 		Statement statement = null;
@@ -1732,16 +1735,14 @@ public class DataAccess {
 				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
-			resultSet = statement
-					.executeQuery("SELECT ID, Document, "
-							+ "Start, Stop FROM STATEMENTS WHERE Type = '"
-							+ type + "'");
+			resultSet = statement.executeQuery("SELECT ID, Document, Start, Stop, Coder FROM STATEMENTS WHERE Type = '" + type + "'");
 			if (resultSet.next()) {
 				do {
 					ids.add(resultSet.getInt("ID"));
 					documentIds.add(resultSet.getInt("Document"));
 					starts.add(resultSet.getInt("Start"));
 					stops.add(resultSet.getInt("Stop"));
+					coders.add(resultSet.getInt("Coder"));
 				} while (resultSet.next());
 			}
 			resultSet.close();
@@ -1762,13 +1763,11 @@ public class DataAccess {
 			}
 		}
 
-		ArrayList<SidebarStatement> statements = new ArrayList<SidebarStatement>();
+		ArrayList<dna.dataStructures.Statement> statements = new ArrayList<dna.dataStructures.Statement>();
 		for (int i = 0; i < ids.size(); i++) {
 			Color color = getStatementTypeColor(type);
 			Date d = getDocument(documentIds.get(i)).getDate();
-			SidebarStatement s = new SidebarStatement(ids.get(i),
-					documentIds.get(i), starts.get(i), stops.get(i), d, color,
-					type);
+			dna.dataStructures.Statement s = new dna.dataStructures.Statement(ids.get(i),	documentIds.get(i), starts.get(i), stops.get(i), d, color, type, coders.get(i));
 			statements.add(s);
 		}
 
@@ -1784,14 +1783,15 @@ public class DataAccess {
 	 *            Caret position.
 	 * @return An array list of sidebar statements.
 	 */
-	public SidebarStatement getStatementAtLocation(int documentId, int pos) {
+	public dna.dataStructures.Statement getStatementAtLocation(int documentId, int pos) {
 
 		int id = -1;
 		String type = null;
 		int startCaret = -1;
 		int stopCaret = -1;
+		int coder = -1;
 
-		SidebarStatement s = null;
+		dna.dataStructures.Statement s = null;
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -1806,8 +1806,7 @@ public class DataAccess {
 				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
-			resultSet = statement.executeQuery("SELECT ID, Type, Start, "
-					+ "Stop FROM STATEMENTS WHERE Document = " + documentId
+			resultSet = statement.executeQuery("SELECT ID, Type, Start, Stop, Coder FROM STATEMENTS WHERE Document = " + documentId
 					+ " AND Start < " + pos + " AND Stop > " + pos);
 			if (resultSet.next()) {
 				do {
@@ -1815,6 +1814,7 @@ public class DataAccess {
 					type = resultSet.getString("Type");
 					startCaret = resultSet.getInt("Start");
 					stopCaret = resultSet.getInt("Stop");
+					coder = resultSet.getInt("Coder");
 				} while (resultSet.next());
 			}
 			resultSet.close();
@@ -1840,8 +1840,7 @@ public class DataAccess {
 			return null;
 		} else {
 			Color color = getStatementTypeColor(type);
-			s = new SidebarStatement(id, documentId, startCaret, stopCaret, d,
-					color, type);
+			s = new dna.dataStructures.Statement(id, documentId, startCaret, stopCaret, d, color, type, coder);
 			return s;
 		}
 	}
@@ -2203,7 +2202,7 @@ public class DataAccess {
 		String title = null;
 		String text = null;
 		Date date = new Date();
-		String coder = null;
+		int coder = -1;
 		String source = null;
 		String section = null;
 		String notes = null;
@@ -2222,14 +2221,12 @@ public class DataAccess {
 				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
-			resultSet = statement
-					.executeQuery("SELECT * FROM DOCUMENTS WHERE ID = "
-							+ documentId);
+			resultSet = statement.executeQuery("SELECT * FROM DOCUMENTS WHERE ID = " + documentId);
 			if (resultSet.next()) {
 				do {
 					title = resultSet.getString("Title");
 					text = resultSet.getString("Text");
-					coder = resultSet.getString("Coder");
+					coder = resultSet.getInt("Coder");
 					source = resultSet.getString("Source");
 					section = resultSet.getString("Section");
 					notes = resultSet.getString("Notes");
@@ -2367,14 +2364,15 @@ public class DataAccess {
 	 *            The ID of the statement.
 	 * @return A SidebarStatement.
 	 */
-	public SidebarStatement getStatement(int statementId) {
+	public dna.dataStructures.Statement getStatement(int statementId) {
 
 		int documentId = -1;
 		String type = null;
 		int startCaret = -1;
 		int stopCaret = -1;
+		int coder = -1;
 
-		SidebarStatement s = null;
+		dna.dataStructures.Statement s = null;
 		Connection connection = null;
 		Statement statement = null;
 		ResultSet resultSet = null;
@@ -2389,15 +2387,14 @@ public class DataAccess {
 				System.err.println("Type of remote database not recognized.");
 			}
 			statement = connection.createStatement();
-			resultSet = statement
-					.executeQuery("SELECT * FROM STATEMENTS WHERE ID = "
-							+ statementId);
+			resultSet = statement.executeQuery("SELECT * FROM STATEMENTS WHERE ID = " + statementId);
 			if (resultSet.next()) {
 				do {
 					documentId = resultSet.getInt("Document");
 					type = resultSet.getString("Type");
 					startCaret = resultSet.getInt("Start");
 					stopCaret = resultSet.getInt("Stop");
+					coder = resultSet.getInt("Coder");
 				} while (resultSet.next());
 			}
 			resultSet.close();
@@ -2420,8 +2417,7 @@ public class DataAccess {
 
 		Date d = getDocument(documentId).getDate();
 		Color color = getStatementTypeColor(type);
-		s = new SidebarStatement(statementId, documentId, startCaret,
-				stopCaret, d, color, type);
+		s = new dna.dataStructures.Statement(statementId, documentId, startCaret, stopCaret, d, color, type, coder);
 
 		return s;
 	}
@@ -2530,7 +2526,7 @@ public class DataAccess {
 	 *            Type of document (e.g., article from business section).
 	 * @return ID of the new document.
 	 */
-	public int addDocument(String title, String text, Date date, String coder,
+	public int addDocument(String title, String text, Date date, int coder,
 			String source, String section, String notes, String type) {
 		long intDate = date.getTime();
 		int id = executeStatementForId("INSERT INTO DOCUMENTS (Title, Text, Date, Coder, "
@@ -2540,9 +2536,9 @@ public class DataAccess {
 				+ text
 				+ "', "
 				+ intDate
-				+ ", '"
+				+ ", "
 				+ coder
-				+ "', '"
+				+ ", '"
 				+ source
 				+ "', '" + section + "', '" + notes + "', '" + type + "')");
 		return id;
@@ -2567,12 +2563,12 @@ public class DataAccess {
 	 *            The type of the document.
 	 */
 	public void changeDocument(int documentId, String title, Date date,
-			String coder, String source, String section, String notes,
+			int coder, String source, String section, String notes,
 			String type) {
 		long dateInt = date.getTime();
 		executeStatement("UPDATE DOCUMENTS SET Title = '" + title
-				+ "', Date = " + dateInt + ", Coder = '" + coder
-				+ "', Source = '" + source + "', Section = '" + section
+				+ "', Date = " + dateInt + ", Coder = " + coder
+				+ ", Source = '" + source + "', Section = '" + section
 				+ "', Notes = '" + notes + "', Type = '" + type
 				+ "' WHERE ID = " + documentId);
 	}

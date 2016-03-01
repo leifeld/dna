@@ -8,28 +8,27 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
-class DocumentContainer implements TableModel {
-	private ArrayList<Document> documents = new ArrayList<Document> ();
+import dna.dataStructures.Document;
+
+class DocumentTableModel implements TableModel {
+	//private ArrayList<Document> documents = new ArrayList<Document> ();
 	private Vector<TableModelListener> listeners = 	new Vector<TableModelListener>();
 
 	//SK start
-	DocumentContainer(ArrayList<Document> documents)
-	{
-		this.documents = documents;	
+	DocumentTableModel(ArrayList<Document> documents) {
+		Dna.data.setDocuments(documents);	
 		sort();
-		
 	}
 	
-	DocumentContainer()
-	{
+	DocumentTableModel() {
 		super();
 	}
 	//SK end
 	
 	public boolean containsTitle(String title) {
 		boolean contains = false;
-		for (int i = 0; i < documents.size(); i++) {
-			if (documents.get(i).getTitle().equals(title)) {
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			if (Dna.data.getDocuments().get(i).getTitle().equals(title)) {
 				contains = true;
 			}
 		}
@@ -38,7 +37,7 @@ class DocumentContainer implements TableModel {
 
 	public void addDocument( Document document ){
 		int id = document.getId();
-		documents.add( document );
+		Dna.data.getDocuments().add( document );
 		sort();
 		int index = getRowIndexById(id);
 
@@ -51,25 +50,25 @@ class DocumentContainer implements TableModel {
 	}
 	
 	public void changeDocument(int documentId, String title, Date date, 
-			String coder, String source, String section, String notes, 
+			int coder, String source, String section, String notes, 
 			String type) {
 		int i = getRowIndexById(documentId);
-		documents.get(i).setTitle(title);
-		documents.get(i).setDate(date);
-		documents.get(i).setCoder(coder);
-		documents.get(i).setSource(source);
-		documents.get(i).setSection(section);
-		documents.get(i).setNotes(notes);
-		documents.get(i).setType(type);
+		Dna.data.getDocuments().get(i).setTitle(title);
+		Dna.data.getDocuments().get(i).setDate(date);
+		Dna.data.getDocuments().get(i).setCoder(coder);
+		Dna.data.getDocuments().get(i).setSource(source);
+		Dna.data.getDocuments().get(i).setSection(section);
+		Dna.data.getDocuments().get(i).setNotes(notes);
+		Dna.data.getDocuments().get(i).setType(type);
 	}
 	
 	public Document get(int index) {
-		return documents.get(index);
+		return Dna.dna.data.getDocuments().get(index);
 	}
 
 	public Document getDocumentByID(int id)
 	{
-		for(Document doc: documents )
+		for(Document doc: Dna.dna.data.getDocuments() )
 		{
 			if(doc.getId()==id)
 			{
@@ -86,12 +85,12 @@ class DocumentContainer implements TableModel {
 
 	//return number of documents in the table
 	public int getRowCount() {		
-		return documents.size();
+		return Dna.dna.data.getDocuments().size();
 	}
 
 	public int getRowIndexById(int id) throws NullPointerException {
-		for (int i = 0; i < documents.size(); i++) {
-			if (documents.get(i).getId() == id) {
+		for (int i = 0; i < Dna.dna.data.getDocuments().size(); i++) {
+			if (Dna.dna.data.getDocuments().get(i).getId() == id) {
 				return i;
 			}
 		}
@@ -99,7 +98,7 @@ class DocumentContainer implements TableModel {
 	}
 	
 	public int getIdByRowIndex(int row) {
-		return documents.get(row).getId();
+		return Dna.dna.data.getDocuments().get(row).getId();
 	}
 	
 	/**
@@ -111,9 +110,9 @@ class DocumentContainer implements TableModel {
 	 */
 	public boolean existsDuplicateTitle(String title, int documentId) {
 		boolean duplicate = false;
-		for (int i = 0; i < documents.size(); i++) {
-			int id = documents.get(i).getId();
-			if (id != documentId && documents.get(i).getTitle().equals(title)) {
+		for (int i = 0; i < Dna.dna.data.getDocuments().size(); i++) {
+			int id = Dna.dna.data.getDocuments().get(i).getId();
+			if (id != documentId && Dna.dna.data.getDocuments().get(i).getTitle().equals(title)) {
 				duplicate = true;
 			}
 		}
@@ -121,7 +120,7 @@ class DocumentContainer implements TableModel {
 	}
 	
 	public void remove(int index) {
-		documents.remove(index);
+		Dna.dna.data.getDocuments().remove(index);
 		TableModelEvent e = new TableModelEvent(this);
 		for( int i = 0, n = listeners.size(); i < n; i++ ){
 			((TableModelListener)listeners.get( i )).tableChanged( e );
@@ -129,7 +128,7 @@ class DocumentContainer implements TableModel {
 	}
 
 	public void clear() {
-		documents.clear();
+		Dna.dna.data.getDocuments().clear();
 		TableModelEvent e = new TableModelEvent(this);
 		for( int i = 0, n = listeners.size(); i < n; i++ ){
 			((TableModelListener)listeners.get( i )).tableChanged( e );
@@ -147,7 +146,7 @@ class DocumentContainer implements TableModel {
 
 	//get the value of a cell (rowIndex, columnIndex)
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		Document document = documents.get(rowIndex);
+		Document document = Dna.dna.data.getDocuments().get(rowIndex);
 		switch( columnIndex ){
 			case 0: return document.getTitle();
 			case 1: return document.getDate();
@@ -176,7 +175,7 @@ class DocumentContainer implements TableModel {
 	}
 	
 	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-		Document document = documents.get(rowIndex);
+		Document document = Dna.dna.data.getDocuments().get(rowIndex);
 
 		switch( columnIndex ){
 		case 0: 
@@ -194,6 +193,6 @@ class DocumentContainer implements TableModel {
 	}
 
 	public void sort() {
-		Collections.sort(documents);
+		Collections.sort(Dna.dna.data.getDocuments());
 	}
 }
