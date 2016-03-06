@@ -8,7 +8,9 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 
 import javax.swing.Icon;
@@ -51,7 +53,8 @@ public class DocumentProperties extends JFrame {
 		this.setIconImage(tableEditIcon.getImage());
 		this.setLayout(new FlowLayout(FlowLayout.LEFT));
 		
-		Document d = Dna.dna.db.getDocument(documentId);
+		//Document d = Dna.dna.db.getDocument(documentId);
+		Document d = Dna.data.getDocument(documentId);
 		this.title = d.getTitle();
 		this.date = d.getDate();
 		this.coder = d.getCoder();
@@ -94,11 +97,15 @@ public class DocumentProperties extends JFrame {
 						getSelectedItem();
 				String notes = notesArea.getText();
 				String type = (String) typeBox.getModel().getSelectedItem();
-				Dna.dna.db.changeDocument(documentId, title, date, coder, 
-						source, section, notes, type);
+				//Dna.dna.db.changeDocument(documentId, title, date, coder, source, section, notes, type);
+				Dna.data.getDocument(documentId).setTitle(title);
+				Dna.data.getDocument(documentId).setDate(date);
+				Dna.data.getDocument(documentId).setCoder(coder);
+				Dna.data.getDocument(documentId).setSource(source);
+				Dna.data.getDocument(documentId).setSection(section);
+				Dna.data.getDocument(documentId).setNotes(notes);
 				Dna.dna.gui.documentPanel.documentContainer.changeDocument(
-						documentId, title, date, coder, source, section, notes, 
-						type);
+						documentId, title, date, coder, source, section, notes, type);
 				Dna.dna.gui.documentPanel.documentContainer.sort();
 				int newRow = Dna.dna.gui.documentPanel.documentContainer.
 						getRowIndexById(documentId);
@@ -147,8 +154,15 @@ public class DocumentProperties extends JFrame {
 		fieldsPanel.add(sourceLabel, gbc);
 		
 		gbc.gridx++;
-		String[] sourceEntries = Dna.dna.db.getDocumentSources();
-		sourceBox = new JXComboBox(sourceEntries);
+		//String[] sourceEntries = Dna.dna.db.getDocumentSources();
+		ArrayList<String> sourceEntries = new ArrayList<String>();
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			if (!sourceEntries.contains(Dna.data.getDocuments().get(i).getSource())) {
+				sourceEntries.add(Dna.data.getDocuments().get(i).getSource());
+			}
+		}
+		Collections.sort(sourceEntries);
+		sourceBox = new JXComboBox(sourceEntries.toArray());
 		sourceBox.setEditable(true);
 		sourceBox.setSelectedItem(this.source);
 		AutoCompleteDecorator.decorate(sourceBox);
@@ -160,8 +174,15 @@ public class DocumentProperties extends JFrame {
 		fieldsPanel.add(sectionLabel, gbc);
 		
 		gbc.gridx++;
-		String[] sectionEntries = Dna.dna.db.getDocumentSections();
-		sectionBox = new JXComboBox(sectionEntries);
+		//String[] sectionEntries = Dna.dna.db.getDocumentSections();
+		ArrayList<String> sectionEntries = new ArrayList<String>();
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			if (!sectionEntries.contains(Dna.data.getDocuments().get(i).getSection())) {
+				sectionEntries.add(Dna.data.getDocuments().get(i).getSection());
+			}
+		}
+		Collections.sort(sectionEntries);
+		sectionBox = new JXComboBox(sectionEntries.toArray());
 		sectionBox.setEditable(true);
 		sectionBox.setSelectedItem(this.section);
 		AutoCompleteDecorator.decorate(sectionBox);
@@ -174,8 +195,15 @@ public class DocumentProperties extends JFrame {
 		fieldsPanel.add(typeLabel, gbc);
 		
 		gbc.gridx++;
-		String[] typeEntries = Dna.dna.db.getDocumentTypes();
-		typeBox = new JXComboBox(typeEntries);
+		//String[] typeEntries = Dna.dna.db.getDocumentTypes();
+		ArrayList<String> typeEntries = new ArrayList<String>();
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			if (!typeEntries.contains(Dna.data.getDocuments().get(i).getType())) {
+				typeEntries.add(Dna.data.getDocuments().get(i).getType());
+			}
+		}
+		Collections.sort(typeEntries);
+		typeBox = new JXComboBox(typeEntries.toArray());
 		typeBox.setEditable(true);
 		typeBox.setSelectedItem(this.type);
 		AutoCompleteDecorator.decorate(typeBox);

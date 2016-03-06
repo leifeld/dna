@@ -3,6 +3,10 @@ package dna;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Set;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -11,6 +15,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.text.DefaultCaret;
 
+import dna.dataStructures.Statement;
 import dna.dataStructures.StatementType;
 
 public class DocStats extends JPanel {
@@ -45,9 +50,9 @@ public class DocStats extends JPanel {
 		refreshButton.setEnabled(false);
 		refreshButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (Dna.dna.db != null) {
+				//if (Dna.dna.db != null) {
 					computeStats();
-				}
+				//}
 			}
 		});
 		
@@ -67,10 +72,20 @@ public class DocStats extends JPanel {
 				+ "Statements: " + numStatements + "\n"
 				+ "Statement Links: " + statementLinks + "\n";
 		
-		for (StatementType st: Dna.dna.db.getStatementTypes()) {
+		//for (StatementType st: Dna.dna.db.getStatementTypes()) {
+		for (StatementType st : Dna.data.getStatementTypes()) {
 			statText = statText + "\n\"" + st.getLabel() + "\" Variables:\n";
-			for (String var : st.getVariables().keySet()) {
-				statText = statText + "     " + var + ": " + Dna.dna.db.getVariableEntriesCount(var, st.getLabel()) + "\n";
+			String[] vars = st.getVariables().keySet().toArray(new String[st.getVariables().keySet().size()]);
+			ArrayList<Statement> s = Dna.data.getStatementsByType(st.getLabel());
+			for (int j = 0; j < vars.length; j++) {
+				ArrayList<Object> varEntries = new ArrayList<Object>();
+				for (int i = 0; i < s.size(); i++) {
+					if (!varEntries.contains(s.get(i).getValues().get(vars[j]))) {
+						varEntries.add(s.get(i).getValues().get(vars[j]));
+					}
+				}
+				int count = varEntries.size();
+				statText = statText + "     " + vars[j] + ": " + count + "\n";
 			}
 		}
 

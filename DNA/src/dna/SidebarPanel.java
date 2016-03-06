@@ -17,6 +17,8 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -45,6 +47,7 @@ import org.jdesktop.swingx.JXTextField;
 
 import dna.dataStructures.Regex;
 import dna.dataStructures.Statement;
+import dna.dataStructures.StatementLink;
 import dna.dataStructures.StatementType;
 
 class SidebarPanel extends JScrollPane {
@@ -208,13 +211,12 @@ class SidebarPanel extends JScrollPane {
             int statementID = (int) table.getModel().getValueAt(modelRow, modelColumn);
 
             Color col = null;
-            for (Statement ss : Dna.dna.data.getStatements()) {
+            for (Statement ss : Dna.data.getStatements()) {
                 if (statementID == ss.getId())  {
                     col = ss.getColor();
                 }
             }
-            if (!isSelected)
-            {
+            if (!isSelected) {
                 c.setBackground(col);
             }
             
@@ -258,7 +260,8 @@ class SidebarPanel extends JScrollPane {
 				if (row > -1) {
 					int statementId = ssc.get(row).getId();
 					if (statementId != -1) {
-						int docId = Dna.dna.db.getStatement(statementId).getDocument();
+						//int docId = Dna.dna.db.getStatement(statementId).getDocument();
+						int docId = Dna.data.getStatement(statementId).getDocument();
 						int docRow = Dna.dna.gui.documentPanel.documentContainer.
 								getRowIndexById(docId);
 						Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
@@ -323,7 +326,9 @@ class SidebarPanel extends JScrollPane {
                     int s2 = (int) connectedStatementTable.getModel().getValueAt(selectedRows[1], 0);
 
 //                                 System.out.println("selectecd ids: "+ s1 + " and " + s2);
-                    Dna.dna.db.addLinkedStatement(s1, s2);
+                    //Dna.dna.db.addLinkedStatement(s1, s2);
+                    int linkId = Dna.data.generateNewStatementLinkId();
+                    Dna.data.getStatementLinks().add(new StatementLink(linkId, s1, s2));
                     
                     updateViewLinksTable();
                     connectedStatementTable.clearSelection();
@@ -363,9 +368,9 @@ class SidebarPanel extends JScrollPane {
                 if (row > -1) {
                     int statementId = ssc.get(row).getId();
                     if (statementId != -1) {
-                        int docId = Dna.dna.db.getStatement(statementId).getDocument();
-                        int docRow = Dna.dna.gui.documentPanel.documentContainer.
-                                getRowIndexById(docId);
+                        //int docId = Dna.dna.db.getStatement(statementId).getDocument();
+                    	int docId = Dna.data.getStatement(statementId).getDocument();
+                        int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
                         Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
                                 setSelectionInterval(docRow, docRow);
 //						Dna.dna.gui.textPanel.selectStatement(statementId, docId);
@@ -417,9 +422,9 @@ class SidebarPanel extends JScrollPane {
 
                 int statement1Id = (int) linkedTable.getModel().getValueAt(selectedrow, selectedCol);
                 if (statement1Id != -1) {
-                    int docId = Dna.dna.db.getStatement(statement1Id).getDocument();
-                    int docRow = Dna.dna.gui.documentPanel.documentContainer.
-                            getRowIndexById(docId);
+                    //int docId = Dna.dna.db.getStatement(statement1Id).getDocument();
+                	int docId = Dna.data.getStatement(statement1Id).getDocument();
+                    int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
                     Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
                             setSelectionInterval(docRow, docRow);
 //						Dna.dna.gui.textPanel.selectStatement(statementId, docId);
@@ -462,7 +467,8 @@ class SidebarPanel extends JScrollPane {
 					int[] selectedRows = linkedTable.getSelectedRows();
                                         for (int id : selectedRows) {
                                             int linkID = (int) linkedTable.getModel().getValueAt(id, 0);
-                                            Dna.dna.db.removeLink(linkID);
+                                            //Dna.dna.db.removeLink(linkID);
+                                            Dna.data.getStatementLinks().remove(linkID);
                         //                    System.out.println("selectecd rows: " + id + " and id: " + linkID);
                                             updateViewLinksTable();
                                         }
@@ -488,7 +494,13 @@ class SidebarPanel extends JScrollPane {
         ArrayList<int[]> data = new ArrayList<>();
         Integer[][] tableData = null;
         if (Dna.dna != null) {
-            data = Dna.dna.db.getAllLinkedStatements();
+            //data = Dna.dna.db.getAllLinkedStatements();
+        	for (int i = 0; i < Dna.data.getStatementLinks().size(); i++) {
+        		int[] ids = new int[2];
+        		ids[0] = Dna.data.getStatementLinks().get(i).getSourceId();
+        		ids[1] = Dna.data.getStatementLinks().get(i).getTargetId();
+        		data.add(ids);
+        	}
             tableData = new Integer[data.size()][3];
 //            System.out.println("rs. size " + data.size());
             for (int i = 0; i < data.size(); i++) {
@@ -517,9 +529,10 @@ class SidebarPanel extends JScrollPane {
 	public void updateStatementTypes() {
 		typeComboBox1.removeAllItems();
 		ArrayList<StatementType> types = new ArrayList<StatementType>();
-		if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().
-				equals("")) {
-			types = Dna.dna.db.getStatementTypes();
+		//if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().equals("")) {
+		if (Dna.data.getSettings().get("filename") != null && !Dna.data.getSettings().get("filename").equals("")) {
+			//types = Dna.dna.db.getStatementTypes();
+			types = Dna.data.getStatementTypes();
 			for (int i = 0; i < types.size(); i++) {				
 				String type = types.get(i).getLabel().toString();
 				if(type!=null )
@@ -538,8 +551,8 @@ class SidebarPanel extends JScrollPane {
 
 		//LB.Add: same for the Self-Contradiction Filter
 		cp.filterComboBoxType.removeAllItems();
-		if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().
-				equals("")) {
+		//if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().equals("")) {
+		if (Dna.data.getSettings().get("filename") != null && !Dna.data.getSettings().get("filename").equals("")) {
 			//types = Dna.dna.db.getStatementTypes();
 			for (int i = 0; i < types.size(); i++) {
 				cp.filterComboBoxType.addItem(types.get(i).getLabel());
@@ -579,7 +592,8 @@ class SidebarPanel extends JScrollPane {
 		variableComboBox2.removeAllItems();
 		String type = (String) typeComboBox1.getSelectedItem();
 		if (type != null && !type.equals("")) {
-			HashMap<String, String> variables = Dna.dna.db.getVariables(type);
+			//HashMap<String, String> variables = Dna.dna.db.getVariables(type);
+			HashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
 			Iterator<String> keyIterator = variables.keySet().iterator();
 			while (keyIterator.hasNext()){
 				String key = keyIterator.next();
@@ -618,10 +632,10 @@ class SidebarPanel extends JScrollPane {
 	 * (listModel) in RegexManagerPanel-class
 	 */
 	public void updateRegexManagerPanel() {
-		ArrayList<Regex> regex = Dna.dna.db.getRegex();
-		for (int i = 0; i < regex.size(); i++) {
-			String label = regex.get(i).getLabel();
-			Color color	= regex.get(i).getColor();
+		//ArrayList<Regex> regex = Dna.dna.db.getRegex();
+		for (int i = 0; i < Dna.data.getRegexes().size(); i++) {
+			String label = Dna.data.getRegexes().get(i).getLabel();
+			Color color	= Dna.data.getRegexes().get(i).getColor();
 			Regex reg = new Regex(label, color);
 			Dna.dna.gui.sidebarPanel.rm.listModel.addElement(reg);
 		}
@@ -803,7 +817,8 @@ class SidebarPanel extends JScrollPane {
 		}
 
 		private void filter() {
-			String fn = Dna.dna.db.getFileName();
+			//String fn = Dna.dna.db.getFileName();
+			String fn = Dna.data.getSettings().get("filename");
 			if (fn != null && !fn.equals("")) 
 			{
 				String p1 = patternField1.getText();
@@ -830,10 +845,29 @@ class SidebarPanel extends JScrollPane {
 				}
 
 				if (!t1.equals("") && ! v1.equals("") && !v2.equals("")) {
-					final ArrayList<Integer> ids1 = Dna.dna.db.
-							getStatementMatch(t1, v1, p1);
-					final ArrayList<Integer> ids2 = Dna.dna.db.
-							getStatementMatch(t1, v2, p2);
+					//final ArrayList<Integer> ids1 = Dna.dna.db.getStatementMatch(t1, v1, p1);
+					//final ArrayList<Integer> ids2 = Dna.dna.db.getStatementMatch(t1, v2, p2);
+					ArrayList<Integer> ids1 = new ArrayList<Integer>();
+					Pattern p = Pattern.compile(p1);
+					for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+						String s = (String) Dna.data.getStatements().get(i).getValues().get(v1);
+						Matcher m = p.matcher(s);
+						boolean b = m.find();
+						if (b == true) {
+							ids1.add(Dna.data.getStatements().get(i).getId());
+						}
+					}
+					ArrayList<Integer> ids2 = new ArrayList<Integer>();
+					p = Pattern.compile(p2);
+					for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+						String s = (String) Dna.data.getStatements().get(i).getValues().get(v2);
+						Matcher m = p.matcher(s);
+						boolean b = m.find();
+						if (b == true) {
+							ids2.add(Dna.data.getStatements().get(i).getId());
+						}
+					}
+					
 					final String p1final = p1;
 					final String p2final = p2;
 

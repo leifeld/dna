@@ -17,6 +17,8 @@ import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -33,6 +35,9 @@ import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
+
+import dna.dataStructures.Document;
+import dna.dataStructures.Statement;
 
 /**
  *
@@ -92,7 +97,8 @@ public class CreateStatementFrame extends JFrame {
 //                gbc.gridx--;
 //                gbc.gridy++;
 
-        LinkedHashMap<String, String> variables = Dna.dna.db.getVariables(type);
+        //LinkedHashMap<String, String> variables = Dna.dna.db.getVariables(type);
+        LinkedHashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
 
         Iterator<String> keyIterator = variables.keySet().iterator();
         while (keyIterator.hasNext()) {
@@ -102,9 +108,18 @@ public class CreateStatementFrame extends JFrame {
             
             if (value.equals("short text")) {
 //				String entry = Dna.dna.db.getVariableStringEntry(statementId, 	key);
-                String[] entries = Dna.dna.db.getVariableStringEntries(key,
-                        type);
-                JComboBox<String> box = new JComboBox<String>(entries);
+                //String[] entries = Dna.dna.db.getVariableStringEntries(key, type);
+            	ArrayList<String> entries = new ArrayList<String>();
+        		ArrayList<Statement> statements = Dna.data.getStatementsByType(type);
+        		for (int i = 0; i < statements.size(); i++) {
+        			String a = (String) Dna.data.getStatements().get(i).getValues().get(key);
+        			if (!entries.contains(a)) {
+        				entries.add(a);
+        			}
+        		}
+        		String[] entriesArray = new String[entries.size()];
+        		entries.toArray(entriesArray);
+                JComboBox<String> box = new JComboBox<String>(entriesArray);
                 box.setEditable(true);
                 box.setPreferredSize(new Dimension(220, 20));
 //    			box.setSelectedItem((String)entry);
@@ -192,60 +207,81 @@ public class CreateStatementFrame extends JFrame {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                     Dna.dna.addStatement(type, documentId, selectionStart, selectionEnd);
-                     int statementId = Dna.dna.db.getStatementId(type, documentId, selectionStart, selectionEnd);
-//                     System.out.println("statement added id: " + statementId );
-                     
-                     Component[] com = gridBagPanel.getComponents();
-                     HashMap<String, String> vars = Dna.dna.db.getVariables(type);
-                     for (int i = 1; i < com.length; i++) {
-			Object content = null;
-			String contentType = null;
-			String dataType = null;
-			if (com[i].getClass().getName().equals("javax.swing.JComboBox")) {
-				contentType = ((JLabel)com[i-1]).getText();
-				dataType = vars.get(contentType);
-				content = ((JComboBox<String>) com[i]).getEditor().getItem();
-				if (content == null) {
-					content = "";
+                
+                LinkedHashMap<String, Object> values = new LinkedHashMap<String, Object>();
+                LinkedHashMap<String, String> vars = Dna.data.getStatementType(type).getVariables();
+                Iterator<String> keyIterator = vars.keySet().iterator();
+				while (keyIterator.hasNext()){	
+					String key = keyIterator.next();
+					if (vars.get(key).equals("long text") || vars.get(key).equals("short text")) {
+						values.put(key, "");
+					} else if (vars.get(key).equals("boolean") || vars.get(key).equals("integer")) {
+						values.put(key, 0);
+					}
 				}
-				Dna.dna.db.changeStatement(statementId, contentType, 
-						(String) content, dataType);
-			} else if (com[i].getClass().getName().equals("javax.swing.JCheckBox")) {
-				contentType = ((JLabel)com[i-1]).getText();
-				dataType = vars.get(contentType);
-				content = ((JCheckBox)com[i]).isSelected();
-				int intBool;
-				if ((Boolean) content == false) {
-					intBool = 0;
-				} else {
-					intBool = 1;
-				}
-				Dna.dna.db.changeStatement(statementId, contentType, intBool, dataType);
-			} else if (com[i].getClass().getName().equals("javax.swing.JScrollPane")) {
-				contentType = ((JLabel)com[i-1]).getText();
-				dataType = vars.get(contentType);
-				JScrollPane jsp = ((JScrollPane)com[i]);
-				JTextArea jta = (JTextArea) jsp.getViewport().getView();
-				content = jta.getText();
-				if (content == null) {
-					content = "";
-				}
-				Dna.dna.db.changeStatement(statementId, contentType, 
-						(String) content, dataType);
-			} else if (com[i].getClass().getName().equals("javax.swing.JPanel")) {
-				contentType = ((JLabel)com[i-1]).getText();
-				dataType = vars.get(contentType);
-				JPanel jp = (JPanel) com[i];
-				JSpinner jsp = (JSpinner) jp.getComponent(0);
-				content = jsp.getValue();
-				Dna.dna.db.changeStatement(statementId, contentType, 
-						(Integer) content, dataType);
-			}
-		}
+				int id = Dna.data.generateNewStatementId();
+				Document document = Dna.data.getDocument(documentId);
+				Date date = document.getDate();
+				Color color = Dna.data.getStatementType(type).getColor();
+				int coder = Integer.parseInt(Dna.data.getSettings().get("currentCoder"));
+				Statement statement = new Statement(id, documentId, selectionStart, selectionEnd, date, color, type, coder, values);
+				Dna.data.getStatements().add(statement);
+                
+                //Dna.dna.addStatement(type, documentId, selectionStart, selectionEnd);
+                //int statementId = Dna.dna.db.getStatementId(type, documentId, selectionStart, selectionEnd);
+				//System.out.println("statement added id: " + statementId );
+                
+                Component[] com = gridBagPanel.getComponents();
+                //HashMap<String, String> vars = Dna.dna.db.getVariables(type);
+                for (int i = 1; i < com.length; i++) {
+                	Object content = null;
+                	String contentType = null;
+                	//String dataType = null;
+                	if (com[i].getClass().getName().equals("javax.swing.JComboBox")) {
+                		contentType = ((JLabel)com[i-1]).getText();
+                		//dataType = vars.get(contentType);
+                		content = ((JComboBox<String>) com[i]).getEditor().getItem();
+                		if (content == null) {
+                			content = "";
+                		}
+                		Dna.data.getStatement(id).getValues().put(contentType, content);
+                		//Dna.dna.db.changeStatement(statementId, contentType, (String) content, dataType);
+                	} else if (com[i].getClass().getName().equals("javax.swing.JCheckBox")) {
+                		contentType = ((JLabel)com[i-1]).getText();
+                		//dataType = vars.get(contentType);
+                		content = ((JCheckBox)com[i]).isSelected();
+                		int intBool;
+                		if ((Boolean) content == false) {
+                			intBool = 0;
+                		} else {
+                			intBool = 1;
+                		}
+                		//Dna.dna.db.changeStatement(statementId, contentType, intBool, dataType);
+                		Dna.data.getStatement(id).getValues().put(contentType, intBool);
+                	} else if (com[i].getClass().getName().equals("javax.swing.JScrollPane")) {
+                		contentType = ((JLabel)com[i-1]).getText();
+                		//dataType = vars.get(contentType);
+                		JScrollPane jsp = ((JScrollPane)com[i]);
+                		JTextArea jta = (JTextArea) jsp.getViewport().getView();
+                		content = jta.getText();
+                		if (content == null) {
+                			content = "";
+                		}
+                		//Dna.dna.db.changeStatement(statementId, contentType, (String) content, dataType);
+                		Dna.data.getStatement(id).getValues().put(contentType, content);
+                	} else if (com[i].getClass().getName().equals("javax.swing.JPanel")) {
+                		contentType = ((JLabel)com[i-1]).getText();
+                		//dataType = vars.get(contentType);
+                		JPanel jp = (JPanel) com[i];
+                		JSpinner jsp = (JSpinner) jp.getComponent(0);
+                		content = jsp.getValue();
+                		//Dna.dna.db.changeStatement(statementId, contentType, (Integer) content, dataType);
+                		Dna.data.getStatement(id).getValues().put(contentType, (Integer) content);
+                	}
+                }
                  
 //                Popup.saveContents(gridBagPanel, statementId, statementType); //causing error, makes slow
-		dispose();
+                dispose();
                 Dna.dna.gui.textPanel.paintStatements();
                 Dna.dna.gui.textPanel.updateUI();
             }
@@ -266,8 +302,6 @@ public class CreateStatementFrame extends JFrame {
 
         this.setContentPane(mainpPanel);
         this.setLocation((int)(WIDTH/4 ), (int)(HEIGHT/4));
-        pack();      
-        
+        pack();
     }
-
 }

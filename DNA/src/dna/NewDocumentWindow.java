@@ -8,7 +8,9 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -28,6 +30,8 @@ import org.jdesktop.swingx.JXComboBox;
 import org.jdesktop.swingx.JXTextArea;
 import org.jdesktop.swingx.JXTextField;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
+
+import dna.dataStructures.Document;
 
 @SuppressWarnings("serial")
 class NewDocumentWindow extends JFrame {
@@ -99,8 +103,7 @@ class NewDocumentWindow extends JFrame {
 				} else {
 					for (int i = 0; i < Dna.dna.gui.documentPanel.documentContainer.
 							getRowCount(); i++) { //TODO: better: compare with db directly
-						if (Dna.dna.gui.documentPanel.documentContainer.getValueAt(i, 0).
-								equals(title)) {
+						if (Dna.dna.gui.documentPanel.documentContainer.getValueAt(i, 0).equals(title)) {
 							duplicate = true;
 						}
 					}
@@ -136,8 +139,9 @@ class NewDocumentWindow extends JFrame {
 				notes = notes.replaceAll("'", "''");
 				String type = (String) typeBox.getModel().getSelectedItem();
 				type = type.replaceAll("'", "''");
-				Dna.dna.addDocument(title, text, date, coder, source, section, 
-						notes, type);
+				//Dna.dna.addDocument(title, text, date, coder, source, section, notes, type);
+				Document d = new Document(Dna.data.generateNewDocumentId(), title, text, date, coder, source, section, notes, type);
+				Dna.data.getDocuments().add(d);
 				//TODO: change selection to new row
 				
 				int index = -1;
@@ -171,8 +175,7 @@ class NewDocumentWindow extends JFrame {
 		gc.set(Calendar.SECOND, 0);
 		gc.set(Calendar.MILLISECOND, 0);
 		dateModel.setValue(gc.getTime());
-		dateSpinner.setEditor(new JSpinner.DateEditor(dateSpinner, 
-				"yyyy-MM-dd  HH:mm:ss"));
+		dateSpinner.setEditor(new JSpinner.DateEditor(dateSpinner, "yyyy-MM-dd  HH:mm:ss"));
 		fieldsPanel.add(dateSpinner, gbc);
 		
 		gbc.gridy++;
@@ -196,8 +199,15 @@ class NewDocumentWindow extends JFrame {
 		fieldsPanel.add(sourceLabel, gbc);
 		
 		gbc.gridx++;
-		String[] sourceEntries = Dna.dna.db.getDocumentSources();
-		sourceBox = new JXComboBox(sourceEntries);
+		//String[] sourceEntries = Dna.dna.db.getDocumentSources();
+		ArrayList<String> sourceEntries = new ArrayList<String>();
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			if (!sourceEntries.contains(Dna.data.getDocuments().get(i).getSource())) {
+				sourceEntries.add(Dna.data.getDocuments().get(i).getSource());
+			}
+		}
+		Collections.sort(sourceEntries);
+		sourceBox = new JXComboBox(sourceEntries.toArray());
 		sourceBox.setEditable(true);
 		sourceBox.setSelectedItem("");
 		AutoCompleteDecorator.decorate(sourceBox);
@@ -209,8 +219,15 @@ class NewDocumentWindow extends JFrame {
 		fieldsPanel.add(sectionLabel, gbc);
 		
 		gbc.gridx++;
-		String[] sectionEntries = Dna.dna.db.getDocumentSections();
-		sectionBox = new JXComboBox(sectionEntries);
+		//String[] sectionEntries = Dna.dna.db.getDocumentSections();
+		ArrayList<String> sectionEntries = new ArrayList<String>();
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			if (!sectionEntries.contains(Dna.data.getDocuments().get(i).getSection())) {
+				sectionEntries.add(Dna.data.getDocuments().get(i).getSection());
+			}
+		}
+		Collections.sort(sectionEntries);
+		sectionBox = new JXComboBox(sectionEntries.toArray());
 		sectionBox.setEditable(true);
 		sectionBox.setSelectedItem("");
 		AutoCompleteDecorator.decorate(sectionBox);
@@ -223,8 +240,15 @@ class NewDocumentWindow extends JFrame {
 		fieldsPanel.add(typeLabel, gbc);
 		
 		gbc.gridx++;
-		String[] typeEntries = Dna.dna.db.getDocumentTypes();
-		typeBox = new JXComboBox(typeEntries);
+		//String[] typeEntries = Dna.dna.db.getDocumentTypes();
+		ArrayList<String> typeEntries = new ArrayList<String>();
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			if (!typeEntries.contains(Dna.data.getDocuments().get(i).getType())) {
+				typeEntries.add(Dna.data.getDocuments().get(i).getType());
+			}
+		}
+		Collections.sort(typeEntries);
+		typeBox = new JXComboBox(typeEntries.toArray());
 		typeBox.setEditable(true);
 		typeBox.setSelectedItem("");
 		AutoCompleteDecorator.decorate(typeBox);

@@ -2,39 +2,69 @@ package dna;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 
+import javax.swing.AbstractListModel;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTree;
+import javax.swing.ListCellRenderer;
+import javax.swing.ListSelectionModel;
+import javax.swing.UIDefaults;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeSelectionModel;
 
 import org.jdesktop.swingx.JXTextField;
+
+import dna.StatementTypeEditor.TypeTableSelectionHandler;
+import dna.StatementTypeEditor.VarTableSelectionHandler;
+import dna.dataStructures.Coder;
+import dna.dataStructures.StatementType;
 
 @SuppressWarnings("serial")
 public class NewDatabaseDialog extends JDialog {
@@ -59,14 +89,10 @@ public class NewDatabaseDialog extends JDialog {
 		JPanel databasePanel = new DatabasePanel();
 		
 		// Coder panel
-		JPanel coderPanel = new JPanel();
-		JLabel test2 = new JLabel("test2");
-		coderPanel.add(test2);
+		JPanel coderPanel = new CoderPanel();
 
 		// Statement type panel
-		JPanel statementTypePanel = new JPanel();
-		JLabel test3 = new JLabel("test3");
-		statementTypePanel.add(test3);
+		JPanel statementTypePanel = new StatementTypePanel();
 		
 		// Card layout on the right
 		JPanel panel = new JPanel();
@@ -116,10 +142,11 @@ public class NewDatabaseDialog extends JDialog {
 		sp.setEnabled(false);
 		
 		// set location and pack window
+		this.setModal(true);
+		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 		this.setResizable(false);
-		this.pack();
 	}
 
 	class OptionsPanel extends JPanel {
@@ -249,7 +276,7 @@ public class NewDatabaseDialog extends JDialog {
 			g.gridwidth = 4;
 			g.insets = new Insets(15, 10, 3, 10);
 			JButton checkButton = new JButton("Check", new ImageIcon(getClass().getResource("/icons/database_connect.png")));
-			JPanel checkPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			JPanel checkPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
 			checkPanel.add(checkButton);
 			checkPanel.add(Box.createRigidArea(new Dimension(5,5)));
 			JLabel checkLabel = new JLabel("");
@@ -274,4 +301,793 @@ public class NewDatabaseDialog extends JDialog {
 		}
 	}
 	
+	// Coder Panel
+	class CoderPanel extends JPanel {
+		JButton addButton, removeButton, editButton;
+		CoderListModel model;
+		CoderListRenderer renderer;
+		
+		CoderPanel() {
+			this.setLayout(new BorderLayout());
+			this.add(new JLabel("Manage coders and permissions"), BorderLayout.NORTH);
+			
+			JList<Coder> coderList = new JList<Coder>();
+			model = new CoderListModel();
+			coderList.setModel(model);
+			renderer = new CoderListRenderer();
+			coderList.setCellRenderer(renderer);
+			JScrollPane sp = new JScrollPane(coderList);
+			this.add(sp, BorderLayout.CENTER);
+			
+			addButton = new JButton("Add", new ImageIcon(getClass().getResource("/icons/user_add.png")));
+			removeButton = new JButton("Remove", new ImageIcon(getClass().getResource("/icons/user_delete.png")));
+			editButton = new JButton("Edit", new ImageIcon(getClass().getResource("/icons/user_edit.png")));
+			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			buttonPanel.add(addButton);
+			buttonPanel.add(removeButton);
+			buttonPanel.add(editButton);
+			removeButton.setEnabled(false);
+			editButton.setEnabled(false);
+			this.add(buttonPanel, BorderLayout.SOUTH);
+			
+			coderList.addListSelectionListener(new ListSelectionListener() {
+				public void valueChanged(ListSelectionEvent e) {
+					if (coderList.getModel().getSize() == 0 || coderList.isSelectionEmpty()) {
+						removeButton.setEnabled(false);
+						editButton.setEnabled(false);
+					} else {
+						removeButton.setEnabled(true);
+						editButton.setEnabled(true);
+					}
+				}
+			});
+			
+			addButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					EditCoderWindow ecw = new EditCoderWindow(new Coder());
+					Coder coder = ecw.getCoder();
+					ecw.dispose();
+					if (!coder.getName().equals("")) {
+						model.addElement(coder);
+					}
+					coderList.updateUI();
+				}
+			});
+			
+			removeButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					model.removeElement(coderList.getSelectedIndex());
+					coderList.updateUI();
+				}
+			});
+
+			editButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					Coder coder = coderList.getSelectedValue();
+					int index = coderList.getSelectedIndex();
+					EditCoderWindow ecw = new EditCoderWindow(coder);
+					Coder coderUpdated = ecw.getCoder();
+					ecw.dispose();
+					model.replaceElement(index, coderUpdated);
+					coderList.updateUI();
+				}
+			});
+			
+			coderList.updateUI();
+		}
+		
+		// List model for linking the coder array list to the JList
+		public class CoderListModel extends AbstractListModel {
+			
+			public void removeElement(int index) {
+				Dna.data.getCoders().remove(index);
+		        fireContentsChanged(this, 0, Dna.data.getCoders().size() - 1);
+			}
+			
+			public void replaceElement(int index, Object o) {
+				Dna.data.getCoders().set(index, (Coder) o);
+		        fireContentsChanged(this, index, index);
+			}
+			
+		    public void addElement(Object o) {
+		        Dna.data.getCoders().add((Coder) o);
+		        Collections.sort(Dna.data.getCoders());
+		        fireContentsChanged(this, 0, Dna.data.getCoders().size() - 1);
+		    }
+
+		    @Override
+		    public Object getElementAt(int index) {
+		    	return Dna.data.getCoders().get(index);
+		    }
+		    
+		    @Override
+		    public int getSize() {
+		    	return Dna.data.getCoders().size();
+		    }
+		}
+
+		/**
+		 * Renderer for coders in a JComboBox
+		 */
+		class CoderListRenderer extends JLabel implements ListCellRenderer<Object> {
+			private static final long serialVersionUID = 1L;
+			@Override
+			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+				Coder coder = (Coder) value;
+				JPanel panel = new JPanel(new BorderLayout());
+				
+				JButton colorRectangle = new JButton();
+				colorRectangle.setPreferredSize(new Dimension(16, 16));
+				colorRectangle.setBackground(new Color(coder.getRed(), coder.getGreen(), coder.getBlue()));
+				
+				JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+				namePanel.add(colorRectangle);
+				namePanel.add(Box.createRigidArea(new Dimension(5,5)));
+				JLabel coderLabel = new JLabel(coder.getName());
+				namePanel.add(coderLabel);
+
+				int numPerm = 0;
+				if (coder.isAddDocuments()) {
+					numPerm++;
+				}
+				if (coder.isViewOtherDocuments()) {
+					numPerm++;
+				}
+				if (coder.isEditOtherDocuments()) {
+					numPerm++;
+				}
+				if (coder.isAddStatements()) {
+					numPerm++;
+				}
+				if (coder.isViewOtherStatements()) {
+					numPerm++;
+				}
+				if (coder.isEditOtherStatements()) {
+					numPerm++;
+				}
+				if (coder.isEditCoders()) {
+					numPerm++;
+				}
+				if (coder.isEditStatementTypes()) {
+					numPerm++;
+				}
+				if (coder.isEditRegex()) {
+					numPerm++;
+				}
+				JLabel permissionsLabel = new JLabel("(" + numPerm + " out of 9 permissions set)");
+				namePanel.add(Box.createRigidArea(new Dimension(5,5)));
+				namePanel.add(permissionsLabel);
+				
+				if (isSelected) {
+					UIDefaults defaults = javax.swing.UIManager.getDefaults();
+					Color bg = defaults.getColor("List.selectionBackground");
+					Color fg = defaults.getColor("List.selectionForeground");
+					panel.setBackground(bg);
+					namePanel.setBackground(bg);
+				}
+				
+				panel.add(namePanel, BorderLayout.NORTH);
+				return panel;
+			}
+		}
+		
+		// GUI component for editing coder details
+		class EditCoderWindow extends JDialog{
+			Coder coder;
+			JTextField nameField;
+			JColorChooser colorChooser;
+			JCheckBox permAddDocuments, permViewOtherDocuments, permEditOtherDocuments;
+			JCheckBox permAddStatements, permViewOtherStatements, permEditOtherStatements;
+			JCheckBox permEditCoders, permEditStatementTypes, permEditRegex;
+			
+			public EditCoderWindow(Coder coder) {
+				this.coder = coder;
+				
+				this.setTitle("Coder details");
+				this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+				ImageIcon icon = new ImageIcon(getClass().getResource("/icons/user_edit.png"));
+				this.setIconImage(icon.getImage());
+				this.setLayout(new BorderLayout());
+				
+				JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+				JLabel nameLabel = new JLabel("Name: ");
+				namePanel.add(nameLabel);
+				namePanel.add(Box.createRigidArea(new Dimension(5,5)));
+				nameField = new JTextField(coder.getName());
+				nameField.setColumns(50);
+				namePanel.add(nameField);
+				this.add(namePanel, BorderLayout.NORTH);
+				
+				JPanel permPanel = new JPanel(new GridLayout(3, 3));
+				permAddDocuments = new JCheckBox("add documents");
+				permViewOtherDocuments = new JCheckBox("view others' documents");
+				permEditOtherDocuments = new JCheckBox("edit others' documents");
+				permAddStatements = new JCheckBox("add statements");
+				permViewOtherStatements = new JCheckBox("view others' statements");
+				permEditOtherStatements = new JCheckBox("edit others' statements");
+				permEditCoders = new JCheckBox("edit coder settings");
+				permEditStatementTypes = new JCheckBox("edit statement types");
+				permEditRegex = new JCheckBox("edit regex settings");
+				permPanel.add(permAddDocuments);
+				permPanel.add(permViewOtherDocuments);
+				permPanel.add(permEditOtherDocuments);
+				permPanel.add(permAddStatements);
+				permPanel.add(permViewOtherStatements);
+				permPanel.add(permEditOtherStatements);
+				permPanel.add(permEditCoders);
+				permPanel.add(permEditStatementTypes);
+				permPanel.add(permEditRegex);
+				permAddDocuments.setSelected(coder.isAddDocuments());
+				permViewOtherDocuments.setSelected(coder.isViewOtherDocuments());
+				permEditOtherDocuments.setSelected(coder.isEditOtherDocuments());
+				permAddStatements.setSelected(coder.isAddStatements());
+				permViewOtherStatements.setSelected(coder.isViewOtherStatements());
+				permEditOtherStatements.setSelected(coder.isEditOtherStatements());
+				permEditCoders.setSelected(coder.isEditCoders());
+				permEditStatementTypes.setSelected(coder.isEditStatementTypes());
+				permEditRegex.setSelected(coder.isEditRegex());
+				this.add(permPanel, BorderLayout.CENTER);
+				
+				JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+				JButton okButton = new JButton("OK", new ImageIcon(getClass().getResource("/icons/accept.png")));
+				okButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						int red = colorChooser.getColor().getRed();
+						int green = colorChooser.getColor().getGreen();
+						int blue = colorChooser.getColor().getBlue();
+						coder.setName(nameField.getText());
+						coder.setRed(red);
+						coder.setGreen(green);
+						coder.setBlue(blue);
+						coder.setAddDocuments(permAddDocuments.isSelected());
+						coder.setViewOtherDocuments(permViewOtherDocuments.isSelected());
+						coder.setEditOtherDocuments(permEditOtherDocuments.isSelected());
+						coder.setAddStatements(permAddStatements.isSelected());
+						coder.setViewOtherStatements(permViewOtherStatements.isSelected());
+						coder.setEditOtherStatements(permEditOtherStatements.isSelected());
+						coder.setEditCoders(permEditCoders.isSelected());
+						coder.setEditStatementTypes(permEditStatementTypes.isSelected());
+						coder.setEditRegex(permEditRegex.isSelected());
+						setVisible(false);
+					}
+				});
+				JButton cancelButton = new JButton("Cancel", new ImageIcon(getClass().getResource("/icons/cancel.png")));
+				cancelButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						cancelAction();
+					}
+				});
+				buttonPanel.add(okButton);
+				buttonPanel.add(cancelButton);
+				
+				nameField.getDocument().addDocumentListener(new DocumentListener() {
+					public void insertUpdate(DocumentEvent e) {
+						check();
+					}
+					public void removeUpdate(DocumentEvent e) {
+						check();
+					}
+					public void changedUpdate(DocumentEvent e) {
+						check();
+					}
+					public void check() {
+						if (nameField.getText().equals("")) {
+							okButton.setEnabled(false);
+						} else {
+							okButton.setEnabled(true);
+						}
+					}
+				});
+				
+				colorChooser = new JColorChooser(new Color(coder.getRed(), coder.getGreen(), coder.getBlue()));
+				
+				JPanel lowerPanel = new JPanel(new BorderLayout());
+				lowerPanel.add(colorChooser, BorderLayout.NORTH);
+				lowerPanel.add(buttonPanel, BorderLayout.SOUTH);
+				this.add(lowerPanel, BorderLayout.SOUTH);
+
+				addWindowListener(new WindowAdapter() {
+					public void windowClosing(WindowEvent e) {
+						cancelAction();
+					}
+				});
+
+				this.pack();
+				this.setModal(true);
+				this.setLocationRelativeTo(null);
+				this.setVisible(true);
+				this.setResizable(false);
+			}
+			
+			public void cancelAction() {
+				dispose();
+			}
+			
+			public void setCoder(Coder coder) {
+				this.setCoder(coder);
+			}
+			
+			public Coder getCoder() {
+				return(this.coder);
+			}
+		}
+	}
+	
+	// StatementType panel
+	class StatementTypePanel extends JPanel {
+		JButton addButton, removeButton, editButton;
+		StatementTypeListModel model;
+		StatementTypeListRenderer renderer;
+		
+		StatementTypePanel() {
+			this.setLayout(new BorderLayout());
+			this.add(new JLabel("Manage statement types"), BorderLayout.NORTH);
+			
+			JList<StatementType> statementTypeList = new JList<StatementType>();
+			model = new StatementTypeListModel();
+			statementTypeList.setModel(model);
+			renderer = new StatementTypeListRenderer();
+			statementTypeList.setCellRenderer(renderer);
+			JScrollPane sp = new JScrollPane(statementTypeList);
+			this.add(sp, BorderLayout.CENTER);
+			
+			addButton = new JButton("Add", new ImageIcon(getClass().getResource("/icons/user_add.png")));
+			removeButton = new JButton("Remove", new ImageIcon(getClass().getResource("/icons/user_delete.png")));
+			editButton = new JButton("Edit", new ImageIcon(getClass().getResource("/icons/user_edit.png")));
+			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			buttonPanel.add(addButton);
+			buttonPanel.add(removeButton);
+			buttonPanel.add(editButton);
+			removeButton.setEnabled(false);
+			editButton.setEnabled(false);
+			this.add(buttonPanel, BorderLayout.SOUTH);
+			
+			statementTypeList.addListSelectionListener(new ListSelectionListener() {
+				public void valueChanged(ListSelectionEvent e) {
+					if (statementTypeList.getModel().getSize() == 0 || statementTypeList.isSelectionEmpty()) {
+						removeButton.setEnabled(false);
+						editButton.setEnabled(false);
+					} else {
+						removeButton.setEnabled(true);
+						editButton.setEnabled(true);
+					}
+				}
+			});
+			
+			addButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					LinkedHashMap<String, String> lhm = new LinkedHashMap<String, String>();
+					EditStatementTypeWindow ecw = new EditStatementTypeWindow(new StatementType("", Color.YELLOW, lhm));
+					StatementType statementType = ecw.getStatementType();
+					ecw.dispose();
+					if (!statementType.getLabel().equals("")) {
+						model.addElement(statementType);
+					}
+					statementTypeList.updateUI();
+				}
+			});
+			
+			removeButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					model.removeElement(statementTypeList.getSelectedIndex());
+					statementTypeList.updateUI();
+				}
+			});
+
+			editButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					StatementType statementType = statementTypeList.getSelectedValue();
+					int index = statementTypeList.getSelectedIndex();
+					EditStatementTypeWindow estw = new EditStatementTypeWindow(statementType);
+					StatementType statementTypeUpdated = estw.getStatementType();
+					estw.dispose();
+					model.replaceElement(index, statementTypeUpdated);
+					statementTypeList.updateUI();
+				}
+			});
+			
+			statementTypeList.updateUI();
+		}
+		
+		// List model for linking the statement type array list to the JList
+		public class StatementTypeListModel extends AbstractListModel {
+			
+			public void removeElement(int index) {
+				Dna.data.getStatementTypes().remove(index);
+		        fireContentsChanged(this, 0, Dna.data.getStatementTypes().size() - 1);
+			}
+			
+			public void replaceElement(int index, Object o) {
+				Dna.data.getStatementTypes().set(index, (StatementType) o);
+		        fireContentsChanged(this, index, index);
+			}
+			
+		    public void addElement(Object o) {
+		        Dna.data.getStatementTypes().add((StatementType) o);
+		        //Collections.sort(Dna.data.getStatementTypes());
+		        fireContentsChanged(this, 0, Dna.data.getStatementTypes().size() - 1);
+		    }
+
+		    @Override
+		    public Object getElementAt(int index) {
+		    	return Dna.data.getStatementTypes().get(index);
+		    }
+		    
+		    @Override
+		    public int getSize() {
+		    	return Dna.data.getStatementTypes().size();
+		    }
+		}
+
+		/**
+		 * Renderer for statement types in a JComboBox
+		 */
+		class StatementTypeListRenderer extends JLabel implements ListCellRenderer<Object> {
+			private static final long serialVersionUID = 1L;
+			@Override
+			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+				StatementType statementType = (StatementType) value;
+				JPanel panel = new JPanel(new BorderLayout());
+				
+				JButton colorRectangle = new JButton();
+				colorRectangle.setPreferredSize(new Dimension(16, 16));
+				colorRectangle.setBackground(statementType.getColor());
+				
+				JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+				namePanel.add(colorRectangle);
+				namePanel.add(Box.createRigidArea(new Dimension(5,5)));
+				JLabel statementTypeLabel = new JLabel(statementType.getLabel());
+				namePanel.add(statementTypeLabel);
+				
+				int numVar = statementType.getVariables().size();
+				JLabel varNumLabel = new JLabel("(" + numVar + " variables)");
+				namePanel.add(Box.createRigidArea(new Dimension(5,5)));
+				namePanel.add(varNumLabel);
+				
+				if (isSelected) {
+					UIDefaults defaults = javax.swing.UIManager.getDefaults();
+					Color bg = defaults.getColor("List.selectionBackground");
+					//Color fg = defaults.getColor("List.selectionForeground");
+					panel.setBackground(bg);
+					namePanel.setBackground(bg);
+				}
+				
+				panel.add(namePanel, BorderLayout.NORTH);
+				return panel;
+			}
+		}
+		
+		// GUI component for editing statement type details
+		class EditStatementTypeWindow extends JDialog{
+			StatementType statementType, copy;
+			JTextField nameField;
+			JColorChooser colorChooser;
+			JTable varTable;
+			JRadioButton stext, ltext, integ, bool;
+			JTextField varTextField;
+			JButton addVariable, trashVariable, addColorButton;
+			
+			public EditStatementTypeWindow(StatementType statementType) {
+				this.statementType = statementType;
+				this.copy = statementType;
+				
+				this.setTitle("Statement type details");
+				this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+				ImageIcon icon = new ImageIcon(getClass().getResource("/icons/application_form_edit.png"));
+				this.setIconImage(icon.getImage());
+				this.setLayout(new BorderLayout());
+				
+				JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+				JLabel nameLabel = new JLabel("Name: ");
+				namePanel.add(nameLabel);
+				namePanel.add(Box.createRigidArea(new Dimension(5,5)));
+				nameField = new JTextField(statementType.getLabel());
+				nameField.setColumns(20);
+				namePanel.add(nameField);
+				
+				addColorButton = new JButton();
+				addColorButton.setForeground(statementType.getColor());
+				addColorButton.setPreferredSize(new Dimension(18, 18));
+				addColorButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						Color actualColor = ((JButton)e.getSource()).getForeground();
+						Color newColor = JColorChooser.showDialog(EditStatementTypeWindow.this, "choose color...", actualColor);
+						if (newColor != null) {
+							((JButton) e.getSource()).setForeground(newColor);
+						}
+					}
+				});
+				namePanel.add(Box.createRigidArea(new Dimension(5,5)));
+				namePanel.add(addColorButton);
+				
+				this.add(namePanel, BorderLayout.NORTH);
+				
+				// variable table
+				JPanel rightPanel = new JPanel(new BorderLayout());
+				String[] columnNames = {"variable name", "data type"};
+				DefaultTableModel varTableModel = new DefaultTableModel(columnNames, 0);
+				varTable = new JTable(varTableModel);
+				varTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+				JScrollPane varScrollPane = new JScrollPane(varTable);
+				varScrollPane.setPreferredSize(new Dimension(100, 184));
+				varTable.getColumnModel().getColumn( 0 ).setPreferredWidth( 50 );
+				varTable.getColumnModel().getColumn( 1 ).setPreferredWidth( 50 );
+				Class<?> colClass = varTable.getColumnClass(0);
+			    varTable.setDefaultEditor(colClass, null);
+				colClass = varTable.getColumnClass(1);
+			    varTable.setDefaultEditor(colClass, null);
+				JPanel middleRightPanel = new JPanel(new BorderLayout());
+				middleRightPanel.add(varScrollPane, BorderLayout.NORTH);
+				
+				JPanel radioButtonPanel = new JPanel(new GridLayout(2, 2));
+				ButtonGroup buttonGroup = new ButtonGroup();
+				stext = new JRadioButton("short text");
+				ltext = new JRadioButton("long text");
+				integ = new JRadioButton("integer");
+				bool = new JRadioButton("boolean");
+				stext.setEnabled(false);
+				ltext.setEnabled(false);
+				integ.setEnabled(false);
+				bool.setEnabled(false);
+				stext.setSelected(true);
+				buttonGroup.add(stext);
+				buttonGroup.add(ltext);
+				buttonGroup.add(integ);
+				buttonGroup.add(bool);
+				radioButtonPanel.add(stext);
+				radioButtonPanel.add(ltext);
+				radioButtonPanel.add(integ);
+				radioButtonPanel.add(bool);
+				
+				// variable buttons
+				JPanel varButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+				
+				varTextField = new JTextField(12);
+				varTextField.getDocument().addDocumentListener(new DocumentListener() {
+					@Override
+					public void changedUpdate(DocumentEvent e) {
+						checkButton();
+					}
+					@Override
+					public void insertUpdate(DocumentEvent e) {
+						checkButton();
+					}
+					@Override
+					public void removeUpdate(DocumentEvent e) {
+						checkButton();
+					}
+					public void checkButton() {
+						String var = varTextField.getText();
+						boolean validAdd = false;
+						boolean validApply = false;
+						if (var.equals("") || var.matches(".*\\s+.*")) {
+							validAdd = false;
+							validApply = false;
+						} else {
+							validAdd = true;
+						}
+						LinkedHashMap<String, String> map = statementType.getVariables();
+						Object[] types = map.keySet().toArray();
+						for (int i = 0; i < types.length; i++) {
+							if (types[i].equals(var)) {
+								validAdd = false;
+								validApply = true;
+							}
+						}
+						if (!stext.isSelected() && !ltext.isSelected() && !integ.isSelected() && !bool.isSelected()) {
+							validAdd = false;
+							validApply = false;
+						}
+						if (validAdd == true) {
+							addVariable.setEnabled(true);
+						} else {
+							addVariable.setEnabled(false);
+						}
+						if (validApply == true) {
+							trashVariable.setEnabled(true);
+						} else {
+							trashVariable.setEnabled(false);
+						}
+					}
+				});
+				
+				//varTextField.setEnabled(false);
+				ImageIcon addIcon = new ImageIcon(getClass().getResource("/icons/add.png"));
+				ImageIcon removeIcon = new ImageIcon(getClass().getResource("/icons/trash.png"));
+				addVariable = new JButton(addIcon);
+				addVariable.setPreferredSize(new Dimension(18, 18));
+				addVariable.setToolTipText("add this new variable to the list");
+				addVariable.setEnabled(false);
+		        addVariable.addActionListener(new ActionListener() {
+		        	public void actionPerformed(ActionEvent e) {
+		        		// collect required data
+		        		String dataType = null;
+		        		if (stext.isSelected()) {
+		        			dataType = "short text";
+		        		} else if (ltext.isSelected()) {
+		        			dataType = "long text";
+		        		} else if (integ.isSelected()) {
+		        			dataType = "integer";
+		        		} else if (bool.isSelected()) {
+		        			dataType = "boolean";
+		        		}
+		        		String newVar = varTextField.getText();
+
+		        		// update table in the current window
+			    		int varRows = varTable.getModel().getRowCount();
+			    		String[] newRow = {newVar, dataType};
+			    		((DefaultTableModel)varTable.getModel()).insertRow(varRows, newRow);
+		        		
+		        		// update statement type
+			    		statementType.getVariables().put(newVar, dataType);
+		        	}
+		        });
+		        
+				trashVariable = new JButton(removeIcon);
+				trashVariable.setPreferredSize(new Dimension(18, 18));
+				trashVariable.setToolTipText("remove this variable from the list");
+				trashVariable.setEnabled(false);
+		        trashVariable.addActionListener(new ActionListener() {
+		        	public void actionPerformed(ActionEvent e) {
+		        		// collect data
+		        		String varName = varTextField.getText();
+		        		
+		        		// ask for confirmation
+		        		int dialog = JOptionPane.showConfirmDialog(
+								EditStatementTypeWindow.this, 
+								"Really remove variable \"" + varName + 
+								"\" along with all data?", 
+								"Confirmation required", JOptionPane.OK_CANCEL_OPTION);
+		        		
+		        		if (dialog == 0) {
+		            		// update statement type
+		    	    		statementType.getVariables().remove(varName);
+		            		
+		            		// update table in the current window
+		            		for (int i = varTable.getModel().getRowCount() - 1; i >= 0; i--) {
+		            			if (varTable.getModel().getValueAt(i, 0).equals(varName)) {
+		            				((DefaultTableModel)varTable.getModel()).removeRow(i);
+		            			}
+		            		}
+		        		}
+		        	}
+		        });
+		        
+				varButtonPanel.add(varTextField);
+				varButtonPanel.add(addVariable);
+				varButtonPanel.add(trashVariable);
+				
+				//populate table with variables
+				Iterator<String> keyIterator = statementType.getVariables().keySet().iterator();
+		        while (keyIterator.hasNext()){
+		    		String key = keyIterator.next();
+		    		String value = statementType.getVariables().get(key);
+		    		int varRows = varTable.getModel().getRowCount();
+		    		String[] newRow = {key, value};
+		    		((DefaultTableModel)varTable.getModel()).insertRow(varRows, newRow);
+		    	}
+				
+				// assemble right panel
+				rightPanel.add(middleRightPanel, BorderLayout.NORTH);
+				rightPanel.add(radioButtonPanel, BorderLayout.CENTER);
+				rightPanel.add(varButtonPanel, BorderLayout.SOUTH);
+				this.add(rightPanel);
+				
+				varTable.getSelectionModel().addListSelectionListener(new VarTableSelectionHandler());
+				
+				// button panel
+				JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+				JButton okButton = new JButton("OK", new ImageIcon(getClass().getResource("/icons/accept.png")));
+				okButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						statementType.setLabel(nameField.getText());
+						statementType.setColor(addColorButton.getForeground());
+						setVisible(false);
+					}
+				});
+				JButton cancelButton = new JButton("Cancel", new ImageIcon(getClass().getResource("/icons/cancel.png")));
+				cancelButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						cancelAction();
+					}
+				});
+				buttonPanel.add(okButton);
+				buttonPanel.add(cancelButton);
+				
+				nameField.getDocument().addDocumentListener(new DocumentListener() {
+					public void insertUpdate(DocumentEvent e) {
+						check();
+					}
+					public void removeUpdate(DocumentEvent e) {
+						check();
+					}
+					public void changedUpdate(DocumentEvent e) {
+						check();
+					}
+					public void check() {
+						if (nameField.getText().equals("")) {
+							okButton.setEnabled(false);
+							stext.setEnabled(false);
+							ltext.setEnabled(false);
+							integ.setEnabled(false);
+							bool.setEnabled(false);
+							varTextField.setEnabled(false);
+							addVariable.setEnabled(false);
+							trashVariable.setEnabled(false);
+						} else {
+							okButton.setEnabled(true);
+							stext.setEnabled(true);
+							ltext.setEnabled(true);
+							integ.setEnabled(true);
+							bool.setEnabled(true);
+							varTextField.setEnabled(true);
+						}
+					}
+				});
+				
+				JPanel lowerPanel = new JPanel(new BorderLayout());
+				lowerPanel.add(buttonPanel, BorderLayout.SOUTH);
+				this.add(lowerPanel, BorderLayout.SOUTH);
+
+				addWindowListener(new WindowAdapter() {
+					public void windowClosing(WindowEvent e) {
+						cancelAction();
+					}
+				});
+
+				this.pack();
+				this.setModal(true);
+				this.setLocationRelativeTo(null);
+				this.setVisible(true);
+				this.setResizable(false);
+			}
+			
+			public void cancelAction() {
+				statementType = copy;
+				dispose();
+			}
+			
+			public void setStatementType(StatementType statementType) {
+				this.setStatementType(statementType);
+			}
+			
+			public StatementType getStatementType() {
+				return(this.statementType);
+			}
+
+			class VarTableSelectionHandler implements ListSelectionListener {
+			    public void valueChanged(ListSelectionEvent e) {
+		    		ListSelectionModel lsm = (ListSelectionModel)e.getSource();
+		    		if (!lsm.getValueIsAdjusting()) {
+		    			int varRow = lsm.getMinSelectionIndex();
+		    			if (varRow > -1) {
+		    				String varName = (String) varTable.getValueAt(varRow, 0);
+		    	    		varTextField.setText(varName);
+		    	    		String dataType = (String) varTable.getValueAt(varRow, 1);
+		    	        	if (dataType.equals("short text")) {
+		    	        		stext.setSelected(true);
+		    	        	} else if (dataType.equals("long text")) {
+		    	        		ltext.setSelected(true);
+		    	        	} else if (dataType.equals("integer")) {
+		    	        		integ.setSelected(true);
+		    	        	} else if (dataType.equals("boolean")) {
+		    	        		bool.setSelected(true);
+		    	        	}
+		    	        	
+		    	    		stext.setEnabled(true);
+		    	    		ltext.setEnabled(true);
+		    	    		integ.setEnabled(true);
+		    	    		bool.setEnabled(true);
+		    		        
+		    		        varTextField.setEnabled(true);
+		    				trashVariable.setEnabled(true);
+		    			} else {
+		    				stext.setSelected(true);
+		    				varTextField.setText("");
+		    			}
+			    	}
+			    }
+			}
+		}
+	}
 }

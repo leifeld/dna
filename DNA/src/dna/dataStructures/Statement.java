@@ -2,6 +2,7 @@ package dna.dataStructures;
 
 import java.awt.Color;
 import java.util.Date;
+import java.util.LinkedHashMap;
 
 public class Statement implements Comparable<Statement> {
 	int id, document, start, stop;
@@ -9,7 +10,9 @@ public class Statement implements Comparable<Statement> {
 	Color color;
 	String type;
 	int coder;
+	LinkedHashMap<String, Object> values = new LinkedHashMap<String, Object>();
 	
+	/*
 	public Statement(int statementId, int documentId, int start, 
 			int stop, Date date, Color color, String type, int coder) {
 		this.id = statementId;
@@ -20,8 +23,43 @@ public class Statement implements Comparable<Statement> {
 		this.color = color;
 		this.type = type;
 		this.coder = coder;
+		this.objects = new ArrayList<Object>();
+		this.objectTypes = new ArrayList<String>();
+		
+	}
+	*/
+	
+	public Statement(int statementId, int documentId, int start, 
+			int stop, Date date, Color color, String type, int coder, 
+			LinkedHashMap<String, Object> values) {
+		this.id = statementId;
+		this.document = documentId;
+		this.start = start;
+		this.stop = stop;
+		this.date = date;
+		this.color = color;
+		this.type = type;
+		this.coder = coder;
+		this.values = values;
+	}
+	
+	/**
+	 * @return the values
+	 */
+	public LinkedHashMap<String, Object> getValues() {
+		return values;
 	}
 
+	/**
+	 * @param values the values to set
+	 */
+	public void setValues(LinkedHashMap<String, Object> values) {
+		this.values = values;
+	}
+
+	/**
+	 * @return the type
+	 */
 	public String getType() {
 		return type;
 	}

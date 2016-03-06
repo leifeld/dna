@@ -15,7 +15,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.Connection;
-import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -38,6 +38,8 @@ import javax.swing.border.LineBorder;
 
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
+import dna.dataStructures.Statement;
+
 public class Popup extends JDialog {
 	
 	private static final long serialVersionUID = 1L;
@@ -48,16 +50,18 @@ public class Popup extends JDialog {
 	static int statementId;
 	JPanel gridBagPanel;
 	Connection conn;
-	Statement st6;
+	//Statement st6;
 	
 	public Popup(Point point, int statementId, Point location) {
 		this.point = point;
 		Popup.statementId = statementId;
 		this.los = location;
 		
-		final dna.dataStructures.Statement s = Dna.dna.db.getStatement(statementId);
-		this.color = s.getColor();
-		this.type = Dna.dna.db.getStatementType(statementId);
+		//final dna.dataStructures.Statement s = Dna.dna.db.getStatement(statementId);
+		Statement statement = Dna.data.getStatement(statementId);
+		this.color = statement.getColor();
+		//this.type = Dna.dna.db.getStatementType(statementId);
+		this.type = statement.getType();
 		
 		//this.setModal(true);
 		this.setUndecorated(true);
@@ -74,13 +78,12 @@ public class Popup extends JDialog {
 		
 		this.addWindowFocusListener(new WindowAdapter() {
 			public void windowLostFocus(WindowEvent e) {
-                                                    saveContents(gridBagPanel, statementId, type);
-                                dispose();
+				saveContents(gridBagPanel, statementId, type);
+                dispose();
 			}
 		});
 		
-		ImageIcon addIcon = new ImageIcon(getClass().getResource(
-				"/icons/comment_edit.png"));
+		ImageIcon addIcon = new ImageIcon(getClass().getResource("/icons/comment_edit.png"));
 		this.setIconImage(addIcon.getImage());
 		
 		c = getContentPane();
@@ -94,13 +97,11 @@ public class Popup extends JDialog {
 		GridBagConstraints gbc = new GridBagConstraints();
 		
 		JLabel sPosLabel = new JLabel(" start:");
-		JTextField startPos = 
-				new JTextField(new Integer(s.getStart()).toString());
+		JTextField startPos = new JTextField(new Integer(statement.getStart()).toString());
 		startPos.setEditable(false);
 		
 		JLabel ePosLabel = new JLabel(" end:");
-		JTextField endPos = 
-				new JTextField(new Integer(s.getStop()).toString());
+		JTextField endPos = new JTextField(new Integer(statement.getStop()).toString());
 		endPos.setEditable(false);
 
 		JLabel idLabel = new JLabel(" ID:");
@@ -124,20 +125,22 @@ public class Popup extends JDialog {
 		duplicate.setPreferredSize(new Dimension(16, 16));
 		duplicate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int newStatementId = Dna.dna.db.duplicateStatement(statementId, s.getDocument(), s.getStart(), s.getStop());
-				Color color = Dna.dna.db.getStatementTypeColor(type);
-				Date date = Dna.dna.db.getDocument(s.getDocument()).getDate();
-				int coder = Dna.dna.db.getStatement(statementId).getCoder();
-				dna.dataStructures.Statement st = new dna.dataStructures.Statement(newStatementId, 
-						s.getDocument(), s.getStart(), s.getStop(), date, 
-						color, type, coder);
-				Dna.dna.gui.sidebarPanel.ssc.addStatement(st, true);
-				Dna.dna.gui.textPanel.selectStatement(newStatementId, s.getDocument());
+				Statement newStatement = Dna.data.getStatement(statementId);
+				int newId = Dna.data.generateNewStatementId();
+				newStatement.setId(newId);
+				newStatement.setCoder(Integer.parseInt(Dna.data.getSettings().get("coder")));
+				Dna.data.getStatements().add(newStatement);
+				//int newStatementId = Dna.dna.db.duplicateStatement(statementId, s.getDocument(), s.getStart(), s.getStop());
+				//Color color = Dna.dna.db.getStatementTypeColor(type);
+				//Date date = Dna.dna.db.getDocument(s.getDocument()).getDate();
+				//int coder = Dna.dna.db.getStatement(statementId).getCoder();
+				//Statement st = new Statement(newStatementId, s.getDocument(), s.getStart(), s.getStop(), date, color, type, coder);
+				//Dna.dna.gui.sidebarPanel.ssc.addStatement(st, true);
+				Dna.dna.gui.textPanel.selectStatement(newId, newStatement.getDocument());
 			}
 		});
 		
-		ImageIcon removeIcon = 
-				new ImageIcon(getClass().getResource("/icons/trash.png"));
+		ImageIcon removeIcon = new ImageIcon(getClass().getResource("/icons/trash.png"));
 		JButton remove = new JButton(removeIcon);
 		remove.setToolTipText(
 				"completely remove the whole statement (but keep the text)");
@@ -148,7 +151,8 @@ public class Popup extends JDialog {
 						"Are you sure you want to remove this statement?", 
 						"Remove?", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
-					Dna.dna.removeStatement(statementId);
+					Dna.data.removeStatement(statementId);
+					//Dna.dna.removeStatement(statementId);
 					Dna.dna.gui.textPanel.paintStatements();
 					
 
@@ -182,7 +186,8 @@ public class Popup extends JDialog {
 		gbc.gridy = 0;
 		gbc.anchor = GridBagConstraints.EAST;
 		
-		HashMap<String, String> variables = Dna.dna.db.getVariables(type);
+		//HashMap<String, String> variables = Dna.dna.db.getVariables(type);
+		HashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
 		
 		Iterator<String> keyIterator = variables.keySet().iterator();
 		while (keyIterator.hasNext()){
@@ -190,11 +195,18 @@ public class Popup extends JDialog {
 			String value = variables.get(key);
 			JLabel label = new JLabel(key, JLabel.TRAILING);
 			if (value.equals("short text")) {
-				String entry = Dna.dna.db.getVariableStringEntry(statementId, 
-						key);
-				String[] entries = Dna.dna.db.getVariableStringEntries(key, 
-						type);
-				JComboBox<String> box = new JComboBox<String>(entries);
+				//String entry = Dna.dna.db.getVariableStringEntry(statementId, key);
+				String entry = (String) Dna.data.getStatement(statementId).getValues().get(key);
+				//String[] entries = Dna.dna.db.getVariableStringEntries(key, type);
+				ArrayList<Statement> subset = Dna.data.getStatementsByType(type);
+				ArrayList<String> entries = new ArrayList<String>();
+				for (int i = 0; i < subset.size(); i++) {
+					String mykey = (String) subset.get(i).getValues().get(key);
+					if (!entries.contains(mykey)) {
+						entries.add(mykey);
+					}
+				}
+				JComboBox<String> box = new JComboBox<String>((String[]) entries.toArray());
 				box.setEditable(true);
     			box.setPreferredSize(new Dimension(220, 20));
     			box.setSelectedItem((String)entry);
@@ -208,8 +220,8 @@ public class Popup extends JDialog {
 				gbc.gridx--;
 				gbc.gridy++;
 			} else if (value.equals("long text")) {
-				String entry = Dna.dna.db.getVariableStringEntry(statementId, 
-						key);
+				//String entry = Dna.dna.db.getVariableStringEntry(statementId, key);
+				String entry = (String) Dna.data.getStatement(statementId).getValues().get(key);
     			JTextArea box = new JTextArea();
     			box.setEditable(true);
     			box.setWrapStyleWord(true);
@@ -228,7 +240,8 @@ public class Popup extends JDialog {
 				gbc.gridx--;
 				gbc.gridy++;
 			} else if (value.equals("boolean")) {
-				int entry = Dna.dna.db.getVariableIntEntry(statementId, key);
+				//int entry = Dna.dna.db.getVariableIntEntry(statementId, key);
+				int entry = (Integer) Dna.data.getStatement(statementId).getValues().get(key);
 				boolean val;
 				if (entry == 0) {
 					val = false;
@@ -254,7 +267,8 @@ public class Popup extends JDialog {
 				gbc.gridx--;
 				gbc.gridy++;
 			} else if (value.equals("integer")) {
-				int entry = Dna.dna.db.getVariableIntEntry(statementId, key);
+				//int entry = Dna.dna.db.getVariableIntEntry(statementId, key);
+				int entry = (Integer) Dna.data.getStatement(statementId).getValues().get(key);
 				JSpinner jsp = new JSpinner();
 				jsp.setValue(entry);
     			jsp.setPreferredSize(new Dimension(70, 20));
@@ -291,7 +305,8 @@ public class Popup extends JDialog {
 	@SuppressWarnings("unchecked")
 	public static void saveContents(JPanel gridBagPanel, int statementID, String type) {
 		Component[] com = gridBagPanel.getComponents();
-		HashMap<String, String> vars = Dna.dna.db.getVariables(type);
+		//HashMap<String, String> vars = Dna.dna.db.getVariables(type);
+		HashMap<String, String> vars = Dna.data.getStatementType(type).getVariables();
 		
 		for (int i = 0; i < com.length; i++) {
 			Object content = null;
@@ -304,8 +319,8 @@ public class Popup extends JDialog {
 				if (content == null) {
 					content = "";
 				}
-				Dna.dna.db.changeStatement(statementId, contentType, 
-						(String) content, dataType);
+				//Dna.dna.db.changeStatement(statementId, contentType, (String) content, dataType);
+				Dna.data.getStatement(statementId).getValues().put(contentType, content);
 			} else if (com[i].getClass().getName().equals(
 					"javax.swing.JCheckBox")) {
 				contentType = ((JLabel)com[i-1]).getText();
@@ -317,8 +332,8 @@ public class Popup extends JDialog {
 				} else {
 					intBool = 1;
 				}
-				Dna.dna.db.changeStatement(statementId, contentType, intBool, 
-						dataType);
+				//Dna.dna.db.changeStatement(statementId, contentType, intBool, dataType);
+				Dna.data.getStatement(statementId).getValues().put(contentType, content);
 			} else if (com[i].getClass().getName().equals(
 					"javax.swing.JScrollPane")) {
 				contentType = ((JLabel)com[i-1]).getText();
@@ -329,8 +344,8 @@ public class Popup extends JDialog {
 				if (content == null) {
 					content = "";
 				}
-				Dna.dna.db.changeStatement(statementId, contentType, 
-						(String) content, dataType);
+				//Dna.dna.db.changeStatement(statementId, contentType, (String) content, dataType);
+				Dna.data.getStatement(statementId).getValues().put(contentType, content);
 			} else if (com[i].getClass().getName().equals(
 					"javax.swing.JPanel")) {
 				contentType = ((JLabel)com[i-1]).getText();
@@ -338,8 +353,8 @@ public class Popup extends JDialog {
 				JPanel jp = (JPanel) com[i];
 				JSpinner jsp = (JSpinner) jp.getComponent(0);
 				content = jsp.getValue();
-				Dna.dna.db.changeStatement(statementId, contentType, 
-						(Integer) content, dataType);
+				//Dna.dna.db.changeStatement(statementId, contentType, (Integer) content, dataType);
+				Dna.data.getStatement(statementId).getValues().put(contentType, content);
 			}
 		}
 		

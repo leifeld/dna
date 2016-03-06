@@ -13,7 +13,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -148,8 +150,15 @@ public class EditDocumentPanel extends JPanel {
 		sourceLabel.setPreferredSize(lableSize);
 		sourcePanel.add(sourceLabel);
 		
-		sourceEntries = Dna.dna.db.getDocumentSources();		 
-		sourceBox = new JXComboBox(sourceEntries);
+		//sourceEntries = Dna.dna.db.getDocumentSources();
+		ArrayList<String> sourceEntries = new ArrayList<String>();
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			if (!sourceEntries.contains(Dna.data.getDocuments().get(i).getSource())) {
+				sourceEntries.add(Dna.data.getDocuments().get(i).getSource());
+			}
+		}
+		Collections.sort(sourceEntries);
+		sourceBox = new JXComboBox(sourceEntries.toArray());
 		sourceBox.setPreferredSize(fieldSize);
 		sourceBox.setEditable(true);
 		sourceBox.setSelectedItem(document.getSource());
@@ -165,8 +174,15 @@ public class EditDocumentPanel extends JPanel {
 		sectionPanel.add(sectionLabel);
 		
 
-		 sectionEntries = Dna.dna.db.getDocumentSections();
-		sectionBox = new JXComboBox(sectionEntries);
+		//sectionEntries = Dna.dna.db.getDocumentSections();
+		ArrayList<String> sectionEntries = new ArrayList<String>();
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			if (!sectionEntries.contains(Dna.data.getDocuments().get(i).getSection())) {
+				sectionEntries.add(Dna.data.getDocuments().get(i).getSection());
+			}
+		}
+		Collections.sort(sectionEntries);
+		sectionBox = new JXComboBox(sectionEntries.toArray());
 		sectionBox.setPreferredSize(fieldSize);
 		sectionBox.setEditable(true);
 		sectionBox.setSelectedItem(document.getSection());
@@ -181,8 +197,15 @@ public class EditDocumentPanel extends JPanel {
 		typeLabel.setPreferredSize(lableSize);
 		typePanel.add(typeLabel);
 		
-		typeEntries = Dna.dna.db.getDocumentTypes();
-		typeBox = new JXComboBox(typeEntries);
+		//typeEntries = Dna.dna.db.getDocumentTypes();
+		ArrayList<String> typeEntries = new ArrayList<String>();
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			if (!typeEntries.contains(Dna.data.getDocuments().get(i).getType())) {
+				typeEntries.add(Dna.data.getDocuments().get(i).getType());
+			}
+		}
+		Collections.sort(typeEntries);
+		typeBox = new JXComboBox(typeEntries.toArray());
 		typeBox.setPreferredSize(fieldSize);
 		typeBox.setEditable(true);
 		typeBox.setSelectedItem(document.getType());
@@ -297,8 +320,15 @@ public class EditDocumentPanel extends JPanel {
 		String type = (String) typeBox.getModel().getSelectedItem();
 		type = type.replaceAll("'", "''");
 
-		Dna.dna.db.changeDocument(document.getId(), title, date, coder, 
-				source, section, notes, type);
+		//Dna.dna.db.changeDocument(document.getId(), title, date, coder, source, section, notes, type);
+		int documentId = document.getId();
+		Dna.data.getDocument(documentId).setTitle(title);
+		Dna.data.getDocument(documentId).setDate(date);
+		Dna.data.getDocument(documentId).setCoder(coder);
+		Dna.data.getDocument(documentId).setSource(source);
+		Dna.data.getDocument(documentId).setSection(section);
+		Dna.data.getDocument(documentId).setNotes(notes);
+		
 		Dna.dna.gui.documentPanel.documentContainer.changeDocument(
 				document.getId(), title, date, coder, source, section, notes, 
 				type);

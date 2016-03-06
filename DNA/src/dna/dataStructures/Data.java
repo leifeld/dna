@@ -1,6 +1,8 @@
 package dna.dataStructures;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 
 public class Data {
 	public ArrayList<Statement> statements;
@@ -9,11 +11,12 @@ public class Data {
 	public ArrayList<Regex> regexes;
 	public ArrayList<StatementType> statementTypes;
 	public ArrayList<CoderRelation> coderRelations;
-	public ArrayList<Setting> settings;
+	public HashMap<String, String> settings;
+	public ArrayList<StatementLink> statementLinks;
 	
 	public Data(ArrayList<Statement> statements, ArrayList<Document> documents, ArrayList<Coder> coders,
 			ArrayList<Regex> regexes, ArrayList<StatementType> statementTypes, ArrayList<CoderRelation> coderRelations,
-			ArrayList<Setting> settings) {
+			HashMap<String, String> settings, ArrayList<StatementLink> statementLinks) {
 		super();
 		this.statements = statements;
 		this.documents = documents;
@@ -22,6 +25,7 @@ public class Data {
 		this.statementTypes = statementTypes;
 		this.coderRelations = coderRelations;
 		this.settings = settings;
+		this.statementLinks = statementLinks;
 	}
 	
 	public Data() {
@@ -31,14 +35,66 @@ public class Data {
 		this.regexes = new ArrayList<Regex>();
 		this.statementTypes = new ArrayList<StatementType>();
 		this.coderRelations = new ArrayList<CoderRelation>();
-		this.settings = new ArrayList<Setting>();
+		this.settings = new HashMap<String, String>();
+		this.statementLinks = new ArrayList<StatementLink>();
+	}
+	
+	/**
+	 * @return the statementLinks
+	 */
+	public ArrayList<StatementLink> getStatementLinks() {
+		return statementLinks;
 	}
 
-	/*
+	/**
+	 * @param statementLinks the statementLinks to set
+	 */
+	public void setStatementLinks(ArrayList<StatementLink> statementLinks) {
+		this.statementLinks = statementLinks;
+	}
+
+	public int generateNewStatementLinkId() {
+		if (statementLinks.size() == 0) {
+			return(1);
+		}
+		ArrayList<Integer> ids = new ArrayList<Integer>();
+		for (int i = 0; i < statementLinks.size(); i++) {
+			ids.add(statementLinks.get(i).getId());
+		}
+		Collections.sort(ids);
+		if (ids.size() == 1) {
+			if (ids.get(0) == 1) {
+				return(2);
+			} else {
+				return(1);
+			}
+		}
+		for (int i = 1; i < ids.size(); i++) {
+			if (ids.get(i) - 1 > ids.get(i - 1)) {
+				return(ids.get(i - 1) + 1);
+			}
+		}
+		return(statementLinks.size() + 1);
+	}
+	
+	/**
+	 * @return the regexes
+	 */
+	public ArrayList<Regex> getRegexes() {
+		return regexes;
+	}
+
+	/**
+	 * @param regexes the regexes to set
+	 */
+	public void setRegexes(ArrayList<Regex> regexes) {
+		this.regexes = regexes;
+	}
+
 	public void addStatement(Statement statement) {
 		statements.add(statement);
 	}
-
+	
 	public void addDocument(Document document) {
 		documents.add(document);
 	}
@@ -47,23 +103,82 @@ public class Data {
 		coders.add(coder);
 	}
 
-	public void addRegex(Regex regex) {
-		regexes.add(regex);
-	}
-
 	public void addStatementType(StatementType statementType) {
 		statementTypes.add(statementType);
 	}
 
+	public void removeStatementType(String label) {
+		for (int i = statements.size() - 1; i > -1; i--) {
+			if (statementTypes.get(i).getLabel().equals(label)) {
+				statementTypes.remove(i);
+			}
+		}
+	}
+	
+	public Statement getStatement(int id) {
+		for (int i = 0; i < statements.size(); i++) {
+			if (statements.get(i).getId() == id) {
+				return(statements.get(i));
+			}
+		}
+		return null;
+	}
+
+	public StatementType getStatementType(String label) {
+		for (int i = 0; i < statementTypes.size(); i++) {
+			if (statementTypes.get(i).getLabel().equals(label)) {
+				return(statementTypes.get(i));
+			}
+		}
+		return(null);
+	}
+	
+	public ArrayList<Statement> getStatementsByType(String type) {
+		ArrayList<Statement> s = new ArrayList<Statement>();
+		for (int i = 0; i < statements.size(); i++) {
+			if (statements.get(i).getType().equals(type)) {
+				s.add(statements.get(i));
+			}
+		}
+		return(s);
+	}
+	
+	public int generateNewStatementId() {
+		if (statements.size() == 0) {
+			return(1);
+		}
+		ArrayList<Integer> ids = new ArrayList<Integer>();
+		for (int i = 0; i < statements.size(); i++) {
+			ids.add(statements.get(i).getId());
+		}
+		Collections.sort(ids);
+		if (ids.size() == 1) {
+			if (ids.get(0) == 1) {
+				return(2);
+			} else {
+				return(1);
+			}
+		}
+		for (int i = 1; i < ids.size(); i++) {
+			if (ids.get(i) - 1 > ids.get(i - 1)) {
+				return(ids.get(i - 1) + 1);
+			}
+		}
+		return(statements.size() + 1);
+	}
+	
+	public void removeStatement(int id) {
+		for (int i = statements.size() - 1; i > -1; i--) {
+			if (statements.get(i).getId() == id) {
+				statements.remove(i);
+			}
+		}
+	}
+	
 	public void addCoderRelation(CoderRelation coderRelation) {
 		coderRelations.add(coderRelation);
 	}
 
-	public void addSetting(Setting setting) {
-		settings.add(setting);
-	}
-	*/
-	
 	/**
 	 * @return the statements
 	 */
@@ -92,6 +207,47 @@ public class Data {
 		this.documents = documents;
 	}
 
+	public Document getDocument(int id) {
+		for (int i = 0; i < documents.size(); i++) {
+			if (documents.get(i).getId() == id) {
+				return(documents.get(i));
+			}
+		}
+		return null;
+	}
+
+	public int generateNewDocumentId() {
+		if (documents.size() == 0) {
+			return(1);
+		}
+		ArrayList<Integer> ids = new ArrayList<Integer>();
+		for (int i = 0; i < documents.size(); i++) {
+			ids.add(documents.get(i).getId());
+		}
+		Collections.sort(ids);
+		if (ids.size() == 1) {
+			if (ids.get(0) == 1) {
+				return(2);
+			} else {
+				return(1);
+			}
+		}
+		for (int i = 1; i < ids.size(); i++) {
+			if (ids.get(i) - 1 > ids.get(i - 1)) {
+				return(ids.get(i - 1) + 1);
+			}
+		}
+		return(documents.size() + 1);
+	}
+
+	public void removeDocument(int id) {
+		for (int i = documents.size() - 1; i > -1; i--) {
+			if (documents.get(i).getId() == id) {
+				documents.remove(i);
+			}
+		}
+	}
+	
 	/**
 	 * @return the coders
 	 */
@@ -105,21 +261,7 @@ public class Data {
 	public void setCoders(ArrayList<Coder> coders) {
 		this.coders = coders;
 	}
-
-	/**
-	 * @return the regexes
-	 */
-	public ArrayList<Regex> getRegexes() {
-		return regexes;
-	}
-
-	/**
-	 * @param regexes the regexes to set
-	 */
-	public void setRegexes(ArrayList<Regex> regexes) {
-		this.regexes = regexes;
-	}
-
+	
 	/**
 	 * @return the statementTypes
 	 */
@@ -151,14 +293,14 @@ public class Data {
 	/**
 	 * @return the settings
 	 */
-	public ArrayList<Setting> getSettings() {
+	public HashMap<String, String> getSettings() {
 		return settings;
 	}
 
 	/**
 	 * @param settings the settings to set
 	 */
-	public void setSettings(ArrayList<Setting> settings) {
+	public void setSettings(HashMap<String, String> settings) {
 		this.settings = settings;
 	}
 }

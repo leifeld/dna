@@ -23,7 +23,7 @@ public class StatementTypeTableModel implements TableModel {
 	}
 	
 	public StatementTypeTableModel(ArrayList<StatementType> types) {
-		Dna.dna.data.setStatementTypes(types);
+		Dna.data.setStatementTypes(types);
 	}
 	
 	public Class<?> getColumnClass(int columnIndex) {
@@ -47,23 +47,24 @@ public class StatementTypeTableModel implements TableModel {
 	}
 	
 	public int getRowCount() {
-		return Dna.dna.data.getStatementTypes().size();
+		return Dna.data.getStatementTypes().size();
 	}
 	
 	public int size() {
-		return Dna.dna.data.getStatementTypes().size();
+		return Dna.data.getStatementTypes().size();
 	}
 	
 	public void remove(int index) {
-		Dna.dna.data.getStatementTypes().remove(index);
+		Dna.data.getStatementTypes().remove(index);
 	}
 	
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		StatementType t = Dna.dna.data.getStatementTypes().get(rowIndex);
+		StatementType t = Dna.data.getStatementTypes().get(rowIndex);
 		if (columnIndex == 0) {
 			return t.getLabel();
 		} else if (columnIndex == 1) {
-			ArrayList<Statement> s = Dna.dna.db.getStatementsByType(t.getLabel());
+			//ArrayList<Statement> s = Dna.dna.db.getStatementsByType(t.getLabel());
+			ArrayList<Statement> s = Dna.data.getStatementsByType(t.getLabel());
 			int count = s.size();
 			return count;
 		} else {
@@ -79,14 +80,16 @@ public class StatementTypeTableModel implements TableModel {
 		switch( columnIndex ){
 			case 0: 
 				String newLabel = (String) aValue;
-				String oldLabel = Dna.dna.data.getStatementTypes().get(rowIndex).getLabel();
-				Color col = Dna.dna.db.getStatementTypeColor(oldLabel);
+				String oldLabel = Dna.data.getStatementTypes().get(rowIndex).getLabel();
+				//Color col = Dna.dna.db.getStatementTypeColor(oldLabel);
+				Color col = Dna.data.getStatementType(oldLabel).getColor();
 				int red = col.getRed();
 				int green = col.getGreen();
 				int blue = col.getBlue();
-				Dna.dna.db.changeStatementType(oldLabel, newLabel, red, green, 
-						blue);
-				Dna.dna.data.getStatementTypes().get(rowIndex).setLabel(newLabel);
+				//Dna.dna.db.changeStatementType(oldLabel, newLabel, red, green, blue);
+				Dna.data.getStatementType(oldLabel).setLabel(newLabel);
+				Dna.data.getStatementType(newLabel).setColor(new Color(red, green, blue));
+				Dna.data.getStatementTypes().get(rowIndex).setLabel(newLabel);
 				break;
 			case 1: 
 				break;
@@ -94,7 +97,7 @@ public class StatementTypeTableModel implements TableModel {
 	}
 
 	public void addStatementType(StatementType statementType) {
-		Dna.dna.data.getStatementTypes().add(statementType);
+		Dna.data.getStatementTypes().add(statementType);
 		TableModelEvent e = new TableModelEvent(this);
 		for( int i = 0, n = listeners.size(); i < n; i++ ){
 			((TableModelListener)listeners.get( i )).tableChanged( e );
@@ -102,13 +105,13 @@ public class StatementTypeTableModel implements TableModel {
 	}
 	
 	public StatementType get(int index) {
-		return Dna.dna.data.getStatementTypes().get(index);
+		return Dna.data.getStatementTypes().get(index);
 	}
 	
 	public StatementType get(String label) throws NullPointerException {
-		for (int i = 0; i < Dna.dna.data.getStatementTypes().size(); i++) {
-			if (Dna.dna.data.getStatementTypes().get(i).getLabel().equals(label)) {
-				return Dna.dna.data.getStatementTypes().get(i);
+		for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
+			if (Dna.data.getStatementTypes().get(i).getLabel().equals(label)) {
+				return Dna.data.getStatementTypes().get(i);
 			}
 		}
 		throw new NullPointerException();
@@ -116,8 +119,8 @@ public class StatementTypeTableModel implements TableModel {
 	
 	public int getIndexByLabel(String label) {
 		int index = -1;
-		for (int i = 0; i < Dna.dna.data.getStatementTypes().size(); i++) {
-			if (Dna.dna.data.getStatementTypes().get(i).getLabel().equals(label)) {
+		for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
+			if (Dna.data.getStatementTypes().get(i).getLabel().equals(label)) {
 				index = i;
 			}
 		}
@@ -125,7 +128,7 @@ public class StatementTypeTableModel implements TableModel {
 	}
 	
 	public void clear() {
-		Dna.dna.data.getStatementTypes().clear();
+		Dna.data.getStatementTypes().clear();
 		TableModelEvent e = new TableModelEvent(this);
 		for( int i = 0, n = listeners.size(); i < n; i++ ){
 			((TableModelListener)listeners.get( i )).tableChanged( e );

@@ -44,7 +44,6 @@ public class Gui extends JFrame {
 	/**
 	 * DNA GUI
 	 */
-	//private static final long serialVersionUID = 6798727706826962027L;
 	Container c;
 	StatusBar statusBar;
 	DocumentPanel documentPanel;
@@ -113,7 +112,8 @@ public class Gui extends JFrame {
 		}
 
 		public void resetLabel() {
-			String fn = Dna.dna.db.getFileName();
+			//String fn = Dna.dna.db.getFileName();
+			String fn = Dna.data.getSettings().get("filename");
 			if (fn == null) {
 				currentFileLabel.setText("Current file: none");
 			} else {
@@ -131,7 +131,7 @@ public class Gui extends JFrame {
 
 		public DocumentPanel() {
 			if(Dna.dna!=null)
-				documentContainer = new DocumentTableModel(Dna.dna.data.getDocuments()); //SK
+				documentContainer = new DocumentTableModel(Dna.data.getDocuments()); //SK
 			else 
 			documentContainer = new DocumentTableModel();
 			
@@ -164,15 +164,12 @@ public class Gui extends JFrame {
 						if (selectedRow == -1) {
 							previousDocID = -1;
 							textPanel.setDocumentText("");
-							Dna.dna.gui.menuBar.changeDocumentButton.
-							setEnabled(false);
-							Dna.dna.gui.menuBar.removeDocumentButton.
-							setEnabled(false);
+							Dna.dna.gui.menuBar.changeDocumentButton.setEnabled(false);
+							Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
 							//SK
 							Dna.dna.gui.sidebarPanel.editDocPanel.createEditDocumentPanel();
 							
-						} else 
-						{							
+						} else {							
 							int id = documentPanel.documentContainer.get(selectedRow).getId() ;
 							//SK Doc_ID and selected row index differs hence search by doc_id in documents list
 							previousDocID = id;
@@ -197,7 +194,8 @@ public class Gui extends JFrame {
 							documentFilter();
 						}
 
-						if (Dna.dna.db.getFileName() != null) {
+						//if (Dna.dna.db.getFileName() != null) {
+						if (Dna.data.getSettings().get("filename") != null) {
 							textPanel.paintStatements();
 						}
 						textPanel.setCaretPosition( 0 );
@@ -228,23 +226,23 @@ public class Gui extends JFrame {
 			this.add(settingsMenu);
 
 			//File menu: new DNA database file...
-			Icon databaseIcon = new ImageIcon(getClass().getResource(
-					"/icons/database.png"));
-			JMenuItem newDatabase = new JMenuItem("New database file...", 
-					databaseIcon);
-			newDatabase.setToolTipText( "create a new database file..." );
+			Icon databaseIcon = new ImageIcon(getClass().getResource("/icons/database.png"));
+			JMenuItem newDatabase = new JMenuItem("New DNA database...", databaseIcon);
+			newDatabase.setToolTipText("create a new DNA database...");
 			fileMenu.add(newDatabase);
 			newDatabase.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
+					
+					new NewDatabaseDialog();
+					
+					/*
 					JFileChooser fc = new JFileChooser();
 					fc.setFileFilter(new FileFilter() {
 						public boolean accept(File f) {
-							return f.getName().toLowerCase().endsWith(".dna") 
-									|| f.isDirectory();
+							return f.getName().toLowerCase().endsWith(".dna") || f.isDirectory();
 						}
 						public String getDescription() {
-							return "Discourse Network Analyzer database " +
-									"(*.dna)";
+							return "Discourse Network Analyzer database (*.dna)";
 						}
 					});
 
@@ -257,14 +255,14 @@ public class Gui extends JFrame {
 						}
 						Dna.dna.newFile(filename);
 					}
+					*/
 				}
 			});
-
+			
+			/*
 			//File menu: open DNA file
-			Icon openIcon = new ImageIcon(getClass().getResource(
-					"/icons/folder.png"));
-			JMenuItem openMenuItem = new JMenuItem("Open database file...", 
-					openIcon);
+			Icon openIcon = new ImageIcon(getClass().getResource("/icons/folder.png"));
+			JMenuItem openMenuItem = new JMenuItem("Open database file...", openIcon);
 			openMenuItem.setToolTipText( "open an existing database file..." );
 			openMenuItem.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -273,12 +271,10 @@ public class Gui extends JFrame {
 					JFileChooser fc = new JFileChooser(); //TODO: THIS SHOULD REMEMBER THE LAST DIRECTORY USED (CAN BE PUT IN BRACKETS AS A STRING)
 					fc.setFileFilter(new FileFilter() {
 						public boolean accept(File f) {
-							return f.getName().toLowerCase().endsWith(".dna")
-									|| f.isDirectory();
+							return f.getName().toLowerCase().endsWith(".dna") || f.isDirectory();
 						}
 						public String getDescription() {
-							return "Discourse Network Analyzer database " +
-									"(*.dna)";
+							return "Discourse Network Analyzer database (*.dna)";
 						}
 					});
 
@@ -324,6 +320,7 @@ public class Gui extends JFrame {
 				}
 			});
 			closeFile.setEnabled(false);
+			*/
 
 			//File menu: exit
 			Icon exitIcon = new ImageIcon( getClass().getResource(
@@ -338,10 +335,8 @@ public class Gui extends JFrame {
 			});
 
 			//Document menu: add new document
-			Icon newDocumentIcon = new ImageIcon(getClass().getResource(
-					"/icons/table_add.png"));
-			newDocumentButton = new JMenuItem("Add new document...", 
-					newDocumentIcon);
+			Icon newDocumentIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
+			newDocumentButton = new JMenuItem("Add new document...", newDocumentIcon);
 			newDocumentButton.setToolTipText( "add new document..." );
 			documentMenu.add(newDocumentButton);
 			newDocumentButton.addActionListener(new ActionListener() {
@@ -352,6 +347,7 @@ public class Gui extends JFrame {
 			newDocumentButton.setEnabled(false);
 
 			//LB.Add: Document menu: import documents from html file
+			/*
 			Icon importHTMLIcon = new ImageIcon(getClass().getResource(
 					"/icons/table_add.png"));
 			importHTMLButton = new JMenuItem("Import from  HTML-file(s)/URL(s)...", 
@@ -364,8 +360,10 @@ public class Gui extends JFrame {
 				}
 			});
 			importHTMLButton.setEnabled(false);
-
+			*/
+			
 			//Document menu: change document properties
+			/*
 			Icon changeDocumentIcon = new ImageIcon(getClass().getResource(
 					"/icons/table_edit.png"));
 			changeDocumentButton = new JMenuItem("Edit document metadata...", 
@@ -383,8 +381,10 @@ public class Gui extends JFrame {
 				}
 			});
 			changeDocumentButton.setEnabled(false);
-
+			*/
+			
 			//Document menu: recode variables
+			/*
 			Icon recodeVariableIcon = new ImageIcon(getClass().getResource(
 					"/icons/pencil.png"));
 			//TODO: pencil-icon? or database_edit.png?
@@ -398,12 +398,11 @@ public class Gui extends JFrame {
 				}
 			});
 			recodeVariableButton.setEnabled(false);
-
+			*/
+			
 			//Document menu: delete selected document
-			Icon removeDocumentIcon = new ImageIcon(getClass().getResource(
-					"/icons/table_delete.png"));
-			removeDocumentButton = new JMenuItem("Delete selected document", 
-					removeDocumentIcon);
+			Icon removeDocumentIcon = new ImageIcon(getClass().getResource("/icons/table_delete.png"));
+			removeDocumentButton = new JMenuItem("Delete selected document", removeDocumentIcon);
 			removeDocumentButton.setToolTipText( "delete selected document" );
 			documentMenu.add(removeDocumentButton);
 			removeDocumentButton.addActionListener(new ActionListener() {
@@ -415,9 +414,9 @@ public class Gui extends JFrame {
 					int row = Dna.dna.gui.documentPanel.documentTable.
 							getSelectedRow();
 					if (row != -1 && dialog == 0) {
-						int documentId = Dna.dna.gui.documentPanel.
-								documentContainer.getIdByRowIndex(row);
-						Dna.dna.removeDocument(documentId);
+						//int documentId = Dna.dna.gui.documentPanel.documentContainer.getIdByRowIndex(row);
+						//Dna.dna.removeDocument(documentId);
+						Dna.dna.gui.documentPanel.documentContainer.remove(row);
 					}
 				}
 			});
@@ -533,7 +532,8 @@ public class Gui extends JFrame {
 			settingsMenu.add(aboutButton);
 			aboutButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					new AboutWindow(Dna.dna.getVersion(), Dna.dna.getDate());
+					//new AboutWindow(Dna.dna.getVersion(), Dna.dna.getDate());
+					new AboutWindow(Dna.data.getSettings().get("version"), Dna.data.getSettings().get("date"));
 				}
 			});
 			typeEditorButton.setEnabled(false);
@@ -546,7 +546,8 @@ public class Gui extends JFrame {
 
 		}
 	}
-
+	
+	/*
 	public class SQLConnectionDialog extends JFrame {
 
 		private static final long serialVersionUID = 1L;
@@ -575,41 +576,39 @@ public class Gui extends JFrame {
 			dbLabel = new JLabel("Database:", JLabel.TRAILING);
 			dbField = new JTextField();
 			
-			/*
-			JLabel typeLabel = new JLabel("DB type:", JLabel.TRAILING);
-			panel.add(typeLabel, gbc);
-			gbc.gridx++;
-			mysqlButton = new JRadioButton("mySQL");
-			mysqlButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					dbField.setText("");
-					dbField.setEnabled(false);
-					dbLabel.setEnabled(false);
-					connectionLabel.setText("mysql://");
-				}
-			});
-			mysqlButton.setSelected(true);
-			dbField.setEnabled(false);
-			dbLabel.setEnabled(false);
-			panel.add(mysqlButton, gbc);
-			gbc.gridx++;
-			gbc.gridwidth = 2;
-			mssqlButton = new JRadioButton("MS SQL Server");
-			mssqlButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					dbField.setEnabled(true);
-					dbLabel.setEnabled(true);
-					connectionLabel.setText("sqlserver://");
-				}
-			});
-			panel.add(mssqlButton, gbc);
-			ButtonGroup buttonGroup = new ButtonGroup();
-			buttonGroup.add(mysqlButton);
-			buttonGroup.add(mssqlButton);
-			gbc.gridx = 0;
-			gbc.gridy++;
-			gbc.gridwidth = 1;
-			*/
+			//JLabel typeLabel = new JLabel("DB type:", JLabel.TRAILING);
+			//panel.add(typeLabel, gbc);
+			//gbc.gridx++;
+			//mysqlButton = new JRadioButton("mySQL");
+			//mysqlButton.addActionListener(new ActionListener() {
+			//	public void actionPerformed(ActionEvent e) {
+			//		dbField.setText("");
+			//		dbField.setEnabled(false);
+			//		dbLabel.setEnabled(false);
+			//		connectionLabel.setText("mysql://");
+			//	}
+			//});
+			//mysqlButton.setSelected(true);
+			//dbField.setEnabled(false);
+			//dbLabel.setEnabled(false);
+			//panel.add(mysqlButton, gbc);
+			//gbc.gridx++;
+			//gbc.gridwidth = 2;
+			//mssqlButton = new JRadioButton("MS SQL Server");
+			//mssqlButton.addActionListener(new ActionListener() {
+			//	public void actionPerformed(ActionEvent e) {
+			//		dbField.setEnabled(true);
+			//		dbLabel.setEnabled(true);
+			//		connectionLabel.setText("sqlserver://");
+			//	}
+			//});
+			//panel.add(mssqlButton, gbc);
+			//ButtonGroup buttonGroup = new ButtonGroup();
+			//buttonGroup.add(mysqlButton);
+			//buttonGroup.add(mssqlButton);
+			//gbc.gridx = 0;
+			//gbc.gridy++;
+			//gbc.gridwidth = 1;
 			
 			panel.add(connectionLabel, gbc);
 			gbc.gridx++;
@@ -678,19 +677,16 @@ public class Gui extends JFrame {
 								url = url + "/" + dbField.getText();
 							}
 						}
-						Dna.dna.openMySQL(connectionField.getText(), 
-								loginField.getText(), pwField.getText());
-					/*
-					} else if (mssqlButton.isSelected()) {
-						if (dbField.getText() == null || dbField.equals("")) {
-							System.err.println("A database name must be " +
-									"provided for MSSQL databases.");
-						}
-						Dna.dna.openMSSQL(connectionField.getText(), 
-								dbField.getText(), loginField.getText(), 
-								pwField.getText());
-					}
-					*/
+						Dna.dna.openMySQL(connectionField.getText(), loginField.getText(), pwField.getText());
+					//} else if (mssqlButton.isSelected()) {
+					//	if (dbField.getText() == null || dbField.equals("")) {
+					//		System.err.println("A database name must be " +
+					//				"provided for MSSQL databases.");
+					//	}
+					//	Dna.dna.openMSSQL(connectionField.getText(), 
+					//			dbField.getText(), loginField.getText(), 
+					//			pwField.getText());
+					//}
 					dispose();
 				}
 			});
@@ -711,4 +707,5 @@ public class Gui extends JFrame {
 			this.setVisible(true);
 		}
 	}
+	*/
 }

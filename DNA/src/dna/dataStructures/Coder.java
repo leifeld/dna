@@ -1,27 +1,93 @@
 package dna.dataStructures;
 
-public class Coder {
+public class Coder implements Comparable<Coder> {
 	int id, red, green, blue;
 	String name, password;
 	boolean editOtherDocuments, viewOtherDocuments, editOtherStatements, viewOtherStatements, editStatementTypes, editRegex, addDocuments, addStatements, editCoders;
-	
-	public Coder(int id, String name, int red, int green, int blue, String password, boolean editOtherDocuments, boolean viewOtherDocuments, boolean editOtherStatements, boolean viewOtherStatements, boolean editStatementTypes, boolean editRegex, boolean addDocuments, boolean addStatements, boolean editCoders) {
+
+	public Coder(
+			int id, 
+			String name, 
+			int red, 
+			int green, 
+			int blue, 
+			String password, 
+			boolean addDocuments, 
+			boolean viewOtherDocuments, 
+			boolean editOtherDocuments, 
+			boolean addStatements, 
+			boolean viewOtherStatements, 
+			boolean editOtherStatements, 
+			boolean editCoders, 
+			boolean editStatementTypes, 
+			boolean editRegex
+			) {
 		this.id = id;
 		this.name = name;
 		this.red = red;
 		this.green = green;
 		this.blue = blue;
 		this.password = password;
+		this.addDocuments = addDocuments;
+		this.viewOtherDocuments = viewOtherDocuments;
 		this.editOtherDocuments = editOtherDocuments;
-		this.editOtherStatements = editOtherStatements;
+		this.addStatements = addStatements;
 		this.viewOtherStatements = viewOtherStatements;
+		this.editOtherStatements = editOtherStatements;
+		this.editCoders = editCoders;
 		this.editStatementTypes = editStatementTypes;
 		this.editRegex = editRegex;
-		this.addDocuments = addDocuments;
-		this.addStatements = addStatements;
-		this.editCoders = editCoders;
 	}
-
+	
+	public Coder(
+			String name, 
+			int red, 
+			int green, 
+			int blue, 
+			String password, 
+			boolean addDocuments, 
+			boolean viewOtherDocuments, 
+			boolean editOtherDocuments, 
+			boolean addStatements, 
+			boolean viewOtherStatements, 
+			boolean editOtherStatements, 
+			boolean editCoders, 
+			boolean editStatementTypes, 
+			boolean editRegex
+			) {
+		this.name = name;
+		this.red = red;
+		this.green = green;
+		this.blue = blue;
+		this.password = password;
+		this.addDocuments = addDocuments;
+		this.viewOtherDocuments = viewOtherDocuments;
+		this.editOtherDocuments = editOtherDocuments;
+		this.addStatements = addStatements;
+		this.viewOtherStatements = viewOtherStatements;
+		this.editOtherStatements = editOtherStatements;
+		this.editCoders = editCoders;
+		this.editStatementTypes = editStatementTypes;
+		this.editRegex = editRegex;
+	}
+	
+	public Coder() {
+		this.name = "";
+		this.red = 255;
+		this.green = 255;
+		this.blue = 0;
+		this.password = "";
+		this.addDocuments = true;
+		this.viewOtherDocuments = true;
+		this.editOtherDocuments = true;
+		this.addStatements = true;
+		this.viewOtherStatements = true;
+		this.editOtherStatements = true;
+		this.editCoders = true;
+		this.editStatementTypes = true;
+		this.editRegex = true;
+	}
+	
 	/**
 	 * @return the id
 	 */
@@ -231,5 +297,29 @@ public class Coder {
 	public void setEditCoders(boolean editCoders) {
 		this.editCoders = editCoders;
 	}
+
+	// how should entries be sorted in a list?
+	public int compareTo(Coder c) {
+		if (this.getName().compareTo(c.getName()) < 0) {
+			return -1;
+		} else if (this.getName().compareTo(c.getName()) > 0) {
+			return 1;
+		} else {
+			if (((Integer) this.getId()).compareTo(c.getId()) < 0) {
+				return -1;
+			} else if (((Integer) this.getId()).compareTo(c.getId()) > 0) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+	}
 	
+	//necessary for sorting purposes
+	public boolean equals(Object o) {
+		if (o == null) return false;
+		if (this == o) return true;
+		if (getClass() != o.getClass()) return false;
+		return compareTo((Coder) o) == 0;
+	}
 }

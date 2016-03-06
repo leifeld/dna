@@ -48,14 +48,14 @@ public class StatementTypeEditor extends JFrame {
 	public StatementTypeEditor() {
 		this.setTitle("Edit statement types...");
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		ImageIcon tableAddIcon = new ImageIcon(getClass().getResource(
-				"/icons/table_add.png"));
+		ImageIcon tableAddIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
 		this.setIconImage(tableAddIcon.getImage());
 		this.setLayout(new FlowLayout(FlowLayout.LEFT));
 		
 		//LEFT PANEL FOR STATEMENT TYPES
 		JPanel leftPanel = new JPanel(new BorderLayout());
-		ArrayList<StatementType> types = Dna.dna.db.getStatementTypes();
+		//ArrayList<StatementType> types = Dna.dna.db.getStatementTypes();
+		ArrayList<StatementType> types = Dna.data.getStatementTypes();
 		
 		// type panel
 		stc = new StatementTypeTableModel(types);
@@ -169,8 +169,9 @@ public class StatementTypeEditor extends JFrame {
 					String newLabel = addTypeTextField.getText();
 					int oldTypeIndex = typeTable.getSelectedRow();
 					String oldLabel = stc.get(oldTypeIndex).getLabel();
-					Dna.dna.db.changeStatementType(oldLabel, newLabel, red, 
-							green, blue);
+					//Dna.dna.db.changeStatementType(oldLabel, newLabel, red, green, blue);
+					Dna.data.getStatementType(oldLabel).setLabel(newLabel);
+					Dna.data.getStatementType(newLabel).setColor(new Color(red, green, blue));
 					
 					// change in the table of the current window
 					stc.get(oldTypeIndex).setColor(newColor);
@@ -209,15 +210,13 @@ public class StatementTypeEditor extends JFrame {
 					int red = newColor.getRed();
 					int green = newColor.getGreen();
 					int blue = newColor.getBlue();
-					LinkedHashMap<String, String> emptyVar = new 
-							LinkedHashMap<String, 
-							String>();
-					Dna.dna.db.insertStatementType(newLabel, red, green, blue, 
-							emptyVar);
+					LinkedHashMap<String, String> emptyVar = new LinkedHashMap<String, String>();
+					//Dna.dna.db.insertStatementType(newLabel, red, green, blue, emptyVar);
+					StatementType newType = new StatementType(newLabel, new Color(red, green, blue), emptyVar);
+					Dna.data.getStatementTypes().add(newType);
 					
 					// change in the table of the current window
-					StatementType statementType = new StatementType(newLabel, 
-							newColor, emptyVar);
+					StatementType statementType = new StatementType(newLabel, newColor, emptyVar);
 					stc.addStatementType(statementType);
 					typeTable.updateUI();
 					int newRow = stc.getIndexByLabel(newLabel);
@@ -243,7 +242,8 @@ public class StatementTypeEditor extends JFrame {
 						"Confirmation required", JOptionPane.OK_CANCEL_OPTION);
 				if (dialog == 0) {
 					// change in the database
-					Dna.dna.db.removeStatementType(oldLabel);
+					//Dna.dna.db.removeStatementType(oldLabel);
+					Dna.data.removeStatementType(oldLabel);
 					
 					// change in the tables of the current window
 					stc.remove(oldTypeIndex);
@@ -344,8 +344,8 @@ public class StatementTypeEditor extends JFrame {
 				}
 				int selRow = typeTable.getSelectedRow();
 				if (selRow > -1) {
-					LinkedHashMap<String, String> map = Dna.dna.db.getVariables(
-							stc.get(selRow).getLabel());
+					//LinkedHashMap<String, String> map = Dna.dna.db.getVariables(stc.get(selRow).getLabel());
+					LinkedHashMap<String, String> map = Dna.data.getStatementType(stc.get(selRow).getLabel()).getVariables();
 					Object[] types = map.keySet().toArray();
 					for (int i = 0; i < types.length; i++) {
 						if (types[i].equals(var)) {
@@ -404,11 +404,20 @@ public class StatementTypeEditor extends JFrame {
 	    				varRows, newRow);
         		
         		// update database
-        		Dna.dna.db.addVariable(newVar, dataType, statementType);
+        		//Dna.dna.db.addVariable(newVar, dataType, statementType);
+	    		Dna.data.getStatementType(statementType).getVariables().put(newVar, dataType);
+	    		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+	    			if (Dna.data.getStatements().get(i).getType().equals(statementType)) {
+	    				if (dataType == "long text" || dataType == "short text") {
+		    				Dna.data.getStatements().get(i).getValues().put(newVar, "");
+	    				} else {
+		    				Dna.data.getStatements().get(i).getValues().put(newVar, 0);
+	    				}
+	    			}
+	    		}
         		
         		// update statement type container
-        		LinkedHashMap<String, String> varMap = stc.get(typeRow).
-        				getVariables();
+        		LinkedHashMap<String, String> varMap = stc.get(typeRow).getVariables();
         		varMap.put(newVar, dataType);
         		stc.get(typeRow).setVariables(varMap);
         		Dna.dna.gui.sidebarPanel.updateStatementTypes();
@@ -441,15 +450,18 @@ public class StatementTypeEditor extends JFrame {
             		stc.get(typeRow).setVariables(varMap);
             		
             		// update database
-            		Dna.dna.db.removeVariable(varName, statementType);
+            		//Dna.dna.db.removeVariable(varName, statementType);
+    	    		Dna.data.getStatementType(statementType).getVariables().remove(varName);
+    	    		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+    	    			if (Dna.data.getStatements().get(i).getType().equals(statementType)) {
+    	    				Dna.data.getStatements().get(i).getValues().remove(varName);
+    	    			}
+    	    		}
             		
             		// update table in the current window
-            		for (int i = varTable.getModel().getRowCount() - 1; i >= 0; 
-            				i--) {
-            			if (varTable.getModel().getValueAt(i, 0).equals(
-            					varName)) {
-            				((DefaultTableModel)varTable.getModel()).removeRow(
-            						i);
+            		for (int i = varTable.getModel().getRowCount() - 1; i >= 0; i--) {
+            			if (varTable.getModel().getValueAt(i, 0).equals(varName)) {
+            				((DefaultTableModel)varTable.getModel()).removeRow(i);
             			}
             		}
             		Dna.dna.gui.sidebarPanel.updateStatementTypes();

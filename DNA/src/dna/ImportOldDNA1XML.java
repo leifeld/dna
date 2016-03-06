@@ -1,6 +1,7 @@
 package dna;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -12,6 +13,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,6 +39,8 @@ import org.jdom.EntityRef;
 import org.jdom.ProcessingInstruction;
 import org.jdom.Text;
 import org.jdom.input.SAXBuilder;
+
+import dna.dataStructures.Statement;
 
 @SuppressWarnings("serial")
 public class ImportOldDNA1XML extends JFrame {
@@ -230,11 +234,12 @@ public class ImportOldDNA1XML extends JFrame {
 				    	title = title.replaceAll("'", "''");
 				    	articleText = articleText.replaceAll("'", "''");
 						
-						int documentId = -1;
+						int documentId = Dna.data.generateNewDocumentId();
 						try {
 					    	SimpleDateFormat sdfToDate = new SimpleDateFormat("dd.MM.yyyy");
 					    	date = sdfToDate.parse(dateString);
-					    	documentId = Dna.dna.addDocument(title, articleText, date, 0, "", "", "Imported from DNA 1.xx.", "");
+					    	//documentId = Dna.dna.addDocument(title, articleText, date, 0, "", "", "Imported from DNA 1.xx.", "");
+					    	dna.dataStructures.Document d = new dna.dataStructures.Document(documentId, title, articleText, date, 0, "", "", "Imported from DNA 1.xx.", "");
 					    } catch (ParseException pe) {
 					    	pe.printStackTrace();
 					    }
@@ -263,12 +268,21 @@ public class ImportOldDNA1XML extends JFrame {
 					    	organization = organization.replaceAll("'", "''");
 					    	category = category.replaceAll("'", "''");
 					    	
-					    	int statementId = Dna.dna.addStatement("DNAStatement", documentId, startInt, endInt);
+					    	//int statementId = Dna.dna.addStatement("DNAStatement", documentId, startInt, endInt);
+					    	int statementId = Dna.data.generateNewStatementId();
 					    	
-					    	Dna.dna.db.changeStatement(statementId, "person", person, "short text");
-					    	Dna.dna.db.changeStatement(statementId, "organization", organization, "short text");
-					    	Dna.dna.db.changeStatement(statementId, "category", category, "short text");
-					    	Dna.dna.db.changeStatement(statementId, "agreement", agreeInt, "boolean");
+					    	//Date date = Dna.data.getDocument(documentId).getDate();
+					    	LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
+					    	map.put("person", person);
+					    	map.put("organization", organization);
+					    	map.put("category", category);
+					    	map.put("agreement", agreeInt);
+					    	Statement s = new Statement(statementId, documentId, startInt, endInt, date, Color.YELLOW, "DNAStatement", 0, map);
+					    	Dna.data.getStatements().add(s);
+					    	//Dna.dna.db.changeStatement(statementId, "person", person, "short text");
+					    	//Dna.dna.db.changeStatement(statementId, "organization", organization, "short text");
+					    	//Dna.dna.db.changeStatement(statementId, "category", category, "short text");
+					    	//Dna.dna.db.changeStatement(statementId, "agreement", agreeInt, "boolean");
 					    }
 					} catch (IOException e) {
 						System.err.println("Error while reading the file \"" + filename + "\".");

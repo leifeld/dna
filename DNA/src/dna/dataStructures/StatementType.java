@@ -1,6 +1,8 @@
 package dna.dataStructures;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 public class StatementType {
@@ -70,6 +72,20 @@ public class StatementType {
 		return variables;
 	}
 
+	/**
+	 * Retrieve an array list of variable names of only a specific type.
+	 * 
+	 * @return  The variables as an array list of strings.
+	 */
+	public ArrayList<String> getVariablesByType(String type) {
+		ArrayList<String> vars = new ArrayList<String>();
+		Iterator<String> keyIterator = variables.keySet().iterator();
+		while (keyIterator.hasNext()){
+			vars.add(keyIterator.next());
+		}
+		return(vars);
+	}
+	
 	/**
 	 * Set the hashmap with the variables and data types.
 	 * 

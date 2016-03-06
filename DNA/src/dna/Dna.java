@@ -19,24 +19,21 @@ import org.jsoup.select.Elements;
 public class Dna {
 	static Data data = new Data();
 	static Dna dna;
-	DataAccess db;
 	Gui gui;
 	
 	//ArrayList<Document> documents = new ArrayList<Document>(); //SK All changes w.r.t. documents list
 	public Dna () {
-		data.getSettings().add(new Setting("version", "2.0 beta 3"));
-		data.getSettings().add(new Setting("date", "2016-03-01"));
+		data.getSettings().put("version", "2.0 beta 3");
+		data.getSettings().put("date", "2016-03-07");
 		
-		//documents = new ArrayList<Document>(); //SK
-		db = new DataAccess();
 		gui = new Gui();
-		//new NewDatabaseDialog();
 	}
 	
 	public static void main (String[] args) {
 		dna = new Dna();
 	}
 
+	/*
 	public String getVersion() {
 		for (int i = 0; i < data.getSettings().size(); i++) {
 			Setting s = data.getSettings().get(i);
@@ -56,7 +53,9 @@ public class Dna {
 		}
 		return(null);
 	}
+	*/
 	
+	/*
 	public int addStatement(String type, int doc, int start, int stop) {
 		int statementId = dna.db.addStatement(type, doc, start, stop);
 		Color color = dna.db.getStatementTypeColor(type);
@@ -74,7 +73,7 @@ public class Dna {
 		dna.gui.sidebarPanel.ssc.remove(row);
 		dna.gui.sidebarPanel.statementTable.updateUI();
 	}
-
+	
 	public int addDocument(String title, String text, Date date, int coder, 
 			String source, String section, String notes, String type) {
 		//TODO: do the replaceAll() here or in NewDOcumentWindow!
@@ -90,6 +89,7 @@ public class Dna {
 		dna.gui.documentPanel.documentContainer.addDocument(d);
 		return id;
 	}
+	*/
 
 	/**
 	 * LB.Add:
@@ -109,6 +109,7 @@ public class Dna {
 	 * @throws IOException
 	 * @throws ParseException
 	 */
+	/*
 	public void importDocumentsFromHTMLFile(String fileName, String pathName, 
 			String textElement, String titleElement, String dateElement, 
 			String sectionElement, int coder, String source, String type, 
@@ -135,19 +136,6 @@ public class Dna {
 					+ "-------------------------------------------------\n\n", 
 					title, source, section);
 			String text = textTitle +"" + "" + textTempString;
-			/*
-			// other version of how to make sure the paragraphs within the text body are separated by \n
-			// Problem here is that if body does not have a "p" => it will not be recorded.
-			//String text = file.select(textElement).get(i).text();
-			StringBuilder stringBuilder = new StringBuilder();
-			for( Element element : file.select(textElement).get(i).select("p") ){
-				stringBuilder.append("\n");
-				stringBuilder.append(element.text());
-				stringBuilder.append("\n");
-				// eg. you can use a StringBuilder and append lines here ...
-			}
-			String text = stringBuilder.toString();
-			 */
 
 			if (dateManuallySelected == false){
 				DateExtractor de = new DateExtractor();
@@ -170,7 +158,8 @@ public class Dna {
 			}	
 		} 	
 	}
-
+	*/
+	
 	/**
 	 * LB.Add:
 	 * Import one document from a webpage, parse it and add it to the data set. 
@@ -187,6 +176,7 @@ public class Dna {
 	 * @throws IOException		
 	 * @throws ParseException
 	 */
+	/*
 	public void importDocumentsFromWebpage(String urlName, 
 			String textElement, String titleElement, String dateElement, 
 			String sectionElement, int coder, String source, String type, 
@@ -302,6 +292,7 @@ public class Dna {
 		Dna.dna.gui.sidebarPanel.docStats.updateStatistics();
 		Dna.dna.gui.menuBar.updateTeggleAction();
 	}
+	*/
 	
 	/*
 	public void openMSSQL(String url, String dbname, String userName, 
@@ -336,6 +327,7 @@ public class Dna {
 	}
 	*/
 	
+	/*
 	public void closeFile() {
 		Dna.dna.db.closeFile();
 		Dna.dna.gui.statusBar.resetLabel();
@@ -376,4 +368,5 @@ public class Dna {
 		Dna.dna.gui.sidebarPanel.docStats.updateStatistics();
 		Dna.dna.gui.menuBar.updateTeggleAction();
 	}
+	*/
 }

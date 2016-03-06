@@ -13,9 +13,9 @@ public class Document implements Comparable<Document> {
 	String type;
 	Date date;
 	
-	public Document( int id, String title, String text, Date date, 
+	public Document(int id, String title, String text, Date date, 
 			int coder, String source, String section, String notes, 
-			String type ) {
+			String type) {
 		this.id = id;
 		this.title = title;
 		this.text = text;
@@ -26,7 +26,7 @@ public class Document implements Comparable<Document> {
 		this.notes = notes;
 		this.type = type;
 	}
-
+	
 	/**
 	 * Retrieve the coder of the document.
 	 * 

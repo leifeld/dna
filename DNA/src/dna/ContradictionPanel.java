@@ -27,6 +27,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
 
+import dna.dataStructures.Statement;
+
 public class ContradictionPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 
@@ -77,9 +79,9 @@ public class ContradictionPanel extends JPanel {
 							Dna.dna.gui.sidebarPanel.statementTable.clearSelection();
 						} else {
 							Dna.dna.gui.sidebarPanel.statementTable.changeSelection(viewId, 0, false, false);
-							int docId = Dna.dna.db.getStatement(nodeInt).getDocument();
-							int docRow = Dna.dna.gui.documentPanel.documentContainer.
-									getRowIndexById(docId);
+							//int docId = Dna.dna.db.getStatement(nodeInt).getDocument();
+							int docId = Dna.data.getStatement(nodeInt).getDocument();
+							int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
 							Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
 							setSelectionInterval(docRow, docRow);
 							Dna.dna.gui.textPanel.selectStatement(nodeInt, docId);
@@ -179,7 +181,8 @@ public class ContradictionPanel extends JPanel {
 		filterComboBoxVar2.removeAllItems();
 		String type = (String) filterComboBoxType.getSelectedItem();
 		if (type != null && !type.equals("")) {
-			HashMap<String, String> variables = Dna.dna.db.getVariables(type);
+			//HashMap<String, String> variables = Dna.dna.db.getVariables(type);
+			HashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
 			Iterator<String> keyIterator = variables.keySet().iterator();
 			while (keyIterator.hasNext()){
 				String key = keyIterator.next();
@@ -218,20 +221,14 @@ public class ContradictionPanel extends JPanel {
 		filterComboBoxBoolean.removeAllItems();
 		String type = (String) filterComboBoxType.getSelectedItem();
 		if (type != null && !type.equals("")) {
-			HashMap<String, String> variables = Dna.dna.db.getVariablesByType(
-					type, "boolean");
-			//LB.Add in DataAccess => new method to get Variables by variableType
-			if (variables.isEmpty() == false) {
-				Iterator<String> keyIterator = variables.keySet().iterator();
-				while (keyIterator.hasNext()){
-					String key = keyIterator.next();
-					filterComboBoxBoolean.addItem(key);
-					filterComboBoxBoolean.setSelectedIndex(0);
-				}
-			}
-			else {
+			ArrayList<String> variables = Dna.data.getStatementType(type).getVariablesByType("boolean");
+			if (variables.size() == 0) {
 				goButton.setEnabled(false);
 				clearButton.setEnabled(false);
+			}
+			for (int i = 0; i < variables.size(); i++) {
+				filterComboBoxBoolean.addItem(variables.get(i));
+				filterComboBoxBoolean.setSelectedIndex(0);
 			}
 		}
 		else {
@@ -249,7 +246,7 @@ public class ContradictionPanel extends JPanel {
 			filterComboBoxVar2.removeAllItems();
 			String type = (String) filterComboBoxType.getSelectedItem();
 			if (type != null && !type.equals("")) {
-				HashMap<String, String> variables = Dna.dna.db.getVariables(type);
+				HashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
 				String variable1 = (String) filterComboBoxVar1.getSelectedItem();
 				// remove item from HashMap: http://stackoverflow.com/questions/6531132/java-hashmap-removing-key-value
 				variables.remove(variable1);
@@ -285,24 +282,34 @@ public class ContradictionPanel extends JPanel {
 		String varBoolean = (String) filterComboBoxBoolean.getSelectedItem();
 
 		// get list of statement IDs 
-		ArrayList<Integer> ids;
-		ids = Dna.dna.db.getStatementIdsAll();
-		//LB.Add in DataAccess: getStatementIdsAll()
+		ArrayList<Integer> ids = new ArrayList<Integer>();
+		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+			ids.add(Dna.data.getStatements().get(i).getId());
+		}
 
 		// get List of actors:
-		String[] actors; //Problem if not ArrayList?
-		actors = Dna.dna.db.getVariableStringEntries(var1, statType);
+		ArrayList<String> actors = new ArrayList<String>();
+		ArrayList<Statement> statements = Dna.data.getStatementsByType(statType);
+		//String[] actors = new String[statements.size()];
+		for (int i = 0; i < statements.size(); i++) {
+			String a = (String) Dna.data.getStatements().get(i).getValues().get(var1);
+			if (!actors.contains(a)) {
+				actors.add(a);
+			}
+		}
+		//String[] actors; //Problem if not ArrayList?
+		//actors = Dna.dna.db.getVariableStringEntries(var1, statType);
 		ArrayList<Integer> tabuId = new ArrayList<Integer>();
 
 		// actors-loop
-		for (int i = 0; i < actors.length; i++) {
-			DefaultMutableTreeNode actor = new DefaultMutableTreeNode(actors[i]);
+		for (int i = 0; i < actors.size(); i++) {
+			DefaultMutableTreeNode actor = new DefaultMutableTreeNode(actors.get(i));
 			ArrayList<Integer> indices = new ArrayList<Integer>();
 
 			// for j = statement IDs
 			for (int j : ids){
-				if (actors[i].equals(Dna.dna.db.getVariableStringEntryWithType(
-						j, var1, statType))) {
+				//if (actors.get(i).equals(Dna.dna.db.getVariableStringEntryWithType(j, var1, statType))) {
+				if (actors.get(i).equals(Dna.data.getStatement(j).getValues().get(var1))) {
 					indices.add(j);
 				}
 			}
@@ -312,28 +319,28 @@ public class ContradictionPanel extends JPanel {
 							j != k && 
 							! tabuId.contains(j) && 
 							! tabuId.contains(k) && 
-							Dna.dna.db.getVariableStringEntryWithType(
-									j, var2, statType)
-									.equals(Dna.dna.db.getVariableStringEntryWithType(
-											k, var2, statType)) && 
-											! Dna.dna.db.getVariableStringEntryWithType(
-													j, varBoolean, statType)
-													.equals(Dna.dna.db.getVariableStringEntryWithType(
-															k, varBoolean, statType))
+							//Dna.dna.db.getVariableStringEntryWithType(j, var2, statType).equals(Dna.dna.db.getVariableStringEntryWithType(k, var2, statType)) &&
+
+							Dna.data.getStatement(j).getValues().get(var2).equals(Dna.data.getStatement(k).getValues().get(var2)) && 
+							//! Dna.dna.db.getVariableStringEntryWithType(j, varBoolean, statType).equals(Dna.dna.db.getVariableStringEntryWithType(k, varBoolean, statType))
+							Dna.data.getStatement(j).getValues().get(varBoolean).equals(Dna.data.getStatement(k).getValues().get(varBoolean))
 							) {
-						DefaultMutableTreeNode category = new DefaultMutableTreeNode(
-								Dna.dna.db.getVariableStringEntryWithType(
-										j, var2, statType));
+						//DefaultMutableTreeNode category = new DefaultMutableTreeNode(
+						//		Dna.dna.db.getVariableStringEntryWithType(
+						//				j, var2, statType));
+						DefaultMutableTreeNode category = new DefaultMutableTreeNode(Dna.data.getStatement(j).getValues().get(var2));
 						ArrayList<Integer> matches = new ArrayList<Integer>();
 						for (int l: indices) {
-							if (Dna.dna.db.getVariableStringEntryWithType(
-									l, var2, statType)
-									.equals(Dna.dna.db.getVariableStringEntryWithType(
-											j, var2, statType))){
+							//if (Dna.dna.db.getVariableStringEntryWithType(
+							//		l, var2, statType)
+							//		.equals(Dna.dna.db.getVariableStringEntryWithType(
+							//				j, var2, statType))){
+							if (Dna.data.getStatement(l).getValues().get(var2).equals(Dna.data.getStatement(j).getValues().get(var2))) {
 								matches.add(l);
 								DefaultMutableTreeNode id = new DefaultMutableTreeNode(
-										Dna.dna.db.getVariableStringEntryWithType(
-												l, varBoolean, statType) + 
+										//Dna.dna.db.getVariableStringEntryWithType(
+										//		l, varBoolean, statType) +
+										Dna.data.getStatement(l).getValues().get(varBoolean) + 
 												" (" + l + ")");
 								category.add(id);
 							}

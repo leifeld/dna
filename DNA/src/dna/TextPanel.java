@@ -157,12 +157,16 @@ class TextPanel extends JPanel {
 			Style blackStyle = sc.addStyle("ConstantWidth", null);
 			StyleConstants.setForeground(blackStyle, Color.black);
 			StyleConstants.setBackground(blackStyle, Color.white);
-			doc.setCharacterAttributes(initialStart, 
-				 initialEnd - initialStart, blackStyle, false);
+			doc.setCharacterAttributes(initialStart, initialEnd - initialStart, blackStyle, false);
 
 			//color statements
-			ArrayList<Statement> statements = 
-					Dna.dna.db.getStatementsPerDocumentId(documentId);
+			//ArrayList<Statement> statements = Dna.dna.db.getStatementsPerDocumentId(documentId);
+			ArrayList<Statement> statements = new ArrayList<Statement>();
+			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+				if (Dna.data.getStatements().get(i).getDocument() == documentId) {
+					statements.add(Dna.data.getStatements().get(i));
+				}
+			}
 			for (int i = 0; i < statements.size(); i++) {
 				int start = statements.get(i).getStart();
 				int stop = statements.get(i).getStop();
@@ -174,10 +178,10 @@ class TextPanel extends JPanel {
 			}
 			
 			//color regular expressions
-			ArrayList<Regex> regex = Dna.dna.db.getRegex();
-			for (int i = 0; i < regex.size(); i++) {
-				String label = regex.get(i).getLabel();
-				Color color = regex.get(i).getColor();
+			//ArrayList<Regex> regex = Dna.dna.db.getRegex();
+			for (int i = 0; i < Dna.data.getRegexes().size(); i++) {
+				String label = Dna.data.getRegexes().get(i).getLabel();
+				Color color = Dna.data.getRegexes().get(i).getColor();
 				Pattern p = Pattern.compile(label, Pattern.CASE_INSENSITIVE);
 				Matcher m = p.matcher(getDocumentText());
 				while(m.find()) {
@@ -206,64 +210,66 @@ class TextPanel extends JPanel {
 	{
 		popmen = new JPopupMenu();
 		// changed by SK
-		statementTypes = Dna.dna.db.getStatementTypes();
+		//statementTypes = Dna.dna.db.getStatementTypes();
+		statementTypes = Dna.data.getStatementTypes();
 		
 		for (int i = 0; i < statementTypes.size(); i++) {
 			String type = statementTypes.get(i).getLabel();
 			Color col = statementTypes.get(i).getColor();
-                    menu1 = new JMenuItem( "Format as " + type);
-                    menu1.setOpaque(true);
-                    menu1.setBackground(col);
+			menu1 = new JMenuItem("Format as " + type);
+			menu1.setOpaque(true);
+			menu1.setBackground(col);
 			popmen.add( menu1 );
-			
+
 			menu1.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					
 					Object item = e.getSource();
 					String itemText = ((JMenuItem) item).getText();
 					String type = itemText.substring(10);
 					
-					
 					int selectionStart = textWindow.getSelectionStart();
 					int selectionEnd = textWindow.getSelectionEnd();
-                                        String selectedText = textWindow.getText().substring(selectionStart, selectionEnd);
-                                        CreateStatementFrame createPanel = new CreateStatementFrame(type, col,documentId, selectionStart, selectionEnd,selectedText);
-                                        createPanel.setVisible(true);
-                                        
-                                        textWindow.setSelectionStart(selectionStart);
-                                        textWindow.setSelectionEnd(selectionEnd);
-                                                
-//					Dna.dna.addStatement(type, documentId, selectionStart, selectionEnd);
+					String selectedText = textWindow.getText().substring(selectionStart, selectionEnd);
+					CreateStatementFrame createPanel = new CreateStatementFrame(type, col,documentId, selectionStart, selectionEnd,selectedText);
+					createPanel.setVisible(true);
+
+					textWindow.setSelectionStart(selectionStart);
+					textWindow.setSelectionEnd(selectionEnd);
+
+					//Dna.dna.addStatement(type, documentId, selectionStart, selectionEnd);
 					paintStatements();
-//					textWindow.setCaretPosition(selectionEnd);
+					//textWindow.setCaretPosition(selectionEnd);
 				}
 			});
 		}
-		
 		popmen.show( comp, x, y );
 	}
 	
-	public void mouseListenSelect(MouseEvent me) throws 
-			ArrayIndexOutOfBoundsException {
-		if ( me.isPopupTrigger() ) {
+	public void mouseListenSelect(MouseEvent me) throws ArrayIndexOutOfBoundsException {
+		if (me.isPopupTrigger()) {
 			if (!(textWindow.getSelectedText() == null)) {
 				popupMenu(me.getComponent(), me.getX(), me.getY());
 			}
 		} else {
-			if (Dna.dna.db.getFileName() != null) {
+			//if (Dna.dna.db.getFileName() != null) {
 				int pos = textWindow.getCaretPosition(); //click caret position
-				Statement s = Dna.dna.db.getStatementAtLocation(documentId, pos);
+				//Statement s = Dna.dna.db.getStatementAtLocation(documentId, pos);
 				Point p = me.getPoint();
-				if (s != null) {
-					int statementId = s.getId();
-					int startIndex = s.getStart();
-					int stopIndex = s.getStop();
-					Point location = textWindow.getLocationOnScreen();
-					textWindow.setSelectionStart(startIndex);
-					textWindow.setSelectionEnd(stopIndex);
-					new Popup(p, statementId, location);
+				for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+					if (Dna.data.getStatements().get(i).getDocument() == documentId && Dna.data.getStatements().get(i).getStart() < pos && Dna.data.getStatements().get(i).getStop() > pos) {
+						int statementId = Dna.data.getStatements().get(i).getId();
+						int startIndex = Dna.data.getStatements().get(i).getStart();
+						int stopIndex = Dna.data.getStatements().get(i).getStop();
+						Point location = textWindow.getLocationOnScreen();
+						textWindow.setSelectionStart(startIndex);
+						textWindow.setSelectionEnd(stopIndex);
+						new Popup(p, statementId, location);
+					}
 				}
-			}
+				//if (s != null) {
+					
+				//}
+			//}
 		}
 	}
 	
@@ -275,18 +281,22 @@ class TextPanel extends JPanel {
 	 * @param documentId
 	 */
 	public void selectStatement(final int statementId, int documentId) {
-		textWindow.setText(Dna.dna.db.getDocument(documentId).getText());
+		//textWindow.setText(Dna.dna.db.getDocument(documentId).getText());
+		textWindow.setText(Dna.data.getDocument(documentId).getText());
 		paintStatements();
 		
-		int start = Dna.dna.db.getStatement(statementId).getStart();
-		int stop = Dna.dna.db.getStatement(statementId).getStop();
+		//int start = Dna.dna.db.getStatement(statementId).getStart();
+		//int stop = Dna.dna.db.getStatement(statementId).getStop();
+		int start = Dna.data.getStatement(statementId).getStart();
+		int stop = Dna.data.getStatement(statementId).getStart();
 		textWindow.grabFocus();
 		textWindow.select(start, stop);
 		
 		// the selection is too slow, so wait for it to finish...
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-				int start = Dna.dna.db.getStatement(statementId).getStart();
+				//int start = Dna.dna.db.getStatement(statementId).getStart();
+				int start = Dna.data.getStatement(statementId).getStart();
 				try {
 					double y = textWindow.modelToView(start).getY();
 					int l = textWindow.getText().length();
@@ -319,11 +329,14 @@ class TextPanel extends JPanel {
 	 * @param statementId
 	 */
 	public void highlightSelectedStatement(final int statementId) {
-		textWindow.setText(Dna.dna.db.getDocument(documentId).getText());
+		//textWindow.setText(Dna.dna.db.getDocument(documentId).getText());
+		textWindow.setText(Dna.data.getDocument(documentId).getText());
 		paintStatements();
 
-		int start = Dna.dna.db.getStatement(statementId).getStart();
-		int stop = Dna.dna.db.getStatement(statementId).getStop();
+		//int start = Dna.dna.db.getStatement(statementId).getStart();
+		//int stop = Dna.dna.db.getStatement(statementId).getStop();
+		int start = Dna.data.getStatement(statementId).getStart();
+		int stop = Dna.data.getStatement(statementId).getStart();
 		textWindow.grabFocus();
 		textWindow.select(start, stop);
 	}

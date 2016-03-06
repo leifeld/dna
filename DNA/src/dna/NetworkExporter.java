@@ -347,7 +347,8 @@ public class NetworkExporter extends JDialog {
 		JLabel scopeQuestion = new JLabel("For which statement type would you like to create a network?");
 		scopePanel.add(scopeQuestion, scopegbc);
 		scopegbc.gridy = 1;
-		typeList = Dna.dna.db.getStatementTypes();  // get info from db
+		//typeList = Dna.dna.db.getStatementTypes();  // get info from db
+		typeList = Dna.data.getStatementTypes();  // get info from db
 		String[] types = new String[typeList.size()];
 		for (int i = 0; i < typeList.size(); i++) {
 			types[i] = typeList.get(i).getLabel();
@@ -721,20 +722,10 @@ public class NetworkExporter extends JDialog {
 	private ArrayList<String> getUniqueValuesAsString(String var) {
 		String type = statementType.getVariableDataType(var);
 		ArrayList<String> values = new ArrayList<String>();
-		if (type.equals("boolean") || type.equals("integer")) {
-			int [] intValues = Dna.dna.db.getAllVariableIntEntries(var, statementType.getLabel());
-			for (int i = 0; i < intValues.length; i++) {
-				String obj = Integer.toString(intValues[i]);
-				if (!values.contains(obj)) {
-					values.add(obj);
-				}
-			}
-		} else {
-			String[] stringValues = Dna.dna.db.getAllVariableStringEntries(var, statementType.getLabel());
-			for (int i = 0; i < stringValues.length; i++) {
-				if (!values.contains(stringValues[i])) {
-					values.add(stringValues[i]);
-				}
+		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+			String val = (String) Dna.data.getStatementsByType(type).get(i).getValues().get(var);
+			if (!values.contains(val)) {
+				values.add(val);
 			}
 		}
 		Collections.sort(values);
@@ -746,13 +737,22 @@ public class NetworkExporter extends JDialog {
 		String type = statementType.getVariableDataType(var);
 		if (type.equals("boolean") || type.equals("integer")) {
 			ArrayList<Integer> values = new ArrayList<Integer>();
-			int [] intValues = Dna.dna.db.getAllVariableIntEntries(var, statementType.getLabel());
+			//int [] intValues = Dna.dna.db.getAllVariableIntEntries(var, statementType.getLabel());
+
+			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+				int val = (int) Dna.data.getStatementsByType(type).get(i).getValues().get(var);
+				if (!values.contains(val)) {
+					values.add(val);
+				}
+			}
+			/*
 			for (int i = 0; i < intValues.length; i++) {
 				int obj = intValues[i];
 				if (!values.contains(obj)) {
 					values.add(obj);
 				}
 			}
+			*/
 			Collections.sort(values);
 			return values;
 		} else {
@@ -822,7 +822,14 @@ public class NetworkExporter extends JDialog {
 		startSpinner = new JSpinner();
 		startModel.setCalendarField(Calendar.DAY_OF_YEAR);
 		startSpinner.setModel(startModel);
-		startModel.setValue(Dna.dna.db.getFirstDate());
+		//startModel.setValue(Dna.dna.db.getFirstDate());
+		ArrayList<Date> dates = new ArrayList<Date>();
+		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+			dates.add(Dna.data.getStatements().get(i).getDate());
+		}
+		Collections.sort(dates);
+		startModel.setValue(dates.get(0));
+		
 		startSpinner.setEditor(new JSpinner.DateEditor(startSpinner, "yyyy-MM-dd  HH:mm:ss"));
 		datePanel.add(startSpinner, dategbc);
 		dategbc.gridy = 3;
@@ -834,7 +841,8 @@ public class NetworkExporter extends JDialog {
 		stopSpinner = new JSpinner();
 		stopModel.setCalendarField(Calendar.DAY_OF_YEAR);
 		stopSpinner.setModel(stopModel);
-		stopModel.setValue(Dna.dna.db.getLastDate());
+		//stopModel.setValue(Dna.dna.db.getLastDate());
+		stopModel.setValue(dates.get(dates.size() - 1));
 		stopSpinner.setEditor(new JSpinner.DateEditor(stopSpinner, "yyyy-MM-dd  HH:mm:ss"));
 		datePanel.add(stopSpinner, dategbc);
 		
@@ -1563,21 +1571,24 @@ public class NetworkExporter extends JDialog {
 		ArrayList<Integer> qualifierValues = new ArrayList<Integer>(); // unique agreement qualifier values
 		for (int i = 0; i < statements.size(); i++) { // retrieve the data for variables 1 and 2 from database
 			int statementId = statements.get(i).getId();
-			String name1 = Dna.dna.db.getVariableStringEntry(statementId, variable1);
+			//String name1 = Dna.dna.db.getVariableStringEntry(statementId, variable1);
+			String name1 = (String) Dna.data.getStatement(statementId).getValues().get(variable1);
 			if (name1 != null && !name1.equals("")) {
 				entries1.add(name1);
 				if (!names1.contains(name1)) {
 					names1.add(name1);
 				}
 			}
-			String name2 = Dna.dna.db.getVariableStringEntry(statementId, variable2);
+			//String name2 = Dna.dna.db.getVariableStringEntry(statementId, variable2);
+			String name2 = (String) Dna.data.getStatement(statementId).getValues().get(variable2);
 			if (name2 != null && !name2.equals("")) {
 				entries2.add(name2);
 				if (!names2.contains(name2)) {
 					names2.add(name2);
 				}
 			}
-			int qual = Dna.dna.db.getVariableIntEntry(statementId, qualifier);
+			//int qual = Dna.dna.db.getVariableIntEntry(statementId, qualifier);
+			int qual = (int) Dna.data.getStatement(statementId).getValues().get(qualifier);
 			if (!qualifierValues.contains(qual)) {
 				qualifierValues.add(qual);
 			}
@@ -1630,19 +1641,22 @@ public class NetworkExporter extends JDialog {
 		ArrayList<Integer> qualifierValues = new ArrayList<Integer>(); // unique agreement qualifier values
 		for (int i = 0; i < statements.size(); i++) { // retrieve the row and column names from database
 			int statementId = statements.get(i).getId();
-			String name1 = Dna.dna.db.getVariableStringEntry(statementId, variable1);
+			//String name1 = Dna.dna.db.getVariableStringEntry(statementId, variable1);
+			String name1 = (String) Dna.data.getStatement(statementId).getValues().get(variable1);
 			if (name1 != null && !name1.equals("")) {
 				if (!names1.contains(name1)) {
 					names1.add(name1);
 				}
 			}
-			String name2 = Dna.dna.db.getVariableStringEntry(statementId, variable2);
+			//String name2 = Dna.dna.db.getVariableStringEntry(statementId, variable2);
+			String name2 = (String) Dna.data.getStatement(statementId).getValues().get(variable2);
 			if (name2 != null && !name2.equals("")) {
 				if (!names2.contains(name2)) {
 					names2.add(name2);
 				}
 			}
-			int qual = Dna.dna.db.getVariableIntEntry(statementId, qualifier);
+			//int qual = Dna.dna.db.getVariableIntEntry(statementId, qualifier);
+			int qual = (int) Dna.data.getStatement(statementId).getValues().get(qualifier);
 			if (!qualifierValues.contains(qual)) {
 				qualifierValues.add(qual);
 			}
@@ -1687,7 +1701,8 @@ public class NetworkExporter extends JDialog {
 				throw new IllegalArgumentException("More than one statement type was selected. Cannot export to a spreadsheet!");
 			}
 		}
-		HashMap<String, String> variables = Dna.dna.db.getVariables(statementType);
+		//HashMap<String, String> variables = Dna.dna.db.getVariables(statementType);
+		HashMap<String, String> variables = Dna.data.getStatementType(statementType).getVariables();
 		Iterator<String> keyIterator;
 		try {
 			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), "UTF8"));
@@ -1709,9 +1724,11 @@ public class NetworkExporter extends JDialog {
 					key = keyIterator.next();
 					value = variables.get(key);
 					if (value.equals("short text") || value.equals("long text")) {
-						out.write(";\"" + Dna.dna.db.getVariableStringEntry(statementId, key).replaceAll(";", ",") + "\"");
+						//out.write(";\"" + Dna.dna.db.getVariableStringEntry(statementId, key).replaceAll(";", ",") + "\"");
+						out.write(";\"" + ((String) Dna.data.getStatement(statementId).getValues().get(key)).replaceAll(";", ",") + "\"");
 					} else if (value.equals("boolean") || value.equals("integer")) {
-						out.write(";" + Dna.dna.db.getVariableIntEntry(statementId, key));
+						//out.write(";" + Dna.dna.db.getVariableIntEntry(statementId, key));
+						out.write(";" + Dna.data.getStatement(statementId).getValues().get(key));
 					}
 				}
 			}
@@ -2122,8 +2139,10 @@ public class NetworkExporter extends JDialog {
 		for (int i = 0; i < al.size(); i++) {
 			boolean select = true;
 			for (int j = 0; j < exObj.size(); j++) {
-				if ((exObj.get(j).isExStr() == true && exObj.get(j).getExVal().contains(Dna.dna.db.getVariableStringEntry(al.get(i), exObj.get(j).getExVar()))) || 
-						(exObj.get(j).isExStr() == false && exObj.get(j).getExVal().contains(Dna.dna.db.getVariableIntEntry(al.get(i), exObj.get(j).getExVar())))) {
+				String ex = exObj.get(j).getExVar();
+				//if ((exObj.get(j).isExStr() == true && exObj.get(j).getExVal().contains(Dna.dna.db.getVariableStringEntry(al.get(i), exObj.get(j).getExVar()))) || 
+				//		(exObj.get(j).isExStr() == false && exObj.get(j).getExVal().contains(Dna.dna.db.getVariableIntEntry(al.get(i), exObj.get(j).getExVar())))) {
+				if (exObj.get(j).getExVal().contains(Dna.data.getStatement(al.get(i)).getValues().get(ex))) {
 					select = false;
 				}
 			}
@@ -2207,38 +2226,35 @@ public class NetworkExporter extends JDialog {
 //Elena: Implement ListRenderer to change the colour of specific elements in JList
 
 class CustomCellRenderer implements ListCellRenderer {
-	  protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
+	protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
 
-	  private String var1, var2, agreement;
-	  public CustomCellRenderer( String mode1, String mode2, String agr ) {
-          super();
-          var1 = mode1;
-          var2 = mode2;
-          agreement = agr;
-      }
-	  
-	  public Component getListCellRendererComponent(JList list, Object value, int index,
-	      boolean isSelected, boolean cellHasFocus) {
+	private String var1, var2, agreement;
+	public CustomCellRenderer( String mode1, String mode2, String agr ) {
+		super();
+		var1 = mode1;
+		var2 = mode2;
+		agreement = agr;
+	}
 
-	    JLabel renderer = (JLabel) defaultRenderer.getListCellRendererComponent(list, value, index,
-	        isSelected, cellHasFocus);
-	    
-	    if (value.toString().equals(var1)){
-	    	renderer.setForeground(new Color(220, 20, 60));
-	    }
-	    else if (value.toString().equals(var2))
-	    	renderer.setForeground(new Color(65, 105, 225));
-	    else if (value.toString().equals(agreement)){
-	    	renderer.setForeground(new Color(0, 201, 87));
-	    }
-	    
-	    
+	public Component getListCellRendererComponent(JList list, Object value, int index,
+			boolean isSelected, boolean cellHasFocus) {
 
-	    return renderer;
-	  }
-	  
-	  
+		JLabel renderer = (JLabel) defaultRenderer.getListCellRendererComponent(list, value, index,
+				isSelected, cellHasFocus);
+
+		if (value.toString().equals(var1)){
+			renderer.setForeground(new Color(220, 20, 60));
+		}
+		else if (value.toString().equals(var2))
+			renderer.setForeground(new Color(65, 105, 225));
+		else if (value.toString().equals(agreement)){
+			renderer.setForeground(new Color(0, 201, 87));
+		}
+
+
+
+		return renderer;
 	}
 
 
-
+}

@@ -102,16 +102,17 @@ public class RegexManagerPanel extends JPanel {
 				if (text.length() > 0) {
 					//LB.Comment: Cannot add an existing regex-term
 					ArrayList<String> labels = new ArrayList<String>();
-					ArrayList<Regex> regex = Dna.dna.db.getRegex();
-					for (int i = 0; i < regex.size(); i++) {
-						String label = regex.get(i).getLabel();
+					//ArrayList<Regex> regex = Dna.dna.db.getRegex();
+					for (int i = 0; i < Dna.data.getRegexes().size(); i++) {
+						String label = Dna.data.getRegexes().get(i).getLabel();
 						labels.add(label);
 					}
 					if (labels.contains(text)){
 						//textField.setText("");
 						//LB.Comment: better if word remains in text-window
 					}else{
-						Dna.dna.db.addRegex(text, red, green, blue);
+						//Dna.dna.db.addRegex(text, red, green, blue);
+						Dna.data.getRegexes().add(new Regex(text, new Color(red, green, blue)));
 						Regex r = new Regex(text, cl);
 						listModel.addElement(r);
 						textField.setText("");
@@ -128,9 +129,11 @@ public class RegexManagerPanel extends JPanel {
 		remove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				int index = regexList.getSelectedIndex();
-				String label = Dna.dna.db.getRegex().get(index).getLabel();	
+				//String label = Dna.dna.db.getRegex().get(index).getLabel();
+				//String label = Dna.data.getRegexes().get(index).getLabel();
 				if (index >= 0) {
-					Dna.dna.db.removeRegex(label);
+					//Dna.dna.db.removeRegex(label);
+					Dna.data.getRegexes().remove(index);
 					//listModel.remove(index);
 					listModel.removeElementAt(index);
 				}
