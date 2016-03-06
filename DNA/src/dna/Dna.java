@@ -20,6 +20,7 @@ public class Dna {
 	static Data data = new Data();
 	static Dna dna;
 	Gui gui;
+	SqlConnection sql;
 	
 	//ArrayList<Document> documents = new ArrayList<Document>(); //SK All changes w.r.t. documents list
 	public Dna () {

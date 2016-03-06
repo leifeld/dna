@@ -18,13 +18,11 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 
 import javax.swing.AbstractListModel;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -39,7 +37,6 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
@@ -59,16 +56,22 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeSelectionModel;
 
-import org.jdesktop.swingx.JXTextField;
-
-import dna.StatementTypeEditor.TypeTableSelectionHandler;
-import dna.StatementTypeEditor.VarTableSelectionHandler;
 import dna.dataStructures.Coder;
+import dna.dataStructures.Data;
+import dna.dataStructures.SqlConnection;
 import dna.dataStructures.StatementType;
 
 @SuppressWarnings("serial")
 public class NewDatabaseDialog extends JDialog {
-
+	JTree tree;
+	DefaultMutableTreeNode top, coderNode, databaseNode, statementTypeNode, summaryNode;
+	JPanel optionsPanel, databasePanel, coderPanel, statementTypePanel, summaryPanel;
+	String dbType;
+	String dbFile = "";
+	String dbUser = "";
+	String dbPassword = "";
+	Data data = new Data();
+	
 	/**
 	 * Create the frame.
 	 */
@@ -83,16 +86,19 @@ public class NewDatabaseDialog extends JDialog {
 		menu.setLayout(new BorderLayout());
 
 		// Options panel
-		JPanel optionsPanel = new OptionsPanel();
+		optionsPanel = new OptionsPanel();
 		
 		// Database panel
-		JPanel databasePanel = new DatabasePanel();
+		databasePanel = new DatabasePanel();
 		
 		// Coder panel
-		JPanel coderPanel = new CoderPanel();
+		coderPanel = new CoderPanel();
 
 		// Statement type panel
-		JPanel statementTypePanel = new StatementTypePanel();
+		statementTypePanel = new StatementTypePanel();
+
+		// Summary panel
+		summaryPanel = new SummaryPanel();
 		
 		// Card layout on the right
 		JPanel panel = new JPanel();
@@ -102,19 +108,22 @@ public class NewDatabaseDialog extends JDialog {
 		panel.add(databasePanel, "databasePanel");
 		panel.add(coderPanel, "coderPanel");
 		panel.add(statementTypePanel, "statementTypePanel");
+		panel.add(summaryPanel, "summaryPanel");
 
 		// Tree on the left
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Options");
-		JTree tree = new JTree(top);
+		top = new DefaultMutableTreeNode("Options");
+		tree = new JTree(top);
 		tree.setEditable(false);
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 		tree.setExpandsSelectedPaths(true);
-		DefaultMutableTreeNode databaseNode = new DefaultMutableTreeNode("Database");
-		DefaultMutableTreeNode coderNode = new DefaultMutableTreeNode("Coder");
-		DefaultMutableTreeNode statementTypeNode = new DefaultMutableTreeNode("Statement types");
+		databaseNode = new DefaultMutableTreeNode("Database");
+		coderNode = new DefaultMutableTreeNode("Coder");
+		statementTypeNode = new DefaultMutableTreeNode("Statement types");
+		summaryNode = new DefaultMutableTreeNode("Summary");
 		top.add(databaseNode);
 		top.add(coderNode);
 		top.add(statementTypeNode);
+		top.add(summaryNode);
 		for (int i = 0; i < tree.getRowCount(); i++) {
 			tree.expandRow(i);
 		}
@@ -127,8 +136,12 @@ public class NewDatabaseDialog extends JDialog {
 					cl.show(panel, "coderPanel");
 				} else if (node.equals("Statement types")) {
 					cl.show(panel, "statementTypePanel");
-				} else {
+				} else if (node.equals("Options")){
 					cl.show(panel, "optionsPanel");
+				} else if (node.equals("Summary")){
+					cl.show(panel, "summaryPanel");
+				} else {
+					System.out.println(node);
 				}
 			}
 		});
@@ -150,18 +163,22 @@ public class NewDatabaseDialog extends JDialog {
 	}
 
 	class OptionsPanel extends JPanel {
+		public JTextArea notes;
 		OptionsPanel() {
-			JTextArea notes = new JTextArea(10, 46);
+			this.setLayout(new BorderLayout());
+			notes = new JTextArea();
 			notes.setEditable(false);
 			notes.setWrapStyleWord(true);
 			notes.setLineWrap(true);
 			notes.setText("You are about to create a new DNA database. \n\nPlease select a database, specify coders, and create statement types for coding. \n\nSome of these options cannot be reversed later.");
 			notes.setOpaque(false);
-			this.add(notes);
+			this.add(notes, BorderLayout.CENTER);
 		}
 	}
 	
 	class DatabasePanel extends JPanel {
+		JButton applySqlButton;
+		
 		DatabasePanel() {
 			this.setLayout(new BorderLayout());
 			
@@ -202,12 +219,10 @@ public class NewDatabaseDialog extends JDialog {
 					JFileChooser fc = new JFileChooser();
 					fc.setFileFilter(new FileFilter() {
 						public boolean accept(File f) {
-							return f.getName().toLowerCase().endsWith(".dna") 
-									|| f.isDirectory();
+							return f.getName().toLowerCase().endsWith(".dna") || f.isDirectory();
 						}
 						public String getDescription() {
-							return "Discourse Network Analyzer database " +
-									"(*.dna)";
+							return "Discourse Network Analyzer database (*.dna)";
 						}
 					});
 
@@ -223,18 +238,53 @@ public class NewDatabaseDialog extends JDialog {
 				}
 			});
 			fileField.setPreferredSize(new Dimension(300, (int) browseButton.getPreferredSize().getHeight()));
+			
 			JButton clearButton = new JButton("Clear", new ImageIcon(getClass().getResource("/icons/arrow_rotate_clockwise.png")));
+			clearButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					fileField.setText("(No file selected)");
+				}
+			});
+			JButton applyButton = new JButton("Apply", new ImageIcon(getClass().getResource("/icons/accept.png")));
+			applyButton.setEnabled(false);
+			applyButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					if (fileField.getText().endsWith(".dna")) {
+						NewDatabaseDialog.this.dbType = "sqlite";
+						NewDatabaseDialog.this.tree.setSelectionRow(2);
+						//NewDatabaseDialog.this.summaryPanel.dbLabel.setText("Database: " + fileField.getText());
+					}
+				}
+			});
+			fileField.getDocument().addDocumentListener(new DocumentListener() {
+				public void insertUpdate(DocumentEvent e) {
+					check();
+				}
+				public void removeUpdate(DocumentEvent e) {
+					check();
+				}
+				public void changedUpdate(DocumentEvent e) {
+					check();
+				}
+				public void check() {
+					if (fileField.getText().endsWith(".dna")) {
+						applyButton.setEnabled(true);
+					} else {
+						applyButton.setEnabled(false);
+					}
+				}
+			});
 			JPanel browseClearPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
 			browseClearPanel.add(browseButton);
 			browseClearPanel.add(Box.createRigidArea(new Dimension(5,5)));
 			browseClearPanel.add(clearButton);
+			browseClearPanel.add(Box.createRigidArea(new Dimension(5,5)));
+			browseClearPanel.add(applyButton);
 			sqlitePanel.add(browseClearPanel, gbc);
 			
 			JPanel mysqlPanel = new JPanel(new GridBagLayout());
 			JTextField addressField = new JTextField();
 			addressField.setColumns(30);
-			JTextField databaseField = new JTextField();
-			databaseField.setColumns(15);
 			JTextField userField = new JTextField();
 			userField.setColumns(15);
 			JPasswordField passwordField = new JPasswordField();
@@ -255,12 +305,6 @@ public class NewDatabaseDialog extends JDialog {
 			g.gridwidth = 1;
 			g.gridy = 1;
 			g.gridx = 0;
-			JLabel databaseLabel = new JLabel("Database:", JLabel.TRAILING);
-			mysqlPanel.add(databaseLabel, g);
-			g.gridx = 1;
-			mysqlPanel.add(databaseField, g);
-			g.gridy = 2;
-			g.gridx = 0;
 			JLabel userLabel = new JLabel("User:", JLabel.TRAILING);
 			mysqlPanel.add(userLabel, g);
 			g.gridx = 1;
@@ -272,16 +316,43 @@ public class NewDatabaseDialog extends JDialog {
 			g.insets = new Insets(0, 10, 3, 10);
 			mysqlPanel.add(passwordField, g);
 			g.gridx = 0;
-			g.gridy = 3;
+			g.gridy = 2;
 			g.gridwidth = 4;
 			g.insets = new Insets(15, 10, 3, 10);
+			applySqlButton = new JButton("Apply", new ImageIcon(getClass().getResource("/icons/accept.png")));
+			applySqlButton.setEnabled(false);
+			applySqlButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					NewDatabaseDialog.this.dbType = "mysql";
+					NewDatabaseDialog.this.tree.setSelectionRow(2);
+					//NewDatabaseDialog.this.summaryNode.dbLabel.setText("Database: mySQL");
+				}
+			});
 			JButton checkButton = new JButton("Check", new ImageIcon(getClass().getResource("/icons/database_connect.png")));
 			JPanel checkPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
+			checkPanel.add(applySqlButton);
+			checkPanel.add(Box.createRigidArea(new Dimension(5,5)));
 			checkPanel.add(checkButton);
 			checkPanel.add(Box.createRigidArea(new Dimension(5,5)));
 			JLabel checkLabel = new JLabel("");
 			checkPanel.add(checkLabel);
 			mysqlPanel.add(checkPanel, g);
+			checkButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					if (addressField.getText().startsWith("mysql://")) {
+						addressField.setText(addressField.getText().substring(8, addressField.getText().length()));
+					}
+					SqlConnection testConnection = new SqlConnection("mysql", addressField.getText(), 
+							userField.getText(), String.copyValueOf(passwordField.getPassword()));
+					checkLabel.setText(testConnection.testMySQLConnection());
+					testConnection.closeConnection();
+					if (checkLabel.getText().equals("OK. Tables will be created.") || checkLabel.getText().equals("Warning: Existing tables will be erased!")) {
+						applySqlButton.setEnabled(true);
+					} else {
+						applySqlButton.setEnabled(false);
+					}
+				}
+			});
 			
 			CardLayout databaseCardLayout = new CardLayout();
 			JPanel cardPanel = new JPanel(databaseCardLayout);
@@ -417,7 +488,7 @@ public class NewDatabaseDialog extends JDialog {
 				JPanel panel = new JPanel(new BorderLayout());
 				
 				JButton colorRectangle = new JButton();
-				colorRectangle.setPreferredSize(new Dimension(16, 16));
+				colorRectangle.setPreferredSize(new Dimension(18, 18));
 				colorRectangle.setBackground(new Color(coder.getRed(), coder.getGreen(), coder.getBlue()));
 				
 				JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -461,7 +532,6 @@ public class NewDatabaseDialog extends JDialog {
 				if (isSelected) {
 					UIDefaults defaults = javax.swing.UIManager.getDefaults();
 					Color bg = defaults.getColor("List.selectionBackground");
-					Color fg = defaults.getColor("List.selectionForeground");
 					panel.setBackground(bg);
 					namePanel.setBackground(bg);
 				}
@@ -530,6 +600,9 @@ public class NewDatabaseDialog extends JDialog {
 				
 				JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 				JButton okButton = new JButton("OK", new ImageIcon(getClass().getResource("/icons/accept.png")));
+				if (nameField.getText().equals("")) {
+					okButton.setEnabled(false);
+				}
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						int red = colorChooser.getColor().getRed();
@@ -686,6 +759,19 @@ public class NewDatabaseDialog extends JDialog {
 				}
 			});
 			
+			LinkedHashMap<String, String> lhm = new LinkedHashMap<String, String>();
+			lhm.put("person", "short text");
+			lhm.put("organization", "short text");
+			lhm.put("concept", "short text");
+			lhm.put("agreement", "boolean");
+			StatementType dnaStatement = new StatementType("DNA Statement", Color.YELLOW, lhm);
+			model.addElement(dnaStatement);
+			
+			LinkedHashMap<String, String> annoMap = new LinkedHashMap<String, String>();
+			annoMap.put("note", "long text");
+			StatementType annotation = new StatementType("Annotation", Color.LIGHT_GRAY, annoMap);
+			model.addElement(annotation);
+			
 			statementTypeList.updateUI();
 		}
 		
@@ -730,7 +816,7 @@ public class NewDatabaseDialog extends JDialog {
 				JPanel panel = new JPanel(new BorderLayout());
 				
 				JButton colorRectangle = new JButton();
-				colorRectangle.setPreferredSize(new Dimension(16, 16));
+				colorRectangle.setPreferredSize(new Dimension(18, 18));
 				colorRectangle.setBackground(statementType.getColor());
 				
 				JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -786,14 +872,14 @@ public class NewDatabaseDialog extends JDialog {
 				namePanel.add(nameField);
 				
 				addColorButton = new JButton();
-				addColorButton.setForeground(statementType.getColor());
+				addColorButton.setBackground(statementType.getColor());
 				addColorButton.setPreferredSize(new Dimension(18, 18));
 				addColorButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						Color actualColor = ((JButton)e.getSource()).getForeground();
+						Color actualColor = ((JButton)e.getSource()).getBackground();
 						Color newColor = JColorChooser.showDialog(EditStatementTypeWindow.this, "choose color...", actualColor);
 						if (newColor != null) {
-							((JButton) e.getSource()).setForeground(newColor);
+							((JButton) e.getSource()).setBackground(newColor);
 						}
 					}
 				});
@@ -842,7 +928,7 @@ public class NewDatabaseDialog extends JDialog {
 				// variable buttons
 				JPanel varButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 				
-				varTextField = new JTextField(12);
+				varTextField = new JTextField(24);
 				varTextField.getDocument().addDocumentListener(new DocumentListener() {
 					@Override
 					public void changedUpdate(DocumentEvent e) {
@@ -981,7 +1067,7 @@ public class NewDatabaseDialog extends JDialog {
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						statementType.setLabel(nameField.getText());
-						statementType.setColor(addColorButton.getForeground());
+						statementType.setColor(addColorButton.getBackground());
 						setVisible(false);
 					}
 				});
@@ -1090,4 +1176,46 @@ public class NewDatabaseDialog extends JDialog {
 			}
 		}
 	}
+
+	public class SummaryPanel extends JPanel {
+		public JLabel coderLabel, statementTypeLabel, dbLabel;
+		
+		public SummaryPanel() {
+			this.setLayout(new BorderLayout());
+			JLabel summaryLabel = new JLabel("Summary:");
+			JPanel infoPanel = new JPanel();
+			infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+			this.dbLabel = new JLabel("(No database selected)");
+			coderLabel = new JLabel("(No coders selected)");
+			statementTypeLabel = new JLabel("(No statement types created)");
+			infoPanel.add(summaryLabel);
+			infoPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+			infoPanel.add(dbLabel);
+			infoPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+			infoPanel.add(coderLabel);
+			infoPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+			infoPanel.add(statementTypeLabel);
+			this.add(infoPanel, BorderLayout.CENTER);
+			
+			JButton goButton = new JButton("Create database", new ImageIcon(getClass().getResource("/icons/accept.png")));
+			JButton cancelButton = new JButton("Cancel", new ImageIcon(getClass().getResource("/icons/cancel.png")));
+			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			buttonPanel.add(goButton);
+			buttonPanel.add(cancelButton);
+			goButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					Dna.dna.sql = new SqlConnection(NewDatabaseDialog.this.dbType, NewDatabaseDialog.this.dbFile, NewDatabaseDialog.this.dbUser, NewDatabaseDialog.this.dbPassword);
+					Dna.dna.sql.createDataStructure();
+					
+				}
+			});
+			cancelButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					dispose();
+				}
+			});
+			this.add(buttonPanel, BorderLayout.SOUTH);
+		}
+	}
+	
 }

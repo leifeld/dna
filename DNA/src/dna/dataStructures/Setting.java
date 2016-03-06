@@ -1,7 +1,5 @@
 package dna.dataStructures;
 
-import dna.Dna;
-
 public class Setting {
 	String property, value;
 	
