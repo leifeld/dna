@@ -6,17 +6,32 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 public class StatementType {
-	
+	int id;
 	String label;
 	Color color;
 	LinkedHashMap<String, String> variables;
 
-	public StatementType(String label, Color color, LinkedHashMap<String, String> variables) {
+	public StatementType(int id, String label, Color color, LinkedHashMap<String, String> variables) {
+		this.id = id;
 		this.label = label;
 		this.color = color;
 		this.variables = variables;
 	}
 	
+	/**
+	 * @return the id
+	 */
+	public int getId() {
+		return id;
+	}
+
+	/**
+	 * @param id the id to set
+	 */
+	public void setId(int id) {
+		this.id = id;
+	}
+
 	/**
 	 * Retrieve data type of a variable contained in the statement type.
 	 * 

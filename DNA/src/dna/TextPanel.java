@@ -190,15 +190,13 @@ class TextPanel extends JPanel {
 					int end = m.end();
 					Style fgStyle = sc.addStyle("ConstantWidth", null);
 					StyleConstants.setForeground(fgStyle, color);
-					doc.setCharacterAttributes(start, end-start, 
-							fgStyle, false);
+					doc.setCharacterAttributes(start, end-start, fgStyle, false);
 				}
 			}
 		}
 	}
 	
-	public void mouseListenPopup(MouseEvent me) throws 
-			ArrayIndexOutOfBoundsException {
+	public void mouseListenPopup(MouseEvent me) throws ArrayIndexOutOfBoundsException {
 		if ( me.isPopupTrigger() ) {
 			if (!(textWindow.getSelectedText() == null)) {
 				popupMenu(me.getComponent(), me.getX(), me.getY());
@@ -206,15 +204,13 @@ class TextPanel extends JPanel {
 		}
 	}
 	
-	public void popupMenu(Component comp, int x, int y)
-	{
+	public void popupMenu(Component comp, int x, int y) {
 		popmen = new JPopupMenu();
-		// changed by SK
-		//statementTypes = Dna.dna.db.getStatementTypes();
 		statementTypes = Dna.data.getStatementTypes();
 		
 		for (int i = 0; i < statementTypes.size(); i++) {
 			String type = statementTypes.get(i).getLabel();
+			StatementType statementType = statementTypes.get(i);
 			Color col = statementTypes.get(i).getColor();
 			menu1 = new JMenuItem("Format as " + type);
 			menu1.setOpaque(true);
@@ -223,14 +219,15 @@ class TextPanel extends JPanel {
 
 			menu1.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					Object item = e.getSource();
-					String itemText = ((JMenuItem) item).getText();
-					String type = itemText.substring(10);
+					//Object item = e.getSource();
+					//String itemText = ((JMenuItem) item).getText();
+					//String type = itemText.substring(10);
 					
 					int selectionStart = textWindow.getSelectionStart();
 					int selectionEnd = textWindow.getSelectionEnd();
 					String selectedText = textWindow.getText().substring(selectionStart, selectionEnd);
-					CreateStatementFrame createPanel = new CreateStatementFrame(type, col,documentId, selectionStart, selectionEnd,selectedText);
+					CreateStatementFrame createPanel = new CreateStatementFrame(
+							statementType, col, documentId, selectionStart, selectionEnd,selectedText);
 					createPanel.setVisible(true);
 
 					textWindow.setSelectionStart(selectionStart);

@@ -11,6 +11,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 
 import javax.swing.ButtonGroup;
@@ -39,6 +41,7 @@ import javax.swing.filechooser.FileFilter;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 
+@SuppressWarnings("serial")
 public class Gui extends JFrame {
 
 	/**
@@ -56,16 +59,19 @@ public class Gui extends JFrame {
 	public Gui() {
 		c = getContentPane();
 		this.setTitle("Discourse Network Analyzer");
-		//this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		//this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		ImageIcon dna32Icon = new ImageIcon(getClass().getResource("/icons/dna32.png"));
 		this.setIconImage(dna32Icon.getImage());
 		
-		//addWindowListener(new WindowAdapter() {
-		//	public void windowClosing(WindowEvent e) {
-		//		dispose();
-		//	}
-		//});
+		this.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				if (Dna.dna.sql != null) {
+					Dna.dna.sql.closeConnection();
+				}
+				dispose();
+			}
+		});
 
 		documentPanel = new DocumentPanel();
 		textPanel = new TextPanel();
@@ -80,14 +86,14 @@ public class Gui extends JFrame {
 
 		sidebarPanel = new SidebarPanel();
 		
-//		JScrollPane sidebarScroll = new JScrollPane(sidebarPanel);
-//		sidebarScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-//		sidebarScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		JScrollPane sidebarScroll = new JScrollPane(sidebarPanel);
+		sidebarScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		sidebarScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
 		JPanel statementSplitPane = new JPanel(new BorderLayout());
 		statementSplitPane.add(codingSplitPane, BorderLayout.CENTER);
 		codingPanel.add(statementSplitPane, BorderLayout.CENTER);
-		codingPanel.add(sidebarPanel, BorderLayout.EAST);
+		codingPanel.add(sidebarScroll, BorderLayout.EAST);
 
 		c.add(codingPanel);
 
@@ -112,7 +118,6 @@ public class Gui extends JFrame {
 		}
 
 		public void resetLabel() {
-			//String fn = Dna.dna.db.getFileName();
 			String fn = Dna.data.getSettings().get("filename");
 			if (fn == null) {
 				currentFileLabel.setText("Current file: none");
@@ -148,8 +153,7 @@ public class Gui extends JFrame {
 
 			private static final long serialVersionUID = 1L;
 
-			public DocumentTable() {		
-//				setModel(new DocumentTableModel()); //SK -- already set before
+			public DocumentTable() {
 				setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 				getTableHeader().setReorderingAllowed( false );
 				putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
@@ -180,10 +184,8 @@ public class Gui extends JFrame {
 							textPanel.setDocumentId(id);
 							textPanel.setDocumentText(text);
 							textPanel.setEnabled(true);
-							Dna.dna.gui.menuBar.changeDocumentButton.
-							setEnabled(true);
-							Dna.dna.gui.menuBar.removeDocumentButton.
-							setEnabled(true);
+							//Dna.dna.gui.menuBar.changeDocumentButton.setEnabled(true);
+							//Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
 							
 							//SK
 							Dna.dna.gui.sidebarPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
@@ -232,81 +234,22 @@ public class Gui extends JFrame {
 			fileMenu.add(newDatabase);
 			newDatabase.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					
 					new NewDatabaseDialog();
-					
-					/*
-					JFileChooser fc = new JFileChooser();
-					fc.setFileFilter(new FileFilter() {
-						public boolean accept(File f) {
-							return f.getName().toLowerCase().endsWith(".dna") || f.isDirectory();
-						}
-						public String getDescription() {
-							return "Discourse Network Analyzer database (*.dna)";
-						}
-					});
-
-					int returnVal = fc.showSaveDialog(dna.Gui.this);
-					if (returnVal == JFileChooser.APPROVE_OPTION) {
-						File file = fc.getSelectedFile();
-						String filename = new String(file.getPath());
-						if (!filename.endsWith(".dna")) {
-							filename = filename + ".dna";
-						}
-						Dna.dna.newFile(filename);
-					}
-					*/
 				}
 			});
 			
-			/*
-			//File menu: open DNA file
-			Icon openIcon = new ImageIcon(getClass().getResource("/icons/folder.png"));
-			JMenuItem openMenuItem = new JMenuItem("Open database file...", openIcon);
-			openMenuItem.setToolTipText( "open an existing database file..." );
-			openMenuItem.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-
-					//File filter
-					JFileChooser fc = new JFileChooser(); //TODO: THIS SHOULD REMEMBER THE LAST DIRECTORY USED (CAN BE PUT IN BRACKETS AS A STRING)
-					fc.setFileFilter(new FileFilter() {
-						public boolean accept(File f) {
-							return f.getName().toLowerCase().endsWith(".dna") || f.isDirectory();
-						}
-						public String getDescription() {
-							return "Discourse Network Analyzer database (*.dna)";
-						}
-					});
-
-					int returnVal = fc.showOpenDialog(dna.Gui.this);
-					if (returnVal == JFileChooser.APPROVE_OPTION) {
-						File file = fc.getSelectedFile();
-						String dbfile;
-						if (!file.getPath().endsWith(".dna")) {
-							dbfile = file.getPath() + ".dna";
-						} else {
-							dbfile = file.getPath();
-						}
-						Dna.dna.openFile(dbfile);
-					}
-				}
-			});
-			fileMenu.add(openMenuItem);
-
-			//File menu: open remote database
-			Icon dbIcon = new ImageIcon(getClass().getResource(
-					"/icons/database_link.png"));
-			JMenuItem dbMenuItem = new JMenuItem("Open remote database...", 
-					dbIcon);
-			dbMenuItem.setToolTipText("establish a connection to a mySQL " +
-					"or MS SQL Server database...");
+			//File menu: open database
+			Icon dbIcon = new ImageIcon(getClass().getResource("/icons/folder.png"));
+			JMenuItem dbMenuItem = new JMenuItem("Open DNA database...", dbIcon);
+			dbMenuItem.setToolTipText("open a local or remote database...");
 			dbMenuItem.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					new SQLConnectionDialog();
+					new OpenDatabaseDialog();
 				}
 			});
 			fileMenu.add(dbMenuItem);
 
+			/*
 			//File menu: close current database file
 			Icon closeIcon = new ImageIcon( getClass().getResource(
 					"/icons/cancel.png") );
@@ -323,13 +266,15 @@ public class Gui extends JFrame {
 			*/
 
 			//File menu: exit
-			Icon exitIcon = new ImageIcon( getClass().getResource(
-					"/icons/door_out.png") );
+			Icon exitIcon = new ImageIcon( getClass().getResource("/icons/door_out.png") );
 			JMenuItem exit = new JMenuItem("Exit", exitIcon);
 			exit.setToolTipText( "quit DNA" );
 			fileMenu.add(exit);
 			exit.addActionListener( new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
+					if (Dna.dna.sql != null) {
+						Dna.dna.sql.closeConnection();
+					}
 					dispose();
 				}
 			});
@@ -503,21 +448,7 @@ public class Gui extends JFrame {
 				}
 			});
 			networkButton.setEnabled(false);
-
-			//Settings menu: edit statement types
-			Icon typeEditorIcon = new ImageIcon(getClass().getResource(
-					"/icons/application_form.png"));
-			typeEditorButton = new JMenuItem("Edit statement types...", 
-					typeEditorIcon);
-			typeEditorButton.setToolTipText( "edit statement types..." );
-			settingsMenu.add(typeEditorButton);
-			typeEditorButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					new StatementTypeEditor();
-				}
-			});
-			typeEditorButton.setEnabled(false);
-
+			
 			//Settings menu: toggle search bar
 			Icon bottomBarIcon = new ImageIcon(getClass().getResource("/icons/application_form_magnify.png"));
 			toggleBottomButton = new JMenuItem("Toggle Search Window (show/hide)", bottomBarIcon); 
@@ -536,7 +467,6 @@ public class Gui extends JFrame {
 					new AboutWindow(Dna.data.getSettings().get("version"), Dna.data.getSettings().get("date"));
 				}
 			});
-			typeEditorButton.setEnabled(false);
 		}
 		
 		void updateTeggleAction()

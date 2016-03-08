@@ -277,6 +277,12 @@ public class ContradictionPanel extends JPanel {
 	 */
 	public void findContradictions() {
 		String statType = (String) filterComboBoxType.getSelectedItem();
+		int statTypeId = -1;
+		for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
+			if (Dna.data.getStatementTypes().get(i).getLabel().equals(statType)) {
+				statTypeId = Dna.data.getStatementTypes().get(i).getId();
+			}
+		}
 		String var1 = (String) filterComboBoxVar1.getSelectedItem();
 		String var2 = (String) filterComboBoxVar2.getSelectedItem();
 		String varBoolean = (String) filterComboBoxBoolean.getSelectedItem();
@@ -289,7 +295,7 @@ public class ContradictionPanel extends JPanel {
 
 		// get List of actors:
 		ArrayList<String> actors = new ArrayList<String>();
-		ArrayList<Statement> statements = Dna.data.getStatementsByType(statType);
+		ArrayList<Statement> statements = Dna.data.getStatementsByStatementTypeId(statTypeId);
 		//String[] actors = new String[statements.size()];
 		for (int i = 0; i < statements.size(); i++) {
 			String a = (String) Dna.data.getStatements().get(i).getValues().get(var1);

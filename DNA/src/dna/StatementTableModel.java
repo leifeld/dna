@@ -88,18 +88,17 @@ public class StatementTableModel implements TableModel {
 	
 	@Override
 	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-		int statementId = Dna.dna.data.getStatements().get(rowIndex).getId();
+		int statementId = Dna.data.getStatements().get(rowIndex).getId();
 		
 		switch( columnIndex ){
 			case 0: 
 				getByStatementId(statementId).setId((Integer) aValue);
 				break;
 			case 1: 
-				getByStatementId(statementId).setType((String) aValue);
+				getByStatementId(statementId).setStatementTypeId((Integer) aValue);
 				break;
 		}
 	}
-	
 	
 	public Statement get(int index) {
 		return Dna.dna.data.getStatements().get(index);

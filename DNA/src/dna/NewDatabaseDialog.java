@@ -56,9 +56,10 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeSelectionModel;
 
+import org.jdesktop.swingx.JXTextField;
+
 import dna.dataStructures.Coder;
 import dna.dataStructures.Data;
-import dna.dataStructures.SqlConnection;
 import dna.dataStructures.StatementType;
 
 @SuppressWarnings("serial")
@@ -66,11 +67,15 @@ public class NewDatabaseDialog extends JDialog {
 	JTree tree;
 	DefaultMutableTreeNode top, coderNode, databaseNode, statementTypeNode, summaryNode;
 	JPanel optionsPanel, databasePanel, coderPanel, statementTypePanel, summaryPanel;
-	String dbType;
+	String dbType = "";
 	String dbFile = "";
 	String dbUser = "";
 	String dbPassword = "";
 	Data data = new Data();
+	
+	JButton goButton;
+	public JLabel coderLabel, statementTypeLabel, dbLabel;
+	public JPanel infoPanel;
 	
 	/**
 	 * Create the frame.
@@ -140,6 +145,18 @@ public class NewDatabaseDialog extends JDialog {
 					cl.show(panel, "optionsPanel");
 				} else if (node.equals("Summary")){
 					cl.show(panel, "summaryPanel");
+					if (dbType == "" || dbFile == "") {
+						dbLabel.setText("(No database selected)");
+					} else {
+						dbLabel.setText("Database: " + dbFile);
+					}
+					coderLabel.setText("Number of coders: " + Dna.data.getCoders().size());
+					statementTypeLabel.setText("Statement types: " + Dna.data.getStatementTypes().size());
+					if (dbType == "" || dbFile == "" || Dna.data.getCoders().size() == 0 || Dna.data.getStatementTypes().size() == 0) {
+						goButton.setEnabled(false);
+					} else {
+						goButton.setEnabled(true);
+					}
 				} else {
 					System.out.println(node);
 				}
@@ -178,6 +195,7 @@ public class NewDatabaseDialog extends JDialog {
 	
 	class DatabasePanel extends JPanel {
 		JButton applySqlButton;
+		JTextField checkField;
 		
 		DatabasePanel() {
 			this.setLayout(new BorderLayout());
@@ -239,10 +257,14 @@ public class NewDatabaseDialog extends JDialog {
 			});
 			fileField.setPreferredSize(new Dimension(300, (int) browseButton.getPreferredSize().getHeight()));
 			
-			JButton clearButton = new JButton("Clear", new ImageIcon(getClass().getResource("/icons/arrow_rotate_clockwise.png")));
-			clearButton.addActionListener(new ActionListener() {
+			JButton sqliteClearButton = new JButton("Clear", new ImageIcon(getClass().getResource("/icons/arrow_rotate_clockwise.png")));
+			sqliteClearButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					fileField.setText("(No file selected)");
+					NewDatabaseDialog.this.dbType = "";
+					NewDatabaseDialog.this.dbFile = "";
+					NewDatabaseDialog.this.dbUser = "";
+					NewDatabaseDialog.this.dbPassword = "";
 				}
 			});
 			JButton applyButton = new JButton("Apply", new ImageIcon(getClass().getResource("/icons/accept.png")));
@@ -251,8 +273,8 @@ public class NewDatabaseDialog extends JDialog {
 				public void actionPerformed(ActionEvent e) {
 					if (fileField.getText().endsWith(".dna")) {
 						NewDatabaseDialog.this.dbType = "sqlite";
+						NewDatabaseDialog.this.dbFile = fileField.getText();
 						NewDatabaseDialog.this.tree.setSelectionRow(2);
-						//NewDatabaseDialog.this.summaryPanel.dbLabel.setText("Database: " + fileField.getText());
 					}
 				}
 			});
@@ -277,7 +299,7 @@ public class NewDatabaseDialog extends JDialog {
 			JPanel browseClearPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
 			browseClearPanel.add(browseButton);
 			browseClearPanel.add(Box.createRigidArea(new Dimension(5,5)));
-			browseClearPanel.add(clearButton);
+			browseClearPanel.add(sqliteClearButton);
 			browseClearPanel.add(Box.createRigidArea(new Dimension(5,5)));
 			browseClearPanel.add(applyButton);
 			sqlitePanel.add(browseClearPanel, gbc);
@@ -324,18 +346,20 @@ public class NewDatabaseDialog extends JDialog {
 			applySqlButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					NewDatabaseDialog.this.dbType = "mysql";
+					NewDatabaseDialog.this.dbFile = addressField.getText();
+					NewDatabaseDialog.this.dbUser = userField.getText();
+					NewDatabaseDialog.this.dbPassword = String.copyValueOf(passwordField.getPassword());
 					NewDatabaseDialog.this.tree.setSelectionRow(2);
-					//NewDatabaseDialog.this.summaryNode.dbLabel.setText("Database: mySQL");
 				}
 			});
+			JButton mysqlClearButton = new JButton("Clear", new ImageIcon(getClass().getResource("/icons/arrow_rotate_clockwise.png")));
 			JButton checkButton = new JButton("Check", new ImageIcon(getClass().getResource("/icons/database_connect.png")));
 			JPanel checkPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
-			checkPanel.add(applySqlButton);
-			checkPanel.add(Box.createRigidArea(new Dimension(5,5)));
 			checkPanel.add(checkButton);
 			checkPanel.add(Box.createRigidArea(new Dimension(5,5)));
-			JLabel checkLabel = new JLabel("");
-			checkPanel.add(checkLabel);
+			checkPanel.add(mysqlClearButton);
+			checkPanel.add(Box.createRigidArea(new Dimension(5,5)));
+			checkPanel.add(applySqlButton);
 			mysqlPanel.add(checkPanel, g);
 			checkButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -344,15 +368,37 @@ public class NewDatabaseDialog extends JDialog {
 					}
 					SqlConnection testConnection = new SqlConnection("mysql", addressField.getText(), 
 							userField.getText(), String.copyValueOf(passwordField.getPassword()));
-					checkLabel.setText(testConnection.testMySQLConnection());
+					checkField.setText(testConnection.testNewMySQLConnection());
 					testConnection.closeConnection();
-					if (checkLabel.getText().equals("OK. Tables will be created.") || checkLabel.getText().equals("Warning: Existing tables will be erased!")) {
+					if (checkField.getText().equals("OK. Tables will be created.") || checkField.getText().equals("Warning: Database contains data that may be overwritten!")) {
 						applySqlButton.setEnabled(true);
 					} else {
 						applySqlButton.setEnabled(false);
 					}
 				}
 			});
+			mysqlClearButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					checkField.setText("");
+					applySqlButton.setEnabled(false);
+					addressField.setText("");
+					userField.setText("");
+					passwordField.setText("");
+					NewDatabaseDialog.this.dbType = "";
+					NewDatabaseDialog.this.dbFile = "";
+					NewDatabaseDialog.this.dbUser = "";
+					NewDatabaseDialog.this.dbPassword = "";
+				}
+			});
+			
+			g.gridy = 2;
+			mysqlPanel.add(Box.createRigidArea(new Dimension(5,5)));
+			g.gridy = 3;
+			checkField = new JTextField("");
+			checkField.setBackground(mysqlPanel.getBackground());
+			checkField.setEditable(false);
+			mysqlPanel.add(checkField, g);
+			
 			
 			CardLayout databaseCardLayout = new CardLayout();
 			JPanel cardPanel = new JPanel(databaseCardLayout);
@@ -385,6 +431,7 @@ public class NewDatabaseDialog extends JDialog {
 			JList<Coder> coderList = new JList<Coder>();
 			model = new CoderListModel();
 			coderList.setModel(model);
+			coderList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			renderer = new CoderListRenderer();
 			coderList.setCellRenderer(renderer);
 			JScrollPane sp = new JScrollPane(coderList);
@@ -489,7 +536,7 @@ public class NewDatabaseDialog extends JDialog {
 				
 				JButton colorRectangle = new JButton();
 				colorRectangle.setPreferredSize(new Dimension(18, 18));
-				colorRectangle.setBackground(new Color(coder.getRed(), coder.getGreen(), coder.getBlue()));
+				colorRectangle.setBackground(coder.getColor());
 				
 				JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 				namePanel.add(colorRectangle);
@@ -498,34 +545,43 @@ public class NewDatabaseDialog extends JDialog {
 				namePanel.add(coderLabel);
 
 				int numPerm = 0;
-				if (coder.isAddDocuments()) {
+				if (coder.getPermissions().get("addDocuments")) {
 					numPerm++;
 				}
-				if (coder.isViewOtherDocuments()) {
+				if (coder.getPermissions().get("editDocuments")) {
 					numPerm++;
 				}
-				if (coder.isEditOtherDocuments()) {
+				if (coder.getPermissions().get("deleteDocuments")) {
 					numPerm++;
 				}
-				if (coder.isAddStatements()) {
+				if (coder.getPermissions().get("importDocuments")) {
 					numPerm++;
 				}
-				if (coder.isViewOtherStatements()) {
+				if (coder.getPermissions().get("viewOthersDocuments")) {
 					numPerm++;
 				}
-				if (coder.isEditOtherStatements()) {
+				if (coder.getPermissions().get("editOthersDocuments")) {
 					numPerm++;
 				}
-				if (coder.isEditCoders()) {
+				if (coder.getPermissions().get("addStatements")) {
 					numPerm++;
 				}
-				if (coder.isEditStatementTypes()) {
+				if (coder.getPermissions().get("viewOthersStatements")) {
 					numPerm++;
 				}
-				if (coder.isEditRegex()) {
+				if (coder.getPermissions().get("editOthersStatements")) {
 					numPerm++;
 				}
-				JLabel permissionsLabel = new JLabel("(" + numPerm + " out of 9 permissions set)");
+				if (coder.getPermissions().get("editCoders")) {
+					numPerm++;
+				}
+				if (coder.getPermissions().get("editStatementTypes")) {
+					numPerm++;
+				}
+				if (coder.getPermissions().get("editRegex")) {
+					numPerm++;
+				}
+				JLabel permissionsLabel = new JLabel("(" + numPerm + " out of 12 permissions set)");
 				namePanel.add(Box.createRigidArea(new Dimension(5,5)));
 				namePanel.add(permissionsLabel);
 				
@@ -545,8 +601,9 @@ public class NewDatabaseDialog extends JDialog {
 		class EditCoderWindow extends JDialog{
 			Coder coder;
 			JTextField nameField;
-			JColorChooser colorChooser;
-			JCheckBox permAddDocuments, permViewOtherDocuments, permEditOtherDocuments;
+			JButton addColorButton;
+			JCheckBox permAddDocuments, permEditDocuments, permDeleteDocuments, permImportDocuments;
+			JCheckBox permViewOtherDocuments, permEditOtherDocuments;
 			JCheckBox permAddStatements, permViewOtherStatements, permEditOtherStatements;
 			JCheckBox permEditCoders, permEditStatementTypes, permEditRegex;
 			
@@ -560,16 +617,36 @@ public class NewDatabaseDialog extends JDialog {
 				this.setLayout(new BorderLayout());
 				
 				JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+				
+				addColorButton = new JButton();
+				addColorButton.setBackground(coder.getColor());
+				addColorButton.setPreferredSize(new Dimension(18, 18));
+				addColorButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						Color actualColor = ((JButton)e.getSource()).getBackground();
+						Color newColor = JColorChooser.showDialog(EditCoderWindow.this, "choose color...", actualColor);
+						if (newColor != null) {
+							((JButton) e.getSource()).setBackground(newColor);
+						}
+					}
+				});
+				namePanel.add(new JLabel("Color: "));
+				namePanel.add(addColorButton);
+				namePanel.add(Box.createRigidArea(new Dimension(5,5)));
 				JLabel nameLabel = new JLabel("Name: ");
 				namePanel.add(nameLabel);
 				namePanel.add(Box.createRigidArea(new Dimension(5,5)));
 				nameField = new JTextField(coder.getName());
-				nameField.setColumns(50);
+				nameField.setColumns(40);
 				namePanel.add(nameField);
+				namePanel.requestFocus();
 				this.add(namePanel, BorderLayout.NORTH);
 				
-				JPanel permPanel = new JPanel(new GridLayout(3, 3));
+				JPanel permPanel = new JPanel(new GridLayout(4, 3));
 				permAddDocuments = new JCheckBox("add documents");
+				permEditDocuments = new JCheckBox("edit documents");
+				permDeleteDocuments = new JCheckBox("delete documents");
+				permImportDocuments = new JCheckBox("import documents");
 				permViewOtherDocuments = new JCheckBox("view others' documents");
 				permEditOtherDocuments = new JCheckBox("edit others' documents");
 				permAddStatements = new JCheckBox("add statements");
@@ -579,6 +656,9 @@ public class NewDatabaseDialog extends JDialog {
 				permEditStatementTypes = new JCheckBox("edit statement types");
 				permEditRegex = new JCheckBox("edit regex settings");
 				permPanel.add(permAddDocuments);
+				permPanel.add(permEditDocuments);
+				permPanel.add(permDeleteDocuments);
+				permPanel.add(permImportDocuments);
 				permPanel.add(permViewOtherDocuments);
 				permPanel.add(permEditOtherDocuments);
 				permPanel.add(permAddStatements);
@@ -587,15 +667,18 @@ public class NewDatabaseDialog extends JDialog {
 				permPanel.add(permEditCoders);
 				permPanel.add(permEditStatementTypes);
 				permPanel.add(permEditRegex);
-				permAddDocuments.setSelected(coder.isAddDocuments());
-				permViewOtherDocuments.setSelected(coder.isViewOtherDocuments());
-				permEditOtherDocuments.setSelected(coder.isEditOtherDocuments());
-				permAddStatements.setSelected(coder.isAddStatements());
-				permViewOtherStatements.setSelected(coder.isViewOtherStatements());
-				permEditOtherStatements.setSelected(coder.isEditOtherStatements());
-				permEditCoders.setSelected(coder.isEditCoders());
-				permEditStatementTypes.setSelected(coder.isEditStatementTypes());
-				permEditRegex.setSelected(coder.isEditRegex());
+				permAddDocuments.setSelected(coder.getPermissions().get("addDocuments"));
+				permEditDocuments.setSelected(coder.getPermissions().get("editDocuments"));
+				permDeleteDocuments.setSelected(coder.getPermissions().get("deleteDocuments"));
+				permImportDocuments.setSelected(coder.getPermissions().get("importDocuments"));
+				permViewOtherDocuments.setSelected(coder.getPermissions().get("viewOthersDocuments"));
+				permEditOtherDocuments.setSelected(coder.getPermissions().get("editOthersDocuments"));
+				permAddStatements.setSelected(coder.getPermissions().get("addStatements"));
+				permViewOtherStatements.setSelected(coder.getPermissions().get("viewOthersStatements"));
+				permEditOtherStatements.setSelected(coder.getPermissions().get("editOthersStatements"));
+				permEditCoders.setSelected(coder.getPermissions().get("editCoders"));
+				permEditStatementTypes.setSelected(coder.getPermissions().get("editStatementTypes"));
+				permEditRegex.setSelected(coder.getPermissions().get("editRegex"));
 				this.add(permPanel, BorderLayout.CENTER);
 				
 				JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -605,22 +688,20 @@ public class NewDatabaseDialog extends JDialog {
 				}
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						int red = colorChooser.getColor().getRed();
-						int green = colorChooser.getColor().getGreen();
-						int blue = colorChooser.getColor().getBlue();
 						coder.setName(nameField.getText());
-						coder.setRed(red);
-						coder.setGreen(green);
-						coder.setBlue(blue);
-						coder.setAddDocuments(permAddDocuments.isSelected());
-						coder.setViewOtherDocuments(permViewOtherDocuments.isSelected());
-						coder.setEditOtherDocuments(permEditOtherDocuments.isSelected());
-						coder.setAddStatements(permAddStatements.isSelected());
-						coder.setViewOtherStatements(permViewOtherStatements.isSelected());
-						coder.setEditOtherStatements(permEditOtherStatements.isSelected());
-						coder.setEditCoders(permEditCoders.isSelected());
-						coder.setEditStatementTypes(permEditStatementTypes.isSelected());
-						coder.setEditRegex(permEditRegex.isSelected());
+						coder.setColor(addColorButton.getBackground());
+						coder.getPermissions().put("addDocuments", permAddDocuments.isSelected());
+						coder.getPermissions().put("editDocuments", permEditDocuments.isSelected());
+						coder.getPermissions().put("deleteDocuments", permDeleteDocuments.isSelected());
+						coder.getPermissions().put("importDocuments", permImportDocuments.isSelected());
+						coder.getPermissions().put("viewOthersDocuments", permViewOtherDocuments.isSelected());
+						coder.getPermissions().put("editOthersDocuments", permEditOtherDocuments.isSelected());
+						coder.getPermissions().put("addStatements", permAddStatements.isSelected());
+						coder.getPermissions().put("viewOthersStatements", permViewOtherStatements.isSelected());
+						coder.getPermissions().put("editOthersStatements", permEditOtherStatements.isSelected());
+						coder.getPermissions().put("editCoders", permEditCoders.isSelected());
+						coder.getPermissions().put("editStatementTypes", permEditStatementTypes.isSelected());
+						coder.getPermissions().put("editRegex", permEditRegex.isSelected());
 						setVisible(false);
 					}
 				});
@@ -652,12 +733,7 @@ public class NewDatabaseDialog extends JDialog {
 					}
 				});
 				
-				colorChooser = new JColorChooser(new Color(coder.getRed(), coder.getGreen(), coder.getBlue()));
-				
-				JPanel lowerPanel = new JPanel(new BorderLayout());
-				lowerPanel.add(colorChooser, BorderLayout.NORTH);
-				lowerPanel.add(buttonPanel, BorderLayout.SOUTH);
-				this.add(lowerPanel, BorderLayout.SOUTH);
+				this.add(buttonPanel, BorderLayout.SOUTH);
 
 				addWindowListener(new WindowAdapter() {
 					public void windowClosing(WindowEvent e) {
@@ -697,6 +773,7 @@ public class NewDatabaseDialog extends JDialog {
 			this.add(new JLabel("Manage statement types"), BorderLayout.NORTH);
 			
 			JList<StatementType> statementTypeList = new JList<StatementType>();
+			statementTypeList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			model = new StatementTypeListModel();
 			statementTypeList.setModel(model);
 			renderer = new StatementTypeListRenderer();
@@ -730,7 +807,8 @@ public class NewDatabaseDialog extends JDialog {
 			addButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					LinkedHashMap<String, String> lhm = new LinkedHashMap<String, String>();
-					EditStatementTypeWindow ecw = new EditStatementTypeWindow(new StatementType("", Color.YELLOW, lhm));
+					EditStatementTypeWindow ecw = new EditStatementTypeWindow(
+							new StatementType(Dna.data.generateNewStatementTypeId(), "", Color.YELLOW, lhm));
 					StatementType statementType = ecw.getStatementType();
 					ecw.dispose();
 					if (!statementType.getLabel().equals("")) {
@@ -764,12 +842,14 @@ public class NewDatabaseDialog extends JDialog {
 			lhm.put("organization", "short text");
 			lhm.put("concept", "short text");
 			lhm.put("agreement", "boolean");
-			StatementType dnaStatement = new StatementType("DNA Statement", Color.YELLOW, lhm);
+			StatementType dnaStatement = new StatementType(
+					Dna.data.generateNewStatementTypeId(), "DNA Statement", Color.YELLOW, lhm);
 			model.addElement(dnaStatement);
 			
 			LinkedHashMap<String, String> annoMap = new LinkedHashMap<String, String>();
 			annoMap.put("note", "long text");
-			StatementType annotation = new StatementType("Annotation", Color.LIGHT_GRAY, annoMap);
+			StatementType annotation = new StatementType(
+					Dna.data.generateNewStatementTypeId(), "Annotation", Color.LIGHT_GRAY, annoMap);
 			model.addElement(annotation);
 			
 			statementTypeList.updateUI();
@@ -1178,16 +1258,15 @@ public class NewDatabaseDialog extends JDialog {
 	}
 
 	public class SummaryPanel extends JPanel {
-		public JLabel coderLabel, statementTypeLabel, dbLabel;
 		
 		public SummaryPanel() {
 			this.setLayout(new BorderLayout());
 			JLabel summaryLabel = new JLabel("Summary:");
-			JPanel infoPanel = new JPanel();
+			infoPanel = new JPanel();
 			infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
-			this.dbLabel = new JLabel("(No database selected)");
+			dbLabel = new JLabel("(No database selected)");
 			coderLabel = new JLabel("(No coders selected)");
-			statementTypeLabel = new JLabel("(No statement types created)");
+			statementTypeLabel = new JLabel("Statement types: " + Dna.data.getStatementTypes().size());
 			infoPanel.add(summaryLabel);
 			infoPanel.add(Box.createRigidArea(new Dimension(5, 5)));
 			infoPanel.add(dbLabel);
@@ -1197,7 +1276,7 @@ public class NewDatabaseDialog extends JDialog {
 			infoPanel.add(statementTypeLabel);
 			this.add(infoPanel, BorderLayout.CENTER);
 			
-			JButton goButton = new JButton("Create database", new ImageIcon(getClass().getResource("/icons/accept.png")));
+			goButton = new JButton("Create database", new ImageIcon(getClass().getResource("/icons/accept.png")));
 			JButton cancelButton = new JButton("Cancel", new ImageIcon(getClass().getResource("/icons/cancel.png")));
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 			buttonPanel.add(goButton);
@@ -1206,7 +1285,18 @@ public class NewDatabaseDialog extends JDialog {
 				public void actionPerformed(ActionEvent e) {
 					Dna.dna.sql = new SqlConnection(NewDatabaseDialog.this.dbType, NewDatabaseDialog.this.dbFile, NewDatabaseDialog.this.dbUser, NewDatabaseDialog.this.dbPassword);
 					Dna.dna.sql.createDataStructure();
+					Dna.data.getSettings().put("filename", dbFile);
+					Dna.dna.sql.upsertSetting("filename", dbFile);
+					for (int i = 0; i < Dna.data.getCoders().size(); i++) {
+						Dna.dna.sql.upsertCoder(Dna.data.getCoders().get(i));
+					}
+					for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
+						Dna.dna.sql.upsertStatementType(Dna.data.getStatementTypes().get(i));
+					}
 					
+					Dna.dna.gui.statusBar.resetLabel();
+					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
+					dispose();
 				}
 			});
 			cancelButton.addActionListener(new ActionListener() {
@@ -1216,6 +1306,9 @@ public class NewDatabaseDialog extends JDialog {
 			});
 			this.add(buttonPanel, BorderLayout.SOUTH);
 		}
+		
+		public void setDbLabel(String text) {
+			dbLabel.setText(text);
+		}
 	}
-	
 }

@@ -14,9 +14,14 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+import javax.swing.AbstractListModel;
+import javax.swing.ComboBoxModel;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -31,6 +36,7 @@ import org.jdesktop.swingx.JXTextArea;
 import org.jdesktop.swingx.JXTextField;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
+import dna.dataStructures.Coder;
 import dna.dataStructures.Document;
 
 @SuppressWarnings("serial")
@@ -44,7 +50,8 @@ class NewDocumentWindow extends JFrame {
 	JPanel newArticlePanel;
 	JXTextField titleField;
 	JXTextArea textArea, notesArea;
-	JXComboBox coderBox, sourceBox, sectionBox, typeBox;
+	JXComboBox sourceBox, sectionBox, typeBox;
+	JComboBox<Coder> coderBox;
 	
 	public NewDocumentWindow() {
 		
@@ -130,7 +137,7 @@ class NewDocumentWindow extends JFrame {
 				String title = titleField.getText();
 				title = title.replaceAll("'", "''");
 				Date date = (Date)dateSpinner.getValue();
-				int coder = (int) coderBox.getModel().getSelectedItem();
+				int coder = (int) ((Coder)coderBox.getModel().getSelectedItem()).getId();
 				String source = (String) sourceBox.getModel().getSelectedItem();
 				source = source.replaceAll("'", "''");
 				String section = (String) sectionBox.getModel().getSelectedItem();
@@ -140,8 +147,9 @@ class NewDocumentWindow extends JFrame {
 				String type = (String) typeBox.getModel().getSelectedItem();
 				type = type.replaceAll("'", "''");
 				//Dna.dna.addDocument(title, text, date, coder, source, section, notes, type);
-				Document d = new Document(Dna.data.generateNewDocumentId(), title, text, date, coder, source, section, notes, type);
-				Dna.data.getDocuments().add(d);
+				Document d = new Document(Dna.data.generateNewDocumentId(), title, text, coder, source, section, notes, type, date);
+				//Dna.data.getDocuments().add(d);
+				Dna.dna.addDocument(d);
 				//TODO: change selection to new row
 				
 				int index = -1;
@@ -185,12 +193,20 @@ class NewDocumentWindow extends JFrame {
 		
 		gbc.gridx++;
 		//String[] coderEntries = Dna.dna.db.getDocumentCoders();
-		coderBox = new JXComboBox(Dna.data.getCoders().toArray());
-		CoderComboBoxRenderer coderRenderer = new CoderComboBoxRenderer();
-		coderBox.setRenderer(coderRenderer);
+		/*
+		String[] coderEntries = new String[Dna.data.getCoders().size()];
+		for (int i = 0; i < Dna.data.getCoders().size(); i++) {
+			coderEntries[i] = Dna.data.getCoders().get(i).getName();
+		}
+		*/
+		coderBox = new JComboBox<Coder>();
+		coderBox.setModel(new DefaultComboBoxModel(Dna.data.getCoders().toArray()));
+		//CoderComboBoxRenderer coderRenderer = new CoderComboBoxRenderer();
+		//coderBox.setRenderer(coderRenderer);
 		coderBox.setEditable(false);
-		coderBox.setSelectedItem("");
-		AutoCompleteDecorator.decorate(coderBox);
+		//coderBox.setSelectedIndex(0);
+		//coderBox.setSelectedItem("");
+		//AutoCompleteDecorator.decorate(coderBox);
 		fieldsPanel.add(coderBox, gbc);
 		
 		gbc.gridy++;
@@ -280,4 +296,31 @@ class NewDocumentWindow extends JFrame {
 		this.setVisible(true);
 		this.pack();
 	}
+	
+	/*
+	class CoderComboBoxModel extends AbstractListModel<Coder> {
+		private Object selectedItem;
+		ArrayList<Coder> list = new ArrayList<Coder>();
+		
+		public CoderComboBoxModel() {
+			this.list = Dna.data.getCoders();
+		}
+
+		public Coder getElementAt(int index) {
+			return list.get(index);
+		}
+
+		public int getSize() {
+			return list.size();
+		}
+		
+		public Object getSelectedItem() {
+			return selectedItem;
+		}
+		
+		public void setSelectedItem(Object anItem) {
+			selectedItem = anItem;
+		}
+	}
+	*/
 }

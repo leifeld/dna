@@ -1,91 +1,61 @@
 package dna.dataStructures;
 
-public class Coder implements Comparable<Coder> {
-	int id, red, green, blue;
-	String name, password;
-	boolean editOtherDocuments, viewOtherDocuments, editOtherStatements, viewOtherStatements, editStatementTypes, editRegex, addDocuments, addStatements, editCoders;
+import java.awt.Color;
+import java.util.HashMap;
 
+public class Coder implements Comparable<Coder> {
+	int id;
+	Color color;
+	String name, password;
+	HashMap<String, Boolean> permissions;
+	
 	public Coder(
 			int id, 
 			String name, 
-			int red, 
-			int green, 
-			int blue, 
+			Color color, 
 			String password, 
-			boolean addDocuments, 
-			boolean viewOtherDocuments, 
-			boolean editOtherDocuments, 
-			boolean addStatements, 
-			boolean viewOtherStatements, 
-			boolean editOtherStatements, 
-			boolean editCoders, 
-			boolean editStatementTypes, 
-			boolean editRegex
+			HashMap<String, Boolean> permissions
 			) {
 		this.id = id;
 		this.name = name;
-		this.red = red;
-		this.green = green;
-		this.blue = blue;
+		this.color = color;
 		this.password = password;
-		this.addDocuments = addDocuments;
-		this.viewOtherDocuments = viewOtherDocuments;
-		this.editOtherDocuments = editOtherDocuments;
-		this.addStatements = addStatements;
-		this.viewOtherStatements = viewOtherStatements;
-		this.editOtherStatements = editOtherStatements;
-		this.editCoders = editCoders;
-		this.editStatementTypes = editStatementTypes;
-		this.editRegex = editRegex;
+		this.permissions = permissions;
 	}
 	
 	public Coder(
 			String name, 
-			int red, 
-			int green, 
-			int blue, 
-			String password, 
-			boolean addDocuments, 
-			boolean viewOtherDocuments, 
-			boolean editOtherDocuments, 
-			boolean addStatements, 
-			boolean viewOtherStatements, 
-			boolean editOtherStatements, 
-			boolean editCoders, 
-			boolean editStatementTypes, 
-			boolean editRegex
+			Color color, 
+			String password,
+			HashMap<String, Boolean> permissions
 			) {
 		this.name = name;
-		this.red = red;
-		this.green = green;
-		this.blue = blue;
+		this.color = color;
 		this.password = password;
-		this.addDocuments = addDocuments;
-		this.viewOtherDocuments = viewOtherDocuments;
-		this.editOtherDocuments = editOtherDocuments;
-		this.addStatements = addStatements;
-		this.viewOtherStatements = viewOtherStatements;
-		this.editOtherStatements = editOtherStatements;
-		this.editCoders = editCoders;
-		this.editStatementTypes = editStatementTypes;
-		this.editRegex = editRegex;
+		this.permissions = permissions;
 	}
 	
 	public Coder() {
 		this.name = "";
-		this.red = 255;
-		this.green = 255;
-		this.blue = 0;
+		this.color = Color.YELLOW;
 		this.password = "";
-		this.addDocuments = true;
-		this.viewOtherDocuments = true;
-		this.editOtherDocuments = true;
-		this.addStatements = true;
-		this.viewOtherStatements = true;
-		this.editOtherStatements = true;
-		this.editCoders = true;
-		this.editStatementTypes = true;
-		this.editRegex = true;
+		this.permissions = new HashMap<String, Boolean>();
+		this.permissions.put("addDocuments", true);
+		this.permissions.put("editDocuments", true);
+		this.permissions.put("deleteDocuments", true);
+		this.permissions.put("importDocuments", true);
+		this.permissions.put("viewOthersDocuments", true);
+		this.permissions.put("editOthersDocuments", true);
+		this.permissions.put("addStatements", true);
+		this.permissions.put("viewOthersStatements", true);
+		this.permissions.put("editOthersStatements", true);
+		this.permissions.put("editCoders", true);
+		this.permissions.put("editStatementTypes", true);
+		this.permissions.put("editRegex", true);
+	}
+	
+	public String toString() {
+		return(this.getName());
 	}
 	
 	/**
@@ -101,47 +71,19 @@ public class Coder implements Comparable<Coder> {
 	public void setId(int id) {
 		this.id = id;
 	}
-
+	
 	/**
-	 * @return the red
+	 * @return the color
 	 */
-	public int getRed() {
-		return red;
+	public Color getColor() {
+		return color;
 	}
 
 	/**
-	 * @param red the red to set
+	 * @param color the color to set
 	 */
-	public void setRed(int red) {
-		this.red = red;
-	}
-
-	/**
-	 * @return the green
-	 */
-	public int getGreen() {
-		return green;
-	}
-
-	/**
-	 * @param green the green to set
-	 */
-	public void setGreen(int green) {
-		this.green = green;
-	}
-
-	/**
-	 * @return the blue
-	 */
-	public int getBlue() {
-		return blue;
-	}
-
-	/**
-	 * @param blue the blue to set
-	 */
-	public void setBlue(int blue) {
-		this.blue = blue;
+	public void setColor(Color color) {
+		this.color = color;
 	}
 
 	/**
@@ -171,131 +113,19 @@ public class Coder implements Comparable<Coder> {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-
+	
 	/**
-	 * @return the editOtherDocuments
+	 * @return the permissions
 	 */
-	public boolean isEditOtherDocuments() {
-		return editOtherDocuments;
+	public HashMap<String, Boolean> getPermissions() {
+		return permissions;
 	}
 
 	/**
-	 * @param editOtherDocuments the editOtherDocuments to set
+	 * @param permissions the permissions to set
 	 */
-	public void setEditOtherDocuments(boolean editOtherDocuments) {
-		this.editOtherDocuments = editOtherDocuments;
-	}
-
-	/**
-	 * @return the viewOtherDocuments
-	 */
-	public boolean isViewOtherDocuments() {
-		return viewOtherDocuments;
-	}
-
-	/**
-	 * @param viewOtherDocuments the viewOtherDocuments to set
-	 */
-	public void setViewOtherDocuments(boolean viewOtherDocuments) {
-		this.viewOtherDocuments = viewOtherDocuments;
-	}
-
-	/**
-	 * @return the editOtherStatements
-	 */
-	public boolean isEditOtherStatements() {
-		return editOtherStatements;
-	}
-
-	/**
-	 * @param editOtherStatements the editOtherStatements to set
-	 */
-	public void setEditOtherStatements(boolean editOtherStatements) {
-		this.editOtherStatements = editOtherStatements;
-	}
-
-	/**
-	 * @return the viewOtherStatements
-	 */
-	public boolean isViewOtherStatements() {
-		return viewOtherStatements;
-	}
-
-	/**
-	 * @param viewOtherStatements the viewOtherStatements to set
-	 */
-	public void setViewOtherStatements(boolean viewOtherStatements) {
-		this.viewOtherStatements = viewOtherStatements;
-	}
-
-	/**
-	 * @return the editStatementTypes
-	 */
-	public boolean isEditStatementTypes() {
-		return editStatementTypes;
-	}
-
-	/**
-	 * @param editStatementTypes the editStatementTypes to set
-	 */
-	public void setEditStatementTypes(boolean editStatementTypes) {
-		this.editStatementTypes = editStatementTypes;
-	}
-
-	/**
-	 * @return the editRegex
-	 */
-	public boolean isEditRegex() {
-		return editRegex;
-	}
-
-	/**
-	 * @param editRegex the editRegex to set
-	 */
-	public void setEditRegex(boolean editRegex) {
-		this.editRegex = editRegex;
-	}
-
-	/**
-	 * @return the addDocuments
-	 */
-	public boolean isAddDocuments() {
-		return addDocuments;
-	}
-
-	/**
-	 * @param addDocuments the addDocuments to set
-	 */
-	public void setAddDocuments(boolean addDocuments) {
-		this.addDocuments = addDocuments;
-	}
-
-	/**
-	 * @return the addStatements
-	 */
-	public boolean isAddStatements() {
-		return addStatements;
-	}
-
-	/**
-	 * @param addStatements the addStatements to set
-	 */
-	public void setAddStatements(boolean addStatements) {
-		this.addStatements = addStatements;
-	}
-
-	/**
-	 * @return the editCoders
-	 */
-	public boolean isEditCoders() {
-		return editCoders;
-	}
-
-	/**
-	 * @param editCoders the editCoders to set
-	 */
-	public void setEditCoders(boolean editCoders) {
-		this.editCoders = editCoders;
+	public void setPermissions(HashMap<String, Boolean> permissions) {
+		this.permissions = permissions;
 	}
 
 	// how should entries be sorted in a list?

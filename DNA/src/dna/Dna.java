@@ -25,7 +25,7 @@ public class Dna {
 	//ArrayList<Document> documents = new ArrayList<Document>(); //SK All changes w.r.t. documents list
 	public Dna () {
 		data.getSettings().put("version", "2.0 beta 3");
-		data.getSettings().put("date", "2016-03-07");
+		data.getSettings().put("date", "2016-03-09");
 		
 		gui = new Gui();
 	}
@@ -34,6 +34,22 @@ public class Dna {
 		dna = new Dna();
 	}
 
+	public void addDocument(Document document) {
+		gui.documentPanel.documentContainer.addDocument(document);
+		sql.upsertDocument(document);
+	}
+	
+	public void addStatement(Statement statement) {
+		data.getStatements().add(statement);
+		sql.upsertStatement(statement, data.getStatementTypeById(statement.getStatementTypeId()).getVariables());
+	}
+	
+	public void addCoder(Coder coder) {
+		data.getCoders().add(coder);
+		sql.upsertCoder(coder);
+	}
+	
+	
 	/*
 	public String getVersion() {
 		for (int i = 0; i < data.getSettings().size(); i++) {

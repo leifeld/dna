@@ -239,7 +239,7 @@ public class ImportOldDNA1XML extends JFrame {
 					    	SimpleDateFormat sdfToDate = new SimpleDateFormat("dd.MM.yyyy");
 					    	date = sdfToDate.parse(dateString);
 					    	//documentId = Dna.dna.addDocument(title, articleText, date, 0, "", "", "Imported from DNA 1.xx.", "");
-					    	dna.dataStructures.Document d = new dna.dataStructures.Document(documentId, title, articleText, date, 0, "", "", "Imported from DNA 1.xx.", "");
+					    	dna.dataStructures.Document d = new dna.dataStructures.Document(documentId, title, articleText, 0, "", "", "Imported from DNA 1.xx.", "", date);
 					    } catch (ParseException pe) {
 					    	pe.printStackTrace();
 					    }
@@ -277,7 +277,7 @@ public class ImportOldDNA1XML extends JFrame {
 					    	map.put("organization", organization);
 					    	map.put("category", category);
 					    	map.put("agreement", agreeInt);
-					    	Statement s = new Statement(statementId, documentId, startInt, endInt, date, Color.YELLOW, "DNAStatement", 0, map);
+					    	Statement s = new Statement(statementId, documentId, startInt, endInt, date, Color.YELLOW, 1, 0, map);
 					    	Dna.data.getStatements().add(s);
 					    	//Dna.dna.db.changeStatement(statementId, "person", person, "short text");
 					    	//Dna.dna.db.changeStatement(statementId, "organization", organization, "short text");

@@ -38,6 +38,7 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
 import dna.dataStructures.Document;
 import dna.dataStructures.Statement;
+import dna.dataStructures.StatementType;
 
 /**
  *
@@ -51,9 +52,9 @@ public class CreateStatementFrame extends JFrame {
     Dimension minSize = new Dimension((int) WIDTH / 2, (int) HEIGHT / 3);
 
     JPanel gridBagPanel;
-    String statementType;
+    StatementType statementType;
     
-    public CreateStatementFrame(String type, Color typeColor, int documentId, 
+    public CreateStatementFrame(StatementType type, Color typeColor, int documentId, 
             int selectionStart, int selectionEnd,  String text) {
         super();
         createStatementFrame = this;
@@ -98,7 +99,7 @@ public class CreateStatementFrame extends JFrame {
 //                gbc.gridy++;
 
         //LinkedHashMap<String, String> variables = Dna.dna.db.getVariables(type);
-        LinkedHashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
+        LinkedHashMap<String, String> variables = type.getVariables();
 
         Iterator<String> keyIterator = variables.keySet().iterator();
         while (keyIterator.hasNext()) {
@@ -110,7 +111,7 @@ public class CreateStatementFrame extends JFrame {
 //				String entry = Dna.dna.db.getVariableStringEntry(statementId, 	key);
                 //String[] entries = Dna.dna.db.getVariableStringEntries(key, type);
             	ArrayList<String> entries = new ArrayList<String>();
-        		ArrayList<Statement> statements = Dna.data.getStatementsByType(type);
+        		ArrayList<Statement> statements = Dna.data.getStatementsByStatementTypeId(type.getId());
         		for (int i = 0; i < statements.size(); i++) {
         			String a = (String) Dna.data.getStatements().get(i).getValues().get(key);
         			if (!entries.contains(a)) {
@@ -209,7 +210,7 @@ public class CreateStatementFrame extends JFrame {
                 super.mouseClicked(e);
                 
                 LinkedHashMap<String, Object> values = new LinkedHashMap<String, Object>();
-                LinkedHashMap<String, String> vars = Dna.data.getStatementType(type).getVariables();
+                LinkedHashMap<String, String> vars = type.getVariables();
                 Iterator<String> keyIterator = vars.keySet().iterator();
 				while (keyIterator.hasNext()){	
 					String key = keyIterator.next();
@@ -222,9 +223,9 @@ public class CreateStatementFrame extends JFrame {
 				int id = Dna.data.generateNewStatementId();
 				Document document = Dna.data.getDocument(documentId);
 				Date date = document.getDate();
-				Color color = Dna.data.getStatementType(type).getColor();
+				Color color = type.getColor();
 				int coder = Integer.parseInt(Dna.data.getSettings().get("currentCoder"));
-				Statement statement = new Statement(id, documentId, selectionStart, selectionEnd, date, color, type, coder, values);
+				Statement statement = new Statement(id, documentId, selectionStart, selectionEnd, date, color, type.getId(), coder, values);
 				Dna.data.getStatements().add(statement);
                 
                 //Dna.dna.addStatement(type, documentId, selectionStart, selectionEnd);

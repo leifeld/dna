@@ -1,0 +1,975 @@
+package dna;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+
+import javax.swing.table.DefaultTableModel;
+
+import dna.dataStructures.Coder;
+import dna.dataStructures.CoderRelation;
+import dna.dataStructures.Data;
+import dna.dataStructures.Document;
+import dna.dataStructures.Regex;
+import dna.dataStructures.Statement;
+import dna.dataStructures.StatementLink;
+import dna.dataStructures.StatementType;
+
+import static java.lang.Math.toIntExact;
+import java.awt.Color;
+
+public class SqlConnection {
+	String dbtype;
+	String dbfile;
+	String login;
+	String password;
+	Connection connection = null;
+	PreparedStatement preStatement = null;
+	ResultSet result = null;
+	
+	public SqlConnection(String dbtype, String dbfile, String login, String password) {
+		this.dbtype = dbtype;
+		this.dbfile = dbfile;
+		this.login = login;
+		this.password = password;
+		try {
+			if (dbtype == "mysql") {
+				Class.forName("com.mysql.jdbc.Driver");
+				this.connection = DriverManager.getConnection("jdbc:mysql://" + dbfile, login, password);
+			} else if (dbtype == "sqlite") {
+				Class.forName("org.sqlite.JDBC");
+				this.connection = DriverManager.getConnection("jdbc:sqlite:" + dbfile);
+			}
+		} catch (SQLException | ClassNotFoundException e) {
+			//e.printStackTrace();
+		}
+	}
+	
+	public void closeConnection() {
+		try {
+			connection.close();
+		} catch (SQLException e) {
+			//e.printStackTrace();
+		} catch (NullPointerException e) {
+			// no connection was established in the first place
+		}
+	}
+	
+	/**
+	 * @param key    Property to set
+	 * @param value  Value corresponding to the property
+	 */
+	public void upsertSetting(String key, String value) {
+		if (dbtype == "sqlite") {
+			executeStatement("INSERT OR REPLACE INTO SETTINGS (Property, Value) VALUES ('" + key + "', '" + value + "')");
+		} else if (dbtype == "mysql") {
+			executeStatement("INSERT INTO SETTINGS (Property, Value) VALUES('" + key + "', '" + value + "') "
+					+ "ON DUPLICATE KEY UPDATE Value = '" + value + "'");
+		}
+	}
+	
+	/**
+	 * @param key    Property to extract
+	 * @return       Value corresponding to the property
+	 */
+	public String getSetting(String key) {
+		String value = "";
+		try {
+			value = (String) executeQueryForObject("SELECT Value FROM SETTINGS WHERE Property = '" + key + "'");
+		} catch (SQLException e) {
+			return "";
+		}
+		return value;
+	}
+
+	/**
+	 * @param key    Property to extract
+	 * @return       Value corresponding to the property
+	 */
+	public Coder getCoder(int id) {
+		Coder coder = null;
+		try {
+			String myQuery = "SELECT * FROM CODERS WHERE ID = " + id;
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+			ResultSet result = preStatement.executeQuery();
+			if (result.next()) {
+				do {
+					String name = result.getString("Name");
+					int red = result.getInt("Red");
+					int green = result.getInt("Green");
+					int blue = result.getInt("Blue");
+					String password = result.getString("Password");
+					coder = new Coder(id, name, new Color(red, green, blue), password, new HashMap<String, Boolean>());
+				} while (result.next());
+			}
+			result.close();
+			preStatement.close();
+			
+			myQuery = "SELECT * FROM CODERPERMISSIONS WHERE Coder = " + id;
+			PreparedStatement preStatement2 = (PreparedStatement) connection.prepareStatement(myQuery);
+			ResultSet result2 = preStatement2.executeQuery();
+			HashMap<String, Boolean> permissions = new HashMap<String, Boolean>();
+			if (result2.next()) {
+				do {
+					int perm = result.getInt("Permission");
+					boolean b;
+					if (perm == 0) {
+						b = false;
+					} else {
+						b = true;
+					}
+					String type = result.getString("Type");
+					permissions.put(type, b);
+				} while (result.next());
+			}
+			coder.setPermissions(permissions);
+			result2.close();
+			preStatement2.close();
+		} catch (SQLException e) {
+			return new Coder();
+		}
+		return coder;
+	}
+	
+	/**
+	 * @param coder     The coder to add to/update in the Coders table
+	 */
+	public void upsertCoder(Coder coder) {
+		int id = coder.getId();
+		String name = coder.getName();
+		int red = coder.getColor().getRed();
+		int green = coder.getColor().getGreen();
+		int blue = coder.getColor().getBlue();
+		String password = coder.getPassword();
+		HashMap<String, Boolean> permissions = coder.getPermissions();
+		
+		if (dbtype == "sqlite") {
+			executeStatement("INSERT OR REPLACE INTO CODERS (ID, Name, Red, Green, Blue, Password) "
+					+ "VALUES (" + id + ", '" + name + "', " + red + ", " + green + ", " + blue + ", '" + password + "')");
+		} else if (dbtype == "mysql") {
+			executeStatement("INSERT INTO CODERS (ID, Name, Red, Green, Blue, Password) "
+					+ "VALUES(" + id + ", '" + name + "', " + red + ", " + green + ", " + blue + ", '" + password + "') "
+					+ "ON DUPLICATE KEY UPDATE Name = '" + name + "', red = " + red + ", green = " + green + ", blue = "
+					+ blue + ", Password = '" + password + "'");
+		}
+		
+		Iterator<String> keyIterator = permissions.keySet().iterator();
+        while (keyIterator.hasNext()){
+    		String key = keyIterator.next();
+    		Boolean value = permissions.get(key);
+    		int intValue;
+    		if (value == true) {
+    			intValue = 1;
+    		} else {
+    			intValue = 0;
+    		}
+    		executeStatement("REPLACE INTO CODERPERMISSIONS(ID, Coder, Type, Permission) "
+    					+ "VALUES ((SELECT ID from CODERPERMISSIONS WHERE Coder = " + id + "), " + id + ", '" 
+    					+ key + "', " + intValue + ")");
+    	}
+	}
+
+	/**
+	 * @param document   Document to add to/update in the DOCUMENTS table
+	 */
+	public void upsertDocument(Document document) {
+		executeStatement("REPLACE INTO DOCUMENTS(ID, Title, Text, Coder, Source, Section, Notes, Type, Date) "
+				+ "VALUES (" + document.getId() + ", '" + document.getTitle() + "', '" + document.getText() 
+				+ "', " + document.getCoder() + ", '" + document.getSource() + "', '" + document.getSection() 
+				+ "', '" + document.getNotes() + "', '" + document.getType() + "', " + document.getDate().getTime() + ")");
+	}
+
+	/**
+	 * @param regex   Regular expression to add to/update in the REGEXES table
+	 */
+	public void upsertRegex(Regex regex) {
+		executeStatement("REPLACE INTO REGEXES(Label, Red, Green, Blue) "
+				+ "VALUES ('" + regex.getLabel() + "', " + regex.getColor().getRed() + ", " + regex.getColor().getGreen()
+				+ ", " + regex.getColor().getBlue() + ")");
+	}
+	
+	public void upsertStatementType(StatementType statementType) {
+		Iterator<String> keyIterator = statementType.getVariables().keySet().iterator();
+        while (keyIterator.hasNext()){
+    		String key = keyIterator.next();
+    		String value = statementType.getVariables().get(key);
+    		executeStatement("REPLACE INTO VARIABLES(ID, Variable, DataType, StatementTypeId) "
+					+ "VALUES ((SELECT ID FROM VARIABLES WHERE Variable = '" + key 
+					+ "' AND StatementTypeId = " + statementType.getId() + "), '" + key + "', '" + value
+					+ "', " + statementType.getId() + ")");
+    	}
+		executeStatement("REPLACE INTO STATEMENTTYPES(ID, Label, Red, Green, Blue) "
+				+ "VALUES (" + statementType.getId() + ", '" + statementType.getLabel() + "', " 
+				+ statementType.getColor().getRed() + ", " + statementType.getColor().getGreen() + ", " 
+				+ statementType.getColor().getBlue() + ")");
+	}
+	
+	/**
+	 * @param sl   StatementLink to add to/update in the STATEMENTLINKS table
+	 */
+	public void upsertStatementLink(StatementLink sl) {
+		executeStatement("REPLACE INTO STATEMENTLINKS(ID, SourceId, TargetId) "
+				+ "VALUES (" + sl.getId() + ", " + sl.getSourceId() + ", " + sl.getTargetId() + ")");
+	}
+	
+	/**
+	 * @return     Array list of all documents in the SQL database.
+	 */
+	private ArrayList<Document> getAllDocuments() {
+		ArrayList<Document> al = new ArrayList<Document>();
+		try {
+			String myQuery = "SELECT * FROM DOCUMENTS";
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+			ResultSet result = preStatement.executeQuery();
+			if (result.next()) {
+				do {
+					Document document = new Document(
+							result.getInt("ID"), 
+							result.getString("Title"), 
+							result.getString("Text"), 
+							result.getInt("Coder"), 
+							result.getString("Source"), 
+							result.getString("Section"), 
+							result.getString("Notes"), 
+							result.getString("Type"), 
+							new Date(result.getInt("Date"))
+					);
+					al.add(document);
+				} while (result.next());
+			}
+			result.close();
+			preStatement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return al;
+	}
+
+	/**
+	 * @return     Array list of all regular expressions in the SQL database.
+	 */
+	private ArrayList<Regex> getAllRegexes() {
+		ArrayList<Regex> al = new ArrayList<Regex>();
+		try {
+			String myQuery = "SELECT * FROM REGEXES";
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+			ResultSet result = preStatement.executeQuery();
+			if (result.next()) {
+				do {
+					Regex regex = new Regex(
+							result.getString("Label"), 
+							new Color(result.getInt("red"), result.getInt("green"), result.getInt("blue")));
+					al.add(regex);
+				} while (result.next());
+			}
+			result.close();
+			preStatement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return al;
+	}
+
+	/**
+	 * @return     Array list of all statement links in the SQL database.
+	 */
+	private ArrayList<StatementLink> getAllStatementLinks() {
+		ArrayList<StatementLink> al = new ArrayList<StatementLink>();
+		try {
+			String myQuery = "SELECT * FROM STATEMENTLINKS";
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+			ResultSet result = preStatement.executeQuery();
+			if (result.next()) {
+				do {
+					StatementLink statementLink = new StatementLink(
+							result.getInt("ID"), result.getInt("SourceId"), result.getInt("TargetId"));
+					al.add(statementLink);
+				} while (result.next());
+			}
+			result.close();
+			preStatement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return al;
+	}
+
+	/**
+	 * @return     Array list of all coder relations in the SQL database.
+	 */
+	private ArrayList<CoderRelation> getAllCoderRelations() {
+		ArrayList<CoderRelation> al = new ArrayList<CoderRelation>();
+		try {
+			String myQuery = "SELECT * FROM CODERRELATIONS";
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+			ResultSet result = preStatement.executeQuery();
+			if (result.next()) {
+				do {
+					CoderRelation coderRelation = new CoderRelation(
+							result.getInt("ID"), result.getInt("Coder"), result.getInt("OtherCoder"), 
+							result.getInt("Permission"), result.getString("Type"));
+					al.add(coderRelation);
+				} while (result.next());
+			}
+			result.close();
+			preStatement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return al;
+	}
+	
+	/**
+	 * @return     Array list of all settings in the SQL database.
+	 */
+	private HashMap<String, String> getAllSettings() {
+		HashMap<String, String> map = new HashMap<String, String>();
+		try {
+			String myQuery = "SELECT * FROM SETTINGS";
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+			ResultSet result = preStatement.executeQuery();
+			if (result.next()) {
+				do {
+					map.put(result.getString("Property"), result.getString("Value"));
+				} while (result.next());
+			}
+			result.close();
+			preStatement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return map;
+	}
+	
+	/**
+	 * @param statement       A Statement object.
+	 * @param variables       A LinkedHashMap as contained in a statement type.
+	 */
+	public void upsertStatement(Statement statement, LinkedHashMap<String, String> variables) {
+		executeStatement("REPLACE INTO STATEMENTS(ID, StatementTypeId, DocumentId, Start, Stop, Coder) "
+				+ "VALUES (" + statement.getId() + ", " + statement.getStatementTypeId() + ", " + statement.getDocument() 
+				+ ", " + statement.getStart() + ", " + statement.getStop() + ", " + statement.getCoder() + ")");
+		
+		String[] varNames = (String[]) statement.getValues().keySet().toArray();
+		for (int i = 0; i < varNames.length; i++) {
+			String type = variables.get(varNames[i]);
+			Object object = statement.getValues().get(varNames[i]);
+			String tableExtension = null;
+			String ap = "";
+			if (type.equals("boolean")) {
+				tableExtension = "BOOLEAN";
+			} else if (type.equals("integer")) {
+    			tableExtension = "INTEGER";
+    		} else if (type.equals("short text")) {
+    			tableExtension = "SHORTTEXT";
+    			ap = "'";
+    		} else if (type.equals("long text")) {
+    			tableExtension = "LONGTEXT";
+    			ap = "'";
+    		}
+			
+			int varid = -1;
+			try {
+				varid = (int) executeQueryForObject("SELECT ID FROM VARIABLES WHERE Variable = " + varNames[i] 
+						+ " AND StatementTypeId = " + statement.getStatementTypeId());
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+			executeStatement("REPLACE INTO DATA" + tableExtension + " (ID, StatementId, VariableId, StatementTypeId, Value) "
+					+ "VALUES ((SELECT ID FROM DATA" + tableExtension + " WHERE StatementId = " + statement.getId() 
+					+ " AND VariableId = " + varid + "), " + statement.getStatementTypeId() + ", " 
+					+ ap + ", " + object + ap + ")");
+		}
+	}
+	
+	/**
+	 * @return     Data object.
+	 */
+	public Data getAllData() {
+		Data data = new Data();
+		data.setSettings(getAllSettings());
+		data.setDocuments(getAllDocuments());
+		data.setCoders(getAllCoders());
+		data.setCoderRelations(getAllCoderRelations());
+		data.setRegexes(getAllRegexes());
+		data.setStatementLinks(getAllStatementLinks());
+		data.setStatementTypes(getAllStatementTypes());
+		
+		ArrayList<Statement> statements = new ArrayList<Statement>();
+		try {
+			String myQuery = "SELECT * FROM STATEMENTS";
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+			ResultSet result = preStatement.executeQuery();
+			if (result.next()) {
+				do {
+					int id = result.getInt("ID");
+					int documentId = result.getInt("DocumentId");
+					int start = result.getInt("Start");
+					int stop = result.getInt("Stop");
+					int statementTypeId = result.getInt("StatementTypeId");
+					int coder = result.getInt("Coder");
+					Date date = data.getDocument(documentId).getDate();
+					StatementType st = data.getStatementTypeById(statementTypeId);
+					Color color = st.getColor();
+					LinkedHashMap<String, Object> values = new LinkedHashMap<String, Object>();
+					
+					Iterator<String> keyIterator = st.getVariables().keySet().iterator();
+			        while (keyIterator.hasNext()){
+			    		String key = keyIterator.next();
+			    		String value = st.getVariables().get(key);
+			    		String tableExtension = "";
+			    		if (value.equals("boolean")) {
+			    			tableExtension = "BOOLEAN";
+			    		} else if (value.equals("integer")) {
+			    			tableExtension = "INTEGER";
+			    		} else if (value.equals("short text")) {
+			    			tableExtension = "SHORTTEXT";
+			    		} else if (value.equals("long text")) {
+			    			tableExtension = "LONGTEXT";
+			    		}
+			    		String myQuery2 = "SELECT * FROM DATA" + tableExtension + " WHERE StatementId = " + id;
+						PreparedStatement preStatement2 = (PreparedStatement) connection.prepareStatement(myQuery2);
+						ResultSet result2 = preStatement2.executeQuery();
+						if (result2.next()) {
+							do {
+								values.put(key, result2.getObject(key));
+							} while (result2.next());
+						}
+						result2.close();
+						preStatement2.close();
+			    	}
+					Statement statement = new Statement(id, documentId, start, stop, date, color, statementTypeId, coder);
+					statements.add(statement);
+				} while (result.next());
+			}
+			result.close();
+			preStatement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		data.setStatements(statements);
+		return data;
+	}
+	
+	/**
+	 * @return     Array list of all documents in the SQL database.
+	 */
+	private ArrayList<StatementType> getAllStatementTypes() {
+		ArrayList<StatementType> al = new ArrayList<StatementType>();
+		try {
+			String myQuery = "SELECT * FROM STATEMENTTYPES";
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+			ResultSet result = preStatement.executeQuery();
+			if (result.next()) {
+				do {
+					int id = result.getInt("id");
+					String label = result.getString("Label");
+					Color color = new Color(result.getInt("red"), result.getInt("green"), result.getInt("blue"));
+					LinkedHashMap<String, String> variables = new LinkedHashMap<String, String>();
+					
+					String myQuery2 = "SELECT * FROM VARIABLES WHERE StatementTypeId = " + id;
+					PreparedStatement preStatement2 = (PreparedStatement) connection.prepareStatement(myQuery2);
+					ResultSet result2 = preStatement2.executeQuery();
+					if (result2.next()) {
+						do {
+							variables.put(result2.getString("Variable"), result2.getString("DataType"));
+						} while (result2.next());
+					}
+					result2.close();
+					preStatement2.close();
+					StatementType statementType = new StatementType(id, label, color, variables);
+					al.add(statementType);
+				} while (result.next());
+			}
+			result.close();
+			preStatement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return al;
+	}
+
+	/**
+	 * @param key    Property to extract
+	 * @return       Value corresponding to the property
+	 */
+	public ArrayList<Coder> getAllCoders() {
+		ArrayList<Coder> al = new ArrayList<Coder>();
+		try {
+			String myQuery = "SELECT * FROM CODERS";
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+			ResultSet result = preStatement.executeQuery();
+			if (result.next()) {
+				do {
+					int id = result.getInt("ID");
+					String name = result.getString("Name");
+					int red = result.getInt("Red");
+					int green = result.getInt("Green");
+					int blue = result.getInt("Blue");
+					String password = result.getString("Password");
+					HashMap<String, Boolean> map = new HashMap<String, Boolean>();
+					
+					String myQuery2 = "SELECT * FROM CODERPERMISSIONS WHERE Coder = " + id;
+					PreparedStatement preStatement2 = (PreparedStatement) connection.prepareStatement(myQuery2);
+					ResultSet result2 = preStatement2.executeQuery();
+					if (result2.next()) {
+						do {
+							int perm = result2.getInt("Permission");
+							boolean b;
+							if (perm == 0) {
+								b = false;
+							} else {
+								b = true;
+							}
+							String type = result2.getString("Type");
+							map.put(type, b);
+						} while (result2.next());
+					}
+					result2.close();
+					preStatement2.close();
+					
+					Coder coder = new Coder(id, name, new Color(red, green, blue), password, map);
+					al.add(coder);
+				} while (result.next());
+			}
+			result.close();
+			preStatement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return al;
+	}
+	
+	/**
+	 * Tests whether a mySQL connection can be established and returns a status message.
+	 * 
+	 * @return   Status message
+	 * @throws   SQLException 
+	 */
+	public String testNewMySQLConnection() {
+		if (connection == null) {
+			return("Error: Connection could not be established!");
+		}
+		ArrayList<String> tableNames = new ArrayList<String>();
+		tableNames.add("STATEMENTS");
+		tableNames.add("DOCUMENTS");
+		tableNames.add("CODERS");
+		tableNames.add("SETTINGS");
+		tableNames.add("CODERRELATIONS");
+		tableNames.add("REGEXES");
+		tableNames.add("STATEMENTTYPES");
+		tableNames.add("STATEMENTLINKS");
+		int count = -1;
+		int i = 0;
+		while (count == -1) {
+			try {
+				count = toIntExact((long) executeQueryForObject("SELECT COUNT(*) FROM " + tableNames.get(i)));
+			} catch (Exception e) {
+				// if we end up here, the table does not exist yet in the database
+			}
+			i++;
+			if (i == 8) {
+				break;
+			}
+		}
+		if (i == -1) {
+			return("OK. Tables will be created.");
+		} else {
+			return("Warning: Database contains data that may be overwritten!");
+		}
+	}
+
+	/**
+	 * Tests whether a mySQL connection can be established and returns a status message.
+	 * 
+	 * @return   Status message
+	 * @throws   SQLException 
+	 */
+	public String testExistingMySQLConnection() {
+		if (connection == null) {
+			return("Error: Connection could not be established!");
+		}
+		ArrayList<String> tableNames = new ArrayList<String>();
+		tableNames.add("STATEMENTS");
+		tableNames.add("DOCUMENTS");
+		tableNames.add("CODERS");
+		tableNames.add("SETTINGS");
+		tableNames.add("CODERRELATIONS");
+		tableNames.add("REGEXES");
+		tableNames.add("STATEMENTTYPES");
+		tableNames.add("STATEMENTLINKS");
+		tableNames.add("VARIABLES");
+		tableNames.add("CODERPERMISSIONS");
+		tableNames.add("DATABOOLEAN");
+		tableNames.add("DATAINTEGER");
+		tableNames.add("DATASHORTTEXT");
+		tableNames.add("DATALONGTEXT");
+		int count = 0;
+		for (int i = 0; i < tableNames.size(); i++) {
+			try {
+				@SuppressWarnings("unused")
+				int test =  toIntExact((long) executeQueryForObject("SELECT COUNT(*) FROM " + tableNames.get(i)));
+				count++;
+			} catch (Exception e) {
+				// if we end up here, the table does not exist yet in the database
+			}
+		}
+		if (count == tableNames.size()) {
+			return("OK. The database contains all necessary tables.");
+		} else {
+			return("Error: Database does not contain all tables necessary.");
+		}
+	}
+	
+	public void createDataStructure() {
+		if (dbtype.equals("sqlite")) {
+			executeStatement("CREATE TABLE IF NOT EXISTS SETTINGS("
+					+ "Property TEXT PRIMARY KEY, " 
+					+ "Value TEXT)");
+
+			executeStatement("CREATE TABLE IF NOT EXISTS CODERS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, " 
+					+ "Name TEXT, "
+					+ "Red INTEGER, "
+					+ "Green INTEGER, "
+					+ "Blue INTEGER, "
+					+ "Password TEXT)");
+
+			executeStatement("CREATE TABLE IF NOT EXISTS DOCUMENTS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, " 
+					+ "Title TEXT, "
+					+ "Text TEXT, " 
+					+ "Coder INTEGER, "
+					+ "Source TEXT, " 
+					+ "Section TEXT, " 
+					+ "Notes TEXT, "
+					+ "Type TEXT, "
+					+ "Date INTEGER, "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID))");
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, "
+					+ "Label TEXT, " 
+					+ "Red INTEGER, "
+					+ "Green INTEGER, " 
+					+ "Blue INTEGER)");
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS VARIABLES("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, " 
+					+ "Variable TEXT, "
+					+ "DataType TEXT, "
+					+ "StatementTypeId INTEGER, "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE (Variable, StatementTypeId))");
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS REGEXES("
+					+ "Label TEXT PRIMARY KEY, " 
+					+ "Red INTEGER, "
+					+ "Green INTEGER, " 
+					+ "Blue INTEGER)");
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS CODERPERMISSIONS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, " 
+					+ "Coder INTEGER, "
+					+ "Type TEXT, "
+					+ "Permission INTEGER, "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
+					+ "UNIQUE (Coder, Permission))");
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, " 
+					+ "Coder INTEGER, "
+					+ "OtherCoder INTEGER, "
+					+ "Type TEXT, "
+					+ "Permission INTEGER, "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
+					+ "FOREIGN KEY(OtherCoder) REFERENCES CODERS(ID))");
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, " 
+					+ "StatementTypeId INTEGER, "
+					+ "Document INTEGER, " 
+					+ "Start INTEGER, " 
+					+ "Stop INTEGER, "
+					+ "Coder INTEGER, "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
+					+ "FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID))");
+			
+	        executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
+	        		+ "ID INTEGER PRIMARY KEY NOT NULL, " 
+					+ "SourceId INTEGER NOT NULL, " 
+	        		+ "TargetId INTEGER NOT NULL, "
+	                + "FOREIGN KEY(SourceId) REFERENCES STATEMENTS(ID),"
+	                + "FOREIGN KEY(TargetId) REFERENCES STATEMENTS(ID))");
+	        
+	        executeStatement("CREATE TABLE IF NOT EXISTS DATABOOLEAN("
+	        		+ "ID INTEGER PRIMARY KEY NOT NULL, "
+	        		+ "StatementId INTEGER NOT NULL, "
+	        		+ "VariableId INTEGER NOT NULL, "
+	        		+ "StatementTypeId INTEGER, "
+	        		+ "Value INTEGER, "
+	        		+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+	        		+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE (StatementId, VariableId))");
+	        
+	        executeStatement("CREATE TABLE IF NOT EXISTS DATAINTEGER("
+	        		+ "ID INTEGER PRIMARY KEY NOT NULL, "
+	        		+ "StatementId INTEGER NOT NULL, "
+	        		+ "VariableId INTEGER NOT NULL, "
+	        		+ "StatementTypeId INTEGER, "
+	        		+ "Value INTEGER, "
+	        		+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+	        		+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE (StatementId, VariableId))");
+
+	        executeStatement("CREATE TABLE IF NOT EXISTS DATASHORTTEXT("
+	        		+ "ID INTEGER PRIMARY KEY NOT NULL, "
+	        		+ "StatementId INTEGER NOT NULL, "
+	        		+ "VariableId INTEGER NOT NULL, "
+	        		+ "StatementTypeId INTEGER, "
+	        		+ "Value TEXT, "
+	        		+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+	        		+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE (StatementId, VariableId))");
+
+	        executeStatement("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
+	        		+ "ID INTEGER PRIMARY KEY NOT NULL, "
+	        		+ "StatementId INTEGER NOT NULL, "
+	        		+ "VariableId INTEGER NOT NULL, "
+	        		+ "StatementTypeId INTEGER, "
+	        		+ "Value TEXT, "
+	        		+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+	        		+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE (StatementId, VariableId))");
+	        
+		} else if (dbtype.equals("mysql")) {
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS SETTINGS("
+					+ "Property VARCHAR(200), " 
+					+ "Value VARCHAR(200),"
+					+ "PRIMARY KEY (Property))");
+
+			executeStatement("CREATE TABLE IF NOT EXISTS CODERS("
+					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " 
+					+ "Name VARCHAR(200), "
+					+ "Red SMALLINT UNSIGNED, "
+					+ "Green SMALLINT UNSIGNED, "
+					+ "Blue SMALLINT UNSIGNED, "
+					+ "Password VARCHAR(50), "
+					+ "PRIMARY KEY(ID))");
+
+			executeStatement("CREATE TABLE IF NOT EXISTS DOCUMENTS("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL, "
+					+ "Title VARCHAR(200), " 
+					+ "Text MEDIUMTEXT, "
+					+ "Coder SMALLINT UNSIGNED NOT NULL, "
+					+ "Source VARCHAR(200), " 
+					+ "Section VARCHAR(200), "
+					+ "Notes TEXT, " 
+					+ "Type VARCHAR(200), "
+					+ "Date BIGINT, " 
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), " 
+					+ "PRIMARY KEY(ID))");
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
+					+ "ID SMALLINT UNSIGNED NOT NULL, "
+					+ "Label VARCHAR(200), " 
+					+ "Red SMALLINT UNSIGNED, "
+					+ "Green SMALLINT UNSIGNED, " 
+					+ "Blue SMALLINT UNSIGNED, "
+					+ "PRIMARY KEY(ID))");
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS VARIABLES("
+					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "Variable VARCHAR(200), " 
+					+ "DataType VARCHAR(200), "
+					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), " 
+					+ "UNIQUE KEY VariableType (Variable, StatementTypeId), "
+					+ "PRIMARY KEY(ID))");
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS REGEXES("
+					+ "Label VARCHAR(200), " 
+					+ "Red SMALLINT UNSIGNED, "
+					+ "Green SMALLINT UNSIGNED, " 
+					+ "Blue SMALLINT UNSIGNED, "
+					+ "PRIMARY KEY(Label))");
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS CODERPERMISSIONS("
+					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " 
+					+ "Coder SMALLINT UNSIGNED NOT NULL, "
+					+ "Type VARCHAR(50), "
+					+ "Permission SMALLINT UNSIGNED, "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
+					+ "UNIQUE KEY CoderPerm (Coder, Permission), "
+					+ "PRIMARY KEY(ID))");
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
+					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " 
+					+ "Coder SMALLINT UNSIGNED NOT NULL, "
+					+ "OtherCoder SMALLINT UNSIGNED NOT NULL, "
+					+ "Type VARCHAR(50), "
+					+ "Permission SMALLINT UNSIGNED, "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
+					+ "FOREIGN KEY(OtherCoder) REFERENCES CODERS(ID), "
+					+ "PRIMARY KEY(ID))");
+			
+			executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTS("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL, "
+					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
+					+ "Document MEDIUMINT UNSIGNED NOT NULL, "
+					+ "Start BIGINT UNSIGNED, " 
+					+ "Stop BIGINT UNSIGNED, "
+					+ "Coder SMALLINT UNSIGNED NOT NULL, "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), " 
+					+ "FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), "
+					+ "PRIMARY KEY(ID))");
+
+	        executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
+	        		+ "ID INTEGER UNSIGNED NOT NULL, " 
+					+ "SourceId MEDIUMINT UNSIGNED NOT NULL, " 
+	        		+ "TargetId MEDIUMINT UNSIGNED NOT NULL, "
+	                + "FOREIGN KEY(SourceId) REFERENCES STATEMENTS(ID),"
+	                + "FOREIGN KEY(TargetId) REFERENCES STATEMENTS(ID), "
+					+ "PRIMARY KEY(ID))");
+	        
+			executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, " 
+					+ "SourceId MEDIUMINT NOT NULL, " 
+					+ "TargetId MEDIUMINT NOT NULL, "
+					+ "FOREIGN KEY(SourceId) REFERENCES STATEMENTS(ID),"
+					+ "FOREIGN KEY(TargetId) REFERENCES STATEMENTS(ID), "
+					+ "PRIMARY KEY(ID))");
+			
+	        executeStatement("CREATE TABLE IF NOT EXISTS DATABOOLEAN("
+	        		+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+	        		+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
+	        		+ "VariableId SMALLINT UNSIGNED NOT NULL, "
+	        		+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
+	        		+ "Value SMALLINT UNSIGNED NOT NULL, "
+	        		+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+	        		+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE KEY StatementVariable (StatementId, VariableId), "
+					+ "PRIMARY KEY(ID))");
+	        
+	        executeStatement("CREATE TABLE IF NOT EXISTS DATAINTEGER("
+	        		+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+	        		+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
+	        		+ "VariableId SMALLINT UNSIGNED NOT NULL, "
+	        		+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
+	        		+ "Value MEDIUMINT NOT NULL, "
+	        		+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+	        		+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE KEY StatementVariable (StatementId, VariableId), "
+					+ "PRIMARY KEY(ID))");
+
+	        executeStatement("CREATE TABLE IF NOT EXISTS DATASHORTTEXT("
+	        		+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+	        		+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
+	        		+ "VariableId SMALLINT UNSIGNED NOT NULL, "
+	        		+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
+	        		+ "Value VARCHAR(200), "
+	        		+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+	        		+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE KEY StatementVariable (StatementId, VariableId), "
+					+ "PRIMARY KEY(ID))");
+
+	        executeStatement("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
+	        		+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+	        		+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
+	        		+ "VariableId SMALLINT UNSIGNED NOT NULL, "
+	        		+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
+	        		+ "Value TEXT, "
+	        		+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+	        		+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE KEY StatementVariable (StatementId, VariableId), "
+					+ "PRIMARY KEY(ID))");
+		}
+	}
+    
+    // TODO: fill in contents;
+    // TODO: bind DNA data structures to databases; update whenever document is left/closed;
+    // TODO: add coder management etc. to side panel or other parts of GUI.
+	
+	/**
+	 * Execute a statement on the database.
+	 * 
+	 * @param myStatement     A string representation of the SQL statement.
+	 */
+	public void executeStatement(String myStatement) {
+		try {
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myStatement);
+			preStatement.execute();
+			preStatement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Execute a query on the database and get an object back.
+	 * 
+	 * @param myStatement     A string representation of the SQL statement.
+	 * @return                The ID of the row that was changed.
+	 * @throws SQLException 
+	 */
+	public Object executeQueryForObject(String myQuery) throws SQLException {
+		Object object = null;
+		PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+		ResultSet result = preStatement.executeQuery();
+		if (result.next()) {
+			do {
+				object = result.getObject(1);
+			} while (result.next());
+		}
+		result.close();
+		preStatement.close();
+		return object;
+	}
+
+	/**
+	 * Execute a query on the database and get an object back.
+	 * 
+	 * @param myQuery         A string representation of the SQL query.
+	 * @return                An array list with resulting objects.
+	 * @throws SQLException 
+	 */
+	/*
+	public ArrayList<Object> executeQueryForList(String myQuery){
+		ArrayList<Object> al = new ArrayList<Object>();
+		try {
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+			ResultSet result;
+			result = preStatement.executeQuery();
+			if (result.next()) {
+				do {
+					al.add(result.getObject(1));
+				} while (result.next());
+			}
+			result.close();
+			preStatement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return al;
+	}
+	*/
+}

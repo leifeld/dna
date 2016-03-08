@@ -723,7 +723,7 @@ public class NetworkExporter extends JDialog {
 		String type = statementType.getVariableDataType(var);
 		ArrayList<String> values = new ArrayList<String>();
 		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
-			String val = (String) Dna.data.getStatementsByType(type).get(i).getValues().get(var);
+			String val = (String) Dna.data.getStatementsByStatementTypeId(statementType.getId()).get(i).getValues().get(var);
 			if (!values.contains(val)) {
 				values.add(val);
 			}
@@ -740,7 +740,7 @@ public class NetworkExporter extends JDialog {
 			//int [] intValues = Dna.dna.db.getAllVariableIntEntries(var, statementType.getLabel());
 
 			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
-				int val = (int) Dna.data.getStatementsByType(type).get(i).getValues().get(var);
+				int val = (int) Dna.data.getStatementsByStatementTypeId(statementType.getId()).get(i).getValues().get(var);
 				if (!values.contains(val)) {
 					values.add(val);
 				}
@@ -1695,14 +1695,14 @@ public class NetworkExporter extends JDialog {
 		int statementId;
 		Date d;
 		SimpleDateFormat dateFormat;
-		String statementType = statements.get(0).getType();
+		int statementTypeId = statements.get(0).getStatementTypeId();
 		for (int i = 0; i < statements.size(); i++) {
-			if (!statements.get(i).getType().equals(statementType)) {
+			if (statements.get(i).getId() != statementTypeId) {
 				throw new IllegalArgumentException("More than one statement type was selected. Cannot export to a spreadsheet!");
 			}
 		}
 		//HashMap<String, String> variables = Dna.dna.db.getVariables(statementType);
-		HashMap<String, String> variables = Dna.data.getStatementType(statementType).getVariables();
+		HashMap<String, String> variables = Dna.data.getStatementTypeById(statementTypeId).getVariables();
 		Iterator<String> keyIterator;
 		try {
 			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), "UTF8"));
@@ -2096,7 +2096,7 @@ public class NetworkExporter extends JDialog {
 				select = false;
 			} else if (s.getDate().after(stopDate)) {
 				select = false;
-			} else if (!s.getType().equals(statementType.getLabel())) {
+			} else if (s.getStatementTypeId() != statementType.getId()) {
 				select = false;
 			}
 			if (select == true) {

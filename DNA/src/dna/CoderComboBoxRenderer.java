@@ -17,9 +17,10 @@ class CoderComboBoxRenderer extends JLabel implements ListCellRenderer {
 	@Override
 	public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
 			boolean cellHasFocus) {
-		Coder coder = Dna.data.getCoders().get((int) value);
+		//Coder coder = Dna.data.getCoders().get((int) value);
+		Coder coder = (Coder) value;
 		this.setText(coder.getName());
-		this.setForeground(new Color(coder.getRed(), coder.getGreen(), coder.getBlue()));
+		this.setForeground(coder.getColor());
 		return this;
 	}
 }

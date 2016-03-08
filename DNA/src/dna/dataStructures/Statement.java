@@ -8,29 +8,26 @@ public class Statement implements Comparable<Statement> {
 	int id, document, start, stop;
 	Date date;
 	Color color;
-	String type;
+	int statementTypeId;
 	int coder;
 	LinkedHashMap<String, Object> values = new LinkedHashMap<String, Object>();
 	
-	/*
 	public Statement(int statementId, int documentId, int start, 
-			int stop, Date date, Color color, String type, int coder) {
+			int stop, Date date, Color color, int statementTypeId, int coder) {
 		this.id = statementId;
 		this.document = documentId;
 		this.start = start;
 		this.stop = stop;
 		this.date = date;
 		this.color = color;
-		this.type = type;
+		this.statementTypeId = statementTypeId;
 		this.coder = coder;
-		this.objects = new ArrayList<Object>();
-		this.objectTypes = new ArrayList<String>();
+		this.values = new LinkedHashMap<String, Object>();
 		
 	}
-	*/
 	
 	public Statement(int statementId, int documentId, int start, 
-			int stop, Date date, Color color, String type, int coder, 
+			int stop, Date date, Color color, int statementTypeId, int coder, 
 			LinkedHashMap<String, Object> values) {
 		this.id = statementId;
 		this.document = documentId;
@@ -38,7 +35,7 @@ public class Statement implements Comparable<Statement> {
 		this.stop = stop;
 		this.date = date;
 		this.color = color;
-		this.type = type;
+		this.statementTypeId = statementTypeId;
 		this.coder = coder;
 		this.values = values;
 	}
@@ -60,12 +57,12 @@ public class Statement implements Comparable<Statement> {
 	/**
 	 * @return the type
 	 */
-	public String getType() {
-		return type;
+	public int getStatementTypeId() {
+		return statementTypeId;
 	}
 
-	public void setType(String type) {
-		this.type = type;
+	public void setStatementTypeId(int statementTypeId) {
+		this.statementTypeId = statementTypeId;
 	}
 
 	public Color getColor() {

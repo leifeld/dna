@@ -13,18 +13,17 @@ public class Document implements Comparable<Document> {
 	String type;
 	Date date;
 	
-	public Document(int id, String title, String text, Date date, 
-			int coder, String source, String section, String notes, 
-			String type) {
+	public Document(int id, String title, String text, int coder, String source, 
+			String section, String notes, String type, Date date) {
 		this.id = id;
 		this.title = title;
 		this.text = text;
-		this.date = date;
 		this.coder = coder;
 		this.source = source;
 		this.section = section;
 		this.notes = notes;
 		this.type = type;
+		this.date = date;
 	}
 	
 	/**

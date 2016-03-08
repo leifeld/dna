@@ -64,7 +64,7 @@ public class DocStats extends JPanel {
 	}
 	
 	public void computeStats() {
-		int numDocuments = Dna.dna.data.getDocuments().size();
+		int numDocuments = Dna.data.getDocuments().size();
 		int numStatements = Dna.dna.gui.sidebarPanel.ssc.getRowCount();
 		int statementLinks = Dna.dna.gui.sidebarPanel.linkedTableModel.getRowCount();
 		
@@ -76,7 +76,7 @@ public class DocStats extends JPanel {
 		for (StatementType st : Dna.data.getStatementTypes()) {
 			statText = statText + "\n\"" + st.getLabel() + "\" Variables:\n";
 			String[] vars = st.getVariables().keySet().toArray(new String[st.getVariables().keySet().size()]);
-			ArrayList<Statement> s = Dna.data.getStatementsByType(st.getLabel());
+			ArrayList<Statement> s = Dna.data.getStatementsByStatementTypeId(st.getId());
 			for (int j = 0; j < vars.length; j++) {
 				ArrayList<Object> varEntries = new ArrayList<Object>();
 				for (int i = 0; i < s.size(); i++) {

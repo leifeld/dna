@@ -14,6 +14,7 @@ public class Data {
 	public HashMap<String, String> settings;
 	public ArrayList<StatementLink> statementLinks;
 	
+	/*
 	public Data(ArrayList<Statement> statements, ArrayList<Document> documents, ArrayList<Coder> coders,
 			ArrayList<Regex> regexes, ArrayList<StatementType> statementTypes, ArrayList<CoderRelation> coderRelations,
 			HashMap<String, String> settings, ArrayList<StatementLink> statementLinks) {
@@ -27,6 +28,7 @@ public class Data {
 		this.settings = settings;
 		this.statementLinks = statementLinks;
 	}
+	*/
 	
 	public Data() {
 		this.statements = new ArrayList<Statement>();
@@ -53,6 +55,30 @@ public class Data {
 		this.statementLinks = statementLinks;
 	}
 
+	public int generateNewStatementTypeId() {
+		if (statementTypes.size() == 0) {
+			return(1);
+		}
+		ArrayList<Integer> ids = new ArrayList<Integer>();
+		for (int i = 0; i < statementTypes.size(); i++) {
+			ids.add(statementTypes.get(i).getId());
+		}
+		Collections.sort(ids);
+		if (ids.size() == 1) {
+			if (ids.get(0) == 1) {
+				return(2);
+			} else {
+				return(1);
+			}
+		}
+		for (int i = 1; i < ids.size(); i++) {
+			if (ids.get(i) - 1 > ids.get(i - 1)) {
+				return(ids.get(i - 1) + 1);
+			}
+		}
+		return(statementTypes.size() + 1);
+	}
+	
 	public int generateNewStatementLinkId() {
 		if (statementLinks.size() == 0) {
 			return(1);
@@ -133,14 +159,23 @@ public class Data {
 		return(null);
 	}
 	
-	public ArrayList<Statement> getStatementsByType(String type) {
+	public ArrayList<Statement> getStatementsByStatementTypeId(int id) {
 		ArrayList<Statement> s = new ArrayList<Statement>();
 		for (int i = 0; i < statements.size(); i++) {
-			if (statements.get(i).getType().equals(type)) {
+			if (statements.get(i).getStatementTypeId() == id) {
 				s.add(statements.get(i));
 			}
 		}
 		return(s);
+	}
+
+	public StatementType getStatementTypeById(int id) {
+		for (int i = 0; i < statementTypes.size(); i++) {
+			if (statementTypes.get(i).getId() == id) {
+				return statementTypes.get(i);
+			}
+		}
+		return(null);
 	}
 	
 	public int generateNewStatementId() {

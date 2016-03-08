@@ -45,6 +45,7 @@ public class Popup extends JDialog {
 	private static final long serialVersionUID = 1L;
 	Container c;
 	Point point, los;
+	int statementTypeId;
 	String type;
 	Color color;
 	static int statementId;
@@ -61,7 +62,8 @@ public class Popup extends JDialog {
 		Statement statement = Dna.data.getStatement(statementId);
 		this.color = statement.getColor();
 		//this.type = Dna.dna.db.getStatementType(statementId);
-		this.type = statement.getType();
+		this.statementTypeId = statement.getStatementTypeId();
+		this.type = Dna.data.getStatementTypeById(this.statementTypeId).getLabel();
 		
 		//this.setModal(true);
 		this.setUndecorated(true);
@@ -198,7 +200,7 @@ public class Popup extends JDialog {
 				//String entry = Dna.dna.db.getVariableStringEntry(statementId, key);
 				String entry = (String) Dna.data.getStatement(statementId).getValues().get(key);
 				//String[] entries = Dna.dna.db.getVariableStringEntries(key, type);
-				ArrayList<Statement> subset = Dna.data.getStatementsByType(type);
+				ArrayList<Statement> subset = Dna.data.getStatementsByStatementTypeId(statementTypeId);
 				ArrayList<String> entries = new ArrayList<String>();
 				for (int i = 0; i < subset.size(); i++) {
 					String mykey = (String) subset.get(i).getValues().get(key);
