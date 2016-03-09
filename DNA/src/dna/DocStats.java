@@ -65,8 +65,8 @@ public class DocStats extends JPanel {
 	
 	public void computeStats() {
 		int numDocuments = Dna.data.getDocuments().size();
-		int numStatements = Dna.dna.gui.sidebarPanel.ssc.getRowCount();
-		int statementLinks = Dna.dna.gui.sidebarPanel.linkedTableModel.getRowCount();
+		int numStatements = Dna.dna.gui.rightPanel.ssc.getRowCount();
+		int statementLinks = Dna.dna.gui.rightPanel.linkedTableModel.getRowCount();
 		
 		String statText = "Documents: " + numDocuments + "\n"
 				+ "Statements: " + numStatements + "\n"

@@ -66,19 +66,19 @@ public class ContradictionPanel extends JPanel {
 						node = node.replaceAll("0 \\(", "");
 						int nodeInt = new Integer(node).intValue();
 
-						Dna.dna.gui.sidebarPanel.statementFilter.showAll.
+						Dna.dna.gui.rightPanel.statementFilter.showAll.
 						setSelected(true);
-						Dna.dna.gui.sidebarPanel.statementFilter.
+						Dna.dna.gui.rightPanel.statementFilter.
 						toggleEnabled(false);
-						Dna.dna.gui.sidebarPanel.statementFilter.allFilter();
+						Dna.dna.gui.rightPanel.statementFilter.allFilter();
 
-						int viewId = Dna.dna.gui.sidebarPanel.statementTable
-								.convertRowIndexToView(Dna.dna.gui.sidebarPanel.ssc
+						int viewId = Dna.dna.gui.rightPanel.statementTable
+								.convertRowIndexToView(Dna.dna.gui.rightPanel.ssc
 										.getIndexByStatementId(nodeInt));
 						if (viewId == -1) {
-							Dna.dna.gui.sidebarPanel.statementTable.clearSelection();
+							Dna.dna.gui.rightPanel.statementTable.clearSelection();
 						} else {
-							Dna.dna.gui.sidebarPanel.statementTable.changeSelection(viewId, 0, false, false);
+							Dna.dna.gui.rightPanel.statementTable.changeSelection(viewId, 0, false, false);
 							//int docId = Dna.dna.db.getStatement(nodeInt).getDocument();
 							int docId = Dna.data.getStatement(nodeInt).getDocument();
 							int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);

@@ -159,7 +159,7 @@ public class Popup extends JDialog {
 					
 
                     // update links table after removal of statements
-                    Dna.dna.gui.sidebarPanel.updateViewLinksTable();
+                    Dna.dna.gui.rightPanel.updateViewLinksTable();
                     
 					dispose();
 				}

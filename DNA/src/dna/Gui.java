@@ -15,6 +15,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 
+import javax.swing.Action;
 import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -32,7 +33,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.ListSelectionModel;
+import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -51,7 +54,8 @@ public class Gui extends JFrame {
 	StatusBar statusBar;
 	DocumentPanel documentPanel;
 	TextPanel textPanel;
-	SidebarPanel sidebarPanel;
+	RightPanel rightPanel;
+	LeftPanel leftPanel;
 	MenuBar menuBar;
 	
 	int previousDocID = -1;
@@ -60,10 +64,10 @@ public class Gui extends JFrame {
 		c = getContentPane();
 		this.setTitle("Discourse Network Analyzer");
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		//this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		ImageIcon dna32Icon = new ImageIcon(getClass().getResource("/icons/dna32.png"));
 		this.setIconImage(dna32Icon.getImage());
 		
+		// close SQL connection before exit
 		this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
 				if (Dna.dna.sql != null) {
@@ -72,29 +76,66 @@ public class Gui extends JFrame {
 				dispose();
 			}
 		});
-
+		
+		// center of the DNA window: documents and text panel
 		documentPanel = new DocumentPanel();
 		textPanel = new TextPanel();
-				
 		JPanel codingPanel = new JPanel(new BorderLayout());
-		JSplitPane codingSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, 
-				documentPanel, textPanel);
-		menuBar = new MenuBar();
-		codingPanel.add(menuBar, BorderLayout.NORTH);
+		JSplitPane codingSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, documentPanel, textPanel);
+		
+		// bottom of the DNA window: status bar
 		statusBar = new StatusBar();
 		codingPanel.add(statusBar, BorderLayout.SOUTH);
-
-		sidebarPanel = new SidebarPanel();
 		
-		JScrollPane sidebarScroll = new JScrollPane(sidebarPanel);
-		sidebarScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		sidebarScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-
+		// top of the DNA window: menu bar (left) and toggle buttons (right)
+		JPanel menuAndButtonsPanel = new JPanel(new BorderLayout());
+		menuBar = new MenuBar();
+		menuAndButtonsPanel.add(menuBar, BorderLayout.WEST);
+		
+		// right collapsible panel
+		rightPanel = new RightPanel();
+		JXCollapsiblePane rightCollapsiblePane = new JXCollapsiblePane();
+		rightCollapsiblePane.setName("Statements");
+		rightCollapsiblePane.setCollapsed(false);
+		rightCollapsiblePane.setDirection(JXCollapsiblePane.Direction.RIGHT);
+		codingPanel.add(rightCollapsiblePane, BorderLayout.EAST);
+		rightCollapsiblePane.add(rightPanel);
+		
 		JPanel statementSplitPane = new JPanel(new BorderLayout());
 		statementSplitPane.add(codingSplitPane, BorderLayout.CENTER);
 		codingPanel.add(statementSplitPane, BorderLayout.CENTER);
-		codingPanel.add(sidebarScroll, BorderLayout.EAST);
+		
+		leftPanel = new LeftPanel();
+		JXCollapsiblePane leftCollapsiblePane = new JXCollapsiblePane();
+		leftCollapsiblePane.setName("Coder settings");
+		leftCollapsiblePane.setCollapsed(false);
+		leftCollapsiblePane.setDirection(JXCollapsiblePane.Direction.LEFT);
+		codingPanel.add(leftCollapsiblePane, BorderLayout.WEST);
+		leftCollapsiblePane.add(leftPanel);
+		
+		JPanel toggleButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		JToggleButton leftToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/application_side_list.png")));
+		leftToggleButton.setPreferredSize(new Dimension(36, 18));
+		leftToggleButton.setSelected(true);
+		leftToggleButton.setName("leftToggle");
+		leftToggleButton.addActionListener(leftCollapsiblePane.getActionMap().get(JXCollapsiblePane.TOGGLE_ACTION));
 
+		toggleButtons.add(leftToggleButton);
+		JToggleButton bottomToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/application_split.png")));
+		bottomToggleButton.setPreferredSize(new Dimension(36, 18));
+		bottomToggleButton.setSelected(false);
+		bottomToggleButton.addActionListener(textPanel.collapsiblePane.getActionMap().get(JXCollapsiblePane.TOGGLE_ACTION));
+		
+		toggleButtons.add(bottomToggleButton);
+		JToggleButton rightToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/application_side_list_right.png")));
+		rightToggleButton.setPreferredSize(new Dimension(36, 18));
+		rightToggleButton.setSelected(true);
+		rightToggleButton.addActionListener(rightCollapsiblePane.getActionMap().get(JXCollapsiblePane.TOGGLE_ACTION));
+		
+		toggleButtons.add(rightToggleButton);
+		menuAndButtonsPanel.add(toggleButtons, BorderLayout.EAST);
+		
+		codingPanel.add(menuAndButtonsPanel, BorderLayout.NORTH);
 		c.add(codingPanel);
 
 		this.pack();
@@ -171,7 +212,7 @@ public class Gui extends JFrame {
 							Dna.dna.gui.menuBar.changeDocumentButton.setEnabled(false);
 							Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
 							//SK
-							Dna.dna.gui.sidebarPanel.editDocPanel.createEditDocumentPanel();
+							Dna.dna.gui.rightPanel.editDocPanel.createEditDocumentPanel();
 							
 						} else {							
 							int id = documentPanel.documentContainer.get(selectedRow).getId() ;
@@ -188,11 +229,11 @@ public class Gui extends JFrame {
 							//Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
 							
 							//SK
-							Dna.dna.gui.sidebarPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
+							Dna.dna.gui.rightPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
 						}
-						if (Dna.dna.gui.sidebarPanel.statementFilter.
+						if (Dna.dna.gui.rightPanel.statementFilter.
 								showCurrent.isSelected()) {
-							Dna.dna.gui.sidebarPanel.statementFilter.
+							Dna.dna.gui.rightPanel.statementFilter.
 							documentFilter();
 						}
 

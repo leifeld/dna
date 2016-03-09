@@ -112,10 +112,7 @@ public class OpenDatabaseDialog extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				if (fileField.getText().endsWith(".dna")) {
 					Dna.dna.sql = new SqlConnection("sqlite", fileField.getText(), "", "");
-					Dna.data = Dna.dna.sql.getAllData();
-					Dna.dna.gui.statusBar.resetLabel();
-					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
-					dispose();
+					loadDataAndDispose();
 				}
 			}
 		});
@@ -188,11 +185,7 @@ public class OpenDatabaseDialog extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				Dna.dna.sql = new SqlConnection("mysql", addressField.getText(), userField.getText(), 
 						String.copyValueOf(passwordField.getPassword()));
-				Dna.data = Dna.dna.sql.getAllData();
-				Dna.dna.gui.statusBar.resetLabel();
-				Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
-				//Dna.dna.gui.sidebarPanel.statementTable.updateUI();
-				dispose();
+				loadDataAndDispose();
 			}
 		});
 		JButton mysqlClearButton = new JButton("Clear", new ImageIcon(getClass().getResource("/icons/arrow_rotate_clockwise.png")));
@@ -263,4 +256,15 @@ public class OpenDatabaseDialog extends JDialog {
 		this.setResizable(false);
 	}
 
+	public void loadDataAndDispose() {
+		Dna.data = Dna.dna.sql.getAllData();
+		Dna.dna.gui.statusBar.resetLabel();
+		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
+		Dna.dna.gui.documentPanel.documentTable.updateUI();
+		Dna.dna.gui.rightPanel.statementTable.updateUI();
+		//Dna.dna.gui.leftPanel.updateToggleButtons();
+		//Dna.dna.gui.leftPanel.updateUI();
+		//Dna.dna.gui.leftPanel.revalidate();
+		dispose();
+	}
 }

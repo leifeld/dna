@@ -2089,9 +2089,9 @@ public class NetworkExporter extends JDialog {
 	ArrayList<Statement> filter() {
 		// step 1: get all statement IDs corresponding to date range and statement type
 		ArrayList<Integer> al = new ArrayList<Integer>();
-		for (int i = 0; i < Dna.dna.gui.sidebarPanel.ssc.size(); i++) {
+		for (int i = 0; i < Dna.dna.gui.rightPanel.ssc.size(); i++) {
 			boolean select = true;
-			Statement s = Dna.dna.gui.sidebarPanel.ssc.get(i);
+			Statement s = Dna.dna.gui.rightPanel.ssc.get(i);
 			if (s.getDate().before(startDate)) {
 				select = false;
 			} else if (s.getDate().after(stopDate)) {
@@ -2154,8 +2154,8 @@ public class NetworkExporter extends JDialog {
 		
 		// step 4: create reduced array list with SidebarStatements for the computations
 		ArrayList<Statement> l = new ArrayList<Statement>();
-		for (int i = 0; i < Dna.dna.gui.sidebarPanel.ssc.size(); i++) {
-			Statement s = Dna.dna.gui.sidebarPanel.ssc.get(i);
+		for (int i = 0; i < Dna.dna.gui.rightPanel.ssc.size(); i++) {
+			Statement s = Dna.dna.gui.rightPanel.ssc.get(i);
 			if (al.contains(s.getId())) {
 				l.add(s);
 			}

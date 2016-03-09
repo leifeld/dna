@@ -50,7 +50,7 @@ import dna.dataStructures.Statement;
 import dna.dataStructures.StatementLink;
 import dna.dataStructures.StatementType;
 
-class SidebarPanel extends JScrollPane {
+class RightPanel extends JScrollPane {
 
 	private static final long serialVersionUID = 1L;
 
@@ -79,17 +79,16 @@ class SidebarPanel extends JScrollPane {
     DocStats docStats; //SK
     EditDocumentPanel editDocPanel;
 
-	public SidebarPanel() {
+	public RightPanel() {
 		this.setPreferredSize(new Dimension(260, 440));
-		//this.setVerticalScrollBarPolicy(JScrollPane.
-		//		VERTICAL_SCROLLBAR_ALWAYS);
+		//this.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		JXTaskPaneContainer tpc = new JXTaskPaneContainer();
 		this.setColumnHeaderView(tpc);
+		tpc.setBackground(this.getBackground());
 
 		statementPanel();
 		JXTaskPane statementTaskPane = new JXTaskPane();
-		ImageIcon statementIcon = new ImageIcon(getClass().getResource(
-				"/icons/comments.png"));
+		ImageIcon statementIcon = new ImageIcon(getClass().getResource("/icons/comments.png"));
 		statementTaskPane.setName("Statements");
 		statementTaskPane.setTitle("Statements");
 		statementTaskPane.setIcon(statementIcon);
@@ -98,8 +97,7 @@ class SidebarPanel extends JScrollPane {
 
 		SearchPanel sp = new SearchPanel();
 		JXTaskPane searchTaskPane = new JXTaskPane();
-		ImageIcon findIcon = new ImageIcon(getClass().getResource(
-				"/icons/find.png"));
+		ImageIcon findIcon = new ImageIcon(getClass().getResource("/icons/find.png"));
 		searchTaskPane.setName("Search within document");
 		searchTaskPane.setTitle("Search within document");
 		searchTaskPane.setIcon(findIcon);
@@ -113,8 +111,7 @@ class SidebarPanel extends JScrollPane {
 		 */
 		cp = new ContradictionPanel();
 		JXTaskPane selfContradictionTaskPane = new JXTaskPane();
-		ImageIcon groupIcon = new ImageIcon(getClass().getResource(
-				"/icons/group.png"));
+		ImageIcon groupIcon = new ImageIcon(getClass().getResource("/icons/group.png"));
 		selfContradictionTaskPane.setName("Find self-contradictions");
 		selfContradictionTaskPane.setTitle("Find self-contradictions");
 		selfContradictionTaskPane.setIcon(groupIcon);
@@ -150,8 +147,8 @@ class SidebarPanel extends JScrollPane {
         ImageIcon ViewLinksIcon = new ImageIcon(getClass().getResource("/icons/table_link.png"));
         ImageIcon createLinksIcon = new ImageIcon(getClass().getResource("/icons/link_add.png"));         
         linksTabPane = new JTabbedPane();
-        linksTabPane.addTab("View", ViewLinksIcon,viewLinkedStatementPanel);
-        linksTabPane.addTab("Create", createLinksIcon,connectedStatementPanel);
+        linksTabPane.addTab("View", ViewLinksIcon, viewLinkedStatementPanel);
+        linksTabPane.addTab("Create", createLinksIcon, connectedStatementPanel);
         saveRecordTaskPane.add(linksTabPane);
         saveRecordTaskPane.setCollapsed(true);
         ((Container) tpc).add(saveRecordTaskPane);
@@ -637,7 +634,7 @@ class SidebarPanel extends JScrollPane {
 			String label = Dna.data.getRegexes().get(i).getLabel();
 			Color color	= Dna.data.getRegexes().get(i).getColor();
 			Regex reg = new Regex(label, color);
-			Dna.dna.gui.sidebarPanel.rm.listModel.addElement(reg);
+			Dna.dna.gui.rightPanel.rm.listModel.addElement(reg);
 		}
 		//Dna.dna.gui.textPanel.paintStatements();
 	}
