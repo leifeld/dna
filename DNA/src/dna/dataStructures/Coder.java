@@ -23,19 +23,8 @@ public class Coder implements Comparable<Coder> {
 		this.permissions = permissions;
 	}
 	
-	public Coder(
-			String name, 
-			Color color, 
-			String password,
-			HashMap<String, Boolean> permissions
-			) {
-		this.name = name;
-		this.color = color;
-		this.password = password;
-		this.permissions = permissions;
-	}
-	
-	public Coder() {
+	public Coder(int id) {
+		this.id = id;
 		this.name = "";
 		this.color = Color.YELLOW;
 		this.password = "";

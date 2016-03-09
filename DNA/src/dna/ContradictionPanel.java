@@ -80,7 +80,7 @@ public class ContradictionPanel extends JPanel {
 						} else {
 							Dna.dna.gui.rightPanel.statementTable.changeSelection(viewId, 0, false, false);
 							//int docId = Dna.dna.db.getStatement(nodeInt).getDocument();
-							int docId = Dna.data.getStatement(nodeInt).getDocument();
+							int docId = Dna.data.getStatement(nodeInt).getDocumentId();
 							int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
 							Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
 							setSelectionInterval(docRow, docRow);

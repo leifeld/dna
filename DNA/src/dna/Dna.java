@@ -38,17 +38,28 @@ public class Dna {
 		gui.documentPanel.documentContainer.addDocument(document);
 		sql.upsertDocument(document);
 	}
+
+	public void removeStatement(int statementId) {
+		gui.rightPanel.ssc.removeStatement(statementId);
+		sql.removeStatement(statementId);
+	}
 	
 	public void addStatement(Statement statement) {
-		data.getStatements().add(statement);
-		sql.upsertStatement(statement, data.getStatementTypeById(statement.getStatementTypeId()).getVariables());
+		gui.rightPanel.ssc.addStatement(statement);
+		
+		sql.addStatement(statement, data.getStatementTypeById(statement.getStatementTypeId()).getVariables());
+	}
+	
+	public void updateVariable(int statementId, int statementTypeId, Object content, String variable) {
+		String dataType = data.getStatementTypeById(statementTypeId).getVariableDataType(variable);
+		sql.upsertVariableContent(content, statementId, variable, statementTypeId, dataType);
+		Dna.data.getStatement(statementId).getValues().put(variable, content);
 	}
 	
 	public void addCoder(Coder coder) {
 		data.getCoders().add(coder);
 		sql.upsertCoder(coder);
 	}
-	
 	
 	/*
 	public String getVersion() {

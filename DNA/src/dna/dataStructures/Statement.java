@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 
 public class Statement implements Comparable<Statement> {
-	int id, document, start, stop;
+	int id, documentId, start, stop;
 	Date date;
 	Color color;
 	int statementTypeId;
@@ -15,7 +15,7 @@ public class Statement implements Comparable<Statement> {
 	public Statement(int statementId, int documentId, int start, 
 			int stop, Date date, Color color, int statementTypeId, int coder) {
 		this.id = statementId;
-		this.document = documentId;
+		this.documentId = documentId;
 		this.start = start;
 		this.stop = stop;
 		this.date = date;
@@ -30,7 +30,7 @@ public class Statement implements Comparable<Statement> {
 			int stop, Date date, Color color, int statementTypeId, int coder, 
 			LinkedHashMap<String, Object> values) {
 		this.id = statementId;
-		this.document = documentId;
+		this.documentId = documentId;
 		this.start = start;
 		this.stop = stop;
 		this.date = date;
@@ -89,12 +89,12 @@ public class Statement implements Comparable<Statement> {
 		this.id = id;
 	}
 
-	public int getDocument() {
-		return document;
+	public int getDocumentId() {
+		return documentId;
 	}
 
-	public void setDocument(int document) {
-		this.document = document;
+	public void setDocumentId(int documentId) {
+		this.documentId = documentId;
 	}
 	
 	public int getStart() {
@@ -129,21 +129,21 @@ public class Statement implements Comparable<Statement> {
 		} else if (this.getDate().compareTo(s.getDate()) > 0) {
 			return 1;
 		} else {
-			if (((Integer) this.document).compareTo(s.getDocument()) < 0) {
+			if (((Integer) this.documentId).compareTo(s.getDocumentId()) < 0) {
 				return -1;
-			} else if (((Integer) this.document).compareTo(s.getDocument()) 
+			} else if (((Integer) this.documentId).compareTo(s.getDocumentId()) 
 					> 0) {
 				return 1;
-			} else if (((Integer) this.document).compareTo(s.getDocument()) 
+			} else if (((Integer) this.documentId).compareTo(s.getDocumentId()) 
 					== 0 && this.start < s.getStart()) {
 				return -1;
-			} else if (((Integer) this.document).compareTo(s.getDocument()) 
+			} else if (((Integer) this.documentId).compareTo(s.getDocumentId()) 
 					== 0 && this.start > s.getStart()) {
 				return 1;
-			} else if (((Integer) this.document).compareTo(s.getDocument()) 
+			} else if (((Integer) this.documentId).compareTo(s.getDocumentId()) 
 					== 0 && this.start == s.getStart() && this.stop < s.getStop()) {
 				return -1;
-			} else if (((Integer) this.document).compareTo(s.getDocument()) 
+			} else if (((Integer) this.documentId).compareTo(s.getDocumentId()) 
 					== 0 && this.start == s.getStart() && this.stop > s.getStop()) {
 				return 1;
 			} else {

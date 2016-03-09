@@ -46,31 +46,35 @@ public class StatementTableModel implements TableModel {
 
 	@Override
 	public int getRowCount() { //same as size(); but needs to be implemented
-		return Dna.dna.data.getStatements().size();
+		return Dna.data.getStatements().size();
 	}
 	
 	public int size() { //same as getRowCount()
-		return Dna.dna.data.getStatements().size();
+		return Dna.data.getStatements().size();
 	}
 	
 	public void remove(int index) {
-		Dna.dna.data.getStatements().remove(index);
+		Dna.data.getStatements().remove(index);
+		TableModelEvent e = new TableModelEvent(this);
+		for( int j = 0, n = listeners.size(); j < n; j++ ){
+			((TableModelListener)listeners.get( j )).tableChanged( e );
+		}
 	}
 
 	// Ele
 	public ArrayList<Statement> getAll () {
-		return Dna.dna.data.getStatements();
+		return Dna.data.getStatements();
 	}
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		Statement s = Dna.dna.data.getStatements().get(rowIndex);
+		Statement s = Dna.data.getStatements().get(rowIndex);
 		if (columnIndex == 0) {
 			return s.getId();
 		} else if (columnIndex == 1) {
 			int start = s.getStart();
 			int stop = s.getStop();
-			int documentId = s.getDocument();
+			int documentId = s.getDocumentId();
 			//SK -------- start ------
 			//String text = Dna.dna.db.getDocument(documentId).getText().substring(start, stop);
 			String text = Dna.dna.gui.documentPanel.documentContainer.getDocumentByID(documentId).getText().substring(start, stop);
@@ -101,13 +105,13 @@ public class StatementTableModel implements TableModel {
 	}
 	
 	public Statement get(int index) {
-		return Dna.dna.data.getStatements().get(index);
+		return Dna.data.getStatements().get(index);
 	}
 	
 	public Statement getByStatementId(int id) throws NullPointerException {
-		for (int i = 0; i < Dna.dna.data.getStatements().size(); i++) {
-			if (Dna.dna.data.getStatements().get(i).getId() == id) {
-				return Dna.dna.data.getStatements().get(i);
+		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+			if (Dna.data.getStatements().get(i).getId() == id) {
+				return Dna.data.getStatements().get(i);
 			}
 		}
 		throw new NullPointerException();
@@ -115,8 +119,8 @@ public class StatementTableModel implements TableModel {
 	
 	public int getIndexByStatementId(int id) {
 		int index = -1;
-		for (int i = 0; i < Dna.dna.data.getStatements().size(); i++) {
-			if (Dna.dna.data.getStatements().get(i).getId() == id) {
+		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+			if (Dna.data.getStatements().get(i).getId() == id) {
 				index = i;
 			}
 		}
@@ -124,7 +128,7 @@ public class StatementTableModel implements TableModel {
 	}
 	
 	public void clear() {
-		Dna.dna.data.getStatements().clear();
+		Dna.data.getStatements().clear();
 		TableModelEvent e = new TableModelEvent(this);
 		for( int i = 0, n = listeners.size(); i < n; i++ ){
 			((TableModelListener)listeners.get( i )).tableChanged( e );
@@ -132,8 +136,8 @@ public class StatementTableModel implements TableModel {
 	}
 	
 	public boolean containsStatementId(int id) {
-		for (int i = 0; i < Dna.dna.data.getStatements().size(); i++) {
-			if (Dna.dna.data.getStatements().get(i).getId() == id) {
+		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+			if (Dna.data.getStatements().get(i).getId() == id) {
 				return true;
 			}
 		}
@@ -141,19 +145,16 @@ public class StatementTableModel implements TableModel {
 	}
 	
 	public void sort() {
-		Collections.sort(Dna.dna.data.getStatements());
+		Collections.sort(Dna.data.getStatements());
 	}
 	
-	public void addStatement(Statement s, boolean sort) {
+	public void addStatement(Statement s) {
 		if (containsStatementId(s.getId()) == true) {
-			System.err.println("A statement with ID " + s.getId() + 
-					" already exists. It will not be added.");
+			System.err.println("A statement with ID " + s.getId() + " already exists. It will not be added.");
 		} else {
 			int statementId = s.getId();
-			Dna.dna.data.getStatements().add(s);
-			if (sort == true) {
-				sort();
-			}
+			Dna.data.getStatements().add(s);
+			sort();
 			int index = getIndexByStatementId(statementId);
 			
 			//notify all listeners
@@ -166,10 +167,10 @@ public class StatementTableModel implements TableModel {
 		}
 	}
 	
-	public void removeSidebarStatement(int statementId) {
-		for (int i = Dna.dna.data.getStatements().size() - 1; i > -1 ; i--) {
-			if (Dna.dna.data.getStatements().get(i).getId() == statementId) {
-				Dna.dna.data.getStatements().remove(i);
+	public void removeStatement(int statementId) {
+		for (int i = Dna.data.getStatements().size() - 1; i > -1 ; i--) {
+			if (Dna.data.getStatements().get(i).getId() == statementId) {
+				Dna.data.getStatements().remove(i);
 			}
 		}
 		
@@ -186,8 +187,8 @@ public class StatementTableModel implements TableModel {
 		boolean accept = false;
 		while (accept == false) {
 			boolean used = false;
-			for (int i = 0; i < Dna.dna.data.getStatements().size(); i++) {
-				if (unused == Dna.dna.data.getStatements().get(i).getId()) {
+			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+				if (unused == Dna.data.getStatements().get(i).getId()) {
 					used = true;
 				}
 			}

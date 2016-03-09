@@ -13,6 +13,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,6 +26,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Style;
@@ -108,8 +113,7 @@ class TextPanel extends JPanel {
 
 		textScrollPane = new JScrollPane(textWindow);
 		textScrollPane.setPreferredSize(new Dimension(700, 500));
-		textScrollPane.setVerticalScrollBarPolicy(
-				JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		//textWindow.setEnabled(false);
 		
 		collapsiblePane = new JXCollapsiblePane(); 
@@ -163,7 +167,7 @@ class TextPanel extends JPanel {
 			//ArrayList<Statement> statements = Dna.dna.db.getStatementsPerDocumentId(documentId);
 			ArrayList<Statement> statements = new ArrayList<Statement>();
 			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
-				if (Dna.data.getStatements().get(i).getDocument() == documentId) {
+				if (Dna.data.getStatements().get(i).getDocumentId() == documentId) {
 					statements.add(Dna.data.getStatements().get(i));
 				}
 			}
@@ -207,6 +211,9 @@ class TextPanel extends JPanel {
 	public void popupMenu(Component comp, int x, int y) {
 		popmen = new JPopupMenu();
 		statementTypes = Dna.data.getStatementTypes();
+		int documentIndex = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
+		int documentId = Dna.data.getDocuments().get(documentIndex).getId();
+		Date documentDate = Dna.data.getDocuments().get(documentIndex).getDate();
 		
 		for (int i = 0; i < statementTypes.size(); i++) {
 			String type = statementTypes.get(i).getLabel();
@@ -226,13 +233,32 @@ class TextPanel extends JPanel {
 					int selectionStart = textWindow.getSelectionStart();
 					int selectionEnd = textWindow.getSelectionEnd();
 					String selectedText = textWindow.getText().substring(selectionStart, selectionEnd);
-					CreateStatementFrame createPanel = new CreateStatementFrame(
-							statementType, col, documentId, selectionStart, selectionEnd,selectedText);
-					createPanel.setVisible(true);
+					//CreateStatementFrame createPanel = new CreateStatementFrame(
+					//		statementType, col, documentId, selectionStart, selectionEnd,selectedText);
+					//createPanel.setVisible(true);
 
-					textWindow.setSelectionStart(selectionStart);
-					textWindow.setSelectionEnd(selectionEnd);
+					//int statementId = dna.db.addStatement(type, doc, start, stop);
+					int statementId = Dna.data.generateNewStatementId();
+					int coderId = Dna.data.getActiveCoder();
+					Color color = statementType.getColor();
+					LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
+					Iterator<String> keyIterator = statementType.getVariables().keySet().iterator();
+			        while (keyIterator.hasNext()){
+			    		String key = keyIterator.next();
+			    		String value = statementType.getVariables().get(key);
+			    		if (value.equals("integer") || value.equals("boolean")) {
+			    			map.put(key, 0);
+			    		} else {
+			    			map.put(key, "");
+			    		}
+			    	}
+					Statement statement = new Statement(statementId, documentId, selectionStart, selectionEnd, 
+							documentDate, color, statementType.getId(), coderId, map);
+					Dna.dna.addStatement(statement);
 
+					//textWindow.setSelectionStart(selectionStart);
+					//textWindow.setSelectionEnd(selectionEnd);
+					
 					//Dna.dna.addStatement(type, documentId, selectionStart, selectionEnd);
 					paintStatements();
 					//textWindow.setCaretPosition(selectionEnd);
@@ -253,7 +279,9 @@ class TextPanel extends JPanel {
 				//Statement s = Dna.dna.db.getStatementAtLocation(documentId, pos);
 				Point p = me.getPoint();
 				for (int i = 0; i < Dna.data.getStatements().size(); i++) {
-					if (Dna.data.getStatements().get(i).getDocument() == documentId && Dna.data.getStatements().get(i).getStart() < pos && Dna.data.getStatements().get(i).getStop() > pos) {
+					if (Dna.data.getStatements().get(i).getDocumentId() == documentId 
+							&& Dna.data.getStatements().get(i).getStart() < pos 
+							&& Dna.data.getStatements().get(i).getStop() > pos) {
 						int statementId = Dna.data.getStatements().get(i).getId();
 						int startIndex = Dna.data.getStatements().get(i).getStart();
 						int stopIndex = Dna.data.getStatements().get(i).getStop();

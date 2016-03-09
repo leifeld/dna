@@ -133,7 +133,7 @@ public class SqlConnection {
 			result2.close();
 			preStatement2.close();
 		} catch (SQLException e) {
-			return new Coder();
+			e.printStackTrace();
 		}
 		return coder;
 	}
@@ -348,19 +348,58 @@ public class SqlConnection {
 		return map;
 	}
 	
-	/**
-	 * @param statement       A Statement object.
-	 * @param variables       A LinkedHashMap as contained in a statement type.
-	 */
-	public void upsertStatement(Statement statement, LinkedHashMap<String, String> variables) {
-		executeStatement("REPLACE INTO STATEMENTS(ID, StatementTypeId, DocumentId, Start, Stop, Coder) "
-				+ "VALUES (" + statement.getId() + ", " + statement.getStatementTypeId() + ", " + statement.getDocument() 
-				+ ", " + statement.getStart() + ", " + statement.getStop() + ", " + statement.getCoder() + ")");
+	public int getVariableId(int statementTypeId, String variableName) {
+		int varid = -1;
+		try {
+			varid = (int) executeQueryForObject("SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
+					+ statementTypeId + " AND Variable = '" + variableName + "'");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return varid;
+	}
+	
+	public void upsertVariableContent(Object value, int statementId, String variableName, int statementTypeId, String dataType) {
+		int variableId = getVariableId(statementTypeId, variableName);
+		String table = "";
+		String ap = "";
+		if (dataType.equals("integer")) {
+			table = "DATAINTEGER";
+		} else if (dataType.equals("boolean")) {
+			table = "DATABOOLEAN";
+		} else if (dataType.equals("short text")) {
+			table = "DATASHORTTEXT";
+			ap = "'";
+		} else if (dataType.equals("long text")) {
+			table = "DATALONGTEXT";
+			ap = "'";
+		}
 		
-		String[] varNames = (String[]) statement.getValues().keySet().toArray();
-		for (int i = 0; i < varNames.length; i++) {
-			String type = variables.get(varNames[i]);
-			Object object = statement.getValues().get(varNames[i]);
+		String myStatement = "REPLACE INTO " + table + "(ID, StatementId, VariableId, StatementTypeId, Value) "
+				+ "VALUES ((SELECT ID FROM " + table + " WHERE VariableId = " + variableId + 
+				" AND StatementTypeId = " + statementTypeId + "), " + statementId + ", " + variableId + ", " 
+				+ statementTypeId + ", " + ap + value + ap + ")";
+		executeStatement(myStatement);
+	}
+	
+	public void removeStatement(int statementId) {
+		executeStatement("DELETE FROM DATABOOLEAN WHERE StatementId = " + statementId);
+		executeStatement("DELETE FROM DATAINTEGER WHERE StatementId = " + statementId);
+		executeStatement("DELETE FROM DATASHORTTEXT WHERE StatementId = " + statementId);
+		executeStatement("DELETE FROM DATALONGTEXT WHERE StatementId = " + statementId);
+		executeStatement("DELETE FROM STATEMENTS WHERE ID = " + statementId);
+	}
+	
+	public void addStatement(Statement statement, LinkedHashMap<String, String> variables) {
+		executeStatement("INSERT INTO STATEMENTS(ID, StatementTypeId, DocumentId, Start, Stop, Coder) "
+				+ "VALUES (" + statement.getId() + ", " + statement.getStatementTypeId() + ", " + statement.getDocumentId() 
+				+ ", " + statement.getStart() + ", " + statement.getStop() + ", " + statement.getCoder() + ")");
+
+		Iterator<String> keyIterator = statement.getValues().keySet().iterator();
+        while (keyIterator.hasNext()){
+    		String key = keyIterator.next();
+    		Object object = statement.getValues().get(key);
+    		String type = variables.get(key);
 			String tableExtension = null;
 			String ap = "";
 			if (type.equals("boolean")) {
@@ -377,17 +416,61 @@ public class SqlConnection {
 			
 			int varid = -1;
 			try {
-				varid = (int) executeQueryForObject("SELECT ID FROM VARIABLES WHERE Variable = " + varNames[i] 
-						+ " AND StatementTypeId = " + statement.getStatementTypeId());
+				varid = (int) executeQueryForObject("SELECT ID FROM VARIABLES WHERE Variable = '" + key 
+						+ "' AND StatementTypeId = " + statement.getStatementTypeId());
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 			
-			executeStatement("REPLACE INTO DATA" + tableExtension + " (ID, StatementId, VariableId, StatementTypeId, Value) "
+			String myStatement = "INSERT INTO DATA" + tableExtension + " (StatementId, VariableId, StatementTypeId, Value) "
+					+ "VALUES (" + statement.getId() + ", " + varid + ", " + statement.getStatementTypeId() + ", "  
+					+ ap + object + ap + ")";
+			executeStatement(myStatement);
+    	}
+	}
+	
+	/**
+	 * @param statement       A Statement object.
+	 * @param variables       A LinkedHashMap as contained in a statement type.
+	 */
+	public void upsertStatement(Statement statement, LinkedHashMap<String, String> variables) {
+		executeStatement("REPLACE INTO STATEMENTS(ID, StatementTypeId, DocumentId, Start, Stop, Coder) "
+				+ "VALUES (" + statement.getId() + ", " + statement.getStatementTypeId() + ", " + statement.getDocumentId() 
+				+ ", " + statement.getStart() + ", " + statement.getStop() + ", " + statement.getCoder() + ")");
+		
+		Iterator<String> keyIterator = statement.getValues().keySet().iterator();
+        while (keyIterator.hasNext()){
+    		String key = keyIterator.next();
+    		Object object = statement.getValues().get(key);
+    		String type = variables.get(key);
+			String tableExtension = null;
+			String ap = "";
+			if (type.equals("boolean")) {
+				tableExtension = "BOOLEAN";
+			} else if (type.equals("integer")) {
+    			tableExtension = "INTEGER";
+    		} else if (type.equals("short text")) {
+    			tableExtension = "SHORTTEXT";
+    			ap = "'";
+    		} else if (type.equals("long text")) {
+    			tableExtension = "LONGTEXT";
+    			ap = "'";
+    		}
+			
+			int varid = -1;
+			try {
+				varid = (int) executeQueryForObject("SELECT ID FROM VARIABLES WHERE Variable = '" + key 
+						+ "' AND StatementTypeId = " + statement.getStatementTypeId());
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+			String myStatement = "REPLACE INTO DATA" + tableExtension + " (ID, StatementId, VariableId, StatementTypeId, Value) "
 					+ "VALUES ((SELECT ID FROM DATA" + tableExtension + " WHERE StatementId = " + statement.getId() 
-					+ " AND VariableId = " + varid + "), " + statement.getStatementTypeId() + ", " 
-					+ ap + ", " + object + ap + ")");
-		}
+					+ " AND VariableId = " + varid + "), " + statement.getId() + ", " + varid + ", " + 
+					statement.getStatementTypeId() + ", "  + ap + object + ap + ")";
+			executeStatement(myStatement);
+    	}
 	}
 	
 	/**
@@ -435,12 +518,13 @@ public class SqlConnection {
 			    		} else if (value.equals("long text")) {
 			    			tableExtension = "LONGTEXT";
 			    		}
-			    		String myQuery2 = "SELECT * FROM DATA" + tableExtension + " WHERE StatementId = " + id;
+			    		int varid = getVariableId(statementTypeId, key);
+			    		String myQuery2 = "SELECT * FROM DATA" + tableExtension + " WHERE StatementId = " + id + " AND VariableId = " + varid;
 						PreparedStatement preStatement2 = (PreparedStatement) connection.prepareStatement(myQuery2);
 						ResultSet result2 = preStatement2.executeQuery();
 						if (result2.next()) {
 							do {
-								values.put(key, result2.getObject(key));
+								values.put(key, result2.getObject("Value"));
 							} while (result2.next());
 						}
 						result2.close();
@@ -696,13 +780,13 @@ public class SqlConnection {
 			executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTS("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, " 
 					+ "StatementTypeId INTEGER, "
-					+ "Document INTEGER, " 
+					+ "DocumentId INTEGER, " 
 					+ "Start INTEGER, " 
 					+ "Stop INTEGER, "
 					+ "Coder INTEGER, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
-					+ "FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID))");
+					+ "FOREIGN KEY(DocumentId) REFERENCES DOCUMENTS(ID))");
 			
 	        executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
 	        		+ "ID INTEGER PRIMARY KEY NOT NULL, " 
@@ -830,13 +914,13 @@ public class SqlConnection {
 			executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTS("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL, "
 					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
-					+ "Document MEDIUMINT UNSIGNED NOT NULL, "
+					+ "DocumentId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "Start BIGINT UNSIGNED, " 
 					+ "Stop BIGINT UNSIGNED, "
 					+ "Coder SMALLINT UNSIGNED NOT NULL, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), " 
-					+ "FOREIGN KEY(Document) REFERENCES DOCUMENTS(ID), "
+					+ "FOREIGN KEY(DocumentId) REFERENCES DOCUMENTS(ID), "
 					+ "PRIMARY KEY(ID))");
 
 	        executeStatement("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("

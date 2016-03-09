@@ -258,7 +258,7 @@ class RightPanel extends JScrollPane {
 					int statementId = ssc.get(row).getId();
 					if (statementId != -1) {
 						//int docId = Dna.dna.db.getStatement(statementId).getDocument();
-						int docId = Dna.data.getStatement(statementId).getDocument();
+						int docId = Dna.data.getStatement(statementId).getDocumentId();
 						int docRow = Dna.dna.gui.documentPanel.documentContainer.
 								getRowIndexById(docId);
 						Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
@@ -366,7 +366,7 @@ class RightPanel extends JScrollPane {
                     int statementId = ssc.get(row).getId();
                     if (statementId != -1) {
                         //int docId = Dna.dna.db.getStatement(statementId).getDocument();
-                    	int docId = Dna.data.getStatement(statementId).getDocument();
+                    	int docId = Dna.data.getStatement(statementId).getDocumentId();
                         int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
                         Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
                                 setSelectionInterval(docRow, docRow);
@@ -420,7 +420,7 @@ class RightPanel extends JScrollPane {
                 int statement1Id = (int) linkedTable.getModel().getValueAt(selectedrow, selectedCol);
                 if (statement1Id != -1) {
                     //int docId = Dna.dna.db.getStatement(statement1Id).getDocument();
-                	int docId = Dna.data.getStatement(statement1Id).getDocument();
+                	int docId = Dna.data.getStatement(statement1Id).getDocumentId();
                     int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
                     Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
                             setSelectionInterval(docRow, docRow);
@@ -802,7 +802,7 @@ class RightPanel extends JScrollPane {
 						StatementTableModel, ? extends Integer> entry) {
 					StatementTableModel stcont = entry.getModel();
 					Statement st = stcont.get(entry.getIdentifier());
-					if (st.getDocument() == documentId) {
+					if (st.getDocumentId() == documentId) {
 						return true;
 					}
 					return false;

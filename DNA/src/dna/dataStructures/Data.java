@@ -13,6 +13,7 @@ public class Data {
 	public ArrayList<CoderRelation> coderRelations;
 	public HashMap<String, String> settings;
 	public ArrayList<StatementLink> statementLinks;
+	int activeCoder = 1;
 	
 	/*
 	public Data(ArrayList<Statement> statements, ArrayList<Document> documents, ArrayList<Coder> coders,
@@ -39,8 +40,23 @@ public class Data {
 		this.coderRelations = new ArrayList<CoderRelation>();
 		this.settings = new HashMap<String, String>();
 		this.statementLinks = new ArrayList<StatementLink>();
+		this.activeCoder = 1;
 	}
 	
+	/**
+	 * @return the activeCoder
+	 */
+	public int getActiveCoder() {
+		return activeCoder;
+	}
+
+	/**
+	 * @param activeCoder the activeCoder to set
+	 */
+	public void setActiveCoder(int activeCoder) {
+		this.activeCoder = activeCoder;
+	}
+
 	/**
 	 * @return the statementLinks
 	 */
@@ -101,6 +117,30 @@ public class Data {
 			}
 		}
 		return(statementLinks.size() + 1);
+	}
+
+	public int generateNewCoderId() {
+		if (coders.size() == 0) {
+			return(1);
+		}
+		ArrayList<Integer> ids = new ArrayList<Integer>();
+		for (int i = 0; i < coders.size(); i++) {
+			ids.add(coders.get(i).getId());
+		}
+		Collections.sort(ids);
+		if (ids.size() == 1) {
+			if (ids.get(0) == 1) {
+				return(2);
+			} else {
+				return(1);
+			}
+		}
+		for (int i = 1; i < ids.size(); i++) {
+			if (ids.get(i) - 1 > ids.get(i - 1)) {
+				return(ids.get(i - 1) + 1);
+			}
+		}
+		return(coders.size() + 1);
 	}
 	
 	/**

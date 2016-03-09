@@ -462,7 +462,7 @@ public class NewDatabaseDialog extends JDialog {
 			
 			addButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					EditCoderWindow ecw = new EditCoderWindow(new Coder());
+					EditCoderWindow ecw = new EditCoderWindow(new Coder(Dna.data.generateNewCoderId()));
 					Coder coder = ecw.getCoder();
 					ecw.dispose();
 					if (!coder.getName().equals("")) {
@@ -639,7 +639,6 @@ public class NewDatabaseDialog extends JDialog {
 				nameField = new JTextField(coder.getName());
 				nameField.setColumns(40);
 				namePanel.add(nameField);
-				namePanel.requestFocus();
 				this.add(namePanel, BorderLayout.NORTH);
 				
 				JPanel permPanel = new JPanel(new GridLayout(4, 3));
@@ -746,6 +745,7 @@ public class NewDatabaseDialog extends JDialog {
 				this.setLocationRelativeTo(null);
 				this.setVisible(true);
 				this.setResizable(false);
+				namePanel.requestFocus();
 			}
 			
 			public void cancelAction() {
@@ -1287,6 +1287,7 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.dna.sql.createDataStructure();
 					Dna.data.getSettings().put("filename", dbFile);
 					Dna.dna.sql.upsertSetting("filename", dbFile);
+					Dna.data.setActiveCoder(Dna.data.getCoders().get(0).getId());
 					for (int i = 0; i < Dna.data.getCoders().size(); i++) {
 						Dna.dna.sql.upsertCoder(Dna.data.getCoders().get(i));
 					}

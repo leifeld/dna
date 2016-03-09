@@ -45,7 +45,7 @@ public class Popup extends JDialog {
 	private static final long serialVersionUID = 1L;
 	Container c;
 	Point point, los;
-	int statementTypeId;
+	static int statementTypeId;
 	String type;
 	Color color;
 	static int statementId;
@@ -62,8 +62,8 @@ public class Popup extends JDialog {
 		Statement statement = Dna.data.getStatement(statementId);
 		this.color = statement.getColor();
 		//this.type = Dna.dna.db.getStatementType(statementId);
-		this.statementTypeId = statement.getStatementTypeId();
-		this.type = Dna.data.getStatementTypeById(this.statementTypeId).getLabel();
+		statementTypeId = statement.getStatementTypeId();
+		this.type = Dna.data.getStatementTypeById(statementTypeId).getLabel();
 		
 		//this.setModal(true);
 		this.setUndecorated(true);
@@ -128,17 +128,18 @@ public class Popup extends JDialog {
 		duplicate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Statement newStatement = Dna.data.getStatement(statementId);
-				int newId = Dna.data.generateNewStatementId();
+				//int newId = Dna.data.generateNewStatementId();
+				int newId = Dna.dna.gui.rightPanel.ssc.getFirstUnusedId();
 				newStatement.setId(newId);
-				newStatement.setCoder(Integer.parseInt(Dna.data.getSettings().get("coder")));
-				Dna.data.getStatements().add(newStatement);
+				newStatement.setCoder(Dna.data.getActiveCoder());
+				Dna.dna.addStatement(newStatement);
 				//int newStatementId = Dna.dna.db.duplicateStatement(statementId, s.getDocument(), s.getStart(), s.getStop());
 				//Color color = Dna.dna.db.getStatementTypeColor(type);
 				//Date date = Dna.dna.db.getDocument(s.getDocument()).getDate();
 				//int coder = Dna.dna.db.getStatement(statementId).getCoder();
 				//Statement st = new Statement(newStatementId, s.getDocument(), s.getStart(), s.getStop(), date, color, type, coder);
 				//Dna.dna.gui.sidebarPanel.ssc.addStatement(st, true);
-				Dna.dna.gui.textPanel.selectStatement(newId, newStatement.getDocument());
+				Dna.dna.gui.textPanel.selectStatement(newId, newStatement.getDocumentId());
 			}
 		});
 		
@@ -153,8 +154,7 @@ public class Popup extends JDialog {
 						"Are you sure you want to remove this statement?", 
 						"Remove?", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
-					Dna.data.removeStatement(statementId);
-					//Dna.dna.removeStatement(statementId);
+					Dna.dna.removeStatement(statementId);
 					Dna.dna.gui.textPanel.paintStatements();
 					
 
@@ -208,7 +208,8 @@ public class Popup extends JDialog {
 						entries.add(mykey);
 					}
 				}
-				JComboBox<String> box = new JComboBox<String>((String[]) entries.toArray());
+				String[] entriesArray = entries.toArray(new String[0]);
+				JComboBox<String> box = new JComboBox<String>(entriesArray);
 				box.setEditable(true);
     			box.setPreferredSize(new Dimension(220, 20));
     			box.setSelectedItem((String)entry);
@@ -222,7 +223,6 @@ public class Popup extends JDialog {
 				gbc.gridx--;
 				gbc.gridy++;
 			} else if (value.equals("long text")) {
-				//String entry = Dna.dna.db.getVariableStringEntry(statementId, key);
 				String entry = (String) Dna.data.getStatement(statementId).getValues().get(key);
     			JTextArea box = new JTextArea();
     			box.setEditable(true);
@@ -242,7 +242,6 @@ public class Popup extends JDialog {
 				gbc.gridx--;
 				gbc.gridy++;
 			} else if (value.equals("boolean")) {
-				//int entry = Dna.dna.db.getVariableIntEntry(statementId, key);
 				int entry = (Integer) Dna.data.getStatement(statementId).getValues().get(key);
 				boolean val;
 				if (entry == 0) {
@@ -307,24 +306,21 @@ public class Popup extends JDialog {
 	@SuppressWarnings("unchecked")
 	public static void saveContents(JPanel gridBagPanel, int statementID, String type) {
 		Component[] com = gridBagPanel.getComponents();
-		//HashMap<String, String> vars = Dna.dna.db.getVariables(type);
 		HashMap<String, String> vars = Dna.data.getStatementType(type).getVariables();
 		
 		for (int i = 0; i < com.length; i++) {
 			Object content = null;
 			String contentType = null;
 			String dataType = null;
-			if (com[i].getClass().getName().equals("javax.swing.JComboBox")) {
+			if (com[i].getClass().getName().equals("javax.swing.JComboBox")) {  // short text
 				contentType = ((JLabel)com[i-1]).getText();
 				dataType = vars.get(contentType);
 				content = ((JComboBox<String>) com[i]).getEditor().getItem();
 				if (content == null) {
 					content = "";
 				}
-				//Dna.dna.db.changeStatement(statementId, contentType, (String) content, dataType);
-				Dna.data.getStatement(statementId).getValues().put(contentType, content);
-			} else if (com[i].getClass().getName().equals(
-					"javax.swing.JCheckBox")) {
+				Dna.dna.updateVariable(statementId, statementTypeId, content, contentType);
+			} else if (com[i].getClass().getName().equals("javax.swing.JCheckBox")) {  // boolean
 				contentType = ((JLabel)com[i-1]).getText();
 				dataType = vars.get(contentType);
 				content = ((JCheckBox)com[i]).isSelected();
@@ -334,10 +330,8 @@ public class Popup extends JDialog {
 				} else {
 					intBool = 1;
 				}
-				//Dna.dna.db.changeStatement(statementId, contentType, intBool, dataType);
-				Dna.data.getStatement(statementId).getValues().put(contentType, content);
-			} else if (com[i].getClass().getName().equals(
-					"javax.swing.JScrollPane")) {
+				Dna.dna.updateVariable(statementId, statementTypeId, intBool, contentType);
+			} else if (com[i].getClass().getName().equals("javax.swing.JScrollPane")) {  // long text
 				contentType = ((JLabel)com[i-1]).getText();
 				dataType = vars.get(contentType);
 				JScrollPane jsp = ((JScrollPane)com[i]);
@@ -346,17 +340,14 @@ public class Popup extends JDialog {
 				if (content == null) {
 					content = "";
 				}
-				//Dna.dna.db.changeStatement(statementId, contentType, (String) content, dataType);
-				Dna.data.getStatement(statementId).getValues().put(contentType, content);
-			} else if (com[i].getClass().getName().equals(
-					"javax.swing.JPanel")) {
+				Dna.dna.updateVariable(statementId, statementTypeId, content, contentType);
+			} else if (com[i].getClass().getName().equals("javax.swing.JPanel")) {  // integer
 				contentType = ((JLabel)com[i-1]).getText();
 				dataType = vars.get(contentType);
 				JPanel jp = (JPanel) com[i];
 				JSpinner jsp = (JSpinner) jp.getComponent(0);
 				content = jsp.getValue();
-				//Dna.dna.db.changeStatement(statementId, contentType, (Integer) content, dataType);
-				Dna.data.getStatement(statementId).getValues().put(contentType, content);
+				Dna.dna.updateVariable(statementId, statementTypeId, content, contentType);
 			}
 		}
 		
