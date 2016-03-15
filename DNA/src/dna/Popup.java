@@ -145,8 +145,7 @@ public class Popup extends JDialog {
 		
 		ImageIcon removeIcon = new ImageIcon(getClass().getResource("/icons/trash.png"));
 		JButton remove = new JButton(removeIcon);
-		remove.setToolTipText(
-				"completely remove the whole statement (but keep the text)");
+		remove.setToolTipText("completely remove the whole statement (but keep the text)");
 		remove.setPreferredSize(new Dimension(16, 16));
 		remove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {

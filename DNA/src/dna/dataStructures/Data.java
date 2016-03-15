@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
+import dna.Dna;
+
 public class Data {
 	public ArrayList<Statement> statements;
 	public ArrayList<Document> documents;
@@ -142,6 +144,30 @@ public class Data {
 		}
 		return(coders.size() + 1);
 	}
+
+	public int generateNewCoderRelationId() {
+		if (coderRelations.size() == 0) {
+			return(1);
+		}
+		ArrayList<Integer> ids = new ArrayList<Integer>();
+		for (int i = 0; i < coderRelations.size(); i++) {
+			ids.add(coderRelations.get(i).getId());
+		}
+		Collections.sort(ids);
+		if (ids.size() == 1) {
+			if (ids.get(0) == 1) {
+				return(2);
+			} else {
+				return(1);
+			}
+		}
+		for (int i = 1; i < ids.size(); i++) {
+			if (ids.get(i) - 1 > ids.get(i - 1)) {
+				return(ids.get(i - 1) + 1);
+			}
+		}
+		return(coderRelations.size() + 1);
+	}
 	
 	/**
 	 * @return the regexes
@@ -165,8 +191,51 @@ public class Data {
 		documents.add(document);
 	}
 
+	public void replaceCoder(Coder coder) {
+		boolean found = false;
+		for (int i = 0; i < coders.size(); i++) {
+			if (coders.get(i).getId() == coder.getId()) {
+				coders.set(i, coder);
+				found = true;
+				break;
+			}
+		}
+		if (found == false) {
+			throw new NullPointerException("Coder with ID = " + coder.getId() + " not found.");
+		}
+	}
+	
 	public void addCoder(Coder coder) {
 		coders.add(coder);
+		int currentId = coder.getId();
+		for (int i = 0; i < coders.size(); i++) {
+			int crId = generateNewCoderRelationId();
+			int remoteId = coders.get(i).getId();
+			CoderRelation cr = new CoderRelation(crId, currentId, remoteId, true, true, true, true);
+			coderRelations.add(cr);
+			crId = generateNewCoderRelationId();
+			CoderRelation cr2 = new CoderRelation(crId, remoteId, currentId, true, true, true, true);
+			coderRelations.add(cr2);
+		}
+	}
+	
+	public void removeCoder(int id) {
+		int index = -1;
+		for (int i = 0; i < coders.size(); i++) {
+			if (coders.get(i).getId() == id) {
+				index = i;
+				break;
+			}
+		}
+		if (index == -1) {
+			throw new NullPointerException("Coder not found.");
+		}
+		for (int i = coderRelations.size() - 1; i < -1; i--) {
+			if (coderRelations.get(i).getCoder() == id || coderRelations.get(i).getOtherCoder() == id) {
+				coderRelations.remove(i);
+			}
+		}
+		coders.remove(index);
 	}
 
 	public void addStatementType(StatementType statementType) {
@@ -207,6 +276,15 @@ public class Data {
 			}
 		}
 		return(s);
+	}
+
+	public Coder getCoderById(int id) {
+		for (int i = 0; i < coders.size(); i++) {
+			if (coders.get(i).getId() == id) {
+				return coders.get(i);
+			}
+		}
+		return(null);
 	}
 
 	public StatementType getStatementTypeById(int id) {

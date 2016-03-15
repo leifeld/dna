@@ -59,6 +59,7 @@ import javax.swing.tree.TreeSelectionModel;
 import org.jdesktop.swingx.JXTextField;
 
 import dna.dataStructures.Coder;
+import dna.dataStructures.CoderRelation;
 import dna.dataStructures.Data;
 import dna.dataStructures.StatementType;
 
@@ -1287,13 +1288,18 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.dna.sql.createDataStructure();
 					Dna.data.getSettings().put("filename", dbFile);
 					Dna.dna.sql.upsertSetting("filename", dbFile);
+					
 					Dna.data.setActiveCoder(Dna.data.getCoders().get(0).getId());
 					for (int i = 0; i < Dna.data.getCoders().size(); i++) {
-						Dna.dna.sql.upsertCoder(Dna.data.getCoders().get(i));
+						Dna.dna.sql.addCoder(Dna.data.getCoders().get(i));
 					}
 					for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
 						Dna.dna.sql.upsertStatementType(Dna.data.getStatementTypes().get(i));
 					}
+					
+					Dna.data.setActiveCoder(Dna.data.getCoders().get(0).getId());
+					Dna.dna.gui.leftPanel.coderPanel.coderBox.setSelectedIndex(0);
+					Dna.dna.gui.leftPanel.setComboEnabled(true);
 					
 					Dna.dna.gui.statusBar.resetLabel();
 					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);

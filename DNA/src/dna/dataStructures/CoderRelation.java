@@ -1,15 +1,17 @@
 package dna.dataStructures;
 
 public class CoderRelation {
-	int id, coder, otherCoder, permission;
-	String type;
+	int id, coder, otherCoder;
+	boolean viewStatements, editStatements, viewDocuments, editDocuments;
 
-	public CoderRelation(int id, int coder, int otherCoder, int permission, String type) {
+	public CoderRelation(int id, int coder, int otherCoder, boolean viewStatements, boolean editStatements, boolean viewDocuments, boolean editDocuments) {
 		this.id = id;
 		this.coder = coder;
 		this.otherCoder = otherCoder;
-		this.permission = permission;
-		this.type = type;
+		this.viewStatements = viewStatements;
+		this.editStatements = editStatements;
+		this.viewDocuments = viewDocuments;
+		this.editDocuments = editDocuments;
 	}
 
 	/**
@@ -55,30 +57,59 @@ public class CoderRelation {
 	}
 
 	/**
-	 * @return the permission
+	 * @return the viewStatements
 	 */
-	public int getPermission() {
-		return permission;
+	public boolean isViewStatements() {
+		return viewStatements;
 	}
 
 	/**
-	 * @param permission the permission to set
+	 * @param viewStatements the viewStatements to set
 	 */
-	public void setPermission(int permission) {
-		this.permission = permission;
+	public void setViewStatements(boolean viewStatements) {
+		this.viewStatements = viewStatements;
 	}
 
 	/**
-	 * @return the type
+	 * @return the editStatements
 	 */
-	public String getType() {
-		return type;
+	public boolean isEditStatements() {
+		return editStatements;
 	}
 
 	/**
-	 * @param type the type to set
+	 * @param editStatements the editStatements to set
 	 */
-	public void setType(String type) {
-		this.type = type;
+	public void setEditStatements(boolean editStatements) {
+		this.editStatements = editStatements;
 	}
+
+	/**
+	 * @return the viewDocuments
+	 */
+	public boolean isViewDocuments() {
+		return viewDocuments;
+	}
+
+	/**
+	 * @param viewDocuments the viewDocuments to set
+	 */
+	public void setViewDocuments(boolean viewDocuments) {
+		this.viewDocuments = viewDocuments;
+	}
+
+	/**
+	 * @return the editDocuments
+	 */
+	public boolean isEditDocuments() {
+		return editDocuments;
+	}
+
+	/**
+	 * @param editDocuments the editDocuments to set
+	 */
+	public void setEditDocuments(boolean editDocuments) {
+		this.editDocuments = editDocuments;
+	}
+
 }

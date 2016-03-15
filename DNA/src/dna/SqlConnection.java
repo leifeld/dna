@@ -171,11 +171,11 @@ public class SqlConnection {
     			intValue = 0;
     		}
     		executeStatement("REPLACE INTO CODERPERMISSIONS(ID, Coder, Type, Permission) "
-    					+ "VALUES ((SELECT ID from CODERPERMISSIONS WHERE Coder = " + id + "), " + id + ", '" 
+    					+ "VALUES ((SELECT ID from CODERPERMISSIONS WHERE Coder = " + id + " AND Type = '" + key + "'), " + id + ", '" 
     					+ key + "', " + intValue + ")");
     	}
 	}
-
+	
 	/**
 	 * @param document   Document to add to/update in the DOCUMENTS table
 	 */
@@ -312,9 +312,34 @@ public class SqlConnection {
 			ResultSet result = preStatement.executeQuery();
 			if (result.next()) {
 				do {
+					int viewStatementsInt = result.getInt("viewStatements");
+					int editStatementsInt = result.getInt("editStatements");
+					int viewDocumentsInt = result.getInt("viewDocuments");
+					int editDocumentsInt = result.getInt("editDocuments");
+					boolean viewStatements, editStatements, viewDocuments, editDocuments;
+					if (viewStatementsInt == 1) {
+						viewStatements = true;
+					} else {
+						viewStatements = false;
+					}
+					if (editStatementsInt == 1) {
+						editStatements = true;
+					} else {
+						editStatements = false;
+					}
+					if (viewDocumentsInt == 1) {
+						viewDocuments = true;
+					} else {
+						viewDocuments = false;
+					}
+					if (editDocumentsInt == 1) {
+						editDocuments = true;
+					} else {
+						editDocuments = false;
+					}
 					CoderRelation coderRelation = new CoderRelation(
 							result.getInt("ID"), result.getInt("Coder"), result.getInt("OtherCoder"), 
-							result.getInt("Permission"), result.getString("Type"));
+							viewStatements, editStatements, viewDocuments, editDocuments);
 					al.add(coderRelation);
 				} while (result.next());
 			}
@@ -380,6 +405,52 @@ public class SqlConnection {
 				" AND StatementTypeId = " + statementTypeId + "), " + statementId + ", " + variableId + ", " 
 				+ statementTypeId + ", " + ap + value + ap + ")";
 		executeStatement(myStatement);
+	}
+	
+	public void addCoder(Coder coder) {
+		// insert the coder
+		String coderStatement = "INSERT INTO CODERS(ID, Name, Red, Green, Blue, Password) VALUES(" + coder.getId() + ", '" 
+				+ coder.getName() + "', " + coder.getColor().getRed() + ", " + coder.getColor().getGreen() + ", " 
+				+ coder.getColor().getBlue() + ", '')";
+		executeStatement(coderStatement);
+		
+		// insert the permissions of the coder
+		Iterator<String> keyIterator = coder.getPermissions().keySet().iterator();
+        while (keyIterator.hasNext()){
+    		String key = keyIterator.next();
+    		boolean perm = coder.getPermissions().get(key);
+    		int permInt = 0;
+    		if (perm == true) {
+    			permInt = 1;
+    		}
+    		String lastid = "LAST_INSERT_ID()";
+    		if (dbtype.equals("sqlite")) {
+    			lastid = "LAST_INSERT_ROWID()";
+    		}
+    		String statement = "INSERT INTO CODERPERMISSIONS(Coder, Type, Permission) VALUES("
+    				+ coder.getId() + ", '" + key + "', " + permInt + ")";
+    		executeStatement(statement);
+        }
+        
+        // insert coder relations
+        ArrayList<Object> coderIds = executeQueryForList("SELECT ID FROM CODERS");
+        for (int i = 0; i < coderIds.size(); i++) {
+        	int id = (int) coderIds.get(i);
+        	if (id != coder.getId()) {
+        		String statement = "INSERT INTO CODERRELATIONS(Coder, OtherCoder, ViewStatements, EditStatements, "
+        				+ "ViewDocuments, EditDocuments) VALUES(" + id + ", " + coder.getId() + ", 1, 1, 1, 1)";
+        		executeStatement(statement);
+        		statement = "INSERT INTO CODERRELATIONS(Coder, OtherCoder, ViewStatements, EditStatements, "
+        				+ "ViewDocuments, EditDocuments) VALUES(" + coder.getId() + ", " + id + ", 1, 1, 1, 1)";
+        		executeStatement(statement);
+        	}
+        }
+	}
+	
+	public void removeCoder(int id) {
+		executeStatement("DELETE FROM CODERRELATIONS WHERE OtherCoder = " + id + " OR Coder = " + id);
+		executeStatement("DELETE FROM CODERPERMISSIONS WHERE Coder = " + id);
+		executeStatement("DELETE FROM CODERS WHERE ID = " + id);
 	}
 	
 	public void removeStatement(int statementId) {
@@ -766,14 +837,16 @@ public class SqlConnection {
 					+ "Type TEXT, "
 					+ "Permission INTEGER, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
-					+ "UNIQUE (Coder, Permission))");
+					+ "UNIQUE (Coder, Type))");
 			
 			executeStatement("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, " 
 					+ "Coder INTEGER, "
 					+ "OtherCoder INTEGER, "
-					+ "Type TEXT, "
-					+ "Permission INTEGER, "
+					+ "viewStatements INTEGER, "
+					+ "editStatements INTEGER, "
+					+ "viewDocuments INTEGER, "
+					+ "editDocuments INTEGER, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
 					+ "FOREIGN KEY(OtherCoder) REFERENCES CODERS(ID))");
 			
@@ -898,15 +971,17 @@ public class SqlConnection {
 					+ "Type VARCHAR(50), "
 					+ "Permission SMALLINT UNSIGNED, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
-					+ "UNIQUE KEY CoderPerm (Coder, Permission), "
+					+ "UNIQUE KEY CoderPerm (Coder, Type), "
 					+ "PRIMARY KEY(ID))");
 			
 			executeStatement("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, " 
 					+ "Coder SMALLINT UNSIGNED NOT NULL, "
 					+ "OtherCoder SMALLINT UNSIGNED NOT NULL, "
-					+ "Type VARCHAR(50), "
-					+ "Permission SMALLINT UNSIGNED, "
+					+ "viewStatements SMALLINT UNSIGNED, "
+					+ "editStatements SMALLINT UNSIGNED, "
+					+ "viewDocuments SMALLINT UNSIGNED, "
+					+ "editDocuments SMALLINT UNSIGNED, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
 					+ "FOREIGN KEY(OtherCoder) REFERENCES CODERS(ID), "
 					+ "PRIMARY KEY(ID))");
@@ -1036,7 +1111,6 @@ public class SqlConnection {
 	 * @return                An array list with resulting objects.
 	 * @throws SQLException 
 	 */
-	/*
 	public ArrayList<Object> executeQueryForList(String myQuery){
 		ArrayList<Object> al = new ArrayList<Object>();
 		try {
@@ -1055,5 +1129,4 @@ public class SqlConnection {
 		}
 		return al;
 	}
-	*/
 }

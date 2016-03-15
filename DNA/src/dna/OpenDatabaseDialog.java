@@ -262,9 +262,9 @@ public class OpenDatabaseDialog extends JDialog {
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.documentPanel.documentTable.updateUI();
 		Dna.dna.gui.rightPanel.statementTable.updateUI();
-		//Dna.dna.gui.leftPanel.updateToggleButtons();
-		//Dna.dna.gui.leftPanel.updateUI();
-		//Dna.dna.gui.leftPanel.revalidate();
+		Dna.data.setActiveCoder(Dna.data.getCoders().get(0).getId());
+		Dna.dna.gui.leftPanel.coderPanel.coderBox.setSelectedIndex(0);
+		Dna.dna.gui.leftPanel.setComboEnabled(true);
 		dispose();
 	}
 }

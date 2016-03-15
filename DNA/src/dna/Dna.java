@@ -57,8 +57,8 @@ public class Dna {
 	}
 	
 	public void addCoder(Coder coder) {
-		data.getCoders().add(coder);
-		sql.upsertCoder(coder);
+		data.addCoder(coder);
+		sql.addCoder(coder);
 	}
 	
 	/*
