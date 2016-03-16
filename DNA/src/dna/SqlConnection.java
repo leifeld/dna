@@ -88,7 +88,39 @@ public class SqlConnection {
 		}
 		return value;
 	}
+	
+	public void updateCoderRelationViewStatements(int id, boolean viewStatements) {
+		String booleanString = "0";
+		if (viewStatements == true) {
+			booleanString = "1";
+		}
+		executeStatement("UPDATE CODERRELATIONS SET ViewStatements = " + booleanString + " WHERE ID = " + id);
+	}
 
+	public void updateCoderRelationEditStatements(int id, boolean editStatements) {
+		String booleanString = "0";
+		if (editStatements == true) {
+			booleanString = "1";
+		}
+		executeStatement("UPDATE CODERRELATIONS SET EditStatements = " + booleanString + " WHERE ID = " + id);
+	}
+
+	public void updateCoderRelationViewDocuments(int id, boolean viewDocuments) {
+		String booleanString = "0";
+		if (viewDocuments == true) {
+			booleanString = "1";
+		}
+		executeStatement("UPDATE CODERRELATIONS SET ViewDocuments = " + booleanString + " WHERE ID = " + id);
+	}
+
+	public void updateCoderRelationEditDocuments(int id, boolean editDocuments) {
+		String booleanString = "0";
+		if (editDocuments == true) {
+			booleanString = "1";
+		}
+		executeStatement("UPDATE CODERRELATIONS SET EditDocuments = " + booleanString + " WHERE ID = " + id);
+	}
+	
 	/**
 	 * @param key    Property to extract
 	 * @return       Value corresponding to the property
@@ -174,6 +206,27 @@ public class SqlConnection {
     					+ "VALUES ((SELECT ID from CODERPERMISSIONS WHERE Coder = " + id + " AND Type = '" + key + "'), " + id + ", '" 
     					+ key + "', " + intValue + ")");
     	}
+        
+        if (permissions.get("viewOthersStatements") == false) {
+        	executeStatement("UPDATE CODERRELATIONS SET ViewStatements = 0 WHERE Coder = " + id);
+        } else {
+        	executeStatement("UPDATE CODERRELATIONS SET ViewStatements = 1 WHERE Coder = " + id);
+        }
+        if (permissions.get("editOthersStatements") == false) {
+        	executeStatement("UPDATE CODERRELATIONS SET EditStatements = 0 WHERE Coder = " + id);
+        } else {
+        	executeStatement("UPDATE CODERRELATIONS SET EditStatements = 1 WHERE Coder = " + id);
+        }
+        if (permissions.get("viewOthersDocuments") == false) {
+        	executeStatement("UPDATE CODERRELATIONS SET ViewDocuments = 0 WHERE Coder = " + id);
+        } else {
+        	executeStatement("UPDATE CODERRELATIONS SET ViewDocuments = 1 WHERE Coder = " + id);
+        }
+        if (permissions.get("editOthersDocuments") == false) {
+        	executeStatement("UPDATE CODERRELATIONS SET EditDocuments = 0 WHERE Coder = " + id);
+        } else {
+        	executeStatement("UPDATE CODERRELATIONS SET EditDocuments = 1 WHERE Coder = " + id);
+        }
 	}
 	
 	/**
@@ -1064,10 +1117,6 @@ public class SqlConnection {
 		}
 	}
     
-    // TODO: fill in contents;
-    // TODO: bind DNA data structures to databases; update whenever document is left/closed;
-    // TODO: add coder management etc. to side panel or other parts of GUI.
-	
 	/**
 	 * Execute a statement on the database.
 	 * 

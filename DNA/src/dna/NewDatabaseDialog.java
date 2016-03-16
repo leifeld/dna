@@ -491,6 +491,11 @@ public class NewDatabaseDialog extends JDialog {
 					coderList.updateUI();
 				}
 			});
+
+			Coder admin = new Coder(Dna.data.generateNewCoderId());
+			admin.setName("Admin");
+			admin.setColor(Color.YELLOW);
+			model.addElement(admin);
 			
 			coderList.updateUI();
 		}
@@ -1298,7 +1303,7 @@ public class NewDatabaseDialog extends JDialog {
 					}
 					
 					Dna.data.setActiveCoder(Dna.data.getCoders().get(0).getId());
-					Dna.dna.gui.leftPanel.coderPanel.coderBox.setSelectedIndex(0);
+					Dna.dna.gui.leftPanel.coderBox.setSelectedIndex(0);
 					Dna.dna.gui.leftPanel.setComboEnabled(true);
 					
 					Dna.dna.gui.statusBar.resetLabel();

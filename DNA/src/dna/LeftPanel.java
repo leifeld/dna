@@ -15,10 +15,12 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Vector;
 
+import javax.swing.AbstractCellEditor;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ComboBoxModel;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -35,15 +37,22 @@ import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
 import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.RowFilter.Entry;
+import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListDataListener;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXTaskPane;
@@ -52,9 +61,11 @@ import org.jdesktop.swingx.JXTaskPaneContainer;
 import dna.NewDatabaseDialog.CoderPanel.EditCoderWindow;
 import dna.dataStructures.Coder;
 import dna.dataStructures.CoderRelation;
+import dna.dataStructures.Statement;
 
 public class LeftPanel extends JPanel {
 	CoderPanel coderPanel;
+	public JComboBox<Coder> coderBox;
 	
 	public LeftPanel() {
 		JXTaskPaneContainer tpc = new JXTaskPaneContainer();
@@ -80,21 +91,25 @@ public class LeftPanel extends JPanel {
 	
 	@SuppressWarnings("serial")
 	public class CoderPanel extends JPanel {
-		public JComboBox<Coder> coderBox;
 		CoderComboBoxModel model;
 		CoderComboRenderer renderer;
 		JButton editButton;
 		CoderRelationTableModel coderTableModel;
 		JTable coderRelationTable;
+		TableRowSorter<CoderRelationTableModel> sorter;
+		RowFilter<CoderRelationTableModel, Integer> filter;
 		
 		public CoderPanel() {
 			this.setLayout(new BorderLayout());
+			
+			// coder edit button
 			JPanel coderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 			editButton = new JButton(new ImageIcon(getClass().getResource("/icons/pencil.png")));
 			editButton.setPreferredSize(new Dimension(30, 30));
 			editButton.setEnabled(false);
 			coderPanel.add(editButton);
 			
+			// coder combo box
 			coderPanel.add(Box.createRigidArea(new Dimension(5,5)));
 			renderer = new CoderComboRenderer();
 			model = new CoderComboBoxModel();
@@ -105,10 +120,10 @@ public class LeftPanel extends JPanel {
 			coderPanel.add(coderBox);
 			this.add(coderPanel, BorderLayout.NORTH);
 			
+			// define coder relation table and its appearance
 			coderTableModel = new CoderRelationTableModel();
 			coderRelationTable = new JTable(coderTableModel);
 			CoderRelationCellRenderer cellRenderer = new CoderRelationCellRenderer();
-			
 			coderRelationTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			JScrollPane coderRelationScrollPane = new JScrollPane(coderRelationTable);
 			coderRelationScrollPane.setPreferredSize(new Dimension(200, 240));
@@ -118,25 +133,67 @@ public class LeftPanel extends JPanel {
 			coderRelationTable.getColumnModel().getColumn( 3 ).setPreferredWidth( 25 );
 			coderRelationTable.getColumnModel().getColumn( 4 ).setPreferredWidth( 25 );
 			coderRelationTable.setRowHeight(30);
-			JTableHeader th = new JTableHeader();  // TODO: write custom table header with icons
-			coderRelationTable.setTableHeader(th);
 			
+			// table header icons
+			TableCellRenderer headerRenderer = new JComponentTableCellRenderer();
+			Border headerBorder = UIManager.getBorder("TableHeader.cellBorder");
+			JLabel viewStatementLabel = new JLabel(new ImageIcon(getClass().getResource("/icons/comment.png")), JLabel.CENTER);
+			JLabel editStatementLabel = new JLabel(new ImageIcon(getClass().getResource("/icons/comment_edit.png")), JLabel.CENTER);
+			JLabel viewDocumentLabel = new JLabel(new ImageIcon(getClass().getResource("/icons/page_white.png")), JLabel.CENTER);
+			JLabel editDocumentLabel = new JLabel(new ImageIcon(getClass().getResource("/icons/page_white_edit.png")), JLabel.CENTER);
+			viewStatementLabel.setToolTipText("Can the current coder view statements of this coder?");
+			editStatementLabel.setToolTipText("Can the current coder edit statements of this coder?");
+			viewDocumentLabel.setToolTipText("Can the current coder view documents of this coder?");
+			editDocumentLabel.setToolTipText("Can the current coder edit documents of this coder?");
+			viewStatementLabel.setBorder(headerBorder);
+			editStatementLabel.setBorder(headerBorder);
+			viewDocumentLabel.setBorder(headerBorder);
+			editDocumentLabel.setBorder(headerBorder);
+			TableColumn column1 = coderRelationTable.getColumnModel().getColumn(1);
+			TableColumn column2 = coderRelationTable.getColumnModel().getColumn(2);
+			TableColumn column3 = coderRelationTable.getColumnModel().getColumn(3);
+			TableColumn column4 = coderRelationTable.getColumnModel().getColumn(4);
+			column1.setHeaderRenderer(headerRenderer);
+			column2.setHeaderRenderer(headerRenderer);
+			column3.setHeaderRenderer(headerRenderer);
+			column4.setHeaderRenderer(headerRenderer);
+			column1.setHeaderValue(viewStatementLabel);
+			column2.setHeaderValue(editStatementLabel);
+			column3.setHeaderValue(viewDocumentLabel);
+			column4.setHeaderValue(editDocumentLabel);
 			coderRelationTable.getTableHeader().setReorderingAllowed( false );
-			coderRelationTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
-
-			//coderRelationTable.setRowSorterEnabled(true);
-
 			
+			// make table unsortable and filter out loops
+			filter = new RowFilter<CoderRelationTableModel, Integer>() {
+				public boolean include(Entry<? extends CoderRelationTableModel, ? extends Integer> entry) {
+					CoderRelationTableModel crtm = entry.getModel();
+					CoderRelation cr = crtm.get(entry.getIdentifier());
+					if (cr.getOtherCoder() == ((Coder) model.getSelectedItem()).getId()) {
+						return false;
+					}
+					return true;
+				}
+			};
+			sorter = new TableRowSorter<CoderRelationTableModel>(coderTableModel) {
+				public void toggleSortOrder(int i) {
+					//leave blank; overwritten method makes the table unsortable
+				}
+			};
+			coderRelationTable.setRowSorter(sorter);
+			
+			// apply cell renderer to display CoderRelation entries properly
 			coderRelationTable.getColumnModel().getColumn(0).setCellRenderer(cellRenderer);
 			coderRelationTable.getColumnModel().getColumn(1).setCellRenderer(cellRenderer);
 			coderRelationTable.getColumnModel().getColumn(2).setCellRenderer(cellRenderer);
 			coderRelationTable.getColumnModel().getColumn(3).setCellRenderer(cellRenderer);
 			coderRelationTable.getColumnModel().getColumn(4).setCellRenderer(cellRenderer);
+			
 			this.add(coderRelationScrollPane, BorderLayout.CENTER);
 			
 			coderBox.addItemListener(new ItemListener() {
 				public void itemStateChanged(ItemEvent e) {
 					coderRelationTable.updateUI();
+					sorter.setRowFilter(filter);
 				}
 			});
 
@@ -158,8 +215,26 @@ public class LeftPanel extends JPanel {
 		coderPanel.setComboEnabled(enabled);
 	}
 
-	
+
+	/**
+	 * @author Philip Leifeld
+	 *
+	 * Class for rendering table headers
+	 */
+	class JComponentTableCellRenderer implements TableCellRenderer {
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+				boolean hasFocus, int row, int column) {
+			return (JComponent) value;
+		}
+	}
+
+	/**
+	 * @author Philip Leifeld
+	 *
+	 * Editor dialog window for changing coder permissions, name, or color.
+	 */
 	class EditCoderWindow extends JDialog{
+		private static final long serialVersionUID = -3405773030010173292L;
 		Coder coder;
 		JTextField nameField;
 		JButton addColorButton;
@@ -263,8 +338,16 @@ public class LeftPanel extends JPanel {
 					coder.getPermissions().put("editStatementTypes", permEditStatementTypes.isSelected());
 					coder.getPermissions().put("editRegex", permEditRegex.isSelected());
 					Dna.data.replaceCoder(coder);
+					for (int i = 0; i < Dna.data.getCoderRelations().size(); i++) {
+						if (Dna.data.getCoderRelations().get(i).getCoder() == coder.getId()) {
+							Dna.data.getCoderRelations().get(i).setViewStatements(permViewOtherStatements.isSelected());
+							Dna.data.getCoderRelations().get(i).setEditStatements(permEditOtherStatements.isSelected());
+							Dna.data.getCoderRelations().get(i).setViewDocuments(permViewOtherDocuments.isSelected());
+							Dna.data.getCoderRelations().get(i).setEditDocuments(permEditOtherDocuments.isSelected());
+						}
+					}
 					Dna.dna.sql.upsertCoder(coder);
-					LeftPanel.this.coderPanel.coderBox.updateUI();
+					LeftPanel.this.coderBox.updateUI();
 					LeftPanel.this.coderPanel.coderRelationTable.updateUI();
 					dispose();
 				}
@@ -350,9 +433,9 @@ public class LeftPanel extends JPanel {
 				int nameLength = name.length();
 				if (nameLength > 13) {
 					nameLength = 10;
+					name = name.substring(0,  nameLength);
 					name = name + "...";
 				}
-				name = name.substring(0,  nameLength);
 				panel.add(new JLabel(name));
 				return panel;
 			}
@@ -401,13 +484,13 @@ public class LeftPanel extends JPanel {
 		private static final long serialVersionUID = 1L;
 
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-			//Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 			JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			if (isSelected) {
-				UIDefaults defaults = javax.swing.UIManager.getDefaults();
-				Color bg = defaults.getColor("List.selectionBackground");
-				//panel.setBackground(bg);
-			}
+			//Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+			//if (isSelected) {
+			//	UIDefaults defaults = javax.swing.UIManager.getDefaults();
+			//	Color bg = defaults.getColor("List.selectionBackground");
+			//	panel.setBackground(bg);
+			//}
 			int modelRow = table.convertRowIndexToModel(row);
 			CoderRelation cr = ((CoderRelationTableModel)table.getModel()).get(modelRow);
 			int otherCoderId = cr.getOtherCoder();
@@ -422,22 +505,42 @@ public class LeftPanel extends JPanel {
 				boolean viewStatements = cr.isViewStatements();
 				JCheckBox box = new JCheckBox();
 				box.setSelected(viewStatements);
-				return box;
+				JPanel panelBox = new JPanel(new FlowLayout(FlowLayout.CENTER));
+				if (((Coder) coderBox.getSelectedItem()).getPermissions().get("viewOthersStatements") == false) {
+					box.setEnabled(false);
+				}
+				panelBox.add(box);
+				return panelBox;
 			} else if (column == 2) {
 				boolean editStatements = cr.isEditStatements();
 				JCheckBox box = new JCheckBox();
 				box.setSelected(editStatements);
-				return box;
+				JPanel panelBox = new JPanel(new FlowLayout(FlowLayout.CENTER));
+				if (((Coder) coderBox.getSelectedItem()).getPermissions().get("editOthersStatements") == false) {
+					box.setEnabled(false);
+				}
+				panelBox.add(box);
+				return panelBox;
 			} else if (column == 3) {
 				boolean viewDocuments = cr.isViewDocuments();
 				JCheckBox box = new JCheckBox();
 				box.setSelected(viewDocuments);
-				return box;
+				JPanel panelBox = new JPanel(new FlowLayout(FlowLayout.CENTER));
+				if (((Coder) coderBox.getSelectedItem()).getPermissions().get("viewOthersDocuments") == false) {
+					box.setEnabled(false);
+				}
+				panelBox.add(box);
+				return panelBox;
 			} else if (column == 4) {
 				boolean editDocuments = cr.isEditDocuments();
 				JCheckBox box = new JCheckBox();
 				box.setSelected(editDocuments);
-				return box;
+				JPanel panelBox = new JPanel(new FlowLayout(FlowLayout.CENTER));
+				if (((Coder) coderBox.getSelectedItem()).getPermissions().get("editOthersDocuments") == false) {
+					box.setEnabled(false);
+				}
+				panelBox.add(box);
+				return panelBox;
 			}
 			return panel;
 		}
@@ -476,19 +579,31 @@ public class LeftPanel extends JPanel {
 		public Class<?> getColumnClass(int columnIndex) {
 			switch( columnIndex ){
 			case 0: return String.class;
-			case 1: return boolean.class;
-			case 2: return boolean.class;
-			case 3: return boolean.class;
-			case 4: return boolean.class;
+			case 1: return Boolean.class;
+			case 2: return Boolean.class;
+			case 3: return Boolean.class;
+			case 4: return Boolean.class;
 			default: return null;
 			}
 		}
 
 		@Override
 		public boolean isCellEditable(int rowIndex, int columnIndex) {
-			return false;
+			if (columnIndex == 0) {
+				return false;
+			} else if (columnIndex == 1 && ((Coder) coderBox.getSelectedItem()).getPermissions().get("viewOthersStatements") == false) {
+				return false;
+			} else if (columnIndex == 2 && ((Coder) coderBox.getSelectedItem()).getPermissions().get("editOthersStatements") == false) {
+				return false;
+			} else if (columnIndex == 3 && ((Coder) coderBox.getSelectedItem()).getPermissions().get("viewOthersDocuments") == false) {
+				return false;
+			} else if (columnIndex == 4 && ((Coder) coderBox.getSelectedItem()).getPermissions().get("editOthersDocuments") == false) {
+				return false;
+			} else {
+				return true;
+			}
 		}
-
+		
 		@Override
 		public Object getValueAt(int rowIndex, int columnIndex) {
 			CoderRelation cr = Dna.data.getCoderRelations().get(rowIndex);
@@ -514,14 +629,17 @@ public class LeftPanel extends JPanel {
 				Dna.data.getCoderById(cr.getOtherCoder()).setName((String) aValue);
 			} else if (columnIndex == 1) {
 				Dna.data.getCoderRelations().get(rowIndex).setViewStatements((boolean) aValue);
+				Dna.dna.sql.updateCoderRelationViewStatements(cr.getId(), (boolean) aValue);
 			} else if (columnIndex == 2) {
 				Dna.data.getCoderRelations().get(rowIndex).setEditStatements((boolean) aValue);
+				Dna.dna.sql.updateCoderRelationEditStatements(cr.getId(), (boolean) aValue);
 			} else if (columnIndex == 3) {
 				Dna.data.getCoderRelations().get(rowIndex).setViewDocuments((boolean) aValue);
+				Dna.dna.sql.updateCoderRelationViewDocuments(cr.getId(), (boolean) aValue);
 			} else if (columnIndex == 4) {
 				Dna.data.getCoderRelations().get(rowIndex).setEditDocuments((boolean) aValue);
+				Dna.dna.sql.updateCoderRelationEditDocuments(cr.getId(), (boolean) aValue);
 			}
-
 		}
 
 		@Override

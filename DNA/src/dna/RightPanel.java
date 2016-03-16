@@ -791,15 +791,12 @@ class RightPanel extends JScrollPane {
 			int row = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
 			int docId = -1;
 			if (row > -1) {
-				docId = Dna.dna.gui.documentPanel.documentContainer.get(row).
-						getId();
+				docId = Dna.dna.gui.documentPanel.documentContainer.get(row).getId();
 			}
 			final int documentId = docId;
-
-			RowFilter<StatementTableModel, Integer> documentFilter = new 
-					RowFilter<StatementTableModel, Integer>() {
-				public boolean include(Entry<? extends 
-						StatementTableModel, ? extends Integer> entry) {
+			
+			RowFilter<StatementTableModel, Integer> documentFilter = new RowFilter<StatementTableModel, Integer>() {
+				public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
 					StatementTableModel stcont = entry.getModel();
 					Statement st = stcont.get(entry.getIdentifier());
 					if (st.getDocumentId() == documentId) {
