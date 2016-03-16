@@ -1302,6 +1302,9 @@ public class NewDatabaseDialog extends JDialog {
 						Dna.dna.sql.upsertStatementType(Dna.data.getStatementTypes().get(i));
 					}
 					
+					Dna.data.getSettings().put("statementColor", "statementType");
+					Dna.dna.sql.upsertSetting("statementColor", "statementType");
+					
 					Dna.data.setActiveCoder(Dna.data.getCoders().get(0).getId());
 					Dna.dna.gui.leftPanel.coderBox.setSelectedIndex(0);
 					Dna.dna.gui.leftPanel.setComboEnabled(true);

@@ -184,12 +184,10 @@ class RightPanel extends JScrollPane {
 		public Component getTableCellRendererComponent(JTable table,
 				Object value, boolean isSelected, boolean hasFocus, int row, 
 				int column) {
-			Component c = super.getTableCellRendererComponent(table, value, 
-					isSelected, hasFocus, row, column);
+			Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 			int modelRow = table.convertRowIndexToModel(row);
-			Color col = ((StatementTableModel)table.getModel()).
-					get(modelRow).getColor();
-			c.setBackground(col);
+			//Color col = ((StatementTableModel)table.getModel()).get(modelRow).getColor();
+			c.setBackground(Dna.data.getStatementColor(((StatementTableModel)table.getModel()).get(modelRow).getId()));
 			return c;
 		}
 	}
@@ -206,13 +204,18 @@ class RightPanel extends JScrollPane {
             int modelRow = table.convertRowIndexToModel(row);
             int modelColumn = table.convertColumnIndexToModel(column);
             int statementID = (int) table.getModel().getValueAt(modelRow, modelColumn);
-
+            
+            Color col = Dna.data.getStatementColor(statementID);
+            /*
             Color col = null;
             for (Statement ss : Dna.data.getStatements()) {
                 if (statementID == ss.getId())  {
-                    col = ss.getColor();
+                    //col = ss.getColor();
+                	col = Dna.data.getStatementColor(ss.getId());
                 }
             }
+            */
+            
             if (!isSelected) {
                 c.setBackground(col);
             }
