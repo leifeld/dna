@@ -174,7 +174,8 @@ class TextPanel extends JPanel {
 			for (int i = 0; i < statements.size(); i++) {
 				int start = statements.get(i).getStart();
 				int stop = statements.get(i).getStop();
-				Color color = statements.get(i).getColor();
+				//Color color = statements.get(i).getColor();
+				Color color = Dna.data.getStatementColor(statements.get(i).getId());
 				Style bgStyle = sc.addStyle("ConstantWidth", null);
 				StyleConstants.setBackground(bgStyle, color);
 				doc.setCharacterAttributes(start, stop - start, 

@@ -256,7 +256,7 @@ public class Gui extends JFrame {
 		JMenuItem closeFile, newDocumentButton, importHTMLButton,  
 		typeEditorButton,changeDocumentButton, removeDocumentButton, 
 		importDnaButton, importOldButton, networkButton, aboutButton, 
-		toggleBottomButton, recodeVariableButton;
+		colorStatementTypeButton, colorCoderButton, recodeVariableButton;
 		
 		public MenuBar() {
 			fileMenu = new JMenu("File");
@@ -491,11 +491,42 @@ public class Gui extends JFrame {
 			networkButton.setEnabled(false);
 			
 			//Settings menu: toggle search bar
+			/*
 			Icon bottomBarIcon = new ImageIcon(getClass().getResource("/icons/application_form_magnify.png"));
 			toggleBottomButton = new JMenuItem("Toggle Search Window (show/hide)", bottomBarIcon); 
 			settingsMenu.add(toggleBottomButton);
 			toggleBottomButton.setEnabled(false);
+			*/
 			
+			//Settings menu: statement color by statement type or coder?
+			Icon tickIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
+			colorStatementTypeButton = new JMenuItem("Color statements by type", tickIcon);
+			colorCoderButton = new JMenuItem("Color statements by coder");
+			colorStatementTypeButton.setToolTipText("use the color of the respective statement type to paint statements");
+			colorCoderButton.setToolTipText("use the color of the respective coder to paint statements");
+			settingsMenu.add(colorStatementTypeButton);
+			settingsMenu.add(colorCoderButton);
+			colorStatementTypeButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					Dna.data.getSettings().put("statementColor", "statementType");
+					Dna.dna.sql.upsertSetting("statementColor", "statementType");
+					colorStatementTypeButton.setIcon(tickIcon);
+					colorCoderButton.setIcon(null);
+					Dna.dna.gui.rightPanel.statementTable.updateUI();
+					Dna.dna.gui.textPanel.paintStatements();
+				}
+			});
+			colorCoderButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					Dna.data.getSettings().put("statementColor", "coder");
+					Dna.dna.sql.upsertSetting("statementColor", "coder");
+					colorStatementTypeButton.setIcon(null);
+					colorCoderButton.setIcon(tickIcon);
+					Dna.dna.gui.rightPanel.statementTable.updateUI();
+					Dna.dna.gui.textPanel.paintStatements();
+				}
+			});
+			settingsMenu.addSeparator();
 			
 			//Settings menu: about DNA
 			Icon aboutIcon = new ImageIcon(getClass().getResource("/icons/dna16.png"));
@@ -510,12 +541,14 @@ public class Gui extends JFrame {
 			});
 		}
 		
+		/*
 		void updateTeggleAction()
 		{
 			toggleBottomButton.setEnabled(true);
 			toggleBottomButton.addActionListener(Dna.dna.gui.textPanel.collapsiblePane.getActionMap().get(JXCollapsiblePane.TOGGLE_ACTION));
 
 		}
+		*/
 	}
 	
 	/*

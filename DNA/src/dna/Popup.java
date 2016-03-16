@@ -60,7 +60,8 @@ public class Popup extends JDialog {
 		
 		//final dna.dataStructures.Statement s = Dna.dna.db.getStatement(statementId);
 		Statement statement = Dna.data.getStatement(statementId);
-		this.color = statement.getColor();
+		//this.color = statement.getColor();
+		this.color = Dna.data.getStatementColor(statementId);
 		//this.type = Dna.dna.db.getStatementType(statementId);
 		statementTypeId = statement.getStatementTypeId();
 		this.type = Dna.data.getStatementTypeById(statementTypeId).getLabel();

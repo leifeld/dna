@@ -7,7 +7,6 @@ import java.util.LinkedHashMap;
 public class Statement implements Comparable<Statement> {
 	int id, documentId, start, stop;
 	Date date;
-	Color color;
 	int statementTypeId;
 	int coder;
 	LinkedHashMap<String, Object> values = new LinkedHashMap<String, Object>();
@@ -19,7 +18,6 @@ public class Statement implements Comparable<Statement> {
 		this.start = start;
 		this.stop = stop;
 		this.date = date;
-		this.color = color;
 		this.statementTypeId = statementTypeId;
 		this.coder = coder;
 		this.values = new LinkedHashMap<String, Object>();
@@ -34,7 +32,6 @@ public class Statement implements Comparable<Statement> {
 		this.start = start;
 		this.stop = stop;
 		this.date = date;
-		this.color = color;
 		this.statementTypeId = statementTypeId;
 		this.coder = coder;
 		this.values = values;
@@ -64,15 +61,7 @@ public class Statement implements Comparable<Statement> {
 	public void setStatementTypeId(int statementTypeId) {
 		this.statementTypeId = statementTypeId;
 	}
-
-	public Color getColor() {
-		return color;
-	}
-
-	public void setColor(Color color) {
-		this.color = color;
-	}
-
+	
 	public Date getDate() {
 		return date;
 	}

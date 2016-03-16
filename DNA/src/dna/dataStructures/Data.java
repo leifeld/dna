@@ -1,5 +1,6 @@
 package dna.dataStructures;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -258,7 +259,7 @@ public class Data {
 		}
 		return null;
 	}
-
+	
 	public StatementType getStatementType(String label) {
 		for (int i = 0; i < statementTypes.size(); i++) {
 			if (statementTypes.get(i).getLabel().equals(label)) {
@@ -266,6 +267,23 @@ public class Data {
 			}
 		}
 		return(null);
+	}
+	
+	public Color getStatementColor(int statementId) {
+		if (settings.get("statementColor").equals("statementType")) {
+			for (int i = 0; i < statementTypes.size(); i++) {
+				if (statementTypes.get(i).getId() == this.getStatement(statementId).getStatementTypeId()) {
+					return statementTypes.get(i).getColor();
+				}
+			}
+		} else if (settings.get("statementColor").equals("coder")) {
+			for (int i = 0; i < coders.size(); i++) {
+				if (coders.get(i).getId() == this.getStatement(statementId).getCoder()) {
+					return coders.get(i).getColor();
+				}
+			}
+		}
+		return null;
 	}
 	
 	public ArrayList<Statement> getStatementsByStatementTypeId(int id) {
