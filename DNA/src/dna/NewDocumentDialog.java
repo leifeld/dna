@@ -14,14 +14,12 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-import javax.swing.AbstractListModel;
-import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.DefaultListModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -40,7 +38,7 @@ import dna.dataStructures.Coder;
 import dna.dataStructures.Document;
 
 @SuppressWarnings("serial")
-class NewDocumentWindow extends JFrame {
+class NewDocumentDialog extends JDialog {
 	
 	String dbfile;
 	SpinnerDateModel dateModel;
@@ -53,25 +51,21 @@ class NewDocumentWindow extends JFrame {
 	JXComboBox sourceBox, sectionBox, typeBox;
 	JComboBox<Coder> coderBox;
 	
-	public NewDocumentWindow() {
-		
+	public NewDocumentDialog() {
+		this.setModal(true);
 		this.setTitle("Add new document...");
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		ImageIcon tableAddIcon = new ImageIcon(getClass().getResource(
-				"/icons/table_add.png"));
+		ImageIcon tableAddIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
 		this.setIconImage(tableAddIcon.getImage());
 		this.setLayout(new FlowLayout(FlowLayout.LEFT));
 		
-		textArea = new JXTextArea("paste the contents of the document here " +
-				"using Ctrl-V...");
+		textArea = new JXTextArea("paste the contents of the document here using Ctrl-V...");
 		textArea.setLineWrap(true);
 		textArea.setWrapStyleWord(true);
 		
 		textScroller = new JScrollPane(textArea);
 		textScroller.setPreferredSize(new Dimension(600, 400));
-		
-		textScroller.setVerticalScrollBarPolicy(JScrollPane.
-				VERTICAL_SCROLLBAR_ALWAYS);
+		textScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		
 		JPanel fieldsPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -128,8 +122,7 @@ class NewDocumentWindow extends JFrame {
 		gbc.insets = new Insets(1, 0, 1, 0);
 		Icon okIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
 		okButton = new JButton("add", okIcon);
-		okButton.setToolTipText( "insert a new article based on the " +
-				"information you entered in this window" );
+		okButton.setToolTipText( "insert a new article based on the information you entered in this window" );
 		okButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String text = textArea.getText();
@@ -146,18 +139,15 @@ class NewDocumentWindow extends JFrame {
 				notes = notes.replaceAll("'", "''");
 				String type = (String) typeBox.getModel().getSelectedItem();
 				type = type.replaceAll("'", "''");
-				//Dna.dna.addDocument(title, text, date, coder, source, section, notes, type);
-				Document d = new Document(Dna.data.generateNewDocumentId(), title, text, coder, source, section, notes, type, date);
-				//Dna.data.getDocuments().add(d);
+				int docId = Dna.data.generateNewDocumentId();
+				Document d = new Document(docId, title, text, coder, source, section, notes, type, date);
 				Dna.dna.addDocument(d);
-				//TODO: change selection to new row
 				
 				int index = -1;
 				for (int i = 0; i < Dna.dna.gui.documentPanel.documentTable.getRowCount(); i++) {
-					if (titleField.getText().equals(Dna.dna.gui.documentPanel.
-							documentContainer.get(i).getTitle())) {
+					if (docId == Dna.dna.gui.documentPanel.documentContainer.get(i).getId()) {
 						index = i;
-					} //TODO: IT WOULD BE NICE IF THE ID FIELD COULD BE USED TO LOCATE THE ARTICLE (INSTEAD OF THE TEXT)
+					}
 				}
 				Dna.dna.gui.documentPanel.documentTable.changeSelection(index, 0, false, false);
 				dispose();
@@ -192,21 +182,9 @@ class NewDocumentWindow extends JFrame {
 		fieldsPanel.add(coderLabel, gbc);
 		
 		gbc.gridx++;
-		//String[] coderEntries = Dna.dna.db.getDocumentCoders();
-		/*
-		String[] coderEntries = new String[Dna.data.getCoders().size()];
-		for (int i = 0; i < Dna.data.getCoders().size(); i++) {
-			coderEntries[i] = Dna.data.getCoders().get(i).getName();
-		}
-		*/
 		coderBox = new JComboBox<Coder>();
 		coderBox.setModel(new DefaultComboBoxModel(Dna.data.getCoders().toArray()));
-		//CoderComboBoxRenderer coderRenderer = new CoderComboBoxRenderer();
-		//coderBox.setRenderer(coderRenderer);
 		coderBox.setEditable(false);
-		//coderBox.setSelectedIndex(0);
-		//coderBox.setSelectedItem("");
-		//AutoCompleteDecorator.decorate(coderBox);
 		fieldsPanel.add(coderBox, gbc);
 		
 		gbc.gridy++;
@@ -215,7 +193,6 @@ class NewDocumentWindow extends JFrame {
 		fieldsPanel.add(sourceLabel, gbc);
 		
 		gbc.gridx++;
-		//String[] sourceEntries = Dna.dna.db.getDocumentSources();
 		ArrayList<String> sourceEntries = new ArrayList<String>();
 		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
 			if (!sourceEntries.contains(Dna.data.getDocuments().get(i).getSource())) {
@@ -235,7 +212,6 @@ class NewDocumentWindow extends JFrame {
 		fieldsPanel.add(sectionLabel, gbc);
 		
 		gbc.gridx++;
-		//String[] sectionEntries = Dna.dna.db.getDocumentSections();
 		ArrayList<String> sectionEntries = new ArrayList<String>();
 		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
 			if (!sectionEntries.contains(Dna.data.getDocuments().get(i).getSection())) {
@@ -256,7 +232,6 @@ class NewDocumentWindow extends JFrame {
 		fieldsPanel.add(typeLabel, gbc);
 		
 		gbc.gridx++;
-		//String[] typeEntries = Dna.dna.db.getDocumentTypes();
 		ArrayList<String> typeEntries = new ArrayList<String>();
 		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
 			if (!typeEntries.contains(Dna.data.getDocuments().get(i).getType())) {
@@ -278,7 +253,11 @@ class NewDocumentWindow extends JFrame {
 		gbc.insets = new Insets(1, 0, 2, 0);
 		notesArea = new JXTextArea("notes...");
 		notesArea.setBorder(titleField.getBorder());
-		fieldsPanel.add(notesArea, gbc);
+		notesArea.setLineWrap(true);
+		notesArea.setWrapStyleWord(true);
+		JScrollPane notesScroller = new JScrollPane(notesArea);
+		notesScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		fieldsPanel.add(notesScroller, gbc);
 		
 		newArticlePanel = new JPanel(new BorderLayout());
 		newArticlePanel.add(fieldsPanel, BorderLayout.NORTH);

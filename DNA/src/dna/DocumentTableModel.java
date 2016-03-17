@@ -11,7 +11,6 @@ import javax.swing.table.TableModel;
 import dna.dataStructures.Document;
 
 class DocumentTableModel implements TableModel {
-	//private ArrayList<Document> documents = new ArrayList<Document> ();
 	private Vector<TableModelListener> listeners = 	new Vector<TableModelListener>();
 
 	//SK start
@@ -66,12 +65,9 @@ class DocumentTableModel implements TableModel {
 		return Dna.data.getDocuments().get(index);
 	}
 
-	public Document getDocumentByID(int id)
-	{
-		for(Document doc: Dna.data.getDocuments() )
-		{
-			if(doc.getId()==id)
-			{
+	public Document getDocumentByID(int id)	{
+		for(Document doc: Dna.data.getDocuments() ) {
+			if (doc.getId() == id) {
 				return doc;
 			}
 		}
@@ -99,24 +95,6 @@ class DocumentTableModel implements TableModel {
 	
 	public int getIdByRowIndex(int row) {
 		return Dna.data.getDocuments().get(row).getId();
-	}
-	
-	/**
-	 * Check whether a given title is a duplicate of any existing doc title.
-	 * 
-	 * @param title       The title to be checked.
-	 * @param documentId  A document ID to be ignored during the check.
-	 * @return            Is the title a duplicate?
-	 */
-	public boolean existsDuplicateTitle(String title, int documentId) {
-		boolean duplicate = false;
-		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
-			int id = Dna.data.getDocuments().get(i).getId();
-			if (id != documentId && Dna.data.getDocuments().get(i).getTitle().equals(title)) {
-				duplicate = true;
-			}
-		}
-		return duplicate;
 	}
 	
 	public void remove(int index) {

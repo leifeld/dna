@@ -283,8 +283,11 @@ public class SqlConnection {
 			ResultSet result = preStatement.executeQuery();
 			if (result.next()) {
 				do {
+					int id = result.getInt("ID");
+					long d = result.getLong("Date");
+					Date date = new Date(d);
 					Document document = new Document(
-							result.getInt("ID"), 
+							id, 
 							result.getString("Title"), 
 							result.getString("Text"), 
 							result.getInt("Coder"), 
@@ -292,7 +295,7 @@ public class SqlConnection {
 							result.getString("Section"), 
 							result.getString("Notes"), 
 							result.getString("Type"), 
-							new Date(result.getInt("Date"))
+							date
 					);
 					al.add(document);
 				} while (result.next());

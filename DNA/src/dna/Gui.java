@@ -180,8 +180,6 @@ public class Gui extends JFrame {
 				documentContainer = new DocumentTableModel(Dna.data.getDocuments()); //SK
 			else 
 			documentContainer = new DocumentTableModel();
-			
-			
 			documentTable = new DocumentTable();
 			documentTable.setModel(documentContainer);
 			this.setViewportView(documentTable);
@@ -196,11 +194,10 @@ public class Gui extends JFrame {
 
 			public DocumentTable() {
 				setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-				getTableHeader().setReorderingAllowed( false );
+				getTableHeader().setReorderingAllowed(false);
 				putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 
-				getSelectionModel().addListSelectionListener(new 
-						ListSelectionListener() {
+				getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 					public void valueChanged(ListSelectionEvent e) {
 						if (e.getValueIsAdjusting()) {
 							return;
@@ -211,11 +208,11 @@ public class Gui extends JFrame {
 							textPanel.setDocumentText("");
 							Dna.dna.gui.menuBar.changeDocumentButton.setEnabled(false);
 							Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
-							//SK
 							Dna.dna.gui.rightPanel.editDocPanel.createEditDocumentPanel();
 							
 						} else {							
 							int id = documentPanel.documentContainer.get(selectedRow).getId() ;
+							//System.out.println(documentPanel.documentContainer.get(selectedRow).getDate());
 							//SK Doc_ID and selected row index differs hence search by doc_id in documents list
 							previousDocID = id;
 							Document document = documentContainer.getDocumentByID(id) ; 
@@ -231,17 +228,14 @@ public class Gui extends JFrame {
 							//SK
 							Dna.dna.gui.rightPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
 						}
-						if (Dna.dna.gui.rightPanel.statementFilter.
-								showCurrent.isSelected()) {
-							Dna.dna.gui.rightPanel.statementFilter.
-							documentFilter();
+						if (Dna.dna.gui.rightPanel.statementFilter.showCurrent.isSelected()) {
+							Dna.dna.gui.rightPanel.statementFilter.documentFilter();
 						}
-
-						//if (Dna.dna.db.getFileName() != null) {
+						
 						if (Dna.data.getSettings().get("filename") != null) {
 							textPanel.paintStatements();
 						}
-						textPanel.setCaretPosition( 0 );
+						textPanel.setCaretPosition(0);
 					}
 				});
 			}
@@ -327,7 +321,7 @@ public class Gui extends JFrame {
 			documentMenu.add(newDocumentButton);
 			newDocumentButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					new NewDocumentWindow();
+					new NewDocumentDialog();
 				}
 			});
 			newDocumentButton.setEnabled(false);

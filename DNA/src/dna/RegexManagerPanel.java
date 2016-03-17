@@ -24,7 +24,7 @@ import javax.swing.ListSelectionModel;
  * wird, der schon in der Liste existiert, oder wenn das Feld leer ist, sollte 
  * während dieser Zeit der Knopf zum Hinzufügen deaktiviert werden. Das kann man
  * mit einem DocumentListener machen. Du findest ein Beispiel in der Datei 
- * NewDocumentWindow.java ab Zeile 81.
+ * NewDocumentDialog.java ab Zeile 81.
  * => Momentan gelöst: man kann auf ok klicken, aber es werden nur Wörter hinzu-
  * gefügt, die sich von den bereits aufgelisteten unterscheiden.
  */
