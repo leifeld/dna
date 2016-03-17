@@ -443,7 +443,7 @@ public class SqlConnection {
 		
 		String myStatement = "REPLACE INTO " + table + "(ID, StatementId, VariableId, StatementTypeId, Value) "
 				+ "VALUES ((SELECT ID FROM " + table + " WHERE VariableId = (SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
-				+ statementTypeId + " AND Variable = '" + variableName + "')" + " AND StatementTypeId = " + statementTypeId + "), " 
+				+ statementTypeId + " AND Variable = '" + variableName + "')" + " AND StatementId = " + statementId + "), " 
 				+ statementId + ", (SELECT ID FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + " AND Variable = '" 
 				+ variableName + "'), " + statementTypeId + ", " + ap + value + ap + ")";
 		executeStatement(myStatement);

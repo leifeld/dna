@@ -262,8 +262,7 @@ class RightPanel extends JScrollPane {
 					if (statementId != -1) {
 						//int docId = Dna.dna.db.getStatement(statementId).getDocument();
 						int docId = Dna.data.getStatement(statementId).getDocumentId();
-						int docRow = Dna.dna.gui.documentPanel.documentContainer.
-								getRowIndexById(docId);
+						int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
 						Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
 						setSelectionInterval(docRow, docRow);
 						Dna.dna.gui.textPanel.selectStatement(statementId, docId);

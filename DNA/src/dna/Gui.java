@@ -527,6 +527,8 @@ public class Gui extends JFrame {
 				}
 			});
 			settingsMenu.addSeparator();
+			colorStatementTypeButton.setEnabled(false);
+			colorCoderButton.setEnabled(false);
 			
 			//Settings menu: about DNA
 			Icon aboutIcon = new ImageIcon(getClass().getResource("/icons/dna16.png"));

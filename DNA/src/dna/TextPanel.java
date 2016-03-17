@@ -306,7 +306,7 @@ class TextPanel extends JPanel {
 		paintStatements();
 		
 		int start = Dna.data.getStatement(statementId).getStart();
-		int stop = Dna.data.getStatement(statementId).getStart();
+		int stop = Dna.data.getStatement(statementId).getStop();
 		textWindow.grabFocus();
 		textWindow.select(start, stop);
 		
