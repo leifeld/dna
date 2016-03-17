@@ -46,14 +46,14 @@ public class Dna {
 	
 	public void addStatement(Statement statement) {
 		gui.rightPanel.ssc.addStatement(statement);
-		
 		sql.addStatement(statement, data.getStatementTypeById(statement.getStatementTypeId()).getVariables());
 	}
 	
 	public void updateVariable(int statementId, int statementTypeId, Object content, String variable) {
-		String dataType = data.getStatementTypeById(statementTypeId).getVariableDataType(variable);
-		sql.upsertVariableContent(content, statementId, variable, statementTypeId, dataType);
+		StatementType st = data.getStatementTypeById(statementTypeId);
+		String dataType = st.getVariables().get(variable);
 		Dna.data.getStatement(statementId).getValues().put(variable, content);
+		sql.upsertVariableContent(content, statementId, variable, statementTypeId, dataType);
 	}
 	
 	public void addCoder(Coder coder) {

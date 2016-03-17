@@ -720,7 +720,7 @@ public class NetworkExporter extends JDialog {
 	// given a variable name, return its corresponding unique values (as strings, even 
 	// if they are integers); useful for filtering and JList population
 	private ArrayList<String> getUniqueValuesAsString(String var) {
-		String type = statementType.getVariableDataType(var);
+		String type = statementType.getVariables().get(var);
 		ArrayList<String> values = new ArrayList<String>();
 		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
 			String val = (String) Dna.data.getStatementsByStatementTypeId(statementType.getId()).get(i).getValues().get(var);
@@ -734,7 +734,7 @@ public class NetworkExporter extends JDialog {
 	
 	// given a variable name of an integer variable, return its corresponding values (useful for filtering)
 	private ArrayList<Integer> getUniqueIntValues(String var) {
-		String type = statementType.getVariableDataType(var);
+		String type = statementType.getVariables().get(var);
 		if (type.equals("boolean") || type.equals("integer")) {
 			ArrayList<Integer> values = new ArrayList<Integer>();
 			//int [] intValues = Dna.dna.db.getAllVariableIntEntries(var, statementType.getLabel());
@@ -2111,7 +2111,7 @@ public class NetworkExporter extends JDialog {
 			String key = keyIterator.next();
 			int[] value = excludeValIndices.get(key);
 			if (value.length > 0) {
-				String dt = statementType.getVariableDataType(key);
+				String dt = statementType.getVariables().get(key);
 				ExcludeObject eo;
 				if (dt.equals("short text") || dt.equals("long text")) {
 					ArrayList<String> values = getUniqueValuesAsString(key); // all values of a certain variable (as contained in the right JList in the exclude panel)

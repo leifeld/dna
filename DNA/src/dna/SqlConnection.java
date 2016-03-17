@@ -48,7 +48,7 @@ public class SqlConnection {
 				this.connection = DriverManager.getConnection("jdbc:sqlite:" + dbfile);
 			}
 		} catch (SQLException | ClassNotFoundException e) {
-			//e.printStackTrace();
+			e.printStackTrace();
 		}
 	}
 	
@@ -426,19 +426,7 @@ public class SqlConnection {
 		return map;
 	}
 	
-	public int getVariableId(int statementTypeId, String variableName) {
-		int varid = -1;
-		try {
-			varid = (int) executeQueryForObject("SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
-					+ statementTypeId + " AND Variable = '" + variableName + "'");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return varid;
-	}
-	
 	public void upsertVariableContent(Object value, int statementId, String variableName, int statementTypeId, String dataType) {
-		int variableId = getVariableId(statementTypeId, variableName);
 		String table = "";
 		String ap = "";
 		if (dataType.equals("integer")) {
@@ -454,9 +442,10 @@ public class SqlConnection {
 		}
 		
 		String myStatement = "REPLACE INTO " + table + "(ID, StatementId, VariableId, StatementTypeId, Value) "
-				+ "VALUES ((SELECT ID FROM " + table + " WHERE VariableId = " + variableId + 
-				" AND StatementTypeId = " + statementTypeId + "), " + statementId + ", " + variableId + ", " 
-				+ statementTypeId + ", " + ap + value + ap + ")";
+				+ "VALUES ((SELECT ID FROM " + table + " WHERE VariableId = (SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
+				+ statementTypeId + " AND Variable = '" + variableName + "')" + " AND StatementTypeId = " + statementTypeId + "), " 
+				+ statementId + ", (SELECT ID FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + " AND Variable = '" 
+				+ variableName + "'), " + statementTypeId + ", " + ap + value + ap + ")";
 		executeStatement(myStatement);
 	}
 	
@@ -538,17 +527,11 @@ public class SqlConnection {
     			ap = "'";
     		}
 			
-			int varid = -1;
-			try {
-				varid = (int) executeQueryForObject("SELECT ID FROM VARIABLES WHERE Variable = '" + key 
-						+ "' AND StatementTypeId = " + statement.getStatementTypeId());
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-			
 			String myStatement = "INSERT INTO DATA" + tableExtension + " (StatementId, VariableId, StatementTypeId, Value) "
-					+ "VALUES (" + statement.getId() + ", " + varid + ", " + statement.getStatementTypeId() + ", "  
+					+ "VALUES (" + statement.getId() + ", " + "(SELECT ID FROM VARIABLES WHERE Variable = '" + key 
+					+ "' AND StatementTypeId = " + statement.getStatementTypeId() + "), " + statement.getStatementTypeId() + ", "  
 					+ ap + object + ap + ")";
+			//System.out.println(myStatement);
 			executeStatement(myStatement);
     	}
 	}
@@ -625,7 +608,6 @@ public class SqlConnection {
 					int coder = result.getInt("Coder");
 					Date date = data.getDocument(documentId).getDate();
 					StatementType st = data.getStatementTypeById(statementTypeId);
-					Color color = st.getColor();
 					LinkedHashMap<String, Object> values = new LinkedHashMap<String, Object>();
 					
 					Iterator<String> keyIterator = st.getVariables().keySet().iterator();
@@ -642,8 +624,9 @@ public class SqlConnection {
 			    		} else if (value.equals("long text")) {
 			    			tableExtension = "LONGTEXT";
 			    		}
-			    		int varid = getVariableId(statementTypeId, key);
-			    		String myQuery2 = "SELECT * FROM DATA" + tableExtension + " WHERE StatementId = " + id + " AND VariableId = " + varid;
+			    		String myQuery2 = "SELECT * FROM DATA" + tableExtension + " WHERE StatementId = " + id 
+			    				+ " AND VariableId = (SELECT ID FROM VARIABLES WHERE StatementTypeId = " + statementTypeId 
+			    				+ " AND Variable = '" + key + "')";
 						PreparedStatement preStatement2 = (PreparedStatement) connection.prepareStatement(myQuery2);
 						ResultSet result2 = preStatement2.executeQuery();
 						if (result2.next()) {
@@ -654,7 +637,7 @@ public class SqlConnection {
 						result2.close();
 						preStatement2.close();
 			    	}
-					Statement statement = new Statement(id, documentId, start, stop, date, color, statementTypeId, coder);
+					Statement statement = new Statement(id, documentId, start, stop, date, statementTypeId, coder, values);
 					statements.add(statement);
 				} while (result.next());
 			}

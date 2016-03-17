@@ -31,17 +31,7 @@ public class StatementType {
 	public void setId(int id) {
 		this.id = id;
 	}
-
-	/**
-	 * Retrieve data type of a variable contained in the statement type.
-	 * 
-	 * @param variable	Name of the variable.
-	 * @return			Data type.
-	 */
-	public String getVariableDataType(String variable) {
-		return variables.get(variable);
-	}
-
+	
 	/**
 	 * Retrieve the label of the statement type.
 	 * 

@@ -277,7 +277,7 @@ public class ImportOldDNA1XML extends JFrame {
 					    	map.put("organization", organization);
 					    	map.put("category", category);
 					    	map.put("agreement", agreeInt);
-					    	Statement s = new Statement(statementId, documentId, startInt, endInt, date, Color.YELLOW, 1, 0, map);
+					    	Statement s = new Statement(statementId, documentId, startInt, endInt, date, 1, 0, map);
 					    	Dna.data.getStatements().add(s);
 					    	//Dna.dna.db.changeStatement(statementId, "person", person, "short text");
 					    	//Dna.dna.db.changeStatement(statementId, "organization", organization, "short text");

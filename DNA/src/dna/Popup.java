@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -120,26 +121,28 @@ public class Popup extends JDialog {
 		colorPanel.setBackground(color);
 		colorPanel.setPreferredSize(new Dimension(4,4));
 		
-		ImageIcon duplicateIcon = new ImageIcon(getClass().getResource(
-				"/icons/add.png"));
+		ImageIcon duplicateIcon = new ImageIcon(getClass().getResource("/icons/add.png"));
 		JButton duplicate = new JButton(duplicateIcon);
-		duplicate.setToolTipText("create a copy of this statement at the " +
-				"same location");
+		duplicate.setToolTipText("create a copy of this statement at the same location");
 		duplicate.setPreferredSize(new Dimension(16, 16));
 		duplicate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Statement newStatement = Dna.data.getStatement(statementId);
-				//int newId = Dna.data.generateNewStatementId();
-				int newId = Dna.dna.gui.rightPanel.ssc.getFirstUnusedId();
-				newStatement.setId(newId);
-				newStatement.setCoder(Dna.data.getActiveCoder());
+				//Statement newStatement = Dna.data.getStatement(statementId);
+				int newId = Dna.data.generateNewStatementId();
+				int documentId = Dna.data.getStatement(statementId).getDocumentId();
+				int start = Dna.data.getStatement(statementId).getStart();
+				int stop = Dna.data.getStatement(statementId).getStop();
+				Date date = Dna.data.getStatement(statementId).getDate();
+				int statementTypeId = Dna.data.getStatement(statementId).getStatementTypeId();
+				int coder = Dna.data.getActiveCoder();
+				LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
+				Iterator<String> keyIterator = Dna.data.getStatement(statementId).getValues().keySet().iterator();
+				while (keyIterator.hasNext()){
+					String key = keyIterator.next();
+					map.put(key, Dna.data.getStatement(statementId).getValues().get(key));
+				}
+				Statement newStatement = new Statement(newId, documentId, start, stop, date, statementTypeId, coder, map);
 				Dna.dna.addStatement(newStatement);
-				//int newStatementId = Dna.dna.db.duplicateStatement(statementId, s.getDocument(), s.getStart(), s.getStop());
-				//Color color = Dna.dna.db.getStatementTypeColor(type);
-				//Date date = Dna.dna.db.getDocument(s.getDocument()).getDate();
-				//int coder = Dna.dna.db.getStatement(statementId).getCoder();
-				//Statement st = new Statement(newStatementId, s.getDocument(), s.getStart(), s.getStop(), date, color, type, coder);
-				//Dna.dna.gui.sidebarPanel.ssc.addStatement(st, true);
 				Dna.dna.gui.textPanel.selectStatement(newId, newStatement.getDocumentId());
 			}
 		});
@@ -157,7 +160,6 @@ public class Popup extends JDialog {
 					Dna.dna.removeStatement(statementId);
 					Dna.dna.gui.textPanel.paintStatements();
 					
-
                     // update links table after removal of statements
                     Dna.dna.gui.rightPanel.updateViewLinksTable();
                     
@@ -188,7 +190,6 @@ public class Popup extends JDialog {
 		gbc.gridy = 0;
 		gbc.anchor = GridBagConstraints.EAST;
 		
-		//HashMap<String, String> variables = Dna.dna.db.getVariables(type);
 		HashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
 		
 		Iterator<String> keyIterator = variables.keySet().iterator();
@@ -231,8 +232,7 @@ public class Popup extends JDialog {
     			box.setText(entry);
     			JScrollPane boxScroller = new JScrollPane(box);
     			boxScroller.setPreferredSize(new Dimension(220, 100));
-    			boxScroller.setVerticalScrollBarPolicy(
-    					JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+    			boxScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
     			
 				gbc.anchor = GridBagConstraints.NORTHEAST;
 	    		gridBagPanel.add(label, gbc);
@@ -268,7 +268,6 @@ public class Popup extends JDialog {
 				gbc.gridx--;
 				gbc.gridy++;
 			} else if (value.equals("integer")) {
-				//int entry = Dna.dna.db.getVariableIntEntry(statementId, key);
 				int entry = (Integer) Dna.data.getStatement(statementId).getValues().get(key);
 				JSpinner jsp = new JSpinner();
 				jsp.setValue(entry);
