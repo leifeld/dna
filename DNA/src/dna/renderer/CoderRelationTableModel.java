@@ -2,6 +2,7 @@ package dna.renderer;
 
 import java.util.Vector;
 
+import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
@@ -102,6 +103,11 @@ public class CoderRelationTableModel implements TableModel {
 			Dna.data.getCoderRelations().get(rowIndex).setEditDocuments((boolean) aValue);
 			Dna.dna.sql.updateCoderRelationEditDocuments(cr.getId(), (boolean) aValue);
 		}
+
+		TableModelEvent e = new TableModelEvent(this);
+		for( int i = 0, n = listeners.size(); i < n; i++ ){
+			((TableModelListener)listeners.get( i )).tableChanged( e );
+		}
 	}
 	
 	@Override
@@ -112,5 +118,14 @@ public class CoderRelationTableModel implements TableModel {
 	@Override
 	public void removeTableModelListener(TableModelListener l) {
 		listeners.remove( l );
+	}
+	
+	public void clear() {
+		Dna.data.getCoderRelations().clear();
+
+		TableModelEvent e = new TableModelEvent(this);
+		for( int i = 0, n = listeners.size(); i < n; i++ ){
+			((TableModelListener)listeners.get( i )).tableChanged( e );
+		}
 	}
 }

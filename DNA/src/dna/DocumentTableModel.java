@@ -111,7 +111,7 @@ public class DocumentTableModel implements TableModel {
 			((TableModelListener)listeners.get( i )).tableChanged( e );
 		}
 	}
-
+	
 	public void clear() {
 		Dna.data.getDocuments().clear();
 		TableModelEvent e = new TableModelEvent(this);

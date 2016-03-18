@@ -231,10 +231,9 @@ public class Gui extends JFrame {
 		private static final long serialVersionUID = 1L;
 
 		JMenu fileMenu, documentMenu, exportMenu, settingsMenu;
-		JMenuItem closeFile, newDocumentButton, importHTMLButton,  
-		typeEditorButton,changeDocumentButton, removeDocumentButton, 
-		importDnaButton, importOldButton, networkButton, aboutButton, 
-		colorStatementTypeButton, colorCoderButton, recodeVariableButton;
+		JMenuItem closeDatabase, newDatabase, openDatabase, importHTMLButton, typeEditorButton, changeDocumentButton, newDocumentButton, 
+			removeDocumentButton, importDnaButton, importOldButton, networkButton, aboutButton, colorStatementTypeButton, 
+			colorCoderButton, recodeVariableButton;
 		
 		public MenuBar() {
 			fileMenu = new JMenu("File");
@@ -248,7 +247,7 @@ public class Gui extends JFrame {
 
 			//File menu: new DNA database file...
 			Icon databaseIcon = new ImageIcon(getClass().getResource("/icons/database.png"));
-			JMenuItem newDatabase = new JMenuItem("New DNA database...", databaseIcon);
+			newDatabase = new JMenuItem("New DNA database...", databaseIcon);
 			newDatabase.setToolTipText("create a new DNA database...");
 			fileMenu.add(newDatabase);
 			newDatabase.addActionListener(new ActionListener() {
@@ -259,30 +258,26 @@ public class Gui extends JFrame {
 			
 			//File menu: open database
 			Icon dbIcon = new ImageIcon(getClass().getResource("/icons/folder.png"));
-			JMenuItem dbMenuItem = new JMenuItem("Open DNA database...", dbIcon);
-			dbMenuItem.setToolTipText("open a local or remote database...");
-			dbMenuItem.addActionListener(new ActionListener() {
+			openDatabase = new JMenuItem("Open DNA database...", dbIcon);
+			openDatabase.setToolTipText("open a local or remote database...");
+			openDatabase.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					new OpenDatabaseDialog();
 				}
 			});
-			fileMenu.add(dbMenuItem);
-
-			/*
-			//File menu: close current database file
-			Icon closeIcon = new ImageIcon( getClass().getResource(
-					"/icons/cancel.png") );
-			closeFile = new JMenuItem("Close database or file", closeIcon);
-			closeFile.setToolTipText( "close current database file or " +
-					"remote connection" );
-			fileMenu.add(closeFile);
-			closeFile.addActionListener( new ActionListener() {
+			fileMenu.add(openDatabase);
+			
+			//File menu: close current database
+			Icon closeIcon = new ImageIcon( getClass().getResource("/icons/disconnect.png") );
+			closeDatabase = new JMenuItem("Close database or file", closeIcon);
+			closeDatabase.setToolTipText( "close current database file or remote connection" );
+			fileMenu.add(closeDatabase);
+			closeDatabase.addActionListener( new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					Dna.dna.closeFile();
+					Dna.dna.closeDatabase();
 				}
 			});
-			closeFile.setEnabled(false);
-			*/
+			closeDatabase.setEnabled(false);
 
 			//File menu: exit
 			Icon exitIcon = new ImageIcon( getClass().getResource("/icons/door_out.png") );

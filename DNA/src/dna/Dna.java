@@ -9,6 +9,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
@@ -64,64 +65,36 @@ public class Dna {
 		data.setActiveCoder(activeCoder);
 		sql.upsertSetting("activeCoder", (new Integer(activeCoder)).toString());
 	}
-	
-	/*
-	public String getVersion() {
-		for (int i = 0; i < data.getSettings().size(); i++) {
-			Setting s = data.getSettings().get(i);
-			if (s.getProperty().equals("version")) {
-				return(s.getValue());
-			}
-		}
-		return(null);
+
+	public void closeDatabase() {
+		data = new Data();
+		sql.closeConnection();
+		sql = null;
+		Dna.dna.gui.leftPanel.coderPanel.clear();
+		Dna.dna.gui.statusBar.resetLabel();
+		Dna.dna.gui.documentPanel.documentContainer.clear();
+		Dna.dna.gui.rightPanel.ssc.clear();
+		Dna.dna.gui.textPanel.setDocumentText("");
+		Dna.dna.gui.menuBar.openDatabase.setEnabled(true);
+		Dna.dna.gui.menuBar.newDatabase.setEnabled(true);
+		Dna.dna.gui.menuBar.colorCoderButton.setIcon(new ImageIcon(getClass().getResource("/icons/tick.png")));
+		Dna.dna.gui.menuBar.colorCoderButton.setEnabled(false);
+		Dna.dna.gui.menuBar.colorStatementTypeButton.setEnabled(false);
+		//Dna.dna.gui.menuBar.typeEditorButton.setEnabled(false);
+		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
+		//Dna.dna.gui.menuBar.importHTMLButton.setEnabled(false);
+		//Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(false);
+		Dna.dna.gui.menuBar.closeDatabase.setEnabled(false);
+		//Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
+		//Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
+		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
+		Dna.dna.gui.rightPanel.updateStatementTypes();
+		Dna.dna.gui.rightPanel.rm.addButton.setEnabled(false);
+		Dna.dna.gui.rightPanel.rm.clear();
+		Dna.dna.gui.rightPanel.linkedTableModel.setRowCount(0);
+		Dna.dna.gui.rightPanel.docStats.clear();
 	}
 
-	public String getDate() {
-		for (int i = 0; i < data.getSettings().size(); i++) {
-			Setting s = data.getSettings().get(i);
-			if (s.getProperty().equals("date")) {
-				return(s.getValue());
-			}
-		}
-		return(null);
-	}
-	*/
-	
-	/*
-	public int addStatement(String type, int doc, int start, int stop) {
-		int statementId = dna.db.addStatement(type, doc, start, stop);
-		Color color = dna.db.getStatementTypeColor(type);
-		Date date = dna.db.getDocument(doc).getDate();
-		int coder = dna.db.getStatement(statementId).getCoder();
-		Statement s = new Statement(statementId, doc, start, 
-				stop, date, color, type, coder);
-		dna.gui.sidebarPanel.ssc.addStatement(s, true);
-		return statementId;
-	}
-
-	public void removeStatement(int statementId) {
-		dna.db.removeStatement(statementId);
-		int row = dna.gui.sidebarPanel.ssc.getIndexByStatementId(statementId);
-		dna.gui.sidebarPanel.ssc.remove(row);
-		dna.gui.sidebarPanel.statementTable.updateUI();
-	}
-	
-	public int addDocument(String title, String text, Date date, int coder, 
-			String source, String section, String notes, String type) {
-		//TODO: do the replaceAll() here or in NewDOcumentWindow!
-		title = title.replaceAll("'", "''");
-		text = text.replaceAll("'", "''");
-		source = source.replaceAll("'", "''");
-		section = section.replaceAll("'", "''");
-		notes = notes.replaceAll("'", "''");
-		type = type.replaceAll("'", "''");
-		int id = dna.db.addDocument(title, text, date, coder, source, section, 
-				notes, type);
-		Document d = Dna.dna.db.getDocument(id);
-		dna.gui.documentPanel.documentContainer.addDocument(d);
-		return id;
-	}
-	*/
 
 	/**
 	 * LB.Add:
@@ -250,139 +223,9 @@ public class Dna {
 					notes, type);
 		}        	
 	}
-
-	public void removeDocument(int documentId) {
-		ArrayList<Statement> al = dna.db.
-				getStatementsPerDocumentId(documentId);
-		for (int i = 0; i < al.size(); i++) {
-			removeStatement(al.get(i).getId());
-		}
-		int row = dna.gui.documentPanel.documentContainer.
-				getRowIndexById(documentId);
-		dna.gui.documentPanel.documentContainer.remove(row);
-		dna.db.removeDocument(documentId);
-	}
-
-	public void openFile(String dbfile) {
-		Dna.dna.db.openSQLite(dbfile);
-		Dna.dna.gui.statusBar.resetLabel();
-		Dna.dna.data.setDocuments(Dna.dna.db.getDocuments());
-		
-		//System.out.println( "Total documents >> " + documents.size());
-		for (int i = 0; i < Dna.dna.data.getDocuments().size(); i++) {
-						
-			//Dna.dna.gui.documentPanel.documentContainer.addDocument(Dna.dna.data.getDocuments().get(i));
-			int documentId = Dna.dna.data.getDocuments().get(i).getId();
-			ArrayList<Statement> statements = Dna.dna.db.
-					getStatementsPerDocumentId(documentId);
-			for (int j = 0; j < statements.size(); j++) {
-				Statement s = statements.get(j);
-				Dna.dna.gui.sidebarPanel.ssc.addStatement(s, true);
-			}
-		}
-		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
-		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
-		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(true);
-		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(true);
-		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
-		Dna.dna.gui.menuBar.importDnaButton.setEnabled(true);
-		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
-		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
-		Dna.dna.gui.sidebarPanel.updateStatementTypes();
-		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
-		Dna.dna.gui.sidebarPanel.updateRegexManagerPanel();
-		Dna.dna.gui.sidebarPanel.updateViewLinksTable();
-		Dna.dna.gui.sidebarPanel.docStats.updateStatistics();
-		Dna.dna.gui.menuBar.updateTeggleAction();
-	}
-
-	public void openMySQL(String url, String userName, String password) {
-		Dna.dna.db.openMySQL(url, userName, password);
-		Dna.dna.gui.statusBar.resetLabel();
-		Dna.dna.data.setDocuments(Dna.dna.db.getDocuments());
-		for (int i = 0; i < Dna.dna.data.getDocuments().size(); i++) {
-			//Dna.dna.gui.documentPanel.documentContainer.addDocument(Dna.dna.data.getDocuments().get(i));
-			int documentId = Dna.dna.data.getDocuments().get(i).getId();
-			ArrayList<Statement> statements = Dna.dna.db.getStatementsPerDocumentId(documentId);
-			for (int j = 0; j < statements.size(); j++) {
-				Statement s = statements.get(j);
-				Dna.dna.gui.sidebarPanel.ssc.addStatement(s, true);
-			}
-		}
-		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
-		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
-		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(true);
-		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(true);
-		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
-		Dna.dna.gui.menuBar.importDnaButton.setEnabled(true);
-		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
-		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
-		Dna.dna.gui.sidebarPanel.updateStatementTypes();
-		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
-		Dna.dna.gui.sidebarPanel.updateRegexManagerPanel();
-		Dna.dna.gui.sidebarPanel.updateViewLinksTable();
-		Dna.dna.gui.sidebarPanel.docStats.updateStatistics();
-		Dna.dna.gui.menuBar.updateTeggleAction();
-	}
 	*/
 	
 	/*
-	public void openMSSQL(String url, String dbname, String userName, 
-			String password) {
-		Dna.dna.db.openMSSQL(url, dbname, userName, password);
-		Dna.dna.gui.statusBar.resetLabel();
-		documents = Dna.dna.db.getDocuments();
-		for (int i = 0; i < documents.size(); i++) {
-			Dna.dna.gui.documentPanel.documentContainer.addDocument(documents.get(i));
-			int documentId = documents.get(i).getId();
-			ArrayList<SidebarStatement> statements = Dna.dna.db.
-					getStatementsPerDocumentId(documentId);
-			for (int j = 0; j < statements.size(); j++) {
-				SidebarStatement s = statements.get(j);
-				Dna.dna.gui.sidebarPanel.ssc.addSidebarStatement(s, true);
-			}
-		}
-		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
-		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
-		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(true);
-		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(true);
-		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
-		Dna.dna.gui.menuBar.importDnaButton.setEnabled(true);
-		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
-		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
-		Dna.dna.gui.sidebarPanel.updateStatementTypes();
-		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
-		Dna.dna.gui.sidebarPanel.updateRegexManagerPanel();
-		Dna.dna.gui.sidebarPanel.updateViewLinksTable();
-		Dna.dna.gui.sidebarPanel.docStats.updateStatistics();
-		Dna.dna.gui.menuBar.updateTeggleAction();
-	}
-	*/
-	
-	/*
-	public void closeFile() {
-		Dna.dna.db.closeFile();
-		Dna.dna.gui.statusBar.resetLabel();
-		Dna.dna.gui.documentPanel.documentContainer.clear();
-		Dna.dna.gui.sidebarPanel.ssc.clear();
-		Dna.dna.gui.textPanel.setDocumentText("");
-		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(false);
-		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
-		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(false);
-		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(false);
-		Dna.dna.gui.menuBar.closeFile.setEnabled(false);
-		Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
-		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
-		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
-		Dna.dna.gui.sidebarPanel.updateStatementTypes();
-		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(false);
-		Dna.dna.gui.sidebarPanel.rm.clear();
-		Dna.dna.gui.sidebarPanel.linkedTableModel.setRowCount(0);
-		Dna.dna.gui.sidebarPanel.docStats.clear();
-		Dna.dna.gui.textPanel.collapsiblePane.setCollapsed(true);
-		Dna.dna.gui.menuBar.toggleBottomButton.setEnabled(false);
-	}
-
 	public void newFile(String filename) {
 		Dna.dna.db.openSQLite(filename);
 		Dna.dna.gui.statusBar.resetLabel();

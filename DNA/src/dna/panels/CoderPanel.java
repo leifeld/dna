@@ -41,7 +41,7 @@ public class CoderPanel extends JPanel {
 	public CoderComboBoxModel model;
 	CoderComboBoxRenderer renderer;
 	JButton editButton, deleteButton, addButton;
-	CoderRelationTableModel coderTableModel;
+	public CoderRelationTableModel coderTableModel;
 	public JTable coderRelationTable;
 	TableRowSorter<CoderRelationTableModel> sorter;
 	RowFilter<CoderRelationTableModel, Integer> filter;
@@ -219,6 +219,12 @@ public class CoderPanel extends JPanel {
 		editButton.setEnabled(enabled);
 		addButton.setEnabled(enabled);
 		deleteButton.setEnabled(enabled);
+	}
+	
+	public void clear() {
+		coderTableModel.clear();
+		model.clear();
+		setComboEnabled(false);
 	}
 }
 

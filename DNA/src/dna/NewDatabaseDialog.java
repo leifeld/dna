@@ -88,6 +88,14 @@ public class NewDatabaseDialog extends JDialog {
 		this.setIconImage(icon.getImage());
 		this.setLayout(new BorderLayout());
 		
+		// remove data if canceled
+		this.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				Dna.data = new Data();
+				dispose();
+			}
+		});
+		
 		JPanel menu = new JPanel();
 		menu.setLayout(new BorderLayout());
 
@@ -1145,6 +1153,9 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.dna.gui.leftPanel.setComboEnabled(true);
 					
 					Dna.dna.gui.statusBar.resetLabel();
+					Dna.dna.gui.menuBar.openDatabase.setEnabled(false);
+					Dna.dna.gui.menuBar.newDatabase.setEnabled(false);
+					Dna.dna.gui.menuBar.closeDatabase.setEnabled(true);
 					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 					Dna.dna.gui.menuBar.colorStatementTypeButton.setEnabled(true);
 					Dna.dna.gui.menuBar.colorCoderButton.setEnabled(true);

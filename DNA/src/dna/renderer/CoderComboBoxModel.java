@@ -45,4 +45,9 @@ public class CoderComboBoxModel extends AbstractListModel<Object> implements Com
 	public Object getSelectedItem() {
 		return selectedItem;
 	}
+	
+	public void clear() {
+		selectedItem = null;
+		fireContentsChanged(this, 0, 0);
+	}
 }

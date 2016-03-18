@@ -247,7 +247,7 @@ public class OpenDatabaseDialog extends JDialog {
 				databaseCardLayout.show(cardPanel, "mysqlPanel");
 			}
 		});
-
+		
 		// set location and pack window
 		this.setModal(true);
 		this.pack();
@@ -255,11 +255,13 @@ public class OpenDatabaseDialog extends JDialog {
 		this.setVisible(true);
 		this.setResizable(false);
 	}
-
+	
 	public void loadDataAndDispose() {
 		Dna.data = Dna.dna.sql.getAllData();
 		Dna.dna.gui.statusBar.resetLabel();
-		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
+		Dna.dna.gui.menuBar.closeDatabase.setEnabled(true);
+		Dna.dna.gui.menuBar.openDatabase.setEnabled(false);
+		Dna.dna.gui.menuBar.newDatabase.setEnabled(false);
 		Dna.dna.gui.menuBar.colorStatementTypeButton.setEnabled(true);
 		Dna.dna.gui.menuBar.colorCoderButton.setEnabled(true);
 		if (Dna.data.getSettings().get("statementColor").equals("statementType")) {
