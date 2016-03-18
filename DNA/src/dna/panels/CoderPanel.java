@@ -207,6 +207,7 @@ public class CoderPanel extends JPanel {
 		
 		coderBox.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
+				Dna.dna.setActiveCoder(((Coder) coderBox.getSelectedItem()).getId());
 				coderRelationTable.updateUI();
 				sorter.setRowFilter(filter);
 			}

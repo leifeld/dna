@@ -1129,7 +1129,7 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.data.getSettings().put("filename", dbFile);
 					Dna.dna.sql.upsertSetting("filename", dbFile);
 					
-					Dna.data.setActiveCoder(Dna.data.getCoders().get(0).getId());
+					Dna.dna.setActiveCoder(Dna.data.getCoders().get(0).getId());
 					for (int i = 0; i < Dna.data.getCoders().size(); i++) {
 						Dna.dna.sql.addCoder(Dna.data.getCoders().get(i));
 					}

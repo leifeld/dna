@@ -60,6 +60,11 @@ public class Dna {
 		sql.addCoder(coder);
 	}
 	
+	public void setActiveCoder(int activeCoder) {
+		data.setActiveCoder(activeCoder);
+		sql.upsertSetting("activeCoder", (new Integer(activeCoder)).toString());
+	}
+	
 	/*
 	public String getVersion() {
 		for (int i = 0; i < data.getSettings().size(); i++) {

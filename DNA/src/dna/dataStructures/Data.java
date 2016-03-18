@@ -16,7 +16,6 @@ public class Data {
 	public ArrayList<CoderRelation> coderRelations;
 	public HashMap<String, String> settings;
 	public ArrayList<StatementLink> statementLinks;
-	int activeCoder = 1;
 	
 	public Data() {
 		this.statements = new ArrayList<Statement>();
@@ -27,23 +26,23 @@ public class Data {
 		this.coderRelations = new ArrayList<CoderRelation>();
 		this.settings = new HashMap<String, String>();
 		this.statementLinks = new ArrayList<StatementLink>();
-		this.activeCoder = 1;
+		settings.put("activeCoder", "1");
 	}
 	
 	/**
 	 * @return the activeCoder
 	 */
 	public int getActiveCoder() {
-		return activeCoder;
+		return Integer.valueOf(settings.get("activeCoder")).intValue();
 	}
-
+	
 	/**
 	 * @param activeCoder the activeCoder to set
 	 */
 	public void setActiveCoder(int activeCoder) {
-		this.activeCoder = activeCoder;
+		settings.put("activeCoder", (new Integer(activeCoder)).toString());
 	}
-
+	
 	/**
 	 * @return the statementLinks
 	 */
