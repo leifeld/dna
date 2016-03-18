@@ -6,20 +6,14 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 
-import javax.swing.Action;
-import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -28,16 +22,11 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.ListSelectionModel;
-import javax.swing.UIManager;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
@@ -46,14 +35,10 @@ import org.jdesktop.swingx.JXCollapsiblePane;
 
 @SuppressWarnings("serial")
 public class Gui extends JFrame {
-
-	/**
-	 * DNA GUI
-	 */
 	Container c;
 	StatusBar statusBar;
-	DocumentPanel documentPanel;
-	TextPanel textPanel;
+	public DocumentPanel documentPanel;
+	public TextPanel textPanel;
 	RightPanel rightPanel;
 	LeftPanel leftPanel;
 	MenuBar menuBar;
@@ -172,14 +157,15 @@ public class Gui extends JFrame {
 	public class DocumentPanel extends JScrollPane {
 
 		private static final long serialVersionUID = 1L;
-		DocumentTableModel documentContainer;
-		DocumentTable documentTable;
+		public DocumentTableModel documentContainer;
+		public DocumentTable documentTable;
 
 		public DocumentPanel() {
-			if(Dna.dna!=null)
+			if(Dna.dna != null) {
 				documentContainer = new DocumentTableModel(Dna.data.getDocuments()); //SK
-			else 
-			documentContainer = new DocumentTableModel();
+			} else {
+				documentContainer = new DocumentTableModel();
+			}
 			documentTable = new DocumentTable();
 			documentTable.setModel(documentContainer);
 			this.setViewportView(documentTable);
@@ -189,9 +175,7 @@ public class Gui extends JFrame {
 		}
 
 		public class DocumentTable extends JTable {
-
-			private static final long serialVersionUID = 1L;
-
+			
 			public DocumentTable() {
 				setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 				getTableHeader().setReorderingAllowed(false);
@@ -206,9 +190,9 @@ public class Gui extends JFrame {
 						if (selectedRow == -1) {
 							previousDocID = -1;
 							textPanel.setDocumentText("");
-							Dna.dna.gui.menuBar.changeDocumentButton.setEnabled(false);
-							Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
-							Dna.dna.gui.rightPanel.editDocPanel.createEditDocumentPanel();
+							//Dna.dna.gui.menuBar.changeDocumentButton.setEnabled(false);
+							//Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
+							Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
 							
 						} else {							
 							int id = documentPanel.documentContainer.get(selectedRow).getId() ;
@@ -226,7 +210,7 @@ public class Gui extends JFrame {
 							//Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
 							
 							//SK
-							Dna.dna.gui.rightPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
+							Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
 						}
 						if (Dna.dna.gui.rightPanel.statementFilter.showCurrent.isSelected()) {
 							Dna.dna.gui.rightPanel.statementFilter.documentFilter();
@@ -494,8 +478,8 @@ public class Gui extends JFrame {
 			
 			//Settings menu: statement color by statement type or coder?
 			Icon tickIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
-			colorStatementTypeButton = new JMenuItem("Color statements by type", tickIcon);
-			colorCoderButton = new JMenuItem("Color statements by coder");
+			colorStatementTypeButton = new JMenuItem("Color statements by type");
+			colorCoderButton = new JMenuItem("Color statements by coder", tickIcon);
 			colorStatementTypeButton.setToolTipText("use the color of the respective statement type to paint statements");
 			colorCoderButton.setToolTipText("use the color of the respective coder to paint statements");
 			settingsMenu.add(colorStatementTypeButton);

@@ -10,7 +10,7 @@ import javax.swing.table.TableModel;
 
 import dna.dataStructures.Document;
 
-class DocumentTableModel implements TableModel {
+public class DocumentTableModel implements TableModel {
 	private Vector<TableModelListener> listeners = 	new Vector<TableModelListener>();
 
 	//SK start
@@ -98,6 +98,13 @@ class DocumentTableModel implements TableModel {
 	}
 	
 	public void remove(int index) {
+		int id = Dna.data.getDocuments().get(index).getId();
+		for (int i = Dna.data.getStatements().size() - 1; i > -1; i--) {
+			if (Dna.data.getStatements().get(i).getDocumentId() == id) {
+				Dna.data.getStatements().remove(i);
+			}
+		}
+		Dna.dna.gui.rightPanel.statementTable.updateUI();
 		Dna.data.getDocuments().remove(index);
 		TableModelEvent e = new TableModelEvent(this);
 		for( int i = 0, n = listeners.size(); i < n; i++ ){

@@ -8,8 +8,6 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
@@ -26,7 +24,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -49,6 +46,7 @@ import dna.dataStructures.Regex;
 import dna.dataStructures.Statement;
 import dna.dataStructures.StatementLink;
 import dna.dataStructures.StatementType;
+import dna.panels.SearchPanel;
 
 class RightPanel extends JScrollPane {
 
@@ -67,7 +65,7 @@ class RightPanel extends JScrollPane {
 	variableComboBox2;
 	//JButton executeButton;
 	
-	  // SK added for linked statements
+	// SK added for linked statements
     StatementTableModel connectedSC;
     JButton connectButton, clearButton, deleteButton;
     JPanel connectedStatementPanel, viewLinkedStatementPanel;
@@ -76,12 +74,10 @@ class RightPanel extends JScrollPane {
     DefaultTableModel linkedTableModel;
     JScrollPane  linkedTableScrollPane, viewLinkedTableScroll;
     
-    DocStats docStats; //SK
-    EditDocumentPanel editDocPanel;
+    DocStats docStats;
 
 	public RightPanel() {
 		this.setPreferredSize(new Dimension(260, 440));
-		//this.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		JXTaskPaneContainer tpc = new JXTaskPaneContainer();
 		this.setColumnHeaderView(tpc);
 		tpc.setBackground(this.getBackground());
@@ -153,18 +149,6 @@ class RightPanel extends JScrollPane {
         saveRecordTaskPane.setCollapsed(true);
         ((Container) tpc).add(saveRecordTaskPane);
         
-        // Panel to change document details
-        JXTaskPane docDetailsTaskPane = new JXTaskPane();
-        editDocPanel = new EditDocumentPanel();
-        ImageIcon docDetailsIcon = new ImageIcon(getClass().getResource("/icons/table_edit.png"));
-        docDetailsTaskPane.setName("Edit document details");
-        docDetailsTaskPane.setTitle("Edit document details");
-
-        docDetailsTaskPane.setIcon(docDetailsIcon);
-        docDetailsTaskPane.setCollapsed(true);
-        docDetailsTaskPane.add(editDocPanel);
-        ((Container)tpc).add(docDetailsTaskPane);
-        
         JXTaskPane docStatisticsTaskPane = new JXTaskPane();
         docStats = new DocStats();
         ImageIcon docStatisticsIcon = new ImageIcon(getClass().getResource("/icons/chart_bar.png"));
@@ -181,12 +165,9 @@ class RightPanel extends JScrollPane {
 	public class StatementCellRenderer extends DefaultTableCellRenderer {
 		private static final long serialVersionUID = 1L;
 
-		public Component getTableCellRendererComponent(JTable table,
-				Object value, boolean isSelected, boolean hasFocus, int row, 
-				int column) {
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 			Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 			int modelRow = table.convertRowIndexToModel(row);
-			//Color col = ((StatementTableModel)table.getModel()).get(modelRow).getColor();
 			c.setBackground(Dna.data.getStatementColor(((StatementTableModel)table.getModel()).get(modelRow).getId()));
 			return c;
 		}

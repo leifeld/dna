@@ -142,8 +142,7 @@ public class Document implements Comparable<Document> {
 	public void setTitle(String title){ this.title = title; }
 	public void setDate(Date date){ this.date = date; }
 	
-	//this tells the array list how to sort Articles, i.e. by a 
-	//combination of date and title
+	//this tells the array list how to sort Articles, i.e. by a combination of date and title
 	public int compareTo(Document a) {
 		if (this.getDate().compareTo(a.getDate()) < 0) {
 			return -1;

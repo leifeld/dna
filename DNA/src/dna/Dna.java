@@ -17,12 +17,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class Dna {
-	static Data data = new Data();
-	static Dna dna;
-	Gui gui;
-	SqlConnection sql;
+	public static Data data = new Data();
+	public static Dna dna;
+	public Gui gui;
+	public SqlConnection sql;
 	
-	//ArrayList<Document> documents = new ArrayList<Document>(); //SK All changes w.r.t. documents list
 	public Dna () {
 		data.getSettings().put("version", "2.0 beta 3");
 		data.getSettings().put("date", "2016-03-09");
@@ -38,7 +37,7 @@ public class Dna {
 		gui.documentPanel.documentContainer.addDocument(document);
 		sql.upsertDocument(document);
 	}
-
+	
 	public void removeStatement(int statementId) {
 		gui.rightPanel.ssc.removeStatement(statementId);
 		sql.removeStatement(statementId);

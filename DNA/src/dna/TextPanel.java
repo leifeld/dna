@@ -1,6 +1,7 @@
 package dna;
 
 import dna.dataStructures.*;
+import dna.panels.SearchWindow;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -36,9 +37,9 @@ import javax.swing.text.StyleContext;
 import org.jdesktop.swingx.JXCollapsiblePane;
 
 @SuppressWarnings("serial")
-class TextPanel extends JPanel {
+public class TextPanel extends JPanel {
 	
-	JTextPane textWindow;
+	public JTextPane textWindow;
 	JScrollPane textScrollPane;
 	private DefaultStyledDocument doc;
 	StyleContext sc;
@@ -47,7 +48,7 @@ class TextPanel extends JPanel {
 	int documentId;
 	
 	SearchWindow searchWindow ;
-	JXCollapsiblePane collapsiblePane;
+	public JXCollapsiblePane collapsiblePane;
 	
 	ArrayList<StatementType> statementTypes ;
 	

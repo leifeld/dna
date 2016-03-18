@@ -6,12 +6,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-
-import javax.swing.table.DefaultTableModel;
 
 import dna.dataStructures.Coder;
 import dna.dataStructures.CoderRelation;
@@ -305,6 +304,7 @@ public class SqlConnection {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		Collections.sort(al);
 		return al;
 	}
 
@@ -393,9 +393,8 @@ public class SqlConnection {
 					} else {
 						editDocuments = false;
 					}
-					CoderRelation coderRelation = new CoderRelation(
-							result.getInt("ID"), result.getInt("Coder"), result.getInt("OtherCoder"), 
-							viewStatements, editStatements, viewDocuments, editDocuments);
+					CoderRelation coderRelation = new CoderRelation(result.getInt("ID"), result.getInt("Coder"), 
+							result.getInt("OtherCoder"), viewStatements, editStatements, viewDocuments, editDocuments);
 					al.add(coderRelation);
 				} while (result.next());
 			}
@@ -493,6 +492,12 @@ public class SqlConnection {
 	}
 	
 	public void removeCoder(int id) {
+		executeStatement("DELETE FROM DATABOOLEAN WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE Coder = " + id + ")");
+		executeStatement("DELETE FROM DATAINTEGER WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE Coder = " + id + ")");
+		executeStatement("DELETE FROM DATASHORTTEXT WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE Coder = " + id + ")");
+		executeStatement("DELETE FROM DATALONGTEXT WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE Coder = " + id + ")");
+		executeStatement("DELETE FROM STATEMENTS WHERE Coder = " + id);
+		executeStatement("DELETE FROM DOCUMENTS WHERE Coder = " + id);
 		executeStatement("DELETE FROM CODERRELATIONS WHERE OtherCoder = " + id + " OR Coder = " + id);
 		executeStatement("DELETE FROM CODERPERMISSIONS WHERE Coder = " + id);
 		executeStatement("DELETE FROM CODERS WHERE ID = " + id);

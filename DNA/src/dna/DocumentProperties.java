@@ -29,6 +29,7 @@ import org.jdesktop.swingx.JXTextArea;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
 import dna.dataStructures.Document;
+import dna.renderer.CoderComboBoxRenderer;
 
 public class DocumentProperties extends JFrame {
 	
@@ -139,7 +140,6 @@ public class DocumentProperties extends JFrame {
 		fieldsPanel.add(coderLabel, gbc);
 		
 		gbc.gridx++;
-		//String[] coderEntries = Dna.dna.db.getDocumentCoders();
 		coderBox = new JXComboBox(Dna.data.getCoders().toArray());
 		CoderComboBoxRenderer coderRenderer = new CoderComboBoxRenderer();
 		coderBox.setRenderer(coderRenderer);
@@ -154,7 +154,6 @@ public class DocumentProperties extends JFrame {
 		fieldsPanel.add(sourceLabel, gbc);
 		
 		gbc.gridx++;
-		//String[] sourceEntries = Dna.dna.db.getDocumentSources();
 		ArrayList<String> sourceEntries = new ArrayList<String>();
 		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
 			if (!sourceEntries.contains(Dna.data.getDocuments().get(i).getSource())) {

@@ -467,7 +467,7 @@ public class NewDatabaseDialog extends JDialog {
 					Coder coder = ecw.getCoder();
 					ecw.dispose();
 					if (!coder.getName().equals("")) {
-						model.addElement(coder);
+						Dna.data.addCoder(coder);
 					}
 					coderList.updateUI();
 				}
@@ -495,8 +495,7 @@ public class NewDatabaseDialog extends JDialog {
 			Coder admin = new Coder(Dna.data.generateNewCoderId());
 			admin.setName("Admin");
 			admin.setColor(Color.YELLOW);
-			model.addElement(admin);
-			
+			Dna.data.addCoder(admin);
 			coderList.updateUI();
 		}
 		
@@ -1302,11 +1301,11 @@ public class NewDatabaseDialog extends JDialog {
 						Dna.dna.sql.upsertStatementType(Dna.data.getStatementTypes().get(i));
 					}
 					
-					Dna.data.getSettings().put("statementColor", "statementType");
-					Dna.dna.sql.upsertSetting("statementColor", "statementType");
+					Dna.data.getSettings().put("statementColor", "coder");
+					Dna.dna.sql.upsertSetting("statementColor", "coder");
 					
 					Dna.data.setActiveCoder(Dna.data.getCoders().get(0).getId());
-					Dna.dna.gui.leftPanel.coderBox.setSelectedIndex(0);
+					Dna.dna.gui.leftPanel.coderPanel.coderBox.setSelectedIndex(0);
 					Dna.dna.gui.leftPanel.setComboEnabled(true);
 					
 					Dna.dna.gui.statusBar.resetLabel();

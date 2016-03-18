@@ -49,7 +49,6 @@ class NewDocumentDialog extends JDialog {
 	JXTextField titleField;
 	JXTextArea textArea, notesArea;
 	JXComboBox sourceBox, sectionBox, typeBox;
-	JComboBox<Coder> coderBox;
 	
 	public NewDocumentDialog() {
 		this.setModal(true);
@@ -130,7 +129,8 @@ class NewDocumentDialog extends JDialog {
 				String title = titleField.getText();
 				title = title.replaceAll("'", "''");
 				Date date = (Date)dateSpinner.getValue();
-				int coder = (int) ((Coder)coderBox.getModel().getSelectedItem()).getId();
+				//int coder = (int) ((Coder)coderBox.getModel().getSelectedItem()).getId();
+				int coder = Dna.data.getActiveCoder();
 				String source = (String) sourceBox.getModel().getSelectedItem();
 				source = source.replaceAll("'", "''");
 				String section = (String) sectionBox.getModel().getSelectedItem();
@@ -182,10 +182,20 @@ class NewDocumentDialog extends JDialog {
 		fieldsPanel.add(coderLabel, gbc);
 		
 		gbc.gridx++;
-		coderBox = new JComboBox<Coder>();
-		coderBox.setModel(new DefaultComboBoxModel(Dna.data.getCoders().toArray()));
-		coderBox.setEditable(false);
-		fieldsPanel.add(coderBox, gbc);
+		JPanel coderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		Coder coder = Dna.data.getCoderById(Dna.data.getActiveCoder());
+		String name = coder.getName();
+		if (name.length() > 20) {
+			name = name.substring(0, 16) + "...";
+		}
+		JLabel coderName = new JLabel(name);
+		JButton colorButton = new JButton();
+		colorButton.setPreferredSize(new Dimension(16, 16));
+		colorButton.setEnabled(false);
+		colorButton.setBackground(coder.getColor());
+		coderPanel.add(colorButton);
+		coderPanel.add(coderName);
+		fieldsPanel.add(coderPanel, gbc);
 		
 		gbc.gridy++;
 		gbc.gridx--;
@@ -270,36 +280,8 @@ class NewDocumentDialog extends JDialog {
 		dateSpinner.setPreferredSize(new Dimension(170, titleField.getHeight()));
 		typeBox.setPreferredSize(new Dimension(170, titleField.getHeight()));
 		sourceBox.setPreferredSize(new Dimension(170, titleField.getHeight()));
-		coderBox.setPreferredSize(new Dimension(170, titleField.getHeight()));
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 		this.pack();
 	}
-	
-	/*
-	class CoderComboBoxModel extends AbstractListModel<Coder> {
-		private Object selectedItem;
-		ArrayList<Coder> list = new ArrayList<Coder>();
-		
-		public CoderComboBoxModel() {
-			this.list = Dna.data.getCoders();
-		}
-
-		public Coder getElementAt(int index) {
-			return list.get(index);
-		}
-
-		public int getSize() {
-			return list.size();
-		}
-		
-		public Object getSelectedItem() {
-			return selectedItem;
-		}
-		
-		public void setSelectedItem(Object anItem) {
-			selectedItem = anItem;
-		}
-	}
-	*/
 }

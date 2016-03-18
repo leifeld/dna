@@ -1,10 +1,9 @@
-package dna;
+package dna.panels;
 
 import java.awt.event.*;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -34,6 +33,8 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
+import dna.Dna;
+
 @SuppressWarnings("serial")
 public class SearchWindow extends JPanel {
 	
@@ -41,7 +42,7 @@ public class SearchWindow extends JPanel {
 	SearchTableModel tableModel;
 	JScrollPane resultScroller;
 	JTextField textField;
-	JButton searchButton, searchRevert, hideButton;
+	JButton searchButton, searchRevert;
 	KeyAdapter enter;
 	
 	public SearchWindow() {
@@ -88,21 +89,7 @@ public class SearchWindow extends JPanel {
 		buttonPanel.add(searchButton);
 		buttonPanel.add(textField);
 		
-		
-		Icon closeSearch = new ImageIcon(getClass().getResource("/icons/cross.png"));
-		hideButton = new JButton(closeSearch);
-		hideButton.setToolTipText("Close search window");
-		hideButton.setPreferredSize(new Dimension(18, 18));
-		hideButton.addMouseListener(new MouseAdapter() {
-			
-			public void mouseClicked(MouseEvent e)
-			{
-				Dna.dna.gui.textPanel.collapsiblePane.setCollapsed(true);
-			}
-		});
-		
 		topPanel.add(buttonPanel, BorderLayout.WEST);
-		topPanel.add(hideButton, BorderLayout.EAST);
 		
 		tableModel = new SearchTableModel();
 		resultTable = new JTable( tableModel );
@@ -173,7 +160,6 @@ public class SearchWindow extends JPanel {
 				}
 				
 				String text = Dna.dna.gui.documentPanel.documentContainer.get(i).getText();
-//				text = Dna.stripHtmlTags(text, false);
 				Pattern p = Pattern.compile(searchTerm, Pattern.CASE_INSENSITIVE);
 				Matcher m = p.matcher(text);
 				while (m.find()) {
@@ -193,7 +179,7 @@ public class SearchWindow extends JPanel {
 						end = text.length();
 					}
 					String subtext = "..." + text.substring(start, end) + "...";
-					SearchResult sr = new SearchResult(i, Dna.dna.gui.documentPanel.documentContainer.get(i).getTitle(), date, m.start() + 1, m.end() + 1, subtext);
+					SearchResult sr = new SearchResult(i, Dna.dna.gui.documentPanel.documentContainer.get(i).getTitle(), date, m.start(), m.end(), subtext);
 					tableModel.addSearchResult(sr);
 				}
 				
@@ -206,7 +192,6 @@ public class SearchWindow extends JPanel {
 	}
 	
 	class SearchResult {
-		
 		int startCoordinate;
 		int endCoordinate;
 		int acRow;

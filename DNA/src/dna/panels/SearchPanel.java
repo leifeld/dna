@@ -1,4 +1,4 @@
-package dna;
+package dna.panels;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -19,8 +19,10 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import dna.Dna;
 
-class SearchPanel extends JPanel {
+
+public class SearchPanel extends JPanel {
 	
 	private static final long serialVersionUID = 1L;
 	

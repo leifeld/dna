@@ -18,22 +18,6 @@ public class Data {
 	public ArrayList<StatementLink> statementLinks;
 	int activeCoder = 1;
 	
-	/*
-	public Data(ArrayList<Statement> statements, ArrayList<Document> documents, ArrayList<Coder> coders,
-			ArrayList<Regex> regexes, ArrayList<StatementType> statementTypes, ArrayList<CoderRelation> coderRelations,
-			HashMap<String, String> settings, ArrayList<StatementLink> statementLinks) {
-		super();
-		this.statements = statements;
-		this.documents = documents;
-		this.coders = coders;
-		this.regexes = regexes;
-		this.statementTypes = statementTypes;
-		this.coderRelations = coderRelations;
-		this.settings = settings;
-		this.statementLinks = statementLinks;
-	}
-	*/
-	
 	public Data() {
 		this.statements = new ArrayList<Statement>();
 		this.documents = new ArrayList<Document>();
@@ -210,17 +194,24 @@ public class Data {
 		coders.add(coder);
 		int currentId = coder.getId();
 		for (int i = 0; i < coders.size(); i++) {
-			int crId = generateNewCoderRelationId();
 			int remoteId = coders.get(i).getId();
-			CoderRelation cr = new CoderRelation(crId, currentId, remoteId, true, true, true, true);
-			coderRelations.add(cr);
-			crId = generateNewCoderRelationId();
-			CoderRelation cr2 = new CoderRelation(crId, remoteId, currentId, true, true, true, true);
-			coderRelations.add(cr2);
+			if (currentId != remoteId) {
+				int crId = generateNewCoderRelationId();
+				CoderRelation cr = new CoderRelation(crId, currentId, remoteId, true, true, true, true);
+				coderRelations.add(cr);
+				int crId2 = generateNewCoderRelationId();
+				CoderRelation cr2 = new CoderRelation(crId2, remoteId, currentId, true, true, true, true);
+				coderRelations.add(cr2);
+			}
 		}
 	}
 	
 	public void removeCoder(int id) {
+		for (int i = documents.size() - 1; i > -1; i--) {
+			if (documents.get(i).getCoder() == id) {
+				Dna.dna.gui.documentPanel.documentContainer.remove(i);
+			}
+		}
 		int index = -1;
 		for (int i = 0; i < coders.size(); i++) {
 			if (coders.get(i).getId() == id) {
