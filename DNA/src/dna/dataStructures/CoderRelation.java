@@ -111,5 +111,4 @@ public class CoderRelation {
 	public void setEditDocuments(boolean editDocuments) {
 		this.editDocuments = editDocuments;
 	}
-
 }

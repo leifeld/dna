@@ -467,10 +467,12 @@ public class SqlConnection {
     		if (perm == true) {
     			permInt = 1;
     		}
+    		/*
     		String lastid = "LAST_INSERT_ID()";
     		if (dbtype.equals("sqlite")) {
     			lastid = "LAST_INSERT_ROWID()";
     		}
+    		*/
     		String statement = "INSERT INTO CODERPERMISSIONS(Coder, Type, Permission) VALUES("
     				+ coder.getId() + ", '" + key + "', " + permInt + ")";
     		executeStatement(statement);
@@ -737,6 +739,7 @@ public class SqlConnection {
 					
 					Coder coder = new Coder(id, name, new Color(red, green, blue), password, map);
 					al.add(coder);
+					Collections.sort(al);
 				} while (result.next());
 			}
 			result.close();

@@ -9,7 +9,8 @@ import javax.swing.event.ListDataListener;
 import dna.Dna;
 import dna.dataStructures.Coder;
 
-public class CoderComboBoxModel implements ComboBoxModel<Object> {
+@SuppressWarnings("serial")
+public class CoderComboBoxModel extends AbstractListModel<Object> implements ComboBoxModel<Object> {
 	private Object selectedItem;
 	Vector<ListDataListener> listeners = new Vector<ListDataListener>();
 	
@@ -43,20 +44,5 @@ public class CoderComboBoxModel implements ComboBoxModel<Object> {
 	@Override
 	public Object getSelectedItem() {
 		return selectedItem;
-	}
-	
-	public void removeSelectedItem() {
-		int id = ((Coder) selectedItem).getId();
-		boolean success = false;
-		for (int i = Dna.data.getCoders().size() - 1; i > -1; i--) {
-			if (Dna.data.getCoders().get(i).getId() == id) {
-				Dna.data.getCoders().remove(i);
-				success = true;
-			}
-			break;
-		}
-		if (success == false) {
-			System.err.println("Coder was not found and could not be removed!");
-		}
 	}
 }

@@ -40,7 +40,7 @@ public class Gui extends JFrame {
 	public DocumentPanel documentPanel;
 	public TextPanel textPanel;
 	RightPanel rightPanel;
-	LeftPanel leftPanel;
+	public LeftPanel leftPanel;
 	MenuBar menuBar;
 	
 	int previousDocID = -1;

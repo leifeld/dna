@@ -24,7 +24,7 @@ public class Dna {
 	
 	public Dna () {
 		data.getSettings().put("version", "2.0 beta 3");
-		data.getSettings().put("date", "2016-03-09");
+		data.getSettings().put("date", "2016-03-21");
 		
 		gui = new Gui();
 	}

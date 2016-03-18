@@ -1,49 +1,33 @@
 package dna.panels;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.UIManager;
-import javax.swing.RowFilter.Entry;
 import javax.swing.border.Border;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
 import dna.Dna;
-import dna.LeftPanel;
+import dna.EditCoderWindow;
 import dna.dataStructures.Coder;
 import dna.dataStructures.CoderRelation;
 import dna.renderer.CoderComboBoxModel;
@@ -51,9 +35,10 @@ import dna.renderer.CoderComboBoxRenderer;
 import dna.renderer.CoderRelationCellRenderer;
 import dna.renderer.CoderRelationTableModel;
 
+@SuppressWarnings("serial")
 public class CoderPanel extends JPanel {
 	public JComboBox<Coder> coderBox;
-	CoderComboBoxModel model;
+	public CoderComboBoxModel model;
 	CoderComboBoxRenderer renderer;
 	JButton editButton, deleteButton, addButton;
 	CoderRelationTableModel coderTableModel;
@@ -83,8 +68,12 @@ public class CoderPanel extends JPanel {
 		buttonPanel.add(editButton);
 		editButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Coder coder = (Coder) model.getElementAt(coderBox.getSelectedIndex());
-				new EditCoderWindow(coder);
+				Coder coder = (Coder) coderBox.getSelectedItem();
+				EditCoderWindow ecw = new EditCoderWindow(coder);
+				Coder coderUpdated = ecw.getCoder();
+				ecw.dispose();
+				Dna.data.replaceCoder(coderUpdated);
+				coderBox.updateUI();
 			}
 		});
 		addButton = new JButton(new ImageIcon(getClass().getResource("/icons/add.png")));
@@ -92,7 +81,15 @@ public class CoderPanel extends JPanel {
 		addButton.setEnabled(false);
 		addButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// TODO: add coder dialog
+				EditCoderWindow ecw = new EditCoderWindow(new Coder(Dna.data.generateNewCoderId()));
+				Coder coder = ecw.getCoder();
+				ecw.dispose();
+				if (!coder.getName().equals("")) {
+					Dna.dna.addCoder(coder);
+				}
+				coderBox.updateUI();
+				coderRelationTable.updateUI();
+				sorter.setRowFilter(filter);
 			}
 		});
 		deleteButton = new JButton(new ImageIcon(getClass().getResource("/icons/delete.png")));
@@ -127,8 +124,8 @@ public class CoderPanel extends JPanel {
 						int id = Dna.data.getActiveCoder();
 						Dna.dna.sql.removeCoder(id);
 						Dna.data.removeCoder(id);
-						coderBox.setSelectedIndex(0);
 						coderBox.updateUI();
+						coderBox.setSelectedIndex(0);
 					}
 				}
 			}
@@ -215,189 +212,13 @@ public class CoderPanel extends JPanel {
 			}
 		});
 	}
-
+	
 	public void setComboEnabled(boolean enabled) {
 		coderBox.setEnabled(enabled);
 		editButton.setEnabled(enabled);
+		addButton.setEnabled(enabled);
 		deleteButton.setEnabled(enabled);
 	}
-	
-
-class EditCoderWindow extends JDialog{
-	private static final long serialVersionUID = -3405773030010173292L;
-	Coder coder;
-	JTextField nameField;
-	JButton addColorButton;
-	JCheckBox permAddDocuments, permEditDocuments, permDeleteDocuments, permImportDocuments;
-	JCheckBox permViewOtherDocuments, permEditOtherDocuments;
-	JCheckBox permAddStatements, permViewOtherStatements, permEditOtherStatements;
-	JCheckBox permEditCoders, permEditStatementTypes, permEditRegex;
-	
-	public EditCoderWindow(Coder coder) {
-		this.coder = coder;
-		
-		this.setTitle("Coder details");
-		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		ImageIcon icon = new ImageIcon(getClass().getResource("/icons/user_edit.png"));
-		this.setIconImage(icon.getImage());
-		this.setLayout(new BorderLayout());
-		
-		JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		
-		addColorButton = new JButton();
-		addColorButton.setBackground(coder.getColor());
-		addColorButton.setPreferredSize(new Dimension(18, 18));
-		addColorButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				Color actualColor = ((JButton)e.getSource()).getBackground();
-				Color newColor = JColorChooser.showDialog(EditCoderWindow.this, "choose color...", actualColor);
-				if (newColor != null) {
-					((JButton) e.getSource()).setBackground(newColor);
-				}
-			}
-		});
-		namePanel.add(new JLabel("Color: "));
-		namePanel.add(addColorButton);
-		namePanel.add(Box.createRigidArea(new Dimension(5,5)));
-		JLabel nameLabel = new JLabel("Name: ");
-		namePanel.add(nameLabel);
-		namePanel.add(Box.createRigidArea(new Dimension(5,5)));
-		nameField = new JTextField(coder.getName());
-		nameField.setColumns(40);
-		namePanel.add(nameField);
-		this.add(namePanel, BorderLayout.NORTH);
-		
-		JPanel permPanel = new JPanel(new GridLayout(4, 3));
-		permAddDocuments = new JCheckBox("add documents");
-		permEditDocuments = new JCheckBox("edit documents");
-		permDeleteDocuments = new JCheckBox("delete documents");
-		permImportDocuments = new JCheckBox("import documents");
-		permViewOtherDocuments = new JCheckBox("view others' documents");
-		permEditOtherDocuments = new JCheckBox("edit others' documents");
-		permAddStatements = new JCheckBox("add statements");
-		permViewOtherStatements = new JCheckBox("view others' statements");
-		permEditOtherStatements = new JCheckBox("edit others' statements");
-		permEditCoders = new JCheckBox("edit coder settings");
-		permEditStatementTypes = new JCheckBox("edit statement types");
-		permEditRegex = new JCheckBox("edit regex settings");
-		permPanel.add(permAddDocuments);
-		permPanel.add(permEditDocuments);
-		permPanel.add(permDeleteDocuments);
-		permPanel.add(permImportDocuments);
-		permPanel.add(permViewOtherDocuments);
-		permPanel.add(permEditOtherDocuments);
-		permPanel.add(permAddStatements);
-		permPanel.add(permViewOtherStatements);
-		permPanel.add(permEditOtherStatements);
-		permPanel.add(permEditCoders);
-		permPanel.add(permEditStatementTypes);
-		permPanel.add(permEditRegex);
-		permAddDocuments.setSelected(coder.getPermissions().get("addDocuments"));
-		permEditDocuments.setSelected(coder.getPermissions().get("editDocuments"));
-		permDeleteDocuments.setSelected(coder.getPermissions().get("deleteDocuments"));
-		permImportDocuments.setSelected(coder.getPermissions().get("importDocuments"));
-		permViewOtherDocuments.setSelected(coder.getPermissions().get("viewOthersDocuments"));
-		permEditOtherDocuments.setSelected(coder.getPermissions().get("editOthersDocuments"));
-		permAddStatements.setSelected(coder.getPermissions().get("addStatements"));
-		permViewOtherStatements.setSelected(coder.getPermissions().get("viewOthersStatements"));
-		permEditOtherStatements.setSelected(coder.getPermissions().get("editOthersStatements"));
-		permEditCoders.setSelected(coder.getPermissions().get("editCoders"));
-		permEditStatementTypes.setSelected(coder.getPermissions().get("editStatementTypes"));
-		permEditRegex.setSelected(coder.getPermissions().get("editRegex"));
-		this.add(permPanel, BorderLayout.CENTER);
-		
-		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		JButton okButton = new JButton("OK", new ImageIcon(getClass().getResource("/icons/accept.png")));
-		if (nameField.getText().equals("")) {
-			okButton.setEnabled(false);
-		}
-		okButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				coder.setName(nameField.getText());
-				coder.setColor(addColorButton.getBackground());
-				coder.getPermissions().put("addDocuments", permAddDocuments.isSelected());
-				coder.getPermissions().put("editDocuments", permEditDocuments.isSelected());
-				coder.getPermissions().put("deleteDocuments", permDeleteDocuments.isSelected());
-				coder.getPermissions().put("importDocuments", permImportDocuments.isSelected());
-				coder.getPermissions().put("viewOthersDocuments", permViewOtherDocuments.isSelected());
-				coder.getPermissions().put("editOthersDocuments", permEditOtherDocuments.isSelected());
-				coder.getPermissions().put("addStatements", permAddStatements.isSelected());
-				coder.getPermissions().put("viewOthersStatements", permViewOtherStatements.isSelected());
-				coder.getPermissions().put("editOthersStatements", permEditOtherStatements.isSelected());
-				coder.getPermissions().put("editCoders", permEditCoders.isSelected());
-				coder.getPermissions().put("editStatementTypes", permEditStatementTypes.isSelected());
-				coder.getPermissions().put("editRegex", permEditRegex.isSelected());
-				Dna.data.replaceCoder(coder);
-				for (int i = 0; i < Dna.data.getCoderRelations().size(); i++) {
-					if (Dna.data.getCoderRelations().get(i).getCoder() == coder.getId()) {
-						Dna.data.getCoderRelations().get(i).setViewStatements(permViewOtherStatements.isSelected());
-						Dna.data.getCoderRelations().get(i).setEditStatements(permEditOtherStatements.isSelected());
-						Dna.data.getCoderRelations().get(i).setViewDocuments(permViewOtherDocuments.isSelected());
-						Dna.data.getCoderRelations().get(i).setEditDocuments(permEditOtherDocuments.isSelected());
-					}
-				}
-				Dna.dna.sql.upsertCoder(coder);
-				coderBox.updateUI();
-				coderRelationTable.updateUI();
-				dispose();
-			}
-		});
-		JButton cancelButton = new JButton("Cancel", new ImageIcon(getClass().getResource("/icons/cancel.png")));
-		cancelButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				cancelAction();
-			}
-		});
-		buttonPanel.add(okButton);
-		buttonPanel.add(cancelButton);
-		
-		nameField.getDocument().addDocumentListener(new DocumentListener() {
-			public void insertUpdate(DocumentEvent e) {
-				check();
-			}
-			public void removeUpdate(DocumentEvent e) {
-				check();
-			}
-			public void changedUpdate(DocumentEvent e) {
-				check();
-			}
-			public void check() {
-				if (nameField.getText().equals("")) {
-					okButton.setEnabled(false);
-				} else {
-					okButton.setEnabled(true);
-				}
-			}
-		});
-		
-		this.add(buttonPanel, BorderLayout.SOUTH);
-
-		addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent e) {
-				cancelAction();
-			}
-		});
-		
-		this.pack();
-		this.setModal(true);
-		this.setLocationRelativeTo(null);
-		this.setVisible(true);
-		this.setResizable(false);
-		namePanel.requestFocus();
-	}
-	
-	public void cancelAction() {
-		dispose();
-	}
-	
-	public void setCoder(Coder coder) {
-		this.setCoder(coder);
-	}
-	
-	public Coder getCoder() {
-		return(this.coder);
-	}
-}
 }
 
 

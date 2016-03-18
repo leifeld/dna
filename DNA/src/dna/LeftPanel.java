@@ -14,7 +14,7 @@ import dna.panels.EditDocumentPanel;
 
 @SuppressWarnings("serial")
 public class LeftPanel extends JScrollPane {
-	CoderPanel coderPanel;
+	public CoderPanel coderPanel;
     EditDocumentPanel editDocPanel;
 
 	public LeftPanel() {
@@ -39,8 +39,8 @@ public class LeftPanel extends JScrollPane {
         JXTaskPane docDetailsTaskPane = new JXTaskPane();
         editDocPanel = new EditDocumentPanel();
         ImageIcon docDetailsIcon = new ImageIcon(getClass().getResource("/icons/table_edit.png"));
-        docDetailsTaskPane.setName("Document meta-data");
-        docDetailsTaskPane.setTitle("Document meta-data");
+        docDetailsTaskPane.setName("Document properties");
+        docDetailsTaskPane.setTitle("Document properties");
         
         docDetailsTaskPane.setIcon(docDetailsIcon);
         docDetailsTaskPane.setCollapsed(false);

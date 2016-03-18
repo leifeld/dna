@@ -23,10 +23,10 @@ public class CoderRelationCellRenderer extends DefaultTableCellRenderer {
 		JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		int modelRow = table.convertRowIndexToModel(row);
 		CoderRelation cr = ((CoderRelationTableModel)table.getModel()).get(modelRow);
-		int otherCoderId = cr.getOtherCoder();
-		Coder otherCoder = Dna.data.getCoderById(otherCoderId);
-		Color otherColor = otherCoder.getColor();
 		if (column == 0) {
+			int otherCoderId = cr.getOtherCoder();
+			Coder otherCoder = Dna.data.getCoderById(otherCoderId);
+			Color otherColor = otherCoder.getColor();
 			JButton colorButton = new JButton();
 			colorButton.setPreferredSize(new Dimension(12, 16));
 			colorButton.setBackground(otherColor);

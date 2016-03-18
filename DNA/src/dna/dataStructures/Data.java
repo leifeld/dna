@@ -185,6 +185,7 @@ public class Data {
 				break;
 			}
 		}
+		Collections.sort(coders);
 		if (found == false) {
 			throw new NullPointerException("Coder with ID = " + coder.getId() + " not found.");
 		}
@@ -204,6 +205,7 @@ public class Data {
 				coderRelations.add(cr2);
 			}
 		}
+		Collections.sort(coders);
 	}
 	
 	public void removeCoder(int id) {
@@ -222,7 +224,7 @@ public class Data {
 		if (index == -1) {
 			throw new NullPointerException("Coder not found.");
 		}
-		for (int i = coderRelations.size() - 1; i < -1; i--) {
+		for (int i = coderRelations.size() - 1; i > -1; i--) {
 			if (coderRelations.get(i).getCoder() == id || coderRelations.get(i).getOtherCoder() == id) {
 				coderRelations.remove(i);
 			}
