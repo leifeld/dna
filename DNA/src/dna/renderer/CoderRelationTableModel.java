@@ -103,11 +103,18 @@ public class CoderRelationTableModel implements TableModel {
 			Dna.data.getCoderRelations().get(rowIndex).setEditDocuments((boolean) aValue);
 			Dna.dna.sql.updateCoderRelationEditDocuments(cr.getId(), (boolean) aValue);
 		}
-
+		
 		TableModelEvent e = new TableModelEvent(this);
 		for( int i = 0, n = listeners.size(); i < n; i++ ){
 			((TableModelListener)listeners.get( i )).tableChanged( e );
 		}
+
+		// update statement-related GUI parts
+		Dna.dna.gui.textPanel.paintStatements();
+		Dna.dna.gui.rightPanel.statementFilter.updateFilter();
+		
+		// update document-related GUI parts
+		Dna.dna.gui.documentPanel.documentFilter();
 	}
 	
 	@Override

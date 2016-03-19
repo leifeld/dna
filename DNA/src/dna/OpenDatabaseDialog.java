@@ -11,7 +11,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
-import javax.swing.AbstractButton;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -262,6 +261,7 @@ public class OpenDatabaseDialog extends JDialog {
 		Dna.dna.gui.menuBar.closeDatabase.setEnabled(true);
 		Dna.dna.gui.menuBar.openDatabase.setEnabled(false);
 		Dna.dna.gui.menuBar.newDatabase.setEnabled(false);
+		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		Dna.dna.gui.menuBar.colorStatementTypeButton.setEnabled(true);
 		Dna.dna.gui.menuBar.colorCoderButton.setEnabled(true);
 		if (Dna.data.getSettings().get("statementColor").equals("statementType")) {
@@ -276,6 +276,11 @@ public class OpenDatabaseDialog extends JDialog {
 		int ac = Dna.data.getActiveCoder();
 		Dna.dna.gui.leftPanel.coderPanel.coderBox.setSelectedItem(Dna.data.getCoderById(ac));
 		Dna.dna.gui.leftPanel.setComboEnabled(true);
+		
+		if (Dna.dna.gui.documentPanel.documentTable.getRowCount() > 0) {
+			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
+		}
+		Dna.dna.gui.documentPanel.documentFilter();
 		dispose();
 	}
 }

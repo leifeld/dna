@@ -36,7 +36,6 @@ public class EditCoderWindow extends JDialog{
 	
 	public EditCoderWindow(Coder coder) {
 		this.coder = coder;
-		
 		this.setTitle("Coder details");
 		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		ImageIcon icon = new ImageIcon(getClass().getResource("/icons/user_edit.png"));
@@ -129,38 +128,6 @@ public class EditCoderWindow extends JDialog{
 				coder.getPermissions().put("editStatementTypes", permEditStatementTypes.isSelected());
 				coder.getPermissions().put("editRegex", permEditRegex.isSelected());
 				setVisible(false);
-				/*
-				boolean coderExists = false;
-				for (int i = 0; i < Dna.data.getCoders().size(); i++) {
-					if (Dna.data.getCoders().get(i).getId() == coder.getId()) {
-						coderExists = true;
-						break;
-					}
-				}
-				
-				if (coderExists == true) {
-					Dna.data.replaceCoder(coder);
-					for (int i = 0; i < Dna.data.getCoderRelations().size(); i++) {
-						if (Dna.data.getCoderRelations().get(i).getCoder() == coder.getId()) {
-							Dna.data.getCoderRelations().get(i).setViewStatements(permViewOtherStatements.isSelected());
-							Dna.data.getCoderRelations().get(i).setEditStatements(permEditOtherStatements.isSelected());
-							Dna.data.getCoderRelations().get(i).setViewDocuments(permViewOtherDocuments.isSelected());
-							Dna.data.getCoderRelations().get(i).setEditDocuments(permEditOtherDocuments.isSelected());
-						}
-					}
-					if (writeSql == true) {
-						Dna.dna.sql.upsertCoder(coder);
-					}
-				} else {
-					Dna.data.addCoder(coder);
-					if (writeSql == true) {
-						Dna.dna.sql.addCoder(coder);
-					}
-				}
-				//coderBox.updateUI();
-				//coderRelationTable.updateUI();
-				dispose();
-				*/
 			}
 		});
 		JButton cancelButton = new JButton("Cancel", new ImageIcon(getClass().getResource("/icons/cancel.png")));

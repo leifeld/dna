@@ -27,9 +27,11 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JToggleButton;
 import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.table.TableRowSorter;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 
@@ -39,7 +41,7 @@ public class Gui extends JFrame {
 	StatusBar statusBar;
 	public DocumentPanel documentPanel;
 	public TextPanel textPanel;
-	RightPanel rightPanel;
+	public RightPanel rightPanel;
 	public LeftPanel leftPanel;
 	MenuBar menuBar;
 	
@@ -155,10 +157,9 @@ public class Gui extends JFrame {
 
 
 	public class DocumentPanel extends JScrollPane {
-
-		private static final long serialVersionUID = 1L;
 		public DocumentTableModel documentContainer;
 		public DocumentTable documentTable;
+		TableRowSorter<DocumentTableModel> sorter;
 
 		public DocumentPanel() {
 			if(Dna.dna != null) {
@@ -172,8 +173,39 @@ public class Gui extends JFrame {
 			setPreferredSize(new Dimension(700, 100));
 			documentTable.getColumnModel().getColumn(0).setPreferredWidth(680);
 			documentTable.getColumnModel().getColumn(1).setPreferredWidth(100);
+			
+			setRowSorterEnabled(true);
 		}
 
+		public void setRowSorterEnabled(boolean enabled) {
+			if (enabled == true) {
+				sorter = new TableRowSorter<DocumentTableModel>(documentContainer) {
+					public void toggleSortOrder(int i) {
+						//leave blank; overwritten method makes the table unsortable
+					}
+				};
+				documentTable.setRowSorter(sorter);
+			} else {
+				documentTable.setRowSorter(null);
+			}
+		}
+		
+		public void documentFilter() {
+			RowFilter<DocumentTableModel, Integer> documentFilter = new RowFilter<DocumentTableModel, Integer>() {
+				public boolean include(Entry<? extends DocumentTableModel, ? extends Integer> entry) {
+					DocumentTableModel dtm = entry.getModel();
+					Document d = dtm.get(entry.getIdentifier());
+					int documentId = d.getId();
+					boolean[] b = Dna.data.getActiveDocumentPermissions(documentId);
+					if (b[0] == true) {
+						return true;
+					}
+					return false;
+				}
+			};
+			sorter.setRowFilter(documentFilter);
+		}
+		
 		public class DocumentTable extends JTable {
 			
 			public DocumentTable() {
@@ -186,50 +218,56 @@ public class Gui extends JFrame {
 						if (e.getValueIsAdjusting()) {
 							return;
 						}
-						int selectedRow = getSelectedRow();
-						if (selectedRow == -1) {
-							previousDocID = -1;
-							textPanel.setDocumentText("");
-							//Dna.dna.gui.menuBar.changeDocumentButton.setEnabled(false);
-							//Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
-							Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
-							
-						} else {							
-							int id = documentPanel.documentContainer.get(selectedRow).getId() ;
-							//System.out.println(documentPanel.documentContainer.get(selectedRow).getDate());
-							//SK Doc_ID and selected row index differs hence search by doc_id in documents list
-							previousDocID = id;
-							Document document = documentContainer.getDocumentByID(id) ; 
-							//Dna.dna.db.getDocument(id); // No DB connection. get Document from retrieved data
-							
-							String text = document.getText();
-							textPanel.setDocumentId(id);
-							textPanel.setDocumentText(text);
-							textPanel.setEnabled(true);
-							//Dna.dna.gui.menuBar.changeDocumentButton.setEnabled(true);
-							//Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
-							
-							//SK
-							Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
-						}
-						if (Dna.dna.gui.rightPanel.statementFilter.showCurrent.isSelected()) {
-							Dna.dna.gui.rightPanel.statementFilter.documentFilter();
-						}
-						
-						if (Dna.data.getSettings().get("filename") != null) {
-							textPanel.paintStatements();
-						}
-						textPanel.setCaretPosition(0);
+						updateDocumentView();
 					}
 				});
+			}
+			
+			public void updateDocumentView() {
+				int selectedRow = getSelectedRow();
+				if (selectedRow == -1) {
+					previousDocID = -1;
+					textPanel.setDocumentText("");
+					//Dna.dna.gui.menuBar.changeDocumentButton.setEnabled(false);
+					//Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
+					Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
+					Dna.dna.gui.leftPanel.editDocPanel.updateUI();
+				} else {
+					int id = documentPanel.documentContainer.get(selectedRow).getId();
+					previousDocID = id;
+					Document document = documentContainer.getDocumentByID(id);
+					
+					String text = document.getText();
+					textPanel.setDocumentId(id);
+					textPanel.setDocumentText(text);
+					textPanel.setEnabled(true);
+					//Dna.dna.gui.menuBar.changeDocumentButton.setEnabled(true);
+					//Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
+					
+					//SK
+					Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
+					
+					boolean[] b = Dna.data.getActiveDocumentPermissions(id);
+					if (b[0] == true && b[1] == true) {
+						Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(Dna.data.getDocuments().get(selectedRow));
+					} else {
+						Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
+					}
+					Dna.dna.gui.leftPanel.editDocPanel.updateUI();
+				}
+				if (Dna.dna.gui.rightPanel.statementFilter.showCurrent.isSelected()) {
+					Dna.dna.gui.rightPanel.statementFilter.documentFilter();
+				}
+				
+				if (Dna.data.getSettings().get("filename") != null) {
+					textPanel.paintStatements();
+				}
+				textPanel.setCaretPosition(0);
 			}
 		}
 	}
 
 	class MenuBar extends JMenuBar {
-
-		private static final long serialVersionUID = 1L;
-
 		JMenu fileMenu, documentMenu, exportMenu, settingsMenu;
 		JMenuItem closeDatabase, newDatabase, openDatabase, importHTMLButton, typeEditorButton, changeDocumentButton, newDocumentButton, 
 			removeDocumentButton, importDnaButton, importOldButton, networkButton, aboutButton, colorStatementTypeButton, 
@@ -393,8 +431,7 @@ public class Gui extends JFrame {
 					JFileChooser fc = new JFileChooser();
 					fc.setFileFilter(new FileFilter() {
 						public boolean accept(File f) {
-							return f.getName().toLowerCase().endsWith(".dna")
-									|| f.isDirectory();
+							return f.getName().toLowerCase().endsWith(".dna") || f.isDirectory();
 						}
 						public String getDescription() {
 							return "DNA 2.0 file (*.dna)";
@@ -428,8 +465,7 @@ public class Gui extends JFrame {
 					JFileChooser fc = new JFileChooser();
 					fc.setFileFilter(new FileFilter() {
 						public boolean accept(File f) {
-							return f.getName().toLowerCase().endsWith(".dna")
-									|| f.isDirectory();
+							return f.getName().toLowerCase().endsWith(".dna") || f.isDirectory();
 						}
 						public String getDescription() {
 							return "DNA 1.xx XML file (*.dna)";
@@ -510,181 +546,9 @@ public class Gui extends JFrame {
 			settingsMenu.add(aboutButton);
 			aboutButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					//new AboutWindow(Dna.dna.getVersion(), Dna.dna.getDate());
 					new AboutWindow(Dna.data.getSettings().get("version"), Dna.data.getSettings().get("date"));
 				}
 			});
 		}
-		
-		/*
-		void updateTeggleAction()
-		{
-			toggleBottomButton.setEnabled(true);
-			toggleBottomButton.addActionListener(Dna.dna.gui.textPanel.collapsiblePane.getActionMap().get(JXCollapsiblePane.TOGGLE_ACTION));
-
-		}
-		*/
 	}
-	
-	/*
-	public class SQLConnectionDialog extends JFrame {
-
-		private static final long serialVersionUID = 1L;
-		JTextField connectionField, loginField, pwField, dbField;
-		JButton connectButton, cancelButton;
-		//JRadioButton mysqlButton, mssqlButton;
-		JLabel dbLabel, connectionLabel;
-
-		public SQLConnectionDialog () {
-			this.setTitle("Enter remote SQL connection details.");
-			this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			Icon mysqlIcon = new ImageIcon(getClass().getResource("/icons/database_link.png"));
-			this.setIconImage(((ImageIcon) mysqlIcon).getImage());
-			this.setLayout(new FlowLayout(FlowLayout.LEFT));
-			JPanel panel = new JPanel(new GridBagLayout());
-			GridBagConstraints gbc = new GridBagConstraints();
-			gbc.insets = new Insets(3, 3, 3, 3);
-			gbc.fill = GridBagConstraints.BOTH;
-			gbc.gridx = 0;
-			gbc.gridy = 0;
-
-			connectionLabel = new JLabel("mysql://", JLabel.TRAILING);
-			connectionField = new JTextField("");
-			connectionField.setColumns(30);
-
-			dbLabel = new JLabel("Database:", JLabel.TRAILING);
-			dbField = new JTextField();
-			
-			//JLabel typeLabel = new JLabel("DB type:", JLabel.TRAILING);
-			//panel.add(typeLabel, gbc);
-			//gbc.gridx++;
-			//mysqlButton = new JRadioButton("mySQL");
-			//mysqlButton.addActionListener(new ActionListener() {
-			//	public void actionPerformed(ActionEvent e) {
-			//		dbField.setText("");
-			//		dbField.setEnabled(false);
-			//		dbLabel.setEnabled(false);
-			//		connectionLabel.setText("mysql://");
-			//	}
-			//});
-			//mysqlButton.setSelected(true);
-			//dbField.setEnabled(false);
-			//dbLabel.setEnabled(false);
-			//panel.add(mysqlButton, gbc);
-			//gbc.gridx++;
-			//gbc.gridwidth = 2;
-			//mssqlButton = new JRadioButton("MS SQL Server");
-			//mssqlButton.addActionListener(new ActionListener() {
-			//	public void actionPerformed(ActionEvent e) {
-			//		dbField.setEnabled(true);
-			//		dbLabel.setEnabled(true);
-			//		connectionLabel.setText("sqlserver://");
-			//	}
-			//});
-			//panel.add(mssqlButton, gbc);
-			//ButtonGroup buttonGroup = new ButtonGroup();
-			//buttonGroup.add(mysqlButton);
-			//buttonGroup.add(mssqlButton);
-			//gbc.gridx = 0;
-			//gbc.gridy++;
-			//gbc.gridwidth = 1;
-			
-			panel.add(connectionLabel, gbc);
-			gbc.gridx++;
-			gbc.gridwidth = 3;
-			panel.add(connectionField, gbc);
-			DocumentListener dl = new DocumentListener() {
-				public void changedUpdate(DocumentEvent e) {
-					checkButton();
-				}
-				public void insertUpdate(DocumentEvent e) {
-					checkButton();
-				}
-				public void removeUpdate(DocumentEvent e) {
-					checkButton();
-				}
-				public void checkButton() {
-					connectButton.setEnabled(true);
-					if (connectionField.getText().equals("") || loginField.
-							getText().equals("") || pwField.getText().
-							equals("") || connectionField.getText().equals("mysql://")) {
-							//equals("") || connectionField.getText().equals("mysql://") || 
-							//(!mysqlButton.isSelected() && !mssqlButton.isSelected())) {
-						connectButton.setEnabled(false);
-					}
-				}
-			};
-			connectionField.getDocument().addDocumentListener(dl);
-			gbc.gridx--;
-			gbc.gridy++;
-			gbc.gridwidth = 1;
-
-			panel.add(dbLabel, gbc);
-			gbc.gridx++;
-
-			panel.add(dbField, gbc);
-			gbc.gridwidth = 1;
-			gbc.gridy++;
-			gbc.gridx = 0;
-			JLabel loginLabel = new JLabel("User name:", JLabel.TRAILING);
-			panel.add(loginLabel, gbc);
-			gbc.gridx++;
-			loginField = new JTextField(10);
-			loginField.setText("");
-			loginField.getDocument().addDocumentListener(dl);
-			panel.add(loginField, gbc);
-			gbc.gridx++;
-			JLabel pwLabel = new JLabel("Password:", JLabel.TRAILING);
-			panel.add(pwLabel, gbc);
-			gbc.gridx++;
-			pwField = new JTextField(10);
-			pwField.setText("");
-			pwField.getDocument().addDocumentListener(dl);
-			panel.add(pwField, gbc);
-			gbc.gridx = 0;
-			gbc.gridy++;
-			gbc.gridwidth = 2;
-			connectButton = new JButton("Connect");
-			connectButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					String url = connectionField.getText();
-					//if (mysqlButton.isSelected()) {
-						if (dbField.getText() != null && !dbField.equals("")) {
-							if (url.endsWith("/")) {
-								url = url + dbField.getText();
-							} else {
-								url = url + "/" + dbField.getText();
-							}
-						}
-						Dna.dna.openMySQL(connectionField.getText(), loginField.getText(), pwField.getText());
-					//} else if (mssqlButton.isSelected()) {
-					//	if (dbField.getText() == null || dbField.equals("")) {
-					//		System.err.println("A database name must be " +
-					//				"provided for MSSQL databases.");
-					//	}
-					//	Dna.dna.openMSSQL(connectionField.getText(), 
-					//			dbField.getText(), loginField.getText(), 
-					//			pwField.getText());
-					//}
-					dispose();
-				}
-			});
-			connectButton.setEnabled(false);
-			cancelButton = new JButton("Cancel");
-			cancelButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					dispose();
-				}
-			});
-			panel.add(connectButton, gbc);
-			gbc.gridx++;
-			gbc.gridx++;
-			panel.add(cancelButton, gbc);
-			this.add(panel);
-			this.pack();
-			this.setLocationRelativeTo(null);
-			this.setVisible(true);
-		}
-	}
-	*/
 }

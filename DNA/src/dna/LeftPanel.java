@@ -15,7 +15,7 @@ import dna.panels.EditDocumentPanel;
 @SuppressWarnings("serial")
 public class LeftPanel extends JScrollPane {
 	public CoderPanel coderPanel;
-    EditDocumentPanel editDocPanel;
+    public EditDocumentPanel editDocPanel;
 
 	public LeftPanel() {
 		this.setPreferredSize(new Dimension(260, 440));

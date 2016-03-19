@@ -84,7 +84,7 @@ public class ContradictionPanel extends JPanel {
 							int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
 							Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
 							setSelectionInterval(docRow, docRow);
-							Dna.dna.gui.textPanel.selectStatement(nodeInt, docId);
+							Dna.dna.gui.textPanel.selectStatement(nodeInt, docId, true);
 						}
 					}
 				} catch (NullPointerException npe) { }

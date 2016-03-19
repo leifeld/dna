@@ -165,22 +165,28 @@ public class TextPanel extends JPanel {
 			doc.setCharacterAttributes(initialStart, initialEnd - initialStart, blackStyle, false);
 
 			//color statements
-			//ArrayList<Statement> statements = Dna.dna.db.getStatementsPerDocumentId(documentId);
 			ArrayList<Statement> statements = new ArrayList<Statement>();
+			ArrayList<Integer> codersVisible = new ArrayList<Integer>();
+			int ac = Dna.data.getActiveCoder();
+			codersVisible.add(ac);
+			for (int i = 0; i < Dna.data.getCoderRelations().size(); i++) {
+				if (Dna.data.getCoderRelations().get(i).getCoder() == ac && Dna.data.getCoderRelations().get(i).isViewStatements() == true) {
+					codersVisible.add(Dna.data.getCoderRelations().get(i).getOtherCoder());  // which coders are visible?
+				}
+			}
 			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
-				if (Dna.data.getStatements().get(i).getDocumentId() == documentId) {
-					statements.add(Dna.data.getStatements().get(i));
+				if (Dna.data.getStatements().get(i).getDocumentId() == documentId 
+						&& codersVisible.contains(Dna.data.getStatements().get(i).getCoder())) {
+					statements.add(Dna.data.getStatements().get(i));  // add to list of statements to be painted
 				}
 			}
 			for (int i = 0; i < statements.size(); i++) {
 				int start = statements.get(i).getStart();
 				int stop = statements.get(i).getStop();
-				//Color color = statements.get(i).getColor();
 				Color color = Dna.data.getStatementColor(statements.get(i).getId());
 				Style bgStyle = sc.addStyle("ConstantWidth", null);
 				StyleConstants.setBackground(bgStyle, color);
-				doc.setCharacterAttributes(start, stop - start, 
-						bgStyle, false);
+				doc.setCharacterAttributes(start, stop - start, bgStyle, false);
 			}
 			
 			//color regular expressions
@@ -225,24 +231,16 @@ public class TextPanel extends JPanel {
 			menu1.setOpaque(true);
 			menu1.setBackground(col);
 			popmen.add( menu1 );
-
+			
 			menu1.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					//Object item = e.getSource();
-					//String itemText = ((JMenuItem) item).getText();
-					//String type = itemText.substring(10);
-					
 					int selectionStart = textWindow.getSelectionStart();
 					int selectionEnd = textWindow.getSelectionEnd();
-					String selectedText = textWindow.getText().substring(selectionStart, selectionEnd);
-					//CreateStatementFrame createPanel = new CreateStatementFrame(
-					//		statementType, col, documentId, selectionStart, selectionEnd,selectedText);
-					//createPanel.setVisible(true);
-
-					//int statementId = dna.db.addStatement(type, doc, start, stop);
+					//String selectedText = textWindow.getText().substring(selectionStart, selectionEnd);
+					
 					int statementId = Dna.data.generateNewStatementId();
 					int coderId = Dna.data.getActiveCoder();
-					Color color = statementType.getColor();
+					//Color color = statementType.getColor();
 					LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
 					Iterator<String> keyIterator = statementType.getVariables().keySet().iterator();
 			        while (keyIterator.hasNext()){
@@ -278,18 +276,26 @@ public class TextPanel extends JPanel {
 		} else {
 			int pos = textWindow.getCaretPosition(); //click caret position
 			Point p = me.getPoint();
+			
 			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
 				if (Dna.data.getStatements().get(i).getDocumentId() == documentId 
 						&& Dna.data.getStatements().get(i).getStart() < pos 
 						&& Dna.data.getStatements().get(i).getStop() > pos) {
-					int statementId = Dna.data.getStatements().get(i).getId();
-					int startIndex = Dna.data.getStatements().get(i).getStart();
-					int stopIndex = Dna.data.getStatements().get(i).getStop();
-					Point location = textWindow.getLocationOnScreen();
-					textWindow.setSelectionStart(startIndex);
-					textWindow.setSelectionEnd(stopIndex);
-					new Popup(p, statementId, location);
-					break;
+					boolean[] b = Dna.data.getActiveStatementPermissions(Dna.data.getStatements().get(i).getId());
+					if (b[0] == true) {  // statement is visible to the active coder
+						int statementId = Dna.data.getStatements().get(i).getId();
+						int startIndex = Dna.data.getStatements().get(i).getStart();
+						int stopIndex = Dna.data.getStatements().get(i).getStop();
+						Point location = textWindow.getLocationOnScreen();
+						textWindow.setSelectionStart(startIndex);
+						textWindow.setSelectionEnd(stopIndex);
+						if (b[1] == true) {  // statement is editable by the active coder
+							new Popup(p, statementId, location, true);
+						} else {
+							new Popup(p, statementId, location, false);
+						}
+						break;
+					}
 				}
 			}
 		}
@@ -302,7 +308,7 @@ public class TextPanel extends JPanel {
 	 * @param statementId
 	 * @param documentId
 	 */
-	public void selectStatement(final int statementId, int documentId) {
+	public void selectStatement(final int statementId, int documentId, boolean editable) {
 		textWindow.setText(Dna.data.getDocument(documentId).getText());
 		paintStatements();
 		
@@ -337,7 +343,7 @@ public class TextPanel extends JPanel {
 				}
 				Point p = mtv.getLocation();
 				Point loc = textWindow.getLocationOnScreen();
-				new Popup(p, statementId, loc);
+				new Popup(p, statementId, loc, editable);
 			}
 		});
 	}

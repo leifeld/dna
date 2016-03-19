@@ -52,18 +52,14 @@ public class Popup extends JDialog {
 	static int statementId;
 	JPanel gridBagPanel;
 	Connection conn;
-	//Statement st6;
 	
-	public Popup(Point point, int statementId, Point location) {
+	public Popup(Point point, int statementId, Point location, boolean editable) {
 		this.point = point;
 		Popup.statementId = statementId;
 		this.los = location;
 		
-		//final dna.dataStructures.Statement s = Dna.dna.db.getStatement(statementId);
 		Statement statement = Dna.data.getStatement(statementId);
-		//this.color = statement.getColor();
 		this.color = Dna.data.getStatementColor(statementId);
-		//this.type = Dna.dna.db.getStatementType(statementId);
 		statementTypeId = statement.getStatementTypeId();
 		this.type = Dna.data.getStatementTypeById(statementTypeId).getLabel();
 		
@@ -143,7 +139,7 @@ public class Popup extends JDialog {
 				}
 				Statement newStatement = new Statement(newId, documentId, start, stop, date, statementTypeId, coder, map);
 				Dna.dna.addStatement(newStatement);
-				Dna.dna.gui.textPanel.selectStatement(newId, newStatement.getDocumentId());
+				Dna.dna.gui.textPanel.selectStatement(newId, newStatement.getDocumentId(), true);
 			}
 		});
 		
@@ -167,6 +163,11 @@ public class Popup extends JDialog {
 				}
 			}
 		});
+		if (editable == true) {
+			remove.setEnabled(true);
+		} else {
+			remove.setEnabled(false);
+		}
 		
 		idAndPositionPanel.add(idLabel);
 		idAndPositionPanel.add(idField);
@@ -198,9 +199,7 @@ public class Popup extends JDialog {
 			String value = variables.get(key);
 			JLabel label = new JLabel(key, JLabel.TRAILING);
 			if (value.equals("short text")) {
-				//String entry = Dna.dna.db.getVariableStringEntry(statementId, key);
 				String entry = (String) Dna.data.getStatement(statementId).getValues().get(key);
-				//String[] entries = Dna.dna.db.getVariableStringEntries(key, type);
 				ArrayList<Statement> subset = Dna.data.getStatementsByStatementTypeId(statementTypeId);
 				ArrayList<String> entries = new ArrayList<String>();
 				for (int i = 0; i < subset.size(); i++) {
@@ -212,6 +211,11 @@ public class Popup extends JDialog {
 				String[] entriesArray = entries.toArray(new String[0]);
 				JComboBox<String> box = new JComboBox<String>(entriesArray);
 				box.setEditable(true);
+				if (editable == true) {
+					box.setEnabled(true);
+				} else {
+					box.setEnabled(false);
+				}
     			box.setPreferredSize(new Dimension(220, 20));
     			box.setSelectedItem((String)entry);
     			AutoCompleteDecorator.decorate(box);
@@ -227,6 +231,11 @@ public class Popup extends JDialog {
 				String entry = (String) Dna.data.getStatement(statementId).getValues().get(key);
     			JTextArea box = new JTextArea();
     			box.setEditable(true);
+				if (editable == true) {
+					box.setEnabled(true);
+				} else {
+					box.setEnabled(false);
+				}
     			box.setWrapStyleWord(true);
     			box.setLineWrap(true);
     			box.setText(entry);
@@ -251,7 +260,12 @@ public class Popup extends JDialog {
 				}
 				JCheckBox box = new JCheckBox();
     			box.setPreferredSize(new Dimension(20, 20));
-    			box.setEnabled(true);
+    			//box.setEnabled(true);
+				if (editable == true) {
+					box.setEnabled(true);
+				} else {
+					box.setEnabled(false);
+				}
     			if (val == true) {
     				box.setSelected(true);
     			} else {
@@ -275,6 +289,11 @@ public class Popup extends JDialog {
     			jsp.setEnabled(true);
     			JPanel jp = new JPanel(new FlowLayout(FlowLayout.LEFT));
     			jp.add(jsp);
+				if (editable == true) {
+					jsp.setEnabled(true);
+				} else {
+					jsp.setEnabled(false);
+				}
     			
 				gbc.anchor = GridBagConstraints.EAST;
 	    		gridBagPanel.add(label, gbc);
@@ -349,6 +368,5 @@ public class Popup extends JDialog {
 				Dna.dna.updateVariable(statementId, statementTypeId, content, contentType);
 			}
 		}
-		
 	}
 }

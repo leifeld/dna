@@ -25,7 +25,6 @@ import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -56,10 +55,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeSelectionModel;
 
-import org.jdesktop.swingx.JXTextField;
-
 import dna.dataStructures.Coder;
-import dna.dataStructures.CoderRelation;
 import dna.dataStructures.Data;
 import dna.dataStructures.StatementType;
 

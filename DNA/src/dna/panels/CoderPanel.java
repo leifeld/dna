@@ -72,8 +72,11 @@ public class CoderPanel extends JPanel {
 				EditCoderWindow ecw = new EditCoderWindow(coder);
 				Coder coderUpdated = ecw.getCoder();
 				ecw.dispose();
-				Dna.data.replaceCoder(coderUpdated);
+				Dna.dna.replaceCoder(coderUpdated);
 				coderBox.updateUI();
+				coderRelationTable.updateUI();
+				Dna.dna.gui.textPanel.paintStatements();
+				Dna.dna.gui.rightPanel.statementFilter.updateFilter();
 			}
 		});
 		addButton = new JButton(new ImageIcon(getClass().getResource("/icons/add.png")));
@@ -210,6 +213,9 @@ public class CoderPanel extends JPanel {
 				Dna.dna.setActiveCoder(((Coder) coderBox.getSelectedItem()).getId());
 				coderRelationTable.updateUI();
 				sorter.setRowFilter(filter);
+				Dna.dna.gui.textPanel.paintStatements();
+				Dna.dna.gui.documentPanel.documentFilter();
+				Dna.dna.gui.documentPanel.documentTable.updateDocumentView();
 			}
 		});
 	}

@@ -45,7 +45,9 @@ public class Dna {
 	}
 	
 	public void addStatement(Statement statement) {
+		gui.rightPanel.setRowSorterEnabled(false);
 		gui.rightPanel.ssc.addStatement(statement);
+		gui.rightPanel.setRowSorterEnabled(true);
 		sql.addStatement(statement, data.getStatementTypeById(statement.getStatementTypeId()).getVariables());
 	}
 	
@@ -59,6 +61,12 @@ public class Dna {
 	public void addCoder(Coder coder) {
 		data.addCoder(coder);
 		sql.addCoder(coder);
+	}
+	
+	public void replaceCoder(Coder coder) {
+		data.replaceCoder(coder);
+		sql.upsertCoder(coder);
+		
 	}
 	
 	public void setActiveCoder(int activeCoder) {

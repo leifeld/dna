@@ -5,7 +5,6 @@ import dna.dataStructures.*;
 import dna.renderer.CoderComboBoxModel;
 import dna.renderer.CoderComboBoxRenderer;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -31,7 +30,6 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SpinnerDateModel;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
-
 
 @SuppressWarnings("serial")
 public class EditDocumentPanel extends JPanel {
@@ -63,11 +61,11 @@ public class EditDocumentPanel extends JPanel {
 	
 	public void createEditDocumentPanel() {
 		this.removeAll();
-		JLabel selectDoc = new JLabel("(No document selected)");
+		JLabel selectDoc = new JLabel("(No document or permission)");
 		selectDoc.setEnabled(false);
 		this.add(selectDoc);
 	}
-
+	
 	@SuppressWarnings("unchecked")
 	public void createEditDocumentPanel(Document doc) {	
 		this.document = doc;
@@ -124,7 +122,7 @@ public class EditDocumentPanel extends JPanel {
 		CoderComboBoxModel model = new CoderComboBoxModel();
 		coderBox = new JComboBox(model);
 		coderBox.setRenderer(renderer);
-		coderBox.setSelectedItem(Dna.data.getCoderById(Dna.data.getActiveCoder()));
+		coderBox.setSelectedItem(Dna.data.getCoderById(doc.getCoder()));
 		this.add(coderBox, g);
 		
 		g.gridy = 8;
@@ -201,8 +199,6 @@ public class EditDocumentPanel extends JPanel {
 		g.weighty = 1.0;
 		g.fill = GridBagConstraints.BOTH;
 		notesArea = new JTextArea(document.getNotes());
-		//notesArea.setPreferredSize(new Dimension(200, 200));
-		//notesArea.setText();
 		notesArea.setCaretPosition(0);
 		notesArea.setBorder(titleField.getBorder());
 		notesArea.setRows(4);
@@ -210,10 +206,7 @@ public class EditDocumentPanel extends JPanel {
 		notesArea.setLineWrap(true);
 		notesArea.setWrapStyleWord(true);
 		notesScroll = new JScrollPane(notesArea);
-		//notesScroll.setPreferredSize(new Dimension(200, 200));
-		//notesScroll.setVisible(false);
 		this.add(notesScroll, g);
-		//this.add(notesArea, g);
 		
 		g.gridy = 20;
 		g.fill = GridBagConstraints.HORIZONTAL;
@@ -232,6 +225,8 @@ public class EditDocumentPanel extends JPanel {
 		cancelButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				createEditDocumentPanel(doc);
+				boolean[] b = Dna.data.getActiveDocumentPermissions(document.getId());
+				setEnabled(b[1]);
 				revalidate();
 			}
 		});
@@ -302,6 +297,8 @@ public class EditDocumentPanel extends JPanel {
 		Dna.dna.gui.documentPanel.documentTable.getSelectionModel().setSelectionInterval(newRow, newRow);
 
 		createEditDocumentPanel(document);
+		boolean[] b = Dna.data.getActiveDocumentPermissions(document.getId());
+		setEnabled(b[1]);
 		revalidate();
 	}
 }

@@ -48,22 +48,19 @@ import dna.dataStructures.StatementLink;
 import dna.dataStructures.StatementType;
 import dna.panels.SearchPanel;
 
-class RightPanel extends JScrollPane {
-
-	private static final long serialVersionUID = 1L;
-
+@SuppressWarnings("serial")
+public class RightPanel extends JScrollPane {
 	StatementTableModel ssc;
 	ContradictionPanel cp;
 	RegexManagerPanel rm;
-	JTable statementTable;
+	public JTable statementTable;
 	JScrollPane statementTableScrollPane;
 	JPanel statementPanel;
-	StatementFilter statementFilter;
+	public StatementFilter statementFilter;
 	TableRowSorter<StatementTableModel> sorter;
 	JXTextField patternField1, patternField2;
 	JComboBox<String> typeComboBox1, typeComboBox2, variableComboBox1, 
 	variableComboBox2;
-	//JButton executeButton;
 	
 	// SK added for linked statements
     StatementTableModel connectedSC;
@@ -180,8 +177,7 @@ class RightPanel extends JScrollPane {
         public Component getTableCellRendererComponent(JTable table,
                 Object value, boolean isSelected, boolean hasFocus, int row,
                 int column) {
-            Component c = super.getTableCellRendererComponent(table, value,
-                    isSelected, hasFocus, row, column);
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             int modelRow = table.convertRowIndexToModel(row);
             int modelColumn = table.convertColumnIndexToModel(column);
             int statementID = (int) table.getModel().getValueAt(modelRow, modelColumn);
@@ -204,8 +200,7 @@ class RightPanel extends JScrollPane {
             return c;
         }
     }
-
-
+	
 	private void statementPanel() {
 		ssc = new StatementTableModel();
 		statementTable = new JTable( ssc );
@@ -216,8 +211,7 @@ class RightPanel extends JScrollPane {
 		statementTable.getColumnModel().getColumn( 1 ).setPreferredWidth( 162 );
 
 		statementTable.getTableHeader().setReorderingAllowed( false );
-		statementTable.putClientProperty("terminateEditOnFocusLost", 
-				Boolean.TRUE);
+		statementTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 
 		setRowSorterEnabled(true);
 
@@ -241,12 +235,12 @@ class RightPanel extends JScrollPane {
 				if (row > -1) {
 					int statementId = ssc.get(row).getId();
 					if (statementId != -1) {
-						//int docId = Dna.dna.db.getStatement(statementId).getDocument();
+						boolean[] b = Dna.data.getActiveStatementPermissions(statementId);
 						int docId = Dna.data.getStatement(statementId).getDocumentId();
 						int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
 						Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
 						setSelectionInterval(docRow, docRow);
-						Dna.dna.gui.textPanel.selectStatement(statementId, docId);
+						Dna.dna.gui.textPanel.selectStatement(statementId, docId, b[1]);
 					}
 				}
 			}
@@ -474,7 +468,6 @@ class RightPanel extends JScrollPane {
         ArrayList<int[]> data = new ArrayList<>();
         Integer[][] tableData = null;
         if (Dna.dna != null) {
-            //data = Dna.dna.db.getAllLinkedStatements();
         	for (int i = 0; i < Dna.data.getStatementLinks().size(); i++) {
         		int[] ids = new int[2];
         		ids[0] = Dna.data.getStatementLinks().get(i).getSourceId();
@@ -572,7 +565,6 @@ class RightPanel extends JScrollPane {
 		variableComboBox2.removeAllItems();
 		String type = (String) typeComboBox1.getSelectedItem();
 		if (type != null && !type.equals("")) {
-			//HashMap<String, String> variables = Dna.dna.db.getVariables(type);
 			HashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
 			Iterator<String> keyIterator = variables.keySet().iterator();
 			while (keyIterator.hasNext()){
@@ -623,12 +615,10 @@ class RightPanel extends JScrollPane {
 	}
 
 	public class StatementFilter extends JPanel {
-
-		private static final long serialVersionUID = 1L;
 		JRadioButton showAll;
 		JRadioButton showCurrent;
 		JRadioButton showFilter;
-
+		
 		public StatementFilter() {
 			this.setLayout(new BorderLayout());
 			JPanel showPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -651,7 +641,6 @@ class RightPanel extends JScrollPane {
 					updateVariables();
 					filter();
 				}
-
 			});
 
 			variableComboBox1 = new JComboBox<String>();
@@ -661,7 +650,6 @@ class RightPanel extends JScrollPane {
 				public void itemStateChanged(ItemEvent e) {
 					filter();
 				}
-
 			});
 			patternField1 = new JXTextField("regex");
 			patternField1.setPreferredSize(new Dimension(104, 20));
@@ -672,12 +660,10 @@ class RightPanel extends JScrollPane {
 				public void itemStateChanged(ItemEvent e) {
 					filter();
 				}
-
 			});
 			patternField2 = new JXTextField("regex");
 			patternField2.setPreferredSize(new Dimension(104, 20));
-
-
+			
 			toggleEnabled(false);
 
 			JPanel filterPanel0 = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -694,11 +680,10 @@ class RightPanel extends JScrollPane {
 			filterPanel.add(filterPanel0, Component.CENTER_ALIGNMENT);
 			filterPanel.add(filterPanel1, Component.CENTER_ALIGNMENT);
 			filterPanel.add(filterPanel2, Component.CENTER_ALIGNMENT);
-
-
+			
 			this.add(showPanel, BorderLayout.NORTH);
 			this.add(filterPanel, BorderLayout.CENTER);
-
+			
 			ActionListener al = new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					if (e.getSource() == showAll) {				
@@ -719,7 +704,7 @@ class RightPanel extends JScrollPane {
 					//}
 				}
 			};
-
+			
 			showAll.addActionListener(al);
 			showCurrent.addActionListener(al);
 			showFilter.addActionListener(al);
@@ -751,25 +736,46 @@ class RightPanel extends JScrollPane {
 			patternField1.setEnabled(enabled);
 			variableComboBox2.setEnabled(enabled);
 			patternField2.setEnabled(enabled);
-			if(enabled==true)
-			{
+			if (enabled == true) {
 				updateStatementTypes();
 			}
 			this.updateUI();
 		}
-
-		public void allFilter() {
-			try {
-				//RowFilter<StatementTableModel, Object> rf = RowFilter.regexFilter("");
-				if (showAll.isSelected()) {
-					sorter.setRowFilter(null);					
-				}
-
-			} catch (java.util.regex.PatternSyntaxException pse) {
-				return;
+		
+		// used in the coder relation table model to update the statement table when coder relations are changed 
+		public void updateFilter() {
+			if (showAll.isSelected()) {
+				allFilter();
+				toggleEnabled(false);
+			}
+			if (showCurrent.isSelected()) {
+				toggleEnabled(false);
+				allFilter();
+				documentFilter();
+			}
+			if (showFilter.isSelected()) {
+				toggleEnabled(true);
+				filter();
 			}
 		}
-
+		
+		public void allFilter() {
+			RowFilter<StatementTableModel, Integer> allFilter = new RowFilter<StatementTableModel, Integer>() {
+				public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
+					StatementTableModel stcont = entry.getModel();
+					Statement st = stcont.get(entry.getIdentifier());
+					boolean[] b = Dna.data.getActiveStatementPermissions(st.getId());
+					if (b[0] == true && Dna.data.getActiveDocumentPermissions(st.getDocumentId())[0] == true) {
+						return true;
+					}
+					return false;
+				}
+			};
+			if (showAll.isSelected()) {
+				sorter.setRowFilter(allFilter);
+			}
+		}
+		
 		public void documentFilter() {
 			int row = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
 			int docId = -1;
@@ -782,7 +788,8 @@ class RightPanel extends JScrollPane {
 				public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
 					StatementTableModel stcont = entry.getModel();
 					Statement st = stcont.get(entry.getIdentifier());
-					if (st.getDocumentId() == documentId) {
+					boolean[] b = Dna.data.getActiveStatementPermissions(st.getId());
+					if (st.getDocumentId() == documentId && b[0] == true && Dna.data.getActiveDocumentPermissions(st.getDocumentId())[0] == true) {
 						return true;
 					}
 					return false;
@@ -792,12 +799,10 @@ class RightPanel extends JScrollPane {
 				sorter.setRowFilter(documentFilter);
 			}
 		}
-
+		
 		private void filter() {
-			//String fn = Dna.dna.db.getFileName();
 			String fn = Dna.data.getSettings().get("filename");
-			if (fn != null && !fn.equals("")) 
-			{
+			if (fn != null && !fn.equals("")) {
 				String p1 = patternField1.getText();
 				String p2 = patternField2.getText();
 
@@ -822,8 +827,6 @@ class RightPanel extends JScrollPane {
 				}
 
 				if (!t1.equals("") && ! v1.equals("") && !v2.equals("")) {
-					//final ArrayList<Integer> ids1 = Dna.dna.db.getStatementMatch(t1, v1, p1);
-					//final ArrayList<Integer> ids2 = Dna.dna.db.getStatementMatch(t1, v2, p2);
 					ArrayList<Integer> ids1 = new ArrayList<Integer>();
 					Pattern p = Pattern.compile(p1);
 					for (int i = 0; i < Dna.data.getStatements().size(); i++) {
@@ -848,38 +851,29 @@ class RightPanel extends JScrollPane {
 					final String p1final = p1;
 					final String p2final = p2;
 
-					RowFilter<StatementTableModel, Integer> idFilter = 
-							new	RowFilter<StatementTableModel, Integer>() 
-							{
-						public boolean include(Entry<? extends 
-								StatementTableModel, ? extends Integer> 
-						entry) {
+					RowFilter<StatementTableModel, Integer> idFilter = new RowFilter<StatementTableModel, Integer>() {
+						public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
 							StatementTableModel stcont = entry.getModel();
-							Statement st = stcont.get(entry.
-									getIdentifier());
-
+							Statement st = stcont.get(entry.getIdentifier());
+							boolean[] b = Dna.data.getActiveStatementPermissions(st.getId());
 							boolean contentMatch;
-							if (ids1.contains(st.getId()) && (ids2.
-									contains(st.getId()) || p2final.
-									equals(""))) {
+							if (ids1.contains(st.getId()) && (ids2.contains(st.getId()) || p2final.equals(""))) {
 								contentMatch = true;
-							} else if (ids2.contains(st.getId()) && 
-									(ids1.contains(st.getId()) || 
-											p1final.equals(""))) {
+							} else if (ids2.contains(st.getId()) && (ids1.contains(st.getId()) || p1final.equals(""))) {
 								contentMatch = true;
 							} else {
 								contentMatch = false;
 							}
 
-							if (contentMatch == true) {
+							if (contentMatch == true && b[0] == true && Dna.data.getActiveDocumentPermissions(st.getDocumentId())[0] == true) {
 								return true;
 							}
 							return false;
 						}
-							};
-							if (showFilter.isSelected()) {
-								sorter.setRowFilter(idFilter);
-							}
+					};
+					if (showFilter.isSelected()) {
+						sorter.setRowFilter(idFilter);
+					}
 				}
 			}
 		}

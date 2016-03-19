@@ -29,11 +29,52 @@ public class Data {
 		settings.put("activeCoder", "1");
 	}
 	
+	public boolean[] getActiveStatementPermissions(int statementId) {
+		int ac = getActiveCoder();
+		boolean[] b = new boolean[4];
+		if (this.getStatement(statementId).getCoder() == ac) {
+			b[0] = true;
+			b[1] = true;
+			b[2] = true;
+			b[3] = true;
+		} else {
+			for (int i = 0; i < coderRelations.size(); i++) {
+				if (coderRelations.get(i).getCoder() == ac && coderRelations.get(i).getOtherCoder() == this.getStatement(statementId).getCoder()) {
+					b[0] = coderRelations.get(i).isViewStatements();
+					b[1] = coderRelations.get(i).isEditStatements();
+					b[2] = coderRelations.get(i).isViewDocuments();
+					b[3] = coderRelations.get(i).isEditDocuments();
+					return b;
+				}
+			}
+		}
+		return b;
+	}
+
+	public boolean[] getActiveDocumentPermissions(int documentId) {
+		int ac = getActiveCoder();
+		boolean[] b = new boolean[2];
+		if (this.getDocument(documentId).getCoder() == ac) {
+			b[0] = true;
+			b[1] = true;
+		} else {
+			for (int i = 0; i < coderRelations.size(); i++) {
+				if (coderRelations.get(i).getCoder() == ac && coderRelations.get(i).getOtherCoder() == this.getDocument(documentId).getCoder()) {
+					b[0] = coderRelations.get(i).isViewDocuments();
+					b[1] = coderRelations.get(i).isEditDocuments();
+					return b;
+				}
+			}
+		}
+		return b;
+	}
+	
 	/**
 	 * @return the activeCoder
 	 */
 	public int getActiveCoder() {
-		return Integer.valueOf(settings.get("activeCoder")).intValue();
+		String s = settings.get("activeCoder");
+		return (int) Integer.valueOf(s);
 	}
 	
 	/**
@@ -185,6 +226,22 @@ public class Data {
 			}
 		}
 		Collections.sort(coders);
+		for (int i = 0; i < coderRelations.size(); i++) {
+			if (coderRelations.get(i).getCoder() == coder.getId()) {
+				if (coder.getPermissions().get("viewOthersStatements") == false) {
+					coderRelations.get(i).setViewStatements(false);
+				}
+				if (coder.getPermissions().get("editOthersStatements") == false) {
+					coderRelations.get(i).setEditStatements(false);
+				}
+				if (coder.getPermissions().get("viewOthersDocuments") == false) {
+					coderRelations.get(i).setViewDocuments(false);
+				}
+				if (coder.getPermissions().get("editOthersDocuments") == false) {
+					coderRelations.get(i).setEditDocuments(false);
+				}
+			}
+		}
 		if (found == false) {
 			throw new NullPointerException("Coder with ID = " + coder.getId() + " not found.");
 		}
