@@ -10,12 +10,14 @@ import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 
 import dna.panels.CoderPanel;
+import dna.panels.DocStatsPanel;
 import dna.panels.EditDocumentPanel;
 
 @SuppressWarnings("serial")
 public class LeftPanel extends JScrollPane {
 	public CoderPanel coderPanel;
     public EditDocumentPanel editDocPanel;
+    DocStatsPanel docStats;
 
 	public LeftPanel() {
 		this.setPreferredSize(new Dimension(260, 440));
@@ -46,6 +48,17 @@ public class LeftPanel extends JScrollPane {
         docDetailsTaskPane.setCollapsed(false);
         docDetailsTaskPane.add(editDocPanel);
         ((Container)tpc).add(docDetailsTaskPane);
+        
+        // document summary statistics
+        JXTaskPane docStatisticsTaskPane = new JXTaskPane();
+        docStats = new DocStatsPanel();
+        ImageIcon docStatisticsIcon = new ImageIcon(getClass().getResource("/icons/chart_bar.png"));
+        docStatisticsTaskPane.setName("Document statistics");
+        docStatisticsTaskPane.setTitle("Document statistics");
+        docStatisticsTaskPane.setIcon(docStatisticsIcon);
+        docStatisticsTaskPane.setCollapsed(true);
+        docStatisticsTaskPane.add(docStats);
+        ((Container)tpc).add(docStatisticsTaskPane);
         
 	}
 

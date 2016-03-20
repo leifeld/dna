@@ -46,13 +46,15 @@ import dna.dataStructures.Regex;
 import dna.dataStructures.Statement;
 import dna.dataStructures.StatementLink;
 import dna.dataStructures.StatementType;
+import dna.panels.DocStatsPanel;
+import dna.panels.RegexPanel;
 import dna.panels.SearchPanel;
 
 @SuppressWarnings("serial")
 public class RightPanel extends JScrollPane {
-	StatementTableModel ssc;
+	public StatementTableModel ssc;
 	ContradictionPanel cp;
-	RegexManagerPanel rm;
+	public RegexPanel rm;
 	public JTable statementTable;
 	JScrollPane statementTableScrollPane;
 	JPanel statementPanel;
@@ -62,17 +64,17 @@ public class RightPanel extends JScrollPane {
 	JComboBox<String> typeComboBox1, typeComboBox2, variableComboBox1, 
 	variableComboBox2;
 	
+	/*
 	// SK added for linked statements
     StatementTableModel connectedSC;
     JButton connectButton, clearButton, deleteButton;
     JPanel connectedStatementPanel, viewLinkedStatementPanel;
     JTable connectedStatementTable, linkedTable;
     JTabbedPane linksTabPane;    
-    DefaultTableModel linkedTableModel;
+    public DefaultTableModel linkedTableModel;
     JScrollPane  linkedTableScrollPane, viewLinkedTableScroll;
-    
-    DocStats docStats;
-
+    */
+	
 	public RightPanel() {
 		this.setPreferredSize(new Dimension(260, 440));
 		JXTaskPaneContainer tpc = new JXTaskPaneContainer();
@@ -94,7 +96,7 @@ public class RightPanel extends JScrollPane {
 		searchTaskPane.setName("Search within document");
 		searchTaskPane.setTitle("Search within document");
 		searchTaskPane.setIcon(findIcon);
-		searchTaskPane.setCollapsed(true);
+		searchTaskPane.setCollapsed(false);
 		((Container)tpc).add(searchTaskPane);
 		searchTaskPane.add(sp);
 
@@ -102,6 +104,7 @@ public class RightPanel extends JScrollPane {
 		 * LB.Add: Panel for Finding self-contradictions
 		 * Class: ContradictionPanel()
 		 */
+		/*
 		cp = new ContradictionPanel();
 		JXTaskPane selfContradictionTaskPane = new JXTaskPane();
 		ImageIcon groupIcon = new ImageIcon(getClass().getResource("/icons/group.png"));
@@ -111,15 +114,12 @@ public class RightPanel extends JScrollPane {
 		selfContradictionTaskPane.setCollapsed(true);
 		((Container)tpc).add(selfContradictionTaskPane);
 		selfContradictionTaskPane.add(cp);        
-
-		/*
-		 * LB.Add: Panel for highlighting regular expressions
-		 * Class: RegexManagerPanel()
-		 */
-		rm = new RegexManagerPanel();
+		*/
+		
+		// regex panel
+		rm = new RegexPanel();
 		JXTaskPane highlighterTaskPane = new JXTaskPane();
-		ImageIcon tableEditIcon = new ImageIcon(getClass().
-				getResource("/icons/color_swatch.png"));
+		ImageIcon tableEditIcon = new ImageIcon(getClass().getResource("/icons/color_swatch.png"));
 		highlighterTaskPane.setName("Regex highlighter");
 		highlighterTaskPane.setTitle("Regex highlighter");
 		highlighterTaskPane.setIcon(tableEditIcon);
@@ -129,7 +129,8 @@ public class RightPanel extends JScrollPane {
 		
 		/*
         SK add : Panel to save details of Linked statements in database    
-        */      
+        */
+		/*
         JXTaskPane saveRecordTaskPane = new JXTaskPane();
         ImageIcon saveIcon = new ImageIcon(getClass().getResource("/icons/table_relationship.png"));
         saveRecordTaskPane.setName("Linked statements");
@@ -145,18 +146,7 @@ public class RightPanel extends JScrollPane {
         saveRecordTaskPane.add(linksTabPane);
         saveRecordTaskPane.setCollapsed(true);
         ((Container) tpc).add(saveRecordTaskPane);
-        
-        JXTaskPane docStatisticsTaskPane = new JXTaskPane();
-        docStats = new DocStats();
-        ImageIcon docStatisticsIcon = new ImageIcon(getClass().getResource("/icons/chart_bar.png"));
-        docStatisticsTaskPane.setName("Document summary statistics");
-        docStatisticsTaskPane.setTitle("Document summary statistics");
-        docStatisticsTaskPane.setIcon(docStatisticsIcon);
-        docStatisticsTaskPane.setCollapsed(true);
-        docStatisticsTaskPane.add(docStats);
-        ((Container)tpc).add(docStatisticsTaskPane);
-        
-        
+        */
 	}
 
 	public class StatementCellRenderer extends DefaultTableCellRenderer {
@@ -170,6 +160,7 @@ public class RightPanel extends JScrollPane {
 		}
 	}
 	
+	/*
 	public class LinksCellRenderer extends DefaultTableCellRenderer {
 
         private static final long serialVersionUID = 1L;
@@ -183,15 +174,13 @@ public class RightPanel extends JScrollPane {
             int statementID = (int) table.getModel().getValueAt(modelRow, modelColumn);
             
             Color col = Dna.data.getStatementColor(statementID);
-            /*
-            Color col = null;
-            for (Statement ss : Dna.data.getStatements()) {
-                if (statementID == ss.getId())  {
-                    //col = ss.getColor();
-                	col = Dna.data.getStatementColor(ss.getId());
-                }
-            }
-            */
+            //Color col = null;
+            //for (Statement ss : Dna.data.getStatements()) {
+            //    if (statementID == ss.getId())  {
+            //        //col = ss.getColor();
+            //    	col = Dna.data.getStatementColor(ss.getId());
+            //    }
+            //}
             
             if (!isSelected) {
                 c.setBackground(col);
@@ -200,6 +189,7 @@ public class RightPanel extends JScrollPane {
             return c;
         }
     }
+	*/
 	
 	private void statementPanel() {
 		ssc = new StatementTableModel();
@@ -251,6 +241,7 @@ public class RightPanel extends JScrollPane {
      * @author Shraddha 
      * Panel for creating Linked statements
      */
+	/*
     private void createConnectedStatementPanel() {
         connectedStatementTable = new JTable(ssc);
         connectedStatementTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -355,11 +346,13 @@ public class RightPanel extends JScrollPane {
         });
 
     }
-
+	*/
+	
     /**
      * @author Shraddha 
      * Panel for creating Linked statements
      */
+	/*
      private void createViewLinkedStatementPanel() {
 
         viewLinkedStatementPanel = new JPanel(new BorderLayout());
@@ -497,14 +490,13 @@ public class RightPanel extends JScrollPane {
         linkedTable.repaint();
 
     }
+	*/
 
 	//called on click of filter radio button to update statement types
 	public void updateStatementTypes() {
 		typeComboBox1.removeAllItems();
 		ArrayList<StatementType> types = new ArrayList<StatementType>();
-		//if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().equals("")) {
 		if (Dna.data.getSettings().get("filename") != null && !Dna.data.getSettings().get("filename").equals("")) {
-			//types = Dna.dna.db.getStatementTypes();
 			types = Dna.data.getStatementTypes();
 			for (int i = 0; i < types.size(); i++) {				
 				String type = types.get(i).getLabel().toString();
@@ -521,7 +513,8 @@ public class RightPanel extends JScrollPane {
 				typeComboBox1.setSelectedIndex(-1);
 			}
 		}
-
+		
+		/*
 		//LB.Add: same for the Self-Contradiction Filter
 		cp.filterComboBoxType.removeAllItems();
 		//if (Dna.dna.db.getFileName() != null && !Dna.dna.db.getFileName().equals("")) {
@@ -558,8 +551,9 @@ public class RightPanel extends JScrollPane {
 			cp.goButton.setEnabled(false);
 			cp.clearButton.setEnabled(false);
 		}
+		*/
 	}
-
+	
 	public void updateVariables() {
 		variableComboBox1.removeAllItems();
 		variableComboBox2.removeAllItems();
@@ -584,7 +578,7 @@ public class RightPanel extends JScrollPane {
 			}
 		}
 	}
-
+	
 	public void setRowSorterEnabled(boolean enabled) {
 		if (enabled == true) {
 			sorter = new TableRowSorter<StatementTableModel>(ssc) {
@@ -598,22 +592,7 @@ public class RightPanel extends JScrollPane {
 			statementTable.setRowSorter(null);
 		}
 	}
-
-	/*
-	 * LB.Add: After a dataset is loaded this method will update the Regex-List
-	 * (listModel) in RegexManagerPanel-class
-	 */
-	public void updateRegexManagerPanel() {
-		//ArrayList<Regex> regex = Dna.dna.db.getRegex();
-		for (int i = 0; i < Dna.data.getRegexes().size(); i++) {
-			String label = Dna.data.getRegexes().get(i).getLabel();
-			Color color	= Dna.data.getRegexes().get(i).getColor();
-			Regex reg = new Regex(label, color);
-			Dna.dna.gui.rightPanel.rm.listModel.addElement(reg);
-		}
-		//Dna.dna.gui.textPanel.paintStatements();
-	}
-
+	
 	public class StatementFilter extends JPanel {
 		JRadioButton showAll;
 		JRadioButton showCurrent;
@@ -627,6 +606,7 @@ public class RightPanel extends JScrollPane {
 			showAll.setSelected(true);
 			showCurrent = new JRadioButton("current");
 			showFilter = new JRadioButton("filter:");
+			showFilter.setEnabled(false);
 			showGroup.add(showAll);
 			showGroup.add(showCurrent);
 			showGroup.add(showFilter);

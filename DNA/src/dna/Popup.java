@@ -157,7 +157,7 @@ public class Popup extends JDialog {
 					Dna.dna.gui.textPanel.paintStatements();
 					
                     // update links table after removal of statements
-                    Dna.dna.gui.rightPanel.updateViewLinksTable();
+                    //Dna.dna.gui.rightPanel.updateViewLinksTable();
                     
 					dispose();
 				}

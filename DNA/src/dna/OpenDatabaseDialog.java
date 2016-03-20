@@ -257,6 +257,9 @@ public class OpenDatabaseDialog extends JDialog {
 	
 	public void loadDataAndDispose() {
 		Dna.data = Dna.dna.sql.getAllData();
+		Dna.dna.gui.rightPanel.rm.regexListModel.updateList();
+		Dna.dna.gui.rightPanel.rm.setFieldsEnabled(true);
+		Dna.dna.gui.leftPanel.docStats.refreshButton.setEnabled(true);
 		Dna.dna.gui.statusBar.resetLabel();
 		Dna.dna.gui.menuBar.closeDatabase.setEnabled(true);
 		Dna.dna.gui.menuBar.openDatabase.setEnabled(false);
@@ -281,6 +284,10 @@ public class OpenDatabaseDialog extends JDialog {
 			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
 		}
 		Dna.dna.gui.documentPanel.documentFilter();
+		
+		Dna.dna.sql.upsertSetting("version", Dna.dna.version);
+		Dna.dna.sql.upsertSetting("date", Dna.dna.date);
+		
 		dispose();
 	}
 }

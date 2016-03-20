@@ -1,12 +1,9 @@
-package dna;
+package dna.panels;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Set;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -15,20 +12,18 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.text.DefaultCaret;
 
+import dna.Dna;
+import dna.ErrorDialog;
 import dna.dataStructures.Statement;
 import dna.dataStructures.StatementType;
 
-public class DocStats extends JPanel {
-	
-	/**
-	 * Document statistics side panel.
-	 */
-	private static final long serialVersionUID = 1L;
+@SuppressWarnings("serial")
+public class DocStatsPanel extends JPanel {
 	JTextArea tf;
-	JButton refreshButton, clearButton;
+	public JButton refreshButton, clearButton;
 	JScrollPane scroll;
 	
-	public DocStats() {
+	public DocStatsPanel() {
 		this.setLayout(new BorderLayout());
 		
 		tf = new JTextArea(7, 12);
@@ -40,9 +35,11 @@ public class DocStats extends JPanel {
 		tf.setEditable(false);
 		ImageIcon clearIcon = new ImageIcon(getClass().getResource("/icons/arrow_rotate_clockwise.png"));
 		clearButton = new JButton("clear", clearIcon);
+		clearButton.setEnabled(false);
 		clearButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				clear();
+				clearButton.setEnabled(false);
 			}
 		});
 		ImageIcon refreshIcon = new ImageIcon(getClass().getResource("/icons/chart_bar.png"));
@@ -50,9 +47,8 @@ public class DocStats extends JPanel {
 		refreshButton.setEnabled(false);
 		refreshButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//if (Dna.dna.db != null) {
-					computeStats();
-				//}
+				computeStats();
+				clearButton.setEnabled(true);
 			}
 		});
 		
@@ -64,15 +60,15 @@ public class DocStats extends JPanel {
 	}
 	
 	public void computeStats() {
+		clear();
 		int numDocuments = Dna.data.getDocuments().size();
 		int numStatements = Dna.dna.gui.rightPanel.ssc.getRowCount();
-		int statementLinks = Dna.dna.gui.rightPanel.linkedTableModel.getRowCount();
+		//int statementLinks = Dna.dna.gui.rightPanel.linkedTableModel.getRowCount();
 		
 		String statText = "Documents: " + numDocuments + "\n"
-				+ "Statements: " + numStatements + "\n"
-				+ "Statement Links: " + statementLinks + "\n";
+				+ "Statements: " + numStatements + "\n";
+				//+ "Statement Links: " + statementLinks + "\n";
 		
-		//for (StatementType st: Dna.dna.db.getStatementTypes()) {
 		for (StatementType st : Dna.data.getStatementTypes()) {
 			statText = statText + "\n\"" + st.getLabel() + "\" Variables:\n";
 			String[] vars = st.getVariables().keySet().toArray(new String[st.getVariables().keySet().size()]);
@@ -100,11 +96,12 @@ public class DocStats extends JPanel {
 		tf.setEditable(false);
 		tf.revalidate();
 	}
-	
+
+	/*
 	public void updateStatistics() {
 		clear();
 		refreshButton.setEnabled(true);
 		computeStats();
 	}
-	
+	*/
 }

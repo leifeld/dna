@@ -2,7 +2,7 @@ package dna.dataStructures;
 
 import java.awt.Color;
 
-public class Regex {
+public class Regex implements Comparable<Regex> {
 	
 	String label;
 	Color color;
@@ -46,5 +46,24 @@ public class Regex {
 	 */
 	public void setColor(Color color) {
 		this.color = color;
+	}
+
+	// how should entries be sorted in a list?
+	public int compareTo(Regex regex) {
+		if (this.getLabel().compareTo(regex.getLabel()) < 0) {
+			return -1;
+		} else if (this.getLabel().compareTo(regex.getLabel()) > 0) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+	
+	//necessary for sorting purposes
+	public boolean equals(Object o) {
+		if (o == null) return false;
+		if (this == o) return true;
+		if (getClass() != o.getClass()) return false;
+		return compareTo((Regex) o) == 0;
 	}
 }

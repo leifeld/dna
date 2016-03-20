@@ -1,6 +1,7 @@
 package dna;
 
 import dna.dataStructures.*;
+import dna.renderer.DocumentTableModel;
 
 import java.awt.BorderLayout;
 import java.awt.Container;

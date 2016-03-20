@@ -1,4 +1,4 @@
-package dna;
+package dna.renderer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -8,18 +8,19 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
+import dna.Dna;
 import dna.dataStructures.Document;
 
 public class DocumentTableModel implements TableModel {
 	private Vector<TableModelListener> listeners = 	new Vector<TableModelListener>();
 
 	//SK start
-	DocumentTableModel(ArrayList<Document> documents) {
+	public DocumentTableModel(ArrayList<Document> documents) {
 		Dna.data.setDocuments(documents);	
 		sort();
 	}
 	
-	DocumentTableModel() {
+	public DocumentTableModel() {
 		super();
 	}
 	//SK end

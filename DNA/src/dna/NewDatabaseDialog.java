@@ -1132,6 +1132,10 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.dna.sql.createDataStructure();
 					Dna.data.getSettings().put("filename", dbFile);
 					Dna.dna.sql.upsertSetting("filename", dbFile);
+					data.getSettings().put("version", Dna.dna.version);
+					Dna.dna.sql.upsertSetting("version", Dna.dna.version);
+					data.getSettings().put("date", Dna.dna.date);
+					Dna.dna.sql.upsertSetting("date", Dna.dna.date);
 					
 					Dna.dna.setActiveCoder(Dna.data.getCoders().get(0).getId());
 					for (int i = 0; i < Dna.data.getCoders().size(); i++) {
@@ -1155,6 +1159,8 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 					Dna.dna.gui.menuBar.colorStatementTypeButton.setEnabled(true);
 					Dna.dna.gui.menuBar.colorCoderButton.setEnabled(true);
+					Dna.dna.gui.rightPanel.rm.setFieldsEnabled(true);
+					Dna.dna.gui.leftPanel.docStats.refreshButton.setEnabled(true);
 					dispose();
 				}
 			});

@@ -29,6 +29,20 @@ public class Data {
 		settings.put("activeCoder", "1");
 	}
 	
+	public void addRegex(Regex regex) {
+		Dna.dna.gui.rightPanel.rm.regexListModel.addElement(regex);
+	}
+	
+	public void removeRegex(String label) {
+		for (int i = Dna.dna.gui.rightPanel.rm.regexListModel.getSize() - 1; i > -1; i--) {
+			String currentLabel = ((Regex) Dna.dna.gui.rightPanel.rm.regexListModel.getElementAt(i)).getLabel();
+			if (currentLabel.equals(label)) {
+				Dna.dna.gui.rightPanel.rm.regexListModel.removeElement(i);
+				break;
+			}
+		}
+	}
+	
 	public boolean[] getActiveStatementPermissions(int statementId) {
 		int ac = getActiveCoder();
 		boolean[] b = new boolean[4];

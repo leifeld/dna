@@ -1,41 +1,34 @@
 package dna;
 
 import dna.dataStructures.*;
-
-import java.awt.Color;
-import java.io.File;
-import java.io.IOException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-
 import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 public class Dna {
 	public static Data data = new Data();
 	public static Dna dna;
 	public Gui gui;
 	public SqlConnection sql;
+	public String version, date;
 	
 	public Dna () {
-		data.getSettings().put("version", "2.0 beta 3");
-		data.getSettings().put("date", "2016-03-21");
+		date = "2016-03-21";
+		version = "2.0 beta 3";
 		
 		gui = new Gui();
 	}
 	
 	public static void main (String[] args) {
-		dna = new Dna();
+		try {
+			dna = new Dna();
+		} catch (Exception e) {
+			new ErrorDialog(e.getMessage());
+		}
 	}
 
 	public void addDocument(Document document) {
+		gui.documentPanel.setRowSorterEnabled(false);
 		gui.documentPanel.documentContainer.addDocument(document);
+		gui.documentPanel.setRowSorterEnabled(true);
 		sql.upsertDocument(document);
 	}
 	
@@ -73,7 +66,17 @@ public class Dna {
 		data.setActiveCoder(activeCoder);
 		sql.upsertSetting("activeCoder", (new Integer(activeCoder)).toString());
 	}
-
+	
+	public void addRegex(Regex regex) {
+		data.addRegex(regex);
+		sql.upsertRegex(regex);
+	}
+	
+	public void removeRegex(String label) {
+		data.removeRegex(label);
+		sql.removeRegex(label);
+	}
+	
 	public void closeDatabase() {
 		data = new Data();
 		sql.closeConnection();
@@ -99,8 +102,11 @@ public class Dna {
 		Dna.dna.gui.rightPanel.updateStatementTypes();
 		Dna.dna.gui.rightPanel.rm.addButton.setEnabled(false);
 		Dna.dna.gui.rightPanel.rm.clear();
-		Dna.dna.gui.rightPanel.linkedTableModel.setRowCount(0);
-		Dna.dna.gui.rightPanel.docStats.clear();
+		//Dna.dna.gui.rightPanel.linkedTableModel.setRowCount(0);
+		Dna.dna.gui.rightPanel.rm.regexListModel.updateList();
+		Dna.dna.gui.rightPanel.rm.setFieldsEnabled(false);
+		Dna.dna.gui.leftPanel.docStats.clear();
+		Dna.dna.gui.leftPanel.docStats.refreshButton.setEnabled(false);
 	}
 
 

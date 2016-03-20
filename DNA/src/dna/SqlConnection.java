@@ -47,7 +47,8 @@ public class SqlConnection {
 				this.connection = DriverManager.getConnection("jdbc:sqlite:" + dbfile);
 			}
 		} catch (SQLException | ClassNotFoundException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		}
 	}
 	
@@ -56,8 +57,10 @@ public class SqlConnection {
 			connection.close();
 		} catch (SQLException e) {
 			//e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		} catch (NullPointerException e) {
 			// no connection was established in the first place
+			new ErrorDialog(e.getMessage());
 		}
 	}
 	
@@ -83,6 +86,7 @@ public class SqlConnection {
 		try {
 			value = (String) executeQueryForObject("SELECT Value FROM SETTINGS WHERE Property = '" + key + "'");
 		} catch (SQLException e) {
+			new ErrorDialog(e.getMessage());
 			return "";
 		}
 		return value;
@@ -164,7 +168,8 @@ public class SqlConnection {
 			result2.close();
 			preStatement2.close();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		}
 		return coder;
 	}
@@ -303,6 +308,7 @@ public class SqlConnection {
 			preStatement.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		}
 		Collections.sort(al);
 		return al;
@@ -328,7 +334,8 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		}
 		return al;
 	}
@@ -352,7 +359,8 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		}
 		return al;
 	}
@@ -401,7 +409,8 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		}
 		return al;
 	}
@@ -423,7 +432,8 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		}
 		return map;
 	}
@@ -504,6 +514,10 @@ public class SqlConnection {
 		executeStatement("DELETE FROM CODERPERMISSIONS WHERE Coder = " + id);
 		executeStatement("DELETE FROM CODERS WHERE ID = " + id);
 	}
+
+	public void removeRegex(String label) {
+		executeStatement("DELETE FROM REGEXES WHERE Label = '" + label + "'");
+	}
 	
 	public void removeStatement(int statementId) {
 		executeStatement("DELETE FROM DATABOOLEAN WHERE StatementId = " + statementId);
@@ -579,7 +593,8 @@ public class SqlConnection {
 				varid = (int) executeQueryForObject("SELECT ID FROM VARIABLES WHERE Variable = '" + key 
 						+ "' AND StatementTypeId = " + statement.getStatementTypeId());
 			} catch (SQLException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
+				new ErrorDialog(e.getMessage());
 			}
 			
 			String myStatement = "REPLACE INTO DATA" + tableExtension + " (ID, StatementId, VariableId, StatementTypeId, Value) "
@@ -654,7 +669,8 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		}
 		data.setStatements(statements);
 		return data;
@@ -693,7 +709,8 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		}
 		return al;
 	}
@@ -745,7 +762,8 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		}
 		return al;
 	}
@@ -1122,7 +1140,8 @@ public class SqlConnection {
 			preStatement.execute();
 			preStatement.close();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		}
 	}
 	
@@ -1168,7 +1187,8 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			new ErrorDialog(e.getMessage());
 		}
 		return al;
 	}
