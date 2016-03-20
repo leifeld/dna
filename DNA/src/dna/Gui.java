@@ -229,8 +229,7 @@ public class Gui extends JFrame {
 				if (selectedRow == -1) {
 					previousDocID = -1;
 					textPanel.setDocumentText("");
-					//Dna.dna.gui.menuBar.changeDocumentButton.setEnabled(false);
-					//Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
+					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
 					Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
 					Dna.dna.gui.leftPanel.editDocPanel.updateUI();
 				} else {
@@ -242,8 +241,7 @@ public class Gui extends JFrame {
 					textPanel.setDocumentId(id);
 					textPanel.setDocumentText(text);
 					textPanel.setEnabled(true);
-					//Dna.dna.gui.menuBar.changeDocumentButton.setEnabled(true);
-					//Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
+					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
 					
 					//SK
 					Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
@@ -270,7 +268,7 @@ public class Gui extends JFrame {
 
 	class MenuBar extends JMenuBar {
 		JMenu fileMenu, documentMenu, exportMenu, settingsMenu;
-		JMenuItem closeDatabase, newDatabase, openDatabase, importHTMLButton, typeEditorButton, changeDocumentButton, newDocumentButton, 
+		JMenuItem closeDatabase, newDatabase, openDatabase, importHTMLButton, typeEditorButton, newDocumentButton, 
 			removeDocumentButton, importDnaButton, importOldButton, networkButton, aboutButton, colorStatementTypeButton, 
 			colorCoderButton, recodeVariableButton;
 		
@@ -360,27 +358,6 @@ public class Gui extends JFrame {
 			importHTMLButton.setEnabled(false);
 			*/
 			
-			//Document menu: change document properties
-			/*
-			Icon changeDocumentIcon = new ImageIcon(getClass().getResource(
-					"/icons/table_edit.png"));
-			changeDocumentButton = new JMenuItem("Edit document metadata...", 
-					changeDocumentIcon);
-			changeDocumentButton.setToolTipText( "edit the title, date etc. " +
-					"of the currently selected document..." );
-			documentMenu.add(changeDocumentButton);
-			changeDocumentButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					int row = Dna.dna.gui.documentPanel.documentTable.
-							getSelectedRow();
-					int documentId = Dna.dna.gui.documentPanel.
-							documentContainer.getIdByRowIndex(row);
-					new DocumentProperties(documentId);
-				}
-			});
-			changeDocumentButton.setEnabled(false);
-			*/
-			
 			//Document menu: recode variables
 			/*
 			Icon recodeVariableIcon = new ImageIcon(getClass().getResource(
@@ -406,19 +383,16 @@ public class Gui extends JFrame {
 			removeDocumentButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, 
-							"Are you sure you want to delete the selected " +
-									"document?", "Confirmation required", 
-									JOptionPane.YES_NO_OPTION);
-					int row = Dna.dna.gui.documentPanel.documentTable.
-							getSelectedRow();
+							"Are you sure you want to delete the selected document (including all statements)?", 
+									"Confirmation required", JOptionPane.YES_NO_OPTION);
+					int row = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
 					if (row != -1 && dialog == 0) {
-						//int documentId = Dna.dna.gui.documentPanel.documentContainer.getIdByRowIndex(row);
-						//Dna.dna.removeDocument(documentId);
-						Dna.dna.gui.documentPanel.documentContainer.remove(row);
+						int documentId = Dna.data.getDocuments().get(row).getId();
+						Dna.dna.removeDocument(documentId);
 					}
 				}
 			});
-			removeDocumentButton.setEnabled(false);
+			removeDocumentButton.setEnabled(true);
 
 			//Document menu: import documents from another DNA database
 			Icon importDnaIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
@@ -482,7 +456,7 @@ public class Gui extends JFrame {
 						} else {
 							dbfile = file.getPath();
 						}
-						new ImportOldDNA1XML(dbfile);
+						new ImportOldDNA(dbfile);
 					}
 				}
 			});

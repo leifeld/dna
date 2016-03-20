@@ -32,6 +32,11 @@ public class Dna {
 		sql.upsertDocument(document);
 	}
 	
+	public void removeDocument(int documentId) {
+		Dna.data.removeDocument(documentId);
+		sql.removeDocument(documentId);
+	}
+	
 	public void removeStatement(int statementId) {
 		gui.rightPanel.ssc.removeStatement(statementId);
 		sql.removeStatement(statementId);

@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -43,25 +44,24 @@ import org.jdom.input.SAXBuilder;
 import dna.dataStructures.Statement;
 
 @SuppressWarnings("serial")
-public class ImportOldDNA1XML extends JFrame {
+public class ImportOldDNA extends JDialog {
 	
 	Container c;
 	JTable articleImportTable;
 	ArticleImportTableModel aitm;
 	ImageIcon filterIcon;
 	
-	public ImportOldDNA1XML(final String file) {
+	public ImportOldDNA(final String file) {
+		this.setModal(true);
 		c = getContentPane();
 		this.setTitle("Import statements...");
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		ImageIcon importIcon = new ImageIcon(getClass().getResource(
-				"/icons/page_white_get.png"));
+		ImageIcon importIcon = new ImageIcon(getClass().getResource("/icons/page_white_get.png"));
 		this.setIconImage(importIcon.getImage());
 		
 		aitm = new ArticleImportTableModel();
 		articleImportTable = new JTable(aitm);
-		articleImportTable.setSelectionMode(ListSelectionModel.
-				SINGLE_SELECTION);
+		articleImportTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane tableScrollPane = new JScrollPane(articleImportTable);
 		tableScrollPane.setPreferredSize(new Dimension(500, 300));
 		
@@ -126,7 +126,7 @@ public class ImportOldDNA1XML extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				
 				String s = (String)JOptionPane.showInputDialog(
-						ImportOldDNA1XML.this, 
+						ImportOldDNA.this, 
 						"Please enter a regular expression to filter the " +
 								"articles:", 
 						"Keyword filter", 

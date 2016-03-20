@@ -503,6 +503,11 @@ public class SqlConnection {
         }
 	}
 	
+	public void removeDocument(int documentId) {
+		executeStatement("DELETE FROM STATEMENTS WHERE DocumentId = " + documentId);
+		executeStatement("DELETE FROM DOCUMENTS WHERE ID = " + documentId);
+	}
+	
 	public void removeCoder(int id) {
 		executeStatement("DELETE FROM DATABOOLEAN WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE Coder = " + id + ")");
 		executeStatement("DELETE FROM DATAINTEGER WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE Coder = " + id + ")");

@@ -474,11 +474,23 @@ public class Data {
 		return(documents.size() + 1);
 	}
 
-	public void removeDocument(int id) {
-		for (int i = documents.size() - 1; i > -1; i--) {
-			if (documents.get(i).getId() == id) {
-				documents.remove(i);
+	public void removeDocument(int documentId) {
+		// remove statements
+		Dna.dna.gui.rightPanel.setRowSorterEnabled(false);
+		for (int i = Dna.dna.gui.rightPanel.ssc.size() - 1; i > -1; i--) {
+			if (Dna.dna.gui.rightPanel.ssc.get(i).getDocumentId() == documentId) {
+				Dna.dna.gui.rightPanel.ssc.remove(i);
 			}
+		}
+		Dna.dna.gui.rightPanel.setRowSorterEnabled(true);
+		
+		// remove document
+		int row = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(documentId);
+		Dna.dna.gui.documentPanel.setRowSorterEnabled(false);
+		Dna.dna.gui.documentPanel.documentContainer.remove(row);
+		Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
+		if (Dna.data.getDocuments().size() > 0) {
+			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
 		}
 	}
 	
