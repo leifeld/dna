@@ -777,29 +777,30 @@ public class SqlConnection {
 		tableNames.add("CODERS");
 		tableNames.add("SETTINGS");
 		tableNames.add("CODERRELATIONS");
+		tableNames.add("CODERPERMISSIONS");
 		tableNames.add("REGEXES");
 		tableNames.add("STATEMENTTYPES");
 		tableNames.add("STATEMENTLINKS");
-		int count = -1;
-		int i = 0;
-		while (count == -1) {
-			try {
-				count = toIntExact((long) executeQueryForObject("SELECT COUNT(*) FROM " + tableNames.get(i)));
-			} catch (Exception e) {
-				// if we end up here, the table does not exist yet in the database
-			}
-			i++;
-			if (i == 8) {
-				break;
+		tableNames.add("VARIABLES");
+		tableNames.add("DATABOOLEAN");
+		tableNames.add("DATAINTEGER");
+		tableNames.add("DATASHORTTEXT");
+		tableNames.add("DATALONGTEXT");
+		
+		boolean tablesExist = false;
+		for (int i = 0; i < tableNames.size(); i++) {
+			ArrayList<Object> al = executeQueryForList("SHOW TABLES LIKE 'tableNames.get(i)'");
+			if (al.size() > 0) {
+				tablesExist = true;
 			}
 		}
-		if (i == -1) {
-			return("OK. Tables will be created.");
+		if (tablesExist == true) {
+			return "Warning: Database contains data that may be overwritten!";
 		} else {
-			return("Warning: Database contains data that may be overwritten!");
+			return "OK. Tables will be created.";
 		}
 	}
-
+	
 	/**
 	 * Tests whether a mySQL connection can be established and returns a status message.
 	 * 
