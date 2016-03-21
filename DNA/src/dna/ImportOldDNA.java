@@ -45,6 +45,7 @@ import org.jdom.Comment;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.EntityRef;
+import org.jdom.JDOMException;
 import org.jdom.ProcessingInstruction;
 import org.jdom.Text;
 import org.jdom.input.SAXBuilder;
@@ -62,8 +63,8 @@ public class ImportOldDNA extends JDialog {
 	int coderId = 0;
 	int statementTypeId;
 	
-	JTextField titlePatternField, sourcePatternField, sectionPatternField, typePatternField, notesPatternField;
-	JTextField titlePreviewField, sourcePreviewField, sectionPreviewField, typePreviewField, notesPreviewField;
+	JTextField titlePatternField, authorPatternField, sourcePatternField, sectionPatternField, typePatternField, notesPatternField;
+	JTextField titlePreviewField, authorPreviewField, sourcePreviewField, sectionPreviewField, typePreviewField, notesPreviewField;
 	
 	public ImportOldDNA(final String file) throws NullPointerException {
 		this.setModal(true);
@@ -198,24 +199,28 @@ public class ImportOldDNA extends JDialog {
 		gbc.anchor = GridBagConstraints.EAST;
 		JLabel titleLabel = new JLabel("Title:");
 		patternPanel.add(titleLabel, gbc);
-		
+
 		gbc.gridy = 2;
+		JLabel authorLabel = new JLabel("Author:");
+		patternPanel.add(authorLabel, gbc);
+
+		gbc.gridy = 3;
 		JLabel sourceLabel = new JLabel("Source:");
 		patternPanel.add(sourceLabel, gbc);
 
-		gbc.gridy = 3;
+		gbc.gridy = 4;
 		JLabel sectionLabel = new JLabel("Section:");
 		patternPanel.add(sectionLabel, gbc);
 
-		gbc.gridy = 4;
+		gbc.gridy = 5;
 		JLabel typeLabel = new JLabel("Type:");
 		patternPanel.add(typeLabel, gbc);
 
-		gbc.gridy = 5;
+		gbc.gridy = 6;
 		JLabel notesLabel = new JLabel("Notes:");
 		patternPanel.add(notesLabel, gbc);
 
-		gbc.gridy = 6;
+		gbc.gridy = 7;
 		JLabel coderLabel = new JLabel("Coder:");
 		patternPanel.add(coderLabel, gbc);
 		
@@ -227,26 +232,31 @@ public class ImportOldDNA extends JDialog {
 		patternPanel.add(titlePatternField, gbc);
 		
 		gbc.gridy = 2;
+		authorPatternField = new JTextField("");
+		authorPatternField.setColumns(20);
+		patternPanel.add(authorPatternField, gbc);
+
+		gbc.gridy = 3;
 		sourcePatternField = new JTextField("");
 		sourcePatternField.setColumns(20);
 		patternPanel.add(sourcePatternField, gbc);
 
-		gbc.gridy = 3;
+		gbc.gridy = 4;
 		sectionPatternField = new JTextField("");
 		sectionPatternField.setColumns(20);
 		patternPanel.add(sectionPatternField, gbc);
 
-		gbc.gridy = 4;
+		gbc.gridy = 5;
 		typePatternField = new JTextField("");
 		typePatternField.setColumns(20);
 		patternPanel.add(typePatternField, gbc);
 
-		gbc.gridy = 5;
+		gbc.gridy = 6;
 		notesPatternField = new JTextField("");
 		notesPatternField.setColumns(20);
 		patternPanel.add(notesPatternField, gbc);
 
-		gbc.gridy = 6;
+		gbc.gridy = 7;
 		gbc.gridwidth = 2;
 		JPanel coderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		coderId = Dna.data.getActiveCoder();
@@ -268,6 +278,12 @@ public class ImportOldDNA extends JDialog {
 		titlePreviewField.setColumns(20);
 		titlePreviewField.setEditable(false);
 		patternPanel.add(titlePreviewField, gbc);
+
+		gbc.gridy = 2;
+		authorPreviewField = new JTextField("");
+		authorPreviewField.setColumns(20);
+		authorPreviewField.setEditable(false);
+		patternPanel.add(authorPreviewField, gbc);
 
 		gbc.gridy = 2;
 		sourcePreviewField = new JTextField("");
@@ -301,6 +317,7 @@ public class ImportOldDNA extends JDialog {
 				int row = articleImportTable.getSelectedRow();
 				if (row < 0) {
 					titlePreviewField.setText("");
+					authorPreviewField.setText("");
 					sourcePreviewField.setText("");
 					sectionPreviewField.setText("");
 					typePreviewField.setText("");
@@ -308,6 +325,7 @@ public class ImportOldDNA extends JDialog {
 				} else {
 					String inputText = (String) aitm.getValueAt(row, 1);
 					titlePreviewField.setText(patternToString(inputText, titlePatternField.getText()));
+					authorPreviewField.setText(patternToString(inputText, authorPatternField.getText()));
 					sourcePreviewField.setText(patternToString(inputText, sourcePatternField.getText()));
 					sectionPreviewField.setText(patternToString(inputText, sectionPatternField.getText()));
 					typePreviewField.setText(patternToString(inputText, typePatternField.getText()));
@@ -375,113 +393,125 @@ public class ImportOldDNA extends JDialog {
 			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Importing documents and statements...", "", 0, aitm.getRowCount() - 1);
 			progressMonitor.setMillisToDecideToPopup(1);
 			
+
+			SAXBuilder builder = new SAXBuilder( false );
+			Document docXml;
+			Element discourse = null;
+			try {
+				docXml = builder.build( new File( filename ) );
+				discourse = docXml.getRootElement();
+			} catch (JDOMException | IOException e1) {
+				e1.printStackTrace();
+			}
+			
+			Element art, article, text;
+			String articleText, dateString, title;
+			SimpleDateFormat sdfToDate;
+			int documentId;
+			
+			Element statement;
+			String start, end, person, organization, category, agreement;
+			int agreeInt, startInt, endInt, statementId;
+			LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();;
+			
 			for (int k = 0; k < aitm.getRowCount(); k++) {
 				if (progressMonitor.isCanceled()) {
 					break;
 				}
-				if ((Boolean)aitm.getValueAt(k, 0) == true) {
+				if ((Boolean) aitm.getValueAt(k, 0) == true) {
+					art = (Element) discourse.getChild("articles");
+					article = (Element) art.getChildren().get(k);
+					text = (Element) article.getChild("text");
+					articleText = new String("");
+					for (Iterator<?> j = text.getContent().iterator(); j.hasNext( ); ) {
+						Object o = j.next( );
+						if (o instanceof Text) {
+							articleText = articleText + ((Text) o).getText();
+						} else if (o instanceof CDATA) {
+							articleText = articleText + ((CDATA) o).getText();
+						} else if (o instanceof Comment) {
+							articleText = articleText + ((Comment) o).getText();
+						} else if (o instanceof ProcessingInstruction) {
+							articleText = articleText + (ProcessingInstruction) o;
+						} else if (o instanceof EntityRef) {
+							articleText = articleText + (EntityRef) o;
+						} else if (o instanceof Element) {
+							articleText = articleText + "<" + ((Element) o).getName() + "/>";
+						}
+					}
+					
+					dateString = article.getChild("date").getText();
+					title = article.getChild("title").getText();
+					
+					// handle duplicates
+					if (Dna.dna.gui.documentPanel.documentContainer.containsTitle(title)) {
+						int count = 2;
+						Pattern p = Pattern.compile(title + " \\(" + "[0-9]+" + "\\)");
+						for (int l = 0; l < Dna.dna.gui.documentPanel.documentContainer.getRowCount(); l++) {
+							Matcher m = p.matcher(Dna.dna.gui.documentPanel.documentContainer.get(l).getTitle());
+							boolean b = m.find();
+							if (b == true) {
+								count++;
+							}
+						}
+						title = title.concat(" (" + count + ")");
+					}
+					
+					Date date = new Date();
+					
+					title = title.replaceAll("'", "''");
+					articleText = articleText.replaceAll("'", "''");
+					
+					documentId = Dna.data.generateNewDocumentId();
+					
 					try {
-						SAXBuilder builder = new SAXBuilder( false );
-						Document docXml = builder.build( new File( filename ) );
-						Element discourse = docXml.getRootElement();
-						Element art = (Element)discourse.getChild("articles");
-						Element article = (Element)art.getChildren().get(k);
-						Element text = (Element) article.getChild("text");
-						String articleText = new String("");
-						for (Iterator<?> j = text.getContent().iterator(); j.hasNext( ); ) {
-							Object o = j.next( );
-							if (o instanceof Text) {
-								articleText = articleText + ((Text)o).getText();
-							} else if (o instanceof CDATA) {
-								articleText = articleText + ((CDATA)o).getText();
-							} else if (o instanceof Comment) {
-								articleText = articleText + ((Comment)o).getText();
-							} else if (o instanceof ProcessingInstruction) {
-								articleText = articleText + (ProcessingInstruction)o;
-							} else if (o instanceof EntityRef) {
-								articleText = articleText + (EntityRef)o;
-							} else if (o instanceof Element) {
-								articleText = articleText + "<" + ((Element)o).getName() + "/>";
-							}
+						sdfToDate = new SimpleDateFormat("dd.MM.yyyy");
+						dna.dataStructures.Document d = new dna.dataStructures.Document(
+								documentId, 
+								patternToString(title, titlePatternField.getText()), 
+								articleText, 
+								coderId, 
+								patternToString(title, authorPatternField.getText()), 
+								patternToString(title, sourcePatternField.getText()), 
+								patternToString(title, sectionPatternField.getText()), 
+								patternToString(title, notesPatternField.getText()), 
+								patternToString(title, typePatternField.getText()), 
+								sdfToDate.parse(dateString)
+						);
+						Dna.dna.addDocument(d);
+					} catch (ParseException pe) {
+						pe.printStackTrace();
+					}
+					
+					//create statements
+					Element statementsXml = (Element) article.getChild("statements");
+					for (int j = 0; j < statementsXml.getChildren().size(); j++) {
+						statement = (Element) statementsXml.getChildren().get(j);
+						start = statement.getChild("start").getText();
+						end = statement.getChild("end").getText();
+						person = statement.getChild("person").getText();
+						organization = statement.getChild("organization").getText();
+						category = statement.getChild("category").getText();
+						agreement = statement.getChild("agreement").getText();
+						if (agreement.equals("yes")) {
+							agreeInt = 1;
+						} else {
+							agreeInt = 0;
 						}
 						
-						String dateString = article.getChild("date").getText();
-						String title = article.getChild("title").getText();
+						startInt = Integer.valueOf( start ).intValue() - 1;
+						endInt = Integer.valueOf( end ).intValue() - 1;
 						
-						// handle duplicates
-						if (Dna.dna.gui.documentPanel.documentContainer.containsTitle(title)) {
-							int count = 2;
-							Pattern p = Pattern.compile(title + " \\(" + "[0-9]+" + "\\)");
-							for (int l = 0; l < Dna.dna.gui.documentPanel.documentContainer.getRowCount(); l++) {
-								Matcher m = p.matcher(Dna.dna.gui.documentPanel.documentContainer.get(l).getTitle());
-								boolean b = m.find();
-								if (b == true) {
-									count++;
-								}
-							}
-							title = title.concat(" (" + count + ")");
-						}
+						person = person.replaceAll("'", "''");
+						organization = organization.replaceAll("'", "''");
+						category = category.replaceAll("'", "''");
 						
-						Date date = new Date();
-						
-				    	title = title.replaceAll("'", "''");
-				    	articleText = articleText.replaceAll("'", "''");
-				    	
-				    	String docTitle = patternToString(title, titlePatternField.getText());
-				    	String docSource = patternToString(title, sourcePatternField.getText());
-				    	String docSection = patternToString(title, sectionPatternField.getText());
-				    	String docType = patternToString(title, typePatternField.getText());
-				    	String docNotes = patternToString(title, notesPatternField.getText());
-						int documentId = Dna.data.generateNewDocumentId();
-						try {
-					    	SimpleDateFormat sdfToDate = new SimpleDateFormat("dd.MM.yyyy");
-					    	date = sdfToDate.parse(dateString);
-					    	dna.dataStructures.Document d = new dna.dataStructures.Document(documentId, docTitle, articleText, 
-					    			coderId, docSource, docSection, docNotes, docType, date);
-					    	Dna.dna.addDocument(d);
-					    } catch (ParseException pe) {
-					    	pe.printStackTrace();
-					    }
-						
-					    //create statements
-					    Element statementsXml = (Element) article.getChild("statements");
-					    for (int j = 0; j < statementsXml.getChildren().size(); j++) {
-					    	Element statement = (Element) statementsXml.getChildren().get(j);
-					    	String start = statement.getChild("start").getText();
-					    	String end = statement.getChild("end").getText();
-					    	String person = statement.getChild("person").getText();
-					    	String organization = statement.getChild("organization").getText();
-					    	String category = statement.getChild("category").getText();
-					    	String agreement = statement.getChild("agreement").getText();
-					    	int agreeInt;
-					    	if (agreement.equals("yes")) {
-					    		agreeInt = 1;
-					    	} else {
-					    		agreeInt = 0;
-					    	}
-					    	
-					    	int startInt = Integer.valueOf( start ).intValue() - 1;
-					    	int endInt = Integer.valueOf( end ).intValue() - 1;
-					    	
-					    	person = person.replaceAll("'", "''");
-					    	organization = organization.replaceAll("'", "''");
-					    	category = category.replaceAll("'", "''");
-					    	
-					    	int statementId = Dna.data.generateNewStatementId();
-					    	LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
-					    	map.put("person", person);
-					    	map.put("organization", organization);
-					    	map.put("concept", category);
-					    	map.put("agreement", agreeInt);
-					    	Statement s = new Statement(statementId, documentId, startInt, endInt, date, statementTypeId, coderId, map);
-					    	Dna.dna.addStatement(s);
-					    }
-					} catch (IOException e) {
-						System.err.println("Error while reading the file \"" + filename + "\".");
-						JOptionPane.showMessageDialog(Dna.dna.gui, "Error while reading the file!");
-					} catch (org.jdom.JDOMException e) {
-						System.err.println("Error while opening the file \"" + filename + "\": " + e.getMessage());
-						JOptionPane.showMessageDialog(Dna.dna.gui, "Error while opening the file!");
+						statementId = Dna.data.generateNewStatementId();
+						map.put("person", person);
+						map.put("organization", organization);
+						map.put("concept", category);
+						map.put("agreement", agreeInt);
+						Dna.dna.addStatement(new Statement(statementId, documentId, startInt, endInt, date, statementTypeId, coderId, map));
 					}
 				}
 				progressMonitor.setProgress(k);

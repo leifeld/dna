@@ -234,9 +234,9 @@ public class SqlConnection {
 	 * @param document   Document to add to/update in the DOCUMENTS table
 	 */
 	public void upsertDocument(Document document) {
-		executeStatement("REPLACE INTO DOCUMENTS(ID, Title, Text, Coder, Source, Section, Notes, Type, Date) "
+		executeStatement("REPLACE INTO DOCUMENTS(ID, Title, Text, Coder, Author, Source, Section, Notes, Type, Date) "
 				+ "VALUES (" + document.getId() + ", '" + document.getTitle() + "', '" + document.getText() 
-				+ "', " + document.getCoder() + ", '" + document.getSource() + "', '" + document.getSection() 
+				+ "', " + document.getCoder() + ", '" + document.getAuthor() + "', '" + document.getSource() + "', '" + document.getSection() 
 				+ "', '" + document.getNotes() + "', '" + document.getType() + "', " + document.getDate().getTime() + ")");
 	}
 
@@ -292,6 +292,7 @@ public class SqlConnection {
 							result.getString("Title"), 
 							result.getString("Text"), 
 							result.getInt("Coder"), 
+							result.getString("Author"), 
 							result.getString("Source"), 
 							result.getString("Section"), 
 							result.getString("Notes"), 
@@ -860,6 +861,7 @@ public class SqlConnection {
 					+ "Title TEXT, "
 					+ "Text TEXT, " 
 					+ "Coder INTEGER, "
+					+ "Author TEXT, "
 					+ "Source TEXT, " 
 					+ "Section TEXT, " 
 					+ "Notes TEXT, "
@@ -990,6 +992,7 @@ public class SqlConnection {
 					+ "Title VARCHAR(200), " 
 					+ "Text MEDIUMTEXT, "
 					+ "Coder SMALLINT UNSIGNED NOT NULL, "
+					+ "Author VARCHAR(200), "
 					+ "Source VARCHAR(200), " 
 					+ "Section VARCHAR(200), "
 					+ "Notes TEXT, " 

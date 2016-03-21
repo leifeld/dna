@@ -38,17 +38,18 @@ public class EditDocumentPanel extends JPanel {
 	SpinnerDateModel dateModel;
 	JSpinner dateSpinner;
 	JComboBox<Coder> coderBox;
+	JComboBox<String> authorBox;
 	JComboBox<String> sourceBox;
 	JComboBox<String> sectionBox;
 	JComboBox<String> typeBox;
 	JButton saveButton, cancelButton;
 	JScrollPane notesScroll;
 	JLabel notesLabel;
+	JLabel authorLabel;
 	JLabel sectionLabel;
 	JLabel titleLabel;
 	JLabel dateLabel;
 	JLabel coderLabel;
-
 	JLabel sourceLabel;
 	JLabel typeLabel;
 	GregorianCalendar gc;
@@ -127,12 +128,33 @@ public class EditDocumentPanel extends JPanel {
 		
 		g.gridy = 8;
 		this.add(Box.createRigidArea(new Dimension(5, 5)), g);
-		
+
 		g.gridy = 9;
+		authorLabel = new JLabel("Author");
+		this.add(authorLabel, g);
+		
+		g.gridy = 10;
+		ArrayList<String> authorEntries = new ArrayList<String>();
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			if (!authorEntries.contains(Dna.data.getDocuments().get(i).getAuthor())) {
+				authorEntries.add(Dna.data.getDocuments().get(i).getAuthor());
+			}
+		}
+		Collections.sort(authorEntries);
+		authorBox = new JComboBox(authorEntries.toArray());
+		authorBox.setEditable(true);
+		authorBox.setSelectedItem(document.getAuthor());
+		AutoCompleteDecorator.decorate(authorBox);
+		this.add(authorBox, g);
+		
+		g.gridy = 11;
+		this.add(Box.createRigidArea(new Dimension(5, 5)), g);
+		
+		g.gridy = 12;
 		sourceLabel = new JLabel("Source");
 		this.add(sourceLabel, g);
 		
-		g.gridy = 10;
+		g.gridy = 13;
 		ArrayList<String> sourceEntries = new ArrayList<String>();
 		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
 			if (!sourceEntries.contains(Dna.data.getDocuments().get(i).getSource())) {
@@ -146,14 +168,14 @@ public class EditDocumentPanel extends JPanel {
 		AutoCompleteDecorator.decorate(sourceBox);
 		this.add(sourceBox, g);
 		
-		g.gridy = 11;
+		g.gridy = 14;
 		this.add(Box.createRigidArea(new Dimension(5, 5)), g);
 		
-		g.gridy = 12;
+		g.gridy = 15;
 		sectionLabel = new JLabel("Section");
 		this.add(sectionLabel, g);
 
-		g.gridy = 13;
+		g.gridy = 16;
 		ArrayList<String> sectionEntries = new ArrayList<String>();
 		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
 			if (!sectionEntries.contains(Dna.data.getDocuments().get(i).getSection())) {
@@ -167,14 +189,14 @@ public class EditDocumentPanel extends JPanel {
 		AutoCompleteDecorator.decorate(sectionBox);
 		this.add(sectionBox, g);
 		
-		g.gridy = 14;
+		g.gridy = 17;
 		this.add(Box.createRigidArea(new Dimension(5, 5)), g);
 		
-		g.gridy = 15;
+		g.gridy = 18;
 		typeLabel = new JLabel("Type");
 		this.add(typeLabel, g);
 		
-		g.gridy = 16;
+		g.gridy = 19;
 		ArrayList<String> typeEntries = new ArrayList<String>();
 		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
 			if (!typeEntries.contains(Dna.data.getDocuments().get(i).getType())) {
@@ -188,14 +210,14 @@ public class EditDocumentPanel extends JPanel {
 		AutoCompleteDecorator.decorate(typeBox);
 		this.add(typeBox, g);
 		
-		g.gridy = 17;
+		g.gridy = 20;
 		this.add(Box.createRigidArea(new Dimension(5, 5)), g);
 		
-		g.gridy = 18;
+		g.gridy = 21;
 		notesLabel = new JLabel("Notes");
 		this.add(notesLabel, g);
 		
-		g.gridy = 19;
+		g.gridy = 22;
 		g.weighty = 1.0;
 		g.fill = GridBagConstraints.BOTH;
 		notesArea = new JTextArea(document.getNotes());
@@ -208,14 +230,14 @@ public class EditDocumentPanel extends JPanel {
 		notesScroll = new JScrollPane(notesArea);
 		this.add(notesScroll, g);
 		
-		g.gridy = 20;
+		g.gridy = 23;
 		g.fill = GridBagConstraints.HORIZONTAL;
 		g.weighty = 0;
 		this.add(Box.createRigidArea(new Dimension(5, 5)), g);
 		
 		// buttons
 		g.gridwidth = 1;
-		g.gridy = 21;
+		g.gridy = 24;
 		Icon tickIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
 		Icon clearIcon = new ImageIcon(getClass().getResource("/icons/cross.png"));
 		saveButton = new JButton("Save", tickIcon);
@@ -272,6 +294,8 @@ public class EditDocumentPanel extends JPanel {
 		title = title.replaceAll("'", "''");
 		Date date = (Date) dateSpinner.getValue();
 		int coder = Dna.data.getCoders().get(coderBox.getSelectedIndex()).getId();
+		String author = (String) authorBox.getModel().getSelectedItem();
+		author = author.replaceAll("'", "''");
 		String source = (String) sourceBox.getModel().getSelectedItem();
 		source = source.replaceAll("'", "''");
 		String section = (String) sectionBox.getModel().getSelectedItem();
@@ -285,6 +309,7 @@ public class EditDocumentPanel extends JPanel {
 		Dna.data.getDocument(documentId).setTitle(title);
 		Dna.data.getDocument(documentId).setDate(date);
 		Dna.data.getDocument(documentId).setCoder(coder);
+		Dna.data.getDocument(documentId).setAuthor(author);
 		Dna.data.getDocument(documentId).setSource(source);
 		Dna.data.getDocument(documentId).setSection(section);
 		Dna.data.getDocument(documentId).setNotes(notes);

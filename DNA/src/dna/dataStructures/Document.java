@@ -7,18 +7,20 @@ public class Document implements Comparable<Document> {
 	public String title;
 	String text;
 	int coder;
+	String author;
 	String source;
 	String section;
 	String notes;
 	String type;
 	Date date;
 	
-	public Document(int id, String title, String text, int coder, String source, 
+	public Document(int id, String title, String text, int coder, String author, String source, 
 			String section, String notes, String type, Date date) {
 		this.id = id;
 		this.title = title;
 		this.text = text;
 		this.coder = coder;
+		this.author = author;
 		this.source = source;
 		this.section = section;
 		this.notes = notes;
@@ -42,6 +44,24 @@ public class Document implements Comparable<Document> {
 	 */
 	public void setCoder(int coder) {
 		this.coder = coder;
+	}
+
+	/**
+	 * Retrieve the author field of the document.
+	 * 
+	 * @return  The author.
+	 */
+	public String getAuthor() {
+		return author;
+	}
+
+	/**
+	 * Set the source field of the document.
+	 * 
+	 * @param source  The source to set.
+	 */
+	public void setAuthor(String author) {
+		this.author = author;
 	}
 
 	/**

@@ -386,19 +386,15 @@ public class Data {
 			ids.add(statements.get(i).getId());
 		}
 		Collections.sort(ids);
-		if (ids.size() == 1) {
-			if (ids.get(0) == 1) {
-				return(2);
-			} else {
-				return(1);
-			}
+		
+		int sum = 0;
+		for (int i = 0; i < ids.size(); i++) {
+			if (ids.get(i) != 0) {
+		         sum += ids.get(i);
+		    }
 		}
-		for (int i = 1; i < ids.size(); i++) {
-			if (ids.get(i) - 1 > ids.get(i - 1)) {
-				return(ids.get(i - 1) + 1);
-			}
-		}
-		return(statements.size() + 1);
+		int total = (ids.size() + 1) * ids.size() / 2;
+		return total - sum;
 	}
 	
 	public void removeStatement(int id) {
@@ -459,19 +455,15 @@ public class Data {
 			ids.add(documents.get(i).getId());
 		}
 		Collections.sort(ids);
-		if (ids.size() == 1) {
-			if (ids.get(0) == 1) {
-				return(2);
-			} else {
-				return(1);
-			}
+		
+		int sum = 0;
+		for (int i = 0; i < ids.size(); i++) {
+			if (ids.get(i) != 0) {
+		         sum += ids.get(i);
+		    }
 		}
-		for (int i = 1; i < ids.size(); i++) {
-			if (ids.get(i) - 1 > ids.get(i - 1)) {
-				return(ids.get(i - 1) + 1);
-			}
-		}
-		return(documents.size() + 1);
+		int total = (ids.size() + 1) * ids.size() / 2;
+		return total - sum;
 	}
 
 	public void removeDocument(int documentId) {

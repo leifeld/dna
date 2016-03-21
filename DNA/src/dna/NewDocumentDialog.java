@@ -48,7 +48,7 @@ class NewDocumentDialog extends JDialog {
 	JPanel newArticlePanel;
 	JXTextField titleField;
 	JXTextArea textArea, notesArea;
-	JXComboBox sourceBox, sectionBox, typeBox;
+	JXComboBox authorBox, sourceBox, sectionBox, typeBox;
 	
 	public NewDocumentDialog() {
 		this.setModal(true);
@@ -129,8 +129,9 @@ class NewDocumentDialog extends JDialog {
 				String title = titleField.getText();
 				title = title.replaceAll("'", "''");
 				Date date = (Date)dateSpinner.getValue();
-				//int coder = (int) ((Coder)coderBox.getModel().getSelectedItem()).getId();
 				int coder = Dna.data.getActiveCoder();
+				String author = (String) authorBox.getModel().getSelectedItem();
+				author = author.replaceAll("'", "''");
 				String source = (String) sourceBox.getModel().getSelectedItem();
 				source = source.replaceAll("'", "''");
 				String section = (String) sectionBox.getModel().getSelectedItem();
@@ -140,7 +141,7 @@ class NewDocumentDialog extends JDialog {
 				String type = (String) typeBox.getModel().getSelectedItem();
 				type = type.replaceAll("'", "''");
 				int docId = Dna.data.generateNewDocumentId();
-				Document d = new Document(docId, title, text, coder, source, section, notes, type, date);
+				Document d = new Document(docId, title, text, coder, author, source, section, notes, type, date);
 				Dna.dna.addDocument(d);
 				
 				int index = -1;
@@ -196,6 +197,25 @@ class NewDocumentDialog extends JDialog {
 		coderPanel.add(colorButton);
 		coderPanel.add(coderName);
 		fieldsPanel.add(coderPanel, gbc);
+
+		gbc.gridy++;
+		gbc.gridx--;
+		JLabel authorLabel = new JLabel("author", JLabel.RIGHT);
+		fieldsPanel.add(authorLabel, gbc);
+		
+		gbc.gridx++;
+		ArrayList<String> authorEntries = new ArrayList<String>();
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			if (!authorEntries.contains(Dna.data.getDocuments().get(i).getAuthor())) {
+				authorEntries.add(Dna.data.getDocuments().get(i).getAuthor());
+			}
+		}
+		Collections.sort(authorEntries);
+		authorBox = new JXComboBox(authorEntries.toArray());
+		authorBox.setEditable(true);
+		authorBox.setSelectedItem("");
+		AutoCompleteDecorator.decorate(authorBox);
+		fieldsPanel.add(authorBox, gbc);
 		
 		gbc.gridy++;
 		gbc.gridx--;
@@ -257,7 +277,7 @@ class NewDocumentDialog extends JDialog {
 		
 		gbc.gridy = 1;
 		gbc.gridx = 2;
-		gbc.gridheight = 5;
+		gbc.gridheight = 6;
 		gbc.gridwidth = 2;
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.insets = new Insets(1, 0, 2, 0);

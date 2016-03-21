@@ -244,7 +244,7 @@ public class Gui extends JFrame {
 					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
 					
 					//SK
-					Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
+					//Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
 					
 					boolean[] b = Dna.data.getActiveDocumentPermissions(id);
 					if (b[0] == true && b[1] == true) {
