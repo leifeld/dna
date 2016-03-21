@@ -1,6 +1,10 @@
 package dna;
 
 import dna.dataStructures.*;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+
 import javax.swing.ImageIcon;
 
 public class Dna {
@@ -10,19 +14,14 @@ public class Dna {
 	public SqlConnection sql;
 	public String version, date;
 	
-	public Dna () {
+	public Dna() {
 		date = "2016-03-21";
 		version = "2.0 beta 3";
-		
 		gui = new Gui();
 	}
 	
 	public static void main (String[] args) {
-		try {
-			dna = new Dna();
-		} catch (Exception e) {
-			new ErrorDialog(e.getMessage());
-		}
+		dna = new Dna();
 	}
 
 	public void addDocument(Document document) {
@@ -46,7 +45,9 @@ public class Dna {
 		gui.rightPanel.setRowSorterEnabled(false);
 		gui.rightPanel.ssc.addStatement(statement);
 		gui.rightPanel.setRowSorterEnabled(true);
-		sql.addStatement(statement, data.getStatementTypeById(statement.getStatementTypeId()).getVariables());
+		int statementTypeId = statement.getStatementTypeId();
+		LinkedHashMap<String, String> map = data.getStatementTypeById(statementTypeId).getVariables();
+		sql.addStatement(statement, map);
 	}
 	
 	public void updateVariable(int statementId, int statementTypeId, Object content, String variable) {
@@ -112,6 +113,7 @@ public class Dna {
 		Dna.dna.gui.rightPanel.rm.setFieldsEnabled(false);
 		Dna.dna.gui.leftPanel.docStats.clear();
 		Dna.dna.gui.leftPanel.docStats.refreshButton.setEnabled(false);
+		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
 	}
 
 

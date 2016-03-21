@@ -47,8 +47,7 @@ public class SqlConnection {
 				this.connection = DriverManager.getConnection("jdbc:sqlite:" + dbfile);
 			}
 		} catch (SQLException | ClassNotFoundException e) {
-			//e.printStackTrace();
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		}
 	}
 	
@@ -56,11 +55,10 @@ public class SqlConnection {
 		try {
 			connection.close();
 		} catch (SQLException e) {
-			//e.printStackTrace();
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		} catch (NullPointerException e) {
 			// no connection was established in the first place
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		}
 	}
 	
@@ -86,7 +84,7 @@ public class SqlConnection {
 		try {
 			value = (String) executeQueryForObject("SELECT Value FROM SETTINGS WHERE Property = '" + key + "'");
 		} catch (SQLException e) {
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 			return "";
 		}
 		return value;
@@ -168,8 +166,7 @@ public class SqlConnection {
 			result2.close();
 			preStatement2.close();
 		} catch (SQLException e) {
-			//e.printStackTrace();
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		}
 		return coder;
 	}
@@ -308,7 +305,6 @@ public class SqlConnection {
 			preStatement.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
-			new ErrorDialog(e.getMessage());
 		}
 		Collections.sort(al);
 		return al;
@@ -334,8 +330,7 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			//e.printStackTrace();
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		}
 		return al;
 	}
@@ -359,8 +354,7 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			//e.printStackTrace();
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		}
 		return al;
 	}
@@ -409,8 +403,7 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			//e.printStackTrace();
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		}
 		return al;
 	}
@@ -432,8 +425,7 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			//e.printStackTrace();
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		}
 		return map;
 	}
@@ -560,7 +552,6 @@ public class SqlConnection {
 					+ "VALUES (" + statement.getId() + ", " + "(SELECT ID FROM VARIABLES WHERE Variable = '" + key 
 					+ "' AND StatementTypeId = " + statement.getStatementTypeId() + "), " + statement.getStatementTypeId() + ", "  
 					+ ap + object + ap + ")";
-			//System.out.println(myStatement);
 			executeStatement(myStatement);
     	}
 	}
@@ -598,8 +589,7 @@ public class SqlConnection {
 				varid = (int) executeQueryForObject("SELECT ID FROM VARIABLES WHERE Variable = '" + key 
 						+ "' AND StatementTypeId = " + statement.getStatementTypeId());
 			} catch (SQLException e) {
-				//e.printStackTrace();
-				new ErrorDialog(e.getMessage());
+				e.printStackTrace();
 			}
 			
 			String myStatement = "REPLACE INTO DATA" + tableExtension + " (ID, StatementId, VariableId, StatementTypeId, Value) "
@@ -674,8 +664,7 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			//e.printStackTrace();
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		}
 		data.setStatements(statements);
 		return data;
@@ -714,8 +703,7 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			//e.printStackTrace();
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		}
 		return al;
 	}
@@ -767,8 +755,7 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			//e.printStackTrace();
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		}
 		return al;
 	}
@@ -1145,8 +1132,7 @@ public class SqlConnection {
 			preStatement.execute();
 			preStatement.close();
 		} catch (SQLException e) {
-			//e.printStackTrace();
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		}
 	}
 	
@@ -1192,8 +1178,7 @@ public class SqlConnection {
 			result.close();
 			preStatement.close();
 		} catch (SQLException e) {
-			//e.printStackTrace();
-			new ErrorDialog(e.getMessage());
+			e.printStackTrace();
 		}
 		return al;
 	}

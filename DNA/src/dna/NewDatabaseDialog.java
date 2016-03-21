@@ -1161,6 +1161,11 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.dna.gui.menuBar.colorCoderButton.setEnabled(true);
 					Dna.dna.gui.rightPanel.rm.setFieldsEnabled(true);
 					Dna.dna.gui.leftPanel.docStats.refreshButton.setEnabled(true);
+					if (Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("importDocuments") == true) {
+						Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
+					} else {
+						Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
+					}
 					dispose();
 				}
 			});

@@ -49,6 +49,7 @@ import dna.dataStructures.StatementType;
 import dna.panels.DocStatsPanel;
 import dna.panels.RegexPanel;
 import dna.panels.SearchPanel;
+import dna.renderer.StatementTableModel;
 
 @SuppressWarnings("serial")
 public class RightPanel extends JScrollPane {

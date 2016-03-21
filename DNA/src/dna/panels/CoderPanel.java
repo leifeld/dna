@@ -77,6 +77,11 @@ public class CoderPanel extends JPanel {
 				coderRelationTable.updateUI();
 				Dna.dna.gui.textPanel.paintStatements();
 				Dna.dna.gui.rightPanel.statementFilter.updateFilter();
+				if (Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("importDocuments") == true) {
+					Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
+				} else {
+					Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
+				}
 			}
 		});
 		addButton = new JButton(new ImageIcon(getClass().getResource("/icons/add.png")));
@@ -216,6 +221,11 @@ public class CoderPanel extends JPanel {
 				Dna.dna.gui.textPanel.paintStatements();
 				Dna.dna.gui.documentPanel.documentFilter();
 				Dna.dna.gui.documentPanel.documentTable.updateDocumentView();
+				if (Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("importDocuments") == true) {
+					Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
+				} else {
+					Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
+				}
 			}
 		});
 	}

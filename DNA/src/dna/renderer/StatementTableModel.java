@@ -1,5 +1,6 @@
-package dna;
+package dna.renderer;
 
+import dna.Dna;
 import dna.dataStructures.*;
 
 import java.util.ArrayList;
@@ -163,7 +164,6 @@ public class StatementTableModel implements TableModel {
 			for( int i = 0, n = listeners.size(); i < n; i++ ){
 				((TableModelListener)listeners.get( i )).tableChanged( e );
 			}
-			
 		}
 	}
 	

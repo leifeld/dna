@@ -44,7 +44,7 @@ public class Gui extends JFrame {
 	public TextPanel textPanel;
 	public RightPanel rightPanel;
 	public LeftPanel leftPanel;
-	MenuBar menuBar;
+	public MenuBar menuBar;
 	
 	int previousDocID = -1;
 
@@ -266,11 +266,16 @@ public class Gui extends JFrame {
 		}
 	}
 
-	class MenuBar extends JMenuBar {
+	public class MenuBar extends JMenuBar {
 		JMenu fileMenu, documentMenu, exportMenu, settingsMenu;
 		JMenuItem closeDatabase, newDatabase, openDatabase, importHTMLButton, typeEditorButton, newDocumentButton, 
-			removeDocumentButton, importDnaButton, importOldButton, networkButton, aboutButton, colorStatementTypeButton, 
-			colorCoderButton, recodeVariableButton;
+			removeDocumentButton, importDnaButton;
+		public JMenuItem importOldButton;
+		JMenuItem networkButton;
+		JMenuItem aboutButton;
+		JMenuItem colorStatementTypeButton;
+		JMenuItem colorCoderButton;
+		JMenuItem recodeVariableButton;
 		
 		public MenuBar() {
 			fileMenu = new JMenu("File");
@@ -392,7 +397,7 @@ public class Gui extends JFrame {
 					}
 				}
 			});
-			removeDocumentButton.setEnabled(true);
+			removeDocumentButton.setEnabled(false);
 
 			//Document menu: import documents from another DNA database
 			Icon importDnaIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
@@ -431,7 +436,7 @@ public class Gui extends JFrame {
 			//Document menu: import old DNA dataset
 			Icon importOldIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
 			importOldButton = new JMenuItem("Import from old DNA 1.xx file...", importOldIcon);
-			importOldButton.setToolTipText("import from old DNA < 2.0 XML dataset...");
+			importOldButton.setToolTipText("import from old DNA 1.31 XML dataset...");
 			documentMenu.add(importOldButton);
 			importOldButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -456,7 +461,12 @@ public class Gui extends JFrame {
 						} else {
 							dbfile = file.getPath();
 						}
-						new ImportOldDNA(dbfile);
+						try {
+							new ImportOldDNA(dbfile);
+						} catch (NullPointerException npe) {
+							JOptionPane.showMessageDialog(Dna.dna.gui, 
+									"The default statement type \"DNA Statement\" is not available or has been modified!");
+						}
 					}
 				}
 			});
@@ -521,7 +531,7 @@ public class Gui extends JFrame {
 			settingsMenu.add(aboutButton);
 			aboutButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					new AboutWindow(Dna.data.getSettings().get("version"), Dna.data.getSettings().get("date"));
+					new AboutWindow(Dna.dna.version, Dna.dna.date);
 				}
 			});
 		}

@@ -15,7 +15,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
@@ -27,7 +26,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Style;
@@ -115,7 +113,6 @@ public class TextPanel extends JPanel {
 		textScrollPane = new JScrollPane(textWindow);
 		textScrollPane.setPreferredSize(new Dimension(500, 500));
 		textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		//textWindow.setEnabled(false);
 		
 		collapsiblePane = new JXCollapsiblePane(); 
 		collapsiblePane.setName("Central Text Panel");
@@ -124,7 +121,6 @@ public class TextPanel extends JPanel {
 		collapsiblePane.setCollapsed(true);
 		searchWindow = new SearchWindow();
 		collapsiblePane.add(searchWindow, "Full-text search");
-
 		
 		//MouseListener for text window; one method for Windows and one for Unix
 		textWindow.addMouseListener( new MouseAdapter() {
@@ -151,7 +147,6 @@ public class TextPanel extends JPanel {
 				}
 			}
 		});
-
 	}
 	
 	public void paintStatements() {
@@ -289,6 +284,10 @@ public class TextPanel extends JPanel {
 						Point location = textWindow.getLocationOnScreen();
 						textWindow.setSelectionStart(startIndex);
 						textWindow.setSelectionEnd(stopIndex);
+						int row = Dna.dna.gui.rightPanel.ssc.getIndexByStatementId(statementId);
+						Dna.dna.gui.rightPanel.statementTable.setRowSelectionInterval(row, row);
+						Dna.dna.gui.rightPanel.statementTable.scrollRectToVisible(new Rectangle(  // scroll to selected row
+								Dna.dna.gui.rightPanel.statementTable.getCellRect(i, 0, true)));
 						if (b[1] == true) {  // statement is editable by the active coder
 							new Popup(p, statementId, location, true);
 						} else {

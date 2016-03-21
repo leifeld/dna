@@ -284,6 +284,11 @@ public class OpenDatabaseDialog extends JDialog {
 			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
 		}
 		Dna.dna.gui.documentPanel.documentFilter();
+		if (Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("importDocuments") == true) {
+			Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
+		} else {
+			Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
+		}
 		
 		Dna.dna.sql.upsertSetting("version", Dna.dna.version);
 		Dna.dna.sql.upsertSetting("date", Dna.dna.date);

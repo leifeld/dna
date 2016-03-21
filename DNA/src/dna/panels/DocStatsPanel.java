@@ -13,7 +13,6 @@ import javax.swing.JTextArea;
 import javax.swing.text.DefaultCaret;
 
 import dna.Dna;
-import dna.ErrorDialog;
 import dna.dataStructures.Statement;
 import dna.dataStructures.StatementType;
 

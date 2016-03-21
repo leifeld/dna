@@ -22,8 +22,7 @@ public class AboutWindow extends JFrame {
     
     public AboutWindow(String version, String date) {
         this.setTitle("About DNA");
-        ImageIcon dna32Icon = new ImageIcon(getClass().getResource(
-            "/icons/dna32.png"));
+        ImageIcon dna32Icon = new ImageIcon(getClass().getResource("/icons/dna32.png"));
         this.setIconImage(dna32Icon.getImage());
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setPreferredSize(new Dimension(420, 260));
