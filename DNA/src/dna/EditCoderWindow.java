@@ -77,7 +77,7 @@ public class EditCoderWindow extends JDialog{
 		permAddStatements = new JCheckBox("add statements");
 		permViewOtherStatements = new JCheckBox("view others' statements");
 		permEditOtherStatements = new JCheckBox("edit others' statements");
-		permEditCoders = new JCheckBox("edit coder settings");
+		permEditCoders = new JCheckBox("add coders");
 		permEditStatementTypes = new JCheckBox("edit statement types");
 		permEditRegex = new JCheckBox("edit regex settings");
 		permPanel.add(permAddDocuments);

@@ -103,7 +103,7 @@ public class TextPanel extends JPanel {
 	    StyleConstants.setFirstLineIndent(mainStyle, 16);
 	    StyleConstants.setFontFamily(mainStyle, "serif");
 	    StyleConstants.setFontSize(mainStyle, 12);
-
+	    
 	    // Create and add the constant width style
 	    final Style cwStyle = sc.addStyle("ConstantWidth", null);
 	    StyleConstants.setBackground(cwStyle, Color.green);
@@ -205,7 +205,7 @@ public class TextPanel extends JPanel {
 	
 	public void mouseListenPopup(MouseEvent me) throws ArrayIndexOutOfBoundsException {
 		if ( me.isPopupTrigger() ) {
-			if (!(textWindow.getSelectedText() == null)) {
+			if (!(textWindow.getSelectedText() == null) && Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("addStatements") == true) {
 				popupMenu(me.getComponent(), me.getX(), me.getY());
 			}
 		}
@@ -250,13 +250,10 @@ public class TextPanel extends JPanel {
 					Statement statement = new Statement(statementId, documentId, selectionStart, selectionEnd, 
 							documentDate, statementType.getId(), coderId, map);
 					Dna.dna.addStatement(statement);
-
-					//textWindow.setSelectionStart(selectionStart);
-					//textWindow.setSelectionEnd(selectionEnd);
 					
-					//Dna.dna.addStatement(type, documentId, selectionStart, selectionEnd);
 					paintStatements();
-					//textWindow.setCaretPosition(selectionEnd);
+					textWindow.setCaretPosition(selectionEnd);
+					Dna.dna.gui.textPanel.selectStatement(statementId, documentId, true);
 				}
 			});
 		}

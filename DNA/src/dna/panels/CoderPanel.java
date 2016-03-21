@@ -113,10 +113,8 @@ public class CoderPanel extends JPanel {
 				}
 				
 				if (Dna.data.getCoderById(ac).getPermissions().get("editCoders") == false) {
-					editButton.setEnabled(false);
 					addButton.setEnabled(false);
 				} else {
-					editButton.setEnabled(true);
 					addButton.setEnabled(true);
 				}
 			}
@@ -294,10 +292,8 @@ public class CoderPanel extends JPanel {
 				}
 				
 				if (Dna.data.getCoderById(ac).getPermissions().get("editCoders") == false) {
-					editButton.setEnabled(false);
 					addButton.setEnabled(false);
 				} else {
-					editButton.setEnabled(true);
 					addButton.setEnabled(true);
 				}
 			}

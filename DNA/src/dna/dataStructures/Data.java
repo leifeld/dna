@@ -279,6 +279,11 @@ public class Data {
 	}
 	
 	public void removeCoder(int id) {
+		for (int i = statements.size() - 1; i > -1; i--) {
+			if (statements.get(i).getCoder() == id) {
+				Dna.dna.gui.rightPanel.ssc.remove(i);
+			}
+		}
 		for (int i = documents.size() - 1; i > -1; i--) {
 			if (documents.get(i).getCoder() == id) {
 				Dna.dna.gui.documentPanel.documentContainer.remove(i);

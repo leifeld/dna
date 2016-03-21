@@ -1197,10 +1197,8 @@ public class NewDatabaseDialog extends JDialog {
 					}
 					
 					if (Dna.data.getCoderById(ac).getPermissions().get("editCoders") == false) {
-						Dna.dna.gui.leftPanel.coderPanel.editButton.setEnabled(false);
 						Dna.dna.gui.leftPanel.coderPanel.addButton.setEnabled(false);
 					} else {
-						Dna.dna.gui.leftPanel.coderPanel.editButton.setEnabled(true);
 						Dna.dna.gui.leftPanel.coderPanel.addButton.setEnabled(true);
 					}
 					
