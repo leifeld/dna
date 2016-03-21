@@ -262,14 +262,39 @@ public class Gui extends JFrame {
 					textPanel.paintStatements();
 				}
 				textPanel.setCaretPosition(0);
+				
+				int ac = Dna.data.getActiveCoder();
+				if (Dna.dna.gui.leftPanel.editDocPanel.saveButton != null) {
+					if (Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
+						Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(false);
+						Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
+					} else {
+						Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(true);
+						Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
+					}
+				}
+				
+				if (Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
+					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
+				} else {
+					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
+				}
+				
+				if (Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
+					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
+				} else {
+					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
+				}
 			}
 		}
 	}
 
 	public class MenuBar extends JMenuBar {
 		JMenu fileMenu, documentMenu, exportMenu, settingsMenu;
-		JMenuItem closeDatabase, newDatabase, openDatabase, importHTMLButton, typeEditorButton, newDocumentButton, 
-			removeDocumentButton, importDnaButton;
+		JMenuItem closeDatabase, newDatabase, openDatabase, importHTMLButton, typeEditorButton;
+		public JMenuItem newDocumentButton;
+		public JMenuItem removeDocumentButton;
+		JMenuItem importDnaButton;
 		public JMenuItem importOldButton;
 		JMenuItem networkButton;
 		JMenuItem aboutButton;

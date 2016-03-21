@@ -32,9 +32,9 @@ import dna.renderer.RegexListRenderer;
 
 public class RegexPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
-	JButton colorButton;
+	public JButton colorButton;
 	public JButton addButton;
-	JButton remove;
+	public JButton remove;
 	JXTextField textField;
 	public RegexListModel regexListModel;
 	public JList<Regex> regexList;
@@ -53,7 +53,9 @@ public class RegexPanel extends JPanel {
 		
 		regexList.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
-				if (regexList.getModel().getSize() == 0 || regexList.isSelectionEmpty()) {
+				int ac = Dna.data.getActiveCoder();
+				if (regexList.getModel().getSize() == 0 || regexList.isSelectionEmpty() 
+						|| Dna.data.getCoderById(ac).getPermissions().get("editRegex") == false) {
 					remove.setEnabled(false);
 				} else {
 					remove.setEnabled(true);
@@ -185,6 +187,8 @@ public class RegexPanel extends JPanel {
 	public void setFieldsEnabled(boolean enabled) {
 		textField.setEnabled(enabled);
 		colorButton.setEnabled(enabled);
+		remove.setEnabled(enabled);
+		addButton.setEnabled(enabled);
 	}
 	
 	public void clear() {

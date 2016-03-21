@@ -42,7 +42,7 @@ public class EditDocumentPanel extends JPanel {
 	JComboBox<String> sourceBox;
 	JComboBox<String> sectionBox;
 	JComboBox<String> typeBox;
-	JButton saveButton, cancelButton;
+	public JButton saveButton, cancelButton;
 	JScrollPane notesScroll;
 	JLabel notesLabel;
 	JLabel authorLabel;
@@ -257,6 +257,11 @@ public class EditDocumentPanel extends JPanel {
 				saveDetails();
 			}
 		});
+		int ac = Dna.data.getActiveCoder();
+		if (Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
+			saveButton.setEnabled(false);
+			cancelButton.setEnabled(false);
+		}
 		this.add(saveButton, g);
 		
 		g.gridx = 1;
