@@ -66,7 +66,7 @@ public class StatementTableModel implements TableModel {
 	public ArrayList<Statement> getAll () {
 		return Dna.data.getStatements();
 	}
-
+	
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
 		Statement s = Dna.data.getStatements().get(rowIndex);
@@ -85,7 +85,7 @@ public class StatementTableModel implements TableModel {
 			return null;
 		}
 	}
-
+	
 	@Override
 	public boolean isCellEditable(int arg0, int arg1) {
 		return false;

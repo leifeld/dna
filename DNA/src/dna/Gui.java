@@ -243,9 +243,6 @@ public class Gui extends JFrame {
 					textPanel.setEnabled(true);
 					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
 					
-					//SK
-					//Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(documentPanel.documentContainer.get(selectedRow));
-					
 					boolean[] b = Dna.data.getActiveDocumentPermissions(id);
 					if (b[0] == true && b[1] == true) {
 						Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(Dna.data.getDocuments().get(selectedRow));
@@ -265,7 +262,7 @@ public class Gui extends JFrame {
 				
 				int ac = Dna.data.getActiveCoder();
 				if (Dna.dna.gui.leftPanel.editDocPanel.saveButton != null) {
-					if (Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
+					if (Dna.data.getSettings().get("filename") == null || Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
 						Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(false);
 						Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
 					} else {
@@ -274,13 +271,13 @@ public class Gui extends JFrame {
 					}
 				}
 				
-				if (Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
+				if (Dna.data.getSettings().get("filename") == null || Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
 					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
 				} else {
 					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
 				}
 				
-				if (Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
+				if (Dna.data.getSettings().get("filename") == null || Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
 					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
 				} else {
 					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);

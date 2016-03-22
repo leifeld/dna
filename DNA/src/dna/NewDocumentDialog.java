@@ -125,21 +125,21 @@ class NewDocumentDialog extends JDialog {
 		okButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String text = textArea.getText();
-				text = text.replaceAll("'", "''");
+				//text = text.replaceAll("'", "''");
 				String title = titleField.getText();
-				title = title.replaceAll("'", "''");
+				//title = title.replaceAll("'", "''");
 				Date date = (Date)dateSpinner.getValue();
 				int coder = Dna.data.getActiveCoder();
 				String author = (String) authorBox.getModel().getSelectedItem();
-				author = author.replaceAll("'", "''");
+				//author = author.replaceAll("'", "''");
 				String source = (String) sourceBox.getModel().getSelectedItem();
-				source = source.replaceAll("'", "''");
+				//source = source.replaceAll("'", "''");
 				String section = (String) sectionBox.getModel().getSelectedItem();
-				section = section.replaceAll("'", "''");
+				//section = section.replaceAll("'", "''");
 				String notes = notesArea.getText();
-				notes = notes.replaceAll("'", "''");
+				//notes = notes.replaceAll("'", "''");
 				String type = (String) typeBox.getModel().getSelectedItem();
-				type = type.replaceAll("'", "''");
+				//type = type.replaceAll("'", "''");
 				int docId = Dna.data.generateNewDocumentId();
 				Document d = new Document(docId, title, text, coder, author, source, section, notes, type, date);
 				Dna.dna.addDocument(d);

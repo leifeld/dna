@@ -6,6 +6,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -231,6 +232,8 @@ public class RightPanel extends JScrollPane {
 						int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
 						Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
 						setSelectionInterval(docRow, docRow);
+						Dna.dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(
+								Dna.dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));
 						Dna.dna.gui.textPanel.selectStatement(statementId, docId, b[1]);
 					}
 				}

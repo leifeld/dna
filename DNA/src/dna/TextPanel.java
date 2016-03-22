@@ -7,6 +7,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -103,6 +104,10 @@ public class TextPanel extends JPanel {
 	    StyleConstants.setFirstLineIndent(mainStyle, 16);
 	    StyleConstants.setFontFamily(mainStyle, "serif");
 	    StyleConstants.setFontSize(mainStyle, 12);
+	    
+	    //Font font = new Font("Serif", Font.ITALIC, 20);
+	    Font font = new Font("Monospaced", Font.PLAIN, 14);
+        textWindow.setFont(font);
 	    
 	    // Create and add the constant width style
 	    final Style cwStyle = sc.addStyle("ConstantWidth", null);
@@ -285,6 +290,9 @@ public class TextPanel extends JPanel {
 						Dna.dna.gui.rightPanel.statementTable.setRowSelectionInterval(row, row);
 						Dna.dna.gui.rightPanel.statementTable.scrollRectToVisible(new Rectangle(  // scroll to selected row
 								Dna.dna.gui.rightPanel.statementTable.getCellRect(i, 0, true)));
+						int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(Dna.data.getStatements().get(i).getDocumentId());
+						Dna.dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(
+								Dna.dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));
 						if (b[1] == true) {  // statement is editable by the active coder
 							new Popup(p, statementId, location, true);
 						} else {

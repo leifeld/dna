@@ -25,6 +25,7 @@ import java.util.regex.PatternSyntaxException;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -39,6 +40,9 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLEditorKit;
 
 import org.jdom.CDATA;
 import org.jdom.Comment;
@@ -285,25 +289,25 @@ public class ImportOldDNA extends JDialog {
 		authorPreviewField.setEditable(false);
 		patternPanel.add(authorPreviewField, gbc);
 
-		gbc.gridy = 2;
+		gbc.gridy = 3;
 		sourcePreviewField = new JTextField("");
 		sourcePreviewField.setColumns(20);
 		sourcePreviewField.setEditable(false);
 		patternPanel.add(sourcePreviewField, gbc);
 
-		gbc.gridy = 3;
+		gbc.gridy = 4;
 		sectionPreviewField = new JTextField("");
 		sectionPreviewField.setColumns(20);
 		sectionPreviewField.setEditable(false);
 		patternPanel.add(sectionPreviewField, gbc);
 
-		gbc.gridy = 4;
+		gbc.gridy = 5;
 		typePreviewField = new JTextField("");
 		typePreviewField.setColumns(20);
 		typePreviewField.setEditable(false);
 		patternPanel.add(typePreviewField, gbc);
 
-		gbc.gridy = 5;
+		gbc.gridy = 6;
 		notesPreviewField = new JTextField("");
 		notesPreviewField.setColumns(20);
 		notesPreviewField.setEditable(false);
@@ -393,7 +397,6 @@ public class ImportOldDNA extends JDialog {
 			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Importing documents and statements...", "", 0, aitm.getRowCount() - 1);
 			progressMonitor.setMillisToDecideToPopup(1);
 			
-
 			SAXBuilder builder = new SAXBuilder( false );
 			Document docXml;
 			Element discourse = null;
@@ -408,11 +411,19 @@ public class ImportOldDNA extends JDialog {
 			String articleText, dateString, title;
 			SimpleDateFormat sdfToDate;
 			int documentId;
+			String authorString, sectionString, sourceString, notesString, typeString;
 			
 			Element statement;
 			String start, end, person, organization, category, agreement;
 			int agreeInt, startInt, endInt, statementId;
-			LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();;
+			LinkedHashMap<String, Object> map;
+
+			JEditorPane textWindow = new JEditorPane();
+			textWindow.setContentType("text/html");
+			HTMLEditorKit kit = new HTMLEditorKit();
+			HTMLDocument doc = (HTMLDocument)(kit.createDefaultDocument());
+			textWindow.setEditorKit(kit);
+			textWindow.setDocument(doc);
 			
 			for (int k = 0; k < aitm.getRowCount(); k++) {
 				if (progressMonitor.isCanceled()) {
@@ -443,6 +454,12 @@ public class ImportOldDNA extends JDialog {
 					dateString = article.getChild("date").getText();
 					title = article.getChild("title").getText();
 					
+					authorString = patternToString(title, authorPatternField.getText());
+					sourceString = patternToString(title, sourcePatternField.getText());
+					sectionString = patternToString(title, sectionPatternField.getText());
+					notesString = patternToString(title, notesPatternField.getText());
+					typeString = patternToString(title, typePatternField.getText());
+					
 					// handle duplicates
 					if (Dna.dna.gui.documentPanel.documentContainer.containsTitle(title)) {
 						int count = 2;
@@ -459,24 +476,29 @@ public class ImportOldDNA extends JDialog {
 					
 					Date date = new Date();
 					
-					title = title.replaceAll("'", "''");
-					articleText = articleText.replaceAll("'", "''");
+					String articleText2 = articleText.replaceAll("\n", "<br>");
 					
+					textWindow.setText(articleText2);
+					try {
+						articleText = doc.getText(0, doc.getLength());
+					} catch (BadLocationException e) {
+						e.printStackTrace();
+					}
 					documentId = Dna.data.generateNewDocumentId();
-					
 					try {
 						sdfToDate = new SimpleDateFormat("dd.MM.yyyy");
+						date = sdfToDate.parse(dateString);
 						dna.dataStructures.Document d = new dna.dataStructures.Document(
 								documentId, 
-								patternToString(title, titlePatternField.getText()), 
-								articleText, 
+								title, 
+								articleText.replaceAll("   ", "\n\n\n").replaceAll("  ", "\n\n"),
 								coderId, 
-								patternToString(title, authorPatternField.getText()), 
-								patternToString(title, sourcePatternField.getText()), 
-								patternToString(title, sectionPatternField.getText()), 
-								patternToString(title, notesPatternField.getText()), 
-								patternToString(title, typePatternField.getText()), 
-								sdfToDate.parse(dateString)
+								authorString, 
+								sourceString, 
+								sectionString, 
+								notesString, 
+								typeString, 
+								date
 						);
 						Dna.dna.addDocument(d);
 					} catch (ParseException pe) {
@@ -499,18 +521,16 @@ public class ImportOldDNA extends JDialog {
 							agreeInt = 0;
 						}
 						
-						startInt = Integer.valueOf( start ).intValue() - 1;
-						endInt = Integer.valueOf( end ).intValue() - 1;
-						
-						person = person.replaceAll("'", "''");
-						organization = organization.replaceAll("'", "''");
-						category = category.replaceAll("'", "''");
+						startInt = Integer.valueOf( start ).intValue();
+						endInt = Integer.valueOf( end ).intValue();
 						
 						statementId = Dna.data.generateNewStatementId();
+						map = new LinkedHashMap<String, Object>();
 						map.put("person", person);
 						map.put("organization", organization);
 						map.put("concept", category);
 						map.put("agreement", agreeInt);
+						
 						Dna.dna.addStatement(new Statement(statementId, documentId, startInt, endInt, date, statementTypeId, coderId, map));
 					}
 				}

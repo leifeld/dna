@@ -235,11 +235,13 @@ public class SqlConnection {
 	 */
 	public void upsertDocument(Document document) {
 		executeStatement("REPLACE INTO DOCUMENTS(ID, Title, Text, Coder, Author, Source, Section, Notes, Type, Date) "
-				+ "VALUES (" + document.getId() + ", '" + document.getTitle() + "', '" + document.getText() 
-				+ "', " + document.getCoder() + ", '" + document.getAuthor() + "', '" + document.getSource() + "', '" + document.getSection() 
-				+ "', '" + document.getNotes() + "', '" + document.getType() + "', " + document.getDate().getTime() + ")");
+				+ "VALUES (" + document.getId() + ", '" + document.getTitle().replaceAll("'", "''")  + "', '" 
+				+ document.getText().replaceAll("'", "''") + "', " + document.getCoder() + ", '" 
+				+ document.getAuthor().replaceAll("'", "''")  + "', '" + document.getSource().replaceAll("'", "''")  + "', '" 
+				+ document.getSection().replaceAll("'", "''") + "', '" + document.getNotes().replaceAll("'", "''") + "', '" 
+				+ document.getType().replaceAll("'", "''") + "', " + document.getDate().getTime() + ")");
 	}
-
+	
 	/**
 	 * @param regex   Regular expression to add to/update in the REGEXES table
 	 */
@@ -544,9 +546,11 @@ public class SqlConnection {
     		} else if (type.equals("short text")) {
     			tableExtension = "SHORTTEXT";
     			ap = "'";
+    			object = ((String) object).replaceAll("'", "''");
     		} else if (type.equals("long text")) {
     			tableExtension = "LONGTEXT";
     			ap = "'";
+    			object = ((String) object).replaceAll("'", "''");
     		}
 			
 			String myStatement = "INSERT INTO DATA" + tableExtension + " (StatementId, VariableId, StatementTypeId, Value) "
@@ -580,9 +584,11 @@ public class SqlConnection {
     		} else if (type.equals("short text")) {
     			tableExtension = "SHORTTEXT";
     			ap = "'";
+    			object = ((String) object).replaceAll("'", "''");
     		} else if (type.equals("long text")) {
     			tableExtension = "LONGTEXT";
     			ap = "'";
+    			object = ((String) object).replaceAll("'", "''");
     		}
 			
 			int varid = -1;
