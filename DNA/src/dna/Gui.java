@@ -7,12 +7,14 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 
+import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
@@ -24,11 +26,17 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JToggleButton;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
+import javax.swing.SpinnerModel;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
@@ -47,7 +55,7 @@ public class Gui extends JFrame {
 	public MenuBar menuBar;
 	
 	int previousDocID = -1;
-
+	
 	public Gui() {
 		c = getContentPane();
 		this.setTitle("Discourse Network Analyzer");
@@ -102,12 +110,24 @@ public class Gui extends JFrame {
 		leftCollapsiblePane.add(leftPanel);
 		
 		JPanel toggleButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		SpinnerModel spinnerModel = new SpinnerNumberModel(14, 8, 60, 1);
+		JSpinner fontSpinner = new JSpinner(spinnerModel);
+		fontSpinner.addChangeListener(new ChangeListener(){
+			public void stateChanged(ChangeEvent e) {
+				Font font = new Font("Monospaced", Font.PLAIN, (int) fontSpinner.getValue());
+				Dna.dna.gui.textPanel.textWindow.setFont(font);
+			}
+		});
+		toggleButtons.add(new JLabel(new ImageIcon(getClass().getResource("/icons/font.png"))));
+		toggleButtons.add(fontSpinner);
+		toggleButtons.add(Box.createRigidArea(new Dimension(5,5)));
+		
 		JToggleButton leftToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/application_side_list.png")));
 		leftToggleButton.setPreferredSize(new Dimension(36, 18));
 		leftToggleButton.setSelected(true);
 		leftToggleButton.setName("leftToggle");
 		leftToggleButton.addActionListener(leftCollapsiblePane.getActionMap().get(JXCollapsiblePane.TOGGLE_ACTION));
-
+		
 		toggleButtons.add(leftToggleButton);
 		JToggleButton bottomToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/application_split.png")));
 		bottomToggleButton.setPreferredSize(new Dimension(36, 18));

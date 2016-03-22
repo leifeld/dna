@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
+import javax.swing.ProgressMonitor;
+
 import dna.dataStructures.Coder;
 import dna.dataStructures.CoderRelation;
 import dna.dataStructures.Data;
@@ -234,6 +236,30 @@ public class SqlConnection {
 	 * @param document   Document to add to/update in the DOCUMENTS table
 	 */
 	public void upsertDocument(Document document) {
+		/*
+		long count = -1;
+		try {
+			count = (long) executeQueryForObject("SELECT COUNT(1) FROM DOCUMENTS WHERE ID = " + document.getId());
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		if (count == 1) {
+			executeStatement("UPDATE DOCUMENTS SET Title = " + document.getTitle().replaceAll("'", "''") + ", Text = '" 
+					+ document.getText().replaceAll("'", "''") + "', Coder = " + document.getCoder() + ", Author = '" 
+					+ document.getAuthor().replaceAll("'", "''") + "', Source = '" + document.getSource().replaceAll("'", "''") 
+					+ "', Section = '" + document.getSection().replaceAll("'", "''") + "', Notes = '" 
+					+ document.getNotes().replaceAll("'", "''") + "', Type = '" + document.getType().replaceAll("'", "''") 
+					+ "', Date = " + document.getDate().getTime());
+		} else {
+			executeStatement("INSERT INTO DOCUMENTS(ID, Title, Text, Coder, Author, Source, Section, Notes, Type, Date) "
+					+ "VALUES (" + document.getId() + ", '" + document.getTitle().replaceAll("'", "''")  + "', '" 
+					+ document.getText().replaceAll("'", "''") + "', " + document.getCoder() + ", '" 
+					+ document.getAuthor().replaceAll("'", "''")  + "', '" + document.getSource().replaceAll("'", "''")  + "', '" 
+					+ document.getSection().replaceAll("'", "''") + "', '" + document.getNotes().replaceAll("'", "''") + "', '" 
+					+ document.getType().replaceAll("'", "''") + "', " + document.getDate().getTime() + ")");
+		}
+		*/
 		executeStatement("REPLACE INTO DOCUMENTS(ID, Title, Text, Coder, Author, Source, Section, Notes, Type, Date) "
 				+ "VALUES (" + document.getId() + ", '" + document.getTitle().replaceAll("'", "''")  + "', '" 
 				+ document.getText().replaceAll("'", "''") + "', " + document.getCoder() + ", '" 
@@ -252,19 +278,40 @@ public class SqlConnection {
 	}
 	
 	public void upsertStatementType(StatementType statementType) {
-		Iterator<String> keyIterator = statementType.getVariables().keySet().iterator();
-        while (keyIterator.hasNext()){
-    		String key = keyIterator.next();
-    		String value = statementType.getVariables().get(key);
-    		executeStatement("REPLACE INTO VARIABLES(ID, Variable, DataType, StatementTypeId) "
-					+ "VALUES ((SELECT ID FROM VARIABLES WHERE Variable = '" + key 
-					+ "' AND StatementTypeId = " + statementType.getId() + "), '" + key + "', '" + value
-					+ "', " + statementType.getId() + ")");
-    	}
 		executeStatement("REPLACE INTO STATEMENTTYPES(ID, Label, Red, Green, Blue) "
 				+ "VALUES (" + statementType.getId() + ", '" + statementType.getLabel() + "', " 
 				+ statementType.getColor().getRed() + ", " + statementType.getColor().getGreen() + ", " 
 				+ statementType.getColor().getBlue() + ")");
+		Iterator<String> keyIterator = statementType.getVariables().keySet().iterator();
+        while (keyIterator.hasNext()){
+    		String key = keyIterator.next();
+    		String value = statementType.getVariables().get(key);
+    		String query = "SELECT ID FROM VARIABLES WHERE Variable = '" + key + "' AND StatementTypeId = " + statementType.getId();
+    		int variableId = -1;
+    		try {
+        		PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(query);
+        		ResultSet result;
+    			result = preStatement.executeQuery();
+				if (result.next()) {
+					do {
+						variableId = result.getInt(1);
+					} while (result.next());
+				}
+	    		result.close();
+	    		preStatement.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+    		
+    		if (variableId == -1) {
+    			executeStatement("INSERT INTO VARIABLES(Variable, DataType, StatementTypeId) VALUES ('"
+        				+ key + "', '" + value + "', " + statementType.getId() + ")");
+    		} else {
+    			executeStatement("REPLACE INTO VARIABLES(ID, Variable, DataType, StatementTypeId) VALUES (" + variableId + ", '" 
+        				+ key + "', '" + value + "', " + statementType.getId() + ")");
+    		}
+    		
+    	}
 	}
 	
 	/**
@@ -274,6 +321,67 @@ public class SqlConnection {
 		executeStatement("REPLACE INTO STATEMENTLINKS(ID, SourceId, TargetId) "
 				+ "VALUES (" + sl.getId() + ", " + sl.getSourceId() + ", " + sl.getTargetId() + ")");
 	}
+	
+	/*
+	class DocumentLoader implements Runnable {
+		ProgressMonitor progressMonitor;
+		ArrayList<Document> al;
+		
+		public ArrayList<Document> DocumentLoader() {
+			al = new ArrayList<Document>();
+			run();
+			return al;
+		}
+		
+		public void run() {
+			int count = 0;
+			try {
+				count = (int) executeQueryForObject("SELECT COUNT(*) FROM DOCUMENTS");
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Importing documents and statements...", "", 0, count);
+			progressMonitor.setMillisToDecideToPopup(1);
+			
+			try {
+				String myQuery = "SELECT * FROM DOCUMENTS";
+				PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+				ResultSet result = preStatement.executeQuery();
+				int i = 0;
+				if (result.next()) {
+					do {
+						i++;
+						progressMonitor.setProgress(i);
+						if (progressMonitor.isCanceled()) {
+							break;
+						}
+						int id = result.getInt("ID");
+						long d = result.getLong("Date");
+						Date date = new Date(d);
+						Document document = new Document(
+								id, 
+								result.getString("Title"), 
+								result.getString("Text"), 
+								result.getInt("Coder"), 
+								result.getString("Author"), 
+								result.getString("Source"), 
+								result.getString("Section"), 
+								result.getString("Notes"), 
+								result.getString("Type"), 
+								date
+						);
+						al.add(document);
+					} while (result.next());
+				}
+				result.close();
+				preStatement.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			Collections.sort(al);
+		}
+	}
+	*/
 	
 	/**
 	 * @return     Array list of all documents in the SQL database.
@@ -448,12 +556,29 @@ public class SqlConnection {
 			ap = "'";
 		}
 		
-		String myStatement = "REPLACE INTO " + table + "(ID, StatementId, VariableId, StatementTypeId, Value) "
-				+ "VALUES ((SELECT ID FROM " + table + " WHERE VariableId = (SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
-				+ statementTypeId + " AND Variable = '" + variableName + "')" + " AND StatementId = " + statementId + "), " 
-				+ statementId + ", (SELECT ID FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + " AND Variable = '" 
-				+ variableName + "'), " + statementTypeId + ", " + ap + value + ap + ")";
-		executeStatement(myStatement);
+		try {
+			// get ID of data entry to update
+			int dataId = (int) executeQueryForObject("SELECT ID FROM " + table + " WHERE VariableId = " 
+					+ "(SELECT ID FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + " AND Variable = '" 
+					+ variableName + "')");
+			
+			// then replace entry
+			String myStatement = "";
+			if (dataId == -1) {
+				myStatement = "INSERT INTO " + table + "(StatementId, VariableId, StatementTypeId, Value) "
+						+ "VALUES (" + statementId + ", (SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
+						+ statementTypeId + " AND Variable = '" + variableName + "')" + ", " + statementTypeId 
+						+ ", " + ap + value + ap + ")";
+			} else {
+				myStatement = "REPLACE INTO " + table + "(ID, StatementId, VariableId, StatementTypeId, Value) "
+						+ "VALUES (" + dataId + ", " + statementId + ", (SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
+						+ statementTypeId + " AND Variable = '" + variableName + "')" + ", " + statementTypeId 
+						+ ", " + ap + value + ap + ")";
+			}
+			executeStatement(myStatement);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void addCoder(Coder coder) {
@@ -472,12 +597,6 @@ public class SqlConnection {
     		if (perm == true) {
     			permInt = 1;
     		}
-    		/*
-    		String lastid = "LAST_INSERT_ID()";
-    		if (dbtype.equals("sqlite")) {
-    			lastid = "LAST_INSERT_ROWID()";
-    		}
-    		*/
     		String statement = "INSERT INTO CODERPERMISSIONS(Coder, Type, Permission) VALUES("
     				+ coder.getId() + ", '" + key + "', " + permInt + ")";
     		executeStatement(statement);
@@ -499,6 +618,10 @@ public class SqlConnection {
 	}
 	
 	public void removeDocument(int documentId) {
+		executeStatement("DELETE FROM DATABOOLEAN WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE DocumentId = " + documentId + ")");
+		executeStatement("DELETE FROM DATAINTEGER WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE DocumentId = " + documentId + ")");
+		executeStatement("DELETE FROM DATASHORTTEXT WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE DocumentId = " + documentId + ")");
+		executeStatement("DELETE FROM DATALONGTEXT WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE DocumentId = " + documentId + ")");
 		executeStatement("DELETE FROM STATEMENTS WHERE DocumentId = " + documentId);
 		executeStatement("DELETE FROM DOCUMENTS WHERE ID = " + documentId);
 	}
