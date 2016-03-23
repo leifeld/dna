@@ -193,6 +193,12 @@ public class Gui extends JFrame {
 			Dna.dna.gui.leftPanel.coderPanel.addButton.setEnabled(true);
 		}
 		
+		if (Dna.data.getCoderById(ac).getPermissions().get("importDocuments") == false) {
+			Dna.dna.gui.menuBar.importTextButton.setEnabled(false);
+		} else {
+			Dna.dna.gui.menuBar.importTextButton.setEnabled(true);
+		}
+		
 		Dna.dna.gui.leftPanel.coderPanel.coderBox.updateUI();
 		Dna.dna.gui.leftPanel.coderPanel.coderRelationTable.updateUI();
 		Dna.dna.gui.textPanel.paintStatements();
@@ -361,6 +367,7 @@ public class Gui extends JFrame {
 		public JMenuItem newDocumentButton;
 		public JMenuItem removeDocumentButton;
 		JMenuItem importDnaButton;
+		public JMenuItem importTextButton;
 		public JMenuItem importOldButton;
 		JMenuItem networkButton;
 		JMenuItem aboutButton;
@@ -490,6 +497,18 @@ public class Gui extends JFrame {
 			});
 			removeDocumentButton.setEnabled(false);
 
+			//Document menu: import text files
+			Icon textFileIcon = new ImageIcon(getClass().getResource("/icons/folder.png"));
+			importTextButton = new JMenuItem("Import text files...", textFileIcon);
+			importTextButton.setToolTipText( "import text files from folder..." );
+			documentMenu.add(importTextButton);
+			importTextButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					new TextFileImporter();
+				}
+			});
+			importTextButton.setEnabled(false);
+			
 			//Document menu: import documents from another DNA database
 			Icon importDnaIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
 			importDnaButton = new JMenuItem("Import from DNA 2.xx file...", importDnaIcon);
