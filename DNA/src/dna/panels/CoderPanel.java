@@ -75,48 +75,7 @@ public class CoderPanel extends JPanel {
 				Coder coderUpdated = ecw.getCoder();
 				ecw.dispose();
 				Dna.dna.replaceCoder(coderUpdated);
-				coderBox.updateUI();
-				coderRelationTable.updateUI();
-				Dna.dna.gui.textPanel.paintStatements();
-				Dna.dna.gui.rightPanel.statementFilter.updateFilter();
-				if (Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("importDocuments") == true) {
-					Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
-				} else {
-					Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
-				}
-				
-				int ac = Dna.data.getActiveCoder();
-				if (Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
-					Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(false);
-					Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
-				} else {
-					Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(true);
-					Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
-				}
-				
-				if (Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
-					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
-				} else {
-					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
-				}
-
-				if (Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
-					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
-				} else {
-					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
-				}
-				
-				if (Dna.data.getCoderById(ac).getPermissions().get("editRegex") == false) {
-					Dna.dna.gui.rightPanel.rm.setFieldsEnabled(false);
-				} else {
-					Dna.dna.gui.rightPanel.rm.setFieldsEnabled(true);
-				}
-				
-				if (Dna.data.getCoderById(ac).getPermissions().get("editCoders") == false) {
-					addButton.setEnabled(false);
-				} else {
-					addButton.setEnabled(true);
-				}
+				Dna.dna.gui.refreshGui();
 			}
 		});
 		addButton = new JButton(new ImageIcon(getClass().getResource("/icons/add.png")));
@@ -253,49 +212,7 @@ public class CoderPanel extends JPanel {
 				Dna.dna.setActiveCoder(((Coder) coderBox.getSelectedItem()).getId());
 				coderRelationTable.updateUI();
 				sorter.setRowFilter(filter);
-				Dna.dna.gui.textPanel.paintStatements();
-				Dna.dna.gui.documentPanel.documentFilter();
-				Dna.dna.gui.documentPanel.documentTable.updateDocumentView();
-				if (Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("importDocuments") == true) {
-					Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
-				} else {
-					Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
-				}
-
-				int ac = Dna.data.getActiveCoder();
-				if (Dna.dna.gui.leftPanel.editDocPanel.saveButton != null) {
-					if (Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
-						Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(false);
-						Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
-					} else {
-						Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(true);
-						Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
-					}
-				}
-				
-				if (Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
-					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
-				} else {
-					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
-				}
-
-				if (Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
-					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
-				} else {
-					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
-				}
-				
-				if (Dna.data.getCoderById(ac).getPermissions().get("editRegex") == false) {
-					Dna.dna.gui.rightPanel.rm.setFieldsEnabled(false);
-				} else {
-					Dna.dna.gui.rightPanel.rm.setFieldsEnabled(true);
-				}
-				
-				if (Dna.data.getCoderById(ac).getPermissions().get("editCoders") == false) {
-					addButton.setEnabled(false);
-				} else {
-					addButton.setEnabled(true);
-				}
+				Dna.dna.gui.refreshGui();
 			}
 		});
 	}

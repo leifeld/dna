@@ -346,6 +346,11 @@ public class ImportOldDNA extends JDialog {
 		mainPanel.add(lowerButtonPanel, BorderLayout.SOUTH);
 		c.add(mainPanel);
 		
+		// make sure all documents are preselected for convenience
+		for (int i = 0; i < aitm.getRowCount(); i++) {
+			aitm.setValueAt(true, i, 0);
+		}
+		
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);

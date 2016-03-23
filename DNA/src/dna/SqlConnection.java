@@ -205,9 +205,14 @@ public class SqlConnection {
     		} else {
     			intValue = 0;
     		}
-    		executeStatement("REPLACE INTO CODERPERMISSIONS(ID, Coder, Type, Permission) "
-    					+ "VALUES ((SELECT ID from CODERPERMISSIONS WHERE Coder = " + id + " AND Type = '" + key + "'), " + id + ", '" 
-    					+ key + "', " + intValue + ")");
+    		int permissionId;
+			try {
+				permissionId = (int) executeQueryForObject("SELECT ID from CODERPERMISSIONS WHERE Coder = " + id + " AND Type = '" + key + "'");
+				executeStatement("REPLACE INTO CODERPERMISSIONS(ID, Coder, Type, Permission) "
+    					+ "VALUES (" + permissionId + ", " + id + ", '" + key + "', " + intValue + ")");
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
     	}
         
         if (permissions.get("viewOthersStatements") == false) {
@@ -715,17 +720,19 @@ public class SqlConnection {
     		}
 			
 			int varid = -1;
+			int dataId = -1;
 			try {
 				varid = (int) executeQueryForObject("SELECT ID FROM VARIABLES WHERE Variable = '" + key 
 						+ "' AND StatementTypeId = " + statement.getStatementTypeId());
+				dataId = (int) executeQueryForObject("SELECT ID FROM DATA" + tableExtension + " WHERE StatementId = " + statement.getId() 
+						+ " AND VariableId = " + varid);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 			
 			String myStatement = "REPLACE INTO DATA" + tableExtension + " (ID, StatementId, VariableId, StatementTypeId, Value) "
-					+ "VALUES ((SELECT ID FROM DATA" + tableExtension + " WHERE StatementId = " + statement.getId() 
-					+ " AND VariableId = " + varid + "), " + statement.getId() + ", " + varid + ", " + 
-					statement.getStatementTypeId() + ", "  + ap + object + ap + ")";
+					+ "VALUES (" + dataId + ", " + statement.getId() + ", " + varid + ", " + statement.getStatementTypeId() 
+					+ ", "  + ap + object + ap + ")";
 			executeStatement(myStatement);
     	}
 	}
@@ -898,7 +905,7 @@ public class SqlConnection {
 	 */
 	public String testNewMySQLConnection() {
 		if (connection == null) {
-			return("Error: Connection could not be established!");
+			return "Error: Connection could not be established!";
 		}
 		ArrayList<String> tableNames = new ArrayList<String>();
 		tableNames.add("STATEMENTS");
@@ -918,7 +925,7 @@ public class SqlConnection {
 		
 		boolean tablesExist = false;
 		for (int i = 0; i < tableNames.size(); i++) {
-			ArrayList<Object> al = executeQueryForList("SHOW TABLES LIKE 'tableNames.get(i)'");
+			ArrayList<Object> al = executeQueryForList("SHOW TABLES LIKE '" + tableNames.get(i) + "'");
 			if (al.size() > 0) {
 				tablesExist = true;
 			}

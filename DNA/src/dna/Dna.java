@@ -15,7 +15,7 @@ public class Dna {
 	public String version, date;
 	
 	public Dna() {
-		date = "2016-03-22";
+		date = "2016-03-23";
 		version = "2.0 beta 3";
 		gui = new Gui();
 	}
@@ -103,7 +103,6 @@ public class Dna {
 		//Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(false);
 		Dna.dna.gui.menuBar.closeDatabase.setEnabled(false);
 		//Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
-		//Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
 		Dna.dna.gui.rightPanel.updateStatementTypes();
 		Dna.dna.gui.rightPanel.rm.addButton.setEnabled(false);

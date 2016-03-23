@@ -598,9 +598,7 @@ public class RightPanel extends JScrollPane {
 	}
 	
 	public class StatementFilter extends JPanel {
-		JRadioButton showAll;
-		JRadioButton showCurrent;
-		JRadioButton showFilter;
+		public JRadioButton showAll, showCurrent, showFilter;
 		
 		public StatementFilter() {
 			this.setLayout(new BorderLayout());

@@ -274,8 +274,6 @@ public class OpenDatabaseDialog extends JDialog {
 			Dna.dna.gui.menuBar.colorCoderButton.setSelected(true);
 			Dna.dna.gui.menuBar.colorStatementTypeButton.setSelected(false);
 		}
-		Dna.dna.gui.documentPanel.documentTable.updateUI();
-		Dna.dna.gui.rightPanel.statementTable.updateUI();
 		int ac = Dna.data.getActiveCoder();
 		Dna.dna.gui.leftPanel.coderPanel.coderBox.setSelectedItem(Dna.data.getCoderById(ac));
 		Dna.dna.gui.leftPanel.setComboEnabled(true);
@@ -284,48 +282,11 @@ public class OpenDatabaseDialog extends JDialog {
 			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
 		}
 		Dna.dna.gui.documentPanel.documentFilter();
-		if (Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("importDocuments") == true) {
-			Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
-		} else {
-			Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
-		}
 		
 		Dna.dna.sql.upsertSetting("version", Dna.dna.version);
 		Dna.dna.sql.upsertSetting("date", Dna.dna.date);
-
-		if (Dna.dna.gui.leftPanel.editDocPanel.saveButton != null) {
-			if (Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
-				Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(false);
-				Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
-			} else {
-				Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(true);
-				Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
-			}
-		}
-
-		if (Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
-			Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
-		} else {
-			Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
-		}
-
-		if (Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
-			Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
-		} else {
-			Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
-		}
 		
-		if (Dna.data.getCoderById(ac).getPermissions().get("editRegex") == false) {
-			Dna.dna.gui.rightPanel.rm.setFieldsEnabled(false);
-		} else {
-			Dna.dna.gui.rightPanel.rm.setFieldsEnabled(true);
-		}
-		
-		if (Dna.data.getCoderById(ac).getPermissions().get("editCoders") == false) {
-			Dna.dna.gui.leftPanel.coderPanel.addButton.setEnabled(false);
-		} else {
-			Dna.dna.gui.leftPanel.coderPanel.addButton.setEnabled(true);
-		}
+		Dna.dna.gui.refreshGui();
 		
 		dispose();
 	}
