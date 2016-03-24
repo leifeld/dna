@@ -4,12 +4,13 @@ import java.util.Vector;
 
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 
 import dna.Dna;
 import dna.dataStructures.CoderRelation;
 
-public class CoderRelationTableModel implements TableModel {
+public class CoderRelationTableModel extends AbstractTableModel implements TableModel {
 
 	Vector<TableModelListener> listeners = new Vector<TableModelListener>();
 	
@@ -38,7 +39,7 @@ public class CoderRelationTableModel implements TableModel {
 		default: return null;
 		}
 	}
-
+	
 	public Class<?> getColumnClass(int columnIndex) {
 		switch( columnIndex ){
 		case 0: return String.class;
@@ -108,7 +109,8 @@ public class CoderRelationTableModel implements TableModel {
 		for( int i = 0, n = listeners.size(); i < n; i++ ){
 			((TableModelListener)listeners.get( i )).tableChanged( e );
 		}
-
+		//fireTableCellUpdated(rowIndex, columnIndex);
+		
 		// update statement-related GUI parts
 		Dna.dna.gui.textPanel.paintStatements();
 		Dna.dna.gui.rightPanel.statementFilter.updateFilter();

@@ -13,6 +13,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.HashMap;
 
 import javax.swing.Box;
 import javax.swing.Icon;
@@ -152,7 +153,8 @@ public class Gui extends JFrame {
 	}
 	
 	public void refreshGui() {
-		if (Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("importDocuments") == true) {
+		HashMap<String, Boolean> perm = Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions();
+		if (perm.get("importDocuments") == true) {
 			Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 		} else {
 			Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
@@ -160,7 +162,7 @@ public class Gui extends JFrame {
 
 		int ac = Dna.data.getActiveCoder();
 		if (Dna.dna.gui.leftPanel.editDocPanel.saveButton != null) {
-			if (Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
+			if (perm.get("editDocuments") == false) {
 				Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(false);
 				Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
 			} else {
@@ -169,38 +171,38 @@ public class Gui extends JFrame {
 			}
 		}
 		
-		if (Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
+		if (perm.get("deleteDocuments") == false) {
 			Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
 		} else {
 			Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
 		}
 
-		if (Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
+		if (perm.get("addDocuments") == false) {
 			Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
 		} else {
 			Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		}
 		
-		if (Dna.data.getCoderById(ac).getPermissions().get("editRegex") == false) {
+		if (perm.get("editRegex") == false) {
 			Dna.dna.gui.rightPanel.rm.setFieldsEnabled(false);
 		} else {
 			Dna.dna.gui.rightPanel.rm.setFieldsEnabled(true);
 		}
 		
-		if (Dna.data.getCoderById(ac).getPermissions().get("editCoders") == false) {
+		if (perm.get("editCoders") == false) {
 			Dna.dna.gui.leftPanel.coderPanel.addButton.setEnabled(false);
 		} else {
 			Dna.dna.gui.leftPanel.coderPanel.addButton.setEnabled(true);
 		}
 		
-		if (Dna.data.getCoderById(ac).getPermissions().get("importDocuments") == false) {
+		if (perm.get("importDocuments") == false) {
 			Dna.dna.gui.menuBar.importTextButton.setEnabled(false);
 		} else {
 			Dna.dna.gui.menuBar.importTextButton.setEnabled(true);
 		}
-		
+
 		Dna.dna.gui.leftPanel.coderPanel.coderBox.updateUI();
-		Dna.dna.gui.leftPanel.coderPanel.coderRelationTable.updateUI();
+		Dna.dna.gui.leftPanel.coderPanel.setRowSorterEnabled(true);
 		Dna.dna.gui.textPanel.paintStatements();
 		Dna.dna.gui.documentPanel.documentFilter();
 		Dna.dna.gui.documentPanel.documentTable.updateDocumentView();

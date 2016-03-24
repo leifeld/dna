@@ -35,6 +35,7 @@ import javax.swing.JScrollPane;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.JTextField;
+import javax.swing.ProgressMonitor;
 import javax.swing.SpinnerDateModel;
 
 import dna.dataStructures.Coder;
@@ -54,6 +55,14 @@ public class TextFileImporter extends JDialog {
 			datePreviewField;
 	private JTextField dateFormatPreview;
 	private JCheckBox titleCheckBox, authorCheckBox, sectionCheckBox, sourceCheckBox, typeCheckBox, dateCheckBox, notesCheckBox;
+	
+	int good, bad = 0;
+	String fn, sCurrentLine, document, title, dateString, author, source, section, notes, type;
+	FileInputStream is = null;
+	InputStreamReader isr = null;
+	BufferedReader br = null;
+	java.util.Date date;
+	Document article;
 	
 	public TextFileImporter() {
 		this.setTitle("Import text files...");
@@ -144,92 +153,12 @@ public class TextFileImporter extends JDialog {
         JButton goButton = new JButton("Import files", goIcon);
         goButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int good = 0;
-				int bad = 0;
-				String df = dateFormatField.getText();
-				String fn, sCurrentLine, document, title, dateString, author, source, section, notes, type;
-				FileInputStream is = null;
-				InputStreamReader isr = null;
-				BufferedReader br = null;
-				java.util.Date date;
-				Document article;
 				if (files != null) {
-					for (int i = 0; i < files.length; i++) {
-						fn = files[i].getName();
-						try {
-							is = new FileInputStream(files[i]);
-							isr = new InputStreamReader(is);
-							br = new BufferedReader(isr);
-							document = "";
-							while ((sCurrentLine = br.readLine()) != null) {
-								document = document + sCurrentLine + "\n";
-							}
-							
-							dateString = "";
-							if (dateCheckBox.isSelected()) {
-								dateString = patternToString(fn, datePatternField.getText());
-							} else {
-								dateString = datePatternField.getText();
-							}
-							date = stringToDate(dateString, df);
-							
-							if (titleCheckBox.isSelected()) {
-								title = patternToString(fn, titlePatternField.getText());
-							} else {
-								title = titlePatternField.getText();
-							}
-							
-							if (authorCheckBox.isSelected()) {
-								author = patternToString(fn, authorPatternField.getText());
-							} else {
-								author = authorPatternField.getText();
-							}
-
-							if (sourceCheckBox.isSelected()) {
-								source = patternToString(fn, sourcePatternField.getText());
-							} else {
-								source = sourcePatternField.getText();
-							}
-
-							if (sectionCheckBox.isSelected()) {
-								section = patternToString(fn, sectionPatternField.getText());
-							} else {
-								section = sectionPatternField.getText();
-							}
-
-							if (typeCheckBox.isSelected()) {
-								type = patternToString(fn, typePatternField.getText());
-							} else {
-								type = typePatternField.getText();
-							}
-
-							if (notesCheckBox.isSelected()) {
-								notes = patternToString(fn, notesPatternField.getText());
-							} else {
-								notes = notesPatternField.getText();
-							}
-							
-							article = new Document(
-									Dna.data.generateNewDocumentId(), 
-									title, 
-									document, 
-									coderId, 
-									author, 
-									source, 
-									section, 
-									notes, 
-									type, 
-									date
-							);
-							Dna.dna.addDocument(article);
-							good++;
-						} catch (Exception ex) {
-							bad++;
-						}
-					}
-					Dna.dna.gui.refreshGui();
-					JOptionPane.showMessageDialog(TextFileImporter.this, good + " documents were successfully imported, " + bad + " omitted.");
-					dispose();
+					good = 0;
+					bad = 0;
+					//TextImporter ti = new TextImporter();
+					Thread ti = new Thread( new TextImporter(), "Import text files" );
+					ti.start();
 				}
 			}
 		});
@@ -238,12 +167,6 @@ public class TextFileImporter extends JDialog {
         fileList = new JList<String>(listModel);
         JScrollPane fileListScroller = new JScrollPane(fileList);
         fileListScroller.setPreferredSize(new Dimension(800, 200));
-        
-        datePatternField = new JTextField("[0-9]{2}\\.[0-9]{2}\\.[0-9]{4}");
-
-        titlePatternField = new JTextField("(?<=[0-9]{2}\\.[0-9]{2}\\.[0-9]{4} - ).+(?=.txt$)");
-        
-        dateFormatField = new JTextField("dd.MM.yyyy");
         
         JPanel filePanel = new JPanel(new BorderLayout());
         
@@ -303,17 +226,17 @@ public class TextFileImporter extends JDialog {
 		gbc.gridx = 1;
 		gbc.gridy = 1;
 		gbc.anchor = GridBagConstraints.WEST;
-		titlePatternField = new JTextField(".+");
+		titlePatternField = new JTextField(".+(?=\\.txt)");
 		titlePatternField.setColumns(35);
 		patternPanel.add(titlePatternField, gbc);
 		
 		gbc.gridy = 2;
-		authorPatternField = new JTextField("");
+		authorPatternField = new JTextField("(?<=.+? - ).+?(?= -)");
 		authorPatternField.setColumns(35);
 		patternPanel.add(authorPatternField, gbc);
 
 		gbc.gridy = 3;
-		sourcePatternField = new JTextField("");
+		sourcePatternField = new JTextField("(?<=.+? - )[a-zA-Z ]+(?= - [A-Z0-9\\( \\)]+\\.txt)");
 		sourcePatternField.setColumns(35);
 		patternPanel.add(sourcePatternField, gbc);
 
@@ -323,7 +246,7 @@ public class TextFileImporter extends JDialog {
 		patternPanel.add(sectionPatternField, gbc);
 
 		gbc.gridy = 5;
-		typePatternField = new JTextField("");
+		typePatternField = new JTextField("[A-Z-]+(?=([0-9\\( \\)])*\\.txt)");
 		typePatternField.setColumns(35);
 		patternPanel.add(typePatternField, gbc);
 
@@ -498,6 +421,102 @@ public class TextFileImporter extends JDialog {
 			return date;
 		} catch (ParseException e) {
 			return new GregorianCalendar().getTime();
+		}
+	}
+	
+	public class TextImporter implements Runnable {
+		ProgressMonitor progressMonitor;
+		
+		public TextImporter() {
+			
+		}
+		
+		@Override
+		public void run() {
+			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Importing text files...", "", 0, files.length - 1);
+			progressMonitor.setMillisToDecideToPopup(1);
+			
+			for (int i = 0; i < files.length; i++) {
+				progressMonitor.setProgress(i);
+				if (progressMonitor.isCanceled()) {
+					break;
+				}
+				fn = files[i].getName();
+				try {
+					is = new FileInputStream(files[i]);
+					isr = new InputStreamReader(is, "UTF-8");
+					br = new BufferedReader(isr);
+					document = "";
+					while ((sCurrentLine = br.readLine()) != null) {
+						document = document + sCurrentLine + "\n";
+					}
+					
+					dateString = "";
+					if (dateCheckBox.isSelected()) {
+						dateString = patternToString(fn, datePatternField.getText());
+					} else {
+						dateString = datePatternField.getText();
+					}
+					date = stringToDate(dateString, dateFormatField.getText());
+					
+					if (titleCheckBox.isSelected()) {
+						title = patternToString(fn, titlePatternField.getText());
+					} else {
+						title = titlePatternField.getText();
+					}
+					
+					if (authorCheckBox.isSelected()) {
+						author = patternToString(fn, authorPatternField.getText());
+					} else {
+						author = authorPatternField.getText();
+					}
+
+					if (sourceCheckBox.isSelected()) {
+						source = patternToString(fn, sourcePatternField.getText());
+					} else {
+						source = sourcePatternField.getText();
+					}
+
+					if (sectionCheckBox.isSelected()) {
+						section = patternToString(fn, sectionPatternField.getText());
+					} else {
+						section = sectionPatternField.getText();
+					}
+
+					if (typeCheckBox.isSelected()) {
+						type = patternToString(fn, typePatternField.getText());
+					} else {
+						type = typePatternField.getText();
+					}
+
+					if (notesCheckBox.isSelected()) {
+						notes = patternToString(fn, notesPatternField.getText());
+					} else {
+						notes = notesPatternField.getText();
+					}
+					
+					article = new Document(
+							Dna.data.generateNewDocumentId(), 
+							title, 
+							document, 
+							coderId, 
+							author, 
+							source, 
+							section, 
+							notes, 
+							type, 
+							date
+					);
+					Dna.dna.addDocument(article);
+					good++;
+				} catch (Exception ex) {
+					bad++;
+				}
+				
+			}
+			Dna.dna.gui.refreshGui();
+			JOptionPane.showMessageDialog(TextFileImporter.this, good + " documents were successfully imported, " + bad + " omitted.");
+			dispose();
 		}
 	}
 }

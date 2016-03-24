@@ -45,8 +45,8 @@ public class CoderPanel extends JPanel {
 	public JButton addButton;
 	public CoderRelationTableModel coderTableModel;
 	public JTable coderRelationTable;
-	TableRowSorter<CoderRelationTableModel> sorter;
-	RowFilter<CoderRelationTableModel, Integer> filter;
+	public TableRowSorter<CoderRelationTableModel> sorter;
+	public RowFilter<CoderRelationTableModel, Integer> filter;
 	
 	public CoderPanel() {
 		this.setLayout(new BorderLayout());
@@ -191,12 +191,8 @@ public class CoderPanel extends JPanel {
 				return true;
 			}
 		};
-		sorter = new TableRowSorter<CoderRelationTableModel>(coderTableModel) {
-			public void toggleSortOrder(int i) {
-				//leave blank; overwritten method makes the table unsortable
-			}
-		};
-		coderRelationTable.setRowSorter(sorter);
+		
+		setRowSorterEnabled(true);
 		
 		// apply cell renderer to display CoderRelation entries properly
 		coderRelationTable.getColumnModel().getColumn(0).setCellRenderer(cellRenderer);
@@ -211,7 +207,6 @@ public class CoderPanel extends JPanel {
 			public void itemStateChanged(ItemEvent e) {
 				Dna.dna.setActiveCoder(((Coder) coderBox.getSelectedItem()).getId());
 				coderRelationTable.updateUI();
-				sorter.setRowFilter(filter);
 				Dna.dna.gui.refreshGui();
 			}
 		});
@@ -228,6 +223,20 @@ public class CoderPanel extends JPanel {
 		coderTableModel.clear();
 		model.clear();
 		setComboEnabled(false);
+	}
+
+	public void setRowSorterEnabled(boolean enabled) {
+		if (enabled == true) {
+			sorter = new TableRowSorter<CoderRelationTableModel>(coderTableModel) {
+				public void toggleSortOrder(int i) {
+					//leave blank; overwritten method makes the table unsortable
+				}
+			};
+			sorter.setRowFilter(filter);
+			coderRelationTable.setRowSorter(sorter);
+		} else {
+			coderRelationTable.setRowSorter(null);
+		}
 	}
 }
 

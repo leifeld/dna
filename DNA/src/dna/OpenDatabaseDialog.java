@@ -20,6 +20,7 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
@@ -89,11 +90,16 @@ public class OpenDatabaseDialog extends JDialog {
 				int returnVal = fc.showOpenDialog(dna.OpenDatabaseDialog.this);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
-					String filename = new String(file.getPath());
-					if (!filename.endsWith(".dna")) {
-						filename = filename + ".dna";
+					if (file.exists()) {
+						String filename = new String(file.getPath());
+						if (!filename.endsWith(".dna")) {
+							filename = filename + ".dna";
+						}
+						fileField.setText(filename);
+					} else {
+						JOptionPane.showMessageDialog(Dna.dna.gui, "The file name you entered does not exist. Please choose a new file.");
+						browseButton.doClick();
 					}
-					fileField.setText(filename);
 				}
 			}
 		});
@@ -275,7 +281,6 @@ public class OpenDatabaseDialog extends JDialog {
 			Dna.dna.gui.menuBar.colorStatementTypeButton.setSelected(false);
 		}
 		int ac = Dna.data.getActiveCoder();
-		Dna.dna.gui.leftPanel.coderPanel.coderBox.setSelectedItem(Dna.data.getCoderById(ac));
 		Dna.dna.gui.leftPanel.setComboEnabled(true);
 		
 		if (Dna.dna.gui.documentPanel.documentTable.getRowCount() > 0) {
@@ -285,6 +290,10 @@ public class OpenDatabaseDialog extends JDialog {
 		
 		Dna.dna.sql.upsertSetting("version", Dna.dna.version);
 		Dna.dna.sql.upsertSetting("date", Dna.dna.date);
+		
+		//Dna.dna.gui.leftPanel.coderPanel.coderBox.setSelectedItem(Dna.data.getCoderById(ac));
+		
+		Dna.dna.gui.leftPanel.coderPanel.model.setSelectedItem(Dna.data.getCoderById(ac));
 		
 		Dna.dna.gui.refreshGui();
 		

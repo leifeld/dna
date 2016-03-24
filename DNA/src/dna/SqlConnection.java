@@ -565,7 +565,7 @@ public class SqlConnection {
 			// get ID of data entry to update
 			int dataId = (int) executeQueryForObject("SELECT ID FROM " + table + " WHERE VariableId = " 
 					+ "(SELECT ID FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + " AND Variable = '" 
-					+ variableName + "')");
+					+ variableName + "') AND StatementId = " + statementId);
 			
 			// then replace entry
 			String myStatement = "";

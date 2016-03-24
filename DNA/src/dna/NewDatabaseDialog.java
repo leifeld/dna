@@ -252,11 +252,16 @@ public class NewDatabaseDialog extends JDialog {
 					int returnVal = fc.showSaveDialog(dna.NewDatabaseDialog.this);
 					if (returnVal == JFileChooser.APPROVE_OPTION) {
 						File file = fc.getSelectedFile();
-						String filename = new String(file.getPath());
-						if (!filename.endsWith(".dna")) {
-							filename = filename + ".dna";
+						if (file.exists()) {
+							JOptionPane.showMessageDialog(Dna.dna.gui, "The file already exists. Please choose a new file.");
+							browseButton.doClick();
+						} else {
+							String filename = new String(file.getPath());
+							if (!filename.endsWith(".dna")) {
+								filename = filename + ".dna";
+							}
+							fileField.setText(filename);
 						}
-						fileField.setText(filename);
 					}
 				}
 			});

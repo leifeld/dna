@@ -1,10 +1,7 @@
 package dna;
 
 import dna.dataStructures.*;
-
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-
 import javax.swing.ImageIcon;
 
 public class Dna {
@@ -16,7 +13,7 @@ public class Dna {
 	
 	public Dna() {
 		date = "2016-03-23";
-		version = "2.0 beta 3";
+		version = "2.0 beta 4";
 		gui = new Gui();
 	}
 	

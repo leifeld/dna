@@ -7,6 +7,7 @@ import javax.swing.ComboBoxModel;
 import javax.swing.event.ListDataListener;
 
 import dna.Dna;
+import dna.dataStructures.Coder;
 
 @SuppressWarnings("serial")
 public class CoderComboBoxModel extends AbstractListModel<Object> implements ComboBoxModel<Object> {
@@ -33,13 +34,14 @@ public class CoderComboBoxModel extends AbstractListModel<Object> implements Com
 	public void removeListDataListener(ListDataListener l) {
 		listeners.remove(l);
 	}
-
+	
 	@Override
 	public void setSelectedItem(Object anItem) {
-		//Dna.data.setActiveCoder(((Coder) anItem).getId());
 		selectedItem = anItem;
+		//System.out.println(((Coder)selectedItem).getName());
+		//fireContentsChanged(this, 0, getSize() - 1);
 	}
-
+	
 	@Override
 	public Object getSelectedItem() {
 		return selectedItem;
