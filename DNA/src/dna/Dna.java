@@ -18,14 +18,14 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2016-03-23";
-		version = "2.0 beta 4";
+		date = "2016-04-01";
+		version = "2.0 beta 5";
 		console = System.err;
 		
 		gui = new Gui();
 	}
 	
-	public static void main (String[] args) throws Exception {
+	public static void main (String[] args) {
 		dna = new Dna();
 	}
 
