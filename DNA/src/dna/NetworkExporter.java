@@ -25,10 +25,8 @@ import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
-import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -69,9 +67,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 
+@SuppressWarnings("serial")
 public class NetworkExporter extends JDialog {
-	
-	private static final long serialVersionUID = 1L;
 	
 	// export settings
 	String networkType; // [oneMode, twoMode, eventList]
@@ -1571,7 +1568,6 @@ public class NetworkExporter extends JDialog {
 		ArrayList<Integer> qualifierValues = new ArrayList<Integer>(); // unique agreement qualifier values
 		for (int i = 0; i < statements.size(); i++) { // retrieve the data for variables 1 and 2 from database
 			int statementId = statements.get(i).getId();
-			//String name1 = Dna.dna.db.getVariableStringEntry(statementId, variable1);
 			String name1 = (String) Dna.data.getStatement(statementId).getValues().get(variable1);
 			if (name1 != null && !name1.equals("")) {
 				entries1.add(name1);
@@ -1579,7 +1575,6 @@ public class NetworkExporter extends JDialog {
 					names1.add(name1);
 				}
 			}
-			//String name2 = Dna.dna.db.getVariableStringEntry(statementId, variable2);
 			String name2 = (String) Dna.data.getStatement(statementId).getValues().get(variable2);
 			if (name2 != null && !name2.equals("")) {
 				entries2.add(name2);
@@ -1587,7 +1582,6 @@ public class NetworkExporter extends JDialog {
 					names2.add(name2);
 				}
 			}
-			//int qual = Dna.dna.db.getVariableIntEntry(statementId, qualifier);
 			int qual = (int) Dna.data.getStatement(statementId).getValues().get(qualifier);
 			if (!qualifierValues.contains(qual)) {
 				qualifierValues.add(qual);

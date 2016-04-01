@@ -13,6 +13,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.HashMap;
 
 import javax.swing.Box;
@@ -159,8 +162,7 @@ public class Gui extends JFrame {
 		} else {
 			Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
 		}
-
-		int ac = Dna.data.getActiveCoder();
+		
 		if (Dna.dna.gui.leftPanel.editDocPanel.saveButton != null) {
 			if (perm.get("editDocuments") == false) {
 				Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(false);
@@ -241,7 +243,7 @@ public class Gui extends JFrame {
 
 		public DocumentPanel() {
 			if(Dna.dna != null) {
-				documentContainer = new DocumentTableModel(Dna.data.getDocuments()); //SK
+				documentContainer = new DocumentTableModel(Dna.data.getDocuments());
 			} else {
 				documentContainer = new DocumentTableModel();
 			}
@@ -329,7 +331,7 @@ public class Gui extends JFrame {
 					Dna.dna.gui.leftPanel.editDocPanel.updateUI();
 				}
 				if (Dna.dna.gui.rightPanel.statementFilter.showCurrent.isSelected()) {
-					Dna.dna.gui.rightPanel.statementFilter.documentFilter();
+					Dna.dna.gui.rightPanel.statementFilter.currentDocumentFilter();
 				}
 				
 				if (Dna.data.getSettings().get("filename") != null) {
@@ -376,6 +378,7 @@ public class Gui extends JFrame {
 		JMenuItem colorStatementTypeButton;
 		JMenuItem colorCoderButton;
 		JMenuItem recodeVariableButton;
+		JMenuItem redirectButton;
 		
 		public MenuBar() {
 			fileMenu = new JMenu("File");
@@ -596,14 +599,6 @@ public class Gui extends JFrame {
 			});
 			networkButton.setEnabled(false);
 			
-			//Settings menu: toggle search bar
-			/*
-			Icon bottomBarIcon = new ImageIcon(getClass().getResource("/icons/application_form_magnify.png"));
-			toggleBottomButton = new JMenuItem("Toggle Search Window (show/hide)", bottomBarIcon); 
-			settingsMenu.add(toggleBottomButton);
-			toggleBottomButton.setEnabled(false);
-			*/
-			
 			//Settings menu: statement color by statement type or coder?
 			Icon tickIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
 			colorStatementTypeButton = new JMenuItem("Color statements by type");
@@ -635,6 +630,56 @@ public class Gui extends JFrame {
 			settingsMenu.addSeparator();
 			colorStatementTypeButton.setEnabled(false);
 			colorCoderButton.setEnabled(false);
+			
+			//Settings menu: redirect output to file
+			Icon redirectIcon = new ImageIcon(getClass().getResource("/icons/report_add.png"));
+			redirectButton = new JMenuItem("Redirect error messages...", redirectIcon);
+			redirectButton.setToolTipText( "redirect all exceptions to a text file..." );
+			settingsMenu.add(redirectButton);
+			redirectButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					if (redirectButton.getText().equals("Redirect error messages...")) {
+						//File filter
+						JFileChooser fc = new JFileChooser();
+						fc.setFileFilter(new FileFilter() {
+							public boolean accept(File f) {
+								return f.getName().toLowerCase().endsWith(".txt") || f.isDirectory();
+							}
+							public String getDescription() {
+								return "Text file (*.txt)";
+							}
+						});
+
+						int returnVal = fc.showOpenDialog(dna.Gui.this);
+						if (returnVal == JFileChooser.APPROVE_OPTION) {
+							String fileName;
+							File file = fc.getSelectedFile();
+							if (!file.getPath().endsWith(".txt")) {
+								fileName = file.getPath() + ".txt";
+							} else {
+								fileName = file.getPath();
+							}
+							
+							// redirect exceptions to file
+							FileOutputStream fos;
+							try {
+								fos = new FileOutputStream(fileName);
+								PrintStream ps = new PrintStream(fos);
+								System.setErr(ps);
+							} catch (FileNotFoundException e1) {
+								e1.printStackTrace();
+							}
+							redirectButton.setText(fileName);
+							redirectButton.setIcon(new ImageIcon(getClass().getResource("/icons/report_delete.png")));
+						}
+					} else {
+						System.setErr(Dna.dna.console);
+						redirectButton.setText("Redirect error messages...");
+						redirectButton.setIcon(new ImageIcon(getClass().getResource("/icons/report_add.png")));
+					}
+				}
+			});
+			settingsMenu.addSeparator();
 			
 			//Settings menu: about DNA
 			Icon aboutIcon = new ImageIcon(getClass().getResource("/icons/dna16.png"));

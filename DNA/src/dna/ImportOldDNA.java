@@ -73,7 +73,7 @@ public class ImportOldDNA extends JDialog {
 	public ImportOldDNA(final String file) throws NullPointerException {
 		this.setModal(true);
 		c = getContentPane();
-		this.setTitle("Import statements...");
+		this.setTitle("Import documents from DNA 1...");
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		ImageIcon importIcon = new ImageIcon(getClass().getResource("/icons/page_white_get.png"));
 		this.setIconImage(importIcon.getImage());

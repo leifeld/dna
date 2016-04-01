@@ -1,6 +1,11 @@
 package dna;
 
 import dna.dataStructures.*;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.LinkedHashMap;
 import javax.swing.ImageIcon;
 
@@ -10,14 +15,17 @@ public class Dna {
 	public Gui gui;
 	public SqlConnection sql;
 	public String version, date;
+	PrintStream console;
 	
 	public Dna() {
 		date = "2016-03-23";
 		version = "2.0 beta 4";
+		console = System.err;
+		
 		gui = new Gui();
 	}
 	
-	public static void main (String[] args) {
+	public static void main (String[] args) throws Exception {
 		dna = new Dna();
 	}
 
@@ -50,8 +58,12 @@ public class Dna {
 	public void updateVariable(int statementId, int statementTypeId, Object content, String variable) {
 		StatementType st = data.getStatementTypeById(statementTypeId);
 		String dataType = st.getVariables().get(variable);
-		Dna.data.getStatement(statementId).getValues().put(variable, content);
-		sql.upsertVariableContent(content, statementId, variable, statementTypeId, dataType);
+		try {
+			sql.upsertVariableContent(content, statementId, variable, statementTypeId, dataType);
+			Dna.data.getStatement(statementId).getValues().put(variable, content);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void addCoder(Coder coder) {
@@ -98,6 +110,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
 		//Dna.dna.gui.menuBar.importHTMLButton.setEnabled(false);
 		//Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(false);
+		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
 		Dna.dna.gui.menuBar.closeDatabase.setEnabled(false);
 		//Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);

@@ -1162,6 +1162,7 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.dna.gui.menuBar.newDatabase.setEnabled(false);
 					Dna.dna.gui.menuBar.closeDatabase.setEnabled(true);
 					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
+					Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 					Dna.dna.gui.menuBar.colorStatementTypeButton.setEnabled(true);
 					Dna.dna.gui.menuBar.colorCoderButton.setEnabled(true);
 					Dna.dna.gui.rightPanel.rm.setFieldsEnabled(true);

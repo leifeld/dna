@@ -271,6 +271,7 @@ public class OpenDatabaseDialog extends JDialog {
 		Dna.dna.gui.menuBar.openDatabase.setEnabled(false);
 		Dna.dna.gui.menuBar.newDatabase.setEnabled(false);
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
+		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
 		Dna.dna.gui.menuBar.colorStatementTypeButton.setEnabled(true);
 		Dna.dna.gui.menuBar.colorCoderButton.setEnabled(true);
 		if (Dna.data.getSettings().get("statementColor").equals("statementType")) {

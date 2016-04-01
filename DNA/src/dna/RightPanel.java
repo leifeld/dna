@@ -1,7 +1,6 @@
 package dna;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -21,33 +20,25 @@ import java.util.regex.Pattern;
 
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.jdesktop.swingx.JXTextField;
 
-import dna.dataStructures.Regex;
 import dna.dataStructures.Statement;
-import dna.dataStructures.StatementLink;
 import dna.dataStructures.StatementType;
-import dna.panels.DocStatsPanel;
 import dna.panels.RegexPanel;
 import dna.panels.SearchPanel;
 import dna.renderer.StatementTableModel;
@@ -675,7 +666,7 @@ public class RightPanel extends JScrollPane {
 					} else if (e.getSource() == showCurrent) {
 						toggleEnabled(false);
 						allFilter();
-						documentFilter();
+						currentDocumentFilter();
 					} else if (e.getSource() == showFilter) {
 						toggleEnabled(true);
 						filter();
@@ -733,7 +724,7 @@ public class RightPanel extends JScrollPane {
 			if (showCurrent.isSelected()) {
 				toggleEnabled(false);
 				allFilter();
-				documentFilter();
+				currentDocumentFilter();
 			}
 			if (showFilter.isSelected()) {
 				toggleEnabled(true);
@@ -758,7 +749,7 @@ public class RightPanel extends JScrollPane {
 			}
 		}
 		
-		public void documentFilter() {
+		public void currentDocumentFilter() {
 			int row = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
 			int docId = -1;
 			if (row > -1) {

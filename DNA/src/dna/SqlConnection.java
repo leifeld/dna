@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
+import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
 
 import dna.dataStructures.Coder;
@@ -546,7 +547,7 @@ public class SqlConnection {
 		return map;
 	}
 	
-	public void upsertVariableContent(Object value, int statementId, String variableName, int statementTypeId, String dataType) {
+	public void upsertVariableContent(Object value, int statementId, String variableName, int statementTypeId, String dataType) throws Exception {
 		String table = "";
 		String ap = "";
 		if (dataType.equals("integer")) {
@@ -556,34 +557,32 @@ public class SqlConnection {
 		} else if (dataType.equals("short text")) {
 			table = "DATASHORTTEXT";
 			ap = "'";
+			value = ((String) value).replaceAll("'", "''");
 		} else if (dataType.equals("long text")) {
 			table = "DATALONGTEXT";
 			ap = "'";
+			value = ((String) value).replaceAll("'", "''");
 		}
 		
-		try {
-			// get ID of data entry to update
-			int dataId = (int) executeQueryForObject("SELECT ID FROM " + table + " WHERE VariableId = " 
-					+ "(SELECT ID FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + " AND Variable = '" 
-					+ variableName + "') AND StatementId = " + statementId);
-			
-			// then replace entry
-			String myStatement = "";
-			if (dataId == -1) {
-				myStatement = "INSERT INTO " + table + "(StatementId, VariableId, StatementTypeId, Value) "
-						+ "VALUES (" + statementId + ", (SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
-						+ statementTypeId + " AND Variable = '" + variableName + "')" + ", " + statementTypeId 
-						+ ", " + ap + value + ap + ")";
-			} else {
-				myStatement = "REPLACE INTO " + table + "(ID, StatementId, VariableId, StatementTypeId, Value) "
-						+ "VALUES (" + dataId + ", " + statementId + ", (SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
-						+ statementTypeId + " AND Variable = '" + variableName + "')" + ", " + statementTypeId 
-						+ ", " + ap + value + ap + ")";
-			}
-			executeStatement(myStatement);
-		} catch (SQLException e) {
-			e.printStackTrace();
+		// get ID of data entry to update
+		int dataId = (int) executeQueryForObject("SELECT ID FROM " + table + " WHERE VariableId = " 
+				+ "(SELECT ID FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + " AND Variable = '" 
+				+ variableName + "') AND StatementId = " + statementId);
+
+		// then replace entry
+		String myStatement = "";
+		if (dataId == -1) {
+			myStatement = "INSERT INTO " + table + "(StatementId, VariableId, StatementTypeId, Value) "
+					+ "VALUES (" + statementId + ", (SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
+					+ statementTypeId + " AND Variable = '" + variableName + "')" + ", " + statementTypeId 
+					+ ", " + ap + value + ap + ")";
+		} else {
+			myStatement = "REPLACE INTO " + table + "(ID, StatementId, VariableId, StatementTypeId, Value) "
+					+ "VALUES (" + dataId + ", " + statementId + ", (SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
+					+ statementTypeId + " AND Variable = '" + variableName + "')" + ", " + statementTypeId 
+					+ ", " + ap + value + ap + ")";
 		}
+		executeStatement(myStatement);
 	}
 	
 	public void addCoder(Coder coder) {
@@ -659,7 +658,7 @@ public class SqlConnection {
 		executeStatement("INSERT INTO STATEMENTS(ID, StatementTypeId, DocumentId, Start, Stop, Coder) "
 				+ "VALUES (" + statement.getId() + ", " + statement.getStatementTypeId() + ", " + statement.getDocumentId() 
 				+ ", " + statement.getStart() + ", " + statement.getStop() + ", " + statement.getCoder() + ")");
-
+		
 		Iterator<String> keyIterator = statement.getValues().keySet().iterator();
         while (keyIterator.hasNext()){
     		String key = keyIterator.next();
@@ -1272,6 +1271,9 @@ public class SqlConnection {
 			preStatement.execute();
 			preStatement.close();
 		} catch (SQLException e) {
+			JOptionPane.showMessageDialog(Dna.dna.gui, 
+					"Database access could not be executed properly. Report this problem along with the \n "
+					+ "error log if you can see a systematic pattern here. Also, reload your file.");
 			e.printStackTrace();
 		}
 	}
@@ -1296,7 +1298,7 @@ public class SqlConnection {
 		preStatement.close();
 		return object;
 	}
-
+	
 	/**
 	 * Execute a query on the database and get an object back.
 	 * 
