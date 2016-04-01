@@ -11,5 +11,5 @@ __If you have questions or want to report bugs:__ [https://github.com/leifeld/dn
 
 ---
 
-##### Looking for the new version DNA 2.0?
-We are actively working on the new version. A working beta version (2.0 beta 1 as of July 16th, 2015) is available on request, but it still lacks some features and may have some bugs. Contact us to get a copy of the .jar file. The new version is based on a database format and allows users to create custom statement types with arbitrary variables. We are planning to refine DNA 2.0 over the course of the next months and then release it here.
+#### Beta version of DNA 2.0 available now
+Version 2.0 beta is a pre-release and can be [downloaded](https://github.com/leifeld/dna/releases) for testing purposes from the [releases](https://github.com/leifeld/dna/releases) page. If you find bugs, please report them to the [issue tracker](https://github.com/leifeld/dna/issues). Development will continue over the course of the summer, and new releases will be added periodically.
