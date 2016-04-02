@@ -66,20 +66,18 @@ public class ContradictionPanel extends JPanel {
 						node = node.replaceAll("0 \\(", "");
 						int nodeInt = new Integer(node).intValue();
 
-						Dna.dna.gui.rightPanel.statementFilter.showAll.
+						Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.
 						setSelected(true);
-						Dna.dna.gui.rightPanel.statementFilter.
+						Dna.dna.gui.rightPanel.statementPanel.statementFilter.
 						toggleEnabled(false);
-						Dna.dna.gui.rightPanel.statementFilter.allFilter();
+						Dna.dna.gui.rightPanel.statementPanel.statementFilter.allFilter();
 
-						int viewId = Dna.dna.gui.rightPanel.statementTable
-								.convertRowIndexToView(Dna.dna.gui.rightPanel.ssc
-										.getIndexByStatementId(nodeInt));
+						int viewId = Dna.dna.gui.rightPanel.statementPanel.statementTable.convertRowIndexToView(
+								Dna.dna.gui.rightPanel.statementPanel.ssc.getIndexByStatementId(nodeInt));
 						if (viewId == -1) {
-							Dna.dna.gui.rightPanel.statementTable.clearSelection();
+							Dna.dna.gui.rightPanel.statementPanel.statementTable.clearSelection();
 						} else {
-							Dna.dna.gui.rightPanel.statementTable.changeSelection(viewId, 0, false, false);
-							//int docId = Dna.dna.db.getStatement(nodeInt).getDocument();
+							Dna.dna.gui.rightPanel.statementPanel.statementTable.changeSelection(viewId, 0, false, false);
 							int docId = Dna.data.getStatement(nodeInt).getDocumentId();
 							int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
 							Dna.dna.gui.documentPanel.documentTable.getSelectionModel().

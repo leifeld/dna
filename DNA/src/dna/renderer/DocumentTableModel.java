@@ -105,7 +105,7 @@ public class DocumentTableModel implements TableModel {
 				Dna.data.getStatements().remove(i);
 			}
 		}
-		Dna.dna.gui.rightPanel.statementTable.updateUI();
+		Dna.dna.gui.rightPanel.statementPanel.statementTable.updateUI();
 		Dna.data.getDocuments().remove(index);
 		TableModelEvent e = new TableModelEvent(this);
 		for( int i = 0, n = listeners.size(); i < n; i++ ){

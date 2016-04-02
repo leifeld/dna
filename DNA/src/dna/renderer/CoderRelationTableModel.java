@@ -10,6 +10,7 @@ import javax.swing.table.TableModel;
 import dna.Dna;
 import dna.dataStructures.CoderRelation;
 
+@SuppressWarnings("serial")
 public class CoderRelationTableModel extends AbstractTableModel implements TableModel {
 
 	Vector<TableModelListener> listeners = new Vector<TableModelListener>();
@@ -113,7 +114,7 @@ public class CoderRelationTableModel extends AbstractTableModel implements Table
 		
 		// update statement-related GUI parts
 		Dna.dna.gui.textPanel.paintStatements();
-		Dna.dna.gui.rightPanel.statementFilter.updateFilter();
+		Dna.dna.gui.rightPanel.statementPanel.statementFilter.updateFilter();
 		
 		// update document-related GUI parts
 		Dna.dna.gui.documentPanel.documentFilter();

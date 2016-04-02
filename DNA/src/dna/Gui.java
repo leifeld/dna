@@ -208,7 +208,7 @@ public class Gui extends JFrame {
 		Dna.dna.gui.textPanel.paintStatements();
 		Dna.dna.gui.documentPanel.documentFilter();
 		Dna.dna.gui.documentPanel.documentTable.updateDocumentView();
-		Dna.dna.gui.rightPanel.statementFilter.updateFilter();
+		Dna.dna.gui.rightPanel.statementPanel.statementFilter.updateFilter();
 	}
 	
 	class StatusBar extends JPanel {
@@ -330,8 +330,8 @@ public class Gui extends JFrame {
 					}
 					Dna.dna.gui.leftPanel.editDocPanel.updateUI();
 				}
-				if (Dna.dna.gui.rightPanel.statementFilter.showCurrent.isSelected()) {
-					Dna.dna.gui.rightPanel.statementFilter.currentDocumentFilter();
+				if (Dna.dna.gui.rightPanel.statementPanel.statementFilter.showCurrent.isSelected()) {
+					Dna.dna.gui.rightPanel.statementPanel.statementFilter.currentDocumentFilter();
 				}
 				
 				if (Dna.data.getSettings().get("filename") != null) {
@@ -613,7 +613,7 @@ public class Gui extends JFrame {
 					Dna.dna.sql.upsertSetting("statementColor", "statementType");
 					colorStatementTypeButton.setIcon(tickIcon);
 					colorCoderButton.setIcon(null);
-					Dna.dna.gui.rightPanel.statementTable.updateUI();
+					Dna.dna.gui.rightPanel.statementPanel.statementTable.updateUI();
 					Dna.dna.gui.textPanel.paintStatements();
 				}
 			});
@@ -623,7 +623,7 @@ public class Gui extends JFrame {
 					Dna.dna.sql.upsertSetting("statementColor", "coder");
 					colorStatementTypeButton.setIcon(null);
 					colorCoderButton.setIcon(tickIcon);
-					Dna.dna.gui.rightPanel.statementTable.updateUI();
+					Dna.dna.gui.rightPanel.statementPanel.statementTable.updateUI();
 					Dna.dna.gui.textPanel.paintStatements();
 				}
 			});

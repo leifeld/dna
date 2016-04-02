@@ -286,10 +286,10 @@ public class TextPanel extends JPanel {
 						Point location = textWindow.getLocationOnScreen();
 						textWindow.setSelectionStart(startIndex);
 						textWindow.setSelectionEnd(stopIndex);
-						int row = Dna.dna.gui.rightPanel.ssc.getIndexByStatementId(statementId);
-						Dna.dna.gui.rightPanel.statementTable.setRowSelectionInterval(row, row);
-						Dna.dna.gui.rightPanel.statementTable.scrollRectToVisible(new Rectangle(  // scroll to selected row
-								Dna.dna.gui.rightPanel.statementTable.getCellRect(i, 0, true)));
+						int row = Dna.dna.gui.rightPanel.statementPanel.ssc.getIndexByStatementId(statementId);
+						Dna.dna.gui.rightPanel.statementPanel.statementTable.setRowSelectionInterval(row, row);
+						Dna.dna.gui.rightPanel.statementPanel.statementTable.scrollRectToVisible(new Rectangle(  // scroll to selected row
+								Dna.dna.gui.rightPanel.statementPanel.statementTable.getCellRect(i, 0, true)));
 						int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(Dna.data.getStatements().get(i).getDocumentId());
 						Dna.dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(
 								Dna.dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));

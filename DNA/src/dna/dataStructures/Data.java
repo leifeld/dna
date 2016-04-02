@@ -281,7 +281,7 @@ public class Data {
 	public void removeCoder(int id) {
 		for (int i = statements.size() - 1; i > -1; i--) {
 			if (statements.get(i).getCoder() == id) {
-				Dna.dna.gui.rightPanel.ssc.remove(i);
+				Dna.dna.gui.rightPanel.statementPanel.ssc.remove(i);
 			}
 		}
 		for (int i = documents.size() - 1; i > -1; i--) {
@@ -483,13 +483,13 @@ public class Data {
 
 	public void removeDocument(int documentId) {
 		// remove statements
-		Dna.dna.gui.rightPanel.setRowSorterEnabled(false);
-		for (int i = Dna.dna.gui.rightPanel.ssc.size() - 1; i > -1; i--) {
-			if (Dna.dna.gui.rightPanel.ssc.get(i).getDocumentId() == documentId) {
-				Dna.dna.gui.rightPanel.ssc.remove(i);
+		Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
+		for (int i = Dna.dna.gui.rightPanel.statementPanel.ssc.size() - 1; i > -1; i--) {
+			if (Dna.dna.gui.rightPanel.statementPanel.ssc.get(i).getDocumentId() == documentId) {
+				Dna.dna.gui.rightPanel.statementPanel.ssc.remove(i);
 			}
 		}
-		Dna.dna.gui.rightPanel.setRowSorterEnabled(true);
+		Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
 		
 		// remove document
 		int row = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(documentId);

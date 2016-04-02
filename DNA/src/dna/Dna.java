@@ -42,14 +42,14 @@ public class Dna {
 	}
 	
 	public void removeStatement(int statementId) {
-		gui.rightPanel.ssc.removeStatement(statementId);
+		gui.rightPanel.statementPanel.ssc.removeStatement(statementId);
 		sql.removeStatement(statementId);
 	}
 	
 	public void addStatement(Statement statement) {
-		gui.rightPanel.setRowSorterEnabled(false);
-		gui.rightPanel.ssc.addStatement(statement);
-		gui.rightPanel.setRowSorterEnabled(true);
+		gui.rightPanel.statementPanel.setRowSorterEnabled(false);
+		gui.rightPanel.statementPanel.ssc.addStatement(statement);
+		gui.rightPanel.statementPanel.setRowSorterEnabled(true);
 		int statementTypeId = statement.getStatementTypeId();
 		LinkedHashMap<String, String> map = data.getStatementTypeById(statementTypeId).getVariables();
 		sql.addStatement(statement, map);
@@ -99,7 +99,7 @@ public class Dna {
 		Dna.dna.gui.leftPanel.coderPanel.clear();
 		Dna.dna.gui.statusBar.resetLabel();
 		Dna.dna.gui.documentPanel.documentContainer.clear();
-		Dna.dna.gui.rightPanel.ssc.clear();
+		Dna.dna.gui.rightPanel.statementPanel.ssc.clear();
 		Dna.dna.gui.textPanel.setDocumentText("");
 		Dna.dna.gui.menuBar.openDatabase.setEnabled(true);
 		Dna.dna.gui.menuBar.newDatabase.setEnabled(true);
@@ -114,7 +114,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.closeDatabase.setEnabled(false);
 		//Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
-		Dna.dna.gui.rightPanel.updateStatementTypes();
+		Dna.dna.gui.rightPanel.statementPanel.updateStatementTypes();
 		Dna.dna.gui.rightPanel.rm.addButton.setEnabled(false);
 		Dna.dna.gui.rightPanel.rm.clear();
 		//Dna.dna.gui.rightPanel.linkedTableModel.setRowCount(0);
