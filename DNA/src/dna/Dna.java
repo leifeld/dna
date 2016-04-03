@@ -18,8 +18,8 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2016-04-01";
-		version = "2.0 beta 5";
+		date = "2016-04-08";
+		version = "2.0 beta 6";
 		console = System.err;
 		
 		gui = new Gui();
@@ -114,7 +114,7 @@ public class Dna {
 		Dna.dna.gui.menuBar.closeDatabase.setEnabled(false);
 		//Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
-		Dna.dna.gui.rightPanel.statementPanel.updateStatementTypes();
+		//Dna.dna.gui.rightPanel.statementPanel.updateStatementTypes();  //TODO: reimplement
 		Dna.dna.gui.rightPanel.rm.addButton.setEnabled(false);
 		Dna.dna.gui.rightPanel.rm.clear();
 		//Dna.dna.gui.rightPanel.linkedTableModel.setRowCount(0);
@@ -123,6 +123,9 @@ public class Dna {
 		Dna.dna.gui.leftPanel.docStats.clear();
 		Dna.dna.gui.leftPanel.docStats.refreshButton.setEnabled(false);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
+		Dna.dna.gui.rightPanel.statementPanel.model.clear();
+		Dna.dna.gui.rightPanel.statementPanel.typeComboBox.setEnabled(false);
+		Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();
 	}
 
 

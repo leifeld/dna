@@ -68,8 +68,7 @@ public class ContradictionPanel extends JPanel {
 
 						Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.
 						setSelected(true);
-						Dna.dna.gui.rightPanel.statementPanel.statementFilter.
-						toggleEnabled(false);
+						//Dna.dna.gui.rightPanel.statementPanel.statementFilter.toggleEnabled(false);
 						Dna.dna.gui.rightPanel.statementPanel.statementFilter.allFilter();
 
 						int viewId = Dna.dna.gui.rightPanel.statementPanel.statementTable.convertRowIndexToView(

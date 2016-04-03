@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,19 +13,20 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.BoxLayout;
+import javax.swing.Box;
 import javax.swing.ButtonGroup;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.event.DocumentEvent;
@@ -31,11 +34,11 @@ import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 
-import org.jdesktop.swingx.JXTextField;
-
 import dna.dataStructures.*;
 import dna.Dna;
 import dna.renderer.StatementTableModel;
+import dna.renderer.StatementTypeComboBoxModel;
+import dna.renderer.StatementTypeComboBoxRenderer;
 
 @SuppressWarnings("serial")
 public class StatementPanel extends JPanel {
@@ -44,9 +47,9 @@ public class StatementPanel extends JPanel {
 	JScrollPane statementTableScrollPane;
 	public StatementFilter statementFilter;
 	TableRowSorter<StatementTableModel> sorter;
-	JXTextField patternField1, patternField2;
-	JComboBox<String> typeComboBox1, typeComboBox2, variableComboBox1, 
-	variableComboBox2;
+	public JComboBox typeComboBox;
+	StatementTypeComboBoxRenderer renderer;
+	public StatementTypeComboBoxModel model;
 
 	public StatementPanel() {
 		this.setLayout(new BorderLayout());
@@ -64,9 +67,8 @@ public class StatementPanel extends JPanel {
 		setRowSorterEnabled(true);
 
 		StatementCellRenderer statementCellRenderer = new StatementCellRenderer();
-		statementTable.getColumnModel().getColumn(0).setCellRenderer(
-				statementCellRenderer);
-
+		statementTable.getColumnModel().getColumn(0).setCellRenderer(statementCellRenderer);
+		
 		statementFilter = new StatementFilter();
 		this.add(statementTableScrollPane, BorderLayout.CENTER);
 		this.add(statementFilter, BorderLayout.SOUTH);
@@ -94,53 +96,6 @@ public class StatementPanel extends JPanel {
 		});
 	}
 	
-	public void updateStatementTypes() {
-		typeComboBox1.removeAllItems();
-		ArrayList<StatementType> types = new ArrayList<StatementType>();
-		if (Dna.data.getSettings().get("filename") != null && !Dna.data.getSettings().get("filename").equals("")) {
-			types = Dna.data.getStatementTypes();
-			for (int i = 0; i < types.size(); i++) {				
-				String type = types.get(i).getLabel().toString();
-				if(type!=null )
-				{
-					typeComboBox1.addItem(type.trim());
-				}
-
-			}
-			try{
-				typeComboBox1.setSelectedIndex(0);
-			}
-			catch (IllegalArgumentException ex){
-				typeComboBox1.setSelectedIndex(-1);
-			}
-		}
-	}
-
-	public void updateVariables() {
-		variableComboBox1.removeAllItems();
-		variableComboBox2.removeAllItems();
-		String type = (String) typeComboBox1.getSelectedItem();
-		if (type != null && !type.equals("")) {
-			HashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
-			Iterator<String> keyIterator = variables.keySet().iterator();
-			while (keyIterator.hasNext()){
-				String key = keyIterator.next();
-				variableComboBox1.addItem(key);
-				variableComboBox2.addItem(key);
-			}
-			try{
-				variableComboBox1.setSelectedIndex(0);
-			}
-			catch (IllegalArgumentException ex){
-			}
-			try{
-				variableComboBox2.setSelectedIndex(0);
-			}
-			catch (IllegalArgumentException ex){
-			}
-		}
-	}
-	
 	public void setRowSorterEnabled(boolean enabled) {
 		if (enabled == true) {
 			sorter = new TableRowSorter<StatementTableModel>(ssc) {
@@ -155,8 +110,106 @@ public class StatementPanel extends JPanel {
 		}
 	}
 	
+	public class CustomFilterPanel extends JPanel {
+		
+		public HashMap<String, Pattern> map = new HashMap<String, Pattern>();
+		
+		public CustomFilterPanel() {
+			// empty panel because no statement type is selected from typeComboBox
+		}
+		
+		public CustomFilterPanel(StatementType statementType) {  // create custom search fields for statement type from typeComboBox
+			this.setLayout(new GridBagLayout());
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridx = 0;
+			gbc.gridy = 0;
+			gbc.gridwidth = 1;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			
+			this.add(Box.createRigidArea(new Dimension(5,5)), gbc);
+			gbc.gridy = 1;
+			
+			Iterator<String> keyIterator = statementType.getVariables().keySet().iterator();
+	        while (keyIterator.hasNext()) {  // create filter fields for all variables
+	    		String key = keyIterator.next();
+	    		JLabel label = new JLabel(key + ": ");
+	    		gbc.weightx = 0.1;
+	    		gbc.anchor = GridBagConstraints.EAST;
+	    		this.add(label, gbc);
+	    		gbc.anchor = GridBagConstraints.WEST;
+	    		gbc.weightx = 0.9;
+	    		gbc.gridx = 1;
+	    		JTextField field = new JTextField("");
+	    		field.setColumns(1);
+	    		map.put(key, Pattern.compile(""));
+	    		DocumentListener dl = new DocumentListener() {
+					public void changedUpdate(DocumentEvent e) {
+						applyFilter();
+					}
+					public void insertUpdate(DocumentEvent e) {
+						applyFilter();
+					}
+					public void removeUpdate(DocumentEvent e) {
+						applyFilter();
+					}
+					public void applyFilter() {
+						Pattern pattern = Pattern.compile(field.getText());
+						map.put(key, pattern);
+						CustomFilterPanel.this.addRowFilter(statementType);
+					}
+				};
+	    		field.getDocument().addDocumentListener(dl);
+	    		this.add(field, gbc);
+	    		gbc.gridx = 0;
+	    		gbc.gridy++;
+	    	}
+	        
+	        CustomFilterPanel.this.addRowFilter(statementType);
+	        
+	        statementFilter.remove(statementFilter.getComponentCount() - 1);
+	        statementFilter.add(this, BorderLayout.SOUTH);
+	        statementFilter.updateUI();
+		}
+		
+		public void addRowFilter(StatementType statementType) {
+			try {
+				RowFilter<StatementTableModel, Integer> filter = new RowFilter<StatementTableModel, Integer>() {
+					public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
+						Statement st = ssc.get(entry.getIdentifier());
+						if (st.getStatementTypeId() != statementType.getId()) {
+							return false;
+						}
+						boolean match = true;
+						Iterator<String> keyIterator = statementType.getVariables().keySet().iterator();
+				        while (keyIterator.hasNext()) {
+				        	String key = keyIterator.next();
+				    		String type = statementType.getVariables().get(key);
+				    		String value = "";
+				    		if (type.equals("short text") || type.equals("long text")) {
+					        	value = (String) st.getValues().get(key);
+				    		} else if (type.equals("integer") || type.equals("boolean")) {
+				    			value = String.valueOf((int) st.getValues().get(key));
+				    		}
+				        	if (value != null) {
+								Matcher matcher = map.get(key).matcher(value);
+								if (matcher.find() == false) {
+									match = false;
+								}
+				        	}
+				        }
+						return match;
+					}
+				};
+				sorter.setRowFilter(filter);
+			} catch (java.util.regex.PatternSyntaxException pse) {
+				return;
+			}
+		}
+	}
+	
 	public class StatementFilter extends JPanel {
 		public JRadioButton showAll, showCurrent, showFilter;
+		CustomFilterPanel customFilterPanel;
 		
 		public StatementFilter() {
 			this.setLayout(new BorderLayout());
@@ -165,78 +218,59 @@ public class StatementPanel extends JPanel {
 			showAll = new JRadioButton("all");
 			showAll.setSelected(true);
 			showCurrent = new JRadioButton("current");
-			showFilter = new JRadioButton("filter:");
-			showFilter.setEnabled(false);
+			showFilter = new JRadioButton("filter");
 			showGroup.add(showAll);
 			showGroup.add(showCurrent);
 			showGroup.add(showFilter);
 			showPanel.add(showAll);
 			showPanel.add(showCurrent);
 			showPanel.add(showFilter);
-
-			typeComboBox1 = new JComboBox<String>();
-			typeComboBox1.setPreferredSize(new Dimension(208, 20));
-			typeComboBox1.addItemListener(new ItemListener() {
-				public void itemStateChanged(ItemEvent e) {
-					updateVariables();
-					filter();
-				}
-			});
-
-			variableComboBox1 = new JComboBox<String>();
-			variableComboBox1.setPreferredSize(new Dimension(100, 20));
-
-			variableComboBox1.addItemListener(new ItemListener() {
-				public void itemStateChanged(ItemEvent e) {
-					filter();
-				}
-			});
-			patternField1 = new JXTextField("regex");
-			patternField1.setPreferredSize(new Dimension(104, 20));
-
-			variableComboBox2 = new JComboBox<String>();
-			variableComboBox2.setPreferredSize(new Dimension(100, 20));
-			variableComboBox2.addItemListener(new ItemListener() {
-				public void itemStateChanged(ItemEvent e) {
-					filter();
-				}
-			});
-			patternField2 = new JXTextField("regex");
-			patternField2.setPreferredSize(new Dimension(104, 20));
 			
-			toggleEnabled(false);
-
-			JPanel filterPanel0 = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			filterPanel0.add(typeComboBox1);
-			JPanel filterPanel1 = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			filterPanel1.add(variableComboBox1);
-			filterPanel1.add(patternField1);
-			JPanel filterPanel2 = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			filterPanel2.add(variableComboBox2);
-			filterPanel2.add(patternField2);
-
-			JPanel filterPanel = new JPanel();
-			filterPanel.setLayout(new BoxLayout(filterPanel,BoxLayout.Y_AXIS));
-			filterPanel.add(filterPanel0, Component.CENTER_ALIGNMENT);
-			filterPanel.add(filterPanel1, Component.CENTER_ALIGNMENT);
-			filterPanel.add(filterPanel2, Component.CENTER_ALIGNMENT);
+			renderer = new StatementTypeComboBoxRenderer();
+			model = new StatementTypeComboBoxModel();
+			typeComboBox = new JComboBox(model);
+			typeComboBox.setRenderer(renderer);
+			typeComboBox.setPreferredSize(new Dimension(150, 30));
+			typeComboBox.addItemListener(new ItemListener() {
+				public void itemStateChanged(ItemEvent e) {
+					customFilterPanel = new CustomFilterPanel((StatementType) model.getSelectedItem());
+				}
+			});
+			typeComboBox.updateUI();
+			typeComboBox.setEnabled(false);
+			typeComboBox.setVisible(false);
+			
+			customFilterPanel = new CustomFilterPanel();
 			
 			this.add(showPanel, BorderLayout.NORTH);
-			this.add(filterPanel, BorderLayout.CENTER);
+			this.add(typeComboBox, BorderLayout.CENTER);
+			this.add(customFilterPanel, BorderLayout.SOUTH);
 			
 			ActionListener al = new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					if (e.getSource() == showAll) {				
 						allFilter();
-						toggleEnabled(false);
-
+				        statementFilter.remove(statementFilter.getComponentCount() - 1);
+				        statementFilter.add(new CustomFilterPanel(), BorderLayout.SOUTH);
+				        statementFilter.updateUI();
+						typeComboBox.setEnabled(false);
+						typeComboBox.setVisible(false);
 					} else if (e.getSource() == showCurrent) {
-						toggleEnabled(false);
 						allFilter();
 						currentDocumentFilter();
+				        statementFilter.remove(statementFilter.getComponentCount() - 1);
+				        statementFilter.add(new CustomFilterPanel(), BorderLayout.SOUTH);
+				        statementFilter.updateUI();
+						typeComboBox.setEnabled(false);
+						typeComboBox.setVisible(false);
 					} else if (e.getSource() == showFilter) {
-						toggleEnabled(true);
-						filter();
+						typeComboBox.setVisible(true);
+						String fn = Dna.data.getSettings().get("filename");
+						if (fn != null && !fn.equals("")) {
+							typeComboBox.setEnabled(true);
+							typeComboBox.updateUI();
+							new CustomFilterPanel((StatementType) typeComboBox.getSelectedItem());
+						}
 
 					}
 					//if (!(e.getSource() == showAll)) {
@@ -248,54 +282,19 @@ public class StatementPanel extends JPanel {
 			showAll.addActionListener(al);
 			showCurrent.addActionListener(al);
 			showFilter.addActionListener(al);
-
-			DocumentListener dl = new DocumentListener() {
-				public void changedUpdate(DocumentEvent e) {
-					applyFilter();
-				}
-				public void insertUpdate(DocumentEvent e) {
-					applyFilter();
-				}
-				public void removeUpdate(DocumentEvent e) {
-					applyFilter();
-				}
-				public void applyFilter() {
-					filter();
-				}
-			};
-
-			patternField1.getDocument().addDocumentListener(dl);
-			patternField2.getDocument().addDocumentListener(dl);
-		}
-
-		public void toggleEnabled(boolean enabled) {
-			patternField1.setText("");
-			patternField2.setText("");			
-			typeComboBox1.setEnabled(enabled);
-			variableComboBox1.setEnabled(enabled);
-			patternField1.setEnabled(enabled);
-			variableComboBox2.setEnabled(enabled);
-			patternField2.setEnabled(enabled);
-			if (enabled == true) {
-				updateStatementTypes();
-			}
-			this.updateUI();
 		}
 		
 		// used in the coder relation table model to update the statement table when coder relations are changed 
 		public void updateFilter() {
 			if (showAll.isSelected()) {
 				allFilter();
-				toggleEnabled(false);
 			}
 			if (showCurrent.isSelected()) {
-				toggleEnabled(false);
 				allFilter();
 				currentDocumentFilter();
 			}
 			if (showFilter.isSelected()) {
-				toggleEnabled(true);
-				filter();
+				showFilter.doClick();
 			}
 		}
 		
@@ -337,84 +336,6 @@ public class StatementPanel extends JPanel {
 			};
 			if (showCurrent.isSelected()) {
 				sorter.setRowFilter(documentFilter);
-			}
-		}
-		
-		private void filter() {
-			String fn = Dna.data.getSettings().get("filename");
-			if (fn != null && !fn.equals("")) {
-				String p1 = patternField1.getText();
-				String p2 = patternField2.getText();
-
-				String t1 = (String) typeComboBox1.getSelectedItem();
-				String v1 = (String) variableComboBox1.getSelectedItem();
-				if (p1 == null) {
-					p1 = "";
-				}
-				if (t1 == null) {
-					t1 = "";
-				}
-				if (v1 == null) {
-					v1 = "";
-				}
-
-				String v2 = (String) variableComboBox2.getSelectedItem();
-				if (p2 == null) {
-					p2 = "";
-				}
-				if (v2 == null) {
-					v2 = "";
-				}
-
-				if (!t1.equals("") && ! v1.equals("") && !v2.equals("")) {
-					ArrayList<Integer> ids1 = new ArrayList<Integer>();
-					Pattern p = Pattern.compile(p1);
-					for (int i = 0; i < Dna.data.getStatements().size(); i++) {
-						String s = (String) Dna.data.getStatements().get(i).getValues().get(v1);
-						Matcher m = p.matcher(s);
-						boolean b = m.find();
-						if (b == true) {
-							ids1.add(Dna.data.getStatements().get(i).getId());
-						}
-					}
-					ArrayList<Integer> ids2 = new ArrayList<Integer>();
-					p = Pattern.compile(p2);
-					for (int i = 0; i < Dna.data.getStatements().size(); i++) {
-						String s = (String) Dna.data.getStatements().get(i).getValues().get(v2);
-						Matcher m = p.matcher(s);
-						boolean b = m.find();
-						if (b == true) {
-							ids2.add(Dna.data.getStatements().get(i).getId());
-						}
-					}
-					
-					final String p1final = p1;
-					final String p2final = p2;
-
-					RowFilter<StatementTableModel, Integer> idFilter = new RowFilter<StatementTableModel, Integer>() {
-						public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
-							StatementTableModel stcont = entry.getModel();
-							Statement st = stcont.get(entry.getIdentifier());
-							boolean[] b = Dna.data.getActiveStatementPermissions(st.getId());
-							boolean contentMatch;
-							if (ids1.contains(st.getId()) && (ids2.contains(st.getId()) || p2final.equals(""))) {
-								contentMatch = true;
-							} else if (ids2.contains(st.getId()) && (ids1.contains(st.getId()) || p1final.equals(""))) {
-								contentMatch = true;
-							} else {
-								contentMatch = false;
-							}
-
-							if (contentMatch == true && b[0] == true && Dna.data.getActiveDocumentPermissions(st.getDocumentId())[0] == true) {
-								return true;
-							}
-							return false;
-						}
-					};
-					if (showFilter.isSelected()) {
-						sorter.setRowFilter(idFilter);
-					}
-				}
 			}
 		}
 	}

@@ -1167,6 +1167,8 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.dna.gui.menuBar.colorCoderButton.setEnabled(true);
 					Dna.dna.gui.rightPanel.rm.setFieldsEnabled(true);
 					Dna.dna.gui.leftPanel.docStats.refreshButton.setEnabled(true);
+					Dna.dna.gui.rightPanel.statementPanel.typeComboBox.setSelectedIndex(0);
+					Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();
 					
 					Dna.dna.gui.refreshGui();
 					

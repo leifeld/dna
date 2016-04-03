@@ -293,7 +293,8 @@ public class OpenDatabaseDialog extends JDialog {
 		Dna.dna.sql.upsertSetting("date", Dna.dna.date);
 		
 		//Dna.dna.gui.leftPanel.coderPanel.coderBox.setSelectedItem(Dna.data.getCoderById(ac));
-		
+		Dna.dna.gui.rightPanel.statementPanel.typeComboBox.setSelectedIndex(0);
+		Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();
 		Dna.dna.gui.leftPanel.coderPanel.model.setSelectedItem(Dna.data.getCoderById(ac));
 		
 		Dna.dna.gui.refreshGui();
