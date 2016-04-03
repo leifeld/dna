@@ -13,7 +13,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 import javax.swing.JOptionPane;
-import javax.swing.ProgressMonitor;
 
 import dna.dataStructures.Coder;
 import dna.dataStructures.CoderRelation;
