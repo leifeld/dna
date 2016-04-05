@@ -25,7 +25,7 @@ import dna.Dna;
 public class Exporter {
 
 	public Exporter() {
-		// TODO
+		new ExportGui();
 	}
 	
 	/**

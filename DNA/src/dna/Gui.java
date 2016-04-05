@@ -1,6 +1,7 @@
 package dna;
 
 import dna.dataStructures.*;
+import dna.export.Exporter;
 import dna.renderer.DocumentTableModel;
 
 import java.awt.BorderLayout;
@@ -597,6 +598,17 @@ public class Gui extends JFrame {
 				}
 			});
 			networkButton.setEnabled(false);
+
+			//Export menu: network export
+			networkButton = new JMenuItem("Export network...", networkIcon);
+			networkButton.setToolTipText( "export a network file..." );
+			exportMenu.add(networkButton);
+			networkButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					new Exporter();
+				}
+			});
+			networkButton.setEnabled(true);
 			
 			//Settings menu: statement color by statement type or coder?
 			Icon tickIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
