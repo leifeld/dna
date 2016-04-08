@@ -2,6 +2,7 @@ package dna.export;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -16,16 +17,23 @@ import java.util.LinkedHashMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTree;
+import javax.swing.ListModel;
+import javax.swing.ListSelectionModel;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -33,10 +41,13 @@ import javax.swing.tree.TreeSelectionModel;
 
 import dna.Dna;
 import dna.dataStructures.StatementType;
+import dna.renderer.StatementTypeComboBoxModel;
+import dna.renderer.StatementTypeComboBoxRenderer;
 
 @SuppressWarnings("serial")
 public class ExportGui extends JDialog {
 	JPanel cards;
+	CardLayout cl;
 	String networkType;
 	ExportSetting exportSetting;
 	JTree tree;
@@ -48,11 +59,12 @@ public class ExportGui extends JDialog {
 		ImageIcon networkIcon = new ImageIcon(getClass().getResource("/icons/chart_organisation.png"));
 		this.setIconImage(networkIcon.getImage());
 		this.setLayout(new BorderLayout());
-		CardLayout cl = new CardLayout();
+		cl = new CardLayout();
 		cards = new JPanel(cl);
 		
 		exportSetting = populateInitialSettings();
 		loadCard1();
+		loadCard2();
 		
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 		ImageIcon backIcon = new ImageIcon(getClass().getResource("/icons/resultset_previous.png"));
@@ -95,6 +107,8 @@ public class ExportGui extends JDialog {
 		for (int i = 0; i < tree.getRowCount(); i++) {
 			tree.expandRow(i);
 		}
+		tree.setToggleClickCount(0);
+		
 		tree.addTreeSelectionListener(new TreeSelectionListener() {
 			public void valueChanged(TreeSelectionEvent tse) {
 				String node = (String) tree.getLastSelectedPathComponent().toString();
@@ -102,6 +116,8 @@ public class ExportGui extends JDialog {
 					cl.show(cards, "networkDataType");
 				} else if (node.equals("Variables")) {
 					cl.show(cards, "variables");
+				} else if (node.equals("Options")) {
+					tree.setSelectionRow(1);
 				} else {
 					System.out.println(node);
 				}
@@ -115,6 +131,7 @@ public class ExportGui extends JDialog {
 		sp.setRightComponent(cards);
 		this.add(sp);
 		sp.setEnabled(false);
+		tree.setSelectionRow(1);
 		
 		this.add(sp, BorderLayout.CENTER);
 		this.add(buttonPanel, BorderLayout.SOUTH);
@@ -139,7 +156,7 @@ public class ExportGui extends JDialog {
 		StatementType statementType = null;
 		for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
 			statementType = Dna.data.getStatementTypes().get(i);
-			ArrayList<String> vars = getVariablesList(statementType, false, true, false, false);
+			DefaultListModel<String> vars = getVariablesList(statementType, false, true, false, false);
 			if (vars.size() > 1) {
 				var1 = vars.get(0);
 				var2 = vars.get(1);
@@ -149,7 +166,7 @@ public class ExportGui extends JDialog {
 		if (var1.equals("") && var2.equals("")) {
 			for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
 				statementType = Dna.data.getStatementTypes().get(i);
-				ArrayList<String> vars = getVariablesList(statementType, false, true, false, false);
+				DefaultListModel<String> vars = getVariablesList(statementType, false, true, false, false);
 				if (vars.size() > 0) {
 					var1 = vars.get(0);
 					var2 = vars.get(0);
@@ -176,18 +193,16 @@ public class ExportGui extends JDialog {
 		JLabel scopeQuestion = new JLabel("For which statement type would you like to create a network?");
 		scopePanel.add(scopeQuestion, scopegbc);
 		scopegbc.gridy = 1;
-		ArrayList<StatementType> typeList = Dna.data.getStatementTypes();  // get info from db
-		String[] types = new String[typeList.size()];
-		for (int i = 0; i < typeList.size(); i++) {
-			types[i] = typeList.get(i).getLabel();
-		}
-		JComboBox<String> typeBox = new JComboBox<String>(types);
+		StatementTypeComboBoxRenderer renderer = new StatementTypeComboBoxRenderer();
+		StatementTypeComboBoxModel model = new StatementTypeComboBoxModel();
+		JComboBox typeBox = new JComboBox(model);
+		typeBox.setRenderer(renderer);
+		typeBox.setSelectedItem(exportSetting.getStatementType());
 		scopegbc.insets = new Insets(0, 0, 10, 0);
 		scopePanel.add(typeBox, scopegbc);
 		ActionListener statementAL = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int stSelIndex = typeBox.getSelectedIndex();
-				// TODO
+				exportSetting.setStatementType((StatementType) typeBox.getSelectedItem());
 			}
 		};
 		typeBox.addActionListener(statementAL);
@@ -217,11 +232,14 @@ public class ExportGui extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				JRadioButton button = (JRadioButton) e.getSource();
 				if (button.getText().equalsIgnoreCase("one-mode network")) {
-					networkType = "oneMode";
+					exportSetting.setNetworkType("oneMode");
+					typeBox.setEnabled(true);
 				} else if (button.getText().equals("two-mode network")) {
-					networkType = "twoMode";					
+					exportSetting.setNetworkType("twoMode");
+					typeBox.setEnabled(true);
 				} else if (button.getText().equals("event list")) {
-					networkType = "eventList";
+					exportSetting.setNetworkType("eventList");
+					typeBox.setEnabled(false);
 				}
 			}
 		};
@@ -231,7 +249,88 @@ public class ExportGui extends JDialog {
 		TitledBorder scopeBorder;
 		scopeBorder = BorderFactory.createTitledBorder("1 / 7");
 		scopePanel.setBorder(scopeBorder);
-		cards.add(scopePanel, "statementType");
+		cards.add(scopePanel, "networkDataType");
+	}
+	
+	private void loadCard2() {
+		JPanel variablesPanel = new JPanel(new GridBagLayout());
+		variablesPanel.setName("card2");
+		GridBagConstraints vargbc = new GridBagConstraints();
+		vargbc.gridx = 0;
+		vargbc.gridy = 0;
+		vargbc.anchor = GridBagConstraints.WEST;
+		vargbc.gridwidth = 3;
+
+		vargbc.insets = new Insets(0, 0, 20, 0);
+		JLabel variablesQuestion = new JLabel("Please select the variables for network creation.");
+		variablesPanel.add(variablesQuestion, vargbc);
+		vargbc.gridwidth = 1;
+		vargbc.gridy = 1;
+		vargbc.insets = new Insets(0, 0, 0, 5);
+		
+		JList<String> var1List = new JList<String>();
+		var1List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		var1List.setLayoutOrientation(JList.VERTICAL);
+		var1List.setVisibleRowCount(5);
+		var1List.setPreferredSize(new Dimension(220, 20));
+		JScrollPane var1Scroller = new JScrollPane(var1List);
+		JPanel var1Panel = new JPanel(new GridBagLayout());
+		GridBagConstraints var1gbc = new GridBagConstraints();
+		var1gbc.gridx = 0;
+		var1gbc.gridy = 0;
+		var1gbc.fill = GridBagConstraints.NONE;
+		JLabel var1Label = new JLabel("first mode (rows)");
+		var1Panel.add(var1Label, var1gbc);
+		var1gbc.gridy = 1;
+		var1Panel.add(var1Scroller, var1gbc);
+		variablesPanel.add(var1Panel, vargbc);
+		vargbc.gridx = 1;
+		
+		JList<String> var2List = new JList<String>();
+		var2List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		var2List.setLayoutOrientation(JList.VERTICAL);
+		
+		var2List.setVisibleRowCount(5);
+		var2List.setPreferredSize(new Dimension(220, 20));
+
+		JScrollPane var2Scroller = new JScrollPane(var2List);
+		JPanel var2Panel = new JPanel(new GridBagLayout());
+		GridBagConstraints var2gbc = new GridBagConstraints();
+		var2gbc.gridx = 0;
+		var2gbc.gridy = 0;
+		var2gbc.fill = GridBagConstraints.NONE;
+		JLabel var2Label = new JLabel("second mode (columns)");
+		var2Panel.add(var2Label, var2gbc);
+		var2gbc.gridy = 1;
+		var2Panel.add(var2Scroller, var2gbc);
+		variablesPanel.add(var2Panel, vargbc);
+
+		var1List.setModel(getVariablesList(exportSetting.getStatementType(), false, true, false, false));
+		var2List.setModel(getVariablesList(exportSetting.getStatementType(), false, true, false, false));
+		var1List.setSelectedValue(exportSetting.getVar1(), true);
+		var2List.setSelectedValue(exportSetting.getVar2(), true);
+		TitledBorder variablesBorder;
+		variablesBorder = BorderFactory.createTitledBorder("2 / 7");
+		variablesPanel.setBorder(variablesBorder);
+		cards.add(variablesPanel, "variables");
+		
+		var1List.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				String selectedValue = var1List.getSelectedValue();
+				if (selectedValue != null) {
+					exportSetting.setVar1(selectedValue);
+				}
+			}
+		});
+
+		var2List.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				String selectedValue = var2List.getSelectedValue();
+				if (selectedValue != null) {
+					exportSetting.setVar2(selectedValue);
+				}
+			}
+		});
 	}
 	
 	/**
@@ -243,17 +342,17 @@ public class ExportGui extends JDialog {
 	 * @param bool		boolean indicating whether boolean variables should be included.
 	 * @return			{@link DefaultListModel<String>} with variables of the the statementType selected.
 	 */
-	ArrayList<String> getVariablesList(StatementType statementType, boolean longtext, boolean shorttext, boolean integer, boolean bool) {
+	DefaultListModel<String> getVariablesList(StatementType statementType, boolean longtext, boolean shorttext, boolean integer, boolean bool) {
 		LinkedHashMap<String, String> variables = statementType.getVariables();
 		Iterator<String> it = variables.keySet().iterator();
-		ArrayList<String> listData = new ArrayList<String>();
+		DefaultListModel<String> listData = new DefaultListModel<String>();
 		while (it.hasNext()) {
 			String var = it.next();
 			if ((longtext == true && variables.get(var).equals("long text")) || 
 					(shorttext == true && variables.get(var).equals("short text")) ||
 					(integer == true && variables.get(var).equals("integer")) ||
 					(bool == true && variables.get(var).equals("boolean"))) {
-				listData.add(var);
+				listData.addElement(var);
 			}
 		}
 		return listData;

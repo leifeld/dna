@@ -138,7 +138,7 @@ class NewDocumentDialog extends JDialog {
 				//notes = notes.replaceAll("'", "''");
 				String type = (String) typeBox.getModel().getSelectedItem();
 				//type = type.replaceAll("'", "''");
-				int docId = Dna.data.generateNewDocumentId();
+				int docId = Dna.data.generateNewId("documents");
 				Document d = new Document(docId, title, text, coder, author, source, section, notes, type, date);
 				Dna.dna.addDocument(d);
 				

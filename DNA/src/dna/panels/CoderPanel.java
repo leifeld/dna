@@ -83,7 +83,7 @@ public class CoderPanel extends JPanel {
 		addButton.setEnabled(false);
 		addButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				EditCoderWindow ecw = new EditCoderWindow(new Coder(Dna.data.generateNewCoderId()));
+				EditCoderWindow ecw = new EditCoderWindow(new Coder(Dna.data.generateNewId("coders")));
 				Coder coder = ecw.getCoder();
 				ecw.dispose();
 				if (!coder.getName().equals("")) {

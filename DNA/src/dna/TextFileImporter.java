@@ -496,7 +496,7 @@ public class TextFileImporter extends JDialog {
 					}
 					
 					article = new Document(
-							Dna.data.generateNewDocumentId(), 
+							Dna.data.generateNewId("documents"), 
 							title, 
 							document, 
 							coderId, 

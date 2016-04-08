@@ -489,7 +489,7 @@ public class ImportOldDNA extends JDialog {
 					} catch (BadLocationException e) {
 						e.printStackTrace();
 					}
-					documentId = Dna.data.generateNewDocumentId();
+					documentId = Dna.data.generateNewId("documents");
 					try {
 						sdfToDate = new SimpleDateFormat("dd.MM.yyyy");
 						date = sdfToDate.parse(dateString);
@@ -529,7 +529,7 @@ public class ImportOldDNA extends JDialog {
 						startInt = Integer.valueOf( start ).intValue();
 						endInt = Integer.valueOf( end ).intValue();
 						
-						statementId = Dna.data.generateNewStatementId();
+						statementId = Dna.data.generateNewId("statements");
 						map = new LinkedHashMap<String, Object>();
 						map.put("person", person);
 						map.put("organization", organization);

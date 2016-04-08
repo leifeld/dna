@@ -236,11 +236,8 @@ public class TextPanel extends JPanel {
 				public void actionPerformed(ActionEvent e) {
 					int selectionStart = textWindow.getSelectionStart();
 					int selectionEnd = textWindow.getSelectionEnd();
-					//String selectedText = textWindow.getText().substring(selectionStart, selectionEnd);
-					
-					int statementId = Dna.data.generateNewStatementId();
+					int statementId = Dna.data.generateNewId("statements");
 					int coderId = Dna.data.getActiveCoder();
-					//Color color = statementType.getColor();
 					LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
 					Iterator<String> keyIterator = statementType.getVariables().keySet().iterator();
 			        while (keyIterator.hasNext()){

@@ -124,7 +124,7 @@ public class Popup extends JDialog {
 		duplicate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				saveContents(gridBagPanel, statementId, type);
-				int newId = Dna.data.generateNewStatementId();
+				int newId = Dna.data.generateNewId("statements");
 				int documentId = Dna.data.getStatement(statementId).getDocumentId();
 				int start = Dna.data.getStatement(statementId).getStart();
 				int stop = Dna.data.getStatement(statementId).getStop();

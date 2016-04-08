@@ -111,102 +111,6 @@ public class Data {
 	public void setStatementLinks(ArrayList<StatementLink> statementLinks) {
 		this.statementLinks = statementLinks;
 	}
-
-	public int generateNewStatementTypeId() {
-		if (statementTypes.size() == 0) {
-			return(1);
-		}
-		ArrayList<Integer> ids = new ArrayList<Integer>();
-		for (int i = 0; i < statementTypes.size(); i++) {
-			ids.add(statementTypes.get(i).getId());
-		}
-		Collections.sort(ids);
-		if (ids.size() == 1) {
-			if (ids.get(0) == 1) {
-				return(2);
-			} else {
-				return(1);
-			}
-		}
-		for (int i = 1; i < ids.size(); i++) {
-			if (ids.get(i) - 1 > ids.get(i - 1)) {
-				return(ids.get(i - 1) + 1);
-			}
-		}
-		return(statementTypes.size() + 1);
-	}
-	
-	public int generateNewStatementLinkId() {
-		if (statementLinks.size() == 0) {
-			return(1);
-		}
-		ArrayList<Integer> ids = new ArrayList<Integer>();
-		for (int i = 0; i < statementLinks.size(); i++) {
-			ids.add(statementLinks.get(i).getId());
-		}
-		Collections.sort(ids);
-		if (ids.size() == 1) {
-			if (ids.get(0) == 1) {
-				return(2);
-			} else {
-				return(1);
-			}
-		}
-		for (int i = 1; i < ids.size(); i++) {
-			if (ids.get(i) - 1 > ids.get(i - 1)) {
-				return(ids.get(i - 1) + 1);
-			}
-		}
-		return(statementLinks.size() + 1);
-	}
-
-	public int generateNewCoderId() {
-		if (coders.size() == 0) {
-			return(1);
-		}
-		ArrayList<Integer> ids = new ArrayList<Integer>();
-		for (int i = 0; i < coders.size(); i++) {
-			ids.add(coders.get(i).getId());
-		}
-		Collections.sort(ids);
-		if (ids.size() == 1) {
-			if (ids.get(0) == 1) {
-				return(2);
-			} else {
-				return(1);
-			}
-		}
-		for (int i = 1; i < ids.size(); i++) {
-			if (ids.get(i) - 1 > ids.get(i - 1)) {
-				return(ids.get(i - 1) + 1);
-			}
-		}
-		return(coders.size() + 1);
-	}
-
-	public int generateNewCoderRelationId() {
-		if (coderRelations.size() == 0) {
-			return(1);
-		}
-		ArrayList<Integer> ids = new ArrayList<Integer>();
-		for (int i = 0; i < coderRelations.size(); i++) {
-			ids.add(coderRelations.get(i).getId());
-		}
-		Collections.sort(ids);
-		if (ids.size() == 1) {
-			if (ids.get(0) == 1) {
-				return(2);
-			} else {
-				return(1);
-			}
-		}
-		for (int i = 1; i < ids.size(); i++) {
-			if (ids.get(i) - 1 > ids.get(i - 1)) {
-				return(ids.get(i - 1) + 1);
-			}
-		}
-		return(coderRelations.size() + 1);
-	}
 	
 	/**
 	 * @return the regexes
@@ -267,10 +171,10 @@ public class Data {
 		for (int i = 0; i < coders.size(); i++) {
 			int remoteId = coders.get(i).getId();
 			if (currentId != remoteId) {
-				int crId = generateNewCoderRelationId();
+				int crId = generateNewId("coderRelations");
 				CoderRelation cr = new CoderRelation(crId, currentId, remoteId, true, true, true, true);
 				coderRelations.add(cr);
-				int crId2 = generateNewCoderRelationId();
+				int crId2 = generateNewId("coderRelations");
 				CoderRelation cr2 = new CoderRelation(crId2, remoteId, currentId, true, true, true, true);
 				coderRelations.add(cr2);
 			}
@@ -382,29 +286,51 @@ public class Data {
 		return(null);
 	}
 	
-	public int generateNewStatementId() {
-		if (statements.size() == 0) {
-			return(1);
-		}
+	public int generateNewId(String arrayList) {
 		ArrayList<Integer> ids = new ArrayList<Integer>();
-		for (int i = 0; i < statements.size(); i++) {
-			ids.add(statements.get(i).getId());
+		if (arrayList.equals("statements")) {
+			for (int i = 0; i < statements.size(); i++) {
+				ids.add(statements.get(i).getId());
+			}
+		} else if (arrayList.equals("documents")) {
+			for (int i = 0; i < documents.size(); i++) {
+				ids.add(documents.get(i).getId());
+			}
+		} else if (arrayList.equals("coders")) {
+			for (int i = 0; i < coders.size(); i++) {
+				ids.add(coders.get(i).getId());
+			}
+		} else if (arrayList.equals("statementLinks")) {
+			for (int i = 0; i < statementLinks.size(); i++) {
+				ids.add(statementLinks.get(i).getId());
+			}
+		} else if (arrayList.equals("statementTypes")) {
+			for (int i = 0; i < statementTypes.size(); i++) {
+				ids.add(statementTypes.get(i).getId());
+			}
+		} else if (arrayList.equals("coderRelations")) {
+			for (int i = 0; i < coderRelations.size(); i++) {
+				ids.add(coderRelations.get(i).getId());
+			}
 		}
 		Collections.sort(ids);
-		
-		if (ids.size() == 1) {
-			if (ids.get(0) == 1) {
-				return(2);
+		int unused = 1;
+		boolean accept = false;
+		while (accept == false) {
+			boolean used = false;
+			for (int i = 0; i < ids.size(); i++) {
+				if (unused == ids.get(i)) {
+					used = true;
+				}
+			}
+			if (used == true) {
+				accept = false;
+				unused++;
 			} else {
-				return(1);
+				accept = true;
 			}
 		}
-		for (int i = 1; i < ids.size(); i++) {
-			if (ids.get(i) - 1 > ids.get(i - 1)) {
-				return(ids.get(i - 1) + 1);
-			}
-		}
-		return(statements.size() + 1);
+		return unused;
 	}
 	
 	public void removeStatement(int id) {
@@ -455,32 +381,7 @@ public class Data {
 		}
 		return null;
 	}
-
-	public int generateNewDocumentId() {
-		if (documents.size() == 0) {
-			return(1);
-		}
-		ArrayList<Integer> ids = new ArrayList<Integer>();
-		for (int i = 0; i < documents.size(); i++) {
-			ids.add(documents.get(i).getId());
-		}
-		Collections.sort(ids);
-
-		if (ids.size() == 1) {
-			if (ids.get(0) == 1) {
-				return(2);
-			} else {
-				return(1);
-			}
-		}
-		for (int i = 1; i < ids.size(); i++) {
-			if (ids.get(i) - 1 > ids.get(i - 1)) {
-				return(ids.get(i - 1) + 1);
-			}
-		}
-		return(documents.size() + 1);
-	}
-
+	
 	public void removeDocument(int documentId) {
 		// remove statements
 		Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);

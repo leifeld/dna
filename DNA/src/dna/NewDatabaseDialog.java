@@ -472,7 +472,7 @@ public class NewDatabaseDialog extends JDialog {
 			
 			addButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					EditCoderWindow ecw = new EditCoderWindow(new Coder(Dna.data.generateNewCoderId()));
+					EditCoderWindow ecw = new EditCoderWindow(new Coder(Dna.data.generateNewId("coders")));
 					Coder coder = ecw.getCoder();
 					ecw.dispose();
 					if (!coder.getName().equals("")) {
@@ -501,7 +501,7 @@ public class NewDatabaseDialog extends JDialog {
 				}
 			});
 
-			Coder admin = new Coder(Dna.data.generateNewCoderId());
+			Coder admin = new Coder(Dna.data.generateNewId("coders"));
 			admin.setName("Admin");
 			admin.setColor(Color.YELLOW);
 			Dna.data.addCoder(admin);
@@ -658,7 +658,7 @@ public class NewDatabaseDialog extends JDialog {
 				public void actionPerformed(ActionEvent e) {
 					LinkedHashMap<String, String> lhm = new LinkedHashMap<String, String>();
 					EditStatementTypeWindow ecw = new EditStatementTypeWindow(
-							new StatementType(Dna.data.generateNewStatementTypeId(), "", Color.YELLOW, lhm));
+							new StatementType(Dna.data.generateNewId("statementTypes"), "", Color.YELLOW, lhm));
 					StatementType statementType = ecw.getStatementType();
 					ecw.dispose();
 					if (!statementType.getLabel().equals("")) {
@@ -693,13 +693,13 @@ public class NewDatabaseDialog extends JDialog {
 			lhm.put("concept", "short text");
 			lhm.put("agreement", "boolean");
 			StatementType dnaStatement = new StatementType(
-					Dna.data.generateNewStatementTypeId(), "DNA Statement", Color.YELLOW, lhm);
+					Dna.data.generateNewId("statementTypes"), "DNA Statement", Color.YELLOW, lhm);
 			model.addElement(dnaStatement);
 			
 			LinkedHashMap<String, String> annoMap = new LinkedHashMap<String, String>();
 			annoMap.put("note", "long text");
 			StatementType annotation = new StatementType(
-					Dna.data.generateNewStatementTypeId(), "Annotation", Color.LIGHT_GRAY, annoMap);
+					Dna.data.generateNewId("statementTypes"), "Annotation", Color.LIGHT_GRAY, annoMap);
 			model.addElement(annotation);
 			
 			statementTypeList.updateUI();
