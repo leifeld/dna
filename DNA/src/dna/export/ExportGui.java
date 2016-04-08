@@ -51,7 +51,10 @@ public class ExportGui extends JDialog {
 	String networkType;
 	ExportSetting exportSetting;
 	JTree tree;
-	DefaultMutableTreeNode top, networkDataTypeNode, variablesNode, summaryNode;
+	DefaultMutableTreeNode top, networkDataTypeNode, variablesNode, agreementNode, summaryNode;
+	JList<String> var1List, var2List, var3List;
+	JLabel var1Label, var2Label, var3Label, variablesQuestion;
+	JRadioButton ignoreButton, congruenceButton, conflictButton, subtractButton;
 	
 	public ExportGui() {
 		this.setTitle("Export data");
@@ -65,6 +68,7 @@ public class ExportGui extends JDialog {
 		exportSetting = populateInitialSettings();
 		loadCard1();
 		loadCard2();
+		loadCard3();
 		
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 		ImageIcon backIcon = new ImageIcon(getClass().getResource("/icons/resultset_previous.png"));
@@ -100,9 +104,11 @@ public class ExportGui extends JDialog {
 		tree.setExpandsSelectedPaths(true);
 		networkDataTypeNode = new DefaultMutableTreeNode("Network data type");
 		variablesNode = new DefaultMutableTreeNode("Variables");
+		agreementNode = new DefaultMutableTreeNode("Agreement");
 		summaryNode = new DefaultMutableTreeNode("Summary");
 		top.add(networkDataTypeNode);
 		top.add(variablesNode);
+		top.add(agreementNode);
 		top.add(summaryNode);
 		for (int i = 0; i < tree.getRowCount(); i++) {
 			tree.expandRow(i);
@@ -116,6 +122,8 @@ public class ExportGui extends JDialog {
 					cl.show(cards, "networkDataType");
 				} else if (node.equals("Variables")) {
 					cl.show(cards, "variables");
+				} else if (node.equals("Agreement")) {
+					cl.show(cards, "agreement");
 				} else if (node.equals("Options")) {
 					tree.setSelectionRow(1);
 				} else {
@@ -139,7 +147,7 @@ public class ExportGui extends JDialog {
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 	}
-	
+
 	private ExportSetting populateInitialSettings() {
 		// find dates to populate initial settings
 		ArrayList<Date> dates = new ArrayList<Date>();
@@ -234,12 +242,42 @@ public class ExportGui extends JDialog {
 				if (button.getText().equalsIgnoreCase("one-mode network")) {
 					exportSetting.setNetworkType("oneMode");
 					typeBox.setEnabled(true);
+					congruenceButton.setEnabled(true);
+					conflictButton.setEnabled(true);
+					subtractButton.setEnabled(true);
+					var1Label.setText("Node type (row x col)" );
+					var2Label.setText("via variable");
+					var1Label.setEnabled(true);
+					var2Label.setEnabled(true);
+					var1List.setEnabled(true);
+					var2List.setEnabled(true);
+					variablesQuestion.setEnabled(true);
 				} else if (button.getText().equals("two-mode network")) {
 					exportSetting.setNetworkType("twoMode");
 					typeBox.setEnabled(true);
+					ignoreButton.setSelected(true);
+					congruenceButton.setEnabled(false);
+					conflictButton.setEnabled(false);
+					subtractButton.setEnabled(false);
+					var1Label.setText("first mode (rows)" );
+					var2Label.setText("second mode (columns)");
+					var1Label.setEnabled(true);
+					var2Label.setEnabled(true);
+					var1List.setEnabled(true);
+					var2List.setEnabled(true);
+					variablesQuestion.setEnabled(true);
 				} else if (button.getText().equals("event list")) {
 					exportSetting.setNetworkType("eventList");
 					typeBox.setEnabled(false);
+					ignoreButton.setSelected(true);
+					congruenceButton.setEnabled(false);
+					conflictButton.setEnabled(false);
+					subtractButton.setEnabled(false);
+					var1Label.setEnabled(false);
+					var2Label.setEnabled(false);
+					var1List.setEnabled(false);
+					var2List.setEnabled(false);
+					variablesQuestion.setEnabled(false);
 				}
 			}
 		};
@@ -262,13 +300,13 @@ public class ExportGui extends JDialog {
 		vargbc.gridwidth = 3;
 
 		vargbc.insets = new Insets(0, 0, 20, 0);
-		JLabel variablesQuestion = new JLabel("Please select the variables for network creation.");
+		variablesQuestion = new JLabel("Please select the variables for network creation.");
 		variablesPanel.add(variablesQuestion, vargbc);
 		vargbc.gridwidth = 1;
 		vargbc.gridy = 1;
 		vargbc.insets = new Insets(0, 0, 0, 5);
 		
-		JList<String> var1List = new JList<String>();
+		var1List = new JList<String>();
 		var1List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		var1List.setLayoutOrientation(JList.VERTICAL);
 		var1List.setVisibleRowCount(5);
@@ -279,14 +317,14 @@ public class ExportGui extends JDialog {
 		var1gbc.gridx = 0;
 		var1gbc.gridy = 0;
 		var1gbc.fill = GridBagConstraints.NONE;
-		JLabel var1Label = new JLabel("first mode (rows)");
+		var1Label = new JLabel("first mode (rows)");
 		var1Panel.add(var1Label, var1gbc);
 		var1gbc.gridy = 1;
 		var1Panel.add(var1Scroller, var1gbc);
 		variablesPanel.add(var1Panel, vargbc);
 		vargbc.gridx = 1;
 		
-		JList<String> var2List = new JList<String>();
+		var2List = new JList<String>();
 		var2List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		var2List.setLayoutOrientation(JList.VERTICAL);
 		
@@ -299,7 +337,7 @@ public class ExportGui extends JDialog {
 		var2gbc.gridx = 0;
 		var2gbc.gridy = 0;
 		var2gbc.fill = GridBagConstraints.NONE;
-		JLabel var2Label = new JLabel("second mode (columns)");
+		var2Label = new JLabel("second mode (columns)");
 		var2Panel.add(var2Label, var2gbc);
 		var2gbc.gridy = 1;
 		var2Panel.add(var2Scroller, var2gbc);
@@ -329,6 +367,131 @@ public class ExportGui extends JDialog {
 				if (selectedValue != null) {
 					exportSetting.setVar2(selectedValue);
 				}
+			}
+		});
+	}
+
+	private void loadCard3() {
+		// card 3: agreement qualifier
+		JPanel panel = new JPanel(new GridBagLayout());
+		panel.setName("card4");
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.anchor = GridBagConstraints.WEST;
+
+		gbc.insets = new Insets(0, 0, 10, 0);
+		var3Label = new JLabel("Agreement qualifier:");
+		panel.add(var3Label, gbc);
+		gbc.gridx = 1;
+		gbc.insets = new Insets(0, 20, 10, 0);
+		JLabel agreeButtonLabel = new JLabel("Aggregation pattern:");
+		panel.add(agreeButtonLabel, gbc);
+		gbc.insets = new Insets(0, 0, 10, 0);
+		
+		var3List = new JList<String>();
+		var3List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		var3List.setSelectedIndex(0);
+		var3List.setLayoutOrientation(JList.VERTICAL);
+		var3List.setVisibleRowCount(4);
+		var3List.setPreferredSize(new Dimension(220, 20));
+		var3List.setModel(getVariablesList(exportSetting.getStatementType(), false, false, true, true));
+		
+		gbc.gridx = 0;
+		gbc.gridy = 1;
+		JScrollPane var3Scroller = new JScrollPane(var3List);
+		panel.add(var3Scroller, gbc);
+		panel.add(var3Scroller, gbc);
+		
+		JPanel patternPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints patterngbc = new GridBagConstraints();
+		patterngbc.gridx = 0;
+		patterngbc.gridy = 0;
+		patterngbc.anchor = GridBagConstraints.WEST;
+		patterngbc.insets = new Insets(0, 0, 1, 0);
+		ignoreButton = new JRadioButton("ignore");
+		ignoreButton.setSelected(true);
+		congruenceButton = new JRadioButton("congruence");
+		congruenceButton.setEnabled(false);
+		conflictButton = new JRadioButton("conflict");
+		conflictButton.setEnabled(false);
+		subtractButton = new JRadioButton("subtract");
+		subtractButton.setEnabled(false);
+		ButtonGroup agreeButtonGroup = new ButtonGroup();
+		agreeButtonGroup.add(ignoreButton);
+		agreeButtonGroup.add(congruenceButton);
+		agreeButtonGroup.add(conflictButton);
+		agreeButtonGroup.add(subtractButton);
+		
+		patternPanel.add(ignoreButton, patterngbc);
+		patterngbc.gridy = 1;
+		patternPanel.add(congruenceButton, patterngbc);
+		patterngbc.gridx = 1;
+		patterngbc.gridy = 0;
+		patternPanel.add(conflictButton, patterngbc);
+		patterngbc.gridy = 1;
+		patternPanel.add(subtractButton, patterngbc);
+		gbc.gridx = 1;
+		gbc.gridheight = 1;
+		gbc.insets = new Insets(0, 20, 10, 0);
+		panel.add(patternPanel, gbc);
+		gbc.gridy = 2;
+		gbc.gridx = 0;
+		gbc.gridwidth = 2;
+		gbc.insets = new Insets(0, 0, 0, 0);
+		var3Label = new JLabel("The agreement qualifier can be used to connect nodes");
+		panel.add(var3Label, gbc);
+		gbc.gridy = 3;
+		JLabel agreementLabel2 = new JLabel("only if they agree or disagree on a third variable.");
+		panel.add(agreementLabel2, gbc);
+		
+		TitledBorder variablesBorder;
+		variablesBorder = BorderFactory.createTitledBorder("3 / 7");
+		panel.setBorder(variablesBorder);
+		cards.add(panel, "agreement");
+		
+		var3List.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				String selectedValue = var3List.getSelectedValue();
+				if (selectedValue != null) {
+					exportSetting.setQualifier(selectedValue);
+					ignoreButton.setEnabled(true);
+					if (networkType.equals("oneMode")) {
+						congruenceButton.setEnabled(true);
+						conflictButton.setEnabled(true);
+						subtractButton.setEnabled(true);
+					} else {
+						congruenceButton.setEnabled(false);
+						conflictButton.setEnabled(false);
+						subtractButton.setEnabled(false);
+					}
+				} else {
+					exportSetting.setQualifier(null);
+					congruenceButton.setEnabled(false);
+					conflictButton.setEnabled(false);
+					subtractButton.setEnabled(false);
+				}
+			}
+		});
+
+		ignoreButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				exportSetting.setAgreementPattern("ignore");
+			}
+		});
+		congruenceButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				exportSetting.setAgreementPattern("congruence");
+			}
+		});
+		conflictButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				exportSetting.setAgreementPattern("conflict");
+			}
+		});
+		subtractButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				exportSetting.setAgreementPattern("subtract");
 			}
 		});
 	}

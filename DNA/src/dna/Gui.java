@@ -597,10 +597,9 @@ public class Gui extends JFrame {
 					new NetworkExporter();
 				}
 			});
-			networkButton.setEnabled(false);
-
+			networkButton.setEnabled(true);
+			
 			//Export menu: network export
-			/*
 			networkButton = new JMenuItem("Export network...", networkIcon);
 			networkButton.setToolTipText( "export a network file..." );
 			exportMenu.add(networkButton);
@@ -610,7 +609,6 @@ public class Gui extends JFrame {
 				}
 			});
 			networkButton.setEnabled(true);
-			*/
 			
 			//Settings menu: statement color by statement type or coder?
 			Icon tickIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));

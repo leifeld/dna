@@ -24,7 +24,7 @@ public class ExportSetting {
 	public ExportSetting(StatementType statementType, Date startDate, Date stopDate, String var1, String var2) {
 		networkType = "oneMode";
 		qualifier = null;
-		agreementPattern = "congruence";
+		agreementPattern = "ignore";
 		excludeValues = new HashMap<String, ArrayList<String>>();
 		aggregationRule = "across date range";
 		exportFormat = "graphml";
