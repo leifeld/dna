@@ -5,9 +5,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import javax.swing.DefaultListModel;
-
-import dna.Dna;
 import dna.dataStructures.StatementType;
 
 public class ExportSetting {
@@ -19,11 +16,12 @@ public class ExportSetting {
 	String qualifier;  // name of the agreeement qualifier variable (e.g., agreement)
 	String agreementPattern;  // [ignore, congruence, conflict, subtract]
 	HashMap<String, ArrayList<String>> excludeValues;
-	String aggregationRule; // [across date range, per document, per calendar year, per time window]
+	String aggregationRule; // [across date range, per document, per calendar year, per time window:]
 	String exportFormat; // [csv, dl, graphml]
 	String normalization;  // [coocurrence, average, jaccard, cosine]
 	boolean countDuplicates;
 	boolean includeIsolates;
+	int windowSize;
 	
 	public ExportSetting(StatementType statementType, Date startDate, Date stopDate, String var1, String var2) {
 		networkType = "oneMode";
@@ -38,10 +36,11 @@ public class ExportSetting {
 		}
 		
 		aggregationRule = "across date range";
-		exportFormat = "graphml";
+		exportFormat = ".graphml";
 		normalization = "cooccurrence";
 		countDuplicates = false;
 		includeIsolates = false;
+		this.windowSize = 30;
 		
 		this.statementType = statementType;
 		this.startDate = startDate;
@@ -50,6 +49,20 @@ public class ExportSetting {
 		this.var2 = var2;
 	}
 	
+	/**
+	 * @return the windowSize
+	 */
+	public int getWindowSize() {
+		return windowSize;
+	}
+
+	/**
+	 * @param windowSize the windowSize to set
+	 */
+	public void setWindowSize(int windowSize) {
+		this.windowSize = windowSize;
+	}
+
 	/**
 	 * @return the networkType
 	 */

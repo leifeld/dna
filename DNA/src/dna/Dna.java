@@ -15,8 +15,8 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2016-04-08";
-		version = "2.0 beta 6";
+		date = "2016-04-11";
+		version = "2.0 beta 7";
 		console = System.err;
 		
 		gui = new Gui();
