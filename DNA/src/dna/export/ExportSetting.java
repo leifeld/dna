@@ -3,7 +3,11 @@ package dna.export;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 
+import javax.swing.DefaultListModel;
+
+import dna.Dna;
 import dna.dataStructures.StatementType;
 
 public class ExportSetting {
@@ -25,7 +29,14 @@ public class ExportSetting {
 		networkType = "oneMode";
 		qualifier = null;
 		agreementPattern = "ignore";
+		
 		excludeValues = new HashMap<String, ArrayList<String>>();
+		Iterator<String> it = statementType.getVariables().keySet().iterator();
+		while (it.hasNext()) {
+			String key = it.next();
+			excludeValues.put(key, new ArrayList<String>());
+		}
+		
 		aggregationRule = "across date range";
 		exportFormat = "graphml";
 		normalization = "cooccurrence";

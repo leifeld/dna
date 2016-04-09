@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -40,6 +41,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeSelectionModel;
 
 import dna.Dna;
+import dna.dataStructures.Statement;
 import dna.dataStructures.StatementType;
 import dna.renderer.StatementTypeComboBoxModel;
 import dna.renderer.StatementTypeComboBoxRenderer;
@@ -51,7 +53,7 @@ public class ExportGui extends JDialog {
 	String networkType;
 	ExportSetting exportSetting;
 	JTree tree;
-	DefaultMutableTreeNode top, networkDataTypeNode, variablesNode, agreementNode, summaryNode;
+	DefaultMutableTreeNode top, networkDataTypeNode, variablesNode, agreementNode, excludeNode, summaryNode;
 	JList<String> var1List, var2List, var3List;
 	JLabel var1Label, var2Label, var3Label, variablesQuestion;
 	JRadioButton ignoreButton, congruenceButton, conflictButton, subtractButton;
@@ -69,6 +71,7 @@ public class ExportGui extends JDialog {
 		loadCard1();
 		loadCard2();
 		loadCard3();
+		loadCard4();
 		
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 		ImageIcon backIcon = new ImageIcon(getClass().getResource("/icons/resultset_previous.png"));
@@ -105,10 +108,12 @@ public class ExportGui extends JDialog {
 		networkDataTypeNode = new DefaultMutableTreeNode("Network data type");
 		variablesNode = new DefaultMutableTreeNode("Variables");
 		agreementNode = new DefaultMutableTreeNode("Agreement");
+		excludeNode = new DefaultMutableTreeNode("Exclude");
 		summaryNode = new DefaultMutableTreeNode("Summary");
 		top.add(networkDataTypeNode);
 		top.add(variablesNode);
 		top.add(agreementNode);
+		top.add(excludeNode);
 		top.add(summaryNode);
 		for (int i = 0; i < tree.getRowCount(); i++) {
 			tree.expandRow(i);
@@ -124,6 +129,8 @@ public class ExportGui extends JDialog {
 					cl.show(cards, "variables");
 				} else if (node.equals("Agreement")) {
 					cl.show(cards, "agreement");
+				} else if (node.equals("Exclude")) {
+					cl.show(cards, "exclude");
 				} else if (node.equals("Options")) {
 					tree.setSelectionRow(1);
 				} else {
@@ -395,7 +402,7 @@ public class ExportGui extends JDialog {
 		var3List.setLayoutOrientation(JList.VERTICAL);
 		var3List.setVisibleRowCount(4);
 		var3List.setPreferredSize(new Dimension(220, 20));
-		var3List.setModel(getVariablesList(exportSetting.getStatementType(), false, false, true, true));
+		var3List.setModel(getVariablesList(exportSetting.getStatementType(), false, true, true, true));
 		
 		gbc.gridx = 0;
 		gbc.gridy = 1;
@@ -494,6 +501,96 @@ public class ExportGui extends JDialog {
 				exportSetting.setAgreementPattern("subtract");
 			}
 		});
+	}
+
+	private void loadCard4() {
+		// card 4: exclude values
+		JPanel excludePanel = new JPanel(new GridBagLayout());
+		excludePanel.setName("card3");
+		GridBagConstraints excludegbc = new GridBagConstraints();
+		excludegbc.gridx = 0;
+		excludegbc.gridy = 0;
+		excludegbc.fill = GridBagConstraints.NONE;
+		excludegbc.gridwidth = 3;
+		excludegbc.insets = new Insets(0, 30, 0, 0);
+		excludegbc.anchor = GridBagConstraints.WEST;
+		JLabel agreeQuestion = new JLabel("Select values you want to exclude. This will ignore all");
+		JLabel agreeQuestion2 = new JLabel("statements matching your selection during export.");
+		excludePanel.add(agreeQuestion, excludegbc);
+		excludegbc.gridy = 1;
+		excludegbc.insets = new Insets(0, 30, 10, 0);
+		excludePanel.add(agreeQuestion2, excludegbc);
+		excludegbc.gridwidth = 1;
+		excludegbc.gridy = 2;
+		excludegbc.insets = new Insets(0, 30, 0, 10);
+		excludegbc.fill = GridBagConstraints.VERTICAL;
+		JLabel agreeVarLabel = new JLabel("variable");
+		excludePanel.add(agreeVarLabel, excludegbc);
+		excludegbc.gridy = 3;
+		excludegbc.gridheight = 4;
+		JList<String> excludeVarList = new JList<String>();
+		excludeVarList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		excludeVarList.setLayoutOrientation(JList.VERTICAL);
+		excludeVarList.setVisibleRowCount(4);
+		excludeVarList.setFixedCellWidth(180);
+		JScrollPane excludeVarScroller = new JScrollPane(excludeVarList);
+		excludePanel.add(excludeVarScroller, excludegbc);
+		excludegbc.gridx = 1;
+		excludegbc.gridy = 2;
+		excludegbc.gridheight = 1;
+		JLabel excludeValLabel = new JLabel("exclude values");
+		excludePanel.add(excludeValLabel, excludegbc);
+		excludegbc.gridy = 3;
+		excludegbc.gridheight = 4;
+		JList<String> excludeValList = new JList<String>();
+		excludeValList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		excludeValList.setLayoutOrientation(JList.VERTICAL);
+		excludeValList.setVisibleRowCount(4);
+		excludeValList.setFixedCellWidth(180);
+		excludeValList.setSize(180, 100);
+		JScrollPane excludeValScroller = new JScrollPane(excludeValList);
+		excludePanel.add(excludeValScroller, excludegbc);
+		
+		TitledBorder excludeBorder;
+		excludeBorder = BorderFactory.createTitledBorder("4 / 7");
+		excludePanel.setBorder(excludeBorder);
+		cards.add(excludePanel, "exclude");
+		
+		excludeVarList.setModel(getVariablesList(exportSetting.getStatementType(), true, true, true, true));
+		excludeVarList.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				String selectedValue = excludeVarList.getSelectedValue();
+				if (e.getValueIsAdjusting() == false) {
+					if (selectedValue != null) {
+						String[] entriesArray = Dna.data.getStringEntries(exportSetting.getStatementType().getId(), selectedValue);
+						excludeValList.setListData(entriesArray);
+						int[] indices = new int[exportSetting.getExcludeValues().get(selectedValue).size()];
+						System.out.println(indices.length);
+						for (int i = 0; i < entriesArray.length; i++) {
+							for (int j = 0; j < exportSetting.getExcludeValues().get(selectedValue).size(); j++) {
+								if (entriesArray[i].equals(exportSetting.getExcludeValues().get(selectedValue).get(j))) {
+									indices[j] = i;
+								}
+							}
+						}
+						excludeValList.setSelectedIndices(indices);
+					}
+				}
+			}
+		});
+		
+		excludeValList.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				String selectedVariable = excludeVarList.getSelectedValue();
+				List<String> selectedValues = excludeValList.getSelectedValuesList();
+				if (e.getValueIsAdjusting() == true) {
+					if (selectedValues != null){
+						ArrayList<String> sel = new ArrayList<String>(selectedValues);
+						exportSetting.getExcludeValues().put(selectedVariable, (ArrayList<String>) sel);
+					}
+				}
+			}
+		});		
 	}
 	
 	/**

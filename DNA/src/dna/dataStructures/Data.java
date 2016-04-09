@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
+import javax.swing.JComboBox;
+
 import dna.Dna;
 
 public class Data {
@@ -41,6 +43,25 @@ public class Data {
 				break;
 			}
 		}
+	}
+	
+	public String[] getStringEntries(int statementTypeId, String variableName) {
+		String type = Dna.data.getStatementTypeById(statementTypeId).getVariables().get(variableName);
+		ArrayList<Statement> subset = Dna.data.getStatementsByStatementTypeId(statementTypeId);
+		ArrayList<String> entries = new ArrayList<String>();
+		for (int i = 0; i < subset.size(); i++) {
+			String mykey;
+			if (type.equals("shorttext") || type.equals("longtext")) {
+				mykey = (String) subset.get(i).getValues().get(variableName);
+			} else {
+				mykey = String.valueOf(subset.get(i).getValues().get(variableName));
+			}
+			if (!entries.contains(mykey)) {
+				entries.add(mykey);
+			}
+		}
+		String[] entriesArray = entries.toArray(new String[0]);
+		return entriesArray;
 	}
 	
 	public boolean[] getActiveStatementPermissions(int statementId) {

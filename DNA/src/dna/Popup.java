@@ -200,7 +200,7 @@ public class Popup extends JDialog {
 			JLabel label = new JLabel(key, JLabel.TRAILING);
 			if (value.equals("short text")) {
 				String entry = (String) Dna.data.getStatement(statementId).getValues().get(key);
-				ArrayList<Statement> subset = Dna.data.getStatementsByStatementTypeId(statementTypeId);
+				/*ArrayList<Statement> subset = Dna.data.getStatementsByStatementTypeId(statementTypeId);
 				ArrayList<String> entries = new ArrayList<String>();
 				for (int i = 0; i < subset.size(); i++) {
 					String mykey = (String) subset.get(i).getValues().get(key);
@@ -208,7 +208,8 @@ public class Popup extends JDialog {
 						entries.add(mykey);
 					}
 				}
-				String[] entriesArray = entries.toArray(new String[0]);
+				String[] entriesArray = entries.toArray(new String[0]);*/
+				String[] entriesArray = Dna.data.getStringEntries(statementTypeId, key);
 				JComboBox<String> box = new JComboBox<String>(entriesArray);
 				box.setEditable(true);
 				if (editable == true) {

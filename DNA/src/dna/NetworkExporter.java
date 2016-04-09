@@ -2049,7 +2049,7 @@ public class NetworkExporter extends JDialog {
 			JOptionPane.showMessageDialog(Dna.dna.gui, "Error while saving the file!\n" + e.getStackTrace());
 		}
 	}
-
+	
 	/**
 	 * This function returns a {@link DefaultListModel} with the variables of the statementType selected to fill a JList.
 	 * 
