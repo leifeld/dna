@@ -30,6 +30,9 @@ public class CoderRelationCellRenderer extends DefaultTableCellRenderer {
 			JButton colorButton = new JButton();
 			colorButton.setPreferredSize(new Dimension(12, 16));
 			colorButton.setBackground(otherColor);
+			colorButton.setForeground(otherColor);
+			colorButton.setOpaque(true);
+			colorButton.setBorderPainted(false);
 			panel.add(colorButton);
 			String name = otherCoder.getName();
 			int nameLength = name.length();

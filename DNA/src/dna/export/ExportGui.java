@@ -64,8 +64,7 @@ public class ExportGui extends JDialog {
 	String networkType;
 	ExportSetting exportSetting;
 	JTree tree;
-	DefaultMutableTreeNode top, networkDataTypeNode, variablesNode, agreementNode, excludeNode, dateRangeNode, customOptionsNode, 
-			fileFormatNode;
+	DefaultMutableTreeNode top, networkDataTypeNode, variablesNode, agreementNode, excludeNode, dateRangeNode, customOptionsNode, fileFormatNode;
 	JList<String> var1List, var2List, var3List;
 	JLabel var1Label, var2Label, var3Label, agreementLabel, agreementLabel2, variablesQuestion, agreeButtonLabel;
 	JRadioButton ignoreButton, congruenceButton, conflictButton, subtractButton;
@@ -76,6 +75,7 @@ public class ExportGui extends JDialog {
 	JLabel normalizationLabel, isolatesLabel, duplicatesLabel;
 	JRadioButton cooccurrenceButton, averageButton, jaccardButton, cosineButton, currentNodesButton, allNodesButton, countDuplicatesButton, 
 			ignoreDuplicatesButton;
+	JRadioButton csvFormatButton, dlFormatButton, graphmlFormatButton;
 	
 	public ExportGui() {
 		this.setTitle("Export data");
@@ -132,6 +132,12 @@ public class ExportGui extends JDialog {
 				if (row < 7) {
 					tree.setSelectionRow(row + 1);
 				}
+			}
+		});
+
+		export.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new NetworkCreator(exportSetting);
 			}
 		});
 		
@@ -345,8 +351,6 @@ public class ExportGui extends JDialog {
 				JRadioButton button = (JRadioButton) e.getSource();
 				if (button.getText().equalsIgnoreCase("one-mode network")) {
 					exportSetting.setNetworkType("oneMode");
-					scopeQuestion.setEnabled(true);
-					typeBox.setEnabled(true);
 					if (!var3List.isSelectionEmpty()) {
 						congruenceButton.setEnabled(true);
 						conflictButton.setEnabled(true);
@@ -383,10 +387,10 @@ public class ExportGui extends JDialog {
 					duplicatesLabel.setEnabled(true);
 					ignoreDuplicatesButton.setEnabled(true);
 					countDuplicatesButton.setEnabled(true);
+					graphmlFormatButton.setEnabled(true);
+					dlFormatButton.setEnabled(true);
 				} else if (button.getText().equals("two-mode network")) {
 					exportSetting.setNetworkType("twoMode");
-					scopeQuestion.setEnabled(true);
-					typeBox.setEnabled(true);
 					ignoreButton.setSelected(true);
 					congruenceButton.setEnabled(false);
 					conflictButton.setEnabled(false);
@@ -421,10 +425,10 @@ public class ExportGui extends JDialog {
 					duplicatesLabel.setEnabled(true);
 					ignoreDuplicatesButton.setEnabled(true);
 					countDuplicatesButton.setEnabled(true);
+					graphmlFormatButton.setEnabled(true);
+					dlFormatButton.setEnabled(true);
 				} else if (button.getText().equals("event list")) {
 					exportSetting.setNetworkType("eventList");
-					scopeQuestion.setEnabled(false);
-					typeBox.setEnabled(false);
 					ignoreButton.setSelected(true);
 					congruenceButton.setEnabled(false);
 					conflictButton.setEnabled(false);
@@ -457,6 +461,9 @@ public class ExportGui extends JDialog {
 					duplicatesLabel.setEnabled(false);
 					ignoreDuplicatesButton.setEnabled(false);
 					countDuplicatesButton.setEnabled(false);
+					csvFormatButton.setSelected(true);
+					graphmlFormatButton.setEnabled(false);
+					dlFormatButton.setEnabled(false);
 				}
 			}
 		};
@@ -729,6 +736,7 @@ public class ExportGui extends JDialog {
 				if (e.getValueIsAdjusting() == false) {
 					if (selectedValue != null) {
 						String[] entriesArray;
+						int[] indices;
 						if (excludeVarList.getSelectedIndex() == excludeVarList.getModel().getSize() - 1) {
 							ArrayList<String> entriesList = new ArrayList<String>();
 							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
@@ -739,6 +747,16 @@ public class ExportGui extends JDialog {
 							entriesArray = new String[entriesList.size()];
 							for (int i = 0; i < entriesList.size(); i++) {
 								entriesArray[i] = entriesList.get(i);
+							}
+							Arrays.sort(entriesArray);
+							excludeValList.setListData(entriesArray);
+							indices = new int[exportSetting.getTypeExclude().size()];
+							for (int i = 0; i < entriesArray.length; i++) {
+								for (int j = 0; j < exportSetting.getTypeExclude().size(); j++) {
+									if (entriesArray[i].equals(exportSetting.getTypeExclude().get(j))) {
+										indices[j] = i;
+									}
+								}
 							}
 						} else if (excludeVarList.getSelectedIndex() == excludeVarList.getModel().getSize() - 2) {
 							ArrayList<String> entriesList = new ArrayList<String>();
@@ -751,6 +769,16 @@ public class ExportGui extends JDialog {
 							for (int i = 0; i < entriesList.size(); i++) {
 								entriesArray[i] = entriesList.get(i);
 							}
+							Arrays.sort(entriesArray);
+							excludeValList.setListData(entriesArray);
+							indices = new int[exportSetting.getSectionExclude().size()];
+							for (int i = 0; i < entriesArray.length; i++) {
+								for (int j = 0; j < exportSetting.getSectionExclude().size(); j++) {
+									if (entriesArray[i].equals(exportSetting.getSectionExclude().get(j))) {
+										indices[j] = i;
+									}
+								}
+							}
 						} else if (excludeVarList.getSelectedIndex() == excludeVarList.getModel().getSize() - 3) {
 							ArrayList<String> entriesList = new ArrayList<String>();
 							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
@@ -761,6 +789,16 @@ public class ExportGui extends JDialog {
 							entriesArray = new String[entriesList.size()];
 							for (int i = 0; i < entriesList.size(); i++) {
 								entriesArray[i] = entriesList.get(i);
+							}
+							Arrays.sort(entriesArray);
+							excludeValList.setListData(entriesArray);
+							indices = new int[exportSetting.getSourceExclude().size()];
+							for (int i = 0; i < entriesArray.length; i++) {
+								for (int j = 0; j < exportSetting.getSourceExclude().size(); j++) {
+									if (entriesArray[i].equals(exportSetting.getSourceExclude().get(j))) {
+										indices[j] = i;
+									}
+								}
 							}
 						} else if (excludeVarList.getSelectedIndex() == excludeVarList.getModel().getSize() - 4) {
 							ArrayList<String> entriesList = new ArrayList<String>();
@@ -773,16 +811,26 @@ public class ExportGui extends JDialog {
 							for (int i = 0; i < entriesList.size(); i++) {
 								entriesArray[i] = entriesList.get(i);
 							}
+							Arrays.sort(entriesArray);
+							excludeValList.setListData(entriesArray);
+							indices = new int[exportSetting.getAuthorExclude().size()];
+							for (int i = 0; i < entriesArray.length; i++) {
+								for (int j = 0; j < exportSetting.getAuthorExclude().size(); j++) {
+									if (entriesArray[i].equals(exportSetting.getAuthorExclude().get(j))) {
+										indices[j] = i;
+									}
+								}
+							}
 						} else {
 							entriesArray = Dna.data.getStringEntries(exportSetting.getStatementType().getId(), selectedValue);
-						}
-						Arrays.sort(entriesArray);
-						excludeValList.setListData(entriesArray);
-						int[] indices = new int[exportSetting.getExcludeValues().get(selectedValue).size()];
-						for (int i = 0; i < entriesArray.length; i++) {
-							for (int j = 0; j < exportSetting.getExcludeValues().get(selectedValue).size(); j++) {
-								if (entriesArray[i].equals(exportSetting.getExcludeValues().get(selectedValue).get(j))) {
-									indices[j] = i;
+							Arrays.sort(entriesArray);
+							excludeValList.setListData(entriesArray);
+							indices = new int[exportSetting.getExcludeValues().get(selectedValue).size()];
+							for (int i = 0; i < entriesArray.length; i++) {
+								for (int j = 0; j < exportSetting.getExcludeValues().get(selectedValue).size(); j++) {
+									if (entriesArray[i].equals(exportSetting.getExcludeValues().get(selectedValue).get(j))) {
+										indices[j] = i;
+									}
 								}
 							}
 						}
@@ -799,7 +847,17 @@ public class ExportGui extends JDialog {
 				if (e.getValueIsAdjusting() == true) {
 					if (selectedValues != null){
 						ArrayList<String> sel = new ArrayList<String>(selectedValues);
-						exportSetting.getExcludeValues().put(selectedVariable, (ArrayList<String>) sel);
+						if (excludeVarList.getSelectedIndex() == excludeVarList.getModel().getSize() - 4) {
+							exportSetting.setAuthorExclude(sel);
+						} else if (excludeVarList.getSelectedIndex() == excludeVarList.getModel().getSize() - 3) {
+							exportSetting.setSourceExclude(sel);
+						} else if (excludeVarList.getSelectedIndex() == excludeVarList.getModel().getSize() - 2) {
+							exportSetting.setSectionExclude(sel);
+						} else if (excludeVarList.getSelectedIndex() == excludeVarList.getModel().getSize() - 1) {
+							exportSetting.setTypeExclude(sel);
+						} else {
+							exportSetting.getExcludeValues().put(selectedVariable, (ArrayList<String>) sel);
+						}
 					}
 				}
 			}
@@ -1079,9 +1137,9 @@ public class ExportGui extends JDialog {
 		outputPanel.add(outputQuestion, outputgbc);
 		outputgbc.gridy = 1;
 		outputgbc.insets = new Insets(0, 0, 0, 0);
-		JRadioButton csvFormatButton = new JRadioButton(".csv (comma-separated values)");
-		JRadioButton dlFormatButton = new JRadioButton(".dl (Ucinet DL fullmatrix)");
-		JRadioButton graphmlFormatButton = new JRadioButton(".graphml (visone)");
+		csvFormatButton = new JRadioButton(".csv (comma-separated values)");
+		dlFormatButton = new JRadioButton(".dl (Ucinet DL fullmatrix)");
+		graphmlFormatButton = new JRadioButton(".graphml (visone)");
 		ButtonGroup outputButtonGroup = new ButtonGroup();
 		outputButtonGroup.add(csvFormatButton);
 		outputButtonGroup.add(dlFormatButton);
@@ -1108,7 +1166,7 @@ public class ExportGui extends JDialog {
 		csvFormatButton.addActionListener(modeFormat);
 		dlFormatButton.addActionListener(modeFormat);
 		graphmlFormatButton.addActionListener(modeFormat);
-		graphmlFormatButton.setSelected(true);
+		csvFormatButton.setSelected(true);
 		
 		outputgbc.gridy = 4;
 		outputgbc.gridwidth = 1;
@@ -1145,6 +1203,7 @@ public class ExportGui extends JDialog {
 					}
 					fileLabel.setText(fileName);
 					export.setEnabled(true);
+					exportSetting.setFileName(fileName);
 				}
 			}
 		});

@@ -129,6 +129,36 @@ public class StatementPanel extends JPanel {
 			this.add(Box.createRigidArea(new Dimension(5,5)), gbc);
 			gbc.gridy = 1;
 			
+			JLabel idLabel = new JLabel("ID: ");
+    		gbc.weightx = 0.1;
+    		gbc.anchor = GridBagConstraints.EAST;
+    		this.add(idLabel, gbc);
+    		gbc.anchor = GridBagConstraints.WEST;
+    		gbc.weightx = 0.9;
+    		gbc.gridx = 1;
+    		JTextField idField = new JTextField("");
+    		idField.setColumns(1);
+    		map.put("ID", Pattern.compile(""));
+    		idField.getDocument().addDocumentListener(new DocumentListener() {
+				public void changedUpdate(DocumentEvent e) {
+					applyFilter();
+				}
+				public void insertUpdate(DocumentEvent e) {
+					applyFilter();
+				}
+				public void removeUpdate(DocumentEvent e) {
+					applyFilter();
+				}
+				public void applyFilter() {
+					Pattern pattern = Pattern.compile(idField.getText());
+					map.put("ID", pattern);
+					CustomFilterPanel.this.addRowFilter(statementType);
+				}
+			});
+    		this.add(idField, gbc);
+    		gbc.gridx = 0;
+    		gbc.gridy++;
+			
 			Iterator<String> keyIterator = statementType.getVariables().keySet().iterator();
 	        while (keyIterator.hasNext()) {  // create filter fields for all variables
 	    		String key = keyIterator.next();
@@ -177,6 +207,10 @@ public class StatementPanel extends JPanel {
 					public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
 						Statement st = ssc.get(entry.getIdentifier());
 						if (st.getStatementTypeId() != statementType.getId()) {
+							return false;
+						}
+						Matcher idMatcher = map.get("ID").matcher(String.valueOf((int) st.getId()));
+						if (idMatcher.find() == false) {
 							return false;
 						}
 						boolean match = true;

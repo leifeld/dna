@@ -15,6 +15,7 @@ public class RegexListRenderer extends DefaultListCellRenderer {
 		JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 		label.setText((String)((Regex)value).getLabel());
 		label.setForeground((Color)((Regex)value).getColor());
+		label.setOpaque(true);
 		return label;
 	}
 }

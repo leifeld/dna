@@ -208,7 +208,6 @@ public class Gui extends JFrame {
 		Dna.dna.gui.textPanel.paintStatements();
 		Dna.dna.gui.documentPanel.documentFilter();
 		Dna.dna.gui.documentPanel.documentTable.updateDocumentView();
-		//Dna.dna.gui.rightPanel.statementPanel.statementFilter.updateFilter();
 	}
 	
 	class StatusBar extends JPanel {
@@ -586,9 +585,9 @@ public class Gui extends JFrame {
 				}
 			});
 			importOldButton.setEnabled(false);
-
+			
+			/*
 			//Export menu: network export
-			Icon networkIcon = new ImageIcon(getClass().getResource("/icons/chart_organisation.png"));
 			networkButton = new JMenuItem("Export network...", networkIcon);
 			networkButton.setToolTipText( "export a network file..." );
 			exportMenu.add(networkButton);
@@ -598,17 +597,24 @@ public class Gui extends JFrame {
 				}
 			});
 			networkButton.setEnabled(true);
+			*/
 			
 			//Export menu: network export
+			Icon networkIcon = new ImageIcon(getClass().getResource("/icons/chart_organisation.png"));
 			networkButton = new JMenuItem("Export network...", networkIcon);
 			networkButton.setToolTipText( "export a network file..." );
 			exportMenu.add(networkButton);
 			networkButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					new Exporter();
+					if (Dna.data.getDocuments().size() > 0 && Dna.data.getStatements().size() > 0) {
+						new Exporter();
+					} else {
+						System.err.println("Warning: Network export not possible because no statements present.");
+					}
+					
 				}
 			});
-			networkButton.setEnabled(true);
+			networkButton.setEnabled(false);
 			
 			//Settings menu: statement color by statement type or coder?
 			Icon tickIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
@@ -682,6 +688,9 @@ public class Gui extends JFrame {
 							}
 							redirectButton.setText(fileName);
 							redirectButton.setIcon(new ImageIcon(getClass().getResource("/icons/report_delete.png")));
+							System.err.println("DNA version: " + Dna.dna.version + " (" + Dna.dna.date + ")");
+							System.err.println("Java version: " + System.getProperty("java.version"));
+							System.err.println("Operating system: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
 						}
 					} else {
 						System.setErr(Dna.dna.console);

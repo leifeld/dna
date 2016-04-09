@@ -123,21 +123,14 @@ class NewDocumentDialog extends JDialog {
 		okButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String text = textArea.getText();
-				//text = text.replaceAll("'", "''");
 				String title = titleField.getText();
-				//title = title.replaceAll("'", "''");
 				Date date = (Date)dateSpinner.getValue();
 				int coder = Dna.data.getActiveCoder();
 				String author = (String) authorBox.getModel().getSelectedItem();
-				//author = author.replaceAll("'", "''");
 				String source = (String) sourceBox.getModel().getSelectedItem();
-				//source = source.replaceAll("'", "''");
 				String section = (String) sectionBox.getModel().getSelectedItem();
-				//section = section.replaceAll("'", "''");
 				String notes = notesArea.getText();
-				//notes = notes.replaceAll("'", "''");
 				String type = (String) typeBox.getModel().getSelectedItem();
-				//type = type.replaceAll("'", "''");
 				int docId = Dna.data.generateNewId("documents");
 				Document d = new Document(docId, title, text, coder, author, source, section, notes, type, date);
 				Dna.dna.addDocument(d);
@@ -192,6 +185,9 @@ class NewDocumentDialog extends JDialog {
 		colorButton.setPreferredSize(new Dimension(16, 16));
 		colorButton.setEnabled(false);
 		colorButton.setBackground(coder.getColor());
+		colorButton.setForeground(coder.getColor());
+		colorButton.setOpaque(true);
+		colorButton.setBorderPainted(false);
 		coderPanel.add(colorButton);
 		coderPanel.add(coderName);
 		fieldsPanel.add(coderPanel, gbc);

@@ -16,12 +16,17 @@ public class ExportSetting {
 	String qualifier;  // name of the agreeement qualifier variable (e.g., agreement)
 	String agreementPattern;  // [ignore, congruence, conflict, subtract]
 	HashMap<String, ArrayList<String>> excludeValues;
+	ArrayList<String> authorExclude;
+	ArrayList<String> sourceExclude;
+	ArrayList<String> sectionExclude;
+	ArrayList<String> typeExclude;
 	String aggregationRule; // [across date range, per document, per calendar year, per time window:]
 	String exportFormat; // [csv, dl, graphml]
 	String normalization;  // [coocurrence, average, jaccard, cosine]
 	boolean countDuplicates;
 	boolean includeIsolates;
 	int windowSize;
+	String fileName;
 	
 	public ExportSetting(StatementType statementType, Date startDate, Date stopDate, String var1, String var2) {
 		networkType = "oneMode";
@@ -34,13 +39,13 @@ public class ExportSetting {
 			String key = it.next();
 			excludeValues.put(key, new ArrayList<String>());
 		}
-		excludeValues.put("author", new ArrayList<String>());
-		excludeValues.put("source", new ArrayList<String>());
-		excludeValues.put("section", new ArrayList<String>());
-		excludeValues.put("type", new ArrayList<String>());
+		authorExclude = new ArrayList<String>();
+		sourceExclude = authorExclude;
+		sectionExclude = authorExclude;
+		typeExclude = authorExclude;
 		
 		aggregationRule = "across date range";
-		exportFormat = ".graphml";
+		exportFormat = ".csv";
 		normalization = "cooccurrence";
 		countDuplicates = false;
 		includeIsolates = false;
@@ -51,8 +56,80 @@ public class ExportSetting {
 		this.stopDate = stopDate;
 		this.var1 = var1;
 		this.var2 = var2;
+		
+		this.fileName = null;
 	}
 	
+	/**
+	 * @return the fileName
+	 */
+	public String getFileName() {
+		return fileName;
+	}
+
+	/**
+	 * @param fileName the fileName to set
+	 */
+	public void setFileName(String fileName) {
+		this.fileName = fileName;
+	}
+
+	/**
+	 * @return the authorExclude
+	 */
+	public ArrayList<String> getAuthorExclude() {
+		return authorExclude;
+	}
+
+	/**
+	 * @param authorExclude the authorExclude to set
+	 */
+	public void setAuthorExclude(ArrayList<String> authorExclude) {
+		this.authorExclude = authorExclude;
+	}
+
+	/**
+	 * @return the sourceExclude
+	 */
+	public ArrayList<String> getSourceExclude() {
+		return sourceExclude;
+	}
+
+	/**
+	 * @param sourceExclude the sourceExclude to set
+	 */
+	public void setSourceExclude(ArrayList<String> sourceExclude) {
+		this.sourceExclude = sourceExclude;
+	}
+
+	/**
+	 * @return the sectionExclude
+	 */
+	public ArrayList<String> getSectionExclude() {
+		return sectionExclude;
+	}
+
+	/**
+	 * @param sectionExclude the sectionExclude to set
+	 */
+	public void setSectionExclude(ArrayList<String> sectionExclude) {
+		this.sectionExclude = sectionExclude;
+	}
+
+	/**
+	 * @return the typeExclude
+	 */
+	public ArrayList<String> getTypeExclude() {
+		return typeExclude;
+	}
+
+	/**
+	 * @param typeExclude the typeExclude to set
+	 */
+	public void setTypeExclude(ArrayList<String> typeExclude) {
+		this.typeExclude = typeExclude;
+	}
+
 	/**
 	 * @return the windowSize
 	 */

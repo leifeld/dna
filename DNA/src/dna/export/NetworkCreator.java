@@ -10,13 +10,26 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import javax.swing.JOptionPane;
+
 import dna.Dna;
+import dna.dataStructures.Document;
 import dna.dataStructures.Statement;
 
 public class NetworkCreator {
-
-	public NetworkCreator() {
-		//TODO
+	ExportSetting exportSetting;
+	
+	public NetworkCreator(ExportSetting exportSetting) {
+		this.exportSetting = exportSetting;
+		ArrayList<Statement> statements = filter();
+		if (exportSetting.getNetworkType().equals("eventList")) {
+			releventCSV(statements, exportSetting.getFileName());
+			JOptionPane.showMessageDialog(Dna.dna.gui, "File has been exported to \"" + exportSetting.getFileName() + "\".");
+		} else {
+			System.err.println("Warning: only event lists have been implemented so far. One- and two-mode networks will be implemented soon.");
+			JOptionPane.showMessageDialog(Dna.dna.gui, "Warning: only event lists have been implemented so far. \n "
+					+ "One- and two-mode networks will be implemented soon.");
+		}
 	}
 
 	/**
@@ -24,84 +37,50 @@ public class NetworkCreator {
 	 * 
 	 * @return	ArrayList of filtered {@link SidebarStatement}s
 	 */
-	/*
 	ArrayList<Statement> filter() {
-		// step 1: get all statement IDs corresponding to date range and statement type
-		ArrayList<Integer> al = new ArrayList<Integer>();
+		ArrayList<Statement> al = new ArrayList<Statement>();
 		for (int i = 0; i < Dna.dna.gui.rightPanel.statementPanel.ssc.size(); i++) {
 			boolean select = true;
 			Statement s = Dna.dna.gui.rightPanel.statementPanel.ssc.get(i);
-			if (s.getDate().before(startDate)) {
+			
+			// step 1: get all statement IDs corresponding to date range and statement type
+			if (s.getDate().before(exportSetting.getStartDate())) {
 				select = false;
-			} else if (s.getDate().after(stopDate)) {
+			} else if (s.getDate().after(exportSetting.getStopDate())) {
 				select = false;
-			} else if (s.getStatementTypeId() != statementType.getId()) {
+			} else if (s.getStatementTypeId() != exportSetting.getStatementType().getId()) {
 				select = false;
 			}
-			if (select == true) {
-				al.add(s.getId());
+			
+			// step 2: check against excluded values
+			if (exportSetting.getAuthorExclude().contains(Dna.data.getDocument(s.getDocumentId()).getAuthor())) {
+				select = false;
+			} else if (exportSetting.getSourceExclude().contains(Dna.data.getDocument(s.getDocumentId()).getSource())) {
+				select = false;
+			} else if (exportSetting.getSectionExclude().contains(Dna.data.getDocument(s.getDocumentId()).getSection())) {
+				select = false;
+			} else if (exportSetting.getTypeExclude().contains(Dna.data.getDocument(s.getDocumentId()).getType())) {
+				select = false;
 			}
-		}
-		
-		// step 2: identify variables with excluded values
-		ArrayList<ExcludeObject> exObj = new ArrayList<ExcludeObject>();
-		Iterator<String> keyIterator = excludeValIndices.keySet().iterator();
-		while (keyIterator.hasNext()) {
-			String key = keyIterator.next();
-			int[] value = excludeValIndices.get(key);
-			if (value.length > 0) {
-				String dt = statementType.getVariables().get(key);
-				ExcludeObject eo;
-				if (dt.equals("short text") || dt.equals("long text")) {
-					ArrayList<String> values = getUniqueValuesAsString(key); // all values of a certain variable (as contained in the right JList in the exclude panel)
-					int[] selectedIndices = excludeValIndices.get(key);  // indices: which of them are selected to be excluded?
-					ArrayList<String> selectedValues = new ArrayList<String>();  // actual values: which of them are selected to be excluded?
-					for (int j = 0; j < selectedIndices.length; j++) {
-						selectedValues.add(values.get(selectedIndices[j]));
-					}
-					eo = new ExcludeObject(key, true, selectedValues);  // a variable along with its values to be excluded
-				} else {
-					ArrayList<Integer> values = getUniqueIntValues(key);
-					int[] selectedIndices = excludeValIndices.get(key);
-					ArrayList<Integer> selectedValues = new ArrayList<Integer>();
-					for (int j = 0; j < selectedIndices.length; j++) {
-						selectedValues.add(values.get(selectedIndices[j]));
-					}
-					eo = new ExcludeObject(key, false, selectedValues);
-				}
-				exObj.add(eo);
-			}
-		}
-		
-		// step 3: get all statements from database and check against values selected for inclusion
-		ArrayList<Integer> keepIds = new ArrayList<Integer>();
-		for (int i = 0; i < al.size(); i++) {
-			boolean select = true;
-			for (int j = 0; j < exObj.size(); j++) {
-				String ex = exObj.get(j).getExVar();
-				//if ((exObj.get(j).isExStr() == true && exObj.get(j).getExVal().contains(Dna.dna.db.getVariableStringEntry(al.get(i), exObj.get(j).getExVar()))) || 
-				//		(exObj.get(j).isExStr() == false && exObj.get(j).getExVal().contains(Dna.dna.db.getVariableIntEntry(al.get(i), exObj.get(j).getExVar())))) {
-				if (exObj.get(j).getExVal().contains(Dna.data.getStatement(al.get(i)).getValues().get(ex))) {
+			Iterator<String> keyIterator = exportSetting.getExcludeValues().keySet().iterator();
+			while (keyIterator.hasNext()) {
+				String key = keyIterator.next();
+				if (exportSetting.getExcludeValues().get(key).contains(s.getValues().get(key))) {
 					select = false;
 				}
 			}
+			
+			// step 3: check against statement type
+			if (s.getStatementTypeId() != exportSetting.getStatementType().getId()) {
+				select = false;
+			}
+			
 			if (select == true) {
-				keepIds.add(al.get(i));
+				al.add(s);
 			}
 		}
-		al = keepIds;
-		
-		// step 4: create reduced array list with SidebarStatements for the computations
-		ArrayList<Statement> l = new ArrayList<Statement>();
-		for (int i = 0; i < Dna.dna.gui.rightPanel.statementPanel.ssc.size(); i++) {
-			Statement s = Dna.dna.gui.rightPanel.statementPanel.ssc.get(i);
-			if (al.contains(s.getId())) {
-				l.add(s);
-			}
-		}
-		return(l);
+		return(al);
 	}
-	*/
 	
 	/**
 	 * Compute the matrix product of two two-dimensional arrays.
@@ -326,17 +305,16 @@ public class NetworkCreator {
 		SimpleDateFormat dateFormat;
 		int statementTypeId = statements.get(0).getStatementTypeId();
 		for (int i = 0; i < statements.size(); i++) {
-			if (statements.get(i).getId() != statementTypeId) {
+			if (statements.get(i).getStatementTypeId() != statementTypeId) {
 				throw new IllegalArgumentException("More than one statement type was selected. Cannot export to a spreadsheet!");
 			}
 		}
-		//HashMap<String, String> variables = Dna.dna.db.getVariables(statementType);
 		HashMap<String, String> variables = Dna.data.getStatementTypeById(statementTypeId).getVariables();
 		Iterator<String> keyIterator;
 		try {
-			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), "UTF8"));
+			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), "UTF-8"));
 			keyIterator = variables.keySet().iterator();
-			out.write("\"ID\";\"time\"");
+			out.write("\"statement ID\";\"time\";\"document ID\";\"document title\";\"author\";\"source\";\"section\";\"type\";\"text\"");
 			while (keyIterator.hasNext()){
 				out.write(";\"" + keyIterator.next() + "\"");
 			}
@@ -348,15 +326,22 @@ public class NetworkCreator {
 				d = statements.get(i).getDate();
 				dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 				out.write(";" + dateFormat.format(d));
+				Document doc = Dna.data.getDocument(Dna.data.getStatement(statementId).getDocumentId());
+				out.write(";" + doc.getId());
+				out.write(";\"" + doc.getTitle().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + doc.getAuthor().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + doc.getSource().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + doc.getSection().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + doc.getType().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + doc.getText().substring(Dna.data.getStatement(statementId).getStart(), 
+						Dna.data.getStatement(statementId).getStop()).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
 				keyIterator = variables.keySet().iterator();
 				while (keyIterator.hasNext()){
 					key = keyIterator.next();
 					value = variables.get(key);
 					if (value.equals("short text") || value.equals("long text")) {
-						//out.write(";\"" + Dna.dna.db.getVariableStringEntry(statementId, key).replaceAll(";", ",") + "\"");
-						out.write(";\"" + ((String) Dna.data.getStatement(statementId).getValues().get(key)).replaceAll(";", ",") + "\"");
+						out.write(";\"" + ((String) Dna.data.getStatement(statementId).getValues().get(key)).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
 					} else if (value.equals("boolean") || value.equals("integer")) {
-						//out.write(";" + Dna.dna.db.getVariableIntEntry(statementId, key));
 						out.write(";" + Dna.data.getStatement(statementId).getValues().get(key));
 					}
 				}

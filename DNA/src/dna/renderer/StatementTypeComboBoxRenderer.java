@@ -13,7 +13,6 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 import javax.swing.UIDefaults;
-import javax.swing.UIManager;
 
 import dna.dataStructures.StatementType;
 
@@ -30,6 +29,9 @@ public class StatementTypeComboBoxRenderer implements ListCellRenderer<Object> {
 			JButton colorRectangle = new JButton();
 			colorRectangle.setPreferredSize(new Dimension(18, 18));
 			colorRectangle.setBackground(statementType.getColor());
+			colorRectangle.setForeground(statementType.getColor());
+			colorRectangle.setOpaque(true);
+			colorRectangle.setBorderPainted(false);
 			
 			JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 			namePanel.add(colorRectangle);
