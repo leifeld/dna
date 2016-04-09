@@ -34,6 +34,10 @@ public class ExportSetting {
 			String key = it.next();
 			excludeValues.put(key, new ArrayList<String>());
 		}
+		excludeValues.put("author", new ArrayList<String>());
+		excludeValues.put("source", new ArrayList<String>());
+		excludeValues.put("section", new ArrayList<String>());
+		excludeValues.put("type", new ArrayList<String>());
 		
 		aggregationRule = "across date range";
 		exportFormat = ".graphml";

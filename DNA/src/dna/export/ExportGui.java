@@ -37,6 +37,7 @@ import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerDateModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.border.TitledBorder;
@@ -118,13 +119,19 @@ public class ExportGui extends JDialog {
 		
 		back.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// TODO
+				int row = tree.getMaxSelectionRow();
+				if (row > 1) {
+					tree.setSelectionRow(row - 1);
+				}
 			}
 		});
 		
 		next.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// TODO
+				int row = tree.getMaxSelectionRow();
+				if (row < 7) {
+					tree.setSelectionRow(row + 1);
+				}
 			}
 		});
 		
@@ -161,18 +168,32 @@ public class ExportGui extends JDialog {
 				String node = (String) tree.getLastSelectedPathComponent().toString();
 				if (node.equals("Network data type")) {
 					cl.show(cards, "networkDataType");
+					next.setEnabled(true);
+					back.setEnabled(false);
 				} else if (node.equals("Variables")) {
 					cl.show(cards, "variables");
+					next.setEnabled(true);
+					back.setEnabled(true);
 				} else if (node.equals("Agreement")) {
 					cl.show(cards, "agreement");
+					next.setEnabled(true);
+					back.setEnabled(true);
 				} else if (node.equals("Exclude")) {
 					cl.show(cards, "exclude");
+					next.setEnabled(true);
+					back.setEnabled(true);
 				} else if (node.equals("Date range")) {
 					cl.show(cards, "dateRange");
+					next.setEnabled(true);
+					back.setEnabled(true);
 				} else if (node.equals("Custom options")) {
 					cl.show(cards, "customOptions");
+					next.setEnabled(true);
+					back.setEnabled(true);
 				} else if (node.equals("File format")) {
 					cl.show(cards, "fileFormat");
+					next.setEnabled(false);
+					back.setEnabled(true);
 				} else if (node.equals("Options")) {
 					tree.setSelectionRow(1);
 				} else {
@@ -225,10 +246,8 @@ public class ExportGui extends JDialog {
 
 		// find dates to populate initial settings
 		ArrayList<Date> dates = new ArrayList<Date>();
-		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
-			if (Dna.data.getStatements().get(i).getStatementTypeId() == statementType.getId()) {
-				dates.add(Dna.data.getStatements().get(i).getDate());
-			}
+		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+			dates.add(Dna.data.getDocuments().get(i).getDate());
 		}
 		Collections.sort(dates);
 		Date startDate, stopDate;
@@ -469,14 +488,18 @@ public class ExportGui extends JDialog {
 		var1List = new JList<String>();
 		var1List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		var1List.setLayoutOrientation(JList.VERTICAL);
-		var1List.setVisibleRowCount(5);
-		var1List.setPreferredSize(new Dimension(220, 20));
+		var1List.setModel(getVariablesList(exportSetting.getStatementType(), false, true, false, false));
+		var1List.setSelectedValue(exportSetting.getVar1(), true);
 		JScrollPane var1Scroller = new JScrollPane(var1List);
+		var1Scroller.setPreferredSize(new Dimension(220, 150));
+		var1Scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		JPanel var1Panel = new JPanel(new GridBagLayout());
 		GridBagConstraints var1gbc = new GridBagConstraints();
 		var1gbc.gridx = 0;
 		var1gbc.gridy = 0;
-		var1gbc.fill = GridBagConstraints.NONE;
+		var1gbc.fill = GridBagConstraints.BOTH;
+		var1gbc.weightx = 1;
+		var1gbc.weighty = 1;
 		var1Label = new JLabel("first mode (rows)");
 		var1Panel.add(var1Label, var1gbc);
 		var1gbc.gridy = 1;
@@ -487,11 +510,12 @@ public class ExportGui extends JDialog {
 		var2List = new JList<String>();
 		var2List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		var2List.setLayoutOrientation(JList.VERTICAL);
-		
-		var2List.setVisibleRowCount(5);
-		var2List.setPreferredSize(new Dimension(220, 20));
+		var2List.setModel(getVariablesList(exportSetting.getStatementType(), false, true, false, false));
+		var2List.setSelectedValue(exportSetting.getVar2(), true);
 
 		JScrollPane var2Scroller = new JScrollPane(var2List);
+		var2Scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		var2Scroller.setPreferredSize(new Dimension(220, 150));
 		JPanel var2Panel = new JPanel(new GridBagLayout());
 		GridBagConstraints var2gbc = new GridBagConstraints();
 		var2gbc.gridx = 0;
@@ -502,11 +526,7 @@ public class ExportGui extends JDialog {
 		var2gbc.gridy = 1;
 		var2Panel.add(var2Scroller, var2gbc);
 		variablesPanel.add(var2Panel, vargbc);
-
-		var1List.setModel(getVariablesList(exportSetting.getStatementType(), false, true, false, false));
-		var2List.setModel(getVariablesList(exportSetting.getStatementType(), false, true, false, false));
-		var1List.setSelectedValue(exportSetting.getVar1(), true);
-		var2List.setSelectedValue(exportSetting.getVar2(), true);
+		
 		TitledBorder variablesBorder;
 		variablesBorder = BorderFactory.createTitledBorder("2 / 7");
 		variablesPanel.setBorder(variablesBorder);
@@ -553,13 +573,13 @@ public class ExportGui extends JDialog {
 		var3List.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		var3List.setSelectedIndex(0);
 		var3List.setLayoutOrientation(JList.VERTICAL);
-		var3List.setVisibleRowCount(4);
-		var3List.setPreferredSize(new Dimension(220, 20));
 		var3List.setModel(getVariablesList(exportSetting.getStatementType(), false, true, true, true));
 		
 		gbc.gridx = 0;
 		gbc.gridy = 1;
 		JScrollPane var3Scroller = new JScrollPane(var3List);
+		var3Scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		var3Scroller.setPreferredSize(new Dimension(220, 130));
 		panel.add(var3Scroller, gbc);
 		panel.add(var3Scroller, gbc);
 		
@@ -586,10 +606,9 @@ public class ExportGui extends JDialog {
 		patternPanel.add(ignoreButton, patterngbc);
 		patterngbc.gridy = 1;
 		patternPanel.add(congruenceButton, patterngbc);
-		patterngbc.gridx = 1;
-		patterngbc.gridy = 0;
+		patterngbc.gridy = 2;
 		patternPanel.add(conflictButton, patterngbc);
-		patterngbc.gridy = 1;
+		patterngbc.gridy = 3;
 		patternPanel.add(subtractButton, patterngbc);
 		gbc.gridx = 1;
 		gbc.gridheight = 1;
@@ -681,9 +700,9 @@ public class ExportGui extends JDialog {
 		excludeVarList = new JList<String>();
 		excludeVarList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		excludeVarList.setLayoutOrientation(JList.VERTICAL);
-		excludeVarList.setVisibleRowCount(4);
-		excludeVarList.setPreferredSize(new Dimension(220, 20));
 		JScrollPane excludeVarScroller = new JScrollPane(excludeVarList);
+		excludeVarScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		excludeVarScroller.setPreferredSize(new Dimension(220, 130));
 		excludePanel.add(excludeVarScroller, excludegbc);
 		excludegbc.gridx = 1;
 		excludegbc.gridy = 2;
@@ -693,10 +712,9 @@ public class ExportGui extends JDialog {
 		excludeValList = new JList<String>();
 		excludeValList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		excludeValList.setLayoutOrientation(JList.VERTICAL);
-		excludeValList.setVisibleRowCount(4);
-		excludeValList.setFixedCellWidth(220);
-		excludeValList.setFixedCellHeight(17);
 		JScrollPane excludeValScroller = new JScrollPane(excludeValList);
+		excludeValScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		excludeValScroller.setPreferredSize(new Dimension(220, 130));
 		excludePanel.add(excludeValScroller, excludegbc);
 		
 		TitledBorder excludeBorder;
@@ -710,7 +728,54 @@ public class ExportGui extends JDialog {
 				String selectedValue = excludeVarList.getSelectedValue();
 				if (e.getValueIsAdjusting() == false) {
 					if (selectedValue != null) {
-						String[] entriesArray = Dna.data.getStringEntries(exportSetting.getStatementType().getId(), selectedValue);
+						String[] entriesArray;
+						if (excludeVarList.getSelectedIndex() == excludeVarList.getModel().getSize() - 1) {
+							ArrayList<String> entriesList = new ArrayList<String>();
+							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+								if (!entriesList.contains(Dna.data.getDocuments().get(i).getType())) {
+									entriesList.add(Dna.data.getDocuments().get(i).getType());
+								}
+							}
+							entriesArray = new String[entriesList.size()];
+							for (int i = 0; i < entriesList.size(); i++) {
+								entriesArray[i] = entriesList.get(i);
+							}
+						} else if (excludeVarList.getSelectedIndex() == excludeVarList.getModel().getSize() - 2) {
+							ArrayList<String> entriesList = new ArrayList<String>();
+							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+								if (!entriesList.contains(Dna.data.getDocuments().get(i).getSection())) {
+									entriesList.add(Dna.data.getDocuments().get(i).getSection());
+								}
+							}
+							entriesArray = new String[entriesList.size()];
+							for (int i = 0; i < entriesList.size(); i++) {
+								entriesArray[i] = entriesList.get(i);
+							}
+						} else if (excludeVarList.getSelectedIndex() == excludeVarList.getModel().getSize() - 3) {
+							ArrayList<String> entriesList = new ArrayList<String>();
+							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+								if (!entriesList.contains(Dna.data.getDocuments().get(i).getSource())) {
+									entriesList.add(Dna.data.getDocuments().get(i).getSource());
+								}
+							}
+							entriesArray = new String[entriesList.size()];
+							for (int i = 0; i < entriesList.size(); i++) {
+								entriesArray[i] = entriesList.get(i);
+							}
+						} else if (excludeVarList.getSelectedIndex() == excludeVarList.getModel().getSize() - 4) {
+							ArrayList<String> entriesList = new ArrayList<String>();
+							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+								if (!entriesList.contains(Dna.data.getDocuments().get(i).getAuthor())) {
+									entriesList.add(Dna.data.getDocuments().get(i).getAuthor());
+								}
+							}
+							entriesArray = new String[entriesList.size()];
+							for (int i = 0; i < entriesList.size(); i++) {
+								entriesArray[i] = entriesList.get(i);
+							}
+						} else {
+							entriesArray = Dna.data.getStringEntries(exportSetting.getStatementType().getId(), selectedValue);
+						}
 						Arrays.sort(entriesArray);
 						excludeValList.setListData(entriesArray);
 						int[] indices = new int[exportSetting.getExcludeValues().get(selectedValue).size()];
@@ -1106,6 +1171,12 @@ public class ExportGui extends JDialog {
 					(bool == true && variables.get(var).equals("boolean"))) {
 				listData.addElement(var);
 			}
+		}
+		if (shorttext == true) {
+			listData.addElement("author");
+			listData.addElement("source");
+			listData.addElement("section");
+			listData.addElement("type");
 		}
 		return listData;
 	}
