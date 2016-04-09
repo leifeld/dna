@@ -11,9 +11,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -62,10 +64,11 @@ public class ExportGui extends JDialog {
 	ExportSetting exportSetting;
 	JTree tree;
 	DefaultMutableTreeNode top, networkDataTypeNode, variablesNode, agreementNode, excludeNode, dateRangeNode, customOptionsNode, 
-			fileFormatNode, summaryNode;
+			fileFormatNode;
 	JList<String> var1List, var2List, var3List;
 	JLabel var1Label, var2Label, var3Label, agreementLabel, agreementLabel2, variablesQuestion, agreeButtonLabel;
 	JRadioButton ignoreButton, congruenceButton, conflictButton, subtractButton;
+	JList<String> excludeVarList, excludeValList;
 	JRadioButton allAggButton, docAggButton, yearAggButton, windowAggButton;
 	JSpinner windowDays;
 	JLabel daysLabel;
@@ -113,7 +116,18 @@ public class ExportGui extends JDialog {
 			}
 		});
 		
-
+		back.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// TODO
+			}
+		});
+		
+		next.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// TODO
+			}
+		});
+		
 		JPanel menu = new JPanel();
 		menu.setLayout(new BorderLayout());
 		
@@ -130,7 +144,6 @@ public class ExportGui extends JDialog {
 		dateRangeNode = new DefaultMutableTreeNode("Date range");
 		customOptionsNode = new DefaultMutableTreeNode("Custom options");
 		fileFormatNode = new DefaultMutableTreeNode("File format");
-		summaryNode = new DefaultMutableTreeNode("Summary");
 		top.add(networkDataTypeNode);
 		top.add(variablesNode);
 		top.add(agreementNode);
@@ -138,7 +151,6 @@ public class ExportGui extends JDialog {
 		top.add(dateRangeNode);
 		top.add(customOptionsNode);
 		top.add(fileFormatNode);
-		top.add(summaryNode);
 		for (int i = 0; i < tree.getRowCount(); i++) {
 			tree.expandRow(i);
 		}
@@ -186,15 +198,6 @@ public class ExportGui extends JDialog {
 	}
 
 	private ExportSetting populateInitialSettings() {
-		// find dates to populate initial settings
-		ArrayList<Date> dates = new ArrayList<Date>();
-		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
-			dates.add(Dna.data.getStatements().get(i).getDate());
-		}
-		Collections.sort(dates);
-		Date startDate = dates.get(0);
-		Date stopDate = dates.get(dates.size() - 1);
-		
 		// find statement type and variables to populate initial settings
 		String var1 = "";
 		String var2 = "";
@@ -218,6 +221,23 @@ public class ExportGui extends JDialog {
 					break;
 				}
 			}
+		}
+
+		// find dates to populate initial settings
+		ArrayList<Date> dates = new ArrayList<Date>();
+		for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+			if (Dna.data.getStatements().get(i).getStatementTypeId() == statementType.getId()) {
+				dates.add(Dna.data.getStatements().get(i).getDate());
+			}
+		}
+		Collections.sort(dates);
+		Date startDate, stopDate;
+		if (dates.size() > 0) {
+			startDate = dates.get(0);
+			stopDate = dates.get(dates.size() - 1);
+		} else {
+			startDate = null;
+			stopDate = null;
 		}
 		
 		// create and return settings
@@ -267,9 +287,36 @@ public class ExportGui extends JDialog {
 		scopePanel.add(typeBox, scopegbc);
 		ActionListener statementAL = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				exportSetting.setStatementType((StatementType) typeBox.getSelectedItem());
-				
-				//TODO: fill other cards with new variables
+				StatementType statementType = (StatementType) typeBox.getSelectedItem();
+				exportSetting.setStatementType(statementType);
+				String var1 = "";
+				String var2 = "";
+				DefaultListModel<String> vars = getVariablesList(statementType, false, true, false, false);
+				if (vars.size() > 1) {
+					var1 = vars.get(0);
+					var2 = vars.get(1);
+				} else if (vars.size() > 0) {
+					var1 = vars.get(0);
+					var2 = vars.get(0);
+				}
+				exportSetting.setStatementType(statementType);
+				exportSetting.setVar1(var1);
+				exportSetting.setVar2(var2);
+				exportSetting.setQualifier(null);
+				var1List.setModel(getVariablesList(statementType, false, true, false, false));
+				var2List.setModel(getVariablesList(statementType, false, true, false, false));
+				var3List.setModel(getVariablesList(statementType, false, true, true, true));
+				ignoreButton.setSelected(true);
+
+				HashMap<String, ArrayList<String>> excludeValues = new HashMap<String, ArrayList<String>>();
+				Iterator<String> it = statementType.getVariables().keySet().iterator();
+				while (it.hasNext()) {
+					String key = it.next();
+					excludeValues.put(key, new ArrayList<String>());
+				}
+				exportSetting.setExcludeValues(excludeValues);
+				excludeVarList.setModel(getVariablesList(statementType, false, true, true, true));
+				excludeValList.setModel(new DefaultListModel<String>());
 			}
 		};
 		typeBox.addActionListener(statementAL);
@@ -631,7 +678,7 @@ public class ExportGui extends JDialog {
 		JLabel agreeVarLabel = new JLabel("variable");
 		excludePanel.add(agreeVarLabel, excludegbc);
 		excludegbc.gridy = 3;
-		JList<String> excludeVarList = new JList<String>();
+		excludeVarList = new JList<String>();
 		excludeVarList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		excludeVarList.setLayoutOrientation(JList.VERTICAL);
 		excludeVarList.setVisibleRowCount(4);
@@ -643,7 +690,7 @@ public class ExportGui extends JDialog {
 		JLabel excludeValLabel = new JLabel("exclude values");
 		excludePanel.add(excludeValLabel, excludegbc);
 		excludegbc.gridy = 3;
-		JList<String> excludeValList = new JList<String>();
+		excludeValList = new JList<String>();
 		excludeValList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		excludeValList.setLayoutOrientation(JList.VERTICAL);
 		excludeValList.setVisibleRowCount(4);
@@ -664,6 +711,7 @@ public class ExportGui extends JDialog {
 				if (e.getValueIsAdjusting() == false) {
 					if (selectedValue != null) {
 						String[] entriesArray = Dna.data.getStringEntries(exportSetting.getStatementType().getId(), selectedValue);
+						Arrays.sort(entriesArray);
 						excludeValList.setListData(entriesArray);
 						int[] indices = new int[exportSetting.getExcludeValues().get(selectedValue).size()];
 						for (int i = 0; i < entriesArray.length; i++) {
@@ -1002,8 +1050,6 @@ public class ExportGui extends JDialog {
 		outputgbc.insets = new Insets(10, 0, 0, 10);
 		ImageIcon fileIcon = new ImageIcon(getClass().getResource("/icons/folder.png"));
 		JButton fileButton = new JButton("Browse...", fileIcon);
-		//fileButton.setPreferredSize(new Dimension(122, 18));
-		//fileButton.setPreferredSize(new Dimension(44, 16));
 		outputPanel.add(fileButton, outputgbc);
 		outputgbc.gridx = 1;
 		JLabel fileLabel = new JLabel("(no output file selected)");
