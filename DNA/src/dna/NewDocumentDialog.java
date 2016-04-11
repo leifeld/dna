@@ -187,11 +187,11 @@ class NewDocumentDialog extends JDialog {
 		colorButton.setBackground(coder.getColor());
 		colorButton.setForeground(coder.getColor());
 		colorButton.setOpaque(true);
-		colorButton.setBorderPainted(false);
+		//colorButton.setBorderPainted(false);
 		coderPanel.add(colorButton);
 		coderPanel.add(coderName);
 		fieldsPanel.add(coderPanel, gbc);
-
+		
 		gbc.gridy++;
 		gbc.gridx--;
 		JLabel authorLabel = new JLabel("author", JLabel.RIGHT);

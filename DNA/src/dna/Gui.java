@@ -1,7 +1,7 @@
 package dna;
 
 import dna.dataStructures.*;
-import dna.export.Exporter;
+import dna.export.ExportGui;
 import dna.renderer.DocumentTableModel;
 
 import java.awt.BorderLayout;
@@ -607,7 +607,7 @@ public class Gui extends JFrame {
 			networkButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					if (Dna.data.getDocuments().size() > 0 && Dna.data.getStatements().size() > 0) {
-						new Exporter();
+						new ExportGui();
 					} else {
 						System.err.println("Warning: Network export not possible because no statements present.");
 					}

@@ -21,15 +21,15 @@ public class ExportSetting {
 	ArrayList<String> sectionExclude;
 	ArrayList<String> typeExclude;
 	String aggregationRule; // [across date range, per document, per calendar year, per time window:]
-	String exportFormat; // [csv, dl, graphml]
+	String exportFormat; // [.csv, .dl, .graphml]
 	String normalization;  // [coocurrence, average, jaccard, cosine]
 	boolean countDuplicates;
 	boolean includeIsolates;
 	int windowSize;
 	String fileName;
 	
-	public ExportSetting(StatementType statementType, Date startDate, Date stopDate, String var1, String var2) {
-		networkType = "oneMode";
+	public ExportSetting(String networkType, StatementType statementType, Date startDate, Date stopDate, String var1, String var2) {
+		this.networkType = networkType;
 		qualifier = null;
 		agreementPattern = "ignore";
 		

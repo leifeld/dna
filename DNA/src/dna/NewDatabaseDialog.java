@@ -553,7 +553,7 @@ public class NewDatabaseDialog extends JDialog {
 				colorRectangle.setBackground(coder.getColor());
 				colorRectangle.setForeground(coder.getColor());
 				colorRectangle.setOpaque(true);
-				colorRectangle.setBorderPainted(false);
+				//colorRectangle.setBorderPainted(false);
 				
 				JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 				namePanel.add(colorRectangle);
@@ -753,7 +753,7 @@ public class NewDatabaseDialog extends JDialog {
 				colorRectangle.setBackground(statementType.getColor());
 				colorRectangle.setForeground(statementType.getColor());
 				colorRectangle.setOpaque(true);
-				colorRectangle.setBorderPainted(false);
+				//colorRectangle.setBorderPainted(false);
 				
 				JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 				namePanel.add(colorRectangle);
@@ -811,7 +811,7 @@ public class NewDatabaseDialog extends JDialog {
 				addColorButton.setBackground(statementType.getColor());
 				addColorButton.setForeground(statementType.getColor());
 				addColorButton.setOpaque(true);
-				addColorButton.setBorderPainted(false);
+				//addColorButton.setBorderPainted(false);
 				addColorButton.setPreferredSize(new Dimension(18, 18));
 				addColorButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
@@ -821,7 +821,7 @@ public class NewDatabaseDialog extends JDialog {
 							((JButton) e.getSource()).setBackground(newColor);
 							((JButton) e.getSource()).setForeground(newColor);
 							((JButton) e.getSource()).setOpaque(true);
-							((JButton) e.getSource()).setBorderPainted(false);
+							//((JButton) e.getSource()).setBorderPainted(false);
 						}
 					}
 				});
@@ -1166,8 +1166,6 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.dna.sql.upsertSetting("statementColor", "coder");
 					
 					Dna.data.setActiveCoder(Dna.data.getCoders().get(0).getId());
-					Dna.dna.gui.leftPanel.coderPanel.coderBox.setSelectedIndex(0);
-					Dna.dna.gui.leftPanel.setComboEnabled(true);
 					
 					Dna.dna.gui.statusBar.resetLabel();
 					Dna.dna.gui.menuBar.openDatabase.setEnabled(false);
@@ -1181,6 +1179,10 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.dna.gui.leftPanel.docStats.refreshButton.setEnabled(true);
 					Dna.dna.gui.rightPanel.statementPanel.typeComboBox.setSelectedIndex(0);
 					Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();
+					
+					Dna.dna.gui.leftPanel.setComboEnabled(true);
+					int ac = Dna.data.getActiveCoder();
+					Dna.dna.gui.leftPanel.coderPanel.model.setSelectedItem(Dna.data.getCoderById(ac));
 					
 					Dna.dna.gui.refreshGui();
 					

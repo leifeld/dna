@@ -48,7 +48,7 @@ public class EditCoderWindow extends JDialog{
 		addColorButton.setBackground(coder.getColor());
 		addColorButton.setForeground(coder.getColor());
 		addColorButton.setOpaque(true);
-		addColorButton.setBorderPainted(false);
+		//addColorButton.setBorderPainted(false);
 		addColorButton.setPreferredSize(new Dimension(18, 18));
 		addColorButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -58,7 +58,7 @@ public class EditCoderWindow extends JDialog{
 					((JButton) e.getSource()).setBackground(newColor);
 					((JButton) e.getSource()).setForeground(newColor);
 					((JButton) e.getSource()).setOpaque(true);
-					((JButton) e.getSource()).setBorderPainted(false);
+					//((JButton) e.getSource()).setBorderPainted(false);
 				}
 			}
 		});
