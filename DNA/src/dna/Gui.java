@@ -667,7 +667,7 @@ public class Gui extends JFrame {
 							}
 						});
 
-						int returnVal = fc.showOpenDialog(dna.Gui.this);
+						int returnVal = fc.showSaveDialog(dna.Gui.this);
 						if (returnVal == JFileChooser.APPROVE_OPTION) {
 							String fileName;
 							File file = fc.getSelectedFile();
