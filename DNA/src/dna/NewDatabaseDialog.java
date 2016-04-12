@@ -6,6 +6,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -548,12 +549,20 @@ public class NewDatabaseDialog extends JDialog {
 				Coder coder = (Coder) value;
 				JPanel panel = new JPanel(new BorderLayout());
 				
-				JButton colorRectangle = new JButton();
+				JButton colorRectangle = (new JButton() {
+					public void paintComponent(Graphics g) {
+						super.paintComponent(g);
+						g.setColor(coder.getColor());
+						g.fillRect(2, 2, 14, 14);
+					}
+				});
 				colorRectangle.setPreferredSize(new Dimension(18, 18));
-				colorRectangle.setBackground(coder.getColor());
-				colorRectangle.setForeground(coder.getColor());
-				colorRectangle.setOpaque(true);
-				colorRectangle.setBorderPainted(false);
+				//JButton colorRectangle = new JButton();
+				//colorRectangle.setPreferredSize(new Dimension(18, 18));
+				//colorRectangle.setBackground(coder.getColor());
+				//colorRectangle.setForeground(coder.getColor());
+				//colorRectangle.setOpaque(true);
+				//colorRectangle.setBorderPainted(false);
 				
 				JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 				namePanel.add(colorRectangle);
@@ -748,12 +757,20 @@ public class NewDatabaseDialog extends JDialog {
 				StatementType statementType = (StatementType) value;
 				JPanel panel = new JPanel(new BorderLayout());
 				
-				JButton colorRectangle = new JButton();
+				JButton colorRectangle = (new JButton() {
+					public void paintComponent(Graphics g) {
+						super.paintComponent(g);
+						g.setColor(statementType.getColor());
+						g.fillRect(2, 2, 14, 14);
+					}
+				});
 				colorRectangle.setPreferredSize(new Dimension(18, 18));
-				colorRectangle.setBackground(statementType.getColor());
-				colorRectangle.setForeground(statementType.getColor());
-				colorRectangle.setOpaque(true);
-				colorRectangle.setBorderPainted(false);
+				//JButton colorRectangle = new JButton();
+				//colorRectangle.setPreferredSize(new Dimension(18, 18));
+				//colorRectangle.setBackground(statementType.getColor());
+				//colorRectangle.setForeground(statementType.getColor());
+				//colorRectangle.setOpaque(true);
+				//colorRectangle.setBorderPainted(false);
 				
 				JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 				namePanel.add(colorRectangle);
@@ -807,21 +824,37 @@ public class NewDatabaseDialog extends JDialog {
 				nameField.setColumns(20);
 				namePanel.add(nameField);
 				
-				addColorButton = new JButton();
-				addColorButton.setBackground(statementType.getColor());
-				addColorButton.setForeground(statementType.getColor());
-				addColorButton.setOpaque(true);
-				addColorButton.setBorderPainted(false);
+				addColorButton = (new JButton() {
+					public void paintComponent(Graphics g) {
+						super.paintComponent(g);
+						g.setColor(statementType.getColor());
+						g.fillRect(2, 2, 14, 14);
+					}
+				});
 				addColorButton.setPreferredSize(new Dimension(18, 18));
+				//addColorButton = new JButton();
+				//addColorButton.setBackground(statementType.getColor());
+				//addColorButton.setForeground(statementType.getColor());
+				//addColorButton.setOpaque(true);
+				//addColorButton.setBorderPainted(false);
+				//addColorButton.setPreferredSize(new Dimension(18, 18));
 				addColorButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						Color actualColor = ((JButton)e.getSource()).getBackground();
 						Color newColor = JColorChooser.showDialog(EditStatementTypeWindow.this, "choose color...", actualColor);
 						if (newColor != null) {
-							((JButton) e.getSource()).setBackground(newColor);
-							((JButton) e.getSource()).setForeground(newColor);
-							((JButton) e.getSource()).setOpaque(true);
-							((JButton) e.getSource()).setBorderPainted(false);
+							//((JButton) e.getSource()).setBackground(newColor);
+							//((JButton) e.getSource()).setForeground(newColor);
+							//((JButton) e.getSource()).setOpaque(true);
+							//((JButton) e.getSource()).setBorderPainted(false);
+							addColorButton = (new JButton() {
+								public void paintComponent(Graphics g) {
+									super.paintComponent(g);
+									g.setColor(newColor);
+									g.fillRect(2, 2, 14, 14);
+								}
+							});
+							addColorButton.setPreferredSize(new Dimension(18, 18));
 						}
 					}
 				});

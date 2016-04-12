@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -25,13 +26,21 @@ public class StatementTypeComboBoxRenderer implements ListCellRenderer<Object> {
 		} else {
 			StatementType statementType = (StatementType) value;
 			JPanel panel = new JPanel(new BorderLayout());
-			
-			JButton colorRectangle = new JButton();
+			JButton colorRectangle = (new JButton() {
+				public void paintComponent(Graphics g) {
+					super.paintComponent(g);
+					g.setColor(statementType.getColor());
+					g.fillRect(2, 2, 14, 14);
+				}
+			});
 			colorRectangle.setPreferredSize(new Dimension(18, 18));
-			colorRectangle.setBackground(statementType.getColor());
-			colorRectangle.setForeground(statementType.getColor());
-			colorRectangle.setOpaque(true);
-			colorRectangle.setBorderPainted(false);
+			colorRectangle.setEnabled(false);
+			//JButton colorRectangle = new JButton();
+			//colorRectangle.setPreferredSize(new Dimension(18, 18));
+			//colorRectangle.setBackground(statementType.getColor());
+			//colorRectangle.setForeground(statementType.getColor());
+			//colorRectangle.setOpaque(true);
+			//colorRectangle.setBorderPainted(false);
 			
 			JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 			namePanel.add(colorRectangle);

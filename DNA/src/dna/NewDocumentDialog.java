@@ -190,7 +190,7 @@ class NewDocumentDialog extends JDialog {
 				g.fillRect(2, 2, 14, 14);
 			}
 		});
-		colorButton.setPreferredSize(new Dimension(16, 16));
+		colorButton.setPreferredSize(new Dimension(18, 18));
 		colorButton.setEnabled(false);
 		coderPanel.add(colorButton);
 		coderPanel.add(coderName);

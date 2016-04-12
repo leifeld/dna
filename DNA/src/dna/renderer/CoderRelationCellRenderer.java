@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -27,12 +28,21 @@ public class CoderRelationCellRenderer extends DefaultTableCellRenderer {
 			int otherCoderId = cr.getOtherCoder();
 			Coder otherCoder = Dna.data.getCoderById(otherCoderId);
 			Color otherColor = otherCoder.getColor();
-			JButton colorButton = new JButton();
-			colorButton.setPreferredSize(new Dimension(12, 16));
-			colorButton.setBackground(otherColor);
-			colorButton.setForeground(otherColor);
-			colorButton.setOpaque(true);
-			colorButton.setBorderPainted(false);
+			JButton colorButton = (new JButton() {
+				public void paintComponent(Graphics g) {
+					super.paintComponent(g);
+					g.setColor(otherColor);
+					g.fillRect(2, 2, 14, 14);
+				}
+			});
+			colorButton.setPreferredSize(new Dimension(18, 18));
+			colorButton.setEnabled(false);
+			//JButton colorButton = new JButton();
+			//colorButton.setPreferredSize(new Dimension(12, 16));
+			//colorButton.setBackground(otherColor);
+			//colorButton.setForeground(otherColor);
+			//colorButton.setOpaque(true);
+			//colorButton.setBorderPainted(false);
 			panel.add(colorButton);
 			String name = otherCoder.getName();
 			int nameLength = name.length();

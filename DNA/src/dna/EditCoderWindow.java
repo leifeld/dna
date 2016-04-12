@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -44,21 +45,32 @@ public class EditCoderWindow extends JDialog{
 		
 		JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		
+		//addColorButton = (new JButton() {
+		//	public void paintComponent(Graphics g) {
+		//		super.paintComponent(g);
+		//		g.setColor(coder.getColor());
+		//		g.fillRect(2, 2, 14, 14);
+		//	}
+		//});
+		//addColorButton.setPreferredSize(new Dimension(18, 18));
 		addColorButton = new JButton();
 		addColorButton.setBackground(coder.getColor());
-		addColorButton.setForeground(coder.getColor());
-		addColorButton.setOpaque(true);
-		addColorButton.setBorderPainted(false);
+		//addColorButton.setForeground(coder.getColor());
+		//addColorButton.setOpaque(true);
+		//addColorButton.setBorderPainted(false);
 		addColorButton.setPreferredSize(new Dimension(18, 18));
 		addColorButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Color actualColor = ((JButton)e.getSource()).getBackground();
 				Color newColor = JColorChooser.showDialog(EditCoderWindow.this, "choose color...", actualColor);
 				if (newColor != null) {
+					//JButton jb = (JButton) e.getSource();
+					//jb.getGraphics().setColor(newColor);
+					//jb.getGraphics().fillRect(2, 2, 14, 14);
 					((JButton) e.getSource()).setBackground(newColor);
-					((JButton) e.getSource()).setForeground(newColor);
-					((JButton) e.getSource()).setOpaque(true);
-					((JButton) e.getSource()).setBorderPainted(false);
+					//((JButton) e.getSource()).setForeground(newColor);
+					//((JButton) e.getSource()).setOpaque(true);
+					//((JButton) e.getSource()).setBorderPainted(false);
 				}
 			}
 		});
