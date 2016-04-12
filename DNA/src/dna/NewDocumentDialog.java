@@ -1,8 +1,10 @@
 package dna;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -181,13 +183,15 @@ class NewDocumentDialog extends JDialog {
 			name = name.substring(0, 16) + "...";
 		}
 		JLabel coderName = new JLabel(name);
-		JButton colorButton = new JButton();
+		JButton colorButton = (new JButton() {
+			public void paintComponent(Graphics g) {
+				super.paintComponent(g);
+				g.setColor(coder.getColor());
+				g.fillRect(2, 2, 14, 14);
+			}
+		});
 		colorButton.setPreferredSize(new Dimension(16, 16));
 		colorButton.setEnabled(false);
-		colorButton.setBackground(coder.getColor());
-		colorButton.setForeground(coder.getColor());
-		colorButton.setOpaque(true);
-		//colorButton.setBorderPainted(false);
 		coderPanel.add(colorButton);
 		coderPanel.add(coderName);
 		fieldsPanel.add(coderPanel, gbc);
