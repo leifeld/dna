@@ -127,7 +127,6 @@ public class RegexPanel extends JPanel {
 				if (newColor != null) {
 					((JButton) e.getSource()).setForeground(newColor);
 				}
-
 			}
 		});
 		newFields.add(Box.createRigidArea(new Dimension(5, 5)));

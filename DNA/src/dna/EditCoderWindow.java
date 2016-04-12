@@ -45,21 +45,22 @@ public class EditCoderWindow extends JDialog{
 		
 		JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		
-		addColorButton = new JButton();
-		addColorButton.setBackground(coder.getColor());
+		JButton colorButtonTemp = (new JButton() {
+			public void paintComponent(Graphics g) {
+				super.paintComponent(g);
+				g.setColor(this.getForeground());
+				g.fillRect(2, 2, 14, 14);
+			}
+		});
+		addColorButton = colorButtonTemp;
 		addColorButton.setForeground(coder.getColor());
-		addColorButton.setOpaque(true);
-		addColorButton.setBorderPainted(false);
 		addColorButton.setPreferredSize(new Dimension(18, 18));
 		addColorButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Color actualColor = ((JButton)e.getSource()).getBackground();
+				Color actualColor = ((JButton)e.getSource()).getForeground();
 				Color newColor = JColorChooser.showDialog(EditCoderWindow.this, "choose color...", actualColor);
 				if (newColor != null) {
-					((JButton) e.getSource()).setBackground(newColor);
 					((JButton) e.getSource()).setForeground(newColor);
-					((JButton) e.getSource()).setOpaque(true);
-					((JButton) e.getSource()).setBorderPainted(false);
 				}
 			}
 		});
@@ -121,7 +122,7 @@ public class EditCoderWindow extends JDialog{
 		okButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				coder.setName(nameField.getText());
-				coder.setColor(addColorButton.getBackground());
+				coder.setColor(addColorButton.getForeground());
 				coder.getPermissions().put("addDocuments", permAddDocuments.isSelected());
 				coder.getPermissions().put("editDocuments", permEditDocuments.isSelected());
 				coder.getPermissions().put("deleteDocuments", permDeleteDocuments.isSelected());
