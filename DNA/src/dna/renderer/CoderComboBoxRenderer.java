@@ -38,12 +38,6 @@ public class CoderComboBoxRenderer implements ListCellRenderer<Object> {
 			});
 			colorButton.setPreferredSize(new Dimension(18, 18));
 			colorButton.setEnabled(false);
-			//JButton colorButton = new JButton();
-			//colorButton.setPreferredSize(new Dimension(12, 16));
-			//colorButton.setBackground(coder.getColor());
-			//colorButton.setForeground(coder.getColor());
-			//colorButton.setOpaque(true);
-			//colorButton.setBorderPainted(false);
 			panel.add(colorButton);
 			
 			String name = coder.getName();

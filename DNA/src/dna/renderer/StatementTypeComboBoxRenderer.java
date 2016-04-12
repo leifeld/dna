@@ -35,12 +35,6 @@ public class StatementTypeComboBoxRenderer implements ListCellRenderer<Object> {
 			});
 			colorRectangle.setPreferredSize(new Dimension(18, 18));
 			colorRectangle.setEnabled(false);
-			//JButton colorRectangle = new JButton();
-			//colorRectangle.setPreferredSize(new Dimension(18, 18));
-			//colorRectangle.setBackground(statementType.getColor());
-			//colorRectangle.setForeground(statementType.getColor());
-			//colorRectangle.setOpaque(true);
-			//colorRectangle.setBorderPainted(false);
 			
 			JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 			namePanel.add(colorRectangle);
