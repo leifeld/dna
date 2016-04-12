@@ -812,21 +812,22 @@ public class NewDatabaseDialog extends JDialog {
 				nameField.setColumns(20);
 				namePanel.add(nameField);
 				
-				addColorButton = new JButton();
-				addColorButton.setBackground(statementType.getColor());
+				JButton colorButtonTemp = (new JButton() {
+					public void paintComponent(Graphics g) {
+						super.paintComponent(g);
+						g.setColor(this.getForeground());
+						g.fillRect(2, 2, 14, 14);
+					}
+				});
+				addColorButton = colorButtonTemp;
 				addColorButton.setForeground(statementType.getColor());
-				addColorButton.setOpaque(true);
-				addColorButton.setBorderPainted(false);
 				addColorButton.setPreferredSize(new Dimension(18, 18));
 				addColorButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						Color actualColor = ((JButton)e.getSource()).getBackground();
+						Color actualColor = ((JButton)e.getSource()).getForeground();
 						Color newColor = JColorChooser.showDialog(EditStatementTypeWindow.this, "choose color...", actualColor);
 						if (newColor != null) {
-							((JButton) e.getSource()).setBackground(newColor);
 							((JButton) e.getSource()).setForeground(newColor);
-							((JButton) e.getSource()).setOpaque(true);
-							((JButton) e.getSource()).setBorderPainted(false);
 						}
 					}
 				});
@@ -1014,7 +1015,7 @@ public class NewDatabaseDialog extends JDialog {
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						statementType.setLabel(nameField.getText());
-						statementType.setColor(addColorButton.getBackground());
+						statementType.setColor(addColorButton.getForeground());
 						setVisible(false);
 					}
 				});
