@@ -267,6 +267,7 @@ public class ExportGui extends JDialog {
 		
 		// create and return settings
 		ExportSetting es = new ExportSetting("oneModeNetwork", statementType, startDate, stopDate, var1, var2);
+		es.setNetworkType("oneMode");
 		return es;
 	}
 

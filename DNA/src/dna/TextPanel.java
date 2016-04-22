@@ -1,6 +1,7 @@
 package dna;
 
 import dna.dataStructures.*;
+import dna.panels.BottomCardPanel;
 import dna.panels.SearchWindow;
 
 import java.awt.BorderLayout;
@@ -46,7 +47,7 @@ public class TextPanel extends JPanel {
 	JMenuItem menu1;
 	int documentId;
 	
-	SearchWindow searchWindow ;
+	public BottomCardPanel bottomCardPanel;
 	public JXCollapsiblePane collapsiblePane;
 	
 	ArrayList<StatementType> statementTypes ;
@@ -124,8 +125,8 @@ public class TextPanel extends JPanel {
 		this.add(textScrollPane, BorderLayout.CENTER);
 		this.add(collapsiblePane, BorderLayout.SOUTH);
 		collapsiblePane.setCollapsed(true);
-		searchWindow = new SearchWindow();
-		collapsiblePane.add(searchWindow, "Full-text search");
+		bottomCardPanel = new BottomCardPanel();
+		collapsiblePane.add(bottomCardPanel, "Search and recode");
 		
 		//MouseListener for text window; one method for Windows and one for Unix
 		textWindow.addMouseListener( new MouseAdapter() {

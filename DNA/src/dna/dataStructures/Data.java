@@ -60,6 +60,7 @@ public class Data {
 				entries.add(mykey);
 			}
 		}
+		Collections.sort(entries);
 		String[] entriesArray = entries.toArray(new String[0]);
 		return entriesArray;
 	}

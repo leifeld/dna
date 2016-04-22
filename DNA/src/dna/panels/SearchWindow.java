@@ -2,6 +2,7 @@ package dna.panels;
 
 import java.awt.event.*;
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -24,6 +25,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.ListSelectionModel;
 import javax.swing.ProgressMonitor;
 import javax.swing.border.EmptyBorder;
@@ -33,10 +35,14 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
+import org.jdesktop.swingx.JXCollapsiblePane;
+
 import dna.Dna;
 
 @SuppressWarnings("serial")
 public class SearchWindow extends JPanel {
+	
+	JToggleButton searchToggleButton, recodeToggleButton;
 	
 	JTable resultTable;
 	SearchTableModel tableModel;
@@ -53,6 +59,40 @@ public class SearchWindow extends JPanel {
 		
 		JPanel topPanel = new JPanel(new BorderLayout());
 		topPanel.setBorder(new EmptyBorder(0,5,0,5));
+		
+		searchToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/find.png")));
+		searchToggleButton.setPreferredSize(new Dimension(36, 18));
+		searchToggleButton.setSelected(false);
+		searchToggleButton.setName("searchToggle");
+		searchToggleButton.addActionListener( new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				CardLayout cl = (CardLayout) Dna.dna.gui.textPanel.bottomCardPanel.getLayout();
+				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "searchPanel");
+				searchToggleButton.setSelected(true);
+				recodeToggleButton.setSelected(false);
+				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(true);
+				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(false);
+			}
+		});
+		recodeToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/table_edit.png")));
+		recodeToggleButton.setPreferredSize(new Dimension(36, 18));
+		recodeToggleButton.setSelected(true);
+		recodeToggleButton.setName("recodeToggle");
+		recodeToggleButton.addActionListener( new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				CardLayout cl = (CardLayout) Dna.dna.gui.textPanel.bottomCardPanel.getLayout();
+				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "recodePanel");
+				searchToggleButton.setSelected(false);
+				recodeToggleButton.setSelected(true);
+				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(false);
+				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(true);
+			}
+		});
+		JPanel switchPanel = new JPanel();
+		switchPanel.add(searchToggleButton);
+		switchPanel.add(recodeToggleButton);
+		topPanel.add(switchPanel, BorderLayout.EAST);
+		
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		textField = new JTextField(30);
 		searchButton = new JButton(searchIcon);

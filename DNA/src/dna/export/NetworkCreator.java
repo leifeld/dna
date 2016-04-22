@@ -49,13 +49,21 @@ public class NetworkCreator {
 			}
 			JOptionPane.showMessageDialog(Dna.dna.gui, "File has been exported to \"" + exportSetting.getFileName() + "\".");
 		} else if (exportSetting.getNetworkType().equals("oneMode")){
-			System.err.println("Warning: one-mode co-occurrence networks have not been implemented yet.");
-			JOptionPane.showMessageDialog(Dna.dna.gui, "Warning: one-mode co-occurrence networks have not been implemented yet.");
+			Network network = oneMode(statements, exportSetting.getVar1(), exportSetting.getVar2(), exportSetting.getQualifier(), 
+					exportSetting.isCountDuplicates(), exportSetting.isIncludeIsolates());
+			if (exportSetting.getExportFormat().equals(".csv")) {
+				exportCSV(network, exportSetting.getFileName());
+			} else if (exportSetting.getExportFormat().equals(".dl")) {
+				exportDL(network, exportSetting.getFileName());
+			} else if (exportSetting.getExportFormat().equals(".graphml")) {
+				exportGraphML(network, exportSetting.getFileName());
+			}
+			JOptionPane.showMessageDialog(Dna.dna.gui, "File has been exported to \"" + exportSetting.getFileName() + "\".");
 		} else {
 			System.err.println("Unknown network type: " + exportSetting.getNetworkType());
 		}
 	}
-
+	
 	/**
 	 * Return a filtered list of {@link SidebarStatement}s based on the settings saved in the {@link NetworkExporterObject}.
 	 * 
@@ -186,6 +194,37 @@ public class NetworkCreator {
         
         return mat3;
     }
+
+	/**
+	 * Subtract second from first two-dimensional array.
+	 * 
+	 * @param mat1	Two-dimensional array with the first input matrix.
+	 * @param mat2	Two-dimensional array with the second input matrix.
+	 * @return		Two-dimensional array with the output matrix.
+	 */
+	public static double[][] subtract(double[][] mat1, double[][] mat2) {
+        int aRows = mat1.length;
+        int aColumns = mat1[0].length;
+        int bRows = mat2.length;
+        int bColumns = mat2[0].length;
+
+        if (aRows != bRows) {
+            throw new IllegalArgumentException("Matrix dimensions do not match: " + aRows + " vs. " + bRows + " rows.");
+        }
+        if (aColumns != bColumns) {
+            throw new IllegalArgumentException("Matrix dimensions do not match: " + aColumns + " vs. " + bColumns + " columns.");
+        }
+        
+        double[][] mat3 = new double[aRows][aColumns];
+        
+        for (int i = 0; i < aRows; i++) {
+            for (int j = 0; j < aColumns; j++) {
+                mat3[i][j] = mat1[i][j] - mat2[i][j];
+            }
+        }
+        
+        return mat3;
+    }
 	
 	public Network twoMode(ArrayList<Statement> statements, String var1, String var2, boolean countDuplicates, boolean includeIsolates) {
 		
@@ -274,6 +313,320 @@ public class NetworkCreator {
 		colnames = names2.toArray(colnames);
 		Matrix matrix = new Matrix(mat, rownames, colnames); // assemble the Matrix object with labels
 		Network network = new Network(matrix, 2);  // wrap matrix in a network object
+		return network;
+	}
+	
+	public Network oneMode(ArrayList<Statement> statements, String var1, String var2, String qualifier, boolean countDuplicates, 
+			boolean includeIsolates) {
+		
+		// step 1: collect values of the qualifier variable
+		String[] qualifierValues = Dna.data.getStringEntries(exportSetting.getStatementType().getId(), qualifier);
+		boolean qualifierInt;
+		if (exportSetting.getStatementType().getVariables().get(qualifier).equals("long text") || 
+				exportSetting.getStatementType().getVariables().get(qualifier).equals("short text")) {
+			qualifierInt = false;
+		} else {
+			qualifierInt = true;
+		}
+		
+		// step 2: get vectors with unique labels for rows and columns of a two-mode matrix
+		ArrayList<String> names1 = new ArrayList<String>(); // unique row labels
+		ArrayList<String> names2 = new ArrayList<String>(); // unique column labels
+		if (includeIsolates == true) {  // take them from the main database 
+			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+				String n1 = (String) Dna.data.getStatements().get(i).getValues().get(var1);
+				String n2 = (String) Dna.data.getStatements().get(i).getValues().get(var2);
+				if (!names1.contains(n1)) {
+					names1.add(n1);
+				}
+				if (!names2.contains(n2)) {
+					names2.add(n2);
+				}
+			}
+		} else {  // no isolates: take them from the filtered results
+			for (int i = 0; i < statements.size(); i++) {
+				String n1 = (String) statements.get(i).getValues().get(var1);
+				String n2 = (String) statements.get(i).getValues().get(var2);
+				if (!names1.contains(n1)) {
+					names1.add(n1);
+				}
+				if (!names2.contains(n2)) {
+					names2.add(n2);
+				}
+			}
+		}
+		Collections.sort(names1);
+		Collections.sort(names2);
+		
+		// step 3: create congruence network; go through each qualifier level, create two-mode network, project one-mode network, and add
+		double[][] congruence = new double[names1.size()][names1.size()];  // quadratic matrix!
+		if (exportSetting.getAgreementPattern().equals("congruence") || exportSetting.getAgreementPattern().equals("subtract")) {
+			for (int i = 0; i < qualifierValues.length; i++) {
+				
+				// only retain statements with this qualifier level
+				ArrayList<Statement> al = new ArrayList<Statement>();
+				for (int j = 0; j < statements.size(); j++) {
+					String currentQualifier = "";
+					if (qualifierInt == true) {
+						currentQualifier = String.valueOf(statements.get(j).getValues().get(qualifier));
+					} else {
+						currentQualifier = (String) statements.get(j).getValues().get(qualifier);
+					}
+					if (qualifierValues[i].equals(currentQualifier)) {
+						al.add(statements.get(j));
+					}
+				}
+				
+				// create two-mode network at this qualifier level
+				double[][] mat = new double[names1.size()][names2.size()];  // rectangular matrix!
+				for (int k = 0; k < statements.size(); k++) {
+					String n1 = (String) statements.get(k).getValues().get(var1);
+					String n2 = (String) statements.get(k).getValues().get(var2);
+					
+					int row = -1;
+					for (int l = 0; l < names1.size(); l++) {
+						if (names1.get(l).equals(n1)) {
+							row = l;
+							break;
+						}
+					}
+					int col = -1;
+					for (int l = 0; l < names2.size(); l++) {
+						if (names2.get(l).equals(n2)) {
+							col = l;
+							break;
+						}
+					}
+					
+					if (countDuplicates == true) {
+						mat[row][col] = mat[row][col] + 1.0;
+					} else {
+						boolean duplicate = false;
+						if (k > 1) {
+							for (int l = k - 1; l > -1; l--) {  // go back to previous statements and check if duplicate; add if no duplicate
+								if (statements.get(l).getDocumentId() == statements.get(k).getDocumentId() && 
+										statements.get(l).getValues().get(var1).equals(statements.get(k).getValues().get(var1)) && 
+										statements.get(l).getValues().get(var2).equals(statements.get(k).getValues().get(var2))) {
+									duplicate = true;
+									break;
+								}
+							}
+						}
+						if (duplicate == false) {
+							mat[row][col] = mat[row][col] + 1.0;
+						}
+					}
+				}
+				
+				// convert two-mode into one-mode network and add to congruence matrix
+				mat = multiply(mat, transpose(mat));
+				congruence = add(congruence, mat);
+			}
+		}
+		
+		// step 4: create conflict network if necessary
+		double[][] conflict = new double[names1.size()][names1.size()];  // quadratic matrix!
+		if (exportSetting.getAgreementPattern().equals("conflict") || exportSetting.getAgreementPattern().equals("subtract")) {
+			for (int i = 0; i < names1.size(); i++) {
+				for (int j = 0; j < names1.size(); j++) {
+					for (int k = 0; k < statements.size(); k++) {
+						for (int l = 0; l < statements.size(); l++) {
+							if (i != j && names1.get(i).equals(statements.get(k).getValues().get(var1)) && 
+									names1.get(j).equals(statements.get(l).getValues().get(var1))) {
+								if (qualifierInt == false) {
+									if (!statements.get(k).getValues().get(qualifier).equals(statements.get(l).getValues().get(qualifier))) {
+										if (countDuplicates == true) {
+											conflict[i][j] = conflict[i][j] + 1;
+										} else {
+											boolean duplicate = false;
+											if (k > 1) {
+												for (int m = k - 1; m > -1; m--) {  // go back to previous statements and check if duplicate; add if no duplicate
+													if (statements.get(m).getDocumentId() == statements.get(k).getDocumentId() && 
+															statements.get(m).getValues().get(var1).equals(statements.get(k).getValues().get(var1)) && 
+															statements.get(m).getValues().get(var2).equals(statements.get(k).getValues().get(var2)) && 
+															statements.get(m).getValues().get(qualifier).equals(statements.get(k).getValues().get(qualifier))) {
+														duplicate = true;
+														break;
+													}
+												}
+											}
+											if (duplicate == false) {
+												conflict[i][j] = conflict[i][j] + 1;
+											}
+										}
+									}
+								} else {
+									int q1 = (int) statements.get(k).getValues().get(qualifier);
+									int q2 = (int) statements.get(l).getValues().get(qualifier);
+									int difference = Math.abs(q1 - q2);
+									
+									if (countDuplicates == true) {
+										conflict[i][j] = conflict[i][j] + difference;
+									} else {
+										boolean duplicate = false;
+										if (k > 1) {
+											for (int m = k - 1; m > -1; m--) {  // go back to previous statements and check if duplicate; add if no duplicate
+												if (statements.get(m).getDocumentId() == statements.get(k).getDocumentId() && 
+														statements.get(m).getValues().get(var1).equals(statements.get(k).getValues().get(var1)) && 
+														statements.get(m).getValues().get(var2).equals(statements.get(k).getValues().get(var2)) && 
+														statements.get(m).getValues().get(qualifier) == statements.get(k).getValues().get(qualifier)) {
+													duplicate = true;
+													break;
+												}
+											}
+										}
+										if (duplicate == false) {
+											conflict[i][j] = conflict[i][j] + difference;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		// step 5: create ignore matrix if necessary
+		double[][] ignore = new double[names1.size()][names2.size()];  // rectangular matrix!
+		if (exportSetting.getAgreementPattern().equals("ignore")) {
+			for (int k = 0; k < statements.size(); k++) {
+				String n1 = (String) statements.get(k).getValues().get(var1);
+				String n2 = (String) statements.get(k).getValues().get(var2);
+				
+				int row = -1;
+				for (int l = 0; l < names1.size(); l++) {
+					if (names1.get(l).equals(n1)) {
+						row = l;
+						break;
+					}
+				}
+				int col = -1;
+				for (int l = 0; l < names2.size(); l++) {
+					if (names2.get(l).equals(n2)) {
+						col = l;
+						break;
+					}
+				}
+				
+				if (countDuplicates == true) {
+					ignore[row][col] = ignore[row][col] + 1.0;
+				} else {
+					boolean duplicate = false;
+					if (k > 1) {
+						for (int l = k - 1; l > -1; l--) {  // go back to previous statements and check if duplicate; add if no duplicate
+							if (statements.get(l).getDocumentId() == statements.get(k).getDocumentId() && 
+									statements.get(l).getValues().get(var1).equals(statements.get(k).getValues().get(var1)) && 
+									statements.get(l).getValues().get(var2).equals(statements.get(k).getValues().get(var2))) {
+								duplicate = true;
+								break;
+							}
+						}
+					}
+					if (duplicate == false) {
+						ignore[row][col] = ignore[row][col] + 1.0;
+					}
+				}
+			}
+			ignore = multiply(ignore, transpose(ignore));  // convert two-mode into one-mode network
+		}
+		
+		// step 5: choose result matrix; subtract if necessary
+		double[][] resultmat = new double[names1.size()][names1.size()];  // quadratic matrix!
+		if (exportSetting.getAgreementPattern().equals("congruence")) {
+			resultmat = congruence;
+		} else if (exportSetting.getAgreementPattern().equals("conflict")) {
+			resultmat = conflict;
+		} else if (exportSetting.getAgreementPattern().equals("ignore")) {
+			resultmat = ignore;
+		} else if (exportSetting.getAgreementPattern().equals("subtract")) {
+			resultmat = subtract(congruence, conflict);
+		}
+		
+		// step 6: normalization
+		if (exportSetting.getNormalization().equals("cooccurrence")) {
+			// do nothing
+		} else if (exportSetting.getNormalization().equals("average")) {
+			Network tm = twoMode(statements, var1, var2, countDuplicates, includeIsolates);
+			double[][] mat = tm.getMatrix().getMatrix();
+			int columns = tm.getMatrix().getColnames().length;
+			if (tm.getMatrix().getRownames().length != names1.size()) {
+				System.err.println("Normalization: dimensions differ. Network is not normalized.");
+			} else {
+				for (int i = 0; i < names1.size(); i++) {
+					for (int j = 0; j < names1.size(); j++) {
+						int activity_i = 0;
+						int activity_j = 0;
+						for (int k = 0; k < columns; k++) {
+							if (mat[i][k] > 0) {
+								activity_i++;
+							}
+							if (mat[j][k] > 0) {
+								activity_j++;
+							}
+						}
+						resultmat[i][j] = resultmat[i][j] / (activity_i + activity_j) / 2;
+					}
+				}
+			}
+		} else if (exportSetting.getNormalization().equals("jaccard")) {
+			System.out.println("Warning: Jaccard normalization is experimental and may return wrong results.");
+			Network tm = twoMode(statements, var1, var2, countDuplicates, includeIsolates);
+			double[][] mat = tm.getMatrix().getMatrix();
+			int columns = tm.getMatrix().getColnames().length;
+			if (tm.getMatrix().getRownames().length != names1.size()) {
+				System.err.println("Normalization: dimensions differ. Network is not normalized.");
+			} else {
+				for (int i = 0; i < names1.size(); i++) {
+					for (int j = 0; j < names1.size(); j++) {
+						int m01 = 0;
+						int m10 = 0;
+						int m11 = 0;
+						for (int k = 0; k < columns; k++) {
+							if (mat[i][k] > 0 && mat[j][k] > 0) {
+								m11++;
+							} else if (mat[i][k] > 0) {
+								m10++;
+							} else if (mat[j][k] > 0) {
+								m01++;
+							}
+						}
+						resultmat[i][j] = resultmat[i][j] / (m01 + m10 + m11);
+					}
+				}
+			}
+		} else if (exportSetting.getNormalization().equals("cosine")) {
+			Network tm = twoMode(statements, var1, var2, countDuplicates, includeIsolates);
+			double[][] mat = tm.getMatrix().getMatrix();
+			int columns = tm.getMatrix().getColnames().length;
+			if (tm.getMatrix().getRownames().length != names1.size()) {
+				System.err.println("Normalization: dimensions differ. Network is not normalized.");
+			} else {
+				for (int i = 0; i < names1.size(); i++) {
+					for (int j = 0; j < names1.size(); j++) {
+						int activity_i = 0;
+						int activity_j = 0;
+						for (int k = 0; k < columns; k++) {
+							if (mat[i][k] > 0) {
+								activity_i++;
+							}
+							if (mat[j][k] > 0) {
+								activity_j++;
+							}
+						}
+						resultmat[i][j] = resultmat[i][j] / Math.sqrt(activity_i * activity_j);
+					}
+				}
+			}
+		} else {
+			System.err.println("Normalization argument not recognized.");
+		}
+		
+		// step 7: create Network object and return
+		String[] rownames = new String[names1.size()]; // cast row/column names from array list to array
+		rownames = names1.toArray(rownames);
+		Matrix matrix = new Matrix(resultmat, rownames, rownames); // assemble the Matrix object with labels
+		Network network = new Network(matrix, 1);  // wrap matrix in a network object
 		return network;
 	}
 	

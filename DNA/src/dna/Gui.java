@@ -208,6 +208,7 @@ public class Gui extends JFrame {
 		Dna.dna.gui.textPanel.paintStatements();
 		Dna.dna.gui.documentPanel.documentFilter();
 		Dna.dna.gui.documentPanel.documentTable.updateDocumentView();
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.updateUI();
 	}
 	
 	class StatusBar extends JPanel {

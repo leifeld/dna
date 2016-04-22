@@ -55,10 +55,11 @@ import org.jdom.Text;
 import org.jdom.input.SAXBuilder;
 
 import dna.dataStructures.Coder;
+import dna.dataStructures.Data;
 import dna.dataStructures.Statement;
-
+/*
 @SuppressWarnings("serial")
-public class ImportOldDNA extends JDialog {
+public class ImportNewDNA extends JDialog {
 	
 	Container c;
 	JTable articleImportTable;
@@ -67,10 +68,7 @@ public class ImportOldDNA extends JDialog {
 	int coderId = 0;
 	int statementTypeId;
 	
-	JTextField titlePatternField, authorPatternField, sourcePatternField, sectionPatternField, typePatternField, notesPatternField;
-	JTextField titlePreviewField, authorPreviewField, sourcePreviewField, sectionPreviewField, typePreviewField, notesPreviewField;
-	
-	public ImportOldDNA(final String file) throws NullPointerException {
+	public ImportNewDNA(final String file) throws NullPointerException {
 		this.setModal(true);
 		c = getContentPane();
 		this.setTitle("Import documents from DNA 1...");
@@ -148,7 +146,7 @@ public class ImportOldDNA extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				
 				String s = (String)JOptionPane.showInputDialog(
-						ImportOldDNA.this, 
+						ImportNewDNA.this, 
 						"Please enter a regular expression to filter the articles:", 
 						"Keyword filter", 
 						JOptionPane.PLAIN_MESSAGE, 
@@ -183,166 +181,11 @@ public class ImportOldDNA extends JDialog {
 		
 		parseArticles(file);
 		
-		JPanel patternPanel = new JPanel(new GridBagLayout());
-		TitledBorder tb2 = new TitledBorder(new EtchedBorder(), "Metadata" );
-		tb2.setTitleJustification(TitledBorder.CENTER);
-		patternPanel.setBorder(tb2);
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.gridx = 1;
-		gbc.gridy = 0;
-		gbc.anchor = GridBagConstraints.WEST;
-		JLabel patternHeaderLabel = new JLabel("Regex pattern");
-		patternPanel.add(patternHeaderLabel, gbc);
-		
-		gbc.gridx = 2;
-		JLabel previewHeaderLabel = new JLabel("Preview");
-		patternPanel.add(previewHeaderLabel, gbc);
-		
-		gbc.gridx = 0;
-		gbc.gridy = 1;
-		gbc.anchor = GridBagConstraints.EAST;
-		JLabel titleLabel = new JLabel("Title:");
-		patternPanel.add(titleLabel, gbc);
-
-		gbc.gridy = 2;
-		JLabel authorLabel = new JLabel("Author:");
-		patternPanel.add(authorLabel, gbc);
-
-		gbc.gridy = 3;
-		JLabel sourceLabel = new JLabel("Source:");
-		patternPanel.add(sourceLabel, gbc);
-
-		gbc.gridy = 4;
-		JLabel sectionLabel = new JLabel("Section:");
-		patternPanel.add(sectionLabel, gbc);
-
-		gbc.gridy = 5;
-		JLabel typeLabel = new JLabel("Type:");
-		patternPanel.add(typeLabel, gbc);
-
-		gbc.gridy = 6;
-		JLabel notesLabel = new JLabel("Notes:");
-		patternPanel.add(notesLabel, gbc);
-
-		gbc.gridy = 7;
-		JLabel coderLabel = new JLabel("Coder:");
-		patternPanel.add(coderLabel, gbc);
-		
-		gbc.gridx = 1;
-		gbc.gridy = 1;
-		gbc.anchor = GridBagConstraints.WEST;
-		titlePatternField = new JTextField(".+");
-		titlePatternField.setColumns(20);
-		patternPanel.add(titlePatternField, gbc);
-		
-		gbc.gridy = 2;
-		authorPatternField = new JTextField("^\\w+, \\w+");
-		authorPatternField.setColumns(20);
-		patternPanel.add(authorPatternField, gbc);
-
-		gbc.gridy = 3;
-		sourcePatternField = new JTextField("(?<=.+? - ).+?(?= -)");
-		sourcePatternField.setColumns(20);
-		patternPanel.add(sourcePatternField, gbc);
-
-		gbc.gridy = 4;
-		sectionPatternField = new JTextField("");
-		sectionPatternField.setColumns(20);
-		patternPanel.add(sectionPatternField, gbc);
-
-		gbc.gridy = 5;
-		typePatternField = new JTextField("(?<=- )[a-zA-Z-]+$");
-		typePatternField.setColumns(20);
-		patternPanel.add(typePatternField, gbc);
-
-		gbc.gridy = 6;
-		notesPatternField = new JTextField("");
-		notesPatternField.setColumns(20);
-		patternPanel.add(notesPatternField, gbc);
-
-		gbc.gridy = 7;
-		gbc.gridwidth = 2;
-		JPanel coderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		coderId = Dna.data.getActiveCoder();
-		Coder coder = Dna.data.getCoderById(coderId);
-		String name = coder.getName();
-		JLabel coderName = new JLabel(name);
-		JButton colorButton = new JButton();
-		colorButton.setPreferredSize(new Dimension(16, 16));
-		colorButton.setEnabled(false);
-		colorButton.setBackground(coder.getColor());
-		coderPanel.add(colorButton);
-		coderPanel.add(coderName);
-		patternPanel.add(coderPanel, gbc);
-		
-		gbc.gridwidth = 1;
-		gbc.gridx = 2;
-		gbc.gridy = 1;
-		titlePreviewField = new JTextField("");
-		titlePreviewField.setColumns(20);
-		titlePreviewField.setEditable(false);
-		patternPanel.add(titlePreviewField, gbc);
-
-		gbc.gridy = 2;
-		authorPreviewField = new JTextField("");
-		authorPreviewField.setColumns(20);
-		authorPreviewField.setEditable(false);
-		patternPanel.add(authorPreviewField, gbc);
-
-		gbc.gridy = 3;
-		sourcePreviewField = new JTextField("");
-		sourcePreviewField.setColumns(20);
-		sourcePreviewField.setEditable(false);
-		patternPanel.add(sourcePreviewField, gbc);
-
-		gbc.gridy = 4;
-		sectionPreviewField = new JTextField("");
-		sectionPreviewField.setColumns(20);
-		sectionPreviewField.setEditable(false);
-		patternPanel.add(sectionPreviewField, gbc);
-
-		gbc.gridy = 5;
-		typePreviewField = new JTextField("");
-		typePreviewField.setColumns(20);
-		typePreviewField.setEditable(false);
-		patternPanel.add(typePreviewField, gbc);
-
-		gbc.gridy = 6;
-		notesPreviewField = new JTextField("");
-		notesPreviewField.setColumns(20);
-		notesPreviewField.setEditable(false);
-		patternPanel.add(notesPreviewField, gbc);
-		
 		JPanel lowerButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        ImageIcon updateIcon = new ImageIcon(getClass().getResource("/icons/arrow_rotate_clockwise.png"));
-        JButton updateButton = new JButton("Refresh", updateIcon);
-        updateButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int row = articleImportTable.getSelectedRow();
-				if (row < 0) {
-					titlePreviewField.setText("");
-					authorPreviewField.setText("");
-					sourcePreviewField.setText("");
-					sectionPreviewField.setText("");
-					typePreviewField.setText("");
-					notesPreviewField.setText("");
-				} else {
-					String inputText = (String) aitm.getValueAt(row, 1);
-					titlePreviewField.setText(patternToString(inputText, titlePatternField.getText()));
-					authorPreviewField.setText(patternToString(inputText, authorPatternField.getText()));
-					sourcePreviewField.setText(patternToString(inputText, sourcePatternField.getText()));
-					sectionPreviewField.setText(patternToString(inputText, sectionPatternField.getText()));
-					typePreviewField.setText(patternToString(inputText, typePatternField.getText()));
-					notesPreviewField.setText(patternToString(inputText, notesPatternField.getText()));
-				}
-			}
-		});
-        lowerButtonPanel.add(updateButton);
 		lowerButtonPanel.add(importButton);
 		
 		JPanel mainPanel = new JPanel(new BorderLayout());
 		mainPanel.add(filePanel, BorderLayout.NORTH);
-		mainPanel.add(patternPanel, BorderLayout.CENTER);
 		mainPanel.add(lowerButtonPanel, BorderLayout.SOUTH);
 		c.add(mainPanel);
 		
@@ -367,26 +210,6 @@ public class ImportOldDNA extends JDialog {
 			}
 		}
 		return -1;
-	}
-	
-	public String patternToString(String text, String pattern) {
-		Pattern p;
-		try {
-			p = Pattern.compile(pattern);
-		} catch (PatternSyntaxException e) {
-			return("");
-		}
-		Matcher m = p.matcher(text);
-		if (m.find()) {
-			try {
-				String string = m.group(0);
-			    return string;
-			} catch (IndexOutOfBoundsException e) {
-				return("");
-			}
-		} else {
-			return "";
-		}
 	}
 	
 	class ArticleInserter implements Runnable {
@@ -465,22 +288,6 @@ public class ImportOldDNA extends JDialog {
 					notesString = patternToString(title, notesPatternField.getText());
 					typeString = patternToString(title, typePatternField.getText());
 					
-					// handle duplicates
-					/*
-					if (Dna.dna.gui.documentPanel.documentContainer.containsTitle(title)) {
-						int count = 2;
-						Pattern p = Pattern.compile(title + " \\(" + "[0-9]+" + "\\)");
-						for (int l = 0; l < Dna.dna.gui.documentPanel.documentContainer.getRowCount(); l++) {
-							Matcher m = p.matcher(Dna.dna.gui.documentPanel.documentContainer.get(l).getTitle());
-							boolean b = m.find();
-							if (b == true) {
-								count++;
-							}
-						}
-						title = title.concat(" (" + count + ")");
-					}
-					*/
-					
 					Date date = new Date();
 					
 					String articleText2 = articleText.replaceAll("\n", "<br>");
@@ -547,6 +354,11 @@ public class ImportOldDNA extends JDialog {
 	}
 	
 	public void parseArticles(String filename) {
+		SqlConnection importConnection = new SqlConnection("sqlite", filename, "", "");
+		Data importData = new Data();
+		
+		
+		
 		try {
 			SAXBuilder builder = new SAXBuilder( false );
 			Document docXml = builder.build( new File( filename ) );
@@ -661,3 +473,4 @@ public class ImportOldDNA extends JDialog {
 		}
 	}
 }
+*/
