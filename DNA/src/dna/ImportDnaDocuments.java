@@ -19,6 +19,7 @@ import javax.swing.DefaultCellEditor;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -41,7 +42,7 @@ import dna.renderer.CoderTableCellRenderer;
 
 
 @SuppressWarnings("serial")
-public class ImportDnaDocuments extends JFrame {
+public class ImportDnaDocuments extends JDialog {
 	
 	Container c;
 	CoderTableModel coderTableModel;
@@ -52,6 +53,7 @@ public class ImportDnaDocuments extends JFrame {
 	public Data foreignData;
 	
 	public ImportDnaDocuments(final String file) {
+		this.setModal(true);
 		c = getContentPane();
 		this.setTitle("Import statements...");
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -80,8 +82,9 @@ public class ImportDnaDocuments extends JFrame {
 		tableScrollPane.setPreferredSize(new Dimension(500, 300));
 		
 		articleImportTable.getColumnModel().getColumn(0).setPreferredWidth(20);
-		articleImportTable.getColumnModel().getColumn(1).setPreferredWidth(400);
-		articleImportTable.getColumnModel().getColumn(2).setPreferredWidth(160);
+		articleImportTable.getColumnModel().getColumn(1).setPreferredWidth(350);
+		articleImportTable.getColumnModel().getColumn(2).setPreferredWidth(80);
+		articleImportTable.getColumnModel().getColumn(3).setPreferredWidth(130);
 		articleImportTable.getTableHeader().setReorderingAllowed( false );
 		
 		JButton importButton = new JButton("Import selected", importIcon);
@@ -259,9 +262,6 @@ public class ImportDnaDocuments extends JFrame {
 			for (int i = 0; i < coderTableModel.coderForeign.size(); i++) {
 				coderMap.put(coderTableModel.coderForeign.get(i).getId(), coderTableModel.coderDomestic.get(i).getId());
 			}
-
-			HashMap<Integer, Integer> documentMap = new HashMap<Integer, Integer>();
-			HashMap<Integer, Boolean> documentExistsMap = new HashMap<Integer, Boolean>();
 			
 			// TODO: check if statement types exist and create if not; map foreign to domestic statementTypeId
 			// for now, we assume that they are identical, but this may lead to errors!
@@ -277,88 +277,53 @@ public class ImportDnaDocuments extends JFrame {
 			*/
 			
 			// documents
-			Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
-			progressMonitor1 = new ProgressMonitor(Dna.dna.gui, "Importing documents and statements...", "", 0, aitm.getRowCount() - 1 );
+			progressMonitor1 = new ProgressMonitor(Dna.dna.gui, "Importing documents...", "", 0, aitm.getRowCount() - 1 );
 			progressMonitor1.setMillisToDecideToPopup(1);
-			
+			HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
 			for (int k = 0; k < aitm.getRowCount(); k++) {
 				progressMonitor1.setProgress(k);
 				if (progressMonitor1.isCanceled()) {
 					break;
 				}
 				if ((Boolean) aitm.getValueAt(k, 0) == true) {
-					int documentId = aitm.getDocumentId(k);
-					Document document = foreignData.getDocument(documentId);
+					Document document = aitm.documents.get(k);
+					int documentId = document.getId();
 					int newDocumentId = Dna.data.generateNewId("documents");
+					if (map.containsKey(documentId)) {
+						System.err.println("Import: document " + documentId + " already exists.");
+					}
+					map.put(documentId, newDocumentId);
 					document.setId(newDocumentId);
 					document.setCoder(coderMap.get(document.getCoder()));
 					Dna.dna.addDocument(document);
 					
-					// import statements for this document
-					for (int i = 0; i < foreignData.getStatements().size(); i++) {
-						if (foreignData.getStatements().get(i).getDocumentId() == documentId) {
-							Statement statement = foreignData.getStatements().get(i);
-							statement.setDocumentId(newDocumentId);
-							statement.setCoder(coderMap.get(statement.getCoder()));
-							int newStatementId = Dna.data.generateNewId("statements");
-							statement.setId(newStatementId);
-							//Dna.dna.gui.rightPanel.statementPanel.ssc.addStatement(statement);
-							Dna.data.addStatement(statement);
-							int statementTypeId = statement.getStatementTypeId();
-							LinkedHashMap<String, String> map = Dna.data.getStatementTypeById(statementTypeId).getVariables();
-							Dna.dna.sql.addStatement(statement, map);
-						}
-					}
 				}
 			}
-			Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
-			
-			/*
-			for (int k = 0; k < aitm.getRowCount(); k++) {
-				progressMonitor1.setProgress(k);
-				if (progressMonitor1.isCanceled()) {
-					break;
-				}
-				if ((Boolean)aitm.getValueAt(k, 0) == true) {
-					int oldDocumentId = aitm.getDocumentId(k);
-					int newDocumentId = Dna.data.generateNewId("documents");
-					documentMap.put(oldDocumentId, newDocumentId);
-					documentExistsMap.put(oldDocumentId, true);
-					Document document = foreignData.getDocument(oldDocumentId);
-					document.setId(newDocumentId);
-					document.setCoder(coderMap.get(document.getCoder()));
-					Dna.dna.addDocument(document);
-				} else {
-					documentExistsMap.put(aitm.getDocumentId(k), false);
-				}
-			}
-			
-			// statements
+
+			// import statements for this document
+			Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
 			progressMonitor2 = new ProgressMonitor(Dna.dna.gui, "Importing statements...", "", 0, foreignData.getStatements().size() - 1 );
 			progressMonitor2.setMillisToDecideToPopup(1);
-			Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
 			for (int i = 0; i < foreignData.getStatements().size(); i++) {
 				progressMonitor2.setProgress(i);
 				if (progressMonitor2.isCanceled()) {
 					break;
 				}
-				int statementDocumentId = foreignData.getStatements().get(i).getDocumentId();
-				boolean exists = documentExistsMap.get(statementDocumentId);
-				if (exists == true) {
-					int newDocumentId = documentMap.get(statementDocumentId);
-					Statement statement = foreignData.getStatements().get(i);
+				Statement statement = foreignData.getStatements().get(i);
+				int documentId = statement.getDocumentId();
+				if (map.containsKey(documentId)) {
+					int newDocumentId = map.get(documentId);
+					statement.setDocumentId(newDocumentId);
 					statement.setCoder(coderMap.get(statement.getCoder()));
 					int newStatementId = Dna.data.generateNewId("statements");
 					statement.setId(newStatementId);
-					statement.setDocumentId(newDocumentId);
-					Dna.dna.gui.rightPanel.statementPanel.ssc.addStatement(statement);
+					Dna.data.addStatement(statement);
 					int statementTypeId = statement.getStatementTypeId();
-					LinkedHashMap<String, String> map = Dna.data.getStatementTypeById(statementTypeId).getVariables();
-					Dna.dna.sql.addStatement(statement, map);
+					LinkedHashMap<String, String> varmap = Dna.data.getStatementTypeById(statementTypeId).getVariables();
+					Dna.dna.sql.addStatement(statement, varmap);
 				}
 			}
 			Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
-			*/
 		}
 	}
 	
@@ -366,13 +331,7 @@ public class ImportDnaDocuments extends JFrame {
 		foreignSql = new SqlConnection("sqlite", filename, "", "");
 		foreignData = foreignSql.getAllData();
 		for (int i = 0; i < foreignData.getDocuments().size(); i++) {
-			int id = foreignData.getDocuments().get(i).getId();
-			String title = foreignData.getDocuments().get(i).getTitle();
-			Date date = foreignData.getDocuments().get(i).getDate();
-			SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy hh:mm:ss");
-			String dateString = dateFormat.format(date);
-			String coderString = foreignData.getCoderById(foreignData.getDocuments().get(i).getCoder()).getName();
-			aitm.addArticle(id, title, coderString, dateString, false);
+			aitm.addArticle(foreignData.getDocuments().get(i), false);
 		}
 		for (int i = 0; i < foreignData.getCoders().size(); i++) {
 			coderTableModel.coderForeign.add(foreignData.getCoders().get(i));
@@ -398,21 +357,13 @@ public class ImportDnaDocuments extends JFrame {
 	
 	class ArticleImportTableModel implements TableModel {
 		private Vector<TableModelListener> listeners = new Vector<TableModelListener>();
-		private Vector<Integer> ids = new Vector<Integer>();
-		private Vector<String> titles = new Vector<String>();
-		private Vector<String> coders = new Vector<String>();
-		private Vector<String> dates = new Vector<String>();
-		private Vector<Boolean> selections = new Vector<Boolean>();
+		ArrayList<Document> documents = new ArrayList<Document>();
+		ArrayList<Boolean> selections = new ArrayList<Boolean>();
 		
-		public void addArticle( int id, String title, String coderString, String date, boolean selection ){
-			
-			int index = titles.size();
-			ids.add(id);
-			titles.add( title );
-			coders.add( coderString );
-			dates.add( date );
+		public void addArticle( Document document, boolean selection ){
+			documents.add(document);
 			selections.add( selection );
-			
+			int index = documents.size();
 			TableModelEvent e = new TableModelEvent( this, index, index, TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT );
 			
 			for( int i = 0, n = listeners.size(); i < n; i++ ) {
@@ -420,8 +371,8 @@ public class ImportDnaDocuments extends JFrame {
 			}
 		}
 		
-		public int getDocumentId(int row) {
-			return ids.get(row);
+		public Document getDocument(int row) {
+			return documents.get(row);
 		}
 		
 		public int getColumnCount() {
@@ -429,7 +380,7 @@ public class ImportDnaDocuments extends JFrame {
 		}
 		
 		public int getRowCount() {
-			return titles.size();
+			return documents.size();
 		}
 		
 		public String getColumnName(int column) {
@@ -443,12 +394,25 @@ public class ImportDnaDocuments extends JFrame {
 		}
 		
 		public Object getValueAt(int rowIndex, int columnIndex) {
-			switch( columnIndex ){
-				case 0: return selections.get(rowIndex) ? Boolean.TRUE : Boolean.FALSE; 
-				case 1: return titles.get(rowIndex);
-				case 2: return coders.get(rowIndex);
-				case 3: return dates.get(rowIndex);
-				default: return null;
+			if (columnIndex == 0) {
+				return selections.get(rowIndex);
+			} else if (columnIndex == 1) {
+				return documents.get(rowIndex).getTitle();
+			} else if (columnIndex == 2) {
+				int coderId = documents.get(rowIndex).getCoder();
+				for (int i = 0; i < coderTableModel.getRowCount(); i++) {
+					if (coderTableModel.coderForeign.get(i).getId() == coderId) {
+						return coderTableModel.coderForeign.get(i).getName();
+					}
+				}
+				return "";
+			} else if (columnIndex == 3) {
+				Date d = documents.get(rowIndex).getDate();
+				SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy hh:mm:ss");
+				String dateString = dateFormat.format(d);
+				return dateString;
+			} else {
+				return null;
 			}
 		}
 		
