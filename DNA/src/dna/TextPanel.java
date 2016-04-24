@@ -325,6 +325,7 @@ public class TextPanel extends JPanel {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				int start = Dna.data.getStatement(statementId).getStart();
+				Rectangle mtv = null;
 				try {
 					double y = textWindow.modelToView(start).getY();
 					int l = textWindow.getText().length();
@@ -335,19 +336,13 @@ public class TextPanel extends JPanel {
 					double h = textScrollPane.getHeight();
 					int value = (int) Math.ceil(frac * max - (h / 2));
 					textScrollPane.getVerticalScrollBar().setValue(value);
-				} catch (BadLocationException e1) {
-					e1.printStackTrace();
-				}
-				
-				Rectangle mtv = null;
-				try {
 					mtv = textWindow.modelToView(start);
+					Point p = mtv.getLocation();
+					Point loc = textWindow.getLocationOnScreen();
+					new Popup(p, statementId, loc, editable);
 				} catch (BadLocationException e) {
-					e.printStackTrace();
+					System.err.println("Statement " + statementId + ": Popup window cannot be opened because the location is outside the document text.");
 				}
-				Point p = mtv.getLocation();
-				Point loc = textWindow.getLocationOnScreen();
-				new Popup(p, statementId, loc, editable);
 			}
 		});
 	}

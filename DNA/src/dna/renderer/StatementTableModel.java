@@ -78,7 +78,14 @@ public class StatementTableModel implements TableModel {
 			int documentId = s.getDocumentId();
 			//SK -------- start ------
 			//String text = Dna.dna.db.getDocument(documentId).getText().substring(start, stop);
-			String text = Dna.dna.gui.documentPanel.documentContainer.getDocumentByID(documentId).getText().substring(start, stop);
+			//String text = Dna.dna.gui.documentPanel.documentContainer.getDocumentByID(documentId).getText().substring(start, stop);
+			String text = "";
+			try {
+				text = Dna.data.getDocument(documentId).getText().substring(start, stop);
+			} catch (java.lang.StringIndexOutOfBoundsException e) {
+				System.err.println("Statement " + s.getId() + ": Location outside the document text.");
+				text = "";
+			}
 			//SK -------- end ------
 			return text;
 		} else {
@@ -162,7 +169,7 @@ public class StatementTableModel implements TableModel {
 			TableModelEvent e = new TableModelEvent( this, index, index, //create event 'new row at index'
 					TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT );
 			for( int i = 0, n = listeners.size(); i < n; i++ ){
-				((TableModelListener)listeners.get( i )).tableChanged( e );
+				((TableModelListener) listeners.get( i )).tableChanged( e );
 			}
 		}
 	}

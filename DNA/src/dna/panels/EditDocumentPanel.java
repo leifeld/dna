@@ -42,7 +42,7 @@ public class EditDocumentPanel extends JPanel {
 	JComboBox<String> sourceBox;
 	JComboBox<String> sectionBox;
 	JComboBox<String> typeBox;
-	public JButton saveButton, cancelButton;
+	public JButton saveDetailsButton, cancelButton;
 	JScrollPane notesScroll;
 	JLabel notesLabel;
 	JLabel authorLabel;
@@ -240,8 +240,8 @@ public class EditDocumentPanel extends JPanel {
 		g.gridy = 24;
 		Icon tickIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
 		Icon clearIcon = new ImageIcon(getClass().getResource("/icons/cross.png"));
-		saveButton = new JButton("Save", tickIcon);
-		saveButton.setToolTipText("save the changes");
+		saveDetailsButton = new JButton("Save", tickIcon);
+		saveDetailsButton.setToolTipText("save the changes");
 		cancelButton = new JButton("Cancel", clearIcon);
 		cancelButton.setToolTipText("cancel changes and refresh without saving");
 		cancelButton.addActionListener( new ActionListener() {
@@ -252,17 +252,20 @@ public class EditDocumentPanel extends JPanel {
 				revalidate();
 			}
 		});
-		saveButton.addActionListener(new ActionListener() {
+		saveDetailsButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				saveDetails();
 			}
 		});
 		int ac = Dna.data.getActiveCoder();
 		if (Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
-			saveButton.setEnabled(false);
+			saveDetailsButton.setEnabled(false);
 			cancelButton.setEnabled(false);
+		} else {
+			saveDetailsButton.setEnabled(true);
+			cancelButton.setEnabled(true);
 		}
-		this.add(saveButton, g);
+		this.add(saveDetailsButton, g);
 		
 		g.gridx = 1;
 		this.add(cancelButton, g);
@@ -289,7 +292,7 @@ public class EditDocumentPanel extends JPanel {
 			typeBox.setEnabled(enabled);
 			notesLabel.setEnabled(enabled);
 			notesArea.setEnabled(enabled);
-			saveButton.setEnabled(enabled);
+			saveDetailsButton.setEnabled(enabled);
 			cancelButton.setEnabled(enabled);
 		}
 	}

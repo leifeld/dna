@@ -337,6 +337,13 @@ public class Data {
 		}
 		Collections.sort(ids);
 		int unused = 1;
+		while (ids.contains(unused)) {
+			unused++;
+		}
+		return unused;
+		
+		/*
+		int unused = 1;
 		boolean accept = false;
 		while (accept == false) {
 			boolean used = false;
@@ -353,6 +360,7 @@ public class Data {
 			}
 		}
 		return unused;
+		*/
 	}
 	
 	public void removeStatement(int id) {

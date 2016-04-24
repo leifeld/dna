@@ -299,8 +299,7 @@ public class StatementPanel extends JPanel {
 						typeComboBox.setVisible(false);
 					} else if (e.getSource() == showFilter) {
 						typeComboBox.setVisible(true);
-						String fn = Dna.data.getSettings().get("filename");
-						if (fn != null && !fn.equals("")) {
+						if (Dna.dna.sql != null) {
 							typeComboBox.setEnabled(true);
 							typeComboBox.updateUI();
 							new CustomFilterPanel((StatementType) typeComboBox.getSelectedItem());

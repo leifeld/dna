@@ -791,6 +791,25 @@ public class SqlConnection {
 						}
 						result2.close();
 						preStatement2.close();
+						if (values.size() == 0 || values.get(key) == null) {  // Fix errors here if no statement contents availabe
+							System.err.print("Statement " + id + ": variable \"" + key + "\" was not saved... ");
+							String query = "SELECT ID FROM VARIABLES WHERE (StatementTypeId = " + statementTypeId 
+									+ " AND Variable = '" + key + "')";
+							int varId = (int) executeQueryForObject(query);
+							String replacementValue = "0";
+							if (value.equals("short text") || value.equals("long text")) {
+								replacementValue = "''";
+							}
+							String statement = "INSERT INTO DATA" + tableExtension + " (StatementId, VariableId, StatementTypeId, Value) "
+									+ "Values (" + id + ", " + varId + ", " + statementTypeId + ", " + replacementValue + ")";
+							executeStatement(statement);
+							if (value.equals("short text") || value.equals("long text")) {
+								values.put(key, "");
+							} else {
+								values.put(key, 0);
+							}
+							System.err.println("The problem has been fixed. Please review this statement.");
+						}
 			    	}
 					Statement statement = new Statement(id, documentId, start, stop, date, statementTypeId, coder, values);
 					statements.add(statement);

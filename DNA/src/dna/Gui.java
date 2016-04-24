@@ -158,17 +158,21 @@ public class Gui extends JFrame {
 	public void refreshGui() {
 		HashMap<String, Boolean> perm = Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions();
 		if (perm.get("importDocuments") == true) {
+			Dna.dna.gui.menuBar.importTextButton.setEnabled(true);
 			Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
+			Dna.dna.gui.menuBar.importDnaButton.setEnabled(true);
 		} else {
+			Dna.dna.gui.menuBar.importTextButton.setEnabled(false);
 			Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
+			Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
 		}
 		
-		if (Dna.dna.gui.leftPanel.editDocPanel.saveButton != null) {
+		if (Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton != null) {
 			if (perm.get("editDocuments") == false) {
-				Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(false);
+				Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(false);
 				Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
 			} else {
-				Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(true);
+				Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(true);
 				Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
 			}
 		}
@@ -196,12 +200,6 @@ public class Gui extends JFrame {
 		} else {
 			Dna.dna.gui.leftPanel.coderPanel.addButton.setEnabled(true);
 		}
-		
-		if (perm.get("importDocuments") == false) {
-			Dna.dna.gui.menuBar.importTextButton.setEnabled(false);
-		} else {
-			Dna.dna.gui.menuBar.importTextButton.setEnabled(true);
-		}
 
 		Dna.dna.gui.leftPanel.coderPanel.coderBox.updateUI();
 		Dna.dna.gui.leftPanel.coderPanel.setRowSorterEnabled(true);
@@ -226,15 +224,13 @@ public class Gui extends JFrame {
 		}
 
 		public void resetLabel() {
-			String fn = Dna.data.getSettings().get("filename");
-			if (fn == null) {
+			if (Dna.dna.sql == null) {
 				currentFileLabel.setText("Current file: none");
 			} else {
-				currentFileLabel.setText("Current file: " + fn);
+				currentFileLabel.setText("Current file: " + Dna.dna.sql.dbfile);
 			}
 		}
 	}
-
 
 	public class DocumentPanel extends JScrollPane {
 		public DocumentTableModel documentContainer;
@@ -334,29 +330,29 @@ public class Gui extends JFrame {
 					Dna.dna.gui.rightPanel.statementPanel.statementFilter.currentDocumentFilter();
 				}
 				
-				if (Dna.data.getSettings().get("filename") != null) {
+				if (Dna.dna.sql != null) {
 					textPanel.paintStatements();
 				}
 				textPanel.setCaretPosition(0);
 				
 				int ac = Dna.data.getActiveCoder();
-				if (Dna.dna.gui.leftPanel.editDocPanel.saveButton != null) {
-					if (Dna.data.getSettings().get("filename") == null || Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
-						Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(false);
+				if (Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton != null) {
+					if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
+						Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(false);
 						Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
 					} else {
-						Dna.dna.gui.leftPanel.editDocPanel.saveButton.setEnabled(true);
+						Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(true);
 						Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
 					}
 				}
 				
-				if (Dna.data.getSettings().get("filename") == null || Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
+				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
 					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
 				} else {
 					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
 				}
 				
-				if (Dna.data.getSettings().get("filename") == null || Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
+				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
 					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
 				} else {
 					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);

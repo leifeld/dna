@@ -34,7 +34,7 @@ public class OpenDatabaseDialog extends JDialog {
 	JTextField checkField;
 
 	public OpenDatabaseDialog() {
-
+		
 		this.setTitle("Open existing database...");
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		ImageIcon icon = new ImageIcon(getClass().getResource("/icons/database.png"));

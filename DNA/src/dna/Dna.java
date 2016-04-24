@@ -112,7 +112,6 @@ public class Dna {
 		//Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(false);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
 		Dna.dna.gui.menuBar.closeDatabase.setEnabled(false);
-		//Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
 		//Dna.dna.gui.rightPanel.statementPanel.updateStatementTypes();  //TODO: reimplement
 		Dna.dna.gui.rightPanel.rm.addButton.setEnabled(false);
@@ -122,7 +121,9 @@ public class Dna {
 		Dna.dna.gui.rightPanel.rm.setFieldsEnabled(false);
 		Dna.dna.gui.leftPanel.docStats.clear();
 		Dna.dna.gui.leftPanel.docStats.refreshButton.setEnabled(false);
+		Dna.dna.gui.menuBar.importTextButton.setEnabled(false);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
+		Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
 		Dna.dna.gui.rightPanel.statementPanel.model.clear();
 		Dna.dna.gui.rightPanel.statementPanel.typeComboBox.setEnabled(false);
 		Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();

@@ -1153,8 +1153,8 @@ public class NewDatabaseDialog extends JDialog {
 				public void actionPerformed(ActionEvent e) {
 					Dna.dna.sql = new SqlConnection(NewDatabaseDialog.this.dbType, NewDatabaseDialog.this.dbFile, NewDatabaseDialog.this.dbUser, NewDatabaseDialog.this.dbPassword);
 					Dna.dna.sql.createDataStructure();
-					Dna.data.getSettings().put("filename", dbFile);
-					Dna.dna.sql.upsertSetting("filename", dbFile);
+					//Dna.data.getSettings().put("filename", dbFile);
+					//Dna.dna.sql.upsertSetting("filename", dbFile);
 					data.getSettings().put("version", Dna.dna.version);
 					Dna.dna.sql.upsertSetting("version", Dna.dna.version);
 					data.getSettings().put("date", Dna.dna.date);
