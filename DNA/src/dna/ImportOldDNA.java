@@ -465,22 +465,6 @@ public class ImportOldDNA extends JDialog {
 					notesString = patternToString(title, notesPatternField.getText());
 					typeString = patternToString(title, typePatternField.getText());
 					
-					// handle duplicates
-					/*
-					if (Dna.dna.gui.documentPanel.documentContainer.containsTitle(title)) {
-						int count = 2;
-						Pattern p = Pattern.compile(title + " \\(" + "[0-9]+" + "\\)");
-						for (int l = 0; l < Dna.dna.gui.documentPanel.documentContainer.getRowCount(); l++) {
-							Matcher m = p.matcher(Dna.dna.gui.documentPanel.documentContainer.get(l).getTitle());
-							boolean b = m.find();
-							if (b == true) {
-								count++;
-							}
-						}
-						title = title.concat(" (" + count + ")");
-					}
-					*/
-					
 					Date date = new Date();
 					
 					String articleText2 = articleText.replaceAll("\n", "<br>");

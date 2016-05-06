@@ -161,10 +161,12 @@ public class Gui extends JFrame {
 			Dna.dna.gui.menuBar.importTextButton.setEnabled(true);
 			Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
 			Dna.dna.gui.menuBar.importDnaButton.setEnabled(true);
+			Dna.dna.gui.menuBar.recodeMetaData.setEnabled(true);
 		} else {
 			Dna.dna.gui.menuBar.importTextButton.setEnabled(false);
 			Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
 			Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
+			Dna.dna.gui.menuBar.recodeMetaData.setEnabled(false);
 		}
 		
 		if (Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton != null) {
@@ -369,11 +371,11 @@ public class Gui extends JFrame {
 		JMenuItem importDnaButton;
 		public JMenuItem importTextButton;
 		public JMenuItem importOldButton;
+		JMenuItem recodeMetaData;
 		JMenuItem networkButton;
 		JMenuItem aboutButton;
 		JMenuItem colorStatementTypeButton;
 		JMenuItem colorCoderButton;
-		JMenuItem recodeVariableButton;
 		JMenuItem redirectButton;
 		
 		public MenuBar() {
@@ -464,11 +466,9 @@ public class Gui extends JFrame {
 			
 			//Document menu: recode variables
 			/*
-			Icon recodeVariableIcon = new ImageIcon(getClass().getResource(
-					"/icons/pencil.png"));
+			Icon recodeVariableIcon = new ImageIcon(getClass().getResource("/icons/pencil.png"));
 			//TODO: pencil-icon? or database_edit.png?
-			recodeVariableButton = new JMenuItem("Recode variables...", 
-					recodeVariableIcon);
+			recodeVariableButton = new JMenuItem("Recode variables...", recodeVariableIcon);
 			recodeVariableButton.setToolTipText("recode variables");
 			documentMenu.add(recodeVariableButton);
 			recodeVariableButton.addActionListener(new ActionListener(){
@@ -582,6 +582,18 @@ public class Gui extends JFrame {
 				}
 			});
 			importOldButton.setEnabled(false);
+
+			//Document menu: Batch-recode meta-data
+			Icon recodeIcon = new ImageIcon(getClass().getResource("/icons/table_key.png"));
+			recodeMetaData = new JMenuItem("Batch-recode meta-data...", recodeIcon);
+			recodeMetaData.setToolTipText("change or auto-complete author, section etc. for multiple documents at once...");
+			recodeMetaData.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					new RecodeDialog();
+				}
+			});
+			documentMenu.add(recodeMetaData);
+			recodeMetaData.setEnabled(false);
 			
 			/*
 			//Export menu: network export

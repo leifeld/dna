@@ -97,7 +97,13 @@ public class NetworkCreator {
 			Iterator<String> keyIterator = exportSetting.getExcludeValues().keySet().iterator();
 			while (keyIterator.hasNext()) {
 				String key = keyIterator.next();
-				if (exportSetting.getExcludeValues().get(key).contains(s.getValues().get(key))) {
+				String string = "";
+				if (exportSetting.getStatementType().getVariables().get(key).equals("boolean") || exportSetting.getStatementType().getVariables().get(key).equals("integer")) {
+					string = String.valueOf(s.getValues().get(key));
+				} else {
+					string = (String) s.getValues().get(key);
+				}
+				if (exportSetting.getExcludeValues().get(key).contains(string)) {
 					select = false;
 				}
 			}
@@ -233,13 +239,15 @@ public class NetworkCreator {
 		ArrayList<String> names2 = new ArrayList<String>(); // unique column labels
 		if (includeIsolates == true) {  // take them from the main database 
 			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
-				String n1 = (String) Dna.data.getStatements().get(i).getValues().get(var1);
-				String n2 = (String) Dna.data.getStatements().get(i).getValues().get(var2);
-				if (!names1.contains(n1)) {
-					names1.add(n1);
-				}
-				if (!names2.contains(n2)) {
-					names2.add(n2);
+				if (Dna.data.getStatements().get(i).getStatementTypeId() == exportSetting.getStatementType().getId()) {
+					String n1 = (String) Dna.data.getStatements().get(i).getValues().get(var1);
+					String n2 = (String) Dna.data.getStatements().get(i).getValues().get(var2);
+					if (!names1.contains(n1)) {
+						names1.add(n1);
+					}
+					if (!names2.contains(n2)) {
+						names2.add(n2);
+					}
 				}
 			}
 		} else {  // no isolates: take them from the filtered results
@@ -629,66 +637,6 @@ public class NetworkCreator {
 		Network network = new Network(matrix, 1);  // wrap matrix in a network object
 		return network;
 	}
-	
-	/**
-	 * This function accepts a list of statements that should be included in the network export, 
-	 * retrieves their actual contents from the database, and creates and returns a one-mode 
-	 * network matrix (co-occurrence/congruence or conflict matrix) based on the statement data.
-	 * 
-	 * @param statements	An array list of SidebarStatement objects that should be included in the export.
-	 * @param variable1		The name of the variable for which the new matrix should be created (e.g., actors).
-	 * @param variable2		The name of the variable via which the new matrix should be aggregated (e.g., concepts).
-	 * @param qualifier		The name of the agreement variable via which an edge should be established.
-	 * @param type			A string with with type of one-mode matrix to be created. Can have values "congruence" or "conflict").
-	 * @return				A network object with a one-mode network.
-	 */
-	/*
-	public Network oneModeNetwork(ArrayList<Statement> statements, String variable1, String variable2, String qualifier, String type) {
-		ArrayList<String> names1 = new ArrayList<String>(); // unique row labels
-		ArrayList<String> names2 = new ArrayList<String>(); // unique column labels
-		ArrayList<Integer> qualifierValues = new ArrayList<Integer>(); // unique agreement qualifier values
-		for (int i = 0; i < statements.size(); i++) { // retrieve the row and column names from database
-			int statementId = statements.get(i).getId();
-			//String name1 = Dna.dna.db.getVariableStringEntry(statementId, variable1);
-			String name1 = (String) Dna.data.getStatement(statementId).getValues().get(variable1);
-			if (name1 != null && !name1.equals("")) {
-				if (!names1.contains(name1)) {
-					names1.add(name1);
-				}
-			}
-			//String name2 = Dna.dna.db.getVariableStringEntry(statementId, variable2);
-			String name2 = (String) Dna.data.getStatement(statementId).getValues().get(variable2);
-			if (name2 != null && !name2.equals("")) {
-				if (!names2.contains(name2)) {
-					names2.add(name2);
-				}
-			}
-			//int qual = Dna.dna.db.getVariableIntEntry(statementId, qualifier);
-			int qual = (int) Dna.data.getStatement(statementId).getValues().get(qualifier);
-			if (!qualifierValues.contains(qual)) {
-				qualifierValues.add(qual);
-			}
-		}
-		double[][] cooc = new double[names1.size()][names1.size()];
-		for (int i = 0; i < qualifierValues.size(); i++) { // compute one-mode projections for each agreement level, then add up
-			double[][] mat = affiliation(statements, variable1, variable2, qualifier).getMatrix().getMatrix();
-			mat = multiply(mat, transpose(mat));
-			cooc = add(cooc, mat);
-		}
-		for (int i = 0; i < names1.size(); i++) {
-			cooc[i][i] = 0;
-		}
-		String[] labels = new String[names1.size()]; // cast row names from array list to array
-		labels = names1.toArray(labels);
-		Matrix matrix = new Matrix(cooc, labels, labels);
-		Network network = new Network(matrix, 1);
-		return network;
-		// TODO: take into account the type variable inside this function to create conflict networks
-		// TODO: allow for concept congruence networks; i.e., multiply numbers of nodes by qualifier selection size
-		// TODO: add normalization options (divide, subtract, Jaccard, cosine similarity)
-		// TODO: consider not only matching agreement levels, but using distance measure, e.g., intensities 2 and 5 have a distance of 3.
-	}
-	*/
 	
 	/**
 	 * This function accepts a list of statements that should be included in the relational event export, 

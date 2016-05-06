@@ -15,8 +15,8 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2016-04-22";
-		version = "2.0 beta 8";
+		date = "2016-05-05";
+		version = "2.0 beta 9";
 		System.out.println("DNA version: " + version + " (" + date + ")");
 		System.out.println("Java version: " + System.getProperty("java.version"));
 		System.out.println("Operating system: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
@@ -108,8 +108,11 @@ public class Dna {
 		Dna.dna.gui.menuBar.colorStatementTypeButton.setEnabled(false);
 		//Dna.dna.gui.menuBar.typeEditorButton.setEnabled(false);
 		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
+		Dna.dna.gui.menuBar.importTextButton.setEnabled(false);
+		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
+		Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
 		//Dna.dna.gui.menuBar.importHTMLButton.setEnabled(false);
-		//Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(false);
+		Dna.dna.gui.menuBar.recodeMetaData.setEnabled(false);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
 		Dna.dna.gui.menuBar.closeDatabase.setEnabled(false);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
@@ -121,9 +124,6 @@ public class Dna {
 		Dna.dna.gui.rightPanel.rm.setFieldsEnabled(false);
 		Dna.dna.gui.leftPanel.docStats.clear();
 		Dna.dna.gui.leftPanel.docStats.refreshButton.setEnabled(false);
-		Dna.dna.gui.menuBar.importTextButton.setEnabled(false);
-		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
-		Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
 		Dna.dna.gui.rightPanel.statementPanel.model.clear();
 		Dna.dna.gui.rightPanel.statementPanel.typeComboBox.setEnabled(false);
 		Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();

@@ -226,7 +226,7 @@ public class RecodePanel extends JPanel {
 				for (int j = 0; j < Dna.data.getStatements().size(); j++) {
 					int statementId = Dna.data.getStatements().get(j).getId();
 					String value = (String) Dna.data.getStatements().get(j).getValues().get(variable);
-					if (value.equals(original)) {
+					if (value != null && value.equals(original)) {
 						Dna.dna.updateVariable(statementId, statementTypeId, edited, variable);
 						count++;
 					}

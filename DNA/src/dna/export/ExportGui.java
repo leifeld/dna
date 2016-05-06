@@ -266,7 +266,7 @@ public class ExportGui extends JDialog {
 		}
 		
 		// create and return settings
-		ExportSetting es = new ExportSetting("oneModeNetwork", statementType, startDate, stopDate, var1, var2);
+		ExportSetting es = new ExportSetting("oneMode", statementType, startDate, stopDate, var1, var2);
 		es.setNetworkType("oneMode");
 		return es;
 	}
@@ -508,7 +508,7 @@ public class ExportGui extends JDialog {
 		var1gbc.fill = GridBagConstraints.BOTH;
 		var1gbc.weightx = 1;
 		var1gbc.weighty = 1;
-		var1Label = new JLabel("first mode (rows)");
+		var1Label = new JLabel("Node type (row x col)");
 		var1Panel.add(var1Label, var1gbc);
 		var1gbc.gridy = 1;
 		var1Panel.add(var1Scroller, var1gbc);
@@ -529,7 +529,7 @@ public class ExportGui extends JDialog {
 		var2gbc.gridx = 0;
 		var2gbc.gridy = 0;
 		var2gbc.fill = GridBagConstraints.NONE;
-		var2Label = new JLabel("second mode (columns)");
+		var2Label = new JLabel("via variable");
 		var2Panel.add(var2Label, var2gbc);
 		var2gbc.gridy = 1;
 		var2Panel.add(var2Scroller, var2gbc);

@@ -26,7 +26,7 @@ import javax.swing.event.DocumentListener;
 import dna.dataStructures.Coder;
 
 @SuppressWarnings("serial")
-public class EditCoderWindow extends JDialog{
+public class EditCoderWindow extends JDialog {
 	Coder coder;
 	JTextField nameField;
 	JButton addColorButton;
