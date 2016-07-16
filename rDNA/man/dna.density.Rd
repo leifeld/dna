@@ -31,15 +31,15 @@ blocks is elsewhere referred to as node-mixing.
 \code{\link{dna.network}}
 }
 \author{
-Philip Leifeld (\url{http://www.philipleifeld.de})
+Philip Leifeld (\url{http://www.philipleifeld.com})
 }
 \examples{
 # download files and initialize DNA:
-download.file("http://www.philipleifeld.de/cms/upload/Downloads/dna-1.30.jar",
-    destfile = "dna-1.30.jar", mode = "wb")
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/dna-1.31.jar",
+    destfile = "dna-1.31.jar", mode = "wb")
 download.file("http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
     destfile = "sample.dna", mode = "wb")
-dna.init("dna-1.30.jar")
+dna.init("dna-1.31.jar")
 
 # create network matrix
 nw <- dna.network("sample.dna")

@@ -1,12 +1,12 @@
 Package: rDNA
-Version: 1.30.1
-Date: 2013-09-27
+Version: 1.31
+Date: 2016-07-16
 Title: R Bindings for the Discourse Network Analyzer
 Author: Philip Leifeld
-Maintainer: Philip Leifeld <philip.leifeld@uni-konstanz.de>
-Description: A package that controls the Java software Discourse Network 
-  Analyzer (DNA) from within R. Network matrices, statement frequency time 
-  series and attributes of actors can be transferred directly into R.
+Maintainer: Philip Leifeld <philip.leifeld@glasgow.ac.uk>
+Description: Control the Java software Discourse Network Analyzer (DNA) from 
+  within R. Network matrices, statement frequency time series and attributes 
+  of actors can be transferred directly into R.
 Depends: R (>= 2.14), rJava (>= 0.5-0)
 Suggests: network, sna
 SystemRequirements: Java (>= 1.6)

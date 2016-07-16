@@ -9,11 +9,11 @@ citEntry(entry="Manual",
   author = as.person("Philip Leifeld"),
   year = year,
   note = vers,
-  organization = paste("University of Konstanz, Department of Politics",
-    "and Public Administration"),
-  address = "Konstanz",
+  organization = paste("University of Glasgow, School of Social and Political",
+    "Sciences"),
+  address = "Glasgow",
   textVersion = paste("Leifeld, Philip (", year, "). rDNA. A Package to ", 
-    "Control Discourse Network Analyzer from R. University of Konstanz, ", 
-    "Department of Politics and Public Administration. ", vers, ".", sep=""),
-  url = "http://www.philipleifeld.de"
+    "Control Discourse Network Analyzer from R. University of Glasgow, ", 
+    "School of Social and Political Sciences. ", vers, ".", sep = ""),
+  url = "http://www.philipleifeld.com"
 )

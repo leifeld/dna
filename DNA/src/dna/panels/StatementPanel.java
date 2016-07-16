@@ -183,9 +183,13 @@ public class StatementPanel extends JPanel {
 						applyFilter();
 					}
 					public void applyFilter() {
-						Pattern pattern = Pattern.compile(field.getText());
-						map.put(key, pattern);
-						CustomFilterPanel.this.addRowFilter(statementType);
+						try {
+							Pattern pattern = Pattern.compile(field.getText());
+							map.put(key, pattern);
+							CustomFilterPanel.this.addRowFilter(statementType);
+						} catch (java.util.regex.PatternSyntaxException pse) {
+							// if the pattern is not valid, don't apply the filter...
+						}
 					}
 				};
 	    		field.getDocument().addDocumentListener(dl);

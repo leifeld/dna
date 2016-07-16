@@ -21,12 +21,12 @@ to \R.
 \code{\link{dna.attributes}}
 }
 \author{
-Philip Leifeld (\url{http://www.philipleifeld.de})
+Philip Leifeld (\url{http://www.philipleifeld.com})
 }
 \examples{
-download.file("http://www.philipleifeld.de/cms/upload/Downloads/dna-1.30.jar",
-    destfile = "dna-1.30.jar", mode = "wb")
-dna.init("dna-1.30.jar")
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/dna-1.31.jar",
+    destfile = "dna-1.31.jar", mode = "wb")
+dna.init("dna-1.31.jar")
 \dontrun{
 dna.gui()
 }

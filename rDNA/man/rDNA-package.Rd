@@ -19,7 +19,7 @@ To display citation information, execute \code{citation("rDNA")}.
 \code{\link{dna.density}}
 }
 \author{
-Philip Leifeld (\url{http://www.philipleifeld.de})
+Philip Leifeld (\url{http://www.philipleifeld.com})
 }
 \keyword{Programming|programming|interface}
 \keyword{Programming|IO}

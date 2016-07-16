@@ -43,14 +43,14 @@ overall.
 \code{\link{dna.categories}}
 }
 \author{
-Philip Leifeld (\url{http://www.philipleifeld.de})
+Philip Leifeld (\url{http://www.philipleifeld.com})
 }
 \examples{
-download.file("http://www.philipleifeld.de/cms/upload/Downloads/dna-1.30.jar",
-    destfile = "dna-1.30.jar", mode = "wb")
+download.file("http://www.philipleifeld.de/cms/upload/Downloads/dna-1.31.jar",
+    destfile = "dna-1.31.jar", mode = "wb")
 download.file("http://www.philipleifeld.de/cms/upload/Downloads/sample.dna", 
     destfile = "sample.dna", mode = "wb")
-dna.init("dna-1.30.jar")
+dna.init("dna-1.31.jar")
 
 time.series <- dna.timeseries("sample.dna")
 }

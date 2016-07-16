@@ -1,6 +1,10 @@
-rDNA (http://www.philipleifeld.de)
+rDNA (http://www.philipleifeld.com)
 
 Version history:
+
+1.31 (2016-07-16)
+* Updated example code from DNA 1.30 to DNA 1.31.
+* Updated e-mail address and web URL.
 
 1.30 (2013-09-27)
 * Updated example code from DNA 1.29 to DNA 1.30.
