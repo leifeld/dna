@@ -2,7 +2,6 @@ package dna;
 
 import dna.dataStructures.*;
 import dna.panels.BottomCardPanel;
-import dna.panels.SearchWindow;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -220,7 +219,9 @@ public class TextPanel extends JPanel {
 	public void popupMenu(Component comp, int x, int y) {
 		popmen = new JPopupMenu();
 		statementTypes = Dna.data.getStatementTypes();
-		int documentIndex = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
+		int docRow = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
+		int documentIndex = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToModel(docRow);
+		//int documentIndex = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
 		int documentId = Dna.data.getDocuments().get(documentIndex).getId();
 		Date documentDate = Dna.data.getDocuments().get(documentIndex).getDate();
 		
@@ -253,6 +254,7 @@ public class TextPanel extends JPanel {
 					Statement statement = new Statement(statementId, documentId, selectionStart, selectionEnd, 
 							documentDate, statementType.getId(), coderId, map);
 					Dna.dna.addStatement(statement);
+					Dna.dna.gui.documentPanel.documentTable.updateUI(); // for the "#" column
 					
 					paintStatements();
 					textWindow.setCaretPosition(selectionEnd);
@@ -290,9 +292,10 @@ public class TextPanel extends JPanel {
 							Dna.dna.gui.rightPanel.statementPanel.statementTable.scrollRectToVisible(new Rectangle(  // scroll to selected row
 									Dna.dna.gui.rightPanel.statementPanel.statementTable.getCellRect(i, 0, true)));
 						}
-						int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(Dna.data.getStatements().get(i).getDocumentId());
-						Dna.dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(
-								Dna.dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));
+						int docModelIndex = Dna.dna.gui.documentPanel.documentContainer.getModelIndexById(Dna.data.getStatements().get(i).getDocumentId());
+						int docRow = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToView(docModelIndex);
+						//int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(Dna.data.getStatements().get(i).getDocumentId());
+						Dna.dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(Dna.dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));
 						if (b[1] == true) {  // statement is editable by the active coder
 							new Popup(p, statementId, location, true);
 						} else {

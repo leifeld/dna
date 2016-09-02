@@ -1,8 +1,6 @@
 package dna;
 
-import dna.dataStructures.*;
 import dna.export.ExportGui;
-import dna.renderer.DocumentTableModel;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -30,21 +28,14 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
-import javax.swing.JTable;
 import javax.swing.JToggleButton;
-import javax.swing.ListSelectionModel;
-import javax.swing.RowFilter;
 import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
-import javax.swing.table.TableRowSorter;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 
@@ -230,135 +221,6 @@ public class Gui extends JFrame {
 				currentFileLabel.setText("Current file: none");
 			} else {
 				currentFileLabel.setText("Current file: " + Dna.dna.sql.dbfile);
-			}
-		}
-	}
-
-	public class DocumentPanel extends JScrollPane {
-		public DocumentTableModel documentContainer;
-		public DocumentTable documentTable;
-		TableRowSorter<DocumentTableModel> sorter;
-
-		public DocumentPanel() {
-			if(Dna.dna != null) {
-				documentContainer = new DocumentTableModel(Dna.data.getDocuments());
-			} else {
-				documentContainer = new DocumentTableModel();
-			}
-			documentTable = new DocumentTable();
-			documentTable.setModel(documentContainer);
-			this.setViewportView(documentTable);
-			setPreferredSize(new Dimension(700, 100));
-			documentTable.getColumnModel().getColumn(0).setPreferredWidth(680);
-			documentTable.getColumnModel().getColumn(1).setPreferredWidth(100);
-			
-			setRowSorterEnabled(true);
-		}
-
-		public void setRowSorterEnabled(boolean enabled) {
-			if (enabled == true) {
-				sorter = new TableRowSorter<DocumentTableModel>(documentContainer) {
-					public void toggleSortOrder(int i) {
-						//leave blank; overwritten method makes the table unsortable
-					}
-				};
-				documentTable.setRowSorter(sorter);
-			} else {
-				documentTable.setRowSorter(null);
-			}
-		}
-		
-		public void documentFilter() {
-			RowFilter<DocumentTableModel, Integer> documentFilter = new RowFilter<DocumentTableModel, Integer>() {
-				public boolean include(Entry<? extends DocumentTableModel, ? extends Integer> entry) {
-					DocumentTableModel dtm = entry.getModel();
-					Document d = dtm.get(entry.getIdentifier());
-					int documentId = d.getId();
-					boolean[] b = Dna.data.getActiveDocumentPermissions(documentId);
-					if (b[0] == true) {
-						return true;
-					}
-					return false;
-				}
-			};
-			sorter.setRowFilter(documentFilter);
-		}
-		
-		public class DocumentTable extends JTable {
-			
-			public DocumentTable() {
-				setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-				getTableHeader().setReorderingAllowed(false);
-				putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
-
-				getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-					public void valueChanged(ListSelectionEvent e) {
-						if (e.getValueIsAdjusting()) {
-							return;
-						}
-						updateDocumentView();
-					}
-				});
-			}
-			
-			public void updateDocumentView() {
-				int selectedRow = getSelectedRow();
-				if (selectedRow == -1) {
-					previousDocID = -1;
-					textPanel.setDocumentText("");
-					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
-					Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
-					Dna.dna.gui.leftPanel.editDocPanel.updateUI();
-				} else {
-					int id = documentPanel.documentContainer.get(selectedRow).getId();
-					previousDocID = id;
-					Document document = documentContainer.getDocumentByID(id);
-					
-					String text = document.getText();
-					textPanel.setDocumentId(id);
-					textPanel.setDocumentText(text);
-					textPanel.setEnabled(true);
-					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
-					
-					boolean[] b = Dna.data.getActiveDocumentPermissions(id);
-					if (b[0] == true && b[1] == true) {
-						Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(Dna.data.getDocuments().get(selectedRow));
-					} else {
-						Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
-					}
-					Dna.dna.gui.leftPanel.editDocPanel.updateUI();
-				}
-				if (Dna.dna.gui.rightPanel.statementPanel.statementFilter.showCurrent.isSelected()) {
-					Dna.dna.gui.rightPanel.statementPanel.statementFilter.currentDocumentFilter();
-				}
-				
-				if (Dna.dna.sql != null) {
-					textPanel.paintStatements();
-				}
-				textPanel.setCaretPosition(0);
-				
-				int ac = Dna.data.getActiveCoder();
-				if (Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton != null) {
-					if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
-						Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(false);
-						Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
-					} else {
-						Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(true);
-						Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
-					}
-				}
-				
-				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
-					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
-				} else {
-					Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
-				}
-				
-				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
-					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
-				} else {
-					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
-				}
 			}
 		}
 	}

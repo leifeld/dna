@@ -39,7 +39,7 @@ public class DocumentTableModel implements TableModel {
 		int id = document.getId();
 		Dna.data.getDocuments().add( document );
 		sort();
-		int index = getRowIndexById(id);
+		int index = getModelIndexById(id);
 
 		//notify all listeners
 		TableModelEvent e = new TableModelEvent( this, index, index, 
@@ -52,7 +52,7 @@ public class DocumentTableModel implements TableModel {
 	public void changeDocument(int documentId, String title, Date date, 
 			int coder, String source, String section, String notes, 
 			String type) {
-		int i = getRowIndexById(documentId);
+		int i = getModelIndexById(documentId);
 		Dna.data.getDocuments().get(i).setTitle(title);
 		Dna.data.getDocuments().get(i).setDate(date);
 		Dna.data.getDocuments().get(i).setCoder(coder);
@@ -77,15 +77,15 @@ public class DocumentTableModel implements TableModel {
 	
 	//return number of columns
 	public int getColumnCount() {
-		return 2;
+		return 3;
 	}
 
 	//return number of documents in the table
 	public int getRowCount() {		
 		return Dna.data.getDocuments().size();
 	}
-
-	public int getRowIndexById(int id) throws NullPointerException {
+	
+	public int getModelIndexById(int id) throws NullPointerException {
 		for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
 			if (Dna.data.getDocuments().get(i).getId() == id) {
 				return i;
@@ -94,8 +94,8 @@ public class DocumentTableModel implements TableModel {
 		throw new NullPointerException();
 	}
 	
-	public int getIdByRowIndex(int row) {
-		return Dna.data.getDocuments().get(row).getId();
+	public int getIdByModelIndex(int modelIndex) {
+		return Dna.data.getDocuments().get(modelIndex).getId();
 	}
 	
 	public void remove(int index) {
@@ -125,7 +125,8 @@ public class DocumentTableModel implements TableModel {
 	public String getColumnName(int column) {
 		switch( column ){
 			case 0: return "Title";
-			case 1: return "Date";
+			case 1: return "#";
+			case 2: return "Date";
 			default: return null;
 		}
 	}
@@ -135,7 +136,8 @@ public class DocumentTableModel implements TableModel {
 		Document document = Dna.data.getDocuments().get(rowIndex);
 		switch( columnIndex ){
 			case 0: return document.getTitle();
-			case 1: return document.getDate();
+			case 1: return Dna.data.countStatementsPerDocument(document.getId());
+			case 2: return document.getDate();
 			default: return null;
 		}
 	}
@@ -144,7 +146,8 @@ public class DocumentTableModel implements TableModel {
 	public Class<?> getColumnClass(int columnIndex) {
 		switch( columnIndex ){
 			case 0: return String.class;
-			case 1: return Date.class;
+			case 1: return Integer.class;
+			case 2: return Date.class;
 			default: return null;
 		}	
 	}
@@ -167,7 +170,7 @@ public class DocumentTableModel implements TableModel {
 		case 0: 
 			document.setTitle( (String)aValue );
 			break;
-		case 1: 
+		case 2: 
 			document.setDate((Date)aValue);
 			break;
 		}

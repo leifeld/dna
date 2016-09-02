@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
-import javax.swing.JComboBox;
-
 import dna.Dna;
 
 public class Data {
@@ -423,9 +421,34 @@ public class Data {
 		Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
 		
 		// remove document
-		int row = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(documentId);
+		int documentModelIndex = Dna.dna.gui.documentPanel.documentContainer.getModelIndexById(documentId);
+		//int row = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(documentId);
 		Dna.dna.gui.documentPanel.setRowSorterEnabled(false);
-		Dna.dna.gui.documentPanel.documentContainer.remove(row);
+		Dna.dna.gui.documentPanel.documentContainer.remove(documentModelIndex);
+		//Dna.dna.gui.documentPanel.documentContainer.remove(row);
+		Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
+		if (Dna.data.getDocuments().size() > 0) {
+			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
+		}
+	}
+	
+	public void removeDocuments(ArrayList<Integer> documentIds, ArrayList<Integer> modelIndices) {
+		// remove statements
+		Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
+		for (int i = Dna.dna.gui.rightPanel.statementPanel.ssc.size() - 1; i > -1; i--) {
+			if (documentIds.contains(Dna.dna.gui.rightPanel.statementPanel.ssc.get(i).getDocumentId())) {
+				Dna.dna.gui.rightPanel.statementPanel.ssc.remove(i);
+			}
+		}
+		Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
+		
+		// remove documents
+		Dna.dna.gui.documentPanel.setRowSorterEnabled(false);
+		for (int i = modelIndices.size() - 1; i > -1; i--) {
+			Dna.dna.gui.documentPanel.documentContainer.remove(modelIndices.get(i));
+		}
+		
+		// reset selection
 		Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
 		if (Dna.data.getDocuments().size() > 0) {
 			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
@@ -486,5 +509,19 @@ public class Data {
 	 */
 	public void setSettings(HashMap<String, String> settings) {
 		this.settings = settings;
+	}
+
+	/**
+	 * @param documentId the ID of the document for which statements should be counted
+	 * @return number of statements with the document ID that is handed over
+	 */
+	public int countStatementsPerDocument(int documentId) {
+		int count = 0;
+		for (int i = 0; i < statements.size(); i++) {
+			if (statements.get(i).getDocumentId() == documentId) {
+				count++;
+			}
+		}
+		return count;
 	}
 }

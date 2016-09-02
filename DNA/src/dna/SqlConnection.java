@@ -628,6 +628,37 @@ public class SqlConnection {
 		executeStatement("DELETE FROM STATEMENTS WHERE DocumentId = " + documentId);
 		executeStatement("DELETE FROM DOCUMENTS WHERE ID = " + documentId);
 	}
+
+	public void removeDocuments(ArrayList<Integer> documentIds) {
+		// create a string of document IDs for batch-selecting entries in SQL
+		String ids = "";
+		for (int i = 0; i < documentIds.size(); i++) {
+			ids = ids + documentIds.get(i);
+			if (i < documentIds.size() - 1) {
+				ids = ids + ", ";
+			}
+		}
+		
+		// remove statements and documents
+		executeStatement("DELETE FROM DATABOOLEAN WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE DocumentId IN (" + ids + "))");
+		executeStatement("DELETE FROM DATAINTEGER WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE DocumentId IN (" + ids + "))");
+		executeStatement("DELETE FROM DATASHORTTEXT WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE DocumentId IN (" + ids + "))");
+		executeStatement("DELETE FROM DATALONGTEXT WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE DocumentId IN (" + ids + "))");
+		executeStatement("DELETE FROM STATEMENTS WHERE DocumentId IN (" + ids + ")");
+		executeStatement("DELETE FROM DOCUMENTS WHERE ID IN (" + ids + ")");
+		
+		// free up unused physical space in the database
+		if (dbtype.equals("mysql")) {
+			executeStatement("OPTIMIZE TABLE DATABOOLEAN");
+			executeStatement("OPTIMIZE TABLE DATAINTEGER");
+			executeStatement("OPTIMIZE TABLE DATASHORTTEXT");
+			executeStatement("OPTIMIZE TABLE DATALONGTEXT");
+			executeStatement("OPTIMIZE TABLE STATEMENTS");
+			executeStatement("OPTIMIZE TABLE DOCUMENTS");
+		} else if (dbtype.equals("sqlite")) {
+			executeStatement("VACUUM");
+		}
+	}
 	
 	public void removeCoder(int id) {
 		executeStatement("DELETE FROM DATABOOLEAN WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE Coder = " + id + ")");

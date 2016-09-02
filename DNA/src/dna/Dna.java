@@ -3,6 +3,7 @@ package dna;
 import dna.dataStructures.*;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import javax.swing.ImageIcon;
 
@@ -15,8 +16,8 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2016-05-11";
-		version = "2.0 beta 10";
+		date = "2016-09-02";
+		version = "2.0 beta 11";
 		System.out.println("DNA version: " + version + " (" + date + ")");
 		System.out.println("Java version: " + System.getProperty("java.version"));
 		System.out.println("Operating system: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
@@ -39,6 +40,24 @@ public class Dna {
 	public void removeDocument(int documentId) {
 		Dna.data.removeDocument(documentId);
 		sql.removeDocument(documentId);
+	}
+	
+	public void removeDocuments(int[] documentRows) {
+		// compile lists of model indices and document IDs
+		ArrayList<Integer> docIds = new ArrayList<Integer>();
+		ArrayList<Integer> modelIndices = new ArrayList<Integer>();
+		for (int i = 0; i < documentRows.length; i++) {
+			int modelIndex = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToModel(documentRows[i]);
+			modelIndices.add(modelIndex);
+			int docId = Dna.dna.gui.documentPanel.documentContainer.getIdByModelIndex(modelIndex);
+			docIds.add(docId);
+		}
+		
+		// remove documents in GUI
+		Dna.data.removeDocuments(docIds, modelIndices);
+		
+		// remove documents in SQL database
+		sql.removeDocuments(docIds);
 	}
 	
 	public void removeStatement(int statementId) {

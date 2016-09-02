@@ -139,6 +139,7 @@ public class Popup extends JDialog {
 				}
 				Statement newStatement = new Statement(newId, documentId, start, stop, date, statementTypeId, coder, map);
 				Dna.dna.addStatement(newStatement);
+				Dna.dna.gui.documentPanel.documentTable.updateUI(); // for the "#" column
 				Dna.dna.gui.textPanel.selectStatement(newId, newStatement.getDocumentId(), true);
 			}
 		});
@@ -155,6 +156,7 @@ public class Popup extends JDialog {
 				if (question == 0) {
 					Dna.dna.removeStatement(statementId);
 					Dna.dna.gui.textPanel.paintStatements();
+					Dna.dna.gui.documentPanel.documentTable.updateUI(); // for the "#" column
 					
                     // update links table after removal of statements
                     //Dna.dna.gui.rightPanel.updateViewLinksTable();
