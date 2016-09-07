@@ -85,10 +85,7 @@ public class StatementPanel extends JPanel {
 						boolean[] b = Dna.data.getActiveStatementPermissions(statementId);
 						int docId = Dna.data.getStatement(statementId).getDocumentId();
 						int docModelIndex = Dna.dna.gui.documentPanel.documentContainer.getModelIndexById(docId);
-						//int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
 						int docRow = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToView(docModelIndex);
-						//Dna.dna.gui.documentPanel.documentTable.getSelectionModel().setSelectionInterval(docModelIndex, docModelIndex);
-						//Dna.dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(Dna.dna.gui.documentPanel.documentTable.getCellRect(docModelIndex, 0, true)));
 						Dna.dna.gui.documentPanel.documentTable.getSelectionModel().setSelectionInterval(docRow, docRow);
 						Dna.dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(Dna.dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));
 						Dna.dna.gui.textPanel.selectStatement(statementId, docId, b[1]);
@@ -361,9 +358,6 @@ public class StatementPanel extends JPanel {
 			if (modelIndex > -1) {
 				docId = Dna.dna.gui.documentPanel.documentContainer.get(modelIndex).getId();
 			}
-			//if (row > -1) {
-			//	docId = Dna.dna.gui.documentPanel.documentContainer.get(row).getId();
-			//}
 			final int documentId = docId;
 			
 			RowFilter<StatementTableModel, Integer> documentFilter = new RowFilter<StatementTableModel, Integer>() {

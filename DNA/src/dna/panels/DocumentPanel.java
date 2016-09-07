@@ -1,39 +1,35 @@
-package dna;
+package dna.panels;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
+import dna.Dna;
 import dna.dataStructures.Document;
-import dna.dataStructures.StatementType;
-import dna.panels.StatementPanel.CustomFilterPanel;
 import dna.renderer.DocumentTableModel;
 
 @SuppressWarnings("serial")
-public class DocumentPanel extends JPanel {
+public class DocumentPanel extends JScrollPane {
 	public DocumentTableModel documentContainer;
 	public DocumentTable documentTable;
 	TableRowSorter<DocumentTableModel> sorter;
 	JScrollPane jsp;
 
 	public DocumentPanel() {
-		this.setLayout(new BorderLayout());
 		if(Dna.dna != null) {
 			documentContainer = new DocumentTableModel(Dna.data.getDocuments());
 		} else {
@@ -41,19 +37,53 @@ public class DocumentPanel extends JPanel {
 		}
 		documentTable = new DocumentTable();
 		documentTable.setModel(documentContainer);
-		jsp = new JScrollPane();
-		jsp.setViewportView(documentTable);
-		jsp.setPreferredSize(new Dimension(700, 100));
+		this.setViewportView(documentTable);
+		this.setPreferredSize(new Dimension(700, 100));
+		
+		setRowSorterEnabled(true);
+
+		TableColumn column[] = new TableColumn[10];
+	    for (int i = 0; i < column.length; i++) {
+	        column[i] = documentTable.getColumnModel().getColumn(i);
+	    }
+	    Boolean[] columnsVisible = new Boolean[] {false, true, true, true, false, false, false, false, false, false};
+		while (documentTable.getColumnModel().getColumnCount() > 0) {
+			documentTable.getColumnModel().removeColumn(documentTable.getColumnModel().getColumn(0));
+	    }
+	    for (int i = 0; i < columnsVisible.length; i++) {
+	    	if (columnsVisible[i] == true) {
+	    		documentTable.getColumnModel().addColumn(column[i]);
+	    	}
+	    }
 		documentTable.getColumnModel().getColumn(0).setPreferredWidth(600);
 		documentTable.getColumnModel().getColumn(1).setPreferredWidth(30);
 		documentTable.getColumnModel().getColumn(2).setPreferredWidth(100);
-		
-		setRowSorterEnabled(true);
-		this.add(jsp, BorderLayout.NORTH);
-		
+	    
 		JPopupMenu popupMenu = new JPopupMenu();
-		JMenuItem menuItemDelete = new JMenuItem("Delete selected document(s)", new ImageIcon(getClass().getResource("/icons/trash.png")));
+		JMenuItem menuItemDelete = new JMenuItem("Delete selected document(s)");
 		popupMenu.add(menuItemDelete);
+		JSeparator sep = new JSeparator();
+		popupMenu.add(sep);
+		JCheckBoxMenuItem menuItemId = new JCheckBoxMenuItem("ID", false);
+		popupMenu.add(menuItemId);
+		JCheckBoxMenuItem menuItemTitle = new JCheckBoxMenuItem("Title", true);
+		popupMenu.add(menuItemTitle);
+		JCheckBoxMenuItem menuItemNumber = new JCheckBoxMenuItem("#", true);
+		popupMenu.add(menuItemNumber);
+		JCheckBoxMenuItem menuItemDate = new JCheckBoxMenuItem("Date", true);
+		popupMenu.add(menuItemDate);
+		JCheckBoxMenuItem menuItemCoder = new JCheckBoxMenuItem("Coder", false);
+		popupMenu.add(menuItemCoder);
+		JCheckBoxMenuItem menuItemAuthor = new JCheckBoxMenuItem("Author", false);
+		popupMenu.add(menuItemAuthor);
+		JCheckBoxMenuItem menuItemSource = new JCheckBoxMenuItem("Source", false);
+		popupMenu.add(menuItemSource);
+		JCheckBoxMenuItem menuItemSection = new JCheckBoxMenuItem("Section", false);
+		popupMenu.add(menuItemSection);
+		JCheckBoxMenuItem menuItemType = new JCheckBoxMenuItem("Type", false);
+		popupMenu.add(menuItemType);
+		JCheckBoxMenuItem menuItemNotes = new JCheckBoxMenuItem("Notes", false);
+		popupMenu.add(menuItemNotes);
 		documentTable.setComponentPopupMenu(popupMenu);
 		
 		ActionListener al = new ActionListener() {
@@ -65,23 +95,99 @@ public class DocumentPanel extends JPanel {
 					if (dialog == 0) {
 						Dna.dna.removeDocuments(selectedRows);
 					}
+				} else {
+					if (e.getSource() == menuItemId) {
+						if (menuItemId.isSelected()) {
+							columnsVisible[0] = true;
+						} else {
+							columnsVisible[0] = false;
+						}
+					} else if (e.getSource() == menuItemTitle) {
+						if (menuItemTitle.isSelected()) {
+							columnsVisible[1] = true;
+						} else {
+							columnsVisible[1] = false;
+						}
+					} else if (e.getSource() == menuItemNumber) {
+						if (menuItemNumber.isSelected()) {
+							columnsVisible[2] = true;
+						} else {
+							columnsVisible[2] = false;
+						}
+					} else if (e.getSource() == menuItemDate) {
+						if (menuItemDate.isSelected()) {
+							columnsVisible[3] = true;
+						} else {
+							columnsVisible[3] = false;
+						}
+					} else if (e.getSource() == menuItemCoder) {
+						if (menuItemCoder.isSelected()) {
+							columnsVisible[4] = true;
+						} else {
+							columnsVisible[4] = false;
+						}
+					} else if (e.getSource() == menuItemAuthor) {
+						if (menuItemAuthor.isSelected()) {
+							columnsVisible[5] = true;
+						} else {
+							columnsVisible[5] = false;
+						}
+					} else if (e.getSource() == menuItemSource) {
+						if (menuItemSource.isSelected()) {
+							columnsVisible[6] = true;
+						} else {
+							columnsVisible[6] = false;
+						}
+					} else if (e.getSource() == menuItemSection) {
+						if (menuItemSection.isSelected()) {
+							columnsVisible[7] = true;
+						} else {
+							columnsVisible[7] = false;
+						}
+					} else if (e.getSource() == menuItemType) {
+						if (menuItemType.isSelected()) {
+							columnsVisible[8] = true;
+						} else {
+							columnsVisible[8] = false;
+						}
+					} else if (e.getSource() == menuItemNotes) {
+						if (menuItemNotes.isSelected()) {
+							columnsVisible[9] = true;
+						} else {
+							columnsVisible[9] = false;
+						}
+					}
+					
+					while (documentTable.getColumnModel().getColumnCount() > 0) {
+						documentTable.getColumnModel().removeColumn(documentTable.getColumnModel().getColumn(0));
+				    }
+					
+				    for (int i = 0; i < columnsVisible.length; i++) {
+				    	if (columnsVisible[i] == true) {
+				    		documentTable.getColumnModel().addColumn(column[i]);
+				    	}
+				    }
 				}
 			}
 		};
 		
 		menuItemDelete.addActionListener(al);
+		menuItemId.addActionListener(al);
+		menuItemTitle.addActionListener(al);
+		menuItemNumber.addActionListener(al);
+		menuItemDate.addActionListener(al);
+		menuItemCoder.addActionListener(al);
+		menuItemAuthor.addActionListener(al);
+		menuItemSource.addActionListener(al);
+		menuItemSection.addActionListener(al);
+		menuItemType.addActionListener(al);
+		menuItemNotes.addActionListener(al);
+		
 	}
 	
 	public void setRowSorterEnabled(boolean enabled) {
 		if (enabled == true) {
 			sorter = new TableRowSorter<DocumentTableModel>(documentContainer);
-			/*
-			sorter = new TableRowSorter<DocumentTableModel>(documentContainer) {
-				public void toggleSortOrder(int i) {
-					//leave blank; overwritten method makes the table unsortable
-				}
-			};
-			*/
 			documentTable.setRowSorter(sorter);
 		} else {
 			documentTable.setRowSorter(null);
@@ -107,7 +213,6 @@ public class DocumentPanel extends JPanel {
 	public class DocumentTable extends JTable {
 		
 		public DocumentTable() {
-			//setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 			getTableHeader().setReorderingAllowed(false);
 			putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
@@ -134,7 +239,6 @@ public class DocumentPanel extends JPanel {
 				int selectedRow = getSelectedRow();
 				int selectedModelIndex = this.convertRowIndexToModel(selectedRow);
 				int id = documentContainer.get(selectedModelIndex).getId();
-				//int id = documentContainer.get(selectedRow).getId();
 				Dna.dna.gui.previousDocID = id;
 				Document document = documentContainer.getDocumentByID(id);
 				
@@ -146,7 +250,6 @@ public class DocumentPanel extends JPanel {
 				
 				boolean[] b = Dna.data.getActiveDocumentPermissions(id);
 				if (b[0] == true && b[1] == true) {
-					//Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(Dna.data.getDocuments().get(selectedRow));
 					Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(Dna.data.getDocuments().get(selectedModelIndex));
 				} else {
 					Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
@@ -157,8 +260,6 @@ public class DocumentPanel extends JPanel {
 			}
 			if (Dna.dna.gui.rightPanel.statementPanel.statementFilter.showCurrent.isSelected()) {
 				Dna.dna.gui.rightPanel.statementPanel.statementFilter.currentDocumentFilter();
-			} else if (Dna.dna.gui.rightPanel.statementPanel.statementFilter.showFilter.isSelected()) {
-				Dna.dna.gui.rightPanel.statementPanel.statementFilter.updateFilter();
 			}
 			
 			if (Dna.dna.sql != null) {

@@ -1,6 +1,7 @@
 package dna;
 
 import dna.export.ExportGui;
+import dna.panels.DocumentPanel;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -49,7 +50,7 @@ public class Gui extends JFrame {
 	public LeftPanel leftPanel;
 	public MenuBar menuBar;
 	
-	int previousDocID = -1;
+	public int previousDocID = -1;
 	
 	public Gui() {
 		c = getContentPane();
