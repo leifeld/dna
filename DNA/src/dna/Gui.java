@@ -172,9 +172,9 @@ public class Gui extends JFrame {
 		}
 		
 		if (perm.get("deleteDocuments") == false) {
-			Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
+			Dna.dna.gui.documentPanel.menuItemDelete.setEnabled(false);
 		} else {
-			Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
+			Dna.dna.gui.documentPanel.menuItemDelete.setEnabled(true);
 		}
 
 		if (perm.get("addDocuments") == false) {
@@ -230,7 +230,6 @@ public class Gui extends JFrame {
 		JMenu fileMenu, documentMenu, exportMenu, settingsMenu;
 		JMenuItem closeDatabase, newDatabase, openDatabase, importHTMLButton, typeEditorButton;
 		public JMenuItem newDocumentButton;
-		public JMenuItem removeDocumentButton;
 		JMenuItem importDnaButton;
 		public JMenuItem importTextButton;
 		public JMenuItem importOldButton;
@@ -342,25 +341,6 @@ public class Gui extends JFrame {
 			recodeVariableButton.setEnabled(false);
 			*/
 			
-			//Document menu: delete selected document
-			Icon removeDocumentIcon = new ImageIcon(getClass().getResource("/icons/table_delete.png"));
-			removeDocumentButton = new JMenuItem("Delete selected document", removeDocumentIcon);
-			removeDocumentButton.setToolTipText( "delete selected document" );
-			documentMenu.add(removeDocumentButton);
-			removeDocumentButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, 
-							"Are you sure you want to delete the selected document (including all statements)?", 
-									"Confirmation required", JOptionPane.YES_NO_OPTION);
-					int row = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
-					if (row != -1 && dialog == 0) {
-						int documentId = Dna.data.getDocuments().get(row).getId();
-						Dna.dna.removeDocument(documentId);
-					}
-				}
-			});
-			removeDocumentButton.setEnabled(false);
-
 			//Document menu: import text files
 			Icon textFileIcon = new ImageIcon(getClass().getResource("/icons/folder.png"));
 			importTextButton = new JMenuItem("Import text files...", textFileIcon);

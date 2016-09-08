@@ -120,7 +120,7 @@ public class DocumentTableModel extends AbstractTableModel {
 	public int getColumnCount() {
 		return 10;
 	}
-
+	
 	//return the name of a column
 	public String getColumnName(int column) {
 		switch( column ){

@@ -28,7 +28,8 @@ public class DocumentPanel extends JScrollPane {
 	public DocumentTable documentTable;
 	TableRowSorter<DocumentTableModel> sorter;
 	JScrollPane jsp;
-
+	public JMenuItem menuItemDelete;
+	
 	public DocumentPanel() {
 		if(Dna.dna != null) {
 			documentContainer = new DocumentTableModel(Dna.data.getDocuments());
@@ -60,7 +61,7 @@ public class DocumentPanel extends JScrollPane {
 		documentTable.getColumnModel().getColumn(2).setPreferredWidth(100);
 	    
 		JPopupMenu popupMenu = new JPopupMenu();
-		JMenuItem menuItemDelete = new JMenuItem("Delete selected document(s)");
+		menuItemDelete = new JMenuItem("Delete selected document(s)");
 		popupMenu.add(menuItemDelete);
 		JSeparator sep = new JSeparator();
 		popupMenu.add(sep);
@@ -232,7 +233,6 @@ public class DocumentPanel extends JScrollPane {
 			if (rowCount == 0 || rowCount > 1) {
 				Dna.dna.gui.previousDocID = -1;
 				Dna.dna.gui.textPanel.setDocumentText("");
-				Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
 				Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
 				Dna.dna.gui.leftPanel.editDocPanel.updateUI();
 			} else if (rowCount == 1) {
@@ -246,7 +246,6 @@ public class DocumentPanel extends JScrollPane {
 				Dna.dna.gui.textPanel.setDocumentId(id);
 				Dna.dna.gui.textPanel.setDocumentText(text);
 				Dna.dna.gui.textPanel.setEnabled(true);
-				Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
 				
 				boolean[] b = Dna.data.getActiveDocumentPermissions(id);
 				if (b[0] == true && b[1] == true) {
@@ -279,9 +278,9 @@ public class DocumentPanel extends JScrollPane {
 			}
 			
 			if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
-				Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(false);
+				Dna.dna.gui.documentPanel.menuItemDelete.setEnabled(false);
 			} else {
-				Dna.dna.gui.menuBar.removeDocumentButton.setEnabled(true);
+				Dna.dna.gui.documentPanel.menuItemDelete.setEnabled(true);
 			}
 			
 			if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {

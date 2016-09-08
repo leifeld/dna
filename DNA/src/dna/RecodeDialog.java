@@ -11,7 +11,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -29,9 +28,7 @@ import javax.swing.JTextField;
 import javax.swing.ProgressMonitor;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
-import javax.swing.table.TableModel;
+import javax.swing.table.AbstractTableModel;
 
 import dna.dataStructures.Document;
 
@@ -88,80 +85,97 @@ public class RecodeDialog extends JDialog {
         
         JLabel targetFieldLabel = new JLabel("Target field:");
         userPanel.add(targetFieldLabel, gbc);
+        targetFieldLabel.setToolTipText("The field in which to put the new information.");
         gbc.gridy++;
         JLabel sourceFieldLabel = new JLabel("Source field:");
         userPanel.add(sourceFieldLabel, gbc);
+        sourceFieldLabel.setToolTipText("The field from which some existing information is taken and processed.");
         gbc.gridy++;
         JLabel matchingOnTargetRegexLabel = new JLabel("Matching on target regex:");
         userPanel.add(matchingOnTargetRegexLabel, gbc);
+        matchingOnTargetRegexLabel.setToolTipText("Something is written into the target field only if this regular expression matches the target field.");
         gbc.gridy++;
         JLabel matchingOnSourceRegexLabel = new JLabel("Matching on source regex:");
         userPanel.add(matchingOnSourceRegexLabel, gbc);
+        matchingOnSourceRegexLabel.setToolTipText("Something is written into the target field only if this regular expression matches the source field.");
         gbc.gridy++;
         JLabel usingTargetStringLabel = new JLabel("%target regular expression:");
         userPanel.add(usingTargetStringLabel, gbc);
+        usingTargetStringLabel.setToolTipText("Match an expression on the target field and re-use it later as %target.");
         gbc.gridy++;
         JLabel targetTranslatedIntoLabel = new JLabel("%target replacement:");
         userPanel.add(targetTranslatedIntoLabel, gbc);
+        targetTranslatedIntoLabel.setToolTipText("A replacement string that is used instead of %target.");
         gbc.gridy++;
         JLabel usingSourceStringLabel = new JLabel("%source regular rexpression:");
         userPanel.add(usingSourceStringLabel, gbc);
+        usingSourceStringLabel.setToolTipText("Match an expression on the source field and re-use it later as %source.");
         gbc.gridy++;
         JLabel sourceTranslatedIntoLabel = new JLabel("%source replacement:");
         userPanel.add(sourceTranslatedIntoLabel, gbc);
+        sourceTranslatedIntoLabel.setToolTipText("A replacement string that is used instead of %source.");
         gbc.gridy++;
         JLabel asFollowsLabel = new JLabel("New target field:");
         userPanel.add(asFollowsLabel, gbc);
+        asFollowsLabel.setToolTipText("The new contents of the target field. You may use %source and %target.");
         gbc.gridy = 0;
         
         gbc.gridx = 1;
         String[] fields = new String[] {"Title", "Author", "Source", "Section", "Type", "Notes"};
         targetBox = new JComboBox<String>(fields);
         targetBox.addItemListener(il);
+        targetBox.setToolTipText("The field in which to put the new information.");
         userPanel.add(targetBox, gbc);
         gbc.gridy++;
         sourceBox = new JComboBox<String>(fields);
         sourceBox.addItemListener(il);
+        sourceBox.setToolTipText("The field from which some existing information is taken and processed.");
         userPanel.add(sourceBox, gbc);
         gbc.gridy++;
         matchingOnTargetRegexField = new JTextField("");
         matchingOnTargetRegexField.setColumns(35);
         matchingOnTargetRegexField.getDocument().addDocumentListener(dl);
+        matchingOnTargetRegexField.setToolTipText("Something is written into the target field only if this regular expression matches the target field.");
         userPanel.add(matchingOnTargetRegexField, gbc);
         gbc.gridy++;
         matchingOnSourceRegexField = new JTextField("");
         matchingOnSourceRegexField.setColumns(35);
         matchingOnSourceRegexField.getDocument().addDocumentListener(dl);
+        matchingOnSourceRegexField.setToolTipText("Something is written into the target field only if this regular expression matches the source field.");
         userPanel.add(matchingOnSourceRegexField, gbc);
         gbc.gridy++;
         usingTargetStringField = new JTextField(".+");
         usingTargetStringField.setColumns(35);
         usingTargetStringField.getDocument().addDocumentListener(dl);
+        usingTargetStringField.setToolTipText("Match an expression on the target field and re-use it later as %target.");
         userPanel.add(usingTargetStringField, gbc);
         gbc.gridy++;
         targetTranslatedIntoField = new JTextField(".+");
         targetTranslatedIntoField.setColumns(35);
         targetTranslatedIntoField.getDocument().addDocumentListener(dl);
+        targetTranslatedIntoField.setToolTipText("A replacement string that is used instead of %target.");
         userPanel.add(targetTranslatedIntoField, gbc);
         gbc.gridy++;
         usingSourceStringField = new JTextField(".+");
         usingSourceStringField.setColumns(35);
         usingSourceStringField.getDocument().addDocumentListener(dl);
+        usingSourceStringField.setToolTipText("Match an expression on the source field and re-use it later as %source.");
         userPanel.add(usingSourceStringField, gbc);
         gbc.gridy++;
         sourceTranslatedIntoField = new JTextField(".+");
         sourceTranslatedIntoField.setColumns(35);
         sourceTranslatedIntoField.getDocument().addDocumentListener(dl);
+        sourceTranslatedIntoField.setToolTipText("A replacement string that is used instead of %source.");
         userPanel.add(sourceTranslatedIntoField, gbc);
         gbc.gridy++;
         asFollowsField = new JTextField("%source");
         asFollowsField.setColumns(35);
         asFollowsField.getDocument().addDocumentListener(dl);
+        asFollowsField.setToolTipText("The new contents of the target field. You may use %source and %target.");
         userPanel.add(asFollowsField, gbc);
         
 		tableModel = new RecodeTableModel();
 		JTable table = new JTable(tableModel);
-		//table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane tableScrollPane = new JScrollPane(table);
 		tableScrollPane.setPreferredSize(new Dimension(500, 400));
 		
@@ -230,7 +244,7 @@ public class RecodeDialog extends JDialog {
 		
 		public void run() {
 			progressMonitor = new ProgressMonitor(RecodeDialog.this, "Recoding documents...", "", 0, tableModel.getRowCount());
-			progressMonitor.setMillisToDecideToPopup(1500);
+			progressMonitor.setMillisToDecideToPopup(1000);
 			
 			if (onlyTable == true) {
 				tableModel.clear();
@@ -338,7 +352,8 @@ public class RecodeDialog extends JDialog {
 	        		}
 	        	}
 	        	if (onlyTable == true) {
-	        		tableModel.addEntry(document.getId(), sourceEntry, targetEntry, result);
+	        		TableEntry entry = new TableEntry(document.getId(), sourceEntry, targetEntry, result);
+	        		tableModel.addEntry(entry);
 	        	}
 				progressMonitor.setProgress(i);
 	        }
@@ -372,26 +387,93 @@ public class RecodeDialog extends JDialog {
 		}
 	}
 	
-	class RecodeTableModel implements TableModel {
-		private Vector<TableModelListener> listeners = new Vector<TableModelListener>();
-		private ArrayList<Integer> id = new ArrayList<Integer>();
-		private ArrayList<String> source = new ArrayList<String>();
-		private ArrayList<String> oldTarget = new ArrayList<String>();
-		private ArrayList<String> newTarget = new ArrayList<String>();
+	class TableEntry {
+		int id;
+		String source;
+		String oldTarget;
+		
+		/**
+		 * @return the id
+		 */
+		public int getId() {
+			return id;
+		}
+
+		/**
+		 * @param id the id to set
+		 */
+		public void setId(int id) {
+			this.id = id;
+		}
+
+		/**
+		 * @return the source
+		 */
+		public String getSource() {
+			return source;
+		}
+
+		/**
+		 * @param source the source to set
+		 */
+		public void setSource(String source) {
+			this.source = source;
+		}
+
+		/**
+		 * @return the oldTarget
+		 */
+		public String getOldTarget() {
+			return oldTarget;
+		}
+
+		/**
+		 * @param oldTarget the oldTarget to set
+		 */
+		public void setOldTarget(String oldTarget) {
+			this.oldTarget = oldTarget;
+		}
+
+		/**
+		 * @return the newTarget
+		 */
+		public String getNewTarget() {
+			return newTarget;
+		}
+
+		/**
+		 * @param newTarget the newTarget to set
+		 */
+		public void setNewTarget(String newTarget) {
+			this.newTarget = newTarget;
+		}
+
+		String newTarget;
+		
+		public TableEntry(int id, String source, String oldTarget, String newTarget) {
+			this.id = id;
+			this.source = source;
+			this.oldTarget = oldTarget;
+			this.newTarget = newTarget;
+		}
+	}
+	
+	class RecodeTableModel extends AbstractTableModel {
+		private ArrayList<TableEntry> entries = new ArrayList<TableEntry>();
 		
 		public int getColumnCount() {
 			return 4;
 		}
 		
 		public int getRowCount() {
-			return id.size();
+			return entries.size();
 		}
 		
 		public String getColumnName(int column) {
 			switch( column ){
 				case 0: return "ID";
 				case 1: return "Source field";
-				case 2: return "Target field";
+				case 2: return "Old target field";
 				case 3: return "New target field";
 				default: return null;
 			}
@@ -399,10 +481,10 @@ public class RecodeDialog extends JDialog {
 		
 		public Object getValueAt(int rowIndex, int columnIndex) {
 			switch( columnIndex ){
-				case 0: return id.get(rowIndex); 
-				case 1: return source.get(rowIndex);
-				case 2: return oldTarget.get(rowIndex);
-				case 3: return newTarget.get(rowIndex);
+				case 0: return entries.get(rowIndex).getId(); 
+				case 1: return entries.get(rowIndex).getSource();
+				case 2: return entries.get(rowIndex).getOldTarget();
+				case 3: return entries.get(rowIndex).getNewTarget();
 				default: return null;
 			}
 		}
@@ -417,53 +499,32 @@ public class RecodeDialog extends JDialog {
 			}	
 		}
 		
-		public void addTableModelListener(TableModelListener l) {
-			listeners.add( l );
-		}
-		public void removeTableModelListener(TableModelListener l) {
-			listeners.remove( l );
-		}
-		
 		public boolean isCellEditable(int rowIndex, int columnIndex) {
 			return false;
 		}
 		
 		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
 			if (columnIndex == 0) {
-				id.set(rowIndex, (Integer) aValue);
+				entries.get(rowIndex).setId((int) aValue);
 			} else if (columnIndex == 1) {
-				source.set(rowIndex, (String) aValue);
+				entries.get(rowIndex).setSource((String) aValue);
 			} else if (columnIndex == 2) {
-				oldTarget.set(rowIndex, (String) aValue);
+				entries.get(rowIndex).setOldTarget((String) aValue);
 			} else if (columnIndex == 3) {
-				newTarget.set(rowIndex, (String) aValue);
+				entries.get(rowIndex).setNewTarget((String) aValue);
 			}
-			TableModelEvent e = new TableModelEvent(this);
-			for( int i = 0, n = listeners.size(); i < n; i++ ){
-				((TableModelListener)listeners.get( i )).tableChanged( e );
-			}
+			this.fireTableCellUpdated(rowIndex, columnIndex);
 		}
 		
-		public void addEntry(int idValue, String sourceString, String targetOldString, String targetNetString) {
-			id.add(idValue);
-			source.add(sourceString);
-			oldTarget.add(targetOldString);
-			newTarget.add(targetNetString);
-			TableModelEvent e = new TableModelEvent(this);
-			for( int i = 0, n = listeners.size(); i < n; i++ ){
-				((TableModelListener)listeners.get( i )).tableChanged( e );
-			}
+		public void addEntry(TableEntry entry) {
+			entries.add(entry);
+			this.fireTableRowsInserted(entries.size(), entries.size());
 		}
 		
 		public void clear() {
-			id.clear();
-			source.clear();
-			oldTarget.clear();
-			newTarget.clear();
-			TableModelEvent e = new TableModelEvent(this);
-			for( int i = 0, n = listeners.size(); i < n; i++ ){
-				((TableModelListener)listeners.get( i )).tableChanged( e );
-			}
+			int size = entries.size();
+			entries.clear();
+			this.fireTableRowsDeleted(0, size);
 		}
 	}
 }
