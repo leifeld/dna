@@ -241,30 +241,6 @@ public class SqlConnection {
 	 * @param document   Document to add to/update in the DOCUMENTS table
 	 */
 	public void upsertDocument(Document document) {
-		/*
-		long count = -1;
-		try {
-			count = (long) executeQueryForObject("SELECT COUNT(1) FROM DOCUMENTS WHERE ID = " + document.getId());
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		if (count == 1) {
-			executeStatement("UPDATE DOCUMENTS SET Title = " + document.getTitle().replaceAll("'", "''") + ", Text = '" 
-					+ document.getText().replaceAll("'", "''") + "', Coder = " + document.getCoder() + ", Author = '" 
-					+ document.getAuthor().replaceAll("'", "''") + "', Source = '" + document.getSource().replaceAll("'", "''") 
-					+ "', Section = '" + document.getSection().replaceAll("'", "''") + "', Notes = '" 
-					+ document.getNotes().replaceAll("'", "''") + "', Type = '" + document.getType().replaceAll("'", "''") 
-					+ "', Date = " + document.getDate().getTime());
-		} else {
-			executeStatement("INSERT INTO DOCUMENTS(ID, Title, Text, Coder, Author, Source, Section, Notes, Type, Date) "
-					+ "VALUES (" + document.getId() + ", '" + document.getTitle().replaceAll("'", "''")  + "', '" 
-					+ document.getText().replaceAll("'", "''") + "', " + document.getCoder() + ", '" 
-					+ document.getAuthor().replaceAll("'", "''")  + "', '" + document.getSource().replaceAll("'", "''")  + "', '" 
-					+ document.getSection().replaceAll("'", "''") + "', '" + document.getNotes().replaceAll("'", "''") + "', '" 
-					+ document.getType().replaceAll("'", "''") + "', " + document.getDate().getTime() + ")");
-		}
-		*/
 		executeStatement("REPLACE INTO DOCUMENTS(ID, Title, Text, Coder, Author, Source, Section, Notes, Type, Date) "
 				+ "VALUES (" + document.getId() + ", '" + document.getTitle().replaceAll("'", "''")  + "', '" 
 				+ document.getText().replaceAll("'", "''") + "', " + document.getCoder() + ", '" 

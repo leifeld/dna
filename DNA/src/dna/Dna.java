@@ -16,8 +16,8 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2016-09-08";
-		version = "2.0 beta 13";
+		date = "2016-10-03";
+		version = "2.0 beta 14";
 		System.out.println("DNA version: " + version + " (" + date + ")");
 		System.out.println("Java version: " + System.getProperty("java.version"));
 		System.out.println("Operating system: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
@@ -130,7 +130,6 @@ public class Dna {
 		Dna.dna.gui.menuBar.importTextButton.setEnabled(false);
 		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
 		Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
-		//Dna.dna.gui.menuBar.importHTMLButton.setEnabled(false);
 		Dna.dna.gui.menuBar.recodeMetaData.setEnabled(false);
 		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
 		Dna.dna.gui.menuBar.closeDatabase.setEnabled(false);
@@ -147,154 +146,4 @@ public class Dna {
 		Dna.dna.gui.rightPanel.statementPanel.typeComboBox.setEnabled(false);
 		Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();
 	}
-
-
-	/**
-	 * LB.Add:
-	 * Import multiple documents from one HTML file, parse them and add them 
-	 * to the data set.
-	 * 
-	 * @param fileName			Name of imported file
-	 * @param pathName			Path of imported file
-	 * @param textElement		HTML code where text is saved in file
-	 * @param titleElement		HTML code where title is saved in file
-	 * @param dateElement		HTML code where date is saved in file
-	 * @param sectionElement	HTML code where section is saved in file
-	 * @param coder				Name of coder
-	 * @param source			Name of source
-	 * @param type				Name of type of document
-	 * @param notes				Notes
-	 * @throws IOException
-	 * @throws ParseException
-	 */
-	/*
-	public void importDocumentsFromHTMLFile(String fileName, String pathName, 
-			String textElement, String titleElement, String dateElement, 
-			String sectionElement, int coder, String source, String type, 
-			String notes, Date dateManually, boolean dateManuallySelected)
-					throws IOException, ParseException {
-
-		File input = new File(pathName);
-		org.jsoup.nodes.Document file = Jsoup.parse(input, "UTF-8");
-
-		for(int i=0; i< file.select(titleElement).size() ; i++){					
-			String title = file.select(titleElement).get(i).text();
-			String section = file.select(sectionElement).get(i).text();		
-
-			// Idea: take all the "p" and "br" in the text body, replace them w/
-			// distinct string (CODE_LINEBREAK_1234), convert HTML to text and
-			// then replace said string with line breaks.
-			Element textTemp = file.select(textElement).get(i);
-			textTemp.select("p").prepend("CODE_LINEBREAK_1234");
-			textTemp.select("br").append("CODE_LINEBREAK_1234");
-			String textTempString = textTemp.text();
-			textTempString = textTempString.replaceAll("CODE_LINEBREAK_1234", 
-					"\n\n");
-			String textTitle = String.format("%s \n%s, %s \n\n--------------"
-					+ "-------------------------------------------------\n\n", 
-					title, source, section);
-			String text = textTitle +"" + "" + textTempString;
-
-			if (dateManuallySelected == false){
-				DateExtractor de = new DateExtractor();
-				String datefull = file.select(dateElement).get(i).text();
-				try{
-					Date dateHTML = (Date) de.extractDate(datefull);
-					addDocument(title, text, dateHTML, coder, source, section, 
-							notes, type);
-				}
-				//TODO: Put warning into usual DNA-warnings format
-				catch(NullPointerException e) {
-					String message = "\n Date not extractable.\nUse 'set date"
-							+ " manually'-option."; 
-					JOptionPane.showMessageDialog(new JFrame(), message, "Warning",
-							JOptionPane.ERROR_MESSAGE);
-				}
-			}else{
-				addDocument(title, text, dateManually, coder, source, section, 
-						notes, type);
-			}	
-		} 	
-	}
-	*/
-	
-	/**
-	 * LB.Add:
-	 * Import one document from a webpage, parse it and add it to the data set. 
-	 * 
-	 * @param urlName			URL of webpage
-	 * @param textElement		HTML/Xpath code where text is saved in file
-	 * @param titleElement		HTML/Xpath code where title is saved in file
-	 * @param dateElement		HTML/Xpath code where date is saved in file
-	 * @param sectionElement	HTML/Xpath code where section is saved in file
-	 * @param coder				Name of coder
-	 * @param source			Name of source
-	 * @param type				Type of document
-	 * @param notes				Notes
-	 * @throws IOException		
-	 * @throws ParseException
-	 */
-	/*
-	public void importDocumentsFromWebpage(String urlName, 
-			String textElement, String titleElement, String dateElement, 
-			String sectionElement, int coder, String source, String type, 
-			String notes, Date dateManually, boolean dateManuallySelected) 
-					throws IOException, ParseException {
-
-		org.jsoup.nodes.Document file = Jsoup.connect(urlName).get();
-
-		String title = file.select(titleElement).text();
-		String section = file.select(sectionElement).text();
-		Elements textTemp = file.select(textElement);
-		textTemp.select("p").prepend("CODE_LINEBREAK_1234");
-		textTemp.select("br").append("CODE_LINEBREAK_1234");
-		String textTempString = textTemp.text();
-		textTempString = textTempString.replaceAll("CODE_LINEBREAK_1234", "\n\n");
-
-		String textTitle = String.format("%s \n%s, %s \nURL: %s\n\n--------------"
-				+ "-------------------------------------------------\n\n", 
-				title, source, section, urlName);
-		String text = textTitle +"" + "" + textTempString;
-
-		if (dateManuallySelected == false){
-			DateExtractor de = new DateExtractor();
-			String datefull = file.select(dateElement).text();
-			try{
-				Date dateHTML = (Date) de.extractDate(datefull);
-				addDocument(title, text, dateHTML, coder, source, section, notes, 
-						type);
-			}
-			//TODO: Put warning into usual DNA-warnings format
-			catch(NullPointerException e) {
-				String message = "\n Date not extractable.\nUse 'set date"
-						+ " manually'-option."; 
-				JOptionPane.showMessageDialog(new JFrame(), message, "Warning",
-						JOptionPane.ERROR_MESSAGE);
-			}
-		}else{
-			addDocument(title, text, dateManually, coder, source, section, 
-					notes, type);
-		}        	
-	}
-	*/
-	
-	/*
-	public void newFile(String filename) {
-		Dna.dna.db.openSQLite(filename);
-		Dna.dna.gui.statusBar.resetLabel();
-		Dna.dna.gui.menuBar.typeEditorButton.setEnabled(true);
-		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
-		Dna.dna.gui.menuBar.importHTMLButton.setEnabled(true);
-		Dna.dna.gui.menuBar.recodeVariableButton.setEnabled(true);
-		Dna.dna.gui.menuBar.closeFile.setEnabled(true);
-		Dna.dna.gui.menuBar.importDnaButton.setEnabled(true);
-		Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
-		Dna.dna.gui.menuBar.networkButton.setEnabled(true);
-		Dna.dna.gui.sidebarPanel.updateStatementTypes();
-		Dna.dna.gui.sidebarPanel.rm.addButton.setEnabled(true);
-		Dna.dna.gui.sidebarPanel.updateViewLinksTable();
-		Dna.dna.gui.sidebarPanel.docStats.updateStatistics();
-		Dna.dna.gui.menuBar.updateTeggleAction();
-	}
-	*/
 }

@@ -539,7 +539,7 @@ public class NetworkCreator {
 			ignore = multiply(ignore, transpose(ignore));  // convert two-mode into one-mode network
 		}
 		
-		// step 5: choose result matrix; subtract if necessary
+		// step 6: choose result matrix; subtract if necessary
 		double[][] resultmat = new double[names1.size()][names1.size()];  // quadratic matrix!
 		if (exportSetting.getAgreementPattern().equals("congruence")) {
 			resultmat = congruence;
@@ -551,7 +551,7 @@ public class NetworkCreator {
 			resultmat = subtract(congruence, conflict);
 		}
 		
-		// step 6: normalization
+		// step 7: normalization
 		if (exportSetting.getNormalization().equals("cooccurrence")) {
 			// do nothing
 		} else if (exportSetting.getNormalization().equals("average")) {
@@ -630,7 +630,7 @@ public class NetworkCreator {
 			System.err.println("Normalization argument not recognized.");
 		}
 		
-		// step 7: create Network object and return
+		// step 8: create Network object and return
 		String[] rownames = new String[names1.size()]; // cast row/column names from array list to array
 		rownames = names1.toArray(rownames);
 		Matrix matrix = new Matrix(resultmat, rownames, rownames); // assemble the Matrix object with labels
