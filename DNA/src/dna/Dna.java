@@ -111,6 +111,11 @@ public class Dna {
 		sql.removeRegex(label);
 	}
 	
+	public void addAttributeVector(AttributeVector av) {
+		data.getAttributes().add(av);
+		sql.upsertAttributeVector(av);
+	}
+	
 	public void closeDatabase() {
 		data = new Data();
 		sql.closeConnection();

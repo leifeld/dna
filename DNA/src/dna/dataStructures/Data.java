@@ -16,6 +16,7 @@ public class Data {
 	public ArrayList<CoderRelation> coderRelations;
 	public HashMap<String, String> settings;
 	public ArrayList<StatementLink> statementLinks;
+	public ArrayList<AttributeVector> attributes;
 	
 	public Data() {
 		this.statements = new ArrayList<Statement>();
@@ -27,8 +28,41 @@ public class Data {
 		this.settings = new HashMap<String, String>();
 		this.statementLinks = new ArrayList<StatementLink>();
 		settings.put("activeCoder", "1");
+		this.attributes = new ArrayList<AttributeVector>();
 	}
 	
+	/**
+	 * Check if an attribute value already exists in the the attributes array list. Return its ID if found and -1 otherwise.
+	 * 
+	 * @param value            The attribute value as a string
+	 * @param variable         The variable name as a string
+	 * @param statementTypeId  The statement type ID as an int
+	 * @return                 The ID of the attribute vector as an int; -1 if the attribute vector does not exist
+	 */
+	public int getAttributeId(String value, String variable, int statementTypeId) {
+		for (int i = 0; i < Dna.data.getAttributes().size(); i++) {
+			if (Dna.data.getAttributes().get(i).getValue().equals(value) && Dna.data.getAttributes().get(i).getVariable().equals(variable) 
+					&& Dna.data.getAttributes().get(i).getStatementTypeId() == statementTypeId) {
+				return Dna.data.getAttributes().get(i).getId();
+			}
+		}
+		return -1;
+	}
+	
+	/**
+	 * @return the attributes
+	 */
+	public ArrayList<AttributeVector> getAttributes() {
+		return attributes;
+	}
+
+	/**
+	 * @param attributes the attributes to set
+	 */
+	public void setAttributes(ArrayList<AttributeVector> attributes) {
+		this.attributes = attributes;
+	}
+
 	public void addRegex(Regex regex) {
 		Dna.dna.gui.rightPanel.rm.regexListModel.addElement(regex);
 	}
@@ -331,6 +365,10 @@ public class Data {
 		} else if (arrayList.equals("coderRelations")) {
 			for (int i = 0; i < coderRelations.size(); i++) {
 				ids.add(coderRelations.get(i).getId());
+			}
+		} else if (arrayList.equals("attributes")) {
+			for (int i = 0; i < attributes.size(); i++) {
+				ids.add(attributes.get(i).getId());
 			}
 		}
 		Collections.sort(ids);

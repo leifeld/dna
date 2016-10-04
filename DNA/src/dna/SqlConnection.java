@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 
 import javax.swing.JOptionPane;
 
+import dna.dataStructures.AttributeVector;
 import dna.dataStructures.Coder;
 import dna.dataStructures.CoderRelation;
 import dna.dataStructures.Data;
@@ -501,6 +502,92 @@ public class SqlConnection {
 	}
 	
 	/**
+	 * Update an existing attribute vector or insert a new item into the ATTRIBUTES table in the database. 
+	 * 
+	 * @param av AttributeVector to be updated in the SQL database
+	 */
+	void upsertAttributeVector(AttributeVector av) {
+		try {
+			int statementTypeId = av.getStatementTypeId();
+			String variable = av.getVariable();
+			int variableId = (int) executeQueryForObject("SELECT ID FROM VARIABLES WHERE StatementTypeID = " + statementTypeId + 
+					" AND Variable = '" + variable + "'");
+
+			executeStatement("REPLACE INTO ATTRIBUTES(ID, VariableId, Value, Red, Green, Blue, Type, Alias, Notes, ChildOf) "
+					+ "VALUES (" + av.getId() + ", " + variableId + ", '" + av.getValue() + "', " + av.getColor().getRed() + ", " + 
+					av.getColor().getGreen() + ", " + av.getColor().getBlue()	+ ", '" + av.getType() + "', '" + av.getAlias() + 
+					"', '" + av.getNotes() + "', '" + av.getChildOf() + "')");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Update color in an attribute vector.
+	 * 
+	 * @param id     ID of the attribute vector
+	 * @param color  New color of the attribute vector
+	 */
+	private void updateAttributeColor(int id, Color color) {
+		executeStatement("UPDATE ATTRIBUTES SET Red = " + color.getRed() + ", Green = " + color.getGreen() + ", Blue = " + color.getBlue() + " WHERE ID = " + id);
+	}
+	
+	/**
+	 * Update some String attribute in an attribute vector.
+	 * 
+	 * @param id        ID of the attribute vector
+	 * @param attribute Attribute string; which variable should be updated?
+	 * @param newValue  New value of the attribute
+	 */
+	private void updateAttributeColor(int id, String attribute, String newValue) {
+		executeStatement("UPDATE ATTRIBUTES SET " + attribute + " = '" + newValue + "' WHERE ID = " + id);
+	}
+	
+	/**
+	 * Read all meta-variables/attributes from SQL database and return them as an array list of attribute vectors.
+	 * 
+	 * @return array list of attribute vectors, containing attributes for the statement values
+	 */
+	private ArrayList<AttributeVector> getAllAttributes() {
+		ArrayList<AttributeVector> al = new ArrayList<AttributeVector>();
+		try {
+			String myQuery = "SELECT ATTRIBUTES.*, VARIABLES.StatementTypeId, VARIABLES.Variable FROM ATTRIBUTES LEFT JOIN VARIABLES ON ATTRIBUTES.VariableId = VARIABLES.ID";
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+			ResultSet result = preStatement.executeQuery();
+			int id;
+			String value;
+			Color color;
+			String type;
+			String alias;
+			String notes;
+			String childOf;
+			int statementTypeId;
+			String variable;
+			AttributeVector av;
+			if (result.next()) {
+				do {
+					id = result.getInt("ID");
+					value = result.getString("Value");
+					color = new Color(result.getInt("Red"), result.getInt("Green"), result.getInt("Blue"));
+					type = result.getString("Type");
+					alias = result.getString("Alias");
+					notes = result.getString("Notes");
+					childOf = result.getString("childOf");
+					statementTypeId = result.getInt("StatementTypeId");
+					variable = result.getString("Variable");
+					av = new AttributeVector(id, value, color, type, alias, notes, childOf, statementTypeId, variable);
+					al.add(av);
+				} while (result.next());
+			}
+			result.close();
+			preStatement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return al;
+	}
+	
+	/**
 	 * @return     Array list of all settings in the SQL database.
 	 */
 	private HashMap<String, String> getAllSettings() {
@@ -828,11 +915,12 @@ public class SqlConnection {
 			e.printStackTrace();
 		}
 		data.setStatements(statements);
+		data.setAttributes(getAllAttributes());
 		return data;
 	}
 	
 	/**
-	 * @return     Array list of all documents in the SQL database.
+	 * @return     Array list of all statement types in the SQL database.
 	 */
 	private ArrayList<StatementType> getAllStatementTypes() {
 		ArrayList<StatementType> al = new ArrayList<StatementType>();
@@ -868,7 +956,7 @@ public class SqlConnection {
 		}
 		return al;
 	}
-
+	
 	/**
 	 * @param key    Property to extract
 	 * @return       Value corresponding to the property
@@ -946,6 +1034,7 @@ public class SqlConnection {
 		tableNames.add("DATAINTEGER");
 		tableNames.add("DATASHORTTEXT");
 		tableNames.add("DATALONGTEXT");
+		tableNames.add("ATTRIBUTES");
 		
 		boolean tablesExist = false;
 		for (int i = 0; i < tableNames.size(); i++) {
@@ -986,6 +1075,7 @@ public class SqlConnection {
 		tableNames.add("DATAINTEGER");
 		tableNames.add("DATASHORTTEXT");
 		tableNames.add("DATALONGTEXT");
+		tableNames.add("ATTRIBUTES");
 		int count = 0;
 		for (int i = 0; i < tableNames.size(); i++) {
 			try {
@@ -1131,6 +1221,19 @@ public class SqlConnection {
 	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 	        		+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "UNIQUE (StatementId, VariableId))");
+
+	        executeStatement("CREATE TABLE IF NOT EXISTS ATTRIBUTES("
+	        		+ "ID INTEGER PRIMARY KEY NOT NULL, "
+	        		+ "VariableId INTEGER NOT NULL, "
+	        		+ "Value TEXT NOT NULL, "
+					+ "Red INTEGER, "
+					+ "Green INTEGER, "
+					+ "Blue INTEGER, "
+					+ "Type TEXT, " 
+					+ "Alias TEXT, "
+					+ "Notes TEXT, " 
+					+ "ChildOf TEXT, " 
+	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID))");
 	        
 		} else if (dbtype.equals("mysql")) {
 			
@@ -1281,6 +1384,20 @@ public class SqlConnection {
 	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 	        		+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "UNIQUE KEY StatementVariable (StatementId, VariableId), "
+					+ "PRIMARY KEY(ID))");
+
+	        executeStatement("CREATE TABLE IF NOT EXISTS ATTRIBUTES("
+	        		+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+	        		+ "VariableId SMALLINT UNSIGNED NOT NULL, "
+	        		+ "Value TEXT, "
+					+ "Red SMALLINT UNSIGNED, "
+					+ "Green SMALLINT UNSIGNED, " 
+					+ "Blue SMALLINT UNSIGNED, "
+					+ "Type TEXT, "
+					+ "Alias TEXT, "
+					+ "Notes TEXT, " 
+					+ "ChildOf TEXT, " 
+	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 					+ "PRIMARY KEY(ID))");
 		}
 	}

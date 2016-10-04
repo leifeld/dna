@@ -39,6 +39,7 @@ import javax.swing.border.LineBorder;
 
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
+import dna.dataStructures.AttributeVector;
 import dna.dataStructures.Statement;
 
 public class Popup extends JDialog {
@@ -318,23 +319,31 @@ public class Popup extends JDialog {
 	@SuppressWarnings("unchecked")
 	public static void saveContents(JPanel gridBagPanel, int statementID, String type) {
 		Component[] com = gridBagPanel.getComponents();
-		HashMap<String, String> vars = Dna.data.getStatementType(type).getVariables();
+		//HashMap<String, String> vars = Dna.data.getStatementType(type).getVariables();
 		
 		for (int i = 0; i < com.length; i++) {
-			Object content = null;
-			String contentType = null;
-			String dataType = null;
+			Object content = null;      // the value of a variable, e.g., "EPA"
+			String contentType = null;  // the variable name, e.g., "organization"
+			//String dataType = null;
 			if (com[i].getClass().getName().equals("javax.swing.JComboBox")) {  // short text
 				contentType = ((JLabel)com[i-1]).getText();
-				dataType = vars.get(contentType);
+				//dataType = vars.get(contentType);
 				content = ((JComboBox<String>) com[i]).getEditor().getItem();
 				if (content == null) {
 					content = "";
 				}
 				Dna.dna.updateVariable(statementId, statementTypeId, content, contentType);
+				int attributeId = Dna.data.getAttributeId((String) content, contentType, statementTypeId);
+				if (attributeId == -1) {
+					int id = Dna.data.generateNewId("attributes");
+					int statementTypeId = Dna.data.getStatement(statementID).getStatementTypeId();
+					AttributeVector attributeVector = new AttributeVector(id, (String) content, new Color(0, 0, 0), "", "", "", "", 
+							statementTypeId, contentType);
+					Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.addRow(attributeVector);
+				}
 			} else if (com[i].getClass().getName().equals("javax.swing.JCheckBox")) {  // boolean
 				contentType = ((JLabel)com[i-1]).getText();
-				dataType = vars.get(contentType);
+				//dataType = vars.get(contentType);
 				content = ((JCheckBox)com[i]).isSelected();
 				int intBool;
 				if ((Boolean) content == false) {
@@ -345,7 +354,7 @@ public class Popup extends JDialog {
 				Dna.dna.updateVariable(statementId, statementTypeId, intBool, contentType);
 			} else if (com[i].getClass().getName().equals("javax.swing.JScrollPane")) {  // long text
 				contentType = ((JLabel)com[i-1]).getText();
-				dataType = vars.get(contentType);
+				//dataType = vars.get(contentType);
 				JScrollPane jsp = ((JScrollPane)com[i]);
 				JTextArea jta = (JTextArea) jsp.getViewport().getView();
 				content = jta.getText();
@@ -355,7 +364,7 @@ public class Popup extends JDialog {
 				Dna.dna.updateVariable(statementId, statementTypeId, content, contentType);
 			} else if (com[i].getClass().getName().equals("javax.swing.JPanel")) {  // integer
 				contentType = ((JLabel)com[i-1]).getText();
-				dataType = vars.get(contentType);
+				//dataType = vars.get(contentType);
 				JPanel jp = (JPanel) com[i];
 				JSpinner jsp = (JSpinner) jp.getComponent(0);
 				content = jsp.getValue();

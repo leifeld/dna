@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
@@ -24,6 +25,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToggleButton;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
@@ -40,7 +42,7 @@ import dna.renderer.StatementTypeComboBoxRenderer;
 
 public class RecodePanel extends JPanel {
 	
-	JToggleButton searchToggleButton, recodeToggleButton;
+	JToggleButton attributeToggleButton, searchToggleButton, recodeToggleButton;
 	public JComboBox typeComboBox, entryBox;
 	public JTable table;
 	DefaultTableModel tableModel;
@@ -57,7 +59,7 @@ public class RecodePanel extends JPanel {
 		
 		// toggle buttons, top right corner
 		searchToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/find.png")));
-		searchToggleButton.setPreferredSize(new Dimension(36, 18));
+		searchToggleButton.setPreferredSize(new Dimension(24, 18));
 		searchToggleButton.setSelected(false);
 		searchToggleButton.setName("searchToggle");
 		searchToggleButton.addActionListener( new ActionListener() {
@@ -66,12 +68,17 @@ public class RecodePanel extends JPanel {
 				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "searchPanel");
 				searchToggleButton.setSelected(true);
 				recodeToggleButton.setSelected(false);
+				attributeToggleButton.setSelected(false);
 				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(true);
 				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(false);
+				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(false);
+				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(true);
+				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(false);
+				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(false);
 			}
 		});
 		recodeToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/table_edit.png")));
-		recodeToggleButton.setPreferredSize(new Dimension(36, 18));
+		recodeToggleButton.setPreferredSize(new Dimension(24, 18));
 		recodeToggleButton.setSelected(true);
 		recodeToggleButton.setName("recodeToggle");
 		recodeToggleButton.addActionListener( new ActionListener() {
@@ -80,13 +87,38 @@ public class RecodePanel extends JPanel {
 				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "recodePanel");
 				searchToggleButton.setSelected(false);
 				recodeToggleButton.setSelected(true);
+				attributeToggleButton.setSelected(false);
 				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(false);
 				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(true);
+				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(false);
+				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(false);
+				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(true);
+				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(false);
+			}
+		});
+		attributeToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/tag_purple.png")));
+		attributeToggleButton.setPreferredSize(new Dimension(24, 18));
+		attributeToggleButton.setSelected(false);
+		attributeToggleButton.setName("attributeToggle");
+		attributeToggleButton.addActionListener( new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				CardLayout cl = (CardLayout) Dna.dna.gui.textPanel.bottomCardPanel.getLayout();
+				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "attributePanel");
+				searchToggleButton.setSelected(false);
+				recodeToggleButton.setSelected(false);
+				attributeToggleButton.setSelected(true);
+				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(false);
+				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(false);
+				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(true);
+				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(false);
+				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(false);
+				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(true);
 			}
 		});
 		JPanel switchPanel = new JPanel();
 		switchPanel.add(searchToggleButton);
 		switchPanel.add(recodeToggleButton);
+		switchPanel.add(attributeToggleButton);
 		topPanel.add(switchPanel, BorderLayout.EAST);
 		
 		// combo boxes and buttons, top left

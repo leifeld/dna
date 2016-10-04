@@ -97,6 +97,7 @@ public class Gui extends JFrame {
 		statementSplitPane.add(codingSplitPane, BorderLayout.CENTER);
 		codingPanel.add(statementSplitPane, BorderLayout.CENTER);
 		
+		// left collapsible panel
 		leftPanel = new LeftPanel();
 		JXCollapsiblePane leftCollapsiblePane = new JXCollapsiblePane();
 		leftCollapsiblePane.setName("Coder settings");
@@ -105,6 +106,7 @@ public class Gui extends JFrame {
 		codingPanel.add(leftCollapsiblePane, BorderLayout.WEST);
 		leftCollapsiblePane.add(leftPanel);
 		
+		// toggle buttons in upper right corner of DNA GUI
 		JPanel toggleButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		SpinnerModel spinnerModel = new SpinnerNumberModel(14, 8, 60, 1);
 		JSpinner fontSpinner = new JSpinner(spinnerModel);
@@ -123,20 +125,20 @@ public class Gui extends JFrame {
 		leftToggleButton.setSelected(true);
 		leftToggleButton.setName("leftToggle");
 		leftToggleButton.addActionListener(leftCollapsiblePane.getActionMap().get(JXCollapsiblePane.TOGGLE_ACTION));
-		
 		toggleButtons.add(leftToggleButton);
+		
 		JToggleButton bottomToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/application_split.png")));
 		bottomToggleButton.setPreferredSize(new Dimension(36, 18));
 		bottomToggleButton.setSelected(false);
 		bottomToggleButton.addActionListener(textPanel.collapsiblePane.getActionMap().get(JXCollapsiblePane.TOGGLE_ACTION));
-		
 		toggleButtons.add(bottomToggleButton);
+		
 		JToggleButton rightToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/application_side_list_right.png")));
 		rightToggleButton.setPreferredSize(new Dimension(36, 18));
 		rightToggleButton.setSelected(true);
 		rightToggleButton.addActionListener(rightCollapsiblePane.getActionMap().get(JXCollapsiblePane.TOGGLE_ACTION));
-		
 		toggleButtons.add(rightToggleButton);
+		
 		menuAndButtonsPanel.add(toggleButtons, BorderLayout.EAST);
 		
 		codingPanel.add(menuAndButtonsPanel, BorderLayout.NORTH);
@@ -201,6 +203,7 @@ public class Gui extends JFrame {
 		Dna.dna.gui.documentPanel.documentFilter();
 		Dna.dna.gui.documentPanel.documentTable.updateDocumentView();
 		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.updateUI();
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTable.updateUI();
 	}
 	
 	class StatusBar extends JPanel {
