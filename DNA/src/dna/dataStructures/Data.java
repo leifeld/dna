@@ -50,6 +50,28 @@ public class Data {
 	}
 	
 	/**
+	 * Delete an attribute vector from the data in the GUI.
+	 * 
+	 * @param attributeVectorId  The ID of the attribute vector to delete
+	 */
+	/*
+	public void deleteAttributeVector(int attributeVectorId) {
+		int row = -1;
+		for (int i = 0; i < attributes.size(); i++) {
+			if (attributes.get(i).getId() == attributeVectorId) {
+				row = i;
+				break;
+			}
+		}
+		if (row < 0) {
+			System.err.println("Attribute vector could not be identified.");
+		} else {
+			attributes.remove(row);
+		}
+	}
+	*/
+	
+	/**
 	 * @return the attributes
 	 */
 	public ArrayList<AttributeVector> getAttributes() {

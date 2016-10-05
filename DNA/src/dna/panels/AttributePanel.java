@@ -2,7 +2,9 @@ package dna.panels;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -11,16 +13,19 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToggleButton;
 import javax.swing.RowFilter;
-import javax.swing.RowFilter.Entry;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableRowSorter;
+
+import org.jdesktop.swingx.JXTextField;
 
 import dna.Dna;
 import dna.dataStructures.AttributeVector;
@@ -38,7 +43,7 @@ public class AttributePanel extends JPanel {
 	public AttributeTableModel attributeTableModel;
 	public JTable attributeTable;
 	public JComboBox typeComboBox, entryBox;
-	TableRowSorter sorter;
+	TableRowSorter<AttributeTableModel> sorter;
 	AttributeCellRenderer renderer;
 	
 	public AttributePanel() {
@@ -166,8 +171,76 @@ public class AttributePanel extends JPanel {
 		attributeTable.setRowSorter(sorter);
 		emptyFilter();
 		
+		//panel with field and buttons at the bottom
+		JPanel lowerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		JXTextField newField = new JXTextField("New value...");
+		newField.setColumns(14);
+		lowerPanel.add(newField);
+		Icon addIcon = new ImageIcon(getClass().getResource("/icons/table_row_insert.png"));
+		JButton addButton = new JButton("Add entry", addIcon);
+		addButton.setPreferredSize(new Dimension(addButton.getPreferredSize().width, newField.getPreferredSize().height));
+		lowerPanel.add(addButton);
+		Icon deleteIcon = new ImageIcon(getClass().getResource("/icons/table_row_delete.png"));
+		JButton deleteButton = new JButton("Delete entry", deleteIcon);
+		deleteButton.setPreferredSize(new Dimension(deleteButton.getPreferredSize().width, newField.getPreferredSize().height));
+		lowerPanel.add(deleteButton);
+		Icon cleanUpIcon = new ImageIcon(getClass().getResource("/icons/table_delete.png"));
+		JButton cleanUpButton = new JButton("Clean up", cleanUpIcon);
+		cleanUpButton.setPreferredSize(new Dimension(cleanUpButton.getPreferredSize().width, newField.getPreferredSize().height));
+		lowerPanel.add(cleanUpButton);
+		Icon addMissingIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
+		JButton addMissingButton = new JButton("Add missing", addMissingIcon);
+		addMissingButton.setPreferredSize(new Dimension(addMissingButton.getPreferredSize().width, newField.getPreferredSize().height));
+		lowerPanel.add(addMissingButton);
+		
+		addButton.addActionListener( new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String value = newField.getText();
+				int id = Dna.data.generateNewId("attributes");
+				int statementTypeId = ((StatementType) typeComboBox.getSelectedItem()).getId();
+				String variable = (String) entryBox.getSelectedItem();
+				boolean exists = false;
+				for (int i = 0; i < Dna.data.getAttributes().size(); i++) {
+					if (Dna.data.getAttributes().get(i).getValue().equals(value) && Dna.data.getAttributes().get(i).getVariable().equals(variable) 
+							&& Dna.data.getAttributes().get(i).getStatementTypeId() == statementTypeId) {
+						exists = true;
+						break;
+					}
+				}
+				if (!exists) {
+					AttributeVector av = new AttributeVector(id, value, new Color(0, 0, 0), "", "", "", "", statementTypeId, variable);
+					attributeTableModel.addRow(av);
+				}
+			}
+		});
+		
+		deleteButton.addActionListener( new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int modelRow = attributeTable.convertRowIndexToModel(attributeTable.getSelectedRow());
+				if (!attributeTableModel.get(modelRow).isInDataset()) {
+					attributeTableModel.deleteRow(modelRow);
+				} else {
+					System.err.println("Entry cannot be deleted because it is still present in the dataset.");
+				}
+			}
+		});
+		
+		cleanUpButton.addActionListener( new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//TODO
+			}
+		});
+		
+		addMissingButton.addActionListener( new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//TODO
+			}
+		});
+		
+		
 		this.add(topPanel, BorderLayout.NORTH);
 		this.add(sp, BorderLayout.CENTER);
+		this.add(lowerPanel, BorderLayout.SOUTH);
 	}
 	
 	private void variableFilter(String variable, int statementTypeId) {

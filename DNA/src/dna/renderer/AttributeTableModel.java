@@ -1,6 +1,7 @@
 package dna.renderer;
 
 import java.awt.Color;
+import java.util.Collections;
 
 import javax.swing.table.AbstractTableModel;
 
@@ -81,6 +82,18 @@ public class AttributeTableModel extends AbstractTableModel {
 	 */
 	public void addRow(AttributeVector av) {
 		Dna.dna.addAttributeVector(av);
+		Collections.sort(Dna.data.attributes);
+		fireTableDataChanged();
+	}
+	
+	/**
+	 * Delete a row from the table.
+	 * 
+	 * @param row  Index of the attribute vector in the table and data structure
+	 */
+	public void deleteRow(int row) {
+		Dna.dna.deleteAttributeVector(row);
+		Collections.sort(Dna.data.attributes);
 		fireTableDataChanged();
 	}
 	

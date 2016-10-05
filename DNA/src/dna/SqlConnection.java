@@ -523,6 +523,15 @@ public class SqlConnection {
 	}
 	
 	/**
+	 * Delete an existing attribute vector from the database using its ID.
+	 * 
+	 * @param attributeVectorId  The ID of the attribute vector
+	 */
+	void deleteAttributeVector(int attributeVectorId) {
+		executeStatement("DELETE FROM ATTRIBUTES WHERE ID = " + attributeVectorId);
+	}
+	
+	/**
 	 * Update color in an attribute vector.
 	 * 
 	 * @param id     ID of the attribute vector

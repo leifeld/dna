@@ -5,6 +5,7 @@ import dna.dataStructures.*;
 import java.awt.Color;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import javax.swing.ImageIcon;
 
@@ -121,7 +122,18 @@ public class Dna {
 		data.getAttributes().add(av);
 		sql.upsertAttributeVector(av);
 	}
-
+	
+	/**
+	 * Delete an existing attribute vector. An attribute vector is an entry of a variable coupled with a color and some meta-data like type or alias.
+	 * 
+	 * @param row  Index of the attribute vector in the table/data structure
+	 */
+	public void deleteAttributeVector(int row) {
+		int attributeVectorId = Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.get(row).getId();
+		Dna.data.getAttributes().remove(row);
+		sql.deleteAttributeVector(attributeVectorId);
+	}
+	
 	/**
 	 * Update the color of an existing attribute vector.
 	 * 
