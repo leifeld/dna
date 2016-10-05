@@ -61,17 +61,17 @@ public class AttributeTableModel extends AbstractTableModel {
 	
 	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
 		if (columnIndex == 0) {
-			dna.Dna.data.getAttributes().get(rowIndex).setValue((String) aValue);
+			Dna.dna.updateAttributeValue(rowIndex, (String) aValue);
 		} else if (columnIndex == 1) {
-			dna.Dna.data.getAttributes().get(rowIndex).setColor((Color) aValue);
+			Dna.dna.updateAttributeColor(rowIndex, (Color) aValue);
 		} else if (columnIndex == 2) {
-			dna.Dna.data.getAttributes().get(rowIndex).setType((String) aValue);
+			Dna.dna.updateAttributeType(rowIndex, (String) aValue);
 		} else if (columnIndex == 3) {
-			dna.Dna.data.getAttributes().get(rowIndex).setAlias((String) aValue);
+			Dna.dna.updateAttributeAlias(rowIndex, (String) aValue);
 		} else if (columnIndex == 4) {
-			dna.Dna.data.getAttributes().get(rowIndex).setNotes((String) aValue);
+			Dna.dna.updateAttributeNotes(rowIndex, (String) aValue);
 		}
-		this.fireTableCellUpdated(rowIndex, columnIndex);
+		this.fireTableDataChanged();
 	}
 	
 	/**
@@ -81,7 +81,6 @@ public class AttributeTableModel extends AbstractTableModel {
 	 */
 	public void addRow(AttributeVector av) {
 		Dna.dna.addAttributeVector(av);
-		//this.fireTableRowsInserted(Dna.data.getAttributes().size() - 1, Dna.data.getAttributes().size() - 1);
 		fireTableDataChanged();
 	}
 	

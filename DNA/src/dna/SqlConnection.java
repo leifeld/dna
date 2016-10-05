@@ -528,7 +528,7 @@ public class SqlConnection {
 	 * @param id     ID of the attribute vector
 	 * @param color  New color of the attribute vector
 	 */
-	private void updateAttributeColor(int id, Color color) {
+	public void updateAttributeColor(int id, Color color) {
 		executeStatement("UPDATE ATTRIBUTES SET Red = " + color.getRed() + ", Green = " + color.getGreen() + ", Blue = " + color.getBlue() + " WHERE ID = " + id);
 	}
 	
@@ -539,7 +539,7 @@ public class SqlConnection {
 	 * @param attribute Attribute string; which variable should be updated?
 	 * @param newValue  New value of the attribute
 	 */
-	private void updateAttributeColor(int id, String attribute, String newValue) {
+	public void updateAttribute(int id, String attribute, String newValue) {
 		executeStatement("UPDATE ATTRIBUTES SET " + attribute + " = '" + newValue + "' WHERE ID = " + id);
 	}
 	

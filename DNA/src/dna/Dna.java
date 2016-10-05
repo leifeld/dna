@@ -2,6 +2,7 @@ package dna;
 
 import dna.dataStructures.*;
 
+import java.awt.Color;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -111,9 +112,69 @@ public class Dna {
 		sql.removeRegex(label);
 	}
 	
+	/**
+	 * Add a new attribute vector. An attribute vector is an entry of a variable coupled with a color and some meta-data like type or alias.
+	 * 
+	 * @param av  The attribute vector
+	 */
 	public void addAttributeVector(AttributeVector av) {
 		data.getAttributes().add(av);
 		sql.upsertAttributeVector(av);
+	}
+
+	/**
+	 * Update the color of an existing attribute vector.
+	 * 
+	 * @param row    Index of the attribute vector
+	 * @param color  The new color
+	 */
+	public void updateAttributeColor(int row, Color color) {
+		data.getAttributes().get(row).setColor(color);
+		sql.updateAttributeColor(data.getAttributes().get(row).getId(), color);
+	}
+
+	/**
+	 * Update the Value field of an existing attribute vector.
+	 * 
+	 * @param row    Index of the attribute vector
+	 * @param value  String containing the value
+	 */
+	public void updateAttributeValue(int row, String value) {
+		data.getAttributes().get(row).setValue(value);
+		sql.updateAttribute(data.getAttributes().get(row).getId(), "Value", value);
+	}
+
+	/**
+	 * Update the Type field of an existing attribute vector.
+	 * 
+	 * @param row    Index of the attribute vector
+	 * @param type  String containing the type
+	 */
+	public void updateAttributeType(int row, String type) {
+		data.getAttributes().get(row).setType(type);
+		sql.updateAttribute(data.getAttributes().get(row).getId(), "Type", type);
+	}
+
+	/**
+	 * Update the Alias field of an existing attribute vector.
+	 * 
+	 * @param row    Index of the attribute vector
+	 * @param alias  String containing the alias
+	 */
+	public void updateAttributeAlias(int row, String alias) {
+		data.getAttributes().get(row).setAlias(alias);
+		sql.updateAttribute(data.getAttributes().get(row).getId(), "Alias", alias);
+	}
+
+	/**
+	 * Update the Notes field of an existing attribute vector.
+	 * 
+	 * @param row    Index of the attribute vector
+	 * @param notes  String containing the notes
+	 */
+	public void updateAttributeNotes(int row, String notes) {
+		data.getAttributes().get(row).setNotes(notes);
+		sql.updateAttribute(data.getAttributes().get(row).getId(), "Notes", notes);
 	}
 	
 	public void closeDatabase() {

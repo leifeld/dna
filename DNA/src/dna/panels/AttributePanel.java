@@ -24,13 +24,10 @@ import javax.swing.table.TableRowSorter;
 
 import dna.Dna;
 import dna.dataStructures.AttributeVector;
-import dna.dataStructures.Document;
 import dna.dataStructures.StatementType;
 import dna.renderer.AttributeCellRenderer;
 import dna.renderer.AttributeTableModel;
-import dna.renderer.CoderComboBoxRenderer;
-import dna.renderer.CoderRelationCellRenderer;
-import dna.renderer.DocumentTableModel;
+import dna.renderer.ColorChooserEditor;
 import dna.renderer.StatementTypeComboBoxModel;
 import dna.renderer.StatementTypeComboBoxRenderer;
 
@@ -126,6 +123,8 @@ public class AttributePanel extends JPanel {
 		attributeTable.getColumnModel().getColumn( 4 ).setPreferredWidth( 150 );
 		renderer = new AttributeCellRenderer();
 		attributeTable.getColumnModel().getColumn(1).setCellRenderer(renderer);
+		ColorChooserEditor cce = new ColorChooserEditor();
+		attributeTable.getColumnModel().getColumn(1).setCellEditor(cce);
 		
 		// combo boxes and buttons, top left
 		StatementTypeComboBoxRenderer renderer = new StatementTypeComboBoxRenderer();
