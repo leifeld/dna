@@ -85,8 +85,12 @@ public class StatementType {
 	public ArrayList<String> getVariablesByType(String type) {
 		ArrayList<String> vars = new ArrayList<String>();
 		Iterator<String> keyIterator = variables.keySet().iterator();
-		while (keyIterator.hasNext()){
-			vars.add(keyIterator.next());
+		while (keyIterator.hasNext()) {
+			String key = keyIterator.next();
+			String value = variables.get(key);
+			if (value.equals(type)) {
+				vars.add(key);
+			}
 		}
 		return(vars);
 	}

@@ -98,6 +98,14 @@ public class AttributeTableModel extends AbstractTableModel {
 	}
 	
 	/**
+	 * Sort the table.
+	 */
+	public void sort() {
+		Collections.sort(Dna.data.attributes);
+		fireTableDataChanged();
+	}
+	
+	/**
 	 * Get the attribute vector stored in a particular row.
 	 * 
 	 * @param row  The row that should be retrieved

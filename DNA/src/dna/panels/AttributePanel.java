@@ -17,12 +17,19 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToggleButton;
+import javax.swing.ListSelectionModel;
+import javax.swing.ProgressMonitor;
 import javax.swing.RowFilter;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableRowSorter;
 
 import org.jdesktop.swingx.JXTextField;
@@ -118,6 +125,7 @@ public class AttributePanel extends JPanel {
 		
 		attributeTableModel = new AttributeTableModel();
 		attributeTable = new JTable(attributeTableModel);
+		attributeTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane sp = new JScrollPane(attributeTable);
 		sp.setPreferredSize(new Dimension(300, 150));
 
@@ -179,10 +187,12 @@ public class AttributePanel extends JPanel {
 		Icon addIcon = new ImageIcon(getClass().getResource("/icons/table_row_insert.png"));
 		JButton addButton = new JButton("Add entry", addIcon);
 		addButton.setPreferredSize(new Dimension(addButton.getPreferredSize().width, newField.getPreferredSize().height));
+		addButton.setEnabled(false);
 		lowerPanel.add(addButton);
 		Icon deleteIcon = new ImageIcon(getClass().getResource("/icons/table_row_delete.png"));
 		JButton deleteButton = new JButton("Delete entry", deleteIcon);
 		deleteButton.setPreferredSize(new Dimension(deleteButton.getPreferredSize().width, newField.getPreferredSize().height));
+		deleteButton.setEnabled(false);
 		lowerPanel.add(deleteButton);
 		Icon cleanUpIcon = new ImageIcon(getClass().getResource("/icons/table_delete.png"));
 		JButton cleanUpButton = new JButton("Clean up", cleanUpIcon);
@@ -192,6 +202,62 @@ public class AttributePanel extends JPanel {
 		JButton addMissingButton = new JButton("Add missing", addMissingIcon);
 		addMissingButton.setPreferredSize(new Dimension(addMissingButton.getPreferredSize().width, newField.getPreferredSize().height));
 		lowerPanel.add(addMissingButton);
+
+		newField.getDocument().addDocumentListener(new DocumentListener() {
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				checkButton();
+			}
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				checkButton();
+			}
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				checkButton();
+			}
+			public void checkButton() {
+				String newValue = newField.getText();
+				int statementTypeId = ((StatementType) typeComboBox.getSelectedItem()).getId();
+				String variable = (String) entryBox.getSelectedItem();
+				boolean add = true;
+				if (newValue.equals("")) {
+					add = false;
+				}
+				for (int i = 0; i < Dna.data.getAttributes().size(); i++) {
+					AttributeVector av = Dna.data.getAttributes().get(i);
+					if (av.getVariable().equals(variable) && av.getStatementTypeId() == statementTypeId && av.getValue().equals(newValue)) {
+						add = false;
+						break;
+					}
+				}
+				if (add == false) {
+					addButton.setEnabled(false);
+				} else {
+					addButton.setEnabled(true);
+				}
+			}
+		});
+
+		// check if selected row is in dataset and disable delete button if necessary
+		attributeTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				if (e.getValueIsAdjusting()) {
+					return;
+				}
+				int viewRow = attributeTable.getSelectedRow();
+				if (viewRow > -1) {
+					int modelRow = attributeTable.convertRowIndexToModel(viewRow);
+					if (attributeTableModel.get(modelRow).isInDataset()) {
+						deleteButton.setEnabled(false);
+					} else {
+						deleteButton.setEnabled(true);
+					}
+				} else {
+					deleteButton.setEnabled(false);
+				}
+			}
+		});
 		
 		addButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -199,18 +265,10 @@ public class AttributePanel extends JPanel {
 				int id = Dna.data.generateNewId("attributes");
 				int statementTypeId = ((StatementType) typeComboBox.getSelectedItem()).getId();
 				String variable = (String) entryBox.getSelectedItem();
-				boolean exists = false;
-				for (int i = 0; i < Dna.data.getAttributes().size(); i++) {
-					if (Dna.data.getAttributes().get(i).getValue().equals(value) && Dna.data.getAttributes().get(i).getVariable().equals(variable) 
-							&& Dna.data.getAttributes().get(i).getStatementTypeId() == statementTypeId) {
-						exists = true;
-						break;
-					}
-				}
-				if (!exists) {
-					AttributeVector av = new AttributeVector(id, value, new Color(0, 0, 0), "", "", "", "", statementTypeId, variable);
-					attributeTableModel.addRow(av);
-				}
+				AttributeVector av = new AttributeVector(id, value, new Color(0, 0, 0), "", "", "", "", statementTypeId, variable);
+				attributeTableModel.addRow(av);
+				newField.setText("");
+				addButton.setEnabled(false);
 			}
 		});
 		
@@ -227,16 +285,36 @@ public class AttributePanel extends JPanel {
 		
 		cleanUpButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//TODO
+				String message = "Are you sure you want to delete all values that have never \n"
+						+ "been coded (= all rows colored in red) for this variable?";
+				int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+				if (dialog == 0) {
+					int count = 0;
+					int statementTypeId = ((StatementType) typeComboBox.getSelectedItem()).getId();
+					String variable = (String) entryBox.getSelectedItem();
+					for (int i = Dna.data.getAttributes().size() - 1; i > -1 ; i--) {
+						AttributeVector av = Dna.data.getAttributes().get(i);
+						if (variable.equals(av.getVariable()) && statementTypeId == av.getStatementTypeId() && av.isInDataset() == false) {
+							attributeTableModel.deleteRow(i);
+							count++;
+						}
+					}
+					JOptionPane.showMessageDialog(Dna.dna.gui, count + " rows were deleted.");
+				}
 			}
 		});
 		
 		addMissingButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//TODO
+				String message = "Are you sure you want to go through all statements and check \n"
+						+ "for missing attribute rows? This can take a while.";
+				int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+				if (dialog == 0) {
+					Thread addMissingThread = new Thread( new AttributeInserter(), "Inserting missing attributes..." );
+					addMissingThread.start();
+				}
 			}
 		});
-		
 		
 		this.add(topPanel, BorderLayout.NORTH);
 		this.add(sp, BorderLayout.CENTER);
@@ -267,5 +345,61 @@ public class AttributePanel extends JPanel {
 			}
 		};
 		sorter.setRowFilter(attributeFilter);
+	}
+	
+	/**
+	 * Add missing attribute vectors to attribute table; run as separate thread.
+	 * 
+	 * @author Philip Leifeld
+	 *
+	 */
+	class AttributeInserter implements Runnable {
+		
+		ProgressMonitor progressMonitor;
+		
+		public AttributeInserter() {
+			// nothing to do here in the constructor
+		}
+		
+		public void run() {
+			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Adding missing attributes...", "", 0, Dna.data.getStatements().size() - 1);
+			progressMonitor.setMillisToDecideToPopup(1);
+			
+			int statementTypeId;
+			ArrayList<String> vars;
+			String value;
+			int id;
+			AttributeVector avk, av;
+			ArrayList<AttributeVector> al = new ArrayList<AttributeVector>(); //TEST
+			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+				if (progressMonitor.isCanceled()) {
+					break;
+				}
+				statementTypeId = Dna.data.getStatements().get(i).getStatementTypeId();
+				vars = Dna.data.getStatementTypeById(statementTypeId).getVariablesByType("short text");
+				if (vars.size() > 0) {
+					for (int j = 0; j < vars.size(); j++) {
+						value = (String) Dna.data.getStatements().get(i).getValues().get(vars.get(j));
+						boolean exists = false;
+						for (int k = 0; k < Dna.data.getAttributes().size(); k++) {
+							avk = Dna.data.getAttributes().get(k);
+							if (avk.getValue().equals(value) && avk.getVariable().equals(vars.get(j)) && avk.getStatementTypeId() == statementTypeId) {
+								exists = true;
+								break;
+							}
+						}
+						if (exists == false) {
+							id = Dna.data.generateNewId("attributes");
+							av = new AttributeVector(id, value, new Color(0, 0, 0), "", "", "", "", statementTypeId, vars.get(j));
+							Dna.data.getAttributes().add(av);
+							al.add(av);
+						}
+					}
+				}
+				progressMonitor.setProgress(i);
+			}
+			Dna.dna.sql.insertAttributeVectors(al);
+			attributeTableModel.sort();
+		}
 	}
 }

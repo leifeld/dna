@@ -514,11 +514,34 @@ public class SqlConnection {
 					" AND Variable = '" + variable + "'");
 
 			executeStatement("REPLACE INTO ATTRIBUTES(ID, VariableId, Value, Red, Green, Blue, Type, Alias, Notes, ChildOf) "
-					+ "VALUES (" + av.getId() + ", " + variableId + ", '" + av.getValue() + "', " + av.getColor().getRed() + ", " + 
-					av.getColor().getGreen() + ", " + av.getColor().getBlue()	+ ", '" + av.getType() + "', '" + av.getAlias() + 
-					"', '" + av.getNotes() + "', '" + av.getChildOf() + "')");
+					+ "VALUES (" + av.getId() + ", " + variableId + ", '" + av.getValue().replaceAll("'", "''") + "', " 
+					+ av.getColor().getRed() + ", " + av.getColor().getGreen() + ", " + av.getColor().getBlue()	+ ", '" 
+					+ av.getType().replaceAll("'", "''") + "', '" + av.getAlias().replaceAll("'", "''") + "', '" 
+					+ av.getNotes().replaceAll("'", "''") + "', '" + av.getChildOf().replaceAll("'", "''") + "')");
 		} catch (SQLException e) {
 			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Add multiple new attribute vectors to the ATTRIBUTES table of the database.
+	 * 
+	 * @param al An array list of AttributeVector objects to be inserted into the ATTRIBUTES table
+	 */
+	public void insertAttributeVectors(ArrayList<AttributeVector> al) {
+		if (al.size() > 0) {
+			String query = "INSERT INTO ATTRIBUTES(ID, VariableId, Value, Red, Green, Blue, Type, Alias, Notes, ChildOf) VALUES ";
+			for (int i = 0; i < al.size(); i++) {
+				query = query + "(" + al.get(i).getId() + ", (SELECT ID FROM VARIABLES WHERE StatementTypeId = " + al.get(i).getStatementTypeId() 
+						+ " AND Variable = '" + al.get(i).getVariable() + "'), '" + al.get(i).getValue().replaceAll("'", "''") + "', " 
+						+ al.get(i).getColor().getRed() + ", " + al.get(i).getColor().getGreen() + ", " + al.get(i).getColor().getBlue() + ", '" 
+						+ al.get(i).getType().replaceAll("'", "''") + "', '" + al.get(i).getAlias().replaceAll("'", "''") + "', '" 
+						+ al.get(i).getNotes().replaceAll("'", "''") + "', '" + al.get(i).getChildOf().replaceAll("'", "''") + "')";
+				if (i < al.size() - 1) {
+					query = query + ", ";
+				}
+			}
+			executeStatement(query);
 		}
 	}
 	
