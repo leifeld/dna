@@ -135,7 +135,11 @@ public class AttributePanel extends JPanel {
 		attributeTable.getColumnModel().getColumn( 3 ).setPreferredWidth( 150 );
 		attributeTable.getColumnModel().getColumn( 4 ).setPreferredWidth( 150 );
 		renderer = new AttributeCellRenderer();
+		attributeTable.getColumnModel().getColumn(0).setCellRenderer(renderer);
 		attributeTable.getColumnModel().getColumn(1).setCellRenderer(renderer);
+		attributeTable.getColumnModel().getColumn(2).setCellRenderer(renderer);
+		attributeTable.getColumnModel().getColumn(3).setCellRenderer(renderer);
+		attributeTable.getColumnModel().getColumn(4).setCellRenderer(renderer);
 		ColorChooserEditor cce = new ColorChooserEditor();
 		attributeTable.getColumnModel().getColumn(1).setCellEditor(cce);
 		
