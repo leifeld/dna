@@ -151,18 +151,22 @@ public class AttributePanel extends JPanel {
 		typeComboBox.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
 				ArrayList<String> variables = new ArrayList<String>();
-				Iterator<String> it = ((StatementType) typeComboBox.getSelectedItem()).getVariables().keySet().iterator();
-				while (it.hasNext()) {
-					String key = it.next();
-					String type = ((StatementType) typeComboBox.getSelectedItem()).getVariables().get(key);
-					if (type.equals("short text") || type.equals("long text")) {
-						variables.add(key);
+				if (typeComboBox.getSelectedIndex() == -1) {
+					entryBox.setModel(new DefaultComboBoxModel(new String[0]));
+				} else {
+					Iterator<String> it = ((StatementType) typeComboBox.getSelectedItem()).getVariables().keySet().iterator();
+					while (it.hasNext()) {
+						String key = it.next();
+						String type = ((StatementType) typeComboBox.getSelectedItem()).getVariables().get(key);
+						if (type.equals("short text") || type.equals("long text")) {
+							variables.add(key);
+						}
 					}
+					String[] varArray = new String[variables.size()];
+					varArray = variables.toArray(varArray);
+					entryBox.setModel(new DefaultComboBoxModel(varArray));
+					variableFilter((String) entryBox.getSelectedItem(), ((StatementType) typeComboBox.getSelectedItem()).getId());
 				}
-				String[] varArray = new String[variables.size()];
-				varArray = variables.toArray(varArray);
-				entryBox.setModel(new DefaultComboBoxModel(varArray));
-				variableFilter((String) entryBox.getSelectedItem(), ((StatementType) typeComboBox.getSelectedItem()).getId());
 			}
 		});
 		typeComboBox.setPreferredSize(new Dimension(200, 30));
@@ -314,8 +318,7 @@ public class AttributePanel extends JPanel {
 						+ "for missing attribute rows? This can take a while.";
 				int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 				if (dialog == 0) {
-					Thread addMissingThread = new Thread( new AttributeInserter(), "Inserting missing attributes..." );
-					addMissingThread.start();
+					startMissingThread();
 				}
 			}
 		});
@@ -323,6 +326,14 @@ public class AttributePanel extends JPanel {
 		this.add(topPanel, BorderLayout.NORTH);
 		this.add(sp, BorderLayout.CENTER);
 		this.add(lowerPanel, BorderLayout.SOUTH);
+	}
+	
+	/**
+	 * Start a new AttributeInserter thread to fill in missing attribute vectors
+	 */
+	public void startMissingThread() {
+		Thread addMissingThread = new Thread( new AttributeInserter(), "Inserting missing attributes..." );
+		addMissingThread.start();
 	}
 	
 	private void variableFilter(String variable, int statementTypeId) {

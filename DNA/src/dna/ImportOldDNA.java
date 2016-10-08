@@ -1,6 +1,7 @@
 package dna;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -54,6 +55,7 @@ import org.jdom.ProcessingInstruction;
 import org.jdom.Text;
 import org.jdom.input.SAXBuilder;
 
+import dna.dataStructures.AttributeVector;
 import dna.dataStructures.Coder;
 import dna.dataStructures.Statement;
 
@@ -522,11 +524,13 @@ public class ImportOldDNA extends JDialog {
 						map.put("concept", category);
 						map.put("agreement", agreeInt);
 						
-						Dna.dna.addStatement(new Statement(statementId, documentId, startInt, endInt, date, statementTypeId, coderId, map));
+						Statement s = new Statement(statementId, documentId, startInt, endInt, date, statementTypeId, coderId, map);
+						Dna.dna.addStatement(s);
 					}
 				}
 				progressMonitor.setProgress(k);
 			}
+			Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.startMissingThread();  // add attribute vectors
 		}
 	}
 	

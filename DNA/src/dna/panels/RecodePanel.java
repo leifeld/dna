@@ -11,9 +11,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Vector;
 
-import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
@@ -25,17 +23,13 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToggleButton;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.CellEditorListener;
-import javax.swing.event.ChangeEvent;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableModel;
 
 import dna.Dna;
+import dna.dataStructures.AttributeVector;
 import dna.dataStructures.StatementType;
 import dna.renderer.StatementTypeComboBoxModel;
 import dna.renderer.StatementTypeComboBoxRenderer;
@@ -45,10 +39,10 @@ public class RecodePanel extends JPanel {
 	JToggleButton attributeToggleButton, searchToggleButton, recodeToggleButton;
 	public JComboBox typeComboBox, entryBox;
 	public JTable table;
-	DefaultTableModel tableModel;
-	JButton applyButton, resetButton;
+	public DefaultTableModel tableModel;
+	public JButton applyButton, resetButton;
 	JList<String> uniqueList;
-	DefaultListModel<String> listModel;
+	public DefaultListModel<String> listModel;
 	
 	@SuppressWarnings("serial")
 	public RecodePanel() {
@@ -129,18 +123,24 @@ public class RecodePanel extends JPanel {
 		typeComboBox.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
 				ArrayList<String> variables = new ArrayList<String>();
-				Iterator<String> it = ((StatementType) typeComboBox.getSelectedItem()).getVariables().keySet().iterator();
-				while (it.hasNext()) {
-					String key = it.next();
-					String type = ((StatementType) typeComboBox.getSelectedItem()).getVariables().get(key);
-					if (type.equals("short text") || type.equals("long text")) {
-						variables.add(key);
+				if (typeComboBox.getSelectedIndex() == -1) {
+					entryBox.setModel(new DefaultComboBoxModel(new String[0]));
+					tableModel.setRowCount(0);
+					listModel.clear();
+				} else {
+					Iterator<String> it = ((StatementType) typeComboBox.getSelectedItem()).getVariables().keySet().iterator();
+					while (it.hasNext()) {
+						String key = it.next();
+						String type = ((StatementType) typeComboBox.getSelectedItem()).getVariables().get(key);
+						if (type.equals("short text") || type.equals("long text")) {
+							variables.add(key);
+						}
 					}
+					String[] varArray = new String[variables.size()];
+					varArray = variables.toArray(varArray);
+					entryBox.setModel(new DefaultComboBoxModel(varArray));
+					updateTable();
 				}
-				String[] varArray = new String[variables.size()];
-				varArray = variables.toArray(varArray);
-				entryBox.setModel(new DefaultComboBoxModel(varArray));
-				updateTable();
 			}
 		});
 		typeComboBox.setPreferredSize(new Dimension(200, 30));
@@ -261,6 +261,12 @@ public class RecodePanel extends JPanel {
 					if (value != null && value.equals(original)) {
 						Dna.dna.updateVariable(statementId, statementTypeId, edited, variable);
 						count++;
+					}
+				}
+				for (int j = 0; j < Dna.data.getAttributes().size(); j++) {
+					AttributeVector a = Dna.data.getAttributes().get(j);
+					if (a.getValue().equals(original) && a.getStatementTypeId() == statementTypeId && a.getVariable().equals(variable)) {
+						Dna.dna.updateAttributeValue(j, edited);
 					}
 				}
 			}

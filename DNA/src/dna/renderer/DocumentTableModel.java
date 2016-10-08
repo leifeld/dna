@@ -224,5 +224,6 @@ public class DocumentTableModel extends AbstractTableModel {
 	
 	public void sort() {
 		Collections.sort(Dna.data.getDocuments());
+		this.fireTableDataChanged();
 	}
 }

@@ -1,6 +1,7 @@
 package dna.renderer;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.table.AbstractTableModel;
@@ -102,6 +103,11 @@ public class AttributeTableModel extends AbstractTableModel {
 	 */
 	public void sort() {
 		Collections.sort(Dna.data.attributes);
+		fireTableDataChanged();
+	}
+	
+	public void clear() {
+		Dna.data.attributes = new ArrayList<AttributeVector>();
 		fireTableDataChanged();
 	}
 	

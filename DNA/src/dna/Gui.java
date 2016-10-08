@@ -202,8 +202,13 @@ public class Gui extends JFrame {
 		Dna.dna.gui.textPanel.paintStatements();
 		Dna.dna.gui.documentPanel.documentFilter();
 		Dna.dna.gui.documentPanel.documentTable.updateDocumentView();
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.updateUI();
 		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.sort();
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setSelectedIndex(0);
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.updateUI();
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.applyButton.setEnabled(true);
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.resetButton.setEnabled(true);
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.setEnabled(true);
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.entryBox.setEnabled(true);
 	}
 	
 	class StatusBar extends JPanel {
@@ -312,37 +317,6 @@ public class Gui extends JFrame {
 				}
 			});
 			newDocumentButton.setEnabled(false);
-
-			//LB.Add: Document menu: import documents from html file
-			/*
-			Icon importHTMLIcon = new ImageIcon(getClass().getResource(
-					"/icons/table_add.png"));
-			importHTMLButton = new JMenuItem("Import from  HTML-file(s)/URL(s)...", 
-					importHTMLIcon);
-			importHTMLButton.setToolTipText( "Import document(s) from html-file(s) or webpage(s)" );
-			documentMenu.add(importHTMLButton);
-			importHTMLButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					new ImportHTMLWebpageTab();
-				}
-			});
-			importHTMLButton.setEnabled(false);
-			*/
-			
-			//Document menu: recode variables
-			/*
-			Icon recodeVariableIcon = new ImageIcon(getClass().getResource("/icons/pencil.png"));
-			//TODO: pencil-icon? or database_edit.png?
-			recodeVariableButton = new JMenuItem("Recode variables...", recodeVariableIcon);
-			recodeVariableButton.setToolTipText("recode variables");
-			documentMenu.add(recodeVariableButton);
-			recodeVariableButton.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					new Recode();
-				}
-			});
-			recodeVariableButton.setEnabled(false);
-			*/
 			
 			//Document menu: import text files
 			Icon textFileIcon = new ImageIcon(getClass().getResource("/icons/folder.png"));

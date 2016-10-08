@@ -324,6 +324,7 @@ public class ImportDnaDocuments extends JDialog {
 				}
 			}
 			Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
+			Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.startMissingThread();  // add attribute vectors
 		}
 	}
 	

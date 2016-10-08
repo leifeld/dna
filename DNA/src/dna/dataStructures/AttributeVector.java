@@ -26,6 +26,10 @@ public class AttributeVector implements Comparable<AttributeVector> {
 		this.variable = variable;
 	}
 	
+	public String toString() {
+		return this.value;
+	}
+	
 	/**
 	 * Checks if the present value is contained in the dataset or not.
 	 * 

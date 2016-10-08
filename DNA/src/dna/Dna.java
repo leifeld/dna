@@ -1,12 +1,15 @@
 package dna;
 
 import dna.dataStructures.*;
+import dna.renderer.StatementTypeComboBoxModel;
 
 import java.awt.Color;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 
 public class Dna {
@@ -195,6 +198,17 @@ public class Dna {
 		sql = null;
 		Dna.dna.gui.leftPanel.coderPanel.clear();
 		Dna.dna.gui.statusBar.resetLabel();
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.clear();
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.updateUI();
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.updateUI();
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.updateUI();
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.entryBox.updateUI();
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.tableModel.setRowCount(0);
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.listModel.clear();
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.applyButton.setEnabled(false);
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.resetButton.setEnabled(false);
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.setEnabled(false);
+		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.entryBox.setEnabled(false);
 		Dna.dna.gui.documentPanel.documentContainer.clear();
 		Dna.dna.gui.rightPanel.statementPanel.ssc.clear();
 		Dna.dna.gui.textPanel.setDocumentText("");

@@ -48,6 +48,45 @@ public class Data {
 		}
 		return -1;
 	}
+
+	/**
+	 * Check if an attribute value already exists in the the attributes array list. Return its row index if found and -1 otherwise.
+	 * 
+	 * @param value            The attribute value as a string
+	 * @param variable         The variable name as a string
+	 * @param statementTypeId  The statement type ID as an int
+	 * @return                 The row index of the attribute vector as an int; -1 if the attribute vector does not exist
+	 */
+	public int getAttributeIndex(String value, String variable, int statementTypeId) {
+		for (int i = 0; i < Dna.data.getAttributes().size(); i++) {
+			if (Dna.data.getAttributes().get(i).getValue().equals(value) && Dna.data.getAttributes().get(i).getVariable().equals(variable) 
+					&& Dna.data.getAttributes().get(i).getStatementTypeId() == statementTypeId) {
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	/**
+	 * Retrieve an array of attribute vectors that have a certain statement type and variable.
+	 * 
+	 * @param variable         The variable name that should match
+	 * @param statementTypeId  The statementTypeId that should match
+	 * @return                 An array of AttributeVector objects
+	 */
+	public AttributeVector[] getAttributes(String variable, int statementTypeId) {
+		ArrayList<AttributeVector> al = new ArrayList<AttributeVector>();
+		for (int i = 0; i < Dna.data.getAttributes().size(); i++) {
+			if (Dna.data.getAttributes().get(i).getVariable().equals(variable) && Dna.data.getAttributes().get(i).getStatementTypeId() == statementTypeId) {
+				al.add(Dna.data.getAttributes().get(i));
+			}
+		}
+		AttributeVector[] array = new AttributeVector[al.size()];
+		for (int i = 0; i < al.size(); i++) {
+			array[i] = al.get(i);
+		}
+		return array;
+	}
 	
 	/**
 	 * Delete an attribute vector from the data in the GUI.

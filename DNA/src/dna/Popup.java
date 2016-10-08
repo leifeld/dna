@@ -15,7 +15,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,6 +40,7 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
 import dna.dataStructures.AttributeVector;
 import dna.dataStructures.Statement;
+import dna.renderer.AttributeComboBoxRenderer;
 
 public class Popup extends JDialog {
 	
@@ -48,7 +48,6 @@ public class Popup extends JDialog {
 	Container c;
 	Point point, los;
 	static int statementTypeId;
-	String type;
 	Color color;
 	static int statementId;
 	JPanel gridBagPanel;
@@ -62,7 +61,6 @@ public class Popup extends JDialog {
 		Statement statement = Dna.data.getStatement(statementId);
 		this.color = Dna.data.getStatementColor(statementId);
 		statementTypeId = statement.getStatementTypeId();
-		this.type = Dna.data.getStatementTypeById(statementTypeId).getLabel();
 		
 		//this.setModal(true);
 		this.setUndecorated(true);
@@ -79,7 +77,7 @@ public class Popup extends JDialog {
 		
 		this.addWindowFocusListener(new WindowAdapter() {
 			public void windowLostFocus(WindowEvent e) {
-				saveContents(gridBagPanel, statementId, type);
+				saveContents(gridBagPanel, statementId);
                 dispose();
 			}
 		});
@@ -109,7 +107,8 @@ public class Popup extends JDialog {
 		JTextField idField = 
 				new JTextField(new Integer(statementId).toString());
 		idField.setEditable(false);
-		
+
+		String type = Dna.data.getStatementTypeById(statementTypeId).getLabel();
 		JLabel typeLabel = new JLabel(" " + type);
 		
 		JSeparator sep = new JSeparator();
@@ -124,7 +123,7 @@ public class Popup extends JDialog {
 		duplicate.setPreferredSize(new Dimension(16, 16));
 		duplicate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				saveContents(gridBagPanel, statementId, type);
+				saveContents(gridBagPanel, statementId);
 				int newId = Dna.data.generateNewId("statements");
 				int documentId = Dna.data.getStatement(statementId).getDocumentId();
 				int start = Dna.data.getStatement(statementId).getStart();
@@ -202,9 +201,12 @@ public class Popup extends JDialog {
 			String value = variables.get(key);
 			JLabel label = new JLabel(key, JLabel.TRAILING);
 			if (value.equals("short text")) {
-				String entry = (String) Dna.data.getStatement(statementId).getValues().get(key);
-				String[] entriesArray = Dna.data.getStringEntries(statementTypeId, key);
-				JComboBox<String> box = new JComboBox<String>(entriesArray);
+				String val = (String) Dna.data.getStatement(statementId).getValues().get(key);
+				int attributeIndex = Dna.data.getAttributeIndex(val, key, statementTypeId);
+				AttributeVector entry = Dna.data.getAttributes().get(attributeIndex);
+				AttributeVector[] entriesArray = Dna.data.getAttributes(key, statementTypeId);
+				JComboBox<AttributeVector> box = new JComboBox<AttributeVector>(entriesArray);
+				box.setRenderer(new AttributeComboBoxRenderer());
 				box.setEditable(true);
 				if (editable == true) {
 					box.setEnabled(true);
@@ -212,7 +214,7 @@ public class Popup extends JDialog {
 					box.setEnabled(false);
 				}
     			box.setPreferredSize(new Dimension(220, 20));
-    			box.setSelectedItem((String)entry);
+    			box.setSelectedItem((AttributeVector)entry);
     			AutoCompleteDecorator.decorate(box);
     			
 				gbc.anchor = GridBagConstraints.EAST;
@@ -255,7 +257,6 @@ public class Popup extends JDialog {
 				}
 				JCheckBox box = new JCheckBox();
     			box.setPreferredSize(new Dimension(20, 20));
-    			//box.setEnabled(true);
 				if (editable == true) {
 					box.setEnabled(true);
 				} else {
@@ -316,19 +317,22 @@ public class Popup extends JDialog {
 		this.setVisible(true);
 	}
 	
+	/**
+	 * In a statement popup window, read the contents from all combo boxes and save them into the database and GUI data structure.
+	 * 
+	 * @param gridBagPanel  The panel that contains the combo boxes
+	 * @param statementID   The ID of the statement that is being edited
+	 */
 	@SuppressWarnings("unchecked")
-	public static void saveContents(JPanel gridBagPanel, int statementID, String type) {
+	public static void saveContents(JPanel gridBagPanel, int statementID) {
 		Component[] com = gridBagPanel.getComponents();
-		//HashMap<String, String> vars = Dna.data.getStatementType(type).getVariables();
 		
 		for (int i = 0; i < com.length; i++) {
 			Object content = null;      // the value of a variable, e.g., "EPA"
 			String contentType = null;  // the variable name, e.g., "organization"
-			//String dataType = null;
 			if (com[i].getClass().getName().equals("javax.swing.JComboBox")) {  // short text
 				contentType = ((JLabel)com[i-1]).getText();
-				//dataType = vars.get(contentType);
-				content = ((JComboBox<String>) com[i]).getEditor().getItem();
+				content = ((AttributeVector) ((JComboBox<AttributeVector>) com[i]).getEditor().getItem()).getValue();
 				if (content == null) {
 					content = "";
 				}
@@ -343,7 +347,6 @@ public class Popup extends JDialog {
 				}
 			} else if (com[i].getClass().getName().equals("javax.swing.JCheckBox")) {  // boolean
 				contentType = ((JLabel)com[i-1]).getText();
-				//dataType = vars.get(contentType);
 				content = ((JCheckBox)com[i]).isSelected();
 				int intBool;
 				if ((Boolean) content == false) {
@@ -354,7 +357,6 @@ public class Popup extends JDialog {
 				Dna.dna.updateVariable(statementId, statementTypeId, intBool, contentType);
 			} else if (com[i].getClass().getName().equals("javax.swing.JScrollPane")) {  // long text
 				contentType = ((JLabel)com[i-1]).getText();
-				//dataType = vars.get(contentType);
 				JScrollPane jsp = ((JScrollPane)com[i]);
 				JTextArea jta = (JTextArea) jsp.getViewport().getView();
 				content = jta.getText();
@@ -364,7 +366,6 @@ public class Popup extends JDialog {
 				Dna.dna.updateVariable(statementId, statementTypeId, content, contentType);
 			} else if (com[i].getClass().getName().equals("javax.swing.JPanel")) {  // integer
 				contentType = ((JLabel)com[i-1]).getText();
-				//dataType = vars.get(contentType);
 				JPanel jp = (JPanel) com[i];
 				JSpinner jsp = (JSpinner) jp.getComponent(0);
 				content = jsp.getValue();

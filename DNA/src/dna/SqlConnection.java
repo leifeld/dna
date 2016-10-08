@@ -251,6 +251,28 @@ public class SqlConnection {
 	}
 	
 	/**
+	 * Add multiple new documents to the DOCUMENTS table of the database.
+	 * 
+	 * @param al An array list of Document objects to be inserted into the DOCUMENTS table
+	 */
+	public void insertDocuments(ArrayList<Document> al) {
+		if (al.size() > 0) {
+			String query = "INSERT INTO DOCUMENTS(ID, Title, Text, Coder, Author, Source, Section, Notes, Type, Date) VALUES ";
+			for (int i = 0; i < al.size(); i++) {
+				query = query + "(" + al.get(i).getId() + ", '" + al.get(i).getTitle().replaceAll("'", "''") + "', '" 
+						+ al.get(i).getText().replaceAll("'", "''") + "', " + al.get(i).getCoder() + ", '" 
+						+ al.get(i).getAuthor().replaceAll("'", "''")  + "', '" + al.get(i).getSource().replaceAll("'", "''")  + "', '" 
+						+ al.get(i).getSection().replaceAll("'", "''") + "', '" + al.get(i).getNotes().replaceAll("'", "''") + "', '" 
+						+ al.get(i).getType().replaceAll("'", "''") + "', " + al.get(i).getDate().getTime() + ")";
+				if (i < al.size() - 1) {
+					query = query + ", ";
+				}
+			}
+			executeStatement(query);
+		}
+	}
+	
+	/**
 	 * @param regex   Regular expression to add to/update in the REGEXES table
 	 */
 	public void upsertRegex(Regex regex) {
@@ -572,7 +594,7 @@ public class SqlConnection {
 	 * @param newValue  New value of the attribute
 	 */
 	public void updateAttribute(int id, String attribute, String newValue) {
-		executeStatement("UPDATE ATTRIBUTES SET " + attribute + " = '" + newValue + "' WHERE ID = " + id);
+		executeStatement("UPDATE ATTRIBUTES SET " + attribute + " = '" + newValue.replaceAll("'", "''") + "' WHERE ID = " + id);
 	}
 	
 	/**
