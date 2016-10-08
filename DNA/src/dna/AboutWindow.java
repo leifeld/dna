@@ -9,7 +9,7 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 @SuppressWarnings("serial")
-public class AboutWindow extends JFrame {
+public class AboutWindow extends JDialog {
     
     /**
 	 * This class shows an about window with instructions.
@@ -26,9 +26,6 @@ public class AboutWindow extends JFrame {
         this.setIconImage(dna32Icon.getImage());
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setPreferredSize(new Dimension(420, 260));
-        this.pack();
-        this.setLocationRelativeTo(null);
-        this.setVisible(true);
         
         Icon dnaTextIcon = new ImageIcon(getClass().getResource("/icons/dna32text.png"));
         JLabel dnaIcon = new JLabel(dnaTextIcon);
@@ -69,5 +66,12 @@ public class AboutWindow extends JFrame {
         aboutInhalt.add(dnaIconPanel, BorderLayout.NORTH);
         aboutInhalt.add(aboutScrollLeiste, BorderLayout.CENTER);
         this.add(aboutInhalt);
+        
+		// set location and pack window
+		this.setModal(true);
+		this.pack();
+		this.setLocationRelativeTo(null);
+		this.setVisible(true);
+		this.setResizable(false);
     }
 }

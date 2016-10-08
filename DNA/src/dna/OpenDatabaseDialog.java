@@ -41,8 +41,6 @@ public class OpenDatabaseDialog extends JDialog {
 		this.setIconImage(icon.getImage());
 		this.setLayout(new BorderLayout());
 		
-		this.setLayout(new BorderLayout());
-		
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
 		buttonPanel.add(Box.createRigidArea(new Dimension(5,5)));

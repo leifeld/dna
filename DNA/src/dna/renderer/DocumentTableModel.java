@@ -51,6 +51,12 @@ public class DocumentTableModel extends AbstractTableModel {
 		}
 	}
 	
+	public void addDocuments(ArrayList<Document> al) {
+		Dna.data.getDocuments().addAll(al);
+		sort();
+		this.fireTableDataChanged();
+	}
+	
 	public void changeDocument(int documentId, String title, Date date, int coder, String source, String section, String notes, String type) {
 		int i = getModelIndexById(documentId);
 		Dna.data.getDocuments().get(i).setTitle(title);

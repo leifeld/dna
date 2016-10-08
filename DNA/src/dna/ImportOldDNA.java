@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -31,6 +32,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -432,6 +434,9 @@ public class ImportOldDNA extends JDialog {
 			textWindow.setEditorKit(kit);
 			textWindow.setDocument(doc);
 			
+			ArrayList<dna.dataStructures.Document> newDocs = new ArrayList<dna.dataStructures.Document>();
+			ArrayList<dna.dataStructures.Statement> newStatements = new ArrayList<dna.dataStructures.Statement>();
+			
 			for (int k = 0; k < aitm.getRowCount(); k++) {
 				if (progressMonitor.isCanceled()) {
 					break;
@@ -493,7 +498,10 @@ public class ImportOldDNA extends JDialog {
 								typeString, 
 								date
 						);
-						Dna.dna.addDocument(d);
+						Dna.dna.gui.documentPanel.setRowSorterEnabled(false);
+						Dna.dna.gui.documentPanel.documentContainer.addDocument(d);
+						Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
+						newDocs.add(d);
 					} catch (ParseException pe) {
 						pe.printStackTrace();
 					}
@@ -525,10 +533,31 @@ public class ImportOldDNA extends JDialog {
 						map.put("agreement", agreeInt);
 						
 						Statement s = new Statement(statementId, documentId, startInt, endInt, date, statementTypeId, coderId, map);
-						Dna.dna.addStatement(s);
+						Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
+						Dna.dna.gui.rightPanel.statementPanel.ssc.addStatement(s);
+						Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
+						newStatements.add(s);
 					}
 				}
 				progressMonitor.setProgress(k);
+			}
+
+			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Saving to database...", "", 0, 3);
+			progressMonitor.setMillisToDecideToPopup(1);
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			progressMonitor.setProgress(1);
+			Dna.dna.sql.insertDocuments(newDocs);
+			progressMonitor.setProgress(2);
+			Dna.dna.sql.addStatements(newStatements);
+			progressMonitor.setProgress(3);
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 			Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.startMissingThread();  // add attribute vectors
 		}

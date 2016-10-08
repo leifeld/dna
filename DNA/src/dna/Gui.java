@@ -332,7 +332,7 @@ public class Gui extends JFrame {
 			
 			//Document menu: import documents from another DNA database
 			Icon importDnaIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
-			importDnaButton = new JMenuItem("Import from DNA 2.xx file...", importDnaIcon);
+			importDnaButton = new JMenuItem("Import from DNA 2.0 file...", importDnaIcon);
 			importDnaButton.setToolTipText("import from DNA 2.0 file...");
 			documentMenu.add(importDnaButton);
 			importDnaButton.addActionListener(new ActionListener() {
@@ -366,12 +366,12 @@ public class Gui extends JFrame {
 
 			//Document menu: import old DNA dataset
 			Icon importOldIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
-			importOldButton = new JMenuItem("Import from old DNA 1.xx file...", importOldIcon);
+			importOldButton = new JMenuItem("Import from DNA 1.31 file...", importOldIcon);
 			importOldButton.setToolTipText("import from old DNA 1.31 XML dataset...");
 			documentMenu.add(importOldButton);
 			importOldButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-
+					
 					//File filter
 					JFileChooser fc = new JFileChooser();
 					fc.setFileFilter(new FileFilter() {
@@ -379,7 +379,7 @@ public class Gui extends JFrame {
 							return f.getName().toLowerCase().endsWith(".dna") || f.isDirectory();
 						}
 						public String getDescription() {
-							return "DNA 1.xx XML file (*.dna)";
+							return "DNA 1.31 XML file (*.dna)";
 						}
 					});
 

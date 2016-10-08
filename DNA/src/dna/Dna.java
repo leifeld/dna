@@ -1,15 +1,12 @@
 package dna;
 
 import dna.dataStructures.*;
-import dna.renderer.StatementTypeComboBoxModel;
 
 import java.awt.Color;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 
 public class Dna {
@@ -21,7 +18,7 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2016-10-03";
+		date = "2016-10-08";
 		version = "2.0 beta 14";
 		System.out.println("DNA version: " + version + " (" + date + ")");
 		System.out.println("Java version: " + System.getProperty("java.version"));

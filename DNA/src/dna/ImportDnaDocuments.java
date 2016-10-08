@@ -249,8 +249,7 @@ public class ImportDnaDocuments extends JDialog {
 	class ArticleInserter implements Runnable {
 		
 		String filename;
-		ProgressMonitor progressMonitor1;
-		ProgressMonitor progressMonitor2;
+		ProgressMonitor progressMonitor;
 		
 		public ArticleInserter(String filename) {
 			this.filename = filename;
@@ -277,14 +276,17 @@ public class ImportDnaDocuments extends JDialog {
 			*/
 			
 			// documents
-			progressMonitor1 = new ProgressMonitor(Dna.dna.gui, "Importing documents...", "", 0, aitm.getRowCount() - 1 );
-			progressMonitor1.setMillisToDecideToPopup(1);
+			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Importing documents and statements.", "(0/4) Reading documents...", 0, 4);
+			progressMonitor.setMillisToDecideToPopup(1);
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			progressMonitor.setProgress(0);
 			HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+			ArrayList<Document> newDocs = new ArrayList<Document>();
 			for (int k = 0; k < aitm.getRowCount(); k++) {
-				progressMonitor1.setProgress(k);
-				if (progressMonitor1.isCanceled()) {
-					break;
-				}
 				if ((Boolean) aitm.getValueAt(k, 0) == true) {
 					Document document = aitm.documents.get(k);
 					int documentId = document.getId();
@@ -295,20 +297,22 @@ public class ImportDnaDocuments extends JDialog {
 					map.put(documentId, newDocumentId);
 					document.setId(newDocumentId);
 					document.setCoder(coderMap.get(document.getCoder()));
-					Dna.dna.addDocument(document);
-					
+					Dna.dna.gui.documentPanel.setRowSorterEnabled(false);
+					Dna.dna.gui.documentPanel.documentContainer.addDocument(document);
+					Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
+					newDocs.add(document);
 				}
 			}
-
+			progressMonitor.setNote("(1/4) Saving documents to database...");
+			progressMonitor.setProgress(1);
+			Dna.dna.sql.insertDocuments(newDocs);
+			
 			// import statements for this document
+			progressMonitor.setNote("(2/4) Reading statements...");
+			progressMonitor.setProgress(2);
 			Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
-			progressMonitor2 = new ProgressMonitor(Dna.dna.gui, "Importing statements...", "", 0, foreignData.getStatements().size() - 1 );
-			progressMonitor2.setMillisToDecideToPopup(1);
+			ArrayList<Statement> newStatements = new ArrayList<Statement>();
 			for (int i = 0; i < foreignData.getStatements().size(); i++) {
-				progressMonitor2.setProgress(i);
-				if (progressMonitor2.isCanceled()) {
-					break;
-				}
 				Statement statement = foreignData.getStatements().get(i);
 				int documentId = statement.getDocumentId();
 				if (map.containsKey(documentId)) {
@@ -318,12 +322,14 @@ public class ImportDnaDocuments extends JDialog {
 					int newStatementId = Dna.data.generateNewId("statements");
 					statement.setId(newStatementId);
 					Dna.data.addStatement(statement);
-					int statementTypeId = statement.getStatementTypeId();
-					LinkedHashMap<String, String> varmap = Dna.data.getStatementTypeById(statementTypeId).getVariables();
-					Dna.dna.sql.addStatement(statement, varmap);
+					newStatements.add(statement);
 				}
 			}
 			Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
+			progressMonitor.setNote("(3/4) Saving statements to database...");
+			progressMonitor.setProgress(3);
+			Dna.dna.sql.addStatements(newStatements);
+			progressMonitor.setProgress(4);
 			Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.startMissingThread();  // add attribute vectors
 		}
 	}

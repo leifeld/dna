@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.TreeMap;
 
 import javax.swing.JOptionPane;
 
@@ -801,6 +802,134 @@ public class SqlConnection {
 		executeStatement("DELETE FROM STATEMENTS WHERE ID = " + statementId);
 	}
 	
+	@SuppressWarnings("serial")
+	public void addStatements(ArrayList<Statement> al) {
+		if (al.size() > 0) {
+			
+			class Tuple implements Comparable<Tuple> {
+				int statementTypeId;
+				String variable;
+				public Tuple(int statementTypeId, String variable) {
+					this.statementTypeId = statementTypeId;
+					this.variable = variable;
+				}
+
+				// how should entries be sorted in a list or table?
+				public int compareTo(Tuple t) {
+					if (((Integer) this.statementTypeId).compareTo(t.statementTypeId) < 0) {
+						return -1;
+					} else if (((Integer) this.statementTypeId).compareTo(t.statementTypeId) > 0) {
+						return 1;
+					} else {
+						if (this.variable.compareTo(t.variable) < 0) {
+							return -1;
+						} else if (this.variable.compareTo(t.variable) > 0) {
+							return 1;
+						} else {
+							return 0;
+						}
+					}
+				}
+				
+				//necessary for sorting purposes
+				public boolean equals(Object o) {
+					if (o == null) return false;
+					if (this == o) return true;
+					if (getClass() != o.getClass()) return false;
+					return compareTo((Tuple) o) == 0;
+				}
+			}
+			
+			TreeMap<Tuple, String> map = new TreeMap<Tuple, String>();
+			try {
+				String myQuery = "SELECT Variable, DataType, StatementTypeId FROM VARIABLES";
+				PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
+				ResultSet result = preStatement.executeQuery();
+				if (result.next()) {
+					do {
+						map.put(new Tuple(result.getInt("StatementTypeId"), result.getString("Variable")), result.getString("DataType"));
+					} while (result.next());
+				}
+				result.close();
+				preStatement.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+			String queryStatements = "INSERT INTO STATEMENTS (ID, StatementTypeId, DocumentId, Start, Stop, Coder) VALUES ";
+			String queryShortText = "INSERT INTO DATASHORTTEXT (StatementId, VariableId, StatementTypeId, Value) VALUES ";
+			String queryLongText = "INSERT INTO DATALONGTEXT (StatementId, VariableId, StatementTypeId, Value) VALUES ";
+			String queryBoolean = "INSERT INTO DATABOOLEAN (StatementId, VariableId, StatementTypeId, Value) VALUES ";
+			String queryInteger = "INSERT INTO DATAINTEGER (StatementId, VariableId, StatementTypeId, Value) VALUES ";
+			int statementId;
+			int statementTypeId;
+			int documentId;
+			int start;
+			int stop;
+			int coderId;
+			for (int i = 0; i < al.size(); i++) {
+				statementId = al.get(i).getId();
+				statementTypeId = al.get(i).getStatementTypeId();
+				documentId = al.get(i).getDocumentId();
+				start = al.get(i).getStart();
+				stop = al.get(i).getStop();
+				coderId = al.get(i).getCoder();
+				queryStatements = queryStatements + "(" + statementId + ", " + statementTypeId + ", " + documentId + ", " + start 
+						+ ", " + stop  + ", " + coderId + ")";
+				
+				Iterator<String> keyIterator = al.get(i).getValues().keySet().iterator();
+		        while (keyIterator.hasNext()){
+		    		String key = keyIterator.next();
+		    		Object object = al.get(i).getValues().get(key);
+		    		String type = map.get(new Tuple(statementTypeId, key));
+		    		if (type.equals("short text")) {
+		    			String myString = ((String) object).replaceAll("'", "''");
+		    			queryShortText = queryShortText + "(" + statementId + ", (SELECT ID FROM VARIABLES WHERE Variable = '" + key 
+			    				+ "' AND StatementTypeId = " + statementTypeId + "), " + statementTypeId + ", '" + myString + "'), ";
+		    		} else if (type.equals("long text")) {
+		    			String myString = ((String) object).replaceAll("'", "''");
+		    			queryLongText = queryLongText + "(" + statementId + ", (SELECT ID FROM VARIABLES WHERE Variable = '" + key 
+			    				+ "' AND StatementTypeId = " + statementTypeId + "), " + statementTypeId + ", '" + myString + "'), ";
+		    		} else if (type.equals("boolean")) {
+		    			queryBoolean = queryBoolean + "(" + statementId + ", (SELECT ID FROM VARIABLES WHERE Variable = '" + key 
+			    				+ "' AND StatementTypeId = " + statementTypeId + "), " + statementTypeId + ", " + (int) object + "), ";
+		    		} else if (type.equals("integer")) {
+		    			queryInteger = queryInteger + "(" + statementId + ", (SELECT ID FROM VARIABLES WHERE Variable = '" + key 
+			    				+ "' AND StatementTypeId = " + statementTypeId + "), " + statementTypeId + ", " + (int) object + "), ";
+		    		}
+		        }
+				if (i < al.size() - 1) {
+					queryStatements = queryStatements + ", ";
+				}
+			}
+			if (queryShortText.endsWith(", ")) {
+				queryShortText = queryShortText.substring(0, queryShortText.length() - 2);
+			}
+			if (queryLongText.endsWith(", ")) {
+				queryLongText = queryLongText.substring(0, queryLongText.length() - 2);
+			}
+			if (queryBoolean.endsWith(", ")) {
+				queryBoolean = queryBoolean.substring(0, queryBoolean.length() - 2);
+			}
+			if (queryInteger.endsWith(", ")) {
+				queryInteger = queryInteger.substring(0, queryInteger.length() - 2);
+			}
+			executeStatement(queryStatements);
+			if (!queryShortText.endsWith("VALUES ")) {
+				executeStatement(queryShortText);
+			}
+			if (!queryLongText.endsWith("VALUES ")) {
+				executeStatement(queryLongText);
+			}
+			if (!queryBoolean.endsWith("VALUES ")) {
+				executeStatement(queryBoolean);
+			}
+			if (!queryInteger.endsWith("VALUES ")) {
+				executeStatement(queryInteger);
+			}
+		}
+	}
+	
 	public void addStatement(Statement statement, LinkedHashMap<String, String> variables) {
 		executeStatement("INSERT INTO STATEMENTS(ID, StatementTypeId, DocumentId, Start, Stop, Coder) "
 				+ "VALUES (" + statement.getId() + ", " + statement.getStatementTypeId() + ", " + statement.getDocumentId() 
@@ -1264,7 +1393,7 @@ public class SqlConnection {
 	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 	        		+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "UNIQUE (StatementId, VariableId))");
-
+	        
 	        executeStatement("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
 	        		+ "ID INTEGER PRIMARY KEY NOT NULL, "
 	        		+ "StatementId INTEGER NOT NULL, "
@@ -1275,7 +1404,7 @@ public class SqlConnection {
 	        		+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 	        		+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "UNIQUE (StatementId, VariableId))");
-
+	        
 	        executeStatement("CREATE TABLE IF NOT EXISTS ATTRIBUTES("
 	        		+ "ID INTEGER PRIMARY KEY NOT NULL, "
 	        		+ "VariableId INTEGER NOT NULL, "
