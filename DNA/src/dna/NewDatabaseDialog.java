@@ -56,6 +56,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeSelectionModel;
 
+import dna.dataStructures.AttributeVector;
 import dna.dataStructures.Coder;
 import dna.dataStructures.Data;
 import dna.dataStructures.StatementType;
@@ -1189,6 +1190,20 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.dna.gui.leftPanel.setComboEnabled(true);
 					int ac = Dna.data.getActiveCoder();
 					Dna.dna.gui.leftPanel.coderPanel.model.setSelectedItem(Dna.data.getCoderById(ac));
+					
+					// add an initial empty attribute vector for each "short text" variable
+					for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
+						StatementType statementType = Dna.data.getStatementTypes().get(i);
+						Iterator<String> keyIterator = statementType.getVariables().keySet().iterator();
+				        while (keyIterator.hasNext()){
+				    		String key = keyIterator.next();
+				    		String value = statementType.getVariables().get(key);
+				    		if (value.equals("short text")) {
+				    			AttributeVector av = new AttributeVector(Dna.data.generateNewId("attributes"), "", Color.BLACK, "", "", "", "", statementType.getId(), key);
+				    			Dna.dna.addAttributeVector(av);
+				    		}
+				    	}
+					}
 					
 					Dna.dna.gui.refreshGui();
 					

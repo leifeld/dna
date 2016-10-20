@@ -332,19 +332,29 @@ public class Popup extends JDialog {
 			String contentType = null;  // the variable name, e.g., "organization"
 			if (com[i].getClass().getName().equals("javax.swing.JComboBox")) {  // short text
 				contentType = ((JLabel)com[i-1]).getText();
-				content = ((AttributeVector) ((JComboBox<AttributeVector>) com[i]).getEditor().getItem()).getValue();
+				
+				JComboBox<?> box = (JComboBox<?>) com[i];  // save the combo box
+				String value = box.getEditor().getItem().toString();  // save its value as a string (no matter if it's a string or an attribute vector)
+				int attributeId = Dna.data.getAttributeId((String) value, contentType, statementTypeId);  // look up if it's an attribute vector
+				boolean newAttribute = false;
+				if (attributeId == -1) {  // if not, create a new attribute vector and interpret as string below
+					newAttribute = true;
+					int id = Dna.data.generateNewId("attributes");
+					int statementTypeId = Dna.data.getStatement(statementID).getStatementTypeId();
+					AttributeVector attributeVector = new AttributeVector(id, (String) value, new Color(0, 0, 0), "", "", "", "", 
+							statementTypeId, contentType);
+					Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.addRow(attributeVector);
+				}
+				
+				if (newAttribute == false) {
+					content = ((AttributeVector) ((JComboBox<AttributeVector>) com[i]).getEditor().getItem()).getValue();
+				} else {
+					content = value;
+				}
 				if (content == null) {
 					content = "";
 				}
 				Dna.dna.updateVariable(statementId, statementTypeId, content, contentType);
-				int attributeId = Dna.data.getAttributeId((String) content, contentType, statementTypeId);
-				if (attributeId == -1) {
-					int id = Dna.data.generateNewId("attributes");
-					int statementTypeId = Dna.data.getStatement(statementID).getStatementTypeId();
-					AttributeVector attributeVector = new AttributeVector(id, (String) content, new Color(0, 0, 0), "", "", "", "", 
-							statementTypeId, contentType);
-					Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.addRow(attributeVector);
-				}
 			} else if (com[i].getClass().getName().equals("javax.swing.JCheckBox")) {  // boolean
 				contentType = ((JLabel)com[i-1]).getText();
 				content = ((JCheckBox)com[i]).isSelected();
