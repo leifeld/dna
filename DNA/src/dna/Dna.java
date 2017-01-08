@@ -18,7 +18,7 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2017-01-07";
+		date = "2017-01-08";
 		version = "2.0 beta 16";
 		System.out.println("DNA version: " + version + " (" + date + ")");
 		System.out.println("Java version: " + System.getProperty("java.version"));

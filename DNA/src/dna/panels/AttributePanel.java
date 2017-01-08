@@ -28,8 +28,6 @@ import javax.swing.RowFilter;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.ListDataEvent;
-import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableRowSorter;
@@ -399,6 +397,7 @@ public class AttributePanel extends JPanel {
 		public void run() {
 			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Adding missing attributes...", "", 0, Dna.data.getStatements().size() - 1);
 			progressMonitor.setMillisToDecideToPopup(1);
+			addMissingButton.setEnabled(false);
 			
 			int statementTypeId;
 			ArrayList<String> vars;
@@ -408,6 +407,7 @@ public class AttributePanel extends JPanel {
 			ArrayList<AttributeVector> al = new ArrayList<AttributeVector>();
 			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
 				if (progressMonitor.isCanceled()) {
+					addMissingButton.setEnabled(true);
 					break;
 				}
 				statementTypeId = Dna.data.getStatements().get(i).getStatementTypeId();
@@ -435,6 +435,7 @@ public class AttributePanel extends JPanel {
 			}
 			Dna.dna.sql.insertAttributeVectors(al);
 			attributeTableModel.sort();
+			addMissingButton.setEnabled(true);
 		}
 	}
 }

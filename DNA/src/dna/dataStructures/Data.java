@@ -31,6 +31,29 @@ public class Data {
 		this.attributes = new ArrayList<AttributeVector>();
 	}
 	
+	
+	/*
+	 * use Dna.dna.statementTypes.contains() instead!
+	 */
+	/*
+	public boolean statementTypeExists(StatementType st) {
+		for (int i = 0; i < statementTypes.size(); i++) {
+			if (st.getLabel().equals(statementTypes.get(i).getLabel())) {
+				System.out.println(" - Label matches");
+				if (st.getColor().equals(statementTypes.get(i).getColor())) {
+					System.out.println(" - Color matches");
+					if (st.getVariables().equals(statementTypes.get(i).getVariables())) {
+						System.out.println(" - Variables match");
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	*/
+	
+	
 	/**
 	 * Check if an attribute value already exists in the the attributes array list. Return its ID if found and -1 otherwise.
 	 * 
@@ -76,9 +99,9 @@ public class Data {
 	 */
 	public AttributeVector[] getAttributes(String variable, int statementTypeId) {
 		ArrayList<AttributeVector> al = new ArrayList<AttributeVector>();
-		for (int i = 0; i < Dna.data.getAttributes().size(); i++) {
-			if (Dna.data.getAttributes().get(i).getVariable().equals(variable) && Dna.data.getAttributes().get(i).getStatementTypeId() == statementTypeId) {
-				al.add(Dna.data.getAttributes().get(i));
+		for (int i = 0; i < getAttributes().size(); i++) {
+			if (getAttributes().get(i).getVariable().equals(variable) && getAttributes().get(i).getStatementTypeId() == statementTypeId) {
+				al.add(getAttributes().get(i));
 			}
 		}
 		AttributeVector[] array = new AttributeVector[al.size()];
@@ -529,6 +552,8 @@ public class Data {
 		if (Dna.data.getDocuments().size() > 0) {
 			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
 		}
+		
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.fireTableDataChanged();
 	}
 	
 	public void removeDocuments(ArrayList<Integer> documentIds, ArrayList<Integer> modelIndices) {
@@ -552,6 +577,8 @@ public class Data {
 		if (Dna.data.getDocuments().size() > 0) {
 			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
 		}
+
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.fireTableDataChanged();
 	}
 	
 	/**

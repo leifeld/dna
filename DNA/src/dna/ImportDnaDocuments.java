@@ -1,6 +1,7 @@
 package dna;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -10,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -32,10 +34,12 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 
+import dna.dataStructures.AttributeVector;
 import dna.dataStructures.Coder;
 import dna.dataStructures.Data;
 import dna.dataStructures.Document;
 import dna.dataStructures.Statement;
+import dna.dataStructures.StatementType;
 import dna.renderer.CoderComboBoxModel;
 import dna.renderer.CoderComboBoxRenderer;
 import dna.renderer.CoderTableCellRenderer;
@@ -276,7 +280,7 @@ public class ImportDnaDocuments extends JDialog {
 			*/
 			
 			// documents
-			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Importing documents and statements.", "(0/4) Reading documents...", 0, 4);
+			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Importing documents and statements.", "(1/5) Reading documents...", 0, 5);
 			progressMonitor.setMillisToDecideToPopup(1);
 			try {
 				Thread.sleep(1000);
@@ -303,13 +307,13 @@ public class ImportDnaDocuments extends JDialog {
 					newDocs.add(document);
 				}
 			}
-			progressMonitor.setNote("(1/4) Saving documents to database...");
 			progressMonitor.setProgress(1);
+			progressMonitor.setNote("(2/5) Saving documents to database...");
 			Dna.dna.sql.insertDocuments(newDocs);
 			
 			// import statements for this document
-			progressMonitor.setNote("(2/4) Reading statements...");
 			progressMonitor.setProgress(2);
+			progressMonitor.setNote("(3/5) Reading statements...");
 			Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
 			ArrayList<Statement> newStatements = new ArrayList<Statement>();
 			for (int i = 0; i < foreignData.getStatements().size(); i++) {
@@ -326,11 +330,66 @@ public class ImportDnaDocuments extends JDialog {
 				}
 			}
 			Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
-			progressMonitor.setNote("(3/4) Saving statements to database...");
 			progressMonitor.setProgress(3);
+			progressMonitor.setNote("(4/5) Saving statements to database...");
 			Dna.dna.sql.addStatements(newStatements);
 			progressMonitor.setProgress(4);
-			Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.startMissingThread();  // add attribute vectors
+			
+			// import attributes
+			progressMonitor.setNote("(5/5) Importing attributes...");
+			ArrayList<StatementType> foreignStatementTypes = foreignData.getStatementTypes();
+			for (int i = 0; i < foreignStatementTypes.size(); i++) {  // iterate through all foreign statement types also present in current database
+				if (Dna.data.getStatementTypes().contains(foreignStatementTypes.get(i))) {
+					int statementTypeId = Dna.data.getStatementType(foreignStatementTypes.get(i).getLabel()).getId();
+					ArrayList<Statement> statements = Dna.data.getStatementsByStatementTypeId(statementTypeId);
+					LinkedHashMap<String, String> variables = foreignStatementTypes.get(i).getVariables();
+					Iterator<String> keyIterator = variables.keySet().iterator();
+			        while (keyIterator.hasNext()){  // iterate through all foreign variables nested in the current statement type
+			    		String key = keyIterator.next();
+			    		String var = variables.get(key);
+			    		if (var.equals("short text")) {  // consider all nested attributes
+			    			AttributeVector[] av = foreignData.getAttributes(key, foreignStatementTypes.get(i).getId());
+			    			ArrayList<AttributeVector> newAttributes = new ArrayList<AttributeVector>();
+			    			for (int j = 0; j < av.length; j++) {
+			    				int avIndex = Dna.data.getAttributeIndex(av[j].getValue(), key, statementTypeId);
+			    				if (avIndex > -1) {  // attribute present in both databases; update empty fields
+			    					if (Dna.data.getAttributes().get(avIndex).getAlias().equals("") && !av[j].getAlias().equals("")) {
+			    						Dna.data.getAttributes().get(avIndex).setAlias(av[j].getAlias());
+			    						Dna.dna.sql.updateAttribute(Dna.data.getAttributes().get(avIndex).getId(), "Alias", av[j].getAlias());
+			    					}
+			    					if (Dna.data.getAttributes().get(avIndex).getNotes().equals("") && !av[j].getNotes().equals("")) {
+			    						Dna.data.getAttributes().get(avIndex).setNotes(av[j].getNotes());
+			    						Dna.dna.sql.updateAttribute(Dna.data.getAttributes().get(avIndex).getId(), "Notes", av[j].getNotes());
+			    					}
+			    					if (Dna.data.getAttributes().get(avIndex).getType().equals("") && !av[j].getType().equals("")) {
+			    						Dna.data.getAttributes().get(avIndex).setType(av[j].getType());
+			    						Dna.dna.sql.updateAttribute(Dna.data.getAttributes().get(avIndex).getId(), "Type", av[j].getType());
+			    					}
+			    					if (Dna.data.getAttributes().get(avIndex).getColor().equals(Color.BLACK) && !av[j].getAlias().equals(Color.BLACK)) {
+			    						Dna.data.getAttributes().get(avIndex).setColor(av[j].getColor());
+			    						Dna.dna.sql.updateAttributeColor(Dna.data.getAttributes().get(avIndex).getId(), av[j].getColor());
+			    					}
+			    				} else {  // attribute not present; check if at least one statement contains it and mark for import later
+			    					for (int k = 0; k < statements.size(); k++) {
+			    						if (statements.get(k).getValues().get(key).equals(av[j].getValue())) {
+			    							int newId = Dna.data.generateNewId("attributes");
+			    							AttributeVector a = av[j];
+			    							a.setId(newId);
+			    							Dna.data.getAttributes().add(a);
+			    							newAttributes.add(a);
+			    							break;
+			    						}
+			    					}
+			    				}
+			    			}
+			    			Dna.dna.sql.insertAttributeVectors(newAttributes);  // import marked attributes
+			    			Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.sort();
+			    		}
+			        }
+				}
+			}
+			progressMonitor.setProgress(5);
+			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);  // if no document is selected, the statement filter may throw an error
 		}
 	}
 	
