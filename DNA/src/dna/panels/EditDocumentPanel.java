@@ -320,6 +320,7 @@ public class EditDocumentPanel extends JPanel {
 		Dna.data.getDocument(documentId).setAuthor(author);
 		Dna.data.getDocument(documentId).setSource(source);
 		Dna.data.getDocument(documentId).setSection(section);
+		Dna.data.getDocument(documentId).setType(type);
 		Dna.data.getDocument(documentId).setNotes(notes);
 		
 		Dna.dna.sql.upsertDocument(Dna.data.getDocument(documentId));
@@ -327,7 +328,6 @@ public class EditDocumentPanel extends JPanel {
 		Dna.dna.gui.documentPanel.documentContainer.sort();
 		int newModelIndex = Dna.dna.gui.documentPanel.documentContainer.getModelIndexById(document.getId());
 		int newRow = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToView(newModelIndex);
-		//int newRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(document.getId());
 		Dna.dna.gui.documentPanel.documentTable.updateUI();
 		Dna.dna.gui.documentPanel.documentTable.getSelectionModel().setSelectionInterval(newRow, newRow);
 
