@@ -43,7 +43,7 @@ public class DocumentPanel extends JScrollPane {
 		
 		setRowSorterEnabled(true);
 
-		TableColumn column[] = new TableColumn[10];
+		TableColumn column[] = new TableColumn[11];
 	    for (int i = 0; i < column.length; i++) {
 	        column[i] = documentTable.getColumnModel().getColumn(i);
 	    }
