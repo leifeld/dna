@@ -47,7 +47,7 @@ public class DocumentPanel extends JScrollPane {
 	    for (int i = 0; i < column.length; i++) {
 	        column[i] = documentTable.getColumnModel().getColumn(i);
 	    }
-	    Boolean[] columnsVisible = new Boolean[] {false, true, true, true, false, false, false, false, false, false};
+	    Boolean[] columnsVisible = new Boolean[] {false, true, true, true, false, false, false, false, false, false, false};
 		while (documentTable.getColumnModel().getColumnCount() > 0) {
 			documentTable.getColumnModel().removeColumn(documentTable.getColumnModel().getColumn(0));
 	    }
@@ -73,6 +73,8 @@ public class DocumentPanel extends JScrollPane {
 		popupMenu.add(menuItemNumber);
 		JCheckBoxMenuItem menuItemDate = new JCheckBoxMenuItem("Date", true);
 		popupMenu.add(menuItemDate);
+		JCheckBoxMenuItem menuItemTime = new JCheckBoxMenuItem("Time", false);
+		popupMenu.add(menuItemTime);
 		JCheckBoxMenuItem menuItemCoder = new JCheckBoxMenuItem("Coder", false);
 		popupMenu.add(menuItemCoder);
 		JCheckBoxMenuItem menuItemAuthor = new JCheckBoxMenuItem("Author", false);
@@ -121,41 +123,47 @@ public class DocumentPanel extends JScrollPane {
 						} else {
 							columnsVisible[3] = false;
 						}
-					} else if (e.getSource() == menuItemCoder) {
-						if (menuItemCoder.isSelected()) {
+					} else if (e.getSource() == menuItemTime) {
+						if (menuItemTime.isSelected()) {
 							columnsVisible[4] = true;
 						} else {
 							columnsVisible[4] = false;
 						}
-					} else if (e.getSource() == menuItemAuthor) {
-						if (menuItemAuthor.isSelected()) {
+					} else if (e.getSource() == menuItemCoder) {
+						if (menuItemCoder.isSelected()) {
 							columnsVisible[5] = true;
 						} else {
 							columnsVisible[5] = false;
 						}
-					} else if (e.getSource() == menuItemSource) {
-						if (menuItemSource.isSelected()) {
+					} else if (e.getSource() == menuItemAuthor) {
+						if (menuItemAuthor.isSelected()) {
 							columnsVisible[6] = true;
 						} else {
 							columnsVisible[6] = false;
 						}
-					} else if (e.getSource() == menuItemSection) {
-						if (menuItemSection.isSelected()) {
+					} else if (e.getSource() == menuItemSource) {
+						if (menuItemSource.isSelected()) {
 							columnsVisible[7] = true;
 						} else {
 							columnsVisible[7] = false;
 						}
-					} else if (e.getSource() == menuItemType) {
-						if (menuItemType.isSelected()) {
+					} else if (e.getSource() == menuItemSection) {
+						if (menuItemSection.isSelected()) {
 							columnsVisible[8] = true;
 						} else {
 							columnsVisible[8] = false;
 						}
-					} else if (e.getSource() == menuItemNotes) {
-						if (menuItemNotes.isSelected()) {
+					} else if (e.getSource() == menuItemType) {
+						if (menuItemType.isSelected()) {
 							columnsVisible[9] = true;
 						} else {
 							columnsVisible[9] = false;
+						}
+					} else if (e.getSource() == menuItemNotes) {
+						if (menuItemNotes.isSelected()) {
+							columnsVisible[10] = true;
+						} else {
+							columnsVisible[10] = false;
 						}
 					}
 					
@@ -177,6 +185,7 @@ public class DocumentPanel extends JScrollPane {
 		menuItemTitle.addActionListener(al);
 		menuItemNumber.addActionListener(al);
 		menuItemDate.addActionListener(al);
+		menuItemTime.addActionListener(al);
 		menuItemCoder.addActionListener(al);
 		menuItemAuthor.addActionListener(al);
 		menuItemSource.addActionListener(al);

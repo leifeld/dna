@@ -1,4 +1,5 @@
 package dna.renderer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -16,7 +17,6 @@ import dna.dataStructures.Document;
 public class DocumentTableModel extends AbstractTableModel {
 	private Vector<TableModelListener> listeners = 	new Vector<TableModelListener>();
 	
-	//SK start
 	public DocumentTableModel(ArrayList<Document> documents) {
 		Dna.data.setDocuments(documents);	
 		sort();
@@ -25,7 +25,6 @@ public class DocumentTableModel extends AbstractTableModel {
 	public DocumentTableModel() {
 		super();
 	}
-	//SK end
 	
 	public boolean containsTitle(String title) {
 		boolean contains = false;
@@ -124,7 +123,7 @@ public class DocumentTableModel extends AbstractTableModel {
 	
 	//return number of columns
 	public int getColumnCount() {
-		return 10;
+		return 11;
 	}
 	
 	//return the name of a column
@@ -134,12 +133,13 @@ public class DocumentTableModel extends AbstractTableModel {
 			case 1: return "Title";
 			case 2: return "#";
 			case 3: return "Date";
-			case 4: return "Coder";
-			case 5: return "Author";
-			case 6: return "Source";
-			case 7: return "Section";
-			case 8: return "Type";
-			case 9: return "Notes";
+			case 4: return "Time";
+			case 5: return "Coder";
+			case 6: return "Author";
+			case 7: return "Source";
+			case 8: return "Section";
+			case 9: return "Type";
+			case 10: return "Notes";
 			default: return null;
 		}
 	}
@@ -147,17 +147,19 @@ public class DocumentTableModel extends AbstractTableModel {
 	//get the value of a cell (rowIndex, columnIndex)
 	public Object getValueAt(int rowIndex, int columnIndex) {
 		Document document = Dna.data.getDocuments().get(rowIndex);
+		SimpleDateFormat time = new SimpleDateFormat("HH:mm:ss");
 		switch( columnIndex ){
 			case 0: return document.getId();
 			case 1: return document.getTitle();
 			case 2: return Dna.data.countStatementsPerDocument(document.getId());
 			case 3: return document.getDate();
-			case 4: return Dna.data.getCoderById(document.getCoder());
-			case 5: return document.getAuthor();
-			case 6: return document.getSource();
-			case 7: return document.getSection();
-			case 8: return document.getType();
-			case 9: return document.getNotes();
+			case 4: return time.format(document.getDate());
+			case 5: return Dna.data.getCoderById(document.getCoder());
+			case 6: return document.getAuthor();
+			case 7: return document.getSource();
+			case 8: return document.getSection();
+			case 9: return document.getType();
+			case 10: return document.getNotes();
 			default: return null;
 		}
 	}
@@ -169,12 +171,13 @@ public class DocumentTableModel extends AbstractTableModel {
 			case 1: return String.class;  // Title
 			case 2: return Integer.class;  // #
 			case 3: return Date.class;  // Date
-			case 4: return Coder.class;  // Coder
-			case 5: return String.class;  // Author
-			case 6: return String.class;  // Source
-			case 7: return String.class;  // Section
-			case 8: return String.class;  // Type
-			case 9: return String.class;  // Notes
+			case 4: return String.class;  // Time
+			case 5: return Coder.class;  // Coder
+			case 6: return String.class;  // Author
+			case 7: return String.class;  // Source
+			case 8: return String.class;  // Section
+			case 9: return String.class;  // Type
+			case 10: return String.class;  // Notes
 			default: return null;
 		}
 	}
@@ -192,21 +195,24 @@ public class DocumentTableModel extends AbstractTableModel {
 			document.setDate( (Date)aValue );
 			break;
 		case 4: 
-			document.setCoder( ((Coder)aValue).getId() );
+			document.setDate( (Date)aValue );
 			break;
 		case 5: 
-			document.setAuthor( (String)aValue );
+			document.setCoder( ((Coder)aValue).getId() );
 			break;
 		case 6: 
-			document.setSource( (String)aValue );
+			document.setAuthor( (String)aValue );
 			break;
 		case 7: 
-			document.setSection( (String)aValue );
+			document.setSource( (String)aValue );
 			break;
 		case 8: 
-			document.setType( (String)aValue );
+			document.setSection( (String)aValue );
 			break;
 		case 9: 
+			document.setType( (String)aValue );
+			break;
+		case 10: 
 			document.setNotes( (String)aValue );
 			break;
 		}
