@@ -28,6 +28,8 @@ import javax.swing.RowFilter;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableRowSorter;
@@ -50,6 +52,7 @@ public class AttributePanel extends JPanel {
 	public AttributeTableModel attributeTableModel;
 	public JTable attributeTable;
 	public JComboBox typeComboBox, entryBox;
+	public JButton cleanUpButton, addMissingButton;
 	TableRowSorter<AttributeTableModel> sorter;
 	AttributeCellRenderer renderer;
 	
@@ -170,6 +173,7 @@ public class AttributePanel extends JPanel {
 			}
 		});
 		typeComboBox.setPreferredSize(new Dimension(200, 30));
+		typeComboBox.setEnabled(false);
 		entryBox = new JComboBox();
 		entryBox.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
@@ -177,6 +181,7 @@ public class AttributePanel extends JPanel {
 			}
 		});
 		entryBox.setPreferredSize(new Dimension(200, 30));
+		entryBox.setEnabled(false);
 		
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.add(typeComboBox);
@@ -203,12 +208,14 @@ public class AttributePanel extends JPanel {
 		deleteButton.setEnabled(false);
 		lowerPanel.add(deleteButton);
 		Icon cleanUpIcon = new ImageIcon(getClass().getResource("/icons/table_delete.png"));
-		JButton cleanUpButton = new JButton("Clean up", cleanUpIcon);
+		cleanUpButton = new JButton("Clean up", cleanUpIcon);
 		cleanUpButton.setPreferredSize(new Dimension(cleanUpButton.getPreferredSize().width, newField.getPreferredSize().height));
+		cleanUpButton.setEnabled(false);
 		lowerPanel.add(cleanUpButton);
 		Icon addMissingIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
-		JButton addMissingButton = new JButton("Add missing", addMissingIcon);
+		addMissingButton = new JButton("Add missing", addMissingIcon);
 		addMissingButton.setPreferredSize(new Dimension(addMissingButton.getPreferredSize().width, newField.getPreferredSize().height));
+		addMissingButton.setEnabled(false);
 		lowerPanel.add(addMissingButton);
 
 		newField.getDocument().addDocumentListener(new DocumentListener() {
@@ -226,23 +233,28 @@ public class AttributePanel extends JPanel {
 			}
 			public void checkButton() {
 				String newValue = newField.getText();
-				int statementTypeId = ((StatementType) typeComboBox.getSelectedItem()).getId();
-				String variable = (String) entryBox.getSelectedItem();
-				boolean add = true;
-				if (newValue.equals("")) {
-					add = false;
-				}
-				for (int i = 0; i < Dna.data.getAttributes().size(); i++) {
-					AttributeVector av = Dna.data.getAttributes().get(i);
-					if (av.getVariable().equals(variable) && av.getStatementTypeId() == statementTypeId && av.getValue().equals(newValue)) {
+				if (typeComboBox.getSelectedItem() != null) {
+					int statementTypeId = ((StatementType) typeComboBox.getSelectedItem()).getId();
+					String variable = (String) entryBox.getSelectedItem();
+					boolean add = true;
+					if (Dna.dna.sql == null) {
 						add = false;
-						break;
 					}
-				}
-				if (add == false) {
-					addButton.setEnabled(false);
-				} else {
-					addButton.setEnabled(true);
+					if (newValue.equals("")) {
+						add = false;
+					}
+					for (int i = 0; i < Dna.data.getAttributes().size(); i++) {
+						AttributeVector av = Dna.data.getAttributes().get(i);
+						if (av.getVariable().equals(variable) && av.getStatementTypeId() == statementTypeId && av.getValue().equals(newValue)) {
+							add = false;
+							break;
+						}
+					}
+					if (add == false) {
+						addButton.setEnabled(false);
+					} else {
+						addButton.setEnabled(true);
+					}
 				}
 			}
 		});
@@ -254,12 +266,16 @@ public class AttributePanel extends JPanel {
 					return;
 				}
 				int viewRow = attributeTable.getSelectedRow();
-				if (viewRow > -1) {
+				if (viewRow > -1 && attributeTable.getRowCount() > 1) {
 					int modelRow = attributeTable.convertRowIndexToModel(viewRow);
-					if (attributeTableModel.get(modelRow).isInDataset()) {
-						deleteButton.setEnabled(false);
+					if (!attributeTableModel.get(modelRow).getValue().equals("")) {
+						if (attributeTableModel.get(modelRow).isInDataset()) {
+							deleteButton.setEnabled(false);
+						} else {
+							deleteButton.setEnabled(true);
+						}
 					} else {
-						deleteButton.setEnabled(true);
+						deleteButton.setEnabled(false);
 					}
 				} else {
 					deleteButton.setEnabled(false);
@@ -283,7 +299,8 @@ public class AttributePanel extends JPanel {
 		deleteButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				int modelRow = attributeTable.convertRowIndexToModel(attributeTable.getSelectedRow());
-				if (!attributeTableModel.get(modelRow).isInDataset()) {
+				if (!attributeTableModel.get(modelRow).isInDataset() && attributeTable.getRowCount() > 1 
+						&& !attributeTableModel.get(modelRow).getValue().equals("")) {
 					attributeTableModel.deleteRow(modelRow);
 				} else {
 					System.err.println("Entry cannot be deleted because it is still present in the dataset.");
@@ -295,19 +312,22 @@ public class AttributePanel extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				String message = "Are you sure you want to delete all values that have never \n"
 						+ "been coded (= all rows colored in red) for this variable?";
-				int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
-				if (dialog == 0) {
-					int count = 0;
-					int statementTypeId = ((StatementType) typeComboBox.getSelectedItem()).getId();
-					String variable = (String) entryBox.getSelectedItem();
-					for (int i = Dna.data.getAttributes().size() - 1; i > -1 ; i--) {
-						AttributeVector av = Dna.data.getAttributes().get(i);
-						if (variable.equals(av.getVariable()) && statementTypeId == av.getStatementTypeId() && av.isInDataset() == false) {
-							attributeTableModel.deleteRow(i);
-							count++;
+				if (typeComboBox.getSelectedItem() != null && attributeTable.getRowCount() > 1) {
+					int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+					if (dialog == 0) {
+						int count = 0;
+						int statementTypeId = ((StatementType) typeComboBox.getSelectedItem()).getId();
+						String variable = (String) entryBox.getSelectedItem();
+						for (int i = Dna.data.getAttributes().size() - 1; i > -1 ; i--) {
+							AttributeVector av = Dna.data.getAttributes().get(i);
+							if (variable.equals(av.getVariable()) && statementTypeId == av.getStatementTypeId() && av.isInDataset() == false 
+									&& !av.getValue().equals("")) {
+								attributeTableModel.deleteRow(i);
+								count++;
+							}
 						}
+						JOptionPane.showMessageDialog(Dna.dna.gui, count + " rows were deleted.");
 					}
-					JOptionPane.showMessageDialog(Dna.dna.gui, count + " rows were deleted.");
 				}
 			}
 		});
@@ -385,7 +405,7 @@ public class AttributePanel extends JPanel {
 			String value;
 			int id;
 			AttributeVector avk, av;
-			ArrayList<AttributeVector> al = new ArrayList<AttributeVector>(); //TEST
+			ArrayList<AttributeVector> al = new ArrayList<AttributeVector>();
 			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
 				if (progressMonitor.isCanceled()) {
 					break;

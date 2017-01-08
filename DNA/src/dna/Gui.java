@@ -203,7 +203,13 @@ public class Gui extends JFrame {
 		Dna.dna.gui.documentPanel.documentFilter();
 		Dna.dna.gui.documentPanel.documentTable.updateDocumentView();
 		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.sort();
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setSelectedIndex(0);
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.updateUI();
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(true);
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(true);
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.addMissingButton.setEnabled(true);
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(true);
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(true);
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.cleanUpButton.setEnabled(true);
 		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.updateUI();
 		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.applyButton.setEnabled(true);
 		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.resetButton.setEnabled(true);

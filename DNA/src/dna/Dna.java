@@ -18,8 +18,8 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2016-10-20";
-		version = "2.0 beta 15";
+		date = "2017-01-07";
+		version = "2.0 beta 16";
 		System.out.println("DNA version: " + version + " (" + date + ")");
 		System.out.println("Java version: " + System.getProperty("java.version"));
 		System.out.println("Operating system: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
@@ -198,6 +198,12 @@ public class Dna {
 		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.clear();
 		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.updateUI();
 		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.updateUI();
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(false);
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(false);
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.addMissingButton.setEnabled(false);
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(false);
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(false);
+		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.cleanUpButton.setEnabled(false);
 		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.updateUI();
 		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.entryBox.updateUI();
 		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.tableModel.setRowCount(0);

@@ -144,6 +144,7 @@ public class RecodePanel extends JPanel {
 			}
 		});
 		typeComboBox.setPreferredSize(new Dimension(200, 30));
+		typeComboBox.setEnabled(false);
 		entryBox = new JComboBox();
 		entryBox.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
@@ -151,6 +152,7 @@ public class RecodePanel extends JPanel {
 			}
 		});
 		entryBox.setPreferredSize(new Dimension(200, 30));
+		entryBox.setEnabled(false);
 		applyButton = new JButton("save", new ImageIcon(getClass().getResource("/icons/accept.png")));
 		applyButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
