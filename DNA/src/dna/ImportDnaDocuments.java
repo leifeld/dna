@@ -354,20 +354,16 @@ public class ImportDnaDocuments extends JDialog {
 			    				int avIndex = Dna.data.getAttributeIndex(av[j].getValue(), key, statementTypeId);
 			    				if (avIndex > -1) {  // attribute present in both databases; update empty fields
 			    					if (Dna.data.getAttributes().get(avIndex).getAlias().equals("") && !av[j].getAlias().equals("")) {
-			    						Dna.data.getAttributes().get(avIndex).setAlias(av[j].getAlias());
-			    						Dna.dna.sql.updateAttribute(Dna.data.getAttributes().get(avIndex).getId(), "Alias", av[j].getAlias());
+			    						Dna.dna.updateAttributeAlias(avIndex, av[j].getAlias());
 			    					}
 			    					if (Dna.data.getAttributes().get(avIndex).getNotes().equals("") && !av[j].getNotes().equals("")) {
-			    						Dna.data.getAttributes().get(avIndex).setNotes(av[j].getNotes());
-			    						Dna.dna.sql.updateAttribute(Dna.data.getAttributes().get(avIndex).getId(), "Notes", av[j].getNotes());
+			    						Dna.dna.updateAttributeNotes(avIndex, av[j].getNotes());
 			    					}
 			    					if (Dna.data.getAttributes().get(avIndex).getType().equals("") && !av[j].getType().equals("")) {
-			    						Dna.data.getAttributes().get(avIndex).setType(av[j].getType());
-			    						Dna.dna.sql.updateAttribute(Dna.data.getAttributes().get(avIndex).getId(), "Type", av[j].getType());
+			    						Dna.dna.updateAttributeType(avIndex, av[j].getType());
 			    					}
 			    					if (Dna.data.getAttributes().get(avIndex).getColor().equals(Color.BLACK) && !av[j].getAlias().equals(Color.BLACK)) {
-			    						Dna.data.getAttributes().get(avIndex).setColor(av[j].getColor());
-			    						Dna.dna.sql.updateAttributeColor(Dna.data.getAttributes().get(avIndex).getId(), av[j].getColor());
+			    						Dna.dna.updateAttributeColor(avIndex, av[j].getColor());
 			    					}
 			    				} else {  // attribute not present; check if at least one statement contains it and mark for import later
 			    					for (int k = 0; k < statements.size(); k++) {

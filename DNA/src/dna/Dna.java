@@ -18,8 +18,8 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2017-01-08";
-		version = "2.0 beta 16";
+		date = "2017-01-09";
+		version = "2.0 beta 17";
 		System.out.println("DNA version: " + version + " (" + date + ")");
 		System.out.println("Java version: " + System.getProperty("java.version"));
 		System.out.println("Operating system: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
@@ -120,6 +120,7 @@ public class Dna {
 	 */
 	public void addAttributeVector(AttributeVector av) {
 		data.getAttributes().add(av);
+		gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.sort();
 		sql.upsertAttributeVector(av);
 	}
 	

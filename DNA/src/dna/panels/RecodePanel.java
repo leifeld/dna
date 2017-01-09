@@ -2,6 +2,7 @@ package dna.panels;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -256,19 +257,50 @@ public class RecodePanel extends JPanel {
 		for (int i = 0; i < tableModel.getRowCount(); i++) {
 			String original = (String) tableModel.getValueAt(i, 0);
 			String edited = (String) tableModel.getValueAt(i, 1);
-			if (!original.equals(edited)) {
-				for (int j = 0; j < Dna.data.getStatements().size(); j++) {
-					int statementId = Dna.data.getStatements().get(j).getId();
+			if (!original.equals(edited)) {  // if the entry on the left and on the right of the recode table don't match...
+				for (int j = 0; j < Dna.data.getStatements().size(); j++) {  // ...go through the statements and change all instances
 					String value = (String) Dna.data.getStatements().get(j).getValues().get(variable);
 					if (value != null && value.equals(original)) {
+						int statementId = Dna.data.getStatements().get(j).getId();
 						Dna.dna.updateVariable(statementId, statementTypeId, edited, variable);
 						count++;
 					}
 				}
-				for (int j = 0; j < Dna.data.getAttributes().size(); j++) {
-					AttributeVector a = Dna.data.getAttributes().get(j);
-					if (a.getValue().equals(original) && a.getStatementTypeId() == statementTypeId && a.getVariable().equals(variable)) {
-						Dna.dna.updateAttributeValue(j, edited);
+				int avIndexOriginal = Dna.data.getAttributeIndex(original, variable, statementTypeId);
+				AttributeVector avOriginal = Dna.data.getAttributes().get(avIndexOriginal);
+				int avIndexTarget = Dna.data.getAttributeIndex(edited, variable, statementTypeId);
+				if (avIndexTarget == -1) {  // edited version does not exist yet, so just rename it
+					Dna.dna.updateAttributeValue(avIndexOriginal, edited);
+				} else {  // already exists
+					AttributeVector avTarget = Dna.data.getAttributes().get(avIndexTarget);
+					ArrayList<Integer> indicesToDelete = new ArrayList<Integer>();
+					if ((avOriginal.getType().equals("")  // both are identical or the original one is empty, so delete the original one
+							&& avOriginal.getAlias().equals("") 
+							&& avOriginal.getNotes().equals("") 
+							&& avOriginal.getColor().equals(Color.BLACK)) 
+							|| (avOriginal.getType().equals(avTarget.getType()) 
+							&& avOriginal.getAlias().equals(avTarget.getAlias()) 
+							&& avOriginal.getNotes().equals(avTarget.getNotes()) 
+							&& avOriginal.getColor().equals(avTarget.getColor()) )) {
+						indicesToDelete.add(avIndexOriginal);
+					} else if (avTarget.getType().equals("")  // target is empty while original is not, so delete target and rename original
+							&& avTarget.getAlias().equals("") 
+							&& avTarget.getNotes().equals("") 
+							&& avTarget.getColor().equals(Color.BLACK) 
+							&& (!avOriginal.getType().equals("") 
+							|| !avOriginal.getAlias().equals("") 
+							|| !avOriginal.getNotes().equals("") 
+							|| !avOriginal.getColor().equals(Color.BLACK) )) {
+						Dna.dna.updateAttributeValue(avIndexOriginal, edited);
+						indicesToDelete.add(avIndexTarget);
+					} else {  // more complicated: both contain some contents, so keep both
+						System.out.println("Case 3: " + avTarget.getValue() + avOriginal.getValue());
+						// nothing to do
+					}
+					if (indicesToDelete.size() > 0) {  // now delete those that were marked earlier
+						for (int j = indicesToDelete.size() - 1; j > -1; j--) {
+							Dna.dna.deleteAttributeVector(indicesToDelete.get(j));
+						}
 					}
 				}
 			}

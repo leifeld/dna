@@ -343,11 +343,15 @@ public class Popup extends JDialog {
 					int statementTypeId = Dna.data.getStatement(statementID).getStatementTypeId();
 					AttributeVector attributeVector = new AttributeVector(id, (String) value, new Color(0, 0, 0), "", "", "", "", 
 							statementTypeId, contentType);
-					Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.addRow(attributeVector);
+					Dna.dna.addAttributeVector(attributeVector);
 				}
 				
 				if (newAttribute == false) {
-					content = ((AttributeVector) ((JComboBox<AttributeVector>) com[i]).getEditor().getItem()).getValue();
+					try {
+						content = ((AttributeVector) ((JComboBox<AttributeVector>) com[i]).getEditor().getItem()).getValue();
+					} catch (java.lang.ClassCastException e) {  // attribute exists, but combo box only contains text for some weird reason
+						content = value;
+					}
 				} else {
 					content = value;
 				}
