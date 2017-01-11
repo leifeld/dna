@@ -5,6 +5,8 @@ import dna.dataStructures.*;
 import java.awt.Color;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.LinkedHashMap;
 
 import javax.swing.ImageIcon;
@@ -18,8 +20,8 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2017-01-09";
-		version = "2.0 beta 17";
+		date = "2017-01-11";
+		version = "2.0 beta 18";
 		System.out.println("DNA version: " + version + " (" + date + ")");
 		System.out.println("Java version: " + System.getProperty("java.version"));
 		System.out.println("Operating system: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
@@ -60,6 +62,42 @@ public class Dna {
 		
 		// remove documents in SQL database
 		sql.removeDocuments(docIds);
+	}
+
+	/**
+	 * Set the time (hours, minutes, second, milliseconds) of a document date to zero for multiple documents.
+	 * 
+	 * @param documentRows  The indices of the documents to update in the document array list
+	 */
+	public void resetTimeOfDocuments(int[] documentRows) {
+		// compile lists of model indices and document IDs
+		ArrayList<Integer> docIds = new ArrayList<Integer>();
+		ArrayList<Integer> modelIndices = new ArrayList<Integer>();
+		for (int i = 0; i < documentRows.length; i++) {
+			int modelIndex = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToModel(documentRows[i]);
+			modelIndices.add(modelIndex);
+			int docId = Dna.dna.gui.documentPanel.documentContainer.getIdByModelIndex(modelIndex);
+			docIds.add(docId);
+		}
+		
+		// change GUI documents
+		ArrayList<Date> newDates = new ArrayList<Date>();
+		for (int i = 0; i < modelIndices.size(); i++) {
+			Date d = data.getDocuments().get(modelIndices.get(i)).getDate();
+			Calendar calendar = Calendar.getInstance();
+	        calendar.setTime(d);
+	        calendar.set(Calendar.MILLISECOND, 0);
+	        calendar.set(Calendar.SECOND, 0);
+	        calendar.set(Calendar.MINUTE, 0);
+	        calendar.set(Calendar.HOUR, 0);
+	        calendar.set(Calendar.AM_PM, 0);
+	        d = calendar.getTime();
+	        data.getDocuments().get(modelIndices.get(i)).setDate(d);
+	        newDates.add(d);
+		}
+		
+		// change SQL documents
+        sql.updateDocumentDates(docIds, newDates);
 	}
 	
 	public void removeStatement(int statementId) {

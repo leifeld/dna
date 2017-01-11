@@ -778,6 +778,35 @@ public class SqlConnection {
 		}
 	}
 	
+	/**
+	 * Update the date in multiple documents.
+	 * 
+	 * @param documentIds  An array list of IDs of the documents to update
+	 * @param newDates  An array list of new dates to insert; same length and order as documentIds
+	 */
+	public void updateDocumentDates(ArrayList<Integer> documentIds, ArrayList<Date> newDates) {
+		String myStatement = "UPDATE DOCUMENTS SET Date = ? WHERE ID = ?;";
+		try {
+			PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myStatement);
+			connection.setAutoCommit(false);
+			for (int i = 0; i < documentIds.size(); i++) {
+				preStatement.setLong(1, newDates.get(i).getTime());
+				preStatement.setInt(2, documentIds.get(i));
+				preStatement.addBatch();
+			}
+			preStatement.executeBatch();
+			connection.commit();
+			preStatement.clearBatch();
+			preStatement.close();
+			connection.setAutoCommit(true);
+		} catch (SQLException e) {
+			JOptionPane.showMessageDialog(Dna.dna.gui, 
+					"Database access could not be executed properly. Report this problem along with the \n "
+					+ "error log if you can see a systematic pattern here. Also, reload your file.");
+			e.printStackTrace();
+		}
+	}
+	
 	public void removeCoder(int id) {
 		executeStatement("DELETE FROM DATABOOLEAN WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE Coder = " + id + ")");
 		executeStatement("DELETE FROM DATAINTEGER WHERE StatementId IN (SELECT ID FROM STATEMENTS WHERE Coder = " + id + ")");

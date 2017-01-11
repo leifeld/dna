@@ -28,7 +28,7 @@ public class DocumentPanel extends JScrollPane {
 	public DocumentTable documentTable;
 	TableRowSorter<DocumentTableModel> sorter;
 	JScrollPane jsp;
-	public JMenuItem menuItemDelete;
+	public JMenuItem menuItemDelete, menuItemResetTime;
 	
 	public DocumentPanel() {
 		if(Dna.dna != null) {
@@ -63,6 +63,8 @@ public class DocumentPanel extends JScrollPane {
 		JPopupMenu popupMenu = new JPopupMenu();
 		menuItemDelete = new JMenuItem("Delete selected document(s)");
 		popupMenu.add(menuItemDelete);
+		menuItemResetTime = new JMenuItem("Set document time to 00:00:00");
+		popupMenu.add(menuItemResetTime);
 		JSeparator sep = new JSeparator();
 		popupMenu.add(sep);
 		JCheckBoxMenuItem menuItemId = new JCheckBoxMenuItem("ID", false);
@@ -97,6 +99,21 @@ public class DocumentPanel extends JScrollPane {
 					int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
 						Dna.dna.removeDocuments(selectedRows);
+					}
+				} else if (e.getSource() == menuItemResetTime) {
+					int[] selectedRows = documentTable.getSelectedRows();
+					String message = "";
+					if (selectedRows.length == 1) {
+						message = "Are you sure you want to reset the time stamp of the selected document?";
+					} else {
+						message = "Are you sure you want to reset the time stamp of these " + selectedRows.length + " documents?";
+					}
+					int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+					if (dialog == 0) {
+						Dna.dna.resetTimeOfDocuments(selectedRows);
+						if (selectedRows.length == 1) {
+							Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(Dna.data.getDocuments().get(selectedRows[0]));
+						}
 					}
 				} else {
 					if (e.getSource() == menuItemId) {
@@ -181,6 +198,7 @@ public class DocumentPanel extends JScrollPane {
 		};
 		
 		menuItemDelete.addActionListener(al);
+		menuItemResetTime.addActionListener(al);
 		menuItemId.addActionListener(al);
 		menuItemTitle.addActionListener(al);
 		menuItemNumber.addActionListener(al);
@@ -244,6 +262,11 @@ public class DocumentPanel extends JScrollPane {
 				Dna.dna.gui.textPanel.setDocumentText("");
 				Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
 				Dna.dna.gui.leftPanel.editDocPanel.updateUI();
+				/*if (rowCount > 3000) {
+					menuItemResetTime.setEnabled(false);
+				} else {
+					menuItemResetTime.setEnabled(true);
+				}*/
 			} else if (rowCount == 1) {
 				int selectedRow = getSelectedRow();
 				int selectedModelIndex = this.convertRowIndexToModel(selectedRow);

@@ -461,26 +461,6 @@ public class Data {
 			unused++;
 		}
 		return unused;
-		
-		/*
-		int unused = 1;
-		boolean accept = false;
-		while (accept == false) {
-			boolean used = false;
-			for (int i = 0; i < ids.size(); i++) {
-				if (unused == ids.get(i)) {
-					used = true;
-				}
-			}
-			if (used == true) {
-				accept = false;
-				unused++;
-			} else {
-				accept = true;
-			}
-		}
-		return unused;
-		*/
 	}
 	
 	public void removeStatement(int id) {
