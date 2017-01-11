@@ -97,7 +97,7 @@ public class Dna {
 		}
 		
 		// change SQL documents
-        sql.updateDocumentDates(docIds, newDates);
+		sql.updateDocumentDates(docIds, newDates);
 	}
 	
 	public void removeStatement(int statementId) {

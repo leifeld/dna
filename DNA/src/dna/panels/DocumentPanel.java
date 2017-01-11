@@ -262,11 +262,6 @@ public class DocumentPanel extends JScrollPane {
 				Dna.dna.gui.textPanel.setDocumentText("");
 				Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
 				Dna.dna.gui.leftPanel.editDocPanel.updateUI();
-				/*if (rowCount > 3000) {
-					menuItemResetTime.setEnabled(false);
-				} else {
-					menuItemResetTime.setEnabled(true);
-				}*/
 			} else if (rowCount == 1) {
 				int selectedRow = getSelectedRow();
 				int selectedModelIndex = this.convertRowIndexToModel(selectedRow);
