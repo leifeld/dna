@@ -12,4 +12,4 @@ __If you have questions or want to report bugs:__ [https://github.com/leifeld/dn
 ---
 
 #### Beta version of DNA 2.0 available now
-Version 2.0 beta is a pre-release and can be [downloaded](https://github.com/leifeld/dna/releases) for testing purposes from the [releases](https://github.com/leifeld/dna/releases) page. If you find bugs, please report them to the [issue tracker](https://github.com/leifeld/dna/issues). Development will continue over the course of the fall and winter, and new releases will be added periodically.
+Version 2.0 beta is a pre-release and can be [downloaded](https://github.com/leifeld/dna/releases) for testing purposes from the [releases](https://github.com/leifeld/dna/releases) page. If you find bugs, please report them to the [issue tracker](https://github.com/leifeld/dna/issues). Development will continue over the course of the year, and new releases will be added periodically.
