@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.stream.Stream;
 
@@ -64,10 +65,63 @@ public class NetworkCreator {
 		}
 	}
 	
+	/*
+	public Network affiliationNetwork(ArrayList<Statement> statements, String var1, String var2, boolean countDuplicates, boolean includeIsolates, 
+			String agreementPattern) {
+		String qualifier = exportSetting.getQualifier();  // qualifier variable (e.g., "agreement")
+		boolean qualBinary = false;  // is the qualifier variable binary (= true) or integer (= false)?
+		LinkedHashMap variables = Dna.data.getStatementTypeById(statements.get(0).getStatementTypeId()).getVariables();
+		Iterator<String> it = variables.keySet().iterator();
+		while (it.hasNext()) {
+			String key = it.next();
+			String value = (String) variables.get(key);
+			if (value.equals(qualifier) && value.equals("integer")) {
+				qualBinary = false;
+			} else if (value.equals(qualifier)) {
+				qualBinary = true;
+			}
+		}
+		if (qualBinary == true) {  // binary: create lists of positive and negative statements, compute two-mode networks separately, and combine
+			
+			if (agreementPattern.equals("ignore")) {
+				Network network = twoMode(statements, var1, var2, countDuplicates, includeIsolates);
+			} else {
+				if (agreementPattern.equals("subtract")) {
+					ArrayList<Statement> statementsPos = new ArrayList<Statement>();
+					ArrayList<Statement> statementsNeg = new ArrayList<Statement>();
+					for (int i = 0; i < statements.size(); i++) {
+						Object o = statements.get(i).getValues().get(qualifier);
+						int value = (int) o;
+						if (value == 0) {
+							statementsNeg.add(statements.get(i));
+						} else {
+							statementsPos.add(statements.get(i));
+						}
+					}
+					Network pos = twoMode(statementsPos, var1, var2, countDuplicates, includeIsolates);
+					Network neg = twoMode(statementsNeg, var1, var2, countDuplicates, includeIsolates);
+					double[][] subtracted = subtract(pos.getMatrix().getMatrix(), neg.getMatrix().getMatrix());
+					Network network = new Network(subtracted); // crap! the matrices don't have the same size...
+					// TODO: write a function that extracts the set of actors for mode 1 and mode 2, conditional on includeIsolates;
+					// then rewrite the twoMode function (and possibly other functions) to use this new getLabels function;
+					// then use it here to get the row and column labels of all statements at the beginning of the function;
+					// then rewrite the twoMode function to accept these lists as additional arguments, rather than recreating 
+					// these lists internally in a function call of getLabels; then call that modified function here...
+				}
+			}
+			
+			
+		}
+		
+		
+		return new Network();
+	}
+	*/
+	
 	/**
-	 * Return a filtered list of {@link SidebarStatement}s based on the settings saved in the {@link NetworkExporterObject}.
+	 * Return a filtered list of {@link Statement}s based on the settings saved in the {@link ExportSetting} object.
 	 * 
-	 * @return	ArrayList of filtered {@link SidebarStatement}s
+	 * @return	ArrayList of filtered {@link Statement}s
 	 */
 	ArrayList<Statement> filter() {
 		ArrayList<Statement> al = new ArrayList<Statement>();

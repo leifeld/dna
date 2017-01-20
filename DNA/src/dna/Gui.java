@@ -1,6 +1,7 @@
 package dna;
 
 import dna.export.ExportGui;
+import dna.export.Exporter;
 import dna.panels.DocumentPanel;
 
 import java.awt.BorderLayout;
@@ -428,7 +429,7 @@ public class Gui extends JFrame {
 			exportMenu.add(networkButton);
 			networkButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					new NetworkExporter();
+					new Exporter();
 				}
 			});
 			networkButton.setEnabled(true);
@@ -442,7 +443,8 @@ public class Gui extends JFrame {
 			networkButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					if (Dna.data.getDocuments().size() > 0 && Dna.data.getStatements().size() > 0) {
-						new ExportGui();
+						//new ExportGui();
+						new Exporter();
 					} else {
 						System.err.println("Warning: Network export not possible because no statements present.");
 					}

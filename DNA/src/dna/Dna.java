@@ -1,6 +1,7 @@
 package dna;
 
 import dna.dataStructures.*;
+import dna.export.Exporter;
 
 import java.awt.Color;
 import java.io.PrintStream;
@@ -20,7 +21,7 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2017-01-11";
+		date = "2017-01-22";
 		version = "2.0 beta 18";
 		System.out.println("DNA version: " + version + " (" + date + ")");
 		System.out.println("Java version: " + System.getProperty("java.version"));
