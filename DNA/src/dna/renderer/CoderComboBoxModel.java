@@ -38,7 +38,6 @@ public class CoderComboBoxModel extends AbstractListModel<Coder> implements Comb
 	@Override
 	public void setSelectedItem(Object anItem) {
 		selectedItem = anItem;
-		//System.out.println(((Coder)selectedItem).getName());
 		//fireContentsChanged(this, 0, getSize() - 1);
 	}
 	

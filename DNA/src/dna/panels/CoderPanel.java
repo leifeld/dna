@@ -56,7 +56,6 @@ public class CoderPanel extends JPanel {
 		model = new CoderComboBoxModel();
 		coderBox = new JComboBox<Coder>(model);
 		coderBox.setRenderer(renderer);
-		coderBox.setPreferredSize(new Dimension(150, 30));
 		coderBox.setEnabled(false);
 		this.add(coderBox, BorderLayout.NORTH);
 		
@@ -142,13 +141,12 @@ public class CoderPanel extends JPanel {
 		coderRelationTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane coderRelationScrollPane = new JScrollPane(coderRelationTable);
 		coderRelationScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		coderRelationScrollPane.setPreferredSize(new Dimension(200, 240));
+		coderRelationScrollPane.setPreferredSize(new Dimension(200, 120));
 		coderRelationTable.getColumnModel().getColumn( 0 ).setPreferredWidth( 200 );
 		coderRelationTable.getColumnModel().getColumn( 1 ).setPreferredWidth( 25 );
 		coderRelationTable.getColumnModel().getColumn( 2 ).setPreferredWidth( 25 );
 		coderRelationTable.getColumnModel().getColumn( 3 ).setPreferredWidth( 25 );
 		coderRelationTable.getColumnModel().getColumn( 4 ).setPreferredWidth( 25 );
-		coderRelationTable.setRowHeight(30);
 		
 		// table header icons
 		TableCellRenderer headerRenderer = new JComponentTableCellRenderer();

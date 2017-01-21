@@ -1,13 +1,11 @@
 package dna.renderer;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 
-import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -22,10 +20,13 @@ public class StatementTypeComboBoxRenderer implements ListCellRenderer<Object> {
 	@Override
 	public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 		if (value == null) {
-			return new JLabel("");
+			JPanel panel = new JPanel();
+			JLabel label = new JLabel("");
+			panel.add(label);
+			return panel;
 		} else {
 			StatementType statementType = (StatementType) value;
-			JPanel panel = new JPanel(new BorderLayout());
+			@SuppressWarnings("serial")
 			JButton colorRectangle = (new JButton() {
 				public void paintComponent(Graphics g) {
 					super.paintComponent(g);
@@ -33,24 +34,20 @@ public class StatementTypeComboBoxRenderer implements ListCellRenderer<Object> {
 					g.fillRect(2, 2, 14, 14);
 				}
 			});
-			colorRectangle.setPreferredSize(new Dimension(18, 18));
+			colorRectangle.setPreferredSize(new Dimension(14, 14));
 			colorRectangle.setEnabled(false);
 			
-			JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			namePanel.add(colorRectangle);
-			namePanel.add(Box.createRigidArea(new Dimension(5,5)));
+			JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+			panel.add(colorRectangle);
 			JLabel statementTypeLabel = new JLabel(statementType.getLabel());
-			namePanel.add(statementTypeLabel);
+			panel.add(statementTypeLabel);
 			
 			if (isSelected) {
 				UIDefaults defaults = javax.swing.UIManager.getDefaults();
 				Color bg = defaults.getColor("List.selectionBackground");
-				//Color fg = defaults.getColor("List.selectionForeground");
 				panel.setBackground(bg);
-				namePanel.setBackground(bg);
 			}
 			
-			panel.add(namePanel, BorderLayout.NORTH);
 			return panel;
 		}
 	}

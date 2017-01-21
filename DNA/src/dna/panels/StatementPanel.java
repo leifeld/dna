@@ -267,7 +267,6 @@ public class StatementPanel extends JPanel {
 			model = new StatementTypeComboBoxModel();
 			typeComboBox = new JComboBox<StatementType>(model);
 			typeComboBox.setRenderer(renderer);
-			typeComboBox.setPreferredSize(new Dimension(150, 30));
 			typeComboBox.addItemListener(new ItemListener() {
 				public void itemStateChanged(ItemEvent e) {
 					customFilterPanel = new CustomFilterPanel((StatementType) model.getSelectedItem());
@@ -353,26 +352,28 @@ public class StatementPanel extends JPanel {
 		
 		public void currentDocumentFilter() {
 			int row = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
-			int modelIndex = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToModel(row);
-			int docId = -1;
-			if (modelIndex > -1) {
-				docId = Dna.dna.gui.documentPanel.documentContainer.get(modelIndex).getId();
-			}
-			final int documentId = docId;
-			
-			RowFilter<StatementTableModel, Integer> documentFilter = new RowFilter<StatementTableModel, Integer>() {
-				public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
-					StatementTableModel stcont = entry.getModel();
-					Statement st = stcont.get(entry.getIdentifier());
-					boolean[] b = Dna.data.getActiveStatementPermissions(st.getId());
-					if (st.getDocumentId() == documentId && b[0] == true && Dna.data.getActiveDocumentPermissions(st.getDocumentId())[0] == true) {
-						return true;
-					}
-					return false;
+			if (row > -1) {
+				int modelIndex = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToModel(row);
+				int docId = -1;
+				if (modelIndex > -1) {
+					docId = Dna.dna.gui.documentPanel.documentContainer.get(modelIndex).getId();
 				}
-			};
-			if (showCurrent.isSelected()) {
-				sorter.setRowFilter(documentFilter);
+				final int documentId = docId;
+				
+				RowFilter<StatementTableModel, Integer> documentFilter = new RowFilter<StatementTableModel, Integer>() {
+					public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
+						StatementTableModel stcont = entry.getModel();
+						Statement st = stcont.get(entry.getIdentifier());
+						boolean[] b = Dna.data.getActiveStatementPermissions(st.getId());
+						if (st.getDocumentId() == documentId && b[0] == true && Dna.data.getActiveDocumentPermissions(st.getDocumentId())[0] == true) {
+							return true;
+						}
+						return false;
+					}
+				};
+				if (showCurrent.isSelected()) {
+					sorter.setRowFilter(documentFilter);
+				}
 			}
 		}
 	}

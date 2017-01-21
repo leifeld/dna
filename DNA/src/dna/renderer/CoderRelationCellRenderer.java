@@ -21,21 +21,22 @@ public class CoderRelationCellRenderer extends DefaultTableCellRenderer {
 	private static final long serialVersionUID = 1L;
 
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-		JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
 		int modelRow = table.convertRowIndexToModel(row);
 		CoderRelation cr = ((CoderRelationTableModel)table.getModel()).get(modelRow);
 		if (column == 0) {
 			int otherCoderId = cr.getOtherCoder();
 			Coder otherCoder = Dna.data.getCoderById(otherCoderId);
 			Color otherColor = otherCoder.getColor();
+			@SuppressWarnings("serial")
 			JButton colorButton = (new JButton() {
 				public void paintComponent(Graphics g) {
 					super.paintComponent(g);
 					g.setColor(otherColor);
-					g.fillRect(2, 2, 14, 14);
+					g.fillRect(2, 2, 12, 12);
 				}
 			});
-			colorButton.setPreferredSize(new Dimension(18, 18));
+			colorButton.setPreferredSize(new Dimension(12, 12));
 			colorButton.setEnabled(false);
 			panel.add(colorButton);
 			String name = otherCoder.getName();
@@ -52,42 +53,34 @@ public class CoderRelationCellRenderer extends DefaultTableCellRenderer {
 			boolean viewStatements = cr.isViewStatements();
 			JCheckBox box = new JCheckBox();
 			box.setSelected(viewStatements);
-			JPanel panelBox = new JPanel(new FlowLayout(FlowLayout.CENTER));
 			if (Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("viewOthersStatements") == false) {
 				box.setEnabled(false);
 			}
-			panelBox.add(box);
-			return panelBox;
+			return box;
 		} else if (column == 2) {
 			boolean editStatements = cr.isEditStatements();
 			JCheckBox box = new JCheckBox();
 			box.setSelected(editStatements);
-			JPanel panelBox = new JPanel(new FlowLayout(FlowLayout.CENTER));
 			if (Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("editOthersStatements") == false) {
 				box.setEnabled(false);
 			}
-			panelBox.add(box);
-			return panelBox;
+			return box;
 		} else if (column == 3) {
 			boolean viewDocuments = cr.isViewDocuments();
 			JCheckBox box = new JCheckBox();
 			box.setSelected(viewDocuments);
-			JPanel panelBox = new JPanel(new FlowLayout(FlowLayout.CENTER));
 			if (Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("viewOthersDocuments") == false) {
 				box.setEnabled(false);
 			}
-			panelBox.add(box);
-			return panelBox;
+			return box;
 		} else if (column == 4) {
 			boolean editDocuments = cr.isEditDocuments();
 			JCheckBox box = new JCheckBox();
 			box.setSelected(editDocuments);
-			JPanel panelBox = new JPanel(new FlowLayout(FlowLayout.CENTER));
 			if (Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("editOthersDocuments") == false) {
 				box.setEnabled(false);
 			}
-			panelBox.add(box);
-			return panelBox;
+			return box;
 		}
 		return panel;
 	}

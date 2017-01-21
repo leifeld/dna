@@ -28,7 +28,7 @@ public class CoderRelationTableModel extends AbstractTableModel implements Table
 	public int getColumnCount() {
 		return 5;
 	}
-
+	
 	@Override
 	public String getColumnName(int column) {
 		switch( column ){

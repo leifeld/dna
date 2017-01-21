@@ -23,12 +23,13 @@ public class CoderComboBoxRenderer implements ListCellRenderer<Object> {
 			return new JLabel("");
 		} else {
 			Coder coder = (Coder) value;
-			JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
 			if (isSelected) {
 				UIDefaults defaults = javax.swing.UIManager.getDefaults();
 				Color bg = defaults.getColor("List.selectionBackground");
 				panel.setBackground(bg);
 			}
+			@SuppressWarnings("serial")
 			JButton colorButton = (new JButton() {
 				public void paintComponent(Graphics g) {
 					super.paintComponent(g);
@@ -36,7 +37,7 @@ public class CoderComboBoxRenderer implements ListCellRenderer<Object> {
 					g.fillRect(2, 2, 14, 14);
 				}
 			});
-			colorButton.setPreferredSize(new Dimension(18, 18));
+			colorButton.setPreferredSize(new Dimension(14, 14));
 			colorButton.setEnabled(false);
 			panel.add(colorButton);
 			
