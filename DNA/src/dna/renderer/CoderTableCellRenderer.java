@@ -7,16 +7,13 @@ import java.awt.FlowLayout;
 import java.awt.Graphics;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.UIDefaults;
 import javax.swing.table.DefaultTableCellRenderer;
 
-import dna.Dna;
 import dna.dataStructures.Coder;
-import dna.dataStructures.CoderRelation;
 
 public class CoderTableCellRenderer extends DefaultTableCellRenderer {
 	private static final long serialVersionUID = 1L;

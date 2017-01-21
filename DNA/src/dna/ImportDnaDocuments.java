@@ -65,7 +65,7 @@ public class ImportDnaDocuments extends JDialog {
 		this.setIconImage(importIcon.getImage());
 
 		CoderComboBoxModel coderComboBoxModel = new CoderComboBoxModel();
-		JComboBox comboBox = new JComboBox(coderComboBoxModel);
+		JComboBox<Coder> comboBox = new JComboBox<Coder>(coderComboBoxModel);
 		CoderComboBoxRenderer renderer = new CoderComboBoxRenderer();
 		comboBox.setRenderer(renderer);
 		coderTableModel = new CoderTableModel();

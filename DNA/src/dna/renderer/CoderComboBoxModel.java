@@ -10,7 +10,7 @@ import dna.Dna;
 import dna.dataStructures.Coder;
 
 @SuppressWarnings("serial")
-public class CoderComboBoxModel extends AbstractListModel<Object> implements ComboBoxModel<Object> {
+public class CoderComboBoxModel extends AbstractListModel<Coder> implements ComboBoxModel<Coder> {
 	private Object selectedItem;
 	Vector<ListDataListener> listeners = new Vector<ListDataListener>();
 	
@@ -20,7 +20,7 @@ public class CoderComboBoxModel extends AbstractListModel<Object> implements Com
 	}
 	
 	@Override
-	public Object getElementAt(int index) {
+	public Coder getElementAt(int index) {
 		return Dna.data.getCoders().get(index);
 	}
 

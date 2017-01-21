@@ -3,7 +3,6 @@ package dna;
 import java.awt.Container;
 import java.awt.Dimension;
 import javax.swing.ImageIcon;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import org.jdesktop.swingx.JXTaskPane;

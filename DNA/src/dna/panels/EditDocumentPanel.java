@@ -12,6 +12,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -67,7 +68,6 @@ public class EditDocumentPanel extends JPanel {
 		this.add(selectDoc);
 	}
 	
-	@SuppressWarnings("unchecked")
 	public void createEditDocumentPanel(Document doc) {	
 		this.document = doc;
 		this.removeAll();
@@ -121,7 +121,7 @@ public class EditDocumentPanel extends JPanel {
 		g.gridy = 7;
 		CoderComboBoxRenderer renderer = new CoderComboBoxRenderer();
 		CoderComboBoxModel model = new CoderComboBoxModel();
-		coderBox = new JComboBox(model);
+		coderBox = new JComboBox<Coder>(model);
 		coderBox.setRenderer(renderer);
 		coderBox.setSelectedItem(Dna.data.getCoderById(doc.getCoder()));
 		this.add(coderBox, g);
@@ -141,7 +141,8 @@ public class EditDocumentPanel extends JPanel {
 			}
 		}
 		Collections.sort(authorEntries);
-		authorBox = new JComboBox(authorEntries.toArray());
+		String[] authorEntriesArray = Arrays.copyOf(authorEntries.toArray(), authorEntries.toArray().length, String[].class);
+		authorBox = new JComboBox<String>(authorEntriesArray);
 		authorBox.setEditable(true);
 		authorBox.setSelectedItem(document.getAuthor());
 		AutoCompleteDecorator.decorate(authorBox);
@@ -162,7 +163,8 @@ public class EditDocumentPanel extends JPanel {
 			}
 		}
 		Collections.sort(sourceEntries);
-		sourceBox = new JComboBox(sourceEntries.toArray());
+		String[] sourceEntriesArray = Arrays.copyOf(sourceEntries.toArray(), sourceEntries.toArray().length, String[].class);
+		sourceBox = new JComboBox<String>(sourceEntriesArray);
 		sourceBox.setEditable(true);
 		sourceBox.setSelectedItem(document.getSource());
 		AutoCompleteDecorator.decorate(sourceBox);
@@ -183,7 +185,8 @@ public class EditDocumentPanel extends JPanel {
 			}
 		}
 		Collections.sort(sectionEntries);
-		sectionBox = new JComboBox(sectionEntries.toArray());
+		String[] sectionEntriesArray = Arrays.copyOf(sectionEntries.toArray(), sectionEntries.toArray().length, String[].class);
+		sectionBox = new JComboBox<String>(sectionEntriesArray);
 		sectionBox.setEditable(true);
 		sectionBox.setSelectedItem(document.getSection());
 		AutoCompleteDecorator.decorate(sectionBox);
@@ -204,7 +207,8 @@ public class EditDocumentPanel extends JPanel {
 			}
 		}
 		Collections.sort(typeEntries);
-		typeBox = new JComboBox(typeEntries.toArray());
+		String[] typeEntriesArray = Arrays.copyOf(typeEntries.toArray(), typeEntries.toArray().length, String[].class);
+		typeBox = new JComboBox<String>(typeEntriesArray);
 		typeBox.setEditable(true);
 		typeBox.setSelectedItem(document.getType());
 		AutoCompleteDecorator.decorate(typeBox);

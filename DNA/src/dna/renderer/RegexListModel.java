@@ -8,7 +8,7 @@ import dna.Dna;
 import dna.dataStructures.Regex;
 
 @SuppressWarnings("serial")
-public class RegexListModel extends AbstractListModel {
+public class RegexListModel extends AbstractListModel<Regex> {
 	
 	public void removeElement(int index) {
 		Dna.data.getRegexes().remove(index);
@@ -27,7 +27,7 @@ public class RegexListModel extends AbstractListModel {
     }
 
     @Override
-    public Object getElementAt(int index) {
+    public Regex getElementAt(int index) {
     	return Dna.data.getRegexes().get(index);
     }
     

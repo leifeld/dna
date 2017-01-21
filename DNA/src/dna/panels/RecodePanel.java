@@ -35,17 +35,18 @@ import dna.dataStructures.StatementType;
 import dna.renderer.StatementTypeComboBoxModel;
 import dna.renderer.StatementTypeComboBoxRenderer;
 
+@SuppressWarnings("serial")
 public class RecodePanel extends JPanel {
 	
 	JToggleButton attributeToggleButton, searchToggleButton, recodeToggleButton;
-	public JComboBox typeComboBox, entryBox;
+	public JComboBox<StatementType> typeComboBox;
+	public JComboBox<String> entryBox;
 	public JTable table;
 	public DefaultTableModel tableModel;
 	public JButton applyButton, resetButton;
 	JList<String> uniqueList;
 	public DefaultListModel<String> listModel;
 	
-	@SuppressWarnings("serial")
 	public RecodePanel() {
 		this.setLayout(new BorderLayout());
 
@@ -119,13 +120,13 @@ public class RecodePanel extends JPanel {
 		// combo boxes and buttons, top left
 		StatementTypeComboBoxRenderer renderer = new StatementTypeComboBoxRenderer();
 		StatementTypeComboBoxModel model = new StatementTypeComboBoxModel();
-		typeComboBox = new JComboBox(model);
+		typeComboBox = new JComboBox<StatementType>(model);
 		typeComboBox.setRenderer(renderer);
 		typeComboBox.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
 				ArrayList<String> variables = new ArrayList<String>();
 				if (typeComboBox.getSelectedIndex() == -1) {
-					entryBox.setModel(new DefaultComboBoxModel(new String[0]));
+					entryBox.setModel(new DefaultComboBoxModel<String>(new String[0]));
 					tableModel.setRowCount(0);
 					listModel.clear();
 				} else {
@@ -139,14 +140,14 @@ public class RecodePanel extends JPanel {
 					}
 					String[] varArray = new String[variables.size()];
 					varArray = variables.toArray(varArray);
-					entryBox.setModel(new DefaultComboBoxModel(varArray));
+					entryBox.setModel(new DefaultComboBoxModel<String>(varArray));
 					updateTable();
 				}
 			}
 		});
 		typeComboBox.setPreferredSize(new Dimension(200, 30));
 		typeComboBox.setEnabled(false);
-		entryBox = new JComboBox();
+		entryBox = new JComboBox<String>();
 		entryBox.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
 				updateTable();

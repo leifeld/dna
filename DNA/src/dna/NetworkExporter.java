@@ -252,7 +252,7 @@ public class NetworkExporter extends JDialog {
 			String var2list = var2List.getSelectedValue();
 			if ((var1list!=null)&&(var2list!=null)&&(var1list.equals(var2list)))
 			{
-				DefaultListModel model = (DefaultListModel)var2List.getModel();		
+				DefaultListModel<String> model = (DefaultListModel<String>)var2List.getModel();		
 				model.removeElement(var1list);
 			}
 		}
@@ -301,7 +301,7 @@ public class NetworkExporter extends JDialog {
 		}
 		
 		// card 4
-		excludeVarList.setCellRenderer( new CustomCellRenderer( var1, var2,qualifier));
+		excludeVarList.setCellRenderer( new CustomCellRenderer(var1, var2, qualifier));
 		updateExcludeList();
 		if (excludeValIndices.size() == 0) {
 			excludeValList.clearSelection();
@@ -480,7 +480,7 @@ public class NetworkExporter extends JDialog {
 					var1modeIndex = selectedIndex;					
 				}
 				if (networkType.equalsIgnoreCase("twoMode")){
-					DefaultListModel model = (DefaultListModel)var2List.getModel();		
+					DefaultListModel<String> model = (DefaultListModel<String>)var2List.getModel();		
 					if ((previousValue1!=null)&&(!model.contains(previousValue1)))
 						model.addElement(previousValue1);
 					model.removeElement(var1);					
@@ -498,7 +498,7 @@ public class NetworkExporter extends JDialog {
 					var2modeIndex = selectedIndex;
 
 					if ((networkType.equalsIgnoreCase("twoMode"))){
-						DefaultListModel model = (DefaultListModel)var1List.getModel();	
+						DefaultListModel<String> model = (DefaultListModel<String>)var1List.getModel();	
 						if ((previousValue2!=null)&&(!model.contains(previousValue2)))
 							model.addElement(previousValue2);
 						model.removeElement(var2);

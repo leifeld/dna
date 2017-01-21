@@ -49,7 +49,8 @@ public class AttributePanel extends JPanel {
 	JToggleButton attributeToggleButton, searchToggleButton, recodeToggleButton;
 	public AttributeTableModel attributeTableModel;
 	public JTable attributeTable;
-	public JComboBox typeComboBox, entryBox;
+	public JComboBox<StatementType> typeComboBox;
+	public JComboBox<String> entryBox;
 	public JButton cleanUpButton, addMissingButton;
 	TableRowSorter<AttributeTableModel> sorter;
 	AttributeCellRenderer renderer;
@@ -147,13 +148,13 @@ public class AttributePanel extends JPanel {
 		// combo boxes and buttons, top left
 		StatementTypeComboBoxRenderer renderer = new StatementTypeComboBoxRenderer();
 		StatementTypeComboBoxModel model = new StatementTypeComboBoxModel();
-		typeComboBox = new JComboBox(model);
+		typeComboBox = new JComboBox<StatementType>(model);
 		typeComboBox.setRenderer(renderer);
 		typeComboBox.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
 				ArrayList<String> variables = new ArrayList<String>();
 				if (typeComboBox.getSelectedIndex() == -1) {
-					entryBox.setModel(new DefaultComboBoxModel(new String[0]));
+					entryBox.setModel(new DefaultComboBoxModel<String>(new String[0]));
 				} else {
 					Iterator<String> it = ((StatementType) typeComboBox.getSelectedItem()).getVariables().keySet().iterator();
 					while (it.hasNext()) {
@@ -165,14 +166,14 @@ public class AttributePanel extends JPanel {
 					}
 					String[] varArray = new String[variables.size()];
 					varArray = variables.toArray(varArray);
-					entryBox.setModel(new DefaultComboBoxModel(varArray));
+					entryBox.setModel(new DefaultComboBoxModel<String>(varArray));
 					variableFilter((String) entryBox.getSelectedItem(), ((StatementType) typeComboBox.getSelectedItem()).getId());
 				}
 			}
 		});
 		typeComboBox.setPreferredSize(new Dimension(200, 30));
 		typeComboBox.setEnabled(false);
-		entryBox = new JComboBox();
+		entryBox = new JComboBox<String>();
 		entryBox.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
 				variableFilter((String) entryBox.getSelectedItem(), ((StatementType) typeComboBox.getSelectedItem()).getId());

@@ -47,7 +47,7 @@ public class StatementPanel extends JPanel {
 	JScrollPane statementTableScrollPane;
 	public StatementFilter statementFilter;
 	TableRowSorter<StatementTableModel> sorter;
-	public JComboBox typeComboBox;
+	public JComboBox<StatementType> typeComboBox;
 	StatementTypeComboBoxRenderer renderer;
 	public StatementTypeComboBoxModel model;
 
@@ -265,7 +265,7 @@ public class StatementPanel extends JPanel {
 			
 			renderer = new StatementTypeComboBoxRenderer();
 			model = new StatementTypeComboBoxModel();
-			typeComboBox = new JComboBox(model);
+			typeComboBox = new JComboBox<StatementType>(model);
 			typeComboBox.setRenderer(renderer);
 			typeComboBox.setPreferredSize(new Dimension(150, 30));
 			typeComboBox.addItemListener(new ItemListener() {

@@ -1,6 +1,5 @@
 package dna;
 
-import dna.export.ExportGui;
 import dna.export.Exporter;
 import dna.panels.DocumentPanel;
 

@@ -54,7 +54,7 @@ public class CoderPanel extends JPanel {
 		// coder combo box
 		renderer = new CoderComboBoxRenderer();
 		model = new CoderComboBoxModel();
-		coderBox = new JComboBox(model);
+		coderBox = new JComboBox<Coder>(model);
 		coderBox.setRenderer(renderer);
 		coderBox.setPreferredSize(new Dimension(150, 30));
 		coderBox.setEnabled(false);

@@ -1,7 +1,6 @@
 package dna;
 
 import dna.dataStructures.*;
-import dna.export.Exporter;
 
 import java.awt.Color;
 import java.io.PrintStream;

@@ -511,7 +511,7 @@ public class NewDatabaseDialog extends JDialog {
 		}
 		
 		// List model for linking the coder array list to the JList
-		public class CoderListModel extends AbstractListModel {
+		public class CoderListModel extends AbstractListModel<Coder> {
 			
 			public void removeElement(int index) {
 				Dna.data.getCoders().remove(index);
@@ -530,7 +530,7 @@ public class NewDatabaseDialog extends JDialog {
 		    }
 
 		    @Override
-		    public Object getElementAt(int index) {
+		    public Coder getElementAt(int index) {
 		    	return Dna.data.getCoders().get(index);
 		    }
 		    
@@ -713,7 +713,7 @@ public class NewDatabaseDialog extends JDialog {
 		}
 		
 		// List model for linking the statement type array list to the JList
-		public class StatementTypeListModel extends AbstractListModel {
+		public class StatementTypeListModel extends AbstractListModel<StatementType> {
 			
 			public void removeElement(int index) {
 				Dna.data.getStatementTypes().remove(index);
@@ -732,7 +732,7 @@ public class NewDatabaseDialog extends JDialog {
 		    }
 
 		    @Override
-		    public Object getElementAt(int index) {
+		    public StatementType getElementAt(int index) {
 		    	return Dna.data.getStatementTypes().get(index);
 		    }
 		    

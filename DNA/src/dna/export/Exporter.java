@@ -62,13 +62,13 @@ public class Exporter extends JDialog {
 		gbc.gridx = 0;
 		gbc.gridy = 1;
 		String[] networkModesItems = new String[] {"Two-mode network", "One-mode network", "Event list"};
-		JComboBox networkModesBox = new JComboBox(networkModesItems);
+		JComboBox<String> networkModesBox = new JComboBox<>(networkModesItems);
 		settingsPanel.add(networkModesBox, gbc);
 
 		gbc.gridx = 1;
 		StatementTypeComboBoxRenderer cbrenderer = new StatementTypeComboBoxRenderer();
 		StatementTypeComboBoxModel model = new StatementTypeComboBoxModel();
-		JComboBox statementTypeBox = new JComboBox(model);
+		JComboBox<StatementType> statementTypeBox = new JComboBox<>(model);
 		statementTypeBox.setRenderer(cbrenderer);
 		
 		String[] var1Items = null, var2Items = null;
@@ -93,7 +93,7 @@ public class Exporter extends JDialog {
 		
 		gbc.gridx = 2;
 		String[] fileFormatItems = new String[] {".csv", ".dl", ".graphml"};
-		JComboBox fileFormatBox = new JComboBox(fileFormatItems);
+		JComboBox<String> fileFormatBox = new JComboBox<>(fileFormatItems);
 		settingsPanel.add(fileFormatBox, gbc);
 		fileFormatBox.setPreferredSize(new Dimension(WIDTH, HEIGHT));
 		statementTypeBox.setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -121,13 +121,13 @@ public class Exporter extends JDialog {
 		gbc.insets = new Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 3;
-		JComboBox var1Box = new JComboBox(var1Items);
+		JComboBox<String> var1Box = new JComboBox<>(var1Items);
 		settingsPanel.add(var1Box, gbc);
 		int HEIGHT2 = (int) var1Box.getPreferredSize().getHeight();
 		var1Box.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 1;
-		JComboBox var2Box = new JComboBox(var2Items);
+		JComboBox<String> var2Box = new JComboBox<>(var2Items);
 		var2Box.setSelectedIndex(1);
 		settingsPanel.add(var2Box, gbc);
 		var2Box.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
@@ -135,14 +135,14 @@ public class Exporter extends JDialog {
 		gbc.gridx = 2;
 		//String[] qualifierItems = getVariablesList((StatementType) statementTypeBox.getSelectedItem(), false, false, true, true);
 		String[] qualifierItems = new String[0];
-		JComboBox qualifierBox = new JComboBox(qualifierItems);
+		JComboBox<String> qualifierBox = new JComboBox<>(qualifierItems);
 		settingsPanel.add(qualifierBox, gbc);
 		qualifierBox.setEnabled(false);
 		qualifierBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 
 		gbc.gridx = 3;
 		String[] aggregationItems = new String[] {"ignore", "combine", "subtract"};
-		JComboBox aggregationBox = new JComboBox(aggregationItems);
+		JComboBox<String> aggregationBox = new JComboBox<>(aggregationItems);
 		settingsPanel.add(aggregationBox, gbc);
 		aggregationBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
@@ -165,20 +165,20 @@ public class Exporter extends JDialog {
 		gbc.gridx = 0;
 		gbc.gridy = 5;
 		String[] normalizationItems = new String[0];
-		JComboBox normalizationBox = new JComboBox(normalizationItems);
+		JComboBox<String> normalizationBox = new JComboBox<>(normalizationItems);
 		settingsPanel.add(normalizationBox, gbc);
 		normalizationBox.setEnabled(false);
 		normalizationBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 1;
 		String[] isolatesItems = new String[] {"include isolates", "only current nodes"};
-		JComboBox isolatesBox = new JComboBox(isolatesItems);
+		JComboBox<String> isolatesBox = new JComboBox<>(isolatesItems);
 		settingsPanel.add(isolatesBox, gbc);
 		isolatesBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 
 		gbc.gridx = 2;
 		String[] duplicatesItems = new String[] {"include all duplicates", "ignore per document"};
-		JComboBox duplicatesBox = new JComboBox(duplicatesItems);
+		JComboBox<String> duplicatesBox = new JComboBox<>(duplicatesItems);
 		settingsPanel.add(duplicatesBox, gbc);
 		duplicatesBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
@@ -226,7 +226,7 @@ public class Exporter extends JDialog {
 		
 		gbc.gridx = 2;
 		String[] temporalItems = new String[] {"across date range", "nested by document"};
-		JComboBox temporalBox = new JComboBox(temporalItems);
+		JComboBox<String> temporalBox = new JComboBox<>(temporalItems);
 		settingsPanel.add(temporalBox, gbc);
 		temporalBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		

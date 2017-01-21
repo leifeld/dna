@@ -7,9 +7,10 @@ import javax.swing.ComboBoxModel;
 import javax.swing.event.ListDataListener;
 
 import dna.Dna;
+import dna.dataStructures.StatementType;
 
 @SuppressWarnings("serial")
-public class StatementTypeComboBoxModel extends AbstractListModel<Object> implements ComboBoxModel<Object> {
+public class StatementTypeComboBoxModel extends AbstractListModel<StatementType> implements ComboBoxModel<StatementType> {
 	private Object selectedItem;
 	Vector<ListDataListener> listeners = new Vector<ListDataListener>();
 	
@@ -19,7 +20,7 @@ public class StatementTypeComboBoxModel extends AbstractListModel<Object> implem
 	}
 	
 	@Override
-	public Object getElementAt(int index) {
+	public StatementType getElementAt(int index) {
 		return Dna.data.getStatementTypes().get(index);
 	}
 

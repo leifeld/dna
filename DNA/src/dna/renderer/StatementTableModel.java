@@ -10,8 +10,8 @@ import java.util.Vector;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableModel;
 
+@SuppressWarnings("serial")
 public class StatementTableModel extends AbstractTableModel {
 	
 	Vector<TableModelListener> listeners = new Vector<TableModelListener>();
@@ -158,21 +158,9 @@ public class StatementTableModel extends AbstractTableModel {
 	}
 	
 	public void addStatement(Statement s) {
-		//if (containsStatementId(s.getId()) == true) {
-		//	System.err.println("A statement with ID " + s.getId() + " already exists. It will not be added.");
-		//} else {
-			int statementId = s.getId();
-			Dna.data.getStatements().add(s);
-			sort();
-			//int index = getIndexByStatementId(statementId);
-			this.fireTableDataChanged();
-			//notify all listeners
-			//TableModelEvent e = new TableModelEvent( this, index, index, //create event 'new row at index'
-			//		TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT );
-			//for( int i = 0, n = listeners.size(); i < n; i++ ){
-			//	((TableModelListener) listeners.get( i )).tableChanged( e );
-			//}
-		//}
+		Dna.data.getStatements().add(s);
+		sort();
+		this.fireTableDataChanged();
 	}
 	
 	public void removeStatement(int statementId) {

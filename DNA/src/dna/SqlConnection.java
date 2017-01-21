@@ -831,7 +831,6 @@ public class SqlConnection {
 		executeStatement("DELETE FROM STATEMENTS WHERE ID = " + statementId);
 	}
 	
-	@SuppressWarnings("serial")
 	public void addStatements(ArrayList<Statement> al) {
 		if (al.size() > 0) {
 			
