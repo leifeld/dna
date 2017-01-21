@@ -16,8 +16,12 @@ import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.ListSelectionModel;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerDateModel;
 
 import dna.Dna;
@@ -25,9 +29,17 @@ import dna.dataStructures.StatementType;
 import dna.renderer.StatementTypeComboBoxModel;
 import dna.renderer.StatementTypeComboBoxRenderer;
 
+/**
+ * @author Philip Leifeld
+ * 
+ * Contains everything needed to export networks, including GUI and network export algorithms.
+ */
 @SuppressWarnings("serial")
 public class Exporter extends JDialog {
 	
+	/**
+	 * Opens an Exporter window, which displays the GUI for exporting network data.
+	 */
 	public Exporter() {
 		this.setTitle("Export data");
 		this.setModal(true);
@@ -230,6 +242,43 @@ public class Exporter extends JDialog {
 		settingsPanel.add(temporalBox, gbc);
 		temporalBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
+		// fifth row of options: exclude values from variables
+		gbc.insets = new Insets(10, 3, 3, 3);
+		gbc.gridx = 0;
+		gbc.gridy = 8;
+		JLabel excludeVariableLabel = new JLabel("Exclude from variable");
+		settingsPanel.add(excludeVariableLabel, gbc);
+		
+		gbc.gridx = 1;
+		JLabel excludeValuesLabel = new JLabel("Exclude values");
+		settingsPanel.add(excludeValuesLabel, gbc);
+		
+		gbc.gridx = 2;
+		JLabel excludePreviewLabel = new JLabel("Preview");
+		settingsPanel.add(excludePreviewLabel, gbc);
+		
+		gbc.insets = new Insets(3, 3, 3, 3);
+		gbc.gridx = 0;
+		gbc.gridy = 9;
+		JList<String> excludeVariableList = new JList<String>();
+		excludeVariableList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		excludeVariableList.setLayoutOrientation(JList.VERTICAL);
+		excludeVariableList.setVisibleRowCount(10);
+		JScrollPane excludeVariableScroller = new JScrollPane(excludeVariableList);
+		excludeVariableScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		settingsPanel.add(excludeVariableScroller, gbc);
+		excludeVariableScroller.setPreferredSize(new Dimension(WIDTH, (int) excludeVariableScroller.getPreferredSize().getHeight()));
+		
+		gbc.gridx = 1;
+		JList<String> excludeValueList = new JList<String>();
+		excludeValueList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		excludeValueList.setLayoutOrientation(JList.VERTICAL);
+		excludeValueList.setVisibleRowCount(10);
+		JScrollPane excludeValueScroller = new JScrollPane(excludeValueList);
+		excludeValueScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		settingsPanel.add(excludeValueScroller, gbc);
+		excludeValueScroller.setPreferredSize(new Dimension(WIDTH, (int) excludeValueScroller.getPreferredSize().getHeight()));
+		
 		this.add(settingsPanel, BorderLayout.NORTH);
 		this.pack();
 		this.setLocationRelativeTo(null);
@@ -237,7 +286,7 @@ public class Exporter extends JDialog {
 	}
 	
 	/**
-	 * This function returns a String array with the variables of the {@link StatementType} selected to fill a {@link JComboBox}.
+	 * Returns a String array with the variables of the {@link StatementType} selected to fill a {@link JComboBox}.
 	 * 
 	 * @param longtext	boolean indicating whether long text variables should be included.
 	 * @param shorttext	boolean indicating whether short text variables should be included.
