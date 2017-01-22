@@ -247,14 +247,59 @@ public class Exporter extends JDialog {
 		gbc.gridx = 0;
 		gbc.gridy = 4;
 		JLabel normalizationLabel = new JLabel("Normalization");
+		String normalizationToolTip = "<html><p width=\"500\">Normalization of edge weights serves to cancel out the effect "
+				+ "that some nodes are more active than others. For example, in an organization x organization one-mode "
+				+ "network aggregated through a concept variable, some organizations with an institutional mandate end "
+				+ "up in very central locations of the network because they have agreement with many other actors due to "
+				+ "their role rather than their actual opinion, i.e., because their office requires them to reveal their "
+				+ "preferences on many concepts. To cancel out this activity effect, one can divide the edge weight "
+				+ "between two organizations by a function of the two incident organizations' activity or frequency of "
+				+ "making statements. This normalization procedure leaves us with a network of edge weights that reflect "
+				+ "similarity in opinions without taking into account centrality or activity in any way. There are several "
+				+ "ways to normalize a one-mode network. <strong>No normalization</strong> switches off normalization and "
+				+ "is the default value. <strong>Average activity</strong> divides edge weights between first-variable "
+				+ "nodes by the average number of different second-variable nodes they are adjacent with in a two-mode "
+				+ "network. For example, if organization A makes statements about 20 different concepts and B makes "
+				+ "statements about 60 difference concepts, the edge weight between A and B in the congruence network "
+				+ "is divided by 40. To achieve a better scaling, all edge weights in the resulting normalized one-mode "
+				+ "network matrix are scaled between 0 and 1. <strong>Jaccard similarity</strong> is a similarity measure "
+				+ "with known normalizing properties as well. Rather than average activity, it divides the co-occurrence "
+				+ "frequency by the activity count of both separate actors plus their joint activity. <strong>Cosine "
+				+ "similarity </strong>is another similarity measure with normalizing properties. It divides edge weights "
+				+ "by the product of the nodes' activity. Details on these normalization measures can be found in <emph>"
+				+ "Leifeld, Philip (2017): Discourse Network Analysis: Policy Debates as Dynamic Networks. In: Oxford "
+				+ "Handbook of Political Networks, edited by JN Victor, AH Montgomery, and MN Lubell, chapter 25, Oxford "
+				+ "University Press.</emph> With two-mode networks, <strong>activity</strong> normalization and <strong>"
+				+ "prominence</strong> normalization are available. They divide the edge weights through the activity of "
+				+ "the node from the first or the second mode, respectively.</p></html>";
+		normalizationLabel.setToolTipText(normalizationToolTip);
 		settingsPanel.add(normalizationLabel, gbc);
 		
 		gbc.gridx = 1;
 		JLabel isolatesLabel = new JLabel("Isolates");
+		String isolatesToolTip = "<html><p width=\"500\">Often, one would like to export several time slices or networks "
+				+ "for different qualifier values separately etc. and merge the resulting networks later on manually. "
+				+ "In these situations, it is easier to merge multiple networks if they have the same matrix dimensions. "
+				+ "However, this is usually not the case because the network export functions by default only include "
+				+ "nodes that show at least minimal activity in the network that is exported. To achieve compatibility of "
+				+ "the matrix dimensions anyway, it is possible to include all nodes of the selected variable(s) in the "
+				+ "whole database, irrespective of time, qualifiers, and excluded values (but without any edge weights "
+				+ "larger than 0, i.e., as isolates). This is meant by including isolates.</p></html>";
+		isolatesLabel.setToolTipText(isolatesToolTip);
 		settingsPanel.add(isolatesLabel, gbc);
 
 		gbc.gridx = 2;
 		JLabel duplicatesLabel = new JLabel("Duplicates");
+		String duplicatesToolTip = "<html><p width=\"500\">By default, all statements are included in a network export. "
+				+ "However, in many data sources, repeated identical statements within the same document are an "
+				+ "artifact of the source material. For example, in a newspaper article, the number of times an actor "
+				+ "is quoted with a statement may be a function of the journalist's agenda or the reporting style of "
+				+ "the news media outlet, rather than the actor's deliberate attempt to speak multiple times. In cases "
+				+ "like this it makes sense to count each statement only once per document. Alternatively, it may "
+				+ "make sense to count statements only once per week, month, or year or in the whole time period if this "
+				+ "artifact happens across documents (e.g., if a newspaper reprints interviews or reports on the same "
+				+ "press release multiple times in different documents).</p></html>";
+		duplicatesLabel.setToolTipText(duplicatesToolTip);
 		settingsPanel.add(duplicatesLabel, gbc);
 
 		gbc.insets = new Insets(3, 3, 3, 3);
@@ -262,6 +307,7 @@ public class Exporter extends JDialog {
 		gbc.gridy = 5;
 		String[] normalizationItems = new String[0];
 		JComboBox<String> normalizationBox = new JComboBox<>(normalizationItems);
+		normalizationBox.setToolTipText(normalizationToolTip);
 		settingsPanel.add(normalizationBox, gbc);
 		normalizationBox.setEnabled(false);
 		normalizationBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
@@ -269,12 +315,15 @@ public class Exporter extends JDialog {
 		gbc.gridx = 1;
 		String[] isolatesItems = new String[] {"include isolates", "only current nodes"};
 		JComboBox<String> isolatesBox = new JComboBox<>(isolatesItems);
+		isolatesBox.setToolTipText(isolatesToolTip);
 		settingsPanel.add(isolatesBox, gbc);
 		isolatesBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 
 		gbc.gridx = 2;
-		String[] duplicatesItems = new String[] {"include all duplicates", "ignore per document"};
+		String[] duplicatesItems = new String[] {"include all duplicates", "ignore per document", "ignore per calendar week", 
+				"ignore per calendar month", "ignore per calendar year", "ignore across date range"};
 		JComboBox<String> duplicatesBox = new JComboBox<>(duplicatesItems);
+		duplicatesBox.setToolTipText(duplicatesToolTip);
 		settingsPanel.add(duplicatesBox, gbc);
 		duplicatesBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
@@ -283,14 +332,28 @@ public class Exporter extends JDialog {
 		gbc.gridx = 0;
 		gbc.gridy = 6;
 		JLabel startLabel = new JLabel("Include from");
+		String dateToolTip = "<html><p width=\"500\">All statements before the start date and time and after the stop date "
+				+ "and time will be ignored during network export. This can be helpful for exporting multiple time slices "
+				+ "and analyzing them separately. By default, the first and last date/time stamp in any statement found in "
+				+ "the whole database are used, i.e., the default setting includes all statements.</p></html>";
+		startLabel.setToolTipText(dateToolTip);
 		settingsPanel.add(startLabel, gbc);
 		
 		gbc.gridx = 1;
 		JLabel stopLabel = new JLabel("Include until");
+		stopLabel.setToolTipText(dateToolTip);
 		settingsPanel.add(stopLabel, gbc);
 
 		gbc.gridx = 2;
 		JLabel temporalLabel = new JLabel("Temporal aggregation");
+		String temporalToolTip = "<html><p width=\"500\">By default, one-mode networks are creating by aggregating over "
+				+ "the qualifier variable across the whole date range. In some settings, however, it makes sense to "
+				+ "create edges only within documents (but still taking into account all documents at all time points). "
+				+ "For example, if the context of the second variable differs across documents, such as norms in legal "
+				+ "cases, it makes sense to create edges between nodes within the first case, then only within the "
+				+ "second case, then the third etc., and finally merge the resulting networks into a joint network. "
+				+ "This is what is done when edges are nested within documents.</p></html>";
+		temporalLabel.setToolTipText(temporalToolTip);
 		settingsPanel.add(temporalLabel, gbc);
 
 		gbc.insets = new Insets(3, 3, 3, 3);
@@ -307,6 +370,7 @@ public class Exporter extends JDialog {
 		Collections.sort(dates);
 		startModel.setValue(dates.get(0));
 		startSpinner.setEditor(new JSpinner.DateEditor(startSpinner, "yyyy-MM-dd - HH:mm:ss"));
+		startSpinner.setToolTipText(dateToolTip);
 		settingsPanel.add(startSpinner, gbc);
 		startSpinner.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
@@ -317,12 +381,14 @@ public class Exporter extends JDialog {
 		stopSpinner.setModel(stopModel);
 		stopModel.setValue(dates.get(dates.size() - 1));
 		stopSpinner.setEditor(new JSpinner.DateEditor(stopSpinner, "yyyy-MM-dd - HH:mm:ss"));
+		stopSpinner.setToolTipText(dateToolTip);
 		settingsPanel.add(stopSpinner, gbc);
 		stopSpinner.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 2;
 		String[] temporalItems = new String[] {"across date range", "nested by document"};
 		JComboBox<String> temporalBox = new JComboBox<>(temporalItems);
+		temporalBox.setToolTipText(temporalToolTip);
 		settingsPanel.add(temporalBox, gbc);
 		temporalBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
@@ -331,14 +397,30 @@ public class Exporter extends JDialog {
 		gbc.gridx = 0;
 		gbc.gridy = 8;
 		JLabel excludeVariableLabel = new JLabel("Exclude from variable");
+		String excludeToolTip = "<html><p width=\"500\">By default, all nodes from all statements are included in the "
+				+ "network, given the type of network and the statement type and variables selected. Often, however, "
+				+ "one wishes to exclude certain nodes or statements from the analysis. For example, in an "
+				+ "organization x organization congruence network via concepts, if one already knows that a certain "
+				+ "concept is very general and does not add to the structure of the discourse network, one can "
+				+ "exclude this concept. Or if the analysis should be restricted to a subgroup of actors (e.g., only "
+				+ "legislators), one can select multiple actors that do not belong to this subgroup, and they will be "
+				+ "ignored during network export. The way this process works is that the list of statements from which "
+				+ "the network is generated is first filtered, and only statements that do not contain any of the "
+				+ "values to be excluded will be retained for the export. To do this, one first needs to select a "
+				+ "variable on the left and then select the values to be excluded. To select or unselect multiple "
+				+ "values, one can hold the ctrl key while selecting or unselecting additional values. The preview "
+				+ "on the right lists all variable-value combinations that are excluded.</p></html>";
+		excludeVariableLabel.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludeVariableLabel, gbc);
 		
 		gbc.gridx = 1;
 		JLabel excludeValuesLabel = new JLabel("Exclude values");
+		excludeValuesLabel.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludeValuesLabel, gbc);
 		
 		gbc.gridx = 2;
 		JLabel excludePreviewLabel = new JLabel("Preview of excluded values");
+		excludePreviewLabel.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludePreviewLabel, gbc);
 		
 		gbc.insets = new Insets(3, 3, 3, 3);
@@ -350,6 +432,7 @@ public class Exporter extends JDialog {
 		excludeVariableList.setVisibleRowCount(10);
 		JScrollPane excludeVariableScroller = new JScrollPane(excludeVariableList);
 		excludeVariableScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		excludeVariableList.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludeVariableScroller, gbc);
 		excludeVariableScroller.setPreferredSize(new Dimension(WIDTH, (int) excludeVariableScroller.getPreferredSize().getHeight()));
 		
@@ -360,6 +443,7 @@ public class Exporter extends JDialog {
 		excludeValueList.setVisibleRowCount(10);
 		JScrollPane excludeValueScroller = new JScrollPane(excludeValueList);
 		excludeValueScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		excludeValueList.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludeValueScroller, gbc);
 		excludeValueScroller.setPreferredSize(new Dimension(WIDTH, (int) excludeValueScroller.getPreferredSize().getHeight()));
 		
@@ -371,6 +455,7 @@ public class Exporter extends JDialog {
 		excludePreviewArea.setEditable(false);
 		excludePreviewArea.setBackground(settingsPanel.getBackground());
 		JScrollPane excludePreviewScroller = new JScrollPane(excludePreviewArea);
+		excludePreviewArea.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludePreviewScroller, gbc);
 		
 		// sixth row: buttons
@@ -390,10 +475,16 @@ public class Exporter extends JDialog {
 		gbc.anchor = GridBagConstraints.EAST;
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		JButton revertButton = new JButton("Revert", new ImageIcon(getClass().getResource("/icons/arrow_rotate_anticlockwise.png")));
+		String revertToolTip = "<html><p>Reset all settings to their default values.</p></html>";
+		revertButton.setToolTipText(revertToolTip);
 		buttonPanel.add(revertButton);
 		JButton cancelButton = new JButton("Cancel", new ImageIcon(getClass().getResource("/icons/cancel.png")));
+		String cancelToolTip = "<html><p>Reset and close this window.</p></html>";
+		cancelButton.setToolTipText(cancelToolTip);
 		buttonPanel.add(cancelButton);
 		JButton exportButton = new JButton("Export...", new ImageIcon(getClass().getResource("/icons/accept.png")));
+		String exportToolTip = "<html><p>Select a file name and save the network using the current settings.</p></html>";
+		exportButton.setToolTipText(exportToolTip);
 		buttonPanel.add(exportButton);
 		toggleHelp();
 		settingsPanel.add(buttonPanel, gbc);
