@@ -1,6 +1,7 @@
 package dna.export;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -8,18 +9,25 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -29,6 +37,9 @@ import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerDateModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
 
 import dna.Dna;
 import dna.dataStructures.StatementType;
@@ -43,6 +54,13 @@ import dna.renderer.StatementTypeComboBoxRenderer;
 @SuppressWarnings("serial")
 public class Exporter extends JDialog {
 	JCheckBox helpBox;
+	JButton exportButton;
+	JComboBox<String> fileFormatBox, var1Box, var2Box, qualifierBox, aggregationBox, normalizationBox, temporalBox;
+	JComboBox<StatementType> statementTypeBox;
+	JList<String> excludeVariableList, excludeValueList;
+	HashMap<String, ArrayList<String>> excludeValues;
+	JTextArea excludePreviewArea;
+	Color fg;
 	
 	/**
 	 * Opens an Exporter window, which displays the GUI for exporting network data.
@@ -101,14 +119,62 @@ public class Exporter extends JDialog {
 		JComboBox<String> networkModesBox = new JComboBox<>(networkModesItems);
 		networkModesBox.setToolTipText(networkModesToolTip);
 		settingsPanel.add(networkModesBox, gbc);
+		networkModesBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String selected = (String) networkModesBox.getSelectedItem();
+				if (selected.equals("Two-mode network")) {
+					fileFormatBox.removeAllItems();
+					fileFormatBox.addItem(".csv");
+					fileFormatBox.addItem(".dl");
+					fileFormatBox.addItem(".graphml");
+					aggregationBox.removeAllItems();
+					aggregationBox.addItem("ignore");
+					aggregationBox.addItem("combine");
+					aggregationBox.addItem("subtract");
+					normalizationBox.removeAllItems();
+					normalizationBox.addItem("no");
+					normalizationBox.addItem("activity");
+					normalizationBox.addItem("prominence");
+					temporalBox.removeAllItems();
+					temporalBox.addItem("across date range");
+				} else if (selected.equals("One-mode network")) {
+					fileFormatBox.removeAllItems();
+					fileFormatBox.addItem(".csv");
+					fileFormatBox.addItem(".dl");
+					fileFormatBox.addItem(".graphml");
+					aggregationBox.removeAllItems();
+					aggregationBox.addItem("ignore");
+					aggregationBox.addItem("congruence");
+					aggregationBox.addItem("conflict");
+					aggregationBox.addItem("subtract");
+					normalizationBox.removeAllItems();
+					normalizationBox.addItem("no");
+					normalizationBox.addItem("average activity");
+					normalizationBox.addItem("Jaccard");
+					normalizationBox.addItem("cosine");
+					temporalBox.removeAllItems();
+					temporalBox.addItem("across date range");
+					temporalBox.addItem("nested in document");
+				} else if (selected.equals("Event list")) {
+					fileFormatBox.removeAllItems();
+					fileFormatBox.addItem(".csv");
+					aggregationBox.removeAllItems();
+					aggregationBox.addItem("ignore");
+					normalizationBox.removeAllItems();
+					normalizationBox.addItem("no");
+					temporalBox.removeAllItems();
+					temporalBox.addItem("across date range");
+				}
+			}
+			
+		});
 
 		gbc.gridx = 1;
 		StatementTypeComboBoxRenderer cbrenderer = new StatementTypeComboBoxRenderer();
 		StatementTypeComboBoxModel model = new StatementTypeComboBoxModel();
-		JComboBox<StatementType> statementTypeBox = new JComboBox<>(model);
+		statementTypeBox = new JComboBox<>(model);
 		statementTypeBox.setRenderer(cbrenderer);
 		statementTypeBox.setToolTipText(statementTypeToolTip);
-		
 		String[] var1Items = null, var2Items = null;
 		for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
 			String[] vars = getVariablesList(Dna.data.getStatementTypes().get(i), false, true, false, false);
@@ -122,16 +188,44 @@ public class Exporter extends JDialog {
 		if (var1Items == null) {
 			System.err.println("No statement type with more than one short text variable found!");
 		}
-		
 		settingsPanel.add(statementTypeBox, gbc);
 		int HEIGHT = (int) statementTypeBox.getPreferredSize().getHeight();
 		int WIDTH = 200;
 		Dimension d = new Dimension(WIDTH, HEIGHT);
 		networkModesBox.setPreferredSize(d);
+		statementTypeBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
+				String[] varItems = getVariablesList(selected, false, true, false, false);
+				String[] qualifierItems = getVariablesList(selected, false, false, true, true);
+				var1Box.removeAllItems();
+				var2Box.removeAllItems();
+				qualifierBox.removeAllItems();
+				if (varItems.length > 0) {
+					for (int i = 0; i < varItems.length; i++) {
+						var1Box.addItem(varItems[i]);
+						var2Box.addItem(varItems[i]);
+					}
+				}
+				if (qualifierItems.length > 0) {
+					for (int i = 0; i < qualifierItems.length; i++) {
+						qualifierBox.addItem(qualifierItems[i]);
+					}
+				}
+				if (varItems.length > 0 && qualifierItems.length > 0) {
+					exportButton.setEnabled(true);
+				} else {
+					exportButton.setEnabled(false);
+				}
+				populateExcludeVariableList();
+				excludeVariableList.setSelectedIndex(0);
+				excludePreviewArea.setText("");
+			}
+		});
 		
 		gbc.gridx = 2;
 		String[] fileFormatItems = new String[] {".csv", ".dl", ".graphml"};
-		JComboBox<String> fileFormatBox = new JComboBox<>(fileFormatItems);
+		fileFormatBox = new JComboBox<>(fileFormatItems);
 		fileFormatBox.setToolTipText(fileFormatToolTip);
 		settingsPanel.add(fileFormatBox, gbc);
 		fileFormatBox.setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -191,53 +285,91 @@ public class Exporter extends JDialog {
 				+ "binary qualifier variable is selected). For example, if an organization mentions a concept two times in a "
 				+ "positive way and three times in a negative way, there will be an edge weight of -1 between the organization "
 				+ "and the concept. In the one-mode case, <strong>subtract</strong> means that a congruence network and a "
-				+ "conflict network are created separately and then the conflict network ties are subtracted from the congruence "
-				+ "network ties. For example, if two organizations A and B disagree over 3 concepts and agree with regard to 5 "
-				+ "concepts, they have an edge weight of 2. <strong>combine</strong> is only available for two-mode networks. "
-				+ "In contrast to the subtract option, it means that the values of the qualifier are treated as qualitative "
-				+ "categories. In this case, DNA creates all possible combinations of edges (e.g., in the binary case, these are "
-				+ "support, rejection, and both/mixed/ambiguous). Integer values are then used as edge weights, as in a multiplex "
-				+ "network. E.g., 1 represents support, 2 represents rejection, and 3 represents both. With an integer variable, "
-				+ "this may become more complex. In one-mode networks, <strong>congruence</strong> means that similarity or matches "
-				+ "on the qualifier variable are counted in order to construct an edge. With a binary variable, matches are used. "
-				+ "For example, if organizations A and B both co-support or both co-reject concept C, they are connected, and the "
-				+ "number of co-supported and co-rejected concepts is used as the edge weight. With an integer qualifier variable, "
+				+ "conflict network are created separately and then the (potentially normalized) conflict network ties are "
+				+ "subtracted from the (potentially normalized) congruence network ties. For example, if two organizations A "
+				+ "and B disagree over 3 concepts and agree with regard to 5 concepts, they have an edge weight of 2. <strong>"
+				+ "combine</strong> is only available for two-mode networks. In contrast to the subtract option, it means that "
+				+ "the values of the qualifier are treated as qualitative categories. In this case, DNA creates all possible "
+				+ "combinations of edges (e.g., in the binary case, these are support, rejection, and both/mixed/ambiguous). "
+				+ "Integer values are then used as edge weights, as in a multiplex network. E.g., 1 represents support, 2 "
+				+ "represents rejection, and 3 represents both. With an integer variable, this may become more complex. In "
+				+ "one-mode networks, <strong>congruence</strong> means that similarity or matches on the qualifier variable "
+				+ "are counted in order to construct an edge. With a binary variable, matches are used. For example, if "
+				+ "organizations A and B both co-support or both co-reject concept C, they are connected, and the number of "
+				+ "co-supported and co-rejected concepts is used as the edge weight. With an integer qualifier variable, "
 				+ "the inverse of the absolute distance plus one (i.e., the proximity) is used instead of a match. In one-mode "
 				+ "networks, <strong>conflict</strong> constructs the network by recording disagreements between actors, rather "
 				+ "than agreements, as in the congruence case. With a binary qualifier, this means that organizations A and B "
-				+ "are connected if one of them supports a concept and the other one rejects the concept. With an integer qualifier, "
-				+ "the absolute distance is used instead.</p></html>";
+				+ "are connected if one of them supports a concept and the other one rejects the concept. With an integer "
+				+ "qualifier, the absolute distance is used instead.</p></html>";
 		aggregationLabel.setToolTipText(aggregationToolTip);
 		settingsPanel.add(aggregationLabel, gbc);
 
 		gbc.insets = new Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 3;
-		JComboBox<String> var1Box = new JComboBox<>(var1Items);
+		var1Box = new JComboBox<>(var1Items);
 		var1Box.setToolTipText(var1ToolTip);
 		settingsPanel.add(var1Box, gbc);
 		int HEIGHT2 = (int) var1Box.getPreferredSize().getHeight();
 		var1Box.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 1;
-		JComboBox<String> var2Box = new JComboBox<>(var2Items);
+		var2Box = new JComboBox<>(var2Items);
 		var2Box.setToolTipText(var2ToolTip);
 		var2Box.setSelectedIndex(1);
 		settingsPanel.add(var2Box, gbc);
 		var2Box.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		fg = var2Box.getForeground();
+		ActionListener varActionListener = new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (var1Box.getItemCount() < 1 || var2Box.getItemCount() < 1) {
+					var1Box.setBorder(null);
+					var2Box.setBorder(null);
+				} else if (var1Box.getSelectedItem().equals(var2Box.getSelectedItem())) {
+					var1Box.setBorder(BorderFactory.createLineBorder(Color.RED));
+					var2Box.setBorder(BorderFactory.createLineBorder(Color.RED));
+				} else {
+					var1Box.setBorder(null);
+					var2Box.setBorder(null);
+				}
+			}
+		};
+		var1Box.addActionListener(varActionListener);
+		var2Box.addActionListener(varActionListener);
 
 		gbc.gridx = 2;
-		//String[] qualifierItems = getVariablesList((StatementType) statementTypeBox.getSelectedItem(), false, false, true, true);
-		String[] qualifierItems = new String[0];
-		JComboBox<String> qualifierBox = new JComboBox<>(qualifierItems);
+		String[] qualifierItems = getVariablesList((StatementType) statementTypeBox.getSelectedItem(), false, false, true, true);
+		qualifierBox = new JComboBox<>(qualifierItems);
 		qualifierBox.setToolTipText(qualifierToolTip);
 		settingsPanel.add(qualifierBox, gbc);
-		qualifierBox.setEnabled(false);
 		qualifierBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		qualifierBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (qualifierBox.getItemCount() == 0) {
+					aggregationBox.removeAllItems();
+					aggregationBox.addItem("ignore");
+				} else if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
+					aggregationBox.removeAllItems();
+					aggregationBox.addItem("ignore");
+					aggregationBox.addItem("combine");
+					aggregationBox.addItem("subtract");
+				} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
+					aggregationBox.removeAllItems();
+					aggregationBox.addItem("ignore");
+					aggregationBox.addItem("congruence");
+					aggregationBox.addItem("conflict");
+					aggregationBox.addItem("subtract");
+				} else if (networkModesBox.getSelectedItem().equals("Event list")) {
+					aggregationBox.removeAllItems();
+					aggregationBox.addItem("ignore");
+				}
+			}
+		});
 
 		gbc.gridx = 3;
 		String[] aggregationItems = new String[] {"ignore", "combine", "subtract"};
-		JComboBox<String> aggregationBox = new JComboBox<>(aggregationItems);
+		aggregationBox = new JComboBox<>(aggregationItems);
 		aggregationBox.setToolTipText(aggregationToolTip);
 		settingsPanel.add(aggregationBox, gbc);
 		aggregationBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
@@ -305,15 +437,14 @@ public class Exporter extends JDialog {
 		gbc.insets = new Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 5;
-		String[] normalizationItems = new String[0];
-		JComboBox<String> normalizationBox = new JComboBox<>(normalizationItems);
+		String[] normalizationItems = new String[] {"no", "activity", "prominence"};
+		normalizationBox = new JComboBox<>(normalizationItems);
 		normalizationBox.setToolTipText(normalizationToolTip);
 		settingsPanel.add(normalizationBox, gbc);
-		normalizationBox.setEnabled(false);
 		normalizationBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 1;
-		String[] isolatesItems = new String[] {"include isolates", "only current nodes"};
+		String[] isolatesItems = new String[] {"only current nodes", "include isolates"};
 		JComboBox<String> isolatesBox = new JComboBox<>(isolatesItems);
 		isolatesBox.setToolTipText(isolatesToolTip);
 		settingsPanel.add(isolatesBox, gbc);
@@ -386,8 +517,8 @@ public class Exporter extends JDialog {
 		stopSpinner.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 2;
-		String[] temporalItems = new String[] {"across date range", "nested by document"};
-		JComboBox<String> temporalBox = new JComboBox<>(temporalItems);
+		String[] temporalItems = new String[] {"across date range", "nested in document"};
+		temporalBox = new JComboBox<>(temporalItems);
 		temporalBox.setToolTipText(temporalToolTip);
 		settingsPanel.add(temporalBox, gbc);
 		temporalBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
@@ -414,9 +545,9 @@ public class Exporter extends JDialog {
 		settingsPanel.add(excludeVariableLabel, gbc);
 		
 		gbc.gridx = 1;
-		JLabel excludeValuesLabel = new JLabel("Exclude values");
-		excludeValuesLabel.setToolTipText(excludeToolTip);
-		settingsPanel.add(excludeValuesLabel, gbc);
+		JLabel excludeValueLabel = new JLabel("Exclude values");
+		excludeValueLabel.setToolTipText(excludeToolTip);
+		settingsPanel.add(excludeValueLabel, gbc);
 		
 		gbc.gridx = 2;
 		JLabel excludePreviewLabel = new JLabel("Preview of excluded values");
@@ -426,7 +557,7 @@ public class Exporter extends JDialog {
 		gbc.insets = new Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 9;
-		JList<String> excludeVariableList = new JList<String>();
+		excludeVariableList = new JList<String>();
 		excludeVariableList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		excludeVariableList.setLayoutOrientation(JList.VERTICAL);
 		excludeVariableList.setVisibleRowCount(10);
@@ -435,9 +566,77 @@ public class Exporter extends JDialog {
 		excludeVariableList.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludeVariableScroller, gbc);
 		excludeVariableScroller.setPreferredSize(new Dimension(WIDTH, (int) excludeVariableScroller.getPreferredSize().getHeight()));
+		excludeValues = new HashMap<String, ArrayList<String>>();
+		populateExcludeVariableList();
+		excludeVariableList.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				String selectedValue = excludeVariableList.getSelectedValue();
+				if (e.getValueIsAdjusting() == false) {
+					if (selectedValue != null) {
+						String[] entriesArray;
+						int[] indices;
+						ArrayList<String> entriesList = new ArrayList<String>();
+						if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 1) {
+							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+								if (!entriesList.contains(Dna.data.getDocuments().get(i).getType())) {
+									entriesList.add(Dna.data.getDocuments().get(i).getType());
+								}
+							}
+							entriesArray = new String[entriesList.size()];
+							for (int i = 0; i < entriesList.size(); i++) {
+								entriesArray[i] = entriesList.get(i);
+							}
+						} else if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 2) {
+							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+								if (!entriesList.contains(Dna.data.getDocuments().get(i).getSection())) {
+									entriesList.add(Dna.data.getDocuments().get(i).getSection());
+								}
+							}
+							entriesArray = new String[entriesList.size()];
+							for (int i = 0; i < entriesList.size(); i++) {
+								entriesArray[i] = entriesList.get(i);
+							}
+						} else if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 3) {
+							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+								if (!entriesList.contains(Dna.data.getDocuments().get(i).getSource())) {
+									entriesList.add(Dna.data.getDocuments().get(i).getSource());
+								}
+							}
+							entriesArray = new String[entriesList.size()];
+							for (int i = 0; i < entriesList.size(); i++) {
+								entriesArray[i] = entriesList.get(i);
+							}
+						} else if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 4) {
+							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
+								if (!entriesList.contains(Dna.data.getDocuments().get(i).getAuthor())) {
+									entriesList.add(Dna.data.getDocuments().get(i).getAuthor());
+								}
+							}
+							entriesArray = new String[entriesList.size()];
+							for (int i = 0; i < entriesList.size(); i++) {
+								entriesArray[i] = entriesList.get(i);
+							}
+						} else {
+							entriesArray = Dna.data.getStringEntries(((StatementType) statementTypeBox.getSelectedItem()).getId(), selectedValue);
+						}
+						Arrays.sort(entriesArray);
+						excludeValueList.setListData(entriesArray);
+						indices = new int[excludeValues.get(selectedValue).size()];
+						for (int i = 0; i < entriesArray.length; i++) {
+							for (int j = 0; j < excludeValues.get(selectedValue).size(); j++) {
+								if (entriesArray[i].equals(excludeValues.get(selectedValue).get(j))) {
+									indices[j] = i;
+								}
+							}
+						}
+						excludeValueList.setSelectedIndices(indices);
+					}
+				}
+			}
+		});
 		
 		gbc.gridx = 1;
-		JList<String> excludeValueList = new JList<String>();
+		excludeValueList = new JList<String>();
 		excludeValueList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		excludeValueList.setLayoutOrientation(JList.VERTICAL);
 		excludeValueList.setVisibleRowCount(10);
@@ -446,17 +645,41 @@ public class Exporter extends JDialog {
 		excludeValueList.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludeValueScroller, gbc);
 		excludeValueScroller.setPreferredSize(new Dimension(WIDTH, (int) excludeValueScroller.getPreferredSize().getHeight()));
+		excludeValueList.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				String selectedVariable = excludeVariableList.getSelectedValue();
+				List<String> selectedValues = excludeValueList.getSelectedValuesList();
+				if (e.getValueIsAdjusting() == true) {
+					if (selectedValues != null){
+						ArrayList<String> sel = new ArrayList<String>(selectedValues);
+						excludeValues.put(selectedVariable, (ArrayList<String>) sel);
+					}
+					String excludePreviewText = "";
+					Iterator<String> it = excludeValues.keySet().iterator();
+					while (it.hasNext()) {
+						String excludeVariable = it.next();
+						ArrayList<String> excludeValueArrayList = excludeValues.get(excludeVariable);
+						if (excludeValueArrayList.size() > 0) {
+							for (int i = 0; i < excludeValueArrayList.size(); i++) {
+								excludePreviewText = excludePreviewText + excludeVariable + ": " + excludeValueArrayList.get(i) + "\n";
+							}
+						}
+					}
+					excludePreviewArea.setText(excludePreviewText);
+				}
+			}
+		});
 		
 		gbc.gridx = 2;
 		gbc.gridwidth = 2;
-		JTextArea excludePreviewArea = new JTextArea();
-		excludePreviewArea.setPreferredSize(excludeValueScroller.getPreferredSize());
-		excludePreviewArea.setText("This is a test.");
+		excludePreviewArea = new JTextArea();
+		excludePreviewArea.setText("");
 		excludePreviewArea.setEditable(false);
 		excludePreviewArea.setBackground(settingsPanel.getBackground());
 		JScrollPane excludePreviewScroller = new JScrollPane(excludePreviewArea);
 		excludePreviewArea.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludePreviewScroller, gbc);
+		excludePreviewScroller.setPreferredSize(excludeValueScroller.getPreferredSize());
 		
 		// sixth row: buttons
 		gbc.gridwidth = 2;
@@ -478,13 +701,83 @@ public class Exporter extends JDialog {
 		String revertToolTip = "<html><p>Reset all settings to their default values.</p></html>";
 		revertButton.setToolTipText(revertToolTip);
 		buttonPanel.add(revertButton);
+		revertButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				networkModesBox.setSelectedIndex(0);
+				int statementTypeIndex = -1;
+				for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
+					String[] vars = getVariablesList(Dna.data.getStatementTypes().get(i), false, true, false, false);
+					if (vars.length > 1) {
+						statementTypeIndex = i;
+						break;
+					}
+				}
+				if (statementTypeIndex == -1) {
+					statementTypeBox.setSelectedIndex(0);
+					System.err.println("No statement type with more than one short text variable found!");
+				} else {
+					statementTypeBox.setSelectedIndex(statementTypeIndex);
+				}
+				statementTypeBox.updateUI();
+				if (var1Box.getItemCount() > 1) {
+					var1Box.setSelectedIndex(0);
+					var2Box.setSelectedIndex(1);
+				}
+				if (qualifierBox.getItemCount() > 0) {
+					qualifierBox.setSelectedIndex(0);
+				}
+				aggregationBox.setSelectedIndex(0);
+				normalizationBox.setSelectedIndex(0);
+				isolatesBox.setSelectedIndex(0);
+				duplicatesBox.setSelectedIndex(0);
+				ArrayList<Date> dates = new ArrayList<Date>();
+				for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+					dates.add(Dna.data.getStatements().get(i).getDate());
+				}
+				Collections.sort(dates);
+				startModel.setValue(dates.get(0));
+				stopModel.setValue(dates.get(dates.size() - 1));
+				temporalBox.setSelectedIndex(0);
+				excludeVariableList.setSelectedIndex(0);
+				excludePreviewArea.setText("");
+				helpBox.setSelected(false);
+			}
+		});
 		JButton cancelButton = new JButton("Cancel", new ImageIcon(getClass().getResource("/icons/cancel.png")));
 		String cancelToolTip = "<html><p>Reset and close this window.</p></html>";
 		cancelButton.setToolTipText(cancelToolTip);
 		buttonPanel.add(cancelButton);
-		JButton exportButton = new JButton("Export...", new ImageIcon(getClass().getResource("/icons/accept.png")));
+		cancelButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				dispose();
+			}
+		});
+		exportButton = new JButton("Export...", new ImageIcon(getClass().getResource("/icons/accept.png")));
 		String exportToolTip = "<html><p>Select a file name and save the network using the current settings.</p></html>";
 		exportButton.setToolTipText(exportToolTip);
+		exportButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fc = new JFileChooser();
+				fc.setFileFilter(new FileFilter() {
+					public boolean accept(File f) {
+						return f.getName().toLowerCase().endsWith((String) fileFormatBox.getSelectedItem()) || f.isDirectory();
+					}
+					public String getDescription() {
+						return "Network File (*" + (String) fileFormatBox.getSelectedItem() + ")";
+					}
+				});
+				
+				int returnVal = fc.showSaveDialog(getParent());
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File file = fc.getSelectedFile();
+					String fileName = file.getPath();
+					if (!fileName.endsWith((String) fileFormatBox.getSelectedItem())) {
+						fileName = fileName + (String) fileFormatBox.getSelectedItem();
+					}
+					startExport();
+				}
+			}
+		});
 		buttonPanel.add(exportButton);
 		toggleHelp();
 		settingsPanel.add(buttonPanel, gbc);
@@ -495,11 +788,29 @@ public class Exporter extends JDialog {
 		this.setVisible(true);
 	}
 	
+	/**
+	 * Sets a new {@link DefaultListModel} in the excludeVariableList and adds variables conditional on the statement type selected
+	 */
+	public void populateExcludeVariableList() {
+		excludeValues.clear();
+		StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
+		String[] excludeVariableItems = getVariablesList(selected, true, true, true, true);
+		DefaultListModel<String> excludeVariableModel = new DefaultListModel<String>();
+		for (int i = 0; i < excludeVariableItems.length; i++) {
+			excludeVariableModel.addElement(excludeVariableItems[i]);
+			excludeValues.put(excludeVariableItems[i], new ArrayList<String>());
+		}
+		excludeVariableList.setModel(excludeVariableModel);
+	}
+	
+	/**
+	 * Show or hide tool tips with instructions depending on whether helpBox is checked
+	 */
 	public void toggleHelp() {
 		javax.swing.ToolTipManager.sharedInstance().setInitialDelay(10);
 		if (helpBox.isSelected()) {
 			javax.swing.ToolTipManager.sharedInstance().setEnabled(true);
-			javax.swing.ToolTipManager.sharedInstance().setDismissDelay(30000);
+			javax.swing.ToolTipManager.sharedInstance().setDismissDelay(999999);
 		} else {
 			javax.swing.ToolTipManager.sharedInstance().setEnabled(false);
 			javax.swing.ToolTipManager.sharedInstance().setDismissDelay(0);
@@ -541,5 +852,10 @@ public class Exporter extends JDialog {
 			}
 		}
 		return vec;
+	}
+	
+	public void startExport() {
+		// TODO: do it!
+		System.out.println("Export was launched.");
 	}
 }
