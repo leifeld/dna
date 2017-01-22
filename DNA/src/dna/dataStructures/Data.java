@@ -554,10 +554,11 @@ public class Data {
 		
 		// reset selection
 		Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
+		Dna.dna.gui.documentPanel.documentTable.updateUI();
 		if (Dna.data.getDocuments().size() > 0) {
 			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
 		}
-
+		
 		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.fireTableDataChanged();
 	}
 	

@@ -21,7 +21,7 @@ public class Dna {
 	
 	public Dna() {
 		date = "2017-01-22";
-		version = "2.0 beta 18";
+		version = "2.0 beta 18 e2";
 		System.out.println("DNA version: " + version + " (" + date + ")");
 		System.out.println("Java version: " + System.getProperty("java.version"));
 		System.out.println("Operating system: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));

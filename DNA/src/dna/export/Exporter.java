@@ -42,6 +42,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
 import dna.Dna;
+import dna.dataStructures.Statement;
 import dna.dataStructures.StatementType;
 import dna.renderer.StatementTypeComboBoxModel;
 import dna.renderer.StatementTypeComboBoxRenderer;
@@ -55,10 +56,12 @@ import dna.renderer.StatementTypeComboBoxRenderer;
 public class Exporter extends JDialog {
 	JCheckBox helpBox;
 	JButton exportButton;
-	JComboBox<String> fileFormatBox, var1Box, var2Box, qualifierBox, aggregationBox, normalizationBox, temporalBox;
+	JComboBox<String> fileFormatBox, var1Box, var2Box, qualifierBox, aggregationBox, normalizationBox, duplicatesBox, temporalBox;
 	JComboBox<StatementType> statementTypeBox;
+	JSpinner startSpinner, stopSpinner;
 	JList<String> excludeVariableList, excludeValueList;
 	HashMap<String, ArrayList<String>> excludeValues;
+	ArrayList<String> excludeAuthor, excludeSource, excludeSection, excludeType;
 	JTextArea excludePreviewArea;
 	Color fg;
 	
@@ -453,7 +456,7 @@ public class Exporter extends JDialog {
 		gbc.gridx = 2;
 		String[] duplicatesItems = new String[] {"include all duplicates", "ignore per document", "ignore per calendar week", 
 				"ignore per calendar month", "ignore per calendar year", "ignore across date range"};
-		JComboBox<String> duplicatesBox = new JComboBox<>(duplicatesItems);
+		duplicatesBox = new JComboBox<>(duplicatesItems);
 		duplicatesBox.setToolTipText(duplicatesToolTip);
 		settingsPanel.add(duplicatesBox, gbc);
 		duplicatesBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
@@ -491,7 +494,7 @@ public class Exporter extends JDialog {
 		gbc.gridx = 0;
 		gbc.gridy = 7;
 		SpinnerDateModel startModel = new SpinnerDateModel();
-		JSpinner startSpinner = new JSpinner();
+		startSpinner = new JSpinner();
 		startModel.setCalendarField(Calendar.DAY_OF_YEAR);
 		startSpinner.setModel(startModel);
 		ArrayList<Date> dates = new ArrayList<Date>();
@@ -507,7 +510,7 @@ public class Exporter extends JDialog {
 		
 		gbc.gridx = 1;
 		SpinnerDateModel stopModel = new SpinnerDateModel();
-		JSpinner stopSpinner = new JSpinner();
+		stopSpinner = new JSpinner();
 		stopModel.setCalendarField(Calendar.DAY_OF_YEAR);
 		stopSpinner.setModel(stopModel);
 		stopModel.setValue(dates.get(dates.size() - 1));
@@ -566,6 +569,10 @@ public class Exporter extends JDialog {
 		excludeVariableList.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludeVariableScroller, gbc);
 		excludeVariableScroller.setPreferredSize(new Dimension(WIDTH, (int) excludeVariableScroller.getPreferredSize().getHeight()));
+		excludeAuthor = new ArrayList<String>();
+		excludeSource = new ArrayList<String>();
+		excludeSection = new ArrayList<String>();
+		excludeType = new ArrayList<String>();
 		excludeValues = new HashMap<String, ArrayList<String>>();
 		populateExcludeVariableList();
 		excludeVariableList.addListSelectionListener(new ListSelectionListener() {
@@ -586,6 +593,16 @@ public class Exporter extends JDialog {
 							for (int i = 0; i < entriesList.size(); i++) {
 								entriesArray[i] = entriesList.get(i);
 							}
+							Arrays.sort(entriesArray);
+							excludeValueList.setListData(entriesArray);
+							indices = new int[excludeType.size()];
+							for (int i = 0; i < entriesArray.length; i++) {
+								for (int j = 0; j < excludeType.size(); j++) {
+									if (entriesArray[i].equals(excludeType.get(j))) {
+										indices[j] = i;
+									}
+								}
+							}
 						} else if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 2) {
 							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
 								if (!entriesList.contains(Dna.data.getDocuments().get(i).getSection())) {
@@ -595,6 +612,16 @@ public class Exporter extends JDialog {
 							entriesArray = new String[entriesList.size()];
 							for (int i = 0; i < entriesList.size(); i++) {
 								entriesArray[i] = entriesList.get(i);
+							}
+							Arrays.sort(entriesArray);
+							excludeValueList.setListData(entriesArray);
+							indices = new int[excludeSection.size()];
+							for (int i = 0; i < entriesArray.length; i++) {
+								for (int j = 0; j < excludeSection.size(); j++) {
+									if (entriesArray[i].equals(excludeSection.get(j))) {
+										indices[j] = i;
+									}
+								}
 							}
 						} else if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 3) {
 							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
@@ -606,6 +633,16 @@ public class Exporter extends JDialog {
 							for (int i = 0; i < entriesList.size(); i++) {
 								entriesArray[i] = entriesList.get(i);
 							}
+							Arrays.sort(entriesArray);
+							excludeValueList.setListData(entriesArray);
+							indices = new int[excludeSource.size()];
+							for (int i = 0; i < entriesArray.length; i++) {
+								for (int j = 0; j < excludeSource.size(); j++) {
+									if (entriesArray[i].equals(excludeSource.get(j))) {
+										indices[j] = i;
+									}
+								}
+							}
 						} else if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 4) {
 							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
 								if (!entriesList.contains(Dna.data.getDocuments().get(i).getAuthor())) {
@@ -616,16 +653,26 @@ public class Exporter extends JDialog {
 							for (int i = 0; i < entriesList.size(); i++) {
 								entriesArray[i] = entriesList.get(i);
 							}
+							Arrays.sort(entriesArray);
+							excludeValueList.setListData(entriesArray);
+							indices = new int[excludeAuthor.size()];
+							for (int i = 0; i < entriesArray.length; i++) {
+								for (int j = 0; j < excludeAuthor.size(); j++) {
+									if (entriesArray[i].equals(excludeAuthor.get(j))) {
+										indices[j] = i;
+									}
+								}
+							}
 						} else {
 							entriesArray = Dna.data.getStringEntries(((StatementType) statementTypeBox.getSelectedItem()).getId(), selectedValue);
-						}
-						Arrays.sort(entriesArray);
-						excludeValueList.setListData(entriesArray);
-						indices = new int[excludeValues.get(selectedValue).size()];
-						for (int i = 0; i < entriesArray.length; i++) {
-							for (int j = 0; j < excludeValues.get(selectedValue).size(); j++) {
-								if (entriesArray[i].equals(excludeValues.get(selectedValue).get(j))) {
-									indices[j] = i;
+							Arrays.sort(entriesArray);
+							excludeValueList.setListData(entriesArray);
+							indices = new int[excludeValues.get(selectedValue).size()];
+							for (int i = 0; i < entriesArray.length; i++) {
+								for (int j = 0; j < excludeValues.get(selectedValue).size(); j++) {
+									if (entriesArray[i].equals(excludeValues.get(selectedValue).get(j))) {
+										indices[j] = i;
+									}
 								}
 							}
 						}
@@ -650,9 +697,19 @@ public class Exporter extends JDialog {
 				String selectedVariable = excludeVariableList.getSelectedValue();
 				List<String> selectedValues = excludeValueList.getSelectedValuesList();
 				if (e.getValueIsAdjusting() == true) {
-					if (selectedValues != null){
+					if (selectedValues != null) {
 						ArrayList<String> sel = new ArrayList<String>(selectedValues);
-						excludeValues.put(selectedVariable, (ArrayList<String>) sel);
+						if (selectedVariable.equals("type")) {
+							excludeType = (ArrayList<String>) sel;
+						} else if (selectedVariable.equals("source")) {
+							excludeSource = (ArrayList<String>) sel;
+						} else if (selectedVariable.equals("section")) {
+							excludeSection = (ArrayList<String>) sel;
+						} else if (selectedVariable.equals("author")) {
+							excludeAuthor = (ArrayList<String>) sel;
+						} else {
+							excludeValues.put(selectedVariable, (ArrayList<String>) sel);
+						}
 					}
 					String excludePreviewText = "";
 					Iterator<String> it = excludeValues.keySet().iterator();
@@ -664,6 +721,26 @@ public class Exporter extends JDialog {
 								excludePreviewText = excludePreviewText + excludeVariable + ": " + excludeValueArrayList.get(i) + "\n";
 							}
 						}
+					}
+					if (excludeAuthor.size() > 0) {
+						for (int i = 0; i < excludeAuthor.size(); i++) {
+							excludePreviewText = excludePreviewText + excludeAuthor.get(i) + "\n";
+						} 
+					}
+					if (excludeSource.size() > 0) {
+						for (int i = 0; i < excludeSource.size(); i++) {
+							excludePreviewText = excludePreviewText + excludeSource.get(i) + "\n";
+						} 
+					}
+					if (excludeSection.size() > 0) {
+						for (int i = 0; i < excludeSection.size(); i++) {
+							excludePreviewText = excludePreviewText + excludeSection.get(i) + "\n";
+						} 
+					}
+					if (excludeType.size() > 0) {
+						for (int i = 0; i < excludeType.size(); i++) {
+							excludePreviewText = excludePreviewText + excludeType.get(i);
+						} 
 					}
 					excludePreviewArea.setText(excludePreviewText);
 				}
@@ -796,9 +873,11 @@ public class Exporter extends JDialog {
 		StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
 		String[] excludeVariableItems = getVariablesList(selected, true, true, true, true);
 		DefaultListModel<String> excludeVariableModel = new DefaultListModel<String>();
-		for (int i = 0; i < excludeVariableItems.length; i++) {
-			excludeVariableModel.addElement(excludeVariableItems[i]);
-			excludeValues.put(excludeVariableItems[i], new ArrayList<String>());
+		if (excludeVariableItems.length > 4) {
+			for (int i = 0; i < excludeVariableItems.length - 4; i++) {
+				excludeVariableModel.addElement(excludeVariableItems[i]);
+				excludeValues.put(excludeVariableItems[i], new ArrayList<String>());
+			}
 		}
 		excludeVariableList.setModel(excludeVariableModel);
 	}
@@ -855,7 +934,105 @@ public class Exporter extends JDialog {
 	}
 	
 	public void startExport() {
-		// TODO: do it!
-		System.out.println("Export was launched.");
+		ArrayList<Statement> statements = filter();
+		System.out.println("Export was launched: " + statements.size() + " statements retained after filtering.");
+	}
+	
+	/**
+	 * Return a filtered list of {@link Statement}s based on the settings in the GUI.
+	 * 
+	 * @return	ArrayList of filtered {@link Statement}s
+	 */
+	ArrayList<Statement> filter() {
+		ArrayList<Statement> al = new ArrayList<Statement>();
+		for (int i = 0; i < Dna.dna.gui.rightPanel.statementPanel.ssc.size(); i++) {
+			boolean select = true;
+			Statement s = Dna.dna.gui.rightPanel.statementPanel.ssc.get(i);
+			StatementType guiStatementType = (StatementType) statementTypeBox.getSelectedItem();
+			
+			// step 1: get all statement IDs corresponding to date range and statement type
+			if (s.getDate().before((Date) startSpinner.getValue())) {
+				select = false;
+			} else if (s.getDate().after((Date) stopSpinner.getValue())) {
+				select = false;
+			} else if (s.getStatementTypeId() != guiStatementType.getId()) {
+				select = false;
+			}
+			
+			// step 2: check against excluded values
+			if (excludeAuthor.contains(Dna.data.getDocument(s.getDocumentId()).getAuthor())) {
+				select = false;
+			} else if (excludeSource.contains(Dna.data.getDocument(s.getDocumentId()).getSource())) {
+				select = false;
+			} else if (excludeSection.contains(Dna.data.getDocument(s.getDocumentId()).getSection())) {
+				select = false;
+			} else if (excludeType.contains(Dna.data.getDocument(s.getDocumentId()).getType())) {
+				select = false;
+			}
+			if (select == true) {
+				Iterator<String> keyIterator = excludeValues.keySet().iterator();
+				while (keyIterator.hasNext()) {
+					String key = keyIterator.next();
+					String string = "";
+					if (guiStatementType.getVariables().get(key).equals("boolean") || guiStatementType.getVariables().get(key).equals("integer")) {
+						string = String.valueOf(s.getValues().get(key));
+					} else {
+						string = (String) s.getValues().get(key);
+					}
+					if (excludeValues.get(key).contains(string)) {
+						select = false;
+					}
+				}
+			}
+			
+			// step 3: check against empty fields
+			String var1Name = (String) var1Box.getSelectedItem();
+			String var2Name = (String) var2Box.getSelectedItem();
+			if (select == true) {
+				if (s.getValues().get(var1Name).equals("")) {
+					select = false;
+				}
+				if (s.getValues().get(var2Name).equals("")) {
+					select = false;
+				}
+			}
+			
+			// step 4: check for duplicates
+			String qualifierName = (String) qualifierBox.getSelectedItem();
+			boolean ignoreQualifier = aggregationBox.getSelectedItem().equals("ignore");
+			String duplicateSetting = (String) duplicatesBox.getSelectedItem();
+			Calendar cal = Calendar.getInstance();
+		    cal.setTime(s.getDate());
+		    int year = cal.get(Calendar.YEAR);
+		    int month = cal.get(Calendar.MONTH);
+		    int week = cal.get(Calendar.WEEK_OF_YEAR);
+			if (!duplicateSetting.equals("include all duplicates")) {
+				for (int j = al.size() - 1; j >= 0; j--) {
+					Calendar calPrevious = Calendar.getInstance();
+				    calPrevious.setTime(al.get(j).getDate());
+				    int yearPrevious = calPrevious.get(Calendar.YEAR);
+				    int monthPrevious = calPrevious.get(Calendar.MONTH);
+				    int weekPrevious = calPrevious.get(Calendar.WEEK_OF_YEAR);
+					if ( s.getStatementTypeId() == al.get(j).getStatementTypeId()
+							&& (al.get(j).getDocumentId() == s.getDocumentId() && duplicateSetting.equals("ignore per document") 
+								|| duplicateSetting.equals("ignore across date range")
+								|| (duplicateSetting.equals("ignore per calendar year") && year == yearPrevious)
+								|| (duplicateSetting.equals("ignore per calendar month") && month == monthPrevious)
+								|| (duplicateSetting.equals("ignore per calendar week") && week == weekPrevious) )
+							&& s.getValues().get(var1Name).equals(al.get(j).getValues().get(var1Name))
+							&& s.getValues().get(var2Name).equals(al.get(j).getValues().get(var2Name))
+							&& (s.getValues().get(qualifierName).equals(al.get(j).getValues().get(qualifierName)) || ignoreQualifier == true) ) {
+						select = false;
+						break;
+					}
+				}
+			}
+			
+			// step 5: add only if the statement passed all checks
+			if (select == true) {
+				al.add(s);
+			}
+		}
+		return(al);
 	}
 }
