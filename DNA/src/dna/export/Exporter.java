@@ -200,8 +200,8 @@ public class Exporter extends JDialog {
 			System.err.println("No statement type with more than one short text variable found!");
 		}
 		settingsPanel.add(statementTypeBox, gbc);
-		int HEIGHT = (int) statementTypeBox.getPreferredSize().getHeight();
-		int WIDTH = 200;
+		final int HEIGHT = (int) statementTypeBox.getPreferredSize().getHeight();
+		final int WIDTH = 200;
 		Dimension d = new Dimension(WIDTH, HEIGHT);
 		networkModesBox.setPreferredSize(d);
 		statementTypeBox.addActionListener(new ActionListener() {
@@ -291,7 +291,7 @@ public class Exporter extends JDialog {
 		String aggregationToolTip = "<html><p width=\"500\">The choices differ between one-mode and two-mode networks. <strong>"
 				+ "ignore</strong> is available in both cases and means that the agreement qualifier variable is ignored, i.e., "
 				+ "the network is constructed as if all values on the qualifier variable were the same. In the two-mode network "
-				+ "case, <strong>subtract</strong> means that negative values on the qualifier variable are subtracted from "
+				+ "case, <strong>subtract</strong> means that negative absolute values on the qualifier variable are subtracted from "
 				+ "positive values (if an integer qualifier is selected) or that 0 values are subtracted from 1 values (if a "
 				+ "binary qualifier variable is selected). For example, if an organization mentions a concept two times in a "
 				+ "positive way and three times in a negative way, there will be an edge weight of -1 between the organization "
@@ -1202,28 +1202,44 @@ public class Exporter extends JDialog {
 		}
 		return(al);
 	}
-
+	
 	/**
-	 * Creata a two-mode network {@link Matrix}. 
+	 * Creata a two-mode network {@link Matrix}.
 	 * 
-	 * @param statements       A (potentially filtered) {@link ArrayList} of {@link Statement}s.
-	 * @param var1             {@link String} denoting the first variable (containing the row values).
-	 * @param var2             {@link String} denoting the second variable (containing the columns values).
-	 * @param names1           {@link String} array containing the row labels.
-	 * @param names2           {@link String} array containing the column labels.
-	 * @param countDuplicates
-	 * @return
+	 * @param statements            A (potentially filtered) {@link ArrayList} of {@link Statement}s.
+	 * @param var1                  {@link String} denoting the first variable (containing the row values).
+	 * @param var2                  {@link String} denoting the second variable (containing the columns values).
+	 * @param names1                {@link String} array containing the row labels.
+	 * @param names2                {@link String} array containing the column labels.
+	 * @param qualifier             {@link String} denoting the qualifier variable.
+	 * @param qualifierAggregation  {@link String} indicating how different levels of the qualifier variable are aggregated. Valid values are "ignore", "subtract", and "combine".
+	 * @param normalization         {@link String} indicating what type of normalization will be used. Valid values are "no", "activity", and "prominence".
+	 * @return                      {@link Matrix} object containing a two-mode network matrix.
 	 */
 	public Matrix computeTwoModeMatrix(ArrayList<Statement> statements, String var1, String var2, String[] names1, 
 			String[] names2, String qualifier, String qualifierAggregation, String normalization) {
 		
-		// TODO: qualifier, aggregation, normalization
+		// TODO: normalization: "no", "activity", "prominence"
+		// TODO: adjust in GUI and tooltip that an integer qualifier and aggregation = "combine" are not possible, or implement this
+		
+		int statementTypeId = statements.get(0).getStatementTypeId();
+		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
+		if (Dna.data.getStatementTypeById(statementTypeId).getVariables().get(qualifier).equals("integer")) {
+			booleanQualifier = false;
+		}
+		int[] qualifierValues;
+		if (booleanQualifier == true) {
+			qualifierValues = new int[] {0, 1};
+		} else {
+			qualifierValues = Dna.data.getIntEntries(statementTypeId, qualifier);
+		}
 		
 		// create and populate matrix
-		double[][] mat = new double[names1.length][names2.length]; // the resulting affiliation matrix; 0 by default
+		double[][][] array = new double[names1.length][names2.length][qualifierValues.length]; // 3D array: rows x cols x qualifier value
 		for (int i = 0; i < statements.size(); i++) {
 			String n1 = (String) statements.get(i).getValues().get(var1);  // retrieve first value from statement
 			String n2 = (String) statements.get(i).getValues().get(var2);  // retrieve second value from statement
+			int q = (int) statements.get(i).getValues().get(qualifier);    // retrieve qualifier value from statement
 			
 			// find out which matrix row corresponds to the first value
 			int row = -1;
@@ -1243,8 +1259,55 @@ public class Exporter extends JDialog {
 				}
 			}
 			
+			// find out which qualifier level corresponds to the qualifier value
+			int qual = -1;  // qualifier level in the array
+			for (int j = 0; j < qualifierValues.length; j++) {
+				if (qualifierValues[j] == q) {
+					qual = j;
+					break;
+				}
+			}
+			
 			// add match to matrix (note that duplicates were dealt with at the statement filter stage)
-			mat[row][col] = mat[row][col] + 1.0;
+			array[row][col][qual] = array[row][col][qual] + 1.0;
+		}
+		
+		// combine levels of the qualifier variable conditional on qualifier aggregation option
+		double[][] mat = new double[names1.length][names2.length];  // initialized with zeros
+		if (booleanQualifier == false && qualifierAggregation.equals("combine")) {
+			qualifierAggregation = "ignore";
+			System.err.print("Qualifier aggregation 'combine' was only implemented for binary qualifiers. Choosing option 'ignore' instead.");
+		}
+		for (int i = 0; i < names1.length; i++) {
+			for (int j = 0; j < names2.length; j++) {
+				if (qualifierAggregation.equals("combine")) {
+					if (array[i][j][0] == 0.0 && array[i][j][1] == 0.0) {
+						mat[i][j] = 0.0;
+					} else if (array[i][j][0] == 0.0 && array[i][j][1] > 0.0) {
+						mat[i][j] = 1.0;
+					} else if (array[i][j][0] > 0.0 && array[i][j][1] == 0) {
+						mat[i][j] = 2.0;
+					} else if (array[i][j][0] > 0.0 && array[i][j][1] > 0.0) {
+						mat[i][j] = 3.0;
+					}
+				} else {
+					for (int k = 0; k < qualifierValues.length ; k++) {
+						if (qualifierAggregation.equals("ignore")) {
+							mat[i][j] = mat[i][j] + array[i][j][k];  // duplicates were already filtered out in the statement filter, so just add
+						} else if (qualifierAggregation.equals("subtract")) {
+							if (booleanQualifier == false && qualifierValues[k] < 0) {  // subtract weighted absolute value
+								mat[i][j] = mat[i][j] - (Math.abs(qualifierValues[k]) * array[i][j][k]);
+							} else if (booleanQualifier == false && qualifierValues[k] >= 0) {  // add weighted absolute value
+								mat[i][j] = mat[i][j] + (Math.abs(qualifierValues[k]) * array[i][j][k]);
+							} else if (booleanQualifier == true && qualifierValues[k] == 0) {  // subtract 1 at most
+								mat[i][j] = mat[i][j] - array[i][j][k];
+							} else if (booleanQualifier == true && qualifierValues[k] > 0) {  // add 1 at most
+								mat[i][j] = mat[i][j] + array[i][j][k];
+							}
+						}
+					}
+				}
+			}
 		}
 		
 		// create Matrix object and return
