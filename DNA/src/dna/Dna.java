@@ -58,16 +58,18 @@ public class Dna {
 		}
 		
 		// remove documents in GUI
-		Date date1 = new Date();
+		//Date date1 = new Date();
 		Dna.data.removeDocuments(docIds, modelIndices);
-		Date date2 = new Date();
+		//Date date2 = new Date();
 		
 		// remove documents in SQL database
 		sql.removeDocuments(docIds);
+		/*
 		Date date3 = new Date();
 		long guiremove = date2.getTime() - date1.getTime();
 		long sqlremove = date3.getTime() - date2.getTime();
 		System.out.println("GUI: " + guiremove + "  SQL: " + sqlremove);
+		*/
 	}
 
 	/**

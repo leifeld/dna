@@ -605,6 +605,7 @@ public class Exporter extends JDialog {
 									}
 								}
 							}
+							System.out.println("type...");
 						} else if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 2) {
 							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
 								if (!entriesList.contains(Dna.data.getDocuments().get(i).getSection())) {
@@ -876,12 +877,14 @@ public class Exporter extends JDialog {
 		StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
 		String[] excludeVariableItems = getVariablesList(selected, true, true, true, true);
 		DefaultListModel<String> excludeVariableModel = new DefaultListModel<String>();
-		if (excludeVariableItems.length > 4) {
-			for (int i = 0; i < excludeVariableItems.length - 4; i++) {
-				excludeVariableModel.addElement(excludeVariableItems[i]);
-				excludeValues.put(excludeVariableItems[i], new ArrayList<String>());
-			}
+		for (int i = 0; i < excludeVariableItems.length - 4; i++) {
+			excludeVariableModel.addElement(excludeVariableItems[i]);
+			excludeValues.put(excludeVariableItems[i], new ArrayList<String>());
 		}
+		excludeVariableModel.addElement("author");
+		excludeVariableModel.addElement("source");
+		excludeVariableModel.addElement("section");
+		excludeVariableModel.addElement("type");
 		excludeVariableList.setModel(excludeVariableModel);
 	}
 	
@@ -1059,12 +1062,13 @@ public class Exporter extends JDialog {
 	 * @param excludeSection      {@link ArrayList} with {@link String}s containing document sections to exclude
 	 * @param excludeType         {@link ArrayList} with {@link String}s containing document types to exclude
 	 * @param excludeValues       {@link HashMap} with {@link String}s as keys (indicating the variable for which entries should be excluded from export) and {@link HashMap}s of {@link String}s (containing variable entries to exclude from network export)
-	 * @return	                  {@link ArrayList} of filtered {@link Statement}s
+	 * @return                    {@link ArrayList} of filtered {@link Statement}s
 	 */
 	ArrayList<Statement> filter(Date startDate, Date stopDate, StatementType statementType, String var1, String var2, String qualifierName, 
 			boolean ignoreQualifier, String duplicateSetting, ArrayList<String> excludeAuthor, 
 			ArrayList<String> excludeSource, ArrayList<String> excludeSection, ArrayList<String> excludeType, 
 			HashMap<String, ArrayList<String>> excludeValues) {
+		
 		ArrayList<Statement> al = new ArrayList<Statement>();
 		for (int i = 0; i < Dna.dna.gui.rightPanel.statementPanel.ssc.size(); i++) {
 			boolean select = true;
