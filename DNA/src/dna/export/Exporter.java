@@ -605,7 +605,6 @@ public class Exporter extends JDialog {
 									}
 								}
 							}
-							System.out.println("type...");
 						} else if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 2) {
 							for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
 								if (!entriesList.contains(Dna.data.getDocuments().get(i).getSection())) {
@@ -727,22 +726,22 @@ public class Exporter extends JDialog {
 					}
 					if (excludeAuthor.size() > 0) {
 						for (int i = 0; i < excludeAuthor.size(); i++) {
-							excludePreviewText = excludePreviewText + excludeAuthor.get(i) + "\n";
+							excludePreviewText = excludePreviewText + "author: " + excludeAuthor.get(i) + "\n";
 						} 
 					}
 					if (excludeSource.size() > 0) {
 						for (int i = 0; i < excludeSource.size(); i++) {
-							excludePreviewText = excludePreviewText + excludeSource.get(i) + "\n";
+							excludePreviewText = excludePreviewText + "source: " + excludeSource.get(i) + "\n";
 						} 
 					}
 					if (excludeSection.size() > 0) {
 						for (int i = 0; i < excludeSection.size(); i++) {
-							excludePreviewText = excludePreviewText + excludeSection.get(i) + "\n";
+							excludePreviewText = excludePreviewText + "section: " + excludeSection.get(i) + "\n";
 						} 
 					}
 					if (excludeType.size() > 0) {
 						for (int i = 0; i < excludeType.size(); i++) {
-							excludePreviewText = excludePreviewText + excludeType.get(i);
+							excludePreviewText = excludePreviewText + "type: " + excludeType.get(i);
 						} 
 					}
 					excludePreviewArea.setText(excludePreviewText);
@@ -1069,6 +1068,29 @@ public class Exporter extends JDialog {
 			ArrayList<String> excludeSource, ArrayList<String> excludeSection, ArrayList<String> excludeType, 
 			HashMap<String, ArrayList<String>> excludeValues) {
 		
+		// reporting
+		Iterator<String> excludeIterator = excludeValues.keySet().iterator();
+		while (excludeIterator.hasNext()) {
+			String key = excludeIterator.next();
+			ArrayList<String> values = excludeValues.get(key);
+			for (int i = 0; i < values.size(); i++) {
+				System.out.println("[Excluded] " + key + ": " + values.get(i));
+			}
+		}
+		for (int i = 0; i < excludeAuthor.size(); i++) {
+			System.out.println("[Excluded] author: " + excludeAuthor.get(i));
+		}
+		for (int i = 0; i < excludeSource.size(); i++) {
+			System.out.println("[Excluded] source: " + excludeSource.get(i));
+		}
+		for (int i = 0; i < excludeSection.size(); i++) {
+			System.out.println("[Excluded] section: " + excludeSection.get(i));
+		}
+		for (int i = 0; i < excludeType.size(); i++) {
+			System.out.println("[Excluded] type: " + excludeType.get(i));
+		}
+		
+		// process and exclude statements
 		ArrayList<Statement> al = new ArrayList<Statement>();
 		for (int i = 0; i < Dna.dna.gui.rightPanel.statementPanel.ssc.size(); i++) {
 			boolean select = true;
