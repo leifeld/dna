@@ -98,14 +98,16 @@ public class DocumentTableModel extends AbstractTableModel {
 		return Dna.data.getDocuments().get(modelIndex).getId();
 	}
 
-	public void remove(int index) {
-		int id = Dna.data.getDocuments().get(index).getId();
-		for (int i = Dna.data.getStatements().size() - 1; i > -1; i--) {
-			if (Dna.data.getStatements().get(i).getDocumentId() == id) {
-				Dna.data.getStatements().remove(i);
+	public void remove(int index, boolean alsoStatements) {
+		if (alsoStatements == true) {
+			int id = Dna.data.getDocuments().get(index).getId();
+			for (int i = Dna.data.getStatements().size() - 1; i > -1; i--) {
+				if (Dna.data.getStatements().get(i).getDocumentId() == id) {
+					Dna.data.getStatements().remove(i);
+				}
 			}
+			Dna.dna.gui.rightPanel.statementPanel.statementTable.updateUI();
 		}
-		Dna.dna.gui.rightPanel.statementPanel.statementTable.updateUI();
 		Dna.data.getDocuments().remove(index);
 		TableModelEvent e = new TableModelEvent(this);
 		for( int i = 0, n = listeners.size(); i < n; i++ ){

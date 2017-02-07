@@ -35,6 +35,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
+import javax.swing.ProgressMonitor;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerDateModel;
 import javax.swing.event.ListSelectionEvent;
@@ -56,7 +57,8 @@ import dna.renderer.StatementTypeComboBoxRenderer;
 public class Exporter extends JDialog {
 	JCheckBox helpBox;
 	JButton exportButton;
-	JComboBox<String> fileFormatBox, var1Box, var2Box, qualifierBox, aggregationBox, normalizationBox, duplicatesBox, temporalBox;
+	JComboBox<String> networkModesBox, fileFormatBox, var1Box, var2Box, qualifierBox, aggregationBox, normalizationBox, 
+			isolatesBox, duplicatesBox, temporalBox;
 	JComboBox<StatementType> statementTypeBox;
 	JSpinner startSpinner, stopSpinner;
 	JList<String> excludeVariableList, excludeValueList;
@@ -119,7 +121,7 @@ public class Exporter extends JDialog {
 		gbc.gridx = 0;
 		gbc.gridy = 1;
 		String[] networkModesItems = new String[] {"Two-mode network", "One-mode network", "Event list"};
-		JComboBox<String> networkModesBox = new JComboBox<>(networkModesItems);
+		networkModesBox = new JComboBox<>(networkModesItems);
 		networkModesBox.setToolTipText(networkModesToolTip);
 		settingsPanel.add(networkModesBox, gbc);
 		networkModesBox.addActionListener(new ActionListener() {
@@ -448,7 +450,7 @@ public class Exporter extends JDialog {
 		
 		gbc.gridx = 1;
 		String[] isolatesItems = new String[] {"only current nodes", "include isolates"};
-		JComboBox<String> isolatesBox = new JComboBox<>(isolatesItems);
+		isolatesBox = new JComboBox<>(isolatesItems);
 		isolatesBox.setToolTipText(isolatesToolTip);
 		settingsPanel.add(isolatesBox, gbc);
 		isolatesBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
@@ -851,7 +853,8 @@ public class Exporter extends JDialog {
 					if (!fileName.endsWith((String) fileFormatBox.getSelectedItem())) {
 						fileName = fileName + (String) fileFormatBox.getSelectedItem();
 					}
-					startExport();
+					Thread exportThread = new Thread( new ExportThread(fileName), "Export network" );
+					exportThread.start();
 				}
 			}
 		});
@@ -932,10 +935,107 @@ public class Exporter extends JDialog {
 		}
 		return vec;
 	}
+
+	/**
+	 * @author Philip Leifeld
+	 *
+	 * Export thread. This is where the computations are executed and the data are written to a file. 
+	 */
+	class ExportThread implements Runnable {
+		
+		String filename;
+		ArrayList<Statement> statements;
+		ProgressMonitor progressMonitor;
+		
+		public ExportThread(String filename) {
+			this.filename = filename;
+		}
+		
+		public void run() {
+			progressMonitor = new ProgressMonitor(Exporter.this, "Exporting network data.", "(1/5) Filtering statements...", 0, 3);
+			progressMonitor.setMillisToDecideToPopup(1);
+			// delay the process by a second to make sure the progress monitor shows up
+			// see here: https://coderanch.com/t/631127/java/progress-monitor-showing
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			progressMonitor.setProgress(0);
+			
+			// step 1: filter statements by date, statement type, empty variable entries, qualifier, and excluded values
+			progressMonitor.setNote("(1/5) Filtering statements...");
+			Date startDate = (Date) startSpinner.getValue();
+			Date stopDate = (Date) stopSpinner.getValue();
+			StatementType statementType = (StatementType) statementTypeBox.getSelectedItem();
+			String var1Name = (String) var1Box.getSelectedItem();
+			String var2Name = (String) var2Box.getSelectedItem();
+			String qualifierName = (String) qualifierBox.getSelectedItem();
+			boolean ignoreQualifier = aggregationBox.getSelectedItem().equals("ignore");
+			String duplicateSetting = (String) duplicatesBox.getSelectedItem();
+			statements = filter(startDate, stopDate, statementType, var1Name, var2Name, qualifierName, ignoreQualifier, 
+					duplicateSetting, excludeAuthor, excludeSource, excludeSection, excludeType, excludeValues);
+			System.out.println("Export was launched: " + statements.size() + " out of " + Dna.data.getStatements().size() 
+					+ " statements retained after filtering.");
+			progressMonitor.setProgress(1);
+			
+			// step 2: compile the node labels (and thereby dimensions) for the first and second mode
+			progressMonitor.setNote("(2/5) Compiling node labels...");
+			boolean includeIsolates = false;
+			if (isolatesBox.getSelectedItem().equals("include isolates")) {
+				includeIsolates = true;
+			}
+			int statementTypeId = statementType.getId();
+			ArrayList<String> names1 = extractLabels(statements, var1Name, statementTypeId, includeIsolates);
+			ArrayList<String> names2 = extractLabels(statements, var2Name, statementTypeId, includeIsolates);
+			System.out.println("Node labels have been extracted.");
+			progressMonitor.setProgress(2);
+			
+			// step 3: create network data structure
+			progressMonitor.setNote("(3/5) Computing network...");
+			// TODO
+			try {
+				Thread.sleep(8000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			System.out.println("Network has been created.");
+			progressMonitor.setProgress(3);
+			
+		}
+	}
 	
-	public void startExport() {
-		ArrayList<Statement> statements = filter();
-		System.out.println("Export was launched: " + statements.size() + " statements retained after filtering.");
+	/**
+	 * Extract the labels for all nodes for a variable from the statements, conditional on isolates settings
+	 * 
+	 * @param statements        {@link ArrayList} of filtered {@link Statement}s
+	 * @param variable          {@link String} indicating the variable for which labels should be extracted
+	 * @param statementTypeId   {@link int} specifying the statement type ID to which the variable belongs
+	 * @param includeIsolates   {@link boolean} indicating whether all nodes should be included or just those after applying the statement filter
+	 * @return                  {@link ArrayList} of {@link String}s containing all sorted node names
+	 */
+	ArrayList<String> extractLabels(ArrayList<Statement> statements, String variable, int statementTypeId, boolean includeIsolates) {
+		ArrayList<String> names = new ArrayList<String>();
+		if (includeIsolates == true) {  // take them from the main database 
+			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
+				if (Dna.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
+					String n = (String) Dna.data.getStatements().get(i).getValues().get(variable);
+					if (!names.contains(n)) {
+						names.add(n);
+					}
+				}
+			}
+		} else {  // no isolates: take them from the filtered results
+			for (int i = 0; i < statements.size(); i++) {
+				String n = (String) statements.get(i).getValues().get(variable);
+				if (!names.contains(n)) {
+					names.add(n);
+				}
+			}
+		}
+		Collections.sort(names);
+		return names;
 	}
 	
 	/**
@@ -943,19 +1043,39 @@ public class Exporter extends JDialog {
 	 * 
 	 * @return	ArrayList of filtered {@link Statement}s
 	 */
-	ArrayList<Statement> filter() {
+	/**
+	 * Return a filtered list of {@link Statement}s based on the settings in the GUI.
+	 * 
+	 * @param startDate           {@link Date} object indicating the start date
+	 * @param stopDate            {@link Date} object indicating the end date
+	 * @param statementType       {@link StatementType} to which the export is restricted
+	 * @param var1                {@link String} indicating the first variable used for network construction, e.g., "organization"
+	 * @param var2                {@link String} indicating the second variable used for network construction, e.g., "concept"
+	 * @param qualifierName       {@link String} indicating the qualifier variable, e.g., "agreement"
+	 * @param ignoreQualifier     {@link boolean} indicating whether the qualifier variable should be ignored
+	 * @param duplicateSetting    {@link String} indicating how to handle duplicates; valid settings include "include all duplicates", "ignore per document", "ignore per calendar week", "ignore per calendar month", "ignore per calendar year", or "ignore across date range"
+	 * @param excludeAuthor       {@link ArrayList} with {@link String}s containing document authors to exclude
+	 * @param excludeSource       {@link ArrayList} with {@link String}s containing document sources to exclude
+	 * @param excludeSection      {@link ArrayList} with {@link String}s containing document sections to exclude
+	 * @param excludeType         {@link ArrayList} with {@link String}s containing document types to exclude
+	 * @param excludeValues       {@link HashMap} with {@link String}s as keys (indicating the variable for which entries should be excluded from export) and {@link HashMap}s of {@link String}s (containing variable entries to exclude from network export)
+	 * @return	                  {@link ArrayList} of filtered {@link Statement}s
+	 */
+	ArrayList<Statement> filter(Date startDate, Date stopDate, StatementType statementType, String var1, String var2, String qualifierName, 
+			boolean ignoreQualifier, String duplicateSetting, ArrayList<String> excludeAuthor, 
+			ArrayList<String> excludeSource, ArrayList<String> excludeSection, ArrayList<String> excludeType, 
+			HashMap<String, ArrayList<String>> excludeValues) {
 		ArrayList<Statement> al = new ArrayList<Statement>();
 		for (int i = 0; i < Dna.dna.gui.rightPanel.statementPanel.ssc.size(); i++) {
 			boolean select = true;
 			Statement s = Dna.dna.gui.rightPanel.statementPanel.ssc.get(i);
-			StatementType guiStatementType = (StatementType) statementTypeBox.getSelectedItem();
 			
 			// step 1: get all statement IDs corresponding to date range and statement type
-			if (s.getDate().before((Date) startSpinner.getValue())) {
+			if (s.getDate().before(startDate)) {
 				select = false;
-			} else if (s.getDate().after((Date) stopSpinner.getValue())) {
+			} else if (s.getDate().after(stopDate)) {
 				select = false;
-			} else if (s.getStatementTypeId() != guiStatementType.getId()) {
+			} else if (s.getStatementTypeId() != statementType.getId()) {
 				select = false;
 			}
 			
@@ -974,7 +1094,7 @@ public class Exporter extends JDialog {
 				while (keyIterator.hasNext()) {
 					String key = keyIterator.next();
 					String string = "";
-					if (guiStatementType.getVariables().get(key).equals("boolean") || guiStatementType.getVariables().get(key).equals("integer")) {
+					if (statementType.getVariables().get(key).equals("boolean") || statementType.getVariables().get(key).equals("integer")) {
 						string = String.valueOf(s.getValues().get(key));
 					} else {
 						string = (String) s.getValues().get(key);
@@ -986,21 +1106,16 @@ public class Exporter extends JDialog {
 			}
 			
 			// step 3: check against empty fields
-			String var1Name = (String) var1Box.getSelectedItem();
-			String var2Name = (String) var2Box.getSelectedItem();
 			if (select == true) {
-				if (s.getValues().get(var1Name).equals("")) {
+				if (s.getValues().get(var1).equals("")) {
 					select = false;
 				}
-				if (s.getValues().get(var2Name).equals("")) {
+				if (s.getValues().get(var2).equals("")) {
 					select = false;
 				}
 			}
 			
 			// step 4: check for duplicates
-			String qualifierName = (String) qualifierBox.getSelectedItem();
-			boolean ignoreQualifier = aggregationBox.getSelectedItem().equals("ignore");
-			String duplicateSetting = (String) duplicatesBox.getSelectedItem();
 			Calendar cal = Calendar.getInstance();
 		    cal.setTime(s.getDate());
 		    int year = cal.get(Calendar.YEAR);
@@ -1019,8 +1134,8 @@ public class Exporter extends JDialog {
 								|| (duplicateSetting.equals("ignore per calendar year") && year == yearPrevious)
 								|| (duplicateSetting.equals("ignore per calendar month") && month == monthPrevious)
 								|| (duplicateSetting.equals("ignore per calendar week") && week == weekPrevious) )
-							&& s.getValues().get(var1Name).equals(al.get(j).getValues().get(var1Name))
-							&& s.getValues().get(var2Name).equals(al.get(j).getValues().get(var2Name))
+							&& s.getValues().get(var1).equals(al.get(j).getValues().get(var1))
+							&& s.getValues().get(var2).equals(al.get(j).getValues().get(var2))
 							&& (s.getValues().get(qualifierName).equals(al.get(j).getValues().get(qualifierName)) || ignoreQualifier == true) ) {
 						select = false;
 						break;

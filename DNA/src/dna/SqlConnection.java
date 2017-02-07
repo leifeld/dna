@@ -746,7 +746,7 @@ public class SqlConnection {
 		executeStatement("DELETE FROM STATEMENTS WHERE DocumentId = " + documentId);
 		executeStatement("DELETE FROM DOCUMENTS WHERE ID = " + documentId);
 	}
-
+	
 	public void removeDocuments(ArrayList<Integer> documentIds) {
 		// create a string of document IDs for batch-selecting entries in SQL
 		String ids = "";

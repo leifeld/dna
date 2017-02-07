@@ -328,7 +328,7 @@ public class Data {
 		}
 		for (int i = documents.size() - 1; i > -1; i--) {
 			if (documents.get(i).getCoder() == id) {
-				Dna.dna.gui.documentPanel.documentContainer.remove(i);
+				Dna.dna.gui.documentPanel.documentContainer.remove(i, false);
 			}
 		}
 		int index = -1;
@@ -526,7 +526,7 @@ public class Data {
 		int documentModelIndex = Dna.dna.gui.documentPanel.documentContainer.getModelIndexById(documentId);
 		//int row = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(documentId);
 		Dna.dna.gui.documentPanel.setRowSorterEnabled(false);
-		Dna.dna.gui.documentPanel.documentContainer.remove(documentModelIndex);
+		Dna.dna.gui.documentPanel.documentContainer.remove(documentModelIndex, false);
 		//Dna.dna.gui.documentPanel.documentContainer.remove(row);
 		Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
 		if (Dna.data.getDocuments().size() > 0) {
@@ -548,8 +548,9 @@ public class Data {
 		
 		// remove documents
 		Dna.dna.gui.documentPanel.setRowSorterEnabled(false);
-		for (int i = modelIndices.size() - 1; i > -1; i--) {
-			Dna.dna.gui.documentPanel.documentContainer.remove(modelIndices.get(i));
+		Collections.sort(modelIndices, Collections.reverseOrder());
+		for (int i : modelIndices) {
+			Dna.dna.gui.documentPanel.documentContainer.remove(i, false);
 		}
 		
 		// reset selection
