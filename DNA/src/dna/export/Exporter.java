@@ -9,7 +9,12 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -30,6 +35,7 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
@@ -947,6 +953,7 @@ public class Exporter extends JDialog {
 		
 		String filename;
 		ArrayList<Statement> statements;
+		String[] names1, names2;
 		ProgressMonitor progressMonitor;
 		
 		public ExportThread(String filename) {
@@ -954,7 +961,7 @@ public class Exporter extends JDialog {
 		}
 		
 		public void run() {
-			progressMonitor = new ProgressMonitor(Exporter.this, "Exporting network data.", "(1/5) Filtering statements...", 0, 3);
+			progressMonitor = new ProgressMonitor(Exporter.this, "Exporting network data.", "(1/4) Filtering statements...", 0, 3);
 			progressMonitor.setMillisToDecideToPopup(1);
 			// delay the process by a second to make sure the progress monitor shows up
 			// see here: https://coderanch.com/t/631127/java/progress-monitor-showing
@@ -966,7 +973,7 @@ public class Exporter extends JDialog {
 			progressMonitor.setProgress(0);
 			
 			// step 1: filter statements by date, statement type, empty variable entries, qualifier, and excluded values
-			progressMonitor.setNote("(1/5) Filtering statements...");
+			progressMonitor.setNote("(1/4) Filtering statements...");
 			Date startDate = (Date) startSpinner.getValue();
 			Date stopDate = (Date) stopSpinner.getValue();
 			StatementType statementType = (StatementType) statementTypeBox.getSelectedItem();
@@ -982,29 +989,44 @@ public class Exporter extends JDialog {
 			progressMonitor.setProgress(1);
 			
 			// step 2: compile the node labels (and thereby dimensions) for the first and second mode
-			progressMonitor.setNote("(2/5) Compiling node labels...");
-			boolean includeIsolates = false;
-			if (isolatesBox.getSelectedItem().equals("include isolates")) {
-				includeIsolates = true;
+			progressMonitor.setNote("(2/4) Compiling node labels...");
+			if (!networkModesBox.getSelectedItem().equals("Event list")) {  // labels are only needed for one-mode or two-mode networks
+				boolean includeIsolates = false;
+				if (isolatesBox.getSelectedItem().equals("include isolates")) {
+					includeIsolates = true;
+				}
+				int statementTypeId = statementType.getId();
+				names1 = extractLabels(statements, var1Name, statementTypeId, includeIsolates);
+				names2 = extractLabels(statements, var2Name, statementTypeId, includeIsolates);
+				System.out.println("Node labels have been extracted.");
 			}
-			int statementTypeId = statementType.getId();
-			ArrayList<String> names1 = extractLabels(statements, var1Name, statementTypeId, includeIsolates);
-			ArrayList<String> names2 = extractLabels(statements, var2Name, statementTypeId, includeIsolates);
-			System.out.println("Node labels have been extracted.");
 			progressMonitor.setProgress(2);
 			
 			// step 3: create network data structure
-			progressMonitor.setNote("(3/5) Computing network...");
-			// TODO
-			try {
-				Thread.sleep(8000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			progressMonitor.setNote("(3/4) Computing network...");
+			Matrix matrix;
+			String qualifier = (String) qualifierBox.getSelectedItem();
+			String qualifierAggregation = (String) aggregationBox.getSelectedItem();
+			String normalization = (String) normalizationBox.getSelectedItem();
+			String temporalAggregation = (String) temporalBox.getSelectedItem();
+			if (networkModesBox.getSelectedItem().equals("Event list")) {
+				// no network preparation needed
+			} else if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
+				matrix = computeTwoModeMatrix(statements, var1Name, var2Name, names1, names2, qualifier, qualifierAggregation, normalization);
+			} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
+				// TODO: generate one-mode network
 			}
 			System.out.println("Network has been created.");
 			progressMonitor.setProgress(3);
 			
+			// step 4: write to file
+			progressMonitor.setNote("(4/4) Writing to file...");
+			if (networkModesBox.getSelectedItem().equals("Event list")) {
+				eventCSV(statements, filename);
+			} else {
+				// TODO: connect network to appropriate output format and export
+			}
+			JOptionPane.showMessageDialog(Dna.dna.gui, "Data were exported to \"" + filename + "\".");
 		}
 	}
 	
@@ -1015,9 +1037,9 @@ public class Exporter extends JDialog {
 	 * @param variable          {@link String} indicating the variable for which labels should be extracted
 	 * @param statementTypeId   {@link int} specifying the statement type ID to which the variable belongs
 	 * @param includeIsolates   {@link boolean} indicating whether all nodes should be included or just those after applying the statement filter
-	 * @return                  {@link ArrayList} of {@link String}s containing all sorted node names
+	 * @return                  {@link String} array containing all sorted node names
 	 */
-	ArrayList<String> extractLabels(ArrayList<Statement> statements, String variable, int statementTypeId, boolean includeIsolates) {
+	String[] extractLabels(ArrayList<Statement> statements, String variable, int statementTypeId, boolean includeIsolates) {
 		ArrayList<String> names = new ArrayList<String>();
 		if (includeIsolates == true) {  // take them from the main database 
 			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
@@ -1037,7 +1059,11 @@ public class Exporter extends JDialog {
 			}
 		}
 		Collections.sort(names);
-		return names;
+		String[] nameArray = new String[names.size()];
+		for (int i = 0; i < names.size(); i++) {
+			nameArray[i] = names.get(i);
+		}
+		return nameArray;
 	}
 	
 	/**
@@ -1175,5 +1201,118 @@ public class Exporter extends JDialog {
 			}
 		}
 		return(al);
+	}
+
+	/**
+	 * Creata a two-mode network {@link Matrix}. 
+	 * 
+	 * @param statements       A (potentially filtered) {@link ArrayList} of {@link Statement}s.
+	 * @param var1             {@link String} denoting the first variable (containing the row values).
+	 * @param var2             {@link String} denoting the second variable (containing the columns values).
+	 * @param names1           {@link String} array containing the row labels.
+	 * @param names2           {@link String} array containing the column labels.
+	 * @param countDuplicates
+	 * @return
+	 */
+	public Matrix computeTwoModeMatrix(ArrayList<Statement> statements, String var1, String var2, String[] names1, 
+			String[] names2, String qualifier, String qualifierAggregation, String normalization) {
+		
+		// TODO: qualifier, aggregation, normalization
+		
+		// create and populate matrix
+		double[][] mat = new double[names1.length][names2.length]; // the resulting affiliation matrix; 0 by default
+		for (int i = 0; i < statements.size(); i++) {
+			String n1 = (String) statements.get(i).getValues().get(var1);  // retrieve first value from statement
+			String n2 = (String) statements.get(i).getValues().get(var2);  // retrieve second value from statement
+			
+			// find out which matrix row corresponds to the first value
+			int row = -1;
+			for (int j = 0; j < names1.length; j++) {
+				if (names1[j].equals(n1)) {
+					row = j;
+					break;
+				}
+			}
+			
+			// find out which matrix column corresponds to the second value
+			int col = -1;
+			for (int j = 0; j < names2.length; j++) {
+				if (names2[j].equals(n2)) {
+					col = j;
+					break;
+				}
+			}
+			
+			// add match to matrix (note that duplicates were dealt with at the statement filter stage)
+			mat[row][col] = mat[row][col] + 1.0;
+		}
+		
+		// create Matrix object and return
+		Matrix matrix = new Matrix(mat, names1, names2); // assemble the Matrix object with labels
+		return matrix;
+	}
+	
+	/**
+	 * This function accepts a list of statements that should be included in the relational event export, 
+	 * and it exports the variables of all statements to a CSV file, along with the statement ID and a 
+	 * date/time stamp. There is one statement per row, and the number of columns is the number of variables 
+	 * present in the statement type.
+	 * 
+	 * @param statements	An array list of SidebarStatement objects (of the same statement type) that should be exported.
+	 * @param fileName		String with the file name of the CSV file to which the event list will be exported.
+	 */
+	public void eventCSV(ArrayList<Statement> statements, String fileName) {
+		String key, value;
+		int statementId;
+		Date d;
+		SimpleDateFormat dateFormat;
+		int statementTypeId = statements.get(0).getStatementTypeId();
+		for (int i = 0; i < statements.size(); i++) {
+			if (statements.get(i).getStatementTypeId() != statementTypeId) {
+				throw new IllegalArgumentException("More than one statement type was selected. Cannot export to a spreadsheet!");
+			}
+		}
+		HashMap<String, String> variables = Dna.data.getStatementTypeById(statementTypeId).getVariables();
+		Iterator<String> keyIterator;
+		try {
+			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), "UTF-8"));
+			keyIterator = variables.keySet().iterator();
+			out.write("\"statement ID\";\"time\";\"document ID\";\"document title\";\"author\";\"source\";\"section\";\"type\";\"text\"");
+			while (keyIterator.hasNext()){
+				out.write(";\"" + keyIterator.next() + "\"");
+			}
+			for (int i = 0; i < statements.size(); i++) {
+				out.newLine();
+				statementId = statements.get(i).getId();
+				String stringId = new Integer(statementId).toString();
+				out.write(stringId);
+				d = statements.get(i).getDate();
+				dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+				out.write(";" + dateFormat.format(d));
+				dna.dataStructures.Document doc = Dna.data.getDocument(Dna.data.getStatement(statementId).getDocumentId());
+				out.write(";" + doc.getId());
+				out.write(";\"" + doc.getTitle().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + doc.getAuthor().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + doc.getSource().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + doc.getSection().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + doc.getType().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + doc.getText().substring(Dna.data.getStatement(statementId).getStart(), 
+						Dna.data.getStatement(statementId).getStop()).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				keyIterator = variables.keySet().iterator();
+				while (keyIterator.hasNext()){
+					key = keyIterator.next();
+					value = variables.get(key);
+					if (value.equals("short text") || value.equals("long text")) {
+						out.write(";\"" + ((String) Dna.data.getStatement(statementId).getValues().get(key)).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+					} else if (value.equals("boolean") || value.equals("integer")) {
+						out.write(";" + Dna.data.getStatement(statementId).getValues().get(key));
+					}
+				}
+			}
+			out.close();
+			System.out.println("Event list has been exported to \"" + fileName + "\".");
+		} catch (IOException e) {
+			System.err.println("Error while saving CSV file: " + e);
+		}
 	}
 }
