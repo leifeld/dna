@@ -182,7 +182,7 @@ public class Data {
 	}
 	
 	/**
-	 * For a boolean or integer variable (as defined in a statement type), retrieve all values  the variable takes across the dataset.
+	 * For a boolean or integer variable (as defined in a statement type), retrieve all values the variable takes at least once across the dataset.
 	 * 
 	 * @param statementTypeId   Statement type ID of the {@link StatementType} in which the variable is defined.
 	 * @param variableName      Name of the boolean or integer variable as a {@link String}.

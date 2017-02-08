@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.math.BigInteger;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1204,7 +1205,7 @@ public class Exporter extends JDialog {
 	}
 	
 	/**
-	 * Creata a two-mode network {@link Matrix}.
+	 * Create a two-mode network {@link Matrix}.
 	 * 
 	 * @param statements            A (potentially filtered) {@link ArrayList} of {@link Statement}s.
 	 * @param var1                  {@link String} denoting the first variable (containing the row values).
@@ -1219,22 +1220,22 @@ public class Exporter extends JDialog {
 	public Matrix computeTwoModeMatrix(ArrayList<Statement> statements, String var1, String var2, String[] names1, 
 			String[] names2, String qualifier, String qualifierAggregation, String normalization) {
 		
+		// TODO: test "combine" aggregation with integer qualifier variable (and also other possibilities)
 		// TODO: normalization: "no", "activity", "prominence"
-		// TODO: adjust in GUI and tooltip that an integer qualifier and aggregation = "combine" are not possible, or implement this
 		
 		int statementTypeId = statements.get(0).getStatementTypeId();
 		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
 		if (Dna.data.getStatementTypeById(statementTypeId).getVariables().get(qualifier).equals("integer")) {
 			booleanQualifier = false;
 		}
-		int[] qualifierValues;
+		int[] qualifierValues;  // unique qualifier values (i.e., all of them found at least once in the dataset)
 		if (booleanQualifier == true) {
 			qualifierValues = new int[] {0, 1};
 		} else {
 			qualifierValues = Dna.data.getIntEntries(statementTypeId, qualifier);
 		}
 		
-		// create and populate matrix
+		// create and populate array
 		double[][][] array = new double[names1.length][names2.length][qualifierValues.length]; // 3D array: rows x cols x qualifier value
 		for (int i = 0; i < statements.size(); i++) {
 			String n1 = (String) statements.get(i).getValues().get(var1);  // retrieve first value from statement
@@ -1274,27 +1275,46 @@ public class Exporter extends JDialog {
 		
 		// combine levels of the qualifier variable conditional on qualifier aggregation option
 		double[][] mat = new double[names1.length][names2.length];  // initialized with zeros
+		/*
 		if (booleanQualifier == false && qualifierAggregation.equals("combine")) {
 			qualifierAggregation = "ignore";
 			System.err.print("Qualifier aggregation 'combine' was only implemented for binary qualifiers. Choosing option 'ignore' instead.");
 		}
+		*/
+		ArrayList<Integer> chosenValuesList;
+		int[] chosenValuesArray;
 		for (int i = 0; i < names1.length; i++) {
 			for (int j = 0; j < names2.length; j++) {
-				if (qualifierAggregation.equals("combine")) {
-					if (array[i][j][0] == 0.0 && array[i][j][1] == 0.0) {
-						mat[i][j] = 0.0;
-					} else if (array[i][j][0] == 0.0 && array[i][j][1] > 0.0) {
-						mat[i][j] = 1.0;
-					} else if (array[i][j][0] > 0.0 && array[i][j][1] == 0) {
-						mat[i][j] = 2.0;
-					} else if (array[i][j][0] > 0.0 && array[i][j][1] > 0.0) {
-						mat[i][j] = 3.0;
+				if (qualifierAggregation.equals("combine")) {  // combine
+					if (booleanQualifier == true) {
+						if (array[i][j][0] == 0.0 && array[i][j][1] == 0.0) {
+							mat[i][j] = 0.0;
+						} else if (array[i][j][0] == 0.0 && array[i][j][1] > 0.0) {
+							mat[i][j] = 1.0;
+						} else if (array[i][j][0] > 0.0 && array[i][j][1] == 0) {
+							mat[i][j] = 2.0;
+						} else if (array[i][j][0] > 0.0 && array[i][j][1] > 0.0) {
+							mat[i][j] = 3.0;
+						}
+					} else {
+						chosenValuesList = new ArrayList<Integer>();
+						for (int k = 0; k < qualifierValues.length; k++) {
+							if (array[i][j][k] > 0 && !chosenValuesList.contains(qualifierValues[k])) {
+								chosenValuesList.add(qualifierValues[k]);
+							}
+						}
+						Collections.sort(chosenValuesList);
+						chosenValuesArray = new int[chosenValuesList.size()];
+						for (int k = 0; k < chosenValuesList.size(); k++) {
+							chosenValuesArray[k] = chosenValuesList.get(k);
+						}
+						mat[i][j] = rankQualifierCombination(chosenValuesArray, qualifierValues);
 					}
 				} else {
-					for (int k = 0; k < qualifierValues.length ; k++) {
-						if (qualifierAggregation.equals("ignore")) {
+					for (int k = 0; k < qualifierValues.length; k++) {
+						if (qualifierAggregation.equals("ignore")) {  // ignore
 							mat[i][j] = mat[i][j] + array[i][j][k];  // duplicates were already filtered out in the statement filter, so just add
-						} else if (qualifierAggregation.equals("subtract")) {
+						} else if (qualifierAggregation.equals("subtract")) {  // subtract
 							if (booleanQualifier == false && qualifierValues[k] < 0) {  // subtract weighted absolute value
 								mat[i][j] = mat[i][j] - (Math.abs(qualifierValues[k]) * array[i][j][k]);
 							} else if (booleanQualifier == false && qualifierValues[k] >= 0) {  // add weighted absolute value
@@ -1313,6 +1333,71 @@ public class Exporter extends JDialog {
 		// create Matrix object and return
 		Matrix matrix = new Matrix(mat, names1, names2); // assemble the Matrix object with labels
 		return matrix;
+	}
+
+	private int rankQualifierCombination(int[] chosenValues, int[] allValues) {
+		// create binary vector with matches
+		int[] matches = new int[allValues.length];
+		int numMatches = 0;
+		for (int i = 0; i < chosenValues.length; i++) {
+			for (int j = 0; j < allValues.length; j++) {
+				if (chosenValues[i] == allValues[j]) {
+					matches[j] = 1;
+					numMatches++;
+				}
+			}
+		}
+		
+		// check how many combinations were there with fewer matches than the empirical number of matches
+		int numPreviousCombinations = 0;
+		int l = numMatches - 1;
+		while (l > 0) {
+			numPreviousCombinations = numPreviousCombinations + nChooseK(allValues.length, l).intValue();
+			l--;
+		}
+		// create an artificial sequence with the same number of matches
+		int[] temp = new int[matches.length];
+		for (int i = 0; i < numMatches; i++) {
+			temp[i] = 1;
+		}
+		int currentMatches = 0;  // used to check whether the current test configuration matches the empirical configuration
+		for (int i = 0; i < temp.length; i++) {
+			if (temp[i] == matches[i]) {
+				currentMatches++;
+			}
+		}
+		if (currentMatches == numMatches) {
+			numPreviousCombinations++;
+			return numPreviousCombinations;
+		}
+		// if it's not that first combination, permute that combination until we hit the right one
+		int count = 1;  // counts how many permutations are necessary to reach the final configuration
+		String binaryNumberString;
+		int binaryNumberInt;
+		char[] binaryNumberCharArray;
+		while (currentMatches != numMatches) {  // as long as there is no complete match, continue iterating
+			count++;
+			binaryNumberString = Arrays.toString(temp);  // convert current configuration to string
+			binaryNumberInt = Integer.parseInt(binaryNumberString, 2);  // then parse into binary number (e.g., 1000110)
+			binaryNumberInt++;  // increase in the binary system by one
+			binaryNumberString = Integer.toBinaryString(binaryNumberInt);  // convert binary number back to string
+			binaryNumberCharArray = binaryNumberString.toCharArray();  // convert binary string to char array
+			for (int i = 0; i < binaryNumberCharArray.length; i++) {  // convert char array to integer array temp
+				if (Character.toString(binaryNumberCharArray[i]).equals("0")) {
+					temp[i] = 0;
+				} else {
+					temp[i] = 1;
+				}
+			}
+			currentMatches = 0;  // check if the current configuration matches the empirical configuration
+			for (int i = 0; i < temp.length; i++) {
+				if (temp[i] == matches[i]) {
+					currentMatches++;
+				}
+			}
+		}
+		numPreviousCombinations = numPreviousCombinations + count;
+		return numPreviousCombinations;
 	}
 	
 	/**
@@ -1377,5 +1462,20 @@ public class Exporter extends JDialog {
 		} catch (IOException e) {
 			System.err.println("Error while saving CSV file: " + e);
 		}
+	}
+	
+	/**
+	 * Computes n choose k.
+	 * 
+	 * @param N    How large is the population?
+	 * @param K    How many items are selected?
+	 * @return     A {@link BigInteger} indicating the result of n choose k.
+	 */
+	static BigInteger nChooseK(int N, int K) {
+	    BigInteger ret = BigInteger.ONE;
+	    for (int k = 0; k < K; k++) {
+	        ret = ret.multiply(BigInteger.valueOf(N - k)).divide(BigInteger.valueOf(k + 1));
+	    }
+	    return ret;
 	}
 }
