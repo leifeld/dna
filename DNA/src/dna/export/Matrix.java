@@ -12,11 +12,13 @@ package dna.export;
 public class Matrix {
 	double[][] matrix;
 	String[] rownames, colnames;
+	boolean integer;
 	
-	public Matrix(double[][] matrix, String[] rownames, String[] colnames) {
+	public Matrix(double[][] matrix, String[] rownames, String[] colnames, boolean integer) {
 		this.matrix = matrix;
 		this.rownames = rownames;
 		this.colnames = colnames;
+		this.integer = integer;
 	}
 
 	/**
@@ -59,5 +61,19 @@ public class Matrix {
 	 */
 	public void setColnames(String[] colnames) {
 		this.colnames = colnames;
+	}
+
+	/**
+	 * @return a boolean value indicating whether the values can be cast to integer
+	 */
+	public boolean getInteger() {
+		return integer;
+	}
+
+	/**
+	 * @param integer   the integer boolean indicator to be set
+	 */
+	public void setInteger(boolean integer) {
+		this.integer = integer;
 	}
 }

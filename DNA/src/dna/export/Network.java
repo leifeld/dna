@@ -57,7 +57,7 @@ class Network {
 			}
 			mat[row][col] = el.get(i).getWeight();
 		}
-		this.matrix = new Matrix(mat, sources, targets);
+		this.matrix = new Matrix(mat, sources, targets, false);
 	}
 	
 	// constructor when both matrix and edge list are present

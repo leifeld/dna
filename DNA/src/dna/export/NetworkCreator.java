@@ -372,7 +372,7 @@ public class NetworkCreator {
 		rownames = names1.toArray(rownames);
 		String[] colnames = new String[names2.size()]; // cast column names from array list to array
 		colnames = names2.toArray(colnames);
-		Matrix matrix = new Matrix(mat, rownames, colnames); // assemble the Matrix object with labels
+		Matrix matrix = new Matrix(mat, rownames, colnames, false); // assemble the Matrix object with labels
 		Network network = new Network(matrix, 2);  // wrap matrix in a network object
 		return network;
 	}
@@ -686,7 +686,7 @@ public class NetworkCreator {
 		// step 8: create Network object and return
 		String[] rownames = new String[names1.size()]; // cast row/column names from array list to array
 		rownames = names1.toArray(rownames);
-		Matrix matrix = new Matrix(resultmat, rownames, rownames); // assemble the Matrix object with labels
+		Matrix matrix = new Matrix(resultmat, rownames, rownames, false); // assemble the Matrix object with labels
 		Network network = new Network(matrix, 1);  // wrap matrix in a network object
 		return network;
 	}

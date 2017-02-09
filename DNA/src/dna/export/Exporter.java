@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
@@ -268,7 +269,7 @@ public class Exporter extends JDialog {
 				+ "the variable for concepts here in order to export an organization x concept network.</p></html>";
 		var2Label.setToolTipText(var2ToolTip);
 		settingsPanel.add(var2Label, gbc);
-
+		
 		gbc.gridx = 2;
 		JLabel qualifierLabel = new JLabel("Qualifier");
 		String qualifierToolTip = "<html><p width=\"500\">The qualifier is a binary or integer variable which indicates "
@@ -286,7 +287,7 @@ public class Exporter extends JDialog {
 				+ "the description under Qualifier aggregation contains more details on this.</p></html>";
 		qualifierLabel.setToolTipText(qualifierToolTip);
 		settingsPanel.add(qualifierLabel, gbc);
-
+		
 		gbc.gridx = 3;
 		JLabel aggregationLabel = new JLabel("Qualifier aggregation");
 		String aggregationToolTip = "<html><p width=\"500\">The choices differ between one-mode and two-mode networks. <strong>"
@@ -316,7 +317,7 @@ public class Exporter extends JDialog {
 				+ "qualifier, the absolute distance is used instead.</p></html>";
 		aggregationLabel.setToolTipText(aggregationToolTip);
 		settingsPanel.add(aggregationLabel, gbc);
-
+		
 		gbc.insets = new Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 3;
@@ -1005,16 +1006,16 @@ public class Exporter extends JDialog {
 			
 			// step 3: create network data structure
 			progressMonitor.setNote("(3/4) Computing network...");
-			Matrix matrix;
+			Matrix matrix = null;
 			String qualifier = (String) qualifierBox.getSelectedItem();
 			String qualifierAggregation = (String) aggregationBox.getSelectedItem();
 			String normalization = (String) normalizationBox.getSelectedItem();
-			String temporalAggregation = (String) temporalBox.getSelectedItem();
 			if (networkModesBox.getSelectedItem().equals("Event list")) {
 				// no network preparation needed
 			} else if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
 				matrix = computeTwoModeMatrix(statements, var1Name, var2Name, names1, names2, qualifier, qualifierAggregation, normalization);
 			} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
+				String temporalAggregation = (String) temporalBox.getSelectedItem();
 				// TODO: generate one-mode network
 			}
 			System.out.println("Network has been created.");
@@ -1022,9 +1023,17 @@ public class Exporter extends JDialog {
 			
 			// step 4: write to file
 			progressMonitor.setNote("(4/4) Writing to file...");
+			String fileFormat = (String) fileFormatBox.getSelectedItem();
 			if (networkModesBox.getSelectedItem().equals("Event list")) {
 				eventCSV(statements, filename);
 			} else {
+				if (fileFormat.equals(".csv")) {
+					exportCSV(matrix, filename);
+				} else if (fileFormat.equals(".dl")) {
+					
+				} else if (fileFormat.equals(".graphml")) {
+					
+				}
 				// TODO: connect network to appropriate output format and export
 			}
 			JOptionPane.showMessageDialog(Dna.dna.gui, "Data were exported to \"" + filename + "\".");
@@ -1220,8 +1229,7 @@ public class Exporter extends JDialog {
 	public Matrix computeTwoModeMatrix(ArrayList<Statement> statements, String var1, String var2, String[] names1, 
 			String[] names2, String qualifier, String qualifierAggregation, String normalization) {
 		
-		// TODO: test "combine" aggregation with integer qualifier variable (and also other possibilities)
-		// TODO: normalization: "no", "activity", "prominence"
+		// TODO: fix "combine" aggregation with integer qualifier variable; test this also with normalization
 		
 		int statementTypeId = statements.get(0).getStatementTypeId();
 		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
@@ -1330,8 +1338,66 @@ public class Exporter extends JDialog {
 			}
 		}
 		
+		// normalization
+		boolean integerBoolean = false;
+		if (normalization.equals("no")) {
+			integerBoolean = true;
+		} else if (normalization.equals("activity")) {
+			integerBoolean = false;
+			double currentDenominator;
+			for (int i = 0; i < names1.length; i++) {
+				currentDenominator = 0.0;
+				if (qualifierAggregation.equals("ignore")) {  // iterate through columns of matrix and sum weighted values
+					for (int j = 0; j < names2.length; j++) {
+						currentDenominator = currentDenominator + mat[i][j];
+					}
+				} else if (qualifierAggregation.equals("combine")) {  // iterate through columns of matrix and count how many are larger than one
+					for (int j = 0; j < names2.length; j++) {
+						if (mat[i][j] > 0.0) {
+							currentDenominator = currentDenominator + 1.0;
+						}
+					}
+				} else if (qualifierAggregation.equals("subtract")) {  // iterate through array and sum for different levels
+					for (int j = 0; j < names2.length; j++) {
+						for (int k = 0; k < qualifierValues.length; k++) {
+							currentDenominator = currentDenominator + array[i][j][k];
+						}
+					}
+				}
+				for (int j = 0; j < names2.length; j++) {  // divide all values by current denominator
+					mat[i][j] = mat[i][j] / currentDenominator;
+				}
+			}
+		} else if (normalization.equals("prominence")) {
+			integerBoolean = false;
+			double currentDenominator;
+			for (int i = 0; i < names2.length; i++) {
+				currentDenominator = 0.0;
+				if (qualifierAggregation.equals("ignore")) {  // iterate through rows of matrix and sum weighted values
+					for (int j = 0; j < names1.length; j++) {
+						currentDenominator = currentDenominator + mat[j][i];
+					}
+				} else if (qualifierAggregation.equals("combine")) {  // iterate through rows of matrix and count how many are larger than one
+					for (int j = 0; j < names1.length; j++) {
+						if (mat[i][j] > 0.0) {
+							currentDenominator = currentDenominator + 1.0;
+						}
+					}
+				} else if (qualifierAggregation.equals("subtract")) {  // iterate through array and sum for different levels
+					for (int j = 0; j < names1.length; j++) {
+						for (int k = 0; k < qualifierValues.length; k++) {
+							currentDenominator = currentDenominator + array[j][i][k];
+						}
+					}
+				}
+				for (int j = 0; j < names1.length; j++) {  // divide all values by current denominator
+					mat[j][i] = mat[j][i] / currentDenominator;
+				}
+			}
+		}
+		
 		// create Matrix object and return
-		Matrix matrix = new Matrix(mat, names1, names2); // assemble the Matrix object with labels
+		Matrix matrix = new Matrix(mat, names1, names2, integerBoolean); // assemble the Matrix object with labels
 		return matrix;
 	}
 
@@ -1463,7 +1529,42 @@ public class Exporter extends JDialog {
 			System.err.println("Error while saving CSV file: " + e);
 		}
 	}
-	
+
+	/**
+	 * Export {@link Matrix} to a CSV matrix file.
+	 * 
+	 * @param matrix   The input {@link Matrix} object.
+	 * @param outfile  The path and file name of the target CSV file.
+	 */
+	public void exportCSV (Matrix matrix, String outfile) {
+		String[] rn = matrix.getRownames();
+		String[] cn = matrix.getColnames();
+		int nr = rn.length;
+		int nc = cn.length;
+		double[][] mat = matrix.getMatrix();
+		try {
+			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outfile), "UTF8"));
+			out.write("\"\"");
+			for (int i = 0; i < nc; i++) {
+				out.write(";\"" + cn[i] + "\"");
+			}
+			for (int i = 0; i < nr; i++) {
+				out.newLine();
+				out.write("\"" + rn[i] + "\"");
+				for (int j = 0; j < nc; j++) {
+					if (matrix.getInteger() == true) {
+						out.write(";" + (int) mat[i][j]);
+					} else {
+						out.write(";" + String.format(new Locale("en"), "%.6f", mat[i][j]));  // six decimal places
+					}
+				}
+			}
+			out.close();
+		} catch (IOException e) {
+			System.err.println("Error while saving CSV matrix file.");
+		}
+	}
+
 	/**
 	 * Computes n choose k.
 	 * 
