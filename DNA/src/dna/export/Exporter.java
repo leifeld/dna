@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.math.BigInteger;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,7 +21,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -777,15 +775,6 @@ public class Exporter extends JDialog {
 		helpBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				toggleHelp();
-				//countRank(new int[]{0, 0, 1, 0, 1, 0});
-				System.out.println(lexRank(new int[]{1, 0}));
-				System.out.println(lexRank(new int[]{0, 1}));
-				System.out.println(lexRank(new int[]{1, 1}));
-				System.out.println(lexRank(new int[]{0, 0, 1, 0, 1, 0}));
-				System.out.println(Arrays.toString(lexUnrank(2, 2)));
-				System.out.println(Arrays.toString(lexUnrank(1, 2)));
-				System.out.println(Arrays.toString(lexUnrank(3, 2)));
-				System.out.println(Arrays.toString(lexUnrank(10, 6)));
 			}
 			
 		});
@@ -1040,11 +1029,10 @@ public class Exporter extends JDialog {
 				if (fileFormat.equals(".csv")) {
 					exportCSV(matrix, filename);
 				} else if (fileFormat.equals(".dl")) {
-					
+					// TODO: connect network to DL output format and export
 				} else if (fileFormat.equals(".graphml")) {
-					
+					// TODO: connect network to GRAPHML output format and export
 				}
-				// TODO: connect network to appropriate output format and export
 			}
 			JOptionPane.showMessageDialog(Dna.dna.gui, "Data were exported to \"" + filename + "\".");
 		}
