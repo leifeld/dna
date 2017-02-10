@@ -385,6 +385,33 @@ public class Exporter extends JDialog {
 		aggregationBox.setToolTipText(aggregationToolTip);
 		settingsPanel.add(aggregationBox, gbc);
 		aggregationBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		aggregationBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (aggregationBox.getItemCount() > 0) {
+					if (aggregationBox.getSelectedItem().equals("combine")) {
+						normalizationBox.removeAllItems();
+						normalizationBox.addItem("no");
+					} else {
+						if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
+							normalizationBox.removeAllItems();
+							normalizationBox.addItem("no");
+							normalizationBox.addItem("activity");
+							normalizationBox.addItem("prominence");
+						} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
+							normalizationBox.removeAllItems();
+							normalizationBox.addItem("no");
+							normalizationBox.addItem("average activity");
+							normalizationBox.addItem("Jaccard");
+							normalizationBox.addItem("cosine");
+						} else if (networkModesBox.getSelectedItem().equals("Event list")) {
+							normalizationBox.removeAllItems();
+							normalizationBox.addItem("no");
+						}
+					}
+				}
+			}
+		});
+		
 		
 		// third row of options
 		gbc.insets = new Insets(10, 3, 3, 3);
