@@ -22,6 +22,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -776,6 +777,15 @@ public class Exporter extends JDialog {
 		helpBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				toggleHelp();
+				//countRank(new int[]{0, 0, 1, 0, 1, 0});
+				System.out.println(lexRank(new int[]{1, 0}));
+				System.out.println(lexRank(new int[]{0, 1}));
+				System.out.println(lexRank(new int[]{1, 1}));
+				System.out.println(lexRank(new int[]{0, 0, 1, 0, 1, 0}));
+				System.out.println(Arrays.toString(lexUnrank(2, 2)));
+				System.out.println(Arrays.toString(lexUnrank(1, 2)));
+				System.out.println(Arrays.toString(lexUnrank(3, 2)));
+				System.out.println(Arrays.toString(lexUnrank(10, 6)));
 			}
 			
 		});
@@ -1169,6 +1179,7 @@ public class Exporter extends JDialog {
 			
 			// step 3: check against empty fields
 			if (select == true) {
+				// TODO: this fails when source x concept network is selected: 
 				if (s.getValues().get(var1).equals("")) {
 					select = false;
 				}
@@ -1228,9 +1239,6 @@ public class Exporter extends JDialog {
 	 */
 	public Matrix computeTwoModeMatrix(ArrayList<Statement> statements, String var1, String var2, String[] names1, 
 			String[] names2, String qualifier, String qualifierAggregation, String normalization) {
-		
-		// TODO: fix "combine" aggregation with integer qualifier variable; test this also with normalization
-		
 		int statementTypeId = statements.get(0).getStatementTypeId();
 		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
 		if (Dna.data.getStatementTypeById(statementTypeId).getVariables().get(qualifier).equals("integer")) {
@@ -1283,41 +1291,21 @@ public class Exporter extends JDialog {
 		
 		// combine levels of the qualifier variable conditional on qualifier aggregation option
 		double[][] mat = new double[names1.length][names2.length];  // initialized with zeros
-		/*
-		if (booleanQualifier == false && qualifierAggregation.equals("combine")) {
-			qualifierAggregation = "ignore";
-			System.err.print("Qualifier aggregation 'combine' was only implemented for binary qualifiers. Choosing option 'ignore' instead.");
-		}
-		*/
-		ArrayList<Integer> chosenValuesList;
-		int[] chosenValuesArray;
+		HashMap<Integer, ArrayList<Integer>> combinations = new HashMap<Integer, ArrayList<Integer>>();
 		for (int i = 0; i < names1.length; i++) {
 			for (int j = 0; j < names2.length; j++) {
 				if (qualifierAggregation.equals("combine")) {  // combine
-					if (booleanQualifier == true) {
-						if (array[i][j][0] == 0.0 && array[i][j][1] == 0.0) {
-							mat[i][j] = 0.0;
-						} else if (array[i][j][0] == 0.0 && array[i][j][1] > 0.0) {
-							mat[i][j] = 1.0;
-						} else if (array[i][j][0] > 0.0 && array[i][j][1] == 0) {
-							mat[i][j] = 2.0;
-						} else if (array[i][j][0] > 0.0 && array[i][j][1] > 0.0) {
-							mat[i][j] = 3.0;
+					double[] vec = array[i][j];  // may be weighted, so create a second, binary vector vec2
+					int[] vec2 = new int[vec.length];
+					ArrayList<Integer> qualVal = new ArrayList<Integer>();  // a list of qualifier values used at mat[i][j]
+					for (int k = 0; k < vec.length; k++) {
+						if (vec[k] > 0) {
+							vec2[k] = 1;
+							qualVal.add(qualifierValues[k]);
 						}
-					} else {
-						chosenValuesList = new ArrayList<Integer>();
-						for (int k = 0; k < qualifierValues.length; k++) {
-							if (array[i][j][k] > 0 && !chosenValuesList.contains(qualifierValues[k])) {
-								chosenValuesList.add(qualifierValues[k]);
-							}
-						}
-						Collections.sort(chosenValuesList);
-						chosenValuesArray = new int[chosenValuesList.size()];
-						for (int k = 0; k < chosenValuesList.size(); k++) {
-							chosenValuesArray[k] = chosenValuesList.get(k);
-						}
-						mat[i][j] = rankQualifierCombination(chosenValuesArray, qualifierValues);
 					}
+					mat[i][j] = lexRank(vec2);  // compute lexical rank, i.e., map the combination of values to a single integer
+					combinations.put(lexRank(vec2), qualVal);  // the bijection needs to be stored for later reporting
 				} else {
 					for (int k = 0; k < qualifierValues.length; k++) {
 						if (qualifierAggregation.equals("ignore")) {  // ignore
@@ -1338,6 +1326,20 @@ public class Exporter extends JDialog {
 			}
 		}
 		
+		// report combinations if necessary
+		if (combinations.size() > 0) {
+			Iterator<Integer> keyIterator = combinations.keySet().iterator();
+			while (keyIterator.hasNext()){
+				Integer key = (Integer) keyIterator.next();
+				ArrayList<Integer> values = combinations.get(key);
+				System.out.print("An edge weight of " + key + " corresponds to the following combination of integers in the DNA coding: ");
+				for (int i = 0; i < values.size(); i++) {
+					System.out.print(values.get(i) + " ");
+				}
+				System.out.print("\n");
+			}
+		}
+		
 		// normalization
 		boolean integerBoolean = false;
 		if (normalization.equals("no")) {
@@ -1352,6 +1354,7 @@ public class Exporter extends JDialog {
 						currentDenominator = currentDenominator + mat[i][j];
 					}
 				} else if (qualifierAggregation.equals("combine")) {  // iterate through columns of matrix and count how many are larger than one
+					System.err.println("Warning: Normalization and qualifier setting 'combine' yield results that cannot be interpreted.");
 					for (int j = 0; j < names2.length; j++) {
 						if (mat[i][j] > 0.0) {
 							currentDenominator = currentDenominator + 1.0;
@@ -1378,6 +1381,7 @@ public class Exporter extends JDialog {
 						currentDenominator = currentDenominator + mat[j][i];
 					}
 				} else if (qualifierAggregation.equals("combine")) {  // iterate through rows of matrix and count how many are larger than one
+					System.err.println("Warning: Normalization and qualifier setting 'combine' yield results that cannot be interpreted.");
 					for (int j = 0; j < names1.length; j++) {
 						if (mat[i][j] > 0.0) {
 							currentDenominator = currentDenominator + 1.0;
@@ -1400,70 +1404,54 @@ public class Exporter extends JDialog {
 		Matrix matrix = new Matrix(mat, names1, names2, integerBoolean); // assemble the Matrix object with labels
 		return matrix;
 	}
-
-	private int rankQualifierCombination(int[] chosenValues, int[] allValues) {
-		// create binary vector with matches
-		int[] matches = new int[allValues.length];
-		int numMatches = 0;
-		for (int i = 0; i < chosenValues.length; i++) {
-			for (int j = 0; j < allValues.length; j++) {
-				if (chosenValues[i] == allValues[j]) {
-					matches[j] = 1;
-					numMatches++;
-				}
+	
+	/**
+	 * Lexical ranking of a binary vector.
+	 * 
+	 * Examples:
+	 * 
+	 * [0, 0] -> 0
+	 * [0, 1] -> 1
+	 * [1, 0] -> 2
+	 * [1, 1] -> 3
+	 * [0, 0, 1, 0, 1, 0] -> 10
+	 * 
+	 * This bijection is used to map combinations of qualifier values into edge weights in the resulting network matrix.
+	 * 
+	 * Source: https://cw.fel.cvut.cz/wiki/_media/courses/b4m33pal/pal06.pdf
+	 * 
+	 * @param binaryVector  A binary int array of arbitrary length, indicating which qualifier values are used in the dataset
+	 * @return              An integer
+	 */
+	private int lexRank(int[] binaryVector) {
+		int n = binaryVector.length;
+		int r = 0;
+		for (int i = 0; i < n; i++) {
+			if (binaryVector[i] > 0) {
+				r = r + (int) Math.pow(2, n - i - 1);
 			}
 		}
-		
-		// check how many combinations were there with fewer matches than the empirical number of matches
-		int numPreviousCombinations = 0;
-		int l = numMatches - 1;
-		while (l > 0) {
-			numPreviousCombinations = numPreviousCombinations + nChooseK(allValues.length, l).intValue();
-			l--;
-		}
-		// create an artificial sequence with the same number of matches
-		int[] temp = new int[matches.length];
-		for (int i = 0; i < numMatches; i++) {
-			temp[i] = 1;
-		}
-		int currentMatches = 0;  // used to check whether the current test configuration matches the empirical configuration
-		for (int i = 0; i < temp.length; i++) {
-			if (temp[i] == matches[i]) {
-				currentMatches++;
+		return r;
+	}
+	
+	/**
+	 * This function is supposed to convert a rank back into a binary vector, but it does not seem to work properly.
+	 * 
+	 * Source: https://cw.fel.cvut.cz/wiki/_media/courses/b4m33pal/pal06.pdf
+	 * 
+	 * @param rank  The integer rank
+	 * @param n     Length of the binary vector
+	 * @return      Binary vector of length n
+	 */
+	private int[] lexUnrank(int rank, int n) {
+		int[] binaryVector = new int[n];
+		for (int i = n; i > 0; i--) {
+			if (rank % 2 == 1) {
+				binaryVector[i - 1] = 1;
+				rank = (int) Math.floor(rank / 2);
 			}
 		}
-		if (currentMatches == numMatches) {
-			numPreviousCombinations++;
-			return numPreviousCombinations;
-		}
-		// if it's not that first combination, permute that combination until we hit the right one
-		int count = 1;  // counts how many permutations are necessary to reach the final configuration
-		String binaryNumberString;
-		int binaryNumberInt;
-		char[] binaryNumberCharArray;
-		while (currentMatches != numMatches) {  // as long as there is no complete match, continue iterating
-			count++;
-			binaryNumberString = Arrays.toString(temp);  // convert current configuration to string
-			binaryNumberInt = Integer.parseInt(binaryNumberString, 2);  // then parse into binary number (e.g., 1000110)
-			binaryNumberInt++;  // increase in the binary system by one
-			binaryNumberString = Integer.toBinaryString(binaryNumberInt);  // convert binary number back to string
-			binaryNumberCharArray = binaryNumberString.toCharArray();  // convert binary string to char array
-			for (int i = 0; i < binaryNumberCharArray.length; i++) {  // convert char array to integer array temp
-				if (Character.toString(binaryNumberCharArray[i]).equals("0")) {
-					temp[i] = 0;
-				} else {
-					temp[i] = 1;
-				}
-			}
-			currentMatches = 0;  // check if the current configuration matches the empirical configuration
-			for (int i = 0; i < temp.length; i++) {
-				if (temp[i] == matches[i]) {
-					currentMatches++;
-				}
-			}
-		}
-		numPreviousCombinations = numPreviousCombinations + count;
-		return numPreviousCombinations;
+		return binaryVector;
 	}
 	
 	/**
@@ -1563,20 +1551,5 @@ public class Exporter extends JDialog {
 		} catch (IOException e) {
 			System.err.println("Error while saving CSV matrix file.");
 		}
-	}
-
-	/**
-	 * Computes n choose k.
-	 * 
-	 * @param N    How large is the population?
-	 * @param K    How many items are selected?
-	 * @return     A {@link BigInteger} indicating the result of n choose k.
-	 */
-	static BigInteger nChooseK(int N, int K) {
-	    BigInteger ret = BigInteger.ONE;
-	    for (int k = 0; k < K; k++) {
-	        ret = ret.multiply(BigInteger.valueOf(N - k)).divide(BigInteger.valueOf(k + 1));
-	    }
-	    return ret;
 	}
 }
