@@ -50,6 +50,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
 import dna.Dna;
+import dna.dataStructures.Document;
 import dna.dataStructures.Statement;
 import dna.dataStructures.StatementType;
 import dna.renderer.StatementTypeComboBoxModel;
@@ -224,11 +225,13 @@ public class Exporter extends JDialog {
 						qualifierBox.addItem(qualifierItems[i]);
 					}
 				}
+				/*
 				if (varItems.length > 0 && qualifierItems.length > 0) {
 					exportButton.setEnabled(true);
 				} else {
 					exportButton.setEnabled(false);
 				}
+				*/
 				populateExcludeVariableList();
 				excludeVariableList.setSelectedIndex(0);
 				excludePreviewArea.setText("");
@@ -349,7 +352,7 @@ public class Exporter extends JDialog {
 		};
 		var1Box.addActionListener(varActionListener);
 		var2Box.addActionListener(varActionListener);
-
+		
 		gbc.gridx = 2;
 		String[] qualifierItems = getVariablesList((StatementType) statementTypeBox.getSelectedItem(), false, false, true, true);
 		qualifierBox = new JComboBox<>(qualifierItems);
@@ -903,6 +906,36 @@ public class Exporter extends JDialog {
 	}
 	
 	/**
+	 * Indicates whether the first variable is a document-level variable (i.e., "author", "source", "section", or "type").
+	 * 
+	 * @return boolean indicating if variable 1 as selected in the Exporter GUI is a document-level variable
+	 */
+	public boolean var1Document() {
+		int lastIndex = var1Box.getItemCount() - 1;
+		int selected = var1Box.getSelectedIndex();
+		if (selected > lastIndex - 4) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	/**
+	 * Indicates whether the second variable is a document-level variable (i.e., "author", "source", "section", or "type").
+	 * 
+	 * @return boolean indicating if variable 2 as selected in the Exporter GUI is a document-level variable
+	 */
+	public boolean var2Document() {
+		int lastIndex = var2Box.getItemCount() - 1;
+		int selected = var2Box.getSelectedIndex();
+		if (selected > lastIndex - 4) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	/**
 	 * Sets a new {@link DefaultListModel} in the excludeVariableList and adds variables conditional on the statement type selected
 	 */
 	public void populateExcludeVariableList() {
@@ -981,6 +1014,7 @@ public class Exporter extends JDialog {
 		
 		String filename;
 		ArrayList<Statement> statements;
+		ArrayList<Document> documents;
 		String[] names1, names2;
 		ProgressMonitor progressMonitor;
 		
@@ -989,7 +1023,7 @@ public class Exporter extends JDialog {
 		}
 		
 		public void run() {
-			progressMonitor = new ProgressMonitor(Exporter.this, "Exporting network data.", "(1/4) Filtering statements...", 0, 3);
+			progressMonitor = new ProgressMonitor(Exporter.this, "Exporting network data.", "(1/5) Filtering statements...", 0, 5);
 			progressMonitor.setMillisToDecideToPopup(1);
 			// delay the process by a second to make sure the progress monitor shows up
 			// see here: https://coderanch.com/t/631127/java/progress-monitor-showing
@@ -1001,7 +1035,7 @@ public class Exporter extends JDialog {
 			progressMonitor.setProgress(0);
 			
 			// step 1: filter statements by date, statement type, empty variable entries, qualifier, and excluded values
-			progressMonitor.setNote("(1/4) Filtering statements...");
+			progressMonitor.setNote("(1/5) Filtering statements...");
 			Date startDate = (Date) startSpinner.getValue();
 			Date stopDate = (Date) stopSpinner.getValue();
 			StatementType statementType = (StatementType) statementTypeBox.getSelectedItem();
@@ -1010,28 +1044,41 @@ public class Exporter extends JDialog {
 			String qualifierName = (String) qualifierBox.getSelectedItem();
 			boolean ignoreQualifier = aggregationBox.getSelectedItem().equals("ignore");
 			String duplicateSetting = (String) duplicatesBox.getSelectedItem();
-			statements = filter(startDate, stopDate, statementType, var1Name, var2Name, qualifierName, ignoreQualifier, 
-					duplicateSetting, excludeAuthor, excludeSource, excludeSection, excludeType, excludeValues);
+			statements = Dna.data.getStatements();
+			documents = Dna.data.getDocuments();
+			boolean filterEmptyFields = true;
+			if (networkModesBox.getSelectedItem().equals("Event list")) {
+				filterEmptyFields = false;
+			}
+			statements = filter(statements, documents, startDate, stopDate, statementType, var1Name, var2Name, 
+					var1Document(), var2Document(), qualifierName, ignoreQualifier, duplicateSetting, 
+					excludeAuthor, excludeSource, excludeSection, excludeType, excludeValues, filterEmptyFields);
 			System.out.println("Export was launched: " + statements.size() + " out of " + Dna.data.getStatements().size() 
 					+ " statements retained after filtering.");
 			progressMonitor.setProgress(1);
 			
 			// step 2: compile the node labels (and thereby dimensions) for the first and second mode
-			progressMonitor.setNote("(2/4) Compiling node labels...");
+			progressMonitor.setNote("(2/5) Compiling node labels...");
 			if (!networkModesBox.getSelectedItem().equals("Event list")) {  // labels are only needed for one-mode or two-mode networks
 				boolean includeIsolates = false;
 				if (isolatesBox.getSelectedItem().equals("include isolates")) {
 					includeIsolates = true;
 				}
 				int statementTypeId = statementType.getId();
-				names1 = extractLabels(statements, var1Name, statementTypeId, includeIsolates);
-				names2 = extractLabels(statements, var2Name, statementTypeId, includeIsolates);
+				ArrayList<Statement> originalStatements = Dna.data.getStatements();
+				names1 = extractLabels(statements, originalStatements, documents, var1Name, var1Document(), statementTypeId, includeIsolates);
+				names2 = extractLabels(statements, originalStatements, documents, var2Name, var2Document(), statementTypeId, includeIsolates);
 				System.out.println("Node labels have been extracted.");
 			}
 			progressMonitor.setProgress(2);
 			
-			// step 3: create network data structure
-			progressMonitor.setNote("(3/4) Computing network...");
+			// step 3: retrieve values for variable 1, variable 2, and qualifier variable
+			progressMonitor.setNote("(3/5) Retrieving values for the node variables...");
+			// TODO
+			progressMonitor.setProgress(3);
+			
+			// step 4: create network data structure
+			progressMonitor.setNote("(4/5) Computing network...");
 			Matrix matrix = null;
 			String qualifier = (String) qualifierBox.getSelectedItem();
 			String qualifierAggregation = (String) aggregationBox.getSelectedItem();
@@ -1039,19 +1086,20 @@ public class Exporter extends JDialog {
 			if (networkModesBox.getSelectedItem().equals("Event list")) {
 				// no network preparation needed
 			} else if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
-				matrix = computeTwoModeMatrix(statements, var1Name, var2Name, names1, names2, qualifier, qualifierAggregation, normalization);
+				matrix = computeTwoModeMatrix(statements, statementType, var1Name, var2Name, names1, names2, qualifier, 
+						qualifierAggregation, normalization);
 			} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
 				String temporalAggregation = (String) temporalBox.getSelectedItem();
 				// TODO: generate one-mode network
 			}
 			System.out.println("Network has been created.");
-			progressMonitor.setProgress(3);
+			progressMonitor.setProgress(4);
 			
-			// step 4: write to file
-			progressMonitor.setNote("(4/4) Writing to file...");
+			// step 5: write to file
+			progressMonitor.setNote("(5/5) Writing to file...");
 			String fileFormat = (String) fileFormatBox.getSelectedItem();
 			if (networkModesBox.getSelectedItem().equals("Event list")) {
-				eventCSV(statements, filename);
+				eventCSV(statements, documents, statementType, filename);
 			} else {
 				if (fileFormat.equals(".csv")) {
 					exportCSV(matrix, filename);
@@ -1061,6 +1109,7 @@ public class Exporter extends JDialog {
 					// TODO: connect network to GRAPHML output format and export
 				}
 			}
+			progressMonitor.setProgress(5);
 			JOptionPane.showMessageDialog(Dna.dna.gui, "Data were exported to \"" + filename + "\".");
 		}
 	}
@@ -1068,31 +1117,63 @@ public class Exporter extends JDialog {
 	/**
 	 * Extract the labels for all nodes for a variable from the statements, conditional on isolates settings
 	 * 
-	 * @param statements        {@link ArrayList} of filtered {@link Statement}s
-	 * @param variable          {@link String} indicating the variable for which labels should be extracted
-	 * @param statementTypeId   {@link int} specifying the statement type ID to which the variable belongs
-	 * @param includeIsolates   {@link boolean} indicating whether all nodes should be included or just those after applying the statement filter
-	 * @return                  {@link String} array containing all sorted node names
+	 * @param statements          {@link ArrayList} of filtered {@link Statement}s
+	 * @param originalStatements  {@link ArrayList} of unfiltered {@link Statement}s (i.e., the original list of statements)
+	 * @param documents           {@link ArrayList} of documents in the database
+	 * @param variable            {@link String} indicating the variable for which labels should be extracted
+	 * @param statementTypeId     {@link int} specifying the statement type ID to which the variable belongs
+	 * @param includeIsolates     {@link boolean} indicating whether all nodes should be included or just those after applying the statement filter
+	 * @return                    {@link String} array containing all sorted node names
 	 */
-	String[] extractLabels(ArrayList<Statement> statements, String variable, int statementTypeId, boolean includeIsolates) {
+	private String[] extractLabels(
+			ArrayList<Statement> statements, 
+			ArrayList<Statement> originalStatements, 
+			ArrayList<Document> documents, 
+			String variable, 
+			boolean variableDocument, 
+			int statementTypeId, 
+			boolean includeIsolates) {
+		
+		// decide whether to use the original statements or the filtered statements
+		ArrayList<Statement> finalStatements;
+		if (includeIsolates == true) {
+			finalStatements = originalStatements;
+		} else {
+			finalStatements = statements;
+		}
+
+		// HashMap for fast lookup of document indices by ID
+		HashMap<Integer, Integer> docMap = new HashMap<Integer, Integer>();
+		for (int i = 0; i < documents.size(); i++) {
+			docMap.put(documents.get(i).getId(), i);
+		}
+		
+		// go through statements and extract names
 		ArrayList<String> names = new ArrayList<String>();
-		if (includeIsolates == true) {  // take them from the main database 
-			for (int i = 0; i < Dna.data.getStatements().size(); i++) {
-				if (Dna.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
-					String n = (String) Dna.data.getStatements().get(i).getValues().get(variable);
-					if (!names.contains(n)) {
-						names.add(n);
-					}
+		String n = null;
+		for (int i = 0; i < finalStatements.size(); i++) {
+			if (variableDocument == true) {
+				if (variable.equals("author")) {
+					n = documents.get(docMap.get(finalStatements.get(i).getDocumentId())).getAuthor();
+				} else if (variable.equals("source")) {
+					n = documents.get(docMap.get(finalStatements.get(i).getDocumentId())).getSource();
+				} else if (variable.equals("section")) {
+					n = documents.get(docMap.get(finalStatements.get(i).getDocumentId())).getSection();
+				} else if (variable.equals("type")) {
+					n = documents.get(docMap.get(finalStatements.get(i).getDocumentId())).getType();
 				}
-			}
-		} else {  // no isolates: take them from the filtered results
-			for (int i = 0; i < statements.size(); i++) {
-				String n = (String) statements.get(i).getValues().get(variable);
+				if (!names.contains(n)) {
+					names.add(n);
+				}
+			} else if (finalStatements.get(i).getStatementTypeId() == statementTypeId) {
+				n = (String) finalStatements.get(i).getValues().get(variable);
 				if (!names.contains(n)) {
 					names.add(n);
 				}
 			}
 		}
+		
+		// sort and convert to array, then return
 		Collections.sort(names);
 		String[] nameArray = new String[names.size()];
 		for (int i = 0; i < names.size(); i++) {
@@ -1109,11 +1190,14 @@ public class Exporter extends JDialog {
 	/**
 	 * Return a filtered list of {@link Statement}s based on the settings in the GUI.
 	 * 
+	 * @param statements          {@link ArrayList} of {@link Statement}s to be filtered.
 	 * @param startDate           {@link Date} object indicating the start date
 	 * @param stopDate            {@link Date} object indicating the end date
 	 * @param statementType       {@link StatementType} to which the export is restricted
 	 * @param var1                {@link String} indicating the first variable used for network construction, e.g., "organization"
 	 * @param var2                {@link String} indicating the second variable used for network construction, e.g., "concept"
+	 * @param var1Document        {@link boolean} indicating if the var1 variable is a document-level variable (as opposed to statement-level)
+	 * @param var2Document        {@link boolean} indicating if the var2 variable is a document-level variable (as opposed to statement-level)
 	 * @param qualifierName       {@link String} indicating the qualifier variable, e.g., "agreement"
 	 * @param ignoreQualifier     {@link boolean} indicating whether the qualifier variable should be ignored
 	 * @param duplicateSetting    {@link String} indicating how to handle duplicates; valid settings include "include all duplicates", "ignore per document", "ignore per calendar week", "ignore per calendar month", "ignore per calendar year", or "ignore across date range"
@@ -1122,12 +1206,28 @@ public class Exporter extends JDialog {
 	 * @param excludeSection      {@link ArrayList} with {@link String}s containing document sections to exclude
 	 * @param excludeType         {@link ArrayList} with {@link String}s containing document types to exclude
 	 * @param excludeValues       {@link HashMap} with {@link String}s as keys (indicating the variable for which entries should be excluded from export) and {@link HashMap}s of {@link String}s (containing variable entries to exclude from network export)
+	 * @param filterEmptyFields   {@link boolean} indicating whether empty fields (i.e., "") should be excluded
 	 * @return                    {@link ArrayList} of filtered {@link Statement}s
 	 */
-	ArrayList<Statement> filter(Date startDate, Date stopDate, StatementType statementType, String var1, String var2, String qualifierName, 
-			boolean ignoreQualifier, String duplicateSetting, ArrayList<String> excludeAuthor, 
-			ArrayList<String> excludeSource, ArrayList<String> excludeSection, ArrayList<String> excludeType, 
-			HashMap<String, ArrayList<String>> excludeValues) {
+	private ArrayList<Statement> filter(
+			ArrayList<Statement> statements, 
+			ArrayList<Document> documents, 
+			Date startDate, 
+			Date stopDate, 
+			StatementType statementType, 
+			String var1, 
+			String var2, 
+			boolean var1Document, 
+			boolean var2Document, 
+			String qualifierName, 
+			boolean ignoreQualifier, 
+			String duplicateSetting, 
+			ArrayList<String> excludeAuthor, 
+			ArrayList<String> excludeSource, 
+			ArrayList<String> excludeSection, 
+			ArrayList<String> excludeType, 
+			HashMap<String, ArrayList<String>> excludeValues, 
+			boolean filterEmptyFields) {
 		
 		// reporting
 		Iterator<String> excludeIterator = excludeValues.keySet().iterator();
@@ -1151,11 +1251,60 @@ public class Exporter extends JDialog {
 			System.out.println("[Excluded] type: " + excludeType.get(i));
 		}
 		
+		// HashMap for fast lookup of document indices by ID
+		HashMap<Integer, Integer> docMap = new HashMap<Integer, Integer>();
+		for (int i = 0; i < documents.size(); i++) {
+			docMap.put(documents.get(i).getId(), i);
+		}
+		
+		// Create arrays with variable values
+		Statement s;
+		String docAuthor, docSource, docSection, docType;
+		String[] values1 = new String[statements.size()];
+		String[] values2 = new String[statements.size()];
+		for (int i = 0; i < statements.size(); i++) {
+			s = statements.get(i);
+			docAuthor = documents.get(docMap.get(s.getDocumentId())).getAuthor();
+			docSource = documents.get(docMap.get(s.getDocumentId())).getSource();
+			docSection = documents.get(docMap.get(s.getDocumentId())).getSection();
+			docType = documents.get(docMap.get(s.getDocumentId())).getType();
+			if (var1Document == true) {
+				if (var1.equals("author")) {
+					values1[i] = docAuthor;
+				} else if (var1.equals("source")) {
+					values1[i] = docSource;
+				} else if (var1.equals("section")) {
+					values1[i] = docSection;
+				} else if (var1.equals("type")) {
+					values1[i] = docType;
+				}
+			} else {
+				values1[i] = (String) s.getValues().get(var1);
+			}
+			if (var2Document == true) {
+				if (var2.equals("author")) {
+					values2[i] = docAuthor;
+				} else if (var2.equals("source")) {
+					values2[i] = docSource;
+				} else if (var2.equals("section")) {
+					values2[i] = docSection;
+				} else if (var2.equals("type")) {
+					values2[i] = docType;
+				}
+			} else {
+				values2[i] = (String) s.getValues().get(var2);
+			}
+		}
+		
 		// process and exclude statements
 		ArrayList<Statement> al = new ArrayList<Statement>();
-		for (int i = 0; i < Dna.dna.gui.rightPanel.statementPanel.ssc.size(); i++) {
+	    String previousVar1 = null;
+	    String previousVar2 = null;
+	    Calendar cal, calPrevious;
+	    int year, month, week, yearPrevious, monthPrevious, weekPrevious;
+		for (int i = 0; i < statements.size(); i++) {
 			boolean select = true;
-			Statement s = Dna.dna.gui.rightPanel.statementPanel.ssc.get(i);
+			s = statements.get(i);
 			
 			// step 1: get all statement IDs corresponding to date range and statement type
 			if (s.getDate().before(startDate)) {
@@ -1167,13 +1316,13 @@ public class Exporter extends JDialog {
 			}
 			
 			// step 2: check against excluded values
-			if (excludeAuthor.contains(Dna.data.getDocument(s.getDocumentId()).getAuthor())) {
+			if (excludeAuthor.contains(documents.get(docMap.get(s.getDocumentId())).getAuthor())) {
 				select = false;
-			} else if (excludeSource.contains(Dna.data.getDocument(s.getDocumentId()).getSource())) {
+			} else if (excludeSource.contains(documents.get(docMap.get(s.getDocumentId())).getSource())) {
 				select = false;
-			} else if (excludeSection.contains(Dna.data.getDocument(s.getDocumentId()).getSection())) {
+			} else if (excludeSection.contains(documents.get(docMap.get(s.getDocumentId())).getSection())) {
 				select = false;
-			} else if (excludeType.contains(Dna.data.getDocument(s.getDocumentId()).getType())) {
+			} else if (excludeType.contains(documents.get(docMap.get(s.getDocumentId())).getType())) {
 				select = false;
 			}
 			if (select == true) {
@@ -1191,39 +1340,59 @@ public class Exporter extends JDialog {
 					}
 				}
 			}
-			
+
 			// step 3: check against empty fields
 			if (select == true) {
-				// TODO: this fails when source x concept network is selected: 
-				if (s.getValues().get(var1).equals("")) {
-					select = false;
-				}
-				if (s.getValues().get(var2).equals("")) {
-					select = false;
+				if (values1[i].equals("") || values2[i].equals("")) {
+					if (filterEmptyFields == true) {
+						select = false;
+					}
 				}
 			}
 			
 			// step 4: check for duplicates
-			Calendar cal = Calendar.getInstance();
+			cal = Calendar.getInstance();
 		    cal.setTime(s.getDate());
-		    int year = cal.get(Calendar.YEAR);
-		    int month = cal.get(Calendar.MONTH);
-		    int week = cal.get(Calendar.WEEK_OF_YEAR);
+		    year = cal.get(Calendar.YEAR);
+		    month = cal.get(Calendar.MONTH);
+		    week = cal.get(Calendar.WEEK_OF_YEAR);
 			if (!duplicateSetting.equals("include all duplicates")) {
 				for (int j = al.size() - 1; j >= 0; j--) {
-					Calendar calPrevious = Calendar.getInstance();
+				    if (var1Document == false) {
+				    	previousVar1 = (String) al.get(j).getValues().get(var1);
+				    } else if (var1.equals("author")) {
+				    	previousVar1 = documents.get(docMap.get(al.get(j).getDocumentId())).getAuthor();
+				    } else if (var1.equals("source")) {
+				    	previousVar1 = documents.get(docMap.get(al.get(j).getDocumentId())).getSource();
+				    } else if (var1.equals("section")) {
+				    	previousVar1 = documents.get(docMap.get(al.get(j).getDocumentId())).getSection();
+				    } else if (var1.equals("type")) {
+				    	previousVar1 = documents.get(docMap.get(al.get(j).getDocumentId())).getType();
+				    }
+				    if (var2Document == false) {
+				    	previousVar2 = (String) al.get(j).getValues().get(var2);
+				    } else if (var2.equals("author")) {
+				    	previousVar2 = documents.get(docMap.get(al.get(j).getDocumentId())).getAuthor();
+				    } else if (var2.equals("source")) {
+				    	previousVar2 = documents.get(docMap.get(al.get(j).getDocumentId())).getSource();
+				    } else if (var2.equals("section")) {
+				    	previousVar2 = documents.get(docMap.get(al.get(j).getDocumentId())).getSection();
+				    } else if (var2.equals("type")) {
+				    	previousVar2 = documents.get(docMap.get(al.get(j).getDocumentId())).getType();
+				    }
+					calPrevious = Calendar.getInstance();
 				    calPrevious.setTime(al.get(j).getDate());
-				    int yearPrevious = calPrevious.get(Calendar.YEAR);
-				    int monthPrevious = calPrevious.get(Calendar.MONTH);
-				    int weekPrevious = calPrevious.get(Calendar.WEEK_OF_YEAR);
+				    yearPrevious = calPrevious.get(Calendar.YEAR);
+				    monthPrevious = calPrevious.get(Calendar.MONTH);
+				    weekPrevious = calPrevious.get(Calendar.WEEK_OF_YEAR);
 					if ( s.getStatementTypeId() == al.get(j).getStatementTypeId()
 							&& (al.get(j).getDocumentId() == s.getDocumentId() && duplicateSetting.equals("ignore per document") 
 								|| duplicateSetting.equals("ignore across date range")
 								|| (duplicateSetting.equals("ignore per calendar year") && year == yearPrevious)
 								|| (duplicateSetting.equals("ignore per calendar month") && month == monthPrevious)
 								|| (duplicateSetting.equals("ignore per calendar week") && week == weekPrevious) )
-							&& s.getValues().get(var1).equals(al.get(j).getValues().get(var1))
-							&& s.getValues().get(var2).equals(al.get(j).getValues().get(var2))
+							&& values1[i].equals(previousVar1)
+							&& values2[i].equals(previousVar2)
 							&& (s.getValues().get(qualifierName).equals(al.get(j).getValues().get(qualifierName)) || ignoreQualifier == true) ) {
 						select = false;
 						break;
@@ -1252,11 +1421,16 @@ public class Exporter extends JDialog {
 	 * @param normalization         {@link String} indicating what type of normalization will be used. Valid values are "no", "activity", and "prominence".
 	 * @return                      {@link Matrix} object containing a two-mode network matrix.
 	 */
-	public Matrix computeTwoModeMatrix(ArrayList<Statement> statements, String var1, String var2, String[] names1, 
+	private Matrix computeTwoModeMatrix(ArrayList<Statement> statements, StatementType statementType, String var1, String var2, String[] names1, 
 			String[] names2, String qualifier, String qualifierAggregation, String normalization) {
-		int statementTypeId = statements.get(0).getStatementTypeId();
+		if (statements.size() == 0) {
+			double[][] m = new double[names1.length][names2.length];
+			Matrix mt = new Matrix(m, names1, names2, true);
+			return mt;
+		}
+		int statementTypeId = statementType.getId();
 		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
-		if (Dna.data.getStatementTypeById(statementTypeId).getVariables().get(qualifier).equals("integer")) {
+		if (statementType.getVariables().get(qualifier).equals("integer")) {
 			booleanQualifier = false;
 		}
 		int[] qualifierValues;  // unique qualifier values (i.e., all of them found at least once in the dataset)
@@ -1458,6 +1632,7 @@ public class Exporter extends JDialog {
 	 * @param n     Length of the binary vector
 	 * @return      Binary vector of length n
 	 */
+	/*
 	private int[] lexUnrank(int rank, int n) {
 		int[] binaryVector = new int[n];
 		for (int i = n; i > 0; i--) {
@@ -1468,6 +1643,7 @@ public class Exporter extends JDialog {
 		}
 		return binaryVector;
 	}
+	*/
 	
 	/**
 	 * This function accepts a list of statements that should be included in the relational event export, 
@@ -1475,21 +1651,30 @@ public class Exporter extends JDialog {
 	 * date/time stamp. There is one statement per row, and the number of columns is the number of variables 
 	 * present in the statement type.
 	 * 
-	 * @param statements	An array list of SidebarStatement objects (of the same statement type) that should be exported.
-	 * @param fileName		String with the file name of the CSV file to which the event list will be exported.
+	 * @param statements	 An array list of {@link Statement}s (of the same statement type) that should be exported.
+	 * @param documents      An array list of {@link Document}s in which the statements are embedded.
+	 * @param statementType  The statement type corresponding to the statements.
+	 * @param fileName		 String with the file name of the CSV file to which the event list will be exported.
 	 */
-	public void eventCSV(ArrayList<Statement> statements, String fileName) {
+	private void eventCSV(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, String fileName) {
 		String key, value;
 		int statementId;
 		Date d;
 		SimpleDateFormat dateFormat;
-		int statementTypeId = statements.get(0).getStatementTypeId();
+		int statementTypeId = statementType.getId();
 		for (int i = 0; i < statements.size(); i++) {
 			if (statements.get(i).getStatementTypeId() != statementTypeId) {
 				throw new IllegalArgumentException("More than one statement type was selected. Cannot export to a spreadsheet!");
 			}
 		}
-		HashMap<String, String> variables = Dna.data.getStatementTypeById(statementTypeId).getVariables();
+
+		// HashMap for fast lookup of document indices by ID
+		HashMap<Integer, Integer> docMap = new HashMap<Integer, Integer>();
+		for (int i = 0; i < documents.size(); i++) {
+			docMap.put(documents.get(i).getId(), i);
+		}
+		
+		HashMap<String, String> variables = statementType.getVariables();
 		Iterator<String> keyIterator;
 		try {
 			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), "UTF-8"));
@@ -1506,23 +1691,23 @@ public class Exporter extends JDialog {
 				d = statements.get(i).getDate();
 				dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 				out.write(";" + dateFormat.format(d));
-				dna.dataStructures.Document doc = Dna.data.getDocument(Dna.data.getStatement(statementId).getDocumentId());
+				Document doc = documents.get(docMap.get(statements.get(i).getDocumentId()));
 				out.write(";" + doc.getId());
 				out.write(";\"" + doc.getTitle().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
 				out.write(";\"" + doc.getAuthor().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
 				out.write(";\"" + doc.getSource().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
 				out.write(";\"" + doc.getSection().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
 				out.write(";\"" + doc.getType().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				out.write(";\"" + doc.getText().substring(Dna.data.getStatement(statementId).getStart(), 
-						Dna.data.getStatement(statementId).getStop()).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + doc.getText().substring(statements.get(i).getStart(), 
+						statements.get(i).getStop()).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
 				keyIterator = variables.keySet().iterator();
 				while (keyIterator.hasNext()){
 					key = keyIterator.next();
 					value = variables.get(key);
 					if (value.equals("short text") || value.equals("long text")) {
-						out.write(";\"" + ((String) Dna.data.getStatement(statementId).getValues().get(key)).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+						out.write(";\"" + ((String) statements.get(i).getValues().get(key)).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
 					} else if (value.equals("boolean") || value.equals("integer")) {
-						out.write(";" + Dna.data.getStatement(statementId).getValues().get(key));
+						out.write(";" + statements.get(i).getValues().get(key));
 					}
 				}
 			}
@@ -1539,7 +1724,7 @@ public class Exporter extends JDialog {
 	 * @param matrix   The input {@link Matrix} object.
 	 * @param outfile  The path and file name of the target CSV file.
 	 */
-	public void exportCSV (Matrix matrix, String outfile) {
+	private void exportCSV (Matrix matrix, String outfile) {
 		String[] rn = matrix.getRownames();
 		String[] cn = matrix.getColnames();
 		int nr = rn.length;
