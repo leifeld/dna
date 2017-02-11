@@ -56,6 +56,12 @@ import dna.dataStructures.StatementType;
 import dna.renderer.StatementTypeComboBoxModel;
 import dna.renderer.StatementTypeComboBoxRenderer;
 
+/*
+ * TODO:
+ * - make several other combo boxes invisible (or change items) when event list is selected 
+ * - change items in temporal aggregation box when two-mode is selected
+ */
+
 /**
  * @author Philip Leifeld
  * 
@@ -1023,7 +1029,7 @@ public class Exporter extends JDialog {
 		}
 		
 		public void run() {
-			progressMonitor = new ProgressMonitor(Exporter.this, "Exporting network data.", "(1/5) Filtering statements...", 0, 5);
+			progressMonitor = new ProgressMonitor(Exporter.this, "Exporting network data.", "(1/4) Filtering statements...", 0, 4);
 			progressMonitor.setMillisToDecideToPopup(1);
 			// delay the process by a second to make sure the progress monitor shows up
 			// see here: https://coderanch.com/t/631127/java/progress-monitor-showing
@@ -1035,7 +1041,7 @@ public class Exporter extends JDialog {
 			progressMonitor.setProgress(0);
 			
 			// step 1: filter statements by date, statement type, empty variable entries, qualifier, and excluded values
-			progressMonitor.setNote("(1/5) Filtering statements...");
+			progressMonitor.setNote("(1/4) Filtering statements...");
 			Date startDate = (Date) startSpinner.getValue();
 			Date stopDate = (Date) stopSpinner.getValue();
 			StatementType statementType = (StatementType) statementTypeBox.getSelectedItem();
@@ -1058,7 +1064,7 @@ public class Exporter extends JDialog {
 			progressMonitor.setProgress(1);
 			
 			// step 2: compile the node labels (and thereby dimensions) for the first and second mode
-			progressMonitor.setNote("(2/5) Compiling node labels...");
+			progressMonitor.setNote("(2/4) Compiling node labels...");
 			if (!networkModesBox.getSelectedItem().equals("Event list")) {  // labels are only needed for one-mode or two-mode networks
 				boolean includeIsolates = false;
 				if (isolatesBox.getSelectedItem().equals("include isolates")) {
@@ -1072,13 +1078,8 @@ public class Exporter extends JDialog {
 			}
 			progressMonitor.setProgress(2);
 			
-			// step 3: retrieve values for variable 1, variable 2, and qualifier variable
-			progressMonitor.setNote("(3/5) Retrieving values for the node variables...");
-			// TODO
-			progressMonitor.setProgress(3);
-			
-			// step 4: create network data structure
-			progressMonitor.setNote("(4/5) Computing network...");
+			// step 3: create network data structure
+			progressMonitor.setNote("(4/4) Computing network...");
 			Matrix matrix = null;
 			String qualifier = (String) qualifierBox.getSelectedItem();
 			String qualifierAggregation = (String) aggregationBox.getSelectedItem();
@@ -1086,17 +1087,18 @@ public class Exporter extends JDialog {
 			if (networkModesBox.getSelectedItem().equals("Event list")) {
 				// no network preparation needed
 			} else if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
-				matrix = computeTwoModeMatrix(statements, statementType, var1Name, var2Name, names1, names2, qualifier, 
-						qualifierAggregation, normalization);
+				matrix = computeTwoModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
+						var2Document(), names1, names2, qualifier, qualifierAggregation, normalization);
 			} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
 				String temporalAggregation = (String) temporalBox.getSelectedItem();
-				// TODO: generate one-mode network
+				matrix = computeOneModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
+						var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, temporalAggregation);
 			}
 			System.out.println("Network has been created.");
-			progressMonitor.setProgress(4);
+			progressMonitor.setProgress(3);
 			
-			// step 5: write to file
-			progressMonitor.setNote("(5/5) Writing to file...");
+			// step 4: write to file
+			progressMonitor.setNote("(5/4) Writing to file...");
 			String fileFormat = (String) fileFormatBox.getSelectedItem();
 			if (networkModesBox.getSelectedItem().equals("Event list")) {
 				eventCSV(statements, documents, statementType, filename);
@@ -1109,7 +1111,7 @@ public class Exporter extends JDialog {
 					// TODO: connect network to GRAPHML output format and export
 				}
 			}
-			progressMonitor.setProgress(5);
+			progressMonitor.setProgress(4);
 			JOptionPane.showMessageDialog(Dna.dna.gui, "Data were exported to \"" + filename + "\".");
 		}
 	}
@@ -1258,45 +1260,11 @@ public class Exporter extends JDialog {
 		}
 		
 		// Create arrays with variable values
-		Statement s;
-		String docAuthor, docSource, docSection, docType;
-		String[] values1 = new String[statements.size()];
-		String[] values2 = new String[statements.size()];
-		for (int i = 0; i < statements.size(); i++) {
-			s = statements.get(i);
-			docAuthor = documents.get(docMap.get(s.getDocumentId())).getAuthor();
-			docSource = documents.get(docMap.get(s.getDocumentId())).getSource();
-			docSection = documents.get(docMap.get(s.getDocumentId())).getSection();
-			docType = documents.get(docMap.get(s.getDocumentId())).getType();
-			if (var1Document == true) {
-				if (var1.equals("author")) {
-					values1[i] = docAuthor;
-				} else if (var1.equals("source")) {
-					values1[i] = docSource;
-				} else if (var1.equals("section")) {
-					values1[i] = docSection;
-				} else if (var1.equals("type")) {
-					values1[i] = docType;
-				}
-			} else {
-				values1[i] = (String) s.getValues().get(var1);
-			}
-			if (var2Document == true) {
-				if (var2.equals("author")) {
-					values2[i] = docAuthor;
-				} else if (var2.equals("source")) {
-					values2[i] = docSource;
-				} else if (var2.equals("section")) {
-					values2[i] = docSection;
-				} else if (var2.equals("type")) {
-					values2[i] = docType;
-				}
-			} else {
-				values2[i] = (String) s.getValues().get(var2);
-			}
-		}
+		String[] values1 = retrieveValues(statements, documents, var1, var1Document);
+		String[] values2 = retrieveValues(statements, documents, var2, var2Document);
 		
 		// process and exclude statements
+		Statement s;
 		ArrayList<Statement> al = new ArrayList<Statement>();
 	    String previousVar1 = null;
 	    String previousVar2 = null;
@@ -1407,27 +1375,35 @@ public class Exporter extends JDialog {
 		}
 		return(al);
 	}
-	
+
 	/**
-	 * Create a two-mode network {@link Matrix}.
+	 * Create a one-mode network {@link Matrix}.
 	 * 
 	 * @param statements            A (potentially filtered) {@link ArrayList} of {@link Statement}s.
+	 * @param documents             An {@link ArrayList} of {@link Document}s which contain the statements.
+	 * @param statementType         The {@link StatementType} corresponding to the statements.
 	 * @param var1                  {@link String} denoting the first variable (containing the row values).
 	 * @param var2                  {@link String} denoting the second variable (containing the columns values).
+	 * @param var1Document          {@link boolean} indicating whether the first variable is a document-level variable.
+	 * @param var2Document          {@link boolean} indicating whether the second variable is a document-level variable.
 	 * @param names1                {@link String} array containing the row labels.
 	 * @param names2                {@link String} array containing the column labels.
-	 * @param qualifier             {@link String} denoting the qualifier variable.
+	 * @param qualifier             {@link String} denoting the name of the qualifier variable.
 	 * @param qualifierAggregation  {@link String} indicating how different levels of the qualifier variable are aggregated. Valid values are "ignore", "subtract", and "combine".
-	 * @param normalization         {@link String} indicating what type of normalization will be used. Valid values are "no", "activity", and "prominence".
-	 * @return                      {@link Matrix} object containing a two-mode network matrix.
+	 * @param normalization         {@link String} indicating what type of normalization will be used. Valid values are "no", "average activity", "Jaccard", and "cosine".
+	 * @param temporalAggregation   {@link String} indicating the temporal aggregation pattern. Valid values are "across date range" and "nested in document".
+	 * @return                      {@link Matrix} object containing a one-mode network matrix.
 	 */
-	private Matrix computeTwoModeMatrix(ArrayList<Statement> statements, StatementType statementType, String var1, String var2, String[] names1, 
-			String[] names2, String qualifier, String qualifierAggregation, String normalization) {
+	private Matrix computeOneModeMatrix(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, 
+			String var1, String var2, boolean var1Document, boolean var2Document, String[] names1, String[] names2, String qualifier, 
+			String qualifierAggregation, String normalization, String temporalAggregation) {
+		
 		if (statements.size() == 0) {
-			double[][] m = new double[names1.length][names2.length];
-			Matrix mt = new Matrix(m, names1, names2, true);
+			double[][] m = new double[names1.length][names1.length];
+			Matrix mt = new Matrix(m, names1, names1, true);
 			return mt;
 		}
+		
 		int statementTypeId = statementType.getId();
 		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
 		if (statementType.getVariables().get(qualifier).equals("integer")) {
@@ -1440,43 +1416,164 @@ public class Exporter extends JDialog {
 			qualifierValues = Dna.data.getIntEntries(statementTypeId, qualifier);
 		}
 		
-		// create and populate array
-		double[][][] array = new double[names1.length][names2.length][qualifierValues.length]; // 3D array: rows x cols x qualifier value
-		for (int i = 0; i < statements.size(); i++) {
-			String n1 = (String) statements.get(i).getValues().get(var1);  // retrieve first value from statement
-			String n2 = (String) statements.get(i).getValues().get(var2);  // retrieve second value from statement
-			int q = (int) statements.get(i).getValues().get(qualifier);    // retrieve qualifier value from statement
-			
-			// find out which matrix row corresponds to the first value
-			int row = -1;
-			for (int j = 0; j < names1.length; j++) {
-				if (names1[j].equals(n1)) {
-					row = j;
-					break;
+		double[][][] array = createArray(statements, documents, statementType, var1, var2, var1Document, var2Document, 
+				names1, names2, qualifier, qualifierAggregation);
+		
+		double[][] mat1 = new double[names1.length][names1.length];  // square matrix for "congruence" (or "ignore") results
+		double[][] mat2 = new double[names1.length][names1.length];  // square matrix for "conflict" results
+		double[][] m = new double[names1.length][names1.length];  // square matrix for final results
+		double range = Math.abs(qualifierValues[qualifierValues.length - 1] - qualifierValues[0]);
+		double i1count = 0.0;
+		double i2count = 0.0;
+		for (int i1 = 0; i1 < names1.length; i1++) {
+			for (int i2 = 0; i2 < names1.length; i2++) {
+				if (i1 != i2) {
+					for (int j = 0; j < names2.length; j++) {
+						// "ignore": sum up i1 and i2 independently over levels of k, then multiply.
+						// In the binary case, this amounts to counting how often each concept is used and then multiplying frequencies.
+						if (qualifierAggregation.equals("ignore")) {
+							i1count = 0;
+							for (int k1 = 0; k1 < qualifierValues.length; k1++) {
+								i1count = i1count + array[i1][j][k1];
+							}
+							i2count = 0;
+							for (int k2 = 0; k2 < qualifierValues.length; k2++) {
+								i2count = i2count + array[i2][j][k2];
+							}
+							mat1[i1][i2] = i1count * i2count;
+						}
+						// "congruence": sum up proximity of i1 and i2 per level of k, weighted by joint usage.
+						// In the binary case, this reduces to the sum of weighted matches per level of k
+						if (qualifierAggregation.equals("congruence") || qualifierAggregation.equals("subtract")) {
+							for (int k1 = 0; k1 < qualifierValues.length; k1++) {
+								for (int k2 = 0; k2 < qualifierValues.length; k2++) {
+									mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * (1.0 - ((Math.abs(qualifierValues[k1] - qualifierValues[k2]) / range))));
+								}
+							}
+						}
+						// "conflict": same as congruence, but distance instead of proximity
+						if (qualifierAggregation.equals("conflict") || qualifierAggregation.equals("subtract")) {
+							for (int k1 = 0; k1 < qualifierValues.length; k1++) {
+								for (int k2 = 0; k2 < qualifierValues.length; k2++) {
+									mat2[i1][i2] = mat2[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * ((Math.abs(qualifierValues[k1] - qualifierValues[k2]) / range)));
+								}
+							}
+						}
+					}
+					System.out.println("mat1: " + mat1[i1][i2] + " mat2: " + mat2[i1][i2] + " m: " + m[i1][i2]);
+					
+					// normalization
+					double norm = 1.0;
+					if (normalization.equals("no")) {
+						norm = 1.0;
+					} else if (normalization.equals("average activity")) {
+						i1count = 0;
+						i2count = 0;
+						for (int j = 0; j < names2.length; j++) {
+							for (int k = 0; k < qualifierValues.length; k++) {
+								i1count = i1count + array[i1][j][k];
+								i2count = i2count + array[i2][j][k];
+							}
+						}
+						norm = (i1count + i2count) / 2;
+					} else if (normalization.equals("Jaccard")) {
+						double m10 = 0;
+						double m01 = 0;
+						double m11 = 0;
+						for (int j = 0; j < names2.length; j++) {
+							for (int k = 0; k < qualifierValues.length; k++) {
+								if (array[i2][j][k] == 0) {
+									m10 = m10 + array[i1][j][k];
+								}
+								if (array[i1][j][k] == 0) {
+									m01 = m01 + array[i2][j][k];
+								}
+								if (array[i1][j][k] > 0 && array[i2][j][k] > 0) {
+									m11 = m11 + (array[i1][j][k] * array[i2][j][k]);
+								}
+							}
+						}
+						norm = m01 + m10 + m11;
+					} else if (normalization.equals("cosine")) {
+						i1count = 0;
+						i2count = 0;
+						for (int j = 0; j < names2.length; j++) {
+							for (int k = 0; k < qualifierValues.length; k++) {
+								i1count = i1count + array[i1][j][k];
+								i2count = i2count + array[i2][j][k];
+							}
+						}
+						norm = Math.sqrt(i1count * i1count) * Math.sqrt(i2count * i2count);
+					}
+					mat1[i1][i2] = mat1[i1][i2] / norm;
+					mat2[i1][i2] = mat2[i1][i2] / norm;
+					
+					// "subtract": congruence minus conflict; use the appropriate matrix or matrices
+					if (qualifierAggregation.equals("ignore")) {
+						m[i1][i2] = mat1[i1][i2];
+					} else if (qualifierAggregation.equals("congruence")) {
+						m[i1][i2] = mat1[i1][i2];
+					} else if (qualifierAggregation.equals("conflict")) {
+						m[i1][i2] = mat2[i1][i2];
+					} else if (qualifierAggregation.equals("subtract")) {
+						m[i1][i2] = mat1[i1][i2] - mat2[i1][i2];
+					}
 				}
 			}
-			
-			// find out which matrix column corresponds to the second value
-			int col = -1;
-			for (int j = 0; j < names2.length; j++) {
-				if (names2[j].equals(n2)) {
-					col = j;
-					break;
-				}
-			}
-			
-			// find out which qualifier level corresponds to the qualifier value
-			int qual = -1;  // qualifier level in the array
-			for (int j = 0; j < qualifierValues.length; j++) {
-				if (qualifierValues[j] == q) {
-					qual = j;
-					break;
-				}
-			}
-			
-			// add match to matrix (note that duplicates were dealt with at the statement filter stage)
-			array[row][col][qual] = array[row][col][qual] + 1.0;
 		}
+		
+		
+		boolean integerBoolean;
+		if (normalization.equals("no") && booleanQualifier == true) {
+			integerBoolean = true;
+		} else {
+			integerBoolean = false;
+		}
+		
+		Matrix matrix = new Matrix(m, names1, names1, integerBoolean);
+		return matrix;
+	}
+	
+	/**
+	 * Create a two-mode network {@link Matrix}.
+	 * 
+	 * @param statements            A (potentially filtered) {@link ArrayList} of {@link Statement}s.
+	 * @param documents             An {@link ArrayList} of {@link Document}s which contain the statements.
+	 * @param statementType         The {@link StatementType} corresponding to the statements.
+	 * @param var1                  {@link String} denoting the first variable (containing the row values).
+	 * @param var2                  {@link String} denoting the second variable (containing the columns values).
+	 * @param var1Document          {@link boolean} indicating whether the first variable is a document-level variable.
+	 * @param var2Document          {@link boolean} indicating whether the second variable is a document-level variable.
+	 * @param names1                {@link String} array containing the row labels.
+	 * @param names2                {@link String} array containing the column labels.
+	 * @param qualifier             {@link String} denoting the name of the qualifier variable.
+	 * @param qualifierAggregation  {@link String} indicating how different levels of the qualifier variable are aggregated. Valid values are "ignore", "subtract", and "combine".
+	 * @param normalization         {@link String} indicating what type of normalization will be used. Valid values are "no", "activity", and "prominence".
+	 * @return                      {@link Matrix} object containing a two-mode network matrix.
+	 */
+	private Matrix computeTwoModeMatrix(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, 
+			String var1, String var2, boolean var1Document, boolean var2Document, String[] names1, String[] names2, String qualifier, 
+			String qualifierAggregation, String normalization) {
+		if (statements.size() == 0) {
+			double[][] m = new double[names1.length][names2.length];
+			Matrix mt = new Matrix(m, names1, names2, true);
+			return mt;
+		}
+		int statementTypeId = statementType.getId();
+		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
+		// TODO: it may be possible that there is no qualifier; adjust for this case (also in the one-mode case?)
+		if (statementType.getVariables().get(qualifier).equals("integer")) {
+			booleanQualifier = false;
+		}
+		int[] qualifierValues;  // unique qualifier values (i.e., all of them found at least once in the dataset)
+		if (booleanQualifier == true) {
+			qualifierValues = new int[] {0, 1};
+		} else {
+			qualifierValues = Dna.data.getIntEntries(statementTypeId, qualifier);
+		}
+		
+		double[][][] array = createArray(statements, documents, statementType, var1, var2, var1Document, var2Document, 
+				names1, names2, qualifier, qualifierAggregation);
 		
 		// combine levels of the qualifier variable conditional on qualifier aggregation option
 		double[][] mat = new double[names1.length][names2.length];  // initialized with zeros
@@ -1592,6 +1689,132 @@ public class Exporter extends JDialog {
 		// create Matrix object and return
 		Matrix matrix = new Matrix(mat, names1, names2, integerBoolean); // assemble the Matrix object with labels
 		return matrix;
+	}
+	
+	/**
+	 * Retrieve the values across statements/documents given the name of the variable. 
+	 * E.g., provide a list of statements, a list of documents, a variable name, and 
+	 * information on whether the variable is defined at the document level (e.g., 
+	 * author or section) or at the statement level (e.g., organization), and return 
+	 * a one-dimensional array of values (e.g., the organization names or authors for 
+	 * all statements provided.
+	 * 
+	 * @param statements            A (potentially filtered) {@link ArrayList} of {@link Statement}s.
+	 * @param documents             An {@link ArrayList} of {@link Document}s which contain the statements.
+	 * @param variable              {@link String} denoting the first variable (containing the row values).
+	 * @param documentLevel         {@link boolean} indicating whether the first variable is a document-level variable.
+	 * @return                      String array of values.
+	 */
+	private String[] retrieveValues(ArrayList<Statement> statements, ArrayList<Document> documents, String variable, boolean documentLevel) {
+		
+		// HashMap for fast lookup of document indices by ID
+		HashMap<Integer, Integer> docMap = new HashMap<Integer, Integer>();
+		for (int i = 0; i < documents.size(); i++) {
+			docMap.put(documents.get(i).getId(), i);
+		}
+		
+		Statement s;
+		String docAuthor, docSource, docSection, docType;
+		String[] values = new String[statements.size()];
+		for (int i = 0; i < statements.size(); i++) {
+			s = statements.get(i);
+			docAuthor = documents.get(docMap.get(s.getDocumentId())).getAuthor();
+			docSource = documents.get(docMap.get(s.getDocumentId())).getSource();
+			docSection = documents.get(docMap.get(s.getDocumentId())).getSection();
+			docType = documents.get(docMap.get(s.getDocumentId())).getType();
+			if (documentLevel == true) {
+				if (variable.equals("author")) {
+					values[i] = docAuthor;
+				} else if (variable.equals("source")) {
+					values[i] = docSource;
+				} else if (variable.equals("section")) {
+					values[i] = docSection;
+				} else if (variable.equals("type")) {
+					values[i] = docType;
+				}
+			} else {
+				values[i] = (String) s.getValues().get(variable);
+			}
+		}
+		
+		return values;
+	}
+	
+	/**
+	 * Create a three-dimensional array (variable 1 x variable 2 x qualifier).
+	 * 
+	 * @param statements            A (potentially filtered) {@link ArrayList} of {@link Statement}s.
+	 * @param documents             An {@link ArrayList} of {@link Document}s which contain the statements.
+	 * @param statementType         The {@link StatementType} corresponding to the statements.
+	 * @param var1                  {@link String} denoting the first variable (containing the row values).
+	 * @param var2                  {@link String} denoting the second variable (containing the columns values).
+	 * @param var1Document          {@link boolean} indicating whether the first variable is a document-level variable.
+	 * @param var2Document          {@link boolean} indicating whether the second variable is a document-level variable.
+	 * @param names1                {@link String} array containing the row labels.
+	 * @param names2                {@link String} array containing the column labels.
+	 * @param qualifier             {@link String} denoting the name of the qualifier variable.
+	 * @param qualifierAggregation  {@link String} indicating how different levels of the qualifier variable are aggregated. Valid values are "ignore", "subtract", and "combine".
+	 * @return                      3D double array
+	 */
+	private double[][][] createArray(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, 
+			String var1, String var2, boolean var1Document, boolean var2Document, String[] names1, String[] names2, String qualifier, 
+			String qualifierAggregation) {
+		
+		int statementTypeId = statementType.getId();
+		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
+		if (statementType.getVariables().get(qualifier).equals("integer")) {
+			booleanQualifier = false;
+		}
+		int[] qualifierValues;  // unique qualifier values (i.e., all of them found at least once in the dataset)
+		if (booleanQualifier == true) {
+			qualifierValues = new int[] {0, 1};
+		} else {
+			qualifierValues = Dna.data.getIntEntries(statementTypeId, qualifier);
+		}
+
+		// Create arrays with variable values
+		String[] values1 = retrieveValues(statements, documents, var1, var1Document);
+		String[] values2 = retrieveValues(statements, documents, var2, var2Document);
+		
+		// create and populate array
+		double[][][] array = new double[names1.length][names2.length][qualifierValues.length]; // 3D array: rows x cols x qualifier value
+		for (int i = 0; i < statements.size(); i++) {
+			String n1 = values1[i];  // retrieve first value from statement
+			String n2 = values2[i];  // retrieve second value from statement
+			int q = (int) statements.get(i).getValues().get(qualifier);  // retrieve qualifier value from statement
+			
+			// find out which matrix row corresponds to the first value
+			int row = -1;
+			for (int j = 0; j < names1.length; j++) {
+				if (names1[j].equals(n1)) {
+					row = j;
+					break;
+				}
+			}
+			
+			// find out which matrix column corresponds to the second value
+			int col = -1;
+			for (int j = 0; j < names2.length; j++) {
+				if (names2[j].equals(n2)) {
+					col = j;
+					break;
+				}
+			}
+			
+			// find out which qualifier level corresponds to the qualifier value
+			int qual = -1;  // qualifier level in the array
+			for (int j = 0; j < qualifierValues.length; j++) {
+				if (qualifierValues[j] == q) {
+					qual = j;
+					break;
+				}
+			}
+			
+			// add match to matrix (note that duplicates were dealt with at the statement filter stage)
+			array[row][col][qual] = array[row][col][qual] + 1.0;
+		}
+		
+		return array;
 	}
 	
 	/**
