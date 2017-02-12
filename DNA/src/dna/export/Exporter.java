@@ -1957,11 +1957,11 @@ public class Exporter extends JDialog {
 			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outfile), "UTF8"));
 			out.write("\"\"");
 			for (int i = 0; i < nc; i++) {
-				out.write(";\"" + cn[i] + "\"");
+				out.write(";\"" + cn[i].replaceAll("\"", "'") + "\"");
 			}
 			for (int i = 0; i < nr; i++) {
 				out.newLine();
-				out.write("\"" + rn[i] + "\"");
+				out.write("\"" + rn[i].replaceAll("\"", "'") + "\"");
 				for (int j = 0; j < nc; j++) {
 					if (matrix.getInteger() == true) {
 						out.write(";" + (int) mat[i][j]);
