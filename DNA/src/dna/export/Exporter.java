@@ -1449,15 +1449,13 @@ public class Exporter extends JDialog {
 						// "ignore": sum up i1 and i2 independently over levels of k, then multiply.
 						// In the binary case, this amounts to counting how often each concept is used and then multiplying frequencies.
 						if (qualifierAggregation.equals("ignore")) {
-							i1count = 0;
-							for (int k1 = 0; k1 < qualifierValues.length; k1++) {
-								i1count = i1count + array[i1][j][k1];
+							i1count = 0.0;
+							i2count = 0.0;
+							for (int k = 0; k < qualifierValues.length; k++) {
+								i1count = i1count + array[i1][j][k];
+								i2count = i2count + array[i2][j][k];
 							}
-							i2count = 0;
-							for (int k2 = 0; k2 < qualifierValues.length; k2++) {
-								i2count = i2count + array[i2][j][k2];
-							}
-							mat1[i1][i2] = i1count * i2count;
+							mat1[i1][i2] = mat1[i1][i2] + i1count * i2count;
 						}
 						// "congruence": sum up proximity of i1 and i2 per level of k, weighted by joint usage.
 						// In the binary case, this reduces to the sum of weighted matches per level of k
@@ -1483,8 +1481,8 @@ public class Exporter extends JDialog {
 					if (normalization.equals("no")) {
 						norm = 1.0;
 					} else if (normalization.equals("average activity")) {
-						i1count = 0;
-						i2count = 0;
+						i1count = 0.0;
+						i2count = 0.0;
 						for (int j = 0; j < names2.length; j++) {
 							for (int k = 0; k < qualifierValues.length; k++) {
 								i1count = i1count + array[i1][j][k];
@@ -1493,9 +1491,9 @@ public class Exporter extends JDialog {
 						}
 						norm = (i1count + i2count) / 2;
 					} else if (normalization.equals("Jaccard")) {
-						double m10 = 0;
-						double m01 = 0;
-						double m11 = 0;
+						double m10 = 0.0;
+						double m01 = 0.0;
+						double m11 = 0.0;
 						for (int j = 0; j < names2.length; j++) {
 							for (int k = 0; k < qualifierValues.length; k++) {
 								if (array[i2][j][k] == 0) {
@@ -1511,8 +1509,8 @@ public class Exporter extends JDialog {
 						}
 						norm = m01 + m10 + m11;
 					} else if (normalization.equals("cosine")) {
-						i1count = 0;
-						i2count = 0;
+						i1count = 0.0;
+						i2count = 0.0;
 						for (int j = 0; j < names2.length; j++) {
 							for (int k = 0; k < qualifierValues.length; k++) {
 								i1count = i1count + array[i1][j][k];
