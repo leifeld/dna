@@ -1119,7 +1119,11 @@ public class Exporter extends JDialog {
 				if (fileFormat.equals(".csv")) {
 					exportCSV(matrix, filename);
 				} else if (fileFormat.equals(".dl")) {
-					// TODO: connect network to DL output format and export
+					boolean twoMode = false;
+					if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
+						twoMode = true;
+					}
+					exportDL(matrix, filename, twoMode);
 				} else if (fileFormat.equals(".graphml")) {
 					// TODO: connect network to GRAPHML output format and export
 				}
@@ -1473,7 +1477,6 @@ public class Exporter extends JDialog {
 							}
 						}
 					}
-					System.out.println("mat1: " + mat1[i1][i2] + " mat2: " + mat2[i1][i2] + " m: " + m[i1][i2]);
 					
 					// normalization
 					double norm = 1.0;
@@ -1988,4 +1991,63 @@ public class Exporter extends JDialog {
 			System.err.println("Error while saving CSV matrix file.");
 		}
 	}
+	
+	/**
+	 * Export network to a DL fullmatrix file for the software UCINET.
+	 * 
+	 * @param matrix   The input {@link Matrix} object.
+	 * @param outfile  The path and file name of the target .dl file.
+	 * @param twoMode  A {@link boolean} indicating if the input matrix is a two-mode network matrix (rather than one-mode). 
+	 */
+	public void exportDL (Matrix matrix, String outfile, boolean twoMode) {
+		String[] rn = matrix.getRownames();
+		String[] cn = matrix.getColnames();
+		int nr = rn.length;
+		int nc = cn.length;
+		double[][] mat = matrix.getMatrix();
+		try {
+			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outfile), "UTF8"));
+			out.write("dl ");
+			if (twoMode == false) {
+				out.write("n = " + nr);
+			} else if (twoMode == true) {
+				out.write("nr = " + nr + ", nc = " + nc);
+			}
+			out.write(", format = fullmatrix");
+			out.newLine();
+			if (twoMode == true) {
+				out.write("row labels:");
+			} else {
+				out.write("labels:");
+			}
+			for (int i = 0; i < nr; i++) {
+				out.newLine();
+				out.write("\"" + rn[i].replaceAll("\"", "'").replaceAll("'", "") + "\"");
+			}
+			if (twoMode == true) {
+				out.newLine();
+				out.write("col labels:");
+				for (int i = 0; i < nc; i++) {
+					out.newLine();
+					out.write("\"" + cn[i].replaceAll("\"", "'").replaceAll("'", "") + "\"");
+				}
+			}
+			out.newLine();
+			out.write("data:");
+			for (int i = 0; i < nr; i++) {
+				out.newLine();
+				for (int j = 0; j < nc; j++) {
+					if (matrix.getInteger() == true) {
+						out.write(" " + (int) mat[i][j]);
+					} else {
+						out.write(" " + String.format(new Locale("en"), "%.6f", mat[i][j]));
+					}
+				}
+			}
+			out.close();
+		} catch (IOException e) {
+			System.err.println("Error while saving DL fullmatrix file.");
+		}
+	}
+
 }
