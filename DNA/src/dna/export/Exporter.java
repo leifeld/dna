@@ -56,12 +56,6 @@ import dna.dataStructures.StatementType;
 import dna.renderer.StatementTypeComboBoxModel;
 import dna.renderer.StatementTypeComboBoxRenderer;
 
-/*
- * TODO:
- * - make several other combo boxes invisible (or change items) when event list is selected 
- * - change items in temporal aggregation box when two-mode is selected
- */
-
 /**
  * @author Philip Leifeld
  * 
@@ -72,7 +66,8 @@ public class Exporter extends JDialog {
 	JCheckBox helpBox;
 	JButton exportButton;
 	JComboBox<String> networkModesBox, fileFormatBox, var1Box, var2Box, qualifierBox, aggregationBox, normalizationBox, 
-			isolatesBox, duplicatesBox, temporalBox;
+			isolatesBox, duplicatesBox;
+	// JComboBox<String> temporalBox;
 	JComboBox<StatementType> statementTypeBox;
 	JSpinner startSpinner, stopSpinner;
 	JList<String> excludeVariableList, excludeValueList;
@@ -154,8 +149,13 @@ public class Exporter extends JDialog {
 					normalizationBox.addItem("no");
 					normalizationBox.addItem("activity");
 					normalizationBox.addItem("prominence");
+					isolatesBox.removeAllItems();
+					isolatesBox.addItem("only current nodes");
+					isolatesBox.addItem("include isolates");
+					/*
 					temporalBox.removeAllItems();
 					temporalBox.addItem("across date range");
+					*/
 				} else if (selected.equals("One-mode network")) {
 					fileFormatBox.removeAllItems();
 					fileFormatBox.addItem(".csv");
@@ -171,9 +171,14 @@ public class Exporter extends JDialog {
 					normalizationBox.addItem("average activity");
 					normalizationBox.addItem("Jaccard");
 					normalizationBox.addItem("cosine");
+					isolatesBox.removeAllItems();
+					isolatesBox.addItem("only current nodes");
+					isolatesBox.addItem("include isolates");
+					/*
 					temporalBox.removeAllItems();
 					temporalBox.addItem("across date range");
 					temporalBox.addItem("nested in document");
+					*/
 				} else if (selected.equals("Event list")) {
 					fileFormatBox.removeAllItems();
 					fileFormatBox.addItem(".csv");
@@ -181,8 +186,12 @@ public class Exporter extends JDialog {
 					aggregationBox.addItem("ignore");
 					normalizationBox.removeAllItems();
 					normalizationBox.addItem("no");
+					isolatesBox.removeAllItems();
+					isolatesBox.addItem("only current nodes");
+					/*
 					temporalBox.removeAllItems();
 					temporalBox.addItem("across date range");
+					*/
 				}
 			}
 			
@@ -522,7 +531,8 @@ public class Exporter extends JDialog {
 		JLabel stopLabel = new JLabel("Include until");
 		stopLabel.setToolTipText(dateToolTip);
 		settingsPanel.add(stopLabel, gbc);
-
+		
+		/*
 		gbc.gridx = 2;
 		JLabel temporalLabel = new JLabel("Temporal aggregation");
 		String temporalToolTip = "<html><p width=\"500\">By default, one-mode networks are creating by aggregating over "
@@ -534,7 +544,8 @@ public class Exporter extends JDialog {
 				+ "This is what is done when edges are nested within documents.</p></html>";
 		temporalLabel.setToolTipText(temporalToolTip);
 		settingsPanel.add(temporalLabel, gbc);
-
+		*/
+		
 		gbc.insets = new Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 7;
@@ -564,12 +575,14 @@ public class Exporter extends JDialog {
 		settingsPanel.add(stopSpinner, gbc);
 		stopSpinner.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
+		/*
 		gbc.gridx = 2;
 		String[] temporalItems = new String[] {"across date range", "nested in document"};
 		temporalBox = new JComboBox<>(temporalItems);
 		temporalBox.setToolTipText(temporalToolTip);
 		settingsPanel.add(temporalBox, gbc);
 		temporalBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		*/
 		
 		// fifth row of options: exclude values from variables
 		gbc.insets = new Insets(10, 3, 3, 3);
@@ -859,7 +872,7 @@ public class Exporter extends JDialog {
 				Collections.sort(dates);
 				startModel.setValue(dates.get(0));
 				stopModel.setValue(dates.get(dates.size() - 1));
-				temporalBox.setSelectedIndex(0);
+				//temporalBox.setSelectedIndex(0);
 				excludeVariableList.setSelectedIndex(0);
 				excludePreviewArea.setText("");
 				helpBox.setSelected(false);
@@ -1090,9 +1103,9 @@ public class Exporter extends JDialog {
 				matrix = computeTwoModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
 						var2Document(), names1, names2, qualifier, qualifierAggregation, normalization);
 			} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
-				String temporalAggregation = (String) temporalBox.getSelectedItem();
+				//String temporalAggregation = (String) temporalBox.getSelectedItem();
 				matrix = computeOneModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
-						var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, temporalAggregation);
+						var2Document(), names1, names2, qualifier, qualifierAggregation, normalization);  // , temporalAggregation
 			}
 			System.out.println("Network has been created.");
 			progressMonitor.setProgress(3);
@@ -1396,7 +1409,7 @@ public class Exporter extends JDialog {
 	 */
 	private Matrix computeOneModeMatrix(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, 
 			String var1, String var2, boolean var1Document, boolean var2Document, String[] names1, String[] names2, String qualifier, 
-			String qualifierAggregation, String normalization, String temporalAggregation) {
+			String qualifierAggregation, String normalization) {  // , String temporalAggregation
 		
 		if (statements.size() == 0) {
 			double[][] m = new double[names1.length][names1.length];
