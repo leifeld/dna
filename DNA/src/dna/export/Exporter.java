@@ -49,7 +49,15 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
+import org.jdom.Attribute;
+import org.jdom.Comment;
+import org.jdom.Element;
+import org.jdom.Namespace;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
+
 import dna.Dna;
+import dna.dataStructures.AttributeVector;
 import dna.dataStructures.Document;
 import dna.dataStructures.Statement;
 import dna.dataStructures.StatementType;
@@ -137,57 +145,94 @@ public class Exporter extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				String selected = (String) networkModesBox.getSelectedItem();
 				if (selected.equals("Two-mode network")) {
+					
+					String fileFormatBackup = (String) fileFormatBox.getSelectedItem();
 					fileFormatBox.removeAllItems();
 					fileFormatBox.addItem(".csv");
 					fileFormatBox.addItem(".dl");
 					fileFormatBox.addItem(".graphml");
+					fileFormatBox.setSelectedItem(fileFormatBackup);
+					
+					String aggregationBackup = (String) aggregationBox.getSelectedItem();
 					aggregationBox.removeAllItems();
 					aggregationBox.addItem("ignore");
 					aggregationBox.addItem("combine");
 					aggregationBox.addItem("subtract");
+					if (aggregationBackup.equals("ignore")) {
+						aggregationBox.setSelectedItem("ignore");
+					} else if (aggregationBackup.equals("combine")) {
+						aggregationBox.setSelectedItem("combine");
+					} else if (aggregationBackup.equals("subtract")) {
+						aggregationBox.setSelectedItem("subtract");
+					}
+					
 					normalizationBox.removeAllItems();
 					normalizationBox.addItem("no");
 					normalizationBox.addItem("activity");
 					normalizationBox.addItem("prominence");
+					
 					isolatesBox.removeAllItems();
 					isolatesBox.addItem("only current nodes");
 					isolatesBox.addItem("include isolates");
+					
 					/*
 					temporalBox.removeAllItems();
 					temporalBox.addItem("across date range");
 					*/
 				} else if (selected.equals("One-mode network")) {
+					
+					String fileFormatBackup = (String) fileFormatBox.getSelectedItem();
 					fileFormatBox.removeAllItems();
 					fileFormatBox.addItem(".csv");
 					fileFormatBox.addItem(".dl");
 					fileFormatBox.addItem(".graphml");
+					fileFormatBox.setSelectedItem(fileFormatBackup);
+
+					String aggregationBackup = (String) aggregationBox.getSelectedItem();
 					aggregationBox.removeAllItems();
 					aggregationBox.addItem("ignore");
 					aggregationBox.addItem("congruence");
 					aggregationBox.addItem("conflict");
 					aggregationBox.addItem("subtract");
+					if (aggregationBackup.equals("ignore")) {
+						aggregationBox.setSelectedItem("ignore");
+					} else if (aggregationBackup.equals("congruence")) {
+						aggregationBox.setSelectedItem("congruence");
+					} else if (aggregationBackup.equals("conflict")) {
+						aggregationBox.setSelectedItem("conflict");
+					} else if (aggregationBackup.equals("subtract")) {
+						aggregationBox.setSelectedItem("subtract");
+					}
+					
 					normalizationBox.removeAllItems();
 					normalizationBox.addItem("no");
 					normalizationBox.addItem("average activity");
 					normalizationBox.addItem("Jaccard");
 					normalizationBox.addItem("cosine");
+					
 					isolatesBox.removeAllItems();
 					isolatesBox.addItem("only current nodes");
 					isolatesBox.addItem("include isolates");
+					
 					/*
 					temporalBox.removeAllItems();
 					temporalBox.addItem("across date range");
 					temporalBox.addItem("nested in document");
 					*/
 				} else if (selected.equals("Event list")) {
+					
 					fileFormatBox.removeAllItems();
 					fileFormatBox.addItem(".csv");
+					
 					aggregationBox.removeAllItems();
 					aggregationBox.addItem("ignore");
+					
 					normalizationBox.removeAllItems();
 					normalizationBox.addItem("no");
+					
 					isolatesBox.removeAllItems();
 					isolatesBox.addItem("only current nodes");
+					
 					/*
 					temporalBox.removeAllItems();
 					temporalBox.addItem("across date range");
@@ -797,7 +842,7 @@ public class Exporter extends JDialog {
 					}
 					if (excludeType.size() > 0) {
 						for (int i = 0; i < excludeType.size(); i++) {
-							excludePreviewText = excludePreviewText + "type: " + excludeType.get(i);
+							excludePreviewText = excludePreviewText + "type: " + excludeType.get(i) + "\n";
 						} 
 					}
 					excludePreviewArea.setText(excludePreviewText);
@@ -1092,7 +1137,7 @@ public class Exporter extends JDialog {
 			progressMonitor.setProgress(2);
 			
 			// step 3: create network data structure
-			progressMonitor.setNote("(4/4) Computing network...");
+			progressMonitor.setNote("(3/4) Computing network...");
 			Matrix matrix = null;
 			String qualifier = (String) qualifierBox.getSelectedItem();
 			String qualifierAggregation = (String) aggregationBox.getSelectedItem();
@@ -1111,21 +1156,31 @@ public class Exporter extends JDialog {
 			progressMonitor.setProgress(3);
 			
 			// step 4: write to file
-			progressMonitor.setNote("(5/4) Writing to file...");
+			progressMonitor.setNote("(4/4) Writing to file...");
 			String fileFormat = (String) fileFormatBox.getSelectedItem();
 			if (networkModesBox.getSelectedItem().equals("Event list")) {
 				eventCSV(statements, documents, statementType, filename);
 			} else {
+				boolean twoMode = false;
+				if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
+					twoMode = true;
+				}
 				if (fileFormat.equals(".csv")) {
 					exportCSV(matrix, filename);
 				} else if (fileFormat.equals(".dl")) {
-					boolean twoMode = false;
-					if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
-						twoMode = true;
-					}
 					exportDL(matrix, filename, twoMode);
 				} else if (fileFormat.equals(".graphml")) {
-					// TODO: connect network to GRAPHML output format and export
+					String[] values1 = retrieveValues(statements, documents, var1Name, var1Document());
+					String[] values2 = retrieveValues(statements, documents, var2Name, var2Document());
+					int[] frequencies1 = countFrequencies(values1, names1);
+					int[] frequencies2 = countFrequencies(values2, names2);
+					ArrayList<AttributeVector> attributes = Dna.data.getAttributes();
+					boolean qualifierBinary = false;
+					if (statementType.getVariables().get(qualifierName).equals("boolean")) {
+						qualifierBinary = true;
+					}
+					exportGraphml(matrix, twoMode, statementType, filename, var1Name, var2Name, frequencies1, frequencies2, 
+							attributes, qualifierAggregation, qualifierBinary);
 				}
 			}
 			progressMonitor.setProgress(4);
@@ -2047,5 +2102,387 @@ public class Exporter extends JDialog {
 			System.err.println("Error while saving DL fullmatrix file.");
 		}
 	}
+	
+	/**
+	 * Count how often a value is used across the range of filtered statements.
+	 * 
+	 * @param variableValues  String array of all values of a certain variable in a set of statements.
+	 * @param uniqueNames     String array of unique values of the same variable across all statements.
+	 * @return                int array of value frequencies for each unique value in same order as uniqueNames.
+	 */
+	private int[] countFrequencies(String[] variableValues, String[] uniqueNames) {
+		int[] frequencies = new int[uniqueNames.length];
+		for (int i = 0; i < uniqueNames.length; i++) {
+			for (int j = 0; j < variableValues.length; j++) {
+				if (uniqueNames[i].equals(variableValues[j])) {
+					frequencies[i] = frequencies[i] + 1;
+				}
+			}
+		}
+		return frequencies;
+	}
+	
+	/**
+	 * Export filter for graphML files.
+	 * 
+	 * @param matrix                 Input {@link Matrix}.
+	 * @param twoMode                Indicates whether the network is a two-mode network.
+	 * @param statementType          The statement type on which the network is based.
+	 * @param outfile                Name of the output file.
+	 * @param var1                   Name of the first variable (the rows of the matrix).
+	 * @param var2                   Name of the second variable (the columns of the matrix).
+	 * @param frequencies1           The number of statements in which the row node is involved (after filtering).
+	 * @param frequencies2           The number of statements in which the column node is involved (after filtering).
+	 * @param attributes             An ArrayList of {@link AttributeVector}s containing all attribute vectors in the database.
+	 * @param qualifierAggregation   A String denoting the qualifier aggregation. Valid values are "ignore", "combine", "subtract", "congruence", and "conflict".
+	 * @param qualifierBinary        Indicates whether the qualifier is a binary variable.
+	 */
+	private void exportGraphml(Matrix matrix, boolean twoMode, StatementType statementType, String outfile, 
+			String var1, String var2, int[] frequencies1, int[] frequencies2, ArrayList<AttributeVector> attributes, 
+			String qualifierAggregation, boolean qualifierBinary) {
+		
+		// extract attributes
+		String[] rn = matrix.getRownames();
+		String[] cn = matrix.getColnames();
+		String[] names;
+		String[] variables;
+		int[] frequencies;
+		if (twoMode == true) {
+			names = new String[rn.length + cn.length];
+			variables = new String[names.length];
+			frequencies = new int[names.length];
+		} else {
+			names = new String[rn.length];
+			variables = new String[rn.length];
+			frequencies = new int[rn.length];
+		}
+		for (int i = 0; i < rn.length; i++) {
+			names[i] = rn[i];
+			variables[i] = var1;
+			frequencies[i] = frequencies1[i];
+		}
+		if (twoMode == true) {
+			for (int i = 0; i < cn.length; i++) {
+				names[i + rn.length] = cn[i];
+				variables[i + rn.length] = var2;
+				frequencies[i + rn.length] = frequencies2[i];
+			}
+		}
+		int[] id = new int[names.length];
+		String[] color = new String[names.length];
+		String[] type = new String[names.length];
+		String[] alias = new String[names.length];
+		String[] notes = new String[names.length];
+		for (int i = 0; i < attributes.size(); i++) {
+			if (attributes.get(i).getStatementTypeId() == statementType.getId() && attributes.get(i).getVariable().equals(var1)) {
+				for (int j = 0; j < rn.length; j++) {
+					if (rn[j].equals(attributes.get(i).getValue())) {
+						id[j] = attributes.get(i).getId();
+						color[j] = String.format("#%02X%02X%02X", attributes.get(i).getColor().getRed(), 
+								attributes.get(i).getColor().getGreen(), attributes.get(i).getColor().getBlue());
+						type[j] = attributes.get(i).getType();
+						alias[j] = attributes.get(i).getAlias();
+						notes[j] = attributes.get(i).getNotes();
+					}
+				}
+			} else if (attributes.get(i).getStatementTypeId() == statementType.getId() && attributes.get(i).getVariable().equals(var2) && twoMode == true) {
+				for (int j = 0; j < cn.length; j++) {
+					if (cn[j].equals(attributes.get(i).getValue())) {
+						id[j + rn.length] = attributes.get(i).getId();
+						color[j + rn.length] = String.format("#%02X%02X%02X", attributes.get(i).getColor().getRed(), 
+								attributes.get(i).getColor().getGreen(), attributes.get(i).getColor().getBlue());
+						type[j + rn.length] = attributes.get(i).getType();
+						alias[j + rn.length] = attributes.get(i).getAlias();
+						notes[j + rn.length] = attributes.get(i).getNotes();
+					}
+				}
+			}
+		}
+		
+		// set up graph structure
+		Namespace xmlns = Namespace.getNamespace("http://graphml.graphdrawing.org/xmlns");
+		Element graphml = new Element("graphml", xmlns);
+		Namespace visone = Namespace.getNamespace("visone", "http://visone.info/xmlns");
+		graphml.addNamespaceDeclaration(visone);
+		Namespace xsi = Namespace.getNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
+		graphml.addNamespaceDeclaration(xsi);
+		Namespace yNs = Namespace.getNamespace("y", "http://www.yworks.com/xml/graphml");
+		graphml.addNamespaceDeclaration(yNs);
+		Attribute attSchema = new Attribute("schemaLocation", "http://graphml.graphdrawing.org/xmlns/graphml http://www.yworks.com/xml/schema/graphml/1.0/ygraphml.xsd ", xsi);
+		graphml.setAttribute(attSchema);
+		org.jdom.Document document = new org.jdom.Document(graphml);
+		
+		Comment dataSchema = new Comment(" data schema ");
+		graphml.addContent(dataSchema);
+		
+		Element keyVisoneNode = new Element("key", xmlns);
+		keyVisoneNode.setAttribute(new Attribute("for", "node"));
+		keyVisoneNode.setAttribute(new Attribute("id", "d0"));
+		keyVisoneNode.setAttribute(new Attribute("yfiles.type", "nodegraphics"));
+		graphml.addContent(keyVisoneNode);
 
+		Element keyVisoneEdge = new Element("key", xmlns);
+		keyVisoneEdge.setAttribute(new Attribute("for", "edge"));
+		keyVisoneEdge.setAttribute(new Attribute("id", "e0"));
+		keyVisoneEdge.setAttribute(new Attribute("yfiles.type", "edgegraphics"));
+		graphml.addContent(keyVisoneEdge);
+
+		Element keyVisoneGraph = new Element("key", xmlns);
+		keyVisoneGraph.setAttribute(new Attribute("for", "graph"));
+		keyVisoneGraph.setAttribute(new Attribute("id", "prop"));
+		keyVisoneGraph.setAttribute(new Attribute("visone.type", "properties"));
+		graphml.addContent(keyVisoneGraph);
+		
+		Element keyId = new Element("key", xmlns);
+		keyId.setAttribute(new Attribute("id", "id"));
+		keyId.setAttribute(new Attribute("for", "node"));
+		keyId.setAttribute(new Attribute("attr.name", "id"));
+		keyId.setAttribute(new Attribute("attr.type", "string"));
+		graphml.addContent(keyId);
+
+		Element keyName = new Element("key", xmlns);
+		keyName.setAttribute(new Attribute("id", "name"));
+		keyName.setAttribute(new Attribute("for", "node"));
+		keyName.setAttribute(new Attribute("attr.name", "name"));
+		keyName.setAttribute(new Attribute("attr.type", "string"));
+		graphml.addContent(keyName);
+		
+		Element keyType = new Element("key", xmlns);
+		keyType.setAttribute(new Attribute("id", "type"));
+		keyType.setAttribute(new Attribute("for", "node"));
+		keyType.setAttribute(new Attribute("attr.name", "type"));
+		keyType.setAttribute(new Attribute("attr.type", "string"));
+		graphml.addContent(keyType);
+		
+		Element keyAlias = new Element("key", xmlns);
+		keyAlias.setAttribute(new Attribute("id", "alias"));
+		keyAlias.setAttribute(new Attribute("for", "node"));
+		keyAlias.setAttribute(new Attribute("attr.name", "alias"));
+		keyAlias.setAttribute(new Attribute("attr.type", "string"));
+		graphml.addContent(keyAlias);
+		
+		Element keyNote = new Element("key", xmlns);
+		keyNote.setAttribute(new Attribute("id", "note"));
+		keyNote.setAttribute(new Attribute("for", "node"));
+		keyNote.setAttribute(new Attribute("attr.name", "note"));
+		keyNote.setAttribute(new Attribute("attr.type", "string"));
+		graphml.addContent(keyNote);
+		
+		Element keyVariable = new Element("key", xmlns);
+		keyVariable.setAttribute(new Attribute("id", "variable"));
+		keyVariable.setAttribute(new Attribute("for", "node"));
+		keyVariable.setAttribute(new Attribute("attr.name", "variable"));
+		keyVariable.setAttribute(new Attribute("attr.type", "string"));
+		graphml.addContent(keyVariable);
+
+		Element keyFrequency = new Element("key", xmlns);
+		keyFrequency.setAttribute(new Attribute("id", "frequency"));
+		keyFrequency.setAttribute(new Attribute("for", "node"));
+		keyFrequency.setAttribute(new Attribute("attr.name", "frequency"));
+		keyFrequency.setAttribute(new Attribute("attr.type", "int"));
+		graphml.addContent(keyFrequency);
+
+		Element keyWeight = new Element("key", xmlns);
+		keyWeight.setAttribute(new Attribute("id", "weight"));
+		keyWeight.setAttribute(new Attribute("for", "edge"));
+		keyWeight.setAttribute(new Attribute("attr.name", "weight"));
+		keyWeight.setAttribute(new Attribute("attr.type", "double"));
+		graphml.addContent(keyWeight);
+		
+		Element graphElement = new Element("graph", xmlns);
+		graphElement.setAttribute(new Attribute("edgedefault", "undirected"));
+		
+		graphElement.setAttribute(new Attribute("id", "DNA"));
+		int numEdges = rn.length * cn.length;
+		if (twoMode == false) {
+			numEdges = (numEdges / 2) - rn.length;
+		}
+		int numNodes = rn.length;
+		if (twoMode == true) {
+			numNodes = numNodes + cn.length;
+		}
+		graphElement.setAttribute(new Attribute("parse.edges", String.valueOf(numEdges)));
+		graphElement.setAttribute(new Attribute("parse.nodes", String.valueOf(numNodes)));
+		graphElement.setAttribute(new Attribute("parse.order", "free"));
+		Element properties = new Element("data", xmlns);
+		properties.setAttribute(new Attribute("key", "prop"));
+		Element labelAttribute = new Element("labelAttribute", visone);
+		labelAttribute.setAttribute("edgeLabel", "weight");
+		labelAttribute.setAttribute("nodeLabel", "name");
+		properties.addContent(labelAttribute);
+		graphElement.addContent(properties);
+		
+		// add nodes
+		Comment nodes = new Comment(" nodes ");
+		graphElement.addContent(nodes);
+		
+		for (int i = 0; i < names.length; i++) {
+			Element node = new Element("node", xmlns);
+			node.setAttribute(new Attribute("id", "n" + id[i]));
+			
+			Element idElement = new Element("data", xmlns);
+			idElement.setAttribute(new Attribute("key", "id"));
+			idElement.setText(String.valueOf(id[i]));
+			node.addContent(idElement);
+			
+			Element nameElement = new Element("data", xmlns);
+			nameElement.setAttribute(new Attribute("key", "name"));
+			nameElement.setText(names[i]);
+			node.addContent(nameElement);
+			
+			Element typeElement = new Element("data", xmlns);
+			typeElement.setAttribute(new Attribute("key", "type"));
+			typeElement.setText(type[i]);
+			node.addContent(typeElement);
+			
+			Element aliasElement = new Element("data", xmlns);
+			aliasElement.setAttribute(new Attribute("key", "alias"));
+			aliasElement.setText(alias[i]);
+			node.addContent(aliasElement);
+			
+			Element notesElement = new Element("data", xmlns);
+			notesElement.setAttribute(new Attribute("key", "notes"));
+			notesElement.setText(notes[i]);
+			node.addContent(notesElement);
+			
+			Element variableElement = new Element("data", xmlns);
+			variableElement.setAttribute(new Attribute("key", "variable"));
+			variableElement.setText(variables[i]);
+			node.addContent(variableElement);
+			
+			Element frequency = new Element("data", xmlns);
+			frequency.setAttribute(new Attribute("key", "frequency"));
+			frequency.setText(String.valueOf(frequencies[i]));
+			node.addContent(frequency);
+			
+			Element vis = new Element("data", xmlns);
+			vis.setAttribute(new Attribute("key", "d0"));
+			Element visoneShapeNode = new Element("shapeNode", visone);
+			Element yShapeNode = new Element("ShapeNode", yNs);
+			Element geometry = new Element("Geometry", yNs);
+			geometry.setAttribute(new Attribute("height", "20.0"));
+			geometry.setAttribute(new Attribute("width", "20.0"));
+			geometry.setAttribute(new Attribute("x", String.valueOf(Math.random() * 800)));
+			geometry.setAttribute(new Attribute("y", String.valueOf(Math.random() * 600)));
+			yShapeNode.addContent(geometry);
+			Element fill = new Element("Fill", yNs);
+			fill.setAttribute(new Attribute("color", color[i]));
+
+			fill.setAttribute(new Attribute("transparent", "false"));
+			yShapeNode.addContent(fill);
+			Element borderStyle = new Element("BorderStyle", yNs);
+			borderStyle.setAttribute(new Attribute("color", "#000000"));
+			borderStyle.setAttribute(new Attribute("type", "line"));
+			borderStyle.setAttribute(new Attribute("width", "1.0"));
+			yShapeNode.addContent(borderStyle);
+
+			Element nodeLabel = new Element("NodeLabel", yNs);
+			nodeLabel.setAttribute(new Attribute("alignment", "center"));
+			nodeLabel.setAttribute(new Attribute("autoSizePolicy", "content"));
+			nodeLabel.setAttribute(new Attribute("backgroundColor", "#FFFFFF"));
+			nodeLabel.setAttribute(new Attribute("fontFamily", "Dialog"));
+			nodeLabel.setAttribute(new Attribute("fontSize", "12"));
+			nodeLabel.setAttribute(new Attribute("fontStyle", "plain"));
+			nodeLabel.setAttribute(new Attribute("hasLineColor", "false"));
+			nodeLabel.setAttribute(new Attribute("height", "19.0"));
+			nodeLabel.setAttribute(new Attribute("modelName", "eight_pos"));
+			nodeLabel.setAttribute(new Attribute("modelPosition", "n"));
+			nodeLabel.setAttribute(new Attribute("textColor", "#000000"));
+			nodeLabel.setAttribute(new Attribute("visible", "true"));
+			nodeLabel.setText(names[i]);
+			yShapeNode.addContent(nodeLabel);
+			
+			Element shape = new Element("Shape", yNs);
+			if (i < rn.length) {
+				shape.setAttribute(new Attribute("type", "ellipse"));
+			} else {
+				shape.setAttribute(new Attribute("type", "roundrectangle"));
+			}
+			yShapeNode.addContent(shape);
+			visoneShapeNode.addContent(yShapeNode);
+			vis.addContent(visoneShapeNode);
+			node.addContent(vis);
+			
+			graphElement.addContent(node);
+		}
+		
+		// add edges
+		double[][] m = matrix.getMatrix();
+		Comment edges = new Comment(" edges ");
+		graphElement.addContent(edges);
+		for (int i = 0; i < rn.length; i++) {
+			for (int j = 0; j < cn.length; j++) {
+				if (m[i][j] != 0.0 && (twoMode == true || (twoMode == false && i < j))) {  // only lower triangle is used for one-mode networks
+					Element edge = new Element("edge", xmlns);
+					
+					int currentId = id[i];
+					edge.setAttribute(new Attribute("source", "n" + String.valueOf(currentId)));
+					if (twoMode == true) {
+						currentId = id[j + rn.length];
+					} else {
+						currentId = id[j];
+					}
+					edge.setAttribute(new Attribute("target", "n" + String.valueOf(currentId)));
+					
+					Element weight = new Element("data", xmlns);
+					weight.setAttribute(new Attribute("key", "weight"));
+					weight.setText(String.valueOf(m[i][j]));
+					edge.addContent(weight);
+
+					Element visEdge = new Element("data", xmlns);
+					visEdge.setAttribute("key", "e0");
+					Element visPolyLineEdge = new Element("polyLineEdge", visone);
+					Element yPolyLineEdge = new Element("PolyLineEdge", yNs);
+
+					Element yLineStyle = new Element("LineStyle", yNs);
+					if (qualifierAggregation.equals("combine") && qualifierBinary == true) {
+						if (m[i][j] == 1.0) {
+							yLineStyle.setAttribute("color", "#00ff00");
+						} else if (m[i][j] == 2.0) {
+							yLineStyle.setAttribute("color", "#ff0000");
+						} else if (m[i][j] == 3.0) {
+							yLineStyle.setAttribute("color", "#0000ff");
+						}
+					} else if (qualifierAggregation.equals("subtract")) {
+						if (m[i][j] < 0) {
+							yLineStyle.setAttribute("color", "#ff0000");
+						} else if (m[i][j] > 0) {
+							yLineStyle.setAttribute("color", "#00ff00");
+						}
+					} else if (qualifierAggregation.equals("conflict")) {
+						yLineStyle.setAttribute("color", "#ff0000");
+					} else if (qualifierAggregation.equals("congruence")) {
+						yLineStyle.setAttribute("color", "#00ff00");
+					} else {
+						yLineStyle.setAttribute("color", "#000000");
+					}
+					yLineStyle.setAttribute(new Attribute("type", "line"));
+					yLineStyle.setAttribute(new Attribute("width", "2.0"));
+					yPolyLineEdge.addContent(yLineStyle);
+					visPolyLineEdge.addContent(yPolyLineEdge);
+					visEdge.addContent(visPolyLineEdge);
+					edge.addContent(visEdge);
+					
+					graphElement.addContent(edge);
+				}
+			}
+		}
+		
+		graphml.addContent(graphElement);
+		
+		// write to file
+		File dnaFile = new File(outfile);
+		try {
+			FileOutputStream outStream = new FileOutputStream(dnaFile);
+			XMLOutputter outToFile = new XMLOutputter();
+			Format format = Format.getPrettyFormat();
+			format.setEncoding("utf-8");
+			outToFile.setFormat(format);
+			outToFile.output(document, outStream);
+			outStream.flush();
+			outStream.close();
+		} catch (IOException e) {
+			System.err.println("Cannot save \"" + dnaFile + "\":" + e.getMessage());
+		}
+	}
 }
