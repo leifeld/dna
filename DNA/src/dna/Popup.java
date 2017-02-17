@@ -196,7 +196,7 @@ public class Popup extends JDialog {
 		HashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
 		
 		Iterator<String> keyIterator = variables.keySet().iterator();
-		while (keyIterator.hasNext()){
+		while (keyIterator.hasNext()) {
 			String key = keyIterator.next();
 			String value = variables.get(key);
 			JLabel label = new JLabel(key, JLabel.TRAILING);
