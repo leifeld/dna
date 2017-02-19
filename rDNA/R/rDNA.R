@@ -108,13 +108,13 @@ dna_network <- function(dna_connection,
       if (length(excludeValues[[i]]) > 0) {
         for (j in 1:length(excludeValues[[i]])) {
           count = count + 1
-          dat[i, 1] <- names(excludeValues)[i]
-          dat[i, 2] <- excludeValues[[i]][j]
+          dat[count, 1] <- names(excludeValues)[i]
+          dat[count, 2] <- excludeValues[[i]][j]
         }
       }
     }
-    var <- dat$variables
-    val <- dat$values
+    var <- dat[, 1]
+    val <- dat[, 2]
   } else {
     var <- character()
     val <- character()
