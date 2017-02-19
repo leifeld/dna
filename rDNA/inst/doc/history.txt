@@ -2,6 +2,10 @@ rDNA (http://www.philipleifeld.com)
 
 Version history:
 
+2.0 beta 19 (2017-02-19)
+* Complete rewrite, with functions dna_connection, print.dna_connection, 
+  dna_gui, dna_network, and dna_attributes.
+
 1.31 (2016-07-16)
 * Updated example code from DNA 1.30 to DNA 1.31.
 * Updated e-mail address and web URL.
