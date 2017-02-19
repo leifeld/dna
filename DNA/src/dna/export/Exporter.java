@@ -1390,7 +1390,9 @@ public class Exporter extends JDialog {
 				while (keyIterator.hasNext()) {
 					String key = keyIterator.next();
 					String string = "";
-					if (statementType.getVariables().get(key).equals("boolean") || statementType.getVariables().get(key).equals("integer")) {
+					if (statementType.getVariables().get(key) == null) {
+						throw new NullPointerException("'" + key + "' is not a statement-level variable and cannot be excluded.");
+					} else if (statementType.getVariables().get(key).equals("boolean") || statementType.getVariables().get(key).equals("integer")) {
 						string = String.valueOf(s.getValues().get(key));
 					} else {
 						string = (String) s.getValues().get(key);
@@ -2561,6 +2563,7 @@ public class Exporter extends JDialog {
 		duplicates = formatDuplicates(duplicates);
 		Date start = formatDate(startDate, startTime);
 		Date stop = formatDate(stopDate, stopTime);
+		
 		HashMap<String, ArrayList<String>> map = processExcludeVariables(excludeVariables, excludeValues, invertValues, data.getStatements(), 
 				data.getStatements(), data.getDocuments(), statementTypeId, includeIsolates);
 		ArrayList<String> authorExclude = processExcludeDocument("author", excludeAuthors, invertAuthors, data.getStatements(), data.getStatements(), 
@@ -2581,7 +2584,7 @@ public class Exporter extends JDialog {
 			filterEmptyFields = false;
 		}
 		if (verbose == true) {
-			System.out.print("(2/" + max + "): Filtering statements... ");
+			System.out.print("(2/" + max + "): Filtering statements... \n");
 		}
 		this.filteredStatements = filter(data.getStatements(), data.getDocuments(), start, stop, st, variable1, variable2, 
 				variable1Document, variable2Document, qualifier, ignoreQualifier, duplicates, authorExclude, sourceExclude, sectionExclude, 
@@ -2992,10 +2995,14 @@ public class Exporter extends JDialog {
 	private HashMap<String, ArrayList<String>> processExcludeVariables(String[] excludeVariables, String[] excludeValues, 
 			boolean invertValues, ArrayList<Statement> statements, ArrayList<Statement> originalStatements, 
 			ArrayList<Document> documents, int statementTypeId, boolean isolates) {
+		
 		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
 		if (excludeVariables.length > 0) {
 			for (int i = 0; i < excludeVariables.length; i++) {
 				ArrayList<String> values = map.get(excludeVariables[i]);
+				if (values == null) {
+					values = new ArrayList<String>();
+				}
 				values.add(excludeValues[i]);
 				Collections.sort(values);
 				map.put(excludeVariables[i], values);
