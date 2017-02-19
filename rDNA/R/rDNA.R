@@ -120,6 +120,19 @@ dna_network <- function(dna_connection,
     val <- character()
   }
   
+  if (length(excludeAuthors) == 1) {
+    excludeAuthors = c(excludeAuthors, excludeAuthors)
+  }
+  if (length(excludeSources) == 1) {
+    excludeSources = c(excludeSources, excludeSources)
+  }
+  if (length(excludeSections) == 1) {
+    excludeSections = c(excludeSections, excludeSections)
+  }
+  if (length(excludeTypes) == 1) {
+    excludeTypes = c(excludeTypes, excludeTypes)
+  }
+  
   .jcall(dna_connection$dna_connection, 
          "V", 
          "rNetwork", 
