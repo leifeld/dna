@@ -32,6 +32,14 @@ public class Dna {
 	
 	public static void main (String[] args) {
 		dna = new Dna();
+
+		if (args.length == 1) {
+			new OpenDatabaseDialog(args[0]);
+		} else if (args.length == 3) {
+			new OpenDatabaseDialog(args[0], args[1], args[2]);
+		} else if (args.length > 0) {
+			System.err.println("A maximum of three startup arguments is recognized.");
+		}
 	}
 
 	public void addDocument(Document document) {

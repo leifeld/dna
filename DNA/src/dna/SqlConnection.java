@@ -43,12 +43,14 @@ public class SqlConnection {
 		this.login = login;
 		this.password = password;
 		try {
-			if (dbtype == "mysql") {
+			if (dbtype.equals("mysql")) {
 				Class.forName("com.mysql.jdbc.Driver");
 				this.connection = DriverManager.getConnection("jdbc:mysql://" + dbfile, login, password);
-			} else if (dbtype == "sqlite") {
+			} else if (dbtype.equals("sqlite")) {
 				Class.forName("org.sqlite.JDBC");
 				this.connection = DriverManager.getConnection("jdbc:sqlite:" + dbfile);
+			} else {
+				System.err.println("Database format not recognized: " + dbtype + ".");
 			}
 		} catch (SQLException | ClassNotFoundException e) {
 			e.printStackTrace();
