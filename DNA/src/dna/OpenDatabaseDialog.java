@@ -32,7 +32,32 @@ import javax.swing.filechooser.FileFilter;
 @SuppressWarnings("serial")
 public class OpenDatabaseDialog extends JDialog {
 	JTextField checkField;
-
+	
+	/**
+	 * Constructor without GUI for loading data from an SQLite database.
+	 * 
+	 * @param dbfile     File name with path.
+	 */
+	public OpenDatabaseDialog(String dbfile) {
+		Dna.dna.sql = new SqlConnection("sqlite", dbfile, "", "");
+		loadDataAndDispose();
+	}
+	
+	/**
+	 * Constructor without GUI for loading data from a mySQL database.
+	 * 
+	 * @param dbfile     mySQL URL (without "jdbc:mysql://").
+	 * @param login      User name for the database access.
+	 * @param password   Password for accessing the database.
+	 */
+	public OpenDatabaseDialog(String dbfile, String login, String password) {
+		Dna.dna.sql = new SqlConnection("mysql", dbfile, login, password);
+		loadDataAndDispose();
+	}
+	
+	/**
+	 * Constructor with GUI
+	 */
 	public OpenDatabaseDialog() {
 		
 		this.setTitle("Open existing database...");
