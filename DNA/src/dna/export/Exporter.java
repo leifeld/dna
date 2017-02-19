@@ -2900,8 +2900,8 @@ public class Exporter extends JDialog {
 		if (normalization.equals("Cosine")) {
 			normalization = "cosine";
 		}
-		if (!normalization.equals("no") && !normalization.equals("activity") && !normalization.equals("average") 
-				&& !normalization.equals("Jaccard") && !normalization.equals("cosine")) {
+		if (!normalization.equals("no") && !normalization.equals("activity") && !normalization.equals("prominence") 
+				&& !normalization.equals("average") && !normalization.equals("Jaccard") && !normalization.equals("cosine")) {
 			System.err.println("'normalization' must be 'no', 'activity', 'prominence', 'average', 'Jaccard', or 'cosine'.");
 		}
 		if (normalization.equals("activity") && !networkType.equals("Two-mode network")) {
