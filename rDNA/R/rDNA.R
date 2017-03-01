@@ -2,14 +2,53 @@
 # some settings
 dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 
-# function for initializing the connection with DNA
+#' Initialize the connection with DNA
+#' 
+#' Establish a connection between \pkg{rDNA} and the DNA software.
+#' 
+#' To use \pkg{rDNA}, DNA first needs to be initialized. This means that 
+#' \pkg{rDNA} needs to be told where the DNA executable file, i.e., the JAR 
+#' file, is located. When the \code{dna_init} function is used, the connection 
+#' to the DNA software is established, and this connection is valid for the 
+#' rest of the \R session. To initialize a connection with a different DNA 
+#' version or path, the \R session would need to be restarted first.
+#' 
+#' @param jarfile The file name of the DNA jar file, e.g., \code{"dna-2.0-beta19.jar"}.
+#' 
+#' @examples
+#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
+#'               destfile = "dna-2.0-beta19.jar", mode = "wb")
+#' dna_init("dna-2.0-beta19.jar")
+#' @export
 dna_init <- function(jarfile = "dna-2.0-beta19.jar") {
   assign("dnaJarString", jarfile, pos = dnaEnvironment)
   message(paste("Jar file:", dnaEnvironment[["dnaJarString"]]))
   .jinit(dnaEnvironment[["dnaJarString"]], force.init = TRUE)
 }
 
-# function for opening the DNA GUI
+
+#' Open the DNA GUI
+#' 
+#' Start DNA and optionally load a database.
+#' 
+#' Start the DNA GUI. Optionally load a .dna database or a mySQL online 
+#' database upon start-up of the GUI. This function is useful to use 
+#' DNA on the fly to quickly recode statements or look something up.
+#' 
+#' @param infile The file name of the .dna database or the URL of the mySQL 
+#'     database to load upon start-up of the GUI
+#' @param javapath The path to the \code{java} command. This may be useful if 
+#'     the CLASSPATH is not set and the java command can not be found. Java 
+#'     is necessary to start the DNA GUI.
+#' @param memory The amount of memory in megabytes to allocate to DNA, for 
+#'     example \code{1024} or \code{4096}.
+#' 
+#' @examples
+#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
+#'               destfile = "dna-2.0-beta19.jar", mode = "wb")
+#' dna_init("dna-2.0-beta19.jar")
+#' dna_gui()
+#' @export
 dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
   djs <- dnaEnvironment[["dnaJarString"]]
   if (is.null(djs)) {
