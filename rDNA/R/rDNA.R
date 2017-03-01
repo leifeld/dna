@@ -40,6 +40,9 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
   }
   obj <- list(dna_connection = export)
   class(obj) <- "dna_connection"
+  if (verbose == TRUE) {
+    print(obj)
+  }
   return(obj)
 }
 
