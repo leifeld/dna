@@ -70,7 +70,35 @@ dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
   }
 }
 
-# function for establishing a database connection
+
+#' Establish a database connection
+#' 
+#' Connect to a local .dna file or remote mySQL DNA database.
+#' 
+#' Before any data can be loaded from a database, a connection with 
+#' the database must be established. The \code{dna_connection} 
+#' function establishes a database connection and loads the documents 
+#' and statements into memory for further processing.
+#' 
+#' @param infile The file name of the .dna database or the URL of the mySQL 
+#'     database to load
+#' @param login The user name for accessing the database (only applicable 
+#'     to remote mySQL databases; can be \code{NULL} if a local .dna file 
+#'     is used).
+#' @param password The password for accessing the database (only applicable 
+#'     to remote mySQL databases; can be \code{NULL} if a local .dna file 
+#'     is used).
+#' @param verbose Print details the number of documents and statements after 
+#'     loading the database?
+#' 
+#' @examples
+#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
+#'               destfile = "dna-2.0-beta19.jar", mode = "wb")
+#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/sample.dna", 
+#'               destfile = "sample.dna", mode = "wb")
+#' dna_init("dna-2.0-beta19.jar")
+#' dna_connection("sample.dna")
+#' @export
 dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE) {
   if (is.null(login) || is.null(password)) {
     export <- .jnew("dna.export/Exporter", "sqlite", infile, "", "", verbose)
@@ -85,10 +113,29 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
   return(obj)
 }
 
-# print a summary of a dna_connection object
+
+#' Print the summary of a \code{dna_connection} object
+#' 
+#' Show details of a \code{dna_connection} object.
+#' 
+#' Print the number of documents and statements to the console after 
+#' establishing a DNA connection.
+#' 
+#' @param x A \code{dna_connection} object.
+#' 
+#' @examples
+#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
+#'               destfile = "dna-2.0-beta19.jar", mode = "wb")
+#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/sample.dna", 
+#'               destfile = "sample.dna", mode = "wb")
+#' dna_init("dna-2.0-beta19.jar")
+#' conn <- dna_connection("sample.dna", verbose = FALSE)
+#' conn
+#' @export
 print.dna_connection <- function(x) {
   .jcall(x$dna_connection, "V", "rShow")
 }
+
 
 # retrieve attribute data.frame
 dna_attributes <- function(dna_connection, 
@@ -113,6 +160,7 @@ dna_attributes <- function(dna_connection,
   )
   return(dat)
 }
+
 
 # compute a one-mode or two-mode network matrix
 dna_network <- function(dna_connection, 
