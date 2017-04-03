@@ -1269,6 +1269,9 @@ public class Exporter extends JDialog {
 		
 		// sort and convert to array, then return
 		Collections.sort(names);
+		if (names.get(0).equals("")) { // remove empty field
+			names.remove(0);
+		}
 		String[] nameArray = new String[names.size()];
 		for (int i = 0; i < names.size(); i++) {
 			nameArray[i] = names.get(i);
