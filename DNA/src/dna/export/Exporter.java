@@ -2587,7 +2587,7 @@ public class Exporter extends JDialog {
 			filterEmptyFields = false;
 		}
 		if (verbose == true) {
-			System.out.print("(2/" + max + "): Filtering statements... \n");
+			System.out.print("(2/" + max + "): Filtering statements... ");
 		}
 		this.filteredStatements = filter(data.getStatements(), data.getDocuments(), start, stop, st, variable1, variable2, 
 				variable1Document, variable2Document, qualifier, ignoreQualifier, duplicates, authorExclude, sourceExclude, sectionExclude, 
@@ -2608,7 +2608,7 @@ public class Exporter extends JDialog {
 			names2 = extractLabels(this.filteredStatements, data.getStatements(), data.getDocuments(), variable2, variable2Document, 
 					statementTypeId, includeIsolates);
 			if (verbose == true) {
-				System.out.print("Node labels have been created with dimensions " + names1.length + " x " + names2.length + ".\n");
+				System.out.print(names1.length + " entries for the first and " + names2.length + " entries for the second variable.\n");
 			}
 		}
 		
@@ -2670,12 +2670,31 @@ public class Exporter extends JDialog {
 	 * Save an array of AttributeVector objects to the Exporter class.
 	 * 
 	 * @param variable              The variable for which the attributes should be retrieved.
-	 * @param statementTypeString   The statement type (given as a string) to which the variable belongs
+	 * @param statementTypeString   The statement type (given as a string) to which the variable belongs.
+	 * @param values                String array of value names for which the attributes should be saved.
 	 */
-	public void rAttributes(String variable, String statementTypeString) {
+	public void rAttributes(String variable, String statementTypeString, String[] values) {
+		
+		// get statement type ID and all attribute vectors
 		int statementTypeId = this.data.getStatementType(statementTypeString).getId();
 		AttributeVector[] av = this.data.getAttributes(variable, statementTypeId);
-		this.attributes = av;
+		
+		// extract full set of labels in alphabetical order if no names vector is provided
+		if (values == null || values.length == 0) {
+			values = extractLabels(this.filteredStatements, data.getStatements(), data.getDocuments(), variable, false, statementTypeId, true);
+		}
+		
+		// extract only those attribute vectors that match the names vector
+		AttributeVector[] at = new AttributeVector[values.length];
+		for (int i = 0; i < values.length; i++) {
+			for (int j = 0; j < av.length; j++) {
+				if (values[i].equals(av[j].getValue())) {
+					at[i] = av[j];
+				}
+			}
+		}
+		
+		this.attributes = at;
 	}
 	
 	/**
