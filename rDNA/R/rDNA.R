@@ -166,6 +166,9 @@ print.dna_connection <- function(x, ...) {
 #'     of interest is nested. For example, \code{"DNA Statement"}.
 #' @param variable The variable for which the attributes should be retrieved. 
 #'     For example, \code{"organization"} or \code{"concept"}.
+#' @param values An optional vector of value names for which the attributes 
+#'     should be retrieved. If this is \code{NULL}, all attributes will be 
+#'     retrieved in alphabetical order, as in the \link{dna_network} function.
 #' 
 #' @examples
 #' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
@@ -176,16 +179,27 @@ print.dna_connection <- function(x, ...) {
 #' conn <- dna_connection("sample.dna")
 #' at <- dna_attributes(conn, "DNA Statement", "organization")
 #' at
+#' at2 <- dna_attributes(conn, "DNA Statement", "organization", 
+#'                       c("Senate", "Sierra Club"))
+#' at2
 #' @export
 dna_attributes <- function(connection, 
                            statementType = "DNA Statement", 
-                           variable = "organization") {
+                           variable = "organization", 
+                           values = NULL) {
+  
+  if (is.null(values)) {
+    values <- character(0)
+  } else if (class(values) != "character") {
+    stop("'values' must be a character vector or NULL.")
+  }
   
   .jcall(connection$dna_connection, 
          "V", 
          "rAttributes", 
          variable, 
-         statementType)
+         statementType, 
+         values)
   dat <- data.frame(id = .jcall(connection$dna_connection, "[I", "getAttributeIds"), 
                     value = .jcall(connection$dna_connection, "[S", "getAttributeValues"), 
                     color = .jcall(connection$dna_connection, "[S", "getAttributeColors"), 
