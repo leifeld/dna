@@ -186,15 +186,15 @@ dna_attributes <- function(connection,
          "rAttributes", 
          variable, 
          statementType)
-  dat <- data.frame(id = .jcall(dna_connection$dna_connection, "[I", "getAttributeIds"), 
-                    value = .jcall(dna_connection$dna_connection, "[S", "getAttributeValues"), 
-                    color = .jcall(dna_connection$dna_connection, "[S", "getAttributeColors"), 
-                    type = .jcall(dna_connection$dna_connection, "[S", "getAttributeTypes"), 
-                    alias = .jcall(dna_connection$dna_connection, "[S", "getAttributeAlias"), 
-                    note = .jcall(dna_connection$dna_connection, "[S", "getAttributeNotes"), 
-                    frequency = .jcall(dna_connection$dna_connection, "[I", "getAttributeFrequencies", variable), 
-                    "in dataset" = .jcall(dna_connection$dna_connection, "[Z", "getAttributeInDataset", statementType), 
-                    "in network" = .jcall(dna_connection$dna_connection, "[Z", "getAttributeInNetwork", statementType), 
+  dat <- data.frame(id = .jcall(connection$dna_connection, "[I", "getAttributeIds"), 
+                    value = .jcall(connection$dna_connection, "[S", "getAttributeValues"), 
+                    color = .jcall(connection$dna_connection, "[S", "getAttributeColors"), 
+                    type = .jcall(connection$dna_connection, "[S", "getAttributeTypes"), 
+                    alias = .jcall(connection$dna_connection, "[S", "getAttributeAlias"), 
+                    note = .jcall(connection$dna_connection, "[S", "getAttributeNotes"), 
+                    frequency = .jcall(connection$dna_connection, "[I", "getAttributeFrequencies", variable), 
+                    "in dataset" = .jcall(connection$dna_connection, "[Z", "getAttributeInDataset", statementType), 
+                    "in network" = .jcall(connection$dna_connection, "[Z", "getAttributeInNetwork", statementType), 
                     check.names = FALSE
   )
   return(dat)
@@ -454,9 +454,9 @@ dna_network <- function(connection,
   if (networkType == "eventlist") {
     stop("Event lists are currently not supported by rDNA and may be added at some point.")
   } else {
-    mat <- .jcall(dna_connection$dna_connection, "[[D", "getMatrix", simplify = TRUE)
-    rownames(mat) <- .jcall(dna_connection$dna_connection, "[S", "getRowNames", simplify = TRUE)
-    colnames(mat) <- .jcall(dna_connection$dna_connection, "[S", "getColumnNames", simplify = TRUE)
+    mat <- .jcall(connection$dna_connection, "[[D", "getMatrix", simplify = TRUE)
+    rownames(mat) <- .jcall(connection$dna_connection, "[S", "getRowNames", simplify = TRUE)
+    colnames(mat) <- .jcall(connection$dna_connection, "[S", "getColumnNames", simplify = TRUE)
     return(mat)
   }
 }
