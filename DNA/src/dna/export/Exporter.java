@@ -2587,7 +2587,7 @@ public class Exporter extends JDialog {
 			filterEmptyFields = false;
 		}
 		if (verbose == true) {
-			System.out.print("(2/" + max + "): Filtering statements... \n");
+			System.out.print("(2/" + max + "): Filtering statements... ");
 		}
 		this.filteredStatements = filter(data.getStatements(), data.getDocuments(), start, stop, st, variable1, variable2, 
 				variable1Document, variable2Document, qualifier, ignoreQualifier, duplicates, authorExclude, sourceExclude, sectionExclude, 
