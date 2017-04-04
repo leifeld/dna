@@ -2608,7 +2608,7 @@ public class Exporter extends JDialog {
 			names2 = extractLabels(this.filteredStatements, data.getStatements(), data.getDocuments(), variable2, variable2Document, 
 					statementTypeId, includeIsolates);
 			if (verbose == true) {
-				System.out.print("Node labels have been created with dimensions " + names1.length + " x " + names2.length + ".\n");
+				System.out.print(names1.length + " entries for the first and " + names2.length + " entries for the second variable.\n");
 			}
 		}
 		
