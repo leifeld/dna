@@ -163,7 +163,12 @@ public class AttributeVector implements Comparable<AttributeVector> {
 	public String getVariable() {
 		return variable;
 	}
-
+	
+	// necessary for sorting purposes
+	public int hashCode(){
+        return this.id; // this.hashCode()
+    }
+	
 	/**
 	 * @param variable the variable to set
 	 */
@@ -195,7 +200,7 @@ public class AttributeVector implements Comparable<AttributeVector> {
 	}
 	
 	//necessary for sorting purposes
-	public boolean equals(Object o) {
+	public boolean equals(AttributeVector o) {
 		if (o == null) return false;
 		if (this == o) return true;
 		if (getClass() != o.getClass()) return false;
