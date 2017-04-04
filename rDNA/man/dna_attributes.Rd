@@ -5,7 +5,7 @@
 \title{Retrieve attributes from DNA's attribute manager}
 \usage{
 dna_attributes(connection, statementType = "DNA Statement",
-  variable = "organization")
+  variable = "organization", values = NULL)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the 
@@ -16,6 +16,10 @@ of interest is nested. For example, \code{"DNA Statement"}.}
 
 \item{variable}{The variable for which the attributes should be retrieved. 
 For example, \code{"organization"} or \code{"concept"}.}
+
+\item{values}{An optional vector of value names for which the attributes 
+should be retrieved. If this is \code{NULL}, all attributes will be 
+retrieved in alphabetical order, as in the \link{dna_network} function.}
 }
 \description{
 Retrieve attributes for a given statement type and variable.
@@ -39,12 +43,13 @@ is used anywhere in the dataset, and the tenth and last column indicates if
 the value is contained in the current connection.
 }
 \examples{
-download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
-              destfile = "dna-2.0-beta19.jar", mode = "wb")
-download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/sample.dna", 
-              destfile = "sample.dna", mode = "wb")
+\dontrun{
 dna_init("dna-2.0-beta19.jar")
 conn <- dna_connection("sample.dna")
 at <- dna_attributes(conn, "DNA Statement", "organization")
 at
+at2 <- dna_attributes(conn, "DNA Statement", "organization", 
+                      c("Senate", "Sierra Club"))
+at2
+}
 }

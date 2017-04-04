@@ -26,8 +26,8 @@ database upon start-up of the GUI. This function is useful to use
 DNA on the fly to quickly recode statements or look something up.
 }
 \examples{
-download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
-              destfile = "dna-2.0-beta19.jar", mode = "wb")
+\dontrun{
 dna_init("dna-2.0-beta19.jar")
 dna_gui()
+}
 }

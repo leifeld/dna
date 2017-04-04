@@ -21,7 +21,7 @@ rest of the \R session. To initialize a connection with a different DNA
 version or path, the \R session would need to be restarted first.
 }
 \examples{
-download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
-              destfile = "dna-2.0-beta19.jar", mode = "wb")
+\dontrun{
 dna_init("dna-2.0-beta19.jar")
+}
 }

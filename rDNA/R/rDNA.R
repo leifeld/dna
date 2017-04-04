@@ -16,9 +16,9 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 #' @param jarfile The file name of the DNA jar file, e.g., \code{"dna-2.0-beta19.jar"}.
 #' 
 #' @examples
-#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
-#'               destfile = "dna-2.0-beta19.jar", mode = "wb")
+#' \dontrun{
 #' dna_init("dna-2.0-beta19.jar")
+#' }
 #' @export
 #' @import rJava
 dna_init <- function(jarfile = "dna-2.0-beta19.jar") {
@@ -45,10 +45,10 @@ dna_init <- function(jarfile = "dna-2.0-beta19.jar") {
 #'     example \code{1024} or \code{4096}.
 #' 
 #' @examples
-#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
-#'               destfile = "dna-2.0-beta19.jar", mode = "wb")
+#' \dontrun{
 #' dna_init("dna-2.0-beta19.jar")
 #' dna_gui()
+#' }
 #' @export
 dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
   djs <- dnaEnvironment[["dnaJarString"]]
@@ -93,12 +93,10 @@ dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
 #'     loading the database?
 #' 
 #' @examples
-#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
-#'               destfile = "dna-2.0-beta19.jar", mode = "wb")
-#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/sample.dna", 
-#'               destfile = "sample.dna", mode = "wb")
+#' \dontrun{
 #' dna_init("dna-2.0-beta19.jar")
 #' dna_connection("sample.dna")
+#' }
 #' @export
 dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE) {
   if (is.null(login) || is.null(password)) {
@@ -126,13 +124,11 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' @param ... Further options (currently not used).
 #' 
 #' @examples
-#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
-#'               destfile = "dna-2.0-beta19.jar", mode = "wb")
-#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/sample.dna", 
-#'               destfile = "sample.dna", mode = "wb")
+#' \dontrun{
 #' dna_init("dna-2.0-beta19.jar")
 #' conn <- dna_connection("sample.dna", verbose = FALSE)
 #' conn
+#' }
 #' @export
 print.dna_connection <- function(x, ...) {
   .jcall(x$dna_connection, "V", "rShow")
@@ -171,10 +167,7 @@ print.dna_connection <- function(x, ...) {
 #'     retrieved in alphabetical order, as in the \link{dna_network} function.
 #' 
 #' @examples
-#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
-#'               destfile = "dna-2.0-beta19.jar", mode = "wb")
-#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/sample.dna", 
-#'               destfile = "sample.dna", mode = "wb")
+#' \dontrun{
 #' dna_init("dna-2.0-beta19.jar")
 #' conn <- dna_connection("sample.dna")
 #' at <- dna_attributes(conn, "DNA Statement", "organization")
@@ -182,6 +175,7 @@ print.dna_connection <- function(x, ...) {
 #' at2 <- dna_attributes(conn, "DNA Statement", "organization", 
 #'                       c("Senate", "Sierra Club"))
 #' at2
+#' }
 #' @export
 dna_attributes <- function(connection, 
                            statementType = "DNA Statement", 
@@ -357,10 +351,7 @@ dna_attributes <- function(connection,
 #'     construction should be printed to the R console.
 #' 
 #' @examples
-#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
-#'               destfile = "dna-2.0-beta19.jar", mode = "wb")
-#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/sample.dna", 
-#'               destfile = "sample.dna", mode = "wb")
+#' \dontrun{
 #' dna_init("dna-2.0-beta19.jar")
 #' conn <- dna_connection("sample.dna")
 #' nw <- dna_network(conn, 
@@ -372,6 +363,7 @@ dna_attributes <- function(connection,
 #'                   normalization = "average", 
 #'                   excludeValues = list("concept" = 
 #'                       c("Climate change is real and anthropogenic.")))
+#' }
 #' @export
 dna_network <- function(connection, 
                         networkType = "twomode", 

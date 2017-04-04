@@ -186,10 +186,7 @@ list in DNA and retrieve it as a matrix or data frame, respectively. The
 arguments resemble the export options in DNA.
 }
 \examples{
-download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
-              destfile = "dna-2.0-beta19.jar", mode = "wb")
-download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/sample.dna", 
-              destfile = "sample.dna", mode = "wb")
+\dontrun{
 dna_init("dna-2.0-beta19.jar")
 conn <- dna_connection("sample.dna")
 nw <- dna_network(conn, 
@@ -201,4 +198,5 @@ nw <- dna_network(conn,
                   normalization = "average", 
                   excludeValues = list("concept" = 
                       c("Climate change is real and anthropogenic.")))
+}
 }

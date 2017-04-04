@@ -31,10 +31,8 @@ function establishes a database connection and loads the documents
 and statements into memory for further processing.
 }
 \examples{
-download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
-              destfile = "dna-2.0-beta19.jar", mode = "wb")
-download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/sample.dna", 
-              destfile = "sample.dna", mode = "wb")
+\dontrun{
 dna_init("dna-2.0-beta19.jar")
 dna_connection("sample.dna")
+}
 }
