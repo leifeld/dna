@@ -4,10 +4,12 @@
 \alias{print.dna_connection}
 \title{Print the summary of a \code{dna_connection} object}
 \usage{
-\method{print}{dna_connection}(x)
+\method{print}{dna_connection}(x, ...)
 }
 \arguments{
 \item{x}{A \code{dna_connection} object.}
+
+\item{...}{Further options (currently not used).}
 }
 \description{
 Show details of a \code{dna_connection} object.

@@ -20,6 +20,7 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 #'               destfile = "dna-2.0-beta19.jar", mode = "wb")
 #' dna_init("dna-2.0-beta19.jar")
 #' @export
+#' @import rJava
 dna_init <- function(jarfile = "dna-2.0-beta19.jar") {
   assign("dnaJarString", jarfile, pos = dnaEnvironment)
   message(paste("Jar file:", dnaEnvironment[["dnaJarString"]]))
@@ -52,7 +53,7 @@ dna_init <- function(jarfile = "dna-2.0-beta19.jar") {
 dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
   djs <- dnaEnvironment[["dnaJarString"]]
   if (is.null(djs)) {
-    stop(paste0(dna.jar.file, " could not be located in directory ", getwd(), "."))
+    stop(paste0(djs, " could not be located in directory ", getwd(), "."))
   } else {
     if (is.null(infile)) {
       f <- ""
@@ -122,6 +123,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' establishing a DNA connection.
 #' 
 #' @param x A \code{dna_connection} object.
+#' @param ... Further options (currently not used).
 #' 
 #' @examples
 #' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
@@ -132,17 +134,54 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' conn <- dna_connection("sample.dna", verbose = FALSE)
 #' conn
 #' @export
-print.dna_connection <- function(x) {
+print.dna_connection <- function(x, ...) {
   .jcall(x$dna_connection, "V", "rShow")
 }
 
 
-# retrieve attribute data.frame
-dna_attributes <- function(dna_connection, 
+#' Retrieve attributes from DNA's attribute manager
+#' 
+#' Retrieve attributes for a given statement type and variable.
+#' 
+#' For any variable in DNA (e.g., organization or concept), the attribute 
+#' manager in DNA stores four attributes, or meta-variables, for each value. 
+#' For example, an organization can be associated with a color, a type, 
+#' an alias, and notes. The \code{dna_attributes} function serves to retrieve 
+#' these attributes for all values of a given variable from DNA. To be sure 
+#' that the attributes are retrieved for the right variable, the user also 
+#' has to provide the statement type in which the variable is nested. Note that 
+#' the \code{dna_attributes} function returns the attributes for all values of 
+#' the respective variable (similar to the \code{includeIsolates = TRUE} 
+#' argument of the \code{dna_network} function. The attributes are returned as 
+#' a data frame with the ID of the value as the first column, the actual value 
+#' as the second column, the color as the third column, type as the fourth 
+#' column, alias as fifth, notes as sixth, and the number of occurrences of the 
+#' value as the seventh column. The ninth column indicates whether the value 
+#' is used anywhere in the dataset, and the tenth and last column indicates if 
+#' the value is contained in the current connection.
+#' 
+#' @param connection A \code{dna_connection} object created by the 
+#'     \code{dna_connection} function.
+#' @param statementType The name of the statement type in which the variable 
+#'     of interest is nested. For example, \code{"DNA Statement"}.
+#' @param variable The variable for which the attributes should be retrieved. 
+#'     For example, \code{"organization"} or \code{"concept"}.
+#' 
+#' @examples
+#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
+#'               destfile = "dna-2.0-beta19.jar", mode = "wb")
+#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/sample.dna", 
+#'               destfile = "sample.dna", mode = "wb")
+#' dna_init("dna-2.0-beta19.jar")
+#' conn <- dna_connection("sample.dna")
+#' at <- dna_attributes(conn, "DNA Statement", "organization")
+#' at
+#' @export
+dna_attributes <- function(connection, 
                            statementType = "DNA Statement", 
                            variable = "organization") {
   
-  .jcall(dna_connection$dna_connection, 
+  .jcall(connection$dna_connection, 
          "V", 
          "rAttributes", 
          variable, 
@@ -162,8 +201,165 @@ dna_attributes <- function(dna_connection,
 }
 
 
-# compute a one-mode or two-mode network matrix
-dna_network <- function(dna_connection, 
+#' Compute and retrieve a network
+#' 
+#' Compute and retrieve a network from DNA.
+#' 
+#' This function serves to compute a one-mode or two-mode network or an event 
+#' list in DNA and retrieve it as a matrix or data frame, respectively. The 
+#' arguments resemble the export options in DNA.
+#' 
+#' @param connection A \code{dna_connection} object created by the 
+#'     \code{dna_connection} function.
+#' @param networkType The kind of network to be computed. Can be 
+#'     \code{"twomode"}, \code{"onemode"}, or \code{"eventlist"}.
+#' @param statementType The name of the statement type in which the variable 
+#'     of interest is nested. For example, \code{"DNA Statement"}.
+#' @param variable1 The first variable for network construction. In a one-mode 
+#'     network, this is the variable for both the rows and columns. In a 
+#'     two-mode network, this is the variable for the rows only. In an event 
+#'     list, this variable is only used to check for duplicates (depending on 
+#'     the setting of the \code{duplicate} argument).
+#' @param variable1Document A boolean value indicating whether the first 
+#'     variable is at the document level (i.e., \code{"author"}, 
+#'     \code{"source"}, \code{"section"}, or \code{"type"}).
+#' @param variable2 The second variable for network construction. In a one-mode 
+#'     network, this is the variable over which the ties are created. For 
+#'     example, if an organization x organization network is created, and ties 
+#'     in this network indicate co-reference to a concept, then the second 
+#'     variable is the \code{"concept"}. In a two-mode network, this is the 
+#'     variable used for the columns of the network matrix. In an event list, 
+#'     this variable is only used to check for duplicates (depending on the 
+#'     setting of the \code{duplicate} argument).
+#' @param variable2Document A boolean value indicating whether the second 
+#'     variable is at the document level (i.e., \code{"author"}, 
+#'     \code{"source"}, \code{"section"}, or \code{"type"}).
+#' @param qualifier The qualifier variable. In a one-mode network, this 
+#'     variable can be used to count only congruence or conflict ties. For 
+#'     example, in an organization x organization network via common concepts, 
+#'     a binary \code{"agreement"} qualifier could be used to record only ties 
+#'     where both organizations have a positive stance on the concept or where 
+#'     both organizations have a negative stance on the concept. With an 
+#'     integer qualifier, the tie weight between the organizations would be 
+#'     proportional to the similarity or distance between the two organizations 
+#'     on the scale of the integer variable. In a two-mode network, the 
+#'     qualifier variable can be used to retain only positive or only negative 
+#'     statements or subtract negative from positive mentions. All of this 
+#'     depends on the setting of the \code{qualifierAggregation} argument. For 
+#'     event lists, the qualifier variable is only used for filtering out 
+#'     duplicates (depending on the setting of the \code{duplicate} argument.
+#' @param qualifierAggregation The aggregation rule for the \code{qualifier} 
+#'     variable. In one-mode networks, this must be \code{"ignore"} (for 
+#'     ignoring the qualifier variable), \code{"congruence"} (for recording a 
+#'     network tie only if both nodes have the same qualifier value in the 
+#'     binary case or for recording the similarity between the two nodes on the 
+#'     qualifier variable in the integer case), \code{"conflict"} (for 
+#'     recording a network tie only if both nodes have a different qualifier 
+#'     value in the binary case or for recording the distance between the two 
+#'     nodes on the qualifier variable in the integer case), or 
+#'     \code{"subtract"} (for subtracting the conflict tie value from the 
+#'     congruence tie value in each dyad). In two-mode networks, this must be 
+#'     \code{"ignore"}, \code{"combine"} (for creating multiplex combinations, 
+#'     e.g., 1 for positive, 2 for negative, and 3 for mixed), or 
+#'     \code{subtract} (for subtracting negative from positive ties). In event 
+#'     lists, this setting is ignored.
+#' @param normalization Normalization of edge weights. Valid settings for 
+#'     one-mode networks are \code{"no"} (for switching off normalization), 
+#'     \code{"average"} (for average activity normalization), \code{"Jaccard"} 
+#'     (for Jaccard coefficient normalization), and \code{"cosine"} (for 
+#'     cosine similarity normalization). Valid settings for two-mode networks 
+#'     are \code{"no"}, \code{"activity"} (for activity normalization), and 
+#'     \code{"prominence"} (for prominence normalization).
+#' @param isolates Should all nodes of the respective variable be included in 
+#'     the network matrix (\code{isolates = TRUE}), or should only those nodes 
+#'     be included that are active in the current time period and are not 
+#'     excluded (\code{isolates = FALSE})?
+#' @param duplicates Setting for excluding duplicate statements before network 
+#'     construction. Valid settings are \code{"include"} (for including all 
+#'     statements in network construction), \code{"document"} (for counting 
+#'     only one identical statement per document), \code{"week"} (for counting 
+#'     only one identical statement per calendar week), \code{"month"} (for 
+#'     counting only one identical statement per calendar month), \code{"year"} 
+#'     (for counting only one identical statement per calendar year), and 
+#'     \code{"acrosstime"} (for counting only one identical statement across 
+#'     the whole time range).
+#' @param start.date The start date for network construction in the format 
+#'     "dd.mm.yyyy". All statements before this date will be excluded.
+#' @param start.time The start time for network construction on the specified 
+#'     \code{start.date}. All statements before this time on the specified date 
+#'     will be excluded.
+#' @param stop.date The stop date for network construction in the format 
+#'     "dd.mm.yyyy". All statements after this date will be excluded.
+#' @param stop.time The stop time for network construction on the specified 
+#'     \code{stop.date}. All statements after this time on the specified date 
+#'     will be excluded.
+#' @param excludeValues A list of named character vectors that contains entries 
+#'     which should be excluded during network construction. For example, 
+#'     \code{list(concept = c("A", "B"), organization = c("org A", "org B"))} 
+#'     would exclude all statements containing concepts "A" or "B" or 
+#'     organizations "org A" or "org B" when the network is constructed. This 
+#'     is irrespective of whether these values appear in \code{variable1}, 
+#'     \code{variable2}, or the \code{qualifier}. Note that only variables at 
+#'     the statement level can be used here. There are separate arguments for 
+#'     excluding statements nested in documents with certain meta-data.
+#' @param excludeAuthors A character vector of authors. If a statement is 
+#'     nested in a document where one of these authors is set in the "Author" 
+#'     meta-data field, the statement is excluded from network construction.
+#' @param excludeSources A character vector of sources. If a statement is 
+#'     nested in a document where one of these sources is set in the "Source" 
+#'     meta-data field, the statement is excluded from network construction.
+#' @param excludeSections A character vector of sections. If a statement is 
+#'     nested in a document where one of these sections is set in the "Section" 
+#'     meta-data field, the statement is excluded from network construction.
+#' @param excludeTypes A character vector of types. If a statement is 
+#'     nested in a document where one of these types is set in the "Type" 
+#'     meta-data field, the statement is excluded from network construction.
+#' @param invertValues A boolean value indicating whether the entries provided 
+#'     by the \code{excludeValues} argument should be excluded from network 
+#'     construction (\code{invertValues = FALSE}) or if they should be the only 
+#'     values that should be included during network construction 
+#'     (\code{invertValues = TRUE}).
+#' @param invertAuthors A boolean value indicating whether the entries provided 
+#'     by the \code{excludeAuthors} argument should be excluded from network 
+#'     construction (\code{invertAuthors = FALSE}) or if they should be the 
+#'     only values that should be included during network construction 
+#'     (\code{invertAuthors = TRUE}).
+#' @param invertSources A boolean value indicating whether the entries provided 
+#'     by the \code{excludeSources} argument should be excluded from network 
+#'     construction (\code{invertSources = FALSE}) or if they should be the 
+#'     only values that should be included during network construction 
+#'     (\code{invertSources = TRUE}).
+#' @param invertSections A boolean value indicating whether the entries 
+#'     provided by the \code{excludeSections} argument should be excluded from 
+#'     network construction (\code{invertSections = FALSE}) or if they should 
+#'     be the only values that should be included during network construction 
+#'     (\code{invertSections = TRUE}).
+#' @param invertTypes A boolean value indicating whether the entries provided 
+#'     by the \code{excludeTypes} argument should be excluded from network 
+#'     construction (\code{invertTypes = FALSE}) or if they should be the 
+#'     only values that should be included during network construction 
+#'     (\code{invertTypes = TRUE}).
+#' @param verbose A boolean value indicating whether details of network 
+#'     construction should be printed to the R console.
+#' 
+#' @examples
+#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar", 
+#'               destfile = "dna-2.0-beta19.jar", mode = "wb")
+#' download.file("https://github.com/leifeld/dna/releases/download/v2.0-beta.19/sample.dna", 
+#'               destfile = "sample.dna", mode = "wb")
+#' dna_init("dna-2.0-beta19.jar")
+#' conn <- dna_connection("sample.dna")
+#' nw <- dna_network(conn, 
+#'                   networkType = "onemode", 
+#'                   variable1 = "organization", 
+#'                   variable2 = "concept", 
+#'                   qualifier = "agreement", 
+#'                   qualifierAggregation = "congruence", 
+#'                   normalization = "average", 
+#'                   excludeValues = list("concept" = 
+#'                       c("Climate change is real and anthropogenic.")))
+#' @export
+dna_network <- function(connection, 
                         networkType = "twomode", 
                         statementType = "DNA Statement", 
                         variable1 = "organization", 
@@ -223,7 +419,7 @@ dna_network <- function(dna_connection,
     excludeTypes = c(excludeTypes, excludeTypes)
   }
   
-  .jcall(dna_connection$dna_connection, 
+  .jcall(connection$dna_connection, 
          "V", 
          "rNetwork", 
          networkType, 
