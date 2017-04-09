@@ -2587,7 +2587,7 @@ public class Exporter extends JDialog {
 			filterEmptyFields = false;
 		}
 		if (verbose == true) {
-			System.out.print("(2/" + max + "): Filtering statements... ");
+			System.out.print("(2/" + max + "): Filtering statements...\n");
 		}
 		this.filteredStatements = filter(data.getStatements(), data.getDocuments(), start, stop, st, variable1, variable2, 
 				variable1Document, variable2Document, qualifier, ignoreQualifier, duplicates, authorExclude, sourceExclude, sectionExclude, 
@@ -3025,7 +3025,9 @@ public class Exporter extends JDialog {
 				if (values == null) {
 					values = new ArrayList<String>();
 				}
-				values.add(excludeValues[i]);
+				if (!values.contains(excludeValues[i])) {
+					values.add(excludeValues[i]);
+				}
 				Collections.sort(values);
 				map.put(excludeVariables[i], values);
 			}

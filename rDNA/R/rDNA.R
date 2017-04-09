@@ -362,7 +362,7 @@ dna_attributes <- function(connection,
 #'                   qualifierAggregation = "congruence", 
 #'                   normalization = "average", 
 #'                   excludeValues = list("concept" = 
-#'                       c("Climate change is real and anthropogenic.")))
+#'                       c("There should be legislation to regulate emissions.")))
 #' }
 #' @export
 dna_network <- function(connection, 
@@ -393,6 +393,27 @@ dna_network <- function(connection,
                         invertTypes = FALSE, 
                         verbose = TRUE) {
   
+  # convert single values to vectors by means of duplication if necessary
+  if (length(excludeTypes) == 1) {
+    excludeTypes = c(excludeTypes, excludeTypes)
+  }
+  if (length(excludeAuthors) == 1) {
+    excludeAuthors = c(excludeAuthors, excludeAuthors)
+  }
+  if (length(excludeSources) == 1) {
+    excludeSources = c(excludeSources, excludeSources)
+  }
+  if (length(excludeSections) == 1) {
+    excludeSections = c(excludeSections, excludeSections)
+  }
+  if (!is.null(excludeValues) && length(excludeValues) > 0) {
+    for (i in 1:length(excludeValues)) {
+      if (length(excludeValues[[i]]) == 1) {
+        excludeValues[[i]] = c(excludeValues[[i]], excludeValues[[i]])
+      }
+    }
+  }
+  
   if (length(excludeValues) > 0) {
     dat <- matrix("", nrow = sum(sapply(excludeValues, length)), ncol = 2)
     count = 0
@@ -410,19 +431,6 @@ dna_network <- function(connection,
   } else {
     var <- character()
     val <- character()
-  }
-  
-  if (length(excludeAuthors) == 1) {
-    excludeAuthors = c(excludeAuthors, excludeAuthors)
-  }
-  if (length(excludeSources) == 1) {
-    excludeSources = c(excludeSources, excludeSources)
-  }
-  if (length(excludeSections) == 1) {
-    excludeSections = c(excludeSections, excludeSections)
-  }
-  if (length(excludeTypes) == 1) {
-    excludeTypes = c(excludeTypes, excludeTypes)
   }
   
   .jcall(connection$dna_connection, 
