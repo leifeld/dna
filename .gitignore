@@ -1,3 +1,7 @@
 /DNA/bin
 *~
 .Rproj.user
+*-concordance.tex
+*.synctex.gz
+*.log
+manual/dna-manual.tex

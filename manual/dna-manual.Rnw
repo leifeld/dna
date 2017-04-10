@@ -1,0 +1,445 @@
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{tmargin=3cm,bmargin=3cm,lmargin=3cm,rmargin=3cm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{natbib}
+\usepackage[
+  unicode=true,
+  pdfusetitle,
+  bookmarks=true,
+  bookmarksnumbered=true,
+  bookmarksopen=true,
+  bookmarksopenlevel=2,
+  breaklinks=true,
+  colorlinks=true
+]{hyperref}
+\hypersetup{
+ pdfstartview={XYZ null null 1}
+}
+
+\newcommand{\dna}{\texttt{DNA}}
+\newcommand{\rdna}{\texttt{rDNA}}
+\newcommand{\R}{\texttt{R}}
+\newcommand{\github}{\href{https://github.com/leifeld/dna}{\texttt{GitHub}}}
+
+\setlength{\parindent}{0em}
+\setlength{\parskip}{0.5em}
+
+\bibpunct[: ]{(}{)}{;}{a}{}{,}
+
+\begin{document}
+<<setup, include=FALSE, cache=FALSE>>=
+library("knitr")
+# set global chunk options
+opts_chunk$set(fig.path = 'figure/workshop-', fig.align = 'center', fig.show = 'hold')
+options(formatR.arrow = TRUE, width = 90)
+knit_hooks$set(crop=hook_pdfcrop)
+@
+
+\title{Discourse Network Analyzer}
+\date{\footnotesize{Last update: DNA 2.0 beta 20 with rDNA 2.0.1 on 2017-04-10.}}
+\author{Philip Leifeld}
+
+\maketitle
+
+This documents describes the software \texttt{Discourse Network Analyzer} (\dna) and its companion \R\ package \rdna\ \citep{leifeld2017rdna}.
+Section~\ref{algorithms} is a concise and fairly technical description of the types of networks \dna\ can export.
+Section~\ref{rdna} is an introductory tutorial on using the \rdna\ package.
+The contents of both sections are meant to be extended in the future, and additional sections may be added.
+\dna\ and \rdna\ can be downloaded from \github.
+Questions and bug reports can be posted in the issue tracker on \github.
+
+\section{\dna\ algorithms} \label{algorithms}
+This section summarizes the main algorithms implemented in \dna\ in a technical way.
+
+$X$ is a three-dimensional array representing statement counts. $x_{ijk}$ is a specific count value in this array, with the first index $i$ denoting an instance of the first variable (e.g., organization $i$), the second index $j$ denoting an instance of the second variable (e.g., concept $j$), and the third index $k$ denoting a level on the qualifier variable (e.g., agreement = $1$). For example, $x_{ijk} = 5$ could mean that organization $i$ mentions concept $j$ with intensity $k$ five times.
+
+Where the qualifier variable is binary, \emph{false} values are represented as $0$ and \emph{true} values as $1$ on the $k$ index, i.e., $K^\text{binary} = \{ 0; 1 \}$. Where the qualifier variable is integer, the respective integer value is used as the level. This implies that $k$ can take positive or negative values or 0, i.e, $K^\text{integer} \subseteq \mathbb{Z}$. Note that all $k$ levels of the scale are included in $K$, not just those values that are empirically observed.
+
+Indices with a prime denote a second instance of an element, e.g., $i'$ may denote another organization. $Y$ denotes the output matrix to be obtained by applying a transformation to $X$. The following transformations are possible:
+
+\subsection{Congruence}
+In a congruence network, the edge weight between nodes $i$ and $i'$ represents the number of times they co-support or co-reject second-variable nodes (if a binary qualifier is used) or the cumulative similarity between $i$ and $i'$ over their assessments of second-variable nodes (in the case of an integer qualifier variable).
+
+In the integer case:
+\begin{equation}
+ y_{ii'}^\text{congruence} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} \sum_{k'} x_{ijk} x_{i'jk'} \left( 1 - \frac{\vert k - k' \vert}{\vert K \vert - 1} \right) \right)
+\end{equation}
+where $\Phi_{ii'}(\cdot)$ denotes a normalization function (to be specified below).
+
+In the binary case, i.e., $\vert K \vert = 2$, this reduces to
+\begin{equation}
+ y_{ii'}^\text{congruence binary} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} x_{ijk} x_{i'jk} + (1 - x_{ijk}) (1 - x_{i'jk}) \right).
+\end{equation}
+
+\subsection{Conflict}
+Binary case:
+\begin{equation}
+ y_{ii'}^\text{conflict binary} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} (1 - x_{ijk}) x_{i'jk} + x_{ijk} (1 - x_{i'jk}) \right).
+\end{equation}
+
+More generally, in the integer case:
+\begin{equation}
+ y_{ii'}^\text{conflict} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} \sum_{k'} x_{ijk} x_{i'jk'} \left( \frac{\vert k - k' \vert}{\vert K \vert - 1} \right) \right)
+\end{equation}
+
+\subsection{Subtract}
+\begin{equation}
+ y_{ii'}^\text{subtract} = y_{ii'}^\text{congruence} - y_{ii'}^\text{conflict}
+\end{equation}
+
+\subsection{Ignore}
+\begin{equation}
+ y_{ii'}^\text{ignore} = \Phi_{ii'}\left( \sum_{j = 1}^n \left( \left( \sum_{k} x_{ijk} \right) \left( \sum_{k} x_{i'jk} \right) \right) \right)
+\end{equation}
+
+\subsection{Normalization}
+In the simplest case, normalization can be switched off, in which case $\Phi_{ii'}^\text{no}(\omega) = \omega$.
+
+Alternatively, edge weights can be divided by the average activity of nodes $i$ and $i'$:
+\begin{equation}
+ \Phi_{ii'}^\text{avg} (\omega) = \frac{\omega}{ \frac{1}{2} \left( \sum_{j = 1}^n \sum_{k} x_{ijk} + \sum_{j = 1}^n \sum_{k} x_{i'jk} \right) }.
+\end{equation}
+
+With Jaccard normalization, we don't just count $i$'s and $i'$'s activity and sum them up independently, but we add up both their independent activities and their joint activity, i.e., both matches and non-matches:
+\begin{equation}
+ \Phi_{ii'}^\text{Jaccard} (\omega) = \frac{\omega}{ \sum_{j = 1}^n \sum_{k} x_{ijk} [x_{i'jk} = 0] + \sum_{j = 1}^n \sum_{k} x_{i'jk}[x_{ijk} = 0] + \sum_{j = 1}^n \sum_{k} x_{ijk} x_{i'jk} }.
+\end{equation}
+
+With cosine normalization, we take the product in the denominator:
+\begin{equation}
+ \Phi_{ii'}^\text{cosine} (\omega) = \frac{\omega}{ \sqrt{(\sum_{j = 1}^n \sum_{k} x_{ijk})^2} \sqrt{(\sum_{j = 1}^n \sum_{k} x_{i'jk})^2} }.
+\end{equation}
+
+\subsection{Affiliation networks}
+Ignoring the qualifier variable:
+\begin{equation}
+ y_{ij}^\text{affiliation ignore} = \Phi_{ij}\left(\sum_{k} x_{ijk} \right)
+\end{equation}
+
+Subtracting negative from positive ties (integer case):
+\begin{equation}
+ y_{ij}^\text{affiliation subtract binary} = \Phi_{ij}\left(\sum_{k} k \cdot x_{ijk} \right)
+\end{equation}
+
+Subtracting negative from positive ties (binary case):
+\begin{equation}
+ y_{ij}^\text{affiliation subtract binary} = \Phi_{ij}\left(\sum_{k} \left( k \cdot x_{ijk} - (1 - k) \cdot x_{ijk} \right) \right)
+\end{equation}
+
+Note that the binary case is \emph{not} merely a special case of the weighted affiliation network in this case.
+
+\subsection{Normalization for affiliation networks}
+With \emph{activity} normalization, ties from active nodes receive lower weights:
+\begin{equation}
+ \Phi_{ij}^\text{activity}(\omega) = \frac{\omega}{\sum_{j = 1}^n \sum_k x_{ijk}}
+\end{equation}
+
+With \emph{prominence} normalization, ties to prominent nodes receive lower weights:
+\begin{equation}
+ \Phi_{ij}^\text{prominence}(\omega) = \frac{\omega}{\sum_{i = 1}^m \sum_k x_{ijk}}
+\end{equation}
+
+
+\section{\rdna: Using \dna\ from \R} \label{rdna}
+\dna\ can be connected to the statistical computing environment \R\ \citep{coreteam2014r:} through the \rdna\ package \citep{leifeld2017rdna}.
+There are two advantages to working with \R\ on \dna\ data.
+
+The first advantage is replicability.
+The network export function of \dna\ has many options.
+Remembering what options were used in an analysis can be difficult.
+If the analysis is executed in \R, commands---rather than mouse clicks---are used to extract networks or attributes from \dna.
+These commands are saved in an \R\ script file.
+This increases replicability because the script can be re-used many times.
+For example, after discovering a wrong code somewhere in the \dna\ database, it is sufficient to fix this problem in the \dna\ file and then re-run the \R\ script instead of manually setting all the options again.
+This reduces the probability of making errors and increases replicability.
+
+The second advantage is the immense flexibility of \R\ in terms of statistical modeling.
+Analyzing \dna\ data in \R\ permits many forms of data analysis beyond simple visualization of the resulting networks.
+Examples include cluster analysis or community detection, scaling and application of data reduction techniques, centrality analysis, and even statistical modeling of network data.
+\R\ is also flexible in terms of combining and matching the data from \dna\ with other data sources.
+
+\subsection{Getting started with \rdna}
+The first step is to install \R.
+Installing additional \R\ packages for network analysis and clustering, such as \texttt{statnet} \citep{goodreau2008statnet, handcock2008statnet, handcock2016statnet}, \texttt{xergm} \citep{leifeld2017temporal, leifeld2017xergm:}, \texttt{igraph} \citep{csardi2006igraph}, and \texttt{cluster} \citep{maechler2017cluster}, is recommended.
+Moreover, it is necessary to install the \texttt{rJava} package \citep{urbanek2016rjava}, on which the \rdna\ package depends, and the \texttt{devtools} package \citep{wickham2016devtools}, which permits installing \R\ packages from \github.
+
+<<eval=FALSE>>=
+install.packages("statnet")
+install.packages("xergm")
+install.packages("igraph")
+install.packages("cluster")
+install.packages("rJava")
+install.packages("devtools")
+@
+
+After installing these supplementary packages, the \rdna\ package can be installed from \github.
+The \texttt{devtools} package contains a function that permits easy installation of \R\ packages from \github\ and can be used as follows to install \rdna:
+
+<<eval=FALSE>>=
+library("devtools")
+install_github("leifeld/dna/rDNA")
+@
+
+Once installed, the \rdna\ package must be attached to the workspace:
+
+<<eval=TRUE, results = 'hide', message = FALSE>>=
+library("rDNA")
+@
+
+To ensure that the following results can be reproduced exactly, we should set the random seed in \R:
+
+<<eval=TRUE, results = 'hide', message = FALSE>>=
+set.seed(12345)
+@
+
+Now we are able to use the package. The first step is to initialize \dna.
+Out of the box, \rdna\ does not know where the \dna\ \texttt{.jar} file is located.
+We need to register \dna\ with \rdna\ to use them together.
+To do that, one needs to save the \dna\ \texttt{.jar} file to the working directory of the current \R\ session and then initialize \dna\ as follows (with \texttt{dna-2.0-beta19.jar} in this example):
+
+<<eval=TRUE, results = 'hide', message = FALSE>>=
+dna_init("dna-2.0-beta19.jar")
+@
+
+After initializing \dna, we can open the DNA graphical user interface from the \R\ command line:
+
+<<eval=FALSE>>=
+dna_gui()
+@
+
+Alternatively, we can provide the file name of a local \dna\ database as an argument, and the database will be opened in \dna.
+For example, we could open the \texttt{sample.dna} database that is provided for download on \github\ under \texttt{Releases}:
+
+<<eval=FALSE>>=
+dna_gui("sample.dna")
+@
+
+For this to work, the database file has to be saved in the working directory of the \R\ session, or the path needs to be provided along with the file name.
+
+In addition to opening the GUI, we will want to retrieve networks and attributes from \dna.
+For this to happen, a connection with a \dna\ database must first be established using the \texttt{dna\_connection} function:
+
+<<eval=TRUE>>=
+conn <- dna_connection("sample.dna")
+@
+
+The \texttt{dna\_connection} function accepts a file name of the database including full or relative path (or, alternatively, a connection string to a remote \texttt{mySQL} database) and optionally the login and password for the database (in case a remote \texttt{mySQL} database is used).
+Details about the connection can be printed by calling the resulting object called \texttt{conn}.
+
+After initializing \dna\ and establishing a connection to a database, we can now retrieve data from \dna.
+We will start with a simple example of a two-mode network from the sample database.
+To compute the network matrix, the connection that we just established must be supplied to the \texttt{dna\_network} function:
+
+<<eval=TRUE, results = 'hide'>>=
+nw <- dna_network(conn)
+@
+
+The resulting matrix can be plotted using visualization functions from the \texttt{statnet} suite of packages:
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'hide', fig.width = 4, fig.height = 4, crop = TRUE>>=
+library("statnet")
+gplot(nw)
+@
+
+It is also easily possible to retrieve the attributes of a variable, for example the colors and types of organizations, using the \texttt{dna\_attributes} function:
+
+<<eval=TRUE, results = 'hide'>>=
+at <- dna_attributes(conn)
+@
+
+The result is a data frame with organizations in the rows and one column per organizational attribute.
+The next section will provide usage examples of both the \texttt{dna\_network} and the \texttt{dna\_attributes} functions.
+
+
+\subsection{Retrieving networks and attributes}
+This section will explore the \texttt{dna\_network} function and facilities for retrieving attributes in more detail.
+The \texttt{dna\_network} function has a number of arguments, which resemble the export options in the DNA export window.
+The help page for the \texttt{dna\_network} function provides details on these arguments.
+It can be opened using the command
+
+<<eval=FALSE>>=
+help("dna_network")
+@
+
+We will start with a simple example: a one-mode congruence network of organizations in a policy debate.
+The \texttt{sample.dna} database is a small excerpt from a larger empirical research project that tries to map the ideological debates around American climate politics in the U.S. Congress over time.
+Details about the dataset from which this excerpt is taken are provided by \citet{fisher2013mapping, fisher2013where}.
+Here, it suffice to say that the \texttt{sample.dna} file contains speeches from hearings in the U.S.\ Congress in which interest groups and legislators make statements about their views on climate politics. 
+Accordingly, one should expect to find a polarized debate with environmental groups on one side and industrial interest groups on the other side.
+To compute a one-mode congruence network, the following code can be used:
+
+<<eval=TRUE, results = 'asis'>>=
+congruence <- dna_network(conn, 
+                          networkType = "onemode", 
+                          statementType = "DNA Statement", 
+                          variable1 = "organization", 
+                          variable2 = "concept", 
+                          qualifier = "agreement", 
+                          qualifierAggregation = "congruence", 
+                          duplicates = "document")
+@
+
+The result is an organization $\times$ organization matrix, where the cells represent on how many concepts any two actors (i\,e., the row organization and the column organization) had the same issue stance (by values of the qualifier variable \texttt{agreement}).
+
+The arguments of the \texttt{dna\_network} function resemble the options in the DNA export window.
+Details on the various arguments of the function can be obtained by displaying the help page (\texttt{?dna\_network}).
+
+\texttt{statementType = "DNA Statement"} indicates which statement type should be used for the network export.
+In this case, the statement type \texttt{DNA Statement} contains the variables \texttt{organization}, \texttt{concept}, and \texttt{agreement}.
+The argument \texttt{qualifierAggregation = "congruence"} causes \rdna\ to count how often the unique elements of \texttt{variable1} have an identical value on the \texttt{qualifier} variable (here: \texttt{agreement}) when they refer to a concept (\texttt{variable2}).
+
+If the algorithm finds duplicate statements within documents---i.\,e., statements containing the same organization, concept, and agreement pattern---, only one of them is retained for the analysis (\texttt{duplicates = "document"}).
+
+The resulting matrix can be converted to a network object and plotted as follows:
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'hide', fig.width = 8, fig.height = 5, crop = TRUE>>=
+nw <- network(congruence)
+plot(nw, 
+     edge.lwd = congruence^2, 
+     displaylabels = TRUE, 
+     label.cex = 0.5, 
+     usearrows = FALSE, 
+     edge.col = "gray"
+     )
+@
+
+Here, we used the \texttt{edge.lwd} argument of the \texttt{plot.network} function to make the line width proportional to the strength of congruence between actors.
+We used squared edge weights to emphasize the difference between low and high edge weights.
+We also displayed the labels of the nodes at half the normal size, suppressed arrow heads, and changed the color of the edges to gray.
+More information about the visualization capabilities of the \texttt{network} and \texttt{sna} packages are provided by \citet{butts2008social, butts2008network, butts2015network}.
+
+The network is not particularly polarized.
+We can suspect that some of the concepts are not very contested.
+If they are supported by all actors, this may mask the extent of polarization with regard to the other concepts.
+From our experience with the dataset, we can tell in this particular case that the concept ``There should be legislation to regulate emissions.'' is in fact very consensual.
+If everybody agrees to this concept, it obfuscates the real structure of the network.
+Therefore we should exclude it from the congruence network.
+To do that, we need to export and plot the congruence network again and use the \texttt{excludeValues} argument this time:
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'hide', fig.width = 8, fig.height = 5, crop = TRUE>>=
+congruence <- dna_network(conn, 
+                          networkType = "onemode", 
+                          statementType = "DNA Statement", 
+                          variable1 = "organization", 
+                          variable2 = "concept", 
+                          qualifier = "agreement", 
+                          qualifierAggregation = "congruence", 
+                          duplicates = "document", 
+                          excludeValues = list("concept" = 
+                              "There should be legislation to regulate emissions."))
+nw <- network(congruence)
+plot(nw, 
+     edge.lwd = congruence^2, 
+     displaylabels = TRUE, 
+     label.cex = 0.5, 
+     usearrows = FALSE, 
+     edge.col = "gray"
+     )
+@
+
+This reveals the structure of the actor congruence network.
+There are two camps revolving around environmental groups on the right and industrial interest groups and state actors on the left, with \texttt{Energy and Environmental Analysis, Inc.} taking a bridging position.
+The strongest belief congruence ties can be found within, rather than between, the coalitions.
+
+Next, we should tweak the congruence network further by changing the appearance of the nodes.
+We can use the colors for the organization types saved in the database and apply them to the nodes in the network.
+We can also make the size of each node proportional to its activity.
+The \texttt{dna\_attributes} function serves to retrieve these additional data from \dna.
+The result is a data frame with the relevant data for each organization in the \texttt{color} and \texttt{frequency} columns:
+
+<<eval=TRUE, results = 'show'>>=
+at <- dna_attributes(conn, 
+                     statementType = "DNA Statement", 
+                     variable = "organization")
+at
+@
+
+To use these data in the congruence network visualization, we can use the plotting facilities of the \texttt{plot.network} function:
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'hide', fig.width = 8, fig.height = 5, crop = TRUE>>=
+plot(nw, 
+     edge.lwd = congruence^2, 
+     displaylabels = TRUE, 
+     label.cex = 0.5, 
+     usearrows = FALSE, 
+     edge.col = "gray", 
+     vertex.col = at$color, 
+     vertex.cex = at$frequency
+     )
+@
+
+This yields a clear visualization of the actor congruence network, with simultaneous display of the network structure includings its coalitions, the actors' activity in the debate, and actor types.
+
+Another way to visualize a discourse network is a two-mode network visualization.
+To compute a two-mode network of organizations and concepts, the following code can be used:
+
+<<eval=TRUE, results = 'asis'>>=
+affil <- dna_network(conn, 
+                     networkType = "twomode", 
+                     statementType = "DNA Statement", 
+                     variable1 = "organization", 
+                     variable2 = "concept", 
+                     qualifier = "agreement", 
+                     qualifierAggregation = "combine", 
+                     duplicates = "document")
+@
+
+This creates a $7 \times 6$ matrix of organizations and their relations to concepts. 
+The argument \texttt{networkType = "twomode"} is necessary because the rows and columns of the \texttt{affil} matrix should contain different variables.
+The arguments \texttt{variable1 = "organization"} and \texttt{variable2 = "concept"} define which variables should be used for the rows and columns, respectively.
+The arguments \texttt{qualifier = "agreement"} and \texttt{qualifierAggregation = "combine"} define how the cells of the matrix should be populated:
+\texttt{agreement} is a binary variable, and the \texttt{combine} option causes a cell to have a value of $0$ if the organization never refers to the concept, $1$ if the organization refers to the respective concept exclusively in a positive way, $2$ if the organization refers to the concept exclusively in a negative way, and $3$ if there are both positive and negative statements by the organization about the concept.
+\rdna\ reports on the \R\ console what each combination means.
+
+As in the previous example, the resulting network matrix can be converted to a \texttt{network} object (as defined in the \texttt{network} package).
+The colors of the edges can be stored as an edge attribute, and the resulting object can be plotted with different colors representing positive, negative, and ambivalent mentions.
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'hide', fig.width = 8, fig.height = 5, crop = TRUE>>=
+nw <- network(affil, bipartite = TRUE)
+colors <- as.character(t(affil))
+colors[colors == "3"] <- "blue"
+colors[colors == "2"] <- "red"
+colors[colors == "1"] <- "green"
+colors <- colors[colors != "0"]
+set.edge.attribute(nw, "color", colors)
+plot(nw, 
+     edge.col = get.edge.attribute(nw, "color"), 
+     vertex.col = c(rep("white", nrow(affil)), 
+                    rep("black", ncol(affil))), 
+     displaylabels = TRUE, 
+     label.cex = 0.5
+     )
+@
+
+In this example, we first converted the two-mode matrix to a bipartite \texttt{network} object, then created a vector of colors for the edges (excluding zeros), and inserted this vector into the \texttt{network} object as an edge attribute.
+It was necessary to work with the transposed \texttt{affil} matrix (using the \texttt{t} function) because the \texttt{set.edge.attribute} function expects edge attributes in a row-wise order while the \texttt{as.character} function returns them in a column-wise order based on the \texttt{affil} matrix.
+Finally, we plotted the network object with edge colors and labels.
+In the visualization, we used white nodes for organizations and black nodes for concepts.
+
+We can now see the opinions of all actors on the various concepts.
+The blue edge indicates that \texttt{Energy and Environmental Analysis, Inc.} has both positive and negative things to say about the concept \texttt{"Emissions legislation should regulate CO2}.
+This is why this organization acts as a bridge between the two camps in the congruence network.
+Furthermore, we can now see more clearly that the concept we omitted in the congruence network, \texttt{"There should be legislation to regulate emissions"}, is viewed positively by four organizations but still receives a negative mention by one actor.
+The green edges span both camps, and this caused additional connections between the two groups.
+The negative tie is ignored in the construction of the congruence network because conflicts are not counted and there is no second red tie to that concept.
+
+% \subsection{Cluster analysis}
+% TODO
+
+% \subsection{Heat maps}
+% TODO
+
+% \subsection{Multi-dimensional scaling}
+% TODO
+
+% \subsection{Correspondence analysis}
+% TODO
+
+\bibliographystyle{apalike}
+\bibliography{dna-manual}
+
+\end{document}
