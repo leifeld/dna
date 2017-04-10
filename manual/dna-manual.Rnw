@@ -202,7 +202,7 @@ We need to register \dna\ with \rdna\ to use them together.
 To do that, one needs to save the \dna\ \texttt{.jar} file to the working directory of the current \R\ session and then initialize \dna\ as follows (with \texttt{dna-2.0-beta19.jar} in this example):
 
 <<eval=TRUE, results = 'hide', message = FALSE>>=
-dna_init("dna-2.0-beta19.jar")
+dna_init("dna-2.0-beta20.jar")
 @
 
 After initializing \dna, we can open the DNA graphical user interface from the \R\ command line:
