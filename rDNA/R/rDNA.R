@@ -469,7 +469,7 @@ dna_network <- function(connection,
     objects <- .jcall(connection$dna_connection, "[Ljava/lang/Object;", "getEventListColumnsR", simplify = TRUE)
     columnNames <- .jcall(connection$dna_connection, "[S", "getEventListColumnsRNames", simplify = TRUE)
     dta <- data.frame(id = .jevalArray(objects[[1]]))
-    dta$time <- as.POSIXct(.jevalArray(objects[[2]]), origin="1970-01-01")
+    dta$time <- as.POSIXct(.jevalArray(objects[[2]]), origin = "1970-01-01")
     dta$docId <- .jevalArray(objects[[3]])
     dta$docTitle <- .jevalArray(objects[[4]])
     dta$docAuthor <- .jevalArray(objects[[5]])

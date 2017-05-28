@@ -2642,8 +2642,9 @@ public class Exporter extends JDialog {
 
 	/**
 	 * This function accepts a list of statements that should be included in the relational event export, 
-	 * and it returns the variables of all statements, along with the statement ID and a date/time stamp. There is one statement per row, and the number of columns is the number of variables 
-	 * present in the statement type.
+	 * and it returns the variables of all statements, along with the statement ID and a date/time stamp. 
+	 * There is one statement per row, and the number of columns is the number of variables present in 
+	 * the statement type plus 8 columns that represent statement ID and document-level variables.
 	 * 
 	 * @param statements	 An array list of {@link Statement}s (of the same statement type) that should be exported.
 	 * @param documents      An array list of {@link Document}s in which the statements are embedded.
