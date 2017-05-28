@@ -466,7 +466,20 @@ dna_network <- function(connection,
   )
   
   if (networkType == "eventlist") {
-    stop("Event lists are currently not supported by rDNA and may be added at some point.")
+    objects <- .jcall(connection$dna_connection, "[Ljava/lang/Object;", "getEventListColumnsR", simplify = TRUE)
+    columnNames <- .jcall(connection$dna_connection, "[S", "getEventListColumnsRNames", simplify = TRUE)
+    dta <- data.frame(id = .jevalArray(objects[[1]]))
+    dta$time <- as.POSIXct(.jevalArray(objects[[2]]), origin="1970-01-01")
+    dta$docId <- .jevalArray(objects[[3]])
+    dta$docTitle <- .jevalArray(objects[[4]])
+    dta$docAuthor <- .jevalArray(objects[[5]])
+    dta$docSource <- .jevalArray(objects[[6]])
+    dta$docSection <- .jevalArray(objects[[7]])
+    dta$docType <- .jevalArray(objects[[8]])
+    for (i in 1:length(columnNames)) {
+      dta[[columnNames[i]]] <- .jevalArray(objects[[i + 8]])
+    }
+    return(dta)
   } else {
     mat <- .jcall(connection$dna_connection, "[[D", "getMatrix", simplify = TRUE)
     rownames(mat) <- .jcall(connection$dna_connection, "[S", "getRowNames", simplify = TRUE)

@@ -96,6 +96,8 @@ public class Exporter extends JDialog {
 	ArrayList<Statement> filteredStatements;
 	Matrix matrix;
 	AttributeVector[] attributes;
+	Object[] eventListColumnsR;
+	String[] columnNames, columnTypes;
 
 	/**
 	 * Constructor for external R calls. Load and prepare data for export.
@@ -2630,13 +2632,138 @@ public class Exporter extends JDialog {
 					variable2Document, names1, names2, qualifier, qualifierAggregation, normalization);
 			this.matrix = m;
 		} else if (networkType.equals("Event list")) {
-			System.err.println("Event lists are currently not supported with rDNA.");
-			// TODO: implement event lists for rDNA
 			this.matrix = null;
+			this.eventListColumnsR = eventListR(filteredStatements, data.getDocuments(), st);
 		}
 		if (verbose == true) {
 			System.out.print("Done.\n");
 		}
+	}
+
+	/**
+	 * This function accepts a list of statements that should be included in the relational event export, 
+	 * and it returns the variables of all statements, along with the statement ID and a date/time stamp. There is one statement per row, and the number of columns is the number of variables 
+	 * present in the statement type.
+	 * 
+	 * @param statements	 An array list of {@link Statement}s (of the same statement type) that should be exported.
+	 * @param documents      An array list of {@link Document}s in which the statements are embedded.
+	 * @param statementType  The statement type corresponding to the statements.
+	 */
+	private Object[] eventListR(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType) {
+		String key, value;
+		Document doc;
+		int statementTypeId = statementType.getId();
+		for (int i = 0; i < statements.size(); i++) {
+			if (statements.get(i).getStatementTypeId() != statementTypeId) {
+				throw new IllegalArgumentException("More than one statement type was selected. Cannot export to a spreadsheet!");
+			}
+		}
+
+		// HashMap for fast lookup of document indices by ID
+		HashMap<Integer, Integer> docMap = new HashMap<Integer, Integer>();
+		for (int i = 0; i < documents.size(); i++) {
+			docMap.put(documents.get(i).getId(), i);
+		}
+		
+		// Get variable names and types of current statement type
+		HashMap<String, String> variables = statementType.getVariables();
+		Iterator<String> keyIterator;
+		ArrayList<String> variableNames = new ArrayList<String>();
+		ArrayList<String> variableTypes = new ArrayList<String>();
+		keyIterator = variables.keySet().iterator();
+		while (keyIterator.hasNext()){
+			key = keyIterator.next();
+			value = variables.get(key);
+			variableNames.add(key);
+			variableTypes.add(value);
+		}
+		columnNames = new String[variableNames.size()];
+		columnTypes = new String[variableTypes.size()];
+		for (int i = 0; i < variableNames.size(); i++) {
+			columnNames[i] = variableNames.get(i);
+			columnTypes[i] = variableTypes.get(i);
+		}
+		
+		// create array of columns and populate document-level and statement-level columns; leave out variables for now
+		Object[] columns = new Object[variableNames.size() + 8];
+		int[] ids = new int[statements.size()];
+		long[] time = new long[statements.size()];
+		int[] docId = new int[statements.size()];
+		String[] docTitle = new String[statements.size()];
+		String[] author = new String[statements.size()];
+		String[] source = new String[statements.size()];
+		String[] section = new String[statements.size()];
+		String[] type = new String[statements.size()];
+		for (int i = 0; i < statements.size(); i++) {
+			ids[i] = statements.get(i).getId();
+			time[i] = statements.get(i).getDate().getTime() / 1000;  // convert milliseconds to seconds (since 1/1/1970)
+			docId[i] = statements.get(i).getDocumentId();
+			doc = documents.get(docMap.get(docId[i]));
+			docTitle[i] = doc.getTitle();
+			author[i] = doc.getAuthor();
+			source[i] = doc.getSource();
+			section[i] = doc.getSection();
+			type[i] = doc.getType();
+		}
+		columns[0] = ids;
+		columns[1] = time;
+		columns[2] = docId;
+		columns[3] = docTitle;
+		columns[4] = author;
+		columns[5] = source;
+		columns[6] = section;
+		columns[7] = type;
+		
+		// Now add the variables to the columns array
+		for (int i = 0; i < variableNames.size(); i++) {
+			if (columnTypes[i].equals("short text") || columnTypes[i].equals("long text")) {
+				columns[i + 8] = new String[statements.size()];
+			} else {
+				columns[i + 8] = new int[statements.size()];
+			}
+		}
+		for (int i = 0; i < statements.size(); i++) {
+			for (int j = 0; j < variableNames.size(); j++) {
+				if (columnTypes[j].equals("short text") || columnTypes[j].equals("long text")) {
+					String[] temp = ((String[]) columns[j + 8]);
+					temp[i] = (String) statements.get(i).getValues().get(columnNames[j]);
+					columns[j + 8] = temp;
+				} else {
+					int[] temp = ((int[]) columns[j + 8]);
+					temp[i] = (int) statements.get(i).getValues().get(columnNames[j]);
+					columns[j + 8] = temp;
+				}
+			}
+		}
+		
+		return columns;
+	}
+
+	/**
+	 * Return variable names in this.eventListColumnsR
+	 * 
+	 * @return   array of Strings with variable names
+	 */
+	public String[] getEventListColumnsRNames() {
+		return columnNames;
+	}
+
+	/**
+	 * Return variable types in this.eventListColumnsR
+	 * 
+	 * @return   array of Strings with variable types
+	 */
+	public String[] getEventListColumnsRTypes() {
+		return columnTypes;
+	}
+	
+	/**
+	 * Return Object[] from this.eventListColumnsR
+	 * 
+	 * @return   array of array of different data types, which represent the columns
+	 */
+	public Object[] getEventListColumnsR() {
+		return eventListColumnsR;
 	}
 	
 	/**
