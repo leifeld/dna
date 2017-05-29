@@ -690,7 +690,7 @@ public class Exporter extends JDialog {
 		timeWindowBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 3;
-		JSpinner timeWindowSpinner = new JSpinner(new SpinnerNumberModel(100, 0, 100000, 1));
+		timeWindowSpinner = new JSpinner(new SpinnerNumberModel(100, 0, 100000, 1));
 		timeWindowSpinner.setToolTipText(timeWindowToolTip);
 		settingsPanel.add(timeWindowSpinner, gbc);
 		timeWindowSpinner.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
@@ -1190,8 +1190,8 @@ public class Exporter extends JDialog {
 			
 			// step 2: compile the node labels (and thereby dimensions) for the first and second mode
 			progressMonitor.setNote("(2/4) Compiling node labels...");
+			boolean includeIsolates = false;
 			if (!networkModesBox.getSelectedItem().equals("Event list")) {  // labels are only needed for one-mode or two-mode networks
-				boolean includeIsolates = false;
 				if (isolatesBox.getSelectedItem().equals("include isolates")) {
 					includeIsolates = true;
 				}
@@ -1216,18 +1216,22 @@ public class Exporter extends JDialog {
 					matrix = computeTwoModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
 							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization);
 				} else {
+					String timeWindowUnit = (String) timeWindowBox.getSelectedItem();
+					int timeWindowDuration = (int) timeWindowSpinner.getModel().getValue();
 					timeWindowMatrices = computeTimeWindowMatrices(statements, documents, statementType, var1Name, var2Name, var1Document(), 
 							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, true, startDate, stopDate, 
-							(String) timeWindowBox.getSelectedItem(), (int) timeWindowSpinner.getValue());
+							timeWindowUnit, timeWindowDuration, includeIsolates);
 				}
 			} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
 				if (timeWindowBox.getSelectedItem().equals("no time window")) {
 					matrix = computeOneModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
 							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization);
 				} else {
+					String timeWindowUnit = (String) timeWindowBox.getSelectedItem();
+					int timeWindowDuration = (int) timeWindowSpinner.getModel().getValue();
 					timeWindowMatrices = computeTimeWindowMatrices(statements, documents, statementType, var1Name, var2Name, var1Document(), 
 							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, false, startDate, stopDate, 
-							(String) timeWindowBox.getSelectedItem(), (int) timeWindowSpinner.getValue());
+							timeWindowUnit, timeWindowDuration, includeIsolates);
 				}
 			}
 			System.out.println("Network has been created.");
@@ -1244,9 +1248,27 @@ public class Exporter extends JDialog {
 					twoMode = true;
 				}
 				if (fileFormat.equals(".csv")) {
-					exportCSV(matrix, filename);
+					if (timeWindowBox.getSelectedItem().equals("no time window")) {
+						exportCSV(matrix, filename);
+					} else {
+						String filename1 = filename.substring(0, filename.length() - 4);
+						String filename3 = filename.substring(filename.length() - 4, filename.length());
+						for (int i = 0; i < timeWindowMatrices.size(); i++) {
+							String filename2 = "-" + String.format("%08d", i + 1);
+							exportCSV(timeWindowMatrices.get(i), filename1 + filename2 + filename3);
+						}
+					}
 				} else if (fileFormat.equals(".dl")) {
-					exportDL(matrix, filename, twoMode);
+					if (timeWindowBox.getSelectedItem().equals("no time window")) {
+						exportDL(matrix, filename, twoMode);
+					} else {
+						String filename1 = filename.substring(0, filename.length() - 3);
+						String filename3 = filename.substring(filename.length() - 3, filename.length());
+						for (int i = 0; i < timeWindowMatrices.size(); i++) {
+							String filename2 = "-" + String.format("%08d", i + 1);
+							exportDL(timeWindowMatrices.get(i), filename1 + filename2 + filename3, twoMode);
+						}
+					}
 				} else if (fileFormat.equals(".graphml")) {
 					String[] values1 = retrieveValues(statements, documents, var1Name, var1Document());
 					String[] values2 = retrieveValues(statements, documents, var2Name, var2Document());
@@ -1257,8 +1279,18 @@ public class Exporter extends JDialog {
 					if (statementType.getVariables().get(qualifierName).equals("boolean")) {
 						qualifierBinary = true;
 					}
-					exportGraphml(matrix, twoMode, statementType, filename, var1Name, var2Name, frequencies1, frequencies2, 
-							attributes, qualifierAggregation, qualifierBinary);
+					if (timeWindowBox.getSelectedItem().equals("no time window")) {
+						exportGraphml(matrix, twoMode, statementType, filename, var1Name, var2Name, frequencies1, frequencies2, 
+								attributes, qualifierAggregation, qualifierBinary);
+					} else {
+						String filename1 = filename.substring(0, filename.length() - 8);
+						String filename3 = filename.substring(filename.length() - 8, filename.length());
+						for (int i = 0; i < timeWindowMatrices.size(); i++) {
+							String filename2 = "-" + String.format("%08d", i + 1);
+							exportGraphml(timeWindowMatrices.get(i), twoMode, statementType, filename1 + filename2 + filename3, 
+									var1Name, var2Name, frequencies1, frequencies2, attributes, qualifierAggregation, qualifierBinary);
+						}
+					}
 				}
 			}
 			progressMonitor.setProgress(4);
@@ -1286,16 +1318,20 @@ public class Exporter extends JDialog {
 	 * @param stop                  End date of the time range over which the time window moves.
 	 * @param unitType              {@link String} indicating the kind of temporal unit used for the moving window. Valid values are "using seconds", "using minutes", "using hours", "using days", "using weeks", "using months", "using years", and "using events".
 	 * @param timeUnits             How large is the time window? E.g., 100 days, where "days" are defined in the unit type argument.
+	 * @param includeIsolates       Boolean indicating whether all nodes should be present at all times
 	 * @return                      {@link Matrix} object containing a one-mode network matrix.
 	 */
 	private ArrayList<Matrix> computeTimeWindowMatrices(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, 
 			String var1, String var2, boolean var1Document, boolean var2Document, String[] names1, String[] names2, String qualifier, 
-			String qualifierAggregation, String normalization, boolean twoMode, Date start, Date stop, String unitType, int timeUnits) {
+			String qualifierAggregation, String normalization, boolean twoMode, Date start, Date stop, String unitType, int timeUnits, 
+			boolean includeIsolates) {
 		
 		timeWindowMatrices = new ArrayList<Matrix>();
 		
-		int statementIterator = timeUnits - 1;
+		int statementIterator = timeUnits;
 		
+		GregorianCalendar stopCalendar = new GregorianCalendar();
+		stopCalendar.setTime(stop);
 		ArrayList<Date> timeLabels = new ArrayList<Date>();
 		GregorianCalendar currentStop = new GregorianCalendar();
 		currentStop.setTime(start);
@@ -1315,9 +1351,13 @@ public class Exporter extends JDialog {
 		} else if (unitType.equals("using years")) {
 			currentStop.add(Calendar.YEAR, timeUnits);
 		} else if (unitType.equals("using events")) {
-			currentStop.setTime(statements.get(statementIterator).getDate());
+			if (statementIterator >= statements.size()) {
+				currentStop.setTime(statements.get(statements.size() - 1).getDate());
+			} else {
+				currentStop.setTime(statements.get(statementIterator).getDate());
+			}
 		}
-		while (!currentStop.after(stop)) {
+		while (!currentStop.after(stopCalendar)) {
 			ArrayList<Statement> currentStatements = new ArrayList<Statement>();
 			for (int i = 0; i < statements.size(); i++) {
 				GregorianCalendar currentTime = new GregorianCalendar();
@@ -1327,6 +1367,11 @@ public class Exporter extends JDialog {
 				}
 			}
 			
+			if (includeIsolates == false) {
+				names1 = extractLabels(currentStatements, statements, documents, var1, var1Document, statementType.getId(), includeIsolates);
+				names2 = extractLabels(currentStatements, statements, documents, var2, var2Document, statementType.getId(), includeIsolates);
+			}
+			
 			if (twoMode == true) {
 				timeWindowMatrices.add(computeTwoModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
 						var2Document, names1, names2, qualifier, qualifierAggregation, normalization));
@@ -1334,7 +1379,9 @@ public class Exporter extends JDialog {
 				timeWindowMatrices.add(computeOneModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
 						var2Document, names1, names2, qualifier, qualifierAggregation, normalization));
 			}
+			
 			timeLabels.add(currentStop.getTime());
+			
 			if (unitType.equals("using seconds")) {
 				currentStart.add(Calendar.SECOND, 1);
 				currentStop.add(Calendar.SECOND, 1);
@@ -1430,12 +1477,14 @@ public class Exporter extends JDialog {
 		
 		// sort and convert to array, then return
 		Collections.sort(names);
-		if (names.get(0).equals("")) { // remove empty field
+		if (names.size() > 0 && names.get(0).equals("")) { // remove empty field
 			names.remove(0);
 		}
 		String[] nameArray = new String[names.size()];
-		for (int i = 0; i < names.size(); i++) {
-			nameArray[i] = names.get(i);
+		if (names.size() > 0) {
+			for (int i = 0; i < names.size(); i++) {
+				nameArray[i] = names.get(i);
+			}
 		}
 		return nameArray;
 	}
@@ -2201,12 +2250,12 @@ public class Exporter extends JDialog {
 	 * @param matrix   The input {@link Matrix} object.
 	 * @param outfile  The path and file name of the target CSV file.
 	 */
-	private void exportCSV (Matrix matrix, String outfile) {
-		String[] rn = matrix.getRownames();
-		String[] cn = matrix.getColnames();
+	private void exportCSV (Matrix m, String outfile) {
+		String[] rn = m.getRownames();
+		String[] cn = m.getColnames();
 		int nr = rn.length;
 		int nc = cn.length;
-		double[][] mat = matrix.getMatrix();
+		double[][] mat = m.getMatrix();
 		try {
 			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outfile), "UTF8"));
 			out.write("\"\"");
@@ -2217,7 +2266,7 @@ public class Exporter extends JDialog {
 				out.newLine();
 				out.write("\"" + rn[i].replaceAll("\"", "'") + "\"");
 				for (int j = 0; j < nc; j++) {
-					if (matrix.getInteger() == true) {
+					if (m.getInteger() == true) {
 						out.write(";" + (int) mat[i][j]);
 					} else {
 						out.write(";" + String.format(new Locale("en"), "%.6f", mat[i][j]));  // six decimal places
@@ -2237,12 +2286,12 @@ public class Exporter extends JDialog {
 	 * @param outfile  The path and file name of the target .dl file.
 	 * @param twoMode  A {@link boolean} indicating if the input matrix is a two-mode network matrix (rather than one-mode). 
 	 */
-	public void exportDL (Matrix matrix, String outfile, boolean twoMode) {
-		String[] rn = matrix.getRownames();
-		String[] cn = matrix.getColnames();
+	public void exportDL (Matrix m, String outfile, boolean twoMode) {
+		String[] rn = m.getRownames();
+		String[] cn = m.getColnames();
 		int nr = rn.length;
 		int nc = cn.length;
-		double[][] mat = matrix.getMatrix();
+		double[][] mat = m.getMatrix();
 		try {
 			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outfile), "UTF8"));
 			out.write("dl ");
@@ -2275,7 +2324,7 @@ public class Exporter extends JDialog {
 			for (int i = 0; i < nr; i++) {
 				out.newLine();
 				for (int j = 0; j < nc; j++) {
-					if (matrix.getInteger() == true) {
+					if (m.getInteger() == true) {
 						out.write(" " + (int) mat[i][j]);
 					} else {
 						out.write(" " + String.format(new Locale("en"), "%.6f", mat[i][j]));
@@ -2322,13 +2371,13 @@ public class Exporter extends JDialog {
 	 * @param qualifierAggregation   A String denoting the qualifier aggregation. Valid values are "ignore", "combine", "subtract", "congruence", and "conflict".
 	 * @param qualifierBinary        Indicates whether the qualifier is a binary variable.
 	 */
-	private void exportGraphml(Matrix matrix, boolean twoMode, StatementType statementType, String outfile, 
+	private void exportGraphml(Matrix mt, boolean twoMode, StatementType statementType, String outfile, 
 			String var1, String var2, int[] frequencies1, int[] frequencies2, ArrayList<AttributeVector> attributes, 
 			String qualifierAggregation, boolean qualifierBinary) {
 		
 		// extract attributes
-		String[] rn = matrix.getRownames();
-		String[] cn = matrix.getColnames();
+		String[] rn = mt.getRownames();
+		String[] cn = mt.getColnames();
 		String[] names;
 		String[] variables;
 		int[] frequencies;
@@ -2592,7 +2641,7 @@ public class Exporter extends JDialog {
 		}
 		
 		// add edges
-		double[][] m = matrix.getMatrix();
+		double[][] m = mt.getMatrix();
 		Comment edges = new Comment(" edges ");
 		graphElement.addContent(edges);
 		for (int i = 0; i < rn.length; i++) {
