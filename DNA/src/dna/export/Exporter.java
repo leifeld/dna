@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -47,6 +48,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.ProgressMonitor;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerDateModel;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
@@ -80,9 +82,9 @@ public class Exporter extends JDialog {
 	JCheckBox helpBox;
 	JButton exportButton;
 	JComboBox<String> networkModesBox, fileFormatBox, var1Box, var2Box, qualifierBox, aggregationBox, normalizationBox, 
-			isolatesBox, duplicatesBox;
+			isolatesBox, duplicatesBox, timeWindowBox;
 	JComboBox<StatementType> statementTypeBox;
-	JSpinner startSpinner, stopSpinner;
+	JSpinner startSpinner, stopSpinner, timeWindowSpinner;
 	JList<String> excludeVariableList, excludeValueList;
 	HashMap<String, ArrayList<String>> excludeValues;
 	ArrayList<String> excludeAuthor, excludeSource, excludeSection, excludeType;
@@ -95,6 +97,7 @@ public class Exporter extends JDialog {
 	Data data;
 	ArrayList<Statement> filteredStatements;
 	Matrix matrix;
+	ArrayList<Matrix> timeWindowMatrices;
 	AttributeVector[] attributes;
 	Object[] eventListColumnsR;
 	String[] columnNames, columnTypes;
@@ -621,6 +624,33 @@ public class Exporter extends JDialog {
 		JLabel stopLabel = new JLabel("Include until");
 		stopLabel.setToolTipText(dateToolTip);
 		settingsPanel.add(stopLabel, gbc);
+
+		gbc.gridx = 2;
+		JLabel timeWindowLabel = new JLabel("Moving time window");
+		String timeWindowToolTip = "<html><p width=\"500\">Create multiple overlapping time slices that are moved "
+				+ "forward along the time axis. For example, if a time window size of 100 days is used and the time "
+				+ "axis starts on a certain start date and ends on a certain end date, then the first time slice will "
+				+ "comprise all statements between the start date and 100 days later. E.g., a one-mode network or a "
+				+ "two-mode network for this time period is created. Then the time window is shifted by one time unit, "
+				+ "and a new network is created for the second to the 101st day, and so forth until the end of the time "
+				+ "period is reached. All time slices are saved as separate networks. If CSV files or DL files are "
+				+ "exported, the networks will be saved to new files each time, with an iterator number added to the "
+				+ "file name. If graphml files are used, the networks are saved inside a network collection. Instead "
+				+ "of days, the user can select other time units by which the time window is shifted. However, the "
+				+ "time slice is always moved forward by one time unit. To get mutually exclusive (i.e., "
+				+ "non-overlapping) time slices, the user should select them manually from the output. For example, if "
+				+ "100 days are used, one could select the first time slice, the 101st slice, the 201st time slice and "
+				+ "so on. Instead of time units, it is also possible to use event time. This will create time slices "
+				+ "of exactly 100 statement events, for example. However, it is possible that multiple events have "
+				+ "identical time steps. In this case, the resulting network time slice is more inclusive and also "
+				+ "contains those statements that happened at the same time.</p></html>";
+		timeWindowLabel.setToolTipText(timeWindowToolTip);
+		settingsPanel.add(timeWindowLabel, gbc);
+		
+		gbc.gridx = 3;
+		JLabel timeWindowNumberLabel = new JLabel("Time window size");
+		timeWindowNumberLabel.setToolTipText(timeWindowToolTip);
+		settingsPanel.add(timeWindowNumberLabel, gbc);
 		
 		gbc.insets = new Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
@@ -650,6 +680,20 @@ public class Exporter extends JDialog {
 		stopSpinner.setToolTipText(dateToolTip);
 		settingsPanel.add(stopSpinner, gbc);
 		stopSpinner.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		
+		gbc.gridx = 2;
+		String[] timeWindowItems = new String[] {"no time window", "using events", "using seconds", "using minutes", 
+				"using hours", "using days", "using weeks", "using months", "using years"};
+		timeWindowBox = new JComboBox<>(timeWindowItems);
+		timeWindowBox.setToolTipText(timeWindowToolTip);
+		settingsPanel.add(timeWindowBox, gbc);
+		timeWindowBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		
+		gbc.gridx = 3;
+		JSpinner timeWindowSpinner = new JSpinner(new SpinnerNumberModel(100, 0, 100000, 1));
+		timeWindowSpinner.setToolTipText(timeWindowToolTip);
+		settingsPanel.add(timeWindowSpinner, gbc);
+		timeWindowSpinner.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
 		
 		// fifth row of options: exclude values from variables
 		gbc.insets = new Insets(10, 3, 3, 3);
@@ -939,7 +983,8 @@ public class Exporter extends JDialog {
 				Collections.sort(dates);
 				startModel.setValue(dates.get(0));
 				stopModel.setValue(dates.get(dates.size() - 1));
-				//temporalBox.setSelectedIndex(0);
+				timeWindowBox.setSelectedIndex(0);
+				timeWindowSpinner.setValue(100);
 				excludeVariableList.setSelectedIndex(0);
 				excludePreviewArea.setText("");
 				helpBox.setSelected(false);
@@ -1167,12 +1212,23 @@ public class Exporter extends JDialog {
 			if (networkModesBox.getSelectedItem().equals("Event list")) {
 				// no network preparation needed
 			} else if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
-				matrix = computeTwoModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
-						var2Document(), names1, names2, qualifier, qualifierAggregation, normalization);
+				if (timeWindowBox.getSelectedItem().equals("no time window")) {
+					matrix = computeTwoModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
+							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization);
+				} else {
+					timeWindowMatrices = computeTimeWindowMatrices(statements, documents, statementType, var1Name, var2Name, var1Document(), 
+							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, true, startDate, stopDate, 
+							(String) timeWindowBox.getSelectedItem(), (int) timeWindowSpinner.getValue());
+				}
 			} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
-				//String temporalAggregation = (String) temporalBox.getSelectedItem();
-				matrix = computeOneModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
-						var2Document(), names1, names2, qualifier, qualifierAggregation, normalization);  // , temporalAggregation
+				if (timeWindowBox.getSelectedItem().equals("no time window")) {
+					matrix = computeOneModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
+							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization);
+				} else {
+					timeWindowMatrices = computeTimeWindowMatrices(statements, documents, statementType, var1Name, var2Name, var1Document(), 
+							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, false, startDate, stopDate, 
+							(String) timeWindowBox.getSelectedItem(), (int) timeWindowSpinner.getValue());
+				}
 			}
 			System.out.println("Network has been created.");
 			progressMonitor.setProgress(3);
@@ -1208,6 +1264,109 @@ public class Exporter extends JDialog {
 			progressMonitor.setProgress(4);
 			JOptionPane.showMessageDialog(Dna.dna.gui, "Data were exported to \"" + filename + "\".");
 		}
+	}
+	
+	/**
+	 * Create a series of one-mode or two-mode networks using a moving time window.
+	 * 
+	 * @param statements            A (potentially filtered) {@link ArrayList} of {@link Statement}s.
+	 * @param documents             An {@link ArrayList} of {@link Document}s which contain the statements.
+	 * @param statementType         The {@link StatementType} corresponding to the statements.
+	 * @param var1                  {@link String} denoting the first variable (containing the row values).
+	 * @param var2                  {@link String} denoting the second variable (containing the columns values).
+	 * @param var1Document          {@link boolean} indicating whether the first variable is a document-level variable.
+	 * @param var2Document          {@link boolean} indicating whether the second variable is a document-level variable.
+	 * @param names1                {@link String} array containing the row labels.
+	 * @param names2                {@link String} array containing the column labels.
+	 * @param qualifier             {@link String} denoting the name of the qualifier variable.
+	 * @param qualifierAggregation  {@link String} indicating how different levels of the qualifier variable are aggregated. Valid values are "ignore", "subtract", and "combine".
+	 * @param normalization         {@link String} indicating what type of normalization will be used. Valid values are "no", "average activity", "Jaccard", and "cosine".
+	 * @param twoMode               Create two-mode networks? If false, one-mode networks are created.
+	 * @param start                 Start date of the time range over which the time window moves.
+	 * @param stop                  End date of the time range over which the time window moves.
+	 * @param unitType              {@link String} indicating the kind of temporal unit used for the moving window. Valid values are "using seconds", "using minutes", "using hours", "using days", "using weeks", "using months", "using years", and "using events".
+	 * @param timeUnits             How large is the time window? E.g., 100 days, where "days" are defined in the unit type argument.
+	 * @return                      {@link Matrix} object containing a one-mode network matrix.
+	 */
+	private ArrayList<Matrix> computeTimeWindowMatrices(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, 
+			String var1, String var2, boolean var1Document, boolean var2Document, String[] names1, String[] names2, String qualifier, 
+			String qualifierAggregation, String normalization, boolean twoMode, Date start, Date stop, String unitType, int timeUnits) {
+		
+		timeWindowMatrices = new ArrayList<Matrix>();
+		
+		int statementIterator = timeUnits - 1;
+		
+		ArrayList<Date> timeLabels = new ArrayList<Date>();
+		GregorianCalendar currentStop = new GregorianCalendar();
+		currentStop.setTime(start);
+		GregorianCalendar currentStart = (GregorianCalendar) currentStop.clone();
+		if (unitType.equals("using seconds")) {
+			currentStop.add(Calendar.SECOND, timeUnits);
+		} else if (unitType.equals("using minutes")) {
+			currentStop.add(Calendar.MINUTE, timeUnits);
+		} else if (unitType.equals("using hours")) {
+			currentStop.add(Calendar.HOUR_OF_DAY, timeUnits);
+		} else if (unitType.equals("using days")) {
+			currentStop.add(Calendar.DAY_OF_MONTH, timeUnits);
+		} else if (unitType.equals("using weeks")) {
+			currentStop.add(Calendar.WEEK_OF_YEAR, timeUnits);
+		} else if (unitType.equals("using months")) {
+			currentStop.add(Calendar.MONTH, timeUnits);
+		} else if (unitType.equals("using years")) {
+			currentStop.add(Calendar.YEAR, timeUnits);
+		} else if (unitType.equals("using events")) {
+			currentStop.setTime(statements.get(statementIterator).getDate());
+		}
+		while (!currentStop.after(stop)) {
+			ArrayList<Statement> currentStatements = new ArrayList<Statement>();
+			for (int i = 0; i < statements.size(); i++) {
+				GregorianCalendar currentTime = new GregorianCalendar();
+				currentTime.setTime(statements.get(i).getDate());
+				if (!currentTime.before(currentStart) && !currentTime.after(currentStop)) {
+					currentStatements.add(statements.get(i));
+				}
+			}
+			
+			if (twoMode == true) {
+				timeWindowMatrices.add(computeTwoModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
+						var2Document, names1, names2, qualifier, qualifierAggregation, normalization));
+			} else {
+				timeWindowMatrices.add(computeOneModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
+						var2Document, names1, names2, qualifier, qualifierAggregation, normalization));
+			}
+			timeLabels.add(currentStop.getTime());
+			if (unitType.equals("using seconds")) {
+				currentStart.add(Calendar.SECOND, 1);
+				currentStop.add(Calendar.SECOND, 1);
+			} else if (unitType.equals("using minutes")) {
+				currentStart.add(Calendar.MINUTE, 1);
+				currentStop.add(Calendar.MINUTE, 1);
+			} else if (unitType.equals("using hours")) {
+				currentStart.add(Calendar.HOUR_OF_DAY, 1);
+				currentStop.add(Calendar.HOUR_OF_DAY, 1);
+			} else if (unitType.equals("using days")) {
+				currentStart.add(Calendar.DAY_OF_MONTH, 1);
+				currentStop.add(Calendar.DAY_OF_MONTH, 1);
+			} else if (unitType.equals("using weeks")) {
+				currentStart.add(Calendar.WEEK_OF_YEAR, 1);
+				currentStop.add(Calendar.WEEK_OF_YEAR, 1);
+			} else if (unitType.equals("using months")) {
+				currentStart.add(Calendar.MONTH, 1);
+				currentStop.add(Calendar.MONTH, 1);
+			} else if (unitType.equals("using years")) {
+				currentStart.add(Calendar.YEAR, 1);
+				currentStop.add(Calendar.YEAR, 1);
+			} else if (unitType.equals("using events")) {
+				if (statementIterator + 1 < statements.size()) {
+					statementIterator = statementIterator + 1;
+					currentStop.setTime(statements.get(statementIterator).getDate());
+				} else {
+					currentStop.add(Calendar.SECOND, 1);  // invoke stop of while loop
+				}
+				currentStart.setTime(statements.get(statementIterator - timeUnits).getDate());
+			}
+		}
+		return timeWindowMatrices;
 	}
 	
 	/**
@@ -1490,7 +1649,6 @@ public class Exporter extends JDialog {
 	 * @param qualifier             {@link String} denoting the name of the qualifier variable.
 	 * @param qualifierAggregation  {@link String} indicating how different levels of the qualifier variable are aggregated. Valid values are "ignore", "subtract", and "combine".
 	 * @param normalization         {@link String} indicating what type of normalization will be used. Valid values are "no", "average activity", "Jaccard", and "cosine".
-	 * @param temporalAggregation   {@link String} indicating the temporal aggregation pattern. Valid values are "across date range" and "nested in document".
 	 * @return                      {@link Matrix} object containing a one-mode network matrix.
 	 */
 	private Matrix computeOneModeMatrix(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, 
