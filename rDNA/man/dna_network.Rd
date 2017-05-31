@@ -11,11 +11,12 @@ dna_network(connection, networkType = "twomode",
   qualifierAggregation = "ignore", normalization = "no", isolates = FALSE,
   duplicates = "include", start.date = "01.01.1900",
   stop.date = "31.12.2099", start.time = "00:00:00",
-  stop.time = "23:59:59", excludeValues = list(),
-  excludeAuthors = character(), excludeSources = character(),
-  excludeSections = character(), excludeTypes = character(),
-  invertValues = FALSE, invertAuthors = FALSE, invertSources = FALSE,
-  invertSections = FALSE, invertTypes = FALSE, verbose = TRUE)
+  stop.time = "23:59:59", timewindow = "no", windowsize = 100,
+  excludeValues = list(), excludeAuthors = character(),
+  excludeSources = character(), excludeSections = character(),
+  excludeTypes = character(), invertValues = FALSE, invertAuthors = FALSE,
+  invertSources = FALSE, invertSections = FALSE, invertTypes = FALSE,
+  verbose = TRUE)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the 
@@ -118,6 +119,33 @@ will be excluded.}
 \code{stop.date}. All statements after this time on the specified date 
 will be excluded.}
 
+\item{timewindow}{Possible values are \code{"no"}, \code{"events"}, 
+\code{"seconds"}, \code{"minutes"}, \code{"hours"}, \code{"days"}, 
+\code{"weeks"}, \code{"months"}, and \code{"years"}. If \code{"no"} is 
+selected (= the default setting), no time window will be used. If any of 
+the time units is selected, a moving time window will be imposed, and 
+only the statements falling within the time period defined by the window 
+will be used to create the network. The time window will then be moved 
+forward by one time unit at a time, and a new network with the new time 
+boundaries will be created. This is repeated until the end of the overall
+time span is reached. All time windows will be saved as separate 
+networks in a list. The duration of each time window is defined by the 
+\code{windowsize} argument. For example, this could be used to create a 
+time window of 6 months which moves forward by one month each time, thus 
+creating time windows that overlap by five months. If \code{"events"} is 
+used instead of a natural time unit, the time window will comprise 
+exactly as many statements as defined in the \code{windowsize} argument. 
+However, if the start or end statement falls on a date and time where 
+multiple events happen, those additional events that occur simultaneously
+are included because there is no other way to decide which of the 
+statements should be selected. Therefore the window size is sometimes 
+extended when the start or end point of a time window is ambiguous in 
+event time.}
+
+\item{windowsize}{The number of time units of which a moving time window is 
+comprised. This can be the number of statement events, the number of days
+etc., as defined in the \code{"timewindow"} argument.}
+
 \item{excludeValues}{A list of named character vectors that contains entries 
 which should be excluded during network construction. For example, 
 \code{list(concept = c("A", "B"), organization = c("org A", "org B"))} 
@@ -183,11 +211,13 @@ Compute and retrieve a network from DNA.
 \details{
 This function serves to compute a one-mode or two-mode network or an event 
 list in DNA and retrieve it as a matrix or data frame, respectively. The 
-arguments resemble the export options in DNA.
+arguments resemble the export options in DNA. It is also possible to compute 
+a temporal sequence of networks using the moving time window approach, in 
+which case the networks are retrieved as a list of matrices.
 }
 \examples{
 \dontrun{
-dna_init("dna-2.0-beta19.jar")
+dna_init("dna-2.0-beta20.jar")
 conn <- dna_connection("sample.dna")
 nw <- dna_network(conn, 
                   networkType = "onemode", 
@@ -197,6 +227,6 @@ nw <- dna_network(conn,
                   qualifierAggregation = "congruence", 
                   normalization = "average", 
                   excludeValues = list("concept" = 
-                      c("Climate change is real and anthropogenic.")))
+                      c("There should be legislation to regulate emissions.")))
 }
 }

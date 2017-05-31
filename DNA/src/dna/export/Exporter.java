@@ -98,6 +98,7 @@ public class Exporter extends JDialog {
 	ArrayList<Statement> filteredStatements;
 	Matrix matrix;
 	ArrayList<Matrix> timeWindowMatrices;
+	ArrayList<Date> timeLabels;
 	AttributeVector[] attributes;
 	Object[] eventListColumnsR;
 	String[] columnNames, columnTypes;
@@ -1332,7 +1333,7 @@ public class Exporter extends JDialog {
 		
 		GregorianCalendar stopCalendar = new GregorianCalendar();
 		stopCalendar.setTime(stop);
-		ArrayList<Date> timeLabels = new ArrayList<Date>();
+		timeLabels = new ArrayList<Date>();
 		GregorianCalendar currentStop = new GregorianCalendar();
 		currentStop.setTime(start);
 		GregorianCalendar currentStart = (GregorianCalendar) currentStop.clone();
@@ -1535,6 +1536,9 @@ public class Exporter extends JDialog {
 			ArrayList<String> excludeType, 
 			HashMap<String, ArrayList<String>> excludeValues, 
 			boolean filterEmptyFields) {
+		
+		// sort statements by date and time
+		Collections.sort(statements);
 		
 		// reporting
 		Iterator<String> excludeIterator = excludeValues.keySet().iterator();
@@ -2738,6 +2742,8 @@ public class Exporter extends JDialog {
 	 * @param stopDate               Stop date for the export, provided as a String with format "dd.MM.yyyy"
 	 * @param startTime              Start time for the export, provided as a String with format "HH:mm:ss"
 	 * @param stopTime               Stop time for the export, provided as a String with format "HH:mm:ss"
+	 * @param timewindow             A string indicating the time window setting. Valid options are 'no', 'events', 'seconds', 'minutes', 'hours', 'days', 'weeks', 'months', and 'years'.
+	 * @param windowsize             An int indicating the duration of the time window in the units specified in the timeWindow argument.
 	 * @param excludeVariables       A String array with n elements, indicating the variable of the n'th value
 	 * @param excludeValues          A String array with n elements, indicating the value pertaining to the n'th variable String
 	 * @param excludeAuthors         A String array of values to exclude in the 'author' variable at the document level
@@ -2754,15 +2760,15 @@ public class Exporter extends JDialog {
 	 */
 	public void rNetwork(String networkType, String statementType, String variable1, boolean variable1Document, String variable2, 
 			boolean variable2Document, String qualifier, String qualifierAggregation, String normalization, boolean includeIsolates, 
-			String duplicates, String startDate, String stopDate, String startTime, String stopTime, String[] excludeVariables, 
-			String[] excludeValues, String[] excludeAuthors, String[] excludeSources, String[] excludeSections, 
+			String duplicates, String startDate, String stopDate, String startTime, String stopTime, String timewindow, int windowsize, 
+			String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources, String[] excludeSections, 
 			String[] excludeTypes, boolean invertValues, boolean invertAuthors, boolean invertSources, boolean invertSections, 
 			boolean invertTypes, boolean verbose) {
 		
 		// step 1: preprocess arguments
-		int max = 4;
+		int max = 5;
 		if (networkType.equals("eventlist")) {
-			max = 3;
+			max = 4;
 		}
 		if (verbose == true) {
 			System.out.print("(1/" + max + "): Processing network options... ");
@@ -2773,8 +2779,37 @@ public class Exporter extends JDialog {
 		int statementTypeId = st.getId();
 		normalization = formatNormalization(networkType, normalization);
 		duplicates = formatDuplicates(duplicates);
+		
 		Date start = formatDate(startDate, startTime);
 		Date stop = formatDate(stopDate, stopTime);
+		
+		if (timewindow == null || timewindow.startsWith("no")) {
+			timewindow = "no time window";
+		}
+		if (timewindow.equals("seconds")) {
+			timewindow = "using seconds";
+		}
+		if (timewindow.equals("minutes")) {
+			timewindow = "using minutes";
+		}
+		if (timewindow.equals("hours")) {
+			timewindow = "using hours";
+		}
+		if (timewindow.equals("days")) {
+			timewindow = "using days";
+		}
+		if (timewindow.equals("weeks")) {
+			timewindow = "using weeks";
+		}
+		if (timewindow.equals("months")) {
+			timewindow = "using months";
+		}
+		if (timewindow.equals("years")) {
+			timewindow = "using years";
+		}
+		if (timewindow.equals("events")) {
+			timewindow = "using events";
+		}
 		
 		HashMap<String, ArrayList<String>> map = processExcludeVariables(excludeVariables, excludeValues, invertValues, data.getStatements(), 
 				data.getStatements(), data.getDocuments(), statementTypeId, includeIsolates);
@@ -2786,6 +2821,7 @@ public class Exporter extends JDialog {
 				data.getDocuments(), statementTypeId, includeIsolates);
 		ArrayList<String> typeExclude = processExcludeDocument("type", excludeTypes, invertTypes, data.getStatements(), data.getStatements(), 
 				data.getDocuments(), statementTypeId, includeIsolates);
+
 		if (verbose == true) {
 			System.out.print("Done.\n");
 		}
@@ -2803,6 +2839,46 @@ public class Exporter extends JDialog {
 				typeExclude, map, filterEmptyFields);
 		if (verbose == true) {
 			System.out.print(this.filteredStatements.size() + " out of " + data.getStatements().size() + " statements retained.\n");
+		}
+		
+		if (!timewindow.equals("no time window") && startDate.equals("01.01.1900") && startTime.equals("00:00:00")) {
+			start = filteredStatements.get(0).getDate();
+		}
+		if (!timewindow.equals("no time window") && stopDate.equals("31.12.2099") && stopTime.equals("23:59:59")) {
+			if (timewindow.equals("using events")) {
+				stop = filteredStatements.get(filteredStatements.size() - 1).getDate();
+			} else {
+				GregorianCalendar stopTemp = new GregorianCalendar();
+				stopTemp.setTime(start);
+				GregorianCalendar lastDateTemp = new GregorianCalendar();
+				lastDateTemp.setTime(filteredStatements.get(filteredStatements.size() - 1).getDate());
+				while (stopTemp.before(lastDateTemp)) {
+					System.out.println(stopTemp.getTime().toString());
+					if (timewindow.equals("using seconds")) {
+						stopTemp.add(Calendar.SECOND, 1);
+					}
+					if (timewindow.equals("using minutes")) {
+						stopTemp.add(Calendar.MINUTE, 1);
+					}
+					if (timewindow.equals("using hours")) {
+						stopTemp.add(Calendar.HOUR, 1);
+					}
+					if (timewindow.equals("using days")) {
+						stopTemp.add(Calendar.DAY_OF_MONTH, 1);
+					}
+					if (timewindow.equals("using weeks")) {
+						stopTemp.add(Calendar.WEEK_OF_YEAR, 1);
+					}
+					if (timewindow.equals("using months")) {
+						stopTemp.add(Calendar.MONTH, 1);
+					}
+					if (timewindow.equals("using years")) {
+						stopTemp.add(Calendar.YEAR, 1);
+					}
+				}
+				stop = stopTemp.getTime();
+			}
+			
 		}
 		
 		// step 3: compile node labels
@@ -2830,13 +2906,26 @@ public class Exporter extends JDialog {
 			System.out.print("(" + step + "/" + max + "): Computing network matrix... ");
 		}
 		Matrix m = null;
+		timeWindowMatrices = null;
 		if (networkType.equals("Two-mode network")) {
-			m = computeTwoModeMatrix(filteredStatements, data.getDocuments(), st, variable1, variable2, variable1Document, 
-					variable2Document, names1, names2, qualifier, qualifierAggregation, normalization);
+			if (timewindow.equals("no")) {
+				m = computeTwoModeMatrix(filteredStatements, data.getDocuments(), st, variable1, variable2, variable1Document, 
+						variable2Document, names1, names2, qualifier, qualifierAggregation, normalization);
+			} else {
+				this.timeWindowMatrices = computeTimeWindowMatrices(filteredStatements, data.getDocuments(), st, variable1, variable2, 
+						variable1Document, variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, true, start, stop, 
+						timewindow, windowsize, includeIsolates);
+			}
 			this.matrix = m;
 		} else if (networkType.equals("One-mode network")) {
-			m = computeOneModeMatrix(filteredStatements, data.getDocuments(), st, variable1, variable2, variable1Document, 
-					variable2Document, names1, names2, qualifier, qualifierAggregation, normalization);
+			if (timewindow.equals("no")) {
+				m = computeOneModeMatrix(filteredStatements, data.getDocuments(), st, variable1, variable2, variable1Document, 
+						variable2Document, names1, names2, qualifier, qualifierAggregation, normalization);
+			} else {
+				this.timeWindowMatrices = computeTimeWindowMatrices(filteredStatements, data.getDocuments(), st, variable1, variable2, 
+						variable1Document, variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, false, start, stop, 
+						timewindow, windowsize, includeIsolates);
+			}
 			this.matrix = m;
 		} else if (networkType.equals("Event list")) {
 			this.matrix = null;
@@ -2844,6 +2933,11 @@ public class Exporter extends JDialog {
 		}
 		if (verbose == true) {
 			System.out.print("Done.\n");
+			int step = 5;
+			if (networkType.equals("Event list")) {
+				step = 4;
+			}
+			System.out.println("(" + step + "/" + max + "): Retrieving results.");
 		}
 	}
 
@@ -2999,6 +3093,46 @@ public class Exporter extends JDialog {
 	 */
 	public String[] getColumnNames() {
 		return matrix.getColnames();
+	}
+	
+	/**
+	 * Return a single matrix in this.timeWindowMatrices.
+	 * 
+	 * @return   double[][] matrix
+	 */
+	public double[][] getTimeWindowNetwork(int t) {
+		return this.timeWindowMatrices.get(t).getMatrix();
+	}
+
+	/**
+	 * Return the row names of a single matrix in this.timeWindowMatrices.
+	 * 
+	 * @return   String[] row names
+	 */
+	public String[] getTimeWindowRowNames(int t) {
+		return timeWindowMatrices.get(t).getRownames();
+	}
+
+	/**
+	 * Return the column names of a single matrix in this.timeWindowMatrices.
+	 * 
+	 * @return   String[] column names
+	 */
+	public String[] getTimeWindowColumnNames(int t) {
+		return timeWindowMatrices.get(t).getColnames();
+	}
+	
+	/**
+	 * Return time labels corresponding to a time window sequence.
+	 * 
+	 * @return   array of Unix times as seconds since 1/1/1970
+	 */
+	public long[] getTimeWindowTimes() {
+		long[] times = new long[timeLabels.size()];
+		for (int i = 0; i < timeLabels.size(); i++) {
+			times[i] = (long) (timeLabels.get(i).getTime() / 1000);
+		}
+		return times;
 	}
 	
 	/**

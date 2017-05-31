@@ -20,7 +20,7 @@ establishing a DNA connection.
 }
 \examples{
 \dontrun{
-dna_init("dna-2.0-beta19.jar")
+dna_init("dna-2.0-beta20.jar")
 conn <- dna_connection("sample.dna", verbose = FALSE)
 conn
 }

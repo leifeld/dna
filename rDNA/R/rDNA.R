@@ -13,15 +13,15 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 #' rest of the \R session. To initialize a connection with a different DNA 
 #' version or path, the \R session would need to be restarted first.
 #' 
-#' @param jarfile The file name of the DNA jar file, e.g., \code{"dna-2.0-beta19.jar"}.
+#' @param jarfile The file name of the DNA jar file, e.g., \code{"dna-2.0-beta20.jar"}.
 #' 
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta19.jar")
+#' dna_init("dna-2.0-beta20.jar")
 #' }
 #' @export
 #' @import rJava
-dna_init <- function(jarfile = "dna-2.0-beta19.jar") {
+dna_init <- function(jarfile = "dna-2.0-beta20.jar") {
   assign("dnaJarString", jarfile, pos = dnaEnvironment)
   message(paste("Jar file:", dnaEnvironment[["dnaJarString"]]))
   .jinit(dnaEnvironment[["dnaJarString"]], force.init = TRUE)
@@ -46,7 +46,7 @@ dna_init <- function(jarfile = "dna-2.0-beta19.jar") {
 #' 
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta19.jar")
+#' dna_init("dna-2.0-beta20.jar")
 #' dna_gui()
 #' }
 #' @export
@@ -94,7 +94,7 @@ dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
 #' 
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta19.jar")
+#' dna_init("dna-2.0-beta20.jar")
 #' dna_connection("sample.dna")
 #' }
 #' @export
@@ -125,7 +125,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' 
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta19.jar")
+#' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection("sample.dna", verbose = FALSE)
 #' conn
 #' }
@@ -168,7 +168,7 @@ print.dna_connection <- function(x, ...) {
 #' 
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta19.jar")
+#' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection("sample.dna")
 #' at <- dna_attributes(conn, "DNA Statement", "organization")
 #' at
@@ -215,7 +215,9 @@ dna_attributes <- function(connection,
 #' 
 #' This function serves to compute a one-mode or two-mode network or an event 
 #' list in DNA and retrieve it as a matrix or data frame, respectively. The 
-#' arguments resemble the export options in DNA.
+#' arguments resemble the export options in DNA. It is also possible to compute 
+#' a temporal sequence of networks using the moving time window approach, in 
+#' which case the networks are retrieved as a list of matrices.
 #' 
 #' @param connection A \code{dna_connection} object created by the 
 #'     \code{dna_connection} function.
@@ -301,6 +303,31 @@ dna_attributes <- function(connection,
 #' @param stop.time The stop time for network construction on the specified 
 #'     \code{stop.date}. All statements after this time on the specified date 
 #'     will be excluded.
+#' @param timewindow Possible values are \code{"no"}, \code{"events"}, 
+#'     \code{"seconds"}, \code{"minutes"}, \code{"hours"}, \code{"days"}, 
+#'     \code{"weeks"}, \code{"months"}, and \code{"years"}. If \code{"no"} is 
+#'     selected (= the default setting), no time window will be used. If any of 
+#'     the time units is selected, a moving time window will be imposed, and 
+#'     only the statements falling within the time period defined by the window 
+#'     will be used to create the network. The time window will then be moved 
+#'     forward by one time unit at a time, and a new network with the new time 
+#'     boundaries will be created. This is repeated until the end of the overall
+#'     time span is reached. All time windows will be saved as separate 
+#'     networks in a list. The duration of each time window is defined by the 
+#'     \code{windowsize} argument. For example, this could be used to create a 
+#'     time window of 6 months which moves forward by one month each time, thus 
+#'     creating time windows that overlap by five months. If \code{"events"} is 
+#'     used instead of a natural time unit, the time window will comprise 
+#'     exactly as many statements as defined in the \code{windowsize} argument. 
+#'     However, if the start or end statement falls on a date and time where 
+#'     multiple events happen, those additional events that occur simultaneously
+#'     are included because there is no other way to decide which of the 
+#'     statements should be selected. Therefore the window size is sometimes 
+#'     extended when the start or end point of a time window is ambiguous in 
+#'     event time.
+#' @param windowsize The number of time units of which a moving time window is 
+#'     comprised. This can be the number of statement events, the number of days
+#'     etc., as defined in the \code{"timewindow"} argument.
 #' @param excludeValues A list of named character vectors that contains entries 
 #'     which should be excluded during network construction. For example, 
 #'     \code{list(concept = c("A", "B"), organization = c("org A", "org B"))} 
@@ -352,7 +379,7 @@ dna_attributes <- function(connection,
 #' 
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta19.jar")
+#' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection("sample.dna")
 #' nw <- dna_network(conn, 
 #'                   networkType = "onemode", 
@@ -381,6 +408,8 @@ dna_network <- function(connection,
                         stop.date = "31.12.2099", 
                         start.time = "00:00:00", 
                         stop.time = "23:59:59", 
+                        timewindow = "no", 
+                        windowsize = 100, 
                         excludeValues = list(), 
                         excludeAuthors = character(), 
                         excludeSources = character(), 
@@ -432,7 +461,7 @@ dna_network <- function(connection,
     var <- character()
     val <- character()
   }
-  
+  myint <- as.integer(100)
   .jcall(connection$dna_connection, 
          "V", 
          "rNetwork", 
@@ -451,6 +480,8 @@ dna_network <- function(connection,
          stop.date, 
          start.time, 
          stop.time, 
+         timewindow, 
+         as.integer(windowsize), 
          var, 
          val, 
          excludeAuthors, 
@@ -480,10 +511,22 @@ dna_network <- function(connection,
       dta[[columnNames[i]]] <- .jevalArray(objects[[i + 8]])
     }
     return(dta)
-  } else {
+  } else if (timewindow == "no") {
     mat <- .jcall(connection$dna_connection, "[[D", "getMatrix", simplify = TRUE)
     rownames(mat) <- .jcall(connection$dna_connection, "[S", "getRowNames", simplify = TRUE)
     colnames(mat) <- .jcall(connection$dna_connection, "[S", "getColumnNames", simplify = TRUE)
+    return(mat)
+  } else {
+    timeLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", simplify = TRUE)
+    timeLabels <- as.POSIXct(timeLabels, origin = "1970-01-01")
+    mat <- list()
+    for (t in 1:length(timeLabels)) {
+      m <- .jcall(connection$dna_connection, "[[D", "getTimeWindowNetwork", as.integer(t - 1), simplify = TRUE)
+      rownames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowRowNames", as.integer(t - 1), simplify = TRUE)
+      colnames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowColumnNames", as.integer(t - 1), simplify = TRUE)
+      mat[[t]] <- m
+      attributes(mat[[t]]) <- list("time" = timeLabels[t])
+    }
     return(mat)
   }
 }

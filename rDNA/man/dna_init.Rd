@@ -4,10 +4,10 @@
 \alias{dna_init}
 \title{Initialize the connection with DNA}
 \usage{
-dna_init(jarfile = "dna-2.0-beta19.jar")
+dna_init(jarfile = "dna-2.0-beta20.jar")
 }
 \arguments{
-\item{jarfile}{The file name of the DNA jar file, e.g., \code{"dna-2.0-beta19.jar"}.}
+\item{jarfile}{The file name of the DNA jar file, e.g., \code{"dna-2.0-beta20.jar"}.}
 }
 \description{
 Establish a connection between \pkg{rDNA} and the DNA software.
@@ -22,6 +22,6 @@ version or path, the \R session would need to be restarted first.
 }
 \examples{
 \dontrun{
-dna_init("dna-2.0-beta19.jar")
+dna_init("dna-2.0-beta20.jar")
 }
 }
