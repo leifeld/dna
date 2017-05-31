@@ -1254,7 +1254,7 @@ public class Exporter extends JDialog {
 						String filename1 = filename.substring(0, filename.length() - 4);
 						String filename3 = filename.substring(filename.length() - 4, filename.length());
 						for (int i = 0; i < timeWindowMatrices.size(); i++) {
-							String filename2 = "-" + String.format("%08d", i + 1);
+							String filename2 = "-" + String.format("%0" + String.valueOf(timeWindowMatrices.size()).length() + "d", i + 1);
 							exportCSV(timeWindowMatrices.get(i), filename1 + filename2 + filename3);
 						}
 					}
@@ -1265,7 +1265,7 @@ public class Exporter extends JDialog {
 						String filename1 = filename.substring(0, filename.length() - 3);
 						String filename3 = filename.substring(filename.length() - 3, filename.length());
 						for (int i = 0; i < timeWindowMatrices.size(); i++) {
-							String filename2 = "-" + String.format("%08d", i + 1);
+							String filename2 = "-" + String.format("%0" + String.valueOf(timeWindowMatrices.size()).length() + "d", i + 1);
 							exportDL(timeWindowMatrices.get(i), filename1 + filename2 + filename3, twoMode);
 						}
 					}
@@ -1286,7 +1286,7 @@ public class Exporter extends JDialog {
 						String filename1 = filename.substring(0, filename.length() - 8);
 						String filename3 = filename.substring(filename.length() - 8, filename.length());
 						for (int i = 0; i < timeWindowMatrices.size(); i++) {
-							String filename2 = "-" + String.format("%08d", i + 1);
+							String filename2 = "-" + String.format("%0" + String.valueOf(timeWindowMatrices.size()).length() + "d", i + 1);
 							exportGraphml(timeWindowMatrices.get(i), twoMode, statementType, filename1 + filename2 + filename3, 
 									var1Name, var2Name, frequencies1, frequencies2, attributes, qualifierAggregation, qualifierBinary);
 						}
@@ -1408,7 +1408,7 @@ public class Exporter extends JDialog {
 					statementIterator = statementIterator + 1;
 					currentStop.setTime(statements.get(statementIterator).getDate());
 				} else {
-					currentStop.add(Calendar.SECOND, 1);  // invoke stop of while loop
+					currentStop.add(Calendar.YEAR, 1);  // invoke stop of while loop
 				}
 				currentStart.setTime(statements.get(statementIterator - timeUnits).getDate());
 			}
