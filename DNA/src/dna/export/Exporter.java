@@ -2853,7 +2853,6 @@ public class Exporter extends JDialog {
 				GregorianCalendar lastDateTemp = new GregorianCalendar();
 				lastDateTemp.setTime(filteredStatements.get(filteredStatements.size() - 1).getDate());
 				while (stopTemp.before(lastDateTemp)) {
-					System.out.println(stopTemp.getTime().toString());
 					if (timewindow.equals("using seconds")) {
 						stopTemp.add(Calendar.SECOND, 1);
 					}

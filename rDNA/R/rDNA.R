@@ -13,7 +13,10 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 #' rest of the \R session. To initialize a connection with a different DNA 
 #' version or path, the \R session would need to be restarted first.
 #' 
-#' @param jarfile The file name of the DNA jar file, e.g., \code{"dna-2.0-beta20.jar"}.
+#' @param jarfile The file name of the DNA jar file, e.g., 
+#'     \code{"dna-2.0-beta20.jar"}.
+#' @param memory The amount of memory in megabytes to allocate to DNA, for 
+#'     example \code{1024} or \code{4096}.
 #' 
 #' @examples
 #' \dontrun{
@@ -21,10 +24,12 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 #' }
 #' @export
 #' @import rJava
-dna_init <- function(jarfile = "dna-2.0-beta20.jar") {
+dna_init <- function(jarfile = "dna-2.0-beta20.jar", memory = 1024) {
   assign("dnaJarString", jarfile, pos = dnaEnvironment)
   message(paste("Jar file:", dnaEnvironment[["dnaJarString"]]))
-  .jinit(dnaEnvironment[["dnaJarString"]], force.init = TRUE)
+  .jinit(dnaEnvironment[["dnaJarString"]], 
+         force.init = TRUE, 
+         parameters = paste0("-Xmx", memory, "m"))
 }
 
 
@@ -525,8 +530,10 @@ dna_network <- function(connection,
       rownames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowRowNames", as.integer(t - 1), simplify = TRUE)
       colnames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowColumnNames", as.integer(t - 1), simplify = TRUE)
       mat[[t]] <- m
-      attributes(mat[[t]]) <- list("time" = timeLabels[t])
     }
-    return(mat)
+    dta <- list()
+    dta$networks <- mat
+    dta$time <- timeLabels
+    return(dta)
   }
 }

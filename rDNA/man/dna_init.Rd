@@ -4,10 +4,14 @@
 \alias{dna_init}
 \title{Initialize the connection with DNA}
 \usage{
-dna_init(jarfile = "dna-2.0-beta20.jar")
+dna_init(jarfile = "dna-2.0-beta20.jar", memory = 1024)
 }
 \arguments{
-\item{jarfile}{The file name of the DNA jar file, e.g., \code{"dna-2.0-beta20.jar"}.}
+\item{jarfile}{The file name of the DNA jar file, e.g., 
+\code{"dna-2.0-beta20.jar"}.}
+
+\item{memory}{The amount of memory in megabytes to allocate to DNA, for 
+example \code{1024} or \code{4096}.}
 }
 \description{
 Establish a connection between \pkg{rDNA} and the DNA software.
