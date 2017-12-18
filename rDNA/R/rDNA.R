@@ -57,23 +57,26 @@ dna_init <- function(jarfile = "dna-2.0-beta20.jar", memory = 1024) {
 #' @export
 dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
   djs <- dnaEnvironment[["dnaJarString"]]
-  if (is.null(djs)) {
-    stop(paste0(djs, " could not be located in directory ", getwd(), "."))
+  if (is.null(djs)) {stop(paste0(djs, " could not be located in directory ", getwd(), "."))}
+  if (!file.exists(infile)) {stop(
+    if (grepl("/", infile, fixed = TRUE)) 
+    {paste0("infile ", infile, " could not be located.")}
+    else 
+    {paste0("infile ", infile, " could not be located in directory ", getwd(), ".")}
+  )}
+  if (is.null(infile)) {
+    f <- ""
   } else {
-    if (is.null(infile)) {
-      f <- ""
-    } else {
-      f <- paste0(" ", infile)
-    }
-    if (is.null(javapath)) {
-      jp <- "java"
-    } else if (grepl("/$", javapath)) {
-      jp <- paste0(javapath, "java")
-    } else {
-      jp <- paste0(javapath, "/java")
-    }
-    system(paste0(jp, " -jar -Xmx", memory, "M ", djs, f))
+    f <- paste0(" ", infile)
   }
+  if (is.null(javapath)) {
+    jp <- "java"
+  } else if (grepl("/$", javapath)) {
+    jp <- paste0(javapath, "java")
+  } else {
+    jp <- paste0(javapath, "/java")
+  }
+  system(paste0(jp, " -jar -Xmx", memory, "M ", djs, f))
 }
 
 
