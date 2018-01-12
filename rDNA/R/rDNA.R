@@ -58,12 +58,14 @@ dna_init <- function(jarfile = "dna-2.0-beta20.jar", memory = 1024) {
 dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
   djs <- dnaEnvironment[["dnaJarString"]]
   if (is.null(djs)) {stop(paste0(djs, " could not be located in directory ", getwd(), "."))}
-  if (!file.exists(infile)) {stop(
-    if (grepl("/", infile, fixed = TRUE)) 
-    {paste0("infile ", infile, " could not be located.")}
-    else 
-    {paste0("infile ", infile, " could not be located in directory ", getwd(), ".")}
-  )}
+  if(!is.null(infile)){
+    if (!file.exists(infile)) {stop(
+      if (grepl("/", infile, fixed = TRUE)) 
+      {paste0("infile ", infile, " could not be located.")}
+      else 
+      {paste0("infile ", infile, " could not be located in working directory ", getwd(), ".")}
+    )}
+  }
   if (is.null(infile)) {
     f <- ""
   } else {
