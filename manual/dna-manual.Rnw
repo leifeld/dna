@@ -195,7 +195,7 @@ Enter the variable name \textbf{"JAVA\_HOME"} and the path to your java installa
   \label{fig:javahome}
 \end{figure}
 
-Windows should now recognise \java\ and be able to run \java-commands. To test this, we can open the Command Prompt (press the "Windows Button" on your keyboard and simply enter "cmd" and then hit "Enter") and typing a \java\ command, e.g. \texttt{"java -version"}. If the installation was successful, the output should display information about the \java-version and build as depicted in figure~\ref{fig:javvers}.
+Windows should now recognise \java\ and be able to run \java-commands. To test this, we can open the Command Prompt (press the "Windows Button" on your keyboard and simply enter ``cmd'' and then hit "Enter") and typing a \java\ command, e.g. \texttt{"java -version"}. If the installation was successful, the output should display information about the \java-version and build as depicted in figure~\ref{fig:javvers}.
 \begin{figure}
   \caption{Testing Java installation in Windows Command Prompt}
   \includegraphics[width=\linewidth]{2-3-javaVersionCommand}

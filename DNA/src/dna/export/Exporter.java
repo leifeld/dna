@@ -55,6 +55,7 @@ import javax.swing.filechooser.FileFilter;
 
 import org.jdom.Attribute;
 import org.jdom.Comment;
+import org.jdom.DocType;
 import org.jdom.Element;
 import org.jdom.Namespace;
 import org.jdom.output.Format;
@@ -2360,6 +2361,209 @@ public class Exporter extends JDialog {
 		return frequencies;
 	}
 	
+	private void exportGEFX(Matrix mt, boolean twoMode, StatementType statementType, String outfile, String var1, String var2, 
+			int[] frequencies1, int[] frequencies2, ArrayList<AttributeVector> attributes, String qualifierAggregation, 
+			boolean qualifierBinary) {
+
+		// extract attributes
+		String[] rn = mt.getRownames();
+		String[] cn = mt.getColnames();
+		String[] names;
+		String[] variables;
+		int[] frequencies;
+		if (twoMode == true) {
+			names = new String[rn.length + cn.length];
+			variables = new String[names.length];
+			frequencies = new int[names.length];
+		} else {
+			names = new String[rn.length];
+			variables = new String[rn.length];
+			frequencies = new int[rn.length];
+		}
+		for (int i = 0; i < rn.length; i++) {
+			names[i] = rn[i];
+			variables[i] = var1;
+			frequencies[i] = frequencies1[i];
+		}
+		if (twoMode == true) {
+			for (int i = 0; i < cn.length; i++) {
+				names[i + rn.length] = cn[i];
+				variables[i + rn.length] = var2;
+				frequencies[i + rn.length] = frequencies2[i];
+			}
+		}
+		int[] id = new int[names.length];
+		Color[] color = new Color[names.length];
+		String[] type = new String[names.length];
+		String[] alias = new String[names.length];
+		String[] notes = new String[names.length];
+		for (int i = 0; i < attributes.size(); i++) {
+			if (attributes.get(i).getStatementTypeId() == statementType.getId() && attributes.get(i).getVariable().equals(var1)) {
+				for (int j = 0; j < rn.length; j++) {
+					if (rn[j].equals(attributes.get(i).getValue())) {
+						id[j] = attributes.get(i).getId();
+						color[j] = attributes.get(i).getColor();
+						type[j] = attributes.get(i).getType();
+						alias[j] = attributes.get(i).getAlias();
+						notes[j] = attributes.get(i).getNotes();
+					}
+				}
+			} else if (attributes.get(i).getStatementTypeId() == statementType.getId() && attributes.get(i).getVariable().equals(var2) && twoMode == true) {
+				for (int j = 0; j < cn.length; j++) {
+					if (cn[j].equals(attributes.get(i).getValue())) {
+						id[j + rn.length] = attributes.get(i).getId();
+						color[j + rn.length] = attributes.get(i).getColor();
+						type[j + rn.length] = attributes.get(i).getType();
+						alias[j + rn.length] = attributes.get(i).getAlias();
+						notes[j + rn.length] = attributes.get(i).getNotes();
+					}
+				}
+			}
+		}
+		
+		
+		
+		DocType dt = new DocType("xml");
+		org.jdom.Document document = new org.jdom.Document();
+		document.setDocType(dt);
+		
+		// gexf element with schema information
+		Element gexfElement = new Element("gexf");
+		gexfElement.setAttribute(new Attribute("xmlns", "http://www.gexf.net/1.2draft"));
+		gexfElement.setAttribute(new Attribute("xmlns:viz", "http://www.gexf.net/1.2draft/viz"));
+		gexfElement.setAttribute(new Attribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance"));
+		gexfElement.setAttribute(new Attribute("xsi:schemaLocation", "http://www.gexf.net/1.2draft/gexf.xsd"));
+		gexfElement.setAttribute(new Attribute("version", "1.2"));
+		document.addContent(gexfElement);
+		
+		// meta data
+		Element meta = new Element("meta");
+		DateFormat df = new SimpleDateFormat("yyyy.MM.dd");
+		Date today = new Date();
+		meta.setAttribute(new Attribute("lastmodifieddate", df.format(today)));
+		Element creator = new Element("creator");
+		creator.setText("Discourse Network Analyzer (DNA)");
+		meta.addContent(creator);
+		Element description = new Element("description");
+		if (twoMode == true) {
+			description.setText("Two-mode network");
+		} else {
+			description.setText("One-mode network");
+		}
+		meta.addContent(description);
+		gexfElement.addContent(meta);
+		
+		// graph element with node and edge attribute definitions
+		Element graphElement = new Element("graph");
+		graphElement.setAttribute(new Attribute("mode", "static"));
+		graphElement.setAttribute(new Attribute("defaultedgetype", "undirected"));
+		
+		Element attributesElement = new Element("attributes");
+		attributesElement.setAttribute(new Attribute("class", "node"));
+		Element at0 = new Element("attribute");
+		at0.setAttribute(new Attribute("id", "0"));
+		at0.setAttribute(new Attribute("title", "type"));
+		at0.setAttribute(new Attribute("type", "string"));
+		attributesElement.addContent(at0);
+		Element at1 = new Element("attribute");
+		at1.setAttribute(new Attribute("id", "1"));
+		at1.setAttribute(new Attribute("title", "alias"));
+		at1.setAttribute(new Attribute("type", "string"));
+		attributesElement.addContent(at1);
+		Element at2 = new Element("attribute");
+		at2.setAttribute(new Attribute("id", "2"));
+		at2.setAttribute(new Attribute("title", "notes"));
+		at2.setAttribute(new Attribute("type", "string"));
+		attributesElement.addContent(at2);
+		
+		/*
+		<attributes class="node">
+	      <attribute id="0" title="url" type="string"/>
+	      <attribute id="1" title="indegree" type="float"/>
+	      <attribute id="2" title="frog" type="boolean">
+	        <default>true</default>
+	      </attribute>
+	    </attributes>
+		*/
+		
+		// add nodes
+		Element nodes = new Element("nodes");
+		for (int i = 0; i < names.length; i++) {
+			Element node = new Element("node");
+			node.setAttribute(new Attribute("id", "" + id[i]));
+			node.setAttribute(new Attribute("label", "" + names[i]));
+			
+			Element attvaluesElement = new Element("attvalues");
+			
+			Element attvalueElement0 = new Element("attvalue");
+			attvalueElement0.setAttribute(new Attribute("for", "0"));
+			attvalueElement0.setAttribute(new Attribute("value", type[i]));
+			attvaluesElement.addContent(attvalueElement0);
+
+			Element attvalueElement1 = new Element("attvalue");
+			attvalueElement1.setAttribute(new Attribute("for", "1"));
+			attvalueElement1.setAttribute(new Attribute("value", alias[i]));
+			attvaluesElement.addContent(attvalueElement1);
+
+			Element attvalueElement2 = new Element("attvalue");
+			attvalueElement2.setAttribute(new Attribute("for", "2"));
+			attvalueElement2.setAttribute(new Attribute("value", notes[i]));
+			attvaluesElement.addContent(attvalueElement2);
+
+			Element attvalueElement3 = new Element("attvalue");
+			attvalueElement3.setAttribute(new Attribute("for", "3"));
+			attvalueElement3.setAttribute(new Attribute("value", variables[i]));
+			attvaluesElement.addContent(attvalueElement3);
+
+			Element attvalueElement4 = new Element("attvalue");
+			attvalueElement4.setAttribute(new Attribute("for", "4"));
+			attvalueElement4.setAttribute(new Attribute("value", String.valueOf(frequencies[i])));
+			attvaluesElement.addContent(attvalueElement4);
+			
+			node.addContent(attvaluesElement);
+			
+			Element vizColor = new Element("viz:color");
+			vizColor.setAttribute(new Attribute("r", "" + color[i].getRed()));
+			vizColor.setAttribute(new Attribute("g", "" + color[i].getGreen()));
+			vizColor.setAttribute(new Attribute("b", "" + color[i].getBlue()));
+			vizColor.setAttribute(new Attribute("a", "" + color[i].getAlpha()));
+			node.addContent(vizColor);
+			
+			Element vizShape = new Element("viz:shape");
+			if (i < rn.length) {
+				vizShape.setAttribute(new Attribute("value", "disc"));
+			} else {
+				vizShape.setAttribute(new Attribute("value", "square"));
+			}
+			node.addContent(vizShape);
+			
+			nodes.addContent(node);
+		}
+		graphElement.addContent(nodes);
+		
+		// add edges
+		Element edges = new Element("edges");
+		
+		graphElement.addContent(edges);
+		
+		gexfElement.addContent(graphElement);
+		
+		// write to file
+		File dnaFile = new File(outfile);
+		try {
+			FileOutputStream outStream = new FileOutputStream(dnaFile);
+			XMLOutputter outToFile = new XMLOutputter();
+			Format format = Format.getPrettyFormat();
+			format.setEncoding("utf-8");
+			outToFile.setFormat(format);
+			outToFile.output(document, outStream);
+			outStream.flush();
+			outStream.close();
+		} catch (IOException e) {
+			System.err.println("Cannot save \"" + dnaFile + "\":" + e.getMessage());
+		}
+	}
+	
 	/**
 	 * Export filter for graphML files.
 	 * 
@@ -2907,7 +3111,7 @@ public class Exporter extends JDialog {
 		Matrix m = null;
 		timeWindowMatrices = null;
 		if (networkType.equals("Two-mode network")) {
-			if (timewindow.equals("no")) {
+			if (timewindow.equals("no time window")) {
 				m = computeTwoModeMatrix(filteredStatements, data.getDocuments(), st, variable1, variable2, variable1Document, 
 						variable2Document, names1, names2, qualifier, qualifierAggregation, normalization);
 			} else {
