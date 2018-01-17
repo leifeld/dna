@@ -34,6 +34,11 @@
 \newcommand{\R}{\texttt{R}}
 \newcommand{\github}{\href{https://github.com/leifeld/dna}{\texttt{GitHub}}}
 \newcommand*{\fullref}[1]{\hyperref[{#1}]{ \nameref*{#1}}} % One single link
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\sectionauthor}[1]{%
+  \linespread{1.1}{\large \textsc{#1}}%
+  \par\nobreak\vspace*{30pt}
+}
 
 \setlength{\parindent}{0em}
 \setlength{\parskip}{0.5em}
@@ -50,36 +55,48 @@ knit_hooks$set(crop=hook_pdfcrop)
 @
 
 \title{Discourse Network Analyzer}
-\date{\footnotesize{Last update: DNA 2.0 beta 19 with rDNA 2.0.1 on 2018-01-11.}}
-\author{Philip Leifeld and Johannes Gruber}
+\date{\footnotesize{Last update: DNA 2.0 beta 20 with rDNA 2.0.2 on 2018-01-11.}}
+\author{Philip Leifeld, Johannes Gruber and Felix Rolf Bossner}
 
 \maketitle
-This documents describes the software \texttt{Discourse Network Analyzer} (\dna) and its companion \R\ package \rdna\ \citep{leifeld2017rdna}.
+\begin{abstract}
+This document describes the open-source standalone software \texttt{Discourse Network Analyzer} (\dna) and its companion \R\ package \rdna\ \citep{leifeld2017rdna} and demonstrates how to install, set up and use them.
+The \java\ software \dna\ is a tool for qualitative content analysis with network export facilities. It can perform all neccessary steps for a discourse network analysis from importing raw text over annotating statements that persons or organizations make to returning network matrices of actors connected by shared concepts. 
+\rdna\ integrates the results from an analysis performed in \dna\ with the statistical computing environment \R\ to perform more in-depth analysis on the coded material.
+Both \dna\ and \rdna\ can be downloaded from \github.
+Questions and bug reports can be posted in the issue tracker on \github.
+\end{abstract}
+
+\tableofcontents
+
+\newpage
+% To DO
+\section{Introduction} \label{sec:intro}
+
 Section~\ref{sec:algorithms} is a concise and fairly technical description of the types of networks \dna\ can export.
-Section~\ref{sec:installation} explains how to install both\dna and \rdna\ which both rely on a correctly set up \java\ runtime environment.
-Then two 
-%four
-sections follow, which describe the usage of \dna\ in detail: Section~\ref{sec:dna-prep} describes how to set up a project in \dna, including the creation of a database, adding and managing users and describes how to set up statement types and variables.
-Section~\ref{sec:dna-import} explains how you import and organise your raw data (i.e. documents).
+Section~\ref{sec:installation} explains how to install both \dna\ and \rdna\ which both rely on a correctly set up \java\ runtime environment.
+Then four sections follow, which describe the usage of \dna\ in detail: Section~\ref{sec:dna-prep} describes how to set up a project in \dna, including the creation of a database, adding and managing users and how to set up or edit statement types and variables.
+Section~\ref{sec:dna-import} explains how you import and organise your raw data (i.\,e.\, documents).
+Section~\ref{sec:dna-coding} and Section~\ref{sec:dna-export} will explain---once they are completed---how material is coded in \dna\ and how coded data can be experted to other programs for further analysis.
 % Section~\ref{sec:dna-coding} = Coding the Data
 % Section~\ref{sec:dna-export} = Exporting the coded Data
 Section~\ref{sec:rdna} is an introductory tutorial on using the \rdna\ package.
-The contents of both sections are meant to be extended in the future, and additional sections may be added.
-\dna\ and \rdna\ can be downloaded from \github.
-Questions and bug reports can be posted in the issue tracker on \github.
-
-% To DO
-%\section{Introduction} \label{sec:intro}
+%The contents of both sections are meant to be extended in the future, and additional sections may be added.
 
 
+
+
+
+\newpage
 \section{\dna\ algorithms} \label{sec:algorithms}
+\sectionauthor{Philip Leifeld}
 This section summarizes the main algorithms implemented in \dna\ in a technical way.
 
-$X$ is a three-dimensional array representing statement counts. $x_{ijk}$ is a specific count value in this array, with the first index $i$ denoting an instance of the first variable (e.g., organization $i$), the second index $j$ denoting an instance of the second variable (e.g., concept $j$), and the third index $k$ denoting a level on the qualifier variable (e.g., agreement = $1$). For example, $x_{ijk} = 5$ could mean that organization $i$ mentions concept $j$ with intensity $k$ five times.
+$X$ is a three-dimensional array representing statement counts. $x_{ijk}$ is a specific count value in this array, with the first index $i$ denoting an instance of the first variable (e.\,g.\,, organization $i$), the second index $j$ denoting an instance of the second variable (e.\,g.\,, concept $j$), and the third index $k$ denoting a level on the qualifier variable (e.\,g.\,, agreement = $1$). For example, $x_{ijk} = 5$ could mean that organization $i$ mentions concept $j$ with intensity $k$ five times.
 
-Where the qualifier variable is binary, \emph{false} values are represented as $0$ and \emph{true} values as $1$ on the $k$ index, i.e., $K^\text{binary} = \{ 0; 1 \}$. Where the qualifier variable is integer, the respective integer value is used as the level. This implies that $k$ can take positive or negative values or 0, i.e, $K^\text{integer} \subseteq \mathbb{Z}$. Note that all $k$ levels of the scale are included in $K$, not just those values that are empirically observed.
+Where the qualifier variable is binary, \emph{false} values are represented as $0$ and \emph{true} values as $1$ on the $k$ index, i.\,e.\,, $K^\text{binary} = \{ 0; 1 \}$. Where the qualifier variable is integer, the respective integer value is used as the level. This implies that $k$ can take positive or negative values or 0, i.e, $K^\text{integer} \subseteq \mathbb{Z}$. Note that all $k$ levels of the scale are included in $K$, not just those values that are empirically observed.
 
-Indices with a prime denote a second instance of an element, e.g., $i'$ may denote another organization. $Y$ denotes the output matrix to be obtained by applying a transformation to $X$. The following transformations are possible:
+Indices with a prime denote a second instance of an element, e.\,g.\,, $i'$ may denote another organization. $Y$ denotes the output matrix to be obtained by applying a transformation to $X$. The following transformations are possible:
 
 \subsection{Congruence}
 In a congruence network, the edge weight between nodes $i$ and $i'$ represents the number of times they co-support or co-reject second-variable nodes (if a binary qualifier is used) or the cumulative similarity between $i$ and $i'$ over their assessments of second-variable nodes (in the case of an integer qualifier variable).
@@ -90,7 +107,7 @@ In the integer case:
 \end{equation}
 where $\Phi_{ii'}(\cdot)$ denotes a normalization function (to be specified below).
 
-In the binary case, i.e., $\vert K \vert = 2$, this reduces to
+In the binary case, i.\,e.\,, $\vert K \vert = 2$, this reduces to
 \begin{equation}
  y_{ii'}^\text{congruence binary} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} x_{ijk} x_{i'jk} + (1 - x_{ijk}) (1 - x_{i'jk}) \right).
 \end{equation}
@@ -124,7 +141,7 @@ Alternatively, edge weights can be divided by the average activity of nodes $i$ 
  \Phi_{ii'}^\text{avg} (\omega) = \frac{\omega}{ \frac{1}{2} \left( \sum_{j = 1}^n \sum_{k} x_{ijk} + \sum_{j = 1}^n \sum_{k} x_{i'jk} \right) }.
 \end{equation}
 
-With Jaccard normalization, we don't just count $i$'s and $i'$'s activity and sum them up independently, but we add up both their independent activities and their joint activity, i.e., both matches and non-matches:
+With Jaccard normalization, we don't just count $i$'s and $i'$'s activity and sum them up independently, but we add up both their independent activities and their joint activity, i.\,e.\,, both matches and non-matches:
 \begin{equation}
  \Phi_{ii'}^\text{Jaccard} (\omega) = \frac{\omega}{ \sum_{j = 1}^n \sum_{k} x_{ijk} [x_{i'jk} = 0] + \sum_{j = 1}^n \sum_{k} x_{i'jk}[x_{ijk} = 0] + \sum_{j = 1}^n \sum_{k} x_{ijk} x_{i'jk} }.
 \end{equation}
@@ -167,43 +184,77 @@ With \emph{prominence} normalization, ties to prominent nodes receive lower weig
 
 
 \section{Installation of \dna\ and \rdna} \label{sec:installation}
-This section explains how \dna\ and \rdna\ can be installed on common desktop operating systems. As \dna\ is written in \java, both \dna\ and \rdna\ rely on a \java\ to work on your computer properly. Installing and configuring a valid \java\ Runtime Environment on your machine will thus be the first and only complicated step of the installation. However, following the simple steps below, one should not run into problems while setting up \java. The advantage of the \java\ programming language for academic software is that it both runs on different operating systems without altering the source code---once the Runtime Environment is set up---and that it is---for the most part---open source. Besides setting up the \java\ Runtime Environment, installation of \dna\ and \rdna\ is identical on different operating systems. If you feel confident that \java\ is already correctly set up on your computer, you can therefore skip to section~{subsection:installdna}. Otherwise please continue to the section for the operating system you wish to install \dna\ and \rdna\ on: 
+\sectionauthor{Johannes Gruber}
+This section explains how \dna\ and \rdna\ can be installed on common desktop operating systems. As \dna\ is written in \java, both \dna\ and \rdna\ rely on \java\ to work on your computer properly. Installing and configuring a valid \java\ Runtime Environment on your machine will thus be the first and only complicated step of the installation. However, following the simple steps below, one should not run into problems while setting up \java. The advantage of the \java\ programming language for academic software is that it both runs on different operating systems without altering the source code---once the Runtime Environment is set up---and that it is---for the most part---open source. Besides setting up the \java\ Runtime Environment, the installation of \dna\ and \rdna\ is identical on different operating systems. If you feel confident that \java\ is already correctly set up on your computer, you can therefore skip to Section~\ref{subsection:installdna} if you like. Otherwise please continue to the section for the operating system you wish to install \dna\ and \rdna\ on: 
 \fullref{subsec:windows},
 \fullref{subsec:mac} or
-\fullref{subsec:linux}.
+\fullref{subsec:linux}. 
+
+For more experienced users, here is a short version of the steps described below:
+\begin{enumerate}
+\item{
+Install \java\ Runtime Environment (JRE) (Version 8) on your computer.
+}
+\item{
+(On Windows: set up the ``JAVA\_HOME'' to the installation path of your JRE.)
+}
+\item{
+Download the newest executable JAR from \href{https://github.com/leifeld/dna/releases}{github.com/leifeld/dna/releases}.
+}
+\item{
+(On Linux: make the JAR file executable.)\newline
+(On Mac: allow excetuting apps from an unidentified developer.)
+}
+\item{
+You can now run the standalone \dna\ or continue to install \rdna\ as well.
+}
+\item{
+Download and install \R\ (and \rstudio).
+}
+\item{
+In \R: install the neccessary \R\ packages \texttt{rJava} and \texttt{devtools}.
+}
+\item{
+In \R: install \rdna\ via 
+<<eval=FALSE, results = 'tex', message = FALSE>>=
+devtools::install_github("leifeld/dna/rDNA", 
+                         args = "--no-multiarch")
+@
+}
+\end{enumerate}
 
 \subsection{Windows}\label{subsec:windows}
-To install the necessary \java\ Runtime Environment on your Windows computer, simply go to \href{https://www.oracle.com/technetwork/java/javase/downloads/}{oracle.com/technetwork/java/javase/downloads/}, scroll down to \textbf{"JRE DOWNLOAD} (JRE being the acronym for \java\ Runtime Environment) and then scroll down to the newest version of your respective Windows version. In this example, I'm running "Windows 10 Home 64 Bit" which means that we need to download and install \textbf{"jre-8u151-windows-x64.exe"} (\textit{see figure~\ref{fig:downljava}}). During the installation, you can accept all the default options, including the installation path.
+To install the necessary \java\ Runtime Environment on your Windows computer, simply go to \linebreak \href{https://www.java.com/en/download/manual.jsp}{java.com/en/download/manual.jsp}, scroll down to and download \textbf{``Windows Offline (64-bit)''} (see Figure~\ref{fig:downljava}; download ``Windows Offline'' instead if you are using a 32-bit version of Windows). During the installation, you can accept all the default options, including the installation path.
 \begin{figure}
+  \includegraphics[width=\linewidth]{03-1-downljava}
   \caption{Downloading JRE from Oracle}
-  \includegraphics[width=\linewidth]{2-1-downljava}
   \label{fig:downljava}
 \end{figure}
 
-Next, you should set \textbf{"JAVA\_HOME"} in your environmental variables to tell your Windows PC where your \java\ installation lives. This step is optional but can prevent many issues with Java people had in the past. To set "JAVA\_HOME", you need to navigate to the menu \textbf{"edit the system environment variables"}. The easiest way to get there is to hit the  "Windows Button" on your keyboard and enter "environment". Windows will then search for programs and settings menus which include this title and should usually display the menu we are looking for on top.
-\footnote{On older versions of Windows, this might not work. On Windows 7 you can alternatively right-click on "My Computer" and select "Properties $\rightarrow$ Advanced". On Windows 8 "Control Panel $\rightarrow$ System $\rightarrow$ Advanced System Settings".
+Next, you should set \textbf{``JAVA\_HOME''} in your environmental variables to tell your Windows PC where your \java\ installation lives. This step is optional but can prevent many issues with \java, people had in the past. To set ``JAVA\_HOME'', you need to navigate to the menu \textbf{``edit the system environment variables''}. The easiest way to get there is to hit the \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-6-winbutton}} button on your keyboard and enter ``environment''. Windows will then search for programs and settings menus which include this title and should usually display the menu we are looking for on top.\footnote{On older versions of Windows, this might not work. On Windows 7 you can alternatively right-click on ``My Computer'' and select ``Properties $\rightarrow$ Advanced''. On Windows 8 ``Control Panel $\rightarrow$ System $\rightarrow$ Advanced System Settings''.
 }
-In this menu you have to find the button \textbf{"Environment variables..."}. Clicking this button should open the windows shown in figure~\ref{fig:javahome}.
+In this menu you have to find the button \textbf{``Environment variables...''}. Clicking this button should open the window shown in Figure~\ref{fig:javahome}.
 
-Under User Variables, click New.
-\footnote{This sets "JAVA\_HOME" just for the current user. If you want to make \java\ available for all users you can enter a System Variable instead.
+Under User Variables, click New.\footnote{This sets ``JAVA\_HOME'' just for the current user. If you want to make \java\ available for all users on the computer you are working on, you can create a System Variable instead.
 }
-Enter the variable name \textbf{"JAVA\_HOME"} and the path to your java installation in the field "Variable value". If you haven't altered the default install location, you should find \java\ in \verb|"C:\Program Files\Java\jre1.8.0_151"| or in \verb|"C:\Program Files (x86)\Java\jre1.8.0_151"| if you chose to install a 32\-bit version of \java (which might cause problems if you try to use it with the 64\-bit version of \R.
+Enter the variable name \textbf{``JAVA\_HOME''} and the path to your java installation in the field \textbf{``Variable value''}. If you haven't altered the default install location, you should find \java\ in \verb|"C:\Program Files\Java\jre1.8.0_151"| or if you chose to install a 32-bit version of \java\ in \verb|"C:\Program Files (x86)\Java\jre1.8.0_151"| (which will cause problems though if you try to use it with a 64-bit version of \R).
 \begin{figure}
+  \centering
+  \includegraphics[width=0.6\linewidth]{03-2-javahome}
   \caption{Edit JAVA\_HOME to tell Windows where your \java\ lives}
-  \includegraphics[width=\linewidth]{2-2-javahome}
   \label{fig:javahome}
 \end{figure}
 
-Windows should now recognise \java\ and be able to run \java-commands. To test this, we can open the Command Prompt (press the "Windows Button" on your keyboard and simply enter ``cmd'' and then hit "Enter") and typing a \java\ command, e.g. \texttt{"java -version"}. If the installation was successful, the output should display information about the \java-version and build as depicted in figure~\ref{fig:javvers}.
+Windows should now recognise \java\ and be able to run \java\ commands. To test this, we can open the Command Prompt (press the \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-6-winbutton}} button on your keyboard and simply enter ``cmd'' and then hit ``Enter'') and type a \java\ command, e.\,g.\, \texttt{``java -version''}. If the installation was successful, the output should display information about the \java-version and build as depicted in Figure~\ref{fig:javvers}.
 \begin{figure}
+  \centering
+  \includegraphics[width=0.65\linewidth]{03-3-javaVersionCommand}
   \caption{Testing Java installation in Windows Command Prompt}
-  \includegraphics[width=\linewidth]{2-3-javaVersionCommand}
   \label{fig:javvers}
 \end{figure}
 
-After installing \java, you are ready to use \dna\ and could skip to section~\ref{subsection:installdna} if you are not interested in installing \rdna\ as well. In order to use \rdna\ the rest of this section will explain how to install \R\ and a recommended  \href{https://en.wikipedia.org/wiki/Integrated_development_environment}{integrated development environment (IDE)} called \texttt{
-\href{https://www.rstudio.com/products/RStudio/}{RStudio}}, which makes working with \R\ a lot easier and also looks a lot better than the default GUI.
+After installing \java, you are ready to use \dna\ and could skip to Section~\ref{subsection:installdna} if you are not interested in installing \rdna\ as well. In order to use \rdna\ the rest of this section will explain how to install \R\ and a recommended  \href{https://en.wikipedia.org/wiki/Integrated_development_environment}{integrated development environment (IDE)} called \texttt{
+\href{https://www.rstudio.com/products/RStudio/}{RStudio}}, which makes working with \R\ a lot easier and also looks a lot better than the default interface.
 \paragraph{Install \R\ on Windows}\label{par:installr-win}
 \begin{enumerate}
 \item{
@@ -213,29 +264,30 @@ First, you need to download R from \href{https://cran.r-project.org/bin/windows/
 On the top of the page click on \textbf{Download R 3.4.3 for Windows} (or a newer version if available).
 }
 \item{
-Install the download file, e.g. "R-3.4.3-win.exe". Usually, it is fine to leave all default settings in the installation options.
+Install the download file, e.\,g.\, ``R-3.4.3-win.exe''. Usually, it is fine to leave all default settings in the installation options.
 }
 \item{
 Go to \href{https://www.rstudio.com/products/rstudio/download/}{rstudio.com/products/rstudio/download/}.
 }
 \item{
-At the bottom of the page, under "Installers for Supported Platforms", click on the link \textbf{RStudio 1.1.383 - Windows Vista/7/8/10} (or a newer version if available). Again the default installation options are fine in most cases and can be accepted unchanged.
+At the bottom of the page, under ``Installers for Supported Platforms'', click on the link \textbf{RStudio 1.1.383 - Windows Vista/7/8/10} (or a newer version if available). Again the default installation options are fine in most cases and can be accepted unchanged.
 }
 \item{
 After installation, you can use \R\ by opening \rstudio.
 }
 \end{enumerate}
-Traditionally, the first test you perform in a new programming language is to write a "Hello, World!" program. To do this in \R\ you simply type \texttt{print("Hello World!")} in the "Console". Alternatively, you can make \R\ perform a simple mathematical operation. If everything is set up correctly, the output should look like this:
+Traditionally, the first test you perform in a new programming language is to write a ``Hello, World!'' program. To do this in \R\ you simply type \texttt{print("Hello World!")} in the ``Console''. Alternatively, you can make \R\ perform a simple mathematical operation. If everything is set up correctly, the output should look like this:
 <<eval=TRUE, results = 'tex'>>=
 print("Hello World!")
-2*3
+# You can also use R as a calculator
+2 * 3
 @
-The chunk of code above marks the first time we are using \R\ commands in this manual, so it might make sense to explain what this means for users who are not familiar with dynamic reports which contain \R-code. Whenever \R-code is shown in this manual it is decorated with a light grey background. The output which is generated by running a command is marked by two \#, which means that every line which does not start with \#\# contains \R-code which you can copy \& paste to the Console in \rstudio\ and run. You can either run a command in \rstudio by clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{2-5-rrun}} on the upper right of \rstudio, near the corner. 
+The chunk of code above marks the first time we are using \R\ commands in this manual, so it might make sense to explain what this means for users who are not familiar with documents which contain \R-code. Whenever \R-code is shown in this manual it is decorated with a light grey background. Comments in code (i.e. text in a computer code which is not executed by the computer but used to explain to humans what the author's intenion was in a code) are marked with a \#, and formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with \#\# contains \R-code which you can copy and paste to the Console in \rstudio\ and run. Aöternnativly, you can also copy the code to an \R\ script and execute it by either clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}} on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
 
 \subsection{macOS}\label{subsec:mac}
-\textit{WIP}
+\textit{Coming soon...}
 
-After installing \java, you are ready to use \dna\ and could skip to section~\ref{subsection:installdna} if you are not interested in installing \rdna\ as well. In order to use \rdna\ the rest of this section will explain how to install \R\ and a recommended  \href{https://en.wikipedia.org/wiki/Integrated_development_environment}{integrated development environment (IDE)} called \texttt{
+After installing \java, you are ready to use \dna\ and could skip to Section~\ref{subsection:installdna} if you are not interested in installing \rdna\ as well. In order to use \rdna\ the rest of this section will explain how to install \R\ and a recommended  \href{https://en.wikipedia.org/wiki/Integrated_development_environment}{integrated development environment (IDE)} called \texttt{
 \href{https://www.rstudio.com/products/RStudio/}{RStudio}}, which makes working with \R\ a lot easier and also looks a lot better than the default GUI. Look for the steps below to 
 \paragraph{install \R\ on Mac}\label{par:installr-mac}
 \begin{enumerate}
@@ -243,16 +295,18 @@ After installing \java, you are ready to use \dna\ and could skip to section~\re
   
   }
 \end{enumerate}
-Traditionally, the first test you perform in a new programming language is to write a "Hello, World!" program. To do this in \R\ you simply type \texttt{print("Hello World!")} in the "Console". Alternatively, you can make \R\ perform a simple mathematical operation. If everything is set up correctly, the output should look like this:
+Traditionally, the first test you perform in a new programming language is to write a ``Hello, World!'' program. To do this in \R\ you simply type \texttt{print(``Hello World!'')} in the ``Console''. Alternatively, you can make \R\ perform a simple mathematical operation. If everything is set up correctly, the output should look like this:
 <<eval=TRUE, results = 'tex'>>=
 print("Hello World!")
-2*3
+# You can also use R as a calculator
+2 * 3
 @
+The chunk of code above marks the first time we are using \R\ commands in this manual, so it might make sense to explain what this means for users who are not familiar with documents which contain \R-code. Whenever \R-code is shown in this manual it is decorated with a light grey background. Comments in code (i.e. text in a computer code which is not executed by the computer but used to explain to humans what the author's intenion was in a code) are marked with a \#, and formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with \#\# contains \R-code which you can copy and paste to the Console in \rstudio\ and run. Aöternnativly, you can also copy the code to an \R\ script and execute it by either clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}} on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
 
 \subsection{Linux}\label{subsec:linux}
-\textit{WIP}
+\textit{Coming soon...}
 
-After installing \java, you are ready to use \dna\ and could skip to section~\ref{subsection:installdna} if you are not interested in installing \rdna\ as well. In order to use \rdna\ the rest of this section will explain how to install \R\ and a recommended  \href{https://en.wikipedia.org/wiki/Integrated_development_environment}{integrated development environment (IDE)} called \texttt{
+After installing \java, you are ready to use \dna\ and could skip to Section~\ref{subsection:installdna} if you are not interested in installing \rdna\ as well. In order to use \rdna\ the rest of this section will explain how to install \R\ and a recommended  \href{https://en.wikipedia.org/wiki/Integrated_development_environment}{integrated development environment (IDE)} called \texttt{
 \href{https://www.rstudio.com/products/RStudio/}{RStudio}}, which makes working with \R\ a lot easier and also looks a lot better than the default GUI.
 \paragraph{install \R\ on Linux}\label{par:installr-linux}
 \begin{enumerate}
@@ -260,63 +314,63 @@ After installing \java, you are ready to use \dna\ and could skip to section~\re
   
   }
 \end{enumerate}
-Traditionally, the first test you perform in a new programming language is to write a "Hello, World!" program. To do this in \R\ you simply type \texttt{print("Hello World!")} in the "Console". Alternatively, you can make \R\ perform a simple mathematical operation. If everything is set up correctly, the output should look like this:
+Traditionally, the first test you perform in a new programming language is to write a ``Hello, World!'' program. To do this in \R\ you simply type \texttt{print(``Hello World!'')} in the ``Console''. Alternatively, you can make \R\ perform a simple mathematical operation. If everything is set up correctly, the output should look like this:
 <<eval=TRUE, results = 'tex'>>=
 print("Hello World!")
-2*3
+# You can also use R as a calculator
+2 * 3
 @
+The chunk of code above marks the first time we are using \R\ commands in this manual, so it might make sense to explain what this means for users who are not familiar with documents which contain \R-code. Whenever \R-code is shown in this manual it is decorated with a light grey background. Comments in code (i.e. text in a computer code which is not executed by the computer but used to explain to humans what the author's intenion was in a code) are marked with a \#, and formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with \#\# contains \R-code which you can copy and paste to the Console in \rstudio\ and run. Aöternnativly, you can also copy the code to an \R\ script and execute it by either clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}} on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
 
 \subsection{Installing the programs themselves}\label{subsection:installdna}
-Once \java\ is set up correctly, you can simply download the latest version of \dna\ as a JAR file from \href{https://github.com/leifeld/dna/releases}{github.com/leifeld/dna/releases} (\textit{see figure~\ref{fig:downloadjar}}). JAR or \texttt{.jar} files are technically archive files which usually contain a computer program written in \java, along with all the pictures and libraries necessary to run the program. Once the download is finished, you can start the program by double-clicking on the downloaded file. However, on Linux, it is sometimes necessary to make the file executable first (e.g. via \texttt{\$chmod +x /path/to/your/dna.jar} or using \href{https://askubuntu.com/a/484719/570716}{a GUI-method}). If clicking on the file does not open the program on a windows machine, right-click on the \texttt{.jar} file $\rightarrow$ "Open with" $\rightarrow$ "Use another app" and then navigate to the file \verb|"C:\Program Files\Java\jre1.8.0_151\bin\javaw.exe"|. If you are not interested in using \rdna, you can now skip to the \hyperref[sec:dna-prep]{next section}.
-%Anything to watch out for on Mac?
+Once \java\ is set up correctly, you can simply download the latest version of \dna\ as a JAR file from \href{https://github.com/leifeld/dna/releases}{github.com/leifeld/dna/releases} (\textit{see Figure~\ref{fig:downloadjar}}). JAR or \texttt{.jar} files are technically archive files which usually contain a computer program written in \java, along with all the pictures and libraries necessary to run the program. Once the download is finished, you can start the program by double-clicking on the downloaded file. However, on Linux, it is sometimes necessary to make the file executable first (e.\,g.\, via \texttt{\$chmod +x /path/to/your/dna.jar} or using \href{https://askubuntu.com/a/484719/570716}{a GUI-method}). On newer version of macOS, a program from an "unidentified developer" (i.e. if the program has not been registered with apple) needs to be made a security exception before you can run it. To do so for \dna\, control-click the program's icon, then choose ``Open'' from the shortcut menu. If clicking on the file does not open the program on a windows machine, right-click on the \texttt{.jar} file $\rightarrow$ ``Open with'' $\rightarrow$ ``Use another app'' and then navigate to the file \verb|``C:\Program Files\Java\jre1.8.0_151\bin\javaw.exe''|. 
+
+If you are not interested in using \rdna, you can now skip to the \hyperref[sec:dna-prep]{next section}.
 \begin{figure}
-  \caption{Download \dna\ jar file from github releases page}
-  \includegraphics[width=\linewidth]{2-4-downloadjar}
+  \includegraphics[width=\linewidth]{03-4-downloadjar}
+  \caption{Download \dna\ jar file from GitHub releases page}
   \label{fig:downloadjar}
 \end{figure}
 
-At this point, I assume that you have installed \R\ and have at least a minimal understandint of how the program works. If that is not the case, you might want to jump back to where we explain how to install \fullref{par:installr-win}, \fullref{par:installr-mac} or \fullref{par:installr-linux}. If you have already done this, we can go ahead and install \rdna\ from within \R. First, we need to install the package \texttt{rJava} \citep{urbanek2016rjava}, which is the most important dependency of \rdna:
+At this point, I assume that you have installed \R\ and have at least a minimal understanding of how the program works. If that is not the case, you might want to jump back to where we explain how to install \fullref{par:installr-win}, \fullref{par:installr-mac} or \fullref{par:installr-linux}. If you have already done this, we can go ahead and install \rdna\ from within \R. First, we need to install the package \texttt{rJava} \citep{urbanek2016rjava}, which is the most important dependency of \rdna:
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 install.packages("rJava")
 @
-To see if this worked, or to troubleshoot potential problems, we can run a couple of \java-commands from within \R:
+To see if this worked, or to troubleshoot potential problems, we can run a couple of \java commands from within \R:
 <<eval=TRUE, results = 'tex', message = FALSE>>=
-library(rJava)
+library("rJava")
 # 1. initialize JVM
 .jinit()
 # 2. retrieve the Java-version
 .jcall("java/lang/System", "S", "getProperty", "java.version")
-## [1] "1.8.0_151"
 
 # 3. retrieve JAVA_HOME location
 .jcall("java/lang/System", "S", "getProperty", "java.home")
-## [1] "C:\\Program Files\\Java\\jre1.8.0_151"
 
 # 4. retrieve Java architecture
 .jcall("java/lang/System", "S", "getProperty", "sun.arch.data.model")
-## [1] "64"
 
-# 5. retreive architecture of OS
+# 5. retreive architecture of OS (This should have 64 in it if step 4 displays
+# "64")
 .jcall("java/lang/System", "S", "getProperty", "os.arch")
-## [1] "amd64"
 
-# 6. retrieve architecture of R as well
+# 6. retrieve architecture of R as well (This should again have 64 in it if step
+# 4 and 5 display 64)
 R.Version()$arch
-## [1] "x86_64"
 @
-Now what you want to make sure, in case something is not working correctly with \texttt{rJava}, is if the architectures of \java\ \textit{see step 4}, your operating system \textit{see step 5} and your version of \r\ \textit{see step 6} match.
+Now what you want to make sure, in case something is not working correctly with \texttt{rJava}, is if the architectures of \java, your operating system and your version of \R\ match (\textit{see comments 4., 5., and 6. in above's code chunk}).
 
-Once this is done, you should install the package \texttt{devtools} \citep{wickham2016devtools}, which permits installing \R\ packages from \github.
+Once this is done, you should install the package \texttt{devtools} \citep{wickham2016devtools}, which permits installing \R\ packages from GitHub.
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 install.packages("devtools")
 @
-Since we only need one function from the package \texttt{devtools} at this point, it is not neccessary to invoke the \texttt{library} command to load the whole package. Instead you can write \texttt{"devtools::"} and then type the function you want 
-to use. \footnote{The option "args = "--no-multiarch"" should normally not be neccessary but prevents errors on some operating systems, since \texttt{devtools} tries to test both 32-bit and 64-bit version of a package---which inevitably causes an error as only one architecture of \java\ is available.}
+Since we only need one function from the package \texttt{devtools} at this point, it is not neccessary to invoke the \texttt{library} command to load the whole package. Instead you can write \texttt{``devtools::''} and then type the function you want 
+to use.\footnote{The option \code{args = "--no-multiarch"} should normally not be neccessary but prevents errors on some operating systems. Since \texttt{devtools} tries to test both 32-bit and 64-bit version of a package during installation, the process inevitably fails as only one architecture of \java\ is available.}
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 devtools::install_github("leifeld/dna/rDNA", 
                          args = "--no-multiarch")
 @
-After this is done as well, the final step of the installation is to test if \rdna\ can loaded correctly and to perform a basic operation with it---opening \dna\ from within \R. In order to do so, you first need to download \dna, which can also be done in \R\ with the \texttt{download.file}-command (\textit{see section~\ref{sec:rdna} for more information about this code chunk}).
+After this is done as well, the final step of the installation is to test if \rdna\ can be loaded into \R\ correctly and to perform a basic operation with it---opening \dna\ from within \R. In order to do so, you first need to download \dna, which can also be done in \R\ with the \texttt{download.file} command (\textit{see Section~\ref{sec:rdna} for more information about this code chunk}).
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 # download two files neccessary to test rDNA
 download.file(
@@ -327,7 +381,7 @@ download.file(
   destfile = "sample.dna", mode = "wb")                 # download sample file
 
 # load library
-library(rDNA)
+library("rDNA")
 
 # initialise the file you just downloaded
 dna_init("dna-2.0-beta19.jar")
@@ -335,14 +389,17 @@ dna_init("dna-2.0-beta19.jar")
 # start up DNA from R with the sample file to see if everything worked
 dna_gui(infile = "sample.dna")
 @
+If these commands can be executed correclty, you are ready and set to use both \dna\ and \rdna\. How you can do so will be described in the rest of this manual.
 
-\section{Using DNA:Preparation of your DNA Workspace} \label{sec:dna-prep}
-After installing the program (see Section~\ref{installation}), you can now create your first DNA database for your own research project. How you set up a DNA database will mainly depend on the needs of your personal research design---which should usually be clear before you start analysing data. Therefore, \dna\ can be customised during the creation of a new database in accordance with how you are planning to use the tool. Note, however, that several of the decisions made during the initial setup of a database can thus not be altered, except by creating a new database and importing the old codes and data.
+\section{Using DNA: Preparation of your DNA Workspace} \label{sec:dna-prep}
+\sectionauthor{Felix Rolf Bossner and Johannes Gruber}
+
+After installing the program (see Section~\ref{sec:installation}), you can now create your first DNA database for your own research project. How you set up a DNA database will mainly depend on the needs of your personal research design---which should usually be clear before you start analysing data. Therefore, \dna\ can be customised during the creation of a new database in accordance with how you are planning to use the tool.
 
 \subsection{Creating a new DNA database}\label{sec:createnewdb}
-In order to create a new DNA database-file, you have to click on the index tab \textbf{"File"} (in the upper left corner of your DNA program window) and select the option \textbf{"New DNA database"} (\textit{cf. figure~\ref{fig:newdb}}). As a result, a new window will open (\textit{cf. figure~\ref{fig:dbchoose}}), in which you find a menu that provides you with a step-by-step guidance for specifying the configuration of your personal DNA project. 
+In order to create a new DNA database file, you have to click on the index tab \textbf{``File''} (in the upper left corner of your DNA program window) and select the option \textbf{``New DNA database''} (\textit{see Figure~\ref{fig:newdb}}). As a result, a new window will open (\textit{see Figure~\ref{fig:dbchoose}}), in which you find a menu that provides you with a step-by-step guidance for specifying the configuration of your personal DNA database 
 \begin{figure}
-  \includegraphics[width=\linewidth]{3-1-newDatabase}
+  \includegraphics[width=\linewidth]{04-1-newDatabase}
   \caption{Starting a new Database}
   \label{fig:newdb}
 \end{figure}
@@ -350,19 +407,19 @@ In order to create a new DNA database-file, you have to click on the index tab \
 
 
 \begin{figure}
-  \includegraphics[width=\linewidth]{3-3-chooseDB}
+  \includegraphics[width=\linewidth]{04-3-chooseDB}
   \caption{Choose if database will be stored locally or remotly}
   \label{fig:dbchoose}
 \end{figure}
 
-Clicking on the first tab in the sidebar of this menu---\textbf{"Database"} (\textit{cf. figure~\ref{fig:dbchoose}})---opens a menu, which allows you to choose the file-name and storage location of your database. For this first step of your set-up, DNA provides you with two options in respect to the type of database, in which your data is stored. Which of these options best fits your research project is dependent on the circumstances of your coding process:
+Clicking on the first tab in the sidebar of this menu---\textbf{``Database''} (\textit{see Figure~\ref{fig:dbchoose}})---opens a menu, which allows you to choose the file name and storage location of your database. For this first step of your set-up, DNA provides you with two options in respect to the type of database, in which your data is stored. Which of these options best fits your research project is dependent on the circumstances of your coding process:
 
 \begin{addmargin}[1cm]{1cm}
-The preset option \textbf{"Local .dna file"} means, that the dataset is stored in a local file
+The preset option \textbf{``Local .dna file''} means, that the dataset is stored in a local file
 \footnote{technically an SQLite file.
-} on your PC or device. This file, with the file extension .dna, can be moved on your machine, sent via email, uploaded and shared via a cloud file hosting service---such as Dropbox---and can generally be treated in the same way as any other file PC users are familiar with. This will be sufficient in most user scenarios, for example, if you employ a single coder working on a single computer, if multiple coders work on a single dataset at non-overlapping intervals or when multiple coders work at the same time on different datasets, which you merge after the coding process (\textit{see section~\ref{subsec:merge}}). For most users, this simpler option will be sufficient and in order to use \dna\ it is not necessary to be familiar with setting up and managing an SQLite or MySQL-database.
+} on your PC or device. This file, with the file extension .dna, can be moved on your machine, sent via email, uploaded and shared via a cloud file hosting service---such as Dropbox---and can generally be treated in the same way as any other file PC users are familiar with. A local .dna file will be sufficient in most user scenarios, for example, if you employ a single coder working on a single computer, if multiple coders work on a single dataset at non-overlapping intervals or when multiple coders work at the same time on different datasets, which you merge after the coding process (\textit{see Section~\ref{subsec:merge}}). For most users, this simpler option will adequate in order to use \dna\. It is not necessary to be familiar with setting up and managing an SQLite or MySQL database. If you think, the scenarios described above cover your intended use of \dna, you can now jump to the next section and start \fullref{sec:createlocal}.
 
-However, for more experienced user or research projects in which several coders want to work on the same database at the same time, a second option was included into \dna\: \textbf{"Remote database on a server"}. This stores your data in a  MySQL database which could be stored locally on your machine---which would defy the purpose though---on a private sever---such as a Network-attached storage (NAS)---or on an online Cloud server. You should select this option if you employ a single coder working on multiple devices or multiple coders working on a single dataset at the same time. The preconditions for using this type of storage are that all coders have a stable connection to the database during the coding process---e.g. via the internet---and that you \href{https://dev.mysql.com/doc/mysql-getting-started/en/}{set up an online MySQL database} in advance.
+However, for more experienced user or research projects in which several coders want to work on the same database at the same time, a second option was included into \dna\: \textbf{``Remote database on a server''}. This stores your data in a  MySQL database which could be stored locally on your machine---which would defy the purpose though---on a private sever---such as a Network-attached storage (NAS)---or on an online Cloud server. You should select this option if you employ a single coder working on multiple devices or multiple coders working on a single dataset at the same time. The preconditions for using this type of storage are that all coders have a stable connection to the database during the coding process---e.\,g.\, via the internet---and that you \href{https://dev.mysql.com/doc/mysql-getting-started/en/}{set up an online MySQL database} in advance. If this is how you want to proceed, you can now jump directly to the section which descibes the neccessary steps for  \fullref{subsec:usingremote}.
 \end{addmargin}
 
 
@@ -371,67 +428,62 @@ However, for more experienced user or research projects in which several coders 
 \subsubsection{Creating a local DNA file}\label{sec:createlocal}
 \begin{enumerate}
 \item{
-Click on the button \textbf{"Browse"} (\textit{cf. figure~\ref{fig:dbchoose}}). Now a pop-up menu---similiar to the one shown in \textit{figure~\ref{fig:path}}---should be opened.
+Click on the button \textbf{``Browse''} (\textit{see Figure~\ref{fig:dbchoose}}). Now a pop-up menu---similiar to the one shown in \textit{Figure~\ref{fig:path}}---should be open.
 }
 
 \item{
-In this pop-up menu, you can choose the storage location of your database on your local device from the \textbf{"Save in"}-slide down menu, enter the name of your database in the field \textbf{"File Name"} and confirm your choices by pressing the \textbf{"Save"}-Button \textit{(cf. figure~\ref{fig:path}}). Now the pop-up menu will close.
+In this pop-up menu, you can choose the storage location of your database on your local device from the \textbf{``Save in''} slide down menu. Enter the name of your database in the field \textbf{``File Name''} and confirm your choices by pressing the \textbf{``Save''} button \textit{(see Figure~\ref{fig:path}}). Now the pop-up menu will close.
 }
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\linewidth]{3-4-path}
+  \includegraphics[width=0.75\linewidth]{04-4-path}
   \caption{Choose location of database window}
   \label{fig:path}
 \end{figure}
 
 \item{
-\textbf{Now it is important, that you confirm your choices again by pressing the "Apply"-Button} (\textit{cf. figure~\ref{fig:apply}}). If you forget to press this Button, you cannot create the database in the final step, because the program will report "No database selected" (\textit{cf. figure~\ref{fig:nodb}}).
+\textbf{Next, it is important, that you confirm your choices again by pressing the ``Apply'' button} (\textit{see Figure~\ref{fig:apply}}). If you forget to press this button, you cannot create the database in the final step, because the program will report ``No database selected'' (\textit{see Figure~\ref{fig:nodb}}).
 }
 \begin{figure}
-  \includegraphics[width=\linewidth]{3-5-apply}
+  \includegraphics[width=\linewidth]{04-5-apply}
   \caption{Apply database choice}
   \label{fig:apply}
 \end{figure}
 \end{enumerate}
 
-If you just employ a single coder and don´t want to change or supplement the preset standard research variables ("person", "organization", "concept", "agreement") or types of codeable statements ("Statement", "Annotation"), you can now proceed directly to the \hyperref[subsec:finalstep]{final step}
-. If you use this manual as a Beginner´s Tutorial for working with \dna, however, it would be helpful to follow the steps outlined in sections~\ref{subsec:userman} and \ref{subsec:stattype} in order to gain a better understanding of the \dna's potential uses and its functions.
+If you just employ a single coder and don´t want to change or supplement the preset standard research variables (``person'', ``organization'', ``concept'', ``agreement'') or types of codeable statements (``Statement'', ``Annotation''), you can now proceed directly to the \hyperref[subsec:finalstep]{final step}. If you use this manual as a beginner´s tutorial for working with \dna, however, it would be helpful to follow the steps outlined in sections~\ref{subsec:userman} and \ref{subsec:stattype} in order to gain a better understanding of the \dna's potential uses and its functions.
 
 
 
 
 \subsubsection{Creating and using a remote database (MySQL)}\label{subsec:usingremote}
-Before you can configure \dna\ for working with a remote MySQL database, it is necessary to execute at least three basic operations in MySQL (\textit{cf. figure~\ref{fig:mysql}}).
-\footnote{for a detailed introduction to database management with MySQL cf. \href{https://dev.mysql.com/doc/mysql-getting-started/en/}{dev.mysql.com/doc/mysql-getting-started}.
+Before you can configure \dna\ for working with a remote MySQL database, it is necessary to execute at least three basic operations in MySQL (\textit{see Figure~\ref{fig:mysql}}).\footnote{For a detailed introduction to database management with MySQL see \href{https://dev.mysql.com/doc/mysql-getting-started/en/}{dev.mysql.com/doc/mysql-getting-started}.
 }
 \begin{figure}
-  \includegraphics[width=\linewidth]{3-6-mysql}
+  \includegraphics[width=\linewidth]{04-6-mysql}
   \caption{Create MySQL database}
   \label{fig:mysql}
 \end{figure}
 
 \begin{enumerate}
 \item{
-You have to create a database on your MySQL-server (\textit{usually by the command} 
-\textbf{"CREATE DATABASE 'DatabaseName' "})
+You have to create a database on your MySQL server (\textit{usually by the command} 
+\textbf{\code{CREATE DATABASE 'DatabaseName'}})
 }
 \item{
-As you probably don´t want to allow all coders access to all other databases stored on your MySQL-server, you should create distinct user-profile(s) for the coding process of your DNA-project. Even if \dna\ itself allows for 
-\hyperref[subsec:userman]{managing multiple different coder-roles}, it is recommendable to create separate user-profiles for each of the individual coders---especially if they simultaneously edit the content of your database. It is also advisable to create passwords for the access to your database, not only for safety reasons but also because DNA sometimes has problems with signing in users without a password. Consequently you would use the 
-\textbf{"CREATE USER 'Username'@'\%' IDENTIFIED BY 'Password'"}
-- Command. It should be noted, that---if necessary---in this step you can restrict the respective users access to your database to a specific device (by replacing '\%' through a particular server-address).
+As you probably don´t want to allow all coders access to all other databases stored on your MySQL server, you should create distinct user profile(s) for the coding process of your \dna\ project. Even if \dna\ itself allows for 
+\hyperref[subsec:userman]{managing multiple different coder roles}, we recommend to create separate user profiles for each of the individual coders---especially if they simultaneously edit the content of your database. It is also advisable to create passwords for the access to your database, not only for safety reasons but also because DNA sometimes has problems with signing in users without a password. Consequently you would use the 
+\textbf{\code{CREATE USER 'Username'@'\%' IDENTIFIED BY 'Password'}}
+  Command. It should be noted, that---if necessary---in this step you can restrict the respective users access to your database to a specific device (by replacing '\%' through a particular server address).
 }
 \item{
 Finally you, have to equip the users with the necessary rights to edit your database. For this, you use the 
-\textbf{"GRANT ALL PRIVILEGES ON Databasename. TO 'Username'@'\%'*"}
--Command, because you can specify distinct user roles and rights with DNA itself in \hyperref[subsec:userman]{the next step}
-, which is particularly designed for discourse network-analytical coding purposes.
+\textbf{\code{GRANT ALL PRIVILEGES ON Databasename.* TO 'Username'@'\%'}} command, because you can specify distinct user roles and rights with DNA itself in \hyperref[subsec:userman]{the next step}, which is specifically designed for discourse network-analytical coding purposes.
 }
 \end{enumerate}
-Once the MySQL-database is set up, you only have to select the option \textbf{"Remote database on a server"} in the first tab of the sidebar menu \textbf{"Database"} in DNA (\textit{cf. \fullref{sec:createnewdb}}) and enter the respective username and password created in the previous step in the respective fields \textbf{"User"} and \textbf{"Password"} as well as to specify the server-address of the database, with which you want to connect, in the field \textbf{"mysql://"}. If you want to access the database remotely from another device, you have to indicate the URL or IP-address of your host-server, the port (which is 3306 in default, but can be \href{https://dev.mysql.com/doc/refman/5.5/en/connecting.html}{configured manually})and the name of your database in the format \textbf{"Hostserveraddress:Port/Databasename"}. If you use DNA on the device hosting the database you can instead use the configuration shown in \textit{figure~\ref{fig:localhost}} (\textbf{"localhost"/Databasename"}). By clicking the button \textbf{"Check"} you can now check if DNA is able to connect to your database. If this is successful, you will receive the message \textbf{"Ok. Tables will be created"} \textit{(cf. figure~\ref{fig:localhost})}; if not, DNA will report  \textbf{"Error: Connection could not be established"}. In case of the latter, you should check the validity of your server address, username and password and---if necessary---repeat the steps outlined above. It should be noted that---for security reasons---MySQL doesn´t allow remote access with the "root"-superuser-profile in most cases. Similar to the generation of a local .dna file, it is finally important, that you confirm your choices again by pressing the \textbf{"Apply"-Button} \textit{(cf. figure~\ref{fig:localhost})}. If you forget to press this Button, you cannot create the database in the \hyperref[subsec:finalstep]{final step}
-, because the program will report "No database selected" \textit{(cf. figure~\ref{fig:nodb})}. 
+Once the MySQL database is set up, you only have to select the option \textbf{``Remote database on a server''} in the first tab of the sidebar menu \textbf{``Database''} in DNA (\textit{see \fullref{sec:createnewdb}}) and enter the respective username and password created in the previous step in the respective fields \textbf{``User''} and \textbf{``Password''} as well as to specify the server address of the database, with which you want to connect, in the field \textbf{``mysql://''}. If you want to access the database remotely from another device, you have to indicate the URL or IP-address of your host server, the port (which is 3306 in default, but can be \href{https://dev.mysql.com/doc/refman/5.5/en/connecting.html}{configured manually}) and the name of your database in the format \textbf{``Hostserveraddress:Port/Databasename''}. If you use DNA on the device hosting the database you can instead use the configuration shown in \textit{Figure~\ref{fig:localhost}} (\textbf{``localhost/Databasename''}). By clicking the button \textbf{``Check''} you can now check if DNA is able to connect to your database. If this is successful, you will receive the message \textbf{``Ok. Tables will be created''} \textit{(see Figure~\ref{fig:localhost})}; if not, DNA will report  \textbf{``Error: Connection could not be established''}. In case of the latter, you should check the validity of your server address, username and password and---if necessary---repeat the steps outlined above. It should be noted that---for security reasons---MySQL doesn´t allow remote access with the ``root'' superuser-profile in most cases. Similar to the generation of a local .dna file, it is finally important, that you confirm your choices again by pressing the \textbf{``Apply'' button} \textit{(see Figure~\ref{fig:localhost})}. If you forget to press this button, you cannot create the database in the \hyperref[subsec:finalstep]{final step}, because the program will report ``No database selected'' \textit{(see Figure~\ref{fig:nodb})}. 
 \begin{figure}
-  \includegraphics[width=\linewidth]{3-7-localhost}
+  \includegraphics[width=\linewidth]{04-7-localhost}
   \caption{Connecting to local MySQL database}
   \label{fig:localhost}
 \end{figure}
@@ -441,16 +493,16 @@ Once the MySQL-database is set up, you only have to select the option \textbf{"R
 
 
 \subsection{User Management: Multiple Coders and Permissions}\label{subsec:userman}
-This second step of preparing your DNA workspace allows you to generate multiple user identities with divergent sets of rights for different coders. Thus, you can specify for each coder, which parts of the dataset each user can see or edit and thereby pre-structure your coding and research process. In order to do so, click on  second tab \textbf{"Coder"} in the sidebar of the "Create new database"-menu (\textit{cf. figure~\ref{fig:addcoder}}).
+This second step of preparing your DNA workspace allows you to generate multiple user identities with different sets of rights for different coders. Thus, you can specify for each coder, which parts of the dataset each user can see or edit and thereby pre-structure your coding and research process. In order to do so, click on  second tab \textbf{``Coder''} in the sidebar of the ``Create new database'' menu (\textit{see Figure~\ref{fig:addcoder}}).
 \begin{figure}
-  \includegraphics[width=\linewidth]{3-8-addcoder}
+  \includegraphics[width=\linewidth]{04-8-addcoder}
   \caption{Adding a second coder to the database}
   \label{fig:addcoder}
 \end{figure}
 
-In the main window (\textit{cf. figure~\ref{fig:addcoder}}) you can now see a list with all coders and how many of the 12 possible actions they are permitted to perform. Now you can either add a new user-profile by clicking the \textbf{"Add"}-button (\textit{cf. figure~\ref{fig:addcoder}}) or select an existing coder and adjust her/his users rights by clicking on the user and then on the \textbf{"Edit"}-button (\textit{cf. figure~\ref{fig:editcoder}}). Both options will open the pop-up menu shown in (\textit{cf. figure~\ref{fig:coderdetail}}).
+In the main window (\textit{see Figure~\ref{fig:addcoder}}) you can now see a list with all coders and how many of the 12 possible actions they are permitted to perform. Now you can either add a new user profile by clicking the \textbf{``Add''} button (\textit{see Figure~\ref{fig:addcoder}}) or select an existing coder and adjust her/his users rights by clicking on the user and then on the \textbf{``Edit''} button (\textit{see Figure~\ref{fig:editcoder}}). Both options will open the pop-up menu shown in (\textit{see Figure~\ref{fig:coderdetail}}).
 \begin{figure}
-  \includegraphics[width=\linewidth]{3-9-coderdetail}
+  \includegraphics[width=\linewidth]{04-9-coderdetail}
   \caption{Configuring coder permissions}
   \label{fig:coderdetail}
 \end{figure}
@@ -458,76 +510,69 @@ In the main window (\textit{cf. figure~\ref{fig:addcoder}}) you can now see a li
 This pop-up menu allows you to configure an individual profile for each coder in three simple steps:
 \begin{enumerate}
 \item{
-You can choose the \textbf{colour} for the coder (\textit{cf. 1, figure~\ref{fig:coderdetail}}). It is recommended to choose different---if possible---divergent colours for each coder, because this permits you to detect at the first glance, which user coded which statement, as every coded statement is marked in the individual colour of its respective coder \textit{(cf. middle column of figure~\ref{fig:chacoder})}.
+You can choose the \textbf{colour} for the coder (\textit{see Figure~\ref{fig:coderdetail}, step 1}). It is recommended to choose different---if possible---divergent colours for each coder, because this permits you to detect at the first glance, which user coded which statement, as every coded statement is marked in the individual colour of its respective coder \textit{(see middle column of Figure~\ref{fig:chacoder})}.
 }
 \item{
-You can enter the preferred name of each coder in the field \textbf{"Name"}. If possible with respect to data protection rules, it is recommended to use the real names of the coders. This makes it easier for them to select their profile (in the upper left of the main program window) the first time they start the program (\textit{cf. figure~\ref{fig:chacoder}}).
+You can enter the preferred name of each coder in the field \textbf{``Name''}. If possible with respect to data protection rules, it is recommended to use the real names of the coders. This makes it easier for them to select their profile (in the upper left of the main program window) the first time they start the program (\textit{see Figure~\ref{fig:chacoder}}).
 }
 \item{
-The final step allows you to configure the \textbf{permissions} of each coder individually by (de)selecting the respective rights via a click (\textit{cf. 3, figure~\ref{fig:coderdetail}}). Each new user has all of the 12 configurable permissions in the preset mode. Which parts of the dataset an individual coder should be able to see or edit, should depend on your coding process. For better orientation a few practical implications of the 12 configurable permissions are listed in \textit{table~1}
-%\ref{tab:permissions}
-. Please keep in mind, that every user can see and change to other user identities either accidentally or because of non-compliance, as s/he has to select her/his role the first time s/he starts the program and can change her/his role anytime \textit{(cf. above \& figure~\ref{fig:chacoder})}}
+The final step allows you to configure the \textbf{permissions} of each coder individually by (de)selecting the respective rights via a click (\textit{see Figure~\ref{fig:coderdetail}, step 3}). Each new user has all of the 12 configurable permissions in the preset mode. Which parts of the dataset an individual coder should be able to see or edit, should depend on your coding process. For better orientation a few practical implications of the 12 configurable permissions are listed in \textit{Table~\ref{tab:permissions}}
+. Please keep in mind, that every user can see and change to other user identities either accidentally or because of non-compliance, as s/he has to select her/his role the first time s/he starts the program and can change her/his role anytime \textit{(see above and Figure~\ref{fig:chacoder})}}
 \end{enumerate}
 \begin{figure}
+  \includegraphics[width=\linewidth]{04-10-chacoder}
   \caption{Change coder identity}
-  \includegraphics[width=\linewidth]{3-10-chacoder}
   \label{fig:chacoder}
 \end{figure}
 
 \begin{figure}
+  \includegraphics[width=\linewidth]{04-11-edicoder}
   \caption{Edit coder details}
-  \includegraphics[width=\linewidth]{3-11-edicoder}
   \label{fig:editcoder}
 \end{figure}
 
-Finally you approve your choices by clicking the \textbf{OK}-button \textit{(cf. 4, figure~\ref{fig:coderdetail})}. It is possible to change the settings either in the "new database"-menu by selecting the respective user and clicking the \textbf{"Edit"}-Button (\textit{cf. figure~\ref{fig:chacoder}}) or changing the coder settings in the main menu.
+Finally you approve your choices by clicking the \textbf{OK} button \textit{(see 4, Figure~\ref{fig:coderdetail})}. It is possible to change the settings either in the ``new database'' menu by selecting the respective user and clicking the \textbf{``Edit''} button (\textit{see Figure~\ref{fig:chacoder}}) or changing the coder settings in the main menu.
 %Felix wanted to link this somewhere(github.com/).
 
 % table doesn't float, which is not ideal but seems to be the only way it breaks over pages?
-%\rowcolors{1}{}{lightgray}
-\begin{tabularx}{\linewidth}{@{}c X@{}}
-\caption{User permissions explained}\\%\label{tab:permissions}\\
+%\rowcolors{1}{}{lightgray} % There are problems with knitr and xcolor, so this works only when compiling in latex directly
+\begin{tabularx}{\linewidth}{@{}c X@{}}\label{tab:permissions}
+\caption{User permissions explained}\\
 \toprule
 \textbf{Permission} & \textbf{Practical Implication} \\
 \midrule
 \endhead
-% TODO: add refs to respective sections
-  add documents & The user can add new documents (= raw data) manually (via copy \& paste or retyping) to the database $\Rightarrow$ user has (also) a research function \\
+  add documents & The user can add new documents (i.e. raw data) manually (via copy and paste or retyping) to the database $\Rightarrow$ user has (also) a research function. \\
   
-  import documents & The user can import new documents from other sources like .txt or other .dna files to the database or recode the metadata of multiple documents $\Rightarrow$ user has (also) a research function \\
+  import documents & The user can import new documents from other sources like .txt or other .dna files to the database or recode the metadata of multiple documents $\Rightarrow$ user has (also) a research function. \\
 
-  delete documents & The user can delete documents from the database or dataset. This option requires at least the other permission "view others' documents"  if the user has an organizing or editing function (structuring database for coding by other users) or the permission "add documents" and "add statements" if the coder 
-  %researches?
-  determines own codes and organizes her/his own set of data. \\
+  delete documents & The user can delete documents from the database or dataset. This option requires at least the other permission ``view others' documents''  if the user has an organizing or editing function (structuring database for coding by other users) or the permission ``add documents'' and ``add statements'' if the coder determines own codes and organizes her/his own set of data. \\
 
-  edit documents & The user can edit her/his own documents (= raw data)  but not necessarily the codings in these documents that were made by other users---which would require the permission "edit others' statements"---or the documents uploaded by other users---which requires the permission "edit others' documents". This option requires at least the other permission "add documents" or "import documents" and should be selected  if the user 
-  %researches?
-  determines own codes and organizes her/his own set of data or acts as a researcher 
+  edit documents & The user can edit her/his own documents (i.e. raw data)  but not necessarily the codings in these documents that were made by other users---which would require the permission ``edit others' statements''---or the documents uploaded by other users---which requires the permission ``edit others' documents''. This option requires at least the other permission ``add documents'' or ``import documents'' and should be selected  if the user determines own codes and organizes her/his own set of data or acts as a researcher
   %?
   for the other coders. \\
 
-  view others' documents & The user can view the documents uploaded by other users. This option is necessary for a collaborative coding process in which only a part of the users 
-  %researches? 
-  selects and uploads the raw data (=documents) for all other users. The option should not be selected if each coder comes up with own codes and organizes her/his own set of data. \\
+  view others' documents & The user can view the documents uploaded by other users. This option is necessary for a collaborative coding process in which only a part of the users selects and uploads the raw data (i.e. documents) for all other users. The option should not be selected if each coder comes up with own codes and organizes her/his own set of data. \\
 
-  edit others' documents & The user can edit the documents uploaded by other users. This option requires at least the other permission "view others' documents" and should be selectedif a user organizes or edits the raw data provided by other users. \\
+  edit others' documents & The user can edit the documents uploaded by other users. This option requires at least the other permission ``view others' documents'' and should be selected if a user organizes or edits the raw data provided by other users. \\
 
-  add statements & The coder actually codes the data by creating and editing statements. If only a part of the users select and upload the raw data  this option requires the additional permission "view others' documents". If the coder suggests own codes and organizes her/his own set of data this option requires either the additional permission \textit{"add documents"} or \textit{"import documents"}. \\
+  add statements & The coder actually codes the data by creating and editing statements. If only a part of the users select and upload the raw data  this option requires the additional permission ``view others' documents''. If the coder suggests own codes and organizes her/his own set of data this option requires either the additional permission \textit{``add documents''} or \textit{``import documents''}. \\
 
-  view others' statements & The coder can view the statements coded by other users. For example  the Coder "DNA User" would not see the yellow statement of the Coder "Admin" in figure~\ref{fig:chacoder} if this option was deselected for her/his user role. This option should not be selected if you want to establish a blind coding process. \\
+  view others' statements & The coder can view the statements coded by other users. For example  the Coder ``DNA User'' would not see the yellow statement of the Coder ``Admin'' in Figure~\ref{fig:chacoder} if this option was deselected for her/his user role. This option should be de-selected if you want to establish a blind coding process. \\
 
-  edit others' statements & The coder can edit or correct the statements coded by other users. This option requires at least the other permission "view others' statements" and should only be selected for few users with an \textit{organizing}  \textit{controlling} or \textit{editing function}. \\
+  edit others' statements & The coder can edit or correct the statements coded by other users. This option requires at least the other permission ``view others' statements'' and should only be selected for few users with an \textit{organizing},  \textit{controlling} or \textit{editing function}. \\
 
-  add coders & The user can add new coders (\textit{see section~\ref{subsec:userman}}). This option should only be selected for few users with an \textit{organizing} function. \\
+  add coders & The user can add new coders (\textit{see Section~\ref{subsec:userman}}). This option should only be selected for few users with an \textit{organizing} function. \\
 
-  edit statement types & The user can change or complement the variables of interest (\textit{see section~\ref{subsec:stattype}}). This option should only be selected for very few users or the researchers
-  %
+  edit statement types & The user can change or complement the variables of interest (\textit{see Section~\ref{subsec:stattype}}). This option should only be selected for very few users or the researchers
+  %?
   themselves because possible adjustment of these variables is usually only necessary in cases when the research design and/or research questions change fundamentally. \\
   
-  edit regex settings & The user can specify keywords which are highlighted in the text , along with a text color
-  %(\textit{see section~\ref{subsec:}})
-  . For example, in \textit{figure~\ref{fig:chacoder}} the word "colors" is highlighted in the raw data text (middle column), because it was specified as a keyword in the \textit{regex highlighter sidebar} in the bottom left of the DNA window. If a user does not have the right to edit the regex setting, the buttons "Add" and "Remove" in this highlighter would be hidden, but the keyword would nevertheless be visibly highlighted in the text and listed in the regex highlighter sidebar. Thus, if you specify a distinct set of theory-based keywords in advance in order to render the coding procedure semi-automatic
-  %?
+  edit regex settings & The user can specify keywords which are highlighted in the text, along with a text color.
+  %To DO%
+  %(\textit{see Section~\ref{subsec:}}).%
+  For example, in \textit{Figure~\ref{fig:chacoder}} the word ``colors'' is highlighted in the raw data text (middle column), because it was specified as a keyword in the \textit{regex highlighter sidebar} in the bottom left of the DNA window. If a user does not have the right to edit the regex setting, the buttons ``Add'' and ``Remove'' in this highlighter would be hidden, but the keyword would nevertheless be visibly highlighted in the text and listed in the regex highlighter sidebar. Thus, if you specify a distinct set of theory based keywords in advance in order to render the coding procedure semi-automatic%
+  %is semi-automatic the correct term?%
   , you should not enable this option or select it only for \textit{few users}, as the respective coder could change the keywords. However, if you don´t have a theoretically relevant set of keywords in advance or just specify them as a assistance for your coders, you can allow them to formulate such keywords by themselves. \\
 
 \bottomrule
@@ -538,19 +583,19 @@ Finally you approve your choices by clicking the \textbf{OK}-button \textit{(cf.
 
 
 \subsection{Statement Types and Variables} \label{subsec:stattype}
-Clicking on the third tab in the sidebar of the "Create new database"-menu - \textbf{"Statement Types"} (\textit{cf. figure~\ref{fig:stattype}}) - opens a menu, which allows you to adjust or supplement either the variables or the types of statements, which your coders derive from the raw data.
+Clicking on the third tab in the sidebar of the ``Create new database'' menu---\textbf{``Statement Types''} (\textit{see Figure~\ref{fig:stattype}})---opens a menu, which allows you to adjust or supplement either the variables or the types of statements, which your coders derive from the raw data.
 \begin{figure}
+  \includegraphics[width=0.9\linewidth]{04-12-stattype}
   \caption{Edit Statement Types}
-  \includegraphics[width=0.9\linewidth]{3-12-stattype}
   \label{fig:stattype}
 \end{figure}
 
 \subsubsection{Adjusting the variables of interest} \label{sec:adjusvarint}
-The statement type \textbf{"DNA Statement"} represents a text portion of your raw data, where an actor reveals her/his opinion/belief/etc. about an issue. Thus, the main task of your coder(s) is to identify such text portions and gain the relevant data about the actor or his opinion/belief/etc. Your research question or theory should not only dictate what kind of information should be coded as statements but also which relevant variables of this information should be captured by the coder. As you can see in the "Statement Types"-menu, DNAs default configuration allows capturing four variables. Selecting \textbf{"DNA Statement"} and clicking on the button \textbf{"Edit"} (\textit{cf. figure~\ref{fig:stattype}}) opens a pop-up window (\textit{cf. figure~\ref{fig:statdetail}}), which reveals the nature of this four preconfigured variables, along whose lines the coders can collect information:
+The statement type \textbf{``DNA Statement''} represents a text portion of your raw data, where an actor reveals her/his opinion/belief/etc. about an issue. Thus, the main task of your coder(s) is to identify such text portions and gain the relevant data about the actor or his opinion/belief/etc. Your research question or theory should not only dictate what kind of information should be coded as statements but also which relevant variables of this information should be captured by the coder. As you can see in the ``Statement Types'' menu, DNAs default configuration allows capturing four variables. Selecting \textbf{``DNA Statement''} and clicking on the button \textbf{``Edit''} (\textit{see Figure~\ref{fig:stattype}}) opens a pop-up window (\textit{see Figure~\ref{fig:statdetail}}), which reveals the nature of this four preconfigured variables, along whose lines the coders can collect information:
 
 \begin{figure}
   \centering
-  \includegraphics{3-13-statdetail}
+  \includegraphics{04-13-statdetail}
   \caption{Edit Statement Type details}
   \label{fig:statdetail}
 \end{figure}
@@ -562,49 +607,49 @@ The statement type \textbf{"DNA Statement"} represents a text portion of your ra
   \item a dummy variable indicating whether the actor \textbf{agrees} with the concept or not.
 \end{itemize}
 
-Furthermore the pop-up window depicted in \textit{figure~\ref{fig:statdetail}} shows, that each variable is assigned to a specific data type: While "person", "organization" and "concept"---according to their nature as nominal variables---will be coded by a short text, "agreement" as a dichotomous variable will be coded as a 
+Furthermore the pop-up window depicted in \textit{Figure~\ref{fig:statdetail}} shows, that each variable is assigned to a specific data type: While ``person'', ``organization'' and ``concept''---according to their nature as nominal variables---will be coded by a short text, ``agreement'' as a dichotomous variable will be coded as a 
 \href{https://en.wikipedia.org/wiki/Boolean_data_type#Python.2C_Ruby.2C_and_JavaScript}{boolean data type}
-, which accordingly only allows for two forms (either agreement or non-agreement). Neither the data type nor the name of the variables can be changed directly. However by selecting a variable and clicking on the \textbf{trash symbol} (on the right side of the "Add Variable"-button, \textit{cf. 4, figure~\ref{fig:statdetail}}) you can delete a variable and subsequently replace it by a new one. Generating a new variable---either to replace one of the preconfigured variables or because you are interested in further or other than the preset variables---is possible in five simple steps:
+, which accordingly only allows for two forms (either agreement or non-agreement). Neither the data type nor the name of the variables can be changed directly. However by selecting a variable and clicking on the \textbf{trash symbol} (on the right side of the ``Add Variable'' button, \textit{Figure~\ref{fig:statdetail}}, step 4) you can delete a variable and subsequently replace it by a new one. Generating a new variable---either to replace one of the preconfigured variables or because you are interested in an additional or a different set of variables---is possible in five simple steps:
 
 \begin{enumerate}
 \item{
-You have to \textbf{select a existing variable} in order to activate the variable menu (\textit{cf. 1, figure~\ref{fig:statdetail}})
+You have to \textbf{select an existing variable} in order to activate the variable menu (\textit{see 1, Figure~\ref{fig:statdetail}}).
 }
 \item{
-Now you can enter the \textbf{name} of the new variable in the \textbf{text field} at the bottom of the pop-up window (\textit{cf. 2, figure~\ref{fig:statdetail}}). For example, in \textit{figure~\ref{fig:statdetail}} we are interested in collecting the age of the person who makes the statement. Please note, that DNA does not allow spaces in variable names: Putting a space in the variable name will disable the "Add Variable"-button necessary for step 4.
+Now you can enter the \textbf{name} of the new variable in the \textbf{text field} at the bottom of the pop-up window (\textit{see 2, Figure~\ref{fig:statdetail}}). For example, in \textit{Figure~\ref{fig:statdetail}} we are interested in collecting the age of the person who makes the statement. Please note, that DNA does not allow spaces in variable names. Putting a space in the variable name will disable the ``Add Variable'' button necessary for step 4.
 }
 \item{
-Now you can choose the \textbf{data type} of your variable by \textbf{clicking} on one of the \textbf{four options}. In our example, we choose the option "integer", as the age of a person is neither a nominal nor a dichotomous variable, but an 
-\href{https://en.wikipedia.org/wiki/Integer_(computer_science)}{integer number} %common sense?
-) (\textit{cf. 3, figure~\ref{fig:statdetail}}).
+Now you can choose the \textbf{data type} of your variable by \textbf{clicking} on one of the \textbf{four options}. In our example, we choose the option ``integer'', as the age of a person is neither a nominal nor a dichotomous variable, but an 
+\href{https://en.wikipedia.org/wiki/Integer_(computer_science)}{integer number}%
+%Should be common sense. Is link needed?%
+) (\textit{see Figure~\ref{fig:statdetail}, step 3}).
 }
 \item{
-You have to click on the \textbf{"Add-Variable"}-button, which has the form of a \textbf{green plus-symbol} (\textit{cf. 4, figure~\ref{fig:statdetail}}). If this button is disabled, you probably did not select a existing variable (step 1) or have a space in your variable name (cf. step 4).
+You have to click on the \textbf{``Add-Variable''} button, which has the form of a \textbf{green plus symbol} (\textit{see 4, Figure~\ref{fig:statdetail}}). If this button is disabled, you probably did not select a existing variable (step 1) or have a space in your variable name (see step 2).
 }
 \item{
-Click the \textbf{"OK"}-button to confirm your choices (\textit{cf. 5, figure~\ref{fig:statdetail}}).
+Click the \textbf{``OK''} button to confirm your choices (\textit{see Figure~\ref{fig:statdetail}, step 5}).
 }
 \end{enumerate}
 
-Please note, that---for the statement type "DNA Statement"---you should only specify variables, in which you have an actual research interest and that accordingly have to be coded for all statements by all coders. If you are interested in additional and optional information about some statements, you can specify them as variables of the other preconfigured statement type---\textbf{"Annotation"}.
+Please note, that---for the statement type ``DNA Statement''---you should only specify variables, in which you have an actual research interest in and that accordingly have to be coded for all statements by all coders. If you are interested in additional and optional information about some statements, you can specify them as variables of the other preconfigured statement type---\textbf{``Annotation''}.
 
 \subsubsection{Adjusting the statement types}
-There are very few research scenarios, in which it is necessary to complement the two existing types of statements with further statement type or the an adjustment of "DNA statement". One of them would be, if you study two parallel yet divergent research questions, which employ the same dataset \textit{and} the same coders at the same time. In this case, you could \textbf{first rename} the statement type "DNA Statement" by \textbf{selecting} it from the statement type menu, clicking the \textbf{"Edit"}-button (\textit{cf. figure~ref{fig:stattype}}), entering the new name (in this case: "Statement for Research Project 1") in the \textbf{text field on top of the pop-up window} (\textit{cf. figure~\ref{fig:statdetail}}) and pressing the \textbf{"OK"}-button (\textit{cf. 5, figure~\ref{fig:statdetail}}). Subsequently you would open a \textbf{new pop-up window} by clicking on the \textbf{"Add"}-Button in the statement type menu (\textit{left button in figure~ref{fig:stattype}}), \textbf{name} the new statement type (in this case: "Statement for Research Project 2") in the text field on top of the pop-up window and \textbf{choose a color} (different from the other type) by clicking on the colored button next to this text field as well as \textbf{specify the relevant variables} synchronous to the procedure depicted in 
-section~\ref{sec:adjusvarint}
-However, please evaluate carefully, if it is really neccesary for your second research interest that you specify a second statement type or if it would be possible to either conceptualize it as a variable of the existing statement type or study it sequentially or with a different set of coders (and therefore in a differen \dna\-datasets). \textbf{More than two statement types (besides "Statement" and "Annotation") can cause a confusion of the coders and therefore compromise the validity of the coding procedure}.
+There are very few research scenarios, in which it is necessary to complement the two existing types of statements with further ones or with an adjustment of type ``DNA statement''. One of them would be, if you study two parallel yet different research questions, which employ the same dataset \textit{and} the same coders at the same time. In this case, you could \textbf{first rename} the statement type ``DNA Statement'' by \textbf{selecting} it from the statement type menu, clicking the \textbf{``Edit''} button (\textit{see Figure~\ref{fig:stattype}}), entering the new name (in this case: ``Statement for Research Project 1'') in the \textbf{text field on top of the pop-up window} (\textit{see Figure~\ref{fig:statdetail}}) and pressing the \textbf{``OK''} button (\textit{see 5, Figure~\ref{fig:statdetail}}). 
+Subsequently you would open a \textbf{new pop-up window} by clicking on the \textbf{``Add''} button in the statement type menu (\textit{left button in Figure~\ref{fig:stattype}}). Then \textbf{name} the new statement type (in this case: ``Statement for Research Project 2'') in the text field on top of the pop-up window and \textbf{choose a color} (different from the other type) by clicking on the colored button next to this text field. Then you also need to \textbf{specify the relevant variables} synchronous to the procedure depicted in Section~\ref{sec:adjusvarint}.
+However, please evaluate carefully, if it is really neccesary for your second research interest that you specify a second statement type or if it would be possible to either conceptualize it as a variable of the existing statement type or study it sequentially or with a different set of coders (and therefore in a different \dna\ dataset). \textbf{More than two statement types (besides ``Statement'' and ``Annotation'') can cause a confusion of the coders and therefore compromise the validity of the coding procedure}.
 
 \subsection{Final step: Approving your workspace and creating the DNA file} \label{subsec:finalstep}
-Finally, clicking on the last tab in the sidebar of the "Create new database"-menu - \textbf{"Summary"} provides you with a summary of your choices in respect to the configuration of your coding process (\textit{cf. figure~\ref{fig:summary}}). After controlling each of the three information you can now create your database by clicking on the \textbf{"Create database"}-button. If this button is disabled and you get the report ""No database selected" (\textit{cf. figure~\ref{fig:nodb}}), you probably forgot to click the \textbf{Apply-Button} after specifying your database (\textit{cf. step 3 in section~{sec:createlocal}}). After creating the database, the new database will open in the main DNA window (\textit{cf. figure~\ref{fig:newdb}}) and you can proceed towards loading up and organizing the raw data.
+Finally, clicking on the last tab in the sidebar of the ``Create new database'' menu---\textbf{``Summary''}---provides you with a summary of your choices in respect to the configuration of your coding process (\textit{see Figure~\ref{fig:summary}}). After controlling each of the three information you can now create your database by clicking on the \textbf{``Create database''} button. If this button is disabled and you get the error ``No database selected'' (\textit{see Figure~\ref{fig:nodb}}), you probably forgot to click the \textbf{Apply button} after specifying your database (\textit{see Section~\ref{sec:createlocal}, step 3}). After creating the database, the new database will open in the main DNA window (\textit{see Figure~\ref{fig:newdb}}) and you can proceed towards loading up and organizing the raw data.
 \begin{figure}
+  \includegraphics[width=\linewidth]{04-14-summary}
   \caption{Summary of your about to be created \dna\ database}
-  \includegraphics[width=\linewidth]{3-14-summary}
   \label{fig:summary}
 \end{figure}
 
 \begin{figure}
-  \caption{No databse selected (e.g. if choice was not applied)}
-  \includegraphics[width=\linewidth]{3-15-nodb}
-  
+  \includegraphics[width=\linewidth]{04-15-nodb}
+  \caption{No databse selected (e.\,g.\, if choice was not applied)}
   \label{fig:nodb}
 \end{figure}
 
@@ -612,49 +657,50 @@ Finally, clicking on the last tab in the sidebar of the "Create new database"-me
 
 
 
-
+\newpage
 \section{Using DNA: Importing and Organizing your Raw Data} \label{sec:dna-import}
-This section describes how to upload and organize your research project's raw data---i.e. the text files (newspaper articles, press releases etc.) containing the uncoded statements---in DNA. 
+\sectionauthor{Felix Rolf Bossner}
+This section describes how to upload and organize your research project's raw data---i.\,e.\, the text files (newspaper articles, press releases etc.) containing the uncoded statements---in DNA. First it will be layed out how you open an existing database---either locally or from a remote location. Then you will learn how to import new documenst into \dna---either by importing one document at a time or by selecting mutliple documents for import. Finally, we tell you how you can organise the documents in your database and how you can change your docuemtns' metadata.
 
 \subsection{Opening an existing DNA database}
-First of all, you have to choose, in which DNA-Database you want to upload and process your data. Thus, you either
-\hyperref{sec:createnewdb}{generate a new}
-or open an existing \dna-database. To open a \dna-database, simply follow the steps depicted in Figure 1: First, click on the index tab \textbf{"File"} and select the option \textbf{"Open \dna-database"} (\textit{cf. 1, figure~\ref{fig:opendb}}). As a result, a pop-up window will appear, which allows you to choose between opening a \textbf{"Local .dna file"} or a \textbf{"remote database on a server"}. If your database is stored on an remote server, you should choose the second option and repeat the procedure outlined in \fullref{subsec:usingremote}.  If your dataset is stored in a folder on your local PC or device, you can proceed with the preset option and click on the button \textbf{"Browse"} (\textit{cf. 2, figure~\ref{fig:opendb}}), which will open a further pop-up window, in which you can find your database by choosing its storage location from the  \textbf{"Save in"}-slide down menu  (\textit{cf. 3}), selecting the respective database (\textit{cf.4}) and clicking on the button \textbf{"Open"} both in the pop-up- and the "Open existing database..."-window (\textit{cf. 5 \& 6}).
+First of all, you have to choose, in which \dna\ Database you want to upload and process your data. To open a \dna database, simply follow the steps depicted in Figure 1: First, click on the index tab \textbf{``File''} and select the option \textbf{``Open \dna\ database''} (\textit{see Figure~\ref{fig:opendb}, step 1}). As a result, a pop-up window will appear, which allows you to choose between opening a \textbf{``Local .dna file''} or a \textbf{``remote database on a server''}. If your database is stored on a remote server, you should choose the second option and repeat the procedure outlined in \fullref{subsec:usingremote}.  If your dataset is stored in a folder on your local PC or device, you can proceed with the preset option and click on the button \textbf{``Browse''} (\textit{see Figure~\ref{fig:opendb}, step 2}), which will open a further pop-up window, in which you can find your database by choosing its storage location from the  \textbf{``Save in''} slide down menu  (\textit{see step 3}), selecting the respective database (\textit{see step 4}) and clicking on the button \textbf{``Open''} both in the pop-up  and the ``Open existing database...'' window (\textit{see steps 5 and 6}).
 \begin{figure}
-  \caption{Opene \dna-database}
-  \includegraphics[width=\linewidth]{4-1-opendb}
+  \includegraphics[width=\linewidth]{05-1-opendb}
+  \caption{Opene \dna database}
   \label{fig:opendb}
 \end{figure}
 
 \subsection{Importing Documents (Raw Data)}\label{subsec:importdoc}
-There are four different---partly semi-automatic---ways to upload your raw data and related descriptive information (title, date, author, source, section and type of document) into \dna: Importing single Documents manually via Copy \& Paste, Importing multiple Documents semi-automatically from text files, Importing Documents from other DNA databases and using \rdna\ to import data which is already available in R (WIP!). All four will be explained in detail in this section.
+There are four different---partly semi-automatic---ways to upload your raw data and related descriptive information (title, date, author, source, section and type of document) into \dna: Importing single Documents manually via Copy and Paste, Importing multiple Documents semi-automatically from text files, Importing Documents from other DNA databases and using \rdna\ to import data which is already available in R (WIP!)%
+%(\textit{see Section~\ref{subsec:importr}})%
+. All four will be explained in detail in this section.
 
-\subsubsection{Importing single Documents manually via Copy \& Paste}
-The most basic way to import data to \dna\ requires you to manually copy \& paste the content and the descriptive information for each of your documents into the text fields of a pop-up window, which you open by clicking on the index tab \textbf{"Documents"} and selecting the option \textbf{"Add new document"} (\textit{cf. figure~\ref{fig:adddoc}}). This window has eight text boxes, in which you can enter information from and about your source data (\textit{cf. figure~\ref{fig:adddoc}}):
+\subsubsection{Importing single Documents manually via Copy and Paste}
+The most basic way to import data to \dna\ requires you to manually copy and paste the content and the descriptive information for each of your documents into the text fields of a pop-up window, which you open by clicking on the index tab \textbf{``Documents''} and selecting the option \textbf{``Add new document''} (\textit{see Figure~\ref{fig:adddoc}}). This window has eight text boxes, in which you can enter information from and about your source data (\textit{see Figure~\ref{fig:adddoc}}):
 
 \begin{itemize}
   \item{
-  The field \textbf{"title"} is mandatory and may include any kind of information, for instance a unique ID if you plan to collect additional information about the articles in a separate database. Duplicate article titles are not allowed.
+  The field \textbf{``title''} is mandatory and may include any kind of information, for instance a unique ID if you plan to collect additional information about the articles in a separate database. Duplicate article titles are not allowed.
   }
   \item{
-The field \textbf{"date"} is also mandatory and preset on the current time and day. You can change it by either clicking on the year, month, day or time and adjusting the respective value via the arrows on the right or by manually entering the date in the format "YYYY-MM-DD hh:mm:ss". Please make sure you enter the date correctly because otherwise the algorithms for longitudinal data
+The field \textbf{``date''} is also mandatory and preset on the current time and day. You can change it by either clicking on the year, month, day or time and adjusting the respective value via the arrows on the right or by manually entering the date in the format ``YYYY-MM-DD hh:mm:ss''. Please make sure you enter the date correctly because otherwise the algorithms for longitudinal data
 %[longitudinal data](http://github,com) #not sure where this link is supposed to go
  will not work properly.
   }
   \item{
-  The fields \textbf{"author"}, \textbf{"source"}, \textbf{"section"} and \textbf{"type"} are optional, but this additional information can help you to efficiently organize your data and ensure the reproducibilty, transparency and future usage of your research project. You can enter these information either manually or select an author, source, section or type you specified for a previously added document from the drop-down menu , which appears when you click of the downward arrow on the left of the respective field.
+  The fields \textbf{``author''}, \textbf{``source''}, \textbf{``section''} and \textbf{``type''} are optional, but this additional information can help you to efficiently organize your data and ensure the reproducibilty, transparency and future usage of your research project. You can enter these information either manually or select an author, source, section or type you specified for a previously added document from the drop-down menu, which appears when you click on the downward arrow buttonon the left of the respective field.
   }
   \item{
-  To insert the content of your document, copy your article from a website or any other text source and paste it in the \textbf{text field (largest field at the bottom of the pop-up-window)}. Single line breaks are automatically removed, while double line breaks (paragraph breaks) are preserved. Some escape sequences and special characters are automatically removed when text is inserted.
+  To insert the content of your document, copy your article from a website or any other text source and paste it in the \textbf{text field (largest field at the bottom of the pop-up window)}. Single line breaks are automatically removed, while double line breaks (paragraph breaks) are preserved. Some escape sequences and special characters are automatically removed when text is inserted.
   }
   \item{
-  If you want to add further meta-information to your document, which does not fit the preset categories, you can use the field \textbf{"notes"}.
+  If you want to add further meta information to your document, which does not fit the preset categories, you can use the field \textbf{``notes''}.
   }
 \end{itemize}
-Finally---after checking your specifications---you can import the document to \dna\ by clicking the \textbf{"Add"}-Button.
+Finally---after checking your specifications---you can import the document to \dna\ by clicking the \textbf{``Add''} button.
 \begin{figure}
+  \includegraphics[width=\linewidth]{05-2-adddoc}
   \caption{Open \dna-database}
-  \includegraphics[width=\linewidth]{4-2-adddoc}
   \label{fig:adddoc}
 \end{figure}
 
@@ -662,180 +708,176 @@ Finally---after checking your specifications---you can import the document to \d
 
 
 \subsubsection{Importing multiple Documents semi-automatically from text files}\label{subsec:multiimport}
-However if you want to analyze a greater number of articles, it quickly becomes tedious to manually copy \& paste each document and its meta-data. This is why \dna\ also offers a semi-automatic way to upload multiple documents and their relevant meta-data (author, date, source, type) at the same time.
+If you want to analyze a greater number of articles, it quickly becomes tedious to manually copy and paste each document and its meta data. This is why \dna\ also offers a semi-automatic way to upload multiple documents and their relevant meta data (author, date, source, type) at the same time.
 
 \paragraph{Downloading and Preparing your Raw Data.}
-This way of importing raw data to \dna\ requires that you save all documents as \textbf{separate ".txt"-files} (one file for each article) \textbf{in a common folder}. Please note, that you have to use the ".txt"-format for saving your data, as \dna\ can not import ".doc" or ".pdf"-files. In case you use the newspaper database of LexisNexis---which is available through many university lbraries---for finding and retrieving your raw data, please make sure that you download all documents separately (by selecting the individual document before clicking the download button, \textit{cf. step 1-2, figure~\ref{fig:nexis}}) and choose the document format "Text" (under "Format Options" in the Download pop-up menu, \textit{cf. step 3-4, figure~\ref{fig:nexis}}) before downloading the data (\textit{cf. step 5, figure~\ref{fig:nexis}}).
-\footnote{If you use \rdna\ it will soon also be possible to import LexisNexis-data into \dna\ via using \rdna\ and a new \R-package called \href{https://github.com/JBGruber/LexisNexisTools}{LexisNexisTools}.
-}
+This way of importing raw data to \dna\ requires that you save all documents as \textbf{separate ``.txt'' files} (one file for each article) \textbf{in a common folder}. Please note, that you have to use the ``.txt'' format for saving your data, as \dna\ can not import ``.doc'' or ``.pdf'' files.\footnote{You can, however, save Word-documents as .txt files or use an online converter to transform PDFs into txt files. Note, that you need to make sure (both cases) that the .txt file is saved with UTF 8 encoding.} In case you use the newspaper database of LexisNexis---which is available through many university lbraries---for finding and retrieving your raw data, please make sure that you download all documents separately (by selecting the individual document before clicking the download button, \textit{see Figure~\ref{fig:nexis}, step 1-2}) and choose the document format ``Text'' (under ``Format Options'' in the Download pop-up menu, \textit{see Figure~\ref{fig:nexis}, step 3-4}) before downloading the data (\textit{see Figure~\ref{fig:nexis}, step 5}).\footnote{If you use \rdna\ it will soon also be possible to import LexisNexis data into \dna\ via using \rdna\ and a new \R package called \href{https://github.com/JBGruber/LexisNexisTools}{LexisNexisTools}.}
 \begin{figure}
+  \includegraphics[width=\linewidth]{05-3-nexis}
   \caption{Downloading files from the LexisNexis newspaper archive}
-  \includegraphics[width=\linewidth]{4-3-nexis}
   \label{fig:nexis}
 \end{figure}
 
-  If you want to use the preset regex-configurations (\hyperref[par:adjregex]{in contrast to adjusting them}) for automatically detecting and uploading the meta-data of your documents, you should use a \textbf{file name} in the format \textbf{"DD.MM.YYYY - Author - Source - TYPE.txt"} \textbf{with blanks before and after the minuses}, where "DD.MM.YYYY" is the date, on which the article was published. While "Author" and "Source" do not require a special format or length (e.g. you can use the first and/or last name of the author), the type of the document must always be indicated by capital letters. For example, the file name of the
-article \href{http://spon.de/aeclD}{spon.de/aeclD}, which is used as an example here, would have the format "31.03.2014 - Ralf Neukirch - SPON International - DIGITALRESOURCE.txt". Please note, that plain text files are somtimes saved as ".TXT" instead of ".txt" files. While this is technically the same, it can cause problems while importing multiple text files. If this is the case, you have to either change the preset Regex-configuration
-% [change the preset Regex-configuration](####III.2.2.2. Adjusting the Regex-Settings)
-or correct the ".txt"-suffix manually in the file name(s). Otherwise the automatic detection of your documents' meta-data won't work.
+  If you want to use the preset regex configurations (\hyperref[par:adjregex]{in contrast to adjusting them}) for automatically detecting and uploading the meta data of your documents, you should use a \textbf{file name} in the format \textbf{``DD.MM.YYYY - Author - Source - TYPE.txt''} \textbf{with blanks before and after the minuses}, where ``DD.MM.YYYY'' is the date, on which the article was published. While ``Author'' and ``Source'' do not require a special format or length (e.\,g.\, you can use the first and/or last name of the author), the type of the document must always be indicated by capital letters. For example, the file name of the
+article \href{http://spon.de/aeclD}{spon.de/aeclD}, which is used as an example here, would have the format ``31.03.2014 - Ralf Neukirch - SPON International - DIGITALRESOURCE.txt''. Please note, that plain text files are somtimes saved as ``.TXT'' instead of ``.txt'' files. While this is technically the same, it can cause problems while importing multiple text files. If this is the case, you have to either change the preset Regex configuration or correct the ``.txt'' suffix manually in the file name(s). Otherwise the automatic detection of your documents' meta data will not work.
 
 \paragraph{Importing your Raw Data into DNA}
-If you prepared your data adequately, you can retrieve the documents and the relevant additional information in four simple steps (\textit{cf. figure~\ref{fig:importtxt}}): 
+If you prepared your data adequately, you can retrieve the documents and the relevant additional information in four simple steps (\textit{see Figure~\ref{fig:importtxt}}): 
 
 \begin{enumerate}
   \item{
-  Click on the index tab \textbf{"Documents"} and select the option \textbf{"Import text files"} (\textit{cf. step 1, figure~\ref{fig:importtxt}}). As a result, a new window will open, in which you press the button \textbf{"Select folder"} (\textit{cf. step 2}). This will open a further pop-up menu. Here, you have to select the \textbf{folder}, in which you saved the text-files of your raw data, from the \textbf{"Look in"-slide down menu} (\textit{cf. step 3}) and click the button \textbf{"Open"} (\textit{cf. step 4}). 
+  Click on the index tab \textbf{``Documents''} and select the option \textbf{``Import text files''} (\textit{see Figure~\ref{fig:importtxt}, step 1}). As a result, a new window will open, in which you press the button \textbf{``Select folder''} (\textit{see step 2}). This will open a further pop-up menu. Here, you have to select the \textbf{folder}, in which you saved the text files of your raw data, from the \textbf{``Look in'' slide down menu} (\textit{see step 3}) and click the button \textbf{``Open''} (\textit{see step 4}). 
   }
-  \begin{figure}
+\begin{figure}
+  \includegraphics[width=\linewidth]{05-4-importtxt}
   \caption{Import text files}
-  \includegraphics[width=\linewidth]{4-4-importtxt}
   \label{fig:importtxt}
-  \end{figure}
+\end{figure}
   
   \item{
-  Now all documents, which are stored in the respective folder, should be listed in the main window of the "Import text files..."-pop up (\textit{cf. figure~\ref{fig:txtfls}}). If this isn't the case, please check if your documents are saved in the right file format (.txt). In order to check, whether \dna\ is able to automatically identify your documents' meta-data, select one of the documents and click on the \textbf{"Refresh"}-Button (\textit{cf. figure~\ref{fig:txtfls}}). If you specified the file names correctly, you can now see the respective meta-data of the selected document in the fields "Title", "Author", "Source", "Type" and "Date" of the \textbf{"Preview"}-Section at the bottom right of the "Import text files"-window (\textit{cf. figure~\ref{fig:txtfls}}). 
+  Now all documents, which are stored in the respective folder, should be listed in the main window of the \textbf{``Import text files...''} pop-up (\textit{see Figure~\ref{fig:txtfls}}). If this isn't the case, please check if your documents are saved in the right file format (.txt). In order to check, whether \dna\ is able to automatically identify your documents' meta data, select one of the documents and click on the \textbf{``Refresh''} button (\textit{see Figure~\ref{fig:txtfls}}). If you specified the file names correctly, you can now see the respective meta data of the selected document in the fields ``Title'', ``Author'', ``Source'', ``Type'' and ``Date'' of the \textbf{``Preview''} Section at the bottom right of the ``Import text files'' window (\textit{see Figure~\ref{fig:txtfls}}). 
   }
   \item{
-  If you want to adjust or amend the meta-data manually, just select the document, \textbf{uncheck} the box \textbf{"Regex"} of the field you want to edit and enter the divergent/additional information in the field on the left. Then click again on the \textbf{"Refresh"}-Button to check, whether you changes were accepted. 
+  If you want to adjust or amend the meta data manually, just select the document, \textbf{uncheck} the box \textbf{``Regex''} of the field you want to edit and enter the divergent/additional information in the field on the left. Then click again on the \textbf{``Refresh''} button to check, whether your changes were accepted. 
   }
   \item{
-  Finally, click on the button \textbf{"Import files"} to import all documents of the respective folder into your \dna\-database (you do not need to select each document for import). 
+  Finally, click on the button \textbf{``Import files''} to import all documents of the respective folder into your \dna\ database (you do not need to select each document for import). 
   }
   \begin{figure}
-  \caption{Import text files}
-  \includegraphics[width=\linewidth]{4-5-txtfls}
-  \label{fig:txtfls}
+    \includegraphics[width=\linewidth]{05-5-txtfls}
+    \caption{Import text files}
+    \label{fig:txtfls}
   \end{figure}
 \end{enumerate}
 
-\paragraph{Adjusting the Regex-Configuration for automatic identification of meta-data.}\label{par:adjregex}
-The previous steps assumed that you use the preset configuration of \dna\ to detect and upload the meta-data (Title, Author, Source, Type, Date) of your documents automatically into your database. However, if you are interested in automatically importing additional information about your source data (in the fields \textbf{"Section"} or \textbf{"Notes"}) or if your file names naming system layed out here (but nevertheless contain all relevant information in a systematic order), \dna\ allows you to change, adjust or amend the pattern, through which the meta-data about your documents is derived from the file names. The commands/rules, on which the "translation" of file names into meta-data is based, are formulated in the 
-\href{https://en.wikipedia.org/wiki/Regular_expression}{Regular expessions (in short: Regex)-Syntax} and can be edited for each kind of information (Title, Author, Source, Section, Tyoe, Notes, Date) in the field \textbf{"Pattern"} on the bottom left of the "Import text files..."-window (\textit{cf. figure~\ref{fig:txtfls}}). If you want to amend or adjust this settings it is recommended to use a Regex Cheatsheet (\textit{see e.g. 
+\paragraph{Adjusting the Regex Configuration for automatic identification of meta data.}\label{par:adjregex}
+The previous steps assumed that you use the preset configuration of \dna\ to detect and upload the meta data (Title, Author, Source, Type, Date) of your documents automatically into your database. However, if you are interested in automatically importing additional information about your source data (in the fields \textbf{``Section''} or \textbf{``Notes''}) or if your file names depart from the naming system layed out here (but nevertheless contain all relevant information in a systematic order), \dna\ allows you to change, adjust or amend the pattern, through which the meta data about your documents is derived from the file names. The commands/rules, on which the ``translation'' of file names into meta data is based, are formulated in the 
+\href{https://en.wikipedia.org/wiki/Regular_expression}{Regular expessions (in short: Regex) syntax} and can be edited for each kind of information (Title, Author, Source, Section, Tyoe, Notes, Date) in the field \textbf{``Pattern''} on the bottom left of the ``Import text files...'' window (\textit{see Figure~\ref{fig:txtfls}}). If you want to amend or adjust this settings it is recommended to use a Regex Cheatsheet (\textit{see e.\,g.\, 
 \href{https://www.cheatography.com/davechild/cheat-sheets/regular-expressions/}{cheatography.com} 
 or 
-\href{http://www.txt2re.com/index-perl.php3?s=31.03.2014\%20-\%20Ralf\%20Neukirch\%20-\%20SPON\%20International\%20-\%20DIGITALRESOURCE.txt&-94&-102&80&77&75&81&-95&79&76&78&82&13&14&5&3}{this regex "translator"}}). As further support, \textit{figure~\ref{fig:regex}} translates the preset regular expressions of the DNA-"Import text files..."-option. 
-%More details about the use of regular expressions in \dna\ can be found [here]() and [here](). ???
+\href{http://www.txt2re.com/index-perl.php3?s=31.03.2014\%20-\%20Ralf\%20Neukirch\%20-\%20SPON\%20International\%20-\%20DIGITALRESOURCE.txt&-94&-102&80&77&75&81&-95&79&76&78&82&13&14&5&3}{this regex ``translator''}}). As further support, \textit{Figure~\ref{fig:regex}} translates the preset regular expressions of the \dna\ ``Import text files...'' option. 
 \begin{figure}
-\caption{Import text files}
-\includegraphics[width=\linewidth]{4-6-regex}
-\label{fig:regex}
+  \includegraphics[width=\linewidth]{05-6-regex}
+  \caption{Import text files}
+  \label{fig:regex}
 \end{figure}
 
-\subsubsection{Importing Documents from other \dna\-databases}\label{subsec:merge}
-You can also import documents from other \dna\-databases. This function is particularly relevant in two scenarios: First, if you not only want to use the \textbf{raw data but also the coded statements} of an already finished research project, this function allows you to import both. Secondly, if there is \textbf{more than one person working on the same project at the same time} and you did not use multiple user roles (\textit{see section~\ref{subsec:userman}}) to enable your coders to work on the same remote database. In the second scenario, you should use this function to prepare your datasets or merge the codings, as it is usually difficult to merge the files manually later on. 
-%??
-In the latter scenario, the function helps you to avoid trouble with \textbf{duplicate statement IDs} and article names, as \dna\ will take care of e.g. duplicates automatically. 
+\subsubsection{Importing Documents from other \dna\ databases}\label{subsec:merge}
+You can also import documents from other \dna\ databases. This function is particularly relevant in two scenarios: First, if you not only want to use the \textbf{raw data but also the coded statements} of an already finished research project, this function allows you to import both. Secondly, if there is \textbf{more than one person working on the same project at the same time} and you did not use multiple user roles (\textit{see Section~\ref{subsec:userman}}) to enable your coders to work on the same remote database. In the second scenario, you should use this function to prepare your datasets or merge the codings, as it is usually difficult to merge the files manually later on. In the latter scenario, the function helps you to avoid trouble with \textbf{duplicate statement IDs} and article names, as \dna\ will take care of e.\,g.\, duplicates automatically. 
 
-Make sure, that you \textbf{know which version of DNA} (DNA 2.0 or older) was used to create and edit the database, from which you want to import data, \textbf{before} using the "Import from DNA"-function. If you use this manual as a beginner's Tutorial for working with \dna\ please download the file "sample.dna" from the \dna\ \href{https://github.com/leifeld/dna/releases}{github.com/leifeld/dna/releases}. This file contains a small selection of documents and statements from a larger project about congressional hearings on climate change \citet{fisher2013mapping, fisher2013where}.
+Make sure, that you \textbf{know which version of DNA} (DNA 2.0 or older) was used to create and edit the database, from which you want to import data, \textbf{before} using the ``Import from DNA'' function. If you use this manual as a beginner's tutorial for working with \dna\ please download the file ``sample.dna'' from the \dna\ \href{https://github.com/leifeld/dna/releases}{github.com/leifeld/dna/releases}. This file contains a small selection of documents and statements from a larger project about congressional hearings on climate change, employed in the project described in \citet{fisher2013mapping, fisher2013where}.
 
-To import documents (and the included code statements), click on the index tab \textbf{"Documents"} and select the option \textbf{"Import from \dna\ 2.0 file"}, if \dna\ 2.0 or was used to create and edit the database. As the file type has of .dna files has significantly changed since version 1.31, databases created with and older version of \dna\ need to be impored using the seperate method \textbf{"Import from \dna\ 1.31 file"} (\textit{cf. step 1, figure~\ref{fig:importdna}}). As a result, a further pop-up menu will open (\textit{cf. figure~\ref{fig:importstat}}). In this window, you have to select the \textbf{folder}, in which you saved the text-files of your raw data, from the \textbf{"Look in"-slide down menu} (\textit{cf. step 2}) and \textbf{select the respective .dna file} (\textit{cf. step 3}). Click the button \textbf{"Open"} (\textit{cf. step 4}) will then open the menu depicted in \textit{figure~\ref{fig:importstat}}.
+To import documents (and the included code statements), click on the index tab \textbf{``Documents''} and select the option \textbf{``Import from \dna\ 2.0 file''}, if \dna\ 2.0 was used to create and edit the database. As the internal structure of .dna files has significantly changed since version 1.31, databases created with an older version of \dna\ need to be impored using the seperate method \textbf{``Import from \dna\ 1.31 file''} (\textit{see Figure~\ref{fig:importdna}, step 1}). As a result of either step, a further pop-up menu will open (\textit{see Figure~\ref{fig:importstat}}). In this window, you have to select the \textbf{folder}, in which you saved the text files of your raw data, from the \textbf{``Look in'' slide down menu} (\textit{see step 2}) and \textbf{select the respective .dna file} (\textit{see step 3}). Click the button \textbf{``Open''} (\textit{see step 4}) to then open the menu depicted in \textit{Figure~\ref{fig:importstat}}.
 \begin{figure}
-\caption{Import a \dna\ 2.0-database}
-\includegraphics[width=\linewidth]{4-7-importdna}
-\label{fig:importdna}
+  \includegraphics[width=\linewidth]{05-7-importdna}
+  \caption{Import a \dna\ 2.0-database}
+  \label{fig:importdna}
 \end{figure}
 
 \begin{figure}
-\caption{Import Statments menu}
-\includegraphics[width=0.6\linewidth]{4-8-importstat}
-\label{fig:importstat}
+  \centering
+  \includegraphics[width=0.6\linewidth]{05-8-importstat}
+  \caption{Import Statments menu}
+  \label{fig:importstat}
 \end{figure}
 
-In this menu, you can select, which documents (and respective which coded statements) from the original \dna\-database you want to import in your database by either manually checking or unchecking the boxes on the left of the document title or by using the function \textbf{"Keyword filter"}. This function is particularly helpful if you want to only import few documents with a specific common characteristic (author, topic) from a very large dataset. 
-Clicking on the button \textbf{"Keyword filter..."} (\textit{cf. left button in figure~\ref{fig:importstat}}) opens a new pop-up window, in which you can enter a specific search term. For example, if you downloaded and opened the \href{https://github.com/leifeld/dna/raw/master/manual/sample.dna}{"sample.dna"}-file, you can select all congressional hearings of NGO representatives by \textbf{entering the keyword "NGO"} in the text field and pressing the button \textbf{"OK"} in the "Keyword filer" pop-up window (\textit{cf. figure~\ref{fig:importstat}}). Now only the boxes of the three documents, which contain the hearings of NGO representatives Kateri Callahan, David Hamilton and Nayak Navin, should be checked, while the other boxes are unchecked. The "Keyword filter..-"-Function is based on the same regex syntax described in \fullref{par:adjregex}. This means, you can also use more specified regular expressions (\textit{cf. figure~\ref{fig:regex} or \href{https://www.cheatography.com/davechild/cheat-sheets/regular-expressions/}{regex cheatsheet}}) to select certain articles. For example, if you enter a "\^{}N" in the "Keyword filter"-text field \dna\ will select all articles starting with a capital N. If you want to undo your selections, you can also automatically select or unselect all articles by pressing the button \textbf{"(Un)select all"} in the middle of the "Import statements"-window (\textit{cf. figure~\ref{fig:importstat}}). Pressing the right button \textbf{"Import selected"} in the same window imports all documents with a checked box (and the respective coded statements) in your \dna\-database (\textit{cf. figure~\ref{fig:importstat}}). If you use this manual as a beginner's tutorial for working with \dna, you should try importing all documents and the respective statements from the file \href{https://github.com/leifeld/dna/raw/master/manual/sample.dna}{"sample.dna"} into your database. 
+In this menu, you can select, which documents (and respective which coded statements) from the original \dna\ database you want to import in your database by either manually checking or unchecking the boxes on the left of the document title or by using the function \textbf{``Keyword filter''}. This function is particularly helpful if you want to only import few documents with a specific common characteristic (author, topic) from a very large dataset. 
+Clicking on the button \textbf{``Keyword filter...''} (\textit{see left button in Figure~\ref{fig:importstat}}) opens a new pop-up window, in which you can enter a specific search term. For example, if you downloaded and opened the \href{https://github.com/leifeld/dna/raw/master/manual/sample.dna}{``sample.dna''} file, you can select all congressional hearings of NGO representatives by \textbf{entering the keyword ``NGO''} in the text field and pressing the button \textbf{``OK''} in the ``Keyword filer'' pop-up window (\textit{see Figure~\ref{fig:importstat}}). Now only the boxes of the three documents, which contain the hearings of NGO representatives Kateri Callahan, David Hamilton and Nayak Navin, should be checked, while the other boxes are unchecked. The ``Keyword filter..'' function is based on the same regex syntax described in \fullref{par:adjregex}. This means, you can also use more specified regular expressions (\textit{see Figure~\ref{fig:regex} or \href{https://www.cheatography.com/davechild/cheat-sheets/regular-expressions/}{regex cheatsheet}}) to select certain articles. For example, if you enter a ``\^{}N'' in the ``Keyword filter'' \dna\ will select all articles starting with a capital N. If you want to undo your selections, you can also automatically select or unselect all articles by pressing the button \textbf{``(Un)select all''} in the middle of the ``Import statements'' window (\textit{see Figure~\ref{fig:importstat}}). Pressing the right button \textbf{``Import selected''} in the same window imports all documents with a checked box (and the respective coded statements) in your \dna\ database (\textit{see Figure~\ref{fig:importstat}}). If you use this manual as a beginner's tutorial for working with \dna, you should try importing all documents and the respective statements from the file \href{https://github.com/leifeld/dna/raw/master/manual/sample.dna}{``sample.dna''} into your database. 
 
+%To DO
+%\subsubsection{Importing Documents using \R\}\label{subsec:importr}
 
 
 
 
 \subsection{Organizing documents (Raw Data) }
 \subsubsection{Deleting and navigating through documents}
-All your imported documents are listed in the upper middle table of the\dna\ main window. If you click on an article, its corresponding text (i. e. the speech) will be displayed in the text area below the document table. By clicking on, for example, the entry "109-1: Callahan, Kateri-NGO-Y" you open the speech of Kateri Callahan, a representative of the Alliance to Save Energy. You can not only adjust the size of the document table (by clicking on the bar above the text area and moving it vertically with your cursor) or its colums (by clicking on the edge of the column and moving it horizontally with your cursor), but also customize the meta-information, which are displayed in the document table: Just \textbf{right click on any document} and use the appearing \textbf{context-menu} to (un-)check the boxes of the information you (don't) want to be displayed (\textit{cf. figure~\ref{fig:batchrecode}, step 1}). A structured (and customised) overview of your raw-data is essential for detecting missing information and thus efficiently controlling, organizing and coding your data. For example, if you display the meta-information "Type" (by checking the respective box in the context-menu), you can see that the type of all documents from the sample.dna file is not listed.
+All your imported documents are listed in the upper middle table of the \dna\ main window. If you click on an article, its corresponding text (i. e. the speech) will be displayed in the text area below the document table. By clicking on, for example, the entry ``109-1: Callahan, Kateri-NGO-Y'' you open the speech of Kateri Callahan, a representative of the Alliance to Save Energy. You can adjust the size of the document table (by clicking on the bar above the text area and moving it vertically with your cursor) or its colums (by clicking on the edge of the column and moving it horizontally with your cursor). You can also customize the meta information, which are displayed in the document table: Just \textbf{right click on any document} and use the appearing \textbf{context menu} to (un-)check the boxes of the information you (don't) want to be displayed (\textit{see Figure~\ref{fig:batchrecode}, step 1}). A structured (and customised) overview of your raw data is essential for detecting missing information and thus efficiently controlling, organizing and coding your data. For example, if you display the meta information ``Type'' (by checking the respective box in the context menu), you can see that the type of all documents from the sample.dna file is not listed.
 \begin{figure}
-\caption{Import Statements menu}
-\includegraphics[width=\linewidth]{4-9-batchrecode}
-\label{fig:batchrecode}
+  \includegraphics[width=\linewidth]{05-9-batchrecode}
+  \caption{Import Statements menu}
+  \label{fig:batchrecode}
 \end{figure}
 
-The same context menu can be used to delete documents from your database by \textbf{selecting the documents} you want to delete (pressing and holding the \textbf{"Ctrl"-key} for selecting multiple documents), opening the context menu with a \textbf{right click} and choosing the option \textbf{"Delete selected documents"}. 
+The same context menu can be used to delete documents from your database by \textbf{selecting the documents} you want to delete (pressing and holding the \textbf{``Ctrl'' key} for selecting multiple documents), opening the context menu with a \textbf{right click} and choosing the option \textbf{``Delete selected documents''}. 
 
-\subsubsection{Editing the documents' meta-data (author, time etc...)}
-DNA allows you to edit, delete or complement the descriptive information related to your raw data (title, date, author, source, section and type of document). Similiar to the procedures outlined in section~\ref{subsec:importdoc} there is a manual as well as a semi-automatic way to adjust the meta-data of your documents.
+\subsubsection{Editing the documents' meta data (author, time etc...)}
+DNA allows you to edit, delete or complement the descriptive information related to your raw data (title, date, author, source, section and type of document). Similiar to the procedures outlined in Section~\ref{subsec:importdoc} there is a manual as well as a semi-automatic way to adjust the meta data of your documents.
 
-\paragraph{Editing the documents' meta-data manually.}
-The most basic way to edit your documents' meta-data is to \textbf{select the document}, of which you want to edit the information (by left-clicking on it) and adjusting the values in the \textbf{"Document properties"}-submenu on the middle left of the\dna\ main window (\textit{cf. figure~\ref{fig:batchrecode}, step 2}) by either manually typing in the relevant information or by selecting an already specified author, a source, a section or a type from the \textbf{drop-down menu} on the right of the respective meta-field. For example, in \textit{figure~\ref{fig:batchrecode} (step 2}) Kateri Callahans speech was selected, and the value "NGO" (for Non-Governmental Organisation) was manually specified as "Type of document" by entering it in the field "Type" of the "Document properties"-submenu. Do not forget to \textbf{press the button "Save"} in the submenu (\textit{cf. figure~\ref{fig:batchrecode}, step 2}) to confirm your edits. 
+\paragraph{Editing the documents' meta data manually.}
+The most basic way to edit your documents' meta data is to \textbf{select the document}, of which you want to edit the information (by left-clicking on it) and adjusting the values in the \textbf{``Document properties''} submenu on the middle left of the \dna\ main window (\textit{see Figure~\ref{fig:batchrecode}, step 2}) by either manually typing in the relevant information or by selecting an already specified author, a source, a section or a type from the \textbf{drop-down menu} on the right of the respective meta field. For example, in \textit{Figure~\ref{fig:batchrecode} (step 2}) Kateri Callahans speech was selected, and the value ``NGO'' (for Non-Governmental Organisation) was manually specified as ``Type of document'' by entering it in the field ``Type'' of the ``Document properties'' submenu. Do not forget to \textbf{press the button ``Save''} in the submenu (\textit{see Figure~\ref{fig:batchrecode}, step 2}) to confirm your edits. 
 
-Please note, that you can manually only edit the meta-data of \textbf{one document at one time}. If you try to select multiple documents for editing, the "Document properties"-submenu will disappear, returning "(No document or permission)" 
+Please note, that you can manually only edit the meta data of \textbf{one document at one time}. If you try to select multiple documents for editing, the ``Document properties'' submenu will disappear, returning ``(No document or permission)''.
 
-\paragraph{Editing the documents' meta-data semi-automatically.}
-However if you want to adjust the meta-data of a greater number of articles, it quickly becomes tedious to manually edit informationabout each document. This is why \dna\ also offers a semi-automatic way to edit, delete or complement the descriptive information related to your documents. In order to edit your documents' meta-data semi-automatically, click on the index tab \textbf{"Documents"} and select the option \textbf{"Batch-recode meta-data"} (\textit{cf. step 3, figure~\ref{fig:batchrecode}}). As a result, a pop-up window similiar to \textit{figure~\ref{fig:recodewin} 10} will open. In the upper half of this pop-up window you find nine fields, which can be configured in order to adjust the meta-data for \textbf{multiple documents at once}:
+\paragraph{Editing the documents' meta data semi-automatically.}
+However if you want to adjust the meta data of a greater number of articles, it quickly becomes tedious to manually edit information about each document. This is why \dna\ also offers a semi-automatic way to edit, delete or complement the descriptive information related to your documents. In order to edit your documents' meta data semi-automatically, click on the index tab \textbf{``Documents''} and select the option \textbf{``Batch-recode meta-data''} (\textit{see Figure~\ref{fig:batchrecode}, step 3}). As a result, a pop-up window similiar to \textit{Figure~\ref{fig:recodewin}} will open. In the upper half of this pop-up window you find nine fields, which can be configured in order to adjust the meta data for \textbf{multiple documents at once}:
 \begin{figure}
-\centering
-\caption{Meta information recode window}
-\includegraphics[width=0.75\linewidth]{4-10-recodewin}
-\label{fig:recodewin}
+  \centering
+  \includegraphics[width=0.75\linewidth]{05-10-recodewin}
+  \caption{Meta information recode window}
+  \label{fig:recodewin}
 \end{figure}
 
 \begin{itemize}
   \item{
-  The field \textbf{"Target field:"} specifies, which kind of meta-information (i.e. title, author, source, section, type, notes) should be adjusted by choosing the respective meta-data category from the slide- down menu (which you open by clicking the arrow on the right of the target field).
+  The field \textbf{``Target field:''} specifies, which kind of meta information (i.\,e.\, title, author, source, section, type, notes) should be adjusted by choosing the respective meta data category from the slide-down menu (which you open by clicking the arrow on the right of the target field).
   }
   \item{
-  The field \textbf{"Source field:"} specifies, where the data you want to use for adjusting the target field is stored. For example, if you simply want to delete or correct (e.g. misspelled) title-, author-, source-, section-, type- or notes-metadata, you usually choose the same field as source field as you have chosen as target field, since you want to adjust the data already stored in this field. However, if you want to add new data to a (maybe empty or incomplete) target field, you have to choose the part of the meta-information as source field, which contains the information, from which you want to derive the new data. As the document title should contain all relevant meta-information, "Title" is usually used as source field for the latter case.
+  The field \textbf{``Source field:''} specifies, where the data you want to use for adjusting the target field is stored. For example, if you simply want to delete or correct (e.\,g.\, misspelled) title-, author-, source-, section-, type- or notes-metadata, you usually choose the same field as source field as you have chosen as target field, since you want to adjust the data already stored in this field. However, if you want to add new data to a (maybe empty or incomplete) target field, you have to choose the part of the meta information as source field, which contains the information, from which you want to derive the new data. As the document title should contain all relevant meta information, ``Title'' is usually used as source field for the latter case.
   }
   \item{
-  The field \textbf{"Matching on target regex"} allows you to automatically delimit the documents which you want to adjust, based on the information stored in the document's target field. Similiar to all regex-implementations in \dna\ you can either use search terms or regular expressions to filter the documents. If you, for instance, misspelled the author "Ralf Neukirch" sometimes as "Ralf Neu\textbf{n}kirch", you can correct all your misspellings by simply selecting "Author" as "Target field", entering "Ralf Neu\textbf{n}kirch" in the field "Matching on target regex:" and the correct version ("Ralf Neukirch") in the field "New target field". As "Matching on target regex" automatically deselects all non-matching cases (here: All documents, who do not have "Ralf Neunkirch" specified as their author), the meta-information (here: "Author") remains the same for all other documents.
+  The field \textbf{``Matching on target regex''} allows you to automatically delimit the documents which you want to adjust, based on the information stored in the document's target field. Similiar to all regex implementations in \dna\ you can either use search terms or regular expressions to filter the documents. If you, for instance, misspelled the author ``Ralf Neukirch'' sometimes as ``Ralf Neu\textbf{n}kirch'', you can correct all your misspellings by simply selecting ``Author'' as ``Target field'', entering ``Ralf Neu\textbf{n}kirch'' in the field ``Matching on target regex:'' and the correct version (``Ralf Neukirch'') in the field ``New target field''. As ``Matching on target regex'' automatically deselects all non-matching cases (here: All documents, who do not have ``Ralf Neunkirch'' specified as their author), the meta information (here: ``Author'') remains the same for all other documents.
   }
   \item{
-  The field \textbf{"Matching on source regex"} similarly allows you to automatically filter the documents of which you want to alter the meta-data, based on the information stored in the document's source field. For example, if you realise that Ralf Neukirch does not write for "SPON International" (as you erroneously specified), but for "THE GUARDIAN", you can simply correct all your misspecifications by first selecting "Source" as the "Target field" and "Author" as the "Source field", secondly entering "Ralf Neukirch" in the field "Matching on source regex" and then specifying "THE GUARDIAN" as "New target field".
+  The field \textbf{``Matching on source regex''} similarly allows you to automatically filter the documents of which you want to alter the meta data, based on the information stored in the document's source field. For example, if you realise that Ralf Neukirch does not write for ``SPON International'' (as you erroneously specified), but for ``THE GUARDIAN'', you can simply correct all your misspecifications by first selecting ``Source'' as the ``Target field'' and ``Author'' as the ``Source field'', secondly entering ``Ralf Neukirch'' in the field ``Matching on source regex'' and then specifying ``THE GUARDIAN'' as ``New target field''.
   }
   \item{
-  The field \textbf{"\%target regular expression"} allows you to specify/match a part of the target field, which you want to use as new information in the same field. For example, if the field "Author" somehow contains the full document titles you can reduce the information in the field "Author" to just the name of the respective author by entering the regular expression "(?<=.+?---).+?(?= -)" (\textit{cf. figure~\ref{fig:regex} or \href{https://www.cheatography.com/davechild/cheat-sheets/regular-expressions/}{regex cheatsheet}}) in the field "\%target regular expression" and entering \textbf{"\%target"} in the field "New target field". \textbf{Please note, that if you do not use this function, you should not change the preset value ".+" in this field}---because if you do, your recoding might not obtain the expected results.
+  The field \textbf{``\%target regular expression''} allows you to specify/match a part of the target field, which you want to use as new information in the same field. For example, if the field ``Author'' somehow contains the full document titles you can reduce the information in the field ``Author'' to just the name of the respective author by entering the regular expression ``\code{(?<=.+?---).+?(?= -)}'' (\textit{see Figure~\ref{fig:regex} or \href{https://www.cheatography.com/davechild/cheat-sheets/regular-expressions/}{regex cheatsheet}}) in the field ``\%target regular expression'' and entering \textbf{``\%target''} in the field ``New target field''. \textbf{Please note, that if you do not use this function, you should not change the preset value ``\code{.+}'' in this field}---because if you do, your recoding might not obtain the expected results.
   }
   \item{
-  The field \textbf{"\%target replacement"}---similarly to the fields "New target field" and "\%source replacement"---defines a new value for the information in the target field. If you use "\%target" as "New target field", you have to specify the new/additional/corrected/reduced information in this field.
+  The field \textbf{``\%target replacement''}---similarly to the fields ``New target field'' and ``\%source replacement''---defines a new value for the information in the target field. If you use ``\%target'' as ``New target field'', you have to specify the new/additional/corrected/reduced information in this field.
   }
   \item{
-  The field \textbf{"\%source regular expression"} allows you to specify/match a part of the source field, which you want to use as new information in the target field. For example, if your source field is "Title" and the titles of your documents have the   recommended format (\textit{i.e. "DD.MM.YYYY - Author - Source - TYPE.txt" with blanks before and after the minuses; see section~\ref{subsec:multiimport}})  you can automatically specify the meta-information for the field "Author" by (1) choosing "Author" as the "Target field" and "Title" as the "Source field", (2) entering the regular expression "(?<=.+?---).+?(?= -)" (\textit{cf. figure~\ref{fig:regex} or \href{https://www.cheatography.com/davechild/cheat-sheets/regular-expressions/}{regex cheatsheet}}) in the field "\%source regular expression" and (3) entering \textbf{"\%source"} in the field "New target field". \textbf{Please note, that if you do not use this function, you should not change the preset value ".+" in this field}---because if you do, your recoding might not obtain the expected results.
+  The field \textbf{``\%source regular expression''} allows you to specify/match a part of the source field, which you want to use as new information in the target field. For example, if your source field is ``Title'' and the titles of your documents have the   recommended format (\textit{i.\,e.\, ``DD.MM.YYYY - Author - Source - TYPE.txt'' with blanks before and after the minuses; see Section~\ref{subsec:multiimport}})  you can automatically specify the meta information for the field ``Author'' by (1.)~choosing ``Author'' as the ``Target field'' and ``Title'' as the ``Source field'', (2.)~entering the regular expression ``\code{(?<=.+?---).+?(?= -)}'' (\textit{see Figure~\ref{fig:regex} or \href{https://www.cheatography.com/davechild/cheat-sheets/regular-expressions/}{regex cheatsheet}}) in the field ``\%source regular expression'' and (3.)~entering \textbf{``\%source''} in the field ``New target field''. \textbf{Please note, that if you do not use this function, you should not change the preset value ``.+'' in this field}---because if you do, your recoding might not obtain the expected results.
   }
   \item{
-  The field \textbf{"\%source replacement"}---similarly to the fields "New target field" and "\%target replacement"---defines a new value for the information in the target field. If you use "\%source" as "New target field", you have to specify the new/additional/corrected/reduced information in this field.
+  The field \textbf{``\%source replacement''}---similarly to the fields ``New target field'' and ``\%target replacement''---defines a new value for the information in the target field. If you use ``\%source'' as ``New target field'', you have to specify the new/additional/corrected/reduced information in this field.
   }
   \item{
-  The field \textbf{"New target field"} defines the new/corrected/reduced/additional data, which is entered in your target field (\textit{cf. examples above}). Please note, that this field has to be set on \textbf{"\%source"} (preset value) if you use the functions "source regular expression" or "source replacement" and has to be set on \textbf{"\%target"} if you use the functions "target regular expression" or "target replacement". Otherwise, the respective functions will not work.
+  The field \textbf{``New target field''} defines the new/corrected/reduced/additional data, which is entered in your target field (\textit{see examples above}). Please note, that this field has to be set on \textbf{``\%source''} (preset value) if you use the functions ``source regular expression'' or ``source replacement'' and has to be set on \textbf{``\%target''} if you use the functions ``target regular expression'' or ``target replacement''. Otherwise, the respective functions will not work.
   }
 \end{itemize}
 
-The lower half of the "Recode document meta-data"-pop-up window (\textit{cf. figure~\ref{fig:recodewin}}) displays a table with four columns and a row for each of your documents, which help you to preview, control and trace back your changes to the meta-data:
+The lower half of the ``Recode document meta-data'' pop-up window (\textit{see Figure~\ref{fig:recodewin}}) displays a table with four columns and a row for each of your documents, which help you to preview, control and trace back your changes to the meta data:
 
 \begin{itemize}
   \item{
-  The column \textbf{"ID"} contains the individual ID of each of your documents. This column can be particularly helpful if you specify a recoding procedures for a certain set of documents. If you know the ID of a few exemplary documents from this set, you can quickly trace back and understand the consequences of your recoding-specifications by scrolling down to the respective ID and taking a look at the other columns of these documents.
+  The column \textbf{``ID''} contains the individual ID of each of your documents. This column can be particularly helpful if you specify a recoding procedures for a certain set of documents. If you know the ID of a few exemplary documents from this set, you can quickly trace back and understand the consequences of your recoding specifications by scrolling down to the respective IDs and taking a look at the other columns of these documents.
   }
   \item{
-  The column \textbf{"Source field"} displays the field, from which you get the meta-data for recoding the target field. It is particularly helpful to understand the sequence of information in the source field, if you want to specify a "\%source regular expression" or use "Matching on source regex" (for example, if only some source fields contain the relevant information).
+  The column \textbf{``Source field''} displays the field, from which you get the meta data for recoding the target field. It is particularly helpful to understand the sequence of information in the source field, if you want to specify a ``\%source regular expression'' or use ``Matching on source regex'' (for example, if only some source fields contain the relevant information).
   }
   \item{
-  The column \textbf{"Old target field"} shows the meta-data in the target fields prior to your adjustments. It is particularly helpful if you want to use "\%target regular expression" or use "Matching on target regex" (for example, if you only want to change the value of a certain set of target fields)
+  The column \textbf{``Old target field''} shows the meta data in the target fields prior to your adjustments. It is particularly helpful if you want to use ``\%target regular expression'' or use ``Matching on target regex'' (for example, if you only want to change the value of a certain set of target fields).
   }
   \item{
-  The column \textbf{"New target field"} displays the consequences of your adjustment. It is particular helpful to control for the successfulness of your recoding and undesired recodings (for example, if the target field already contained the relevant information but is recoded nevertheless).
+  The column \textbf{``New target field''} displays the consequences of your adjustment. It is particular helpful to check if your recoding will be successful or if some recoding outcomes are actually undesired (for example, if the target field already contained the relevant information but is recoded nevertheless).
   }
 \end{itemize}
 
-Your recodings are only applied, if you press the button \textbf{"Recode"} (on the lower right of the "Recode document meta-data"-window, cf. figure~\ref{fig:recodewin}). \textbf{Once this is applied, it cannot be undone!} So please control the consequences of your recodings by using the table at the lower half of the window. However, before pressing the "Recode"-button, you \textit{can} revert all adjustments by pressing the button \textbf{"Revert changes"} and therefore are able to experiment with the meta-data (regex) specifications.
+Your recodings are only applied, if you press the button \textbf{``Recode''} (on the lower right of the ``Recode document meta data'' window, see Figure~\ref{fig:recodewin}). \textbf{Once this is applied, it cannot be undone!} So please control the consequences of your recodings by using the table at the lower half of the window. However, before pressing the ``Recode'' button, you \textit{can} revert all adjustments by pressing the button \textbf{``Revert changes''} and therefore are able to experiment with the meta data (regex) specifications.
 
-As noted previously, all documents from the file "sample.dna" do not specify any meta-data concerning the type of the respective document. Both \textbf{figure~\ref{fig:recodewin}} and \textbf{figure~\ref{fig:recoderegex}} illustrate an exemplary semi-automatic procedure for complementing this information based on the information stored in the document-title (here: The organisation, to which the respective speaker belongs to). Thus in both examples, "Type" is selected as "Target field", while "Title" is selected as "Source field".
+As noted previously, all documents from the file ``sample.dna'' do not specify any meta data concerning the type of the respective document. Both \textbf{Figure~\ref{fig:recodewin}} and \textbf{Figure~\ref{fig:recoderegex}} illustrate an exemplary semi-automatic procedure for complementing this information based on the information stored in the document title (here: The organisation, to which the respective speaker belongs to). Thus in both examples, ``Type'' is selected as ``Target field'', while ``Title'' is selected as ``Source field''.
 
-The example in \textbf{figure~\ref{fig:recodewin}} uses \textbf{manual search terms} to specify the meta-information for the document-type. By entering "NGO" in the field "Matching on source regex" the adjustments are limited to the documents, which contain "NGO" in the document title. By entering "NGO" in the field "New target field", the new value for "Type" is specified for the selected documents. As you can see in the table on the lower half of the "Recode meta-data"-window, this very simple procedure is insofar successful, as only the target-fields of documents containing hearings of NGO-representatives are changed and the target fields of all other documents (including those with already correct "Type"-information) remain unchanged. However, this procedure would have to be repeated for each kind of organisation from the sample (NGO, GOV, BUS).
+The example in \textbf{Figure~\ref{fig:recodewin}} uses \textbf{manual search terms} to specify the meta information for the document type. By entering ``NGO'' in the field ``Matching on source regex'' the adjustments are limited to the documents, which contain ``NGO'' in the document title. By entering ``NGO'' in the field ``New target field'', the new value for ``Type'' is specified for the selected documents. As you can see in the table on the lower half of the ``Recode meta-data'' window, this very simple procedure is insofar successful, as only the target fields of documents containing hearings of NGO-representatives are changed and the target fields of all other documents (including those with already correct ``Type'' information) remain unchanged. However, this procedure would have to be repeated for each kind of organisation from the sample (NGO, GOV, BUS).
 
-The more elegant and less elaborate way of semi-automatically specifying meta-information is depicted in \textbf{figure~\ref{fig:recoderegex}}, which uses the \textbf{Regex-syntax}. 
-Here, by entering "\^{}?" in the field "Matching on target regex", only those documents are selected for amendment, which do not already contain any information about the document-type (therefore excluding those documents with already correct "Type"-information). 
-By specifying "(?<=.+?-)[A-Z]+" as "\%source regular expression" (and accordingly "\%source" as "New target field"), \dna\ is instructed to filter any string of upper-case characters before a minus in the document title and set it as a new value for "Type". Thus you can recode the document-type for all documents at once, ensuring that already specified values are not overwritten---as evident from the table in the lower half of the window.
+The more elegant way of semi-automatically specifying meta information is depicted in \textbf{Figure~\ref{fig:recoderegex}}, which uses the \textbf{Regex-syntax}. 
+Here, by entering \code{\^{}?} in the field ``Matching on target regex'', only those documents are selected for amendment, which do not already contain any information about the document type (therefore excluding those documents with already correct ``Type'' information). 
+By specifying \code{(?<=.+?-)[A-Z]+} as ``\%source regular expression'' (and accordingly ``\%source'' as ``New target field''), \dna\ is instructed to filter any string of upper-case characters before a minus in the document title and set it as a new value for ``Type''. Thus you can recode the document type for all documents at once, ensuring that already specified values are not overwritten---as evident from the table in the lower half of the window.
 \begin{figure}
-\caption{Meta information recode window (regex explained)}
-\includegraphics[width=\linewidth]{4-11-recoderegex}
-\label{fig:recoderegex}
+  \includegraphics[width=\linewidth]{05-11-recoderegex}
+  \caption{Meta information recode window (regex explained)}
+  \label{fig:recoderegex}
 \end{figure}
 
 
@@ -844,16 +886,17 @@ By specifying "(?<=.+?-)[A-Z]+" as "\%source regular expression" (and accordingl
 
 %To DO
 \section{Using \dna : Coding the Data}\label{sec:dna-coding}
-
+\textit{Coming soon...}
 %To DO
 \section{Using \dna : Exporting the coded Data}\label{sec:dna-export}
-
+\textit{Coming soon...}
 
 
 
 
 \newpage
 \section{\rdna: Using \dna\ from \R} \label{sec:rdna}
+\sectionauthor{Philip Leifeld}
 \dna\ can be connected to the statistical computing environment \R\ \citep{coreteam2014r:} through the \rdna\ package \citep{leifeld2017rdna}.
 There are two advantages to working with \R\ on \dna\ data.
 
@@ -874,7 +917,7 @@ Examples include cluster analysis or community detection, scaling and applicatio
 \subsection{Getting started with \rdna}
 The first step is to install \R.
 Installing additional \R\ packages for network analysis and clustering, such as \texttt{statnet} \citep{goodreau2008statnet, handcock2008statnet, handcock2016statnet}, \texttt{xergm} \citep{leifeld2017temporal, leifeld2017xergm:}, \texttt{igraph} \citep{csardi2006igraph}, and \texttt{cluster} \citep{maechler2017cluster}, is recommended.
-Moreover, it is necessary to install the \texttt{rJava} package \citep{urbanek2016rjava}, on which the \rdna\ package depends, and the \texttt{devtools} package \citep{wickham2016devtools}, which permits installing \R\ packages from \github\ (\textit{see section~\ref{subsection:installdna}}).
+Moreover, it is necessary to install the \texttt{rJava} package \citep{urbanek2016rjava}, on which the \rdna\ package depends, and the \texttt{devtools} package \citep{wickham2016devtools}, which permits installing \R\ packages from GitHub (\textit{see Section~\ref{subsection:installdna}}).
 
 <<eval=FALSE>>=
 install.packages("statnet")
@@ -886,7 +929,7 @@ install.packages("devtools")
 @
 
 After installing these supplementary packages, the \rdna\ package can be installed from \github.
-The \texttt{devtools} package contains a function that permits easy installation of \R\ packages from \github\ and can be used as follows to install \rdna:
+The \texttt{devtools} package contains a function that permits easy installation of \R\ packages from GitHub and can be used as follows to install \rdna:
 
 <<eval=FALSE>>=
 library("devtools")
@@ -908,7 +951,7 @@ set.seed(12345)
 Now we are able to use the package. The first step is to initialize \dna.
 Out of the box, \rdna\ does not know where the \dna\ \texttt{.jar} file is located.
 We need to register \dna\ with \rdna\ to use them together.
-To do that, one needs to save the \dna\ \texttt{.jar} file to the working directory of the current \R\ session and then initialize \dna\ as follows (with \texttt{dna-2.0-beta19.jar} in this example):
+To do that, one needs to save the \dna\ \texttt{.jar} file to the working directory of the current \R\ session and then initialize \dna\ as follows (with \texttt{dna-2.0-beta20.jar} in this example):
 
 <<eval=TRUE, results = 'tex', message = FALSE>>=
 dna_init("dna-2.0-beta20.jar")
@@ -943,13 +986,13 @@ After initializing \dna\ and establishing a connection to a database, we can now
 We will start with a simple example of a two-mode network from the sample database.
 To compute the network matrix, the connection that we just established must be supplied to the \texttt{dna\_network} function:
 
-<<eval=FALSE, results = 'tex'>>=
+<<eval=TRUE, results = 'tex'>>=
 nw <- dna_network(conn)
 @
 
 The resulting matrix can be plotted using visualization functions from the \texttt{statnet} suite of packages:
 
-<<eval=FALSE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 4, fig.height = 4, crop = TRUE>>=
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 4, fig.height = 4, crop = TRUE>>=
 library("statnet")
 gplot(nw)
 @
@@ -1031,7 +1074,7 @@ To do that, we need to export and plot the congruence network again and use the 
 
 <<eval=FALSE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 5, crop = TRUE>>=
 congruence <- dna_network(conn, 
-                          networkType = "onemode", 
+                          #networkType = "onemode", 
                           statementType = "DNA Statement", 
                           variable1 = "organization", 
                           variable2 = "concept", 
@@ -1130,9 +1173,9 @@ Finally, we plotted the network object with edge colours and labels.
 In the visualization, we used white nodes for organizations and black nodes for concepts.
 
 We can now see the opinions of all actors on the various concepts.
-The blue edge indicates that \texttt{Energy and Environmental Analysis, Inc.} has both positive and negative things to say about the concept \texttt{"Emissions legislation should regulate CO2}.
+The blue edge indicates that \texttt{Energy and Environmental Analysis, Inc.} has both positive and negative things to say about the concept \texttt{``Emissions legislation should regulate CO2''}.
 This is why this organization acts as a bridge between the two camps in the congruence network.
-Furthermore, we can now see more clearly that the concept we omitted in the congruence network, \texttt{"There should be legislation to regulate emissions"}, is viewed positively by four organizations but still receives a negative mention by one actor.
+Furthermore, we can now see more clearly that the concept we omitted in the congruence network, \texttt{``There should be legislation to regulate emissions''}, is viewed positively by four organizations but still receives a negative mention by one actor.
 The green edges span both camps, and this caused additional connections between the two groups.
 The negative tie is ignored in the construction of the congruence network because conflicts are not counted and there is no second red tie to that concept.
 
