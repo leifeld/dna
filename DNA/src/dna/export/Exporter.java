@@ -3121,7 +3121,7 @@ public class Exporter extends JDialog {
 			}
 			this.matrix = m;
 		} else if (networkType.equals("One-mode network")) {
-			if (timewindow.equals("no")) {
+			if (timewindow.equals("no time window")) {
 				m = computeOneModeMatrix(filteredStatements, data.getDocuments(), st, variable1, variable2, variable1Document, 
 						variable2Document, names1, names2, qualifier, qualifierAggregation, normalization);
 			} else {
