@@ -82,6 +82,24 @@ dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
 }
 
 
+#' Provides a small sample database
+#' 
+#' Retrieves the location of a small local .dna sample file.
+#' 
+#' A small sample database to test the functions of rDNA.
+#' 
+#' @examples
+#' \dontrun{
+#' dna_init("dna-2.0-beta20.jar")
+#' dna_connection(dna_sample())
+#' }
+#' @author Johannes Gruber
+#' @export
+dna_sample <- function(){
+  system.file("extdata", "sample.dna", package = "rDNA")
+} 
+
+
 #' Establish a database connection
 #' 
 #' Connect to a local .dna file or remote mySQL DNA database.
@@ -105,7 +123,7 @@ dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
 #' @examples
 #' \dontrun{
 #' dna_init("dna-2.0-beta20.jar")
-#' dna_connection("sample.dna")
+#' dna_connection(dna_sample())
 #' }
 #' @export
 dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE) {
@@ -136,7 +154,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' @examples
 #' \dontrun{
 #' dna_init("dna-2.0-beta20.jar")
-#' conn <- dna_connection("sample.dna", verbose = FALSE)
+#' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' conn
 #' }
 #' @export
@@ -179,7 +197,7 @@ print.dna_connection <- function(x, ...) {
 #' @examples
 #' \dontrun{
 #' dna_init("dna-2.0-beta20.jar")
-#' conn <- dna_connection("sample.dna")
+#' conn <- dna_connection(dna_sample())
 #' at <- dna_attributes(conn, "DNA Statement", "organization")
 #' at
 #' at2 <- dna_attributes(conn, "DNA Statement", "organization", 
@@ -390,7 +408,7 @@ dna_attributes <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_init("dna-2.0-beta20.jar")
-#' conn <- dna_connection("sample.dna")
+#' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, 
 #'                   networkType = "onemode", 
 #'                   variable1 = "organization", 
