@@ -8,10 +8,11 @@
 \usepackage{natbib}
 \usepackage{scrextend}
 \usepackage{graphicx}
+\usepackage{placeins}
 \usepackage{booktabs}
-%\usepackage{tabularx}
+%\usepackage{tabularx} %problems with knitr
 \usepackage{ltablex}
-%\usepackage[table]{xcolor}
+%\usepackage[table]{xcolor} %problems with knitr
 \usepackage[
   unicode=true,
   pdfusetitle,
@@ -37,7 +38,7 @@
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\sectionauthor}[1]{%
   \linespread{1.1}{\large \textsc{#1}}%
-  \par\nobreak\vspace*{30pt}
+  \par\nobreak\vspace*{15pt}
 }
 
 \setlength{\parindent}{0em}
@@ -61,7 +62,7 @@ knit_hooks$set(crop=hook_pdfcrop)
 \maketitle
 \begin{abstract}
 This document describes the open-source standalone software \texttt{Discourse Network Analyzer} (\dna) and its companion \R\ package \rdna\ \citep{leifeld2017rdna} and demonstrates how to install, set up and use them.
-The \java\ software \dna\ is a tool for qualitative content analysis with network export facilities. It can perform all neccessary steps for a discourse network analysis from importing raw text over annotating statements that persons or organizations make to returning network matrices of actors connected by shared concepts. 
+The \java\ software \dna\ is a tool for qualitative content analysis with network export facilities. It can perform all necessary steps for a discourse network analysis from importing raw text over annotating statements that persons or organizations make to returning network matrices of actors connected by shared concepts. 
 \rdna\ integrates the results from an analysis performed in \dna\ with the statistical computing environment \R\ to perform more in-depth analysis on the coded material.
 Both \dna\ and \rdna\ can be downloaded from \github.
 Questions and bug reports can be posted in the issue tracker on \github.
@@ -72,6 +73,7 @@ Questions and bug reports can be posted in the issue tracker on \github.
 \newpage
 % To DO
 \section{Introduction} \label{sec:intro}
+\FloatBarrier
 
 Section~\ref{sec:algorithms} is a concise and fairly technical description of the types of networks \dna\ can export.
 Section~\ref{sec:installation} explains how to install both \dna\ and \rdna\ which both rely on a correctly set up \java\ runtime environment.
@@ -86,10 +88,11 @@ Section~\ref{sec:rdna} is an introductory tutorial on using the \rdna\ package.
 
 
 
-
+\FloatBarrier
 \newpage
 \section{\dna\ algorithms} \label{sec:algorithms}
 \sectionauthor{Philip Leifeld}
+\FloatBarrier
 This section summarizes the main algorithms implemented in \dna\ in a technical way.
 
 $X$ is a three-dimensional array representing statement counts. $x_{ijk}$ is a specific count value in this array, with the first index $i$ denoting an instance of the first variable (e.\,g.\,, organization $i$), the second index $j$ denoting an instance of the second variable (e.\,g.\,, concept $j$), and the third index $k$ denoting a level on the qualifier variable (e.\,g.\,, agreement = $1$). For example, $x_{ijk} = 5$ could mean that organization $i$ mentions concept $j$ with intensity $k$ five times.
@@ -182,9 +185,10 @@ With \emph{prominence} normalization, ties to prominent nodes receive lower weig
 
 
 
-
+\newpage
 \section{Installation of \dna\ and \rdna} \label{sec:installation}
 \sectionauthor{Johannes Gruber}
+\FloatBarrier
 This section explains how \dna\ and \rdna\ can be installed on common desktop operating systems. As \dna\ is written in \java, both \dna\ and \rdna\ rely on \java\ to work on your computer properly. Installing and configuring a valid \java\ Runtime Environment on your machine will thus be the first and only complicated step of the installation. However, following the simple steps below, one should not run into problems while setting up \java. The advantage of the \java\ programming language for academic software is that it both runs on different operating systems without altering the source code---once the Runtime Environment is set up---and that it is---for the most part---open source. Besides setting up the \java\ Runtime Environment, the installation of \dna\ and \rdna\ is identical on different operating systems. If you feel confident that \java\ is already correctly set up on your computer, you can therefore skip to Section~\ref{subsection:installdna} if you like. Otherwise please continue to the section for the operating system you wish to install \dna\ and \rdna\ on: 
 \fullref{subsec:windows},
 \fullref{subsec:mac} or
@@ -193,10 +197,14 @@ This section explains how \dna\ and \rdna\ can be installed on common desktop op
 For more experienced users, here is a short version of the steps described below:
 \begin{enumerate}
 \item{
+(On Mac: install \href{https://support.apple.com/downloads/DL1572/en_US/javaforosx.dmg}{Apple's legacy version of \java}---even though we will never use it.
+)
+}
+\item{
 Install \java\ Runtime Environment (JRE) (Version 8) on your computer.
 }
 \item{
-(On Windows: set up the ``JAVA\_HOME'' to the installation path of your JRE.)
+(On Windows and Mac: set up the ``JAVA\_HOME'' to the installation path of your JRE.)
 }
 \item{
 Download the newest executable JAR from \href{https://github.com/leifeld/dna/releases}{github.com/leifeld/dna/releases}.
@@ -212,7 +220,7 @@ You can now run the standalone \dna\ or continue to install \rdna\ as well.
 Download and install \R\ (and \rstudio).
 }
 \item{
-In \R: install the neccessary \R\ packages \texttt{rJava} and \texttt{devtools}.
+In \R: install the necessary \R\ packages \texttt{rJava} and \texttt{devtools}.
 }
 \item{
 In \R: install \rdna\ via 
@@ -231,7 +239,7 @@ To install the necessary \java\ Runtime Environment on your Windows computer, si
   \label{fig:downljava}
 \end{figure}
 
-Next, you should set \textbf{``JAVA\_HOME''} in your environmental variables to tell your Windows PC where your \java\ installation lives. This step is optional but can prevent many issues with \java, people had in the past. To set ``JAVA\_HOME'', you need to navigate to the menu \textbf{``edit the system environment variables''}. The easiest way to get there is to hit the \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-6-winbutton}} button on your keyboard and enter ``environment''. Windows will then search for programs and settings menus which include this title and should usually display the menu we are looking for on top.\footnote{On older versions of Windows, this might not work. On Windows 7 you can alternatively right-click on ``My Computer'' and select ``Properties $\rightarrow$ Advanced''. On Windows 8 ``Control Panel $\rightarrow$ System $\rightarrow$ Advanced System Settings''.
+Next, you should set \textbf{``JAVA\_HOME''} in your environmental variables to tell your Windows PC where your \java\ installation lives. This step is optional, but can prevent many issues with \java, people had in the past. To set ``JAVA\_HOME'', you need to navigate to the menu \textbf{``edit the system environment variables''}. The easiest way to get there is to hit the \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-6-winbutton}} button on your keyboard and enter ``environment''. Windows will then search for programs and settings menus which include this title and should usually display the menu we are looking for on top.\footnote{On older versions of Windows, this might not work. On Windows 7 you can alternatively right-click on ``My Computer'' and select ``Properties $\rightarrow$ Advanced''. On Windows 8 ``Control Panel $\rightarrow$ System $\rightarrow$ Advanced System Settings''.
 }
 In this menu you have to find the button \textbf{``Environment variables...''}. Clicking this button should open the window shown in Figure~\ref{fig:javahome}.
 
@@ -264,7 +272,7 @@ First, you need to download R from \href{https://cran.r-project.org/bin/windows/
 On the top of the page click on \textbf{Download R 3.4.3 for Windows} (or a newer version if available).
 }
 \item{
-Install the download file, e.\,g.\, ``R-3.4.3-win.exe''. Usually, it is fine to leave all default settings in the installation options.
+Install the downloaded file, e.\,g.\, ``R-3.4.3-win.exe''. Usually, it is fine to leave all default settings in the installation options.
 }
 \item{
 Go to \href{https://www.rstudio.com/products/rstudio/download/}{rstudio.com/products/rstudio/download/}.
@@ -276,54 +284,159 @@ At the bottom of the page, under ``Installers for Supported Platforms'', click o
 After installation, you can use \R\ by opening \rstudio.
 }
 \end{enumerate}
-Traditionally, the first test you perform in a new programming language is to write a ``Hello, World!'' program. To do this in \R\ you simply type \texttt{print("Hello World!")} in the ``Console''. Alternatively, you can make \R\ perform a simple mathematical operation. If everything is set up correctly, the output should look like this:
+Traditionally, the first test you perform in a new programming language is to write a ``Hello, World!'' program. To do this in \R, you simply type \texttt{print(``Hello World!'')} in the ``Console'' (\textit{the window which covers the left half of \rstudio}). Alternatively, you can make \R\ perform a simple mathematical operation. If everything is set up correctly, the output should look like this:
 <<eval=TRUE, results = 'tex'>>=
 print("Hello World!")
 # You can also use R as a calculator
 2 * 3
 @
-The chunk of code above marks the first time we are using \R\ commands in this manual, so it might make sense to explain what this means for users who are not familiar with documents which contain \R-code. Whenever \R-code is shown in this manual it is decorated with a light grey background. Comments in code (i.e. text in a computer code which is not executed by the computer but used to explain to humans what the author's intenion was in a code) are marked with a \#, and formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with \#\# contains \R-code which you can copy and paste to the Console in \rstudio\ and run. Aöternnativly, you can also copy the code to an \R\ script and execute it by either clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}} on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
+The chunk of code above marks the first time we are using \R\ commands in this manual. It might be worth, to explain what this means for users who are not familiar with documents which contain \R-code. Whenever code is shown in this manual it is decorated with a light grey background. Comments in \R-code (i.\,e. text targeted at the user to explain what is happening in a specific line) are marked with a \#, are formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with \#\# contains \R-code which you can copy and paste to the Console in \rstudio\ and run. Alternnativly, you can also copy the code to an \R\ script and execute it by either clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}} on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
+If this works fine, you should be able to continue to the next section which describes \fullref{subsection:installdna}.
+
 
 \subsection{macOS}\label{subsec:mac}
-\textit{Coming soon...}
+On macOS, you have to install two versions of \java\ in order for \rdna\ to work properly. The reasons behind this are too complicated to cover here, but basically, Apple built its own version of \java, which needs to be on your machine, even though it is outdated.
+Therefore we need to first install the legacy \java\ 6---which we will never use---before installing the correct \java\ Runtime Environment version 8.\footnote{If you do not wish to ever use \rdna\ or any other \R\ package which relies on \java, you might not need both versions and can just download the newest \java\ Runtime Environment. However, installing \java\ version 8 before the legacy \java\ will cause problems if you'll ever change your mind.}
 
-After installing \java, you are ready to use \dna\ and could skip to Section~\ref{subsection:installdna} if you are not interested in installing \rdna\ as well. In order to use \rdna\ the rest of this section will explain how to install \R\ and a recommended  \href{https://en.wikipedia.org/wiki/Integrated_development_environment}{integrated development environment (IDE)} called \texttt{
-\href{https://www.rstudio.com/products/RStudio/}{RStudio}}, which makes working with \R\ a lot easier and also looks a lot better than the default GUI. Look for the steps below to 
+First, please download the file \href{https://support.apple.com/downloads/DL1572/en_US/javaforosx.dmg}{support.apple.com/downloads/DL1572/en\_US/javaforosx.dmg} and install it, accepting all defaults. After this has finished, we can proceed to get the new version of the \java\ Runtime Environment. Go to \href{https://www.java.com/en/download/manual.jsp}{java.com/en/download/manual.jsp} and scroll down to download \textbf{``Mac OS X (10.7.3 version and above)''} (see Figure~\ref{fig:downljava2}). Again, install the program accepting all defaults.
+\begin{figure}
+  \centering
+  \includegraphics[width=0.9\linewidth]{03-1-downljava2}
+  \caption{Downloading JRE from Oracle}
+  \label{fig:downljava2}
+\end{figure}
+
+After installing \java, you are ready to use \dna\ and could skip to Section~\ref{subsection:installdna} if you are not interested in installing \rdna\ as well. In order to use \rdna\ the rest of this section will explain how to install \R\ and a recommended  \href{https://en.wikipedia.org/wiki/Integrated_development_environment}{integrated development environment (IDE)} called \texttt{\href{https://www.rstudio.com/products/RStudio/}{RStudio}}, which makes working with \R\ a lot easier and also looks a lot better than \R's default interface.
 \paragraph{install \R\ on Mac}\label{par:installr-mac}
 \begin{enumerate}
   \item{
-  
+  First, you need to download R from \href{https://cran.r-project.org/bin/macosx/}{cran.r-project.org/bin/macosx/}.
+  }
+  \item{
+  On the top of the page click on \textbf{R-3.4.3.pkg} (or a newer version if available).
+  }
+  \item{
+  Install the downloaded file. Usually, it is fine to leave all default settings in the installation options.
+  }
+  \item{
+  Go to \href{https://www.rstudio.com/products/rstudio/download/}{rstudio.com/products/rstudio/download/}.
+  }
+  \item{
+  At the bottom of the page, under ``Installers for Supported Platforms'', click on the link \textbf{RStudio 1.1.383 - Mac OS X 10.6+ (64-bit)} (or a newer version if available). Again the default installation options are fine in most cases and can be accepted unchanged.
+  }
+  \item{
+  Then you need to install the program ``Xcode'' from the app store.
+  }
+  \item{
+  After installation, you can use \R\ by opening \rstudio.
   }
 \end{enumerate}
-Traditionally, the first test you perform in a new programming language is to write a ``Hello, World!'' program. To do this in \R\ you simply type \texttt{print(``Hello World!'')} in the ``Console''. Alternatively, you can make \R\ perform a simple mathematical operation. If everything is set up correctly, the output should look like this:
+Traditionally, the first test you perform in a new programming language is to write a ``Hello, World!'' program. To do this in \R, you simply type \texttt{print(``Hello World!'')} in the ``Console'' (\textit{the window which covers the left half of \rstudio}). Alternatively, you can make \R\ perform a simple mathematical operation. If everything is set up correctly, the output should look like this:
 <<eval=TRUE, results = 'tex'>>=
 print("Hello World!")
 # You can also use R as a calculator
 2 * 3
 @
-The chunk of code above marks the first time we are using \R\ commands in this manual, so it might make sense to explain what this means for users who are not familiar with documents which contain \R-code. Whenever \R-code is shown in this manual it is decorated with a light grey background. Comments in code (i.e. text in a computer code which is not executed by the computer but used to explain to humans what the author's intenion was in a code) are marked with a \#, and formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with \#\# contains \R-code which you can copy and paste to the Console in \rstudio\ and run. Aöternnativly, you can also copy the code to an \R\ script and execute it by either clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}} on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
+The chunk of code above marks the first time we are using \R\ commands in this manual. It might be worth, to explain what this means for users who are not familiar with documents which contain \R-code. Whenever code is shown in this manual it is decorated with a light grey background. Comments in \R-code (i.\,e. text targeted at the user to explain what is happening in a specific line) are marked with a \#, are formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with either \# or \#\# contains \R-code which you can copy and paste to the Console in \rstudio\ and run. Alternatively, you can also copy the code to an \R\ script and execute it by either clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}} on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
+
+Now unfortunatly, working with \java\ from within \R\ on a Mac is a bit messy. Apple's own version of \java, although important to have installed, does not run in combination with \R. That is why we have to tell your system which version of \java\ to use by default. To do this, we have to enter a few system commands, which you can either do in the Terminal app or directly from within \R\ using the \code{system} function:
+<<eval=FALSE, results = 'tex'>>=
+# list files in java_home
+system("/usr/libexec/java_home -V")
+##Matching Java Virtual Machines (3):
+##    1.8.0_60, x86_64:	"Java SE 8"	/Library/Java/JavaVirtualMachines/jdk1.8.0_60...
+##    1.6.0_65-b14-468, x86_64:	"Java SE 6"	/Library/Java/JavaVirtualMachines/1.6...
+##    1.6.0_65-b14-468, i386:	"Java SE 6"	/Library/Java/JavaVirtualMachines/1.6.0...
+
+# see default version of Java
+system("java -version")
+##java version "1.8.0_60"
+##Java(TM) SE Runtime Environment (build 1.8.0_60-b27)
+##Java HotSpot(TM) 64-Bit Server VM (build 25.60-b23, mixed mode)
+@
+If your output looks like the above, you are ready to install \texttt{rJava}. If the first command does not show \code{1.8.0\_60, x86\_64} (or any other version staring with 1.8.), you need to install \java\ version 8 again (\textit{see above}) and possibly reboot your computer. If the second command shows \code{java version "1.6.0\_65"}, but version 1.8 is listed in the output from the first command, you can set the default by excecuting the following command:
+
+<<eval=FALSE, results = 'tex'>>=
+# Set JAVA_HOME
+system("export JAVA_HOME=`/usr/libexec/java_home -v 1.8`")
+@
+After that, you should be able to continue to the next section which describes \fullref{subsection:installdna}.
 
 \subsection{Linux}\label{subsec:linux}
-\textit{Coming soon...}
+%To Do: Add Suse and Debian commands where different
+Since you are using Linux, we assume that you are sufficiently comfortable with using the command line. Therefore, we only provide the necessary steps for installing \java\ as commands. 
 
-After installing \java, you are ready to use \dna\ and could skip to Section~\ref{subsection:installdna} if you are not interested in installing \rdna\ as well. In order to use \rdna\ the rest of this section will explain how to install \R\ and a recommended  \href{https://en.wikipedia.org/wiki/Integrated_development_environment}{integrated development environment (IDE)} called \texttt{
-\href{https://www.rstudio.com/products/RStudio/}{RStudio}}, which makes working with \R\ a lot easier and also looks a lot better than the default GUI.
+First check if \java\ might already be installed:
+<<eval=FALSE, engine = 'bash', eval = FALSE, results = 'tex'>>=
+$java -version
+@
+If not, install it, e.\,g.\, via \code{apt-get}:
+<<eval=FALSE, engine = 'bash', eval = FALSE, results = 'tex'>>=
+$sudo apt-get install default-jre
+@
+Optional: You can also install the \java\ development kit at this point, which is sometimes recommended for working with \R\ and \java.
+<<eval=FALSE, engine = 'bash', eval = FALSE, results = 'tex'>>=
+$sudo apt-get install default-jdk
+@
+After installing \java, you are ready to use \dna\ and could skip to Section~\ref{subsection:installdna} if you are not interested in installing \rdna\ as well. In order to use \rdna\ the rest of this section will explain how to install \R\ and a recommended  \href{https://en.wikipedia.org/wiki/Integrated_development_environment}{integrated development environment (IDE)} called \texttt{\href{https://www.rstudio.com/products/RStudio/}{RStudio}}, which makes working with \R\ a lot easier and also looks a better than the default GUI.
 \paragraph{install \R\ on Linux}\label{par:installr-linux}
 \begin{enumerate}
   \item{
-  
+  Since the version of \R\ on the default repositories tends to be fairly outdated, we add the repository of the Comprehensive R Archive Network (CRAN) to the sources.list:
+ <<eval=FALSE, engine = 'bash', eval = FALSE, results = 'tex'>>=
+$sudo echo "deb https://cran.rstudio.com/bin/linux/ubuntu/artful/" 
+$sudo tee -a /etc/apt/sources.list
+@ 
+  \textbf{Note, that you need to replace \code{/ubuntu/artful/} with your flavour and version of Linux}. Visit \href{https://cran.rstudio.com/bin/linux/}{CRAN} to see which ones are available
+  }
+  \item{
+  Next, you need to add \R\ to your keyring. Seen below is how you would accomplish that in Ubuntu:
+<<eval=FALSE, engine = 'bash', eval = FALSE, results = 'tex'>>=
+$gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9
+$gpg -a --export E084DAB9 | sudo apt-key add -
+@ 
+  }
+  \item{
+  Update apt and install \R\ (and r-base-dev if you wish to compile packages from source):
+<<eval=FALSE, engine = 'bash', eval = FALSE, results = 'tex'>>=
+$sudo apt-get update
+$sudo apt-get install r-base
+$sudo apt-get install r-base-dev
+@ 
+  }
+  \item{
+  Now install \rstudio\ via gdebi (and install gdebi first if you don't already have it)\footnote{alternativly, you can download an installation file from \href{https://www.rstudio.com/products/rstudio/download/}{rstudio.com/products/rstudio/download/}.}:
+<<eval=FALSE, engine = 'bash', eval = FALSE, results = 'tex'>>=
+$sudo apt-get install gdebi-core
+$wget https://download1.rstudio.org/rstudio-1.1.414-amd64.deb
+$sudo gdebi -n rstudio-0.99.896-amd64.deb
+$rm rstudio-1.1.414-amd64.deb
+@   
+  }
+  \item{
+  After the installation has finished, you can use \R\ by opening \rstudio.
   }
 \end{enumerate}
-Traditionally, the first test you perform in a new programming language is to write a ``Hello, World!'' program. To do this in \R\ you simply type \texttt{print(``Hello World!'')} in the ``Console''. Alternatively, you can make \R\ perform a simple mathematical operation. If everything is set up correctly, the output should look like this:
+Traditionally, the first test you perform in a new programming language is to write a ``Hello, World!'' program. To do this in \R, you simply type \texttt{print(``Hello World!'')} in the ``Console'' (\textit{the window which covers the left half of \rstudio}). Alternatively, you can make \R\ perform a simple mathematical operation. If everything is set up correctly, the output should look like this:
 <<eval=TRUE, results = 'tex'>>=
 print("Hello World!")
 # You can also use R as a calculator
 2 * 3
 @
-The chunk of code above marks the first time we are using \R\ commands in this manual, so it might make sense to explain what this means for users who are not familiar with documents which contain \R-code. Whenever \R-code is shown in this manual it is decorated with a light grey background. Comments in code (i.e. text in a computer code which is not executed by the computer but used to explain to humans what the author's intenion was in a code) are marked with a \#, and formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with \#\# contains \R-code which you can copy and paste to the Console in \rstudio\ and run. Aöternnativly, you can also copy the code to an \R\ script and execute it by either clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}} on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
+The chunk of code above marks the first time we are using \R\ commands in this manual. Since it looks similar to the terminal commands we used above, you probably have no problem reading it. But just in case, it might be worth to explain what you see there: whenever code is shown in this manual it is decorated with a light grey background. Comments in \R-code (i.\,e. text targeted at the user to explain what is happening in a specific line) are marked with a \#, are formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with \#\# contains \R-code which you can copy and paste to the Console in \rstudio\ and run. Alternnativly, you can also copy the code to an \R\ script and execute it by either clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}} on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
+
+Now before we can actually run \rdna, we need to associate \java\ with R. To do this, you can either go back to the terminal, or you can invoke a system command directly from within \R\ using the \code{system} function:
+<<eval=FALSE, engine = 'bash', eval = FALSE, results = 'tex'>>=
+$sudo R CMD javareconf
+@
+Or:
+<<eval=FALSE, results = 'tex'>>=
+system("sudo R CMD javareconf")
+@
+After this is finished, you are now set to start installing \dna\ and the \rdna-package themselves.
 
 \subsection{Installing the programs themselves}\label{subsection:installdna}
-Once \java\ is set up correctly, you can simply download the latest version of \dna\ as a JAR file from \href{https://github.com/leifeld/dna/releases}{github.com/leifeld/dna/releases} (\textit{see Figure~\ref{fig:downloadjar}}). JAR or \texttt{.jar} files are technically archive files which usually contain a computer program written in \java, along with all the pictures and libraries necessary to run the program. Once the download is finished, you can start the program by double-clicking on the downloaded file. However, on Linux, it is sometimes necessary to make the file executable first (e.\,g.\, via \texttt{\$chmod +x /path/to/your/dna.jar} or using \href{https://askubuntu.com/a/484719/570716}{a GUI-method}). On newer version of macOS, a program from an "unidentified developer" (i.e. if the program has not been registered with apple) needs to be made a security exception before you can run it. To do so for \dna\, control-click the program's icon, then choose ``Open'' from the shortcut menu. If clicking on the file does not open the program on a windows machine, right-click on the \texttt{.jar} file $\rightarrow$ ``Open with'' $\rightarrow$ ``Use another app'' and then navigate to the file \verb|``C:\Program Files\Java\jre1.8.0_151\bin\javaw.exe''|. 
+Once \java\ is set up correctly, you can simply download the latest version of \dna\ as a JAR file from \href{https://github.com/leifeld/dna/releases}{github.com/leifeld/dna/releases} (\textit{see Figure~\ref{fig:downloadjar}}). JAR or \texttt{.jar} files are technically archive files which usually contain a computer program written in \java, along with all the pictures and libraries necessary to run the program. Once the download is finished, you can start the program by double-clicking on the downloaded file. However, on Linux, it is sometimes necessary to make the file executable first (e.\,g.\, via \texttt{\$chmod +x /path/to/your/dna.jar} or using \href{https://askubuntu.com/a/484719/570716}{a GUI-method}). On newer version of macOS, a program from an "unidentified developer" (i.\,e., if the program has not been registered with apple) needs to be made a security exception before you can run it. To do so for \dna\, control-click the program's icon, then choose ``Open'' from the shortcut menu. If clicking on the file does not open the program on a windows machine, right-click on the \texttt{.jar} file $\rightarrow$ ``Open with'' $\rightarrow$ ``Use another app'' and then navigate to the file \verb|``C:\Program Files\Java\jre1.8.0_151\bin\javaw.exe''|. 
 
 If you are not interested in using \rdna, you can now skip to the \hyperref[sec:dna-prep]{next section}.
 \begin{figure}
@@ -364,15 +477,15 @@ Once this is done, you should install the package \texttt{devtools} \citep{wickh
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 install.packages("devtools")
 @
-Since we only need one function from the package \texttt{devtools} at this point, it is not neccessary to invoke the \texttt{library} command to load the whole package. Instead you can write \texttt{``devtools::''} and then type the function you want 
-to use.\footnote{The option \code{args = "--no-multiarch"} should normally not be neccessary but prevents errors on some operating systems. Since \texttt{devtools} tries to test both 32-bit and 64-bit version of a package during installation, the process inevitably fails as only one architecture of \java\ is available.}
+Since we only need one function from the package \texttt{devtools} at this point, it is not necessary to invoke the \texttt{library} command to load the whole package. Instead you can write \texttt{``devtools::''} and then type the function you want 
+to use.\footnote{The option \code{args = "--no-multiarch"} should normally not be necessary, but prevents errors on some operating systems. Since \texttt{devtools} tries to test both 32-bit and 64-bit version of a package during installation, the process inevitably fails as only one architecture of \java\ is available.}
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 devtools::install_github("leifeld/dna/rDNA", 
                          args = "--no-multiarch")
 @
 After this is done as well, the final step of the installation is to test if \rdna\ can be loaded into \R\ correctly and to perform a basic operation with it---opening \dna\ from within \R. In order to do so, you first need to download \dna, which can also be done in \R\ with the \texttt{download.file} command (\textit{see Section~\ref{sec:rdna} for more information about this code chunk}).
 <<eval=FALSE, results = 'tex', message = FALSE>>=
-# download two files neccessary to test rDNA
+# download two files necessary to test rDNA
 download.file(
   "https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar",
   destfile = "dna-2.0-beta19.jar", mode = "wb")         # download DNA jar
@@ -391,8 +504,14 @@ dna_gui(infile = "sample.dna")
 @
 If these commands can be executed correclty, you are ready and set to use both \dna\ and \rdna\. How you can do so will be described in the rest of this manual.
 
+
+
+
+
+\newpage
 \section{Using DNA: Preparation of your DNA Workspace} \label{sec:dna-prep}
 \sectionauthor{Felix Rolf Bossner and Johannes Gruber}
+\FloatBarrier
 
 After installing the program (see Section~\ref{sec:installation}), you can now create your first DNA database for your own research project. How you set up a DNA database will mainly depend on the needs of your personal research design---which should usually be clear before you start analysing data. Therefore, \dna\ can be customised during the creation of a new database in accordance with how you are planning to use the tool.
 
@@ -419,7 +538,7 @@ The preset option \textbf{``Local .dna file''} means, that the dataset is stored
 \footnote{technically an SQLite file.
 } on your PC or device. This file, with the file extension .dna, can be moved on your machine, sent via email, uploaded and shared via a cloud file hosting service---such as Dropbox---and can generally be treated in the same way as any other file PC users are familiar with. A local .dna file will be sufficient in most user scenarios, for example, if you employ a single coder working on a single computer, if multiple coders work on a single dataset at non-overlapping intervals or when multiple coders work at the same time on different datasets, which you merge after the coding process (\textit{see Section~\ref{subsec:merge}}). For most users, this simpler option will adequate in order to use \dna\. It is not necessary to be familiar with setting up and managing an SQLite or MySQL database. If you think, the scenarios described above cover your intended use of \dna, you can now jump to the next section and start \fullref{sec:createlocal}.
 
-However, for more experienced user or research projects in which several coders want to work on the same database at the same time, a second option was included into \dna\: \textbf{``Remote database on a server''}. This stores your data in a  MySQL database which could be stored locally on your machine---which would defy the purpose though---on a private sever---such as a Network-attached storage (NAS)---or on an online Cloud server. You should select this option if you employ a single coder working on multiple devices or multiple coders working on a single dataset at the same time. The preconditions for using this type of storage are that all coders have a stable connection to the database during the coding process---e.\,g.\, via the internet---and that you \href{https://dev.mysql.com/doc/mysql-getting-started/en/}{set up an online MySQL database} in advance. If this is how you want to proceed, you can now jump directly to the section which descibes the neccessary steps for  \fullref{subsec:usingremote}.
+However, for more experienced user or research projects in which several coders want to work on the same database at the same time, a second option was included into \dna\: \textbf{``Remote database on a server''}. This stores your data in a  MySQL database which could be stored locally on your machine---which would defy the purpose though---on a private sever---such as a Network-attached storage (NAS)---or on an online Cloud server. You should select this option if you employ a single coder working on multiple devices or multiple coders working on a single dataset at the same time. The preconditions for using this type of storage are that all coders have a stable connection to the database during the coding process---e.\,g.\, via the internet---and that you \href{https://dev.mysql.com/doc/mysql-getting-started/en/}{set up an online MySQL database} in advance. If this is how you want to proceed, you can now jump directly to the section which descibes the necessary steps for  \fullref{subsec:usingremote}.
 \end{addmargin}
 
 
@@ -472,7 +591,7 @@ You have to create a database on your MySQL server (\textit{usually by the comma
 }
 \item{
 As you probably don´t want to allow all coders access to all other databases stored on your MySQL server, you should create distinct user profile(s) for the coding process of your \dna\ project. Even if \dna\ itself allows for 
-\hyperref[subsec:userman]{managing multiple different coder roles}, we recommend to create separate user profiles for each of the individual coders---especially if they simultaneously edit the content of your database. It is also advisable to create passwords for the access to your database, not only for safety reasons but also because DNA sometimes has problems with signing in users without a password. Consequently you would use the 
+\hyperref[subsec:userman]{managing multiple different coder roles}, we recommend to create separate user profiles for each of the individual coders---especially if they simultaneously edit the content of your database. It is also advisable to create passwords for the access to your database, not only for safety reasons, but also because DNA sometimes has problems with signing in users without a password. Consequently you would use the 
 \textbf{\code{CREATE USER 'Username'@'\%' IDENTIFIED BY 'Password'}}
   Command. It should be noted, that---if necessary---in this step you can restrict the respective users access to your database to a specific device (by replacing '\%' through a particular server address).
 }
@@ -536,23 +655,23 @@ Finally you approve your choices by clicking the \textbf{OK} button \textit{(see
 
 % table doesn't float, which is not ideal but seems to be the only way it breaks over pages?
 %\rowcolors{1}{}{lightgray} % There are problems with knitr and xcolor, so this works only when compiling in latex directly
-\begin{tabularx}{\linewidth}{@{}c X@{}}\label{tab:permissions}
+\begin{tabularx}{\linewidth}{@{}c X@{}}%\label{tab:permissions}
 \caption{User permissions explained}\\
 \toprule
 \textbf{Permission} & \textbf{Practical Implication} \\
 \midrule
 \endhead
-  add documents & The user can add new documents (i.e. raw data) manually (via copy and paste or retyping) to the database $\Rightarrow$ user has (also) a research function. \\
+  add documents & The user can add new documents (i.\,e., raw data) manually (via copy and paste or retyping) to the database $\Rightarrow$ user has (also) a research function. \\
   
   import documents & The user can import new documents from other sources like .txt or other .dna files to the database or recode the metadata of multiple documents $\Rightarrow$ user has (also) a research function. \\
 
   delete documents & The user can delete documents from the database or dataset. This option requires at least the other permission ``view others' documents''  if the user has an organizing or editing function (structuring database for coding by other users) or the permission ``add documents'' and ``add statements'' if the coder determines own codes and organizes her/his own set of data. \\
 
-  edit documents & The user can edit her/his own documents (i.e. raw data)  but not necessarily the codings in these documents that were made by other users---which would require the permission ``edit others' statements''---or the documents uploaded by other users---which requires the permission ``edit others' documents''. This option requires at least the other permission ``add documents'' or ``import documents'' and should be selected  if the user determines own codes and organizes her/his own set of data or acts as a researcher
+  edit documents & The user can edit her/his own documents (i.\,e., raw data),  but not necessarily the codings in these documents that were made by other users---which would require the permission ``edit others' statements''---or the documents uploaded by other users---which requires the permission ``edit others' documents''. This option requires at least the other permission ``add documents'' or ``import documents'' and should be selected  if the user determines own codes and organizes her/his own set of data or acts as a researcher
   %?
   for the other coders. \\
 
-  view others' documents & The user can view the documents uploaded by other users. This option is necessary for a collaborative coding process in which only a part of the users selects and uploads the raw data (i.e. documents) for all other users. The option should not be selected if each coder comes up with own codes and organizes her/his own set of data. \\
+  view others' documents & The user can view the documents uploaded by other users. This option is necessary for a collaborative coding process in which only a part of the users selects and uploads the raw data (i.\,e., documents) for all other users. The option should not be selected if each coder comes up with own codes and organizes her/his own set of data. \\
 
   edit others' documents & The user can edit the documents uploaded by other users. This option requires at least the other permission ``view others' documents'' and should be selected if a user organizes or edits the raw data provided by other users. \\
 
@@ -591,7 +710,7 @@ Clicking on the third tab in the sidebar of the ``Create new database'' menu---\
 \end{figure}
 
 \subsubsection{Adjusting the variables of interest} \label{sec:adjusvarint}
-The statement type \textbf{``DNA Statement''} represents a text portion of your raw data, where an actor reveals her/his opinion/belief/etc. about an issue. Thus, the main task of your coder(s) is to identify such text portions and gain the relevant data about the actor or his opinion/belief/etc. Your research question or theory should not only dictate what kind of information should be coded as statements but also which relevant variables of this information should be captured by the coder. As you can see in the ``Statement Types'' menu, DNAs default configuration allows capturing four variables. Selecting \textbf{``DNA Statement''} and clicking on the button \textbf{``Edit''} (\textit{see Figure~\ref{fig:stattype}}) opens a pop-up window (\textit{see Figure~\ref{fig:statdetail}}), which reveals the nature of this four preconfigured variables, along whose lines the coders can collect information:
+The statement type \textbf{``DNA Statement''} represents a text portion of your raw data, where an actor reveals her/his opinion/belief/etc. about an issue. Thus, the main task of your coder(s) is to identify such text portions and gain the relevant data about the actor or his opinion/belief/etc. Your research question or theory should not only dictate what kind of information should be coded as statements, but also which relevant variables of this information should be captured by the coder. As you can see in the ``Statement Types'' menu, DNAs default configuration allows capturing four variables. Selecting \textbf{``DNA Statement''} and clicking on the button \textbf{``Edit''} (\textit{see Figure~\ref{fig:stattype}}) opens a pop-up window (\textit{see Figure~\ref{fig:statdetail}}), which reveals the nature of this four preconfigured variables, along whose lines the coders can collect information:
 
 \begin{figure}
   \centering
@@ -660,6 +779,7 @@ Finally, clicking on the last tab in the sidebar of the ``Create new database'' 
 \newpage
 \section{Using DNA: Importing and Organizing your Raw Data} \label{sec:dna-import}
 \sectionauthor{Felix Rolf Bossner}
+\FloatBarrier
 This section describes how to upload and organize your research project's raw data---i.\,e.\, the text files (newspaper articles, press releases etc.) containing the uncoded statements---in DNA. First it will be layed out how you open an existing database---either locally or from a remote location. Then you will learn how to import new documenst into \dna---either by importing one document at a time or by selecting mutliple documents for import. Finally, we tell you how you can organise the documents in your database and how you can change your docuemtns' metadata.
 
 \subsection{Opening an existing DNA database}
@@ -763,7 +883,7 @@ or
 \end{figure}
 
 \subsubsection{Importing Documents from other \dna\ databases}\label{subsec:merge}
-You can also import documents from other \dna\ databases. This function is particularly relevant in two scenarios: First, if you not only want to use the \textbf{raw data but also the coded statements} of an already finished research project, this function allows you to import both. Secondly, if there is \textbf{more than one person working on the same project at the same time} and you did not use multiple user roles (\textit{see Section~\ref{subsec:userman}}) to enable your coders to work on the same remote database. In the second scenario, you should use this function to prepare your datasets or merge the codings, as it is usually difficult to merge the files manually later on. In the latter scenario, the function helps you to avoid trouble with \textbf{duplicate statement IDs} and article names, as \dna\ will take care of e.\,g.\, duplicates automatically. 
+You can also import documents from other \dna\ databases. This function is particularly relevant in two scenarios: First, if you not only want to use the \textbf{raw data, but also the coded statements} of an already finished research project, this function allows you to import both. Secondly, if there is \textbf{more than one person working on the same project at the same time} and you did not use multiple user roles (\textit{see Section~\ref{subsec:userman}}) to enable your coders to work on the same remote database. In the second scenario, you should use this function to prepare your datasets or merge the codings, as it is usually difficult to merge the files manually later on. In the latter scenario, the function helps you to avoid trouble with \textbf{duplicate statement IDs} and article names, as \dna\ will take care of e.\,g.\, duplicates automatically. 
 
 Make sure, that you \textbf{know which version of DNA} (DNA 2.0 or older) was used to create and edit the database, from which you want to import data, \textbf{before} using the ``Import from DNA'' function. If you use this manual as a beginner's tutorial for working with \dna\ please download the file ``sample.dna'' from the \dna\ \href{https://github.com/leifeld/dna/releases}{github.com/leifeld/dna/releases}. This file contains a small selection of documents and statements from a larger project about congressional hearings on climate change, employed in the project described in \citet{fisher2013mapping, fisher2013where}.
 
@@ -861,7 +981,7 @@ The lower half of the ``Recode document meta-data'' pop-up window (\textit{see F
   The column \textbf{``Old target field''} shows the meta data in the target fields prior to your adjustments. It is particularly helpful if you want to use ``\%target regular expression'' or use ``Matching on target regex'' (for example, if you only want to change the value of a certain set of target fields).
   }
   \item{
-  The column \textbf{``New target field''} displays the consequences of your adjustment. It is particular helpful to check if your recoding will be successful or if some recoding outcomes are actually undesired (for example, if the target field already contained the relevant information but is recoded nevertheless).
+  The column \textbf{``New target field''} displays the consequences of your adjustment. It is particular helpful to check if your recoding will be successful or if some recoding outcomes are actually undesired (for example, if the target field already contained the relevant information, but is recoded nevertheless).
   }
 \end{itemize}
 
@@ -883,12 +1003,14 @@ By specifying \code{(?<=.+?-)[A-Z]+} as ``\%source regular expression'' (and acc
 
 
 
-
+\newpage
 %To DO
 \section{Using \dna : Coding the Data}\label{sec:dna-coding}
+\FloatBarrier
 \textit{Coming soon...}
 %To DO
 \section{Using \dna : Exporting the coded Data}\label{sec:dna-export}
+\FloatBarrier
 \textit{Coming soon...}
 
 
@@ -897,6 +1019,7 @@ By specifying \code{(?<=.+?-)[A-Z]+} as ``\%source regular expression'' (and acc
 \newpage
 \section{\rdna: Using \dna\ from \R} \label{sec:rdna}
 \sectionauthor{Philip Leifeld}
+\FloatBarrier
 \dna\ can be connected to the statistical computing environment \R\ \citep{coreteam2014r:} through the \rdna\ package \citep{leifeld2017rdna}.
 There are two advantages to working with \R\ on \dna\ data.
 
@@ -1024,7 +1147,7 @@ Here, it suffices to say that the \texttt{sample.dna} file contains speeches fro
 Accordingly, one should expect to find a polarized debate with environmental groups on one side and industrial interest groups on the other side.
 To compute a one-mode congruence network, the following code can be used:
 
-<<eval=FALSE, results = 'tex'>>=
+<<eval=TRUE, results = 'tex'>>=
 congruence <- dna_network(conn, 
                           networkType = "onemode", 
                           statementType = "DNA Statement", 
@@ -1048,7 +1171,7 @@ If the algorithm finds duplicate statements within documents---i.\,e., statement
 
 The resulting matrix can be converted to a network object and plotted as follows:
 
-<<eval=FALSE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 5, crop = TRUE>>=
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 5, crop = TRUE>>=
 nw <- network(congruence)
 plot(nw, 
      edge.lwd = congruence^2, 
@@ -1072,9 +1195,9 @@ If everybody agrees to this concept, it obfuscates the real structure of the net
 Therefore we should exclude it from the congruence network.
 To do that, we need to export and plot the congruence network again and use the \texttt{excludeValues} argument this time:
 
-<<eval=FALSE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 5, crop = TRUE>>=
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 5, crop = TRUE>>=
 congruence <- dna_network(conn, 
-                          #networkType = "onemode", 
+                          networkType = "onemode", 
                           statementType = "DNA Statement", 
                           variable1 = "organization", 
                           variable2 = "concept", 
@@ -1112,7 +1235,7 @@ at
 
 To use these data in the congruence network visualization, we can use the plotting facilities of the \texttt{plot.network} function:
 
-<<eval=FALSE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 5, crop = TRUE>>=
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 5, crop = TRUE>>=
 plot(nw, 
      edge.lwd = congruence^2, 
      displaylabels = TRUE, 
@@ -1129,7 +1252,7 @@ This yields a clear visualization of the actor congruence network, with simultan
 Another way to visualize a discourse network is a two-mode network visualization.
 To compute a two-mode network of organizations and concepts, the following code can be used:
 
-<<eval=FALSE, results = 'tex'>>=
+<<eval=TRUE, results = 'tex'>>=
 affil <- dna_network(conn, 
                      networkType = "twomode", 
                      statementType = "DNA Statement", 
@@ -1150,7 +1273,7 @@ The arguments \texttt{qualifier = "agreement"} and \texttt{qualifierAggregation 
 As in the previous example, the resulting network matrix can be converted to a \texttt{network} object (as defined in the \texttt{network} package).
 The colours of the edges can be stored as an edge attribute, and the resulting object can be plotted with different colours representing positive, negative, and ambivalent mentions.
 
-<<eval=FALSE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 5, crop = TRUE>>=
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 5, crop = TRUE>>=
 nw <- network(affil, bipartite = TRUE)
 colors <- as.character(t(affil))
 colors[colors == "3"] <- "blue"
@@ -1175,7 +1298,7 @@ In the visualization, we used white nodes for organizations and black nodes for 
 We can now see the opinions of all actors on the various concepts.
 The blue edge indicates that \texttt{Energy and Environmental Analysis, Inc.} has both positive and negative things to say about the concept \texttt{``Emissions legislation should regulate CO2''}.
 This is why this organization acts as a bridge between the two camps in the congruence network.
-Furthermore, we can now see more clearly that the concept we omitted in the congruence network, \texttt{``There should be legislation to regulate emissions''}, is viewed positively by four organizations but still receives a negative mention by one actor.
+Furthermore, we can now see more clearly that the concept we omitted in the congruence network, \texttt{``There should be legislation to regulate emissions''}, is viewed positively by four organizations, but still receives a negative mention by one actor.
 The green edges span both camps, and this caused additional connections between the two groups.
 The negative tie is ignored in the construction of the congruence network because conflicts are not counted and there is no second red tie to that concept.
 
