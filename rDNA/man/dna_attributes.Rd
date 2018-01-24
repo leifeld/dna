@@ -45,7 +45,7 @@ the value is contained in the current connection.
 \examples{
 \dontrun{
 dna_init("dna-2.0-beta20.jar")
-conn <- dna_connection("sample.dna")
+conn <- dna_connection(dna_sample())
 at <- dna_attributes(conn, "DNA Statement", "organization")
 at
 at2 <- dna_attributes(conn, "DNA Statement", "organization", 
