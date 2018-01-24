@@ -25,6 +25,14 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 #' @export
 #' @import rJava
 dna_init <- function(jarfile = "dna-2.0-beta20.jar", memory = 1024) {
+  if(!is.null(jarfile)){
+    if (!file.exists(jarfile)) {stop(
+      if (grepl("/", jarfile, fixed = TRUE)) 
+      {paste0("jarfile \"", jarfile, "\" could not be located.")}
+      else 
+      {paste0("jarfile \"", jarfile, "\" could not be located in working directory \"", getwd(), "\".")}
+    )}
+  }					
   assign("dnaJarString", jarfile, pos = dnaEnvironment)
   message(paste("Jar file:", dnaEnvironment[["dnaJarString"]]))
   .jinit(dnaEnvironment[["dnaJarString"]], 
