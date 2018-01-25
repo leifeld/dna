@@ -25,18 +25,28 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 #' @export
 #' @import rJava
 dna_init <- function(jarfile = "dna-2.0-beta20.jar", memory = 1024) {
-  if(!is.null(jarfile)){
-    if (!file.exists(jarfile)) {stop(
-      if (grepl("/", jarfile, fixed = TRUE)) 
-      {paste0("jarfile \"", jarfile, "\" could not be located.")}
-      else 
-      {paste0("jarfile \"", jarfile, "\" could not be located in working directory \"", getwd(), "\".")}
-    )}
-  }					
+  if(!is.null(jarfile)) {
+    if (!file.exists(jarfile)) {
+      stop(if (grepl("/", jarfile, fixed = TRUE))
+      {
+        paste0("jarfile \"", jarfile, "\" could not be located.")
+      }
+      else
+      {
+        paste0(
+          "jarfile \"",
+          jarfile,
+          "\" could not be located in working directory \"",
+          getwd(),
+          "\"."
+        )
+      })
+    }
+  }
   assign("dnaJarString", jarfile, pos = dnaEnvironment)
   message(paste("Jar file:", dnaEnvironment[["dnaJarString"]]))
-  .jinit(dnaEnvironment[["dnaJarString"]], 
-         force.init = TRUE, 
+  .jinit(dnaEnvironment[["dnaJarString"]],
+         force.init = TRUE,
          parameters = paste0("-Xmx", memory, "m"))
 }
 
@@ -65,13 +75,15 @@ dna_init <- function(jarfile = "dna-2.0-beta20.jar", memory = 1024) {
 #' @export
 dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
   djs <- dnaEnvironment[["dnaJarString"]]
-  if (is.null(djs)) {stop(paste0(djs, " could not be located in directory ", getwd(), "."))}
+  if (is.null(djs)) {stop(paste0(djs, " could not be located in directory ", 
+                                 getwd(), "."))}
   if(!is.null(infile)){
     if (!file.exists(infile)) {stop(
       if (grepl("/", infile, fixed = TRUE)) 
       {paste0("infile ", infile, " could not be located.")}
       else 
-      {paste0("infile ", infile, " could not be located in working directory ", getwd(), ".")}
+      {paste0("infile ", infile, " could not be located in working directory ", 
+              getwd(), ".")}
     )}
   }
   if (is.null(infile)) {
@@ -566,5 +578,291 @@ dna_network <- function(connection,
     dta$networks <- mat
     dta$time <- timeLabels
     return(dta)
+  }
+}
+
+
+#' Calculate the modularity of a network
+#' 
+#' Calculate the modularity of a network retrieved via \link{dna_network}.
+#' 
+#' Uses the function \link[igraph]{modularity.igraph} to calculate the division
+#' of the network into modules for a network retrieved via \link{dna_network}.
+#' 
+#' @param mat A network matrix found e.g. in nw$networks (nw being an object
+#'   generated via \link{dna_network}).
+#' 
+#' @examples
+#' \dontrun{
+#' dna_init("dna-2.0-beta20.jar")
+#' conn <- dna_connection(dna_sample())
+#' nw <- dna_network(conn,
+#'                   networkType = "onemode")
+#' modularity <- lvmod(nw)
+#' modularity
+#' }
+#' @author Philip Leifeld, Johannes B. Gruber
+#' @export
+#' @import igraph
+lvmod <- function(mat) {
+  g <- igraph::graph.adjacency(mat, mode = "undirected", weighted = TRUE)
+  lv <- igraph::cluster_louvain(g)
+  mod <- igraph::modularity(lv)
+  return(mod)
+}
+
+
+#' Computes for a temporal sequence of networks
+#' 
+#' Computes a measure for each network in a temporal sequence of networks.
+#' 
+#' This function serves as a convenience wrapper to calculate a measure for each
+#' network in a temporal sequence of networks. The standard is to calculate the
+#' modularity of the network for each time window (see
+#' \link[igraph]{modularity.igraph}). The function can also be used to split
+#' your data (facet) and calculate networks for each facet type.
+#' 
+#' @param connection A \link{dna_connection} object created by the 
+#'     \link{dna_connection} function.
+#' @param timewindow Same as in \link{dna_network}.
+#' @param windowsize Same as in \link{dna_network}.
+#' @param facet Which value from the dna database should be used to subset the
+#'   networks. Can be "Authors" for document author, "Sources" for document
+#'   source, "Sections" for documents which contain a certain section or "Types"
+#'   to subset document types.
+#' @param facetValues Which values should be used to facet calculation of the
+#'   networks. Always contains the value 'all' for comparison. Use e.g.
+#'   excludeTypes to exclude documents from comparison.
+#' @param method Is used to compute exactly one measurement for each network
+#'   computed in the temporal sequence of networks. Can contain the name of any
+#'   function which reduces a matrix to just one value.
+#' @param excludeAuthors Same as in \link{dna_network}. Used to override facet
+#'   'all' when used.
+#' @param excludeSources Same as in \link{dna_network}. Used to override facet
+#'   'all' when used.
+#' @param excludeSections Same as in \link{dna_network}. Used to override facet
+#'   'all' when used.
+#' @param excludeTypes Same as in \link{dna_network}. Used to override facet
+#'   'all' when used.
+#' @param verbose Display messages if TRUE or 1. Also display messages details
+#'   of network construction when 2
+#' @param ... additional arguments passed to \link{dna_network}.
+#' 
+#' @examples
+#' \dontrun{
+#' dna_init("dna-2.0-beta20.jar")
+#' conn <- dna_connection(dna_sample())
+#' 
+#' tW <- dna_timeWindow(connection = conn,
+#'                      timewindow = "days",
+#'                      windowsize = 10,
+#'                      facet = "Authors",
+#'                      facetValues = c("Bluestein, Joel", 
+#'                                      "Voinovich, George", 
+#'                                      "Whitman, Christine Todd"),
+#'                      method = "modularity",
+#'                      excludeValues = list(),
+#'                      excludeAuthors = character(),
+#'                      excludeSources = character(),
+#'                      excludeSections = character(),
+#'                      excludeTypes = character(),
+#'                      verbose = TRUE)
+#' 
+#' dna_plotTimeWindow(tW, facetValues = c("Bluestein, Joel", "Voinovich, George"))
+#' }
+#' @author Johannes B. Gruber, Philip Leifeld
+#' @export
+#' @import ggplot2
+dna_timeWindow <- function(connection,
+                           timewindow = "no", 
+                           windowsize = 100,
+                           facet = character(),
+                           facetValues = character(),
+                           method = "modularity",  # should be possible to pass different function in (see Phil other package)
+                           excludeAuthors = character(),
+                           excludeSources = character(), 
+                           excludeSections = character(),
+                           excludeTypes = character(),
+                           verbose = 2,
+                           ...) { #passed on to dna_network
+  
+  facetValues <- c(facetValues, "all")
+  if(facet == "Authors"){Authors <- facetValues}else{Authors <- character()}
+  if(facet == "Sources"){Sources <- facetValues}else{Sources <- character()}
+  if(facet == "Sections"){Sections <- facetValues}else{Sections <- character()}
+  if(facet == "Types"){Types <- facetValues}else{Types <- character()}
+  if(any(Authors %in% excludeAuthors)){
+    cat(paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "), 
+        "is found in both \"Authors\" and \"excludeAuthors\".", 
+        paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "),
+        " was removed from \"excludeAuthors\".\n")
+    excludeAuthors <- excludeAuthors[!excludeAuthors %in% Authors]
+  }
+  if(any(Sources %in% excludeSources)){
+    cat(paste0("\"", Sources[Sources %in% excludeSources], "\"", collapse = ", "),
+        "is found in both \"Sources\" and \"excludeSources\".", 
+        paste0("\"", Sources[Sources %in% excludeSources], "\"", collapse = ", "),
+        " was removed from \"excludeSources\".\n")
+    excludeSources <- excludeSources[!excludeSources %in% Sources]
+  }
+  if(any(Sections %in% excludeSections)){
+    cat(paste0("\"", Sections[Sections %in% excludeSections], "\"", collapse = ", "),
+        "is found in both \"Sections\" and \"excludeSections\".", 
+        paste0("\"", Sections[Sections %in% excludeSections], "\"", collapse = ", "),
+        " was removed from \"excludeSections\".\n")
+    excludeSections <- excludeSections[!excludeSections %in% Sections]
+  }
+  if(any(Types %in% excludeTypes)){
+    cat(paste0("\"", Types[Types %in% excludeTypes], "\"", collapse = ", "),
+        "is found in both \"Types\" and \"excludeTypes\".", 
+        paste0("\"", Types[Types %in% excludeTypes], "\"", collapse = ", "),
+        " was removed from \"excludeTypes\".\n")
+    excludeTypes <- excludeTypes[!excludeTypes %in% Types]
+  }
+  
+  if(method == "modularity"){
+    mod.m <- lapply(facetValues, function(x){
+      if(verbose|verbose == 2){cat("Calculating Type =", facetValues[facetValues %in% x], "\n")}
+      nw <- dna_network(connection = connection, 
+                        networkType = "onemode", 
+                        qualifierAggregation = "congruence",
+                        timewindow = timewindow, 
+                        windowsize = windowsize,
+                        excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
+                        excludeSources = c(Sources[Sources %in% x], excludeSources), 
+                        excludeSections = c(Sections[Sections %in% x], excludeSections),
+                        excludeTypes = c(Types[Types %in% x], excludeTypes),
+                        verbose = ifelse(verbose > 1, TRUE, FALSE),
+                        ...)
+      mod.m <- data.frame(index = 1:length(nw$networks), 
+                          time = nw$time, 
+                          modularity = sapply(nw$networks, lvmod), 
+                          facet = rep(facetValues[facetValues %in% x], length(nw$networks)))
+      return(mod.m)
+    })
+  }else{
+    if(!exists(method, mode = 'function')){
+      stop(
+        paste0("\"", method, "\" is not a valid function.")
+      )
+    }else{
+      if(length(do.call(method, list(matrix(c(1,2,3, 11,12,13), nrow = 2, ncol = 3))))!=1){
+        stop(
+          paste0("\"", method, "\" is not a valid method for dna_timeWindow.\n dna_timeWindow needs a 
+                 function which provides exactly one value when applied to an object of class matrix. 
+                 See ?dna_timeWindow for help.")
+          )}else{
+            mod.m <- lapply(Types, function(x){
+              if(verbose|verbose == 2){cat("Calculating Type =", Types[Types %in% x], "\n")}
+              nw <- dna_network(connection = connection, 
+                                networkType = "onemode", 
+                                qualifierAggregation = "congruence",
+                                timewindow = timewindow, 
+                                windowsize = windowsize,
+                                excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
+                                excludeSources = c(Sources[Sources %in% x], excludeSources), 
+                                excludeSections = c(Sections[Sections %in% x], excludeSections),
+                                excludeTypes = c(Types[Types %in% x], excludeTypes),
+                                verbose = ifelse(verbose > 1, TRUE, FALSE),
+                                ...)
+              mod.m <- data.frame(index = 1:length(nw$networks), 
+                                  time = nw$time, 
+                                  x = sapply(nw$networks, method), 
+                                  facet = rep(facetValues[facetValues %in% x], length(nw$networks)))
+              colnames(mod.m)[3] <- method
+              return(mod.m)
+            })
+      }
+  }
+}
+  mod.df <- do.call("rbind", mod.m)
+  class(mod.df) <- c("data.frame", "dna_timeWindow", paste(method))
+  return(mod.df)
+}
+
+
+#' Plot \link{dna_timeWindow} objects
+#'
+#' Plot \link{dna_timeWindow} objects in a grid separated by facet.
+#'
+#' A convenience function to plot an object created with \link{dna_timeWindow}
+#' function. Uses \link[ggplot2]{geom_line} under the hood to plot results from
+#' a call to \link{dna_timeWindow} and facets a grid view using
+#' \link[ggplot2]{facet_grid}. Customised themes and ggplot2 functions can be
+#' passed on with +.
+#'
+#' @param x A \code{dna_timeWindow} object created by the \link{dna_timeWindow}
+#'   function.
+#' @param facetValues The name or names of the facet values which should be included in the
+#'   plot.
+#' @param include.y Include specific value of facet in the plot.
+#' @param rows,cols Number of rows and columns in which the plots are arranged.
+#'   plot.
+#' @param ... Not used. Additional parameters should be passed on to ggplot2 via
+#'   e.g. \code{+ theme_bw()}.
+#'   
+#' @examples
+#' \dontrun{
+#' dna_init("dna-2.0-beta20.jar")
+#' conn <- dna_connection(dna_sample())
+#' 
+#' tW <- dna_timeWindow(connection = conn,
+#'                      timewindow = "days",
+#'                      windowsize = 10,
+#'                      facet = "Authors",
+#'                      facetValues = c("Bluestein, Joel", 
+#'                                      "Voinovich, George", 
+#'                                      "Whitman, Christine Todd"),
+#'                      method = "modularity",
+#'                      excludeValues = list(),
+#'                      excludeAuthors = character(),
+#'                      excludeSources = character(),
+#'                      excludeSections = character(),
+#'                      excludeTypes = character(),
+#'                      verbose = TRUE)
+#' 
+#' plot <- dna_plotTimeWindow(tW, 
+#'                            facetValues = c("Bluestein, Joel", "Voinovich, George", "all"),
+#'                            include.y = 1,
+#'                            rows = 3) 
+#' plot + theme_bw()
+#' }
+#' @author Johannes B. Gruber, Philip Leifeld
+#' @export
+#' @import ggplot2
+dna_plotTimeWindow <- function(x, 
+                               facetValues = "all",
+                               include.y = NULL,
+                               rows = NULL,
+                               cols = NULL,
+                               ...){
+  method <- colnames(x)[3]
+  if(!any(grepl("dna_timeWindow", class(x)))){
+    warning("x is not an object of class \"dna_timeWindow\".")
+  }
+  if(identical(facetValues, "all")){
+    ggplot2::ggplot(x, aes_string(x = "time", y = paste(method))) + 
+      geom_line() + 
+      geom_smooth(stat = 'smooth', method = 'gam', formula = y ~ s(x, bs = "cs")) +
+      facet_wrap(~ facet, nrow = rows, ncol = cols)+ 
+      expand_limits(y = include.y)
+  }else{
+    if(all(facetValues %in% x$facet)){
+      if(length(facetValues) == 1){
+        ggplot2::ggplot(x[grep(paste0("^", facetValues, "$"), x$facet),], aes_string(x = "time", y = paste(method))) + 
+          geom_line() + 
+          geom_smooth(stat = 'smooth', method = 'gam', formula = y ~ s(x, bs = "cs")) + 
+          expand_limits(y = include.y)
+      }else{
+        ggplot2::ggplot(x[x$facet %in% facetValues,], aes_string(x = "time", y = paste(method))) + 
+          geom_line() + 
+          geom_smooth(stat = 'smooth', method = 'gam', formula = y ~ s(x, bs = "cs")) +
+          facet_wrap(~ facet, nrow = rows, ncol = cols)+ 
+          expand_limits(y = include.y)
+      }
+    }else{stop(
+      paste0("\"", facetValues[!facetValues %in% x$facet], "\" was not found in facetValues")
+    )
+    }
   }
 }

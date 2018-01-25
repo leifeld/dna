@@ -1,6 +1,6 @@
 Package: rDNA
-Version: 2.0.3
-Date: 2018-01-22
+Version: 2.0.4
+Date: 2018-01-25
 Title: R Bindings for the Discourse Network Analyzer
 Authors@R: c( person("Philip", "Leifeld", email = "Philip.Leifeld@glasgow.ac.uk", role =
     c("aut", "cre", "cph")), 
@@ -11,7 +11,9 @@ Description: Control the Java software Discourse Network Analyzer (DNA) from
     directly into R.
 Depends:
     R (>= 2.14),
-    rJava (>= 0.5-0)
+    rJava (>= 0.5-0),
+    ggplot2 (>= 2.0-0),
+    igraph (>= 1.0-0)    
 SystemRequirements: Java (>= 1.8)
 License: GPL-3
 LazyData: true
