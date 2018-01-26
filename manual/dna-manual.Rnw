@@ -1,4 +1,6 @@
-\documentclass{article}
+\documentclass{report}
+
+
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{geometry}
@@ -36,10 +38,30 @@
 \newcommand{\github}{\href{https://github.com/leifeld/dna}{\texttt{GitHub}}}
 \newcommand*{\fullref}[1]{\hyperref[{#1}]{ \nameref*{#1}}} % One single link
 \newcommand{\code}[1]{\texttt{#1}}
-\newcommand{\sectionauthor}[1]{%
-  \linespread{1.1}{\large \textsc{#1}}%
-  \par\nobreak\vspace*{15pt}
+
+\usepackage{suffix}
+
+\newcommand\chapterauthor[1]{\authortoc{#1}\printchapterauthor{#1}}
+\WithSuffix\newcommand\chapterauthor*[1]{\printchapterauthor{#1}}
+
+\makeatletter
+\newcommand{\printchapterauthor}[1]{%
+  {\parindent0pt\vspace*{-25pt}%
+  \linespread{1.1}\large\scshape#1%
+  \par\nobreak\vspace*{35pt}}
+  \@afterheading%
 }
+\newcommand{\authortoc}[1]{%
+  \addtocontents{toc}{\vskip-10pt}%
+  \addtocontents{toc}{%
+    \protect\contentsline{chapter}%
+    {\hskip1.3em\mdseries\scshape\protect\scriptsize#1}{}{}}
+  \addtocontents{toc}{\vskip5pt}%
+}
+\makeatother
+
+
+\newcommand{\Autorname}{\addtocontents{toc}{\hspace{0.47cm}\emph{\aut}\par}}
 
 \setlength{\parindent}{0em}
 \setlength{\parskip}{0.5em}
@@ -55,25 +77,25 @@ options(formatR.arrow = TRUE, width = 90)
 knit_hooks$set(crop=hook_pdfcrop)
 @
 
-\title{Discourse Network Analyzer}
-\date{\footnotesize{Last update: DNA 2.0 beta 20 with rDNA 2.0.2 on 2018-01-11.}}
+\title{Discourse Network Analyzer \linebreak Manual}
+\date{\footnotesize{Last update: DNA 2.0 beta 20 with rDNA 2.0.4 on \today.}}
 \author{Philip Leifeld, Johannes Gruber and Felix Rolf Bossner}
 
 \maketitle
-\begin{abstract}
-This document describes the open-source standalone software \texttt{Discourse Network Analyzer} (\dna) and its companion \R\ package \rdna\ \citep{leifeld2017rdna} and demonstrates how to install, set up and use them.
+\tableofcontents
+
+
+% To DO
+\chapter{Introduction} \label{sec:intro}
+\FloatBarrier
+
+This manual describes the open-source standalone software \texttt{Discourse Network Analyzer} (\dna) and its companion \R\ package \rdna\ \citep{leifeld2017rdna} and demonstrates how to install, set up and use both of them.
 The \java\ software \dna\ is a tool for qualitative content analysis with network export facilities. It can perform all necessary steps for a discourse network analysis from importing raw text over annotating statements that persons or organizations make to returning network matrices of actors connected by shared concepts. 
 \rdna\ integrates the results from an analysis performed in \dna\ with the statistical computing environment \R\ to perform more in-depth analysis on the coded material.
 Both \dna\ and \rdna\ can be downloaded from \github.
 Questions and bug reports can be posted in the issue tracker on \github.
-\end{abstract}
 
-\tableofcontents
-
-\newpage
-% To DO
-\section{Introduction} \label{sec:intro}
-\FloatBarrier
+\textit{This manual is a work in progress and will be continuously updated during the year 2018.}
 
 Section~\ref{sec:algorithms} is a concise and fairly technical description of the types of networks \dna\ can export.
 Section~\ref{sec:installation} explains how to install both \dna\ and \rdna\ which both rely on a correctly set up \java\ runtime environment.
@@ -88,10 +110,8 @@ Section~\ref{sec:rdna} is an introductory tutorial on using the \rdna\ package.
 
 
 
-\FloatBarrier
-\newpage
-\section{\dna\ algorithms} \label{sec:algorithms}
-\sectionauthor{Philip Leifeld}
+\chapter{\dna\ algorithms} \label{sec:algorithms}
+\chapterauthor{Philip Leifeld}
 \FloatBarrier
 This section summarizes the main algorithms implemented in \dna\ in a technical way.
 
@@ -101,7 +121,7 @@ Where the qualifier variable is binary, \emph{false} values are represented as $
 
 Indices with a prime denote a second instance of an element, e.\,g.\,, $i'$ may denote another organization. $Y$ denotes the output matrix to be obtained by applying a transformation to $X$. The following transformations are possible:
 
-\subsection{Congruence}
+\section{Congruence}
 In a congruence network, the edge weight between nodes $i$ and $i'$ represents the number of times they co-support or co-reject second-variable nodes (if a binary qualifier is used) or the cumulative similarity between $i$ and $i'$ over their assessments of second-variable nodes (in the case of an integer qualifier variable).
 
 In the integer case:
@@ -115,7 +135,7 @@ In the binary case, i.\,e.\,, $\vert K \vert = 2$, this reduces to
  y_{ii'}^\text{congruence binary} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} x_{ijk} x_{i'jk} + (1 - x_{ijk}) (1 - x_{i'jk}) \right).
 \end{equation}
 
-\subsection{Conflict}
+\section{Conflict}
 Binary case:
 \begin{equation}
  y_{ii'}^\text{conflict binary} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} (1 - x_{ijk}) x_{i'jk} + x_{ijk} (1 - x_{i'jk}) \right).
@@ -126,17 +146,17 @@ More generally, in the integer case:
  y_{ii'}^\text{conflict} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} \sum_{k'} x_{ijk} x_{i'jk'} \left( \frac{\vert k - k' \vert}{\vert K \vert - 1} \right) \right)
 \end{equation}
 
-\subsection{Subtract}
+\section{Subtract}
 \begin{equation}
  y_{ii'}^\text{subtract} = y_{ii'}^\text{congruence} - y_{ii'}^\text{conflict}
 \end{equation}
 
-\subsection{Ignore}
+\section{Ignore}
 \begin{equation}
  y_{ii'}^\text{ignore} = \Phi_{ii'}\left( \sum_{j = 1}^n \left( \left( \sum_{k} x_{ijk} \right) \left( \sum_{k} x_{i'jk} \right) \right) \right)
 \end{equation}
 
-\subsection{Normalization}
+\section{Normalization}
 In the simplest case, normalization can be switched off, in which case $\Phi_{ii'}^\text{no}(\omega) = \omega$.
 
 Alternatively, edge weights can be divided by the average activity of nodes $i$ and $i'$:
@@ -154,7 +174,7 @@ With cosine normalization, we take the product in the denominator:
  \Phi_{ii'}^\text{cosine} (\omega) = \frac{\omega}{ \sqrt{(\sum_{j = 1}^n \sum_{k} x_{ijk})^2} \sqrt{(\sum_{j = 1}^n \sum_{k} x_{i'jk})^2} }.
 \end{equation}
 
-\subsection{Affiliation networks}
+\section{Affiliation networks}
 Ignoring the qualifier variable:
 \begin{equation}
  y_{ij}^\text{affiliation ignore} = \Phi_{ij}\left(\sum_{k} x_{ijk} \right)
@@ -172,7 +192,7 @@ Subtracting negative from positive ties (binary case):
 
 Note that the binary case is \emph{not} merely a special case of the weighted affiliation network in this case.
 
-\subsection{Normalization for affiliation networks}
+\section{Normalization for affiliation networks}
 With \emph{activity} normalization, ties from active nodes receive lower weights:
 \begin{equation}
  \Phi_{ij}^\text{activity}(\omega) = \frac{\omega}{\sum_{j = 1}^n \sum_k x_{ijk}}
@@ -185,10 +205,11 @@ With \emph{prominence} normalization, ties to prominent nodes receive lower weig
 
 
 
-\newpage
-\section{Installation of \dna\ and \rdna} \label{sec:installation}
-\sectionauthor{Johannes Gruber}
+
+\chapter{Installation of \dna\ and \rdna} \label{sec:installation}
+\chapterauthor{Johannes Gruber}
 \FloatBarrier
+
 This section explains how \dna\ and \rdna\ can be installed on common desktop operating systems. As \dna\ is written in \java, both \dna\ and \rdna\ rely on \java\ to work on your computer properly. Installing and configuring a valid \java\ Runtime Environment on your machine will thus be the first and only complicated step of the installation. However, following the simple steps below, one should not run into problems while setting up \java. The advantage of the \java\ programming language for academic software is that it both runs on different operating systems without altering the source code---once the Runtime Environment is set up---and that it is---for the most part---open source. Besides setting up the \java\ Runtime Environment, the installation of \dna\ and \rdna\ is identical on different operating systems. If you feel confident that \java\ is already correctly set up on your computer, you can therefore skip to Section~\ref{subsection:installdna} if you like. Otherwise please continue to the section for the operating system you wish to install \dna\ and \rdna\ on: 
 \fullref{subsec:windows},
 \fullref{subsec:mac} or
@@ -231,7 +252,7 @@ devtools::install_github("leifeld/dna/rDNA",
 }
 \end{enumerate}
 
-\subsection{Windows}\label{subsec:windows}
+\section{Windows}\label{subsec:windows}
 To install the necessary \java\ Runtime Environment on your Windows computer, simply go to \linebreak \href{https://www.java.com/en/download/manual.jsp}{java.com/en/download/manual.jsp}, scroll down to and download \textbf{``Windows Offline (64-bit)''} (see Figure~\ref{fig:downljava}; download ``Windows Offline'' instead if you are using a 32-bit version of Windows). During the installation, you can accept all the default options, including the installation path.
 \begin{figure}
   \includegraphics[width=\linewidth]{03-1-downljava}
@@ -245,7 +266,7 @@ In this menu you have to find the button \textbf{``Environment variables...''}. 
 
 Under User Variables, click New.\footnote{This sets ``JAVA\_HOME'' just for the current user. If you want to make \java\ available for all users on the computer you are working on, you can create a System Variable instead.
 }
-Enter the variable name \textbf{``JAVA\_HOME''} and the path to your java installation in the field \textbf{``Variable value''}. If you haven't altered the default install location, you should find \java\ in \verb|"C:\Program Files\Java\jre1.8.0_151"| or if you chose to install a 32-bit version of \java\ in \verb|"C:\Program Files (x86)\Java\jre1.8.0_151"| (which will cause problems though if you try to use it with a 64-bit version of \R).
+Enter the variable name \textbf{``JAVA\_HOME''} and the path to your java installation in the field \textbf{``Variable value''}. If you haven't altered the default install location, you should find \java\ in \verb|"C:\Program Files\Java\jre1.8.0_151"| or if you chose to install a 32-bit version of \java\ in \verb|"C:\Program Files (x86)\Java\jre1.8.0_151"| (which will cause problems though if you try to use it with a 64-bit version of \R).\footnote{Note, that you have to repeat this procedure whenever the installation path of \java\ changes, for example, whenever \java\ is updated.}
 \begin{figure}
   \centering
   \includegraphics[width=0.6\linewidth]{03-2-javahome}
@@ -294,7 +315,7 @@ The chunk of code above marks the first time we are using \R\ commands in this m
 If this works fine, you should be able to continue to the next section which describes \fullref{subsection:installdna}.
 
 
-\subsection{macOS}\label{subsec:mac}
+\section{macOS}\label{subsec:mac}
 On macOS, you have to install two versions of \java\ in order for \rdna\ to work properly. The reasons behind this are too complicated to cover here, but basically, Apple built its own version of \java, which needs to be on your machine, even though it is outdated.
 Therefore we need to first install the legacy \java\ 6---which we will never use---before installing the correct \java\ Runtime Environment version 8.\footnote{If you do not wish to ever use \rdna\ or any other \R\ package which relies on \java, you might not need both versions and can just download the newest \java\ Runtime Environment. However, installing \java\ version 8 before the legacy \java\ will cause problems if you'll ever change your mind.}
 
@@ -362,7 +383,7 @@ system("export JAVA_HOME=`/usr/libexec/java_home -v 1.8`")
 @
 After that, you should be able to continue to the next section which describes \fullref{subsection:installdna}.
 
-\subsection{Linux}\label{subsec:linux}
+\section{Linux}\label{subsec:linux}
 %To Do: Add Suse and Debian commands where different
 Since you are using Linux, we assume that you are sufficiently comfortable with using the command line. Therefore, we only provide the necessary steps for installing \java\ as commands. 
 
@@ -435,7 +456,7 @@ system("sudo R CMD javareconf")
 @
 After this is finished, you are now set to start installing \dna\ and the \rdna-package themselves.
 
-\subsection{Installing the programs themselves}\label{subsection:installdna}
+\section{Installing the programs themselves}\label{subsection:installdna}
 Once \java\ is set up correctly, you can simply download the latest version of \dna\ as a JAR file from \href{https://github.com/leifeld/dna/releases}{github.com/leifeld/dna/releases} (\textit{see Figure~\ref{fig:downloadjar}}). JAR or \texttt{.jar} files are technically archive files which usually contain a computer program written in \java, along with all the pictures and libraries necessary to run the program. Once the download is finished, you can start the program by double-clicking on the downloaded file. However, on Linux, it is sometimes necessary to make the file executable first (e.\,g.\, via \texttt{\$chmod +x /path/to/your/dna.jar} or using \href{https://askubuntu.com/a/484719/570716}{a GUI-method}). On newer version of macOS, a program from an "unidentified developer" (i.\,e., if the program has not been registered with apple) needs to be made a security exception before you can run it. To do so for \dna\, control-click the program's icon, then choose ``Open'' from the shortcut menu. If clicking on the file does not open the program on a windows machine, right-click on the \texttt{.jar} file $\rightarrow$ ``Open with'' $\rightarrow$ ``Use another app'' and then navigate to the file \verb|``C:\Program Files\Java\jre1.8.0_151\bin\javaw.exe''|. 
 
 If you are not interested in using \rdna, you can now skip to the \hyperref[sec:dna-prep]{next section}.
@@ -487,20 +508,17 @@ After this is done as well, the final step of the installation is to test if \rd
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 # download two files necessary to test rDNA
 download.file(
-  "https://github.com/leifeld/dna/releases/download/v2.0-beta.19/dna-2.0-beta19.jar",
-  destfile = "dna-2.0-beta19.jar", mode = "wb")         # download DNA jar
-download.file(
-  "https://github.com/leifeld/dna/releases/download/v2.0-beta.19/sample.dna",
-  destfile = "sample.dna", mode = "wb")                 # download sample file
+  "https://github.com/leifeld/dna/raw/master/manual/dna-2.0-beta20.jar",
+  destfile = "dna-2.0-beta20.jar", mode = "wb")         # download DNA jar
 
 # load library
 library("rDNA")
 
 # initialise the file you just downloaded
-dna_init("dna-2.0-beta19.jar")
+dna_init("dna-2.0-beta20.jar")
 
 # start up DNA from R with the sample file to see if everything worked
-dna_gui(infile = "sample.dna")
+dna_gui(infile = dna_sample())
 @
 If these commands can be executed correclty, you are ready and set to use both \dna\ and \rdna\. How you can do so will be described in the rest of this manual.
 
@@ -508,14 +526,14 @@ If these commands can be executed correclty, you are ready and set to use both \
 
 
 
-\newpage
-\section{Using DNA: Preparation of your DNA Workspace} \label{sec:dna-prep}
-\sectionauthor{Felix Rolf Bossner and Johannes Gruber}
+
+\chapter{Using DNA: Preparation of your DNA Workspace} \label{sec:dna-prep}
+\chapterauthor{Felix Rolf Bossner and Johannes Gruber}
 \FloatBarrier
 
 After installing the program (see Section~\ref{sec:installation}), you can now create your first DNA database for your own research project. How you set up a DNA database will mainly depend on the needs of your personal research design---which should usually be clear before you start analysing data. Therefore, \dna\ can be customised during the creation of a new database in accordance with how you are planning to use the tool.
 
-\subsection{Creating a new DNA database}\label{sec:createnewdb}
+\section{Creating a new DNA database}\label{sec:createnewdb}
 In order to create a new DNA database file, you have to click on the index tab \textbf{``File''} (in the upper left corner of your DNA program window) and select the option \textbf{``New DNA database''} (\textit{see Figure~\ref{fig:newdb}}). As a result, a new window will open (\textit{see Figure~\ref{fig:dbchoose}}), in which you find a menu that provides you with a step-by-step guidance for specifying the configuration of your personal DNA database 
 \begin{figure}
   \includegraphics[width=\linewidth]{04-1-newDatabase}
@@ -544,7 +562,7 @@ However, for more experienced user or research projects in which several coders 
 
 
 
-\subsubsection{Creating a local DNA file}\label{sec:createlocal}
+\subsection{Creating a local DNA file}\label{sec:createlocal}
 \begin{enumerate}
 \item{
 Click on the button \textbf{``Browse''} (\textit{see Figure~\ref{fig:dbchoose}}). Now a pop-up menu---similiar to the one shown in \textit{Figure~\ref{fig:path}}---should be open.
@@ -575,7 +593,7 @@ If you just employ a single coder and don´t want to change or supplement the pr
 
 
 
-\subsubsection{Creating and using a remote database (MySQL)}\label{subsec:usingremote}
+\subsection{Creating and using a remote database (MySQL)}\label{subsec:usingremote}
 Before you can configure \dna\ for working with a remote MySQL database, it is necessary to execute at least three basic operations in MySQL (\textit{see Figure~\ref{fig:mysql}}).\footnote{For a detailed introduction to database management with MySQL see \href{https://dev.mysql.com/doc/mysql-getting-started/en/}{dev.mysql.com/doc/mysql-getting-started}.
 }
 \begin{figure}
@@ -611,7 +629,7 @@ Once the MySQL database is set up, you only have to select the option \textbf{``
 
 
 
-\subsection{User Management: Multiple Coders and Permissions}\label{subsec:userman}
+\section{User Management: Multiple Coders and Permissions}\label{subsec:userman}
 This second step of preparing your DNA workspace allows you to generate multiple user identities with different sets of rights for different coders. Thus, you can specify for each coder, which parts of the dataset each user can see or edit and thereby pre-structure your coding and research process. In order to do so, click on  second tab \textbf{``Coder''} in the sidebar of the ``Create new database'' menu (\textit{see Figure~\ref{fig:addcoder}}).
 \begin{figure}
   \includegraphics[width=\linewidth]{04-8-addcoder}
@@ -701,7 +719,7 @@ Finally you approve your choices by clicking the \textbf{OK} button \textit{(see
 
 
 
-\subsection{Statement Types and Variables} \label{subsec:stattype}
+\section{Statement Types and Variables} \label{subsec:stattype}
 Clicking on the third tab in the sidebar of the ``Create new database'' menu---\textbf{``Statement Types''} (\textit{see Figure~\ref{fig:stattype}})---opens a menu, which allows you to adjust or supplement either the variables or the types of statements, which your coders derive from the raw data.
 \begin{figure}
   \includegraphics[width=0.9\linewidth]{04-12-stattype}
@@ -709,7 +727,7 @@ Clicking on the third tab in the sidebar of the ``Create new database'' menu---\
   \label{fig:stattype}
 \end{figure}
 
-\subsubsection{Adjusting the variables of interest} \label{sec:adjusvarint}
+\subsection{Adjusting the variables of interest} \label{sec:adjusvarint}
 The statement type \textbf{``DNA Statement''} represents a text portion of your raw data, where an actor reveals her/his opinion/belief/etc. about an issue. Thus, the main task of your coder(s) is to identify such text portions and gain the relevant data about the actor or his opinion/belief/etc. Your research question or theory should not only dictate what kind of information should be coded as statements, but also which relevant variables of this information should be captured by the coder. As you can see in the ``Statement Types'' menu, DNAs default configuration allows capturing four variables. Selecting \textbf{``DNA Statement''} and clicking on the button \textbf{``Edit''} (\textit{see Figure~\ref{fig:stattype}}) opens a pop-up window (\textit{see Figure~\ref{fig:statdetail}}), which reveals the nature of this four preconfigured variables, along whose lines the coders can collect information:
 
 \begin{figure}
@@ -753,12 +771,12 @@ Click the \textbf{``OK''} button to confirm your choices (\textit{see Figure~\re
 
 Please note, that---for the statement type ``DNA Statement''---you should only specify variables, in which you have an actual research interest in and that accordingly have to be coded for all statements by all coders. If you are interested in additional and optional information about some statements, you can specify them as variables of the other preconfigured statement type---\textbf{``Annotation''}.
 
-\subsubsection{Adjusting the statement types}
+\subsection{Adjusting the statement types}
 There are very few research scenarios, in which it is necessary to complement the two existing types of statements with further ones or with an adjustment of type ``DNA statement''. One of them would be, if you study two parallel yet different research questions, which employ the same dataset \textit{and} the same coders at the same time. In this case, you could \textbf{first rename} the statement type ``DNA Statement'' by \textbf{selecting} it from the statement type menu, clicking the \textbf{``Edit''} button (\textit{see Figure~\ref{fig:stattype}}), entering the new name (in this case: ``Statement for Research Project 1'') in the \textbf{text field on top of the pop-up window} (\textit{see Figure~\ref{fig:statdetail}}) and pressing the \textbf{``OK''} button (\textit{see 5, Figure~\ref{fig:statdetail}}). 
 Subsequently you would open a \textbf{new pop-up window} by clicking on the \textbf{``Add''} button in the statement type menu (\textit{left button in Figure~\ref{fig:stattype}}). Then \textbf{name} the new statement type (in this case: ``Statement for Research Project 2'') in the text field on top of the pop-up window and \textbf{choose a color} (different from the other type) by clicking on the colored button next to this text field. Then you also need to \textbf{specify the relevant variables} synchronous to the procedure depicted in Section~\ref{sec:adjusvarint}.
 However, please evaluate carefully, if it is really neccesary for your second research interest that you specify a second statement type or if it would be possible to either conceptualize it as a variable of the existing statement type or study it sequentially or with a different set of coders (and therefore in a different \dna\ dataset). \textbf{More than two statement types (besides ``Statement'' and ``Annotation'') can cause a confusion of the coders and therefore compromise the validity of the coding procedure}.
 
-\subsection{Final step: Approving your workspace and creating the DNA file} \label{subsec:finalstep}
+\section{Final step: Approving your workspace and creating the DNA file} \label{subsec:finalstep}
 Finally, clicking on the last tab in the sidebar of the ``Create new database'' menu---\textbf{``Summary''}---provides you with a summary of your choices in respect to the configuration of your coding process (\textit{see Figure~\ref{fig:summary}}). After controlling each of the three information you can now create your database by clicking on the \textbf{``Create database''} button. If this button is disabled and you get the error ``No database selected'' (\textit{see Figure~\ref{fig:nodb}}), you probably forgot to click the \textbf{Apply button} after specifying your database (\textit{see Section~\ref{sec:createlocal}, step 3}). After creating the database, the new database will open in the main DNA window (\textit{see Figure~\ref{fig:newdb}}) and you can proceed towards loading up and organizing the raw data.
 \begin{figure}
   \includegraphics[width=\linewidth]{04-14-summary}
@@ -776,13 +794,13 @@ Finally, clicking on the last tab in the sidebar of the ``Create new database'' 
 
 
 
-\newpage
-\section{Using DNA: Importing and Organizing your Raw Data} \label{sec:dna-import}
-\sectionauthor{Felix Rolf Bossner}
+
+\chapter{Using DNA: Importing and Organizing your Raw Data} \label{sec:dna-import}
+\chapterauthor{Felix Rolf Bossner}
 \FloatBarrier
 This section describes how to upload and organize your research project's raw data---i.\,e.\, the text files (newspaper articles, press releases etc.) containing the uncoded statements---in DNA. First it will be layed out how you open an existing database---either locally or from a remote location. Then you will learn how to import new documenst into \dna---either by importing one document at a time or by selecting mutliple documents for import. Finally, we tell you how you can organise the documents in your database and how you can change your docuemtns' metadata.
 
-\subsection{Opening an existing DNA database}
+\section{Opening an existing DNA database}
 First of all, you have to choose, in which \dna\ Database you want to upload and process your data. To open a \dna database, simply follow the steps depicted in Figure 1: First, click on the index tab \textbf{``File''} and select the option \textbf{``Open \dna\ database''} (\textit{see Figure~\ref{fig:opendb}, step 1}). As a result, a pop-up window will appear, which allows you to choose between opening a \textbf{``Local .dna file''} or a \textbf{``remote database on a server''}. If your database is stored on a remote server, you should choose the second option and repeat the procedure outlined in \fullref{subsec:usingremote}.  If your dataset is stored in a folder on your local PC or device, you can proceed with the preset option and click on the button \textbf{``Browse''} (\textit{see Figure~\ref{fig:opendb}, step 2}), which will open a further pop-up window, in which you can find your database by choosing its storage location from the  \textbf{``Save in''} slide down menu  (\textit{see step 3}), selecting the respective database (\textit{see step 4}) and clicking on the button \textbf{``Open''} both in the pop-up  and the ``Open existing database...'' window (\textit{see steps 5 and 6}).
 \begin{figure}
   \includegraphics[width=\linewidth]{05-1-opendb}
@@ -790,12 +808,12 @@ First of all, you have to choose, in which \dna\ Database you want to upload and
   \label{fig:opendb}
 \end{figure}
 
-\subsection{Importing Documents (Raw Data)}\label{subsec:importdoc}
+\section{Importing Documents (Raw Data)}\label{subsec:importdoc}
 There are four different---partly semi-automatic---ways to upload your raw data and related descriptive information (title, date, author, source, section and type of document) into \dna: Importing single Documents manually via Copy and Paste, Importing multiple Documents semi-automatically from text files, Importing Documents from other DNA databases and using \rdna\ to import data which is already available in R (WIP!)%
 %(\textit{see Section~\ref{subsec:importr}})%
 . All four will be explained in detail in this section.
 
-\subsubsection{Importing single Documents manually via Copy and Paste}
+\subsection{Importing single Documents manually via Copy and Paste}
 The most basic way to import data to \dna\ requires you to manually copy and paste the content and the descriptive information for each of your documents into the text fields of a pop-up window, which you open by clicking on the index tab \textbf{``Documents''} and selecting the option \textbf{``Add new document''} (\textit{see Figure~\ref{fig:adddoc}}). This window has eight text boxes, in which you can enter information from and about your source data (\textit{see Figure~\ref{fig:adddoc}}):
 
 \begin{itemize}
@@ -827,7 +845,7 @@ Finally---after checking your specifications---you can import the document to \d
 
 
 
-\subsubsection{Importing multiple Documents semi-automatically from text files}\label{subsec:multiimport}
+\subsection{Importing multiple Documents semi-automatically from text files}\label{subsec:multiimport}
 If you want to analyze a greater number of articles, it quickly becomes tedious to manually copy and paste each document and its meta data. This is why \dna\ also offers a semi-automatic way to upload multiple documents and their relevant meta data (author, date, source, type) at the same time.
 
 \paragraph{Downloading and Preparing your Raw Data.}
@@ -882,7 +900,7 @@ or
   \label{fig:regex}
 \end{figure}
 
-\subsubsection{Importing Documents from other \dna\ databases}\label{subsec:merge}
+\subsection{Importing Documents from other \dna\ databases}\label{subsec:merge}
 You can also import documents from other \dna\ databases. This function is particularly relevant in two scenarios: First, if you not only want to use the \textbf{raw data, but also the coded statements} of an already finished research project, this function allows you to import both. Secondly, if there is \textbf{more than one person working on the same project at the same time} and you did not use multiple user roles (\textit{see Section~\ref{subsec:userman}}) to enable your coders to work on the same remote database. In the second scenario, you should use this function to prepare your datasets or merge the codings, as it is usually difficult to merge the files manually later on. In the latter scenario, the function helps you to avoid trouble with \textbf{duplicate statement IDs} and article names, as \dna\ will take care of e.\,g.\, duplicates automatically. 
 
 Make sure, that you \textbf{know which version of DNA} (DNA 2.0 or older) was used to create and edit the database, from which you want to import data, \textbf{before} using the ``Import from DNA'' function. If you use this manual as a beginner's tutorial for working with \dna\ please download the file ``sample.dna'' from the \dna\ \href{https://github.com/leifeld/dna/releases}{github.com/leifeld/dna/releases}. This file contains a small selection of documents and statements from a larger project about congressional hearings on climate change, employed in the project described in \citet{fisher2013mapping, fisher2013where}.
@@ -905,13 +923,13 @@ In this menu, you can select, which documents (and respective which coded statem
 Clicking on the button \textbf{``Keyword filter...''} (\textit{see left button in Figure~\ref{fig:importstat}}) opens a new pop-up window, in which you can enter a specific search term. For example, if you downloaded and opened the \href{https://github.com/leifeld/dna/raw/master/manual/sample.dna}{``sample.dna''} file, you can select all congressional hearings of NGO representatives by \textbf{entering the keyword ``NGO''} in the text field and pressing the button \textbf{``OK''} in the ``Keyword filer'' pop-up window (\textit{see Figure~\ref{fig:importstat}}). Now only the boxes of the three documents, which contain the hearings of NGO representatives Kateri Callahan, David Hamilton and Nayak Navin, should be checked, while the other boxes are unchecked. The ``Keyword filter..'' function is based on the same regex syntax described in \fullref{par:adjregex}. This means, you can also use more specified regular expressions (\textit{see Figure~\ref{fig:regex} or \href{https://www.cheatography.com/davechild/cheat-sheets/regular-expressions/}{regex cheatsheet}}) to select certain articles. For example, if you enter a ``\^{}N'' in the ``Keyword filter'' \dna\ will select all articles starting with a capital N. If you want to undo your selections, you can also automatically select or unselect all articles by pressing the button \textbf{``(Un)select all''} in the middle of the ``Import statements'' window (\textit{see Figure~\ref{fig:importstat}}). Pressing the right button \textbf{``Import selected''} in the same window imports all documents with a checked box (and the respective coded statements) in your \dna\ database (\textit{see Figure~\ref{fig:importstat}}). If you use this manual as a beginner's tutorial for working with \dna, you should try importing all documents and the respective statements from the file \href{https://github.com/leifeld/dna/raw/master/manual/sample.dna}{``sample.dna''} into your database. 
 
 %To DO
-%\subsubsection{Importing Documents using \R\}\label{subsec:importr}
+%\subsection{Importing Documents using \R\}\label{subsec:importr}
 
 
 
 
-\subsection{Organizing documents (Raw Data) }
-\subsubsection{Deleting and navigating through documents}
+\section{Organizing documents (Raw Data) }
+\subsection{Deleting and navigating through documents}
 All your imported documents are listed in the upper middle table of the \dna\ main window. If you click on an article, its corresponding text (i. e. the speech) will be displayed in the text area below the document table. By clicking on, for example, the entry ``109-1: Callahan, Kateri-NGO-Y'' you open the speech of Kateri Callahan, a representative of the Alliance to Save Energy. You can adjust the size of the document table (by clicking on the bar above the text area and moving it vertically with your cursor) or its colums (by clicking on the edge of the column and moving it horizontally with your cursor). You can also customize the meta information, which are displayed in the document table: Just \textbf{right click on any document} and use the appearing \textbf{context menu} to (un-)check the boxes of the information you (don't) want to be displayed (\textit{see Figure~\ref{fig:batchrecode}, step 1}). A structured (and customised) overview of your raw data is essential for detecting missing information and thus efficiently controlling, organizing and coding your data. For example, if you display the meta information ``Type'' (by checking the respective box in the context menu), you can see that the type of all documents from the sample.dna file is not listed.
 \begin{figure}
   \includegraphics[width=\linewidth]{05-9-batchrecode}
@@ -921,7 +939,7 @@ All your imported documents are listed in the upper middle table of the \dna\ ma
 
 The same context menu can be used to delete documents from your database by \textbf{selecting the documents} you want to delete (pressing and holding the \textbf{``Ctrl'' key} for selecting multiple documents), opening the context menu with a \textbf{right click} and choosing the option \textbf{``Delete selected documents''}. 
 
-\subsubsection{Editing the documents' meta data (author, time etc...)}
+\subsection{Editing the documents' meta data (author, time etc...)}
 DNA allows you to edit, delete or complement the descriptive information related to your raw data (title, date, author, source, section and type of document). Similiar to the procedures outlined in Section~\ref{subsec:importdoc} there is a manual as well as a semi-automatic way to adjust the meta data of your documents.
 
 \paragraph{Editing the documents' meta data manually.}
@@ -1003,22 +1021,22 @@ By specifying \code{(?<=.+?-)[A-Z]+} as ``\%source regular expression'' (and acc
 
 
 
-\newpage
+
 %To DO
-\section{Using \dna : Coding the Data}\label{sec:dna-coding}
+\chapter{Using \dna : Coding the Data}\label{sec:dna-coding}
 \FloatBarrier
 \textit{Coming soon...}
 %To DO
-\section{Using \dna : Exporting the coded Data}\label{sec:dna-export}
+\chapter{Using \dna : Exporting the coded Data}\label{sec:dna-export}
 \FloatBarrier
 \textit{Coming soon...}
 
 
 
 
-\newpage
-\section{\rdna: Using \dna\ from \R} \label{sec:rdna}
-\sectionauthor{Philip Leifeld}
+
+\chapter{\rdna: Using \dna\ from \R} \label{sec:rdna}
+\chapterauthor{Philip Leifeld}
 \FloatBarrier
 \dna\ can be connected to the statistical computing environment \R\ \citep{coreteam2014r:} through the \rdna\ package \citep{leifeld2017rdna}.
 There are two advantages to working with \R\ on \dna\ data.
@@ -1037,7 +1055,7 @@ Analysing \dna\ data in \R\ permits many forms of data analysis beyond simple vi
 Examples include cluster analysis or community detection, scaling and application of data reduction techniques, centrality analysis, and even statistical modelling of network data.
 \R\ is also flexible in terms of combining and matching the data from \dna\ with other data sources.
 
-\subsection{Getting started with \rdna}
+\section{Getting started with \rdna}
 The first step is to install \R.
 Installing additional \R\ packages for network analysis and clustering, such as \texttt{statnet} \citep{goodreau2008statnet, handcock2008statnet, handcock2016statnet}, \texttt{xergm} \citep{leifeld2017temporal, leifeld2017xergm:}, \texttt{igraph} \citep{csardi2006igraph}, and \texttt{cluster} \citep{maechler2017cluster}, is recommended.
 Moreover, it is necessary to install the \texttt{rJava} package \citep{urbanek2016rjava}, on which the \rdna\ package depends, and the \texttt{devtools} package \citep{wickham2016devtools}, which permits installing \R\ packages from GitHub (\textit{see Section~\ref{subsection:installdna}}).
@@ -1130,7 +1148,7 @@ The result is a data frame with organizations in the rows and one column per org
 The next section will provide usage examples of both the \texttt{dna\_network} and the \texttt{dna\_attributes} functions.
 
 
-\subsection{Retrieving networks and attributes}
+\section{Retrieving networks and attributes}
 This section will explore the \texttt{dna\_network} function and facilities for retrieving attributes in more detail.
 The \texttt{dna\_network} function has a number of arguments, which resemble the export options in the \dna\ export window.
 The help page for the \texttt{dna\_network} function provides details on these arguments.
@@ -1260,7 +1278,8 @@ affil <- dna_network(conn,
                      variable2 = "concept", 
                      qualifier = "agreement", 
                      qualifierAggregation = "combine", 
-                     duplicates = "document")
+                     duplicates = "document",
+                     verbose = FALSE)
 @
 
 This creates a $7 \times 6$ matrix of organizations and their relations to concepts. 
@@ -1302,16 +1321,16 @@ Furthermore, we can now see more clearly that the concept we omitted in the cong
 The green edges span both camps, and this caused additional connections between the two groups.
 The negative tie is ignored in the construction of the congruence network because conflicts are not counted and there is no second red tie to that concept.
 
-% \subsection{Cluster analysis}
+% \section{Cluster analysis}
 % TODO
 
-% \subsection{Heat maps}
+% \section{Heat maps}
 % TODO
 
-% \subsection{Multi-dimensional scaling}
+% \section{Multi-dimensional scaling}
 % TODO
 
-% \subsection{Correspondence analysis}
+% \section{Correspondence analysis}
 % TODO
 
 \bibliographystyle{apalike}
