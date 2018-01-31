@@ -879,3 +879,188 @@ dna_plotTimeWindow <- function(x,
     }
   }
 }
+
+
+#' Plot agreement and disagreement
+#'
+#' Plot agreement and disagreement towards statements (i.e. their centrality).
+#'
+#' This function plots agreement and disagreement towards DNA Statements for
+#' different categories such as "concept", "person" or "docTitle". The goal is to
+#' determine the centrality of claims. If, for example, concepts are not very
+#' contested, this may mask the extent of polarization with regard to the other
+#' concepts. It often makes sense to exclude those concept in further analysis.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \link{dna_connection} function.
+#' @param of Category over which (dis-)agreement will be plotted. Most useful
+#'   categories are "concept" and "actor" but document categories can be used.
+#' @param lab.pos,lab.neg Names for (dis-)agreement labels.
+#' @param lab Determines whether (dis-)agreement labels and title are displayed.
+#' @param colours If TRUE, statement colours will be used to fill the bars. Not
+#'   possible for all categories.
+#' @param fontSize Text size in pts.
+#' @param barWidth Thickness of the bars. bars will touch when set to 1. When
+#'   set to 0.5, space between two bars is the same as thickness of bars.
+#' @param axisWidth Thickness of the x-axis which separates agreement from
+#'   disagreement.
+#' @param truncate Sets the number of characters to which axis labels (i.e. the
+#'   categories of "of") should be truncated.
+#' @param ... Additional arguments passed to \link{dna_network}.
+#'
+#' @examples
+#' \dontrun{
+#' dna_init("dna-2.0-beta20.jar")
+#' conn <- dna_connection(dna_sample())
+#'
+#' dna_plotCentrality(connection = conn,
+#'                    of = "concept",
+#'                    colours = FALSE,
+#'                    barWidth = 0.5)
+#' }
+#' @author Johannes B. Gruber
+#' @export
+#' @import ggplot2
+dna_plotCentrality <- function(connection,
+                               of = "concept",
+                               lab.pos = "Agreement",
+                               lab.neg = "Disagreement",
+                               lab = TRUE,
+                               colours = FALSE,
+                               fontSize = 12,
+                               barWidth = 0.6,
+                               axisWidth = 1.5,
+                               truncate = 40,
+                               ...) {
+  #retrieve data from network
+  dta <- dna_network(connection = connection,
+                     networkType = "eventlist",
+                     verbose = FALSE,
+                     ...)
+  
+  # test validity of "of"-value
+  if(!of %in% colnames(dta)|of %in% c("id", "agreement")){
+    stop(
+      paste0("\"", of, "\" is not a valid \"of\" value. Choose one of the following:\n",
+             paste0("\"", colnames(dta)[!colnames(dta) %in% c("id", "agreement")], "\"", collapse = ",\n"))
+    )
+  }
+  if(of %in% c("time", "docId", "docTitle", "docAuthor", "docSource", "docSection", "docType")){
+    warning(
+      paste0("\"colours = TRUE\" not possible for \"of = \"", of, "\"\".", collapse = ",\n")
+    )
+    colours <- FALSE
+  }
+  
+  #count (dis-)agreement per "of"
+  dta <- as.data.frame(table(dta$agreement, dta[, of]),
+                       stringsAsFactors = FALSE)
+  
+  #rename columns to work with them more easily
+  colnames(dta) <- c("agreement", "concept", "Frequency")
+  
+  # order data per total mentions (disagreement + agreement)
+  dta2 <- stats::aggregate(Frequency ~ concept, sum, data=dta)
+  dta2 <- dta2[order(dta2$Frequency, decreasing = TRUE), ]
+  # replicate order of dta2$concept to dta
+  dta <- dta[order(match(dta$concept, dta2$concept)), ]
+  
+  # get bar colours
+  if (colours){
+    col <- dna_attributes(connection = connection, statementType = "DNA Statement",
+                          variable = of, values = NULL)
+    dta$color <- as.character(col$color[match(dta$concept, col$value)])
+  } else {
+    dta$color <- "white"
+  }
+  
+  # truncate where "of" is longer than truncate value
+  dta$concept <- ifelse(nchar(dta$concept) > truncate,
+                        paste0(gsub("\\s+$", "",
+                                    strtrim(dta$concept, width = truncate)),
+                               "..."),
+                        dta$concept
+  )
+  if(length(dta$concept) / length(unique(dta$concept)) != 2){
+    warning("After truncation, some labels are now excatly the same. I will try to fix that.")
+    dta2$concept <- ifelse(nchar(dta2$concept) > truncate,
+                           paste0(gsub("\\s+$", "",
+                                       strtrim(dta2$concept, width = truncate)),
+                                  "..."),
+                           dta2$concept
+    )
+    i <- 1
+    while(any(duplicated(dta2$concept))){
+      dta2$concept[duplicated(dta2$concept)] <- paste0(dta2$concept[duplicated(dta2$concept)], ".", i)
+      i <- i + 1
+    }
+    dta2 <- dta2[rep(seq_len(nrow(dta2)), each=2),]
+    dta$concept <- dta2$concept
+  }
+  
+  # setting disagreement as -1 instead 0
+  dta$agreement <- ifelse(dta$agreement == 0, -1, 1)
+  
+  # recode Frequency in positive and negative
+  dta$Frequency <- dta$Frequency * as.integer(dta$agreement)
+  dta$absFrequency <- abs(dta$Frequency)
+  
+  # generate position of bar labels
+  offset <- (max(dta$Frequency) + abs(min(dta$Frequency))) * 0.05
+  offset <- ifelse(offset < 0.5, 0.5, offset) # offset should be at least 0.5
+  if(offset > abs(min(dta$Frequency))){offset <- abs(min(dta$Frequency))}
+  if(offset > max(dta$Frequency)){offset <- abs(min(dta$Frequency))} 
+  dta$pos <- ifelse(dta$Frequency > 0, 
+                    dta$Frequency + offset, 
+                    dta$Frequency - offset)
+  
+  # move 0 labels where neccessary
+  dta$pos[dta$Frequency == 0] <- ifelse(dta$agreement[dta$Frequency == 0] == 1, 
+                                        dta$pos[dta$Frequency == 0] * -1,
+                                        dta$pos[dta$Frequency == 0])
+  
+  high <- length(unique(dta$concept)) + 1.5
+  yintercepts <- data.frame(x = c(0, high-1),
+                            y = c(0, 0))
+  
+  g <-  ggplot(dta, aes_string(x = "concept", y = "Frequency")) + 
+    geom_bar(stat="identity", 
+             position = position_dodge(), 
+             fill = dta$color,
+             colour = "black",
+             width = barWidth) +
+    coord_flip() +
+    theme_bw() +
+    geom_line(aes_string(x = "x", y = "y"), data = yintercepts, size = axisWidth) +
+    theme(panel.border = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          axis.line = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.text.y = element_text(size = fontSize),
+          plot.title = element_text(hjust = ifelse(max(nchar(dta$concept)) > 10, -0.15, 0))) +
+    geom_text(aes_string(x = "concept", y = "pos", label = "absFrequency"), size = (fontSize / .pt)) +
+    scale_y_discrete(expand = expand_scale(add = offset)) + #make some room for labels
+    scale_fill_manual("legend", values = dta$color)
+  if(lab){
+    g <- g +
+      annotate("text", 
+               x = high, 
+               y = offset * 2,
+               hjust = 0,
+               label = lab.pos,
+               size = (fontSize / .pt)) +
+      annotate("text", 
+               x = high, 
+               y = 0 - offset * 2,
+               hjust = 1,
+               label = lab.neg,
+               size = (fontSize / .pt)) +
+      ggtitle(label = paste0(of, "s")) +
+      scale_x_discrete(expand = expand_scale(add = 2))
+  }
+  return(g)
+}
