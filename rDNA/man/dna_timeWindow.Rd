@@ -6,9 +6,7 @@
 \usage{
 dna_timeWindow(connection, timewindow = "no", windowsize = 100,
   facet = character(), facetValues = character(), method = "modularity",
-  excludeAuthors = character(), excludeSources = character(),
-  excludeSections = character(), excludeTypes = character(), verbose = 2,
-  ...)
+  verbose = 2, ...)
 }
 \arguments{
 \item{connection}{A \link{dna_connection} object created by the 
@@ -30,18 +28,6 @@ excludeTypes to exclude documents from comparison.}
 \item{method}{Is used to compute exactly one measurement for each network
 computed in the temporal sequence of networks. Can contain the name of any
 function which reduces a matrix to just one value.}
-
-\item{excludeAuthors}{Same as in \link{dna_network}. Used to override facet
-'all' when used.}
-
-\item{excludeSources}{Same as in \link{dna_network}. Used to override facet
-'all' when used.}
-
-\item{excludeSections}{Same as in \link{dna_network}. Used to override facet
-'all' when used.}
-
-\item{excludeTypes}{Same as in \link{dna_network}. Used to override facet
-'all' when used.}
 
 \item{verbose}{Display messages if TRUE or 1. Also display messages details
 of network construction when 2}
@@ -71,11 +57,6 @@ tW <- dna_timeWindow(connection = conn,
                                      "Voinovich, George", 
                                      "Whitman, Christine Todd"),
                      method = "modularity",
-                     excludeValues = list(),
-                     excludeAuthors = character(),
-                     excludeSources = character(),
-                     excludeSections = character(),
-                     excludeTypes = character(),
                      verbose = TRUE)
 
 dna_plotTimeWindow(tW, facetValues = c("Bluestein, Joel", "Voinovich, George"))

@@ -636,14 +636,6 @@ lvmod <- function(mat) {
 #' @param method Is used to compute exactly one measurement for each network
 #'   computed in the temporal sequence of networks. Can contain the name of any
 #'   function which reduces a matrix to just one value.
-#' @param excludeAuthors Same as in \link{dna_network}. Used to override facet
-#'   'all' when used.
-#' @param excludeSources Same as in \link{dna_network}. Used to override facet
-#'   'all' when used.
-#' @param excludeSections Same as in \link{dna_network}. Used to override facet
-#'   'all' when used.
-#' @param excludeTypes Same as in \link{dna_network}. Used to override facet
-#'   'all' when used.
 #' @param verbose Display messages if TRUE or 1. Also display messages details
 #'   of network construction when 2
 #' @param ... additional arguments passed to \link{dna_network}.
@@ -661,11 +653,6 @@ lvmod <- function(mat) {
 #'                                      "Voinovich, George", 
 #'                                      "Whitman, Christine Todd"),
 #'                      method = "modularity",
-#'                      excludeValues = list(),
-#'                      excludeAuthors = character(),
-#'                      excludeSources = character(),
-#'                      excludeSections = character(),
-#'                      excludeTypes = character(),
 #'                      verbose = TRUE)
 #' 
 #' dna_plotTimeWindow(tW, facetValues = c("Bluestein, Joel", "Voinovich, George"))
@@ -678,41 +665,64 @@ dna_timeWindow <- function(connection,
                            windowsize = 100,
                            facet = character(),
                            facetValues = character(),
-                           method = "modularity",  # should be possible to pass different function in (see Phil other package)
-                           excludeAuthors = character(),
-                           excludeSources = character(), 
-                           excludeSections = character(),
-                           excludeTypes = character(),
+                           method = "modularity",
                            verbose = 2,
                            ...) { #passed on to dna_network
   
+  dots <- list(...)
+  if("excludeAuthors" %in% names(dots)){
+    excludeAuthors <- unname(unlist(dots["excludeAuthors"]))
+    dots["excludeAuthors"] <- NULL
+  } else {
+    excludeAuthors <- character()
+  }
+  if("excludeSources" %in% names(dots)){
+    excludeSources <- unname(unlist(dots["excludeSources"]))
+    dots["excludeSources"] <- NULL
+  } else {
+    excludeSources <- character()
+  }
+  if("excludeSections" %in% names(dots)){
+    excludeSections <- unname(unlist(dots["excludeSections"]))
+    dots["excludeSections"] <- NULL
+  } else {
+    excludeSections <- character()
+  }
+  if("excludeTypes" %in% names(dots)){
+    excludeTypes <- unname(unlist(dots["excludeTypes"]))
+    dots["excludeTypes"] <- NULL
+  } else {
+    excludeTypes <- character()
+  }
+  
   facetValues <- c(facetValues, "all")
-  if(facet == "Authors"){Authors <- facetValues}else{Authors <- character()}
-  if(facet == "Sources"){Sources <- facetValues}else{Sources <- character()}
-  if(facet == "Sections"){Sections <- facetValues}else{Sections <- character()}
-  if(facet == "Types"){Types <- facetValues}else{Types <- character()}
-  if(any(Authors %in% excludeAuthors)){
+  
+  if( facet == "Authors" ){Authors <- facetValues} else {Authors <- character()}
+  if (facet == "Sources"){Sources <- facetValues} else {Sources <- character()}
+  if (facet == "Sections"){Sections <- facetValues} else {Sections <- character()}
+  if (facet == "Types"){Types <- facetValues} else {Types <- character()}
+  if (any(Authors %in% excludeAuthors)){
     cat(paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "), 
         "is found in both \"Authors\" and \"excludeAuthors\".", 
         paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "),
         " was removed from \"excludeAuthors\".\n")
     excludeAuthors <- excludeAuthors[!excludeAuthors %in% Authors]
   }
-  if(any(Sources %in% excludeSources)){
+  if (any(Sources %in% excludeSources)){
     cat(paste0("\"", Sources[Sources %in% excludeSources], "\"", collapse = ", "),
         "is found in both \"Sources\" and \"excludeSources\".", 
         paste0("\"", Sources[Sources %in% excludeSources], "\"", collapse = ", "),
         " was removed from \"excludeSources\".\n")
     excludeSources <- excludeSources[!excludeSources %in% Sources]
   }
-  if(any(Sections %in% excludeSections)){
+  if (any(Sections %in% excludeSections)){
     cat(paste0("\"", Sections[Sections %in% excludeSections], "\"", collapse = ", "),
         "is found in both \"Sections\" and \"excludeSections\".", 
         paste0("\"", Sections[Sections %in% excludeSections], "\"", collapse = ", "),
         " was removed from \"excludeSections\".\n")
     excludeSections <- excludeSections[!excludeSections %in% Sections]
   }
-  if(any(Types %in% excludeTypes)){
+  if (any(Types %in% excludeTypes)){
     cat(paste0("\"", Types[Types %in% excludeTypes], "\"", collapse = ", "),
         "is found in both \"Types\" and \"excludeTypes\".", 
         paste0("\"", Types[Types %in% excludeTypes], "\"", collapse = ", "),
@@ -720,51 +730,55 @@ dna_timeWindow <- function(connection,
     excludeTypes <- excludeTypes[!excludeTypes %in% Types]
   }
   
-  if(method == "modularity"){
+  if (method == "modularity"){
     mod.m <- lapply(facetValues, function(x){
-      if(verbose|verbose == 2){cat("Calculating Type =", facetValues[facetValues %in% x], "\n")}
-      nw <- dna_network(connection = connection, 
-                        networkType = "onemode", 
-                        qualifierAggregation = "congruence",
-                        timewindow = timewindow, 
-                        windowsize = windowsize,
-                        excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
-                        excludeSources = c(Sources[Sources %in% x], excludeSources), 
-                        excludeSections = c(Sections[Sections %in% x], excludeSections),
-                        excludeTypes = c(Types[Types %in% x], excludeTypes),
-                        verbose = ifelse(verbose > 1, TRUE, FALSE),
-                        ...)
+      if (verbose|verbose == 2){cat("Calculating Type =", facetValues[facetValues %in% x], "\n")}
+      nw <- do.call(dna_network,
+                    c(list(connection = connection, 
+                           networkType = "onemode", 
+                           qualifierAggregation = "congruence",
+                           timewindow = timewindow, 
+                           windowsize = windowsize,
+                           excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
+                           excludeSources = c(Sources[Sources %in% x], excludeSources), 
+                           excludeSections = c(Sections[Sections %in% x], excludeSections),
+                           excludeTypes = c(Types[Types %in% x], excludeTypes),
+                           verbose = ifelse(verbose > 1, TRUE, FALSE)      
+                    ), dots)
+                    )
       mod.m <- data.frame(index = 1:length(nw$networks), 
                           time = nw$time, 
                           modularity = sapply(nw$networks, lvmod), 
                           facet = rep(facetValues[facetValues %in% x], length(nw$networks)))
       return(mod.m)
     })
-  }else{
+  } else {
     if(!exists(method, mode = 'function')){
       stop(
         paste0("\"", method, "\" is not a valid function.")
       )
-    }else{
-      if(length(do.call(method, list(matrix(c(1,2,3, 11,12,13), nrow = 2, ncol = 3))))!=1){
+    } else {
+      if (length(do.call(method, list(matrix(c(1,2,3, 11,12,13), nrow = 2, ncol = 3))))!=1){
         stop(
           paste0("\"", method, "\" is not a valid method for dna_timeWindow.\n dna_timeWindow needs a 
                  function which provides exactly one value when applied to an object of class matrix. 
                  See ?dna_timeWindow for help.")
-          )}else{
+          )} else {
             mod.m <- lapply(Types, function(x){
-              if(verbose|verbose == 2){cat("Calculating Type =", Types[Types %in% x], "\n")}
-              nw <- dna_network(connection = connection, 
-                                networkType = "onemode", 
-                                qualifierAggregation = "congruence",
-                                timewindow = timewindow, 
-                                windowsize = windowsize,
-                                excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
-                                excludeSources = c(Sources[Sources %in% x], excludeSources), 
-                                excludeSections = c(Sections[Sections %in% x], excludeSections),
-                                excludeTypes = c(Types[Types %in% x], excludeTypes),
-                                verbose = ifelse(verbose > 1, TRUE, FALSE),
-                                ...)
+              if (verbose|verbose == 2){cat("Calculating Type =", Types[Types %in% x], "\n")}
+              nw <- do.call(dna_network,
+                            c(list(connection = connection, 
+                                   networkType = "onemode", 
+                                   qualifierAggregation = "congruence",
+                                   timewindow = timewindow, 
+                                   windowsize = windowsize,
+                                   excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
+                                   excludeSources = c(Sources[Sources %in% x], excludeSources), 
+                                   excludeSections = c(Sections[Sections %in% x], excludeSections),
+                                   excludeTypes = c(Types[Types %in% x], excludeTypes),
+                                   verbose = ifelse(verbose > 1, TRUE, FALSE)      
+                            ), dots)
+                            )
               mod.m <- data.frame(index = 1:length(nw$networks), 
                                   time = nw$time, 
                                   x = sapply(nw$networks, method), 
@@ -772,9 +786,7 @@ dna_timeWindow <- function(connection,
               colnames(mod.m)[3] <- method
               return(mod.m)
             })
-      }
-  }
-}
+}}}
   mod.df <- do.call("rbind", mod.m)
   class(mod.df) <- c("data.frame", "dna_timeWindow", paste(method))
   return(mod.df)
@@ -840,29 +852,30 @@ dna_plotTimeWindow <- function(x,
   if(!any(grepl("dna_timeWindow", class(x)))){
     warning("x is not an object of class \"dna_timeWindow\".")
   }
-  if(identical(facetValues, "all")){
+  if (identical(facetValues, "all")){
     ggplot2::ggplot(x, aes_string(x = "time", y = paste(method))) + 
       geom_line() + 
       geom_smooth(stat = 'smooth', method = 'gam', formula = y ~ s(x, bs = "cs")) +
       facet_wrap(~ facet, nrow = rows, ncol = cols)+ 
       expand_limits(y = include.y)
-  }else{
-    if(all(facetValues %in% x$facet)){
-      if(length(facetValues) == 1){
+  } else {
+    if (all(facetValues %in% x$facet)){
+      if (length(facetValues) == 1){
         ggplot2::ggplot(x[grep(paste0("^", facetValues, "$"), x$facet),], aes_string(x = "time", y = paste(method))) + 
           geom_line() + 
           geom_smooth(stat = 'smooth', method = 'gam', formula = y ~ s(x, bs = "cs")) + 
           expand_limits(y = include.y)
-      }else{
+      } else {
         ggplot2::ggplot(x[x$facet %in% facetValues,], aes_string(x = "time", y = paste(method))) + 
           geom_line() + 
           geom_smooth(stat = 'smooth', method = 'gam', formula = y ~ s(x, bs = "cs")) +
           facet_wrap(~ facet, nrow = rows, ncol = cols)+ 
           expand_limits(y = include.y)
       }
-    }else{stop(
-      paste0("\"", facetValues[!facetValues %in% x$facet], "\" was not found in facetValues")
-    )
+    } else {
+      stop(
+        paste0("\"", facetValues[!facetValues %in% x$facet], "\" was not found in facetValues")
+      )
     }
   }
 }
