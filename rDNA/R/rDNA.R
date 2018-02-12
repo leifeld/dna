@@ -115,8 +115,27 @@ dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
 #' }
 #' @author Johannes Gruber
 #' @export
-dna_sample <- function(){
-  system.file("extdata", "sample.dna", package = "rDNA")
+dna_sample <- function(fresh = FALSE, copy2wd = FALSE){
+  if (!file.exists(paste0( #create backup
+    system.file("extdata", "sample.dna", package = "rDNA"), ".backup"
+  ))) {
+    file.copy(from = system.file("extdata", "sample.dna", package = "rDNA"),
+              to = paste0(
+                system.file("extdata", "sample.dna", package = "rDNA"), ".backup"
+              ), overwrite = TRUE)
+  }
+  if (fresh) {
+    file.copy(to = system.file("extdata", "sample.dna", package = "rDNA"),
+              from = paste0(
+                system.file("extdata", "sample.dna", package = "rDNA"), ".backup"
+              ), overwrite = TRUE)
+  }
+  if (copy2wd){
+    file.copy(from = system.file("extdata", "sample.dna", package = "rDNA"),
+              to = getwd(), overwrite = TRUE)  
+  } else {
+    system.file("extdata", "sample.dna", package = "rDNA") 
+  }
 } 
 
 
@@ -1059,7 +1078,6 @@ dna_plotCentrality <- function(connection,
                hjust = 1,
                label = lab.neg,
                size = (fontSize / .pt)) +
-      ggtitle(label = paste0(of, "s")) +
       scale_x_discrete(expand = expand_scale(add = 2))
   }
   return(g)
