@@ -4,7 +4,7 @@
 \alias{dna_gui}
 \title{Open the DNA GUI}
 \usage{
-dna_gui(infile = NULL, javapath = NULL, memory = 1024)
+dna_gui(infile = NULL, javapath = NULL, memory = 1024, verbose = TRUE)
 }
 \arguments{
 \item{infile}{The file name of the .dna database or the URL of the mySQL 
@@ -16,6 +16,8 @@ is necessary to start the DNA GUI.}
 
 \item{memory}{The amount of memory in megabytes to allocate to DNA, for 
 example \code{1024} or \code{4096}.}
+
+\item{verbose}{Print details and error messages from the call to DNA?}
 }
 \description{
 Start DNA and optionally load a database.

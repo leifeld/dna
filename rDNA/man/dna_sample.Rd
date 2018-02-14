@@ -4,7 +4,15 @@
 \alias{dna_sample}
 \title{Provides a small sample database}
 \usage{
-dna_sample()
+dna_sample(fresh = FALSE, copy2wd = FALSE)
+}
+\arguments{
+\item{fresh}{If the sample.dna file was altered in an earlier call to
+\link{dna_network}, setting this option to TRUE will create an untouched
+version of the sample.}
+
+\item{copy2wd}{Indicates whether the sample file should be copied to the
+current working directory.}
 }
 \description{
 Retrieves the location of a small local .dna sample file.

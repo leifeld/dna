@@ -66,6 +66,7 @@ dna_init <- function(jarfile = "dna-2.0-beta20.jar", memory = 1024) {
 #'     is necessary to start the DNA GUI.
 #' @param memory The amount of memory in megabytes to allocate to DNA, for 
 #'     example \code{1024} or \code{4096}.
+#' @param verbose Print details and error messages from the call to DNA?
 #' 
 #' @examples
 #' \dontrun{
@@ -73,7 +74,7 @@ dna_init <- function(jarfile = "dna-2.0-beta20.jar", memory = 1024) {
 #' dna_gui()
 #' }
 #' @export
-dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
+dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024, verbose = TRUE) {
   djs <- dnaEnvironment[["dnaJarString"]]
   if (is.null(djs)) {stop(paste0(djs, " could not be located in directory ", 
                                  getwd(), "."))}
@@ -98,7 +99,7 @@ dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
   } else {
     jp <- paste0(javapath, "/java")
   }
-  system(paste0(jp, " -jar -Xmx", memory, "M ", djs, f))
+  system(paste0(jp, " -jar -Xmx", memory, "M ", djs, f), intern = !verbose)
 }
 
 
@@ -108,6 +109,12 @@ dna_gui <- function(infile = NULL, javapath = NULL, memory = 1024) {
 #' 
 #' A small sample database to test the functions of rDNA.
 #' 
+#' @param fresh If the sample.dna file was altered in an earlier call to
+#'   \link{dna_network}, setting this option to TRUE will create an untouched
+#'   version of the sample.
+#' @param copy2wd Indicates whether the sample file should be copied to the
+#'   current working directory.
+#'   
 #' @examples
 #' \dontrun{
 #' dna_init("dna-2.0-beta20.jar")
