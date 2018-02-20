@@ -9,7 +9,7 @@ dna_timeWindow(connection, timewindow = "no", windowsize = 100,
   verbose = 2, ...)
 }
 \arguments{
-\item{connection}{A \link{dna_connection} object created by the 
+\item{connection}{A \link{dna_connection} object created by the
 \link{dna_connection} function.}
 
 \item{timewindow}{Same as in \link{dna_network}.}
@@ -53,8 +53,8 @@ tW <- dna_timeWindow(connection = conn,
                      timewindow = "days",
                      windowsize = 10,
                      facet = "Authors",
-                     facetValues = c("Bluestein, Joel", 
-                                     "Voinovich, George", 
+                     facetValues = c("Bluestein, Joel",
+                                     "Voinovich, George",
                                      "Whitman, Christine Todd"),
                      method = "modularity",
                      verbose = TRUE)

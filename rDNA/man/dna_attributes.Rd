@@ -8,38 +8,38 @@ dna_attributes(connection, statementType = "DNA Statement",
   variable = "organization", values = NULL)
 }
 \arguments{
-\item{connection}{A \code{dna_connection} object created by the 
+\item{connection}{A \code{dna_connection} object created by the
 \code{dna_connection} function.}
 
-\item{statementType}{The name of the statement type in which the variable 
+\item{statementType}{The name of the statement type in which the variable
 of interest is nested. For example, \code{"DNA Statement"}.}
 
-\item{variable}{The variable for which the attributes should be retrieved. 
+\item{variable}{The variable for which the attributes should be retrieved.
 For example, \code{"organization"} or \code{"concept"}.}
 
-\item{values}{An optional vector of value names for which the attributes 
-should be retrieved. If this is \code{NULL}, all attributes will be 
+\item{values}{An optional vector of value names for which the attributes
+should be retrieved. If this is \code{NULL}, all attributes will be
 retrieved in alphabetical order, as in the \link{dna_network} function.}
 }
 \description{
 Retrieve attributes for a given statement type and variable.
 }
 \details{
-For any variable in DNA (e.g., organization or concept), the attribute 
-manager in DNA stores four attributes, or meta-variables, for each value. 
-For example, an organization can be associated with a color, a type, 
-an alias, and notes. The \code{dna_attributes} function serves to retrieve 
-these attributes for all values of a given variable from DNA. To be sure 
-that the attributes are retrieved for the right variable, the user also 
-has to provide the statement type in which the variable is nested. Note that 
-the \code{dna_attributes} function returns the attributes for all values of 
-the respective variable (similar to the \code{includeIsolates = TRUE} 
-argument of the \code{dna_network} function. The attributes are returned as 
-a data frame with the ID of the value as the first column, the actual value 
-as the second column, the color as the third column, type as the fourth 
-column, alias as fifth, notes as sixth, and the number of occurrences of the 
-value as the seventh column. The ninth column indicates whether the value 
-is used anywhere in the dataset, and the tenth and last column indicates if 
+For any variable in DNA (e.g., organization or concept), the attribute
+manager in DNA stores four attributes, or meta-variables, for each value.
+For example, an organization can be associated with a color, a type,
+an alias, and notes. The \code{dna_attributes} function serves to retrieve
+these attributes for all values of a given variable from DNA. To be sure
+that the attributes are retrieved for the right variable, the user also
+has to provide the statement type in which the variable is nested. Note that
+the \code{dna_attributes} function returns the attributes for all values of
+the respective variable (similar to the \code{includeIsolates = TRUE}
+argument of the \code{dna_network} function. The attributes are returned as
+a data frame with the ID of the value as the first column, the actual value
+as the second column, the color as the third column, type as the fourth
+column, alias as fifth, notes as sixth, and the number of occurrences of the
+value as the seventh column. The ninth column indicates whether the value
+is used anywhere in the dataset, and the tenth and last column indicates if
 the value is contained in the current connection.
 }
 \examples{
@@ -48,7 +48,7 @@ dna_init("dna-2.0-beta20.jar")
 conn <- dna_connection(dna_sample())
 at <- dna_attributes(conn, "DNA Statement", "organization")
 at
-at2 <- dna_attributes(conn, "DNA Statement", "organization", 
+at2 <- dna_attributes(conn, "DNA Statement", "organization",
                       c("Senate", "Sierra Club"))
 at2
 }

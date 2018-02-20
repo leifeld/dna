@@ -41,8 +41,8 @@ tW <- dna_timeWindow(connection = conn,
                      timewindow = "days",
                      windowsize = 10,
                      facet = "Authors",
-                     facetValues = c("Bluestein, Joel", 
-                                     "Voinovich, George", 
+                     facetValues = c("Bluestein, Joel",
+                                     "Voinovich, George",
                                      "Whitman, Christine Todd"),
                      method = "modularity",
                      excludeValues = list(),
@@ -52,10 +52,10 @@ tW <- dna_timeWindow(connection = conn,
                      excludeTypes = character(),
                      verbose = TRUE)
 
-plot <- dna_plotTimeWindow(tW, 
+plot <- dna_plotTimeWindow(tW,
                            facetValues = c("Bluestein, Joel", "Voinovich, George", "all"),
                            include.y = 1,
-                           rows = 3) 
+                           rows = 3)
 plot + theme_bw()
 }
 }

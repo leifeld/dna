@@ -15,7 +15,7 @@
 Show details of a \code{dna_connection} object.
 }
 \details{
-Print the number of documents and statements to the console after 
+Print the number of documents and statements to the console after
 establishing a DNA connection.
 }
 \examples{

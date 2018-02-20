@@ -7,14 +7,14 @@
 dna_gui(infile = NULL, javapath = NULL, memory = 1024, verbose = TRUE)
 }
 \arguments{
-\item{infile}{The file name of the .dna database or the URL of the mySQL 
+\item{infile}{The file name of the .dna database or the URL of the mySQL
 database to load upon start-up of the GUI}
 
-\item{javapath}{The path to the \code{java} command. This may be useful if 
-the CLASSPATH is not set and the java command can not be found. Java 
+\item{javapath}{The path to the \code{java} command. This may be useful if
+the CLASSPATH is not set and the java command can not be found. Java
 is necessary to start the DNA GUI.}
 
-\item{memory}{The amount of memory in megabytes to allocate to DNA, for 
+\item{memory}{The amount of memory in megabytes to allocate to DNA, for
 example \code{1024} or \code{4096}.}
 
 \item{verbose}{Print details and error messages from the call to DNA?}
@@ -23,8 +23,8 @@ example \code{1024} or \code{4096}.}
 Start DNA and optionally load a database.
 }
 \details{
-Start the DNA GUI. Optionally load a .dna database or a mySQL online 
-database upon start-up of the GUI. This function is useful to use 
+Start the DNA GUI. Optionally load a .dna database or a mySQL online
+database upon start-up of the GUI. This function is useful to use
 DNA on the fly to quickly recode statements or look something up.
 }
 \examples{

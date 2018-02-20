@@ -4,18 +4,17 @@
 \alias{dna_sample}
 \title{Provides a small sample database}
 \usage{
-dna_sample(fresh = FALSE, copy2wd = FALSE)
+dna_sample(overwrite = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{fresh}{If the sample.dna file was altered in an earlier call to
-\link{dna_network}, setting this option to TRUE will create an untouched
-version of the sample.}
+\item{overwrite}{Should sample.dna be overwritten if found in the current
+working directory?}
 
-\item{copy2wd}{Indicates whether the sample file should be copied to the
-current working directory.}
+\item{verbose}{Display warning message if file exists in current wd.}
 }
 \description{
-Retrieves the location of a small local .dna sample file.
+Copies a small .dna sample file to the current working directory and returns
+the location of this newly created file.
 }
 \details{
 A small sample database to test the functions of rDNA.

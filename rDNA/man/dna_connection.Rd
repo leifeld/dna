@@ -7,27 +7,27 @@
 dna_connection(infile, login = NULL, password = NULL, verbose = TRUE)
 }
 \arguments{
-\item{infile}{The file name of the .dna database or the URL of the mySQL 
+\item{infile}{The file name of the .dna database or the URL of the mySQL
 database to load}
 
-\item{login}{The user name for accessing the database (only applicable 
-to remote mySQL databases; can be \code{NULL} if a local .dna file 
+\item{login}{The user name for accessing the database (only applicable
+to remote mySQL databases; can be \code{NULL} if a local .dna file
 is used).}
 
-\item{password}{The password for accessing the database (only applicable 
-to remote mySQL databases; can be \code{NULL} if a local .dna file 
+\item{password}{The password for accessing the database (only applicable
+to remote mySQL databases; can be \code{NULL} if a local .dna file
 is used).}
 
-\item{verbose}{Print details the number of documents and statements after 
+\item{verbose}{Print details the number of documents and statements after
 loading the database?}
 }
 \description{
 Connect to a local .dna file or remote mySQL DNA database.
 }
 \details{
-Before any data can be loaded from a database, a connection with 
-the database must be established. The \code{dna_connection} 
-function establishes a database connection and loads the documents 
+Before any data can be loaded from a database, a connection with
+the database must be established. The \code{dna_connection}
+function establishes a database connection and loads the documents
 and statements into memory for further processing.
 }
 \examples{
