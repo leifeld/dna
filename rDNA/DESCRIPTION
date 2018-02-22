@@ -12,7 +12,7 @@ Description: Control the Java software Discourse Network Analyzer (DNA) from
 Depends:
     R (>= 2.14),
     rJava (>= 0.5-0)
-Imports: igraph, stats, ggplot2
+Imports: igraph, stats, ggplot2, ggraph, vegan, scales
 SystemRequirements: Java (>= 1.8)
 License: GPL-3
 LazyData: true
