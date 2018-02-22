@@ -1185,7 +1185,7 @@ public class Exporter extends JDialog {
 			}
 			statements = filter(statements, documents, startDate, stopDate, statementType, var1Name, var2Name, 
 					var1Document(), var2Document(), qualifierName, ignoreQualifier, duplicateSetting, 
-					excludeAuthor, excludeSource, excludeSection, excludeType, excludeValues, filterEmptyFields);
+					excludeAuthor, excludeSource, excludeSection, excludeType, excludeValues, filterEmptyFields, true);
 			System.out.println("Export was launched: " + statements.size() + " out of " + Dna.data.getStatements().size() 
 					+ " statements retained after filtering.");
 			progressMonitor.setProgress(1);
@@ -1536,7 +1536,8 @@ public class Exporter extends JDialog {
 			ArrayList<String> excludeSection, 
 			ArrayList<String> excludeType, 
 			HashMap<String, ArrayList<String>> excludeValues, 
-			boolean filterEmptyFields) {
+			boolean filterEmptyFields, 
+			boolean verbose) {
 		
 		// sort statements by date and time
 		Collections.sort(statements);
@@ -1546,21 +1547,25 @@ public class Exporter extends JDialog {
 		while (excludeIterator.hasNext()) {
 			String key = excludeIterator.next();
 			ArrayList<String> values = excludeValues.get(key);
-			for (int i = 0; i < values.size(); i++) {
-				System.out.println("[Excluded] " + key + ": " + values.get(i));
+			if (verbose == true) {
+				for (int i = 0; i < values.size(); i++) {
+					System.out.println("[Excluded] " + key + ": " + values.get(i));
+				}
 			}
 		}
-		for (int i = 0; i < excludeAuthor.size(); i++) {
-			System.out.println("[Excluded] author: " + excludeAuthor.get(i));
-		}
-		for (int i = 0; i < excludeSource.size(); i++) {
-			System.out.println("[Excluded] source: " + excludeSource.get(i));
-		}
-		for (int i = 0; i < excludeSection.size(); i++) {
-			System.out.println("[Excluded] section: " + excludeSection.get(i));
-		}
-		for (int i = 0; i < excludeType.size(); i++) {
-			System.out.println("[Excluded] type: " + excludeType.get(i));
+		if (verbose == true) {
+			for (int i = 0; i < excludeAuthor.size(); i++) {
+				System.out.println("[Excluded] author: " + excludeAuthor.get(i));
+			}
+			for (int i = 0; i < excludeSource.size(); i++) {
+				System.out.println("[Excluded] source: " + excludeSource.get(i));
+			}
+			for (int i = 0; i < excludeSection.size(); i++) {
+				System.out.println("[Excluded] section: " + excludeSection.get(i));
+			}
+			for (int i = 0; i < excludeType.size(); i++) {
+				System.out.println("[Excluded] type: " + excludeType.get(i));
+			}
 		}
 		
 		// HashMap for fast lookup of document indices by ID
@@ -3040,7 +3045,7 @@ public class Exporter extends JDialog {
 		}
 		this.filteredStatements = filter(data.getStatements(), data.getDocuments(), start, stop, st, variable1, variable2, 
 				variable1Document, variable2Document, qualifier, ignoreQualifier, duplicates, authorExclude, sourceExclude, sectionExclude, 
-				typeExclude, map, filterEmptyFields);
+				typeExclude, map, filterEmptyFields, verbose);
 		if (verbose == true) {
 			System.out.print(this.filteredStatements.size() + " out of " + data.getStatements().size() + " statements retained.\n");
 		}
