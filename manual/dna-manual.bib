@@ -30,6 +30,14 @@
     url = {http://CRAN.R-project.org/package=network},
 }
 
+@Manual{butts2016sna,
+  title = {\texttt{sna}: Tools for Social Network Analysis},
+  author = {Butts, Carter T.},
+  year = {2016},
+  note = {R package version 2.4},
+  url = {https://CRAN.R-project.org/package=sna},
+}
+
 @Manual{coreteam2014r:,
   Title                    = {\texttt{R}: A Language and Environment for Statistical Computing},
   Address                  = {Vienna, Austria},
@@ -37,16 +45,6 @@
   Organization             = {\texttt{R} {F}oundation for {S}tatistical {C}omputing},
   Year                     = {2014},
   Url                      = {http://www.R-project.org/}
-}
-
-@article{csardi2006igraph,
-  title={The \texttt{igraph} Software Package for Complex Network Research},
-  author={Csardi, Gabor and Nepusz, Tamas},
-  journal={InterJournal, Complex Systems},
-  volume={1695},
-  number={5},
-  pages={1--9},
-  year={2006}
 }
 
 @ARTICLE{fisher2013mapping,
@@ -85,16 +83,6 @@
   doi                      = {10.18637/jss.v024.i09}
 }
 
-@article{handcock2008statnet,
-  title={\texttt{statnet}: Software Tools for the Representation, Visualization, Analysis and Simulation of Network Data},
-  author={Handcock, Mark S. and Hunter, David R. and Butts, Carter T. and Goodreau, Steven M. and Morris, Martina},
-  journal={Journal of Statistical Software},
-  volume={24},
-  number={1},
-  pages={1--11},
-  year={2008}
-}
-
 @Manual{handcock2016statnet,
     author = {Handcock, Mark S. and Hunter, David R. and Butts, Carter T. 
       and Goodreau, Steven M. and Krivitsky, Pavel N. and Bender-deMoll, 
@@ -125,12 +113,16 @@ title = {\texttt{rDNA}. A Package to Control {Discourse Network Analyzer} from R
     url = {http://www.philipleifeld.com},
 }
 
-@Manual{leifeld2017temporal,
+@Manual{leifeld2018temporal,
   title = {Temporal Exponential Random Graph Models with \texttt{btergm}: Estimation and Bootstrap Confidence Intervals},
   author = {Leifeld, Philip and Cranmer, Skyler J. and Desmarais, Bruce A.},
-  year = {2017},
+  year = {2018},
   journal = {Journal of Statistical Software},
-  note = {Forthcoming}
+  volume = {86},
+  number = {6},
+  pages = {1--36},
+  doi = {10.18637/jss.v083.i06},
+  url = {http://dx.doi.org/10.18637/jss.v083.i06}
 }
 
 @Manual{maechler2017cluster,
@@ -157,7 +149,7 @@ title = {\texttt{rDNA}. A Package to Control {Discourse Network Analyzer} from R
     url = {https://CRAN.R-project.org/package=devtools},
 }
 
-@incollection{Leifeld.2017oxf,
+@incollection{leifeld2017discourse,
  author = {Leifeld, Philip},
  title = {Discourse Network Analysis: Policy Debates as Dynamic Networks},
  url = {http://dx.doi.org/10.1093/oxfordhb/9780190228217.013.25},
@@ -168,23 +160,15 @@ title = {\texttt{rDNA}. A Package to Control {Discourse Network Analyzer} from R
  year = {2017}
 }
 
-@Article{statnet,
+@Article{handcock2008statnet,
   title = {\texttt{statnet}: Software Tools for the Representation, Visualization, Analysis and Simulation of Network Data},
-  author = {Mark S. Handcock and David R. Hunter and Carter T. Butts and Steven M. Goodreau and Martina Morris},
+  author = {Handcock, Mark S. and Hunter, David R. and Butts, Carter T. and Goodreau, Steven M. and Morris, Martina},
   journal = {Journal of Statistical Software},
   year = {2008},
   volume = {24},
   number = {1},
   pages = {1--11},
   url = {http://www.jstatsoft.org/v24/i01},
-}
-
-@Manual{sna,
-  title = {\texttt{sna}: Tools for Social Network Analysis},
-  author = {Carter T. Butts},
-  year = {2016},
-  note = {R package version 2.4},
-  url = {https://CRAN.R-project.org/package=sna},
 }
 
 @Article{network,
@@ -197,9 +181,9 @@ title = {\texttt{rDNA}. A Package to Control {Discourse Network Analyzer} from R
   url = {http://www.jstatsoft.org/v24/i02/paper},
 }
 
-@Article{igraph,
-  title = {The \texttt{igraph} software package for complex network research},
-  author = {Gabor Csardi and Tamas Nepusz},
+@Article{csardi2006igraph,
+  title = {The \texttt{igraph} Software Package for Complex Network Research},
+  author = {Csardi, Gabor and Nepusz, Tamas},
   journal = {InterJournal},
   volume = {Complex Systems},
   pages = {1695},
@@ -207,17 +191,17 @@ title = {\texttt{rDNA}. A Package to Control {Discourse Network Analyzer} from R
   url = {http://igraph.org},
 }
 
-@Manual{tidygraph,
+@Manual{linpedersen2017tidygraph,
   title = {\texttt{tidygraph}: A Tidy API for Graph Manipulation},
-  author = {Thomas Lin Pedersen},
+  author = {Lin Pedersen, Thomas},
   year = {2017},
   note = {R package version 1.0.0},
   url = {https://CRAN.R-project.org/package=tidygraph},
 }
 
-@Manual{ggraph,
+@Manual{linpedersen2017ggraph,
   title = {\texttt{ggraph}: An Implementation of Grammar of Graphics for Graphs and Networks},
-  author = {Thomas Lin Pedersen},
+  author = {Lin Pedersen, Thomas},
   year = {2017},
   note = {R package version 1.0.0},
   url = {https://CRAN.R-project.org/package=ggraph},
@@ -233,7 +217,7 @@ title = {\texttt{rDNA}. A Package to Control {Discourse Network Analyzer} from R
   }
 
 
-@article{Leifeld.2013,
+@article{leifeld2013reconceptualising,
  author = {Leifeld, Philip},
  year = {2013},
  title = {Reconceptualizing Major Policy Change in the Advocacy Coalition Framework: A Discourse Network Analysis of {G}erman Pension Politics},
@@ -246,15 +230,13 @@ title = {\texttt{rDNA}. A Package to Control {Discourse Network Analyzer} from R
 }
 
 
-@book{Leifeld.2016pen,
+@book{leifeld2016policy,
  author = {Leifeld, Philip},
  year = {2016},
  title = {Policy Debates as Dynamic Networks: {G}erman Pension Politics and Privatization Discourse},
- keywords = {Diskursanalyse;Politische Kommunikation;Rentenreform},
- address = {Frankfurt},
- edition = {1. Aufl., neue Ausg},
+ address = {Frankfurt/New York},
  volume = {29},
- publisher = {Campus},
+ publisher = {Campus Verlag/University of Chicago Press},
  isbn = {3593505703},
  series = {Schriften des Zentrums f{\"u}r Sozialpolitik Bremen}
 }
@@ -298,13 +280,13 @@ title = {\texttt{rDNA}. A Package to Control {Discourse Network Analyzer} from R
 }
 
 
-@incollection{Schneider.2014,
- author = {Schneider, Volker and K., Jana},
- title = {Punctuations and Displacements in Policy Discourse: The Climate Change Issue in {G}ermany 2007-2010},
+@incollection{schneider2014punctuations,
+ author = {Schneider, Volker and Ollmann, Jana K.},
+ title = {Punctuations and Displacements in Policy Discourse: The Climate Change Issue in {G}ermany 2007--2010},
  publisher = {InTech},
  isbn = {978-953-51-1094-1},
  editor = {Silvern, Steven and Young, Stephen},
- booktitle = {Environmental change and sustainability},
+ booktitle = {Environmental Change and Sustainability},
  year = {2014},
  address = {Rijeka, Croatia},
  doi = {10.5772/54302}
@@ -339,7 +321,7 @@ title = {\texttt{rDNA}. A Package to Control {Discourse Network Analyzer} from R
 @article{Wagner.2017,
  author = {Wagner, Paul and Payne, Diane},
  year = {2017},
- title = {Trends, frames and discourse networks: Analysing the coverage of climate change in {I}rish newspapers},
+ title = {Trends, Frames and Discourse Networks: Analysing the Coverage of Climate Change in {I}rish Newspapers},
  pages = {5--28},
  volume = {25},
  number = {1},
@@ -350,7 +332,6 @@ title = {\texttt{rDNA}. A Package to Control {Discourse Network Analyzer} from R
 
 
 @article{Yun.2014,
- abstract = {Based on newspaper content analysis, the Korean press (2007-08) accepts the anthropogenic argument---that humans have caused and are responsible for climate change. News articles stress the ecological effects of climate change and the need to mitigate and to reduce emissions through government policies. Compared to other countries, however, one point stands out---the Korean press frames mitigation as an economic opportunity, not a threat. Moreover, businesses cited in the news strongly support this idea. However, citing government and business sectors, the conservative and financial newspapers tend to define this opportunity as selling Korean nuclear power technology and green technology abroad. These papers rarely represent voices that advocate structural change in Korean society to reduce its emissions. This particular stance on mitigation as an economic opportunity results from the vulnerability of the Korean export economy to international pressures, coupled with government and business attempt to find a viable export option under the mitigation rationale.},
  author = {Yun, Sun-Jin and Ku, Dowan and Park, Nyun-Bae and Han, Joon},
  year = {2014},
  title = {Framing Climate Change as an Economic Opportunity in {S}outh {K}orean Newspapers},

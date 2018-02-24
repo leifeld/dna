@@ -4,5 +4,9 @@
 *-concordance.tex
 *.synctex.gz
 *.log
+*.toc
+*.out
+*.aux
 manual/dna-manual.tex
 manual/figure/
+manual/sample.dna

@@ -3,7 +3,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{geometry}
-\geometry{tmargin=3cm,bmargin=3cm,lmargin=3cm,rmargin=3cm}
+\geometry{margin=3cm}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{natbib}
@@ -26,19 +26,7 @@
 \usepackage{tabu}
 \usepackage{threeparttable}
 \usepackage[normalem]{ulem}
-
-\usepackage[
-  unicode=true,
-  pdfusetitle,
-  bookmarks=true,
-  bookmarksnumbered=true,
-  bookmarksopen=true,
-  bookmarksopenlevel=2,
-  breaklinks=true,
-  colorlinks=true,
-  pdfstartview={XYZ null null 1},
-  citecolor={blue}
- ]{hyperref}
+\usepackage[export]{adjustbox} % to add boxes around screenshots
 
 \graphicspath{ {Figures/} }
 \newcommand{\dna}{\texttt{DNA}}
@@ -46,6 +34,12 @@
 \newcommand{\rstudio}{\texttt{RStudio}}
 \newcommand{\java}{\texttt{Java}}
 \newcommand{\R}{\texttt{R}}
+\newcommand{\ucinet}{\texttt{Ucinet}}
+\newcommand{\netminer}{\texttt{NetMiner}}
+\newcommand{\gephi}{\texttt{Gephi}}
+\newcommand{\visone}{\texttt{visone}}
+\newcommand{\win}{\raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-6-winbutton}}}
+\newcommand{\rrun}{\raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}}}
 \newcommand{\github}{\href{https://github.com/leifeld/dna}{\texttt{GitHub}}}
 \newcommand*{\fullref}[1]{\hyperref[{#1}]{ \nameref*{#1}}} % One single link
 \newcommand{\code}[1]{% same color and decoration as knitr bash command
@@ -102,6 +96,20 @@
 \raggedbottom
 
 \pagenumbering{roman} % roman numbering in frontmatter
+
+\usepackage[
+  unicode=true,
+  pdfusetitle,
+  bookmarks=true,
+  bookmarksnumbered=true,
+  bookmarksopen=true,
+  bookmarksopenlevel=2,
+  breaklinks=true,
+  colorlinks=true,
+  pdfstartview={XYZ null null 1},
+  citecolor={blue}
+ ]{hyperref}
+
 \begin{document}
 <<setup, include=FALSE, cache=FALSE, results='hide', message=FALSE, warning=FALSE>>=
 library("knitr")
@@ -116,6 +124,7 @@ knit_hooks$set(crop=hook_pdfcrop)
 \author{Philip Leifeld, Johannes Gruber and Felix Rolf Bossner}
 
 \maketitle
+\setcounter{tocdepth}{1}
 % change linkcolor in TOC
 {\hypersetup{linkcolor=black}
 \tableofcontents
@@ -123,32 +132,39 @@ knit_hooks$set(crop=hook_pdfcrop)
 
 
 \chapter{Introduction} \label{sec:intro}
+\chapterauthor{Philip Leifeld and Johannes Gruber}
 \FloatBarrier
 \pagenumbering{arabic}
 
-This manual demonstrates how to install, set up and use the open-source standalone software \texttt{Discourse Network Analyzer} (\dna) and its companion \R\ package \rdna\ \citep{leifeld2018rdna}, which are designed for researchers using the method \textit{discourse network analysis}.\footnote{\textit{This manual is a work in progress and will be continuously updated during the year 2018. See \href{https://github.com/leifeld/dna/blob/master/manual/dna-manual.pdf}{\texttt{github.com/leifeld/dna/blob/master/manual/}} for the most recent version}.
-}
-By combining content and dynamic network analysis, this method can reveal the structure and dynamics of debates, such as political discourses.
-For the user, the method comprises three basic steps: first, to annotate statements of actors in unstructured (text) sources; second, to create networks from the thereby structured data; and finally to analyse and interpret the results by employing the toolbox of network analysis. The results can take a number of different forms, such as congruence or conflict networks at the actor or concept level, affiliation networks of actors and concept stances, and longitudinal versions of these networks (see Section~\ref{sec:algorithms} or \citet{Leifeld.2017oxf} for a comprehensive overview of the method).
+This manual demonstrates how to install, set up, and use the open-source standalone software \texttt{Discourse Network Analyzer} (\dna) and its companion \R\ package \rdna\ \citep{leifeld2018rdna}, which are designed for researchers using the method \textit{discourse network analysis}.%
+\footnote{\textit{This manual is a work in progress and will be continuously updated during the year 2018.
+See \href{https://github.com/leifeld/dna/blob/master/manual/dna-manual.pdf}{\texttt{github.com/leifeld/dna/blob/master/manual/}} for the most recent version}.}
+By combining content analysis and dynamic network analysis, this method can reveal the structure and dynamics of policy debates.
+The method comprises three basic steps:
+\begin{enumerate}
+ \item annotating statements of actors in unstructured (text) sources, 
+ \item creating networks from the resulting structured data, 
+ \item analysing and interpreting the results by employing the toolbox of network analysis.
+\end{enumerate}
+The results can take a number of different forms, such as so-called congruence or conflict networks of actors or of concepts, affiliation networks of actors and concepts, and longitudinal versions of these networks (see Section~\ref{sec:algorithms} and \citealt{leifeld2017discourse} for a comprehensive overview of the method).
 
-The benefit of using the \java\ software \dna\ is that it is specifically designed to aid the user in the first two of these basic steps of discourse network analysis. It is mainly designed for qualitative content analysis, which in this case means, to annotate the statements, or in other words, to structure the textual data. The program is also able, to create different kinds of network matrices and export them to other programs for further analysis and plotting. \dna\ is furthermore designed to help the user to develop a comprehensive workflow, from importing raw text, over managing multiple users as well as different types of documents, supporting the coding process with a regular expression highlighter to basic analysis options during export. Additionally, while the software is primarily designed for discourse network analysis, it is also very flexible as the statement types can be adjusted (\textit{see Section~\ref{subsec:stattype}}) to accommodate different content analysis tasks, such as, for example, framing analysis. While there are numerous alternative software packages for qualitative content analysis, there are very few which were specifically developed with discourse network analysis in mind and therefore lack the functionality necessary for exporting network data.
+The benefit of using the \java\ software \dna\ is that it is specifically designed to aid the user in the first two of these basic steps of discourse network analysis.
+It is mainly designed for qualitative annotation of actors' statements in order to structure the text.
+The program can also create different kinds of network matrices based on these structured data and export them to other programs for further analysis and plotting.
+Additionally, while the software is primarily designed for discourse network analysis of actors and concepts, it is also flexible with regard to the definition of new statement types, for example using user-defined variables like ``location'' or ``addressee'' (see Section~\ref{subsec:stattype}).
+While there are numerous alternative software packages for qualitative content analysis, there are very few which were specifically developed with discourse network analysis in mind, and therefore they lack the functionality necessary for exporting network data.
 
-The companion \R\ package \rdna additionally helps with the remaining basic step mentioned above: analysis of the coded statements. \rdna\ integrates the results from coding performed in \dna\ with the statistical computing environment \R\ to perform more in-depth analysis of the coded material. While data can be exported to other software such as %
-\textsc{Ucinet}, % 
-{\protect\raisebox{.5ex}{\color[rgb]{0.1,0.1,0.1}v}% dark gray
-  \protect\raisebox{.1ex}{\color[rgb]{0.3,0.3,0.3}i}% light gray
-  \protect\raisebox{-.1ex}{\color[rgb]{0.1,0.1,0.1}s}% dark gray
-  \protect\raisebox{.1ex}{\color[rgb]{0.3,0.3,0.3}o}% light gray
-  \protect\raisebox{-.1ex}{\color[rgb]{0.1,0.1,0.1}n}% dark gray
-  \protect\raisebox{-.4ex}{\color[rgb]{0.3,0.3,0.3}e}% light gray
-}, \textsc{NetMiner}, \textsc{Gephi} %
-and more, \R\ is the preferred choice, as it enables reproducible research, is free and open source and has a huge community of users and developers who are engaged in all kinds of data analysis tasks. Consequently, \R\ has several fantastic packages developed specifically for network analysis---such as \texttt{statnet} \citep{statnet}, \texttt{igraph} \citep{igraph}, \texttt{xergm} \citep{leifeld2017temporal, leifeld2017xergm:}, \texttt{sna} \citep{sna}, \texttt{network} \citep{butts2008network}, \texttt{tidygraph} \citep{tidygraph} and \texttt{ggraph} \citep{ggraph}---and a lot more that can aid content and network analysis even though they were written with other tasks in mind. Most of these packages work seamlessly with data processed by \rdna\ and therefore add a myriad of possibilities to the native functions of our own \R\ package.
+The companion package \rdna\ for the statistical computing environment \R\ additionally helps with the third step mentioned above: analysis of the annotated statements.
+\rdna\ takes the structured data from \dna\ and permits further in-depth analysis using network analysis.
+While data can also be exported to other software such as \ucinet, \visone, \netminer, and \gephi, \R\ is the preferred choice as it facilitates reproducible research, is free and open source, and has a large community of users and developers who are engaged in all kinds of data analysis tasks.
+\R\ has several packages developed specifically for network analysis, such as \texttt{statnet} \citep{handcock2008statnet}, \texttt{igraph} \citep{csardi2006igraph}, \texttt{xergm} \citep{leifeld2018temporal, leifeld2017xergm:}, \texttt{sna} \citep{butts2016sna}, \texttt{network} \citep{butts2008network}, \texttt{ggraph} \citep{linpedersen2017ggraph}, and \texttt{tidygraph} \citep{linpedersen2017tidygraph}.
+Most of these packages work seamlessly with data processed by \rdna\ and therefore add a myriad of possibilities to the native functions of our own \R\ package.
 
 In recent years, discourse network analysis has been employed by a growing number of scholars in a wide field of policy sectors, such as 
-pension politics \citep{Leifeld.2013, Leifeld.2016pen}, 
-climate politics \citep{fisher2013mapping, fisher2013where, Broadbent.2014, Gkiouzepas.2015, Manfredo.2014, Schneider.2014, Stoddart.2015, Wagner.2017, Yun.2014}, 
+pension politics \citep{leifeld2013reconceptualising, leifeld2016policy}, 
+climate politics \citep{fisher2013mapping, fisher2013where, Broadbent.2014, Gkiouzepas.2015, Manfredo.2014, schneider2014punctuations, Stoddart.2015, Wagner.2017, Yun.2014}, 
 software patents and property rights \citep{Leifeld.2012, Herweg.2013}, 
-Internet policy \citep{Breindl.2013, Haunss2009ip}, 
+internet policy \citep{Breindl.2013, Haunss2009ip}, 
 infrastructure projects \citep{Nagel.2016}, 
 energy policy \citep{Brutschin.2013, Haunss.2017, Imbert.2017, Rinscheid.2015, Rinscheidetal.2015},
 shooting rampages \citep{Hurka.2013}, 
@@ -159,22 +175,27 @@ deforestation \citep{Rantala.2014},
 genetically modified organisms \citep{Tosun.2015}, 
 higher education \citep{Naegler.2015}, 
 international financial politics \citep{Werner.2015, Haunss2017finace}, 
-and online deception \citep{Wu.2015}. Many of these studies were already employing \dna\ and as the academic interest in discourse network analysis has steadily grown in recent years, the use of both, the method and the software, will eventually become more widespread. And while the method is spreading, it is also constantly advanced and extended. One promising advance, for example, is the idea that relational event modelling, as first proposed by \citep{Butts2008event}, can help to determine whether an actor makes a statement at time t as a reaction to previous statements made in the debate, or independant from it. If this is the casem, it would allow causal inference about questions like ``do actors influence other actors of the same type to adopt their concepts (=contagion), or does the same actor type independently lead to similar preferences?''.
+and online deception \citep{Wu.2015}.
 
+While a default toolbox of methods is available for discourse network analysis, new methods are being developed presently.
+For example, one promising approach is the application of inferential network models to the temporal network structure produced by \dna\ in order to model policy debates at the micro level.
+This will soon allow us to develop and test theories on how actors contribute statements to policy debates, and to forecast debates based on these theories \citep[for an outlook, see][]{leifeld2017discourse}.
 
-The outline of this manual is as follows. Section~\ref{sec:algorithms} is a concise and fairly technical description of the types of networks \dna\ can export.
-Section~\ref{sec:installation} explains how to install \dna\ and \rdna\ which both rely on a correctly set up \java\ runtime environment. While installing the programs themselves would probably not be worth its own section, installing \java\ on some operating systems can be surprisingly tough---at least without our explanations.
-Then four sections follow, which describe the usage of \dna\ in detail: Section~\ref{sec:dna-prep} describes how to set up a project in \dna, including the creation of a database, adding and managing users and how to set up or edit statement types and variables.
-Section~\ref{sec:dna-import} explains how you can import and organise your raw data (i.\,e., documents).
-Section~\ref{sec:dna-coding} provides an overview of how you code statements in \dna. Even though this process is very straightforward the section also reveals some functions implemented in \dna\ which can help you to code material faster and more reliable.
-Section~\ref{sec:dna-export} explains how data can be exported to other programs for further analysis. What may have seemed abstract in Section~\ref{sec:algorithms} quickly becomes clear at this point---once you have exported a few example networks yourself.
-Section~\ref{sec:rdna} is an introductory tutorial on using the \rdna\ package to perform additional analysis and plotting tasks using the infrastructure provided by \R.
+The outline of this manual is as follows.
+Chapter~\ref{sec:algorithms} describes the types of networks \dna\ can export.
+Chapter~\ref{sec:installation} explains how to install \dna\ and \rdna, which both rely on a correctly configured \java\ runtime environment.
+Only consult this chapter if you experience problems with the installation on your own.
+The following four sections describe the usage of \dna\ in detail:
+Chapter~\ref{sec:dna-prep} describes how to set up a project in \dna, including the creation of a database, adding and managing users, and how to set up or edit statement types and variables.
+Chapter~\ref{sec:dna-import} explains how you can import and organise your raw data (i.\,e., documents).
+Chapter~\ref{sec:dna-coding} provides an overview of how you annotate statements in \dna.
+Even though this process is very straightforward, the section also reveals some functions that can help you to annotate material faster and more reliably.
+Chapter~\ref{sec:dna-export} explains how data can be exported to other programs for further analysis.
+What may have seemed abstract in Section~\ref{sec:algorithms} quickly becomes clear at this point---once you have exported a few example networks yourself.
+Chapter~\ref{sec:rdna} is an introductory tutorial on using the \rdna\ package to perform additional analysis and plotting tasks using the infrastructure provided by \R.
 
-Both \dna\ and \rdna\ can be downloaded from \github\ (\textit{See Section~\ref{sec:installation}}).
-Questions and bug reports can be posted in the issue tracker on \github.
-
-
-
+Both \dna\ and \rdna\ can be downloaded from \github\ (see Chapter~\ref{sec:installation}).
+Please feel free to post questions and bug reports to the issue tracker on \github.
 
 
 \chapter{\dna\ Algorithms} \label{sec:algorithms}
@@ -182,11 +203,18 @@ Questions and bug reports can be posted in the issue tracker on \github.
 \FloatBarrier
 This section summarizes the main algorithms implemented in \dna\ in a technical way.
 
-$X$ is a three-dimensional array representing statement counts. $x_{ijk}$ is a specific count value in this array, with the first index $i$ denoting an instance of the first variable (e.\,g., organization $i$), the second index $j$ denoting an instance of the second variable (e.\,g., concept $j$), and the third index $k$ denoting a level on the qualifier variable (e.\,g., agreement = $1$). For example, $x_{ijk} = 5$ could mean that organization $i$ mentions concept $j$ with intensity $k$ five times.
+$X$ is a three-dimensional array representing statement counts.
+$x_{ijk}$ is a specific count value in this array, with the first index $i$ denoting an instance of the first variable (e.\,g., organization $i$), the second index $j$ denoting an instance of the second variable (e.\,g., concept $j$), and the third index $k$ denoting a level on the qualifier variable (e.\,g., agreement = $1$).
+For example, $x_{ijk} = 5$ could mean that organization $i$ mentions concept $j$ with intensity $k$ five times.
 
-Where the qualifier variable is binary, \emph{false} values are represented as $0$ and \emph{true} values as $1$ on the $k$ index, i.\,e., $K^\text{binary} = \{ 0; 1 \}$. Where the qualifier variable is integer, the respective integer value is used as the level. This implies that $k$ can take positive or negative values or 0, i.e, $K^\text{integer} \subseteq \mathbb{Z}$. Note that all $k$ levels of the scale are included in $K$, not just those values that are empirically observed.
+Where the qualifier variable is binary, \emph{false} values are represented as $0$ and \emph{true} values as $1$ on the $k$ index, i.\,e., $K^\text{binary} = \{ 0; 1 \}$.
+Where the qualifier variable is integer, the respective integer value is used as the level.
+This implies that $k$ can take positive or negative values or 0, i.e, $K^\text{integer} \subseteq \mathbb{Z}$.
+Note that all $k$ levels of the scale are included in $K$, not just those values that are empirically observed.
 
-Indices with a prime denote a second instance of an element, e.\,g., $i'$ may denote another organization. $Y$ denotes the output matrix to be obtained by applying a transformation to $X$. The following transformations are possible:
+Indices with a prime denote a second instance of an element, e.\,g., $i'$ may denote another organization.
+$Y$ denotes the output matrix to be obtained by applying a transformation to $X$.
+The following transformations are possible:
 
 \section{Congruence}\label{subsec:congruence}
 In a congruence network, the edge weight between nodes $i$ and $i'$ represents the number of times they co-support or co-reject second-variable nodes (if a binary qualifier is used) or the cumulative similarity between $i$ and $i'$ over their assessments of second-variable nodes (in the case of an integer qualifier variable).
@@ -283,8 +311,6 @@ With \emph{prominence} normalization, ties to prominent nodes receive lower weig
 \end{equation}
 
 
-
-
 \chapter{Installation of \dna\ and \rdna} \label{sec:installation}
 \chapterauthor{Johannes Gruber}
 \FloatBarrier
@@ -334,13 +360,12 @@ devtools::install_github("leifeld/dna/rDNA",
 \section{Windows}\label{subsec:windows}
 To install the necessary \java\ Runtime Environment on your Windows computer, simply go to \linebreak \href{https://www.java.com/en/download/manual.jsp}{java.com/en/download/manual.jsp}, scroll down to and download \textbf{``Windows Offline (64-bit)''} (see Figure~\ref{fig:downljava}; download ``Windows Offline'' instead if you are using a 32-bit version of Windows). During the installation, you can accept all the default options, including the installation path.
 \begin{figure}
-  \setlength{\fboxsep}{0pt}
-  \fbox{\includegraphics[width=\textwidth]{03-1-downljava}}
+  \includegraphics[frame,width=\textwidth]{03-1-downljava}
   \caption{Downloading JRE from Oracle}
   \label{fig:downljava}
 \end{figure}
 
-Next, you should set \textbf{``JAVA\_HOME''} in your environmental variables to tell your Windows PC where your \java\ installation lives. This step is optional, but can prevent many issues with \java, people had in the past. To set ``JAVA\_HOME'', you need to navigate to the menu \textbf{``edit the system environment variables''}. The easiest way to get there is to hit the \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-6-winbutton}} button on your keyboard and enter ``environment''. Windows will then search for programs and settings menus which include this title and should usually display the menu we are looking for on top.\footnote{On older versions of Windows, this might not work. On Windows 7 you can alternatively right-click on ``My Computer'' and select ``Properties $\rightarrow$ Advanced''. On Windows 8 ``Control Panel $\rightarrow$ System $\rightarrow$ Advanced System Settings''.
+Next, you should set \textbf{``JAVA\_HOME''} in your environmental variables to tell your Windows PC where your \java\ installation lives. This step is optional, but can prevent many issues with \java, people had in the past. To set ``JAVA\_HOME'', you need to navigate to the menu \textbf{``edit the system environment variables''}. The easiest way to get there is to hit the \win\ button on your keyboard and enter ``environment''. Windows will then search for programs and settings menus which include this title and should usually display the menu we are looking for on top.\footnote{On older versions of Windows, this might not work. On Windows 7 you can alternatively right-click on ``My Computer'' and select ``Properties $\rightarrow$ Advanced''. On Windows 8 ``Control Panel $\rightarrow$ System $\rightarrow$ Advanced System Settings''.
 }
 In this menu you have to find the button \textbf{``Environment variables...''}. Clicking this button should open the window shown in Figure~\ref{fig:javahome}.
 
@@ -354,7 +379,7 @@ Enter the variable name \textbf{``JAVA\_HOME''} and the path to your java instal
   \label{fig:javahome}
 \end{figure}
 
-Windows should now recognise \java\ and be able to run \java\ commands. To test this, we can open the Command Prompt (press the \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-6-winbutton}} button on your keyboard and simply enter ``cmd'' and then hit ``Enter'') and type a \java\ command, e.\,g., \texttt{``java -version''}. If the installation was successful, the output should display information about the \java-version and build as depicted in Figure~\ref{fig:javvers}.
+Windows should now recognise \java\ and be able to run \java\ commands. To test this, we can open the Command Prompt (press the \win\ button on your keyboard and simply enter ``cmd'' and then hit ``Enter'') and type a \java\ command, e.\,g., \texttt{``java -version''}. If the installation was successful, the output should display information about the \java-version and build as depicted in Figure~\ref{fig:javvers}.
 \begin{figure}
   \centering
   \includegraphics[width=0.65\linewidth]{03-3-javaVersionCommand}
@@ -391,7 +416,7 @@ print("Hello World!")
 # You can also use R as a calculator
 2 * 3
 @
-The chunk of code above marks the first time we are using \R\ commands in this manual. It might be worth, to explain what this means for users who are not familiar with documents which contain \R\ code. Whenever code is shown in this manual it is decorated with a light grey background. Comments in \R\ code (i.\,e. text targeted at the user to explain what is happening in a specific line) are marked with a \#, are formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with \#\# contains \R\ code which you can copy and paste to the Console in \rstudio\ and run. Alternnativly, you can also copy the code to an \R\ script and execute it by either clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}} on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
+The chunk of code above marks the first time we are using \R\ commands in this manual. It might be worth, to explain what this means for users who are not familiar with documents which contain \R\ code. Whenever code is shown in this manual it is decorated with a light grey background. Comments in \R\ code (i.\,e. text targeted at the user to explain what is happening in a specific line) are marked with a \#, are formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with \#\# contains \R\ code which you can copy and paste to the Console in \rstudio\ and run. Alternnativly, you can also copy the code to an \R\ script and execute it by either clicking on this button \rrun\ on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
 If this works fine, you should be able to continue to the next section which describes \fullref{subsection:installdna}.
 
 
@@ -438,7 +463,7 @@ print("Hello World!")
 # You can also use R as a calculator
 2 * 3
 @
-The chunk of code above marks the first time we are using \R\ commands in this manual. It might be worth, to explain what this means for users who are not familiar with documents which contain \R\ code. Whenever code is shown in this manual it is decorated with a light grey background. Comments in \R\ code (i.\,e. text targeted at the user to explain what is happening in a specific line) are marked with a \#, are formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with either \# or \#\# contains \R\ code which you can copy and paste to the Console in \rstudio\ and run. Alternatively, you can also copy the code to an \R\ script and execute it by either clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}} on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
+The chunk of code above marks the first time we are using \R\ commands in this manual. It might be worth, to explain what this means for users who are not familiar with documents which contain \R\ code. Whenever code is shown in this manual it is decorated with a light grey background. Comments in \R\ code (i.\,e. text targeted at the user to explain what is happening in a specific line) are marked with a \#, are formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with either \# or \#\# contains \R\ code which you can copy and paste to the Console in \rstudio\ and run. Alternatively, you can also copy the code to an \R\ script and execute it by either clicking on this button \rrun\ on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
 
 Now unfortunatly, working with \java\ from within \R\ on a Mac is a bit messy. Apple's own version of \java, although important to have installed, does not run in combination with \R. That is why we have to tell your system which version of \java\ to use by default. To do this, we have to enter a few system commands, which you can either do in the Terminal app or directly from within \R\ using the \code{system} function:
 <<eval=FALSE, results = 'tex'>>=
@@ -531,7 +556,7 @@ print("Hello World!")
 # You can also use R as a calculator
 2 * 3
 @
-The chunk of code above marks the first time we are using \R\ commands in this manual. Since it looks similar to the terminal commands we used above, you probably have no problem reading it. But just in case, it might be worth to explain what you see there: whenever code is shown in this manual it is decorated with a light grey background. Comments in \R\ code (i.\,e. text targeted at the user to explain what is happening in a specific line) are marked with a \#, are formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with \#\# contains \R\ code which you can copy and paste to the Console in \rstudio\ and run. Alternnativly, you can also copy the code to an \R\ script and execute it by either clicking on this button \raisebox{-0.1em}{\includegraphics[height=1.5\fontcharht\font`\B]{03-5-rrun}} on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
+The chunk of code above marks the first time we are using \R\ commands in this manual. Since it looks similar to the terminal commands we used above, you probably have no problem reading it. But just in case, it might be worth to explain what you see there: whenever code is shown in this manual it is decorated with a light grey background. Comments in \R\ code (i.\,e. text targeted at the user to explain what is happening in a specific line) are marked with a \#, are formatted in italic font and in dark grey. The output, which is generated by running a command, is marked by two \# and formatted in black. This means that every line which does not start with \#\# contains \R\ code which you can copy and paste to the Console in \rstudio\ and run. Alternnativly, you can also copy the code to an \R\ script and execute it by either clicking on this button \rrun\ on the upper right of \rstudio, near the corner or you can use the shortcut ``Ctrl+Enter''. Both ways, the highlighted code or the line in which the caret is currently flashing are sent to the console and executed.
 
 Now before we can actually run \rdna, we need to associate \java\ with R. To do this, you can either go back to the terminal, or you can invoke a system command directly from within \R\ using the \code{system} function:
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
@@ -1329,7 +1354,7 @@ The \textbf{``.csv'' format} (short for  comma-separated values) is basically a 
 This is the exact same table as Table~\ref{tab:twomode}\footnote{Except that column names needed to be truncated to fit on this page.} 
 but instead of rows and columns, the values are stored in plain text, with each line containing one row of the table and the values separated by semicolons. You can usually open these files in MS Excel, LibreOffice, or Numbers (Apple's spreadsheet application) or other spreadsheet applications without any further steps. Note, however, that your spreadsheet application sometimes needs to be set to use semicolons to separate values instead of commas.\footnote{This is usually only a problem in MS Excel running on a Windows computer where the CSV separator is set system-wide in the language options. If you experience problems, you need to use the import function in Excel rather than opening the .csv file directly.}
 
-\textbf{``.dl''} files are for use with the network analysis software\textsc{Ucinet}. Again, information in .dl files is stored in plain text and you can open the files using the text editor of your choice if you want to inspect the format in detail. Taking again Table~\ref{tab:twomode} as an example, the respective .dl file looks like this:
+\textbf{``.dl''} files are for use with the network analysis software \ucinet. Again, information in .dl files is stored in plain text and you can open the files using the text editor of your choice if you want to inspect the format in detail. Taking again Table~\ref{tab:twomode} as an example, the respective .dl file looks like this:
 
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 dl nr = 6, nc = 7, format = fullmatrix
@@ -1356,28 +1381,12 @@ data:
  2 2 0 0 1 1 1
  1 0 10 2 2 1 0
 @
-\textsc{Ucinet} is a Windows application which also runs on Mac and Linux if you use it with and emulators such as Wine or Bootcamp. A 60-day free trial version with all features included is available for free on their website: 
-\href{https://sites.google.com/site/ucinetsoftware/downloads}{sites.google.com/site/ucinetsoftware/}. However, we advise to use either % 
-{\protect\raisebox{.5ex}{\color[rgb]{0.1,0.1,0.1}v}% dark gray
-  \protect\raisebox{.1ex}{\color[rgb]{0.3,0.3,0.3}i}% light gray
-  \protect\raisebox{-.1ex}{\color[rgb]{0.1,0.1,0.1}s}% dark gray
-  \protect\raisebox{.1ex}{\color[rgb]{0.3,0.3,0.3}o}% light gray
-  \protect\raisebox{-.1ex}{\color[rgb]{0.1,0.1,0.1}n}% dark gray
-  \protect\raisebox{-.4ex}{\color[rgb]{0.3,0.3,0.3}e}% light gray
-}
-or \R\ for visualising your networks as both are free, under active development and---in the case of \R---open source.
+\ucinet\ is a Windows application which also runs on Mac and Linux if you use it with and emulators such as Wine or Bootcamp. A 60-day free trial version with all features included is available for free on their website: 
+\href{https://sites.google.com/site/ucinetsoftware/downloads}{sites.google.com/site/ucinetsoftware/}. However, we advise to use either \visone\ or \R\ for visualising your networks as both are free, under active development and---in the case of \R---open source.
 
 %include screenshot?
 
-The \textbf{``.graphml'' format} is based on the open standard XML and while still readable by humans, the output file for Table~\ref{tab:twomode} would be too long to display it here. .graphml files can be opened using % 
-{\protect\raisebox{.5ex}{\color[rgb]{0.1,0.1,0.1}v}% dark gray
-  \protect\raisebox{.1ex}{\color[rgb]{0.3,0.3,0.3}i}% light gray
-  \protect\raisebox{-.1ex}{\color[rgb]{0.1,0.1,0.1}s}% dark gray
-  \protect\raisebox{.1ex}{\color[rgb]{0.3,0.3,0.3}o}% light gray
-  \protect\raisebox{-.1ex}{\color[rgb]{0.1,0.1,0.1}n}% dark gray
-  \protect\raisebox{-.4ex}{\color[rgb]{0.3,0.3,0.3}e}% light gray
-} %
-which is ``a software tool intended for research and teaching in social network analysis'' (\textit{see \href{http://visone.info/html/about.html}{visone.info/html/about.html}}). Since it is a \java\ program like \dna\ itself, it can be run on any operating system capable of installing \java---which means bascially all of them. You can take a glimpse at its visualisation capabilities in Figure~\ref{fig:visone}, which shows the plot of Table~\ref{tab:twomode}.
+The \textbf{``.graphml'' format} is based on the open standard XML and while still readable by humans, the output file for Table~\ref{tab:twomode} would be too long to display it here. .graphml files can be opened using \visone, which is ``a software tool intended for research and teaching in social network analysis'' (\textit{see \href{http://visone.info/html/about.html}{visone.info/html/about.html}}). Since it is a \java\ program like \dna\ itself, it can be run on any operating system capable of installing \java---which means bascially all of them. You can take a glimpse at its visualisation capabilities in Figure~\ref{fig:visone}, which shows the plot of Table~\ref{tab:twomode}.
 
 \begin{figure}
   \centering
@@ -1723,7 +1732,7 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
 
 
 \section{Normalization}\label{sec:normal}
-In most real-life networks, normalisation is important. The reason is that some actors are more salient than others in public discussion. Government officials in charge of a certain problem will usually be covered more intensely than public interest groups who have an opposite stance. Other actors, such as political parties, follow a membership logic according to which they are by definition more diverse than others with regard to opinions. That means that due to their activity and diversity, these actors have agreement or disagreement ties to most other actors in the network at some point. This can obscure the real structure of a network and make it much harder to identify coalitions \citep{Leifeld.2017oxf}.
+In most real-life networks, normalisation is important. The reason is that some actors are more salient than others in public discussion. Government officials in charge of a certain problem will usually be covered more intensely than public interest groups who have an opposite stance. Other actors, such as political parties, follow a membership logic according to which they are by definition more diverse than others with regard to opinions. That means that due to their activity and diversity, these actors have agreement or disagreement ties to most other actors in the network at some point. This can obscure the real structure of a network and make it much harder to identify coalitions \citep{leifeld2017discourse}.
 
 To cancel out this activity effect, one can divide the edge weight between two organisations by a function of the two organizations' activity or frequency of making statements (\textit{see Section~\ref{sec:normalis}}). This normalization procedure leaves us with a network of edge weights that reflect similarity in opinions without taking into account centrality or activity. Once again, which options are available depends on the network type. Only the option ``no'' is available in both types---which switches off normalization and is the default value.
 
@@ -1754,7 +1763,7 @@ To cancel out this activity effect, one can divide the edge weight between two o
     }
   \end{itemize}
 \end{itemize}
-Normalisation can be used in the different networks described in Section~\ref{sec:qualifier} to correct potential biases introduced by very active nodes. By using a threshold value on the edge weights before visualising the network, normalisation can make it easier to remove low-intensity ties without discriminating against organisations with a low media profile. Furthermore, the two normalisation algorithm which are based on vector similarities (Cosine and Jaccard) prepare networks to be fed into hierarchical cluster analyses, nonmetric multidimensional scaling, or other clustering techniques that are based on distance or similarity measures in order to identify coalitions in a policy debate as an alternative to community detection. Details about normalisation can be found in \citet{Leifeld.2017oxf}. In Table~\ref{tab:normal} you can see what how the two-mode network from Table~\ref{tab:twomode} looks like after applying the activity normalisation algorithm.
+Normalisation can be used in the different networks described in Section~\ref{sec:qualifier} to correct potential biases introduced by very active nodes. By using a threshold value on the edge weights before visualising the network, normalisation can make it easier to remove low-intensity ties without discriminating against organisations with a low media profile. Furthermore, the two normalisation algorithm which are based on vector similarities (Cosine and Jaccard) prepare networks to be fed into hierarchical cluster analyses, nonmetric multidimensional scaling, or other clustering techniques that are based on distance or similarity measures in order to identify coalitions in a policy debate as an alternative to community detection. Details about normalisation can be found in \citet{leifeld2017discourse}. In Table~\ref{tab:normal} you can see what how the two-mode network from Table~\ref{tab:twomode} looks like after applying the activity normalisation algorithm.
 
 <<eval=TRUE, echo=FALSE>>=
 conn <- dna_connection(dna_sample(verbose = FALSE))
@@ -2054,7 +2063,7 @@ Examples include cluster analysis or community detection, scaling and applicatio
 
 \section{Getting Started with \rdna}
 The first step is to install \R.
-Installing additional \R\ packages for network analysis and clustering, such as \texttt{statnet} \citep{goodreau2008statnet, handcock2008statnet, handcock2016statnet}, \texttt{xergm} \citep{leifeld2017temporal, leifeld2017xergm:}, \texttt{igraph} \citep{csardi2006igraph}, and \texttt{cluster} \citep{maechler2017cluster}, is recommended.
+Installing additional \R\ packages for network analysis and clustering, such as \texttt{statnet} \citep{handcock2008statnet, goodreau2008statnet, handcock2016statnet}, \texttt{xergm} \citep{leifeld2018temporal, leifeld2017xergm:}, \texttt{igraph} \citep{csardi2006igraph}, and \texttt{cluster} \citep{maechler2017cluster}, is recommended.
 Moreover, it is necessary to install the \texttt{rJava} package \citep{urbanek2016rjava}, on which the \rdna\ package depends, and the \texttt{devtools} package \citep{wickham2016devtools}, which permits installing \R\ packages from GitHub (\textit{see Section~\ref{subsection:installdna}}).
 
 <<eval=FALSE>>=
