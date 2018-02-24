@@ -1207,7 +1207,7 @@ The first thing to consider is which type of network you want to export. There a
 
 If you select to export a \textbf{``one-mode network''}, the resulting matrix will have the same nodes in the rows and columns  (e.\,g., organizations x organizations) (\textit{see Table~\ref{tab:onemode}}). The values in the cells in Table~\ref{tab:onemode} are a function of how often Variable 1 and Variable 2 are referenced together in \dna\ Statements. These values represent the edge weights of a network. All other options left on default, in the one-mode network case, that is the sum of all products of co-references by e.\,e., ogranisation A with organisation B (\textit{see Section~\ref{subsec:ignore}}). Note, that the edge weight of an organisation with itself is always zero. One could also expect that these values would be aggregations of all statements an organisation made. However, this would not make theoretical sense as there is no edge between an organisation and itself. The the choice of the value zero in cells where row and column mention the same organisation are all zero is deliberate.
 
-<<eval=TRUE, echo=FALSE, results='hide', message=FALSE>>=
+<<eval=TRUE, echo=FALSE, results='hide', message=FALSE, warning=FALSE>>=
 #' prep environment
 library("rDNA")
 library("kableExtra")
@@ -1220,7 +1220,7 @@ truncate <- function(x, trunc = 12){
                         x)
 }
 @
-<<eval=TRUE, echo=FALSE>>=
+<<eval=TRUE, echo=FALSE, warning=FALSE>>=
 conn <- dna_connection(dna_sample())
 dt <- dna_network(conn,
                   networkType = "onemode",
@@ -1249,7 +1249,7 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
 @
 
 A \textbf{``Two-mode network''}, on the other hand, has different sets of nodes in the rows and columns of the resulting matrix (e.\,g., concepts x organizations) (\textit{see Table~\ref{tab:twomode}}). In this case, what you select in Variable 1 will become the rows of the matrix while Variable 2 will be the columns. In the two-mode network case, the edge weights will be, all other options left on default, simple counts of all co-references of Variable 1 and 2.
-<<eval=TRUE, echo=FALSE>>=
+<<eval=TRUE, echo=FALSE, warning=FALSE>>=
 conn <- dna_connection(dna_sample())
 dt <- dna_network(conn,
                   networkType = "twomode",
@@ -1278,7 +1278,7 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
 @
 
 The \textbf{``Event list''} is a little different from the other two options. Instead of summarising the statements over Variable 1 and 2, it simply lists all \dna\ Statements with each row containing all variables of a statement including the time which was set for the document a statement occurred in. The event list is thus a more detailed version of the statements window in the \dna\ user interface. As you can see in Table~\ref{tab:eventl}, this table is a lot larger than the matrices produced by the summarising algorithms used to produce one-mode and two node networks.
-<<eval=TRUE, echo=FALSE>>=
+<<eval=TRUE, echo=FALSE, warning=FALSE>>=
 conn <- dna_connection(dna_sample())
 dt <- dna_network(conn,
                   networkType = "eventlist",
@@ -1381,7 +1381,7 @@ which is ``a software tool intended for research and teaching in social network 
 
 \begin{figure}
   \centering
-  \includegraphics[width=\linewidth]{07-03-visone}
+  \includegraphics[width=\linewidth]{07-02-visone}
   \caption{Plotting the network portrayed in Table~\ref{tab:twomode} in Visone}
   \label{fig:visone}
 \end{figure}
@@ -1391,8 +1391,8 @@ which is ``a software tool intended for research and teaching in social network 
 As mentioned earlier, Variable 1 and 2 do different things depending on whether you select one-mode or two-mode under ``Type of network''.
 In a one-mode network, Variable 1 will contain the node class used both for the rows and columns of the matrix. For example, select the variable for organizations in order to export an organization $\times$ organization network such as shown in Table~\ref{tab:onemode}. Variable 2 in a one-node network will denote the variable through which the edges are aggregated (i.\,e., the values in the cells). For example, if you export a one-mode network of organizations, what makes the most sense is to aggregate how often they co-reference the same concept. That means that the second variable should be set to ``concept''.
 
-In a two-mode network, the first variable denotes the node class for the rows, while the second variable denotes the node class used for the columns of the resulting network matrix. For Table~\ref{tab:twomode}, for example, we set Variable 1 to ``concept'' and Variable 1 to ``organization''. Instead of seeing which concepts were  referenced by which organisation, we could also create a table that displays person x concept. To do that we simply set Variable~1 to ``concept'' and Variable~2 to ``person''. To make the logic underlying the use of the two variables even more clear we can also choose to create a somewhat redundent two-mode matrix. By setting Variable 1 to ``organization'' and Variable 2 to ``person'' we can count how often statements reference organisations and persons together. Since every person belongs to just one organisation, the resulting matrix will count all statements by a person in one cell of her/his column while the result of all other cells in her/his column is zero:
-<<eval=TRUE, echo=FALSE>>=
+In a two-mode network, the first variable denotes the node class for the rows, while the second variable denotes the node class used for the columns of the resulting network matrix. For Table~\ref{tab:twomode}, for example, we set Variable 1 to ``concept'' and Variable 1 to ``organization''. Instead of seeing which concepts were  referenced by which organisation, we could also create a table that displays person x concept. To do that we simply set Variable 1 to ``concept'' and Variable 2 to ``person''. To make the logic underlying the use of the two variables even more clear we can also choose to create a somewhat redundent two-mode matrix. By setting Variable 1 to ``organization'' and Variable 2 to ``person'' we can count how often statements reference organisations and persons together. Since every person belongs to just one organisation, the resulting matrix will count all statements by a person in one cell of her/his column while the result of all other cells in her/his column is zero:
+<<eval=TRUE, echo=FALSE, warning=FALSE>>=
 conn <- dna_connection(dna_sample())
 dt <- dna_network(conn,
                   networkType = "twomode",
