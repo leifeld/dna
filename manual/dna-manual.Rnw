@@ -13,8 +13,7 @@
 \usepackage{booktabs}
 \usepackage{ltablex}
 \usepackage[table]{xcolor}
-\usepackage{soul}
-%include for kable
+\usepackage{soul} % include for kable
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{array}
@@ -27,6 +26,8 @@
 \usepackage{threeparttable}
 \usepackage[normalem]{ulem}
 \usepackage[export]{adjustbox} % to add boxes around screenshots
+\usepackage{tikz}
+\usepackage{tikz-3dplot}
 
 \graphicspath{ {Figures/} }
 \newcommand{\dna}{\texttt{DNA}}
@@ -77,7 +78,7 @@
   \addtocontents{toc}{\vskip-10pt}%
   \addtocontents{toc}{%
     \protect\contentsline{chapter}%
-    {\hskip1.3em\mdseries\scshape\protect\scriptsize#1}{}{}}
+    {\hskip1.3em\mdseries\scshape\protect\small#1}{}{}}
   \addtocontents{toc}{\vskip5pt}%
 }
 \makeatother
@@ -198,14 +199,234 @@ Both \dna\ and \rdna\ can be downloaded from \github\ (see Chapter~\ref{sec:inst
 Please feel free to post questions and bug reports to the issue tracker on \github.
 
 
-\chapter{\dna\ Algorithms} \label{sec:algorithms}
+\chapter{Methods for Network Construction} \label{sec:algorithms}
 \chapterauthor{Philip Leifeld}
 \FloatBarrier
-This section summarizes the main algorithms implemented in \dna\ in a technical way.
+This chapter summarises the main network algorithms implemented in \dna\ graphically and using mathematical notation.
 
+\section{Graphical Intuition}
+
+Figure~\ref{fig:algo_aff} illustrates how actors (as yellow nodes on the left) and concepts (as blue nodes on the right) are connected by dashed lines.
+These dashed lines represent the edges of a bipartite graph, also called an affiliation network.
+Substantively, these edges represent statements that were annotated in a policy debate.
+For example, actor~5 refers to concepts~3 and~4 in the debate.
+
+\tikzset{
+ actor/.style ={circle,draw=red!50!yellow,fill=red!20!yellow,thick,inner sep=1pt},
+ category/.style ={circle,draw=blue!70,fill=blue!40,thick,inner sep=1pt},
+ grey/.style ={line width=0.5mm, dashed,color=gray,inner sep=0pt},
+ black/.style ={line width=0.5mm},
+ annotation/.style = {fill=gray!50, rounded corners=3}
+}
+
+\begin{figure}[tbp]
+ \begin{center}
+  \begin{tikzpicture}
+   \node [actor] (a1) at (0,4) {$a_1$};
+   \node [actor] (a2) at (1,3) {$a_2$};
+   \node [actor] (a3) at (0,2) {$a_3$};
+   \node [actor] (a4) at (1,1) {$a_4$};
+   \node [actor] (a5) at (0,0) {$a_5$};
+   \node [category] (c1) at (5,4) {$c_1$};
+   \node [category] (c2) at (7,3) {$c_2$};
+   \node [category] (c3) at (6,2) {$c_3$};
+   \node [category] (c4) at (5,0) {$c_4$};
+   \node [category] (c5) at (7,1) {$c_5$};
+   \draw [grey] (a1) to (c1);
+   \draw [grey] (a2) to (c1);
+   \draw [grey] (a2) to (c2);
+   \draw [grey] (a2) to (c3);
+   \draw [grey] (a3) to (c3);
+   \draw [grey] (a3) to (c5);
+   \draw [grey] (a4) to (c3);
+   \draw [grey] (a5) to (c3);
+   \draw [grey] (a5) to (c4);
+   \draw [black] (a1) to (a2);
+   \draw [black] (a2) to (a3);
+   \draw [black] (a2) to (a5);
+   \draw [black] (a3) to (a4);
+   \draw [black] (a3) to (a5);
+   \draw [black] (a2) to (a4);
+   \draw [black] (a4) to (a5);
+   \draw [black] (c1) to (c2);
+   \draw [black] (c1) to (c3);
+   \draw [black] (c2) to (c3);
+   \draw [black] (c3) to (c4);
+   \draw [black] (c3) to (c5);
+   \node at (0,-2) {};
+   \node at (7,5.5) {};
+   \node [annotation] at (0,5) {actors};
+   \node [annotation] at (6,5) {concepts};
+   \node [annotation, text width=1.5cm, right=-3mm] at (2.5,-1) {affiliation network};
+   \node [annotation, text width=1.5cm, right=-6mm] at (0,-1) {actor network};
+   \node [annotation, text width=1.5cm, right=-6mm] at (5.5,-1) {concept network};
+  \end{tikzpicture}
+  \caption{Illustration: Affiliation network (dashed lines) between actors (yellow nodes, variable~1) and concepts (blue nodes, variable~2) and their induced actor congruence network (solid lines on the left) and concept congruence network (solid lines on the right).}
+  \label{fig:algo_aff}
+ \end{center}
+\end{figure}
+
+Based on this bipartite graph, an actor congruence network and a concept congruence network can be inferred.
+For example, actors~1 and~2 jointly refer to the same concept~1, hence they are directly connected by an edge in the actor congruence network illustrated on the left.
+If actors~1 and~2 shared more than one concept, their edge weight would be proportional to the number of concepts they shared.
+Substantively, the strength of connection between two actors can be interpreted as their similarity in terms of the concepts they employ in the policy debate.
+
+Conversely, concepts~1 and~3 are jointly referred to by the same actor~2, hence they are directly connected by an edge in the concept congruence network illustrated on the right.
+If concepts~1 and~3 were jointly referred to by more than one actor, their similarity would be greater than one.
+Substantively, the edge weights between concepts can be interpreted as their similarity in terms of the actors that employ them in the policy debate.
+
+Actors and concepts are merely a substantive application where other variables~1 and~2 could have been encoded instead, such as persons and locations or speakers and addressees.
+
+Simply modelling referral of a concept by an actor, however, is insufficient to capture agreement and opposition in policy debates.
+For example, actor~1 and actor~2 may either both support concept~1, they may both reject concept~1, or one of them may refer to concept~1 in a positive way while the other one may refer to concept~1 in a negative way.
+Depending on these configurations, one would infer a congruent or a conflictual relationship between actors~1 and~2.
+
+Figure~\ref{fig:algo_binarycongruence} illustrates how two types of networks can be generated, congruence and conflict networks.
+In a congruence network, edges are counted when both actors co-support or co-reject a concept.
+In a conflict network, edges are counted when the two actors' agreement patterns differ.
+
+\begin{figure}[tbp]
+ \begin{center}
+  \begin{tikzpicture}
+   \node [actor] (a1) at (0,1) {$a_1$};
+   \node [actor] (a2) at (0,0) {$a_2$};
+   \node [category] (c1) at (3,0.5) {$c_1$};
+   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
+   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
+   \draw [black] (a1) to (a2);
+   \node [annotation,right=-3mm] at (0,2.3) {congruence networks};
+   
+   \node [actor] (a1) at (5.5,1) {$a_1$};
+   \node [actor] (a2) at (5.5,0) {$a_2$};
+   \node [category] (c1) at (8.5,0.5) {$c_1$};
+   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
+   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
+   \draw [black] (a1) to (a2);
+   \node [annotation,right=-3mm] at (5.5,2.3) {conflict networks};
+   
+   \node [actor] (a1) at (0,-1.5) {$a_1$};
+   \node [actor] (a2) at (0,-2.5) {$a_2$};
+   \node [category] (c1) at (3,-2) {$c_1$};
+   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
+   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
+   \draw [black] (a1) to (a2);
+   
+   \node [actor] (a1) at (5.5,-1.5) {$a_1$};
+   \node [actor] (a2) at (5.5,-2.5) {$a_2$};
+   \node [category] (c1) at (8.5,-2) {$c_1$};
+   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
+   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
+   \draw [black] (a1) to (a2);
+  \end{tikzpicture}
+  \caption{Illustration: congruence and conflict networks with a binary qualifier variable.}
+  \label{fig:algo_binarycongruence}
+ \end{center}
+\end{figure}
+
+Qualifiers like ``agreement'' need not be binary (e.\,g., positive or negative).
+They could be represented by integer weights, such as intensity of agreement on a scale from $-5$ to $+5$.
+In this case, one would need to define the edge weights between nodes in a congruence network as the absolute difference between the two weights in the affiliation network subtracted from the maximum possible difference and divided by the maximum possible difference.
+Conversely, in a conflict network, one would need to define the edge weights between nodes as the absolute difference between the two weights in the affiliation network divided by the maximum possible difference, such that a value of 0 represents no conflict and 1 represents maximal conflict.
+In either case, these fractions would need to be counted over all concepts (or, more generally, over all nodes of the second variable).
+This calculation is illustrated in Figure~\ref{fig:algo_integercongruence}.
+
+\begin{figure}[tbp]
+ \begin{center}
+  \begin{tikzpicture}
+   \node [actor] (a1) at (0,1) {$a_1$};
+   \node [actor] (a2) at (0,0) {$a_2$};
+   \node [category] (c1) at (3,0.5) {$c_1$};
+   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
+   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+5$} (c1);
+   \draw [black] (a1) to node [left=1mm,circle,solid,line width=0.2mm] {$\frac{7}{10}$} (a2);
+   \node [annotation,right=-3mm] at (0,2.3) {congruence networks};
+   
+   \node [actor] (a1) at (5.5,1) {$a_1$};
+   \node [actor] (a2) at (5.5,0) {$a_2$};
+   \node [category] (c1) at (8.5,0.5) {$c_1$};
+   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
+   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+5$} (c1);
+   \draw [black] (a1) to node [left=1mm,circle,solid,line width=0.2mm] {$\frac{3}{10}$} (a2);
+   \node [annotation,right=-3mm] at (5.5,2.3) {conflict networks};
+   
+   \node [actor] (a1) at (0,-1.5) {$a_1$};
+   \node [actor] (a2) at (0,-2.5) {$a_2$};
+   \node [category] (c1) at (3,-2) {$c_1$};
+   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$-4$} (c1);
+   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
+   \draw [black] (a1) to node [left=1mm,circle,solid,line width=0.2mm] {$\frac{4}{10}$} (a2);
+   
+   \node [actor] (a1) at (5.5,-1.5) {$a_1$};
+   \node [actor] (a2) at (5.5,-2.5) {$a_2$};
+   \node [category] (c1) at (8.5,-2) {$c_1$};
+   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$-4$} (c1);
+   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
+   \draw [black] (a1) to node [left=1mm,circle,solid,line width=0.2mm] {$\frac{6}{10}$} (a2);
+  \end{tikzpicture}
+  \caption{Illustration: congruence and conflict networks with an integer qualifier variable.}
+  \label{fig:algo_integercongruence}
+ \end{center}
+\end{figure}
+
+Finally, it may be necessary to normalise the resulting affiliation, congruence, or conflict network.
+Normalisation may be necessary to avoid a core--periphery structure where those actors end up at the center of the network who refer to most concepts.
+Normalisation corrects for the verbosity of actors (or, more generally, for the centrality of a node in the affiliation network).
+Several normalisation methods are available, and they will be described below.
+Graph clustering can then be applied to the normalised networks to identify coalitions in policy debates.
+More details, especially on the topic of normalisation, can be found in \citet{leifeld2017discourse}.
+
+The next section will introduce some formal notation to represent the data structures and transformations introduced above; then these transformations will be re-introduced more formally using mathematical notation, and finally normalisation methods will be proposed.
+
+\section{Notation}
 $X$ is a three-dimensional array representing statement counts.
-$x_{ijk}$ is a specific count value in this array, with the first index $i$ denoting an instance of the first variable (e.\,g., organization $i$), the second index $j$ denoting an instance of the second variable (e.\,g., concept $j$), and the third index $k$ denoting a level on the qualifier variable (e.\,g., agreement = $1$).
-For example, $x_{ijk} = 5$ could mean that organization $i$ mentions concept $j$ with intensity $k$ five times.
+$x_{ijk}$ is a specific count value in this array, with the first index $i$ denoting an instance of the first variable (e.\,g., organization or actor $i$), the second index $j$ denoting an instance of the second variable (e.\,g., concept $j$), and the third index $k$ denoting a level on the qualifier variable (e.\,g., agreement = $1$).
+For example, $x_{ijk} = 5$ could mean that actor $i$ mentions concept $j$ with intensity $k$ five times.
+$X$ can be represented as a cuboid, as illustrated in Figure~\ref{fig:algo_cuboid}.
+
+\begin{figure}
+ \begin{center}
+  % diagram adjusted from https://latex.org/know-how/440-tikz-3dplot
+  \tdplotsetmaincoords{60}{125}
+  \begin{tikzpicture}
+   [tdplot_main_coords,
+    grid/.style={very thin,gray},
+    axis/.style={->,blue,thick},
+    cube/.style={opacity=.5,very thick,fill=red}]
+   %draw a grid in the x-y plane
+   \foreach \x in {-0.5,0,...,2.5}
+    \foreach \y in {-0.5,0,...,2.5}
+     {
+      \draw[grid] (\x,-0.5) -- (\x,2.5);
+      \draw[grid] (-0.5,\y) -- (2.5,\y);
+     }			
+   
+   %draw the axes
+   \draw[axis] (0,0,0) -- (3,0,0) node[anchor=west]{$i$};
+   \draw[axis] (0,0,0) -- (0,3,0) node[anchor=west]{$j$};
+   \draw[axis] (0,0,0) -- (0,0,3) node[anchor=west]{$k$};
+   
+   %draw the bottom of the cube
+   \draw[cube] (0,0,0) -- (0,2,0) -- (2,2,0) -- (2,0,0) -- cycle;
+   
+   %draw the back-right of the cube
+   \draw[cube] (0,0,0) -- (0,2,0) -- (0,2,2) -- (0,0,2) -- cycle;
+   
+   %draw the back-left of the cube
+   \draw[cube] (0,0,0) -- (2,0,0) -- (2,0,2) -- (0,0,2) -- cycle;
+   
+   %draw the front-right of the cube
+   \draw[cube] (2,0,0) -- (2,2,0) -- (2,2,2) -- (2,0,2) -- cycle;
+   
+   %draw the front-left of the cube
+   \draw[cube] (0,2,0) -- (2,2,0) -- (2,2,2) -- (0,2,2) -- cycle;
+   
+   %draw the top of the cube
+   \draw[cube] (0,0,2) -- (0,2,2) -- (2,2,2) -- (2,0,2) -- cycle;
+  \end{tikzpicture}
+  \caption{Statements in the $X$ array can be represented in a cuboid data structure.}
+  \label{fig:algo_cuboid}
+ \end{center}
+\end{figure}
 
 Where the qualifier variable is binary, \emph{false} values are represented as $0$ and \emph{true} values as $1$ on the $k$ index, i.\,e., $K^\text{binary} = \{ 0; 1 \}$.
 Where the qualifier variable is integer, the respective integer value is used as the level.
@@ -214,101 +435,155 @@ Note that all $k$ levels of the scale are included in $K$, not just those values
 
 Indices with a prime denote a second instance of an element, e.\,g., $i'$ may denote another organization.
 $Y$ denotes the output matrix to be obtained by applying a transformation to $X$.
-The following transformations are possible:
+Several transformations are possible and will be described below.
 
-\section{Congruence}\label{subsec:congruence}
+\section{Construction of One-Mode Networks} \label{subsec:onemode}
+
+\subsection{Congruence Networks} \label{subsec:congruence}
 In a congruence network, the edge weight between nodes $i$ and $i'$ represents the number of times they co-support or co-reject second-variable nodes (if a binary qualifier is used) or the cumulative similarity between $i$ and $i'$ over their assessments of second-variable nodes (in the case of an integer qualifier variable).
 
-In the integer case:
-\begin{equation}
+In the integer case, the similarity between nodes $i$ and $i'$ is defined as the cumulative similarity over levels $k$ of the qualifier variable:
+\begin{equation} \label{eq:congruence_integer}
  y_{ii'}^\text{congruence} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} \sum_{k'} x_{ijk} x_{i'jk'} \left( 1 - \frac{\vert k - k' \vert}{\vert K \vert - 1} \right) \right)
 \end{equation}
 where $\Phi_{ii'}(\cdot)$ denotes a normalization function (to be specified below).
 
-In the binary case, i.\,e., $\vert K \vert = 2$, this reduces to
-\begin{equation}
- y_{ii'}^\text{congruence binary} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} x_{ijk} x_{i'jk} + (1 - x_{ijk}) (1 - x_{i'jk}) \right).
+Here, $\vert k - k' \vert$ is the difference in assessment of second-mode node $k$ (e.\,g., concept) by two first-mode nodes $i$ and $i'$.
+$\vert K \vert - 1$ is the maximum diffference there can be, with $\vert K \vert$ indicating the number of levels in qualifier variable $K$.
+For example, if the qualifier scale is $[-5; 5]$, $\vert K \vert - 1 = 10$.
+The subtraction in the parentheses serves to convert distances (as in a conflict network) to similarities.
+The distances are counted over all statements, meaning that nodes $i$ and $i'$ count these similarities over all combinations of the levels $k$ (for node $i$) and $k'$ (for node $i'$) for each second-variable node $j$ (e.\,g., each concept) and weight them by how often these combinations occur.
+This weighting occurs in the $x_{ijk} x_{i'jk'}$ part.
+For example, if $i$ mentions $j$ at intensity $-4$ twice and $i'$ mentions $j$ at intensity $+2$ three times on an intensity scale $[-5; +5]$, this contributes $2 \cdot 3 \cdot (1 - \frac{\vert-4 - 2\vert}{11 - 1}) = 4.2$ to the edge weight between $i$ and $i'$ in the congruence network.
+
+The binary case with $\vert K \vert = 2$ is a special case of the integer congruence network with a negative or positive agreement pattern, for example reflecting rejection or support of a concept by an actor.
+In the binary case, congruent opinions always reduce to $1 - \frac{\vert k - k' \vert}{\vert K \vert - 1} = 1$, and differences in opinion always reduce to $1 - \frac{\vert k - k' \vert}{\vert K \vert - 1} = 0$.
+Hence the binary case can be more easily expressed by counting the matches on the $k$ qualifier for all $j$ items without computing any distances:
+\begin{equation} \label{eq:congruence_binary}
+ y_{ii'}^\text{congruence binary} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} x_{ijk} x_{i'jk} \right).
 \end{equation}
 
-%This seems strange, because if $K = 2$, $k = 1$ and $k' = 0$, the equation would be:
-%\begin{equation}
-% y_{ii'}^\text{congruence} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} \sum_{k'} x_{ijk} x_{i'jk'} \left( 1 -  \frac{\vert 1 - 0' \vert}{\vert 2 \vert - 1} \right) %\right)
-%\end{equation}
-%which is always 0.
-
-\section{Conflict}\label{subsec:conflict}
-Binary case:
-\begin{equation}
- y_{ii'}^\text{conflict binary} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} (1 - x_{ijk}) x_{i'jk} + x_{ijk} (1 - x_{i'jk}) \right).
-\end{equation}
-
-%suggested correction:
-%With  $K = 2$, $k = 1$ and $k' = 0$
-%\begin{equation}
-% y_{ii'}^\text{conflict} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} \sum_{k'} x_{ijk} x_{i'jk'} \right)
-%\end{equation}
-
-More generally, in the integer case:
+\subsection{Conflict Networks} \label{subsec:conflict}
+The same logic as for the congruence network can be applied to produce conflict networks.
+In the integer case, Equation~\ref{eq:congruence_integer} must be modified such that the relative distances are not subtracted from one, while everything else stays the same:
 \begin{equation}
  y_{ii'}^\text{conflict} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} \sum_{k'} x_{ijk} x_{i'jk'} \left( \frac{\vert k - k' \vert}{\vert K \vert - 1} \right) \right)
 \end{equation}
 
-\section{Subtract}
+In the binary case, Equation~\ref{eq:congruence_binary} must be modified such that contradictions instead of matches are counted.
+In other words, instead of counting $x_{ijk} x_{i'jk}$, $x_{ijk} x_{i'jk'}$ must be counted:
+\begin{equation}
+ y_{ii'}^\text{conflict binary} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} x_{ijk} x_{i'jk'} \right).
+\end{equation}
+
+\subsection{The Subtract Method}
+In many empirical applications, it might make sense to combine the notions of congruence and conflict in a single signed and weighted network.
+If only congruence is considered, for example, one misses out on the possible fact that two actors may contradict each other on more concepts than they agree on.
+For this reason, it might make sense to subtract conflict edge weights from congruence edge weights and thereby construct a signed, weighted graph using the \emph{subtract} method as follows:
 \begin{equation}
  y_{ii'}^\text{subtract} = y_{ii'}^\text{congruence} - y_{ii'}^\text{conflict}
 \end{equation}
+Here, positive $y_{ii'}^\text{subtract}$ values indicate congruence in excess of conflict while negative values indicate conflict in excess of congruence.
+In some practical applications---for example, for visualisations of the congruence network---, it may make sense to discard all negative values or introduce some other threshold value $c$ for recoding all $y_{ii'}^\text{subtract} < c$ values as $0$.
 
-\section{Ignore}\label{subsec:ignore}
+\subsection{The Ignore Method} \label{subsec:ignore}
+In some applications, qualifiers do not matter substantively, or there is only one level on the qualifier variable.
+In such applications, it is possible to just count all referrals of $j$ by $i$ across levels of $k$ to get the number of times $i$ mentions $j$ in any way, then do the same for $i'$, and multiply both to yield the similarity between $i$ and $i'$ in terms of overlap in $j$, disregarding the levels of $k$:
 \begin{equation}
  y_{ii'}^\text{ignore} = \Phi_{ii'}\left( \sum_{j = 1}^n \left( \left( \sum_{k} x_{ijk} \right) \left( \sum_{k} x_{i'jk} \right) \right) \right)
 \end{equation}
 
-\section{Normalization}\label{sec:normalis}
-In the simplest case, normalization can be switched off, in which case $\Phi_{ii'}^\text{no}(\omega) = \omega$.
+\section{Normalisation for One-Mode Networks}\label{sec:normalis}
+\citet{leifeld2017discourse} discusses the normalisation of congruence networks.
+Normalisation, however, is also possible for affiliation networks, as will be demonstrated below.
 
-Alternatively, edge weights can be divided by the average activity of nodes $i$ and $i'$:
+Normalisation can be necessary to correct networks for the activity or popularity of nodes.
+For example, if some first-variable nodes refer to a substantial number of second-variable nodes while others refer to few, the former will be more likely to be connected to many other nodes and especially those with similar levels of activity, which leads to a core--periphery structure of the discourse network.
+Normalisation corrects for this pattern by cancelling out the effect of activity or popularity of nodes.
+This will often lead to a clear cluster structure based on the similarity of node profiles, instead of a core--periphery structure.
+
+In the simplest case, normalization can be switched off, in which case
+\begin{equation}
+ \Phi_{ii'}^\text{no}(\omega) = \omega.
+\end{equation}
+
+\subsection{Average Activity Normalisation of One-Mode Networks}
+Edge weights can be divided by the \emph{average activity} of nodes $i$ and $i'$:
 \begin{equation}\label{eq:activity}
  \Phi_{ii'}^\text{avg} (\omega) = \frac{\omega}{ \frac{1}{2} \left( \sum_{j = 1}^n \sum_{k} x_{ijk} + \sum_{j = 1}^n \sum_{k} x_{i'jk} \right) }.
 \end{equation}
+\emph{Average activity normalisation} is the most commonly applied form of normalisation and works both with binary and weighted $X$ arrays, i.\,e., with or without duplicate statements.
+It divides each weight by the mean of the number of second-variable referrals of nodes $i$ and $i'$.
 
-With Jaccard normalization, we don't just count $i$'s and $i'$'s activity and sum them up independently, but we add up both their independent activities and their joint activity, i.\,e., both matches and non-matches:
+\subsection{Jaccard Normalisation for One-Mode Networks}
+With \emph{Jaccard normalisation}, we do not just count $i$'s and $i'$'s activity and sum them up independently, but we add up both their independent activities and their joint activity, i.\,e., both matches and non-matches:
 \begin{equation}\label{eq:jaccard}
  \Phi_{ii'}^\text{Jaccard} (\omega) = \frac{\omega}{ \sum_{j = 1}^n \sum_{k} x_{ijk} [x_{i'jk} = 0] + \sum_{j = 1}^n \sum_{k} x_{i'jk}[x_{ijk} = 0] + \sum_{j = 1}^n \sum_{k} x_{ijk} x_{i'jk} }.
 \end{equation}
+Jaccard normalisation works best with binary $X$ arrays, i.\,e., if duplicate statements are not possible in the data structure.
 
-With cosine normalization, we take the product in the denominator:
+\subsection{Cosine Normalisation for One-Mode Networks}
+With \emph{cosine normalization}, we modify Equation~\ref{eq:activity} to take the product in the denominator instead of the mean:
 \begin{equation}\label{eq:cosine}
  \Phi_{ii'}^\text{cosine} (\omega) = \frac{\omega}{ \sqrt{(\sum_{j = 1}^n \sum_{k} x_{ijk})^2} \sqrt{(\sum_{j = 1}^n \sum_{k} x_{i'jk})^2} }.
 \end{equation}
+This works best when duplicates are admitted but can also be applied to binary $X$ arrays.
 
 \section{Affiliation Networks}
-Ignoring the qualifier variable:
+While one-mode networks as portrayed in Section~\ref{subsec:onemode} are most useful for analysing coalition structure in policy debates, affiliation networks convey more complexity.
+This makes them harder to interpret with increasing complexity of the data but can be more informative for less complex discourse networks.
+
+The simplest case is to ignore the qualifier variable:
 \begin{equation}
  y_{ij}^\text{affiliation ignore} = \Phi_{ij}\left(\sum_{k} x_{ijk} \right)
 \end{equation}
+This only makes sense if there is only one level in $K$ or if the qualifier variable does not matter substantively.
 
-Subtracting negative from positive ties (integer case):
+More interestingly, negative edges (e.\,g., rejection of concepts by actors) can be subtracted from positive edges (e.\,g., support of concepts by actors).
+This yields a signed, weighted affiliation network.
+
+In the integer case, the respective cells in $X$ can just be weighted by the respective level $k$.
+If the weight is negative, this will subtract $x_{ijk}$ from the count:
 \begin{equation}
- y_{ij}^\text{affiliation subtract binary} = \Phi_{ij}\left(\sum_{k} k \cdot x_{ijk} \right)
+ y_{ij}^\text{affiliation subtract binary} = \Phi_{ij}\left(\sum_{k} k x_{ijk} \right)
 \end{equation}
 
-Subtracting negative from positive ties (binary case):
+In the binary case (assuming $K = \{0; 1\}$), $0$ values need to be transformed into $-1$ before they can be subtracted:
 \begin{equation}
- y_{ij}^\text{affiliation subtract binary} = \Phi_{ij}\left(\sum_{k} \left( k \cdot x_{ijk} - (1 - k) \cdot x_{ijk} \right) \right)
+ y_{ij}^\text{affiliation subtract binary} = \Phi_{ij}\left(\sum_{k} \left( k x_{ijk} - (1 - k) x_{ijk} \right) \right)
 \end{equation}
 
-Note that the binary case is \emph{not} merely a special case of the weighted affiliation network in this case.
+Alternatively, in the binary case (assuming $K = \{0; 1\}$), it is possible to map all combinations of $k$ for each $(ij)$ dyad into a multiplex network with three distinct types of edges, where $0$ represents neither agreement nor disagreement, $1$ represents agreement$, $2$ represents disagreement$, and $3$ represents a mix of both agreement and disagreement.
+This can be useful, for example, for visualising agreement, disagreement, and ambiguity/ambivalence in the same affiliation network using different colours.
+More formally:
+\begin{equation}
+ y_{ij}^\text{affiliation combine binary} = 
+ \begin{cases}
+    0 & \text{if } \sum_k x_{ijk} = 0 \\
+    1 & \text{if } x_{i,j,k=0} = 0 \wedge x_{i,j,k=1} > 0 \\
+    2 & \text{if } x_{i,j,k=1} = 0 \wedge x_{i,j,k=0} > 0 \\
+    3 & \text{if } x_{i,j,k=0} > 0 \wedge x_{i,j,k=1} > 0
+ \end{cases}
+\end{equation}
 
-\section{Normalization for Affiliation Networks}
-With \emph{activity} normalization, ties from active nodes receive lower weights:
+\section{Normalisation of Affiliation Networks}
+Like one-mode networks, affiliation networks can be normalised.
+With \emph{activity normalisation}, ties from more active nodes receive lower weights:
 \begin{equation}
  \Phi_{ij}^\text{activity}(\omega) = \frac{\omega}{\sum_{j = 1}^n \sum_k x_{ijk}}
 \end{equation}
 
-With \emph{prominence} normalization, ties to prominent nodes receive lower weights:
+With \emph{prominence normalisation}, ties to more prominent nodes receive lower weights:
 \begin{equation}
  \Phi_{ij}^\text{prominence}(\omega) = \frac{\omega}{\sum_{i = 1}^m \sum_k x_{ijk}}
 \end{equation}
+
+\section{Temporal Aggregation: Time Windows and Attenuation}
+Networks can be temporally smoothed.
+For example, it is possible to create a series of temporally overlapping time slices and aggregate these slices into a single network to limit the temporal scope of congruence edges (\emph{time window algorithm}).
+Using the same algorithm, it is possible to visualise change over time using animations.
+Or it is possible to make the edge weight proportional to the time that has passed between the relevant statements of $i$ and $i'$ (\emph{attenuation algorithm}).
+These methods are more advanced and are introduced in \citet{leifeld2016policy}.
 
 
 \chapter{Installation of \dna\ and \rdna} \label{sec:installation}
