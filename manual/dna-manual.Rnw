@@ -164,20 +164,18 @@ Most of these packages work seamlessly with data processed by \rdna\ and therefo
 
 In recent years, discourse network analysis has been employed by a growing number of scholars in a wide field of policy sectors, such as 
 pension politics \citep{leifeld2013reconceptualising, leifeld2016policy}, 
-climate politics \citep{fisher2013mapping, fisher2013where, Broadbent.2014, Gkiouzepas.2015, Manfredo.2014, schneider2014punctuations, Stoddart.2015, Wagner.2017, Yun.2014}, 
-software patents and property rights \citep{Leifeld.2012, Herweg.2013}, 
-internet policy \citep{Breindl.2013, Haunss2009ip}, 
-infrastructure projects \citep{Nagel.2016}, 
-energy policy \citep{Brutschin.2013, Haunss.2017, Imbert.2017, Rinscheid.2015, Rinscheidetal.2015},
-shooting rampages \citep{Hurka.2013}, 
-abortion \citep{Muller.2014, Muller.2014b, Muller.2015}, 
-outdoor sports \citep{Stoddartetal.2015}, 
-water politics \citep{Brandenberger.2015, Cisneros.2015}, 
-deforestation \citep{Rantala.2014}, 
-genetically modified organisms \citep{Tosun.2015}, 
-higher education \citep{Naegler.2015}, 
-international financial politics \citep{Werner.2015, Haunss2017finace}, 
-and online deception \citep{Wu.2015}.
+climate politics \citep{fisher2013mapping, fisher2013where, broadbent2014inter, gkiouzepas2015climate, manfredo2014society, schneider2014punctuations, stoddart2015canada, wagner2017trends, yun2014framing}, 
+software patents and property rights \citep{leifeld2012software, herweg2013politische}, 
+internet policy \citep{breindl2013discourse, haunss2009ip}, 
+infrastructure projects \citep{nagel2016polarisierung}, 
+energy policy \citep{brutschin2013dynamics, haunss2017ausstieg, imbert2017inquiry, rinscheid2015crisis},
+shooting rampages \citep{hurka2013framing}, 
+abortion \citep{muller2014beleidscontroverse, muller2014discourscoalities, muller2015discourse}, 
+outdoor sports \citep{stoddartetal2015environmentalists},
+deforestation \citep{rantala2014multistakeholder}, 
+higher education \citep{naegler2015partner}, 
+international financial politics \citep{haunss2017finace}, 
+and online deception \citep{wu2015dobnet}.
 
 While a default toolbox of methods is available for discourse network analysis, new methods are being developed presently.
 For example, one promising approach is the application of inferential network models to the temporal network structure produced by \dna\ in order to model policy debates at the micro level.
@@ -867,7 +865,7 @@ If you are not interested in using \rdna, you can now skip to Chapter~\ref{chp:d
 At this point, it is assumed that you have installed \R\ and have at least a minimal understanding of how the program works (see Section~\ref{subsec:rtest}).
 If that is the case, we can go ahead and install \rdna\ from within \R.
 
-First, we need to install the package \rjava\ \citep{urbanek2016rjava}, which is the most important dependency of \rdna:
+First, we need to install the package \rjava\ \citep{urbanek2017rjava}, which is the most important dependency of \rdna:
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 install.packages("rJava")
 @
@@ -899,7 +897,7 @@ R.Version()$arch
 For \rdna\ to work properly, you need to ensure that \rjava\ works correctly.
 In particular, it is essential that the architectures of \java, your operating system, and your version of \R\ match (see comments~4, 5, and 6 in the code chunk above).
 
-Once this is done, you should install the package \texttt{devtools} \citep{wickham2016devtools}, which permits installing \R\ packages from \github.
+Once this is done, you should install the package \texttt{devtools} \citep{wickham2018devtools}, which permits installing \R\ packages from \github.
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 install.packages("devtools")
 @
@@ -1193,7 +1191,7 @@ Finally---after checking your specifications---you can import the document to \d
 If you want to analyze a greater number of articles, it quickly becomes tedious to manually copy and paste each document and its meta data. This is why \dna\ also offers a semi-automatic way to upload multiple documents and their relevant meta data (author, date, source, type) at the same time.
 
 \subsubsection{Downloading and Preparing your Raw Data}
-This way of importing raw data to \dna\ requires that you save all documents as \textbf{separate \code{.txt} files} (one file for each article) \textbf{in a common folder}. Please note, that you have to use the \code{.txt}format for saving your data, as \dna\ can not import \code{.doc} or \code{.pdf} files.\footnote{You can, however, save Word-documents as .txt files or use an online converter to transform PDFs into txt files. Note, that you need to make sure (both cases) that the .txt file is saved with UTF 8 encoding.} In case you use the newspaper database of LexisNexis---which is available through many university lbraries---for finding and retrieving your raw data, please make sure that you download all documents separately (by selecting the individual document before clicking the download button, \textit{see Figure~\ref{fig:nexis}, step 1-2}) and choose the document format \code{Text} (under \code{Format Options} in the Download pop-up menu, \textit{see Figure~\ref{fig:nexis}, step 3-4}) before downloading the data (see Figure~\ref{fig:nexis}, step 5).\footnote{If you use \rdna\ it will soon also be possible to import LexisNexis data into \dna\ via using \rdna\ and a new \R package called \href{https://github.com/JBGruber/LexisNexisTools}{LexisNexisTools} \citep{gruber2018}.}
+This way of importing raw data to \dna\ requires that you save all documents as \textbf{separate \code{.txt} files} (one file for each article) \textbf{in a common folder}. Please note, that you have to use the \code{.txt}format for saving your data, as \dna\ can not import \code{.doc} or \code{.pdf} files.\footnote{You can, however, save Word-documents as .txt files or use an online converter to transform PDFs into txt files. Note, that you need to make sure (both cases) that the .txt file is saved with UTF 8 encoding.} In case you use the newspaper database of LexisNexis---which is available through many university lbraries---for finding and retrieving your raw data, please make sure that you download all documents separately (by selecting the individual document before clicking the download button, \textit{see Figure~\ref{fig:nexis}, step 1-2}) and choose the document format \code{Text} (under \code{Format Options} in the Download pop-up menu, \textit{see Figure~\ref{fig:nexis}, step 3-4}) before downloading the data (see Figure~\ref{fig:nexis}, step 5).\footnote{If you use \rdna\ it will soon also be possible to import LexisNexis data into \dna\ via using \rdna\ and a new \R package called \href{https://github.com/JBGruber/LexisNexisTools}{LexisNexisTools} \citep{gruber2018lexis}.}
 \begin{figure}
   \includegraphics[frame, width=\linewidth]{05-3-nexis}
   \caption{Downloading files from the LexisNexis newspaper archive}
@@ -2243,7 +2241,7 @@ unlink(dna_sample())
 \chapter{\rdna: Using \dna\ from \R} \label{chp:rdna}
 \chapterauthor{Philip Leifeld and Johannes Gruber}
 \FloatBarrier
-\dna\ can be connected to the statistical computing environment \R\ \citep{coreteam2014r:} through the \rdna\ package \citep{leifeld2018rdna}.
+\dna\ can be connected to the statistical computing environment \R\ \citep{coreteam2014r} through the \rdna\ package \citep{leifeld2018rdna}.
 There are two advantages to working with \R\ on \dna\ data.
 
 The first advantage is replicability.
@@ -2263,7 +2261,7 @@ Examples include cluster analysis or community detection, scaling and applicatio
 \section{Getting Started with \rdna}
 The first step is to install \R.
 Installing additional \R\ packages for network analysis and clustering, such as \texttt{statnet} \citep{handcock2008statnet, goodreau2008statnet, handcock2016statnet}, \texttt{xergm} \citep{leifeld2018temporal, leifeld2017xergm:}, \texttt{igraph} \citep{csardi2006igraph}, and \texttt{cluster} \citep{maechler2017cluster}, is recommended.
-Moreover, it is necessary to install the \texttt{rJava} package \citep{urbanek2016rjava}, on which the \rdna\ package depends, and the \texttt{devtools} package \citep{wickham2016devtools}, which permits installing \R\ packages from GitHub (see Section~\ref{sec:installdna}).
+Moreover, it is necessary to install the \texttt{rJava} package \citep{urbanek2017rjava}, on which the \rdna\ package depends, and the \texttt{devtools} package \citep{wickham2018devtools}, which permits installing \R\ packages from GitHub (see Section~\ref{sec:installdna}).
 
 <<eval=FALSE>>=
 install.packages("statnet")
