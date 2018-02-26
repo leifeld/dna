@@ -955,15 +955,19 @@ In order to create a new DNA database file, you have to click on the index tab \
 
 Clicking on the first tab in the sidebar of this menu---\code{Database} (see Figure~\ref{fig:dbchoose})---opens a menu, which allows you to choose the file name and storage location of your database. For this first step of your set-up, DNA provides you with two options in respect to the type of database, in which your data is stored. Which of these options best fits your research project is dependent on the circumstances of your coding process:
 
-\begin{addmargin}[1cm]{1cm}
-The preset option \code{Local .dna file} means, that the dataset is stored in a local file
-\footnote{Technically an SQLite file.
-} on your PC or device. This file, with the file extension .dna, can be moved on your machine, sent via email, uploaded and shared via a cloud file hosting service---such as Dropbox---and can generally be treated in the same way as any other file PC users are familiar with. A local .dna file will be sufficient in most user scenarios, for example, if you employ a single coder working on a single computer, if multiple coders work on a single dataset at non-overlapping intervals or when multiple coders work at the same time on different datasets, which you merge after the coding process (see Section~\ref{subsec:merge}). For most users, this simpler option will adequate in order to use \dna\. It is not necessary to be familiar with setting up and managing an SQLite or MySQL database. If you think, the scenarios described above cover your intended use of \dna, you can now jump to the next section and start \fullref{subsec:createlocal}.
-
-However, for more experienced user or research projects in which several coders want to work on the same database at the same time, a second option was included into \dna\: \code{Remote database on a server}. This stores your data in a  MySQL database which could be stored locally on your machine---which would defy the purpose though---on a private sever---such as a Network-attached storage (NAS)---or on an online Cloud server. You should select this option if you employ a single coder working on multiple devices or multiple coders working on a single dataset at the same time. The preconditions for using this type of storage are that all coders have a stable connection to the database during the coding process---e.\,g., via the internet---and that you \href{https://dev.mysql.com/doc/mysql-getting-started/en/}{set up an online MySQL database} in advance. If this is how you want to proceed, you can now jump directly to the section which descibes the necessary steps for  \fullref{subsec:usingremote}.
-\end{addmargin}
-
-
+\begin{description}
+\item[\code{Local .dna file}] The preset option \code{Local .dna file} means that the dataset is stored in a local file (technically an SQLite file) on your PC or device.
+  This file, with the file extension .dna, can be moved on your machine, sent via email, uploaded and shared via a cloud file hosting service---such as Dropbox---and can generally be treated in the same way as any other file PC users are familiar with.
+  A local .dna file will be sufficient in most user scenarios, for example, if you employ a single coder working on a single computer, if multiple coders work on a single dataset at non-overlapping intervals or when multiple coders work at the same time on different datasets, which you merge after the coding process (see Section~\ref{subsec:merge}).
+  For most users, this simpler option will adequate in order to use \dna\.
+  It is not necessary to be familiar with setting up and managing an SQLite or MySQL database.
+  If you think the scenarios described above cover your intended use of \dna, you can now jump to the next section and start \fullref{subsec:createlocal}.
+\item[\code{Remote database on a server}] However, for more experienced user or research projects in which several coders want to work on the same database at the same time, a second option was included into \dna\: \code{Remote database on a server}.
+  This stores your data in a  MySQL database which could be stored locally on your machine---which would defy the purpose though---, on a private server---such as a Network-attached storage (NAS)---, or on an online cloud server.
+  You should select this option if you employ a single coder working on multiple devices or multiple coders working on a single dataset at the same time.
+  The preconditions for using this type of storage are that all coders have a stable connection to the database during the coding process---e.\,g., via the internet---and that you \href{https://dev.mysql.com/doc/mysql-getting-started/en/}{set up an online MySQL database} in advance.
+  If this is how you want to proceed, you can now jump directly to the section which descibes the necessary steps for \fullref{subsec:usingremote}.
+\end{description}
 
 
 \subsection{Creating a Local DNA File}\label{subsec:createlocal}
