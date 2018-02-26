@@ -5,23 +5,23 @@
 \title{Plots cluster objects}
 \usage{
 dna_plotCluster(dend, shape = "elbows", colour = TRUE, activity = TRUE,
-  linebutt = TRUE, colours = "identity", custom.colours = character(),
+  lineends = TRUE, colours = "identity", custom.colours = character(),
   branch.colour = "#636363", leaf.linetype = "a", branch.linetype = "a",
-  lineWidth = 1, lineAlpha = 1, buttAlpha = 1, fontSize = 12,
+  lineWidth = 1, lineAlpha = 1, endsAlpha = 1, fontSize = 12,
   theme = "bw", truncate = 40, leaf.labels = "ticks", circular = FALSE,
   show.legend = FALSE, ...)
 }
 \arguments{
-\item{dend}{A \code{dna_cluster} object created by the 
+\item{dend}{A \code{dna_cluster} object created by the
 \link{dna_cluster} function.}
 
 \item{shape}{See \link[ggraph]{layout_dendrogram_auto}.}
 
 \item{colour}{Should the plot be coloured or not (logical).}
 
-\item{activity}{Should activity of variable in \link{dna_cluster} be used to determine size of linebutts (logical).}
+\item{activity}{Should activity of variable in \link{dna_cluster} be used to determine size of lineends (logical).}
 
-\item{linebutt}{Should linebutts be displayed (logical).}
+\item{lineends}{Should lineends be displayed (logical).}
 
 \item{colours}{There are three options from where to derive the colours in
 the plot: (1.) "identity" uses the names of variables as colours, fails if
@@ -35,13 +35,13 @@ colours in the plot (if colours = "manual") or select a palette from
 
 \item{branch.colour}{Provide one colour in which all branches are coloured.}
 
-\item{leaf.linetype, }{branch.linetype "a" for straight line or "b" for dotted line.}
+\item{leaf.linetype, branch.linetype}{"a" for straight line or "b" for dotted line.}
 
 \item{lineWidth}{Width of all lines.}
 
 \item{lineAlpha}{Alpha of all lines.}
 
-\item{buttAlpha}{Alpha of all linebutts}
+\item{endsAlpha}{Alpha of all lineends}
 
 \item{fontSize}{Set the font size for the entire plot.}
 

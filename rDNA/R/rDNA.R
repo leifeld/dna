@@ -71,9 +71,9 @@ dna_init <- function(jarfile = "dna-2.0-beta20.jar", memory = 1024) {
 #' dna_gui()
 #' }
 #' @export
-dna_gui <- function(infile = NULL, 
-                    javapath = NULL, 
-                    memory = 1024, 
+dna_gui <- function(infile = NULL,
+                    javapath = NULL,
+                    memory = 1024,
                     verbose = TRUE) {
   djs <- dnaEnvironment[["dnaJarString"]]
   if (is.null(djs)) {
@@ -135,7 +135,7 @@ dna_sample <- function(overwrite = FALSE,
     }
   } else {
     file.copy(from = system.file("extdata", "sample.dna", package = "rDNA"),
-              to = paste0(getwd(), "/sample.dna"), 
+              to = paste0(getwd(), "/sample.dna"),
               overwrite = overwrite)
   }
   return(paste0(getwd(), "/sample.dna"))
@@ -625,7 +625,9 @@ dna_network <- function(connection,
 #' }
 #' @author Philip Leifeld, Johannes B. Gruber
 #' @export
-#' @import igraph
+#' @importFrom igraph graph.adjacency
+#' @importFrom igraph cluster_louvain
+#' @importFrom igraph modularity
 lvmod <- function(mat) {
   g <- igraph::graph.adjacency(mat, mode = "undirected", weighted = TRUE)
   lv <- igraph::cluster_louvain(g)
@@ -1088,11 +1090,11 @@ dna_plotCentrality <- function(connection,
 
 
 #' Cluster network from a DNA connection
-#' 
+#'
 #' Clustering methods for DNA connections.
-#' 
+#'
 #' Perform a cluster analysis based on a DNA connection.
-#' 
+#'
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
 #' @param variable The first variable for network construction  (see
@@ -1109,19 +1111,20 @@ dna_plotCentrality <- function(connection,
 #'   colours? Additionally, can be "membership" if cut.k or cut.h are provided.
 #' @param cut.k,cut.h See k and h in \link[stats]{cutree}.
 #' @param ... additional arguments passed to \link{dna_network}
-#' 
+#'
 #' @examples
 #' \dontrun{
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
-#' 
+#'
 #' clust.l <- dna_cluster(connection)
-#' 
+#'
 #' dna_plotCluster(clust.l)
 #' }
 #' @author Johannes B. Gruber
 #' @export
-#' @import stats
+#' @importFrom vegan vegdist
+#' @importFrom stats setNames dist hclust cutree
 dna_cluster <- function(connection,
                         variable = "organization",
                         rm.duplicates = FALSE,
@@ -1131,7 +1134,7 @@ dna_cluster <- function(connection,
                         cut.k = NULL,
                         cut.h = NULL,
                         ...) {#passed on to dna_network
-  
+
   dots <- list(...)
   #dots <- list("excludeValues" = excludeValues2)
   #print(unlist(unname(dots["excludeValues"])))
@@ -1145,8 +1148,8 @@ dna_cluster <- function(connection,
     excl <- unlist(unname(excludeValues[qualifier]))
     excludeValues[qualifier] <- NULL
   }
-  
-  
+
+
   # 1. create two-mode networks (with or without duplicates) for all levels of
   # the qualifier variable separately, including isolates
   # find all qualifier levels
@@ -1156,9 +1159,9 @@ dna_cluster <- function(connection,
                          excludeValues = excludeValues,
                          verbose = FALSE
                   ), dots))
-  
+
   lvls <- unique(lvls[, qualifier])
-  
+
   if (exists("excl")) {
     lvls <- lvls[!lvls %in% excl]
     if (length(lvls) < 1){
@@ -1167,21 +1170,21 @@ dna_cluster <- function(connection,
         "\". Computation not possible."
       ))
     }}
-  
+
   dta <- lapply(lvls, function(l){
     # add level of the qualifier variable to exclude
-    excludeVals = c(setNames(list(l),
-                             nm = qualifier), 
+    excludeVals = c(stats::setNames(list(l),
+                             nm = qualifier),
                     excludeValues)
-    
+
     nw <- do.call(dna_network,
                   c(list(connection = connection,
                          networkType = "twomode",
                          variable1 = variable,
-                         normalization = "no", 
-                         isolates = TRUE, 
-                         duplicates = ifelse(rm.duplicates, 
-                                             "include", 
+                         normalization = "no",
+                         isolates = TRUE,
+                         duplicates = ifelse(rm.duplicates,
+                                             "include",
                                              "document"),
                          qualifier = qualifier,
                          qualifierAggregation = "ignore",
@@ -1189,18 +1192,18 @@ dna_cluster <- function(connection,
                          verbose = FALSE))
                   #, dots)
     )
-    
+
     colnames(nw) <- paste(colnames(nw), "-", l)
     return(nw)
   })
-  
+
   # 2. collate them horizontally usign cbind
   dta <- do.call("cbind", dta)
-  
+
   # 3. remove lines from the matrix where the row sum is zero
   dta <- dta[rowSums(dta) > 0, ]
   dta <- dta[, colSums(dta) > 0]
-  
+
   # 4. compute Jaccard dissimilarity matrix using the vegdist function in the
   # vegan package (or dist if If duplicates are included in the affiliation
   # matrices)
@@ -1214,13 +1217,13 @@ dna_cluster <- function(connection,
     hc$group <- cutree(hc, k = cut.k, h = cut.h)
   }
   hc$activity <- rowSums(dta)
-  
+
   # add colours
   if (!colours == "membership") {
     col <- dna_attributes(connection = connection, statementType = "DNA Statement",
                           variable = variable, values = NULL)
     hc$colours <- col[, colours][match(hc$labels, col$value)]
-    
+
   } else {
     if(!is.null(c(cut.k, cut.h))){
       hc$colours <- paste("Group", hc$group)
@@ -1233,18 +1236,18 @@ dna_cluster <- function(connection,
 
 
 #' Plots cluster objects
-#' 
+#'
 #' Plots objects derived via \link{dna_cluster}.
-#' 
+#'
 #' This function is a convenience wrapper for several different dendrogram
 #' types, which can be plotted using the \code{ggraph} package.
-#' 
-#' @param dend A \code{dna_cluster} object created by the 
+#'
+#' @param dend A \code{dna_cluster} object created by the
 #'     \link{dna_cluster} function.
 #' @param shape See \link[ggraph]{layout_dendrogram_auto}.
 #' @param colour Should the plot be coloured or not (logical).
-#' @param activity Should activity of variable in \link{dna_cluster} be used to determine size of linebutts (logical).
-#' @param linebutt Should linebutts be displayed (logical).
+#' @param activity Should activity of variable in \link{dna_cluster} be used to determine size of lineends (logical).
+#' @param lineends Should lineends be displayed (logical).
 #' @param colours There are three options from where to derive the colours in
 #'   the plot: (1.) "identity" uses the names of variables as colours, fails if
 #'   names are not plottable colours; (2.) "manual" provide colours via
@@ -1254,19 +1257,19 @@ dna_cluster <- function(connection,
 #'   colours in the plot (if colours = "manual") or select a palette from
 #'   \code{RColorBrewer} (if colours = "brewer").
 #' @param branch.colour Provide one colour in which all branches are coloured.
-#' @param leaf.linetype, branch.linetype "a" for straight line or "b" for dotted line.
+#' @param leaf.linetype,branch.linetype "a" for straight line or "b" for dotted line.
 #' @param lineWidth Width of all lines.
 #' @param lineAlpha Alpha of all lines.
-#' @param buttAlpha Alpha of all linebutts
+#' @param endsAlpha Alpha of all lineends
 #' @param fontSize Set the font size for the entire plot.
 #' @param theme See themes in \code{ggplot2}. The theme "bw" was customised to look best with dendrograms.
 #' @param truncate Sets the number of characters to which labels should be truncated.
 #' @param leaf.labels Either "ticks" to display the labels as axis ticks or "node" to label nodes directly.
 #' @param circular Logical. Should the layout be transformed to a circular representation. See  \link[ggraph]{layout_dendrogram_auto}.
 #' @param show.legend Logical. Should the legend be displayed.
-#' 
+#'
 #' @param ... additional arguments passed to \link{dna_network}
-#' 
+#'
 #' @examples
 #' \dontrun{
 #' dna_init("dna-2.0-beta20.jar")
@@ -1277,12 +1280,12 @@ dna_cluster <- function(connection,
 #' @author Johannes B. Gruber
 #' @export
 #' @import ggraph
-#' @import stats
+#' @importFrom stats as.dendrogram is.leaf dendrapply
 dna_plotCluster <- function(dend,
                             shape = "elbows",
                             colour = TRUE,
                             activity = TRUE,
-                            linebutt = TRUE,
+                            lineends = TRUE,
                             colours = "identity",
                             custom.colours = character(),
                             branch.colour = "#636363",
@@ -1290,7 +1293,7 @@ dna_plotCluster <- function(dend,
                             branch.linetype = "a",
                             lineWidth = 1,
                             lineAlpha = 1,
-                            buttAlpha = 1,
+                            endsAlpha = 1,
                             fontSize = 12,
                             theme = "bw",
                             truncate = 40,
@@ -1298,23 +1301,23 @@ dna_plotCluster <- function(dend,
                             circular = FALSE,
                             show.legend = FALSE,
                             ...) {
-  
+
   # truncate lables
   dend$labels_short <- ifelse(nchar(dend$labels) > truncate,
                               paste0(gsub("\\s+$", "",
                                           strtrim(dend$labels, width = truncate)),
                                      "..."),
                               dend$labels)
-  
+
   # format as dendrogram
   hierarchy <- stats::as.dendrogram(dend)
-  # Add colours 
+  # Add colours
   hierarchy <- stats::dendrapply(hierarchy, function(x) {
-    if (is.leaf(x)) {
+    if (stats::is.leaf(x)) {
       attr(x, "Colour") <- as.character(dend$colours[match(as.character(labels(x)), dend$labels)])
-      attr(x, "Activity") <- unname(dend$activity[dend$order[match(as.character(labels(x)), 
+      attr(x, "Activity") <- unname(dend$activity[dend$order[match(as.character(labels(x)),
                                                                    dend$labels)]])
-      attr(x, "labels_short") <- dend$labels_short[match(as.character(labels(x)), 
+      attr(x, "labels_short") <- dend$labels_short[match(as.character(labels(x)),
                                                          dend$labels)]
       attr(x, "linetype") <- leaf.linetype
     } else {
@@ -1330,25 +1333,25 @@ dna_plotCluster <- function(dend,
                                labels_short = attr(x, "labels_short"))
     x
   })
-  
+
   # create initial dedrogram
-  dg <- ggraph::ggraph(graph = hierarchy, 
-                       layout = "dendrogram", 
+  dg <- ggraph::ggraph(graph = hierarchy,
+                       layout = "dendrogram",
                        circular = circular)
-  
+
   # add the shape
   if (shape == "elbows"){
     if(colour){
       dg <- dg +
-        geom_edge_elbow(aes(colour = cols,
-                            edge_linetype = linetype),  
+        geom_edge_elbow(aes_string(colour = "cols",
+                            edge_linetype = "linetype"),
                         show.legend = show.legend,
                         width = lineWidth,
                         alpha = lineAlpha)
     } else {
       dg <- dg +
-        geom_edge_elbow(aes(edge_linetype = linetype),
-                        show.legend = show.legend, 
+        geom_edge_elbow(aes_string(edge_linetype = "linetype"),
+                        show.legend = show.legend,
                         width = lineWidth,
                         alpha = lineAlpha)
     }
@@ -1356,15 +1359,15 @@ dna_plotCluster <- function(dend,
   if (shape == "link"){
     if(colour){
       dg <- dg +
-        geom_edge_link(aes(colour = cols,
-                           edge_linetype = linetype),  
-                       show.legend = show.legend, 
+        geom_edge_link(aes_string(colour = "cols",
+                           edge_linetype = "linetype"),
+                       show.legend = show.legend,
                        width = lineWidth,
                        alpha = lineAlpha)
     } else {
       dg <- dg +
-        geom_edge_link(aes(edge_linetype = linetype),
-                       show.legend = show.legend, 
+        geom_edge_link(aes_string(edge_linetype = "linetype"),
+                       show.legend = show.legend,
                        width = lineWidth,
                        alpha = lineAlpha)
     }
@@ -1372,15 +1375,15 @@ dna_plotCluster <- function(dend,
   if (shape == "diagonal"){
     if(colour){
       dg <- dg +
-        geom_edge_diagonal(aes(colour = cols,
-                               edge_linetype = linetype),  
-                           show.legend = show.legend, 
+        geom_edge_diagonal(aes_string(colour = "cols",
+                               edge_linetype = "linetype"),
+                           show.legend = show.legend,
                            width = lineWidth,
                            alpha = lineAlpha)
     } else {
       dg <- dg +
-        geom_edge_diagonal(aes(edge_linetype = linetype),
-                           show.legend = show.legend, 
+        geom_edge_diagonal(aes_string(edge_linetype = "linetype"),
+                           show.legend = show.legend,
                            width = lineWidth,
                            alpha = lineAlpha)
     }
@@ -1388,15 +1391,15 @@ dna_plotCluster <- function(dend,
   if (shape == "arc"){
     if(colour){
       dg <- dg +
-        geom_edge_arc(aes(colour = cols,
-                          edge_linetype = linetype),  
-                      show.legend = show.legend, 
+        geom_edge_arc(aes_string(colour = "cols",
+                          edge_linetype = "linetype"),
+                      show.legend = show.legend,
                       width = lineWidth,
                       alpha = lineAlpha)
     } else {
       dg <- dg +
-        geom_edge_arc(aes(edge_linetype = linetype),
-                      show.legend = show.legend, 
+        geom_edge_arc(aes_string(edge_linetype = "linetype"),
+                      show.legend = show.legend,
                       width = lineWidth,
                       alpha = lineAlpha)
     }
@@ -1404,15 +1407,15 @@ dna_plotCluster <- function(dend,
   if (shape == "fan"){
     if(colour){
       dg <- dg +
-        geom_edge_fan(aes(colour = cols,
-                          edge_linetype = linetype),  
-                      show.legend = show.legend, 
+        geom_edge_fan(aes_string(colour = "cols",
+                          edge_linetype = "linetype"),
+                      show.legend = show.legend,
                       width = lineWidth,
                       alpha = lineAlpha)
     } else {
       dg <- dg +
-        geom_edge_fan(aes(edge_linetype = linetype),
-                      show.legend = show.legend, 
+        geom_edge_fan(aes_string(edge_linetype = "linetype"),
+                      show.legend = show.legend,
                       width = lineWidth,
                       alpha = lineAlpha)
     }
@@ -1432,18 +1435,18 @@ dna_plotCluster <- function(dend,
     if (length(custom.colours) == 0) {
       custom.colours = "Set3"
     }
-    cols3 <- c(branch.colour, 
-               scales::brewer_pal(type = "div", 
+    cols3 <- c(branch.colour,
+               scales::brewer_pal(type = "div",
                                   palette = custom.colours)(length(levels(dend$colours))))
     cols3 <- setNames(cols3, nm = c(branch.colour, levels(dend$colours)))
     dg <- dg +
       scale_edge_colour_manual(values = cols3)
   }
-  
+
   #theme
   if (theme == "bw") {
     dg <- dg +
-      theme_bw() + 
+      theme_bw() +
       theme(panel.border = element_blank(),
             axis.title = element_blank(),
             panel.grid.major = element_blank(),
@@ -1475,26 +1478,26 @@ dna_plotCluster <- function(dend,
   # labels
   if (leaf.labels == "ticks") {
     dg <- dg +
-      scale_x_continuous(breaks = seq(0, length(dend$labels)-1, by = 1), 
+      scale_x_continuous(breaks = seq(0, length(dend$labels)-1, by = 1),
                          label = dend$labels_short)
   }
   if (leaf.labels == "nodes") {
     if (circular == FALSE) {
       if(colour){
         dg <- dg +
-          geom_node_text(aes(label = labels_short,
-                             filter = leaf,
-                             colour = cols), 
-                         angle=270, 
-                         hjust=0, 
+          geom_node_text(aes_string(label = "labels_short",
+                             filter = "leaf",
+                             colour = "cols"),
+                         angle=270,
+                         hjust=0,
                          nudge_y = -0.02,
                          size = fontSize)
       } else {
         dg <- dg +
-          geom_node_text(aes(label = labels_short,
-                             filter = leaf), 
-                         angle=270, 
-                         hjust=0, 
+          geom_node_text(aes_string(label = "labels_short",
+                             filter = "leaf"),
+                         angle=270,
+                         hjust=0,
                          nudge_y = -0.02,
                          size = fontSize)
       }
@@ -1503,7 +1506,7 @@ dna_plotCluster <- function(dend,
     } else {
       if(colour){
         dg <- dg +
-          geom_node_text(aes(filter = leaf, 
+          geom_node_text(aes(filter = leaf,
                              angle = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
                                             node_angle(x, y) + 180,
                                             node_angle(x, y)),
@@ -1516,7 +1519,7 @@ dna_plotCluster <- function(dend,
           expand_limits(x = c(-2.3, 2.3), y = c(-2.3, 2.3))
       } else {
         dg <- dg +
-          geom_node_text(aes(filter = leaf, 
+          geom_node_text(aes(filter = leaf,
                              angle = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
                                             node_angle(x, y) + 180,
                                             node_angle(x, y)),
@@ -1529,45 +1532,45 @@ dna_plotCluster <- function(dend,
       }
     }
   }
-  
-  # line butts
-  if (linebutt) {
+
+  # line ends
+  if (lineends) {
     if (activity & colour){
       dg <- dg +
-        geom_node_point(aes(filter = leaf, 
-                            colour = cols, 
-                            size = Activity,
-                            shape = cols),
+        geom_node_point(aes_string(filter = "leaf",
+                            colour = "cols",
+                            size = "Activity",
+                            shape = "cols"),
                         show.legend = show.legend,
-                        alpha = buttAlpha)
+                        alpha = endsAlpha)
     }
     if (!activity & colour){
       dg <- dg +
-        geom_node_point(aes(filter = leaf, 
-                            colour = cols,
-                            shape = cols),
+        geom_node_point(aes_string(filter = "leaf",
+                            colour = "cols",
+                            shape = "cols"),
                         show.legend = show.legend,
-                        alpha = buttAlpha)
+                        alpha = endsAlpha)
     }
     if (activity & !colour){
       dg <- dg +
-        geom_node_point(aes(filter = leaf, 
-                            size = Activity,
-                            shape = cols),
+        geom_node_point(aes_string(filter = "leaf",
+                            size = "Activity",
+                            shape = "cols"),
                         show.legend = show.legend,
-                        alpha = buttAlpha)
+                        alpha = endsAlpha)
     }
     if (!activity & !colour){
       dg <- dg +
-        geom_node_point(aes(filter = leaf,
-                            shape = cols),
+        geom_node_point(aes_string(filter = "leaf",
+                            shape = "cols"),
                         show.legend = show.legend,
-                        alpha = buttAlpha)
+                        alpha = endsAlpha)
     }
   }
   # cuttree rectangles see
   # stackoverflow.com/questions/24140339/tree-cut-and-rectangles-around-clusters-for-a-horizontal-dendrogram-in-r
-  
+
   # color node text and points
   # colour
   if (colour) {
