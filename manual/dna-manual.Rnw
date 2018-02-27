@@ -159,7 +159,7 @@ While there are numerous alternative software packages for qualitative content a
 The companion package \rdna\ for the statistical computing environment \R\ additionally helps with the third step mentioned above: analysis of the annotated statements.
 \rdna\ takes the structured data from \dna\ and permits further in-depth analysis using network analysis.
 While data can also be exported to other software such as \ucinet, \visone, \netminer, and \gephi, \R\ is the preferred choice as it facilitates reproducible research, is free and open source, and has a large community of users and developers who are engaged in all kinds of data analysis tasks.
-\R\ has several packages developed specifically for network analysis, such as \texttt{statnet} \citep{handcock2008statnet}, \texttt{igraph} \citep{csardi2006igraph}, \texttt{xergm} \citep{leifeld2018temporal, leifeld2017xergm:}, \texttt{sna} \citep{butts2016sna}, \texttt{network} \citep{butts2008network}, \texttt{ggraph} \citep{linpedersen2017ggraph}, and \texttt{tidygraph} \citep{linpedersen2017tidygraph}.
+\R\ has several packages developed specifically for network analysis, such as \texttt{statnet} \citep{handcock2008statnet}, \texttt{igraph} \citep{csardi2006igraph}, \texttt{xergm} \citep{leifeld2018temporal, leifeld2017xergm}, \texttt{sna} \citep{butts2016sna}, \texttt{network} \citep{butts2008network}, \texttt{ggraph} \citep{linpedersen2017ggraph}, and \texttt{tidygraph} \citep{linpedersen2017tidygraph}.
 Most of these packages work seamlessly with data processed by \rdna\ and therefore add a myriad of possibilities to the native functions of our own \R\ package.
 
 In recent years, discourse network analysis has been employed by a growing number of scholars in a wide field of policy sectors, such as 
@@ -2668,7 +2668,7 @@ Examples include cluster analysis or community detection, scaling and applicatio
 
 \section{Getting Started with \rdna}
 The first step is to install \R.
-Installing additional \R\ packages for network analysis and clustering, such as \texttt{statnet} \citep{handcock2008statnet, goodreau2008statnet, handcock2016statnet}, \texttt{xergm} \citep{leifeld2018temporal, leifeld2017xergm:}, \texttt{igraph} \citep{csardi2006igraph}, and \texttt{cluster} \citep{maechler2017cluster}, is recommended.
+Installing additional \R\ packages for network analysis and clustering, such as \texttt{statnet} \citep{handcock2008statnet, goodreau2008statnet, handcock2016statnet}, \texttt{xergm} \citep{leifeld2018temporal, leifeld2017xergm}, \texttt{igraph} \citep{csardi2006igraph}, and \texttt{cluster} \citep{maechler2017cluster}, is recommended.
 Moreover, it is necessary to install the \texttt{rJava} package \citep{urbanek2017rjava}, on which the \rdna\ package depends, and the \texttt{devtools} package \citep{wickham2018devtools}, which permits installing \R\ packages from GitHub (see Section~\ref{sec:installdna}).
 
 <<eval=FALSE>>=
