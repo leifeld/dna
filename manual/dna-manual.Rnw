@@ -1766,7 +1766,7 @@ dt <- dna_network(conn,
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "",
-      caption = "One-mode network (organizations x organizations over concept)\\label{tab:onemode}") %>%
+      caption = "One-mode network (organizations $\\times$ organizations over concept)\\label{tab:onemode}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
 
@@ -1797,7 +1797,7 @@ dt <- dna_network(conn,
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "",  
-      caption = "Two-mode network (concept x organizations)\\label{tab:twomode}") %>%
+      caption = "Two-mode network (concept $\\times$ organizations)\\label{tab:twomode}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
 
@@ -1952,7 +1952,7 @@ dt <- dna_network(conn,
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "",  
-      caption = "Two-mode network (variable1 = organization x variable2 = person)\\label{tab:variables}") %>%
+      caption = "Two-mode network (variable1 = organization $\\times$ variable2 = person)\\label{tab:variables}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
 
@@ -2114,7 +2114,7 @@ dt <- dna_network(conn,
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "",  
-      caption = "One-mode congruence network (organizations x organizations over concept)\\label{tab:qual3}") %>%
+      caption = "One-mode congruence network (organizations $\\times$ organizations over concept)\\label{tab:qual3}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
 @
@@ -2170,7 +2170,7 @@ dt <- dna_network(conn,
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "",  
-      caption = "One-mode conflict network (organizations x organizations over concept)\\label{tab:qual4}") %>%
+      caption = "One-mode conflict network (organizations $\\times$ organizations over concept)\\label{tab:qual4}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
 @
@@ -2215,7 +2215,7 @@ dt <- dna_network(conn,
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "",  
-      caption = "One-mode subtract network (organizations x organizations over concept)\\label{tab:qual5}") %>%
+      caption = "One-mode subtract network (organizations $\\times$ organizations over concept)\\label{tab:qual5}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
 @
@@ -2256,7 +2256,7 @@ dt <- dna_network(conn,
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "",  
-      caption = "Two-mode network (concept x organizations) with disagreements subtracted from agreements\\label{tab:qual}") %>%
+      caption = "Two-mode network (concept $\\times$ organizations) with disagreements subtracted from agreements\\label{tab:qual}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   column_spec(5, bold = T) %>%
   row_spec(0, angle = 90) 
@@ -2290,7 +2290,7 @@ dt <- dna_network(conn,
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "",  
-      caption = "Two-mode network (concept x organizations) with disagreements and agreements combined\\label{tab:qual2}") %>%
+      caption = "Two-mode network (concept $\\times$ organizations) with disagreements and agreements combined\\label{tab:qual2}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   column_spec(3, bold = T) %>%
   row_spec(0, angle = 90)
@@ -2360,7 +2360,7 @@ dt <- dna_network(conn,
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "",  
-      caption = "Two-mode network (organizations x concept) activity normalised\\label{tab:normal}") %>%
+      caption = "Two-mode network (organizations $\\times$ concept) activity normalised\\label{tab:normal}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
 
@@ -2409,7 +2409,7 @@ dt <- dna_network(conn,
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "",  
-      caption = "Two-mode network (organization x concept) duplicates excluded across date range\\label{tab:dupl}") %>%
+      caption = "Two-mode network (organization $\\times$ concept) duplicates excluded across date range\\label{tab:dupl}") %>%
   kable_styling(latex_options = c("basic", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
 @
@@ -2465,7 +2465,7 @@ row.names(dt20) <- truncate(row.names(dt20), 20)
 
 #approach 1
 kable(list(dt6, dt14, dt20), format = "latex", booktabs = TRUE, linesep = "", 
-      caption = "Time series two-mode networks (organizations x concept)\\label{tab:time}") %>%
+      caption = "Time series two-mode networks (organizations $\\times$ concept)\\label{tab:time}") %>%
   group_rows(as.character(dt[["time"]][6]), 0, 2) %>%
   group_rows(as.character(dt[["time"]][14]), 3, 4) %>%
   group_rows(as.character(dt[["time"]][20]), 5, 7) %>%
@@ -2474,7 +2474,7 @@ kable(list(dt6, dt14, dt20), format = "latex", booktabs = TRUE, linesep = "",
 
 #approach 2
 kable(dt6, format = "latex", booktabs = TRUE, linesep = "", 
-            caption = "Time series two-mode networks (organizations x concept)\\label{tab:time}") %>%
+            caption = "Time series two-mode networks (organizations $\\times$ concept)\\label{tab:time}") %>%
   group_rows(as.character(dt[["time"]][6]), 0, 2)  %>%
   kable_styling(full_width = T) %>%
   row_spec(0, angle = 90) %>%
@@ -2583,7 +2583,7 @@ dt <- dna_network(conn,
                                            "National Petrochemical & Refiners Association")),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
-kable(dt, format = "latex", booktabs = TRUE, linesep = "",  caption = "Two-mode network (organizations x concept) with all non-NGOs excluded\\label{tab:exclud}") %>%
+kable(dt, format = "latex", booktabs = TRUE, linesep = "",  caption = "Two-mode network (organizations $\\times$ concept) with all non-NGOs excluded\\label{tab:exclud}") %>%
   kable_styling(latex_options = c("striped")) %>%
   row_spec(0, angle = 90)
 @
