@@ -12,7 +12,7 @@
 \usepackage{placeins}
 \usepackage{booktabs}
 \usepackage{ltablex}
-\usepackage[table]{xcolor}
+%\usepackage[table]{xcolor} % see global chunk options
 \usepackage{soul} % include for kable
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -118,11 +118,11 @@ library("knitr")
 # set global chunk options
 opts_chunk$set(fig.path = 'figure/workshop-', fig.align = 'center', fig.show = 'hold')
 options(formatR.arrow = TRUE, width = 90, knitr.table.format = "latex")
-knit_hooks$set(crop=hook_pdfcrop)
+knit_hooks$set(crop=hook_pdfcrop, document = function(x) {sub('\\usepackage[]{color}', '\\usepackage[table]{xcolor}', x, fixed = TRUE)})
 @
 
 \title{Discourse Network Analyzer Manual}
-\date{\footnotesize{Last update: DNA 2.0 beta 20 with rDNA 2.0.4 on \today.}}
+\date{\footnotesize{Last update: DNA 2.0 beta 20 with rDNA 2.0.5 on \today.}}
 \author{Philip Leifeld, Johannes Gruber and Felix Rolf Bossner}
 
 \maketitle
@@ -165,7 +165,7 @@ Most of these packages work seamlessly with data processed by \rdna\ and therefo
 In recent years, discourse network analysis has been employed by a growing number of scholars in a wide field of policy sectors, such as 
 pension politics \citep{leifeld2013reconceptualising, leifeld2016policy}, 
 climate politics \citep{fisher2013mapping, fisher2013where, broadbent2014inter, gkiouzepas2015climate, manfredo2014society, schneider2014punctuations, stoddart2015canada, wagner2017trends, yun2014framing}, 
-software patents and property rights \citep{leifeld2012software, herweg2013politische}, 
+software patents and property rights \citep{leifeld2012software}, 
 internet policy \citep{breindl2013discourse, haunss2009ip}, 
 infrastructure projects \citep{nagel2016polarisierung}, 
 energy policy \citep{brutschin2013dynamics, haunss2017ausstieg, imbert2017inquiry, rinscheid2015crisis},
@@ -801,7 +801,7 @@ $sudo add-apt-repository "deb [arch=amd64,i386] https://cran.rstu
   dio.com/bin/linux/ubuntu artful/"
 @
         Note, that you need to replace \code{/ubuntu artful/} with your flavour and version of Linux.
-        Visit \url{https://cran.rstudio.com/bin/linux/}{CRAN} to see which ones are available.
+        Visit \href{https://cran.rstudio.com/bin/linux/}{CRAN} to see which ones are available.
         \code{cran.rstudio.com} is also just one of several \href{https://cran.r-project.org/mirrors.html}{CRAN mirrors}, so you could replace it with a different one if you prefer.
   \item Next, you need to add \R\ to your keyring.
         Here is how you would accomplish this in Ubuntu:
@@ -2649,7 +2649,7 @@ unlink(dna_sample())
 \chapter{\rdna: Using \dna\ from \R} \label{chp:rdna}
 \chapterauthor{Philip Leifeld and Johannes Gruber}
 \FloatBarrier
-\dna\ can be connected to the statistical computing environment \R\ \citep{coreteam2014r} through the \rdna\ package \citep{leifeld2018rdna}.
+\dna\ can be connected to the statistical computing environment \R\ \citep{coreteam2017r} through the \rdna\ package \citep{leifeld2018rdna}.
 There are two advantages to working with \R\ on \dna\ data.
 
 The first advantage is replicability.
