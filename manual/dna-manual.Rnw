@@ -676,7 +676,7 @@ In order to use \rdna, the rest of this section will explain how to install \R\ 
 \item Install the downloaded file, e.\,g., \code{R-3.4.3-win.exe}.
       Usually, it is fine to leave all default settings in the installation options.
 \item Go to \url{https://www.rstudio.com/products/rstudio/download/}.
-\item At the bottom of the page, under \code{Installers for Supported Platforms}, click on the link \code{RStudio 1.1.383 -- Windows Vista/7/8/10} (or a newer version if available).
+\item At the bottom of the page, under \code{Installers for Supported Platforms}, click on the link \code{RStudio 1.1.423 -- Windows Vista/7/8/10} (or a newer version if available).
       Again, the default installation options are fine in most cases and can be accepted without changes.
 \item After installation, you can use \R\ by opening \rstudio.
 \end{enumerate}
@@ -733,7 +733,7 @@ In order to use \rdna, the rest of this section will explain how to install \R\ 
   \item Install the downloaded file.
         Usually, it is fine to leave all default settings in the installation options.
   \item Go to \url{https://www.rstudio.com/products/rstudio/download/}.
-  \item At the bottom of the page, under \code{Installers for Supported Platforms}, click on the link \code{RStudio 1.1.383 -- Mac OS X 10.6+ (64-bit)} (or a newer version if available).
+  \item At the bottom of the page, under \code{Installers for Supported Platforms}, click on the link \code{RStudio 1.1.423 -- Mac OS X 10.6+ (64-bit)} (or a newer version if available).
         Again, the default installation options are fine in most cases and can be accepted without any changes.
   \item Then you need to install the program \texttt{Xcode} from the app store.
   \item After installation, you can use \R\ by opening \rstudio.
@@ -801,7 +801,11 @@ $sudo add-apt-repository "deb [arch=amd64,i386] https://cran.rstu
   dio.com/bin/linux/ubuntu artful/"
 @
         Note, that you need to replace \code{/ubuntu artful/} with your flavour and version of Linux.
-        Visit \href{https://cran.rstudio.com/bin/linux/}{CRAN} to see which ones are available.
+        You can check your version with:
+<<eval=FALSE, engine = 'bash', results = 'tex'>>=
+$lsb_release -a
+@
+        Visit \href{https://cran.rstudio.com/bin/linux/}{CRAN} to see for which  Linux distributions \R\ is available.
         \code{cran.rstudio.com} is also just one of several \href{https://cran.r-project.org/mirrors.html}{CRAN mirrors}, so you could replace it with a different one if you prefer.
   \item Next, you need to add \R\ to your keyring.
         Here is how you would accomplish this in Ubuntu:
@@ -822,9 +826,9 @@ $sudo apt-get install r-base install r-base-dev
   \item Now install \rstudio\ via gdebi (and install gdebi first if you do not already have it)\footnote{Alternatively, you can download an installation file from \url{https://www.rstudio.com/products/rstudio/download/}.}:
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 $sudo apt-get install gdebi-core
-$wget https://download1.rstudio.org/rstudio-1.1.419-amd64.deb
-$sudo gdebi -n rstudio-1.1.419-amd64.deb
-$rm rstudio-1.1.419-amd64.deb
+$wget https://download1.rstudio.org/rstudio-1.1.423-amd64.deb
+$sudo gdebi -n rstudio-1.1.423-amd64.deb
+$rm rstudio-1.1.423-amd64.deb
 @
   \item (Up to version 1.1.423, \rstudio\ depends on an outdated version of \texttt(libgstreamer).
         You thus either need to use a new version or install the old version of \texttt(libgstreamer) using the method explained in \href{https://mikewilliamson.wordpress.com/2016/11/14/installing-r-studio-on-ubuntu-16-10/}{this blogpost}.)

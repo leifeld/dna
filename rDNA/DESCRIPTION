@@ -10,9 +10,9 @@ Description: Control the Java software Discourse Network Analyzer (DNA) from
     within R. Network matrices and attributes of nodes can be transferred 
     directly into R.
 Depends:
-    R (>= 2.14),
+    R (>= 3.0.0),
     rJava (>= 0.5-0)
-Imports: igraph (>= 1.1.0), stats (>= 3.4.3), ggplot2 (>= 2.2.1), ggraph (>= 1.0.1), vegan (>= 2.4.6), scales (>= 0.5.0)
+Imports: igraph (>= 1.1.0), stats (>= 3.0.0), ggplot2 (>= 2.2.1), ggraph (>= 1.0.0), vegan (>= 2.4.6), scales (>= 0.5.0)
 SystemRequirements: Java (>= 1.8)
 License: GPL-3
 LazyData: true
