@@ -469,9 +469,9 @@ In the integer case, Equation~\ref{eq:congruence_integer} must be modified such 
 \end{equation}
 
 In the binary case, Equation~\ref{eq:congruence_binary} must be modified such that contradictions instead of matches are counted.
-In other words, instead of counting $x_{ijk} x_{i'jk}$, $x_{ijk} x_{i'jk'}$ must be counted:
+In other words, instead of counting $x_{ijk} x_{i'jk}$, $x_{ijk} x_{i',j,(1-k)}$ must be counted:
 \begin{equation}\label{eq:conflict_binary}
- y_{ii'}^\text{conflict binary} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} x_{ijk} x_{i'jk'} \right).
+ y_{ii'}^\text{conflict binary} = \Phi_{ii'}\left( \sum_{j = 1}^n \sum_{k} x_{ijk} x_{i',j,(1-k)} \right).
 \end{equation}
 
 \subsection{The Subtract Method}
@@ -543,7 +543,7 @@ This yields a signed, weighted affiliation network.
 In the integer case, the respective cells in $X$ can just be weighted by the respective level $k$.
 If the weight is negative, this will subtract $x_{ijk}$ from the count:
 \begin{equation}
- y_{ij}^\text{affiliation subtract binary} = \Phi_{ij}\left(\sum_{k} k x_{ijk} \right)
+ y_{ij}^\text{affiliation subtract integer} = \Phi_{ij}\left(\sum_{k} k x_{ijk} \right)
 \end{equation}
 
 In the binary case (assuming $K = \{0; 1\}$), $0$ values need to be transformed into $-1$ before they can be subtracted:
