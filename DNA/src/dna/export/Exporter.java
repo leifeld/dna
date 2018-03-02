@@ -635,9 +635,8 @@ public class Exporter extends JDialog {
 				+ "comprise all statements between the start date and 100 days later. E.g., a one-mode network or a "
 				+ "two-mode network for this time period is created. Then the time window is shifted by one time unit, "
 				+ "and a new network is created for the second to the 101st day, and so forth until the end of the time "
-				+ "period is reached. All time slices are saved as separate networks. If CSV files or DL files are "
-				+ "exported, the networks will be saved to new files each time, with an iterator number added to the "
-				+ "file name. If graphml files are used, the networks are saved inside a network collection. Instead "
+				+ "period is reached. All time slices are saved as separate networks. The networks will be saved to new "
+				+ "files each time, with an iterator number added to the file name. Instead "
 				+ "of days, the user can select other time units by which the time window is shifted. However, the "
 				+ "time slice is always moved forward by one time unit. To get mutually exclusive (i.e., "
 				+ "non-overlapping) time slices, the user should select them manually from the output. For example, if "
@@ -3372,6 +3371,18 @@ public class Exporter extends JDialog {
 		}
 		
 		this.attributes = at;
+	}
+	
+	/**
+	 * Save an array of AttributeVector objects to the Exporter class.
+	 * 
+	 * @param variable              The variable for which the attributes should be retrieved.
+	 * @param statementTypeString   The statement type (given as a string) to which the variable belongs.
+	 * @param values                String array of value names for which the attributes should be saved.
+	 */
+	public String rDocumentText(int documentId) {
+        String dt = this.data.getDocument(documentId).getText();
+        return dt;
 	}
 	
 	/**
