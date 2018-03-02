@@ -708,18 +708,18 @@ If this works fine, you should be able to continue to Section~\ref{sec:installdn
 On macOS, you have to install two versions of \java\ in order for \rdna\ to work properly.
 The reasons behind this are too complicated to cover here.
 Basically, Apple built its own version of \java, which needs to be on your machine, even though it is outdated.
-Therefore we need to first install the legacy \java~6---which we will never use---before installing the correct \java\ Runtime Environment version~8.\footnote{If you do not wish to ever use \rdna\ or any other \R\ package that relies on \java, you might not need both versions and can just download the newest \java\ Runtime Environment.
+Therefore we need to first install the legacy \java~6---which we will never use---before installing the correct \java\ Development Kit version~8.\footnote{If you do not wish to ever use \rdna\ or any other \R\ package that relies on \java, you might not need both versions and can just download the newest \java\ Runtime Environment.
 However, installing \java\ version~8 before the legacy \java\ will cause problems if you ever change your mind.}
 
 First, please download the file \url{https://support.apple.com/downloads/DL1572/en_US/javaforosx.dmg} and install it, accepting all defaults.
-After this has finished, we can proceed to get the new version of the \java\ Runtime Environment.
-Go to \url{https://www.java.com/en/download/manual.jsp} and scroll down to download \code{Mac OS X (10.7.3 version and above)} (see Figure~\ref{fig:downljava2}).
+After this has finished, we can proceed to get the new version of the \java\ Development Kit.
+Go to \url{http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html} and scroll down to \code{Java SE Development Kit 8u162}, accept the License Agreement and then click on \code{jdk-8u161-macosx-x64.dmg} to download the file (see Figure~\ref{fig:downljava2}).
 Again, install the program accepting all defaults.
 
 \begin{figure}[tbp]
   \centering
-  \includegraphics[frame, width=\textwidth]{03-1-downljava2}
-  \caption{Downloading JRE from Oracle.}
+  \includegraphics[frame, width=0.75\textwidth]{03-1-downljava2}
+  \caption{Downloading JDK from Oracle.}
   \label{fig:downljava2}
 \end{figure}
 
@@ -734,8 +734,8 @@ In order to use \rdna, the rest of this section will explain how to install \R\ 
         Usually, it is fine to leave all default settings in the installation options.
   \item Go to \url{https://www.rstudio.com/products/rstudio/download/}.
   \item At the bottom of the page, under \code{Installers for Supported Platforms}, click on the link \code{RStudio 1.1.423 -- Mac OS X 10.6+ (64-bit)} (or a newer version if available).
-        Again, the default installation options are fine in most cases and can be accepted without any changes.
-  \item Then you need to install the program \texttt{Xcode} from the app store.
+        Install RStudio by simply dragging the application icon in the downloaded \code{.dmg} file to your Applications folder.
+  \item Then you need to install the program \texttt{Xcode} from the app store. The program is very large and will take a while to install.
   \item After installation, you can use \R\ by opening \rstudio.
 \end{enumerate}
 
@@ -749,25 +749,53 @@ To do this, we have to enter a few system commands, which you can either do in t
 # list files in java_home
 system("/usr/libexec/java_home -V")
 ##Matching Java Virtual Machines (3):
-## 1.8.0_60, x86_64:	"Java SE 8"	/Library/Java/JavaVirtualMachines/jdk1.8.0...
-## 1.6.0_65-b14-468, x86_64:	"Java SE 6"	/Library/Java/JavaVirtualMachines/...
+## 1.8.0_162, x86_64:	"Java SE 8"	/Library/Java/JavaVirtualMachines/jdk1.8.0...
+## 1.6.0_65-b14-468, x86_64:	"Java SE 6"	/Library/Java/JavaVirtualMachines/... 
 ## 1.6.0_65-b14-468, i386:	"Java SE 6"	/Library/Java/JavaVirtualMachines/1....
+
 
 # see default version of Java
 system("java -version")
-##java version "1.8.0_60"
-##Java(TM) SE Runtime Environment (build 1.8.0_60-b27)
-##Java HotSpot(TM) 64-Bit Server VM (build 25.60-b23, mixed mode)
+##java version "1.8.0_162"
+##Java(TM) SE Runtime Environment (build 1.8.0_162-b12)
+##Java HotSpot(TM) 64-Bit Server VM (build 25.162-b12, mixed mode)
 @
-If your output looks like the output above, you are ready to install \texttt{rJava}.
-If the first command does not show \code{1.8.0\_60, x86\_64} (or any other version staring with \code{1.8.}), you need to install \java\ version~8 again (see above) and possibly reboot your computer.
-If the second command shows \code{java version "1.6.0\_65"}, but version~1.8 is listed in the output from the first command, you can set the default by excecuting the following command:
+If your output looks like the output above, you are almost ready to install \texttt{rJava}.
+The only thing left to do is to associate \java\ with \R.
+To do this, you can either use the terminal app, or you can invoke a system command directly from within \R\ using the \code{system} function:
+<<eval=FALSE, engine = 'bash', results = 'tex'>>=
+$sudo R CMD javareconf
+@
+Or in \R:
+<<eval=FALSE, results = 'tex'>>=
+system("sudo R CMD javareconf")
+@
+
+If \code{/usr/libexec/java\_home -V} does not show \code{1.8.0\_162} (or any other version staring with \code{1.8.}), you need to install \java\ version~8 again (see above) and possibly reboot your computer.
+If \code{java -version} shows \code{java version "1.6.0\_65"}, but version~1.8 is listed in the output from the first command, you can set the default by excecuting the following command:
 <<eval=FALSE, results = 'tex'>>=
 # Set JAVA_HOME
 system("export JAVA_HOME=`/usr/libexec/java_home -v 1.8`")
 @
 
-After this, you should be able to continue to Section~\ref{sec:installdna}.
+After this, you should be able to continue to Section~\ref{sec:installdna}. However, depending on prior installations and the configuration of your machine, there can be other problems. You can find one nice tutorial and trouble-shooting guide \href{https://github.com/MTFA/CohortEx/wiki/Run-rJava-with-RStudio-under-OSX-10.10,-10.11-(El-Capitan)-or-10.12-(Sierra)#using-rstudioapp-or-rapp}{here}.
+
+\subsection{Problems with \R\ and macOS}
+Unfortunatly, there are curretly even more problems when running \rdna\ on macOS. 
+Since OSX does not seem to support headless operations, all commands in \rdna\ which call such a \java\ command fail with \code{java.awt.HeadlessException}.
+At the moment, the only workaround, if this happens to you,  is to use an alternative user interface called \emph{JGR} (speak ``Jaguar'').
+To install this, first make sure \href{https://www.xquartz.org/}{XQuartz} is installed on your computer. Then you can open \texttt{JGR} running the follwing commands in \R\ or \rstudio:
+<<eval=FALSE, results = 'tex'>>=
+# Install JGR
+install.packages("JGR")
+
+# Load JGR
+library(JGR)
+
+# Open GUI
+JGR()
+@
+You have to run all following \R\ commands from this newly opened window, which might not look as nice as \rstudio, but gets the job done.
 
 \section{Linux} \label{sec:linux}
 
@@ -802,7 +830,7 @@ $sudo add-apt-repository "deb [arch=amd64,i386] https://cran.rstu
 @
         Note, that you need to replace \code{/ubuntu artful/} with your flavour and version of Linux.
         You can check your version with:
-<<eval=FALSE, engine = 'bash', results = 'tex'>>=
+<<eval=TRUE, engine = 'bash', results = 'tex'>>=
 $lsb_release -a
 @
         Visit \href{https://cran.rstudio.com/bin/linux/}{CRAN} to see for which  Linux distributions \R\ is available.
@@ -856,7 +884,7 @@ Once the download is finished, you can start the program by double-clicking on t
 However, on Linux, it is sometimes necessary to make the file executable first (e.\,g., via \code{\$chmod +x /path/to/your/dna.jar} or using \href{https://askubuntu.com/a/484719/570716}{a GUI method}).
 On newer version of macOS, a security exception needs to be made before you can run a program from an ``unidentified developer'' (i.\,e., if the program has not been registered with Apple).
 To do so for \dna, control-click the program's icon, then choose \code{Open} from the shortcut menu.
-If clicking on the file does not open the program on a windows machine, right-click on the \texttt{.jar} file $\rightarrow$ \code{Open with} $\rightarrow$ \code{Use another app} and then navigate to the file \code{"C:\textbackslash Program Files\textbackslash Java\textbackslash jre1.8.0\_151\textbackslash bin\textbackslash javaw.exe"}.
+If clicking on the file does not open the program on a Windows machine, right-click on the \texttt{.jar} file $\rightarrow$ \code{Open with} $\rightarrow$ \code{Use another app} and then navigate to the file \code{"C:\textbackslash Program Files\textbackslash Java\textbackslash jre1.8.0\_151\textbackslash bin\textbackslash javaw.exe"}.
 
 If you are not interested in using \rdna, you can now skip to Chapter~\ref{chp:dna-prep}.
 
@@ -870,11 +898,14 @@ At this point, it is assumed that you have installed \R\ and have at least a min
 If that is the case, we can go ahead and install \rdna\ from within \R.
 
 First, we need to install the package \rjava\ \citep{urbanek2017rjava}, which is the most important dependency of \rdna:
+\footnote{Again this sometimes doesn't work that easily on macOS. If the installation fails, you could try to install the package from source using \code{install.packages("rJava", type="source").}}
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 install.packages("rJava")
 @
 
 To see if this worked, or to troubleshoot potential problems, we can run a few \java\ commands from within \R:
+\footnote{Loading \rjava\ for the first time regulary fails on macOS with the warning \code{...}.
+If this is the case, try the command \code{sudo ln -s \$(/usr/libexec/java\_home)/jre/lib/server/libjvm.dylib /usr/local/lib} in your terminal app.}
 <<eval=TRUE, results = 'tex', message = FALSE>>=
 library("rJava")
 # 1. initialize JVM
