@@ -961,7 +961,7 @@ dna_plotCentrality <- function(connection,
                      networkType = "eventlist",
                      verbose = FALSE,
                      ...)
-
+  
   # test validity of "of"-value
   if(!of %in% colnames(dta)|of %in% c("id", "agreement")){
     stop(
@@ -975,20 +975,20 @@ dna_plotCentrality <- function(connection,
     )
     colours <- FALSE
   }
-
+  
   #count (dis-)agreement per "of"
   dta <- as.data.frame(table(dta$agreement, dta[, of]),
                        stringsAsFactors = FALSE)
-
+  
   #rename columns to work with them more easily
   colnames(dta) <- c("agreement", "concept", "Frequency")
-
+  
   # order data per total mentions (disagreement + agreement)
   dta2 <- stats::aggregate(Frequency ~ concept, sum, data=dta)
   dta2 <- dta2[order(dta2$Frequency, decreasing = TRUE), ]
   # replicate order of dta2$concept to dta
   dta <- dta[order(match(dta$concept, dta2$concept)), ]
-
+  
   # get bar colours
   if (colours){
     col <- dna_attributes(connection = connection, statementType = "DNA Statement",
@@ -997,7 +997,7 @@ dna_plotCentrality <- function(connection,
   } else {
     dta$color <- "white"
   }
-
+  
   # truncate where "of" is longer than truncate value
   dta$concept <- ifelse(nchar(dta$concept) > truncate,
                         paste0(gsub("\\s+$", "",
@@ -1021,14 +1021,14 @@ dna_plotCentrality <- function(connection,
     dta2 <- dta2[rep(seq_len(nrow(dta2)), each=2),]
     dta$concept <- dta2$concept
   }
-
+  
   # setting disagreement as -1 instead 0
   dta$agreement <- ifelse(dta$agreement == 0, -1, 1)
-
+  
   # recode Frequency in positive and negative
   dta$Frequency <- dta$Frequency * as.integer(dta$agreement)
   dta$absFrequency <- abs(dta$Frequency)
-
+  
   # generate position of bar labels
   offset <- (max(dta$Frequency) + abs(min(dta$Frequency))) * 0.05
   offset <- ifelse(offset < 0.5, 0.5, offset) # offset should be at least 0.5
@@ -1037,16 +1037,16 @@ dna_plotCentrality <- function(connection,
   dta$pos <- ifelse(dta$Frequency > 0,
                     dta$Frequency + offset,
                     dta$Frequency - offset)
-
+  
   # move 0 labels where neccessary
   dta$pos[dta$Frequency == 0] <- ifelse(dta$agreement[dta$Frequency == 0] == 1,
                                         dta$pos[dta$Frequency == 0] * -1,
                                         dta$pos[dta$Frequency == 0])
-
+  
   high <- length(unique(dta$concept)) + 1.5
   yintercepts <- data.frame(x = c(0, high-1),
                             y = c(0, 0))
-
+  
   g <-  ggplot(dta, aes_string(x = "concept", y = "Frequency")) +
     geom_bar(stat="identity",
              position = position_dodge(),
@@ -1067,7 +1067,7 @@ dna_plotCentrality <- function(connection,
           axis.text.y = element_text(size = fontSize),
           plot.title = element_text(hjust = ifelse(max(nchar(dta$concept)) > 10, -0.15, 0))) +
     geom_text(aes_string(x = "concept", y = "pos", label = "absFrequency"), size = (fontSize / .pt)) +
-    scale_y_discrete(expand = expand_scale(add = offset)) + #make some room for labels
+    scale_y_discrete(expand = c(0, offset, 0, offset)) + #make some room for labels
     scale_fill_manual("legend", values = dta$color)
   if(lab){
     g <- g +
@@ -1083,7 +1083,7 @@ dna_plotCentrality <- function(connection,
                hjust = 1,
                label = lab.neg,
                size = (fontSize / .pt)) +
-      scale_x_discrete(expand = expand_scale(add = 2))
+      scale_x_discrete(expand = c(0, 2, 0, 2))
   }
   return(g)
 }
