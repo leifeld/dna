@@ -825,14 +825,11 @@ In order to use \rdna, the rest of this section will explain how to install \R\ 
 \begin{enumerate}
   \item Since the version of \R\ in the default repositories tends to be fairly outdated, we add the repository of the Comprehensive R Archive Network (CRAN) to our \code{sources.list}:
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
-$sudo add-apt-repository "deb [arch=amd64,i386] https://cran.rstu
-  dio.com/bin/linux/ubuntu artful/"
+$sudo add-apt-repository \
+"deb [arch=amd64,i386] https://cran.rstudio.com/bin/linux/ubuntu \
+$(lsb_release -cs)/"
 @
-        Note, that you need to replace \code{/ubuntu artful/} with your flavour and version of Linux.
-        You can check your version with:
-<<eval=TRUE, engine = 'bash', results = 'tex'>>=
-$lsb_release -a
-@
+        Note, that \code{lsb\_release -a} automatically selects your flavour and version of Linux from the CRAN server. 
         Visit \href{https://cran.rstudio.com/bin/linux/}{CRAN} to see for which  Linux distributions \R\ is available.
         \code{cran.rstudio.com} is also just one of several \href{https://cran.r-project.org/mirrors.html}{CRAN mirrors}, so you could replace it with a different one if you prefer.
   \item Next, you need to add \R\ to your keyring.
@@ -851,15 +848,20 @@ $sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E2
 $sudo apt-get update
 $sudo apt-get install r-base install r-base-dev
 @
-  \item Now install \rstudio\ via gdebi (and install gdebi first if you do not already have it)\footnote{Alternatively, you can download an installation file from \url{https://www.rstudio.com/products/rstudio/download/}.}:
+  \item Now install \rstudio\ via gdebi (and install gdebi first if you do not already have it):%
+  \footnote{Alternatively, you can download an installation file from \url{https://www.rstudio.com/products/rstudio/download/}.}\textsuperscript{,}%
+  \footnote{Up to version 1.1.423, \rstudio\ depends on an outdated version of \texttt(libgstreamer).
+        You thus either need to use a new version or install the old version of \texttt(libgstreamer) using the method explained in \href{https://mikewilliamson.wordpress.com/2016/11/14/installing-r-studio-on-ubuntu-16-10/}{this blogpost}.}
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 $sudo apt-get install gdebi-core
 $wget https://download1.rstudio.org/rstudio-1.1.423-amd64.deb
 $sudo gdebi -n rstudio-1.1.423-amd64.deb
 $rm rstudio-1.1.423-amd64.deb
 @
-  \item (Up to version 1.1.423, \rstudio\ depends on an outdated version of \texttt(libgstreamer).
-        You thus either need to use a new version or install the old version of \texttt(libgstreamer) using the method explained in \href{https://mikewilliamson.wordpress.com/2016/11/14/installing-r-studio-on-ubuntu-16-10/}{this blogpost}.)
+  \item For Linux there is another system dependecy for \rdna\ which helps with handling units of physical quantities in the plot functions that come with the package. You should install this using:
+<<eval=FALSE, engine = 'bash', results = 'tex'>>= 
+$sudo apt-get install libudunits2-dev
+@
   \item After the installation has finished, you can use \R\ by opening \rstudio.
 \end{enumerate}
 
@@ -875,7 +877,7 @@ Or:
 system("sudo R CMD javareconf")
 @
 
-After this is finished, you are ready to start installing \dna\ and the \rdna\ package as described in Section~\ref{sec:installdna}.
+If this finishes without errors, you are ready to start installing \dna\ and the \rdna\ package as described in Section~\ref{sec:installdna}.
 
 \section{Installing \dna\ and \rdna} \label{sec:installdna}
 Once \java\ is set up correctly, you can simply download the latest version of \dna\ as a JAR file from \url{https://github.com/leifeld/dna/releases} (see Figure~\ref{fig:downloadjar}).
@@ -897,8 +899,9 @@ If you are not interested in using \rdna, you can now skip to Chapter~\ref{chp:d
 At this point, it is assumed that you have installed \R\ and have at least a minimal understanding of how the program works (see Section~\ref{subsec:rtest}).
 If that is the case, we can go ahead and install \rdna\ from within \R.
 
-First, we need to install the package \rjava\ \citep{urbanek2017rjava}, which is the most important dependency of \rdna:
-\footnote{Again this sometimes doesn't work that easily on macOS. If the installation fails, you could try to install the package from source using \code{install.packages("rJava", type="source").}}
+First, we need to install the package \rjava\ \citep{urbanek2017rjava}, which is the most important dependency of \rdna:%
+\footnote{Again this sometimes doesn't work that easily on macOS. If the installation fails, you could try to install the package from source using \code{install.packages("rJava", type="source").}}\textsuperscript{,}%
+  \footnote{Alternativly, it can make sense on Linux systems to install \rjava\ via apt: \code{sudo apt-get install r-cran-rjava}.}
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 install.packages("rJava")
 @
