@@ -2,60 +2,87 @@
 % Please edit documentation in R/rDNA.R
 \name{dna_plotCluster}
 \alias{dna_plotCluster}
-\title{Plots cluster objects}
+\title{Plots dna_cluster objects}
 \usage{
-dna_plotCluster(dend, shape = "elbows", colour = TRUE, activity = TRUE,
-  lineends = TRUE, colours = "identity", custom.colours = character(),
-  branch.colour = "#636363", leaf.linetype = "a", branch.linetype = "a",
-  lineWidth = 1, lineAlpha = 1, endsAlpha = 1, fontSize = 12,
-  theme = "bw", truncate = 40, leaf.labels = "ticks", circular = FALSE,
-  show.legend = FALSE, ...)
+dna_plotCluster(dend, shape = "elbows", activity = FALSE,
+  line_colours = "colours1", branch_colour = "#636363",
+  colours = "identity", custom_colours = character(),
+  line_ends = character(), custom_shapes = character(), ends_alpha = 1,
+  ends_size = 3, rectangles = "red", leaf_linetype = "a",
+  branch_linetype = "b", line_width = 1, line_alpha = 1, font_size = 12,
+  theme = "bw", truncate = 40, leaf_labels = "ticks", circular = FALSE,
+  show_legend = TRUE, ...)
 }
 \arguments{
-\item{dend}{A \code{dna_cluster} object created by the
-\link{dna_cluster} function.}
+\item{dend}{A \code{dna_cluster} object created by the \link{dna_cluster}
+function.}
 
-\item{shape}{See \link[ggraph]{layout_dendrogram_auto}.}
+\item{shape}{The shape of the dendrogram. Available options are "elbows",
+"link", "diagonal", "arc", and "fan". See
+\link[ggraph]{layout_dendrogram_auto}.}
 
-\item{colour}{Should the plot be coloured or not (logical).}
+\item{activity}{Should activity of variable in \link{dna_cluster} be used to
+determine size of line_ends (logical). Activity means the number of
+statements which remained after duplicates were removed.}
 
-\item{activity}{Should activity of variable in \link{dna_cluster} be used to determine size of lineends (logical).}
+\item{line_colours}{Determines which data is used to colour the leafs of the
+dendrogram. Can be either "colours1", "colours2" or "group". Set to
+\code{character()} leafs-lines should not be coloured.}
 
-\item{lineends}{Should lineends be displayed (logical).}
+\item{branch_colour}{Provide one colour in which all branches are coloured.}
 
 \item{colours}{There are three options from where to derive the colours in
-the plot: (1.) "identity" uses the names of variables as colours, fails if
-names are not plottable colours; (2.) "manual" provide colours via
-custom.colours; (3.) "brewer" automatically select nice colours from a
-\code{RColorBrewer} palette (palette can be set in custom.colours).}
+the plot: (1.) "identity" tries to use the names of variables as colours,
+fails if names are not plottable colours; (2.) "manual" provide colours via
+custom_colours; (3.) "brewer" automatically select nice colours from a
+\code{RColorBrewer} palette (palettes can be set in custom_colours,
+defaults to \code{Set3}).}
 
-\item{custom.colours}{Either provide enough colours to manually set the
+\item{custom_colours}{Either provide enough colours to manually set the
 colours in the plot (if colours = "manual") or select a palette from
 \code{RColorBrewer} (if colours = "brewer").}
 
-\item{branch.colour}{Provide one colour in which all branches are coloured.}
+\item{line_ends}{Determines which data is used to colour the line_ends of the
+dendrogram. Can be either "colours1", "colours2" or "group". Set to
+\code{character()} if no line ends should be displayed.}
 
-\item{leaf.linetype, branch.linetype}{"a" for straight line or "b" for dotted line.}
+\item{custom_shapes}{If shapes are provided, those are used for line_ends
+instead of the standard ones. Available shapes range from 0:25 and 32:127}
 
-\item{lineWidth}{Width of all lines.}
+\item{ends_alpha}{Alpha of all line_ends}
 
-\item{lineAlpha}{Alpha of all lines.}
+\item{ends_size}{If \code{activity = FALSE}, the size of the lineend symbols
+can be set to one size for the whole plot.}
 
-\item{endsAlpha}{Alpha of all lineends}
+\item{rectangles}{If a colour is provided, this will draw rectangles in given
+colour around the groups.}
 
-\item{fontSize}{Set the font size for the entire plot.}
+\item{leaf_linetype, branch_linetype}{Determines which lines are used for
+leafs and branches. Takes "a" for straight line or "b" for dotted line.}
 
-\item{theme}{See themes in \code{ggplot2}. The theme "bw" was customised to look best with dendrograms.}
+\item{line_width}{Width of all lines.}
+
+\item{line_alpha}{Alpha of all lines.}
+
+\item{font_size}{Set the font size for the entire plot.}
+
+\item{theme}{See themes in \code{ggplot2}. The theme "bw" was customised to
+look best with dendrograms. "ggplot" changes very little from the custom
+ggplot look and is best to add your own theme ggplot style with \code{+}.}
 
 \item{truncate}{Sets the number of characters to which labels should be truncated.}
 
-\item{leaf.labels}{Either "ticks" to display the labels as axis ticks or "node" to label nodes directly.}
+\item{leaf_labels}{Either "ticks" to display the labels as axis ticks or
+"node" to label nodes directly. Node labels are also take the same colour
+as the leaf the label.}
 
-\item{circular}{Logical. Should the layout be transformed to a circular representation. See  \link[ggraph]{layout_dendrogram_auto}.}
+\item{circular}{Logical. Should the layout be transformed to a circular
+representation. See  \link[ggraph]{layout_dendrogram_auto}.}
 
-\item{show.legend}{Logical. Should the legend be displayed.}
+\item{show_legend}{Logical. Should a legend be displayed.#'}
 
-\item{...}{additional arguments passed to \link{dna_network}}
+\item{...}{additional arguments passed to \link{dna_network}. If you want to
+add more plot options use \code{+} and the ggplot2 logic (see example).}
 }
 \description{
 Plots objects derived via \link{dna_cluster}.
@@ -69,7 +96,12 @@ types, which can be plotted using the \code{ggraph} package.
 dna_init("dna-2.0-beta20.jar")
 conn <- dna_connection(dna_sample())
 at <- dna_attributes(conn, "DNA Statement", "organization")
-dna_plotCentrality(conn)
+dg <- dna_plotCentrality(conn)
+dg
+
+# Flip plot with ggplot2 command
+library("ggplot2")
+dg + coord_flip()
 }
 }
 \author{

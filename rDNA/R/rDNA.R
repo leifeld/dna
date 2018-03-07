@@ -251,13 +251,13 @@ dna_attributes <- function(connection,
                            statementType = "DNA Statement",
                            variable = "organization",
                            values = NULL) {
-
+ 
   if (is.null(values)) {
     values <- character(0)
   } else if (class(values) != "character") {
     stop("'values' must be a character vector or NULL.")
   }
-
+ 
   .jcall(connection$dna_connection,
          "V",
          "rAttributes",
@@ -491,7 +491,7 @@ dna_network <- function(connection,
                         invertSections = FALSE,
                         invertTypes = FALSE,
                         verbose = TRUE) {
-
+ 
   # convert single values to vectors by means of duplication if necessary
   if (length(excludeTypes) == 1) {
     excludeTypes <- c(excludeTypes, excludeTypes)
@@ -512,7 +512,7 @@ dna_network <- function(connection,
       }
     }
   }
-
+ 
   if (length(excludeValues) > 0) {
     dat <- matrix("", nrow = sum(sapply(excludeValues, length)), ncol = 2)
     count <- 0
@@ -565,7 +565,7 @@ dna_network <- function(connection,
          invertTypes,
          verbose
   )
-
+ 
   if (networkType == "eventlist") {
     objects <- .jcall(connection$dna_connection, "[Ljava/lang/Object;", "getEventListColumnsR", simplify = TRUE)
     columnNames <- .jcall(connection$dna_connection, "[S", "getEventListColumnsRNames", simplify = TRUE)
@@ -692,7 +692,7 @@ dna_timeWindow <- function(connection,
                            method = "modularity",
                            verbose = 2,
                            ...) { #passed on to dna_network
-
+ 
   dots <- list(...)
   if("excludeAuthors" %in% names(dots)){
     excludeAuthors <- unname(unlist(dots["excludeAuthors"]))
@@ -718,9 +718,9 @@ dna_timeWindow <- function(connection,
   } else {
     excludeTypes <- character()
   }
-
+ 
   facetValues <- c(facetValues, "all")
-
+ 
   if( facet == "Authors" ){Authors <- facetValues} else {Authors <- character()}
   if (facet == "Sources"){Sources <- facetValues} else {Sources <- character()}
   if (facet == "Sections"){Sections <- facetValues} else {Sections <- character()}
@@ -753,7 +753,7 @@ dna_timeWindow <- function(connection,
         " was removed from \"excludeTypes\".\n")
     excludeTypes <- excludeTypes[!excludeTypes %in% Types]
   }
-
+ 
   if (method == "modularity"){
     mod.m <- lapply(facetValues, function(x){
       if (verbose|verbose == 2){cat("Calculating Type =", facetValues[facetValues %in% x], "\n")}
@@ -769,7 +769,7 @@ dna_timeWindow <- function(connection,
                            excludeTypes = c(Types[Types %in% x], excludeTypes),
                            verbose = ifelse(verbose > 1, TRUE, FALSE)
                     ), dots)
-                    )
+      )
       mod.m <- data.frame(index = 1:length(nw$networks),
                           time = nw$time,
                           modularity = sapply(nw$networks, lvmod),
@@ -802,7 +802,7 @@ dna_timeWindow <- function(connection,
                                    excludeTypes = c(Types[Types %in% x], excludeTypes),
                                    verbose = ifelse(verbose > 1, TRUE, FALSE)
                             ), dots)
-                            )
+              )
               mod.m <- data.frame(index = 1:length(nw$networks),
                                   time = nw$time,
                                   x = sapply(nw$networks, method),
@@ -810,11 +810,11 @@ dna_timeWindow <- function(connection,
               colnames(mod.m)[3] <- method
               return(mod.m)
             })
-}}}
+      }}}
   mod.df <- do.call("rbind", mod.m)
   class(mod.df) <- c("data.frame", "dna_timeWindow", paste(method))
   return(mod.df)
-}
+  }
 
 
 #' Plot \link{dna_timeWindow} objects
@@ -834,7 +834,7 @@ dna_timeWindow <- function(connection,
 #' @param include.y Include specific value of facet in the plot.
 #' @param rows,cols Number of rows and columns in which the plots are arranged.
 #'   plot.
-#' @param ... Not used. Additional parameters should be passed on to ggplot2 via
+#' @param ... Currently not used. Additional parameters should be passed on to ggplot2 via
 #'   e.g. \code{+ theme_bw()}.
 #'
 #' @examples
@@ -961,7 +961,7 @@ dna_plotCentrality <- function(connection,
                      networkType = "eventlist",
                      verbose = FALSE,
                      ...)
-  
+ 
   # test validity of "of"-value
   if(!of %in% colnames(dta)|of %in% c("id", "agreement")){
     stop(
@@ -975,20 +975,19 @@ dna_plotCentrality <- function(connection,
     )
     colours <- FALSE
   }
-  
-  #count (dis-)agreement per "of"
+ 
+  # count (dis-)agreement per "of"
   dta <- as.data.frame(table(dta$agreement, dta[, of]),
                        stringsAsFactors = FALSE)
-  
-  #rename columns to work with them more easily
   colnames(dta) <- c("agreement", "concept", "Frequency")
-  
+ 
   # order data per total mentions (disagreement + agreement)
   dta2 <- stats::aggregate(Frequency ~ concept, sum, data=dta)
   dta2 <- dta2[order(dta2$Frequency, decreasing = TRUE), ]
+ 
   # replicate order of dta2$concept to dta
   dta <- dta[order(match(dta$concept, dta2$concept)), ]
-  
+ 
   # get bar colours
   if (colours){
     col <- dna_attributes(connection = connection, statementType = "DNA Statement",
@@ -997,7 +996,7 @@ dna_plotCentrality <- function(connection,
   } else {
     dta$color <- "white"
   }
-  
+ 
   # truncate where "of" is longer than truncate value
   dta$concept <- ifelse(nchar(dta$concept) > truncate,
                         paste0(gsub("\\s+$", "",
@@ -1021,14 +1020,14 @@ dna_plotCentrality <- function(connection,
     dta2 <- dta2[rep(seq_len(nrow(dta2)), each=2),]
     dta$concept <- dta2$concept
   }
-  
+ 
   # setting disagreement as -1 instead 0
   dta$agreement <- ifelse(dta$agreement == 0, -1, 1)
-  
+ 
   # recode Frequency in positive and negative
   dta$Frequency <- dta$Frequency * as.integer(dta$agreement)
   dta$absFrequency <- abs(dta$Frequency)
-  
+ 
   # generate position of bar labels
   offset <- (max(dta$Frequency) + abs(min(dta$Frequency))) * 0.05
   offset <- ifelse(offset < 0.5, 0.5, offset) # offset should be at least 0.5
@@ -1037,16 +1036,14 @@ dna_plotCentrality <- function(connection,
   dta$pos <- ifelse(dta$Frequency > 0,
                     dta$Frequency + offset,
                     dta$Frequency - offset)
-  
+ 
   # move 0 labels where neccessary
   dta$pos[dta$Frequency == 0] <- ifelse(dta$agreement[dta$Frequency == 0] == 1,
                                         dta$pos[dta$Frequency == 0] * -1,
                                         dta$pos[dta$Frequency == 0])
-  
   high <- length(unique(dta$concept)) + 1.5
   yintercepts <- data.frame(x = c(0, high-1),
                             y = c(0, 0))
-  
   g <-  ggplot(dta, aes_string(x = "concept", y = "Frequency")) +
     geom_bar(stat="identity",
              position = position_dodge(),
@@ -1099,19 +1096,24 @@ dna_plotCentrality <- function(connection,
 #'   \link{dna_connection} function.
 #' @param variable The first variable for network construction  (see
 #'   \link{dna_network}). The second one defaults to "concept" but can be
-#'   provided via ... if necessary.
-#' @param rm.duplicates Should duplicates be removed from documents in the
-#'   database (see \link{dna_network}. This also influences if
-#'   \link[vegan]{vegdist} or \link[stats]{dist} is used to calculate the
-#'   dissimilarity matrix.
+#'   provided via ... if necessary (see \code{variable2} in
+#'   \code{dna_connection}).
+#' @param duplicates Setting for excluding duplicate statements before network
+#'   construction (for details see \link{dna_network}. If exclusion of
+#'   duplicates results in a binary matrix, \link[vegan]{vegdist} will be used
+#'   instead of \link[stats]{dist} to calculate the dissimilarity matrix.
 #' @param clust.method The agglomeration method to be used. See
 #'   \link[stats]{hclust}.
-#' @param qualifier The qualifier variable. See \link{dna_network}.
-#' @param colours Which attribute of variable from DNA should be used to assign
-#'   colours? Additionally, can be "membership" if cut.k or cut.h are provided.
-#' @param cut.k,cut.h See k and h in \link[stats]{cutree}.
+#' @param colours1,colours2 Which attribute of variable from DNA should be used
+#'   to assign colours? There are two sets of colours saved in the resulting
+#'   object as \link{dna_plotCluster} has two graphical elements to distinguish
+#'   between values: line_colours and line_ends. Possible values are "id", "value",
+#'   "color", "type", "alias" and "note".
+#' @param cutree.k,cutree.h If cutree.k or cutree.h are provided, the tree from
+#'   hierarchical clustering is cut into several groups. See $k$ and $h$ in
+#'   \link[stats]{cutree} for details.
 #' @param ... additional arguments passed to \link{dna_network}
-#'
+#'  
 #' @examples
 #' \dontrun{
 #' dna_init("dna-2.0-beta20.jar")
@@ -1127,323 +1129,401 @@ dna_plotCentrality <- function(connection,
 #' @importFrom stats setNames dist hclust cutree
 dna_cluster <- function(connection,
                         variable = "organization",
-                        rm.duplicates = FALSE,
+                        duplicates = "document",
                         clust.method = "ward.D2",
-                        qualifier = "agreement",
-                        colours = "color",
-                        cut.k = NULL,
-                        cut.h = NULL,
-                        ...) {#passed on to dna_network
-
+                        colours1 = "color",
+                        colours2 = "value",
+                        cutree.k = NULL,
+                        cutree.h = NULL,
+                        ...) {
   dots <- list(...)
-  #dots <- list("excludeValues" = excludeValues2)
-  #print(unlist(unname(dots["excludeValues"])))
   if ("excludeValues" %in% names(dots)){
     excludeValues <- dots["excludeValues"][[1]]
     dots["excludeValues"] <- NULL
   } else {
     excludeValues <- list()
   }
+  if (!exists("qualifier")) {
+    qualifier <- "agreement"
+  }
   if (qualifier %in% names(excludeValues)){
     excl <- unlist(unname(excludeValues[qualifier]))
     excludeValues[qualifier] <- NULL
   }
 
-
-  # 1. create two-mode networks (with or without duplicates) for all levels of
-  # the qualifier variable separately, including isolates
-  # find all qualifier levels
   lvls <- do.call(dna_network,
                   c(list(connection = connection,
                          networkType = "eventlist",
                          excludeValues = excludeValues,
                          verbose = FALSE
                   ), dots))
-
+ 
   lvls <- unique(lvls[, qualifier])
-
+ 
   if (exists("excl")) {
     lvls <- lvls[!lvls %in% excl]
     if (length(lvls) < 1){
-      stop(paste0(
+      stop (paste0(
         "You excluded all levels of \"", qualifier,
         "\". Computation not possible."
       ))
-    }}
-
+    }
+  }
+ 
   dta <- lapply(lvls, function(l){
-    # add level of the qualifier variable to exclude
     excludeVals = c(stats::setNames(list(l),
-                             nm = qualifier),
+                                    nm = qualifier),
                     excludeValues)
-
+   
     nw <- do.call(dna_network,
                   c(list(connection = connection,
                          networkType = "twomode",
                          variable1 = variable,
-                         normalization = "no",
                          isolates = TRUE,
-                         duplicates = ifelse(rm.duplicates,
-                                             "include",
-                                             "document"),
+                         duplicates = duplicates,
                          qualifier = qualifier,
-                         qualifierAggregation = "ignore",
                          excludeValues = excludeVals,
-                         verbose = FALSE))
-                  #, dots)
+                         verbose = FALSE)
+                    , dots)
     )
-
+   
     colnames(nw) <- paste(colnames(nw), "-", l)
     return(nw)
   })
-
-  # 2. collate them horizontally usign cbind
   dta <- do.call("cbind", dta)
-
-  # 3. remove lines from the matrix where the row sum is zero
   dta <- dta[rowSums(dta) > 0, ]
   dta <- dta[, colSums(dta) > 0]
-
-  # 4. compute Jaccard dissimilarity matrix using the vegdist function in the
-  # vegan package (or dist if If duplicates are included in the affiliation
-  # matrices)
-  if (rm.duplicates){
+  if (all(dta %in% c(0, 1))){ # test if dta is binary
     d <-  vegan::vegdist(dta, method = "jaccard")
   } else {
     d <-  dist(dta, method = "euclidean")
   }
   hc <- hclust(d, method = clust.method)
-  if(!is.null(c(cut.k, cut.h))){
-    hc$group <- cutree(hc, k = cut.k, h = cut.h)
+  if (!is.null(c(cutree.k, cutree.h))){
+    hc$group <- cutree(hc, k = cutree.k, h = cutree.h)
   }
-  hc$activity <- rowSums(dta)
-
-  # add colours
-  if (!colours == "membership") {
-    col <- dna_attributes(connection = connection, statementType = "DNA Statement",
-                          variable = variable, values = NULL)
-    hc$colours <- col[, colours][match(hc$labels, col$value)]
-
+  hc$activities <- unname(rowSums(dta))
+  col <- dna_attributes(connection = connection,
+                        statementType = "DNA Statement",
+                        variable = variable,
+                        values = NULL)
+  hc$colours1 <- col[, colours1][match(hc$labels, col$value)]
+  hc$colours2 <- col[, colours2][match(hc$labels, col$value)]
+  if (any(!is.null(c(cutree.h, cutree.k)))) {
+    hc$group <- paste("Group", hc$group)
   } else {
-    if(!is.null(c(cut.k, cut.h))){
-      hc$colours <- paste("Group", hc$group)
-    } else {
-      warning("Assigning colours based on cluster membership only works if either cut.k or cut.h are provided")
-    }
+    hc$group <- paste("Group", rep_len(0, length.out = length(hc$labels)))
   }
+  if (length(cutree.k) + length(cutree.h) > 0) {
+    attr(hc, "cut") <- c("cutree.k" = cutree.k, "cutree.h" = cutree.h)
+  } else {
+    attr(hc, "cut") <- NA
+  }
+  hc$call = match.call()
+  attr(hc, "colours") <- c("colours1" = colours1, "colours2" = colours2)
+  class(hc) <- c("dna_cluster", class(hc))
   return(hc)
 }
 
 
-#' Plots cluster objects
+#' Print the summary of a \code{dna_cluster} object
+#'
+#' Show details of a \code{dna_cluster} object.
+#'
+#' Print original call to the function, the information from the
+#' \link[stats]{hclust} call and additional variables which can be used for
+#' plotting the object.
+#'
+#' @param x A \code{dna_cluster} object.
+#' @param ... Further options (currently not used).
+#'
+#' @examples
+#' \dontrun{
+#' dna_init("dna-2.0-beta20.jar")
+#' conn <- dna_connection(dna_sample(), verbose = FALSE)
+#' clust.l <- dna_cluster(conn)
+#' clust.l
+#' }
+#' @export
+print.dna_cluster <- function(x, ...) {
+  if (!is.null(x$call)) {
+    cat("\nCall:\n", deparse(x$call), "\n\n", sep = "")
+  }
+  if (!is.null(x$method)) {
+    cat("Cluster method   :", x$method, "\n")
+  }
+  if (!is.null(x$dist.method)) {
+    cat("Distance         :", x$dist.method, "\n")
+  }
+  cat("Number of objects:", length(x$height) + 1, "\n")
+  if (length(na.omit(attr(x, "cut"))) > 0) {
+    cat("Cut at           :", paste(gsub("cutree.", "", 
+                              names(attr(x, "cut"))), "=", 
+                         attr(x, "cut"), 
+                         collapse = ", "), 
+        "\n")
+  }
+  cat("Used for colours :\n", paste(names(attr(x, "colours")), 
+                                         paste0("\"",
+                                                attr(x, "colours"),
+                                                "\"\n"), 
+                                         sep = "        : ",
+                                         collapse = " "))
+    
+  cat("\n")
+  invisible(x)
+}
+
+
+#' Plots dna_cluster objects
 #'
 #' Plots objects derived via \link{dna_cluster}.
 #'
 #' This function is a convenience wrapper for several different dendrogram
 #' types, which can be plotted using the \code{ggraph} package.
 #'
-#' @param dend A \code{dna_cluster} object created by the
-#'     \link{dna_cluster} function.
-#' @param shape See \link[ggraph]{layout_dendrogram_auto}.
-#' @param colour Should the plot be coloured or not (logical).
-#' @param activity Should activity of variable in \link{dna_cluster} be used to determine size of lineends (logical).
-#' @param lineends Should lineends be displayed (logical).
+#' @param dend A \code{dna_cluster} object created by the \link{dna_cluster}
+#'   function.
+#' @param shape The shape of the dendrogram. Available options are "elbows",
+#'   "link", "diagonal", "arc", and "fan". See
+#'   \link[ggraph]{layout_dendrogram_auto}.
+#' @param activity Should activity of variable in \link{dna_cluster} be used to
+#'   determine size of line_ends (logical). Activity means the number of
+#'   statements which remained after duplicates were removed.
+#' @param line_colours Determines which data is used to colour the leafs of the
+#'   dendrogram. Can be either "colours1", "colours2" or "group". Set to
+#'   \code{character()} leafs-lines should not be coloured.
 #' @param colours There are three options from where to derive the colours in
-#'   the plot: (1.) "identity" uses the names of variables as colours, fails if
-#'   names are not plottable colours; (2.) "manual" provide colours via
-#'   custom.colours; (3.) "brewer" automatically select nice colours from a
-#'   \code{RColorBrewer} palette (palette can be set in custom.colours).
-#' @param custom.colours Either provide enough colours to manually set the
+#'   the plot: (1.) "identity" tries to use the names of variables as colours,
+#'   fails if names are not plottable colours; (2.) "manual" provide colours via
+#'   custom_colours; (3.) "brewer" automatically select nice colours from a
+#'   \code{RColorBrewer} palette (palettes can be set in custom_colours,
+#'   defaults to \code{Set3}).
+#' @param custom_colours Either provide enough colours to manually set the
 #'   colours in the plot (if colours = "manual") or select a palette from
 #'   \code{RColorBrewer} (if colours = "brewer").
-#' @param branch.colour Provide one colour in which all branches are coloured.
-#' @param leaf.linetype,branch.linetype "a" for straight line or "b" for dotted line.
-#' @param lineWidth Width of all lines.
-#' @param lineAlpha Alpha of all lines.
-#' @param endsAlpha Alpha of all lineends
-#' @param fontSize Set the font size for the entire plot.
-#' @param theme See themes in \code{ggplot2}. The theme "bw" was customised to look best with dendrograms.
+#' @param branch_colour Provide one colour in which all branches are coloured.
+#' @param line_width Width of all lines.
+#' @param line_alpha Alpha of all lines.
+#' @param ends_size If \code{activity = FALSE}, the size of the lineend symbols
+#'   can be set to one size for the whole plot.
+#' @param line_ends Determines which data is used to colour the line_ends of the
+#'   dendrogram. Can be either "colours1", "colours2" or "group". Set to
+#'   \code{character()} if no line ends should be displayed.
+#' @param custom_shapes If shapes are provided, those are used for line_ends
+#'   instead of the standard ones. Available shapes range from 0:25 and 32:127
+#' @param ends_alpha Alpha of all line_ends
+#' @param rectangles If a colour is provided, this will draw rectangles in given
+#'   colour around the groups.
+#' @param leaf_linetype,branch_linetype Determines which lines are used for
+#'   leafs and branches. Takes "a" for straight line or "b" for dotted line.
+#' @param font_size Set the font size for the entire plot.
+#' @param theme See themes in \code{ggplot2}. The theme "bw" was customised to
+#'   look best with dendrograms. "ggplot" changes very little from the custom
+#'   ggplot look and is best to add your own theme ggplot style with \code{+}.
 #' @param truncate Sets the number of characters to which labels should be truncated.
-#' @param leaf.labels Either "ticks" to display the labels as axis ticks or "node" to label nodes directly.
-#' @param circular Logical. Should the layout be transformed to a circular representation. See  \link[ggraph]{layout_dendrogram_auto}.
-#' @param show.legend Logical. Should the legend be displayed.
-#'
-#' @param ... additional arguments passed to \link{dna_network}
+#' @param leaf_labels Either "ticks" to display the labels as axis ticks or
+#'   "node" to label nodes directly. Node labels are also take the same colour
+#'   as the leaf the label.
+#' @param circular Logical. Should the layout be transformed to a circular
+#'   representation. See  \link[ggraph]{layout_dendrogram_auto}.
+#' @param show_legend Logical. Should a legend be displayed.#'
+#' @param ... additional arguments passed to \link{dna_network}. If you want to
+#'   add more plot options use \code{+} and the ggplot2 logic (see example).
 #'
 #' @examples
 #' \dontrun{
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
 #' at <- dna_attributes(conn, "DNA Statement", "organization")
-#' dna_plotCentrality(conn)
+#' dg <- dna_plotCentrality(conn)
+#' dg
+#' 
+#' # Flip plot with ggplot2 command
+#' library("ggplot2")
+#' dg + coord_flip()
 #' }
 #' @author Johannes B. Gruber
 #' @export
 #' @import ggraph
-#' @importFrom stats as.dendrogram is.leaf dendrapply
+#' @importFrom stats as.dendrogram is.leaf dendrapply aggregate
 dna_plotCluster <- function(dend,
                             shape = "elbows",
-                            colour = TRUE,
-                            activity = TRUE,
-                            lineends = TRUE,
+                            activity = FALSE,
+                            line_colours = "colours1",
+                            branch_colour = "#636363",
                             colours = "identity",
-                            custom.colours = character(),
-                            branch.colour = "#636363",
-                            leaf.linetype = "a",
-                            branch.linetype = "a",
-                            lineWidth = 1,
-                            lineAlpha = 1,
-                            endsAlpha = 1,
-                            fontSize = 12,
+                            custom_colours = character(),
+                            line_ends = character(),
+                            custom_shapes = character(),
+                            ends_alpha = 1,
+                            ends_size = 3,
+                            rectangles = "red",
+                            leaf_linetype = "a",
+                            branch_linetype = "b",
+                            line_width = 1,
+                            line_alpha = 1,
+                            font_size = 12,
                             theme = "bw",
                             truncate = 40,
-                            leaf.labels = "ticks",
+                            leaf_labels = "ticks",
                             circular = FALSE,
-                            show.legend = FALSE,
+                            show_legend = TRUE,
                             ...) {
-
-  # truncate lables
+  # truncate lables----
   dend$labels_short <- ifelse(nchar(dend$labels) > truncate,
                               paste0(gsub("\\s+$", "",
                                           strtrim(dend$labels, width = truncate)),
                                      "..."),
                               dend$labels)
-
+  
   # format as dendrogram
   hierarchy <- stats::as.dendrogram(dend)
-  # Add colours
+  # Add colours----
   hierarchy <- stats::dendrapply(hierarchy, function(x) {
     if (stats::is.leaf(x)) {
-      attr(x, "Colour") <- as.character(dend$colours[match(as.character(labels(x)), dend$labels)])
-      attr(x, "Activity") <- unname(dend$activity[dend$order[match(as.character(labels(x)),
-                                                                   dend$labels)]])
+      if (length(line_colours) > 0) {
+        attr(x, "Colour1") <- as.character(dend[[line_colours]][match(as.character(labels(x)),
+                                                                    dend$labels)])
+      } else {
+        attr(x, "Colour1") <- ""
+      }
+      if (length(line_ends) > 0) {
+        attr(x, "Colour2") <- as.character(dend[[line_ends]][match(as.character(labels(x)),
+                                                                  dend$labels)])
+      } else {
+        attr(x, "Colour2") <- ""
+      }
+      
+      attr(x, "Activity") <- dend$activities[dend$order[match(as.character(labels(x)),
+                                                              dend$labels)]]
       attr(x, "labels_short") <- dend$labels_short[match(as.character(labels(x)),
                                                          dend$labels)]
-      attr(x, "linetype") <- leaf.linetype
+      attr(x, "linetype") <- leaf_linetype
     } else {
-      attr(x, "Colour") <- branch.colour
+      if (length(line_colours) > 0) {
+        attr(x, "Colour1") <- branch_colour
+      } else {
+        attr(x, "Colour1") <- ""
+      }
+      if (length(line_ends) > 0) {
+        attr(x, "Colour2") <- branch_colour
+      } else {
+        attr(x, "Colour2") <- ""
+      }
       attr(x, "Activity") <- 0
       attr(x, "labels_short") <- ""
-      attr(x, "linetype") <- branch.linetype
+      attr(x, "linetype") <- branch_linetype
     }
-    attr(x, "edgePar") <- list(cols = attr(x, "Colour"),
+    attr(x, "edgePar") <- list(cols1 = attr(x, "Colour1"),
+                               cols2 = attr(x, "Colour2"),
                                linetype = attr(x, "linetype"))
-    attr(x, "nodePar") <- list(cols = attr(x, "Colour"),
+    attr(x, "nodePar") <- list(cols3 = attr(x, "Colour1"),
+                               cols4 = attr(x, "Colour2"),
                                Activity = attr(x, "Activity"),
                                labels_short = attr(x, "labels_short"))
     x
   })
-
-  # create initial dedrogram
+  # create dedrogram----
   dg <- ggraph::ggraph(graph = hierarchy,
                        layout = "dendrogram",
                        circular = circular)
-
-  # add the shape
+  
+  # shape----
   if (shape == "elbows"){
-    if(colour){
-      dg <- dg +
-        geom_edge_elbow(aes_string(colour = "cols",
-                            edge_linetype = "linetype"),
-                        show.legend = show.legend,
-                        width = lineWidth,
-                        alpha = lineAlpha)
-    } else {
-      dg <- dg +
-        geom_edge_elbow(aes_string(edge_linetype = "linetype"),
-                        show.legend = show.legend,
-                        width = lineWidth,
-                        alpha = lineAlpha)
-    }
+    dg <- dg +
+      geom_edge_elbow(aes_string(colour = "cols1",
+                                 edge_linetype = "linetype"),
+                      show.legend = show_legend ,
+                      width = line_width,
+                      alpha = line_alpha)
   }
   if (shape == "link"){
-    if(colour){
-      dg <- dg +
-        geom_edge_link(aes_string(colour = "cols",
-                           edge_linetype = "linetype"),
-                       show.legend = show.legend,
-                       width = lineWidth,
-                       alpha = lineAlpha)
-    } else {
-      dg <- dg +
-        geom_edge_link(aes_string(edge_linetype = "linetype"),
-                       show.legend = show.legend,
-                       width = lineWidth,
-                       alpha = lineAlpha)
-    }
+    dg <- dg +
+      geom_edge_link(aes_string(colour = "cols1",
+                                edge_linetype = "linetype"),
+                     show.legend = show_legend ,
+                     width = line_width,
+                     alpha = line_alpha)
   }
   if (shape == "diagonal"){
-    if(colour){
-      dg <- dg +
-        geom_edge_diagonal(aes_string(colour = "cols",
-                               edge_linetype = "linetype"),
-                           show.legend = show.legend,
-                           width = lineWidth,
-                           alpha = lineAlpha)
-    } else {
-      dg <- dg +
-        geom_edge_diagonal(aes_string(edge_linetype = "linetype"),
-                           show.legend = show.legend,
-                           width = lineWidth,
-                           alpha = lineAlpha)
-    }
+    dg <- dg +
+      geom_edge_diagonal(aes_string(colour = "cols1",
+                                    edge_linetype = "linetype"),
+                         show.legend = show_legend ,
+                         width = line_width,
+                         alpha = line_alpha)
   }
   if (shape == "arc"){
-    if(colour){
-      dg <- dg +
-        geom_edge_arc(aes_string(colour = "cols",
-                          edge_linetype = "linetype"),
-                      show.legend = show.legend,
-                      width = lineWidth,
-                      alpha = lineAlpha)
-    } else {
-      dg <- dg +
-        geom_edge_arc(aes_string(edge_linetype = "linetype"),
-                      show.legend = show.legend,
-                      width = lineWidth,
-                      alpha = lineAlpha)
-    }
+    dg <- dg +
+      geom_edge_arc(aes_string(colour = "cols1",
+                               edge_linetype = "linetype"),
+                    show.legend = show_legend ,
+                    width = line_width,
+                    alpha = line_alpha)
   }
   if (shape == "fan"){
-    if(colour){
-      dg <- dg +
-        geom_edge_fan(aes_string(colour = "cols",
-                          edge_linetype = "linetype"),
-                      show.legend = show.legend,
-                      width = lineWidth,
-                      alpha = lineAlpha)
+    dg <- dg +
+      geom_edge_fan(aes_string(colour = "cols1",
+                               edge_linetype = "linetype"),
+                    show.legend = show_legend ,
+                    width = line_width,
+                    alpha = line_alpha)
+  }
+  dg <- dg +
+    scale_edge_linetype_discrete(guide = "none")
+  if (length(line_colours) > 0) {
+    dend[[line_colours]] <- as.factor(dend[[line_colours]])
+    autoCols <- c(branch_colour, levels(dend[[line_colours]]))
+    if (show_legend) {
+      guide <- "legend"
+      if (line_colours == "colours1") guidename <- attr(dend, "colours")[1]
+      if (line_colours == "colours2") guidename <- attr(dend, "colours")[2]
+      if (line_colours == "group") guidename <- "group"
+      guidename <- paste0(toupper(substr(guidename, 1, 1)),
+                          substr(guidename, 2, nchar(guidename)))
     } else {
-      dg <- dg +
-        geom_edge_fan(aes_string(edge_linetype = "linetype"),
-                      show.legend = show.legend,
-                      width = lineWidth,
-                      alpha = lineAlpha)
+      guide <- "none"
+      guidename <- waiver()
     }
   }
-  dend$colours <- as.factor(dend$colours)
-  if (colours == "identity" & colour) {
+  if (colours == "identity" & length(line_colours) > 0) {
+    autoCols <- setNames(autoCols, nm = c(branch_colour, levels(dend[[line_colours]])))
     dg <- dg +
-      scale_edge_colour_identity() # gives error if colour names are not actual colours
+      scale_edge_colour_manual(breaks = autoCols[-1],
+                               values = autoCols,
+                               guide = guide,
+                               name = guidename)
   }
-  if (colours == "manual" & colour) {
-    cols2 <- c(branch.colour, custom.colours)
-    cols2 <- setNames(cols2, nm = c(branch.colour, levels(dend$colours)))
+  if (colours == "manual" & length(line_colours) > 0) {
+    manCols <- c(branch_colour, custom_colours)
+    manCols <- setNames(manCols, nm = c(branch_colour, levels(dend[[line_colours]])))
     dg <- dg +
-      scale_edge_colour_manual(values = cols2)
+      scale_edge_colour_manual(breaks = autoCols[-1],
+                               values = manCols,
+                               guide = guide,
+                               name = guidename)
   }
-  if (colours == "brewer" & colour) {
-    if (length(custom.colours) == 0) {
-      custom.colours = "Set3"
+  if (colours == "brewer" & length(line_colours) > 0) {
+    if (length(custom_colours) == 0) {
+      custom_colours = "Set3"
     }
-    cols3 <- c(branch.colour,
-               scales::brewer_pal(type = "div",
-                                  palette = custom.colours)(length(levels(dend$colours))))
-    cols3 <- setNames(cols3, nm = c(branch.colour, levels(dend$colours)))
+    brewCols <- c(branch_colour,
+                  scales::brewer_pal(type = "div",
+                                     palette = custom_colours)(length(levels(dend[[line_colours]]))))
+    brewCols <- setNames(brewCols, nm = c(branch_colour, levels(dend[[line_colours]])))
     dg <- dg +
-      scale_edge_colour_manual(values = cols3)
+      scale_edge_colour_manual(breaks = autoCols[-1],
+                               values = brewCols,
+                               guide = guide,
+                               name = guidename)
   }
-
-  #theme
+  if (length(line_colours) == 0) {
+    dg <- dg +
+      scale_edge_colour_manual(values = "black", guide = "none")
+  }
+  
+  # theme----
   if (theme == "bw") {
     dg <- dg +
       theme_bw() +
@@ -1451,141 +1531,153 @@ dna_plotCluster <- function(dend,
             axis.title = element_blank(),
             panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
-            text = element_text(size = fontSize),
+            text = element_text(size = font_size),
             axis.line = element_blank(),
-            #axis.text.y = element_blank(),
+            axis.ticks.x = element_blank(),
             axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
   }
   if (theme == "ggplot") {
     dg <- dg +
-      theme(text = element_text(size = fontSize))
+      theme(text = element_text(size = font_size))
   }
   if (theme == "void") {
     dg <- dg +
       theme_void() +
-      theme(text = element_text(size = fontSize))
+      theme(text = element_text(size = font_size))
   }
   if (theme == "light") {
     dg <- dg +
       theme_light() +
-      theme(text = element_text(size = fontSize))
+      theme(text = element_text(size = font_size))
   }
   if (theme == "dark") {
     dg <- dg +
       theme_dark() +
-      theme(text = element_text(size = fontSize))
+      theme(text = element_text(size = font_size))
   }
-  # labels
-  if (leaf.labels == "ticks") {
+  # labels----
+  if (leaf_labels == "ticks") {
     dg <- dg +
       scale_x_continuous(breaks = seq(0, length(dend$labels)-1, by = 1),
-                         label = dend$labels_short)
+                         label = dend$labels_short[dend$order])
   }
-  if (leaf.labels == "nodes") {
+  if (leaf_labels == "nodes") {
     if (circular == FALSE) {
-      if(colour){
-        dg <- dg +
-          geom_node_text(aes_string(label = "labels_short",
-                             filter = "leaf",
-                             colour = "cols"),
-                         angle=270,
-                         hjust=0,
-                         nudge_y = -0.02,
-                         size = fontSize)
-      } else {
-        dg <- dg +
-          geom_node_text(aes_string(label = "labels_short",
-                             filter = "leaf"),
-                         angle=270,
-                         hjust=0,
-                         nudge_y = -0.02,
-                         size = fontSize)
-      }
       dg <- dg +
+        geom_node_text(aes_string(label = "labels_short",
+                                  filter = "leaf",
+                                  colour = "cols3"),
+                       angle=270,
+                       hjust=0,
+                       nudge_y = -0.02,
+                       size = (font_size / .pt),
+                       show.legend = FALSE) +
         expand_limits(y = c(-2.3, 2.3))
+      #circular plots----
     } else {
-      if(colour){
-        dg <- dg +
-          geom_node_text(aes(filter = leaf,
-                             angle = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
-                                            node_angle(x, y) + 180,
-                                            node_angle(x, y)),
-                             label = labels_short,
-                             hjust = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
-                                            1.05,
-                                            -0.05),
-                             colour = cols),
-                         show.legend = show.legend) +
-          expand_limits(x = c(-2.3, 2.3), y = c(-2.3, 2.3))
-      } else {
-        dg <- dg +
-          geom_node_text(aes(filter = leaf,
-                             angle = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
-                                            node_angle(x, y) + 180,
-                                            node_angle(x, y)),
-                             label = labels_short,
-                             hjust = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
-                                            1.05,
-                                            -0.05)),
-                         show.legend = show.legend) +
-          expand_limits(x = c(-2.3, 2.3), y = c(-2.3, 2.3))
-      }
+      dg <- dg +
+        geom_node_text(aes(filter = leaf,
+                           angle = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
+                                          node_angle(x, y) + 180,
+                                          node_angle(x, y)),
+                           label = labels_short,
+                           hjust = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
+                                          1.05,
+                                          -0.05),
+                           
+                           colour = cols3),
+                       size = (font_size / .pt),
+                       show.legend = FALSE) +
+        expand_limits(x = c(-2.3, 2.3), y = c(-2.3, 2.3))
     }
   }
-
-  # line ends
-  if (lineends) {
-    if (activity & colour){
-      dg <- dg +
-        geom_node_point(aes_string(filter = "leaf",
-                            colour = "cols",
-                            size = "Activity",
-                            shape = "cols"),
-                        show.legend = show.legend,
-                        alpha = endsAlpha)
+  
+  # line ends----
+  if (length(line_ends) > 0) {
+    if (show_legend) {
+      guide <- "legend"
+      if (line_ends == "colours1") legendname <- attr(dend, "colours")[1]
+      if (line_ends == "colours2") legendname <- attr(dend, "colours")[2]
+      if (line_ends == "group") legendname <- "group"
+      legendname <- paste0(toupper(substr(legendname, 1, 1)),
+                           substr(legendname, 2, nchar(legendname)))
+    } else {
+      legendname <- waiver()
     }
-    if (!activity & colour){
+    if (activity){
       dg <- dg +
         geom_node_point(aes_string(filter = "leaf",
-                            colour = "cols",
-                            shape = "cols"),
-                        show.legend = show.legend,
-                        alpha = endsAlpha)
+                                   colour = "cols3",
+                                   size = "Activity",
+                                   shape = "cols4"),
+                        show.legend = show_legend,
+                        alpha = ends_alpha)
+    } else {
+      dg <- dg +
+        geom_node_point(aes_string(filter = "leaf",
+                                   colour = "cols3",
+                                   shape = "cols4"),
+                        size = ends_size,
+                        show.legend = show_legend,
+                        alpha = ends_alpha)
     }
-    if (activity & !colour){
+    
+    # custom_shapes----
+    if (length(custom_shapes) > 0) {
       dg <- dg +
-        geom_node_point(aes_string(filter = "leaf",
-                            size = "Activity",
-                            shape = "cols"),
-                        show.legend = show.legend,
-                        alpha = endsAlpha)
-    }
-    if (!activity & !colour){
+        scale_shape_manual(values = custom_shapes,
+                           name = legendname)
+    } else {
       dg <- dg +
-        geom_node_point(aes_string(filter = "leaf",
-                            shape = "cols"),
-                        show.legend = show.legend,
-                        alpha = endsAlpha)
+        scale_shape_discrete(name = legendname)
     }
   }
-  # cuttree rectangles see
-  # stackoverflow.com/questions/24140339/tree-cut-and-rectangles-around-clusters-for-a-horizontal-dendrogram-in-r
-
-  # color node text and points
-  # colour
-  if (colour) {
+  
+  # rectangles----
+  if (length(rectangles) > 0 & !circular) {
+    rect <- data.frame(label = dend$labels_short[dend$order],
+                       cluster = dend$group[dend$order],
+                       y = min(dend$height),
+                       x = seq_along(dend$labels_short)-1)
+    rect <- aggregate(x~cluster, rect, range)
+    rect$xmin <- rect$x[, 1] - mean(range(dend$order)) / 10
+    rect$xmax <- rect$x[, 2] + mean(range(dend$order)) / 10
+    rect$ymax <- min(dend$height) + max(range(dend$height)) / 10
+    
+    dg <- dg +
+      geom_rect(data = rect,
+                aes_string(xmin = "xmin",
+                           xmax = "xmax",
+                           ymin = 0,
+                           ymax = "ymax"),
+                color = rectangles,
+                fill = NA)
+  }
+  
+  # color node text and points----
+  if (length(line_colours) > 0) {
+    
     if (colours == "identity") {
       dg <- dg +
-        scale_colour_identity()
+        scale_colour_identity(guide = "none")
     }
     if (colours == "manual") {
       dg <- dg +
-        scale_colour_manual(values = cols2[-1])
+        scale_colour_manual(values = manCols[-1],
+                            guide = guide,
+                            name = guidename)
     }
     if (colours == "brewer") {
       dg <- dg +
-        scale_colour_manual(values = cols3[-1])
+        scale_colour_manual(values = brewCols[-1],
+                            guide = guide,
+                            name = guidename)
     }
+  }  else {
+    dg <- dg +
+      scale_colour_manual(values = "black",
+                          guide = "none",
+                          name = waiver())
   }
   return(dg)
 }

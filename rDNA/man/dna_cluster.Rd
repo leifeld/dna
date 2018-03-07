@@ -4,9 +4,9 @@
 \alias{dna_cluster}
 \title{Cluster network from a DNA connection}
 \usage{
-dna_cluster(connection, variable = "organization", rm.duplicates = FALSE,
-  clust.method = "ward.D2", qualifier = "agreement", colours = "color",
-  cut.k = NULL, cut.h = NULL, ...)
+dna_cluster(connection, variable = "organization", duplicates = "document",
+  clust.method = "ward.D2", colours1 = "color", colours2 = "value",
+  cutree.k = NULL, cutree.h = NULL, ...)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
@@ -14,22 +14,26 @@ dna_cluster(connection, variable = "organization", rm.duplicates = FALSE,
 
 \item{variable}{The first variable for network construction  (see
 \link{dna_network}). The second one defaults to "concept" but can be
-provided via ... if necessary.}
+provided via ... if necessary (see \code{variable2} in
+\code{dna_connection}).}
 
-\item{rm.duplicates}{Should duplicates be removed from documents in the
-database (see \link{dna_network}. This also influences if
-\link[vegan]{vegdist} or \link[stats]{dist} is used to calculate the
-dissimilarity matrix.}
+\item{duplicates}{Setting for excluding duplicate statements before network
+construction (for details see \link{dna_network}. If exclusion of
+duplicates results in a binary matrix, \link[vegan]{vegdist} will be used
+instead of \link[stats]{dist} to calculate the dissimilarity matrix.}
 
 \item{clust.method}{The agglomeration method to be used. See
 \link[stats]{hclust}.}
 
-\item{qualifier}{The qualifier variable. See \link{dna_network}.}
+\item{colours1, colours2}{Which attribute of variable from DNA should be used
+to assign colours? There are two sets of colours saved in the resulting
+object as \link{dna_plotCluster} has two graphical elements to distinguish
+between values: line_colours and line_ends. Possible values are "id", "value",
+"color", "type", "alias" and "note".}
 
-\item{colours}{Which attribute of variable from DNA should be used to assign
-colours? Additionally, can be "membership" if cut.k or cut.h are provided.}
-
-\item{cut.k, cut.h}{See k and h in \link[stats]{cutree}.}
+\item{cutree.k, cutree.h}{If cutree.k or cutree.h are provided, the tree from
+hierarchical clustering is cut into several groups. See $k$ and $h$ in
+\link[stats]{cutree} for details.}
 
 \item{...}{additional arguments passed to \link{dna_network}}
 }

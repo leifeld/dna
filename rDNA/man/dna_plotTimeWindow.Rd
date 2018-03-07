@@ -19,7 +19,7 @@ plot.}
 \item{rows, cols}{Number of rows and columns in which the plots are arranged.
 plot.}
 
-\item{...}{Not used. Additional parameters should be passed on to ggplot2 via
+\item{...}{Currently not used. Additional parameters should be passed on to ggplot2 via
 e.g. \code{+ theme_bw()}.}
 }
 \description{
