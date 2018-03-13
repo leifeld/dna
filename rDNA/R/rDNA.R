@@ -1126,7 +1126,8 @@ dna_plotCentrality <- function(connection,
 #' @author Johannes B. Gruber
 #' @export
 #' @importFrom vegan vegdist
-#' @importFrom stats setNames dist hclust cutree
+#' @importFrom stats setNames dist hclust cutree as.hclust
+#' @importFrom igraph graph_from_adjacency_matrix cluster_leading_eigen cluster_walktrap E 
 dna_cluster <- function(connection,
                         variable = "organization",
                         duplicates = "document",
@@ -1150,59 +1151,127 @@ dna_cluster <- function(connection,
     excl <- unlist(unname(excludeValues[qualifier]))
     excludeValues[qualifier] <- NULL
   }
-
-  lvls <- do.call(dna_network,
-                  c(list(connection = connection,
-                         networkType = "eventlist",
-                         excludeValues = excludeValues,
-                         verbose = FALSE
-                  ), dots))
- 
-  lvls <- unique(lvls[, qualifier])
- 
-  if (exists("excl")) {
-    lvls <- lvls[!lvls %in% excl]
-    if (length(lvls) < 1){
-      stop (paste0(
-        "You excluded all levels of \"", qualifier,
-        "\". Computation not possible."
-      ))
+  
+  # hclust----
+  if (clust.method %in% c("ward.D", 
+                          "ward.D2", 
+                          "single", 
+                          "complete", 
+                          "average",
+                          "mcquitty",
+                          "median",
+                          "centroid")) {
+    lvls <- do.call(dna_network,
+                    c(list(connection = connection,
+                           networkType = "eventlist",
+                           excludeValues = excludeValues,
+                           verbose = FALSE
+                    ), dots))
+    
+    lvls <- unique(lvls[, qualifier])
+    
+    if (exists("excl")) {
+      lvls <- lvls[!lvls %in% excl]
+      if (length(lvls) < 1){
+        stop (paste0(
+          "You excluded all levels of \"", qualifier,
+          "\". Computation not possible."
+        ))
+      }
     }
+    
+    dta <- lapply(lvls, function(l){
+      excludeVals = c(stats::setNames(list(l),
+                                      nm = qualifier),
+                      excludeValues)
+      
+      nw <- do.call(dna_network,
+                    c(list(connection = connection,
+                           networkType = "twomode",
+                           variable1 = variable,
+                           isolates = TRUE,
+                           duplicates = duplicates,
+                           qualifier = qualifier,
+                           excludeValues = excludeVals,
+                           verbose = FALSE)
+                      , dots)
+      )
+      
+      colnames(nw) <- paste(colnames(nw), "-", l)
+      return(nw)
+    })
+    dta <- do.call("cbind", dta)
+    dta <- dta[rowSums(dta) > 0, ]
+    dta <- dta[, colSums(dta) > 0]
+    if (all(dta %in% c(0, 1))){ # test if dta is binary
+      d <-  vegan::vegdist(dta, method = "jaccard")
+    } else {
+      d <-  dist(dta, method = "euclidean")
+    }
+    hc <- hclust(d, method = clust.method)
+    hc$activities <- unname(rowSums(dta))
   }
- 
-  dta <- lapply(lvls, function(l){
-    excludeVals = c(stats::setNames(list(l),
-                                    nm = qualifier),
-                    excludeValues)
-   
+  # igraph----
+    if (clust.method %in% c("edge_betweenness",
+                            "leading_eigen",
+                            "walktrap")) {
     nw <- do.call(dna_network,
                   c(list(connection = connection,
-                         networkType = "twomode",
+                         networkType = "onemode",
                          variable1 = variable,
-                         isolates = TRUE,
+                         isolates = FALSE,
                          duplicates = duplicates,
                          qualifier = qualifier,
-                         excludeValues = excludeVals,
                          verbose = FALSE)
                     , dots)
     )
-   
-    colnames(nw) <- paste(colnames(nw), "-", l)
-    return(nw)
-  })
-  dta <- do.call("cbind", dta)
-  dta <- dta[rowSums(dta) > 0, ]
-  dta <- dta[, colSums(dta) > 0]
-  if (all(dta %in% c(0, 1))){ # test if dta is binary
-    d <-  vegan::vegdist(dta, method = "jaccard")
-  } else {
-    d <-  dist(dta, method = "euclidean")
+    
+    
+    nw2 <- igraph::graph_from_adjacency_matrix(nw,
+                                               mode = "undirected",
+                                               #weighted = TRUE,
+                                               weighted = NULL,
+                                               diag = TRUE,
+                                               add.colnames = NULL)
+    
+    # igraph methods
+    if (clust.method == "edge_betweenness") {
+      hc <- igraph::cluster_edge_betweenness(nw2,
+                                             weights = igraph::E(nw2)$weight, 
+                                             directed = TRUE,
+                                             edge.betweenness = TRUE, 
+                                             merges = TRUE, 
+                                             bridges = TRUE,
+                                             modularity = TRUE, 
+                                             membership = TRUE)
+    }
+    if (clust.method == "leading_eigen") {
+      hc <- igraph::cluster_leading_eigen(nw2,
+                                          steps = -1, 
+                                          weights = NULL, 
+                                          start = NULL,
+                                          #options = arpack_defaults, 
+                                          callback = NULL, 
+                                          extra = NULL)
+    }
+    if (clust.method == "walktrap") {
+      hc <- igraph::cluster_walktrap(nw2,
+                                     weights = igraph::E(nw2)$weight, 
+                                     steps = 4,
+                                     merges = TRUE, 
+                                     modularity = TRUE, 
+                                     membership = TRUE)
+    }
+    
+    hc <- as.hclust(hc, hang = -1, use.modularity = FALSE)
+    hc$method <- clust.method
+    hc$activities <- unname(rowSums(nw))
+    
   }
-  hc <- hclust(d, method = clust.method)
+  
   if (!is.null(c(cutree.k, cutree.h))){
     hc$group <- cutree(hc, k = cutree.k, h = cutree.h)
   }
-  hc$activities <- unname(rowSums(dta))
   col <- dna_attributes(connection = connection,
                         statementType = "DNA Statement",
                         variable = variable,
@@ -1245,6 +1314,7 @@ dna_cluster <- function(connection,
 #' clust.l
 #' }
 #' @export
+#' @importFrom stats na.omit
 print.dna_cluster <- function(x, ...) {
   if (!is.null(x$call)) {
     cat("\nCall:\n", deparse(x$call), "\n\n", sep = "")
@@ -1252,10 +1322,10 @@ print.dna_cluster <- function(x, ...) {
   if (!is.null(x$method)) {
     cat("Cluster method   :", x$method, "\n")
   }
-  if (!is.null(x$dist.method)) {
+  if (!is.null(x$dist.method) & !is.na(x$dist.method)) {
     cat("Distance         :", x$dist.method, "\n")
   }
-  cat("Number of objects:", length(x$height) + 1, "\n")
+  cat("Number of objects:", length(x$labels), "\n")
   if (length(na.omit(attr(x, "cut"))) > 0) {
     cat("Cut at           :", paste(gsub("cutree.", "", 
                               names(attr(x, "cut"))), "=", 
@@ -1640,8 +1710,8 @@ dna_plotCluster <- function(dend,
                        y = min(dend$height),
                        x = seq_along(dend$labels_short)-1)
     rect <- aggregate(x~cluster, rect, range)
-    rect$xmin <- rect$x[, 1] - mean(range(dend$order)) / 10
-    rect$xmax <- rect$x[, 2] + mean(range(dend$order)) / 10
+    rect$xmin <- rect$x[, 1] - 0.25
+    rect$xmax <- rect$x[, 2] + 0.25
     rect$ymax <- min(dend$height) + max(range(dend$height)) / 10
     
     dg <- dg +

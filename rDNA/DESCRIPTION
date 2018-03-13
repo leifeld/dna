@@ -13,7 +13,7 @@ Depends:
     R (>= 3.0.0),
     rJava (>= 0.5-0)
 Imports: igraph (>= 1.1.0), stats (>= 3.0.0), ggplot2 (>= 2.2.1), ggraph (>= 1.0.0), vegan (>= 2.4.6), scales (>= 0.5.0)
-SystemRequirements: Java (>= 1.8)
+SystemRequirements: Java (>= 1.8), libudunits2-dev (Linux)
 License: GPL-3
 LazyData: true
 RoxygenNote: 6.0.1
