@@ -1,6 +1,5 @@
 package dna.export;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -160,7 +159,7 @@ public class Exporter extends JDialog {
 		this.setModal(true);
 		ImageIcon networkIcon = new ImageIcon(getClass().getResource("/icons/chart_organisation.png"));
 		this.setIconImage(networkIcon.getImage());
-		this.setLayout(new BorderLayout());
+		this.setLayout(new java.awt.BorderLayout());
 		
 		JPanel settingsPanel = new JPanel();
 		GridBagLayout g = new GridBagLayout();
@@ -1031,7 +1030,7 @@ public class Exporter extends JDialog {
 		toggleHelp();
 		settingsPanel.add(buttonPanel, gbc);
 		
-		this.add(settingsPanel, BorderLayout.NORTH);
+		this.add(settingsPanel, java.awt.BorderLayout.NORTH);
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
