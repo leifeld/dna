@@ -1,13 +1,5 @@
 package dna.export;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -89,7 +81,7 @@ public class Exporter extends JDialog {
 	HashMap<String, ArrayList<String>> excludeValues;
 	ArrayList<String> excludeAuthor, excludeSource, excludeSection, excludeType;
 	JTextArea excludePreviewArea;
-	Color fg;
+	java.awt.Color fg;
 	
 	// objects for R calls
 	String dbfile;
@@ -162,12 +154,12 @@ public class Exporter extends JDialog {
 		this.setLayout(new java.awt.BorderLayout());
 		
 		JPanel settingsPanel = new JPanel();
-		GridBagLayout g = new GridBagLayout();
+		java.awt.GridBagLayout g = new java.awt.GridBagLayout();
 		settingsPanel.setLayout(g);
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.anchor = GridBagConstraints.WEST;
-		gbc.insets = new Insets(3, 3, 3, 3);
-		gbc.fill = GridBagConstraints.HORIZONTAL;
+		java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
+		gbc.anchor = java.awt.GridBagConstraints.WEST;
+		gbc.insets = new java.awt.Insets(3, 3, 3, 3);
+		gbc.fill = java.awt.GridBagConstraints.HORIZONTAL;
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		gbc.gridheight = 1;
@@ -208,8 +200,8 @@ public class Exporter extends JDialog {
 		networkModesBox = new JComboBox<>(networkModesItems);
 		networkModesBox.setToolTipText(networkModesToolTip);
 		settingsPanel.add(networkModesBox, gbc);
-		networkModesBox.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		networkModesBox.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent e) {
 				String selected = (String) networkModesBox.getSelectedItem();
 				if (selected.equals("Two-mode network")) {
 					
@@ -320,10 +312,10 @@ public class Exporter extends JDialog {
 		settingsPanel.add(statementTypeBox, gbc);
 		final int HEIGHT = (int) statementTypeBox.getPreferredSize().getHeight();
 		final int WIDTH = 200;
-		Dimension d = new Dimension(WIDTH, HEIGHT);
+		java.awt.Dimension d = new java.awt.Dimension(WIDTH, HEIGHT);
 		networkModesBox.setPreferredSize(d);
-		statementTypeBox.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		statementTypeBox.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent e) {
 				StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
 				String[] varItems = getVariablesList(selected, false, true, false, false);
 				String[] qualifierItems = getVariablesList(selected, false, false, true, true);
@@ -352,11 +344,11 @@ public class Exporter extends JDialog {
 		fileFormatBox = new JComboBox<>(fileFormatItems);
 		fileFormatBox.setToolTipText(fileFormatToolTip);
 		settingsPanel.add(fileFormatBox, gbc);
-		fileFormatBox.setPreferredSize(new Dimension(WIDTH, HEIGHT));
-		statementTypeBox.setPreferredSize(new Dimension(WIDTH, HEIGHT));
+		fileFormatBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT));
+		statementTypeBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT));
 		
 		// second row of options
-		gbc.insets = new Insets(10, 3, 3, 3);
+		gbc.insets = new java.awt.Insets(10, 3, 3, 3);
 		gbc.gridwidth = 1;
 		gbc.gridx = 0;
 		gbc.gridy = 2;
@@ -429,30 +421,30 @@ public class Exporter extends JDialog {
 		aggregationLabel.setToolTipText(aggregationToolTip);
 		settingsPanel.add(aggregationLabel, gbc);
 		
-		gbc.insets = new Insets(3, 3, 3, 3);
+		gbc.insets = new java.awt.Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 3;
 		var1Box = new JComboBox<>(var1Items);
 		var1Box.setToolTipText(var1ToolTip);
 		settingsPanel.add(var1Box, gbc);
 		int HEIGHT2 = (int) var1Box.getPreferredSize().getHeight();
-		var1Box.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		var1Box.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 1;
 		var2Box = new JComboBox<>(var2Items);
 		var2Box.setToolTipText(var2ToolTip);
 		var2Box.setSelectedIndex(1);
 		settingsPanel.add(var2Box, gbc);
-		var2Box.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		var2Box.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		fg = var2Box.getForeground();
-		ActionListener varActionListener = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		java.awt.event.ActionListener varActionListener = new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent e) {
 				if (var1Box.getItemCount() < 1 || var2Box.getItemCount() < 1) {
 					var1Box.setBorder(null);
 					var2Box.setBorder(null);
 				} else if (var1Box.getSelectedItem().equals(var2Box.getSelectedItem())) {
-					var1Box.setBorder(BorderFactory.createLineBorder(Color.RED));
-					var2Box.setBorder(BorderFactory.createLineBorder(Color.RED));
+					var1Box.setBorder(BorderFactory.createLineBorder(java.awt.Color.RED));
+					var2Box.setBorder(BorderFactory.createLineBorder(java.awt.Color.RED));
 				} else {
 					var1Box.setBorder(null);
 					var2Box.setBorder(null);
@@ -467,9 +459,9 @@ public class Exporter extends JDialog {
 		qualifierBox = new JComboBox<>(qualifierItems);
 		qualifierBox.setToolTipText(qualifierToolTip);
 		settingsPanel.add(qualifierBox, gbc);
-		qualifierBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
-		qualifierBox.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		qualifierBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
+		qualifierBox.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent e) {
 				if (qualifierBox.getItemCount() == 0) {
 					aggregationBox.removeAllItems();
 					aggregationBox.addItem("ignore");
@@ -496,9 +488,9 @@ public class Exporter extends JDialog {
 		aggregationBox = new JComboBox<>(aggregationItems);
 		aggregationBox.setToolTipText(aggregationToolTip);
 		settingsPanel.add(aggregationBox, gbc);
-		aggregationBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
-		aggregationBox.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		aggregationBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
+		aggregationBox.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent e) {
 				if (aggregationBox.getItemCount() > 0) {
 					if (aggregationBox.getSelectedItem().equals("combine")) {
 						normalizationBox.removeAllItems();
@@ -526,7 +518,7 @@ public class Exporter extends JDialog {
 		
 		
 		// third row of options
-		gbc.insets = new Insets(10, 3, 3, 3);
+		gbc.insets = new java.awt.Insets(10, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 4;
 		JLabel normalizationLabel = new JLabel("Normalization");
@@ -585,21 +577,21 @@ public class Exporter extends JDialog {
 		duplicatesLabel.setToolTipText(duplicatesToolTip);
 		settingsPanel.add(duplicatesLabel, gbc);
 
-		gbc.insets = new Insets(3, 3, 3, 3);
+		gbc.insets = new java.awt.Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 5;
 		String[] normalizationItems = new String[] {"no", "activity", "prominence"};
 		normalizationBox = new JComboBox<>(normalizationItems);
 		normalizationBox.setToolTipText(normalizationToolTip);
 		settingsPanel.add(normalizationBox, gbc);
-		normalizationBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		normalizationBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 1;
 		String[] isolatesItems = new String[] {"only current nodes", "include isolates"};
 		isolatesBox = new JComboBox<>(isolatesItems);
 		isolatesBox.setToolTipText(isolatesToolTip);
 		settingsPanel.add(isolatesBox, gbc);
-		isolatesBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		isolatesBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 
 		gbc.gridx = 2;
 		String[] duplicatesItems = new String[] {"include all duplicates", "ignore per document", "ignore per calendar week", 
@@ -607,10 +599,10 @@ public class Exporter extends JDialog {
 		duplicatesBox = new JComboBox<>(duplicatesItems);
 		duplicatesBox.setToolTipText(duplicatesToolTip);
 		settingsPanel.add(duplicatesBox, gbc);
-		duplicatesBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		duplicatesBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		
 		// fourth row of options
-		gbc.insets = new Insets(10, 3, 3, 3);
+		gbc.insets = new java.awt.Insets(10, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 6;
 		JLabel startLabel = new JLabel("Include from");
@@ -652,7 +644,7 @@ public class Exporter extends JDialog {
 		timeWindowNumberLabel.setToolTipText(timeWindowToolTip);
 		settingsPanel.add(timeWindowNumberLabel, gbc);
 		
-		gbc.insets = new Insets(3, 3, 3, 3);
+		gbc.insets = new java.awt.Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 7;
 		SpinnerDateModel startModel = new SpinnerDateModel();
@@ -668,7 +660,7 @@ public class Exporter extends JDialog {
 		startSpinner.setEditor(new JSpinner.DateEditor(startSpinner, "yyyy-MM-dd - HH:mm:ss"));
 		startSpinner.setToolTipText(dateToolTip);
 		settingsPanel.add(startSpinner, gbc);
-		startSpinner.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		startSpinner.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 1;
 		SpinnerDateModel stopModel = new SpinnerDateModel();
@@ -679,7 +671,7 @@ public class Exporter extends JDialog {
 		stopSpinner.setEditor(new JSpinner.DateEditor(stopSpinner, "yyyy-MM-dd - HH:mm:ss"));
 		stopSpinner.setToolTipText(dateToolTip);
 		settingsPanel.add(stopSpinner, gbc);
-		stopSpinner.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		stopSpinner.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 2;
 		String[] timeWindowItems = new String[] {"no time window", "using events", "using seconds", "using minutes", 
@@ -687,16 +679,16 @@ public class Exporter extends JDialog {
 		timeWindowBox = new JComboBox<>(timeWindowItems);
 		timeWindowBox.setToolTipText(timeWindowToolTip);
 		settingsPanel.add(timeWindowBox, gbc);
-		timeWindowBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		timeWindowBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 3;
 		timeWindowSpinner = new JSpinner(new SpinnerNumberModel(100, 0, 100000, 1));
 		timeWindowSpinner.setToolTipText(timeWindowToolTip);
 		settingsPanel.add(timeWindowSpinner, gbc);
-		timeWindowSpinner.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
+		timeWindowSpinner.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		
 		// fifth row of options: exclude values from variables
-		gbc.insets = new Insets(10, 3, 3, 3);
+		gbc.insets = new java.awt.Insets(10, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 8;
 		JLabel excludeVariableLabel = new JLabel("Exclude from variable");
@@ -726,7 +718,7 @@ public class Exporter extends JDialog {
 		excludePreviewLabel.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludePreviewLabel, gbc);
 		
-		gbc.insets = new Insets(3, 3, 3, 3);
+		gbc.insets = new java.awt.Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 9;
 		excludeVariableList = new JList<String>();
@@ -737,7 +729,7 @@ public class Exporter extends JDialog {
 		excludeVariableScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		excludeVariableList.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludeVariableScroller, gbc);
-		excludeVariableScroller.setPreferredSize(new Dimension(WIDTH, (int) excludeVariableScroller.getPreferredSize().getHeight()));
+		excludeVariableScroller.setPreferredSize(new java.awt.Dimension(WIDTH, (int) excludeVariableScroller.getPreferredSize().getHeight()));
 		excludeAuthor = new ArrayList<String>();
 		excludeSource = new ArrayList<String>();
 		excludeSection = new ArrayList<String>();
@@ -860,7 +852,7 @@ public class Exporter extends JDialog {
 		excludeValueScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		excludeValueList.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludeValueScroller, gbc);
-		excludeValueScroller.setPreferredSize(new Dimension(WIDTH, (int) excludeValueScroller.getPreferredSize().getHeight()));
+		excludeValueScroller.setPreferredSize(new java.awt.Dimension(WIDTH, (int) excludeValueScroller.getPreferredSize().getHeight()));
 		excludeValueList.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
 				String selectedVariable = excludeVariableList.getSelectedValue();
@@ -932,8 +924,8 @@ public class Exporter extends JDialog {
 		gbc.gridx = 0;
 		gbc.gridy = 10;
 		helpBox = new JCheckBox("Display tooltips with instructions");
-		helpBox.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		helpBox.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent e) {
 				toggleHelp();
 			}
 			
@@ -941,14 +933,14 @@ public class Exporter extends JDialog {
 		settingsPanel.add(helpBox, gbc);
 		
 		gbc.gridx = 2;
-		gbc.anchor = GridBagConstraints.EAST;
-		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		gbc.anchor = java.awt.GridBagConstraints.EAST;
+		JPanel buttonPanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
 		JButton revertButton = new JButton("Revert", new ImageIcon(getClass().getResource("/icons/arrow_rotate_anticlockwise.png")));
 		String revertToolTip = "<html><p>Reset all settings to their default values.</p></html>";
 		revertButton.setToolTipText(revertToolTip);
 		buttonPanel.add(revertButton);
-		revertButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		revertButton.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent e) {
 				networkModesBox.setSelectedIndex(0);
 				int statementTypeIndex = -1;
 				for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
@@ -994,16 +986,16 @@ public class Exporter extends JDialog {
 		String cancelToolTip = "<html><p>Reset and close this window.</p></html>";
 		cancelButton.setToolTipText(cancelToolTip);
 		buttonPanel.add(cancelButton);
-		cancelButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		cancelButton.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent e) {
 				dispose();
 			}
 		});
 		exportButton = new JButton("Export...", new ImageIcon(getClass().getResource("/icons/accept.png")));
 		String exportToolTip = "<html><p>Select a file name and save the network using the current settings.</p></html>";
 		exportButton.setToolTipText(exportToolTip);
-		exportButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		exportButton.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent e) {
 				JFileChooser fc = new JFileChooser();
 				fc.setFileFilter(new FileFilter() {
 					public boolean accept(File f) {
@@ -2396,7 +2388,7 @@ public class Exporter extends JDialog {
 			}
 		}
 		int[] id = new int[names.length];
-		Color[] color = new Color[names.length];
+		java.awt.Color[] color = new java.awt.Color[names.length];
 		String[] type = new String[names.length];
 		String[] alias = new String[names.length];
 		String[] notes = new String[names.length];
