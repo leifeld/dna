@@ -140,7 +140,7 @@ knit_hooks$set(crop=hook_pdfcrop, document = function(x) {sub('\\usepackage[]{co
 
 This manual demonstrates how to install, set up, and use the open-source standalone software \texttt{Discourse Network Analyzer} (\dna) and its companion \R\ package \rdna\ \citep{leifeld2018rdna}, which are designed for researchers using the method \emph{discourse network analysis}.%
 \footnote{\emph{This manual is a work in progress and will be continuously updated during the year 2018.
-See \url{https://github.com/leifeld/dna/blob/master/manual/dna-manual.pdf} for the most recent version}.}
+See \url{https://github.com/leifeld/dna/blob/master/manual/} for the most recent version}.}
 By combining content analysis and dynamic network analysis, this method can reveal the structure and dynamics of policy debates.
 The method comprises three basic steps:
 \begin{enumerate}
