@@ -721,10 +721,10 @@ dna_timeWindow <- function(connection,
  
   facetValues <- c(facetValues, "all")
  
-  if( facet == "Authors" ){Authors <- facetValues} else {Authors <- character()}
-  if (facet == "Sources"){Sources <- facetValues} else {Sources <- character()}
-  if (facet == "Sections"){Sections <- facetValues} else {Sections <- character()}
-  if (facet == "Types"){Types <- facetValues} else {Types <- character()}
+  if (facet == "Authors" ) {Authors <- facetValues} else {Authors <- character()}
+  if (facet == "Sources") {Sources <- facetValues} else {Sources <- character()}
+  if (facet == "Sections") {Sections <- facetValues} else {Sections <- character()}
+  if (facet == "Types") {Types <- facetValues} else {Types <- character()}
   if (any(Authors %in% excludeAuthors)){
     cat(paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "),
         "is found in both \"Authors\" and \"excludeAuthors\".",
@@ -753,7 +753,6 @@ dna_timeWindow <- function(connection,
         " was removed from \"excludeTypes\".\n")
     excludeTypes <- excludeTypes[!excludeTypes %in% Types]
   }
- 
   if (method == "modularity"){
     mod.m <- lapply(facetValues, function(x){
       if (verbose|verbose == 2){cat("Calculating Type =", facetValues[facetValues %in% x], "\n")}
@@ -1102,9 +1101,14 @@ dna_plotCentrality <- function(connection,
 #'   construction (for details see \link{dna_network}. If exclusion of
 #'   duplicates results in a binary matrix, \link[vegan]{vegdist} will be used
 #'   instead of \link[stats]{dist} to calculate the dissimilarity matrix.
-#' @param clust.method The agglomeration method to be used. See
-#'   \link[stats]{hclust}.
-#' @param colours1,colours2 Which attribute of variable from DNA should be used
+#' @param clust.method The agglomeration method to be used. When set to
+#'   "ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median"
+#'   or "centroid" the respective methonds from \link[stats]{hclust} will be
+#'   used. When set to "edge_betweenness", "leading_eigen" or "walktrap"
+#'   \link[igraph]{cluster_edge_betweenness},
+#'   \link[igraph]{cluster_leading_eigen} or \link[igraph]{cluster_walktrap}
+#'   respectivly, will be used for clustering.
+#' @param attribut1,attribut2 Which attribute of variable from DNA should be used
 #'   to assign colours? There are two sets of colours saved in the resulting
 #'   object as \link{dna_plotCluster} has two graphical elements to distinguish
 #'   between values: line_colours and line_ends. Possible values are "id", "value",
@@ -1112,7 +1116,10 @@ dna_plotCentrality <- function(connection,
 #' @param cutree.k,cutree.h If cutree.k or cutree.h are provided, the tree from
 #'   hierarchical clustering is cut into several groups. See $k$ and $h$ in
 #'   \link[stats]{cutree} for details.
-#' @param ... additional arguments passed to \link{dna_network}
+#' @param ... Additional arguments passed to \link{dna_network}. This is
+#'   especially useful to set qualifier (defaults to "agreement") and
+#'   normalization (defaults to "no") if non-default values are needed for
+#'   clustering.
 #'  
 #' @examples
 #' \dontrun{
@@ -1132,8 +1139,8 @@ dna_cluster <- function(connection,
                         variable = "organization",
                         duplicates = "document",
                         clust.method = "ward.D2",
-                        colours1 = "color",
-                        colours2 = "value",
+                        attribut1 = "color",
+                        attribut2 = "value",
                         cutree.k = NULL,
                         cutree.h = NULL,
                         ...) {
@@ -1152,6 +1159,50 @@ dna_cluster <- function(connection,
     excludeValues[qualifier] <- NULL
   }
   
+  
+  lvls <- do.call(dna_network,
+                  c(list(connection = connection,
+                         networkType = "eventlist",
+                         excludeValues = excludeValues,
+                         verbose = FALSE
+                  ), dots))
+  
+  lvls <- unique(lvls[, qualifier])
+  
+  if (exists("excl")) {
+    lvls <- lvls[!lvls %in% excl]
+    if (length(lvls) < 1){
+      stop (paste0(
+        "You excluded all levels of \"", qualifier,
+        "\". Computation not possible."
+      ))
+    }
+  }
+  
+  dta <- lapply(lvls, function(l){
+    excludeVals = c(stats::setNames(list(l),
+                                    nm = qualifier),
+                    excludeValues)
+    
+    nw <- do.call(dna_network,
+                  c(list(connection = connection,
+                         networkType = "twomode",
+                         variable1 = variable,
+                         isolates = TRUE,
+                         duplicates = duplicates,
+                         qualifier = qualifier,
+                         excludeValues = excludeVals,
+                         verbose = FALSE)
+                    , dots)
+    )
+    
+    colnames(nw) <- paste(colnames(nw), "-", l)
+    return(nw)
+  })
+  dta <- do.call("cbind", dta)
+  dta <- dta[rowSums(dta) > 0, ]
+  dta <- dta[, colSums(dta) > 0]
+  
   # hclust----
   if (clust.method %in% c("ward.D", 
                           "ward.D2", 
@@ -1161,48 +1212,6 @@ dna_cluster <- function(connection,
                           "mcquitty",
                           "median",
                           "centroid")) {
-    lvls <- do.call(dna_network,
-                    c(list(connection = connection,
-                           networkType = "eventlist",
-                           excludeValues = excludeValues,
-                           verbose = FALSE
-                    ), dots))
-    
-    lvls <- unique(lvls[, qualifier])
-    
-    if (exists("excl")) {
-      lvls <- lvls[!lvls %in% excl]
-      if (length(lvls) < 1){
-        stop (paste0(
-          "You excluded all levels of \"", qualifier,
-          "\". Computation not possible."
-        ))
-      }
-    }
-    
-    dta <- lapply(lvls, function(l){
-      excludeVals = c(stats::setNames(list(l),
-                                      nm = qualifier),
-                      excludeValues)
-      
-      nw <- do.call(dna_network,
-                    c(list(connection = connection,
-                           networkType = "twomode",
-                           variable1 = variable,
-                           isolates = TRUE,
-                           duplicates = duplicates,
-                           qualifier = qualifier,
-                           excludeValues = excludeVals,
-                           verbose = FALSE)
-                      , dots)
-      )
-      
-      colnames(nw) <- paste(colnames(nw), "-", l)
-      return(nw)
-    })
-    dta <- do.call("cbind", dta)
-    dta <- dta[rowSums(dta) > 0, ]
-    dta <- dta[, colSums(dta) > 0]
     if (all(dta %in% c(0, 1))){ # test if dta is binary
       d <-  vegan::vegdist(dta, method = "jaccard")
     } else {
@@ -1212,12 +1221,13 @@ dna_cluster <- function(connection,
     hc$activities <- unname(rowSums(dta))
   }
   # igraph----
-    if (clust.method %in% c("edge_betweenness",
-                            "leading_eigen",
-                            "walktrap")) {
+  if (clust.method %in% c("edge_betweenness",
+                          "leading_eigen",
+                          "walktrap")) {
     nw <- do.call(dna_network,
                   c(list(connection = connection,
                          networkType = "onemode",
+                         qualifierAggregation = "subtract",
                          variable1 = variable,
                          isolates = FALSE,
                          duplicates = duplicates,
@@ -1225,42 +1235,34 @@ dna_cluster <- function(connection,
                          verbose = FALSE)
                     , dots)
     )
-    
-    
     nw2 <- igraph::graph_from_adjacency_matrix(nw,
                                                mode = "undirected",
-                                               #weighted = TRUE,
-                                               weighted = NULL,
-                                               diag = TRUE,
+                                               weighted = "weight",
+                                               diag = FALSE,
                                                add.colnames = NULL)
-    
-    # igraph methods
     if (clust.method == "edge_betweenness") {
       hc <- igraph::cluster_edge_betweenness(nw2,
                                              weights = igraph::E(nw2)$weight, 
-                                             directed = TRUE,
+                                             directed = FALSE,
                                              edge.betweenness = TRUE, 
                                              merges = TRUE, 
                                              bridges = TRUE,
-                                             modularity = TRUE, 
-                                             membership = TRUE)
-    }
-    if (clust.method == "leading_eigen") {
+                                             modularity = FALSE, 
+                                             membership = FALSE)
+    } else if (clust.method == "leading_eigen") {
       hc <- igraph::cluster_leading_eigen(nw2,
                                           steps = -1, 
-                                          weights = NULL, 
+                                          weights = igraph::E(nw2)$weight, 
                                           start = NULL,
-                                          #options = arpack_defaults, 
                                           callback = NULL, 
                                           extra = NULL)
-    }
-    if (clust.method == "walktrap") {
+    } else if (clust.method == "walktrap") {
       hc <- igraph::cluster_walktrap(nw2,
                                      weights = igraph::E(nw2)$weight, 
                                      steps = 4,
                                      merges = TRUE, 
-                                     modularity = TRUE, 
-                                     membership = TRUE)
+                                     modularity = FALSE, 
+                                     membership = FALSE)
     }
     
     hc <- as.hclust(hc, hang = -1, use.modularity = FALSE)
@@ -1276,8 +1278,8 @@ dna_cluster <- function(connection,
                         statementType = "DNA Statement",
                         variable = variable,
                         values = NULL)
-  hc$colours1 <- col[, colours1][match(hc$labels, col$value)]
-  hc$colours2 <- col[, colours2][match(hc$labels, col$value)]
+  hc$attribut1 <- col[, attribut1][match(hc$labels, col$value)]
+  hc$attribut2 <- col[, attribut2][match(hc$labels, col$value)]
   if (any(!is.null(c(cutree.h, cutree.k)))) {
     hc$group <- paste("Group", hc$group)
   } else {
@@ -1289,8 +1291,10 @@ dna_cluster <- function(connection,
     attr(hc, "cut") <- NA
   }
   hc$call = match.call()
-  attr(hc, "colours") <- c("colours1" = colours1, "colours2" = colours2)
+  attr(hc, "colours") <- c("attribut1" = attribut1, "attribut2" = attribut2)
   class(hc) <- c("dna_cluster", class(hc))
+  # add data for heatmap plot
+  hc$network <- dta
   return(hc)
 }
 
@@ -1361,7 +1365,7 @@ print.dna_cluster <- function(x, ...) {
 #'   determine size of line_ends (logical). Activity means the number of
 #'   statements which remained after duplicates were removed.
 #' @param line_colours Determines which data is used to colour the leafs of the
-#'   dendrogram. Can be either "colours1", "colours2" or "group". Set to
+#'   dendrogram. Can be either "attribut1", "attribut2" or "group". Set to
 #'   \code{character()} leafs-lines should not be coloured.
 #' @param colours There are three options from where to derive the colours in
 #'   the plot: (1.) "identity" tries to use the names of variables as colours,
@@ -1378,7 +1382,7 @@ print.dna_cluster <- function(x, ...) {
 #' @param ends_size If \code{activity = FALSE}, the size of the lineend symbols
 #'   can be set to one size for the whole plot.
 #' @param line_ends Determines which data is used to colour the line_ends of the
-#'   dendrogram. Can be either "colours1", "colours2" or "group". Set to
+#'   dendrogram. Can be either "attribut1", "attribut2" or "group". Set to
 #'   \code{character()} if no line ends should be displayed.
 #' @param custom_shapes If shapes are provided, those are used for line_ends
 #'   instead of the standard ones. Available shapes range from 0:25 and 32:127
@@ -1420,7 +1424,7 @@ print.dna_cluster <- function(x, ...) {
 dna_plotCluster <- function(dend,
                             shape = "elbows",
                             activity = FALSE,
-                            line_colours = "colours1",
+                            line_colours = "attribut1",
                             branch_colour = "#636363",
                             colours = "identity",
                             custom_colours = character(),
@@ -1507,32 +1511,28 @@ dna_plotCluster <- function(dend,
                       show.legend = show_legend ,
                       width = line_width,
                       alpha = line_alpha)
-  }
-  if (shape == "link"){
+  } else if (shape == "link"){
     dg <- dg +
       geom_edge_link(aes_string(colour = "cols1",
                                 edge_linetype = "linetype"),
                      show.legend = show_legend ,
                      width = line_width,
                      alpha = line_alpha)
-  }
-  if (shape == "diagonal"){
+  } else if (shape == "diagonal"){
     dg <- dg +
       geom_edge_diagonal(aes_string(colour = "cols1",
                                     edge_linetype = "linetype"),
                          show.legend = show_legend ,
                          width = line_width,
                          alpha = line_alpha)
-  }
-  if (shape == "arc"){
+  } else if (shape == "arc"){
     dg <- dg +
       geom_edge_arc(aes_string(colour = "cols1",
                                edge_linetype = "linetype"),
                     show.legend = show_legend ,
                     width = line_width,
                     alpha = line_alpha)
-  }
-  if (shape == "fan"){
+  } else if (shape == "fan"){
     dg <- dg +
       geom_edge_fan(aes_string(colour = "cols1",
                                edge_linetype = "linetype"),
@@ -1547,8 +1547,8 @@ dna_plotCluster <- function(dend,
     autoCols <- c(branch_colour, levels(dend[[line_colours]]))
     if (show_legend) {
       guide <- "legend"
-      if (line_colours == "colours1") guidename <- attr(dend, "colours")[1]
-      if (line_colours == "colours2") guidename <- attr(dend, "colours")[2]
+      if (line_colours == "attribut1") guidename <- attr(dend, "colours")[1]
+      if (line_colours == "attribut2") guidename <- attr(dend, "colours")[2]
       if (line_colours == "group") guidename <- "group"
       guidename <- paste0(toupper(substr(guidename, 1, 1)),
                           substr(guidename, 2, nchar(guidename)))
@@ -1564,8 +1564,7 @@ dna_plotCluster <- function(dend,
                                values = autoCols,
                                guide = guide,
                                name = guidename)
-  }
-  if (colours == "manual" & length(line_colours) > 0) {
+  } else if (colours == "manual" & length(line_colours) > 0) {
     manCols <- c(branch_colour, custom_colours)
     manCols <- setNames(manCols, nm = c(branch_colour, levels(dend[[line_colours]])))
     dg <- dg +
@@ -1573,8 +1572,7 @@ dna_plotCluster <- function(dend,
                                values = manCols,
                                guide = guide,
                                name = guidename)
-  }
-  if (colours == "brewer" & length(line_colours) > 0) {
+  } else if (colours == "brewer" & length(line_colours) > 0) {
     if (length(custom_colours) == 0) {
       custom_colours = "Set3"
     }
@@ -1605,22 +1603,18 @@ dna_plotCluster <- function(dend,
             axis.line = element_blank(),
             axis.ticks.x = element_blank(),
             axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-  }
-  if (theme == "ggplot") {
+  } else if (theme == "ggplot") {
     dg <- dg +
       theme(text = element_text(size = font_size))
-  }
-  if (theme == "void") {
+  } else if (theme == "void") {
     dg <- dg +
       theme_void() +
       theme(text = element_text(size = font_size))
-  }
-  if (theme == "light") {
+  } else if (theme == "light") {
     dg <- dg +
       theme_light() +
       theme(text = element_text(size = font_size))
-  }
-  if (theme == "dark") {
+  } else if (theme == "dark") {
     dg <- dg +
       theme_dark() +
       theme(text = element_text(size = font_size))
@@ -1630,8 +1624,7 @@ dna_plotCluster <- function(dend,
     dg <- dg +
       scale_x_continuous(breaks = seq(0, length(dend$labels)-1, by = 1),
                          label = dend$labels_short[dend$order])
-  }
-  if (leaf_labels == "nodes") {
+  } else if (leaf_labels == "nodes") {
     if (circular == FALSE) {
       dg <- dg +
         geom_node_text(aes_string(label = "labels_short",
@@ -1666,8 +1659,8 @@ dna_plotCluster <- function(dend,
   if (length(line_ends) > 0) {
     if (show_legend) {
       guide <- "legend"
-      if (line_ends == "colours1") legendname <- attr(dend, "colours")[1]
-      if (line_ends == "colours2") legendname <- attr(dend, "colours")[2]
+      if (line_ends == "attribut1") legendname <- attr(dend, "colours")[1]
+      if (line_ends == "attribut2") legendname <- attr(dend, "colours")[2]
       if (line_ends == "group") legendname <- "group"
       legendname <- paste0(toupper(substr(legendname, 1, 1)),
                            substr(legendname, 2, nchar(legendname)))
@@ -1730,14 +1723,12 @@ dna_plotCluster <- function(dend,
     if (colours == "identity") {
       dg <- dg +
         scale_colour_identity(guide = "none")
-    }
-    if (colours == "manual") {
+    } else if (colours == "manual") {
       dg <- dg +
         scale_colour_manual(values = manCols[-1],
                             guide = guide,
                             name = guidename)
-    }
-    if (colours == "brewer") {
+    } else if (colours == "brewer") {
       dg <- dg +
         scale_colour_manual(values = brewCols[-1],
                             guide = guide,
