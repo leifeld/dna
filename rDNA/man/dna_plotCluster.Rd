@@ -5,7 +5,7 @@
 \title{Plots dna_cluster objects}
 \usage{
 dna_plotCluster(dend, shape = "elbows", activity = FALSE,
-  line_colours = "colours1", branch_colour = "#636363",
+  line_colours = "attribut1", branch_colour = "#636363",
   colours = "identity", custom_colours = character(),
   line_ends = character(), custom_shapes = character(), ends_alpha = 1,
   ends_size = 3, rectangles = "red", leaf_linetype = "a",
@@ -26,7 +26,7 @@ determine size of line_ends (logical). Activity means the number of
 statements which remained after duplicates were removed.}
 
 \item{line_colours}{Determines which data is used to colour the leafs of the
-dendrogram. Can be either "colours1", "colours2" or "group". Set to
+dendrogram. Can be either "attribut1", "attribut2" or "group". Set to
 \code{character()} leafs-lines should not be coloured.}
 
 \item{branch_colour}{Provide one colour in which all branches are coloured.}
@@ -43,7 +43,7 @@ colours in the plot (if colours = "manual") or select a palette from
 \code{RColorBrewer} (if colours = "brewer").}
 
 \item{line_ends}{Determines which data is used to colour the line_ends of the
-dendrogram. Can be either "colours1", "colours2" or "group". Set to
+dendrogram. Can be either "attribut1", "attribut2" or "group". Set to
 \code{character()} if no line ends should be displayed.}
 
 \item{custom_shapes}{If shapes are provided, those are used for line_ends

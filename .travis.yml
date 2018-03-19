@@ -1,0 +1,29 @@
+language: r
+sudo: required
+cache: packages
+
+r:
+  - devel
+  - release
+  - oldrel
+  
+before_install:
+  - cd rDNA
+
+addons:
+  apt:
+    packages:
+       - default-jdk
+       - r-cran-rjava
+       - libudunits2-dev
+       
+r_packages:
+  - devtools
+
+r_github_packages:  
+  - igraph/rigraph
+  
+script:
+  - Rscript -e "install.packages(c('rJava', 'ggraph'))" # Some packages need to be installed for every R verion
+  - R CMD build .
+  - R CMD check *tar.gz

@@ -5,7 +5,7 @@
 \title{Cluster network from a DNA connection}
 \usage{
 dna_cluster(connection, variable = "organization", duplicates = "document",
-  clust.method = "ward.D2", colours1 = "color", colours2 = "value",
+  clust.method = "ward.D2", attribut1 = "color", attribut2 = "value",
   cutree.k = NULL, cutree.h = NULL, ...)
 }
 \arguments{
@@ -22,10 +22,15 @@ construction (for details see \link{dna_network}. If exclusion of
 duplicates results in a binary matrix, \link[vegan]{vegdist} will be used
 instead of \link[stats]{dist} to calculate the dissimilarity matrix.}
 
-\item{clust.method}{The agglomeration method to be used. See
-\link[stats]{hclust}.}
+\item{clust.method}{The agglomeration method to be used. When set to
+"ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median"
+or "centroid" the respective methonds from \link[stats]{hclust} will be
+used. When set to "edge_betweenness", "leading_eigen" or "walktrap"
+\link[igraph]{cluster_edge_betweenness},
+\link[igraph]{cluster_leading_eigen} or \link[igraph]{cluster_walktrap}
+respectivly, will be used for clustering.}
 
-\item{colours1, colours2}{Which attribute of variable from DNA should be used
+\item{attribut1, attribut2}{Which attribute of variable from DNA should be used
 to assign colours? There are two sets of colours saved in the resulting
 object as \link{dna_plotCluster} has two graphical elements to distinguish
 between values: line_colours and line_ends. Possible values are "id", "value",
@@ -35,7 +40,10 @@ between values: line_colours and line_ends. Possible values are "id", "value",
 hierarchical clustering is cut into several groups. See $k$ and $h$ in
 \link[stats]{cutree} for details.}
 
-\item{...}{additional arguments passed to \link{dna_network}}
+\item{...}{Additional arguments passed to \link{dna_network}. This is
+especially useful to set qualifier (defaults to "agreement") and
+normalization (defaults to "no") if non-default values are needed for
+clustering.}
 }
 \description{
 Clustering methods for DNA connections.
