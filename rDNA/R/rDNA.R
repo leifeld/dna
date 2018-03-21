@@ -95,12 +95,12 @@ dna_attributes <- function(connection,
 #'   instead of \link[stats]{dist} to calculate the dissimilarity matrix.
 #' @param clust.method The agglomeration method to be used. When set to
 #'   "ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median"
-#'   or "centroid" the respective methonds from \link[stats]{hclust} will be
+#'   or "centroid" the respective methods from \link[stats]{hclust} will be
 #'   used. When set to "edge_betweenness", "leading_eigen" or "walktrap"
 #'   \link[igraph]{cluster_edge_betweenness},
 #'   \link[igraph]{cluster_leading_eigen} or \link[igraph]{cluster_walktrap}
-#'   respectivly, will be used for clustering.
-#' @param attribut1,attribut2 Which attribute of variable from DNA should be used
+#'   respectively, will be used for clustering.
+#' @param attribute1,attribute2 Which attribute of variable from DNA should be used
 #'   to assign colours? There are two sets of colours saved in the resulting
 #'   object as \link{dna_plotDendro} has two graphical elements to distinguish
 #'   between values: line_colours and line_ends. Possible values are "id", "value",
@@ -131,8 +131,8 @@ dna_cluster <- function(connection,
                         variable = "organization",
                         duplicates = "document",
                         clust.method = "ward.D2",
-                        attribut1 = "color",
-                        attribut2 = "value",
+                        attribute1 = "color",
+                        attribute2 = "value",
                         cutree.k = NULL,
                         cutree.h = NULL,
                         ...) {
@@ -269,8 +269,8 @@ dna_cluster <- function(connection,
                         statementType = "DNA Statement",
                         variable = variable,
                         values = NULL)
-  hc$attribut1 <- col[, attribut1][match(hc$labels, col$value)]
-  hc$attribut2 <- col[, attribut2][match(hc$labels, col$value)]
+  hc$attribute1 <- col[, attribute1][match(hc$labels, col$value)]
+  hc$attribute2 <- col[, attribute2][match(hc$labels, col$value)]
   if (any(!is.null(c(cutree.h, cutree.k)))) {
     hc$group <- paste("Group", hc$group)
   } else {
@@ -282,7 +282,7 @@ dna_cluster <- function(connection,
     attr(hc, "cut") <- NA
   }
   hc$call = match.call()
-  attr(hc, "colours") <- c("attribut1" = attribut1, "attribut2" = attribut2)
+  attr(hc, "colours") <- c("attribute1" = attribute1, "attribute2" = attribute2)
   class(hc) <- c("dna_cluster", class(hc))
   # add data for heatmap plot
   hc$network <- dta
@@ -333,10 +333,10 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 
 #' Download the binary DNA JAR file
 #'
-#' Downloads the newset released DNA JAR file neccesary for running
+#' Downloads the newest released DNA JAR file necessary for running
 #' \code{dna_init}.
 #'
-#' This simpl function downloads the DNA JAR from the latest release.
+#' This simple function downloads the DNA JAR from the latest release.
 #'
 #' @param file You can choose to provide a path and name here. By default, the
 #'   file is downloaded into the current working directory and the name stays
@@ -345,7 +345,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' @examples
 #' dna_downloadJar()
 #' @export
-#' @import rJava
+#' @importFrom utils download.file
 dna_downloadJar <- function(file = "dna-2.0-beta20.jar") {
   url <- paste0("https://github.com/leifeld/dna/releases/download/v2.0-beta.20/dna-2.0-beta20.jar")
   download.file(url = url,
@@ -983,7 +983,7 @@ dna_plotCentrality <- function(connection,
 #'   determine size of line_ends (logical). Activity means the number of
 #'   statements which remained after duplicates were removed.
 #' @param line_colours Determines which data is used to colour the leafs of the
-#'   dendrogram. Can be either "attribut1", "attribut2" or "group". Set to
+#'   dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
 #'   \code{character()} leafs-lines should not be coloured.
 #' @param colours There are three options from where to derive the colours in
 #'   the plot: (1.) "identity" tries to use the names of variables as colours,
@@ -1000,7 +1000,7 @@ dna_plotCentrality <- function(connection,
 #' @param ends_size If \code{activity = FALSE}, the size of the lineend symbols
 #'   can be set to one size for the whole plot.
 #' @param line_ends Determines which data is used to colour the line_ends of the
-#'   dendrogram. Can be either "attribut1", "attribut2" or "group". Set to
+#'   dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
 #'   \code{character()} if no line ends should be displayed.
 #' @param custom_shapes If shapes are provided, those are used for line_ends
 #'   instead of the standard ones. Available shapes range from 0:25 and 32:127
@@ -1041,7 +1041,7 @@ dna_plotCentrality <- function(connection,
 dna_plotDendro <- function(clust,
                             shape = "elbows",
                             activity = FALSE,
-                            line_colours = "attribut1",
+                            line_colours = "attribute1",
                             branch_colour = "#636363",
                             colours = "identity",
                             custom_colours = character(),
@@ -1164,8 +1164,8 @@ dna_plotDendro <- function(clust,
     autoCols <- c(branch_colour, levels(clust[[line_colours]]))
     if (show_legend) {
       guide <- "legend"
-      if (line_colours == "attribut1") guidename <- attr(clust, "colours")[1]
-      if (line_colours == "attribut2") guidename <- attr(clust, "colours")[2]
+      if (line_colours == "attribute1") guidename <- attr(clust, "colours")[1]
+      if (line_colours == "attribute2") guidename <- attr(clust, "colours")[2]
       if (line_colours == "group") guidename <- "group"
       guidename <- paste0(toupper(substr(guidename, 1, 1)),
                           substr(guidename, 2, nchar(guidename)))
@@ -1276,8 +1276,8 @@ dna_plotDendro <- function(clust,
   if (length(line_ends) > 0) {
     if (show_legend) {
       guide <- "legend"
-      if (line_ends == "attribut1") legendname <- attr(clust, "colours")[1]
-      if (line_ends == "attribut2") legendname <- attr(clust, "colours")[2]
+      if (line_ends == "attribute1") legendname <- attr(clust, "colours")[1]
+      if (line_ends == "attribute2") legendname <- attr(clust, "colours")[2]
       if (line_ends == "group") legendname <- "group"
       legendname <- paste0(toupper(substr(legendname, 1, 1)),
                            substr(legendname, 2, nchar(legendname)))
@@ -1387,7 +1387,7 @@ dna_plotDendro <- function(clust,
 #'   \link[ggplot2]{scale_fill_gradient}. If more than two colours are provided
 #'   \link[ggplot2]{scale_fill_gradientn} is used instead.
 #' @param square If TRUE, will make the tiles of the heatmap quadratic.
-#' @param qualifierLevels Takes a list with integer values of the qulifier
+#' @param qualifierLevels Takes a list with integer values of the qualifier
 #'   levels (as characters) as names and character values as labels (See
 #'   example).
 #' @param ... Currently not used.

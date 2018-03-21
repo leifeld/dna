@@ -32,7 +32,7 @@ values. Colours are then derived from a sequential colour gradient palette.
 
 \item{square}{If TRUE, will make the tiles of the heatmap quadratic.}
 
-\item{qualifierLevels}{Takes a list with integer values of the qulifier
+\item{qualifierLevels}{Takes a list with integer values of the qualifier
 levels (as characters) as names and character values as labels (See
 example).}
 

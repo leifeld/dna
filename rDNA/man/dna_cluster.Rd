@@ -5,7 +5,7 @@
 \title{Cluster network from a DNA connection}
 \usage{
 dna_cluster(connection, variable = "organization", duplicates = "document",
-  clust.method = "ward.D2", attribut1 = "color", attribut2 = "value",
+  clust.method = "ward.D2", attribute1 = "color", attribute2 = "value",
   cutree.k = NULL, cutree.h = NULL, ...)
 }
 \arguments{
@@ -24,13 +24,13 @@ instead of \link[stats]{dist} to calculate the dissimilarity matrix.}
 
 \item{clust.method}{The agglomeration method to be used. When set to
 "ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median"
-or "centroid" the respective methonds from \link[stats]{hclust} will be
+or "centroid" the respective methods from \link[stats]{hclust} will be
 used. When set to "edge_betweenness", "leading_eigen" or "walktrap"
 \link[igraph]{cluster_edge_betweenness},
 \link[igraph]{cluster_leading_eigen} or \link[igraph]{cluster_walktrap}
-respectivly, will be used for clustering.}
+respectively, will be used for clustering.}
 
-\item{attribut1, attribut2}{Which attribute of variable from DNA should be used
+\item{attribute1, attribute2}{Which attribute of variable from DNA should be used
 to assign colours? There are two sets of colours saved in the resulting
 object as \link{dna_plotDendro} has two graphical elements to distinguish
 between values: line_colours and line_ends. Possible values are "id", "value",
