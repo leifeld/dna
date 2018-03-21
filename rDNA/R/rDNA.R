@@ -331,6 +331,31 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 }
 
 
+#' Download the binary DNA JAR file
+#'
+#' Downloads the newset released DNA JAR file neccesary for running
+#' \code{dna_init}.
+#'
+#' This simpl function downloads the DNA JAR from the latest release.
+#'
+#' @param file You can choose to provide a path and name here. By default, the
+#'   file is downloaded into the current working directory and the name stays
+#'   intact.
+#'
+#' @examples
+#' dna_downloadJar()
+#' @export
+#' @import rJava
+dna_downloadJar <- function(file = "dna-2.0-beta20.jar") {
+  url <- paste0("https://github.com/leifeld/dna/releases/download/v2.0-beta.20/dna-2.0-beta20.jar")
+  download.file(url = url,
+                destfile = file, 
+                mode = "wb",
+                cacheOK = FALSE,
+                extra = character())
+}
+
+
 #' Open the DNA GUI
 #'
 #' Start DNA and optionally load a database.
