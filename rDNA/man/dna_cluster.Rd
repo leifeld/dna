@@ -32,7 +32,7 @@ respectivly, will be used for clustering.}
 
 \item{attribut1, attribut2}{Which attribute of variable from DNA should be used
 to assign colours? There are two sets of colours saved in the resulting
-object as \link{dna_plotCluster} has two graphical elements to distinguish
+object as \link{dna_plotDendro} has two graphical elements to distinguish
 between values: line_colours and line_ends. Possible values are "id", "value",
 "color", "type", "alias" and "note".}
 
@@ -58,7 +58,7 @@ conn <- dna_connection(dna_sample())
 
 clust.l <- dna_cluster(connection)
 
-dna_plotCluster(clust.l)
+dna_plotDendro(clust.l)
 }
 }
 \author{

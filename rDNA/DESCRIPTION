@@ -1,6 +1,6 @@
 Package: rDNA
-Version: 2.0.52
-Date: 2018-03-7
+Version: 2.0.53
+Date: 2018-03-21
 Title: R Bindings for the Discourse Network Analyzer
 Authors@R: c( person("Philip", "Leifeld", email = "Philip.Leifeld@glasgow.ac.uk", role =
     c("aut", "cre", "cph")), 
@@ -12,7 +12,14 @@ Description: Control the Java software Discourse Network Analyzer (DNA) from
 Depends:
     R (>= 3.0.0),
     rJava (>= 0.5-0)
-Imports: igraph (>= 1.1.0), stats (>= 3.0.0), ggplot2 (>= 2.2.1), ggraph (>= 1.0.0), vegan (>= 2.4.6), scales (>= 0.5.0)
+Imports: igraph (>= 1.1.0), 
+         stats (>= 3.0.0), 
+         ggplot2 (>= 2.2.1),
+         reshape2 (>= 1.4.3),
+         ggraph (>= 1.0.0), 
+         vegan (>= 2.4.6), 
+         scales (>= 0.5.0),
+         cowplot (>= 0.9.2)         
 SystemRequirements: Java (>= 1.8), libudunits2-dev (Linux)
 License: GPL-3
 LazyData: true

@@ -102,7 +102,7 @@ dna_attributes <- function(connection,
 #'   respectivly, will be used for clustering.
 #' @param attribut1,attribut2 Which attribute of variable from DNA should be used
 #'   to assign colours? There are two sets of colours saved in the resulting
-#'   object as \link{dna_plotCluster} has two graphical elements to distinguish
+#'   object as \link{dna_plotDendro} has two graphical elements to distinguish
 #'   between values: line_colours and line_ends. Possible values are "id", "value",
 #'   "color", "type", "alias" and "note".
 #' @param cutree.k,cutree.h If cutree.k or cutree.h are provided, the tree from
@@ -120,7 +120,7 @@ dna_attributes <- function(connection,
 #'
 #' clust.l <- dna_cluster(connection)
 #'
-#' dna_plotCluster(clust.l)
+#' dna_plotDendro(clust.l)
 #' }
 #' @author Johannes B. Gruber
 #' @export
@@ -211,11 +211,10 @@ dna_cluster <- function(connection,
     }
     hc <- hclust(d, method = clust.method)
     hc$activities <- unname(rowSums(dta))
-  }
-  # igraph----
-  if (clust.method %in% c("edge_betweenness",
-                          "leading_eigen",
-                          "walktrap")) {
+    # igraph----
+  } else if (clust.method %in% c("edge_betweenness",
+                                 "leading_eigen",
+                                 "walktrap")) {
     nw <- do.call(dna_network,
                   c(list(connection = connection,
                          networkType = "onemode",
@@ -943,14 +942,14 @@ dna_plotCentrality <- function(connection,
 }
 
 
-#' Plots dna_cluster objects
+#' Plots a dendrogram from dna_cluster objects
 #'
-#' Plots objects derived via \link{dna_cluster}.
+#' Plots a dendrogram from objects derived via \link{dna_cluster}.
 #'
 #' This function is a convenience wrapper for several different dendrogram
 #' types, which can be plotted using the \code{ggraph} package.
 #'
-#' @param dend A \code{dna_cluster} object created by the \link{dna_cluster}
+#' @param clust A \code{dna_cluster} object created by the \link{dna_cluster}
 #'   function.
 #' @param shape The shape of the dendrogram. Available options are "elbows",
 #'   "link", "diagonal", "arc", and "fan". See
@@ -996,26 +995,25 @@ dna_plotCentrality <- function(connection,
 #' @param circular Logical. Should the layout be transformed to a circular
 #'   representation. See  \link[ggraph]{layout_dendrogram_auto}.
 #' @param show_legend Logical. Should a legend be displayed.#'
-#' @param ... additional arguments passed to \link{dna_network}. If you want to
-#'   add more plot options use \code{+} and the ggplot2 logic (see example).
+#' @param ... Not used. If you want to add more plot options use \code{+} and
+#'   the ggplot2 logic (see example).
 #'
 #' @examples
 #' \dontrun{
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
-#' at <- dna_attributes(conn, "DNA Statement", "organization")
-#' dg <- dna_plotCentrality(conn)
-#' dg
+#' clust <- dna_cluster(conn)
+#' dend <- dna_plotDendro(clust)
 #' 
 #' # Flip plot with ggplot2 command
 #' library("ggplot2")
-#' dg + coord_flip()
+#' dend + coord_flip()
 #' }
 #' @author Johannes B. Gruber
 #' @export
 #' @import ggraph
 #' @importFrom stats as.dendrogram is.leaf dendrapply aggregate
-dna_plotCluster <- function(dend,
+dna_plotDendro <- function(clust,
                             shape = "elbows",
                             activity = FALSE,
                             line_colours = "attribut1",
@@ -1039,34 +1037,34 @@ dna_plotCluster <- function(dend,
                             show_legend = TRUE,
                             ...) {
   # truncate lables----
-  dend$labels_short <- ifelse(nchar(dend$labels) > truncate,
+  clust$labels_short <- ifelse(nchar(clust$labels) > truncate,
                               paste0(gsub("\\s+$", "",
-                                          strtrim(dend$labels, width = truncate)),
+                                          strtrim(clust$labels, width = truncate)),
                                      "..."),
-                              dend$labels)
+                              clust$labels)
   
   # format as dendrogram
-  hierarchy <- stats::as.dendrogram(dend)
+  hierarchy <- stats::as.dendrogram(clust)
   # Add colours----
   hierarchy <- stats::dendrapply(hierarchy, function(x) {
     if (stats::is.leaf(x)) {
       if (length(line_colours) > 0) {
-        attr(x, "Colour1") <- as.character(dend[[line_colours]][match(as.character(labels(x)),
-                                                                      dend$labels)])
+        attr(x, "Colour1") <- as.character(clust[[line_colours]][match(as.character(labels(x)),
+                                                                      clust$labels)])
       } else {
         attr(x, "Colour1") <- ""
       }
       if (length(line_ends) > 0) {
-        attr(x, "Colour2") <- as.character(dend[[line_ends]][match(as.character(labels(x)),
-                                                                   dend$labels)])
+        attr(x, "Colour2") <- as.character(clust[[line_ends]][match(as.character(labels(x)),
+                                                                   clust$labels)])
       } else {
         attr(x, "Colour2") <- ""
       }
       
-      attr(x, "Activity") <- dend$activities[dend$order[match(as.character(labels(x)),
-                                                              dend$labels)]]
-      attr(x, "labels_short") <- dend$labels_short[match(as.character(labels(x)),
-                                                         dend$labels)]
+      attr(x, "Activity") <- clust$activities[clust$order[match(as.character(labels(x)),
+                                                              clust$labels)]]
+      attr(x, "labels_short") <- clust$labels_short[match(as.character(labels(x)),
+                                                         clust$labels)]
       attr(x, "linetype") <- leaf_linetype
     } else {
       if (length(line_colours) > 0) {
@@ -1137,12 +1135,12 @@ dna_plotCluster <- function(dend,
   dg <- dg +
     scale_edge_linetype_discrete(guide = "none")
   if (length(line_colours) > 0) {
-    dend[[line_colours]] <- as.factor(dend[[line_colours]])
-    autoCols <- c(branch_colour, levels(dend[[line_colours]]))
+    clust[[line_colours]] <- as.factor(clust[[line_colours]])
+    autoCols <- c(branch_colour, levels(clust[[line_colours]]))
     if (show_legend) {
       guide <- "legend"
-      if (line_colours == "attribut1") guidename <- attr(dend, "colours")[1]
-      if (line_colours == "attribut2") guidename <- attr(dend, "colours")[2]
+      if (line_colours == "attribut1") guidename <- attr(clust, "colours")[1]
+      if (line_colours == "attribut2") guidename <- attr(clust, "colours")[2]
       if (line_colours == "group") guidename <- "group"
       guidename <- paste0(toupper(substr(guidename, 1, 1)),
                           substr(guidename, 2, nchar(guidename)))
@@ -1152,7 +1150,7 @@ dna_plotCluster <- function(dend,
     }
   }
   if (colours == "identity" & length(line_colours) > 0) {
-    autoCols <- setNames(autoCols, nm = c(branch_colour, levels(dend[[line_colours]])))
+    autoCols <- setNames(autoCols, nm = c(branch_colour, levels(clust[[line_colours]])))
     dg <- dg +
       scale_edge_colour_manual(breaks = autoCols[-1],
                                values = autoCols,
@@ -1160,7 +1158,7 @@ dna_plotCluster <- function(dend,
                                name = guidename)
   } else if (colours == "manual" & length(line_colours) > 0) {
     manCols <- c(branch_colour, custom_colours)
-    manCols <- setNames(manCols, nm = c(branch_colour, levels(dend[[line_colours]])))
+    manCols <- setNames(manCols, nm = c(branch_colour, levels(clust[[line_colours]])))
     dg <- dg +
       scale_edge_colour_manual(breaks = autoCols[-1],
                                values = manCols,
@@ -1172,8 +1170,8 @@ dna_plotCluster <- function(dend,
     }
     brewCols <- c(branch_colour,
                   scales::brewer_pal(type = "div",
-                                     palette = custom_colours)(length(levels(dend[[line_colours]]))))
-    brewCols <- setNames(brewCols, nm = c(branch_colour, levels(dend[[line_colours]])))
+                                     palette = custom_colours)(length(levels(clust[[line_colours]]))))
+    brewCols <- setNames(brewCols, nm = c(branch_colour, levels(clust[[line_colours]])))
     dg <- dg +
       scale_edge_colour_manual(breaks = autoCols[-1],
                                values = brewCols,
@@ -1216,8 +1214,8 @@ dna_plotCluster <- function(dend,
   # labels----
   if (leaf_labels == "ticks") {
     dg <- dg +
-      scale_x_continuous(breaks = seq(0, length(dend$labels)-1, by = 1),
-                         label = dend$labels_short[dend$order])
+      scale_x_continuous(breaks = seq(0, length(clust$labels)-1, by = 1),
+                         label = clust$labels_short[clust$order])
   } else if (leaf_labels == "nodes") {
     if (circular == FALSE) {
       dg <- dg +
@@ -1253,8 +1251,8 @@ dna_plotCluster <- function(dend,
   if (length(line_ends) > 0) {
     if (show_legend) {
       guide <- "legend"
-      if (line_ends == "attribut1") legendname <- attr(dend, "colours")[1]
-      if (line_ends == "attribut2") legendname <- attr(dend, "colours")[2]
+      if (line_ends == "attribut1") legendname <- attr(clust, "colours")[1]
+      if (line_ends == "attribut2") legendname <- attr(clust, "colours")[2]
       if (line_ends == "group") legendname <- "group"
       legendname <- paste0(toupper(substr(legendname, 1, 1)),
                            substr(legendname, 2, nchar(legendname)))
@@ -1292,14 +1290,14 @@ dna_plotCluster <- function(dend,
   
   # rectangles----
   if (length(rectangles) > 0 & !circular) {
-    rect <- data.frame(label = dend$labels_short[dend$order],
-                       cluster = dend$group[dend$order],
-                       y = min(dend$height),
-                       x = seq_along(dend$labels_short)-1)
+    rect <- data.frame(label = clust$labels_short[clust$order],
+                       cluster = clust$group[clust$order],
+                       y = min(clust$height),
+                       x = seq_along(clust$labels_short)-1)
     rect <- aggregate(x~cluster, rect, range)
     rect$xmin <- rect$x[, 1] - 0.25
     rect$xmax <- rect$x[, 2] + 0.25
-    rect$ymax <- min(dend$height) + max(range(dend$height)) / 10
+    rect$ymax <- min(clust$height) + max(range(clust$height)) / 10
     
     dg <- dg +
       geom_rect(data = rect,
@@ -1335,6 +1333,253 @@ dna_plotCluster <- function(dend,
                           name = waiver())
   }
   return(dg)
+}
+
+
+#' Plots a heatmap from dna_cluster objects
+#'
+#' Plots a heatmap with dendrograms from objects derived via \link{dna_cluster}.
+#'
+#' This function plots a heatmap including dendrograms on the x- and y- axis of
+#' the heatmap plot. The available options for colouring the tiles can be
+#' displayed using \code{RColorBrewer::display.brewer.all()} (RColorBrewer needs
+#' to be installed).
+#'
+#' @param clust A \code{dna_cluster} object created by the \link{dna_cluster}
+#'   function.
+#' @param truncate Sets the number of characters to which labels should be
+#'   truncated.
+#' @param values Should values displayed in the tiles of the heatmap? Logical.
+#' @param colours There are two options: When "brewer" is selected, the function
+#'   \link[ggplot2]{scale_fill_distiller} is used to colour the heatmap tiles.
+#'   When "gradient" is selected, \link[ggplot2]{scale_fill_gradient} will be
+#'   used. The colour palette and low/high values can be supplied using the
+#'   argument \code{custom_colours}
+#' @param custom_colours For \code{colours = "brewer"} you can use either a
+#'   string with a palette name or the index number of a brewer palette (see
+#'   details). If \code{colours = "gradient"} you need to supply at least two
+#'   values. Colours are then derived from a sequential colour gradient palette.
+#'   \link[ggplot2]{scale_fill_gradient}. If more than two colours are provided
+#'   \link[ggplot2]{scale_fill_gradientn} is used instead.
+#' @param square If TRUE, will make the tiles of the heatmap quadratic.
+#' @param qualifierLevels Takes a list with integer values of the qulifier
+#'   levels (as characters) as names and character values as labels (See
+#'   example).
+#' @param ... Currently not used.
+#'
+#' @examples
+#' \dontrun{
+#' dna_init("dna-2.0-beta20.jar")
+#' conn <- dna_connection(dna_sample())
+#' clust <- dna_cluster(conn)
+#' dend <- dna_plotHeatmap(clust,
+#'                         qualifierLevels = list("0" = "no",
+#'                                                "1" = "yes"))
+#' }
+#' @author Johannes B. Gruber
+#' @export
+#' @import ggplot2
+#' @importFrom cowplot ggdraw insert_yaxis_grob insert_xaxis_grob
+#' @importFrom reshape2 melt
+dna_plotHeatmap <- function(clust,
+                            truncate = 40,
+                            values = FALSE,
+                            colours = character(),
+                            custom_colours = character(),
+                            square = TRUE,
+                            qualifierLevels = list("0" = "no",
+                                                   "1" = "yes"),
+                            ...) {
+  nw <- clust[["network"]]
+  # truncate column labels----
+  pn <- colnames(nw)
+  if (max(sapply(regmatches(pn, gregexpr("-", pn)), length)) == 0) {
+    pn <- ""
+  } else {
+    for (i in max(sapply(regmatches(pn, gregexpr("-", pn)), length))) {
+      pn <- sub("^.*-", "", pn)
+    }
+    colnames(nw) <- gsub("*.\\s+-\\s+[[:digit:]]$", 
+                         "", 
+                         colnames(nw))
+  }
+  colnames(nw) <- trim(colnames(nw),
+                       truncate - 3)
+  # test if truncation created duplicated colnames
+  if(any(unlist(sapply(unique(pn), function(i){
+    duplicated(colnames(nw)[pn == i])
+  })))){
+    warning("After truncation, some labels are now excatly the same. I will try to fix that.")
+    colnames(nw) <- paste0("L", pn, colnames(nw))
+    colnames(nw) <- paste0(make.unique(sub("...$", "", colnames(nw)), sep = " #"), "...")
+    colnames(nw) <- sub("^L.[[:digit:]]", "", colnames(nw))
+  }
+  if (any(!pn %in% "^$")) {
+    colnames(nw) <- paste0(colnames(nw),
+                           " -",
+                           pn)
+  }
+  # convert qualifier levels
+  if (length(qualifierLevels) > 0){
+    for (l in seq_len(length(qualifierLevels))) {
+      colnames(nw) <- gsub(paste0(names(qualifierLevels[l]), "$"),
+                           qualifierLevels[l],
+                           colnames(nw))
+    }
+  }
+  # truncate row labels----
+  row.names(nw) <- trim(row.names(nw),
+                        truncate)
+  
+  if(any(duplicated(row.names(nw)))){
+    warning("After truncation, some labels are now excatly the same. I will try to fix that.")
+    row.names(nw) <- paste0(make.names(sub("...$", "", row.names(nw)), unique=TRUE), "...")
+  }
+  if (!exists("method")) {
+    method <- ""
+  } else if (method == "heatmaply") {
+    heatmaply::heatmaply(nw)
+  }
+  # re-construct clust objects----
+  args <- c(as.list(clust$call)[-1],
+            formals(dna_cluster)[-1])
+  args <- args[!duplicated(names(args))]
+  if (args$clust.method %in% c("ward.D", 
+                               "ward.D2", 
+                               "single", 
+                               "complete", 
+                               "average",
+                               "mcquitty",
+                               "median",
+                               "centroid")) {
+    dend_y <- clust
+  } else {
+    warning(paste0("dna_plotHeatmap currently only works with",
+                   "clustering algorithms from hclust. Dendro",
+                   "grams are constructed using method \"ward",
+                   ".D2\" instead."))
+    if (all(nw %in% c(0, 1))){
+      d <-  vegan::vegdist(nw, method = "jaccard")
+    } else {
+      d <-  dist(nw, method = "euclidean")
+    }
+    dend_y <- hclust(d, method = "ward.D2")
+    dend_y$activities <- unname(rowSums(nw))
+    args$clust.method <- "ward.D2"
+  }
+  if (all(t(nw) %in% c(0, 1))){
+    d <-  vegan::vegdist(t(nw), method = "jaccard")
+  } else {
+    d <-  dist(t(nw), method = "euclidean")
+  }
+  dend_x <- hclust(d, method = args$clust.method)
+  
+  dend_x$activities <- unname(rowSums(t(nw)))
+  # plot clust y ----
+  plt_dendr_y <- dna_plotDendro(clust = dend_y,
+                                shape = "elbows", 
+                                activity = FALSE,
+                                line_colours = character(), 
+                                branch_colour = "#636363",
+                                colours = "identity", 
+                                custom_colours = character(),
+                                line_ends = character(), 
+                                custom_shapes = character(), 
+                                rectangles = character(), 
+                                leaf_linetype = "a",
+                                branch_linetype = "a", 
+                                line_width = 1, 
+                                line_alpha = 1, 
+                                font_size = 12,
+                                theme = "void", 
+                                truncate = 40, 
+                                leaf_labels = "ticks", 
+                                circular = FALSE,
+                                show_legend = FALSE) +
+    coord_flip() +
+    scale_y_reverse() 
+  # plot clust x ----
+  plt_dendr_x <- dna_plotDendro(clust = dend_x,
+                                shape = "elbows", 
+                                activity = FALSE,
+                                line_colours = character(), 
+                                branch_colour = "#636363",
+                                colours = "identity", 
+                                custom_colours = character(),
+                                line_ends = character(), 
+                                custom_shapes = character(), 
+                                rectangles = character(), 
+                                leaf_linetype = "a",
+                                branch_linetype = "a", 
+                                line_width = 1, 
+                                line_alpha = 1, 
+                                font_size = 12,
+                                theme = "void", 
+                                truncate = 40, 
+                                leaf_labels = "ticks", 
+                                circular = FALSE,
+                                show_legend = FALSE)
+  ## heatmap ----
+  df <- reshape2::melt(nw[dend_y$order, dend_x$order])
+  df$posy <- seq_len(length(levels(df$Var1)))
+  df$posx <- as.vector(sapply(seq_len(length(levels(df$Var2))), 
+                              rep, 
+                              length(levels(df$Var1))))
+  
+  plt_hmap <- ggplot(data = df , aes_string(x = "posx",
+                                            y = "posy",
+                                            fill = "value")) +
+    geom_tile() +
+    theme(axis.text.x = element_text(angle = 90, 
+                                     vjust = 0.5, 
+                                     hjust = 1),
+          panel.grid = element_blank(), 
+          axis.line = element_blank(),
+          axis.title = element_blank(),
+          axis.text = element_text(margin = margin(t = 0, 
+                                                   r = 0, 
+                                                   b = 0, 
+                                                   l = 0, 
+                                                   unit = "pt")),
+          plot.margin = unit(c(0, 0, 0, 0), "lines")) +
+    scale_y_continuous(breaks = unique(df$posy),
+                       labels = levels(df$Var1),
+                       position = "right", 
+                       expand = c(0, 0)) +
+    scale_x_continuous(breaks = unique(df$posx),
+                       labels = levels(df$Var2),
+                       position = "right", 
+                       expand = c(0, 0)) 
+  ### display values ----
+  if (square) plt_hmap <- plt_hmap + coord_fixed(expand = FALSE)
+  ### display values ----
+  if (values) {
+    plt_hmap <- plt_hmap +
+      geom_text(aes_string(label = "value"))
+  }
+  ## colour heatmap ----
+  if (length(colours) > 0) {
+    if (colours == "brewer") {
+      if (length(custom_colours) < 1) custom_colours <- 2
+      plt_hmap <- plt_hmap +
+        scale_fill_distiller(palette = custom_colours)
+    } else if (colours == "gradient"){
+      if (length(custom_colours) < 1){
+        stop(paste0("When gradient is selected for colours you need",
+                    " to supply at least two colours in the form \"",
+                    "c(\'gray\', \'blue\')\" to custom_colours")) 
+      }
+      plt_hmap <- plt_hmap +
+        scale_fill_gradientn(colours = custom_colours)
+    }
+  }
+  ### merge plots---
+  ggdraw(plot = 
+           insert_yaxis_grob(plot = 
+                               insert_xaxis_grob(plot = plt_hmap, 
+                                                 plt_dendr_x, 
+                                                 position = "top"),
+                             plt_dendr_y, position = "left"))
 }
 
 
@@ -1742,4 +1987,21 @@ print.dna_cluster <- function(x, ...) {
 #' @export
 print.dna_connection <- function(x, ...) {
   .jcall(x$dna_connection, "V", "rShow")
+}
+
+
+#' Truncate labels
+#'
+#' Internal function, used to truncate labels
+#'
+#' @param x A character string
+#' @param n May number of character to truncate to
+#'
+#' @author Philip Leifeld, Johannes B. Gruber
+trim <- function(x, n){
+  ifelse(nchar(x) > n,
+         paste0(gsub("\\s+$", "",
+                     strtrim(x, width = n)),
+                "..."),
+         x)
 }
