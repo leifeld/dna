@@ -341,18 +341,24 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' @param file You can choose to provide a path and name here. By default, the
 #'   file is downloaded into the current working directory and the name stays
 #'   intact.
+#' @param force Logical. Should the file be overwritten if it already exists.
 #'
 #' @examples
 #' dna_downloadJar()
 #' @export
 #' @importFrom utils download.file
-dna_downloadJar <- function(file = "dna-2.0-beta20.jar") {
+dna_downloadJar <- function(file = "dna-2.0-beta20.jar",
+                            force = FALSE) {
   url <- paste0("https://github.com/leifeld/dna/releases/download/v2.0-beta.20/dna-2.0-beta20.jar")
-  download.file(url = url,
-                destfile = file, 
-                mode = "wb",
-                cacheOK = FALSE,
-                extra = character())
+  if (any(file.exists(file), force)) {
+    download.file(url = url,
+                  destfile = file, 
+                  mode = "wb",
+                  cacheOK = FALSE,
+                  extra = character())
+  } else {
+    warning("Newest DNA JAR file already exists. Try \"force = TRUE\" to download it anyway")
+  }
 }
 
 
