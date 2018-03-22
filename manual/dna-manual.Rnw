@@ -948,18 +948,19 @@ devtools::install_github("leifeld/dna/rDNA", args = "--no-multiarch")
 @
 
 After this is done as well, the final step of the installation is to test if \rdna\ can be loaded into \R\ correctly and to perform a basic operation with it---opening \dna\ from within \R.
-In order to do so, you first need to download \dna, which can also be done in \R\ with the \code{download.file} command (see Chapter~\ref{chp:rdna} for more details on what these commands mean).
+In order to do so, you first need to download \dna, which can also be done in \R\ with the \code{dna\_downloadJar} command (see Chapter~\ref{chp:rdna} for more details on what these commands mean).
+<<eval=TRUE, echo = FALSE>>=
+rDNA::dna_downloadJar() 
+@
 <<eval=FALSE, results = 'tex', message = FALSE>>=
-# download two files necessary to test rDNA
-download.file(
-  "https://github.com/leifeld/dna/raw/master/manual/dna-2.0-beta20.jar",
-  destfile = "dna-2.0-beta20.jar", mode = "wb") # download DNA jar
+# download rDNA JAR
+dna_downloadJar() # download DNA jar
 
 # load library
 library("rDNA")
 
 # initialise the file you just downloaded
-dna_init("dna-2.0-beta20.jar")
+dna_init()
 
 # start up DNA from R with the sample file to see if everything worked
 dna_gui(infile = dna_sample())
@@ -1548,6 +1549,9 @@ Thus you can recode the document type for all documents at once, ensuring that a
 Now that you know how to create a database and organise the documents in it, it's time to start with the actual coding.
 This section describes how to create, edit and navigate through statements as well as how to employ the regex highlighter and search function to make coding of statements easier and faster.
 If you want to recreate the steps outlined in this section for practice, you should download the file \code{sample.dna} from the \dna\ \url{https://github.com/leifeld/dna/releases} and open it with the newest version of \dna\ from the same page---if you haven't already done that.
+This sample is a small excerpt from a larger empirical research project that tries to map the ideological debates around American climate politics in the U.S. Congress over time.
+Details about the dataset from which this excerpt is taken are provided by \citet{fisher2013mapping, fisher2013where}.
+Here, it suffices to say that the \texttt{sample.dna} file contains speeches from hearings in the U.S.\ Congress in which interest groups and legislators make statements about their views on climate politics. 
 
 \section{Creating a \dna\ Statement}\label{sec:createstat}
 \FloatBarrier
@@ -1756,7 +1760,7 @@ This will put some further information about each option on your screen when you
 \end{figure}
 
 
-\section{Type of Network}
+\section{Type of Network}\label{sec:typeofn}
 The first thing to consider is which type of network you want to export.
 There are three options: one-mode networks, two-mode networks and event lists.
 
@@ -2705,9 +2709,10 @@ Examples include cluster analysis or community detection, scaling and applicatio
 \R\ is also flexible in terms of combining and matching the data from \dna\ with other data sources.
 
 \section{Getting Started with \rdna}
-The first step is to install \R.
+The first step is to install \R---which was explained in Section~\ref{chp:installation}).
 Installing additional \R\ packages for network analysis and clustering, such as \texttt{statnet} \citep{handcock2008statnet, goodreau2008statnet, handcock2016statnet}, \texttt{xergm} \citep{leifeld2018temporal, leifeld2017xergm}, \texttt{igraph} \citep{csardi2006igraph}, and \texttt{cluster} \citep{maechler2017cluster}, is recommended.
-Moreover, it is necessary to install the \texttt{rJava} package \citep{urbanek2017rjava}, on which the \rdna\ package depends, and the \texttt{devtools} package \citep{wickham2018devtools}, which permits installing \R\ packages from GitHub (see Section~\ref{sec:installdna}).
+Moreover, it is necessary to install and correctly set up the \texttt{rJava} package \citep{urbanek2017rjava}, on which the \rdna\ package depends, and the \texttt{devtools} package \citep{wickham2018devtools}, which permits installing \R\ packages from GitHub (see Section~\ref{sec:installdna}).
+To install the packages neccessary for this section, simply execute the following commands:
 
 <<eval=FALSE>>=
 install.packages("statnet")
@@ -2718,15 +2723,8 @@ install.packages("rJava")
 install.packages("devtools")
 @
 
-After installing these supplementary packages, the \rdna\ package can be installed from \github.
-The \texttt{devtools} package contains a function that permits easy installation of \R\ packages from GitHub and can be used as follows to install \rdna:
-
-<<eval=FALSE>>=
-library("devtools")
-install_github("leifeld/dna/rDNA")
-@
-
-Once installed, the \rdna\ package must be attached to the workspace:
+Nefore going on, the \rdna\ package must be attached to the workspace. 
+If you have already set up \rdna\ (see Section~\ref{sec:installdna}) you can do this with:
 
 <<eval=TRUE, results = 'tex', message = FALSE>>=
 library("rDNA")
@@ -2740,12 +2738,19 @@ set.seed(12345)
 
 Now we are able to use the package.
 The first step is to initialize \dna.
-Out of the box, \rdna\ does not know where the \dna\ \texttt{.jar} file is located.
-We need to register \dna\ with \rdna\ to use them together.
-To do that, one needs to save the \dna\ \texttt{.jar} file to the working directory of the current \R\ session and then initialize \dna\ as follows (with \texttt{dna-2.0-beta20.jar} in this example):
+Out of the box, \rdna\ does not know where the \dna\ \texttt{.jar} file is located, but will look for the newest version of it in your working directory.
+We also need to register \dna\ with \rdna\ to use them together.
+To do that, you need to save the \dna\ \texttt{.jar} file to the working directory of the current \R\ session.
+If you haven't already downlaoded \dna, you can do this from \R\ by running \code{dna\_downloadJar()}.
+This will place the newest version of \dna\ in your working directory.
+Then  you can initialize \dna\ as follows (with \texttt{dna-2.0-beta20.jar} in this example):
 
-<<eval=TRUE, results = 'tex', message = FALSE>>=
+<<eval=FALSE>>=
 dna_init("dna-2.0-beta20.jar")
+
+# If you use the current beta version (e.g., you have just downloaded it via
+# dna_downloadJar) you can omit the file name
+dna_init()
 @
 
 After initializing \dna, we can open the \dna\ graphical user interface from the \R\ command line:
@@ -2767,15 +2772,15 @@ dna_gui("sample.dna")
 dna_gui(dna_sample())
 @
 
-In addition to opening the GUI, we will want to retrieve networks and attributes from \dna.
-For this to happen, a connection with a \dna\ database must first be established using the \code{dna\_connection} function:
+In addition to opening the GUI, we will want to retrieve networks and attributes from \dna---which is the main purpose of \rdna!
+For this to happen, a connection with a \dna\ database must first be established using the \code{dna\_connection} function, which works similar to \code{dna\_gui}:
 
 <<eval=TRUE, warning=FALSE>>=
 conn <- dna_connection(dna_sample())
 @
 
 The \code{dna\_connection} function accepts a file name of the database including full or relative path (or, alternatively, a connection string to a remote \texttt{MySQL} database) and optionally the login and password for the database (in case a remote \texttt{MySQL} database is used).
-Details about the connection can be printed by calling the resulting object called \texttt{conn}.
+Details about the connection can be printed by calling the resulting object named \code{conn}.
 
 After initializing \dna\ and establishing a connection to a database, we can now retrieve data from \dna.
 We will start with a simple example of a two-mode network from the sample database.
@@ -2785,26 +2790,35 @@ To compute the network matrix, the connection that we just established must be s
 nw <- dna_network(conn)
 @
 
-The resulting matrix can be plotted using visualization functions from the \texttt{statnet} suite of packages:
-
+The resulting matrix is the same that you have seen in Table~\ref{tab:twomode}.
+Another useful fact about the \R\ environment is that there are functions for nearly every task you might want to perform in network analysis and it is also very well suited for plotting.
+The object we just created for example can easily be plotted with a single line of code in the  \texttt{statnet} suite of packages:
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 4, fig.height = 4, crop = TRUE>>=
+# First attach the statnet package
 library("statnet")
+
+# Then simply use gplot
 gplot(nw)
 @
 
-It is also easily possible to retrieve the attributes of a variable, for example the colours and types of organizations, using the \code{dna\_attributes} function:
+It is also easily possible to retrieve the attributes of a variable, for example the colours and types of ogranisations , using the \code{dna\_attributes} function:
 
 <<eval=TRUE, results = 'tex'>>=
 at <- dna_attributes(conn)
 @
 
-The result is a data frame with organizations in the rows and one column per organizational attribute.
+The result is a data frame with organizations in the rows and one column per organizational attribute:
+<<eval=TRUE, echo = FALSE, results = 'tex'>>=
+kable(at, format = "latex", booktabs = TRUE, linesep = "",
+      caption = "Attributes of \"organization\" from the sample database\\label{tab:attribute}") %>%
+  kable_styling(latex_options = c("striped", "scale_down", "HOLD_position"))
+@
 The next section will provide usage examples of both the \code{dna\_network} and the \code{dna\_attributes} functions.
 
 
 \section{Retrieving Networks and Attributes}\label{sec:retnet}
 This section will explore the \code{dna\_network} function and facilities for retrieving attributes in more detail.
-The \code{dna\_network} function has a number of arguments, which resemble the export options in the \dna\ export window.
+The \code{dna\_network} function has a number of arguments, which resemble the export options in the \dna\ export window (see Chapter~\ref{chp:dna-export}).
 The help page for the \code{dna\_network} function provides details on these arguments.
 It can be opened using the command
 
@@ -2812,10 +2826,11 @@ It can be opened using the command
 help("dna_network")
 @
 
+If you are using \rstudio, this will open the help window, which is by default in the lower right corner of the user interface. Instead of typing \code{help("Name\_of\_Function")} into the console you can also use \code{?Name\_of\_Function} or use the search bar in the help window in \rstudio.
+
 We will start with a simple example: a one-mode congruence network of organizations in a policy debate.
-The \texttt{sample.dna} database is a small excerpt from a larger empirical research project that tries to map the ideological debates around American climate politics in the U.S. Congress over time.
-Details about the dataset from which this excerpt is taken are provided by \citet{fisher2013mapping, fisher2013where}.
-Here, it suffices to say that the \texttt{sample.dna} file contains speeches from hearings in the U.S.\ Congress in which interest groups and legislators make statements about their views on climate politics. 
+We will use the same \texttt{sample.dna} database as in Chapter~\ref{chp:dna-export})
+As mentioned above, it is a small excerpt from a larger empirical research project that tries to map the ideological debates around American climate politics in the U.S. Congress over time.
 Accordingly, one should expect to find a polarized debate with environmental groups on one side and industrial interest groups on the other side.
 To compute a one-mode congruence network, the following code can be used:
 
@@ -2832,11 +2847,11 @@ congruence <- dna_network(conn,
 
 The result is an organization $\times$ organization matrix, where the cells represent on how many concepts any two actors (i\,e., the row organization and the column organization) had the same issue stance (by values of the qualifier variable \code{agreement}).
 
-The arguments of the \code{dna\_network} function resemble the options in the \dna\ export window.
+If you have read Chapter~\ref{chp:dna-export}, you can clearly see now that the arguments of the \code{dna\_network} function resemble the options in the \dna\ export window.
 Details on the various arguments of the function can be obtained by displaying the help page (\code{?dna\_network}).
 In the code chunk above, \code{statementType = "DNA Statement"} indicates which statement type should be used for the network export.
 In this case, the statement type \texttt{\dna\ Statement} contains the variables \code{organization}, \code{concept}, and \code{agreement}.
-The argument \code{qualifierAggregation = "congruence"} causes \rdna\ to count how often the unique elements of \code{variable1} have an identical value on the \code{qualifier} variable (here: \code{agreement}) when they refer to a concept (\code{variable2}).
+The argument \code{qualifierAggregation = "congruence"} causes \rdna\ to count how often the unique elements of \code{variable1} have an identical value on the \code{qualifier} variable (here: \code{agreement}) when they refer to a concept (\code{variable2}; more details can be found in Section~\ref{sec:typeofn}).
 
 If the algorithm finds duplicate statements within documents---i.\,e., statements containing the same organization, concept, and agreement pattern---, only one of them is retained for the analysis (\code{duplicates = "document"}).
 
@@ -2853,22 +2868,31 @@ plot(nw,
      )
 @
 
-Here, we used the \code{edge.lwd} argument of the \code{plot.network} function to make the line width proportional to the strength of congruence between actors.
+A little background in \R\ is needed to understand what is happening here.
+The plot function in \R\ is somewhat special as it can handle a lot of different objects.
+Instead of trying to plot every object in the same way, \R\ will automatically detect its class and use a specific plotting method for it.
+You can detect a class of the object we are plotting yourself with the function \code{class(nw)}.
+Since the class of this object is \code{network}, \R\ will automatically use \code{plot.network}.
+That means tha if you want to learn more about the plotting method we used above, you can simply type \code{help(plot.network)} into the \R\ Console.
+
+Here, we additionally used the \code{edge.lwd} argument of the \code{plot.network} function to make the line width proportional to the strength of congruence between actors.
 We used squared edge weights to emphasize the difference between low and high edge weights.
-We also displayed the labels of the nodes at half the normal size, suppressed arrow heads, and changed the colour of the edges to grey.
+And we also displayed the labels of the nodes at half the normal size, suppressed arrow heads, and changed the colour of the edges to grey.
 More information about the visualization capabilities of the \texttt{network} and \texttt{sna} packages are provided by \citet{butts2008social, butts2008network, butts2015network}.
 
-The network is not particularly polarized.
+As you can see now, the network is not particularly polarized.
 We can suspect that some of the concepts are not very contested.
-If they are supported by all actors, this may mask the extent of polarization with regard to the other concepts.We can see if this is the case by plotting the agreement and disagreement towards concepts with \code{dna\_plotCentrality}:
+If they are supported by all actors, this may mask the extent of polarization with regard to the other concepts. We can see if this is the case by plotting the agreement and disagreement towards concepts with \code{dna\_plotCentrality}:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 10, fig.height = 5, crop = TRUE>>=
 dna_plotCentrality(conn,
                    of = "concept",
                    fontSize = 10)
 @
+
 It looks like the the concept ``There should be legislation to regulate emissions.'' is in fact very consensual.
 By repeating the same command with a few different options we can check if the organizations do in fact all agree on this matter:
+
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 10, fig.height = 5, crop = TRUE>>=
 dna_plotCentrality(conn,
                    of = "organization",
@@ -2877,9 +2901,12 @@ dna_plotCentrality(conn,
                         "There should be legislation to regulate emissions."),
                    invertValues = TRUE)
 @
+
 Instead of plotting agreement towards the concept, \code{of = "organization"} shows how often organizations agreed or disagreed with any statements.
 Yet, by combining \code{excludeValues} and \code{invertValues = TRUE}, we tell \R\ to \emph{only} regard the statement we want to look at.
-The plot shows that everyone but the ``National Petrochemical \& Refiners Association'' agrees to the concept we chose, which indicates that consnesus on the statement ``There should be legislation to regulate emissions.'' obfuscates the real structure of the network.
+Again, you can get help with this function with the command \code{help(dna\_plotCentrality)}.
+
+The plot shows that everyone but the ``National Petrochemical \& Refiners Association'' agrees to the concept we chose, which indicates that consensus on the statement ``There should be legislation to regulate emissions.'' obfuscates the real structure of the network.
 Therefore we should exclude it from the congruence network.
 To do that, we need to export and plot the congruence network again and use the \code{excludeValues} argument this time:
 
@@ -2905,7 +2932,7 @@ plot(nw,
      )
 @
 
-This reveals the structure of the actor congruence network.
+This reveals the structure of the actor congruence network much better.
 There are two camps revolving around environmental groups on the right and industrial interest groups and state actors on the left, with \texttt{Energy and Environmental Analysis, Inc.} taking a bridging position.
 The strongest belief congruence ties can be found within, rather than between, the coalitions.
 
@@ -2913,9 +2940,10 @@ Next, we should tweak the congruence network further by changing the appearance 
 We can use the colours for the organization types saved in the database and apply them to the nodes in the network.
 We can also make the size of each node proportional to its activity.
 The \code{dna\_attributes} function serves to retrieve these additional data from \dna.
-The result is a data frame with the relevant data for each organization in the \texttt{colour} and \texttt{frequency} columns:
+The result is a data frame with the relevant data for each organization in the \texttt{colour} and \texttt{frequency} columns:%
+\footnote{This prints the data.frame directly to the console. If you wish to examine the data.frame in a spreadsheet-style viewer instead, you can use \code{View(at)}.}
 
-<<eval=TRUE, results = 'show'>>=
+<<eval = TRUE, results = 'show'>>=
 at <- dna_attributes(conn, 
                      statementType = "DNA Statement", 
                      variable = "organization")
@@ -2958,17 +2986,18 @@ The argument \code{networkType = "twomode"} is necessary because the rows and co
 The arguments \code{variable1 = "organization"} and \code{variable2 = "concept"} define which variables should be used for the rows and columns, respectively.
 The arguments \code{qualifier = "agreement"} and \code{qualifierAggregation = "combine"} define how the cells of the matrix should be populated:
 \code{agreement} is a binary variable, and the \code{combine} option causes a cell to have a value of $0$ if the organization never refers to the concept, $1$ if the organization refers to the respective concept exclusively in a positive way, $2$ if the organization refers to the concept exclusively in a negative way, and $3$ if there are both positive and negative statements by the organization about the concept.
+We have covered this before in detail in Section~\ref{sec:qualifier}.
 \rdna\ reports on the \R\ console what each combination means.
 
 As in the previous example, the resulting network matrix can be converted to a \texttt{network} object (as defined in the \texttt{network} package).
 The colours of the edges can be stored as an edge attribute, and the resulting object can be plotted with different colours representing positive, negative, and ambivalent mentions.
 
-<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 5, crop = TRUE>>=
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 6, crop = TRUE>>=
 nw <- network(affil, bipartite = TRUE)
 colors <- as.character(t(affil))
-colors[colors == "3"] <- "blue"
-colors[colors == "2"] <- "red"
-colors[colors == "1"] <- "green"
+colors[colors == "3"] <- "deepskyblue"
+colors[colors == "2"] <- "indianred"
+colors[colors == "1"] <- "#31a354"
 colors <- colors[colors != "0"]
 set.edge.attribute(nw, "color", colors)
 plot(nw, 
@@ -2985,6 +3014,15 @@ It was necessary to work with the transposed \texttt{affil} matrix (using the \c
 Finally, we plotted the network object with edge colours and labels.
 In the visualization, we used white nodes for organizations and black nodes for concepts.
 
+A side not on colours in \R: As you can see in this code chunk, there are three kinds of colours which \R\ can process.
+Simple general colour names like \emph{black} and \emph{white}, very specific colour names like \emph{deepskyblue} and \emph{indianred}, and hexadecimal numbers that represent a specific mixture of red, green and blue.
+For finding the specific names, there is an extensive \href{https://www.nceas.ucsb.edu/~frazier/RSpatialGuides/colorPaletteCheatsheet.pdf}{R colour cheatsheet}, which is also a good resource to get a quick overview of colours in R as well.
+Using hexadecimal numbers might seem overly complicated for the task of picking a colour for a plot at first.
+However, there are two reasons why you should consider it anyway.
+First, it is nowadays very easy to install a colour picker addon in your web browser, which gives you the opportunity to pick any colour you like on a website and use it for your own plots in \R.
+And second, because there is a fantastic website called \url{colorbrewer2.org} that offers a number of very pleasant looking colour palettes which can make your plots appear more modern.
+The easiest way to use colours from both sources is by entering the hexadecimal numbers, preceded by \texttt{\#}.
+
 We can now see the opinions of all actors on the various concepts.
 The blue edge indicates that \texttt{Energy and Environmental Analysis, Inc.} has both positive and negative things to say about the concept \texttt{``Emissions legislation should regulate CO2''}.
 This is why this organization acts as a bridge between the two camps in the congruence network.
@@ -2992,18 +3030,134 @@ Furthermore, we can now see more clearly that the concept we omitted in the cong
 The green edges span both camps, and this caused additional connections between the two groups.
 The negative tie is ignored in the construction of the congruence network because conflicts are not counted and there is no second red tie to that concept.
 
-% \section{Cluster analysis}
-% TODO
-%As mentioned in Section~\refsec:normal
+\section{Cluster analysis}
+As briefly mentioned in Section~\ref{sec:normal}, it is often fertile to perform clustering techniques on networks retrieved via discourse network analysis to make it easy to detect communities in the discourse.
+Especially as networks get bigger, it can quickly get very hard to see the different alliances in a network plot.
+Furthermore, as some actors tend to have especially high or low profiles in a discussion, due to their different levels of access to, for example, the media, the strength of ties can quickly get masked by some actors being able to express ties more often than others.
+To get around some of this problem, we have included the function \code{dna\_cluster} to make it very easy for users to normalise and cluster networks using Euclidean and Jaccard distance measures and hierarchical clustering.
+Again you can get help on the function using \code{help(dna\_cluster)}.
 
-% \section{Heat maps}
-% TODO
+We can perform the clustering directly on the connection to the sample database we have been using above and do not need to call \code{dna\_network} first:
+
+<<eval=TRUE, results = 'tex'>>=
+clust <- dna_cluster(conn)
+clust
+@
+
+As you can see from the information printed on the screen when \code{clust} was called, the cluster method used by default is \texttt{ward.D2}.
+The distance measure is set automatically, based on the properties of the network. Since the default of \code{help(dna\_cluster)} is to exclude duplicated statements on the document level (\code{duplicates = "document"}), the resulting network matrix is binary, meaning that 1 represents a connection between actors and 0 means there is no connection. If you turn the removal of duplicates off, the Euclidean distance will be used instead of Jaccard:
+
+<<eval=TRUE, results = 'tex'>>=
+clust <- dna_cluster(conn,
+                     duplicates = "include")
+clust
+@
+
+You can directly plot objects from \code{dna\_cluster} calling the same plot command as above:
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 5, fig.height = 7, out.width = "40%", out.height = "40%", crop = TRUE>>=
+plot(clust)
+@
+
+As you can see, this produces a simple dendrogram which shows the different clusters as branches and the organisations as leafs of a tree.
+This plot might be informative enough in some cases, but it is neither very appealing nor is it easy to customise its shape and colours.
+This is why we have integrated a special plot function into \rdna\ to make the life of users easier and to produce arguably nicer plots which can be directly used for publication:
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 5, fig.height = 7, out.width = "40%", out.height = "40%", crop = TRUE>>=
+dna_plotDendro(clust)
+@
+
+As you can see, this is essentially the same plot but the overly long labels on the x-axis were truncated (you can set the maximum number of characters via \code{truncate =}), the leaves of the dendrogram have the colours chosen for each organisation in \dna, and the branches now consist of dashed lines to highlight the clusters better.
+When you look into the help for \code{dna\_plotDendro} you will see that the function is highly customisable and has several more features than we will highlight here.
+
+But first of all, what you can see from the plot is that it appears like the discussion consist of three broad clusters.
+``National Petrochemical \& Refiners Association'', ``Energy and Environmental Analysis, Inc.'' and the ``Senate'' appear to form one cluster; the ``Alliance to Save Energy'', ``Sierra Club'' and ``U.S. Public Interest Research Group'' make up the second one; while the ``Environmental Protection Agency'' seems to be a single community on its own.
+But remember, that data for this plot still includes all duplicated statements and the concept which we have identified in the last section to be so consensual, that is masks the conflict in this discussion.
+
+When we completely remove duplicates and the problematic concept, the picture looks a bit different:
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 5, fig.height = 7, out.width = "40%", out.height = "40%", crop = TRUE>>=
+clust <- dna_cluster(conn,
+                     duplicates = "acrossrange",
+                     attribute1 = "type",
+                     cutree.k = 2,
+                     excludeValues = list("concept" = 
+                                            "There should be legislation to regulate emissions."))
+dna_plotDendro(clust,
+               shape = "diagonal",
+               colours = "brewer",
+               rectangles = "red")
+@
+
+Now we can see that the two main branches of the dendrogram show the same communities we have identified in the network plot. 
+As you have noticed, we have also changed some other things about the plot such as its shape, the selection of colours and we have plotted red rectangles around the two main clusters.
+As mentioned before, the function is highly customisable and can visualise four different information about the variables:
+
+\begin{description}
+\item[\code{leaf\_colours}] Takes the values \code{"attribute1"} and \code{"attribute2"} and colours the leaves accordingly. What values are in attribute1 and attribute2 of the object you are plotting can be set in \code{"dna\_cluster"}. In this example, it was set to \code{"type"}, which means that the type of organisation was used to colour leaves.
+\item[\code{leaf\_ends}] This works in the same way as \code{leaf\_colours} but instead of colours the leaves, it assigns different shapes to the line ends of the leaves.
+\item[\code{activity}] This can be either turned on or off via \code{TRUE} and \code{FALSE}. If turned on, the size of the line ends will be determined by the activity of the leaf in the network---i\,.e., how many statements it made (minus the duplicated statements, if you chose to exclude them). 
+\item[\code{rectangles}] You can either provide a colour value to draw rectangles around groups of leaves or it they will disappear (which is the default). The group membership of each organisation in above's example was determined by providing \code{cutree.k = 2} in \code{"dna\_cluster"}. If you neither provide a value for \code{cutree.k} nor \code{cutree.h}, all leaves will belong to the same group.
+\end{description}
+
+Theerefore it is possible to visualise a lot of different information in just one plot, which is great for publication, or if you want to use the plot to discover certain patterns for further analysis. Th following plot therfore uses the full potential of the function.
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
+clust <- dna_cluster(conn,
+                     variable = "person",
+                     attribute1 = "in network",
+                     attribute2 = "type",
+                     cutree.k = 2,
+                     excludeValues = list("concept" = 
+                                            "There should be legislation to regulate emissions."))
+library("ggplot2")
+dna_plotDendro(clust,
+               activity = TRUE,
+               shape = "diagonal",
+               truncate = 20,
+               leaf_colours = "attribute1",
+               colours = "brewer",
+               custom_colours = "Set1",
+               rectangles = "#e34a33",
+               leaf_ends = "attribute2",
+               ends_alpha = 0.8,
+               leaf_labels = "ticks") +
+  coord_flip()
+  
+@
+
+As you can see in this example, you can make further changes to the plot using commands from the \texttt{ggplot2} package \citep{wickham2009ggplot2}.
+This package is very popular in the \R\ community and you can find many tutorial online on how to produce plots with it.
+As \code{dna\_plotDendro} essentially uses \texttt{ggplot2} under the hood, you use functions from \texttt{ggplot2} and its extensions to manipulate the appearence of the dendrogram further.
+In this case, we add \code{+ coord\_flip()} after the end of the call to \code{dna\_plotDendro} to rotate the plot by 90°.
+
+
+
+
+\section{Heat maps}
+Implemented in \rdna\ is also a function to create heatmaps.
+Heatmaps are especially helpful to get a quick overview of a large matrix, to see where values are especially high or low.
+Combined with the dendrograms introduced in the last section, they can thus be helpful to get an insight into which concepts determine clustering most.
+The function to do this is called \code{dna\_plotHeatmap} and takes objects that were created with \code{dna\_cluster}---just as \code{dna\_plotDendro}:
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
+clust <- dna_cluster(conn)
+dna_plotHeatmap(clust)
+  
+@
+
+
 
 % \section{Multi-dimensional scaling}
 % TODO
 
 % \section{Correspondence analysis}
 % TODO
+
+% \section{More advanced network plots}
+% TODO
+% include hive plots and other plots from ggraph
+% include interactive network plots from visNetwork and networkD3
+% See https://www.jessesadler.com/post/network-analysis-with-r/
 
 \bibliographystyle{apalike}
 \bibliography{dna-manual}
