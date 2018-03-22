@@ -5,12 +5,12 @@
 \title{Plots a dendrogram from dna_cluster objects}
 \usage{
 dna_plotDendro(clust, shape = "elbows", activity = FALSE,
-  line_colours = "attribute1", branch_colour = "#636363",
+  leaf_colours = "attribute1", branch_colour = "#636363",
   colours = "identity", custom_colours = character(),
-  line_ends = character(), custom_shapes = character(), ends_alpha = 1,
-  ends_size = 3, rectangles = "red", leaf_linetype = "a",
+  leaf_ends = character(), custom_shapes = character(), ends_alpha = 1,
+  ends_size = 3, rectangles = character(), leaf_linetype = "a",
   branch_linetype = "b", line_width = 1, line_alpha = 1, font_size = 12,
-  theme = "bw", truncate = 40, leaf_labels = "ticks", circular = FALSE,
+  theme = "bw", truncate = 30, leaf_labels = "ticks", circular = FALSE,
   show_legend = TRUE, ...)
 }
 \arguments{
@@ -22,10 +22,10 @@ function.}
 \link[ggraph]{layout_dendrogram_auto}.}
 
 \item{activity}{Should activity of variable in \link{dna_cluster} be used to
-determine size of line_ends (logical). Activity means the number of
+determine size of leaf_ends (logical). Activity means the number of
 statements which remained after duplicates were removed.}
 
-\item{line_colours}{Determines which data is used to colour the leafs of the
+\item{leaf_colours}{Determines which data is used to colour the leafs of the
 dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
 \code{character()} leafs-lines should not be coloured.}
 
@@ -42,14 +42,14 @@ defaults to \code{Set3}).}
 colours in the plot (if colours = "manual") or select a palette from
 \code{RColorBrewer} (if colours = "brewer").}
 
-\item{line_ends}{Determines which data is used to colour the line_ends of the
+\item{leaf_ends}{Determines which data is used to colour the leaf_ends of the
 dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
 \code{character()} if no line ends should be displayed.}
 
-\item{custom_shapes}{If shapes are provided, those are used for line_ends
+\item{custom_shapes}{If shapes are provided, those are used for leaf_ends
 instead of the standard ones. Available shapes range from 0:25 and 32:127}
 
-\item{ends_alpha}{Alpha of all line_ends}
+\item{ends_alpha}{Alpha of all leaf_ends}
 
 \item{ends_size}{If \code{activity = FALSE}, the size of the lineend symbols
 can be set to one size for the whole plot.}

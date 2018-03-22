@@ -33,7 +33,7 @@ respectively, will be used for clustering.}
 \item{attribute1, attribute2}{Which attribute of variable from DNA should be used
 to assign colours? There are two sets of colours saved in the resulting
 object as \link{dna_plotDendro} has two graphical elements to distinguish
-between values: line_colours and line_ends. Possible values are "id", "value",
+between values: leaf_colours and leaf_ends. Possible values are "id", "value",
 "color", "type", "alias" and "note".}
 
 \item{cutree.k, cutree.h}{If cutree.k or cutree.h are provided, the tree from

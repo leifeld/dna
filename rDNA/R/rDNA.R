@@ -103,7 +103,7 @@ dna_attributes <- function(connection,
 #' @param attribute1,attribute2 Which attribute of variable from DNA should be used
 #'   to assign colours? There are two sets of colours saved in the resulting
 #'   object as \link{dna_plotDendro} has two graphical elements to distinguish
-#'   between values: line_colours and line_ends. Possible values are "id", "value",
+#'   between values: leaf_colours and leaf_ends. Possible values are "id", "value",
 #'   "color", "type", "alias" and "note".
 #' @param cutree.k,cutree.h If cutree.k or cutree.h are provided, the tree from
 #'   hierarchical clustering is cut into several groups. See $k$ and $h$ in
@@ -350,7 +350,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 dna_downloadJar <- function(file = "dna-2.0-beta20.jar",
                             force = FALSE) {
   url <- paste0("https://github.com/leifeld/dna/releases/download/v2.0-beta.20/dna-2.0-beta20.jar")
-  if (any(file.exists(file), force)) {
+  if (any(!file.exists(file), force)) {
     download.file(url = url,
                   destfile = file, 
                   mode = "wb",
@@ -986,9 +986,9 @@ dna_plotCentrality <- function(connection,
 #'   "link", "diagonal", "arc", and "fan". See
 #'   \link[ggraph]{layout_dendrogram_auto}.
 #' @param activity Should activity of variable in \link{dna_cluster} be used to
-#'   determine size of line_ends (logical). Activity means the number of
+#'   determine size of leaf_ends (logical). Activity means the number of
 #'   statements which remained after duplicates were removed.
-#' @param line_colours Determines which data is used to colour the leafs of the
+#' @param leaf_colours Determines which data is used to colour the leafs of the
 #'   dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
 #'   \code{character()} leafs-lines should not be coloured.
 #' @param colours There are three options from where to derive the colours in
@@ -1005,12 +1005,12 @@ dna_plotCentrality <- function(connection,
 #' @param line_alpha Alpha of all lines.
 #' @param ends_size If \code{activity = FALSE}, the size of the lineend symbols
 #'   can be set to one size for the whole plot.
-#' @param line_ends Determines which data is used to colour the line_ends of the
+#' @param leaf_ends Determines which data is used to colour the leaf_ends of the
 #'   dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
 #'   \code{character()} if no line ends should be displayed.
-#' @param custom_shapes If shapes are provided, those are used for line_ends
+#' @param custom_shapes If shapes are provided, those are used for leaf_ends
 #'   instead of the standard ones. Available shapes range from 0:25 and 32:127
-#' @param ends_alpha Alpha of all line_ends
+#' @param ends_alpha Alpha of all leaf_ends
 #' @param rectangles If a colour is provided, this will draw rectangles in given
 #'   colour around the groups.
 #' @param leaf_linetype,branch_linetype Determines which lines are used for
@@ -1045,65 +1045,65 @@ dna_plotCentrality <- function(connection,
 #' @import ggraph
 #' @importFrom stats as.dendrogram is.leaf dendrapply aggregate
 dna_plotDendro <- function(clust,
-                            shape = "elbows",
-                            activity = FALSE,
-                            line_colours = "attribute1",
-                            branch_colour = "#636363",
-                            colours = "identity",
-                            custom_colours = character(),
-                            line_ends = character(),
-                            custom_shapes = character(),
-                            ends_alpha = 1,
-                            ends_size = 3,
-                            rectangles = "red",
-                            leaf_linetype = "a",
-                            branch_linetype = "b",
-                            line_width = 1,
-                            line_alpha = 1,
-                            font_size = 12,
-                            theme = "bw",
-                            truncate = 40,
-                            leaf_labels = "ticks",
-                            circular = FALSE,
-                            show_legend = TRUE,
-                            ...) {
+                           shape = "elbows",
+                           activity = FALSE,
+                           leaf_colours = "attribute1",
+                           branch_colour = "#636363",
+                           colours = "identity",
+                           custom_colours = character(),
+                           leaf_ends = character(),
+                           custom_shapes = character(),
+                           ends_alpha = 1,
+                           ends_size = 3,
+                           rectangles = character(),
+                           leaf_linetype = "a",
+                           branch_linetype = "b",
+                           line_width = 1,
+                           line_alpha = 1,
+                           font_size = 12,
+                           theme = "bw",
+                           truncate = 30,
+                           leaf_labels = "ticks",
+                           circular = FALSE,
+                           show_legend = TRUE,
+                           ...) {
   # truncate lables----
   clust$labels_short <- ifelse(nchar(clust$labels) > truncate,
-                              paste0(gsub("\\s+$", "",
-                                          strtrim(clust$labels, width = truncate)),
-                                     "..."),
-                              clust$labels)
+                               paste0(gsub("\\s+$", "",
+                                           strtrim(clust$labels, width = truncate)),
+                                      "..."),
+                               clust$labels)
   
   # format as dendrogram
   hierarchy <- stats::as.dendrogram(clust)
   # Add colours----
   hierarchy <- stats::dendrapply(hierarchy, function(x) {
     if (stats::is.leaf(x)) {
-      if (length(line_colours) > 0) {
-        attr(x, "Colour1") <- as.character(clust[[line_colours]][match(as.character(labels(x)),
-                                                                      clust$labels)])
+      if (length(leaf_colours) > 0) {
+        attr(x, "Colour1") <- as.character(clust[[leaf_colours]][match(as.character(labels(x)),
+                                                                       clust$labels)])
       } else {
         attr(x, "Colour1") <- ""
       }
-      if (length(line_ends) > 0) {
-        attr(x, "Colour2") <- as.character(clust[[line_ends]][match(as.character(labels(x)),
-                                                                   clust$labels)])
+      if (length(leaf_ends) > 0) {
+        attr(x, "Colour2") <- as.character(clust[[leaf_ends]][match(as.character(labels(x)),
+                                                                    clust$labels)])
       } else {
         attr(x, "Colour2") <- ""
       }
       
       attr(x, "Activity") <- clust$activities[clust$order[match(as.character(labels(x)),
-                                                              clust$labels)]]
+                                                                clust$labels)]]
       attr(x, "labels_short") <- clust$labels_short[match(as.character(labels(x)),
-                                                         clust$labels)]
+                                                          clust$labels)]
       attr(x, "linetype") <- leaf_linetype
     } else {
-      if (length(line_colours) > 0) {
+      if (length(leaf_colours) > 0) {
         attr(x, "Colour1") <- branch_colour
       } else {
         attr(x, "Colour1") <- ""
       }
-      if (length(line_ends) > 0) {
+      if (length(leaf_ends) > 0) {
         attr(x, "Colour2") <- branch_colour
       } else {
         attr(x, "Colour2") <- ""
@@ -1165,14 +1165,14 @@ dna_plotDendro <- function(clust,
   }
   dg <- dg +
     scale_edge_linetype_discrete(guide = "none")
-  if (length(line_colours) > 0) {
-    clust[[line_colours]] <- as.factor(clust[[line_colours]])
-    autoCols <- c(branch_colour, levels(clust[[line_colours]]))
+  if (length(leaf_colours) > 0) {
+    clust[[leaf_colours]] <- as.factor(clust[[leaf_colours]])
+    autoCols <- c(branch_colour, levels(clust[[leaf_colours]]))
     if (show_legend) {
       guide <- "legend"
-      if (line_colours == "attribute1") guidename <- attr(clust, "colours")[1]
-      if (line_colours == "attribute2") guidename <- attr(clust, "colours")[2]
-      if (line_colours == "group") guidename <- "group"
+      if (leaf_colours == "attribute1") guidename <- attr(clust, "colours")[1]
+      if (leaf_colours == "attribute2") guidename <- attr(clust, "colours")[2]
+      if (leaf_colours == "group") guidename <- "group"
       guidename <- paste0(toupper(substr(guidename, 1, 1)),
                           substr(guidename, 2, nchar(guidename)))
     } else {
@@ -1180,36 +1180,36 @@ dna_plotDendro <- function(clust,
       guidename <- waiver()
     }
   }
-  if (colours == "identity" & length(line_colours) > 0) {
-    autoCols <- setNames(autoCols, nm = c(branch_colour, levels(clust[[line_colours]])))
+  if (colours == "identity" & length(leaf_colours) > 0) {
+    autoCols <- setNames(autoCols, nm = c(branch_colour, levels(clust[[leaf_colours]])))
     dg <- dg +
       scale_edge_colour_manual(breaks = autoCols[-1],
                                values = autoCols,
                                guide = guide,
                                name = guidename)
-  } else if (colours == "manual" & length(line_colours) > 0) {
+  } else if (colours == "manual" & length(leaf_colours) > 0) {
     manCols <- c(branch_colour, custom_colours)
-    manCols <- setNames(manCols, nm = c(branch_colour, levels(clust[[line_colours]])))
+    manCols <- setNames(manCols, nm = c(branch_colour, levels(clust[[leaf_colours]])))
     dg <- dg +
       scale_edge_colour_manual(breaks = autoCols[-1],
                                values = manCols,
                                guide = guide,
                                name = guidename)
-  } else if (colours == "brewer" & length(line_colours) > 0) {
+  } else if (colours == "brewer" & length(leaf_colours) > 0) {
     if (length(custom_colours) == 0) {
       custom_colours = "Set3"
     }
     brewCols <- c(branch_colour,
                   scales::brewer_pal(type = "div",
-                                     palette = custom_colours)(length(levels(clust[[line_colours]]))))
-    brewCols <- setNames(brewCols, nm = c(branch_colour, levels(clust[[line_colours]])))
+                                     palette = custom_colours)(length(levels(clust[[leaf_colours]]))))
+    brewCols <- setNames(brewCols, nm = c(branch_colour, levels(clust[[leaf_colours]])))
     dg <- dg +
       scale_edge_colour_manual(breaks = autoCols[-1],
                                values = brewCols,
                                guide = guide,
                                name = guidename)
   }
-  if (length(line_colours) == 0) {
+  if (length(leaf_colours) == 0) {
     dg <- dg +
       scale_edge_colour_manual(values = "black", guide = "none")
   }
@@ -1253,8 +1253,8 @@ dna_plotDendro <- function(clust,
         geom_node_text(aes_string(label = "labels_short",
                                   filter = "leaf",
                                   colour = "cols3"),
-                       angle=270,
-                       hjust=0,
+                       angle = 270,
+                       hjust = 0,
                        nudge_y = -0.02,
                        size = (font_size / .pt),
                        show.legend = FALSE) +
@@ -1279,12 +1279,12 @@ dna_plotDendro <- function(clust,
   }
   
   # line ends----
-  if (length(line_ends) > 0) {
+  if (length(leaf_ends) > 0) {
     if (show_legend) {
       guide <- "legend"
-      if (line_ends == "attribute1") legendname <- attr(clust, "colours")[1]
-      if (line_ends == "attribute2") legendname <- attr(clust, "colours")[2]
-      if (line_ends == "group") legendname <- "group"
+      if (leaf_ends == "attribute1") legendname <- attr(clust, "colours")[1]
+      if (leaf_ends == "attribute2") legendname <- attr(clust, "colours")[2]
+      if (leaf_ends == "group") legendname <- "group"
       legendname <- paste0(toupper(substr(legendname, 1, 1)),
                            substr(legendname, 2, nchar(legendname)))
     } else {
@@ -1329,19 +1329,20 @@ dna_plotDendro <- function(clust,
     rect$xmin <- rect$x[, 1] - 0.25
     rect$xmax <- rect$x[, 2] + 0.25
     rect$ymax <- min(clust$height) + max(range(clust$height)) / 10
+    rect$ymin <- 0 - max(range(clust$height)) / 100
     
     dg <- dg +
       geom_rect(data = rect,
                 aes_string(xmin = "xmin",
                            xmax = "xmax",
-                           ymin = 0,
+                           ymin = "ymin",
                            ymax = "ymax"),
                 color = rectangles,
                 fill = NA)
   }
   
   # color node text and points----
-  if (length(line_colours) > 0) {
+  if (length(leaf_colours) > 0) {
     
     if (colours == "identity") {
       dg <- dg +
@@ -1510,11 +1511,11 @@ dna_plotHeatmap <- function(clust,
   plt_dendr_y <- dna_plotDendro(clust = dend_y,
                                 shape = "elbows", 
                                 activity = FALSE,
-                                line_colours = character(), 
+                                leaf_colours = character(), 
                                 branch_colour = "#636363",
                                 colours = "identity", 
                                 custom_colours = character(),
-                                line_ends = character(), 
+                                leaf_ends = character(), 
                                 custom_shapes = character(), 
                                 rectangles = character(), 
                                 leaf_linetype = "a",
@@ -1533,11 +1534,11 @@ dna_plotHeatmap <- function(clust,
   plt_dendr_x <- dna_plotDendro(clust = dend_x,
                                 shape = "elbows", 
                                 activity = FALSE,
-                                line_colours = character(), 
+                                leaf_colours = character(), 
                                 branch_colour = "#636363",
                                 colours = "identity", 
                                 custom_colours = character(),
-                                line_ends = character(), 
+                                leaf_ends = character(), 
                                 custom_shapes = character(), 
                                 rectangles = character(), 
                                 leaf_linetype = "a",
@@ -1991,7 +1992,7 @@ print.dna_cluster <- function(x, ...) {
                                     paste0("\"",
                                            attr(x, "colours"),
                                            "\"\n"), 
-                                    sep = "        : ",
+                                    sep = "      : ",
                                     collapse = " "))
   
   cat("\n")
