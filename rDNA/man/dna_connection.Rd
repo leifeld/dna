@@ -32,6 +32,7 @@ and statements into memory for further processing.
 }
 \examples{
 \dontrun{
+dna_downloadJar()
 dna_init("dna-2.0-beta20.jar")
 dna_connection(dna_sample())
 }

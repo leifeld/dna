@@ -21,5 +21,7 @@ Downloads the newest released DNA JAR file necessary for running
 This simple function downloads the DNA JAR from the latest release.
 }
 \examples{
+\dontrun{
 dna_downloadJar()
+}
 }

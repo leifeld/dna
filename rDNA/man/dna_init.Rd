@@ -26,6 +26,7 @@ version or path, the \R session would need to be restarted first.
 }
 \examples{
 \dontrun{
+dna_downloadJar()
 dna_init("dna-2.0-beta20.jar")
 }
 }

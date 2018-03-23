@@ -34,6 +34,7 @@ passed on with +.
 }
 \examples{
 \dontrun{
+dna_downloadJar()
 dna_init("dna-2.0-beta20.jar")
 conn <- dna_connection(dna_sample())
 

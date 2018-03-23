@@ -93,6 +93,7 @@ types, which can be plotted using the \code{ggraph} package.
 }
 \examples{
 \dontrun{
+dna_downloadJar()
 dna_init("dna-2.0-beta20.jar")
 conn <- dna_connection(dna_sample())
 clust <- dna_cluster(conn)

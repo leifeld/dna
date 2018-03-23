@@ -36,6 +36,7 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
 #' at <- dna_attributes(conn, "DNA Statement", "organization")
@@ -115,6 +116,7 @@ dna_attributes <- function(connection,
 #'  
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
 #'
@@ -312,6 +314,7 @@ dna_cluster <- function(connection,
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' dna_connection(dna_sample())
 #' }
@@ -344,7 +347,9 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' @param force Logical. Should the file be overwritten if it already exists.
 #'
 #' @examples
+#' \dontrun{
 #' dna_downloadJar()
+#' }
 #' @export
 #' @importFrom utils download.file
 dna_downloadJar <- function(file = "dna-2.0-beta20.jar",
@@ -439,6 +444,7 @@ dna_gui <- function(infile = NULL,
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' }
 #' @export
@@ -637,6 +643,7 @@ dna_init <- function(jarfile = "dna-2.0-beta20.jar", memory = 1024) {
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn,
@@ -821,6 +828,7 @@ dna_network <- function(connection,
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
 #'
@@ -892,7 +900,8 @@ dna_plotCentrality <- function(connection,
                         dta$concept
   )
   if(length(dta$concept) / length(unique(dta$concept)) != 2){
-    warning("After truncation, some labels are now excatly the same. I will try to fix that.")
+    warning(paste0("After truncation, some labels are now exactly the same. Those are followed by",
+            " # + number now. Consider increasing truncation value."))
     dta2$concept <- ifelse(nchar(dta2$concept) > truncate,
                            paste0(gsub("\\s+$", "",
                                        strtrim(dta2$concept, width = truncate)),
@@ -1031,6 +1040,7 @@ dna_plotCentrality <- function(connection,
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
@@ -1246,7 +1256,7 @@ dna_plotDendro <- function(clust,
   if (leaf_labels == "ticks") {
     dg <- dg +
       scale_x_continuous(breaks = seq(0, length(clust$labels)-1, by = 1),
-                         label = clust$labels_short[clust$order])
+                         labels = clust$labels_short[clust$order])
   } else if (leaf_labels == "nodes") {
     if (circular == FALSE) {
       dg <- dg +
@@ -1266,7 +1276,7 @@ dna_plotDendro <- function(clust,
                            angle = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
                                           node_angle(x, y) + 180,
                                           node_angle(x, y)),
-                           label = labels_short,
+                           labels = labels_short,
                            hjust = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
                                           1.05,
                                           -0.05),
@@ -1401,6 +1411,7 @@ dna_plotDendro <- function(clust,
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
@@ -1441,7 +1452,8 @@ dna_plotHeatmap <- function(clust,
   if(any(unlist(sapply(unique(pn), function(i){
     duplicated(colnames(nw)[pn == i])
   })))){
-    warning("After truncation, some labels are now excatly the same. I will try to fix that.")
+    warning(paste0("After truncation, some labels are now exactly the same. Those are followed by",
+                   " # + number now. Consider increasing truncation value."))
     colnames(nw) <- paste0("L", pn, colnames(nw))
     colnames(nw) <- paste0(make.unique(sub("...$", "", colnames(nw)), sep = " #"), "...")
     colnames(nw) <- sub("^L.[[:digit:]]", "", colnames(nw))
@@ -1464,13 +1476,9 @@ dna_plotHeatmap <- function(clust,
                         truncate)
   
   if(any(duplicated(row.names(nw)))){
-    warning("After truncation, some labels are now excatly the same. I will try to fix that.")
+    warning(paste0("After truncation, some labels are now exactly the same. Those are followed by",
+                   " # + number now. Consider increasing truncation value."))
     row.names(nw) <- paste0(make.names(sub("...$", "", row.names(nw)), unique=TRUE), "...")
-  }
-  if (!exists("method")) {
-    method <- ""
-  } else if (method == "heatmaply") {
-    heatmaply::heatmaply(nw)
   }
   # re-construct clust objects----
   args <- c(as.list(clust$call)[-1],
@@ -1637,6 +1645,7 @@ dna_plotHeatmap <- function(clust,
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
 #'
@@ -1716,6 +1725,7 @@ dna_plotTimeWindow <- function(x,
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' dna_connection(dna_sample())
 #' }
@@ -1768,6 +1778,7 @@ dna_sample <- function(overwrite = FALSE,
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
 #'
@@ -1930,6 +1941,7 @@ dna_timeWindow <- function(connection,
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn,
@@ -1963,6 +1975,7 @@ lvmod <- function(mat) {
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' clust.l <- dna_cluster(conn)
@@ -2012,6 +2025,7 @@ print.dna_cluster <- function(x, ...) {
 #'
 #' @examples
 #' \dontrun{
+#' dna_downloadJar()
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' conn
