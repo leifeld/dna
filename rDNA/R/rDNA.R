@@ -228,6 +228,10 @@ dna_cluster <- function(connection,
                          verbose = FALSE)
                     , dots)
     )
+    # Remove negative values
+    nw <- ifelse(test = nw < 0,
+                 yes = 0,
+                 no = nw)
     nw2 <- igraph::graph_from_adjacency_matrix(nw,
                                                mode = "undirected",
                                                weighted = "weight",
@@ -236,7 +240,6 @@ dna_cluster <- function(connection,
     if (clust.method == "edge_betweenness") {
       hc <- igraph::cluster_edge_betweenness(nw2,
                                              weights = igraph::E(nw2)$weight, 
-                                             directed = FALSE,
                                              edge.betweenness = TRUE, 
                                              merges = TRUE, 
                                              bridges = TRUE,
@@ -255,15 +258,12 @@ dna_cluster <- function(connection,
                                      steps = 4,
                                      merges = TRUE, 
                                      modularity = FALSE, 
-                                     membership = FALSE)
+                                     membership = TRUE) # FALSE makes more sense but throws and error due to bug in igraph
     }
-    
     hc <- as.hclust(hc, hang = -1, use.modularity = FALSE)
     hc$method <- clust.method
     hc$activities <- unname(rowSums(nw))
-    
   }
-  
   if (!is.null(c(cutree.k, cutree.h))){
     hc$group <- cutree(hc, k = cutree.k, h = cutree.h)
   }
