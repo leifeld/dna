@@ -1205,8 +1205,10 @@ public class Exporter extends JDialog {
 				// no network preparation needed
 			} else if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
 				if (timeWindowBox.getSelectedItem().equals("no time window")) {
+					boolean verbose;
+					verbose = true;
 					matrix = computeTwoModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
-							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization);
+							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, verbose);
 				} else {
 					String timeWindowUnit = (String) timeWindowBox.getSelectedItem();
 					int timeWindowDuration = (int) timeWindowSpinner.getModel().getValue();
@@ -1365,8 +1367,10 @@ public class Exporter extends JDialog {
 			}
 			
 			if (twoMode == true) {
+				boolean verbose;
+				verbose = true;
 				timeWindowMatrices.add(computeTwoModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
-						var2Document, names1, names2, qualifier, qualifierAggregation, normalization));
+						var2Document, names1, names2, qualifier, qualifierAggregation, normalization, verbose));
 			} else {
 				timeWindowMatrices.add(computeOneModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
 						var2Document, names1, names2, qualifier, qualifierAggregation, normalization));
@@ -1856,7 +1860,7 @@ public class Exporter extends JDialog {
 	 */
 	private Matrix computeTwoModeMatrix(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, 
 			String var1, String var2, boolean var1Document, boolean var2Document, String[] names1, String[] names2, String qualifier, 
-			String qualifierAggregation, String normalization) {
+			String qualifierAggregation, String normalization, boolean verbose) {
 		if (statements.size() == 0) {
 			double[][] m = new double[names1.length][names2.length];
 			Matrix mt = new Matrix(m, names1, names2, true);
@@ -1921,11 +1925,17 @@ public class Exporter extends JDialog {
 			while (keyIterator.hasNext()){
 				Integer key = (Integer) keyIterator.next();
 				ArrayList<Integer> values = combinations.get(key);
-				System.out.print("An edge weight of " + key + " corresponds to the following combination of integers in the DNA coding: ");
-				for (int i = 0; i < values.size(); i++) {
-					System.out.print(values.get(i) + " ");
+				if (verbose == true) {
+					System.out.print("An edge weight of " + key + " corresponds to the following combination of integers in the DNA coding: ");
 				}
-				System.out.print("\n");
+				for (int i = 0; i < values.size(); i++) {
+					if (verbose == true) {
+						System.out.print(values.get(i) + " ");
+					}
+				}
+				if (verbose == true) {
+					System.out.print("\n");
+				}
 			}
 		}
 		
@@ -3108,7 +3118,7 @@ public class Exporter extends JDialog {
 		if (networkType.equals("Two-mode network")) {
 			if (timewindow.equals("no time window")) {
 				m = computeTwoModeMatrix(filteredStatements, data.getDocuments(), st, variable1, variable2, variable1Document, 
-						variable2Document, names1, names2, qualifier, qualifierAggregation, normalization);
+						variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, verbose);
 			} else {
 				this.timeWindowMatrices = computeTimeWindowMatrices(filteredStatements, data.getDocuments(), st, variable1, variable2, 
 						variable1Document, variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, true, start, stop, 

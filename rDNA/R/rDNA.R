@@ -143,7 +143,7 @@ dna_attributes <- function(connection,
 #' @importFrom cluster pam
 #' @importFrom splitstackshape cSplit
 #' @importFrom grDevices chull
-#' @importFrom utils packageVersion
+#' @importFrom utils packageVersion capture.output
 dna_cluster <- function(connection,
                         variable = "organization",
                         duplicates = "document",
@@ -320,7 +320,7 @@ dna_cluster <- function(connection,
     } else {
       d <-  dist(nw, method = "euclidean")
     }
-    mds <- MASS::isoMDS(d)
+    invisible(capture.output(mds <- MASS::isoMDS(d)))
     k.best <- which.max(sapply(seq(from = 2, to = ncol(nw), by = 1), function(i){
       cluster::pam(d, k = i) $ silinfo $ avg.width
     })) + 1
