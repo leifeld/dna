@@ -2,7 +2,6 @@
 # some settings
 dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 
-
 #' Retrieve attributes from DNA's attribute manager
 #'
 #' Retrieve attributes for a given statement type and variable.
@@ -109,6 +108,9 @@ dna_attributes <- function(connection,
 #' @param cutree.k,cutree.h If cutree.k or cutree.h are provided, the tree from
 #'   hierarchical clustering is cut into several groups. See $k$ and $h$ in
 #'   \link[stats]{cutree} for details.
+#' @param mds If TRUE, then the final object will contain a data.frame with the
+#'   results of a non-metric multidimensional scaling (performed via
+#'   \link[MASS]{isoMDS}) which can be plotted using \link{dna_plotMDS}.
 #' @param ... Additional arguments passed to \link{dna_network}. This is
 #'   especially useful to set qualifier (defaults to "agreement") and
 #'   normalization (defaults to "no") if non-default values are needed for
@@ -120,15 +122,26 @@ dna_attributes <- function(connection,
 #' dna_init("dna-2.0-beta20.jar")
 #' conn <- dna_connection(dna_sample())
 #'
-#' clust.l <- dna_cluster(connection)
-#'
+#' clust.l <- dna_cluster(connection,
+#'                        mds = TRUE)
+#' 
 #' dna_plotDendro(clust.l)
+#' dna_plotHeatmap(clust.l)
+#' dna_plotMDS(clust.l,
+#'             jitter = c(0.5, 0.7))
+#' 
 #' }
 #' @author Johannes B. Gruber
 #' @export
 #' @importFrom vegan vegdist
 #' @importFrom stats setNames dist hclust cutree as.hclust
 #' @importFrom igraph graph_from_adjacency_matrix cluster_leading_eigen cluster_walktrap E 
+#' @importFrom dplyr summarise group_by_all
+#' @importFrom MASS isoMDS
+#' @importFrom cluster pam
+#' @importFrom splitstackshape cSplit
+#' @importFrom grDevices chull
+#' @importFrom utils packageVersion
 dna_cluster <- function(connection,
                         variable = "organization",
                         duplicates = "document",
@@ -137,6 +150,7 @@ dna_cluster <- function(connection,
                         attribute2 = "value",
                         cutree.k = NULL,
                         cutree.h = NULL,
+                        mds = FALSE,
                         ...) {
   dots <- list(...)
   if ("excludeValues" %in% names(dots)){
@@ -196,8 +210,6 @@ dna_cluster <- function(connection,
   dta <- do.call("cbind", dta)
   dta <- dta[rowSums(dta) > 0, ]
   dta <- dta[, colSums(dta) > 0]
-  
-  # hclust----
   if (clust.method %in% c("ward.D", 
                           "ward.D2", 
                           "single", 
@@ -213,7 +225,6 @@ dna_cluster <- function(connection,
     }
     hc <- hclust(d, method = clust.method)
     hc$activities <- unname(rowSums(dta))
-    # igraph----
   } else if (clust.method %in% c("edge_betweenness",
                                  "leading_eigen",
                                  "walktrap")) {
@@ -228,7 +239,6 @@ dna_cluster <- function(connection,
                          verbose = FALSE)
                     , dots)
     )
-    # Remove negative values
     nw <- ifelse(test = nw < 0,
                  yes = 0,
                  no = nw)
@@ -283,10 +293,57 @@ dna_cluster <- function(connection,
   } else {
     attr(hc, "cut") <- NA
   }
+  if (mds) {
+    nw <- do.call(dna_network,
+                  c(list(connection = connection,
+                         networkType = "twomode",
+                         variable1 = variable,
+                         isolates = TRUE,
+                         duplicates = duplicates,
+                         qualifier = qualifier,
+                         verbose = FALSE,
+                         qualifierAggregation = "combine")
+                    , dots))
+    if (any(duplicated(nw))){
+      . <- data.frame(nw, check.names = FALSE)
+      . <- dplyr::group_by_all(.)
+      .$rn <- row.names(.)
+      . <- dplyr::summarise(., rowname = paste(rn, collapse = "|"))
+      nw <- data.frame(., stringsAsFactors = FALSE)
+      row.names(nw) <- nw$rowname
+      nw <- nw[, !colnames(nw) == "rowname"]
+    }
+    if (all(nw %in% c(0, 1))){ 
+      d <-  vegan::vegdist(nw, method = "jaccard")
+    } else {
+      d <-  dist(nw, method = "euclidean")
+    }
+    mds <- MASS::isoMDS(d)
+    k.best <- which.max(sapply(seq(from = 2, to = ncol(nw), by = 1), function(i){
+      cluster::pam(d, k = i) $ silinfo $ avg.width
+    })) + 1
+    mds <- data.frame(variable = row.names(mds$points),
+                      dimension1 = mds$points[, 1],
+                      dimension2 = mds$points[, 2],
+                      cluster = as.factor(cluster::pam(d, k = k.best)[["clustering"]]),
+                      stress = mds$stress)
+    if (any(grepl("|", mds$variable, fixed = TRUE))) {
+      mds <- splitstackshape::cSplit(mds, "variable", "|", "long")
+    }
+    mds$hull <- FALSE
+    polygons <- lapply(unique(mds$cluster), function(i) {
+      df <- mds[mds$cluster == i, ][grDevices::chull(x = mds[mds$cluster == i, ]$dimension1, 
+                                                     y = mds[mds$cluster == i, ]$dimension2), ]
+      df$hull <- TRUE
+      df
+    })
+    mds <- rbind(mds,
+                 do.call(rbind, polygons))
+    hc$mds <- data.frame(mds[!duplicated(mds$variable, fromLast = TRUE), ])
+  }
   hc$call = match.call()
   attr(hc, "colours") <- c("attribute1" = attribute1, "attribute2" = attribute2)
   class(hc) <- c("dna_cluster", class(hc))
-  # add data for heatmap plot
   hc$network <- dta
   return(hc)
 }
@@ -1620,6 +1677,118 @@ dna_plotHeatmap <- function(clust,
                                                  plt_dendr_x, 
                                                  position = "top"),
                              plt_dendr_y, position = "left"))
+}
+
+
+#' Plots an MDS scatterplot from dna.cluster objects
+#'
+#' Plots a scatterplot with the results of non-metric multidimensional scaling
+#' performed in \link{dna_cluster}.
+#'
+#' This function is a convenience wrapper for using the \code{ggplot2} package
+#' to make a scatterplot of the results of non-metric multidimensional scaling
+#' performed in \link{dna_cluster}. It can also add ellipses of polygons to
+#' highlight clusters.
+#'
+#' @param clust A \code{dna_cluster} object created by the \link{dna_cluster}
+#'   function.
+#'
+#' @param draw_clusters Should clustering be highlighted? Possible values are
+#'   "polygon", which draws polygons around clusters derived via the best fit in
+#'   \link[cluster]{pam}, "ellipse" uses \link[ggplot2]{stat_ellipse} to draw
+#'   ellipses around clusters from \link[cluster]{pam} or "density" to perform a
+#'   2D kernel density estimation (see \link[MASS]{kde2d}) and display the
+#'   results with contours.
+#' @param alpha The alpha level of the polygons drawn when draw.clusters =
+#'   "polygon".
+#' @param jitter Takes either one value, to control the width of the jittering
+#'   of points, two values to control width and height of the jittering of
+#'   points (e.g., c(.l, .2)) or "character()" to turn off the jittering of
+#'   points.
+#' @param label Logical. Should labels be plotted?
+#' @param label_size,font_colour Control the label size and font colour of the
+#'   labels if \code{label = TRUE}, label_size takes numeric values, font_colour
+#'   takes a character string with a valid colour value.
+#' @param ... Not used. If you want to add more plot options use \code{+} and
+#'   the ggplot2 logic (see example).
+#' @examples
+#' \dontrun{
+#' dna_downloadJar()
+#' dna_init("dna-2.0-beta20.jar")
+#' conn <- dna_connection(dna_sample())
+#' clust <- dna_cluster(conn)
+#' mds <- dna_plotMDS(clust,
+#'                    mds = TRUE)
+#' # Flip plot with ggplot2 command
+#' library("ggplot2")
+#' mds +
+#'   coord_flip()
+#'   }
+#' @author Johannes B. Gruber
+#' @export
+#' @import ggplot2
+#' @importFrom ggrepel geom_label_repel
+dna_plotMDS <- function(clust,
+                        draw_clusters = character(),
+                        alpha = .25,
+                        jitter = c(0.5, 0.7),
+                        label = FALSE,
+                        label_size = 3.5,
+                        font_colour = "black",
+                        ...) {
+  if (!"mds" %in% names(clust)) {
+    stop(paste("No data on multidimensional scaling given. Did you set \"mds =",
+               "TRUE\" when you called dna_cluster()?"))
+  }
+  df <- clust[["mds"]]
+  g <- ggplot(df, aes_string(x = "dimension1",
+                             y = "dimension2",
+                             fill = "cluster",
+                             label = "variable"))
+  if (length(jitter) > 0) {
+    if (all(!utils::packageVersion("ggrepel") >= "0.7.3",
+            !utils::packageVersion("ggplot2") >= "2.2.1.9000",
+            label)) {
+      stop(paste("For jittering both points and labels, you need at least",
+                 "'ggplot2'version 2.2.1.9000 and 'ggrepel' version 0.7.3"))
+    }
+    width = ifelse(is.na(jitter[1]),
+                   0,
+                   jitter[1])
+    height = ifelse(is.na(jitter[2]),
+                    0,
+                    jitter[2])
+    pos <- position_jitter(width = width,
+                           height = height,
+                           seed = 1)
+  } else {
+    pos <- "identity"
+  }
+  g <- g +
+    geom_point(aes_string(colour = "cluster",
+                          shape = "cluster"),
+               position = pos)
+  if (length(draw_clusters) > 0){
+    if (draw_clusters == "polygon") {
+      g <- g +
+        geom_polygon(data = df[df$hull, ],
+                     alpha = alpha,
+                     position = pos)
+    } else if (draw_clusters == "ellipse") {
+      g <- g +
+        stat_ellipse(position = pos)
+    } else if (draw_clusters == "density"){
+      g <- g +
+        geom_density2d(alpha = alpha)
+    }
+  }
+  if (label) {
+    g <- g +
+      ggrepel::geom_label_repel(size = label_size,
+                                color = font_colour,
+                                position = pos)
+  }
+  return(g)
 }
 
 

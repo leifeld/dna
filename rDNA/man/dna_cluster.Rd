@@ -6,7 +6,7 @@
 \usage{
 dna_cluster(connection, variable = "organization", duplicates = "document",
   clust.method = "ward.D2", attribute1 = "color", attribute2 = "value",
-  cutree.k = NULL, cutree.h = NULL, ...)
+  cutree.k = NULL, cutree.h = NULL, mds = FALSE, ...)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
@@ -40,6 +40,10 @@ between values: leaf_colours and leaf_ends. Possible values are "id", "value",
 hierarchical clustering is cut into several groups. See $k$ and $h$ in
 \link[stats]{cutree} for details.}
 
+\item{mds}{If TRUE, then the final object will contain a data.frame with the
+results of a non-metric multidimensional scaling (performed via
+\link[MASS]{isoMDS}) which can be plotted using \link{dna_plotMDS}.}
+
 \item{...}{Additional arguments passed to \link{dna_network}. This is
 especially useful to set qualifier (defaults to "agreement") and
 normalization (defaults to "no") if non-default values are needed for
@@ -57,9 +61,14 @@ dna_downloadJar()
 dna_init("dna-2.0-beta20.jar")
 conn <- dna_connection(dna_sample())
 
-clust.l <- dna_cluster(connection)
+clust.l <- dna_cluster(connection,
+                       mds = TRUE)
 
 dna_plotDendro(clust.l)
+dna_plotHeatmap(clust.l)
+dna_plotMDS(clust.l,
+            jitter = c(0.5, 0.7))
+
 }
 }
 \author{
