@@ -1,6 +1,8 @@
 
 # some settings
 dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
+# more settings which quiet concerns of R CMD check about ggplot and dplyr pipelines
+if(getRversion() >= "2.15.1")  utils::globalVariables(c("rn", "cols3", "labels_short", "leaf", "x", "y"))
 
 #' Retrieve attributes from DNA's attribute manager
 #'
