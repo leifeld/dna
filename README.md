@@ -1,15 +1,29 @@
-Discourse Network Analyzer (DNA)
-===
+##Discourse Network Analyzer (DNA)
 
-The Java software Discourse Network Analyzer (DNA) is a qualitative content analysis tool with network export facilities. You import text files and annotate statements that persons or organizations make, and the program will return network matrices of actors connected by shared concepts. There is also an R package called rDNA for integration with the statistical computing environment R.
+The Java software Discourse Network Analyzer (DNA) is a qualitative content analysis tool with network export facilities. You import text files and annotate statements that persons or organizations make, and the program will return network matrices of actors connected by shared concepts.
 
-__Download the software:__ [https://github.com/leifeld/dna/releases](https://github.com/leifeld/dna/releases)
+- Download the latest [release](https://github.com/leifeld/dna/releases) of the software.
 
-__Check out the manual for more information:__ [https://github.com/leifeld/dna/releases/download/v2.0-beta.20/dna-manual.pdf](https://github.com/leifeld/dna/releases/download/v2.0-beta.20/dna-manual.pdf)
+- Check out the detailed [manual](https://github.com/leifeld/dna/releases/download/v2.0-beta.20/dna-manual.pdf) for more information, including installation instructions and information on network methods and rDNA.
 
-__If you have questions or want to report bugs:__ [https://github.com/leifeld/dna/issues](https://github.com/leifeld/dna/issues)
+- If you have questions or want to report bugs, please create an issue in the [issue tracker](https://github.com/leifeld/dna/issues).
 
----
+<br />
 
-#### Beta version of DNA 2.0 available now
-Version 2.0 beta is a pre-release and can be [downloaded](https://github.com/leifeld/dna/releases) for testing purposes from the [releases](https://github.com/leifeld/dna/releases) page. If you find bugs, please report them to the [issue tracker](https://github.com/leifeld/dna/issues). Development will continue over the course of the year, and new releases will be added periodically.
+## rDNA. A Package to Control DNA from R
+
+This is the companion package to DNA. It integrates the Java software with the statistical computing environment R.
+
+You can install the package using:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("leifeld/dna/rDNA")
+
+# On Windows amd MacOS, you might have to use
+devtools::install_github("leifeld/dna/rDNA", args = "--no-multiarch")
+```
+The package relies on `rJava`, which needs to be installed first. For details on the installation process on different operating systems, consult the chapter "Installation of DNA and rDNA" in the manual.
+
+[![Build Status](https://travis-ci.org/leifeld/dna.svg?branch=master)](https://travis-ci.org/leifeld/dna)
+
