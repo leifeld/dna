@@ -1,4 +1,4 @@
-##Discourse Network Analyzer (DNA)
+## Discourse Network Analyzer (DNA)
 
 The Java software Discourse Network Analyzer (DNA) is a qualitative content analysis tool with network export facilities. You import text files and annotate statements that persons or organizations make, and the program will return network matrices of actors connected by shared concepts.
 
