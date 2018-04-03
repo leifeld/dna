@@ -1592,11 +1592,14 @@ dna_plotHeatmap <- function(clust,
                                 font_size = 12,
                                 theme = "void", 
                                 truncate = 40, 
-                                leaf_labels = "ticks", 
+                                leaf_labels = "", 
                                 circular = FALSE,
                                 show_legend = FALSE) +
+    scale_x_continuous(expand = c(0.0, 0.5, 0.0, 0.5)) +
     coord_flip() +
-    scale_y_reverse() 
+    scale_y_reverse()
+  
+  
   # plot clust x ----
   plt_dendr_x <- dna_plotDendro(clust = dend_x,
                                 shape = "elbows", 
@@ -1615,9 +1618,10 @@ dna_plotHeatmap <- function(clust,
                                 font_size = 12,
                                 theme = "void", 
                                 truncate = 40, 
-                                leaf_labels = "ticks", 
+                                leaf_labels = "", 
                                 circular = FALSE,
-                                show_legend = FALSE)
+                                show_legend = FALSE) +
+    scale_x_continuous(expand = c(0.0, 0.5, 0.0, 0.5))
   ## heatmap ----
   df <- reshape2::melt(nw[dend_y$order, dend_x$order])
   df$posy <- seq_len(length(levels(df$Var1)))
@@ -1648,8 +1652,7 @@ dna_plotHeatmap <- function(clust,
     scale_x_continuous(breaks = unique(df$posx),
                        labels = levels(df$Var2),
                        position = "right", 
-                       expand = c(0, 0)) 
-  ### display values ----
+                       expand = c(0, 0))
   if (square) plt_hmap <- plt_hmap + coord_fixed(expand = FALSE)
   ### display values ----
   if (values) {
@@ -1664,21 +1667,22 @@ dna_plotHeatmap <- function(clust,
         scale_fill_distiller(palette = custom_colours)
     } else if (colours == "gradient"){
       if (length(custom_colours) < 1){
-        stop(paste0("When gradient is selected for colours you need",
-                    " to supply at least two colours in the form \"",
-                    "c(\'gray\', \'blue\')\" to custom_colours")) 
+        custom_colours <- c("gray", "blue")
       }
       plt_hmap <- plt_hmap +
         scale_fill_gradientn(colours = custom_colours)
     }
   }
   ### merge plots---
-  ggdraw(plot = 
-           insert_yaxis_grob(plot = 
-                               insert_xaxis_grob(plot = plt_hmap, 
-                                                 plt_dendr_x, 
-                                                 position = "top"),
-                             plt_dendr_y, position = "left"))
+  g <- insert_xaxis_grob(plot = plt_hmap, 
+                         plt_dendr_x,
+                         height = grid::unit(0.2, "null"),
+                         position = "top")
+  g <- insert_yaxis_grob(plot = g,
+                         plt_dendr_y, 
+                         position = "left")
+  g <- ggdraw(plot = g)
+  return(g)
 }
 
 
