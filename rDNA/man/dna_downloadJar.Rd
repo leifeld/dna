@@ -4,12 +4,13 @@
 \alias{dna_downloadJar}
 \title{Download the binary DNA JAR file}
 \usage{
-dna_downloadJar(file = "dna-2.0-beta20.jar", force = FALSE)
+dna_downloadJar(filename = "dna-2.0-beta20.jar", filepath = character(),
+  force = FALSE)
 }
 \arguments{
-\item{file}{You can choose to provide a path and name here. By default, the
-file is downloaded into the current working directory and the name stays
-intact.}
+\item{filename}{Name of the downloaded Jar.}
+
+\item{filepath}{Download path. Defaults to working directory.}
 
 \item{force}{Logical. Should the file be overwritten if it already exists.}
 }
