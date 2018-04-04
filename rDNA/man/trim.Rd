@@ -4,12 +4,14 @@
 \alias{trim}
 \title{Truncate labels}
 \usage{
-trim(x, n)
+trim(x, n, e = "...")
 }
 \arguments{
 \item{x}{A character string}
 
 \item{n}{May number of character to truncate to}
+
+\item{e}{String added at the end of x to signal it was truncated.}
 }
 \description{
 Internal function, used to truncate labels

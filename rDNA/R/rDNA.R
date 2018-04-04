@@ -1493,7 +1493,7 @@ dna_plotHeatmap <- function(clust,
                                                    "1" = "yes"),
                             ...) {
   nw <- clust[["network"]]
-  # truncate column labels----
+  # construct column labels----
   pn <- colnames(nw)
   if (max(sapply(regmatches(pn, gregexpr("-", pn)), length)) == 0) {
     pn <- ""
@@ -1501,7 +1501,7 @@ dna_plotHeatmap <- function(clust,
     for (i in max(sapply(regmatches(pn, gregexpr("-", pn)), length))) {
       pn <- sub("^.*-", "", pn)
     }
-    colnames(nw) <- gsub("*.\\s+-\\s+[[:digit:]]$", 
+    colnames(nw) <- gsub("\\s+-\\s+[[:digit:]]$", 
                          "", 
                          colnames(nw))
   }
@@ -1514,8 +1514,19 @@ dna_plotHeatmap <- function(clust,
     warning(paste0("After truncation, some labels are now exactly the same. Those are followed by",
                    " # + number now. Consider increasing truncation value."))
     colnames(nw) <- paste0("L", pn, colnames(nw))
-    colnames(nw) <- paste0(make.unique(sub("...$", "", colnames(nw)), sep = " #"), "...")
+    d <- grepl("\\...$", colnames(nw))
+    colnames(nw) <- make.unique(sub("\\...$", "", colnames(nw)), sep = " #")
+    colnames(nw)[duplicated(sub(" #[[:digit:]]$", "", colnames(nw)))] <- 
+      sapply(colnames(nw)[duplicated(sub(" #[[:digit:]]$", "", colnames(nw)))], function(i){
+        d <- paste0("#", gsub(".*#", "", i))
+        w <- sub(" #[[:digit:]]$", "", i)
+        w <- trim(w,
+                  truncate - 3,
+                  e = "")
+        paste(w, d)
+      })
     colnames(nw) <- sub("^L.[[:digit:]]", "", colnames(nw))
+    colnames(nw)[d] <- paste0(colnames(nw)[d], "...")
   }
   if (any(!pn %in% "^$")) {
     colnames(nw) <- paste0(colnames(nw),
@@ -2217,12 +2228,13 @@ print.dna_connection <- function(x, ...) {
 #'
 #' @param x A character string
 #' @param n May number of character to truncate to
+#' @param e String added at the end of x to signal it was truncated.
 #'
 #' @author Philip Leifeld, Johannes B. Gruber
-trim <- function(x, n){
+trim <- function(x, n, e = "..."){
   ifelse(nchar(x) > n,
          paste0(gsub("\\s+$", "",
                      strtrim(x, width = n)),
-                "..."),
+                e),
          x)
 }
