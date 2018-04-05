@@ -122,7 +122,7 @@ knit_hooks$set(crop=hook_pdfcrop, document = function(x) {sub('\\usepackage[]{co
 @
 
 \title{Discourse Network Analyzer Manual}
-\date{\footnotesize{Last update: DNA 2.0 beta 20 with rDNA 2.0.5 on \today.}}
+\date{\footnotesize{Last update: DNA 2.0 beta 20 with rDNA 2.0.57 on \today.}}
 \author{Philip Leifeld, Johannes Gruber and Felix Rolf Bossner}
 
 \maketitle
@@ -676,7 +676,7 @@ In order to use \rdna, the rest of this section will explain how to install \R\ 
 \item Install the downloaded file, e.\,g., \code{R-3.4.3-win.exe}.
       Usually, it is fine to leave all default settings in the installation options.
 \item Go to \url{https://www.rstudio.com/products/rstudio/download/}.
-\item At the bottom of the page, under \code{Installers for Supported Platforms}, click on the link \code{RStudio 1.1.423 -- Windows Vista/7/8/10} (or a newer version if available).
+\item At the bottom of the page, under \code{Installers for Supported Platforms}, click on the link \code{RStudio 1.1.442 -- Windows Vista/7/8/10} (or a newer version if available).
       Again, the default installation options are fine in most cases and can be accepted without changes.
 \item After installation, you can use \R\ by opening \rstudio.
 \end{enumerate}
@@ -733,7 +733,7 @@ In order to use \rdna, the rest of this section will explain how to install \R\ 
   \item Install the downloaded file.
         Usually, it is fine to leave all default settings in the installation options.
   \item Go to \url{https://www.rstudio.com/products/rstudio/download/}.
-  \item At the bottom of the page, under \code{Installers for Supported Platforms}, click on the link \code{RStudio 1.1.423 -- Mac OS X 10.6+ (64-bit)} (or a newer version if available).
+  \item At the bottom of the page, under \code{Installers for Supported Platforms}, click on the link \code{RStudio 1.1.442 -- Mac OS X 10.6+ (64-bit)} (or a newer version if available).
         Install RStudio by simply dragging the application icon in the downloaded \code{.dmg} file to your Applications folder.
   \item Then you need to install the program \texttt{Xcode} from the app store. The program is very large and will take a while to install.
   \item After installation, you can use \R\ by opening \rstudio.
@@ -810,11 +810,6 @@ $java -version
 
 If not, install it, e.\,g., via \code{APT}:
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
-$sudo apt-get install default-jre
-@
-
-Optional: You can also install the \java\ development kit (JDK) at this point, which is sometimes recommended for working with \R\ and \java.
-<<eval=FALSE, engine = 'bash', results = 'tex'>>=
 $sudo apt-get install default-jdk
 @
 
@@ -835,28 +830,37 @@ $(lsb_release -cs)/"
   \item Next, you need to add \R\ to your keyring.
         Here is how you would accomplish this in Ubuntu:
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
-$gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9
-$gpg -a --export E084DAB9 | sudo apt-key add -
+$sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9 
 @
-        Or
-<<eval=FALSE, engine = 'bash', results = 'tex'>>=
-$sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E2
-  98A3A825C0D65DFD57CBB651716619E084DAB9
-@
-  \item Update apt and install \R\ (and \code{r-base-dev} if you wish to compile packages from source):
+  \item Update apt and install \R\ (or \code{r-base-dev} if you wish to compile packages from source):
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 $sudo apt-get update
-$sudo apt-get install r-base install r-base-dev
+$sudo apt-get install r-base
 @
   \item Now install \rstudio\ via gdebi (and install gdebi first if you do not already have it):%
-  \footnote{Alternatively, you can download an installation file from \url{https://www.rstudio.com/products/rstudio/download/}.}\textsuperscript{,}%
-  \footnote{Up to version 1.1.423, \rstudio\ depends on an outdated version of \texttt(libgstreamer).
-        You thus either need to use a new version or install the old version of \texttt(libgstreamer) using the method explained in \href{https://mikewilliamson.wordpress.com/2016/11/14/installing-r-studio-on-ubuntu-16-10/}{this blogpost}.}
+  \footnote{Alternatively, you can download an installation file from \url{https://www.rstudio.com/products/rstudio/download/}.}\textsuperscript{,}
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 $sudo apt-get install gdebi-core
-$wget https://download1.rstudio.org/rstudio-1.1.423-amd64.deb
-$sudo gdebi -n rstudio-1.1.423-amd64.deb
-$rm rstudio-1.1.423-amd64.deb
+$wget https://download1.rstudio.org/rstudio-1.1.442-amd64.deb
+$sudo gdebi -n rstudio-1.1.442-amd64.deb
+$rm rstudio-1.1.442-amd64.deb
+@
+  Note, that as of version 1.1.442, \rstudio\ depends on an outdated version of \texttt{libgstreamer}.
+  This version has already been deprecated in some linux distributions, which can lead to an error during installation of \rstudio.
+  If you run into trouble while installing \rstudio, you should try installing the old version of \texttt{libgstreamer} side-by-side the newer library:
+<<eval=FALSE, engine = 'bash', results = 'tex'>>=
+# Download files with wget
+$wget http://ftp.ca.debian.org/debian/pool/main/g/gstreamer0.10/libgstreamer\
+0.10-0_0.10.36-1.5_amd64.deb
+$wget http://ftp.ca.debian.org/debian/pool/main/g/gst-plugins-base0.10/libgs\
+treamer-plugins-base0.10-0_0.10.36-2_amd64.deb
+ 
+# Now install with gdebi
+$sudo gdebi libgstreamer0.10-0_0.10.36-1.5_amd64.deb
+$sudo gdebi libgstreamer-plugins-base0.10-0_0.10.36-2_amd64.deb
+
+# And then clean up
+$sudo rm libgstreamer0.10-0_0.10.36-1.5_amd64.deb libgstreamer-plugins-base0.10-0_0.10.36-2_amd64.deb
 @
   \item For Linux there is another system dependecy for \rdna\ which helps with handling units of physical quantities in the plot functions that come with the package. You should install this using:
 <<eval=FALSE, engine = 'bash', results = 'tex'>>= 
@@ -868,13 +872,10 @@ $sudo apt-get install libudunits2-dev
 To test your installation of \R, follow the instructions in Section~\ref{subsec:rtest}.
 
 Before we can actually run \rdna, we need to associate \java\ with \R.
-To do this, you can either go back to the terminal, or you can invoke a system command directly from within \R\ using the \code{system} function:
+To do this, you should go back to the terminal:
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
+$sudo apt-get install r-cran-rjava
 $sudo R CMD javareconf
-@
-Or:
-<<eval=FALSE, results = 'tex'>>=
-system("sudo R CMD javareconf")
 @
 
 If this finishes without errors, you are ready to start installing \dna\ and the \rdna\ package as described in Section~\ref{sec:installdna}.
@@ -3127,7 +3128,7 @@ dna_plotDendro(clust,
 @
 
 As you can see in this example, you can make further changes to the plot using commands from the \texttt{ggplot2} package \citep{wickham2009ggplot2}.
-This package is very popular in the \R\ community and you can find many tutorial online on how to produce plots with it.
+This package is very popular in the \R\ community and you can find many tutorials online on how to produce plots with it.
 As \code{dna\_plotDendro} essentially uses \texttt{ggplot2} under the hood, you use functions from \texttt{ggplot2} and its extensions to manipulate the appearence of the dendrogram further.
 In this case, we add \code{+ coord\_flip()} after the end of the call to \code{dna\_plotDendro} to rotate the plot by 90°.
 
