@@ -32,7 +32,7 @@ function which reduces a matrix to just one value.}
 \item{verbose}{Display messages if TRUE or 1. Also display messages details
 of network construction when 2}
 
-\item{...}{additional arguments passed to \link{dna_network}.}
+\item{...}{Additional arguments passed to \link{dna_network}.}
 }
 \description{
 Computes a measure for each network in a temporal sequence of networks.

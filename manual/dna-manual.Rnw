@@ -2899,7 +2899,7 @@ dna_plotCentrality(conn,
                    of = "organization",
                    fontSize = 10,
                    excludeValues = list("concept" = 
-                        "There should be legislation to regulate emissions."),
+                   "There should be legislation to regulate emissions."),
                    invertValues = TRUE)
 @
 
@@ -2922,7 +2922,7 @@ congruence <-
               qualifierAggregation = "congruence", 
               duplicates = "document", 
               excludeValues = list("concept" = 
-                  "There should be legislation to regulate emissions."))
+              "There should be legislation to regulate emissions."))
 nw <- network(congruence)
 plot(nw, 
      edge.lwd = congruence^2, 
@@ -3021,7 +3021,7 @@ For finding the specific names, there is an extensive \href{https://www.nceas.uc
 Using hexadecimal numbers might seem overly complicated for the task of picking a colour for a plot at first.
 However, there are two reasons why you should consider it anyway.
 First, it is nowadays very easy to install a colour picker addon in your web browser, which gives you the opportunity to pick any colour you like on a website and use it for your own plots in \R.
-And second, because there is a fantastic website called \url{colorbrewer2.org} that offers a number of very pleasant looking colour palettes which can make your plots appear more modern.
+And second, because there is a fantastic website called \url{http://colorbrewer2.org/} that offers a number of very pleasant looking colour palettes which can make your plots appear more modern.
 The easiest way to use colours from both sources is by entering the hexadecimal numbers, preceded by \texttt{\#}.
 
 We can now see the opinions of all actors on the various concepts.
@@ -3049,8 +3049,7 @@ As you can see from the information printed on the screen when \code{clust} was 
 The distance measure is set automatically, based on the properties of the network. Since the default of \code{help(dna\_cluster)} is to exclude duplicated statements on the document level (\code{duplicates = "document"}), the resulting network matrix is binary, meaning that 1 represents a connection between actors and 0 means there is no connection. If you turn the removal of duplicates off, the Euclidean distance will be used instead of Jaccard:
 
 <<eval=TRUE, results = 'tex'>>=
-clust <- dna_cluster(conn,
-                     duplicates = "include")
+clust <- dna_cluster(conn, duplicates = "include")
 clust
 @
 
@@ -3083,11 +3082,8 @@ clust <- dna_cluster(conn,
                      attribute1 = "type",
                      cutree.k = 2,
                      excludeValues = list("concept" = 
-                                            "There should be legislation to regulate emissions."))
-dna_plotDendro(clust,
-               shape = "diagonal",
-               colours = "brewer",
-               rectangles = "red")
+                     "There should be legislation to regulate emissions."))
+dna_plotDendro(clust, shape = "diagonal", colours = "brewer", rectangles = "red")
 @
 
 Now we can see that the two main branches of the dendrogram show the same communities we have identified in the network plot. 
@@ -3101,16 +3097,26 @@ As mentioned before, the function is highly customisable and can visualise four 
 \item[\code{rectangles}] You can either provide a colour value to draw rectangles around groups of leaves or it they will disappear (which is the default). The group membership of each organisation in above's example was determined by providing \code{cutree.k = 2} in \code{"dna\_cluster"}. If you neither provide a value for \code{cutree.k} nor \code{cutree.h}, all leaves will belong to the same group.
 \end{description}
 
-Theerefore it is possible to visualise a lot of different information in just one plot, which is great for publication, or if you want to use the plot to discover certain patterns for further analysis. Th following plot therfore uses the full potential of the function.
+Theerefore it is possible to visualise a lot of different information in just one plot, which is great for publication, or if you want to use the plot to discover certain patterns for further analysis. The following plot shows this by employing the full potential of the function.
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 clust <- dna_cluster(conn,
                      variable = "person",
-                     attribute1 = "in network",
+                     attribute1 = "value",
                      attribute2 = "type",
                      cutree.k = 2,
                      excludeValues = list("concept" = 
-                                            "There should be legislation to regulate emissions."))
+                     "There should be legislation to regulate emissions."))
+
+# Now the first attribute is just the name of the person
+levels(clust$attribute1)
+
+# Let's replace this with something more informative
+clust$attribute1 <- factor(c("male", "female", "male", "male", "male", "female", "male"))
+
+# You can change the legend by changing the colours attribute
+attr(clust, "colours") <- c("Gender", "Organisation Type")
+
 library("ggplot2")
 dna_plotDendro(clust,
                activity = TRUE,
@@ -3122,12 +3128,14 @@ dna_plotDendro(clust,
                rectangles = "#e34a33",
                leaf_ends = "attribute2",
                ends_alpha = 0.8,
+               font_size = 9,
                leaf_labels = "ticks") +
   coord_flip()
-  
 @
 
-As you can see in this example, you can make further changes to the plot using commands from the \texttt{ggplot2} package \citep{wickham2009ggplot2}.
+As becomes clear from this plot, the three NGOs are clustered together, while other organisations make up the second cluster. You can also see that while the NGOs are roughly the same in terms of activity, the number of statements coded from persons who belong Business or Government organisations or are in Congress differ widely. Unsurprisingly, the gender of the speakers does not seem to influence in which cluster they end up.
+
+As you can also see in this example, you can make further changes to the plot using commands from the \texttt{ggplot2} package \citep{wickham2009ggplot2}.
 This package is very popular in the \R\ community and you can find many tutorials online on how to produce plots with it.
 As \code{dna\_plotDendro} essentially uses \texttt{ggplot2} under the hood, you use functions from \texttt{ggplot2} and its extensions to manipulate the appearence of the dendrogram further.
 In this case, we add \code{+ coord\_flip()} after the end of the call to \code{dna\_plotDendro} to rotate the plot by 90°.
@@ -3135,16 +3143,30 @@ In this case, we add \code{+ coord\_flip()} after the end of the call to \code{d
 
 
 
-\section{Heat maps}
-Implemented in \rdna\ is also a function to create heatmaps.
-Heatmaps are especially helpful to get a quick overview of a large matrix, to see where values are especially high or low.
-Combined with the dendrograms introduced in the last section, they can thus be helpful to get an insight into which concepts determine clustering most.
+\section{Heatmaps}
+\rdna\ also comes with a function to create heatmaps.
+Heatmaps are especially helpful to get a quick overview of a large matrix and see where values are especially high or low.
+Combined with the dendrograms introduced in the last section, they can thus be helpful to get an insight into which concepts determine the clustering.
 The function to do this is called \code{dna\_plotHeatmap} and takes objects that were created with \code{dna\_cluster}---just as \code{dna\_plotDendro}:
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 clust <- dna_cluster(conn)
 dna_plotHeatmap(clust)
-  
 @
+
+The dendrograms on the x- and y-axis of the heatmap shows how organisations and concepts are grouped together by the clustering algorithm used to construct the object \code{clust}.
+As you can see, the main feature the NGOs have in common is their disagreement to many of the concepts, while the other organisations do not necessarily agree to all the concepts but seem to be more cautious in stating their disagreement.
+
+As the heatmap is ordered by the dendrograms on its axis, chaning the clustering algorithm will also change the heatmap.
+As many users---and some publishers---may prefer grayscale plots, we also use the following plot to demonstrate how to accomplish that with \code{dna_plotHeatmap}:
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
+clust <- dna_cluster(conn,
+                     clust.method = "centroid")
+dna_plotHeatmap(clust,
+                colours = "gradient",
+                custom_colours = c('gray', 'black'))
+@
+
 
 
 

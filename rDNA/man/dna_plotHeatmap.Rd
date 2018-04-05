@@ -36,7 +36,7 @@ values. Colours are then derived from a sequential colour gradient palette.
 levels (as characters) as names and character values as labels (See
 example).}
 
-\item{...}{Currently not used.}
+\item{...}{Additional arguments passed to \link{dna_plotDendro}.}
 }
 \description{
 Plots a heatmap with dendrograms from objects derived via \link{dna_cluster}.

@@ -1466,7 +1466,7 @@ dna_plotDendro <- function(clust,
 #' @param qualifierLevels Takes a list with integer values of the qualifier
 #'   levels (as characters) as names and character values as labels (See
 #'   example).
-#' @param ... Currently not used.
+#' @param ... Additional arguments passed to \link{dna_plotDendro}.
 #'
 #' @examples
 #' \dontrun{
@@ -1586,52 +1586,33 @@ dna_plotHeatmap <- function(clust,
   
   dend_x$activities <- unname(rowSums(t(nw)))
   # plot clust y ----
-  plt_dendr_y <- dna_plotDendro(clust = dend_y,
-                                shape = "elbows", 
-                                activity = FALSE,
-                                leaf_colours = character(), 
-                                branch_colour = "#636363",
-                                colours = "identity", 
-                                custom_colours = character(),
-                                leaf_ends = character(), 
-                                custom_shapes = character(), 
-                                rectangles = character(), 
-                                leaf_linetype = "a",
-                                branch_linetype = "a", 
-                                line_width = 1, 
-                                line_alpha = 1, 
-                                font_size = 12,
-                                theme = "void", 
-                                truncate = 40, 
-                                leaf_labels = "", 
-                                circular = FALSE,
-                                show_legend = FALSE) +
+  dots <- list(...)
+  if (!"leaf_colours" %in% names(dots)) {
+    dots <- c(dots,
+              list(leaf_colours = character()))
+  }
+  if (!"leaf_colours" %in% names(dots)) {
+    dots <- c(dots,
+             list(theme = "void"))
+  }
+  if (!"branch_linetype" %in% names(dots)) {
+    dots <- c(dots,
+              list(branch_linetype = "a"))
+  }
+  plt_dendr_y <- do.call(dna_plotDendro,
+                         c(list(clust = dend_y,
+                                leaf_labels = ""),
+                           dots)) +
     scale_x_continuous(expand = c(0.0, 0.5, 0.0, 0.5)) +
     coord_flip() +
     scale_y_reverse()
   
   
   # plot clust x ----
-  plt_dendr_x <- dna_plotDendro(clust = dend_x,
-                                shape = "elbows", 
-                                activity = FALSE,
-                                leaf_colours = character(), 
-                                branch_colour = "#636363",
-                                colours = "identity", 
-                                custom_colours = character(),
-                                leaf_ends = character(), 
-                                custom_shapes = character(), 
-                                rectangles = character(), 
-                                leaf_linetype = "a",
-                                branch_linetype = "a", 
-                                line_width = 1, 
-                                line_alpha = 1, 
-                                font_size = 12,
-                                theme = "void", 
-                                truncate = 40, 
-                                leaf_labels = "", 
-                                circular = FALSE,
-                                show_legend = FALSE) +
+  plt_dendr_x <- do.call(dna_plotDendro,
+                         c(list(clust = dend_x,
+                                leaf_labels = ""),
+                           dots)) +
     scale_x_continuous(expand = c(0.0, 0.5, 0.0, 0.5))
   ## heatmap ----
   df <- reshape2::melt(nw[dend_y$order, dend_x$order])
@@ -1960,7 +1941,7 @@ dna_sample <- function(overwrite = FALSE,
 #'   function which reduces a matrix to just one value.
 #' @param verbose Display messages if TRUE or 1. Also display messages details
 #'   of network construction when 2
-#' @param ... additional arguments passed to \link{dna_network}.
+#' @param ... Additional arguments passed to \link{dna_network}.
 #'
 #' @examples
 #' \dontrun{
