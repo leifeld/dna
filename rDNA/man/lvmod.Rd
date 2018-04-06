@@ -20,7 +20,7 @@ of the network into modules for a network retrieved via \link{dna_network}.
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta20.jar")
+dna_init("dna-2.0-beta21.jar")
 conn <- dna_connection(dna_sample())
 nw <- dna_network(conn,
                   networkType = "onemode")

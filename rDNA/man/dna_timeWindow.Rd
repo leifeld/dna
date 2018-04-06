@@ -47,7 +47,7 @@ your data (facet) and calculate networks for each facet type.
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta20.jar")
+dna_init("dna-2.0-beta21.jar")
 conn <- dna_connection(dna_sample())
 
 tW <- dna_timeWindow(connection = conn,

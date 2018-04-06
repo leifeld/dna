@@ -38,7 +38,7 @@ if(getRversion() >= "2.15.1")  utils::globalVariables(c("rn", "cols3", "labels_s
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #' at <- dna_attributes(conn, "DNA Statement", "organization")
 #' at
@@ -121,7 +121,7 @@ dna_attributes <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #'
 #' clust.l <- dna_cluster(connection,
@@ -374,7 +374,7 @@ dna_cluster <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' dna_connection(dna_sample())
 #' }
 #' @export
@@ -410,10 +410,10 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' }
 #' @export
 #' @importFrom utils download.file
-dna_downloadJar <- function(filename = "dna-2.0-beta20.jar",
+dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
                             filepath = character(),
                             force = FALSE) {
-  url <- paste0("https://github.com/leifeld/dna/releases/download/v2.0-beta.20/dna-2.0-beta20.jar")
+  url <- paste0("https://github.com/leifeld/dna/releases/download/v2.0-beta.21/dna-2.0-beta21.jar")
   if (any(!file.exists(paste0(filepath, filename)), force)) {
     download.file(url = url,
                   destfile = paste0(filepath, filename), 
@@ -445,7 +445,7 @@ dna_downloadJar <- function(filename = "dna-2.0-beta20.jar",
 #'
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' dna_gui()
 #' }
 #' @export
@@ -497,18 +497,18 @@ dna_gui <- function(infile = NULL,
 #' version or path, the \R session would need to be restarted first.
 #'
 #' @param jarfile The file name of the DNA jar file, e.g.,
-#'     \code{"dna-2.0-beta20.jar"}.
+#'     \code{"dna-2.0-beta21.jar"}.
 #' @param memory The amount of memory in megabytes to allocate to DNA, for
 #'     example \code{1024} or \code{4096}.
 #'
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' }
 #' @export
 #' @import rJava
-dna_init <- function(jarfile = "dna-2.0-beta20.jar", memory = 1024) {
+dna_init <- function(jarfile = "dna-2.0-beta21.jar", memory = 1024) {
   if (!is.null(jarfile)) {
     if (!file.exists(jarfile)) {
       stop(if (grepl("/", jarfile, fixed = TRUE)){
@@ -703,7 +703,7 @@ dna_init <- function(jarfile = "dna-2.0-beta20.jar", memory = 1024) {
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn,
 #'                   networkType = "onemode",
@@ -888,7 +888,7 @@ dna_network <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #'
 #' dna_plotCentrality(connection = conn,
@@ -1100,7 +1100,7 @@ dna_plotCentrality <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' dend <- dna_plotDendro(clust)
@@ -1471,7 +1471,7 @@ dna_plotDendro <- function(clust,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' dend <- dna_plotHeatmap(clust,
@@ -1712,7 +1712,7 @@ dna_plotHeatmap <- function(clust,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' mds <- dna_plotMDS(clust,
@@ -1813,7 +1813,7 @@ dna_plotMDS <- function(clust,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #'
 #' tW <- dna_timeWindow(connection = conn,
@@ -1893,7 +1893,7 @@ dna_plotTimeWindow <- function(x,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' dna_connection(dna_sample())
 #' }
 #' @author Johannes Gruber
@@ -1946,7 +1946,7 @@ dna_sample <- function(overwrite = FALSE,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #'
 #' tW <- dna_timeWindow(connection = conn,
@@ -2109,7 +2109,7 @@ dna_timeWindow <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn,
 #'                   networkType = "onemode")
@@ -2143,7 +2143,7 @@ lvmod <- function(mat) {
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' clust.l <- dna_cluster(conn)
 #' clust.l
@@ -2193,7 +2193,7 @@ print.dna_cluster <- function(x, ...) {
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta20.jar")
+#' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' conn
 #' }
