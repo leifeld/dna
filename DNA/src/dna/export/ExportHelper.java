@@ -8,7 +8,6 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import dna.Dna;
 import dna.dataStructures.Document;
 import dna.dataStructures.Statement;
 import dna.dataStructures.StatementType;
@@ -504,7 +503,6 @@ public class ExportHelper {
 			return mt;
 		}
 		
-		int statementTypeId = statementType.getId();
 		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
 		if (statementType.getVariables().get(qualifier).equals("integer")) {
 			booleanQualifier = false;
@@ -513,7 +511,7 @@ public class ExportHelper {
 		if (booleanQualifier == true) {
 			qualifierValues = new int[] {0, 1};
 		} else {
-			qualifierValues = Dna.data.getIntEntries(statementTypeId, qualifier);
+			qualifierValues = getIntValues(statements, qualifier);
 		}
 		
 		double[][][] array = createArray(statements, documents, statementType, var1, var2, var1Document, var2Document, 
@@ -656,7 +654,6 @@ public class ExportHelper {
 			Matrix mt = new Matrix(m, names1, names2, true);
 			return mt;
 		}
-		int statementTypeId = statementType.getId();
 		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
 		// TODO: it may be possible that there is no qualifier; adjust for this case (also in the one-mode case?)
 		if (statementType.getVariables().get(qualifier).equals("integer")) {
@@ -666,7 +663,7 @@ public class ExportHelper {
 		if (booleanQualifier == true) {
 			qualifierValues = new int[] {0, 1};
 		} else {
-			qualifierValues = Dna.data.getIntEntries(statementTypeId, qualifier);
+			qualifierValues = getIntValues(statements, qualifier);
 		}
 		
 		double[][][] array = createArray(statements, documents, statementType, var1, var2, var1Document, var2Document, 
@@ -814,7 +811,6 @@ public class ExportHelper {
 			String var1, String var2, boolean var1Document, boolean var2Document, String[] names1, String[] names2, String qualifier, 
 			String qualifierAggregation) {
 		
-		int statementTypeId = statementType.getId();
 		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
 		if (statementType.getVariables().get(qualifier).equals("integer")) {
 			booleanQualifier = false;
@@ -823,7 +819,7 @@ public class ExportHelper {
 		if (booleanQualifier == true) {
 			qualifierValues = new int[] {0, 1};
 		} else {
-			qualifierValues = Dna.data.getIntEntries(statementTypeId, qualifier);
+			qualifierValues = getIntValues(statements, qualifier);
 		}
 
 		// Create arrays with variable values
@@ -869,6 +865,28 @@ public class ExportHelper {
 		}
 		
 		return array;
+	}
+
+	/**
+	 * Retrieve unique integer values from an integer qualifier variable
+	 * @param statements     An array list of statements.
+	 * @param qualifier      Name of the qualifier variable as a string.
+	 * @return               Vector of unique int values.
+	 */
+	private int[] getIntValues(ArrayList<Statement> statements, String qualifier) {
+		ArrayList<Integer> al = new ArrayList<Integer>();
+		for (int i = 0; i < statements.size(); i++) {
+			int q = (int) statements.get(i).getValues().get(qualifier);
+			if (!al.contains(q)) {
+				al.add(q);
+			}
+		}
+		Collections.sort(al);
+		int[] qualifierValues = new int[al.size()];
+		for (int i = 0; i < al.size(); i++) {
+			qualifierValues[i] = (int) al.get(i);
+		}
+		return qualifierValues;
 	}
 	
 	/**

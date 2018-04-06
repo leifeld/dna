@@ -181,34 +181,6 @@ public class Data {
 		return entriesArray;
 	}
 	
-	/**
-	 * For a boolean or integer variable (as defined in a statement type), retrieve all values the variable takes at least once across the dataset.
-	 * 
-	 * @param statementTypeId   Statement type ID of the {@link StatementType} in which the variable is defined.
-	 * @param variableName      Name of the boolean or integer variable as a {@link String}.
-	 * @return                  Array of integer values.
-	 */
-	public int[] getIntEntries(int statementTypeId, String variableName) {
-		String type = Dna.data.getStatementTypeById(statementTypeId).getVariables().get(variableName);
-		if (!type.equals("integer") && !type.equals("boolean")) {
-			System.err.println("Variable '" + variableName + "' is not integer or boolean!");
-		}
-		ArrayList<Statement> subset = Dna.data.getStatementsByStatementTypeId(statementTypeId);
-		ArrayList<Integer> entries = new ArrayList<Integer>();
-		for (int i = 0; i < subset.size(); i++) {
-			int value = (int) subset.get(i).getValues().get(variableName);
-			if (!entries.contains(value)) {
-				entries.add(value);
-			}
-		}
-		Collections.sort(entries);
-		int[] values = new int[entries.size()];
-		for (int i = 0; i < entries.size(); i++) {
-			values[i] = entries.get(i);
-		}
-		return values;
-	}
-	
 	public boolean[] getActiveStatementPermissions(int statementId) {
 		int ac = getActiveCoder();
 		boolean[] b = new boolean[4];
