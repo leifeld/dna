@@ -380,9 +380,9 @@ dna_cluster <- function(connection,
 #' @export
 dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE) {
   if (is.null(login) || is.null(password)) {
-    export <- .jnew("dna.export/Exporter", "sqlite", infile, "", "", verbose)
+    export <- .jnew("dna.export/ExporterR", "sqlite", infile, "", "", verbose)
   } else {
-    export <- .jnew("dna.export/Exporter", "mysql", infile, login, password, verbose)
+    export <- .jnew("dna.export/ExporterR", "mysql", infile, login, password, verbose)
   }
   obj <- list(dna_connection = export)
   class(obj) <- "dna_connection"
