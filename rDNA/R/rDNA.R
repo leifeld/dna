@@ -2,7 +2,12 @@
 # some settings
 dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 # more settings which quiet concerns of R CMD check about ggplot and dplyr pipelines
-if(getRversion() >= "2.15.1")  utils::globalVariables(c("rn", "cols3", "labels_short", "leaf", "x", "y"))
+if(getRversion() >= "2.15.1")  utils::globalVariables(c("rn",
+                                                        "cols3",
+                                                        "labels_short",
+                                                        "leaf",
+                                                        "x",
+                                                        "y"))
 
 #' Retrieve attributes from DNA's attribute manager
 #'
@@ -51,13 +56,13 @@ dna_attributes <- function(connection,
                            statementType = "DNA Statement",
                            variable = "organization",
                            values = NULL) {
-  
+ 
   if (is.null(values)) {
     values <- character(0)
   } else if (class(values) != "character") {
     stop("'values' must be a character vector or NULL.")
   }
-  
+ 
   .jcall(connection$dna_connection,
          "V",
          "rAttributes",
@@ -110,14 +115,11 @@ dna_attributes <- function(connection,
 #' @param cutree.k,cutree.h If cutree.k or cutree.h are provided, the tree from
 #'   hierarchical clustering is cut into several groups. See $k$ and $h$ in
 #'   \link[stats]{cutree} for details.
-#' @param mds If TRUE, then the final object will contain a data.frame with the
-#'   results of a non-metric multidimensional scaling (performed via
-#'   \link[MASS]{isoMDS}) which can be plotted using \link{dna_plotMDS}.
 #' @param ... Additional arguments passed to \link{dna_network}. This is
 #'   especially useful to set qualifier (defaults to "agreement") and
 #'   normalization (defaults to "no") if non-default values are needed for
 #'   clustering.
-#'  
+#' 
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
@@ -126,18 +128,18 @@ dna_attributes <- function(connection,
 #'
 #' clust.l <- dna_cluster(connection,
 #'                        mds = TRUE)
-#' 
+#'
 #' dna_plotDendro(clust.l)
 #' dna_plotHeatmap(clust.l)
 #' dna_plotMDS(clust.l,
 #'             jitter = c(0.5, 0.7))
-#' 
+#'
 #' }
 #' @author Johannes B. Gruber
 #' @export
 #' @importFrom vegan vegdist
 #' @importFrom stats setNames dist hclust cutree as.hclust
-#' @importFrom igraph graph_from_adjacency_matrix cluster_leading_eigen cluster_walktrap E 
+#' @importFrom igraph graph_from_adjacency_matrix cluster_leading_eigen cluster_walktrap E
 #' @importFrom dplyr summarise group_by_all
 #' @importFrom MASS isoMDS
 #' @importFrom cluster pam
@@ -152,7 +154,6 @@ dna_cluster <- function(connection,
                         attribute2 = "value",
                         cutree.k = NULL,
                         cutree.h = NULL,
-                        mds = FALSE,
                         ...) {
   dots <- list(...)
   if ("excludeValues" %in% names(dots)){
@@ -168,17 +169,14 @@ dna_cluster <- function(connection,
     excl <- unlist(unname(excludeValues[qualifier]))
     excludeValues[qualifier] <- NULL
   }
-  
-  
   lvls <- do.call(dna_network,
                   c(list(connection = connection,
                          networkType = "eventlist",
                          excludeValues = excludeValues,
                          verbose = FALSE
                   ), dots))
-  
+ 
   lvls <- unique(lvls[, qualifier])
-  
   if (exists("excl")) {
     lvls <- lvls[!lvls %in% excl]
     if (length(lvls) < 1){
@@ -188,12 +186,10 @@ dna_cluster <- function(connection,
       ))
     }
   }
-  
   dta <- lapply(lvls, function(l){
-    excludeVals = c(stats::setNames(list(l),
+    excludeVals <- c(stats::setNames(list(l),
                                     nm = qualifier),
                     excludeValues)
-    
     nw <- do.call(dna_network,
                   c(list(connection = connection,
                          networkType = "twomode",
@@ -205,17 +201,37 @@ dna_cluster <- function(connection,
                          verbose = FALSE)
                     , dots)
     )
-    
     colnames(nw) <- paste(colnames(nw), "-", l)
     return(nw)
   })
   dta <- do.call("cbind", dta)
   dta <- dta[rowSums(dta) > 0, ]
   dta <- dta[, colSums(dta) > 0]
-  if (clust.method %in% c("ward.D", 
-                          "ward.D2", 
-                          "single", 
-                          "complete", 
+  nw <- do.call(dna_network,
+                c(list(connection = connection,
+                       networkType = "onemode",
+                       qualifierAggregation = "subtract",
+                       variable1 = variable,
+                       isolates = FALSE,
+                       duplicates = duplicates,
+                       qualifier = qualifier,
+                       verbose = FALSE)
+                  , dots)
+  )
+  nw <- ifelse(test = nw < 0,
+               yes = 0,
+               no = nw)
+  nw2 <- igraph::graph_from_adjacency_matrix(nw,
+                                             mode = "undirected",
+                                             weighted = "weight",
+                                             diag = FALSE,
+                                             add.colnames = NULL)
+  cluster_louvain <- igraph::cluster_louvain(nw2,
+                                             weights = igraph::E(nw2)$weight)
+  if (clust.method %in% c("ward.D",
+                          "ward.D2",
+                          "single",
+                          "complete",
                           "average",
                           "mcquitty",
                           "median",
@@ -230,51 +246,36 @@ dna_cluster <- function(connection,
   } else if (clust.method %in% c("edge_betweenness",
                                  "leading_eigen",
                                  "walktrap")) {
-    nw <- do.call(dna_network,
-                  c(list(connection = connection,
-                         networkType = "onemode",
-                         qualifierAggregation = "subtract",
-                         variable1 = variable,
-                         isolates = FALSE,
-                         duplicates = duplicates,
-                         qualifier = qualifier,
-                         verbose = FALSE)
-                    , dots)
-    )
-    nw <- ifelse(test = nw < 0,
-                 yes = 0,
-                 no = nw)
-    nw2 <- igraph::graph_from_adjacency_matrix(nw,
-                                               mode = "undirected",
-                                               weighted = "weight",
-                                               diag = FALSE,
-                                               add.colnames = NULL)
     if (clust.method == "edge_betweenness") {
       hc <- igraph::cluster_edge_betweenness(nw2,
-                                             weights = igraph::E(nw2)$weight, 
-                                             edge.betweenness = TRUE, 
-                                             merges = TRUE, 
+                                             weights = igraph::E(nw2)$weight,
+                                             edge.betweenness = TRUE,
+                                             merges = TRUE,
                                              bridges = TRUE,
-                                             modularity = FALSE, 
+                                             modularity = FALSE,
                                              membership = FALSE)
     } else if (clust.method == "leading_eigen") {
       hc <- igraph::cluster_leading_eigen(nw2,
-                                          steps = -1, 
-                                          weights = igraph::E(nw2)$weight, 
+                                          steps = -1,
+                                          weights = igraph::E(nw2)$weight,
                                           start = NULL,
-                                          callback = NULL, 
+                                          callback = NULL,
                                           extra = NULL)
     } else if (clust.method == "walktrap") {
       hc <- igraph::cluster_walktrap(nw2,
-                                     weights = igraph::E(nw2)$weight, 
+                                     weights = igraph::E(nw2)$weight,
                                      steps = 4,
-                                     merges = TRUE, 
-                                     modularity = FALSE, 
-                                     membership = TRUE) # FALSE makes more sense but throws and error due to bug in igraph
+                                     merges = TRUE,
+                                     modularity = FALSE,
+                                     membership = TRUE)
     }
     hc <- as.hclust(hc, hang = -1, use.modularity = FALSE)
     hc$method <- clust.method
     hc$activities <- unname(rowSums(nw))
+  } else {
+    stop(paste0("Please provide a valid clust.method: 'ward.D', 'ward.D2',",
+               " 'single', 'complete', 'average', 'mcquitty', 'median', 'cen",
+               "troid', 'edge_betweenness', 'leading_eigen', 'walktrap'"))
   }
   if (!is.null(c(cutree.k, cutree.h))){
     hc$group <- cutree(hc, k = cutree.k, h = cutree.h)
@@ -295,55 +296,46 @@ dna_cluster <- function(connection,
   } else {
     attr(hc, "cut") <- NA
   }
-  if (mds) {
-    nw <- do.call(dna_network,
-                  c(list(connection = connection,
-                         networkType = "twomode",
-                         variable1 = variable,
-                         isolates = TRUE,
-                         duplicates = duplicates,
-                         qualifier = qualifier,
-                         verbose = FALSE,
-                         qualifierAggregation = "combine")
-                    , dots))
-    if (any(duplicated(nw))){
-      . <- data.frame(nw, check.names = FALSE)
-      . <- dplyr::group_by_all(.)
-      .$rn <- row.names(.)
-      . <- dplyr::summarise(., rowname = paste(rn, collapse = "|"))
-      nw <- data.frame(., stringsAsFactors = FALSE)
-      row.names(nw) <- nw$rowname
-      nw <- nw[, !colnames(nw) == "rowname"]
-    }
-    if (all(nw %in% c(0, 1))){ 
-      d <-  vegan::vegdist(nw, method = "jaccard")
-    } else {
-      d <-  dist(nw, method = "euclidean")
-    }
-    invisible(capture.output(mds <- MASS::isoMDS(d)))
-    k.best <- which.max(sapply(seq(from = 2, to = ncol(nw), by = 1), function(i){
-      cluster::pam(d, k = i) $ silinfo $ avg.width
-    })) + 1
-    mds <- data.frame(variable = row.names(mds$points),
-                      dimension1 = mds$points[, 1],
-                      dimension2 = mds$points[, 2],
-                      cluster = as.factor(cluster::pam(d, k = k.best)[["clustering"]]),
-                      stress = mds$stress)
-    if (any(grepl("|", mds$variable, fixed = TRUE))) {
-      mds <- splitstackshape::cSplit(mds, "variable", "|", "long")
-    }
-    mds$hull <- FALSE
-    polygons <- lapply(unique(mds$cluster), function(i) {
-      df <- mds[mds$cluster == i, ][grDevices::chull(x = mds[mds$cluster == i, ]$dimension1, 
-                                                     y = mds[mds$cluster == i, ]$dimension2), ]
-      df$hull <- TRUE
-      df
-    })
-    mds <- rbind(mds,
-                 do.call(rbind, polygons))
-    hc$mds <- data.frame(mds[!duplicated(mds$variable, fromLast = TRUE), ])
+  nw <- do.call(dna_network,
+                c(list(connection = connection,
+                       networkType = "twomode",
+                       variable1 = variable,
+                       isolates = TRUE,
+                       duplicates = duplicates,
+                       qualifier = qualifier,
+                       verbose = FALSE,
+                       qualifierAggregation = "combine")
+                  , dots))
+  if (any(duplicated(nw))){
+    . <- data.frame(nw, check.names = FALSE)
+    . <- dplyr::group_by_all(.)
+    .$rn <- row.names(.)
+    . <- dplyr::summarise(., rowname = paste(rn, collapse = "|"))
+    nw <- data.frame(., stringsAsFactors = FALSE)
+    row.names(nw) <- nw$rowname
+    nw <- nw[, !colnames(nw) == "rowname"]
   }
-  hc$call = match.call()
+  if (all(nw %in% c(0, 1))){
+    d <-  vegan::vegdist(nw, method = "jaccard")
+  } else {
+    d <-  dist(nw, method = "euclidean")
+  }
+  invisible(capture.output(mds <- MASS::isoMDS(d)))
+  k.best <- which.max(sapply(seq(from = 2, to = ncol(nw), by = 1), function(i){
+    cluster::pam(d, k = i)$silinfo$avg.width
+  })) + 1
+  mds <- data.frame(variable = row.names(mds$points),
+                    Dimension_1 = mds$points[, 1],
+                    Dimension_2 = mds$points[, 2],
+                    cluster_pam = as.factor(cluster::pam(d, k = k.best)[["clustering"]]),
+                    cluster_louvain = as.factor(cluster_louvain$memberships)[match(row.names(mds$points),
+                                                                                    cluster_louvain$names)],
+                    stress = mds$stress)
+  if (any(grepl("|", mds$variable, fixed = TRUE))) {
+    mds <- splitstackshape::cSplit(mds, "variable", "|", "long")
+  }
+  hc$mds <- data.frame(mds[!duplicated(mds$variable, fromLast = TRUE), ])
+  hc$call <-  match.call()
   attr(hc, "colours") <- c("attribute1" = attribute1, "attribute2" = attribute2)
   class(hc) <- c("dna_cluster", class(hc))
   hc$network <- dta
@@ -416,7 +408,7 @@ dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
   url <- paste0("https://github.com/leifeld/dna/releases/download/v2.0-beta.21/dna-2.0-beta21.jar")
   if (any(!file.exists(paste0(filepath, filename)), force)) {
     download.file(url = url,
-                  destfile = paste0(filepath, filename), 
+                  destfile = paste0(filepath, filename),
                   mode = "wb",
                   cacheOK = FALSE,
                   extra = character())
@@ -745,7 +737,7 @@ dna_network <- function(connection,
                         invertSections = FALSE,
                         invertTypes = FALSE,
                         verbose = TRUE) {
-  
+ 
   # convert single values to vectors by means of duplication if necessary
   if (length(excludeTypes) == 1) {
     excludeTypes <- c(excludeTypes, excludeTypes)
@@ -766,7 +758,6 @@ dna_network <- function(connection,
       }
     }
   }
-  
   if (length(excludeValues) > 0) {
     dat <- matrix("", nrow = sum(sapply(excludeValues, length)), ncol = 2)
     count <- 0
@@ -819,7 +810,7 @@ dna_network <- function(connection,
          invertTypes,
          verbose
   )
-  
+ 
   if (networkType == "eventlist") {
     objects <- .jcall(connection$dna_connection, "[Ljava/lang/Object;", "getEventListColumnsR", simplify = TRUE)
     columnNames <- .jcall(connection$dna_connection, "[S", "getEventListColumnsRNames", simplify = TRUE)
@@ -915,7 +906,7 @@ dna_plotCentrality <- function(connection,
                      networkType = "eventlist",
                      verbose = FALSE,
                      ...)
-  
+ 
   # test validity of "of"-value
   if(!of %in% colnames(dta)|of %in% c("id", "agreement")){
     stop(
@@ -929,19 +920,19 @@ dna_plotCentrality <- function(connection,
     )
     colours <- FALSE
   }
-  
+ 
   # count (dis-)agreement per "of"
   dta <- as.data.frame(table(dta$agreement, dta[, of]),
                        stringsAsFactors = FALSE)
   colnames(dta) <- c("agreement", "concept", "Frequency")
-  
+ 
   # order data per total mentions (disagreement + agreement)
   dta2 <- stats::aggregate(Frequency ~ concept, sum, data=dta)
   dta2 <- dta2[order(dta2$Frequency, decreasing = TRUE), ]
-  
+ 
   # replicate order of dta2$concept to dta
   dta <- dta[order(match(dta$concept, dta2$concept)), ]
-  
+ 
   # get bar colours
   if (colours){
     col <- dna_attributes(connection = connection, statementType = "DNA Statement",
@@ -950,7 +941,7 @@ dna_plotCentrality <- function(connection,
   } else {
     dta$color <- "white"
   }
-  
+ 
   # truncate where "of" is longer than truncate value
   dta$concept <- ifelse(nchar(dta$concept) > truncate,
                         paste0(gsub("\\s+$", "",
@@ -960,7 +951,7 @@ dna_plotCentrality <- function(connection,
   )
   if(length(dta$concept) / length(unique(dta$concept)) != 2){
     warning(paste0("After truncation, some labels are now exactly the same. Those are followed by",
-            " # + number now. Consider increasing truncation value."))
+                   " # + number now. Consider increasing truncation value."))
     dta2$concept <- ifelse(nchar(dta2$concept) > truncate,
                            paste0(gsub("\\s+$", "",
                                        strtrim(dta2$concept, width = truncate)),
@@ -975,14 +966,14 @@ dna_plotCentrality <- function(connection,
     dta2 <- dta2[rep(seq_len(nrow(dta2)), each=2),]
     dta$concept <- dta2$concept
   }
-  
+ 
   # setting disagreement as -1 instead 0
   dta$agreement <- ifelse(dta$agreement == 0, -1, 1)
-  
+ 
   # recode Frequency in positive and negative
   dta$Frequency <- dta$Frequency * as.integer(dta$agreement)
   dta$absFrequency <- abs(dta$Frequency)
-  
+ 
   # generate position of bar labels
   offset <- (max(dta$Frequency) + abs(min(dta$Frequency))) * 0.05
   offset <- ifelse(offset < 0.5, 0.5, offset) # offset should be at least 0.5
@@ -991,7 +982,7 @@ dna_plotCentrality <- function(connection,
   dta$pos <- ifelse(dta$Frequency > 0,
                     dta$Frequency + offset,
                     dta$Frequency - offset)
-  
+ 
   # move 0 labels where neccessary
   dta$pos[dta$Frequency == 0] <- ifelse(dta$agreement[dta$Frequency == 0] == 1,
                                         dta$pos[dta$Frequency == 0] * -1,
@@ -1104,7 +1095,7 @@ dna_plotCentrality <- function(connection,
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' dend <- dna_plotDendro(clust)
-#' 
+#'
 #' # Flip plot with ggplot2 command
 #' library("ggplot2")
 #' dend + coord_flip()
@@ -1142,7 +1133,7 @@ dna_plotDendro <- function(clust,
                                            strtrim(clust$labels, width = truncate)),
                                       "..."),
                                clust$labels)
-  
+ 
   # format as dendrogram
   hierarchy <- stats::as.dendrogram(clust)
   # Add colours----
@@ -1160,7 +1151,7 @@ dna_plotDendro <- function(clust,
       } else {
         attr(x, "Colour2") <- ""
       }
-      
+     
       attr(x, "Activity") <- clust$activities[clust$order[match(as.character(labels(x)),
                                                                 clust$labels)]]
       attr(x, "labels_short") <- clust$labels_short[match(as.character(labels(x)),
@@ -1194,7 +1185,7 @@ dna_plotDendro <- function(clust,
   dg <- ggraph::ggraph(graph = hierarchy,
                        layout = "dendrogram",
                        circular = circular)
-  
+ 
   # shape----
   if (shape == "elbows"){
     dg <- dg +
@@ -1266,7 +1257,7 @@ dna_plotDendro <- function(clust,
                                name = guidename)
   } else if (colours == "brewer" & length(leaf_colours) > 0) {
     if (length(custom_colours) == 0) {
-      custom_colours = "Set3"
+      custom_colours <- "Set3"
     }
     brewCols <- c(branch_colour,
                   scales::brewer_pal(type = "div",
@@ -1282,7 +1273,7 @@ dna_plotDendro <- function(clust,
     dg <- dg +
       scale_edge_colour_manual(values = "black", guide = "none")
   }
-  
+ 
   # theme----
   if (theme == "bw") {
     dg <- dg +
@@ -1339,14 +1330,14 @@ dna_plotDendro <- function(clust,
                            hjust = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
                                           1.05,
                                           -0.05),
-                           
+                          
                            colour = cols3),
                        size = (font_size / .pt),
                        show.legend = FALSE) +
         expand_limits(x = c(-2.3, 2.3), y = c(-2.3, 2.3))
     }
   }
-  
+ 
   # line ends----
   if (length(leaf_ends) > 0) {
     if (show_legend) {
@@ -1376,7 +1367,7 @@ dna_plotDendro <- function(clust,
                         show.legend = show_legend,
                         alpha = ends_alpha)
     }
-    
+   
     # custom_shapes----
     if (length(custom_shapes) > 0) {
       dg <- dg +
@@ -1387,7 +1378,7 @@ dna_plotDendro <- function(clust,
         scale_shape_discrete(name = legendname)
     }
   }
-  
+ 
   # rectangles----
   if (length(rectangles) > 0 & !circular) {
     rect <- data.frame(label = clust$labels_short[clust$order],
@@ -1399,7 +1390,7 @@ dna_plotDendro <- function(clust,
     rect$xmax <- rect$x[, 2] + 0.25
     rect$ymax <- min(clust$height) + max(range(clust$height)) / 10
     rect$ymin <- 0 - max(range(clust$height)) / 100
-    
+   
     dg <- dg +
       geom_rect(data = rect,
                 aes_string(xmin = "xmin",
@@ -1409,10 +1400,10 @@ dna_plotDendro <- function(clust,
                 color = rectangles,
                 fill = NA)
   }
-  
+ 
   # color node text and points----
   if (length(leaf_colours) > 0) {
-    
+   
     if (colours == "identity") {
       dg <- dg +
         scale_colour_identity(guide = "none")
@@ -1501,8 +1492,8 @@ dna_plotHeatmap <- function(clust,
     for (i in max(sapply(regmatches(pn, gregexpr("-", pn)), length))) {
       pn <- sub("^.*-", "", pn)
     }
-    colnames(nw) <- gsub("\\s+-\\s+[[:digit:]]$", 
-                         "", 
+    colnames(nw) <- gsub("\\s+-\\s+[[:digit:]]$",
+                         "",
                          colnames(nw))
   }
   colnames(nw) <- trim(colnames(nw),
@@ -1511,12 +1502,12 @@ dna_plotHeatmap <- function(clust,
   if(any(unlist(sapply(unique(pn), function(i){
     duplicated(colnames(nw)[pn == i])
   })))){
-    warning(paste0("After truncation, some labels are now exactly the same. Those are followed by",
-                   " # + number now. Consider increasing truncation value."))
+    warning(paste0("After truncation, some labels are now exactly the same.",
+                   "Those are followed by # + number now. Consider increasing truncation value."))
     colnames(nw) <- paste0("L", pn, colnames(nw))
     d <- grepl("\\...$", colnames(nw))
     colnames(nw) <- make.unique(sub("\\...$", "", colnames(nw)), sep = " #")
-    colnames(nw)[duplicated(sub(" #[[:digit:]]$", "", colnames(nw)))] <- 
+    colnames(nw)[duplicated(sub(" #[[:digit:]]$", "", colnames(nw)))] <-
       sapply(colnames(nw)[duplicated(sub(" #[[:digit:]]$", "", colnames(nw)))], function(i){
         d <- paste0("#", gsub(".*#", "", i))
         w <- sub(" #[[:digit:]]$", "", i)
@@ -1544,7 +1535,7 @@ dna_plotHeatmap <- function(clust,
   # truncate row labels----
   row.names(nw) <- trim(row.names(nw),
                         truncate)
-  
+ 
   if(any(duplicated(row.names(nw)))){
     warning(paste0("After truncation, some labels are now exactly the same. Those are followed by",
                    " # + number now. Consider increasing truncation value."))
@@ -1554,10 +1545,10 @@ dna_plotHeatmap <- function(clust,
   args <- c(as.list(clust$call)[-1],
             formals(dna_cluster)[-1])
   args <- args[!duplicated(names(args))]
-  if (args$clust.method %in% c("ward.D", 
-                               "ward.D2", 
-                               "single", 
-                               "complete", 
+  if (args$clust.method %in% c("ward.D",
+                               "ward.D2",
+                               "single",
+                               "complete",
                                "average",
                                "mcquitty",
                                "median",
@@ -1583,7 +1574,7 @@ dna_plotHeatmap <- function(clust,
     d <-  dist(t(nw), method = "euclidean")
   }
   dend_x <- hclust(d, method = args$clust.method)
-  
+ 
   dend_x$activities <- unname(rowSums(t(nw)))
   # plot clust y ----
   dots <- list(...)
@@ -1606,8 +1597,8 @@ dna_plotHeatmap <- function(clust,
     scale_x_continuous(expand = c(0.0, 0.5, 0.0, 0.5)) +
     coord_flip() +
     scale_y_reverse()
-  
-  
+ 
+ 
   # plot clust x ----
   plt_dendr_x <- do.call(dna_plotDendro,
                          c(list(clust = dend_x,
@@ -1617,33 +1608,33 @@ dna_plotHeatmap <- function(clust,
   ## heatmap ----
   df <- reshape2::melt(nw[dend_y$order, dend_x$order])
   df$posy <- seq_len(length(levels(df$Var1)))
-  df$posx <- as.vector(sapply(seq_len(length(levels(df$Var2))), 
-                              rep, 
+  df$posx <- as.vector(sapply(seq_len(length(levels(df$Var2))),
+                              rep,
                               length(levels(df$Var1))))
-  
+ 
   plt_hmap <- ggplot(data = df , aes_string(x = "posx",
                                             y = "posy",
                                             fill = "value")) +
     geom_tile() +
-    theme(axis.text.x = element_text(angle = 90, 
-                                     vjust = 0.5, 
+    theme(axis.text.x = element_text(angle = 90,
+                                     vjust = 0.5,
                                      hjust = 1),
-          panel.grid = element_blank(), 
+          panel.grid = element_blank(),
           axis.line = element_blank(),
           axis.title = element_blank(),
-          axis.text = element_text(margin = margin(t = 0, 
-                                                   r = 0, 
-                                                   b = 0, 
-                                                   l = 0, 
+          axis.text = element_text(margin = margin(t = 0,
+                                                   r = 0,
+                                                   b = 0,
+                                                   l = 0,
                                                    unit = "pt")),
           plot.margin = unit(c(0, 0, 0, 0), "lines")) +
     scale_y_continuous(breaks = unique(df$posy),
                        labels = levels(df$Var1),
-                       position = "right", 
+                       position = "right",
                        expand = c(0, 0)) +
     scale_x_continuous(breaks = unique(df$posx),
                        labels = levels(df$Var2),
-                       position = "right", 
+                       position = "right",
                        expand = c(0, 0))
   if (square) plt_hmap <- plt_hmap + coord_fixed(expand = FALSE)
   ### display values ----
@@ -1666,12 +1657,12 @@ dna_plotHeatmap <- function(clust,
     }
   }
   ### merge plots---
-  g <- insert_xaxis_grob(plot = plt_hmap, 
+  g <- insert_xaxis_grob(plot = plt_hmap,
                          plt_dendr_x,
                          height = grid::unit(0.2, "null"),
                          position = "top")
   g <- insert_yaxis_grob(plot = g,
-                         plt_dendr_y, 
+                         plt_dendr_y,
                          position = "left")
   g <- ggdraw(plot = g)
   return(g)
@@ -1690,23 +1681,34 @@ dna_plotHeatmap <- function(clust,
 #'
 #' @param clust A \code{dna_cluster} object created by the \link{dna_cluster}
 #'   function.
-#'
-#' @param draw_clusters Should clustering be highlighted? Possible values are
-#'   "polygon", which draws polygons around clusters derived via the best fit in
-#'   \link[cluster]{pam}, "ellipse" uses \link[ggplot2]{stat_ellipse} to draw
-#'   ellipses around clusters from \link[cluster]{pam} or "density" to perform a
-#'   2D kernel density estimation (see \link[MASS]{kde2d}) and display the
-#'   results with contours.
+#' @param draw_polygons Logical. Should clusters be highlighted with coloured
+#'   polygons?
+#' @param custom_colours Manually provide colours for the points and polygons.
+#' @param custom_shape Manually provide shapes to use for the scatterplot.
 #' @param alpha The alpha level of the polygons drawn when draw.clusters =
 #'   "polygon".
 #' @param jitter Takes either one value, to control the width of the jittering
 #'   of points, two values to control width and height of the jittering of
 #'   points (e.g., c(.l, .2)) or "character()" to turn off the jittering of
 #'   points.
+#' @param seed Seed for jittering.
 #' @param label Logical. Should labels be plotted?
-#' @param label_size,font_colour Control the label size and font colour of the
-#'   labels if \code{label = TRUE}, label_size takes numeric values, font_colour
-#'   takes a character string with a valid colour value.
+#' @param label_size,font_colour,label_background Control the label size, font
+#'   colour of the labels and if a background should be displayed when
+#'   \code{label = TRUE}. label_size takes numeric values, font_colour takes a
+#'   character string with a valid colour value and label_background can be
+#'   either TRUE or FALSE.
+#' @param expand Expand x- and y-axis (e.g., to make room for labels). The first
+#'   value is the units by which the x-axis is expanded in both directions, the
+#'   second controls expansion of the y axis.
+#' @param stress Should stress from the MDS be displayed on the plot.
+#' @param axis_labels Provide custom axis labels.
+#' @param clust_method Can be either "pam" for \link[cluster]{pam}, "louvain"
+#'   for \link[igraph]{cluster_louvain} or "inherit" to use the method provided
+#'   by the call to from \link{dna_cluster}.
+#' @param truncate Sets the number of characters to which labels should be
+#'   truncated.
+#' @param title Title of the MDS plot.
 #' @param ... Not used. If you want to add more plot options use \code{+} and
 #'   the ggplot2 logic (see example).
 #' @examples
@@ -1715,76 +1717,117 @@ dna_plotHeatmap <- function(clust,
 #' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
-#' mds <- dna_plotMDS(clust,
-#'                    mds = TRUE)
+#' mds <- dna_plotMDS(clust)
 #' # Flip plot with ggplot2 command
 #' library("ggplot2")
 #' mds +
 #'   coord_flip()
-#'   }
+#' }
 #' @author Johannes B. Gruber
 #' @export
 #' @import ggplot2
 #' @importFrom ggrepel geom_label_repel
 dna_plotMDS <- function(clust,
-                        draw_clusters = character(),
+                        draw_polygons = TRUE,
                         alpha = .25,
-                        jitter = c(0.5, 0.7),
+                        jitter = NULL,
+                        seed = 12345,
                         label = FALSE,
                         label_size = 3.5,
+                        label_background = FALSE,
                         font_colour = "black",
+                        expand = 0,
+                        stress = TRUE,
+                        truncate = 40,
+                        custom_colours = character(),
+                        custom_shape = character(),
+                        axis_labels = character(),
+                        clust_method = "pam",
+                        title = "Nonmetric Multidimensional Scaling",
                         ...) {
-  if (!"mds" %in% names(clust)) {
-    stop(paste("No data on multidimensional scaling given. Did you set \"mds =",
-               "TRUE\" when you called dna_cluster()?"))
-  }
   df <- clust[["mds"]]
-  g <- ggplot(df, aes_string(x = "dimension1",
-                             y = "dimension2",
+  if (length(jitter) > 0) {
+    set.seed(seed)
+    df$Dimension_1 <- jitter(df$Dimension_1, amount = jitter[1])
+    if (length(jitter) > 1) {
+      df$Dimension_2 <- jitter(df$Dimension_2, amount = jitter[2])
+    }
+  }
+  if (clust_method == "inherit") {
+   df$cluster <- clust$group[match(clust$labels, df$variable)]
+  } else if (clust_method == "pam") {
+    df$cluster <- df$cluster_pam
+  } else if (clust_method == "louvain") {
+    df$cluster <- df$cluster_louvain
+  } else {
+    stop(paste0("Please provide a valid clust_method: 'inherit', 'pam' or ",
+                "'louvain'."))
+  }
+  df$variable <- trim(as.character(df$variable), truncate)
+  g <- ggplot(df, aes_string(x = "Dimension_1",
+                             y = "Dimension_2",
                              fill = "cluster",
                              label = "variable"))
-  if (length(jitter) > 0) {
-    if (all(!utils::packageVersion("ggrepel") >= "0.7.3",
-            !utils::packageVersion("ggplot2") >= "2.2.1.9000",
-            label)) {
-      stop(paste("For jittering both points and labels, you need at least",
-                 "'ggplot2'version 2.2.1.9000 and 'ggrepel' version 0.7.3"))
-    }
-    width = ifelse(is.na(jitter[1]),
-                   0,
-                   jitter[1])
-    height = ifelse(is.na(jitter[2]),
-                    0,
-                    jitter[2])
-    pos <- position_jitter(width = width,
-                           height = height,
-                           seed = 1)
-  } else {
-    pos <- "identity"
-  }
   g <- g +
     geom_point(aes_string(colour = "cluster",
-                          shape = "cluster"),
-               position = pos)
-  if (length(draw_clusters) > 0){
-    if (draw_clusters == "polygon") {
+                          shape = "cluster"))
+  if (draw_polygons){
+      polygons <- lapply(unique(df$cluster), function(i) {
+        df[df$cluster == i, ][grDevices::chull(x = df[df$cluster == i, ]$Dimension_1,
+                                               y = df[df$cluster == i, ]$Dimension_2), ]
+      })
+      polygons <- do.call(rbind, polygons)
       g <- g +
-        geom_polygon(data = df[df$hull, ],
-                     alpha = alpha,
-                     position = pos)
-    } else if (draw_clusters == "ellipse") {
-      g <- g +
-        stat_ellipse(position = pos)
-    } else if (draw_clusters == "density"){
-      g <- g +
-        geom_density2d(alpha = alpha)
-    }
+        geom_polygon(data = polygons,
+                     alpha = alpha)
   }
   if (label) {
+    if (label_background) {
+      g <- g +
+        ggrepel::geom_label_repel(size = label_size,
+                                  color = font_colour)
+    } else {
+      g <- g +
+        ggrepel::geom_text_repel(size = label_size,
+                                 color = font_colour)
+    }
+  }
+  if (length(expand) > 0) {
     g <- g +
-      ggrepel::geom_label_repel(size = label_size,
-                                color = font_colour,
-                                position = pos)
+      scale_x_continuous(limits = c(min(df$Dimension_1) - expand[1],
+                                    max(df$Dimension_1) + expand[1]))
+    if (length(expand) > 1) {
+      g <- g +
+        scale_y_continuous(limits = c(min(df$Dimension_2) - expand[2],
+                                    max(df$Dimension_2) + expand[2]))
+    } else {expand[2] <- 0}
+  } else {expand[1] <- 0}
+  if (length(custom_colours) > 0) {
+    g <- g +
+      scale_color_manual(values = custom_colours) +
+      scale_fill_manual(values = custom_colours)
+  }
+  if (length(custom_shape) > 0) {
+    g <- g +
+      scale_shape_manual(values = custom_shape)
+  }
+  if (length(axis_labels) > 0) {
+    g <- g +
+      xlab(label = axis_labels[1]) +
+      ylab(label = axis_labels[2])
+  }
+  if (length(title) > 0) {
+    g <- g +
+      ggtitle(title)
+  }
+  if (stress) {
+    a <- data.frame(x = max(df$Dimension_1) + expand[1],
+                    y = max(df$Dimension_2) + expand[2],
+                    label = paste("Stress:", round(df$stress[1], digits = 6)))
+   
+    g <- g +
+      geom_text(data = a, aes(x = x, y = y, label = label),
+                inherit.aes = FALSE, hjust=1)
   }
   return(g)
 }
@@ -1965,14 +2008,14 @@ dna_sample <- function(overwrite = FALSE,
 #' @export
 #' @import ggplot2
 dna_timeWindow <- function(connection,
-                           timewindow = "no",
+                           timewindow = "days",
                            windowsize = 100,
-                           facet = character(),
+                           facet = "Types",
                            facetValues = character(),
                            method = "modularity",
                            verbose = 2,
                            ...) { #passed on to dna_network
-  
+ 
   dots <- list(...)
   if("excludeAuthors" %in% names(dots)){
     excludeAuthors <- unname(unlist(dots["excludeAuthors"]))
@@ -1998,9 +2041,7 @@ dna_timeWindow <- function(connection,
   } else {
     excludeTypes <- character()
   }
-  
   facetValues <- c(facetValues, "all")
-  
   if (facet == "Authors" ) {Authors <- facetValues} else {Authors <- character()}
   if (facet == "Sources") {Sources <- facetValues} else {Sources <- character()}
   if (facet == "Sections") {Sections <- facetValues} else {Sections <- character()}
@@ -2162,19 +2203,19 @@ print.dna_cluster <- function(x, ...) {
   }
   cat("Number of objects:", length(x$labels), "\n")
   if (length(na.omit(attr(x, "cut"))) > 0) {
-    cat("Cut at           :", paste(gsub("cutree.", "", 
-                                         names(attr(x, "cut"))), "=", 
-                                    attr(x, "cut"), 
-                                    collapse = ", "), 
+    cat("Cut at           :", paste(gsub("cutree.", "",
+                                         names(attr(x, "cut"))), "=",
+                                    attr(x, "cut"),
+                                    collapse = ", "),
         "\n")
   }
-  cat("Used for colours :\n", paste(names(attr(x, "colours")), 
+  cat("Used for colours :\n", paste(names(attr(x, "colours")),
                                     paste0("\"",
                                            attr(x, "colours"),
-                                           "\"\n"), 
+                                           "\"\n"),
                                     sep = "      : ",
                                     collapse = " "))
-  
+ 
   cat("\n")
   invisible(x)
 }

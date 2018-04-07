@@ -4,20 +4,19 @@
 \alias{dna_plotMDS}
 \title{Plots an MDS scatterplot from dna.cluster objects}
 \usage{
-dna_plotMDS(clust, draw_clusters = character(), alpha = 0.25,
-  jitter = c(0.5, 0.7), label = FALSE, label_size = 3.5,
-  font_colour = "black", ...)
+dna_plotMDS(clust, draw_polygons = TRUE, alpha = 0.25, jitter = NULL,
+  seed = 12345, label = FALSE, label_size = 3.5,
+  label_background = FALSE, font_colour = "black", expand = 0,
+  stress = TRUE, truncate = 40, custom_colours = character(),
+  custom_shape = character(), axis_labels = character(),
+  clust_method = "pam", title = "Nonmetric Multidimensional Scaling", ...)
 }
 \arguments{
 \item{clust}{A \code{dna_cluster} object created by the \link{dna_cluster}
 function.}
 
-\item{draw_clusters}{Should clustering be highlighted? Possible values are
-"polygon", which draws polygons around clusters derived via the best fit in
-\link[cluster]{pam}, "ellipse" uses \link[ggplot2]{stat_ellipse} to draw
-ellipses around clusters from \link[cluster]{pam} or "density" to perform a
-2D kernel density estimation (see \link[MASS]{kde2d}) and display the
-results with contours.}
+\item{draw_polygons}{Logical. Should clusters be highlighted with coloured
+polygons?}
 
 \item{alpha}{The alpha level of the polygons drawn when draw.clusters =
 "polygon".}
@@ -27,11 +26,36 @@ of points, two values to control width and height of the jittering of
 points (e.g., c(.l, .2)) or "character()" to turn off the jittering of
 points.}
 
+\item{seed}{Seed for jittering.}
+
 \item{label}{Logical. Should labels be plotted?}
 
-\item{label_size, font_colour}{Control the label size and font colour of the
-labels if \code{label = TRUE}, label_size takes numeric values, font_colour
-takes a character string with a valid colour value.}
+\item{label_size, font_colour, label_background}{Control the label size, font
+colour of the labels and if a background should be displayed when
+\code{label = TRUE}. label_size takes numeric values, font_colour takes a
+character string with a valid colour value and label_background can be
+either TRUE or FALSE.}
+
+\item{expand}{Expand x- and y-axis (e.g., to make room for labels). The first
+value is the units by which the x-axis is expanded in both directions, the
+second controls expansion of the y axis.}
+
+\item{stress}{Should stress from the MDS be displayed on the plot.}
+
+\item{truncate}{Sets the number of characters to which labels should be
+truncated.}
+
+\item{custom_colours}{Manually provide colours for the points and polygons.}
+
+\item{custom_shape}{Manually provide shapes to use for the scatterplot.}
+
+\item{axis_labels}{Provide custom axis labels.}
+
+\item{clust_method}{Can be either "pam" for \link[cluster]{pam}, "louvain"
+for \link[igraph]{cluster_louvain} or "inherit" to use the method provided
+by the call to from \link{dna_cluster}.}
+
+\item{title}{Title of the MDS plot.}
 
 \item{...}{Not used. If you want to add more plot options use \code{+} and
 the ggplot2 logic (see example).}
@@ -52,13 +76,12 @@ dna_downloadJar()
 dna_init("dna-2.0-beta21.jar")
 conn <- dna_connection(dna_sample())
 clust <- dna_cluster(conn)
-mds <- dna_plotMDS(clust,
-                   mds = TRUE)
+mds <- dna_plotMDS(clust)
 # Flip plot with ggplot2 command
 library("ggplot2")
 mds +
   coord_flip()
-  }
+}
 }
 \author{
 Johannes B. Gruber

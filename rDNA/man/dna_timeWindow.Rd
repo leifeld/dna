@@ -4,8 +4,8 @@
 \alias{dna_timeWindow}
 \title{Computes for a temporal sequence of networks}
 \usage{
-dna_timeWindow(connection, timewindow = "no", windowsize = 100,
-  facet = character(), facetValues = character(), method = "modularity",
+dna_timeWindow(connection, timewindow = "days", windowsize = 100,
+  facet = "Types", facetValues = character(), method = "modularity",
   verbose = 2, ...)
 }
 \arguments{
