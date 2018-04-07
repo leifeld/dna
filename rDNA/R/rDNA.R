@@ -1698,6 +1698,7 @@ dna_plotHeatmap <- function(clust,
 #'   \code{label = TRUE}. label_size takes numeric values, font_colour takes a
 #'   character string with a valid colour value and label_background can be
 #'   either TRUE or FALSE.
+#' @param point_size Size of the points in the scatterplot.
 #' @param expand Expand x- and y-axis (e.g., to make room for labels). The first
 #'   value is the units by which the x-axis is expanded in both directions, the
 #'   second controls expansion of the y axis.
@@ -1734,6 +1735,7 @@ dna_plotMDS <- function(clust,
                         seed = 12345,
                         label = FALSE,
                         label_size = 3.5,
+                        point_size = 1,
                         label_background = FALSE,
                         font_colour = "black",
                         expand = 0,
@@ -1770,7 +1772,8 @@ dna_plotMDS <- function(clust,
                              label = "variable"))
   g <- g +
     geom_point(aes_string(colour = "cluster",
-                          shape = "cluster"))
+                          shape = "cluster"),
+                          size = point_size)
   if (draw_polygons){
       polygons <- lapply(unique(df$cluster), function(i) {
         df[df$cluster == i, ][grDevices::chull(x = df[df$cluster == i, ]$Dimension_1,

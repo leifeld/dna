@@ -5,7 +5,7 @@
 \title{Plots an MDS scatterplot from dna.cluster objects}
 \usage{
 dna_plotMDS(clust, draw_polygons = TRUE, alpha = 0.25, jitter = NULL,
-  seed = 12345, label = FALSE, label_size = 3.5,
+  seed = 12345, label = FALSE, label_size = 3.5, point_size = 1,
   label_background = FALSE, font_colour = "black", expand = 0,
   stress = TRUE, truncate = 40, custom_colours = character(),
   custom_shape = character(), axis_labels = character(),
@@ -35,6 +35,8 @@ colour of the labels and if a background should be displayed when
 \code{label = TRUE}. label_size takes numeric values, font_colour takes a
 character string with a valid colour value and label_background can be
 either TRUE or FALSE.}
+
+\item{point_size}{Size of the points int the scatterplot.}
 
 \item{expand}{Expand x- and y-axis (e.g., to make room for labels). The first
 value is the units by which the x-axis is expanded in both directions, the
