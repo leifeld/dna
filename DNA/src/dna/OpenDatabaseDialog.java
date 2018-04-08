@@ -25,6 +25,8 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
+import javax.swing.SpinnerModel;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
@@ -314,6 +316,11 @@ public class OpenDatabaseDialog extends JDialog {
 		
 		Dna.dna.sql.upsertSetting("version", Dna.dna.version);
 		Dna.dna.sql.upsertSetting("date", Dna.dna.date);
+		if (!Dna.data.getSettings().containsKey("popupWidth")) {
+			Dna.data.addSetting("popupWidth", "220");
+			Dna.dna.sql.upsertSetting("popupWidth", "220");
+		}
+		Dna.dna.gui.popupWidthModel.setValue(Integer.parseInt(Dna.data.getSettings().get("popupWidth")));
 		
 		//Dna.dna.gui.leftPanel.coderPanel.coderBox.setSelectedItem(Dna.data.getCoderById(ac));
 		Dna.dna.gui.rightPanel.statementPanel.typeComboBox.setSelectedIndex(0);

@@ -70,7 +70,6 @@ public class NewDatabaseDialog extends JDialog {
 	String dbFile = "";
 	String dbUser = "";
 	String dbPassword = "";
-	Data data = new Data();
 	
 	JButton goButton;
 	public JLabel coderLabel, statementTypeLabel, dbLabel;
@@ -1156,10 +1155,13 @@ public class NewDatabaseDialog extends JDialog {
 					Dna.dna.sql.createDataStructure();
 					//Dna.data.getSettings().put("filename", dbFile);
 					//Dna.dna.sql.upsertSetting("filename", dbFile);
-					data.getSettings().put("version", Dna.dna.version);
+					Dna.data.getSettings().put("version", Dna.dna.version);
 					Dna.dna.sql.upsertSetting("version", Dna.dna.version);
-					data.getSettings().put("date", Dna.dna.date);
+					Dna.data.getSettings().put("date", Dna.dna.date);
 					Dna.dna.sql.upsertSetting("date", Dna.dna.date);
+					Dna.data.getSettings().put("popupWidth", "220");  // default width of text fields in popup windows
+					Dna.dna.sql.upsertSetting("popupWidth", "220");
+					Dna.dna.gui.popupWidthModel.setValue(220);
 					
 					Dna.dna.setActiveCoder(Dna.data.getCoders().get(0).getId());
 					for (int i = 0; i < Dna.data.getCoders().size(); i++) {

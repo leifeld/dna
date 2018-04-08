@@ -52,11 +52,13 @@ public class Popup extends JDialog {
 	static int statementId;
 	JPanel gridBagPanel;
 	Connection conn;
+	int textFieldWidth;
 	
 	public Popup(Point point, int statementId, Point location, boolean editable) {
 		this.point = point;
 		Popup.statementId = statementId;
 		this.los = location;
+		this.textFieldWidth = Integer.parseInt(Dna.data.getSettings().get("popupWidth"));
 		
 		Statement statement = Dna.data.getStatement(statementId);
 		this.color = Dna.data.getStatementColor(statementId);
@@ -213,7 +215,7 @@ public class Popup extends JDialog {
 				} else {
 					box.setEnabled(false);
 				}
-    			box.setPreferredSize(new Dimension(220, 20));
+    			box.setPreferredSize(new Dimension(this.textFieldWidth, 20));
     			box.setSelectedItem((AttributeVector)entry);
     			AutoCompleteDecorator.decorate(box);
     			
@@ -237,7 +239,7 @@ public class Popup extends JDialog {
     			box.setLineWrap(true);
     			box.setText(entry);
     			JScrollPane boxScroller = new JScrollPane(box);
-    			boxScroller.setPreferredSize(new Dimension(220, 100));
+    			boxScroller.setPreferredSize(new Dimension(this.textFieldWidth, 100));
     			boxScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
     			
 				gbc.anchor = GridBagConstraints.NORTHEAST;

@@ -49,6 +49,7 @@ public class Gui extends JFrame {
 	public RightPanel rightPanel;
 	public LeftPanel leftPanel;
 	public MenuBar menuBar;
+	public SpinnerModel popupWidthModel;
 	
 	public int previousDocID = -1;
 	
@@ -108,8 +109,25 @@ public class Gui extends JFrame {
 		
 		// toggle buttons in upper right corner of DNA GUI
 		JPanel toggleButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		SpinnerModel spinnerModel = new SpinnerNumberModel(14, 8, 60, 1);
-		JSpinner fontSpinner = new JSpinner(spinnerModel);
+		
+		popupWidthModel = new SpinnerNumberModel(220, 220, 9990, 10);
+		JSpinner popupWidthSpinner = new JSpinner(popupWidthModel);
+		popupWidthSpinner.setPreferredSize(new Dimension(60, (int) popupWidthSpinner.getPreferredSize().getHeight()));
+		popupWidthSpinner.addChangeListener(new ChangeListener(){
+			public void stateChanged(ChangeEvent e) {
+				if (Dna.dna.sql != null) {
+					String s = String.valueOf((int) popupWidthSpinner.getValue());
+					Dna.data.getSettings().put("popupWidth", s);
+					Dna.dna.sql.upsertSetting("popupWidth", s);
+				}
+			}
+		});
+		toggleButtons.add(new JLabel(new ImageIcon(getClass().getResource("/icons/shape_align_left.png"))));
+		toggleButtons.add(popupWidthSpinner);
+		toggleButtons.add(Box.createRigidArea(new Dimension(5,5)));
+		
+		SpinnerModel fontSizeModel = new SpinnerNumberModel(14, 8, 60, 1);
+		JSpinner fontSpinner = new JSpinner(fontSizeModel);
 		fontSpinner.addChangeListener(new ChangeListener(){
 			public void stateChanged(ChangeEvent e) {
 				Font font = new Font("Monospaced", Font.PLAIN, (int) fontSpinner.getValue());

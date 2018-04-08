@@ -618,7 +618,17 @@ public class Data {
 	public void setSettings(HashMap<String, String> settings) {
 		this.settings = settings;
 	}
-
+	
+	/**
+	 * Add a new setting to the settings list
+	 * 
+	 * @param key      The key
+	 * @param value    The value
+	 */
+	public void addSetting(String key, String value) {
+		this.settings.put(key, value);
+	}
+	
 	/**
 	 * @param documentId the ID of the document for which statements should be counted
 	 * @return number of statements with the document ID that is handed over
