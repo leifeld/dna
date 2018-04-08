@@ -317,7 +317,7 @@ public class OpenDatabaseDialog extends JDialog {
 		Dna.dna.sql.upsertSetting("version", Dna.dna.version);
 		Dna.dna.sql.upsertSetting("date", Dna.dna.date);
 		if (!Dna.data.getSettings().containsKey("popupWidth")) {
-			Dna.data.addSetting("popupWidth", "220");
+			Dna.data.getSettings().put("popupWidth", "220");
 			Dna.dna.sql.upsertSetting("popupWidth", "220");
 		}
 		Dna.dna.gui.popupWidthModel.setValue(Integer.parseInt(Dna.data.getSettings().get("popupWidth")));
