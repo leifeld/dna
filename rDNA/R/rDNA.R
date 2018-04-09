@@ -405,7 +405,8 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
                             filepath = character(),
                             force = FALSE) {
-  url <- paste0("https://github.com/leifeld/dna/releases/download/v2.0-beta.21/dna-2.0-beta21.jar")
+  # temporary fix until next release
+  url <- paste0("https://github.com/leifeld/dna/releases/download/v2.0-beta.20/dna-2.0-beta20.jar")
   if (any(!file.exists(paste0(filepath, filename)), force)) {
     download.file(url = url,
                   destfile = paste0(filepath, filename),
@@ -906,7 +907,7 @@ dna_plotCentrality <- function(connection,
                      networkType = "eventlist",
                      verbose = FALSE,
                      ...)
- 
+  
   # test validity of "of"-value
   if(!of %in% colnames(dta)|of %in% c("id", "agreement")){
     stop(
@@ -920,98 +921,131 @@ dna_plotCentrality <- function(connection,
     )
     colours <- FALSE
   }
- 
+  
   # count (dis-)agreement per "of"
   dta <- as.data.frame(table(dta$agreement, dta[, of]),
                        stringsAsFactors = FALSE)
-  colnames(dta) <- c("agreement", "concept", "Frequency")
- 
+  colnames(dta) <- c("agreement", "of", "Frequency")
+  binary <- all(dta$agreement %in% c(0, 1))
+  if (binary) {
+    dta$count <- dta$Frequency
+    dta$absFrequency <- dta$Frequency
+  } else {
+    dta$count <- dta$Frequency
+    dta$Frequency <- dta$Frequency * as.numeric(dta$agreement)
+    dta$absFrequency <- abs(dta$Frequency)
+  }
+  
   # order data per total mentions (disagreement + agreement)
-  dta2 <- stats::aggregate(Frequency ~ concept, sum, data=dta)
-  dta2 <- dta2[order(dta2$Frequency, decreasing = TRUE), ]
- 
-  # replicate order of dta2$concept to dta
-  dta <- dta[order(match(dta$concept, dta2$concept)), ]
- 
+  dta2 <- stats::aggregate(absFrequency ~ of, sum, data=dta)
+  dta2 <- dta2[order(dta2$absFrequency, decreasing = TRUE), ]
+  
+  # replicate order of dta2$of to dta
+  dta$of <- factor(dta$of, levels = rev(dta2$of))
+  
   # get bar colours
   if (colours){
     col <- dna_attributes(connection = connection, statementType = "DNA Statement",
                           variable = of, values = NULL)
-    dta$color <- as.character(col$color[match(dta$concept, col$value)])
+    dta$colour <- as.character(col$color[match(dta$of, col$value)])
+    dta$text_colour <- "black"
+    dta$text_colour[sum(grDevices::col2rgb(dta$colour) *c(299, 587,114))/1000 < 123] <- "white"
   } else {
-    dta$color <- "white"
+    dta$colour <- "white"
+    dta$text_colour <- "black"
   }
- 
-  # truncate where "of" is longer than truncate value
-  dta$concept <- ifelse(nchar(dta$concept) > truncate,
-                        paste0(gsub("\\s+$", "",
-                                    strtrim(dta$concept, width = truncate)),
-                               "..."),
-                        dta$concept
-  )
-  if(length(dta$concept) / length(unique(dta$concept)) != 2){
-    warning(paste0("After truncation, some labels are now exactly the same. Those are followed by",
-                   " # + number now. Consider increasing truncation value."))
-    dta2$concept <- ifelse(nchar(dta2$concept) > truncate,
-                           paste0(gsub("\\s+$", "",
-                                       strtrim(dta2$concept, width = truncate)),
-                                  "..."),
-                           dta2$concept
-    )
-    i <- 1
-    while(any(duplicated(dta2$concept))){
-      dta2$concept[duplicated(dta2$concept)] <- paste0(dta2$concept[duplicated(dta2$concept)], ".", i)
-      i <- i + 1
+  
+  if (binary) {
+    # setting disagreement as -1 instead 0
+    dta$agreement <- ifelse(dta$agreement == 0, -1, 1)
+    
+    # recode Frequency in positive and negative
+    dta$Frequency <- dta$Frequency * as.integer(dta$agreement)
+    dta$absFrequency <- abs(dta$Frequency)
+    
+    # generate position of bar labels
+    offset <- (max(dta$Frequency) + abs(min(dta$Frequency))) * 0.05
+    offset <- ifelse(offset < 0.5, 0.5, offset) # offset should be at least 0.5
+    if(offset > abs(min(dta$Frequency))){offset <- abs(min(dta$Frequency))}
+    if(offset > max(dta$Frequency)){offset <- abs(min(dta$Frequency))}
+    dta$pos <- ifelse(dta$Frequency > 0,
+                      dta$Frequency + offset,
+                      dta$Frequency - offset)
+    
+    # move 0 labels where neccessary
+    dta$pos[dta$Frequency == 0] <- ifelse(dta$agreement[dta$Frequency == 0] == 1,
+                                          dta$pos[dta$Frequency == 0] * -1,
+                                          dta$pos[dta$Frequency == 0])
+    dta$label <- as.factor(dta$count)
+  } else {
+    dta <- dta[dta$Frequency != 0, ]
+    dta$pos <- ifelse(dta$Frequency > 0,
+                      1.1,
+                      -0.1)
+    # add 0 values in case all frequencies are positive/negative
+    for (c in unique(dta$of)) {
+      if(all(dta$Frequency[dta$of == c] < 0)) {
+        dta <- rbind(dta,
+                     dta[dta$of == c, ][1, ])
+        dta[nrow(dta), c(1, 3, 4)] <- 0
+      }
+      if(all(dta$Frequency[dta$of == c] > 0)) {
+        dta <- rbind(dta,
+                     dta[dta$of == c, ][1, ])
+        dta[nrow(dta), c(1, 3, 4)] <- 0
+      }
     }
-    dta2 <- dta2[rep(seq_len(nrow(dta2)), each=2),]
-    dta$concept <- dta2$concept
+    dta$label <- paste(dta$count, dta$agreement, sep = " x ")
   }
- 
-  # setting disagreement as -1 instead 0
-  dta$agreement <- ifelse(dta$agreement == 0, -1, 1)
- 
-  # recode Frequency in positive and negative
-  dta$Frequency <- dta$Frequency * as.integer(dta$agreement)
-  dta$absFrequency <- abs(dta$Frequency)
- 
-  # generate position of bar labels
   offset <- (max(dta$Frequency) + abs(min(dta$Frequency))) * 0.05
-  offset <- ifelse(offset < 0.5, 0.5, offset) # offset should be at least 0.5
-  if(offset > abs(min(dta$Frequency))){offset <- abs(min(dta$Frequency))}
-  if(offset > max(dta$Frequency)){offset <- abs(min(dta$Frequency))}
-  dta$pos <- ifelse(dta$Frequency > 0,
-                    dta$Frequency + offset,
-                    dta$Frequency - offset)
- 
-  # move 0 labels where neccessary
-  dta$pos[dta$Frequency == 0] <- ifelse(dta$agreement[dta$Frequency == 0] == 1,
-                                        dta$pos[dta$Frequency == 0] * -1,
-                                        dta$pos[dta$Frequency == 0])
-  high <- length(unique(dta$concept)) + 1.5
+  offset <- ifelse(offset < 0.5, 0.5, offset)
+  high <- length(unique(dta$of)) + 1.5
   yintercepts <- data.frame(x = c(0, high-1),
                             y = c(0, 0))
-  g <-  ggplot(dta, aes_string(x = "concept", y = "Frequency")) +
-    geom_bar(stat="identity",
-             position = position_dodge(),
-             fill = dta$color,
-             colour = "black",
-             width = barWidth) +
+  
+  
+  g <- ggplot(dta[order(dta$Frequency, 
+                        decreasing = TRUE),], 
+              aes_string(x = "of", 
+                         y = "Frequency", 
+                         fill = "agreement", 
+                         label = "label")) +
+    geom_bar(aes_string(fill = "colour",
+                        colour = "text_colour"),
+             stat="identity",
+             width = barWidth,
+             show.legend = FALSE) +
     coord_flip() +
-    theme_bw() +
-    geom_line(aes_string(x = "x", y = "y"), data = yintercepts, size = axisWidth) +
-    theme(panel.border = element_blank(),
-          panel.grid.major = element_blank(),
+    theme_minimal() +
+    geom_line(aes_string(x = "x", y = "y"), 
+              data = yintercepts, 
+              size = axisWidth,
+              inherit.aes = FALSE) +
+    theme(panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
-          axis.line = element_blank(),
           axis.title.x = element_blank(),
           axis.title.y = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.y = element_blank(),
           axis.text.y = element_text(size = fontSize),
-          plot.title = element_text(hjust = ifelse(max(nchar(dta$concept)) > 10, -0.15, 0))) +
-    geom_text(aes_string(x = "concept", y = "pos", label = "absFrequency"), size = (fontSize / .pt)) +
-    scale_y_discrete(expand = c(0, offset, 0, offset)) + #make some room for labels
-    scale_fill_manual("legend", values = dta$color)
+          plot.title = element_text(hjust = ifelse(max(nchar(as.character(dta$of))) > 10, -0.15, 0))) +
+    scale_fill_manual(values = dta$colour) +
+    scale_color_identity()
+  if (binary) {
+    g <- g +
+      geom_text(aes_string(x = "of", 
+                           y = "pos",
+                           label = "label"), 
+                size = (fontSize / .pt),
+                inherit.aes = FALSE,
+                data = dta)
+  } else {
+    g <- g +
+      geom_text(aes_string(colour = "text_colour"),
+                size = (fontSize / .pt), 
+                position = position_stack(vjust = 0.5),
+                inherit.aes = TRUE)
+  }
   if(lab){
     g <- g +
       annotate("text",
@@ -1026,7 +1060,11 @@ dna_plotCentrality <- function(connection,
                hjust = 1,
                label = lab.neg,
                size = (fontSize / .pt)) +
-      scale_x_discrete(expand = c(0, 2, 0, 2))
+      scale_x_discrete(labels = function(x) trim(x, n = truncate), 
+                       expand = c(0, 2, 0, 2))
+  } else {
+    g <- g +
+      scale_x_discrete(labels = function(x) trim(x, n = truncate))
   }
   return(g)
 }

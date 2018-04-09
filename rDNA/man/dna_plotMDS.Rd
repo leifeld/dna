@@ -36,7 +36,7 @@ colour of the labels and if a background should be displayed when
 character string with a valid colour value and label_background can be
 either TRUE or FALSE.}
 
-\item{point_size}{Size of the points int the scatterplot.}
+\item{point_size}{Size of the points in the scatterplot.}
 
 \item{expand}{Expand x- and y-axis (e.g., to make room for labels). The first
 value is the units by which the x-axis is expanded in both directions, the
