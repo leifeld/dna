@@ -6,6 +6,7 @@
 \usage{
 dna_plotHeatmap(clust, truncate = 40, values = FALSE,
   colours = character(), custom_colours = character(), square = TRUE,
+  dendro_x = TRUE, dendro_x_size = 0.2, dendro_y_size = 0.2,
   qualifierLevels = list(`0` = "no", `1` = "yes"), ...)
 }
 \arguments{
@@ -15,7 +16,7 @@ function.}
 \item{truncate}{Sets the number of characters to which labels should be
 truncated.}
 
-\item{values}{Should values displayed in the tiles of the heatmap? Logical.}
+\item{values}{If TRUE, will display the values in the tiles of the heatmap.}
 
 \item{colours}{There are two options: When "brewer" is selected, the function
 \link[ggplot2]{scale_fill_distiller} is used to colour the heatmap tiles.
@@ -32,6 +33,11 @@ values. Colours are then derived from a sequential colour gradient palette.
 
 \item{square}{If TRUE, will make the tiles of the heatmap quadratic.}
 
+\item{dendro_x}{If TRUE, will draw a dendrogram on the x-axis.}
+
+\item{dendro_x_size, dendro_y_size}{Control the size of the dendrograms on the
+x- and y-axis}
+
 \item{qualifierLevels}{Takes a list with integer values of the qualifier
 levels (as characters) as names and character values as labels (See
 example).}
@@ -42,7 +48,7 @@ example).}
 Plots a heatmap with dendrograms from objects derived via \link{dna_cluster}.
 }
 \details{
-This function plots a heatmap including dendrograms on the x- and y- axis of
+This function plots a heatmap including dendrograms on the x- and y-axis of
 the heatmap plot. The available options for colouring the tiles can be
 displayed using \code{RColorBrewer::display.brewer.all()} (RColorBrewer needs
 to be installed).

@@ -156,6 +156,11 @@ dna_cluster <- function(connection,
                         cutree.h = NULL,
                         ...) {
   dots <- list(...)
+  if ("normalization" %in% names(dots)){
+    warning(paste0("Normalization is done automatically during clustering and",
+                   " cannot be passed to dna_network via \"...\""))
+    dots["normalization"] <- NULL
+  }
   if ("excludeValues" %in% names(dots)){
     excludeValues <- dots["excludeValues"][[1]]
     dots["excludeValues"] <- NULL
@@ -1470,7 +1475,7 @@ dna_plotDendro <- function(clust,
 #'
 #' Plots a heatmap with dendrograms from objects derived via \link{dna_cluster}.
 #'
-#' This function plots a heatmap including dendrograms on the x- and y- axis of
+#' This function plots a heatmap including dendrograms on the x- and y-axis of
 #' the heatmap plot. The available options for colouring the tiles can be
 #' displayed using \code{RColorBrewer::display.brewer.all()} (RColorBrewer needs
 #' to be installed).
@@ -1479,7 +1484,7 @@ dna_plotDendro <- function(clust,
 #'   function.
 #' @param truncate Sets the number of characters to which labels should be
 #'   truncated.
-#' @param values Should values displayed in the tiles of the heatmap? Logical.
+#' @param values If TRUE, will display the values in the tiles of the heatmap.
 #' @param colours There are two options: When "brewer" is selected, the function
 #'   \link[ggplot2]{scale_fill_distiller} is used to colour the heatmap tiles.
 #'   When "gradient" is selected, \link[ggplot2]{scale_fill_gradient} will be
@@ -1492,6 +1497,9 @@ dna_plotDendro <- function(clust,
 #'   \link[ggplot2]{scale_fill_gradient}. If more than two colours are provided
 #'   \link[ggplot2]{scale_fill_gradientn} is used instead.
 #' @param square If TRUE, will make the tiles of the heatmap quadratic.
+#' @param dendro_x If TRUE, will draw a dendrogram on the x-axis.
+#' @param dendro_x_size,dendro_y_size Control the size of the dendrograms on the
+#'   x- and y-axis
 #' @param qualifierLevels Takes a list with integer values of the qualifier
 #'   levels (as characters) as names and character values as labels (See
 #'   example).
@@ -1518,6 +1526,9 @@ dna_plotHeatmap <- function(clust,
                             colours = character(),
                             custom_colours = character(),
                             square = TRUE,
+                            dendro_x = TRUE,
+                            dendro_x_size = 0.2,
+                            dendro_y_size = 0.2,
                             qualifierLevels = list("0" = "no",
                                                    "1" = "yes"),
                             ...) {
@@ -1540,7 +1551,7 @@ dna_plotHeatmap <- function(clust,
   if(any(unlist(sapply(unique(pn), function(i){
     duplicated(colnames(nw)[pn == i])
   })))){
-    warning(paste0("After truncation, some labels are now exactly the same.",
+    warning(paste0("After truncation, some column labels are now exactly the same.",
                    "Those are followed by # + number now. Consider increasing truncation value."))
     colnames(nw) <- paste0("L", pn, colnames(nw))
     d <- grepl("\\...$", colnames(nw))
@@ -1575,7 +1586,7 @@ dna_plotHeatmap <- function(clust,
                         truncate)
  
   if(any(duplicated(row.names(nw)))){
-    warning(paste0("After truncation, some labels are now exactly the same. Those are followed by",
+    warning(paste0("After truncation, some row labels are now exactly the same. Those are followed by",
                    " # + number now. Consider increasing truncation value."))
     row.names(nw) <- paste0(make.names(sub("...$", "", row.names(nw)), unique=TRUE), "...")
   }
@@ -1583,37 +1594,34 @@ dna_plotHeatmap <- function(clust,
   args <- c(as.list(clust$call)[-1],
             formals(dna_cluster)[-1])
   args <- args[!duplicated(names(args))]
-  if (args$clust.method %in% c("ward.D",
-                               "ward.D2",
-                               "single",
-                               "complete",
-                               "average",
-                               "mcquitty",
-                               "median",
-                               "centroid")) {
-    dend_y <- clust
-  } else {
-    warning(paste0("dna_plotHeatmap currently only works with",
-                   "clustering algorithms from hclust. Dendro",
-                   "grams are constructed using method \"ward",
-                   ".D2\" instead."))
-    if (all(nw %in% c(0, 1))){
-      d <-  vegan::vegdist(nw, method = "jaccard")
-    } else {
-      d <-  dist(nw, method = "euclidean")
-    }
-    dend_y <- hclust(d, method = "ward.D2")
-    dend_y$activities <- unname(rowSums(nw))
+  dend_y <- clust
+  if (all(dendro_x,
+          !args$clust.method %in% c("ward.D",
+                                    "ward.D2",
+                                    "single",
+                                    "complete",
+                                    "average",
+                                    "mcquitty",
+                                    "median",
+                                    "centroid"))) {
+    warning(paste0("The dendrogram on the x-axis of the ", 
+                   "dna_plotHeatmap cannot be made using \"",
+                   args$clust.method,
+                   "\". This dendro",
+                   "gram is constructed using the method ",
+                   "\"ward.D2\" instead."))
     args$clust.method <- "ward.D2"
   }
+  
   if (all(t(nw) %in% c(0, 1))){
     d <-  vegan::vegdist(t(nw), method = "jaccard")
   } else {
     d <-  dist(t(nw), method = "euclidean")
   }
   dend_x <- hclust(d, method = args$clust.method)
- 
+  
   dend_x$activities <- unname(rowSums(t(nw)))
+  
   # plot clust y ----
   dots <- list(...)
   if (!"leaf_colours" %in% names(dots)) {
@@ -1638,11 +1646,13 @@ dna_plotHeatmap <- function(clust,
  
  
   # plot clust x ----
-  plt_dendr_x <- do.call(dna_plotDendro,
-                         c(list(clust = dend_x,
-                                leaf_labels = ""),
-                           dots)) +
-    scale_x_continuous(expand = c(0.0, 0.5, 0.0, 0.5))
+  if (dendro_x) {
+    plt_dendr_x <- do.call(dna_plotDendro,
+                           c(list(clust = dend_x,
+                                  leaf_labels = ""),
+                             dots)) +
+      scale_x_continuous(expand = c(0.0, 0.5, 0.0, 0.5))
+  }
   ## heatmap ----
   df <- reshape2::melt(nw[dend_y$order, dend_x$order])
   df$posy <- seq_len(length(levels(df$Var1)))
@@ -1695,13 +1705,16 @@ dna_plotHeatmap <- function(clust,
     }
   }
   ### merge plots---
-  g <- insert_xaxis_grob(plot = plt_hmap,
-                         plt_dendr_x,
-                         height = grid::unit(0.2, "null"),
-                         position = "top")
-  g <- insert_yaxis_grob(plot = g,
+  g <- insert_yaxis_grob(plot = plt_hmap,
                          plt_dendr_y,
+                         width = grid::unit(dendro_y_size, "null"),
                          position = "left")
+  if (dendro_x) {
+    g <- insert_xaxis_grob(plot = g,
+                           plt_dendr_x,
+                           height = grid::unit(dendro_x_size, "null"),
+                           position = "top")
+  }
   g <- ggdraw(plot = g)
   return(g)
 }
