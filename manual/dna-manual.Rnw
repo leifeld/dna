@@ -122,7 +122,7 @@ knit_hooks$set(crop=hook_pdfcrop, document = function(x) {sub('\\usepackage[]{co
 @
 
 \title{Discourse Network Analyzer Manual}
-\date{\footnotesize{Last update: DNA 2.0 beta 20 with rDNA 2.0.57 on \today.}}
+\date{\footnotesize{Last update: DNA 2.0 beta 20 with rDNA \Sexpr{packageVersion("rDNA")} on \today.}}
 \author{Philip Leifeld, Johannes Gruber and Felix Rolf Bossner}
 
 \maketitle
@@ -950,7 +950,7 @@ devtools::install_github("leifeld/dna/rDNA", args = "--no-multiarch")
 
 After this is done as well, the final step of the installation is to test if \rdna\ can be loaded into \R\ correctly and to perform a basic operation with it---opening \dna\ from within \R.
 In order to do so, you first need to download \dna, which can also be done in \R\ with the \code{dna\_downloadJar} command (see Chapter~\ref{chp:rdna} for more details on what these commands mean).
-<<eval=TRUE, echo = FALSE>>=
+<<eval=TRUE, echo = FALSE, warning = FALSE>>=
 rDNA::dna_downloadJar() 
 @
 <<eval=FALSE, results = 'tex', message = FALSE>>=
@@ -1778,7 +1778,7 @@ The the choice of the value zero in cells where row and column mention the same 
 #' prep environment
 library("rDNA")
 library("kableExtra")
-dna_init("dna-2.0-beta20.jar")
+dna_init("dna-2.0-beta21.jar")
 truncate <- function(x, trunc = 12){
   x <- ifelse(nchar(x) > trunc,
                         paste0(gsub("\\s+$", "",
@@ -2744,10 +2744,10 @@ We also need to register \dna\ with \rdna\ to use them together.
 To do that, you need to save the \dna\ \texttt{.jar} file to the working directory of the current \R\ session.
 If you haven't already downlaoded \dna, you can do this from \R\ by running \code{dna\_downloadJar()}.
 This will place the newest version of \dna\ in your working directory.
-Then  you can initialize \dna\ as follows (with \texttt{dna-2.0-beta20.jar} in this example):
+Then  you can initialize \dna\ as follows (with \texttt{dna-2.0-beta21.jar} in this example):
 
 <<eval=FALSE>>=
-dna_init("dna-2.0-beta20.jar")
+dna_init("dna-2.0-beta21.jar")
 
 # If you use the current beta version (e.g., you have just downloaded it via
 # dna_downloadJar) you can omit the file name
@@ -3032,21 +3032,34 @@ The green edges span both camps, and this caused additional connections between 
 The negative tie is ignored in the construction of the congruence network because conflicts are not counted and there is no second red tie to that concept.
 
 \section{Cluster analysis}
-As briefly mentioned in Section~\ref{sec:normal}, it is often fertile to perform clustering techniques on networks retrieved via discourse network analysis to make it easy to detect communities in the discourse.
-Especially as networks get bigger, it can quickly get very hard to see the different alliances in a network plot.
-Furthermore, as some actors tend to have especially high or low profiles in a discussion, due to their different levels of access to, for example, the media, the strength of ties can quickly get masked by some actors being able to express ties more often than others.
-To get around some of this problem, we have included the function \code{dna\_cluster} to make it very easy for users to normalise and cluster networks using Euclidean and Jaccard distance measures and hierarchical clustering.
+In the last section we have seen how you can identify communities in a discourse by visually inspecting network plots.
+However, this becomes difficult very quickly as soon as discourse network analysis is performed on a larger database with more than just a few actors.
+As briefly mentioned in Section~\ref{sec:normal}, it is therefore often fertile to perform certain clustering techniques on DNA networks to get a better grip of the characteristics of a discourse.
+
+
+Additionally, different levels of access to the media or other public forums can lead one organisation to be able to make many more statements than others and therefore mask the strength of ties between actors.
+To ease the impact of this problem, we have included the function \code{dna\_cluster} to make it very easy for users to normalise and cluster networks using a collection of techniques such as Euclidean and Jaccard distance measures and hierarchical clustering.
 Again you can get help on the function using \code{help(dna\_cluster)}.
 
 We can perform the clustering directly on the connection to the sample database we have been using above and do not need to call \code{dna\_network} first:
 
 <<eval=TRUE, results = 'tex'>>=
+# Use the command on the connection to the sample
 clust <- dna_cluster(conn)
+
+# And simply type the name of the object to print information about it
 clust
 @
 
 As you can see from the information printed on the screen when \code{clust} was called, the cluster method used by default is \texttt{ward.D2}.
-The distance measure is set automatically, based on the properties of the network. Since the default of \code{help(dna\_cluster)} is to exclude duplicated statements on the document level (\code{duplicates = "document"}), the resulting network matrix is binary, meaning that 1 represents a connection between actors and 0 means there is no connection. If you turn the removal of duplicates off, the Euclidean distance will be used instead of Jaccard:
+The distance measure is set automatically, based on the properties of the network. 
+Since the default of \code{dna\_cluster} is to exclude duplicated statements on the document level (\code{duplicates = "document"}), the resulting network matrix is binary in this case, meaning that 1 represents a connection between actors and 0 means there is no connection.
+This, in effect, normalises the network as it doens't matter anymore how often an actor makes the same statement.
+In other scenarios, however, actors might make the same statment many times over different documents. 
+In this case, you might want to use a different setting for \code{duplicates} argument.
+\code{duplicates = acrosstime"} will create a binary network in almost all cases, with one exception: if actors contradict themselves and \code{qualifierAggregation} is left on the default \code{"ignore"}.
+Then two statments, one agreeing with the concept and one disagreeing with it are not treated as duplicates and hence remain in the network.
+If you turn the removal of duplicates off, the Euclidean distance will be used instead of Jaccard:
 
 <<eval=TRUE, results = 'tex'>>=
 clust <- dna_cluster(conn, duplicates = "include")
@@ -3059,7 +3072,7 @@ You can directly plot objects from \code{dna\_cluster} calling the same plot com
 plot(clust)
 @
 
-As you can see, this produces a simple dendrogram which shows the different clusters as branches and the organisations as leafs of a tree.
+Plot produces a simple dendrogram in this case, which shows the different clusters as branches and the organisations as leafs of a tree.
 This plot might be informative enough in some cases, but it is neither very appealing nor is it easy to customise its shape and colours.
 This is why we have integrated a special plot function into \rdna\ to make the life of users easier and to produce arguably nicer plots which can be directly used for publication:
 
@@ -3086,7 +3099,7 @@ clust <- dna_cluster(conn,
 dna_plotDendro(clust, shape = "diagonal", colours = "brewer", rectangles = "red")
 @
 
-Now we can see that the two main branches of the dendrogram show the same communities we have identified in the network plot. 
+Now we can see that the two main branches of the dendrogram show the same communities we have identified in the network plot.
 As you have noticed, we have also changed some other things about the plot such as its shape, the selection of colours and we have plotted red rectangles around the two main clusters.
 As mentioned before, the function is highly customisable and can visualise four different information about the variables:
 
@@ -3133,31 +3146,112 @@ dna_plotDendro(clust,
   coord_flip()
 @
 
-As becomes clear from this plot, the three NGOs are clustered together, while other organisations make up the second cluster. You can also see that while the NGOs are roughly the same in terms of activity, the number of statements coded from persons who belong Business or Government organisations or are in Congress differ widely. Unsurprisingly, the gender of the speakers does not seem to influence in which cluster they end up.
+As becomes clear from this plot, the three NGOs are clustered together, while other organisations make up the second cluster. 
+You can also see that while the NGOs are roughly the same in terms of activity, the number of statements coded from persons who belong to a business or government organisations or are in Congress, differ widely.
+Unsurprisingly, the gender of the speakers does not seem to influence in which cluster they end up, but at least now you know, how you can add this information.
 
 As you can also see in this example, you can make further changes to the plot using commands from the \texttt{ggplot2} package \citep{wickham2009ggplot2}.
 This package is very popular in the \R\ community and you can find many tutorials online on how to produce plots with it.
-As \code{dna\_plotDendro} essentially uses \texttt{ggplot2} under the hood, you use functions from \texttt{ggplot2} and its extensions to manipulate the appearence of the dendrogram further.
+As \code{dna\_plotDendro} essentially uses \texttt{ggplot2} under the hood, you can use functions from \texttt{ggplot2} and its extensions to manipulate the appearence of the dendrogram further.
 In this case, we add \code{+ coord\_flip()} after the end of the call to \code{dna\_plotDendro} to rotate the plot by 90°.
 
+What we did not explore so far, is that \code{dna\_cluster} is also capable of using a range of different clustering methods.
+First, we implemented all clustering methods from the \code{hclust} function in \R\ (See \code{help(hclust)}).
+And secdond, we included the ``cluster\_edge\_betweenness'', ``cluster\_leading\_eigen'' and ``cluster\_walktrap'' algorithms from \texttt{igraph} package \citep{csardi2006igraph}.
 
+We can compare a few of these algorithms by running \code{dna\_cluster} and \code{dna\_plotDendro} multiple times and then arranging the outcome in a grid:
 
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 7, fig.height = 7, crop = TRUE>>=
+# We save the concept we want to exclude in a new object, so we do not have to
+# repeat this line multiple times
+excludeConcept <- list("concept" = 
+                         "There should be legislation to regulate emissions.")
+
+# Then we call dna_cluster four times with four different clusterig methods
+clust_centroid <- dna_cluster(conn,
+                              clust.method = "centroid",
+                              cutree.k = 2,
+                              excludeValues = excludeConcept)
+clust_edbe <- dna_cluster(conn,
+                              clust.method = "edge_betweenness",
+                              cutree.k = 2,
+                              excludeValues = excludeConcept)
+clust_leei <- dna_cluster(conn,
+                              clust.method = "leading_eigen",
+                              cutree.k = 2,
+                              excludeValues = excludeConcept)
+clust_walktrap <- dna_cluster(conn,
+                              clust.method = "walktrap",
+                              cutree.k = 2,
+                              excludeValues = excludeConcept)
+
+# Now we plot the four clustered objects but save the plots in objects instead
+# of printing them to the screen directly
+dend_centroid <- dna_plotDendro(clust_centroid, show_legend = FALSE, truncate = 25) +
+  ggtitle("centroid")
+dend_edbe <- dna_plotDendro(clust_edbe, show_legend = FALSE, truncate = 25)+
+  ggtitle("edge_betweenness")
+dend_leei <- dna_plotDendro(clust_leei, show_legend = FALSE, truncate = 25)+
+  ggtitle("leading_eigen")
+dend_walktrap <- dna_plotDendro(clust_walktrap, show_legend = FALSE, truncate = 25)+
+  ggtitle("walktrap")
+
+# Now we arrange the plots in a grid and save this to an object 'grid' as well
+grid <- gridExtra::grid.arrange(dend_centroid,
+                                dend_edbe, 
+                                dend_leei,
+                                dend_walktrap,
+                                ncol = 2)
+
+@
+
+As you can see, all but one of the cluster methods arrive at basically the same result: 
+NGOs belong to one main cluster, while the other organisations form the second one.
+Only community clusterin based on the leading eigenvector of the community matrix seems to fall out of line.
+
+Once your plot is displayed in the Plots window of RStudio, you can use the export button to save the image as a PNG or PDF file for later use.
+Alternatively, you can also use another command from \texttt{ggplot2} to save the plot, which can often lead to better results than using \rstudio's built-in feature:
+
+<<eval=FALSE>>=
+ggsave(plot = grid, filename = "Cluster methods.pdf", device = "pdf", 
+       scale = 2, width = 10, height = 15, units = "cm")
+@
 
 \section{Heatmaps}
-\rdna\ also comes with a function to create heatmaps.
-Heatmaps are especially helpful to get a quick overview of a large matrix and see where values are especially high or low.
+Once you know which actors are clustered together, the next step of an analysis would be to determine what stances bind them together.
+One way to do so would be to use the \code{dna\_network()} function to retrieve (dis-)agreement of the actors towards all the different concepts.
+This information is already present in objects created with \code{dna\_cluster()}:
+
+<<eval=FALSE, results = 'tex'>>=
+clust <- dna_cluster(conn)
+clust[["network"]]
+@
+<<eval=TRUE, results = 'tex', echo=FALSE>>=
+clust <- dna_cluster(conn)
+dt <- clust[["network"]]
+#colnames(dt) <- truncate(colnames(dt), trunc = 20)
+kable(dt, format = "latex", booktabs = TRUE, linesep = "") %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 7) %>%
+    row_spec(0, angle = 90)
+@
+
+However, this table is hard to read, especially when there are more than just a few ogranisations or concepts present in the database.
+
+One approach to make it easier to inspect the distribution of (dis-)greement on concepts among members of each cluster are heatmap plots.
+Heatmaps are especially helpful to get a quick overview of a large matrix and see where values are high or low.
 Combined with the dendrograms introduced in the last section, they can thus be helpful to get an insight into which concepts determine the clustering.
-The function to do this is called \code{dna\_plotHeatmap} and takes objects that were created with \code{dna\_cluster}---just as \code{dna\_plotDendro}:
+The function to do this in \rdna\ is called \code{dna\_plotHeatmap} and takes objects that were created with \code{dna\_cluster}---just as \code{dna\_plotDendro}:
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 clust <- dna_cluster(conn)
 dna_plotHeatmap(clust)
 @
 
-The dendrograms on the x- and y-axis of the heatmap shows how organisations and concepts are grouped together by the clustering algorithm used to construct the object \code{clust}.
-As you can see, the main feature the NGOs have in common is their disagreement to many of the concepts, while the other organisations do not necessarily agree to all the concepts but seem to be more cautious in stating their disagreement.
+The dendrograms on the x- and y-axis of the heatmap show how organisations and concepts are grouped together by the clustering algorithm used to construct the object \code{clust}.
+As you can see, the main feature the NGOs have in common is their disagreement to many of the concepts, while the other organisations do not necessarily agree to all the concepts, they seem to be more cautious in stating their disagreement.
 
-As the heatmap is ordered by the dendrograms on its axis, chaning the clustering algorithm will also change the heatmap.
-As many users---and some publishers---may prefer grayscale plots, we also use the following plot to demonstrate how to accomplish that with \code{dna_plotHeatmap}:
+As the heatmap is ordered by the dendrograms on its axis, changing the clustering algorithm will also change the heatmap.
+This makes it easy to compare how concepts and actors are clustered together
+As many users---and some publishers---may prefer grayscale plots, we also use the following plot to demonstrate how to accomplish that with \code{dna\_plotHeatmap}:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 clust <- dna_cluster(conn,
@@ -3170,8 +3264,105 @@ dna_plotHeatmap(clust,
 
 
 
-% \section{Multi-dimensional scaling}
-% TODO
+\section{Multi-dimensional scaling}
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
+clust <- dna_cluster(conn)
+dna_plotMDS(clust)
+@
+
+
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
+dna_plotMDS(clust,
+            jitter = c(0.5, 1.7))
+@
+
+
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
+dna_plotMDS(clust,
+            jitter = c(0.5, 1.7),
+            seed = 23455)
+@
+
+Use labels to see multiple points on the same place but not alter their position.
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
+dna_plotMDS(clust,
+            label = TRUE,
+            seed = 23455)
+@
+
+
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
+dna_plotMDS(clust,
+            label = TRUE,
+            custom_colours = c("red", "green", "blue"),
+            custom_shape = c(4,5,6),
+            clust_method = "louvain")
+@
+
+
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
+
+clust <- dna_cluster(conn,
+                     clust.method = "edge_betweenness",
+                     cutree.k = 2)
+dna_plotMDS(clust,
+            draw_polygons = TRUE,
+            label = TRUE,
+            jitter = c(1.5, 1.7),
+            clust_method = "inherit",
+            seed = 12345)
+@
+
+
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
+dna_plotMDS(clust,
+            axis_labels = c("Dimension A", "Dimension B"),
+            stress = FALSE,
+            title = character())
+@
+
+
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
+
+# ggplot
+library("ggplot2")
+
+clust$group <- gsub("Group", "Cluster", clust$group)
+dna_plotMDS(clust,
+            jitter = c(1.5, 1.7),
+            clust_method = "inherit",
+            axis_labels = c("Dimension A", "Dimension B"),
+            custom_shape = c(1, 5),
+            stress = FALSE,
+            title = character(),
+            label = TRUE,
+            label_size = 2,
+            point_size = 3,
+            label_background = TRUE) +
+  theme_bw() +
+  labs(caption = paste0("Nonmetric MDS with STRESS = ", 
+                        round(clust$mds$stress[1], 3), 
+                        ". Clusters derived from ",
+                        clust$method,
+                        " calculation.")) +
+  theme(panel.grid.minor = element_blank(),
+        text = element_text(size = 9),
+        panel.grid.major = element_line(colour = "grey", 
+                                        size = 0.3, 
+                                        linetype = 2),
+        panel.background = element_rect(fill = "#F8F2E4"),
+        legend.position = c(0.85, 0.85),
+        legend.background = element_rect(fill = alpha(0.4)),
+        legend.title = element_blank())
+@
+
 
 % \section{Correspondence analysis}
 % TODO

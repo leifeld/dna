@@ -411,7 +411,7 @@ dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
                             filepath = character(),
                             force = FALSE) {
   # temporary fix until next release
-  url <- paste0("https://github.com/leifeld/dna/releases/download/v2.0-beta.20/dna-2.0-beta20.jar")
+  url <- paste0("https://github.com/leifeld/dna/blob/master/manual/dna-2.0-beta21.jar")
   if (any(!file.exists(paste0(filepath, filename)), force)) {
     download.file(url = url,
                   destfile = paste0(filepath, filename),
