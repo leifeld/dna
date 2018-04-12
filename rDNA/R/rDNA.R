@@ -192,7 +192,7 @@ dna_cluster <- function(connection,
     }
   }
   dta <- lapply(lvls, function(l){
-    excludeVals <- c(stats::setNames(list(l),
+    excludeVals <- c(stats::setNames(list(lvls[!lvls == l]),
                                     nm = qualifier),
                     excludeValues)
     nw <- do.call(dna_network,
@@ -203,6 +203,7 @@ dna_cluster <- function(connection,
                          duplicates = duplicates,
                          qualifier = qualifier,
                          excludeValues = excludeVals,
+                         invertValues = FALSE,
                          verbose = FALSE)
                     , dots)
     )
