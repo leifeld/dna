@@ -1596,15 +1596,14 @@ dna_plotHeatmap <- function(clust,
             formals(dna_cluster)[-1])
   args <- args[!duplicated(names(args))]
   dend_y <- clust
-  if (all(dendro_x,
-          !args$clust.method %in% c("ward.D",
+  if (!args$clust.method %in% c("ward.D",
                                     "ward.D2",
                                     "single",
                                     "complete",
                                     "average",
                                     "mcquitty",
                                     "median",
-                                    "centroid"))) {
+                                    "centroid")) {
     warning(paste0("The dendrogram on the x-axis of the ", 
                    "dna_plotHeatmap cannot be made using \"",
                    args$clust.method,
@@ -1696,7 +1695,8 @@ dna_plotHeatmap <- function(clust,
     if (colours == "brewer") {
       if (length(custom_colours) < 1) custom_colours <- 2
       plt_hmap <- plt_hmap +
-        scale_fill_distiller(palette = custom_colours)
+        scale_fill_distiller(palette = custom_colours,
+                             direction = 1)
     } else if (colours == "gradient"){
       if (length(custom_colours) < 1){
         custom_colours <- c("gray", "blue")
