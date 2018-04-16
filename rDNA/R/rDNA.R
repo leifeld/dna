@@ -326,7 +326,11 @@ dna_cluster <- function(connection,
   } else {
     d <-  dist(nw, method = "euclidean")
   }
+  if (length(d) < 2) {
+    stop("Clustering cannot be performed on less than three actors.")
+  }
   invisible(capture.output(mds <- MASS::isoMDS(d)))
+  
   k.best <- which.max(sapply(seq(from = 2, to = ncol(nw), by = 1), function(i){
     cluster::pam(d, k = i)$silinfo$avg.width
   })) + 1
@@ -1541,10 +1545,9 @@ dna_plotHeatmap <- function(clust,
   if (max(sapply(regmatches(pn, gregexpr("-", pn)), length)) == 0) {
     pn <- ""
   } else {
-    for (i in max(sapply(regmatches(pn, gregexpr("-", pn)), length))) {
-      pn <- sub("^.*-", "", pn)
-    }
-    colnames(nw) <- gsub("\\s+-\\s+[[:digit:]]$",
+    pn <- regmatches(pn, gregexpr("-?[0-9]\\d*(\\.\\d+)?$", pn))
+    pn <- paste0(" ", pn)
+    colnames(nw) <- gsub("\\s+-\\s+-?[[:digit:]]$",
                          "",
                          colnames(nw))
   }
