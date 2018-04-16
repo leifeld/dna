@@ -7,6 +7,8 @@
 *.toc
 *.out
 *.aux
+*.directory
+*.Rhistory
 manual/dna-manual.tex
 manual/figure/
 manual/sample.dna

@@ -7,7 +7,7 @@
 dna_plotHeatmap(clust, truncate = 40, values = FALSE,
   colours = character(), custom_colours = character(), square = TRUE,
   dendro_x = TRUE, dendro_x_size = 0.2, dendro_y_size = 0.2,
-  qualifierLevels = list(`0` = "no", `1` = "yes"), ...)
+  qualifierLevels = list(`0` = "no", `1` = "yes"), show_legend = TRUE, ...)
 }
 \arguments{
 \item{clust}{A \code{dna_cluster} object created by the \link{dna_cluster}
@@ -41,6 +41,8 @@ x- and y-axis}
 \item{qualifierLevels}{Takes a list with integer values of the qualifier
 levels (as characters) as names and character values as labels (See
 example).}
+
+\item{show_legend}{Logical. Should a legend be displayed.}
 
 \item{...}{Additional arguments passed to \link{dna_plotDendro}.}
 }

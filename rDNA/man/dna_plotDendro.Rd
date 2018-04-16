@@ -79,7 +79,7 @@ as the leaf the label.}
 \item{circular}{Logical. Should the layout be transformed to a circular
 representation. See  \link[ggraph]{layout_dendrogram_auto}.}
 
-\item{show_legend}{Logical. Should a legend be displayed.#'}
+\item{show_legend}{Logical. Should a legend be displayed.}
 
 \item{...}{Not used. If you want to add more plot options use \code{+} and
 the ggplot2 logic (see example).}

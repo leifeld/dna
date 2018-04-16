@@ -1128,7 +1128,7 @@ dna_plotCentrality <- function(connection,
 #'   as the leaf the label.
 #' @param circular Logical. Should the layout be transformed to a circular
 #'   representation. See  \link[ggraph]{layout_dendrogram_auto}.
-#' @param show_legend Logical. Should a legend be displayed.#'
+#' @param show_legend Logical. Should a legend be displayed.
 #' @param ... Not used. If you want to add more plot options use \code{+} and
 #'   the ggplot2 logic (see example).
 #'
@@ -1370,7 +1370,7 @@ dna_plotDendro <- function(clust,
                            angle = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
                                           node_angle(x, y) + 180,
                                           node_angle(x, y)),
-                           labels = labels_short,
+                           label = labels_short,
                            hjust = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
                                           1.05,
                                           -0.05),
@@ -1504,6 +1504,7 @@ dna_plotDendro <- function(clust,
 #' @param qualifierLevels Takes a list with integer values of the qualifier
 #'   levels (as characters) as names and character values as labels (See
 #'   example).
+#' @param show_legend Logical. Should a legend be displayed.
 #' @param ... Additional arguments passed to \link{dna_plotDendro}.
 #'
 #' @examples
@@ -1532,6 +1533,7 @@ dna_plotHeatmap <- function(clust,
                             dendro_y_size = 0.2,
                             qualifierLevels = list("0" = "no",
                                                    "1" = "yes"),
+                            show_legend = TRUE,
                             ...) {
   nw <- clust[["network"]]
   # construct column labels----
@@ -1553,7 +1555,7 @@ dna_plotHeatmap <- function(clust,
     duplicated(colnames(nw)[pn == i])
   })))){
     warning(paste0("After truncation, some column labels are now exactly the same.",
-                   "Those are followed by # + number now. Consider increasing truncation value."))
+                   "Those are followed by # + number now. Consider increasing the 'truncation' value."))
     colnames(nw) <- paste0("L", pn, colnames(nw))
     d <- grepl("\\...$", colnames(nw))
     colnames(nw) <- make.unique(sub("\\...$", "", colnames(nw)), sep = " #")
@@ -1588,7 +1590,7 @@ dna_plotHeatmap <- function(clust,
  
   if(any(duplicated(row.names(nw)))){
     warning(paste0("After truncation, some row labels are now exactly the same. Those are followed by",
-                   " # + number now. Consider increasing truncation value."))
+                   " # + number now. Consider increasing the 'truncation' value."))
     row.names(nw) <- paste0(make.names(sub("...$", "", row.names(nw)), unique=TRUE), "...")
   }
   # re-construct clust objects----
@@ -1643,8 +1645,6 @@ dna_plotHeatmap <- function(clust,
     scale_x_continuous(expand = c(0.0, 0.5, 0.0, 0.5)) +
     coord_flip() +
     scale_y_reverse()
- 
- 
   # plot clust x ----
   if (dendro_x) {
     plt_dendr_x <- do.call(dna_plotDendro,
@@ -1659,11 +1659,10 @@ dna_plotHeatmap <- function(clust,
   df$posx <- as.vector(sapply(seq_len(length(levels(df$Var2))),
                               rep,
                               length(levels(df$Var1))))
- 
   plt_hmap <- ggplot(data = df , aes_string(x = "posx",
                                             y = "posy",
                                             fill = "value")) +
-    geom_tile() +
+    geom_tile(show.legend = show_legend) +
     theme(axis.text.x = element_text(angle = 90,
                                      vjust = 0.5,
                                      hjust = 1),
