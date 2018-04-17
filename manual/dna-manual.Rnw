@@ -3330,19 +3330,43 @@ Also note, that you can use the \code{...} argument to pass arguments to \code{d
 Try setting 
 
 \section{Multi-dimensional scaling}
+From the heatmap plot you have an idea now why the cluster analysis put certain actors in their respective groups.
+Yet, what you cannot assess so far is how different or similar the clusters are to each other.
+The network matrix usually simply has too many columns to compare the different actors to each other all at once.
+One common tool to get around this problem is to reduce the number of dimensions---in this case the dimensions would be agreement and disagreement to each concept---until they can be plotted in a two-dimensional space.
+That is excatly what (non-metric) multidimensional scaling (MDS) does.\footnote{Specifically we use Kruskal's non-metric multidimensional scaling which makes most sense for our kind of network data.}
+Taking agreement and disagreement information towards all concepts, MDS can reduce the differences and siilarities between actors to plot them in a two-dimensional space.
+
+In \rdna\ we can perform this with the now well-known \code{dna\_cluster} function and the \code{dna\_plotMDS} command.
+
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 clust <- dna_cluster(conn)
 dna_plotMDS(clust)
 @
 
+Each point in this dotplot represents an organisation, in this case, and the points are highlighted with colours and shapes which represent their membership in one of the clusters.
+Clusters are derived in this case with the \code{pam} function from the \texttt{cluster} package \citep{maechler2017cluster} and the silhouette width is used to assess the best number of clusters automatically by default, which in this case happens to be two.
 
+However, looking at the plot, you probably wonder why there only appear to be three dots.
+In fact, there is one point for every one of the seven organisations, but since they are so similar, they are plotted in almost exactly the same place.
+There are, however, tools to make them visible nevertheless.
+The first of these tools is called jittering: by adding random noise to the data, it is possible to prevent overplotting.
+In the \code{dna\_plotMDS} function, this can be done by providing one or two numeric values to the \code{jitter} argument:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 dna_plotMDS(clust,
             jitter = c(0.5, 1.7))
 @
 
+Now you can see points for all of the seven organisations.
+Additionally, polygons now encompass all points of the same cluster to visualise the area of a specific cluster.
+The first jitter value in the code chunk above determines the limits of how much a point can be displaced left or right on the x-axis.
+If a second value is provided, the points are additionally jittered on the y-axis.
 
+Since the jittering happens randomly, the plot would usually look different every time.
+However, to ensure reproducibility of plots, we added a seed argument.
+As long as you do not change the seed, plots will look the same every time you plot them.
+Yet, if you change the seed, this will alter the position of the jittered points:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 dna_plotMDS(clust,
@@ -3350,25 +3374,35 @@ dna_plotMDS(clust,
             seed = 23455)
 @
 
-Use labels to see multiple points on the same place but not alter their position.
+Use the jittering option cautiously though, since it distorts the appearance of the plot heavily if you choose appearance high jitter values as in the examples above.
+
+To evade the problem of distortion, you can use the other tool to show overplotted points in \rdna.
+Use option \code{label = TRUE} to plot the actor labels closely to their respective dots.
+In this case, the labels will be moved instead of the points if actors appear very closely together.
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 dna_plotMDS(clust,
-            label = TRUE,
-            seed = 23455)
+            label = TRUE)
 @
 
+The downside in this case is that the polygons disappeared again, since you need at least three points in one cluster, before the become visible.
 
+Like in the plot functions we showed before, \code{dna\_plotMDS} again comes with several arguments to style the plots.
+Specifically, you can provide colours to \code{custom\_colours} and numeric values to \code{custom\_shape}.
+
+Another important point to highlight about \code{dna\_plotMDS} is that there are two additional cluster algorithms to determine the groups.
+The first one, \code{pam}, was already mentioned above.
+The second one, \code{cluster\_louvain} is from the \texttt{igraph} package \citep{csardi2006igraph} and can be chosen with \code{clust\_method = "louvain"}:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 dna_plotMDS(clust,
             label = TRUE,
             custom_colours = c("red", "green", "blue"),
-            custom_shape = c(4,5,6),
+            custom_shape = c(4,5),
             clust_method = "louvain")
 @
 
-
+If you would rather use one of those explained above, you can simply set the option in \code{dna\_cluster} and then choose \code{clust\_method = "inherit"}:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 
@@ -3383,7 +3417,7 @@ dna_plotMDS(clust,
             seed = 12345)
 @
 
-
+Other ways to style the plot include setting the labels of the axis:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 dna_plotMDS(clust,
@@ -3392,7 +3426,7 @@ dna_plotMDS(clust,
             title = character())
 @
 
-
+Or using again \texttt{ggplot2} commands to modify the plot much further:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 
@@ -3413,7 +3447,7 @@ dna_plotMDS(clust,
             label_background = TRUE) +
   theme_bw() +
   labs(caption = paste0("Nonmetric MDS with STRESS = ",
-                        round(clust$mds$stress[1], 3),
+                        round(attributes(clust$mds)$stress, 3),
                         ". Clusters derived from ",
                         clust$method,
                         " calculation.")) +
