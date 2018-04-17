@@ -329,22 +329,23 @@ dna_cluster <- function(connection,
   if (length(d) < 2) {
     stop("Clustering cannot be performed on less than three actors.")
   }
-  invisible(capture.output(mds <- MASS::isoMDS(d)))
-  
+  mds <- MASS::isoMDS(d, trace = FALSE)
   k.best <- which.max(sapply(seq(from = 2, to = ncol(nw), by = 1), function(i){
     cluster::pam(d, k = i)$silinfo$avg.width
-  })) + 1
+  }))
+  stress <- mds$stress
   mds <- data.frame(variable = row.names(mds$points),
                     Dimension_1 = mds$points[, 1],
                     Dimension_2 = mds$points[, 2],
                     cluster_pam = as.factor(cluster::pam(d, k = k.best)[["clustering"]]),
                     cluster_louvain = as.factor(cluster_louvain$memberships)[match(row.names(mds$points),
-                                                                                    cluster_louvain$names)],
-                    stress = mds$stress)
+                                                                                    cluster_louvain$names)])
+ 
   if (any(grepl("|", mds$variable, fixed = TRUE))) {
     mds <- splitstackshape::cSplit(mds, "variable", "|", "long")
   }
   hc$mds <- data.frame(mds[!duplicated(mds$variable, fromLast = TRUE), ])
+  attributes(hc$mds)$stress <- stress
   hc$call <-  match.call()
   attr(hc, "colours") <- c("attribute1" = attribute1, "attribute2" = attribute2)
   class(hc) <- c("dna_cluster", class(hc))
@@ -1880,8 +1881,7 @@ dna_plotMDS <- function(clust,
   if (stress) {
     a <- data.frame(x = max(df$Dimension_1) + expand[1],
                     y = max(df$Dimension_2) + expand[2],
-                    label = paste("Stress:", round(df$stress[1], digits = 6)))
-   
+                    label = paste("Stress:", round(attributes(df)$stress, digits = 6)))
     g <- g +
       geom_text(data = a, aes(x = x, y = y, label = label),
                 inherit.aes = FALSE, hjust=1)
