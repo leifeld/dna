@@ -861,9 +861,18 @@ dna_network <- function(connection,
 }
 
 
+#' @rdname rDNA
+#' @usage NULL
+#' @export
+dna_plotCentrality <- function(...) {
+  .Deprecated('dna_barplot')
+  dna_barplot(...)
+}
+
+
 #' Plot agreement and disagreement
 #'
-#' Plot agreement and disagreement towards statements (i.e. their centrality).
+#' Plot agreement and disagreement towards statements.
 #'
 #' This function plots agreement and disagreement towards DNA Statements for
 #' different categories such as "concept", "person" or "docTitle". The goal is to

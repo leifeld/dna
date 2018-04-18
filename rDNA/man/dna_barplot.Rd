@@ -36,7 +36,7 @@ categories of "of") should be truncated.}
 \item{...}{Additional arguments passed to \link{dna_network}.}
 }
 \description{
-Plot agreement and disagreement towards statements (i.e. their centrality).
+Plot agreement and disagreement towards statements.
 }
 \details{
 This function plots agreement and disagreement towards DNA Statements for
