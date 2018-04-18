@@ -894,7 +894,7 @@ dna_network <- function(connection,
 #' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #'
-#' dna_plotCentrality(connection = conn,
+#' dna_barplot(connection = conn,
 #'                    of = "concept",
 #'                    colours = FALSE,
 #'                    barWidth = 0.5)
@@ -902,7 +902,7 @@ dna_network <- function(connection,
 #' @author Johannes B. Gruber
 #' @export
 #' @import ggplot2
-dna_plotCentrality <- function(connection,
+dna_barplot <- function(connection,
                                of = "concept",
                                lab.pos = "Agreement",
                                lab.neg = "Disagreement",
@@ -918,7 +918,6 @@ dna_plotCentrality <- function(connection,
                      networkType = "eventlist",
                      verbose = FALSE,
                      ...)
-  
   # test validity of "of"-value
   if(!of %in% colnames(dta)|of %in% c("id", "agreement")){
     stop(
@@ -1010,12 +1009,11 @@ dna_plotCentrality <- function(connection,
   }
   offset <- (max(dta$Frequency) + abs(min(dta$Frequency))) * 0.05
   offset <- ifelse(offset < 0.5, 0.5, offset)
-  high <- length(unique(dta$of)) + 1.5
-  yintercepts <- data.frame(x = c(0, high-1),
+  yintercepts <- data.frame(x = c(0.5, length(unique(dta$of)) + 0.5),
                             y = c(0, 0))
+  high <- yintercepts$x[2] + 0.25
   
-  
-  g <- ggplot(dta[order(dta$Frequency, 
+  g <- ggplot(dta[order(as.numeric(dta$agreement), 
                         decreasing = TRUE),], 
               aes_string(x = "of", 
                          y = "Frequency", 

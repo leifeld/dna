@@ -2882,29 +2882,27 @@ More information about the visualization capabilities of the \texttt{network} an
 
 As you can see now, the network is not particularly polarized.
 We can suspect that some of the concepts are not very contested.
-If they are supported by all actors, this may mask the extent of polarization with regard to the other concepts. We can see if this is the case by plotting the agreement and disagreement towards concepts with \code{dna\_plotCentrality}:
+If they are supported by all actors, this may mask the extent of polarization with regard to the other concepts. We can see if this is the case by plotting the agreement and disagreement towards concepts with \code{dna\_barplot}:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 10, fig.height = 5, crop = TRUE>>=
-dna_plotCentrality(conn,
-                   of = "concept",
-                   fontSize = 10)
+dna_barplot(conn, of = "concept", fontSize = 10)
 @
 
 It looks like the the concept ``There should be legislation to regulate emissions.'' is in fact very consensual.
 By repeating the same command with a few different options we can check if the organizations do in fact all agree on this matter:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 10, fig.height = 5, crop = TRUE>>=
-dna_plotCentrality(conn,
-                   of = "organization",
-                   fontSize = 10,
-                   excludeValues = list("concept" =
-                   "There should be legislation to regulate emissions."),
-                   invertValues = TRUE)
+dna_barplot(conn,
+            of = "organization",
+            fontSize = 10,
+            excludeValues = list("concept" =
+            "There should be legislation to regulate emissions."),
+            invertValues = TRUE)
 @
 
 Instead of plotting agreement towards the concept, \code{of = "organization"} shows how often organizations agreed or disagreed with any statements.
 Yet, by combining \code{excludeValues} and \code{invertValues = TRUE}, we tell \R\ to \emph{only} regard the statement we want to look at.
-Again, you can get help with this function with the command \code{help(dna\_plotCentrality)}.
+Again, you can get help with this function with the command \code{help(dna\_barplot)}.
 
 The plot shows that everyone but the ``National Petrochemical \& Refiners Association'' agrees to the concept we chose, which indicates that consensus on the statement ``There should be legislation to regulate emissions.'' obfuscates the real structure of the network.
 Therefore we should exclude it from the congruence network.
