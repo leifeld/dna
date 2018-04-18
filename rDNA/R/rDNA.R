@@ -513,20 +513,18 @@ dna_gui <- function(infile = NULL,
 #' @export
 #' @import rJava
 dna_init <- function(jarfile = "dna-2.0-beta21.jar", memory = 1024) {
-  if (!is.null(jarfile)) {
-    if (!file.exists(jarfile)) {
-      stop(if (grepl("/", jarfile, fixed = TRUE)){
-        paste0("jarfile \"", jarfile, "\" could not be located.")
-      } else {
-        paste0(
-          "jarfile \"",
-          jarfile,
-          "\" could not be located in working directory \"",
-          getwd(),
-          "\"."
-        )
-      })
-    }
+  if (!file.exists(jarfile)) {
+    stop(if (grepl("/", jarfile, fixed = TRUE)){
+      paste0("jarfile \"", jarfile, "\" could not be located.")
+    } else {
+      paste0(
+        "jarfile \"",
+        jarfile,
+        "\" could not be located in working directory \"",
+        getwd(),
+        "\"."
+      )
+    })
   }
   assign("dnaJarString", jarfile, pos = dnaEnvironment)
   message(paste("Jar file:", dnaEnvironment[["dnaJarString"]]))
@@ -618,7 +616,7 @@ dna_init <- function(jarfile = "dna-2.0-beta21.jar", memory = 1024) {
 #'     only one identical statement per calendar week), \code{"month"} (for
 #'     counting only one identical statement per calendar month), \code{"year"}
 #'     (for counting only one identical statement per calendar year), and
-#'     \code{"acrosstime"} (for counting only one identical statement across
+#'     \code{"acrossrange"} (for counting only one identical statement across
 #'     the whole time range).
 #' @param start.date The start date for network construction in the format
 #'     "dd.mm.yyyy". All statements before this date will be excluded.
@@ -837,11 +835,15 @@ dna_network <- function(connection,
     for (i in 1:length(columnNames)) {
       dta[[columnNames[i]]] <- .jevalArray(objects[[i + 8]])
     }
+    attributes(dta)$call <- match.call()
+    class(dta) <- c("dna_eventlist", class(dta))
     return(dta)
   } else if (timewindow == "no") {
     mat <- .jcall(connection$dna_connection, "[[D", "getMatrix", simplify = TRUE)
     rownames(mat) <- .jcall(connection$dna_connection, "[S", "getRowNames", simplify = TRUE)
     colnames(mat) <- .jcall(connection$dna_connection, "[S", "getColumnNames", simplify = TRUE)
+    attributes(mat)$call <- match.call()
+    class(mat) <- c(paste0("dna_network_", networkType), class(mat))
     return(mat)
   } else {
     timeLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", simplify = TRUE)
@@ -856,12 +858,14 @@ dna_network <- function(connection,
     dta <- list()
     dta$networks <- mat
     dta$time <- timeLabels
+    attributes(dta)$call <- match.call()
+    class(dta) <- c(paste0("dna_network_", networkType, "_timewindows"), class(dta))
     return(dta)
   }
 }
 
 
-#' @rdname rDNA
+#' @rdname dna_barplot
 #' @usage NULL
 #' @export
 dna_plotCentrality <- function(...) {
@@ -1238,9 +1242,9 @@ dna_plotDendro <- function(clust,
     x
   })
   # create dedrogram----
-  dg <- ggraph::ggraph(graph = hierarchy,
-                       layout = "dendrogram",
-                       circular = circular)
+  dg <- ggraph(graph = hierarchy,
+               layout = "dendrogram",
+               circular = circular)
  
   # shape----
   if (shape == "elbows"){
@@ -1261,7 +1265,7 @@ dna_plotDendro <- function(clust,
     dg <- dg +
       geom_edge_diagonal(aes_string(colour = "cols1",
                                     edge_linetype = "linetype"),
-                         show.legend = show_legend ,
+                         show.legend = show_legend,
                          width = line_width,
                          alpha = line_alpha)
   } else if (shape == "arc"){
@@ -2316,7 +2320,7 @@ print.dna_connection <- function(x, ...) {
 #' @param n May number of character to truncate to
 #' @param e String added at the end of x to signal it was truncated.
 #'
-#' @author Philip Leifeld, Johannes B. Gruber
+#' @author Johannes B. Gruber
 trim <- function(x, n, e = "..."){
   ifelse(nchar(x) > n,
          paste0(gsub("\\s+$", "",

@@ -102,7 +102,7 @@ only one identical statement per document), \code{"week"} (for counting
 only one identical statement per calendar week), \code{"month"} (for
 counting only one identical statement per calendar month), \code{"year"}
 (for counting only one identical statement per calendar year), and
-\code{"acrosstime"} (for counting only one identical statement across
+\code{"acrossrange"} (for counting only one identical statement across
 the whole time range).}
 
 \item{start.date}{The start date for network construction in the format

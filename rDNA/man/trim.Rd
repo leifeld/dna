@@ -17,5 +17,5 @@ trim(x, n, e = "...")
 Internal function, used to truncate labels
 }
 \author{
-Philip Leifeld, Johannes B. Gruber
+Johannes B. Gruber
 }
