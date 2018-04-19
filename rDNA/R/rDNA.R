@@ -1854,11 +1854,13 @@ dna_plotMDS <- function(clust,
     if (label_background) {
       g <- g +
         ggrepel::geom_label_repel(size = label_size,
-                                  color = font_colour)
+                                  color = font_colour,
+                                  show.legend = FALSE)
     } else {
       g <- g +
         ggrepel::geom_text_repel(size = label_size,
-                                 color = font_colour)
+                                 color = font_colour,
+                                 show.legend = FALSE)
     }
   }
   if (length(expand) > 0) {
