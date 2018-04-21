@@ -18,9 +18,7 @@ You can install the package using:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("leifeld/dna/rDNA")
 
-# On Windows amd MacOS, you might have to use
 devtools::install_github("leifeld/dna/rDNA", args = "--no-multiarch")
 ```
 The package relies on `rJava`, which needs to be installed first. For details on the installation process on different operating systems, consult the chapter "Installation of DNA and rDNA" in the manual.
