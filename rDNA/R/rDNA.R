@@ -9,6 +9,109 @@ if(getRversion() >= "2.15.1")  utils::globalVariables(c("rn",
                                                         "x",
                                                         "y"))
 
+
+#' Add a document to the DNA database
+#' 
+#' Add a new document to the DNA database.
+#' 
+#' The \code{dna_addDocument} function can add new documents to an existing DNA 
+#' database. The user supplies a \link{dna_connection} object as well as various 
+#' details about the document, for example the title, text, date etc. The date 
+#' can be supplied either as a \link{POSIXct} object or as an integer value 
+#' containing millisecond since 1970-01-01. The document ID will be 
+#' automatically generated and can be returned if \code{returnID} is set to 
+#' \code{TRUE}.
+#' 
+#' @param connection A \code{dna_connection} object created by the
+#'     \code{dna_connection} function.
+#' @param title A character object containing the title of the new document.
+#' @param text A character object containing the text of the new document. Line 
+#'     breaks can be included as \code{"\\n"}.
+#' @param coder An integer value indicating which coder created the document.
+#' @param author A character object containing the author of the document.
+#' @param source A character object containing the source of the document.
+#' @param section A character object containing the section of the document.
+#' @param notes A character object containing notes about the document.
+#' @param type A character object containing the type of the document.
+#' @param date A \code{POSIXct} object containing the date/time stamp of the 
+#'     document. Alternatively, the date/time can be supplied as an integer 
+#'     value indicating the milliseconds since the start of 1970-01-01.
+#' @param returnID Return the ID of the newly created document as a numeric 
+#'     value?
+#' @param verbose Print details?
+#' 
+#' @author Philip Leifeld
+#' @export
+dna_addDocument <- function(connection, 
+                            title = "", 
+                            text = "", 
+                            coder = 1, 
+                            author = "", 
+                            source = "", 
+                            section = "", 
+                            notes = "", 
+                            type = "", 
+                            date = Sys.time(), 
+                            returnID = FALSE, 
+                            verbose = TRUE) {
+  
+  if (!is.character(title)) {
+    stop("The title must be provided as a character object.")
+  }
+  if (!is.character(text)) {
+    stop("The text must be provided as a character object.")
+  }
+  if (!is.integer(coder)) {
+    if (is.numeric(coder)) {
+      coder <- as.integer(coder)
+    } else {
+      stop("The coder must be provided as a numeric object (see dna_getCoders).")
+    }
+  }
+  if (!is.character(author)) {
+    stop("The author must be provided as a character object.")
+  }
+  if (!is.character(source)) {
+    stop("The source must be provided as a character object.")
+  }
+  if (!is.character(section)) {
+    stop("The section must be provided as a character object.")
+  }
+  if (!is.character(notes)) {
+    stop("The notes must be provided as a character object.")
+  }
+  if (!is.character(type)) {
+    stop("The type must be provided as a character object.")
+  }
+  if (any(class(date) %in% c("POSIXct", "POSIXt"))) {
+    dateLong <- .jlong(as.integer(date) * 1000)
+  } else if (is.numeric(date)) {
+    dateLong <- .jlong(as.integer(date))
+  } else {
+    stop("The document date must be provided as a POSIXct object or as a numeric value indicating milliseconds since 1970-01-01.")
+  }
+  
+  id <- .jcall(connection$dna_connection, 
+               "I", 
+               "addDocument", 
+               title, 
+               text, 
+               coder, 
+               author, 
+               source, 
+               section, 
+               notes, 
+               type, 
+               dateLong)
+  if (verbose == TRUE) {
+    cat("A new document with ID", id, "was added to the database.")
+  }
+  if (returnID == TRUE) {
+    return(id)
+  }
+}
+
+
 #' Retrieve attributes from DNA's attribute manager
 #'
 #' Retrieve attributes for a given statement type and variable.
@@ -427,6 +530,53 @@ dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
   } else {
     warning("Newest DNA JAR file already exists. Try \"force = TRUE\" to download it anyway")
   }
+}
+
+
+
+#' Retrieve a dataframe with documents from a DNA connection
+#' 
+#' Retrieve a dataframe with all documents from a DNA connection.
+#' 
+#' This function creates a dataframe with one row per document and contains 
+#' columns for the document ID, title, the complete text, and all meta data. The 
+#' dataframe can then be manually manipulated and returned to the DNA database 
+#' through the \link{dna_setDocuments} function.
+#' 
+#' @param connection A \code{dna_connection} object created by the
+#'     \code{dna_connection} function.
+#' 
+#' @examples
+#' \dontrun{
+#' dna_init("dna-2.0-beta21.jar")
+#' conn <- dna_connection(dna_sample())
+#' documents <- dna_getDocuments(conn)
+#' documents$title[1] <- "New title for first document"
+#' documents$notes[3] <- "Added a note via rDNA."
+#' documents <- documents[, -5]  # Removing the fifth document
+#' dna_setDocuments(conn, documents, simulate = TRUE)  # apply changes
+#' }
+#' 
+#' @author Philip Leifeld
+#' @export
+dna_getDocuments <- function(connection) {
+  documents <- .jcall(connection$dna_connection, 
+                      "[Ljava/lang/Object;", 
+                      "getDocuments")
+  names(documents) <- c("id", 
+                        "title", 
+                        "text", 
+                        "coder", 
+                        "author", 
+                        "source", 
+                        "section", 
+                        "notes", 
+                        "type", 
+                        "date")
+  documents <- lapply(documents, .jevalArray)
+  documents$date <- as.POSIXct(documents$date / 1000, origin = "1970-01-01")
+  documents <- as.data.frame(documents, stringsAsFactors = FALSE)
+  return(documents)
 }
 
 
@@ -1992,6 +2142,35 @@ dna_plotTimeWindow <- function(x,
 }
 
 
+#' Removes a document from the database
+#' 
+#' Removes a document from the database based on its ID.
+#' 
+#' The user provides a connection object and the ID of an existing statement in 
+#' the DNA database, and this statement is removed both from memory and from the 
+#' SQL database.
+#' 
+#' @param connection A \code{dna_connection} object created by the
+#'   \link{dna_connection} function.
+#' @param id An integer value denoting the ID of the document to be removed. The 
+#'   \link{dna_getDocuments} function can be used to look up IDs.
+#' @param verbose Print details on whether the document could be removed?
+#' 
+#' @author Philip Leifeld
+#' @export
+dna_removeDocument <- function(connection, id, verbose = TRUE) {
+  if (!is.integer(id)) {
+    id <- as.integer(id)
+  }
+  .jcall(connection$dna_connection, 
+         "V", 
+         "removeDocument", 
+         id, 
+         verbose)
+}
+
+
+
 #' Provides a small sample database
 #'
 #' Copies a small .dna sample file to the current working directory and returns
@@ -2025,6 +2204,149 @@ dna_sample <- function(overwrite = FALSE,
               overwrite = overwrite)
   }
   return(paste0(getwd(), "/sample.dna"))
+}
+
+
+#' Recode documents and metadata in the DNA database
+#' 
+#' Recode documents and their metadata in a DNA database.
+#' 
+#' This function takes a dataframe with 10 columns (ID, title, text, coder, 
+#' author, sources, section, notes, type, date) as returned by the 
+#' \link{dna_getDocuments} function and hands it over to a DNA connection in 
+#' order to update the documents in the database based on the contents of the 
+#' dataframe. The typical workflow is to retrieve the documents and their 
+#' metadata using \link{dna_getDocuments}, manipulating the documents, and then 
+#' applying the changes with \link{dna_setDocuments}. Documents that are no 
+#' longer in the dataframe are removed from the database; documents in the 
+#' dataframe that are not in the database are added to the database; and 
+#' contents of existing documents are updated. By default, the changes are only 
+#' simulated and not actually written into the database. The user can inspect 
+#' the reported changes and then apply the actual changes by setting 
+#' \code{simulate = FALSE}.
+#' 
+#' @param connection A \code{dna_connection} object created by the
+#'     \code{dna_connection} function.
+#' @param documents A dataframe with ten columns: id (integer), title 
+#'     (character), text (character), coder (integer), author (character), 
+#'     sources (character), section (character), notes (character), type 
+#'     (character), and date (POSIXct or integer; if integer, the value 
+#'     indicates milliseconds since the start of 1970-01-01).
+#' @param removeStatements If a document is present in the DNA database but not 
+#'     in the \code{documents} dataframe, the respective document is removed 
+#'     from the database. However, the document may contain statements. If 
+#'     \code{removeStatements = TRUE} is set, these statements are removed along 
+#'     with the respective document. If \code{removeStatements = FALSE} is set, 
+#'     the statements are not deleted, the document is kept as well, and a 
+#'     message is printed.
+#' @param simulate Should the changes only be simulated instead of actually 
+#'     applied to the DNA connection and the SQL database? This can help to 
+#'     plan more complex recode operations.
+#' @param verbose Print details about the recode operations?
+#' 
+#' @examples
+#' \dontrun{
+#' dna_init("dna-2.0-beta21.jar")
+#' conn <- dna_connection(dna_sample())
+#' documents <- dna_getDocuments(conn)
+#' documents$title[1] <- "New title for first document"
+#' documents$notes[3] <- "Added a note via rDNA."
+#' documents <- documents[, -5]  # Removing the fifth document
+#' dna_setDocuments(conn, documents, simulate = TRUE)  # apply changes
+#' }
+#' 
+#' @author Philip Leifeld
+#' @export
+dna_setDocuments <- function(connection, 
+                             documents, 
+                             removeStatements = FALSE, 
+                             simulate = TRUE, 
+                             verbose = TRUE) {
+  
+  if (!is.data.frame(documents)) {
+    stop("'documents' must be a data.frame similar to the one returned by dna_getDocuments.")
+  }
+  if (ncol(documents) != 10) {
+    stop("'documents' must be a data.frame with 10 columns.")
+  }
+  if (!is.numeric(documents[, 1])) {
+    stop("The first column of 'documents' must be numeric and must contain the document IDs.")
+  }
+  if (!is.character(documents[, 2])) {
+    if (is.factor(documents[, 2])) {
+      documents[, 2] <- as.character(documents[, 2])
+    } else {
+      stop("The second column of 'documents' must contain the document titles as character objects.")
+    }
+  }
+  if (!is.character(documents[, 3])) {
+    if (is.factor(documents[, 3])) {
+      documents[, 3] <- as.character(documents[, 3])
+    } else {
+      stop("The third column of 'documents' must contain the document texts as character objects.")
+    }
+  }
+  if (!is.numeric(documents[, 4])) {
+    stop("The fourth column of 'documents' must contain the coder IDs as integer values (see dna_getCoders).")
+  } else if (!is.integer(documents[, 4])) {
+    documents[, 4] <- as.integer(documents[, 4])
+  }
+  if (!is.character(documents[, 5])) {
+    if (is.factor(documents[, 5])) {
+      documents[, 5] <- as.character(documents[, 5])
+    } else {
+      stop("The fifth column of 'documents' must contain the document authors as character objects.")
+    }
+  }
+  if (!is.character(documents[, 6])) {
+    if (is.factor(documents[, 6])) {
+      documents[, 6] <- as.character(documents[, 6])
+    } else {
+      stop("The sixth column of 'documents' must contain the document sources as character objects.")
+    }
+  }
+  if (!is.character(documents[, 7])) {
+    if (is.factor(documents[, 7])) {
+      documents[, 7] <- as.character(documents[, 7])
+    } else {
+      stop("The seventh column of 'documents' must contain the document sections as character objects.")
+    }
+  }
+  if (!is.character(documents[, 8])) {
+    if (is.factor(documents[, 8])) {
+      documents[, 8] <- as.character(documents[, 8])
+    } else {
+      stop("The eighth column of 'documents' must contain the document notes as character objects.")
+    }
+  }
+  if (!is.character(documents[, 9])) {
+    if (is.factor(documents[, 9])) {
+      documents[, 9] <- as.character(documents[, 9])
+    } else {
+      stop("The ninth column of 'documents' must contain the document types as character objects.")
+    }
+  }
+  if (any(class(documents[, 10]) %in% c("POSIXct", "POSIXt"))) {
+    documents[, 10] <- .jlong(as.integer(documents[, 10]) * 1000)
+  } else if (is.numeric(documents[, 10])) {
+    documents[, 10] <- .jlong(as.integer(documents[, 10]))
+  } else {
+    stop("The tenth column of 'documents' must contain the document dates as POSIXct objects or as numeric objects indicating milliseconds since 1970-01-01.")
+  }
+  if (verbose == TRUE) {
+    if (nrow(documents) == 0) {
+      warning("'documents' has 0 rows. Deleting all documents from the database.")
+    }
+  }
+  
+  documents <- .jarray(lapply(documents, .jarray))
+  .jcall(connection$dna_connection, 
+         "V", 
+         "setDocuments", 
+         documents, 
+         removeStatements, 
+         simulate, 
+         verbose)
 }
 
 

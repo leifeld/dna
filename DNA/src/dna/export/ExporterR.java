@@ -912,17 +912,302 @@ public class ExporterR {
 		}
 		return times;
 	}
-	
+
 	/**
-	 * Save an array of AttributeVector objects to the Exporter class.
+	 * Retrieve an object array of all document data for R.
 	 * 
-	 * @param variable              The variable for which the attributes should be retrieved.
-	 * @param statementTypeString   The statement type (given as a string) to which the variable belongs.
-	 * @param values                String array of value names for which the attributes should be saved.
+	 * @return Object array with further arrays for title, text etc.
 	 */
-	public String rDocumentText(int documentId) {
-        String dt = this.data.getDocument(documentId).getText();
-        return dt;
+	public Object[] getDocuments() {
+		int n = this.data.getDocuments().size();
+		
+		int[] id = new int[n];
+		String[] title = new String[n];
+		String[] text = new String[n];
+		int[] coder = new int[n];
+		String[] author = new String[n];
+		String[] source = new String[n];
+		String[] section = new String[n];
+		String[] notes = new String[n];
+		String[] type = new String[n];
+		long[] date = new long[n];
+		
+		for (int i = 0; i < this.data.getDocuments().size(); i++) {
+			id[i] = this.data.getDocuments().get(i).getId();
+			title[i] = this.data.getDocuments().get(i).getTitle();
+			text[i] = this.data.getDocuments().get(i).getText();
+			coder[i] = this.data.getDocuments().get(i).getCoder();
+			author[i] = this.data.getDocuments().get(i).getAuthor();
+			source[i] = this.data.getDocuments().get(i).getSource();
+			section[i] = this.data.getDocuments().get(i).getSection();
+			notes[i] = this.data.getDocuments().get(i).getNotes();
+			type[i] = this.data.getDocuments().get(i).getType();
+			date[i] = this.data.getDocuments().get(i).getDate().getTime();
+		}
+		
+		Object[] documents = new Object[10];
+		documents[0] = id;
+		documents[1] = title;
+		documents[2] = text;
+		documents[3] = coder;
+		documents[4] = author;
+		documents[5] = source;
+		documents[6] = section;
+		documents[7] = notes;
+		documents[8] = type;
+		documents[9] = date;
+		
+		return documents;
 	}
 	
+	/**
+	 * Update the list of documents based on an array of arrays for the document data.
+	 * 
+	 * @param documents            Array of objects containing document IDs, title, text, coder, author, source, section, notes, type, and date.
+	 * @param removeStatements     Delete statements contained in documents that are removed?
+	 * @param simulate             If true, changes are not actually carried out.
+	 * @param verbose              Should statistics on updating process be reported?
+	 */
+	public void setDocuments(Object[] documents, boolean removeStatements, boolean simulate, boolean verbose) {
+		int[] id = (int[]) documents[0];
+		String[] title = (String[]) documents[1];
+		String[] text = (String[]) documents[2];
+		int[] coder = (int[]) documents[3];
+		String[] author = (String[]) documents[4];
+		String[] source = (String[]) documents[5];
+		String[] section = (String[]) documents[6];
+		String[] notes = (String[]) documents[7];
+		String[] type = (String[]) documents[8];
+		long[] date = (long[]) documents[9];
+		
+		int updateCountTitle = 0;
+		int updateCountText = 0;
+		int updateCountCoder = 0;
+		int updateCountAuthor = 0;
+		int updateCountSource = 0;
+		int updateCountSection = 0;
+		int updateCountNotes = 0;
+		int updateCountType = 0;
+		int updateCountDate = 0;
+		int updateCountNewDocuments = 0;
+		int updateCountDeleted = 0;
+		int updateCountStatementsDeleted = 0;
+		
+		if (verbose == true) {
+			if (simulate == true) {
+				System.out.println("Simulation mode: no actual changes are made to the database!");
+			} else {
+				System.out.println("Changes will be written both in memory and to the SQL database!");
+			}
+		}
+		
+		// delete documents that are not in the array
+		if (this.data.getDocuments().size() > 0) {
+			for (int j = this.data.getDocuments().size() - 1; j > -1; j--) {
+				boolean delete = true;
+				for (int i = 0; i < id.length; i++) {
+					if (this.data.getDocuments().get(j).getId() == id[i]) {
+						delete = false;
+					}
+				}
+				if (delete == true) {
+					boolean containsStatements = false;
+					if (!this.data.getStatements().isEmpty()) {
+						for (int k = this.data.getStatements().size() - 1; k > -1; k--) {
+							if (this.data.getStatements().get(k).getDocumentId() == this.data.getDocuments().get(j).getId()) {
+								if (removeStatements == true) {
+									int statementId = this.data.getStatements().get(k).getId();
+									if (simulate == false) {
+										this.data.getStatements().remove(k);
+										this.sql.removeStatement(statementId);
+									}
+									updateCountStatementsDeleted++;
+								} else {
+									containsStatements = true;
+								}
+							}
+						}
+						if (!containsStatements) {
+							if (simulate == false) {
+								this.data.getDocuments().remove(j);
+								this.sql.removeDocument(this.data.getDocuments().get(j).getId());
+							}
+							updateCountDeleted++;
+						} else {
+							System.err.println("Document " + this.data.getDocuments().get(j).getId() + " contains statements and was not removed.");
+						}
+					}
+				}
+			}
+		}
+		
+		// add or update documents
+		for (int i = 0; i < id.length; i++) {
+			boolean update = true;
+			
+			// check if coder field is valid
+			if (this.data.getCoderById(coder[i]) == null) {
+				update = false;
+				System.err.println("Document ID " + id[i] + ": coder ID is invalid. Skipping this document.");
+			}
+			
+			// check if document ID exists
+			int foundIndex = -1;
+			for (int j = 0; j < this.data.getDocuments().size(); j++) {
+				if (id[i] == this.data.getDocuments().get(j).getId()) {
+					foundIndex = j;
+				}
+			}
+			
+			// check if document length is shorter than last statement in the document
+			int minLength = 0;
+			if (foundIndex > -1) {
+				for (int k = 0; k < this.data.getStatements().size(); k++) {
+					if (this.data.getStatements().get(k).getStop() > minLength && this.data.getStatements().get(k).getDocumentId() == id[i]) {
+						minLength = this.data.getStatements().get(k).getStop();
+					}
+				}
+			}
+			if (text[i].length() < minLength) {
+				update = false;
+				System.err.println("Document ID " + id[i] + ": text is not long enough to accommodate existing statements. Skipping this document.");
+			}
+			
+			if (foundIndex > -1 && update == true) {
+				if (!this.data.getDocuments().get(foundIndex).getTitle().equals(title[i])) {
+					if (simulate == false) {
+						this.data.getDocuments().get(foundIndex).setTitle(title[i]);
+					}
+					updateCountTitle++;
+				}
+				if (!this.data.getDocuments().get(foundIndex).getText().equals(text[i])) {
+					if (simulate == false) {
+						this.data.getDocuments().get(foundIndex).setText(text[i]);
+					}
+					updateCountText++;
+				}
+				if (this.data.getDocuments().get(foundIndex).getCoder() != coder[i]) {
+					if (simulate == false) {
+						this.data.getDocuments().get(foundIndex).setCoder(coder[i]);
+					}
+					updateCountCoder++;
+				}
+				if (!this.data.getDocuments().get(foundIndex).getAuthor().equals(author[i])) {
+					if (simulate == false) {
+						this.data.getDocuments().get(foundIndex).setTitle(author[i]);
+					}
+					updateCountAuthor++;
+				}
+				if (!this.data.getDocuments().get(foundIndex).getSource().equals(source[i])) {
+					if (simulate == false) {
+						this.data.getDocuments().get(foundIndex).setSource(source[i]);
+					}
+					updateCountSource++;
+				}
+				if (!this.data.getDocuments().get(foundIndex).getSection().equals(section[i])) {
+					if (simulate == false) {
+						this.data.getDocuments().get(foundIndex).setSection(section[i]);
+					}
+					updateCountSection++;
+				}
+				if (!this.data.getDocuments().get(foundIndex).getNotes().equals(notes[i])) {
+					if (simulate == false) {
+						this.data.getDocuments().get(foundIndex).setNotes(notes[i]);
+					}
+					updateCountNotes++;
+				}
+				if (!this.data.getDocuments().get(foundIndex).getType().equals(type[i])) {
+					if (simulate == false) {
+						this.data.getDocuments().get(foundIndex).setType(type[i]);
+					}
+					updateCountType++;
+				}
+				if (this.data.getDocuments().get(foundIndex).getDate().getTime() != date[i]) {
+					if (simulate == false) {
+						this.data.getDocuments().get(foundIndex).setDate(new Date(date[i]));
+					}
+					updateCountDate++;
+				}
+				if (simulate == false) {
+					this.sql.upsertDocument(this.data.getDocuments().get(foundIndex));
+				}
+			} else if (update == true) {
+				Document d = new Document(id[i], title[i], text[i], coder[i], author[i], source[i], section[i], notes[i], type[i], new Date(date[i]));
+				if (simulate == false) {
+					this.data.addDocument(d);
+					this.sql.upsertDocument(d);
+				}
+				updateCountNewDocuments++;
+			}
+		}
+		
+		// report statistics
+		if (verbose == true) {
+			System.out.println("New documents added: " + updateCountNewDocuments);
+			System.out.println("Deleted documents:   " + updateCountDeleted);
+			System.out.println("Deleted statements:  " + updateCountStatementsDeleted);
+			System.out.println("Titles updated:      " + updateCountTitle);
+			System.out.println("Texts updated:       " + updateCountText);
+			System.out.println("Coders updated:      " + updateCountCoder);
+			System.out.println("Authors updated:     " + updateCountAuthor);
+			System.out.println("Sources updated:     " + updateCountSource);
+			System.out.println("Sections updated:    " + updateCountSection);
+			System.out.println("Notes updated:       " + updateCountNotes);
+			System.out.println("Types updated:       " + updateCountType);
+			System.out.println("Dates updated:       " + updateCountDate);
+		}
+	}
+	
+	/**
+	 * Add a document both to memory and the SQL database.
+	 * 
+	 * @param title     Title of the document.
+	 * @param text      Text of the document.
+	 * @param coder     Coder ID of the document.
+	 * @param author    Author of the document.
+	 * @param source    Source of the document.
+	 * @param section   Section of the document.
+	 * @param notes     Notes for the document.
+	 * @param type      Type of the document.
+	 * @param date      Date of the document in milliseconds since 1970-01-01.
+	 * @return          New document ID.
+	 */
+	public int addDocument(String title, String text, int coder, String author, String source, String section, String notes, String type, long date) {
+		if (this.data.getCoderById(coder) == null) {
+			System.err.println("Document could not be added because coder ID is unknown.");
+			return -1;
+		}
+		int id = this.data.generateNewId("documents");
+		Date dateObject = new Date(date);
+		Document d = new Document(id, title, text, coder, author, source, section, notes, type, dateObject);
+		this.data.addDocument(d);
+		this.sql.upsertDocument(d);
+		return id;
+	}
+	
+	/**
+	 * Remove a document based on its ID.
+	 * 
+	 * @param id        ID of the document.
+	 * @param verbose   Should messages be printed?
+	 */
+	public void removeDocument(int id, boolean verbose) {
+		boolean success = false;
+		for (int i = this.data.getDocuments().size() - 1; i > -1 ; i--) {
+			if (this.data.getDocuments().get(i).getId() == id) {
+				this.data.getDocuments().remove(i);
+				success = true;
+			}
+		}
+		if (success) {
+			this.sql.removeDocument(id);
+		}
+		if (verbose) {
+			if (success) {
+				System.out.println("Document " + id + " was successfully removed.");
+			} else {
+				System.err.println("A document with ID " + id + " was not found.");
+			}
+		}
+	}
 }
