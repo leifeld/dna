@@ -820,6 +820,85 @@ public class ExporterR {
 	}
 
 	/**
+	 * Retrieve attributes for a specific variable defined in a statement type.
+	 * 
+	 * @param statementTypeId    ID of the statement type in which the variable is defined.
+	 * @param variable           Variable name for which the values and attributes should be retrieved.
+	 * @param values             An array of values to which the attributes should be limited. Useful for handing over the nodes of a network, for example.
+	 * @return                   Object array containing arrays with the ID, value, color, type, alias, notes, and frequency of each entry.
+	 */
+	public Object[] getAttributes(int statementTypeId, String variable, String[] values) {
+		
+		AttributeVector[] av = this.data.getAttributes(variable, statementTypeId);
+		
+		// create master list of values to be included (check if present in the file)
+		ArrayList<String> valuesList = new ArrayList<String>();
+		if (values.length < 1) {
+			for (int j = 0; j < av.length; j++) {
+				if (!av[j].getValue().equals("")) {
+					valuesList.add(av[j].getValue());
+				}
+			}
+		} else {
+			for (int i = 0; i < values.length; i++) {
+				for (int j = 0; j < av.length; j++) {
+					if (values[i].equals(av[j].getValue()) && !valuesList.contains(values[i]) && !values[i].equals("")) {
+						valuesList.add(values[i]);
+					}
+				}
+				if (!valuesList.contains(values[i])) {
+					System.err.println("Value '" + values[i] + "' is not contained in the database and will be ignored.");
+				}
+			}
+		}
+		Collections.sort(valuesList);
+		
+		// create arrays of values and other attribute metadata
+		String[] value = new String[valuesList.size()];
+		int[] id = new int[valuesList.size()];
+		String[] color = new String[valuesList.size()];
+		String[] type = new String[valuesList.size()];
+		String[] alias = new String[valuesList.size()];
+		String[] notes = new String[valuesList.size()];
+		int[] frequency = new int[valuesList.size()];
+		
+		// populate arrays
+		for (int i = 0; i < valuesList.size(); i++) {
+			for (int j = 0; j < av.length; j++) {
+				if (av[j].getValue().equals(valuesList.get(i))) {
+					value[i] = av[j].getValue();
+					id[i] = av[j].getId();
+					color[i] = String.format("#%02X%02X%02X", av[j].getColor().getRed(), av[j].getColor().getGreen(), av[j].getColor().getBlue());
+					type[i] = av[j].getType();
+					alias[i] = av[j].getAlias();
+					notes[i] = av[j].getNotes();
+				}
+			}
+			
+			// compute frequencies of each value
+			frequency[i] = 0;
+			for (int k = 0; k < this.data.getStatements().size(); k++) {
+				if (this.data.getStatements().get(k).getStatementTypeId() == statementTypeId) {
+					if (((String) this.data.getStatements().get(k).getValues().get(variable)).equals(value[i])) {
+						frequency[i] = frequency[i] + 1;
+					}
+				}
+			}
+		}
+		
+		// create object array and return results
+		Object[] attributes = new Object[7];
+		attributes[0] = id;
+		attributes[1] = value;
+		attributes[2] = color;
+		attributes[3] = type;
+		attributes[4] = alias;
+		attributes[5] = notes;
+		attributes[6] = frequency;
+		return attributes;
+	}
+	
+	/**
 	 * Return variable names in this.eventListColumnsR
 	 * 
 	 * @return   array of Strings with variable names

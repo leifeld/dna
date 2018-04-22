@@ -533,6 +533,90 @@ dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
 }
 
 
+#' Retrieve a dataframe with attributes from a DNA connection
+#' 
+#' Retrieve a dataframe with attributes from a DNA connection.
+#' 
+#' Attributes are metadata for the values saved in a variable. For example, an 
+#' organization can be associated with a certain color or type. This function 
+#' serves to retrieve these attributes for the values of a given variable from 
+#' DNA as a dataframe. The user supplies a DNA connection and specifies the 
+#' variable for which the attributes should be extracted as well as the 
+#' statement type in which the variable is defined (by statement type ID). 
+#' Optionally, a vector of values for which the attributes should be extracted 
+#' can be specified; this limits the vector to the values specified. The 
+#' resulting dataframe contains an additional column for the frequency with 
+#' which the respective value is used in statements across the database. The 
+#' \code{dna_getAttributes} function is similar to the \link{dna_attributes} 
+#' function and takes the same arguments, but there are subtle differences: 
+#' \link{dna_attributes} extracts attributes and frequencies only for the 
+#' statements defined in a network export, i.e., after filtering statements for 
+#' time, duplicates etc. This enables the user to match actor types, colors etc. 
+#' more easily to network data.
+#' 
+#' @param connection A \code{dna_connection} object created by the
+#'     \code{dna_connection} function.
+#' @param statementType The ID of the statement type (as an integer) in which 
+#'     the variable is defined.
+#' @param variable The name of the variable for which attribute data should be 
+#'     retrieved, for example \code{"organization"} or \code{"concept"}.
+#' @param values An optional character vector of entries to which the dataframe 
+#'     should be limited. If all values and attributes should be retrieved for a 
+#'     given variable, this can be \code{NULL} or a character vector of length 
+#'     0.
+#' 
+#' @examples
+#' \dontrun{
+#' dna_init("dna-2.0-beta21.jar")
+#' conn <- dna_connection(dna_sample())
+#' attributes <- dna_getAttributes(statementType = 1, 
+#'                                 variable = "organization", 
+#'                                 values = c("Alliance to Save Energy", 
+#'                                            "Senate", 
+#'                                            "Sierra Club"))
+#' }
+#' 
+#' @author Philip Leifeld
+#' @export
+dna_getAttributes <- function(connection, 
+                              statementType = 1, 
+                              variable = "organization", 
+                              values = NULL) {
+  
+  if (!is.numeric(statementType) || length(statementType) > 1) {
+    stop("'statementType' must be a single integer value referencing the ID of the statement type in which the variable is defined.")
+  }
+  statementType <- as.integer(statementType)
+  if (!is.character(variable) || length(variable) > 1) {
+    stop("'variable' must be a single character object referencing the variable for which the attribute data should be retrieved.")
+  }
+  if (is.null(values)) {
+    values <- character(0)
+  }
+  if (!is.character(values)) {
+    stop("'values' must be NULL or a (possibly empty) character vector.")
+  }
+  
+  attributes <- .jcall(connection$dna_connection, 
+                       "[Ljava/lang/Object;", 
+                       "getAttributes", 
+                       statementType, 
+                       variable, 
+                       values)
+  
+  names(attributes) <- c("id", 
+                         "value", 
+                         "color", 
+                         "type", 
+                         "alias", 
+                         "notes", 
+                         "frequency")
+  
+  attributes <- lapply(attributes, .jevalArray)
+  attributes <- as.data.frame(attributes, stringsAsFactors = FALSE)
+  return(attributes)
+}
+
 
 #' Retrieve a dataframe with documents from a DNA connection
 #' 
