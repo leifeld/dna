@@ -2232,17 +2232,29 @@ dna_plotTimeWindow <- function(x,
 #' 
 #' The user provides a connection object and the ID of an existing statement in 
 #' the DNA database, and this statement is removed both from memory and from the 
-#' SQL database.
+#' SQL database, possibly including any statements contained in the document.
 #' 
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
 #' @param id An integer value denoting the ID of the document to be removed. The 
 #'   \link{dna_getDocuments} function can be used to look up IDs.
+#' @param removeStatements The document given by \code{id} may contain 
+#'     statements. If \code{removeStatements = TRUE} is set, these statements 
+#'     are removed along with the respective document. If 
+#'     \code{removeStatements = FALSE} is set, the statements are not deleted, 
+#'     the document is kept as well, and a message is printed.
+#' @param simulate Should the changes only be simulated instead of actually 
+#'     applied to the DNA connection and the SQL database? This can help to 
+#'     plan more complex recode operations.
 #' @param verbose Print details on whether the document could be removed?
 #' 
 #' @author Philip Leifeld
 #' @export
-dna_removeDocument <- function(connection, id, verbose = TRUE) {
+dna_removeDocument <- function(connection, 
+                               id, 
+                               removeStatements = FALSE, 
+                               simulate = TRUE, 
+                               verbose = TRUE) {
   if (!is.integer(id)) {
     id <- as.integer(id)
   }
@@ -2250,9 +2262,10 @@ dna_removeDocument <- function(connection, id, verbose = TRUE) {
          "V", 
          "removeDocument", 
          id, 
+         removeStatements, 
+         simulate, 
          verbose)
 }
-
 
 
 #' Provides a small sample database

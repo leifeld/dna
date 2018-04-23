@@ -1106,15 +1106,15 @@ public class ExporterR {
 								}
 							}
 						}
-						if (!containsStatements) {
-							if (simulate == false) {
-								this.data.getDocuments().remove(j);
-								this.sql.removeDocument(this.data.getDocuments().get(j).getId());
-							}
-							updateCountDeleted++;
-						} else {
-							System.err.println("Document " + this.data.getDocuments().get(j).getId() + " contains statements and was not removed.");
+					}
+					if (!containsStatements) {
+						if (simulate == false) {
+							this.data.getDocuments().remove(j);
+							this.sql.removeDocument(this.data.getDocuments().get(j).getId());
 						}
+						updateCountDeleted++;
+					} else {
+						System.err.println("Document " + this.data.getDocuments().get(j).getId() + " contains statements and was not removed.");
 					}
 				}
 			}
@@ -1267,26 +1267,70 @@ public class ExporterR {
 	/**
 	 * Remove a document based on its ID.
 	 * 
-	 * @param id        ID of the document.
-	 * @param verbose   Should messages be printed?
+	 * @param id                   ID of the document.
+	 * @param removeStatements     Delete statements contained in documents that are removed?
+	 * @param simulate             If true, changes are not actually carried out.
+	 * @param verbose              Should messages be printed?
 	 */
-	public void removeDocument(int id, boolean verbose) {
-		boolean success = false;
-		for (int i = this.data.getDocuments().size() - 1; i > -1 ; i--) {
-			if (this.data.getDocuments().get(i).getId() == id) {
-				this.data.getDocuments().remove(i);
-				success = true;
-			}
-		}
-		if (success) {
-			this.sql.removeDocument(id);
-		}
-		if (verbose) {
-			if (success) {
-				System.out.println("Document " + id + " was successfully removed.");
+	public void removeDocument(int id, boolean removeStatements, boolean simulate, boolean verbose) {
+		
+		// report simulation mode
+		if (verbose == true) {
+			if (simulate == true) {
+				System.out.println("Simulation mode: no actual changes are made to the database!");
 			} else {
-				System.err.println("A document with ID " + id + " was not found.");
+				System.out.println("Changes will be written both in memory and to the SQL database!");
 			}
+		}
+		
+		// delete statements if necessary
+		int updateCountStatementsDeleted = 0;
+		boolean containsStatements = false;
+		if (!this.data.getStatements().isEmpty()) {
+			for (int k = this.data.getStatements().size() - 1; k > -1; k--) {
+				if (this.data.getStatements().get(k).getDocumentId() == id) {
+					if (removeStatements == true) {
+						int statementId = this.data.getStatements().get(k).getId();
+						if (simulate == false) {
+							this.data.getStatements().remove(k);
+							this.sql.removeStatement(statementId);
+						}
+						updateCountStatementsDeleted++;
+					} else {
+						containsStatements = true;
+					}
+				}
+			}
+		}
+		
+		// report result of statement deletion
+		if (verbose == true) {
+			System.out.println("Statements removed in Document " + id + ": " + updateCountStatementsDeleted);
+		}
+		
+		// remove document from memory and SQL database if there are no statements or the statements were deleted
+		if (!containsStatements) {
+			if (simulate == false) {
+				boolean success = false;
+				for (int i = this.data.getDocuments().size() - 1; i > -1 ; i--) {
+					if (this.data.getDocuments().get(i).getId() == id) {
+						this.data.getDocuments().remove(i);
+						success = true;
+					}
+				}
+				if (success) {
+					this.sql.removeDocument(id);
+				}
+				if (verbose) {
+					if (success) {
+						System.out.println("Removal of Document " + id + ": successful.");
+					} else {
+						System.err.println("Removal of Document " + id + ": ID was not found.");
+					}
+				}
+			}
+		} else {
+			System.err.println("Removal of Document " + id + ": document contains statements and was not removed.");
 		}
 	}
 }
