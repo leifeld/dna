@@ -551,7 +551,7 @@ dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
 #' function and takes the same arguments, but there are subtle differences: 
 #' \link{dna_attributes} extracts attributes and frequencies only for the 
 #' statements defined in a network export, i.e., after filtering statements for 
-#' time, duplicates etc. This enables the user to match actor types, colors etc. 
+#' time, duplicates etc. This enables the user to match actor types, colours etc. 
 #' more easily to network data.
 #' 
 #' @param connection A \code{dna_connection} object created by the

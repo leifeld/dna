@@ -40,7 +40,7 @@ which the respective value is used in statements across the database. The
 function and takes the same arguments, but there are subtle differences: 
 \link{dna_attributes} extracts attributes and frequencies only for the 
 statements defined in a network export, i.e., after filtering statements for 
-time, duplicates etc. This enables the user to match actor types, colors etc. 
+time, duplicates etc. This enables the user to match actor types, colours etc. 
 more easily to network data.
 }
 \examples{
