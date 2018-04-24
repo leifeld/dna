@@ -32,8 +32,9 @@ dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
 \item{branch_colour}{Provide one colour in which all branches are coloured.}
 
 \item{colours}{There are three options from where to derive the colours in
-the plot: (1.) "identity" tries to use the names of variables as colours,
-fails if names are not plottable colours; (2.) "manual" provide colours via
+the plot: (1.) "identity" tries to use the names of variables as colours
+(e.g., if you retrieved the names as attribute from DNA), fails if names
+are not plottable colours; (2.) "manual" provide colours via
 custom_colours; (3.) "brewer" automatically select nice colours from a
 \code{RColorBrewer} palette (palettes can be set in custom_colours,
 defaults to \code{Set3}).}
@@ -47,9 +48,9 @@ dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
 \code{character()} if no line ends should be displayed.}
 
 \item{custom_shapes}{If shapes are provided, those are used for leaf_ends
-instead of the standard ones. Available shapes range from 0:25 and 32:127}
+instead of the standard ones. Available shapes range from 0:25 and 32:127.}
 
-\item{ends_alpha}{Alpha of all leaf_ends}
+\item{ends_alpha}{Alpha of all leaf_ends.}
 
 \item{ends_size}{If \code{activity = FALSE}, the size of the lineend symbols
 can be set to one size for the whole plot.}
@@ -67,17 +68,18 @@ leafs and branches. Takes "a" for straight line or "b" for dotted line.}
 \item{font_size}{Set the font size for the entire plot.}
 
 \item{theme}{See themes in \code{ggplot2}. The theme "bw" was customised to
-look best with dendrograms. "ggplot" changes very little from the custom
-ggplot look and is best to add your own theme ggplot style with \code{+}.}
+look best with dendrograms. Leave empty to use standard ggplot theme.
+Customise the theme by adding \code{+ theme_*} after this function...}
 
-\item{truncate}{Sets the number of characters to which labels should be truncated.}
+\item{truncate}{Sets the number of characters to which labels should be
+truncated.}
 
 \item{leaf_labels}{Either "ticks" to display the labels as axis ticks or
 "node" to label nodes directly. Node labels are also take the same colour
 as the leaf the label.}
 
 \item{circular}{Logical. Should the layout be transformed to a circular
-representation. See  \link[ggraph]{layout_dendrogram_auto}.}
+representation. See \link[ggraph]{layout_dendrogram_auto}.}
 
 \item{show_legend}{Logical. Should a legend be displayed.}
 

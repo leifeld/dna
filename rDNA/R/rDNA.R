@@ -3,6 +3,7 @@
 dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 # more settings which quiet concerns of R CMD check about ggplot and dplyr pipelines
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("rn",
+                                                        "connection",
                                                         "cols3",
                                                         "labels_short",
                                                         "leaf",
@@ -1345,8 +1346,9 @@ dna_barplot <- function(connection,
 #'   dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
 #'   \code{character()} leafs-lines should not be coloured.
 #' @param colours There are three options from where to derive the colours in
-#'   the plot: (1.) "identity" tries to use the names of variables as colours,
-#'   fails if names are not plottable colours; (2.) "manual" provide colours via
+#'   the plot: (1.) "identity" tries to use the names of variables as colours
+#'   (e.g., if you retrieved the names as attribute from DNA), fails if names
+#'   are not plottable colours; (2.) "manual" provide colours via
 #'   custom_colours; (3.) "brewer" automatically select nice colours from a
 #'   \code{RColorBrewer} palette (palettes can be set in custom_colours,
 #'   defaults to \code{Set3}).
@@ -1362,22 +1364,23 @@ dna_barplot <- function(connection,
 #'   dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
 #'   \code{character()} if no line ends should be displayed.
 #' @param custom_shapes If shapes are provided, those are used for leaf_ends
-#'   instead of the standard ones. Available shapes range from 0:25 and 32:127
-#' @param ends_alpha Alpha of all leaf_ends
+#'   instead of the standard ones. Available shapes range from 0:25 and 32:127.
+#' @param ends_alpha Alpha of all leaf_ends.
 #' @param rectangles If a colour is provided, this will draw rectangles in given
 #'   colour around the groups.
 #' @param leaf_linetype,branch_linetype Determines which lines are used for
 #'   leafs and branches. Takes "a" for straight line or "b" for dotted line.
 #' @param font_size Set the font size for the entire plot.
 #' @param theme See themes in \code{ggplot2}. The theme "bw" was customised to
-#'   look best with dendrograms. "ggplot" changes very little from the custom
-#'   ggplot look and is best to add your own theme ggplot style with \code{+}.
-#' @param truncate Sets the number of characters to which labels should be truncated.
+#'   look best with dendrograms. Leave empty to use standard ggplot theme.
+#'   Customise the theme by adding \code{+ theme_*} after this function...
+#' @param truncate Sets the number of characters to which labels should be
+#'   truncated.
 #' @param leaf_labels Either "ticks" to display the labels as axis ticks or
 #'   "node" to label nodes directly. Node labels are also take the same colour
 #'   as the leaf the label.
 #' @param circular Logical. Should the layout be transformed to a circular
-#'   representation. See  \link[ggraph]{layout_dendrogram_auto}.
+#'   representation. See \link[ggraph]{layout_dendrogram_auto}.
 #' @param show_legend Logical. Should a legend be displayed.
 #' @param ... Not used. If you want to add more plot options use \code{+} and
 #'   the ggplot2 logic (see example).
@@ -1479,7 +1482,12 @@ dna_plotDendro <- function(clust,
   dg <- ggraph(graph = hierarchy,
                layout = "dendrogram",
                circular = circular)
- 
+
+  # Recode show_legend
+  show_legend <- ifelse(show_legend, # ggplot wants this recoding for some reason
+                        NA,
+                        show_legend)
+  
   # shape----
   if (shape == "elbows"){
     dg <- dg +
@@ -1522,7 +1530,7 @@ dna_plotDendro <- function(clust,
   if (length(leaf_colours) > 0) {
     clust[[leaf_colours]] <- as.factor(clust[[leaf_colours]])
     autoCols <- c(branch_colour, levels(clust[[leaf_colours]]))
-    if (show_legend) {
+    if (is.na(show_legend)) {
       guide <- "legend"
       if (leaf_colours == "attribute1") guidename <- attr(clust, "colours")[1]
       if (leaf_colours == "attribute2") guidename <- attr(clust, "colours")[2]
@@ -1580,9 +1588,6 @@ dna_plotDendro <- function(clust,
             axis.line = element_blank(),
             axis.ticks.x = element_blank(),
             axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-  } else if (theme == "ggplot") {
-    dg <- dg +
-      theme(text = element_text(size = font_size))
   } else if (theme == "void") {
     dg <- dg +
       theme_void() +
@@ -1634,7 +1639,7 @@ dna_plotDendro <- function(clust,
  
   # line ends----
   if (length(leaf_ends) > 0) {
-    if (show_legend) {
+    if (is.na(show_legend)) {
       guide <- "legend"
       if (leaf_ends == "attribute1") legendname <- attr(clust, "colours")[1]
       if (leaf_ends == "attribute2") legendname <- attr(clust, "colours")[2]
@@ -1969,6 +1974,278 @@ dna_plotHeatmap <- function(clust,
 }
 
 
+#' Produces a hive plot from DNA data
+#'
+#' Produces a hive plot from various objects containing DNA data
+#'
+#' This function is a convenience wrapper to make hive plots  with
+#' \link[ggraph]{ggraph} from several types of objects created in rDNA.
+#' Specifically, onemode networks from \link{dna_network}, dna_cluster objects
+#' created with \link{dna_cluster} and connections to a database
+#' (\link{dna_connection}) are supported. The \code{...} are inactive, except
+#' when plotting directly from a dna_connection. In this case, additional
+#' arguments can be passed to network construction via \link{dna_network}.
+#'
+#' @param x Either a dna_network or a dna_cluster object or a connection to a
+#'   DNA database (see \link{dna_connection}).
+#' @param axis Takes the name of an attribute in DNA or "group" to produce the
+#'   axis. The option "group" only makes sense if either a dna_cluster object is
+#'   used or if a list of groups is provided in the \code{groups} argument.
+#' @param axis_label If TRUE, axis labels are plotted at the end of the axis
+#'   instead of the legend.
+#' @param axis_colours There are five options for colouring the axis segments :
+#'   (1.) "auto" simply leaves the standard ggplot2 colours; (2.) "identity"
+#'   tries to use the names of variables as colours (i.e., if you set axis =
+#'   "color") but fails if names are not plottable colours; (3) "manual" let's
+#'   you provide colours via custom_colours; (4.) "brewer" automatically selects
+#'   nice colours from a \code{RColorBrewer} palette (palettes can be set in
+#'   custom_colours, defaults to \code{Set3}); and (5.) "single" uses the first
+#'   value in custom_colours for all nodes.
+#' @param custom_colours Either provide enough colours to manually set the
+#'   colours in the plot (if colours = "manual") or select a palette from
+#'   \code{RColorBrewer} (if colours = "brewer").
+#' @param edge_weight If TRUE, edge weights will be used to determine width of
+#'   the lines between nodes. The minimum and maximum width can be controlled
+#'   with \code{edge_size_range}.
+#' @param edge_size_range Takes a numeric vector with two values: minimum and
+#'   maximum \code{edge_weight}.
+#' @param edge_colour What colour to use for edges.
+#' @param edge_alpha Values lower than 1 make the edges transparent.
+#' @param node_label If TRUE, text is added next to nodes to label them. If
+#'   "label", a rectangle is drawn underneath the text, often making it easier
+#'   to read.
+#' @param label_repel Controls how far from the labels will be put from nodes.
+#'   The exact position of nodes is random but overplotting is avoided.
+#' @param label_lines If TRUE, draws lines between nodes and labels if labels
+#'   are further away from nodes.
+#' @param font_size Control the font size of the node labels.
+#' @param theme See themes in \code{ggplot2}. Available options are "graph"
+#'   (which is customised to look best with networks), "bw", "void", "light" and
+#'   "dark". Leave empty to use standard ggplot theme. Customise the theme by
+#'   adding \code{+ theme_*} after this function.
+#' @param truncate Sets the number of characters to which labels should be
+#'   truncated.
+#' @param groups Takes a named list with values as names and group assignments
+#'   as values.
+#' @param threshold Minimum threshold for which edges should be plotted.
+#' @param seed Set seed to reproduce the layout.
+#' @param show_legend Logical. Should a legend be displayed.
+#' @param ... Only active when plotting from a dna_connection. Arguments are
+#'   passed to \link{dna_network}. Especially useful for normalisation of
+#'   networks.
+#'
+#' @examples
+#' \dontrun{
+#' dna_downloadJar()
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
+#'
+#' # Plot from onemode network
+#' nw <- dna_network(conn, networkType = "onemode")
+#' dna_plotHive(nw)
+#'
+#' # Plot from dna_cluster
+#' clust <- dna_cluster(conn)
+#' dna_plotHive(clust, axis = "group")
+#'
+#' # Plot from dna_connection
+#' dna_plotHive(conn, threshold = 0.3, networkType = "onemode",
+#'              normalization ="Jaccard")
+#' }
+#'
+#' @export
+#' @import ggraph
+#' @import igraph
+#' @importFrom ggrepel geom_label_repel geom_text_repel
+dna_plotHive <- function(x,
+                         axis = "type",
+                         axis_label = FALSE,
+                         axis_colours = "auto",
+                         custom_colours = character(),
+                         edge_weight = TRUE,
+                         edge_size_range = c(0.2, 2),
+                         edge_colour = "grey",
+                         edge_alpha = 1,
+                         node_label = TRUE,
+                         label_repel = 0.5,
+                         label_lines = FALSE,
+                         font_size = 9,
+                         theme = "graph",
+                         truncate = 30,
+                         groups = list(),
+                         threshold = NULL,
+                         seed = 12345,
+                         show_legend = TRUE,
+                         ...) {
+  layout <- "hive"
+  # Make igraph
+  if (any(grepl("dna_connection", class(x)))) {
+    x <- do.call("dna_network", args = list(connection = x,
+                                            verbose = FALSE,
+                                            ...))
+  } else if (any(grepl("dna_cluster", class(x)))) {
+    if (!length(groups) > 0) {
+      groups <- list(name = x$labels,
+                     group = x$group)
+    }
+    args <- c(as.list(x$call)[-1],
+              networkType = "onemode")
+    args <- args[!names(args) %in% c("clust.method",
+                                     "attribute1",
+                                     "attribute2",
+                                     "cutree.k",
+                                     "cutree.h")]
+    x <- do.call("dna_network", args = c(args, verbose = FALSE))
+  }
+  if (any(grepl("dna_network_onemode", class(x)))) {
+    graph <- graph_from_adjacency_matrix(x,
+                                         mode = "undirected",
+                                         weighted = TRUE,
+                                         diag = FALSE,
+                                         add.colnames = NULL,
+                                         add.rownames = NA)
+  } else if (any(grepl("dna_network_twomode", class(x)))) {
+    graph <- graph_from_incidence_matrix(x,
+                                         directed = FALSE,
+                                         weighted = TRUE,
+                                         add.names = NULL)
+    if (layout == "auto") {
+      layout <- "bipartite"
+      message("Using `bipartite` as default layout")
+    } else if (layout == "hive") {
+      stop("Twomode networks are currently not allowed.")
+    }
+  } else {
+    stop("Only takes objects from call to 'dna_network()', 'dna_cluster' or a 'dna_connection'")
+  }
+  if (!is.null(threshold)) {
+    graph <- delete.edges(graph, which(!E(graph)$weight >= threshold))
+  }
+  
+  # get attributes
+  # colour and attribute----
+  args <- c(as.list(attributes(x)$call)[-1])
+  args["networkType"] <- "eventlist"
+  if (is.null(args[["statementType"]])) {
+    args[["statementType"]] <- formals("dna_network")[["statementType"]]
+  }
+  if (is.null(args[["variable1"]])) {
+    args[["variable1"]] <- formals("dna_network")[["variable1"]]
+  }
+  att <- dna_attributes(connection, statementType = args[["statementType"]],
+                        variable = args[["variable1"]], values = row.names(x))
+  
+  V(graph)$degree <- degree(graph)
+  
+  if (axis == "group") {
+    V(graph)$attribute <- groups$group[match(V(graph)$name, groups$name)]
+    node_attribute <- "Membership"
+  } else {
+    V(graph)$attribute <- as.character(att[, axis])[match(att$value, V(graph)$name)]
+    node_attribute <- paste0(toupper(substr(axis, 1, 1)),
+                             substr(axis, 2, nchar(axis)))
+  }
+  
+  if (edge_weight) {
+    E(graph)$Activity <- E(graph)$weight
+  } else {
+    E(graph)$Activity <- NULL
+  }
+  
+  lyt <- create_layout(graph, layout = layout, axis = "attribute", sort.by = "degree")
+  lyt$name_short <- trim(as.character(lyt$name), n = truncate)
+  colnames(lyt) <- gsub("attribute", node_attribute, colnames(lyt))
+  show_legend <- ifelse(show_legend, # ggplot wants this recoding for some reason
+                        NA,
+                        show_legend)
+  g <- ggraph(lyt) +
+    geom_edge_hive(aes_string(width = "Activity"), 
+                   alpha = edge_alpha,
+                   colour = edge_colour,
+                   show.legend = show_legend) +
+    scale_edge_width(range = edge_size_range)
+  if (axis_label) {
+    yexp <- (max(lyt$y) - min(lyt$y)) / 4
+    xexp <- (max(lyt$x) - min(lyt$x)) / 4
+    g <- g +
+      geom_axis_hive(aes_string(colour = node_attribute), 
+                     size = 2, 
+                     label = TRUE,
+                     show.legend = FALSE) +
+      scale_y_continuous(expand = c(0, yexp, 0, yexp)) +
+      scale_x_continuous(expand = c(0, xexp, 0, xexp))
+  } else {
+    g <- g +
+      geom_axis_hive(aes_string(colour = node_attribute), 
+                     size = 2, 
+                     label = FALSE,
+                     show.legend = show_legend)
+  }
+  
+  # add labels----
+  if ((is.logical(node_label) & node_label) | node_label == "label")
+    if (node_label == "label") {
+      g <- g +
+        geom_label_repel(aes_string(x = "x", y = "y",
+                                    label = "name_short"),
+                         point.padding = label_repel,
+                         box.padding = label_repel,
+                         fontface = 'bold',
+                         size = font_size/.pt,
+                         min.segment.length = ifelse(label_lines, 0.5, Inf))
+    } else {
+      g <- g +
+        geom_text_repel(aes_string(x = "x", y = "y",
+                                   label = "name_short"),
+                        point.padding = label_repel,
+                        box.padding = label_repel,
+                        fontface = 'bold',
+                        size = font_size/.pt,
+                        min.segment.length = ifelse(label_lines, 0.5, Inf))
+    }
+  
+  # theme ----
+  if (theme == "graph") {
+    g <- g  +
+      theme_graph(base_size = font_size)
+  } else if (theme == "bw") {
+    g <- g +
+      theme_bw(base_size = font_size)
+  } else if (theme == "void") {
+    g <- g +
+      theme_void(base_size = font_size)
+  } else if (theme == "light") {
+    g <- g +
+      theme_light(base_size = font_size)
+  } else if (theme == "dark") {
+    g <- g +
+      theme_dark(base_size = font_size)
+  }
+  
+  # colours ----
+  if (!axis_colours == "auto") {
+    if (axis_colours == "identity") {
+      g <- g +
+        scale_colour_identity()
+    } else if (axis_colours == "manual" | axis_colours == "single") {
+      if (axis_colours == "single") {
+        custom_colours <- rep(custom_colours[1], 
+                              length.out = length(unique(lyt[, node_attribute])))
+      }
+      g <- g +
+        scale_colour_manual(values = custom_colours)
+    } else if (axis_colours == "brewer") {
+      if (length(custom_colours) == 0) {
+        custom_colours <- "Set3"
+      }
+      g <- g +
+        scale_colour_brewer(palette = custom_colours)
+    }
+  } 
+  return(g)
+}
+
+
 #' Plots an MDS scatterplot from dna.cluster objects
 #'
 #' Plots a scatterplot with the results of non-metric multidimensional scaling
@@ -2137,6 +2414,318 @@ dna_plotMDS <- function(clust,
 }
 
 
+
+#' Plots a network from DNA data
+#'
+#' Plots a network from various objects containing DNA data
+#'
+#' This function is a convenience wrapper to plot networks  with
+#' \link[ggraph]{ggraph} from several types of objects created in rDNA.
+#' Specifically, one- and twomode networks from \link{dna_network}, dna_cluster
+#' objects created with \link{dna_cluster} and connections to a database
+#' (\link{dna_connection}) are supported. The \code{...} are inactive, except
+#' when plotting directly from a dna_connection. In this case, additional
+#' arguments can be passed to network construction via \link{dna_network}.
+#'
+#' The available layouts are listed in \link[ggraph]{layout_igraph_auto} under
+#' "Standard layouts".
+#'
+#' @param x Either a dna_network or a dna_cluster object or a connection to a
+#'   DNA database (see \link{dna_connection}).
+#' @param layout The type of layout to use.
+#' @param edges When set to "link", the default, straight lines are used to
+#'   connect nodes. Other available options are "arc", "diagonal" and "fan".
+#' @param edge_weight If TRUE, edge weights will be used to determine width of
+#'   the lines between nodes. The minimum and maximum width can be controlled
+#'   with \code{edge_size_range}.
+#' @param edge_size_range Takes a numeric vector with two values: minimum and
+#'   maximum \code{edge_weight}.
+#' @param edge_colour What colour to use for edges.
+#' @param edge_alpha Values lower than 1 make the edges transparent.
+#' @param node_size Takes numeric values to control the size of nodes.
+#' @param node_attribute Takes the name of an attribute in DNA or "group" to
+#'   colour nodes. The option "group" only makes sense if either a dna_cluster
+#'   object is used or if a list of groups is provided in the \code{groups}
+#'   argument.
+#' @param node_colours There are five options for colouring the nodes: (1.)
+#'   "auto" simply leaves the standard ggplot2 colours; (2.) "identity" tries to
+#'   use the names of variables as colours (i.e., if you set axis = "color") but
+#'   fails if names are not plottable colours; (3) "manual" let's you provide
+#'   colours via custom_colours; (4.) "brewer" automatically selects nice
+#'   colours from a \code{RColorBrewer} palette (palettes can be set in
+#'   custom_colours, defaults to \code{Set3}); and (5.) "single" uses the first
+#'   value in custom_colours for all nodes.
+#' @param custom_colours Either provide enough colours to manually set the
+#'   colours in the plot (if colours = "manual"), select a palette from
+#'   \code{RColorBrewer} (if colours = "brewer") or provide a single colour for
+#'   all nodes (if colours = "single").
+#' @param node_shape Control the node shape. Available shapes range from 0:25
+#'   and 32:127.
+#' @param node_label If TRUE, text is added next to nodes to label them. If
+#'   "label", a rectangle is drawn underneath the text, often making it easier
+#'   to read.
+#' @param font_size Control the font size of the node labels.
+#' @param theme See themes in \code{ggplot2}. Available options are "graph"
+#'   (which is customised to look best with networks), "bw", "void", "light" and
+#'   "dark". Leave empty to use standard ggplot theme. Customise the theme by
+#'   adding \code{+ theme_*} after this function.
+#' @param label_repel Controls how far from the labels will be put from nodes.
+#'   The exact position of nodes is random but overplotting is avoided.
+#' @param label_lines If TRUE, draws lines between nodes and labels if labels
+#'   are further away from nodes.
+#' @param truncate Sets the number of characters to which labels should be
+#'   truncated.
+#' @param groups Takes a named list with values as names and group assignments
+#'   as values.
+#' @param threshold Minimum threshold for which edges should be plotted.
+#' @param seed Set seed to reproduce the layout.
+#' @param show_legend Logical. Should a legend be displayed.
+#' @param ... Only active when plotting from a dna_connection. Arguments are
+#'   passed to \link{dna_network}. Especially useful for normalisation of
+#'   networks.
+#' @examples
+#' \dontrun{
+#' dna_downloadJar()
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
+#'
+#' # Plot from onemode network (twomode also possible)
+#' nw <- dna_network(conn, networkType = "onemode")
+#' dna_plotNetwork(nw)
+#'
+#' # Plot from dna_cluster
+#' clust <- dna_cluster(conn)
+#' dna_plotNetwork(clust, node_attribute = "group")
+#'
+#' # Plot from dna_connection
+#' dna_plotNetwork(conn, networkType = "twomode", layout = "bipartite")
+#' }
+#'
+#' @export
+#' @import ggraph
+#' @import igraph
+#' @importFrom ggrepel geom_label_repel geom_text_repel
+dna_plotNetwork <- function(x,
+                            layout = "auto",
+                            edges = "link",
+                            edge_weight = TRUE,
+                            edge_size_range = c(0.2, 2),
+                            edge_colour = "grey",
+                            edge_alpha = 1,
+                            node_size = 6,
+                            node_attribute = "type",
+                            node_colours = "auto",
+                            custom_colours = character(),
+                            node_shape = 19,
+                            node_label = TRUE,
+                            font_size = 9,
+                            theme = "graph",
+                            label_repel = 0.5,
+                            label_lines = FALSE,
+                            truncate = 30,
+                            groups = list(),
+                            threshold = NULL,
+                            seed = 12345,
+                            show_legend = TRUE,
+                            ...) {
+  # Make igraph object----
+  set.seed(seed)
+  if (any(grepl("dna_connection", class(x)))) {
+    x <- do.call("dna_network", args = list(connection = x,
+                                            verbose = FALSE,
+                                            ...))
+  } else if (any(grepl("dna_cluster", class(x)))) {
+    if (!length(groups) > 0) {
+      groups <- list(name = x$labels,
+                     group = x$group)
+    }
+    args <- c(as.list(x$call)[-1],
+              networkType = "onemode")
+    args <- args[!names(args) %in% c("clust.method",
+                                     "attribute1",
+                                     "attribute2",
+                                     "cutree.k",
+                                     "cutree.h")]
+    x <- do.call("dna_network", args = c(args, verbose = FALSE))
+  }
+  if (any(grepl("dna_network_onemode", class(x)))) {
+    graph <- graph_from_adjacency_matrix(x,
+                                         mode = "undirected",
+                                         weighted = TRUE,
+                                         diag = FALSE,
+                                         add.colnames = NULL,
+                                         add.rownames = NA)
+  } else if (any(grepl("dna_network_twomode", class(x)))) {
+    graph <- graph_from_incidence_matrix(x,
+                                         directed = FALSE,
+                                         #mode = , #ignored for undirected
+                                         #multiple = FALSE,
+                                         weighted = TRUE,
+                                         add.names = NULL)
+    if (layout == "auto") {
+      layout <- "bipartite"
+      message("Using `bipartite` as default layout")
+    }
+  } else {
+    stop("Only takes objects from call to 'dna_network()', 'dna_cluster' or a 'dna_connection'")
+  }
+  if (!length(groups) > 0) {
+    groups <- list(name = V(graph)$name,
+                   group = rep("Group 0", length(V(graph)$name)))
+  }
+  V(graph)$group <- groups$group[match(V(graph)$name, groups$name)]
+  
+  # colour and attribute----
+  args <- c(as.list(attributes(x)$call)[-1])
+  args["networkType"] <- "eventlist"
+  if (is.null(args[["statementType"]])) {
+    args[["statementType"]] <- formals("dna_network")[["statementType"]]
+  }
+  if (is.null(args[["variable1"]])) {
+    args[["variable1"]] <- formals("dna_network")[["variable1"]]
+  }
+  cols <- dna_attributes(connection, statementType = args[["statementType"]],
+                         variable = args[["variable1"]], values = row.names(x))
+  V(graph)$colour <- as.character(cols$color)[match(V(graph)$name, cols$value)]
+  if (node_attribute == "group") {
+    V(graph)$attribute <- V(graph)$group
+  } else {
+    if (!any(node_attribute %in% colnames(cols))) {
+      stop(paste0("Not a possible 'node_attribute'. Please choose one of: 'group', '",
+                  paste(colnames(cols), collapse = "', '"), "'"))
+    }
+    V(graph)$attribute <- as.character(cols[, node_attribute])[match(V(graph)$name, cols$value)]
+  }
+  if (edge_weight) {
+    E(graph)$Activity <- E(graph)$weight
+  } else {
+    E(graph)$Activity <- NULL
+  }
+  if (!is.null(threshold)) {
+    graph <- delete.edges(graph, which(!E(graph)$weight >= threshold))
+  }
+  # start the plot ----
+  lyt <- create_layout(graph, layout = layout)
+  if (node_attribute == "group") {
+    node_attribute <- "Membership"
+  } else {
+    node_attribute <- paste0(toupper(substr(node_attribute, 1, 1)),
+                             substr(node_attribute, 2, nchar(node_attribute)))
+  }
+  lyt$name_short <- trim(as.character(lyt$name), n = truncate)
+  
+  if (any(grepl("dna_network_twomode", class(x)))) {
+    lyt$attribute <- as.character(lyt$attribute)
+    lyt$attribute[is.na(lyt$attribute)] <- "Concept"
+  }
+  colnames(lyt) <- gsub("attribute", node_attribute, colnames(lyt))
+  g <- ggraph(lyt)
+  # add lines----
+  if (edges == "link") {
+    g <- g +
+      geom_edge_link(aes_string(width = "Activity"), alpha = edge_alpha,
+                     colour = edge_colour,
+                     show.legend = show_legend)
+  } else if (edges == "arc") {
+    g <- g +
+      geom_edge_arc(aes_string(width = "Activity"), alpha = edge_alpha,
+                    colour = edge_colour,
+                    show.legend = show_legend)
+  } else if (edges == "diagonal") {
+    g <- g +
+      geom_edge_diagonal(aes_string(width = "Activity"), alpha = edge_alpha,
+                         colour = edge_colour,
+                         show.legend = show_legend)
+  } else if (edges == "fan") {
+    g <- g +
+      geom_edge_fan(aes_string(width = "Activity"),
+                    alpha = edge_alpha,
+                    colour = edge_colour,
+                    show.legend = show_legend)
+  }
+  g <- g +
+    scale_edge_width(range = edge_size_range)
+  # add nodes----
+  show_legend <- ifelse(show_legend,
+                        NA,
+                        show_legend)
+  if (node_colours == "single") {
+    g <- g +
+      geom_node_point(colour = custom_colours,
+                      size = node_size,
+                      shape = node_shape,
+                      show.legend = show_legend) +
+      scale_color_identity()
+  } else {
+    g <- g +
+      geom_node_point(aes_string(colour = node_attribute),
+                      size = node_size,
+                      shape = node_shape,
+                      show.legend = show_legend)
+  }
+  # add labels----
+  if ((is.logical(node_label) & node_label) | node_label == "label") {
+    # Make room for labels
+    yexp <- (max(lyt$y) - min(lyt$y)) / 4
+    g <- g + scale_y_continuous(expand = c(0, yexp, 0, yexp))
+    if (node_label == "label") {
+      g <- g +
+        geom_label_repel(aes_string(x = "x", y = "y",
+                                    label = "name_short"),
+                         point.padding = label_repel,
+                         box.padding = label_repel,
+                         fontface = 'bold',
+                         size = font_size/.pt,
+                         min.segment.length = ifelse(label_lines, 0.5, Inf))
+    } else {
+      g <- g +
+        geom_text_repel(aes_string(x = "x", y = "y",
+                                   label = "name_short"),
+                        point.padding = label_repel,
+                        box.padding = label_repel,
+                        fontface = 'bold',
+                        size = font_size/.pt,
+                        min.segment.length = ifelse(label_lines, 0.5, Inf))
+    }
+  }
+  
+  # theme ----
+  if (theme == "graph") {
+    g <- g  +
+      theme_graph(base_size = font_size)
+  } else if (theme == "bw") {
+    g <- g +
+      theme_bw(base_size = font_size)
+  } else if (theme == "void") {
+    g <- g +
+      theme_void(base_size = font_size)
+  } else if (theme == "light") {
+    g <- g +
+      theme_light(base_size = font_size)
+  } else if (theme == "dark") {
+    g <- g +
+      theme_dark(base_size = font_size)
+  }
+  # colours ----
+  if (!node_colours == "auto" | !node_colours == "single") {
+    if (node_colours == "identity") {
+      g <- g +
+        scale_colour_identity()
+    } else if (node_colours == "manual") {
+      g <- g +
+        scale_colour_manual(values = custom_colours)
+    } else if (node_colours == "brewer") {
+      if (length(custom_colours) == 0) {
+        custom_colours <- "Set3"
+      }
+      g <- g +
+        scale_colour_brewer( palette = custom_colours)
+    }
+  } 
+  return(g)
+}
+
+
 #' Plot \link{dna_timeWindow} objects
 #'
 #' Plot \link{dna_timeWindow} objects in a grid separated by facet.
@@ -2266,6 +2855,7 @@ dna_removeDocument <- function(connection,
          simulate, 
          verbose)
 }
+
 
 
 #' Provides a small sample database
