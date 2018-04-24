@@ -3,7 +3,6 @@
 dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 # more settings which quiet concerns of R CMD check about ggplot and dplyr pipelines
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("rn",
-                                                        "connection",
                                                         "cols3",
                                                         "labels_short",
                                                         "leaf",
@@ -2132,7 +2131,7 @@ dna_plotHive <- function(x,
   if (is.null(args[["variable1"]])) {
     args[["variable1"]] <- formals("dna_network")[["variable1"]]
   }
-  att <- dna_attributes(connection, statementType = args[["statementType"]],
+  att <- dna_attributes(eval(args[["connection"]]), statementType = args[["statementType"]],
                         variable = args[["variable1"]], values = row.names(x))
   
   V(graph)$degree <- degree(graph)
@@ -2584,7 +2583,7 @@ dna_plotNetwork <- function(x,
   if (is.null(args[["variable1"]])) {
     args[["variable1"]] <- formals("dna_network")[["variable1"]]
   }
-  cols <- dna_attributes(connection, statementType = args[["statementType"]],
+  cols <- dna_attributes(eval(args[["connection"]]), statementType = args[["statementType"]],
                          variable = args[["variable1"]], values = row.names(x))
   V(graph)$colour <- as.character(cols$color)[match(V(graph)$name, cols$value)]
   if (node_attribute == "group") {
@@ -2719,7 +2718,7 @@ dna_plotNetwork <- function(x,
         custom_colours <- "Set3"
       }
       g <- g +
-        scale_colour_brewer( palette = custom_colours)
+        scale_colour_brewer(palette = custom_colours)
     }
   } 
   return(g)
