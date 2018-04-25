@@ -1211,7 +1211,11 @@ public class ExporterR {
 					this.sql.upsertDocument(this.data.getDocuments().get(foundIndex));
 				}
 			} else if (update == true) {
-				Document d = new Document(id[i], title[i], text[i], coder[i], author[i], source[i], section[i], notes[i], type[i], new Date(date[i]));
+				int newId = id[i];
+				if (newId == -1) {
+					newId = this.data.generateNewId("documents");
+				}
+				Document d = new Document(newId, title[i], text[i], coder[i], author[i], source[i], section[i], notes[i], type[i], new Date(date[i]));
 				if (simulate == false) {
 					this.data.addDocument(d);
 					this.sql.upsertDocument(d);

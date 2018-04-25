@@ -2921,7 +2921,10 @@ dna_sample <- function(overwrite = FALSE,
 #'     (character), text (character), coder (integer), author (character), 
 #'     sources (character), section (character), notes (character), type 
 #'     (character), and date (POSIXct or integer; if integer, the value 
-#'     indicates milliseconds since the start of 1970-01-01).
+#'     indicates milliseconds since the start of 1970-01-01). \code{NA} values 
+#'     or \code{-1} values are permitted in the id column. If these are 
+#'     encountered, a new ID is automatically generated, and the document is 
+#'     added.
 #' @param removeStatements If a document is present in the DNA database but not 
 #'     in the \code{documents} dataframe, the respective document is removed 
 #'     from the database. However, the document may contain statements. If 
@@ -3028,6 +3031,9 @@ dna_setDocuments <- function(connection,
       warning("'documents' has 0 rows. Deleting all documents from the database.")
     }
   }
+  
+  # replace NAs with -1, which will be replaced by an auto-generated ID in DNA
+  documents$id[is.na(documents$id)] <- -1
   
   documents <- .jarray(lapply(documents, .jarray))
   .jcall(connection$dna_connection, 
