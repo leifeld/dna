@@ -70,7 +70,7 @@ public class ExportHelper {
 					names.add(n);
 				}
 			} else if (finalStatements.get(i).getStatementTypeId() == statementTypeId) {
-				n = (String) finalStatements.get(i).getValues().get(variable);
+				n = (String) finalStatements.get(i).getValues().get(variable).toString();
 				if (!names.contains(n)) {
 					names.add(n);
 				}
