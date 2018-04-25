@@ -556,8 +556,9 @@ dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
 #' 
 #' @param connection A \code{dna_connection} object created by the
 #'     \code{dna_connection} function.
-#' @param statementType The ID of the statement type (as an integer) in which 
-#'     the variable is defined.
+#' @param statementType The ID of the statement type (as an integer) or the name 
+#'     of the statement type (as a character object) in which the variable is 
+#'     defined.
 #' @param variable The name of the variable for which attribute data should be 
 #'     retrieved, for example \code{"organization"} or \code{"concept"}.
 #' @param values An optional character vector of entries to which the dataframe 
@@ -583,10 +584,12 @@ dna_getAttributes <- function(connection,
                               variable = "organization", 
                               values = NULL) {
   
-  if (!is.numeric(statementType) || length(statementType) > 1) {
-    stop("'statementType' must be a single integer value referencing the ID of the statement type in which the variable is defined.")
+  if ((!is.numeric(statementType) && !is.character(statementType)) || length(statementType) > 1) {
+    stop("'statementType' must be a single integer or character value referencing the ID or name of the statement type in which the variable is defined.")
   }
-  statementType <- as.integer(statementType)
+  if (!is.integer(statementType) && is.numeric(statementType)) {
+    statementType <- as.integer(statementType)
+  }
   if (!is.character(variable) || length(variable) > 1) {
     stop("'variable' must be a single character object referencing the variable for which the attribute data should be retrieved.")
   }

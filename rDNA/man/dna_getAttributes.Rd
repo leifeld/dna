@@ -11,8 +11,9 @@ dna_getAttributes(connection, statementType = 1, variable = "organization",
 \item{connection}{A \code{dna_connection} object created by the
 \code{dna_connection} function.}
 
-\item{statementType}{The ID of the statement type (as an integer) in which 
-the variable is defined.}
+\item{statementType}{The ID of the statement type (as an integer) or the name 
+of the statement type (as a character object) in which the variable is 
+defined.}
 
 \item{variable}{The name of the variable for which attribute data should be 
 retrieved, for example \code{"organization"} or \code{"concept"}.}

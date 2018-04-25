@@ -818,16 +818,53 @@ public class ExporterR {
 		int[] frequencies = exportHelper.countFrequencies(values, this.getAttributeValues());
 		return frequencies;
 	}
+	
+	/**
+	 * Retrieve attributes for a specific variable defined in a statement type.
+	 * 
+	 * @param statementTypeLabel  Name of the statement type in which the variable is defined. Make sure there are no duplicate names!
+	 * @param variable            Variable name for which the values and attributes should be retrieved.
+	 * @param values              An array of values to which the attributes should be limited. Useful for handing over the nodes of a network, for example.
+	 * @return                    Object array containing arrays with the ID, value, color, type, alias, notes, and frequency of each entry.
+	 */
+	public Object[] getAttributes(String statementTypeLabel, String variable, String[] values) {
+		StatementType st = this.data.getStatementType(statementTypeLabel);
+		int id = -1;
+		if (st != null) {
+			id = st.getId();
+		}
+		return getAttributes(id, variable, values);
+	}
 
 	/**
 	 * Retrieve attributes for a specific variable defined in a statement type.
 	 * 
-	 * @param statementTypeId    ID of the statement type in which the variable is defined.
-	 * @param variable           Variable name for which the values and attributes should be retrieved.
-	 * @param values             An array of values to which the attributes should be limited. Useful for handing over the nodes of a network, for example.
-	 * @return                   Object array containing arrays with the ID, value, color, type, alias, notes, and frequency of each entry.
+	 * @param statementTypeId     ID of the statement type in which the variable is defined.
+	 * @param variable            Variable name for which the values and attributes should be retrieved.
+	 * @param values              An array of values to which the attributes should be limited. Useful for handing over the nodes of a network, for example.
+	 * @return                    Object array containing arrays with the ID, value, color, type, alias, notes, and frequency of each entry.
 	 */
 	public Object[] getAttributes(int statementTypeId, String variable, String[] values) {
+		
+		if (statementTypeId == -1) {
+			Object[] o = new Object[7];
+			String[] value = new String[0];
+			int[] id = new int[0];
+			String[] color = new String[0];
+			String[] type = new String[0];
+			String[] alias = new String[0];
+			String[] notes = new String[0];
+			int[] frequency = new int[0];
+			o[0] = id;
+			o[1] = value;
+			o[2] = color;
+			o[3] = type;
+			o[4] = alias;
+			o[5] = notes;
+			o[6] = frequency;
+			System.err.println("Statement type was not found!");
+			return o;
+		}
 		
 		AttributeVector[] av = this.data.getAttributes(variable, statementTypeId);
 		
