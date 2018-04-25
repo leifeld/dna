@@ -8,7 +8,7 @@ dna_plotHive(x, axis = "type", axis_label = FALSE, axis_colours = "auto",
   custom_colours = character(), edge_weight = TRUE,
   edge_size_range = c(0.2, 2), edge_colour = "grey", edge_alpha = 1,
   node_label = TRUE, label_repel = 0.5, label_lines = FALSE,
-  font_size = 9, theme = "graph", truncate = 30, groups = list(),
+  font_size = 6, theme = "graph", truncate = 30, groups = list(),
   threshold = NULL, seed = 12345, show_legend = TRUE, ...)
 }
 \arguments{

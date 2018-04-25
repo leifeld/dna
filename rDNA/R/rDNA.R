@@ -2068,7 +2068,7 @@ dna_plotHive <- function(x,
                          node_label = TRUE,
                          label_repel = 0.5,
                          label_lines = FALSE,
-                         font_size = 9,
+                         font_size = 6,
                          theme = "graph",
                          truncate = 30,
                          groups = list(),
@@ -2182,7 +2182,7 @@ dna_plotHive <- function(x,
   }
   
   # add labels----
-  if ((is.logical(node_label) & node_label) | node_label == "label")
+  if ((is.logical(node_label) & node_label == TRUE) | node_label == "label") {
     if (node_label == "label") {
       g <- g +
         geom_label_repel(aes_string(x = "x", y = "y",
@@ -2202,11 +2202,12 @@ dna_plotHive <- function(x,
                         size = font_size/.pt,
                         min.segment.length = ifelse(label_lines, 0.5, Inf))
     }
+  }
   
   # theme ----
   if (theme == "graph") {
     g <- g  +
-      theme_graph(base_size = font_size)
+      theme_graph(base_family = "", base_size = font_size)
   } else if (theme == "bw") {
     g <- g +
       theme_bw(base_size = font_size)
@@ -2517,7 +2518,7 @@ dna_plotNetwork <- function(x,
                             custom_colours = character(),
                             node_shape = 19,
                             node_label = TRUE,
-                            font_size = 9,
+                            font_size = 6,
                             theme = "graph",
                             label_repel = 0.5,
                             label_lines = FALSE,
@@ -2663,10 +2664,13 @@ dna_plotNetwork <- function(x,
                       show.legend = show_legend)
   }
   # add labels----
-  if ((is.logical(node_label) & node_label) | node_label == "label") {
+  if ((is.logical(node_label) & node_label == TRUE) | node_label == "label") {
     # Make room for labels
-    yexp <- (max(lyt$y) - min(lyt$y)) / 4
-    g <- g + scale_y_continuous(expand = c(0, yexp, 0, yexp))
+    yexp <- (max(lyt$y) - min(lyt$y)) / 3
+    xexp <- (max(lyt$x) - min(lyt$x)) / 3
+    g <- g +
+      scale_y_continuous(expand = c(0, yexp, 0, yexp)) +
+      scale_x_continuous(expand = c(0, xexp, 0, xexp))
     if (node_label == "label") {
       g <- g +
         geom_label_repel(aes_string(x = "x", y = "y",
@@ -2691,7 +2695,7 @@ dna_plotNetwork <- function(x,
   # theme ----
   if (theme == "graph") {
     g <- g  +
-      theme_graph(base_size = font_size)
+      theme_graph(base_family = "", base_size = font_size)
   } else if (theme == "bw") {
     g <- g +
       theme_bw(base_size = font_size)
@@ -2720,7 +2724,7 @@ dna_plotNetwork <- function(x,
       g <- g +
         scale_colour_brewer(palette = custom_colours)
     }
-  } 
+  }
   return(g)
 }
 

@@ -1785,6 +1785,13 @@ truncate <- function(x, trunc = 12){
                                "..."),
                         x)
 }
+trim <- function(x, n = 12, e = "..."){
+  ifelse(nchar(x) > n,
+         paste0(gsub("\\s+$", "",
+                     strtrim(x, width = n)),
+                e),
+         x)
+}
 @
 <<eval=TRUE, echo=FALSE, warning=FALSE>>=
 conn <- dna_connection(dna_sample())
@@ -2265,7 +2272,7 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
 
 \subsection{Two-mode (Affiliation) Networks}
 \begin{description}
-\item[Ignore] The agreement qualifier variable is ignored, i.e., the network is constructed as if all values on the qualifier variable were the same.
+\item[Ignore] The agreement qualifier variable is ignored, i\,.e., the network is constructed as if all values on the qualifier variable were the same.
 In the most common case, the qualifier being (dis-)agreement, this means that co-references of a concept are aggregated, no matter if persons or organisations agree on them or not (see Table~\ref{tab:onemode}).
 The way in which the edge weights are constructed was already mentioned in Section~\ref{sec:twomode}.
 In the simplest case, a two-mode network with a binary qualifier, the edge weights for ignore are simple counts of co-references of variable 1 and 2.
@@ -2586,7 +2593,7 @@ However, if we would select two or a higher number in \code{time window size}, s
 For example, if there had been hearings on the first, second and third of February, a network would be created for the first and second February and a second network would feature statements from the second and third.
 If there were more dates included in the time range, this process would continue until the end of the time period is reached.
 Other time units work in the same way.
-To get mutually exclusive (i.e., non-overlapping) time slices, the user should select them manually from the output.
+To get mutually exclusive (i\,.e., non-overlapping) time slices, the user should select them manually from the output.
 For example, if the window size is 10 days, you could only select file number one, eleven, 21 and so on.
 
 Instead of time units, it is also possible to use \code{event time}.
@@ -2643,7 +2650,7 @@ This is because by default only nodes that show at least minimal activity are in
 As you can also see in Table~\ref{tab:time}, exclusion of statements can lead to very differently sized matrices.
 However, if you have ever manually merged matrices of different sizes, you will know that it can be tedious to get everything into the right form.
 In these situations, it is easier to merge multiple networks if they have the same matrix dimensions.
-To achieve compatibility of the matrix dimensions anyway, it is possible to include all nodes of the selected variable(s) in the whole database, irrespective of time, qualifiers, and excluded values (but without any edge weights larger than 0, i.e., as isolates).
+To achieve compatibility of the matrix dimensions anyway, it is possible to include all nodes of the selected variable(s) in the whole database, irrespective of time, qualifiers, and excluded values (but without any edge weights larger than 0, i\,.e., as isolates).
 You can see this in Table~\ref{tab:isolates} which mirrors the information of Table~\ref{tab:exclud} but has the same dimensions as, for example, Table~\ref{tab:twomode}.
 
 <<eval=TRUE, echo=FALSE>>=
@@ -3307,7 +3314,7 @@ If your qualifier levels have a different meaning, the default values should alw
 As was mentioned before, \code{dna\_clust} removes duplicates on the document level by default, leaving the dataset---in case of the sample---as a binary.
 If the heatmap is not binary, it might make sense to display the exact values inside the plot though by setting \code{values = TRUE}.
 
-<<eval=TRUE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, out.height = "25%", out.width = "60%", crop = TRUE>>=
+<<eval=TRUE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, out.height = "30%", out.width = "60%", crop = TRUE>>=
 clust <- dna_cluster(conn,
                      duplicates = "include",
                      clust.method = "walktrap")
@@ -3352,8 +3359,7 @@ The first of these tools is called jittering: by adding random noise to the data
 In the \code{dna\_plotMDS} function, this can be done by providing one or two numeric values to the \code{jitter} argument:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
-dna_plotMDS(clust,
-            jitter = c(0.5, 1.7))
+dna_plotMDS(clust, jitter = c(0.5, 1.7))
 @
 
 Now you can see points for all of the seven organisations.
@@ -3367,9 +3373,7 @@ As long as you do not change the seed, plots will look the same every time you p
 Yet, if you change the seed, this will alter the position of the jittered points:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
-dna_plotMDS(clust,
-            jitter = c(0.5, 1.7),
-            seed = 23455)
+dna_plotMDS(clust, jitter = c(0.5, 1.7), seed = 23455)
 @
 
 Use the jittering option cautiously though, since it distorts the appearance of the plot heavily if you choose appearance high jitter values as in the examples above.
@@ -3379,8 +3383,7 @@ Use option \code{label = TRUE} to plot the actor labels closely to their respect
 In this case, the labels will be moved instead of the points if actors appear very closely together.
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
-dna_plotMDS(clust,
-            label = TRUE)
+dna_plotMDS(clust, label = TRUE)
 @
 
 The downside in this case is that the polygons disappeared again, since you need at least three points in one cluster, before the become visible.
@@ -3403,10 +3406,7 @@ dna_plotMDS(clust,
 If you would rather use one of those explained above, you can simply set the option in \code{dna\_cluster} and then choose \code{clust\_method = "inherit"}:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
-
-clust <- dna_cluster(conn,
-                     clust.method = "edge_betweenness",
-                     cutree.k = 2)
+clust <- dna_cluster(conn, clust.method = "edge_betweenness", cutree.k = 2)
 dna_plotMDS(clust,
             draw_polygons = TRUE,
             label = TRUE,
@@ -3430,7 +3430,6 @@ Or using again \texttt{ggplot2} commands to modify the plot much further:
 
 # ggplot
 library("ggplot2")
-
 clust$group <- gsub("Group", "Cluster", clust$group)
 dna_plotMDS(clust,
             jitter = c(1.5, 1.7),
@@ -3464,11 +3463,275 @@ dna_plotMDS(clust,
 % \section{Correspondence analysis}
 % TODO
 
-% \section{More advanced network plots}
+\section{Network plots}
+We have shown above already, how you can use the \R\ infrastructure to produce some basic network plots with the \texttt{statnet} suite of packages. 
+Besides that, there are a number of packages in the \R\ universe that are quite capable to cater to your network plotting needs.
+The already mentioned \texttt{igraph} package \citep{csardi2006igraph}, for example, comes with very powerful functions for plotting networks. 
+Other packages, such as \texttt{networkD3} \citep{allaire2017networkD3} are capable of creating interactive network plots, which are great to share, for example, on a website.
+The package \texttt{ggraph} \citep{linpedersen2017ggraph} was specifically developed to employ the same logic as \texttt{ggplot2}, the so called grammer of graphics, to implement a consistent logic of plotting networks.
+This makes it possible to produce highly customised plots by combining a set of relatively few individual functions which each serve to control one specific aspect of a plot.
+
+Whatever package you might prefer though, all of them have one thing in common: unlike graphical solutions such as \gephi\ or \visone, network analysis and plotting in R enables reproducible research.
+This often outweighs the alleged convenience of GUI applications, as reproducibility is not just of academic value, but also enables you to copy the same plotting code again and again in your own research, once you are happy with the appearance of the network plot.
+
+However, we do acknowledge that bringing the data into the right form and tweaking your network plots to look good can be daunting for beginners or even advanced \R\ users who are new to network analysis.
+This is why \rdna\ comes wit two dedicated functions to create netwrok plots: \code{dna\_plotNetwork} and \code{dna\_plotHive}.
+Both are capable of handling \dna\ data from a number different objects.
+
+You can either first produce a one- or---in case of the \code{dna\_plotNetwork}---two-mode network:
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 6, fig.height = 4, crop = TRUE>>=
+# Plot onemode network
+nw <- dna_network(conn, networkType = "onemode")
+dna_plotNetwork(nw)
+@
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 6, fig.height = 4, crop = TRUE>>=
+# Or twomode
+nw <- dna_network(conn, networkType = "twomode")
+dna_plotNetwork(nw, truncate = 20, label_repel = 0) +
+  coord_flip()
+@
+
+You can use a \code{dna\_cluster} object and and choose to use membership in clusters to colour the nodes:
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 4, fig.height = 4, crop = TRUE>>=
+clust <- dna_cluster(conn,
+                     clust.method = "walktrap",
+                     cutree.k = 3)
+dna_plotNetwork(clust,
+                node_attribute = "group")
+@
+
+Or you can directly plot from a connection to a \dna\ database and add controls to the network construction directly in the plot command:
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 4, fig.height = 4, crop = TRUE>>=
+dna_plotNetwork(conn,
+                networkType = "onemode",
+                statementType = "DNA Statement",
+                qualifierAggregation = "congruence",
+                duplicates = "document",
+                excludeValues = list("concept" =
+                "There should be legislation to regulate emissions."))
+@
+
+
+As you might be aware though, network visualisation poses one problem: the choice of the right layout algorithm can be quite difficult and there is unfortunately not one that would solve the problems for all datasets.
+In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} package are available---not all of which are useful for plotting networks from \dna\ data. Here is the selection of algorithms which we think makes the most sense:
+
+\begin{description}
+  \item[nicely] This is probably the most useful option. Not technically a network algorithm, it employs \texttt{igraph} package to pick an appropriate layout. See \code{?igraph::nicely} for the details.
+  
+  \item[bipartite] This algorithm is only really useful for two-mode networks. It minimises edge-crossings by plotting the nodes for each of the two variables in a separate row. See \code{?igraph::as\_bipartite}.
+  
+  \item[dh] Uses Davidson and Harels simulated annealing algorithm to place nodes. See \code{?igraph::with\_dh}.
+  
+  \item[randomly] Places nodes randomly into the plot. See \code{?igraph::randomly}.
+  
+  \item[fr] Spreads the nodes based on the force-directed algorithm of Fruchterman and Reingold. See \code{?igraph::with\_fr}
+  
+  \item[kk] Uses the spring-based algorithm by Kamada and Kawai to place nodes. See \code{?igraph::with\_kk}
+  
+  \item[mds] Performs a multidimensional scaling and places nodes according to the result. See \code{?igraph::with\_mds}.
+  
+  \item[graphopt] Employs the Graphopt algorithm based on alternating attraction and repulsion to place nodes.
+  
+  \item[drl] Uses the force directed algorithm from the DrL toolbox to place nodes. See \code{?igraph::with\_drl}.
+  
+  \item[lgl] Uses the algorithm from Large Graph Layout to place nodes. See \code{?igraph::with\_lgl}.
+  
+  \item[gem] Place nodes on the plane using the GEM force-directed layout algorithm. See \code{?igraph::with\_gem}.
+  
+  \item[star] This places one node in the centre and spreads the rest of the nodes in equal distances around it. \code{?igraph::as\_star}
+  
+  \item[circle] Arranges the nodes in a circle.
+\end{description}
+
+To get a better idea of how this works, look at the code chunk and plot below to see a small selection of the algorithms in action.
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 7, crop = TRUE>>=
+# First, let's construct a onemode network
+nw <- dna_network(conn,
+                  networkType = "onemode",
+                  qualifierAggregation = "congruence",
+                  duplicates = "document",
+                  excludeValues = list("concept" =
+                  "There should be legislation to regulate emissions."))
+
+# As with the options for dna_cluster we produce four different plot objects
+nw_fr <- dna_plotNetwork(nw, layout = "fr", show_legend = FALSE) +
+   ggtitle("Fruchterman Reingold")
+nw_graphopt <- dna_plotNetwork(nw, layout = "graphopt", show_legend = FALSE) +
+   ggtitle("Graphopt")
+nw_mds <- dna_plotNetwork(nw, layout = "mds", show_legend = FALSE) +
+   ggtitle("MDS")
+nw_randomly <- dna_plotNetwork(nw, layout = "randomly") +
+   ggtitle("Randomly")
+ 
+# The plots are again arranged in a grid
+grid <- grid.arrange(nw_fr, nw_graphopt, nw_mds, nw_randomly)
+
+@
+
+There are, again several options to style the plot.
+
+Some critics, however, doubt the usefulness of the common network plots---often referred to as hairballs---you see above.
+\citet{krzywinski2012hive}, for example, have argued that these network plots ``lack reproducibility and perceptual uniformity because they do not use a node coordinate system''. In the function \code{dna\_plotNetwork} a seed is automatically set to ensure at least reproducibility when you run the same code. You can change the argument \code{seed} to get an idea of how much chance is involved in calculating the layout.
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 7, crop = TRUE>>=
+nw_1 <- dna_plotNetwork(nw, show_legend = FALSE, seed = 1)
+nw_2 <- dna_plotNetwork(nw, show_legend = FALSE, seed = 2)
+nw_12345 <- dna_plotNetwork(nw, show_legend = FALSE, seed = 12345)
+nw_71288 <- dna_plotNetwork(nw, show_legend = FALSE, seed = 71288)
+
+# The plots are again arranged in a grid
+grid <- grid.arrange(nw_1, nw_2, nw_12345, nw_71288)
+@
+
+To get around this problem, \citet{krzywinski2012hive} suggest so-called hive plots. These plots feature radially distributed linear axes on which the nodes are positioned. You can choose yourself, what the axes mean, so it is easier to assess whether and how a certain attribute of a network influences clustering among actors.
+
+In \rdna, you can produce hive plots with the \code{dna\_plotHive} function, which is very similar to \code{dna\_plotNetwork}, except that you additionally provide an argument to produce the axes.
+
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 4, fig.height = 4, crop = TRUE>>=
+dna_plotHive(nw, axis = "type")
+@
+
+
 % TODO
-% include hive plots and other plots from ggraph
+% More styling options
 % include interactive network plots from visNetwork and networkD3
-% See https://www.jessesadler.com/post/network-analysis-with-r/
+
+
+\section{Adding and manipulating documents in DNA from R}
+In \rdna, there are also several functions to manipulate the documents within a \dna\ database from \R: \code{dna\_getDocuments}, \code{dna\_addDocument}, \code{dna\_removeDocument} and \code{dna\_setDocuments}.
+
+\code{dna\_getDocuments} retrieves a dataframe with all documents from a \dna\ connection into the \R\ environment.
+This can be useful in multiple scenarios:
+If you have lost or never had original source files for the documents in the database, you can export the dataframe from \R\ into a common format, such as a CSV file, which can be opened using, for example, MS Excel, LibreOffice, or Numbers (see \code{?write.csv}).
+This can also be useful if you have used \dna\ to add metadata to your documents.
+
+A second scenario in which this could be useful is, if you want to calculate some statistics about your text---such as length of texts in words or characters, readability or lexical diversity---or if you want to support your manual coding by determining, for example, the most important words via keyness or tfidf algorithms (see \citet{kasper2017text} for an overview of working with text in \R).
+
+Another scenario would be if you want to use \R\ instead of \dna\ to recode some of your documents' metadata.
+In the example below, we first retrieve the documents from \dna\ then alter two of the columns: "type" and "author".
+
+<<eval=FALSE, results = 'tex'>>=
+docs <- dna_getDocuments(conn)
+docs
+@
+<<eval=TRUE, results = 'tex', echo=FALSE>>=
+docs <- dna_getDocuments(conn)
+colnames(docs) <- trim(colnames(docs))
+docs$text <- gsub("\n", "", trim(docs$text, n = 14))
+docs$title <- gsub("\n", "", trim(docs$title, n = 14))
+kable(docs, format = "latex", booktabs = TRUE, linesep = "") %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 7)
+@
+<<eval=FALSE, results = 'tex'>>=
+# Fill empty column with the same word in every row
+docs$type <-  "hearing"
+# Use regular expression to change the order of name and surname of the authors
+docs$author <- sub('^(.*), (.*)', '\\2 \\1', docs$author)
+docs
+@
+<<eval=TRUE, results = 'tex', echo=FALSE>>=
+docs$type <-  "hearing"
+docs$author <- sub('^(.*), (.*)', '\\2 \\1', docs$author)
+docs$text <- gsub("\n", "", trim(docs$text, n = 14))
+docs$title <- gsub("\n", "", trim(docs$title, n = 14))
+kable(docs, format = "latex", booktabs = TRUE, linesep = "") %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 7)
+@
+
+So how do we get this new dataframe back into \dna? The answer is the next function we will discuss: \code{dna\_setDocuments}.
+This function has just a few arguments but is very capable and can also be dangerous if not used correctly.
+We, therefore, recommend that you make a backup copy of your database---which you should do regularly anyway---before you start to alter anything.
+After you have done this, you can provide a dataframe with ten columns and with:
+
+\begin{description}
+  \item[ID] must be numeric and must contain the document IDs.
+  \item[title] must contain the document titles as character objects.
+  \item[text] must contain the document texts as character objects.
+  \item[coder] must contain the coder IDs as integer values. % (see dna_getCoders).
+  \item[author] must contain the document authors as character objects.
+  \item[source] must contain the document sources as character objects.
+  \item[section] must contain the document sections as character objects.
+  \item[notes] must contain the document notes as character objects.
+  \item[type] must contain the document types as character objects.
+  \item[date] must contain the document dates as POSIXct objects or as numeric objects indicating milliseconds since 1970-01-01.
+\end{description}
+
+Since we retrieved the objects docs from the database, it already meets all these conditions.
+In other cases, however, you will have to rearrange the data a bit until you can push it to \dna.
+Before you actually change anything, it is recommended to do a test run, or in other words \code{simulate} what would be done to the database:
+
+<<eval=FALSE, results = 'tex'>>=
+dna_setDocuments(conn, documents = docs, removeStatements = FALSE,
+                 simulate = TRUE)
+@
+
+Note, that this is the default and that you need to set \code{simulate = FALSE} before anything really happens.
+You should also be cautious with the option \code{removeStatements} since when set to \code{TRUE}, it will destroy part of your work if a document in your new dataframe has the same ID as a document already present in the database.
+
+\subsection{Adding newspaper articles using LexisNexisTools}
+One common way of retrieving texts for analysis in \dna\ is by downloading articles from the commercial newspaper archive LexisNexis.
+Many university libraries have access to this database which maintains a collection of newspaper articles from many major outlets across Europe and North America.
+It's powerful search engine also allows for a finely grained search string to limit the number of articles for a specific topic.
+
+To convert the raw files from LexisNexis though, we need another \R\ package: \texttt{LexisNexisTools} \citep{gruber2018lexis}.
+You can install this package via \code{devtools::install\_github("JBGruber/LexisNexisTools")}.
+The workflow looks as follows:
+
+<<eval=TRUE, warning = FALSE, results = 'tex'>>=
+library("LexisNexisTools")
+# This places a sample TXT file in your working directory in
+lnt_sample()
+
+# Look for TXT files
+my_files <- list.files(pattern = "TXT", ignore.case = TRUE)
+
+# If this contains other files not from LexisNexis you can subset the vector
+my_files <- my_files[grepl("^sample.TXT$", my_files)]
+
+# Now the files can be converted into an LNToutput object
+LNToutput <- lnt_read(my_files, convert_date = FALSE)
+
+# And this object can be converted to work in rDNA
+docs <- lnt_convert(LNToutput, to = "rDNA")
+@
+
+This object is almost ready to add to the \dna\ database.
+We only need to adjust the ID column, so that IDs are not duplicated and set a valid coder ID (i\,.e., one that is already present in the database).
+
+<<eval=TRUE, warning = FALSE, results = 'tex'>>=
+docs_orig <- dna_getDocuments(conn)
+
+# We create new unique IDs by IDs with the highest ID from the original data 
+docs$id <- docs$id + max(docs_orig$id)
+
+# We use coder 1 to import the new documents
+unique(docs_orig$coder)
+docs$coder <- 2
+
+# Now we combine the original with the new data and push it to DNA
+docs <- rbind(docs_orig, docs)
+dna_setDocuments(conn, documents = docs, simulate = FALSE)
+@
+
+Now the documents from LexisNexis are in the \dna\ database:
+
+<<eval=FALSE, results = 'tex'>>=
+docs <- dna_getDocuments(conn)
+docs
+@
+<<eval=TRUE, results = 'tex', echo=FALSE>>=
+docs <- dna_getDocuments(conn)
+colnames(docs) <- trim(colnames(docs))
+docs$text <- gsub("\n", "", trim(docs$text, n = 14))
+docs$title <- gsub("\n", "", trim(docs$title, n = 14))
+kable(docs, format = "latex", booktabs = TRUE, linesep = "") %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 7)
+@
+
 
 \bibliographystyle{apalike}
 \bibliography{dna-manual}
