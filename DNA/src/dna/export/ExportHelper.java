@@ -390,7 +390,6 @@ public class ExportHelper {
 		
 		GregorianCalendar stopCalendar = new GregorianCalendar();
 		stopCalendar.setTime(stop);
-		ArrayList<Date> timeLabels = new ArrayList<Date>();
 		GregorianCalendar currentStop = new GregorianCalendar();
 		currentStop.setTime(start);
 		GregorianCalendar currentStart = (GregorianCalendar) currentStop.clone();
@@ -433,14 +432,16 @@ public class ExportHelper {
 			if (twoMode == true) {
 				boolean verbose;
 				verbose = true;
-				timeWindowMatrices.add(computeTwoModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
-						var2Document, names1, names2, qualifier, qualifierAggregation, normalization, verbose));
+				Matrix m = computeTwoModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
+						var2Document, names1, names2, qualifier, qualifierAggregation, normalization, verbose);
+				m.setDate(currentStop.getTime());
+				timeWindowMatrices.add(m);
 			} else {
-				timeWindowMatrices.add(computeOneModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
-						var2Document, names1, names2, qualifier, qualifierAggregation, normalization));
+				Matrix m = computeOneModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
+						var2Document, names1, names2, qualifier, qualifierAggregation, normalization);
+				m.setDate(currentStop.getTime());
+				timeWindowMatrices.add(m);
 			}
-			
-			timeLabels.add(currentStop.getTime());
 			
 			if (unitType.equals("using seconds")) {
 				currentStart.add(Calendar.SECOND, 1);

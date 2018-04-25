@@ -27,7 +27,6 @@ public class ExporterR {
 	ArrayList<Statement> filteredStatements;
 	Matrix matrix;
 	ArrayList<Matrix> timeWindowMatrices;
-	ArrayList<Date> timeLabels;
 	AttributeVector[] attributes;
 	Object[] eventListColumnsR;
 	String[] columnNames, columnTypes;
@@ -1022,9 +1021,9 @@ public class ExporterR {
 	 * @return   array of Unix times as seconds since 1/1/1970
 	 */
 	public long[] getTimeWindowTimes() {
-		long[] times = new long[timeLabels.size()];
-		for (int i = 0; i < timeLabels.size(); i++) {
-			times[i] = (long) (timeLabels.get(i).getTime() / 1000);
+		long[] times = new long[timeWindowMatrices.size()];
+		for (int i = 0; i < timeWindowMatrices.size(); i++) {
+			times[i] = (long) (timeWindowMatrices.get(i).getDate().getTime() / 1000);
 		}
 		return times;
 	}
