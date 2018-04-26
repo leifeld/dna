@@ -20,7 +20,7 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2018-04-23";
+		date = "2018-04-26";
 		version = "2.0 beta 21";
 		System.out.println("DNA version: " + version + " (" + date + ")");
 		System.out.println("Java version: " + System.getProperty("java.version"));
@@ -66,18 +66,10 @@ public class Dna {
 		}
 		
 		// remove documents in GUI
-		//Date date1 = new Date();
 		Dna.data.removeDocuments(docIds, modelIndices);
-		//Date date2 = new Date();
 		
 		// remove documents in SQL database
 		sql.removeDocuments(docIds);
-		/*
-		Date date3 = new Date();
-		long guiremove = date2.getTime() - date1.getTime();
-		long sqlremove = date3.getTime() - date2.getTime();
-		System.out.println("GUI: " + guiremove + "  SQL: " + sqlremove);
-		*/
 	}
 
 	/**

@@ -696,24 +696,26 @@ dna_gui <- function(infile = NULL,
                     verbose = TRUE) {
   djs <- dnaEnvironment[["dnaJarString"]]
   if (is.null(djs)) {
-    stop(paste0(djs, " could not be located in directory ",
-                getwd(), "."))
+    stop(paste0(djs, " could not be located in directory ", getwd(), "."))
   }
-  if(!is.null(infile)){
+  if(!is.null(infile)) {
     if (!file.exists(infile)) {
       stop(
-        if (grepl("/", infile, fixed = TRUE))
-        {paste0("infile ", infile, " could not be located.")}
-        else
-        {paste0("infile ", infile, " could not be located in working directory ",
-                getwd(), ".")
+        if (grepl("/", infile, fixed = TRUE)) {
+          paste0("infile ", infile, " could not be located.")
+        } else {
+          paste0("infile ", 
+                 infile, 
+                 " could not be located in working directory ", 
+                 getwd(), ".")
         }
-      )}
+      )
+    }
   }
   if (is.null(infile)) {
     f <- ""
   } else {
-    f <- paste0(" ", infile)
+    f <- paste0(" \"", infile, "\"")
   }
   if (is.null(javapath)) {
     jp <- "java"
