@@ -191,7 +191,15 @@ dna_attributes <- function(connection,
 #'
 #' Clustering methods for DNA connections.
 #'
-#' Perform a cluster analysis based on a DNA connection.
+#' Perform a cluster analysis based on a DNA connection. Clustering is performed
+#' on a collated twomode network for cluster methods "ward.D", "ward.D2",
+#' "single", "complete", "average", "mcquitty", "median" and "centroid" or on a
+#' onemode network with the cluster methods "edge_betweenness", "leading_eigen"
+#' and "walktrap" from the \link{igraph} package. The collated twomode network
+#' is constructed by retrieving individual networks for each of the qualifiers
+#' levels and combining the results. You can look at this network with
+#' View(clust$network) (with "clust" being the outcome of a call to
+#' dna_cluster()).
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
@@ -210,19 +218,19 @@ dna_attributes <- function(connection,
 #'   \link[igraph]{cluster_edge_betweenness},
 #'   \link[igraph]{cluster_leading_eigen} or \link[igraph]{cluster_walktrap}
 #'   respectively, will be used for clustering.
-#' @param attribute1,attribute2 Which attribute of variable from DNA should be used
-#'   to assign colours? There are two sets of colours saved in the resulting
-#'   object as \link{dna_plotDendro} has two graphical elements to distinguish
-#'   between values: leaf_colours and leaf_ends. Possible values are "id", "value",
-#'   "color", "type", "alias" and "note".
+#' @param attribute1,attribute2 Which attribute of variable from DNA should be
+#'   used to assign colours? There are two sets of colours saved in the
+#'   resulting object as \link{dna_plotDendro} has two graphical elements to
+#'   distinguish between values: leaf_colours and leaf_ends. Possible values are
+#'   "id", "value", "color", "type", "alias" and "note".
 #' @param cutree.k,cutree.h If cutree.k or cutree.h are provided, the tree from
 #'   hierarchical clustering is cut into several groups. See $k$ and $h$ in
 #'   \link[stats]{cutree} for details.
 #' @param ... Additional arguments passed to \link{dna_network}. This is
 #'   especially useful to set qualifier (defaults to "agreement") and
 #'   normalization (defaults to "no") if non-default values are needed for
-#'   clustering.
-#' 
+#'   clustering. Some other options, like qualifierAggregation are turned off
+#'
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
@@ -242,7 +250,8 @@ dna_attributes <- function(connection,
 #' @export
 #' @importFrom vegan vegdist
 #' @importFrom stats setNames dist hclust cutree as.hclust
-#' @importFrom igraph graph_from_adjacency_matrix cluster_leading_eigen cluster_walktrap E
+#' @importFrom igraph graph_from_adjacency_matrix cluster_leading_eigen
+#'   cluster_walktrap E
 #' @importFrom dplyr summarise group_by_all
 #' @importFrom MASS isoMDS
 #' @importFrom cluster pam
@@ -259,10 +268,23 @@ dna_cluster <- function(connection,
                         cutree.h = NULL,
                         ...) {
   dots <- list(...)
+  if ("qualifierAggregation" %in% names(dots)) {
+    message("\"qualifierAggregation\" can't be changed in dna_cluster. The option is ignored." )
+    dots["qualifierAggregation"] <- NULL
+  }
   if ("normalization" %in% names(dots)){
-    warning(paste0("Normalization is done automatically during clustering and",
-                   " cannot be passed to dna_network via \"...\""))
+    normalization_onemode <- ifelse(dots[["normalization"]] %in% 
+                                      c("no", "average", "Jaccard", "cosine"),
+                                    dots[["normalization"]],
+                                    "no")
+    normalization_twomode <-   ifelse(dots[["normalization"]] %in% 
+                                        c("no", "activity", "prominence"),
+                                      dots[["normalization"]],
+                                      "no")
     dots["normalization"] <- NULL
+  } else {
+    normalization_onemode <- "no"
+    normalization_twomode <- "no"
   }
   if ("excludeValues" %in% names(dots)){
     excludeValues <- dots["excludeValues"][[1]]
@@ -270,20 +292,22 @@ dna_cluster <- function(connection,
   } else {
     excludeValues <- list()
   }
-  if (!exists("qualifier")) {
-    qualifier <- "agreement"
-  }
-  if (qualifier %in% names(excludeValues)){
-    excl <- unlist(unname(excludeValues[qualifier]))
-    excludeValues[qualifier] <- NULL
-  }
   lvls <- do.call(dna_network,
                   c(list(connection = connection,
                          networkType = "eventlist",
                          excludeValues = excludeValues,
                          verbose = FALSE
                   ), dots))
- 
+  if ("qualifier" %in% names(dots)) { #
+    qualifier <- dots[["qualifier"]]
+    dots[["qualifier"]] <- NULL
+  } else {
+    qualifier <- "agreement"
+  }
+  if (qualifier %in% names(excludeValues)){
+    excl <- unlist(unname(excludeValues[qualifier]))
+    excludeValues[qualifier] <- NULL
+  }
   lvls <- unique(lvls[, qualifier])
   if (exists("excl")) {
     lvls <- lvls[!lvls %in% excl]
@@ -302,6 +326,7 @@ dna_cluster <- function(connection,
                   c(list(connection = connection,
                          networkType = "twomode",
                          variable1 = variable,
+                         normalization = normalization_twomode,
                          isolates = TRUE,
                          duplicates = duplicates,
                          qualifier = qualifier,
@@ -313,6 +338,7 @@ dna_cluster <- function(connection,
     colnames(nw) <- paste(colnames(nw), "-", l)
     return(nw)
   })
+  dta <- rapply(dta, f = function(x) ifelse(is.nan(x),0,x), how="replace" )
   dta <- do.call("cbind", dta)
   dta <- dta[rowSums(dta) > 0, ]
   dta <- dta[, colSums(dta) > 0]
@@ -320,6 +346,7 @@ dna_cluster <- function(connection,
                 c(list(connection = connection,
                        networkType = "onemode",
                        qualifierAggregation = "subtract",
+                       normalization = normalization_onemode,
                        variable1 = variable,
                        isolates = FALSE,
                        duplicates = duplicates,
@@ -409,6 +436,7 @@ dna_cluster <- function(connection,
                 c(list(connection = connection,
                        networkType = "twomode",
                        variable1 = variable,
+                       normalization = "no",
                        isolates = TRUE,
                        duplicates = duplicates,
                        qualifier = qualifier,

@@ -30,11 +30,11 @@ used. When set to "edge_betweenness", "leading_eigen" or "walktrap"
 \link[igraph]{cluster_leading_eigen} or \link[igraph]{cluster_walktrap}
 respectively, will be used for clustering.}
 
-\item{attribute1, attribute2}{Which attribute of variable from DNA should be used
-to assign colours? There are two sets of colours saved in the resulting
-object as \link{dna_plotDendro} has two graphical elements to distinguish
-between values: leaf_colours and leaf_ends. Possible values are "id", "value",
-"color", "type", "alias" and "note".}
+\item{attribute1, attribute2}{Which attribute of variable from DNA should be
+used to assign colours? There are two sets of colours saved in the
+resulting object as \link{dna_plotDendro} has two graphical elements to
+distinguish between values: leaf_colours and leaf_ends. Possible values are
+"id", "value", "color", "type", "alias" and "note".}
 
 \item{cutree.k, cutree.h}{If cutree.k or cutree.h are provided, the tree from
 hierarchical clustering is cut into several groups. See $k$ and $h$ in
@@ -43,13 +43,21 @@ hierarchical clustering is cut into several groups. See $k$ and $h$ in
 \item{...}{Additional arguments passed to \link{dna_network}. This is
 especially useful to set qualifier (defaults to "agreement") and
 normalization (defaults to "no") if non-default values are needed for
-clustering.}
+clustering. Some other options, like qualifierAggregation are turned off}
 }
 \description{
 Clustering methods for DNA connections.
 }
 \details{
-Perform a cluster analysis based on a DNA connection.
+Perform a cluster analysis based on a DNA connection. Clustering is performed
+on a collated twomode network for cluster methods "ward.D", "ward.D2",
+"single", "complete", "average", "mcquitty", "median" and "centroid" or on a
+onemode network with the cluster methods "edge_betweenness", "leading_eigen"
+and "walktrap" from the \link{igraph} package. The collated twomode network
+is constructed by retrieving individual networks for each of the qualifiers
+levels and combining the results. You can look at this network with
+View(clust$network) (with "clust" being the outcome of a call to
+dna_cluster()).
 }
 \examples{
 \dontrun{
