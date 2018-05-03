@@ -14,7 +14,7 @@ dna_plotHeatmap(clust, truncate = 40, values = FALSE,
 function.}
 
 \item{truncate}{Sets the number of characters to which labels should be
-truncated.}
+truncated. Value \code{Inf} turns off truncation.}
 
 \item{values}{If TRUE, will display the values in the tiles of the heatmap.}
 

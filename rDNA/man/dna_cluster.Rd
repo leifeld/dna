@@ -50,10 +50,10 @@ Clustering methods for DNA connections.
 }
 \details{
 Perform a cluster analysis based on a DNA connection. Clustering is performed
-on a collated twomode network for cluster methods "ward.D", "ward.D2",
+on a collated two-mode network for cluster methods "ward.D", "ward.D2",
 "single", "complete", "average", "mcquitty", "median" and "centroid" or on a
-onemode network with the cluster methods "edge_betweenness", "leading_eigen"
-and "walktrap" from the \link{igraph} package. The collated twomode network
+one-mode network with the cluster methods "edge_betweenness", "leading_eigen"
+and "walktrap" from the \link{igraph} package. The collated two-mode network
 is constructed by retrieving individual networks for each of the qualifiers
 levels and combining the results. You can look at this network with
 View(clust$network) (with "clust" being the outcome of a call to

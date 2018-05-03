@@ -229,5 +229,9 @@ nw <- dna_network(conn,
                   normalization = "average",
                   excludeValues = list("concept" =
                       c("There should be legislation to regulate emissions.")))
+                      
+# plot network
+dna_plotNetwork(nw)
+dna_plotHive(nw)
 }
 }

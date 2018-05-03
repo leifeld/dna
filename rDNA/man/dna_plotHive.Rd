@@ -12,28 +12,35 @@ dna_plotHive(x, axis = "type", axis_label = FALSE, axis_colours = "auto",
   threshold = NULL, seed = 12345, show_legend = TRUE, ...)
 }
 \arguments{
-\item{x}{Either a dna_network or a dna_cluster object or a connection to a
-DNA database (see \link{dna_connection}).}
+\item{x}{A \code{dna_network_onemode} object created by the
+\link{dna_network} function.}
 
-\item{axis}{Takes the name of an attribute in DNA or "group" to produce the
-axis. The option "group" only makes sense if either a dna_cluster object is
-used or if a list of groups is provided in the \code{groups} argument.}
+\item{axis}{Takes the name of an attribute in DNA (i.e. "id", "value",
+"color", "type", "alias", "notes" or "frequency") or "group" to colour
+nodes. The option "group" only makes sense if you provide group membership
+information to the \code{groups} argument.}
 
-\item{axis_label}{If TRUE, axis labels are plotted at the end of the axis
-instead of the legend.}
+\item{axis_label}{If TRUE, axis labels are plotted at the end of the axis and
+are removed from the legend.}
 
-\item{axis_colours}{There are five options for colouring the axis segments :
-(1.) "auto" simply leaves the standard ggplot2 colours; (2.) "identity"
-tries to use the names of variables as colours (i.e., if you set axis =
-"color") but fails if names are not plottable colours; (3) "manual" let's
-you provide colours via custom_colours; (4.) "brewer" automatically selects
-nice colours from a \code{RColorBrewer} palette (palettes can be set in
-custom_colours, defaults to \code{Set3}); and (5.) "single" uses the first
-value in custom_colours for all nodes.}
+\item{axis_colours}{There are five options for colouring the axis segments:
+(1.) "auto" either uses the colours in the DNA database or leaves the
+standard ggplot2 colours; (2.) "identity" tries to use the names of
+variables as colours (e.g., if you set node_attribute = "color" or have
+provided a colour name in another attributes field in DNA) but fails if
+names are not plottable colours; (3) "manual" let's you provide colours via
+custom_colours; (4.) "brewer" automatically selects nice colours from a
+\code{RColorBrewer} palette (palettes can be set in custom_colours,
+defaults to \code{Set3}); and (5.) "single" uses the first value in
+custom_colours for all axis.}
 
-\item{custom_colours}{Either provide enough colours to manually set the
-colours in the plot (if colours = "manual") or select a palette from
-\code{RColorBrewer} (if colours = "brewer").}
+\item{custom_colours}{Takes custom values to control the node colours. The
+format of the necessary values depends on the setting of
+\code{node_colours}: When \code{node_colours = "manual"}, a character
+object containing the enough colour names for all groups is needed; When
+\code{node_colours = "brewer"} you need to supply a a palette from
+\code{RColorBrewer} (otherwise defaults to "Set3"); When \code{node_colours
+"single"} only a single colour name is needed (defaults to "red").}
 
 \item{edge_weight}{If TRUE, edge weights will be used to determine width of
 the lines between nodes. The minimum and maximum width can be controlled
@@ -42,54 +49,54 @@ with \code{edge_size_range}.}
 \item{edge_size_range}{Takes a numeric vector with two values: minimum and
 maximum \code{edge_weight}.}
 
-\item{edge_colour}{What colour to use for edges.}
+\item{edge_colour}{Provide the name of a colour to use for edges.}
 
-\item{edge_alpha}{Values lower than 1 make the edges transparent.}
+\item{edge_alpha}{Takes numeric values to control the alpha-transperency of
+edges. Values lower than 1 make the edges transparent.}
 
 \item{node_label}{If TRUE, text is added next to nodes to label them. If
 "label", a rectangle is drawn underneath the text, often making it easier
-to read.}
+to read. If FALSE no lables are drawn.}
 
 \item{label_repel}{Controls how far from the labels will be put from nodes.
-The exact position of nodes is random but overplotting is avoided.}
+The exact position of text is random but overplotting is avoided.}
 
 \item{label_lines}{If TRUE, draws lines between nodes and labels if labels
 are further away from nodes.}
 
 \item{font_size}{Control the font size of the node labels.}
 
-\item{theme}{See themes in \code{ggplot2}. Available options are "graph"
+\item{theme}{Provide the name of a theme. Available options are "graph"
 (which is customised to look best with networks), "bw", "void", "light" and
-"dark". Leave empty to use standard ggplot theme. Customise the theme by
-adding \code{+ theme_*} after this function.}
+"dark". Leave empty to use standard ggplot theme. Choose other themes or
+customise with tools from \link{ggplot2} by adding \code{+ theme_*} after
+this function.}
 
 \item{truncate}{Sets the number of characters to which labels should be
-truncated.}
+truncated. Value \code{Inf} turns off truncation.}
 
-\item{groups}{Takes a named list with values as names and group assignments
-as values.}
+\item{groups}{Takes a \code{dna_cluster} object or a named list or character
+object. In case of a named list or character object, the names must match
+the values of \code{variable1} used during network construction (see
+example).}
 
 \item{threshold}{Minimum threshold for which edges should be plotted.}
 
-\item{seed}{Set seed to reproduce the layout.}
+\item{seed}{Numeric value passed to \link{set.seed}. The default is as good
+as any other value but provides that plots are always reproducible.}
 
 \item{show_legend}{Logical. Should a legend be displayed.}
 
-\item{...}{Only active when plotting from a dna_connection. Arguments are
-passed to \link{dna_network}. Especially useful for normalisation of
-networks.}
+\item{...}{Currently not used.}
 }
 \description{
-Produces a hive plot from various objects containing DNA data
+This function is an easy wrapper to create hive plots from one-mode networks
+with data from DNA.
 }
 \details{
-This function is a convenience wrapper to make hive plots  with
-\link[ggraph]{ggraph} from several types of objects created in rDNA.
-Specifically, onemode networks from \link{dna_network}, dna_cluster objects
-created with \link{dna_cluster} and connections to a database
-(\link{dna_connection}) are supported. The \code{...} are inactive, except
-when plotting directly from a dna_connection. In this case, additional
-arguments can be passed to network construction via \link{dna_network}.
+This function is a convenience wrapper to plot networks with
+\link[ggraph]{ggraph} from one-mode network objects created via
+\link{dna_network} rDNA.
 }
 \examples{
 \dontrun{
@@ -97,17 +104,23 @@ dna_downloadJar()
 dna_init()
 conn <- dna_connection(dna_sample())
 
-# Plot from onemode network
+# Plot from one-mode network
 nw <- dna_network(conn, networkType = "onemode")
 dna_plotHive(nw)
 
-# Plot from dna_cluster
-clust <- dna_cluster(conn)
-dna_plotHive(clust, axis = "group")
+# Use groups from dna_cluster
+clust <- dna_cluster(conn, cutree.k = 2)
+dna_plotHive(nw, axis = "group", groups = clust)
 
-# Plot from dna_connection
-dna_plotHive(conn, threshold = 0.3, networkType = "onemode",
-             normalization ="Jaccard")
+# Use custom groups from dna_cluster
+groups <- c("Alliance to Save Energy" = "group 1",
+            "Energy and Environmental Analysis, Inc." = "group 2",
+            "Environmental Protection Agency" = "group 3",
+            "National Petrochemical & Refiners Association" = "group 1",
+            "Senate" = "group 2",
+            "Sierra Club" = "group 3",
+            "U.S. Public Interest Research Group"  = "group 1")
+dna_plotHive(nw, axis = "group", groups = groups)
 }
 
 }

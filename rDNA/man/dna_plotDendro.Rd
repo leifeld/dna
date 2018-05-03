@@ -72,7 +72,7 @@ look best with dendrograms. Leave empty to use standard ggplot theme.
 Customise the theme by adding \code{+ theme_*} after this function...}
 
 \item{truncate}{Sets the number of characters to which labels should be
-truncated.}
+truncated. Value \code{Inf} turns off truncation.}
 
 \item{leaf_labels}{Either "ticks" to display the labels as axis ticks or
 "node" to label nodes directly. Node labels are also take the same colour

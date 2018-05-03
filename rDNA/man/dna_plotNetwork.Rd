@@ -6,103 +6,120 @@
 \usage{
 dna_plotNetwork(x, layout = "auto", edges = "link", edge_weight = TRUE,
   edge_size_range = c(0.2, 2), edge_colour = "grey", edge_alpha = 1,
-  node_size = 6, node_attribute = "type", node_colours = "auto",
+  node_size = 6, node_attribute = "color", node_colours = "auto",
   custom_colours = character(), node_shape = 19, node_label = TRUE,
   font_size = 6, theme = "graph", label_repel = 0.5,
   label_lines = FALSE, truncate = 30, groups = list(), threshold = NULL,
   seed = 12345, show_legend = TRUE, ...)
 }
 \arguments{
-\item{x}{Either a dna_network or a dna_cluster object or a connection to a
-DNA database (see \link{dna_connection}).}
+\item{x}{A \code{dna_network} object created by the \link{dna_network}
+function.}
 
-\item{layout}{The type of layout to use.}
+\item{layout}{The type of layout to use. Available layouts include "nicely"
+(which tries to choose a suiting layout), "bipartite" (for two-mode
+networks), "circle", "dh", "drl", "fr", "gem", "graphopt", "kk", "lgl",
+"mds", "randomly" and "star". Other layouts might be available (see
+Details).}
 
-\item{edges}{When set to "link", the default, straight lines are used to
-connect nodes. Other available options are "arc", "diagonal" and "fan".}
+\item{edges}{When set to "link" (default) straight lines are used to connect
+nodes. Other available options are "arc", "diagonal" and "fan".}
 
-\item{edge_weight}{If TRUE, edge weights will be used to determine width of
-the lines between nodes. The minimum and maximum width can be controlled
-with \code{edge_size_range}.}
+\item{edge_weight}{If TRUE, edge weights will be used to determine the width
+of the lines. The minimum and maximum width can be controlled with
+\code{edge_size_range}.}
 
 \item{edge_size_range}{Takes a numeric vector with two values: minimum and
 maximum \code{edge_weight}.}
 
-\item{edge_colour}{What colour to use for edges.}
+\item{edge_colour}{Provide the name of a colour to use for edges. Defaults to
+"grey".}
 
-\item{edge_alpha}{Values lower than 1 make the edges transparent.}
+\item{edge_alpha}{Takes numeric values to control the alpha-transperency of
+edges. Values lower than 1 make the edges transparent.}
 
-\item{node_size}{Takes numeric values to control the size of nodes.}
+\item{node_size}{Takes numeric values to control the size of nodes (defaults
+to 6).}
 
-\item{node_attribute}{Takes the name of an attribute in DNA or "group" to
-colour nodes. The option "group" only makes sense if either a dna_cluster
-object is used or if a list of groups is provided in the \code{groups}
-argument.}
+\item{node_attribute}{Takes the name of an attribute in DNA (i.e. "id",
+"value", "color", "type", "alias", "notes" or "frequency") or "group" to
+colour nodes. The option "group" only makes sense if you provide group
+membership information to the \code{groups} argument.}
 
 \item{node_colours}{There are five options for colouring the nodes: (1.)
-"auto" simply leaves the standard ggplot2 colours; (2.) "identity" tries to
-use the names of variables as colours (i.e., if you set axis = "color") but
-fails if names are not plottable colours; (3) "manual" let's you provide
-colours via custom_colours; (4.) "brewer" automatically selects nice
-colours from a \code{RColorBrewer} palette (palettes can be set in
-custom_colours, defaults to \code{Set3}); and (5.) "single" uses the first
-value in custom_colours for all nodes.}
+"auto" either leaves the standard ggplot2 colours or uses the colours in
+the DNA database; (2.) "identity" tries to use \code{node_attribute} for
+colours (i.e., if you set \code{node_attribute = "color"} or have provided
+a colour name in another attribute field in DNA) but fails if names are not
+plottable colours; (3) "manual" lets you provide colours via
+custom_colours; (4.) "brewer" automatically selects nice colours from a
+\code{RColorBrewer} palette (palettes can be set in custom_colours); and
+(5.) "single" uses the first value in custom_colours for all nodes.}
 
-\item{custom_colours}{Either provide enough colours to manually set the
-colours in the plot (if colours = "manual"), select a palette from
-\code{RColorBrewer} (if colours = "brewer") or provide a single colour for
-all nodes (if colours = "single").}
+\item{custom_colours}{Takes custom values to control the node colours. The
+format of the necessary values depends on the setting of
+\code{node_colours}: When \code{node_colours = "manual"}, a character
+object containing the enough colour names for all groups is needed; When
+\code{node_colours = "brewer"} you need to supply a a palette from
+\code{RColorBrewer} (otherwise defaults to "Set3"); When \code{node_colours
+"single"} only a single colour name is needed (defaults to "red").}
 
-\item{node_shape}{Control the node shape. Available shapes range from 0:25
+\item{node_shape}{Controls the node shape. Available shapes range from 0:25
 and 32:127.}
 
 \item{node_label}{If TRUE, text is added next to nodes to label them. If
 "label", a rectangle is drawn underneath the text, often making it easier
-to read.}
+to read. If FALSE no lables are drawn.}
 
-\item{font_size}{Control the font size of the node labels.}
+\item{font_size}{Controls the font size of the node labels. The default, 6,
+looks best on many viewers and knitr reports.}
 
-\item{theme}{See themes in \code{ggplot2}. Available options are "graph"
+\item{theme}{Provide the name of a theme. Available options are "graph"
 (which is customised to look best with networks), "bw", "void", "light" and
-"dark". Leave empty to use standard ggplot theme. Customise the theme by
-adding \code{+ theme_*} after this function.}
+"dark". Leave empty to use standard ggplot theme. Choose other themes or
+customise with tools from \link{ggplot2} by adding \code{+ theme_*} after
+this function.}
 
-\item{label_repel}{Controls how far from the labels will be put from nodes.
-The exact position of nodes is random but overplotting is avoided.}
+\item{label_repel}{Controls how far labels will be put from nodes. The exact
+position of text is random but overplotting is avoided.}
 
 \item{label_lines}{If TRUE, draws lines between nodes and labels if labels
 are further away from nodes.}
 
 \item{truncate}{Sets the number of characters to which labels should be
-truncated.}
+truncated. Value \code{Inf} turns off truncation.}
 
-\item{groups}{Takes a named list with values as names and group assignments
-as values.}
+\item{groups}{Takes a \code{dna_cluster} object or a named list or character
+object. In case of a named list or character object, the names must match
+the values of \code{variable1} used during network construction (see
+example).}
 
 \item{threshold}{Minimum threshold for which edges should be plotted.}
 
-\item{seed}{Set seed to reproduce the layout.}
+\item{seed}{Numeric value passed to \link{set.seed}. The default is as good
+as any other value but provides that plots are always reproducible.}
 
-\item{show_legend}{Logical. Should a legend be displayed.}
+\item{show_legend}{If TRUE, displays a legend.}
 
-\item{...}{Only active when plotting from a dna_connection. Arguments are
-passed to \link{dna_network}. Especially useful for normalisation of
-networks.}
+\item{...}{Arguments passed on to the layout function (see
+\link[ggraph]{layout_igraph_auto}). If you want to add more plot options
+use \code{+} and ggplot2 functions.}
 }
 \description{
-Plots a network from various objects containing DNA data
+This function is an easy wrapper to create network plots from one- and
+two-mode networks with data from DNA.
 }
 \details{
-This function is a convenience wrapper to plot networks  with
-\link[ggraph]{ggraph} from several types of objects created in rDNA.
-Specifically, one- and twomode networks from \link{dna_network}, dna_cluster
-objects created with \link{dna_cluster} and connections to a database
-(\link{dna_connection}) are supported. The \code{...} are inactive, except
-when plotting directly from a dna_connection. In this case, additional
-arguments can be passed to network construction via \link{dna_network}.
+This function is a convenience wrapper to plot networks with
+\link[ggraph]{ggraph} from network objects created in rDNA. Specifically,
+one- and two-mode networks from calls to \link{dna_network} are supported.
 
-The available layouts are listed in \link[ggraph]{layout_igraph_auto} under
-"Standard layouts".
+The available layouts are listed and explained in
+\link[ggraph]{layout_igraph_auto} under "Standard layouts". When layouts are
+added to igraph, those should quickly become available as well.
+
+Use \code{RColorBrewer::display.brewer.all()} to see which palettes are
+available as \code{custom_colours} when \code{colours = "brewer"}.
 }
 \examples{
 \dontrun{
@@ -110,16 +127,27 @@ dna_downloadJar()
 dna_init()
 conn <- dna_connection(dna_sample())
 
-# Plot from onemode network (twomode also possible)
+# Plot from one-mode network
 nw <- dna_network(conn, networkType = "onemode")
 dna_plotNetwork(nw)
 
-# Plot from dna_cluster
-clust <- dna_cluster(conn)
-dna_plotNetwork(clust, node_attribute = "group")
+# Plot from two-mode network (and add ggplot option)
+nw2 <- dna_network(conn, networkType = "twomode")
+dna_plotNetwork(nw2) + ggplot2::coord_flip()
 
-# Plot from dna_connection
-dna_plotNetwork(conn, networkType = "twomode", layout = "bipartite")
+# Use groups from dna_cluster
+clust <- dna_cluster(conn, cutree.k = 2)
+dna_plotNetwork(nw, node_attribute = "group", groups = clust)
+
+# Use custom groups from dna_cluster
+groups <- c("Alliance to Save Energy" = "group 1",
+            "Energy and Environmental Analysis, Inc." = "group 2",
+            "Environmental Protection Agency" = "group 3",
+            "National Petrochemical & Refiners Association" = "group 1",
+            "Senate" = "group 2",
+            "Sierra Club" = "group 3",
+            "U.S. Public Interest Research Group"  = "group 1")
+dna_plotNetwork(nw, node_attribute = "group", groups = groups)
 }
 
 }

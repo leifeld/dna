@@ -45,7 +45,7 @@ second controls expansion of the y axis.}
 \item{stress}{Should stress from the MDS be displayed on the plot.}
 
 \item{truncate}{Sets the number of characters to which labels should be
-truncated.}
+truncated. Value \code{Inf} turns off truncation.}
 
 \item{custom_colours}{Manually provide colours for the points and polygons.}
 

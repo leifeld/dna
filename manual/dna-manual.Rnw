@@ -3061,7 +3061,7 @@ Since the default of \code{dna\_cluster} is to exclude duplicated statements on 
 This, in effect, normalises the network as it does not matter anymore how often an actor makes the same statement in the same document and since the actors in the sample database do not appear in more than one document each.
 In other scenarios, however, actors might make the same statment many times over different documents.
 In this case, you might want to use a different setting for \code{duplicates} argument.
-\code{duplicates = acrosstime"}, for example, will make sure a binary network is created in all cases.
+\code{duplicates = "acrosstime"}, for example, will make sure a binary network is created in all cases.
 If you turn the removal of duplicates off, the Euclidean distance will be used for clustering in this case and the number of statments each organisation has made will influence the clustering results:
 
 <<eval=TRUE, results = 'tex'>>=
@@ -3092,7 +3092,7 @@ But remember, that data for this plot still includes all duplicated statements a
 So we need to remove this now.
 
 Excluding values from the clustering is not a dedicated option in \code{dna\_cluster}, but it is very easy to do anyway.
-Note, the descpition of the \code{...} in \code{help(dna\_cluster)}: ``Additional arguments passed to dna\_network.''
+Note, the description of the \code{...} in \code{help(dna\_cluster)}: ``Additional arguments passed to dna\_network.''
 This means that you can use nearly all arguments from \code{dna\_network} by simply writing them within the brackets after \code{dna\_cluster}.
 When we completely remove duplicates and the problematic concept as described, the resulting dendrogram looks a bit different:
 
@@ -3268,7 +3268,7 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "") %>%
 
 The ``- 0'' or ``- 1'' behind each concept label stand for disagreement or agreement respectively. However, this table is hard to read, especially when there are more than just a few organisations or concepts present in the database.
 
-One approach to making it easier to inspect the distribution of (dis-)agreement on concepts among members of each cluster are heatmap plots.
+One approach to make it easier to inspect the distribution of (dis-)agreement on concepts among members of each cluster are heatmap plots.
 Heatmaps are especially helpful to get a quick overview of a matrix and see where values are high or low.
 Combined with the dendrograms introduced in the last section, they can thus be helpful to get an insight into which concepts determine the clustering.
 The function to do this in \rdna\ is called \code{dna\_plotHeatmap} and takes objects that were created with \code{dna\_cluster}---just as \code{dna\_plotDendro}:
@@ -3312,7 +3312,7 @@ More levels can be named in the same fashion by adding more entries to this list
 If your qualifier levels have a different meaning, the default values should always be changed as \rdna\ does not detect the meaning automatically.
 
 As was mentioned before, \code{dna\_clust} removes duplicates on the document level by default, leaving the dataset---in case of the sample---as a binary.
-If the heatmap is not binary, it might make sense to display the exact values inside the plot though by setting \code{values = TRUE}.
+If the heatmap is not binary, it might make sense to display the exact values inside the plot by setting \code{values = TRUE}.
 
 <<eval=TRUE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, out.height = "30%", out.width = "60%", crop = TRUE>>=
 clust <- dna_cluster(conn,
@@ -3332,15 +3332,15 @@ dna_plotHeatmap(clust,
 
 Consult \code{help(dna\_plotHeatmap)} to see what other options you can set. For example, read up on the \code{dendro\_y\_size} option we used above, to see what it means.
 Also note, that you can use the \code{...} argument to pass arguments to \code{dna\_plotDendro}.
-Try setting 
+Try using a different shape argument, for example, to see how this would work.
 
 \section{Multi-dimensional scaling}
-From the heatmap plot you have an idea now why the cluster analysis put certain actors in their respective groups.
+From the heatmap plot you got an idea now why the cluster analysis assigned certain group memberships to actors.
 Yet, what you cannot assess so far is how different or similar the clusters are to each other.
 The network matrix usually simply has too many columns to compare the different actors to each other all at once.
 One common tool to get around this problem is to reduce the number of dimensions---in this case the dimensions would be agreement and disagreement to each concept---until they can be plotted in a two-dimensional space.
 That is excatly what (non-metric) multidimensional scaling (MDS) does.\footnote{Specifically we use Kruskal's non-metric multidimensional scaling which makes most sense for our kind of network data.}
-Taking agreement and disagreement information towards all concepts, MDS can reduce the differences and siilarities between actors to plot them in a two-dimensional space.
+Taking agreement and disagreement information towards all concepts, MDS can reduce the differences and similarities between actors to plot them in a two-dimensional space.
 
 In \rdna\ we can perform this with the now well-known \code{dna\_cluster} function and the \code{dna\_plotMDS} command.
 
@@ -3730,6 +3730,20 @@ docs$text <- gsub("\n", "", trim(docs$text, n = 14))
 docs$title <- gsub("\n", "", trim(docs$title, n = 14))
 kable(docs, format = "latex", booktabs = TRUE, linesep = "") %>%
   kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 7)
+@
+
+
+
+\subsection{Adding documents already in R}
+
+<<eval=FALSE, results = 'tex'>>=
+%library(quanteda)
+x <- data_corpus_irishbudget2010
+
+x2 <- data_corpus_irishbudget2010$documents
+@
+<<eval=TRUE, results = 'tex', echo=FALSE>>=
+
 @
 
 

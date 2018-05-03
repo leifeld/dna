@@ -9,7 +9,8 @@ trim(x, n, e = "...")
 \arguments{
 \item{x}{A character string}
 
-\item{n}{May number of character to truncate to}
+\item{n}{Max number of characters to truncate to. Value \code{Inf} turns off
+truncation.}
 
 \item{e}{String added at the end of x to signal it was truncated.}
 }
