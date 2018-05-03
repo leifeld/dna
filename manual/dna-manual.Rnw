@@ -3468,17 +3468,15 @@ We have shown above already, how you can use the \R\ infrastructure to produce s
 Besides that, there are a number of packages in the \R\ universe that are quite capable to cater to your network plotting needs.
 The already mentioned \texttt{igraph} package \citep{csardi2006igraph}, for example, comes with very powerful functions for plotting networks. 
 Other packages, such as \texttt{networkD3} \citep{allaire2017networkD3} are capable of creating interactive network plots, which are great to share, for example, on a website.
-The package \texttt{ggraph} \citep{linpedersen2017ggraph} was specifically developed to employ the same logic as \texttt{ggplot2}, the so called grammer of graphics, to implement a consistent logic of plotting networks.
+The package \texttt{ggraph} \citep{linpedersen2017ggraph} was specifically developed to employ the same logic as \texttt{ggplot2}, the so-called grammar of graphics, to implement a consistent logic for plotting networks.
 This makes it possible to produce highly customised plots by combining a set of relatively few individual functions which each serve to control one specific aspect of a plot.
 
-Whatever package you might prefer though, all of them have one thing in common: unlike graphical solutions such as \gephi\ or \visone, network analysis and plotting in R enables reproducible research.
+Whatever package you might prefer though, all of them have one thing in common: unlike graphical solutions such as \gephi\ or \visone, using \R\ for network analysis and plotting enables you to do reproducible research.
 This often outweighs the alleged convenience of GUI applications, as reproducibility is not just of academic value, but also enables you to copy the same plotting code again and again in your own research, once you are happy with the appearance of the network plot.
 
 However, we do acknowledge that bringing the data into the right form and tweaking your network plots to look good can be daunting for beginners or even advanced \R\ users who are new to network analysis.
-This is why \rdna\ comes wit two dedicated functions to create netwrok plots: \code{dna\_plotNetwork} and \code{dna\_plotHive}.
-Both are capable of handling \dna\ data from a number different objects.
-
-You can either first produce a one- or---in case of the \code{dna\_plotNetwork}---two-mode network:
+This is why \rdna\ comes with two dedicated functions to create netwrok plots: \code{dna\_plotNetwork} and \code{dna\_plotHive}.
+Both are capable of handling \dna\ network objects:\footnote{Both functions technically first create an \texttt{igraph} object from a \dna\ network which is then plotted using \texttt{ggraph}.}
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 6, fig.height = 4, crop = TRUE>>=
 # Plot onemode network
@@ -3491,29 +3489,6 @@ nw <- dna_network(conn, networkType = "twomode")
 dna_plotNetwork(nw, truncate = 20, label_repel = 0) +
   coord_flip()
 @
-
-You can use a \code{dna\_cluster} object and and choose to use membership in clusters to colour the nodes:
-
-<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 4, fig.height = 4, crop = TRUE>>=
-clust <- dna_cluster(conn,
-                     clust.method = "walktrap",
-                     cutree.k = 3)
-dna_plotNetwork(clust,
-                node_attribute = "group")
-@
-
-Or you can directly plot from a connection to a \dna\ database and add controls to the network construction directly in the plot command:
-
-<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 4, fig.height = 4, crop = TRUE>>=
-dna_plotNetwork(conn,
-                networkType = "onemode",
-                statementType = "DNA Statement",
-                qualifierAggregation = "congruence",
-                duplicates = "document",
-                excludeValues = list("concept" =
-                "There should be legislation to regulate emissions."))
-@
-
 
 As you might be aware though, network visualisation poses one problem: the choice of the right layout algorithm can be quite difficult and there is unfortunately not one that would solve the problems for all datasets.
 In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} package are available---not all of which are useful for plotting networks from \dna\ data. Here is the selection of algorithms which we think makes the most sense:
@@ -3564,8 +3539,8 @@ nw_graphopt <- dna_plotNetwork(nw, layout = "graphopt", show_legend = FALSE) +
    ggtitle("Graphopt")
 nw_mds <- dna_plotNetwork(nw, layout = "mds", show_legend = FALSE) +
    ggtitle("MDS")
-nw_randomly <- dna_plotNetwork(nw, layout = "randomly") +
-   ggtitle("Randomly")
+nw_randomly <- dna_plotNetwork(nw, layout = "kk") +
+   ggtitle("Kamada and Kawai")
  
 # The plots are again arranged in a grid
 grid <- grid.arrange(nw_fr, nw_graphopt, nw_mds, nw_randomly)
@@ -3577,14 +3552,13 @@ There are, again several options to style the plot.
 Some critics, however, doubt the usefulness of the common network plots---often referred to as hairballs---you see above.
 \citet{krzywinski2012hive}, for example, have argued that these network plots ``lack reproducibility and perceptual uniformity because they do not use a node coordinate system''. In the function \code{dna\_plotNetwork} a seed is automatically set to ensure at least reproducibility when you run the same code. You can change the argument \code{seed} to get an idea of how much chance is involved in calculating the layout.
 
-<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 7, crop = TRUE>>=
+<<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 nw_1 <- dna_plotNetwork(nw, show_legend = FALSE, seed = 1)
 nw_2 <- dna_plotNetwork(nw, show_legend = FALSE, seed = 2)
 nw_12345 <- dna_plotNetwork(nw, show_legend = FALSE, seed = 12345)
-nw_71288 <- dna_plotNetwork(nw, show_legend = FALSE, seed = 71288)
 
 # The plots are again arranged in a grid
-grid <- grid.arrange(nw_1, nw_2, nw_12345, nw_71288)
+grid <- grid.arrange(nw_1, nw_2, nw_12345, nrow = 1)
 @
 
 To get around this problem, \citet{krzywinski2012hive} suggest so-called hive plots. These plots feature radially distributed linear axes on which the nodes are positioned. You can choose yourself, what the axes mean, so it is easier to assess whether and how a certain attribute of a network influences clustering among actors.
@@ -3624,7 +3598,7 @@ colnames(docs) <- trim(colnames(docs))
 docs$text <- gsub("\n", "", trim(docs$text, n = 14))
 docs$title <- gsub("\n", "", trim(docs$title, n = 14))
 kable(docs, format = "latex", booktabs = TRUE, linesep = "") %>%
-  kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 7)
+  kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 5)
 @
 <<eval=FALSE, results = 'tex'>>=
 # Fill empty column with the same word in every row
@@ -3639,13 +3613,13 @@ docs$author <- sub('^(.*), (.*)', '\\2 \\1', docs$author)
 docs$text <- gsub("\n", "", trim(docs$text, n = 14))
 docs$title <- gsub("\n", "", trim(docs$title, n = 14))
 kable(docs, format = "latex", booktabs = TRUE, linesep = "") %>%
-  kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 7)
+  kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 5)
 @
 
 So how do we get this new dataframe back into \dna? The answer is the next function we will discuss: \code{dna\_setDocuments}.
 This function has just a few arguments but is very capable and can also be dangerous if not used correctly.
 We, therefore, recommend that you make a backup copy of your database---which you should do regularly anyway---before you start to alter anything.
-After you have done this, you can provide a dataframe with ten columns and with:
+After you have done this, you can provide a dataframe with ten columns:
 
 \begin{description}
   \item[ID] must be numeric and must contain the document IDs.
@@ -3714,7 +3688,7 @@ docs$coder <- 2
 
 # Now we combine the original with the new data and push it to DNA
 docs <- rbind(docs_orig, docs)
-dna_setDocuments(conn, documents = docs, simulate = FALSE)
+#dna_setDocuments(conn, documents = docs, simulate = FALSE)
 @
 
 Now the documents from LexisNexis are in the \dna\ database:
@@ -3729,24 +3703,98 @@ colnames(docs) <- trim(colnames(docs))
 docs$text <- gsub("\n", "", trim(docs$text, n = 14))
 docs$title <- gsub("\n", "", trim(docs$title, n = 14))
 kable(docs, format = "latex", booktabs = TRUE, linesep = "") %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 5)
+@
+
+
+
+\subsection{Adding other documents}
+
+Besides LexisNexis, there is a myriad of sources from where you can get documents.
+\R\ provides many good packages to read files from all different sources, such as MS Word, Excel and PDF files or directly from web pages via web scraping.
+There are many tutorials online on how to get your specific format in which you retrieved raw text data into \R.
+
+However, before you can hand the documents over to \dna, you have to bring them into the right format first.
+We use the dataset ``Irish budget speeches from 2010'' from the \texttt{quanteda} package to show how this can be done:
+
+<<eval=TRUE, results = 'tex', message=FALSE>>=
+library(quanteda)
+# First load the data
+corpus <- data_corpus_irishbudget2010
+
+# To get to the text data we have to subset the corpus object which transforms
+# it into a data.frame
+df <- corpus$documents
+@
+<<eval=TRUE, results = 'tex', echo=FALSE>>=
+df2 <- df
+row.names(df2) <- trim(row.names(df2), n = 14)
+df2$texts <- trim(df2$texts, n = 14)
+kable(df2, format = "latex", booktabs = TRUE, linesep = "") %>%
   kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 7)
 @
 
+Now the easiest way to arrive at the correct format is to create a new data.frame and fill it with the columns from the budget data.
+Note, that not all of the columns in \dna\ makes sense for all data sources.
+But you can simply leave a column empty, as is done for ``section'' in the following:
 
-
-\subsection{Adding documents already in R}
-
-<<eval=FALSE, results = 'tex'>>=
-%library(quanteda)
-x <- data_corpus_irishbudget2010
-
-x2 <- data_corpus_irishbudget2010$documents
+<<eval=TRUE, results = 'tex'>>=
+docs_new <- data.frame(id = df$number, 
+                       title = row.names(df), 
+                       text = df$texts, 
+                       coder = 1, 
+                       author = paste(df$foren, df$name), 
+                       source = "Budget Statement 2010", 
+                       section = "", 
+                       notes = df$party, 
+                       type = df$debate, 
+                       date = df$year,
+                       stringsAsFactors = FALSE)
 @
 <<eval=TRUE, results = 'tex', echo=FALSE>>=
-
+docs_new2 <- docs_new
+docs_new2$title <- trim(docs_new2$title, n = 14)
+docs_new2$text <- trim(docs_new2$text, n = 14)
+docs_new2$source <- trim(docs_new2$source, n = 10)
+kable(docs_new2, format = "latex", booktabs = TRUE, linesep = "") %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 5)
 @
 
+Before you can proceed, you should check if the columns already have the right classes to hand the data.frame over to \dna:
+<<eval=TRUE, results = 'tex'>>=
+lapply(docs_new, class)
+@
 
+Compare this output with the requirements for the data.frame (see \code{?dna_setDocuments}) and you can see that only the ID column does not have the correct class.
+In this case, it is easy to correct that:
+
+<<eval=TRUE, results = 'tex'>>=
+docs$id <- as.numeric(docs$id)
+@
+
+The remaining steps are the same as before:
+\begin{enumerate}
+  \item Retrieve the documents already in \dna\ with \code{dna\_getDocuments} (can be skipped if no documents are present).
+  \item Make sure the new documents have unique IDs.
+  \item Use \code{rbind} to append the old data.frame with the new documents.
+  \item Use \code{dna\_setDocuments} to push the data.frame into the \dna\ database.
+\end{enumerate}
+
+<<eval=TRUE, results = 'tex'>>=
+# 1.
+docs_orig <- dna_getDocuments(conn)
+
+# 2.
+docs$id <- docs$id + max(docs_orig$id)
+
+# 3.
+docs <- rbind(docs_orig, docs)
+
+# 4.
+dna_setDocuments(conn, documents = docs, simulate = FALSE)
+@
+
+This should be all it takes to get documents from pretty much any source into \dna.
 \bibliographystyle{apalike}
 \bibliography{dna-manual}
 

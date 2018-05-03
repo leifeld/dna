@@ -1,6 +1,6 @@
 Package: rDNA
 Version: 2.0.74
-Date: 2018-05-01
+Date: 2018-05-03
 Title: R Bindings for the Discourse Network Analyzer
 Authors@R: 
     c( person("Philip", "Leifeld", email = "Philip.Leifeld@glasgow.ac.uk", 
