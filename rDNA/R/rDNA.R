@@ -3014,8 +3014,8 @@ dna_setDocuments <- function(connection,
   if (ncol(documents) != 10) {
     stop("'documents' must be a data.frame with 10 columns.")
   }
-  if (!is.numeric(documents[, 1])) {
-    stop("The first column of 'documents' must be numeric and must contain the document IDs.")
+  if (!is.integer(documents[, 1])) {
+    stop("The first column of 'documents' must be integer and must contain the document IDs.")
   }
   if (!is.character(documents[, 2])) {
     if (is.factor(documents[, 2])) {
@@ -3085,7 +3085,9 @@ dna_setDocuments <- function(connection,
   }
   
   # replace NAs with -1, which will be replaced by an auto-generated ID in DNA
-  documents$id[is.na(documents$id)] <- -1
+  if (any(is.na(documents[, 1]))) {
+    documents[which(is.na(documents[, 1])), 1] <- as.integer(-1)
+  }
   
   documents <- .jarray(lapply(documents, .jarray))
   .jcall(connection$dna_connection, 
