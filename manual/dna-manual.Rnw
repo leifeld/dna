@@ -125,7 +125,7 @@ RS_vers <- site[grepl("<h4 id=\"download\"><strong>RStudio Desktop", site)]
 RS_vers <- as.character(regmatches(RS_vers, gregexpr("\\d+.\\d+.\\d+", RS_vers)))
 
 # set global chunk options
-opts_chunk$set(fig.path = 'figure/workshop-', fig.align = 'center', fig.show = 'hold')
+opts_chunk$set(fig.path = 'figure/workshop-', fig.align = 'center', fig.show = 'hold', error = FALSE)
 options(formatR.arrow = TRUE, width = 90, knitr.table.format = "latex")
 knit_hooks$set(crop=hook_pdfcrop,
                document = function(x) {
@@ -3622,7 +3622,7 @@ We, therefore, recommend that you make a backup copy of your database---which yo
 After you have done this, you can provide a dataframe with ten columns:
 
 \begin{description}
-  \item[ID] must be numeric and must contain the document IDs.
+  \item[ID] must be integer and must contain the document IDs.
   \item[title] must contain the document titles as character objects.
   \item[text] must contain the document texts as character objects.
   \item[coder] must contain the coder IDs as integer values. % (see dna_getCoders).
@@ -3688,7 +3688,7 @@ docs$coder <- 2
 
 # Now we combine the original with the new data and push it to DNA
 docs <- rbind(docs_orig, docs)
-#dna_setDocuments(conn, documents = docs, simulate = FALSE)
+dna_setDocuments(conn, documents = docs, simulate = FALSE)
 @
 
 Now the documents from LexisNexis are in the \dna\ database:
@@ -3718,7 +3718,7 @@ However, before you can hand the documents over to \dna, you have to bring them 
 We use the dataset ``Irish budget speeches from 2010'' from the \texttt{quanteda} package to show how this can be done:
 
 <<eval=TRUE, results = 'tex', message=FALSE>>=
-library(quanteda)
+library("quanteda")
 # First load the data
 corpus <- data_corpus_irishbudget2010
 
@@ -3769,7 +3769,7 @@ Compare this output with the requirements for the data.frame (see \code{?dna_set
 In this case, it is easy to correct that:
 
 <<eval=TRUE, results = 'tex'>>=
-docs$id <- as.numeric(docs$id)
+docs$id <- as.integer(docs$id)
 @
 
 The remaining steps are the same as before:
