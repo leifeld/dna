@@ -3686,7 +3686,7 @@ docs$id <- docs$id + max(docs_orig$id)
 unique(docs_orig$coder)
 docs$coder <- 2
 
-# Now we combine the original with the new data and push it to DNA
+# Now we combine the original with the new documents and push it to DNA
 docs <- rbind(docs_orig, docs)
 dna_setDocuments(conn, documents = docs, simulate = FALSE)
 @
@@ -3702,6 +3702,11 @@ docs <- dna_getDocuments(conn)
 colnames(docs) <- trim(colnames(docs))
 docs$text <- gsub("\n", "", trim(docs$text, n = 14))
 docs$title <- gsub("\n", "", trim(docs$title, n = 14))
+docs$author <- gsub("\n", "", trim(docs$author, n = 10))
+docs$source <- gsub("\n", "", trim(docs$source, n = 6))
+docs$section <- gsub("\n", "", trim(docs$section, n = 6))
+docs$type <- gsub("\n", "", trim(docs$type, n = 6))
+docs$date <- gsub("\n", "", trim(as.character(docs$date), n = 10, e = ""))
 kable(docs, format = "latex", booktabs = TRUE, linesep = "") %>%
   kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 5)
 @
@@ -3710,12 +3715,14 @@ kable(docs, format = "latex", booktabs = TRUE, linesep = "") %>%
 
 \subsection{Adding other documents}
 
-Besides LexisNexis, there is a myriad of sources from where you can get documents.
-\R\ provides many good packages to read files from all different sources, such as MS Word, Excel and PDF files or directly from web pages via web scraping.
-There are many tutorials online on how to get your specific format in which you retrieved raw text data into \R.
+Besides LexisNexis, there is a myriad of sources from where you can get documents for your discourse network analysis.
+These can come in a number of different shapes and (file) formats.
+The task is then, how to get the documents into \dna\ with as little manual work as possible.
+Luckily, many people who use \R\ have had similar problems and developed useful packages to make it as easy as possible to read in (text) data from, for example, MS Word, Excel and PDF files or directly from web pages via web scraping.
+There are many tutorials online on how to get your specific format in which you retrieved raw text data into \R\ which is why we will not cover this part.
+However, before you can hand the documents over to \dna, you have to bring them into the correct format first.
 
-However, before you can hand the documents over to \dna, you have to bring them into the right format first.
-We use the dataset ``Irish budget speeches from 2010'' from the \texttt{quanteda} package to show how this can be done:
+We use the dataset ``Irish budget speeches from 2010'' from \citet{lowe2013validate} which is integrated in the \texttt{quanteda} package \citep{benoit2018quanteda} to exemplify the process of how this is done:\footnote{Install \texttt{quanteda} first with \code{install.packages("quanteda")} if you do not have it on your system already.}
 
 <<eval=TRUE, results = 'tex', message=FALSE>>=
 library("quanteda")
@@ -3736,7 +3743,7 @@ kable(df2, format = "latex", booktabs = TRUE, linesep = "") %>%
 
 Now the easiest way to arrive at the correct format is to create a new data.frame and fill it with the columns from the budget data.
 Note, that not all of the columns in \dna\ makes sense for all data sources.
-But you can simply leave a column empty, as is done for ``section'' in the following:
+Simply leave a column empty if you think it does not make sense in your case, as is done for ``section'' in the following:
 
 <<eval=TRUE, results = 'tex'>>=
 docs_new <- data.frame(id = df$number, 
@@ -3765,7 +3772,7 @@ Before you can proceed, you should check if the columns already have the right c
 lapply(docs_new, class)
 @
 
-Compare this output with the requirements for the data.frame (see \code{?dna_setDocuments}) and you can see that only the ID column does not have the correct class.
+Compare this output with the requirements for the data.frame (see \code{?dna\_setDocuments}) and you can see that only the ID column does not have the correct class.
 In this case, it is easy to correct that:
 
 <<eval=TRUE, results = 'tex'>>=
