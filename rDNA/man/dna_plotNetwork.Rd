@@ -35,7 +35,7 @@ maximum \code{edge_weight}.}
 \item{edge_colour}{Provide the name of a colour to use for edges. Defaults to
 "grey".}
 
-\item{edge_alpha}{Takes numeric values to control the alpha-transperency of
+\item{edge_alpha}{Takes numeric values to control the alpha-transparency of
 edges. Values lower than 1 make the edges transparent.}
 
 \item{node_size}{Takes numeric values to control the size of nodes (defaults

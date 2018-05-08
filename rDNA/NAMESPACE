@@ -3,7 +3,6 @@
 S3method(print,dna_cluster)
 S3method(print,dna_connection)
 export(dna_addDocument)
-export(dna_attributes)
 export(dna_barplot)
 export(dna_cluster)
 export(dna_connection)

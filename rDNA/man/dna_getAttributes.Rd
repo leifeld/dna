@@ -36,13 +36,7 @@ statement type in which the variable is defined (by statement type ID).
 Optionally, a vector of values for which the attributes should be extracted 
 can be specified; this limits the vector to the values specified. The 
 resulting dataframe contains an additional column for the frequency with 
-which the respective value is used in statements across the database. The 
-\code{dna_getAttributes} function is similar to the \link{dna_attributes} 
-function and takes the same arguments, but there are subtle differences: 
-\link{dna_attributes} extracts attributes and frequencies only for the 
-statements defined in a network export, i.e., after filtering statements for 
-time, duplicates etc. This enables the user to match actor types, colours etc. 
-more easily to network data.
+which the respective value is used in statements across the database.
 }
 \examples{
 \dontrun{

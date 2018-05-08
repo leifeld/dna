@@ -120,7 +120,7 @@ site <- readLines("https://cran.r-project.org/bin/windows/base/", n = 10)
 R_vers <- site[grepl("^<title>", site)]
 R_vers <- as.character(regmatches(R_vers, gregexpr("\\d+.\\d+.\\d+", R_vers)))
 # get latest RStudio version
-site <- readLines("https://www.rstudio.com/products/rstudio/download/#download")
+site <- readLines("https://www.rstudio.com/products/rstudio/download/")
 RS_vers <- site[grepl("<h4 id=\"download\"><strong>RStudio Desktop", site)]
 RS_vers <- as.character(regmatches(RS_vers, gregexpr("\\d+.\\d+.\\d+", RS_vers)))
 
@@ -2811,7 +2811,7 @@ gplot(nw)
 It is also easily possible to retrieve the attributes of a variable, for example the colours and types of ogranisations , using the \code{dna\_attributes} function:
 
 <<eval=TRUE, results = 'tex'>>=
-at <- dna_attributes(conn)
+at <- dna_getAttributes(conn)
 @
 
 The result is a data frame with organizations in the rows and one column per organizational attribute:
@@ -2949,9 +2949,9 @@ The result is a data frame with the relevant data for each organization in the \
 \footnote{This prints the data.frame directly to the console. If you wish to examine the data.frame in a spreadsheet-style viewer instead, you can use \code{View(at)}.}
 
 <<eval = TRUE, results = 'show'>>=
-at <- dna_attributes(conn,
-                     statementType = "DNA Statement",
-                     variable = "organization")
+at <- dna_getAttributes(conn,
+                        statementType = "DNA Statement",
+                        variable = "organization")
 at
 @
 
@@ -3133,12 +3133,12 @@ clust <- dna_cluster(conn,
                      excludeValues = list("concept" =
                      "There should be legislation to regulate emissions."))
 
-# Now the first attribute is just the name of the person
-levels(clust$attribute1)
+# Now the first attribute contains just the names of the persons
+clust$attribute1
 
 # You can replace these values by something more informative like this
-clust$attribute1 <- factor(c("male", "female", "male", "male", "male", 
-                             "female", "male"))
+clust$attribute1 <- c("male", "female", "male", "male", "male", 
+                      "female", "male")
 
 # You can change the legend by changing the colours attribute
 attr(clust, "colours") <- c("Gender", "Organisation Type")
@@ -3161,7 +3161,7 @@ dna_plotDendro(clust,
 @
 
 As becomes clear from this plot, the three NGOs are clustered together, while other organisations make up the second cluster.
-You can also see that while the NGOs are roughly the same in terms of activity, the number of statements coded from persons who belong to a business or government organisations or are in Congress, differ widely.
+You can also see that while the NGOs are roughly the same in terms of activity, the number of statements  from persons who belong to a business or government organisations or are in Congress, differ widely.
 Unsurprisingly, the gender of the speakers does not seem to influence in which cluster they end up, but at least now you know, how you can add this information.
 
 You can also see in this example, how you can make further changes to the plot using commands from the \texttt{ggplot2} package \citep{wickham2009ggplot2}: simply by adding them via \code{+} at the end of the plot function.
@@ -3655,7 +3655,7 @@ To convert the raw files from LexisNexis though, we need another \R\ package: \t
 You can install this package via \code{devtools::install\_github("JBGruber/LexisNexisTools")}.
 The workflow looks as follows:
 
-<<eval=TRUE, warning = FALSE, results = 'tex'>>=
+<<eval=TRUE, warning = FALSE, message=FALSE, results = 'tex'>>=
 library("LexisNexisTools")
 # This places a sample TXT file in your working directory in
 lnt_sample()
@@ -3667,7 +3667,7 @@ my_files <- list.files(pattern = "TXT", ignore.case = TRUE)
 my_files <- my_files[grepl("^sample.TXT$", my_files)]
 
 # Now the files can be converted into an LNToutput object
-LNToutput <- lnt_read(my_files, convert_date = FALSE)
+LNToutput <- lnt_read(my_files)
 
 # And this object can be converted to work in rDNA
 docs <- lnt_convert(LNToutput, to = "rDNA")

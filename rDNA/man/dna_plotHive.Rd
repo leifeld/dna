@@ -51,7 +51,7 @@ maximum \code{edge_weight}.}
 
 \item{edge_colour}{Provide the name of a colour to use for edges.}
 
-\item{edge_alpha}{Takes numeric values to control the alpha-transperency of
+\item{edge_alpha}{Takes numeric values to control the alpha-transparency of
 edges. Values lower than 1 make the edges transparent.}
 
 \item{node_label}{If TRUE, text is added next to nodes to label them. If

@@ -112,81 +112,6 @@ dna_addDocument <- function(connection,
 }
 
 
-#' Retrieve attributes from DNA's attribute manager
-#'
-#' Retrieve attributes for a given statement type and variable.
-#'
-#' For any variable in DNA (e.g., organization or concept), the attribute
-#' manager in DNA stores four attributes, or meta-variables, for each value.
-#' For example, an organization can be associated with a color, a type,
-#' an alias, and notes. The \code{dna_attributes} function serves to retrieve
-#' these attributes for all values of a given variable from DNA. To be sure
-#' that the attributes are retrieved for the right variable, the user also
-#' has to provide the statement type in which the variable is nested. Note that
-#' the \code{dna_attributes} function returns the attributes for all values of
-#' the respective variable (similar to the \code{includeIsolates = TRUE}
-#' argument of the \code{dna_network} function. The attributes are returned as
-#' a data frame with the ID of the value as the first column, the actual value
-#' as the second column, the color as the third column, type as the fourth
-#' column, alias as fifth, notes as sixth, and the number of occurrences of the
-#' value as the seventh column. The ninth column indicates whether the value
-#' is used anywhere in the dataset, and the tenth and last column indicates if
-#' the value is contained in the current connection.
-#'
-#' @param connection A \code{dna_connection} object created by the
-#'     \code{dna_connection} function.
-#' @param statementType The name of the statement type in which the variable
-#'     of interest is nested. For example, \code{"DNA Statement"}.
-#' @param variable The variable for which the attributes should be retrieved.
-#'     For example, \code{"organization"} or \code{"concept"}.
-#' @param values An optional vector of value names for which the attributes
-#'     should be retrieved. If this is \code{NULL}, all attributes will be
-#'     retrieved in alphabetical order, as in the \link{dna_network} function.
-#'
-#' @examples
-#' \dontrun{
-#' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
-#' conn <- dna_connection(dna_sample())
-#' at <- dna_attributes(conn, "DNA Statement", "organization")
-#' at
-#' at2 <- dna_attributes(conn, "DNA Statement", "organization",
-#'                       c("Senate", "Sierra Club"))
-#' at2
-#' }
-#' @export
-dna_attributes <- function(connection,
-                           statementType = "DNA Statement",
-                           variable = "organization",
-                           values = NULL) {
- 
-  if (is.null(values)) {
-    values <- character(0)
-  } else if (class(values) != "character") {
-    stop("'values' must be a character vector or NULL.")
-  }
- 
-  .jcall(connection$dna_connection,
-         "V",
-         "rAttributes",
-         variable,
-         statementType,
-         values)
-  dat <- data.frame(id = .jcall(connection$dna_connection, "[I", "getAttributeIds"),
-                    value = .jcall(connection$dna_connection, "[S", "getAttributeValues"),
-                    color = .jcall(connection$dna_connection, "[S", "getAttributeColors"),
-                    type = .jcall(connection$dna_connection, "[S", "getAttributeTypes"),
-                    alias = .jcall(connection$dna_connection, "[S", "getAttributeAlias"),
-                    note = .jcall(connection$dna_connection, "[S", "getAttributeNotes"),
-                    frequency = .jcall(connection$dna_connection, "[I", "getAttributeFrequencies", variable),
-                    "in dataset" = .jcall(connection$dna_connection, "[Z", "getAttributeInDataset", statementType),
-                    "in network" = .jcall(connection$dna_connection, "[Z", "getAttributeInNetwork", statementType),
-                    check.names = FALSE
-  )
-  return(dat)
-}
-
-
 #' Cluster network from a DNA connection
 #'
 #' Clustering methods for DNA connections.
@@ -577,13 +502,7 @@ dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
 #' Optionally, a vector of values for which the attributes should be extracted 
 #' can be specified; this limits the vector to the values specified. The 
 #' resulting dataframe contains an additional column for the frequency with 
-#' which the respective value is used in statements across the database. The 
-#' \code{dna_getAttributes} function is similar to the \link{dna_attributes} 
-#' function and takes the same arguments, but there are subtle differences: 
-#' \link{dna_attributes} extracts attributes and frequencies only for the 
-#' statements defined in a network export, i.e., after filtering statements for 
-#' time, duplicates etc. This enables the user to match actor types, colours etc. 
-#' more easily to network data.
+#' which the respective value is used in statements across the database.
 #' 
 #' @param connection A \code{dna_connection} object created by the
 #'     \code{dna_connection} function.
@@ -2057,7 +1976,7 @@ dna_plotHeatmap <- function(clust,
 #' @param edge_size_range Takes a numeric vector with two values: minimum and
 #'   maximum \code{edge_weight}.
 #' @param edge_colour Provide the name of a colour to use for edges.
-#' @param edge_alpha Takes numeric values to control the alpha-transperency of
+#' @param edge_alpha Takes numeric values to control the alpha-transparency of
 #'   edges. Values lower than 1 make the edges transparent.
 #' @param node_label If TRUE, text is added next to nodes to label them. If
 #'   "label", a rectangle is drawn underneath the text, often making it easier
@@ -2482,7 +2401,7 @@ dna_plotMDS <- function(clust,
 #'   maximum \code{edge_weight}.
 #' @param edge_colour Provide the name of a colour to use for edges. Defaults to
 #'   "grey".
-#' @param edge_alpha Takes numeric values to control the alpha-transperency of
+#' @param edge_alpha Takes numeric values to control the alpha-transparency of
 #'   edges. Values lower than 1 make the edges transparent.
 #' @param node_size Takes numeric values to control the size of nodes (defaults
 #'   to 6).
