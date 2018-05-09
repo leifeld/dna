@@ -1689,6 +1689,88 @@ dna_plotDendro <- function(clust,
 }
 
 
+#' Plot frequency of statements over time
+#'
+#' Plots frequency of statements over time.
+#'
+#' This function plots frequency of statements over time from a DNA connection
+#' established with \link{dna_connection}. A second variable can be used to
+#' group the bars in the resulting barplot..
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \link{dna_connection} function.
+#' @param of A variable which is used to group the bars. Can be "agreement",
+#'   "organization", "person", "concept" or NULL to disregard differences.
+#' @param timewindow Bars represent all statements in a certain timewindow. This
+#'   can be "days", "months" or "years".
+#' @param bar Determines if bars should be stacked ("stacked") or side-by-side
+#'   ("side").
+#' @param ... Additional arguments passed to \link{dna_network}.
+#'
+#' @examples
+#' \dontrun{
+#' dna_downloadJar()
+#' dna_init("dna-2.0-beta21.jar")
+#' conn <- dna_connection(dna_sample())
+#'
+#' dna_plotFrequency(connection = conn,
+#'                   of = "agreement",
+#'                   timewindow = "days",
+#'                   bar = "stacked")
+#' }
+#' @author Johannes B. Gruber
+#' @export
+#' @import ggplot2
+dna_plotFrequency <- function(connection,
+                              of = "agreement",
+                              timewindow = "days",
+                              bar = "stacked",
+                              ...) {
+  att <- dna_getAttributes(connection)
+  att$id <- NULL
+  dta <- dna_network(connection = connection,
+                     networkType = "eventlist",
+                     verbose = FALSE,
+                     ...)
+  if (timewindow == "days") {
+    dta$date <- as.Date(format.POSIXct(dta$time, 
+                                       format = "%Y-%m-%d"))
+  } else if (timewindow == "months") {
+    dta$date <- as.Date(paste0(format.POSIXct(dta$time, 
+                                              format = "%Y-%m"),
+                               "-01"))
+  }  else if (timewindow == "years") {
+    dta$date <- as.Date(paste0(format.POSIXct(dta$time, 
+                                              format = "%Y"),
+                               "-01-01"))
+  }
+  dta_count <- as.data.frame(table(dta[, c("date",
+                                           of)]))
+  colnames(dta_count)[c(1, length(colnames(dta_count)))] <- 
+    c("Date", "Frequency")
+  if (ncol(dta_count) > 2) {
+    g <- ggplot(dta_count, 
+                aes_string(x = "Date", 
+                           y = "Frequency",
+                           fill = of))
+  } else {
+    g <- ggplot(dta_count, 
+                aes_string(x = "Date", 
+                           y = "Frequency"))
+  }
+  
+  if (bar == "stacked") {
+    g <- g +
+      geom_bar(stat = "identity")
+  } else if (bar == "side") {
+    g <- g +
+      geom_bar(stat = "identity",
+               position = "dodge")
+  }
+  return(g)
+}
+
+
 #' Plots a heatmap from dna_cluster objects
 #'
 #' Plots a heatmap with dendrograms from objects derived via \link{dna_cluster}.
@@ -3239,6 +3321,67 @@ dna_toIgraph <- function(x,
     stop("Only takes objects of class 'dna_network_onemode' or 'dna_network_twomode'.")
   }
   return(graph)
+}
+
+
+
+#' Convert DNA networks to igraph objects
+#'
+#' This function can produce eventSequence objects (see
+#' \link[rem]{eventSequence}) used in the package rem from DNA connections.
+#'
+#' @param connection \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param variable The first variable for network construction  (see
+#'   \link{dna_network}). The second one defaults to "concept" but can be
+#'   provided via ... if necessary (see \code{variable2} in
+#'   \code{dna_connection}).
+#' @param ... Additional arguments passed to \link{dna_network} and
+#'   \link[rem]{eventSequence}.
+#'
+#' @return A data.frame containing an event sequence for relational event
+#'   models.
+#' @export
+#' @importFrom rem eventSequence
+#'
+#' @examples
+#' \dontrun{
+#' dna_downloadJar()
+#' dna_init("dna-2.0-beta21.jar")
+#' conn <- dna_connection(dna_sample())
+#' eventSequence <- dna_toREM(conn)
+#'
+#' ### pass on arguments to dna_network
+#' eventSequence2 <- dna_toREM(conn, duplicates = "document")
+#'
+#' ### pass on arguments to eventSequence
+#' eventSequence3 <- dna_toREM(conn, excludeTypeOfDay = "Wednesday")
+#' }
+dna_toREM <- function(connection,
+                      variable = "organization",
+                      ...) {
+  dots <- list(...)
+  dots_network <- dots[names(dots) %in% names(formals("dna_network"))]
+  dots_sequence <- dots[names(dots) %in% names(formals("eventSequence"))]
+  dta <- do.call("dna_network",
+                 c(list(connection, 
+                        networkType = "eventlist", 
+                        variable1 = variable,
+                        verbose = FALSE
+                 ), dots_network))
+  att <- dna_getAttributes(connection, variable = variable)
+  att$id <- NULL
+  dta <- merge(dta, att, by = variable, by.y = "value", all.x = TRUE, all.y = FALSE)
+  dta$date <- as.Date(dta$time)
+  dta$year  <- as.numeric(format(dta$date, "%Y"))
+  dta$weekdays <- weekdays(dta$date)
+  do.call("eventSequence",
+          c(list(dta$date, 
+                 dateformat = "%Y-%m-%d", 
+                 data = dta,
+                 returnData = TRUE, 
+                 sortData = TRUE
+          ), dots_sequence))
 }
 
 

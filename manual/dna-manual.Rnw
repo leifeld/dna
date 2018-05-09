@@ -3498,27 +3498,27 @@ In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} p
   
   \item[bipartite] This algorithm is only really useful for two-mode networks. It minimises edge-crossings by plotting the nodes for each of the two variables in a separate row. See \code{?igraph::as\_bipartite}.
   
+   \item[circle] Arranges the nodes in a circle.
+  
   \item[dh] Uses Davidson and Harels simulated annealing algorithm to place nodes. See \code{?igraph::with\_dh}.
-  
-  \item[randomly] Places nodes randomly into the plot. See \code{?igraph::randomly}.
-  
-  \item[fr] Spreads the nodes based on the force-directed algorithm of Fruchterman and Reingold. See \code{?igraph::with\_fr}
-  
-  \item[kk] Uses the spring-based algorithm by Kamada and Kawai to place nodes. See \code{?igraph::with\_kk}
-  
-  \item[mds] Performs a multidimensional scaling and places nodes according to the result. See \code{?igraph::with\_mds}.
-  
-  \item[graphopt] Employs the Graphopt algorithm based on alternating attraction and repulsion to place nodes.
   
   \item[drl] Uses the force directed algorithm from the DrL toolbox to place nodes. See \code{?igraph::with\_drl}.
   
-  \item[lgl] Uses the algorithm from Large Graph Layout to place nodes. See \code{?igraph::with\_lgl}.
+  \item[fr] Spreads the nodes based on the force-directed algorithm of Fruchterman and Reingold. See \code{?igraph::with\_fr}
   
   \item[gem] Place nodes on the plane using the GEM force-directed layout algorithm. See \code{?igraph::with\_gem}.
   
-  \item[star] This places one node in the centre and spreads the rest of the nodes in equal distances around it. \code{?igraph::as\_star}
+  \item[graphopt] Employs the Graphopt algorithm based on alternating attraction and repulsion to place nodes.
   
-  \item[circle] Arranges the nodes in a circle.
+  \item[kk] Uses the spring-based algorithm by Kamada and Kawai to place nodes. See \code{?igraph::with\_kk}
+  
+  \item[lgl] Uses the algorithm from Large Graph Layout to place nodes. See \code{?igraph::with\_lgl}.
+  
+  \item[mds] Performs metric multidimensional scaling for generating the coordinates of the nodes. This algorithm is what comes closest to the "stress minimization" layout from \visone. See \code{?igraph::with\_mds}.
+  
+  \item[randomly] Places nodes randomly into the plot. See \code{?igraph::randomly}.
+  
+  \item[star] This places one node in the centre and spreads the rest of the nodes in equal distances around it. See \code{?igraph::as\_star}.
 \end{description}
 
 To get a better idea of how this works, look at the code chunk and plot below to see a small selection of the algorithms in action.
