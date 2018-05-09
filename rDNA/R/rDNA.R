@@ -129,7 +129,7 @@ dna_addDocument <- function(connection,
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
 #' @param variable The first variable for network construction  (see
-#'   \link{dna_network}). The second one defaults to "concept" but can be
+#'   \link{dna_network}). The second one defaults to \code{"concept"} but can be
 #'   provided via ... if necessary (see \code{variable2} in
 #'   \code{dna_connection}).
 #' @param duplicates Setting for excluding duplicate statements before network
@@ -137,9 +137,10 @@ dna_addDocument <- function(connection,
 #'   duplicates results in a binary matrix, \link[vegan]{vegdist} will be used
 #'   instead of \link[stats]{dist} to calculate the dissimilarity matrix.
 #' @param clust.method The agglomeration method to be used. When set to
-#'   "ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median"
-#'   or "centroid" the respective methods from \link[stats]{hclust} will be
-#'   used. When set to "edge_betweenness", "leading_eigen" or "walktrap"
+#'   \code{"ward.D"}, \code{"ward.D2"}, \code{"single"}, \code{"complete"},
+#'   \code{"average"}, \code{"mcquitty"}, \code{"median"} or \code{"centroid"}
+#'   the respective methods from \link[stats]{hclust} will be used. When set to
+#'   \code{"edge_betweenness"}, \code{"leading_eigen"} or \code{"walktrap"}
 #'   \link[igraph]{cluster_edge_betweenness},
 #'   \link[igraph]{cluster_leading_eigen} or \link[igraph]{cluster_walktrap}
 #'   respectively, will be used for clustering.
@@ -147,13 +148,14 @@ dna_addDocument <- function(connection,
 #'   used to assign colours? There are two sets of colours saved in the
 #'   resulting object as \link{dna_plotDendro} has two graphical elements to
 #'   distinguish between values: leaf_colours and leaf_ends. Possible values are
-#'   "id", "value", "color", "type", "alias" and "note".
+#'   \code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"}
+#'   and \code{"note"}.
 #' @param cutree.k,cutree.h If cutree.k or cutree.h are provided, the tree from
 #'   hierarchical clustering is cut into several groups. See $k$ and $h$ in
 #'   \link[stats]{cutree} for details.
 #' @param ... Additional arguments passed to \link{dna_network}. This is
-#'   especially useful to set qualifier (defaults to "agreement") and
-#'   normalization (defaults to "no") if non-default values are needed for
+#'   especially useful to set qualifier (defaults to \code{"agreement"}) and
+#'   normalization (defaults to \code{"no"}) if non-default values are needed for
 #'   clustering. Some other options, like qualifierAggregation are turned off
 #'
 #' @examples
@@ -1072,22 +1074,24 @@ dna_plotCentrality <- function(...) {
 #' Plot agreement and disagreement towards statements.
 #'
 #' This function plots agreement and disagreement towards DNA Statements for
-#' different categories such as "concept", "person" or "docTitle". The goal is to
-#' determine the centrality of claims. If, for example, concepts are not very
+#' different categories such as "concept", "person" or "docTitle". The goal is
+#' to determine the centrality of claims. If, for example, concepts are not very
 #' contested, this may mask the extent of polarization with regard to the other
 #' concepts. It often makes sense to exclude those concept in further analysis.
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
 #' @param of Category over which (dis-)agreement will be plotted. Most useful
-#'   categories are "concept" and "actor" but document categories can be used.
+#'   categories are \code{"concept"} and \code{"actor"} but document categories
+#'   can be used.
 #' @param lab.pos,lab.neg Names for (dis-)agreement labels.
 #' @param lab Determines whether (dis-)agreement labels and title are displayed.
-#' @param colours If TRUE, statement colours will be used to fill the bars. Not
-#'   possible for all categories.
+#' @param colours If \code{TRUE}, statement colours will be used to fill the
+#'   bars. Not possible for all categories.
 #' @param fontSize Text size in pts.
-#' @param barWidth Thickness of the bars. bars will touch when set to 1. When
-#'   set to 0.5, space between two bars is the same as thickness of bars.
+#' @param barWidth Thickness of the bars. bars will touch when set to \code{1}.
+#'   When set to \code{0.5}, space between two bars is the same as thickness of
+#'   bars.
 #' @param axisWidth Thickness of the x-axis which separates agreement from
 #'   disagreement.
 #' @param truncate Sets the number of characters to which axis labels (i.e. the
@@ -1298,32 +1302,32 @@ dna_barplot <- function(connection,
 #'
 #' @param clust A \code{dna_cluster} object created by the \link{dna_cluster}
 #'   function.
-#' @param shape The shape of the dendrogram. Available options are "elbows",
-#'   "link", "diagonal", "arc", and "fan". See
+#' @param shape The shape of the dendrogram. Available options are \code{elbows},
+#'   \code{link}, \code{diagonal}, \code{arc}, and \code{fan}. See
 #'   \link[ggraph]{layout_dendrogram_auto}.
 #' @param activity Should activity of variable in \link{dna_cluster} be used to
 #'   determine size of leaf_ends (logical). Activity means the number of
 #'   statements which remained after duplicates were removed.
 #' @param leaf_colours Determines which data is used to colour the leafs of the
-#'   dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
+#'   dendrogram. Can be either \code{attribute1}, \code{attribute2}or \code{group}. Set to
 #'   \code{character()} leafs-lines should not be coloured.
 #' @param colours There are three options from where to derive the colours in
-#'   the plot: (1.) "identity" tries to use the names of variables as colours
+#'   the plot: (1.) \code{identity} tries to use the names of variables as colours
 #'   (e.g., if you retrieved the names as attribute from DNA), fails if names
-#'   are not plottable colours; (2.) "manual" provide colours via
-#'   custom_colours; (3.) "brewer" automatically select nice colours from a
+#'   are not plottable colours; (2.) \code{manual} provide colours via
+#'   custom_colours; (3.) \code{brewer} automatically select nice colours from a
 #'   \code{RColorBrewer} palette (palettes can be set in custom_colours,
 #'   defaults to \code{Set3}).
 #' @param custom_colours Either provide enough colours to manually set the
-#'   colours in the plot (if colours = "manual") or select a palette from
-#'   \code{RColorBrewer} (if colours = "brewer").
+#'   colours in the plot (if colours = \code{manual"}) or select a palette from
+#'   \code{RColorBrewer} (if colours = \code{brewer"}).
 #' @param branch_colour Provide one colour in which all branches are coloured.
 #' @param line_width Width of all lines.
 #' @param line_alpha Alpha of all lines.
 #' @param ends_size If \code{activity = FALSE}, the size of the lineend symbols
 #'   can be set to one size for the whole plot.
 #' @param leaf_ends Determines which data is used to colour the leaf_ends of the
-#'   dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
+#'   dendrogram. Can be either \code{attribute1}, \code{attribute2} or \code{group}. Set to
 #'   \code{character()} if no line ends should be displayed.
 #' @param custom_shapes If shapes are provided, those are used for leaf_ends
 #'   instead of the standard ones. Available shapes range from 0:25 and 32:127.
@@ -1331,15 +1335,15 @@ dna_barplot <- function(connection,
 #' @param rectangles If a colour is provided, this will draw rectangles in given
 #'   colour around the groups.
 #' @param leaf_linetype,branch_linetype Determines which lines are used for
-#'   leafs and branches. Takes "a" for straight line or "b" for dotted line.
+#'   leafs and branches. Takes \code{a} for straight line or \code{b} for dotted line.
 #' @param font_size Set the font size for the entire plot.
-#' @param theme See themes in \code{ggplot2}. The theme "bw" was customised to
+#' @param theme See themes in \code{ggplot2}. The theme \code{bw} was customised to
 #'   look best with dendrograms. Leave empty to use standard ggplot theme.
 #'   Customise the theme by adding \code{+ theme_*} after this function...
 #' @param truncate Sets the number of characters to which labels should be
 #'   truncated. Value \code{Inf} turns off truncation.
-#' @param leaf_labels Either "ticks" to display the labels as axis ticks or
-#'   "node" to label nodes directly. Node labels are also take the same colour
+#' @param leaf_labels Either \code{ticks} to display the labels as axis ticks or
+#'   \code{node} to label nodes directly. Node labels are also take the same colour
 #'   as the leaf the label.
 #' @param circular Logical. Should the layout be transformed to a circular
 #'   representation. See \link[ggraph]{layout_dendrogram_auto}.
@@ -1386,7 +1390,7 @@ dna_plotDendro <- function(clust,
                            circular = FALSE,
                            show_legend = TRUE,
                            ...) {
-  # truncate lables----
+  # truncate lables
   clust$labels_short <- ifelse(nchar(clust$labels) > truncate,
                                paste0(gsub("\\s+$", "",
                                            strtrim(clust$labels, width = truncate)),
@@ -1395,7 +1399,7 @@ dna_plotDendro <- function(clust,
  
   # format as dendrogram
   hierarchy <- stats::as.dendrogram(clust)
-  # Add colours----
+  # Add colours
   hierarchy <- stats::dendrapply(hierarchy, function(x) {
     if (stats::is.leaf(x)) {
       if (length(leaf_colours) > 0) {
@@ -1440,7 +1444,7 @@ dna_plotDendro <- function(clust,
                                labels_short = attr(x, "labels_short"))
     x
   })
-  # create dedrogram----
+  # create dedrogram
   dg <- ggraph(graph = hierarchy,
                layout = "dendrogram",
                circular = circular)
@@ -1450,7 +1454,7 @@ dna_plotDendro <- function(clust,
                         NA,
                         show_legend)
   
-  # shape----
+  # shape
   if (shape == "elbows"){
     dg <- dg +
       geom_edge_elbow(aes_string(colour = "cols1",
@@ -1538,7 +1542,7 @@ dna_plotDendro <- function(clust,
       scale_edge_colour_manual(values = "black", guide = "none")
   }
  
-  # theme----
+  # theme
   if (theme == "bw") {
     dg <- dg +
       theme_bw() +
@@ -1563,7 +1567,7 @@ dna_plotDendro <- function(clust,
       theme_dark() +
       theme(text = element_text(size = font_size))
   }
-  # labels----
+  # labels
   if (leaf_labels == "ticks") {
     dg <- dg +
       scale_x_continuous(breaks = seq(0, length(clust$labels)-1, by = 1),
@@ -1580,7 +1584,7 @@ dna_plotDendro <- function(clust,
                        size = (font_size / .pt),
                        show.legend = FALSE) +
         expand_limits(y = c(-2.3, 2.3))
-      #circular plots----
+      #circular plots
     } else {
       dg <- dg +
         geom_node_text(aes(filter = leaf,
@@ -1599,7 +1603,7 @@ dna_plotDendro <- function(clust,
     }
   }
  
-  # line ends----
+  # line ends
   if (length(leaf_ends) > 0) {
     if (is.na(show_legend)) {
       guide <- "legend"
@@ -1629,7 +1633,7 @@ dna_plotDendro <- function(clust,
                         alpha = ends_alpha)
     }
    
-    # custom_shapes----
+    # custom_shapes
     if (length(custom_shapes) > 0) {
       dg <- dg +
         scale_shape_manual(values = custom_shapes,
@@ -1640,7 +1644,7 @@ dna_plotDendro <- function(clust,
     }
   }
  
-  # rectangles----
+  # rectangles
   if (length(rectangles) > 0 & !circular) {
     rect <- data.frame(label = clust$labels_short[clust$order],
                        cluster = clust$group[clust$order],
@@ -1662,7 +1666,7 @@ dna_plotDendro <- function(clust,
                 fill = NA)
   }
  
-  # color node text and points----
+  # color node text and points
   if (length(leaf_colours) > 0) {
    
     if (colours == "identity") {
@@ -1699,12 +1703,13 @@ dna_plotDendro <- function(clust,
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
-#' @param of A variable which is used to group the bars. Can be "agreement",
-#'   "organization", "person", "concept" or NULL to disregard differences.
+#' @param of A variable which is used to group the bars. Can be
+#'   \code{"agreement}, \code{"organization}, \code{"person}, \code{"concept} or
+#'   \code{NULL} to disregard differences.
 #' @param timewindow Bars represent all statements in a certain timewindow. This
-#'   can be "days", "months" or "years".
-#' @param bar Determines if bars should be stacked ("stacked") or side-by-side
-#'   ("side").
+#'   can be \code{"days"}, \code{"months"} or \code{"years"}.
+#' @param bar Determines if bars should be stacked (\code{"stacked"}) or
+#'   side-by-side (\code{"side"}).
 #' @param ... Additional arguments passed to \link{dna_network}.
 #'
 #' @examples
@@ -1785,9 +1790,9 @@ dna_plotFrequency <- function(connection,
 #' @param truncate Sets the number of characters to which labels should be
 #'   truncated. Value \code{Inf} turns off truncation.
 #' @param values If TRUE, will display the values in the tiles of the heatmap.
-#' @param colours There are two options: When "brewer" is selected, the function
+#' @param colours There are two options: When\code{"brewer} is selected, the function
 #'   \link[ggplot2]{scale_fill_distiller} is used to colour the heatmap tiles.
-#'   When "gradient" is selected, \link[ggplot2]{scale_fill_gradient} will be
+#'   When\code{"gradient} is selected, \link[ggplot2]{scale_fill_gradient} will be
 #'   used. The colour palette and low/high values can be supplied using the
 #'   argument \code{custom_colours}
 #' @param custom_colours For \code{colours = "brewer"} you can use either a
@@ -2029,50 +2034,52 @@ dna_plotHeatmap <- function(clust,
 #'
 #' @param x A \code{dna_network_onemode} object created by the
 #'   \link{dna_network} function.
-#' @param axis Takes the name of an attribute in DNA (i.e. "id", "value",
-#'   "color", "type", "alias", "notes" or "frequency") or "group" to colour
-#'   nodes. The option "group" only makes sense if you provide group membership
+#' @param axis Takes the name of an attribute in DNA (i.e. \code{"id"},
+#'   \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
+#'   \code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
+#'   The option \code{"group"} only makes sense if you provide group membership
 #'   information to the \code{groups} argument.
-#' @param axis_label If TRUE, axis labels are plotted at the end of the axis and
-#'   are removed from the legend.
-#' @param axis_colours There are five options for colouring the axis segments:
-#'   (1.) "auto" either uses the colours in the DNA database or leaves the
-#'   standard ggplot2 colours; (2.) "identity" tries to use the names of
-#'   variables as colours (e.g., if you set node_attribute = "color" or have
-#'   provided a colour name in another attributes field in DNA) but fails if
-#'   names are not plottable colours; (3) "manual" let's you provide colours via
-#'   custom_colours; (4.) "brewer" automatically selects nice colours from a
-#'   \code{RColorBrewer} palette (palettes can be set in custom_colours,
-#'   defaults to \code{Set3}); and (5.) "single" uses the first value in
-#'   custom_colours for all axis.
-#' @param custom_colours Takes custom values to control the node colours. The
-#'   format of the necessary values depends on the setting of
-#'   \code{node_colours}: When \code{node_colours = "manual"}, a character
-#'   object containing the enough colour names for all groups is needed; When
-#'   \code{node_colours = "brewer"} you need to supply a a palette from
-#'   \code{RColorBrewer} (otherwise defaults to "Set3"); When \code{node_colours
-#'   "single"} only a single colour name is needed (defaults to "red").
-#' @param edge_weight If TRUE, edge weights will be used to determine width of
-#'   the lines between nodes. The minimum and maximum width can be controlled
-#'   with \code{edge_size_range}.
+#' @param axis_label If \code{TRUE}, axis labels are plotted at the end of the
+#'   axis and are removed from the legend.
+#' @param axis_colours There are five options for colouring the axes: (1.)
+#'   \code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
+#'   leaves the standard ggplot2 colours otherwise; (2.) \code{"identity"} tries
+#'   to use \code{axis} for colours (i.e., if you set \code{axis = "color"} or
+#'   have provided a colour name in another attribute field in DNA) but fails if
+#'   names are not plottable colours; (3) \code{"manual"} lets you provide
+#'   colours via custom_colours; (4.) \code{"brewer"} automatically selects nice
+#'   colours from a \code{RColorBrewer} palette (palettes can be set in
+#'   custom_colours); and (5.) \code{"single"} uses the first value in
+#'   custom_colours for all axes
+#' @param custom_colours Takes custom values to control the axes colours. The
+#'   format of the necessary values depends on the setting of \code{axis}: When
+#'   \code{axis = "manual"}, a character object containing the enough colour
+#'   names for all groups is needed; When \code{axis = "brewer"} you need to
+#'   supply a a palette from \code{RColorBrewer} (otherwise defaults to "Set3");
+#'   When \code{axis "single"} only a single colour name is needed (defaults to
+#'   "red").
+#' @param edge_weight If \code{TRUE}, edge weights will be used to determine
+#'   width of the lines between nodes. The minimum and maximum width can be
+#'   controlled with \code{edge_size_range}.
 #' @param edge_size_range Takes a numeric vector with two values: minimum and
 #'   maximum \code{edge_weight}.
 #' @param edge_colour Provide the name of a colour to use for edges.
 #' @param edge_alpha Takes numeric values to control the alpha-transparency of
-#'   edges. Values lower than 1 make the edges transparent.
-#' @param node_label If TRUE, text is added next to nodes to label them. If
-#'   "label", a rectangle is drawn underneath the text, often making it easier
-#'   to read. If FALSE no lables are drawn.
+#'   edges. Possible values range from \code{0} (fully transparent) to \code{1}
+#'   (fully visible).
+#' @param node_label If \code{TRUE}, text is added next to nodes to label them.
+#'   If "label", a rectangle is drawn underneath the text, often making it
+#'   easier to read. If \code{FALSE} no lables are drawn.
 #' @param label_repel Controls how far from the labels will be put from nodes.
 #'   The exact position of text is random but overplotting is avoided.
-#' @param label_lines If TRUE, draws lines between nodes and labels if labels
-#'   are further away from nodes.
+#' @param label_lines If \code{TRUE}, draws lines between nodes and labels if
+#'   labels are further away from nodes.
 #' @param font_size Control the font size of the node labels.
-#' @param theme Provide the name of a theme. Available options are "graph"
-#'   (which is customised to look best with networks), "bw", "void", "light" and
-#'   "dark". Leave empty to use standard ggplot theme. Choose other themes or
-#'   customise with tools from \link{ggplot2} by adding \code{+ theme_*} after
-#'   this function.
+#' @param theme Provide the name of a theme. Available options are
+#'   \code{"graph"} (which is customised to look best with networks), "bw",
+#'   "void", "light" and \code{"dark"}. Leave empty to use standard ggplot
+#'   theme. Choose other themes or customise with tools from \link{ggplot2} by
+#'   adding \code{+ theme_*} after this function.
 #' @param truncate Sets the number of characters to which labels should be
 #'   truncated. Value \code{Inf} turns off truncation.
 #' @param groups Takes a \code{dna_cluster} object or a named list or character
@@ -2144,8 +2151,7 @@ dna_plotHive <- function(x,
     graph <- delete.edges(graph, which(!E(graph)$weight >= threshold))
   }
   
-  # get attributes
-  # colour and attribute----
+  # colour and attribute
   args <- c(as.list(attributes(x)$call)[-1])
   args["networkType"] <- "eventlist"
   if (is.null(args[["statementType"]])) {
@@ -2214,7 +2220,7 @@ dna_plotHive <- function(x,
                      show.legend = show_legend)
   }
   
-  # add labels----
+  # add labels
   if ((is.logical(node_label) & node_label == TRUE) | node_label == "label") {
     if (node_label == "label") {
       g <- g +
@@ -2237,7 +2243,7 @@ dna_plotHive <- function(x,
     }
   }
   
-  # theme ----
+  # theme
   if (theme == "graph") {
     g <- g  +
       theme_graph(base_family = "", base_size = font_size)
@@ -2255,7 +2261,7 @@ dna_plotHive <- function(x,
       theme_dark(base_size = font_size)
   }
   
-  # colours ----
+  # colours
   if (!axis_colours == "auto") {
     if (axis_colours == "identity") {
       g <- g +
@@ -2298,11 +2304,11 @@ dna_plotHive <- function(x,
 #'   polygons?
 #' @param custom_colours Manually provide colours for the points and polygons.
 #' @param custom_shape Manually provide shapes to use for the scatterplot.
-#' @param alpha The alpha level of the polygons drawn when draw.clusters =
-#'   "polygon".
+#' @param alpha The alpha level of the polygons drawn when \code{draw.clusters =
+#'   "polygon"}.
 #' @param jitter Takes either one value, to control the width of the jittering
 #'   of points, two values to control width and height of the jittering of
-#'   points (e.g., c(.l, .2)) or "character()" to turn off the jittering of
+#'   points (e.g., c(.l, .2)) or \code{character()} to turn off the jittering of
 #'   points.
 #' @param seed Seed for jittering.
 #' @param label Logical. Should labels be plotted?
@@ -2317,9 +2323,9 @@ dna_plotHive <- function(x,
 #'   second controls expansion of the y axis.
 #' @param stress Should stress from the MDS be displayed on the plot.
 #' @param axis_labels Provide custom axis labels.
-#' @param clust_method Can be either "pam" for \link[cluster]{pam}, "louvain"
-#'   for \link[igraph]{cluster_louvain} or "inherit" to use the method provided
-#'   by the call to from \link{dna_cluster}.
+#' @param clust_method Can be either \code{pam} for \link[cluster]{pam}, \code{"louvain"}
+#'   for \link[igraph]{cluster_louvain} or \code{"inherit"} to use the method provided
+#'   by the call to \link{dna_cluster}.
 #' @param truncate Sets the number of characters to which labels should be
 #'   truncated. Value \code{Inf} turns off truncation.
 #' @param title Title of the MDS plot.
@@ -2469,60 +2475,69 @@ dna_plotMDS <- function(clust,
 #'
 #' @param x A \code{dna_network} object created by the \link{dna_network}
 #'   function.
-#' @param layout The type of layout to use. Available layouts include "nicely"
-#'   (which tries to choose a suiting layout), "bipartite" (for two-mode
-#'   networks), "circle", "dh", "drl", "fr", "gem", "graphopt", "kk", "lgl",
-#'   "mds", "randomly" and "star". Other layouts might be available (see
-#'   Details).
-#' @param edges When set to "link" (default) straight lines are used to connect
-#'   nodes. Other available options are "arc", "diagonal" and "fan".
-#' @param edge_weight If TRUE, edge weights will be used to determine the width
-#'   of the lines. The minimum and maximum width can be controlled with
+#' @param layout The type of layout to use. Available layouts include
+#'   \code{"nicely"} (which tries to choose a suiting layout),
+#'   \code{"bipartite"} (for two-mode networks), \code{"circle"}, \code{"dh"},
+#'   \code{"drl"}, \code{"fr"}, \code{"gem"}, \code{"graphopt"}, \code{"kk"},
+#'   \code{"lgl"}, \code{"mds"}, \code{"randomly"} and \code{"star"}. The
+#'   default, \code{"auto"} chooses \code{"nicely"} if \code{x} is a one-mode
+#'   network and \code{"bipartite"} in case of two-mode networks. Other layouts
+#'   might be available (see \link[ggraph]{layout_igraph_auto} for details).
+#' @param edges When set to \code{"link"} (default) straight lines are used to
+#'   connect nodes. Other available options are \code{"arc"}, \code{"diagonal"}
+#'   and \code{"fan"}.
+#' @param edge_weight If \code{TRUE}, edge weights will be used to determine the
+#'   width of the lines. The minimum and maximum width can be controlled with
 #'   \code{edge_size_range}.
 #' @param edge_size_range Takes a numeric vector with two values: minimum and
 #'   maximum \code{edge_weight}.
 #' @param edge_colour Provide the name of a colour to use for edges. Defaults to
-#'   "grey".
+#'   \code{"grey"}.
 #' @param edge_alpha Takes numeric values to control the alpha-transparency of
-#'   edges. Values lower than 1 make the edges transparent.
-#' @param node_size Takes numeric values to control the size of nodes (defaults
-#'   to 6).
-#' @param node_attribute Takes the name of an attribute in DNA (i.e. "id",
-#'   "value", "color", "type", "alias", "notes" or "frequency") or "group" to
-#'   colour nodes. The option "group" only makes sense if you provide group
-#'   membership information to the \code{groups} argument.
+#'   edges. Possible values range from \code{0} (fully transparent) to \code{1}
+#'   (fully visible).
+#' @param node_size Takes positive numeric values to control the size of nodes
+#'   (defaults to \code{6}). Usually values between \code{1} and \code{20} look
+#'   best.
+#' @param node_attribute Takes the name of an attribute in DNA (i.e.
+#'   \code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
+#'   \code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
+#'   The option \code{"group"} only makes sense if you provide group membership
+#'   information to the \code{groups} argument.
 #' @param node_colours There are five options for colouring the nodes: (1.)
-#'   "auto" either leaves the standard ggplot2 colours or uses the colours in
-#'   the DNA database; (2.) "identity" tries to use \code{node_attribute} for
-#'   colours (i.e., if you set \code{node_attribute = "color"} or have provided
-#'   a colour name in another attribute field in DNA) but fails if names are not
-#'   plottable colours; (3) "manual" lets you provide colours via
-#'   custom_colours; (4.) "brewer" automatically selects nice colours from a
+#'   \code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
+#'   leaves the standard ggplot2 colours otherwise; (2.) \code{"identity"} tries
+#'   to use \code{node_attribute} for colours (i.e., if you set
+#'   \code{node_attribute = "color"} or have provided a colour name in another
+#'   attribute field in DNA) but fails if names are not plottable colours; (3)
+#'   \code{"manual"} lets you provide colours via custom_colours; (4.)
+#'   \code{"brewer"} automatically selects nice colours from a
 #'   \code{RColorBrewer} palette (palettes can be set in custom_colours); and
-#'   (5.) "single" uses the first value in custom_colours for all nodes.
+#'   (5.) \code{"single"} uses the first value in custom_colours for all nodes.
 #' @param custom_colours Takes custom values to control the node colours. The
 #'   format of the necessary values depends on the setting of
 #'   \code{node_colours}: When \code{node_colours = "manual"}, a character
 #'   object containing the enough colour names for all groups is needed; When
 #'   \code{node_colours = "brewer"} you need to supply a a palette from
-#'   \code{RColorBrewer} (otherwise defaults to "Set3"); When \code{node_colours
-#'   "single"} only a single colour name is needed (defaults to "red").
-#' @param node_shape Controls the node shape. Available shapes range from 0:25
-#'   and 32:127.
-#' @param node_label If TRUE, text is added next to nodes to label them. If
-#'   "label", a rectangle is drawn underneath the text, often making it easier
-#'   to read. If FALSE no lables are drawn.
-#' @param font_size Controls the font size of the node labels. The default, 6,
-#'   looks best on many viewers and knitr reports.
-#' @param theme Provide the name of a theme. Available options are "graph"
-#'   (which is customised to look best with networks), "bw", "void", "light" and
-#'   "dark". Leave empty to use standard ggplot theme. Choose other themes or
-#'   customise with tools from \link{ggplot2} by adding \code{+ theme_*} after
-#'   this function.
+#'   \code{RColorBrewer} (defaults to \code{"Set3"} if \code{custom_colours} is
+#'   left empty); When \code{node_colours "single"} only a single colour name is
+#'   needed (defaults to \code{"red"}).
+#' @param node_shape Controls the node shape. Available shapes range from
+#'   \code{0:25} and \code{32:127}.
+#' @param node_label If \code{TRUE}, text is added next to nodes to label them.
+#'   If \code{"label"}, a rectangle is drawn underneath the text, often making
+#'   it easier to read. If \code{FALSE} no lables are drawn.
+#' @param font_size Controls the font size of the node labels. The default,
+#'   \code{6}, looks best on many viewers and knitr reports.
+#' @param theme Provide the name of a theme. Available options are
+#'   \code{"graph"} (which is customised to look best with networks),
+#'   \code{"bw"}, \code{"void"}, \code{"light"} and \code{"dark"}. Leave empty
+#'   to use standard ggplot theme. Choose other themes or customise with tools
+#'   from \link{ggplot2} by adding \code{+ theme_*} after this function.
 #' @param label_repel Controls how far labels will be put from nodes. The exact
 #'   position of text is random but overplotting is avoided.
-#' @param label_lines If TRUE, draws lines between nodes and labels if labels
-#'   are further away from nodes.
+#' @param label_lines If \code{TRUE}, draws lines between nodes and labels if
+#'   labels are further away from nodes.
 #' @param truncate Sets the number of characters to which labels should be
 #'   truncated. Value \code{Inf} turns off truncation.
 #' @param groups Takes a \code{dna_cluster} object or a named list or character
@@ -2532,7 +2547,7 @@ dna_plotMDS <- function(clust,
 #' @param threshold Minimum threshold for which edges should be plotted.
 #' @param seed Numeric value passed to \link{set.seed}. The default is as good
 #'   as any other value but provides that plots are always reproducible.
-#' @param show_legend If TRUE, displays a legend.
+#' @param show_legend If \code{TRUE}, displays a legend.
 #' @param ... Arguments passed on to the layout function (see
 #'   \link[ggraph]{layout_igraph_auto}). If you want to add more plot options
 #'   use \code{+} and ggplot2 functions.
@@ -2790,7 +2805,7 @@ dna_plotNetwork <- function(x,
 #' function. Uses \link[ggplot2]{geom_line} under the hood to plot results from
 #' a call to \link{dna_timeWindow} and facets a grid view using
 #' \link[ggplot2]{facet_grid}. Customised themes and ggplot2 functions can be
-#' passed on with +.
+#' passed on with \code{+}.
 #'
 #' @param x A \code{dna_timeWindow} object created by the \link{dna_timeWindow}
 #'   function.
@@ -2921,8 +2936,8 @@ dna_removeDocument <- function(connection,
 #'
 #' A small sample database to test the functions of rDNA.
 #'
-#' @param overwrite Should sample.dna be overwritten if found in the current
-#'   working directory?
+#' @param overwrite Logical. Should sample.dna be overwritten if found in the
+#'   current working directory?
 #' @param verbose Display warning message if file exists in current wd.
 #'
 #' @examples
@@ -3112,21 +3127,21 @@ dna_setDocuments <- function(connection,
 #' your data (facet) and calculate networks for each facet type.
 #'
 #' @param connection A \link{dna_connection} object created by the
-#'     \link{dna_connection} function.
+#'   \link{dna_connection} function.
 #' @param timewindow Same as in \link{dna_network}.
 #' @param windowsize Same as in \link{dna_network}.
 #' @param facet Which value from the dna database should be used to subset the
-#'   networks. Can be "Authors" for document author, "Sources" for document
-#'   source, "Sections" for documents which contain a certain section or "Types"
-#'   to subset document types.
+#'   networks. Can be \code{"Authors"} for document author, \code{"Sources"} for
+#'   document source, \code{"Sections"} for documents which contain a certain
+#'   section or \code{"Types"} to subset document types.
 #' @param facetValues Which values should be used to facet calculation of the
-#'   networks. Always contains the value 'all' for comparison. Use e.g.
+#'   networks. Always contains the value "all" for comparison. Use e.g.
 #'   excludeTypes to exclude documents from comparison.
 #' @param method Is used to compute exactly one measurement for each network
 #'   computed in the temporal sequence of networks. Can contain the name of any
 #'   function which reduces a matrix to just one value.
-#' @param verbose Display messages if TRUE or 1. Also display messages details
-#'   of network construction when 2
+#' @param verbose Display messages if \code{TRUE} or \code{1}. Also displays
+#'   details about network construction when \code{2}.
 #' @param ... Additional arguments passed to \link{dna_network}.
 #'
 #' @examples
@@ -3290,7 +3305,6 @@ dna_timeWindow <- function(connection,
 #' @param weighted Logical. Should edge weights be used to create a weighted
 #'   graph from the dna_network object.
 #'
-#' @return
 #' @export
 #' @importFrom igraph graph_from_adjacency_matrix graph_from_incidence_matrix
 #'
@@ -3330,7 +3344,7 @@ dna_toIgraph <- function(x,
 #' This function can produce eventSequence objects (see
 #' \link[rem]{eventSequence}) used in the package rem from DNA connections.
 #'
-#' @param connection \code{dna_connection} object created by the
+#' @param x \code{dna_connection} object created by the
 #'   \code{dna_connection} function.
 #' @param variable The first variable for network construction  (see
 #'   \link{dna_network}). The second one defaults to "concept" but can be
@@ -3357,19 +3371,19 @@ dna_toIgraph <- function(x,
 #' ### pass on arguments to eventSequence
 #' eventSequence3 <- dna_toREM(conn, excludeTypeOfDay = "Wednesday")
 #' }
-dna_toREM <- function(connection,
+dna_toREM <- function(x,
                       variable = "organization",
                       ...) {
   dots <- list(...)
   dots_network <- dots[names(dots) %in% names(formals("dna_network"))]
   dots_sequence <- dots[names(dots) %in% names(formals("eventSequence"))]
   dta <- do.call("dna_network",
-                 c(list(connection, 
+                 c(list(x, 
                         networkType = "eventlist", 
                         variable1 = variable,
                         verbose = FALSE
                  ), dots_network))
-  att <- dna_getAttributes(connection, variable = variable)
+  att <- dna_getAttributes(x, variable = variable)
   att$id <- NULL
   dta <- merge(dta, att, by = variable, by.y = "value", all.x = TRUE, all.y = FALSE)
   dta$date <- as.Date(dta$time)
@@ -3500,7 +3514,7 @@ print.dna_connection <- function(x, ...) {
 #' @param n Max number of characters to truncate to. Value \code{Inf} turns off
 #'   truncation.
 #' @param e String added at the end of x to signal it was truncated.
-#'
+#' @noRd
 #' @author Johannes B. Gruber
 trim <- function(x, n, e = "..."){
   ifelse(nchar(x) > n,

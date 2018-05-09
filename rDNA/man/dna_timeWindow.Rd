@@ -17,20 +17,20 @@ dna_timeWindow(connection, timewindow = "days", windowsize = 100,
 \item{windowsize}{Same as in \link{dna_network}.}
 
 \item{facet}{Which value from the dna database should be used to subset the
-networks. Can be "Authors" for document author, "Sources" for document
-source, "Sections" for documents which contain a certain section or "Types"
-to subset document types.}
+networks. Can be \code{"Authors"} for document author, \code{"Sources"} for
+document source, \code{"Sections"} for documents which contain a certain
+section or \code{"Types"} to subset document types.}
 
 \item{facetValues}{Which values should be used to facet calculation of the
-networks. Always contains the value 'all' for comparison. Use e.g.
+networks. Always contains the value "all" for comparison. Use e.g.
 excludeTypes to exclude documents from comparison.}
 
 \item{method}{Is used to compute exactly one measurement for each network
 computed in the temporal sequence of networks. Can contain the name of any
 function which reduces a matrix to just one value.}
 
-\item{verbose}{Display messages if TRUE or 1. Also display messages details
-of network construction when 2}
+\item{verbose}{Display messages if \code{TRUE} or \code{1}. Also displays
+details about network construction when \code{2}.}
 
 \item{...}{Additional arguments passed to \link{dna_network}.}
 }

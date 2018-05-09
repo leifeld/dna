@@ -15,36 +15,37 @@ dna_plotHive(x, axis = "type", axis_label = FALSE, axis_colours = "auto",
 \item{x}{A \code{dna_network_onemode} object created by the
 \link{dna_network} function.}
 
-\item{axis}{Takes the name of an attribute in DNA (i.e. "id", "value",
-"color", "type", "alias", "notes" or "frequency") or "group" to colour
-nodes. The option "group" only makes sense if you provide group membership
+\item{axis}{Takes the name of an attribute in DNA (i.e. \code{"id"},
+\code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
+\code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
+The option \code{"group"} only makes sense if you provide group membership
 information to the \code{groups} argument.}
 
-\item{axis_label}{If TRUE, axis labels are plotted at the end of the axis and
-are removed from the legend.}
+\item{axis_label}{If \code{TRUE}, axis labels are plotted at the end of the
+axis and are removed from the legend.}
 
-\item{axis_colours}{There are five options for colouring the axis segments:
-(1.) "auto" either uses the colours in the DNA database or leaves the
-standard ggplot2 colours; (2.) "identity" tries to use the names of
-variables as colours (e.g., if you set node_attribute = "color" or have
-provided a colour name in another attributes field in DNA) but fails if
-names are not plottable colours; (3) "manual" let's you provide colours via
-custom_colours; (4.) "brewer" automatically selects nice colours from a
-\code{RColorBrewer} palette (palettes can be set in custom_colours,
-defaults to \code{Set3}); and (5.) "single" uses the first value in
-custom_colours for all axis.}
+\item{axis_colours}{There are five options for colouring the axes: (1.)
+\code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
+leaves the standard ggplot2 colours otherwise; (2.) \code{"identity"} tries
+to use \code{axis} for colours (i.e., if you set \code{axis = "color"} or
+have provided a colour name in another attribute field in DNA) but fails if
+names are not plottable colours; (3) \code{"manual"} lets you provide
+colours via custom_colours; (4.) \code{"brewer"} automatically selects nice
+colours from a \code{RColorBrewer} palette (palettes can be set in
+custom_colours); and (5.) \code{"single"} uses the first value in
+custom_colours for all axes}
 
-\item{custom_colours}{Takes custom values to control the node colours. The
-format of the necessary values depends on the setting of
-\code{node_colours}: When \code{node_colours = "manual"}, a character
-object containing the enough colour names for all groups is needed; When
-\code{node_colours = "brewer"} you need to supply a a palette from
-\code{RColorBrewer} (otherwise defaults to "Set3"); When \code{node_colours
-"single"} only a single colour name is needed (defaults to "red").}
+\item{custom_colours}{Takes custom values to control the axes colours. The
+format of the necessary values depends on the setting of \code{axis}: When
+\code{axis = "manual"}, a character object containing the enough colour
+names for all groups is needed; When \code{axis = "brewer"} you need to
+supply a a palette from \code{RColorBrewer} (otherwise defaults to "Set3");
+When \code{axis "single"} only a single colour name is needed (defaults to
+"red").}
 
-\item{edge_weight}{If TRUE, edge weights will be used to determine width of
-the lines between nodes. The minimum and maximum width can be controlled
-with \code{edge_size_range}.}
+\item{edge_weight}{If \code{TRUE}, edge weights will be used to determine
+width of the lines between nodes. The minimum and maximum width can be
+controlled with \code{edge_size_range}.}
 
 \item{edge_size_range}{Takes a numeric vector with two values: minimum and
 maximum \code{edge_weight}.}
@@ -52,25 +53,26 @@ maximum \code{edge_weight}.}
 \item{edge_colour}{Provide the name of a colour to use for edges.}
 
 \item{edge_alpha}{Takes numeric values to control the alpha-transparency of
-edges. Values lower than 1 make the edges transparent.}
+edges. Possible values range from \code{0} (fully transparent) to \code{1}
+(fully visible).}
 
-\item{node_label}{If TRUE, text is added next to nodes to label them. If
-"label", a rectangle is drawn underneath the text, often making it easier
-to read. If FALSE no lables are drawn.}
+\item{node_label}{If \code{TRUE}, text is added next to nodes to label them.
+If "label", a rectangle is drawn underneath the text, often making it
+easier to read. If \code{FALSE} no lables are drawn.}
 
 \item{label_repel}{Controls how far from the labels will be put from nodes.
 The exact position of text is random but overplotting is avoided.}
 
-\item{label_lines}{If TRUE, draws lines between nodes and labels if labels
-are further away from nodes.}
+\item{label_lines}{If \code{TRUE}, draws lines between nodes and labels if
+labels are further away from nodes.}
 
 \item{font_size}{Control the font size of the node labels.}
 
-\item{theme}{Provide the name of a theme. Available options are "graph"
-(which is customised to look best with networks), "bw", "void", "light" and
-"dark". Leave empty to use standard ggplot theme. Choose other themes or
-customise with tools from \link{ggplot2} by adding \code{+ theme_*} after
-this function.}
+\item{theme}{Provide the name of a theme. Available options are
+\code{"graph"} (which is customised to look best with networks), "bw",
+"void", "light" and \code{"dark"}. Leave empty to use standard ggplot
+theme. Choose other themes or customise with tools from \link{ggplot2} by
+adding \code{+ theme_*} after this function.}
 
 \item{truncate}{Sets the number of characters to which labels should be
 truncated. Value \code{Inf} turns off truncation.}

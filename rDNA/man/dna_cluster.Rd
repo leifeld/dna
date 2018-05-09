@@ -13,7 +13,7 @@ dna_cluster(connection, variable = "organization", duplicates = "document",
 \link{dna_connection} function.}
 
 \item{variable}{The first variable for network construction  (see
-\link{dna_network}). The second one defaults to "concept" but can be
+\link{dna_network}). The second one defaults to \code{"concept"} but can be
 provided via ... if necessary (see \code{variable2} in
 \code{dna_connection}).}
 
@@ -23,9 +23,10 @@ duplicates results in a binary matrix, \link[vegan]{vegdist} will be used
 instead of \link[stats]{dist} to calculate the dissimilarity matrix.}
 
 \item{clust.method}{The agglomeration method to be used. When set to
-"ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median"
-or "centroid" the respective methods from \link[stats]{hclust} will be
-used. When set to "edge_betweenness", "leading_eigen" or "walktrap"
+\code{"ward.D"}, \code{"ward.D2"}, \code{"single"}, \code{"complete"},
+\code{"average"}, \code{"mcquitty"}, \code{"median"} or \code{"centroid"}
+the respective methods from \link[stats]{hclust} will be used. When set to
+\code{"edge_betweenness"}, \code{"leading_eigen"} or \code{"walktrap"}
 \link[igraph]{cluster_edge_betweenness},
 \link[igraph]{cluster_leading_eigen} or \link[igraph]{cluster_walktrap}
 respectively, will be used for clustering.}
@@ -34,15 +35,16 @@ respectively, will be used for clustering.}
 used to assign colours? There are two sets of colours saved in the
 resulting object as \link{dna_plotDendro} has two graphical elements to
 distinguish between values: leaf_colours and leaf_ends. Possible values are
-"id", "value", "color", "type", "alias" and "note".}
+\code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"}
+and \code{"note"}.}
 
 \item{cutree.k, cutree.h}{If cutree.k or cutree.h are provided, the tree from
 hierarchical clustering is cut into several groups. See $k$ and $h$ in
 \link[stats]{cutree} for details.}
 
 \item{...}{Additional arguments passed to \link{dna_network}. This is
-especially useful to set qualifier (defaults to "agreement") and
-normalization (defaults to "no") if non-default values are needed for
+especially useful to set qualifier (defaults to \code{"agreement"}) and
+normalization (defaults to \code{"no"}) if non-default values are needed for
 clustering. Some other options, like qualifierAggregation are turned off}
 }
 \description{

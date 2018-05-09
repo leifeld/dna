@@ -18,12 +18,12 @@ function.}
 \item{draw_polygons}{Logical. Should clusters be highlighted with coloured
 polygons?}
 
-\item{alpha}{The alpha level of the polygons drawn when draw.clusters =
-"polygon".}
+\item{alpha}{The alpha level of the polygons drawn when \code{draw.clusters =
+"polygon"}.}
 
 \item{jitter}{Takes either one value, to control the width of the jittering
 of points, two values to control width and height of the jittering of
-points (e.g., c(.l, .2)) or "character()" to turn off the jittering of
+points (e.g., c(.l, .2)) or \code{character()} to turn off the jittering of
 points.}
 
 \item{seed}{Seed for jittering.}
@@ -53,9 +53,9 @@ truncated. Value \code{Inf} turns off truncation.}
 
 \item{axis_labels}{Provide custom axis labels.}
 
-\item{clust_method}{Can be either "pam" for \link[cluster]{pam}, "louvain"
-for \link[igraph]{cluster_louvain} or "inherit" to use the method provided
-by the call to from \link{dna_cluster}.}
+\item{clust_method}{Can be either \code{pam} for \link[cluster]{pam}, \code{"louvain"}
+for \link[igraph]{cluster_louvain} or \code{"inherit"} to use the method provided
+by the call to \link{dna_cluster}.}
 
 \item{title}{Title of the MDS plot.}
 

@@ -11,14 +11,15 @@ dna_plotFrequency(connection, of = "agreement", timewindow = "days",
 \item{connection}{A \code{dna_connection} object created by the
 \link{dna_connection} function.}
 
-\item{of}{A variable which is used to group the bars. Can be "agreement",
-"organization", "person", "concept" or NULL to disregard differences.}
+\item{of}{A variable which is used to group the bars. Can be
+\code{"agreement}, \code{"organization}, \code{"person}, \code{"concept} or
+\code{NULL} to disregard differences.}
 
 \item{timewindow}{Bars represent all statements in a certain timewindow. This
-can be "days", "months" or "years".}
+can be \code{"days"}, \code{"months"} or \code{"years"}.}
 
-\item{bar}{Determines if bars should be stacked ("stacked") or side-by-side
-("side").}
+\item{bar}{Determines if bars should be stacked (\code{"stacked"}) or
+side-by-side (\code{"side"}).}
 
 \item{...}{Additional arguments passed to \link{dna_network}.}
 }

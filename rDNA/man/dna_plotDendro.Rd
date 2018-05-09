@@ -17,8 +17,8 @@ dna_plotDendro(clust, shape = "elbows", activity = FALSE,
 \item{clust}{A \code{dna_cluster} object created by the \link{dna_cluster}
 function.}
 
-\item{shape}{The shape of the dendrogram. Available options are "elbows",
-"link", "diagonal", "arc", and "fan". See
+\item{shape}{The shape of the dendrogram. Available options are \code{elbows},
+\code{link}, \code{diagonal}, \code{arc}, and \code{fan}. See
 \link[ggraph]{layout_dendrogram_auto}.}
 
 \item{activity}{Should activity of variable in \link{dna_cluster} be used to
@@ -26,25 +26,25 @@ determine size of leaf_ends (logical). Activity means the number of
 statements which remained after duplicates were removed.}
 
 \item{leaf_colours}{Determines which data is used to colour the leafs of the
-dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
+dendrogram. Can be either \code{attribute1}, \code{attribute2}or \code{group}. Set to
 \code{character()} leafs-lines should not be coloured.}
 
 \item{branch_colour}{Provide one colour in which all branches are coloured.}
 
 \item{colours}{There are three options from where to derive the colours in
-the plot: (1.) "identity" tries to use the names of variables as colours
+the plot: (1.) \code{identity} tries to use the names of variables as colours
 (e.g., if you retrieved the names as attribute from DNA), fails if names
-are not plottable colours; (2.) "manual" provide colours via
-custom_colours; (3.) "brewer" automatically select nice colours from a
+are not plottable colours; (2.) \code{manual} provide colours via
+custom_colours; (3.) \code{brewer} automatically select nice colours from a
 \code{RColorBrewer} palette (palettes can be set in custom_colours,
 defaults to \code{Set3}).}
 
 \item{custom_colours}{Either provide enough colours to manually set the
-colours in the plot (if colours = "manual") or select a palette from
-\code{RColorBrewer} (if colours = "brewer").}
+colours in the plot (if colours = \code{manual"}) or select a palette from
+\code{RColorBrewer} (if colours = \code{brewer"}).}
 
 \item{leaf_ends}{Determines which data is used to colour the leaf_ends of the
-dendrogram. Can be either "attribute1", "attribute2" or "group". Set to
+dendrogram. Can be either \code{attribute1}, \code{attribute2} or \code{group}. Set to
 \code{character()} if no line ends should be displayed.}
 
 \item{custom_shapes}{If shapes are provided, those are used for leaf_ends
@@ -59,7 +59,7 @@ can be set to one size for the whole plot.}
 colour around the groups.}
 
 \item{leaf_linetype, branch_linetype}{Determines which lines are used for
-leafs and branches. Takes "a" for straight line or "b" for dotted line.}
+leafs and branches. Takes \code{a} for straight line or \code{b} for dotted line.}
 
 \item{line_width}{Width of all lines.}
 
@@ -67,15 +67,15 @@ leafs and branches. Takes "a" for straight line or "b" for dotted line.}
 
 \item{font_size}{Set the font size for the entire plot.}
 
-\item{theme}{See themes in \code{ggplot2}. The theme "bw" was customised to
+\item{theme}{See themes in \code{ggplot2}. The theme \code{bw} was customised to
 look best with dendrograms. Leave empty to use standard ggplot theme.
 Customise the theme by adding \code{+ theme_*} after this function...}
 
 \item{truncate}{Sets the number of characters to which labels should be
 truncated. Value \code{Inf} turns off truncation.}
 
-\item{leaf_labels}{Either "ticks" to display the labels as axis ticks or
-"node" to label nodes directly. Node labels are also take the same colour
+\item{leaf_labels}{Either \code{ticks} to display the labels as axis ticks or
+\code{node} to label nodes directly. Node labels are also take the same colour
 as the leaf the label.}
 
 \item{circular}{Logical. Should the layout be transformed to a circular

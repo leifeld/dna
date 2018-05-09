@@ -4,10 +4,10 @@
 \alias{dna_toREM}
 \title{Convert DNA networks to igraph objects}
 \usage{
-dna_toREM(connection, variable = "organization", ...)
+dna_toREM(x, variable = "organization", ...)
 }
 \arguments{
-\item{connection}{\code{dna_connection} object created by the
+\item{x}{\code{dna_connection} object created by the
 \code{dna_connection} function.}
 
 \item{variable}{The first variable for network construction  (see

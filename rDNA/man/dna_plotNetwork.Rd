@@ -16,75 +16,84 @@ dna_plotNetwork(x, layout = "auto", edges = "link", edge_weight = TRUE,
 \item{x}{A \code{dna_network} object created by the \link{dna_network}
 function.}
 
-\item{layout}{The type of layout to use. Available layouts include "nicely"
-(which tries to choose a suiting layout), "bipartite" (for two-mode
-networks), "circle", "dh", "drl", "fr", "gem", "graphopt", "kk", "lgl",
-"mds", "randomly" and "star". Other layouts might be available (see
-Details).}
+\item{layout}{The type of layout to use. Available layouts include
+\code{"nicely"} (which tries to choose a suiting layout),
+\code{"bipartite"} (for two-mode networks), \code{"circle"}, \code{"dh"},
+\code{"drl"}, \code{"fr"}, \code{"gem"}, \code{"graphopt"}, \code{"kk"},
+\code{"lgl"}, \code{"mds"}, \code{"randomly"} and \code{"star"}. The
+default, \code{"auto"} chooses \code{"nicely"} if \code{x} is a one-mode
+network and \code{"bipartite"} in case of two-mode networks. Other layouts
+might be available (see \link[ggraph]{layout_igraph_auto} for details).}
 
-\item{edges}{When set to "link" (default) straight lines are used to connect
-nodes. Other available options are "arc", "diagonal" and "fan".}
+\item{edges}{When set to \code{"link"} (default) straight lines are used to
+connect nodes. Other available options are \code{"arc"}, \code{"diagonal"}
+and \code{"fan"}.}
 
-\item{edge_weight}{If TRUE, edge weights will be used to determine the width
-of the lines. The minimum and maximum width can be controlled with
+\item{edge_weight}{If \code{TRUE}, edge weights will be used to determine the
+width of the lines. The minimum and maximum width can be controlled with
 \code{edge_size_range}.}
 
 \item{edge_size_range}{Takes a numeric vector with two values: minimum and
 maximum \code{edge_weight}.}
 
 \item{edge_colour}{Provide the name of a colour to use for edges. Defaults to
-"grey".}
+\code{"grey"}.}
 
 \item{edge_alpha}{Takes numeric values to control the alpha-transparency of
-edges. Values lower than 1 make the edges transparent.}
+edges. Possible values range from \code{0} (fully transparent) to \code{1}
+(fully visible).}
 
-\item{node_size}{Takes numeric values to control the size of nodes (defaults
-to 6).}
+\item{node_size}{Takes positive numeric values to control the size of nodes
+(defaults to \code{6}). Usually values between \code{1} and \code{20} look
+best.}
 
-\item{node_attribute}{Takes the name of an attribute in DNA (i.e. "id",
-"value", "color", "type", "alias", "notes" or "frequency") or "group" to
-colour nodes. The option "group" only makes sense if you provide group
-membership information to the \code{groups} argument.}
+\item{node_attribute}{Takes the name of an attribute in DNA (i.e.
+\code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
+\code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
+The option \code{"group"} only makes sense if you provide group membership
+information to the \code{groups} argument.}
 
 \item{node_colours}{There are five options for colouring the nodes: (1.)
-"auto" either leaves the standard ggplot2 colours or uses the colours in
-the DNA database; (2.) "identity" tries to use \code{node_attribute} for
-colours (i.e., if you set \code{node_attribute = "color"} or have provided
-a colour name in another attribute field in DNA) but fails if names are not
-plottable colours; (3) "manual" lets you provide colours via
-custom_colours; (4.) "brewer" automatically selects nice colours from a
+\code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
+leaves the standard ggplot2 colours otherwise; (2.) \code{"identity"} tries
+to use \code{node_attribute} for colours (i.e., if you set
+\code{node_attribute = "color"} or have provided a colour name in another
+attribute field in DNA) but fails if names are not plottable colours; (3)
+\code{"manual"} lets you provide colours via custom_colours; (4.)
+\code{"brewer"} automatically selects nice colours from a
 \code{RColorBrewer} palette (palettes can be set in custom_colours); and
-(5.) "single" uses the first value in custom_colours for all nodes.}
+(5.) \code{"single"} uses the first value in custom_colours for all nodes.}
 
 \item{custom_colours}{Takes custom values to control the node colours. The
 format of the necessary values depends on the setting of
 \code{node_colours}: When \code{node_colours = "manual"}, a character
 object containing the enough colour names for all groups is needed; When
 \code{node_colours = "brewer"} you need to supply a a palette from
-\code{RColorBrewer} (otherwise defaults to "Set3"); When \code{node_colours
-"single"} only a single colour name is needed (defaults to "red").}
+\code{RColorBrewer} (defaults to \code{"Set3"} if \code{custom_colours} is
+left empty); When \code{node_colours "single"} only a single colour name is
+needed (defaults to \code{"red"}).}
 
-\item{node_shape}{Controls the node shape. Available shapes range from 0:25
-and 32:127.}
+\item{node_shape}{Controls the node shape. Available shapes range from
+\code{0:25} and \code{32:127}.}
 
-\item{node_label}{If TRUE, text is added next to nodes to label them. If
-"label", a rectangle is drawn underneath the text, often making it easier
-to read. If FALSE no lables are drawn.}
+\item{node_label}{If \code{TRUE}, text is added next to nodes to label them.
+If \code{"label"}, a rectangle is drawn underneath the text, often making
+it easier to read. If \code{FALSE} no lables are drawn.}
 
-\item{font_size}{Controls the font size of the node labels. The default, 6,
-looks best on many viewers and knitr reports.}
+\item{font_size}{Controls the font size of the node labels. The default,
+\code{6}, looks best on many viewers and knitr reports.}
 
-\item{theme}{Provide the name of a theme. Available options are "graph"
-(which is customised to look best with networks), "bw", "void", "light" and
-"dark". Leave empty to use standard ggplot theme. Choose other themes or
-customise with tools from \link{ggplot2} by adding \code{+ theme_*} after
-this function.}
+\item{theme}{Provide the name of a theme. Available options are
+\code{"graph"} (which is customised to look best with networks),
+\code{"bw"}, \code{"void"}, \code{"light"} and \code{"dark"}. Leave empty
+to use standard ggplot theme. Choose other themes or customise with tools
+from \link{ggplot2} by adding \code{+ theme_*} after this function.}
 
 \item{label_repel}{Controls how far labels will be put from nodes. The exact
 position of text is random but overplotting is avoided.}
 
-\item{label_lines}{If TRUE, draws lines between nodes and labels if labels
-are further away from nodes.}
+\item{label_lines}{If \code{TRUE}, draws lines between nodes and labels if
+labels are further away from nodes.}
 
 \item{truncate}{Sets the number of characters to which labels should be
 truncated. Value \code{Inf} turns off truncation.}
@@ -99,7 +108,7 @@ example).}
 \item{seed}{Numeric value passed to \link{set.seed}. The default is as good
 as any other value but provides that plots are always reproducible.}
 
-\item{show_legend}{If TRUE, displays a legend.}
+\item{show_legend}{If \code{TRUE}, displays a legend.}
 
 \item{...}{Arguments passed on to the layout function (see
 \link[ggraph]{layout_igraph_auto}). If you want to add more plot options

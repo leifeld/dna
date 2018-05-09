@@ -7,8 +7,8 @@
 dna_sample(overwrite = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{overwrite}{Should sample.dna be overwritten if found in the current
-working directory?}
+\item{overwrite}{Logical. Should sample.dna be overwritten if found in the
+current working directory?}
 
 \item{verbose}{Display warning message if file exists in current wd.}
 }

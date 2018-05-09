@@ -16,19 +16,21 @@ dna_barplot(connection, of = "concept", lab.pos = "Agreement",
 \link{dna_connection} function.}
 
 \item{of}{Category over which (dis-)agreement will be plotted. Most useful
-categories are "concept" and "actor" but document categories can be used.}
+categories are \code{"concept"} and \code{"actor"} but document categories
+can be used.}
 
 \item{lab.pos, lab.neg}{Names for (dis-)agreement labels.}
 
 \item{lab}{Determines whether (dis-)agreement labels and title are displayed.}
 
-\item{colours}{If TRUE, statement colours will be used to fill the bars. Not
-possible for all categories.}
+\item{colours}{If \code{TRUE}, statement colours will be used to fill the
+bars. Not possible for all categories.}
 
 \item{fontSize}{Text size in pts.}
 
-\item{barWidth}{Thickness of the bars. bars will touch when set to 1. When
-set to 0.5, space between two bars is the same as thickness of bars.}
+\item{barWidth}{Thickness of the bars. bars will touch when set to \code{1}.
+When set to \code{0.5}, space between two bars is the same as thickness of
+bars.}
 
 \item{axisWidth}{Thickness of the x-axis which separates agreement from
 disagreement.}
@@ -41,8 +43,8 @@ Plot agreement and disagreement towards statements.
 }
 \details{
 This function plots agreement and disagreement towards DNA Statements for
-different categories such as "concept", "person" or "docTitle". The goal is to
-determine the centrality of claims. If, for example, concepts are not very
+different categories such as "concept", "person" or "docTitle". The goal is
+to determine the centrality of claims. If, for example, concepts are not very
 contested, this may mask the extent of polarization with regard to the other
 concepts. It often makes sense to exclude those concept in further analysis.
 }

@@ -24,6 +24,7 @@ Imports:
     grDevices (>= 3.0.0),
     MASS (>= 7.3.0),
     reshape2 (>= 1.4.3),
+    rem (>= 1.2.8),
     scales (>= 0.5.0),
     splitstackshape (>= 1.4.2),
     stats (>= 3.0.0),
