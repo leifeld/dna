@@ -7,8 +7,9 @@
 dna_toREM(x, variable = "organization", ...)
 }
 \arguments{
-\item{x}{\code{dna_connection} object created by the
-\code{dna_connection} function.}
+\item{x}{A \code{dna_connection} object created by the \code{dna_connection}
+function or a \code{dna_eventlist} object created with \code{dna_network}
+(setting \code{networkType = "eventlist"}).}
 
 \item{variable}{The first variable for network construction  (see
 \link{dna_network}). The second one defaults to "concept" but can be
@@ -31,12 +32,18 @@ This function can produce eventSequence objects (see
 dna_downloadJar()
 dna_init("dna-2.0-beta21.jar")
 conn <- dna_connection(dna_sample())
+
+### Convert dna_connection to eventSequence
 eventSequence <- dna_toREM(conn)
 
-### pass on arguments to dna_network
+### Convert network object to eventSequence
+nw <- dna_network(conn, networkType = "eventlist")
+eventSequence <- dna_toREM(nw)
+
+### Pass on arguments to dna_network
 eventSequence2 <- dna_toREM(conn, duplicates = "document")
 
-### pass on arguments to eventSequence
+### Pass on arguments to eventSequence
 eventSequence3 <- dna_toREM(conn, excludeTypeOfDay = "Wednesday")
 }
 }

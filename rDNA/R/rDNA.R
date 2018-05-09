@@ -3344,8 +3344,9 @@ dna_toIgraph <- function(x,
 #' This function can produce eventSequence objects (see
 #' \link[rem]{eventSequence}) used in the package rem from DNA connections.
 #'
-#' @param x \code{dna_connection} object created by the
-#'   \code{dna_connection} function.
+#' @param x A \code{dna_connection} object created by the \code{dna_connection}
+#'   function or a \code{dna_eventlist} object created with \code{dna_network}
+#'   (setting \code{networkType = "eventlist"}).
 #' @param variable The first variable for network construction  (see
 #'   \link{dna_network}). The second one defaults to "concept" but can be
 #'   provided via ... if necessary (see \code{variable2} in
@@ -3363,32 +3364,52 @@ dna_toIgraph <- function(x,
 #' dna_downloadJar()
 #' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
+#'
+#' ### Convert dna_connection to eventSequence
 #' eventSequence <- dna_toREM(conn)
 #'
-#' ### pass on arguments to dna_network
+#' ### Convert network object to eventSequence
+#' nw <- dna_network(conn, networkType = "eventlist")
+#' eventSequence <- dna_toREM(nw)
+#'
+#' ### Pass on arguments to dna_network
 #' eventSequence2 <- dna_toREM(conn, duplicates = "document")
 #'
-#' ### pass on arguments to eventSequence
+#' ### Pass on arguments to eventSequence
 #' eventSequence3 <- dna_toREM(conn, excludeTypeOfDay = "Wednesday")
 #' }
 dna_toREM <- function(x,
                       variable = "organization",
                       ...) {
   dots <- list(...)
-  dots_network <- dots[names(dots) %in% names(formals("dna_network"))]
-  dots_sequence <- dots[names(dots) %in% names(formals("eventSequence"))]
-  dta <- do.call("dna_network",
-                 c(list(x, 
-                        networkType = "eventlist", 
-                        variable1 = variable,
-                        verbose = FALSE
-                 ), dots_network))
+  if (any(grepl("dna_connection", class(x)))) {
+    dots_network <- dots[names(dots) %in% names(formals("dna_network"))]
+    dta <- do.call("dna_network",
+                   c(list(x, 
+                          networkType = "eventlist", 
+                          variable1 = variable,
+                          verbose = FALSE
+                   ), dots_network))
+  } else if (any(grepl("dna_eventlist", class(x)))) {
+    if (any(names(dots) %in% names(formals("dna_network")))) {
+      message("Since x is already a network object, arguments for dna_network() provided through '...' are ignored")
+    }
+    dta <- x
+    args <- c(as.list(attributes(x)$call)[-1],
+              formals("dna_network"))
+    args <- args[!duplicated(names(args))]
+    variable <- args$variable1
+    x <- eval(args$connection)
+  } else {
+    stop("x must be an object of class 'dna_connection' or 'dna_eventlist'")
+  }
   att <- dna_getAttributes(x, variable = variable)
   att$id <- NULL
   dta <- merge(dta, att, by = variable, by.y = "value", all.x = TRUE, all.y = FALSE)
   dta$date <- as.Date(dta$time)
   dta$year  <- as.numeric(format(dta$date, "%Y"))
   dta$weekdays <- weekdays(dta$date)
+  dots_sequence <- dots[names(dots) %in% names(formals("eventSequence"))]
   do.call("eventSequence",
           c(list(dta$date, 
                  dateformat = "%Y-%m-%d", 
