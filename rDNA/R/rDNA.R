@@ -443,10 +443,23 @@ dna_cluster <- function(connection,
 #' }
 #' @export
 dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE) {
+  if (!file.exists(infile)) {
+    stop(if (grepl("/", infile, fixed = TRUE)){
+      paste0("infile \"", infile, "\" could not be located.")
+    } else {
+      paste0(
+        "infile \"",
+        infile,
+        "\" could not be located in working directory \"",
+        getwd(),
+        "\"."
+      )
+    })
+  }
   if (is.null(login) || is.null(password)) {
-    export <- .jnew("dna.export/ExporterR", "sqlite", infile, "", "", verbose)
+    export <- .jnew("dna.export/ExporterR", "sqlite", paste0(getwd(), "/", infile), "", "", verbose)
   } else {
-    export <- .jnew("dna.export/ExporterR", "mysql", infile, login, password, verbose)
+    export <- .jnew("dna.export/ExporterR", "mysql", paste0(getwd(), "/", infile), login, password, verbose)
   }
   obj <- list(dna_connection = export)
   class(obj) <- "dna_connection"
