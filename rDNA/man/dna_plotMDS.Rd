@@ -4,16 +4,20 @@
 \alias{dna_plotMDS}
 \title{Plots an MDS scatterplot from dna.cluster objects}
 \usage{
-dna_plotMDS(clust, draw_polygons = TRUE, alpha = 0.25, jitter = NULL,
-  seed = 12345, label = FALSE, label_size = 3.5, point_size = 1,
-  label_background = FALSE, font_colour = "black", expand = 0,
-  stress = TRUE, truncate = 40, custom_colours = character(),
-  custom_shape = character(), axis_labels = character(),
-  clust_method = "pam", title = "Nonmetric Multidimensional Scaling", ...)
+dna_plotMDS(clust, dimensions = c(1, 2), draw_polygons = TRUE,
+  alpha = 0.25, jitter = NULL, seed = 12345, label = FALSE,
+  label_size = 3.5, point_size = 1, label_background = FALSE,
+  font_colour = "black", expand = 0, stress = TRUE, truncate = 40,
+  custom_colours = character(), custom_shape = character(),
+  axis_labels = character(), clust_method = "pam",
+  title = "Nonmetric Multidimensional Scaling", ...)
 }
 \arguments{
 \item{clust}{A \code{dna_cluster} object created by the \link{dna_cluster}
 function.}
+
+\item{dimensions}{Provide two numeric values to determine which dimensions to
+plot. The default, c(1, 2), will plot dimension 1 and dimension 2.}
 
 \item{draw_polygons}{Logical. Should clusters be highlighted with coloured
 polygons?}
@@ -53,9 +57,9 @@ truncated. Value \code{Inf} turns off truncation.}
 
 \item{axis_labels}{Provide custom axis labels.}
 
-\item{clust_method}{Can be either \code{pam} for \link[cluster]{pam}, \code{"louvain"}
-for \link[igraph]{cluster_louvain} or \code{"inherit"} to use the method provided
-by the call to \link{dna_cluster}.}
+\item{clust_method}{Can be either \code{pam} for \link[cluster]{pam},
+\code{"louvain"} for \link[igraph]{cluster_louvain} or \code{"inherit"} to
+use the method provided by the call to \link{dna_cluster}.}
 
 \item{title}{Title of the MDS plot.}
 
