@@ -2334,64 +2334,67 @@ dna_plotHeatmap <- function(clust,
 #' \link{dna_network} rDNA.
 #'
 #' @param x A \code{dna_network_onemode} object created by the
-#' \link{dna_network} function.
+#'   \link{dna_network} function.
 #' @param axis Takes the name of an attribute in DNA (i.e. \code{"id"},
-#' \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
-#' \code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
-#' The option \code{"group"} only makes sense if you provide group membership
-#' information to the \code{groups} argument.
+#'   \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
+#'   \code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
+#'   The option \code{"group"} only makes sense if you provide group membership
+#'   information to the \code{groups} argument.
+#' @param sort The attribute to use for placing nodes along their axis. Higher
+#'   (or alphabetically later) values are placed closer to the centre. Possible
+#'   attributes are .... Additionally, NULL can be used to place nodes sequentially.
 #' @param axis_label If \code{TRUE}, axis labels are plotted at the end of the
-#' axis and are removed from the legend.
+#'   axis and are removed from the legend.
 #' @param axis_colours There are five options for colouring the axes: (1.)
-#' \code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
-#' leaves the standard ggplot2 colours otherwise; (2.) \code{"identity"} tries
-#' to use \code{axis} for colours (i.e., if you set \code{axis = "color"} or
-#' have provided a colour name in another attribute field in DNA) but fails if
-#' names are not plottable colours; (3) \code{"manual"} lets you provide
-#' colours via custom_colours; (4.) \code{"brewer"} automatically selects nice
-#' colours from a \code{RColorBrewer} palette (palettes can be set in
-#' custom_colours); and (5.) \code{"single"} uses the first value in
-#' custom_colours for all axes
+#'   \code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
+#'   leaves the standard ggplot2 colours otherwise; (2.) \code{"identity"} tries
+#'   to use \code{axis} for colours (i.e., if you set \code{axis = "color"} or
+#'   have provided a colour name in another attribute field in DNA) but fails if
+#'   names are not plottable colours; (3) \code{"manual"} lets you provide
+#'   colours via custom_colours; (4.) \code{"brewer"} automatically selects nice
+#'   colours from a \code{RColorBrewer} palette (palettes can be set in
+#'   custom_colours); and (5.) \code{"single"} uses the first value in
+#'   custom_colours for all axes
 #' @param custom_colours Takes custom values to control the axes colours. The
-#' format of the necessary values depends on the setting of \code{axis}: When
-#' \code{axis = "manual"}, a character object containing the enough colour
-#' names for all groups is needed; When \code{axis = "brewer"} you need to
-#' supply a a palette from \code{RColorBrewer} (otherwise defaults to "Set3");
-#' When \code{axis "single"} only a single colour name is needed (defaults to
-#' "red").
+#'   format of the necessary values depends on the setting of \code{axis}: When
+#'   \code{axis = "manual"}, a character object containing the enough colour
+#'   names for all groups is needed; When \code{axis = "brewer"} you need to
+#'   supply a a palette from \code{RColorBrewer} (otherwise defaults to "Set3");
+#'   When \code{axis "single"} only a single colour name is needed (defaults to
+#'   "red").
 #' @param edge_weight If \code{TRUE}, edge weights will be used to determine
-#' width of the lines between nodes. The minimum and maximum width can be
-#' controlled with \code{edge_size_range}.
+#'   width of the lines between nodes. The minimum and maximum width can be
+#'   controlled with \code{edge_size_range}.
 #' @param edge_size_range Takes a numeric vector with two values: minimum and
-#' maximum \code{edge_weight}.
+#'   maximum \code{edge_weight}.
 #' @param edge_colour Provide the name of a colour to use for edges.
 #' @param edge_alpha Takes numeric values to control the alpha-transparency of
-#' edges. Possible values range from \code{0} (fully transparent) to \code{1}
-#' (fully visible).
+#'   edges. Possible values range from \code{0} (fully transparent) to \code{1}
+#'   (fully visible).
 #' @param node_label If \code{TRUE}, text is added next to nodes to label them.
-#' If "label", a rectangle is drawn underneath the text, often making it
-#' easier to read. If \code{FALSE} no lables are drawn.
+#'   If "label", a rectangle is drawn underneath the text, often making it
+#'   easier to read. If \code{FALSE} no lables are drawn.
 #' @param label_repel Controls how far from the labels will be put from nodes.
-#' The exact position of text is random but overplotting is avoided.
+#'   The exact position of text is random but overplotting is avoided.
 #' @param label_lines If \code{TRUE}, draws lines between nodes and labels if
-#' labels are further away from nodes.
+#'   labels are further away from nodes.
 #' @param font_size Control the font size of the node labels.
 #' @param theme Provide the name of a theme. Available options are
-#' \code{"graph"} (which is customised to look best with networks), "bw",
-#' "void", "light" and \code{"dark"}. Leave empty to use standard ggplot
-#' theme. Choose other themes or customise with tools from \link{ggplot2} by
-#' adding \code{+ theme_*} after this function.
+#'   \code{"graph"} (which is customised to look best with networks), "bw",
+#'   "void", "light" and \code{"dark"}. Leave empty to use standard ggplot
+#'   theme. Choose other themes or customise with tools from \link{ggplot2} by
+#'   adding \code{+ theme_*} after this function.
 #' @param truncate Sets the number of characters to which labels should be
-#' truncated. Value \code{Inf} turns off truncation.
+#'   truncated. Value \code{Inf} turns off truncation.
 #' @param groups Takes a \code{dna_cluster} object or a named list or character
-#' object. In case of a named list or character object, the names must match
-#' the values of \code{variable1} used during network construction (see
-#' example).
+#'   object. In case of a named list or character object, the names must match
+#'   the values of \code{variable1} used during network construction (see
+#'   example).
 #' @param threshold Minimum threshold for which edges should be plotted.
 #' @param seed Numeric value passed to \link{set.seed}. The default is as good
-#' as any other value but provides that plots are always reproducible.
+#'   as any other value but provides that plots are always reproducible.
 #' @param show_legend Logical. Should a legend be displayed.
-#' @param ... Currently not used.
+#' @param ... Arguments passed on to \link[ggraph]{layout_igraph_hive}.
 #'
 #' @examples
 #' \dontrun{
@@ -2407,7 +2410,7 @@ dna_plotHeatmap <- function(clust,
 #' clust <- dna_cluster(conn, cutree.k = 2)
 #' dna_plotHive(nw, axis = "group", groups = clust)
 #'
-#' # Use custom groups from dna_cluster
+#' # Use custom groups
 #' groups <- c("Alliance to Save Energy" = "group 1",
 #' "Energy and Environmental Analysis, Inc." = "group 2",
 #' "Environmental Protection Agency" = "group 3",
@@ -2415,6 +2418,7 @@ dna_plotHeatmap <- function(clust,
 #' "Senate" = "group 2",
 #' "Sierra Club" = "group 3",
 #' "U.S. Public Interest Research Group"= "group 1")
+#'
 #' dna_plotHive(nw, axis = "group", groups = groups)
 #' }
 #'
@@ -2424,6 +2428,7 @@ dna_plotHeatmap <- function(clust,
 #' @importFrom ggrepel geom_label_repel geom_text_repel
 dna_plotHive <- function(x,
                          axis = "type",
+                         sort = "degree",
                          axis_label = FALSE,
                          axis_colours = "auto",
                          custom_colours = character(),
@@ -2467,6 +2472,7 @@ dna_plotHive <- function(x,
                            values = row.names(x))
   
   V(graph)$degree <- degree(graph)
+  V(graph)$frequency <- as.character(att$frequency)[match(att$value, V(graph)$name)]
   
   if (axis == "group") {
     if (!length(groups) > 0) {
@@ -2485,13 +2491,19 @@ dna_plotHive <- function(x,
                              substr(axis, 2, nchar(axis)))
   }
   
+  if ((is.vector(sort, mode = "numeric") |
+      is.vector(sort, mode = "character")) &
+      length(sort) > 1) {
+    V(graph)$sorting <- unname(sort[match(names(sort), V(graph)$name)])
+    sort <- "sorting"
+  }
+  
   if (edge_weight) {
     E(graph)$Weight <- E(graph)$weight
   } else {
     E(graph)$Weight <- NULL
   }
-  
-  lyt <- create_layout(graph, layout = layout, axis = "attribute", sort.by = "degree")
+  lyt <- create_layout(graph, layout = layout, axis = "attribute", sort.by = sort, ...)
   lyt$name_short <- trim(as.character(lyt$name), n = truncate)
   colnames(lyt) <- gsub("attribute", node_attribute, colnames(lyt))
   show_legend <- ifelse(show_legend, # ggplot wants this recoding for some reason
@@ -2563,7 +2575,16 @@ dna_plotHive <- function(x,
   }
   
   # colours
-  if (!axis_colours == "auto") {
+  if (axis_colours == "auto" & !node_attribute == "Membership") {
+    test <- sapply(unique(att[, tolower(node_attribute)]), function(a) {
+      length(unique(att$color[att[, tolower(node_attribute)] == a])) == 1
+    })
+    if (all(test)) {
+      g <- g + 
+        scale_color_manual(labels = att[, tolower(node_attribute)],
+                           values = att$color)
+    }
+  } else {
     if (axis_colours == "identity") {
       g <- g +
         scale_colour_identity()
@@ -2941,17 +2962,17 @@ dna_plotNetwork <- function(x,
   if (is.null(args[["variable1"]])) {
     args[["variable1"]] <- formals("dna_network")[["variable1"]]
   }
-  cols <- dna_getAttributes(eval(args[["connection"]]), statementType = args[["statementType"]],
+  att <- dna_getAttributes(eval(args[["connection"]]), statementType = args[["statementType"]],
                             variable = args[["variable1"]], values = row.names(x))
-  V(graph)$colour <- as.character(cols$color)[match(V(graph)$name, cols$value)]
+  V(graph)$colour <- as.character(att$color)[match(V(graph)$name, att$value)]
   if (node_attribute == "group") {
     V(graph)$attribute <- V(graph)$group
   } else {
-    if (!any(node_attribute %in% colnames(cols))) {
+    if (!any(node_attribute %in% colnames(att))) {
       stop(paste0("Not a possible 'node_attribute'. Please choose one of: 'group', '",
-                  paste(colnames(cols), collapse = "', '"), "'."))
+                  paste(colnames(att), collapse = "', '"), "'."))
     }
-    V(graph)$attribute <- as.character(cols[, node_attribute])[match(V(graph)$name, cols$value)]
+    V(graph)$attribute <- as.character(att[, node_attribute])[match(V(graph)$name, att$value)]
   }
   if (edge_weight) {
     E(graph)$Weight <- E(graph)$weight
@@ -2974,12 +2995,12 @@ dna_plotNetwork <- function(x,
   if (any(grepl("dna_network_twomode", class(x)))) {
     lyt$attribute <- as.character(lyt$attribute)
     if (node_colours == "auto" & node_attribute == "Color") {
-      cols <- dna_getAttributes(eval(args[["connection"]]),
+      att <- dna_getAttributes(eval(args[["connection"]]),
                                 statementType = args[["statementType"]],
                                 variable = "concept")
       lyt$attribute[is.na(lyt$attribute)] <-
-        as.character(cols$color)[match(lyt$name[is.na(lyt$attribute)],
-                                       cols$value)]
+        as.character(att$color)[match(lyt$name[is.na(lyt$attribute)],
+                                       att$value)]
     } else {
       lyt$attribute[is.na(lyt$attribute)] <- "Concept"
     }
@@ -3080,11 +3101,22 @@ dna_plotNetwork <- function(x,
       theme_dark(base_size = font_size)
   }
   # colours ----
-  if (node_colours == "auto" & node_attribute == "Color") {
-    node_colours <- "identity"
-  }
-  if (!node_colours == "auto" | !node_colours == "single") {
-    if (node_colours == "identity") {
+  if (!node_colours == "single") {
+    if (node_colours == "auto" & node_attribute == "Color") {
+      node_colours <- "identity"
+    } 
+    if (node_colours == "auto" & !node_attribute == "Membership") {
+      test <- sapply(unique(att[, tolower(node_attribute)]), function(a) {
+        length(unique(att$color[att[, tolower(node_attribute)] == a])) == 1
+      })
+      if (all(test)) {
+        g <- g + 
+          scale_color_manual(labels = att[, tolower(node_attribute)],
+                             values = att$color)
+      } else {
+        warning("Inconsistent assignment of colours to '", node_attribute, "'.")
+      }
+    } else if (node_colours == "identity") {
       g <- g +
         scale_colour_identity()
     } else if (node_colours == "manual") {
@@ -3529,7 +3561,7 @@ dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
                   cacheOK = FALSE,
                   extra = character())
   } else {
-    warning("Newest DNA JAR file already exists. Try \"force = TRUE\" to download it anyway")
+    warning("Newest DNA JAR file already exists. Try \"force = TRUE\" if you want to download it anyway.")
   }
 }
 

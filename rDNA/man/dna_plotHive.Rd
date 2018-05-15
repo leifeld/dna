@@ -4,8 +4,8 @@
 \alias{dna_plotHive}
 \title{Produces a hive plot from DNA data}
 \usage{
-dna_plotHive(x, axis = "type", axis_label = FALSE, axis_colours = "auto",
-  custom_colours = character(), edge_weight = TRUE,
+dna_plotHive(x, axis = "type", sort = "degree", axis_label = FALSE,
+  axis_colours = "auto", custom_colours = character(), edge_weight = TRUE,
   edge_size_range = c(0.2, 2), edge_colour = "grey", edge_alpha = 1,
   node_label = TRUE, label_repel = 0.5, label_lines = FALSE,
   font_size = 6, theme = "graph", truncate = 30, groups = list(),
@@ -20,6 +20,10 @@ dna_plotHive(x, axis = "type", axis_label = FALSE, axis_colours = "auto",
 \code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
 The option \code{"group"} only makes sense if you provide group membership
 information to the \code{groups} argument.}
+
+\item{sort}{The attribute to use for placing nodes along their axis. Higher
+(or alphabetically later) values are placed closer to the centre. Possible
+attributes are .... Additionally, NULL can be used to place nodes sequentially.}
 
 \item{axis_label}{If \code{TRUE}, axis labels are plotted at the end of the
 axis and are removed from the legend.}
@@ -89,7 +93,7 @@ as any other value but provides that plots are always reproducible.}
 
 \item{show_legend}{Logical. Should a legend be displayed.}
 
-\item{...}{Currently not used.}
+\item{...}{Arguments passed on to \link[ggraph]{layout_igraph_hive}.}
 }
 \description{
 This function is an easy wrapper to create hive plots from one-mode networks
@@ -114,7 +118,7 @@ dna_plotHive(nw)
 clust <- dna_cluster(conn, cutree.k = 2)
 dna_plotHive(nw, axis = "group", groups = clust)
 
-# Use custom groups from dna_cluster
+# Use custom groups
 groups <- c("Alliance to Save Energy" = "group 1",
 "Energy and Environmental Analysis, Inc." = "group 2",
 "Environmental Protection Agency" = "group 3",
@@ -122,6 +126,7 @@ groups <- c("Alliance to Save Energy" = "group 1",
 "Senate" = "group 2",
 "Sierra Club" = "group 3",
 "U.S. Public Interest Research Group"= "group 1")
+
 dna_plotHive(nw, axis = "group", groups = groups)
 }
 
