@@ -4,7 +4,7 @@
 \alias{dna_plotHive}
 \title{Produces a hive plot from DNA data}
 \usage{
-dna_plotHive(x, axis = "type", sort = "degree", axis_label = FALSE,
+dna_plotHive(x, axis = "type", sort_by = "degree", axis_label = FALSE,
   axis_colours = "auto", custom_colours = character(), edge_weight = TRUE,
   edge_size_range = c(0.2, 2), edge_colour = "grey", edge_alpha = 1,
   node_label = TRUE, label_repel = 0.5, label_lines = FALSE,
@@ -21,9 +21,11 @@ dna_plotHive(x, axis = "type", sort = "degree", axis_label = FALSE,
 The option \code{"group"} only makes sense if you provide group membership
 information to the \code{groups} argument.}
 
-\item{sort}{The attribute to use for placing nodes along their axis. Higher
-(or alphabetically later) values are placed closer to the centre. Possible
-attributes are .... Additionally, NULL can be used to place nodes sequentially.}
+\item{sort_by}{Either the name of an attribute to sort by or a name vector
+with values to sort by. Possible values are \code{"frequency"},
+\code{"degree"} (to sort by in-degree of the actors) or \code{NULL} to
+place nodes sequentially. A named vector can be provided, with one value
+per actor (see example).}
 
 \item{axis_label}{If \code{TRUE}, axis labels are plotted at the end of the
 axis and are removed from the legend.}
@@ -113,6 +115,17 @@ conn <- dna_connection(dna_sample())
 # Plot from one-mode network
 nw <- dna_network(conn, networkType = "onemode")
 dna_plotHive(nw)
+
+# Use custom sorting
+sorting <- c("Alliance to Save Energy" = 1,
+             "Energy and Environmental Analysis, Inc." = 2,
+             "Environmental Protection Agency" = 3,
+             "National Petrochemical & Refiners Association" = 4,
+             "Senate" = 5,
+             "Sierra Club" = 6,
+             "U.S. Public Interest Research Group"= 7)
+
+dna_plotHive(nw, sort_by = sorting)
 
 # Use groups from dna_cluster
 clust <- dna_cluster(conn, cutree.k = 2)

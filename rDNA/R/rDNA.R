@@ -2340,9 +2340,11 @@ dna_plotHeatmap <- function(clust,
 #'   \code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
 #'   The option \code{"group"} only makes sense if you provide group membership
 #'   information to the \code{groups} argument.
-#' @param sort The attribute to use for placing nodes along their axis. Higher
-#'   (or alphabetically later) values are placed closer to the centre. Possible
-#'   attributes are .... Additionally, NULL can be used to place nodes sequentially.
+#' @param sort_by Either the name of an attribute to sort by or a name vector
+#'   with values to sort by. Possible values are \code{"frequency"},
+#'   \code{"degree"} (to sort by in-degree of the actors) or \code{NULL} to
+#'   place nodes sequentially. A named vector can be provided, with one value
+#'   per actor (see example).
 #' @param axis_label If \code{TRUE}, axis labels are plotted at the end of the
 #'   axis and are removed from the legend.
 #' @param axis_colours There are five options for colouring the axes: (1.)
@@ -2405,7 +2407,18 @@ dna_plotHeatmap <- function(clust,
 #' # Plot from one-mode network
 #' nw <- dna_network(conn, networkType = "onemode")
 #' dna_plotHive(nw)
-#'
+#' 
+#' # Use custom sorting
+#' sorting <- c("Alliance to Save Energy" = 1,
+#'              "Energy and Environmental Analysis, Inc." = 2,
+#'              "Environmental Protection Agency" = 3,
+#'              "National Petrochemical & Refiners Association" = 4,
+#'              "Senate" = 5,
+#'              "Sierra Club" = 6,
+#'              "U.S. Public Interest Research Group"= 7)
+#' 
+#' dna_plotHive(nw, sort_by = sorting)
+#' 
 #' # Use groups from dna_cluster
 #' clust <- dna_cluster(conn, cutree.k = 2)
 #' dna_plotHive(nw, axis = "group", groups = clust)
@@ -2428,7 +2441,7 @@ dna_plotHeatmap <- function(clust,
 #' @importFrom ggrepel geom_label_repel geom_text_repel
 dna_plotHive <- function(x,
                          axis = "type",
-                         sort = "degree",
+                         sort_by = "degree",
                          axis_label = FALSE,
                          axis_colours = "auto",
                          custom_colours = character(),
@@ -2491,11 +2504,11 @@ dna_plotHive <- function(x,
                              substr(axis, 2, nchar(axis)))
   }
   
-  if ((is.vector(sort, mode = "numeric") |
-      is.vector(sort, mode = "character")) &
-      length(sort) > 1) {
-    V(graph)$sorting <- unname(sort[match(names(sort), V(graph)$name)])
-    sort <- "sorting"
+  if ((is.vector(sort_by, mode = "numeric") |
+      is.vector(sort_by, mode = "character")) &
+      length(sort_by) > 1) {
+    V(graph)$sorting <- unname(sort_by[match(names(sort_by), V(graph)$name)])
+    sort_by <- "sorting"
   }
   
   if (edge_weight) {
@@ -2503,7 +2516,7 @@ dna_plotHive <- function(x,
   } else {
     E(graph)$Weight <- NULL
   }
-  lyt <- create_layout(graph, layout = layout, axis = "attribute", sort.by = sort, ...)
+  lyt <- create_layout(graph, layout = layout, axis = "attribute", sort.by = sort_by, ...)
   lyt$name_short <- trim(as.character(lyt$name), n = truncate)
   colnames(lyt) <- gsub("attribute", node_attribute, colnames(lyt))
   show_legend <- ifelse(show_legend, # ggplot wants this recoding for some reason
