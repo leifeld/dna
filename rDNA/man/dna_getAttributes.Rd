@@ -2,7 +2,7 @@
 % Please edit documentation in R/rDNA.R
 \name{dna_getAttributes}
 \alias{dna_getAttributes}
-\title{Retrieve a dataframe with attributes from a DNA connection}
+\title{Retrieve a dataframe with attributes from a DNA connection.}
 \usage{
 dna_getAttributes(connection, statementType = 1, variable = "organization",
   values = NULL)
@@ -11,42 +11,39 @@ dna_getAttributes(connection, statementType = 1, variable = "organization",
 \item{connection}{A \code{dna_connection} object created by the
 \code{dna_connection} function.}
 
-\item{statementType}{The ID of the statement type (as an integer) or the name 
-of the statement type (as a character object) in which the variable is 
+\item{statementType}{The ID of the statement type (as an integer) or the name
+of the statement type (as a character object) in which the variable is
 defined.}
 
-\item{variable}{The name of the variable for which attribute data should be 
+\item{variable}{The name of the variable for which attribute data should be
 retrieved, for example \code{"organization"} or \code{"concept"}.}
 
-\item{values}{An optional character vector of entries to which the dataframe 
-should be limited. If all values and attributes should be retrieved for a 
-given variable, this can be \code{NULL} or a character vector of length 
+\item{values}{An optional character vector of entries to which the dataframe
+should be limited. If all values and attributes should be retrieved for a
+given variable, this can be \code{NULL} or a character vector of length
 0.}
 }
 \description{
-Retrieve a dataframe with attributes from a DNA connection.
-}
-\details{
-Attributes are metadata for the values saved in a variable. For example, an 
-organization can be associated with a certain color or type. This function 
-serves to retrieve these attributes for the values of a given variable from 
-DNA as a dataframe. The user supplies a DNA connection and specifies the 
-variable for which the attributes should be extracted as well as the 
-statement type in which the variable is defined (by statement type ID). 
-Optionally, a vector of values for which the attributes should be extracted 
-can be specified; this limits the vector to the values specified. The 
-resulting dataframe contains an additional column for the frequency with 
+Attributes are metadata for the values saved in a variable. For example, an
+organization can be associated with a certain color or type. This function
+serves to retrieve these attributes for the values of a given variable from
+DNA as a dataframe. The user supplies a DNA connection and specifies the
+variable for which the attributes should be extracted as well as the
+statement type in which the variable is defined (by statement type ID).
+Optionally, a vector of values for which the attributes should be extracted
+can be specified; this limits the vector to the values specified. The
+resulting dataframe contains an additional column for the frequency with
 which the respective value is used in statements across the database.
 }
 \examples{
 \dontrun{
 dna_init("dna-2.0-beta21.jar")
 conn <- dna_connection(dna_sample())
-attributes <- dna_getAttributes(statementType = 1, 
-                                variable = "organization", 
-                                values = c("Alliance to Save Energy", 
-                                           "Senate", 
-                                           "Sierra Club"))
+attributes <- dna_getAttributes(statementType = 1,
+variable = "organization",
+values = c("Alliance to Save Energy",
+"Senate",
+"Sierra Club"))
 }
 
 }

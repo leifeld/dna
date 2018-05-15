@@ -13,7 +13,7 @@ dna_cluster(connection, variable = "organization", duplicates = "document",
 \item{connection}{A \code{dna_connection} object created by the
 \link{dna_connection} function.}
 
-\item{variable}{The first variable for network construction  (see
+\item{variable}{The first variable for network construction(see
 \link{dna_network}). The second one defaults to \code{"concept"} but can be
 provided via \code{...} if necessary (see \code{variable2} in
 \link{dna_connection}).}
@@ -95,7 +95,7 @@ clust.l <- dna_cluster(conn)
 dna_plotDendro(clust.l)
 dna_plotHeatmap(clust.l)
 dna_plotMDS(clust.l,
-            jitter = c(0.5, 0.7))
+jitter = c(0.5, 0.7))
 
 }
 }

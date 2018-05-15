@@ -14,9 +14,9 @@ dna_getDocuments(connection)
 Retrieve a dataframe with all documents from a DNA connection.
 }
 \details{
-This function creates a dataframe with one row per document and contains 
-columns for the document ID, title, the complete text, and all meta data. The 
-dataframe can then be manually manipulated and returned to the DNA database 
+This function creates a dataframe with one row per document and contains
+columns for the document ID, title, the complete text, and all meta data. The
+dataframe can then be manually manipulated and returned to the DNA database
 through the \link{dna_setDocuments} function.
 }
 \examples{
@@ -26,8 +26,8 @@ conn <- dna_connection(dna_sample())
 documents <- dna_getDocuments(conn)
 documents$title[1] <- "New title for first document"
 documents$notes[3] <- "Added a note via rDNA."
-documents <- documents[, -5]  # Removing the fifth document
-dna_setDocuments(conn, documents, simulate = TRUE)  # apply changes
+documents <- documents[, -5]# Removing the fifth document
+dna_setDocuments(conn, documents, simulate = TRUE)# apply changes
 }
 
 }

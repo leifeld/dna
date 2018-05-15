@@ -14,7 +14,7 @@ dna_addDocument(connection, title = "", text = "", coder = 1,
 
 \item{title}{A character object containing the title of the new document.}
 
-\item{text}{A character object containing the text of the new document. Line 
+\item{text}{A character object containing the text of the new document. Line
 breaks can be included as \code{"\\n"}.}
 
 \item{coder}{An integer value indicating which coder created the document.}
@@ -29,11 +29,11 @@ breaks can be included as \code{"\\n"}.}
 
 \item{type}{A character object containing the type of the document.}
 
-\item{date}{A \code{POSIXct} object containing the date/time stamp of the 
-document. Alternatively, the date/time can be supplied as an integer 
+\item{date}{A \code{POSIXct} object containing the date/time stamp of the
+document. Alternatively, the date/time can be supplied as an integer
 value indicating the milliseconds since the start of 1970-01-01.}
 
-\item{returnID}{Return the ID of the newly created document as a numeric 
+\item{returnID}{Return the ID of the newly created document as a numeric
 value?}
 
 \item{verbose}{Print details?}
@@ -42,12 +42,12 @@ value?}
 Add a new document to the DNA database.
 }
 \details{
-The \code{dna_addDocument} function can add new documents to an existing DNA 
-database. The user supplies a \link{dna_connection} object as well as various 
-details about the document, for example the title, text, date etc. The date 
-can be supplied either as a \link{POSIXct} object or as an integer value 
-containing millisecond since 1970-01-01. The document ID will be 
-automatically generated and can be returned if \code{returnID} is set to 
+The \code{dna_addDocument} function can add new documents to an existing DNA
+database. The user supplies a \link{dna_connection} object as well as various
+details about the document, for example the title, text, date etc. The date
+can be supplied either as a \link{POSIXct} object or as an integer value
+containing millisecond since 1970-01-01. The document ID will be
+automatically generated and can be returned if \code{returnID} is set to
 \code{TRUE}.
 }
 \author{

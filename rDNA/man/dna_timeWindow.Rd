@@ -2,7 +2,7 @@
 % Please edit documentation in R/rDNA.R
 \name{dna_timeWindow}
 \alias{dna_timeWindow}
-\title{Computes for a temporal sequence of networks}
+\title{Computes a temporal sequence of networks}
 \usage{
 dna_timeWindow(connection, timewindow = "days", windowsize = 100,
   facet = "Types", facetValues = character(), method = "modularity",
@@ -51,14 +51,14 @@ dna_init("dna-2.0-beta21.jar")
 conn <- dna_connection(dna_sample())
 
 tW <- dna_timeWindow(connection = conn,
-                     timewindow = "days",
-                     windowsize = 10,
-                     facet = "Authors",
-                     facetValues = c("Bluestein, Joel",
-                                     "Voinovich, George",
-                                     "Whitman, Christine Todd"),
-                     method = "modularity",
-                     verbose = TRUE)
+timewindow = "days",
+windowsize = 10,
+facet = "Authors",
+facetValues = c("Bluestein, Joel",
+"Voinovich, George",
+"Whitman, Christine Todd"),
+method = "modularity",
+verbose = TRUE)
 
 dna_plotTimeWindow(tW, facetValues = c("Bluestein, Joel", "Voinovich, George"))
 }

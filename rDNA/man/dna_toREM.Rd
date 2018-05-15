@@ -11,7 +11,7 @@ dna_toREM(x, variable = "organization", ...)
 function or a \code{dna_eventlist} object created with \code{dna_network}
 (setting \code{networkType = "eventlist"}).}
 
-\item{variable}{The first variable for network construction  (see
+\item{variable}{The first variable for network construction(see
 \link{dna_network}). The second one defaults to "concept" but can be
 provided via ... if necessary (see \code{variable2} in
 \code{dna_connection}).}
@@ -21,7 +21,7 @@ provided via ... if necessary (see \code{variable2} in
 }
 \value{
 A data.frame containing an event sequence for relational event
-  models.
+models.
 }
 \description{
 This function can produce eventSequence objects (see

@@ -39,24 +39,24 @@ dna_init("dna-2.0-beta21.jar")
 conn <- dna_connection(dna_sample())
 
 tW <- dna_timeWindow(connection = conn,
-                     timewindow = "days",
-                     windowsize = 10,
-                     facet = "Authors",
-                     facetValues = c("Bluestein, Joel",
-                                     "Voinovich, George",
-                                     "Whitman, Christine Todd"),
-                     method = "modularity",
-                     excludeValues = list(),
-                     excludeAuthors = character(),
-                     excludeSources = character(),
-                     excludeSections = character(),
-                     excludeTypes = character(),
-                     verbose = TRUE)
+timewindow = "days",
+windowsize = 10,
+facet = "Authors",
+facetValues = c("Bluestein, Joel",
+"Voinovich, George",
+"Whitman, Christine Todd"),
+method = "modularity",
+excludeValues = list(),
+excludeAuthors = character(),
+excludeSources = character(),
+excludeSections = character(),
+excludeTypes = character(),
+verbose = TRUE)
 
 plot <- dna_plotTimeWindow(tW,
-                           facetValues = c("Bluestein, Joel", "Voinovich, George", "all"),
-                           include.y = 1,
-                           rows = 3)
+facetValues = c("Bluestein, Joel", "Voinovich, George", "all"),
+include.y = 1,
+rows = 3)
 plot + theme_bw()
 }
 }

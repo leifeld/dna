@@ -86,7 +86,7 @@ mds <- dna_plotMDS(clust)
 # Flip plot with ggplot2 command
 library("ggplot2")
 mds +
-  coord_flip()
+coord_flip()
 }
 }
 \author{

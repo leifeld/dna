@@ -2,7 +2,7 @@
 % Please edit documentation in R/rDNA.R
 \name{dna_plotFrequency}
 \alias{dna_plotFrequency}
-\title{Plot frequency of statements over time}
+\title{Plots frequency of statements over time.}
 \usage{
 dna_plotFrequency(connection, of = "agreement", timewindow = "days",
   bar = "stacked", ...)
@@ -24,9 +24,6 @@ side-by-side (\code{"side"}).}
 \item{...}{Additional arguments passed to \link{dna_network}.}
 }
 \description{
-Plots frequency of statements over time.
-}
-\details{
 This function plots frequency of statements over time from a DNA connection
 established with \link{dna_connection}. A second variable can be used to
 group the bars in the resulting barplot..
@@ -38,9 +35,9 @@ dna_init("dna-2.0-beta21.jar")
 conn <- dna_connection(dna_sample())
 
 dna_plotFrequency(connection = conn,
-                  of = "agreement",
-                  timewindow = "days",
-                  bar = "stacked")
+of = "agreement",
+timewindow = "days",
+bar = "stacked")
 }
 }
 \author{

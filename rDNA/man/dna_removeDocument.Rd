@@ -11,17 +11,17 @@ dna_removeDocument(connection, id, removeStatements = FALSE,
 \item{connection}{A \code{dna_connection} object created by the
 \link{dna_connection} function.}
 
-\item{id}{An integer value denoting the ID of the document to be removed. The 
+\item{id}{An integer value denoting the ID of the document to be removed. The
 \link{dna_getDocuments} function can be used to look up IDs.}
 
-\item{removeStatements}{The document given by \code{id} may contain 
-statements. If \code{removeStatements = TRUE} is set, these statements 
-are removed along with the respective document. If 
-\code{removeStatements = FALSE} is set, the statements are not deleted, 
+\item{removeStatements}{The document given by \code{id} may contain
+statements. If \code{removeStatements = TRUE} is set, these statements
+are removed along with the respective document. If
+\code{removeStatements = FALSE} is set, the statements are not deleted,
 the document is kept as well, and a message is printed.}
 
-\item{simulate}{Should the changes only be simulated instead of actually 
-applied to the DNA connection and the SQL database? This can help to 
+\item{simulate}{Should the changes only be simulated instead of actually
+applied to the DNA connection and the SQL database? This can help to
 plan more complex recode operations.}
 
 \item{verbose}{Print details on whether the document could be removed?}
@@ -30,8 +30,8 @@ plan more complex recode operations.}
 Removes a document from the database based on its ID.
 }
 \details{
-The user provides a connection object and the ID of an existing statement in 
-the DNA database, and this statement is removed both from memory and from the 
+The user provides a connection object and the ID of an existing statement in
+the DNA database, and this statement is removed both from memory and from the
 SQL database, possibly including any statements contained in the document.
 }
 \author{
