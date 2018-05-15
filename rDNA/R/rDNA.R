@@ -1624,6 +1624,57 @@ dna_toREM <- function(x,
 }
 
 
+#' Convert DNA networks to network objects
+#'
+#' This function can convert objects of class 'dna_network_onemode' and
+#' 'dna_network_twomode' to network objects as used in the \link{network}
+#' package.
+#'
+#' @param x A dna_network.
+#' @param ... Additional arguments passed to \link[network]{as.network.matrix}.
+#'
+#' @export
+#' @importFrom network as.network.matrix
+#'
+#' @examples
+#' \dontrun{
+#' dna_downloadJar()
+#' dna_init("dna-2.0-beta21.jar")
+#' conn <- dna_connection(dna_sample())
+#' nw <- dna_network(conn, networkType = "onemode")
+#' network <- dna_toNetwork(nw)
+#'
+#' library("statnet")
+#' plot(network)
+#' nw <- dna_network(conn, networkType = "twomode")
+#' network <- dna_toNetwork(nw)
+#' plot(network,
+#'      displaylabels = TRUE,
+#'      label.cex = 0.5,
+#'      usearrows = FALSE,
+#'      edge.col = "gray")
+#' }
+dna_toNetwork <- function(x,
+                          ...) {
+  if (any(grepl("dna_network_onemode", class(x)))) {
+    nw <- as.network.matrix(x, 
+                            matrix.type = "adjacency", 
+                            directed = FALSE, 
+                            bipartite = FALSE,
+                            ...)
+  } else if (any(grepl("dna_network_twomode", class(x)))) {
+    nw <- as.network.matrix(x, 
+                            matrix.type = "incidence", 
+                            directed = FALSE, 
+                            bipartite = TRUE,
+                            ...)
+  } else {
+    stop("Only takes objects of class 'dna_network_onemode' or 'dna_network_twomode'.")
+  }
+  return(nw)
+}
+
+
 # Visualisation ----------------------------------------------------------------
 
 #' Plots a dendrogram from dna_cluster objects
