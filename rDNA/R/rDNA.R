@@ -1241,7 +1241,6 @@ dna_network <- function(connection,
     var <- character()
     val <- character()
   }
-  myint <- as.integer(100)
   .jcall(connection$dna_connection,
          "V",
          "rNetwork",

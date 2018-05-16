@@ -1,16 +1,15 @@
 Package: rDNA
 Version: 2.0.80
-Date: 2018-05-15
-Title: R Bindings for the Discourse Network Analyzer
+Date: 2018-05-16
+Title: Discourse Network Analysis in R
 Authors@R: 
     c(person("Philip", "Leifeld", email = "Philip.Leifeld@glasgow.ac.uk", 
     role = c("aut", "cre", "cph")), 
     person("Johannes", "Gruber", email = "j.gruber.1@research.gla.ac.uk", 
     role = "aut"))
 Maintainer: Philip Leifeld <Philip.Leifeld@glasgow.ac.uk>
-Description: Control the Java software Discourse Network Analyzer (DNA) from
-    within R. Network matrices and attributes of nodes can be transferred 
-    directly into R.
+Description: Qualitative content analysis and discourse network analysis 
+    using the Java software Discourse Network Analyzer (DNA).
 Depends:
     R (>= 3.0.0),
     rJava (>= 0.5-0)

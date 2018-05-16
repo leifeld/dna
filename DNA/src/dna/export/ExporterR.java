@@ -848,11 +848,16 @@ public class ExporterR {
 	 * Return time labels corresponding to a time window sequence.
 	 * 
 	 * @return   array of Unix times as seconds since 1/1/1970
+	 * @throws Exception 
 	 */
-	public long[] getTimeWindowTimes() {
+	public long[] getTimeWindowTimes() throws Exception {
 		long[] times = new long[timeWindowMatrices.size()];
-		for (int i = 0; i < timeWindowMatrices.size(); i++) {
-			times[i] = (long) (timeWindowMatrices.get(i).getDate().getTime() / 1000);
+		if (times.length > 0) {
+			for (int i = 0; i < timeWindowMatrices.size(); i++) {
+				times[i] = (long) (timeWindowMatrices.get(i).getDate().getTime() / 1000);
+			}
+		} else {
+			throw new Exception("Not a single network matrix has been generated. Does the time window size exceed the time range?");
 		}
 		return times;
 	}
