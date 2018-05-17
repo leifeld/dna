@@ -2,30 +2,136 @@
 # display version number and date when the package is loaded
 #' @importFrom utils packageDescription
 .onAttach <- function(libname, pkgname) {
-  desc<- packageDescription(pkgname, libname)
+  desc <- packageDescription(pkgname, libname)
   packageStartupMessage(
     'Version: ', desc$Version, '\n',
     'Date:    ', desc$Date, '\n',
-    'Author:  ', 'Philip Leifeld (University of Glasgow)'
+    'Authors: ', 'Philip Leifeld (University of Glasgow),\n',
+    '         Johannes Gruber (University of Glasgow)'
   )
 }
-
-
 # some settings
 dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
-
-
 # more settings which quiet concerns of R CMD check about ggplot and dplyr pipelines
-if(getRversion() >= "2.15.1")utils::globalVariables(c("rn",
+if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
                                                       "cols3",
                                                       "labels_short",
                                                       "leaf",
                                                       "x",
                                                       "y"))
-
-
-# GUI --------------------------------------------------------------------------
-
+# Data access ------------------------------------------------------------------
+#' Establish a database connection
+#'
+#' Connect to a local .dna file or remote mySQL DNA database.
+#'
+#' Before any data can be loaded from a database, a connection with
+#' the database must be established. The \code{dna_connection}
+#' function establishes a database connection and loads the documents
+#' and statements into memory for further processing.
+#'
+#' @param infile The file name of the .dna database or the URL of the mySQL
+#' database to load
+#' @param login The user name for accessing the database (only applicable
+#' to remote mySQL databases; can be \code{NULL} if a local .dna file
+#' is used).
+#' @param password The password for accessing the database (only applicable
+#' to remote mySQL databases; can be \code{NULL} if a local .dna file
+#' is used).
+#' @param verbose Print details the number of documents and statements after
+#' loading the database?
+#'
+#' @examples
+#' \dontrun{
+#' dna_downloadJar()
+#' dna_init("dna-2.0-beta21.jar")
+#' dna_connection(dna_sample())
+#' }
+#' @export
+dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE) {
+  if (!file.exists(infile)) {
+    stop(if (grepl("/", infile, fixed = TRUE)) {
+      paste0("infile \"", infile, "\" could not be located.")
+    } else {
+      paste0(
+        "infile \"",
+        infile,
+        "\" could not be located in working directory \"",
+        getwd(),
+        "\"."
+      )
+    })
+  }
+  if (!grepl("/", infile, fixed = TRUE)) {
+    infile <- paste0(getwd(), "/", infile)
+  }
+  if (is.null(dnaEnvironment[["dnaJarString"]])) {
+    stop("No connection between rDNA and the DNA detected. Maybe dna_init() would help.")
+  }
+  if (is.null(login) || is.null(password)) {
+    export <- .jnew("dna.export/ExporterR", "sqlite", infile, "", "", verbose)
+  } else {
+    export <- .jnew("dna.export/ExporterR", "mysql", infile, login, password, verbose)
+  }
+  obj <- list(dna_connection = export)
+  class(obj) <- "dna_connection"
+  if (verbose == TRUE) {
+    print(obj)
+  }
+  return(obj)
+}
+#' Print the summary of a \code{dna_connection} object
+#'
+#' Show details of a \code{dna_connection} object.
+#'
+#' Print the number of documents and statements to the console after
+#' establishing a DNA connection.
+#'
+#' @param x A \code{dna_connection} object.
+#' @param ... Further options (currently not used).
+#'
+#' @examples
+#' \dontrun{
+#' dna_downloadJar()
+#' dna_init("dna-2.0-beta21.jar")
+#' conn <- dna_connection(dna_sample(), verbose = FALSE)
+#' conn
+#' }
+#' @export
+print.dna_connection <- function(x, ...) {
+  .jcall(x$dna_connection, "V", "rShow")
+}
+#' Download the binary DNA JAR file
+#'
+#' Downloads the newest released DNA JAR file necessary for running
+#' \code{dna_init}.
+#'
+#' This simple function downloads the DNA JAR from the latest release.
+#'
+#' @param filename Name of the downloaded Jar.
+#' @param filepath Download path. Defaults to working directory.
+#' @param force Logical. Should the file be overwritten if it already exists.
+#'
+#' @examples
+#' \dontrun{
+#' dna_downloadJar()
+#' }
+#' @export
+#' @importFrom utils download.file
+dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
+                            filepath = character(),
+                            force = FALSE) {
+  # temporary fix until next release
+  url <- paste0("https://github.com/leifeld/dna/raw/master/manual/dna-2.0-beta21.jar")
+  if (any(!file.exists(paste0(filepath, filename)), force)) {
+    download.file(url = url,
+                  destfile = paste0(filepath, filename),
+                  mode = "wb",
+                  cacheOK = FALSE,
+                  extra = character())
+  } else {
+    warning("Newest DNA JAR file already exists. Try \"force = TRUE\" if you want to download it anyway.")
+  }
+}
 #' Open the DNA GUI
 #'
 #' Start DNA and optionally load a database.
@@ -57,7 +163,7 @@ dna_gui <- function(infile = NULL,
     stop("No connection between rDNA and the DNA detected. Maybe dna_init() would help.")
   }
   if (!file.exists(infile)) {
-    stop(if (grepl("/", infile, fixed = TRUE)){
+    stop(if (grepl("/", infile, fixed = TRUE)) {
       paste0("infile \"", infile, "\" could not be located.")
     } else {
       paste0(
@@ -73,7 +179,7 @@ dna_gui <- function(infile = NULL,
   if (is.null(djs)) {
     stop(paste0(djs, " could not be located in directory ", getwd(), "."))
   }
-  if(!is.null(infile)) {
+  if (!is.null(infile)) {
     if (!file.exists(infile)) {
       stop(
         if (grepl("/", infile, fixed = TRUE)) {
@@ -101,71 +207,6 @@ dna_gui <- function(infile = NULL,
   }
   system(paste0(jp, " -jar -Xmx", memory, "M ", djs, f), intern = !verbose)
 }
-
-
-# Data access ------------------------------------------------------------------
-
-#' Establish a database connection
-#'
-#' Connect to a local .dna file or remote mySQL DNA database.
-#'
-#' Before any data can be loaded from a database, a connection with
-#' the database must be established. The \code{dna_connection}
-#' function establishes a database connection and loads the documents
-#' and statements into memory for further processing.
-#'
-#' @param infile The file name of the .dna database or the URL of the mySQL
-#' database to load
-#' @param login The user name for accessing the database (only applicable
-#' to remote mySQL databases; can be \code{NULL} if a local .dna file
-#' is used).
-#' @param password The password for accessing the database (only applicable
-#' to remote mySQL databases; can be \code{NULL} if a local .dna file
-#' is used).
-#' @param verbose Print details the number of documents and statements after
-#' loading the database?
-#'
-#' @examples
-#' \dontrun{
-#' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
-#' dna_connection(dna_sample())
-#' }
-#' @export
-dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE) {
-  if (!file.exists(infile)) {
-    stop(if (grepl("/", infile, fixed = TRUE)){
-      paste0("infile \"", infile, "\" could not be located.")
-    } else {
-      paste0(
-        "infile \"",
-        infile,
-        "\" could not be located in working directory \"",
-        getwd(),
-        "\"."
-      )
-    })
-  }
-  if (!grepl("/", infile, fixed = TRUE)) {
-    infile <- paste0(getwd(), "/", infile)
-  }
-  if (is.null(dnaEnvironment[["dnaJarString"]])) {
-    stop("No connection between rDNA and the DNA detected. Maybe dna_init() would help.")
-  }
-  if (is.null(login) || is.null(password)) {
-    export <- .jnew("dna.export/ExporterR", "sqlite", infile, "", "", verbose)
-  } else {
-    export <- .jnew("dna.export/ExporterR", "mysql",infile, login, password, verbose)
-  }
-  obj <- list(dna_connection = export)
-  class(obj) <- "dna_connection"
-  if (verbose == TRUE) {
-    print(obj)
-  }
-  return(obj)
-}
-
-
 #' Initialize the connection with DNA
 #'
 #' Establish a connection between \pkg{rDNA} and the DNA software.
@@ -191,7 +232,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' @import rJava
 dna_init <- function(jarfile = "dna-2.0-beta21.jar", memory = 1024) {
   if (!file.exists(jarfile)) {
-    stop(if (grepl("/", jarfile, fixed = TRUE)){
+    stop(if (grepl("/", jarfile, fixed = TRUE)) {
       paste0("jarfile \"", jarfile, "\" could not be located.")
     } else {
       paste0(
@@ -209,10 +250,41 @@ dna_init <- function(jarfile = "dna-2.0-beta21.jar", memory = 1024) {
          force.init = TRUE,
          parameters = paste0("-Xmx", memory, "m"))
 }
-
-
+#' Provides a small sample database
+#'
+#' Copies a small .dna sample file to the current working directory and returns
+#' the location of this newly created file.
+#'
+#' A small sample database to test the functions of rDNA.
+#'
+#' @param overwrite Logical. Should sample.dna be overwritten if found in the
+#' current working directory?
+#' @param verbose Display warning message if file exists in current wd.
+#'
+#' @examples
+#' \dontrun{
+#' dna_downloadJar()
+#' dna_init("dna-2.0-beta21.jar")
+#' dna_connection(dna_sample())
+#' }
+#' @author Johannes Gruber
+#' @export
+dna_sample <- function(overwrite = FALSE,
+                       verbose = TRUE) {
+  if (file.exists(paste0(getwd(), "/sample.dna")) & overwrite == FALSE) {
+    if (verbose) {
+      warning(
+        "Sample file exists in wd. Use overwrite = TRUE to create fresh sample file."
+      )
+    }
+  } else {
+    file.copy(from = system.file("extdata", "sample.dna", package = "rDNA"),
+              to = paste0(getwd(), "/sample.dna"),
+              overwrite = overwrite)
+  }
+  return(paste0(getwd(), "/sample.dna"))
+}
 # Data management --------------------------------------------------------------
-
 #' Add a document to the DNA database
 #'
 #' Add a new document to the DNA database.
@@ -257,7 +329,6 @@ dna_addDocument <- function(connection,
                             date = Sys.time(),
                             returnID = FALSE,
                             verbose = TRUE) {
-  
   if (!is.character(title)) {
     stop("The title must be provided as a character object.")
   }
@@ -293,7 +364,6 @@ dna_addDocument <- function(connection,
   } else {
     stop("The document date must be provided as a POSIXct object or as a numeric value indicating milliseconds since 1970-01-01.")
   }
-  
   id <- .jcall(connection$dna_connection,
                "I",
                "addDocument",
@@ -313,8 +383,6 @@ dna_addDocument <- function(connection,
     return(id)
   }
 }
-
-
 #' Retrieve a dataframe with attributes from a DNA connection.
 #'
 #' Attributes are metadata for the values saved in a variable. For example, an
@@ -357,7 +425,6 @@ dna_getAttributes <- function(connection,
                               statementType = 1,
                               variable = "organization",
                               values = NULL) {
-  
   if ((!is.numeric(statementType) && !is.character(statementType)) || length(statementType) > 1) {
     stop("'statementType' must be a single integer or character value referencing the ID or name of the statement type in which the variable is defined.")
   }
@@ -373,14 +440,12 @@ dna_getAttributes <- function(connection,
   if (!is.character(values)) {
     stop("'values' must be NULL or a (possibly empty) character vector.")
   }
-  
   attributes <- .jcall(connection$dna_connection,
                        "[Ljava/lang/Object;",
                        "getAttributes",
                        statementType,
                        variable,
                        values)
-  
   names(attributes) <- c("id",
                          "value",
                          "color",
@@ -388,13 +453,10 @@ dna_getAttributes <- function(connection,
                          "alias",
                          "notes",
                          "frequency")
-  
   attributes <- lapply(attributes, .jevalArray)
   attributes <- as.data.frame(attributes, stringsAsFactors = FALSE)
   return(attributes)
 }
-
-
 #' Retrieve a dataframe with documents from a DNA connection
 #'
 #' Retrieve a dataframe with all documents from a DNA connection.
@@ -439,8 +501,6 @@ dna_getDocuments <- function(connection) {
   documents <- as.data.frame(documents, stringsAsFactors = FALSE)
   return(documents)
 }
-
-
 #' Removes a document from the database
 #'
 #' Removes a document from the database based on its ID.
@@ -481,8 +541,6 @@ dna_removeDocument <- function(connection,
          simulate,
          verbose)
 }
-
-
 #' Recode documents and metadata in the DNA database
 #'
 #' Recode documents and their metadata in a DNA database.
@@ -541,7 +599,6 @@ dna_setDocuments <- function(connection,
                              removeStatements = FALSE,
                              simulate = TRUE,
                              verbose = TRUE) {
-  
   if (!is.data.frame(documents)) {
     stop("'documents' must be a data.frame similar to the one returned by dna_getDocuments.")
   }
@@ -617,12 +674,10 @@ dna_setDocuments <- function(connection,
       warning("'documents' has 0 rows. Deleting all documents from the database.")
     }
   }
-  
   # replace NAs with -1, which will be replaced by an auto-generated ID in DNA
   if (any(is.na(documents[, 1]))) {
     documents[which(is.na(documents[, 1])), 1] <- as.integer(-1)
   }
-  
   documents <- .jarray(lapply(documents, .jarray))
   .jcall(connection$dna_connection,
          "V",
@@ -632,10 +687,7 @@ dna_setDocuments <- function(connection,
          simulate,
          verbose)
 }
-
-
 # Analysis/Transformation ------------------------------------------------------
-
 #' Cluster network from a DNA connection
 #'
 #' Clustering methods for DNA connections.
@@ -740,7 +792,7 @@ dna_cluster <- function(connection,
                         dimensions = 2,
                         ...) {
   dots <- list(...)
-  if ("normalization" %in% names(dots)){
+  if ("normalization" %in% names(dots)) {
     normalization_onemode <- ifelse(dots[["normalization"]] %in%
                                       c("no", "average", "Jaccard", "cosine"),
                                     dots[["normalization"]],
@@ -754,7 +806,7 @@ dna_cluster <- function(connection,
     normalization_onemode <- "no"
     normalization_twomode <- "no"
   }
-  if ("excludeValues" %in% names(dots)){
+  if ("excludeValues" %in% names(dots)) {
     excludeValues <- dots["excludeValues"][[1]]
     dots["excludeValues"] <- NULL
   } else {
@@ -769,27 +821,27 @@ dna_cluster <- function(connection,
                          excludeValues = excludeValues,
                          verbose = FALSE
                   ), dots))
-  if ("qualifier" %in% names(dots)) { #
+  if ("qualifier" %in% names(dots)) {
     qualifier <- dots[["qualifier"]]
     dots[["qualifier"]] <- NULL
   } else {
     qualifier <- "agreement"
   }
-  if (qualifier %in% names(excludeValues)){
+  if (qualifier %in% names(excludeValues)) {
     excl <- unlist(unname(excludeValues[qualifier]))
     excludeValues[qualifier] <- NULL
   }
   lvls <- unique(lvls[, qualifier])
   if (exists("excl")) {
     lvls <- lvls[!lvls %in% excl]
-    if (length(lvls) < 1){
+    if (length(lvls) < 1) {
       stop (paste0(
         "You excluded all levels of \"", qualifier,
         "\". Computation not possible."
       ))
     }
   }
-  dta <- lapply(lvls, function(l){
+  dta <- lapply(lvls, function(l) {
     excludeVals <- c(stats::setNames(list(lvls[!lvls == l]),
                                      nm = qualifier),
                      excludeValues)
@@ -810,7 +862,7 @@ dna_cluster <- function(connection,
     colnames(nw) <- paste(colnames(nw), "-", l)
     return(nw)
   })
-  dta <- rapply(dta, f = function(x) ifelse(is.nan(x),0,x), how="replace" )
+  dta <- rapply(dta, f = function(x) ifelse(is.nan(x), 0, x), how = "replace" )
   dta <- do.call("cbind", dta)
   dta <- dta[rowSums(dta) > 0, ]
   dta <- dta[, colSums(dta) > 0]
@@ -862,10 +914,10 @@ dna_cluster <- function(connection,
                           "mcquitty",
                           "median",
                           "centroid")) {
-    if (all(dta %in% c(0, 1))){ # test if dta is binary
-      d <-vegan::vegdist(dta, method = "jaccard")
+    if (all(dta %in% c(0, 1))) { # test if dta is binary
+      d <- vegan::vegdist(dta, method = "jaccard")
     } else {
-      d <-dist(dta, method = "euclidean")
+      d <- dist(dta, method = "euclidean")
     }
     hc <- hclust(d, method = clust.method)
     hc$activities <- unname(rowSums(dta))
@@ -903,7 +955,7 @@ dna_cluster <- function(connection,
                 " 'single', 'complete', 'average', 'mcquitty', 'median', 'cen",
                 "troid', 'edge_betweenness', 'leading_eigen', 'walktrap'"))
   }
-  if (!is.null(c(cutree.k, cutree.h))){
+  if (!is.null(c(cutree.k, cutree.h))) {
     hc$group <- cutree(hc, k = cutree.k, h = cutree.h)
   }
   col <- dna_getAttributes(connection = connection,
@@ -943,7 +995,7 @@ dna_cluster <- function(connection,
     nw <- dta
     warning("When variable2 is clustered qualifier aggregations is turned off and instead the transposed collated two-mode matrix is used.")
   }
-  if (any(duplicated(nw))){
+  if (any(duplicated(nw))) {
     . <- data.frame(nw, check.names = FALSE)
     . <- dplyr::group_by_all(.)
     .$rn <- row.names(.)
@@ -952,16 +1004,16 @@ dna_cluster <- function(connection,
     row.names(.) <- .$rowname
     nw <- .[, !colnames(.) == "rowname"]
   }
-  if (all(nw %in% c(0, 1))){
-    d <-vegan::vegdist(nw, method = "jaccard")
+  if (all(nw %in% c(0, 1))) {
+    d <- vegan::vegdist(nw, method = "jaccard")
   } else {
-    d <-dist(nw, method = "euclidean")
+    d <- dist(nw, method = "euclidean")
   }
   if (length(d) < 2) {
     stop("Clustering cannot be performed on less than three actors.")
   }
   mds <- MASS::isoMDS(d, trace = FALSE, k = dimensions)
-  k.best <- which.max(sapply(seq(from = 2, to = nrow(nw) - 1, by = 1), function(i){
+  k.best <- which.max(sapply(seq(from = 2, to = nrow(nw) - 1, by = 1), function(i) {
     cluster::pam(nw, diss = FALSE, k = i)$silinfo$avg.width
   }))
   stress <- mds$stress
@@ -977,14 +1029,60 @@ dna_cluster <- function(connection,
   }
   hc$mds <- data.frame(mds[!duplicated(mds$variable, fromLast = TRUE), ])
   attributes(hc$mds)$stress <- stress
-  hc$call <-match.call()
+  hc$call <- match.call()
   attr(hc, "colours") <- c("attribute1" = attribute1, "attribute2" = attribute2)
   class(hc) <- c("dna_cluster", class(hc))
   hc$network <- dta
   return(hc)
 }
-
-
+#' Print the summary of a \code{dna_cluster} object
+#'
+#' Show details of a \code{dna_cluster} object.
+#'
+#' Print original call to the function, the information from the
+#' \link[stats]{hclust} call and additional variables which can be used for
+#' plotting the object.
+#'
+#' @param x A \code{dna_cluster} object.
+#' @param ... Further options (currently not used).
+#'
+#' @examples
+#' \dontrun{
+#' dna_downloadJar()
+#' dna_init("dna-2.0-beta21.jar")
+#' conn <- dna_connection(dna_sample(), verbose = FALSE)
+#' clust.l <- dna_cluster(conn)
+#' clust.l
+#' }
+#' @export
+#' @importFrom stats na.omit
+print.dna_cluster <- function(x, ...) {
+  if (!is.null(x$call)) {
+    cat("\nCall:\n", deparse(x$call), "\n\n", sep = "")
+  }
+  if (!is.null(x$method)) {
+    cat("Cluster method :", x$method, "\n")
+  }
+  if (!is.null(x$dist.method) & !is.na(x$dist.method)) {
+    cat("Distance :", x$dist.method, "\n")
+  }
+  cat("Number of objects:", length(x$labels), "\n")
+  if (length(na.omit(attr(x, "cut"))) > 0) {
+    cat("Cut at :", paste(gsub("cutree.", "",
+                               names(attr(x, "cut"))), "=",
+                          attr(x, "cut"),
+                          collapse = ", "),
+        "\n")
+  }
+  cat("Used for colours :\n", paste(names(attr(x, "colours")),
+                                    paste0("\"",
+                                           attr(x, "colours"),
+                                           "\"\n"),
+                                    sep = ": ",
+                                    collapse = " "))
+  cat("\n")
+  invisible(x)
+}
 #' Compute and retrieve a network
 #'
 #' Compute and retrieve a network from DNA.
@@ -1202,7 +1300,6 @@ dna_network <- function(connection,
                         invertSections = FALSE,
                         invertTypes = FALSE,
                         verbose = TRUE) {
-  
   # convert single values to vectors by means of duplication if necessary
   if (length(excludeTypes) == 1) {
     excludeTypes <- c(excludeTypes, excludeTypes)
@@ -1274,7 +1371,6 @@ dna_network <- function(connection,
          invertTypes,
          verbose
   )
-  
   if (networkType == "eventlist") {
     objects <- .jcall(connection$dna_connection, "[Ljava/lang/Object;", "getEventListColumnsR", simplify = TRUE)
     columnNames <- .jcall(connection$dna_connection, "[S", "getEventListColumnsRNames", simplify = TRUE)
@@ -1317,8 +1413,6 @@ dna_network <- function(connection,
     return(dta)
   }
 }
-
-
 #' Computes a temporal sequence of networks
 #'
 #' Computes a measure for each network in a temporal sequence of networks.
@@ -1375,28 +1469,27 @@ dna_timeWindow <- function(connection,
                            facetValues = character(),
                            method = "modularity",
                            verbose = 2,
-                           ...) { #passed on to dna_network
-  
+                           ...) {
   dots <- list(...)
-  if("excludeAuthors" %in% names(dots)){
+  if ("excludeAuthors" %in% names(dots)) {
     excludeAuthors <- unname(unlist(dots["excludeAuthors"]))
     dots["excludeAuthors"] <- NULL
   } else {
     excludeAuthors <- character()
   }
-  if("excludeSources" %in% names(dots)){
+  if ("excludeSources" %in% names(dots)) {
     excludeSources <- unname(unlist(dots["excludeSources"]))
     dots["excludeSources"] <- NULL
   } else {
     excludeSources <- character()
   }
-  if("excludeSections" %in% names(dots)){
+  if ("excludeSections" %in% names(dots)) {
     excludeSections <- unname(unlist(dots["excludeSections"]))
     dots["excludeSections"] <- NULL
   } else {
     excludeSections <- character()
   }
-  if("excludeTypes" %in% names(dots)){
+  if ("excludeTypes" %in% names(dots)) {
     excludeTypes <- unname(unlist(dots["excludeTypes"]))
     dots["excludeTypes"] <- NULL
   } else {
@@ -1407,37 +1500,37 @@ dna_timeWindow <- function(connection,
   if (facet == "Sources") {Sources <- facetValues} else {Sources <- character()}
   if (facet == "Sections") {Sections <- facetValues} else {Sections <- character()}
   if (facet == "Types") {Types <- facetValues} else {Types <- character()}
-  if (any(Authors %in% excludeAuthors)){
+  if (any(Authors %in% excludeAuthors)) {
     cat(paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "),
         "is found in both \"Authors\" and \"excludeAuthors\".",
         paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "),
         " was removed from \"excludeAuthors\".\n")
     excludeAuthors <- excludeAuthors[!excludeAuthors %in% Authors]
   }
-  if (any(Sources %in% excludeSources)){
+  if (any(Sources %in% excludeSources)) {
     cat(paste0("\"", Sources[Sources %in% excludeSources], "\"", collapse = ", "),
         "is found in both \"Sources\" and \"excludeSources\".",
         paste0("\"", Sources[Sources %in% excludeSources], "\"", collapse = ", "),
         " was removed from \"excludeSources\".\n")
     excludeSources <- excludeSources[!excludeSources %in% Sources]
   }
-  if (any(Sections %in% excludeSections)){
+  if (any(Sections %in% excludeSections)) {
     cat(paste0("\"", Sections[Sections %in% excludeSections], "\"", collapse = ", "),
         "is found in both \"Sections\" and \"excludeSections\".",
         paste0("\"", Sections[Sections %in% excludeSections], "\"", collapse = ", "),
         " was removed from \"excludeSections\".\n")
     excludeSections <- excludeSections[!excludeSections %in% Sections]
   }
-  if (any(Types %in% excludeTypes)){
+  if (any(Types %in% excludeTypes)) {
     cat(paste0("\"", Types[Types %in% excludeTypes], "\"", collapse = ", "),
         "is found in both \"Types\" and \"excludeTypes\".",
         paste0("\"", Types[Types %in% excludeTypes], "\"", collapse = ", "),
         " was removed from \"excludeTypes\".\n")
     excludeTypes <- excludeTypes[!excludeTypes %in% Types]
   }
-  if (method == "modularity"){
-    mod.m <- lapply(facetValues, function(x){
-      if (verbose|verbose == 2){cat("Calculating Type =", facetValues[facetValues %in% x], "\n")}
+  if (method == "modularity") {
+    mod.m <- lapply(facetValues, function(x) {
+      if (verbose | verbose == 2) {cat("Calculating Type =", facetValues[facetValues %in% x], "\n")}
       nw <- do.call(dna_network,
                     c(list(connection = connection,
                            networkType = "onemode",
@@ -1458,19 +1551,19 @@ dna_timeWindow <- function(connection,
       return(mod.m)
     })
   } else {
-    if(!exists(method, mode = 'function')){
+    if (!exists(method, mode = "function")) {
       stop(
         paste0("\"", method, "\" is not a valid function.")
       )
     } else {
-      if (length(do.call(method, list(matrix(c(1,2,3, 11,12,13), nrow = 2, ncol = 3))))!=1){
+      if (length(do.call(method, list(matrix(c(1, 2, 3, 11, 12, 13), nrow = 2, ncol = 3))))!=1) {
         stop(
           paste0("\"", method, "\" is not a valid method for dna_timeWindow.\n dna_timeWindow needs a
                  function which provides exactly one value when applied to an object of class matrix.
                  See ?dna_timeWindow for help.")
           )} else {
-            mod.m <- lapply(Types, function(x){
-              if (verbose|verbose == 2){cat("Calculating Type =", Types[Types %in% x], "\n")}
+            mod.m <- lapply(Types, function(x) {
+              if (verbose | verbose == 2) {cat("Calculating Type =", Types[Types %in% x], "\n")}
               nw <- do.call(dna_network,
                             c(list(connection = connection,
                                    networkType = "onemode",
@@ -1495,11 +1588,8 @@ dna_timeWindow <- function(connection,
   mod.df <- do.call("rbind", mod.m)
   class(mod.df) <- c("data.frame", "dna_timeWindow", paste(method))
   return(mod.df)
-  }
-
-
+}
 # Transformation ---------------------------------------------------------------
-
 #' Convert DNA networks to igraph objects
 #'
 #' This function can convert objects of class 'dna_network_onemode' or
@@ -1540,8 +1630,6 @@ dna_toIgraph <- function(x,
   }
   return(graph)
 }
-
-
 #' Convert DNA networks to igraph objects
 #'
 #' This function can produce eventSequence objects (see
@@ -1610,7 +1698,7 @@ dna_toREM <- function(x,
   att$id <- NULL
   dta <- merge(dta, att, by = variable, by.y = "value", all.x = TRUE, all.y = FALSE)
   dta$date <- as.Date(dta$time)
-  dta$year<- as.numeric(format(dta$date, "%Y"))
+  dta$year <- as.numeric(format(dta$date, "%Y"))
   dta$weekdays <- weekdays(dta$date)
   dots_sequence <- dots[names(dots) %in% names(formals("eventSequence"))]
   do.call("eventSequence",
@@ -1621,8 +1709,6 @@ dna_toREM <- function(x,
                  sortData = TRUE
           ), dots_sequence))
 }
-
-
 #' Convert DNA networks to network objects
 #'
 #' This function can convert objects of class 'dna_network_onemode' and
@@ -1656,15 +1742,15 @@ dna_toREM <- function(x,
 dna_toNetwork <- function(x,
                           ...) {
   if (any(grepl("dna_network_onemode", class(x)))) {
-    nw <- as.network.matrix(x, 
-                            matrix.type = "adjacency", 
-                            directed = FALSE, 
+    nw <- as.network.matrix(x,
+                            matrix.type = "adjacency",
+                            directed = FALSE,
                             bipartite = FALSE,
                             ...)
   } else if (any(grepl("dna_network_twomode", class(x)))) {
-    nw <- as.network.matrix(x, 
-                            matrix.type = "incidence", 
-                            directed = FALSE, 
+    nw <- as.network.matrix(x,
+                            matrix.type = "incidence",
+                            directed = FALSE,
                             bipartite = TRUE,
                             ...)
   } else {
@@ -1672,10 +1758,7 @@ dna_toNetwork <- function(x,
   }
   return(nw)
 }
-
-
 # Visualisation ----------------------------------------------------------------
-
 #' Plots a dendrogram from dna_cluster objects
 #'
 #' Plots a dendrogram from objects derived via \link{dna_cluster}.
@@ -1779,7 +1862,6 @@ dna_plotDendro <- function(clust,
                                            strtrim(clust$labels, width = truncate)),
                                       "..."),
                                clust$labels)
-  
   # format as dendrogram
   hierarchy <- stats::as.dendrogram(clust)
   # Add colours
@@ -1797,7 +1879,6 @@ dna_plotDendro <- function(clust,
       } else {
         attr(x, "Colour2") <- ""
       }
-      
       attr(x, "Activity") <- clust$activities[clust$order[match(as.character(labels(x)),
                                                                 clust$labels)]]
       attr(x, "labels_short") <- clust$labels_short[match(as.character(labels(x)),
@@ -1831,46 +1912,44 @@ dna_plotDendro <- function(clust,
   dg <- ggraph(graph = hierarchy,
                layout = "dendrogram",
                circular = circular)
-  
   # Recode show_legend
   show_legend <- ifelse(show_legend, # ggplot wants this recoding for some reason
                         NA,
                         show_legend)
-  
   # shape
-  if (shape == "elbows"){
+  if (shape == "elbows") {
     dg <- dg +
       geom_edge_elbow(aes_string(colour = "cols1",
                                  edge_linetype = "linetype"),
-                      show.legend = show_legend ,
+                      show.legend = show_legend,
                       width = line_width,
                       alpha = line_alpha)
-  } else if (shape == "link"){
+  } else if (shape == "link") {
     dg <- dg +
       geom_edge_link(aes_string(colour = "cols1",
                                 edge_linetype = "linetype"),
-                     show.legend = show_legend ,
+                     show.legend = show_legend,
                      width = line_width,
                      alpha = line_alpha)
-  } else if (shape == "diagonal"){
+  } else if (shape == "diagonal") {
     dg <- dg +
       geom_edge_diagonal(aes_string(colour = "cols1",
                                     edge_linetype = "linetype"),
                          show.legend = show_legend,
                          width = line_width,
                          alpha = line_alpha)
-  } else if (shape == "arc"){
+  } else if (shape == "arc") {
     dg <- dg +
       geom_edge_arc(aes_string(colour = "cols1",
                                edge_linetype = "linetype"),
-                    show.legend = show_legend ,
+                    show.legend = show_legend,
                     width = line_width,
                     alpha = line_alpha)
-  } else if (shape == "fan"){
+  } else if (shape == "fan") {
     dg <- dg +
       geom_edge_fan(aes_string(colour = "cols1",
                                edge_linetype = "linetype"),
-                    show.legend = show_legend ,
+                    show.legend = show_legend,
                     width = line_width,
                     alpha = line_alpha)
   }
@@ -1924,7 +2003,6 @@ dna_plotDendro <- function(clust,
     dg <- dg +
       scale_edge_colour_manual(values = "black", guide = "none")
   }
-  
   # theme
   if (theme == "bw") {
     dg <- dg +
@@ -1978,14 +2056,12 @@ dna_plotDendro <- function(clust,
                            hjust = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
                                           1.05,
                                           -0.05),
-                           
                            colour = cols3),
                        size = (font_size / .pt),
                        show.legend = FALSE) +
         expand_limits(x = c(-2.3, 2.3), y = c(-2.3, 2.3))
     }
   }
-  
   # line ends
   if (length(leaf_ends) > 0) {
     if (is.na(show_legend)) {
@@ -1998,7 +2074,7 @@ dna_plotDendro <- function(clust,
     } else {
       legendname <- waiver()
     }
-    if (activity){
+    if (activity) {
       dg <- dg +
         geom_node_point(aes_string(filter = "leaf",
                                    colour = "cols3",
@@ -2015,7 +2091,6 @@ dna_plotDendro <- function(clust,
                         show.legend = show_legend,
                         alpha = ends_alpha)
     }
-    
     # custom_shapes
     if (length(custom_shapes) > 0) {
       dg <- dg +
@@ -2026,19 +2101,17 @@ dna_plotDendro <- function(clust,
         scale_shape_discrete(name = legendname)
     }
   }
-  
   # rectangles
   if (length(rectangles) > 0 & !circular) {
     rect <- data.frame(label = clust$labels_short[clust$order],
                        cluster = clust$group[clust$order],
                        y = min(clust$height),
-                       x = seq_along(clust$labels_short)-1)
+                       x = seq_along(clust$labels_short) - 1)
     rect <- aggregate(x~cluster, rect, range)
     rect$xmin <- rect$x[, 1] - 0.25
     rect$xmax <- rect$x[, 2] + 0.25
     rect$ymax <- min(clust$height) + max(range(clust$height)) / 10
     rect$ymin <- 0 - max(range(clust$height)) / 100
-    
     dg <- dg +
       geom_rect(data = rect,
                 aes_string(xmin = "xmin",
@@ -2048,10 +2121,8 @@ dna_plotDendro <- function(clust,
                 color = rectangles,
                 fill = NA)
   }
-  
   # color node text and points
   if (length(leaf_colours) > 0) {
-    
     if (colours == "identity") {
       dg <- dg +
         scale_colour_identity(guide = "none")
@@ -2074,8 +2145,6 @@ dna_plotDendro <- function(clust,
   }
   return(dg)
 }
-
-
 #' Plots a heatmap from dna_cluster objects
 #'
 #' Plots a heatmap with dendrograms from objects derived via \link{dna_cluster}.
@@ -2140,7 +2209,7 @@ dna_plotHeatmap <- function(clust,
                             show_legend = TRUE,
                             ...) {
   nw <- clust[["network"]]
-  # construct column labels----
+  # construct column labels
   pn <- colnames(nw)
   if (max(sapply(regmatches(pn, gregexpr("-", pn)), length)) == 0) {
     pn <- ""
@@ -2154,16 +2223,16 @@ dna_plotHeatmap <- function(clust,
   colnames(nw) <- trim(colnames(nw),
                        truncate - 3)
   # test if truncation created duplicated colnames
-  if(any(unlist(sapply(unique(pn), function(i){
+  if (any(unlist(sapply(unique(pn), function(i) {
     duplicated(colnames(nw)[pn == i])
-  })))){
+  })))) {
     warning(paste0("After truncation, some column labels are now exactly the same.",
                    "Those are followed by # + number now. Consider increasing the 'truncation' value."))
     colnames(nw) <- paste0("L", pn, colnames(nw))
     d <- grepl("\\...$", colnames(nw))
     colnames(nw) <- make.unique(sub("\\...$", "", colnames(nw)), sep = " #")
     colnames(nw)[duplicated(sub(" #[[:digit:]]$", "", colnames(nw)))] <-
-      sapply(colnames(nw)[duplicated(sub(" #[[:digit:]]$", "", colnames(nw)))], function(i){
+      sapply(colnames(nw)[duplicated(sub(" #[[:digit:]]$", "", colnames(nw)))], function(i) {
         d <- paste0("#", gsub(".*#", "", i))
         w <- sub(" #[[:digit:]]$", "", i)
         w <- trim(w,
@@ -2180,23 +2249,22 @@ dna_plotHeatmap <- function(clust,
                            pn)
   }
   # convert qualifier levels
-  if (length(qualifierLevels) > 0){
+  if (length(qualifierLevels) > 0) {
     for (l in seq_len(length(qualifierLevels))) {
       colnames(nw) <- gsub(paste0(names(qualifierLevels[l]), "$"),
                            qualifierLevels[l],
                            colnames(nw))
     }
   }
-  # truncate row labels----
+  # truncate row labels
   row.names(nw) <- trim(row.names(nw),
                         truncate)
-  
-  if(any(duplicated(row.names(nw)))){
+  if (any(duplicated(row.names(nw)))) {
     warning(paste0("After truncation, some row labels are now exactly the same. Those are followed by",
                    " # + number now. Consider increasing the 'truncation' value."))
-    row.names(nw) <- paste0(make.names(sub("...$", "", row.names(nw)), unique=TRUE), "...")
+    row.names(nw) <- paste0(make.names(sub("...$", "", row.names(nw)), unique = TRUE), "...")
   }
-  # re-construct clust objects----
+  # re-construct clust objects
   args <- c(as.list(clust$call)[-1],
             formals(dna_cluster)[-1])
   args <- args[!duplicated(names(args))]
@@ -2217,17 +2285,14 @@ dna_plotHeatmap <- function(clust,
                    "\"ward.D2\" instead."))
     args$clust.method <- "ward.D2"
   }
-  
-  if (all(t(nw) %in% c(0, 1))){
-    d <-vegan::vegdist(t(nw), method = "jaccard")
+  if (all(t(nw) %in% c(0, 1))) {
+    d <- vegan::vegdist(t(nw), method = "jaccard")
   } else {
-    d <-dist(t(nw), method = "euclidean")
+    d <- dist(t(nw), method = "euclidean")
   }
   dend_x <- hclust(d, method = args$clust.method)
-  
   dend_x$activities <- unname(rowSums(t(nw)))
-  
-  # plot clust y ----
+  # plot clust y
   dots <- list(...)
   if (!"leaf_colours" %in% names(dots)) {
     dots <- c(dots,
@@ -2248,7 +2313,7 @@ dna_plotHeatmap <- function(clust,
     scale_x_continuous(expand = c(0.0, 0.5, 0.0, 0.5)) +
     coord_flip() +
     scale_y_reverse()
-  # plot clust x ----
+  # plot clust x
   if (dendro_x) {
     plt_dendr_x <- do.call(dna_plotDendro,
                            c(list(clust = dend_x,
@@ -2256,13 +2321,13 @@ dna_plotHeatmap <- function(clust,
                              dots)) +
       scale_x_continuous(expand = c(0.0, 0.5, 0.0, 0.5))
   }
-  ## heatmap ----
+  ## heatmap
   df <- reshape2::melt(nw[dend_y$order, dend_x$order])
   df$posy <- seq_len(length(levels(df$Var1)))
   df$posx <- as.vector(sapply(seq_len(length(levels(df$Var2))),
                               rep,
                               length(levels(df$Var1))))
-  plt_hmap <- ggplot(data = df , aes_string(x = "posx",
+  plt_hmap <- ggplot(data = df, aes_string(x = "posx",
                                             y = "posy",
                                             fill = "value")) +
     geom_tile(show.legend = show_legend) +
@@ -2287,27 +2352,27 @@ dna_plotHeatmap <- function(clust,
                        position = "right",
                        expand = c(0, 0))
   if (square) plt_hmap <- plt_hmap + coord_fixed(expand = FALSE)
-  ### display values ----
+  ### display values
   if (values) {
     plt_hmap <- plt_hmap +
       geom_text(aes_string(label = "value"))
   }
-  ## colour heatmap ----
+  ## colour heatmap
   if (length(colours) > 0) {
     if (colours == "brewer") {
       if (length(custom_colours) < 1) custom_colours <- 2
       plt_hmap <- plt_hmap +
         scale_fill_distiller(palette = custom_colours,
                              direction = 1)
-    } else if (colours == "gradient"){
-      if (length(custom_colours) < 1){
+    } else if (colours == "gradient") {
+      if (length(custom_colours) < 1) {
         custom_colours <- c("gray", "blue")
       }
       plt_hmap <- plt_hmap +
         scale_fill_gradientn(colours = custom_colours)
     }
   }
-  ### merge plots---
+  # merge plots
   g <- insert_yaxis_grob(plot = plt_hmap,
                          plt_dendr_y,
                          width = grid::unit(dendro_y_size, "null"),
@@ -2321,8 +2386,6 @@ dna_plotHeatmap <- function(clust,
   g <- ggdraw(plot = g)
   return(g)
 }
-
-
 #' Produces a hive plot from DNA data
 #'
 #' This function is an easy wrapper to create hive plots from one-mode networks
@@ -2406,7 +2469,7 @@ dna_plotHeatmap <- function(clust,
 #' # Plot from one-mode network
 #' nw <- dna_network(conn, networkType = "onemode")
 #' dna_plotHive(nw)
-#' 
+#'
 #' # Use custom sorting
 #' sorting <- c("Alliance to Save Energy" = 1,
 #'              "Energy and Environmental Analysis, Inc." = 2,
@@ -2415,9 +2478,9 @@ dna_plotHeatmap <- function(clust,
 #'              "Senate" = 5,
 #'              "Sierra Club" = 6,
 #'              "U.S. Public Interest Research Group"= 7)
-#' 
+#'
 #' dna_plotHive(nw, sort_by = sorting)
-#' 
+#'
 #' # Use groups from dna_cluster
 #' clust <- dna_cluster(conn, cutree.k = 2)
 #' dna_plotHive(nw, axis = "group", groups = clust)
@@ -2468,7 +2531,6 @@ dna_plotHive <- function(x,
   if (!is.null(threshold)) {
     graph <- delete.edges(graph, which(!E(graph)$weight >= threshold))
   }
-  
   # colour and attribute
   args <- c(as.list(attributes(x)$call)[-1])
   args["networkType"] <- "eventlist"
@@ -2482,10 +2544,8 @@ dna_plotHive <- function(x,
                            statementType = args[["statementType"]],
                            variable = args[["variable1"]],
                            values = row.names(x))
-  
   V(graph)$degree <- degree(graph)
   V(graph)$frequency <- as.character(att$frequency)[match(att$value, V(graph)$name)]
-  
   if (axis == "group") {
     if (!length(groups) > 0) {
       groups <- rep("Group 0", length(V(graph)$name))
@@ -2502,14 +2562,12 @@ dna_plotHive <- function(x,
     node_attribute <- paste0(toupper(substr(axis, 1, 1)),
                              substr(axis, 2, nchar(axis)))
   }
-  
   if ((is.vector(sort_by, mode = "numeric") |
       is.vector(sort_by, mode = "character")) &
       length(sort_by) > 1) {
     V(graph)$sorting <- unname(sort_by[match(names(sort_by), V(graph)$name)])
     sort_by <- "sorting"
   }
-  
   if (edge_weight) {
     E(graph)$Weight <- E(graph)$weight
   } else {
@@ -2544,7 +2602,6 @@ dna_plotHive <- function(x,
                      label = FALSE,
                      show.legend = show_legend)
   }
-  
   # add labels
   if ((is.logical(node_label) & node_label == TRUE) | node_label == "label") {
     if (node_label == "label") {
@@ -2553,8 +2610,8 @@ dna_plotHive <- function(x,
                                     label = "name_short"),
                          point.padding = label_repel,
                          box.padding = label_repel,
-                         fontface = 'bold',
-                         size = font_size/.pt,
+                         fontface = "bold",
+                         size = font_size / .pt,
                          min.segment.length = ifelse(label_lines, 0.5, Inf))
     } else {
       g <- g +
@@ -2562,15 +2619,14 @@ dna_plotHive <- function(x,
                                    label = "name_short"),
                         point.padding = label_repel,
                         box.padding = label_repel,
-                        fontface = 'bold',
-                        size = font_size/.pt,
+                        fontface = "bold",
+                        size = font_size / .pt,
                         min.segment.length = ifelse(label_lines, 0.5, Inf))
     }
   }
-  
   # theme
   if (theme == "graph") {
-    g <- g+
+    g <- g +
       theme_graph(base_family = "", base_size = font_size)
   } else if (theme == "bw") {
     g <- g +
@@ -2585,14 +2641,13 @@ dna_plotHive <- function(x,
     g <- g +
       theme_dark(base_size = font_size)
   }
-  
   # colours
   if (axis_colours == "auto" & !node_attribute == "Membership") {
     test <- sapply(unique(att[, tolower(node_attribute)]), function(a) {
       length(unique(att$color[att[, tolower(node_attribute)] == a])) == 1
     })
     if (all(test)) {
-      g <- g + 
+      g <- g +
         scale_color_manual(labels = att[, tolower(node_attribute)],
                            values = att$color)
     }
@@ -2620,8 +2675,6 @@ dna_plotHive <- function(x,
   }
   return(g)
 }
-
-
 #' Plots an MDS scatterplot from dna.cluster objects
 #'
 #' Plots a scatterplot with the results of non-metric multidimensional scaling
@@ -2732,7 +2785,7 @@ dna_plotMDS <- function(clust,
     geom_point(aes_string(colour = "cluster",
                           shape = "cluster"),
                size = point_size)
-  if (draw_polygons){
+  if (draw_polygons) {
     polygons <- lapply(unique(df$cluster), function(i) {
       df[df$cluster == i, ][grDevices::chull(x = df[df$cluster == i, ][[dim1]],
                                              y = df[df$cluster == i, ][[dim2]]), ]
@@ -2763,8 +2816,12 @@ dna_plotMDS <- function(clust,
       g <- g +
         scale_y_continuous(limits = c(min(df[[dim2]]) - expand[2],
                                       max(df[[dim2]]) + expand[2]))
-    } else {expand[2] <- 0}
-  } else {expand[1] <- 0}
+    } else {
+      expand[2] <- 0
+      }
+  } else {
+    expand[1] <- 0
+    }
   if (length(custom_colours) > 0) {
     g <- g +
       scale_color_manual(values = custom_colours) +
@@ -2789,12 +2846,10 @@ dna_plotMDS <- function(clust,
                     label = paste("Stress:", round(attributes(df)$stress, digits = 6)))
     g <- g +
       geom_text(data = a, aes(x = x, y = y, label = label),
-                inherit.aes = FALSE, hjust=1)
+                inherit.aes = FALSE, hjust = 1)
   }
   return(g)
 }
-
-
 #' Plots a network from DNA data
 #'
 #' This function is an easy wrapper to create network plots from one- and
@@ -2945,7 +3000,7 @@ dna_plotNetwork <- function(x,
                             seed = 12345,
                             show_legend = TRUE,
                             ...) {
-  # Make igraph object----
+  # Make igraph object
   set.seed(seed)
   if (any(grepl("dna_network_twomode", class(x)))) {
     if (layout == "auto") {
@@ -2954,8 +3009,7 @@ dna_plotNetwork <- function(x,
     }
   }
   graph <- dna_toIgraph(x)
-  
-  # Groups-----
+  # Groups-
   if (!length(groups) > 0) {
     groups <- rep("Group 0", length(V(graph)$name))
     names(groups) <- V(graph)$name
@@ -2964,8 +3018,7 @@ dna_plotNetwork <- function(x,
   } else if (any(grepl("dna_cluster", class(groups)))) {
     V(graph)$group <- groups$group[match(V(graph)$name, groups$labels)]
   }
-  
-  # colour and attribute----
+  # colour and attribute
   args <- c(as.list(attributes(x)$call)[-1])
   args["networkType"] <- "eventlist"
   if (is.null(args[["statementType"]])) {
@@ -2994,7 +3047,7 @@ dna_plotNetwork <- function(x,
   if (!is.null(threshold)) {
     graph <- delete.edges(graph, which(!E(graph)$weight >= threshold))
   }
-  # start the plot ----
+  # start the plot
   lyt <- create_layout(graph, layout = layout, ...)
   if (node_attribute == "group") {
     node_attribute <- "Membership"
@@ -3003,7 +3056,6 @@ dna_plotNetwork <- function(x,
                              substr(node_attribute, 2, nchar(node_attribute)))
   }
   lyt$name_short <- trim(as.character(lyt$name), n = truncate)
-  
   if (any(grepl("dna_network_twomode", class(x)))) {
     lyt$attribute <- as.character(lyt$attribute)
     if (node_colours == "auto" & node_attribute == "Color") {
@@ -3016,11 +3068,10 @@ dna_plotNetwork <- function(x,
     } else {
       lyt$attribute[is.na(lyt$attribute)] <- "Concept"
     }
-    
   }
   colnames(lyt) <- gsub("attribute", node_attribute, colnames(lyt))
   g <- ggraph(lyt)
-  # add lines----
+  # add lines
   if (edges == "link") {
     g <- g +
       geom_edge_link(aes_string(width = "Weight"), alpha = edge_alpha,
@@ -3045,7 +3096,7 @@ dna_plotNetwork <- function(x,
   }
   g <- g +
     scale_edge_width(range = edge_size_range)
-  # add nodes----
+  # add nodes
   show_legend <- ifelse(show_legend,
                         NA,
                         show_legend)
@@ -3066,7 +3117,7 @@ dna_plotNetwork <- function(x,
                       shape = node_shape,
                       show.legend = show_legend)
   }
-  # add labels----
+  # add labels
   if ((is.logical(node_label) & node_label == TRUE) | node_label == "label") {
     # Make room for labels
     yexp <- (max(lyt$y) - min(lyt$y)) / 3
@@ -3080,8 +3131,8 @@ dna_plotNetwork <- function(x,
                                     label = "name_short"),
                          point.padding = label_repel,
                          box.padding = label_repel,
-                         fontface = 'bold',
-                         size = font_size/.pt,
+                         fontface = "bold",
+                         size = font_size / .pt,
                          min.segment.length = ifelse(label_lines, 0.5, Inf))
     } else {
       g <- g +
@@ -3089,15 +3140,14 @@ dna_plotNetwork <- function(x,
                                    label = "name_short"),
                         point.padding = label_repel,
                         box.padding = label_repel,
-                        fontface = 'bold',
-                        size = font_size/.pt,
+                        fontface = "bold",
+                        size = font_size / .pt,
                         min.segment.length = ifelse(label_lines, 0.5, Inf))
     }
   }
-  
-  # theme ----
+  # theme
   if (theme == "graph") {
-    g <- g+
+    g <- g +
       theme_graph(base_family = "", base_size = font_size)
   } else if (theme == "bw") {
     g <- g +
@@ -3112,17 +3162,17 @@ dna_plotNetwork <- function(x,
     g <- g +
       theme_dark(base_size = font_size)
   }
-  # colours ----
+  # colours
   if (!node_colours == "single") {
     if (node_colours == "auto" & node_attribute == "Color") {
       node_colours <- "identity"
-    } 
+    }
     if (node_colours == "auto" & !node_attribute == "Membership") {
       test <- sapply(unique(att[, tolower(node_attribute)]), function(a) {
         length(unique(att$color[att[, tolower(node_attribute)] == a])) == 1
       })
       if (all(test)) {
-        g <- g + 
+        g <- g +
           scale_color_manual(labels = att[, tolower(node_attribute)],
                              values = att$color)
       } else {
@@ -3144,8 +3194,6 @@ dna_plotNetwork <- function(x,
   }
   return(g)
 }
-
-
 #' Plot \link{dna_timeWindow} objects
 #'
 #' Plot \link{dna_timeWindow} objects in a grid separated by facet.
@@ -3201,29 +3249,30 @@ dna_plotTimeWindow <- function(x,
                                include.y = NULL,
                                rows = NULL,
                                cols = NULL,
-                               ...){
+                               ...) {
   method <- colnames(x)[3]
-  if(!any(grepl("dna_timeWindow", class(x)))){
+  if (!any(grepl("dna_timeWindow", class(x)))) {
     warning("x is not an object of class \"dna_timeWindow\".")
   }
-  if (identical(facetValues, "all")){
+  if (identical(facetValues, "all")) {
     ggplot2::ggplot(x, aes_string(x = "time", y = paste(method))) +
       geom_line() +
-      geom_smooth(stat = 'smooth', method = 'gam', formula = y ~ s(x, bs = "cs")) +
-      facet_wrap(~ facet, nrow = rows, ncol = cols)+
+      geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
+      facet_wrap(~ facet, nrow = rows, ncol = cols) +
       expand_limits(y = include.y)
   } else {
-    if (all(facetValues %in% x$facet)){
-      if (length(facetValues) == 1){
-        ggplot2::ggplot(x[grep(paste0("^", facetValues, "$"), x$facet),], aes_string(x = "time", y = paste(method))) +
+    if (all(facetValues %in% x$facet)) {
+      if (length(facetValues) == 1) {
+        ggplot2::ggplot(x[grep(paste0("^", facetValues, "$"), x$facet), ], 
+                        aes_string(x = "time", y = paste(method))) +
           geom_line() +
-          geom_smooth(stat = 'smooth', method = 'gam', formula = y ~ s(x, bs = "cs")) +
+          geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
           expand_limits(y = include.y)
       } else {
-        ggplot2::ggplot(x[x$facet %in% facetValues,], aes_string(x = "time", y = paste(method))) +
+        ggplot2::ggplot(x[x$facet %in% facetValues, ], aes_string(x = "time", y = paste(method))) +
           geom_line() +
-          geom_smooth(stat = 'smooth', method = 'gam', formula = y ~ s(x, bs = "cs")) +
-          facet_wrap(~ facet, nrow = rows, ncol = cols)+
+          geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
+          facet_wrap(~ facet, nrow = rows, ncol = cols) +
           expand_limits(y = include.y)
       }
     } else {
@@ -3233,10 +3282,7 @@ dna_plotTimeWindow <- function(x,
     }
   }
 }
-
-
 # Summary plots ----------------------------------------------------------------
-
 #' Plot agreement and disagreement
 #'
 #' Plot agreement and disagreement towards statements.
@@ -3298,19 +3344,18 @@ dna_barplot <- function(connection,
                      ...)
   dots <- list(...)
   # test validity of "of"-value
-  if(!of %in% colnames(dta)|of %in% c("id", "agreement")){
+  if (!of %in% colnames(dta) | of %in% c("id", "agreement")) {
     stop(
       paste0("\"", of, "\" is not a valid \"of\" value. Choose one of the following:\n",
              paste0("\"", colnames(dta)[!colnames(dta) %in% c("id", "agreement")], "\"", collapse = ",\n"))
     )
   }
-  if(of %in% c("time", "docId", "docTitle", "docAuthor", "docSource", "docSection", "docType")){
+  if (of %in% c("time", "docId", "docTitle", "docAuthor", "docSource", "docSection", "docType")) {
     warning(
       paste0("\"colours = TRUE\" not possible for \"of = \"", of, "\"\".", collapse = ",\n")
     )
     colours <- FALSE
   }
-  
   # count (dis-)agreement per "of"
   dta <- as.data.frame(table(dta$agreement, dta[, of]),
                        stringsAsFactors = FALSE)
@@ -3324,16 +3369,13 @@ dna_barplot <- function(connection,
     dta$Frequency <- dta$Frequency * as.numeric(dta$agreement)
     dta$absFrequency <- abs(dta$Frequency)
   }
-  
   # order data per total mentions (disagreement + agreement)
-  dta2 <- stats::aggregate(absFrequency ~ of, sum, data=dta)
+  dta2 <- stats::aggregate(absFrequency ~ of, sum, data = dta)
   dta2 <- dta2[order(dta2$absFrequency, decreasing = TRUE), ]
-  
   # replicate order of dta2$of to dta
   dta$of <- factor(dta$of, levels = rev(dta2$of))
-  
   # get bar colours
-  if (colours){
+  if (colours) {
     if (!"statementType" %in% names(dots)) {
       dots$statementType <- "DNA Statement"
     }
@@ -3341,29 +3383,25 @@ dna_barplot <- function(connection,
                              variable = of, values = NULL)
     dta$colour <- as.character(col$color[match(dta$of, col$value)])
     dta$text_colour <- "black"
-    dta$text_colour[sum(grDevices::col2rgb(dta$colour) *c(299, 587,114))/1000 < 123] <- "white"
+    dta$text_colour[sum(grDevices::col2rgb(dta$colour) * c(299, 587, 114)) / 1000 < 123] <- "white"
   } else {
     dta$colour <- "white"
     dta$text_colour <- "black"
   }
-  
   if (binary) {
     # setting disagreement as -1 instead 0
     dta$agreement <- ifelse(dta$agreement == 0, -1, 1)
-    
     # recode Frequency in positive and negative
     dta$Frequency <- dta$Frequency * as.integer(dta$agreement)
     dta$absFrequency <- abs(dta$Frequency)
-    
     # generate position of bar labels
     offset <- (max(dta$Frequency) + abs(min(dta$Frequency))) * 0.05
     offset <- ifelse(offset < 0.5, 0.5, offset) # offset should be at least 0.5
-    if(offset > abs(min(dta$Frequency))){offset <- abs(min(dta$Frequency))}
-    if(offset > max(dta$Frequency)){offset <- abs(min(dta$Frequency))}
+    if (offset > abs(min(dta$Frequency))) {offset <- abs(min(dta$Frequency))}
+    if (offset > max(dta$Frequency)) {offset <- abs(min(dta$Frequency))}
     dta$pos <- ifelse(dta$Frequency > 0,
                       dta$Frequency + offset,
                       dta$Frequency - offset)
-    
     # move 0 labels where neccessary
     dta$pos[dta$Frequency == 0] <- ifelse(dta$agreement[dta$Frequency == 0] == 1,
                                           dta$pos[dta$Frequency == 0] * -1,
@@ -3376,12 +3414,12 @@ dna_barplot <- function(connection,
                       -0.1)
     # add 0 values in case all frequencies are positive/negative
     for (c in unique(dta$of)) {
-      if(all(dta$Frequency[dta$of == c] < 0)) {
+      if (all(dta$Frequency[dta$of == c] < 0)) {
         dta <- rbind(dta,
                      dta[dta$of == c, ][1, ])
         dta[nrow(dta), c(1, 3, 4)] <- 0
       }
-      if(all(dta$Frequency[dta$of == c] > 0)) {
+      if (all(dta$Frequency[dta$of == c] > 0)) {
         dta <- rbind(dta,
                      dta[dta$of == c, ][1, ])
         dta[nrow(dta), c(1, 3, 4)] <- 0
@@ -3394,16 +3432,15 @@ dna_barplot <- function(connection,
   yintercepts <- data.frame(x = c(0.5, length(unique(dta$of)) + 0.5),
                             y = c(0, 0))
   high <- yintercepts$x[2] + 0.25
-  
   g <- ggplot(dta[order(as.numeric(dta$agreement),
-                        decreasing = TRUE),],
+                        decreasing = TRUE), ],
               aes_string(x = "of",
                          y = "Frequency",
                          fill = "agreement",
                          label = "label")) +
     geom_bar(aes_string(fill = "colour",
                         colour = "text_colour"),
-             stat="identity",
+             stat = "identity",
              width = barWidth,
              show.legend = FALSE) +
     coord_flip() +
@@ -3437,7 +3474,7 @@ dna_barplot <- function(connection,
                 position = position_stack(vjust = 0.5),
                 inherit.aes = TRUE)
   }
-  if(lab){
+  if (lab) {
     g <- g +
       annotate("text",
                x = high,
@@ -3459,8 +3496,6 @@ dna_barplot <- function(connection,
   }
   return(g)
 }
-
-
 #' Plots frequency of statements over time.
 #'
 #' This function plots frequency of statements over time from a DNA connection
@@ -3529,7 +3564,6 @@ dna_plotFrequency <- function(connection,
                 aes_string(x = "Date",
                            y = "Frequency"))
   }
-  
   if (bar == "stacked") {
     g <- g +
       geom_bar(stat = "identity")
@@ -3540,44 +3574,24 @@ dna_plotFrequency <- function(connection,
   }
   return(g)
 }
-
-
-# Support & internal -----------------------------------------------------------
-
-#' Download the binary DNA JAR file
+#' Truncate labels
 #'
-#' Downloads the newest released DNA JAR file necessary for running
-#' \code{dna_init}.
+#' Internal function, used to truncate labels
 #'
-#' This simple function downloads the DNA JAR from the latest release.
-#'
-#' @param filename Name of the downloaded Jar.
-#' @param filepath Download path. Defaults to working directory.
-#' @param force Logical. Should the file be overwritten if it already exists.
-#'
-#' @examples
-#' \dontrun{
-#' dna_downloadJar()
-#' }
-#' @export
-#' @importFrom utils download.file
-dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
-                            filepath = character(),
-                            force = FALSE) {
-  # temporary fix until next release
-  url <- paste0("https://github.com/leifeld/dna/raw/master/manual/dna-2.0-beta21.jar")
-  if (any(!file.exists(paste0(filepath, filename)), force)) {
-    download.file(url = url,
-                  destfile = paste0(filepath, filename),
-                  mode = "wb",
-                  cacheOK = FALSE,
-                  extra = character())
-  } else {
-    warning("Newest DNA JAR file already exists. Try \"force = TRUE\" if you want to download it anyway.")
-  }
+#' @param x A character string
+#' @param n Max number of characters to truncate to. Value \code{Inf} turns off
+#' truncation.
+#' @param e String added at the end of x to signal it was truncated.
+#' @noRd
+#' @author Johannes B. Gruber
+trim <- function(x, n, e = "...") {
+  ifelse(nchar(x) > n,
+         paste0(gsub("\\s+$", "",
+                     strtrim(x, width = n)),
+                e),
+         x)
 }
-
-
+# Support & internal -----------------------------------------------------------
 #' Calculate the modularity of a network
 #'
 #' Calculate the modularity of a network retrieved via \link{dna_network}.
@@ -3608,133 +3622,4 @@ lvmod <- function(mat) {
   lv <- igraph::cluster_louvain(g)
   mod <- igraph::modularity(lv)
   return(mod)
-}
-
-
-#' Print the summary of a \code{dna_cluster} object
-#'
-#' Show details of a \code{dna_cluster} object.
-#'
-#' Print original call to the function, the information from the
-#' \link[stats]{hclust} call and additional variables which can be used for
-#' plotting the object.
-#'
-#' @param x A \code{dna_cluster} object.
-#' @param ... Further options (currently not used).
-#'
-#' @examples
-#' \dontrun{
-#' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
-#' conn <- dna_connection(dna_sample(), verbose = FALSE)
-#' clust.l <- dna_cluster(conn)
-#' clust.l
-#' }
-#' @export
-#' @importFrom stats na.omit
-print.dna_cluster <- function(x, ...) {
-  if (!is.null(x$call)) {
-    cat("\nCall:\n", deparse(x$call), "\n\n", sep = "")
-  }
-  if (!is.null(x$method)) {
-    cat("Cluster method :", x$method, "\n")
-  }
-  if (!is.null(x$dist.method) & !is.na(x$dist.method)) {
-    cat("Distance :", x$dist.method, "\n")
-  }
-  cat("Number of objects:", length(x$labels), "\n")
-  if (length(na.omit(attr(x, "cut"))) > 0) {
-    cat("Cut at :", paste(gsub("cutree.", "",
-                               names(attr(x, "cut"))), "=",
-                          attr(x, "cut"),
-                          collapse = ", "),
-        "\n")
-  }
-  cat("Used for colours :\n", paste(names(attr(x, "colours")),
-                                    paste0("\"",
-                                           attr(x, "colours"),
-                                           "\"\n"),
-                                    sep = ": ",
-                                    collapse = " "))
-  
-  cat("\n")
-  invisible(x)
-}
-
-
-#' Print the summary of a \code{dna_connection} object
-#'
-#' Show details of a \code{dna_connection} object.
-#'
-#' Print the number of documents and statements to the console after
-#' establishing a DNA connection.
-#'
-#' @param x A \code{dna_connection} object.
-#' @param ... Further options (currently not used).
-#'
-#' @examples
-#' \dontrun{
-#' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
-#' conn <- dna_connection(dna_sample(), verbose = FALSE)
-#' conn
-#' }
-#' @export
-print.dna_connection <- function(x, ...) {
-  .jcall(x$dna_connection, "V", "rShow")
-}
-
-
-#' Provides a small sample database
-#'
-#' Copies a small .dna sample file to the current working directory and returns
-#' the location of this newly created file.
-#'
-#' A small sample database to test the functions of rDNA.
-#'
-#' @param overwrite Logical. Should sample.dna be overwritten if found in the
-#' current working directory?
-#' @param verbose Display warning message if file exists in current wd.
-#'
-#' @examples
-#' \dontrun{
-#' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
-#' dna_connection(dna_sample())
-#' }
-#' @author Johannes Gruber
-#' @export
-dna_sample <- function(overwrite = FALSE,
-                       verbose = TRUE) {
-  if (file.exists(paste0(getwd(), "/sample.dna")) & overwrite == FALSE) {
-    if (verbose){
-      warning(
-        "Sample file exists in wd. Use overwrite = TRUE to create fresh sample file."
-      )
-    }
-  } else {
-    file.copy(from = system.file("extdata", "sample.dna", package = "rDNA"),
-              to = paste0(getwd(), "/sample.dna"),
-              overwrite = overwrite)
-  }
-  return(paste0(getwd(), "/sample.dna"))
-}
-
-
-#' Truncate labels
-#'
-#' Internal function, used to truncate labels
-#'
-#' @param x A character string
-#' @param n Max number of characters to truncate to. Value \code{Inf} turns off
-#' truncation.
-#' @param e String added at the end of x to signal it was truncated.
-#' @noRd
-#' @author Johannes B. Gruber
-trim <- function(x, n, e = "..."){
-  ifelse(nchar(x) > n,
-         paste0(gsub("\\s+$", "",
-                     strtrim(x, width = n)),
-                e),
-         x)
 }

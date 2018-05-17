@@ -3,10 +3,11 @@ citHeader("To cite package rDNA in publications use:")
 if(!exists("meta") || is.null(meta)) meta <- packageDescription("rDNA")
 year <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date)
 vers <- paste("R package version", meta$Version)
+author <- meta$Author
 
 citEntry(entry="Manual",
   title = "{rDNA. A Package to Control Discourse Network Analyzer from R}",
-  author = as.person("Philip Leifeld"),
+  author = author,
   year = year,
   note = vers,
   organization = paste("University of Glasgow, School of Social and Political",
