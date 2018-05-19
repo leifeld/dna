@@ -431,7 +431,7 @@ public class ExportHelper {
 			
 			if (twoMode == true) {
 				boolean verbose;
-				verbose = true;
+				verbose = false;
 				Matrix m = computeTwoModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
 						var2Document, names1, names2, qualifier, qualifierAggregation, normalization, verbose);
 				m.setDate(currentStop.getTime());
@@ -715,13 +715,11 @@ public class ExportHelper {
 				ArrayList<Integer> values = combinations.get(key);
 				if (verbose == true) {
 					System.out.print("An edge weight of " + key + " corresponds to the following combination of integers in the DNA coding: ");
-				}
-				for (int i = 0; i < values.size(); i++) {
-					if (verbose == true) {
-						System.out.print(values.get(i) + " ");
+					for (int i = 0; i < values.size(); i++) {
+						if (verbose == true) {
+							System.out.print(values.get(i) + " ");
+						}
 					}
-				}
-				if (verbose == true) {
 					System.out.print("\n");
 				}
 			}

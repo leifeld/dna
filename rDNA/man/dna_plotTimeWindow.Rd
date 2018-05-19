@@ -5,7 +5,7 @@
 \title{Plot \link{dna_timeWindow} objects}
 \usage{
 dna_plotTimeWindow(x, facetValues = "all", include.y = NULL, rows = NULL,
-  cols = NULL, ...)
+  cols = NULL, diagnostics = FALSE, ...)
 }
 \arguments{
 \item{x}{A \code{dna_timeWindow} object created by the \link{dna_timeWindow}
@@ -18,6 +18,8 @@ plot.}
 
 \item{rows, cols}{Number of rows and columns in which the plots are arranged.
 plot.}
+
+\item{diagnostics}{Plot the different measures saved in the object?}
 
 \item{...}{Currently not used. Additional parameters should be passed on to ggplot2 via
 e.g. \code{+ theme_bw()}.}

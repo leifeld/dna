@@ -1,4 +1,5 @@
 # Startup ----------------------------------------------------------------------
+
 # display version number and date when the package is loaded
 #' @importFrom utils packageDescription
 .onAttach <- function(libname, pkgname) {
@@ -19,7 +20,10 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
                                                       "leaf",
                                                       "x",
                                                       "y"))
+
+
 # Data access ------------------------------------------------------------------
+
 #' Establish a database connection
 #'
 #' Connect to a local .dna file or remote mySQL DNA database.
@@ -79,6 +83,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
   }
   return(obj)
 }
+
 #' Print the summary of a \code{dna_connection} object
 #'
 #' Show details of a \code{dna_connection} object.
@@ -100,6 +105,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 print.dna_connection <- function(x, ...) {
   .jcall(x$dna_connection, "V", "rShow")
 }
+
 #' Download the binary DNA JAR file
 #'
 #' Downloads the newest released DNA JAR file necessary for running
@@ -132,6 +138,7 @@ dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
     warning("Newest DNA JAR file already exists. Try \"force = TRUE\" if you want to download it anyway.")
   }
 }
+
 #' Open the DNA GUI
 #'
 #' Start DNA and optionally load a database.
@@ -207,6 +214,7 @@ dna_gui <- function(infile = NULL,
   }
   system(paste0(jp, " -jar -Xmx", memory, "M ", djs, f), intern = !verbose)
 }
+
 #' Initialize the connection with DNA
 #'
 #' Establish a connection between \pkg{rDNA} and the DNA software.
@@ -250,6 +258,7 @@ dna_init <- function(jarfile = "dna-2.0-beta21.jar", memory = 1024) {
          force.init = TRUE,
          parameters = paste0("-Xmx", memory, "m"))
 }
+
 #' Provides a small sample database
 #'
 #' Copies a small .dna sample file to the current working directory and returns
@@ -284,7 +293,10 @@ dna_sample <- function(overwrite = FALSE,
   }
   return(paste0(getwd(), "/sample.dna"))
 }
+
+
 # Data management --------------------------------------------------------------
+
 #' Add a document to the DNA database
 #'
 #' Add a new document to the DNA database.
@@ -383,6 +395,7 @@ dna_addDocument <- function(connection,
     return(id)
   }
 }
+
 #' Retrieve a dataframe with attributes from a DNA connection.
 #'
 #' Attributes are metadata for the values saved in a variable. For example, an
@@ -457,6 +470,7 @@ dna_getAttributes <- function(connection,
   attributes <- as.data.frame(attributes, stringsAsFactors = FALSE)
   return(attributes)
 }
+
 #' Retrieve a dataframe with documents from a DNA connection
 #'
 #' Retrieve a dataframe with all documents from a DNA connection.
@@ -501,6 +515,7 @@ dna_getDocuments <- function(connection) {
   documents <- as.data.frame(documents, stringsAsFactors = FALSE)
   return(documents)
 }
+
 #' Removes a document from the database
 #'
 #' Removes a document from the database based on its ID.
@@ -541,6 +556,7 @@ dna_removeDocument <- function(connection,
          simulate,
          verbose)
 }
+
 #' Recode documents and metadata in the DNA database
 #'
 #' Recode documents and their metadata in a DNA database.
@@ -687,7 +703,10 @@ dna_setDocuments <- function(connection,
          simulate,
          verbose)
 }
+
+
 # Analysis/Transformation ------------------------------------------------------
+
 #' Cluster network from a DNA connection
 #'
 #' Clustering methods for DNA connections.
@@ -1035,6 +1054,7 @@ dna_cluster <- function(connection,
   hc$network <- dta
   return(hc)
 }
+
 #' Print the summary of a \code{dna_cluster} object
 #'
 #' Show details of a \code{dna_cluster} object.
@@ -1083,6 +1103,7 @@ print.dna_cluster <- function(x, ...) {
   cat("\n")
   invisible(x)
 }
+
 #' Compute and retrieve a network
 #'
 #' Compute and retrieve a network from DNA.
@@ -1413,18 +1434,29 @@ dna_network <- function(connection,
     return(dta)
   }
 }
+
 #' Computes a temporal sequence of networks
 #'
 #' Computes a measure for each network in a temporal sequence of networks.
 #'
 #' This function serves as a convenience wrapper to calculate a measure for each
 #' network in a temporal sequence of networks. The standard is to calculate the
-#' modularity of the network for each time window (see
-#' \link[igraph]{modularity.igraph}). The function can also be used to split
-#' your data (facet) and calculate networks for each facet type.
+#' modularity the best two-community solution (i.e., bipolarization) of the 
+#' network for each time window. The function can also be used to split
+#' your data (facet) and calculate networks for each facet type and return the 
+#' statistics by facet.
 #'
 #' @param connection A \link{dna_connection} object created by the
 #' \link{dna_connection} function.
+#' @param method Is used to compute exactly one measurement for each network
+#' computed in the temporal sequence of networks. Can contain the name of any
+#' function which reduces a matrix to just one value or one of the following 
+#' character strings: \code{"bipolarization"} (for calculating the modularity of 
+#' different two-cluster solutions and choosing the highest one); 
+#' \code{"multipolarization"} (for calculating the modularity of different 
+#' community detection measures as implemented in \pkg{igraph}; or \code{"louvain"} 
+#' (for detecting communities using the fast Louvain algorithm and computing 
+#' modularity based on this result).
 #' @param timewindow Same as in \link{dna_network}.
 #' @param windowsize Same as in \link{dna_network}.
 #' @param facet Which value from the dna database should be used to subset the
@@ -1434,9 +1466,6 @@ dna_network <- function(connection,
 #' @param facetValues Which values should be used to facet calculation of the
 #' networks. Always contains the value "all" for comparison. Use e.g.
 #' excludeTypes to exclude documents from comparison.
-#' @param method Is used to compute exactly one measurement for each network
-#' computed in the temporal sequence of networks. Can contain the name of any
-#' function which reduces a matrix to just one value.
 #' @param verbose Display messages if \code{TRUE} or \code{1}. Also displays
 #' details about network construction when \code{2}.
 #' @param ... Additional arguments passed to \link{dna_network}.
@@ -1459,82 +1488,108 @@ dna_network <- function(connection,
 #'
 #' dna_plotTimeWindow(tW, facetValues = c("Bluestein, Joel", "Voinovich, George"))
 #' }
-#' @author Johannes B. Gruber, Philip Leifeld
+#' @author Philip Leifeld, Johannes B. Gruber
 #' @export
 #' @import ggplot2
+#' @importFrom cluster pam
+#' @importFrom dplyr progress_estimated
+#' @importFrom igraph graph.adjacency modularity cluster_fast_greedy cluster_walktrap 
+#'   cluster_leading_eigen cluster_edge_betweenness cluster_louvain cut_at
+#' @importFrom sna equiv.clust sedist
+#' @importFrom stats kmeans hclust cutree cor
+#' @importFrom vegan vegdist
 dna_timeWindow <- function(connection,
+                           method = "bipolarization",
                            timewindow = "days",
                            windowsize = 100,
                            facet = "Types",
                            facetValues = character(),
-                           method = "modularity",
-                           verbose = 2,
-                           ...) {
+                           verbose = 1,
+                           ...) { # passed on to dna_network
   dots <- list(...)
-  if ("excludeAuthors" %in% names(dots)) {
+  if ("excludeAuthors" %in% names(dots)){
     excludeAuthors <- unname(unlist(dots["excludeAuthors"]))
     dots["excludeAuthors"] <- NULL
   } else {
     excludeAuthors <- character()
   }
-  if ("excludeSources" %in% names(dots)) {
+  if ("excludeSources" %in% names(dots)){
     excludeSources <- unname(unlist(dots["excludeSources"]))
     dots["excludeSources"] <- NULL
   } else {
     excludeSources <- character()
   }
-  if ("excludeSections" %in% names(dots)) {
+  if ("excludeSections" %in% names(dots)){
     excludeSections <- unname(unlist(dots["excludeSections"]))
     dots["excludeSections"] <- NULL
   } else {
     excludeSections <- character()
   }
-  if ("excludeTypes" %in% names(dots)) {
+  if ("excludeTypes" %in% names(dots)){
     excludeTypes <- unname(unlist(dots["excludeTypes"]))
     dots["excludeTypes"] <- NULL
   } else {
     excludeTypes <- character()
   }
   facetValues <- c(facetValues, "all")
-  if (facet == "Authors" ) {Authors <- facetValues} else {Authors <- character()}
-  if (facet == "Sources") {Sources <- facetValues} else {Sources <- character()}
-  if (facet == "Sections") {Sections <- facetValues} else {Sections <- character()}
-  if (facet == "Types") {Types <- facetValues} else {Types <- character()}
-  if (any(Authors %in% excludeAuthors)) {
+  if (facet == "Authors" ) {
+    Authors <- facetValues
+  } else {
+    Authors <- character()
+  }
+  if (facet == "Sources") {
+    Sources <- facetValues
+  } else {
+    Sources <- character()
+  }
+  if (facet == "Sections") {
+    Sections <- facetValues
+  } else {
+    Sections <- character()
+  }
+  if (facet == "Types") {
+    Types <- facetValues
+  } else {
+    Types <- character()
+  }
+  if (any(Authors %in% excludeAuthors)){
     cat(paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "),
         "is found in both \"Authors\" and \"excludeAuthors\".",
         paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "),
         " was removed from \"excludeAuthors\".\n")
     excludeAuthors <- excludeAuthors[!excludeAuthors %in% Authors]
   }
-  if (any(Sources %in% excludeSources)) {
+  if (any(Sources %in% excludeSources)){
     cat(paste0("\"", Sources[Sources %in% excludeSources], "\"", collapse = ", "),
         "is found in both \"Sources\" and \"excludeSources\".",
         paste0("\"", Sources[Sources %in% excludeSources], "\"", collapse = ", "),
         " was removed from \"excludeSources\".\n")
     excludeSources <- excludeSources[!excludeSources %in% Sources]
   }
-  if (any(Sections %in% excludeSections)) {
+  if (any(Sections %in% excludeSections)){
     cat(paste0("\"", Sections[Sections %in% excludeSections], "\"", collapse = ", "),
         "is found in both \"Sections\" and \"excludeSections\".",
         paste0("\"", Sections[Sections %in% excludeSections], "\"", collapse = ", "),
         " was removed from \"excludeSections\".\n")
     excludeSections <- excludeSections[!excludeSections %in% Sections]
   }
-  if (any(Types %in% excludeTypes)) {
+  if (any(Types %in% excludeTypes)){
     cat(paste0("\"", Types[Types %in% excludeTypes], "\"", collapse = ", "),
         "is found in both \"Types\" and \"excludeTypes\".",
         paste0("\"", Types[Types %in% excludeTypes], "\"", collapse = ", "),
         " was removed from \"excludeTypes\".\n")
     excludeTypes <- excludeTypes[!excludeTypes %in% Types]
   }
-  if (method == "modularity") {
+  if (is.character(method) && method == "louvain") {
     mod.m <- lapply(facetValues, function(x) {
-      if (verbose | verbose == 2) {cat("Calculating Type =", facetValues[facetValues %in% x], "\n")}
+      if (verbose > 0) {
+        cat("Retrieving time window networks... Calculating Type =", facetValues[facetValues %in% x], "\n")
+      }
       nw <- do.call(dna_network,
                     c(list(connection = connection,
                            networkType = "onemode",
-                           qualifierAggregation = "congruence",
+                           qualifierAggregation = "subtract",
+                           normalization = "average",
                            timewindow = timewindow,
                            windowsize = windowsize,
                            excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
@@ -1544,52 +1599,349 @@ dna_timeWindow <- function(connection,
                            verbose = ifelse(verbose > 1, TRUE, FALSE)
                     ), dots)
       )
+      
+      n <- length(nw$networks)
+      lv_mod <- numeric(n)
+      if (verbose > 0) {
+        p <- progress_estimated(n)
+        cat("Computing Louvain modularity...\n")
+      }
+      for (i in 1:n) {
+        if (verbose > 0) {
+          p$tick()$print()
+        }
+        
+        cong <- nw$networks[[i]]
+        cong[cong < 0] <- 0
+        g <- igraph::graph.adjacency(cong, mode = "undirected", weighted = TRUE)
+        
+        lv <- cluster_louvain(g)
+        lv_mod[i] <- igraph::modularity(lv)
+      }
+      
       mod.m <- data.frame(index = 1:length(nw$networks),
-                          time = nw$time,
-                          modularity = sapply(nw$networks, lvmod),
+                          Time = nw$time,
+                          Modularity = lv_mod,
                           facet = rep(facetValues[facetValues %in% x], length(nw$networks)))
       return(mod.m)
     })
+  } else if (is.character(method) && method %in% c("multipolarization", "multipolarisation", "modularity")) {
+    mod.m <- lapply(facetValues, function(x) {
+      if (verbose > 0) {
+        cat("Retrieving time window networks... Calculating Type =", facetValues[facetValues %in% x], "\n")
+      }
+      nw <- do.call(dna_network,
+                    c(list(connection = connection,
+                           networkType = "onemode",
+                           qualifierAggregation = "subtract",
+                           normalization = "average",
+                           timewindow = timewindow,
+                           windowsize = windowsize,
+                           excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
+                           excludeSources = c(Sources[Sources %in% x], excludeSources),
+                           excludeSections = c(Sections[Sections %in% x], excludeSections),
+                           excludeTypes = c(Types[Types %in% x], excludeTypes),
+                           verbose = ifelse(verbose > 1, TRUE, FALSE)
+                    ), dots)
+      )
+      
+      n <- length(nw$networks)
+      le_mod <- numeric(n)
+      lv_mod <- numeric(n)
+      fg_mod <- numeric(n)
+      wt_mod <- numeric(n)
+      eb_mod <- numeric(n)
+      if (verbose > 0) {
+        p <- progress_estimated(n)
+        cat("Computing multipolarization measure...\n")
+      }
+      for (i in 1:n) {
+        if (verbose > 0) {
+          p$tick()$print()
+        }
+        
+        cong <- nw$networks[[i]]
+        cong[cong < 0] <- 0
+        g <- igraph::graph.adjacency(cong, mode = "undirected", weighted = TRUE)
+        
+        fg <- cluster_fast_greedy(g)
+        fg_mod[i] <- igraph::modularity(fg)
+        
+        wt <- cluster_walktrap(g)
+        wt_mod[i] <- igraph::modularity(wt)
+        
+        try({
+          suppressWarnings(le <- cluster_leading_eigen(g))
+          le_mod[i] <- igraph::modularity(le)
+        }, silent = TRUE)
+        if (le_mod[i] == 0) {
+          le_mod[i] <- NA
+        }
+        
+        eb <- cluster_edge_betweenness(g, directed = FALSE)
+        eb_mod[i] <- igraph::modularity(eb)
+        
+        lv <- cluster_louvain(g)
+        lv_mod[i] <- igraph::modularity(lv)
+      }
+      mod_matrix <- cbind(fg_mod, wt_mod, le_mod, eb_mod, lv_mod)
+      max_mod <- apply(mod_matrix, 1, function(x) max(x, na.rm = TRUE))
+      
+      mod.m <- data.frame(index = 1:length(nw$networks),
+                          Time = nw$time,
+                          Modularity = max_mod,
+                          "Fast & Greedy" = fg_mod,
+                          "Walktrap" = wt_mod,
+                          "Leading Eigenvector" = le_mod,
+                          "Edge Betweenness" = eb_mod,
+                          "Louvain" = lv_mod,
+                          facet = rep(facetValues[facetValues %in% x], length(nw$networks)),
+                          check.names = FALSE)
+      return(mod.m)
+    })
+  } else if (is.character(method) && method %in% c("bipolarization", "bipolarisation")) {
+    mod.m <- lapply(facetValues, function(x) {
+      if (verbose > 0) {
+        cat("Retrieving time window networks... Calculating Type =", facetValues[facetValues %in% x], "\n")
+      }
+      nw_aff <- do.call(dna_network,
+                        c(list(connection = connection,
+                               networkType = "twomode",
+                               qualifierAggregation = "combine",
+                               timewindow = timewindow,
+                               windowsize = windowsize,
+                               excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
+                               excludeSources = c(Sources[Sources %in% x], excludeSources),
+                               excludeSections = c(Sections[Sections %in% x], excludeSections),
+                               excludeTypes = c(Types[Types %in% x], excludeTypes),
+                               verbose = ifelse(verbose > 1, TRUE, FALSE)
+                        ), dots)
+      )
+      nw_cong <- do.call(dna_network,
+                         c(list(connection = connection,
+                                networkType = "onemode",
+                                qualifierAggregation = "congruence",
+                                timewindow = timewindow,
+                                windowsize = windowsize, 
+                                normalization = "average", 
+                                excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
+                                excludeSources = c(Sources[Sources %in% x], excludeSources),
+                                excludeSections = c(Sections[Sections %in% x], excludeSections),
+                                excludeTypes = c(Types[Types %in% x], excludeTypes),
+                                verbose = ifelse(verbose > 1, TRUE, FALSE)
+                         ), dots)
+      )
+      nw_subt <- do.call(dna_network,
+                         c(list(connection = connection,
+                                networkType = "onemode",
+                                qualifierAggregation = "subtract",
+                                timewindow = timewindow,
+                                windowsize = windowsize,
+                                normalization = "average",
+                                excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
+                                excludeSources = c(Sources[Sources %in% x], excludeSources),
+                                excludeSections = c(Sections[Sections %in% x], excludeSections),
+                                excludeTypes = c(Types[Types %in% x], excludeTypes),
+                                verbose = ifelse(verbose > 1, TRUE, FALSE)
+                         ), dots)
+      )
+      n <- length(nw_aff$networks)
+      km_mod <- numeric(n)   # k-means clustering
+      pm_mod <- numeric(n)   # partitioning around medoids (pam)
+      hcw_mod <- numeric(n)  # hierarchical clustering with Ward D2
+      hcc_mod <- numeric(n)  # hierarchical clustering with complete linkage
+      fg_mod <- numeric(n)   # fast and greedy community detection
+      wt_mod <- numeric(n)   # walktrap community detection
+      le_mod <- numeric(n)   # leading eigenvector community detection
+      eb_mod <- numeric(n)   # Girvan-Newman edge betweenness community detection
+      ec_mod <- numeric(n)   # equivalence clustering
+      cc_mod <- numeric(n)   # CONCOR based on subtract matrix
+      cca_mod <- numeric(n)  # CONCOR based on combined affiliation matrix
+      if (verbose > 0) {
+        p <- progress_estimated(n)
+        cat("Computing bipolarization measure...\n")
+      }
+      for (i in 1:n) {
+        if (verbose > 0) {
+          p$tick()$print()
+        }
+        
+        cong <- nw_cong$networks[[i]]
+        subt <- nw_subt$networks[[i]]
+        g <- igraph::graph.adjacency(cong, mode = "undirected", weighted = TRUE)
+        
+        aff <- nw_aff$networks[[i]]
+        pos <- apply(aff, 1:2, function(x) ifelse(x %in% c(1, 3), 1, 0))
+        neg <- apply(aff, 1:2, function(x) ifelse(x %in% c(2, 3), 1, 0))
+        
+        colnames(pos) <- paste(colnames(pos), "- yes")
+        colnames(neg) <- paste(colnames(neg), "- no")
+        combined <- cbind(pos, neg)
+        combined <- combined[rowSums(combined) > 0, ]
+        
+        jac <- vegdist(combined, method = "jaccard")
+        km <- kmeans(jac, centers = 2)
+        km_mod[i] <- igraph::modularity(x = g, membership = km$cluster)
+        
+        pm <- pam(jac, k = 2)
+        pm_mod[i] <- igraph::modularity(x = g, membership = pm$cluster)
+        
+        hcw <- hclust(jac, method = "ward.D2")
+        hcw_mem <- cutree(hcw, k = 2)
+        hcw_mod[i] <- igraph::modularity(x = g, membership = hcw_mem)
+        
+        hcc <- hclust(jac, method = "complete")
+        hcc_mem <- cutree(hcc, k = 2)
+        hcc_mod[i] <- igraph::modularity(x = g, membership = hcc_mem)
+        if (hcc_mod[i] == 0) {
+          hcc_mod[i] <- NA
+        }
+        
+        suppressWarnings(fg <- cluster_fast_greedy(g))
+        suppressWarnings(fg_mem <- cut_at(fg, no = 2))
+        if (length(unique(fg_mem) < 3)) {
+          fg_mod[i] <- igraph::modularity(x = g, membership = fg_mem)
+        }
+        if (fg_mod[i] == 0) {
+          fg_mod[i] <- NA
+        }
+        
+        suppressWarnings(wt <- cluster_walktrap(g))
+        suppressWarnings(wt_mem <- cut_at(wt, no = 2))
+        if (length(unique(wt_mem) < 3)) {
+          wt_mod[i] <- igraph::modularity(x = g, membership = wt_mem)
+        }
+        if (wt_mod[i] == 0) {
+          wt_mod[i] <- NA
+        }
+        
+        try({
+          suppressWarnings(le <- cluster_leading_eigen(g))
+          suppressWarnings(le_mem <- cut_at(le, no = 2))
+          if (length(unique(le_mem) < 3)) {
+            le_mod[i] <- igraph::modularity(x = g, membership = le_mem)
+          }
+        }, silent = TRUE)
+        if (le_mod[i] == 0) {
+          le_mod[i] <- NA
+        }
+        
+        suppressWarnings(eb <- cluster_edge_betweenness(g, directed = FALSE))
+        suppressWarnings(eb_mem <- cut_at(eb, no = 2))
+        if (length(unique(eb_mem) < 3)) {
+          eb_mod[i] <- igraph::modularity(x = g, membership = eb_mem)
+        }
+        if (eb_mod[i] == 0) {
+          eb_mod[i] <- NA
+        }
+        
+        ec_dist <- sedist(subt, method = "euclidean")
+        ec <- equiv.clust(subt, equiv.dist = ec_dist)
+        ec_mem <- cutree(ec$cluster, k = 2)
+        ec_mod[i] <- igraph::modularity(x = g, membership = ec_mem)
+        
+        suppressWarnings(mi <- cor(subt))
+        iter <- 1
+        cutoff <- 0.999
+        max.iter <- 50
+        while(any(abs(mi) <= cutoff) & iter <= max.iter) {
+          mi[is.na(mi)] <- 0
+          mi <- cor(mi)
+          iter <- iter + 1
+        }
+        concor_cong <- ((mi[, 1] > 0) * 1) + 1
+        cc_mod[i] <- igraph::modularity(x = g, membership = concor_cong)
+        
+        suppressWarnings(mi <- cor(t(combined)))
+        iter <- 1
+        cutoff <- 0.999
+        max.iter <- 50
+        while(any(abs(mi) <= cutoff) & iter <= max.iter) {
+          mi[is.na(mi)] <- 0
+          mi <- cor(mi)
+          iter <- iter + 1
+        }
+        concor_aff <- ((mi[, 1] > 0) * 1) + 1
+        cca_mod[i] <- igraph::modularity(x = g, membership = concor_aff)
+      }
+      mod_matrix <- cbind(km_mod, pm_mod, hcw_mod, hcc_mod, fg_mod, wt_mod, le_mod, eb_mod, ec_mod, cc_mod, cca_mod)
+      max_mod <- apply(mod_matrix, 1, function(x) max(x, na.rm = TRUE))
+      
+      mod.m <- data.frame(index = 1:n,
+                          Time = nw_aff$time,
+                          Modularity = max_mod,
+                          "k-Means" = km_mod, 
+                          "Partionning around Medoids" = pm_mod, 
+                          "Hierarchical Clustering (Ward)" = hcw_mod, 
+                          "Hierarchical Clustering (Complete)" = hcc_mod, 
+                          "Fast & Greedy" = fg_mod, 
+                          "Walktrap" = wt_mod, 
+                          "Leading Eigenvector" = le_mod, 
+                          "Edge Betweenness" = eb_mod, 
+                          "Equivalence Clustering" = ec_mod, 
+                          "CONCOR (One-Mode)" = cc_mod, 
+                          "CONCOR (Two-Mode)" = cca_mod, 
+                          facet = rep(facetValues[facetValues %in% x], n),
+                          check.names = FALSE)
+      return(mod.m)
+    })
   } else {
-    if (!exists(method, mode = "function")) {
-      stop(
+    if (verbose > 0) {
+      cat("Applying custom function to network time windows...\n")
+    }
+    if (!class(method) == "function"){
+      stop (
         paste0("\"", method, "\" is not a valid function.")
       )
     } else {
-      if (length(do.call(method, list(matrix(c(1, 2, 3, 11, 12, 13), nrow = 2, ncol = 3))))!=1) {
-        stop(
+      testmat <- matrix(c(1, 2, 3, 
+                          11, 12, 13, 
+                          21, 22, 23), 
+                        nrow = 3, 
+                        ncol = 3)
+      if (length(do.call(method, list(testmat))) != 1) {
+        stop (
           paste0("\"", method, "\" is not a valid method for dna_timeWindow.\n dna_timeWindow needs a
                  function which provides exactly one value when applied to an object of class matrix.
                  See ?dna_timeWindow for help.")
-          )} else {
-            mod.m <- lapply(Types, function(x) {
-              if (verbose | verbose == 2) {cat("Calculating Type =", Types[Types %in% x], "\n")}
-              nw <- do.call(dna_network,
-                            c(list(connection = connection,
-                                   networkType = "onemode",
-                                   qualifierAggregation = "congruence",
-                                   timewindow = timewindow,
-                                   windowsize = windowsize,
-                                   excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
-                                   excludeSources = c(Sources[Sources %in% x], excludeSources),
-                                   excludeSections = c(Sections[Sections %in% x], excludeSections),
-                                   excludeTypes = c(Types[Types %in% x], excludeTypes),
-                                   verbose = ifelse(verbose > 1, TRUE, FALSE)
-                            ), dots)
-              )
-              mod.m <- data.frame(index = 1:length(nw$networks),
-                                  time = nw$time,
-                                  x = sapply(nw$networks, method),
-                                  facet = rep(facetValues[facetValues %in% x], length(nw$networks)))
-              colnames(mod.m)[3] <- method
-              return(mod.m)
-            })
-      }}}
+        )
+      } else {
+        mod.m <- lapply(Types, function(x) {
+          if (verbose|verbose == 2) {
+            cat("Retrieving time window networks... Calculating Type =", Types[Types %in% x], "\n")
+          }
+          nw <- do.call(dna_network,
+                        c(list(connection = connection,
+                               timewindow = timewindow,
+                               windowsize = windowsize,
+                               excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
+                               excludeSources = c(Sources[Sources %in% x], excludeSources),
+                               excludeSections = c(Sections[Sections %in% x], excludeSections),
+                               excludeTypes = c(Types[Types %in% x], excludeTypes),
+                               verbose = ifelse(verbose > 1, TRUE, FALSE)
+                        ), dots)
+          )
+          mod.m <- data.frame(index = 1:length(nw$networks),
+                              Time = nw$time,
+                              x = sapply(nw$networks, method),
+                              facet = rep(facetValues[facetValues %in% x], length(nw$networks)))
+          colnames(mod.m)[3] <- deparse(quote(method))
+          return(mod.m)
+        })
+      }
+    }
+    if (verbose > 0) {
+      cat("Done.\n")
+    }
+  }
   mod.df <- do.call("rbind", mod.m)
-  class(mod.df) <- c("data.frame", "dna_timeWindow", paste(method))
+  class(mod.df) <- c("data.frame", "dna_timeWindow")
   return(mod.df)
 }
+
+
 # Transformation ---------------------------------------------------------------
+
 #' Convert DNA networks to igraph objects
 #'
 #' This function can convert objects of class 'dna_network_onemode' or
@@ -1630,6 +1982,7 @@ dna_toIgraph <- function(x,
   }
   return(graph)
 }
+
 #' Convert DNA networks to igraph objects
 #'
 #' This function can produce eventSequence objects (see
@@ -1709,6 +2062,7 @@ dna_toREM <- function(x,
                  sortData = TRUE
           ), dots_sequence))
 }
+
 #' Convert DNA networks to network objects
 #'
 #' This function can convert objects of class 'dna_network_onemode' and
@@ -1758,7 +2112,10 @@ dna_toNetwork <- function(x,
   }
   return(nw)
 }
+
+
 # Visualisation ----------------------------------------------------------------
+
 #' Plots a dendrogram from dna_cluster objects
 #'
 #' Plots a dendrogram from objects derived via \link{dna_cluster}.
@@ -2145,6 +2502,7 @@ dna_plotDendro <- function(clust,
   }
   return(dg)
 }
+
 #' Plots a heatmap from dna_cluster objects
 #'
 #' Plots a heatmap with dendrograms from objects derived via \link{dna_cluster}.
@@ -2386,6 +2744,7 @@ dna_plotHeatmap <- function(clust,
   g <- ggdraw(plot = g)
   return(g)
 }
+
 #' Produces a hive plot from DNA data
 #'
 #' This function is an easy wrapper to create hive plots from one-mode networks
@@ -2675,6 +3034,7 @@ dna_plotHive <- function(x,
   }
   return(g)
 }
+
 #' Plots an MDS scatterplot from dna.cluster objects
 #'
 #' Plots a scatterplot with the results of non-metric multidimensional scaling
@@ -2850,6 +3210,7 @@ dna_plotMDS <- function(clust,
   }
   return(g)
 }
+
 #' Plots a network from DNA data
 #'
 #' This function is an easy wrapper to create network plots from one- and
@@ -3194,6 +3555,7 @@ dna_plotNetwork <- function(x,
   }
   return(g)
 }
+
 #' Plot \link{dna_timeWindow} objects
 #'
 #' Plot \link{dna_timeWindow} objects in a grid separated by facet.
@@ -3211,6 +3573,7 @@ dna_plotNetwork <- function(x,
 #' @param include.y Include specific value of facet in the plot.
 #' @param rows,cols Number of rows and columns in which the plots are arranged.
 #' plot.
+#' @param diagnostics Plot the different measures saved in the object?
 #' @param ... Currently not used. Additional parameters should be passed on to ggplot2 via
 #' e.g. \code{+ theme_bw()}.
 #'
@@ -3249,27 +3612,43 @@ dna_plotTimeWindow <- function(x,
                                include.y = NULL,
                                rows = NULL,
                                cols = NULL,
+                               diagnostics = FALSE,
                                ...) {
   method <- colnames(x)[3]
   if (!any(grepl("dna_timeWindow", class(x)))) {
     warning("x is not an object of class \"dna_timeWindow\".")
   }
   if (identical(facetValues, "all")) {
-    ggplot2::ggplot(x, aes_string(x = "time", y = paste(method))) +
-      geom_line() +
-      geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
-      facet_wrap(~ facet, nrow = rows, ncol = cols) +
-      expand_limits(y = include.y)
+    if (diagnostics == TRUE) {
+      x_long <- x[, -ncol(x)]
+      x_long <- melt(x_long, id.vars = c("index", "Time"))
+      colnames(x_long)[3] <- "Measure"
+      colnames(x_long)[4] <- "Polarization"
+      ggplot2::ggplot(x_long, aes_string(x = "Time", y = "Polarization", colour = "Measure")) +
+        geom_line() +
+        geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
+        facet_wrap(~ Measure, nrow = rows, ncol = cols) +
+        expand_limits(y = include.y) +
+        theme(legend.position = "none")
+    } else {
+      ggplot2::ggplot(x, aes_string(x = "Time", y = method)) +
+        geom_line() +
+        geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
+        expand_limits(y = include.y)
+    }
   } else {
+    if (diagnostics == TRUE) {
+      warning("Diagnostics have not been implemented for multiple facets.")
+    }
     if (all(facetValues %in% x$facet)) {
       if (length(facetValues) == 1) {
         ggplot2::ggplot(x[grep(paste0("^", facetValues, "$"), x$facet), ], 
-                        aes_string(x = "time", y = paste(method))) +
+                        aes_string(x = "Time", y = method)) +
           geom_line() +
           geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
           expand_limits(y = include.y)
       } else {
-        ggplot2::ggplot(x[x$facet %in% facetValues, ], aes_string(x = "time", y = paste(method))) +
+        ggplot2::ggplot(x[x$facet %in% facetValues, ], aes_string(x = "Time", y = method)) +
           geom_line() +
           geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
           facet_wrap(~ facet, nrow = rows, ncol = cols) +
@@ -3282,7 +3661,10 @@ dna_plotTimeWindow <- function(x,
     }
   }
 }
+
+
 # Summary plots ----------------------------------------------------------------
+
 #' Plot agreement and disagreement
 #'
 #' Plot agreement and disagreement towards statements.
@@ -3496,6 +3878,7 @@ dna_barplot <- function(connection,
   }
   return(g)
 }
+
 #' Plots frequency of statements over time.
 #'
 #' This function plots frequency of statements over time from a DNA connection
@@ -3574,6 +3957,7 @@ dna_plotFrequency <- function(connection,
   }
   return(g)
 }
+
 #' Truncate labels
 #'
 #' Internal function, used to truncate labels
@@ -3590,36 +3974,4 @@ trim <- function(x, n, e = "...") {
                      strtrim(x, width = n)),
                 e),
          x)
-}
-# Support & internal -----------------------------------------------------------
-#' Calculate the modularity of a network
-#'
-#' Calculate the modularity of a network retrieved via \link{dna_network}.
-#'
-#' Uses the function \link[igraph]{modularity.igraph} to calculate the division
-#' of the network into modules for a network retrieved via \link{dna_network}.
-#'
-#' @param mat A network matrix found e.g. in nw$networks (nw being an object
-#' generated via \link{dna_network}).
-#'
-#' @examples
-#' \dontrun{
-#' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
-#' conn <- dna_connection(dna_sample())
-#' nw <- dna_network(conn,
-#' networkType = "onemode")
-#' modularity <- lvmod(nw)
-#' modularity
-#' }
-#' @author Philip Leifeld, Johannes B. Gruber
-#' @export
-#' @importFrom igraph graph.adjacency
-#' @importFrom igraph cluster_louvain
-#' @importFrom igraph modularity
-lvmod <- function(mat) {
-  g <- igraph::graph.adjacency(mat, mode = "undirected", weighted = TRUE)
-  lv <- igraph::cluster_louvain(g)
-  mod <- igraph::modularity(lv)
-  return(mod)
 }

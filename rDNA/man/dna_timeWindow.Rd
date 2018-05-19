@@ -4,13 +4,23 @@
 \alias{dna_timeWindow}
 \title{Computes a temporal sequence of networks}
 \usage{
-dna_timeWindow(connection, timewindow = "days", windowsize = 100,
-  facet = "Types", facetValues = character(), method = "modularity",
-  verbose = 2, ...)
+dna_timeWindow(connection, method = "bipolarization", timewindow = "days",
+  windowsize = 100, facet = "Types", facetValues = character(),
+  verbose = 1, ...)
 }
 \arguments{
 \item{connection}{A \link{dna_connection} object created by the
 \link{dna_connection} function.}
+
+\item{method}{Is used to compute exactly one measurement for each network
+computed in the temporal sequence of networks. Can contain the name of any
+function which reduces a matrix to just one value or one of the following 
+character strings: \code{"bipolarization"} (for calculating the modularity of 
+different two-cluster solutions and choosing the highest one); 
+\code{"multipolarization"} (for calculating the modularity of different 
+community detection measures as implemented in \pkg{igraph}; or \code{"louvain"} 
+(for detecting communities using the fast Louvain algorithm and computing 
+modularity based on this result).}
 
 \item{timewindow}{Same as in \link{dna_network}.}
 
@@ -25,10 +35,6 @@ section or \code{"Types"} to subset document types.}
 networks. Always contains the value "all" for comparison. Use e.g.
 excludeTypes to exclude documents from comparison.}
 
-\item{method}{Is used to compute exactly one measurement for each network
-computed in the temporal sequence of networks. Can contain the name of any
-function which reduces a matrix to just one value.}
-
 \item{verbose}{Display messages if \code{TRUE} or \code{1}. Also displays
 details about network construction when \code{2}.}
 
@@ -40,9 +46,10 @@ Computes a measure for each network in a temporal sequence of networks.
 \details{
 This function serves as a convenience wrapper to calculate a measure for each
 network in a temporal sequence of networks. The standard is to calculate the
-modularity of the network for each time window (see
-\link[igraph]{modularity.igraph}). The function can also be used to split
-your data (facet) and calculate networks for each facet type.
+modularity the best two-community solution (i.e., bipolarization) of the 
+network for each time window. The function can also be used to split
+your data (facet) and calculate networks for each facet type and return the 
+statistics by facet.
 }
 \examples{
 \dontrun{
@@ -64,5 +71,5 @@ dna_plotTimeWindow(tW, facetValues = c("Bluestein, Joel", "Voinovich, George"))
 }
 }
 \author{
-Johannes B. Gruber, Philip Leifeld
+Philip Leifeld, Johannes B. Gruber
 }

@@ -1,6 +1,6 @@
 Package: rDNA
-Version: 2.0.80
-Date: 2018-05-17
+Version: 2.0.81
+Date: 2018-05-19
 Title: Discourse Network Analysis in R
 Authors@R: 
     c(person("Philip", "Leifeld", email = "Philip.Leifeld@glasgow.ac.uk", 
@@ -26,6 +26,7 @@ Imports:
     reshape2 (>= 1.4.3),
     rem (>= 1.2.8),
     scales (>= 0.5.0),
+    sna (>= 2.0),
     splitstackshape (>= 1.4.2),
     stats (>= 3.0.0),
     utils (>= 3.0.0),
