@@ -1544,25 +1544,25 @@ dna_timeWindow <- function(connection,
                            verbose = 1,
                            ...) { # passed on to dna_network
   dots <- list(...)
-  if ("excludeAuthors" %in% names(dots)){
+  if ("excludeAuthors" %in% names(dots)) {
     excludeAuthors <- unname(unlist(dots["excludeAuthors"]))
     dots["excludeAuthors"] <- NULL
   } else {
     excludeAuthors <- character()
   }
-  if ("excludeSources" %in% names(dots)){
+  if ("excludeSources" %in% names(dots)) {
     excludeSources <- unname(unlist(dots["excludeSources"]))
     dots["excludeSources"] <- NULL
   } else {
     excludeSources <- character()
   }
-  if ("excludeSections" %in% names(dots)){
+  if ("excludeSections" %in% names(dots)) {
     excludeSections <- unname(unlist(dots["excludeSections"]))
     dots["excludeSections"] <- NULL
   } else {
     excludeSections <- character()
   }
-  if ("excludeTypes" %in% names(dots)){
+  if ("excludeTypes" %in% names(dots)) {
     excludeTypes <- unname(unlist(dots["excludeTypes"]))
     dots["excludeTypes"] <- NULL
   } else {
@@ -1589,28 +1589,28 @@ dna_timeWindow <- function(connection,
   } else {
     Types <- character()
   }
-  if (any(Authors %in% excludeAuthors)){
+  if (any(Authors %in% excludeAuthors)) {
     cat(paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "),
         "is found in both \"Authors\" and \"excludeAuthors\".",
         paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "),
         " was removed from \"excludeAuthors\".\n")
     excludeAuthors <- excludeAuthors[!excludeAuthors %in% Authors]
   }
-  if (any(Sources %in% excludeSources)){
+  if (any(Sources %in% excludeSources)) {
     cat(paste0("\"", Sources[Sources %in% excludeSources], "\"", collapse = ", "),
         "is found in both \"Sources\" and \"excludeSources\".",
         paste0("\"", Sources[Sources %in% excludeSources], "\"", collapse = ", "),
         " was removed from \"excludeSources\".\n")
     excludeSources <- excludeSources[!excludeSources %in% Sources]
   }
-  if (any(Sections %in% excludeSections)){
+  if (any(Sections %in% excludeSections)) {
     cat(paste0("\"", Sections[Sections %in% excludeSections], "\"", collapse = ", "),
         "is found in both \"Sections\" and \"excludeSections\".",
         paste0("\"", Sections[Sections %in% excludeSections], "\"", collapse = ", "),
         " was removed from \"excludeSections\".\n")
     excludeSections <- excludeSections[!excludeSections %in% Sections]
   }
-  if (any(Types %in% excludeTypes)){
+  if (any(Types %in% excludeTypes)) {
     cat(paste0("\"", Types[Types %in% excludeTypes], "\"", collapse = ", "),
         "is found in both \"Types\" and \"excludeTypes\".",
         paste0("\"", Types[Types %in% excludeTypes], "\"", collapse = ", "),
@@ -1994,7 +1994,7 @@ dna_timeWindow <- function(connection,
     if (verbose > 0) {
       cat("Applying custom function to network time windows...\n")
     }
-    if (!class(method) == "function"){
+    if (!class(method) == "function") {
       stop (
         paste0("\"", method, "\" is not a valid function.")
       )
