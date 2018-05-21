@@ -873,7 +873,9 @@ $sudo gdebi libgstreamer-plugins-base0.10-0_0.10.36-2_amd64.deb
 # And then clean up
 $sudo rm libgstreamer0.10-0_0.10.36-1.5_amd64.deb libgstreamer-plugins-base0.10-0_0.10.36-2_amd64.deb
 @
-  \item For Linux there are afew other system dependecy for \rdna\. You should install these using:
+  
+  \item For Linux, there are a few other system dependencies for \rdna\. You should install these using:
+
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 $sudo apt-get install libudunits2-dev
 $sudo apt-get build-dep libcurl4-gnutls-dev
@@ -3669,7 +3671,7 @@ To convert the raw files from LexisNexis though, we need another \R\ package: \t
 You can install this package via \code{devtools::install\_github("JBGruber/LexisNexisTools")}.
 The workflow looks as follows:
 
-<<eval=TRUE, warning = FALSE, message=FALSE, results = 'tex'>>=
+<<eval=TRUE, warning = FALSE, message=FALSE, results = 'hide'>>=
 library("LexisNexisTools")
 # This places a sample TXT file in your working directory in
 lnt_sample()

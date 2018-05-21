@@ -1494,7 +1494,7 @@ dna_network <- function(connection,
 #' @param ncpus Number of CPU cores to use for parallel processing (if switched 
 #'   on through the \code{parallel} argument).
 #' @param cl An optional \code{cluster} object for PSOCK parallel processing. 
-#'   If no \code{cluster} object is provided (default behavior), a cluster is 
+#'   If no \code{cluster} object is provided (default behaviour), a cluster is 
 #'   created internally on the fly. If a \code{cluster} object is provided, 
 #'   the \code{ncpus} argument is ignored because the \code{cluster} object 
 #'   already contains the number of cores. It can be useful to supply a 
@@ -2263,6 +2263,212 @@ dna_toNetwork <- function(x,
 
 
 # Visualisation ----------------------------------------------------------------
+
+#' Plots an MDS scatterplot from dna.cluster objects
+#'
+#' Plots a scatterplot with the results of non-metric multidimensional scaling
+#' performed in \link{dna_cluster}.
+#'
+#' This function is a convenience wrapper for using the \code{ggplot2} package
+#' to make a scatterplot of the results of non-metric multidimensional scaling
+#' performed in \link{dna_cluster}. It can also add ellipses of polygons to
+#' highlight clusters.
+#'
+#' @param clust A \code{dna_cluster} object created by the \link{dna_cluster}
+#'   function.
+#' @param what Choose either "MDS" to plot the results of multidimensional
+#'   scaling or "FA" to plot two factors of the factor analysis.
+#' @param dimensions Provide two numeric values to determine which dimensions to
+#'   plot. The default, c(1, 2), will plot dimension 1 and dimension 2.
+#' @param draw_polygons Logical. Should clusters be highlighted with coloured
+#'   polygons?
+#' @param custom_colours Manually provide colours for the points and polygons.
+#' @param custom_shape Manually provide shapes to use for the scatterplot.
+#' @param alpha The alpha level of the polygons drawn when \code{draw.clusters =
+#'   "polygon"}.
+#' @param jitter Takes either one value, to control the width of the jittering
+#'   of points, two values to control width and height of the jittering of
+#'   points (e.g., c(.l, .2)) or \code{character()} to turn off the jittering of
+#'   points.
+#' @param seed Seed for jittering.
+#' @param label Logical. Should labels be plotted?
+#' @param label_size,font_colour,label_background Control the label size, font
+#'   colour of the labels and if a background should be displayed when
+#'   \code{label = TRUE}. label_size takes numeric values, font_colour takes a
+#'   character string with a valid colour value and label_background can be
+#'   either TRUE or FALSE.
+#' @param point_size Size of the points in the scatterplot.
+#' @param expand Expand x- and y-axis (e.g., to make room for labels). The first
+#'   value is the units by which the x-axis is expanded in both directions, the
+#'   second controls expansion of the y axis.
+#' @param stress Should stress from the MDS be displayed on the plot.
+#' @param axis_labels Provide custom axis labels.
+#' @param clust_method Can be either \code{pam} for \link[cluster]{pam},
+#'   \code{"louvain"} for \link[igraph]{cluster_louvain} or \code{"inherit"} to
+#'   use the method provided by the call to \link{dna_cluster}.
+#' @param truncate Sets the number of characters to which labels should be
+#'   truncated. Value \code{Inf} turns off truncation.
+#' @param title Title of the MDS plot.
+#' @param ... Not used. If you want to add more plot options use \code{+} and
+#'   the ggplot2 logic (see example).
+#' @examples
+#' \dontrun{
+#' dna_downloadJar()
+#' dna_init("dna-2.0-beta21.jar")
+#' conn <- dna_connection(dna_sample())
+#' clust <- dna_cluster(conn)
+#' mds <- dna_plotCoordinates(clust)
+#' # Flip plot with ggplot2 command
+#' library("ggplot2")
+#' mds +
+#' coord_flip()
+#' }
+#' @author Johannes B. Gruber
+#' @export
+#' @import ggplot2
+#' @importFrom ggrepel geom_label_repel
+dna_plotCoordinates <- function(clust,
+                                what = "MDS",
+                                dimensions = c(1, 2),
+                                draw_polygons = TRUE,
+                                alpha = .25,
+                                jitter = NULL,
+                                seed = 12345,
+                                label = FALSE,
+                                label_size = 3.5,
+                                point_size = 1,
+                                label_background = FALSE,
+                                font_colour = "black",
+                                expand = 0,
+                                stress = TRUE,
+                                truncate = 40,
+                                custom_colours = character(),
+                                custom_shape = character(),
+                                axis_labels = character(),
+                                clust_method = "pam",
+                                title = "auto",
+                                ...) {
+  if (is.vector(dimensions, mode = "numeric") &
+      any(grepl(paste0("Dimension_", dimensions[1]), colnames(clust[["mds"]]))) &
+      any(grepl(paste0("Dimension_", dimensions[2]), colnames(clust[["mds"]])))) {
+    stop("Please provide two valid dimensions to plot as a numeric vector (e.g., 'c(1, 2)')")
+  }
+  if (what == "MDS") {
+    df <- clust[["mds"]]
+    dim1 <- paste0("Dimension_", dimensions[1])
+    dim2 <- paste0("Dimension_", dimensions[2])
+  } else if (what == "FA") {
+    df <- clust[["fa"]]$loadings[, dimensions]
+    dim1 <- paste0("Factor", dimensions[1])
+    dim2 <- paste0("Factor", dimensions[2])
+    df <- data.frame(df,
+                     variable = row.names(df),
+                     cluster_pam = clust[["mds"]]$cluster_pam,
+                     cluster_louvain = clust[["mds"]]$cluster_louvain)
+  } else {
+    stop("This function can either plot MDS or factor analysis data. Please select 'MDS' or 'FA' as 'what'." )
+  }
+  
+  # jitter if selected
+  if (length(jitter) > 0) {
+    set.seed(seed)
+    df[[dim1]] <- jitter(df[[dim1]], amount = jitter[1])
+    if (length(jitter) > 1) {
+      df[[dim2]] <- jitter(df[[dim2]], amount = jitter[2])
+    }
+  }
+  if (clust_method == "inherit") {
+    df$cluster <- clust$group[match(clust$labels, df$variable)]
+  } else if (clust_method == "pam") {
+    df$cluster <- df$cluster_pam
+  } else if (clust_method == "louvain") {
+    df$cluster <- df$cluster_louvain
+  } else {
+    stop(paste0("Please provide a valid clust_method: 'inherit', 'pam' or ",
+                "'louvain'."))
+  }
+  df$variable <- trim(as.character(df$variable), truncate)
+  g <- ggplot(df, aes_string(x = dim1,
+                             y = dim2,
+                             fill = "cluster",
+                             label = "variable"))
+  g <- g +
+    geom_point(aes_string(colour = "cluster",
+                          shape = "cluster"),
+               size = point_size)
+  if (draw_polygons) {
+    polygons <- lapply(unique(df$cluster), function(i) {
+      df[df$cluster == i, ][grDevices::chull(x = df[df$cluster == i, ][[dim1]],
+                                             y = df[df$cluster == i, ][[dim2]]), ]
+    })
+    polygons <- do.call(rbind, polygons)
+    g <- g +
+      geom_polygon(data = polygons,
+                   alpha = alpha)
+  }
+  if (label) {
+    if (label_background) {
+      g <- g +
+        ggrepel::geom_label_repel(size = label_size,
+                                  color = font_colour,
+                                  show.legend = FALSE)
+    } else {
+      g <- g +
+        ggrepel::geom_text_repel(size = label_size,
+                                 color = font_colour,
+                                 show.legend = FALSE)
+    }
+  }
+  if (length(expand) > 0) {
+    g <- g +
+      scale_x_continuous(limits = c(min(df[[dim1]]) - expand[1],
+                                    max(df[[dim1]]) + expand[1]))
+    if (length(expand) > 1) {
+      g <- g +
+        scale_y_continuous(limits = c(min(df[[dim2]]) - expand[2],
+                                      max(df[[dim2]]) + expand[2]))
+    } else {
+      expand[2] <- 0
+    }
+  } else {
+    expand[1] <- 0
+  }
+  if (length(custom_colours) > 0) {
+    g <- g +
+      scale_color_manual(values = custom_colours) +
+      scale_fill_manual(values = custom_colours)
+  }
+  if (length(custom_shape) > 0) {
+    g <- g +
+      scale_shape_manual(values = custom_shape)
+  }
+  if (length(axis_labels) > 0) {
+    g <- g +
+      xlab(label = axis_labels[1]) +
+      ylab(label = axis_labels[2])
+  }
+  if (length(title) > 0) {
+    if (title == "auto") {
+      if (what == "MDS") {
+        title <- "Non-metric Multidimensional Scaling"
+      } else if (what == "FA") {
+        title <- "Factor analysis"
+      }
+    }
+    g <- g +
+      ggtitle(title)
+  }
+  if (stress & what == "MDS") {
+    a <- data.frame(x = max(df[[dim1]]) + expand[1],
+                    y = max(df[[dim2]]) + expand[2],
+                    label = paste("Stress:", round(attributes(df)$stress, digits = 6)))
+    g <- g +
+      geom_text(data = a, aes(x = x, y = y, label = label),
+                inherit.aes = FALSE, hjust = 1)
+  }
+  return(g)
+}
+
 
 #' Plots a dendrogram from dna_cluster objects
 #'
@@ -3183,204 +3389,6 @@ dna_plotHive <- function(x,
   return(g)
 }
 
-#' Plots an MDS scatterplot from dna.cluster objects
-#'
-#' Plots a scatterplot with the results of non-metric multidimensional scaling
-#' performed in \link{dna_cluster}.
-#'
-#' This function is a convenience wrapper for using the \code{ggplot2} package
-#' to make a scatterplot of the results of non-metric multidimensional scaling
-#' performed in \link{dna_cluster}. It can also add ellipses of polygons to
-#' highlight clusters.
-#'
-#' @param clust A \code{dna_cluster} object created by the \link{dna_cluster}
-#'   function.
-#' @param what Choose either "MDS" to plot the results of multidimensional
-#'   scaling or "FA" to plot two factors of the factor analysis.
-#' @param dimensions Provide two numeric values to determine which dimensions to
-#'   plot. The default, c(1, 2), will plot dimension 1 and dimension 2.
-#' @param draw_polygons Logical. Should clusters be highlighted with coloured
-#'   polygons?
-#' @param custom_colours Manually provide colours for the points and polygons.
-#' @param custom_shape Manually provide shapes to use for the scatterplot.
-#' @param alpha The alpha level of the polygons drawn when \code{draw.clusters =
-#'   "polygon"}.
-#' @param jitter Takes either one value, to control the width of the jittering
-#'   of points, two values to control width and height of the jittering of
-#'   points (e.g., c(.l, .2)) or \code{character()} to turn off the jittering of
-#'   points.
-#' @param seed Seed for jittering.
-#' @param label Logical. Should labels be plotted?
-#' @param label_size,font_colour,label_background Control the label size, font
-#'   colour of the labels and if a background should be displayed when
-#'   \code{label = TRUE}. label_size takes numeric values, font_colour takes a
-#'   character string with a valid colour value and label_background can be
-#'   either TRUE or FALSE.
-#' @param point_size Size of the points in the scatterplot.
-#' @param expand Expand x- and y-axis (e.g., to make room for labels). The first
-#'   value is the units by which the x-axis is expanded in both directions, the
-#'   second controls expansion of the y axis.
-#' @param stress Should stress from the MDS be displayed on the plot.
-#' @param axis_labels Provide custom axis labels.
-#' @param clust_method Can be either \code{pam} for \link[cluster]{pam},
-#'   \code{"louvain"} for \link[igraph]{cluster_louvain} or \code{"inherit"} to
-#'   use the method provided by the call to \link{dna_cluster}.
-#' @param truncate Sets the number of characters to which labels should be
-#'   truncated. Value \code{Inf} turns off truncation.
-#' @param title Title of the MDS plot.
-#' @param ... Not used. If you want to add more plot options use \code{+} and
-#'   the ggplot2 logic (see example).
-#' @examples
-#' \dontrun{
-#' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
-#' conn <- dna_connection(dna_sample())
-#' clust <- dna_cluster(conn)
-#' mds <- dna_plotCoordinates(clust)
-#' # Flip plot with ggplot2 command
-#' library("ggplot2")
-#' mds +
-#' coord_flip()
-#' }
-#' @author Johannes B. Gruber
-#' @export
-#' @import ggplot2
-#' @importFrom ggrepel geom_label_repel
-dna_plotCoordinates <- function(clust,
-                                what = "MDS",
-                                dimensions = c(1, 2),
-                                draw_polygons = TRUE,
-                                alpha = .25,
-                                jitter = NULL,
-                                seed = 12345,
-                                label = FALSE,
-                                label_size = 3.5,
-                                point_size = 1,
-                                label_background = FALSE,
-                                font_colour = "black",
-                                expand = 0,
-                                stress = TRUE,
-                                truncate = 40,
-                                custom_colours = character(),
-                                custom_shape = character(),
-                                axis_labels = character(),
-                                clust_method = "pam",
-                                title = "auto",
-                                ...) {
-  if (what == "MDS") {
-    df <- clust[["mds"]]
-    dim1 <- paste0("Dimension_", dimensions[1])
-    dim2 <- paste0("Dimension_", dimensions[2])
-  } else if (what == "FA") {
-    df <- clust[["fa"]]$loadings[, dimensions]
-    dim1 <- paste0("Factor", dimensions[1])
-    dim2 <- paste0("Factor", dimensions[2])
-    df <- data.frame(df,
-                     variable = row.names(df),
-                     cluster_pam = clust[["mds"]]$cluster_pam,
-                     cluster_louvain = clust[["mds"]]$cluster_louvain)
-  } else {
-    stop("This function can either plot MDS or factor analysis data. Please select 'MDS' or 'FA' as 'what'." )
-  }
-  # jitter if selected
-  if (length(jitter) > 0) {
-    set.seed(seed)
-    df[[dim1]] <- jitter(df[[dim1]], amount = jitter[1])
-    if (length(jitter) > 1) {
-      df[[dim2]] <- jitter(df[[dim2]], amount = jitter[2])
-    }
-  }
-  if (clust_method == "inherit") {
-    df$cluster <- clust$group[match(clust$labels, df$variable)]
-  } else if (clust_method == "pam") {
-    df$cluster <- df$cluster_pam
-  } else if (clust_method == "louvain") {
-    df$cluster <- df$cluster_louvain
-  } else {
-    stop(paste0("Please provide a valid clust_method: 'inherit', 'pam' or ",
-                "'louvain'."))
-  }
-  df$variable <- trim(as.character(df$variable), truncate)
-  g <- ggplot(df, aes_string(x = dim1,
-                             y = dim2,
-                             fill = "cluster",
-                             label = "variable"))
-  g <- g +
-    geom_point(aes_string(colour = "cluster",
-                          shape = "cluster"),
-               size = point_size)
-  if (draw_polygons) {
-    polygons <- lapply(unique(df$cluster), function(i) {
-      df[df$cluster == i, ][grDevices::chull(x = df[df$cluster == i, ][[dim1]],
-                                             y = df[df$cluster == i, ][[dim2]]), ]
-    })
-    polygons <- do.call(rbind, polygons)
-    g <- g +
-      geom_polygon(data = polygons,
-                   alpha = alpha)
-  }
-  if (label) {
-    if (label_background) {
-      g <- g +
-        ggrepel::geom_label_repel(size = label_size,
-                                  color = font_colour,
-                                  show.legend = FALSE)
-    } else {
-      g <- g +
-        ggrepel::geom_text_repel(size = label_size,
-                                 color = font_colour,
-                                 show.legend = FALSE)
-    }
-  }
-  if (length(expand) > 0) {
-    g <- g +
-      scale_x_continuous(limits = c(min(df[[dim1]]) - expand[1],
-                                    max(df[[dim1]]) + expand[1]))
-    if (length(expand) > 1) {
-      g <- g +
-        scale_y_continuous(limits = c(min(df[[dim2]]) - expand[2],
-                                      max(df[[dim2]]) + expand[2]))
-    } else {
-      expand[2] <- 0
-      }
-  } else {
-    expand[1] <- 0
-    }
-  if (length(custom_colours) > 0) {
-    g <- g +
-      scale_color_manual(values = custom_colours) +
-      scale_fill_manual(values = custom_colours)
-  }
-  if (length(custom_shape) > 0) {
-    g <- g +
-      scale_shape_manual(values = custom_shape)
-  }
-  if (length(axis_labels) > 0) {
-    g <- g +
-      xlab(label = axis_labels[1]) +
-      ylab(label = axis_labels[2])
-  }
-  if (length(title) > 0) {
-    if (title == "auto") {
-      if (what == "MDS") {
-        title <- "Non-metric Multidimensional Scaling"
-      } else if (what == "FA") {
-        title <- "Factor analysis"
-      }
-    }
-    g <- g +
-      ggtitle(title)
-  }
-  if (stress & what == "MDS") {
-    a <- data.frame(x = max(df[[dim1]]) + expand[1],
-                    y = max(df[[dim2]]) + expand[2],
-                    label = paste("Stress:", round(attributes(df)$stress, digits = 6)))
-    g <- g +
-      geom_text(data = a, aes(x = x, y = y, label = label),
-                inherit.aes = FALSE, hjust = 1)
-  }
-  return(g)
-}
 
 #' Plots a network from DNA data
 #'
