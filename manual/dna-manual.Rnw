@@ -136,7 +136,7 @@ knit_hooks$set(crop=hook_pdfcrop,
 @
 
 \title{Discourse Network Analyzer Manual}
-\date{\footnotesize{Last update: DNA 2.0 beta 20 with rDNA \Sexpr{packageVersion("rDNA")} on \today.}}
+\date{\footnotesize{Last update: DNA 2.0 beta 21 with rDNA \Sexpr{packageVersion("rDNA")} on \today.}}
 \author{Philip Leifeld, Johannes Gruber and Felix Rolf Bossner}
 
 \maketitle
