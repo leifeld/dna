@@ -1466,33 +1466,67 @@ dna_network <- function(connection,
 #' @param facetValues Which values should be used to facet calculation of the
 #' networks. Always contains the value "all" for comparison. Use e.g.
 #' excludeTypes to exclude documents from comparison.
+#' @param parallel Use parallel processing for the computation of time series 
+#'   measures? By default, this is switched off (\code{"no"}), meaning that only 
+#'   one CPU node is used to compute the results. Other possible values are 
+#'   \code{"FORK"} and \code{"PSOCK"}. The FORK option uses the \code{mclapply} 
+#'   function under the hood. This works well on Unix systems with multiple 
+#'   cores but not on Windows. If \code{"FORK"} is used, the \code{cl} argument is 
+#'   ignored. The \code{"PSOCK"} option uses the \code{parSapply} function under 
+#'   the hood. This works on any kind of system including Windows but is 
+#'   slightly slower than forking. In either case, the number of cores can be 
+#'   provided using the \code{ncpus} argument.
+#' @param ncpus Number of CPU cores to use for parallel processing (if switched 
+#'   on through the \code{parallel} argument).
+#' @param cl An optional \code{cluster} object for PSOCK parallel processing. 
+#'   If no \code{cluster} object is provided (default behavior), a cluster is 
+#'   created internally on the fly. If a \code{cluster} object is provided, 
+#'   the \code{ncpus} argument is ignored because the \code{cluster} object 
+#'   already contains the number of cores. It can be useful to supply a 
+#'   \code{cluster} object for example for use with the MPI protocol on a HPC 
+#'   cluster. Note that the \code{cl} argument is ignored if 
+#'   \code{parallel = "FORK"}.
 #' @param verbose Display messages if \code{TRUE} or \code{1}. Also displays
 #' details about network construction when \code{2}.
 #' @param ... Additional arguments passed to \link{dna_network}.
 #'
 #' @examples
 #' \dontrun{
+#' library("ggplot2")
 #' dna_downloadJar()
 #' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #'
 #' tW <- dna_timeWindow(connection = conn,
-#'timewindow = "days",
-#'windowsize = 10,
-#'facet = "Authors",
-#'facetValues = c("Bluestein, Joel",
-#'"Voinovich, George",
-#'"Whitman, Christine Todd"),
-#'method = "modularity",
-#'verbose = TRUE)
+#'                      timewindow = "days",
+#'                      windowsize = 10,
+#'                      facet = "Authors",
+#'                      facetValues = c("Bluestein, Joel",
+#'                                      "Voinovich, George"),
+#'                      method = "bipolarization",
+#'                      verbose = TRUE)
 #'
-#' dna_plotTimeWindow(tW, facetValues = c("Bluestein, Joel", "Voinovich, George"))
+#' dna_plotTimeWindow(tW, 
+#'                    facetValues = c("Bluestein, Joel", 
+#'                                    "Voinovich, George",
+#'                                    "all"),
+#'                    rows = 2)
+#' 
+#' mp <- dna_timeWindow(connection = conn,
+#'                      timewindow = "days",
+#'                      windowsize = 15,
+#'                      method = "multipolarization",
+#'                      duplicates = "document",
+#'                      parallel = "PSOCK",
+#'                      ncpus = 3)
+#' 
+#' dna_plotTimeWindow(mp, include.y = c(-1, 1)) + theme_bw()
 #' }
 #' @author Philip Leifeld, Johannes B. Gruber
 #' @export
 #' @import ggplot2
+#' @import parallel
 #' @importFrom cluster pam
-#' @importFrom dplyr progress_estimated
 #' @importFrom igraph graph.adjacency modularity cluster_fast_greedy cluster_walktrap 
 #'   cluster_leading_eigen cluster_edge_betweenness cluster_louvain cut_at
 #' @importFrom sna equiv.clust sedist
@@ -1504,6 +1538,9 @@ dna_timeWindow <- function(connection,
                            windowsize = 100,
                            facet = "Types",
                            facetValues = character(),
+                           parallel = c("no", "FORK", "PSOCK"),
+                           ncpus = 1,
+                           cl = NULL,
                            verbose = 1,
                            ...) { # passed on to dna_network
   dots <- list(...)
@@ -1600,28 +1637,47 @@ dna_timeWindow <- function(connection,
                     ), dots)
       )
       
-      n <- length(nw$networks)
-      lv_mod <- numeric(n)
-      if (verbose > 0) {
-        p <- progress_estimated(n)
-        cat("Computing Louvain modularity...\n")
-      }
-      for (i in 1:n) {
-        if (verbose > 0) {
-          p$tick()$print()
+      louvain <- function(x) {
+        if (nrow(x) < 2) {
+          return(NA)
         }
-        
-        cong <- nw$networks[[i]]
-        cong[cong < 0] <- 0
-        g <- igraph::graph.adjacency(cong, mode = "undirected", weighted = TRUE)
-        
+        x[x < 0] <- 0
+        g <- igraph::graph.adjacency(x, mode = "undirected", weighted = TRUE)
         lv <- cluster_louvain(g)
-        lv_mod[i] <- igraph::modularity(lv)
+        return(igraph::modularity(lv))
+      }
+      
+      if (parallel[1] == "no") {
+        if (verbose > 0) {
+          cat("Computing Louvain modularity without parallelization...\n")
+        }
+        lvmod <- sapply(nw$networks, louvain)
+      } else if (parallel[1] == "FORK") {
+        if (verbose > 0) {
+          cat("Computing Louvain modularity (FORK cluster with", ncpus, "cores)...\n")
+        }
+        lvmod <- simplify2array(mclapply(nw$networks, louvain, mc.cores = ncpus))
+      } else if (parallel[1] == "PSOCK") {
+        newCluster <- FALSE
+        if (is.null(cl)) {
+          newCluster <- TRUE
+          cl <- makePSOCKcluster(ncpus)
+        }
+        clusterEvalQ(cl, library("igraph"))
+        if (verbose > 0) {
+          cat("Computing Louvain modularity (PSOCK cluster with", length(cl), "cores)...\n")
+        }
+        lvmod <- parSapply(cl = cl, nw$networks, louvain)
+        if (newCluster == TRUE) {
+          stopCluster(cl)
+        }
+      } else {
+        stop("'parallel' argument was not recognized.")
       }
       
       mod.m <- data.frame(index = 1:length(nw$networks),
                           Time = nw$time,
-                          Modularity = lv_mod,
+                          Modularity = lvmod,
                           facet = rep(facetValues[facetValues %in% x], length(nw$networks)))
       return(mod.m)
     })
@@ -1645,56 +1701,74 @@ dna_timeWindow <- function(connection,
                     ), dots)
       )
       
-      n <- length(nw$networks)
-      le_mod <- numeric(n)
-      lv_mod <- numeric(n)
-      fg_mod <- numeric(n)
-      wt_mod <- numeric(n)
-      eb_mod <- numeric(n)
-      if (verbose > 0) {
-        p <- progress_estimated(n)
-        cat("Computing multipolarization measure...\n")
-      }
-      for (i in 1:n) {
-        if (verbose > 0) {
-          p$tick()$print()
+      multipolarization <- function(x) {
+        if (nrow(x) < 2) {
+          return(rep(NA, 6))
         }
-        
-        cong <- nw$networks[[i]]
-        cong[cong < 0] <- 0
-        g <- igraph::graph.adjacency(cong, mode = "undirected", weighted = TRUE)
+        x[x < 0] <- 0
+        g <- igraph::graph.adjacency(x, mode = "undirected", weighted = TRUE)
         
         fg <- cluster_fast_greedy(g)
-        fg_mod[i] <- igraph::modularity(fg)
+        fg_mod <- igraph::modularity(fg)
         
         wt <- cluster_walktrap(g)
-        wt_mod[i] <- igraph::modularity(wt)
+        wt_mod <- igraph::modularity(wt)
         
+        le_mod <- NA
         try({
           suppressWarnings(le <- cluster_leading_eigen(g))
-          le_mod[i] <- igraph::modularity(le)
+          le_mod <- igraph::modularity(le)
         }, silent = TRUE)
-        if (le_mod[i] == 0) {
-          le_mod[i] <- NA
+        if (!is.na(le_mod) && le_mod == 0) {
+          le_mod <- NA
         }
         
         eb <- cluster_edge_betweenness(g, directed = FALSE)
-        eb_mod[i] <- igraph::modularity(eb)
+        eb_mod <- igraph::modularity(eb)
         
         lv <- cluster_louvain(g)
-        lv_mod[i] <- igraph::modularity(lv)
+        lv_mod <- igraph::modularity(lv)
+        
+        values <- c(fg_mod, wt_mod, le_mod, eb_mod, lv_mod)
+        values <- c(max(values, na.rm = TRUE), values)
       }
-      mod_matrix <- cbind(fg_mod, wt_mod, le_mod, eb_mod, lv_mod)
-      max_mod <- apply(mod_matrix, 1, function(x) max(x, na.rm = TRUE))
+      
+      if (parallel[1] == "no") {
+        if (verbose > 0) {
+          cat("Computing multipolarization measure without parallelization...\n")
+        }
+        mod_matrix <- t(sapply(nw$networks, multipolarization))
+      } else if (parallel[1] == "FORK") {
+        if (verbose > 0) {
+          cat("Computing multipolarization measure (FORK cluster with", ncpus, "cores)...\n")
+        }
+        mod_matrix <- t(simplify2array(mclapply(nw$networks, multipolarization, mc.cores = ncpus)))
+      } else if (parallel[1] == "PSOCK") {
+        newCluster <- FALSE
+        if (is.null(cl)) {
+          newCluster <- TRUE
+          cl <- makePSOCKcluster(ncpus)
+        }
+        clusterEvalQ(cl, library("igraph"))
+        if (verbose > 0) {
+          cat("Computing multipolarization measure (PSOCK cluster with", length(cl), "cores)...\n")
+        }
+        mod_matrix <- t(parSapply(cl = cl, nw$networks, multipolarization))
+        if (newCluster == TRUE) {
+          stopCluster(cl)
+        }
+      } else {
+        stop("'parallel' argument was not recognized.")
+      }
       
       mod.m <- data.frame(index = 1:length(nw$networks),
                           Time = nw$time,
-                          Modularity = max_mod,
-                          "Fast & Greedy" = fg_mod,
-                          "Walktrap" = wt_mod,
-                          "Leading Eigenvector" = le_mod,
-                          "Edge Betweenness" = eb_mod,
-                          "Louvain" = lv_mod,
+                          Modularity = mod_matrix[, 1],
+                          "Fast & Greedy" = mod_matrix[, 2],
+                          "Walktrap" = mod_matrix[, 3],
+                          "Leading Eigenvector" = mod_matrix[, 4],
+                          "Edge Betweenness" = mod_matrix[, 5],
+                          "Louvain" = mod_matrix[, 6],
                           facet = rep(facetValues[facetValues %in% x], length(nw$networks)),
                           check.names = FALSE)
       return(mod.m)
@@ -1745,102 +1819,100 @@ dna_timeWindow <- function(connection,
                                 verbose = ifelse(verbose > 1, TRUE, FALSE)
                          ), dots)
       )
+      
       n <- length(nw_aff$networks)
-      km_mod <- numeric(n)   # k-means clustering
-      pm_mod <- numeric(n)   # partitioning around medoids (pam)
-      hcw_mod <- numeric(n)  # hierarchical clustering with Ward D2
-      hcc_mod <- numeric(n)  # hierarchical clustering with complete linkage
-      fg_mod <- numeric(n)   # fast and greedy community detection
-      wt_mod <- numeric(n)   # walktrap community detection
-      le_mod <- numeric(n)   # leading eigenvector community detection
-      eb_mod <- numeric(n)   # Girvan-Newman edge betweenness community detection
-      ec_mod <- numeric(n)   # equivalence clustering
-      cc_mod <- numeric(n)   # CONCOR based on subtract matrix
-      cca_mod <- numeric(n)  # CONCOR based on combined affiliation matrix
-      if (verbose > 0) {
-        p <- progress_estimated(n)
-        cat("Computing bipolarization measure...\n")
-      }
+      l <- list(n)
       for (i in 1:n) {
-        if (verbose > 0) {
-          p$tick()$print()
-        }
+        l[[i]] <- list()
+        l[[i]]$cong <- nw_cong$networks[[i]]
+        l[[i]]$subt <- nw_subt$networks[[i]]
+        l[[i]]$aff <- nw_aff$networks[[i]]
+      }
+      
+      bipolarization <- function(x) {
         
-        cong <- nw_cong$networks[[i]]
-        subt <- nw_subt$networks[[i]]
-        g <- igraph::graph.adjacency(cong, mode = "undirected", weighted = TRUE)
+        g <- igraph::graph.adjacency(x$cong, mode = "undirected", weighted = TRUE)
         
-        aff <- nw_aff$networks[[i]]
-        pos <- apply(aff, 1:2, function(x) ifelse(x %in% c(1, 3), 1, 0))
-        neg <- apply(aff, 1:2, function(x) ifelse(x %in% c(2, 3), 1, 0))
+        pos <- apply(x$aff, 1:2, function(x) ifelse(x %in% c(1, 3), 1, 0))
+        neg <- apply(x$aff, 1:2, function(x) ifelse(x %in% c(2, 3), 1, 0))
         
         colnames(pos) <- paste(colnames(pos), "- yes")
         colnames(neg) <- paste(colnames(neg), "- no")
         combined <- cbind(pos, neg)
-        combined <- combined[rowSums(combined) > 0, ]
+        combined <- combined[rowSums(combined) > 0, , drop = FALSE]
+        if (nrow(combined) < 2) {  # less than two objects in current time window
+          return(rep(NA, 12))
+        }
         
         jac <- vegdist(combined, method = "jaccard")
-        km <- kmeans(jac, centers = 2)
-        km_mod[i] <- igraph::modularity(x = g, membership = km$cluster)
+        km_mod <- NA
+        try({
+          km <- kmeans(jac, centers = 2)
+          km_mod <- igraph::modularity(x = g, membership = km$cluster)
+        }, silent = TRUE)
         
-        pm <- pam(jac, k = 2)
-        pm_mod[i] <- igraph::modularity(x = g, membership = pm$cluster)
+        pm_mod <- NA
+        try({
+          pm <- pam(jac, k = 2)
+          pm_mod <- igraph::modularity(x = g, membership = pm$cluster)
+        }, silent = TRUE)
         
         hcw <- hclust(jac, method = "ward.D2")
         hcw_mem <- cutree(hcw, k = 2)
-        hcw_mod[i] <- igraph::modularity(x = g, membership = hcw_mem)
+        hcw_mod <- igraph::modularity(x = g, membership = hcw_mem)
         
         hcc <- hclust(jac, method = "complete")
         hcc_mem <- cutree(hcc, k = 2)
-        hcc_mod[i] <- igraph::modularity(x = g, membership = hcc_mem)
-        if (hcc_mod[i] == 0) {
-          hcc_mod[i] <- NA
+        hcc_mod <- igraph::modularity(x = g, membership = hcc_mem)
+        if (hcc_mod == 0) {
+          hcc_mod <- NA
         }
         
         suppressWarnings(fg <- cluster_fast_greedy(g))
         suppressWarnings(fg_mem <- cut_at(fg, no = 2))
         if (length(unique(fg_mem) < 3)) {
-          fg_mod[i] <- igraph::modularity(x = g, membership = fg_mem)
+          fg_mod <- igraph::modularity(x = g, membership = fg_mem)
         }
-        if (fg_mod[i] == 0) {
-          fg_mod[i] <- NA
+        if (fg_mod == 0) {
+          fg_mod <- NA
         }
         
         suppressWarnings(wt <- cluster_walktrap(g))
         suppressWarnings(wt_mem <- cut_at(wt, no = 2))
         if (length(unique(wt_mem) < 3)) {
-          wt_mod[i] <- igraph::modularity(x = g, membership = wt_mem)
+          wt_mod <- igraph::modularity(x = g, membership = wt_mem)
         }
-        if (wt_mod[i] == 0) {
-          wt_mod[i] <- NA
+        if (wt_mod == 0) {
+          wt_mod <- NA
         }
         
+        le_mod <- NA
         try({
           suppressWarnings(le <- cluster_leading_eigen(g))
           suppressWarnings(le_mem <- cut_at(le, no = 2))
           if (length(unique(le_mem) < 3)) {
-            le_mod[i] <- igraph::modularity(x = g, membership = le_mem)
+            le_mod <- igraph::modularity(x = g, membership = le_mem)
           }
         }, silent = TRUE)
-        if (le_mod[i] == 0) {
-          le_mod[i] <- NA
+        if (!is.na(le_mod) && le_mod == 0) {
+          le_mod <- NA
         }
         
         suppressWarnings(eb <- cluster_edge_betweenness(g, directed = FALSE))
         suppressWarnings(eb_mem <- cut_at(eb, no = 2))
         if (length(unique(eb_mem) < 3)) {
-          eb_mod[i] <- igraph::modularity(x = g, membership = eb_mem)
+          eb_mod <- igraph::modularity(x = g, membership = eb_mem)
         }
-        if (eb_mod[i] == 0) {
-          eb_mod[i] <- NA
+        if (eb_mod == 0) {
+          eb_mod <- NA
         }
         
-        ec_dist <- sedist(subt, method = "euclidean")
-        ec <- equiv.clust(subt, equiv.dist = ec_dist)
+        ec_dist <- sedist(x$subt, method = "euclidean")
+        ec <- equiv.clust(x$subt, equiv.dist = ec_dist)
         ec_mem <- cutree(ec$cluster, k = 2)
-        ec_mod[i] <- igraph::modularity(x = g, membership = ec_mem)
+        ec_mod <- igraph::modularity(x = g, membership = ec_mem)
         
-        suppressWarnings(mi <- cor(subt))
+        suppressWarnings(mi <- cor(x$subt))
         iter <- 1
         cutoff <- 0.999
         max.iter <- 50
@@ -1850,7 +1922,7 @@ dna_timeWindow <- function(connection,
           iter <- iter + 1
         }
         concor_cong <- ((mi[, 1] > 0) * 1) + 1
-        cc_mod[i] <- igraph::modularity(x = g, membership = concor_cong)
+        cc_mod <- igraph::modularity(x = g, membership = concor_cong)
         
         suppressWarnings(mi <- cor(t(combined)))
         iter <- 1
@@ -1862,25 +1934,58 @@ dna_timeWindow <- function(connection,
           iter <- iter + 1
         }
         concor_aff <- ((mi[, 1] > 0) * 1) + 1
-        cca_mod[i] <- igraph::modularity(x = g, membership = concor_aff)
+        cca_mod <- igraph::modularity(x = g, membership = concor_aff)
+        
+        values <- c(km_mod, pm_mod, hcw_mod, hcc_mod, fg_mod, wt_mod, le_mod, eb_mod, ec_mod, cc_mod, cca_mod)
+        values <- c(max(values, na.rm = TRUE), values)
+        return(values)
       }
-      mod_matrix <- cbind(km_mod, pm_mod, hcw_mod, hcc_mod, fg_mod, wt_mod, le_mod, eb_mod, ec_mod, cc_mod, cca_mod)
-      max_mod <- apply(mod_matrix, 1, function(x) max(x, na.rm = TRUE))
+      
+      if (parallel[1] == "no") {
+        if (verbose > 0) {
+          cat("Computing bipolarization measure without parallelization...\n")
+        }
+        mod_matrix <- t(sapply(l, bipolarization))
+      } else if (parallel[1] == "FORK") {
+        if (verbose > 0) {
+          cat("Computing bipolarization measure (FORK cluster with", ncpus, "cores)...\n")
+        }
+        mod_matrix <- t(simplify2array(mclapply(l, bipolarization, mc.cores = ncpus)))
+      } else if (parallel[1] == "PSOCK") {
+        newCluster <- FALSE
+        if (is.null(cl)) {
+          newCluster <- TRUE
+          cl <- makePSOCKcluster(ncpus)
+        }
+        clusterEvalQ(cl, library("igraph"))
+        clusterEvalQ(cl, library("vegan"))
+        clusterEvalQ(cl, library("cluster"))
+        clusterEvalQ(cl, library("sna"))
+        if (verbose > 0) {
+          cat("Computing bipolarization measure (PSOCK cluster with", length(cl), "cores)...\n")
+        }
+        mod_matrix <- t(parSapply(cl = cl, l, bipolarization))
+        if (newCluster == TRUE) {
+          stopCluster(cl)
+        }
+      } else {
+        stop("'parallel' argument was not recognized.")
+      }
       
       mod.m <- data.frame(index = 1:n,
                           Time = nw_aff$time,
-                          Modularity = max_mod,
-                          "k-Means" = km_mod, 
-                          "Partionning around Medoids" = pm_mod, 
-                          "Hierarchical Clustering (Ward)" = hcw_mod, 
-                          "Hierarchical Clustering (Complete)" = hcc_mod, 
-                          "Fast & Greedy" = fg_mod, 
-                          "Walktrap" = wt_mod, 
-                          "Leading Eigenvector" = le_mod, 
-                          "Edge Betweenness" = eb_mod, 
-                          "Equivalence Clustering" = ec_mod, 
-                          "CONCOR (One-Mode)" = cc_mod, 
-                          "CONCOR (Two-Mode)" = cca_mod, 
+                          Modularity = mod_matrix[, 1],
+                          "k-Means" = mod_matrix[, 2], 
+                          "Partionning around Medoids" = mod_matrix[, 3], 
+                          "Hierarchical Clustering (Ward)" = mod_matrix[, 4], 
+                          "Hierarchical Clustering (Complete)" = mod_matrix[, 5], 
+                          "Fast & Greedy" = mod_matrix[, 6], 
+                          "Walktrap" = mod_matrix[, 7], 
+                          "Leading Eigenvector" = mod_matrix[, 8], 
+                          "Edge Betweenness" = mod_matrix[, 9], 
+                          "Equivalence Clustering" = mod_matrix[, 10], 
+                          "CONCOR (One-Mode)" = mod_matrix[, 11], 
+                          "CONCOR (Two-Mode)" = mod_matrix[, 12], 
                           facet = rep(facetValues[facetValues %in% x], n),
                           check.names = FALSE)
       return(mod.m)
@@ -1921,9 +2026,38 @@ dna_timeWindow <- function(connection,
                                verbose = ifelse(verbose > 1, TRUE, FALSE)
                         ), dots)
           )
+          
+          if (parallel[1] == "no") {
+            if (verbose > 0) {
+              cat("Computing custom measure without parallelization...\n")
+            }
+            results <- sapply(nw$networks, method)
+          } else if (parallel[1] == "FORK") {
+            if (verbose > 0) {
+              cat("Computing custom measure (FORK cluster with", ncpus, "cores)...\n")
+            }
+            results <- simplify2array(mclapply(nw$networks, method, mc.cores = ncpus))
+          } else if (parallel[1] == "PSOCK") {
+            newCluster <- FALSE
+            if (is.null(cl)) {
+              newCluster <- TRUE
+              cl <- makePSOCKcluster(ncpus)
+            }
+            clusterEvalQ(cl, library("igraph"))
+            if (verbose > 0) {
+              cat("Computing custom measure (PSOCK cluster with", length(cl), "cores)...\n")
+            }
+            results <- parSapply(cl = cl, nw$networks, method)
+            if (newCluster == TRUE) {
+              stopCluster(cl)
+            }
+          } else {
+            stop("'parallel' argument was not recognized.")
+          }
+          
           mod.m <- data.frame(index = 1:length(nw$networks),
                               Time = nw$time,
-                              x = sapply(nw$networks, method),
+                              x = results,
                               facet = rep(facetValues[facetValues %in% x], length(nw$networks)))
           colnames(mod.m)[3] <- deparse(quote(method))
           return(mod.m)
@@ -3579,30 +3713,35 @@ dna_plotNetwork <- function(x,
 #'
 #' @examples
 #' \dontrun{
+#' library("ggplot2")
 #' dna_downloadJar()
 #' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #'
 #' tW <- dna_timeWindow(connection = conn,
-#'timewindow = "days",
-#'windowsize = 10,
-#'facet = "Authors",
-#'facetValues = c("Bluestein, Joel",
-#'"Voinovich, George",
-#'"Whitman, Christine Todd"),
-#'method = "modularity",
-#'excludeValues = list(),
-#'excludeAuthors = character(),
-#'excludeSources = character(),
-#'excludeSections = character(),
-#'excludeTypes = character(),
-#'verbose = TRUE)
+#'                      timewindow = "days",
+#'                      windowsize = 10,
+#'                      facet = "Authors",
+#'                      facetValues = c("Bluestein, Joel",
+#'                                      "Voinovich, George"),
+#'                      method = "bipolarization",
+#'                      verbose = TRUE)
 #'
-#' plot <- dna_plotTimeWindow(tW,
-#'facetValues = c("Bluestein, Joel", "Voinovich, George", "all"),
-#'include.y = 1,
-#'rows = 3)
-#' plot + theme_bw()
+#' dna_plotTimeWindow(tW, 
+#'                    facetValues = c("Bluestein, Joel", 
+#'                                    "Voinovich, George",
+#'                                    "all"),
+#'                    rows = 2)
+#' 
+#' mp <- dna_timeWindow(connection = conn,
+#'                      timewindow = "days",
+#'                      windowsize = 15,
+#'                      method = "multipolarization",
+#'                      duplicates = "document",
+#'                      parallel = "PSOCK",
+#'                      ncpus = 3)
+#' 
+#' dna_plotTimeWindow(mp, include.y = c(-1, 1)) + theme_bw()
 #' }
 #' @author Johannes B. Gruber, Philip Leifeld
 #' @export

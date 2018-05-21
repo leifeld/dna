@@ -36,30 +36,35 @@ passed on with \code{+}.
 }
 \examples{
 \dontrun{
+library("ggplot2")
 dna_downloadJar()
 dna_init("dna-2.0-beta21.jar")
 conn <- dna_connection(dna_sample())
 
 tW <- dna_timeWindow(connection = conn,
-timewindow = "days",
-windowsize = 10,
-facet = "Authors",
-facetValues = c("Bluestein, Joel",
-"Voinovich, George",
-"Whitman, Christine Todd"),
-method = "modularity",
-excludeValues = list(),
-excludeAuthors = character(),
-excludeSources = character(),
-excludeSections = character(),
-excludeTypes = character(),
-verbose = TRUE)
+                     timewindow = "days",
+                     windowsize = 10,
+                     facet = "Authors",
+                     facetValues = c("Bluestein, Joel",
+                                     "Voinovich, George"),
+                     method = "bipolarization",
+                     verbose = TRUE)
 
-plot <- dna_plotTimeWindow(tW,
-facetValues = c("Bluestein, Joel", "Voinovich, George", "all"),
-include.y = 1,
-rows = 3)
-plot + theme_bw()
+dna_plotTimeWindow(tW, 
+                   facetValues = c("Bluestein, Joel", 
+                                   "Voinovich, George",
+                                   "all"),
+                   rows = 2)
+
+mp <- dna_timeWindow(connection = conn,
+                     timewindow = "days",
+                     windowsize = 15,
+                     method = "multipolarization",
+                     duplicates = "document",
+                     parallel = "PSOCK",
+                     ncpus = 3)
+
+dna_plotTimeWindow(mp, include.y = c(-1, 1)) + theme_bw()
 }
 }
 \author{
