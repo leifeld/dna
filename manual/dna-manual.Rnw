@@ -116,13 +116,25 @@
 <<setup, include=FALSE, cache=FALSE, results='hide', message=FALSE, warning=FALSE>>=
 library("knitr")
 # get latest R version
-site <- readLines("https://cran.r-project.org/bin/windows/base/", n = 10)
+site <- tryCatch({
+  readLines("https://cran.r-project.org/bin/windows/base/", n = 10)
+}, 
+error = function(e) {warning("Internet connection neccessary to check for newest R version")})
 R_vers <- site[grepl("^<title>", site)]
 R_vers <- as.character(regmatches(R_vers, gregexpr("\\d+.\\d+.\\d+", R_vers)))
+if (length(R_vers) == 0) {
+  R_vers <- "3.5.0"
+}
 # get latest RStudio version
-site <- readLines("https://www.rstudio.com/products/rstudio/download/")
+site <- tryCatch({
+  readLines("https://www.rstudio.com/products/rstudio/download/")
+}, 
+error = function(e) {warning("Internet connection neccessary to check for newest R version")})
 RS_vers <- site[grepl("<h4 id=\"download\"><strong>RStudio Desktop", site)]
 RS_vers <- as.character(regmatches(RS_vers, gregexpr("\\d+.\\d+.\\d+", RS_vers)))
+if (length(RS_vers) == 0) {
+  RS_vers <- "1.1.447"
+}
 
 # set global chunk options
 opts_chunk$set(fig.path = 'figure/workshop-', fig.align = 'center', fig.show = 'hold', error = FALSE)
@@ -621,8 +633,8 @@ Otherwise please continue to the section for the operating system you wish to in
 For more experienced users, here is a short version of the steps described below:
 \begin{enumerate}
 \item (On Mac: install \href{https://support.apple.com/downloads/DL1572/en_US/javaforosx.dmg}{Apple's legacy version of \java}---even though we will never use it.)
-\item Install \java\ Runtime Environment (JRE) (Version 8) on your computer.
-\item (On Windows and Mac: set up the \code{JAVA\_HOME} to the installation path of your JRE.)
+\item Install \java\ Runtime Environment (JDK) (Version 8) on your computer.
+\item (On Windows and Mac: set up the \code{JAVA\_HOME} to the installation path of your JDK.)
 \item Download the newest executable JAR from \url{https://github.com/leifeld/dna/releases}.
 \item (On Linux: make the JAR file executable.) \\
       (On Mac: allow executing apps from an unidentified developer.)
@@ -643,7 +655,7 @@ During the installation, you can accept all the default options, including the i
 
 \begin{figure}[tbp]
   \includegraphics[frame, width=\textwidth]{03-1-downljava}
-  \caption{Downloading JRE from Oracle}
+  \caption{Downloading JDK from Oracle}
   \label{fig:downljava}
 \end{figure}
 
@@ -861,9 +873,11 @@ $sudo gdebi libgstreamer-plugins-base0.10-0_0.10.36-2_amd64.deb
 # And then clean up
 $sudo rm libgstreamer0.10-0_0.10.36-1.5_amd64.deb libgstreamer-plugins-base0.10-0_0.10.36-2_amd64.deb
 @
-  \item For Linux there is another system dependecy for \rdna\ which helps with handling units of physical quantities in the plot functions that come with the package. You should install this using:
+  \item For Linux there are afew other system dependecy for \rdna\. You should install these using:
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 $sudo apt-get install libudunits2-dev
+$sudo apt-get build-dep libcurl4-gnutls-dev
+$sudo apt-get install libcurl4-gnutls-dev
 @
   \item After the installation has finished, you can use \R\ by opening \rstudio.
 \end{enumerate}
@@ -2096,8 +2110,8 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
   row_spec(6, bold = T)
 @
 
-Each value in Table~\ref{tab:disagree} represents a speciic value in a three-dimensional array which was descibed in Chapter~\ref{chp:algorithms}.
-One of the $x_{ijk}$ values is, for example, the count for $i =$ \emph{``CO2 legislation will not hurt theeconomy.''}, $j =$  \emph{``Senate''} and $k =$ \emph{disgaree}.
+Each value in Table~\ref{tab:disagree} represents a specific value in a three-dimensional array which was descibed in Chapter~\ref{chp:algorithms}.
+One of the $x_{ijk}$ values is, for example, the count for $i =$ \emph{``CO2 legislation will not hurt the economy.''}, $j =$  \emph{``Senate''} and $k =$ \emph{disgaree}.
 Look in Table~\ref{tab:disagree} to see that this specific value is 2.
 
 You can also see that the Senate and Sierra Club co-reference three concepts: `\emph{`CO2 legislation will not hurt the economy.''}, \emph{``Emissions legislation should regulate CO2.''} and \emph{``There should be legislation to regulate emissions.''}.
@@ -2121,7 +2135,7 @@ For the co-referenced concepts, the edge weight is number of statments from Sena
 
 \item[Congruence] This option is only available for one-mode networks.
 It means that only similarity or matches on the qualifier variable are counted in order to construct an edge.
-In case of a binary second variable (e.\,g., (dis-)agreement) this means that only statements are counted were, for example, two organisations co-support or both co-reject a concept.
+In case of a binary second variable (e.\,g., (dis-)agreement) this means that the only statements counted are those where, for example, two organisations co-support or both co-reject a concept.
 You can see how this changes the output when you compare Table~\ref{tab:onemode} and Table~\ref{tab:qual3}.
 Focusing again on the edge between the Senate and the Sierra Club, you can see now that the value dropped from seven to two as they do not support or reject all of the same concepts.
 We can repeat the same calculation, this time using Equation~\ref{eq:congruence_binary} from Section~\ref{subsec:congruence}:
@@ -2363,9 +2377,9 @@ Only the option \code{no} is available in both types---which switches off normal
   \item \textbf{Two-mode network}
   \begin{description}
     \item[Activity] This divides the edge weights through the activity of the node from the first variable.
-For example, in and concept $\times$ organisation network in which organisation A has made four statements in total, the edge with concept B, which A mentioned once, has the value 0.25.
+For example, in concept $\times$ organisation network in which organisation A has made four statements in total, the edge with concept B, which A mentioned once, has the value 0.25.
     \item[Prominence] This divides the edge weights through the prominence of the node from the second variable.
-For example, in and concept $\times$ organisation network in which concept B was mentioned eight times by all organisations and once by organisation A, the edge of A and B has the value 0.125.
+For example, in concept $\times$ organisation network in which concept B was mentioned eight times by all organisations and once by organisation A, the edge of A and B has the value 0.125.
   \end{description}
   \item \textbf{One-mode network}
   \begin{description}
@@ -2383,9 +2397,9 @@ Find this algorithm in Equation~\ref{eq:cosine}.
 \end{itemize}
 Normalisation can be used in the different networks described in Section~\ref{sec:qualifier} to correct potential biases introduced by very active nodes.
 By using a threshold value on the edge weights before visualising the network, normalisation can make it easier to remove low-intensity ties without discriminating against organisations with a low media profile.
-Furthermore, the two normalisation algorithm which are based on vector similarities (Cosine and Jaccard) prepare networks to be fed into hierarchical cluster analyses, nonmetric multidimensional scaling, or other clustering techniques that are based on distance or similarity measures in order to identify coalitions in a policy debate as an alternative to community detection.
+Furthermore, the two normalisation algorithms which are based on vector similarities (Cosine and Jaccard) prepare networks to be fed into hierarchical cluster analyses, nonmetric multidimensional scaling, or other clustering techniques that are based on distance or similarity measures in order to identify coalitions in a policy debate as an alternative to community detection.
 Details about normalisation can be found in \citet{leifeld2017discourse}.
-In Table~\ref{tab:normal} you can see what how the two-mode network from Table~\ref{tab:twomode} looks like after applying the activity normalisation algorithm.
+In Table~\ref{tab:normal} you can see how the two-mode network from Table~\ref{tab:twomode} looks like after applying the activity normalisation algorithm.
 
 <<eval=TRUE, echo=FALSE>>=
 conn <- dna_connection(dna_sample(verbose = FALSE))
@@ -3126,7 +3140,7 @@ The following plot shows this by employing the full potential of the function.
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 clust <- dna_cluster(conn,
-                     variable = "person",
+                     variable1 = "person",
                      attribute1 = "value",
                      attribute2 = "type",
                      cutree.k = 2,
@@ -3342,24 +3356,24 @@ One common tool to get around this problem is to reduce the number of dimensions
 That is excatly what (non-metric) multidimensional scaling (MDS) does.\footnote{Specifically we use Kruskal's non-metric multidimensional scaling which makes most sense for our kind of network data.}
 Taking agreement and disagreement information towards all concepts, MDS can reduce the differences and similarities between actors to plot them in a two-dimensional space.
 
-In \rdna\ we can perform this with the now well-known \code{dna\_cluster} function and the \code{dna\_plotMDS} command.
+In \rdna\ we can perform this with the now well-known \code{dna\_cluster} function and the \code{dna\_plotCoordinates} command.
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 clust <- dna_cluster(conn)
-dna_plotMDS(clust)
+dna_plotCoordinates(clust)
 @
 
 Each point in this dotplot represents an organisation, in this case, and the points are highlighted with colours and shapes which represent their membership in one of the clusters.
-Clusters are derived in this case with the \code{pam} function from the \texttt{cluster} package \citep{maechler2017cluster} and the silhouette width is used to assess the best number of clusters automatically by default, which in this case happens to be two.
+Clusters are derived in this case with the \code{pam} function from the \texttt{cluster} package \citep{maechler2017cluster} and the silhouette width is used to assess the best number of clusters automatically by default, which in this case happens to be one.
 
 However, looking at the plot, you probably wonder why there only appear to be three dots.
 In fact, there is one point for every one of the seven organisations, but since they are so similar, they are plotted in almost exactly the same place.
 There are, however, tools to make them visible nevertheless.
 The first of these tools is called jittering: by adding random noise to the data, it is possible to prevent overplotting.
-In the \code{dna\_plotMDS} function, this can be done by providing one or two numeric values to the \code{jitter} argument:
+In the \code{dna\_plotCoordinates} function, this can be done by providing one or two numeric values to the \code{jitter} argument:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
-dna_plotMDS(clust, jitter = c(0.5, 1.7))
+dna_plotCoordinates(clust, jitter = c(0.5, 1.7))
 @
 
 Now you can see points for all of the seven organisations.
@@ -3373,7 +3387,7 @@ As long as you do not change the seed, plots will look the same every time you p
 Yet, if you change the seed, this will alter the position of the jittered points:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
-dna_plotMDS(clust, jitter = c(0.5, 1.7), seed = 23455)
+dna_plotCoordinates(clust, jitter = c(0.5, 1.7), seed = 23455)
 @
 
 Use the jittering option cautiously though, since it distorts the appearance of the plot heavily if you choose appearance high jitter values as in the examples above.
@@ -3383,45 +3397,45 @@ Use option \code{label = TRUE} to plot the actor labels closely to their respect
 In this case, the labels will be moved instead of the points if actors appear very closely together.
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
-dna_plotMDS(clust, label = TRUE)
+dna_plotCoordinates(clust, label = TRUE)
 @
 
 The downside in this case is that the polygons disappeared again, since you need at least three points in one cluster, before the become visible.
 
-Like in the plot functions we showed before, \code{dna\_plotMDS} again comes with several arguments to style the plots.
+Like in the plot functions we showed before, \code{dna\_plotCoordinates} again comes with several arguments to style the plots.
 Specifically, you can provide colours to \code{custom\_colours} and numeric values to \code{custom\_shape}.
 
-Another important point to highlight about \code{dna\_plotMDS} is that there are two additional cluster algorithms to determine the groups.
+Another important point to highlight about \code{dna\_plotCoordinates} is that there are two additional cluster algorithms to determine the groups.
 The first one, \code{pam}, was already mentioned above.
 The second one, \code{cluster\_louvain} is from the \texttt{igraph} package \citep{csardi2006igraph} and can be chosen with \code{clust\_method = "louvain"}:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
-dna_plotMDS(clust,
-            label = TRUE,
-            custom_colours = c("red", "green", "blue"),
-            custom_shape = c(4,5),
-            clust_method = "louvain")
+dna_plotCoordinates(clust,
+                    label = TRUE,
+                    custom_colours = c("red", "green", "blue"),
+                    custom_shape = c(4,5),
+                    clust_method = "louvain")
 @
 
 If you would rather use one of those explained above, you can simply set the option in \code{dna\_cluster} and then choose \code{clust\_method = "inherit"}:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 clust <- dna_cluster(conn, clust.method = "edge_betweenness", cutree.k = 2)
-dna_plotMDS(clust,
-            draw_polygons = TRUE,
-            label = TRUE,
-            jitter = c(1.5, 1.7),
-            clust_method = "inherit",
-            seed = 12345)
+dna_plotCoordinates(clust,
+                    draw_polygons = TRUE,
+                    label = TRUE,
+                    jitter = c(1.5, 1.7),
+                    clust_method = "inherit",
+                    seed = 12345)
 @
 
 Other ways to style the plot include setting the labels of the axis:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
-dna_plotMDS(clust,
-            axis_labels = c("Dimension A", "Dimension B"),
-            stress = FALSE,
-            title = character())
+dna_plotCoordinates(clust,
+                    axis_labels = c("Dimension A", "Dimension B"),
+                    stress = FALSE,
+                    title = character())
 @
 
 Or using again \texttt{ggplot2} commands to modify the plot much further:
@@ -3431,17 +3445,17 @@ Or using again \texttt{ggplot2} commands to modify the plot much further:
 # ggplot
 library("ggplot2")
 clust$group <- gsub("Group", "Cluster", clust$group)
-dna_plotMDS(clust,
-            jitter = c(1.5, 1.7),
-            clust_method = "inherit",
-            axis_labels = c("Dimension A", "Dimension B"),
-            custom_shape = c(1, 5),
-            stress = FALSE,
-            title = character(),
-            label = TRUE,
-            label_size = 2,
-            point_size = 3,
-            label_background = TRUE) +
+dna_plotCoordinates(clust,
+                    jitter = c(1.5, 1.7),
+                    clust_method = "inherit",
+                    axis_labels = c("Dimension A", "Dimension B"),
+                    custom_shape = c(1, 5),
+                    stress = FALSE,
+                    title = character(),
+                    label = TRUE,
+                    label_size = 2,
+                    point_size = 3,
+                    label_background = TRUE) +
   theme_bw() +
   labs(caption = paste0("Nonmetric MDS with STRESS = ",
                         round(attributes(clust$mds)$stress, 3),
@@ -3464,7 +3478,7 @@ dna_plotMDS(clust,
 % TODO
 
 \section{Network plots}
-We have shown above already, how you can use the \R\ infrastructure to produce some basic network plots with the \texttt{statnet} suite of packages. 
+We have shown above already how you can use the \R\ infrastructure to produce some basic network plots with the \texttt{statnet} suite of packages. 
 Besides that, there are a number of packages in the \R\ universe that are quite capable to cater to your network plotting needs.
 The already mentioned \texttt{igraph} package \citep{csardi2006igraph}, for example, comes with very powerful functions for plotting networks. 
 Other packages, such as \texttt{networkD3} \citep{allaire2017networkD3} are capable of creating interactive network plots, which are great to share, for example, on a website.
@@ -3506,7 +3520,7 @@ In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} p
   
   \item[fr] Spreads the nodes based on the force-directed algorithm of Fruchterman and Reingold. See \code{?igraph::with\_fr}
   
-  \item[gem] Place nodes on the plane using the GEM force-directed layout algorithm. See \code{?igraph::with\_gem}.
+  \item[gem] Places nodes on the plane using the GEM force-directed layout algorithm. See \code{?igraph::with\_gem}.
   
   \item[graphopt] Employs the Graphopt algorithm based on alternating attraction and repulsion to place nodes.
   
@@ -3547,7 +3561,7 @@ grid <- grid.arrange(nw_fr, nw_graphopt, nw_mds, nw_randomly)
 
 @
 
-There are, again several options to style the plot.
+There are again several options to style the plot.
 
 Some critics, however, doubt the usefulness of the common network plots---often referred to as hairballs---you see above.
 \citet{krzywinski2012hive}, for example, have argued that these network plots ``lack reproducibility and perceptual uniformity because they do not use a node coordinate system''. In the function \code{dna\_plotNetwork} a seed is automatically set to ensure at least reproducibility when you run the same code. You can change the argument \code{seed} to get an idea of how much chance is involved in calculating the layout.
@@ -3649,7 +3663,7 @@ You should also be cautious with the option \code{removeStatements} since when s
 \subsection{Adding newspaper articles using LexisNexisTools}
 One common way of retrieving texts for analysis in \dna\ is by downloading articles from the commercial newspaper archive LexisNexis.
 Many university libraries have access to this database which maintains a collection of newspaper articles from many major outlets across Europe and North America.
-It's powerful search engine also allows for a finely grained search string to limit the number of articles for a specific topic.
+Its powerful search engine also allows for a finely grained search string to limit the number of articles for a specific topic.
 
 To convert the raw files from LexisNexis though, we need another \R\ package: \texttt{LexisNexisTools} \citep{gruber2018lexis}.
 You can install this package via \code{devtools::install\_github("JBGruber/LexisNexisTools")}.

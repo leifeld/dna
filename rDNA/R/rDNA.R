@@ -714,37 +714,42 @@ dna_setDocuments <- function(connection,
 #' Perform a cluster analysis based on a DNA connection. Clustering is performed
 #' on the distance matrix of a collated two-mode network for cluster methods
 #' "ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median"
-#' and "centroid" or on a one-mode network with the cluster methods
-#' "edge_betweenness", "leading_eigen" and "walktrap" from the \link{igraph}
-#' package. The collated two-mode network is constructed by retrieving
-#' individual networks for each of the qualifiers levels and combining the
-#' results by columns. You can look at this network with
-#' \code{View(clust$network)} ("clust" being the outcome of a call to
-#' \code{dna_cluster()}).
+#' and "centroid" or on a one-mode "subtract" network (with negative values
+#' replaced by 0) for the cluster methods "edge_betweenness", "leading_eigen"
+#' and "walktrap" from the \link{igraph} package. The collated two-mode network
+#' is constructed by retrieving individual networks for each of the qualifiers
+#' levels and combining the results by columns. Alternatively, you can use a
+#' two-mode "subtract" network with option \code{collate = TRUE}. You can look
+#' at this network with \code{View(clust$network)} ("clust" being the outcome of
+#' a call to \code{dna_cluster()}).
 #'
 #' The distance matrix is calculated either by \link[vegan]{vegdist}, if the
 #' collated two-mode network is binary, or by \link[stats]{dist}, in all other
 #' cases.
 #'
 #' Besides clustering, this function also performs non-metric multidimensional
-#' scaling (see \link[MASS]{isoMDS}). The results can be extracted from the
-#' object using \code{clust.l$mds} or can be plotted using \link{dna_plotMDS}.
+#' scaling (see \link[MASS]{isoMDS}) and factor analysis (see
+#' \link[stats]{factanal}). The results can be extracted from the returned
+#' object using \code{clust.l$mds} or \code{clust.l$fa} respectively. Both
+#' results can also be plotted using \link{dna_plotCoordinates}.
 #'
 #' @param connection A \code{dna_connection} object created by the
-#' \link{dna_connection} function.
-#' @param variable The first variable for network construction(see
-#' \link{dna_network}). The second one defaults to \code{"concept"} but can be
-#' provided via \code{...} if necessary (see \code{variable2} in
-#' \link{dna_connection}).
+#'   \link{dna_connection} function.
+#' @param variable1 The first variable for network construction (see
+#'   \link{dna_network}). Defaults to "organization".
+#' @param variable2 The second variable for network construction (see
+#'   \link{dna_network}). Defaults to \code{"concept"}.
+#' @param transpose Logical. If \code{TRUE}, variable2 is clustered instead of
+#'   variable1.
+#' @param collate Logical. If \code{FALSE}, clustering is performed on a
+#'   "subtract" network instead of the collated twomode network (see
+#'   \link{dna_network} for information on "subtract" networks).
 #' @param duplicates Setting for excluding duplicate statements before network
-#' construction (for details see \link{dna_network}. If exclusion of
-#' duplicates results in a binary matrix, \link[vegan]{vegdist} will be used
-#' instead of \link[stats]{dist} to calculate the dissimilarity matrix.
-#' @param clust.variable Choose if you want to cluster \code{"variable1"} (e.g.,
-#' "organization" by default) or \code{"variable2"} (e.g., "concept" by
-#' default) from the network.
+#'   construction (for details see \link{dna_network}. If exclusion of
+#'   duplicates results in a binary matrix, \link[vegan]{vegdist} will be used
+#'   instead of \link[stats]{dist} to calculate the dissimilarity matrix.
 #' @param clust.method The agglomeration method to be used. When set to
-#' \code{"ward.D"}, \code{"ward.D2"}, \code{"single"}, \code{"complete"},
+#'   \code{"ward.D"}, \code{"ward.D2"}, \code{"single"}, \code{"complete"},
 #' \code{"average"}, \code{"mcquitty"}, \code{"median"} or \code{"centroid"}
 #' the respective methods from \link[stats]{hclust} will be used. When set to
 #' \code{"edge_betweenness"}, \code{"leading_eigen"} or \code{"walktrap"}
@@ -760,17 +765,15 @@ dna_setDocuments <- function(connection,
 #' @param cutree.k,cutree.h If cutree.k or cutree.h are provided, the tree from
 #' hierarchical clustering is cut into several groups. See $k$ and $h$ in
 #' \link[stats]{cutree} for details.
-#' @param qualifierAggregation This argument refers to the qualifier aggregation
-#' in \link{dna_network}. It is ignored for constructing the network for
-#' clustering but is used for MDS. The two available options are
-#' \code{"combine"} and \code{"subtract"} (see \link{dna_network}).
-#' @param dimensions The desired dimension for the solution of the MDS. Only two
-#' can be plotted but you might want to calculate more and then choose which
-#' ones to plot.
-#' @param ... Additional arguments passed to \link{dna_network}. This is
-#' especially useful to set qualifier (defaults to \code{"agreement"}) and
-#' normalization (defaults to \code{"no"}) if non-default values are needed
-#' for clustering.
+#' @param dimensions The desired dimension for the solution of the MDS and also
+#'   the desired number of factors to extract from the factor analysis. Only two
+#'   can be plotted but you might want to calculate more and then choose which
+#'   ones to plot.
+#' @param ... Additional arguments passed to \link{dna_network},
+#'   \link[stats]{factanal}) and \link[MASS]{isoMDS}). This is especially useful
+#'   to set qualifier (defaults to \code{"agreement"}) and normalization
+#'   (defaults to \code{"no"}) if non-default values are needed in the clustered
+#'   network.
 #'
 #' @examples
 #' \dontrun{
@@ -782,14 +785,14 @@ dna_setDocuments <- function(connection,
 #'
 #' dna_plotDendro(clust.l)
 #' dna_plotHeatmap(clust.l)
-#' dna_plotMDS(clust.l,
+#' dna_plotCoordinates(clust.l,
 #' jitter = c(0.5, 0.7))
 #'
 #' }
 #' @author Johannes B. Gruber
 #' @export
 #' @importFrom vegan vegdist
-#' @importFrom stats setNames dist hclust cutree as.hclust
+#' @importFrom stats setNames dist hclust cutree as.hclust factanal
 #' @importFrom igraph graph_from_adjacency_matrix cluster_leading_eigen
 #' cluster_walktrap E
 #' @importFrom dplyr summarise group_by_all
@@ -799,18 +802,26 @@ dna_setDocuments <- function(connection,
 #' @importFrom grDevices chull
 #' @importFrom utils packageVersion capture.output
 dna_cluster <- function(connection,
-                        variable = "organization",
+                        variable1 = "organization",
+                        variable2 = "concept",
+                        transpose = FALSE,
+                        collate = TRUE,
                         duplicates = "document",
-                        clust.variable = "variable1",
                         clust.method = "ward.D2",
                         attribute1 = "color",
                         attribute2 = "value",
                         cutree.k = NULL,
                         cutree.h = NULL,
-                        qualifierAggregation = "combine",
                         dimensions = 2,
                         ...) {
   dots <- list(...)
+  if (any(names(formals(factanal)) %in% names(dots))) {
+    dots_fa <- dots[names(dots) %in% names(formals(factanal))]
+    dots[names(dots) %in% names(formals(factanal))] <- NULL
+  } else {
+    dots_fa <- list()
+  }
+  
   if ("normalization" %in% names(dots)) {
     normalization_onemode <- ifelse(dots[["normalization"]] %in%
                                       c("no", "average", "Jaccard", "cosine"),
@@ -860,55 +871,66 @@ dna_cluster <- function(connection,
       ))
     }
   }
-  dta <- lapply(lvls, function(l) {
-    excludeVals <- c(stats::setNames(list(lvls[!lvls == l]),
-                                     nm = qualifier),
-                     excludeValues)
-    nw <- do.call(dna_network,
-                  c(list(connection = connection,
-                         networkType = "twomode",
-                         variable1 = variable,
-                         qualifier = qualifier,
-                         qualifierAggregation = "ignore",
-                         normalization = normalization_twomode,
-                         isolates = TRUE,
-                         duplicates = duplicates,
-                         excludeValues = excludeVals,
-                         invertValues = FALSE,
-                         verbose = FALSE)
-                    , dots)
-    )
-    colnames(nw) <- paste(colnames(nw), "-", l)
-    return(nw)
-  })
-  dta <- rapply(dta, f = function(x) ifelse(is.nan(x), 0, x), how = "replace" )
-  dta <- do.call("cbind", dta)
-  dta <- dta[rowSums(dta) > 0, ]
-  dta <- dta[, colSums(dta) > 0]
-  if (clust.variable == "variable2") {
-    dta <- t(dta)
-    if ("variable2" %in% names(dots)) {
-      variable1 <- dots[["variable2"]]
-      variable2 <- variable
-    } else {
-      variable1 <- formals("dna_network")[["variable2"]]
-      variable2 <- variable
-    }
-  } else if (clust.variable == "variable1") {
-    variable1 <- variable
-    if ("variable2" %in% names(dots)) {
-      variable2 <- dots[["variable2"]]
-    } else {
-      variable2 <- formals("dna_network")[["variable2"]]
-    }
+  if (collate) {
+    dta <- lapply(lvls, function(l) {
+      excludeVals <- c(stats::setNames(list(lvls[!lvls == l]),
+                                       nm = qualifier),
+                       excludeValues)
+      nw <- do.call(dna_network,
+                    c(list(connection = connection,
+                           networkType = "twomode",
+                           variable1 = variable1,
+                           variable2 = variable2,
+                           qualifier = qualifier,
+                           qualifierAggregation = "ignore",
+                           normalization = normalization_twomode,
+                           isolates = TRUE,
+                           duplicates = duplicates,
+                           excludeValues = excludeVals,
+                           invertValues = FALSE,
+                           verbose = FALSE)
+                      , dots)
+      )
+      colnames(nw) <- paste(colnames(nw), "-", l)
+      return(nw)
+    })
+    dta <- rapply(dta, f = function(x) ifelse(is.nan(x), 0, x), how = "replace" )
+    dta <- do.call("cbind", dta)
+    dta.fa <- dta
+    dta <- dta[rowSums(dta) > 0, ]
+    dta <- dta[, colSums(dta) > 0]
+  } else {
+    dta <- do.call(dna_network,
+                   c(list(connection = connection,
+                          networkType = "twomode",
+                          variable1 = variable1,
+                          variable2 = variable2,
+                          qualifier = qualifier,
+                          qualifierAggregation = "subtract",
+                          normalization = normalization_twomode,
+                          isolates = TRUE,
+                          duplicates = duplicates,
+                          excludeValues = excludeValues,
+                          invertValues = FALSE,
+                          verbose = FALSE)
+                     , dots))
+    dta.fa <- dta
   }
-  dots[["variable2"]] <- NULL
+  if (transpose) {
+    dta <- t(dta)
+    dta.fa <- t(dta.fa)
+    . <- variable1
+    variable1 <- variable2
+    variable2 <- .
+  }
+  # create onemode for igraph and MDS louvain cluster
   nw <- do.call(dna_network,
                 c(list(connection = connection,
                        networkType = "onemode",
                        qualifierAggregation = "subtract",
                        normalization = normalization_onemode,
                        variable1 = variable1,
+                       variable2 = variable2,
                        isolates = FALSE,
                        duplicates = duplicates,
                        qualifier = qualifier,
@@ -977,6 +999,7 @@ dna_cluster <- function(connection,
   if (!is.null(c(cutree.k, cutree.h))) {
     hc$group <- cutree(hc, k = cutree.k, h = cutree.h)
   }
+  # Retrieve colours for variable1. Even if transpose, this is correct
   col <- dna_getAttributes(connection = connection,
                            statementType = dots$statementType,
                            variable = variable1,
@@ -993,47 +1016,38 @@ dna_cluster <- function(connection,
   } else {
     attr(hc, "cut") <- NA
   }
-  if (!qualifierAggregation %in% c("subtract", "combine")) {
-    qualifierAggregation <- "combine"
-    warning("Only the qualifier aggregations 'subtract' and 'combine' can be honoured. The default 'combine' was used instead.")
-  }
-  if (clust.variable == "variable1") {
-    nw <- do.call(dna_network,
-                  c(list(connection = connection,
-                         networkType = "twomode",
-                         variable1 = variable1,
-                         variable2 = variable2,
-                         normalization = "no",
-                         isolates = TRUE,
-                         duplicates = duplicates,
-                         qualifier = qualifier,
-                         verbose = FALSE,
-                         qualifierAggregation = qualifierAggregation)
-                    , dots))
-  } else {
-    nw <- dta
-    warning("When variable2 is clustered qualifier aggregations is turned off and instead the transposed collated two-mode matrix is used.")
-  }
-  if (any(duplicated(nw))) {
-    . <- data.frame(nw, check.names = FALSE)
+  # FA
+  fa <- tryCatch(do.call(factanal,
+                         c(list(x = t(dta.fa),
+                                factors = dimensions)
+                           , dots_fa)),
+                 error = function(e) {
+                   e <- paste("In factor analysis: ", e)
+                   warning(e, call. = FALSE)
+                   e <- NULL
+                 }
+  )
+  # MDS
+  if (any(duplicated(dta))) {
+    . <- data.frame(dta, check.names = FALSE)
     . <- dplyr::group_by_all(.)
     .$rn <- row.names(.)
     . <- dplyr::summarise(., rowname = paste(rn, collapse = "|"))
     . <- data.frame(., stringsAsFactors = FALSE)
     row.names(.) <- .$rowname
-    nw <- .[, !colnames(.) == "rowname"]
+    dta <- .[, !colnames(.) == "rowname"]
   }
-  if (all(nw %in% c(0, 1))) {
-    d <- vegan::vegdist(nw, method = "jaccard")
+  if (all(dta %in% c(0, 1))) {
+    d <- vegan::vegdist(dta, method = "jaccard")
   } else {
-    d <- dist(nw, method = "euclidean")
+    d <- dist(dta, method = "euclidean")
   }
   if (length(d) < 2) {
     stop("Clustering cannot be performed on less than three actors.")
   }
   mds <- MASS::isoMDS(d, trace = FALSE, k = dimensions)
-  k.best <- which.max(sapply(seq(from = 2, to = nrow(nw) - 1, by = 1), function(i) {
-    cluster::pam(nw, diss = FALSE, k = i)$silinfo$avg.width
+  k.best <- which.max(sapply(seq(from = 2, to = nrow(dta) - 1, by = 1), function(i) {
+    cluster::pam(dta, diss = FALSE, k = i)$silinfo$avg.width
   }))
   stress <- mds$stress
   mat <- data.frame(mds$points)
@@ -1047,6 +1061,7 @@ dna_cluster <- function(connection,
     mds <- splitstackshape::cSplit(mds, "variable", "|", "long")
   }
   hc$mds <- data.frame(mds[!duplicated(mds$variable, fromLast = TRUE), ])
+  hc$fa <- fa
   attributes(hc$mds)$stress <- stress
   hc$call <- match.call()
   attr(hc, "colours") <- c("attribute1" = attribute1, "attribute2" = attribute2)
@@ -2093,20 +2108,19 @@ dna_timeWindow <- function(connection,
 #' dna_downloadJar()
 #' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
-#' nw <- dna_network(conn,
-#' networkType = "onemode")
+#' nw <- dna_network(conn, networkType = "onemode")
 #' graph <- dna_toIgraph(nw)
 #' }
 dna_toIgraph <- function(x,
                          weighted = TRUE) {
-  if (any(grepl("dna_network_onemode", class(x)))) {
+  if (any(class(x) %in% "dna_network_onemode")) {
     graph <- graph_from_adjacency_matrix(x,
                                          mode = "undirected",
                                          weighted = weighted,
                                          diag = FALSE,
                                          add.colnames = NULL,
                                          add.rownames = NA)
-  } else if (any(grepl("dna_network_twomode", class(x)))) {
+  } else if (any(class(x) %in% "dna_network_twomode")) {
     graph <- graph_from_incidence_matrix(x,
                                          directed = FALSE,
                                          weighted = weighted,
@@ -2160,7 +2174,7 @@ dna_toREM <- function(x,
                       variable = "organization",
                       ...) {
   dots <- list(...)
-  if (any(grepl("dna_connection", class(x)))) {
+  if (any(class(x) %in% "dna_connection")) {
     dots_network <- dots[names(dots) %in% names(formals("dna_network"))]
     dta <- do.call("dna_network",
                    c(list(x,
@@ -2168,7 +2182,7 @@ dna_toREM <- function(x,
                           variable1 = variable,
                           verbose = FALSE
                    ), dots_network))
-  } else if (any(grepl("dna_eventlist", class(x)))) {
+  } else if (any(class(x) %in% "dna_eventlist")) {
     if (any(names(dots) %in% names(formals("dna_network")))) {
       message("Since x is already a network object, arguments for dna_network() provided through '...' are ignored")
     }
@@ -2229,13 +2243,13 @@ dna_toREM <- function(x,
 #' }
 dna_toNetwork <- function(x,
                           ...) {
-  if (any(grepl("dna_network_onemode", class(x)))) {
-    nw <- as.network.matrix(x,
+  if (any(class(x) %in% "dna_network_onemode")) {
+    nw2 <- as.network.matrix(x,
                             matrix.type = "adjacency",
                             directed = FALSE,
                             bipartite = FALSE,
                             ...)
-  } else if (any(grepl("dna_network_twomode", class(x)))) {
+  } else if (any(class(x) %in% "dna_network_twomode")) {
     nw <- as.network.matrix(x,
                             matrix.type = "incidence",
                             directed = FALSE,
@@ -3017,7 +3031,7 @@ dna_plotHive <- function(x,
                          ...) {
   layout <- "hive"
   # Make igraph
-  if (any(grepl("dna_network_twomode", class(x)))) {
+  if (any(class(x) %in% "dna_network_twomode")) {
     stop("Twomode networks are currently not allowed.")
   }
   graph <- dna_toIgraph(x)
@@ -3045,7 +3059,7 @@ dna_plotHive <- function(x,
       names(groups) <- V(graph)$name
     } else if (any(grepl("list|character", class(groups)))) {
       groups <- groups[match(V(graph)$name, names(groups))]
-    } else if (any(grepl("dna_cluster", class(groups)))) {
+    } else if (any(class(groups) %in% "dna_cluster")) {
       groups <- groups$group[match(V(graph)$name, groups$labels)]
     }
     node_attribute <- "Membership"
@@ -3180,47 +3194,49 @@ dna_plotHive <- function(x,
 #' highlight clusters.
 #'
 #' @param clust A \code{dna_cluster} object created by the \link{dna_cluster}
-#' function.
+#'   function.
+#' @param what Choose either "MDS" to plot the results of multidimensional
+#'   scaling or "FA" to plot two factors of the factor analysis.
 #' @param dimensions Provide two numeric values to determine which dimensions to
-#' plot. The default, c(1, 2), will plot dimension 1 and dimension 2.
+#'   plot. The default, c(1, 2), will plot dimension 1 and dimension 2.
 #' @param draw_polygons Logical. Should clusters be highlighted with coloured
-#' polygons?
+#'   polygons?
 #' @param custom_colours Manually provide colours for the points and polygons.
 #' @param custom_shape Manually provide shapes to use for the scatterplot.
 #' @param alpha The alpha level of the polygons drawn when \code{draw.clusters =
-#' "polygon"}.
+#'   "polygon"}.
 #' @param jitter Takes either one value, to control the width of the jittering
-#' of points, two values to control width and height of the jittering of
-#' points (e.g., c(.l, .2)) or \code{character()} to turn off the jittering of
-#' points.
+#'   of points, two values to control width and height of the jittering of
+#'   points (e.g., c(.l, .2)) or \code{character()} to turn off the jittering of
+#'   points.
 #' @param seed Seed for jittering.
 #' @param label Logical. Should labels be plotted?
 #' @param label_size,font_colour,label_background Control the label size, font
-#' colour of the labels and if a background should be displayed when
-#' \code{label = TRUE}. label_size takes numeric values, font_colour takes a
-#' character string with a valid colour value and label_background can be
-#' either TRUE or FALSE.
+#'   colour of the labels and if a background should be displayed when
+#'   \code{label = TRUE}. label_size takes numeric values, font_colour takes a
+#'   character string with a valid colour value and label_background can be
+#'   either TRUE or FALSE.
 #' @param point_size Size of the points in the scatterplot.
 #' @param expand Expand x- and y-axis (e.g., to make room for labels). The first
-#' value is the units by which the x-axis is expanded in both directions, the
-#' second controls expansion of the y axis.
+#'   value is the units by which the x-axis is expanded in both directions, the
+#'   second controls expansion of the y axis.
 #' @param stress Should stress from the MDS be displayed on the plot.
 #' @param axis_labels Provide custom axis labels.
 #' @param clust_method Can be either \code{pam} for \link[cluster]{pam},
-#' \code{"louvain"} for \link[igraph]{cluster_louvain} or \code{"inherit"} to
-#' use the method provided by the call to \link{dna_cluster}.
+#'   \code{"louvain"} for \link[igraph]{cluster_louvain} or \code{"inherit"} to
+#'   use the method provided by the call to \link{dna_cluster}.
 #' @param truncate Sets the number of characters to which labels should be
-#' truncated. Value \code{Inf} turns off truncation.
+#'   truncated. Value \code{Inf} turns off truncation.
 #' @param title Title of the MDS plot.
 #' @param ... Not used. If you want to add more plot options use \code{+} and
-#' the ggplot2 logic (see example).
+#'   the ggplot2 logic (see example).
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
 #' dna_init("dna-2.0-beta21.jar")
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
-#' mds <- dna_plotMDS(clust)
+#' mds <- dna_plotCoordinates(clust)
 #' # Flip plot with ggplot2 command
 #' library("ggplot2")
 #' mds +
@@ -3230,29 +3246,43 @@ dna_plotHive <- function(x,
 #' @export
 #' @import ggplot2
 #' @importFrom ggrepel geom_label_repel
-dna_plotMDS <- function(clust,
-                        dimensions = c(1, 2),
-                        draw_polygons = TRUE,
-                        alpha = .25,
-                        jitter = NULL,
-                        seed = 12345,
-                        label = FALSE,
-                        label_size = 3.5,
-                        point_size = 1,
-                        label_background = FALSE,
-                        font_colour = "black",
-                        expand = 0,
-                        stress = TRUE,
-                        truncate = 40,
-                        custom_colours = character(),
-                        custom_shape = character(),
-                        axis_labels = character(),
-                        clust_method = "pam",
-                        title = "Nonmetric Multidimensional Scaling",
-                        ...) {
-  df <- clust[["mds"]]
-  dim1 <- paste0("Dimension_", dimensions[1])
-  dim2 <- paste0("Dimension_", dimensions[2])
+dna_plotCoordinates <- function(clust,
+                                what = "MDS",
+                                dimensions = c(1, 2),
+                                draw_polygons = TRUE,
+                                alpha = .25,
+                                jitter = NULL,
+                                seed = 12345,
+                                label = FALSE,
+                                label_size = 3.5,
+                                point_size = 1,
+                                label_background = FALSE,
+                                font_colour = "black",
+                                expand = 0,
+                                stress = TRUE,
+                                truncate = 40,
+                                custom_colours = character(),
+                                custom_shape = character(),
+                                axis_labels = character(),
+                                clust_method = "pam",
+                                title = "auto",
+                                ...) {
+  if (what == "MDS") {
+    df <- clust[["mds"]]
+    dim1 <- paste0("Dimension_", dimensions[1])
+    dim2 <- paste0("Dimension_", dimensions[2])
+  } else if (what == "FA") {
+    df <- clust[["fa"]]$loadings[, dimensions]
+    dim1 <- paste0("Factor", dimensions[1])
+    dim2 <- paste0("Factor", dimensions[2])
+    df <- data.frame(df,
+                     variable = row.names(df),
+                     cluster_pam = clust[["mds"]]$cluster_pam,
+                     cluster_louvain = clust[["mds"]]$cluster_louvain)
+  } else {
+    stop("This function can either plot MDS or factor analysis data. Please select 'MDS' or 'FA' as 'what'." )
+  }
+  # jitter if selected
   if (length(jitter) > 0) {
     set.seed(seed)
     df[[dim1]] <- jitter(df[[dim1]], amount = jitter[1])
@@ -3331,10 +3361,17 @@ dna_plotMDS <- function(clust,
       ylab(label = axis_labels[2])
   }
   if (length(title) > 0) {
+    if (title == "auto") {
+      if (what == "MDS") {
+        title <- "Non-metric Multidimensional Scaling"
+      } else if (what == "FA") {
+        title <- "Factor analysis"
+      }
+    }
     g <- g +
       ggtitle(title)
   }
-  if (stress) {
+  if (stress & what == "MDS") {
     a <- data.frame(x = max(df[[dim1]]) + expand[1],
                     y = max(df[[dim2]]) + expand[2],
                     label = paste("Stress:", round(attributes(df)$stress, digits = 6)))
@@ -3497,7 +3534,7 @@ dna_plotNetwork <- function(x,
                             ...) {
   # Make igraph object
   set.seed(seed)
-  if (any(grepl("dna_network_twomode", class(x)))) {
+  if (any(class(x) %in% "dna_network_twomode")) {
     if (layout == "auto") {
       layout <- "bipartite"
       message("Using `bipartite` as default layout")
@@ -3510,7 +3547,7 @@ dna_plotNetwork <- function(x,
     names(groups) <- V(graph)$name
   } else if (any(grepl("list|character", class(groups)))) {
     V(graph)$group <- groups[match(V(graph)$name, names(groups))]
-  } else if (any(grepl("dna_cluster", class(groups)))) {
+  } else if (any(grepl("list|character", class(groups)))) {
     V(graph)$group <- groups$group[match(V(graph)$name, groups$labels)]
   }
   # colour and attribute
@@ -3551,7 +3588,7 @@ dna_plotNetwork <- function(x,
                              substr(node_attribute, 2, nchar(node_attribute)))
   }
   lyt$name_short <- trim(as.character(lyt$name), n = truncate)
-  if (any(grepl("dna_network_twomode", class(x)))) {
+  if (any(class(x) %in% "dna_network_twomode")) {
     lyt$attribute <- as.character(lyt$attribute)
     if (node_colours == "auto" & node_attribute == "Color") {
       att <- dna_getAttributes(eval(args[["connection"]]),
@@ -3754,7 +3791,7 @@ dna_plotTimeWindow <- function(x,
                                diagnostics = FALSE,
                                ...) {
   method <- colnames(x)[3]
-  if (!any(grepl("dna_timeWindow", class(x)))) {
+  if (!any(class(x) %in% "dna_timeWindow")) {
     warning("x is not an object of class \"dna_timeWindow\".")
   }
   if (identical(facetValues, "all")) {

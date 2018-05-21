@@ -4,31 +4,35 @@
 \alias{dna_cluster}
 \title{Cluster network from a DNA connection}
 \usage{
-dna_cluster(connection, variable = "organization", duplicates = "document",
-  clust.variable = "variable1", clust.method = "ward.D2",
-  attribute1 = "color", attribute2 = "value", cutree.k = NULL,
-  cutree.h = NULL, qualifierAggregation = "combine", dimensions = 2, ...)
+dna_cluster(connection, variable1 = "organization", variable2 = "concept",
+  transpose = FALSE, collate = TRUE, duplicates = "document",
+  clust.method = "ward.D2", attribute1 = "color", attribute2 = "value",
+  cutree.k = NULL, cutree.h = NULL, dimensions = 2, ...)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
 \link{dna_connection} function.}
 
-\item{variable}{The first variable for network construction(see
-\link{dna_network}). The second one defaults to \code{"concept"} but can be
-provided via \code{...} if necessary (see \code{variable2} in
-\link{dna_connection}).}
+\item{variable1}{The first variable for network construction (see
+\link{dna_network}). Defaults to "organization".}
+
+\item{variable2}{The second variable for network construction (see
+\link{dna_network}). Defaults to \code{"concept"}.}
+
+\item{transpose}{Logical. If \code{TRUE}, variable2 is clustered instead of
+variable1.}
+
+\item{collate}{Logical. If \code{FALSE}, clustering is performed on a
+"subtract" network instead of the collated twomode network (see
+\link{dna_network} for information on "subtract" networks).}
 
 \item{duplicates}{Setting for excluding duplicate statements before network
 construction (for details see \link{dna_network}. If exclusion of
 duplicates results in a binary matrix, \link[vegan]{vegdist} will be used
 instead of \link[stats]{dist} to calculate the dissimilarity matrix.}
 
-\item{clust.variable}{Choose if you want to cluster \code{"variable1"} (e.g.,
-"organization" by default) or \code{"variable2"} (e.g., "concept" by
-default) from the network.}
-
 \item{clust.method}{The agglomeration method to be used. When set to
-\code{"ward.D"}, \code{"ward.D2"}, \code{"single"}, \code{"complete"},
+  \code{"ward.D"}, \code{"ward.D2"}, \code{"single"}, \code{"complete"},
 \code{"average"}, \code{"mcquitty"}, \code{"median"} or \code{"centroid"}
 the respective methods from \link[stats]{hclust} will be used. When set to
 \code{"edge_betweenness"}, \code{"leading_eigen"} or \code{"walktrap"}
@@ -47,19 +51,16 @@ and \code{"note"}.}
 hierarchical clustering is cut into several groups. See $k$ and $h$ in
 \link[stats]{cutree} for details.}
 
-\item{qualifierAggregation}{This argument refers to the qualifier aggregation
-in \link{dna_network}. It is ignored for constructing the network for
-clustering but is used for MDS. The two available options are
-\code{"combine"} and \code{"subtract"} (see \link{dna_network}).}
-
-\item{dimensions}{The desired dimension for the solution of the MDS. Only two
+\item{dimensions}{The desired dimension for the solution of the MDS and also
+the desired number of factors to extract from the factor analysis. Only two
 can be plotted but you might want to calculate more and then choose which
 ones to plot.}
 
-\item{...}{Additional arguments passed to \link{dna_network}. This is
-especially useful to set qualifier (defaults to \code{"agreement"}) and
-normalization (defaults to \code{"no"}) if non-default values are needed
-for clustering.}
+\item{...}{Additional arguments passed to \link{dna_network},
+\link[stats]{factanal}) and \link[MASS]{isoMDS}). This is especially useful
+to set qualifier (defaults to \code{"agreement"}) and normalization
+(defaults to \code{"no"}) if non-default values are needed in the clustered
+network.}
 }
 \description{
 Clustering methods for DNA connections.
@@ -68,21 +69,24 @@ Clustering methods for DNA connections.
 Perform a cluster analysis based on a DNA connection. Clustering is performed
 on the distance matrix of a collated two-mode network for cluster methods
 "ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median"
-and "centroid" or on a one-mode network with the cluster methods
-"edge_betweenness", "leading_eigen" and "walktrap" from the \link{igraph}
-package. The collated two-mode network is constructed by retrieving
-individual networks for each of the qualifiers levels and combining the
-results by columns. You can look at this network with
-\code{View(clust$network)} ("clust" being the outcome of a call to
-\code{dna_cluster()}).
+and "centroid" or on a one-mode "subtract" network (with negative values
+replaced by 0) for the cluster methods "edge_betweenness", "leading_eigen"
+and "walktrap" from the \link{igraph} package. The collated two-mode network
+is constructed by retrieving individual networks for each of the qualifiers
+levels and combining the results by columns. Alternatively, you can use a
+two-mode "subtract" network with option \code{collate = TRUE}. You can look
+at this network with \code{View(clust$network)} ("clust" being the outcome of
+a call to \code{dna_cluster()}).
 
 The distance matrix is calculated either by \link[vegan]{vegdist}, if the
 collated two-mode network is binary, or by \link[stats]{dist}, in all other
 cases.
 
 Besides clustering, this function also performs non-metric multidimensional
-scaling (see \link[MASS]{isoMDS}). The results can be extracted from the
-object using \code{clust.l$mds} or can be plotted using \link{dna_plotMDS}.
+scaling (see \link[MASS]{isoMDS}) and factor analysis (see
+\link[stats]{factanal}). The results can be extracted from the returned
+object using \code{clust.l$mds} or \code{clust.l$fa} respectively. Both
+results can also be plotted using \link{dna_plotCoordinates}.
 }
 \examples{
 \dontrun{
@@ -94,7 +98,7 @@ clust.l <- dna_cluster(conn)
 
 dna_plotDendro(clust.l)
 dna_plotHeatmap(clust.l)
-dna_plotMDS(clust.l,
+dna_plotCoordinates(clust.l,
 jitter = c(0.5, 0.7))
 
 }
