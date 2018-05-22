@@ -14,7 +14,7 @@ dna_cluster(connection, variable1 = "organization", variable2 = "concept",
 \link{dna_connection} function.}
 
 \item{variable1}{The first variable for network construction (see
-\link{dna_network}). Defaults to "organization".}
+\link{dna_network}). Defaults to \code{"organization"}.}
 
 \item{variable2}{The second variable for network construction (see
 \link{dna_network}). Defaults to \code{"concept"}.}
@@ -27,7 +27,7 @@ variable1.}
 \link{dna_network} for information on "subtract" networks).}
 
 \item{duplicates}{Setting for excluding duplicate statements before network
-construction (for details see \link{dna_network}. If exclusion of
+construction (for details see \link{dna_network}). If exclusion of
 duplicates results in a binary matrix, \link[vegan]{vegdist} will be used
 instead of \link[stats]{dist} to calculate the dissimilarity matrix.}
 

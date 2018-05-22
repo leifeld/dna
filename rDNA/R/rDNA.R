@@ -736,7 +736,7 @@ dna_setDocuments <- function(connection,
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
 #' @param variable1 The first variable for network construction (see
-#'   \link{dna_network}). Defaults to "organization".
+#'   \link{dna_network}). Defaults to \code{"organization"}.
 #' @param variable2 The second variable for network construction (see
 #'   \link{dna_network}). Defaults to \code{"concept"}.
 #' @param transpose Logical. If \code{TRUE}, variable2 is clustered instead of
@@ -745,7 +745,7 @@ dna_setDocuments <- function(connection,
 #'   "subtract" network instead of the collated twomode network (see
 #'   \link{dna_network} for information on "subtract" networks).
 #' @param duplicates Setting for excluding duplicate statements before network
-#'   construction (for details see \link{dna_network}. If exclusion of
+#'   construction (for details see \link{dna_network}). If exclusion of
 #'   duplicates results in a binary matrix, \link[vegan]{vegdist} will be used
 #'   instead of \link[stats]{dist} to calculate the dissimilarity matrix.
 #' @param clust.method The agglomeration method to be used. When set to
@@ -2348,9 +2348,9 @@ dna_plotCoordinates <- function(clust,
                                 clust_method = "pam",
                                 title = "auto",
                                 ...) {
-  if (is.vector(dimensions, mode = "numeric") &
-      any(grepl(paste0("Dimension_", dimensions[1]), colnames(clust[["mds"]]))) &
-      any(grepl(paste0("Dimension_", dimensions[2]), colnames(clust[["mds"]])))) {
+  if (any(!is.vector(dimensions, mode = "numeric"),
+          !any(grepl(paste0("Dimension_", dimensions[1]), colnames(clust[["mds"]]))),
+          !any(grepl(paste0("Dimension_", dimensions[2]), colnames(clust[["mds"]]))))) {
     stop("Please provide two valid dimensions to plot as a numeric vector (e.g., 'c(1, 2)')")
   }
   if (what == "MDS") {
