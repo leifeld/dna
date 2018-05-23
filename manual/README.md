@@ -8,6 +8,6 @@ This is the most recent version of the DNA manual. It is written using **Sweave*
 * Have **DNA** and **rDNA** correctly set up on your system.
 * Have the R package **kableExtra** installed (`install.packages("kableExtra")`).
 
-You can find instructions on how to install the programs in the latest release version of the [manual](https://github.com/leifeld/dna/releases/download/v2.0-beta.20/dna-manual.pdf).
+You can find instructions on how to install the programs in the latest release version of the [manual](https://github.com/leifeld/dna/releases/download/v2.0-beta.21/dna-manual.pdf).
 
 Finally you need to choose knitr to weave the file “dna-manual.Rnw” files in RStudio (Tools -> Global Options -> Sweave) and then press the "Compile PDF" button.

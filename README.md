@@ -4,7 +4,7 @@ The Java software Discourse Network Analyzer (DNA) is a qualitative content anal
 
 - Download the latest [release](https://github.com/leifeld/dna/releases) of the software.
 
-- Check out the detailed [manual](https://github.com/leifeld/dna/releases/download/v2.0-beta.20/dna-manual.pdf) for more information, including installation instructions and information on network methods and rDNA.
+- Check out the detailed [manual](https://github.com/leifeld/dna/releases/download/v2.0-beta.21/dna-manual.pdf) for more information, including installation instructions and information on network methods and rDNA.
 
 - If you have questions or want to report bugs, please create an issue in the [issue tracker](https://github.com/leifeld/dna/issues).
 

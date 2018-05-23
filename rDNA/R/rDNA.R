@@ -61,7 +61,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
         infile,
         "\" could not be located in working directory \"",
         getwd(),
-        "\"."
+        "\". Try dna_downloadJar() if you do not have the file already."
       )
     })
   }
@@ -2244,7 +2244,7 @@ dna_toREM <- function(x,
 dna_toNetwork <- function(x,
                           ...) {
   if (any(class(x) %in% "dna_network_onemode")) {
-    nw2 <- as.network.matrix(x,
+    nw <- as.network.matrix(x,
                             matrix.type = "adjacency",
                             directed = FALSE,
                             bipartite = FALSE,
