@@ -851,8 +851,8 @@ $sudo apt-get install r-base
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 $sudo apt-get install gdebi-core
 $wget https://download1.rstudio.org/rstudio-$RS_vers$-amd64.deb
-$sudo gdebi -n rstudio-RS_vers-amd64.deb
-$rm rstudio-RS_vers-amd64.deb
+$sudo gdebi -n rstudio-$RS_vers$-amd64.deb
+$rm rstudio-$RS_vers$-amd64.deb
 @
  
   Note, that as of version \Sexpr{RS_vers}, \rstudio\ depends on an outdated version of \texttt{libgstreamer}.
@@ -1283,7 +1283,7 @@ First it will be layed out how you open an existing database---either locally or
 Then you will learn how to import new documenst into \dna---either by importing one document at a time or by selecting mutliple documents for import.
 Finally, we tell you how you can organise the documents in your database and how you can change your docuemtns' metadata.
 
-\section{Opening an Existing DNA Database}
+\section{Opening an Existing DNA Database}\label{chp:dna-open}
 First of all, you have to choose, in which \dna\ Database you want to upload and process your data.
 To open a \dna database, simply follow the steps depicted in Figure 1: First, click on the index tab \code{File} and select the option \code{Open DNA database} (see Figure~\ref{fig:opendb}, step 1).
 As a result, a pop-up window will appear, which allows you to choose between opening a \code{Local .dna file} or a \code{remote database on a server}.
@@ -1821,10 +1821,6 @@ dt <- dna_network(conn,
                   normalization = "no",
                   isolates = FALSE,
                   duplicates = "include",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = character(),
@@ -1852,10 +1848,6 @@ dt <- dna_network(conn,
                   normalization = "no",
                   isolates = FALSE,
                   duplicates = "include",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = character(),
@@ -1884,10 +1876,6 @@ dt <- dna_network(conn,
                   normalization = "no",
                   isolates = FALSE,
                   duplicates = "include",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = character(),
@@ -2007,10 +1995,6 @@ dt <- dna_network(conn,
                   normalization = "no",
                   isolates = FALSE,
                   duplicates = "include",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = character(),
@@ -2056,10 +2040,6 @@ dt1 <- dna_network(conn,
                   normalization = "no",
                   isolates = TRUE,
                   duplicates = "include",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = list(agreement = 0),
@@ -2076,10 +2056,6 @@ dt2 <- dna_network(conn,
                   normalization = "no",
                   isolates = TRUE,
                   duplicates = "include",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = list(agreement = 1),
@@ -2169,10 +2145,6 @@ dt <- dna_network(conn,
                   normalization = "no",
                   isolates = FALSE,
                   duplicates = "include",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = character(),
@@ -2225,10 +2197,6 @@ dt <- dna_network(conn,
                   normalization = "no",
                   isolates = FALSE,
                   duplicates = "include",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = character(),
@@ -2270,10 +2238,6 @@ dt <- dna_network(conn,
                   normalization = "no",
                   isolates = FALSE,
                   duplicates = "include",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = character(),
@@ -2311,10 +2275,6 @@ dt <- dna_network(conn,
                   normalization = "no",
                   isolates = FALSE,
                   duplicates = "include",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = character(),
@@ -2345,11 +2305,6 @@ dt <- dna_network(conn,
                   normalization = "no",
                   isolates = FALSE,
                   duplicates = "include",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
-                  timewindow = "no",
                   windowsize = 100,
                   excludeValues = character(),
                   verbose = TRUE)
@@ -2415,10 +2370,6 @@ dt <- dna_network(conn,
                   normalization = "activity",
                   isolates = FALSE,
                   duplicates = "include",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = character(),
@@ -2464,10 +2415,6 @@ dt <- dna_network(conn,
                   normalization = "no",
                   isolates = FALSE,
                   duplicates = "acrossrange",
-                  start.date = "26.01.2005",
-                  stop.date = "16.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = character(),
@@ -2635,10 +2582,6 @@ dt <- dna_network(conn,
                   normalization = "no",
                   isolates = FALSE,
                   duplicates = "acrossrange",
-                  start.date = "26.01.2005",
-                  stop.date = "17.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 1,
                   excludeValues = list("organization" =
@@ -2681,10 +2624,6 @@ dt <- dna_network(conn,
                   normalization = "no",
                   isolates = TRUE,
                   duplicates = "acrossrange",
-                  start.date = "26.01.2005",
-                  stop.date = "17.02.2005",
-                  start.time = "00:00:00",
-                  stop.time = "00:00:00",
                   timewindow = "no",
                   windowsize = 1,
                   excludeValues = list("organization" =
@@ -2999,7 +2938,7 @@ affil <- dna_network(conn,
                      qualifier = "agreement",
                      qualifierAggregation = "combine",
                      duplicates = "document",
-                     verbose = FALSE)
+                     verbose = TRUE)
 @
 
 This creates a $7 \times 6$ matrix of organizations and their relations to concepts.
@@ -3008,7 +2947,7 @@ The arguments \code{variable1 = "organization"} and \code{variable2 = "concept"}
 The arguments \code{qualifier = "agreement"} and \code{qualifierAggregation = "combine"} define how the cells of the matrix should be populated:
 \code{agreement} is a binary variable, and the \code{combine} option causes a cell to have a value of $0$ if the organization never refers to the concept, $1$ if the organization refers to the respective concept exclusively in a positive way, $2$ if the organization refers to the concept exclusively in a negative way, and $3$ if there are both positive and negative statements by the organization about the concept.
 We have covered this before in detail in Section~\ref{sec:qualifier}.
-\rdna\ reports on the \R\ console what each combination means.
+\rdna\ reports on the \R\ console what each combination means (if you set \code{verbose = TRUE}).
 
 As in the previous example, the resulting network matrix can be converted to a \texttt{network} object (as defined in the \texttt{network} package).
 The colours of the edges can be stored as an edge attribute, and the resulting object can be plotted with different colours representing positive, negative, and ambivalent mentions.
@@ -3492,7 +3431,9 @@ This often outweighs the alleged convenience of GUI applications, as reproducibi
 
 However, we do acknowledge that bringing the data into the right form and tweaking your network plots to look good can be daunting for beginners or even advanced \R\ users who are new to network analysis.
 This is why \rdna\ comes with two dedicated functions to create netwrok plots: \code{dna\_plotNetwork} and \code{dna\_plotHive}.
-Both are capable of handling \dna\ network objects:\footnote{Both functions technically first create an \texttt{igraph} object from a \dna\ network which is then plotted using \texttt{ggraph}.}
+Both are capable of handling \dna\ network objects:\footnote{Both functions technically first create an \texttt{igraph} object from a \dna\ network which is then plotted using \texttt{ggraph}.}\footnote{There is a good chance that your own plot will not look exactly like this.
+Due to your screen size and the size of the plot window, the size of nodes and labels might differ.
+However, you can easily control this by changing the arguments \code{node\_size} and \code{font\_size}.}
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 6, fig.height = 4, crop = TRUE>>=
 # Plot onemode network
@@ -3591,7 +3532,7 @@ dna_plotHive(nw, axis = "type")
 % include interactive network plots from visNetwork and networkD3
 
 
-\section{Adding and manipulating documents in DNA from R}
+\section{Adding and manipulating documents in DNA from R}\label{sec:man-docs}
 In \rdna, there are also several functions to manipulate the documents within a \dna\ database from \R: \code{dna\_getDocuments}, \code{dna\_addDocument}, \code{dna\_removeDocument} and \code{dna\_setDocuments}.
 
 \code{dna\_getDocuments} retrieves a dataframe with all documents from a \dna\ connection into the \R\ environment.
