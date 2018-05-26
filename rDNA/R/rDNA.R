@@ -1657,9 +1657,7 @@ dna_timeWindow <- function(connection,
           return(NA)
         }
         x[x < 0] <- 0
-        g <- igraph::graph.adjacency(x, mode = "undirected", weighted = TRUE)
-        lv <- cluster_louvain(g)
-        return(igraph::modularity(lv))
+        return(igraph::modularity(cluster_louvain(graph.adjacency(x, mode = "undirected", weighted = TRUE))))
       }
       
       if (parallel[1] == "no") {
@@ -1718,34 +1716,37 @@ dna_timeWindow <- function(connection,
       
       multipolarization <- function(x) {
         if (nrow(x) < 2) {
-          return(rep(NA, 6))
+          return(as.numeric(rep(NA, 6)))
         }
         x[x < 0] <- 0
-        g <- igraph::graph.adjacency(x, mode = "undirected", weighted = TRUE)
+        g <- graph.adjacency(x, mode = "undirected", weighted = TRUE)
+        values <- as.numeric(rep(NA, 5))
         
-        fg <- cluster_fast_greedy(g)
-        fg_mod <- igraph::modularity(fg)
-        
-        wt <- cluster_walktrap(g)
-        wt_mod <- igraph::modularity(wt)
-        
-        le_mod <- NA
         try({
-          suppressWarnings(le <- cluster_leading_eigen(g))
-          le_mod <- igraph::modularity(le)
-        }, silent = TRUE)
-        if (!is.na(le_mod) && le_mod == 0) {
-          le_mod <- NA
+          values[1] <- modularity(cluster_fast_greedy(g))
+        })
+        
+        try({
+          values[2] <- modularity(cluster_walktrap(g))
+        })
+        
+        try({
+          values[3] <- modularity(cluster_leading_eigen(g))
+        })
+        
+        if (all(x == 0)) {
+          values[4] <- NA
+        } else {
+          try({
+            values[4] <- modularity(cluster_edge_betweenness(g, directed = FALSE))
+          })
         }
         
-        eb <- cluster_edge_betweenness(g, directed = FALSE)
-        eb_mod <- igraph::modularity(eb)
+        try({
+          values[5] <- modularity(cluster_louvain(g))
+        })
         
-        lv <- cluster_louvain(g)
-        lv_mod <- igraph::modularity(lv)
-        
-        values <- c(fg_mod, wt_mod, le_mod, eb_mod, lv_mod)
-        values <- c(max(values, na.rm = TRUE), values)
+        return(c(max(values, na.rm = TRUE), values))
       }
       
       if (parallel[1] == "no") {
@@ -1806,20 +1807,6 @@ dna_timeWindow <- function(connection,
                                verbose = ifelse(verbose > 1, TRUE, FALSE)
                         ), dots)
       )
-      nw_cong <- do.call(dna_network,
-                         c(list(connection = connection,
-                                networkType = "onemode",
-                                qualifierAggregation = "congruence",
-                                timewindow = timewindow,
-                                windowsize = windowsize, 
-                                normalization = "average", 
-                                excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
-                                excludeSources = c(Sources[Sources %in% x], excludeSources),
-                                excludeSections = c(Sections[Sections %in% x], excludeSections),
-                                excludeTypes = c(Types[Types %in% x], excludeTypes),
-                                verbose = ifelse(verbose > 1, TRUE, FALSE)
-                         ), dots)
-      )
       nw_subt <- do.call(dna_network,
                          c(list(connection = connection,
                                 networkType = "onemode",
@@ -1839,121 +1826,92 @@ dna_timeWindow <- function(connection,
       l <- list(n)
       for (i in 1:n) {
         l[[i]] <- list()
-        l[[i]]$cong <- nw_cong$networks[[i]]
         l[[i]]$subt <- nw_subt$networks[[i]]
         l[[i]]$aff <- nw_aff$networks[[i]]
       }
       
       bipolarization <- function(x) {
+        cong <- x$subt
+        if (nrow(cong) == 0) {
+          return(as.numeric(rep(NA, 12)))
+        }
+        cong[cong < 0] <- 0
+        g <- graph.adjacency(cong, mode = "undirected", weighted = TRUE)
         
-        g <- igraph::graph.adjacency(x$cong, mode = "undirected", weighted = TRUE)
-        
-        pos <- apply(x$aff, 1:2, function(x) ifelse(x %in% c(1, 3), 1, 0))
-        neg <- apply(x$aff, 1:2, function(x) ifelse(x %in% c(2, 3), 1, 0))
-        
-        colnames(pos) <- paste(colnames(pos), "- yes")
-        colnames(neg) <- paste(colnames(neg), "- no")
-        combined <- cbind(pos, neg)
+        combined <- cbind(apply(x$aff, 1:2, function(x) ifelse(x %in% c(1, 3), 1, 0)),
+                          apply(x$aff, 1:2, function(x) ifelse(x %in% c(2, 3), 1, 0)))
         combined <- combined[rowSums(combined) > 0, , drop = FALSE]
         if (nrow(combined) < 2) {  # less than two objects in current time window
           return(rep(NA, 12))
         }
+        values <- as.numeric(rep(NA, 11))
         
         jac <- vegdist(combined, method = "jaccard")
-        km_mod <- NA
         try({
-          km <- kmeans(jac, centers = 2)
-          km_mod <- igraph::modularity(x = g, membership = km$cluster)
+          values[1] <- modularity(x = g, membership = kmeans(jac, centers = 2)$cluster)
         }, silent = TRUE)
         
-        pm_mod <- NA
         try({
-          pm <- pam(jac, k = 2)
-          pm_mod <- igraph::modularity(x = g, membership = pm$cluster)
+          values[2] <- modularity(x = g, membership = pam(jac, k = 2)$cluster)
         }, silent = TRUE)
         
-        hcw <- hclust(jac, method = "ward.D2")
-        hcw_mem <- cutree(hcw, k = 2)
-        hcw_mod <- igraph::modularity(x = g, membership = hcw_mem)
-        
-        hcc <- hclust(jac, method = "complete")
-        hcc_mem <- cutree(hcc, k = 2)
-        hcc_mod <- igraph::modularity(x = g, membership = hcc_mem)
-        if (hcc_mod == 0) {
-          hcc_mod <- NA
-        }
-        
-        suppressWarnings(fg <- cluster_fast_greedy(g))
-        suppressWarnings(fg_mem <- cut_at(fg, no = 2))
-        if (length(unique(fg_mem) < 3)) {
-          fg_mod <- igraph::modularity(x = g, membership = fg_mem)
-        }
-        if (fg_mod == 0) {
-          fg_mod <- NA
-        }
-        
-        suppressWarnings(wt <- cluster_walktrap(g))
-        suppressWarnings(wt_mem <- cut_at(wt, no = 2))
-        if (length(unique(wt_mem) < 3)) {
-          wt_mod <- igraph::modularity(x = g, membership = wt_mem)
-        }
-        if (wt_mod == 0) {
-          wt_mod <- NA
-        }
-        
-        le_mod <- NA
         try({
-          suppressWarnings(le <- cluster_leading_eigen(g))
-          suppressWarnings(le_mem <- cut_at(le, no = 2))
-          if (length(unique(le_mem) < 3)) {
-            le_mod <- igraph::modularity(x = g, membership = le_mem)
+          values[3] <- modularity(x = g, membership = cutree(hclust(jac, method = "ward.D2"), k = 2))
+        }, silent = TRUE)
+        
+        try({
+          values[4] <- modularity(x = g, membership = cutree(hclust(jac, method = "complete"), k = 2))
+        }, silent = TRUE)
+        
+        try({
+          values[5] <- modularity(x = g, membership = cut_at(cluster_fast_greedy(g), no = 2))
+        }, silent = TRUE)
+        
+        try({
+          values[6] <- modularity(x = g, membership = cut_at(cluster_walktrap(g), no = 2))
+        }, silent = TRUE)
+        
+        try({
+          values[7] <- modularity(x = g, membership = cut_at(cluster_leading_eigen(g), no = 2))
+        }, silent = TRUE)
+        
+        if (all(cong == 0)) {
+          values[8] <- NA
+        } else {
+          try({
+            values[8] <- modularity(x = g, membership = cut_at(cluster_edge_betweenness(g), no = 2))
+          }, silent = TRUE)
+        }
+        
+        try({
+          values[9] <- modularity(x = g, membership = cutree(equiv.clust(x$subt, equiv.dist = sedist(x$subt, method = "euclidean"))$cluster, k = 2))
+        }, silent = TRUE)
+        
+        try({
+          suppressWarnings(mi <- cor(x$subt))
+          iter <- 1
+          while(any(abs(mi) <= 0.999) & iter <= 50) {
+            mi[is.na(mi)] <- 0
+            mi <- cor(mi)
+            iter <- iter + 1
           }
+          concor_cong <- ((mi[, 1] > 0) * 1) + 1
+          values[10] <- modularity(x = g, membership = concor_cong)
         }, silent = TRUE)
-        if (!is.na(le_mod) && le_mod == 0) {
-          le_mod <- NA
-        }
         
-        suppressWarnings(eb <- cluster_edge_betweenness(g, directed = FALSE))
-        suppressWarnings(eb_mem <- cut_at(eb, no = 2))
-        if (length(unique(eb_mem) < 3)) {
-          eb_mod <- igraph::modularity(x = g, membership = eb_mem)
-        }
-        if (eb_mod == 0) {
-          eb_mod <- NA
-        }
+        try({
+          suppressWarnings(mi <- cor(t(combined)))
+          iter <- 1
+          while(any(abs(mi) <= 0.999) & iter <= 50) {
+            mi[is.na(mi)] <- 0
+            mi <- cor(mi)
+            iter <- iter + 1
+          }
+          concor_aff <- ((mi[, 1] > 0) * 1) + 1
+          values[11] <- modularity(x = g, membership = concor_aff)
+        }, silent = TRUE)
         
-        ec_dist <- sedist(x$subt, method = "euclidean")
-        ec <- equiv.clust(x$subt, equiv.dist = ec_dist)
-        ec_mem <- cutree(ec$cluster, k = 2)
-        ec_mod <- igraph::modularity(x = g, membership = ec_mem)
-        
-        suppressWarnings(mi <- cor(x$subt))
-        iter <- 1
-        cutoff <- 0.999
-        max.iter <- 50
-        while(any(abs(mi) <= cutoff) & iter <= max.iter) {
-          mi[is.na(mi)] <- 0
-          mi <- cor(mi)
-          iter <- iter + 1
-        }
-        concor_cong <- ((mi[, 1] > 0) * 1) + 1
-        cc_mod <- igraph::modularity(x = g, membership = concor_cong)
-        
-        suppressWarnings(mi <- cor(t(combined)))
-        iter <- 1
-        cutoff <- 0.999
-        max.iter <- 50
-        while(any(abs(mi) <= cutoff) & iter <= max.iter) {
-          mi[is.na(mi)] <- 0
-          mi <- cor(mi)
-          iter <- iter + 1
-        }
-        concor_aff <- ((mi[, 1] > 0) * 1) + 1
-        cca_mod <- igraph::modularity(x = g, membership = concor_aff)
-        
-        values <- c(km_mod, pm_mod, hcw_mod, hcc_mod, fg_mod, wt_mod, le_mod, eb_mod, ec_mod, cc_mod, cca_mod)
-        values <- c(max(values, na.rm = TRUE), values)
-        return(values)
+        return(c(max(values, na.rm = TRUE), values))
       }
       
       if (parallel[1] == "no") {
