@@ -1734,7 +1734,7 @@ dna_timeWindow <- function(connection,
           values[3] <- modularity(cluster_leading_eigen(g))
         })
         
-        if (all(x == 0)) {
+        if (all(x == 0) && packageVersion("igraph") < "1.2.1") {
           values[4] <- NA
         } else {
           try({
@@ -1875,7 +1875,7 @@ dna_timeWindow <- function(connection,
           values[7] <- modularity(x = g, membership = cut_at(cluster_leading_eigen(g), no = 2))
         }, silent = TRUE)
         
-        if (all(cong == 0)) {
+        if (all(cong == 0) && packageVersion("igraph") < "1.2.1") {
           values[8] <- NA
         } else {
           try({
