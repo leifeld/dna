@@ -1657,7 +1657,7 @@ dna_timeWindow <- function(connection,
           return(NA)
         }
         x[x < 0] <- 0
-        return(igraph::modularity(cluster_louvain(graph.adjacency(x, mode = "undirected", weighted = TRUE))))
+        return(modularity(cluster_louvain(graph.adjacency(x, mode = "undirected", weighted = TRUE))))
       }
       
       if (parallel[1] == "no") {
@@ -1724,27 +1724,27 @@ dna_timeWindow <- function(connection,
         
         try({
           values[1] <- modularity(cluster_fast_greedy(g))
-        })
+        }, silent = TRUE)
         
         try({
           values[2] <- modularity(cluster_walktrap(g))
-        })
+        }, silent = TRUE)
         
         try({
           values[3] <- modularity(cluster_leading_eigen(g))
-        })
+        }, silent = TRUE)
         
         if (all(x == 0) && packageVersion("igraph") < "1.2.1") {
           values[4] <- NA
         } else {
           try({
             values[4] <- modularity(cluster_edge_betweenness(g, directed = FALSE))
-          })
+          }, silent = TRUE)
         }
         
         try({
           values[5] <- modularity(cluster_louvain(g))
-        })
+        }, silent = TRUE)
         
         return(c(max(values, na.rm = TRUE), values))
       }
