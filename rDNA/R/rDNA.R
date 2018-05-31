@@ -1028,26 +1028,27 @@ dna_cluster <- function(connection,
                  }
   )
   # MDS
-  if (any(duplicated(dta))) {
-    . <- data.frame(dta, check.names = FALSE)
+  dta_mds <- dta
+  if (any(duplicated(dta_mds))) {
+    . <- data.frame(dta_mds, check.names = FALSE)
     . <- dplyr::group_by_all(.)
     .$rn <- row.names(.)
     . <- dplyr::summarise(., rowname = paste(rn, collapse = "|"))
     . <- data.frame(., stringsAsFactors = FALSE)
     row.names(.) <- .$rowname
-    dta <- .[, !colnames(.) == "rowname"]
+    dta_mds <- .[, !colnames(.) == "rowname"]
   }
-  if (all(dta %in% c(0, 1))) {
-    d <- vegan::vegdist(dta, method = "jaccard")
+  if (all(dta_mds %in% c(0, 1))) {
+    d <- vegan::vegdist(dta_mds, method = "jaccard")
   } else {
-    d <- dist(dta, method = "euclidean")
+    d <- dist(dta_mds, method = "euclidean")
   }
   if (length(d) < 2) {
     stop("Clustering cannot be performed on less than three actors.")
   }
   mds <- MASS::isoMDS(d, trace = FALSE, k = dimensions)
-  k.best <- which.max(sapply(seq(from = 2, to = nrow(dta) - 1, by = 1), function(i) {
-    cluster::pam(dta, diss = FALSE, k = i)$silinfo$avg.width
+  k.best <- which.max(sapply(seq(from = 2, to = nrow(dta_mds) - 1, by = 1), function(i) {
+    cluster::pam(dta_mds, diss = FALSE, k = i)$silinfo$avg.width
   }))
   stress <- mds$stress
   mat <- data.frame(mds$points)
@@ -2089,7 +2090,7 @@ dna_toIgraph <- function(x,
   return(graph)
 }
 
-#' Convert DNA networks to igraph objects
+#' Convert DNA networks to eventSequence objects
 #'
 #' This function can produce eventSequence objects (see
 #' \link[rem]{eventSequence}) used in the package rem from DNA connections.
@@ -3319,8 +3320,7 @@ dna_plotHive <- function(x,
     })
     if (all(test)) {
       g <- g +
-        scale_color_manual(labels = att[, tolower(node_attribute)],
-                           values = att$color)
+        scale_color_manual(values = unique(att$color)[order(unique(att[, tolower(node_attribute)]))])
     }
   } else {
     if (axis_colours == "identity") {
@@ -4028,14 +4028,14 @@ dna_barplot <- function(connection,
 #' group the bars in the resulting barplot..
 #'
 #' @param connection A \code{dna_connection} object created by the
-#' \link{dna_connection} function.
+#'   \link{dna_connection} function.
 #' @param of A variable which is used to group the bars. Can be
-#' \code{"agreement}, \code{"organization}, \code{"person}, \code{"concept} or
-#' \code{NULL} to disregard differences.
-#' @param timewindow Bars represent all statements in a certain timewindow. This
-#' can be \code{"days"}, \code{"months"} or \code{"years"}.
+#'   \code{"agreement"}, \code{"organization"}, \code{"person"},
+#'   \code{"concept"} or \code{NULL} to disregard differences.
+#' @param timewindow Bars represent all statements made during certain
+#'   timewindow. This can be \code{"days"}, \code{"months"} or \code{"years"}.
 #' @param bar Determines if bars should be stacked (\code{"stacked"}) or
-#' side-by-side (\code{"side"}).
+#'   side-by-side (\code{"side"}).
 #' @param ... Additional arguments passed to \link{dna_network}.
 #'
 #' @examples

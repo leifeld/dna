@@ -12,11 +12,11 @@ dna_plotFrequency(connection, of = "agreement", timewindow = "days",
 \link{dna_connection} function.}
 
 \item{of}{A variable which is used to group the bars. Can be
-\code{"agreement}, \code{"organization}, \code{"person}, \code{"concept} or
-\code{NULL} to disregard differences.}
+\code{"agreement"}, \code{"organization"}, \code{"person"},
+\code{"concept"} or \code{NULL} to disregard differences.}
 
-\item{timewindow}{Bars represent all statements in a certain timewindow. This
-can be \code{"days"}, \code{"months"} or \code{"years"}.}
+\item{timewindow}{Bars represent all statements made during certain
+timewindow. This can be \code{"days"}, \code{"months"} or \code{"years"}.}
 
 \item{bar}{Determines if bars should be stacked (\code{"stacked"}) or
 side-by-side (\code{"side"}).}

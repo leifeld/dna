@@ -2,7 +2,7 @@
 % Please edit documentation in R/rDNA.R
 \name{dna_toREM}
 \alias{dna_toREM}
-\title{Convert DNA networks to igraph objects}
+\title{Convert DNA networks to eventSequence objects}
 \usage{
 dna_toREM(x, variable = "organization", ...)
 }
