@@ -30,7 +30,7 @@ This function can produce eventSequence objects (see
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 conn <- dna_connection(dna_sample())
 
 ### Convert dna_connection to eventSequence

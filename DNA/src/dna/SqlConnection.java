@@ -531,7 +531,7 @@ public class SqlConnection {
 	 * 
 	 * @param av AttributeVector to be updated in the SQL database
 	 */
-	void upsertAttributeVector(AttributeVector av) {
+	public void upsertAttributeVector(AttributeVector av) {
 		try {
 			int statementTypeId = av.getStatementTypeId();
 			String variable = av.getVariable();
@@ -575,7 +575,7 @@ public class SqlConnection {
 	 * 
 	 * @param attributeVectorId  The ID of the attribute vector
 	 */
-	void deleteAttributeVector(int attributeVectorId) {
+	public void deleteAttributeVector(int attributeVectorId) {
 		executeStatement("DELETE FROM ATTRIBUTES WHERE ID = " + attributeVectorId);
 	}
 	
@@ -587,6 +587,17 @@ public class SqlConnection {
 	 */
 	public void updateAttributeColor(int id, Color color) {
 		executeStatement("UPDATE ATTRIBUTES SET Red = " + color.getRed() + ", Green = " + color.getGreen() + ", Blue = " + color.getBlue() + " WHERE ID = " + id);
+	}
+
+	/**
+	 * Update color in an attribute vector.
+	 * 
+	 * @param id     ID of the attribute vector
+	 * @param color  New color of the attribute vector
+	 */
+	public void updateAttributeColor(int id, String color) {
+		Color c = new Color(Integer.parseInt(color.substring(1), 16));
+		executeStatement("UPDATE ATTRIBUTES SET Red = " + c.getRed() + ", Green = " + c.getGreen() + ", Blue = " + c.getBlue() + " WHERE ID = " + id);
 	}
 	
 	/**

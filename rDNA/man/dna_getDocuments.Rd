@@ -21,13 +21,13 @@ through the \link{dna_setDocuments} function.
 }
 \examples{
 \dontrun{
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 conn <- dna_connection(dna_sample())
 documents <- dna_getDocuments(conn)
 documents$title[1] <- "New title for first document"
 documents$notes[3] <- "Added a note via rDNA."
-documents <- documents[, -5]# Removing the fifth document
-dna_setDocuments(conn, documents, simulate = TRUE)# apply changes
+documents <- documents[, -5]  # Removing the fifth document
+dna_setDocuments(conn, documents, simulate = TRUE)  # apply changes
 }
 
 }

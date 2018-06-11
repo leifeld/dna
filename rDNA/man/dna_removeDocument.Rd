@@ -30,8 +30,8 @@ plan more complex recode operations.}
 Removes a document from the database based on its ID.
 }
 \details{
-The user provides a connection object and the ID of an existing statement in
-the DNA database, and this statement is removed both from memory and from the
+The user provides a connection object and the ID of an existing document in
+the DNA database, and this document is removed both from memory and from the
 SQL database, possibly including any statements contained in the document.
 }
 \author{

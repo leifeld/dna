@@ -20,8 +20,7 @@ retrieved, for example \code{"organization"} or \code{"concept"}.}
 
 \item{values}{An optional character vector of entries to which the dataframe
 should be limited. If all values and attributes should be retrieved for a
-given variable, this can be \code{NULL} or a character vector of length
-0.}
+given variable, this can be \code{NULL} or a character vector of length 0.}
 }
 \description{
 Attributes are metadata for the values saved in a variable. For example, an
@@ -37,13 +36,13 @@ which the respective value is used in statements across the database.
 }
 \examples{
 \dontrun{
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 conn <- dna_connection(dna_sample())
 attributes <- dna_getAttributes(statementType = 1,
-variable = "organization",
-values = c("Alliance to Save Energy",
-"Senate",
-"Sierra Club"))
+                                variable = "organization",
+                                values = c("Alliance to Save Energy",
+                                           "Senate",
+                                           "Sierra Club"))
 }
 
 }

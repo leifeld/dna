@@ -133,12 +133,12 @@ dna_plotHive(nw, axis = "group", groups = clust)
 
 # Use custom groups
 groups <- c("Alliance to Save Energy" = "group 1",
-"Energy and Environmental Analysis, Inc." = "group 2",
-"Environmental Protection Agency" = "group 3",
-"National Petrochemical & Refiners Association" = "group 1",
-"Senate" = "group 2",
-"Sierra Club" = "group 3",
-"U.S. Public Interest Research Group"= "group 1")
+            "Energy and Environmental Analysis, Inc." = "group 2",
+            "Environmental Protection Agency" = "group 3",
+            "National Petrochemical & Refiners Association" = "group 1",
+            "Senate" = "group 2",
+            "Sierra Club" = "group 3",
+            "U.S. Public Interest Research Group"= "group 1")
 
 dna_plotHive(nw, axis = "group", groups = groups)
 }

@@ -54,7 +54,7 @@ the reported changes and then apply the actual changes by setting
 }
 \examples{
 \dontrun{
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 conn <- dna_connection(dna_sample())
 documents <- dna_getDocuments(conn)
 documents$title[1] <- "New title for first document"

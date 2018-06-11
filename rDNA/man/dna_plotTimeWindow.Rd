@@ -11,8 +11,8 @@ dna_plotTimeWindow(x, facetValues = "all", include.y = NULL, rows = NULL,
 \item{x}{A \code{dna_timeWindow} object created by the \link{dna_timeWindow}
 function.}
 
-\item{facetValues}{The name or names of the facet values which should be included in the
-plot.}
+\item{facetValues}{The name or names of the facet values which should be 
+included in the plot.}
 
 \item{include.y}{Include specific value of facet in the plot.}
 
@@ -38,7 +38,7 @@ passed on with \code{+}.
 \dontrun{
 library("ggplot2")
 dna_downloadJar()
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 conn <- dna_connection(dna_sample())
 
 tW <- dna_timeWindow(connection = conn,

@@ -58,12 +58,11 @@ to be installed).
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 conn <- dna_connection(dna_sample())
 clust <- dna_cluster(conn)
 dend <- dna_plotHeatmap(clust,
-qualifierLevels = list("0" = "no",
-"1" = "yes"))
+qualifierLevels = list("0" = "no", "1" = "yes"))
 }
 }
 \author{

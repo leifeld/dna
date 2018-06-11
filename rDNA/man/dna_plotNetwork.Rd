@@ -65,13 +65,13 @@ attribute field in DNA) but fails if names are not plottable colours; (3)
 (5.) \code{"single"} uses the first value in custom_colours for all nodes.}
 
 \item{custom_colours}{Takes custom values to control the node colours. The
-format of the necessary values depends on the setting of
-\code{node_colours}: When \code{node_colours = "manual"}, a character
-object containing the enough colour names for all groups is needed; When
+  format of the necessary values depends on the setting of
+  \code{node_colours}: When \code{node_colours = "manual"}, a character
+  object containing the enough colour names for all groups is needed; When
 \code{node_colours = "brewer"} you need to supply a a palette from
 \code{RColorBrewer} (defaults to \code{"Set3"} if \code{custom_colours} is
-left empty); When \code{node_colours "single"} only a single colour name is
-needed (defaults to \code{"red"}).}
+  left empty); When \code{node_colours "single"} only a single colour name is
+  needed (defaults to \code{"red"}).}
 
 \item{node_shape}{Controls the node shape. Available shapes range from
 \code{0:25} and \code{32:127}.}
@@ -150,12 +150,12 @@ dna_plotNetwork(nw, node_attribute = "group", groups = clust)
 
 # Use custom groups from dna_cluster
 groups <- c("Alliance to Save Energy" = "group 1",
-"Energy and Environmental Analysis, Inc." = "group 2",
-"Environmental Protection Agency" = "group 3",
-"National Petrochemical & Refiners Association" = "group 1",
-"Senate" = "group 2",
-"Sierra Club" = "group 3",
-"U.S. Public Interest Research Group"= "group 1")
+            "Energy and Environmental Analysis, Inc." = "group 2",
+            "Environmental Protection Agency" = "group 3",
+            "National Petrochemical & Refiners Association" = "group 1",
+            "Senate" = "group 2",
+            "Sierra Club" = "group 3",
+            "U.S. Public Interest Research Group"= "group 1")
 dna_plotNetwork(nw, node_attribute = "group", groups = groups)
 }
 

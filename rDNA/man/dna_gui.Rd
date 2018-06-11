@@ -29,7 +29,7 @@ DNA on the fly to quickly recode statements or look something up.
 }
 \examples{
 \dontrun{
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 dna_gui()
 }
 }

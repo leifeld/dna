@@ -67,20 +67,20 @@ event lists, the qualifier variable is only used for filtering out
 duplicates (depending on the setting of the \code{duplicate} argument.}
 
 \item{qualifierAggregation}{The aggregation rule for the \code{qualifier}
-variable. In one-mode networks, this must be \code{"ignore"} (for
-ignoring the qualifier variable), \code{"congruence"} (for recording a
-network tie only if both nodes have the same qualifier value in the
-binary case or for recording the similarity between the two nodes on the
-qualifier variable in the integer case), \code{"conflict"} (for
-recording a network tie only if both nodes have a different qualifier
-value in the binary case or for recording the distance between the two
-nodes on the qualifier variable in the integer case), or
+  variable. In one-mode networks, this must be \code{"ignore"} (for
+  ignoring the qualifier variable), \code{"congruence"} (for recording a
+  network tie only if both nodes have the same qualifier value in the
+  binary case or for recording the similarity between the two nodes on the
+  qualifier variable in the integer case), \code{"conflict"} (for
+  recording a network tie only if both nodes have a different qualifier
+  value in the binary case or for recording the distance between the two
+  nodes on the qualifier variable in the integer case), or
 \code{"subtract"} (for subtracting the conflict tie value from the
-congruence tie value in each dyad). In two-mode networks, this must be
+  congruence tie value in each dyad). In two-mode networks, this must be
 \code{"ignore"}, \code{"combine"} (for creating multiplex combinations,
-e.g., 1 for positive, 2 for negative, and 3 for mixed), or
+  e.g., 1 for positive, 2 for negative, and 3 for mixed), or
 \code{subtract} (for subtracting negative from positive ties). In event
-lists, this setting is ignored.}
+  lists, this setting is ignored.}
 
 \item{normalization}{Normalization of edge weights. Valid settings for
 one-mode networks are \code{"no"} (for switching off normalization),
@@ -218,7 +218,7 @@ which case the networks are retrieved as a list of matrices.
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 conn <- dna_connection(dna_sample())
 nw <- dna_network(conn,
 networkType = "onemode",

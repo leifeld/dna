@@ -32,7 +32,7 @@ duplicates results in a binary matrix, \link[vegan]{vegdist} will be used
 instead of \link[stats]{dist} to calculate the dissimilarity matrix.}
 
 \item{clust.method}{The agglomeration method to be used. When set to
-  \code{"ward.D"}, \code{"ward.D2"}, \code{"single"}, \code{"complete"},
+\code{"ward.D"}, \code{"ward.D2"}, \code{"single"}, \code{"complete"},
 \code{"average"}, \code{"mcquitty"}, \code{"median"} or \code{"centroid"}
 the respective methods from \link[stats]{hclust} will be used. When set to
 \code{"edge_betweenness"}, \code{"leading_eigen"} or \code{"walktrap"}
@@ -91,7 +91,7 @@ results can also be plotted using \link{dna_plotCoordinates}.
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 conn <- dna_connection(dna_sample())
 
 clust.l <- dna_cluster(conn)
@@ -100,8 +100,8 @@ dna_plotDendro(clust.l)
 dna_plotHeatmap(clust.l)
 dna_plotCoordinates(clust.l,
 jitter = c(0.5, 0.7))
-
 }
+
 }
 \author{
 Johannes B. Gruber

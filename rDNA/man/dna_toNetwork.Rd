@@ -19,7 +19,7 @@ package.
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 conn <- dna_connection(dna_sample())
 nw <- dna_network(conn, networkType = "onemode")
 network <- dna_toNetwork(nw)

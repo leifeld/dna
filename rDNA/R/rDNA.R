@@ -34,20 +34,20 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
 #' and statements into memory for further processing.
 #'
 #' @param infile The file name of the .dna database or the URL of the mySQL
-#' database to load
+#'   database to load
 #' @param login The user name for accessing the database (only applicable
-#' to remote mySQL databases; can be \code{NULL} if a local .dna file
-#' is used).
+#'   to remote mySQL databases; can be \code{NULL} if a local .dna file
+#'   is used).
 #' @param password The password for accessing the database (only applicable
-#' to remote mySQL databases; can be \code{NULL} if a local .dna file
-#' is used).
+#'   to remote mySQL databases; can be \code{NULL} if a local .dna file
+#'   is used).
 #' @param verbose Print details the number of documents and statements after
-#' loading the database?
+#'   loading the database?
 #'
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' dna_connection(dna_sample())
 #' }
 #' @export
@@ -97,7 +97,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' conn
 #' }
@@ -123,11 +123,11 @@ print.dna_connection <- function(x, ...) {
 #' }
 #' @export
 #' @importFrom utils download.file
-dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
+dna_downloadJar <- function(filename = "dna-2.0-beta22.jar",
                             filepath = character(),
                             force = FALSE) {
   # temporary fix until next release
-  url <- paste0("https://github.com/leifeld/dna/raw/master/manual/dna-2.0-beta21.jar")
+  url <- paste0("https://github.com/leifeld/dna/raw/master/manual/dna-2.0-beta22.jar")
   if (any(!file.exists(paste0(filepath, filename)), force)) {
     download.file(url = url,
                   destfile = paste0(filepath, filename),
@@ -148,17 +148,17 @@ dna_downloadJar <- function(filename = "dna-2.0-beta21.jar",
 #' DNA on the fly to quickly recode statements or look something up.
 #'
 #' @param infile The file name of the .dna database or the URL of the mySQL
-#' database to load upon start-up of the GUI
+#'   database to load upon start-up of the GUI
 #' @param javapath The path to the \code{java} command. This may be useful if
-#' the CLASSPATH is not set and the java command can not be found. Java
-#' is necessary to start the DNA GUI.
+#'   the CLASSPATH is not set and the java command can not be found. Java
+#'   is necessary to start the DNA GUI.
 #' @param memory The amount of memory in megabytes to allocate to DNA, for
-#' example \code{1024} or \code{4096}.
+#'   example \code{1024} or \code{4096}.
 #' @param verbose Print details and error messages from the call to DNA?
 #'
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' dna_gui()
 #' }
 #' @export
@@ -227,18 +227,18 @@ dna_gui <- function(infile = NULL,
 #' version or path, the \R session would need to be restarted first.
 #'
 #' @param jarfile The file name of the DNA jar file, e.g.,
-#' \code{"dna-2.0-beta21.jar"}.
+#'   \code{"dna-2.0-beta22.jar"}.
 #' @param memory The amount of memory in megabytes to allocate to DNA, for
-#' example \code{1024} or \code{4096}.
+#'   example \code{1024} or \code{4096}.
 #'
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' }
 #' @export
 #' @import rJava
-dna_init <- function(jarfile = "dna-2.0-beta21.jar", memory = 1024) {
+dna_init <- function(jarfile = "dna-2.0-beta22.jar", memory = 1024) {
   if (!file.exists(jarfile)) {
     stop(if (grepl("/", jarfile, fixed = TRUE)) {
       paste0("jarfile \"", jarfile, "\" could not be located.")
@@ -267,13 +267,13 @@ dna_init <- function(jarfile = "dna-2.0-beta21.jar", memory = 1024) {
 #' A small sample database to test the functions of rDNA.
 #'
 #' @param overwrite Logical. Should sample.dna be overwritten if found in the
-#' current working directory?
+#'   current working directory?
 #' @param verbose Display warning message if file exists in current wd.
 #'
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' dna_connection(dna_sample())
 #' }
 #' @author Johannes Gruber
@@ -297,6 +297,115 @@ dna_sample <- function(overwrite = FALSE,
 
 # Data management --------------------------------------------------------------
 
+#' Add an attribute to the DNA database
+#'
+#' Add a new attribute to the DNA database.
+#'
+#' The \code{dna_addAttribute} function can add new attributes to an existing
+#' DNA database. Attributes are the annotations that are coded within a 
+#' variable, along with some meta-data. For example, if the variable is 
+#' "organization", then an attribute value could be "Environmental Protection 
+#' Agency", and other attribute meta-data for this value could be its color, 
+#' actor type etc. The \code{dna_addAttribute} function can not only be used to 
+#' add entries to the attributes table in an ongoing project, but also to 
+#' pre-populate a DNA database with values for deductive coding. Either way, the
+#' user supplies a \link{dna_connection} object as well as various details about
+#' the attribute to be added, for example the value, color, type etc. The 
+#' attribute ID will be automatically generated and can be returned if 
+#' \code{returnID} is set to \code{TRUE}.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param statementType The ID of the statement type (as an integer) or the name
+#'   of the statement type (as a character object) in which the variable is
+#'   defined.
+#' @param variable The name of the variable for which attribute data should be
+#'   retrieved, for example \code{"organization"} or \code{"concept"}.
+#' @param value The value of the new attribute as a character object.
+#' @param color A character object containing the color of the new document as a
+#'   hexadecimal RGB value.
+#' @param type The type of the new attribute as a character object.
+#' @param alias A character object containing the alias of the new attribute.
+#' @param notes The notes of the new attribute as a character object.
+#' @param returnID Return the ID of the newly created attribute as a numeric
+#'   value?
+#' @param verbose Print details?
+#'
+#' @author Philip Leifeld
+#' @export
+dna_addAttribute <- function(connection,
+                             statementType = 1,
+                             variable = "organization",
+                             value = "new value",
+                             color = "#000000",
+                             type = "",
+                             alias = "",
+                             notes = "",
+                             returnID = FALSE,
+                             verbose = TRUE) {
+  if (is.numeric(statementType) && !is.integer(statementType)) {
+    statementType <- as.integer(statementType)
+  }
+  if (!class(statementType) %in% c("character", "integer")) {
+    stop("The statement type must be either an integer value or a character object.")
+  }
+  if (length(statementType) > 1) {
+    stop("Only one single statement type must be provided, not multiple types.")
+  }
+  if (!is.character(variable)) {
+    stop("The variable must be provided as a character object.")
+  }
+  if (length(variable) > 1) {
+    stop("Only one single variable must be provided, not multiple types.")
+  }
+  if (!is.character(value)) {
+    stop("The value must be provided as a character object.")
+  }
+  if (length(value) > 1) {
+    stop("Only one single value must be provided, not multiple values.")
+  }
+  if (!is.character(color)) {
+    stop("The color must be provided as a character object in hexadecimal RGB format.")
+  }
+  if (length(color) > 1) {
+    stop("Only one single color must be provided, not multiple colors.")
+  }
+  if (!is.character(type)) {
+    stop("The type must be provided as a character object.")
+  }
+  if (length(type) > 1) {
+    stop("Only one single type must be provided, not multiple types.")
+  }
+  if (!is.character(alias)) {
+    stop("The alias must be provided as a character object.")
+  }
+  if (length(alias) > 1) {
+    stop("Only one single alias must be provided, not multiple aliases.")
+  }
+  if (!is.character(notes)) {
+    stop("The notes must be provided as a character object.")
+  }
+  if (length(notes) > 1) {
+    stop("Only one single note must be provided, not multiple notes.")
+  }
+  id <- .jcall(connection$dna_connection,
+               "I",
+               "addAttribute",
+               statementType,
+               variable,
+               value,
+               color,
+               type,
+               alias,
+               notes)
+  if (verbose == TRUE) {
+    cat("A new attribute with ID", id, "was added to the database.")
+  }
+  if (returnID == TRUE) {
+    return(id)
+  }
+}
+
 #' Add a document to the DNA database
 #'
 #' Add a new document to the DNA database.
@@ -310,10 +419,10 @@ dna_sample <- function(overwrite = FALSE,
 #' \code{TRUE}.
 #'
 #' @param connection A \code{dna_connection} object created by the
-#' \code{dna_connection} function.
+#'   \code{dna_connection} function.
 #' @param title A character object containing the title of the new document.
 #' @param text A character object containing the text of the new document. Line
-#' breaks can be included as \code{"\\n"}.
+#'   breaks can be included as \code{"\\n"}.
 #' @param coder An integer value indicating which coder created the document.
 #' @param author A character object containing the author of the document.
 #' @param source A character object containing the source of the document.
@@ -321,10 +430,10 @@ dna_sample <- function(overwrite = FALSE,
 #' @param notes A character object containing notes about the document.
 #' @param type A character object containing the type of the document.
 #' @param date A \code{POSIXct} object containing the date/time stamp of the
-#' document. Alternatively, the date/time can be supplied as an integer
-#' value indicating the milliseconds since the start of 1970-01-01.
+#'   document. Alternatively, the date/time can be supplied as an integer
+#'   value indicating the milliseconds since the start of 1970-01-01.
 #' @param returnID Return the ID of the newly created document as a numeric
-#' value?
+#'   value?
 #' @param verbose Print details?
 #'
 #' @author Philip Leifeld
@@ -410,26 +519,25 @@ dna_addDocument <- function(connection,
 #' which the respective value is used in statements across the database.
 #'
 #' @param connection A \code{dna_connection} object created by the
-#' \code{dna_connection} function.
+#'   \code{dna_connection} function.
 #' @param statementType The ID of the statement type (as an integer) or the name
-#' of the statement type (as a character object) in which the variable is
-#' defined.
+#'   of the statement type (as a character object) in which the variable is
+#'   defined.
 #' @param variable The name of the variable for which attribute data should be
-#' retrieved, for example \code{"organization"} or \code{"concept"}.
+#'   retrieved, for example \code{"organization"} or \code{"concept"}.
 #' @param values An optional character vector of entries to which the dataframe
-#' should be limited. If all values and attributes should be retrieved for a
-#' given variable, this can be \code{NULL} or a character vector of length
-#' 0.
+#'   should be limited. If all values and attributes should be retrieved for a
+#'   given variable, this can be \code{NULL} or a character vector of length 0.
 #'
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #' attributes <- dna_getAttributes(statementType = 1,
-#' variable = "organization",
-#' values = c("Alliance to Save Energy",
-#'"Senate",
-#'"Sierra Club"))
+#'                                 variable = "organization",
+#'                                 values = c("Alliance to Save Energy",
+#'                                            "Senate",
+#'                                            "Sierra Club"))
 #' }
 #'
 #' @author Philip Leifeld
@@ -481,17 +589,17 @@ dna_getAttributes <- function(connection,
 #' through the \link{dna_setDocuments} function.
 #'
 #' @param connection A \code{dna_connection} object created by the
-#' \code{dna_connection} function.
+#'   \code{dna_connection} function.
 #'
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #' documents <- dna_getDocuments(conn)
 #' documents$title[1] <- "New title for first document"
 #' documents$notes[3] <- "Added a note via rDNA."
-#' documents <- documents[, -5]# Removing the fifth document
-#' dna_setDocuments(conn, documents, simulate = TRUE)# apply changes
+#' documents <- documents[, -5]  # Removing the fifth document
+#' dna_setDocuments(conn, documents, simulate = TRUE)  # apply changes
 #' }
 #'
 #' @author Philip Leifeld
@@ -516,26 +624,90 @@ dna_getDocuments <- function(connection) {
   return(documents)
 }
 
+#' Removes an attribute entry from the database
+#'
+#' Removes an attribute entry from the database based on its ID or value.
+#'
+#' The user provides a connection object and the ID or value label of an 
+#' existing attribute in the DNA database, and this attribute is removed both
+#' from memory and from the SQL database, possibly including any statements 
+#' associated with the attribute.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \link{dna_connection} function.
+#' @param statementType The ID of the statement type (as an integer) or the name
+#'   of the statement type (as a character object) in which the variable is
+#'   defined.
+#' @param variable The name of the variable from which attribute should be
+#'   removed, for example \code{"organization"} or \code{"concept"}.
+#' @param attribute An integer value denoting the ID of the attribute to be 
+#'   removed, or a value label (as a character object) denoting the entry to be 
+#'   removed. The \link{dna_getAttributes} function can be used to look up IDs.
+#' @param removeStatements The attribute given by \code{attribute} may contain
+#'   statements. If \code{removeStatements = TRUE} is set, these statements
+#'   are removed along with the respective attribute. If
+#'   \code{removeStatements = FALSE} is set, the statements are not deleted,
+#'   the attribute is kept as well, and a message is printed.
+#' @param simulate Should the changes only be simulated instead of actually
+#'   applied to the DNA connection and the SQL database? This can help to
+#'   plan more complex recode operations.
+#' @param verbose Print details on whether the attribute could be removed?
+#'
+#' @author Philip Leifeld
+#' @export
+dna_removeAttribute <- function(connection,
+                                statementType = 1,
+                                variable = "organization",
+                                attribute,
+                                removeStatements = FALSE,
+                                simulate = TRUE,
+                                verbose = TRUE) {
+  if (!is.integer(attribute) && is.numeric(attribute)) {
+    attribute <- as.integer(attribute)
+  }
+  if (!is.integer(attribute) && !is.character(attribute)) {
+    attribute <- as.character(attribute)
+  }
+  if (length(attribute) > 1) {
+    stop("Only one attribute can be removed at a time. Use a loop or vectorization if you need to remove multiple attributes.")
+  }
+  if (is.numeric(statementType) && !is.integer(statementType)) {
+    statementType <- as.integer(statementType)
+  }
+  if (!is.integer(statementType) && !is.character(statementType)) {
+    statementType <- as.character(statementType)
+  }
+  .jcall(connection$dna_connection,
+         "V",
+         "removeAttribute",
+         statementType,
+         variable,
+         attribute,
+         removeStatements,
+         simulate,
+         verbose)
+}
+
 #' Removes a document from the database
 #'
 #' Removes a document from the database based on its ID.
 #'
-#' The user provides a connection object and the ID of an existing statement in
-#' the DNA database, and this statement is removed both from memory and from the
+#' The user provides a connection object and the ID of an existing document in
+#' the DNA database, and this document is removed both from memory and from the
 #' SQL database, possibly including any statements contained in the document.
 #'
 #' @param connection A \code{dna_connection} object created by the
-#' \link{dna_connection} function.
+#'   \link{dna_connection} function.
 #' @param id An integer value denoting the ID of the document to be removed. The
-#' \link{dna_getDocuments} function can be used to look up IDs.
+#'   \link{dna_getDocuments} function can be used to look up IDs.
 #' @param removeStatements The document given by \code{id} may contain
-#' statements. If \code{removeStatements = TRUE} is set, these statements
-#' are removed along with the respective document. If
-#' \code{removeStatements = FALSE} is set, the statements are not deleted,
-#' the document is kept as well, and a message is printed.
+#'   statements. If \code{removeStatements = TRUE} is set, these statements
+#'   are removed along with the respective document. If
+#'   \code{removeStatements = FALSE} is set, the statements are not deleted,
+#'   the document is kept as well, and a message is printed.
 #' @param simulate Should the changes only be simulated instead of actually
-#' applied to the DNA connection and the SQL database? This can help to
-#' plan more complex recode operations.
+#'   applied to the DNA connection and the SQL database? This can help to
+#'   plan more complex recode operations.
 #' @param verbose Print details on whether the document could be removed?
 #'
 #' @author Philip Leifeld
@@ -552,6 +724,172 @@ dna_removeDocument <- function(connection,
          "V",
          "removeDocument",
          id,
+         removeStatements,
+         simulate,
+         verbose)
+}
+
+#' Recode attributes in the DNA database
+#'
+#' Add, remove, and edit values and attributes for a variable in a DNA database.
+#'
+#' This function takes a dataframe with columns "id", "value", "color", "type", 
+#' "alias", and "notes" (in no particular order and ignoring any additional 
+#' columns) and hands it over to a DNA connection in order to update the 
+#' attributes in the database for a specific statement type and variable, based 
+#' on the contents of the dataframe. The typical workflow is to retrieve the 
+#' attributes for some statement type and variable using 
+#' \link{dna_getAttributes}, manipulating the attributes, and then applying the 
+#' changes with \link{dna_setAttributes}. Attributes that are no longer in the 
+#' dataframe are removed from the database; attributes in the dataframe that 
+#' are not in the database are added to the database; and contents of existing 
+#' attributes are updated. By default, the changes are only simulated and not 
+#' actually written into the database. The user can inspect the reported 
+#' changes and then apply the actual changes by setting \code{simulate = FALSE}.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param attributes A dataframe with at least six columns: id (integer), value
+#'   (character), color (character; must be in hexadecimal RGB format), 
+#'   type (character), alias (character), and notes (character), in no 
+#'   particular order. \code{NA} values or \code{-1} values are permitted in the
+#'   id column. If these are encountered, a new ID is automatically generated, 
+#'   and the attribute is added.
+#' @param statementType The ID of the statement type (as an integer) or the name
+#'   of the statement type (as a character object) in which the variable is
+#'   defined.
+#' @param variable The name of the variable for which attribute data should be
+#'   retrieved, for example \code{"organization"} or \code{"concept"}.
+#' @param removeStatements If an attribute is present in the DNA database but 
+#'   not in the \code{attributes} dataframe, the respective attribute is removed
+#'   from the database. However, the attribute may have been used in statements. 
+#'   If \code{removeStatements = TRUE} is set, these statements are removed 
+#'   along with the respective attribute. If \code{removeStatements = FALSE} is 
+#'   set, the statements are not deleted, the attribute is kept as well, and a
+#'   message is printed.
+#' @param simulate Should the changes only be simulated instead of actually
+#'   applied to the DNA connection and the SQL database? This can help to
+#'   plan more complex recode operations.
+#' @param verbose Print details about the recode operations?
+#'
+#' @examples
+#' \dontrun{
+#' dna_init("dna-2.0-beta22.jar")
+#' conn <- dna_connection(dna_sample())
+#' at <- dna_getAttributes(conn)
+#' 
+#' at$value[2] <- "new organization name"   # recode a value
+#' at$color[5] <- "#0000FF"                 # recode a color
+#' at$notes[3] <- "Added a note via rDNA."  # recode a note
+#' at <- at[-6, ]                           # remove an attribute
+#' at <- rbind(at, 
+#'             data.frame(id = NA, 
+#'                        value = "new actor",
+#'                        color = "#00FFCC",
+#'                        type = "NGO",
+#'                        alias = "",
+#'                        notes = ""))
+#' dna_setAttributes(conn, 
+#'                   statementType = "DNA Statement", 
+#'                   variable = "organization", 
+#'                   at, 
+#'                   removeStatements = TRUE, 
+#'                   simulate = TRUE)
+#' }
+#'
+#' @author Philip Leifeld
+#' @export
+dna_setAttributes <- function(connection,
+                              attributes,
+                              statementType = 1,
+                              variable = "organization",
+                              removeStatements = FALSE,
+                              simulate = TRUE,
+                              verbose = TRUE) {
+  if ((!is.numeric(statementType) && !is.character(statementType)) || length(statementType) > 1) {
+    stop("'statementType' must be a single integer or character value referencing the ID or name of the statement type in which the variable is defined.")
+  }
+  if (!is.integer(statementType) && is.numeric(statementType)) {
+    statementType <- as.integer(statementType)
+  }
+  if (!is.character(variable) || length(variable) > 1) {
+    stop("'variable' must be a single character object referencing the variable for which the attribute data should be set.")
+  }
+  if (!is.data.frame(attributes)) {
+    stop("'attributes' must be a data.frame similar to the one returned by dna_getAttributes.")
+  }
+  if (!"id" %in% colnames(attributes)) {
+    "The 'attributes' data.frame does not contain a column with the label 'id'."
+  }
+  if (!"value" %in% colnames(attributes)) {
+    "The 'attributes' data.frame does not contain a column with the label 'value'."
+  }
+  if (!"color" %in% colnames(attributes)) {
+    "The 'attributes' data.frame does not contain a column with the label 'color'."
+  }
+  if (!"type" %in% colnames(attributes)) {
+    "The 'attributes' data.frame does not contain a column with the label 'type'."
+  }
+  if (!"alias" %in% colnames(attributes)) {
+    "The 'attributes' data.frame does not contain a column with the label 'alias'."
+  }
+  if (!"notes" %in% colnames(attributes)) {
+    "The 'attributes' data.frame does not contain a column with the label 'notes'."
+  }
+  if (!is.integer(attributes$id)) {
+    stop("The 'id' column of 'attributes' must be integer and must contain the attribute IDs.")
+  }
+  if (!is.character(attributes$value)) {
+    if (is.factor(attributes$value)) {
+      attributes$value <- as.character(attributes$value)
+    } else {
+      stop("The 'value' column of 'attributes' must contain the attribute values as character objects.")
+    }
+  }
+  if (!is.character(attributes$color)) {
+    if (is.factor(attributes$color)) {
+      attributes$color <- as.character(attributes$color)
+    } else {
+      stop("The 'color' column of 'attributes' must contain the attribute colors as character objects in hexadecimal format.")
+    }
+  }
+  if (!is.character(attributes$type)) {
+    if (is.factor(attributes$type)) {
+      attributes$type <- as.character(attributes$type)
+    } else {
+      stop("The 'type' column of 'attributes' must contain the attribute types as character objects.")
+    }
+  }
+  if (!is.character(attributes$alias)) {
+    if (is.factor(attributes$alias)) {
+      attributes$alias <- as.character(attributes$alias)
+    } else {
+      stop("The 'alias' column of 'attributes' must contain the attribute aliases as character objects.")
+    }
+  }
+  if (!is.character(attributes$notes)) {
+    if (is.factor(attributes$notes)) {
+      attributes$notes <- as.character(attributes$notes)
+    } else {
+      stop("The 'notes' column of 'attributes' must contain the attribute notes as character objects.")
+    }
+  }
+  if (verbose == TRUE) {
+    if (nrow(attributes) == 0) {
+      warning("'attributes' has 0 rows. Deleting all attributes from the database.")
+    }
+  }
+  # replace NAs with -1, which will be replaced by an auto-generated ID in DNA
+  if (any(is.na(attributes$id))) {
+    attributes$id[which(is.na(documents$id))] <- as.integer(-1)
+  }
+  attributes <- .jarray(lapply(attributes, .jarray))
+  .jcall(connection$dna_connection,
+         "V",
+         "setAttributes",
+         statementType,
+         variable,
+         attributes,
          removeStatements,
          simulate,
          verbose)
@@ -576,30 +914,30 @@ dna_removeDocument <- function(connection,
 #' \code{simulate = FALSE}.
 #'
 #' @param connection A \code{dna_connection} object created by the
-#' \code{dna_connection} function.
+#'   \code{dna_connection} function.
 #' @param documents A dataframe with ten columns: id (integer), title
-#' (character), text (character), coder (integer), author (character),
-#' sources (character), section (character), notes (character), type
-#' (character), and date (POSIXct or integer; if integer, the value
-#' indicates milliseconds since the start of 1970-01-01). \code{NA} values
-#' or \code{-1} values are permitted in the id column. If these are
-#' encountered, a new ID is automatically generated, and the document is
-#' added.
+#'   (character), text (character), coder (integer), author (character),
+#'   sources (character), section (character), notes (character), type
+#'   (character), and date (POSIXct or integer; if integer, the value
+#'   indicates milliseconds since the start of 1970-01-01). \code{NA} values
+#'   or \code{-1} values are permitted in the id column. If these are
+#'   encountered, a new ID is automatically generated, and the document is
+#'   added.
 #' @param removeStatements If a document is present in the DNA database but not
-#' in the \code{documents} dataframe, the respective document is removed
-#' from the database. However, the document may contain statements. If
-#' \code{removeStatements = TRUE} is set, these statements are removed along
-#' with the respective document. If \code{removeStatements = FALSE} is set,
-#' the statements are not deleted, the document is kept as well, and a
-#' message is printed.
+#'   in the \code{documents} dataframe, the respective document is removed
+#'   from the database. However, the document may contain statements. If
+#'   \code{removeStatements = TRUE} is set, these statements are removed along
+#'   with the respective document. If \code{removeStatements = FALSE} is set,
+#'   the statements are not deleted, the document is kept as well, and a
+#'   message is printed.
 #' @param simulate Should the changes only be simulated instead of actually
-#' applied to the DNA connection and the SQL database? This can help to
-#' plan more complex recode operations.
+#'   applied to the DNA connection and the SQL database? This can help to
+#'   plan more complex recode operations.
 #' @param verbose Print details about the recode operations?
 #'
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #' documents <- dna_getDocuments(conn)
 #' documents$title[1] <- "New title for first document"
@@ -750,21 +1088,21 @@ dna_setDocuments <- function(connection,
 #'   instead of \link[stats]{dist} to calculate the dissimilarity matrix.
 #' @param clust.method The agglomeration method to be used. When set to
 #'   \code{"ward.D"}, \code{"ward.D2"}, \code{"single"}, \code{"complete"},
-#' \code{"average"}, \code{"mcquitty"}, \code{"median"} or \code{"centroid"}
-#' the respective methods from \link[stats]{hclust} will be used. When set to
-#' \code{"edge_betweenness"}, \code{"leading_eigen"} or \code{"walktrap"}
-#' \link[igraph]{cluster_edge_betweenness},
-#' \link[igraph]{cluster_leading_eigen} or \link[igraph]{cluster_walktrap}
-#' respectively, will be used for clustering.
+#'   \code{"average"}, \code{"mcquitty"}, \code{"median"} or \code{"centroid"}
+#'   the respective methods from \link[stats]{hclust} will be used. When set to
+#'   \code{"edge_betweenness"}, \code{"leading_eigen"} or \code{"walktrap"}
+#'   \link[igraph]{cluster_edge_betweenness},
+#'   \link[igraph]{cluster_leading_eigen} or \link[igraph]{cluster_walktrap}
+#'   respectively, will be used for clustering.
 #' @param attribute1,attribute2 Which attribute of variable from DNA should be
-#' used to assign colours? There are two sets of colours saved in the
-#' resulting object as \link{dna_plotDendro} has two graphical elements to
-#' distinguish between values: leaf_colours and leaf_ends. Possible values are
-#' \code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"}
-#' and \code{"note"}.
+#'   used to assign colours? There are two sets of colours saved in the
+#'   resulting object as \link{dna_plotDendro} has two graphical elements to
+#'   distinguish between values: leaf_colours and leaf_ends. Possible values are
+#'   \code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"}
+#'   and \code{"note"}.
 #' @param cutree.k,cutree.h If cutree.k or cutree.h are provided, the tree from
-#' hierarchical clustering is cut into several groups. See $k$ and $h$ in
-#' \link[stats]{cutree} for details.
+#'   hierarchical clustering is cut into several groups. See $k$ and $h$ in
+#'   \link[stats]{cutree} for details.
 #' @param dimensions The desired dimension for the solution of the MDS and also
 #'   the desired number of factors to extract from the factor analysis. Only two
 #'   can be plotted but you might want to calculate more and then choose which
@@ -778,7 +1116,7 @@ dna_setDocuments <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #'
 #' clust.l <- dna_cluster(conn)
@@ -787,14 +1125,14 @@ dna_setDocuments <- function(connection,
 #' dna_plotHeatmap(clust.l)
 #' dna_plotCoordinates(clust.l,
 #' jitter = c(0.5, 0.7))
-#'
 #' }
+#' 
 #' @author Johannes B. Gruber
 #' @export
 #' @importFrom vegan vegdist
 #' @importFrom stats setNames dist hclust cutree as.hclust factanal
 #' @importFrom igraph graph_from_adjacency_matrix cluster_leading_eigen
-#' cluster_walktrap E
+#'   cluster_walktrap E
 #' @importFrom dplyr summarise group_by_all
 #' @importFrom MASS isoMDS
 #' @importFrom cluster pam
@@ -1085,7 +1423,7 @@ dna_cluster <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' clust.l <- dna_cluster(conn)
 #' clust.l
@@ -1131,167 +1469,167 @@ print.dna_cluster <- function(x, ...) {
 #' which case the networks are retrieved as a list of matrices.
 #'
 #' @param connection A \code{dna_connection} object created by the
-#' \code{dna_connection} function.
+#'   \code{dna_connection} function.
 #' @param networkType The kind of network to be computed. Can be
-#' \code{"twomode"}, \code{"onemode"}, or \code{"eventlist"}.
+#'   \code{"twomode"}, \code{"onemode"}, or \code{"eventlist"}.
 #' @param statementType The name of the statement type in which the variable
-#' of interest is nested. For example, \code{"DNA Statement"}.
+#'   of interest is nested. For example, \code{"DNA Statement"}.
 #' @param variable1 The first variable for network construction. In a one-mode
-#' network, this is the variable for both the rows and columns. In a
-#' two-mode network, this is the variable for the rows only. In an event
-#' list, this variable is only used to check for duplicates (depending on
-#' the setting of the \code{duplicate} argument).
+#'   network, this is the variable for both the rows and columns. In a
+#'   two-mode network, this is the variable for the rows only. In an event
+#'   list, this variable is only used to check for duplicates (depending on
+#'   the setting of the \code{duplicate} argument).
 #' @param variable1Document A boolean value indicating whether the first
-#' variable is at the document level (i.e., \code{"author"},
-#' \code{"source"}, \code{"section"}, or \code{"type"}).
+#'   variable is at the document level (i.e., \code{"author"},
+#'   \code{"source"}, \code{"section"}, or \code{"type"}).
 #' @param variable2 The second variable for network construction. In a one-mode
-#' network, this is the variable over which the ties are created. For
-#' example, if an organization x organization network is created, and ties
-#' in this network indicate co-reference to a concept, then the second
-#' variable is the \code{"concept"}. In a two-mode network, this is the
-#' variable used for the columns of the network matrix. In an event list,
-#' this variable is only used to check for duplicates (depending on the
-#' setting of the \code{duplicate} argument).
+#'   network, this is the variable over which the ties are created. For
+#'   example, if an organization x organization network is created, and ties
+#'   in this network indicate co-reference to a concept, then the second
+#'   variable is the \code{"concept"}. In a two-mode network, this is the
+#'   variable used for the columns of the network matrix. In an event list,
+#'   this variable is only used to check for duplicates (depending on the
+#'   setting of the \code{duplicate} argument).
 #' @param variable2Document A boolean value indicating whether the second
-#' variable is at the document level (i.e., \code{"author"},
-#' \code{"source"}, \code{"section"}, or \code{"type"}).
+#'   variable is at the document level (i.e., \code{"author"},
+#'   \code{"source"}, \code{"section"}, or \code{"type"}).
 #' @param qualifier The qualifier variable. In a one-mode network, this
-#' variable can be used to count only congruence or conflict ties. For
-#' example, in an organization x organization network via common concepts,
-#' a binary \code{"agreement"} qualifier could be used to record only ties
-#' where both organizations have a positive stance on the concept or where
-#' both organizations have a negative stance on the concept. With an
-#' integer qualifier, the tie weight between the organizations would be
-#' proportional to the similarity or distance between the two organizations
-#' on the scale of the integer variable. In a two-mode network, the
-#' qualifier variable can be used to retain only positive or only negative
-#' statements or subtract negative from positive mentions. All of this
-#' depends on the setting of the \code{qualifierAggregation} argument. For
-#' event lists, the qualifier variable is only used for filtering out
-#' duplicates (depending on the setting of the \code{duplicate} argument.
+#'   variable can be used to count only congruence or conflict ties. For
+#'   example, in an organization x organization network via common concepts,
+#'   a binary \code{"agreement"} qualifier could be used to record only ties
+#'   where both organizations have a positive stance on the concept or where
+#'   both organizations have a negative stance on the concept. With an
+#'   integer qualifier, the tie weight between the organizations would be
+#'   proportional to the similarity or distance between the two organizations
+#'   on the scale of the integer variable. In a two-mode network, the
+#'   qualifier variable can be used to retain only positive or only negative
+#'   statements or subtract negative from positive mentions. All of this
+#'   depends on the setting of the \code{qualifierAggregation} argument. For
+#'   event lists, the qualifier variable is only used for filtering out
+#'   duplicates (depending on the setting of the \code{duplicate} argument.
 #' @param qualifierAggregation The aggregation rule for the \code{qualifier}
-#' variable. In one-mode networks, this must be \code{"ignore"} (for
-#' ignoring the qualifier variable), \code{"congruence"} (for recording a
-#' network tie only if both nodes have the same qualifier value in the
-#' binary case or for recording the similarity between the two nodes on the
-#' qualifier variable in the integer case), \code{"conflict"} (for
-#' recording a network tie only if both nodes have a different qualifier
-#' value in the binary case or for recording the distance between the two
-#' nodes on the qualifier variable in the integer case), or
+#'   variable. In one-mode networks, this must be \code{"ignore"} (for
+#'   ignoring the qualifier variable), \code{"congruence"} (for recording a
+#'   network tie only if both nodes have the same qualifier value in the
+#'   binary case or for recording the similarity between the two nodes on the
+#'   qualifier variable in the integer case), \code{"conflict"} (for
+#'   recording a network tie only if both nodes have a different qualifier
+#'   value in the binary case or for recording the distance between the two
+#'   nodes on the qualifier variable in the integer case), or
 #' \code{"subtract"} (for subtracting the conflict tie value from the
-#' congruence tie value in each dyad). In two-mode networks, this must be
+#'   congruence tie value in each dyad). In two-mode networks, this must be
 #' \code{"ignore"}, \code{"combine"} (for creating multiplex combinations,
-#' e.g., 1 for positive, 2 for negative, and 3 for mixed), or
+#'   e.g., 1 for positive, 2 for negative, and 3 for mixed), or
 #' \code{subtract} (for subtracting negative from positive ties). In event
-#' lists, this setting is ignored.
+#'   lists, this setting is ignored.
 #' @param normalization Normalization of edge weights. Valid settings for
-#' one-mode networks are \code{"no"} (for switching off normalization),
-#' \code{"average"} (for average activity normalization), \code{"Jaccard"}
-#' (for Jaccard coefficient normalization), and \code{"cosine"} (for
-#' cosine similarity normalization). Valid settings for two-mode networks
-#' are \code{"no"}, \code{"activity"} (for activity normalization), and
-#' \code{"prominence"} (for prominence normalization).
+#'   one-mode networks are \code{"no"} (for switching off normalization),
+#'   \code{"average"} (for average activity normalization), \code{"Jaccard"}
+#'   (for Jaccard coefficient normalization), and \code{"cosine"} (for
+#'   cosine similarity normalization). Valid settings for two-mode networks
+#'   are \code{"no"}, \code{"activity"} (for activity normalization), and
+#'   \code{"prominence"} (for prominence normalization).
 #' @param isolates Should all nodes of the respective variable be included in
-#' the network matrix (\code{isolates = TRUE}), or should only those nodes
-#' be included that are active in the current time period and are not
-#' excluded (\code{isolates = FALSE})?
+#'   the network matrix (\code{isolates = TRUE}), or should only those nodes
+#'   be included that are active in the current time period and are not
+#'   excluded (\code{isolates = FALSE})?
 #' @param duplicates Setting for excluding duplicate statements before network
-#' construction. Valid settings are \code{"include"} (for including all
-#' statements in network construction), \code{"document"} (for counting
-#' only one identical statement per document), \code{"week"} (for counting
-#' only one identical statement per calendar week), \code{"month"} (for
-#' counting only one identical statement per calendar month), \code{"year"}
-#' (for counting only one identical statement per calendar year), and
-#' \code{"acrossrange"} (for counting only one identical statement across
-#' the whole time range).
+#'   construction. Valid settings are \code{"include"} (for including all
+#'   statements in network construction), \code{"document"} (for counting
+#'   only one identical statement per document), \code{"week"} (for counting
+#'   only one identical statement per calendar week), \code{"month"} (for
+#'   counting only one identical statement per calendar month), \code{"year"}
+#'   (for counting only one identical statement per calendar year), and
+#'   \code{"acrossrange"} (for counting only one identical statement across
+#'   the whole time range).
 #' @param start.date The start date for network construction in the format
-#' "dd.mm.yyyy". All statements before this date will be excluded.
+#'   "dd.mm.yyyy". All statements before this date will be excluded.
 #' @param start.time The start time for network construction on the specified
-#' \code{start.date}. All statements before this time on the specified date
-#' will be excluded.
+#'   \code{start.date}. All statements before this time on the specified date
+#'   will be excluded.
 #' @param stop.date The stop date for network construction in the format
-#' "dd.mm.yyyy". All statements after this date will be excluded.
+#'   "dd.mm.yyyy". All statements after this date will be excluded.
 #' @param stop.time The stop time for network construction on the specified
-#' \code{stop.date}. All statements after this time on the specified date
-#' will be excluded.
+#'   \code{stop.date}. All statements after this time on the specified date
+#'   will be excluded.
 #' @param timewindow Possible values are \code{"no"}, \code{"events"},
-#' \code{"seconds"}, \code{"minutes"}, \code{"hours"}, \code{"days"},
-#' \code{"weeks"}, \code{"months"}, and \code{"years"}. If \code{"no"} is
-#' selected (= the default setting), no time window will be used. If any of
-#' the time units is selected, a moving time window will be imposed, and
-#' only the statements falling within the time period defined by the window
-#' will be used to create the network. The time window will then be moved
-#' forward by one time unit at a time, and a new network with the new time
-#' boundaries will be created. This is repeated until the end of the overall
-#' time span is reached. All time windows will be saved as separate
-#' networks in a list. The duration of each time window is defined by the
-#' \code{windowsize} argument. For example, this could be used to create a
-#' time window of 6 months which moves forward by one month each time, thus
-#' creating time windows that overlap by five months. If \code{"events"} is
-#' used instead of a natural time unit, the time window will comprise
-#' exactly as many statements as defined in the \code{windowsize} argument.
-#' However, if the start or end statement falls on a date and time where
-#' multiple events happen, those additional events that occur simultaneously
-#' are included because there is no other way to decide which of the
-#' statements should be selected. Therefore the window size is sometimes
-#' extended when the start or end point of a time window is ambiguous in
-#' event time.
+#'   \code{"seconds"}, \code{"minutes"}, \code{"hours"}, \code{"days"},
+#'   \code{"weeks"}, \code{"months"}, and \code{"years"}. If \code{"no"} is
+#'   selected (= the default setting), no time window will be used. If any of
+#'   the time units is selected, a moving time window will be imposed, and
+#'   only the statements falling within the time period defined by the window
+#'   will be used to create the network. The time window will then be moved
+#'   forward by one time unit at a time, and a new network with the new time
+#'   boundaries will be created. This is repeated until the end of the overall
+#'   time span is reached. All time windows will be saved as separate
+#'   networks in a list. The duration of each time window is defined by the
+#'   \code{windowsize} argument. For example, this could be used to create a
+#'   time window of 6 months which moves forward by one month each time, thus
+#'   creating time windows that overlap by five months. If \code{"events"} is
+#'   used instead of a natural time unit, the time window will comprise
+#'   exactly as many statements as defined in the \code{windowsize} argument.
+#'   However, if the start or end statement falls on a date and time where
+#'   multiple events happen, those additional events that occur simultaneously
+#'   are included because there is no other way to decide which of the
+#'   statements should be selected. Therefore the window size is sometimes
+#'   extended when the start or end point of a time window is ambiguous in
+#'   event time.
 #' @param windowsize The number of time units of which a moving time window is
-#' comprised. This can be the number of statement events, the number of days
-#' etc., as defined in the \code{"timewindow"} argument.
+#'   comprised. This can be the number of statement events, the number of days
+#'   etc., as defined in the \code{"timewindow"} argument.
 #' @param excludeValues A list of named character vectors that contains entries
-#' which should be excluded during network construction. For example,
-#' \code{list(concept = c("A", "B"), organization = c("org A", "org B"))}
-#' would exclude all statements containing concepts "A" or "B" or
-#' organizations "org A" or "org B" when the network is constructed. This
-#' is irrespective of whether these values appear in \code{variable1},
-#' \code{variable2}, or the \code{qualifier}. Note that only variables at
-#' the statement level can be used here. There are separate arguments for
-#' excluding statements nested in documents with certain meta-data.
+#'   which should be excluded during network construction. For example,
+#'   \code{list(concept = c("A", "B"), organization = c("org A", "org B"))}
+#'   would exclude all statements containing concepts "A" or "B" or
+#'   organizations "org A" or "org B" when the network is constructed. This
+#'   is irrespective of whether these values appear in \code{variable1},
+#'   \code{variable2}, or the \code{qualifier}. Note that only variables at
+#'   the statement level can be used here. There are separate arguments for
+#'   excluding statements nested in documents with certain meta-data.
 #' @param excludeAuthors A character vector of authors. If a statement is
-#' nested in a document where one of these authors is set in the "Author"
-#' meta-data field, the statement is excluded from network construction.
+#'   nested in a document where one of these authors is set in the "Author"
+#'   meta-data field, the statement is excluded from network construction.
 #' @param excludeSources A character vector of sources. If a statement is
-#' nested in a document where one of these sources is set in the "Source"
-#' meta-data field, the statement is excluded from network construction.
+#'   nested in a document where one of these sources is set in the "Source"
+#'   meta-data field, the statement is excluded from network construction.
 #' @param excludeSections A character vector of sections. If a statement is
-#' nested in a document where one of these sections is set in the "Section"
-#' meta-data field, the statement is excluded from network construction.
+#'   nested in a document where one of these sections is set in the "Section"
+#'   meta-data field, the statement is excluded from network construction.
 #' @param excludeTypes A character vector of types. If a statement is
-#' nested in a document where one of these types is set in the "Type"
-#' meta-data field, the statement is excluded from network construction.
+#'   nested in a document where one of these types is set in the "Type"
+#'   meta-data field, the statement is excluded from network construction.
 #' @param invertValues A boolean value indicating whether the entries provided
-#' by the \code{excludeValues} argument should be excluded from network
-#' construction (\code{invertValues = FALSE}) or if they should be the only
-#' values that should be included during network construction
-#' (\code{invertValues = TRUE}).
+#'   by the \code{excludeValues} argument should be excluded from network
+#'   construction (\code{invertValues = FALSE}) or if they should be the only
+#'   values that should be included during network construction
+#'   (\code{invertValues = TRUE}).
 #' @param invertAuthors A boolean value indicating whether the entries provided
-#' by the \code{excludeAuthors} argument should be excluded from network
-#' construction (\code{invertAuthors = FALSE}) or if they should be the
-#' only values that should be included during network construction
-#' (\code{invertAuthors = TRUE}).
+#'   by the \code{excludeAuthors} argument should be excluded from network
+#'   construction (\code{invertAuthors = FALSE}) or if they should be the
+#'   only values that should be included during network construction
+#'   (\code{invertAuthors = TRUE}).
 #' @param invertSources A boolean value indicating whether the entries provided
-#' by the \code{excludeSources} argument should be excluded from network
-#' construction (\code{invertSources = FALSE}) or if they should be the
-#' only values that should be included during network construction
-#' (\code{invertSources = TRUE}).
+#'   by the \code{excludeSources} argument should be excluded from network
+#'   construction (\code{invertSources = FALSE}) or if they should be the
+#'   only values that should be included during network construction
+#'   (\code{invertSources = TRUE}).
 #' @param invertSections A boolean value indicating whether the entries
-#' provided by the \code{excludeSections} argument should be excluded from
-#' network construction (\code{invertSections = FALSE}) or if they should
-#' be the only values that should be included during network construction
-#' (\code{invertSections = TRUE}).
+#'   provided by the \code{excludeSections} argument should be excluded from
+#'   network construction (\code{invertSections = FALSE}) or if they should
+#'   be the only values that should be included during network construction
+#'   (\code{invertSections = TRUE}).
 #' @param invertTypes A boolean value indicating whether the entries provided
-#' by the \code{excludeTypes} argument should be excluded from network
-#' construction (\code{invertTypes = FALSE}) or if they should be the
-#' only values that should be included during network construction
-#' (\code{invertTypes = TRUE}).
+#'   by the \code{excludeTypes} argument should be excluded from network
+#'   construction (\code{invertTypes = FALSE}) or if they should be the
+#'   only values that should be included during network construction
+#'   (\code{invertTypes = TRUE}).
 #' @param verbose A boolean value indicating whether details of network
-#' construction should be printed to the R console.
+#'   construction should be printed to the R console.
 #'
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn,
 #' networkType = "onemode",
@@ -1440,6 +1778,8 @@ dna_network <- function(connection,
       m <- .jcall(connection$dna_connection, "[[D", "getTimeWindowNetwork", as.integer(t - 1), simplify = TRUE)
       rownames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowRowNames", as.integer(t - 1), simplify = TRUE)
       colnames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowColumnNames", as.integer(t - 1), simplify = TRUE)
+      attributes(m)$call <- match.call()
+      class(m) <- c(paste0("dna_network_", networkType), class(m))
       mat[[t]] <- m
     }
     dta <- list()
@@ -1463,25 +1803,25 @@ dna_network <- function(connection,
 #' statistics by facet.
 #'
 #' @param connection A \link{dna_connection} object created by the
-#' \link{dna_connection} function.
+#'   \link{dna_connection} function.
 #' @param method Is used to compute exactly one measurement for each network
-#' computed in the temporal sequence of networks. Can contain the name of any
-#' function which reduces a matrix to just one value or one of the following 
-#' character strings: \code{"bipolarization"} (for calculating the modularity of 
-#' different two-cluster solutions and choosing the highest one); 
-#' \code{"multipolarization"} (for calculating the modularity of different 
-#' community detection measures as implemented in \pkg{igraph}; or \code{"louvain"} 
-#' (for detecting communities using the fast Louvain algorithm and computing 
-#' modularity based on this result).
+#'   computed in the temporal sequence of networks. Can contain the name of any
+#'   function which reduces a matrix to just one value or one of the following 
+#'   character strings: \code{"bipolarization"} (for calculating the modularity of 
+#'   different two-cluster solutions and choosing the highest one); 
+#'   \code{"multipolarization"} (for calculating the modularity of different 
+#'   community detection measures as implemented in \pkg{igraph}; or \code{"louvain"} 
+#'   (for detecting communities using the fast Louvain algorithm and computing 
+#'   modularity based on this result).
 #' @param timewindow Same as in \link{dna_network}.
 #' @param windowsize Same as in \link{dna_network}.
 #' @param facet Which value from the dna database should be used to subset the
-#' networks. Can be \code{"Authors"} for document author, \code{"Sources"} for
-#' document source, \code{"Sections"} for documents which contain a certain
-#' section or \code{"Types"} to subset document types.
+#'   networks. Can be \code{"Authors"} for document author, \code{"Sources"} for
+#'   document source, \code{"Sections"} for documents which contain a certain
+#'   section or \code{"Types"} to subset document types.
 #' @param facetValues Which values should be used to facet calculation of the
-#' networks. Always contains the value "all" for comparison. Use e.g.
-#' excludeTypes to exclude documents from comparison.
+#'   networks. Always contains the value "all" for comparison. Use e.g.
+#'   excludeTypes to exclude documents from comparison.
 #' @param parallel Use parallel processing for the computation of time series 
 #'   measures? By default, this is switched off (\code{"no"}), meaning that only 
 #'   one CPU node is used to compute the results. Other possible values are 
@@ -1503,14 +1843,14 @@ dna_network <- function(connection,
 #'   cluster. Note that the \code{cl} argument is ignored if 
 #'   \code{parallel = "FORK"}.
 #' @param verbose Display messages if \code{TRUE} or \code{1}. Also displays
-#' details about network construction when \code{2}.
+#'   details about network construction when \code{2}.
 #' @param ... Additional arguments passed to \link{dna_network}.
 #'
 #' @examples
 #' \dontrun{
 #' library("ggplot2")
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #'
 #' tW <- dna_timeWindow(connection = conn,
@@ -2057,7 +2397,7 @@ dna_timeWindow <- function(connection,
 #'
 #' @param x A dna_network (one- or two-mode).
 #' @param weighted Logical. Should edge weights be used to create a weighted
-#' graph from the dna_network object.
+#'   graph from the dna_network object.
 #'
 #' @export
 #' @importFrom igraph graph_from_adjacency_matrix graph_from_incidence_matrix
@@ -2065,7 +2405,7 @@ dna_timeWindow <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, networkType = "onemode")
 #' graph <- dna_toIgraph(nw)
@@ -2096,12 +2436,12 @@ dna_toIgraph <- function(x,
 #' \link[rem]{eventSequence}) used in the package rem from DNA connections.
 #'
 #' @param x A \code{dna_connection} object created by the \code{dna_connection}
-#' function or a \code{dna_eventlist} object created with \code{dna_network}
-#' (setting \code{networkType = "eventlist"}).
+#'   function or a \code{dna_eventlist} object created with \code{dna_network}
+#'   (setting \code{networkType = "eventlist"}).
 #' @param variable The first variable for network construction(see
-#' \link{dna_network}). The second one defaults to "concept" but can be
-#' provided via ... if necessary (see \code{variable2} in
-#' \code{dna_connection}).
+#'   \link{dna_network}). The second one defaults to "concept" but can be
+#'   provided via ... if necessary (see \code{variable2} in
+#'   \code{dna_connection}).
 #' @param ... Additional arguments passed to \link{dna_network} and
 #' \link[rem]{eventSequence}.
 #'
@@ -2113,7 +2453,7 @@ dna_toIgraph <- function(x,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #'
 #' ### Convert dna_connection to eventSequence
@@ -2185,7 +2525,7 @@ dna_toREM <- function(x,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, networkType = "onemode")
 #' network <- dna_toNetwork(nw)
@@ -2273,14 +2613,14 @@ dna_toNetwork <- function(x,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' mds <- dna_plotCoordinates(clust)
+#' 
 #' # Flip plot with ggplot2 command
 #' library("ggplot2")
-#' mds +
-#' coord_flip()
+#' mds + coord_flip()
 #' }
 #' @author Johannes B. Gruber
 #' @export
@@ -2437,60 +2777,60 @@ dna_plotCoordinates <- function(clust,
 #' types, which can be plotted using the \code{ggraph} package.
 #'
 #' @param clust A \code{dna_cluster} object created by the \link{dna_cluster}
-#' function.
+#'   function.
 #' @param shape The shape of the dendrogram. Available options are \code{elbows},
-#' \code{link}, \code{diagonal}, \code{arc}, and \code{fan}. See
-#' \link[ggraph]{layout_dendrogram_auto}.
+#'   \code{link}, \code{diagonal}, \code{arc}, and \code{fan}. See
+#'   \link[ggraph]{layout_dendrogram_auto}.
 #' @param activity Should activity of variable in \link{dna_cluster} be used to
-#' determine size of leaf_ends (logical). Activity means the number of
-#' statements which remained after duplicates were removed.
+#'   determine size of leaf_ends (logical). Activity means the number of
+#'   statements which remained after duplicates were removed.
 #' @param leaf_colours Determines which data is used to colour the leafs of the
-#' dendrogram. Can be either \code{attribute1}, \code{attribute2}or \code{group}. Set to
-#' \code{character()} leafs-lines should not be coloured.
+#'   dendrogram. Can be either \code{attribute1}, \code{attribute2}or \code{group}. Set to
+#'   \code{character()} leafs-lines should not be coloured.
 #' @param colours There are three options from where to derive the colours in
-#' the plot: (1.) \code{identity} tries to use the names of variables as colours
-#' (e.g., if you retrieved the names as attribute from DNA), fails if names
-#' are not plottable colours; (2.) \code{manual} provide colours via
-#' custom_colours; (3.) \code{brewer} automatically select nice colours from a
-#' \code{RColorBrewer} palette (palettes can be set in custom_colours,
-#' defaults to \code{Set3}).
+#'   the plot: (1.) \code{identity} tries to use the names of variables as colours
+#'   (e.g., if you retrieved the names as attribute from DNA), fails if names
+#'   are not plottable colours; (2.) \code{manual} provide colours via
+#'   custom_colours; (3.) \code{brewer} automatically select nice colours from a
+#'   \code{RColorBrewer} palette (palettes can be set in custom_colours,
+#'   defaults to \code{Set3}).
 #' @param custom_colours Either provide enough colours to manually set the
-#' colours in the plot (if colours = \code{manual"}) or select a palette from
-#' \code{RColorBrewer} (if colours = \code{brewer"}).
+#'   colours in the plot (if colours = \code{manual"}) or select a palette from
+#'   \code{RColorBrewer} (if colours = \code{brewer"}).
 #' @param branch_colour Provide one colour in which all branches are coloured.
 #' @param line_width Width of all lines.
 #' @param line_alpha Alpha of all lines.
 #' @param ends_size If \code{activity = FALSE}, the size of the lineend symbols
-#' can be set to one size for the whole plot.
+#'   can be set to one size for the whole plot.
 #' @param leaf_ends Determines which data is used to colour the leaf_ends of the
-#' dendrogram. Can be either \code{attribute1}, \code{attribute2} or \code{group}. Set to
-#' \code{character()} if no line ends should be displayed.
+#'   dendrogram. Can be either \code{attribute1}, \code{attribute2} or \code{group}. Set to
+#'   \code{character()} if no line ends should be displayed.
 #' @param custom_shapes If shapes are provided, those are used for leaf_ends
-#' instead of the standard ones. Available shapes range from 0:25 and 32:127.
+#'   instead of the standard ones. Available shapes range from 0:25 and 32:127.
 #' @param ends_alpha Alpha of all leaf_ends.
 #' @param rectangles If a colour is provided, this will draw rectangles in given
-#' colour around the groups.
+#'   colour around the groups.
 #' @param leaf_linetype,branch_linetype Determines which lines are used for
-#' leafs and branches. Takes \code{a} for straight line or \code{b} for dotted line.
+#'   leafs and branches. Takes \code{a} for straight line or \code{b} for dotted line.
 #' @param font_size Set the font size for the entire plot.
 #' @param theme See themes in \code{ggplot2}. The theme \code{bw} was customised to
-#' look best with dendrograms. Leave empty to use standard ggplot theme.
-#' Customise the theme by adding \code{+ theme_*} after this function...
+#'   look best with dendrograms. Leave empty to use standard ggplot theme.
+#'   Customise the theme by adding \code{+ theme_*} after this function...
 #' @param truncate Sets the number of characters to which labels should be
-#' truncated. Value \code{Inf} turns off truncation.
+#'   truncated. Value \code{Inf} turns off truncation.
 #' @param leaf_labels Either \code{ticks} to display the labels as axis ticks or
-#' \code{node} to label nodes directly. Node labels are also take the same colour
-#' as the leaf the label.
+#'   \code{node} to label nodes directly. Node labels are also take the same colour
+#'   as the leaf the label.
 #' @param circular Logical. Should the layout be transformed to a circular
-#' representation. See \link[ggraph]{layout_dendrogram_auto}.
+#'   representation. See \link[ggraph]{layout_dendrogram_auto}.
 #' @param show_legend Logical. Should a legend be displayed.
 #' @param ... Not used. If you want to add more plot options use \code{+} and
-#' the ggplot2 logic (see example).
+#'   the ggplot2 logic (see example).
 #'
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' dend <- dna_plotDendro(clust)
@@ -2826,40 +3166,39 @@ dna_plotDendro <- function(clust,
 #' to be installed).
 #'
 #' @param clust A \code{dna_cluster} object created by the \link{dna_cluster}
-#' function.
+#'   function.
 #' @param truncate Sets the number of characters to which labels should be
-#' truncated. Value \code{Inf} turns off truncation.
+#'   truncated. Value \code{Inf} turns off truncation.
 #' @param values If TRUE, will display the values in the tiles of the heatmap.
 #' @param colours There are two options: When\code{"brewer} is selected, the function
-#' \link[ggplot2]{scale_fill_distiller} is used to colour the heatmap tiles.
-#' When\code{"gradient} is selected, \link[ggplot2]{scale_fill_gradient} will be
-#' used. The colour palette and low/high values can be supplied using the
-#' argument \code{custom_colours}
+#'   \link[ggplot2]{scale_fill_distiller} is used to colour the heatmap tiles.
+#'   When\code{"gradient} is selected, \link[ggplot2]{scale_fill_gradient} will be
+#'   used. The colour palette and low/high values can be supplied using the
+#'   argument \code{custom_colours}
 #' @param custom_colours For \code{colours = "brewer"} you can use either a
-#' string with a palette name or the index number of a brewer palette (see
-#' details). If \code{colours = "gradient"} you need to supply at least two
-#' values. Colours are then derived from a sequential colour gradient palette.
-#' \link[ggplot2]{scale_fill_gradient}. If more than two colours are provided
-#' \link[ggplot2]{scale_fill_gradientn} is used instead.
+#'   string with a palette name or the index number of a brewer palette (see
+#'   details). If \code{colours = "gradient"} you need to supply at least two
+#'   values. Colours are then derived from a sequential colour gradient palette.
+#'   \link[ggplot2]{scale_fill_gradient}. If more than two colours are provided
+#'   \link[ggplot2]{scale_fill_gradientn} is used instead.
 #' @param square If TRUE, will make the tiles of the heatmap quadratic.
 #' @param dendro_x If TRUE, will draw a dendrogram on the x-axis.
 #' @param dendro_x_size,dendro_y_size Control the size of the dendrograms on the
-#' x- and y-axis
+#'   x- and y-axis
 #' @param qualifierLevels Takes a list with integer values of the qualifier
-#' levels (as characters) as names and character values as labels (See
-#' example).
+#'   levels (as characters) as names and character values as labels (See
+#'   example).
 #' @param show_legend Logical. Should a legend be displayed.
 #' @param ... Additional arguments passed to \link{dna_plotDendro}.
 #'
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' dend <- dna_plotHeatmap(clust,
-#' qualifierLevels = list("0" = "no",
-#'"1" = "yes"))
+#' qualifierLevels = list("0" = "no", "1" = "yes"))
 #' }
 #' @author Johannes B. Gruber
 #' @export
@@ -3159,12 +3498,12 @@ dna_plotHeatmap <- function(clust,
 #'
 #' # Use custom groups
 #' groups <- c("Alliance to Save Energy" = "group 1",
-#' "Energy and Environmental Analysis, Inc." = "group 2",
-#' "Environmental Protection Agency" = "group 3",
-#' "National Petrochemical & Refiners Association" = "group 1",
-#' "Senate" = "group 2",
-#' "Sierra Club" = "group 3",
-#' "U.S. Public Interest Research Group"= "group 1")
+#'             "Energy and Environmental Analysis, Inc." = "group 2",
+#'             "Environmental Protection Agency" = "group 3",
+#'             "National Petrochemical & Refiners Association" = "group 1",
+#'             "Senate" = "group 2",
+#'             "Sierra Club" = "group 3",
+#'             "U.S. Public Interest Research Group"= "group 1")
 #'
 #' dna_plotHive(nw, axis = "group", groups = groups)
 #' }
@@ -3365,83 +3704,83 @@ dna_plotHive <- function(x,
 #' available as \code{custom_colours} when \code{colours = "brewer"}.
 #'
 #' @param x A \code{dna_network} object created by the \link{dna_network}
-#' function.
+#'   function.
 #' @param layout The type of layout to use. Available layouts include
-#' \code{"nicely"} (which tries to choose a suiting layout),
-#' \code{"bipartite"} (for two-mode networks), \code{"circle"}, \code{"dh"},
-#' \code{"drl"}, \code{"fr"}, \code{"gem"}, \code{"graphopt"}, \code{"kk"},
-#' \code{"lgl"}, \code{"mds"}, \code{"randomly"} and \code{"star"}. The
-#' default, \code{"auto"} chooses \code{"nicely"} if \code{x} is a one-mode
-#' network and \code{"bipartite"} in case of two-mode networks. Other layouts
-#' might be available (see \link[ggraph]{layout_igraph_auto} for details).
+#'   \code{"nicely"} (which tries to choose a suiting layout),
+#'   \code{"bipartite"} (for two-mode networks), \code{"circle"}, \code{"dh"},
+#'   \code{"drl"}, \code{"fr"}, \code{"gem"}, \code{"graphopt"}, \code{"kk"},
+#'   \code{"lgl"}, \code{"mds"}, \code{"randomly"} and \code{"star"}. The
+#'   default, \code{"auto"} chooses \code{"nicely"} if \code{x} is a one-mode
+#'   network and \code{"bipartite"} in case of two-mode networks. Other layouts
+#'   might be available (see \link[ggraph]{layout_igraph_auto} for details).
 #' @param edges When set to \code{"link"} (default) straight lines are used to
-#' connect nodes. Other available options are \code{"arc"}, \code{"diagonal"}
-#' and \code{"fan"}.
+#'   connect nodes. Other available options are \code{"arc"}, \code{"diagonal"}
+#'   and \code{"fan"}.
 #' @param edge_weight If \code{TRUE}, edge weights will be used to determine the
-#' width of the lines. The minimum and maximum width can be controlled with
-#' \code{edge_size_range}.
+#'   width of the lines. The minimum and maximum width can be controlled with
+#'   \code{edge_size_range}.
 #' @param edge_size_range Takes a numeric vector with two values: minimum and
-#' maximum \code{edge_weight}.
+#'   maximum \code{edge_weight}.
 #' @param edge_colour Provide the name of a colour to use for edges. Defaults to
-#' \code{"grey"}.
+#'   \code{"grey"}.
 #' @param edge_alpha Takes numeric values to control the alpha-transparency of
-#' edges. Possible values range from \code{0} (fully transparent) to \code{1}
-#' (fully visible).
+#'   edges. Possible values range from \code{0} (fully transparent) to \code{1}
+#'   (fully visible).
 #' @param node_size Takes positive numeric values to control the size of nodes
-#' (defaults to \code{6}). Usually values between \code{1} and \code{20} look
-#' best.
+#'   (defaults to \code{6}). Usually values between \code{1} and \code{20} look
+#'   best.
 #' @param node_attribute Takes the name of an attribute in DNA (i.e.
-#' \code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
-#' \code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
-#' The option \code{"group"} only makes sense if you provide group membership
-#' information to the \code{groups} argument.
+#'   \code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
+#'   \code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
+#'   The option \code{"group"} only makes sense if you provide group membership
+#'   information to the \code{groups} argument.
 #' @param node_colours There are five options for colouring the nodes: (1.)
-#' \code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
-#' leaves the standard ggplot2 colours otherwise; (2.) \code{"identity"} tries
-#' to use \code{node_attribute} for colours (i.e., if you set
-#' \code{node_attribute = "color"} or have provided a colour name in another
-#' attribute field in DNA) but fails if names are not plottable colours; (3)
-#' \code{"manual"} lets you provide colours via custom_colours; (4.)
-#' \code{"brewer"} automatically selects nice colours from a
-#' \code{RColorBrewer} palette (palettes can be set in custom_colours); and
-#' (5.) \code{"single"} uses the first value in custom_colours for all nodes.
+#'   \code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
+#'   leaves the standard ggplot2 colours otherwise; (2.) \code{"identity"} tries
+#'   to use \code{node_attribute} for colours (i.e., if you set
+#'   \code{node_attribute = "color"} or have provided a colour name in another
+#'   attribute field in DNA) but fails if names are not plottable colours; (3)
+#'   \code{"manual"} lets you provide colours via custom_colours; (4.)
+#'   \code{"brewer"} automatically selects nice colours from a
+#'   \code{RColorBrewer} palette (palettes can be set in custom_colours); and
+#'   (5.) \code{"single"} uses the first value in custom_colours for all nodes.
 #' @param custom_colours Takes custom values to control the node colours. The
-#' format of the necessary values depends on the setting of
-#' \code{node_colours}: When \code{node_colours = "manual"}, a character
-#' object containing the enough colour names for all groups is needed; When
+#'   format of the necessary values depends on the setting of
+#'   \code{node_colours}: When \code{node_colours = "manual"}, a character
+#'   object containing the enough colour names for all groups is needed; When
 #' \code{node_colours = "brewer"} you need to supply a a palette from
 #' \code{RColorBrewer} (defaults to \code{"Set3"} if \code{custom_colours} is
-#' left empty); When \code{node_colours "single"} only a single colour name is
-#' needed (defaults to \code{"red"}).
+#'   left empty); When \code{node_colours "single"} only a single colour name is
+#'   needed (defaults to \code{"red"}).
 #' @param node_shape Controls the node shape. Available shapes range from
-#' \code{0:25} and \code{32:127}.
+#'   \code{0:25} and \code{32:127}.
 #' @param node_label If \code{TRUE}, text is added next to nodes to label them.
-#' If \code{"label"}, a rectangle is drawn underneath the text, often making
-#' it easier to read. If \code{FALSE} no lables are drawn.
+#'   If \code{"label"}, a rectangle is drawn underneath the text, often making
+#'   it easier to read. If \code{FALSE} no lables are drawn.
 #' @param font_size Controls the font size of the node labels. The default,
-#' \code{6}, looks best on many viewers and knitr reports.
+#'   \code{6}, looks best on many viewers and knitr reports.
 #' @param theme Provide the name of a theme. Available options are
-#' \code{"graph"} (which is customised to look best with networks),
-#' \code{"bw"}, \code{"void"}, \code{"light"} and \code{"dark"}. Leave empty
-#' to use standard ggplot theme. Choose other themes or customise with tools
-#' from \link{ggplot2} by adding \code{+ theme_*} after this function.
+#'   \code{"graph"} (which is customised to look best with networks),
+#'   \code{"bw"}, \code{"void"}, \code{"light"} and \code{"dark"}. Leave empty
+#'   to use standard ggplot theme. Choose other themes or customise with tools
+#'   from \link{ggplot2} by adding \code{+ theme_*} after this function.
 #' @param label_repel Controls how far labels will be put from nodes. The exact
-#' position of text is random but overplotting is avoided.
+#'   position of text is random but overplotting is avoided.
 #' @param label_lines If \code{TRUE}, draws lines between nodes and labels if
-#' labels are further away from nodes.
+#'   labels are further away from nodes.
 #' @param truncate Sets the number of characters to which labels should be
-#' truncated. Value \code{Inf} turns off truncation.
+#'   truncated. Value \code{Inf} turns off truncation.
 #' @param groups Takes a \code{dna_cluster} object or a named list or character
-#' object. In case of a named list or character object, the names must match
-#' the values of \code{variable1} used during network construction (see
-#' example).
+#'   object. In case of a named list or character object, the names must match
+#'   the values of \code{variable1} used during network construction (see
+#'   example).
 #' @param threshold Minimum threshold for which edges should be plotted.
 #' @param seed Numeric value passed to \link{set.seed}. The default is as good
-#' as any other value but provides that plots are always reproducible.
+#'   as any other value but provides that plots are always reproducible.
 #' @param show_legend If \code{TRUE}, displays a legend.
 #' @param ... Arguments passed on to the layout function (see
-#' \link[ggraph]{layout_igraph_auto}). If you want to add more plot options
-#' use \code{+} and ggplot2 functions.
+#'   \link[ggraph]{layout_igraph_auto}). If you want to add more plot options
+#'   use \code{+} and ggplot2 functions.
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
@@ -3462,12 +3801,12 @@ dna_plotHive <- function(x,
 #'
 #' # Use custom groups from dna_cluster
 #' groups <- c("Alliance to Save Energy" = "group 1",
-#' "Energy and Environmental Analysis, Inc." = "group 2",
-#' "Environmental Protection Agency" = "group 3",
-#' "National Petrochemical & Refiners Association" = "group 1",
-#' "Senate" = "group 2",
-#' "Sierra Club" = "group 3",
-#' "U.S. Public Interest Research Group"= "group 1")
+#'             "Energy and Environmental Analysis, Inc." = "group 2",
+#'             "Environmental Protection Agency" = "group 3",
+#'             "National Petrochemical & Refiners Association" = "group 1",
+#'             "Senate" = "group 2",
+#'             "Sierra Club" = "group 3",
+#'             "U.S. Public Interest Research Group"= "group 1")
 #' dna_plotNetwork(nw, node_attribute = "group", groups = groups)
 #' }
 #'
@@ -3704,21 +4043,21 @@ dna_plotNetwork <- function(x,
 #' passed on with \code{+}.
 #'
 #' @param x A \code{dna_timeWindow} object created by the \link{dna_timeWindow}
-#' function.
-#' @param facetValues The name or names of the facet values which should be included in the
-#' plot.
+#'   function.
+#' @param facetValues The name or names of the facet values which should be 
+#'   included in the plot.
 #' @param include.y Include specific value of facet in the plot.
 #' @param rows,cols Number of rows and columns in which the plots are arranged.
-#' plot.
+#'   plot.
 #' @param diagnostics Plot the different measures saved in the object?
 #' @param ... Currently not used. Additional parameters should be passed on to ggplot2 via
-#' e.g. \code{+ theme_bw()}.
+#'   e.g. \code{+ theme_bw()}.
 #'
 #' @examples
 #' \dontrun{
 #' library("ggplot2")
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #'
 #' tW <- dna_timeWindow(connection = conn,
@@ -3818,28 +4157,28 @@ dna_plotTimeWindow <- function(x,
 #' concepts. It often makes sense to exclude those concept in further analysis.
 #'
 #' @param connection A \code{dna_connection} object created by the
-#' \link{dna_connection} function.
+#'   \link{dna_connection} function.
 #' @param of Category over which (dis-)agreement will be plotted. Most useful
-#' categories are \code{"concept"} and \code{"actor"} but document categories
-#' can be used.
+#'   categories are \code{"concept"} and \code{"actor"} but document categories
+#'   can be used.
 #' @param lab.pos,lab.neg Names for (dis-)agreement labels.
 #' @param lab Determines whether (dis-)agreement labels and title are displayed.
 #' @param colours If \code{TRUE}, statement colours will be used to fill the
-#' bars. Not possible for all categories.
+#'   bars. Not possible for all categories.
 #' @param fontSize Text size in pts.
 #' @param barWidth Thickness of the bars. bars will touch when set to \code{1}.
-#' When set to \code{0.5}, space between two bars is the same as thickness of
-#' bars.
+#'   When set to \code{0.5}, space between two bars is the same as thickness of
+#'   bars.
 #' @param axisWidth Thickness of the x-axis which separates agreement from
-#' disagreement.
+#'   disagreement.
 #' @param truncate Sets the number of characters to which axis labels (i.e. the
-#' categories of "of") should be truncated.
+#'   categories of "of") should be truncated.
 #' @param ... Additional arguments passed to \link{dna_network}.
 #'
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #'
 #' dna_barplot(connection = conn,
@@ -4041,7 +4380,7 @@ dna_barplot <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta21.jar")
+#' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #'
 #' dna_plotFrequency(connection = conn,
@@ -4106,8 +4445,9 @@ dna_plotFrequency <- function(connection,
 #'
 #' @param x A character string
 #' @param n Max number of characters to truncate to. Value \code{Inf} turns off
-#' truncation.
+#'   truncation.
 #' @param e String added at the end of x to signal it was truncated.
+#' 
 #' @noRd
 #' @author Johannes B. Gruber
 trim <- function(x, n, e = "...") {

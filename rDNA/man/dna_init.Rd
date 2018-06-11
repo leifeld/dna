@@ -4,11 +4,11 @@
 \alias{dna_init}
 \title{Initialize the connection with DNA}
 \usage{
-dna_init(jarfile = "dna-2.0-beta21.jar", memory = 1024)
+dna_init(jarfile = "dna-2.0-beta22.jar", memory = 1024)
 }
 \arguments{
 \item{jarfile}{The file name of the DNA jar file, e.g.,
-\code{"dna-2.0-beta21.jar"}.}
+\code{"dna-2.0-beta22.jar"}.}
 
 \item{memory}{The amount of memory in megabytes to allocate to DNA, for
 example \code{1024} or \code{4096}.}
@@ -27,6 +27,6 @@ version or path, the \R session would need to be restarted first.
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 }
 }

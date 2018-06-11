@@ -25,6 +25,18 @@ public class AttributeVector implements Comparable<AttributeVector> {
 		this.statementTypeId = statementTypeId;
 		this.variable = variable;
 	}
+
+	public AttributeVector(int id, String value, String color, String type, String alias, String notes, String childOf, int statementTypeId, String variable) {
+		this.id = id;
+		this.value = value;
+		this.color = new Color(Integer.parseInt(color.substring(1), 16));
+		this.type = type;
+		this.alias = alias;
+		this.notes = notes;
+		this.childOf = childOf;
+		this.statementTypeId = statementTypeId;
+		this.variable = variable;
+	}
 	
 	public String toString() {
 		return this.value;
@@ -85,6 +97,13 @@ public class AttributeVector implements Comparable<AttributeVector> {
 	 */
 	public void setColor(Color color) {
 		this.color = color;
+	}
+
+	/**
+	 * @param color the color to set
+	 */
+	public void setColor(String color) {
+		this.color = new Color(Integer.parseInt(color.substring(1), 16));
 	}
 
 	/**

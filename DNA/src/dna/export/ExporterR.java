@@ -764,6 +764,390 @@ public class ExporterR {
 	}
 	
 	/**
+	 * Update the list of attributes based on an array of arrays for the attribute data.
+	 * 
+	 * @param statementTypeLabel  Statement type label for which the attributes will be updated (as a String).
+	 * @param variable            Variable name for which the attributes will be updated.
+	 * @param attributes          Array of objects containing attribute ID, value, color, type, alias, and notes.
+	 * @param removeStatements    Delete statements containing attribute values that are removed?
+	 * @param simulate            If true, changes are not actually carried out.
+	 * @param verbose             Should statistics on updating process be reported?
+	 * @throws Exception
+	 */
+	public void setAttributes(String statementTypeLabel, String variable, Object[] attributes, boolean removeStatements, boolean simulate, boolean verbose) throws Exception {
+		StatementType st = this.data.getStatementType(statementTypeLabel);
+		int id = -1;
+		if (st != null) {
+			id = st.getId();
+		}
+		setAttributes(id, variable, attributes, removeStatements, simulate, verbose);
+	}
+	
+	/**
+	 * Update the list of attributes based on an array of arrays for the attribute data.
+	 * 
+	 * @param statementTypeId   Statement type ID for which the attributes will be updated.
+	 * @param variable          Variable name for which the attributes will be updated.
+	 * @param attributes        Array of objects containing attribute ID, value, color, type, alias, and notes.
+	 * @param removeStatements  Delete statements containing attribute values that are removed?
+	 * @param simulate          If true, changes are not actually carried out.
+	 * @param verbose           Should statistics on updating process be reported?
+	 * @throws Exception
+	 */
+	public void setAttributes(int statementTypeId, String variable, Object[] attributes, boolean removeStatements, boolean simulate, boolean verbose) throws Exception {
+		int[] id = (int[]) attributes[0];
+		String[] value = (String[]) attributes[1];
+		String[] color = (String[]) attributes[2];
+		String[] type = (String[]) attributes[3];
+		String[] alias = (String[]) attributes[4];
+		String[] notes = (String[]) attributes[5];
+		
+		// check for duplicate attribute values and IDs and throw exception if necessary
+		if (id.length > 0) {
+			for (int i = 0; i < id.length; i++) {
+				for (int j = 0; j < id.length; j++) {
+					if (i != j && value[i].equals(value[j])) {
+						throw new Exception("Duplicate attribute values are not permitted (ID " + id[i] + " and ID " + id[j] + ", value \"" + value[i] + "\").");
+					}
+					if (i != j && id[i] == id[j]) {
+						throw new Exception("Duplicate attribute IDs are not permitted (ID " + id[i] + " and ID " + id[j] + ").");
+					}
+				}
+			}
+		}
+		
+		int updateCountValue = 0;
+		int updateCountColor = 0;
+		int updateCountType = 0;
+		int updateCountAlias = 0;
+		int updateCountNotes = 0;
+		int updateCountNewAttributes = 0;
+		int updateCountDeleted = 0;
+		int updateCountStatementsDeleted = 0;
+		int updateCountStatementsChanged = 0;
+		
+		if (verbose == true) {
+			if (simulate == true) {
+				System.out.println("Simulation mode: no actual changes are made to the database!");
+			} else {
+				System.out.println("Changes will be written both in memory and to the SQL database!");
+			}
+		}
+		
+		// delete attribute IDs in database that are not in the array provided by the user and update fields if the attribute ID exists and entries have changed
+		HashMap<String, String> valueChangeMap = new HashMap<String, String>();
+		ArrayList<String> deleteList = new ArrayList<String>();
+		ArrayList<Integer> deleteListId = new ArrayList<Integer>();
+		if (this.data.getAttributes(variable, statementTypeId).length > 0) {
+			for (int j = this.data.getAttributes(variable, statementTypeId).length - 1; j > -1; j--) {
+				// mark attribute in database for deletion if necessary or update fields
+				boolean delete = true;
+				if (this.data.getAttributes(variable, statementTypeId)[j].getValue().equals("")) {
+					delete = false;
+				} else if (id.length > 0) {
+					for (int i = 0; i < id.length; i++) {
+						if (this.data.getAttributes(variable, statementTypeId)[j].getId() == id[i]) {
+							delete = false;
+							if (!this.data.getAttributes(variable, statementTypeId)[j].getValue().equals(value[i])) {
+								updateCountValue++;
+								valueChangeMap.put(this.data.getAttributes(variable, statementTypeId)[j].getValue(), value[i]); // save values to be recoded in hash map
+								if (simulate == false) {
+									this.data.getAttributes(variable, statementTypeId)[j].setValue(value[i]);
+									this.sql.updateAttribute(id[i], "Value", value[i]);
+								}
+							}
+							String col = String.format("#%02X%02X%02X", 
+									this.data.getAttributes(variable, statementTypeId)[j].getColor().getRed(), 
+									this.data.getAttributes(variable, statementTypeId)[j].getColor().getGreen(), 
+									this.data.getAttributes(variable, statementTypeId)[j].getColor().getBlue());
+							if (!col.equals(color[i])) {
+								updateCountColor++;
+								if (simulate == false) {
+									this.data.getAttributes(variable, statementTypeId)[j].setColor(color[i]);
+									this.sql.updateAttributeColor(id[i], color[i]);
+								}
+							}
+							if (!this.data.getAttributes(variable, statementTypeId)[j].getAlias().equals(alias[i])) {
+								updateCountAlias++;
+								if (simulate == false) {
+									this.data.getAttributes(variable, statementTypeId)[j].setAlias(alias[i]);
+									this.sql.updateAttribute(id[i], "Alias", alias[i]);
+								}
+							}
+							if (!this.data.getAttributes(variable, statementTypeId)[j].getNotes().equals(notes[i])) {
+								updateCountNotes++;
+								if (simulate == false) {
+									this.data.getAttributes(variable, statementTypeId)[j].setNotes(notes[i]);
+									this.sql.updateAttribute(id[i], "Notes", notes[i]);								
+								}
+							}
+						}
+					}
+				}
+				
+				// delete attribute in database and mark for statement deletion
+				if (delete == true) {
+					deleteList.add(this.data.getAttributes(variable, statementTypeId)[j].getValue());
+					deleteListId.add(this.data.getAttributes(variable, statementTypeId)[j].getId());
+				}
+			}
+			
+			// delete attributes based on delete list for IDs
+			if (deleteListId.size() > 0) {
+				for (int j = 0; j < deleteListId.size(); j++) {
+					for (int i = this.data.getAttributes().size() - 1; i > -1; i--) {
+						if (this.data.getAttributes().get(i).getId() == deleteListId.get(j)) {
+							updateCountDeleted++;
+							if (simulate == false) {
+								this.sql.deleteAttributeVector(this.data.getAttributes().get(i).getId());
+								this.data.getAttributes().remove(i);
+							}
+						}
+					}
+				}
+			}
+			
+			// delete statements where the value is marked for deletion
+			if (removeStatements == true) {
+				for (int k = this.data.getStatements().size() - 1; k > -1; k--) {
+					if (deleteList.contains(this.data.getStatements().get(k).getValues().get(variable))) {
+						updateCountStatementsDeleted++;
+						if (simulate == false) {
+							this.sql.removeStatement(this.data.getStatements().get(k).getId());
+							this.data.getStatements().remove(k);
+						}
+					}
+				}
+			}
+		}
+		
+		// recode values in statements (as saved in hash map above)
+		if (this.data.getStatements().size() > 0) {
+			for (int k = 0; k < this.data.getStatements().size(); k++) {
+				if (valueChangeMap.containsKey(this.data.getStatements().get(k).getValues().get(variable))) {
+					updateCountStatementsChanged++;
+					if (simulate == false) {
+						String oldValue = (String) this.data.getStatements().get(k).getValues().get(variable);
+						String newValue = valueChangeMap.get(oldValue);
+						int statementId = this.data.getStatements().get(k).getId();
+						this.sql.upsertVariableContent(newValue, statementId, variable, statementTypeId, "short text");
+						this.data.getStatements().get(k).getValues().put(variable, newValue);
+					}
+				}
+				
+			}
+		}
+
+		// add new attributes that don't exist in the database yet
+		if (id.length > 0) {
+			for (int i = 0; i < id.length; i++) {
+				boolean exists = false;
+				boolean fixId = false;
+				if (this.data.getAttributes(variable, statementTypeId).length > 0) {
+					for (int j = 0; j < this.data.getAttributes().size(); j++) {
+						if (id[i] == this.data.getAttributes().get(j).getId()) {
+							if (this.data.getAttributes().get(j).getStatementTypeId() == statementTypeId 
+									&& this.data.getAttributes().get(j).getVariable().equals(variable) 
+									&& !this.data.getAttributes().get(j).getValue().equals("")) {
+								exists = true;
+							} else {
+								exists = false;
+								fixId = true;
+							}
+						}
+					}
+				}
+				if (!exists) {
+					int newId;
+					if (fixId == true || id[i] == -1) {
+						newId = this.data.generateNewId("attributes");
+					} else {
+						newId = id[i];
+					}
+					updateCountNewAttributes++;
+					if (simulate == false) {
+						AttributeVector av = new AttributeVector(newId, value[i], color[i], type[i], alias[i], notes[i], "", statementTypeId, variable);
+						this.data.getAttributes().add(av);
+						this.sql.upsertAttributeVector(av);
+					}
+				}
+			}
+		}
+
+		// report statistics
+		if (verbose == true) {
+			System.out.println("New attributes added: " + updateCountNewAttributes);
+			System.out.println("Deleted attributes:   " + updateCountDeleted);
+			System.out.println("Values updated:       " + updateCountValue);
+			System.out.println("Colors updated:       " + updateCountColor);
+			System.out.println("Types updated:        " + updateCountType);
+			System.out.println("Aliases updated:      " + updateCountAlias);
+			System.out.println("Notes updated:        " + updateCountNotes);
+			System.out.println("Updated statements:   " + updateCountStatementsChanged);
+			System.out.println("Deleted statements:   " + updateCountStatementsDeleted);
+		}
+	}
+
+	/**
+	 * Add an attribute both to memory and the SQL database, with a given statement type label.
+	 * 
+	 * @param statementTypeLabel  Statement type string in which the variable is defined.
+	 * @param variable            Variable name to which the attribute will be added, as defined in the respective statement type.
+	 * @param value               Attribute value.
+	 * @param color               Attribute color.
+	 * @param type                Attribute type.
+	 * @param alias               Attribute alias.
+	 * @param notes               Attribute notes.
+	 * @return                    New document ID.
+	 * @throws Exception 
+	 */
+	public int addAttribute(String statementTypeLabel, String variable, String value, String color, String type, String alias, String notes) throws Exception {
+		int statementTypeId = this.data.getStatementType(statementTypeLabel).getId();
+		return addAttribute(statementTypeId, variable, value, color, type, alias, notes);
+	}
+	
+	/**
+	 * Add an attribute both to memory and the SQL database, with a given statement type ID.
+	 * 
+	 * @param statementTypeId  Statement type ID in which the variable is defined.
+	 * @param variable         Variable name to which the attribute will be added, as defined in the respective statement type.
+	 * @param value            Attribute value.
+	 * @param color            Attribute color.
+	 * @param type             Attribute type.
+	 * @param alias            Attribute alias.
+	 * @param notes            Attribute notes.
+	 * @return                 New document ID.
+	 * @throws Exception 
+	 */
+	public int addAttribute(int statementTypeId, String variable, String value, String color, String type, String alias, String notes) throws Exception {
+		if (value.equals("")) {
+			throw new Exception("The 'value' field cannot be empty. Aborting.");
+		}
+		for (int i = 0; i < this.data.getAttributes(variable, statementTypeId).length; i++) {
+			if (this.data.getAttributes(variable, statementTypeId)[i].getValue().equals(value)) {
+				throw new Exception("An attribute with the same statement type, variable, and value already exists. Aborting.");
+			}
+		}
+		int id = this.data.generateNewId("attributes");
+		AttributeVector av = new AttributeVector(id, value, color, type, alias, notes, "", statementTypeId, variable);
+		this.data.getAttributes().add(av);
+		Collections.sort(this.data.getAttributes());
+		this.sql.upsertAttributeVector(av);
+		return id;
+	}
+	
+	/**
+	 * Remove an attribute based on its value. This is a wrapper for the function with the same name but an additional id argument.
+	 * 
+	 * @param statementTypeId   Statement type ID associated with the attribute.
+	 * @param variable          Variable contained in the statement ID that is associated with the attribute.
+	 * @param value             String value of the attribute to be removed.
+	 * @param removeStatements  Delete statements associated with attributes that are removed?
+	 * @param simulate          If true, changes are not actually carried out.
+	 * @param verbose           Should messages be printed?
+	 */
+	public void removeAttribute(int statementTypeId, String variable, String value, boolean removeStatements, boolean simulate, boolean verbose) {
+		int id = -1;
+		for (int i = 0; i < this.data.getAttributes(variable, statementTypeId).length; i++) {
+			if (this.data.getAttributes(variable, statementTypeId)[i].getValue().equals(value)) {
+				id = this.data.getAttributes(variable, statementTypeId)[i].getId();
+			}
+		}
+		removeAttribute(statementTypeId, variable, value, id, removeStatements, simulate, verbose);
+	}
+
+	/**
+	 * Remove an attribute based on its ID. This is a wrapper for the function with the same name but an additional value argument.
+	 * 
+	 * @param statementTypeId   Statement type ID associated with the attribute.
+	 * @param variable          Variable contained in the statement ID that is associated with the attribute.
+	 * @param id                ID of the attribute to be removed.
+	 * @param removeStatements  Delete statements associated with attributes that are removed?
+	 * @param simulate          If true, changes are not actually carried out.
+	 * @param verbose           Should messages be printed?
+	 */
+	public void removeAttribute(int statementTypeId, String variable, int id, boolean removeStatements, boolean simulate, boolean verbose) {
+		String value = "";
+		for (int i = 0; i < this.data.getAttributes(variable, statementTypeId).length; i++) {
+			if (this.data.getAttributes(variable, statementTypeId)[i].getId() == id) {
+				value = this.data.getAttributes(variable, statementTypeId)[i].getValue();
+			}
+		}
+		removeAttribute(statementTypeId, variable, value, id, removeStatements, simulate, verbose);
+	}
+	
+	/**
+	 * Remove an attribute based on its value and ID.
+	 * @param statementTypeId   Statement type ID associated with the attribute.
+	 * @param variable          Variable contained in the statement ID that is associated with the attribute.
+	 * @param value             String value of the attribute to be removed.
+	 * @param id                ID of the attribute to be removed.
+	 * @param removeStatements  Delete statements associated with attributes that are removed?
+	 * @param simulate          If true, changes are not actually carried out.
+	 * @param verbose           Should messages be printed?
+	 */
+	public void removeAttribute(int statementTypeId, String variable, String value, int id, boolean removeStatements, boolean simulate, boolean verbose) {
+		// report simulation mode
+		if (verbose == true) {
+			if (simulate == true) {
+				System.out.println("Simulation mode: no actual changes are made to the database!");
+			} else {
+				System.out.println("Changes will be written both in memory and to the SQL database!");
+			}
+		}
+		
+		// delete statements if necessary
+		int updateCountStatementsDeleted = 0;
+		boolean affectsStatements = false;
+		if (!this.data.getStatements().isEmpty()) {
+			for (int k = this.data.getStatements().size() - 1; k > -1; k--) {
+				if (this.data.getStatements().get(k).getStatementTypeId() == statementTypeId && this.data.getStatements().get(k).getValues().get(variable).equals(value)) {
+					if (removeStatements == true) {
+						int statementId = this.data.getStatements().get(k).getId();
+						if (simulate == false) {
+							this.data.getStatements().remove(k);
+							this.sql.removeStatement(statementId);
+						}
+						updateCountStatementsDeleted++;
+					} else {
+						affectsStatements = true;
+					}
+				}
+			}
+		}
+		
+		// report result of statement deletion
+		if (verbose == true) {
+			System.out.println("Statements removed: " + updateCountStatementsDeleted);
+		}
+		
+		// remove attribute from memory and SQL database if there are no statements or the statements were deleted
+		if (!affectsStatements) {
+			boolean success = false;
+			if (simulate == false) {
+				for (int i = this.data.getAttributes().size() - 1; i > -1 ; i--) {
+					if (this.data.getAttributes().get(i).getStatementTypeId() == statementTypeId && this.data.getAttributes().get(i).getValue().equals(value) && !this.data.getAttributes().get(i).getValue().equals("")) {
+						this.data.getAttributes().remove(i);
+						success = true;
+					}
+				}
+				if (success) {
+					this.sql.deleteAttributeVector(id);
+				}
+			}
+			if (verbose) {
+				if (success) {
+					System.out.println("Removal of attribute " + id + ": successful.");
+				} else {
+					System.err.println("Removal of attribute " + id + ": ID was not found.");
+				}
+			}
+		} else {
+			System.err.println("Removal of attribute " + id + ": attribute was not removed because it is used in existing statements.");
+		}
+	}
+	
+	/**
 	 * Return variable names in this.eventListColumnsR
 	 * 
 	 * @return   array of Strings with variable names
@@ -1184,8 +1568,8 @@ public class ExporterR {
 		
 		// remove document from memory and SQL database if there are no statements or the statements were deleted
 		if (!containsStatements) {
+			boolean success = false;
 			if (simulate == false) {
-				boolean success = false;
 				for (int i = this.data.getDocuments().size() - 1; i > -1 ; i--) {
 					if (this.data.getDocuments().get(i).getId() == id) {
 						this.data.getDocuments().remove(i);
@@ -1195,12 +1579,12 @@ public class ExporterR {
 				if (success) {
 					this.sql.removeDocument(id);
 				}
-				if (verbose) {
-					if (success) {
-						System.out.println("Removal of Document " + id + ": successful.");
-					} else {
-						System.err.println("Removal of Document " + id + ": ID was not found.");
-					}
+			}
+			if (verbose) {
+				if (success) {
+					System.out.println("Removal of Document " + id + ": successful.");
+				} else {
+					System.err.println("Removal of Document " + id + ": ID was not found.");
 				}
 			}
 		} else {

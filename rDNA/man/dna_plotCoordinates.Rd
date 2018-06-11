@@ -82,14 +82,14 @@ highlight clusters.
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 conn <- dna_connection(dna_sample())
 clust <- dna_cluster(conn)
 mds <- dna_plotCoordinates(clust)
+
 # Flip plot with ggplot2 command
 library("ggplot2")
-mds +
-coord_flip()
+mds + coord_flip()
 }
 }
 \author{
