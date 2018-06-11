@@ -1124,14 +1124,16 @@ public class ExporterR {
 		// remove attribute from memory and SQL database if there are no statements or the statements were deleted
 		if (!affectsStatements) {
 			boolean success = false;
-			if (simulate == false) {
-				for (int i = this.data.getAttributes().size() - 1; i > -1 ; i--) {
-					if (this.data.getAttributes().get(i).getStatementTypeId() == statementTypeId && this.data.getAttributes().get(i).getValue().equals(value) && !this.data.getAttributes().get(i).getValue().equals("")) {
+			for (int i = this.data.getAttributes().size() - 1; i > -1 ; i--) {
+				if (this.data.getAttributes().get(i).getStatementTypeId() == statementTypeId && this.data.getAttributes().get(i).getValue().equals(value) && !this.data.getAttributes().get(i).getValue().equals("")) {
+					if (simulate == false) {
 						this.data.getAttributes().remove(i);
-						success = true;
 					}
+					success = true;
 				}
-				if (success) {
+			}
+			if (success) {
+				if (simulate == false) {
 					this.sql.deleteAttributeVector(id);
 				}
 			}
@@ -1569,14 +1571,16 @@ public class ExporterR {
 		// remove document from memory and SQL database if there are no statements or the statements were deleted
 		if (!containsStatements) {
 			boolean success = false;
-			if (simulate == false) {
-				for (int i = this.data.getDocuments().size() - 1; i > -1 ; i--) {
-					if (this.data.getDocuments().get(i).getId() == id) {
+			for (int i = this.data.getDocuments().size() - 1; i > -1 ; i--) {
+				if (this.data.getDocuments().get(i).getId() == id) {
+					if (simulate == false) {
 						this.data.getDocuments().remove(i);
-						success = true;
 					}
+					success = true;
 				}
-				if (success) {
+			}
+			if (success) {
+				if (simulate == false) {
 					this.sql.removeDocument(id);
 				}
 			}
