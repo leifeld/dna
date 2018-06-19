@@ -19,8 +19,8 @@ defined.}
 \item{variable}{The name of the variable from which attribute should be
 removed, for example \code{"organization"} or \code{"concept"}.}
 
-\item{attribute}{An integer value denoting the ID of the attribute to be 
-removed, or a value label (as a character object) denoting the entry to be 
+\item{attribute}{An integer value denoting the ID of the attribute to be
+removed, or a value label (as a character object) denoting the entry to be
 removed. The \link{dna_getAttributes} function can be used to look up IDs.}
 
 \item{removeStatements}{The attribute given by \code{attribute} may contain
@@ -39,9 +39,9 @@ plan more complex recode operations.}
 Removes an attribute entry from the database based on its ID or value.
 }
 \details{
-The user provides a connection object and the ID or value label of an 
+The user provides a connection object and the ID or value label of an
 existing attribute in the DNA database, and this attribute is removed both
-from memory and from the SQL database, possibly including any statements 
+from memory and from the SQL database, possibly including any statements
 associated with the attribute.
 }
 \author{

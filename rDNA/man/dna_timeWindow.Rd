@@ -15,12 +15,12 @@ dna_timeWindow(connection, method = "bipolarization", timewindow = "days",
 
 \item{method}{Is used to compute exactly one measurement for each network
 computed in the temporal sequence of networks. Can contain the name of any
-function which reduces a matrix to just one value or one of the following 
-character strings: \code{"bipolarization"} (for calculating the modularity of 
-different two-cluster solutions and choosing the highest one); 
-\code{"multipolarization"} (for calculating the modularity of different 
-community detection measures as implemented in \pkg{igraph}; or \code{"louvain"} 
-(for detecting communities using the fast Louvain algorithm and computing 
+function which reduces a matrix to just one value or one of the following
+character strings: \code{"bipolarization"} (for calculating the modularity of
+different two-cluster solutions and choosing the highest one);
+\code{"multipolarization"} (for calculating the modularity of different
+community detection measures as implemented in \pkg{igraph}; or \code{"louvain"}
+(for detecting communities using the fast Louvain algorithm and computing
 modularity based on this result).}
 
 \item{timewindow}{Same as in \link{dna_network}.}
@@ -36,27 +36,27 @@ section or \code{"Types"} to subset document types.}
 networks. Always contains the value "all" for comparison. Use e.g.
 excludeTypes to exclude documents from comparison.}
 
-\item{parallel}{Use parallel processing for the computation of time series 
-measures? By default, this is switched off (\code{"no"}), meaning that only 
-one CPU node is used to compute the results. Other possible values are 
-\code{"FORK"} and \code{"PSOCK"}. The FORK option uses the \code{mclapply} 
-function under the hood. This works well on Unix systems with multiple 
-cores but not on Windows. If \code{"FORK"} is used, the \code{cl} argument is 
-ignored. The \code{"PSOCK"} option uses the \code{parSapply} function under 
-the hood. This works on any kind of system including Windows but is 
-slightly slower than forking. In either case, the number of cores can be 
+\item{parallel}{Use parallel processing for the computation of time series
+measures? By default, this is switched off (\code{"no"}), meaning that only
+one CPU node is used to compute the results. Other possible values are
+\code{"FORK"} and \code{"PSOCK"}. The FORK option uses the \code{mclapply}
+function under the hood. This works well on Unix systems with multiple
+cores but not on Windows. If \code{"FORK"} is used, the \code{cl} argument is
+ignored. The \code{"PSOCK"} option uses the \code{parSapply} function under
+the hood. This works on any kind of system including Windows but is
+slightly slower than forking. In either case, the number of cores can be
 provided using the \code{ncpus} argument.}
 
-\item{ncpus}{Number of CPU cores to use for parallel processing (if switched 
+\item{ncpus}{Number of CPU cores to use for parallel processing (if switched
 on through the \code{parallel} argument).}
 
-\item{cl}{An optional \code{cluster} object for PSOCK parallel processing. 
-If no \code{cluster} object is provided (default behaviour), a cluster is 
-created internally on the fly. If a \code{cluster} object is provided, 
-the \code{ncpus} argument is ignored because the \code{cluster} object 
-already contains the number of cores. It can be useful to supply a 
-\code{cluster} object for example for use with the MPI protocol on a HPC 
-cluster. Note that the \code{cl} argument is ignored if 
+\item{cl}{An optional \code{cluster} object for PSOCK parallel processing.
+If no \code{cluster} object is provided (default behaviour), a cluster is
+created internally on the fly. If a \code{cluster} object is provided,
+the \code{ncpus} argument is ignored because the \code{cluster} object
+already contains the number of cores. It can be useful to supply a
+\code{cluster} object for example for use with the MPI protocol on a HPC
+cluster. Note that the \code{cl} argument is ignored if
 \code{parallel = "FORK"}.}
 
 \item{verbose}{Display messages if \code{TRUE} or \code{1}. Also displays
@@ -70,9 +70,9 @@ Computes a measure for each network in a temporal sequence of networks.
 \details{
 This function serves as a convenience wrapper to calculate a measure for each
 network in a temporal sequence of networks. The standard is to calculate the
-modularity the best two-community solution (i.e., bipolarization) of the 
+modularity the best two-community solution (i.e., bipolarization) of the
 network for each time window. The function can also be used to split
-your data (facet) and calculate networks for each facet type and return the 
+your data (facet) and calculate networks for each facet type and return the
 statistics by facet.
 }
 \examples{
@@ -91,8 +91,8 @@ tW <- dna_timeWindow(connection = conn,
                      method = "bipolarization",
                      verbose = TRUE)
 
-dna_plotTimeWindow(tW, 
-                   facetValues = c("Bluestein, Joel", 
+dna_plotTimeWindow(tW,
+                   facetValues = c("Bluestein, Joel",
                                    "Voinovich, George",
                                    "all"),
                    rows = 2)

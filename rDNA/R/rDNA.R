@@ -302,16 +302,16 @@ dna_sample <- function(overwrite = FALSE,
 #' Add a new attribute to the DNA database.
 #'
 #' The \code{dna_addAttribute} function can add new attributes to an existing
-#' DNA database. Attributes are the annotations that are coded within a 
-#' variable, along with some meta-data. For example, if the variable is 
-#' "organization", then an attribute value could be "Environmental Protection 
-#' Agency", and other attribute meta-data for this value could be its color, 
-#' actor type etc. The \code{dna_addAttribute} function can not only be used to 
-#' add entries to the attributes table in an ongoing project, but also to 
+#' DNA database. Attributes are the annotations that are coded within a
+#' variable, along with some meta-data. For example, if the variable is
+#' "organization", then an attribute value could be "Environmental Protection
+#' Agency", and other attribute meta-data for this value could be its color,
+#' actor type etc. The \code{dna_addAttribute} function can not only be used to
+#' add entries to the attributes table in an ongoing project, but also to
 #' pre-populate a DNA database with values for deductive coding. Either way, the
 #' user supplies a \link{dna_connection} object as well as various details about
-#' the attribute to be added, for example the value, color, type etc. The 
-#' attribute ID will be automatically generated and can be returned if 
+#' the attribute to be added, for example the value, color, type etc. The
+#' attribute ID will be automatically generated and can be returned if
 #' \code{returnID} is set to \code{TRUE}.
 #'
 #' @param connection A \code{dna_connection} object created by the
@@ -628,9 +628,9 @@ dna_getDocuments <- function(connection) {
 #'
 #' Removes an attribute entry from the database based on its ID or value.
 #'
-#' The user provides a connection object and the ID or value label of an 
+#' The user provides a connection object and the ID or value label of an
 #' existing attribute in the DNA database, and this attribute is removed both
-#' from memory and from the SQL database, possibly including any statements 
+#' from memory and from the SQL database, possibly including any statements
 #' associated with the attribute.
 #'
 #' @param connection A \code{dna_connection} object created by the
@@ -640,8 +640,8 @@ dna_getDocuments <- function(connection) {
 #'   defined.
 #' @param variable The name of the variable from which attribute should be
 #'   removed, for example \code{"organization"} or \code{"concept"}.
-#' @param attribute An integer value denoting the ID of the attribute to be 
-#'   removed, or a value label (as a character object) denoting the entry to be 
+#' @param attribute An integer value denoting the ID of the attribute to be
+#'   removed, or a value label (as a character object) denoting the entry to be
 #'   removed. The \link{dna_getAttributes} function can be used to look up IDs.
 #' @param removeStatements The attribute given by \code{attribute} may contain
 #'   statements. If \code{removeStatements = TRUE} is set, these statements
@@ -733,38 +733,38 @@ dna_removeDocument <- function(connection,
 #'
 #' Add, remove, and edit values and attributes for a variable in a DNA database.
 #'
-#' This function takes a dataframe with columns "id", "value", "color", "type", 
-#' "alias", and "notes" (in no particular order and ignoring any additional 
-#' columns) and hands it over to a DNA connection in order to update the 
-#' attributes in the database for a specific statement type and variable, based 
-#' on the contents of the dataframe. The typical workflow is to retrieve the 
-#' attributes for some statement type and variable using 
-#' \link{dna_getAttributes}, manipulating the attributes, and then applying the 
-#' changes with \link{dna_setAttributes}. Attributes that are no longer in the 
-#' dataframe are removed from the database; attributes in the dataframe that 
-#' are not in the database are added to the database; and contents of existing 
-#' attributes are updated. By default, the changes are only simulated and not 
-#' actually written into the database. The user can inspect the reported 
+#' This function takes a dataframe with columns "id", "value", "color", "type",
+#' "alias", and "notes" (in no particular order and ignoring any additional
+#' columns) and hands it over to a DNA connection in order to update the
+#' attributes in the database for a specific statement type and variable, based
+#' on the contents of the dataframe. The typical workflow is to retrieve the
+#' attributes for some statement type and variable using
+#' \link{dna_getAttributes}, manipulating the attributes, and then applying the
+#' changes with \link{dna_setAttributes}. Attributes that are no longer in the
+#' dataframe are removed from the database; attributes in the dataframe that
+#' are not in the database are added to the database; and contents of existing
+#' attributes are updated. By default, the changes are only simulated and not
+#' actually written into the database. The user can inspect the reported
 #' changes and then apply the actual changes by setting \code{simulate = FALSE}.
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \code{dna_connection} function.
 #' @param attributes A dataframe with at least six columns: id (integer), value
-#'   (character), color (character; must be in hexadecimal RGB format), 
-#'   type (character), alias (character), and notes (character), in no 
+#'   (character), color (character; must be in hexadecimal RGB format),
+#'   type (character), alias (character), and notes (character), in no
 #'   particular order. \code{NA} values or \code{-1} values are permitted in the
-#'   id column. If these are encountered, a new ID is automatically generated, 
+#'   id column. If these are encountered, a new ID is automatically generated,
 #'   and the attribute is added.
 #' @param statementType The ID of the statement type (as an integer) or the name
 #'   of the statement type (as a character object) in which the variable is
 #'   defined.
 #' @param variable The name of the variable for which attribute data should be
 #'   retrieved, for example \code{"organization"} or \code{"concept"}.
-#' @param removeStatements If an attribute is present in the DNA database but 
+#' @param removeStatements If an attribute is present in the DNA database but
 #'   not in the \code{attributes} dataframe, the respective attribute is removed
-#'   from the database. However, the attribute may have been used in statements. 
-#'   If \code{removeStatements = TRUE} is set, these statements are removed 
-#'   along with the respective attribute. If \code{removeStatements = FALSE} is 
+#'   from the database. However, the attribute may have been used in statements.
+#'   If \code{removeStatements = TRUE} is set, these statements are removed
+#'   along with the respective attribute. If \code{removeStatements = FALSE} is
 #'   set, the statements are not deleted, the attribute is kept as well, and a
 #'   message is printed.
 #' @param simulate Should the changes only be simulated instead of actually
@@ -777,23 +777,23 @@ dna_removeDocument <- function(connection,
 #' dna_init("dna-2.0-beta22.jar")
 #' conn <- dna_connection(dna_sample())
 #' at <- dna_getAttributes(conn)
-#' 
+#'
 #' at$value[2] <- "new organization name"   # recode a value
 #' at$color[5] <- "#0000FF"                 # recode a color
 #' at$notes[3] <- "Added a note via rDNA."  # recode a note
 #' at <- at[-6, ]                           # remove an attribute
-#' at <- rbind(at, 
-#'             data.frame(id = NA, 
+#' at <- rbind(at,
+#'             data.frame(id = NA,
 #'                        value = "new actor",
 #'                        color = "#00FFCC",
 #'                        type = "NGO",
 #'                        alias = "",
 #'                        notes = ""))
-#' dna_setAttributes(conn, 
-#'                   statementType = "DNA Statement", 
-#'                   variable = "organization", 
-#'                   at, 
-#'                   removeStatements = TRUE, 
+#' dna_setAttributes(conn,
+#'                   statementType = "DNA Statement",
+#'                   variable = "organization",
+#'                   at,
+#'                   removeStatements = TRUE,
 #'                   simulate = TRUE)
 #' }
 #'
@@ -881,7 +881,7 @@ dna_setAttributes <- function(connection,
   }
   # replace NAs with -1, which will be replaced by an auto-generated ID in DNA
   if (any(is.na(attributes$id))) {
-    attributes$id[which(is.na(documents$id))] <- as.integer(-1)
+    attributes$id[which(is.na(attributes$id))] <- as.integer(-1)
   }
   attributes <- .jarray(lapply(attributes, .jarray))
   .jcall(connection$dna_connection,
@@ -1126,7 +1126,7 @@ dna_setDocuments <- function(connection,
 #' dna_plotCoordinates(clust.l,
 #' jitter = c(0.5, 0.7))
 #' }
-#' 
+#'
 #' @author Johannes B. Gruber
 #' @export
 #' @importFrom vegan vegdist
@@ -1159,7 +1159,7 @@ dna_cluster <- function(connection,
   } else {
     dots_fa <- list()
   }
-  
+
   if ("normalization" %in% names(dots)) {
     normalization_onemode <- ifelse(dots[["normalization"]] %in%
                                       c("no", "average", "Jaccard", "cosine"),
@@ -1797,21 +1797,21 @@ dna_network <- function(connection,
 #'
 #' This function serves as a convenience wrapper to calculate a measure for each
 #' network in a temporal sequence of networks. The standard is to calculate the
-#' modularity the best two-community solution (i.e., bipolarization) of the 
+#' modularity the best two-community solution (i.e., bipolarization) of the
 #' network for each time window. The function can also be used to split
-#' your data (facet) and calculate networks for each facet type and return the 
+#' your data (facet) and calculate networks for each facet type and return the
 #' statistics by facet.
 #'
 #' @param connection A \link{dna_connection} object created by the
 #'   \link{dna_connection} function.
 #' @param method Is used to compute exactly one measurement for each network
 #'   computed in the temporal sequence of networks. Can contain the name of any
-#'   function which reduces a matrix to just one value or one of the following 
-#'   character strings: \code{"bipolarization"} (for calculating the modularity of 
-#'   different two-cluster solutions and choosing the highest one); 
-#'   \code{"multipolarization"} (for calculating the modularity of different 
-#'   community detection measures as implemented in \pkg{igraph}; or \code{"louvain"} 
-#'   (for detecting communities using the fast Louvain algorithm and computing 
+#'   function which reduces a matrix to just one value or one of the following
+#'   character strings: \code{"bipolarization"} (for calculating the modularity of
+#'   different two-cluster solutions and choosing the highest one);
+#'   \code{"multipolarization"} (for calculating the modularity of different
+#'   community detection measures as implemented in \pkg{igraph}; or \code{"louvain"}
+#'   (for detecting communities using the fast Louvain algorithm and computing
 #'   modularity based on this result).
 #' @param timewindow Same as in \link{dna_network}.
 #' @param windowsize Same as in \link{dna_network}.
@@ -1822,25 +1822,25 @@ dna_network <- function(connection,
 #' @param facetValues Which values should be used to facet calculation of the
 #'   networks. Always contains the value "all" for comparison. Use e.g.
 #'   excludeTypes to exclude documents from comparison.
-#' @param parallel Use parallel processing for the computation of time series 
-#'   measures? By default, this is switched off (\code{"no"}), meaning that only 
-#'   one CPU node is used to compute the results. Other possible values are 
-#'   \code{"FORK"} and \code{"PSOCK"}. The FORK option uses the \code{mclapply} 
-#'   function under the hood. This works well on Unix systems with multiple 
-#'   cores but not on Windows. If \code{"FORK"} is used, the \code{cl} argument is 
-#'   ignored. The \code{"PSOCK"} option uses the \code{parSapply} function under 
-#'   the hood. This works on any kind of system including Windows but is 
-#'   slightly slower than forking. In either case, the number of cores can be 
+#' @param parallel Use parallel processing for the computation of time series
+#'   measures? By default, this is switched off (\code{"no"}), meaning that only
+#'   one CPU node is used to compute the results. Other possible values are
+#'   \code{"FORK"} and \code{"PSOCK"}. The FORK option uses the \code{mclapply}
+#'   function under the hood. This works well on Unix systems with multiple
+#'   cores but not on Windows. If \code{"FORK"} is used, the \code{cl} argument is
+#'   ignored. The \code{"PSOCK"} option uses the \code{parSapply} function under
+#'   the hood. This works on any kind of system including Windows but is
+#'   slightly slower than forking. In either case, the number of cores can be
 #'   provided using the \code{ncpus} argument.
-#' @param ncpus Number of CPU cores to use for parallel processing (if switched 
+#' @param ncpus Number of CPU cores to use for parallel processing (if switched
 #'   on through the \code{parallel} argument).
-#' @param cl An optional \code{cluster} object for PSOCK parallel processing. 
-#'   If no \code{cluster} object is provided (default behaviour), a cluster is 
-#'   created internally on the fly. If a \code{cluster} object is provided, 
-#'   the \code{ncpus} argument is ignored because the \code{cluster} object 
-#'   already contains the number of cores. It can be useful to supply a 
-#'   \code{cluster} object for example for use with the MPI protocol on a HPC 
-#'   cluster. Note that the \code{cl} argument is ignored if 
+#' @param cl An optional \code{cluster} object for PSOCK parallel processing.
+#'   If no \code{cluster} object is provided (default behaviour), a cluster is
+#'   created internally on the fly. If a \code{cluster} object is provided,
+#'   the \code{ncpus} argument is ignored because the \code{cluster} object
+#'   already contains the number of cores. It can be useful to supply a
+#'   \code{cluster} object for example for use with the MPI protocol on a HPC
+#'   cluster. Note that the \code{cl} argument is ignored if
 #'   \code{parallel = "FORK"}.
 #' @param verbose Display messages if \code{TRUE} or \code{1}. Also displays
 #'   details about network construction when \code{2}.
@@ -1862,12 +1862,12 @@ dna_network <- function(connection,
 #'                      method = "bipolarization",
 #'                      verbose = TRUE)
 #'
-#' dna_plotTimeWindow(tW, 
-#'                    facetValues = c("Bluestein, Joel", 
+#' dna_plotTimeWindow(tW,
+#'                    facetValues = c("Bluestein, Joel",
 #'                                    "Voinovich, George",
 #'                                    "all"),
 #'                    rows = 2)
-#' 
+#'
 #' mp <- dna_timeWindow(connection = conn,
 #'                      timewindow = "days",
 #'                      windowsize = 15,
@@ -1875,7 +1875,7 @@ dna_network <- function(connection,
 #'                      duplicates = "document",
 #'                      parallel = "PSOCK",
 #'                      ncpus = 3)
-#' 
+#'
 #' dna_plotTimeWindow(mp, include.y = c(-1, 1)) + theme_bw()
 #' }
 #' @author Philip Leifeld, Johannes B. Gruber
@@ -1883,7 +1883,7 @@ dna_network <- function(connection,
 #' @import ggplot2
 #' @import parallel
 #' @importFrom cluster pam
-#' @importFrom igraph graph.adjacency modularity cluster_fast_greedy cluster_walktrap 
+#' @importFrom igraph graph.adjacency modularity cluster_fast_greedy cluster_walktrap
 #'   cluster_leading_eigen cluster_edge_betweenness cluster_louvain cut_at
 #' @importFrom sna equiv.clust sedist
 #' @importFrom stats kmeans hclust cutree cor
@@ -1992,7 +1992,7 @@ dna_timeWindow <- function(connection,
                            verbose = ifelse(verbose > 1, TRUE, FALSE)
                     ), dots)
       )
-      
+
       louvain <- function(x) {
         if (nrow(x) < 2) {
           return(NA)
@@ -2000,7 +2000,7 @@ dna_timeWindow <- function(connection,
         x[x < 0] <- 0
         return(modularity(cluster_louvain(graph.adjacency(x, mode = "undirected", weighted = TRUE))))
       }
-      
+
       if (parallel[1] == "no") {
         if (verbose > 0) {
           cat("Computing Louvain modularity without parallelization...\n")
@@ -2028,7 +2028,7 @@ dna_timeWindow <- function(connection,
       } else {
         stop("'parallel' argument was not recognized.")
       }
-      
+
       mod.m <- data.frame(index = 1:length(nw$networks),
                           Time = nw$time,
                           Modularity = lvmod,
@@ -2054,7 +2054,7 @@ dna_timeWindow <- function(connection,
                            verbose = ifelse(verbose > 1, TRUE, FALSE)
                     ), dots)
       )
-      
+
       multipolarization <- function(x) {
         if (nrow(x) < 2) {
           return(as.numeric(rep(NA, 6)))
@@ -2062,19 +2062,19 @@ dna_timeWindow <- function(connection,
         x[x < 0] <- 0
         g <- graph.adjacency(x, mode = "undirected", weighted = TRUE)
         values <- as.numeric(rep(NA, 5))
-        
+
         try({
           values[1] <- modularity(cluster_fast_greedy(g))
         }, silent = TRUE)
-        
+
         try({
           values[2] <- modularity(cluster_walktrap(g))
         }, silent = TRUE)
-        
+
         try({
           values[3] <- modularity(cluster_leading_eigen(g))
         }, silent = TRUE)
-        
+
         if (all(x == 0) && packageVersion("igraph") < "1.2.1") {
           values[4] <- NA
         } else {
@@ -2082,14 +2082,14 @@ dna_timeWindow <- function(connection,
             values[4] <- modularity(cluster_edge_betweenness(g, directed = FALSE))
           }, silent = TRUE)
         }
-        
+
         try({
           values[5] <- modularity(cluster_louvain(g))
         }, silent = TRUE)
-        
+
         return(c(max(values, na.rm = TRUE), values))
       }
-      
+
       if (parallel[1] == "no") {
         if (verbose > 0) {
           cat("Computing multipolarization measure without parallelization...\n")
@@ -2117,7 +2117,7 @@ dna_timeWindow <- function(connection,
       } else {
         stop("'parallel' argument was not recognized.")
       }
-      
+
       mod.m <- data.frame(index = 1:length(nw$networks),
                           Time = nw$time,
                           Modularity = mod_matrix[, 1],
@@ -2162,7 +2162,7 @@ dna_timeWindow <- function(connection,
                                 verbose = ifelse(verbose > 1, TRUE, FALSE)
                          ), dots)
       )
-      
+
       n <- length(nw_aff$networks)
       l <- list(n)
       for (i in 1:n) {
@@ -2170,7 +2170,7 @@ dna_timeWindow <- function(connection,
         l[[i]]$subt <- nw_subt$networks[[i]]
         l[[i]]$aff <- nw_aff$networks[[i]]
       }
-      
+
       bipolarization <- function(x) {
         cong <- x$subt
         if (nrow(cong) == 0) {
@@ -2178,7 +2178,7 @@ dna_timeWindow <- function(connection,
         }
         cong[cong < 0] <- 0
         g <- graph.adjacency(cong, mode = "undirected", weighted = TRUE)
-        
+
         combined <- cbind(apply(x$aff, 1:2, function(x) ifelse(x %in% c(1, 3), 1, 0)),
                           apply(x$aff, 1:2, function(x) ifelse(x %in% c(2, 3), 1, 0)))
         combined <- combined[rowSums(combined) > 0, , drop = FALSE]
@@ -2186,36 +2186,36 @@ dna_timeWindow <- function(connection,
           return(rep(NA, 12))
         }
         values <- as.numeric(rep(NA, 11))
-        
+
         jac <- vegdist(combined, method = "jaccard")
         try({
           values[1] <- modularity(x = g, membership = kmeans(jac, centers = 2)$cluster)
         }, silent = TRUE)
-        
+
         try({
           values[2] <- modularity(x = g, membership = pam(jac, k = 2)$cluster)
         }, silent = TRUE)
-        
+
         try({
           values[3] <- modularity(x = g, membership = cutree(hclust(jac, method = "ward.D2"), k = 2))
         }, silent = TRUE)
-        
+
         try({
           values[4] <- modularity(x = g, membership = cutree(hclust(jac, method = "complete"), k = 2))
         }, silent = TRUE)
-        
+
         try({
           values[5] <- modularity(x = g, membership = cut_at(cluster_fast_greedy(g), no = 2))
         }, silent = TRUE)
-        
+
         try({
           values[6] <- modularity(x = g, membership = cut_at(cluster_walktrap(g), no = 2))
         }, silent = TRUE)
-        
+
         try({
           values[7] <- modularity(x = g, membership = cut_at(cluster_leading_eigen(g), no = 2))
         }, silent = TRUE)
-        
+
         if (all(cong == 0) && packageVersion("igraph") < "1.2.1") {
           values[8] <- NA
         } else {
@@ -2223,11 +2223,11 @@ dna_timeWindow <- function(connection,
             values[8] <- modularity(x = g, membership = cut_at(cluster_edge_betweenness(g), no = 2))
           }, silent = TRUE)
         }
-        
+
         try({
           values[9] <- modularity(x = g, membership = cutree(equiv.clust(x$subt, equiv.dist = sedist(x$subt, method = "euclidean"))$cluster, k = 2))
         }, silent = TRUE)
-        
+
         try({
           suppressWarnings(mi <- cor(x$subt))
           iter <- 1
@@ -2239,7 +2239,7 @@ dna_timeWindow <- function(connection,
           concor_cong <- ((mi[, 1] > 0) * 1) + 1
           values[10] <- modularity(x = g, membership = concor_cong)
         }, silent = TRUE)
-        
+
         try({
           suppressWarnings(mi <- cor(t(combined)))
           iter <- 1
@@ -2251,10 +2251,10 @@ dna_timeWindow <- function(connection,
           concor_aff <- ((mi[, 1] > 0) * 1) + 1
           values[11] <- modularity(x = g, membership = concor_aff)
         }, silent = TRUE)
-        
+
         return(c(max(values, na.rm = TRUE), values))
       }
-      
+
       if (parallel[1] == "no") {
         if (verbose > 0) {
           cat("Computing bipolarization measure without parallelization...\n")
@@ -2285,21 +2285,21 @@ dna_timeWindow <- function(connection,
       } else {
         stop("'parallel' argument was not recognized.")
       }
-      
+
       mod.m <- data.frame(index = 1:n,
                           Time = nw_aff$time,
                           Modularity = mod_matrix[, 1],
-                          "k-Means" = mod_matrix[, 2], 
-                          "Partionning around Medoids" = mod_matrix[, 3], 
-                          "Hierarchical Clustering (Ward)" = mod_matrix[, 4], 
-                          "Hierarchical Clustering (Complete)" = mod_matrix[, 5], 
-                          "Fast & Greedy" = mod_matrix[, 6], 
-                          "Walktrap" = mod_matrix[, 7], 
-                          "Leading Eigenvector" = mod_matrix[, 8], 
-                          "Edge Betweenness" = mod_matrix[, 9], 
-                          "Equivalence Clustering" = mod_matrix[, 10], 
-                          "CONCOR (One-Mode)" = mod_matrix[, 11], 
-                          "CONCOR (Two-Mode)" = mod_matrix[, 12], 
+                          "k-Means" = mod_matrix[, 2],
+                          "Partionning around Medoids" = mod_matrix[, 3],
+                          "Hierarchical Clustering (Ward)" = mod_matrix[, 4],
+                          "Hierarchical Clustering (Complete)" = mod_matrix[, 5],
+                          "Fast & Greedy" = mod_matrix[, 6],
+                          "Walktrap" = mod_matrix[, 7],
+                          "Leading Eigenvector" = mod_matrix[, 8],
+                          "Edge Betweenness" = mod_matrix[, 9],
+                          "Equivalence Clustering" = mod_matrix[, 10],
+                          "CONCOR (One-Mode)" = mod_matrix[, 11],
+                          "CONCOR (Two-Mode)" = mod_matrix[, 12],
                           facet = rep(facetValues[facetValues %in% x], n),
                           check.names = FALSE)
       return(mod.m)
@@ -2313,10 +2313,10 @@ dna_timeWindow <- function(connection,
         paste0("\"", method, "\" is not a valid function.")
       )
     } else {
-      testmat <- matrix(c(1, 2, 3, 
-                          11, 12, 13, 
-                          21, 22, 23), 
-                        nrow = 3, 
+      testmat <- matrix(c(1, 2, 3,
+                          11, 12, 13,
+                          21, 22, 23),
+                        nrow = 3,
                         ncol = 3)
       if (length(do.call(method, list(testmat))) != 1) {
         stop (
@@ -2340,7 +2340,7 @@ dna_timeWindow <- function(connection,
                                verbose = ifelse(verbose > 1, TRUE, FALSE)
                         ), dots)
           )
-          
+
           if (parallel[1] == "no") {
             if (verbose > 0) {
               cat("Computing custom measure without parallelization...\n")
@@ -2368,7 +2368,7 @@ dna_timeWindow <- function(connection,
           } else {
             stop("'parallel' argument was not recognized.")
           }
-          
+
           mod.m <- data.frame(index = 1:length(nw$networks),
                               Time = nw$time,
                               x = results,
@@ -2617,7 +2617,7 @@ dna_toNetwork <- function(x,
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' mds <- dna_plotCoordinates(clust)
-#' 
+#'
 #' # Flip plot with ggplot2 command
 #' library("ggplot2")
 #' mds + coord_flip()
@@ -2667,7 +2667,7 @@ dna_plotCoordinates <- function(clust,
   } else {
     stop("This function can either plot MDS or factor analysis data. Please select 'MDS' or 'FA' as 'what'." )
   }
-  
+
   # jitter if selected
   if (length(jitter) > 0) {
     set.seed(seed)
@@ -3170,11 +3170,11 @@ dna_plotDendro <- function(clust,
 #' @param truncate Sets the number of characters to which labels should be
 #'   truncated. Value \code{Inf} turns off truncation.
 #' @param values If TRUE, will display the values in the tiles of the heatmap.
-#' @param colours There are two options: When\code{"brewer} is selected, the function
+#' @param colours There are two options: When \code{"brewer"} is selected, the function
 #'   \link[ggplot2]{scale_fill_distiller} is used to colour the heatmap tiles.
-#'   When\code{"gradient} is selected, \link[ggplot2]{scale_fill_gradient} will be
+#'   When \code{"gradient"} is selected, \link[ggplot2]{scale_fill_gradient} will be
 #'   used. The colour palette and low/high values can be supplied using the
-#'   argument \code{custom_colours}
+#'   argument \code{custom_colours}.
 #' @param custom_colours For \code{colours = "brewer"} you can use either a
 #'   string with a palette name or the index number of a brewer palette (see
 #'   details). If \code{colours = "gradient"} you need to supply at least two
@@ -3184,7 +3184,7 @@ dna_plotDendro <- function(clust,
 #' @param square If TRUE, will make the tiles of the heatmap quadratic.
 #' @param dendro_x If TRUE, will draw a dendrogram on the x-axis.
 #' @param dendro_x_size,dendro_y_size Control the size of the dendrograms on the
-#'   x- and y-axis
+#'   x- and y-axis.
 #' @param qualifierLevels Takes a list with integer values of the qualifier
 #'   levels (as characters) as names and character values as labels (See
 #'   example).
@@ -4044,7 +4044,7 @@ dna_plotNetwork <- function(x,
 #'
 #' @param x A \code{dna_timeWindow} object created by the \link{dna_timeWindow}
 #'   function.
-#' @param facetValues The name or names of the facet values which should be 
+#' @param facetValues The name or names of the facet values which should be
 #'   included in the plot.
 #' @param include.y Include specific value of facet in the plot.
 #' @param rows,cols Number of rows and columns in which the plots are arranged.
@@ -4069,12 +4069,12 @@ dna_plotNetwork <- function(x,
 #'                      method = "bipolarization",
 #'                      verbose = TRUE)
 #'
-#' dna_plotTimeWindow(tW, 
-#'                    facetValues = c("Bluestein, Joel", 
+#' dna_plotTimeWindow(tW,
+#'                    facetValues = c("Bluestein, Joel",
 #'                                    "Voinovich, George",
 #'                                    "all"),
 #'                    rows = 2)
-#' 
+#'
 #' mp <- dna_timeWindow(connection = conn,
 #'                      timewindow = "days",
 #'                      windowsize = 15,
@@ -4082,7 +4082,7 @@ dna_plotNetwork <- function(x,
 #'                      duplicates = "document",
 #'                      parallel = "PSOCK",
 #'                      ncpus = 3)
-#' 
+#'
 #' dna_plotTimeWindow(mp, include.y = c(-1, 1)) + theme_bw()
 #' }
 #' @author Johannes B. Gruber, Philip Leifeld
@@ -4123,7 +4123,7 @@ dna_plotTimeWindow <- function(x,
     }
     if (all(facetValues %in% x$facet)) {
       if (length(facetValues) == 1) {
-        ggplot2::ggplot(x[grep(paste0("^", facetValues, "$"), x$facet), ], 
+        ggplot2::ggplot(x[grep(paste0("^", facetValues, "$"), x$facet), ],
                         aes_string(x = "Time", y = method)) +
           geom_line() +
           geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
@@ -4447,7 +4447,7 @@ dna_plotFrequency <- function(connection,
 #' @param n Max number of characters to truncate to. Value \code{Inf} turns off
 #'   truncation.
 #' @param e String added at the end of x to signal it was truncated.
-#' 
+#'
 #' @noRd
 #' @author Johannes B. Gruber
 trim <- function(x, n, e = "...") {

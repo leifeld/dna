@@ -40,16 +40,16 @@ Add a new attribute to the DNA database.
 }
 \details{
 The \code{dna_addAttribute} function can add new attributes to an existing
-DNA database. Attributes are the annotations that are coded within a 
-variable, along with some meta-data. For example, if the variable is 
-"organization", then an attribute value could be "Environmental Protection 
-Agency", and other attribute meta-data for this value could be its color, 
-actor type etc. The \code{dna_addAttribute} function can not only be used to 
-add entries to the attributes table in an ongoing project, but also to 
+DNA database. Attributes are the annotations that are coded within a
+variable, along with some meta-data. For example, if the variable is
+"organization", then an attribute value could be "Environmental Protection
+Agency", and other attribute meta-data for this value could be its color,
+actor type etc. The \code{dna_addAttribute} function can not only be used to
+add entries to the attributes table in an ongoing project, but also to
 pre-populate a DNA database with values for deductive coding. Either way, the
 user supplies a \link{dna_connection} object as well as various details about
-the attribute to be added, for example the value, color, type etc. The 
-attribute ID will be automatically generated and can be returned if 
+the attribute to be added, for example the value, color, type etc. The
+attribute ID will be automatically generated and can be returned if
 \code{returnID} is set to \code{TRUE}.
 }
 \author{

@@ -148,7 +148,7 @@ knit_hooks$set(crop=hook_pdfcrop,
 @
 
 \title{Discourse Network Analyzer Manual}
-\date{\footnotesize{Last update: DNA 2.0 beta 21 with rDNA \Sexpr{packageVersion("rDNA")} on \today.}}
+\date{\footnotesize{Last update: DNA 2.0 beta 22 with rDNA \Sexpr{packageVersion("rDNA")} on \today.}}
 \author{Philip Leifeld, Johannes Gruber and Felix Rolf Bossner}
 
 \maketitle
@@ -1793,7 +1793,7 @@ The the choice of the value zero in cells where row and column mention the same 
 #' prep environment
 library("rDNA")
 library("kableExtra")
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 truncate <- function(x, trunc = 12){
   x <- ifelse(nchar(x) > trunc,
                         paste0(gsub("\\s+$", "",
@@ -2705,10 +2705,10 @@ We also need to register \dna\ with \rdna\ to use them together.
 To do that, you need to save the \dna\ \texttt{.jar} file to the working directory of the current \R\ session.
 If you haven't already downlaoded \dna, you can do this from \R\ by running \code{dna\_downloadJar()}.
 This will place the newest version of \dna\ in your working directory.
-Then  you can initialize \dna\ as follows (with \texttt{dna-2.0-beta21.jar} in this example):
+Then  you can initialize \dna\ as follows (with \texttt{dna-2.0-beta22.jar} in this example):
 
 <<eval=FALSE>>=
-dna_init("dna-2.0-beta21.jar")
+dna_init("dna-2.0-beta22.jar")
 
 # If you use the current beta version (e.g., you have just downloaded it via
 # dna_downloadJar) you can omit the file name

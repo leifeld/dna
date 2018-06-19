@@ -11,7 +11,7 @@ dna_plotTimeWindow(x, facetValues = "all", include.y = NULL, rows = NULL,
 \item{x}{A \code{dna_timeWindow} object created by the \link{dna_timeWindow}
 function.}
 
-\item{facetValues}{The name or names of the facet values which should be 
+\item{facetValues}{The name or names of the facet values which should be
 included in the plot.}
 
 \item{include.y}{Include specific value of facet in the plot.}
@@ -50,8 +50,8 @@ tW <- dna_timeWindow(connection = conn,
                      method = "bipolarization",
                      verbose = TRUE)
 
-dna_plotTimeWindow(tW, 
-                   facetValues = c("Bluestein, Joel", 
+dna_plotTimeWindow(tW,
+                   facetValues = c("Bluestein, Joel",
                                    "Voinovich, George",
                                    "all"),
                    rows = 2)

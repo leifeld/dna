@@ -18,11 +18,11 @@ truncated. Value \code{Inf} turns off truncation.}
 
 \item{values}{If TRUE, will display the values in the tiles of the heatmap.}
 
-\item{colours}{There are two options: When\code{"brewer} is selected, the function
+\item{colours}{There are two options: When \code{"brewer} is selected, the function
 \link[ggplot2]{scale_fill_distiller} is used to colour the heatmap tiles.
-When\code{"gradient} is selected, \link[ggplot2]{scale_fill_gradient} will be
+When \code{"gradient} is selected, \link[ggplot2]{scale_fill_gradient} will be
 used. The colour palette and low/high values can be supplied using the
-argument \code{custom_colours}}
+argument \code{custom_colours}.}
 
 \item{custom_colours}{For \code{colours = "brewer"} you can use either a
 string with a palette name or the index number of a brewer palette (see
@@ -36,7 +36,7 @@ values. Colours are then derived from a sequential colour gradient palette.
 \item{dendro_x}{If TRUE, will draw a dendrogram on the x-axis.}
 
 \item{dendro_x_size, dendro_y_size}{Control the size of the dendrograms on the
-x- and y-axis}
+x- and y-axis.}
 
 \item{qualifierLevels}{Takes a list with integer values of the qualifier
 levels (as characters) as names and character values as labels (See
