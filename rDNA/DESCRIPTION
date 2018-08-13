@@ -1,6 +1,6 @@
 Package: rDNA
-Version: 2.1.6
-Date: 2018-06-11
+Version: 2.1.7
+Date: 2018-08-13
 Title: Discourse Network Analysis in R
 Authors@R: 
     c(person("Philip", "Leifeld", email = "Philip.Leifeld@glasgow.ac.uk", 

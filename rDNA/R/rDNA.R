@@ -52,18 +52,20 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
 #' }
 #' @export
 dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE) {
-  if (!file.exists(infile)) {
-    stop(if (grepl("/", infile, fixed = TRUE)) {
-      paste0("infile \"", infile, "\" could not be located.")
-    } else {
-      paste0(
-        "infile \"",
-        infile,
-        "\" could not be located in working directory \"",
-        getwd(),
-        "\". Try dna_downloadJar() if you do not have the file already."
-      )
-    })
+  if (is.null(login) & is.null(password)) {
+    if (!file.exists(infile)) {
+      stop(if (grepl("/", infile, fixed = TRUE)) {
+        paste0("infile \"", infile, "\" could not be located.")
+      } else {
+        paste0(
+          "infile \"",
+          infile,
+          "\" could not be located in working directory \"",
+          getwd(),
+          "\". Try dna_downloadJar() if you do not have the file already."
+        )
+      })
+    }
   }
   if (!grepl("/", infile, fixed = TRUE)) {
     infile <- paste0(getwd(), "/", infile)
@@ -169,7 +171,7 @@ dna_gui <- function(infile = NULL,
   if (is.null(dnaEnvironment[["dnaJarString"]])) {
     stop("No connection between rDNA and the DNA detected. Maybe dna_init() would help.")
   }
-  if (!file.exists(infile)) {
+  if (!is.null(infile)) if (!file.exists(infile)) {
     stop(if (grepl("/", infile, fixed = TRUE)) {
       paste0("infile \"", infile, "\" could not be located.")
     } else {
