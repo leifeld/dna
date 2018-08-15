@@ -1,6 +1,6 @@
 Package: rDNA
-Version: 2.1.7
-Date: 2018-08-13
+Version: 2.1.8
+Date: 2018-08-15
 Title: Discourse Network Analysis in R
 Authors@R: 
     c(person("Philip", "Leifeld", email = "Philip.Leifeld@glasgow.ac.uk", 
@@ -15,6 +15,7 @@ Depends:
     rJava (>= 0.5-0)
 Imports: 
     cluster (>= 2.0.0),
+	coda (>= 0.19.1),
     cowplot (>= 0.9.2),
     dplyr (>= 0.7.0),
     ggplot2 (>= 2.2.1),
@@ -22,6 +23,7 @@ Imports:
     ggrepel (>= 0.7.0),
     grDevices (>= 3.0.0),
     MASS (>= 7.3.0),
+	MCMCpack (>= 1.4.3),
     network (>= 1.13.0.1),
     reshape2 (>= 1.4.3),
     rem (>= 1.2.8),
@@ -36,4 +38,4 @@ Imports:
 SystemRequirements: Java (>= 1.8), libudunits2-dev (Linux)
 License: GPL-3
 LazyData: true
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0

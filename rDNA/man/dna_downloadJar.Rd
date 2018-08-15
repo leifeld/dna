@@ -4,8 +4,8 @@
 \alias{dna_downloadJar}
 \title{Download the binary DNA JAR file}
 \usage{
-dna_downloadJar(filename = "dna-2.0-beta22.jar", filepath = character(),
-  force = FALSE)
+dna_downloadJar(filename = "dna-2.0-beta22.jar",
+  filepath = character(), force = FALSE)
 }
 \arguments{
 \item{filename}{Name of the downloaded Jar.}

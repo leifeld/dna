@@ -5,8 +5,8 @@
 \title{Recode attributes in the DNA database}
 \usage{
 dna_setAttributes(connection, attributes, statementType = 1,
-  variable = "organization", removeStatements = FALSE, simulate = TRUE,
-  verbose = TRUE)
+  variable = "organization", removeStatements = FALSE,
+  simulate = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

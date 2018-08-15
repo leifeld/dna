@@ -5,8 +5,9 @@
 \title{Plot agreement and disagreement}
 \usage{
 dna_barplot(connection, of = "concept", lab.pos = "Agreement",
-  lab.neg = "Disagreement", lab = TRUE, colours = FALSE, fontSize = 12,
-  barWidth = 0.6, axisWidth = 1.5, truncate = 40, ...)
+  lab.neg = "Disagreement", lab = TRUE, colours = FALSE,
+  fontSize = 12, barWidth = 0.6, axisWidth = 1.5, truncate = 40,
+  ...)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
