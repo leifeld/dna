@@ -1249,6 +1249,24 @@ public class ExporterR {
 	}
 
 	/**
+	 * Return numbers of statements corresponding to a time window sequence.
+	 * 
+	 * @return   array of integers representing how many statements a time window network is composed of
+	 * @throws Exception 
+	 */
+	public int[] getTimeWindowNumStatements() throws Exception {
+		int[] numStatements = new int[timeWindowMatrices.size()];
+		if (numStatements.length > 0) {
+			for (int i = 0; i < timeWindowMatrices.size(); i++) {
+				numStatements[i] = timeWindowMatrices.get(i).getNumStatements();
+			}
+		} else {
+			throw new Exception("Not a single network matrix has been generated. Does the time window size exceed the time range?");
+		}
+		return numStatements;
+	}
+
+	/**
 	 * Retrieve an object array of all document data for R.
 	 * 
 	 * @return Object array with further arrays for title, text etc.

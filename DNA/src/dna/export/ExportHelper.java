@@ -385,97 +385,116 @@ public class ExportHelper {
 			boolean includeIsolates) {
 		
 		ArrayList<Matrix> timeWindowMatrices = new ArrayList<Matrix>();
-		
-		int statementIterator = timeUnits;
-		
-		GregorianCalendar stopCalendar = new GregorianCalendar();
-		stopCalendar.setTime(stop);
-		GregorianCalendar currentStop = new GregorianCalendar();
-		currentStop.setTime(start);
-		GregorianCalendar currentStart = (GregorianCalendar) currentStop.clone();
-		if (unitType.equals("using seconds")) {
-			currentStop.add(Calendar.SECOND, timeUnits);
-		} else if (unitType.equals("using minutes")) {
-			currentStop.add(Calendar.MINUTE, timeUnits);
-		} else if (unitType.equals("using hours")) {
-			currentStop.add(Calendar.HOUR_OF_DAY, timeUnits);
-		} else if (unitType.equals("using days")) {
-			currentStop.add(Calendar.DAY_OF_MONTH, timeUnits);
-		} else if (unitType.equals("using weeks")) {
-			currentStop.add(Calendar.WEEK_OF_YEAR, timeUnits);
-		} else if (unitType.equals("using months")) {
-			currentStop.add(Calendar.MONTH, timeUnits);
-		} else if (unitType.equals("using years")) {
-			currentStop.add(Calendar.YEAR, timeUnits);
-		} else if (unitType.equals("using events")) {
-			if (statementIterator >= statements.size()) {
-				currentStop.setTime(statements.get(statements.size() - 1).getDate());
-			} else {
-				currentStop.setTime(statements.get(statementIterator).getDate());
-			}
-		}
-		while (!currentStop.after(stopCalendar)) {
-			ArrayList<Statement> currentStatements = new ArrayList<Statement>();
-			for (int i = 0; i < statements.size(); i++) {
-				GregorianCalendar currentTime = new GregorianCalendar();
-				currentTime.setTime(statements.get(i).getDate());
-				if (!currentTime.before(currentStart) && !currentTime.after(currentStop)) {
-					currentStatements.add(statements.get(i));
+		Collections.sort(statements);
+		ArrayList<Statement> currentWindowStatements = new ArrayList<Statement>();
+		Matrix m;
+		if (unitType.equals("using events")) {
+			int iteratorStart, iteratorStop;
+			for (int t = 0; t < statements.size(); t++) {
+				currentWindowStatements.clear();
+				iteratorStart = t - (int) Math.round((double) (timeUnits - 1) / 2);
+				iteratorStop = t + (int) Math.round((double) (timeUnits - 1) / 2);
+				if (iteratorStart >= 0 && iteratorStop < statements.size()) {
+					for (int i = iteratorStart; i <= iteratorStop; i++) {
+						currentWindowStatements.add(statements.get(i));
+					}
+					if (currentWindowStatements.size() > 0) {
+						if (includeIsolates == false) {
+							names1 = extractLabels(currentWindowStatements, statements, documents, var1, var1Document, statementType.getId(), includeIsolates);
+							names2 = extractLabels(currentWindowStatements, statements, documents, var2, var2Document, statementType.getId(), includeIsolates);
+						}
+						if (twoMode == true) {
+							boolean verbose = false;
+							m = computeTwoModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
+									var2Document, names1, names2, qualifier, qualifierAggregation, normalization, verbose);
+						} else {
+							m = computeOneModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
+									var2Document, names1, names2, qualifier, qualifierAggregation, normalization);
+						}
+						m.setDate(statements.get(t).getDate());
+						m.setNumStatements(currentWindowStatements.size());
+						timeWindowMatrices.add(m);
+					}
 				}
 			}
-			
-			if (includeIsolates == false) {
-				names1 = extractLabels(currentStatements, statements, documents, var1, var1Document, statementType.getId(), includeIsolates);
-				names2 = extractLabels(currentStatements, statements, documents, var2, var2Document, statementType.getId(), includeIsolates);
-			}
-			
-			if (twoMode == true) {
-				boolean verbose;
-				verbose = false;
-				Matrix m = computeTwoModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
-						var2Document, names1, names2, qualifier, qualifierAggregation, normalization, verbose);
-				m.setDate(currentStop.getTime());
-				timeWindowMatrices.add(m);
-			} else {
-				Matrix m = computeOneModeMatrix(currentStatements, documents, statementType, var1, var2, var1Document, 
-						var2Document, names1, names2, qualifier, qualifierAggregation, normalization);
-				m.setDate(currentStop.getTime());
-				timeWindowMatrices.add(m);
-			}
-			
-			if (unitType.equals("using seconds")) {
-				currentStart.add(Calendar.SECOND, 1);
-				currentStop.add(Calendar.SECOND, 1);
-			} else if (unitType.equals("using minutes")) {
-				currentStart.add(Calendar.MINUTE, 1);
-				currentStop.add(Calendar.MINUTE, 1);
-			} else if (unitType.equals("using hours")) {
-				currentStart.add(Calendar.HOUR_OF_DAY, 1);
-				currentStop.add(Calendar.HOUR_OF_DAY, 1);
-			} else if (unitType.equals("using days")) {
-				currentStart.add(Calendar.DAY_OF_MONTH, 1);
-				currentStop.add(Calendar.DAY_OF_MONTH, 1);
-			} else if (unitType.equals("using weeks")) {
-				currentStart.add(Calendar.WEEK_OF_YEAR, 1);
-				currentStop.add(Calendar.WEEK_OF_YEAR, 1);
-			} else if (unitType.equals("using months")) {
-				currentStart.add(Calendar.MONTH, 1);
-				currentStop.add(Calendar.MONTH, 1);
-			} else if (unitType.equals("using years")) {
-				currentStart.add(Calendar.YEAR, 1);
-				currentStop.add(Calendar.YEAR, 1);
-			} else if (unitType.equals("using events")) {
-				if (statementIterator + 1 < statements.size()) {
-					statementIterator = statementIterator + 1;
-					currentStop.setTime(statements.get(statementIterator).getDate());
-				} else {
-					currentStop.add(Calendar.YEAR, 1);  // invoke stop of while loop
+		} else {
+			GregorianCalendar startCalendar = new GregorianCalendar();  // start of statement list
+			startCalendar.setTime(start);
+			GregorianCalendar stopCalendar = new GregorianCalendar();   // end of statement list
+			stopCalendar.setTime(stop);
+			GregorianCalendar currentTime = new GregorianCalendar();    // current time while progressing through list of statements
+			currentTime.setTime(start);
+			GregorianCalendar windowStart = new GregorianCalendar();    // start of the time window
+			windowStart.setTime(start);
+			GregorianCalendar windowStop = new GregorianCalendar();     // end of the time window
+			windowStop.setTime(start);
+			GregorianCalendar iTime = new GregorianCalendar();          // time of the statement to be potentially added to the time slice
+			int addition = 0;
+			while (!currentTime.after(stopCalendar)) {
+				Date matrixTime = currentTime.getTime();
+				windowStart.setTime(matrixTime);
+				windowStop.setTime(matrixTime);
+				currentWindowStatements.clear();
+				addition = (int) Math.round(((double) timeUnits - 1) / 2);
+				if (unitType.equals("using seconds")) {
+					windowStart.add(Calendar.SECOND, -addition);
+					windowStop.add(Calendar.SECOND, addition);
+					currentTime.add(Calendar.SECOND, 1);
+				} else if (unitType.equals("using minutes")) {
+					windowStart.add(Calendar.MINUTE, -addition);
+					windowStop.add(Calendar.MINUTE, addition);
+					currentTime.add(Calendar.MINUTE, 1);
+				} else if (unitType.equals("using hours")) {
+					windowStart.add(Calendar.HOUR_OF_DAY, -addition);
+					windowStop.add(Calendar.HOUR_OF_DAY, addition);
+					currentTime.add(Calendar.HOUR_OF_DAY, 1);
+				} else if (unitType.equals("using days")) {
+					windowStart.add(Calendar.DAY_OF_MONTH, -addition);
+					windowStop.add(Calendar.DAY_OF_MONTH, addition);
+					currentTime.add(Calendar.DAY_OF_MONTH, 1);
+				} else if (unitType.equals("using weeks")) {
+					windowStart.add(Calendar.WEEK_OF_YEAR, -addition);
+					windowStop.add(Calendar.WEEK_OF_YEAR, addition);
+					currentTime.add(Calendar.WEEK_OF_YEAR, 1);
+				} else if (unitType.equals("using months")) {
+					windowStart.add(Calendar.MONTH, -addition);
+					windowStop.add(Calendar.MONTH, addition);
+					currentTime.add(Calendar.MONTH, 1);
+				} else if (unitType.equals("using years")) {
+					windowStart.add(Calendar.YEAR, -addition);
+					windowStop.add(Calendar.YEAR, addition);
+					currentTime.add(Calendar.YEAR, 1);
 				}
-				currentStart.setTime(statements.get(statementIterator - timeUnits).getDate());
+				if (!windowStart.before(startCalendar) && !windowStop.after(stopCalendar)) {
+					for (int i = 0; i < statements.size(); i++) {
+						iTime.setTime(statements.get(i).getDate());
+						if (!iTime.before(windowStart) && !iTime.after(windowStop)) {
+							currentWindowStatements.add(statements.get(i));
+						}
+					}
+					if (currentWindowStatements.size() > 0) {
+						if (includeIsolates == false) {
+							names1 = extractLabels(currentWindowStatements, statements, documents, var1, var1Document, statementType.getId(), includeIsolates);
+							names2 = extractLabels(currentWindowStatements, statements, documents, var2, var2Document, statementType.getId(), includeIsolates);
+						}
+						if (twoMode == true) {
+							boolean verbose = false;
+							m = computeTwoModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
+									var2Document, names1, names2, qualifier, qualifierAggregation, normalization, verbose);
+						} else {
+							m = computeOneModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
+									var2Document, names1, names2, qualifier, qualifierAggregation, normalization);
+						}
+						m.setDate(matrixTime);
+						m.setNumStatements(currentWindowStatements.size());
+						timeWindowMatrices.add(m);
+					}
+				}
 			}
 		}
 		return timeWindowMatrices;
 	}
+	
 	
 	/**
 	 * Create a one-mode network {@link Matrix}.
