@@ -2688,6 +2688,7 @@ dna_network <- function(connection,
   } else {
     timeLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", simplify = TRUE)
     timeLabels <- as.POSIXct(timeLabels, origin = "1970-01-01")
+    numStatements <- .jcall(connection$dna_connection, "[I", "getTimeWindowNumStatements", simplify = TRUE)
     mat <- list()
     for (t in 1:length(timeLabels)) {
       m <- .jcall(connection$dna_connection, "[[D", "getTimeWindowNetwork", as.integer(t - 1), simplify = TRUE)
@@ -2700,6 +2701,7 @@ dna_network <- function(connection,
     dta <- list()
     dta$networks <- mat
     dta$time <- timeLabels
+    dta$numStatements <- numStatements
     attributes(dta)$call <- match.call()
     class(dta) <- c(paste0("dna_network_", networkType, "_timewindows"), class(dta))
     return(dta)
@@ -2946,6 +2948,7 @@ dna_timeWindow <- function(connection,
 
       mod.m <- data.frame(index = 1:length(nw$networks),
                           Time = nw$time,
+                          NumStatements = nw$numStatements,
                           Modularity = lvmod,
                           facet = rep(facetValues[facetValues %in% x], length(nw$networks)))
       return(mod.m)
@@ -3035,6 +3038,7 @@ dna_timeWindow <- function(connection,
 
       mod.m <- data.frame(index = 1:length(nw$networks),
                           Time = nw$time,
+                          NumStatements = nw$numStatements,
                           Modularity = mod_matrix[, 1],
                           "Fast & Greedy" = mod_matrix[, 2],
                           "Walktrap" = mod_matrix[, 3],
@@ -3203,6 +3207,7 @@ dna_timeWindow <- function(connection,
 
       mod.m <- data.frame(index = 1:n,
                           Time = nw_aff$time,
+                          NumStatements = nw_aff$numStatements,
                           Modularity = mod_matrix[, 1],
                           "k-Means" = mod_matrix[, 2],
                           "Partionning around Medoids" = mod_matrix[, 3],
@@ -3286,6 +3291,7 @@ dna_timeWindow <- function(connection,
 
           mod.m <- data.frame(index = 1:length(nw$networks),
                               Time = nw$time,
+                              NumStatements = nw$numStatements,
                               x = results,
                               facet = rep(facetValues[facetValues %in% x], length(nw$networks)))
           colnames(mod.m)[3] <- deparse(quote(method))
@@ -5529,16 +5535,16 @@ dna_plotTimeWindow <- function(x,
                                cols = NULL,
                                diagnostics = FALSE,
                                ...) {
-  method <- colnames(x)[3]
+  method <- colnames(x)[4]
   if (!any(class(x) %in% "dna_timeWindow")) {
     warning("x is not an object of class \"dna_timeWindow\".")
   }
   if (identical(facetValues, "all")) {
     if (diagnostics == TRUE) {
       x_long <- x[, -ncol(x)]
-      x_long <- melt(x_long, id.vars = c("index", "Time"))
-      colnames(x_long)[3] <- "Measure"
-      colnames(x_long)[4] <- "Polarization"
+      x_long <- melt(x_long, id.vars = c("index", "Time", "NumStatements"))
+      colnames(x_long)[4] <- "Measure"
+      colnames(x_long)[5] <- "Polarization"
       ggplot2::ggplot(x_long, aes_string(x = "Time", y = "Polarization", colour = "Measure")) +
         geom_line() +
         geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +

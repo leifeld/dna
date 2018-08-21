@@ -17,12 +17,27 @@ public class Matrix {
 	String[] rownames, colnames;
 	boolean integer;
 	Date date;
+	int numStatements;
 	
 	public Matrix(double[][] matrix, String[] rownames, String[] colnames, boolean integer) {
 		this.matrix = matrix;
 		this.rownames = rownames;
 		this.colnames = colnames;
 		this.integer = integer;
+	}
+
+	/**
+	 * @return the numStatements
+	 */
+	public int getNumStatements() {
+		return numStatements;
+	}
+
+	/**
+	 * @param numStatements the numStatements to set
+	 */
+	public void setNumStatements(int numStatements) {
+		this.numStatements = numStatements;
 	}
 
 	/**
