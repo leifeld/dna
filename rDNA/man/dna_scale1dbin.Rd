@@ -27,19 +27,19 @@ dna_scale1dbin(connection, variable1 = "organization",
 \item{qualifier}{The qualifier variable for the scaling construction (see
 \link{dna_network}). Defaults to \code{"agreement"}.}
 
-\item{zero_as_na}{Logical. If \code{TRUE}, all non-mentions of an actor towards a 
+\item{zero_as_na}{Logical. If \code{TRUE}, all non-mentions of an actor towards a
 concept will be recoded as NA, if \code{FALSE} as zero.}
 
-\item{threshold}{Numerical value that specifies when a mixed position can be considered as 
-agreement or disagreement. If e.g. one actor has 60 percent of agreeing and 40 percent 
-of disagreeing statements towards a concept, a threshold of 0.6 will recode the actor 
-position on this concept as "agreement". All values in between the positive and negative 
-threshold will be recoded as NA. If the threshold is set to NULL, all "mixed" positions of 
+\item{threshold}{Numerical value that specifies when a mixed position can be considered as
+agreement or disagreement. If e.g. one actor has 60 percent of agreeing and 40 percent
+of disagreeing statements towards a concept, a threshold of 0.6 will recode the actor
+position on this concept as "agreement". All values in between the positive and negative
+threshold will be recoded as NA. If the threshold is set to NULL, all "mixed" positions of
 actors will be recoded as NA.}
 
-\item{theta_constraints}{A list specifying the constraints on the actor parameter. 
-Three possible forms of constraints are possible: \code{actorname = value}, 
-which will constrain an actor to be equal to the specified value (e.g. 0), 
+\item{theta_constraints}{A list specifying the constraints on the actor parameter.
+Three possible forms of constraints are possible: \code{actorname = value},
+which will constrain an actor to be equal to the specified value (e.g. 0),
 \code{actorname = "+"}, which will constrain the actor to be positively scaled and
 \code{actorname = "-"}, which will constrain the actor to be negatively scaled (see
 example).}
@@ -48,48 +48,48 @@ example).}
 
 \item{mcmc_burnin}{The number of burn-in iterations for the sampler.}
 
-\item{mcmc_thin}{The thinning interval for the sampler. Iterations must be divisible 
+\item{mcmc_thin}{The thinning interval for the sampler. Iterations must be divisible
 by the thinning interval.}
 
 \item{mcmc_normalize}{Logical. Should the MCMC output be normalized?}
 
 \item{theta_start}{The starting values for the actor parameters. Can either be a scalar
-or a column vector equal to the number of actors included in the scaling. If set to the 
-default NA, starting values will be set according to an eigenvalue-eigenvector 
+or a column vector equal to the number of actors included in the scaling. If set to the
+default NA, starting values will be set according to an eigenvalue-eigenvector
 decomposition of the actor agreement score.}
 
-\item{alpha_start}{The starting values for the concept difficulty parameters. Can either 
-be a scalar or a column vector equal to the number of actors included in the scaling. If 
-set to the default NA, starting values will be set according to a series of probit 
+\item{alpha_start}{The starting values for the concept difficulty parameters. Can either
+be a scalar or a column vector equal to the number of actors included in the scaling. If
+set to the default NA, starting values will be set according to a series of probit
 regressions that condition the starting values of the difficulty parameters.}
 
-\item{beta_start}{The starting values for the concept discrimination parameters. Can 
-either be a scalar or a column vector equal to the number of actors included in the 
-scaling. If set to the default NA, starting values will be set according to a series of 
+\item{beta_start}{The starting values for the concept discrimination parameters. Can
+either be a scalar or a column vector equal to the number of actors included in the
+scaling. If set to the default NA, starting values will be set according to a series of
 probit regressions that condition the starting values of the discrimination parameters.}
 
 \item{theta_prior_mean}{A scalar value specifying the prior mean of the actor parameters.}
 
-\item{theta_prior_variance}{A scalar value specifying the prior inverse variances of the 
+\item{theta_prior_variance}{A scalar value specifying the prior inverse variances of the
 actor parameters.}
 
 \item{alpha_beta_prior_mean}{Mean of the difficulty and discrimination parameters. Can
 either be a scalar or a 2-vector. If a scalar, both means will be set according to the
 specified value.}
 
-\item{alpha_beta_prior_variance}{Inverse variance of the difficulty and discrimination 
-parameters. Can either be a scalar or a 2-vector. If a scalar, both means will be set 
+\item{alpha_beta_prior_variance}{Inverse variance of the difficulty and discrimination
+parameters. Can either be a scalar or a 2-vector. If a scalar, both means will be set
 according to the specified value.}
 
 \item{store_variables}{A character vector indicating which variables should be stored
-from the scaling. Can either take the value of the character vector indicated in 
+from the scaling. Can either take the value of the character vector indicated in
 \code{variable1} or \code{variable2} or \code{"both"} to store both variables. Defaults
 to \code{"both"}.}
 
 \item{drop_constant_items}{Logical. Should concepts that have no variation be
 deleted before the scaling? Defaults to \code{FALSE}.}
 
-\item{drop_min_actors}{A numeric value specifying the minimum number of concepts actors 
+\item{drop_min_actors}{A numeric value specifying the minimum number of concepts actors
 should have mentioned to be included in the scaling.}
 
 \item{verbose}{A boolean or numeric value indicating whether the iterations of the scaling
@@ -97,44 +97,46 @@ should be printed to the R console. Defaults to \code{TRUE}.}
 
 \item{seed}{The seed for the scaling.}
 
-\item{...}{Additional arguments passed to \link{dna_network}. Actors can e.g. be removed 
+\item{...}{Additional arguments passed to \link{dna_network}. Actors can e.g. be removed
 with the \code{excludeValues} arguments. The scaling can also be applied to a specific time
 slice by using \code{start.date} and \code{stop.date}.}
 }
 \description{
-Scale ideological positions of actors and concepts from a DNA connection by using 
-Markov Chain Monte Carlo for binary one-dimensional Item Response Theory. This is one of 
-the four scaling functions. For one-dimensional ordinal scaling see \link{dna_scale1dord}, 
-for multi-dimensional binary scaling see \link{dna_scaleKdbin} and for multi-dimensional 
+Scale ideological positions of actors and concepts from a DNA connection by using
+Markov Chain Monte Carlo for binary one-dimensional Item Response Theory. This is one of
+the four scaling functions. For one-dimensional ordinal scaling see \link{dna_scale1dord},
+for multi-dimensional binary scaling see \link{dna_scaleKdbin} and for multi-dimensional
 ordinal scaling \link{dna_scaleKdord}.
 }
 \details{
 This function is a convenience wrapper for the \link[MCMCpack]{MCMCirt1d} function.
-Using Markov Chain Monte Carlo (MCMC), \code{dna_scale1dbin} generates a sample from the 
+Using Markov Chain Monte Carlo (MCMC), \code{dna_scale1dbin} generates a sample from the
 posterior distribution using standard Gibbs sampling. For the model form see the details
 in \link[MCMCpack]{MCMCirt1d}.
 
-\code{dna_scale1dbin} internally uses the \code{combine} qualifier aggregation and then 
+\code{dna_scale1dbin} internally uses the \code{combine} qualifier aggregation and then
 recodes the values into 0 for disagreement, 1 for agreement and NA for mixed positions and
 non-mentions of concepts. However, you can further relax the recoding of NA values by
-setting all non-mentions as disagreement with \code{zero_as_na}. By setting a 
+setting all non-mentions as disagreement with \code{zero_as_na}. By setting a
 \code{threshold} you can further decide at which percentage of agreement and disagreement
 an actor position on a concept can be considered as agreement/disagreement or mixed position.
-The argument \code{drop_min_actors} excludes actors which have only used a limited number 
-of concepts. Limited participation of actors in a debate can impact the scaling of the 
+The argument \code{drop_min_actors} excludes actors which have only used a limited number
+of concepts. Limited participation of actors in a debate can impact the scaling of the
 ideal points, as actors with only few mentions of concepts convey limited information
-on their ideological position. Reducing the number of actors to be scaled hence improves 
+on their ideological position. Reducing the number of actors to be scaled hence improves
 the precision of the ideological positions of actors and the scaling itself.
 
-As \code{dna_scale1dbin} is a Bayesian Item Response Theory approach, priors and starting 
-values can be set on the actor and concept parameters. Constraints on the actor parameters 
-can also be specified to help identifying the model and to indicate in which direction 
-ideological positions of actors and concepts run. The returned MCMC output can also be 
-post-processed by normalizing the estimated parameters for each iteration through 
+As \code{dna_scale1dbin} is a Bayesian Item Response Theory approach, priors and starting
+values can be set on the actor and concept parameters. Constraints on the actor parameters
+can also be specified to help identifying the model and to indicate in which direction
+ideological positions of actors and concepts run. The returned MCMC output can also be
+post-processed by normalizing the estimated parameters for each iteration through
 \code{mcmc_normalize}.
 
-To plot the resulting ideal points of actors and concepts, you can use the 
-\link{dna_plotScale} function.
+To plot the resulting ideal points of actors and concepts, you can use the
+\link{dna_plotScale} function. To assess if the returned MCMC chain has converged to its
+stationary distribution, please use \link{dna_convergenceScale}. The evaluation of
+convergence is essential to report conclusions based on accurate parameter estimates.
 }
 \examples{
 \dontrun{
@@ -162,9 +164,9 @@ dna_scale <- dna_scale1dbin(connection,
                             drop_constant_items = FALSE,
                             drop_min_actors = 1,
                             verbose = TRUE,
-                            seed = 12345)               
+                            seed = 12345)
                             }
-                            
+
 }
 \author{
 Tim Henrichsen, Johannes B. Gruber

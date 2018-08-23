@@ -10,7 +10,7 @@ dna_scaleKdbin(connection, variable1 = "organization",
   mcmc_iterations = 20000, mcmc_burnin = 2000, mcmc_thin = 10,
   alpha_beta_start = NA, alpha_beta_prior_mean = 0,
   alpha_beta_prior_variance = 1, store_variables = "both",
-  drop_constant_items = FALSE, drop_min_actors = 1, verbose = 1000,
+  drop_constant_items = FALSE, drop_min_actors = 1, verbose = TRUE,
   seed = 12345, ...)
 }
 \arguments{
@@ -26,27 +26,27 @@ dna_scaleKdbin(connection, variable1 = "organization",
 \item{qualifier}{The qualifier variable for the scaling construction (see
 \link{dna_network}). Defaults to \code{"agreement"}.}
 
-\item{zero_as_na}{Logical. If \code{TRUE}, all non-mentions of an actor towards a 
+\item{zero_as_na}{Logical. If \code{TRUE}, all non-mentions of an actor towards a
 concept will be recoded as NA, if \code{FALSE} as zero.}
 
-\item{threshold}{Numerical value that specifies when a mixed position can be considered as 
-agreement or disagreement. If e.g. one actor has 60 percent of agreeing and 40 percent 
-of disagreeing statements towards a concept, a threshold of 0.6 will recode the actor 
-position on this concept as "agreement". All values in between the positive and negative 
-threshold will be recoded as NA. If the threshold is set to NULL, all "mixed" positions of 
+\item{threshold}{Numerical value that specifies when a mixed position can be considered as
+agreement or disagreement. If e.g. one actor has 60 percent of agreeing and 40 percent
+of disagreeing statements towards a concept, a threshold of 0.6 will recode the actor
+position on this concept as "agreement". All values in between the positive and negative
+threshold will be recoded as NA. If the threshold is set to NULL, all "mixed" positions of
 actors will be recoded as NA.}
 
 \item{dimensions}{The number of dimensions to be fitted.}
 
 \item{item_constraints}{A list of lists specifying constraints on the concept parameters.
 Three possible forms of constraints are possible: \code{conceptname = list(2, value)}
-,which will constrain a concept to be equal to the specified value (e.g. 0) 
-on the first dimension of the item discrimination parameter. \code{conceptname = list(2,"+")} 
-will constrain the concept to be positively scaled on the first dimension and 
-\code{conceptname = list(2, "-")} will constrain the concept to be negatively scaled on 
-the first dimension (see example). Note that first column refers to the negative item 
-difficulty parameters, which in general should not be constrained. Therefore use  
-K+1 dimensions for constraints on the item discrimination parameters on the respective 
+,which will constrain a concept to be equal to the specified value (e.g. 0)
+on the first dimension of the item discrimination parameter. \code{conceptname = list(2,"+")}
+will constrain the concept to be positively scaled on the first dimension and
+\code{conceptname = list(2, "-")} will constrain the concept to be negatively scaled on
+the first dimension (see example). Note that first column refers to the negative item
+difficulty parameters, which in general should not be constrained. Therefore use
+K+1 dimensions for constraints on the item discrimination parameters on the respective
 dimensions (see example).}
 
 \item{mcmc_iterations}{The number of iterations for the sampler.}
@@ -56,28 +56,28 @@ dimensions (see example).}
 \item{mcmc_thin}{The thinning interval for the sampler. Iterations
 must be divisible by the thinning interval.}
 
-\item{alpha_beta_start}{Starting values for the item difficulty and discrimination 
-parameters. Can be either a scalar or a matrix. If set to NA, the starting values 
-for the unconstrained concepts are set to values generated from a series of proportional 
-odds logistic regression fits and starting values for inequality constrained elements 
+\item{alpha_beta_start}{Starting values for the item difficulty and discrimination
+parameters. Can be either a scalar or a matrix. If set to NA, the starting values
+for the unconstrained concepts are set to values generated from a series of proportional
+odds logistic regression fits and starting values for inequality constrained elements
 are set to either 1.0 or -1.0, depending on the nature of the constraints.}
 
-\item{alpha_beta_prior_mean}{The prior means for the item difficulty and discrimination 
+\item{alpha_beta_prior_mean}{The prior means for the item difficulty and discrimination
 parameters.}
 
-\item{alpha_beta_prior_variance}{The inverse variances of the item difficulty and 
-discrimination parameters. Can either be a scalar or a matrix of dimensions 
+\item{alpha_beta_prior_variance}{The inverse variances of the item difficulty and
+discrimination parameters. Can either be a scalar or a matrix of dimensions
 K+1 times concepts.}
 
 \item{store_variables}{A character vector indicating which variables should be stored
-from the scaling. Can either take the value of the character vector indicated in 
+from the scaling. Can either take the value of the character vector indicated in
 \code{variable1} or \code{variable2} or \code{"both"} to store both variables. Defaults
 to \code{"both"}.}
 
 \item{drop_constant_items}{Logical. Should concepts that have no variation be
 deleted before the scaling? Defaults to \code{FALSE}.}
 
-\item{drop_min_actors}{A numeric value specifying the minimum number of concepts actors 
+\item{drop_min_actors}{A numeric value specifying the minimum number of concepts actors
 should have mentioned to be included in the scaling.}
 
 \item{verbose}{A boolean or numeric value indicating whether the iterations of the scaling
@@ -85,51 +85,53 @@ should be printed to the R console. Defaults to \code{TRUE}.}
 
 \item{seed}{The seed for the scaling.}
 
-\item{...}{Additional arguments passed to \link{dna_network}. Actors can e.g. be removed 
+\item{...}{Additional arguments passed to \link{dna_network}. Actors can e.g. be removed
 with the \code{excludeValues} arguments. The scaling can also be applied to a specific time
 slice by using \code{start.date} and \code{stop.date}.}
 }
 \description{
-Scale ideological positions of actors and concepts from a DNA connection by using 
-Markov Chain Monte Carlo for binary multi-dimensional Item Response Theory. This is one of 
-the four scaling functions. For one-dimensional binary scaling see \link{dna_scale1dbin}, 
-for one-dimensional ordinal scaling see \link{dna_scale1dord} and for multi-dimensional 
+Scale ideological positions of actors and concepts from a DNA connection by using
+Markov Chain Monte Carlo for binary multi-dimensional Item Response Theory. This is one of
+the four scaling functions. For one-dimensional binary scaling see \link{dna_scale1dbin},
+for one-dimensional ordinal scaling see \link{dna_scale1dord} and for multi-dimensional
 ordinal scaling \link{dna_scaleKdord}.
 }
 \details{
 This function is a convenience wrapper for the \link[MCMCpack]{MCMCirtKd} function.
-Using Markov Chain Monte Carlo (MCMC), \code{dna_scaleKdbin} generates a sample from the 
+Using Markov Chain Monte Carlo (MCMC), \code{dna_scaleKdbin} generates a sample from the
 posterior distribution using standard Gibbs sampling. For the model form see the details
 in \link[MCMCpack]{MCMCirtKd}.
 
-\code{dna_scaleKdbin} internally uses the \code{combine} qualifier aggregation and then 
+\code{dna_scaleKdbin} internally uses the \code{combine} qualifier aggregation and then
 recodes the values into 0 for disagreement, 1 for agreement and NA for mixed positions and
 non-mentions of concepts. However, you can further relax the recoding of NA values by
-setting all non-mentions as disagreement with \code{zero_as_na}. By setting a 
+setting all non-mentions as disagreement with \code{zero_as_na}. By setting a
 \code{threshold} you can further decide at which percentage of agreement and disagreement
 an actor position on a concept can be considered as agreement/disagreement or mixed position.
-The argument \code{drop_min_actors} excludes actors which have only used a limited number 
-of concepts. Limited participation of actors in a debate can impact the scaling of the 
+The argument \code{drop_min_actors} excludes actors which have only used a limited number
+of concepts. Limited participation of actors in a debate can impact the scaling of the
 ideal points, as actors with only few mentions of concepts convey limited information
-on their ideological position. Reducing the number of actors to be scaled hence improves 
+on their ideological position. Reducing the number of actors to be scaled hence improves
 the precision of the ideological positions of actors and the scaling itself.
 
-As \code{dna_scaleKdbin} is a Bayesian Item Response Theory approach, priors and starting 
-values can be set on the actor and concept parameters. Constraints on the actor parameters 
-can also be specified to help identifying the model and to indicate in which direction 
-ideological positions of actors and concepts run. Fitting multi-dimensional scaling models 
-requires a good choice of item discrimination parameter constraints to specify the 
-ideological dimensions of your data. A suitable way identifying the dimensions is to 
-constrain one or two item discrimination parameters to load only on one dimension. This
-means that we set one/two parameter to load either positive or negative on one dimension  
-and setting it to zero on the other. Please note that the first column in the 
-\code{item_constraints} argument refers to the item difficulty parameters which should not 
+As \code{dna_scaleKdbin} is a Bayesian Item Response Theory approach, priors and starting
+values can be set on the actor and concept parameters. Constraints on the actor parameters
+can also be specified to help identifying the model and to indicate in which direction
+ideological positions of actors and concepts run. Fitting multi-dimensional scaling models
+requires a good choice of item discrimination parameter constraints to specify the
+ideological dimensions of your data. A suitable way identifying the dimensions is to
+constrain one item discrimination parameter to load only on one dimension. This
+means that we set one parameter to load either positive or negative on one dimension
+and setting it to zero on the other. Please note that the first column in the
+\code{item_constraints} argument refers to the item difficulty parameters which should not
 be constrained. To constrain an item discrimination parameter on the first dimension use e.g.
-\code{conceptname = list(2, "+")}, \code{conceptname = list(3, "-")} for 
+\code{conceptname = list(2, "+")}, \code{conceptname = list(3, "-")} for
 the second dimension and so on (see also the example).
 
-To plot the resulting ideal points of actors and concepts, you can use the 
-\link{dna_plotScale} function.
+To plot the resulting ideal points of actors and concepts, you can use the
+\link{dna_plotScale} function. To assess if the returned MCMC chain has converged to its
+stationary distribution, please use \link{dna_convergenceScale}. The evaluation of
+convergence is essential to report conclusions based on accurate parameter estimates.
 }
 \examples{
 \dontrun{
@@ -140,14 +142,12 @@ dna_scale <- dna_scaleKdbin(connection,
                             zero_as_na = TRUE,
                             threshold = 0.6,
                             item_constraints = list(
-                            `Climate change is caused by greenhouse gases (CO2).` = 
+                            `Climate change is caused by greenhouse gases (CO2).` =
                             list(2, "-"),
-                            `Climate change is caused by greenhouse gases (CO2).` = 
+                            `Climate change is caused by greenhouse gases (CO2).` =
                             c(3, 0),
-                            `CO2 legislation will not hurt the economy.` = 
-                            list(3, "-"),
-                            `CO2 legislation will not hurt the economy.` = 
-                            c(2, 0)),
+                            `CO2 legislation will not hurt the economy.` =
+                            list(3, "-")),
                             mcmc_iterations = 20000,
                             mcmc_burnin = 2000,
                             mcmc_thin = 10,

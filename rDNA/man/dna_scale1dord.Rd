@@ -26,24 +26,24 @@ dna_scale1dord(connection, variable1 = "organization",
 \item{qualifier}{The qualifier variable for the scaling construction (see
 \link{dna_network}). Defaults to \code{"agreement"}.}
 
-\item{zero_as_na}{Logical. If \code{TRUE}, all non-mentions of an actor towards a 
+\item{zero_as_na}{Logical. If \code{TRUE}, all non-mentions of an actor towards a
 concept will be recoded as NA, if \code{FALSE} as zero.}
 
-\item{threshold}{Numerical value that specifies when a mixed position can be considered as 
-agreement or disagreement. If e.g. one actor has 60 percent of agreeing and 40 percent 
-of disagreeing statements towards a concept, a threshold of 0.6 will recode the actor 
-position on this concept as "agreement". All values in between the positive and negative 
-threshold will be recoded as NA. If the threshold is set to NULL, all "mixed" positions of 
+\item{threshold}{Numerical value that specifies when a mixed position can be considered as
+agreement or disagreement. If e.g. one actor has 60 percent of agreeing and 40 percent
+of disagreeing statements towards a concept, a threshold of 0.6 will recode the actor
+position on this concept as "agreement". All values in between the positive and negative
+threshold will be recoded as NA. If the threshold is set to NULL, all "mixed" positions of
 actors will be recoded as NA.}
 
 \item{lambda_constraints}{A list of lists specifying constraints on the concept parameters.
 Three possible forms of constraints are possible: \code{conceptname = list(2
-, value)}, which will constrain a concept to be equal to the specified value (e.g. 0) 
-on the first dimension of the item discrimination parameter. \code{conceptname = list(2, 
-"+")} will constrain the concept to be positively scaled on the first dimension and 
-\code{conceptname = list(2, "-")} will constrain the concept to be negatively scaled on 
-the first dimension (see example). Note that first column refers to the negative item 
-difficulty parameters, which in general should not be constrained. Therefore use "2" 
+, value)}, which will constrain a concept to be equal to the specified value (e.g. 0)
+on the first dimension of the item discrimination parameter. \code{conceptname = list(2,
+"+")} will constrain the concept to be positively scaled on the first dimension and
+\code{conceptname = list(2, "-")} will constrain the concept to be negatively scaled on
+the first dimension (see example). Note that first column refers to the negative item
+difficulty parameters, which in general should not be constrained. Therefore use "2"
 instead of "1" for this model (see example).}
 
 \item{mcmc_iterations}{The number of iterations for the sampler.}
@@ -53,32 +53,32 @@ instead of "1" for this model (see example).}
 \item{mcmc_thin}{The thinning interval for the sampler. Iterations
 must be divisible by the thinning interval.}
 
-\item{mcmc_tune}{The tuning parameter for the sampler. Can be either a scalar or a k-vector. 
+\item{mcmc_tune}{The tuning parameter for the sampler. Can be either a scalar or a k-vector.
 Must be strictly positive.}
 
 \item{mcmc_normalize}{Logical. Should the MCMC output be normalized?}
 
-\item{lambda_start}{Starting values for the concept parameters. Can be either a scalar 
-or a matrix. If set to NA (default), the starting values for the unconstrained parameters 
-in the first column are based on the observed response patterns. The remaining 
-unconstrained elements are set to starting values of either 1.0 or -1.0, depending on 
+\item{lambda_start}{Starting values for the concept parameters. Can be either a scalar
+or a matrix. If set to NA (default), the starting values for the unconstrained parameters
+in the first column are based on the observed response patterns. The remaining
+unconstrained elements are set to starting values of either 1.0 or -1.0, depending on
 the nature of the constraint.}
 
 \item{lambda_prior_mean}{The prior mean of the concept parameters. Can be either a scalar
 or a matrix.}
 
-\item{lambda_prior_variance}{The prior inverse variances of the concept parameters. Can be 
+\item{lambda_prior_variance}{The prior inverse variances of the concept parameters. Can be
 either a scalar or a matrix.}
 
 \item{store_variables}{A character vector indicating which variables should be stored
-from the scaling. Can either take the value of the character vector indicated in 
+from the scaling. Can either take the value of the character vector indicated in
 \code{variable1} or \code{variable2} or \code{"both"} to store both variables. Defaults
 to \code{"both"}.}
 
 \item{drop_constant_items}{Logical. Should concepts that have no variation be
 deleted before the scaling? Defaults to \code{FALSE}.}
 
-\item{drop_min_actors}{A numeric value specifying the minimum number of concepts actors 
+\item{drop_min_actors}{A numeric value specifying the minimum number of concepts actors
 should have mentioned to be included in the scaling.}
 
 \item{verbose}{A boolean or numeric value indicating whether the iterations of the scaling
@@ -86,45 +86,47 @@ should be printed to the R console. Defaults to \code{TRUE}.}
 
 \item{seed}{The seed for the scaling.}
 
-\item{...}{Additional arguments passed to \link{dna_network}. Actors can e.g. be removed 
+\item{...}{Additional arguments passed to \link{dna_network}. Actors can e.g. be removed
 with the \code{excludeValues} arguments. The scaling can also be applied to a specific time
 slice by using \code{start.date} and \code{stop.date}.}
 }
 \description{
-Scale ideological positions of actors and concepts from a DNA connection by using 
-Markov Chain Monte Carlo for ordinal one-dimensional Item Response Theory. This is one of 
-the four scaling functions. For one-dimensional binary scaling see \link{dna_scale1dbin}, 
-for multi-dimensional binary scaling see \link{dna_scaleKdbin} and for multi-dimensional 
+Scale ideological positions of actors and concepts from a DNA connection by using
+Markov Chain Monte Carlo for ordinal one-dimensional Item Response Theory. This is one of
+the four scaling functions. For one-dimensional binary scaling see \link{dna_scale1dbin},
+for multi-dimensional binary scaling see \link{dna_scaleKdbin} and for multi-dimensional
 ordinal scaling \link{dna_scaleKdord}.
 }
 \details{
 This function is a convenience wrapper for the \link[MCMCpack]{MCMCordfactanal} function.
-Using Markov Chain Monte Carlo (MCMC), \code{dna_scale1dord} generates a sample from the 
-posterior distribution of an ordinal data factor analysis model, using a 
-Metropolis-Hastings within Gibbs sampling algorithm. For the model form see the details 
+Using Markov Chain Monte Carlo (MCMC), \code{dna_scale1dord} generates a sample from the
+posterior distribution of an ordinal data factor analysis model, using a
+Metropolis-Hastings within Gibbs sampling algorithm. For the model form see the details
 in \link[MCMCpack]{MCMCordfactanal}.
 
-\code{dna_scale1dord} internally uses the \code{combine} qualifier aggregation and then 
-recodes the values into "1" for disagreement, "2" for mixed positions and "3" for agreement. 
-When \code{zero_is_na} is set to \code{TRUE}, non-mentions of concepts are set to NA, while 
-setting the argument to \code{FALSE} recodes them to "2" as mixed position. By setting a 
+\code{dna_scale1dord} internally uses the \code{combine} qualifier aggregation and then
+recodes the values into "1" for disagreement, "2" for mixed positions and "3" for agreement.
+When \code{zero_is_na} is set to \code{TRUE}, non-mentions of concepts are set to NA, while
+setting the argument to \code{FALSE} recodes them to "2" as mixed position. By setting a
 \code{threshold} you can further decide at which percentage of agreement and disagreement
 an actor position on a concept can be considered as agreement/disagreement or mixed position.
-The argument \code{drop_min_actors} excludes actors which have only used a limited number 
-of concepts. Limited participation of actors in a debate can impact the scaling of the 
+The argument \code{drop_min_actors} excludes actors which have only used a limited number
+of concepts. Limited participation of actors in a debate can impact the scaling of the
 ideal points, as actors with only few mentions of concepts convey limited information
-on their ideological position. Reducing the number of actors to be scaled hence improves 
+on their ideological position. Reducing the number of actors to be scaled hence improves
 the precision of the ideological positions of actors and the scaling itself.
 
-As \code{dna_scale1dord} is a Bayesian Item Response Theory approach, priors and starting 
-values can be set on concept parameters. Constraints on the concept parameters 
-can also be specified to help identifying the model and to indicate in which direction 
-ideological positions of actors and concepts run. The returned MCMC output can also be 
-post-processed by normalizing the estimated parameters for each iteration through 
+As \code{dna_scale1dord} is a Bayesian Item Response Theory approach, priors and starting
+values can be set on concept parameters. Constraints on the concept parameters
+can also be specified to help identifying the model and to indicate in which direction
+ideological positions of actors and concepts run. The returned MCMC output can also be
+post-processed by normalizing the estimated parameters for each iteration through
 \code{mcmc_normalize}.
 
-To plot the resulting ideal points of actors and concepts, you can use the 
-\link{dna_plotScale} function.
+To plot the resulting ideal points of actors and concepts, you can use the
+\link{dna_plotScale} function. To assess if the returned MCMC chain has converged to its
+stationary distribution, please use \link{dna_convergenceScale}. The evaluation of
+convergence is essential to report conclusions based on accurate parameter estimates.
 }
 \examples{
 \dontrun{
@@ -135,7 +137,7 @@ dna_scale <- dna_scale1dord(connection,
                             zero_as_na = TRUE,
                             threshold = 0.6,
                             lambda_constraints = list(
-                            `Climate change is caused by greenhouse gases (CO2).` = 
+                            `Climate change is caused by greenhouse gases (CO2).` =
                             list(2, "-")),
                             mcmc_iterations = 20000,
                             mcmc_burnin = 2000,
