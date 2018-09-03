@@ -5,64 +5,90 @@
 \title{Convergence diagnostics for \code{dna_scale} objects}
 \usage{
 dna_convergenceScale(dna_scale, variable = "both", method = "geweke",
-  colors = TRUE, nrow = 3, ncol = 3, value = NULL)
+  colors = "identity", nrow = 3, ncol = 3, value = NULL)
 }
 \arguments{
 \item{dna_scale}{A \code{dna_scale} object.}
 
-\item{variable}{Variable for assessing convergence diagnostics. If \code{"both"}, both
-stored variables from the \code{dna_scale} function call will be used. Defaults to
-\code{"both"}.}
+\item{variable}{Variable for assessing convergence diagnostics. Can either 
+be the value provided in \code{variable1} or \code{variable2} from the 
+\code{dna_scale} functions, or \code{"both"} if both stored variables 
+should be analyzed. Defaults to \code{"both"}.}
 
-\item{method}{Method for the convergence diagnostics. Supported are \code{"geweke"},
-\code{"density"} and \code{"trace"}. Defaults to \code{"geweke"}.}
+\item{method}{Method for the convergence diagnostics. Supported are 
+\code{"geweke"}, \code{"density"} and \code{"trace"}. Defaults to 
+\code{"geweke"}.}
 
-\item{colors}{Logical. Should attribute colors be used for either the
-\code{density} or \code{trace} plots? Defaults to \code{TRUE}.}
+\item{colors}{Colors for either the \code{density} or \code{trace} plots. 
+\code{"identity"} colors the variables according to the attributes in the 
+object and \code{NULL} sets colors off. You can also provide customized 
+colors directly. Possible options are either providing a single character 
+vector (if you wish to color a plot element in only one color), or a 
+character vector or data frame of at least the same length as values in 
+the object. If you use a data frame, please provide one column named 
+\code{"names"} that indicates the names of the values and one column named 
+\code{"colors"} that specifies the value colors. Defaults to 
+\code{"identity"}.}
 
 \item{nrow}{Number of rows for the facet plot.}
 
 \item{ncol}{Number of columns for the facet plot.}
 
-\item{value}{Optional character vector if only specific actors/concepts should be
+\item{value}{Optional character vector if only specific values should be 
 analyzed. If specified, \code{variable} will be ignored.}
 }
 \description{
-Convergence diagnostics for the MCMC chain created by the \code{dna_scale} functions.
+Convergence diagnostics for the MCMC chain created by the \code{dna_scale} 
+functions.
 }
 \details{
-This function offers several convergence diagnostics for the MCMC chain created by the
-\code{dna_scale} functions. There are three possible ways of assessing mixing of a chain:
+This function offers several convergence diagnostics for the MCMC chain 
+created by the \code{dna_scale} functions. Note that for the values 
+indicated in \code{variable2}, only the item discrimination parameters are 
+evaluated. There are three possible ways of assessing mixing of a chain:
 
-\code{"trace"} is a graphic inspection of the sampled values by iteration. Once the chain
-has reached its stationary distribution, the parameter values should look like a hairy
-caterpillar, meaning that the chain should not stay in the same state for too long or
-have too many consecutive steps in one direction.
+\code{"trace"} is a graphic inspection of the sampled values by iteration. 
+Once the chain has reached its stationary distribution, the parameter values 
+should look like a hairy caterpillar, meaning that the chain should not stay 
+in the same state for too long or have too many consecutive steps in one 
+direction.
 
-\code{"density"} visually analyzes the cumulative density of the sampled values for 
-each parameter. Unimodality should indicate convergence of the chain, while 
-multimodality might indicate an identification problem leading to non-convergence.
+\code{"density"} visually analyzes the cumulative density of the sampled 
+values for each parameter. Unimodality should indicate convergence of the 
+chain, while multimodality might indicate an identification problem leading 
+to non-convergence.
 
-\code{"geweke"} conducts a difference of means test for the sampled values for two 
-sections of the chain. It then compares the first 10 percent of iterations with the final 
-50 percent of iterations. If the samples are drawn from the stationary distribution of 
-the chain, a difference of means test should be statistically significant at some 
-conventional level (in our case 0.05). The returned test statistic is a standard Z-score. 
-All values should be below the 1.96 value that would indicate significance at the 
-p =< 0.05 level.
+\code{"geweke"} conducts a difference of means test for the sampled values 
+for two sections of the chain by comparing the first 10 percent of 
+iterations with the final 50 percent of iterations. If the samples are drawn 
+from the stationary distribution of the chain, a difference of means test 
+should be statistically significant at some conventional level (in our case 
+0.05). The returned test statistic is a standard Z-score. All values should 
+be below the 1.96 value which would indicate significance at the p =< 0.05 
+level.
 }
 \examples{
 \dontrun{
+dna_scale <- dna_scale1dbin(connection,
+                            variable1 = "organization",
+                            variable2 = "concept",
+                            qualifier = "agreement",
+                            threshold = 0.51,
+                            mcmc_iterations = 20000,
+                            mcmc_burnin = 2000,
+                            mcmc_thin = 10,
+                            store_variables = "both")
+                            
 dna_convergenceScale(dna_scale,
                      variable = "both",
                      method = "trace",
-                     colors = TRUE,
+                     colors = "identity",
                      nrow = 4,
                      ncol = 4)
 
 dna_convergenceScale(dna_scale,
                      method = "density",
-                     colors = TRUE,
+                     colors = NULL,
                      nrow = 1,
                      ncol = 2,
                      value = c("Senate", "Sierra Club"))

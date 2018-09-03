@@ -12,8 +12,8 @@
 \item{...}{Further options (currently not used).}
 }
 \description{
-Prints the plots of \code{dna_convergenceScale} objects, when the objects 
-to be plotted exceed a meaningful plot on one page.
+Prints the plots of a \code{dna_convergenceScale} object, when the object 
+to be plotted exceeds a meaningful plot on one page.
 }
 \details{
 In case you choose to plot a wide range of actors and/or concepts, which 
@@ -26,9 +26,12 @@ facet plots on several pages.
 dna_convergenceScale <- dna_convergenceScale(dna_scale,
                                              variable = "both",
                                              method = "trace",
-                                             colors = TRUE,
-                                             nrow = 4,
-                                             ncol = 4)
+                                             colors = NULL,
+                                             nrow = 1,
+                                             ncol = 1)
 dna_convergenceScale
-}                                       
+}
+}
+\author{
+Tim Henrichsen, Johannes B. Gruber
 }

@@ -5,96 +5,160 @@
 \title{Plot ideological ideal points from a dna_scale object}
 \usage{
 dna_plotScale(dna_scale, variable = "organization", dimensions = 1,
-  hpd = 0.95, colors = TRUE, label = TRUE, label_size = 10,
-  point_size = 4, hpd_size = 0.8, intercept = TRUE, facet = NULL,
-  truncate = 40, x_axis_label = NULL, y_axis_label = NULL, min = 1,
-  exclude = NULL)
+  hpd = 0.95, label = TRUE, label_size = 10, label_colors = NULL,
+  point_size = 4, point_colors = "identity", hpd_lwd = 0.8,
+  hpd_colors = "identity", intercept_lwd = 0.8,
+  intercept_color = "#525252", intercept_lty = "dashed",
+  intercept_alpha = 0.4, facet = NULL, truncate = 60,
+  x_axis_label = NULL, y_axis_label = NULL, exclude_min = 1,
+  exclude = NULL, custom_colors = NULL)
 }
 \arguments{
 \item{dna_scale}{A \code{dna_scale} object.}
 
 \item{variable}{Variable to be plotted.}
 
-\item{dimensions}{Number of dimensions to be plotted. To plot only the first or second
-dimension of a two dimensional scaling please use \code{2.1} or \code{2.2}. Only two
-dimensions are supported.}
+\item{dimensions}{Number of dimensions to be plotted. Valid values are 
+\code{1} and \code{2} for a one- or two-dimensional plot, and \code{2.1}
+or \code{2.2} for the first or second dimension of a two-dimensional 
+scaling.}
 
-\item{hpd}{A numeric scalar specifying the size of the Highest Posterior Density intervals.
-Defaults to \code{0.95}.}
-
-\item{colors}{Logical. Should the colors stored in the \code{dna_attributes} be used
-for plotting? Defaults to \code{TRUE}.}
+\item{hpd}{A numeric scalar specifying the size of the Highest Posterior 
+Density intervals (HPD). Defaults to \code{0.95}. \code{NULL} turns off 
+HPDs.}
 
 \item{label}{Logical. Should labels be plotted? Defaults to \code{TRUE}.}
 
-\item{label_size}{Label size in pts.}
+\item{label_size, point_size}{Label and point size in pts.}
 
-\item{point_size}{Point size in pts.}
+\item{label_colors, point_colors, hpd_colors}{Colors for the labels, points 
+and Highest Posterior Densities of the plot. Three options are available 
+for all three arguments: \code{"identity"} colors the variables according 
+to the attributes in the object. \code{NULL} sets colors off and 
+\code{"custom"} allows you to specify customized colors in the argument 
+\code{custom_colors}. For \code{label_colors} and \code{hpd_colors}, you 
+can further directly provide customized colors not indicated in 
+\code{custom_colors}. This can be useful if you prefer individual colors 
+for particular elements of the plot. Possible options are either providing 
+a single character vector (if you wish to color a plot element in only one 
+color), or a character vector or data frame of at least the same length as 
+values in the object. If you use a data frame, please provide one column 
+named \code{"names"} that indicates the names of the values and one column 
+named \code{"colors"} that specifies the value colors.}
 
-\item{hpd_size}{Highest Posterior Density intervals size in pts.}
+\item{hpd_lwd}{Highest Posterior Density interval linewidth in pts.}
 
-\item{intercept}{Logical. Should intercept be plotted?}
+\item{intercept_lwd}{Linewidth of the intercept (a vertical bar indicating 
+zero) in pts.}
 
-\item{facet}{A character vector specifying which attribute of the actors/concepts should
-be used for the facet plot.}
+\item{intercept_color}{Colors for the intercept.}
 
-\item{truncate}{Sets the number of characters to which labels should be truncated.}
+\item{intercept_lty}{A character vector providing the linetype of the 
+intercept. Valid values are \code{"solid"}, \code{"dashed"}, 
+\code{"dotted"}, \code{"twodash"}, \code{"dotdash"}, \code{"longdash"} or 
+\code{"blank"}. Defaults to \code{"dashed"}. \code{"blank"} turns off 
+intercept.}
 
-\item{x_axis_label}{A character vector specifying the x axis label name.}
+\item{intercept_alpha}{A numeric value indicating the alpha level for the 
+intercept.}
 
-\item{y_axis_label}{A character vector specifying the y axis label name.}
+\item{facet}{A character vector specifying which attribute of the variable 
+should be used for the facet plot. Valid values are \code{"type"}, 
+\code{"alias"} or \code{"notes"}.}
 
-\item{min}{A numeric value reducing the plot to actors/concepts with a minimum frequency
-of statements.}
+\item{truncate}{Sets the number of characters to which labels should be 
+truncated.}
+
+\item{x_axis_label, y_axis_label}{A character vector specifying the x and y 
+axis label name(s).}
+
+\item{exclude_min}{A numeric value reducing the plot to actors/concepts 
+with a minimum frequency of statements.}
 
 \item{exclude}{A character vector to exclude actors/concepts from the plot.}
+
+\item{custom_colors}{Customized colors for the labels, points and/or 
+Highest Posterior Density intervals. Possible options are either providing 
+a single character vector (if you wish to color a plot element in only one 
+color), or a character vector or data frame of at least the same length as 
+values in the object. If you use a data frame, please provide one column 
+named \code{"names"} that indicates the names of the values and one column 
+named \code{"colors"} that specifies the value colors.}
 }
 \description{
-Plots ideological ideal points of actors and concepts with the results of the MCMC scaling
+Plots ideological ideal points with the results of the MCMC scaling 
 performed in the \code{dna_scale} functions.
 }
 \details{
-This function is a convenience wrapper for the \code{ggplot2} package to plot ideological
-ideal points from \code{dna_scale} objects. Only two dimensions can currently be plotted.
-Highest Posterior Densities can be added to the ideal points.
+This function is a convenience wrapper for the \code{ggplot2} package to 
+plot ideological ideal points from \code{dna_scale} objects. Two different 
+variables can be plotted:
 
-Plotting all actors or concepts can create chaotic plots, you can therefore limit the plot
-by including only the most active actors or most mentioned concepts with \code{min}.
-Specific entries can be excluded with the \code{exclude} argument. Furthermore, the plot
-can be split into several facets according to the attributes of the actors and/or concepts.
+Firstly, you can plot the ideological ideal points of subjects (e.g. 
+\code{"organizations"}) which you have provided in \code{variable1} of the 
+\code{dna_scale} functions. The ideal point, which is the mean value of the 
+MCMC sample parameters, serves as as ideological position of an actor in a 
+e.g. ideological or policy dimension.
+
+Secondly, you can plot the item discrimination parameter of the variable 
+provided in \code{variable2} of \code{dna_scale} (e.g. \code{"concepts"}). 
+The item discrimination parameter indicates how well for example a specific 
+\code{"concept"} separates actors in the ideological space.
+
+By providing colors in the \code{custom_colors} argument, you can tailor the 
+plot by specifying customized colors for the ideal points, their Highest 
+Posterior Densities (HPD), or the ideal point labels. If you wish to 
+distinguish the HPD and/or label colors from the point or 
+\code{custom_colors}, you can also directly specify them in the 
+\code{hpd_colors} or \code{label_colors} argument.
+
+Plotting all actors or concepts can create chaotic plots, you can therefore 
+limit the plot by including only the most active actors or most prominent 
+concepts with \code{exclude_min}. Specific entries can be excluded with the 
+\code{exclude} argument. Furthermore, the plot can be split into several 
+facets according to the attributes of the variables.
 }
 \examples{
 \dontrun{
+
+dna_scale <- dna_scale1dbin(connection,
+                            variable1 = "organization",
+                            variable2 = "concept",
+                            qualifier = "agreement",
+                            threshold = 0.51,
+                            mcmc_iterations = 20000,
+                            mcmc_burnin = 2000,
+                            mcmc_thin = 10,
+                            store_variables = "both")
 dna_plotScale(dna_scale,
               variable = "organization",
               dimensions = 1,
               hpd = 0.95,
-              label = TRUE,
-              label_size = 10,
-              point_size = 4,
-              hpd_size = 0.8,
-              intercept = TRUE,
-              facet = "type",
-              truncate = NULL,
-              x_axis_label = "Ideological Ideal Point",
-              min = 1,
+              point_colors = "identity",
               exclude = c("Environmental Protection Agency", "Senate"))
 
+# Customized plot
 dna_plotScale(dna_scale,
-              variable = "concept",
-              dimensions = 2.1,
+              variable = "organization",
+              dimensions = 1,
               hpd = 0.95,
+              point_colors = "custom",
               label = TRUE,
               label_size = 10,
+              label_colors = "custom",
               point_size = 4,
-              hpd_size = 0.8,
-              intercept = TRUE,
-              facet = NULL,
-              truncate = 40,
+              hpd_colors = "custom",
+              hpd_lwd = 0.2,
+              intercept_color = "#'525252",
+              intercept_lty = "solid",
+              intercept_lwd = 0.8,
+              intercept_alpha = 0.4,
               x_axis_label = "Ideological Ideal Point",
-              min = 1,
-              exclude = "There should be legislation to regulate emissions.")
-              }
+              exclude_min = 6,
+              custom_colors = c("Sierra Club" = "#'33a02c",
+                                "Environmental Protection Agency" = "#'fdbf6f",
+                                "U.S. Public Interest Research Group" = "#'b15928"))
+}
 
 }
 \author{
