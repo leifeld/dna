@@ -7,7 +7,8 @@
 dna_plotHeatmap(clust, truncate = 40, values = FALSE,
   colours = character(), custom_colours = character(), square = TRUE,
   dendro_x = TRUE, dendro_x_size = 0.2, dendro_y_size = 0.2,
-  qualifierLevels = list(`0` = "no", `1` = "yes"), show_legend = TRUE, ...)
+  qualifierLevels = list(`0` = "no", `1` = "yes"), show_legend = TRUE,
+  ...)
 }
 \arguments{
 \item{clust}{A \code{dna_cluster} object created by the \link{dna_cluster}

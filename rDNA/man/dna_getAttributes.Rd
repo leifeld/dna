@@ -4,8 +4,8 @@
 \alias{dna_getAttributes}
 \title{Retrieve a dataframe with attributes from a DNA connection.}
 \usage{
-dna_getAttributes(connection, statementType = 1, variable = "organization",
-  values = NULL)
+dna_getAttributes(connection, statementType = 1,
+  variable = "organization", values = NULL)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

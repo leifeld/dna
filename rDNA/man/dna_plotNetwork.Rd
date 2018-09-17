@@ -4,13 +4,14 @@
 \alias{dna_plotNetwork}
 \title{Plots a network from DNA data}
 \usage{
-dna_plotNetwork(x, layout = "auto", edges = "link", edge_weight = TRUE,
-  edge_size_range = c(0.2, 2), edge_colour = "grey", edge_alpha = 1,
-  node_size = 6, node_attribute = "color", node_colours = "auto",
+dna_plotNetwork(x, layout = "auto", edges = "link",
+  edge_weight = TRUE, edge_size_range = c(0.2, 2),
+  edge_colour = "grey", edge_alpha = 1, node_size = 6,
+  node_attribute = "color", node_colours = "auto",
   custom_colours = character(), node_shape = 19, node_label = TRUE,
   font_size = 6, theme = "graph", label_repel = 0.5,
-  label_lines = FALSE, truncate = 30, groups = list(), threshold = NULL,
-  seed = 12345, show_legend = TRUE, ...)
+  label_lines = FALSE, truncate = 30, groups = list(),
+  threshold = NULL, seed = 12345, show_legend = TRUE, ...)
 }
 \arguments{
 \item{x}{A \code{dna_network} object created by the \link{dna_network}

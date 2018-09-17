@@ -4,9 +4,10 @@
 \alias{dna_addAttribute}
 \title{Add an attribute to the DNA database}
 \usage{
-dna_addAttribute(connection, statementType = 1, variable = "organization",
-  value = "new value", color = "#000000", type = "", alias = "",
-  notes = "", returnID = FALSE, verbose = TRUE)
+dna_addAttribute(connection, statementType = 1,
+  variable = "organization", value = "new value", color = "#000000",
+  type = "", alias = "", notes = "", returnID = FALSE,
+  verbose = TRUE)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

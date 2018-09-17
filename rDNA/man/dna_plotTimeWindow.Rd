@@ -4,8 +4,8 @@
 \alias{dna_plotTimeWindow}
 \title{Plot \link{dna_timeWindow} objects}
 \usage{
-dna_plotTimeWindow(x, facetValues = "all", include.y = NULL, rows = NULL,
-  cols = NULL, diagnostics = FALSE, ...)
+dna_plotTimeWindow(x, facetValues = "all", include.y = NULL,
+  rows = NULL, cols = NULL, diagnostics = FALSE, ...)
 }
 \arguments{
 \item{x}{A \code{dna_timeWindow} object created by the \link{dna_timeWindow}
