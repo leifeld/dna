@@ -2297,7 +2297,7 @@ dna_timeWindow <- function(connection,
                           NumStatements = nw_aff$numStatements,
                           Modularity = mod_matrix[, 1],
                           "k-Means" = mod_matrix[, 2],
-                          "Partionning around Medoids" = mod_matrix[, 3],
+                          "Partitioning around Medoids" = mod_matrix[, 3],
                           "Hierarchical Clustering (Ward)" = mod_matrix[, 4],
                           "Hierarchical Clustering (Complete)" = mod_matrix[, 5],
                           "Fast & Greedy" = mod_matrix[, 6],
@@ -4113,7 +4113,7 @@ dna_plotTimeWindow <- function(x,
       x_long <- melt(x_long, id.vars = c("index", "Time", "NumStatements"))
       colnames(x_long)[4] <- "Measure"
       colnames(x_long)[5] <- "Polarization"
-      ggplot2::ggplot(x_long, aes_string(x = "Time", y = "Polarization", colour = "Measure")) +
+      ggplot2::ggplot(x_long, aes_string(x = "Time", y = "Polarization")) +
         geom_line() +
         geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
         facet_wrap(~ Measure, nrow = rows, ncol = cols) +
