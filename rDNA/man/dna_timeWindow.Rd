@@ -4,10 +4,10 @@
 \alias{dna_timeWindow}
 \title{Computes a temporal sequence of networks}
 \usage{
-dna_timeWindow(connection, method = "bipolarization", timewindow = "days",
-  windowsize = 100, facet = "Types", facetValues = character(),
-  parallel = c("no", "FORK", "PSOCK"), ncpus = 1, cl = NULL,
-  verbose = 1, ...)
+dna_timeWindow(connection, method = "bipolarization",
+  timewindow = "days", windowsize = 100, facet = "Types",
+  facetValues = character(), parallel = c("no", "FORK", "PSOCK"),
+  ncpus = 1, cl = NULL, verbose = 1, ...)
 }
 \arguments{
 \item{connection}{A \link{dna_connection} object created by the

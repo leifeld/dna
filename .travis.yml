@@ -16,6 +16,7 @@ addons:
        - default-jdk
        - r-cran-rjava
        - libudunits2-dev
+       - r-cran-mcmcpack
        
 r_packages:
   - devtools
