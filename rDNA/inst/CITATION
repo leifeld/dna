@@ -13,7 +13,7 @@ citEntry(entry="Manual",
   organization = paste("University of Glasgow, School of Social and Political",
     "Sciences"),
   address = "Glasgow",
-  textVersion = paste("Leifeld, Philip (", year, "). rDNA. A Package to ", 
+  textVersion = paste("Leifeld, Philip, Johannes Gruber and Tim Henrichsen (", year, "). rDNA. A Package to ", 
     "Control Discourse Network Analyzer from R. University of Glasgow, ", 
     "School of Social and Political Sciences. ", vers, ".", sep = ""),
   url = "http://www.philipleifeld.com"

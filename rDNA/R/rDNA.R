@@ -22,7 +22,9 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
                                                       "y",
                                                       "mean_dim1",
                                                       "mean_dim2",
-                                                      "name"))
+                                                      "name",
+                                                      "it",
+                                                      "color"))
 
 
 # Data access ------------------------------------------------------------------
@@ -1466,7 +1468,7 @@ print.dna_cluster <- function(x, ...) {
 
 #' One-dimensional binary scaling from a DNA connection
 #'
-#' Scale ideological positions of two variables (e.g. organizations and 
+#' Scale ideological positions of two variables (e.g., organizations and 
 #' concepts) from a DNA connection by using Markov Chain Monte Carlo for binary 
 #' one-dimensional Item Response Theory. This is one of the four scaling 
 #' functions. For one-dimensional ordinal scaling, see \link{dna_scale1dord}, 
@@ -1481,7 +1483,7 @@ print.dna_cluster <- function(x, ...) {
 #' 
 #' As in a two-mode network in \link{dna_network}, two variables have to be 
 #' provided for the scaling. The first variable corresponds to the rows of a 
-#' two-mode network and usually entails actors (e.g. \code{"organizations"}), 
+#' two-mode network and usually entails actors (e.g., \code{"organizations"}), 
 #' while the second variable is equal to the columns of a two-mode network, 
 #' typically expressed by \code{"concepts"}. The \code{dna_scale} functions 
 #' use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1} 
@@ -1493,21 +1495,11 @@ print.dna_cluster <- function(x, ...) {
 #' \code{combine} qualifier aggregation and then recodes the values into 
 #' \code{0} for disagreement, \code{1} for agreement and \code{NA} for mixed 
 #' positions and non-mentions of concepts. Integer qualifiers are also recoded 
-#' into \code{0} and \code{1}. 
-#' 
-#' You can further relax the recoding of \code{NA} values by setting a 
+#' into \code{0} and \code{1} by rescaling the qualifier values between 
+#' \code{0} and \code{1}. You can further relax the recoding of \code{NA} values by setting a 
 #' \code{threshold} which lets you decide at which percentage of agreement and 
 #' disagreement an actor position on a concept can be considered as 
-#' agreement/disagreement or mixed position. If e.g. one actor has 60 percent 
-#' of agreeing and 40 percent of disagreeing statements towards a concept, a 
-#' threshold of 0.51 will recode the actor position on this concept as 
-#' "agreement". The same accounts also for disagreeing statements. If one actor 
-#' has 60 percent of disagreeing and 40 percent of agreeing statements a 
-#' threshold of 0.51 will recode the actor position on this concept as 
-#' "disagreement". All values in between the threshold (e.g. 55 percent 
-#' agreement and 45 percent of disagreement and a threshold of 0.6) will be 
-#' recoded as \code{NA}. If the threshold is set to \code{NULL}, all "mixed" 
-#' positions of actors will be recoded as \code{NA}. 
+#' agreement/disagreement or mixed position.  
 #' 
 #' The argument \code{drop_min_actors} excludes actors with only a limited 
 #' number of concepts used. Limited participation of actors in a debate can 
@@ -1515,34 +1507,32 @@ print.dna_cluster <- function(x, ...) {
 #' concepts convey limited information on their ideological position. The same 
 #' can also be done for concepts with the argument \code{drop_min_concepts}. 
 #' Concepts that have been rarely mentioned do not strongly discriminate the
-#' ideological positions of actors and can therefore impact the accuracy of the
-#' scaling. Reducing the number of actors of concepts to be scaled hence 
+#' ideological positions of actors and can, therefore, impact the accuracy of 
+#' the scaling. Reducing the number of actors of concepts to be scaled hence 
 #' improves the precision of the ideological positions for both variables and 
-#' the scaling itself.
-#' 
-#' Another possibility to reduce the number of concepts is to use 
-#' \code{drop_constant_concepts}, which will reduce concepts not having any 
-#' variation in the agreement/disagreement structure of actors. This means that 
-#' all concepts will be dropped which have only agreeing or disagreeing 
+#' the scaling itself. Another possibility to reduce the number of concepts is 
+#' to use \code{drop_constant_concepts}, which will reduce concepts not having 
+#' any variation in the agreement/disagreement structure of actors. This means 
+#' that all concepts will be dropped which have only agreeing or disagreeing 
 #' statements.
 #'
 #' As \code{dna_scale1dbin} implements a Bayesian Item Response Theory 
-#' approach, priors and starting values can be set on the actor and concept 
-#' parameters. Constraints on the actor parameters can also be specified to 
-#' help identifying the model and to indicate in which direction ideological 
-#' positions of actors and concepts run. 
-#' 
-#' The returned MCMC output can also be post-processed by normalizing the 
-#' samples for each iteration with \code{mcmc_normalize}. Normalization can 
-#' be a sufficient way of identifying one-dimensional ideal point models. This 
-#' constraint normalizes the samples to have a mean of \code{0} and a standard 
-#' deviation of \code{1}.
+#' approach, \code{priors} and \code{starting values} can be set on the actor 
+#' and concept parameters. Changing the default \code{prior} values can often 
+#' help you to achieve better results. Constraints on the actor parameters can 
+#' also be specified to help identifying the model and to indicate in which 
+#' direction ideological positions of actors and concepts run. The returned 
+#' MCMC output can also be post-processed by normalizing the samples for each 
+#' iteration with \code{mcmc_normalize}. Normalization can be a sufficient
+#' way of identifying one-dimensional ideal point models.
 #'
 #' To plot the resulting ideal points of actors and concepts, you can use the
 #' \link{dna_plotScale} function. To assess if the returned MCMC chain has 
 #' converged to its stationary distribution, please use 
 #' \link{dna_convergenceScale}. The evaluation of convergence is essential to 
-#' report conclusions based on accurate parameter estimates.
+#' report conclusions based on accurate parameter estimates. Achieving chain 
+#' convergence often requires setting the iterations of the MCMC chain to 
+#' several million.
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
@@ -1553,7 +1543,16 @@ print.dna_cluster <- function(x, ...) {
 #' @param qualifier The qualifier variable for the scaling construction (see
 #'   \link{dna_network}). Defaults to \code{"agreement"}.
 #' @param threshold Numeric value that specifies when a mixed position can be 
-#'   considered as agreement or disagreement (see details). Must be strictly 
+#'   considered as agreement or disagreement. If e.g. one actor has 60 percent 
+#'   of agreeing and 40 percent of disagreeing statements towards a concept, a 
+#'   \code{threshold} of 0.51 will recode the actor position on this concept as 
+#'   "agreement". The same accounts also for disagreeing statements. If one 
+#'   actor has 60 percent of disagreeing and 40 percent of agreeing statements,  
+#'   a \code{threshold} of 0.51 will recode the actor position on this concept 
+#'   as "disagreement". All values in between the \code{threshold} (e.g., 55 
+#'   percent agreement and 45 percent of disagreement and a threshold of 0.6) 
+#'   will be recoded as \code{NA}. If is set to \code{NULL}, all "mixed"  
+#'   positions of actors will be recoded as \code{NA}. Must be strictly 
 #'   positive.
 #' @param theta_constraints A list specifying the constraints on the actor 
 #'   parameter. Three forms of constraints are possible: 
@@ -1565,8 +1564,9 @@ print.dna_cluster <- function(x, ...) {
 #' @param mcmc_burnin The number of burn-in iterations for the sampler.
 #' @param mcmc_thin The thinning interval for the sampler. Iterations must be 
 #'   divisible by the thinning interval.
-#' @param mcmc_normalize Logical. Should the MCMC output be normalized? Can 
-#'   help to identify the model.
+#' @param mcmc_normalize Logical. Should the MCMC output be normalized? If 
+#'   \code{TRUE}, samples are normalized to a mean of \code{0} and a standard 
+#'   deviation of \code{1}.
 #' @param theta_start The \code{starting values} for the actor parameters. Can 
 #'   either be a scalar or a column vector with as many elements as the number 
 #'   of actors included in the scaling. If set to the default \code{NA}, 
@@ -1602,9 +1602,10 @@ print.dna_cluster <- function(x, ...) {
 #' @param drop_constant_concepts Logical. Should concepts that have no 
 #'   variation be deleted before the scaling? Defaults to \code{FALSE}.
 #' @param drop_min_actors A numeric value specifying the minimum number of 
-#'   concepts actors should have mentioned to be included in the scaling.
+#'   concepts actors should have mentioned to be included in the scaling. 
+#'   Defaults to \code{1}.
 #' @param drop_min_concepts A numeric value specifying the minimum number a 
-#'   concept should have been jointly mentioned by actors.
+#'   concept should have been jointly mentioned by actors. Defaults to \code{2}.
 #' @param verbose A boolean or numeric value indicating whether the iterations 
 #'   of the scaling should be printed to the R console. If set to a numeric 
 #'   value, every \code{verboseth} iteration will be printed. If set to 
@@ -1656,7 +1657,7 @@ dna_scale1dbin <- function(connection,
                            theta_constraints = NULL,
                            mcmc_iterations = 20000,
                            mcmc_burnin = 1000,
-                           mcmc_thin = 1,
+                           mcmc_thin = 10,
                            mcmc_normalize = FALSE,
                            theta_start = NA,
                            alpha_start = NA,
@@ -1668,7 +1669,7 @@ dna_scale1dbin <- function(connection,
                            store_variables = "both",
                            drop_constant_concepts = FALSE,
                            drop_min_actors = 1,
-                           drop_min_concepts = 1,
+                           drop_min_concepts = 2,
                            verbose = TRUE,
                            seed = 12345,
                            ...) {
@@ -1729,27 +1730,35 @@ dna_scale1dbin <- function(connection,
                                       dots_nw))
   if (store_variables == variable1 | store_variables == "both") {
     actors <- x[, grepl("^theta.", colnames(x))]
+    hpd <- as.data.frame(coda::HPDinterval(actors, prob = 0.95))
     actors <- as.data.frame(colMeans(actors))
+    actors <- merge(actors, hpd, by = 0)
     colnames(actors)[colnames(actors) == "colMeans(actors)"] <- "mean"
-    rownames(actors) <- gsub("^theta.", "", rownames(actors))
+    colnames(actors)[colnames(actors) == "lower"] <- "HPD2.5"
+    colnames(actors)[colnames(actors) == "upper"] <- "HPD97.5"
+    actors$Row.names <- gsub("^theta.", "", actors$Row.names)
     at <- dna_getAttributes(connection = connection,
                             variable = variable1,
-                            values = rownames(actors))
+                            values = actors$Row.names)
     at$frequency <- rowSums(nw_freq)[match(at$value, rownames(nw_freq))]
-    actors <- merge(actors, at, by.x = "row.names", by.y = "value")
-    actors <- actors[, -3]
+    actors <- merge(actors, at, by.x = "Row.names", by.y = "value")
+    actors <- actors[, !(colnames(actors) == "id")]
     actors$variable <- "actor"
   }
   if (store_variables == variable2 | store_variables == "both") {
     concepts <- x[, grepl("^beta.", colnames(x))]
+    hpd <- as.data.frame(coda::HPDinterval(concepts, prob = 0.95))
     concepts <- as.data.frame(colMeans(concepts))
+    concepts <- merge(concepts, hpd, by = 0)
     colnames(concepts)[colnames(concepts) == "colMeans(concepts)"] <- "mean"
-    rownames(concepts) <- gsub("^beta.", "", rownames(concepts))
+    colnames(concepts)[colnames(concepts) == "lower"] <- "HPD2.5"
+    colnames(concepts)[colnames(concepts) == "upper"] <- "HPD97.5"
+    concepts$Row.names <- gsub("^beta.", "", concepts$Row.names)
     at <- dna_getAttributes(connection = connection,
                             variable = variable2,
-                            values = rownames(concepts))
-    concepts <- merge(concepts, at, by.x = "row.names", by.y = "value")
-    concepts <- concepts[, -3]
+                            values = concepts$Row.names)
+    concepts <- merge(concepts, at, by.x = "Row.names", by.y = "value")
+    concepts <- concepts[, !(colnames(concepts) == "id")]
     concepts$variable <- "concept"
   }
   if (store_variables == "both") {
@@ -1761,15 +1770,14 @@ dna_scale1dbin <- function(connection,
   }
   if (drop_constant_concepts &
       (store_variables == "both" | store_variables == variable2)) {
-    concepts <- x[, grepl("^beta.", colnames(x))]
-    colnames(concepts) <- gsub("^beta.", "", colnames(concepts))
-    if (!(all(colnames(nw2) %in% colnames(concepts)))) {
+    if (!(all(colnames(nw2) %in% concepts$Row.names))) {
       warning("The following constant concepts have been dropped:\n",
-              paste(colnames(nw2)[!colnames(nw2) %in% colnames(concepts)],
+              paste(colnames(nw2)[!colnames(nw2) %in% concepts$Row.names],
                     collapse = "\n"))
     }
   }
   dna_scale$call <- mget(names(formals()), sys.frame(sys.nframe()))
+  dna_scale$call$connection <- NULL
   class(dna_scale) <- c("dna_scale1dbin", class(dna_scale))
   class(dna_scale) <- c("dna_scale", class(dna_scale))
   return(dna_scale)
@@ -1778,7 +1786,7 @@ dna_scale1dbin <- function(connection,
 
 #' One-dimensional ordinal scaling from a DNA connection.
 #'
-#' Scale ideological positions of two variables (e.g. organizations and 
+#' Scale ideological positions of two variables (e.g., organizations and 
 #' concepts) from a DNA connection by using Markov Chain Monte Carlo for 
 #' ordinal one-dimensional Item Response Theory. This is one of the four 
 #' scaling functions. For one-dimensional binary scaling, see 
@@ -1795,7 +1803,7 @@ dna_scale1dbin <- function(connection,
 #' 
 #' As in a two-mode network in \link{dna_network}, two variables have to be 
 #' provided for the scaling. The first variable corresponds to the rows of a 
-#' two-mode network and usually entails actors (e.g. \code{"organizations"}), 
+#' two-mode network and usually entails actors (e.g., \code{"organizations"}), 
 #' while the second variable is equal to the columns of a two-mode network, 
 #' typically expressed by \code{"concepts"}. The \code{dna_scale} functions 
 #' use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1} 
@@ -1806,22 +1814,12 @@ dna_scale1dbin <- function(connection,
 #' \code{dna_scale1dord} internally uses the \code{combine} qualifier 
 #' aggregation and then recodes the values into \code{1} for disagreement, 
 #' \code{2} for mixed positions and \code{3} for agreement. Integer qualifiers 
-#' are not recoded. 
-#' 
-#' When \code{zero_is_na} is set to \code{TRUE}, non-mentions of concepts are 
-#' set to \code{NA}, while setting the argument to \code{FALSE} recodes them to 
-#' \code{2} as mixed position. By setting a \code{threshold}, you can further 
-#' decide at which percentage of agreement and disagreement an actor position 
-#' on a concept can be considered as agreement/disagreement or mixed position. 
-#' If e.g. one actor has 70 percent of agreeing and 30 percent of disagreeing 
-#' statements towards a concept, a threshold of 0.6 will recode the actor 
-#' position on this concept as "agreement". The same accounts also for 
-#' disagreeing statements. If one actor has 70 percent of disagreeing and 30 
-#' percent of agreeing statements, a threshold of 0.6 will recode the actor 
-#' position on this concept as "disagreement". All values in between the 
-#' threshold (e.g. 55 percent agreement and 45 percent of disagreement and a 
-#' threshold of 0.6) will be recoded as \code{2}. If the threshold is set to 
-#' \code{NULL}, all "mixed" positions of actors will be recoded as \code{2}. 
+#' are not recoded. When \code{zero_is_na} is set to \code{TRUE}, non-mentions 
+#' of concepts are set to \code{NA}, while setting the argument to \code{FALSE} 
+#' recodes them to \code{2} as mixed position. By setting a \code{threshold}, 
+#' you can further decide at which percentage of agreement and disagreement
+#' an actor position on a concept can be considered as agreement/disagreement 
+#' or mixed position.
 #' 
 #' The argument \code{drop_min_actors} excludes actors with only a limited 
 #' number of concepts used. Limited participation of actors in a debate can 
@@ -1829,37 +1827,35 @@ dna_scale1dbin <- function(connection,
 #' concepts convey limited information on their ideological position. The same 
 #' can also be done for concepts with the argument \code{drop_min_concepts}. 
 #' Concepts that have been rarely mentioned do not strongly discriminate the
-#' ideological positions of actors and can therefore impact the accuracy of the
+#' ideological positions of actors and can, therefore, impact the accuracy of the
 #' scaling. Reducing the number of actors of concepts to be scaled hence 
 #' improves the precision of the ideological positions for both variables and 
-#' the scaling itself.
-#' 
-#' Another possibility to reduce the number of concepts is to use 
-#' \code{drop_constant_concepts}, which will reduce concepts not having any 
-#' variation in the agreement/disagreement structure of actors. This means that 
-#' all concepts will be dropped which have only agreeing, disagreeing or mixed 
-#' statements.
+#' the scaling itself. Another possibility to reduce the number of concepts is 
+#' to use \code{drop_constant_concepts}, which will reduce concepts not having 
+#' any variation in the agreement/disagreement structure of actors. This means 
+#' that all concepts will be dropped which have only agreeing, disagreeing or 
+#' mixed statements.
 #'
 #' As \code{dna_scale1dord} implements a Bayesian Item Response Theory 
-#' approach, priors and starting values can be set on concept parameters. 
-#' Constraints on the concept parameters can also be specified to help 
-#' identifying the model and to indicate in which direction ideological 
-#' positions of actors and concepts run. For concepts, the scaling estimates an 
+#' approach, \code{priors} and \code{starting values} can be set on the concept 
+#' parameters. Changing the default \code{prior} values can often help you to 
+#' achieve better results. Constraints on the concept parameters can also be 
+#' specified to help identifying the model and to indicate in which direction 
+#' ideological positions of actors and concepts run. The scaling estimates an 
 #' item discrimination parameter and an item difficulty parameter for each 
-#' concept. We advise to constrain the item discrimination parameter, as the 
-#' item difficulty parameter, in general, should not be constrained.
-#' 
-#' The returned MCMC output can also be post-processed by normalizing the 
-#' samples for each iteration with \code{mcmc_normalize}. Normalization can 
-#' be a sufficient way of identifying one-dimensional ideal point models. This 
-#' constraint normalizes the samples to have a mean of \code{0} and a standard 
-#' deviation of \code{1}.
+#' concept. We advise constraining the item discrimination parameter, as the 
+#' item difficulty parameter, in general, should not be constrained. The 
+#' returned MCMC output can also be post-processed by normalizing the samples
+#' for each iteration with \code{mcmc_normalize}. Normalization can be a 
+#' sufficient way of identifying one-dimensional ideal point models.
 #'
 #' To plot the resulting ideal points of actors and concepts, you can use the
 #' \link{dna_plotScale} function. To assess if the returned MCMC chain has 
 #' converged to its stationary distribution, please use 
 #' \link{dna_convergenceScale}. The evaluation of convergence is essential to 
-#' report conclusions based on accurate parameter estimates.
+#' report conclusions based on accurate parameter estimates. Achieving chain 
+#' convergence often requires setting the iterations of the MCMC chain to 
+#' several million.
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
@@ -1873,20 +1869,28 @@ dna_scale1dbin <- function(connection,
 #'   towards a concept will be recoded as \code{NA}. If \code{FALSE} as 
 #'   \code{2}.
 #' @param threshold Numeric value that specifies when a mixed position can be 
-#'   considered as agreement or disagreement (see details). Must be strictly 
+#'   considered as agreement or disagreement. If e.g., one actor has 60 percent 
+#'   of agreeing and 40 percent of disagreeing statements towards a concept, a 
+#'   \code{threshold} of 0.51 will recode the actor position on this concept as 
+#'   "agreement". The same accounts also for disagreeing statements. If one 
+#'   actor has 60 percent of disagreeing and 40 percent of agreeing statements, 
+#'   a \code{threshold} of 0.51 will recode the actor position on this concept 
+#'   as "disagreement". All values in between the \code{threshold} (e.g., 55 
+#'   percent agreement and 45 percent of disagreement and a threshold of 0.6) 
+#'   will be recoded as \code{2}. If is set to \code{NULL}, all "mixed"  
+#'   positions of actors will be recoded as \code{2}. Must be strictly 
 #'   positive.
 #' @param lambda_constraints A list of lists specifying constraints on the 
 #'   concept parameters. Note that value \code{1} in the brackets of the 
 #'   argument refers to the negative item difficulty parameters, which in 
 #'   general should not be constrained. Value \code{2} relates to the item 
 #'   discrimination parameter and should be used for constraints on concepts. 
-#'   Therefore use \code{2} instead of \code{1} for this model. Three forms of 
-#'   constraints are possible: \code{conceptname = list(2, value)} will
-#'   constrain the item discrimination parameter to be equal to the specified 
-#'   value (e.g. 0). \code{conceptname = list(2,"+")} will constrain the item 
-#'   discrimination parameter to be positively scaled and 
-#'   \code{conceptname = list(2, "-")} will constrain the concept to be 
-#'   negatively scaled (see example).
+#'   Three forms of constraints are possible: 
+#'   \code{conceptname = list(2, value)} will constrain the item discrimination 
+#'   parameter to be equal to the specified value (e.g., 0). 
+#'   \code{conceptname = list(2,"+")} will constrain the item discrimination 
+#'   parameter to be positively scaled and \code{conceptname = list(2, "-")} 
+#'   will constrain the parameter to be negatively scaled (see example).
 #' @param mcmc_iterations The number of iterations for the sampler.
 #' @param mcmc_burnin The number of burn-in iterations for the sampler.
 #' @param mcmc_thin The thinning interval for the sampler. Iterations must be 
@@ -1895,8 +1899,9 @@ dna_scale1dbin <- function(connection,
 #'   sampler. Acceptance rates should ideally range between \code{0.15} and 
 #'   \code{0.5}. Can be either a scalar or a k-vector. Must be strictly 
 #'   positive.
-#' @param mcmc_normalize Logical. Should the MCMC output be normalized? Can 
-#'   help to identify the model.
+#' @param mcmc_normalize Logical. Should the MCMC output be normalized? If 
+#'   \code{TRUE}, samples are normalized to a mean of \code{0} and a standard 
+#'   deviation of \code{1}.
 #' @param lambda_start \code{Starting values} for the concept parameters. Can 
 #'   be either a scalar or a matrix. If set to \code{NA} (default), the 
 #'   \code{starting values} for the unconstrained parameters in the first 
@@ -1915,9 +1920,10 @@ dna_scale1dbin <- function(connection,
 #' @param drop_constant_concepts Logical. Should concepts that have no 
 #'   variation be deleted before the scaling? Defaults to \code{FALSE}.
 #' @param drop_min_actors A numeric value specifying the minimum number of 
-#'   concepts actors should have mentioned to be included in the scaling.
+#'   concepts actors should have mentioned to be included in the scaling. 
+#'   Defaults to \code{1}.
 #' @param drop_min_concepts A numeric value specifying the minimum number a 
-#'   concept should have been jointly mentioned by actors.
+#'   concept should have been jointly mentioned by actors. Defaults to \code{2}.
 #' @param verbose A boolean or numeric value indicating whether the iterations 
 #'   of the scaling should be printed to the R console. If set to a numeric 
 #'   value, every \code{verboseth} iteration will be printed. If set to 
@@ -1925,7 +1931,7 @@ dna_scale1dbin <- function(connection,
 #'   divided by \code{100}.
 #' @param seed The random seed for the scaling.
 #' @param ... Additional arguments passed to \link{dna_network}. Actors can 
-#'   e.g. be removed with the \code{excludeValues} arguments. The scaling can 
+#'   e.g., be removed with the \code{excludeValues} arguments. The scaling can 
 #'   also be applied to a specific time slice by using \code{start.date} and 
 #'   \code{stop.date}.
 #'
@@ -1966,7 +1972,7 @@ dna_scale1dord <- function(connection,
                            lambda_constraints = NULL,
                            mcmc_iterations = 20000,
                            mcmc_burnin = 1000,
-                           mcmc_thin = 1,
+                           mcmc_thin = 10,
                            mcmc_tune = 1.5,
                            mcmc_normalize = TRUE,
                            lambda_start = NA,
@@ -1975,7 +1981,7 @@ dna_scale1dord <- function(connection,
                            store_variables = "both",
                            drop_constant_concepts = FALSE,
                            drop_min_actors = 1,
-                           drop_min_concepts = 1,
+                           drop_min_concepts = 2,
                            verbose = TRUE,
                            seed = 12345,
                            ...) {
@@ -2035,28 +2041,36 @@ dna_scale1dord <- function(connection,
                                       dots_nw))
   if (store_variables == variable1 | store_variables == "both") {
     actors <- x[, grepl("^phi.", colnames(x))]
+    hpd <- as.data.frame(coda::HPDinterval(actors, prob = 0.95))
     actors <- as.data.frame(colMeans(actors))
+    actors <- merge(actors, hpd, by = 0)
     colnames(actors)[colnames(actors) == "colMeans(actors)"] <- "mean"
-    rownames(actors) <- gsub("^phi.|.2$", "", rownames(actors))
+    colnames(actors)[colnames(actors) == "lower"] <- "HPD2.5"
+    colnames(actors)[colnames(actors) == "upper"] <- "HPD97.5"
+    actors$Row.names <- gsub("^phi.|.2$", "", actors$Row.names)
     at <- dna_getAttributes(connection = connection,
                             variable = variable1,
-                            values = rownames(actors))
+                            values = actors$Row.names)
     at$frequency <- rowSums(nw_freq)[match(at$value, rownames(nw_freq))]
-    actors <- merge(actors, at, by.x = "row.names", by.y = "value")
-    actors <- actors[, -3]
+    actors <- merge(actors, at, by.x = "Row.names", by.y = "value")
+    actors <- actors[, !(colnames(actors) == "id")]
     actors$variable <- "actor"
   }
   if (store_variables == variable2 | store_variables == "both") {
     concepts <- x[, grepl("^Lambda", colnames(x))]
     concepts <- concepts[, grepl(".2$", colnames(concepts))]
+    hpd <- as.data.frame(coda::HPDinterval(concepts, prob = 0.95))
     concepts <- as.data.frame(colMeans(concepts))
+    concepts <- merge(concepts, hpd, by = 0)
     colnames(concepts)[colnames(concepts) == "colMeans(concepts)"] <- "mean"
-    rownames(concepts) <- gsub("^Lambda|.2$", "", rownames(concepts))
+    colnames(concepts)[colnames(concepts) == "lower"] <- "HPD2.5"
+    colnames(concepts)[colnames(concepts) == "upper"] <- "HPD97.5"
+    concepts$Row.names <- gsub("^Lambda|.2$", "", concepts$Row.names)
     at <- dna_getAttributes(connection = connection,
                             variable = variable2,
-                            values = rownames(concepts))
-    concepts <- merge(concepts, at, by.x = "row.names", by.y = "value")
-    concepts <- concepts[, -3]
+                            values = concepts$Row.names)
+    concepts <- merge(concepts, at, by.x = "Row.names", by.y = "value")
+    concepts <- concepts[, !(colnames(concepts) == "id")]
     concepts$variable <- "concept"
   }
   if (store_variables == "both") {
@@ -2068,16 +2082,14 @@ dna_scale1dord <- function(connection,
   }
   if (drop_constant_concepts &
       (store_variables == "both" | store_variables == variable2)) {
-    concepts <- x[, grepl("^Lambda", colnames(x))]
-    concepts <- concepts[, grepl(".2$", colnames(concepts))]
-    colnames(concepts) <- gsub("^Lambda|.2$", "", colnames(concepts))
-    if (!(all(colnames(nw2) %in% colnames(concepts)))) {
+    if (!(all(colnames(nw2) %in% concepts$Row.names))) {
       warning("The following constant concepts have been dropped:\n",
-              paste(colnames(nw2)[!colnames(nw2) %in% colnames(concepts)],
+              paste(colnames(nw2)[!colnames(nw2) %in% concepts$Row.names],
                     collapse = "\n"))
     }
   }
   dna_scale$call <- mget(names(formals()), sys.frame(sys.nframe()))
+  dna_scale$call$connection <- NULL
   class(dna_scale) <- c("dna_scale1dord", class(dna_scale))
   class(dna_scale) <- c("dna_scale", class(dna_scale))
   return(dna_scale)
@@ -2086,7 +2098,7 @@ dna_scale1dord <- function(connection,
 
 #' Two-dimensional binary scaling from a DNA connection
 #'
-#' Scale ideological positions of two variables (e.g. organizations and 
+#' Scale ideological positions of two variables (e.g., organizations and 
 #' concepts) from a DNA connection by using Markov Chain Monte Carlo for binary 
 #' two-dimensional Item Response Theory. This is one of the four scaling 
 #' functions. For one-dimensional binary scaling, see \link{dna_scale1dbin}, 
@@ -2101,7 +2113,7 @@ dna_scale1dord <- function(connection,
 #' 
 #' As in a two-mode network in \link{dna_network}, two variables have to be 
 #' provided for the scaling. The first variable corresponds to the rows of a 
-#' two-mode network and usually entails actors (e.g. \code{"organizations"}), 
+#' two-mode network and usually entails actors (e.g., \code{"organizations"}), 
 #' while the second variable is equal to the columns of a two-mode network, 
 #' typically expressed by \code{"concepts"}. The \code{dna_scale} functions 
 #' use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1} 
@@ -2112,21 +2124,12 @@ dna_scale1dord <- function(connection,
 #' \code{dna_scale2dbin} internally uses the \code{combine} qualifier 
 #' aggregation and then recodes the values into \code{0} for disagreement, 
 #' \code{1} for agreement and \code{NA} for mixed positions and non-mentions of 
-#' concepts. Integer qualifiers are also recoded into \code{0} and \code{1}.
-#' 
-#' You can further relax the recoding of \code{NA} values by setting a 
-#' \code{threshold} which lets you decide at which percentage of agreement and 
-#' disagreement an actor position on a concept can be considered as 
-#' agreement/disagreement or mixed position. If e.g. one actor has 60 percent 
-#' of agreeing and 40 percent of disagreeing statements towards a concept, a 
-#' threshold of 0.51 will recode the actor position on this concept as 
-#' "agreement". The same accounts also for disagreeing statements. If one actor 
-#' has 60 percent of disagreeing and 40 percent of agreeing statements, a 
-#' threshold of 0.51 will recode the actor position on this concept as 
-#' "disagreement". All values in between the threshold (e.g. 55 percent 
-#' agreement and 45 percent of disagreement and a threshold of 0.6) will be 
-#' recoded as \code{NA}. If the threshold is set to \code{NULL}, all "mixed" 
-#' positions of actors will be recoded as \code{NA}. 
+#' concepts. Integer qualifiers are also recoded into \code{0} and \code{1} by 
+#' rescaling the qualifier values between \code{0} and \code{1}. You can 
+#' further relax the recoding of \code{NA} values by setting a \code{threshold} 
+#' which lets you decide at which percentage of agreement and disagreement 
+#' an actor position on a concept can be considered as agreement/disagreement 
+#' or mixed position.
 #' 
 #' The argument \code{drop_min_actors} excludes actors with only a limited 
 #' number of concepts used. Limited participation of actors in a debate can 
@@ -2134,53 +2137,43 @@ dna_scale1dord <- function(connection,
 #' concepts convey limited information on their ideological position. The same 
 #' can also be done for concepts with the argument \code{drop_min_concepts}. 
 #' Concepts that have been rarely mentioned do not strongly discriminate the
-#' ideological positions of actors and can therefore impact the accuracy of the
-#' scaling. Reducing the number of actors of concepts to be scaled hence 
+#' ideological positions of actors and can, therefore, impact the accuracy of 
+#' the scaling. Reducing the number of actors of concepts to be scaled hence
 #' improves the precision of the ideological positions for both variables and 
-#' the scaling itself.
-#' 
-#' Another possibility to reduce the number of concepts is to use 
-#' \code{drop_constant_concepts}, which will reduce concepts not having any 
-#' variation in the agreement/disagreement structure of actors. This means that 
-#' all concepts will be dropped which have only agreeing or disagreeing 
-#' statements.
+#' the scaling itself. Another possibility to reduce the number of concepts is 
+#' to use \code{drop_constant_concepts}, which will reduce concepts not having 
+#' any variation in the agreement/disagreement structure of actors. This means 
+#' that all concepts will be dropped which have only agreeing, disagreeing or 
+#' mixed statements.
 #' 
 #' As \code{dna_scale2dbin} implements a Bayesian Item Response Theory 
-#' approach, priors and starting values can be set on the actor and concept 
-#' parameters. Constraints on the parameters can also be specified to 
-#' help identifying the model and to indicate in which direction ideological 
-#' positions of actors and concepts run. Please note that, unlike 
-#' \link{dna_scale1dbin}, this function constrains the values indicated in 
-#' \code{variable2}. For these values, the scaling estimates an item 
-#' discrimination parameter for each dimension and an item difficulty parameter
-#' for both dimensions. The item difficulty parameter should, however, not be  
-#' constrained (see \link[MCMCpack]{MCMCirtKd}). Therefore, you should set 
-#' constraints on the item discrimination parameters.
+#' approach, \code{priors} and \code{starting values} can be set on the concept 
+#' parameters. Changing the default \code{prior} values can often 
+#' help you to achieve better results. Constraints on the parameters can also 
+#' be specified to help identifying the model and to indicate in which 
+#' direction ideological positions of actors and concepts run. Please note 
+#' that, unlike \link{dna_scale1dbin}, this function constrains the values 
+#' indicated in \code{variable2}. For these values, the scaling estimates an 
+#' item discrimination parameter for each dimension and an item difficulty 
+#' parameter for both dimensions. The item difficulty parameter should, 
+#' however, not be constrained (see \link[MCMCpack]{MCMCirtKd}). Therefore, you 
+#' should set constraints on the item discrimination parameters.
 #' 
 #' Fitting two-dimensional scaling models requires a good choice of concept 
 #' constraints to specify the ideological dimensions of your data. A suitable 
 #' way of identifying your ideological dimensions is to constrain one item
 #' discrimination parameter to load only on one dimension. This means that we
 #' set one parameter to load either positive or negative on one dimension and 
-#' setting it to zero on the other. Please note that value \code{1} in the 
-#' first position of the brackets of the \code{item_constraints} argument 
-#' refers to the item difficulty parameter, which should, as mentioned,
-#' not be constrained. Therefore, if you wish to constrain a concept to load 
-#' e.g only on the first dimension, please use the \code{item_constraints} 
-#' argument in the following way: to constrain an item on the first dimension 
-#' use e.g. \code{conceptname = list(2, "+")}. The value \code{2} specifies the 
-#' item discrimination parameter on the first dimension, which, as in this 
-#' example is constrained to load only positive on the first dimension (as 
-#' indicated by the \code{+}). The same applies for the second dimension: if 
-#' you wish to constrain the item discrimination parameter of a concept on the 
-#' second dimension, please specify the parameter with a \code{3} as in the 
-#' following example: \code{conceptname = list(3, "-")}.
+#' setting it to zero on the other. A second concept should also be constrained 
+#' to load either positive or negative on one dimension (see example)
 #'
 #' To plot the resulting ideal points of actors and concepts, you can use the
 #' \link{dna_plotScale} function. To assess if the returned MCMC chain has 
 #' converged to its stationary distribution, please use 
 #' \link{dna_convergenceScale}. The evaluation of convergence is essential to 
-#' report conclusions based on accurate parameter estimates.
+#' report conclusions based on accurate parameter estimates. Achieving chain 
+#' convergence often requires setting the iterations of the MCMC chain to 
+#' several million.
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
@@ -2191,21 +2184,30 @@ dna_scale1dord <- function(connection,
 #' @param qualifier The qualifier variable for the scaling construction (see
 #'   \link{dna_network}). Defaults to \code{"agreement"}.
 #' @param threshold Numeric value that specifies when a mixed position can be 
-#'   considered as agreement or disagreement (see details). Must be strictly 
+#'   considered as agreement or disagreement. If e.g., one actor has 60 percent 
+#'   of agreeing and 40 percent of disagreeing statements towards a concept, a 
+#'   \code{threshold} of 0.51 will recode the actor position on this concept as 
+#'   "agreement". The same accounts also for disagreeing statements. If one 
+#'   actor has 60 percent of disagreeing and 40 percent of agreeing statements, 
+#'   a \code{threshold} of 0.51 will recode the actor position on this concept 
+#'   as "disagreement". All values in between the \code{threshold} (e.g., 55 
+#'   percent agreement and 45 percent of disagreement and a threshold of 0.6) 
+#'   will be recoded as \code{NA}. If is set to \code{NULL}, all "mixed"  
+#'   positions of actors will be recoded as \code{NA}. Must be strictly 
 #'   positive.
 #' @param item_constraints A list of lists specifying constraints on the 
 #'   concept parameters. Note that value \code{1} in the brackets of the 
 #'   argument refers to the item difficulty parameters, which in 
-#'   general should not be constrained. Value \code{2} relates to the item 
-#'   discrimination parameter and should be used for constraints on concepts.
-#'   Three possible forms of constraints are possible: 
-#'   \code{conceptname = list(2, value)} will constrain a concept to be 
-#'   equal to the specified value (e.g. 0) on the first dimension of the item 
-#'   discrimination parameter. \code{conceptname = list(2,"+")} will constrain 
-#'   the concept to be positively scaled on the first dimension and
+#'   general should not be constrained. All values above \code{1} relate to the 
+#'   item discrimination parameters on the single dimensions. These should be 
+#'   used for constraints on concepts. Three possible forms of constraints are 
+#'   possible: \code{conceptname = list(2, value)} will constrain a concept to 
+#'   be equal to the specified value (e.g., 0) on the first dimension of the 
+#'   item discrimination parameter. \code{conceptname = list(2,"+")} will 
+#'   constrain the concept to be positively scaled on the first dimension and
 #'   \code{conceptname = list(2, "-")} will constrain the concept to be 
-#'   negatively scaled on the first dimension (see example and details). If you 
-#'   wish to constrain a concept on the second dimensions, please indicate this 
+#'   negatively scaled on the first dimension (see example). If you 
+#'   wish to constrain a concept on the second dimension, please indicate this 
 #'   with a \code{3} in the first position in the bracket.
 #' @param mcmc_iterations The number of iterations for the sampler.
 #' @param mcmc_burnin The number of burn-in iterations for the sampler.
@@ -2231,9 +2233,10 @@ dna_scale1dord <- function(connection,
 #' @param drop_constant_concepts Logical. Should concepts that have no 
 #'   variation be deleted before the scaling? Defaults to \code{FALSE}.
 #' @param drop_min_actors A numeric value specifying the minimum number of 
-#'   concepts actors should have mentioned to be included in the scaling.
+#'   concepts actors should have mentioned to be included in the scaling. 
+#'   Defaults to \code{1}.
 #' @param drop_min_concepts A numeric value specifying the minimum number a 
-#'   concept should have been jointly mentioned by actors.
+#'   concept should have been jointly mentioned by actors. Defaults to \code{2}.
 #' @param verbose A boolean or numeric value indicating whether the iterations 
 #'   of the scaling should be printed to the R console. If set to a numeric 
 #'   value, every \code{verboseth} iteration will be printed. If set to 
@@ -2241,7 +2244,7 @@ dna_scale1dord <- function(connection,
 #'   divided by \code{100}.
 #' @param seed The random seed for the scaling.
 #' @param ... Additional arguments passed to \link{dna_network}. Actors can 
-#'   e.g. be removed with the \code{excludeValues} arguments. The scaling can 
+#'   e.g., be removed with the \code{excludeValues} arguments. The scaling can 
 #'   also be applied to a specific time slice by using \code{start.date} and 
 #'   \code{stop.date}.
 #'
@@ -2281,14 +2284,14 @@ dna_scale2dbin <- function(connection,
                            item_constraints = NULL,
                            mcmc_iterations = 20000,
                            mcmc_burnin = 1000,
-                           mcmc_thin = 1,
+                           mcmc_thin = 10,
                            alpha_beta_start = NA,
                            alpha_beta_prior_mean = 0,
-                           alpha_beta_prior_variance = 1,
+                           alpha_beta_prior_variance = 0.1,
                            store_variables = "both",
                            drop_constant_concepts = FALSE,
                            drop_min_actors = 1,
-                           drop_min_concepts = 1,
+                           drop_min_concepts = 2,
                            verbose = TRUE,
                            seed = 12345,
                            ...) {
@@ -2341,41 +2344,49 @@ dna_scale2dbin <- function(connection,
                                       dots_nw))
   if (store_variables == variable1 | store_variables == "both") {
     actors <- x[, grepl("^theta.", colnames(x))]
+    hpd <- as.data.frame(coda::HPDinterval(actors, prob = 0.95))
     actors <- as.data.frame(colMeans(actors))
+    actors <- merge(actors, hpd, by = 0)
     colnames(actors)[colnames(actors) == "colMeans(actors)"] <- "mean"
-    actors1 <- actors[grepl(".1$", rownames(actors)), drop = FALSE, ]
-    rownames(actors1) <- gsub("^theta.|.1$", "", rownames(actors1))
-    actors2 <- actors[grepl(".2$", rownames(actors)), drop = FALSE, ]
-    rownames(actors2) <- gsub("^theta.|.2$", "", rownames(actors2))
+    colnames(actors)[colnames(actors) == "lower"] <- "HPD2.5"
+    colnames(actors)[colnames(actors) == "upper"] <- "HPD97.5"
+    actors1 <- actors[grepl(".1$", actors$Row.names), drop = FALSE, ]
+    actors1$Row.names <- gsub("^theta.|.1$", "", actors1$Row.names)
+    actors2 <- actors[grepl(".2$", actors$Row.names), drop = FALSE, ]
+    actors2$Row.names <- gsub("^theta.|.2$", "", actors2$Row.names)
     actors <- merge(actors1,
                     actors2,
-                    by = "row.names",
+                    by = "Row.names",
                     suffixes = c("_dim1", "_dim2"))
     at <- dna_getAttributes(connection = connection,
                             variable = variable1,
                             values = actors$Row.names)
     at$frequency <- rowSums(nw_freq)[match(at$value, rownames(nw_freq))]
     actors <- merge(actors, at, by.x = "Row.names", by.y = "value")
-    actors <- actors[, -4]
+    actors <- actors[, !(colnames(actors) == "id")]
     actors$variable <- "actor"
   }
   if (store_variables == variable2 | store_variables == "both") {
     concepts <- x[, grepl("^beta.", colnames(x))]
+    hpd <- as.data.frame(coda::HPDinterval(concepts, prob = 0.95))
     concepts <- as.data.frame(colMeans(concepts))
+    concepts <- merge(concepts, hpd, by = 0)
     colnames(concepts)[colnames(concepts) == "colMeans(concepts)"] <- "mean"
-    concepts1 <- concepts[grepl(".1$", rownames(concepts)), drop = FALSE, ]
-    rownames(concepts1) <- gsub("^beta.|.1$", "", rownames(concepts1))
-    concepts2 <- concepts[grepl(".2$", rownames(concepts)), drop = FALSE, ]
-    rownames(concepts2) <- gsub("^beta.|.2$", "", rownames(concepts2))
+    colnames(concepts)[colnames(concepts) == "lower"] <- "HPD2.5"
+    colnames(concepts)[colnames(concepts) == "upper"] <- "HPD97.5"
+    concepts1 <- concepts[grepl(".1$", concepts$Row.names), drop = FALSE, ]
+    concepts1$Row.names <- gsub("^beta.|.1$", "", concepts1$Row.names)
+    concepts2 <- concepts[grepl(".2$", concepts$Row.names), drop = FALSE, ]
+    concepts2$Row.names <- gsub("^beta.|.2$", "", concepts2$Row.names)
     concepts <- merge(concepts1,
                       concepts2,
-                      by = "row.names",
+                      by = "Row.names",
                       suffixes = c("_dim1", "_dim2"))
     at <- dna_getAttributes(connection = connection,
                             variable = variable2,
                             values = concepts$Row.names)
     concepts <- merge(concepts, at, by.x = "Row.names", by.y = "value")
-    concepts <- concepts[, -4]
+    concepts <- concepts[, !(colnames(concepts) == "id")]
     concepts$variable <- "concept"
   }
   if (store_variables == "both") {
@@ -2387,16 +2398,14 @@ dna_scale2dbin <- function(connection,
   }
   if (drop_constant_concepts &
       (store_variables == "both" | store_variables == variable2)) {
-    concepts <- x[, grepl("^beta.", colnames(x))]
-    concepts <- x[, grepl(".1$", colnames(x))]
-    colnames(concepts) <- gsub("^beta.|.1$", "", colnames(concepts))
-    if (!(all(colnames(nw2) %in% colnames(concepts)))) {
+    if (!(all(colnames(nw2) %in% concepts$Row.names))) {
       warning("The following constant concepts have been dropped:\n",
-              paste(colnames(nw2)[!colnames(nw2) %in% colnames(concepts)],
+              paste(colnames(nw2)[!colnames(nw2) %in% concepts$Row.names],
                     collapse = "\n"))
     }
   }
   dna_scale$call <- mget(names(formals()), sys.frame(sys.nframe()))
+  dna_scale$call$connection <- NULL
   class(dna_scale) <- c("dna_scale2dbin", class(dna_scale))
   class(dna_scale) <- c("dna_scale", class(dna_scale))
   return(dna_scale)
@@ -2405,7 +2414,7 @@ dna_scale2dbin <- function(connection,
 
 #' Two-dimensional ordinal scaling from a DNA connection
 #'
-#' Scale ideological positions of two variables (e.g. organizations and 
+#' Scale ideological positions of two variables (e.g., organizations and 
 #' concepts from a DNA connection by using Markov Chain Monte Carlo for 
 #' ordinal two-dimensional Item Response Theory. This is one of the four 
 #' scaling functions. For one-dimensional binary scaling, see 
@@ -2422,7 +2431,7 @@ dna_scale2dbin <- function(connection,
 #'
 #' As in a two-mode network in \link{dna_network}, two variables have to be 
 #' provided for the scaling. The first variable corresponds to the rows of a 
-#' two-mode network and usually entails actors (e.g. \code{"organizations"}), 
+#' two-mode network and usually entails actors (e.g., \code{"organizations"}), 
 #' while the second variable is equal to the columns of a two-mode network, 
 #' typically expressed by \code{"concepts"}. The \code{dna_scale} functions 
 #' use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1} 
@@ -2433,22 +2442,12 @@ dna_scale2dbin <- function(connection,
 #' \code{dna_scale2dord} internally uses the \code{combine} qualifier 
 #' aggregation and then recodes the values into \code{1} for disagreement, 
 #' \code{2} for mixed positions and \code{3} for agreement. Integer qualifiers 
-#' are not recoded. 
-#' 
-#' When \code{zero_is_na} is set to \code{TRUE}, non-mentions of concepts are 
-#' set to \code{NA}, while setting the argument to \code{FALSE} recodes them to 
-#' \code{2} as mixed position. By setting a \code{threshold}, you can further 
-#' decide at which percentage of agreement and disagreement an actor position 
-#' on a concept can be considered as agreement/disagreement or mixed position. 
-#' If e.g. one actor has 70 percent of agreeing and 30 percent of disagreeing 
-#' statements towards a concept, a threshold of 0.6 will recode the actor 
-#' position on this concept as "agreement". The same accounts also for 
-#' disagreeing statements. If one actor has 70 percent of disagreeing and 30 
-#' percent of agreeing statements, a threshold of 0.6 will recode the actor 
-#' position on this concept as "disagreement". All values in between the 
-#' threshold (e.g. 55 percent agreement and 45 percent of disagreement and a 
-#' threshold of 0.6) will be recoded as \code{2}. If the threshold is set to 
-#' \code{NULL}, all "mixed" positions of actors will be recoded as \code{2}. 
+#' are not recoded. When \code{zero_is_na} is set to \code{TRUE}, non-mentions 
+#' of concepts are set to \code{NA}, while setting the argument to \code{FALSE} 
+#' recodes them to \code{2} as mixed position. By setting a \code{threshold}, 
+#' you can further decide at which percentage of agreement and disagreement
+#' an actor position on a concept can be considered as agreement/disagreement 
+#' or mixed position.
 #' 
 #' The argument \code{drop_min_actors} excludes actors with only a limited 
 #' number of concepts used. Limited participation of actors in a debate can 
@@ -2456,24 +2455,23 @@ dna_scale2dbin <- function(connection,
 #' concepts convey limited information on their ideological position. The same 
 #' can also be done for concepts with the argument \code{drop_min_concepts}. 
 #' Concepts that have been rarely mentioned do not strongly discriminate the
-#' ideological positions of actors and can therefore impact the accuracy of the
-#' scaling. Reducing the number of actors of concepts to be scaled hence 
+#' ideological positions of actors and can, therefore, impact the accuracy of 
+#' the scaling. Reducing the number of actors of concepts to be scaled hence 
 #' improves the precision of the ideological positions for both variables and 
-#' the scaling itself.
-#' 
-#' Another possibility to reduce the number of concepts is to use 
-#' \code{drop_constant_concepts}, which will reduce concepts not having any 
-#' variation in the agreement/disagreement structure of actors. This means that 
-#' all concepts will be dropped which have only agreeing, disagreeing or mixed 
-#' statements.
+#' the scaling itself. Another possibility to reduce the number of concepts is 
+#' to use \code{drop_constant_concepts}, which will reduce concepts not having 
+#' any variation in the agreement/disagreement structure of actors. This means 
+#' that all concepts will be dropped which have only agreeing, disagreeing or 
+#' mixed statements.
 #'
 #' As \code{dna_scale2dord} implements a Bayesian Item Response Theory 
-#' approach, priors and starting values can be set on the concept parameters. 
-#' Constraints on the concept parameters can also be specified to help 
-#' identifying the model and to indicate in which direction ideological 
-#' positions of actors and concepts run. For concepts, the scaling estimates an 
-#' item discrimination parameter for each dimension and an item difficulty 
-#' difficulty parameter for both dimensions. The item difficulty parameter 
+#' approach, \code{priors} and \code{starting values} can be set on the concept 
+#' parameters. Changing the default \code{prior} values can often 
+#' help you to achieve better results. Constraints on the concept parameters 
+#' can also be specified to help identifying the model and to indicate in which 
+#' direction ideological positions of actors and concepts run. For concepts, 
+#' the scaling estimates an item discrimination parameter for each dimension 
+#' and an item difficulty for both dimensions. The item difficulty parameter 
 #' should, however, not be constrained (see \link[MCMCpack]{MCMCordfactanal}). 
 #' Therefore, you should set constraints on the item discrimination parameters.
 #' 
@@ -2482,25 +2480,16 @@ dna_scale2dbin <- function(connection,
 #' way of identifying your ideological dimensions is to constrain one item
 #' discrimination parameter to load only on one dimension. This means that we
 #' set one parameter to load either positive or negative on one dimension and 
-#' setting it to zero on the other. Please note that value \code{1} in the 
-#' first position of the brackets of the \code{lambda_constraints} argument 
-#' refers to the item difficulty parameter, which should, as mentioned,
-#' not be constrained. Therefore, if you wish to constrain a concept to load 
-#' e.g only on the first dimension, please use the \code{lambda_constraints} 
-#' argument in the following way: to constrain an item on the first dimension 
-#' use e.g. \code{conceptname = list(2, "+")}. The value \code{2} specifies the 
-#' item discrimination parameter on the first dimension, which, as in this 
-#' example is constrained to load only positive on the first dimension (as 
-#' indicated by the \code{+}). The same applies for the second dimension: if 
-#' you wish to constrain the item discrimination parameter of a concept on the 
-#' second dimension, please specify the parameter with a \code{3} as in the 
-#' following example: \code{conceptname = list(3, "-")}.
+#' setting it to zero on the other. A second concept should also be constrained 
+#' to load either positive or negative on one dimension (see example)
 #'
 #' To plot the resulting ideal points of actors and concepts, you can use the
 #' \link{dna_plotScale} function. To assess if the returned MCMC chain has 
 #' converged to its stationary distribution, please use 
 #' \link{dna_convergenceScale}. The evaluation of convergence is essential to 
-#' report conclusions based on accurate parameter estimates.
+#' report conclusions based on accurate parameter estimates. Achieving chain 
+#' convergence often requires setting the iterations of the MCMC chain to 
+#' several million.
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
@@ -2514,21 +2503,30 @@ dna_scale2dbin <- function(connection,
 #'   towards a concept will be recoded as \code{NA}. If \code{FALSE} as 
 #'   \code{2}.
 #' @param threshold Numeric value that specifies when a mixed position can be 
-#'   considered as agreement or disagreement (see details). Must be strictly 
+#'   considered as agreement or disagreement. If e.g., one actor has 60 percent 
+#'   of agreeing and 40 percent of disagreeing statements towards a concept, a 
+#'   \code{threshold} of 0.51 will recode the actor position on this concept as 
+#'   "agreement". The same accounts also for disagreeing statements. If one 
+#'   actor has 60 percent of disagreeing and 40 percent of agreeing statements, 
+#'   a \code{threshold} of 0.51 will recode the actor position on this concept 
+#'   as "disagreement". All values in between the \code{threshold} (e.g., 55 
+#'   percent agreement and 45 percent of disagreement and a threshold of 0.6) 
+#'   will be recoded as \code{2}. If is set to \code{NULL}, all "mixed"  
+#'   positions of actors will be recoded as \code{2}. Must be strictly 
 #'   positive.
 #' @param lambda_constraints A list of lists specifying constraints on the 
 #'   concept parameters. Note that value \code{1} in the brackets of the 
 #'   argument refers to the item difficulty parameters, which in 
-#'   general should not be constrained. Value \code{2} relates to the item 
-#'   discrimination parameter and should be used for constraints on concepts.
-#'   Three possible forms of constraints are possible: 
-#'   \code{conceptname = list(2, value)} will constrain a concept to be 
-#'   equal to the specified value (e.g. 0) on the first dimension of the item 
-#'   discrimination parameter. \code{conceptname = list(2,"+")} will constrain 
-#'   the concept to be positively scaled on the first dimension and
+#'   general should not be constrained. All values above \code{1} relate to the 
+#'   item discrimination parameters on the single dimensions. These should be 
+#'   used for constraints on concepts. Three possible forms of constraints are 
+#'   possible: \code{conceptname = list(2, value)} will constrain a concept to 
+#'   be equal to the specified value (e.g., 0) on the first dimension of the 
+#'   item discrimination parameter. \code{conceptname = list(2,"+")} will 
+#'   constrain the concept to be positively scaled on the first dimension and
 #'   \code{conceptname = list(2, "-")} will constrain the concept to be 
-#'   negatively scaled on the first dimension (see example and details). If you 
-#'   wish to constrain a concept on the second dimensions, please indicate this 
+#'   negatively scaled on the first dimension (see example). If you 
+#'   wish to constrain a concept on the second dimension, please indicate this 
 #'   with a \code{3} in the first position in the bracket.
 #' @param mcmc_iterations The number of iterations for the sampler.
 #' @param mcmc_burnin The number of burn-in iterations for the sampler.
@@ -2555,18 +2553,19 @@ dna_scale2dbin <- function(connection,
 #'   speed of the scaling. Defaults to \code{"both"}.
 #' @param drop_constant_concepts Logical. Should concepts that have no 
 #'   variation be deleted before the scaling? Defaults to \code{FALSE}.
-#' @param drop_min_actors A numeric value specifying the minimum amount of 
-#'   concepts actors should have mentioned to be included in the scaling.
+#' @param drop_min_actors A numeric value specifying the minimum number of 
+#'   concepts actors should have mentioned to be included in the scaling. 
+#'   Defaults to \code{1}.
 #' @param drop_min_concepts A numeric value specifying the minimum number a 
-#'   concept should have been jointly mentioned by actors.
+#'   concept should have been jointly mentioned by actors. Defaults to \code{2}.
 #' @param verbose A boolean or numeric value indicating whether the iterations 
 #'   of the scaling should be printed to the R console. If set to a numeric 
-#'   value, every \code{verbosev} iteration will be printed. If set to 
+#'   value, every \code{verboseth} iteration will be printed. If set to 
 #'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in 
 #'   divided by \code{100}.
 #' @param seed The random seed for the scaling.
 #' @param ... Additional arguments passed to \link{dna_network}. Actors can 
-#'   e.g. be removed with the \code{excludeValues} arguments. The scaling can 
+#'   e.g., be removed with the \code{excludeValues} arguments. The scaling can 
 #'   also be applied to a specific time slice by using \code{start.date} and 
 #'   \code{stop.date}.
 #'
@@ -2608,15 +2607,15 @@ dna_scale2dord <- function(connection,
                            lambda_constraints = NULL,
                            mcmc_iterations = 20000,
                            mcmc_burnin = 1000,
-                           mcmc_thin = 1,
+                           mcmc_thin = 10,
                            mcmc_tune = 1.5,
                            lambda_start = NA,
                            lambda_prior_mean = 0,
-                           lambda_prior_variance = 1,
+                           lambda_prior_variance = 0.1,
                            store_variables = "both",
                            drop_constant_concepts = FALSE,
                            drop_min_actors = 1,
-                           drop_min_concepts = 1,
+                           drop_min_concepts = 2,
                            verbose = TRUE,
                            seed = 12345,
                            ...) {
@@ -2671,41 +2670,49 @@ dna_scale2dord <- function(connection,
                                       dots_nw))
   if (store_variables == variable1 | store_variables == "both") {
     actors <- x[, grepl("^phi.", colnames(x))]
+    hpd <- as.data.frame(coda::HPDinterval(actors, prob = 0.95))
     actors <- as.data.frame(colMeans(actors))
+    actors <- merge(actors, hpd, by = 0)
     colnames(actors)[colnames(actors) == "colMeans(actors)"] <- "mean"
-    actors1 <- actors[grepl(".2$", rownames(actors)), drop = FALSE, ]
-    rownames(actors1) <- gsub("^phi.|.2$", "", rownames(actors1))
-    actors2 <- actors[grepl(".3$", rownames(actors)), drop = FALSE, ]
-    rownames(actors2) <- gsub("^phi.|.3$", "", rownames(actors2))
+    colnames(actors)[colnames(actors) == "lower"] <- "HPD2.5"
+    colnames(actors)[colnames(actors) == "upper"] <- "HPD97.5"
+    actors1 <- actors[grepl(".2$", actors$Row.names), drop = FALSE, ]
+    actors1$Row.names <- gsub("^phi.|.2$", "", actors1$Row.names)
+    actors2 <- actors[grepl(".3$", actors$Row.names), drop = FALSE, ]
+    actors2$Row.names <- gsub("^phi.|.3$", "", actors1$Row.names)
     actors <- merge(actors1,
                     actors2,
-                    by = "row.names",
+                    by = "Row.names",
                     suffixes = c("_dim1", "_dim2"))
     at <- dna_getAttributes(connection = connection,
                             variable = variable1,
                             values = actors$Row.names)
     at$frequency <- rowSums(nw_freq)[match(at$value, rownames(nw_freq))]
     actors <- merge(actors, at, by.x = "Row.names", by.y = "value")
-    actors <- actors[, -4]
+    actors <- actors[, !(colnames(actors) == "id")]
     actors$variable <- "actor"
   }
   if (store_variables == variable2 | store_variables == "both") {
     concepts <- x[, grepl("^Lambda", colnames(x))]
+    hpd <- as.data.frame(coda::HPDinterval(concepts, prob = 0.95))
     concepts <- as.data.frame(colMeans(concepts))
+    concepts <- merge(concepts, hpd, by = 0)
     colnames(concepts)[colnames(concepts) == "colMeans(concepts)"] <- "mean"
-    concepts1 <- concepts[grepl(".2$", rownames(concepts)), drop = FALSE, ]
-    rownames(concepts1) <- gsub("^Lambda|.2$", "", rownames(concepts1))
-    concepts2 <- concepts[grepl(".3$", rownames(concepts)), drop = FALSE, ]
-    rownames(concepts2) <- gsub("^Lambda|.3$", "", rownames(concepts2))
+    colnames(concepts)[colnames(concepts) == "lower"] <- "HPD2.5"
+    colnames(concepts)[colnames(concepts) == "upper"] <- "HPD97.5"
+    concepts1 <- concepts[grepl(".2$", concepts$Row.names), drop = FALSE, ]
+    concepts1$Row.names <- gsub("^Lambda|.2$", "", concepts1$Row.names)
+    concepts2 <- concepts[grepl(".3$", concepts$Row.names), drop = FALSE, ]
+    concepts2$Row.names <- gsub("^Lambda|.3$", "", concepts2$Row.names)
     concepts <- merge(concepts1,
                       concepts2,
-                      by = "row.names",
+                      by = "Row.names",
                       suffixes = c("_dim1", "_dim2"))
     at <- dna_getAttributes(connection = connection,
                             variable = variable2,
                             values = concepts$Row.names)
     concepts <- merge(concepts, at, by.x = "Row.names", by.y = "value")
-    concepts <- concepts[, -4]
+    concepts <- concepts[, !(colnames(concepts) == "id")]
     concepts$variable <- "concept"
   }
   if (store_variables == "both") {
@@ -2717,16 +2724,14 @@ dna_scale2dord <- function(connection,
   }
   if (drop_constant_concepts &
       (store_variables == "both" | store_variables == variable2)) {
-    concepts <- x[, grepl("^Lambda", colnames(x))]
-    concepts <- concepts[, grepl(".2$", colnames(concepts))]
-    colnames(concepts) <- gsub("^Lambda|.2$", "", colnames(concepts))
-    if (!(all(colnames(nw2) %in% colnames(concepts)))) {
+    if (!(all(colnames(nw2) %in% concepts$Row.names))) {
       warning("The following constant concepts have been dropped:\n",
-              paste(colnames(nw2)[!colnames(nw2) %in% colnames(concepts)],
+              paste(colnames(nw2)[!colnames(nw2) %in% concepts$Row.names],
                     collapse = "\n"))
     }
   }
   dna_scale$call <- mget(names(formals()), sys.frame(sys.nframe()))
+  dna_scale$call$connection <- NULL
   class(dna_scale) <- c("dna_scale2dord", class(dna_scale))
   class(dna_scale) <- c("dna_scale", class(dna_scale))
   return(dna_scale)
@@ -2763,7 +2768,10 @@ dna_scale2dord <- function(connection,
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
 plot.dna_scale <- function(x, ...) {
-  dna_convergenceScale(x, method = "trace", colors = "identity")
+  dna_convergenceScale(x,
+                       variable = x$call$store_variables,
+                       method = "trace",
+                       colors = TRUE)
 }
 
 
@@ -5406,25 +5414,19 @@ dna_plotNetwork <- function(x,
 #' plot ideological ideal points from \code{dna_scale} objects. Two different 
 #' variables can be plotted: 
 #' 
-#' Firstly, you can plot the ideological ideal points of subjects (e.g. 
+#' Firstly, you can plot the ideological ideal points of subjects (e.g., 
 #' \code{"organizations"}) which you have provided in \code{variable1} of the 
 #' \code{dna_scale} functions. The ideal point, which is the mean value of the 
-#' MCMC sample parameters, serves as as ideological position of an actor in a 
-#' e.g. ideological or policy dimension.
+#' MCMC sample parameters, serves as the ideological position of an actor in an 
+#' e.g., ideological or policy dimension.
 #' 
 #' Secondly, you can plot the item discrimination parameter of the variable 
-#' provided in \code{variable2} of \code{dna_scale} (e.g. \code{"concepts"}). 
-#' The item discrimination parameter indicates how well for example a specific 
-#' \code{"concept"} separates actors in the ideological space.
+#' provided in \code{variable2} of the \code{dna_scale} functions (e.g., 
+#' \code{"concepts"}). The item discrimination parameter indicates how 
+#' good for example a specific \code{"concept"} separates actors in the 
+#' ideological space.
 #' 
-#' By providing colors in the \code{custom_colors} argument, you can tailor the 
-#' plot by specifying customized colors for the ideal points, their Highest 
-#' Posterior Densities (HPD), or the ideal point labels. If you wish to 
-#' distinguish the HPD and/or label colors from the point or 
-#' \code{custom_colors}, you can also directly specify them in the 
-#' \code{hpd_colors} or \code{label_colors} argument.
-#'
-#' Plotting all actors or concepts can create chaotic plots, you can therefore 
+#' Plotting all actors or concepts can create chaotic plots, you can, therefore, 
 #' limit the plot by including only the most active actors or most prominent 
 #' concepts with \code{exclude_min}. Specific entries can be excluded with the 
 #' \code{exclude} argument. Furthermore, the plot can be split into several 
@@ -5442,29 +5444,25 @@ dna_plotNetwork <- function(x,
 #' @param label Logical. Should labels be plotted? Defaults to \code{TRUE}.
 #' @param label_size,point_size Label and point size in pts.
 #' @param label_colors,point_colors,hpd_colors Colors for the labels, points 
-#'   and Highest Posterior Densities of the plot. Three options are available 
-#'   for all three arguments: \code{"identity"} colors the variables according 
-#'   to the attributes in the object. \code{NULL} sets colors off and 
-#'   \code{"custom"} allows you to specify customized colors in the argument 
-#'   \code{custom_colors}. For \code{label_colors} and \code{hpd_colors}, you 
-#'   can further directly provide customized colors not indicated in 
-#'   \code{custom_colors}. This can be useful if you prefer individual colors 
-#'   for particular elements of the plot. Possible options are either providing 
-#'   a single character vector (if you wish to color a plot element in only one 
-#'   color), or a character vector or data frame of at least the same length as 
-#'   values in the object. If you use a data frame, please provide one column 
-#'   named \code{"names"} that indicates the names of the values and one column 
-#'   named \code{"colors"} that specifies the value colors.
+#'   and Highest Posterior Densities of the plot. \code{TRUE} colors the 
+#'   variables according to the attributes in the object and \code{FALSE} sets 
+#'   colors to black. You can also provide customized colors. Possible 
+#'   options are either providing a single character vector (if you wish to 
+#'   color a plot element in only one color), or a character or numeric vector 
+#'   or data frame of at least the same length as values to be plotted. If you 
+#'   use a data frame, please provide one column named \code{"names"} that 
+#'   indicates the names of the values and one column named \code{"colors"} 
+#'   that specifies the value colors. Defaults to \code{TRUE}.
 #' @param hpd_lwd Highest Posterior Density interval linewidth in pts.
 #' @param intercept_lwd Linewidth of the intercept (a vertical bar indicating 
 #'   zero) in pts.
-#' @param intercept_color Colors for the intercept.
+#' @param intercept_color Color for the intercept.
 #' @param intercept_lty A character vector providing the linetype of the 
 #'   intercept. Valid values are \code{"solid"}, \code{"dashed"}, 
 #'   \code{"dotted"}, \code{"twodash"}, \code{"dotdash"}, \code{"longdash"} or 
 #'   \code{"blank"}. Defaults to \code{"dashed"}. \code{"blank"} turns off 
 #'   intercept.
-#' @param intercept_alpha A numeric value indicating the alpha level for the 
+#' @param intercept_alpha A numeric value indicating the alpha level of the 
 #'   intercept.
 #' @param facet A character vector specifying which attribute of the variable 
 #'   should be used for the facet plot. Valid values are \code{"type"}, 
@@ -5476,17 +5474,9 @@ dna_plotNetwork <- function(x,
 #' @param exclude_min A numeric value reducing the plot to actors/concepts 
 #'   with a minimum frequency of statements.
 #' @param exclude A character vector to exclude actors/concepts from the plot.
-#' @param custom_colors Customized colors for the labels, points and/or 
-#'   Highest Posterior Density intervals. Possible options are either providing 
-#'   a single character vector (if you wish to color a plot element in only one 
-#'   color), or a character vector or data frame of at least the same length as 
-#'   values in the object. If you use a data frame, please provide one column 
-#'   named \code{"names"} that indicates the names of the values and one column 
-#'   named \code{"colors"} that specifies the value colors.
 #'
 #' @examples
 #' \dontrun{
-#' 
 #' dna_scale <- dna_scale1dbin(connection,
 #'                             variable1 = "organization",
 #'                             variable2 = "concept",
@@ -5500,30 +5490,8 @@ dna_plotNetwork <- function(x,
 #'               variable = "organization",
 #'               dimensions = 1,
 #'               hpd = 0.95,
-#'               point_colors = "identity",
+#'               point_colors = TRUE,
 #'               exclude = c("Environmental Protection Agency", "Senate"))
-#' 
-#' # Customized plot
-#' dna_plotScale(dna_scale,
-#'               variable = "organization",
-#'               dimensions = 1,
-#'               hpd = 0.95,
-#'               point_colors = "custom",
-#'               label = TRUE,
-#'               label_size = 10,
-#'               label_colors = "custom",
-#'               point_size = 4,
-#'               hpd_colors = "custom",
-#'               hpd_lwd = 0.2,
-#'               intercept_color = "#'525252",
-#'               intercept_lty = "solid",
-#'               intercept_lwd = 0.8,
-#'               intercept_alpha = 0.4,
-#'               x_axis_label = "Ideological Ideal Point",
-#'               exclude_min = 6,
-#'               custom_colors = c("Sierra Club" = "#'33a02c",
-#'                                 "Environmental Protection Agency" = "#'fdbf6f",
-#'                                 "U.S. Public Interest Research Group" = "#'b15928"))
 #' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
@@ -5538,11 +5506,11 @@ dna_plotScale <- function(dna_scale,
                           hpd = 0.95,
                           label = TRUE,
                           label_size = 10,
-                          label_colors = NULL,
+                          label_colors = FALSE,
                           point_size = 4,
-                          point_colors = "identity",
+                          point_colors = TRUE,
                           hpd_lwd = 0.8,
-                          hpd_colors = "identity",
+                          hpd_colors = TRUE,
                           intercept_lwd = 0.8,
                           intercept_color = "#525252",
                           intercept_lty = "dashed",
@@ -5552,8 +5520,7 @@ dna_plotScale <- function(dna_scale,
                           x_axis_label = NULL,
                           y_axis_label = NULL,
                           exclude_min = 1,
-                          exclude = NULL,
-                          custom_colors = NULL) {
+                          exclude = NULL) {
   if (!any(grepl("dna_scale", class(dna_scale), fixed = TRUE))) {
     stop ("This is not a dna_scale object.")
   }
@@ -5580,21 +5547,6 @@ dna_plotScale <- function(dna_scale,
     stop("Please insert either 'dimensions = 2.1' for the first dimension ",
          "of the two-dimensional scaling or 'dimensions = 2.2' for ",
          "the second dimension.")
-  }
-  if (length(point_colors) > 1 |
-      (!is.null(point_colors) & !is.character(point_colors)) |
-      (!is.null(point_colors) & !any(c("identity", "custom") %in% point_colors))) {
-    stop("Please provide valid 'point_colors' argument. \"identity\" sets ",
-         "variable colors according to the attribute colors. \"custom\" ",
-         "enables you to provide customized colors in the argument 'custom ",
-         "colors' and NULL turns colors off.")
-  }
-  if (is.null(custom_colors) &
-      (isTRUE(point_colors == "custom") |
-       isTRUE(hpd_colors == "custom") |
-       isTRUE(label_colors == "custom"))) {
-    stop("Please provide 'custom colors' argument to plot label, point or hpd ",
-         "colors.")
   }
   if (variable == dna_scale$call$variable1) {
     x <- dna_scale$attributes[dna_scale$attributes$variable == "actor", ]
@@ -5666,22 +5618,70 @@ dna_plotScale <- function(dna_scale,
   }
   if (!is.null(exclude)) {
     if (any(!exclude %in% dna_scale$attributes$Row.names)) {
-      warning("At least one exclude value could not be found in dna_scale ",
-              "object.")
+      warning("The following exclude values could not be found in dna_scale ",
+              "object:\n",
+              paste(exclude[!exclude %in% dna_scale$attributes$Row.names],
+                    collapse = "\n"))
     }
     x <- x[!x$Row.names %in% exclude, ]
   }
   if (isTRUE(exclude_min > 1)) {
     x <- x[x$frequency >= exclude_min, ]
   }
-  if (isTRUE(point_colors == "identity" | point_colors == "custom")) {
-    col <- "color"
-  } else if (is.null(point_colors)) {
-    col <- NULL
+  if (isTRUE(point_colors)) {
+    x$colors_point <- x$color
+  } else if (isTRUE(point_colors == FALSE)){
+    x$colors_point <- "#000000"
+  } else {
+    if (is.data.frame(point_colors)) {
+      if (!("names" %in% colnames(point_colors) |
+            "colors" %in% colnames(point_colors))) {
+        stop("Cannot find column names specified as \"names\" or \"colors\" ",
+             "in 'point_colors' object. Please provide both columns with ",
+             "matching values.")
+      }
+      if (nrow(point_colors) < nrow(x)) {
+        stop("Values in 'point_colors' are not equal to values in dna_scale ",
+             "object. Please add the following values:\n",
+             paste(x$Row.names[!x$Row.names %in% point_colors$names],
+                   collapse = "\n"))
+      }
+      if (!(all(x$Row.names %in% point_colors$names))) {
+        stop("Not all dna_scale values are included in the 'point_colors' ",
+             "object. Please add the following values:\n",
+             paste(x$Row.names[!x$Row.names %in% point_colors$names],
+                   collapse = "\n"))
+      }
+      x$colors_point <- point_colors$colors[match(x$Row.names, point_colors$names)]
+    } else if (is.character(point_colors) | is.numeric(point_colors)) {
+      if (length(point_colors) == 1) {
+        x$colors_point <- point_colors
+      } else if (any(x$Row.names %in% names(point_colors))) {
+        if (length(point_colors) < nrow(x)) {
+          stop("Values in 'point_colors' are not equal to values in dna_scale ",
+               "object. Please add the following values:\n",
+               paste(x$Row.names[!x$Row.names %in% names(point_colors)],
+                     collapse = "\n"))
+        }
+        if (!(all(x$Row.names %in% names(point_colors)))) {
+          stop("Not all dna_scale values are included in the 'point_colors' ",
+               "object. Please add the following values:\n",
+               paste(x$Row.names[!x$Row.names %in% names(point_colors)],
+                     collapse = "\n"))
+        }
+        x$colors_point <- point_colors[match(x$Row.names, names(point_colors))]
+      } else {
+        if (length(point_colors) != nrow(x)) {
+          stop(paste0("Values of 'point_colors' must equal values in dna_scale",
+                      " object (", nrow(x), ")."))
+        }
+        x$colors_point <- point_colors
+      }
+    }
   }
-  if (isTRUE(hpd_colors == "identity")) {
+  if (isTRUE(hpd_colors)) {
     x$color_hpd <- x$color
-  } else if (is.null(hpd_colors)) {
+  } else if (isTRUE(hpd_colors == FALSE)) {
     x$color_hpd <- "#000000"
   } else {
     if (is.data.frame(hpd_colors)) {
@@ -5689,7 +5689,7 @@ dna_plotScale <- function(dna_scale,
             "colors" %in% colnames(hpd_colors))) {
         stop("Cannot find column names specified as \"names\" or \"colors\" ",
              "in 'hpd_colors' object. Please provide both columns with ",
-             "matching values to enable custom HPD colors.")
+             "matching values.")
       }
       if (nrow(hpd_colors) < nrow(x)) {
         stop("Values in 'hpd_colors' are not equal to values in dna_scale ",
@@ -5704,27 +5704,35 @@ dna_plotScale <- function(dna_scale,
                    collapse = "\n"))
       }
       x$color_hpd <- hpd_colors$colors[match(x$Row.names, hpd_colors$names)]
-    } else if (is.character(hpd_colors) & length(hpd_colors) == 1) {
-      x$color_hpd <- hpd_colors
-    } else if (is.character(hpd_colors)) {
-      if (length(hpd_colors) < nrow(x)) {
-        stop("Values in 'hpd_colors' are not equal to values in dna_scale ",
-             "object. Please add the following values:\n",
-             paste(x$Row.names[!x$Row.names %in% names(hpd_colors)],
-                   collapse = "\n"))
+    } else if (is.character(hpd_colors) | is.numeric(hpd_colors)) {
+      if (length(hpd_colors) == 1) {
+        x$color_hpd <- hpd_colors
+      } else if (any(x$Row.names %in% names(hpd_colors))) {
+        if (length(hpd_colors) < nrow(x)) {
+          stop("Values in 'hpd_colors' are not equal to values in dna_scale ",
+               "object. Please add the following values:\n",
+               paste(x$Row.names[!x$Row.names %in% names(hpd_colors)],
+                     collapse = "\n"))
+        }
+        if (!(all(x$Row.names %in% names(hpd_colors)))) {
+          stop("Not all dna_scale values are included in the 'hpd_colors' ",
+               "object. Please add the following values:\n",
+               paste(x$Row.names[!x$Row.names %in% names(hpd_colors)],
+                     collapse = "\n"))
+        }
+        x$color_hpd <- hpd_colors[match(x$Row.names, names(hpd_colors))]
+      } else {
+        if (length(hpd_colors) != nrow(x)) {
+          stop(paste0("Values of 'hpd_colors' must equal values in dna_scale ",
+                      "object (", nrow(x), ")."))
+        }
+        x$color_hpd <- hpd_colors
       }
-      if (!(all(x$Row.names %in% names(hpd_colors)))) {
-        stop("Not all dna_scale values are included in the 'hpd_colors' ",
-             "object. Please add the following values:\n",
-             paste(x$Row.names[!x$Row.names %in% names(custom_colors)],
-                   collapse = "\n"))
-      }
-      x$color_hpd <- hpd_colors[match(x$Row.names, names(hpd_colors))]
     }
   }
-  if (isTRUE(label_colors == "identity")) {
+  if (isTRUE(label_colors)) {
     x$color_label <- x$color
-  } else if (is.null(label_colors)) {
+  } else if (isTRUE(label_colors == FALSE)) {
     if (dimensions == 2) {
       x$color_label <- "#000000"
     } else {
@@ -5736,7 +5744,7 @@ dna_plotScale <- function(dna_scale,
             "colors" %in% colnames(label_colors))) {
         stop("Cannot find column names specified as \"names\" or \"colors\" ",
              "in 'label_colors' object. Please provide both columns with ",
-             "matching values to enable custom label colors.")
+             "matching values.")
       }
       if (nrow(label_colors) < nrow(x)) {
         stop("Values in 'label_colors' are not equal to values in dna_scale ",
@@ -5747,97 +5755,33 @@ dna_plotScale <- function(dna_scale,
       if (!(all(x$Row.names %in% label_colors$names))) {
         stop("Not all dna_scale values are included in the 'label_colors' ",
              "object. Please add the following values:\n",
-             paste(x$Row.names[!x$Row.names %in% custom_colors$names],
+             paste(x$Row.names[!x$Row.names %in% label_colors$names],
                    collapse = "\n"))
       }
       x$color_label <- label_colors$colors[match(x$Row.names, label_colors$names)]
-    } else if (is.character(label_colors) & length(label_colors) == 1) {
-      x$color_label <- label_colors
-    } else if (is.character(label_colors)) {
-      if (length(label_colors) < nrow(x)) {
-        stop("Values in 'label_colors' are not equal to values in dna_scale ",
-             "object. Please add the following values:\n",
-             paste(x$Row.names[!x$Row.names %in% names(label_colors)],
-                   collapse = "\n"))
-      }
-      if (!(all(x$Row.names %in% names(label_colors)))) {
-        stop("Not all dna_scale values are included in the 'label_colors' ",
-             "object. Please add the following values:\n",
-             paste(x$Row.names[!x$Row.names %in% names(label_colors)],
-                   collapse = "\n"))
-      }
-      x$color_label <- label_colors[match(x$Row.names, names(label_colors))]
-    }
-  }
-  if (!is.null(custom_colors) &
-      (is.null(point_colors) | isTRUE(point_colors == "identity")) &
-      (is.null(hpd_colors) | isTRUE(hpd_colors == "identity")) &
-      (is.null(label_colors) | isTRUE(label_colors == "identity"))) {
-    warning("'custom_colors' is ignored and attribute colors are used. If you ",
-            "wish to plot 'custom_colors' for points, Highest Posterior ",
-            "Densities or labels, please specify \"custom\" in the respective ",
-            "colors argument.")
-  }
-  if (!is.null(custom_colors)) {
-    if (is.data.frame(custom_colors)) {
-      if (!("names" %in% colnames(custom_colors) |
-            "colors" %in% colnames(custom_colors))) {
-        stop("Cannot find column names specified as \"names\" or \"colors\" ",
-             "in 'custom_colors' object. Please provide both columns with ",
-             "matching values to enable custom colors.")
-      }
-      if (isTRUE(nrow(custom_colors) < nrow(x))) {
-        stop("Values in 'custom_colors' are not equal to values in dna_scale ",
-             "object. Please add the following values:\n",
-             paste(x$Row.names[!x$Row.names %in% custom_colors$names],
-                   collapse = "\n"))
-      }
-      if (!(all(x$Row.names %in% custom_colors$names))) {
-        stop("Not all dna_scale values are included in the 'custom_colors' ",
-             "object. Please add the following values:\n",
-             paste(x$Row.names[!x$Row.names %in% custom_colors$names],
-                   collapse = "\n"))
-      }
-    }
-    if (is.character(custom_colors) & length(custom_colors) > 1) {
-      if (length(custom_colors) < nrow(x)) {
-        stop("Values in 'custom_colors' are not equal to values in dna_scale ",
-             "object. Please add the following values:\n",
-             paste(x$Row.names[!x$Row.names %in% names(custom_colors)],
-                   collapse = "\n"))
-      }
-      if (!(all(x$Row.names %in% names(custom_colors)))) {
-        stop("Not all dna_scale values are included in the 'custom_colors' ",
-             "object. Please add the following values:\n",
-             paste(x$Row.names[!x$Row.names %in% names(custom_colors)],
-                   collapse = "\n"))
-      }
-    }
-    if (isTRUE(point_colors == "custom")) {
-      if (is.data.frame(custom_colors)) {
-        x$color <- custom_colors$colors[match(x$Row.names, custom_colors$names)]
-      } else if (is.character(custom_colors) & length(custom_colors) == 1) {
-        x$color <- custom_colors
-      } else if (is.character(custom_colors)) {
-        x$color <- custom_colors[match(x$Row.names, names(custom_colors))]
-      }
-    }
-    if (isTRUE(hpd_colors == "custom")) {
-      if (is.data.frame(custom_colors)) {
-        x$color_hpd <- custom_colors$colors[match(x$Row.names, custom_colors$names)]
-      } else if (is.character(custom_colors) & length(custom_colors) == 1) {
-        x$color_hpd <- custom_colors
-      } else if (is.character(hpd_colors)) {
-        x$color_hpd <- custom_colors[match(x$Row.names, names(custom_colors))]
-      }
-    }
-    if (isTRUE(label_colors == "custom")) {
-      if (is.data.frame(custom_colors)) {
-        x$color_label <- custom_colors$colors[match(x$Row.names, custom_colors$names)]
-      } else if (is.character(custom_colors) & length(custom_colors) == 1) {
-        x$color_label <- custom_colors
-      } else if (is.character(label_colors)) {
-        x$color_label <- custom_colors[match(x$Row.names, names(custom_colors))]
+    } else if (is.character(label_colors) | is.numeric(label_colors)) {
+      if (length(label_colors) == 1) {
+        x$color_label <- label_colors
+      } else if (any(x$Row.names %in% names(label_colors))) {
+        if (length(label_colors) < nrow(x)) {
+          stop("Values in 'label_colors' are not equal to values in dna_scale ",
+               "object. Please add the following values:\n",
+               paste(x$Row.names[!x$Row.names %in% names(label_colors)],
+                     collapse = "\n"))
+        }
+        if (!(all(x$Row.names %in% names(label_colors)))) {
+          stop("Not all dna_scale values are included in the 'label_colors' ",
+               "object. Please add the following values:\n",
+               paste(x$Row.names[!x$Row.names %in% names(label_colors)],
+                     collapse = "\n"))
+        }
+        x$color_label <- label_colors[match(x$Row.names, names(label_colors))]
+      } else {
+        if (length(label_colors) != nrow(x)) {
+          stop(paste0("Values of 'label_colors' must equal values in dna_scale",
+                      " object (", nrow(x), ")."))
+        }
+        x$color_label <- label_colors
       }
     }
   }
@@ -5870,7 +5814,7 @@ dna_plotScale <- function(dna_scale,
     if (dimensions == 1) {
       g <- ggplot(x, aes_string(x = "mean",
                                 y = "Row.names",
-                                color = col)) +
+                                color = "colors_point")) +
         geom_vline(xintercept = 0,
                    size = intercept_lwd,
                    linetype = intercept_lty,
@@ -5886,7 +5830,7 @@ dna_plotScale <- function(dna_scale,
     } else if (dimensions == 2.1) {
       g <- ggplot(x, aes_string(x = "mean_dim1",
                                 y = "Row.names",
-                                color = col)) +
+                                color = "colors_point")) +
         geom_vline(xintercept = 0,
                    size = intercept_lwd,
                    linetype = intercept_lty,
@@ -5902,7 +5846,7 @@ dna_plotScale <- function(dna_scale,
     } else if (dimensions == 2.2) {
       g <- ggplot(x, aes_string(x = "mean_dim2",
                                 y = "Row.names",
-                                color = col)) +
+                                color = "colors_point")) +
         geom_vline(xintercept = 0,
                    size = intercept_lwd,
                    linetype = intercept_lty,
@@ -5937,7 +5881,7 @@ dna_plotScale <- function(dna_scale,
   } else if (dimensions == 2) {
     g <- ggplot(x, aes_string(x = "mean_dim1",
                               y = "mean_dim2",
-                              color = col))
+                              color = "colors_point"))
     if (!is.null(hpd)) {
       g <- g +
         geom_errorbarh(aes_string(xmin = "lower_dim1",
@@ -6319,7 +6263,7 @@ dna_barplot <- function(connection,
 #' This function offers several convergence diagnostics for the MCMC chain 
 #' created by the \code{dna_scale} functions. Note that for the values 
 #' indicated in \code{variable2}, only the item discrimination parameters are 
-#' evaluated. There are three possible ways of assessing mixing of a chain:
+#' evaluated. There are three possible ways of assessing the mixing of a chain:
 #'
 #' \code{"trace"} is a graphic inspection of the sampled values by iteration. 
 #' Once the chain has reached its stationary distribution, the parameter values 
@@ -6333,34 +6277,46 @@ dna_barplot <- function(connection,
 #' to non-convergence.
 #'
 #' \code{"geweke"} conducts a difference of means test for the sampled values 
-#' for two sections of the chain by comparing the first 10 percent of 
+#' for two sections of the chain, by comparing the first 10 percent of 
 #' iterations with the final 50 percent of iterations. If the samples are drawn 
 #' from the stationary distribution of the chain, a difference of means test 
 #' should be statistically significant at some conventional level (in our case 
 #' 0.05). The returned test statistic is a standard Z-score. All values should 
-#' be below the 1.96 value which would indicate significance at the p =< 0.05 
+#' be below the 1.96 value which indicates significance at the p =< 0.05 
 #' level.
-#'
+#' 
+#' In case your chain has not converged, a first solution could be to increase 
+#' the \code{iterations} and the \code{burn-in} phase of your scaling. Other 
+#' options can be to reduce the scaling to only prominent actors and/or
+#' concepts with the \code{drop_min_actors} and/or \code{drop_min_concepts} 
+#' arguments in the respective \code{dna_scale} functions. Setting 
+#' \code{constraints} or changing \code{priors} provide another possibility to 
+#' improve your results and achieve chain convergence.
+#' 
 #' @param dna_scale A \code{dna_scale} object.
 #' @param variable Variable for assessing convergence diagnostics. Can either 
-#'   be the value provided in \code{variable1} or \code{variable2} from the 
+#'   be the value provided in \code{variable1} or \code{variable2} of the 
 #'   \code{dna_scale} functions, or \code{"both"} if both stored variables 
 #'   should be analyzed. Defaults to \code{"both"}.
 #' @param method Method for the convergence diagnostics. Supported are 
 #'   \code{"geweke"}, \code{"density"} and \code{"trace"}. Defaults to 
 #'   \code{"geweke"}.
 #' @param colors Colors for either the \code{density} or \code{trace} plots. 
-#'   \code{"identity"} colors the variables according to the attributes in the 
-#'   object and \code{NULL} sets colors off. You can also provide customized 
-#'   colors directly. Possible options are either providing a single character 
-#'   vector (if you wish to color a plot element in only one color), or a 
-#'   character vector or data frame of at least the same length as values in 
-#'   the object. If you use a data frame, please provide one column named 
-#'   \code{"names"} that indicates the names of the values and one column named 
-#'   \code{"colors"} that specifies the value colors. Defaults to 
-#'   \code{"identity"}.
+#'   \code{TRUE} colors the variables according to the attributes in the 
+#'   object and \code{FALSE} sets colors to black. You can also provide 
+#'   customized colors. Possible options are either providing a single 
+#'   character vector (if you wish to color values in only one color), or a 
+#'   character or numeric vector or data frame of at least the same length as 
+#'   values in the object. If you use a data frame, please provide one column 
+#'   named \code{"names"} that indicates the names of the values and one column 
+#'   named \code{"colors"} that specifies the value colors. Defaults to 
+#'   \code{TRUE}.
+#' @param trace_size Size of the trace lines for the \code{traceplots}.
 #' @param nrow Number of rows for the facet plot.
 #' @param ncol Number of columns for the facet plot.
+#' @param facet_page If the number of values to be plotted exceeds the 
+#'   specified number of columns and rows of the facet plot, the plot is split 
+#'   into several pages. \code{facet_page} indicates the page you wish to plot.
 #' @param value Optional character vector if only specific values should be 
 #'   analyzed. If specified, \code{variable} will be ignored.
 #'
@@ -6379,13 +6335,13 @@ dna_barplot <- function(connection,
 #' dna_convergenceScale(dna_scale,
 #'                      variable = "both",
 #'                      method = "trace",
-#'                      colors = "identity",
+#'                      colors = TRUE,
 #'                      nrow = 4,
 #'                      ncol = 4)
 #'
 #' dna_convergenceScale(dna_scale,
 #'                      method = "density",
-#'                      colors = NULL,
+#'                      colors = TRUE,
 #'                      nrow = 1,
 #'                      ncol = 2,
 #'                      value = c("Senate", "Sierra Club"))
@@ -6402,9 +6358,11 @@ dna_barplot <- function(connection,
 dna_convergenceScale <- function(dna_scale,
                                  variable = "both",
                                  method = "geweke",
-                                 colors = "identity",
+                                 colors = TRUE,
+                                 trace_size = 0.5,
                                  nrow = 3,
                                  ncol = 3,
+                                 facet_page = 1,
                                  value = NULL) {
   if (!any(grepl("dna_scale", class(dna_scale), fixed = TRUE))) {
     stop ("This is not a dna_scale object.")
@@ -6440,7 +6398,9 @@ dna_convergenceScale <- function(dna_scale,
       stop("'value' could not be found in dna_scale object.")
     }
     if (any(!value %in% dna_scale$attributes$Row.names)) {
-      warning("At least one value could not be found in dna_scale object.")
+      warning("The following values could not be found in dna_scale object:",
+              "\n", paste(value[!value %in% dna_scale$attributes$Row.names],
+                         collapse = "\n"))
     }
     if ("dna_scale1dbin" %in% class(dna_scale)) {
       colnames(dna_scale$sample) <- gsub("^theta.|^beta.", "",
@@ -6528,166 +6488,170 @@ dna_convergenceScale <- function(dna_scale,
     }
   }
   if (method == "geweke") {
-    return(sort(abs(coda::geweke.diag(x)$z), decreasing = FALSE))
+    g <- sort(abs(coda::geweke.diag(x)$z), decreasing = FALSE)
   } else if (method == "trace" | method == "density") {
-    suppressMessages(melt <- reshape2::melt(as.data.frame(x)))
+    suppressMessages(z <- reshape2::melt(as.data.frame(x)))
     if (!is.null(colors)) {
       if ("dna_scale1dbin" %in% class(dna_scale) |
           "dna_scale1dord" %in% class(dna_scale)) {
-        melt <- dplyr::group_by(melt, variable)
+        z <- dplyr::group_by(z, variable)
       } else {
-        melt$name <- gsub("_dim1$|_dim2$", "", melt$variable)
-        melt <- dplyr::group_by(melt, name)
+        z$name <- gsub("_dim1$|_dim2$", "", z$variable)
+        z <- dplyr::group_by(z, name)
       }
       if ("dna_scale1dbin" %in% class(dna_scale) |
           "dna_scale1dord" %in% class(dna_scale)) {
-        if (isTRUE(colors == "identity")) {
-          melt$color <- dna_scale$attributes$color[match(melt$variable, dna_scale$attributes$Row.names)]
+        if (isTRUE(colors)) {
+          z$color <- dna_scale$attributes$color[match(z$variable, dna_scale$attributes$Row.names)]
+        } else if (isTRUE(colors == FALSE)) {
+          z$color <- "#000000"
         } else if (is.data.frame(colors)) {
           if (!("names" %in% colnames(colors) |
                 "colors" %in% colnames(colors))) {
             stop("Cannot find column names specified as \"names\" or ",
                  "\"colors\" in 'colors' object. Please provide both columns ",
-                 "with matching values to enable custom colors.")
+                 "with matching values.")
           }
-          if (nrow(colors) < length(unique(melt$variable))) {
+          if (nrow(colors) < length(unique(z$variable))) {
             stop("Values in 'colors' are not equal to values in dna_scale ",
                  "object. Please add the following values:\n",
-                 paste(unique(melt$variable)[!unique(melt$variable) %in% colors$names],
+                 paste(unique(z$variable)[!unique(z$variable) %in% colors$names],
                        collapse = "\n"))
           }
-          if (!(all(unique(melt$variable) %in% colors$names))) {
+          if (!(all(unique(z$variable) %in% colors$names))) {
             stop("Not all dna_scale values are included in the 'colors' ",
                  "object. Please add the following values:\n",
-                 paste(unique(melt$variable)[!unique(melt$variable) %in% colors$names],
+                 paste(unique(z$variable)[!unique(z$variable) %in% colors$names],
                        collapse = "\n"))
           }
-          melt$color <- colors$colors[match(melt$variable, colors$names)]
-        } else if (is.character(colors) & length(colors) == 1) {
-          melt$color <- colors
-        } else if (is.character(colors)) {
-          if (length(colors) < length(unique(melt$variable))) {
-            stop("Values in 'colors' are not equal to values in dna_scale ",
-                 "object. Please add the following values:\n",
-                 paste(unique(melt$variable)[!unique(melt$variable) %in% names(colors)],
-                       collapse = "\n"))
+          z$color <- colors$colors[match(z$variable, colors$names)]
+        } else if (is.character(colors) | is.numeric(colors)) {
+          if (length(colors) == 1) {
+            z$color <- colors
+          } else if (any(z$variable %in% names(colors))) {
+            if (length(colors) < length(unique(z$variable))) {
+              stop("Values in 'colors' are not equal to values in dna_scale ",
+                   "object. Please add the following values:\n",
+                   paste(unique(z$variable)[!unique(z$variable) %in% names(colors)],
+                         collapse = "\n"))
+            }
+            if (!(all(unique(z$variable) %in% names(colors)))) {
+              stop("Not all dna_scale values are included in the 'colors' ",
+                   "object. Please add the following values:\n",
+                   paste(unique(z$variable)[!unique(z$variable) %in% names(colors)],
+                         collapse = "\n"))
+            }
+            z$color <- colors[match(z$variable, names(colors))]
+          } else {
+            if (length(colors) != length(unique(z$variable))) {
+              stop(paste0("Values of 'colors' must equal values in dna_scale",
+                          " object (", length(unique(z$variable)), ")."))
+            }
+            z$color <- rep(colors, each = nrow(dna_scale$sample))
           }
-          if (!(all(unique(melt$variable) %in% names(colors)))) {
-            stop("Not all dna_scale values are included in the 'colors' ",
-                 "object. Please add the following values:\n",
-                 paste(unique(melt$variable)[!unique(melt$variable) %in% names(colors)],
-                       collapse = "\n"))
-          }
-          melt$color <- colors[match(melt$variable, names(colors))]
         }
       } else {
-        if (isTRUE(colors == "identity")) {
-          melt$color <- dna_scale$attributes$color[match(melt$name, dna_scale$attributes$Row.names)]
+        if (isTRUE(colors)) {
+          z$color <- dna_scale$attributes$color[match(z$name, dna_scale$attributes$Row.names)]
+        } else if (isTRUE(colors == FALSE)) {
+          z$color <- "#000000"
         } else if (is.data.frame(colors)) {
           if (!("names" %in% colnames(colors) |
                 "colors" %in% colnames(colors))) {
             stop("Cannot find column names specified as \"names\" or ",
                  "\"colors\" in 'colors' object. Please provide both columns ",
-                 "with matching values to enable custom colors.")
+                 "with matching values.")
           }
-          if (nrow(colors) < length(unique(melt$name))) {
+          if (nrow(colors) < length(unique(z$name))) {
             stop("Values in 'colors' are not equal to values in dna_scale ",
                  "object. Please add the following values:\n",
-                 paste(unique(melt$name)[!unique(melt$name) %in% colors$names],
+                 paste(unique(z$name)[!unique(z$name) %in% colors$names],
                        collapse = "\n"))
           }
-          if (!(all(unique(melt$name) %in% colors$names))) {
+          if (!(all(unique(z$name) %in% colors$names))) {
             stop("Not all dna_scale values are included in the 'colors' ",
                  "object. Please add the following values:\n",
-                 paste(unique(melt$name)[!unique(melt$name) %in% colors$names],
+                 paste(unique(z$name)[!unique(z$name) %in% colors$names],
                        collapse = "\n"))
           }
-          melt$color <- colors$colors[match(melt$name, colors$names)]
-        } else if (is.character(colors) & length(colors) == 1) {
-          melt$color <- colors
-        } else if (is.character(colors)) {
-          if (length(colors) < length(unique(melt$name))) {
-            stop("Values in 'colors' are not equal to values in dna_scale ",
-                 "object. Please add the following values:\n",
-                 paste(unique(melt$name)[!unique(melt$name) %in% names(colors)],
-                       collapse = "\n"))
+          z$color <- colors$colors[match(z$name, colors$names)]
+        } else if (is.character(colors) | is.numeric(colors)) {
+          if (length(colors) == 1) {
+            z$color <- colors
+          } else if (any(z$name %in% names(colors))) {
+            if (length(colors) < length(unique(z$name))) {
+              stop("Values in 'colors' are not equal to values in dna_scale ",
+                   "object. Please add the following values:\n",
+                   paste(unique(z$name)[!unique(z$name) %in% names(colors)],
+                         collapse = "\n"))
+            }
+            if (!(all(unique(z$name) %in% names(colors)))) {
+              stop("Not all dna_scale values are included in the 'colors' ",
+                   "object. Please add the following values:\n",
+                   paste(unique(z$name)[!unique(z$name) %in% names(colors)],
+                         collapse = "\n"))
+            }
+            z$color <- colors[match(z$name, names(colors))]
+          } else {
+            if (length(colors) != length(unique(z$name))) {
+              stop(paste0("Values of 'colors' must equal values in dna_scale",
+                          " object (", length(unique(z$name)), ")."))
+            }
+            z$color <- rep(colors, each = nrow(dna_scale$sample))
           }
-          if (!(all(unique(melt$name) %in% names(colors)))) {
-            stop("Not all dna_scale values are included in the 'colors' ",
-                 "object. Please add the following values:\n",
-                 paste(unique(melt$name)[!unique(melt$name) %in% names(colors)],
-                       collapse = "\n"))
-          }
-          melt$color <- colors[match(melt$name, names(colors))]
         }
       }
     }
-    col <- switch(!is.null(colors), "color")
     if (method == "density") {
-      g <- ggplot(melt, aes_string(x = "value")) +
-        geom_density(aes_string(group = "variable",
-                                colour = col, fill = col),
+      g <- ggplot(z, aes(x = value)) +
+        geom_density(aes(colour = color, fill = color),
                      alpha = 0.3) +
         theme(axis.text.y = element_blank(),
               axis.ticks.y = element_blank(),
               axis.title = element_blank())
-      if (length(unique(melt$variable)) == 1) {
-        g <- g + ggtitle(melt$variable)
-      } else if (length(unique(melt$variable)) > 1 &
-                 length(unique(melt$variable)) <= (nrow * ncol)) {
+      if (length(unique(z$variable)) == 1) {
+        g <- g + ggtitle(z$variable)
+      } else if (length(unique(z$variable)) > 1 &
+                 length(unique(z$variable)) <= (nrow * ncol)) {
         g <- g + facet_wrap(~variable, scales = "free")
-      } else if (length(unique(melt$variable)) > (nrow * ncol)) {
+      } else if (length(unique(z$variable)) > (nrow * ncol)) {
         # Calculate number of pages for facets
-        n_pages <- ceiling(length(unique(melt$variable)) / (nrow * ncol))
-        g <- lapply(seq_len(n_pages), function(i) {
+        n_pages <- ceiling(length(unique(z$variable)) / (nrow * ncol))
+        if (facet_page > n_pages) {
+          stop(paste0("The specified 'facet_page' is higher than the maximum ",
+                      "number of pages (", n_pages, ")."))
+        }
           g <- g + ggforce::facet_wrap_paginate(~variable,
                                                 scales = "free",
                                                 nrow = nrow,
                                                 ncol = ncol,
-                                                page = i)
-          if (!is.null(colors)) {
-            g <- g + scale_color_identity() + scale_fill_identity()
-          }
-          return(g)
-        })
-        names(g) <- sapply(seq_len(n_pages), function(i) {
-          paste("page:", i, "of", n_pages)
-        })
-        class(g) <- c("dna_convergenceScale", class(g))
-        colors <- NULL
+                                                page = facet_page)
       }
     } else if (method == "trace") {
-      melt$it <- 1:nrow(dna_scale$sample)
-      g <- ggplot(melt, aes_string(y = "value", x = "it")) +
-        geom_line(aes_string(group = "variable", color = col), size = 0.01) +
+      z$it <- 1:nrow(dna_scale$sample)
+      g <- ggplot(z, aes(y = value, x = it)) +
+        geom_line(color = z$color, size = trace_size) +
         theme(axis.title = element_blank())
-      if (length(unique(melt$variable)) == 1) {
-        g <- g + ggtitle(melt$variable)
-      } else if (length(unique(melt$variable)) > 1 &
-                 length(unique(melt$variable)) <= (nrow * ncol)) {
+      if (length(unique(z$variable)) == 1) {
+        g <- g + ggtitle(z$variable)
+      } else if (length(unique(z$variable)) > 1 &
+                 length(unique(z$variable)) <= (nrow * ncol)) {
         g <- g + facet_wrap(~variable,
                             scales = "free",
                             nrow = nrow,
                             ncol = ncol)
-      } else if (length(unique(melt$variable)) > (nrow * ncol)) {
+      } else if (length(unique(z$variable)) > (nrow * ncol)) {
         # Calculate number of pages for facets
-        n_pages <- ceiling(length(unique(melt$variable)) / (nrow * ncol))
-        g <- lapply(seq_len(n_pages), function(i) {
+        n_pages <- ceiling(length(unique(z$variable)) / (nrow * ncol))
+        if (facet_page > n_pages) {
+          stop(paste0("The specified 'facet_page' is higher than the maximum ",
+                      "number of pages (", n_pages, ")."))
+        }
           g <- g + ggforce::facet_wrap_paginate(~variable,
                                                 scales = "free",
                                                 nrow = nrow,
                                                 ncol = ncol,
-                                                page = i)
-          if (!is.null(colors)) {
-            g <- g + scale_color_identity() + scale_fill_identity()
-          }
-          return(g)
-        })
-        names(g) <- sapply(seq_len(n_pages), function(i) {
-          paste("page:", i, "of", n_pages)
-        })
-        class(g) <- c("dna_convergenceScale", class(g))
-        colors <- NULL
+                                                page = facet_page)
       }
     }
     if (!is.null(colors)) {
@@ -6695,41 +6659,6 @@ dna_convergenceScale <- function(dna_scale,
     }
   }
   return(g)
-}
-
-
-#' Print the summary of a \code{dna_convergenceScale} object
-#'
-#' Prints the plots of a \code{dna_convergenceScale} object, when the object 
-#' to be plotted exceeds a meaningful plot on one page.
-#' 
-#' In case you choose to plot a wide range of actors and/or concepts, which 
-#' exceed a meaningful plot on one page, \code{dna_convergenceScale} uses 
-#' \link[ggforce]{facet_wrap_paginate} under the hood to display the single 
-#' facet plots on several pages.
-#' 
-#' @param x A \code{dna_convergenceScale} object.
-#' @param ... Further options (currently not used).
-#'
-#' @examples
-#' \dontrun{
-#' dna_convergenceScale <- dna_convergenceScale(dna_scale,
-#'                                              variable = "both",
-#'                                              method = "trace",
-#'                                              colors = NULL,
-#'                                              nrow = 1,
-#'                                              ncol = 1)
-#' dna_convergenceScale
-#' }
-#' @author Tim Henrichsen, Johannes B. Gruber
-#' @export
-print.dna_convergenceScale <- function(x, ...) {
-  for (i in seq_along(x)) {
-    print(names(x)[i])
-    print(x[[i]])
-    continue <- menu(c("Next plot", "Stop"), title = "continue?")
-    if (continue %in% c(0, 2)) break()
-  }
 }
 
 
@@ -6979,36 +6908,65 @@ bin_recode <- function(connection,
     }
   }
   if (isTRUE(drop_min_actors > 1) | isTRUE(drop_min_concepts > 1)) {
-    # Drop actors with less than specified concepts used
-    nw_exclude <- do.call("dna_network", c(list(
-      connection = connection,
-      networkType = "twomode",
-      variable1 = variable1,
-      variable2 = variable2,
-      qualifier = qualifier,
-      qualifierAggregation = "ignore",
-      duplicates = "acrossrange",
-      verbose = FALSE,
-      excludeValues = excludeValues,
-      invertValues = invertValues),
-      dots_nw))
+    nw_exclude <- nw2
+    nw_exclude[nw_exclude == 0] <- 1
+    nw_exclude[is.na(nw_exclude)] <- 0
     if (isTRUE(drop_min_actors > 1)) {
+      if (drop_min_actors > max(rowSums(nw_exclude))) {
+        stop(paste0("The specified number in 'drop_min_actors' is higher than ",
+             "the maximum number of concepts mentioned by an actor (",
+             max(rowSums(nw_exclude))), ").")
+      }
       nw2 <- nw2[rowSums(nw_exclude) >= drop_min_actors, ]
     }
     if (isTRUE(drop_min_concepts > 1)) {
+      if (drop_min_concepts > max(colSums(nw_exclude))) {
+        stop(paste0("The specified number in 'drop_min_concepts' is higher ",
+                    "than the maximum number of jointly mentioned concepts (",
+                    max(colSums(nw_exclude))), ").")
+      }
       nw2 <- nw2[, colSums(nw_exclude) >= drop_min_concepts]
     }
   }
+  # Test if actor is without any statements
+  filter_actor <- sapply(rownames(nw2), function(c) {
+    !sum(is.na(nw2[c, ]) * 1) >= ncol(nw2)
+  })
   # Test if only one concept used by actor
-  filter <- sapply(colnames(nw2), function(c) {
+  filter_concept <- sapply(colnames(nw2), function(c) {
     !sum(is.na(nw2[, c]) * 1) >= nrow(nw2) - 1
   })
-  nw2 <- nw2[, filter]
-  if ("FALSE" %in% filter) {
-    warning("dna_scale requires concepts mentioned by at least two actors. ",
-            "The following concepts have therefore not been included in the ",
-            "scaling:\n",
-            paste(names(filter[filter == FALSE]), collapse = "\n"))
+  nw2 <- nw2[filter_actor, filter_concept]
+  if ("FALSE" %in% filter_concept) {
+    if (drop_min_actors > 1 & drop_min_concepts >= 2) {
+      warning("After deleting actors with 'drop_min_actors', some concepts ",
+              "are now mentioned by less than the two required actors. The ",
+              "follwing concepts have therefore not been included in the ",
+              "scaling:\n",
+              paste(names(filter_concept[filter_concept == FALSE]),
+                    collapse = "\n"))
+    } else {
+      warning("dna_scale requires concepts mentioned by at least two actors. ",
+              "The following concepts have therefore not been included in the ",
+              "scaling:\n",
+              paste(names(filter_concept[filter_concept == FALSE]),
+                    collapse = "\n"))
+    }
+  }
+  if ("FALSE" %in% filter_actor) {
+    if (drop_min_concepts >= 1) {
+      warning("After deleting concepts with 'drop_min_concepts', some actors ",
+              "now have less than one statement. The following actors have ",
+              "therefore not been included in the scaling:\n",
+              paste(names(filter_actor[filter_actor == FALSE]),
+                    collapse = "\n"))
+    } else {
+      warning("Some actors do not have any statements and were not included in",
+              " the scaling. Setting or lowering the 'threshold' might include",
+              " them:\n",
+              paste(names(filter_actor[filter_actor == FALSE]),
+                    collapse = "\n"))
+    }
   }
   out <- list(nw2 = nw2,
               dots = dots,
@@ -7085,7 +7043,6 @@ ord_recode <- function(connection,
                                       excludeValues = excludeValues,
                                       invertValues = invertValues),
                                  dots_nw))
-  
   if (!all(unique(nw[, qualifier])) %in% c(0, 1)) {
     nw <- do.call("dna_network", c(list(connection = connection,
                                         networkType = "twomode",
@@ -7145,7 +7102,6 @@ ord_recode <- function(connection,
                           excludeValues),
         invertValues = invertValues),
         dots_nw))
-      
       nw_neg <- do.call("dna_network", c(list(
         connection = connection,
         networkType = "twomode",
@@ -7160,11 +7116,9 @@ ord_recode <- function(connection,
                           excludeValues),
         invertValues = invertValues),
         dots_nw))
-      
       nw_com <- (nw_pos - nw_neg) / (nw_pos + nw_neg)
       nw2 <- nw_com
       threshold <- threshold * 2 - 1
-      
       if (zero_as_na == TRUE) {
         nw2[is.nan(nw_com)] <- NA
         nw2[nw_com < threshold &
@@ -7183,41 +7137,70 @@ ord_recode <- function(connection,
     }
   }
   if (isTRUE(drop_min_actors > 1) | isTRUE(drop_min_concepts > 1)) {
-    # Drop actors with less than specified concepts used
-    nw_exclude <- do.call("dna_network", c(list(
-      connection = connection,
-      networkType = "twomode",
-      variable1 = variable1,
-      variable2 = variable2,
-      qualifier = qualifier,
-      qualifierAggregation = "ignore",
-      duplicates = "acrossrange",
-      verbose = FALSE,
-      excludeValues = excludeValues,
-      invertValues = invertValues),
-      dots_nw))
+    nw_exclude <- nw2
+    nw_exclude[nw_exclude > 1] <- 1
+    nw_exclude[is.na(nw_exclude)] <- 0
     if (isTRUE(drop_min_actors > 1)) {
+      if (drop_min_actors > max(rowSums(nw_exclude))) {
+        stop(paste0("The specified number in 'drop_min_actors' is higher than ",
+                    "the maximum number of concepts mentioned by an actor (",
+                    max(rowSums(nw_exclude))), ").")
+      }
       nw2 <- nw2[rowSums(nw_exclude) >= drop_min_actors, ]
     }
     if (isTRUE(drop_min_concepts > 1)) {
+      if (drop_min_concepts > max(colSums(nw_exclude))) {
+        stop(paste0("The specified number in 'drop_min_concepts' is higher ",
+                    "than the maximum number of jointly mentioned concepts (",
+                    max(colSums(nw_exclude))), ").")
+      }
       nw2 <- nw2[, colSums(nw_exclude) >= drop_min_concepts]
     }
   }
+  # Test if actor is without any statements
+  filter_actor <- sapply(rownames(nw2), function(c) {
+    !sum(is.na(nw2[c, ]) * 1) >= ncol(nw2)
+  })
   # Test if only one concept used by actor
-  filter <- sapply(colnames(nw2), function(c) {
+  filter_concept <- sapply(colnames(nw2), function(c) {
     !sum(is.na(nw2[, c]) * 1) >= nrow(nw2) - 1
   })
-  nw2 <- nw2[, filter]
-  if ("FALSE" %in% filter) {
-    warning("dna_scale requires concepts mentioned by at least two actors. ",
-            "The following concepts have therefore not been included in the ",
-            "scaling:\n",
-            paste(names(filter[filter == FALSE]), collapse = "\n"))
+  nw2 <- nw2[filter_actor, filter_concept]
+  if ("FALSE" %in% filter_concept) {
+    if (drop_min_actors > 1 & drop_min_concepts >= 2) {
+      warning("After deleting actors with 'drop_min_actors', some concepts ",
+              "are now mentioned by less than the two required actors. The ",
+              "follwing concepts have therefore not been included in the ",
+              "scaling:\n",
+              paste(names(filter_concept[filter_concept == FALSE]),
+                    collapse = "\n"))
+    } else {
+      warning("dna_scale requires concepts mentioned by at least two actors. ",
+              "The following concepts have therefore not been included in the ",
+              "scaling:\n",
+              paste(names(filter_concept[filter_concept == FALSE]),
+                    collapse = "\n"))
+    }
   }
-  out <- list(nw2 = nw2, 
-              dots = dots, 
+  if ("FALSE" %in% filter_actor) {
+    if (drop_min_concepts >= 1) {
+      warning("After deleting concepts with 'drop_min_concepts', some actors ",
+              "now have less than one statement. The following actors have ",
+              "therefore not been included in the scaling:\n",
+              paste(names(filter_actor[filter_actor == FALSE]),
+                    collapse = "\n"))
+    } else {
+      warning("Some actors do not have any statements and were not included in",
+              " the scaling. Setting or lowering the 'threshold' might include",
+              " them:\n",
+              paste(names(filter_actor[filter_actor == FALSE]),
+                    collapse = "\n"))
+    }
+  }
+  out <- list(nw2 = nw2,
+              dots = dots,
               dots_nw = dots_nw,
-              excludeValues = excludeValues, 
+              excludeValues = excludeValues,
               invertValues = invertValues)
   return(out)
 }

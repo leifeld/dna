@@ -5,13 +5,13 @@
 \title{Plot ideological ideal points from a dna_scale object}
 \usage{
 dna_plotScale(dna_scale, variable = "organization", dimensions = 1,
-  hpd = 0.95, label = TRUE, label_size = 10, label_colors = NULL,
-  point_size = 4, point_colors = "identity", hpd_lwd = 0.8,
-  hpd_colors = "identity", intercept_lwd = 0.8,
+  hpd = 0.95, label = TRUE, label_size = 10, label_colors = FALSE,
+  point_size = 4, point_colors = TRUE, hpd_lwd = 0.8,
+  hpd_colors = TRUE, intercept_lwd = 0.8,
   intercept_color = "#525252", intercept_lty = "dashed",
   intercept_alpha = 0.4, facet = NULL, truncate = 60,
   x_axis_label = NULL, y_axis_label = NULL, exclude_min = 1,
-  exclude = NULL, custom_colors = NULL)
+  exclude = NULL)
 }
 \arguments{
 \item{dna_scale}{A \code{dna_scale} object.}
@@ -32,26 +32,22 @@ HPDs.}
 \item{label_size, point_size}{Label and point size in pts.}
 
 \item{label_colors, point_colors, hpd_colors}{Colors for the labels, points 
-and Highest Posterior Densities of the plot. Three options are available 
-for all three arguments: \code{"identity"} colors the variables according 
-to the attributes in the object. \code{NULL} sets colors off and 
-\code{"custom"} allows you to specify customized colors in the argument 
-\code{custom_colors}. For \code{label_colors} and \code{hpd_colors}, you 
-can further directly provide customized colors not indicated in 
-\code{custom_colors}. This can be useful if you prefer individual colors 
-for particular elements of the plot. Possible options are either providing 
-a single character vector (if you wish to color a plot element in only one 
-color), or a character vector or data frame of at least the same length as 
-values in the object. If you use a data frame, please provide one column 
-named \code{"names"} that indicates the names of the values and one column 
-named \code{"colors"} that specifies the value colors.}
+and Highest Posterior Densities of the plot. \code{TRUE} colors the 
+variables according to the attributes in the object and \code{FALSE} sets 
+colors to black. You can also provide customized colors. Possible 
+options are either providing a single character vector (if you wish to 
+color a plot element in only one color), or a character or numeric vector 
+or data frame of at least the same length as values to be plotted. If you 
+use a data frame, please provide one column named \code{"names"} that 
+indicates the names of the values and one column named \code{"colors"} 
+that specifies the value colors. Defaults to \code{TRUE}.}
 
 \item{hpd_lwd}{Highest Posterior Density interval linewidth in pts.}
 
 \item{intercept_lwd}{Linewidth of the intercept (a vertical bar indicating 
 zero) in pts.}
 
-\item{intercept_color}{Colors for the intercept.}
+\item{intercept_color}{Color for the intercept.}
 
 \item{intercept_lty}{A character vector providing the linetype of the 
 intercept. Valid values are \code{"solid"}, \code{"dashed"}, 
@@ -59,7 +55,7 @@ intercept. Valid values are \code{"solid"}, \code{"dashed"},
 \code{"blank"}. Defaults to \code{"dashed"}. \code{"blank"} turns off 
 intercept.}
 
-\item{intercept_alpha}{A numeric value indicating the alpha level for the 
+\item{intercept_alpha}{A numeric value indicating the alpha level of the 
 intercept.}
 
 \item{facet}{A character vector specifying which attribute of the variable 
@@ -76,14 +72,6 @@ axis label name(s).}
 with a minimum frequency of statements.}
 
 \item{exclude}{A character vector to exclude actors/concepts from the plot.}
-
-\item{custom_colors}{Customized colors for the labels, points and/or 
-Highest Posterior Density intervals. Possible options are either providing 
-a single character vector (if you wish to color a plot element in only one 
-color), or a character vector or data frame of at least the same length as 
-values in the object. If you use a data frame, please provide one column 
-named \code{"names"} that indicates the names of the values and one column 
-named \code{"colors"} that specifies the value colors.}
 }
 \description{
 Plots ideological ideal points with the results of the MCMC scaling 
@@ -94,25 +82,19 @@ This function is a convenience wrapper for the \code{ggplot2} package to
 plot ideological ideal points from \code{dna_scale} objects. Two different 
 variables can be plotted:
 
-Firstly, you can plot the ideological ideal points of subjects (e.g. 
+Firstly, you can plot the ideological ideal points of subjects (e.g., 
 \code{"organizations"}) which you have provided in \code{variable1} of the 
 \code{dna_scale} functions. The ideal point, which is the mean value of the 
-MCMC sample parameters, serves as as ideological position of an actor in a 
-e.g. ideological or policy dimension.
+MCMC sample parameters, serves as the ideological position of an actor in an 
+e.g., ideological or policy dimension.
 
 Secondly, you can plot the item discrimination parameter of the variable 
-provided in \code{variable2} of \code{dna_scale} (e.g. \code{"concepts"}). 
-The item discrimination parameter indicates how well for example a specific 
-\code{"concept"} separates actors in the ideological space.
+provided in \code{variable2} of the \code{dna_scale} functions (e.g., 
+\code{"concepts"}). The item discrimination parameter indicates how 
+good for example a specific \code{"concept"} separates actors in the 
+ideological space.
 
-By providing colors in the \code{custom_colors} argument, you can tailor the 
-plot by specifying customized colors for the ideal points, their Highest 
-Posterior Densities (HPD), or the ideal point labels. If you wish to 
-distinguish the HPD and/or label colors from the point or 
-\code{custom_colors}, you can also directly specify them in the 
-\code{hpd_colors} or \code{label_colors} argument.
-
-Plotting all actors or concepts can create chaotic plots, you can therefore 
+Plotting all actors or concepts can create chaotic plots, you can, therefore, 
 limit the plot by including only the most active actors or most prominent 
 concepts with \code{exclude_min}. Specific entries can be excluded with the 
 \code{exclude} argument. Furthermore, the plot can be split into several 
@@ -120,7 +102,6 @@ facets according to the attributes of the variables.
 }
 \examples{
 \dontrun{
-
 dna_scale <- dna_scale1dbin(connection,
                             variable1 = "organization",
                             variable2 = "concept",
@@ -134,30 +115,8 @@ dna_plotScale(dna_scale,
               variable = "organization",
               dimensions = 1,
               hpd = 0.95,
-              point_colors = "identity",
+              point_colors = TRUE,
               exclude = c("Environmental Protection Agency", "Senate"))
-
-# Customized plot
-dna_plotScale(dna_scale,
-              variable = "organization",
-              dimensions = 1,
-              hpd = 0.95,
-              point_colors = "custom",
-              label = TRUE,
-              label_size = 10,
-              label_colors = "custom",
-              point_size = 4,
-              hpd_colors = "custom",
-              hpd_lwd = 0.2,
-              intercept_color = "#'525252",
-              intercept_lty = "solid",
-              intercept_lwd = 0.8,
-              intercept_alpha = 0.4,
-              x_axis_label = "Ideological Ideal Point",
-              exclude_min = 6,
-              custom_colors = c("Sierra Club" = "#'33a02c",
-                                "Environmental Protection Agency" = "#'fdbf6f",
-                                "U.S. Public Interest Research Group" = "#'b15928"))
 }
 
 }

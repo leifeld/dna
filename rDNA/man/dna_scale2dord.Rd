@@ -7,11 +7,11 @@
 dna_scale2dord(connection, variable1 = "organization",
   variable2 = "concept", qualifier = "agreement", zero_as_na = TRUE,
   threshold = NULL, lambda_constraints = NULL,
-  mcmc_iterations = 20000, mcmc_burnin = 1000, mcmc_thin = 1,
+  mcmc_iterations = 20000, mcmc_burnin = 1000, mcmc_thin = 10,
   mcmc_tune = 1.5, lambda_start = NA, lambda_prior_mean = 0,
-  lambda_prior_variance = 1, store_variables = "both",
+  lambda_prior_variance = 0.1, store_variables = "both",
   drop_constant_concepts = FALSE, drop_min_actors = 1,
-  drop_min_concepts = 1, verbose = TRUE, seed = 12345, ...)
+  drop_min_concepts = 2, verbose = TRUE, seed = 12345, ...)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
@@ -31,22 +31,31 @@ towards a concept will be recoded as \code{NA}. If \code{FALSE} as
 \code{2}.}
 
 \item{threshold}{Numeric value that specifies when a mixed position can be 
-considered as agreement or disagreement (see details). Must be strictly 
+considered as agreement or disagreement. If e.g., one actor has 60 percent 
+of agreeing and 40 percent of disagreeing statements towards a concept, a 
+\code{threshold} of 0.51 will recode the actor position on this concept as 
+"agreement". The same accounts also for disagreeing statements. If one 
+actor has 60 percent of disagreeing and 40 percent of agreeing statements, 
+a \code{threshold} of 0.51 will recode the actor position on this concept 
+as "disagreement". All values in between the \code{threshold} (e.g., 55 
+percent agreement and 45 percent of disagreement and a threshold of 0.6) 
+will be recoded as \code{2}. If is set to \code{NULL}, all "mixed"  
+positions of actors will be recoded as \code{2}. Must be strictly 
 positive.}
 
 \item{lambda_constraints}{A list of lists specifying constraints on the 
 concept parameters. Note that value \code{1} in the brackets of the 
 argument refers to the item difficulty parameters, which in 
-general should not be constrained. Value \code{2} relates to the item 
-discrimination parameter and should be used for constraints on concepts.
-Three possible forms of constraints are possible: 
-\code{conceptname = list(2, value)} will constrain a concept to be 
-equal to the specified value (e.g. 0) on the first dimension of the item 
-discrimination parameter. \code{conceptname = list(2,"+")} will constrain 
-the concept to be positively scaled on the first dimension and
+general should not be constrained. All values above \code{1} relate to the 
+item discrimination parameters on the single dimensions. These should be 
+used for constraints on concepts. Three possible forms of constraints are 
+possible: \code{conceptname = list(2, value)} will constrain a concept to 
+be equal to the specified value (e.g., 0) on the first dimension of the 
+item discrimination parameter. \code{conceptname = list(2,"+")} will 
+constrain the concept to be positively scaled on the first dimension and
 \code{conceptname = list(2, "-")} will constrain the concept to be 
-negatively scaled on the first dimension (see example and details). If you 
-wish to constrain a concept on the second dimensions, please indicate this 
+negatively scaled on the first dimension (see example). If you 
+wish to constrain a concept on the second dimension, please indicate this 
 with a \code{3} in the first position in the bracket.}
 
 \item{mcmc_iterations}{The number of iterations for the sampler.}
@@ -83,27 +92,28 @@ speed of the scaling. Defaults to \code{"both"}.}
 \item{drop_constant_concepts}{Logical. Should concepts that have no 
 variation be deleted before the scaling? Defaults to \code{FALSE}.}
 
-\item{drop_min_actors}{A numeric value specifying the minimum amount of 
-concepts actors should have mentioned to be included in the scaling.}
+\item{drop_min_actors}{A numeric value specifying the minimum number of 
+concepts actors should have mentioned to be included in the scaling. 
+Defaults to \code{1}.}
 
 \item{drop_min_concepts}{A numeric value specifying the minimum number a 
-concept should have been jointly mentioned by actors.}
+concept should have been jointly mentioned by actors. Defaults to \code{2}.}
 
 \item{verbose}{A boolean or numeric value indicating whether the iterations 
 of the scaling should be printed to the R console. If set to a numeric 
-value, every \code{verbosev} iteration will be printed. If set to 
+value, every \code{verboseth} iteration will be printed. If set to 
 \code{TRUE}, \code{verbose} will print the total of iterations and burn-in 
 divided by \code{100}.}
 
 \item{seed}{The random seed for the scaling.}
 
 \item{...}{Additional arguments passed to \link{dna_network}. Actors can 
-e.g. be removed with the \code{excludeValues} arguments. The scaling can 
+e.g., be removed with the \code{excludeValues} arguments. The scaling can 
 also be applied to a specific time slice by using \code{start.date} and 
 \code{stop.date}.}
 }
 \description{
-Scale ideological positions of two variables (e.g. organizations and 
+Scale ideological positions of two variables (e.g., organizations and 
 concepts from a DNA connection by using Markov Chain Monte Carlo for 
 ordinal two-dimensional Item Response Theory. This is one of the four 
 scaling functions. For one-dimensional binary scaling, see 
@@ -121,7 +131,7 @@ further help for the scaling arguments, see \link[MCMCpack]{MCMCordfactanal}.
 
 As in a two-mode network in \link{dna_network}, two variables have to be 
 provided for the scaling. The first variable corresponds to the rows of a 
-two-mode network and usually entails actors (e.g. \code{"organizations"}), 
+two-mode network and usually entails actors (e.g., \code{"organizations"}), 
 while the second variable is equal to the columns of a two-mode network, 
 typically expressed by \code{"concepts"}. The \code{dna_scale} functions 
 use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1} 
@@ -132,22 +142,12 @@ and \code{variable2}. However, the scaling is not restricted to
 \code{dna_scale2dord} internally uses the \code{combine} qualifier 
 aggregation and then recodes the values into \code{1} for disagreement, 
 \code{2} for mixed positions and \code{3} for agreement. Integer qualifiers 
-are not recoded.
-
-When \code{zero_is_na} is set to \code{TRUE}, non-mentions of concepts are 
-set to \code{NA}, while setting the argument to \code{FALSE} recodes them to 
-\code{2} as mixed position. By setting a \code{threshold}, you can further 
-decide at which percentage of agreement and disagreement an actor position 
-on a concept can be considered as agreement/disagreement or mixed position. 
-If e.g. one actor has 70 percent of agreeing and 30 percent of disagreeing 
-statements towards a concept, a threshold of 0.6 will recode the actor 
-position on this concept as "agreement". The same accounts also for 
-disagreeing statements. If one actor has 70 percent of disagreeing and 30 
-percent of agreeing statements, a threshold of 0.6 will recode the actor 
-position on this concept as "disagreement". All values in between the 
-threshold (e.g. 55 percent agreement and 45 percent of disagreement and a 
-threshold of 0.6) will be recoded as \code{2}. If the threshold is set to 
-\code{NULL}, all "mixed" positions of actors will be recoded as \code{2}.
+are not recoded. When \code{zero_is_na} is set to \code{TRUE}, non-mentions 
+of concepts are set to \code{NA}, while setting the argument to \code{FALSE} 
+recodes them to \code{2} as mixed position. By setting a \code{threshold}, 
+you can further decide at which percentage of agreement and disagreement
+an actor position on a concept can be considered as agreement/disagreement 
+or mixed position.
 
 The argument \code{drop_min_actors} excludes actors with only a limited 
 number of concepts used. Limited participation of actors in a debate can 
@@ -155,24 +155,23 @@ impact the scaling of the ideal points, as actors with only few mentions of
 concepts convey limited information on their ideological position. The same 
 can also be done for concepts with the argument \code{drop_min_concepts}. 
 Concepts that have been rarely mentioned do not strongly discriminate the
-ideological positions of actors and can therefore impact the accuracy of the
-scaling. Reducing the number of actors of concepts to be scaled hence 
+ideological positions of actors and can, therefore, impact the accuracy of 
+the scaling. Reducing the number of actors of concepts to be scaled hence 
 improves the precision of the ideological positions for both variables and 
-the scaling itself.
-
-Another possibility to reduce the number of concepts is to use 
-\code{drop_constant_concepts}, which will reduce concepts not having any 
-variation in the agreement/disagreement structure of actors. This means that 
-all concepts will be dropped which have only agreeing, disagreeing or mixed 
-statements.
+the scaling itself. Another possibility to reduce the number of concepts is 
+to use \code{drop_constant_concepts}, which will reduce concepts not having 
+any variation in the agreement/disagreement structure of actors. This means 
+that all concepts will be dropped which have only agreeing, disagreeing or 
+mixed statements.
 
 As \code{dna_scale2dord} implements a Bayesian Item Response Theory 
-approach, priors and starting values can be set on the concept parameters. 
-Constraints on the concept parameters can also be specified to help 
-identifying the model and to indicate in which direction ideological 
-positions of actors and concepts run. For concepts, the scaling estimates an 
-item discrimination parameter for each dimension and an item difficulty 
-difficulty parameter for both dimensions. The item difficulty parameter 
+approach, \code{priors} and \code{starting values} can be set on the concept 
+parameters. Changing the default \code{prior} values can often 
+help you to achieve better results. Constraints on the concept parameters 
+can also be specified to help identifying the model and to indicate in which 
+direction ideological positions of actors and concepts run. For concepts, 
+the scaling estimates an item discrimination parameter for each dimension 
+and an item difficulty for both dimensions. The item difficulty parameter 
 should, however, not be constrained (see \link[MCMCpack]{MCMCordfactanal}). 
 Therefore, you should set constraints on the item discrimination parameters.
 
@@ -181,25 +180,16 @@ constraints to specify the ideological dimensions of your data. A suitable
 way of identifying your ideological dimensions is to constrain one item
 discrimination parameter to load only on one dimension. This means that we
 set one parameter to load either positive or negative on one dimension and 
-setting it to zero on the other. Please note that value \code{1} in the 
-first position of the brackets of the \code{lambda_constraints} argument 
-refers to the item difficulty parameter, which should, as mentioned,
-not be constrained. Therefore, if you wish to constrain a concept to load 
-e.g only on the first dimension, please use the \code{lambda_constraints} 
-argument in the following way: to constrain an item on the first dimension 
-use e.g. \code{conceptname = list(2, "+")}. The value \code{2} specifies the 
-item discrimination parameter on the first dimension, which, as in this 
-example is constrained to load only positive on the first dimension (as 
-indicated by the \code{+}). The same applies for the second dimension: if 
-you wish to constrain the item discrimination parameter of a concept on the 
-second dimension, please specify the parameter with a \code{3} as in the 
-following example: \code{conceptname = list(3, "-")}.
+setting it to zero on the other. A second concept should also be constrained 
+to load either positive or negative on one dimension (see example)
 
 To plot the resulting ideal points of actors and concepts, you can use the
 \link{dna_plotScale} function. To assess if the returned MCMC chain has 
 converged to its stationary distribution, please use 
 \link{dna_convergenceScale}. The evaluation of convergence is essential to 
-report conclusions based on accurate parameter estimates.
+report conclusions based on accurate parameter estimates. Achieving chain 
+convergence often requires setting the iterations of the MCMC chain to 
+several million.
 }
 \examples{
 \dontrun{

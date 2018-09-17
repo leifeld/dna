@@ -7,12 +7,12 @@
 dna_scale1dbin(connection, variable1 = "organization",
   variable2 = "concept", qualifier = "agreement", threshold = NULL,
   theta_constraints = NULL, mcmc_iterations = 20000,
-  mcmc_burnin = 1000, mcmc_thin = 1, mcmc_normalize = FALSE,
+  mcmc_burnin = 1000, mcmc_thin = 10, mcmc_normalize = FALSE,
   theta_start = NA, alpha_start = NA, beta_start = NA,
   theta_prior_mean = 0, theta_prior_variance = 1,
   alpha_beta_prior_mean = 0, alpha_beta_prior_variance = 0.25,
   store_variables = "both", drop_constant_concepts = FALSE,
-  drop_min_actors = 1, drop_min_concepts = 1, verbose = TRUE,
+  drop_min_actors = 1, drop_min_concepts = 2, verbose = TRUE,
   seed = 12345, ...)
 }
 \arguments{
@@ -29,7 +29,16 @@ dna_scale1dbin(connection, variable1 = "organization",
 \link{dna_network}). Defaults to \code{"agreement"}.}
 
 \item{threshold}{Numeric value that specifies when a mixed position can be 
-considered as agreement or disagreement (see details). Must be strictly 
+considered as agreement or disagreement. If e.g. one actor has 60 percent 
+of agreeing and 40 percent of disagreeing statements towards a concept, a 
+\code{threshold} of 0.51 will recode the actor position on this concept as 
+"agreement". The same accounts also for disagreeing statements. If one 
+actor has 60 percent of disagreeing and 40 percent of agreeing statements,  
+a \code{threshold} of 0.51 will recode the actor position on this concept 
+as "disagreement". All values in between the \code{threshold} (e.g., 55 
+percent agreement and 45 percent of disagreement and a threshold of 0.6) 
+will be recoded as \code{NA}. If is set to \code{NULL}, all "mixed"  
+positions of actors will be recoded as \code{NA}. Must be strictly 
 positive.}
 
 \item{theta_constraints}{A list specifying the constraints on the actor 
@@ -46,8 +55,9 @@ which will constrain the actor to be negatively scaled (see example).}
 \item{mcmc_thin}{The thinning interval for the sampler. Iterations must be 
 divisible by the thinning interval.}
 
-\item{mcmc_normalize}{Logical. Should the MCMC output be normalized? Can 
-help to identify the model.}
+\item{mcmc_normalize}{Logical. Should the MCMC output be normalized? If 
+\code{TRUE}, samples are normalized to a mean of \code{0} and a standard 
+deviation of \code{1}.}
 
 \item{theta_start}{The \code{starting values} for the actor parameters. Can 
 either be a scalar or a column vector with as many elements as the number 
@@ -93,10 +103,11 @@ speed of the scaling. Defaults to \code{"both"}.}
 variation be deleted before the scaling? Defaults to \code{FALSE}.}
 
 \item{drop_min_actors}{A numeric value specifying the minimum number of 
-concepts actors should have mentioned to be included in the scaling.}
+concepts actors should have mentioned to be included in the scaling. 
+Defaults to \code{1}.}
 
 \item{drop_min_concepts}{A numeric value specifying the minimum number a 
-concept should have been jointly mentioned by actors.}
+concept should have been jointly mentioned by actors. Defaults to \code{2}.}
 
 \item{verbose}{A boolean or numeric value indicating whether the iterations 
 of the scaling should be printed to the R console. If set to a numeric 
@@ -112,7 +123,7 @@ also be applied to a specific time slice by using \code{start.date} and
 \code{stop.date}.}
 }
 \description{
-Scale ideological positions of two variables (e.g. organizations and 
+Scale ideological positions of two variables (e.g., organizations and 
 concepts) from a DNA connection by using Markov Chain Monte Carlo for binary 
 one-dimensional Item Response Theory. This is one of the four scaling 
 functions. For one-dimensional ordinal scaling, see \link{dna_scale1dord}, 
@@ -128,7 +139,7 @@ sampling. For the model form and further help for the scaling arguments, see
 
 As in a two-mode network in \link{dna_network}, two variables have to be 
 provided for the scaling. The first variable corresponds to the rows of a 
-two-mode network and usually entails actors (e.g. \code{"organizations"}), 
+two-mode network and usually entails actors (e.g., \code{"organizations"}), 
 while the second variable is equal to the columns of a two-mode network, 
 typically expressed by \code{"concepts"}. The \code{dna_scale} functions 
 use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1} 
@@ -140,21 +151,11 @@ For a binary qualifier, \code{dna_scale1dbin} internally uses the
 \code{combine} qualifier aggregation and then recodes the values into 
 \code{0} for disagreement, \code{1} for agreement and \code{NA} for mixed 
 positions and non-mentions of concepts. Integer qualifiers are also recoded 
-into \code{0} and \code{1}.
-
-You can further relax the recoding of \code{NA} values by setting a 
+into \code{0} and \code{1} by rescaling the qualifier values between 
+\code{0} and \code{1}. You can further relax the recoding of \code{NA} values by setting a 
 \code{threshold} which lets you decide at which percentage of agreement and 
 disagreement an actor position on a concept can be considered as 
-agreement/disagreement or mixed position. If e.g. one actor has 60 percent 
-of agreeing and 40 percent of disagreeing statements towards a concept, a 
-threshold of 0.51 will recode the actor position on this concept as 
-"agreement". The same accounts also for disagreeing statements. If one actor 
-has 60 percent of disagreeing and 40 percent of agreeing statements a 
-threshold of 0.51 will recode the actor position on this concept as 
-"disagreement". All values in between the threshold (e.g. 55 percent 
-agreement and 45 percent of disagreement and a threshold of 0.6) will be 
-recoded as \code{NA}. If the threshold is set to \code{NULL}, all "mixed" 
-positions of actors will be recoded as \code{NA}.
+agreement/disagreement or mixed position.
 
 The argument \code{drop_min_actors} excludes actors with only a limited 
 number of concepts used. Limited participation of actors in a debate can 
@@ -162,34 +163,32 @@ impact the scaling of the ideal points, as actors with only few mentions of
 concepts convey limited information on their ideological position. The same 
 can also be done for concepts with the argument \code{drop_min_concepts}. 
 Concepts that have been rarely mentioned do not strongly discriminate the
-ideological positions of actors and can therefore impact the accuracy of the
-scaling. Reducing the number of actors of concepts to be scaled hence 
+ideological positions of actors and can, therefore, impact the accuracy of 
+the scaling. Reducing the number of actors of concepts to be scaled hence 
 improves the precision of the ideological positions for both variables and 
-the scaling itself.
-
-Another possibility to reduce the number of concepts is to use 
-\code{drop_constant_concepts}, which will reduce concepts not having any 
-variation in the agreement/disagreement structure of actors. This means that 
-all concepts will be dropped which have only agreeing or disagreeing 
+the scaling itself. Another possibility to reduce the number of concepts is 
+to use \code{drop_constant_concepts}, which will reduce concepts not having 
+any variation in the agreement/disagreement structure of actors. This means 
+that all concepts will be dropped which have only agreeing or disagreeing 
 statements.
 
 As \code{dna_scale1dbin} implements a Bayesian Item Response Theory 
-approach, priors and starting values can be set on the actor and concept 
-parameters. Constraints on the actor parameters can also be specified to 
-help identifying the model and to indicate in which direction ideological 
-positions of actors and concepts run.
-
-The returned MCMC output can also be post-processed by normalizing the 
-samples for each iteration with \code{mcmc_normalize}. Normalization can 
-be a sufficient way of identifying one-dimensional ideal point models. This 
-constraint normalizes the samples to have a mean of \code{0} and a standard 
-deviation of \code{1}.
+approach, \code{priors} and \code{starting values} can be set on the actor 
+and concept parameters. Changing the default \code{prior} values can often 
+help you to achieve better results. Constraints on the actor parameters can 
+also be specified to help identifying the model and to indicate in which 
+direction ideological positions of actors and concepts run. The returned 
+MCMC output can also be post-processed by normalizing the samples for each 
+iteration with \code{mcmc_normalize}. Normalization can be a sufficient
+way of identifying one-dimensional ideal point models.
 
 To plot the resulting ideal points of actors and concepts, you can use the
 \link{dna_plotScale} function. To assess if the returned MCMC chain has 
 converged to its stationary distribution, please use 
 \link{dna_convergenceScale}. The evaluation of convergence is essential to 
-report conclusions based on accurate parameter estimates.
+report conclusions based on accurate parameter estimates. Achieving chain 
+convergence often requires setting the iterations of the MCMC chain to 
+several million.
 }
 \examples{
 \dontrun{
