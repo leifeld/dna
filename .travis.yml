@@ -25,6 +25,6 @@ r_github_packages:
   - igraph/rigraph
   
 script:
-  - Rscript -e "install.packages(c('rJava', 'ggraph'))" # Some packages need to be installed for every R verion
+  - Rscript -e "install.packages(c('rJava', 'ggraph'))" # Some packages need to be installed for every R version
   - R CMD build .
   - R CMD check *tar.gz
