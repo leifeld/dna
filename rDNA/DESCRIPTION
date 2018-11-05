@@ -1,6 +1,6 @@
 Package: rDNA
 Version: 2.1.9
-Date: 2018-09-17
+Date: 2018-11-05
 Title: Discourse Network Analysis in R
 Authors@R: 
     c(person("Philip", "Leifeld", email = "Philip.Leifeld@glasgow.ac.uk", 
@@ -42,3 +42,4 @@ SystemRequirements: Java (>= 1.8), libudunits2-dev (Linux)
 License: GPL-3
 LazyData: true
 RoxygenNote: 6.1.0
+Encoding: UTF-8
