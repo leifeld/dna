@@ -643,7 +643,7 @@ For more experienced users, here is a short version of the steps described below
 \item In \R: install the necessary \R\ packages \texttt{rJava} and \texttt{devtools}.
 \item In \R: install \rdna\ via
 <<eval=FALSE, results = 'tex', message = FALSE>>=
-devtools::install_github("leifeld/dna/rDNA", args = "--no-multiarch")
+devtools::install_github("leifeld/dna/rDNA", INSTALL_opts = "--no-multiarch")
 @
 \end{enumerate}
 
@@ -957,10 +957,10 @@ install.packages("devtools")
 @
 
 Since we only need one function from the package \texttt{devtools} at this point, it is not necessary to invoke the \code{library} command to load the whole package.
-Instead, you can write \code{devtools::} and then type the function you want to use.\footnote{The option \code{args = "--no-multiarch"} should normally not be necessary, but prevents errors on some operating systems.
+Instead, you can write \code{devtools::} and then type the function you want to use.\footnote{The option \code{INSTALL\_opts = "--no-multiarch"} should normally not be necessary, but prevents errors on some operating systems.
 Since \texttt{devtools} tries to test both the 32-bit and 64-bit version of a package during installation, the process inevitably fails as only one architecture of \java\ is available.}
 <<eval=FALSE, results = 'tex', message = FALSE>>=
-devtools::install_github("leifeld/dna/rDNA", args = "--no-multiarch")
+devtools::install_github("leifeld/dna/rDNA", INSTALL_opts = "--no-multiarch")
 @
 
 After this is done as well, the final step of the installation is to test if \rdna\ can be loaded into \R\ correctly and to perform a basic operation with it---opening \dna\ from within \R.
