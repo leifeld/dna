@@ -2715,16 +2715,19 @@ dna_init("dna-2.0-beta22.jar")
 dna_init()
 @
 
-After initializing \dna, we can open the \dna\ graphical user interface from the \R\ command line:
+Now we are able to use all functions from the package.
+To get started, we can open the \dna\ graphical user interface (GUI) from the \R\ command line.
+This is not necessary for further steps and while the GUI is open, you can in fact not do anything else with \R\ as the \texttt{Console} window will be used to display any messages or errors from \dna\ if they occur.\footnote{If no messages need to be printed to the Console, this might look like \R\ is ``frozen'', but don't worry: \R\ will return to its usual behaviour after you close the GUI.}
 
 <<eval=FALSE>>=
 dna_gui()
 @
 
-Alternatively, we can provide the file name of a local \dna\ database as an argument, and the database will be opened in \dna.
+The \code{dna\_gui()} function is intended for cases when you want to use \dna\ on the fly to (re-)code statements or look something up.
+Therefore you usually will provide the file name of a local \dna\ database as an argument to open it in the GUI.
 For example, we could open the \texttt{sample.dna} database which comes with the package.
-To that, we included a convenience function called \code{dna\_sample}.
-You can use this function in one of two ways: either, you use it to copy the sample database into your current working directory, from where \R\ can easily find it, or you use it directly in the package folder or \rdna:
+To do that, simply use \code{dna\_sample()} to either copy the sample database into your current working directory or directly use it inside \code{dna\_gui()} which will copy it to your working directory and then open it:
+
 <<eval=FALSE>>=
 # copy sample.dna to your working directory and then open it via dna_gui
 dna_sample()
@@ -2734,11 +2737,14 @@ dna_gui("sample.dna")
 dna_gui(dna_sample())
 @
 
-In addition to opening the GUI, we will want to retrieve networks and attributes from \dna---which is the main purpose of \rdna!
-For this to happen, a connection with a \dna\ database must first be established using the \code{dna\_connection} function, which works similar to \code{dna\_gui}:
+Opening a database in the GUI from \rdna\ will be useful in few cases though.
+Instead, the main purpose of \rdna\ is to get data in and retrieve it from your database.
+For this to happen, a connection with a \dna\ database must first be established using the \code{dna\_connection} function, which is the equivalent to opening an existing \dna\ database in the GUI (see Section~\ref{chp:dna-open} and works similar to the \code{dna\_gui()} command.
+We use the \code{dna\_sample()} command again to access the \texttt{sample.dna} file.
+If you ever change something about the sample, you can revert it to its original state with the setting \code{overwrite = TRUE}:
 
 <<eval=TRUE, warning=FALSE>>=
-conn <- dna_connection(dna_sample())
+conn <- dna_connection(dna_sample(overwrite = TRUE))
 @
 
 The \code{dna\_connection} function accepts a file name of the database including full or relative path (or, alternatively, a connection string to a remote \texttt{MySQL} database) and optionally the login and password for the database (in case a remote \texttt{MySQL} database is used).
