@@ -67,7 +67,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
           infile,
           "\" could not be located in working directory \"",
           getwd(),
-          "\". Try dna_downloadJar() if you do not have the file already."
+          "\"."
         )
       })
     }
@@ -6322,6 +6322,9 @@ dna_barplot <- function(connection,
       paste0("\"colours = TRUE\" not possible for \"of = \"", of, "\"\".", collapse = ",\n")
     )
     colours <- FALSE
+  }
+  if ("qualifier" %in% names(dots)) {
+    colnames(dta) <- gsub(dots$qualifier, "agreement", colnames(dta))
   }
   # count (dis-)agreement per "of"
   dta <- as.data.frame(table(dta$agreement, dta[, of]),
