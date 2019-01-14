@@ -5,7 +5,6 @@ cache: packages
 r:
   - devel
   - release
-  - oldrel
   
 before_install:
   - cd rDNA
