@@ -1960,13 +1960,4 @@ public class ExporterR {
 		object[1] = types;
 		return object;
 	}
-	
-	/* TODO:
-	 * - create dna_setStatements
-	 * - update beta 22 -> 23 references in rDNA and manual
-	 * - create dna_addStatementType, dna_removeStatementType, dna_getStatementTypes, dna_setStatementTypes
-	 * - create dna_addCoder, dna_removeCoder, dna_getCoders, dna_setCoders
-	 * - create dna_addRegex, dna_removeRegex, dna_getRegexes, dna_setRegexes
-	 * - check NA value issue reported by Johannes
-	 */
 }
