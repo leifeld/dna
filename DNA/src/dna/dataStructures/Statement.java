@@ -10,8 +10,7 @@ public class Statement implements Comparable<Statement> {
 	int coder;
 	LinkedHashMap<String, Object> values = new LinkedHashMap<String, Object>();
 	
-	public Statement(int statementId, int documentId, int start, 
-			int stop, Date date, int statementTypeId, int coder) {
+	public Statement(int statementId, int documentId, int start, int stop, Date date, int statementTypeId, int coder) {
 		this.id = statementId;
 		this.documentId = documentId;
 		this.start = start;
@@ -23,9 +22,7 @@ public class Statement implements Comparable<Statement> {
 		
 	}
 	
-	public Statement(int statementId, int documentId, int start, 
-			int stop, Date date, int statementTypeId, int coder, 
-			LinkedHashMap<String, Object> values) {
+	public Statement(int statementId, int documentId, int start, int stop, Date date, int statementTypeId, int coder, LinkedHashMap<String, Object> values) {
 		this.id = statementId;
 		this.documentId = documentId;
 		this.start = start;

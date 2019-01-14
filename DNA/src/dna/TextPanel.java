@@ -245,7 +245,9 @@ public class TextPanel extends JPanel {
 			        while (keyIterator.hasNext()){
 			    		String key = keyIterator.next();
 			    		String value = statementType.getVariables().get(key);
-			    		if (value.equals("integer") || value.equals("boolean")) {
+			    		if (value.equals("boolean")) {
+			    			map.put(key, 1);
+			    		} else if (value.equals("integer")) {
 			    			map.put(key, 0);
 			    		} else {
 			    			map.put(key, "");

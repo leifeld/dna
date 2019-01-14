@@ -512,6 +512,127 @@ dna_addDocument <- function(connection,
   }
 }
 
+#' Add a statement to the DNA database
+#'
+#' Add a new statement to the DNA database.
+#'
+#' The \code{dna_addStatement} function can add a new statement to an existing 
+#' DNA database. The user supplies a \link{dna_connection} object as well as 
+#' the document ID, location of the statement in the document, and the variables
+#' and their values. As different statement types have different variables, the
+#' \code{...} argument catches all variables and their values supplied by the
+#' user. The statement ID will be automatically generated and can be returned 
+#' if \code{returnID} is set to \code{TRUE}.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param documentID An integer specifying the ID of the document for which the 
+#' statement should be added.
+#' @param startCaret An integer for the start location of the statement in the 
+#' document text. Must be non-negative and not larger than the number of 
+#' characters minus one in the document.
+#' @param endCaret An integer for the stop location of the statement in the 
+#' document text. Must be non-negative, greater than \code{startCaret}, and not 
+#' larger than the number of characters in the document.
+#' @param statementType The statement type of the statement that will be added. 
+#' Can be provided as an integer ID of the statement type or as a character 
+#' object representing the name of the statement type (if there is no 
+#' ambiguity).
+#' @param coder An integer value indicating which coder created the document.
+#' @param returnID Return the ID of the newly created statement as a numeric
+#'   value?
+#' @param verbose Print details?
+#' @param ... Values of the variables contained in the statement, for example 
+#' \code{organization = "some actor", concept = "my concept", agreement = 1}. 
+#' Values for Boolean variables can be provided as \code{logical} values 
+#' (\code{TRUE} or \code{FALSE}) or \code{numeric} values (\code{1} or 
+#' \code{0}).
+#'
+#' @author Philip Leifeld
+#' @export
+dna_addStatement <- function(connection,
+                             documentID,
+                             startCaret = 1,
+                             endCaret = 2,
+                             statementType = "DNA Statement",
+                             coder = 1,
+                             returnID = FALSE,
+                             verbose = TRUE,
+                             ...) {
+  if (!is.integer(documentID)) {
+    if (is.numeric(documentID)) {
+      documentID <- as.integer(documentID)
+    } else {
+      stop("'documentID' must be a numeric value specifying the ID of the document to which the statement should be added. You can look up document IDs using the 'dna_getDocuments' function.")
+    }
+  }
+  if (!is.integer(startCaret)) {
+    if (is.numeric(startCaret)) {
+      startCaret <- as.integer(startCaret)
+    } else {
+      stop("'startCaret' must be a single numeric value specifying the start location in of the statement in the document.")
+    }
+  }
+  if (!is.integer(endCaret)) {
+    if (is.numeric(endCaret)) {
+      endCaret <- as.integer(endCaret)
+    } else {
+      stop("'endCaret' must be a single numeric value specifying the end location in of the statement in the document.")
+    }
+  }
+  if (!is.character(statementType) && !is.numeric(statementType)) {
+    stop("'statementType' must be a numeric ID of the statement type or a character object indicating the name of the statement type.")
+  } else if (is.numeric(statementType) && !is.integer(statementType)) {
+    statementType <- as.integer(statementType)
+  }
+  if (!is.integer(coder)) {
+    if (is.numeric(coder)) {
+      coder <- as.integer(coder)
+    } else {
+      stop("The coder must be provided as a numeric object (see dna_getCoders).")
+    }
+  }
+  ellipsis <- list(...)
+  ellipsis <- lapply(ellipsis, function(x) {
+    if (is.logical(x)) {
+      if (x == TRUE) {
+        x <- 1
+      } else if (x == FALSE) {
+        x <- 0
+      }
+    }
+    if (is.numeric(x)) {
+      x <- as.integer(x)
+    }
+    if (!class(x) %in% c("character", "integer", "logical")) {
+      stop("All supplied values must be character, integer, or logical.")
+    }
+    if (length(x) != 1) {
+      stop("All supplied values must be of length 1.")
+    }
+    return(x)
+  })
+  varNames <- names(ellipsis)
+  ellipsis <- as.data.frame(ellipsis, stringsAsFactors = FALSE)
+  ellipsis <- .jarray(lapply(ellipsis, .jarray))
+  
+  id <- .jcall(connection$dna_connection,
+               "I",
+               "addStatement",
+               documentID,
+               startCaret,
+               endCaret,
+               statementType,
+               coder,
+               varNames,
+               ellipsis,
+               verbose)
+  
+  if (returnID == TRUE) {
+    return(id)
+  }
+}
+
 #' Retrieve a dataframe with attributes from a DNA connection.
 #'
 #' Attributes are metadata for the values saved in a variable. For example, an
@@ -631,6 +752,62 @@ dna_getDocuments <- function(connection) {
   return(documents)
 }
 
+#' Retrieve a dataframe with statements from a DNA connection
+#'
+#' Retrieve a dataframe with all statements from a DNA connection.
+#'
+#' This function creates a dataframe with one row per statement and contains
+#' columns for the statement ID, document ID, start and end position in the
+#' text, statement type ID, coder ID, and all variables. Statements are
+#' retrieved for a specific statement type. The data frame can then be manually
+#' manipulated and returned to the DNA database using the
+#' \link{dna_setStatements} function.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param statementType The statement type for which statements should be
+#'   retrieved. The statement type can be supplied as an integer or character
+#'   string, for example \code{1} or \code{"DNAStatement"}.
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
+#' statements <- dna_getStatements(conn, statementType = "DNAStatement")
+#' }
+#'
+#' @author Philip Leifeld
+#' @export
+dna_getStatements <- function(connection, statementType) {
+  if (is.numeric(statementType)) {
+    statementType <- as.integer(statementType)
+  }
+  if (!is.integer(statementType) && !is.character(statementType)) {
+    stop("'statementType' must be integer or character.")
+  }
+  if (length(statementType) != 1) {
+    stop("'statementType' must have length 1.")
+  }
+  
+  statements <- J(conn$dna_connection, "getStatements", statementType)
+  statements <- lapply(statements, .jevalArray)
+  statements <- as.data.frame(statements, stringsAsFactors = FALSE)
+  
+  variables <- J(conn$dna_connection, "getVariables", statementType)
+  variables <- lapply(variables, .jevalArray)
+  variables <- as.data.frame(variables, stringsAsFactors = FALSE)
+  variables <- variables[, 1]
+  
+  colnames(statements) <- c("id",
+                            "documentId",
+                            "startCaret",
+                            "endCaret",
+                            "statementTypeId",
+                            "coder",
+                            variables)
+  return(statements)
+}
+
 #' Removes an attribute entry from the database
 #'
 #' Removes an attribute entry from the database based on its ID or value.
@@ -733,6 +910,39 @@ dna_removeDocument <- function(connection,
          id,
          removeStatements,
          simulate,
+         verbose)
+}
+
+#' Removes a statement from the database
+#'
+#' Removes a statement from the database based on its ID.
+#'
+#' The user provides a connection object and the ID of an existing statement in
+#' the DNA database, and this statement is removed both from memory and from the
+#' SQL database.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \link{dna_connection} function.
+#' @param id An integer value denoting the ID of the statement to be removed.
+#' The \link{dna_getStatements} function can be used to look up IDs.
+#' @param verbose Print details on whether the document could be removed?
+#'
+#' @author Philip Leifeld
+#' @export
+dna_removeStatement <- function(connection,
+                                id,
+                                verbose = TRUE) {
+  if (!is.integer(id)) {
+    if (is.numeric(id)) {
+      id <- as.integer(id)
+    } else {
+      stop("'id' must be a numeric or integer statement ID.")
+    }
+  }
+  .jcall(connection$dna_connection,
+         "V",
+         "removeStatement",
+         id,
          verbose)
 }
 

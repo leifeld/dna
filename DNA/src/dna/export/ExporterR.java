@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 
 import dna.SqlConnection;
 import dna.dataStructures.AttributeVector;
@@ -1613,4 +1614,359 @@ public class ExporterR {
 			System.err.println("Removal of Document " + id + ": document contains statements and was not removed.");
 		}
 	}
+
+	/**
+	 * Wrapper for the {@link addStatement} function. This function is identical but specifies the statement type as a 
+	 * String label instead of the statement type ID AND specifies only a single variable name (because there is only 
+	 * one variable defined in the statement type).
+	 * 
+	 * @param documentId       The document ID of the document to which the statement should be added.
+	 * @param startCaret       The start position of the statement in the document.
+	 * @param endCaret         The stop position of the statement in the document.
+	 * @param statementType    The label of the statement type of which the statement to be created is an instance.
+	 * @param coder            The ID of the coder that adds the current statement.
+	 * @param varName          A single variable names to which the values should be added (in case there is only one single variable present).
+	 * @param values           The values to be added to the statement variables as an {@link Object} array.
+	 * @param verbose          Report feedback to the console?
+	 * @return                 A new ID of the statement that was added.
+	 * @throws Exception
+	 */
+	public int addStatement(int documentId, int startCaret, int endCaret, String statementType, int coder, String varName, Object[] values, boolean verbose) {
+		int statementTypeId = -1;
+		try {
+			statementTypeId = this.data.getStatementType(statementType).getId();
+		} catch (NullPointerException npe) {
+			System.err.println("Statement could not be added because the statement type is unknown.");
+			return -1;
+		}
+		String[] varNames = new String[] { varName };  // convert string into string array
+		return addStatement(documentId, startCaret, endCaret, statementTypeId, coder, varNames, values, verbose);
+	}
+	
+	/**
+	 * Wrapper for the {@link addStatement} function. This function is identical but specifies the statement type as a String label instead of the statement type ID.
+	 * 
+	 * @param documentId       The document ID of the document to which the statement should be added.
+	 * @param startCaret       The start position of the statement in the document.
+	 * @param endCaret         The stop position of the statement in the document.
+	 * @param statementType    The label of the statement type of which the statement to be created is an instance.
+	 * @param coder            The ID of the coder that adds the current statement.
+	 * @param varNames         The variable names to which the values should be added, in the same order as the values.
+	 * @param values           The values to be added to the statement variables as an {@link Object} array.
+	 * @param verbose          Report feedback to the console?
+	 * @return                 A new ID of the statement that was added.
+	 * @throws Exception
+	 */
+	public int addStatement(int documentId, int startCaret, int endCaret, String statementType, int coder, String[] varNames, Object[] values, boolean verbose) {
+		int statementTypeId = -1;
+		try {
+			statementTypeId = this.data.getStatementType(statementType).getId();
+		} catch (NullPointerException npe) {
+			System.err.println("Statement could not be added because the statement type is unknown.");
+			return -1;
+		}
+		return addStatement(documentId, startCaret, endCaret, statementTypeId, coder, varNames, values, verbose);
+	}
+
+	/**
+	 * Wrapper for the {@link addStatement} function. This function is identical but specifies only a single variable 
+	 * name (because there is only one variable defined in the statement type).
+	 * 
+	 * @param documentId       The document ID of the document to which the statement should be added.
+	 * @param startCaret       The start position of the statement in the document.
+	 * @param endCaret         The stop position of the statement in the document.
+	 * @param statementTypeId  The ID of the statement type of which the statement to be created is an instance.
+	 * @param coder            The ID of the coder that adds the current statement.
+	 * @param varName          A single variable names to which the values should be added (in case there is only one single variable present).
+	 * @param values           The values to be added to the statement variables as an {@link Object} array.
+	 * @param verbose          Report feedback to the console?
+	 * @return                 A new ID of the statement that was added.
+	 * @throws Exception
+	 */
+	public int addStatement(int documentId, int startCaret, int endCaret, int statementTypeId, int coder, String varName, Object[] values, boolean verbose) {
+		String[] varNames = new String[] { varName };  // convert string into string array
+		return addStatement(documentId, startCaret, endCaret, statementTypeId, coder, varNames, values, verbose);
+	}
+	
+	/**
+	 * Add a new statement with custom contents to the database.
+	 * 
+	 * @param documentId       The document ID of the document to which the statement should be added.
+	 * @param startCaret       The start position of the statement in the document.
+	 * @param endCaret         The stop position of the statement in the document.
+	 * @param statementTypeId  The ID of the statement type of which the statement to be created is an instance.
+	 * @param coder            The ID of the coder that adds the current statement.
+	 * @param varNames         The variable names to which the values should be added, in the same order as the values.
+	 * @param values           The values to be added to the statement variables as an {@link Object} array.
+	 * @param verbose          Report feedback to the console?
+	 * @return                 A new ID of the statement that was added.
+	 * @throws Exception
+	 */
+	public int addStatement(int documentId, int startCaret, int endCaret, int statementTypeId, int coder, String[] varNames, Object[] values, boolean verbose) {
+		int statementId = this.data.generateNewId("statements");
+		int docLength = 0;
+		try {
+			docLength = data.getDocument(documentId).getText().length();
+		} catch (NullPointerException npe) {
+			System.err.println("Error: Document ID could not be found.");
+			return -1;
+		}
+		if (docLength == 0) {
+			System.err.println("Error: No statements can be added to this document because its length is zero.");
+			return -1;
+		}
+		Date date = data.getDocument(documentId).getDate();
+		if (startCaret < 0) {
+			System.err.println("Error: 'startCaret' must be 0 or greater than 0.");
+			return -1;
+		}
+		if (startCaret > docLength - 1) {
+			System.err.println("Error: 'startCaret' is greater than the length minus one of the document with ID " + documentId + ".");
+			return -1;
+		}
+		if (endCaret < startCaret + 1) {
+			System.err.println("Error: 'endCaret' position must be greater than the 'startCaret' position.");
+			return -1;
+		}
+		if (endCaret > docLength) {
+			System.err.println("Error: 'endCaret' is greater than the length of the document with ID " + documentId + ".");
+			return -1;
+		}
+		if (this.data.getCoderById(coder) == null) {
+			System.err.println("Error: Statement could not be added because coder ID is unknown.");
+			return -1;
+		}
+		
+		StatementType st = this.data.getStatementTypeById(statementTypeId);
+		if (st == null) {
+			System.err.println("Error: Statement could not be added because the statement type is unknown.");
+			return -1;
+		}
+		
+		LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
+		for (int i = 0; i < values.length; i++) {
+			if (!st.getVariables().containsKey(varNames[i])) {
+				System.err.println("Warning: The value for variable '" + varNames[i] + "' is ignored because this variable is not defined in statement type '" + st.getLabel() + "'.");
+				continue;
+			}
+			if (st.getVariables().get(varNames[i]).equals("boolean") || st.getVariables().get(varNames[i]).equals("integer")) {
+				int[] v = (int[]) values[i];
+				if (st.getVariables().get(varNames[i]).equals("boolean") && (v[0] < 0 || v[0] > 1)) {
+					System.err.println("Warning: The value for the boolean variable '" + varNames[i] + "' is replaced by 1 because the value provided is outside the valid range of values.");
+					map.put(varNames[i], 1);
+				} else {
+					map.put(varNames[i], v[0]);
+				}
+				if (verbose == true) {
+					System.out.println(varNames[i] + ": " + v[0]);
+				}
+			} else {
+				String[] v = (String[]) values[i];
+				map.put(varNames[i], v[0]);
+				
+				// also add a new attribute if the value doesn't exist yet in the database
+				String attrString = "";
+				if (this.data.getAttributeId(v[0], varNames[i], statementTypeId) == -1) {
+					int attributeId = this.data.generateNewId("attributes");
+					AttributeVector av = new AttributeVector(attributeId, v[0], "#000000", "", "", "", "", statementTypeId, varNames[i]);
+					this.data.attributes.add(av);
+					Collections.sort(this.data.getAttributes());
+					this.sql.upsertAttributeVector(av);
+					attrString = " [new attribute added]";
+				}
+				
+				if (verbose == true) {
+					System.out.println(varNames[i] + ": " + v[0] + attrString);
+				}
+			}
+		}
+		Iterator<String> mapIterator = st.getVariables().keySet().iterator();
+		String key, type;
+		while (mapIterator.hasNext()) {
+			key = mapIterator.next();
+			type = st.getVariables().get(key);
+			if (!map.containsKey(key)) {
+				if (type.equals("boolean")) {
+					map.put(key, 1);
+				} else if (type.equals("integer")) {
+					map.put(key, 0);
+				} else if (type.equals("short text") || type.equals("long text")) {
+					map.put(key, "");
+				}
+			}
+		}
+		Statement s = new Statement(statementId, documentId, startCaret, endCaret, date, statementTypeId, coder, map);
+		this.data.addStatement(s);
+		this.sql.addStatement(s, st.getVariables());
+		if (verbose == true) {
+			System.out.println("A new statement with ID " + statementId + " was added to the database in document " + documentId + ".");
+		}
+		return statementId;
+	}
+	
+	/**
+	 * Remove a statement with a given statement ID.
+	 * 
+	 * @param statementId  ID of the statement to delete from the database and memory.
+	 * @param verbose      Print details?
+	 * @throws Exception
+	 */
+	public void removeStatement(int statementId, boolean verbose) throws Exception {
+		if (this.data.getStatement(statementId) == null) {
+			throw new Exception("Statement with ID " + statementId + " not found.");
+		}
+		this.data.removeStatement(statementId);
+		this.sql.removeStatement(statementId);
+		if (verbose == true) {
+			System.out.println("Removal of Statement " + statementId + ": successful.");
+		}
+	}
+
+	/**
+	 * Retrieve an object array of all statement data for R using a statement type label.
+	 * 
+	 * @param statementType  The statement type name for which the statements should be retrieved.
+	 * @return               An object array with the different slots for the variables.
+	 * @throws Exception 
+	 */
+	public Object[] getStatements(String statementType) throws Exception {
+		try {
+			int statementTypeId = this.data.getStatementType(statementType).getId();
+			Object[] objects = getStatements(statementTypeId);
+			return objects;
+		} catch (NullPointerException npe) {
+			throw new Exception("Statement type '" + statementType + "' could not be found.");
+		}
+	}
+	
+	/**
+	 * Retrieve an object array of all statement data for R using a statement type ID.
+	 * 
+	 * @param statementTypeId  The statement type ID for which the statements should be retrieved.
+	 * @return                 An object array with the different slots for the variables.
+	 */
+	public Object[] getStatements(int statementTypeId) {
+		ArrayList<Statement> sl = this.data.getStatementsByStatementTypeId(statementTypeId);
+		int n = sl.size();
+		int[] statementIds = new int[n];
+		int[] documentIds = new int[n];
+		int[] startCarets = new int[n];
+		int[] endCarets = new int[n];
+		int[] statementTypeIds = new int[n];
+		int[] coders = new int[n];
+		Statement s;
+		for (int i = 0; i < n; i++) {
+			s = sl.get(i);
+			statementIds[i] = s.getId();
+			documentIds[i] = s.getDocumentId();
+			startCarets[i] = s.getStart();
+			endCarets[i] = s.getStop();
+			statementTypeIds[i] = statementTypeId;
+			coders[i] = s.getCoder();
+		}
+
+		StatementType st = this.data.getStatementTypeById(statementTypeId);
+		Object[] object = new Object[6 + st.getVariables().size()];
+		object[0] = statementIds;
+		object[1] = documentIds;
+		object[2] = startCarets;
+		object[3] = endCarets;
+		object[4] = statementTypeIds;
+		object[5] = coders;
+		
+		int counter = 5;
+		String key, value;
+		Iterator<String> iterator = st.getVariables().keySet().iterator();
+		while (iterator.hasNext()) {
+			counter++;
+			key = iterator.next();
+			value = st.getVariables().get(key);
+			if (value.equals("short text") || value.equals("long text")) {
+				String[] var = new String[n];
+				for (int i = 0; i < n; i++) {
+					var[i] = (String) sl.get(i).getValues().get(key);
+				}
+				object[counter] = var;
+			} else {
+				int[] var = new int[n];
+				for (int i = 0; i < n; i++) {
+					var[i] = (int) sl.get(i).getValues().get(key);
+				}
+				object[counter] = var;
+			}
+		}
+		
+		return object;
+	}
+	
+	/**
+	 * Create and return an object that contains all statement types (but not their variable definitions).
+	 * 
+	 * @return  An Object array of IDs, labels, and color strings.
+	 */
+	public Object[] getStatementTypes() {
+		int n = this.data.getStatementTypes().size();
+		int[] ids = new int[n];
+		String[] labels = new String[n];
+		String[] colors = new String[n];
+		StatementType st;
+		for (int i = 0; i < n; i++) {
+			st = this.data.getStatementTypes().get(i);
+			ids[i] = st.getId();
+			labels[i] = st.getLabel();
+			colors[i] = String.format("#%02X%02X%02X", st.getColor().getRed(), st.getColor().getGreen(), st.getColor().getBlue()); 
+		}
+		Object[] object = new Object[3];
+		object[0] = ids;
+		object[1] = labels;
+		object[2] = colors;
+		return object;
+	}
+
+	/**
+	 * Retrieve variables and data type definitions for a given statement type (via label) and an Object array.
+	 * 
+	 * @param statementTypeLabel  Label of the statement type for which variables should be retrieved.
+	 * @return                    Object array of variables and data type definitions.
+	 */
+	public Object[] getVariables(String statementTypeLabel) {
+		int id = this.data.getStatementType(statementTypeLabel).getId();
+		return getVariables(id);
+	}
+	
+	/**
+	 * Retrieve variables and data type definitions for a given statement type (via ID) and an Object array.
+	 * 
+	 * @param statementTypeId  ID of the statement type for which variables should be retrieved.
+	 * @return                 Object array of variables and data type definitions.
+	 */
+	public Object[] getVariables(int statementTypeId) {
+		StatementType st = this.data.getStatementTypeById(statementTypeId);
+		int n = st.getVariables().size();
+		String[] variables = new String[n];
+		String[] types = new String[n];
+		int counter = 0;
+		String key, value;
+		Iterator<String> iterator = st.getVariables().keySet().iterator();
+		while (iterator.hasNext()) {
+			key = iterator.next();
+			value = st.getVariables().get(key);
+			variables[counter] = key;
+			types[counter] = value;
+			counter++;
+		}
+		Object[] object = new Object[2];
+		object[0] = variables;
+		object[1] = types;
+		return object;
+	}
+	
+	/* TODO:
+	 * - create dna_setStatements
+	 * - update beta 22 -> 23 references in rDNA and manual
+	 * - create dna_addStatementType, dna_removeStatementType, dna_getStatementTypes, dna_setStatementTypes
+	 * - create dna_addCoder, dna_removeCoder, dna_getCoders, dna_setCoders
+	 * - create dna_addRegex, dna_removeRegex, dna_getRegexes, dna_setRegexes
+	 * - check NA value issue reported by Johannes
+	 */
 }
