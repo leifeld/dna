@@ -19,7 +19,6 @@ public class Statement implements Comparable<Statement> {
 		this.statementTypeId = statementTypeId;
 		this.coder = coder;
 		this.values = new LinkedHashMap<String, Object>();
-		
 	}
 	
 	public Statement(int statementId, int documentId, int start, int stop, Date date, int statementTypeId, int coder, LinkedHashMap<String, Object> values) {

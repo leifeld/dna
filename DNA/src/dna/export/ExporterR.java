@@ -1079,6 +1079,7 @@ public class ExporterR {
 	
 	/**
 	 * Remove an attribute based on its value and ID.
+	 * 
 	 * @param statementTypeId   Statement type ID associated with the attribute.
 	 * @param variable          Variable contained in the statement ID that is associated with the attribute.
 	 * @param value             String value of the attribute to be removed.
@@ -1897,6 +1898,212 @@ public class ExporterR {
 		}
 		
 		return object;
+	}
+	
+	/**
+	 * Update the list of statements based on an array of arrays for the statement data.
+	 * 
+	 * @param statements  Array of objects containing statement IDs, document IDs, start carets, end carets, statement type IDs, coders, and further variables defined in the statement type.
+	 * @param simulate    If true, changes are not actually carried out.
+	 * @param verbose     Should statistics on updating process be reported?
+	 * @throws Exception
+	 */
+	public void setStatements(Object[] statements, boolean simulate, boolean verbose) throws Exception {
+		int[] id = (int[]) statements[0];
+		int[] documentId = (int[]) statements[1];
+		int[] startCaret = (int[]) statements[2];
+		int[] endCaret = (int[]) statements[3];
+		int[] statementTypeIDs = (int[]) statements[4]; // deviate slightly from naming convention here because 'statementTypeId' will be used later for only the first value
+		int[] coder = (int[]) statements[5];
+
+		int updateCountDeleted = 0;
+		int updateCountNewStatements = 0;
+		int updateCountDocumentId = 0;
+		int updateCountStartCaret = 0;
+		int updateCountEndCaret = 0;
+		int updateCountCoder = 0;
+		int numVar = statements.length - 6;
+		int[] updateCountVariables = new int[numVar];
+
+		if (verbose == true) {
+			if (simulate == true) {
+				System.out.println("Simulation mode: no actual changes are made to the database!");
+			} else {
+				System.out.println("Changes will be written both in memory and to the SQL database!");
+			}
+		}
+		
+		// find out which variables are in the table and what data types they have, based on the first entry
+		String[] varNames = new String[numVar];
+		String[] varTypes = new String[numVar];
+		int statementTypeId = statementTypeIDs[0];
+		StatementType st;
+		try {
+			st = this.data.getStatementTypeById(statementTypeId);
+		} catch (NullPointerException npe) {
+			throw new Exception("Statement type ID of the first statement was not found in the database. Aborting.");
+		}
+		LinkedHashMap<String, String> variables = st.getVariables();
+		Iterator<String> iterator = variables.keySet().iterator();
+		int counter = 0;
+		while (iterator.hasNext()) {
+			String key = iterator.next();
+			varNames[counter] = key;
+			varTypes[counter] = variables.get(key);
+			counter++;
+		}
+		if (counter != numVar) {
+			throw new Exception("Number of variables in the data frame does not match the number of variables in the statement type definition. Aborting.");
+		}
+		
+		// delete statements that are not in the input array 'statements'
+		if (this.data.getStatements().size() > 0) {
+			boolean delete;
+			for (int j = this.data.getStatements().size() - 1; j > -1; j--) {
+				delete = true;
+				for (int i = 0; i < id.length; i++) {
+					if (this.data.getStatements().get(j).getId() == id[i]) {
+						delete = false;
+					}
+				}
+				if (delete == true) {
+					if (simulate == false) {
+						this.data.getStatements().remove(j);
+						this.sql.removeStatement(this.data.getStatements().get(j).getId());
+					}
+					updateCountDeleted++;
+				}
+			}
+		}
+		
+		// add or update statements
+		for (int i = 0; i < id.length; i++) {
+			boolean update = true;
+
+			// check if statement ID exists
+			int foundIndex = -1;
+			for (int j = 0; j < this.data.getStatements().size(); j++) {
+				if (id[i] == this.data.getStatements().get(j).getId()) {
+					foundIndex = j;
+				}
+			}
+			
+			// check if coder field is valid
+			if (this.data.getCoderById(coder[i]) == null) {
+				update = false;
+				System.err.println("Statement ID " + id[i] + ": coder ID is invalid. Skipping this statement.");
+			}
+			
+			// check if start caret < end caret
+			if (startCaret[i] >= endCaret[i]) {
+				update = false;
+				System.err.println("Statement ID " + id[i] + ": end caret is not greater than the start caret, meaning the statement would have zero or negative length. Skipping this statement.");
+			}
+			
+			if (this.data.getDocument(documentId[i]) == null) {
+				update = false;
+				System.err.println("Statement ID " + id[i] + ": document ID was not found in the database. Skipping this statement.");
+			}
+			
+			// check if document length is shorter than the supplied start caret
+			if (this.data.getDocument(documentId[i]).getText().length() - 1 < startCaret[i]) {
+				update = false;
+				System.err.println("Statement ID " + id[i] + ": start caret would be after the last character of the document. Skipping this statement.");
+			}
+
+			// check if document length is shorter than the supplied end caret
+			if (this.data.getDocument(documentId[i]).getText().length() < endCaret[i]) {
+				update = false;
+				System.err.println("Statement ID " + id[i] + ": end caret would be more than one character after the last character of the document. Skipping this statement.");
+			}
+			
+			// check if statement type matches the first statement type in the 'statements' data frame
+			if (statementTypeId != statementTypeIDs[i]) {
+				update = false;
+				System.err.println("Statement ID " + id[i] + ": statement type ID is not identical to the first statement type ID in the data frame. Skipping this statement.");
+			}
+			
+			if (foundIndex > -1 && update == true) {
+				if (this.data.getStatements().get(foundIndex).getStart() != startCaret[i]) {
+					if (simulate == false) {
+						this.data.getStatements().get(foundIndex).setStart(startCaret[i]);
+					}
+					updateCountStartCaret++;
+				}
+				if (this.data.getStatements().get(foundIndex).getStop() != endCaret[i]) {
+					if (simulate == false) {
+						this.data.getStatements().get(foundIndex).setStop(endCaret[i]);
+					}
+					updateCountEndCaret++;
+				}
+				if (this.data.getStatements().get(foundIndex).getDocumentId() != documentId[i]) {
+					if (simulate == false) {
+						this.data.getStatements().get(foundIndex).setDocumentId(documentId[i]);
+					}
+					updateCountDocumentId++;
+				}
+				if (this.data.getStatements().get(foundIndex).getCoder() != coder[i]) {
+					if (simulate == false) {
+						this.data.getStatements().get(foundIndex).setCoder(coder[i]);
+					}
+					updateCountCoder++;
+				}
+				
+				// go through remaining variables and update where necessary
+				for (int j = 0; j < numVar; j++) {
+					if (varTypes[j].equals("short text") || varTypes[j].equals("long text")) {
+						if (!this.data.getStatements().get(foundIndex).getValues().get(varNames[j]).equals((String[]) statements[j + 6])) {
+							if (simulate == false) {
+								this.data.getStatements().get(foundIndex).getValues().put(varNames[j], (String[]) statements[j + 6]);
+							}
+							updateCountVariables[j]++;
+						}
+					} else {
+						if (this.data.getStatements().get(foundIndex).getValues().get(varNames[j]) == (int[]) statements[j + 6]) {
+							if (simulate == false) {
+								this.data.getStatements().get(foundIndex).getValues().put(varNames[j], (int[]) statements[j + 6]);
+							}
+							updateCountVariables[j]++;
+						}
+					}
+				}
+
+				if (simulate == false) {
+					this.sql.upsertStatement(this.data.getStatements().get(foundIndex), st.getVariables());
+				}
+			} else if (update == true) {
+				int newId = id[i];
+				if (newId == -1) {
+					newId = this.data.generateNewId("statements");
+				}
+				Statement s = new Statement(newId, documentId[i], startCaret[i], endCaret[i], this.data.getDocument(documentId[i]).getDate(), statementTypeId, coder[i]);
+				for (int j = 0; j < numVar; j++) {
+					if (varTypes[j].equals("short text") || varTypes[j].equals("long text")) {
+						s.getValues().put(varNames[j], (String[]) statements[j + 6]);
+					} else {
+						s.getValues().put(varNames[j], (int[]) statements[j + 6]);
+					}
+				}
+				if (simulate == false) {
+					this.data.addStatement(s);
+					this.sql.upsertStatement(s, st.getVariables());
+				}
+				updateCountNewStatements++;
+			}
+		}
+
+		// report statistics
+		if (verbose == true) {
+			System.out.println("New statements: " + updateCountNewStatements);
+			System.out.println("Deleted statements: " + updateCountDeleted);
+			System.out.println("Document IDs updated: " + updateCountDocumentId);
+			System.out.println("Start carets updated: " + updateCountStartCaret);
+			System.out.println("End carets updated: " + updateCountEndCaret);
+			System.out.println("Coders updated: " + updateCountCoder);
+			for (int i = 0; i < numVar; i++) {
+				System.out.println("Updated variable '" + varNames[i] + "': " + updateCountVariables[i + 6]);
+			}
+		}
 	}
 	
 	/**

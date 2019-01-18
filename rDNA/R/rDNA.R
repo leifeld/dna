@@ -1132,14 +1132,23 @@ dna_setAttributes <- function(connection,
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \code{dna_connection} function.
-#' @param documents A dataframe with ten columns: id (integer), title
-#'   (character), text (character), coder (integer), author (character),
-#'   sources (character), section (character), notes (character), type
-#'   (character), and date (POSIXct or integer; if integer, the value
-#'   indicates milliseconds since the start of 1970-01-01). \code{NA} values
-#'   or \code{-1} values are permitted in the id column. If these are
-#'   encountered, a new ID is automatically generated, and the document is
-#'   added.
+#' @param documents A data frame with the following columns:
+#'   \enumerate{
+#'     \item id (integer - can be \code{NA} if a new statement is added),
+#'     \item title (character - the title of the document),
+#'     \item text (character - the document text),
+#'     \item coder (integer - ID of  the coder),
+#'     \item author (character - the document author),
+#'     \item source (character - the document source),
+#'     \item section (character - the document section),
+#'     \item notes (character - the document notes),
+#'     \item type (character - the document type),
+#'     \item date (POSIXct or integer; if integer, the value indicates
+#'     milliseconds since the start of 1970-01-01 - the document date/time).
+#'   }
+#'   \code{NA} values or \code{-1} values are permitted in the id column. If
+#'   these are encountered, a new ID is automatically generated, and the
+#'   document is added.
 #' @param removeStatements If a document is present in the DNA database but not
 #'   in the \code{documents} dataframe, the respective document is removed
 #'   from the database. However, the document may contain statements. If
@@ -1159,8 +1168,8 @@ dna_setAttributes <- function(connection,
 #' documents <- dna_getDocuments(conn)
 #' documents$title[1] <- "New title for first document"
 #' documents$notes[3] <- "Added a note via rDNA."
-#' documents <- documents[, -5]# Removing the fifth document
-#' dna_setDocuments(conn, documents, simulate = TRUE)# apply changes
+#' documents <- documents[, -5] # removing the fifth document
+#' dna_setDocuments(conn, documents, simulate = TRUE) # apply changes
 #' }
 #'
 #' @author Philip Leifeld
@@ -1174,71 +1183,107 @@ dna_setDocuments <- function(connection,
     stop("'documents' must be a data.frame similar to the one returned by dna_getDocuments.")
   }
   if (ncol(documents) != 10) {
-    stop("'documents' must be a data.frame with 10 columns.")
+    stop("'documents' must contain exactly ten columns. You can use the 'dna_getDocuments' function to create a template.")
+  }
+  if (colnames(documents)[1] != "id") {
+    stop("The first column of 'documents' must be called 'id' and contain the document IDs.")
   }
   if (!is.integer(documents[, 1])) {
-    stop("The first column of 'documents' must be integer and must contain the document IDs.")
+    if (is.numeric(documents[, 1])) {
+      documents[, 1] <- as.integer(documents[, 1])
+    } else {
+      stop("'documents$id' must contain integer values.")
+    }
+  }
+  if (colnames(documents)[2] != "title") {
+    stop("The second column of 'documents' must be called 'title' and contain the document titles.")
   }
   if (!is.character(documents[, 2])) {
     if (is.factor(documents[, 2])) {
       documents[, 2] <- as.character(documents[, 2])
     } else {
-      stop("The second column of 'documents' must contain the document titles as character objects.")
+      stop("'documents$title' must contain character objects.")
     }
+  }
+  if (colnames(documents)[3] != "text") {
+    stop("The third column of 'documents' must be called 'text' and contain the document texts.")
   }
   if (!is.character(documents[, 3])) {
     if (is.factor(documents[, 3])) {
       documents[, 3] <- as.character(documents[, 3])
     } else {
-      stop("The third column of 'documents' must contain the document texts as character objects.")
+      stop("'documents$text' must contain character objects.")
     }
   }
-  if (!is.numeric(documents[, 4])) {
-    stop("The fourth column of 'documents' must contain the coder IDs as integer values (see dna_getCoders).")
-  } else if (!is.integer(documents[, 4])) {
-    documents[, 4] <- as.integer(documents[, 4])
+  if (colnames(documents)[4] != "coderId") {
+    stop("The fourth column of 'documents' must be called 'coder' and contain the coder IDs.")
+  }
+  if (!is.integer(documents[, 4])) {
+    if (is.numeric(documents[, 4])) {
+      documents[, 4] <- as.integer(documents[, 4])
+    } else {
+      stop("'documents$coderId' must contain integer values.")
+    }
+  }
+  if (colnames(documents)[5] != "author") {
+    stop("The fifth column of 'documents' must be called 'author' and contain the document author.")
   }
   if (!is.character(documents[, 5])) {
     if (is.factor(documents[, 5])) {
       documents[, 5] <- as.character(documents[, 5])
     } else {
-      stop("The fifth column of 'documents' must contain the document authors as character objects.")
+      stop("'documents$author' must contain character objects.")
     }
+  }
+  if (colnames(documents)[6] != "sources") {
+    stop("The sixth column of 'documents' must be called 'source' and contain the document source.")
   }
   if (!is.character(documents[, 6])) {
     if (is.factor(documents[, 6])) {
       documents[, 6] <- as.character(documents[, 6])
     } else {
-      stop("The sixth column of 'documents' must contain the document sources as character objects.")
+      stop("'documents$source' must contain character objects.")
     }
+  }
+  if (colnames(documents)[7] != "section") {
+    stop("The seventh column of 'documents' must be called 'section' and contain the document section.")
   }
   if (!is.character(documents[, 7])) {
     if (is.factor(documents[, 7])) {
       documents[, 7] <- as.character(documents[, 7])
     } else {
-      stop("The seventh column of 'documents' must contain the document sections as character objects.")
+      stop("'documents$section' must contain character objects.")
     }
+  }
+  if (colnames(documents)[8] != "notes") {
+    stop("The eighth column of 'documents' must be called 'notes' and contain the document notes.")
   }
   if (!is.character(documents[, 8])) {
     if (is.factor(documents[, 8])) {
       documents[, 8] <- as.character(documents[, 8])
     } else {
-      stop("The eighth column of 'documents' must contain the document notes as character objects.")
+      stop("'documents$notes' must contain character objects.")
     }
+  }
+  if (colnames(documents)[9] != "type") {
+    stop("The ninth column of 'documents' must be called 'type' and contain the document type.")
   }
   if (!is.character(documents[, 9])) {
     if (is.factor(documents[, 9])) {
       documents[, 9] <- as.character(documents[, 9])
     } else {
-      stop("The ninth column of 'documents' must contain the document types as character objects.")
+      stop("'documents$type' must contain character objects.")
     }
+  }
+  if (colnames(documents)[10] != "date") {
+    stop("The tenth column of 'documents' must be called 'date' and contain the document date/time.")
   }
   if (any(class(documents[, 10]) %in% c("POSIXct", "POSIXt"))) {
     documents[, 10] <- .jlong(as.integer(documents[, 10]) * 1000)
   } else if (is.numeric(documents[, 10])) {
     documents[, 10] <- .jlong(as.integer(documents[, 10]))
   } else {
-    stop("The tenth column of 'documents' must contain the document dates as POSIXct objects or as numeric objects indicating milliseconds since 1970-01-01.")
+    stop("'documents$date' must contain the document dates as POSIXct objects or as numeric objects indicating milliseconds since 1970-01-01.")
   }
   if (verbose == TRUE) {
     if (nrow(documents) == 0) {
@@ -1255,6 +1300,153 @@ dna_setDocuments <- function(connection,
          "setDocuments",
          documents,
          removeStatements,
+         simulate,
+         verbose)
+}
+
+#' Recode statements in the DNA database
+#'
+#' Recode statements in a DNA database.
+#'
+#' This function takes a dataframe with columns "id", "documentId",
+#' "startCaret", "endCaret", "statementTypeId", "coder", and addition columns
+#' for the variables of the respective statement type, as returned by the
+#' \link{dna_getStatements} function, and hands it over to a DNA connection in
+#' order to update the statements in the database based on the contents of the
+#' dataframe. The typical workflow is to retrieve the statements using
+#' \link{dna_getStatements}, manipulate the statements in the data frame, and
+#' then apply the changes with \link{dna_setStatements}. Statements that are no
+#' longer in the data frame are removed from the database; statements in the
+#' data frame that are not in the database are added to the database; and
+#' contents of existing statements are updated. By default, the changes are only
+#' simulated and not actually written into the database. The user can inspect
+#' the reported changes and then apply the actual changes by setting
+#' \code{simulate = FALSE}. If attributes for any of the variables are affected,
+#' they are renamed or added if there is no other instance in the database. Note
+#' that the removal or update of statements does not automatically remove any
+#' attributes. See \link{dna_removeAttribute} and \link{dna_setAttributes} for
+#' this purpose.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param statements A data frame with the following columns:
+#'   \enumerate{
+#'     \item id (integer - can be \code{NA} if a new statement is added),
+#'     \item documentId (integer - needs to refer to an existing document ID),
+#'     \item startCaret (integer - the start position of the statement in the
+#'     text as a character count, starting at 0 for the first character in the
+#'     document),
+#'     \item endCaret (integer - the end position of the statement in the text
+#'     as a character count, where for example a value of 1 would indicate that
+#'     the statement ends after the first character in the document),
+#'     \item statementTypeId (integer - ID of the corresponding statement type),
+#'     \item coder (integer - ID of the coder),
+#'     \item additional columns for the respective variable, such as
+#'     organization, concept, agreement, etc.
+#'   }
+#'   \code{NA} values or \code{-1} values are permitted in the id column. If
+#'   these are encountered, a new ID is automatically generated, and the
+#'   statement is added.
+#' @param simulate Should the changes only be simulated instead of actually
+#'   applied to the DNA connection and the SQL database? This can help to
+#'   plan more complex recode operations.
+#' @param verbose Print details about the recode operations?
+#'
+#' @examples
+#' \dontrun{
+#' dna_init("dna-2.0-beta23.jar")
+#' conn <- dna_connection(dna_sample())
+#' statements <- dna_getStatements(conn)
+#' statements$organization[1] <- "New actor for first statement"
+#' statements$concept[3] <- "New concept for the third statement"
+#' statements <- statements[, -5] # removing the fifth statement
+#' dna_setStatements(conn, statements, simulate = TRUE) # apply changes
+#' }
+#'
+#' @author Philip Leifeld
+#' @export
+dna_setStatements <- function(connection,
+                              statements,
+                              simulate = TRUE,
+                              verbose = TRUE) {
+  if (!is.data.frame(statements)) {
+    stop("'statements' must be a data.frame similar to the one returned by dna_getStatements.")
+  }
+  if (ncol(statements) < 6) {
+    stop("'statements' must contain at least six columns. You can use the 'dna_getStatements' function to create a template.")
+  }
+  if (colnames(statements)[1] != "id") {
+    stop("The first column of 'statements' must be called 'id' and contain the statement IDs.")
+  }
+  if (!is.integer(statements[, 1])) {
+    if (is.numeric(statements[, 1])) {
+      statements[, 1] <- as.integer(statements[, 1])
+    } else {
+      stop("'statements$id' must contain integer values.")
+    }
+  }
+  if (colnames(statements)[2] != "documentId") {
+    stop("The second column of 'statements' must be called 'documentId' and contain the document IDs.")
+  }
+  if (!is.integer(statements[, 2])) {
+    if (is.numeric(statements[, 2])) {
+      statements[, 2] <- as.integer(statements[, 2])
+    } else {
+      stop("'statements$documentId' must contain integer values.")
+    }
+  }
+  if (colnames(statements)[3] != "startCaret") {
+    stop("The third column of 'statements' must be called 'startCaret' and contain the start position of the statement in the text.")
+  }
+  if (!is.integer(statements[, 3])) {
+    if (is.numeric(statements[, 3])) {
+      statements[, 3] <- as.integer(statements[, 3])
+    } else {
+      stop("'statements$startCaret' must contain integer values.")
+    }
+  }
+  if (colnames(statements)[4] != "endCaret") {
+    stop("The fourth column of 'statements' must be called 'endCaret' and contain the end position of the statement in the text.")
+  }
+  if (!is.integer(statements[, 4])) {
+    if (is.numeric(statements[, 4])) {
+      statements[, 4] <- as.integer(statements[, 4])
+    } else {
+      stop("'statements$endCaret' must contain integer values.")
+    }
+  }
+  if (colnames(statements)[5] != "statementTypeId") {
+    stop("The fifth column of 'statements' must be called 'statementTypeId' and contain the statement type IDs.")
+  }
+  if (!is.integer(statements[, 5])) {
+    if (is.numeric(statements[, 5])) {
+      statements[, 5] <- as.integer(statements[, 5])
+    } else {
+      stop("'statements$statementTypeId' must contain integer values.")
+    }
+  }
+  if (colnames(statements)[6] != "coderId") {
+    stop("The sixth column of 'statements' must be called 'coder' and contain the coder IDs.")
+  }
+  if (!is.integer(statements[, 6])) {
+    if (is.numeric(statements[, 6])) {
+      statements[, 6] <- as.integer(statements[, 6])
+    } else {
+      stop("'statements$coderId' must contain integer values.")
+    }
+  }
+  if (verbose == TRUE && nrow(documents) == 0) {
+    warning("'statements' has 0 rows. Deleting all statements from the database.")
+  }
+  # replace NAs with -1, which will be replaced by an auto-generated ID in DNA
+  if (any(is.na(statements[, 1]))) {
+    statements[which(is.na(statements[, 1])), 1] <- as.integer(-1)
+  }
+  statements <- .jarray(lapply(statements, .jarray))
+  .jcall(connection$dna_connection,
+         "V",
+         "setStatements",
+         statements,
          simulate,
          verbose)
 }

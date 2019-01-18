@@ -11,14 +11,23 @@ dna_setDocuments(connection, documents, removeStatements = FALSE,
 \item{connection}{A \code{dna_connection} object created by the
 \code{dna_connection} function.}
 
-\item{documents}{A dataframe with ten columns: id (integer), title
-(character), text (character), coder (integer), author (character),
-sources (character), section (character), notes (character), type
-(character), and date (POSIXct or integer; if integer, the value
-indicates milliseconds since the start of 1970-01-01). \code{NA} values
-or \code{-1} values are permitted in the id column. If these are
-encountered, a new ID is automatically generated, and the document is
-added.}
+\item{documents}{A data frame with the following columns:
+\enumerate{
+  \item id (integer - can be \code{NA} if a new statement is added),
+  \item title (character - the title of the document),
+  \item text (character - the document text),
+  \item coder (integer - ID of  the coder),
+  \item author (character - the document author),
+  \item source (character - the document source),
+  \item section (character - the document section),
+  \item notes (character - the document notes),
+  \item type (character - the document type),
+  \item date (POSIXct or integer; if integer, the value indicates
+  milliseconds since the start of 1970-01-01 - the document date/time).
+}
+\code{NA} values or \code{-1} values are permitted in the id column. If
+these are encountered, a new ID is automatically generated, and the
+document is added.}
 
 \item{removeStatements}{If a document is present in the DNA database but not
 in the \code{documents} dataframe, the respective document is removed
@@ -59,8 +68,8 @@ conn <- dna_connection(dna_sample())
 documents <- dna_getDocuments(conn)
 documents$title[1] <- "New title for first document"
 documents$notes[3] <- "Added a note via rDNA."
-documents <- documents[, -5]# Removing the fifth document
-dna_setDocuments(conn, documents, simulate = TRUE)# apply changes
+documents <- documents[, -5] # removing the fifth document
+dna_setDocuments(conn, documents, simulate = TRUE) # apply changes
 }
 
 }
