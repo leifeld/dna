@@ -1425,23 +1425,59 @@ dna_setStatements <- function(connection,
       stop("'statements$statementTypeId' must contain integer values.")
     }
   }
-  if (colnames(statements)[6] != "coderId") {
+  if (colnames(statements)[6] != "coder") {
     stop("The sixth column of 'statements' must be called 'coder' and contain the coder IDs.")
   }
   if (!is.integer(statements[, 6])) {
     if (is.numeric(statements[, 6])) {
       statements[, 6] <- as.integer(statements[, 6])
     } else {
-      stop("'statements$coderId' must contain integer values.")
+      stop("'statements$coder' must contain integer values.")
     }
   }
-  if (verbose == TRUE && nrow(documents) == 0) {
+  
+  # check validity of variables
+  variables <- J(conn$dna_connection, "getVariables", as.integer(statements$statementTypeId[1]))
+  variables <- lapply(variables, .jevalArray)
+  variables <- as.data.frame(variables, stringsAsFactors = FALSE)
+  colnames(variables) <- c("variable", "type")
+  for (i in 1:nrow(variables)) {
+    if (variables[i, 2] == "boolean") {
+      if (is.integer(statements[, 6 + i])) {
+        # fine
+      } else if (is.numeric(statements[, 6 + i]) || is.logical(statements[, 6 + i])) {
+        statements[, 6 + i] <- as.integer(statements[, 6 + i])
+      } else {
+        stop(paste0("'statements$`", variables[i, 1], "`' must contain only binary values (0 or 1)."))
+      }
+      if (!all(statements[, 6 + i] %in% 0:1)) {
+        stop(paste0("'statements$`", variables[i, 1], "`' must contain only binary values (0 or 1)."))
+      }
+    } else if (variables[i, 2] == "integer") {
+      if (is.integer(statements[, 6 + i])) {
+        # fine
+      } else if (is.numeric(statements[, 6 + i]) || is.logical(statements[, 6 + i])) {
+        statements[, 6 + i] <- as.integer(statements[, 6 + i])
+      } else {
+        stop(paste0("'statements$`", variables[i, 1], "`' must contain integer values."))
+      }
+    } else {
+      if (!is.character(statements[, 6 + i])) {
+        statements[, 6 + i] <- as.character(statements[, 6 + i])
+      }
+      statements[, 6 + i][is.na(statements[, 6 + i])] <- ""
+    }
+  }
+  
+  if (verbose == TRUE && nrow(statements) == 0) {
     warning("'statements' has 0 rows. Deleting all statements from the database.")
   }
+  
   # replace NAs with -1, which will be replaced by an auto-generated ID in DNA
   if (any(is.na(statements[, 1]))) {
     statements[which(is.na(statements[, 1])), 1] <- as.integer(-1)
   }
+  
   statements <- .jarray(lapply(statements, .jarray))
   .jcall(connection$dna_connection,
          "V",

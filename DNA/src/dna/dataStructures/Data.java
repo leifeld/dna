@@ -63,10 +63,10 @@ public class Data {
 	 * @return                 The ID of the attribute vector as an int; -1 if the attribute vector does not exist
 	 */
 	public int getAttributeId(String value, String variable, int statementTypeId) {
-		for (int i = 0; i < Dna.data.getAttributes().size(); i++) {
-			if (Dna.data.getAttributes().get(i).getValue().equals(value) && Dna.data.getAttributes().get(i).getVariable().equals(variable) 
-					&& Dna.data.getAttributes().get(i).getStatementTypeId() == statementTypeId) {
-				return Dna.data.getAttributes().get(i).getId();
+		for (int i = 0; i < getAttributes().size(); i++) {
+			if (getAttributes().get(i).getValue().equals(value) && getAttributes().get(i).getVariable().equals(variable) 
+					&& getAttributes().get(i).getStatementTypeId() == statementTypeId) {
+				return getAttributes().get(i).getId();
 			}
 		}
 		return -1;
@@ -81,9 +81,9 @@ public class Data {
 	 * @return                 The row index of the attribute vector as an int; -1 if the attribute vector does not exist
 	 */
 	public int getAttributeIndex(String value, String variable, int statementTypeId) {
-		for (int i = 0; i < Dna.data.getAttributes().size(); i++) {
-			if (Dna.data.getAttributes().get(i).getValue().equals(value) && Dna.data.getAttributes().get(i).getVariable().equals(variable) 
-					&& Dna.data.getAttributes().get(i).getStatementTypeId() == statementTypeId) {
+		for (int i = 0; i < getAttributes().size(); i++) {
+			if (getAttributes().get(i).getValue().equals(value) && getAttributes().get(i).getVariable().equals(variable) 
+					&& getAttributes().get(i).getStatementTypeId() == statementTypeId) {
 				return i;
 			}
 		}
@@ -162,8 +162,8 @@ public class Data {
 	}
 	
 	public String[] getStringEntries(int statementTypeId, String variableName) {
-		String type = Dna.data.getStatementTypeById(statementTypeId).getVariables().get(variableName);
-		ArrayList<Statement> subset = Dna.data.getStatementsByStatementTypeId(statementTypeId);
+		String type = getStatementTypeById(statementTypeId).getVariables().get(variableName);
+		ArrayList<Statement> subset = getStatementsByStatementTypeId(statementTypeId);
 		ArrayList<String> entries = new ArrayList<String>();
 		for (int i = 0; i < subset.size(); i++) {
 			String mykey;
@@ -536,7 +536,7 @@ public class Data {
 		Dna.dna.gui.documentPanel.documentContainer.remove(documentModelIndex, false);
 		//Dna.dna.gui.documentPanel.documentContainer.remove(row);
 		Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
-		if (Dna.data.getDocuments().size() > 0) {
+		if (getDocuments().size() > 0) {
 			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
 		}
 		
@@ -563,7 +563,7 @@ public class Data {
 		// reset selection
 		Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
 		Dna.dna.gui.documentPanel.documentTable.updateUI();
-		if (Dna.data.getDocuments().size() > 0) {
+		if (getDocuments().size() > 0) {
 			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
 		}
 		

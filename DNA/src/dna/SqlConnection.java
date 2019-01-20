@@ -1015,7 +1015,7 @@ public class SqlConnection {
 				+ ", " + statement.getStart() + ", " + statement.getStop() + ", " + statement.getCoder() + ")");
 		
 		Iterator<String> keyIterator = statement.getValues().keySet().iterator();
-        while (keyIterator.hasNext()){
+        while (keyIterator.hasNext()) {
     		String key = keyIterator.next();
     		Object object = statement.getValues().get(key);
     		String type = variables.get(key);
