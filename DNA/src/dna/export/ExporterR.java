@@ -21,6 +21,11 @@ import dna.dataStructures.StatementType;
 
 public class ExporterR {
 
+	/* =================================================================================================================
+	 * Object definitions; constructor; and helper functions
+	 * =================================================================================================================
+	 */
+
 	// objects for R calls
 	String dbfile;
 	SqlConnection sql;
@@ -82,6 +87,12 @@ public class ExporterR {
 		System.out.print("\n");
 	}
 	
+	
+	/* =================================================================================================================
+	 * Functions for generating and retrieving networks
+	 * =================================================================================================================
+	 */
+	
 	/**
 	 * Compute one-mode or two-mode network matrix based on R arguments.
 	 * 
@@ -131,16 +142,144 @@ public class ExporterR {
 		if (verbose == true) {
 			System.out.print("(1/" + max + "): Processing network options... ");
 		}
-		networkType = formatNetworkType(networkType);
-		StatementType st = processStatementType(networkType, statementType, variable1, variable2, qualifier, qualifierAggregation);
+		
+		// format network type
+		// valid R input: 'eventlist', 'twomode', or 'onemode'
+		// valid Java output: 'Event list', 'Two-mode network', or 'One-mode network'
+		if (networkType.equals("eventlist")) {
+			networkType = "Event list";
+		} else if (networkType.equals("twomode")) {
+			networkType = "Two-mode network";
+		} else if (networkType.equals("onemode")) {
+			networkType = "One-mode network";
+		} else {
+			System.err.println("Network type was not recognized. Use 'twomode', 'onemode', or 'eventlist'.");
+		}
+		
+		// process and check validity of statement type etc.
+		// valid R input for qualifierAggregation: 'ignore', 'combine', 'subtract', 'congruence', or 'conflict'
+		StatementType st = data.getStatementType(statementType);
+		if (st == null) {
+			System.err.println("Statement type '" + statementType + " does not exist!");
+		}
+		
+		if (!st.getVariables().containsKey(variable1)) {
+			System.err.println("Variable 1 ('" + variable1 + "') does not exist in this statement type.");
+		}
+		if (!st.getVariables().get(variable1).equals("short text")) {
+			System.err.println("Variable 1 ('" + variable1 + "') is not a short text variable.");
+		}
+		
+		if (!st.getVariables().containsKey(variable2)) {
+			System.err.println("Variable 2 ('" + variable2 + "') does not exist in this statement type.");
+		}
+		if (!st.getVariables().get(variable2).equals("short text")) {
+			System.err.println("Variable 2 ('" + variable2 + "') is not a short text variable.");
+		}
+		
+		if (!st.getVariables().containsKey(qualifier)) {
+			System.err.println("The qualifier variable ('" + qualifier + "') does not exist in this statement type.");
+		}
+		if (!st.getVariables().get(qualifier).equals("boolean") && !st.getVariables().get(qualifier).equals("integer")) {
+			System.err.println("The qualifier variable ('" + qualifier + "') is not a boolean or integer variable.");
+		}
+		
+		if (!qualifierAggregation.equals("ignore") && !qualifierAggregation.equals("subtract") && !qualifierAggregation.equals("combine")
+				&& !qualifierAggregation.equals("congruence") && !qualifierAggregation.equals("conflict")) {
+			System.err.println("'qualifierAggregation' must be 'ignore', 'combine', 'subtract', 'congruence', or 'conflict'.");
+		}
+		if (qualifierAggregation.equals("combine") && !networkType.equals("Two-mode network")) {
+			System.err.println("qualifierAggregation = 'combine' is only possible with two-mode networks.");
+		}
+		if (qualifierAggregation.equals("congruence") && !networkType.equals("One-mode network")) {
+			System.err.println("qualifierAggregation = 'congruence' is only possible with one-mode networks.");
+		}
+		if (qualifierAggregation.equals("conflict") && !networkType.equals("One-mode network")) {
+			System.err.println("qualifierAggregation = 'conflict' is only possible with one-mode networks.");
+		}
+		
 		boolean ignoreQualifier = qualifier.equals("ignore");
 		int statementTypeId = st.getId();
-		normalization = formatNormalization(networkType, normalization);
-		duplicates = formatDuplicates(duplicates);
 		
-		Date start = formatDate(startDate, startTime);
-		Date stop = formatDate(stopDate, stopTime);
+		// format normalization argument
+		// R input can be: 'no', 'activity', 'prominence', 'average', 'Jaccard', or 'cosine'
+		// formatted Java output can be: 'no', 'activity', 'prominence', 'average activity', 'Jaccard', or 'cosine'
+		if (normalization.equals("jaccard")) {
+			normalization = "Jaccard";
+		}
+		if (normalization.equals("Cosine")) {
+			normalization = "cosine";
+		}
+		if (!normalization.equals("no") && !normalization.equals("activity") && !normalization.equals("prominence") 
+				&& !normalization.equals("average") && !normalization.equals("Jaccard") && !normalization.equals("cosine")) {
+			System.err.println("'normalization' must be 'no', 'activity', 'prominence', 'average', 'Jaccard', or 'cosine'.");
+		}
+		if (normalization.equals("activity") && !networkType.equals("Two-mode network")) {
+			System.err.println("'normalization = 'activity' is only possible with two-mode networks.");
+		}
+		if (normalization.equals("prominence") && !networkType.equals("Two-mode network")) {
+			System.err.println("'normalization = 'prominence' is only possible with two-mode networks.");
+		}
+		if (normalization.equals("average") && !networkType.equals("One-mode network")) {
+			System.err.println("'normalization = 'average' is only possible with one-mode networks.");
+		}
+		if (normalization.equals("Jaccard") && !networkType.equals("One-mode network")) {
+			System.err.println("'normalization = 'Jaccard' is only possible with one-mode networks.");
+		}
+		if (normalization.equals("cosine") && !networkType.equals("One-mode network")) {
+			System.err.println("'normalization = 'cosine' is only possible with one-mode networks.");
+		}
+		if (normalization.equals("average")) {
+			normalization = "average activity";
+		}
 		
+		// format duplicates argument
+		// valid R input: 'include', 'document', 'week', 'month', 'year', or 'acrossrange'
+		// valid Java output: 'include all duplicates', 'ignore per document', 'ignore per calendar week', 'ignore per calendar month', 'ignore per calendar year', or 'ignore across date range'
+		if (!duplicates.equals("include") && !duplicates.equals("document") && !duplicates.equals("week") && !duplicates.equals("month") 
+				&& !duplicates.equals("year") && !duplicates.equals("acrossrange")) {
+			System.err.println("'duplicates' must be 'include', 'document', 'week', 'month', 'year', or 'acrossrange'.");
+		}
+		if (duplicates.equals("include")) {
+			duplicates = "include all duplicates";
+		} else if (duplicates.equals("document")) {
+			duplicates = "ignore per document";
+		} else if (duplicates.equals("week")) {
+			duplicates = "ignore per calendar week";
+		} else if (duplicates.equals("month")) {
+			duplicates = "ignore per calendar month";
+		} else if (duplicates.equals("year")) {
+			duplicates = "ignore per calendar year";
+		} else if (duplicates.equals("acrossrange")) {
+			duplicates = "ignore across date range";
+		}
+
+		// format dates and times with input formats "dd.MM.yyyy" and "HH:mm:ss"
+		DateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+		String startString = startDate + " " + startTime;
+		Date start = null;
+		try {
+			start = df.parse(startString);
+		} catch (ParseException e) {
+			System.err.println("Start date or time is invalid!");
+		}
+		if (!startString.equals(df.format(startDate))) {
+			startDate = null;
+			System.err.println("Start date or time is invalid!");
+		}
+		String stopString = stopDate + " " + stopTime;
+		Date stop = null;
+		try {
+			stop = df.parse(stopString);
+		} catch (ParseException e) {
+			System.err.println("Stop date or time is invalid!");
+		}
+		if (!stopString.equals(df.format(stopDate))) {
+			stopDate = null;
+			System.err.println("Stop date or time is invalid!");
+		}
+		
+		// format time window arguments
 		if (timewindow == null || timewindow.startsWith("no")) {
 			timewindow = "no time window";
 		}
@@ -169,8 +308,38 @@ public class ExporterR {
 			timewindow = "using events";
 		}
 		
-		HashMap<String, ArrayList<String>> map = processExcludeVariables(excludeVariables, excludeValues, invertValues, data.getStatements(), 
-				data.getStatements(), data.getDocuments(), statementTypeId, includeIsolates);
+		// process exclude variables: create HashMap with variable:value pairs
+		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
+		if (excludeVariables.length > 0) {
+			for (int i = 0; i < excludeVariables.length; i++) {
+				ArrayList<String> values = map.get(excludeVariables[i]);
+				if (values == null) {
+					values = new ArrayList<String>();
+				}
+				if (!values.contains(excludeValues[i])) {
+					values.add(excludeValues[i]);
+				}
+				Collections.sort(values);
+				map.put(excludeVariables[i], values);
+			}
+		}
+		if (invertValues == true) {
+			Iterator<String> mapIterator = map.keySet().iterator();
+			while (mapIterator.hasNext()) {
+				String key = mapIterator.next();
+				ArrayList<String> values = map.get(key);
+				String[] labels = exportHelper.extractLabels(data.getStatements(), data.getStatements(), data.getDocuments(), key, false, statementTypeId, includeIsolates);
+				ArrayList<String> newValues = new ArrayList<String>();
+				for (int i = 0; i < labels.length; i++) {
+					if (!values.contains(labels[i])) {
+						newValues.add(labels[i]);
+					}
+				}
+				map.put(key, newValues);
+			}
+		}
+		
+		// process document-level exclude variables using repeated calls of private function 'processExcludeDocument'
 		ArrayList<String> authorExclude = processExcludeDocument("author", excludeAuthors, invertAuthors, data.getStatements(), data.getStatements(), 
 				data.getDocuments(), statementTypeId, includeIsolates);
 		ArrayList<String> sourceExclude = processExcludeDocument("source", excludeSources, invertSources, data.getStatements(), data.getStatements(),  
@@ -285,8 +454,92 @@ public class ExporterR {
 			}
 			this.matrix = m;
 		} else if (networkType.equals("Event list")) {
+			// convert list of filtered statements into event list in the form of an Object[], including all statement- and document-level variables
 			this.matrix = null;
-			this.eventListColumnsR = eventListR(filteredStatements, data.getDocuments(), st);
+		    String key, value;
+			Document doc;
+			for (int i = 0; i < filteredStatements.size(); i++) {
+				if (filteredStatements.get(i).getStatementTypeId() != statementTypeId) {
+					throw new IllegalArgumentException("More than one statement type was selected. Cannot export to a spreadsheet!");
+				}
+			}
+
+			// HashMap for fast lookup of document indices by ID
+			HashMap<Integer, Integer> docMap = new HashMap<Integer, Integer>();
+			for (int i = 0; i < data.getDocuments().size(); i++) {
+				docMap.put(data.getDocuments().get(i).getId(), i);
+			}
+			
+			// Get variable names and types of current statement type
+			HashMap<String, String> variables = st.getVariables();
+			Iterator<String> keyIterator;
+			ArrayList<String> variableNames = new ArrayList<String>();
+			ArrayList<String> variableTypes = new ArrayList<String>();
+			keyIterator = variables.keySet().iterator();
+			while (keyIterator.hasNext()){
+				key = keyIterator.next();
+				value = variables.get(key);
+				variableNames.add(key);
+				variableTypes.add(value);
+			}
+			columnNames = new String[variableNames.size()];
+			columnTypes = new String[variableTypes.size()];
+			for (int i = 0; i < variableNames.size(); i++) {
+				columnNames[i] = variableNames.get(i);
+				columnTypes[i] = variableTypes.get(i);
+			}
+			
+			// create array of columns and populate document-level and statement-level columns; leave out variables for now
+			Object[] eventListColumnsR = new Object[variableNames.size() + 8];
+			int[] ids = new int[filteredStatements.size()];
+			long[] time = new long[filteredStatements.size()];
+			int[] docId = new int[filteredStatements.size()];
+			String[] docTitle = new String[filteredStatements.size()];
+			String[] author = new String[filteredStatements.size()];
+			String[] source = new String[filteredStatements.size()];
+			String[] section = new String[filteredStatements.size()];
+			String[] type = new String[filteredStatements.size()];
+			for (int i = 0; i < filteredStatements.size(); i++) {
+				ids[i] = filteredStatements.get(i).getId();
+				time[i] = filteredStatements.get(i).getDate().getTime() / 1000;  // convert milliseconds to seconds (since 1/1/1970)
+				docId[i] = filteredStatements.get(i).getDocumentId();
+				doc = data.getDocuments().get(docMap.get(docId[i]));
+				docTitle[i] = doc.getTitle();
+				author[i] = doc.getAuthor();
+				source[i] = doc.getSource();
+				section[i] = doc.getSection();
+				type[i] = doc.getType();
+			}
+			eventListColumnsR[0] = ids;
+			eventListColumnsR[1] = time;
+			eventListColumnsR[2] = docId;
+			eventListColumnsR[3] = docTitle;
+			eventListColumnsR[4] = author;
+			eventListColumnsR[5] = source;
+			eventListColumnsR[6] = section;
+			eventListColumnsR[7] = type;
+			
+			// Now add the variables to the columns array
+			for (int i = 0; i < variableNames.size(); i++) {
+				if (columnTypes[i].equals("short text") || columnTypes[i].equals("long text")) {
+					eventListColumnsR[i + 8] = new String[filteredStatements.size()];
+				} else {
+					eventListColumnsR[i + 8] = new int[filteredStatements.size()];
+				}
+			}
+			for (int i = 0; i < filteredStatements.size(); i++) {
+				for (int j = 0; j < variableNames.size(); j++) {
+					if (columnTypes[j].equals("short text") || columnTypes[j].equals("long text")) {
+						String[] temp = ((String[]) eventListColumnsR[j + 8]);
+						temp[i] = (String) filteredStatements.get(i).getValues().get(columnNames[j]);
+						eventListColumnsR[j + 8] = temp;
+					} else {
+						int[] temp = ((int[]) eventListColumnsR[j + 8]);
+						temp[i] = (int) filteredStatements.get(i).getValues().get(columnNames[j]);
+						eventListColumnsR[j + 8] = temp;
+					}
+				}
+			}
 		}
 		if (verbose == true) {
 			System.out.print("Done.\n");
@@ -298,219 +551,6 @@ public class ExporterR {
 		}
 	}
 
-	/**
-	 * Format the R argument 'networkType' (can be 'eventlist', 'twomode', or 'onemode') to 'Event list', 'Two-mode network', or 'One-mode network'.
-	 * 
-	 * @param networkType   R argument
-	 * @return              formatted string
-	 */
-	private String formatNetworkType(String networkType) {
-		if (networkType.equals("eventlist")) {
-			networkType = "Event list";
-		} else if (networkType.equals("twomode")) {
-			networkType = "Two-mode network";
-		} else if (networkType.equals("onemode")) {
-			networkType = "One-mode network";
-		} else {
-			System.err.println("Network type was not recognized. Use 'twomode', 'onemode', or 'eventlist'.");
-		}
-		return networkType;
-	}
-
-	/**
-	 * Check if variables and statement type (provided as a String) are valid and return statement type.
-	 * 
-	 * @param networkType            Java-DNA-formatted network type String 
-	 * @param statementType          Statement type given as a String
-	 * @param variable1              First variable as a String
-	 * @param variable2              Second variable as a String
-	 * @param qualifier              Qualifier variable as a String
-	 * @param qualifierAggregation   Qualifier aggregation rule as a String ('ignore', 'combine', 'subtract', 'congruence', or 'conflict')
-	 * @return                       StatementType to be used
-	 */
-	private StatementType processStatementType(String networkType, String statementType, String variable1, String variable2, String qualifier, String qualifierAggregation) {
-		StatementType st = data.getStatementType(statementType);
-		if (st == null) {
-			System.err.println("Statement type '" + statementType + " does not exist!");
-		}
-		
-		if (!st.getVariables().containsKey(variable1)) {
-			System.err.println("Variable 1 ('" + variable1 + "') does not exist in this statement type.");
-		}
-		if (!st.getVariables().get(variable1).equals("short text")) {
-			System.err.println("Variable 1 ('" + variable1 + "') is not a short text variable.");
-		}
-		
-		if (!st.getVariables().containsKey(variable2)) {
-			System.err.println("Variable 2 ('" + variable2 + "') does not exist in this statement type.");
-		}
-		if (!st.getVariables().get(variable2).equals("short text")) {
-			System.err.println("Variable 2 ('" + variable2 + "') is not a short text variable.");
-		}
-		
-		if (!st.getVariables().containsKey(qualifier)) {
-			System.err.println("The qualifier variable ('" + qualifier + "') does not exist in this statement type.");
-		}
-		if (!st.getVariables().get(qualifier).equals("boolean") && !st.getVariables().get(qualifier).equals("integer")) {
-			System.err.println("The qualifier variable ('" + qualifier + "') is not a boolean or integer variable.");
-		}
-		
-		if (!qualifierAggregation.equals("ignore") && !qualifierAggregation.equals("subtract") && !qualifierAggregation.equals("combine")
-				&& !qualifierAggregation.equals("congruence") && !qualifierAggregation.equals("conflict")) {
-			System.err.println("'qualifierAggregation' must be 'ignore', 'combine', 'subtract', 'congruence', or 'conflict'.");
-		}
-		if (qualifierAggregation.equals("combine") && !networkType.equals("Two-mode network")) {
-			System.err.println("qualifierAggregation = 'combine' is only possible with two-mode networks.");
-		}
-		if (qualifierAggregation.equals("congruence") && !networkType.equals("One-mode network")) {
-			System.err.println("qualifierAggregation = 'congruence' is only possible with one-mode networks.");
-		}
-		if (qualifierAggregation.equals("conflict") && !networkType.equals("One-mode network")) {
-			System.err.println("qualifierAggregation = 'conflict' is only possible with one-mode networks.");
-		}
-		
-		return st;
-	}
-
-	/**
-	 * Format the normalization R argument.
-	 * 
-	 * @param networkType     Java-DNA-formatted network type String
-	 * @param normalization   R argument String with the normalization type (can be 'no', 'activity', 'prominence', 'average', 'Jaccard', or 'cosine')
-	 * @return                Formatted normalization String for DNA export (can be 'no', 'activity', 'prominence', 'average activity', 'Jaccard', or 'cosine')
-	 */
-	private String formatNormalization(String networkType, String normalization) {
-		if (normalization.equals("jaccard")) {
-			normalization = "Jaccard";
-		}
-		if (normalization.equals("Cosine")) {
-			normalization = "cosine";
-		}
-		if (!normalization.equals("no") && !normalization.equals("activity") && !normalization.equals("prominence") 
-				&& !normalization.equals("average") && !normalization.equals("Jaccard") && !normalization.equals("cosine")) {
-			System.err.println("'normalization' must be 'no', 'activity', 'prominence', 'average', 'Jaccard', or 'cosine'.");
-		}
-		if (normalization.equals("activity") && !networkType.equals("Two-mode network")) {
-			System.err.println("'normalization = 'activity' is only possible with two-mode networks.");
-		}
-		if (normalization.equals("prominence") && !networkType.equals("Two-mode network")) {
-			System.err.println("'normalization = 'prominence' is only possible with two-mode networks.");
-		}
-		if (normalization.equals("average") && !networkType.equals("One-mode network")) {
-			System.err.println("'normalization = 'average' is only possible with one-mode networks.");
-		}
-		if (normalization.equals("Jaccard") && !networkType.equals("One-mode network")) {
-			System.err.println("'normalization = 'Jaccard' is only possible with one-mode networks.");
-		}
-		if (normalization.equals("cosine") && !networkType.equals("One-mode network")) {
-			System.err.println("'normalization = 'cosine' is only possible with one-mode networks.");
-		}
-		if (normalization.equals("average")) {
-			normalization = "average activity";
-		}
-		return normalization;
-	}
-	
-	/**
-	 * Format the duplicates R argument.
-	 * 
-	 * @param duplicates   An input String that can be 'include', 'document', 'week', 'month', 'year', or 'acrossrange'.
-	 * @return             An output String that can be 'include all duplicates', 'ignore per document', 'ignore per calendar week', 'ignore per calendar month', 'ignore per calendar year', or 'ignore across date range'
-	 */
-	private String formatDuplicates(String duplicates) {
-		if (!duplicates.equals("include") && !duplicates.equals("document") && !duplicates.equals("week") && !duplicates.equals("month") 
-				&& !duplicates.equals("year") && !duplicates.equals("acrossrange")) {
-			System.err.println("'duplicates' must be 'include', 'document', 'week', 'month', 'year', or 'acrossrange'.");
-		}
-		if (duplicates.equals("include")) {
-			duplicates = "include all duplicates";
-		} else if (duplicates.equals("document")) {
-			duplicates = "ignore per document";
-		} else if (duplicates.equals("week")) {
-			duplicates = "ignore per calendar week";
-		} else if (duplicates.equals("month")) {
-			duplicates = "ignore per calendar month";
-		} else if (duplicates.equals("year")) {
-			duplicates = "ignore per calendar year";
-		} else if (duplicates.equals("acrossrange")) {
-			duplicates = "ignore across date range";
-		}
-		
-		return duplicates;
-	}
-	
-	/**
-	 * Convert a date String of format "dd.MM.yyyy" and a time String of format "HH:mm:ss" to a Date object.
-	 * 
-	 * @param dateString    date String of format "dd.MM.yyyy"
-	 * @param timeString    time String of format "HH:mm:ss"
-	 * @return              Date object containing both the date and the time
-	 */
-	private Date formatDate(String dateString, String timeString) {
-		String s = dateString + " " + timeString;
-		DateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-		Date d = null;
-		try {
-			d = df.parse(s);
-		} catch (ParseException e) {
-			System.err.println("Date or time is invalid!");
-		}
-		if (!s.equals(df.format(d))) {
-			d = null;
-			System.err.println("Date or time is invalid!");
-		}
-		return d;
-	}
-	
-	/**
-	 * Convert a String array of variables and another one of values to be excluded from export into an array list, after considering the invert argument.
-	 * 
-	 * @param excludeVariables     A String array with n elements, indicating the variable of the n'th value
-	 * @param excludeValues        A String array with n elements, indicating the value pertaining to the n'th variable String
-	 * @param invertValues         boolean indicating whether the values should be included (= true) rather than excluded
-	 * @param statements           ArrayList<String> of filtered statements
-	 * @param originalStatements   Original ArrayList<String> of statements before applying the filter
-	 * @param documents            ArrayList<Document> containing all documents in which the statements are embedded
-	 * @param statementTypeId      int ID of the statement type to which the variables belong
-	 * @param isolates             Should isolates be included in the network export?
-	 * @return
-	 */
-	private HashMap<String, ArrayList<String>> processExcludeVariables(String[] excludeVariables, String[] excludeValues, 
-			boolean invertValues, ArrayList<Statement> statements, ArrayList<Statement> originalStatements, 
-			ArrayList<Document> documents, int statementTypeId, boolean isolates) {
-		
-		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
-		if (excludeVariables.length > 0) {
-			for (int i = 0; i < excludeVariables.length; i++) {
-				ArrayList<String> values = map.get(excludeVariables[i]);
-				if (values == null) {
-					values = new ArrayList<String>();
-				}
-				if (!values.contains(excludeValues[i])) {
-					values.add(excludeValues[i]);
-				}
-				Collections.sort(values);
-				map.put(excludeVariables[i], values);
-			}
-		}
-		if (invertValues == true) {
-			Iterator<String> mapIterator = map.keySet().iterator();
-			while (mapIterator.hasNext()) {
-				String key = mapIterator.next();
-				ArrayList<String> values = map.get(key);
-				String[] labels = exportHelper.extractLabels(statements, originalStatements, documents, key, false, statementTypeId, isolates);
-				ArrayList<String> newValues = new ArrayList<String>();
-				for (int i = 0; i < labels.length; i++) {
-					if (!values.contains(labels[i])) {
-						newValues.add(labels[i]);
-					}
-				}
-				map.put(key, newValues);
-			}
-		}
-		return map;
-	}
-	
 	/**
 	 * Process exclude arguments for a document-level variable for R export.
 	 * 
@@ -547,109 +587,132 @@ public class ExporterR {
 		
 		return exclude;
 	}
-	
-	/**
-	 * This function accepts a list of statements that should be included in the relational event export, 
-	 * and it returns the variables of all statements, along with the statement ID and a date/time stamp. 
-	 * There is one statement per row, and the number of columns is the number of variables present in 
-	 * the statement type plus 8 columns that represent statement ID and document-level variables.
-	 * 
-	 * @param statements	 An array list of {@link Statement}s (of the same statement type) that should be exported.
-	 * @param documents      An array list of {@link Document}s in which the statements are embedded.
-	 * @param statementType  The statement type corresponding to the statements.
-	 */
-	private Object[] eventListR(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType) {
-		String key, value;
-		Document doc;
-		int statementTypeId = statementType.getId();
-		for (int i = 0; i < statements.size(); i++) {
-			if (statements.get(i).getStatementTypeId() != statementTypeId) {
-				throw new IllegalArgumentException("More than one statement type was selected. Cannot export to a spreadsheet!");
-			}
-		}
 
-		// HashMap for fast lookup of document indices by ID
-		HashMap<Integer, Integer> docMap = new HashMap<Integer, Integer>();
-		for (int i = 0; i < documents.size(); i++) {
-			docMap.put(documents.get(i).getId(), i);
-		}
-		
-		// Get variable names and types of current statement type
-		HashMap<String, String> variables = statementType.getVariables();
-		Iterator<String> keyIterator;
-		ArrayList<String> variableNames = new ArrayList<String>();
-		ArrayList<String> variableTypes = new ArrayList<String>();
-		keyIterator = variables.keySet().iterator();
-		while (keyIterator.hasNext()){
-			key = keyIterator.next();
-			value = variables.get(key);
-			variableNames.add(key);
-			variableTypes.add(value);
-		}
-		columnNames = new String[variableNames.size()];
-		columnTypes = new String[variableTypes.size()];
-		for (int i = 0; i < variableNames.size(); i++) {
-			columnNames[i] = variableNames.get(i);
-			columnTypes[i] = variableTypes.get(i);
-		}
-		
-		// create array of columns and populate document-level and statement-level columns; leave out variables for now
-		Object[] columns = new Object[variableNames.size() + 8];
-		int[] ids = new int[statements.size()];
-		long[] time = new long[statements.size()];
-		int[] docId = new int[statements.size()];
-		String[] docTitle = new String[statements.size()];
-		String[] author = new String[statements.size()];
-		String[] source = new String[statements.size()];
-		String[] section = new String[statements.size()];
-		String[] type = new String[statements.size()];
-		for (int i = 0; i < statements.size(); i++) {
-			ids[i] = statements.get(i).getId();
-			time[i] = statements.get(i).getDate().getTime() / 1000;  // convert milliseconds to seconds (since 1/1/1970)
-			docId[i] = statements.get(i).getDocumentId();
-			doc = documents.get(docMap.get(docId[i]));
-			docTitle[i] = doc.getTitle();
-			author[i] = doc.getAuthor();
-			source[i] = doc.getSource();
-			section[i] = doc.getSection();
-			type[i] = doc.getType();
-		}
-		columns[0] = ids;
-		columns[1] = time;
-		columns[2] = docId;
-		columns[3] = docTitle;
-		columns[4] = author;
-		columns[5] = source;
-		columns[6] = section;
-		columns[7] = type;
-		
-		// Now add the variables to the columns array
-		for (int i = 0; i < variableNames.size(); i++) {
-			if (columnTypes[i].equals("short text") || columnTypes[i].equals("long text")) {
-				columns[i + 8] = new String[statements.size()];
-			} else {
-				columns[i + 8] = new int[statements.size()];
-			}
-		}
-		for (int i = 0; i < statements.size(); i++) {
-			for (int j = 0; j < variableNames.size(); j++) {
-				if (columnTypes[j].equals("short text") || columnTypes[j].equals("long text")) {
-					String[] temp = ((String[]) columns[j + 8]);
-					temp[i] = (String) statements.get(i).getValues().get(columnNames[j]);
-					columns[j + 8] = temp;
-				} else {
-					int[] temp = ((int[]) columns[j + 8]);
-					temp[i] = (int) statements.get(i).getValues().get(columnNames[j]);
-					columns[j + 8] = temp;
-				}
-			}
-		}
-		
-		return columns;
+	/**
+	 * Return variable names in this.eventListColumnsR
+	 * 
+	 * @return   array of Strings with variable names
+	 */
+	public String[] getEventListColumnsRNames() {
+		return columnNames;
+	}
+
+	/**
+	 * Return variable types in this.eventListColumnsR
+	 * 
+	 * @return   array of Strings with variable types
+	 */
+	public String[] getEventListColumnsRTypes() {
+		return columnTypes;
 	}
 	
 	/**
-	 * Retrieve attributes for a specific variable defined in a statement type.
+	 * Return Object[] from this.eventListColumnsR
+	 * 
+	 * @return   array of array of different data types, which represent the columns
+	 */
+	public Object[] getEventListColumnsR() {
+		return eventListColumnsR;
+	}
+	
+	/**
+	 * Return double[][] from this.matrix.
+	 * 
+	 * @return   network matrix
+	 */
+	public double[][] getMatrix() {
+		return matrix.getMatrix();
+	}
+	
+	/**
+	 * Return row names from this.matrix.
+	 * 
+	 * @return   String array of node names for the row variable.
+	 */
+	public String[] getRowNames() {
+		return matrix.getRownames();
+	}
+	
+	/**
+	 * Return column names from this.matrix.
+	 * 
+	 * @return   String array of node names for the column variable.
+	 */
+	public String[] getColumnNames() {
+		return matrix.getColnames();
+	}
+	
+	/**
+	 * Return a single matrix in this.timeWindowMatrices.
+	 * 
+	 * @return   double[][] matrix
+	 */
+	public double[][] getTimeWindowNetwork(int t) {
+		return this.timeWindowMatrices.get(t).getMatrix();
+	}
+
+	/**
+	 * Return the row names of a single matrix in this.timeWindowMatrices.
+	 * 
+	 * @return   String[] row names
+	 */
+	public String[] getTimeWindowRowNames(int t) {
+		return timeWindowMatrices.get(t).getRownames();
+	}
+
+	/**
+	 * Return the column names of a single matrix in this.timeWindowMatrices.
+	 * 
+	 * @return   String[] column names
+	 */
+	public String[] getTimeWindowColumnNames(int t) {
+		return timeWindowMatrices.get(t).getColnames();
+	}
+	
+	/**
+	 * Return time labels corresponding to a time window sequence.
+	 * 
+	 * @return   array of Unix times as seconds since 1/1/1970
+	 * @throws Exception 
+	 */
+	public long[] getTimeWindowTimes() throws Exception {
+		long[] times = new long[timeWindowMatrices.size()];
+		if (times.length > 0) {
+			for (int i = 0; i < timeWindowMatrices.size(); i++) {
+				times[i] = (long) (timeWindowMatrices.get(i).getDate().getTime() / 1000);
+			}
+		} else {
+			throw new Exception("Not a single network matrix has been generated. Does the time window size exceed the time range?");
+		}
+		return times;
+	}
+
+	/**
+	 * Return numbers of statements corresponding to a time window sequence.
+	 * 
+	 * @return   array of integers representing how many statements a time window network is composed of
+	 * @throws Exception 
+	 */
+	public int[] getTimeWindowNumStatements() throws Exception {
+		int[] numStatements = new int[timeWindowMatrices.size()];
+		if (numStatements.length > 0) {
+			for (int i = 0; i < timeWindowMatrices.size(); i++) {
+				numStatements[i] = timeWindowMatrices.get(i).getNumStatements();
+			}
+		} else {
+			throw new Exception("Not a single network matrix has been generated. Does the time window size exceed the time range?");
+		}
+		return numStatements;
+	}
+
+	
+	/* =================================================================================================================
+	 * Functions for managing attributes
+	 * =================================================================================================================
+	 */
+	
+	/**
+	 * Retrieve attributes for a specific variable defined in a statement type (here: definition for String statement type label).
 	 * 
 	 * @param statementTypeLabel  Name of the statement type in which the variable is defined. Make sure there are no duplicate names!
 	 * @param variable            Variable name for which the values and attributes should be retrieved.
@@ -666,7 +729,7 @@ public class ExporterR {
 	}
 
 	/**
-	 * Retrieve attributes for a specific variable defined in a statement type.
+	 * Retrieve attributes for a specific variable defined in a statement type (here: definition for int statement type ID).
 	 * 
 	 * @param statementTypeId     ID of the statement type in which the variable is defined.
 	 * @param variable            Variable name for which the values and attributes should be retrieved.
@@ -1150,124 +1213,13 @@ public class ExporterR {
 			System.err.println("Removal of attribute " + id + ": attribute was not removed because it is used in existing statements.");
 		}
 	}
-	
-	/**
-	 * Return variable names in this.eventListColumnsR
-	 * 
-	 * @return   array of Strings with variable names
-	 */
-	public String[] getEventListColumnsRNames() {
-		return columnNames;
-	}
 
-	/**
-	 * Return variable types in this.eventListColumnsR
-	 * 
-	 * @return   array of Strings with variable types
-	 */
-	public String[] getEventListColumnsRTypes() {
-		return columnTypes;
-	}
 	
-	/**
-	 * Return Object[] from this.eventListColumnsR
-	 * 
-	 * @return   array of array of different data types, which represent the columns
+	/* =================================================================================================================
+	 * Functions for managing documents
+	 * =================================================================================================================
 	 */
-	public Object[] getEventListColumnsR() {
-		return eventListColumnsR;
-	}
 	
-	/**
-	 * Return double[][] from this.matrix.
-	 * 
-	 * @return   network matrix
-	 */
-	public double[][] getMatrix() {
-		return matrix.getMatrix();
-	}
-	
-	/**
-	 * Return row names from this.matrix.
-	 * 
-	 * @return   String array of node names for the row variable.
-	 */
-	public String[] getRowNames() {
-		return matrix.getRownames();
-	}
-	
-	/**
-	 * Return column names from this.matrix.
-	 * 
-	 * @return   String array of node names for the column variable.
-	 */
-	public String[] getColumnNames() {
-		return matrix.getColnames();
-	}
-	
-	/**
-	 * Return a single matrix in this.timeWindowMatrices.
-	 * 
-	 * @return   double[][] matrix
-	 */
-	public double[][] getTimeWindowNetwork(int t) {
-		return this.timeWindowMatrices.get(t).getMatrix();
-	}
-
-	/**
-	 * Return the row names of a single matrix in this.timeWindowMatrices.
-	 * 
-	 * @return   String[] row names
-	 */
-	public String[] getTimeWindowRowNames(int t) {
-		return timeWindowMatrices.get(t).getRownames();
-	}
-
-	/**
-	 * Return the column names of a single matrix in this.timeWindowMatrices.
-	 * 
-	 * @return   String[] column names
-	 */
-	public String[] getTimeWindowColumnNames(int t) {
-		return timeWindowMatrices.get(t).getColnames();
-	}
-	
-	/**
-	 * Return time labels corresponding to a time window sequence.
-	 * 
-	 * @return   array of Unix times as seconds since 1/1/1970
-	 * @throws Exception 
-	 */
-	public long[] getTimeWindowTimes() throws Exception {
-		long[] times = new long[timeWindowMatrices.size()];
-		if (times.length > 0) {
-			for (int i = 0; i < timeWindowMatrices.size(); i++) {
-				times[i] = (long) (timeWindowMatrices.get(i).getDate().getTime() / 1000);
-			}
-		} else {
-			throw new Exception("Not a single network matrix has been generated. Does the time window size exceed the time range?");
-		}
-		return times;
-	}
-
-	/**
-	 * Return numbers of statements corresponding to a time window sequence.
-	 * 
-	 * @return   array of integers representing how many statements a time window network is composed of
-	 * @throws Exception 
-	 */
-	public int[] getTimeWindowNumStatements() throws Exception {
-		int[] numStatements = new int[timeWindowMatrices.size()];
-		if (numStatements.length > 0) {
-			for (int i = 0; i < timeWindowMatrices.size(); i++) {
-				numStatements[i] = timeWindowMatrices.get(i).getNumStatements();
-			}
-		} else {
-			throw new Exception("Not a single network matrix has been generated. Does the time window size exceed the time range?");
-		}
-		return numStatements;
-	}
-
 	/**
 	 * Retrieve an object array of all document data for R.
 	 * 
@@ -1617,212 +1569,11 @@ public class ExporterR {
 		}
 	}
 
-	/**
-	 * Wrapper for the {@link addStatement} function. This function is identical but specifies the statement type as a 
-	 * String label instead of the statement type ID AND specifies only a single variable name (because there is only 
-	 * one variable defined in the statement type).
-	 * 
-	 * @param documentId       The document ID of the document to which the statement should be added.
-	 * @param startCaret       The start position of the statement in the document.
-	 * @param endCaret         The stop position of the statement in the document.
-	 * @param statementType    The label of the statement type of which the statement to be created is an instance.
-	 * @param coder            The ID of the coder that adds the current statement.
-	 * @param varName          A single variable names to which the values should be added (in case there is only one single variable present).
-	 * @param values           The values to be added to the statement variables as an {@link Object} array.
-	 * @param verbose          Report feedback to the console?
-	 * @return                 A new ID of the statement that was added.
-	 * @throws Exception
-	 */
-	public int addStatement(int documentId, int startCaret, int endCaret, String statementType, int coder, String varName, Object[] values, boolean verbose) {
-		int statementTypeId = -1;
-		try {
-			statementTypeId = this.data.getStatementType(statementType).getId();
-		} catch (NullPointerException npe) {
-			System.err.println("Statement could not be added because the statement type is unknown.");
-			return -1;
-		}
-		String[] varNames = new String[] { varName };  // convert string into string array
-		return addStatement(documentId, startCaret, endCaret, statementTypeId, coder, varNames, values, verbose);
-	}
 	
-	/**
-	 * Wrapper for the {@link addStatement} function. This function is identical but specifies the statement type as a String label instead of the statement type ID.
-	 * 
-	 * @param documentId       The document ID of the document to which the statement should be added.
-	 * @param startCaret       The start position of the statement in the document.
-	 * @param endCaret         The stop position of the statement in the document.
-	 * @param statementType    The label of the statement type of which the statement to be created is an instance.
-	 * @param coder            The ID of the coder that adds the current statement.
-	 * @param varNames         The variable names to which the values should be added, in the same order as the values.
-	 * @param values           The values to be added to the statement variables as an {@link Object} array.
-	 * @param verbose          Report feedback to the console?
-	 * @return                 A new ID of the statement that was added.
-	 * @throws Exception
+	/* =================================================================================================================
+	 * Functions for managing statements
+	 * =================================================================================================================
 	 */
-	public int addStatement(int documentId, int startCaret, int endCaret, String statementType, int coder, String[] varNames, Object[] values, boolean verbose) {
-		int statementTypeId = -1;
-		try {
-			statementTypeId = this.data.getStatementType(statementType).getId();
-		} catch (NullPointerException npe) {
-			System.err.println("Statement could not be added because the statement type is unknown.");
-			return -1;
-		}
-		return addStatement(documentId, startCaret, endCaret, statementTypeId, coder, varNames, values, verbose);
-	}
-
-	/**
-	 * Wrapper for the {@link addStatement} function. This function is identical but specifies only a single variable 
-	 * name (because there is only one variable defined in the statement type).
-	 * 
-	 * @param documentId       The document ID of the document to which the statement should be added.
-	 * @param startCaret       The start position of the statement in the document.
-	 * @param endCaret         The stop position of the statement in the document.
-	 * @param statementTypeId  The ID of the statement type of which the statement to be created is an instance.
-	 * @param coder            The ID of the coder that adds the current statement.
-	 * @param varName          A single variable names to which the values should be added (in case there is only one single variable present).
-	 * @param values           The values to be added to the statement variables as an {@link Object} array.
-	 * @param verbose          Report feedback to the console?
-	 * @return                 A new ID of the statement that was added.
-	 * @throws Exception
-	 */
-	public int addStatement(int documentId, int startCaret, int endCaret, int statementTypeId, int coder, String varName, Object[] values, boolean verbose) {
-		String[] varNames = new String[] { varName };  // convert string into string array
-		return addStatement(documentId, startCaret, endCaret, statementTypeId, coder, varNames, values, verbose);
-	}
-	
-	/**
-	 * Add a new statement with custom contents to the database.
-	 * 
-	 * @param documentId       The document ID of the document to which the statement should be added.
-	 * @param startCaret       The start position of the statement in the document.
-	 * @param endCaret         The stop position of the statement in the document.
-	 * @param statementTypeId  The ID of the statement type of which the statement to be created is an instance.
-	 * @param coder            The ID of the coder that adds the current statement.
-	 * @param varNames         The variable names to which the values should be added, in the same order as the values.
-	 * @param values           The values to be added to the statement variables as an {@link Object} array.
-	 * @param verbose          Report feedback to the console?
-	 * @return                 A new ID of the statement that was added.
-	 * @throws Exception
-	 */
-	public int addStatement(int documentId, int startCaret, int endCaret, int statementTypeId, int coder, String[] varNames, Object[] values, boolean verbose) {
-		int statementId = this.data.generateNewId("statements");
-		int docLength = 0;
-		try {
-			docLength = data.getDocument(documentId).getText().length();
-		} catch (NullPointerException npe) {
-			System.err.println("Error: Document ID could not be found.");
-			return -1;
-		}
-		if (docLength == 0) {
-			System.err.println("Error: No statements can be added to this document because its length is zero.");
-			return -1;
-		}
-		Date date = data.getDocument(documentId).getDate();
-		if (startCaret < 0) {
-			System.err.println("Error: 'startCaret' must be 0 or greater than 0.");
-			return -1;
-		}
-		if (startCaret > docLength - 1) {
-			System.err.println("Error: 'startCaret' is greater than the length minus one of the document with ID " + documentId + ".");
-			return -1;
-		}
-		if (endCaret < startCaret + 1) {
-			System.err.println("Error: 'endCaret' position must be greater than the 'startCaret' position.");
-			return -1;
-		}
-		if (endCaret > docLength) {
-			System.err.println("Error: 'endCaret' is greater than the length of the document with ID " + documentId + ".");
-			return -1;
-		}
-		if (this.data.getCoderById(coder) == null) {
-			System.err.println("Error: Statement could not be added because coder ID is unknown.");
-			return -1;
-		}
-		
-		StatementType st = this.data.getStatementTypeById(statementTypeId);
-		if (st == null) {
-			System.err.println("Error: Statement could not be added because the statement type is unknown.");
-			return -1;
-		}
-		
-		LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
-		for (int i = 0; i < values.length; i++) {
-			if (!st.getVariables().containsKey(varNames[i])) {
-				System.err.println("Warning: The value for variable '" + varNames[i] + "' is ignored because this variable is not defined in statement type '" + st.getLabel() + "'.");
-				continue;
-			}
-			if (st.getVariables().get(varNames[i]).equals("boolean") || st.getVariables().get(varNames[i]).equals("integer")) {
-				int[] v = (int[]) values[i];
-				if (st.getVariables().get(varNames[i]).equals("boolean") && (v[0] < 0 || v[0] > 1)) {
-					System.err.println("Warning: The value for the boolean variable '" + varNames[i] + "' is replaced by 1 because the value provided is outside the valid range of values.");
-					map.put(varNames[i], 1);
-				} else {
-					map.put(varNames[i], v[0]);
-				}
-				if (verbose == true) {
-					System.out.println(varNames[i] + ": " + v[0]);
-				}
-			} else {
-				String[] v = (String[]) values[i];
-				map.put(varNames[i], v[0]);
-				
-				// also add a new attribute if the value doesn't exist yet in the database
-				String attrString = "";
-				if (this.data.getAttributeId(v[0], varNames[i], statementTypeId) == -1) {
-					int attributeId = this.data.generateNewId("attributes");
-					AttributeVector av = new AttributeVector(attributeId, v[0], "#000000", "", "", "", "", statementTypeId, varNames[i]);
-					this.data.attributes.add(av);
-					Collections.sort(this.data.getAttributes());
-					this.sql.upsertAttributeVector(av);
-					attrString = " [new attribute added]";
-				}
-				
-				if (verbose == true) {
-					System.out.println(varNames[i] + ": " + v[0] + attrString);
-				}
-			}
-		}
-		Iterator<String> mapIterator = st.getVariables().keySet().iterator();
-		String key, type;
-		while (mapIterator.hasNext()) {
-			key = mapIterator.next();
-			type = st.getVariables().get(key);
-			if (!map.containsKey(key)) {
-				if (type.equals("boolean")) {
-					map.put(key, 1);
-				} else if (type.equals("integer")) {
-					map.put(key, 0);
-				} else if (type.equals("short text") || type.equals("long text")) {
-					map.put(key, "");
-				}
-			}
-		}
-		Statement s = new Statement(statementId, documentId, startCaret, endCaret, date, statementTypeId, coder, map);
-		this.data.addStatement(s);
-		this.sql.addStatement(s, st.getVariables());
-		if (verbose == true) {
-			System.out.println("A new statement with ID " + statementId + " was added to the database in document " + documentId + ".");
-		}
-		return statementId;
-	}
-	
-	/**
-	 * Remove a statement with a given statement ID.
-	 * 
-	 * @param statementId  ID of the statement to delete from the database and memory.
-	 * @param verbose      Print details?
-	 * @throws Exception
-	 */
-	public void removeStatement(int statementId, boolean verbose) throws Exception {
-		if (this.data.getStatement(statementId) == null) {
-			throw new Exception("Statement with ID " + statementId + " not found.");
-		}
-		this.data.removeStatement(statementId);
-		this.sql.removeStatement(statementId);
-		if (verbose == true) {
-			System.out.println("Removal of Statement " + statementId + ": successful.");
-		}
-	}
 
 	/**
 	 * Retrieve an object array of all statement data for R using a statement type label.
@@ -2182,6 +1933,219 @@ public class ExporterR {
 		}
 	}
 	
+	/**
+	 * Wrapper for the {@link addStatement} function. This function is identical but specifies the statement type as a 
+	 * String label instead of the statement type ID AND specifies only a single variable name (because there is only 
+	 * one variable defined in the statement type).
+	 * 
+	 * @param documentId       The document ID of the document to which the statement should be added.
+	 * @param startCaret       The start position of the statement in the document.
+	 * @param endCaret         The stop position of the statement in the document.
+	 * @param statementType    The label of the statement type of which the statement to be created is an instance.
+	 * @param coder            The ID of the coder that adds the current statement.
+	 * @param varName          A single variable names to which the values should be added (in case there is only one single variable present).
+	 * @param values           The values to be added to the statement variables as an {@link Object} array.
+	 * @param verbose          Report feedback to the console?
+	 * @return                 A new ID of the statement that was added.
+	 * @throws Exception
+	 */
+	public int addStatement(int documentId, int startCaret, int endCaret, String statementType, int coder, String varName, Object[] values, boolean verbose) {
+		int statementTypeId = -1;
+		try {
+			statementTypeId = this.data.getStatementType(statementType).getId();
+		} catch (NullPointerException npe) {
+			System.err.println("Statement could not be added because the statement type is unknown.");
+			return -1;
+		}
+		String[] varNames = new String[] { varName };  // convert string into string array
+		return addStatement(documentId, startCaret, endCaret, statementTypeId, coder, varNames, values, verbose);
+	}
+	
+	/**
+	 * Wrapper for the {@link addStatement} function. This function is identical but specifies the statement type as a String label instead of the statement type ID.
+	 * 
+	 * @param documentId       The document ID of the document to which the statement should be added.
+	 * @param startCaret       The start position of the statement in the document.
+	 * @param endCaret         The stop position of the statement in the document.
+	 * @param statementType    The label of the statement type of which the statement to be created is an instance.
+	 * @param coder            The ID of the coder that adds the current statement.
+	 * @param varNames         The variable names to which the values should be added, in the same order as the values.
+	 * @param values           The values to be added to the statement variables as an {@link Object} array.
+	 * @param verbose          Report feedback to the console?
+	 * @return                 A new ID of the statement that was added.
+	 * @throws Exception
+	 */
+	public int addStatement(int documentId, int startCaret, int endCaret, String statementType, int coder, String[] varNames, Object[] values, boolean verbose) {
+		int statementTypeId = -1;
+		try {
+			statementTypeId = this.data.getStatementType(statementType).getId();
+		} catch (NullPointerException npe) {
+			System.err.println("Statement could not be added because the statement type is unknown.");
+			return -1;
+		}
+		return addStatement(documentId, startCaret, endCaret, statementTypeId, coder, varNames, values, verbose);
+	}
+
+	/**
+	 * Wrapper for the {@link addStatement} function. This function is identical but specifies only a single variable 
+	 * name (because there is only one variable defined in the statement type).
+	 * 
+	 * @param documentId       The document ID of the document to which the statement should be added.
+	 * @param startCaret       The start position of the statement in the document.
+	 * @param endCaret         The stop position of the statement in the document.
+	 * @param statementTypeId  The ID of the statement type of which the statement to be created is an instance.
+	 * @param coder            The ID of the coder that adds the current statement.
+	 * @param varName          A single variable names to which the values should be added (in case there is only one single variable present).
+	 * @param values           The values to be added to the statement variables as an {@link Object} array.
+	 * @param verbose          Report feedback to the console?
+	 * @return                 A new ID of the statement that was added.
+	 * @throws Exception
+	 */
+	public int addStatement(int documentId, int startCaret, int endCaret, int statementTypeId, int coder, String varName, Object[] values, boolean verbose) {
+		String[] varNames = new String[] { varName };  // convert string into string array
+		return addStatement(documentId, startCaret, endCaret, statementTypeId, coder, varNames, values, verbose);
+	}
+	
+	/**
+	 * Add a new statement with custom contents to the database.
+	 * 
+	 * @param documentId       The document ID of the document to which the statement should be added.
+	 * @param startCaret       The start position of the statement in the document.
+	 * @param endCaret         The stop position of the statement in the document.
+	 * @param statementTypeId  The ID of the statement type of which the statement to be created is an instance.
+	 * @param coder            The ID of the coder that adds the current statement.
+	 * @param varNames         The variable names to which the values should be added, in the same order as the values.
+	 * @param values           The values to be added to the statement variables as an {@link Object} array.
+	 * @param verbose          Report feedback to the console?
+	 * @return                 A new ID of the statement that was added.
+	 * @throws Exception
+	 */
+	public int addStatement(int documentId, int startCaret, int endCaret, int statementTypeId, int coder, String[] varNames, Object[] values, boolean verbose) {
+		int statementId = this.data.generateNewId("statements");
+		int docLength = 0;
+		try {
+			docLength = data.getDocument(documentId).getText().length();
+		} catch (NullPointerException npe) {
+			System.err.println("Error: Document ID could not be found.");
+			return -1;
+		}
+		if (docLength == 0) {
+			System.err.println("Error: No statements can be added to this document because its length is zero.");
+			return -1;
+		}
+		Date date = data.getDocument(documentId).getDate();
+		if (startCaret < 0) {
+			System.err.println("Error: 'startCaret' must be 0 or greater than 0.");
+			return -1;
+		}
+		if (startCaret > docLength - 1) {
+			System.err.println("Error: 'startCaret' is greater than the length minus one of the document with ID " + documentId + ".");
+			return -1;
+		}
+		if (endCaret < startCaret + 1) {
+			System.err.println("Error: 'endCaret' position must be greater than the 'startCaret' position.");
+			return -1;
+		}
+		if (endCaret > docLength) {
+			System.err.println("Error: 'endCaret' is greater than the length of the document with ID " + documentId + ".");
+			return -1;
+		}
+		if (this.data.getCoderById(coder) == null) {
+			System.err.println("Error: Statement could not be added because coder ID is unknown.");
+			return -1;
+		}
+		
+		StatementType st = this.data.getStatementTypeById(statementTypeId);
+		if (st == null) {
+			System.err.println("Error: Statement could not be added because the statement type is unknown.");
+			return -1;
+		}
+		
+		LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
+		for (int i = 0; i < values.length; i++) {
+			if (!st.getVariables().containsKey(varNames[i])) {
+				System.err.println("Warning: The value for variable '" + varNames[i] + "' is ignored because this variable is not defined in statement type '" + st.getLabel() + "'.");
+				continue;
+			}
+			if (st.getVariables().get(varNames[i]).equals("boolean") || st.getVariables().get(varNames[i]).equals("integer")) {
+				int[] v = (int[]) values[i];
+				if (st.getVariables().get(varNames[i]).equals("boolean") && (v[0] < 0 || v[0] > 1)) {
+					System.err.println("Warning: The value for the boolean variable '" + varNames[i] + "' is replaced by 1 because the value provided is outside the valid range of values.");
+					map.put(varNames[i], 1);
+				} else {
+					map.put(varNames[i], v[0]);
+				}
+				if (verbose == true) {
+					System.out.println(varNames[i] + ": " + v[0]);
+				}
+			} else {
+				String[] v = (String[]) values[i];
+				map.put(varNames[i], v[0]);
+				
+				// also add a new attribute if the value doesn't exist yet in the database
+				String attrString = "";
+				if (this.data.getAttributeId(v[0], varNames[i], statementTypeId) == -1) {
+					int attributeId = this.data.generateNewId("attributes");
+					AttributeVector av = new AttributeVector(attributeId, v[0], "#000000", "", "", "", "", statementTypeId, varNames[i]);
+					this.data.attributes.add(av);
+					Collections.sort(this.data.getAttributes());
+					this.sql.upsertAttributeVector(av);
+					attrString = " [new attribute added]";
+				}
+				
+				if (verbose == true) {
+					System.out.println(varNames[i] + ": " + v[0] + attrString);
+				}
+			}
+		}
+		Iterator<String> mapIterator = st.getVariables().keySet().iterator();
+		String key, type;
+		while (mapIterator.hasNext()) {
+			key = mapIterator.next();
+			type = st.getVariables().get(key);
+			if (!map.containsKey(key)) {
+				if (type.equals("boolean")) {
+					map.put(key, 1);
+				} else if (type.equals("integer")) {
+					map.put(key, 0);
+				} else if (type.equals("short text") || type.equals("long text")) {
+					map.put(key, "");
+				}
+			}
+		}
+		Statement s = new Statement(statementId, documentId, startCaret, endCaret, date, statementTypeId, coder, map);
+		this.data.addStatement(s);
+		this.sql.addStatement(s, st.getVariables());
+		if (verbose == true) {
+			System.out.println("A new statement with ID " + statementId + " was added to the database in document " + documentId + ".");
+		}
+		return statementId;
+	}
+	
+	/**
+	 * Remove a statement with a given statement ID.
+	 * 
+	 * @param statementId  ID of the statement to delete from the database and memory.
+	 * @param verbose      Print details?
+	 * @throws Exception
+	 */
+	public void removeStatement(int statementId, boolean verbose) throws Exception {
+		if (this.data.getStatement(statementId) == null) {
+			throw new Exception("Statement with ID " + statementId + " not found.");
+		}
+		this.data.removeStatement(statementId);
+		this.sql.removeStatement(statementId);
+		if (verbose == true) {
+			System.out.println("Removal of Statement " + statementId + ": successful.");
+		}
+	}
+
+	
+	/* =================================================================================================================
+	 * Functions for managing statement types and variables
+	 * =================================================================================================================
+	 */
+
 	/**
 	 * Create and return an object that contains all statement types (but not their variable definitions).
 	 * 
