@@ -5,10 +5,12 @@
 .onAttach <- function(libname, pkgname) {
   desc <- packageDescription(pkgname, libname)
   packageStartupMessage(
-    'Version: ', desc$Version, '\n',
-    'Date:    ', desc$Date, '\n',
-    'Authors: ', 'Philip Leifeld (University of Glasgow),\n',
-    '         Johannes Gruber (University of Glasgow)'
+    'Version:      ', desc$Version, '\n',
+    'Date:         ', desc$Date, '\n',
+    'Authors       Philip Leifeld  (University of Glasgow)\n',
+    'Contributors: Johannes B. Gruber (University of Glasgow),\n',
+    '              Tim Henrichsen  (Scuola superiore Sant\'Anna Pisa)\n',
+    'Project home: github.com/leifeld/dna'
   )
 }
 # some settings
@@ -52,7 +54,7 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' dna_connection(dna_sample())
 #' }
 #' @export
@@ -76,7 +78,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
     infile <- paste0(getwd(), "/", infile)
   }
   if (is.null(dnaEnvironment[["dnaJarString"]])) {
-    stop("No connection between rDNA and the DNA detected. Maybe dna_init() would help.")
+    stop("No connection between rDNA and DNA detected. Maybe dna_init() would help.")
   }
   if (is.null(login) || is.null(password)) {
     export <- .jnew("dna.export/ExporterR", "sqlite", infile, "", "", verbose)
@@ -104,7 +106,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' conn
 #' }
@@ -113,36 +115,41 @@ print.dna_connection <- function(x, ...) {
   .jcall(x$dna_connection, "V", "rShow")
 }
 
-#' Download the binary DNA JAR file
+#' Download the binary DNA jar file
 #'
-#' Downloads the newest released DNA JAR file necessary for running
-#' \code{dna_init}.
+#' Downloads the newest released DNA jar file necessary for running
+#' \link{dna_init}.
 #'
-#' This simple function downloads the DNA JAR from the latest release.
+#' This function uses GitHub's API to download the latest DNA jar file to the
+#' working directory.
 #'
-#' @param filename Name of the downloaded Jar.
-#' @param filepath Download path. Defaults to working directory.
-#' @param force Logical. Should the file be overwritten if it already exists.
+#' @param force Logical. Should the file be overwritten if it already exists?
+#' @param returnString Logical. Return the file name of the downloaded jar file?
 #'
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
 #' }
+#' 
 #' @export
+#' 
 #' @importFrom utils download.file
-dna_downloadJar <- function(filename = "dna-2.0-beta22.jar",
-                            filepath = character(),
-                            force = FALSE) {
-  # temporary fix until next release
-  url <- paste0("https://github.com/leifeld/dna/raw/master/manual/dna-2.0-beta22.jar")
-  if (any(!file.exists(paste0(filepath, filename)), force)) {
-    download.file(url = url,
-                  destfile = paste0(filepath, filename),
-                  mode = "wb",
-                  cacheOK = FALSE,
-                  extra = character())
+dna_downloadJar <- function(force = FALSE, returnString = FALSE) {
+  u <- url("https://api.github.com/repos/leifeld/dna/releases")
+  open(u)
+  lines <- readLines(u, warn = FALSE)
+  m <- gregexpr("https://github.com/leifeld/dna/releases/download/.{3,15}?/dna-.{3,15}?\\.jar", lines, perl = TRUE)
+  m <- regmatches(lines, m)[[1]]
+  close(u)
+  filename <- strsplit(m[1], "/")[[1]]
+  filename <- filename[length(filename)]
+  if (force == TRUE || (force == FALSE && !file.exists(filename))) {
+    download.file(url = m[1], destfile = filename, mode = "wb", cacheOK = FALSE)
   } else {
-    warning("Newest DNA JAR file already exists. Try \"force = TRUE\" if you want to download it anyway.")
+    warning("Latest DNA jar file already exists. Use 'force = TRUE' to overwrite it.")
+  }
+  if (returnString == TRUE) {
+    return(filename)
   }
 }
 
@@ -165,7 +172,7 @@ dna_downloadJar <- function(filename = "dna-2.0-beta22.jar",
 #'
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' dna_gui()
 #' }
 #' @export
@@ -174,35 +181,27 @@ dna_gui <- function(infile = NULL,
                     memory = 1024,
                     verbose = TRUE) {
   if (is.null(dnaEnvironment[["dnaJarString"]])) {
-    stop("No connection between rDNA and the DNA detected. Maybe dna_init() would help.")
+    stop("No connection between rDNA and DNA detected. Maybe dna_init() would help.")
   }
   if (!is.null(infile)) if (!file.exists(infile)) {
     stop(if (grepl("/", infile, fixed = TRUE)) {
-      paste0("infile \"", infile, "\" could not be located.")
+      paste0("'", infile, "' could not be located.")
     } else {
-      paste0(
-        "infile \"",
-        infile,
-        "\" could not be located in working directory \"",
-        getwd(),
-        "\"."
+      paste0("'", infile, "' could not be located in working directory '", getwd(), "'."
       )
     })
   }
   djs <- dnaEnvironment[["dnaJarString"]]
   if (is.null(djs)) {
-    stop(paste0(djs, " could not be located in directory ", getwd(), "."))
+    stop(paste0("'", djs, "' could not be located in working directory '", getwd(), "'."))
   }
   if (!is.null(infile)) {
     if (!file.exists(infile)) {
       stop(
         if (grepl("/", infile, fixed = TRUE)) {
-          paste0("infile ", infile, " could not be located.")
+          paste0("'", infile, "' could not be located.")
         } else {
-          paste0("infile ",
-                 infile,
-                 " could not be located in working directory ",
-                 getwd(), ".")
+          paste0("'", infile, "' could not be located in working directory '", getwd(), "'.")
         }
       )
     }
@@ -219,6 +218,9 @@ dna_gui <- function(infile = NULL,
   } else {
     jp <- paste0(javapath, "/java")
   }
+  if (verbose == TRUE) {
+    message("To return to R, close the DNA window when done.")
+  }
   system(paste0(jp, " -jar -Xmx", memory, "M ", djs, f), intern = !verbose)
 }
 
@@ -234,29 +236,37 @@ dna_gui <- function(infile = NULL,
 #' version or path, the \R session would need to be restarted first.
 #'
 #' @param jarfile The file name of the DNA jar file, e.g.,
-#'   \code{"dna-2.0-beta22.jar"}.
+#'   \code{"dna-2.0-beta23.jar"}. Will be auto-detected by choosing the most
+#'   recent version stored in the working directory if \code{jarfile = NULL}.
 #' @param memory The amount of memory in megabytes to allocate to DNA, for
 #'   example \code{1024} or \code{4096}.
+#' @param returnString Return a character object representing the jar file name?
 #'
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' }
 #' @export
 #' @import rJava
-dna_init <- function(jarfile = "dna-2.0-beta22.jar", memory = 1024) {
+dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
+  if (is.null(jarfile) || is.na(jarfile)) { # auto-detect file name in working directory
+    files <- dir()
+    files <- files[grepl("^dna-.+\\.jar$", files)]
+    files <- sort(files)
+    jarfile <- files[length(files)]
+  }
+  if (is.null(jarfile) || length(jarfile) == 0) {
+    stop("No DNA jar file found in the working directory.")
+  }
+  if (!is.character(jarfile) || length(jarfile) > 1 || grepl("^dna-.+\\.jar$", jarfile) == FALSE) {
+    stop("'jarfile' must be a character object of length 1 that points to the DNA jar file.")
+  }
   if (!file.exists(jarfile)) {
     stop(if (grepl("/", jarfile, fixed = TRUE)) {
-      paste0("jarfile \"", jarfile, "\" could not be located.")
+      paste0("jarfile '", jarfile, "' could not be located.")
     } else {
-      paste0(
-        "jarfile \"",
-        jarfile,
-        "\" could not be located in working directory \"",
-        getwd(),
-        "\"."
-      )
+      paste0("jarfile '", jarfile, "' could not be located in working directory '", getwd(), "'.")
     })
   }
   assign("dnaJarString", jarfile, pos = dnaEnvironment)
@@ -264,6 +274,9 @@ dna_init <- function(jarfile = "dna-2.0-beta22.jar", memory = 1024) {
   .jinit(dnaEnvironment[["dnaJarString"]],
          force.init = TRUE,
          parameters = paste0("-Xmx", memory, "m"))
+  if (returnString == TRUE) {
+    return(jarfile)
+  }
 }
 
 #' Provides a small sample database
@@ -280,17 +293,19 @@ dna_init <- function(jarfile = "dna-2.0-beta22.jar", memory = 1024) {
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' dna_connection(dna_sample())
 #' }
-#' @author Johannes Gruber
+#' 
+#' @author Johannes B. Gruber
+#' 
 #' @export
 dna_sample <- function(overwrite = FALSE,
                        verbose = TRUE) {
   if (file.exists(paste0(getwd(), "/sample.dna")) & overwrite == FALSE) {
     if (verbose) {
       warning(
-        "Sample file exists in wd. Use overwrite = TRUE to create fresh sample file."
+        "Sample file already exists in working directory. Use 'overwrite = TRUE' to create fresh sample file."
       )
     }
   } else {
@@ -406,7 +421,7 @@ dna_addAttribute <- function(connection,
                alias,
                notes)
   if (verbose == TRUE) {
-    cat("A new attribute with ID", id, "was added to the database.")
+    message("A new attribute with ID", id, "was added to the database.")
   }
   if (returnID == TRUE) {
     return(id)
@@ -505,7 +520,7 @@ dna_addDocument <- function(connection,
                type,
                dateLong)
   if (verbose == TRUE) {
-    cat("A new document with ID", id, "was added to the database.")
+    message("A new document with ID", id, "was added to the database.")
   }
   if (returnID == TRUE) {
     return(id)
@@ -659,7 +674,7 @@ dna_addStatement <- function(connection,
 #'
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' attributes <- dna_getAttributes(statementType = 1,
 #'                                 variable = "organization",
@@ -721,7 +736,7 @@ dna_getAttributes <- function(connection,
 #'
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' documents <- dna_getDocuments(conn)
 #' documents$title[1] <- "New title for first document"
@@ -991,7 +1006,7 @@ dna_removeStatement <- function(connection,
 #'
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' at <- dna_getAttributes(conn)
 #'
@@ -1163,7 +1178,7 @@ dna_setAttributes <- function(connection,
 #'
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' documents <- dna_getDocuments(conn)
 #' documents$title[1] <- "New title for first document"
@@ -1354,7 +1369,7 @@ dna_setDocuments <- function(connection,
 #'
 #' @examples
 #' \dontrun{
-#' dna_init("dna-2.0-beta23.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' statements <- dna_getStatements(conn)
 #' statements$organization[1] <- "New actor for first statement"
@@ -1561,7 +1576,7 @@ dna_setStatements <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
 #' clust.l <- dna_cluster(conn)
@@ -1868,7 +1883,7 @@ dna_cluster <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' clust.l <- dna_cluster(conn)
 #' clust.l
@@ -2057,8 +2072,10 @@ print.dna_cluster <- function(x, ...) {
 #' 
 #' @examples
 #' \dontrun{
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale1dbin(
-#'   connection,
+#'   conn,
 #'   variable1 = "organization",
 #'   variable2 = "concept",
 #'   qualifier = "agreement",
@@ -2375,8 +2392,10 @@ dna_scale1dbin <- function(connection,
 #'
 #' @examples
 #' \dontrun{
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale1dord(
-#'   connection,
+#'   conn,
 #'   variable1 = "organization",
 #'   variable2 = "concept",
 #'   qualifier = "agreement",
@@ -2688,8 +2707,10 @@ dna_scale1dord <- function(connection,
 #'
 #' @examples
 #' \dontrun{
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale2dbin(
-#'   connection,
+#'   conn,
 #'   variable1 = "organization",
 #'   variable2 = "concept",
 #'   qualifier = "agreement",
@@ -3009,8 +3030,10 @@ dna_scale2dbin <- function(connection,
 #'
 #' @examples
 #' \dontrun{
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale2dord(
-#'   connection,
+#'   conn,
 #'   variable1 = "organization",
 #'   variable2 = "concept",
 #'   qualifier = "agreement",
@@ -3189,7 +3212,9 @@ dna_scale2dord <- function(connection,
 #'
 #' @examples
 #' \dontrun{
-#' dna_scale <- dna_scale1dbin(connection,
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
+#' dna_scale <- dna_scale1dbin(conn,
 #'                             variable1 = "organization",
 #'                             variable2 = "concept",
 #'                             qualifier = "agreement",
@@ -3226,7 +3251,9 @@ plot.dna_scale <- function(x, ...) {
 #' 
 #' @examples
 #' \dontrun{
-#' dna_scale <- dna_scale1dbin(connection,
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
+#' dna_scale <- dna_scale1dbin(conn,
 #'                             variable1 = "organization",
 #'                             variable2 = "concept",
 #'                             qualifier = "agreement",
@@ -3433,17 +3460,17 @@ print.dna_scale <- function(x, ...) {
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn,
-#' networkType = "onemode",
-#' variable1 = "organization",
-#' variable2 = "concept",
-#' qualifier = "agreement",
-#' qualifierAggregation = "congruence",
-#' normalization = "average",
-#' excludeValues = list("concept" =
-#' c("There should be legislation to regulate emissions.")))
+#'   networkType = "onemode",
+#'   variable1 = "organization",
+#'   variable2 = "concept",
+#'   qualifier = "agreement",
+#'   qualifierAggregation = "congruence",
+#'   normalization = "average",
+#'   excludeValues = list("concept" =
+#'   c("There should be legislation to regulate emissions.")))
 #'
 #' # plot network
 #' dna_plotNetwork(nw)
@@ -3656,7 +3683,7 @@ dna_network <- function(connection,
 #' \dontrun{
 #' library("ggplot2")
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
 #' tW <- dna_timeWindow(connection = conn,
@@ -3684,7 +3711,9 @@ dna_network <- function(connection,
 #'
 #' dna_plotTimeWindow(mp, include.y = c(-1, 1)) + theme_bw()
 #' }
+#' 
 #' @author Philip Leifeld, Johannes B. Gruber
+#' 
 #' @export
 #' @import ggplot2
 #' @import parallel
@@ -4215,7 +4244,7 @@ dna_timeWindow <- function(connection,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, networkType = "onemode")
 #' graph <- dna_toIgraph(nw)
@@ -4263,7 +4292,7 @@ dna_toIgraph <- function(x,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
 #' ### Convert dna_connection to eventSequence
@@ -4293,7 +4322,7 @@ dna_toREM <- function(x,
                    ), dots_network))
   } else if (any(class(x) %in% "dna_eventlist")) {
     if (any(names(dots) %in% names(formals("dna_network")))) {
-      message("Since x is already a network object, arguments for dna_network() provided through '...' are ignored")
+      message("Since 'x' is already a network object, arguments for dna_network() provided through '...' are ignored")
     }
     dta <- x
     args <- c(as.list(attributes(x)$call)[-1],
@@ -4335,7 +4364,7 @@ dna_toREM <- function(x,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, networkType = "onemode")
 #' network <- dna_toNetwork(nw)
@@ -4423,7 +4452,7 @@ dna_toNetwork <- function(x,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' mds <- dna_plotCoordinates(clust)
@@ -4584,7 +4613,7 @@ dna_plotCoordinates <- function(clust,
 #' Plots a dendrogram from objects derived via \link{dna_cluster}.
 #'
 #' This function is a convenience wrapper for several different dendrogram
-#' types, which can be plotted using the \code{ggraph} package.
+#' types, which can be plotted using the \pkg{ggraph} package.
 #'
 #' @param clust A \code{dna_cluster} object created by the \link{dna_cluster}
 #'   function.
@@ -4640,7 +4669,7 @@ dna_plotCoordinates <- function(clust,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' dend <- dna_plotDendro(clust)
@@ -5004,7 +5033,7 @@ dna_plotDendro <- function(clust,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' dend <- dna_plotHeatmap(clust,
@@ -5915,7 +5944,9 @@ dna_plotNetwork <- function(x,
 #'
 #' @examples
 #' \dontrun{
-#' dna_scale <- dna_scale1dbin(connection,
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
+#' dna_scale <- dna_scale1dbin(conn,
 #'                             variable1 = "organization",
 #'                             variable2 = "concept",
 #'                             qualifier = "agreement",
@@ -6389,7 +6420,7 @@ dna_plotScale <- function(dna_scale,
 #' \dontrun{
 #' library("ggplot2")
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
 #' tW <- dna_timeWindow(connection = conn,
@@ -6510,15 +6541,17 @@ dna_plotTimeWindow <- function(x,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
 #' dna_barplot(connection = conn,
-#'of = "concept",
-#'colours = FALSE,
-#'barWidth = 0.5)
+#'             of = "concept",
+#'             colours = FALSE,
+#'             barWidth = 0.5)
 #' }
+#' 
 #' @author Johannes B. Gruber
+#' 
 #' @export
 #' @import ggplot2
 dna_barplot <- function(connection,
@@ -6763,7 +6796,9 @@ dna_barplot <- function(connection,
 #'
 #' @examples
 #' \dontrun{
-#' dna_scale <- dna_scale1dbin(connection,
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
+#' dna_scale <- dna_scale1dbin(conn,
 #'                             variable1 = "organization",
 #'                             variable2 = "concept",
 #'                             qualifier = "agreement",
@@ -7123,13 +7158,13 @@ dna_convergenceScale <- function(dna_scale,
 #' @examples
 #' \dontrun{
 #' dna_downloadJar()
-#' dna_init("dna-2.0-beta22.jar")
+#' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
 #' dna_plotFrequency(connection = conn,
-#' of = "agreement",
-#' timewindow = "days",
-#' bar = "stacked")
+#'                   of = "agreement",
+#'                   timewindow = "days",
+#'                   bar = "stacked")
 #' }
 #' @author Johannes B. Gruber
 #' @export

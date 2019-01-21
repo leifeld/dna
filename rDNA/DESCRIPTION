@@ -1,14 +1,14 @@
 Package: rDNA
 Version: 2.1.11
-Date: 2019-01-18
+Date: 2019-01-22
 Title: Discourse Network Analysis in R
 Authors@R: 
     c(person("Philip", "Leifeld", email = "Philip.Leifeld@glasgow.ac.uk", 
-    role = c("aut", "cre", "cph")), 
-    person("Johannes", "Gruber", email = "j.gruber.1@research.gla.ac.uk", 
-    role = "aut"), 
-    person("Tim", "Henrichsen", email = "tim.henrichsen@santannapisa.it", 
-    role = "ctb"))
+             role = c("aut", "cre", "cph")), 
+      person("Johannes", "Gruber", email = "j.gruber.1@research.gla.ac.uk", 
+             role = "ctb"), 
+      person("Tim", "Henrichsen", email = "tim.henrichsen@santannapisa.it", 
+             role = "ctb"))
 Maintainer: Philip Leifeld <Philip.Leifeld@glasgow.ac.uk>
 Description: Qualitative content analysis and discourse network analysis 
     using the Java software Discourse Network Analyzer (DNA).
@@ -41,5 +41,7 @@ Imports:
 SystemRequirements: Java (>= 1.8), libudunits2-dev (Linux)
 License: GPL-3
 LazyData: true
+URL: https://github.com/leifeld/dna
+BugReports: https://github.com/leifeld/dna/issues
 RoxygenNote: 6.1.0
 Encoding: UTF-8
