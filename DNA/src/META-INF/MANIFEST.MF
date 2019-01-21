@@ -1,0 +1,69 @@
+Manifest-Version: 1.0
+Main-Class: dna.Dna
+Class-Path: .
+
+Name: org/jdom/
+Specification-Title: JDOM Classes
+Specification-Version: 1.0
+Specification-Vendor: jdom.org
+Implementation-Title: org.jdom
+Implementation-Version: 1.1.1
+Implementation-Vendor: jdom.org
+
+Name: org/jdom/xpath/
+Specification-Title: JDOM XPath Classes
+Specification-Version: 1.0
+Specification-Vendor: jdom.org
+Implementation-Title: org.jdom.xpath
+Implementation-Version: 1.1.1
+Implementation-Vendor: jdom.org
+
+Name: common
+Specification-Title: JDBC
+Specification-Version: 4.0
+Specification-Vendor: Sun Microsystems Inc.
+Implementation-Title: MySQL Connector/J
+Implementation-Version: 5.1.24
+Implementation-Vendor-Id: com.mysql
+Implementation-Vendor: Oracle
+
+Name: org/jdom/output/
+Specification-Title: JDOM Output Classes
+Specification-Version: 1.0
+Specification-Vendor: jdom.org
+Implementation-Title: org.jdom.output
+Implementation-Version: 1.1.1
+Implementation-Vendor: jdom.org
+
+Name: org/jdom/adapters/
+Specification-Title: JDOM Adapter Classes
+Specification-Version: 1.0
+Specification-Vendor: jdom.org
+Implementation-Title: org.jdom.adapters
+Implementation-Version: 1.1.1
+Implementation-Vendor: jdom.org
+
+Name: org/jdom/filter/
+Specification-Title: JDOM Filter Classes
+Specification-Version: 1.0
+Specification-Vendor: jdom.org
+Implementation-Title: org.jdom.filter
+Implementation-Version: 1.1.1
+Implementation-Vendor: jdom.org
+
+Name: org/jdom/transform/
+Specification-Title: JDOM Transformation Classes
+Specification-Version: 1.0
+Specification-Vendor: jdom.org
+Implementation-Title: org.jdom.transform
+Implementation-Version: 1.1.1
+Implementation-Vendor: jdom.org
+
+Name: org/jdom/input/
+Specification-Title: JDOM Input Classes
+Specification-Version: 1.0
+Specification-Vendor: jdom.org
+Implementation-Title: org.jdom.input
+Implementation-Version: 1.1.1
+Implementation-Vendor: jdom.org
+
