@@ -52,6 +52,7 @@ dna: compile-java
 compile-java: extract-jar-libs
 	cd $(OUTPUT_DIR)/src/; \
 	$(JAVAC) dna/Dna.java; \
+	$(JAVAC) dna/export/ExporterR.java; \
 	$(FIND) . -name '*.java' -exec $(RM) {} \;
 
 # extract-jar-libs - extract libraries
