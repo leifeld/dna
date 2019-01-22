@@ -5,6 +5,8 @@ RM          := rm -rf
 MKDIR       := mkdir -p
 CP          := cp -r
 RBUILD      := R CMD build
+RSCRIPT     := Rscript -e
+LATEX       := texi2pdf
 
 # define makefile variables for directories and files
 OUTPUT_DIR  := output
@@ -27,8 +29,18 @@ VERSION     := $(shell grep -P 'version = ".+"' DNA/src/dna/Dna.java | sed 's/";
 JARFILE     := dna-${VERSION}.jar
 
 # make all and print a final message that we're done
-all: sample dna rDNA
+all: sample dna rDNA manual
 	@echo done.
+
+# compile the manual using knitr and texi2pdf
+manual: mkdir-output
+	$(CP) $(MANUAL_DIR) $(OUTPUT_DIR);                   \
+	cd $(OUTPUT_DIR)/$(MANUAL_DIR);                      \
+	$(RSCRIPT) "library(knitr); knit('$(MANUAL_FILE)')"; \
+	$(LATEX) *.tex;                                      \
+	mv *.pdf ..;                                         \
+	cd ..;                                               \
+	$(RM) $(MANUAL_DIR)
 
 # compile rDNA source package
 rDNA: mkdir-output

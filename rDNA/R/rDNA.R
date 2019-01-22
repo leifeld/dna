@@ -1230,14 +1230,14 @@ dna_setDocuments <- function(connection,
       stop("'documents$text' must contain character objects.")
     }
   }
-  if (colnames(documents)[4] != "coderId") {
+  if (colnames(documents)[4] != "coder") {
     stop("The fourth column of 'documents' must be called 'coder' and contain the coder IDs.")
   }
   if (!is.integer(documents[, 4])) {
     if (is.numeric(documents[, 4])) {
       documents[, 4] <- as.integer(documents[, 4])
     } else {
-      stop("'documents$coderId' must contain integer values.")
+      stop("'documents$coder' must contain integer values.")
     }
   }
   if (colnames(documents)[5] != "author") {
@@ -1250,7 +1250,7 @@ dna_setDocuments <- function(connection,
       stop("'documents$author' must contain character objects.")
     }
   }
-  if (colnames(documents)[6] != "sources") {
+  if (colnames(documents)[6] != "source") {
     stop("The sixth column of 'documents' must be called 'source' and contain the document source.")
   }
   if (!is.character(documents[, 6])) {

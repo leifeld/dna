@@ -147,8 +147,12 @@ knit_hooks$set(crop=hook_pdfcrop,
                  })
 @
 
+<<eval=TRUE, echo = FALSE, warning = FALSE>>=
+jarfile <- rDNA::dna_downloadJar(returnString = TRUE)
+@
+
 \title{Discourse Network Analyzer Manual}
-\date{\footnotesize{Last update: DNA 2.0 beta 22 with rDNA \Sexpr{packageVersion("rDNA")} on \today.}}
+\date{\footnotesize{Last update: \Sexpr{jarfile} with rDNA \Sexpr{packageVersion("rDNA")} on \today.}}
 \author{Philip Leifeld, Johannes Gruber and Felix Rolf Bossner}
 
 \maketitle
@@ -965,9 +969,6 @@ devtools::install_github("leifeld/dna/rDNA", INSTALL_opts = "--no-multiarch")
 
 After this is done as well, the final step of the installation is to test if \rdna\ can be loaded into \R\ correctly and to perform a basic operation with it---opening \dna\ from within \R.
 In order to do so, you first need to download \dna, which can also be done in \R\ with the \code{dna\_downloadJar} command (see Chapter~\ref{chp:rdna} for more details on what these commands mean).
-<<eval=TRUE, echo = FALSE, warning = FALSE>>=
-rDNA::dna_downloadJar()
-@
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 # download rDNA JAR
 dna_downloadJar() # download DNA jar
@@ -1793,7 +1794,8 @@ The the choice of the value zero in cells where row and column mention the same 
 #' prep environment
 library("rDNA")
 library("kableExtra")
-dna_init("dna-2.0-beta22.jar")
+dna_downloadJar()
+dna_init()
 truncate <- function(x, trunc = 12){
   x <- ifelse(nchar(x) > trunc,
                         paste0(gsub("\\s+$", "",
@@ -2705,13 +2707,9 @@ We also need to register \dna\ with \rdna\ to use them together.
 To do that, you need to save the \dna\ \texttt{.jar} file to the working directory of the current \R\ session.
 If you haven't already downlaoded \dna, you can do this from \R\ by running \code{dna\_downloadJar()}.
 This will place the newest version of \dna\ in your working directory.
-Then  you can initialize \dna\ as follows (with \texttt{dna-2.0-beta22.jar} in this example):
+Then you can initialize \dna\ as follows:
 
 <<eval=FALSE>>=
-dna_init("dna-2.0-beta22.jar")
-
-# If you use the current beta version (e.g., you have just downloaded it via
-# dna_downloadJar) you can omit the file name
 dna_init()
 @
 
@@ -3588,7 +3586,7 @@ After you have done this, you can provide a dataframe with ten columns:
   \item[ID] must be integer and must contain the document IDs.
   \item[title] must contain the document titles as character objects.
   \item[text] must contain the document texts as character objects.
-  \item[coder] must contain the coder IDs as integer values. % (see dna_getCoders).
+  \item[coder] must contain the coder IDs as integer values.
   \item[author] must contain the document authors as character objects.
   \item[source] must contain the document sources as character objects.
   \item[section] must contain the document sections as character objects.
@@ -3602,7 +3600,9 @@ In other cases, however, you will have to rearrange the data a bit until you can
 Before you actually change anything, it is recommended to do a test run, or in other words \code{simulate} what would be done to the database:
 
 <<eval=FALSE, results = 'tex'>>=
-dna_setDocuments(conn, documents = docs, removeStatements = FALSE,
+dna_setDocuments(conn,
+                 documents = docs,
+                 removeStatements = FALSE,
                  simulate = TRUE)
 @
 
@@ -3732,7 +3732,7 @@ kable(docs_new2, format = "latex", booktabs = TRUE, linesep = "") %>%
 
 Before you can proceed, you should check if the columns already have the right classes to hand the data.frame over to \dna:
 <<eval=TRUE, results = 'tex'>>=
-lapply(docs_new, class)
+sapply(docs_new, class)
 @
 
 Compare this output with the requirements for the data.frame (see \code{?dna\_setDocuments}) and you can see that only the ID column does not have the correct class.
