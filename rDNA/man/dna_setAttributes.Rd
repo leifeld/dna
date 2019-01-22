@@ -60,7 +60,7 @@ changes and then apply the actual changes by setting \code{simulate = FALSE}.
 }
 \examples{
 \dontrun{
-dna_init("dna-2.0-beta22.jar")
+dna_init()
 conn <- dna_connection(dna_sample())
 at <- dna_getAttributes(conn)
 

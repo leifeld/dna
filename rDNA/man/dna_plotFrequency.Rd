@@ -31,13 +31,13 @@ group the bars in the resulting barplot..
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta22.jar")
+dna_init()
 conn <- dna_connection(dna_sample())
 
 dna_plotFrequency(connection = conn,
-of = "agreement",
-timewindow = "days",
-bar = "stacked")
+                  of = "agreement",
+                  timewindow = "days",
+                  bar = "stacked")
 }
 }
 \author{

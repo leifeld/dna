@@ -22,10 +22,11 @@ A small sample database to test the functions of rDNA.
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta22.jar")
+dna_init()
 dna_connection(dna_sample())
 }
+
 }
 \author{
-Johannes Gruber
+Johannes B. Gruber
 }

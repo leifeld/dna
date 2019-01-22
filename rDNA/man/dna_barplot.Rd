@@ -51,14 +51,15 @@ concepts. It often makes sense to exclude those concept in further analysis.
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta22.jar")
+dna_init()
 conn <- dna_connection(dna_sample())
 
 dna_barplot(connection = conn,
-of = "concept",
-colours = FALSE,
-barWidth = 0.5)
+            of = "concept",
+            colours = FALSE,
+            barWidth = 0.5)
 }
+
 }
 \author{
 Johannes B. Gruber

@@ -189,8 +189,10 @@ several million.
 }
 \examples{
 \dontrun{
+dna_init()
+conn <- dna_connection(dna_sample())
 dna_scale <- dna_scale1dord(
-  connection,
+  conn,
   variable1 = "organization",
   variable2 = "concept",
   qualifier = "agreement",

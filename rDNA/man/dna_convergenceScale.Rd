@@ -84,7 +84,9 @@ improve your results and achieve chain convergence.
 }
 \examples{
 \dontrun{
-dna_scale <- dna_scale1dbin(connection,
+dna_init()
+conn <- dna_connection(dna_sample())
+dna_scale <- dna_scale1dbin(conn,
                             variable1 = "organization",
                             variable2 = "concept",
                             qualifier = "agreement",

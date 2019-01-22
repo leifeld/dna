@@ -21,7 +21,7 @@ through the \link{dna_setDocuments} function.
 }
 \examples{
 \dontrun{
-dna_init("dna-2.0-beta22.jar")
+dna_init()
 conn <- dna_connection(dna_sample())
 documents <- dna_getDocuments(conn)
 documents$title[1] <- "New title for first document"

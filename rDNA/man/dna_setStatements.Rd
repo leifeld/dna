@@ -61,7 +61,7 @@ this purpose.
 }
 \examples{
 \dontrun{
-dna_init("dna-2.0-beta23.jar")
+dna_init()
 conn <- dna_connection(dna_sample())
 statements <- dna_getStatements(conn)
 statements$organization[1] <- "New actor for first statement"

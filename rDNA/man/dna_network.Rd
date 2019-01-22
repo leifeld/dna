@@ -218,17 +218,17 @@ which case the networks are retrieved as a list of matrices.
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta22.jar")
+dna_init()
 conn <- dna_connection(dna_sample())
 nw <- dna_network(conn,
-networkType = "onemode",
-variable1 = "organization",
-variable2 = "concept",
-qualifier = "agreement",
-qualifierAggregation = "congruence",
-normalization = "average",
-excludeValues = list("concept" =
-c("There should be legislation to regulate emissions.")))
+  networkType = "onemode",
+  variable1 = "organization",
+  variable2 = "concept",
+  qualifier = "agreement",
+  qualifierAggregation = "congruence",
+  normalization = "average",
+  excludeValues = list("concept" =
+  c("There should be legislation to regulate emissions.")))
 
 # plot network
 dna_plotNetwork(nw)

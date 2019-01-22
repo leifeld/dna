@@ -36,7 +36,7 @@ which the respective value is used in statements across the database.
 }
 \examples{
 \dontrun{
-dna_init("dna-2.0-beta22.jar")
+dna_init()
 conn <- dna_connection(dna_sample())
 attributes <- dna_getAttributes(statementType = 1,
                                 variable = "organization",

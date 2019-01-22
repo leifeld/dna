@@ -91,12 +91,12 @@ Plots a dendrogram from objects derived via \link{dna_cluster}.
 }
 \details{
 This function is a convenience wrapper for several different dendrogram
-types, which can be plotted using the \code{ggraph} package.
+types, which can be plotted using the \pkg{ggraph} package.
 }
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta22.jar")
+dna_init()
 conn <- dna_connection(dna_sample())
 clust <- dna_cluster(conn)
 dend <- dna_plotDendro(clust)

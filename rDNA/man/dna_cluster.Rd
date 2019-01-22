@@ -92,7 +92,7 @@ results can also be plotted using \link{dna_plotCoordinates}.
 \examples{
 \dontrun{
 dna_downloadJar()
-dna_init("dna-2.0-beta22.jar")
+dna_init()
 conn <- dna_connection(dna_sample())
 
 clust.l <- dna_cluster(conn)
