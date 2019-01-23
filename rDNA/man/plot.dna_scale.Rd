@@ -12,11 +12,11 @@
 \item{...}{Further options (currently not used).}
 }
 \description{
-Plot convergence diagnostics of the MCMC chain created by the four 
+Plot convergence diagnostics of the MCMC chain created by the four
 \code{dna_scale} functions.
 }
 \details{
-Plots \code{trace plots} of the \code{dna_scale} MCMC output. For further 
+Plots \code{trace plots} of the \code{dna_scale} MCMC output. For further
 convergence diagnostics, see \link{dna_convergenceScale}.
 }
 \examples{

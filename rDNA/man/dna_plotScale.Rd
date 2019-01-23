@@ -18,86 +18,86 @@ dna_plotScale(dna_scale, variable = "organization", dimensions = 1,
 
 \item{variable}{Variable to be plotted.}
 
-\item{dimensions}{Number of dimensions to be plotted. Valid values are 
+\item{dimensions}{Number of dimensions to be plotted. Valid values are
 \code{1} and \code{2} for a one- or two-dimensional plot, and \code{2.1}
-or \code{2.2} for the first or second dimension of a two-dimensional 
+or \code{2.2} for the first or second dimension of a two-dimensional
 scaling.}
 
-\item{hpd}{A numeric scalar specifying the size of the Highest Posterior 
-Density intervals (HPD). Defaults to \code{0.95}. \code{NULL} turns off 
+\item{hpd}{A numeric scalar specifying the size of the Highest Posterior
+Density intervals (HPD). Defaults to \code{0.95}. \code{NULL} turns off
 HPDs.}
 
 \item{label}{Logical. Should labels be plotted? Defaults to \code{TRUE}.}
 
 \item{label_size, point_size}{Label and point size in pts.}
 
-\item{label_colors, point_colors, hpd_colors}{Colors for the labels, points 
-and Highest Posterior Densities of the plot. \code{TRUE} colors the 
-variables according to the attributes in the object and \code{FALSE} sets 
-colors to black. You can also provide customized colors. Possible 
-options are either providing a single character vector (if you wish to 
-color a plot element in only one color), or a character or numeric vector 
-or data frame of at least the same length as values to be plotted. If you 
-use a data frame, please provide one column named \code{"names"} that 
-indicates the names of the values and one column named \code{"colors"} 
+\item{label_colors, point_colors, hpd_colors}{Colors for the labels, points
+and Highest Posterior Densities of the plot. \code{TRUE} colors the
+variables according to the attributes in the object and \code{FALSE} sets
+colors to black. You can also provide customized colors. Possible
+options are either providing a single character vector (if you wish to
+color a plot element in only one color), or a character or numeric vector
+or data frame of at least the same length as values to be plotted. If you
+use a data frame, please provide one column named \code{"names"} that
+indicates the names of the values and one column named \code{"colors"}
 that specifies the value colors. Defaults to \code{TRUE}.}
 
 \item{hpd_lwd}{Highest Posterior Density interval linewidth in pts.}
 
-\item{intercept_lwd}{Linewidth of the intercept (a vertical bar indicating 
+\item{intercept_lwd}{Linewidth of the intercept (a vertical bar indicating
 zero) in pts.}
 
 \item{intercept_color}{Color for the intercept.}
 
-\item{intercept_lty}{A character vector providing the linetype of the 
-intercept. Valid values are \code{"solid"}, \code{"dashed"}, 
-\code{"dotted"}, \code{"twodash"}, \code{"dotdash"}, \code{"longdash"} or 
-\code{"blank"}. Defaults to \code{"dashed"}. \code{"blank"} turns off 
+\item{intercept_lty}{A character vector providing the linetype of the
+intercept. Valid values are \code{"solid"}, \code{"dashed"},
+\code{"dotted"}, \code{"twodash"}, \code{"dotdash"}, \code{"longdash"} or
+\code{"blank"}. Defaults to \code{"dashed"}. \code{"blank"} turns off
 intercept.}
 
-\item{intercept_alpha}{A numeric value indicating the alpha level of the 
+\item{intercept_alpha}{A numeric value indicating the alpha level of the
 intercept.}
 
-\item{facet}{A character vector specifying which attribute of the variable 
-should be used for the facet plot. Valid values are \code{"type"}, 
+\item{facet}{A character vector specifying which attribute of the variable
+should be used for the facet plot. Valid values are \code{"type"},
 \code{"alias"} or \code{"notes"}.}
 
-\item{truncate}{Sets the number of characters to which labels should be 
+\item{truncate}{Sets the number of characters to which labels should be
 truncated.}
 
-\item{x_axis_label, y_axis_label}{A character vector specifying the x and y 
+\item{x_axis_label, y_axis_label}{A character vector specifying the x and y
 axis label name(s).}
 
-\item{exclude_min}{A numeric value reducing the plot to actors/concepts 
+\item{exclude_min}{A numeric value reducing the plot to actors/concepts
 with a minimum frequency of statements.}
 
 \item{exclude}{A character vector to exclude actors/concepts from the plot.}
 }
 \description{
-Plots ideological ideal points with the results of the MCMC scaling 
+Plots ideological ideal points with the results of the MCMC scaling
 performed in the \code{dna_scale} functions.
 }
 \details{
-This function is a convenience wrapper for the \code{ggplot2} package to 
-plot ideological ideal points from \code{dna_scale} objects. Two different 
+This function is a convenience wrapper for the \code{ggplot2} package to
+plot ideological ideal points from \code{dna_scale} objects. Two different
 variables can be plotted:
 
-Firstly, you can plot the ideological ideal points of subjects (e.g., 
-\code{"organizations"}) which you have provided in \code{variable1} of the 
-\code{dna_scale} functions. The ideal point, which is the mean value of the 
-MCMC sample parameters, serves as the ideological position of an actor in an 
+Firstly, you can plot the ideological ideal points of subjects (e.g.,
+\code{"organizations"}) which you have provided in \code{variable1} of the
+\code{dna_scale} functions. The ideal point, which is the mean value of the
+MCMC sample parameters, serves as the ideological position of an actor in an
 e.g., ideological or policy dimension.
 
-Secondly, you can plot the item discrimination parameter of the variable 
-provided in \code{variable2} of the \code{dna_scale} functions (e.g., 
-\code{"concepts"}). The item discrimination parameter indicates how 
-good for example a specific \code{"concept"} separates actors in the 
+Secondly, you can plot the item discrimination parameter of the variable
+provided in \code{variable2} of the \code{dna_scale} functions (e.g.,
+\code{"concepts"}). The item discrimination parameter indicates how
+good for example a specific \code{"concept"} separates actors in the
 ideological space.
 
-Plotting all actors or concepts can create chaotic plots, you can, therefore, 
-limit the plot by including only the most active actors or most prominent 
-concepts with \code{exclude_min}. Specific entries can be excluded with the 
-\code{exclude} argument. Furthermore, the plot can be split into several 
+Plotting all actors or concepts can create chaotic plots, you can, therefore,
+limit the plot by including only the most active actors or most prominent
+concepts with \code{exclude_min}. Specific entries can be excluded with the
+\code{exclude} argument. Furthermore, the plot can be split into several
 facets according to the attributes of the variables.
 }
 \examples{

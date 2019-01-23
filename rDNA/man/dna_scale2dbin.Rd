@@ -26,32 +26,32 @@ dna_scale2dbin(connection, variable1 = "organization",
 \item{qualifier}{The qualifier variable for the scaling construction (see
 \link{dna_network}). Defaults to \code{"agreement"}.}
 
-\item{threshold}{Numeric value that specifies when a mixed position can be 
-considered as agreement or disagreement. If e.g., one actor has 60 percent 
-of agreeing and 40 percent of disagreeing statements towards a concept, a 
-\code{threshold} of 0.51 will recode the actor position on this concept as 
-"agreement". The same accounts also for disagreeing statements. If one 
-actor has 60 percent of disagreeing and 40 percent of agreeing statements, 
-a \code{threshold} of 0.51 will recode the actor position on this concept 
-as "disagreement". All values in between the \code{threshold} (e.g., 55 
-percent agreement and 45 percent of disagreement and a threshold of 0.6) 
-will be recoded as \code{NA}. If is set to \code{NULL}, all "mixed"  
-positions of actors will be recoded as \code{NA}. Must be strictly 
+\item{threshold}{Numeric value that specifies when a mixed position can be
+considered as agreement or disagreement. If e.g., one actor has 60 percent
+of agreeing and 40 percent of disagreeing statements towards a concept, a
+\code{threshold} of 0.51 will recode the actor position on this concept as
+"agreement". The same accounts also for disagreeing statements. If one
+actor has 60 percent of disagreeing and 40 percent of agreeing statements,
+a \code{threshold} of 0.51 will recode the actor position on this concept
+as "disagreement". All values in between the \code{threshold} (e.g., 55
+percent agreement and 45 percent of disagreement and a threshold of 0.6)
+will be recoded as \code{NA}. If is set to \code{NULL}, all "mixed"
+positions of actors will be recoded as \code{NA}. Must be strictly
 positive.}
 
-\item{item_constraints}{A list of lists specifying constraints on the 
-concept parameters. Note that value \code{1} in the brackets of the 
-argument refers to the item difficulty parameters, which in 
-general should not be constrained. All values above \code{1} relate to the 
-item discrimination parameters on the single dimensions. These should be 
-used for constraints on concepts. Three possible forms of constraints are 
-possible: \code{conceptname = list(2, value)} will constrain a concept to 
-be equal to the specified value (e.g., 0) on the first dimension of the 
-item discrimination parameter. \code{conceptname = list(2,"+")} will 
+\item{item_constraints}{A list of lists specifying constraints on the
+concept parameters. Note that value \code{1} in the brackets of the
+argument refers to the item difficulty parameters, which in
+general should not be constrained. All values above \code{1} relate to the
+item discrimination parameters on the single dimensions. These should be
+used for constraints on concepts. Three possible forms of constraints are
+possible: \code{conceptname = list(2, value)} will constrain a concept to
+be equal to the specified value (e.g., 0) on the first dimension of the
+item discrimination parameter. \code{conceptname = list(2,"+")} will
 constrain the concept to be positively scaled on the first dimension and
-\code{conceptname = list(2, "-")} will constrain the concept to be 
-negatively scaled on the first dimension (see example). If you 
-wish to constrain a concept on the second dimension, please indicate this 
+\code{conceptname = list(2, "-")} will constrain the concept to be
+negatively scaled on the first dimension (see example). If you
+wish to constrain a concept on the second dimension, please indicate this
 with a \code{3} in the first position in the bracket.}
 
 \item{mcmc_iterations}{The number of iterations for the sampler.}
@@ -61,127 +61,127 @@ with a \code{3} in the first position in the bracket.}
 \item{mcmc_thin}{The thinning interval for the sampler. Iterations
 must be divisible by the thinning interval.}
 
-\item{alpha_beta_start}{\code{Starting values} for the item difficulty and 
-discrimination parameters. Can be either a scalar or a matrix. If set to 
-\code{NA}, the \code{starting values} for the unconstrained concepts are 
+\item{alpha_beta_start}{\code{Starting values} for the item difficulty and
+discrimination parameters. Can be either a scalar or a matrix. If set to
+\code{NA}, the \code{starting values} for the unconstrained concepts are
 set to values generated from a series of proportional odds logistic
-regression fits and \code{starting values} for inequality constrained 
-elements are set to either \code{1.0} or \code{-1.0}, depending on the 
+regression fits and \code{starting values} for inequality constrained
+elements are set to either \code{1.0} or \code{-1.0}, depending on the
 nature of the constraints.}
 
-\item{alpha_beta_prior_mean}{The prior means for the item difficulty and 
+\item{alpha_beta_prior_mean}{The prior means for the item difficulty and
 discrimination parameters.}
 
-\item{alpha_beta_prior_variance}{The inverse variances of the item 
-difficulty and discrimination parameters. Can either be a scalar or a 
+\item{alpha_beta_prior_variance}{The inverse variances of the item
+difficulty and discrimination parameters. Can either be a scalar or a
 matrix of two dimensions times the concepts.}
 
-\item{store_variables}{A character vector indicating which variables should 
-be stored from the scaling. Can either take the value of the character 
-vector indicated in \code{variable1} or \code{variable2} or \code{"both"} 
-to store both variables. Note that saving both variables can impact the 
+\item{store_variables}{A character vector indicating which variables should
+be stored from the scaling. Can either take the value of the character
+vector indicated in \code{variable1} or \code{variable2} or \code{"both"}
+to store both variables. Note that saving both variables can impact the
 speed of the scaling. Defaults to \code{"both"}.}
 
-\item{drop_constant_concepts}{Logical. Should concepts that have no 
+\item{drop_constant_concepts}{Logical. Should concepts that have no
 variation be deleted before the scaling? Defaults to \code{FALSE}.}
 
-\item{drop_min_actors}{A numeric value specifying the minimum number of 
-concepts actors should have mentioned to be included in the scaling. 
+\item{drop_min_actors}{A numeric value specifying the minimum number of
+concepts actors should have mentioned to be included in the scaling.
 Defaults to \code{1}.}
 
-\item{drop_min_concepts}{A numeric value specifying the minimum number a 
+\item{drop_min_concepts}{A numeric value specifying the minimum number a
 concept should have been jointly mentioned by actors. Defaults to \code{2}.}
 
-\item{verbose}{A boolean or numeric value indicating whether the iterations 
-of the scaling should be printed to the R console. If set to a numeric 
-value, every \code{verboseth} iteration will be printed. If set to 
-\code{TRUE}, \code{verbose} will print the total of iterations and burn-in 
+\item{verbose}{A boolean or numeric value indicating whether the iterations
+of the scaling should be printed to the R console. If set to a numeric
+value, every \code{verboseth} iteration will be printed. If set to
+\code{TRUE}, \code{verbose} will print the total of iterations and burn-in
 divided by \code{100}.}
 
 \item{seed}{The random seed for the scaling.}
 
-\item{...}{Additional arguments passed to \link{dna_network}. Actors can 
-e.g., be removed with the \code{excludeValues} arguments. The scaling can 
-also be applied to a specific time slice by using \code{start.date} and 
+\item{...}{Additional arguments passed to \link{dna_network}. Actors can
+e.g., be removed with the \code{excludeValues} arguments. The scaling can
+also be applied to a specific time slice by using \code{start.date} and
 \code{stop.date}.}
 }
 \description{
-Scale ideological positions of two variables (e.g., organizations and 
-concepts) from a DNA connection by using Markov Chain Monte Carlo for binary 
-two-dimensional Item Response Theory. This is one of the four scaling 
-functions. For one-dimensional binary scaling, see \link{dna_scale1dbin}, 
-for one-dimensional ordinal scaling, see \link{dna_scale1dord} and for 
+Scale ideological positions of two variables (e.g., organizations and
+concepts) from a DNA connection by using Markov Chain Monte Carlo for binary
+two-dimensional Item Response Theory. This is one of the four scaling
+functions. For one-dimensional binary scaling, see \link{dna_scale1dbin},
+for one-dimensional ordinal scaling, see \link{dna_scale1dord} and for
 two-dimensional ordinal scaling \link{dna_scale2dord}.
 }
 \details{
-This function is a convenience wrapper for the \link[MCMCpack]{MCMCirtKd} 
-function. Using Markov Chain Monte Carlo (MCMC), \code{dna_scale2dbin} 
+This function is a convenience wrapper for the \link[MCMCpack]{MCMCirtKd}
+function. Using Markov Chain Monte Carlo (MCMC), \code{dna_scale2dbin}
 generates a sample from the posterior distribution using standard Gibbs
-sampling. For the model form and further help for the scaling arguments, see 
+sampling. For the model form and further help for the scaling arguments, see
 \link[MCMCpack]{MCMCirtKd}.
 
-As in a two-mode network in \link{dna_network}, two variables have to be 
-provided for the scaling. The first variable corresponds to the rows of a 
-two-mode network and usually entails actors (e.g., \code{"organizations"}), 
-while the second variable is equal to the columns of a two-mode network, 
-typically expressed by \code{"concepts"}. The \code{dna_scale} functions 
-use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1} 
-and \code{variable2}. However, the scaling is not restricted to 
-\code{"actors"} and \code{"concepts"} but depends on what you provide in 
+As in a two-mode network in \link{dna_network}, two variables have to be
+provided for the scaling. The first variable corresponds to the rows of a
+two-mode network and usually entails actors (e.g., \code{"organizations"}),
+while the second variable is equal to the columns of a two-mode network,
+typically expressed by \code{"concepts"}. The \code{dna_scale} functions
+use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1}
+and \code{variable2}. However, the scaling is not restricted to
+\code{"actors"} and \code{"concepts"} but depends on what you provide in
 \code{variable1} or \code{variable2}.
 
-\code{dna_scale2dbin} internally uses the \code{combine} qualifier 
-aggregation and then recodes the values into \code{0} for disagreement, 
-\code{1} for agreement and \code{NA} for mixed positions and non-mentions of 
-concepts. Integer qualifiers are also recoded into \code{0} and \code{1} by 
-rescaling the qualifier values between \code{0} and \code{1}. You can 
-further relax the recoding of \code{NA} values by setting a \code{threshold} 
-which lets you decide at which percentage of agreement and disagreement 
-an actor position on a concept can be considered as agreement/disagreement 
+\code{dna_scale2dbin} internally uses the \code{combine} qualifier
+aggregation and then recodes the values into \code{0} for disagreement,
+\code{1} for agreement and \code{NA} for mixed positions and non-mentions of
+concepts. Integer qualifiers are also recoded into \code{0} and \code{1} by
+rescaling the qualifier values between \code{0} and \code{1}. You can
+further relax the recoding of \code{NA} values by setting a \code{threshold}
+which lets you decide at which percentage of agreement and disagreement
+an actor position on a concept can be considered as agreement/disagreement
 or mixed position.
 
-The argument \code{drop_min_actors} excludes actors with only a limited 
-number of concepts used. Limited participation of actors in a debate can 
-impact the scaling of the ideal points, as actors with only few mentions of 
-concepts convey limited information on their ideological position. The same 
-can also be done for concepts with the argument \code{drop_min_concepts}. 
+The argument \code{drop_min_actors} excludes actors with only a limited
+number of concepts used. Limited participation of actors in a debate can
+impact the scaling of the ideal points, as actors with only few mentions of
+concepts convey limited information on their ideological position. The same
+can also be done for concepts with the argument \code{drop_min_concepts}.
 Concepts that have been rarely mentioned do not strongly discriminate the
-ideological positions of actors and can, therefore, impact the accuracy of 
+ideological positions of actors and can, therefore, impact the accuracy of
 the scaling. Reducing the number of actors of concepts to be scaled hence
-improves the precision of the ideological positions for both variables and 
-the scaling itself. Another possibility to reduce the number of concepts is 
-to use \code{drop_constant_concepts}, which will reduce concepts not having 
-any variation in the agreement/disagreement structure of actors. This means 
-that all concepts will be dropped which have only agreeing, disagreeing or 
+improves the precision of the ideological positions for both variables and
+the scaling itself. Another possibility to reduce the number of concepts is
+to use \code{drop_constant_concepts}, which will reduce concepts not having
+any variation in the agreement/disagreement structure of actors. This means
+that all concepts will be dropped which have only agreeing, disagreeing or
 mixed statements.
 
-As \code{dna_scale2dbin} implements a Bayesian Item Response Theory 
-approach, \code{priors} and \code{starting values} can be set on the concept 
-parameters. Changing the default \code{prior} values can often 
-help you to achieve better results. Constraints on the parameters can also 
-be specified to help identifying the model and to indicate in which 
-direction ideological positions of actors and concepts run. Please note 
-that, unlike \link{dna_scale1dbin}, this function constrains the values 
-indicated in \code{variable2}. For these values, the scaling estimates an 
-item discrimination parameter for each dimension and an item difficulty 
-parameter for both dimensions. The item difficulty parameter should, 
-however, not be constrained (see \link[MCMCpack]{MCMCirtKd}). Therefore, you 
+As \code{dna_scale2dbin} implements a Bayesian Item Response Theory
+approach, \code{priors} and \code{starting values} can be set on the concept
+parameters. Changing the default \code{prior} values can often
+help you to achieve better results. Constraints on the parameters can also
+be specified to help identifying the model and to indicate in which
+direction ideological positions of actors and concepts run. Please note
+that, unlike \link{dna_scale1dbin}, this function constrains the values
+indicated in \code{variable2}. For these values, the scaling estimates an
+item discrimination parameter for each dimension and an item difficulty
+parameter for both dimensions. The item difficulty parameter should,
+however, not be constrained (see \link[MCMCpack]{MCMCirtKd}). Therefore, you
 should set constraints on the item discrimination parameters.
 
-Fitting two-dimensional scaling models requires a good choice of concept 
-constraints to specify the ideological dimensions of your data. A suitable 
+Fitting two-dimensional scaling models requires a good choice of concept
+constraints to specify the ideological dimensions of your data. A suitable
 way of identifying your ideological dimensions is to constrain one item
 discrimination parameter to load only on one dimension. This means that we
-set one parameter to load either positive or negative on one dimension and 
-setting it to zero on the other. A second concept should also be constrained 
+set one parameter to load either positive or negative on one dimension and
+setting it to zero on the other. A second concept should also be constrained
 to load either positive or negative on one dimension (see example)
 
 To plot the resulting ideal points of actors and concepts, you can use the
-\link{dna_plotScale} function. To assess if the returned MCMC chain has 
-converged to its stationary distribution, please use 
-\link{dna_convergenceScale}. The evaluation of convergence is essential to 
-report conclusions based on accurate parameter estimates. Achieving chain 
-convergence often requires setting the iterations of the MCMC chain to 
+\link{dna_plotScale} function. To assess if the returned MCMC chain has
+converged to its stationary distribution, please use
+\link{dna_convergenceScale}. The evaluation of convergence is essential to
+report conclusions based on accurate parameter estimates. Achieving chain
+convergence often requires setting the iterations of the MCMC chain to
 several million.
 }
 \examples{

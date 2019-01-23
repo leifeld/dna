@@ -43,5 +43,5 @@ License: GPL-3
 LazyData: true
 URL: https://github.com/leifeld/dna
 BugReports: https://github.com/leifeld/dna/issues
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
 Encoding: UTF-8

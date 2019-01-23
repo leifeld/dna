@@ -87,7 +87,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
   }
   obj <- list(dna_connection = export)
   class(obj) <- "dna_connection"
-  if (verbose == TRUE) {
+  if (isTRUE(verbose)) {
     print(obj)
   }
   return(obj)
@@ -130,9 +130,9 @@ print.dna_connection <- function(x, ...) {
 #' \dontrun{
 #' dna_downloadJar()
 #' }
-#' 
+#'
 #' @export
-#' 
+#'
 #' @importFrom utils download.file
 dna_downloadJar <- function(force = FALSE, returnString = FALSE) {
   u <- url("https://api.github.com/repos/leifeld/dna/releases")
@@ -259,7 +259,7 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
   if (is.null(jarfile) || length(jarfile) == 0) {
     stop("No DNA jar file found in the working directory.")
   }
-  if (!is.character(jarfile) || length(jarfile) > 1 || grepl("^dna-.+\\.jar$", jarfile) == FALSE) {
+  if (!is.character(jarfile) || length(jarfile) > 1 || !grepl("^dna-.+\\.jar$", basename(jarfile))) {
     stop("'jarfile' must be a character object of length 1 that points to the DNA jar file.")
   }
   if (!file.exists(jarfile)) {
@@ -274,7 +274,7 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
   .jinit(dnaEnvironment[["dnaJarString"]],
          force.init = TRUE,
          parameters = paste0("-Xmx", memory, "m"))
-  if (returnString == TRUE) {
+  if (isTRUE(returnString)) {
     return(jarfile)
   }
 }
@@ -296,9 +296,9 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
 #' dna_init()
 #' dna_connection(dna_sample())
 #' }
-#' 
+#'
 #' @author Johannes B. Gruber
-#' 
+#'
 #' @export
 dna_sample <- function(overwrite = FALSE,
                        verbose = TRUE) {
@@ -531,36 +531,36 @@ dna_addDocument <- function(connection,
 #'
 #' Add a new statement to the DNA database.
 #'
-#' The \code{dna_addStatement} function can add a new statement to an existing 
-#' DNA database. The user supplies a \link{dna_connection} object as well as 
+#' The \code{dna_addStatement} function can add a new statement to an existing
+#' DNA database. The user supplies a \link{dna_connection} object as well as
 #' the document ID, location of the statement in the document, and the variables
 #' and their values. As different statement types have different variables, the
 #' \code{...} argument catches all variables and their values supplied by the
-#' user. The statement ID will be automatically generated and can be returned 
+#' user. The statement ID will be automatically generated and can be returned
 #' if \code{returnID} is set to \code{TRUE}.
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \code{dna_connection} function.
-#' @param documentID An integer specifying the ID of the document for which the 
+#' @param documentID An integer specifying the ID of the document for which the
 #' statement should be added.
-#' @param startCaret An integer for the start location of the statement in the 
-#' document text. Must be non-negative and not larger than the number of 
+#' @param startCaret An integer for the start location of the statement in the
+#' document text. Must be non-negative and not larger than the number of
 #' characters minus one in the document.
-#' @param endCaret An integer for the stop location of the statement in the 
-#' document text. Must be non-negative, greater than \code{startCaret}, and not 
+#' @param endCaret An integer for the stop location of the statement in the
+#' document text. Must be non-negative, greater than \code{startCaret}, and not
 #' larger than the number of characters in the document.
-#' @param statementType The statement type of the statement that will be added. 
-#' Can be provided as an integer ID of the statement type or as a character 
-#' object representing the name of the statement type (if there is no 
+#' @param statementType The statement type of the statement that will be added.
+#' Can be provided as an integer ID of the statement type or as a character
+#' object representing the name of the statement type (if there is no
 #' ambiguity).
 #' @param coder An integer value indicating which coder created the document.
 #' @param returnID Return the ID of the newly created statement as a numeric
 #'   value?
 #' @param verbose Print details?
-#' @param ... Values of the variables contained in the statement, for example 
-#' \code{organization = "some actor", concept = "my concept", agreement = 1}. 
-#' Values for Boolean variables can be provided as \code{logical} values 
-#' (\code{TRUE} or \code{FALSE}) or \code{numeric} values (\code{1} or 
+#' @param ... Values of the variables contained in the statement, for example
+#' \code{organization = "some actor", concept = "my concept", agreement = 1}.
+#' Values for Boolean variables can be provided as \code{logical} values
+#' (\code{TRUE} or \code{FALSE}) or \code{numeric} values (\code{1} or
 #' \code{0}).
 #'
 #' @author Philip Leifeld
@@ -630,7 +630,7 @@ dna_addStatement <- function(connection,
   varNames <- names(ellipsis)
   ellipsis <- as.data.frame(ellipsis, stringsAsFactors = FALSE)
   ellipsis <- .jarray(lapply(ellipsis, .jarray))
-  
+
   id <- .jcall(connection$dna_connection,
                "I",
                "addStatement",
@@ -642,7 +642,7 @@ dna_addStatement <- function(connection,
                varNames,
                ellipsis,
                verbose)
-  
+
   if (returnID == TRUE) {
     return(id)
   }
@@ -803,16 +803,16 @@ dna_getStatements <- function(connection, statementType) {
   if (length(statementType) != 1) {
     stop("'statementType' must have length 1.")
   }
-  
-  statements <- J(conn$dna_connection, "getStatements", statementType)
+
+  statements <- J(connection$dna_connection, "getStatements", statementType)
   statements <- lapply(statements, .jevalArray)
   statements <- as.data.frame(statements, stringsAsFactors = FALSE)
-  
-  variables <- J(conn$dna_connection, "getVariables", statementType)
+
+  variables <- J(connection$dna_connection, "getVariables", statementType)
   variables <- lapply(variables, .jevalArray)
   variables <- as.data.frame(variables, stringsAsFactors = FALSE)
   variables <- variables[, 1]
-  
+
   colnames(statements) <- c("id",
                             "documentId",
                             "startCaret",
@@ -1450,9 +1450,9 @@ dna_setStatements <- function(connection,
       stop("'statements$coder' must contain integer values.")
     }
   }
-  
+
   # check validity of variables
-  variables <- J(conn$dna_connection, "getVariables", as.integer(statements$statementTypeId[1]))
+  variables <- J(connection$dna_connection, "getVariables", as.integer(statements$statementTypeId[1]))
   variables <- lapply(variables, .jevalArray)
   variables <- as.data.frame(variables, stringsAsFactors = FALSE)
   colnames(variables) <- c("variable", "type")
@@ -1483,16 +1483,16 @@ dna_setStatements <- function(connection,
       statements[, 6 + i][is.na(statements[, 6 + i])] <- ""
     }
   }
-  
+
   if (verbose == TRUE && nrow(statements) == 0) {
     warning("'statements' has 0 rows. Deleting all statements from the database.")
   }
-  
+
   # replace NAs with -1, which will be replaced by an auto-generated ID in DNA
   if (any(is.na(statements[, 1]))) {
     statements[which(is.na(statements[, 1])), 1] <- as.integer(-1)
   }
-  
+
   statements <- .jarray(lapply(statements, .jarray))
   .jcall(connection$dna_connection,
          "V",
@@ -1921,70 +1921,70 @@ print.dna_cluster <- function(x, ...) {
 
 #' One-dimensional binary scaling from a DNA connection
 #'
-#' Scale ideological positions of two variables (e.g., organizations and 
-#' concepts) from a DNA connection by using Markov Chain Monte Carlo for binary 
-#' one-dimensional Item Response Theory. This is one of the four scaling 
-#' functions. For one-dimensional ordinal scaling, see \link{dna_scale1dord}, 
-#' for two-dimensional binary scaling, see \link{dna_scale2dbin} and for 
+#' Scale ideological positions of two variables (e.g., organizations and
+#' concepts) from a DNA connection by using Markov Chain Monte Carlo for binary
+#' one-dimensional Item Response Theory. This is one of the four scaling
+#' functions. For one-dimensional ordinal scaling, see \link{dna_scale1dord},
+#' for two-dimensional binary scaling, see \link{dna_scale2dbin} and for
 #' two-dimensional ordinal scaling \link{dna_scale2dord}.
 #'
-#' This function is a convenience wrapper for the \link[MCMCpack]{MCMCirt1d} 
-#' function. Using Markov Chain Monte Carlo (MCMC), \code{dna_scale1dbin} 
-#' generates a sample from the posterior distribution using standard Gibbs 
-#' sampling. For the model form and further help for the scaling arguments, see 
+#' This function is a convenience wrapper for the \link[MCMCpack]{MCMCirt1d}
+#' function. Using Markov Chain Monte Carlo (MCMC), \code{dna_scale1dbin}
+#' generates a sample from the posterior distribution using standard Gibbs
+#' sampling. For the model form and further help for the scaling arguments, see
 #' \link[MCMCpack]{MCMCirt1d}.
-#' 
-#' As in a two-mode network in \link{dna_network}, two variables have to be 
-#' provided for the scaling. The first variable corresponds to the rows of a 
-#' two-mode network and usually entails actors (e.g., \code{"organizations"}), 
-#' while the second variable is equal to the columns of a two-mode network, 
-#' typically expressed by \code{"concepts"}. The \code{dna_scale} functions 
-#' use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1} 
-#' and \code{variable2}. However, the scaling is not restricted to 
-#' \code{"actors"} and \code{"concepts"} but depends on what you provide in 
+#'
+#' As in a two-mode network in \link{dna_network}, two variables have to be
+#' provided for the scaling. The first variable corresponds to the rows of a
+#' two-mode network and usually entails actors (e.g., \code{"organizations"}),
+#' while the second variable is equal to the columns of a two-mode network,
+#' typically expressed by \code{"concepts"}. The \code{dna_scale} functions
+#' use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1}
+#' and \code{variable2}. However, the scaling is not restricted to
+#' \code{"actors"} and \code{"concepts"} but depends on what you provide in
 #' \code{variable1} or \code{variable2}.
-#' 
-#' For a binary qualifier, \code{dna_scale1dbin} internally uses the 
-#' \code{combine} qualifier aggregation and then recodes the values into 
-#' \code{0} for disagreement, \code{1} for agreement and \code{NA} for mixed 
-#' positions and non-mentions of concepts. Integer qualifiers are also recoded 
-#' into \code{0} and \code{1} by rescaling the qualifier values between 
-#' \code{0} and \code{1}. You can further relax the recoding of \code{NA} values by setting a 
-#' \code{threshold} which lets you decide at which percentage of agreement and 
-#' disagreement an actor position on a concept can be considered as 
-#' agreement/disagreement or mixed position.  
-#' 
-#' The argument \code{drop_min_actors} excludes actors with only a limited 
-#' number of concepts used. Limited participation of actors in a debate can 
-#' impact the scaling of the ideal points, as actors with only few mentions of 
-#' concepts convey limited information on their ideological position. The same 
-#' can also be done for concepts with the argument \code{drop_min_concepts}. 
+#'
+#' For a binary qualifier, \code{dna_scale1dbin} internally uses the
+#' \code{combine} qualifier aggregation and then recodes the values into
+#' \code{0} for disagreement, \code{1} for agreement and \code{NA} for mixed
+#' positions and non-mentions of concepts. Integer qualifiers are also recoded
+#' into \code{0} and \code{1} by rescaling the qualifier values between
+#' \code{0} and \code{1}. You can further relax the recoding of \code{NA} values by setting a
+#' \code{threshold} which lets you decide at which percentage of agreement and
+#' disagreement an actor position on a concept can be considered as
+#' agreement/disagreement or mixed position.
+#'
+#' The argument \code{drop_min_actors} excludes actors with only a limited
+#' number of concepts used. Limited participation of actors in a debate can
+#' impact the scaling of the ideal points, as actors with only few mentions of
+#' concepts convey limited information on their ideological position. The same
+#' can also be done for concepts with the argument \code{drop_min_concepts}.
 #' Concepts that have been rarely mentioned do not strongly discriminate the
-#' ideological positions of actors and can, therefore, impact the accuracy of 
-#' the scaling. Reducing the number of actors of concepts to be scaled hence 
-#' improves the precision of the ideological positions for both variables and 
-#' the scaling itself. Another possibility to reduce the number of concepts is 
-#' to use \code{drop_constant_concepts}, which will reduce concepts not having 
-#' any variation in the agreement/disagreement structure of actors. This means 
-#' that all concepts will be dropped which have only agreeing or disagreeing 
+#' ideological positions of actors and can, therefore, impact the accuracy of
+#' the scaling. Reducing the number of actors of concepts to be scaled hence
+#' improves the precision of the ideological positions for both variables and
+#' the scaling itself. Another possibility to reduce the number of concepts is
+#' to use \code{drop_constant_concepts}, which will reduce concepts not having
+#' any variation in the agreement/disagreement structure of actors. This means
+#' that all concepts will be dropped which have only agreeing or disagreeing
 #' statements.
 #'
-#' As \code{dna_scale1dbin} implements a Bayesian Item Response Theory 
-#' approach, \code{priors} and \code{starting values} can be set on the actor 
-#' and concept parameters. Changing the default \code{prior} values can often 
-#' help you to achieve better results. Constraints on the actor parameters can 
-#' also be specified to help identifying the model and to indicate in which 
-#' direction ideological positions of actors and concepts run. The returned 
-#' MCMC output can also be post-processed by normalizing the samples for each 
+#' As \code{dna_scale1dbin} implements a Bayesian Item Response Theory
+#' approach, \code{priors} and \code{starting values} can be set on the actor
+#' and concept parameters. Changing the default \code{prior} values can often
+#' help you to achieve better results. Constraints on the actor parameters can
+#' also be specified to help identifying the model and to indicate in which
+#' direction ideological positions of actors and concepts run. The returned
+#' MCMC output can also be post-processed by normalizing the samples for each
 #' iteration with \code{mcmc_normalize}. Normalization can be a sufficient
 #' way of identifying one-dimensional ideal point models.
 #'
 #' To plot the resulting ideal points of actors and concepts, you can use the
-#' \link{dna_plotScale} function. To assess if the returned MCMC chain has 
-#' converged to its stationary distribution, please use 
-#' \link{dna_convergenceScale}. The evaluation of convergence is essential to 
-#' report conclusions based on accurate parameter estimates. Achieving chain 
-#' convergence often requires setting the iterations of the MCMC chain to 
+#' \link{dna_plotScale} function. To assess if the returned MCMC chain has
+#' converged to its stationary distribution, please use
+#' \link{dna_convergenceScale}. The evaluation of convergence is essential to
+#' report conclusions based on accurate parameter estimates. Achieving chain
+#' convergence often requires setting the iterations of the MCMC chain to
 #' several million.
 #'
 #' @param connection A \code{dna_connection} object created by the
@@ -1995,81 +1995,81 @@ print.dna_cluster <- function(x, ...) {
 #'   \link{dna_network}). Defaults to \code{"concept"}.
 #' @param qualifier The qualifier variable for the scaling construction (see
 #'   \link{dna_network}). Defaults to \code{"agreement"}.
-#' @param threshold Numeric value that specifies when a mixed position can be 
-#'   considered as agreement or disagreement. If e.g. one actor has 60 percent 
-#'   of agreeing and 40 percent of disagreeing statements towards a concept, a 
-#'   \code{threshold} of 0.51 will recode the actor position on this concept as 
-#'   "agreement". The same accounts also for disagreeing statements. If one 
-#'   actor has 60 percent of disagreeing and 40 percent of agreeing statements,  
-#'   a \code{threshold} of 0.51 will recode the actor position on this concept 
-#'   as "disagreement". All values in between the \code{threshold} (e.g., 55 
-#'   percent agreement and 45 percent of disagreement and a threshold of 0.6) 
-#'   will be recoded as \code{NA}. If is set to \code{NULL}, all "mixed"  
-#'   positions of actors will be recoded as \code{NA}. Must be strictly 
+#' @param threshold Numeric value that specifies when a mixed position can be
+#'   considered as agreement or disagreement. If e.g. one actor has 60 percent
+#'   of agreeing and 40 percent of disagreeing statements towards a concept, a
+#'   \code{threshold} of 0.51 will recode the actor position on this concept as
+#'   "agreement". The same accounts also for disagreeing statements. If one
+#'   actor has 60 percent of disagreeing and 40 percent of agreeing statements,
+#'   a \code{threshold} of 0.51 will recode the actor position on this concept
+#'   as "disagreement". All values in between the \code{threshold} (e.g., 55
+#'   percent agreement and 45 percent of disagreement and a threshold of 0.6)
+#'   will be recoded as \code{NA}. If is set to \code{NULL}, all "mixed"
+#'   positions of actors will be recoded as \code{NA}. Must be strictly
 #'   positive.
-#' @param theta_constraints A list specifying the constraints on the actor 
-#'   parameter. Three forms of constraints are possible: 
-#'   \code{actorname = value}, which will constrain an actor to be equal to the 
-#'   specified value (e.g. \code{0}), \code{actorname = "+"}, which will 
-#'   constrain the actor to be positively scaled and \code{actorname = "-"}, 
+#' @param theta_constraints A list specifying the constraints on the actor
+#'   parameter. Three forms of constraints are possible:
+#'   \code{actorname = value}, which will constrain an actor to be equal to the
+#'   specified value (e.g. \code{0}), \code{actorname = "+"}, which will
+#'   constrain the actor to be positively scaled and \code{actorname = "-"},
 #'   which will constrain the actor to be negatively scaled (see example).
 #' @param mcmc_iterations The number of iterations for the sampler.
 #' @param mcmc_burnin The number of burn-in iterations for the sampler.
-#' @param mcmc_thin The thinning interval for the sampler. Iterations must be 
+#' @param mcmc_thin The thinning interval for the sampler. Iterations must be
 #'   divisible by the thinning interval.
-#' @param mcmc_normalize Logical. Should the MCMC output be normalized? If 
-#'   \code{TRUE}, samples are normalized to a mean of \code{0} and a standard 
+#' @param mcmc_normalize Logical. Should the MCMC output be normalized? If
+#'   \code{TRUE}, samples are normalized to a mean of \code{0} and a standard
 #'   deviation of \code{1}.
-#' @param theta_start The \code{starting values} for the actor parameters. Can 
-#'   either be a scalar or a column vector with as many elements as the number 
-#'   of actors included in the scaling. If set to the default \code{NA}, 
-#'   \code{starting values} will be set according to an eigenvalue-eigenvector 
+#' @param theta_start The \code{starting values} for the actor parameters. Can
+#'   either be a scalar or a column vector with as many elements as the number
+#'   of actors included in the scaling. If set to the default \code{NA},
+#'   \code{starting values} will be set according to an eigenvalue-eigenvector
 #'   decomposition of the actor agreement score.
-#' @param alpha_start The \code{starting values} for the concept difficulty 
-#'   parameters. Can either be a scalar or a column vector with as many 
-#'   elements as the number of actors included in the scaling. If set to the 
-#'   default \code{NA}, \code{starting values} will be set according to a 
-#'   series of probit regressions that condition the starting values of the 
+#' @param alpha_start The \code{starting values} for the concept difficulty
+#'   parameters. Can either be a scalar or a column vector with as many
+#'   elements as the number of actors included in the scaling. If set to the
+#'   default \code{NA}, \code{starting values} will be set according to a
+#'   series of probit regressions that condition the starting values of the
 #'   difficulty parameters.
-#' @param beta_start The \code{starting values} for the concept discrimination 
-#'   parameters. Can either be a scalar or a column vector with as many 
-#'   elements as the number of actors included in the scaling. If set to the 
-#'   default \code{NA}, \code{starting values} will be set according to a 
-#'   series of probit regressions that condition the \code{starting values} of 
+#' @param beta_start The \code{starting values} for the concept discrimination
+#'   parameters. Can either be a scalar or a column vector with as many
+#'   elements as the number of actors included in the scaling. If set to the
+#'   default \code{NA}, \code{starting values} will be set according to a
+#'   series of probit regressions that condition the \code{starting values} of
 #'   the discrimination parameters.
-#' @param theta_prior_mean A scalar value specifying the prior mean of the 
+#' @param theta_prior_mean A scalar value specifying the prior mean of the
 #'   actor parameters.
-#' @param theta_prior_variance A scalar value specifying the prior inverse 
+#' @param theta_prior_variance A scalar value specifying the prior inverse
 #'   variances of the actor parameters.
-#' @param alpha_beta_prior_mean Mean of the difficulty and discrimination 
-#'   parameters. Can either be a scalar or a 2-vector. If a scalar, both means 
+#' @param alpha_beta_prior_mean Mean of the difficulty and discrimination
+#'   parameters. Can either be a scalar or a 2-vector. If a scalar, both means
 #'   will be set according to the specified value.
-#' @param alpha_beta_prior_variance Inverse variance of the difficulty and 
-#'   discrimination parameters. Can either be a scalar or a 2-vector. If a 
+#' @param alpha_beta_prior_variance Inverse variance of the difficulty and
+#'   discrimination parameters. Can either be a scalar or a 2-vector. If a
 #'   scalar, both means will be set according to the specified value.
-#' @param store_variables A character vector indicating which variables should 
-#'   be stored from the scaling. Can either take the value of the character 
-#'   vector indicated in \code{variable1} or \code{variable2} or \code{"both"} 
-#'   to store both variables. Note that saving both variables can impact the 
+#' @param store_variables A character vector indicating which variables should
+#'   be stored from the scaling. Can either take the value of the character
+#'   vector indicated in \code{variable1} or \code{variable2} or \code{"both"}
+#'   to store both variables. Note that saving both variables can impact the
 #'   speed of the scaling. Defaults to \code{"both"}.
-#' @param drop_constant_concepts Logical. Should concepts that have no 
+#' @param drop_constant_concepts Logical. Should concepts that have no
 #'   variation be deleted before the scaling? Defaults to \code{FALSE}.
-#' @param drop_min_actors A numeric value specifying the minimum number of 
-#'   concepts actors should have mentioned to be included in the scaling. 
+#' @param drop_min_actors A numeric value specifying the minimum number of
+#'   concepts actors should have mentioned to be included in the scaling.
 #'   Defaults to \code{1}.
-#' @param drop_min_concepts A numeric value specifying the minimum number a 
+#' @param drop_min_concepts A numeric value specifying the minimum number a
 #'   concept should have been jointly mentioned by actors. Defaults to \code{2}.
-#' @param verbose A boolean or numeric value indicating whether the iterations 
-#'   of the scaling should be printed to the R console. If set to a numeric 
-#'   value, every \code{verboseth} iteration will be printed. If set to 
-#'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in 
+#' @param verbose A boolean or numeric value indicating whether the iterations
+#'   of the scaling should be printed to the R console. If set to a numeric
+#'   value, every \code{verboseth} iteration will be printed. If set to
+#'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in
 #'   divided by \code{100}.
 #' @param seed The random seed for the scaling.
-#' @param ... Additional arguments passed to \link{dna_network}. Actors can 
-#'   e.g. be removed with the \code{excludeValues} arguments. The scaling can 
-#'   also be applied to a specific time slice by using \code{start.date} and 
+#' @param ... Additional arguments passed to \link{dna_network}. Actors can
+#'   e.g. be removed with the \code{excludeValues} arguments. The scaling can
+#'   also be applied to a specific time slice by using \code{start.date} and
 #'   \code{stop.date}.
-#' 
+#'
 #' @examples
 #' \dontrun{
 #' dna_init()
@@ -2241,75 +2241,75 @@ dna_scale1dbin <- function(connection,
 
 #' One-dimensional ordinal scaling from a DNA connection.
 #'
-#' Scale ideological positions of two variables (e.g., organizations and 
-#' concepts) from a DNA connection by using Markov Chain Monte Carlo for 
-#' ordinal one-dimensional Item Response Theory. This is one of the four 
-#' scaling functions. For one-dimensional binary scaling, see 
-#' \link{dna_scale1dbin}, for two-dimensional binary scaling, see 
-#' \link{dna_scale2dbin} and for two-dimensional ordinal scaling 
+#' Scale ideological positions of two variables (e.g., organizations and
+#' concepts) from a DNA connection by using Markov Chain Monte Carlo for
+#' ordinal one-dimensional Item Response Theory. This is one of the four
+#' scaling functions. For one-dimensional binary scaling, see
+#' \link{dna_scale1dbin}, for two-dimensional binary scaling, see
+#' \link{dna_scale2dbin} and for two-dimensional ordinal scaling
 #' \link{dna_scale2dord}.
 #'
-#' This function is a convenience wrapper for the 
-#' \link[MCMCpack]{MCMCordfactanal} function. Using Markov Chain Monte Carlo 
-#' (MCMC), \code{dna_scale1dord} generates a sample from the posterior 
+#' This function is a convenience wrapper for the
+#' \link[MCMCpack]{MCMCordfactanal} function. Using Markov Chain Monte Carlo
+#' (MCMC), \code{dna_scale1dord} generates a sample from the posterior
 #' distribution of an ordinal data factor analysis model, using a
-#' Metropolis-Hastings within Gibbs sampling algorithm. For the model form and 
+#' Metropolis-Hastings within Gibbs sampling algorithm. For the model form and
 #' further help for the scaling arguments, see \link[MCMCpack]{MCMCordfactanal}.
-#' 
-#' As in a two-mode network in \link{dna_network}, two variables have to be 
-#' provided for the scaling. The first variable corresponds to the rows of a 
-#' two-mode network and usually entails actors (e.g., \code{"organizations"}), 
-#' while the second variable is equal to the columns of a two-mode network, 
-#' typically expressed by \code{"concepts"}. The \code{dna_scale} functions 
-#' use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1} 
-#' and \code{variable2}. However, the scaling is not restricted to 
-#' \code{"actors"} and \code{"concepts"} but depends on what you provide in 
+#'
+#' As in a two-mode network in \link{dna_network}, two variables have to be
+#' provided for the scaling. The first variable corresponds to the rows of a
+#' two-mode network and usually entails actors (e.g., \code{"organizations"}),
+#' while the second variable is equal to the columns of a two-mode network,
+#' typically expressed by \code{"concepts"}. The \code{dna_scale} functions
+#' use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1}
+#' and \code{variable2}. However, the scaling is not restricted to
+#' \code{"actors"} and \code{"concepts"} but depends on what you provide in
 #' \code{variable1} or \code{variable2}.
-#' 
-#' \code{dna_scale1dord} internally uses the \code{combine} qualifier 
-#' aggregation and then recodes the values into \code{1} for disagreement, 
-#' \code{2} for mixed positions and \code{3} for agreement. Integer qualifiers 
-#' are not recoded. When \code{zero_is_na} is set to \code{TRUE}, non-mentions 
-#' of concepts are set to \code{NA}, while setting the argument to \code{FALSE} 
-#' recodes them to \code{2} as mixed position. By setting a \code{threshold}, 
+#'
+#' \code{dna_scale1dord} internally uses the \code{combine} qualifier
+#' aggregation and then recodes the values into \code{1} for disagreement,
+#' \code{2} for mixed positions and \code{3} for agreement. Integer qualifiers
+#' are not recoded. When \code{zero_is_na} is set to \code{TRUE}, non-mentions
+#' of concepts are set to \code{NA}, while setting the argument to \code{FALSE}
+#' recodes them to \code{2} as mixed position. By setting a \code{threshold},
 #' you can further decide at which percentage of agreement and disagreement
-#' an actor position on a concept can be considered as agreement/disagreement 
+#' an actor position on a concept can be considered as agreement/disagreement
 #' or mixed position.
-#' 
-#' The argument \code{drop_min_actors} excludes actors with only a limited 
-#' number of concepts used. Limited participation of actors in a debate can 
-#' impact the scaling of the ideal points, as actors with only few mentions of 
-#' concepts convey limited information on their ideological position. The same 
-#' can also be done for concepts with the argument \code{drop_min_concepts}. 
+#'
+#' The argument \code{drop_min_actors} excludes actors with only a limited
+#' number of concepts used. Limited participation of actors in a debate can
+#' impact the scaling of the ideal points, as actors with only few mentions of
+#' concepts convey limited information on their ideological position. The same
+#' can also be done for concepts with the argument \code{drop_min_concepts}.
 #' Concepts that have been rarely mentioned do not strongly discriminate the
 #' ideological positions of actors and can, therefore, impact the accuracy of the
-#' scaling. Reducing the number of actors of concepts to be scaled hence 
-#' improves the precision of the ideological positions for both variables and 
-#' the scaling itself. Another possibility to reduce the number of concepts is 
-#' to use \code{drop_constant_concepts}, which will reduce concepts not having 
-#' any variation in the agreement/disagreement structure of actors. This means 
-#' that all concepts will be dropped which have only agreeing, disagreeing or 
+#' scaling. Reducing the number of actors of concepts to be scaled hence
+#' improves the precision of the ideological positions for both variables and
+#' the scaling itself. Another possibility to reduce the number of concepts is
+#' to use \code{drop_constant_concepts}, which will reduce concepts not having
+#' any variation in the agreement/disagreement structure of actors. This means
+#' that all concepts will be dropped which have only agreeing, disagreeing or
 #' mixed statements.
 #'
-#' As \code{dna_scale1dord} implements a Bayesian Item Response Theory 
-#' approach, \code{priors} and \code{starting values} can be set on the concept 
-#' parameters. Changing the default \code{prior} values can often help you to 
-#' achieve better results. Constraints on the concept parameters can also be 
-#' specified to help identifying the model and to indicate in which direction 
-#' ideological positions of actors and concepts run. The scaling estimates an 
-#' item discrimination parameter and an item difficulty parameter for each 
-#' concept. We advise constraining the item discrimination parameter, as the 
-#' item difficulty parameter, in general, should not be constrained. The 
+#' As \code{dna_scale1dord} implements a Bayesian Item Response Theory
+#' approach, \code{priors} and \code{starting values} can be set on the concept
+#' parameters. Changing the default \code{prior} values can often help you to
+#' achieve better results. Constraints on the concept parameters can also be
+#' specified to help identifying the model and to indicate in which direction
+#' ideological positions of actors and concepts run. The scaling estimates an
+#' item discrimination parameter and an item difficulty parameter for each
+#' concept. We advise constraining the item discrimination parameter, as the
+#' item difficulty parameter, in general, should not be constrained. The
 #' returned MCMC output can also be post-processed by normalizing the samples
-#' for each iteration with \code{mcmc_normalize}. Normalization can be a 
+#' for each iteration with \code{mcmc_normalize}. Normalization can be a
 #' sufficient way of identifying one-dimensional ideal point models.
 #'
 #' To plot the resulting ideal points of actors and concepts, you can use the
-#' \link{dna_plotScale} function. To assess if the returned MCMC chain has 
-#' converged to its stationary distribution, please use 
-#' \link{dna_convergenceScale}. The evaluation of convergence is essential to 
-#' report conclusions based on accurate parameter estimates. Achieving chain 
-#' convergence often requires setting the iterations of the MCMC chain to 
+#' \link{dna_plotScale} function. To assess if the returned MCMC chain has
+#' converged to its stationary distribution, please use
+#' \link{dna_convergenceScale}. The evaluation of convergence is essential to
+#' report conclusions based on accurate parameter estimates. Achieving chain
+#' convergence often requires setting the iterations of the MCMC chain to
 #' several million.
 #'
 #' @param connection A \code{dna_connection} object created by the
@@ -2320,74 +2320,74 @@ dna_scale1dbin <- function(connection,
 #'   \link{dna_network}). Defaults to \code{"concept"}.
 #' @param qualifier The qualifier variable for the scaling construction (see
 #'   \link{dna_network}). Defaults to \code{"agreement"}.
-#' @param zero_as_na Logical. If \code{TRUE}, all non-mentions of an actor 
-#'   towards a concept will be recoded as \code{NA}. If \code{FALSE} as 
+#' @param zero_as_na Logical. If \code{TRUE}, all non-mentions of an actor
+#'   towards a concept will be recoded as \code{NA}. If \code{FALSE} as
 #'   \code{2}.
-#' @param threshold Numeric value that specifies when a mixed position can be 
-#'   considered as agreement or disagreement. If e.g., one actor has 60 percent 
-#'   of agreeing and 40 percent of disagreeing statements towards a concept, a 
-#'   \code{threshold} of 0.51 will recode the actor position on this concept as 
-#'   "agreement". The same accounts also for disagreeing statements. If one 
-#'   actor has 60 percent of disagreeing and 40 percent of agreeing statements, 
-#'   a \code{threshold} of 0.51 will recode the actor position on this concept 
-#'   as "disagreement". All values in between the \code{threshold} (e.g., 55 
-#'   percent agreement and 45 percent of disagreement and a threshold of 0.6) 
-#'   will be recoded as \code{2}. If is set to \code{NULL}, all "mixed"  
-#'   positions of actors will be recoded as \code{2}. Must be strictly 
+#' @param threshold Numeric value that specifies when a mixed position can be
+#'   considered as agreement or disagreement. If e.g., one actor has 60 percent
+#'   of agreeing and 40 percent of disagreeing statements towards a concept, a
+#'   \code{threshold} of 0.51 will recode the actor position on this concept as
+#'   "agreement". The same accounts also for disagreeing statements. If one
+#'   actor has 60 percent of disagreeing and 40 percent of agreeing statements,
+#'   a \code{threshold} of 0.51 will recode the actor position on this concept
+#'   as "disagreement". All values in between the \code{threshold} (e.g., 55
+#'   percent agreement and 45 percent of disagreement and a threshold of 0.6)
+#'   will be recoded as \code{2}. If is set to \code{NULL}, all "mixed"
+#'   positions of actors will be recoded as \code{2}. Must be strictly
 #'   positive.
-#' @param lambda_constraints A list of lists specifying constraints on the 
-#'   concept parameters. Note that value \code{1} in the brackets of the 
-#'   argument refers to the negative item difficulty parameters, which in 
-#'   general should not be constrained. Value \code{2} relates to the item 
-#'   discrimination parameter and should be used for constraints on concepts. 
-#'   Three forms of constraints are possible: 
-#'   \code{conceptname = list(2, value)} will constrain the item discrimination 
-#'   parameter to be equal to the specified value (e.g., 0). 
-#'   \code{conceptname = list(2,"+")} will constrain the item discrimination 
-#'   parameter to be positively scaled and \code{conceptname = list(2, "-")} 
+#' @param lambda_constraints A list of lists specifying constraints on the
+#'   concept parameters. Note that value \code{1} in the brackets of the
+#'   argument refers to the negative item difficulty parameters, which in
+#'   general should not be constrained. Value \code{2} relates to the item
+#'   discrimination parameter and should be used for constraints on concepts.
+#'   Three forms of constraints are possible:
+#'   \code{conceptname = list(2, value)} will constrain the item discrimination
+#'   parameter to be equal to the specified value (e.g., 0).
+#'   \code{conceptname = list(2,"+")} will constrain the item discrimination
+#'   parameter to be positively scaled and \code{conceptname = list(2, "-")}
 #'   will constrain the parameter to be negatively scaled (see example).
 #' @param mcmc_iterations The number of iterations for the sampler.
 #' @param mcmc_burnin The number of burn-in iterations for the sampler.
-#' @param mcmc_thin The thinning interval for the sampler. Iterations must be 
+#' @param mcmc_thin The thinning interval for the sampler. Iterations must be
 #'   divisible by the thinning interval.
-#' @param mcmc_tune The tuning parameter for the acceptance rates of the 
-#'   sampler. Acceptance rates should ideally range between \code{0.15} and 
-#'   \code{0.5}. Can be either a scalar or a k-vector. Must be strictly 
+#' @param mcmc_tune The tuning parameter for the acceptance rates of the
+#'   sampler. Acceptance rates should ideally range between \code{0.15} and
+#'   \code{0.5}. Can be either a scalar or a k-vector. Must be strictly
 #'   positive.
-#' @param mcmc_normalize Logical. Should the MCMC output be normalized? If 
-#'   \code{TRUE}, samples are normalized to a mean of \code{0} and a standard 
+#' @param mcmc_normalize Logical. Should the MCMC output be normalized? If
+#'   \code{TRUE}, samples are normalized to a mean of \code{0} and a standard
 #'   deviation of \code{1}.
-#' @param lambda_start \code{Starting values} for the concept parameters. Can 
-#'   be either a scalar or a matrix. If set to \code{NA} (default), the 
-#'   \code{starting values} for the unconstrained parameters in the first 
+#' @param lambda_start \code{Starting values} for the concept parameters. Can
+#'   be either a scalar or a matrix. If set to \code{NA} (default), the
+#'   \code{starting values} for the unconstrained parameters in the first
 #'   column are based on the observed response patterns. The remaining
-#'   unconstrained elements are set to starting values of either \code{1.0} or 
+#'   unconstrained elements are set to starting values of either \code{1.0} or
 #'   \code{-1.0}, depending on the nature of the constraint.
-#' @param lambda_prior_mean The prior mean of the concept parameters. Can be 
+#' @param lambda_prior_mean The prior mean of the concept parameters. Can be
 #'   either a scalar or a matrix.
-#' @param lambda_prior_variance The prior inverse variances of the concept 
+#' @param lambda_prior_variance The prior inverse variances of the concept
 #'   parameters. Can be either a scalar or a matrix.
-#' @param store_variables A character vector indicating which variables should 
-#'   be stored from the scaling. Can either take the value of the character 
-#'   vector indicated in \code{variable1} or \code{variable2} or \code{"both"} 
-#'   to store both variables. Note that saving both variables can impact the 
+#' @param store_variables A character vector indicating which variables should
+#'   be stored from the scaling. Can either take the value of the character
+#'   vector indicated in \code{variable1} or \code{variable2} or \code{"both"}
+#'   to store both variables. Note that saving both variables can impact the
 #'   speed of the scaling. Defaults to \code{"both"}.
-#' @param drop_constant_concepts Logical. Should concepts that have no 
+#' @param drop_constant_concepts Logical. Should concepts that have no
 #'   variation be deleted before the scaling? Defaults to \code{FALSE}.
-#' @param drop_min_actors A numeric value specifying the minimum number of 
-#'   concepts actors should have mentioned to be included in the scaling. 
+#' @param drop_min_actors A numeric value specifying the minimum number of
+#'   concepts actors should have mentioned to be included in the scaling.
 #'   Defaults to \code{1}.
-#' @param drop_min_concepts A numeric value specifying the minimum number a 
+#' @param drop_min_concepts A numeric value specifying the minimum number a
 #'   concept should have been jointly mentioned by actors. Defaults to \code{2}.
-#' @param verbose A boolean or numeric value indicating whether the iterations 
-#'   of the scaling should be printed to the R console. If set to a numeric 
-#'   value, every \code{verboseth} iteration will be printed. If set to 
-#'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in 
+#' @param verbose A boolean or numeric value indicating whether the iterations
+#'   of the scaling should be printed to the R console. If set to a numeric
+#'   value, every \code{verboseth} iteration will be printed. If set to
+#'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in
 #'   divided by \code{100}.
 #' @param seed The random seed for the scaling.
-#' @param ... Additional arguments passed to \link{dna_network}. Actors can 
-#'   e.g., be removed with the \code{excludeValues} arguments. The scaling can 
-#'   also be applied to a specific time slice by using \code{start.date} and 
+#' @param ... Additional arguments passed to \link{dna_network}. Actors can
+#'   e.g., be removed with the \code{excludeValues} arguments. The scaling can
+#'   also be applied to a specific time slice by using \code{start.date} and
 #'   \code{stop.date}.
 #'
 #' @examples
@@ -2555,81 +2555,81 @@ dna_scale1dord <- function(connection,
 
 #' Two-dimensional binary scaling from a DNA connection
 #'
-#' Scale ideological positions of two variables (e.g., organizations and 
-#' concepts) from a DNA connection by using Markov Chain Monte Carlo for binary 
-#' two-dimensional Item Response Theory. This is one of the four scaling 
-#' functions. For one-dimensional binary scaling, see \link{dna_scale1dbin}, 
-#' for one-dimensional ordinal scaling, see \link{dna_scale1dord} and for 
+#' Scale ideological positions of two variables (e.g., organizations and
+#' concepts) from a DNA connection by using Markov Chain Monte Carlo for binary
+#' two-dimensional Item Response Theory. This is one of the four scaling
+#' functions. For one-dimensional binary scaling, see \link{dna_scale1dbin},
+#' for one-dimensional ordinal scaling, see \link{dna_scale1dord} and for
 #' two-dimensional ordinal scaling \link{dna_scale2dord}.
 #'
-#' This function is a convenience wrapper for the \link[MCMCpack]{MCMCirtKd} 
-#' function. Using Markov Chain Monte Carlo (MCMC), \code{dna_scale2dbin} 
+#' This function is a convenience wrapper for the \link[MCMCpack]{MCMCirtKd}
+#' function. Using Markov Chain Monte Carlo (MCMC), \code{dna_scale2dbin}
 #' generates a sample from the posterior distribution using standard Gibbs
-#' sampling. For the model form and further help for the scaling arguments, see 
+#' sampling. For the model form and further help for the scaling arguments, see
 #' \link[MCMCpack]{MCMCirtKd}.
-#' 
-#' As in a two-mode network in \link{dna_network}, two variables have to be 
-#' provided for the scaling. The first variable corresponds to the rows of a 
-#' two-mode network and usually entails actors (e.g., \code{"organizations"}), 
-#' while the second variable is equal to the columns of a two-mode network, 
-#' typically expressed by \code{"concepts"}. The \code{dna_scale} functions 
-#' use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1} 
-#' and \code{variable2}. However, the scaling is not restricted to 
-#' \code{"actors"} and \code{"concepts"} but depends on what you provide in 
+#'
+#' As in a two-mode network in \link{dna_network}, two variables have to be
+#' provided for the scaling. The first variable corresponds to the rows of a
+#' two-mode network and usually entails actors (e.g., \code{"organizations"}),
+#' while the second variable is equal to the columns of a two-mode network,
+#' typically expressed by \code{"concepts"}. The \code{dna_scale} functions
+#' use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1}
+#' and \code{variable2}. However, the scaling is not restricted to
+#' \code{"actors"} and \code{"concepts"} but depends on what you provide in
 #' \code{variable1} or \code{variable2}.
 #'
-#' \code{dna_scale2dbin} internally uses the \code{combine} qualifier 
-#' aggregation and then recodes the values into \code{0} for disagreement, 
-#' \code{1} for agreement and \code{NA} for mixed positions and non-mentions of 
-#' concepts. Integer qualifiers are also recoded into \code{0} and \code{1} by 
-#' rescaling the qualifier values between \code{0} and \code{1}. You can 
-#' further relax the recoding of \code{NA} values by setting a \code{threshold} 
-#' which lets you decide at which percentage of agreement and disagreement 
-#' an actor position on a concept can be considered as agreement/disagreement 
+#' \code{dna_scale2dbin} internally uses the \code{combine} qualifier
+#' aggregation and then recodes the values into \code{0} for disagreement,
+#' \code{1} for agreement and \code{NA} for mixed positions and non-mentions of
+#' concepts. Integer qualifiers are also recoded into \code{0} and \code{1} by
+#' rescaling the qualifier values between \code{0} and \code{1}. You can
+#' further relax the recoding of \code{NA} values by setting a \code{threshold}
+#' which lets you decide at which percentage of agreement and disagreement
+#' an actor position on a concept can be considered as agreement/disagreement
 #' or mixed position.
-#' 
-#' The argument \code{drop_min_actors} excludes actors with only a limited 
-#' number of concepts used. Limited participation of actors in a debate can 
-#' impact the scaling of the ideal points, as actors with only few mentions of 
-#' concepts convey limited information on their ideological position. The same 
-#' can also be done for concepts with the argument \code{drop_min_concepts}. 
+#'
+#' The argument \code{drop_min_actors} excludes actors with only a limited
+#' number of concepts used. Limited participation of actors in a debate can
+#' impact the scaling of the ideal points, as actors with only few mentions of
+#' concepts convey limited information on their ideological position. The same
+#' can also be done for concepts with the argument \code{drop_min_concepts}.
 #' Concepts that have been rarely mentioned do not strongly discriminate the
-#' ideological positions of actors and can, therefore, impact the accuracy of 
+#' ideological positions of actors and can, therefore, impact the accuracy of
 #' the scaling. Reducing the number of actors of concepts to be scaled hence
-#' improves the precision of the ideological positions for both variables and 
-#' the scaling itself. Another possibility to reduce the number of concepts is 
-#' to use \code{drop_constant_concepts}, which will reduce concepts not having 
-#' any variation in the agreement/disagreement structure of actors. This means 
-#' that all concepts will be dropped which have only agreeing, disagreeing or 
+#' improves the precision of the ideological positions for both variables and
+#' the scaling itself. Another possibility to reduce the number of concepts is
+#' to use \code{drop_constant_concepts}, which will reduce concepts not having
+#' any variation in the agreement/disagreement structure of actors. This means
+#' that all concepts will be dropped which have only agreeing, disagreeing or
 #' mixed statements.
-#' 
-#' As \code{dna_scale2dbin} implements a Bayesian Item Response Theory 
-#' approach, \code{priors} and \code{starting values} can be set on the concept 
-#' parameters. Changing the default \code{prior} values can often 
-#' help you to achieve better results. Constraints on the parameters can also 
-#' be specified to help identifying the model and to indicate in which 
-#' direction ideological positions of actors and concepts run. Please note 
-#' that, unlike \link{dna_scale1dbin}, this function constrains the values 
-#' indicated in \code{variable2}. For these values, the scaling estimates an 
-#' item discrimination parameter for each dimension and an item difficulty 
-#' parameter for both dimensions. The item difficulty parameter should, 
-#' however, not be constrained (see \link[MCMCpack]{MCMCirtKd}). Therefore, you 
+#'
+#' As \code{dna_scale2dbin} implements a Bayesian Item Response Theory
+#' approach, \code{priors} and \code{starting values} can be set on the concept
+#' parameters. Changing the default \code{prior} values can often
+#' help you to achieve better results. Constraints on the parameters can also
+#' be specified to help identifying the model and to indicate in which
+#' direction ideological positions of actors and concepts run. Please note
+#' that, unlike \link{dna_scale1dbin}, this function constrains the values
+#' indicated in \code{variable2}. For these values, the scaling estimates an
+#' item discrimination parameter for each dimension and an item difficulty
+#' parameter for both dimensions. The item difficulty parameter should,
+#' however, not be constrained (see \link[MCMCpack]{MCMCirtKd}). Therefore, you
 #' should set constraints on the item discrimination parameters.
-#' 
-#' Fitting two-dimensional scaling models requires a good choice of concept 
-#' constraints to specify the ideological dimensions of your data. A suitable 
+#'
+#' Fitting two-dimensional scaling models requires a good choice of concept
+#' constraints to specify the ideological dimensions of your data. A suitable
 #' way of identifying your ideological dimensions is to constrain one item
 #' discrimination parameter to load only on one dimension. This means that we
-#' set one parameter to load either positive or negative on one dimension and 
-#' setting it to zero on the other. A second concept should also be constrained 
+#' set one parameter to load either positive or negative on one dimension and
+#' setting it to zero on the other. A second concept should also be constrained
 #' to load either positive or negative on one dimension (see example)
 #'
 #' To plot the resulting ideal points of actors and concepts, you can use the
-#' \link{dna_plotScale} function. To assess if the returned MCMC chain has 
-#' converged to its stationary distribution, please use 
-#' \link{dna_convergenceScale}. The evaluation of convergence is essential to 
-#' report conclusions based on accurate parameter estimates. Achieving chain 
-#' convergence often requires setting the iterations of the MCMC chain to 
+#' \link{dna_plotScale} function. To assess if the returned MCMC chain has
+#' converged to its stationary distribution, please use
+#' \link{dna_convergenceScale}. The evaluation of convergence is essential to
+#' report conclusions based on accurate parameter estimates. Achieving chain
+#' convergence often requires setting the iterations of the MCMC chain to
 #' several million.
 #'
 #' @param connection A \code{dna_connection} object created by the
@@ -2640,69 +2640,69 @@ dna_scale1dord <- function(connection,
 #'   \link{dna_network}). Defaults to \code{"concept"}.
 #' @param qualifier The qualifier variable for the scaling construction (see
 #'   \link{dna_network}). Defaults to \code{"agreement"}.
-#' @param threshold Numeric value that specifies when a mixed position can be 
-#'   considered as agreement or disagreement. If e.g., one actor has 60 percent 
-#'   of agreeing and 40 percent of disagreeing statements towards a concept, a 
-#'   \code{threshold} of 0.51 will recode the actor position on this concept as 
-#'   "agreement". The same accounts also for disagreeing statements. If one 
-#'   actor has 60 percent of disagreeing and 40 percent of agreeing statements, 
-#'   a \code{threshold} of 0.51 will recode the actor position on this concept 
-#'   as "disagreement". All values in between the \code{threshold} (e.g., 55 
-#'   percent agreement and 45 percent of disagreement and a threshold of 0.6) 
-#'   will be recoded as \code{NA}. If is set to \code{NULL}, all "mixed"  
-#'   positions of actors will be recoded as \code{NA}. Must be strictly 
+#' @param threshold Numeric value that specifies when a mixed position can be
+#'   considered as agreement or disagreement. If e.g., one actor has 60 percent
+#'   of agreeing and 40 percent of disagreeing statements towards a concept, a
+#'   \code{threshold} of 0.51 will recode the actor position on this concept as
+#'   "agreement". The same accounts also for disagreeing statements. If one
+#'   actor has 60 percent of disagreeing and 40 percent of agreeing statements,
+#'   a \code{threshold} of 0.51 will recode the actor position on this concept
+#'   as "disagreement". All values in between the \code{threshold} (e.g., 55
+#'   percent agreement and 45 percent of disagreement and a threshold of 0.6)
+#'   will be recoded as \code{NA}. If is set to \code{NULL}, all "mixed"
+#'   positions of actors will be recoded as \code{NA}. Must be strictly
 #'   positive.
-#' @param item_constraints A list of lists specifying constraints on the 
-#'   concept parameters. Note that value \code{1} in the brackets of the 
-#'   argument refers to the item difficulty parameters, which in 
-#'   general should not be constrained. All values above \code{1} relate to the 
-#'   item discrimination parameters on the single dimensions. These should be 
-#'   used for constraints on concepts. Three possible forms of constraints are 
-#'   possible: \code{conceptname = list(2, value)} will constrain a concept to 
-#'   be equal to the specified value (e.g., 0) on the first dimension of the 
-#'   item discrimination parameter. \code{conceptname = list(2,"+")} will 
+#' @param item_constraints A list of lists specifying constraints on the
+#'   concept parameters. Note that value \code{1} in the brackets of the
+#'   argument refers to the item difficulty parameters, which in
+#'   general should not be constrained. All values above \code{1} relate to the
+#'   item discrimination parameters on the single dimensions. These should be
+#'   used for constraints on concepts. Three possible forms of constraints are
+#'   possible: \code{conceptname = list(2, value)} will constrain a concept to
+#'   be equal to the specified value (e.g., 0) on the first dimension of the
+#'   item discrimination parameter. \code{conceptname = list(2,"+")} will
 #'   constrain the concept to be positively scaled on the first dimension and
-#'   \code{conceptname = list(2, "-")} will constrain the concept to be 
-#'   negatively scaled on the first dimension (see example). If you 
-#'   wish to constrain a concept on the second dimension, please indicate this 
+#'   \code{conceptname = list(2, "-")} will constrain the concept to be
+#'   negatively scaled on the first dimension (see example). If you
+#'   wish to constrain a concept on the second dimension, please indicate this
 #'   with a \code{3} in the first position in the bracket.
 #' @param mcmc_iterations The number of iterations for the sampler.
 #' @param mcmc_burnin The number of burn-in iterations for the sampler.
 #' @param mcmc_thin The thinning interval for the sampler. Iterations
 #'   must be divisible by the thinning interval.
-#' @param alpha_beta_start \code{Starting values} for the item difficulty and 
-#'   discrimination parameters. Can be either a scalar or a matrix. If set to 
-#'   \code{NA}, the \code{starting values} for the unconstrained concepts are 
+#' @param alpha_beta_start \code{Starting values} for the item difficulty and
+#'   discrimination parameters. Can be either a scalar or a matrix. If set to
+#'   \code{NA}, the \code{starting values} for the unconstrained concepts are
 #'   set to values generated from a series of proportional odds logistic
-#'   regression fits and \code{starting values} for inequality constrained 
-#'   elements are set to either \code{1.0} or \code{-1.0}, depending on the 
+#'   regression fits and \code{starting values} for inequality constrained
+#'   elements are set to either \code{1.0} or \code{-1.0}, depending on the
 #'   nature of the constraints.
-#' @param alpha_beta_prior_mean The prior means for the item difficulty and 
+#' @param alpha_beta_prior_mean The prior means for the item difficulty and
 #'   discrimination parameters.
-#' @param alpha_beta_prior_variance The inverse variances of the item 
-#'   difficulty and discrimination parameters. Can either be a scalar or a 
+#' @param alpha_beta_prior_variance The inverse variances of the item
+#'   difficulty and discrimination parameters. Can either be a scalar or a
 #'   matrix of two dimensions times the concepts.
-#' @param store_variables A character vector indicating which variables should 
-#'   be stored from the scaling. Can either take the value of the character 
-#'   vector indicated in \code{variable1} or \code{variable2} or \code{"both"} 
-#'   to store both variables. Note that saving both variables can impact the 
+#' @param store_variables A character vector indicating which variables should
+#'   be stored from the scaling. Can either take the value of the character
+#'   vector indicated in \code{variable1} or \code{variable2} or \code{"both"}
+#'   to store both variables. Note that saving both variables can impact the
 #'   speed of the scaling. Defaults to \code{"both"}.
-#' @param drop_constant_concepts Logical. Should concepts that have no 
+#' @param drop_constant_concepts Logical. Should concepts that have no
 #'   variation be deleted before the scaling? Defaults to \code{FALSE}.
-#' @param drop_min_actors A numeric value specifying the minimum number of 
-#'   concepts actors should have mentioned to be included in the scaling. 
+#' @param drop_min_actors A numeric value specifying the minimum number of
+#'   concepts actors should have mentioned to be included in the scaling.
 #'   Defaults to \code{1}.
-#' @param drop_min_concepts A numeric value specifying the minimum number a 
+#' @param drop_min_concepts A numeric value specifying the minimum number a
 #'   concept should have been jointly mentioned by actors. Defaults to \code{2}.
-#' @param verbose A boolean or numeric value indicating whether the iterations 
-#'   of the scaling should be printed to the R console. If set to a numeric 
-#'   value, every \code{verboseth} iteration will be printed. If set to 
-#'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in 
+#' @param verbose A boolean or numeric value indicating whether the iterations
+#'   of the scaling should be printed to the R console. If set to a numeric
+#'   value, every \code{verboseth} iteration will be printed. If set to
+#'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in
 #'   divided by \code{100}.
 #' @param seed The random seed for the scaling.
-#' @param ... Additional arguments passed to \link{dna_network}. Actors can 
-#'   e.g., be removed with the \code{excludeValues} arguments. The scaling can 
-#'   also be applied to a specific time slice by using \code{start.date} and 
+#' @param ... Additional arguments passed to \link{dna_network}. Actors can
+#'   e.g., be removed with the \code{excludeValues} arguments. The scaling can
+#'   also be applied to a specific time slice by using \code{start.date} and
 #'   \code{stop.date}.
 #'
 #' @examples
@@ -2730,7 +2730,7 @@ dna_scale1dord <- function(connection,
 #'   seed = 12345
 #' )
 #' }
-#' 
+#'
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
 #' @importFrom MCMCpack MCMCirtKd
@@ -2873,81 +2873,81 @@ dna_scale2dbin <- function(connection,
 
 #' Two-dimensional ordinal scaling from a DNA connection
 #'
-#' Scale ideological positions of two variables (e.g., organizations and 
-#' concepts from a DNA connection by using Markov Chain Monte Carlo for 
-#' ordinal two-dimensional Item Response Theory. This is one of the four 
-#' scaling functions. For one-dimensional binary scaling, see 
-#' \link{dna_scale1dbin}, for one-dimensional ordinal scaling, see 
-#' \link{dna_scale1dord} and for two-dimensional binary scaling 
+#' Scale ideological positions of two variables (e.g., organizations and
+#' concepts from a DNA connection by using Markov Chain Monte Carlo for
+#' ordinal two-dimensional Item Response Theory. This is one of the four
+#' scaling functions. For one-dimensional binary scaling, see
+#' \link{dna_scale1dbin}, for one-dimensional ordinal scaling, see
+#' \link{dna_scale1dord} and for two-dimensional binary scaling
 #' \link{dna_scale2dbin}.
 #'
-#' This function is a convenience wrapper for the 
-#' \link[MCMCpack]{MCMCordfactanal} function. Using Markov Chain Monte Carlo 
-#' (MCMC), \code{dna_scale2dord} generates a sample from the posterior 
+#' This function is a convenience wrapper for the
+#' \link[MCMCpack]{MCMCordfactanal} function. Using Markov Chain Monte Carlo
+#' (MCMC), \code{dna_scale2dord} generates a sample from the posterior
 #' distribution of an ordinal data factor analysis model, using a
-#' Metropolis-Hastings within Gibbs sampling algorithm. For the model form and 
+#' Metropolis-Hastings within Gibbs sampling algorithm. For the model form and
 #' further help for the scaling arguments, see \link[MCMCpack]{MCMCordfactanal}.
 #'
-#' As in a two-mode network in \link{dna_network}, two variables have to be 
-#' provided for the scaling. The first variable corresponds to the rows of a 
-#' two-mode network and usually entails actors (e.g., \code{"organizations"}), 
-#' while the second variable is equal to the columns of a two-mode network, 
-#' typically expressed by \code{"concepts"}. The \code{dna_scale} functions 
-#' use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1} 
-#' and \code{variable2}. However, the scaling is not restricted to 
-#' \code{"actors"} and \code{"concepts"} but depends on what you provide in 
+#' As in a two-mode network in \link{dna_network}, two variables have to be
+#' provided for the scaling. The first variable corresponds to the rows of a
+#' two-mode network and usually entails actors (e.g., \code{"organizations"}),
+#' while the second variable is equal to the columns of a two-mode network,
+#' typically expressed by \code{"concepts"}. The \code{dna_scale} functions
+#' use \code{"actors"} and \code{"concepts"} as synonyms for \code{variable1}
+#' and \code{variable2}. However, the scaling is not restricted to
+#' \code{"actors"} and \code{"concepts"} but depends on what you provide in
 #' \code{variable1} or \code{variable2}.
 #'
-#' \code{dna_scale2dord} internally uses the \code{combine} qualifier 
-#' aggregation and then recodes the values into \code{1} for disagreement, 
-#' \code{2} for mixed positions and \code{3} for agreement. Integer qualifiers 
-#' are not recoded. When \code{zero_is_na} is set to \code{TRUE}, non-mentions 
-#' of concepts are set to \code{NA}, while setting the argument to \code{FALSE} 
-#' recodes them to \code{2} as mixed position. By setting a \code{threshold}, 
+#' \code{dna_scale2dord} internally uses the \code{combine} qualifier
+#' aggregation and then recodes the values into \code{1} for disagreement,
+#' \code{2} for mixed positions and \code{3} for agreement. Integer qualifiers
+#' are not recoded. When \code{zero_is_na} is set to \code{TRUE}, non-mentions
+#' of concepts are set to \code{NA}, while setting the argument to \code{FALSE}
+#' recodes them to \code{2} as mixed position. By setting a \code{threshold},
 #' you can further decide at which percentage of agreement and disagreement
-#' an actor position on a concept can be considered as agreement/disagreement 
+#' an actor position on a concept can be considered as agreement/disagreement
 #' or mixed position.
-#' 
-#' The argument \code{drop_min_actors} excludes actors with only a limited 
-#' number of concepts used. Limited participation of actors in a debate can 
-#' impact the scaling of the ideal points, as actors with only few mentions of 
-#' concepts convey limited information on their ideological position. The same 
-#' can also be done for concepts with the argument \code{drop_min_concepts}. 
+#'
+#' The argument \code{drop_min_actors} excludes actors with only a limited
+#' number of concepts used. Limited participation of actors in a debate can
+#' impact the scaling of the ideal points, as actors with only few mentions of
+#' concepts convey limited information on their ideological position. The same
+#' can also be done for concepts with the argument \code{drop_min_concepts}.
 #' Concepts that have been rarely mentioned do not strongly discriminate the
-#' ideological positions of actors and can, therefore, impact the accuracy of 
-#' the scaling. Reducing the number of actors of concepts to be scaled hence 
-#' improves the precision of the ideological positions for both variables and 
-#' the scaling itself. Another possibility to reduce the number of concepts is 
-#' to use \code{drop_constant_concepts}, which will reduce concepts not having 
-#' any variation in the agreement/disagreement structure of actors. This means 
-#' that all concepts will be dropped which have only agreeing, disagreeing or 
+#' ideological positions of actors and can, therefore, impact the accuracy of
+#' the scaling. Reducing the number of actors of concepts to be scaled hence
+#' improves the precision of the ideological positions for both variables and
+#' the scaling itself. Another possibility to reduce the number of concepts is
+#' to use \code{drop_constant_concepts}, which will reduce concepts not having
+#' any variation in the agreement/disagreement structure of actors. This means
+#' that all concepts will be dropped which have only agreeing, disagreeing or
 #' mixed statements.
 #'
-#' As \code{dna_scale2dord} implements a Bayesian Item Response Theory 
-#' approach, \code{priors} and \code{starting values} can be set on the concept 
-#' parameters. Changing the default \code{prior} values can often 
-#' help you to achieve better results. Constraints on the concept parameters 
-#' can also be specified to help identifying the model and to indicate in which 
-#' direction ideological positions of actors and concepts run. For concepts, 
-#' the scaling estimates an item discrimination parameter for each dimension 
-#' and an item difficulty for both dimensions. The item difficulty parameter 
-#' should, however, not be constrained (see \link[MCMCpack]{MCMCordfactanal}). 
+#' As \code{dna_scale2dord} implements a Bayesian Item Response Theory
+#' approach, \code{priors} and \code{starting values} can be set on the concept
+#' parameters. Changing the default \code{prior} values can often
+#' help you to achieve better results. Constraints on the concept parameters
+#' can also be specified to help identifying the model and to indicate in which
+#' direction ideological positions of actors and concepts run. For concepts,
+#' the scaling estimates an item discrimination parameter for each dimension
+#' and an item difficulty for both dimensions. The item difficulty parameter
+#' should, however, not be constrained (see \link[MCMCpack]{MCMCordfactanal}).
 #' Therefore, you should set constraints on the item discrimination parameters.
-#' 
-#' Fitting two-dimensional scaling models requires a good choice of concept 
-#' constraints to specify the ideological dimensions of your data. A suitable 
+#'
+#' Fitting two-dimensional scaling models requires a good choice of concept
+#' constraints to specify the ideological dimensions of your data. A suitable
 #' way of identifying your ideological dimensions is to constrain one item
 #' discrimination parameter to load only on one dimension. This means that we
-#' set one parameter to load either positive or negative on one dimension and 
-#' setting it to zero on the other. A second concept should also be constrained 
+#' set one parameter to load either positive or negative on one dimension and
+#' setting it to zero on the other. A second concept should also be constrained
 #' to load either positive or negative on one dimension (see example)
 #'
 #' To plot the resulting ideal points of actors and concepts, you can use the
-#' \link{dna_plotScale} function. To assess if the returned MCMC chain has 
-#' converged to its stationary distribution, please use 
-#' \link{dna_convergenceScale}. The evaluation of convergence is essential to 
-#' report conclusions based on accurate parameter estimates. Achieving chain 
-#' convergence often requires setting the iterations of the MCMC chain to 
+#' \link{dna_plotScale} function. To assess if the returned MCMC chain has
+#' converged to its stationary distribution, please use
+#' \link{dna_convergenceScale}. The evaluation of convergence is essential to
+#' report conclusions based on accurate parameter estimates. Achieving chain
+#' convergence often requires setting the iterations of the MCMC chain to
 #' several million.
 #'
 #' @param connection A \code{dna_connection} object created by the
@@ -2958,74 +2958,74 @@ dna_scale2dbin <- function(connection,
 #'   \link{dna_network}). Defaults to \code{"concept"}.
 #' @param qualifier The qualifier variable for the scaling construction (see
 #'   \link{dna_network}). Defaults to \code{"agreement"}.
-#' @param zero_as_na Logical. If \code{TRUE}, all non-mentions of an actor 
-#'   towards a concept will be recoded as \code{NA}. If \code{FALSE} as 
+#' @param zero_as_na Logical. If \code{TRUE}, all non-mentions of an actor
+#'   towards a concept will be recoded as \code{NA}. If \code{FALSE} as
 #'   \code{2}.
-#' @param threshold Numeric value that specifies when a mixed position can be 
-#'   considered as agreement or disagreement. If e.g., one actor has 60 percent 
-#'   of agreeing and 40 percent of disagreeing statements towards a concept, a 
-#'   \code{threshold} of 0.51 will recode the actor position on this concept as 
-#'   "agreement". The same accounts also for disagreeing statements. If one 
-#'   actor has 60 percent of disagreeing and 40 percent of agreeing statements, 
-#'   a \code{threshold} of 0.51 will recode the actor position on this concept 
-#'   as "disagreement". All values in between the \code{threshold} (e.g., 55 
-#'   percent agreement and 45 percent of disagreement and a threshold of 0.6) 
-#'   will be recoded as \code{2}. If is set to \code{NULL}, all "mixed"  
-#'   positions of actors will be recoded as \code{2}. Must be strictly 
+#' @param threshold Numeric value that specifies when a mixed position can be
+#'   considered as agreement or disagreement. If e.g., one actor has 60 percent
+#'   of agreeing and 40 percent of disagreeing statements towards a concept, a
+#'   \code{threshold} of 0.51 will recode the actor position on this concept as
+#'   "agreement". The same accounts also for disagreeing statements. If one
+#'   actor has 60 percent of disagreeing and 40 percent of agreeing statements,
+#'   a \code{threshold} of 0.51 will recode the actor position on this concept
+#'   as "disagreement". All values in between the \code{threshold} (e.g., 55
+#'   percent agreement and 45 percent of disagreement and a threshold of 0.6)
+#'   will be recoded as \code{2}. If is set to \code{NULL}, all "mixed"
+#'   positions of actors will be recoded as \code{2}. Must be strictly
 #'   positive.
-#' @param lambda_constraints A list of lists specifying constraints on the 
-#'   concept parameters. Note that value \code{1} in the brackets of the 
-#'   argument refers to the item difficulty parameters, which in 
-#'   general should not be constrained. All values above \code{1} relate to the 
-#'   item discrimination parameters on the single dimensions. These should be 
-#'   used for constraints on concepts. Three possible forms of constraints are 
-#'   possible: \code{conceptname = list(2, value)} will constrain a concept to 
-#'   be equal to the specified value (e.g., 0) on the first dimension of the 
-#'   item discrimination parameter. \code{conceptname = list(2,"+")} will 
+#' @param lambda_constraints A list of lists specifying constraints on the
+#'   concept parameters. Note that value \code{1} in the brackets of the
+#'   argument refers to the item difficulty parameters, which in
+#'   general should not be constrained. All values above \code{1} relate to the
+#'   item discrimination parameters on the single dimensions. These should be
+#'   used for constraints on concepts. Three possible forms of constraints are
+#'   possible: \code{conceptname = list(2, value)} will constrain a concept to
+#'   be equal to the specified value (e.g., 0) on the first dimension of the
+#'   item discrimination parameter. \code{conceptname = list(2,"+")} will
 #'   constrain the concept to be positively scaled on the first dimension and
-#'   \code{conceptname = list(2, "-")} will constrain the concept to be 
-#'   negatively scaled on the first dimension (see example). If you 
-#'   wish to constrain a concept on the second dimension, please indicate this 
+#'   \code{conceptname = list(2, "-")} will constrain the concept to be
+#'   negatively scaled on the first dimension (see example). If you
+#'   wish to constrain a concept on the second dimension, please indicate this
 #'   with a \code{3} in the first position in the bracket.
 #' @param mcmc_iterations The number of iterations for the sampler.
 #' @param mcmc_burnin The number of burn-in iterations for the sampler.
-#' @param mcmc_thin The thinning interval for the sampler. Iterations must be 
+#' @param mcmc_thin The thinning interval for the sampler. Iterations must be
 #'   divisible by the thinning interval.
-#' @param mcmc_tune The tuning parameter for the acceptance rates of the 
-#'   sampler. Acceptance rates should ideally range between \code{0.15} and 
-#'   \code{0.5}. Can be either a scalar or a k-vector. Must be strictly 
+#' @param mcmc_tune The tuning parameter for the acceptance rates of the
+#'   sampler. Acceptance rates should ideally range between \code{0.15} and
+#'   \code{0.5}. Can be either a scalar or a k-vector. Must be strictly
 #'   positive.
-#' @param lambda_start \code{Starting values} for the concept parameters. Can 
-#'   be either a scalar or a matrix. If set to \code{NA} (default), the 
-#'   \code{starting values} for the unconstrained parameters in the first 
+#' @param lambda_start \code{Starting values} for the concept parameters. Can
+#'   be either a scalar or a matrix. If set to \code{NA} (default), the
+#'   \code{starting values} for the unconstrained parameters in the first
 #'   column are based on the observed response pattern. The remaining
-#'   unconstrained elements are set to \code{starting values} of either 
+#'   unconstrained elements are set to \code{starting values} of either
 #'   \code{1.0} or \code{-1.0}, depending on the nature of the constraint.
-#' @param lambda_prior_mean The prior mean of the concept parameters. Can be 
+#' @param lambda_prior_mean The prior mean of the concept parameters. Can be
 #'   either a scalar or a matrix.
-#' @param lambda_prior_variance The prior inverse variances of the concept 
+#' @param lambda_prior_variance The prior inverse variances of the concept
 #'   parameters. Can be either a scalar or a matrix.
-#' @param store_variables A character vector indicating which variables should 
-#'   be stored from the scaling. Can either take the value of the character 
-#'   vector indicated in \code{variable1} or \code{variable2} or \code{"both"} 
-#'   to store both variables. Note that saving both variables can impact the 
+#' @param store_variables A character vector indicating which variables should
+#'   be stored from the scaling. Can either take the value of the character
+#'   vector indicated in \code{variable1} or \code{variable2} or \code{"both"}
+#'   to store both variables. Note that saving both variables can impact the
 #'   speed of the scaling. Defaults to \code{"both"}.
-#' @param drop_constant_concepts Logical. Should concepts that have no 
+#' @param drop_constant_concepts Logical. Should concepts that have no
 #'   variation be deleted before the scaling? Defaults to \code{FALSE}.
-#' @param drop_min_actors A numeric value specifying the minimum number of 
-#'   concepts actors should have mentioned to be included in the scaling. 
+#' @param drop_min_actors A numeric value specifying the minimum number of
+#'   concepts actors should have mentioned to be included in the scaling.
 #'   Defaults to \code{1}.
-#' @param drop_min_concepts A numeric value specifying the minimum number a 
+#' @param drop_min_concepts A numeric value specifying the minimum number a
 #'   concept should have been jointly mentioned by actors. Defaults to \code{2}.
-#' @param verbose A boolean or numeric value indicating whether the iterations 
-#'   of the scaling should be printed to the R console. If set to a numeric 
-#'   value, every \code{verboseth} iteration will be printed. If set to 
-#'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in 
+#' @param verbose A boolean or numeric value indicating whether the iterations
+#'   of the scaling should be printed to the R console. If set to a numeric
+#'   value, every \code{verboseth} iteration will be printed. If set to
+#'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in
 #'   divided by \code{100}.
 #' @param seed The random seed for the scaling.
-#' @param ... Additional arguments passed to \link{dna_network}. Actors can 
-#'   e.g., be removed with the \code{excludeValues} arguments. The scaling can 
-#'   also be applied to a specific time slice by using \code{start.date} and 
+#' @param ... Additional arguments passed to \link{dna_network}. Actors can
+#'   e.g., be removed with the \code{excludeValues} arguments. The scaling can
+#'   also be applied to a specific time slice by using \code{start.date} and
 #'   \code{stop.date}.
 #'
 #' @examples
@@ -3201,12 +3201,12 @@ dna_scale2dord <- function(connection,
 
 #' Plot a \code{dna_scale} object
 #'
-#' Plot convergence diagnostics of the MCMC chain created by the four 
+#' Plot convergence diagnostics of the MCMC chain created by the four
 #' \code{dna_scale} functions.
-#' 
-#' Plots \code{trace plots} of the \code{dna_scale} MCMC output. For further 
+#'
+#' Plots \code{trace plots} of the \code{dna_scale} MCMC output. For further
 #' convergence diagnostics, see \link{dna_convergenceScale}.
-#' 
+#'
 #' @param x A dna_scale object.
 #' @param ... Further options (currently not used).
 #'
@@ -3227,7 +3227,7 @@ dna_scale2dord <- function(connection,
 #'                             seed = 12345)
 #' plot(dna_scale)
 #' }
-#' 
+#'
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
 plot.dna_scale <- function(x, ...) {
@@ -3239,16 +3239,16 @@ plot.dna_scale <- function(x, ...) {
 
 
 #' Print the summary of a \code{dna_scale} object
-#' 
-#' Show details of the MCMC chain created by the four \code{dna_scale} 
+#'
+#' Show details of the MCMC chain created by the four \code{dna_scale}
 #' functions.
-#' 
-#' Prints the method that was used for the scaling, the number of values in the 
+#'
+#' Prints the method that was used for the scaling, the number of values in the
 #' object and their means.
-#' 
+#'
 #' @param x A \code{dna_scale} object.
 #' @param ... Further options (currently not used).
-#' 
+#'
 #' @examples
 #' \dontrun{
 #' dna_init()
@@ -3262,7 +3262,7 @@ plot.dna_scale <- function(x, ...) {
 #'                             mcmc_burnin = 2000,
 #'                             mcmc_thin = 10,
 #'                             store_variables = "both")
-#' dna_scale                           
+#' dna_scale
 #' }
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
@@ -3711,9 +3711,9 @@ dna_network <- function(connection,
 #'
 #' dna_plotTimeWindow(mp, include.y = c(-1, 1)) + theme_bw()
 #' }
-#' 
+#'
 #' @author Philip Leifeld, Johannes B. Gruber
-#' 
+#'
 #' @export
 #' @import ggplot2
 #' @import parallel
@@ -4880,7 +4880,7 @@ dna_plotDendro <- function(clust,
   # labels
   if (leaf_labels == "ticks") {
     dg <- dg +
-      scale_x_continuous(breaks = seq(0, length(clust$labels)-1, by = 1),
+      scale_x_continuous(breaks = seq(0, length(clust$labels) - 1, by = 1),
                          labels = clust$labels_short[clust$order])
   } else if (leaf_labels == "nodes") {
     if (circular == FALSE) {
@@ -5874,71 +5874,71 @@ dna_plotNetwork <- function(x,
 
 #' Plot ideological ideal points from a dna_scale object
 #'
-#' Plots ideological ideal points with the results of the MCMC scaling 
+#' Plots ideological ideal points with the results of the MCMC scaling
 #' performed in the \code{dna_scale} functions.
 #'
-#' This function is a convenience wrapper for the \code{ggplot2} package to 
-#' plot ideological ideal points from \code{dna_scale} objects. Two different 
-#' variables can be plotted: 
-#' 
-#' Firstly, you can plot the ideological ideal points of subjects (e.g., 
-#' \code{"organizations"}) which you have provided in \code{variable1} of the 
-#' \code{dna_scale} functions. The ideal point, which is the mean value of the 
-#' MCMC sample parameters, serves as the ideological position of an actor in an 
+#' This function is a convenience wrapper for the \code{ggplot2} package to
+#' plot ideological ideal points from \code{dna_scale} objects. Two different
+#' variables can be plotted:
+#'
+#' Firstly, you can plot the ideological ideal points of subjects (e.g.,
+#' \code{"organizations"}) which you have provided in \code{variable1} of the
+#' \code{dna_scale} functions. The ideal point, which is the mean value of the
+#' MCMC sample parameters, serves as the ideological position of an actor in an
 #' e.g., ideological or policy dimension.
-#' 
-#' Secondly, you can plot the item discrimination parameter of the variable 
-#' provided in \code{variable2} of the \code{dna_scale} functions (e.g., 
-#' \code{"concepts"}). The item discrimination parameter indicates how 
-#' good for example a specific \code{"concept"} separates actors in the 
+#'
+#' Secondly, you can plot the item discrimination parameter of the variable
+#' provided in \code{variable2} of the \code{dna_scale} functions (e.g.,
+#' \code{"concepts"}). The item discrimination parameter indicates how
+#' good for example a specific \code{"concept"} separates actors in the
 #' ideological space.
-#' 
-#' Plotting all actors or concepts can create chaotic plots, you can, therefore, 
-#' limit the plot by including only the most active actors or most prominent 
-#' concepts with \code{exclude_min}. Specific entries can be excluded with the 
-#' \code{exclude} argument. Furthermore, the plot can be split into several 
+#'
+#' Plotting all actors or concepts can create chaotic plots, you can, therefore,
+#' limit the plot by including only the most active actors or most prominent
+#' concepts with \code{exclude_min}. Specific entries can be excluded with the
+#' \code{exclude} argument. Furthermore, the plot can be split into several
 #' facets according to the attributes of the variables.
 #'
 #' @param dna_scale A \code{dna_scale} object.
 #' @param variable Variable to be plotted.
-#' @param dimensions Number of dimensions to be plotted. Valid values are 
+#' @param dimensions Number of dimensions to be plotted. Valid values are
 #'   \code{1} and \code{2} for a one- or two-dimensional plot, and \code{2.1}
-#'   or \code{2.2} for the first or second dimension of a two-dimensional 
+#'   or \code{2.2} for the first or second dimension of a two-dimensional
 #'   scaling.
-#' @param hpd A numeric scalar specifying the size of the Highest Posterior 
-#'   Density intervals (HPD). Defaults to \code{0.95}. \code{NULL} turns off 
+#' @param hpd A numeric scalar specifying the size of the Highest Posterior
+#'   Density intervals (HPD). Defaults to \code{0.95}. \code{NULL} turns off
 #'   HPDs.
 #' @param label Logical. Should labels be plotted? Defaults to \code{TRUE}.
 #' @param label_size,point_size Label and point size in pts.
-#' @param label_colors,point_colors,hpd_colors Colors for the labels, points 
-#'   and Highest Posterior Densities of the plot. \code{TRUE} colors the 
-#'   variables according to the attributes in the object and \code{FALSE} sets 
-#'   colors to black. You can also provide customized colors. Possible 
-#'   options are either providing a single character vector (if you wish to 
-#'   color a plot element in only one color), or a character or numeric vector 
-#'   or data frame of at least the same length as values to be plotted. If you 
-#'   use a data frame, please provide one column named \code{"names"} that 
-#'   indicates the names of the values and one column named \code{"colors"} 
+#' @param label_colors,point_colors,hpd_colors Colors for the labels, points
+#'   and Highest Posterior Densities of the plot. \code{TRUE} colors the
+#'   variables according to the attributes in the object and \code{FALSE} sets
+#'   colors to black. You can also provide customized colors. Possible
+#'   options are either providing a single character vector (if you wish to
+#'   color a plot element in only one color), or a character or numeric vector
+#'   or data frame of at least the same length as values to be plotted. If you
+#'   use a data frame, please provide one column named \code{"names"} that
+#'   indicates the names of the values and one column named \code{"colors"}
 #'   that specifies the value colors. Defaults to \code{TRUE}.
 #' @param hpd_lwd Highest Posterior Density interval linewidth in pts.
-#' @param intercept_lwd Linewidth of the intercept (a vertical bar indicating 
+#' @param intercept_lwd Linewidth of the intercept (a vertical bar indicating
 #'   zero) in pts.
 #' @param intercept_color Color for the intercept.
-#' @param intercept_lty A character vector providing the linetype of the 
-#'   intercept. Valid values are \code{"solid"}, \code{"dashed"}, 
-#'   \code{"dotted"}, \code{"twodash"}, \code{"dotdash"}, \code{"longdash"} or 
-#'   \code{"blank"}. Defaults to \code{"dashed"}. \code{"blank"} turns off 
+#' @param intercept_lty A character vector providing the linetype of the
+#'   intercept. Valid values are \code{"solid"}, \code{"dashed"},
+#'   \code{"dotted"}, \code{"twodash"}, \code{"dotdash"}, \code{"longdash"} or
+#'   \code{"blank"}. Defaults to \code{"dashed"}. \code{"blank"} turns off
 #'   intercept.
-#' @param intercept_alpha A numeric value indicating the alpha level of the 
+#' @param intercept_alpha A numeric value indicating the alpha level of the
 #'   intercept.
-#' @param facet A character vector specifying which attribute of the variable 
-#'   should be used for the facet plot. Valid values are \code{"type"}, 
+#' @param facet A character vector specifying which attribute of the variable
+#'   should be used for the facet plot. Valid values are \code{"type"},
 #'   \code{"alias"} or \code{"notes"}.
-#' @param truncate Sets the number of characters to which labels should be 
+#' @param truncate Sets the number of characters to which labels should be
 #'   truncated.
-#' @param x_axis_label,y_axis_label A character vector specifying the x and y 
+#' @param x_axis_label,y_axis_label A character vector specifying the x and y
 #'   axis label name(s).
-#' @param exclude_min A numeric value reducing the plot to actors/concepts 
+#' @param exclude_min A numeric value reducing the plot to actors/concepts
 #'   with a minimum frequency of statements.
 #' @param exclude A character vector to exclude actors/concepts from the plot.
 #'
@@ -6549,9 +6549,9 @@ dna_plotTimeWindow <- function(x,
 #'             colours = FALSE,
 #'             barWidth = 0.5)
 #' }
-#' 
+#'
 #' @author Johannes B. Gruber
-#' 
+#'
 #' @export
 #' @import ggplot2
 dna_barplot <- function(connection,
@@ -6731,67 +6731,67 @@ dna_barplot <- function(connection,
 
 #' Convergence diagnostics for \code{dna_scale} objects
 #'
-#' Convergence diagnostics for the MCMC chain created by the \code{dna_scale} 
+#' Convergence diagnostics for the MCMC chain created by the \code{dna_scale}
 #' functions.
 #'
-#' This function offers several convergence diagnostics for the MCMC chain 
-#' created by the \code{dna_scale} functions. Note that for the values 
-#' indicated in \code{variable2}, only the item discrimination parameters are 
+#' This function offers several convergence diagnostics for the MCMC chain
+#' created by the \code{dna_scale} functions. Note that for the values
+#' indicated in \code{variable2}, only the item discrimination parameters are
 #' evaluated. There are three possible ways of assessing the mixing of a chain:
 #'
-#' \code{"trace"} is a graphic inspection of the sampled values by iteration. 
-#' Once the chain has reached its stationary distribution, the parameter values 
-#' should look like a hairy caterpillar, meaning that the chain should not stay 
-#' in the same state for too long or have too many consecutive steps in one 
+#' \code{"trace"} is a graphic inspection of the sampled values by iteration.
+#' Once the chain has reached its stationary distribution, the parameter values
+#' should look like a hairy caterpillar, meaning that the chain should not stay
+#' in the same state for too long or have too many consecutive steps in one
 #' direction.
 #'
-#' \code{"density"} visually analyzes the cumulative density of the sampled 
-#' values for each parameter. Unimodality should indicate convergence of the 
-#' chain, while multimodality might indicate an identification problem leading 
+#' \code{"density"} visually analyzes the cumulative density of the sampled
+#' values for each parameter. Unimodality should indicate convergence of the
+#' chain, while multimodality might indicate an identification problem leading
 #' to non-convergence.
 #'
-#' \code{"geweke"} conducts a difference of means test for the sampled values 
-#' for two sections of the chain, by comparing the first 10 percent of 
-#' iterations with the final 50 percent of iterations. If the samples are drawn 
-#' from the stationary distribution of the chain, a difference of means test 
-#' should be statistically significant at some conventional level (in our case 
-#' 0.05). The returned test statistic is a standard Z-score. All values should 
-#' be below the 1.96 value which indicates significance at the p =< 0.05 
+#' \code{"geweke"} conducts a difference of means test for the sampled values
+#' for two sections of the chain, by comparing the first 10 percent of
+#' iterations with the final 50 percent of iterations. If the samples are drawn
+#' from the stationary distribution of the chain, a difference of means test
+#' should be statistically significant at some conventional level (in our case
+#' 0.05). The returned test statistic is a standard Z-score. All values should
+#' be below the 1.96 value which indicates significance at the p =< 0.05
 #' level.
-#' 
-#' In case your chain has not converged, a first solution could be to increase 
-#' the \code{iterations} and the \code{burn-in} phase of your scaling. Other 
+#'
+#' In case your chain has not converged, a first solution could be to increase
+#' the \code{iterations} and the \code{burn-in} phase of your scaling. Other
 #' options can be to reduce the scaling to only prominent actors and/or
-#' concepts with the \code{drop_min_actors} and/or \code{drop_min_concepts} 
-#' arguments in the respective \code{dna_scale} functions. Setting 
-#' \code{constraints} or changing \code{priors} provide another possibility to 
+#' concepts with the \code{drop_min_actors} and/or \code{drop_min_concepts}
+#' arguments in the respective \code{dna_scale} functions. Setting
+#' \code{constraints} or changing \code{priors} provide another possibility to
 #' improve your results and achieve chain convergence.
-#' 
+#'
 #' @param dna_scale A \code{dna_scale} object.
-#' @param variable Variable for assessing convergence diagnostics. Can either 
-#'   be the value provided in \code{variable1} or \code{variable2} of the 
-#'   \code{dna_scale} functions, or \code{"both"} if both stored variables 
+#' @param variable Variable for assessing convergence diagnostics. Can either
+#'   be the value provided in \code{variable1} or \code{variable2} of the
+#'   \code{dna_scale} functions, or \code{"both"} if both stored variables
 #'   should be analyzed. Defaults to \code{"both"}.
-#' @param method Method for the convergence diagnostics. Supported are 
-#'   \code{"geweke"}, \code{"density"} and \code{"trace"}. Defaults to 
+#' @param method Method for the convergence diagnostics. Supported are
+#'   \code{"geweke"}, \code{"density"} and \code{"trace"}. Defaults to
 #'   \code{"geweke"}.
-#' @param colors Colors for either the \code{density} or \code{trace} plots. 
-#'   \code{TRUE} colors the variables according to the attributes in the 
-#'   object and \code{FALSE} sets colors to black. You can also provide 
-#'   customized colors. Possible options are either providing a single 
-#'   character vector (if you wish to color values in only one color), or a 
-#'   character or numeric vector or data frame of at least the same length as 
-#'   values in the object. If you use a data frame, please provide one column 
-#'   named \code{"names"} that indicates the names of the values and one column 
-#'   named \code{"colors"} that specifies the value colors. Defaults to 
+#' @param colors Colors for either the \code{density} or \code{trace} plots.
+#'   \code{TRUE} colors the variables according to the attributes in the
+#'   object and \code{FALSE} sets colors to black. You can also provide
+#'   customized colors. Possible options are either providing a single
+#'   character vector (if you wish to color values in only one color), or a
+#'   character or numeric vector or data frame of at least the same length as
+#'   values in the object. If you use a data frame, please provide one column
+#'   named \code{"names"} that indicates the names of the values and one column
+#'   named \code{"colors"} that specifies the value colors. Defaults to
 #'   \code{TRUE}.
 #' @param trace_size Size of the trace lines for the \code{traceplots}.
 #' @param nrow Number of rows for the facet plot.
 #' @param ncol Number of columns for the facet plot.
-#' @param facet_page If the number of values to be plotted exceeds the 
-#'   specified number of columns and rows of the facet plot, the plot is split 
+#' @param facet_page If the number of values to be plotted exceeds the
+#'   specified number of columns and rows of the facet plot, the plot is split
 #'   into several pages. \code{facet_page} indicates the page you wish to plot.
-#' @param value Optional character vector if only specific values should be 
+#' @param value Optional character vector if only specific values should be
 #'   analyzed. If specified, \code{variable} will be ignored.
 #'
 #' @examples
@@ -6807,7 +6807,7 @@ dna_barplot <- function(connection,
 #'                             mcmc_burnin = 2000,
 #'                             mcmc_thin = 10,
 #'                             store_variables = "both")
-#'                             
+#'
 #' dna_convergenceScale(dna_scale,
 #'                      variable = "both",
 #'                      method = "trace",
