@@ -112,7 +112,7 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' }
 #' @export
 print.dna_connection <- function(x, ...) {
-  .jcall(x$dna_connection, "V", "rShow")
+  cat(.jcall(x$dna_connection, "S", "rShow"))
 }
 
 #' Download the binary DNA jar file

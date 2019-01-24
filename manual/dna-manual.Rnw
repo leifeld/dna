@@ -1794,7 +1794,6 @@ The the choice of the value zero in cells where row and column mention the same 
 #' prep environment
 library("rDNA")
 library("kableExtra")
-dna_downloadJar()
 dna_init()
 truncate <- function(x, trunc = 12){
   x <- ifelse(nchar(x) > trunc,

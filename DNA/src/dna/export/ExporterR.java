@@ -66,7 +66,7 @@ public class ExporterR {
 	/**
 	 * A function for printing details about the dataset. Used by rDNA.
 	 */
-	public void rShow() {
+	public String rShow() {
 		String statementString = " statements in ";
 		if (this.data.getStatements().size() == 1) {
 			statementString = " statement in ";
@@ -75,16 +75,14 @@ public class ExporterR {
 		if (this.data.getDocuments().size() == 1) {
 			documentString = " document";
 		}
-		System.out.println("DNA database: " + this.dbfile);
-		System.out.println(data.getStatements().size() + statementString + data.getDocuments().size() + documentString);
-		System.out.print("Statement types: ");
+		String s = "DNA database: " + this.dbfile + "\n" + data.getStatements().size() + statementString + data.getDocuments().size() + documentString + "\nStatement types: ";
 		for (int i = 0; i < data.getStatementTypes().size(); i++) {
-			System.out.print(data.getStatementTypes().get(i).getLabel());
+			s = s + data.getStatementTypes().get(i).getLabel();
 			if (i < data.getStatementTypes().size() - 1) {
-				System.out.print(", ");
+				s = s + ", ";
 			}
 		}
-		System.out.print("\n");
+		return s;
 	}
 	
 	
