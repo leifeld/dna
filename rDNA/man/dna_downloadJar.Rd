@@ -4,7 +4,8 @@
 \alias{dna_downloadJar}
 \title{Download the binary DNA jar file}
 \usage{
-dna_downloadJar(path = getwd(), force = FALSE, returnString = FALSE)
+dna_downloadJar(path = paste0(dirname(system.file(".", package =
+  "rDNA")), "/", "extdata"), force = FALSE, returnString = FALSE)
 }
 \arguments{
 \item{path}{Directory path in which the jar file will be stored.}
