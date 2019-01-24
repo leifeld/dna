@@ -129,7 +129,9 @@ print.dna_connection <- function(x, ...) {
 #' @export
 #'
 #' @importFrom utils download.file
-dna_downloadJar <- function(path = getwd(), force = FALSE, returnString = FALSE) {
+dna_downloadJar <- function(path = paste0(dirname(system.file(".", package = "rDNA")), "/", "extdata"),
+                            force = FALSE,
+                            returnString = FALSE) {
   u <- url("https://api.github.com/repos/leifeld/dna/releases")
   open(u)
   lines <- readLines(u, warn = FALSE)
