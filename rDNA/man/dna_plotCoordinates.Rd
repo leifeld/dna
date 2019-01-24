@@ -81,7 +81,6 @@ highlight clusters.
 }
 \examples{
 \dontrun{
-dna_downloadJar()
 dna_init()
 conn <- dna_connection(dna_sample())
 clust <- dna_cluster(conn)

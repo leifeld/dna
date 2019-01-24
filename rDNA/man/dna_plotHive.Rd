@@ -109,7 +109,6 @@ This function is a convenience wrapper to plot networks with
 }
 \examples{
 \dontrun{
-dna_downloadJar()
 dna_init()
 conn <- dna_connection(dna_sample())
 

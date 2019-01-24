@@ -1,20 +1,21 @@
 # Startup ----------------------------------------------------------------------
 
-# display version number and date when the package is loaded
+dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
+
+# display version number and date when the package is attached
 #' @importFrom utils packageDescription
 .onAttach <- function(libname, pkgname) {
   desc <- packageDescription(pkgname, libname)
   packageStartupMessage(
     'Version:      ', desc$Version, '\n',
     'Date:         ', desc$Date, '\n',
-    'Authors       Philip Leifeld  (University of Glasgow)\n',
+    'Author:       Philip Leifeld  (University of Glasgow)\n',
     'Contributors: Johannes B. Gruber (University of Glasgow),\n',
     '              Tim Henrichsen  (Scuola superiore Sant\'Anna Pisa)\n',
     'Project home: github.com/leifeld/dna'
   )
 }
-# some settings
-dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
+
 # more settings which quiet concerns of R CMD check about ggplot and dplyr pipelines
 if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
                                                       "cols3",
@@ -53,7 +54,6 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' dna_connection(dna_sample())
 #' }
@@ -105,7 +105,6 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' conn
@@ -123,18 +122,14 @@ print.dna_connection <- function(x, ...) {
 #' This function uses GitHub's API to download the latest DNA jar file to the
 #' working directory.
 #'
+#' @param path Directory path in which the jar file will be stored.
 #' @param force Logical. Should the file be overwritten if it already exists?
 #' @param returnString Logical. Return the file name of the downloaded jar file?
-#'
-#' @examples
-#' \dontrun{
-#' dna_downloadJar()
-#' }
 #'
 #' @export
 #'
 #' @importFrom utils download.file
-dna_downloadJar <- function(force = FALSE, returnString = FALSE) {
+dna_downloadJar <- function(path = getwd(), force = FALSE, returnString = FALSE) {
   u <- url("https://api.github.com/repos/leifeld/dna/releases")
   open(u)
   lines <- readLines(u, warn = FALSE)
@@ -143,6 +138,7 @@ dna_downloadJar <- function(force = FALSE, returnString = FALSE) {
   close(u)
   filename <- strsplit(m[1], "/")[[1]]
   filename <- filename[length(filename)]
+  filename <- paste0(path, ifelse(endsWith(path, "/"), "", "/"), filename)
   if (force == TRUE || (force == FALSE && !file.exists(filename))) {
     download.file(url = m[1], destfile = filename, mode = "wb", cacheOK = FALSE)
   } else {
@@ -237,37 +233,59 @@ dna_gui <- function(infile = NULL,
 #'
 #' @param jarfile The file name of the DNA jar file, e.g.,
 #'   \code{"dna-2.0-beta23.jar"}. Will be auto-detected by choosing the most
-#'   recent version stored in the working directory if \code{jarfile = NULL}.
+#'   recent version stored in the library path or working directory if
+#'   \code{jarfile = NULL}.
 #' @param memory The amount of memory in megabytes to allocate to DNA, for
 #'   example \code{1024} or \code{4096}.
 #' @param returnString Return a character object representing the jar file name?
 #'
-#' @examples
-#' \dontrun{
-#' dna_downloadJar()
-#' dna_init()
-#' }
 #' @export
 #' @import rJava
 dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
-  if (is.null(jarfile) || is.na(jarfile)) { # auto-detect file name in working directory
-    files <- dir()
+  if (is.null(jarfile) || is.na(jarfile)) {
+
+    # auto-detect file name in library directory
+    path <- paste0(dirname(system.file(".", package = "rDNA")), "/", "extdata")
+    files <- dir(path)
     files <- files[grepl("^dna-.+\\.jar$", files)]
     files <- sort(files)
-    jarfile <- files[length(files)]
+    if (length(files) > 0) {
+      jarfile <- paste0(path, "/", files[length(files)])
+    }
+
+    # auto-detect file name in working directory
+    jarfile_wd <- NULL
+    path_wd <- getwd()
+    files_wd <- dir(path_wd)
+    files_wd <- files_wd[grepl("^dna-.+\\.jar$", files_wd)]
+    files_wd <- sort(files_wd)
+    if (length(files_wd) > 0) {
+      jarfile_wd <- paste0(path_wd, "/", files_wd[length(files_wd)])
+    }
+
+    # use file in working directory if version is more recent or none found in library path
+    if ((!is.null(jarfile) && !is.null(jarfile_wd) && basename(jarfile_wd) > basename(jarfile)) || is.null(jarfile)) {
+      jarfile <- jarfile_wd
+    }
+
+    # if none was found whatsoever, attempt to download to library path
+    if (is.null(jarfile)) {
+      message("No jar file found. Trying to download most recent version to library path.")
+      jarfile <- dna_downloadJar(path = path, returnString = TRUE)
+      message("Done.")
+    }
   }
   if (is.null(jarfile) || length(jarfile) == 0) {
-    stop("No DNA jar file found in the working directory.")
+    message("No DNA jar file found in the library path or working directory.")
+    if (isTRUE(returnString)) {
+      return(NULL)
+    }
   }
   if (!is.character(jarfile) || length(jarfile) > 1 || !grepl("^dna-.+\\.jar$", basename(jarfile))) {
     stop("'jarfile' must be a character object of length 1 that points to the DNA jar file.")
   }
   if (!file.exists(jarfile)) {
-    stop(if (grepl("/", jarfile, fixed = TRUE)) {
-      paste0("jarfile '", jarfile, "' could not be located.")
-    } else {
-      paste0("jarfile '", jarfile, "' could not be located in working directory '", getwd(), "'.")
-    })
+    stop(paste0("jarfile '", jarfile, "' could not be located."))
   }
   assign("dnaJarString", jarfile, pos = dnaEnvironment)
   message(paste("Jar file:", dnaEnvironment[["dnaJarString"]]))
@@ -292,7 +310,6 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' dna_connection(dna_sample())
 #' }
@@ -1575,7 +1592,6 @@ dna_setStatements <- function(connection,
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
@@ -1882,7 +1898,6 @@ dna_cluster <- function(connection,
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' clust.l <- dna_cluster(conn)
@@ -3459,7 +3474,6 @@ print.dna_scale <- function(x, ...) {
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn,
@@ -3682,7 +3696,6 @@ dna_network <- function(connection,
 #' @examples
 #' \dontrun{
 #' library("ggplot2")
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
@@ -4243,7 +4256,6 @@ dna_timeWindow <- function(connection,
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, networkType = "onemode")
@@ -4291,7 +4303,6 @@ dna_toIgraph <- function(x,
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
@@ -4363,7 +4374,6 @@ dna_toREM <- function(x,
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, networkType = "onemode")
@@ -4451,7 +4461,6 @@ dna_toNetwork <- function(x,
 #'   the ggplot2 logic (see example).
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
@@ -4668,7 +4677,6 @@ dna_plotCoordinates <- function(clust,
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
@@ -5032,7 +5040,6 @@ dna_plotDendro <- function(clust,
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
@@ -5312,7 +5319,6 @@ dna_plotHeatmap <- function(clust,
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
@@ -5622,7 +5628,6 @@ dna_plotHive <- function(x,
 #'   use \code{+} and ggplot2 functions.
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
@@ -6419,7 +6424,6 @@ dna_plotScale <- function(dna_scale,
 #' @examples
 #' \dontrun{
 #' library("ggplot2")
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
@@ -6540,7 +6544,6 @@ dna_plotTimeWindow <- function(x,
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
@@ -7157,7 +7160,6 @@ dna_convergenceScale <- function(dna_scale,
 #'
 #' @examples
 #' \dontrun{
-#' dna_downloadJar()
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'

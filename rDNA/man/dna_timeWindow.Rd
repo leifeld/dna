@@ -78,7 +78,6 @@ statistics by facet.
 \examples{
 \dontrun{
 library("ggplot2")
-dna_downloadJar()
 dna_init()
 conn <- dna_connection(dna_sample())
 

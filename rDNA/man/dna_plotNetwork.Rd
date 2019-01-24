@@ -133,7 +133,6 @@ available as \code{custom_colours} when \code{colours = "brewer"}.
 }
 \examples{
 \dontrun{
-dna_downloadJar()
 dna_init()
 conn <- dna_connection(dna_sample())
 

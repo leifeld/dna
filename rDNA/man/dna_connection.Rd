@@ -32,7 +32,6 @@ and statements into memory for further processing.
 }
 \examples{
 \dontrun{
-dna_downloadJar()
 dna_init()
 dna_connection(dna_sample())
 }

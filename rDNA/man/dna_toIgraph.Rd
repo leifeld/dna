@@ -18,7 +18,6 @@ This function can convert objects of class 'dna_network_onemode' or
 }
 \examples{
 \dontrun{
-dna_downloadJar()
 dna_init()
 conn <- dna_connection(dna_sample())
 nw <- dna_network(conn, networkType = "onemode")

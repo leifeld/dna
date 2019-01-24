@@ -21,7 +21,6 @@ A small sample database to test the functions of rDNA.
 }
 \examples{
 \dontrun{
-dna_downloadJar()
 dna_init()
 dna_connection(dna_sample())
 }

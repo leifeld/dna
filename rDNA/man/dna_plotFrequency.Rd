@@ -30,7 +30,6 @@ group the bars in the resulting barplot..
 }
 \examples{
 \dontrun{
-dna_downloadJar()
 dna_init()
 conn <- dna_connection(dna_sample())
 

@@ -4,9 +4,11 @@
 \alias{dna_downloadJar}
 \title{Download the binary DNA jar file}
 \usage{
-dna_downloadJar(force = FALSE, returnString = FALSE)
+dna_downloadJar(path = getwd(), force = FALSE, returnString = FALSE)
 }
 \arguments{
+\item{path}{Directory path in which the jar file will be stored.}
+
 \item{force}{Logical. Should the file be overwritten if it already exists?}
 
 \item{returnString}{Logical. Return the file name of the downloaded jar file?}
@@ -18,10 +20,4 @@ Downloads the newest released DNA jar file necessary for running
 \details{
 This function uses GitHub's API to download the latest DNA jar file to the
 working directory.
-}
-\examples{
-\dontrun{
-dna_downloadJar()
-}
-
 }

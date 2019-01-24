@@ -29,7 +29,6 @@ This function can produce eventSequence objects (see
 }
 \examples{
 \dontrun{
-dna_downloadJar()
 dna_init()
 conn <- dna_connection(dna_sample())
 

@@ -9,7 +9,8 @@ dna_init(jarfile = NULL, memory = 1024, returnString = FALSE)
 \arguments{
 \item{jarfile}{The file name of the DNA jar file, e.g.,
 \code{"dna-2.0-beta23.jar"}. Will be auto-detected by choosing the most
-recent version stored in the working directory if \code{jarfile = NULL}.}
+recent version stored in the library path or working directory if
+\code{jarfile = NULL}.}
 
 \item{memory}{The amount of memory in megabytes to allocate to DNA, for
 example \code{1024} or \code{4096}.}
@@ -26,10 +27,4 @@ file, is located. When the \code{dna_init} function is used, the connection
 to the DNA software is established, and this connection is valid for the
 rest of the \R session. To initialize a connection with a different DNA
 version or path, the \R session would need to be restarted first.
-}
-\examples{
-\dontrun{
-dna_downloadJar()
-dna_init()
-}
 }
