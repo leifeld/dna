@@ -261,7 +261,7 @@ public class ExporterR {
 		} catch (ParseException e) {
 			System.err.println("Start date or time is invalid!");
 		}
-		if (!startString.equals(df.format(startDate))) {
+		if (!startString.equals(df.format(start))) {
 			startDate = null;
 			System.err.println("Start date or time is invalid!");
 		}
@@ -272,7 +272,7 @@ public class ExporterR {
 		} catch (ParseException e) {
 			System.err.println("Stop date or time is invalid!");
 		}
-		if (!stopString.equals(df.format(stopDate))) {
+		if (!stopString.equals(df.format(stop))) {
 			stopDate = null;
 			System.err.println("Stop date or time is invalid!");
 		}
@@ -350,7 +350,7 @@ public class ExporterR {
 		if (verbose == true) {
 			System.out.print("Done.\n");
 		}
-		
+
 		// step 2: filter
 		boolean filterEmptyFields = true;
 		if (networkType.equals("Event list")) {
