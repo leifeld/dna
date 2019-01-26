@@ -12,7 +12,7 @@ dna_getStatements(connection, statementType)
 
 \item{statementType}{The statement type for which statements should be
 retrieved. The statement type can be supplied as an integer or character
-string, for example \code{1} or \code{"DNAStatement"}.}
+string, for example \code{1} or \code{"DNA Statement"}.}
 }
 \description{
 Retrieve a dataframe with all statements from a DNA connection.
@@ -29,7 +29,7 @@ manipulated and returned to the DNA database using the
 \dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
-statements <- dna_getStatements(conn, statementType = "DNAStatement")
+statements <- dna_getStatements(conn, statementType = "DNA Statement")
 }
 
 }

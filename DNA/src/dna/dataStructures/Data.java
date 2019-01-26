@@ -352,14 +352,6 @@ public class Data {
 	public void addStatementType(StatementType statementType) {
 		statementTypes.add(statementType);
 	}
-
-	public void removeStatementType(String label) {
-		for (int i = statements.size() - 1; i > -1; i--) {
-			if (statementTypes.get(i).getLabel().equals(label)) {
-				statementTypes.remove(i);
-			}
-		}
-	}
 	
 	public Statement getStatement(int id) {
 		for (int i = 0; i < statements.size(); i++) {

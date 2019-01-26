@@ -11,6 +11,13 @@ public class StatementType implements Comparable<StatementType> {
 	Color color;
 	LinkedHashMap<String, String> variables;
 
+	public StatementType(int id, String label, String color, LinkedHashMap<String, String> variables) {
+		this.id = id;
+		this.label = label;
+		this.color = new Color(Integer.parseInt(color.substring(1), 16));
+		this.variables = variables;
+	}
+	
 	public StatementType(int id, String label, Color color, LinkedHashMap<String, String> variables) {
 		this.id = id;
 		this.label = label;

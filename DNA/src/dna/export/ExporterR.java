@@ -2140,7 +2140,7 @@ public class ExporterR {
 
 	
 	/* =================================================================================================================
-	 * Functions for managing statement types and variables
+	 * Functions for managing statement types
 	 * =================================================================================================================
 	 */
 
@@ -2167,6 +2167,105 @@ public class ExporterR {
 		object[2] = colors;
 		return object;
 	}
+
+	/**
+	 * Add a new, empty statement type (without variables) to the database.
+	 * 
+	 * @param statementTypeLabel  Name of the statement type.
+	 * @param color               Color of the statement type as an RGB hex string (e.g., "#FF0000").
+	 * @throws Exception
+	 */
+	public void addStatementType(String statementTypeLabel, String color) throws Exception {
+		if (this.data.getStatementType(statementTypeLabel) != null) {
+			throw new Exception("A statement type called '" + statementTypeLabel + "' already exists and will not be added.");
+		}
+		int id = this.data.generateNewId("statementTypes");
+		LinkedHashMap<String, String> variables = new LinkedHashMap<String, String>();
+		StatementType st = new StatementType(id, statementTypeLabel, color, variables);
+		this.data.addStatementType(st);
+		this.sql.upsertStatementType(st);
+	}
+
+	/**
+	 * Remove a statement type including all variables, attributes, and statements, based on the statement type label.
+	 * 
+	 * @param statementTypeLabel  Label of the statement type to be removed.
+	 * @param simulate            Simulate the changes without writing them to the database?
+	 * @param verbose             Print details to the console?
+	 * @throws Exception
+	 */
+	public void removeStatementType(String statementTypeLabel, boolean simulate, boolean verbose) throws Exception {
+		int statementTypeId = this.data.getStatementType(statementTypeLabel).getId();
+		removeStatementType(statementTypeId, simulate, verbose);
+	}
+	
+	/**
+	 * Remove a statement type including all variables, attributes, and statements, based on the statement type ID.
+	 * 
+	 * @param statementTypeId  ID of the statement type to be removed.
+	 * @param simulate         Simulate the changes without writing them to the database?
+	 * @param verbose          Print details to the console?
+	 * @throws Exception
+	 */
+	public void removeStatementType(int statementTypeId, boolean simulate, boolean verbose) throws Exception {
+		if (this.data.getStatementTypeById(statementTypeId) == null) {
+			throw new Exception("A statement type with ID " + statementTypeId + " was not found in the database.");
+		}
+		
+		// report simulation mode
+		if (verbose == true) {
+			if (simulate == true) {
+				System.out.println("Simulation mode: no actual changes are made to the database!");
+			} else {
+				System.out.println("Changes will be written both in memory and to the SQL database!");
+			}
+		}
+
+		// remove attributes associated with the statement type ID
+		int removeAttributeCounter = 0;
+		for (int i = this.data.getAttributes().size() - 1; i > -1 ; i--) {
+			if (this.data.getAttributes().get(i).getStatementTypeId() == statementTypeId) {
+				if (simulate == false) {
+					this.data.getAttributes().remove(i);
+				}
+				removeAttributeCounter++;
+			}
+		}
+		
+		// remove statements associated with the statement type ID
+		int removeStatementCounter = 0;
+		for (int i = this.data.getStatements().size() - 1; i > -1; i--) {
+			if (this.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
+				if (simulate == false) {
+					this.data.getStatements().remove(i);
+				}
+				removeStatementCounter++;
+			}
+		}
+		
+		// remove statement type
+		if (simulate == false) {
+			for (int i = this.data.getStatementTypes().size() - 1; i > -1; i--) {
+				if (this.data.getStatementTypes().get(i).getId() == statementTypeId) {
+					this.data.getStatementTypes().remove(i);
+				}
+			}
+			this.sql.removeStatementType(statementTypeId);
+		}
+
+		// report statistics
+		if (verbose == true) {
+			System.out.println("Deleted attributes:      " + removeAttributeCounter);
+			System.out.println("Deleted statements:      " + removeStatementCounter);
+			System.out.println("Deleted statement types: 1");
+		}
+	}
+
+	
+	/* =================================================================================================================
+	 * Functions for managing variables
+	 * =================================================================================================================
+	 */
 
 	/**
 	 * Retrieve variables and data type definitions for a given statement type (via label) and an Object array.
@@ -2204,5 +2303,135 @@ public class ExporterR {
 		object[0] = variables;
 		object[1] = types;
 		return object;
+	}
+	
+	/**
+	 * Add a new variable to an existing statement type (as provided by a statement type label).
+	 * 
+	 * @param statementType    Label of the statement type in which the variable will be defined.
+	 * @param variable         Variable name.
+	 * @param dataType         Data type of the variable. Must be "short text", "long text", "integer", or "boolean".
+	 * @param simulate         Simulate the changes without writing them to the database?
+	 * @param verbose          Print details to the console?
+	 * @throws Exception
+	 */
+	public void addVariable(String statementType, String variable, String dataType, boolean simulate, boolean verbose) throws Exception {
+		int statementTypeId = this.data.getStatementType(statementType).getId();
+		addVariable(statementTypeId, variable, dataType, simulate, verbose);
+	}
+	
+	/**
+	 * Add a new variable to an existing statement type (as provided by a statement type ID).
+	 * 
+	 * @param statementTypeId  ID of the statement type in which the variable will be defined.
+	 * @param variable         Variable name.
+	 * @param dataType         Data type of the variable. Must be "short text", "long text", "integer", or "boolean".
+	 * @param simulate         Simulate the changes without writing them to the database?
+	 * @param verbose          Print details to the console?
+	 * @throws Exception
+	 */
+	public void addVariable(int statementTypeId, String variable, String dataType, boolean simulate, boolean verbose) throws Exception {
+		if (this.data.getStatementTypeById(statementTypeId).getVariables().containsKey(variable)) {
+			throw new Exception("Variable '" + variable + "' already exists in statement type ID " + statementTypeId + ".");
+		}
+		if (!dataType.equals("short text") && !dataType.equals("long text") && !dataType.equals("integer") && !dataType.equals("boolean")) {
+			throw new Exception("Data type is invalid.");
+		}
+		if (simulate == false) {
+			this.data.getStatementTypeById(statementTypeId).getVariables().put(variable, dataType);
+			this.sql.addVariable(variable, dataType, statementTypeId);
+		}
+		if (dataType.equals("short text") || dataType.equals("long text")) {
+			AttributeVector av = new AttributeVector(this.data.generateNewId("attributes"), "", "#000000", "", "", "", "", statementTypeId, variable);
+			if (simulate == false) {
+				this.data.getAttributes().add(av);
+				Collections.sort(this.data.getAttributes());
+				this.sql.upsertAttributeVector(av);
+			}
+		}
+		int updateStatementsCount = 0;
+		for (int i = 0; i < this.data.getStatements().size(); i++) {
+			if (this.data.getStatements().get(i).getStatementTypeId() == statementTypeId 
+					&& !this.data.getStatements().get(i).getValues().containsKey(variable)) {
+				if (simulate == false) {
+					if (dataType.equals("short text") || dataType.equals("long text")) {
+						this.data.getStatements().get(i).getValues().put(variable, "");
+						this.sql.upsertVariableContent("", this.data.getStatements().get(i).getId(), variable, statementTypeId, dataType);
+					} else if (dataType.equals("boolean")) {
+						this.data.getStatements().get(i).getValues().put(variable, 1);
+						this.sql.upsertVariableContent(1, this.data.getStatements().get(i).getId(), variable, statementTypeId, dataType);
+					} else if (dataType.equals("integer")) {
+						this.data.getStatements().get(i).getValues().put(variable, 0);
+						this.sql.upsertVariableContent(0, this.data.getStatements().get(i).getId(), variable, statementTypeId, dataType);
+					}
+				}
+				updateStatementsCount++;
+			}
+		}
+
+		// report statistics
+		if (verbose == true) {
+			System.out.println("Added variables:    1");
+			System.out.println("Added attributes:   1");
+			System.out.println("Updated statements: " + updateStatementsCount);
+		}
+	}
+
+	/**
+	 * Remove a variable from a statement type, including attributes and statements.
+	 * 
+	 * @param statementTypeLabel  The String label of the statement type in which the variable is defined.
+	 * @param variable            The name of the variable as a String.
+	 * @param simulate            If true, changes are not actually carried out.
+	 * @param verbose             Should statistics on updating process be reported?
+	 * @throws Exception
+	 */
+	public void removeVariable(String statementTypeLabel, String variable, boolean simulate, boolean verbose) throws Exception {
+		int statementTypeId = this.data.getStatementType(statementTypeLabel).getId();
+		removeVariable(statementTypeId, variable, simulate, verbose);
+	}
+	
+	/**
+	 * Remove a variable from a statement type, including attributes and statements.
+	 * 
+	 * @param statementTypeId  The ID of the statement type in which the variable is defined.
+	 * @param variable         The name of the variable as a String.
+	 * @param simulate         If true, changes are not actually carried out.
+	 * @param verbose          Should statistics on updating process be reported?
+	 * @throws Exception
+	 */
+	public void removeVariable(int statementTypeId, String variable, boolean simulate, boolean verbose) throws Exception {
+		if (!this.data.getStatementTypeById(statementTypeId).getVariables().containsKey(variable)) {
+			throw new Exception("Variable '" + variable + "' does not exist in statement type " + statementTypeId + ".");
+		}
+		int removeFromStatementCounter = 0;
+		int removeAttributeCounter = 0;
+		for (int i = this.data.getAttributes().size() - 1; i > -1 ; i--) {
+			if (this.data.getAttributes().get(i).getStatementTypeId() == statementTypeId && this.data.getAttributes().get(i).getVariable().equals(variable)) {
+				if (simulate == false) {
+					this.data.getAttributes().remove(i);
+				}
+				removeAttributeCounter++;
+			}
+		}
+		for (int i = 0; i < this.data.getStatements().size(); i++) {
+			if (this.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
+				if (simulate == false) {
+					this.data.getStatements().get(i).getValues().remove(variable);
+				}
+				removeFromStatementCounter++;
+			}
+		}
+		if (simulate == false) {
+			this.data.getStatementTypeById(statementTypeId).getVariables().remove(variable);
+			this.sql.removeVariable(statementTypeId, variable);
+		}
+
+		// report statistics
+		if (verbose == true) {
+			System.out.println("Removed attributes: " + removeAttributeCounter);
+			System.out.println("Updated statements: " + removeFromStatementCounter);
+			System.out.println("Removed variables:  1");
+		}
 	}
 }

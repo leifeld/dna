@@ -667,6 +667,113 @@ dna_addStatement <- function(connection,
   }
 }
 
+#' Add a new statement type (without variables) to the database
+#'
+#' Add a new statement type (without variables) to the database.
+#'
+#' Add a new statement type to a database. The statement type contains no
+#' variables but can be populated with variables using the
+#' \link{dna_addVariable} function. Along with the the label used to describe
+#' the statement type, a color needs to be supplied in order to display the
+#' statement type in this color in the GUI (see \link{dna_gui}).
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param label A descriptive label for the statement type. For example
+#'   \code{"DNA Statement" or "My new statement type"}. The label may contain
+#'   spaces.
+#' @param color A color in the form of a hexadecimal RGB string, such as
+#'   \code{"#FFFF00"} for yellow.
+#'
+#' @export
+dna_addStatementType <- function(connection, label, color = "#FFFF00") {
+  if (is.null(label) || is.na(label) || length(label) != 1 || !is.character(label)) {
+    stop("'label' must be a character object of length 1.")
+  }
+  if (is.null(color) || is.na(color) || length(color) != 1 || !is.character(color)) {
+    stop("'color' must be a character object of length 1 containing a hexadecimal RGB value.")
+  }
+  if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
+    stop("'color' is not a hex RGB value of the form '#FFFF00'.")
+  }
+  .jcall(connection$dna_connection, "V", "addStatementType", label, color)
+}
+
+#' Add a new variable to a statement type in the database
+#'
+#' Add a new variable to a statement type in the database.
+#'
+#' Add a new variable to an existing statement type in the database, based on
+#' the statement type ID or label, a name for the new variable, and a data type
+#' specification.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param statementType The statement type in which the new variable should be
+#'   defined. The statement type can be supplied as an integer ID or character
+#'   string, for example \code{1} or \code{"DNA Statement"}.
+#' @param variable The name of the new variable as a character object. Only
+#'   characters and numbers are allowed, i.e., no whitespace characters.
+#' @param dataType The data type of the new variable. Valid values are 
+#'   \code{"short text"} (for things like persons, organizations, locations
+#'   etc., up to 200 characters), \code{"long text"} (for things like notes,
+#'   can store more than 200 characters), \code{"boolean"} (for qualifier
+#'   variables such as a binary agreement variable), and \code{"integer"} (for
+#'   ordinal Likert scales, such as -5 to +5 or -1 to +1).
+#' @param simulate Should the changes only be simulated instead of actually
+#'   applied to the DNA connection and the SQL database? This can help to
+#'   plan more complex recode operations.
+#' @param verbose Print details about the recode operations?
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
+#' dna_addVariable(conn, 1, "location", "short text")
+#' }
+#'
+#' @export
+dna_addVariable <- function(connection,
+                            statementType = 1,
+                            variable,
+                            dataType = "short text",
+                            simulate,
+                            verbose) {
+  if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
+      || (!is.numeric(statementType) && !is.character(statementType))) {
+    stop("'statementType' must be an integer or character object of length 1.")
+  }
+  if (is.numeric(statementType) && !is.integer(statementType)) {
+    statementType <- as.integer(statementType)
+  }
+  if (is.null(variable) || is.na(variable) || length(variable) != 1 || !is.character(variable)) {
+    stop("'variable' must be a character object of length 1.")
+  }
+  if (grepl("\\W", variable)) {
+    stop("'variable' must not contain any spaces. Only characters and numbers are allowed.")
+  }
+  if (is.null(dataType) || is.na(dataType) || length(dataType) != 1 || !is.character(dataType)) {
+    stop("'dataType' must be a character object of length 1.")
+  }
+  if (!dataType %in% c("short text", "long text", "integer", "boolean")) {
+    stop("'dataType' must be 'short text', 'long text', 'integer', or 'boolean'.")
+  }
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate != 1)) {
+    stop("'simulate' must be a logical value of length 1")
+  }
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose != 1)) {
+    stop("'verbose' must be a logical value of length 1")
+  }
+  .jcall(connection$dna_connection,
+         "V",
+         "addVariable",
+         statementType,
+         variable,
+         dataType,
+         simulate,
+         verbose)
+}
+
 #' Retrieve a dataframe with attributes from a DNA connection.
 #'
 #' Attributes are metadata for the values saved in a variable. For example, an
@@ -801,13 +908,13 @@ dna_getDocuments <- function(connection) {
 #'   \code{dna_connection} function.
 #' @param statementType The statement type for which statements should be
 #'   retrieved. The statement type can be supplied as an integer or character
-#'   string, for example \code{1} or \code{"DNAStatement"}.
+#'   string, for example \code{1} or \code{"DNA Statement"}.
 #'
 #' @examples
 #' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
-#' statements <- dna_getStatements(conn, statementType = "DNAStatement")
+#' statements <- dna_getStatements(conn, statementType = "DNA Statement")
 #' }
 #'
 #' @author Philip Leifeld
@@ -840,6 +947,74 @@ dna_getStatements <- function(connection, statementType) {
                             "coder",
                             variables)
   return(statements)
+}
+
+#' Retrieve a dataframe with statement types from a DNA connection
+#'
+#' Retrieve a dataframe with all statement types from a DNA connection.
+#'
+#' This function creates a dataframe with one row per statement type and
+#' contains columns for the statement type ID, label, and color (as an RGB hex
+#' string). The statement type IDs can then be used to retrieve the variables
+#' defined within a statement type using the \link{dna_getVariables} function.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
+#' statementTypes <- dna_getStatementTypes(conn)
+#' }
+#'
+#' @export
+dna_getStatementTypes <- function(connection) {
+  statementTypes <- J(connection$dna_connection, "getStatementTypes")
+  statementTypes <- lapply(statementTypes, .jevalArray)
+  statementTypes <- as.data.frame(statementTypes, stringsAsFactors = FALSE)
+  colnames(statementTypes) <- c("id", "label", "color")
+  return(statementTypes)
+}
+
+#' Retrieve a dataframe with all variables for a statement type
+#'
+#' Retrieve a dataframe with all variables defined in a given statement type.
+#'
+#' For a given statement type ID (see \link{dna_getStatementTypes}), this
+#' function creates a dataframe with one row per variable and contains columns
+#' for the variable name and the data type associated with this variable.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param statementType The statement type for which statements should be
+#'   retrieved. The statement type can be supplied as an integer or character
+#'   string, for example \code{1} or \code{"DNA Statement"}.
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
+#' variables <- dna_getVariables(conn, 1)
+#' }
+#'
+#' @export
+dna_getVariables <- function(connection, statementType) {
+  if (is.null(statementType) || is.na(statementType) || length(statementType) != 1) {
+    stop("'statementType' must be an integer or character object of length 1.")
+  }
+  if (is.numeric(statementType) && !is.integer(statementType)) {
+    statementType <- as.integer(statementType)
+  } else if (!is.character(statementType) && !is.integer(statementType)) {
+    stop("'statementType' must be an integer or character object of length 1.")
+  }
+  
+  variables <- J(connection$dna_connection, "getVariables", statementType)
+  variables <- lapply(variables, .jevalArray)
+  variables <- as.data.frame(variables, stringsAsFactors = FALSE)
+  colnames(variables) <- c("label", "type")
+  
+  return(variables)
 }
 
 #' Removes an attribute entry from the database
@@ -977,6 +1152,104 @@ dna_removeStatement <- function(connection,
          "V",
          "removeStatement",
          id,
+         verbose)
+}
+
+#' Remove a statement type from the database
+#'
+#' Remove a statement type from the database.
+#'
+#' Completely remove a statement type from the database, including all
+#' variables, attributes, and statements that are associated with the statement
+#' type.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param statementType The statement type to be deleted. The statement type
+#'   can be supplied as an integer ID or character string, for example \code{1}
+#'   or \code{"DNA Statement"}.
+#' @param simulate Should the changes only be simulated instead of actually
+#'   applied to the DNA connection and the SQL database? This can help to
+#'   plan more complex recode operations.
+#' @param verbose Print details about the recode operations?
+#'
+#' @export
+dna_removeStatementType <- function(connection, statementType, simulate, verbose) {
+  if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
+      || (!is.numeric(statementType) && !is.character(statementType))) {
+    stop("'statementType' must be an integer or character object of length 1.")
+  }
+  if (is.numeric(statementType) && !is.integer(statementType)) {
+    statementType <- as.integer(statementType)
+  }
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate != 1)) {
+    stop("'simulate' must be a logical value of length 1")
+  }
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose != 1)) {
+    stop("'verbose' must be a logical value of length 1")
+  }
+  .jcall(connection$dna_connection,
+         "V",
+         "removeStatementType",
+         statementType,
+         simulate,
+         verbose)
+}
+
+#' Add a new variable to a statement type in the database
+#'
+#' Add a new variable to a statement type in the database.
+#'
+#' Add a new variable to an existing statement type in the database, based on
+#' the statement type ID or label, a name for the new variable, and a data type
+#' specification.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param statementType The statement type from which variable should be
+#'   deleted. The statement type can be supplied as an integer ID or character
+#'   string, for example \code{1} or \code{"DNA Statement"}.
+#' @param variable The name of the variable as a character object.
+#' @param simulate Should the changes only be simulated instead of actually
+#'   applied to the DNA connection and the SQL database? This can help to
+#'   plan more complex recode operations.
+#' @param verbose Print details about the recode operations?
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
+#' dna_removeVariable(conn, 1, "person")
+#' }
+#'
+#' @export
+dna_removeVariable <- function(connection,
+                               statementType = 1,
+                               variable,
+                               simulate,
+                               verbose) {
+  if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
+      || (!is.numeric(statementType) && !is.character(statementType))) {
+    stop("'statementType' must be an integer or character object of length 1.")
+  }
+  if (is.numeric(statementType) && !is.integer(statementType)) {
+    statementType <- as.integer(statementType)
+  }
+  if (is.null(variable) || is.na(variable) || length(variable) != 1 || !is.character(variable)) {
+    stop("'variable' must be a character object of length 1.")
+  }
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate != 1)) {
+    stop("'simulate' must be a logical value of length 1")
+  }
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose != 1)) {
+    stop("'verbose' must be a logical value of length 1")
+  }
+  .jcall(connection$dna_connection,
+         "V",
+         "removeVariable",
+         statementType,
+         variable,
+         simulate,
          verbose)
 }
 

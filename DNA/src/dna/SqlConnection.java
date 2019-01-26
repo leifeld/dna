@@ -28,6 +28,10 @@ import dna.dataStructures.StatementType;
 import static java.lang.Math.toIntExact;
 import java.awt.Color;
 
+/**
+ * @author philip
+ *
+ */
 public class SqlConnection {
 	String dbtype;
 	String dbfile;
@@ -329,67 +333,6 @@ public class SqlConnection {
 				+ "VALUES (" + sl.getId() + ", " + sl.getSourceId() + ", " + sl.getTargetId() + ")");
 	}
 	
-	/*
-	class DocumentLoader implements Runnable {
-		ProgressMonitor progressMonitor;
-		ArrayList<Document> al;
-		
-		public ArrayList<Document> DocumentLoader() {
-			al = new ArrayList<Document>();
-			run();
-			return al;
-		}
-		
-		public void run() {
-			int count = 0;
-			try {
-				count = (int) executeQueryForObject("SELECT COUNT(*) FROM DOCUMENTS");
-			} catch (SQLException e1) {
-				e1.printStackTrace();
-			}
-			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Importing documents and statements...", "", 0, count);
-			progressMonitor.setMillisToDecideToPopup(1);
-			
-			try {
-				String myQuery = "SELECT * FROM DOCUMENTS";
-				PreparedStatement preStatement = (PreparedStatement) connection.prepareStatement(myQuery);
-				ResultSet result = preStatement.executeQuery();
-				int i = 0;
-				if (result.next()) {
-					do {
-						i++;
-						progressMonitor.setProgress(i);
-						if (progressMonitor.isCanceled()) {
-							break;
-						}
-						int id = result.getInt("ID");
-						long d = result.getLong("Date");
-						Date date = new Date(d);
-						Document document = new Document(
-								id, 
-								result.getString("Title"), 
-								result.getString("Text"), 
-								result.getInt("Coder"), 
-								result.getString("Author"), 
-								result.getString("Source"), 
-								result.getString("Section"), 
-								result.getString("Notes"), 
-								result.getString("Type"), 
-								date
-						);
-						al.add(document);
-					} while (result.next());
-				}
-				result.close();
-				preStatement.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-			Collections.sort(al);
-		}
-	}
-	*/
-	
 	/**
 	 * @return     Array list of all documents in the SQL database.
 	 */
@@ -677,6 +620,16 @@ public class SqlConnection {
 		return map;
 	}
 	
+	/**
+	 * Update or insert the content of one variable in one statement in the SQL database.
+	 * 
+	 * @param value            The value to be inserted or updated.
+	 * @param statementId      The ID of the statement.
+	 * @param variableName     The name of the variable.
+	 * @param statementTypeId  The statement type ID.
+	 * @param dataType         The data type. Valid values are "short text", "long text", "boolean", or "integer".
+	 * @throws Exception
+	 */
 	public void upsertVariableContent(Object value, int statementId, String variableName, int statementTypeId, String dataType) throws Exception {
 		String table = "";
 		String ap = "";
@@ -695,10 +648,15 @@ public class SqlConnection {
 		}
 		
 		// get ID of data entry to update
-		int dataId = (int) executeQueryForObject("SELECT ID FROM " + table + " WHERE VariableId = " 
-				+ "(SELECT ID FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + " AND Variable = '" 
-				+ variableName + "') AND StatementId = " + statementId);
-
+		int dataId = -1;
+		try {
+			dataId = (int) executeQueryForObject("SELECT ID FROM " + table + " WHERE VariableId = " 
+					+ "(SELECT ID FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + " AND Variable = '" 
+					+ variableName + "') AND StatementId = " + statementId);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
 		// then replace entry
 		String myStatement = "";
 		if (dataId == -1) {
@@ -1051,6 +1009,69 @@ public class SqlConnection {
 					+ ", "  + ap + object + ap + ")";
 			executeStatement(myStatement);
     	}
+	}
+	
+	/**
+	 * Remove a variable from a statement type, including the respective statements and attributes
+	 * 
+	 * @param statementTypeId  The ID of the statement type in which the variable is defined 
+	 * @param variable         The name of the variable as a String
+	 * @throws Exception
+	 */
+	public void removeVariable(int statementTypeId, String variable) throws Exception {
+		int varid = -1;
+		String dataType = "";
+		try {
+			varid = (int) executeQueryForObject("SELECT ID FROM VARIABLES WHERE Variable = '" + variable + "' AND StatementTypeId = " + statementTypeId);
+			dataType = (String) executeQueryForObject("SELECT DataType FROM VARIABLES WHERE ID = " + varid);
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		String table;
+		if (dataType.equals("short text")) {
+			table = "DATASHORTTEXT";
+		} else if (dataType.equals("long text")) {
+			table = "DATALONGTEXT";
+		} else if (dataType.equals("integer")) {
+			table = "DATAINTEGER";
+		} else if (dataType.equals("boolean")) {
+			table = "DATABOOLEAN";
+		} else {
+			throw new Exception("Data type invalid.");
+		}
+		executeStatement("DELETE FROM ATTRIBUTES WHERE VariableId = " + varid);
+		executeStatement("DELETE FROM " + table + " WHERE VariableId = " + varid);
+		executeStatement("DELETE FROM VARIABLES WHERE ID = " + varid);
+	}
+	
+	/**
+	 * Add a variable to the Variables table. Note that attributes and statements are not updated automatically. 
+	 * This needs to be done separately.
+	 * 
+	 * @param variable         Variable name as a string.
+	 * @param dataType         Data type as a string ("short text", "long text", "boolean", or "integer").
+	 * @param statementTypeId  Statement type ID as an integer.
+	 */
+	public void addVariable(String variable, String dataType, int statementTypeId) {
+		executeStatement("INSERT INTO VARIABLES (Variable, DataType, StatementTypeId) VALUES ('" + variable 
+				+ "', '" + dataType + "', " + statementTypeId + ")");
+	}
+	
+	/**
+	 * Remove a statement type including all variables, attributes, and statements.
+	 * 
+	 * @param statementTypeId  ID of the statement type to be removed.
+	 */
+	public void removeStatementType(int statementTypeId) {
+		executeStatement("DELETE FROM ATTRIBUTES WHERE VariableId IN (SELECT ID FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + ")");
+		executeStatement("DELETE FROM DATASHORTTEXT WHERE StatementTypeId = " + statementTypeId + ")");
+		executeStatement("DELETE FROM DATALONGTEXT WHERE StatementTypeId = " + statementTypeId + ")");
+		executeStatement("DELETE FROM DATAINTEGER WHERE StatementTypeId = " + statementTypeId + ")");
+		executeStatement("DELETE FROM DATABOOLEAN WHERE StatementTypeId = " + statementTypeId + ")");
+		executeStatement("DELETE FROM STATEMENTS WHERE StatementTypeId = " + statementTypeId + ")");
+		executeStatement("DELETE FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + ")");
+		executeStatement("DELETE FROM STATEMENTTYPES WHERE ID = " + statementTypeId + ")");
 	}
 	
 	/**
