@@ -149,6 +149,7 @@ knit_hooks$set(crop=hook_pdfcrop,
 
 <<eval=TRUE, echo = FALSE, warning = FALSE>>=
 jarfile <- rDNA::dna_downloadJar(returnString = TRUE)
+jarfile <- basename(jarfile)
 @
 
 \title{Discourse Network Analyzer Manual}
