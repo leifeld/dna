@@ -488,7 +488,7 @@ public class ExporterR {
 			}
 			
 			// create array of columns and populate document-level and statement-level columns; leave out variables for now
-			Object[] eventListColumnsR = new Object[variableNames.size() + 8];
+			eventListColumnsR = new Object[variableNames.size() + 8];
 			int[] ids = new int[filteredStatements.size()];
 			long[] time = new long[filteredStatements.size()];
 			int[] docId = new int[filteredStatements.size()];
