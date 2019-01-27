@@ -774,6 +774,39 @@ dna_addVariable <- function(connection,
          verbose)
 }
 
+#' Change the color of a statement type
+#'
+#' Change the color of a statement type.
+#'
+#' This function assigns a new color to a statement type. The color is used to
+#' display statements of this type in the DNA GUI (see \link{dna_gui}).
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param statementType The statement type whose color should be updated. The
+#' statement type can be supplied as an integer ID or character string, for
+#' example \code{1} or \code{"DNA Statement"}.
+#' @param color A color in the form of a hexadecimal RGB string, such as
+#'   \code{"#FFFF00"} for yellow.
+#'
+#' @export
+dna_colorStatementType <- function(connection, statementType, color = "#FFFF00") {
+  if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
+      || (!is.numeric(statementType) && !is.character(statementType))) {
+    stop("'statementType' must be an integer or character object of length 1.")
+  }
+  if (is.numeric(statementType) && !is.integer(statementType)) {
+    statementType <- as.integer(statementType)
+  }
+  if (is.null(color) || is.na(color) || length(color) != 1 || !is.character(color)) {
+    stop("'color' must be a character object of length 1 containing a hexadecimal RGB value.")
+  }
+  if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
+    stop("'color' is not a hex RGB value of the form '#FFFF00'.")
+  }
+  .jcall(connection$dna_connection, "V", "colorStatementType", statementType, color)
+}
+
 #' Retrieve a dataframe with attributes from a DNA connection.
 #'
 #' Attributes are metadata for the values saved in a variable. For example, an
@@ -1017,6 +1050,73 @@ dna_getVariables <- function(connection, statementType) {
   return(variables)
 }
 
+#' Recast a variable into a different data type
+#'
+#' Recast a variable into a different data type.
+#'
+#' This function converts a variable into a different data type. The user
+#' supplies the statement type in which the variable is defined and the variable
+#' name, and the variable is converted into a different data type.
+#' 
+#' Depending on the current data type of the variable, different actions are
+#' taken as follows:
+#' \describe{
+#'  \item{"short text"}{Will be converted into "long text".}
+#'  \item{"long text"}{Will be converted into "short text". The function goes
+#'    through all statements and truncates the respective values if they are
+#'    longer than 200 characters, both in the statements and attributes.}
+#'  \item{"boolean"}{Will be converted into "integer" by recoding \code{0} into
+#'    \code{-1} and keeping \code{1} as \code{1}.}
+#'  \item{"integer"}{Will be converted into "boolean". If there are precisely
+#'    two values across all statements, the smaller value will be recoded into
+#'    \code{0} and the larger value into \code{1}. If there is only one value
+#'    across all statements, this value will be recoded as \code{1}. If there
+#'    are no statements of this statement type, no recoding will be done. If
+#'    there are more than two values across all statements, an error message
+#'    will be printed.}
+#' }
+#' 
+#' By default, changes are only simulated, but this can be changed using the
+#' \code{simulate} argument in order to actually apply the changes to the
+#' database.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param statementType The statement type in which the variable is defined that
+#'   should be recast into a different data type. The statement type can be
+#'   supplied as an integer ID or character string, for example \code{1} or
+#'   \code{"DNA Statement"}.
+#' @param variable The name of the variable that should be recast into a
+#'   different data type.
+#' @param simulate Should the changes only be simulated instead of actually
+#'   applied to the DNA connection and the SQL database? This can help to
+#'   plan more complex recode operations.
+#' @param verbose Print details about the recode operations?
+#'
+#' @export
+dna_recastVariable <- function(connection, statementType, variable, simulate, verbose) {
+  if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
+      || (!is.numeric(statementType) && !is.character(statementType))) {
+    stop("'statementType' must be an integer or character object of length 1.")
+  }
+  if (is.numeric(statementType) && !is.integer(statementType)) {
+    statementType <- as.integer(statementType)
+  }
+  if (is.null(variable) || is.na(variable) || length(variable) != 1 || !is.character(variable)) {
+    stop("'variable' must be a character object of length 1.")
+  }
+  if (grepl("\\W", variable)) {
+    stop("'variable' must not contain any spaces. Only characters and numbers are allowed.")
+  }
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate != 1)) {
+    stop("'simulate' must be a logical value of length 1")
+  }
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose != 1)) {
+    stop("'verbose' must be a logical value of length 1")
+  }
+  .jcall(connection$dna_connection, "V", "recastVariable", statementType, variable, simulate, verbose)
+}
+
 #' Removes an attribute entry from the database
 #'
 #' Removes an attribute entry from the database based on its ID or value.
@@ -1251,6 +1351,77 @@ dna_removeVariable <- function(connection,
          variable,
          simulate,
          verbose)
+}
+
+#' Rename a statement type
+#'
+#' Rename a statement type by assigning a new label.
+#'
+#' This function renames a statement type by replacing its label with a new
+#' label.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param statementType The statement type that should be renamed. The statement
+#' type can be supplied as an integer ID or character string, for example
+#' \code{1} or \code{"DNA Statement"}.
+#' @param label A descriptive new label for the statement type. For example
+#'   \code{"DNA Statement" or "My statement type"}. The label may contain
+#'   spaces.
+#'
+#' @export
+dna_renameStatementType <- function(connection, statementType, label) {
+  if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
+      || (!is.numeric(statementType) && !is.character(statementType))) {
+    stop("'statementType' must be an integer or character object of length 1.")
+  }
+  if (is.numeric(statementType) && !is.integer(statementType)) {
+    statementType <- as.integer(statementType)
+  }
+  if (is.null(label) || is.na(label) || length(label) != 1 || !is.character(label)) {
+    stop("'label' must be a character object of length 1.")
+  }
+  .jcall(connection$dna_connection, "V", "renameStatementType", statementType, label)
+}
+
+#' Rename a variable
+#'
+#' Rename a variable by assigning a new label.
+#'
+#' This function renames a statement type by replacing its label with a new
+#' label.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param statementType The statement type in which the variable is defined that
+#'   should be renamed. The statement type can be supplied as an integer ID or
+#'   character string, for example \code{1} or \code{"DNA Statement"}.
+#' @param variable The name of the variable that should be renamed.
+#' @param label A descriptive new label for the variable. For example
+#'   \code{"actor" or "intensity"}. The label must not contain spaces.
+#'
+#' @export
+dna_renameVariable <- function(connection, statementType, variable, label) {
+  if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
+      || (!is.numeric(statementType) && !is.character(statementType))) {
+    stop("'statementType' must be an integer or character object of length 1.")
+  }
+  if (is.numeric(statementType) && !is.integer(statementType)) {
+    statementType <- as.integer(statementType)
+  }
+  if (is.null(variable) || is.na(variable) || length(variable) != 1 || !is.character(variable)) {
+    stop("'variable' must be a character object of length 1.")
+  }
+  if (grepl("\\W", variable)) {
+    stop("'variable' must not contain any spaces. Only characters and numbers are allowed.")
+  }
+  if (is.null(label) || is.na(label) || length(label) != 1 || !is.character(label)) {
+    stop("'label' must be a character object of length 1.")
+  }
+  if (grepl("\\W", label)) {
+    stop("'label' must not contain any spaces. Only characters and numbers are allowed.")
+  }
+  .jcall(connection$dna_connection, "V", "renameVariable", statementType, variable, label)
 }
 
 #' Recode attributes in the DNA database

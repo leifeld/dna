@@ -28,10 +28,6 @@ import dna.dataStructures.StatementType;
 import static java.lang.Math.toIntExact;
 import java.awt.Color;
 
-/**
- * @author philip
- *
- */
 public class SqlConnection {
 	String dbtype;
 	String dbfile;
@@ -323,6 +319,89 @@ public class SqlConnection {
     		}
     		
     	}
+	}
+	
+	/**
+	 * Change the data type of a variable from short text to long text, from long text to short text, from integer to 
+	 * boolean, or from boolean to integer. Automatically determine the source and target data type. Move data around 
+	 * between SQL tables as necessary.
+	 * 
+	 * @param statementTypeId  ID of the statement type in which the variable is defined.
+	 * @param variable         Name of the variable to be recoded.
+	 * @throws Exception
+	 */
+	public void recastVariable(int statementTypeId, String variable) throws Exception {
+		
+		// identify current data type to determine how to recast
+		String dataType = (String) executeQueryForObject("SELECT DataType FROM VARIABLES WHERE StatementTypeId = " + statementTypeId 
+				+ " AND Variable = '" + variable + "'");
+		
+		String sourceTable, targetTable, newDataType;
+		if (dataType.equals("short text")) {
+			sourceTable = "DATASHORTTEXT";
+			targetTable = "DATALONGTEXT";
+			newDataType = "long text";
+		} else if (dataType.equals("long text")) {
+			sourceTable = "DATALONGTEXT";
+			targetTable = "DATASHORTTEXT";
+			newDataType = "short text";
+		} else if (dataType.equals("boolean")) {
+			sourceTable = "DATABOOLEAN";
+			targetTable = "DATAINTEGER";
+			newDataType = "integer";
+		} else if (dataType.equals("integer")) {
+			sourceTable = "DATAINTEGER";
+			targetTable = "DATABOOLEAN";
+			newDataType = "boolean";
+		} else {
+			throw new Exception("Data type in database for variable '" + variable + "' was not recognized.");
+		}
+		
+		// copy data from sourceTable to targetTable (and look up Variable ID),
+		// then delete in sourceTable,
+		// then change variable data type in VARIABLES
+		String string = "INSERT INTO " + targetTable + " (StatementID, VariableID, StatementTypeId, Value) VALUES "
+				+ "(SELECT StatementID, VariableID, StatementTypeId, Value FROM " + sourceTable + " WHERE "
+				+ "StatementTypeId = " + statementTypeId + " AND VariableID = (SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
+				+ statementTypeId + " AND Variable = '" + variable + "'));"
+				+ "DELETE FROM " + sourceTable + " * WHERE StatementTypeId = " + statementTypeId + " AND Variable = '" + variable + "';"
+				+ "UPDATE VARIABLES SET DataType = '" + newDataType + "' WHERE StatementTypeId = " + statementTypeId 
+				+ "AND Variable = '" + variable + "';";
+		executeStatement(string);
+	}
+	
+	/**
+	 * Rename a variable in the SQL database.
+	 * 
+	 * @param statementTypeId  ID of the statement type in which the variable is defined.
+	 * @param oldVariable      Name of the variable to be renamed.
+	 * @param newVariable      New name for the variable.
+	 */
+	public void renameVariable(int statementTypeId, String oldVariable, String newVariable) {
+		executeStatement("UPDATE VARIABLES Set Variable = '" + newVariable + "' WHERE StatementTypeId = " + statementTypeId 
+				+ " AND Variable = '" + oldVariable + "'");
+	}
+	
+	/**
+	 * Set a new label for an existing statement type in the SQL database
+	 * 
+	 * @param statementTypeId  ID of the statement type to rename
+	 * @param newLabel         New String label for the statement type
+	 */
+	public void renameStatementType(int statementTypeId, String newLabel) {
+		executeStatement("UPDATE STATEMENTTYPES SET Label = '" + newLabel + "' WHERE ID = " + statementTypeId);
+	}
+
+	/**
+	 * Set a new color for an existing statement type in the SQL database
+	 * 
+	 * @param statementTypeId  ID of the statement type to rename
+	 * @param red              Red color, from 0 to 255
+	 * @param green            Green color, from 0 to 255
+	 * @param blue             Blue color, from 0 to 255
+	 */
+	public void colorStatementType(int statementTypeId, int red, int green, int blue) {
+		executeStatement("UPDATE STATEMENTTYPES SET Red = " + red + ", Green = " + green + ", Blue = " + blue + " WHERE ID = " + statementTypeId);
 	}
 	
 	/**

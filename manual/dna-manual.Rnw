@@ -147,8 +147,10 @@ knit_hooks$set(crop=hook_pdfcrop,
                  })
 @
 
-<<eval=TRUE, echo = FALSE, warning = FALSE>>=
-jarfile <- rDNA::dna_downloadJar(returnString = TRUE)
+<<eval=TRUE, echo = FALSE, warning = FALSE, results = 'hide', message = FALSE>>=
+library("rDNA")
+dna_downloadJar()
+jarfile <- dna_init(returnString = TRUE)
 jarfile <- basename(jarfile)
 @
 

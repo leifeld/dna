@@ -2273,6 +2273,54 @@ public class ExporterR {
 		}
 	}
 
+	/**
+	 * Rename a statement type by providing a new String label, based on the current label as input.
+	 * 
+	 * @param statementTypeLabel  Label of the statement type to be renamed.
+	 * @param newLabel            New label as a string.
+	 */
+	public void renameStatementType(String statementTypeLabel, String newLabel) {
+		int statementTypeId = this.data.getStatementType(statementTypeLabel).getId();
+		this.data.getStatementTypeById(statementTypeId).setLabel(newLabel);
+		this.sql.renameStatementType(statementTypeId, newLabel);
+	}
+
+	/**
+	 * Rename a statement type by providing a new String label, based on the statement type ID as input.
+	 * 
+	 * @param statementTypeId  ID of the statement type to be renamed.
+	 * @param newLabel         New label as a string.
+	 */
+	public void renameStatementType(int statementTypeId, String newLabel) {
+		this.data.getStatementTypeById(statementTypeId).setLabel(newLabel);
+		this.sql.renameStatementType(statementTypeId, newLabel);
+	}
+
+	/**
+	 * Change the color of an existing statement type by providing a new hex color string, based on statement type label.
+	 * 
+	 * @param statementTypeLabel  Label of the statement type to be updated.
+	 * @param color               String with a hexadecimal RGB color, for example "#FFFF00".
+	 */
+	public void colorStatementType(String statementTypeLabel, String color) {
+		int statementTypeId = this.data.getStatementType(statementTypeLabel).getId();
+		colorStatementType(statementTypeId, color);
+	}
+
+	/**
+	 * Change the color of an existing statement type by providing a new hex color string, based on statement type ID.
+	 * 
+	 * @param statementTypeId  ID of the statement type to be updated.
+	 * @param color            String with a hexadecimal RGB color, for example "#FFFF00".
+	 */
+	public void colorStatementType(int statementTypeId, String color) {
+		this.data.getStatementTypeById(statementTypeId).setColor(color);
+		this.sql.colorStatementType(statementTypeId,
+				this.data.getStatementTypeById(statementTypeId).getBlue(),
+				this.data.getStatementTypeById(statementTypeId).getBlue(),
+				this.data.getStatementTypeById(statementTypeId).getBlue());
+	}
+
 	
 	/* =================================================================================================================
 	 * Functions for managing variables
@@ -2343,12 +2391,25 @@ public class ExporterR {
 	 * @throws Exception
 	 */
 	public void addVariable(int statementTypeId, String variable, String dataType, boolean simulate, boolean verbose) throws Exception {
+		if (this.data.getStatementTypeById(statementTypeId) == null) {
+			throw new Exception("A statement type with ID " + statementTypeId + " was not found in the database.");
+		}
 		if (this.data.getStatementTypeById(statementTypeId).getVariables().containsKey(variable)) {
 			throw new Exception("Variable '" + variable + "' already exists in statement type ID " + statementTypeId + ".");
 		}
 		if (!dataType.equals("short text") && !dataType.equals("long text") && !dataType.equals("integer") && !dataType.equals("boolean")) {
 			throw new Exception("Data type is invalid.");
 		}
+
+		// report simulation mode
+		if (verbose == true) {
+			if (simulate == true) {
+				System.out.println("Simulation mode: no actual changes are made to the database!");
+			} else {
+				System.out.println("Changes will be written both in memory and to the SQL database!");
+			}
+		}
+
 		if (simulate == false) {
 			this.data.getStatementTypeById(statementTypeId).getVariables().put(variable, dataType);
 			this.sql.addVariable(variable, dataType, statementTypeId);
@@ -2444,6 +2505,256 @@ public class ExporterR {
 			System.out.println("Removed attributes: " + removeAttributeCounter);
 			System.out.println("Updated statements: " + removeFromStatementCounter);
 			System.out.println("Removed variables:  1");
+		}
+	}
+
+	/**
+	 * Rename a variable by providing a new String label, based on the statement type label and variable label as input.
+	 * 
+	 * @param statementTypeLabel  Label of the statement type to be renamed.
+	 * @param variable            Old variable name.
+	 * @param newLabel            New label as a string.
+	 * @param simulate            If true, changes are not actually carried out.
+	 * @param verbose             Should statistics on updating process be reported?
+	 * @throws Exception 
+	 */
+	public void renameVariable(String statementTypeLabel, String variable, String newLabel, boolean simulate, boolean verbose) throws Exception {
+		int statementTypeId = this.data.getStatementType(statementTypeLabel).getId();
+		renameVariable(statementTypeId, variable, newLabel, simulate, verbose);
+	}
+	
+	/**
+	 * Rename a variable by providing a new String label, based on the statement type ID and variable label as input.
+	 * 
+	 * @param statementTypeId  ID of the statement type to be renamed.
+	 * @param variable         Old variable name.
+	 * @param newLabel         New label as a string.
+	 * @param simulate         If true, changes are not actually carried out.
+	 * @param verbose          Should statistics on updating process be reported?
+	 * @throws Exception 
+	 */
+	public void renameVariable(int statementTypeId, String variable, String newLabel, boolean simulate, boolean verbose) throws Exception {
+		if (this.data.getStatementTypeById(statementTypeId) == null) {
+			throw new Exception("A statement type with ID " + statementTypeId + " was not found in the database.");
+		}
+		if (newLabel.contains(" ")) {
+			throw new Exception("The new variable name contains spaces. This is not permitted.");
+		}
+		
+		// report simulation mode
+		if (verbose == true) {
+			if (simulate == true) {
+				System.out.println("Simulation mode: no actual changes are made to the database!");
+			} else {
+				System.out.println("Changes will be written both in memory and to the SQL database!");
+			}
+		}
+
+		// update attributes
+		int updateAttributeCounter = 0;
+		for (int i = 0; i < this.data.getAttributes().size(); i++) {
+			if (this.data.getAttributes().get(i).getStatementTypeId() == statementTypeId && this.data.getAttributes().get(i).getVariable().equals(variable)) {
+				if (simulate == false) {
+					this.data.getAttributes().get(i).setVariable(newLabel);
+				}
+				updateAttributeCounter++;
+			}
+		}
+		
+		// update statements
+		int updateStatementCounter = 0;
+		for (int i = 0; i < this.data.getStatements().size(); i++) {
+			if (this.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
+				if (simulate == false) {
+					this.data.getStatements().get(i).getValues().put(newLabel, this.data.getStatements().get(i).getValues().get(variable));
+					this.data.getStatements().get(i).getValues().remove(variable);
+				}
+				updateStatementCounter++;
+			}
+		}
+		
+		// update statement type
+		if (simulate == false) {
+			String dataType = this.data.getStatementTypeById(statementTypeId).getVariables().get(variable);
+			this.data.getStatementTypeById(statementTypeId).getVariables().put(newLabel, dataType);
+			this.data.getStatementTypeById(statementTypeId).getVariables().remove(variable);
+		}
+		
+		// also change in the SQL database
+		if (simulate == false) {
+			this.sql.renameVariable(statementTypeId, variable, newLabel);
+		}
+
+		// report statistics
+		if (verbose == true) {
+			System.out.println("Updated attributes: " + updateAttributeCounter);
+			System.out.println("Updated statements: " + updateStatementCounter);
+			System.out.println("Updated variables:  1");
+		}
+	}
+
+	/**
+	 * Recast a variable from short text to long text, from long text to short text, from integer to boolean, or from 
+	 * boolean to integer, including any necessary changes in statements and attributes. Based on statement type label
+	 * 
+	 * @param statementTypeLabel  Label of the statement type in which the variable is defined.
+	 * @param variable            Name of the variable to be recast.
+	 * @param simulate            If true, changes are not actually carried out.
+	 * @param verbose             Should statistics on updating process be reported?
+	 * @throws Exception
+	 */
+	public void recastVariable(String statementTypeLabel, String variable, boolean simulate, boolean verbose) throws Exception {
+		int statementTypeId = this.data.getStatementType(statementTypeLabel).getId();
+		recastVariable(statementTypeId, variable, simulate, verbose);
+	}
+	
+	/**
+	 * Recast a variable from short text to long text, from long text to short text, from integer to boolean, or from 
+	 * boolean to integer, including any necessary changes in statements and attributes. Based on statement type ID.
+	 * 
+	 * @param statementTypeId  ID of the statement type in which the variable is defined.
+	 * @param variable         Name of the variable to be recast.
+	 * @param simulate         If true, changes are not actually carried out.
+	 * @param verbose          Should statistics on updating process be reported?
+	 * @throws Exception
+	 */
+	public void recastVariable(int statementTypeId, String variable, boolean simulate, boolean verbose) throws Exception {
+		
+		// check validity of input arguments
+		if (this.data.getStatementTypeById(statementTypeId) == null) {
+			throw new Exception("A statement type with ID " + statementTypeId + " was not found in the database.");
+		}
+		if (!this.data.getStatementTypeById(statementTypeId).getVariables().containsKey(variable)) {
+			throw new Exception("Variable '" + variable + "' is undefined in statement type " + statementTypeId + ".");
+		}
+		
+		// report simulation mode
+		if (verbose == true) {
+			if (simulate == true) {
+				System.out.println("Simulation mode: no actual changes are made to the database!");
+			} else {
+				System.out.println("Changes will be written both in memory and to the SQL database!");
+			}
+		}
+
+		// do the recoding, depending on which input data type is found
+		int updateAttributeCounter = 0;
+		int updateStatementCounter = 0;
+		String oldDataType = this.data.getStatementTypeById(statementTypeId).getVariables().get(variable);
+		if (oldDataType.equals("short text")) { // just change the data type; no other changes necessary
+			if (simulate == false) {
+				this.data.getStatementTypeById(statementTypeId).getVariables().put(variable, "long text");
+				this.sql.recastVariable(statementTypeId, variable);
+			}
+		} else if (oldDataType.equals("long text")) { // cut off values in statements and attributes that are longer than 200 characters and change data type
+			ArrayList<String> oldValues = new ArrayList<String>();
+			String oldValue;
+			if (this.data.getStatements().size() > 0) {
+				for (int i = 0; i < this.data.getStatements().size(); i++) {
+					if (((String) this.data.getStatements().get(i).getValues().get(variable)).length() > 200) {
+						oldValue = (String) this.data.getStatements().get(i).getValues().get(variable);
+						if (!oldValues.contains(oldValue)) {
+							oldValues.add(oldValue);
+						}
+						if (simulate == false) {
+							this.data.getStatements().get(i).getValues().put(variable, oldValue.substring(0, 200));
+							this.sql.upsertVariableContent(oldValue.substring(0, 200), this.data.getStatements().get(i).getId(), variable, statementTypeId, "long text");
+						}
+						updateStatementCounter++;
+					}
+				}
+			}
+			if (oldValues.size() > 0) {
+				int index;
+				for (int i = 0; i < oldValues.size(); i++) {
+					index = this.data.getAttributeIndex(oldValues.get(i), variable, statementTypeId);
+					if (simulate == false) {
+						this.data.getAttributes().get(index).setValue(oldValues.get(i).substring(0, 200));
+						this.sql.updateAttribute(this.data.getAttributes().get(index).getId(), "Value", oldValues.get(i).substring(0, 200));
+					}
+					updateAttributeCounter++;
+				}
+			}
+			if (simulate == false) {
+				this.data.getStatementTypeById(statementTypeId).getVariables().put(variable, "short text");
+				this.sql.recastVariable(statementTypeId, variable);
+			}
+		} else if (oldDataType.equals("integer")) { // recode statements into boolean and change data type; do not modify attributes
+			ArrayList<Integer> oldValues = new ArrayList<Integer>();
+			int oldValue;
+			if (this.data.getStatements().size() > 0) {
+				for (int i = 0; i < this.data.getStatements().size(); i++) {
+					oldValue = (int) this.data.getStatements().get(i).getValues().get(variable);
+					if (!oldValues.contains(oldValue)) {
+						oldValues.add(oldValue);
+					}
+				}
+				Collections.sort(oldValues);
+			}
+			if (oldValues.size() > 2) { // old integer variable has more than two values: fail
+				System.err.print("Variable type could not be changed from integer to boolean because there are more than two values:");
+				for (int i = 0; i < oldValues.size(); i++) {
+					System.err.print(" " + oldValues.get(i));
+				}
+				System.err.println("\nUse the dna_setStatements() function to recode values.");
+			} else if (oldValues.size() == 2) { // old integer variable has exactly two values: recode into 0 and 1 where necessary
+				for (int i = 0; i < this.data.getStatements().size(); i++) {
+					oldValue = (int) this.data.getStatements().get(i).getValues().get(variable);
+					if (oldValue == oldValues.get(0) && oldValue != 0) {
+						if (simulate == false) {
+							this.data.getStatements().get(i).getValues().put(variable, 0);
+							this.sql.upsertVariableContent(0, this.data.getStatements().get(i).getId(), variable, statementTypeId, "integer");
+						}
+						updateStatementCounter++;
+					} else if (oldValue == oldValues.get(1) && oldValue != 1) {
+						if (simulate == false) {
+							this.data.getStatements().get(i).getValues().put(variable, 1);
+							this.sql.upsertVariableContent(1, this.data.getStatements().get(i).getId(), variable, statementTypeId, "integer");
+						}
+						updateStatementCounter++;
+					}
+				}
+			} else if (oldValues.size() == 1) { // old integer variable has only one value: recode that value into 1
+				for (int i = 0; i < this.data.getStatements().size(); i++) {
+					oldValue = (int) this.data.getStatements().get(i).getValues().get(variable);
+					if (oldValue != 1) {
+						if (simulate == false) {
+							this.data.getStatements().get(i).getValues().put(variable, 1);
+							this.sql.upsertVariableContent(1, this.data.getStatements().get(i).getId(), variable, statementTypeId, "integer");
+						}
+						updateStatementCounter++;
+					}
+				}
+			} else {
+				// no statements to recode
+			}
+			if (simulate == false) {
+				this.data.getStatementTypeById(statementTypeId).getVariables().put(variable, "boolean");
+				this.sql.recastVariable(statementTypeId, variable);
+			}
+		} else if (oldDataType.equals("boolean")) { // recode statements from [0; 1] to [-1; +1]
+			if (simulate == false) {
+				this.data.getStatementTypeById(statementTypeId).getVariables().put(variable, "integer");
+				this.sql.recastVariable(statementTypeId, variable);
+			}
+			for (int i = 0; i < this.data.getStatements().size(); i++) {
+				if ((int) this.data.getStatements().get(i).getValues().get(variable) == 0) {
+					if (simulate = false) {
+						this.data.getStatements().get(i).getValues().put(variable, -1);
+						this.sql.upsertVariableContent(-1, this.data.getStatements().get(i).getId(), variable, statementTypeId, "integer");
+					}
+					updateStatementCounter++;
+				}
+			}
+		} else {
+			throw new Exception("Data type not recognized.");
+		}
+		
+		// report statistics
+		if (verbose == true) {
+			System.out.println("Updated variables:  1");
+			System.out.println("Updated attributes: " + updateAttributeCounter);
+			System.out.println("Updated statements: " + updateStatementCounter);
 		}
 	}
 }
