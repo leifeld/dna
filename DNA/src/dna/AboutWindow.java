@@ -25,7 +25,7 @@ public class AboutWindow extends JDialog {
         ImageIcon dna32Icon = new ImageIcon(getClass().getResource("/icons/dna32.png"));
         this.setIconImage(dna32Icon.getImage());
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        this.setPreferredSize(new Dimension(420, 260));
+        this.setPreferredSize(new Dimension(420, 360));
         
         Icon dnaTextIcon = new ImageIcon(getClass().getResource("/icons/dna32text.png"));
         JLabel dnaIcon = new JLabel(dnaTextIcon);
@@ -39,10 +39,12 @@ public class AboutWindow extends JDialog {
         
         aboutText.setText("<p><b>Current version</b><br>" + version + " (" + date + ")</p>"
             + "<p><b>DNA project homepage</b><br>"
-            + "Documentation, publications, a forum, and a bug tracker can be found "
+            + "Documentation, source code, publications, a forum, and a bug tracker can be found "
             + "here: <a href=\"http://github.com/leifeld/dna/\">http://github.com/leifeld/dna/</a></p>"
             + "<p><b>Icons</b><br> taken from <a href=\"http://www.famfamfam.com/lab/icons/silk/\">"
             + "http://www.famfamfam.com/lab/icons/silk/</a>.</p>"
+            + "<p><b>JRI</b><br>To display output in R, this software project uses JRI by Simon Urbanek (under LGPL license), "
+            + "which can be downloaded at <a href=\"https://github.com/s-u/rJava\">https://github.com/s-u/rJava</a>.</p>"
             );
         
         aboutText.addHyperlinkListener(new HyperlinkListener() {

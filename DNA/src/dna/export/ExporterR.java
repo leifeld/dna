@@ -1,5 +1,6 @@
 package dna.export;
 
+import java.io.PrintStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -11,6 +12,9 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+
+import org.rosuda.JRI.RConsoleOutputStream;
+import org.rosuda.JRI.Rengine;
 
 import dna.SqlConnection;
 import dna.dataStructures.AttributeVector;
@@ -42,6 +46,12 @@ public class ExporterR {
 	 * Constructor for external R calls. Load and prepare data for export.
 	 */
 	public ExporterR(String dbtype, String dbfile, String login, String password, boolean verbose) {
+		
+		// divert stdout to R console
+		Rengine r = new Rengine();
+		RConsoleOutputStream rs = new RConsoleOutputStream(r, 0);
+		System.setOut(new PrintStream(rs));
+		
 		this.dbfile = dbfile;
 		this.sql = new SqlConnection(dbtype, this.dbfile, login, password);
 		this.data = sql.getAllData();
@@ -65,6 +75,8 @@ public class ExporterR {
 	
 	/**
 	 * A function for printing details about the dataset. Used by rDNA.
+	 * 
+	 * @return   A string with details about the database.
 	 */
 	public String rShow() {
 		String statementString = " statements in ";
