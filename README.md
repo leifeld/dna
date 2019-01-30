@@ -18,7 +18,7 @@ You can install the package using:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("leifeld/dna/rDNA", INSTALL_opts = "--no-multiarch")
+devtools::install_url("https://github.com/leifeld/dna/releases/download/v2.0-beta.22/rDNA_2.1.9.tar.gz", INSTALL_opts = "--no-multiarch")
 ```
 The package relies on `rJava`, which needs to be installed first. For details on the installation process on different operating systems, consult the chapter "Installation of DNA and rDNA" in the manual.
 
