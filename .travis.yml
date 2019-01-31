@@ -23,7 +23,16 @@ r_packages:
 r_github_packages:  
   - igraph/rigraph
   
+before_script:
+  - cd ..
+  - make dna
+  - cp ./output/dna-*.jar ./rDNA/inst/extdata/
+  - cd rDNA
+  
 script:
   - Rscript -e "install.packages(c('rJava', 'ggraph'))" # Some packages need to be installed for every R version
   - R CMD build .
   - R CMD check *tar.gz
+
+after_success:
+    - Rscript -e 'covr::codecov()'
