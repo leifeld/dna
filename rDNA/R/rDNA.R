@@ -440,7 +440,7 @@ dna_addAttribute <- function(connection,
                alias,
                notes)
   if (verbose == TRUE) {
-    message("A new attribute with ID", id, "was added to the database.")
+    message("A new attribute with ID ", id, " was added to the database.")
   }
   if (returnID == TRUE) {
     return(id)
