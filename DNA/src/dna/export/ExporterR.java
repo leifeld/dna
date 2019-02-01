@@ -51,6 +51,7 @@ public class ExporterR {
 		Rengine r = new Rengine();
 		RConsoleOutputStream rs = new RConsoleOutputStream(r, 0);
 		System.setOut(new PrintStream(rs));
+		System.setErr(new PrintStream(rs));
 		
 		this.dbfile = dbfile;
 		this.sql = new SqlConnection(dbtype, this.dbfile, login, password);
