@@ -94,6 +94,7 @@ public class ExporterR {
 				s = s + ", ";
 			}
 		}
+		s = s + "\n";
 		return s;
 	}
 	
