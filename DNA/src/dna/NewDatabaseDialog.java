@@ -254,7 +254,7 @@ public class NewDatabaseDialog extends JDialog {
 					if (returnVal == JFileChooser.APPROVE_OPTION) {
 						File file = fc.getSelectedFile();
 						if (file.exists()) {
-							JOptionPane.showMessageDialog(Dna.dna.gui, "The file already exists. Please choose a new file.");
+							JOptionPane.showMessageDialog(Dna.gui, "The file already exists. Please choose a new file.");
 							browseButton.doClick();
 						} else {
 							String filename = new String(file.getPath());
@@ -1153,17 +1153,17 @@ public class NewDatabaseDialog extends JDialog {
 				public void actionPerformed(ActionEvent e) {
 					Dna.dna.sql = new SqlConnection(NewDatabaseDialog.this.dbType, NewDatabaseDialog.this.dbFile, NewDatabaseDialog.this.dbUser, NewDatabaseDialog.this.dbPassword);
 					Dna.dna.sql.createDataStructure();
-					//Dna.data.getSettings().put("filename", dbFile);
-					//Dna.dna.sql.upsertSetting("filename", dbFile);
 					Dna.data.getSettings().put("version", Dna.dna.version);
 					Dna.dna.sql.upsertSetting("version", Dna.dna.version);
 					Dna.data.getSettings().put("date", Dna.dna.date);
 					Dna.dna.sql.upsertSetting("date", Dna.dna.date);
 					Dna.data.getSettings().put("popupWidth", "220");  // default width of text fields in popup windows
 					Dna.dna.sql.upsertSetting("popupWidth", "220");
-					Dna.dna.gui.popupWidthModel.setValue(220);
+					Dna.gui.popupWidthModel.setValue(220);
+
+					Dna.data.setActiveCoder(Dna.data.getCoders().get(0).getId());
+					Dna.dna.sql.upsertSetting("activeCoder", Integer.toString(Dna.data.getCoders().get(0).getId()));
 					
-					Dna.dna.setActiveCoder(Dna.data.getCoders().get(0).getId());
 					for (int i = 0; i < Dna.data.getCoders().size(); i++) {
 						Dna.dna.sql.addCoder(Dna.data.getCoders().get(i));
 					}
@@ -1176,22 +1176,22 @@ public class NewDatabaseDialog extends JDialog {
 					
 					Dna.data.setActiveCoder(Dna.data.getCoders().get(0).getId());
 					
-					Dna.dna.gui.statusBar.resetLabel();
-					Dna.dna.gui.menuBar.openDatabase.setEnabled(false);
-					Dna.dna.gui.menuBar.newDatabase.setEnabled(false);
-					Dna.dna.gui.menuBar.closeDatabase.setEnabled(true);
-					Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
-					Dna.dna.gui.menuBar.networkButton.setEnabled(true);
-					Dna.dna.gui.menuBar.colorStatementTypeButton.setEnabled(true);
-					Dna.dna.gui.menuBar.colorCoderButton.setEnabled(true);
-					Dna.dna.gui.rightPanel.rm.setFieldsEnabled(true);
-					Dna.dna.gui.leftPanel.docStats.refreshButton.setEnabled(true);
-					Dna.dna.gui.rightPanel.statementPanel.typeComboBox.setSelectedIndex(0);
-					Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();
+					Dna.gui.statusBar.resetLabel();
+					Dna.gui.menuBar.openDatabase.setEnabled(false);
+					Dna.gui.menuBar.newDatabase.setEnabled(false);
+					Dna.gui.menuBar.closeDatabase.setEnabled(true);
+					Dna.gui.menuBar.newDocumentButton.setEnabled(true);
+					Dna.gui.menuBar.networkButton.setEnabled(true);
+					Dna.gui.menuBar.colorStatementTypeButton.setEnabled(true);
+					Dna.gui.menuBar.colorCoderButton.setEnabled(true);
+					Dna.gui.rightPanel.rm.setFieldsEnabled(true);
+					Dna.gui.leftPanel.docStats.refreshButton.setEnabled(true);
+					Dna.gui.rightPanel.statementPanel.typeComboBox.setSelectedIndex(0);
+					Dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();
 					
-					Dna.dna.gui.leftPanel.setComboEnabled(true);
+					Dna.gui.leftPanel.setComboEnabled(true);
 					int ac = Dna.data.getActiveCoder();
-					Dna.dna.gui.leftPanel.coderPanel.model.setSelectedItem(Dna.data.getCoderById(ac));
+					Dna.gui.leftPanel.coderPanel.model.setSelectedItem(Dna.data.getCoderById(ac));
 					
 					// add an initial empty attribute vector for each "short text" variable
 					for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
@@ -1207,7 +1207,7 @@ public class NewDatabaseDialog extends JDialog {
 				    	}
 					}
 					
-					Dna.dna.gui.refreshGui();
+					Dna.gui.refreshGui();
 					
 					dispose();
 				}

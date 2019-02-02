@@ -49,6 +49,8 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
 #' @param password The password for accessing the database (only applicable
 #'   to remote mySQL databases; can be \code{NULL} if a local .dna file
 #'   is used).
+#' @param create If the file or remote database structure does not exist yet,
+#'   should it be created with default values?
 #' @param verbose Print details the number of documents and statements after
 #'   loading the database?
 #'
@@ -58,20 +60,20 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
 #' dna_connection(dna_sample())
 #' }
 #' @export
-dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE) {
+dna_connection <- function(infile, login = NULL, password = NULL, create = FALSE, verbose = TRUE) {
   if (is.null(login) & is.null(password)) {
     if (!file.exists(infile)) {
-      stop(if (grepl("/", infile, fixed = TRUE)) {
-        paste0("infile \"", infile, "\" could not be located.")
-      } else {
-        paste0(
-          "infile \"",
-          infile,
-          "\" could not be located in working directory \"",
-          getwd(),
-          "\"."
-        )
-      })
+      if (!isTRUE(create)) {
+        stop(if (grepl("/", infile, fixed = TRUE)) {
+          paste0("infile '", infile, "' could not be located. Use 'create = TRUE' to create a new database.")
+        } else {
+          paste0("infile '",
+                 infile,
+                 "' could not be located in working directory '",
+                 getwd(),
+                 "'. Use 'create = TRUE' to create a new database.")
+        })
+      }
     }
   }
   if (!grepl("/", infile, fixed = TRUE)) {
@@ -539,7 +541,7 @@ dna_addDocument <- function(connection,
                type,
                dateLong)
   if (verbose == TRUE) {
-    message("A new document with ID", id, "was added to the database.")
+    message("A new document with ID ", id, " was added to the database.")
   }
   if (returnID == TRUE) {
     return(id)

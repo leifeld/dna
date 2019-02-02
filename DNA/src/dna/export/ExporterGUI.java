@@ -1237,7 +1237,7 @@ public class ExporterGUI extends JDialog {
 				}
 			}
 			progressMonitor.setProgress(4);
-			JOptionPane.showMessageDialog(Dna.dna.gui, "Data were exported to \"" + filename + "\".");
+			JOptionPane.showMessageDialog(Dna.gui, "Data were exported to \"" + filename + "\".");
 		}
 	}
 	

@@ -131,7 +131,7 @@ public class Gui extends JFrame {
 		fontSpinner.addChangeListener(new ChangeListener(){
 			public void stateChanged(ChangeEvent e) {
 				Font font = new Font("Monospaced", Font.PLAIN, (int) fontSpinner.getValue());
-				Dna.dna.gui.textPanel.textWindow.setFont(font);
+				Dna.gui.textPanel.textWindow.setFont(font);
 			}
 		});
 		toggleButtons.add(new JLabel(new ImageIcon(getClass().getResource("/icons/font.png"))));
@@ -170,69 +170,69 @@ public class Gui extends JFrame {
 	public void refreshGui() {
 		HashMap<String, Boolean> perm = Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions();
 		if (perm.get("importDocuments") == true) {
-			Dna.dna.gui.menuBar.importTextButton.setEnabled(true);
-			Dna.dna.gui.menuBar.importOldButton.setEnabled(true);
-			Dna.dna.gui.menuBar.importDnaButton.setEnabled(true);
-			Dna.dna.gui.menuBar.recodeMetaData.setEnabled(true);
+			Dna.gui.menuBar.importTextButton.setEnabled(true);
+			Dna.gui.menuBar.importOldButton.setEnabled(true);
+			Dna.gui.menuBar.importDnaButton.setEnabled(true);
+			Dna.gui.menuBar.recodeMetaData.setEnabled(true);
 		} else {
-			Dna.dna.gui.menuBar.importTextButton.setEnabled(false);
-			Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
-			Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
-			Dna.dna.gui.menuBar.recodeMetaData.setEnabled(false);
+			Dna.gui.menuBar.importTextButton.setEnabled(false);
+			Dna.gui.menuBar.importOldButton.setEnabled(false);
+			Dna.gui.menuBar.importDnaButton.setEnabled(false);
+			Dna.gui.menuBar.recodeMetaData.setEnabled(false);
 		}
 		
-		if (Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton != null) {
+		if (Dna.gui.leftPanel.editDocPanel.saveDetailsButton != null) {
 			if (perm.get("editDocuments") == false) {
-				Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(false);
-				Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
+				Dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(false);
+				Dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
 			} else {
-				Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(true);
-				Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
+				Dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(true);
+				Dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
 			}
 		}
 		
 		if (perm.get("deleteDocuments") == false) {
-			Dna.dna.gui.documentPanel.menuItemDelete.setEnabled(false);
+			Dna.gui.documentPanel.menuItemDelete.setEnabled(false);
 		} else {
-			Dna.dna.gui.documentPanel.menuItemDelete.setEnabled(true);
+			Dna.gui.documentPanel.menuItemDelete.setEnabled(true);
 		}
 
 		if (perm.get("addDocuments") == false) {
-			Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
+			Dna.gui.menuBar.newDocumentButton.setEnabled(false);
 		} else {
-			Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
+			Dna.gui.menuBar.newDocumentButton.setEnabled(true);
 		}
 		
 		if (perm.get("editRegex") == false) {
-			Dna.dna.gui.rightPanel.rm.setFieldsEnabled(false);
+			Dna.gui.rightPanel.rm.setFieldsEnabled(false);
 		} else {
-			Dna.dna.gui.rightPanel.rm.setFieldsEnabled(true);
+			Dna.gui.rightPanel.rm.setFieldsEnabled(true);
 		}
 		
 		if (perm.get("editCoders") == false) {
-			Dna.dna.gui.leftPanel.coderPanel.addButton.setEnabled(false);
+			Dna.gui.leftPanel.coderPanel.addButton.setEnabled(false);
 		} else {
-			Dna.dna.gui.leftPanel.coderPanel.addButton.setEnabled(true);
+			Dna.gui.leftPanel.coderPanel.addButton.setEnabled(true);
 		}
 
-		Dna.dna.gui.leftPanel.coderPanel.coderBox.updateUI();
-		Dna.dna.gui.leftPanel.coderPanel.setRowSorterEnabled(true);
-		Dna.dna.gui.textPanel.paintStatements();
-		Dna.dna.gui.documentPanel.documentFilter();
-		Dna.dna.gui.documentPanel.documentTable.updateDocumentView();
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.sort();
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.updateUI();
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(true);
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(true);
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.addMissingButton.setEnabled(true);
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(true);
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(true);
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.cleanUpButton.setEnabled(true);
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.updateUI();
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.applyButton.setEnabled(true);
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.resetButton.setEnabled(true);
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.setEnabled(true);
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.entryBox.setEnabled(true);
+		Dna.gui.leftPanel.coderPanel.coderBox.updateUI();
+		Dna.gui.leftPanel.coderPanel.setRowSorterEnabled(true);
+		Dna.gui.textPanel.paintStatements();
+		Dna.gui.documentPanel.documentFilter();
+		Dna.gui.documentPanel.documentTable.updateDocumentView();
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.sort();
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.updateUI();
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(true);
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(true);
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.addMissingButton.setEnabled(true);
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(true);
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(true);
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.cleanUpButton.setEnabled(true);
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.updateUI();
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.applyButton.setEnabled(true);
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.resetButton.setEnabled(true);
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.setEnabled(true);
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.entryBox.setEnabled(true);
 	}
 	
 	class StatusBar extends JPanel {
@@ -419,7 +419,7 @@ public class Gui extends JFrame {
 						try {
 							new ImportOldDNA(dbfile);
 						} catch (NullPointerException npe) {
-							JOptionPane.showMessageDialog(Dna.dna.gui, 
+							JOptionPane.showMessageDialog(Dna.gui, 
 									"The default statement type \"DNA Statement\" is not available or has been modified!");
 						}
 					}
@@ -483,8 +483,8 @@ public class Gui extends JFrame {
 					Dna.dna.sql.upsertSetting("statementColor", "statementType");
 					colorStatementTypeButton.setIcon(tickIcon);
 					colorCoderButton.setIcon(null);
-					Dna.dna.gui.rightPanel.statementPanel.statementTable.updateUI();
-					Dna.dna.gui.textPanel.paintStatements();
+					Dna.gui.rightPanel.statementPanel.statementTable.updateUI();
+					Dna.gui.textPanel.paintStatements();
 				}
 			});
 			colorCoderButton.addActionListener(new ActionListener() {
@@ -493,8 +493,8 @@ public class Gui extends JFrame {
 					Dna.dna.sql.upsertSetting("statementColor", "coder");
 					colorStatementTypeButton.setIcon(null);
 					colorCoderButton.setIcon(tickIcon);
-					Dna.dna.gui.rightPanel.statementPanel.statementTable.updateUI();
-					Dna.dna.gui.textPanel.paintStatements();
+					Dna.gui.rightPanel.statementPanel.statementTable.updateUI();
+					Dna.gui.textPanel.paintStatements();
 				}
 			});
 			settingsMenu.addSeparator();

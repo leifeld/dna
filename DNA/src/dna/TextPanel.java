@@ -219,8 +219,8 @@ public class TextPanel extends JPanel {
 	public void popupMenu(Component comp, int x, int y) {
 		popmen = new JPopupMenu();
 		statementTypes = Dna.data.getStatementTypes();
-		int docRow = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
-		int documentIndex = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToModel(docRow);
+		int docRow = Dna.gui.documentPanel.documentTable.getSelectedRow();
+		int documentIndex = Dna.gui.documentPanel.documentTable.convertRowIndexToModel(docRow);
 		//int documentIndex = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
 		int documentId = Dna.data.getDocuments().get(documentIndex).getId();
 		Date documentDate = Dna.data.getDocuments().get(documentIndex).getDate();
@@ -256,11 +256,11 @@ public class TextPanel extends JPanel {
 					Statement statement = new Statement(statementId, documentId, selectionStart, selectionEnd, 
 							documentDate, statementType.getId(), coderId, map);
 					Dna.dna.addStatement(statement);
-					Dna.dna.gui.documentPanel.documentTable.updateUI(); // for the "#" column
+					Dna.gui.documentPanel.documentTable.updateUI(); // for the "#" column
 					
 					paintStatements();
 					textWindow.setCaretPosition(selectionEnd);
-					Dna.dna.gui.textPanel.selectStatement(statementId, documentId, true);
+					Dna.gui.textPanel.selectStatement(statementId, documentId, true);
 				}
 			});
 		}
@@ -288,16 +288,16 @@ public class TextPanel extends JPanel {
 						Point location = textWindow.getLocationOnScreen();
 						textWindow.setSelectionStart(startIndex);
 						textWindow.setSelectionEnd(stopIndex);
-						int row = Dna.dna.gui.rightPanel.statementPanel.ssc.getIndexByStatementId(statementId);
+						int row = Dna.gui.rightPanel.statementPanel.ssc.getIndexByStatementId(statementId);
 						if (row > -1) {
-							Dna.dna.gui.rightPanel.statementPanel.statementTable.setRowSelectionInterval(row, row);
-							Dna.dna.gui.rightPanel.statementPanel.statementTable.scrollRectToVisible(new Rectangle(  // scroll to selected row
-									Dna.dna.gui.rightPanel.statementPanel.statementTable.getCellRect(i, 0, true)));
+							Dna.gui.rightPanel.statementPanel.statementTable.setRowSelectionInterval(row, row);
+							Dna.gui.rightPanel.statementPanel.statementTable.scrollRectToVisible(new Rectangle(  // scroll to selected row
+									Dna.gui.rightPanel.statementPanel.statementTable.getCellRect(i, 0, true)));
 						}
-						int docModelIndex = Dna.dna.gui.documentPanel.documentContainer.getModelIndexById(Dna.data.getStatements().get(i).getDocumentId());
-						int docRow = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToView(docModelIndex);
+						int docModelIndex = Dna.gui.documentPanel.documentContainer.getModelIndexById(Dna.data.getStatements().get(i).getDocumentId());
+						int docRow = Dna.gui.documentPanel.documentTable.convertRowIndexToView(docModelIndex);
 						//int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(Dna.data.getStatements().get(i).getDocumentId());
-						Dna.dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(Dna.dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));
+						Dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(Dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));
 						if (b[1] == true) {  // statement is editable by the active coder
 							new Popup(p, statementId, location, true);
 						} else {
@@ -332,9 +332,9 @@ public class TextPanel extends JPanel {
 				int start = Dna.data.getStatement(statementId).getStart();
 				Rectangle mtv = null;
 				try {
-					double y = textWindow.modelToView(start).getY();
+					double y = textWindow.modelToView2D(start).getY();
 					int l = textWindow.getText().length();
-					double last = textWindow.modelToView(l).getY();
+					double last = textWindow.modelToView2D(l).getY();
 					double frac = y / last;
 					double max = textScrollPane.getVerticalScrollBar().
 							getMaximum();

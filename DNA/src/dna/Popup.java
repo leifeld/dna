@@ -98,16 +98,16 @@ public class Popup extends JDialog {
 		GridBagConstraints gbc = new GridBagConstraints();
 		
 		JLabel sPosLabel = new JLabel(" start:");
-		JTextField startPos = new JTextField(new Integer(statement.getStart()).toString());
+		JTextField startPos = new JTextField(Integer.toString(statement.getStart()));
 		startPos.setEditable(false);
 		
 		JLabel ePosLabel = new JLabel(" end:");
-		JTextField endPos = new JTextField(new Integer(statement.getStop()).toString());
+		JTextField endPos = new JTextField(Integer.toString(statement.getStop()));
 		endPos.setEditable(false);
 
 		JLabel idLabel = new JLabel(" ID:");
 		JTextField idField = 
-				new JTextField(new Integer(statementId).toString());
+				new JTextField(Integer.toString(statementId));
 		idField.setEditable(false);
 
 		String type = Dna.data.getStatementTypeById(statementTypeId).getLabel();
@@ -141,8 +141,8 @@ public class Popup extends JDialog {
 				}
 				Statement newStatement = new Statement(newId, documentId, start, stop, date, statementTypeId, coder, map);
 				Dna.dna.addStatement(newStatement);
-				Dna.dna.gui.documentPanel.documentTable.updateUI(); // for the "#" column
-				Dna.dna.gui.textPanel.selectStatement(newId, newStatement.getDocumentId(), true);
+				Dna.gui.documentPanel.documentTable.updateUI(); // for the "#" column
+				Dna.gui.textPanel.selectStatement(newId, newStatement.getDocumentId(), true);
 			}
 		});
 		
@@ -152,13 +152,13 @@ public class Popup extends JDialog {
 		remove.setPreferredSize(new Dimension(16, 16));
 		remove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int question = JOptionPane.showConfirmDialog(Dna.dna.gui, 
+				int question = JOptionPane.showConfirmDialog(Dna.gui, 
 						"Are you sure you want to remove this statement?", 
 						"Remove?", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
 					Dna.dna.removeStatement(statementId);
-					Dna.dna.gui.textPanel.paintStatements();
-					Dna.dna.gui.documentPanel.documentTable.updateUI(); // for the "#" column
+					Dna.gui.textPanel.paintStatements();
+					Dna.gui.documentPanel.documentTable.updateUI(); // for the "#" column
 					
                     // update links table after removal of statements
                     //Dna.dna.gui.rightPanel.updateViewLinksTable();

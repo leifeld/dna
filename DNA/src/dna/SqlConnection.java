@@ -13,8 +13,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.TreeMap;
 
-import javax.swing.JOptionPane;
-
 import dna.dataStructures.AttributeVector;
 import dna.dataStructures.Coder;
 import dna.dataStructures.CoderRelation;
@@ -85,8 +83,7 @@ public class SqlConnection {
 			preStatement.execute();
 			preStatement.close();
 		} catch (SQLException e) {
-			JOptionPane.showMessageDialog(Dna.dna.gui, 
-					"Database access could not be executed properly. Report this problem along with the \n "
+			System.err.println("Database access could not be executed properly. Report this problem along with the \n "
 					+ "error log if you can see a systematic pattern here. Also, reload your file.");
 			e.printStackTrace();
 		}
@@ -768,8 +765,7 @@ public class SqlConnection {
 			preStatement.close();
 			connection.setAutoCommit(true);
 		} catch (SQLException e) {
-			JOptionPane.showMessageDialog(Dna.dna.gui, 
-					"Database access could not be executed properly. Report this problem along with the \n "
+			System.err.println("Database access could not be executed properly. Report this problem along with the \n "
 					+ "error log if you can see a systematic pattern here. Also, reload your file.");
 			e.printStackTrace();
 		}
@@ -1606,10 +1602,10 @@ public class SqlConnection {
 		String password = coder.getPassword();
 		HashMap<String, Boolean> permissions = coder.getPermissions();
 		
-		if (dbtype == "sqlite") {
+		if (dbtype.equals("sqlite")) {
 			executeStatement("INSERT OR REPLACE INTO CODERS (ID, Name, Red, Green, Blue, Password) "
 					+ "VALUES (" + id + ", '" + name + "', " + red + ", " + green + ", " + blue + ", '" + password + "')");
-		} else if (dbtype == "mysql") {
+		} else if (dbtype.equals("mysql")) {
 			executeStatement("INSERT INTO CODERS (ID, Name, Red, Green, Blue, Password) "
 					+ "VALUES(" + id + ", '" + name + "', " + red + ", " + green + ", " + blue + ", '" + password + "') "
 					+ "ON DUPLICATE KEY UPDATE Name = '" + name + "', red = " + red + ", green = " + green + ", blue = "
@@ -1799,15 +1795,13 @@ public class SqlConnection {
 	 * @param value  Value corresponding to the property
 	 */
 	public void upsertSetting(String key, String value) {
-		if (dbtype == "sqlite") {
+		if (dbtype.equals("sqlite")) {
 			executeStatement("INSERT OR REPLACE INTO SETTINGS (Property, Value) VALUES ('" + key + "', '" + value + "')");
-		} else if (dbtype == "mysql") {
+		} else if (dbtype.equals("mysql")) {
 			executeStatement("INSERT INTO SETTINGS (Property, Value) VALUES('" + key + "', '" + value + "') "
 					+ "ON DUPLICATE KEY UPDATE Value = '" + value + "'");
 		}
 	}
-	
-	
 
 	
 	/* =================================================================================================================

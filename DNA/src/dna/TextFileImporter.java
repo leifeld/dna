@@ -433,7 +433,7 @@ public class TextFileImporter extends JDialog {
 		
 		@Override
 		public void run() {
-			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Importing text files...", "", 0, files.length - 1);
+			progressMonitor = new ProgressMonitor(Dna.gui, "Importing text files...", "", 0, files.length - 1);
 			progressMonitor.setMillisToDecideToPopup(1);
 			
 			for (int i = 0; i < files.length; i++) {
@@ -514,7 +514,7 @@ public class TextFileImporter extends JDialog {
 				}
 				
 			}
-			Dna.dna.gui.refreshGui();
+			Dna.gui.refreshGui();
 			JOptionPane.showMessageDialog(TextFileImporter.this, good + " documents were successfully imported, " + bad + " omitted.");
 			dispose();
 		}
