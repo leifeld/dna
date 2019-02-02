@@ -106,12 +106,12 @@ public class ExporterR {
 			
 			// create default statement types
 			try {
-				this.addStatementType("DNA Statement", "#FFFF00");
+				this.addStatementType("DNA Statement", "#FFFF00", new String[0], new String[0]);
 				this.addVariable("DNA Statement", "person", "short text", false, false);
 				this.addVariable("DNA Statement", "organization", "short text", false, false);
 				this.addVariable("DNA Statement", "concept", "short text", false, false);
 				this.addVariable("DNA Statement", "agreement", "boolean", false, false);
-				this.addStatementType("Annotation", "#D3D3D3");
+				this.addStatementType("Annotation", "#D3D3D3", new String[0], new String[0]);
 				this.addVariable("Annotation", "note", "long text", false, false);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -2245,21 +2245,46 @@ public class ExporterR {
 	}
 
 	/**
-	 * Add a new, empty statement type (without variables) to the database.
+	 * Add a new statement type (with or without variables) to the database.
 	 * 
 	 * @param statementTypeLabel  Name of the statement type.
 	 * @param color               Color of the statement type as an RGB hex string (e.g., "#FF0000").
+	 * @param variableNames       A String array of variable names. Must not contain any white space.
+	 * @param variableTypes       A String array of data types, with values "short text", "long text", "boolean", or "integer".
 	 * @throws Exception
 	 */
-	public void addStatementType(String statementTypeLabel, String color) throws Exception {
+	public void addStatementType(String statementTypeLabel, String color, String[] variableNames, String[] variableTypes) throws Exception {
 		if (this.data.getStatementType(statementTypeLabel) != null) {
 			throw new Exception("A statement type called '" + statementTypeLabel + "' already exists and will not be added.");
 		}
-		int id = this.data.generateNewId("statementTypes");
-		LinkedHashMap<String, String> variables = new LinkedHashMap<String, String>();
-		StatementType st = new StatementType(id, statementTypeLabel, color, variables);
+		int statementTypeId = this.data.generateNewId("statementTypes");
+		LinkedHashMap<String, String> variableMap = new LinkedHashMap<String, String>();
+		if (variableNames.length > 0) {
+			for (int i = 0; i < variableNames.length; i++) {
+				if ((variableTypes[i].equals("short text") || variableTypes[i].equals("long text") || variableTypes[i].equals("boolean") || variableTypes[i].equals("integer")) && !variableNames[i].contains(" ")) {
+					variableMap.put(variableNames[i], variableTypes[i]);
+				} else {
+					throw new Exception("Variable '" + variableNames[i] + "' has an invalid data type or contains spaces. Aborting.");
+				}
+			}
+		}
+		StatementType st = new StatementType(statementTypeId, statementTypeLabel, color, variableMap);
 		this.data.addStatementType(st);
 		this.sql.upsertStatementType(st);
+		
+		// add blank attributes
+		Iterator<String> iterator = st.getVariables().keySet().iterator();
+		while (iterator.hasNext()) {
+			String key = iterator.next();
+			String value = st.getVariables().get(key);
+			if (value.equals("short text") || value.equals("long text")) {
+				int attributeId = this.data.generateNewId("attributes");
+				AttributeVector av = new AttributeVector(attributeId, "", "#000000", "", "", "", "", statementTypeId, key);
+				this.data.getAttributes().add(av);
+				Collections.sort(this.data.getAttributes());
+				this.sql.upsertAttributeVector(av);
+			}
+		}
 	}
 
 	/**
@@ -2380,8 +2405,8 @@ public class ExporterR {
 	public void colorStatementType(int statementTypeId, String color) {
 		this.data.getStatementTypeById(statementTypeId).setColor(color);
 		this.sql.colorStatementType(statementTypeId,
-				this.data.getStatementTypeById(statementTypeId).getBlue(),
-				this.data.getStatementTypeById(statementTypeId).getBlue(),
+				this.data.getStatementTypeById(statementTypeId).getRed(),
+				this.data.getStatementTypeById(statementTypeId).getGreen(),
 				this.data.getStatementTypeById(statementTypeId).getBlue());
 	}
 

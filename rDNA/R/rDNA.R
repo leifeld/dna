@@ -687,7 +687,7 @@ dna_addStatement <- function(connection,
 #'   \code{"#FFFF00"} for yellow.
 #'
 #' @export
-dna_addStatementType <- function(connection, label, color = "#FFFF00") {
+dna_addStatementType <- function(connection, label, color = "#FFFF00", ...) {
   if (is.null(label) || is.na(label) || length(label) != 1 || !is.character(label)) {
     stop("'label' must be a character object of length 1.")
   }
@@ -697,7 +697,29 @@ dna_addStatementType <- function(connection, label, color = "#FFFF00") {
   if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
     stop("'color' is not a hex RGB value of the form '#FFFF00'.")
   }
-  .jcall(connection$dna_connection, "V", "addStatementType", label, color)
+  
+  dots <- list(...)
+  if (any(sapply(dots, length) > 1)) {
+    stop("Some arguments in ... are longer than 1. All variables need to be associated with exactly one data type.")
+  }
+  if (!all(sapply(dots, is.character))) {
+    stop("Some arguments in ... are not character strings. They need to indicate the variable type as a character string.")
+  }
+  if (any(grepl("\\W", names(dots)))) {
+    stop("Variable names must not contain any spaces.")
+  }
+  variableNames <- names(dots)
+  if (is.null(variableNames)) {
+    variableNames <- character()
+  }
+  variableNames <- .jarray(variableNames)  # wrap in .jarray in case there is only one element
+  variableTypes <- unlist(dots)
+  if (is.null(variableTypes)) {
+    variableTypes <- character()
+  }
+  variableTypes <- .jarray(variableTypes)  # wrap in .jarray in case there is only one element
+  
+  .jcall(connection$dna_connection, "V", "addStatementType", label, color, variableNames, variableTypes)
 }
 
 #' Add a new variable to a statement type in the database
