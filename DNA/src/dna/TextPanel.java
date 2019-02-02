@@ -14,6 +14,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -299,9 +300,9 @@ public class TextPanel extends JPanel {
 						//int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(Dna.data.getStatements().get(i).getDocumentId());
 						Dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(Dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));
 						if (b[1] == true) {  // statement is editable by the active coder
-							new Popup(p, statementId, location, true);
+							new Popup(p.getX(), p.getY(), statementId, location, true);
 						} else {
-							new Popup(p, statementId, location, false);
+							new Popup(p.getX(), p.getY(), statementId, location, false);
 						}
 						break;
 					}
@@ -330,7 +331,7 @@ public class TextPanel extends JPanel {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				int start = Dna.data.getStatement(statementId).getStart();
-				Rectangle mtv = null;
+				Rectangle2D mtv = null;
 				try {
 					double y = textWindow.modelToView2D(start).getY();
 					int l = textWindow.getText().length();
@@ -341,10 +342,9 @@ public class TextPanel extends JPanel {
 					double h = textScrollPane.getHeight();
 					int value = (int) Math.ceil(frac * max - (h / 2));
 					textScrollPane.getVerticalScrollBar().setValue(value);
-					mtv = textWindow.modelToView(start);
-					Point p = mtv.getLocation();
+					mtv = textWindow.modelToView2D(start);
 					Point loc = textWindow.getLocationOnScreen();
-					new Popup(p, statementId, loc, editable);
+					new Popup(mtv.getX(), mtv.getY(), statementId, loc, editable);
 				} catch (BadLocationException e) {
 					System.err.println("Statement " + statementId + ": Popup window cannot be opened because the location is outside the document text.");
 				}

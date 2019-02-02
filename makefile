@@ -16,7 +16,7 @@ SAMPLE_DIR  := sample
 SAMPLE_FILE := sample.dna
 R_DIR       := rDNA
 MANUAL_DIR  := manual
-MANUAL_FILE := dna-manual.Rnw
+MANUAL_FILE := dna-manual
 
 # define makefile variable for DNA JAR file name with version number
 # 1. match version line in Dna.java using grep
@@ -34,12 +34,12 @@ all: sample dna rDNA manual
 
 # compile the manual using knitr and texi2pdf
 manual: mkdir-output
-	$(CP) $(MANUAL_DIR) $(OUTPUT_DIR);                   \
-	cd $(OUTPUT_DIR)/$(MANUAL_DIR);                      \
-	$(RSCRIPT) "library(knitr); knit('$(MANUAL_FILE)')"; \
-	$(LATEX) *.tex;                                      \
-	mv *.pdf ..;                                         \
-	cd ..;                                               \
+	$(CP) $(MANUAL_DIR) $(OUTPUT_DIR);                       \
+	cd $(OUTPUT_DIR)/$(MANUAL_DIR);                          \
+	$(RSCRIPT) "library(knitr); knit('$(MANUAL_FILE).Rnw')"; \
+	$(LATEX) $(MANUAL_FILE).tex;                             \
+	mv *.pdf ..;                                             \
+	cd ..;                                                   \
 	$(RM) $(MANUAL_DIR)
 
 # compile rDNA source package

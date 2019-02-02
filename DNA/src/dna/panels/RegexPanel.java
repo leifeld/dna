@@ -149,7 +149,7 @@ public class RegexPanel extends JPanel {
 				String text = textField.getText();
 				Dna.dna.addRegex(new Regex(text, new Color(red, green, blue)));
 				textField.setText("");
-				Dna.dna.gui.textPanel.paintStatements();
+				Dna.gui.textPanel.paintStatements();
 			}
 		});
 		addButton.setEnabled(false);
@@ -163,7 +163,7 @@ public class RegexPanel extends JPanel {
 				Dna.dna.removeRegex(label);
 				regexList.clearSelection();
 				regexList.setSelectedIndex(0);
-				Dna.dna.gui.textPanel.paintStatements();
+				Dna.gui.textPanel.paintStatements();
 			}
 		});
 		buttons.add(remove);

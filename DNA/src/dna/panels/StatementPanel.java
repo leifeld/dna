@@ -84,11 +84,11 @@ public class StatementPanel extends JPanel {
 					if (statementId != -1) {
 						boolean[] b = Dna.data.getActiveStatementPermissions(statementId);
 						int docId = Dna.data.getStatement(statementId).getDocumentId();
-						int docModelIndex = Dna.dna.gui.documentPanel.documentContainer.getModelIndexById(docId);
-						int docRow = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToView(docModelIndex);
-						Dna.dna.gui.documentPanel.documentTable.getSelectionModel().setSelectionInterval(docRow, docRow);
-						Dna.dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(Dna.dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));
-						Dna.dna.gui.textPanel.selectStatement(statementId, docId, b[1]);
+						int docModelIndex = Dna.gui.documentPanel.documentContainer.getModelIndexById(docId);
+						int docRow = Dna.gui.documentPanel.documentTable.convertRowIndexToView(docModelIndex);
+						Dna.gui.documentPanel.documentTable.getSelectionModel().setSelectionInterval(docRow, docRow);
+						Dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(Dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));
+						Dna.gui.textPanel.selectStatement(statementId, docId, b[1]);
 					}
 				}
 			}
@@ -351,12 +351,12 @@ public class StatementPanel extends JPanel {
 		}
 		
 		public void currentDocumentFilter() {
-			int row = Dna.dna.gui.documentPanel.documentTable.getSelectedRow();
+			int row = Dna.gui.documentPanel.documentTable.getSelectedRow();
 			if (row > -1) {
-				int modelIndex = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToModel(row);
+				int modelIndex = Dna.gui.documentPanel.documentTable.convertRowIndexToModel(row);
 				int docId = -1;
 				if (modelIndex > -1) {
-					docId = Dna.dna.gui.documentPanel.documentContainer.get(modelIndex).getId();
+					docId = Dna.gui.documentPanel.documentContainer.get(modelIndex).getId();
 				}
 				final int documentId = docId;
 				

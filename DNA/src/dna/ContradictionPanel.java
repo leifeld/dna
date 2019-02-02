@@ -64,7 +64,7 @@ public class ContradictionPanel extends JPanel {
 						node = node.replaceAll("\\)", "");
 						node = node.replaceAll("1 \\(", "");
 						node = node.replaceAll("0 \\(", "");
-						int nodeInt = new Integer(node).intValue();
+						int nodeInt = Integer.parseInt(node);
 
 						Dna.gui.rightPanel.statementPanel.statementFilter.showAll.
 						setSelected(true);

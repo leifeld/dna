@@ -233,7 +233,7 @@ public class Data {
 	 * @param activeCoder the activeCoder to set
 	 */
 	public void setActiveCoder(int activeCoder) {
-		settings.put("activeCoder", (new Integer(activeCoder)).toString());
+		settings.put("activeCoder", Integer.toString(activeCoder));
 	}
 	
 	/**

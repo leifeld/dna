@@ -362,7 +362,7 @@ public class ImportDnaDocuments extends JDialog {
 			    					if (Dna.data.getAttributes().get(avIndex).getType().equals("") && !av[j].getType().equals("")) {
 			    						Dna.dna.updateAttributeType(avIndex, av[j].getType());
 			    					}
-			    					if (Dna.data.getAttributes().get(avIndex).getColor().equals(Color.BLACK) && !av[j].getAlias().equals(Color.BLACK)) {
+			    					if (Dna.data.getAttributes().get(avIndex).getColor().equals(Color.BLACK) && !av[j].getColor().equals(Color.BLACK)) {
 			    						Dna.dna.updateAttributeColor(avIndex, av[j].getColor());
 			    					}
 			    				} else {  // attribute not present; check if at least one statement contains it and mark for import later

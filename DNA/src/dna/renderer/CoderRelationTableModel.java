@@ -113,11 +113,11 @@ public class CoderRelationTableModel extends AbstractTableModel implements Table
 		//fireTableCellUpdated(rowIndex, columnIndex);
 		
 		// update statement-related GUI parts
-		Dna.dna.gui.textPanel.paintStatements();
-		Dna.dna.gui.rightPanel.statementPanel.statementFilter.updateFilter();
+		Dna.gui.textPanel.paintStatements();
+		Dna.gui.rightPanel.statementPanel.statementFilter.updateFilter();
 		
 		// update document-related GUI parts
-		Dna.dna.gui.documentPanel.documentFilter();
+		Dna.gui.documentPanel.documentFilter();
 	}
 	
 	@Override

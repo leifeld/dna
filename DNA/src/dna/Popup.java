@@ -46,7 +46,8 @@ public class Popup extends JDialog {
 	
 	private static final long serialVersionUID = 1L;
 	Container c;
-	Point point, los;
+	double X, Y;
+	Point los;
 	static int statementTypeId;
 	Color color;
 	static int statementId;
@@ -54,8 +55,9 @@ public class Popup extends JDialog {
 	Connection conn;
 	int textFieldWidth;
 	
-	public Popup(Point point, int statementId, Point location, boolean editable) {
-		this.point = point;
+	public Popup(double X, double Y, int statementId, Point location, boolean editable) {
+		this.X = X;
+		this.Y = Y;
 		Popup.statementId = statementId;
 		this.los = location;
 		this.textFieldWidth = Integer.parseInt(Dna.data.getSettings().get("popupWidth"));
@@ -311,8 +313,8 @@ public class Popup extends JDialog {
 		
 		this.pack();
 		
-		double xDouble = los.getX() + point.getX();
-		double yDouble = los.getY() + point.getY();
+		double xDouble = los.getX() + X;
+		double yDouble = los.getY() + Y;
 		int x = (int) xDouble + 6;
 		int y = (int) yDouble + 13;
 		this.setLocation(x, y);

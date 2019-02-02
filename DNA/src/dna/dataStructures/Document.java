@@ -176,11 +176,11 @@ public class Document implements Comparable<Document> {
 			return 1;
 		} else if (this.getDate().compareTo(a.getDate()) == 0 &&
 				this.getTitle().compareToIgnoreCase(a.getTitle()) == 0 &&
-				new Integer(this.getId()).compareTo(a.getId()) < 0) {
+				Integer.valueOf(this.getId()).compareTo(a.getId()) < 0) {
 			return -1;
 		} else if (this.getDate().compareTo(a.getDate()) == 0 &&
 				this.getTitle().compareToIgnoreCase(a.getTitle()) == 0 &&
-				new Integer(this.getId()).compareTo(a.getId()) > 0) {
+				Integer.valueOf(this.getId()).compareTo(a.getId()) > 0) {
 			return 1;
 		} else {
 			return 0;

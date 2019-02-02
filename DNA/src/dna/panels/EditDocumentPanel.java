@@ -329,11 +329,11 @@ public class EditDocumentPanel extends JPanel {
 		
 		Dna.dna.sql.upsertDocument(Dna.data.getDocument(documentId));
 		
-		Dna.dna.gui.documentPanel.documentContainer.sort();
-		int newModelIndex = Dna.dna.gui.documentPanel.documentContainer.getModelIndexById(document.getId());
-		int newRow = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToView(newModelIndex);
-		Dna.dna.gui.documentPanel.documentTable.updateUI();
-		Dna.dna.gui.documentPanel.documentTable.getSelectionModel().setSelectionInterval(newRow, newRow);
+		Dna.gui.documentPanel.documentContainer.sort();
+		int newModelIndex = Dna.gui.documentPanel.documentContainer.getModelIndexById(document.getId());
+		int newRow = Dna.gui.documentPanel.documentTable.convertRowIndexToView(newModelIndex);
+		Dna.gui.documentPanel.documentTable.updateUI();
+		Dna.gui.documentPanel.documentTable.getSelectionModel().setSelectionInterval(newRow, newRow);
 
 		createEditDocumentPanel(document);
 		boolean[] b = Dna.data.getActiveDocumentPermissions(document.getId());

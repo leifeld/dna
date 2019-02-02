@@ -68,17 +68,17 @@ public class AttributePanel extends JPanel {
 		searchToggleButton.setName("searchToggle");
 		searchToggleButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				CardLayout cl = (CardLayout) Dna.dna.gui.textPanel.bottomCardPanel.getLayout();
-				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "searchPanel");
+				CardLayout cl = (CardLayout) Dna.gui.textPanel.bottomCardPanel.getLayout();
+				cl.show(Dna.gui.textPanel.bottomCardPanel, "searchPanel");
 				searchToggleButton.setSelected(true);
 				recodeToggleButton.setSelected(false);
 				attributeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.attributeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.attributeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(false);
 			}
 		});
 		recodeToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/table_edit.png")));
@@ -87,17 +87,17 @@ public class AttributePanel extends JPanel {
 		recodeToggleButton.setName("recodeToggle");
 		recodeToggleButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				CardLayout cl = (CardLayout) Dna.dna.gui.textPanel.bottomCardPanel.getLayout();
-				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "recodePanel");
+				CardLayout cl = (CardLayout) Dna.gui.textPanel.bottomCardPanel.getLayout();
+				cl.show(Dna.gui.textPanel.bottomCardPanel, "recodePanel");
 				searchToggleButton.setSelected(false);
 				recodeToggleButton.setSelected(true);
 				attributeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.attributeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.attributeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(false);
 			}
 		});
 		attributeToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/tag_purple.png")));
@@ -106,17 +106,17 @@ public class AttributePanel extends JPanel {
 		attributeToggleButton.setName("attributeToggle");
 		attributeToggleButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				CardLayout cl = (CardLayout) Dna.dna.gui.textPanel.bottomCardPanel.getLayout();
-				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "attributePanel");
+				CardLayout cl = (CardLayout) Dna.gui.textPanel.bottomCardPanel.getLayout();
+				cl.show(Dna.gui.textPanel.bottomCardPanel, "attributePanel");
 				searchToggleButton.setSelected(false);
 				recodeToggleButton.setSelected(false);
 				attributeToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.attributeToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.attributeToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(true);
 			}
 		});
 		JPanel switchPanel = new JPanel();
@@ -312,7 +312,7 @@ public class AttributePanel extends JPanel {
 				String message = "Are you sure you want to delete all values that have never \n"
 						+ "been coded (= all rows colored in red) for this variable?";
 				if (typeComboBox.getSelectedItem() != null && attributeTable.getRowCount() > 1) {
-					int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+					int dialog = JOptionPane.showConfirmDialog(Dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
 						int count = 0;
 						int statementTypeId = ((StatementType) typeComboBox.getSelectedItem()).getId();
@@ -325,7 +325,7 @@ public class AttributePanel extends JPanel {
 								count++;
 							}
 						}
-						JOptionPane.showMessageDialog(Dna.dna.gui, count + " rows were deleted.");
+						JOptionPane.showMessageDialog(Dna.gui, count + " rows were deleted.");
 					}
 				}
 			}
@@ -335,7 +335,7 @@ public class AttributePanel extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				String message = "Are you sure you want to go through all statements and check \n"
 						+ "for missing attribute rows? This can take a while.";
-				int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+				int dialog = JOptionPane.showConfirmDialog(Dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 				if (dialog == 0) {
 					startMissingThread();
 				}
@@ -396,7 +396,7 @@ public class AttributePanel extends JPanel {
 		}
 		
 		public void run() {
-			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Adding missing attributes...", "", 0, Dna.data.getStatements().size() - 1);
+			progressMonitor = new ProgressMonitor(Dna.gui, "Adding missing attributes...", "", 0, Dna.data.getStatements().size() - 1);
 			progressMonitor.setMillisToDecideToPopup(1);
 			addMissingButton.setEnabled(false);
 			
