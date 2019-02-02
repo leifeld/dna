@@ -4,7 +4,7 @@
 \alias{dna_addStatementType}
 \title{Add a new statement type (without variables) to the database}
 \usage{
-dna_addStatementType(connection, label, color = "#FFFF00")
+dna_addStatementType(connection, label, color = "#FFFF00", ...)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
@@ -16,6 +16,13 @@ spaces.}
 
 \item{color}{A color in the form of a hexadecimal RGB string, such as
 \code{"#FFFF00"} for yellow.}
+
+\item{...}{Additional arguments can be added here to define the variables
+associated with the statement type. For example,
+\code{person = "short text"} or \code{agreement = "boolean"} or multiple
+arguments like these separated by comma. The variable names should not
+contain any spaces, and the values that indicate the data types should be
+of types "short text", "long text", "boolean", or "integer".}
 }
 \description{
 Add a new statement type (without variables) to the database.

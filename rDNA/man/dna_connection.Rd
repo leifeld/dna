@@ -4,7 +4,8 @@
 \alias{dna_connection}
 \title{Establish a database connection}
 \usage{
-dna_connection(infile, login = NULL, password = NULL, verbose = TRUE)
+dna_connection(infile, login = NULL, password = NULL, create = FALSE,
+  verbose = TRUE)
 }
 \arguments{
 \item{infile}{The file name of the .dna database or the URL of the mySQL
@@ -17,6 +18,9 @@ is used).}
 \item{password}{The password for accessing the database (only applicable
 to remote mySQL databases; can be \code{NULL} if a local .dna file
 is used).}
+
+\item{create}{If the file or remote database structure does not exist yet,
+should it be created with default values?}
 
 \item{verbose}{Print details the number of documents and statements after
 loading the database?}

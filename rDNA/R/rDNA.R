@@ -685,6 +685,12 @@ dna_addStatement <- function(connection,
 #'   spaces.
 #' @param color A color in the form of a hexadecimal RGB string, such as
 #'   \code{"#FFFF00"} for yellow.
+#' @param ... Additional arguments can be added here to define the variables
+#'   associated with the statement type. For example,
+#'   \code{person = "short text"} or \code{agreement = "boolean"} or multiple
+#'   arguments like these separated by comma. The variable names should not
+#'   contain any spaces, and the values that indicate the data types should be
+#'   of types "short text", "long text", "boolean", or "integer".
 #'
 #' @export
 dna_addStatementType <- function(connection, label, color = "#FFFF00", ...) {
