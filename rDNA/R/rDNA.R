@@ -64,15 +64,18 @@ dna_connection <- function(infile, login = NULL, password = NULL, create = FALSE
   if (is.null(login) & is.null(password)) {
     if (!file.exists(infile)) {
       if (!isTRUE(create)) {
-        stop(if (grepl("/", infile, fixed = TRUE)) {
-          paste0("infile '", infile, "' could not be located. Use 'create = TRUE' to create a new database.")
+        if (grepl("/", infile, fixed = TRUE)) {
+          msg <- paste0("infile '",
+                        infile,
+                        "' could not be located. Use 'create = TRUE' to create a new database.")
         } else {
-          paste0("infile '",
-                 infile,
-                 "' could not be located in working directory '",
-                 getwd(),
-                 "'. Use 'create = TRUE' to create a new database.")
-        })
+          msg <- paste0("infile '",
+                        infile,
+                        "' could not be located in working directory '",
+                        getwd(),
+                        "'. Use 'create = TRUE' to create a new database.")
+        }
+        stop(msg)
       }
     }
   }
