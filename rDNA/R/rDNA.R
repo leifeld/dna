@@ -61,23 +61,19 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
 #' }
 #' @export
 dna_connection <- function(infile, login = NULL, password = NULL, create = FALSE, verbose = TRUE) {
-  if (is.null(login) & is.null(password)) {
-    if (!file.exists(infile)) {
-      if (!isTRUE(create)) {
-        if (grepl("/", infile, fixed = TRUE)) {
-          msg <- paste0("infile '",
-                        infile,
-                        "' could not be located. Use 'create = TRUE' to create a new database.")
-        } else {
-          msg <- paste0("infile '",
-                        infile,
-                        "' could not be located in working directory '",
-                        getwd(),
-                        "'. Use 'create = TRUE' to create a new database.")
-        }
-        stop(msg)
-      }
+  if (is.null(login) & is.null(password) & !file.exists(infile) & !isTRUE(create)) {
+    if (grepl("/", infile, fixed = TRUE)) {
+      msg <- paste0("infile '",
+                    infile,
+                    "' could not be located. Use 'create = TRUE' to create a new database.")
+    } else {
+      msg <- paste0("infile '",
+                    infile,
+                    "' could not be located in working directory '",
+                    getwd(),
+                    "'. Use 'create = TRUE' to create a new database.")
     }
+    stop(msg)
   }
   if (!grepl("/", infile, fixed = TRUE)) {
     infile <- paste0(getwd(), "/", infile)
