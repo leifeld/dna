@@ -115,6 +115,31 @@ print.dna_connection <- function(x, ...) {
   cat(.jcall(x$dna_connection, "S", "rShow"))
 }
 
+#' Print the summary of a \code{dna_documents} object
+#'
+#' Show details of a \code{dna_documents} object.
+#'
+#' Print a data frame returned by \link{dna_getDocuments}. The only difference
+#' between this print method and the default print method for data frames is
+#' that the \code{text} column and other columns containing character strings
+#' are truncated for better readability on screen.
+#'
+#' @param x A \code{dna_connection} object.
+#' @param truncate Number of characters to which character columns in the data
+#'   frame should be truncated.
+#' @param ... Further options (currently not used).
+#'
+#' @export
+print.dna_documents <- function(x, truncate = 20, ...) {
+  x2 <- x
+  class(x2) <- class(x2)[-1]
+  x2[, unlist(sapply(x2, is.character))] <- apply(x2[, unlist(sapply(x2, is.character))],
+                                                  1:2,
+                                                  function(t) trim(x = trimws(t), n = truncate, e = "*"))
+  cat("Note: text denoted by * is truncated to", truncate, "characters for readability.\n\n")
+  print(x2)
+}
+
 #' Download the binary DNA jar file
 #'
 #' Downloads the newest released DNA jar file necessary for running
@@ -952,6 +977,7 @@ dna_getDocuments <- function(connection) {
   documents <- lapply(documents, .jevalArray)
   documents$date <- as.POSIXct(documents$date / 1000, origin = "1970-01-01")
   documents <- as.data.frame(documents, stringsAsFactors = FALSE)
+  class(documents) <- c("dna_documents", class(documents))
   return(documents)
 }
 

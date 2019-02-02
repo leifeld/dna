@@ -3,6 +3,7 @@
 S3method(plot,dna_scale)
 S3method(print,dna_cluster)
 S3method(print,dna_connection)
+S3method(print,dna_documents)
 S3method(print,dna_scale)
 export(dna_addAttribute)
 export(dna_addDocument)
