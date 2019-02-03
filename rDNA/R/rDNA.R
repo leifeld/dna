@@ -115,11 +115,12 @@ print.dna_connection <- function(x, ...) {
   cat(.jcall(x$dna_connection, "S", "rShow"))
 }
 
-#' Print the summary of a \code{dna_documents} object
+#' Print the summary of a \code{dna_dataframe} object
 #'
-#' Show details of a \code{dna_documents} object.
+#' Show details of a \code{dna_dataframe} object.
 #'
-#' Print a data frame returned by \link{dna_getDocuments}. The only difference
+#' Print a data frame returned by \link{dna_getDocuments},
+#' \link{dna_getStatements}, or \link{dna_getAttributes}. The only difference
 #' between this print method and the default print method for data frames is
 #' that the \code{text} column and other columns containing character strings
 #' are truncated for better readability on screen.
@@ -130,7 +131,7 @@ print.dna_connection <- function(x, ...) {
 #' @param ... Further options (currently not used).
 #'
 #' @export
-print.dna_documents <- function(x, truncate = 20, ...) {
+print.dna_dataframe <- function(x, truncate = 20, ...) {
   x2 <- x
   class(x2) <- class(x2)[-1]
   x2[, unlist(sapply(x2, is.character))] <- apply(x2[, unlist(sapply(x2, is.character))],
@@ -932,6 +933,7 @@ dna_getAttributes <- function(connection,
                          "frequency")
   attributes <- lapply(attributes, .jevalArray)
   attributes <- as.data.frame(attributes, stringsAsFactors = FALSE)
+  class(attributes) <- c("dna_dataframe", class(attributes))
   return(attributes)
 }
 
@@ -977,7 +979,7 @@ dna_getDocuments <- function(connection) {
   documents <- lapply(documents, .jevalArray)
   documents$date <- as.POSIXct(documents$date / 1000, origin = "1970-01-01")
   documents <- as.data.frame(documents, stringsAsFactors = FALSE)
-  class(documents) <- c("dna_documents", class(documents))
+  class(documents) <- c("dna_dataframe", class(documents))
   return(documents)
 }
 
@@ -1034,6 +1036,7 @@ dna_getStatements <- function(connection, statementType) {
                             "statementTypeId",
                             "coder",
                             variables)
+  class(statements) <- c("dna_dataframe", class(statements))
   return(statements)
 }
 
