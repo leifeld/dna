@@ -439,7 +439,7 @@ public class ExporterR {
 				variable1Document, variable2Document, qualifier, ignoreQualifier, duplicates, authorExclude, sourceExclude, sectionExclude, 
 				typeExclude, map, filterEmptyFields, verbose);
 		if (verbose == true) {
-			System.out.print(filteredStatements.size() + " out of " + data.getStatements().size() + " statements retained.\n");
+			System.out.print("       " + filteredStatements.size() + " out of " + data.getStatements().size() + " statements retained.\n");
 		}
 		
 		if (!timewindow.equals("no time window") && startDate.equals("01.01.1900") && startTime.equals("00:00:00")) {
@@ -493,7 +493,7 @@ public class ExporterR {
 			names2 = exportHelper.extractLabels(filteredStatements, data.getStatements(), data.getDocuments(), variable2, variable2Document, 
 					statementTypeId, includeIsolates);
 			if (verbose == true) {
-				System.out.print(names1.length + " entries for the first and " + names2.length + " entries for the second variable.\n");
+				System.out.print("\n       " + names1.length + " entries for the first and " + names2.length + " entries for the second variable.\n");
 			}
 		}
 		

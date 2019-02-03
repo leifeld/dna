@@ -144,22 +144,22 @@ public class ExportHelper {
 			ArrayList<String> values = excludeValues.get(key);
 			if (verbose == true) {
 				for (int i = 0; i < values.size(); i++) {
-					System.out.println("[Excluded] " + key + ": " + values.get(i));
+					System.out.println("       [Excluded] " + key + ": " + values.get(i));
 				}
 			}
 		}
 		if (verbose == true) {
 			for (int i = 0; i < excludeAuthor.size(); i++) {
-				System.out.println("[Excluded] author: " + excludeAuthor.get(i));
+				System.out.println("       [Excluded] author: " + excludeAuthor.get(i));
 			}
 			for (int i = 0; i < excludeSource.size(); i++) {
-				System.out.println("[Excluded] source: " + excludeSource.get(i));
+				System.out.println("       [Excluded] source: " + excludeSource.get(i));
 			}
 			for (int i = 0; i < excludeSection.size(); i++) {
-				System.out.println("[Excluded] section: " + excludeSection.get(i));
+				System.out.println("       [Excluded] section: " + excludeSection.get(i));
 			}
 			for (int i = 0; i < excludeType.size(); i++) {
-				System.out.println("[Excluded] type: " + excludeType.get(i));
+				System.out.println("       [Excluded] type: " + excludeType.get(i));
 			}
 		}
 		
