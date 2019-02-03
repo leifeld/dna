@@ -792,8 +792,8 @@ dna_addVariable <- function(connection,
                             statementType = 1,
                             variable,
                             dataType = "short text",
-                            simulate,
-                            verbose) {
+                            simulate = TRUE,
+                            verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
       || (!is.numeric(statementType) && !is.character(statementType))) {
     stop("'statementType' must be an integer or character object of length 1.")
@@ -813,10 +813,10 @@ dna_addVariable <- function(connection,
   if (!dataType %in% c("short text", "long text", "integer", "boolean")) {
     stop("'dataType' must be 'short text', 'long text', 'integer', or 'boolean'.")
   }
-  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate != 1)) {
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
     stop("'simulate' must be a logical value of length 1")
   }
-  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose != 1)) {
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
     stop("'verbose' must be a logical value of length 1")
   }
   .jcall(connection$dna_connection,

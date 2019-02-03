@@ -5,7 +5,7 @@
 \title{Add a new variable to a statement type in the database}
 \usage{
 dna_addVariable(connection, statementType = 1, variable,
-  dataType = "short text", simulate, verbose)
+  dataType = "short text", simulate = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
