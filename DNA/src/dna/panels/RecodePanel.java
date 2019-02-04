@@ -235,6 +235,18 @@ public class RecodePanel extends JPanel {
 		this.add(tablePanel, BorderLayout.CENTER);
 	}
 	
+	/**
+	 * This function is called to update the combo boxes at the top of the recode panel. For example from the Dna class when a database is closed.
+	 */
+	public void updateBoxes() {
+		typeComboBox.setModel(new DefaultComboBoxModel<StatementType>());
+		entryBox.setModel(new DefaultComboBoxModel<String>(new String[0]));
+		tableModel.setRowCount(0);
+		listModel.clear();
+		StatementTypeComboBoxModel model = new StatementTypeComboBoxModel();
+		typeComboBox.setModel(model);
+	}
+	
 	public void updateTable() {
 		String var = (String) entryBox.getSelectedItem();
 		int statementTypeId = ((StatementType) typeComboBox.getModel().getSelectedItem()).getId();
@@ -245,7 +257,6 @@ public class RecodePanel extends JPanel {
 			data[0] = entries[i];
 			data[1] = entries[i];
 			tableModel.addRow(data);
-			listModel.addElement(entries[1]);
 		}
 		applyButton.setEnabled(true);
 		resetButton.setEnabled(true);

@@ -245,6 +245,7 @@ public class Dna {
 		Dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(false);
 		Dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(false);
 		Dna.gui.textPanel.bottomCardPanel.attributePanel.cleanUpButton.setEnabled(false);
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.updateBoxes();
 		Dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.updateUI();
 		Dna.gui.textPanel.bottomCardPanel.recodePanel.entryBox.updateUI();
 		Dna.gui.textPanel.bottomCardPanel.recodePanel.tableModel.setRowCount(0);
