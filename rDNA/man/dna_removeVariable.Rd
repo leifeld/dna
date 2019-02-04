@@ -4,8 +4,8 @@
 \alias{dna_removeVariable}
 \title{Add a new variable to a statement type in the database}
 \usage{
-dna_removeVariable(connection, statementType = 1, variable, simulate,
-  verbose)
+dna_removeVariable(connection, statementType = 1, variable,
+  simulate = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

@@ -1152,7 +1152,7 @@ dna_getVariables <- function(connection, statementType) {
 #' @param verbose Print details about the recode operations?
 #'
 #' @export
-dna_recastVariable <- function(connection, statementType, variable, simulate, verbose) {
+dna_recastVariable <- function(connection, statementType, variable, simulate = TRUE, verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
       || (!is.numeric(statementType) && !is.character(statementType))) {
     stop("'statementType' must be an integer or character object of length 1.")
@@ -1166,10 +1166,10 @@ dna_recastVariable <- function(connection, statementType, variable, simulate, ve
   if (grepl("\\W", variable)) {
     stop("'variable' must not contain any spaces. Only characters and numbers are allowed.")
   }
-  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate != 1)) {
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
     stop("'simulate' must be a logical value of length 1")
   }
-  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose != 1)) {
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
     stop("'verbose' must be a logical value of length 1")
   }
   .jcall(connection$dna_connection, "V", "recastVariable", statementType, variable, simulate, verbose)
@@ -1332,7 +1332,7 @@ dna_removeStatement <- function(connection,
 #' @param verbose Print details about the recode operations?
 #'
 #' @export
-dna_removeStatementType <- function(connection, statementType, simulate, verbose) {
+dna_removeStatementType <- function(connection, statementType, simulate = TRUE, verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
       || (!is.numeric(statementType) && !is.character(statementType))) {
     stop("'statementType' must be an integer or character object of length 1.")
@@ -1340,10 +1340,10 @@ dna_removeStatementType <- function(connection, statementType, simulate, verbose
   if (is.numeric(statementType) && !is.integer(statementType)) {
     statementType <- as.integer(statementType)
   }
-  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate != 1)) {
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
     stop("'simulate' must be a logical value of length 1")
   }
-  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose != 1)) {
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
     stop("'verbose' must be a logical value of length 1")
   }
   .jcall(connection$dna_connection,
@@ -1384,8 +1384,8 @@ dna_removeStatementType <- function(connection, statementType, simulate, verbose
 dna_removeVariable <- function(connection,
                                statementType = 1,
                                variable,
-                               simulate,
-                               verbose) {
+                               simulate = TRUE,
+                               verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
       || (!is.numeric(statementType) && !is.character(statementType))) {
     stop("'statementType' must be an integer or character object of length 1.")
@@ -1396,10 +1396,10 @@ dna_removeVariable <- function(connection,
   if (is.null(variable) || is.na(variable) || length(variable) != 1 || !is.character(variable)) {
     stop("'variable' must be a character object of length 1.")
   }
-  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate != 1)) {
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
     stop("'simulate' must be a logical value of length 1")
   }
-  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose != 1)) {
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
     stop("'verbose' must be a logical value of length 1")
   }
   .jcall(connection$dna_connection,

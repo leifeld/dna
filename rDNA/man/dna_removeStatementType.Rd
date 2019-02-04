@@ -4,7 +4,8 @@
 \alias{dna_removeStatementType}
 \title{Remove a statement type from the database}
 \usage{
-dna_removeStatementType(connection, statementType, simulate, verbose)
+dna_removeStatementType(connection, statementType, simulate = TRUE,
+  verbose = TRUE)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
