@@ -21,9 +21,10 @@ devtools::install_github("leifeld/dna/rDNA", INSTALL_opts = "--no-multiarch")
 ```
 Please note that the most recent version requires compilation of the current jar file from the sources on GitHub, for example using the provided make file.
 
-The recommended version for most users is therefore the stable release version of rDNA, which can be used together with the jar file of the respective release (see [releases](https://github.com/leifeld/dna/releases)). You can install the stable release version of rDNA by inserting the path to the latest release version into the above command. For example, for the 2.0 beta 22 release, this would be:
+The recommended version for most users is therefore the stable release version of rDNA, which can be used together with the jar file of the respective release (see [releases](https://github.com/leifeld/dna/releases)). You can install the stable release version of rDNA by inserting the path to the latest release version into the above command. For example, for the 2.0 beta 23 release, this would be:
 ``` r
-devtools::install_url("https://github.com/leifeld/dna/releases/download/v2.0-beta.22/rDNA_2.1.9.tar.gz", INSTALL_opts = "--no-multiarch")
+devtools::install_url("https://github.com/leifeld/dna/releases/download/v2.0-beta.23/rDNA_2.1.13.tar.gz",
+                      INSTALL_opts = "--no-multiarch")
 ```
 Note that the package relies on `rJava`, which needs to be installed first. For details on the installation process on different operating systems, consult the chapter "Installation of DNA and rDNA" in the manual.
 
