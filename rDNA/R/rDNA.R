@@ -1459,7 +1459,7 @@ dna_renameStatementType <- function(connection, statementType, label) {
 #'   \code{"actor" or "intensity"}. The label must not contain spaces.
 #'
 #' @export
-dna_renameVariable <- function(connection, statementType, variable, label) {
+dna_renameVariable <- function(connection, statementType, variable, label, simulate = TRUE, verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
       || (!is.numeric(statementType) && !is.character(statementType))) {
     stop("'statementType' must be an integer or character object of length 1.")
@@ -1479,7 +1479,13 @@ dna_renameVariable <- function(connection, statementType, variable, label) {
   if (grepl("\\W", label)) {
     stop("'label' must not contain any spaces. Only characters and numbers are allowed.")
   }
-  .jcall(connection$dna_connection, "V", "renameVariable", statementType, variable, label)
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
+    stop("'simulate' must be a logical value of length 1")
+  }
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
+    stop("'verbose' must be a logical value of length 1")
+  }
+  .jcall(connection$dna_connection, "V", "renameVariable", statementType, variable, label, simulate, verbose)
 }
 
 #' Recode attributes in the DNA database

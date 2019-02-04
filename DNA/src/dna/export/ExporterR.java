@@ -2566,6 +2566,16 @@ public class ExporterR {
 		if (!this.data.getStatementTypeById(statementTypeId).getVariables().containsKey(variable)) {
 			throw new Exception("Variable '" + variable + "' does not exist in statement type " + statementTypeId + ".");
 		}
+
+		// report simulation mode
+		if (verbose == true) {
+			if (simulate == true) {
+				System.out.println("Simulation mode: no actual changes are made to the database!");
+			} else {
+				System.out.println("Changes will be written both in memory and to the SQL database!");
+			}
+		}
+
 		int removeFromStatementCounter = 0;
 		int removeAttributeCounter = 0;
 		for (int i = this.data.getAttributes().size() - 1; i > -1 ; i--) {
@@ -2576,14 +2586,17 @@ public class ExporterR {
 				removeAttributeCounter++;
 			}
 		}
-		for (int i = 0; i < this.data.getStatements().size(); i++) {
-			if (this.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
-				if (simulate == false) {
-					this.data.getStatements().get(i).getValues().remove(variable);
+		if (this.data.getStatements().size() > 0) {
+			for (int i = 0; i < this.data.getStatements().size(); i++) {
+				if (this.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
+					if (simulate == false) {
+						this.data.getStatements().get(i).getValues().remove(variable);
+					}
+					removeFromStatementCounter++;
 				}
-				removeFromStatementCounter++;
 			}
 		}
+		
 		if (simulate == false) {
 			this.data.getStatementTypeById(statementTypeId).getVariables().remove(variable);
 			this.sql.removeVariable(statementTypeId, variable);
@@ -2652,13 +2665,15 @@ public class ExporterR {
 		
 		// update statements
 		int updateStatementCounter = 0;
-		for (int i = 0; i < this.data.getStatements().size(); i++) {
-			if (this.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
-				if (simulate == false) {
-					this.data.getStatements().get(i).getValues().put(newLabel, this.data.getStatements().get(i).getValues().get(variable));
-					this.data.getStatements().get(i).getValues().remove(variable);
+		if (this.data.getStatements().size() > 0) {
+			for (int i = 0; i < this.data.getStatements().size(); i++) {
+				if (this.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
+					if (simulate == false) {
+						this.data.getStatements().get(i).getValues().put(newLabel, this.data.getStatements().get(i).getValues().get(variable));
+						this.data.getStatements().get(i).getValues().remove(variable);
+					}
+					updateStatementCounter++;
 				}
-				updateStatementCounter++;
 			}
 		}
 		
