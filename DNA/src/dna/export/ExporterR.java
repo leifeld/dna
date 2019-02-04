@@ -616,7 +616,11 @@ public class ExporterR {
 			}
 		}
 		if (verbose == true) {
-			System.out.print("Done.\n");
+			if (qualifierAggregation.equals("combine")) {
+				System.out.print("       Done.\n");
+			} else {
+				System.out.print("Done.\n");
+			}
 			int step = 5;
 			if (networkType.equals("Event list")) {
 				step = 4;
