@@ -148,14 +148,14 @@ public class Data {
 	}
 
 	public void addRegex(Regex regex) {
-		Dna.dna.gui.rightPanel.rm.regexListModel.addElement(regex);
+		Dna.gui.rightPanel.rm.regexListModel.addElement(regex);
 	}
 	
 	public void removeRegex(String label) {
-		for (int i = Dna.dna.gui.rightPanel.rm.regexListModel.getSize() - 1; i > -1; i--) {
-			String currentLabel = ((Regex) Dna.dna.gui.rightPanel.rm.regexListModel.getElementAt(i)).getLabel();
+		for (int i = Dna.gui.rightPanel.rm.regexListModel.getSize() - 1; i > -1; i--) {
+			String currentLabel = ((Regex) Dna.gui.rightPanel.rm.regexListModel.getElementAt(i)).getLabel();
 			if (currentLabel.equals(label)) {
-				Dna.dna.gui.rightPanel.rm.regexListModel.removeElement(i);
+				Dna.gui.rightPanel.rm.regexListModel.removeElement(i);
 				break;
 			}
 		}
@@ -233,7 +233,7 @@ public class Data {
 	 * @param activeCoder the activeCoder to set
 	 */
 	public void setActiveCoder(int activeCoder) {
-		settings.put("activeCoder", (new Integer(activeCoder)).toString());
+		settings.put("activeCoder", Integer.toString(activeCoder));
 	}
 	
 	/**
@@ -323,12 +323,12 @@ public class Data {
 	public void removeCoder(int id) {
 		for (int i = statements.size() - 1; i > -1; i--) {
 			if (statements.get(i).getCoder() == id) {
-				Dna.dna.gui.rightPanel.statementPanel.ssc.remove(i);
+				Dna.gui.rightPanel.statementPanel.ssc.remove(i);
 			}
 		}
 		for (int i = documents.size() - 1; i > -1; i--) {
 			if (documents.get(i).getCoder() == id) {
-				Dna.dna.gui.documentPanel.documentContainer.remove(i, false);
+				Dna.gui.documentPanel.documentContainer.remove(i, false);
 			}
 		}
 		int index = -1;
@@ -513,53 +513,53 @@ public class Data {
 	
 	public void removeDocument(int documentId) {
 		// remove statements
-		Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
-		for (int i = Dna.dna.gui.rightPanel.statementPanel.ssc.size() - 1; i > -1; i--) {
-			if (Dna.dna.gui.rightPanel.statementPanel.ssc.get(i).getDocumentId() == documentId) {
-				Dna.dna.gui.rightPanel.statementPanel.ssc.remove(i);
+		Dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
+		for (int i = Dna.gui.rightPanel.statementPanel.ssc.size() - 1; i > -1; i--) {
+			if (Dna.gui.rightPanel.statementPanel.ssc.get(i).getDocumentId() == documentId) {
+				Dna.gui.rightPanel.statementPanel.ssc.remove(i);
 			}
 		}
-		Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
+		Dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
 		
 		// remove document
-		int documentModelIndex = Dna.dna.gui.documentPanel.documentContainer.getModelIndexById(documentId);
+		int documentModelIndex = Dna.gui.documentPanel.documentContainer.getModelIndexById(documentId);
 		//int row = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(documentId);
-		Dna.dna.gui.documentPanel.setRowSorterEnabled(false);
-		Dna.dna.gui.documentPanel.documentContainer.remove(documentModelIndex, false);
+		Dna.gui.documentPanel.setRowSorterEnabled(false);
+		Dna.gui.documentPanel.documentContainer.remove(documentModelIndex, false);
 		//Dna.dna.gui.documentPanel.documentContainer.remove(row);
-		Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
+		Dna.gui.documentPanel.setRowSorterEnabled(true);
 		if (getDocuments().size() > 0) {
-			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
+			Dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
 		}
 		
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.fireTableDataChanged();
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.fireTableDataChanged();
 	}
 	
 	public void removeDocuments(ArrayList<Integer> documentIds, ArrayList<Integer> modelIndices) {
 		// remove statements
-		Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
-		for (int i = Dna.dna.gui.rightPanel.statementPanel.ssc.size() - 1; i > -1; i--) {
-			if (documentIds.contains(Dna.dna.gui.rightPanel.statementPanel.ssc.get(i).getDocumentId())) {
-				Dna.dna.gui.rightPanel.statementPanel.ssc.remove(i);
+		Dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
+		for (int i = Dna.gui.rightPanel.statementPanel.ssc.size() - 1; i > -1; i--) {
+			if (documentIds.contains(Dna.gui.rightPanel.statementPanel.ssc.get(i).getDocumentId())) {
+				Dna.gui.rightPanel.statementPanel.ssc.remove(i);
 			}
 		}
-		Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
+		Dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
 		
 		// remove documents
-		Dna.dna.gui.documentPanel.setRowSorterEnabled(false);
+		Dna.gui.documentPanel.setRowSorterEnabled(false);
 		Collections.sort(modelIndices, Collections.reverseOrder());
 		for (int i : modelIndices) {
-			Dna.dna.gui.documentPanel.documentContainer.remove(i, false);
+			Dna.gui.documentPanel.documentContainer.remove(i, false);
 		}
 		
 		// reset selection
-		Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
-		Dna.dna.gui.documentPanel.documentTable.updateUI();
+		Dna.gui.documentPanel.setRowSorterEnabled(true);
+		Dna.gui.documentPanel.documentTable.updateUI();
 		if (getDocuments().size() > 0) {
-			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
+			Dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
 		}
 		
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.fireTableDataChanged();
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.fireTableDataChanged();
 	}
 	
 	/**

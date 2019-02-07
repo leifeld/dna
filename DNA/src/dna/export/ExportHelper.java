@@ -144,22 +144,22 @@ public class ExportHelper {
 			ArrayList<String> values = excludeValues.get(key);
 			if (verbose == true) {
 				for (int i = 0; i < values.size(); i++) {
-					System.out.println("[Excluded] " + key + ": " + values.get(i));
+					System.out.println("       [Excluded] " + key + ": " + values.get(i));
 				}
 			}
 		}
 		if (verbose == true) {
 			for (int i = 0; i < excludeAuthor.size(); i++) {
-				System.out.println("[Excluded] author: " + excludeAuthor.get(i));
+				System.out.println("       [Excluded] author: " + excludeAuthor.get(i));
 			}
 			for (int i = 0; i < excludeSource.size(); i++) {
-				System.out.println("[Excluded] source: " + excludeSource.get(i));
+				System.out.println("       [Excluded] source: " + excludeSource.get(i));
 			}
 			for (int i = 0; i < excludeSection.size(); i++) {
-				System.out.println("[Excluded] section: " + excludeSection.get(i));
+				System.out.println("       [Excluded] section: " + excludeSection.get(i));
 			}
 			for (int i = 0; i < excludeType.size(); i++) {
-				System.out.println("[Excluded] type: " + excludeType.get(i));
+				System.out.println("       [Excluded] type: " + excludeType.get(i));
 			}
 		}
 		
@@ -733,15 +733,15 @@ public class ExportHelper {
 				Integer key = (Integer) keyIterator.next();
 				ArrayList<Integer> values = combinations.get(key);
 				if (verbose == true) {
-					System.out.print("An edge weight of " + key + " corresponds to the following combination of integers in the DNA coding: ");
+					System.out.print("\n       An edge weight of " + key + " maps onto integer combination: ");
 					for (int i = 0; i < values.size(); i++) {
 						if (verbose == true) {
 							System.out.print(values.get(i) + " ");
 						}
 					}
-					System.out.print("\n");
 				}
 			}
+			System.out.print("\n");
 		}
 		
 		// normalization

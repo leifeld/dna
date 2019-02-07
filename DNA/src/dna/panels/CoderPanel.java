@@ -74,7 +74,7 @@ public class CoderPanel extends JPanel {
 				Coder coderUpdated = ecw.getCoder();
 				ecw.dispose();
 				Dna.dna.replaceCoder(coderUpdated);
-				Dna.dna.gui.refreshGui();
+				Dna.gui.refreshGui();
 			}
 		});
 		addButton = new JButton(new ImageIcon(getClass().getResource("/icons/add.png")));
@@ -99,7 +99,7 @@ public class CoderPanel extends JPanel {
 		deleteButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (Dna.data.getCoders().size() == 1) {
-					JOptionPane.showMessageDialog(Dna.dna.gui, "The selected coder cannot be deleted because there are no other coders left.");
+					JOptionPane.showMessageDialog(Dna.gui, "The selected coder cannot be deleted because there are no other coders left.");
 				} else {
 					int countDoc = 0;
 					for (int i = 0; i < Dna.data.getDocuments().size(); i++) {
@@ -120,7 +120,7 @@ public class CoderPanel extends JPanel {
 								+ "in these documents. Are you \n sure you want to do this? The changes cannot be reverted.";
 					}
 					
-					int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+					int dialog = JOptionPane.showConfirmDialog(Dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
 						int id = Dna.data.getActiveCoder();
 						Dna.dna.sql.removeCoder(id);
@@ -203,9 +203,10 @@ public class CoderPanel extends JPanel {
 		
 		coderBox.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
-				Dna.dna.setActiveCoder(((Coder) coderBox.getSelectedItem()).getId());
+				Dna.data.setActiveCoder(((Coder) coderBox.getSelectedItem()).getId());
+				Dna.dna.sql.upsertSetting("activeCoder", Integer.toString(((Coder) coderBox.getSelectedItem()).getId()));
 				coderRelationTable.updateUI();
-				Dna.dna.gui.refreshGui();
+				Dna.gui.refreshGui();
 			}
 		});
 	}

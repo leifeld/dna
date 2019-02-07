@@ -60,17 +60,17 @@ public class RecodePanel extends JPanel {
 		searchToggleButton.setName("searchToggle");
 		searchToggleButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				CardLayout cl = (CardLayout) Dna.dna.gui.textPanel.bottomCardPanel.getLayout();
-				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "searchPanel");
+				CardLayout cl = (CardLayout) Dna.gui.textPanel.bottomCardPanel.getLayout();
+				cl.show(Dna.gui.textPanel.bottomCardPanel, "searchPanel");
 				searchToggleButton.setSelected(true);
 				recodeToggleButton.setSelected(false);
 				attributeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(false);
 			}
 		});
 		recodeToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/table_edit.png")));
@@ -79,17 +79,17 @@ public class RecodePanel extends JPanel {
 		recodeToggleButton.setName("recodeToggle");
 		recodeToggleButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				CardLayout cl = (CardLayout) Dna.dna.gui.textPanel.bottomCardPanel.getLayout();
-				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "recodePanel");
+				CardLayout cl = (CardLayout) Dna.gui.textPanel.bottomCardPanel.getLayout();
+				cl.show(Dna.gui.textPanel.bottomCardPanel, "recodePanel");
 				searchToggleButton.setSelected(false);
 				recodeToggleButton.setSelected(true);
 				attributeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(false);
 			}
 		});
 		attributeToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/tag_purple.png")));
@@ -98,17 +98,17 @@ public class RecodePanel extends JPanel {
 		attributeToggleButton.setName("attributeToggle");
 		attributeToggleButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				CardLayout cl = (CardLayout) Dna.dna.gui.textPanel.bottomCardPanel.getLayout();
-				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "attributePanel");
+				CardLayout cl = (CardLayout) Dna.gui.textPanel.bottomCardPanel.getLayout();
+				cl.show(Dna.gui.textPanel.bottomCardPanel, "attributePanel");
 				searchToggleButton.setSelected(false);
 				recodeToggleButton.setSelected(false);
 				attributeToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.searchToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.recodeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.searchWindow.attributeToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(true);
 			}
 		});
 		JPanel switchPanel = new JPanel();
@@ -158,12 +158,12 @@ public class RecodePanel extends JPanel {
 		applyButton = new JButton("save", new ImageIcon(getClass().getResource("/icons/accept.png")));
 		applyButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int question = JOptionPane.showConfirmDialog(Dna.dna.gui, 
+				int question = JOptionPane.showConfirmDialog(Dna.gui, 
 						"Are you sure you want to recode all values that have been changed?", "Confirmation", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
 					int count = recode();
 					updateTable();
-					JOptionPane.showMessageDialog(Dna.dna.gui, count + " statements have been updated.");
+					JOptionPane.showMessageDialog(Dna.gui, count + " statements have been updated.");
 				}
 			}
 		});
@@ -171,7 +171,7 @@ public class RecodePanel extends JPanel {
 		resetButton = new JButton("reset", new ImageIcon(getClass().getResource("/icons/cancel.png")));
 		resetButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int question = JOptionPane.showConfirmDialog(Dna.dna.gui, 
+				int question = JOptionPane.showConfirmDialog(Dna.gui, 
 						"Are you sure you want to revert all changes you have made?", "Confirmation", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
 					updateTable();
@@ -235,6 +235,18 @@ public class RecodePanel extends JPanel {
 		this.add(tablePanel, BorderLayout.CENTER);
 	}
 	
+	/**
+	 * This function is called to update the combo boxes at the top of the recode panel. For example from the Dna class when a database is closed.
+	 */
+	public void updateBoxes() {
+		typeComboBox.setModel(new DefaultComboBoxModel<StatementType>());
+		entryBox.setModel(new DefaultComboBoxModel<String>(new String[0]));
+		tableModel.setRowCount(0);
+		listModel.clear();
+		StatementTypeComboBoxModel model = new StatementTypeComboBoxModel();
+		typeComboBox.setModel(model);
+	}
+	
 	public void updateTable() {
 		String var = (String) entryBox.getSelectedItem();
 		int statementTypeId = ((StatementType) typeComboBox.getModel().getSelectedItem()).getId();
@@ -245,7 +257,6 @@ public class RecodePanel extends JPanel {
 			data[0] = entries[i];
 			data[1] = entries[i];
 			tableModel.addRow(data);
-			listModel.addElement(entries[1]);
 		}
 		applyButton.setEnabled(true);
 		resetButton.setEnabled(true);

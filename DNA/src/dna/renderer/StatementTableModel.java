@@ -128,8 +128,8 @@ public class StatementTableModel extends AbstractTableModel {
 	
 	public int getIndexByStatementId(int id) {
 		int index = -1;
-		for (int i = 0; i < Dna.dna.gui.rightPanel.statementPanel.statementTable.getRowCount(); i++) {
-			if ((int) Dna.dna.gui.rightPanel.statementPanel.statementTable.getValueAt(i, 0) == id) {
+		for (int i = 0; i < Dna.gui.rightPanel.statementPanel.statementTable.getRowCount(); i++) {
+			if ((int) Dna.gui.rightPanel.statementPanel.statementTable.getValueAt(i, 0) == id) {
 				index = i;
 			}
 		}

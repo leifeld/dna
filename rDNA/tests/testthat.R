@@ -1,4 +1,4 @@
-library(testthat)
-library(rDNA)
+library("testthat")
+library("rDNA")
 
 test_check("rDNA")

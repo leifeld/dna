@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +43,6 @@ import javax.swing.filechooser.FileFilter;
 
 import org.jdom.Attribute;
 import org.jdom.Comment;
-import org.jdom.DocType;
 import org.jdom.Element;
 import org.jdom.Namespace;
 import org.jdom.output.Format;
@@ -1237,7 +1235,7 @@ public class ExporterGUI extends JDialog {
 				}
 			}
 			progressMonitor.setProgress(4);
-			JOptionPane.showMessageDialog(Dna.dna.gui, "Data were exported to \"" + filename + "\".");
+			JOptionPane.showMessageDialog(Dna.gui, "Data were exported to \"" + filename + "\".");
 		}
 	}
 	
@@ -1282,7 +1280,7 @@ public class ExporterGUI extends JDialog {
 			for (int i = 0; i < statements.size(); i++) {
 				out.newLine();
 				statementId = statements.get(i).getId();
-				String stringId = new Integer(statementId).toString();
+				String stringId = Integer.valueOf(statementId).toString();
 				out.write(stringId);
 				d = statements.get(i).getDate();
 				dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
@@ -1407,6 +1405,7 @@ public class ExporterGUI extends JDialog {
 		}
 	}
 	
+	/*
 	private void exportGEFX(Matrix mt, boolean twoMode, StatementType statementType, String outfile, String var1, String var2, 
 			int[] frequencies1, int[] frequencies2, ArrayList<AttributeVector> attributes, String qualifierAggregation, 
 			boolean qualifierBinary) {
@@ -1522,15 +1521,13 @@ public class ExporterGUI extends JDialog {
 		at2.setAttribute(new Attribute("type", "string"));
 		attributesElement.addContent(at2);
 		
-		/*
-		<attributes class="node">
-	      <attribute id="0" title="url" type="string"/>
-	      <attribute id="1" title="indegree" type="float"/>
-	      <attribute id="2" title="frog" type="boolean">
-	        <default>true</default>
-	      </attribute>
-	    </attributes>
-		*/
+		//<attributes class="node">
+	    //  <attribute id="0" title="url" type="string"/>
+	    //  <attribute id="1" title="indegree" type="float"/>
+	    //  <attribute id="2" title="frog" type="boolean">
+	    //    <default>true</default>
+	    //  </attribute>
+	    //</attributes>
 		
 		// add nodes
 		Element nodes = new Element("nodes");
@@ -1609,6 +1606,7 @@ public class ExporterGUI extends JDialog {
 			System.err.println("Cannot save \"" + dnaFile + "\":" + e.getMessage());
 		}
 	}
+	*/
 	
 	/**
 	 * Export filter for graphML files.

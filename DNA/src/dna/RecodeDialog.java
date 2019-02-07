@@ -358,10 +358,10 @@ public class RecodeDialog extends JDialog {
 				progressMonitor.setProgress(i);
 	        }
 	        if (onlyTable == false) {
-    			Dna.dna.gui.documentPanel.documentContainer.sort();
-    			Dna.dna.gui.documentPanel.documentTable.updateUI();
-    			Dna.dna.gui.documentPanel.documentTable.getSelectionModel().setSelectionInterval(0, 0);
-    			Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(Dna.data.getDocuments().get(0));
+    			Dna.gui.documentPanel.documentContainer.sort();
+    			Dna.gui.documentPanel.documentTable.updateUI();
+    			Dna.gui.documentPanel.documentTable.getSelectionModel().setSelectionInterval(0, 0);
+    			Dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(Dna.data.getDocuments().get(0));
 				RecodeDialog.this.dispose();
 	        }
 		}

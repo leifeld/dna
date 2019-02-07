@@ -96,7 +96,7 @@ public class DocumentPanel extends JScrollPane {
 				if (e.getSource() == menuItemDelete) {
 					int[] selectedRows = documentTable.getSelectedRows();
 					String message = "Are you sure you want to delete " + selectedRows.length + " document(s) including all statements?";
-					int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+					int dialog = JOptionPane.showConfirmDialog(Dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
 						Dna.dna.removeDocuments(selectedRows);
 					}
@@ -108,11 +108,11 @@ public class DocumentPanel extends JScrollPane {
 					} else {
 						message = "Are you sure you want to reset the time stamp of these " + selectedRows.length + " documents?";
 					}
-					int dialog = JOptionPane.showConfirmDialog(Dna.dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+					int dialog = JOptionPane.showConfirmDialog(Dna.gui, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
 						Dna.dna.resetTimeOfDocuments(selectedRows);
 						if (selectedRows.length == 1) {
-							Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(Dna.data.getDocuments().get(selectedRows[0]));
+							Dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(Dna.data.getDocuments().get(selectedRows[0]));
 						}
 					}
 				} else {
@@ -258,62 +258,62 @@ public class DocumentPanel extends JScrollPane {
 		public void updateDocumentView() {
 			int rowCount = this.getSelectedRowCount();
 			if (rowCount == 0 || rowCount > 1) {
-				Dna.dna.gui.previousDocID = -1;
-				Dna.dna.gui.textPanel.setDocumentText("");
-				Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
-				Dna.dna.gui.leftPanel.editDocPanel.updateUI();
+				Dna.gui.previousDocID = -1;
+				Dna.gui.textPanel.setDocumentText("");
+				Dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
+				Dna.gui.leftPanel.editDocPanel.updateUI();
 			} else if (rowCount == 1) {
 				int selectedRow = getSelectedRow();
 				int selectedModelIndex = this.convertRowIndexToModel(selectedRow);
 				int id = documentContainer.get(selectedModelIndex).getId();
-				Dna.dna.gui.previousDocID = id;
+				Dna.gui.previousDocID = id;
 				Document document = documentContainer.getDocumentByID(id);
 				
 				String text = document.getText();
-				Dna.dna.gui.textPanel.setDocumentId(id);
-				Dna.dna.gui.textPanel.setDocumentText(text);
-				Dna.dna.gui.textPanel.setEnabled(true);
+				Dna.gui.textPanel.setDocumentId(id);
+				Dna.gui.textPanel.setDocumentText(text);
+				Dna.gui.textPanel.setEnabled(true);
 				
 				boolean[] b = Dna.data.getActiveDocumentPermissions(id);
 				if (b[0] == true && b[1] == true) {
-					Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(Dna.data.getDocuments().get(selectedModelIndex));
+					Dna.gui.leftPanel.editDocPanel.createEditDocumentPanel(Dna.data.getDocuments().get(selectedModelIndex));
 				} else {
-					Dna.dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
+					Dna.gui.leftPanel.editDocPanel.createEditDocumentPanel();
 				}
-				Dna.dna.gui.leftPanel.editDocPanel.updateUI();
+				Dna.gui.leftPanel.editDocPanel.updateUI();
 			} else {
 				System.err.println("Negative number of rows in the document table!");
 			}
-			if (Dna.dna.gui.rightPanel.statementPanel.statementFilter.showCurrent.isSelected()) {
-				Dna.dna.gui.rightPanel.statementPanel.statementFilter.currentDocumentFilter();
+			if (Dna.gui.rightPanel.statementPanel.statementFilter.showCurrent.isSelected()) {
+				Dna.gui.rightPanel.statementPanel.statementFilter.currentDocumentFilter();
 			}
 			
 			if (Dna.dna.sql != null) {
-				Dna.dna.gui.textPanel.paintStatements();
+				Dna.gui.textPanel.paintStatements();
 			}
-			Dna.dna.gui.textPanel.setCaretPosition(0);
+			Dna.gui.textPanel.setCaretPosition(0);
 			
 			int ac = Dna.data.getActiveCoder();
-			if (Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton != null) {
+			if (Dna.gui.leftPanel.editDocPanel.saveDetailsButton != null) {
 				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
-					Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(false);
-					Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
+					Dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(false);
+					Dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
 				} else {
-					Dna.dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(true);
-					Dna.dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
+					Dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(true);
+					Dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
 				}
 			}
 			
 			if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
-				Dna.dna.gui.documentPanel.menuItemDelete.setEnabled(false);
+				Dna.gui.documentPanel.menuItemDelete.setEnabled(false);
 			} else {
-				Dna.dna.gui.documentPanel.menuItemDelete.setEnabled(true);
+				Dna.gui.documentPanel.menuItemDelete.setEnabled(true);
 			}
 			
 			if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
-				Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
+				Dna.gui.menuBar.newDocumentButton.setEnabled(false);
 			} else {
-				Dna.dna.gui.menuBar.newDocumentButton.setEnabled(true);
+				Dna.gui.menuBar.newDocumentButton.setEnabled(true);
 			}
 		}
 	}

@@ -1,5 +1,6 @@
 package dna.export;
 
+import java.io.File;
 import java.io.PrintStream;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -16,8 +17,10 @@ import java.util.LinkedHashMap;
 import org.rosuda.JRI.RConsoleOutputStream;
 import org.rosuda.JRI.Rengine;
 
+import dna.Dna;
 import dna.SqlConnection;
 import dna.dataStructures.AttributeVector;
+import dna.dataStructures.Coder;
 import dna.dataStructures.Data;
 import dna.dataStructures.Document;
 import dna.dataStructures.Statement;
@@ -34,7 +37,6 @@ public class ExporterR {
 	String dbfile;
 	SqlConnection sql;
 	Data data;
-	ArrayList<Statement> filteredStatements;
 	Matrix matrix;
 	ArrayList<Matrix> timeWindowMatrices;
 	AttributeVector[] attributes;
@@ -44,21 +46,80 @@ public class ExporterR {
 
 	/**
 	 * Constructor for external R calls. Load and prepare data for export.
+	 * @throws Exception 
 	 */
-	public ExporterR(String dbtype, String dbfile, String login, String password, boolean verbose) {
+	public ExporterR(String dbtype, String dbfile, String login, String password, boolean verbose) throws Exception {
 		
 		// divert stdout to R console
 		Rengine r = new Rengine();
 		RConsoleOutputStream rs = new RConsoleOutputStream(r, 0);
 		System.setOut(new PrintStream(rs));
-		
+		System.setErr(new PrintStream(rs));
+
+		// check if database file or connection exists and connect
+		this.data = new Data();
 		this.dbfile = dbfile;
-		this.sql = new SqlConnection(dbtype, this.dbfile, login, password);
-		this.data = sql.getAllData();
-		this.filteredStatements = new ArrayList<Statement>();
-		for (int i = 0; i < data.getStatements().size(); i++) {
-			filteredStatements.add(data.getStatements().get(i));
+		boolean dbExists = true;
+		if (dbtype.equals("sqlite")) {
+			File f = new File(this.dbfile);
+			if (f.exists()) {
+				dbExists = true;
+			} else {
+				dbExists = false;
+			}
+		} else if (dbtype.equals("mysql")) {
+			try {
+				SqlConnection testConnection = new SqlConnection(dbtype, this.dbfile, login, password);
+				testConnection.closeConnection();
+				dbExists = true;
+			} catch (Exception e) {
+				dbExists = false;
+				throw new Exception("Connection could not be opened.\n" + e.getStackTrace());
+			}
 		}
+		this.sql = new SqlConnection(dbtype, this.dbfile, login, password);
+
+		if (!dbExists) { // if the database does not exist, create default data structures
+			this.sql.createDataStructure();
+			if (verbose == true) {
+				System.out.println("Table structure created.");
+			}
+			
+			// create default settings
+			Dna dna = new Dna();
+			this.data.getSettings().put("version", dna.version);
+			this.sql.upsertSetting("version", dna.version);
+			this.data.getSettings().put("date", dna.date);
+			this.sql.upsertSetting("date", dna.date);
+			this.data.getSettings().put("popupWidth", "220");  // default width of text fields in popup windows
+			this.sql.upsertSetting("popupWidth", "220");
+			this.data.getSettings().put("statementColor", "coder");
+			this.sql.upsertSetting("statementColor", "coder");
+			
+			// create coder
+			Coder adminCoder = new Coder(1);
+			adminCoder.setName("admin");
+			this.data.addCoder(adminCoder);
+			this.sql.addCoder(adminCoder);
+			this.data.setActiveCoder(adminCoder.getId());
+			this.sql.upsertSetting("activeCoder", Integer.toString(adminCoder.getId()));
+			
+			// create default statement types
+			try {
+				this.addStatementType("DNA Statement", "#FFFF00", new String[0], new String[0]);
+				this.addVariable("DNA Statement", "person", "short text", false, false);
+				this.addVariable("DNA Statement", "organization", "short text", false, false);
+				this.addVariable("DNA Statement", "concept", "short text", false, false);
+				this.addVariable("DNA Statement", "agreement", "boolean", false, false);
+				this.addStatementType("Annotation", "#D3D3D3", new String[0], new String[0]);
+				this.addVariable("Annotation", "note", "long text", false, false);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		// read in all data from the database and report summary
+		this.data = sql.getAllData();
 		if (verbose == true) {
 			String statementString = " statements and ";
 			if (this.data.getStatements().size() == 1) {
@@ -70,6 +131,7 @@ public class ExporterR {
 			}
 			System.out.println("Data loaded: " + data.getStatements().size() + statementString + data.getDocuments().size() + documentString);
 		}
+		
 		this.exportHelper = new ExportHelper();
 	}
 	
@@ -94,6 +156,7 @@ public class ExporterR {
 				s = s + ", ";
 			}
 		}
+		s = s + "\n";
 		return s;
 	}
 	
@@ -371,11 +434,12 @@ public class ExporterR {
 		if (verbose == true) {
 			System.out.print("(2/" + max + "): Filtering statements...\n");
 		}
-		this.filteredStatements = exportHelper.filter(data.getStatements(), data.getDocuments(), start, stop, st, variable1, variable2, 
+
+		ArrayList<Statement> filteredStatements = exportHelper.filter(this.data.getStatements(), this.data.getDocuments(), start, stop, st, variable1, variable2, 
 				variable1Document, variable2Document, qualifier, ignoreQualifier, duplicates, authorExclude, sourceExclude, sectionExclude, 
 				typeExclude, map, filterEmptyFields, verbose);
 		if (verbose == true) {
-			System.out.print(this.filteredStatements.size() + " out of " + data.getStatements().size() + " statements retained.\n");
+			System.out.print("       " + filteredStatements.size() + " out of " + data.getStatements().size() + " statements retained.\n");
 		}
 		
 		if (!timewindow.equals("no time window") && startDate.equals("01.01.1900") && startTime.equals("00:00:00")) {
@@ -424,12 +488,12 @@ public class ExporterR {
 			if (verbose == true) {
 				System.out.print("(3/" + max + "): Compiling node labels... ");
 			}
-			names1 = exportHelper.extractLabels(this.filteredStatements, data.getStatements(), data.getDocuments(), variable1, variable1Document, 
+			names1 = exportHelper.extractLabels(filteredStatements, data.getStatements(), data.getDocuments(), variable1, variable1Document, 
 					statementTypeId, includeIsolates);
-			names2 = exportHelper.extractLabels(this.filteredStatements, data.getStatements(), data.getDocuments(), variable2, variable2Document, 
+			names2 = exportHelper.extractLabels(filteredStatements, data.getStatements(), data.getDocuments(), variable2, variable2Document, 
 					statementTypeId, includeIsolates);
 			if (verbose == true) {
-				System.out.print(names1.length + " entries for the first and " + names2.length + " entries for the second variable.\n");
+				System.out.print("\n       " + names1.length + " entries for the first and " + names2.length + " entries for the second variable.\n");
 			}
 		}
 		
@@ -552,7 +616,11 @@ public class ExporterR {
 			}
 		}
 		if (verbose == true) {
-			System.out.print("Done.\n");
+			if (qualifierAggregation.equals("combine")) {
+				System.out.print("       Done.\n");
+			} else {
+				System.out.print("Done.\n");
+			}
 			int step = 5;
 			if (networkType.equals("Event list")) {
 				step = 4;
@@ -2181,21 +2249,46 @@ public class ExporterR {
 	}
 
 	/**
-	 * Add a new, empty statement type (without variables) to the database.
+	 * Add a new statement type (with or without variables) to the database.
 	 * 
 	 * @param statementTypeLabel  Name of the statement type.
 	 * @param color               Color of the statement type as an RGB hex string (e.g., "#FF0000").
+	 * @param variableNames       A String array of variable names. Must not contain any white space.
+	 * @param variableTypes       A String array of data types, with values "short text", "long text", "boolean", or "integer".
 	 * @throws Exception
 	 */
-	public void addStatementType(String statementTypeLabel, String color) throws Exception {
+	public void addStatementType(String statementTypeLabel, String color, String[] variableNames, String[] variableTypes) throws Exception {
 		if (this.data.getStatementType(statementTypeLabel) != null) {
 			throw new Exception("A statement type called '" + statementTypeLabel + "' already exists and will not be added.");
 		}
-		int id = this.data.generateNewId("statementTypes");
-		LinkedHashMap<String, String> variables = new LinkedHashMap<String, String>();
-		StatementType st = new StatementType(id, statementTypeLabel, color, variables);
+		int statementTypeId = this.data.generateNewId("statementTypes");
+		LinkedHashMap<String, String> variableMap = new LinkedHashMap<String, String>();
+		if (variableNames.length > 0) {
+			for (int i = 0; i < variableNames.length; i++) {
+				if ((variableTypes[i].equals("short text") || variableTypes[i].equals("long text") || variableTypes[i].equals("boolean") || variableTypes[i].equals("integer")) && !variableNames[i].contains(" ")) {
+					variableMap.put(variableNames[i], variableTypes[i]);
+				} else {
+					throw new Exception("Variable '" + variableNames[i] + "' has an invalid data type or contains spaces. Aborting.");
+				}
+			}
+		}
+		StatementType st = new StatementType(statementTypeId, statementTypeLabel, color, variableMap);
 		this.data.addStatementType(st);
 		this.sql.upsertStatementType(st);
+		
+		// add blank attributes
+		Iterator<String> iterator = st.getVariables().keySet().iterator();
+		while (iterator.hasNext()) {
+			String key = iterator.next();
+			String value = st.getVariables().get(key);
+			if (value.equals("short text") || value.equals("long text")) {
+				int attributeId = this.data.generateNewId("attributes");
+				AttributeVector av = new AttributeVector(attributeId, "", "#000000", "", "", "", "", statementTypeId, key);
+				this.data.getAttributes().add(av);
+				Collections.sort(this.data.getAttributes());
+				this.sql.upsertAttributeVector(av);
+			}
+		}
 	}
 
 	/**
@@ -2316,8 +2409,8 @@ public class ExporterR {
 	public void colorStatementType(int statementTypeId, String color) {
 		this.data.getStatementTypeById(statementTypeId).setColor(color);
 		this.sql.colorStatementType(statementTypeId,
-				this.data.getStatementTypeById(statementTypeId).getBlue(),
-				this.data.getStatementTypeById(statementTypeId).getBlue(),
+				this.data.getStatementTypeById(statementTypeId).getRed(),
+				this.data.getStatementTypeById(statementTypeId).getGreen(),
 				this.data.getStatementTypeById(statementTypeId).getBlue());
 	}
 
@@ -2477,6 +2570,16 @@ public class ExporterR {
 		if (!this.data.getStatementTypeById(statementTypeId).getVariables().containsKey(variable)) {
 			throw new Exception("Variable '" + variable + "' does not exist in statement type " + statementTypeId + ".");
 		}
+
+		// report simulation mode
+		if (verbose == true) {
+			if (simulate == true) {
+				System.out.println("Simulation mode: no actual changes are made to the database!");
+			} else {
+				System.out.println("Changes will be written both in memory and to the SQL database!");
+			}
+		}
+
 		int removeFromStatementCounter = 0;
 		int removeAttributeCounter = 0;
 		for (int i = this.data.getAttributes().size() - 1; i > -1 ; i--) {
@@ -2487,14 +2590,17 @@ public class ExporterR {
 				removeAttributeCounter++;
 			}
 		}
-		for (int i = 0; i < this.data.getStatements().size(); i++) {
-			if (this.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
-				if (simulate == false) {
-					this.data.getStatements().get(i).getValues().remove(variable);
+		if (this.data.getStatements().size() > 0) {
+			for (int i = 0; i < this.data.getStatements().size(); i++) {
+				if (this.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
+					if (simulate == false) {
+						this.data.getStatements().get(i).getValues().remove(variable);
+					}
+					removeFromStatementCounter++;
 				}
-				removeFromStatementCounter++;
 			}
 		}
+		
 		if (simulate == false) {
 			this.data.getStatementTypeById(statementTypeId).getVariables().remove(variable);
 			this.sql.removeVariable(statementTypeId, variable);
@@ -2563,13 +2669,15 @@ public class ExporterR {
 		
 		// update statements
 		int updateStatementCounter = 0;
-		for (int i = 0; i < this.data.getStatements().size(); i++) {
-			if (this.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
-				if (simulate == false) {
-					this.data.getStatements().get(i).getValues().put(newLabel, this.data.getStatements().get(i).getValues().get(variable));
-					this.data.getStatements().get(i).getValues().remove(variable);
+		if (this.data.getStatements().size() > 0) {
+			for (int i = 0; i < this.data.getStatements().size(); i++) {
+				if (this.data.getStatements().get(i).getStatementTypeId() == statementTypeId) {
+					if (simulate == false) {
+						this.data.getStatements().get(i).getValues().put(newLabel, this.data.getStatements().get(i).getValues().get(variable));
+						this.data.getStatements().get(i).getValues().remove(variable);
+					}
+					updateStatementCounter++;
 				}
-				updateStatementCounter++;
 			}
 		}
 		

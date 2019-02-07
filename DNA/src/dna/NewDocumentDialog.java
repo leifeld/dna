@@ -100,9 +100,9 @@ class NewDocumentDialog extends JDialog {
 				if (titleField.getText().equals("")) {
 					duplicate = true;
 				} else {
-					for (int i = 0; i < Dna.dna.gui.documentPanel.documentContainer.
+					for (int i = 0; i < Dna.gui.documentPanel.documentContainer.
 							getRowCount(); i++) { //TODO: better: compare with db directly
-						if (Dna.dna.gui.documentPanel.documentContainer.getValueAt(i, 0).equals(title)) {
+						if (Dna.gui.documentPanel.documentContainer.getValueAt(i, 0).equals(title)) {
 							duplicate = true;
 						}
 					}
@@ -137,12 +137,12 @@ class NewDocumentDialog extends JDialog {
 				Dna.dna.addDocument(d);
 				
 				int index = -1;
-				for (int i = 0; i < Dna.dna.gui.documentPanel.documentTable.getRowCount(); i++) {
-					if (docId == Dna.dna.gui.documentPanel.documentContainer.get(i).getId()) {
+				for (int i = 0; i < Dna.gui.documentPanel.documentTable.getRowCount(); i++) {
+					if (docId == Dna.gui.documentPanel.documentContainer.get(i).getId()) {
 						index = i;
 					}
 				}
-				Dna.dna.gui.documentPanel.documentTable.changeSelection(index, 0, false, false);
+				Dna.gui.documentPanel.documentTable.changeSelection(index, 0, false, false);
 				dispose();
 			}
 		});

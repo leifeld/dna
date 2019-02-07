@@ -63,17 +63,17 @@ public class SearchWindow extends JPanel {
 		searchToggleButton.setName("searchToggle");
 		searchToggleButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				CardLayout cl = (CardLayout) Dna.dna.gui.textPanel.bottomCardPanel.getLayout();
-				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "searchPanel");
+				CardLayout cl = (CardLayout) Dna.gui.textPanel.bottomCardPanel.getLayout();
+				cl.show(Dna.gui.textPanel.bottomCardPanel, "searchPanel");
 				searchToggleButton.setSelected(true);
 				recodeToggleButton.setSelected(false);
 				attributeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.attributeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.attributeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(false);
 			}
 		});
 		recodeToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/table_edit.png")));
@@ -82,17 +82,17 @@ public class SearchWindow extends JPanel {
 		recodeToggleButton.setName("recodeToggle");
 		recodeToggleButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				CardLayout cl = (CardLayout) Dna.dna.gui.textPanel.bottomCardPanel.getLayout();
-				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "recodePanel");
+				CardLayout cl = (CardLayout) Dna.gui.textPanel.bottomCardPanel.getLayout();
+				cl.show(Dna.gui.textPanel.bottomCardPanel, "recodePanel");
 				searchToggleButton.setSelected(false);
 				recodeToggleButton.setSelected(true);
 				attributeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.attributeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.attributeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(false);
 			}
 		});
 		attributeToggleButton = new JToggleButton(new ImageIcon(getClass().getResource("/icons/tag_purple.png")));
@@ -101,17 +101,17 @@ public class SearchWindow extends JPanel {
 		attributeToggleButton.setName("attributeToggle");
 		attributeToggleButton.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				CardLayout cl = (CardLayout) Dna.dna.gui.textPanel.bottomCardPanel.getLayout();
-				cl.show(Dna.dna.gui.textPanel.bottomCardPanel, "attributePanel");
+				CardLayout cl = (CardLayout) Dna.gui.textPanel.bottomCardPanel.getLayout();
+				cl.show(Dna.gui.textPanel.bottomCardPanel, "attributePanel");
 				searchToggleButton.setSelected(false);
 				recodeToggleButton.setSelected(false);
 				attributeToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.attributeToggleButton.setSelected(true);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(false);
-				Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.searchToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.recodeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.recodePanel.attributeToggleButton.setSelected(true);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.searchToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.recodeToggleButton.setSelected(false);
+				Dna.gui.textPanel.bottomCardPanel.attributePanel.attributeToggleButton.setSelected(true);
 			}
 		});
 		JPanel switchPanel = new JPanel();
@@ -178,10 +178,10 @@ public class SearchWindow extends JPanel {
 					
 				} else {
 					int acRow = tableModel.get(selectedRow).getAcRow();
-					Dna.dna.gui.documentPanel.documentTable.changeSelection(acRow, 0, false, false);
-					Dna.dna.gui.textPanel.textWindow.grabFocus();
-					Dna.dna.gui.textPanel.textWindow.setSelectionStart(tableModel.get(selectedRow).getStartCoordinate());
-					Dna.dna.gui.textPanel.textWindow.setSelectionEnd(tableModel.get(selectedRow).getEndCoordinate());
+					Dna.gui.documentPanel.documentTable.changeSelection(acRow, 0, false, false);
+					Dna.gui.textPanel.textWindow.grabFocus();
+					Dna.gui.textPanel.textWindow.setSelectionStart(tableModel.get(selectedRow).getStartCoordinate());
+					Dna.gui.textPanel.textWindow.setSelectionEnd(tableModel.get(selectedRow).getEndCoordinate());
 				}
 			}
 		});
@@ -213,24 +213,24 @@ public class SearchWindow extends JPanel {
 			searchRevert.setEnabled(false);
 			
 			progressMonitor = new ProgressMonitor(SearchWindow.this, "Searching...", "", 0, 
-					Dna.dna.gui.documentPanel.documentContainer.getRowCount() - 1 );
+					Dna.gui.documentPanel.documentContainer.getRowCount() - 1 );
 			progressMonitor.setMillisToDecideToPopup(1);
 			
 			tableModel.clear();
 			
 			String searchTerm = textField.getText();
 			
-			for (int i = 0; i < Dna.dna.gui.documentPanel.documentContainer.getRowCount(); i++) {
+			for (int i = 0; i < Dna.gui.documentPanel.documentContainer.getRowCount(); i++) {
 				progressMonitor.setProgress(i);
 				if (progressMonitor.isCanceled()) {
 					break;
 				}
 				
-				String text = Dna.dna.gui.documentPanel.documentContainer.get(i).getText();
+				String text = Dna.gui.documentPanel.documentContainer.get(i).getText();
 				Pattern p = Pattern.compile(searchTerm, Pattern.CASE_INSENSITIVE);
 				Matcher m = p.matcher(text);
 				while (m.find()) {
-					Date d = Dna.dna.gui.documentPanel.documentContainer.get(i).getDate();
+					Date d = Dna.gui.documentPanel.documentContainer.get(i).getDate();
 					GregorianCalendar date = new GregorianCalendar();
 					date.setTime(d);
 					int start;
@@ -246,7 +246,7 @@ public class SearchWindow extends JPanel {
 						end = text.length();
 					}
 					String subtext = "..." + text.substring(start, end) + "...";
-					SearchResult sr = new SearchResult(i, Dna.dna.gui.documentPanel.documentContainer.get(i).getTitle(), date, m.start(), m.end(), subtext);
+					SearchResult sr = new SearchResult(i, Dna.gui.documentPanel.documentContainer.get(i).getTitle(), date, m.start(), m.end(), subtext);
 					tableModel.addSearchResult(sr);
 				}
 				

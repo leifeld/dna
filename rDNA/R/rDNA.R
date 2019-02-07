@@ -49,6 +49,8 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
 #' @param password The password for accessing the database (only applicable
 #'   to remote mySQL databases; can be \code{NULL} if a local .dna file
 #'   is used).
+#' @param create If the file or remote database structure does not exist yet,
+#'   should it be created with default values?
 #' @param verbose Print details the number of documents and statements after
 #'   loading the database?
 #'
@@ -58,21 +60,20 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
 #' dna_connection(dna_sample())
 #' }
 #' @export
-dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE) {
-  if (is.null(login) & is.null(password)) {
-    if (!file.exists(infile)) {
-      stop(if (grepl("/", infile, fixed = TRUE)) {
-        paste0("infile \"", infile, "\" could not be located.")
-      } else {
-        paste0(
-          "infile \"",
-          infile,
-          "\" could not be located in working directory \"",
-          getwd(),
-          "\"."
-        )
-      })
+dna_connection <- function(infile, login = NULL, password = NULL, create = FALSE, verbose = TRUE) {
+  if (is.null(login) & is.null(password) & !file.exists(infile) & !isTRUE(create)) {
+    if (grepl("/", infile, fixed = TRUE)) {
+      msg <- paste0("infile '",
+                    infile,
+                    "' could not be located. Use 'create = TRUE' to create a new database.")
+    } else {
+      msg <- paste0("infile '",
+                    infile,
+                    "' could not be located in working directory '",
+                    getwd(),
+                    "'. Use 'create = TRUE' to create a new database.")
     }
+    stop(msg)
   }
   if (!grepl("/", infile, fixed = TRUE)) {
     infile <- paste0(getwd(), "/", infile)
@@ -112,6 +113,32 @@ dna_connection <- function(infile, login = NULL, password = NULL, verbose = TRUE
 #' @export
 print.dna_connection <- function(x, ...) {
   cat(.jcall(x$dna_connection, "S", "rShow"))
+}
+
+#' Print the summary of a \code{dna_dataframe} object
+#'
+#' Show details of a \code{dna_dataframe} object.
+#'
+#' Print a data frame returned by \link{dna_getDocuments},
+#' \link{dna_getStatements}, or \link{dna_getAttributes}. The only difference
+#' between this print method and the default print method for data frames is
+#' that the \code{text} column and other columns containing character strings
+#' are truncated for better readability on screen.
+#'
+#' @param x A \code{dna_connection} object.
+#' @param truncate Number of characters to which character columns in the data
+#'   frame should be truncated.
+#' @param ... Further options (currently not used).
+#'
+#' @export
+print.dna_dataframe <- function(x, truncate = 20, ...) {
+  x2 <- x
+  class(x2) <- class(x2)[-1]
+  x2[, unlist(sapply(x2, is.character))] <- apply(x2[, unlist(sapply(x2, is.character))],
+                                                  1:2,
+                                                  function(t) trim(x = trimws(t), n = truncate, e = "*"))
+  cat("Note: text denoted by * is truncated to", truncate, "characters for readability.\n\n")
+  print(x2)
 }
 
 #' Download the binary DNA jar file
@@ -440,7 +467,7 @@ dna_addAttribute <- function(connection,
                alias,
                notes)
   if (verbose == TRUE) {
-    message("A new attribute with ID", id, "was added to the database.")
+    message("A new attribute with ID ", id, " was added to the database.")
   }
   if (returnID == TRUE) {
     return(id)
@@ -539,7 +566,7 @@ dna_addDocument <- function(connection,
                type,
                dateLong)
   if (verbose == TRUE) {
-    message("A new document with ID", id, "was added to the database.")
+    message("A new document with ID ", id, " was added to the database.")
   }
   if (returnID == TRUE) {
     return(id)
@@ -684,9 +711,15 @@ dna_addStatement <- function(connection,
 #'   spaces.
 #' @param color A color in the form of a hexadecimal RGB string, such as
 #'   \code{"#FFFF00"} for yellow.
+#' @param ... Additional arguments can be added here to define the variables
+#'   associated with the statement type. For example,
+#'   \code{person = "short text"} or \code{agreement = "boolean"} or multiple
+#'   arguments like these separated by comma. The variable names should not
+#'   contain any spaces, and the values that indicate the data types should be
+#'   of types "short text", "long text", "boolean", or "integer".
 #'
 #' @export
-dna_addStatementType <- function(connection, label, color = "#FFFF00") {
+dna_addStatementType <- function(connection, label, color = "#FFFF00", ...) {
   if (is.null(label) || is.na(label) || length(label) != 1 || !is.character(label)) {
     stop("'label' must be a character object of length 1.")
   }
@@ -696,7 +729,29 @@ dna_addStatementType <- function(connection, label, color = "#FFFF00") {
   if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
     stop("'color' is not a hex RGB value of the form '#FFFF00'.")
   }
-  .jcall(connection$dna_connection, "V", "addStatementType", label, color)
+  
+  dots <- list(...)
+  if (any(sapply(dots, length) > 1)) {
+    stop("Some arguments in ... are longer than 1. All variables need to be associated with exactly one data type.")
+  }
+  if (!all(sapply(dots, is.character))) {
+    stop("Some arguments in ... are not character strings. They need to indicate the variable type as a character string.")
+  }
+  if (any(grepl("\\W", names(dots)))) {
+    stop("Variable names must not contain any spaces.")
+  }
+  variableNames <- names(dots)
+  if (is.null(variableNames)) {
+    variableNames <- character()
+  }
+  variableNames <- .jarray(variableNames)  # wrap in .jarray in case there is only one element
+  variableTypes <- unlist(dots)
+  if (is.null(variableTypes)) {
+    variableTypes <- character()
+  }
+  variableTypes <- .jarray(variableTypes)  # wrap in .jarray in case there is only one element
+  
+  .jcall(connection$dna_connection, "V", "addStatementType", label, color, variableNames, variableTypes)
 }
 
 #' Add a new variable to a statement type in the database
@@ -737,8 +792,8 @@ dna_addVariable <- function(connection,
                             statementType = 1,
                             variable,
                             dataType = "short text",
-                            simulate,
-                            verbose) {
+                            simulate = TRUE,
+                            verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
       || (!is.numeric(statementType) && !is.character(statementType))) {
     stop("'statementType' must be an integer or character object of length 1.")
@@ -758,10 +813,10 @@ dna_addVariable <- function(connection,
   if (!dataType %in% c("short text", "long text", "integer", "boolean")) {
     stop("'dataType' must be 'short text', 'long text', 'integer', or 'boolean'.")
   }
-  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate != 1)) {
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
     stop("'simulate' must be a logical value of length 1")
   }
-  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose != 1)) {
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
     stop("'verbose' must be a logical value of length 1")
   }
   .jcall(connection$dna_connection,
@@ -878,6 +933,7 @@ dna_getAttributes <- function(connection,
                          "frequency")
   attributes <- lapply(attributes, .jevalArray)
   attributes <- as.data.frame(attributes, stringsAsFactors = FALSE)
+  class(attributes) <- c("dna_dataframe", class(attributes))
   return(attributes)
 }
 
@@ -923,6 +979,7 @@ dna_getDocuments <- function(connection) {
   documents <- lapply(documents, .jevalArray)
   documents$date <- as.POSIXct(documents$date / 1000, origin = "1970-01-01")
   documents <- as.data.frame(documents, stringsAsFactors = FALSE)
+  class(documents) <- c("dna_dataframe", class(documents))
   return(documents)
 }
 
@@ -979,6 +1036,7 @@ dna_getStatements <- function(connection, statementType) {
                             "statementTypeId",
                             "coder",
                             variables)
+  class(statements) <- c("dna_dataframe", class(statements))
   return(statements)
 }
 
@@ -1094,7 +1152,7 @@ dna_getVariables <- function(connection, statementType) {
 #' @param verbose Print details about the recode operations?
 #'
 #' @export
-dna_recastVariable <- function(connection, statementType, variable, simulate, verbose) {
+dna_recastVariable <- function(connection, statementType, variable, simulate = TRUE, verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
       || (!is.numeric(statementType) && !is.character(statementType))) {
     stop("'statementType' must be an integer or character object of length 1.")
@@ -1108,10 +1166,10 @@ dna_recastVariable <- function(connection, statementType, variable, simulate, ve
   if (grepl("\\W", variable)) {
     stop("'variable' must not contain any spaces. Only characters and numbers are allowed.")
   }
-  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate != 1)) {
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
     stop("'simulate' must be a logical value of length 1")
   }
-  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose != 1)) {
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
     stop("'verbose' must be a logical value of length 1")
   }
   .jcall(connection$dna_connection, "V", "recastVariable", statementType, variable, simulate, verbose)
@@ -1274,7 +1332,7 @@ dna_removeStatement <- function(connection,
 #' @param verbose Print details about the recode operations?
 #'
 #' @export
-dna_removeStatementType <- function(connection, statementType, simulate, verbose) {
+dna_removeStatementType <- function(connection, statementType, simulate = TRUE, verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
       || (!is.numeric(statementType) && !is.character(statementType))) {
     stop("'statementType' must be an integer or character object of length 1.")
@@ -1282,10 +1340,10 @@ dna_removeStatementType <- function(connection, statementType, simulate, verbose
   if (is.numeric(statementType) && !is.integer(statementType)) {
     statementType <- as.integer(statementType)
   }
-  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate != 1)) {
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
     stop("'simulate' must be a logical value of length 1")
   }
-  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose != 1)) {
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
     stop("'verbose' must be a logical value of length 1")
   }
   .jcall(connection$dna_connection,
@@ -1326,8 +1384,8 @@ dna_removeStatementType <- function(connection, statementType, simulate, verbose
 dna_removeVariable <- function(connection,
                                statementType = 1,
                                variable,
-                               simulate,
-                               verbose) {
+                               simulate = TRUE,
+                               verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
       || (!is.numeric(statementType) && !is.character(statementType))) {
     stop("'statementType' must be an integer or character object of length 1.")
@@ -1338,10 +1396,10 @@ dna_removeVariable <- function(connection,
   if (is.null(variable) || is.na(variable) || length(variable) != 1 || !is.character(variable)) {
     stop("'variable' must be a character object of length 1.")
   }
-  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate != 1)) {
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
     stop("'simulate' must be a logical value of length 1")
   }
-  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose != 1)) {
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
     stop("'verbose' must be a logical value of length 1")
   }
   .jcall(connection$dna_connection,
@@ -1401,7 +1459,7 @@ dna_renameStatementType <- function(connection, statementType, label) {
 #'   \code{"actor" or "intensity"}. The label must not contain spaces.
 #'
 #' @export
-dna_renameVariable <- function(connection, statementType, variable, label) {
+dna_renameVariable <- function(connection, statementType, variable, label, simulate = TRUE, verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
       || (!is.numeric(statementType) && !is.character(statementType))) {
     stop("'statementType' must be an integer or character object of length 1.")
@@ -1421,7 +1479,13 @@ dna_renameVariable <- function(connection, statementType, variable, label) {
   if (grepl("\\W", label)) {
     stop("'label' must not contain any spaces. Only characters and numbers are allowed.")
   }
-  .jcall(connection$dna_connection, "V", "renameVariable", statementType, variable, label)
+  if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
+    stop("'simulate' must be a logical value of length 1")
+  }
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
+    stop("'verbose' must be a logical value of length 1")
+  }
+  .jcall(connection$dna_connection, "V", "renameVariable", statementType, variable, label, simulate, verbose)
 }
 
 #' Recode attributes in the DNA database

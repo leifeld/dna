@@ -94,7 +94,7 @@ public class ImportDnaDocuments extends JDialog {
 		JButton importButton = new JButton("Import selected", importIcon);
 		importButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int question = JOptionPane.showConfirmDialog(Dna.dna.gui, 
+				int question = JOptionPane.showConfirmDialog(Dna.gui, 
 						"Are you sure you want to insert the selected \n" +
 						"articles into the currently open DNA database?", 
 						"Confirmation", JOptionPane.YES_NO_OPTION);
@@ -108,7 +108,7 @@ public class ImportDnaDocuments extends JDialog {
 								"-Xmx1024M option, where '1024' is the space " +
 								"you want\nto allocate to DNA. The manual " +
 								"provides further details.");
-						JOptionPane.showMessageDialog(Dna.dna.gui, 
+						JOptionPane.showMessageDialog(Dna.gui, 
 								"Out of memory. File has been closed. Please " +
 								"start Java with\nthe -Xmx1024M option, " +
 								"where '1024' is the space you want\nto " +
@@ -280,7 +280,7 @@ public class ImportDnaDocuments extends JDialog {
 			*/
 			
 			// documents
-			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Importing documents and statements.", "(1/5) Reading documents...", 0, 5);
+			progressMonitor = new ProgressMonitor(Dna.gui, "Importing documents and statements.", "(1/5) Reading documents...", 0, 5);
 			progressMonitor.setMillisToDecideToPopup(1);
 			try {
 				Thread.sleep(1000);
@@ -301,9 +301,9 @@ public class ImportDnaDocuments extends JDialog {
 					map.put(documentId, newDocumentId);
 					document.setId(newDocumentId);
 					document.setCoder(coderMap.get(document.getCoder()));
-					Dna.dna.gui.documentPanel.setRowSorterEnabled(false);
-					Dna.dna.gui.documentPanel.documentContainer.addDocument(document);
-					Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
+					Dna.gui.documentPanel.setRowSorterEnabled(false);
+					Dna.gui.documentPanel.documentContainer.addDocument(document);
+					Dna.gui.documentPanel.setRowSorterEnabled(true);
 					newDocs.add(document);
 				}
 			}
@@ -314,7 +314,7 @@ public class ImportDnaDocuments extends JDialog {
 			// import statements for this document
 			progressMonitor.setProgress(2);
 			progressMonitor.setNote("(3/5) Reading statements...");
-			Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
+			Dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
 			ArrayList<Statement> newStatements = new ArrayList<Statement>();
 			for (int i = 0; i < foreignData.getStatements().size(); i++) {
 				Statement statement = foreignData.getStatements().get(i);
@@ -329,7 +329,7 @@ public class ImportDnaDocuments extends JDialog {
 					newStatements.add(statement);
 				}
 			}
-			Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
+			Dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
 			progressMonitor.setProgress(3);
 			progressMonitor.setNote("(4/5) Saving statements to database...");
 			Dna.dna.sql.addStatements(newStatements);
@@ -362,7 +362,7 @@ public class ImportDnaDocuments extends JDialog {
 			    					if (Dna.data.getAttributes().get(avIndex).getType().equals("") && !av[j].getType().equals("")) {
 			    						Dna.dna.updateAttributeType(avIndex, av[j].getType());
 			    					}
-			    					if (Dna.data.getAttributes().get(avIndex).getColor().equals(Color.BLACK) && !av[j].getAlias().equals(Color.BLACK)) {
+			    					if (Dna.data.getAttributes().get(avIndex).getColor().equals(Color.BLACK) && !av[j].getColor().equals(Color.BLACK)) {
 			    						Dna.dna.updateAttributeColor(avIndex, av[j].getColor());
 			    					}
 			    				} else {  // attribute not present; check if at least one statement contains it and mark for import later
@@ -379,13 +379,13 @@ public class ImportDnaDocuments extends JDialog {
 			    				}
 			    			}
 			    			Dna.dna.sql.insertAttributeVectors(newAttributes);  // import marked attributes
-			    			Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.sort();
+			    			Dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.sort();
 			    		}
 			        }
 				}
 			}
 			progressMonitor.setProgress(5);
-			Dna.dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);  // if no document is selected, the statement filter may throw an error
+			Dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);  // if no document is selected, the statement filter may throw an error
 		}
 	}
 	

@@ -64,26 +64,26 @@ public class ContradictionPanel extends JPanel {
 						node = node.replaceAll("\\)", "");
 						node = node.replaceAll("1 \\(", "");
 						node = node.replaceAll("0 \\(", "");
-						int nodeInt = new Integer(node).intValue();
+						int nodeInt = Integer.parseInt(node);
 
-						Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.
+						Dna.gui.rightPanel.statementPanel.statementFilter.showAll.
 						setSelected(true);
 						//Dna.dna.gui.rightPanel.statementPanel.statementFilter.toggleEnabled(false);
-						Dna.dna.gui.rightPanel.statementPanel.statementFilter.allFilter();
+						Dna.gui.rightPanel.statementPanel.statementFilter.allFilter();
 
-						int viewId = Dna.dna.gui.rightPanel.statementPanel.statementTable.convertRowIndexToView(
-								Dna.dna.gui.rightPanel.statementPanel.ssc.getIndexByStatementId(nodeInt));
+						int viewId = Dna.gui.rightPanel.statementPanel.statementTable.convertRowIndexToView(
+								Dna.gui.rightPanel.statementPanel.ssc.getIndexByStatementId(nodeInt));
 						if (viewId == -1) {
-							Dna.dna.gui.rightPanel.statementPanel.statementTable.clearSelection();
+							Dna.gui.rightPanel.statementPanel.statementTable.clearSelection();
 						} else {
-							Dna.dna.gui.rightPanel.statementPanel.statementTable.changeSelection(viewId, 0, false, false);
+							Dna.gui.rightPanel.statementPanel.statementTable.changeSelection(viewId, 0, false, false);
 							int docId = Dna.data.getStatement(nodeInt).getDocumentId();
-							int docModelIndex = Dna.dna.gui.documentPanel.documentContainer.getModelIndexById(docId);
-							int docRow = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToView(docModelIndex);
+							int docModelIndex = Dna.gui.documentPanel.documentContainer.getModelIndexById(docId);
+							int docRow = Dna.gui.documentPanel.documentTable.convertRowIndexToView(docModelIndex);
 							//int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(docId);
-							Dna.dna.gui.documentPanel.documentTable.getSelectionModel().
+							Dna.gui.documentPanel.documentTable.getSelectionModel().
 							setSelectionInterval(docRow, docRow);
-							Dna.dna.gui.textPanel.selectStatement(nodeInt, docId, true);
+							Dna.gui.textPanel.selectStatement(nodeInt, docId, true);
 						}
 					}
 				} catch (NullPointerException npe) { }

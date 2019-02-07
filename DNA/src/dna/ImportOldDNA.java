@@ -98,7 +98,7 @@ public class ImportOldDNA extends JDialog {
 		JButton importButton = new JButton("Import selected articles", importIcon);
 		importButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int question = JOptionPane.showConfirmDialog(Dna.dna.gui, 
+				int question = JOptionPane.showConfirmDialog(Dna.gui, 
 						"Are you sure you want to insert the selected \n" +
 						"articles into the currently open DNA database?", 
 						"Confirmation", JOptionPane.YES_NO_OPTION);
@@ -112,7 +112,7 @@ public class ImportOldDNA extends JDialog {
 								"-Xmx1024M option, where '1024' is the space " +
 								"you want\nto allocate to DNA. The manual " +
 								"provides further details.");
-						JOptionPane.showMessageDialog(Dna.dna.gui, 
+						JOptionPane.showMessageDialog(Dna.gui, 
 								"Out of memory. File has been closed. Please " +
 								"start Java with\nthe -Xmx1024M option, " +
 								"where '1024' is the space you want\nto " +
@@ -400,7 +400,7 @@ public class ImportOldDNA extends JDialog {
 		}
 		
 		public void run() {
-			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Importing documents and statements...", "", 0, aitm.getRowCount() - 1);
+			progressMonitor = new ProgressMonitor(Dna.gui, "Importing documents and statements...", "", 0, aitm.getRowCount() - 1);
 			progressMonitor.setMillisToDecideToPopup(1);
 			
 			SAXBuilder builder = new SAXBuilder( false );
@@ -495,9 +495,9 @@ public class ImportOldDNA extends JDialog {
 								typeString, 
 								date
 						);
-						Dna.dna.gui.documentPanel.setRowSorterEnabled(false);
-						Dna.dna.gui.documentPanel.documentContainer.addDocument(d);
-						Dna.dna.gui.documentPanel.setRowSorterEnabled(true);
+						Dna.gui.documentPanel.setRowSorterEnabled(false);
+						Dna.gui.documentPanel.documentContainer.addDocument(d);
+						Dna.gui.documentPanel.setRowSorterEnabled(true);
 						newDocs.add(d);
 					} catch (ParseException pe) {
 						pe.printStackTrace();
@@ -530,16 +530,16 @@ public class ImportOldDNA extends JDialog {
 						map.put("agreement", agreeInt);
 						
 						Statement s = new Statement(statementId, documentId, startInt, endInt, date, statementTypeId, coderId, map);
-						Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
-						Dna.dna.gui.rightPanel.statementPanel.ssc.addStatement(s);
-						Dna.dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
+						Dna.gui.rightPanel.statementPanel.setRowSorterEnabled(false);
+						Dna.gui.rightPanel.statementPanel.ssc.addStatement(s);
+						Dna.gui.rightPanel.statementPanel.setRowSorterEnabled(true);
 						newStatements.add(s);
 					}
 				}
 				progressMonitor.setProgress(k);
 			}
 
-			progressMonitor = new ProgressMonitor(Dna.dna.gui, "Saving to database...", "", 0, 3);
+			progressMonitor = new ProgressMonitor(Dna.gui, "Saving to database...", "", 0, 3);
 			progressMonitor.setMillisToDecideToPopup(1);
 			try {
 				Thread.sleep(1000);
@@ -556,7 +556,7 @@ public class ImportOldDNA extends JDialog {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.startMissingThread();  // add attribute vectors
+			Dna.gui.textPanel.bottomCardPanel.attributePanel.startMissingThread();  // add attribute vectors
 		}
 	}
 	
@@ -578,17 +578,17 @@ public class ImportOldDNA extends JDialog {
 				}
 			} else if (v.equals("1.09")) {
 				System.err.println("Your file was saved in an older version of DNA. Please open the file in DNA 1.31, save it to a new file, and try to import it again.");
-				JOptionPane.showMessageDialog(Dna.dna.gui,	"Your file was saved in an earlier version of DNA.\nPlease open the file, save it to a new .dna file,\nand try to import it again.", "Confirmation required", JOptionPane.OK_OPTION);
+				JOptionPane.showMessageDialog(Dna.gui,	"Your file was saved in an earlier version of DNA.\nPlease open the file, save it to a new .dna file,\nand try to import it again.", "Confirmation required", JOptionPane.OK_OPTION);
 			} else {
 				System.err.println("Articles can only be imported from valid DNA 1.xx files!");
-				JOptionPane.showMessageDialog(Dna.dna.gui,	"Articles can only be imported from valid DNA files!", "Confirmation required", JOptionPane.OK_OPTION);
+				JOptionPane.showMessageDialog(Dna.gui,	"Articles can only be imported from valid DNA files!", "Confirmation required", JOptionPane.OK_OPTION);
 			}
 		} catch (IOException e) {
 			System.err.println("Error while reading the file \"" + filename + "\".");
-			JOptionPane.showMessageDialog(Dna.dna.gui, "Error while reading the file!");
+			JOptionPane.showMessageDialog(Dna.gui, "Error while reading the file!");
 		} catch (org.jdom.JDOMException e) {
 			System.err.println("Error while opening the file \"" + filename + "\": " + e.getMessage());
-			JOptionPane.showMessageDialog(Dna.dna.gui, "Error while opening the file!");
+			JOptionPane.showMessageDialog(Dna.gui, "Error while opening the file!");
 		}
 	}
 	

@@ -4,7 +4,8 @@
 \alias{dna_recastVariable}
 \title{Recast a variable into a different data type}
 \usage{
-dna_recastVariable(connection, statementType, variable, simulate, verbose)
+dna_recastVariable(connection, statementType, variable, simulate = TRUE,
+  verbose = TRUE)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

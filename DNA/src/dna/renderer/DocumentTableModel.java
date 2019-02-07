@@ -106,7 +106,7 @@ public class DocumentTableModel extends AbstractTableModel {
 					Dna.data.getStatements().remove(i);
 				}
 			}
-			Dna.dna.gui.rightPanel.statementPanel.statementTable.updateUI();
+			Dna.gui.rightPanel.statementPanel.statementTable.updateUI();
 		}
 		Dna.data.getDocuments().remove(index);
 		TableModelEvent e = new TableModelEvent(this);

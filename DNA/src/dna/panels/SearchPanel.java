@@ -110,8 +110,8 @@ public class SearchPanel extends JPanel {
 	}
 
 	public void continueSearch(boolean forward) {
-		if (Dna.dna.gui.documentPanel.documentContainer.getRowCount() == 0 || 
-				Dna.dna.gui.documentPanel.documentTable.getSelectedRow() == -1) {
+		if (Dna.gui.documentPanel.documentContainer.getRowCount() == 0 || 
+				Dna.gui.documentPanel.documentTable.getSelectedRow() == -1) {
 			//there is no article where text could be found...
 		} else {
 			int matchStart = 0;
@@ -120,15 +120,15 @@ public class SearchPanel extends JPanel {
 			//create list of matches in current article
 			matches.clear();
 			String term = searchField.getText();
-			if (Dna.dna.gui.documentPanel.documentTable.getSelectedRow() == -1) {
-				Dna.dna.gui.documentPanel.documentTable.changeSelection(0, 0, false, 
+			if (Dna.gui.documentPanel.documentTable.getSelectedRow() == -1) {
+				Dna.gui.documentPanel.documentTable.changeSelection(0, 0, false, 
 						false);
 			}
 			
 			//int id = Dna.dna.gui.documentPanel.documentContainer.get(
 			//		Dna.dna.gui.documentPanel.documentTable.getSelectedRow()).getId();
 			
-			String searchText = Dna.dna.gui.textPanel.getDocumentText();
+			String searchText = Dna.gui.textPanel.getDocumentText();
 	    	//String searchText = new SqlQuery(dbfile).getArticleTextById(id);
 	    	
 			//searchText = stripHtmlTags(searchText, false);
@@ -140,14 +140,14 @@ public class SearchPanel extends JPanel {
 			
 			//determine cursor position from which to start searching
 			int searchPosition;
-			int selectionStart = Dna.dna.gui.textPanel.getSelectionStart();
-			int selectionEnd = Dna.dna.gui.textPanel.getSelectionEnd();
+			int selectionStart = Dna.gui.textPanel.getSelectionStart();
+			int selectionEnd = Dna.gui.textPanel.getSelectionEnd();
 			int selectionLength = selectionEnd - selectionStart;
 			if (selectionLength > 0) {
 				searchPosition = selectionStart;
 			} else {
-				if (Dna.dna.gui.textPanel.getCaretPosition() > 0) {
-					searchPosition = Dna.dna.gui.textPanel.getCaretPosition();
+				if (Dna.gui.textPanel.getCaretPosition() > 0) {
+					searchPosition = Dna.gui.textPanel.getCaretPosition();
 				} else {
 					searchPosition = 1;
 				}
@@ -183,7 +183,7 @@ public class SearchPanel extends JPanel {
 			}
 			
 			//select the match in the text window
-			Dna.dna.gui.textPanel.highlightText(matchStart, matchEnd);
+			Dna.gui.textPanel.highlightText(matchStart, matchEnd);
 		}
 	}
 	

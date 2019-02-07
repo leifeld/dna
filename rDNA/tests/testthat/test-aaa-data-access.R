@@ -7,15 +7,15 @@ setup(
 # set Sys.setenv(MAKE_DNA="TRUE") to run this part
 if (Sys.getenv("MAKE_DNA") == "TRUE") {
   test_that("download Jar", {
-    expect_equal({
+    expect_that({
       file <- dna_downloadJar(path = ".", returnString = TRUE)
       file.exists(file)
-    }, TRUE) 
+    }, equals(TRUE)) 
   })
-  test_that("make DNA",{
-    expect_equal({
+  test_that("make DNA", {
+    expect_that({
       unlink(dir(pattern = "dna-.+\\.jar$"))
-      system("cd ../../../ && make dna")
+      system("cd ../../../ && make dna", ignore.stdout = TRUE)
       jar <- dir(path = "../../../output", pattern = "^dna-.+\\.jar$",
                  full.names = TRUE)
       file.copy(
@@ -23,20 +23,20 @@ if (Sys.getenv("MAKE_DNA") == "TRUE") {
         to = paste0("../../inst/extdata/", basename(jar)),
         overwrite = TRUE
       )
-    }, TRUE)
+    },  equals(TRUE))
   })
 } else if (tolower(Sys.getenv("NOT_CRAN")) %in% c("1", "yes", "true") &
-           !nchar(Sys.getenv("TRAVIS_R_VERSION")) > 0){
+           !nchar(Sys.getenv("TRAVIS_R_VERSION")) > 0) {
   test_that("download Jar", {
-    expect_equal({
+    expect_that({
       file <- dna_downloadJar(returnString = TRUE)
       file.exists(file)
-    }, TRUE) 
+    },  equals(TRUE)) 
   })
 }
 
 test_that("initialise DNA",{
-  expect_equal({
+  expect_that({
     jar <- dir("../../inst/extdata", "^dna-.+\\.jar$", full.names = TRUE)
     if (!length(jar) > 0) 
       jar <- dir(paste0(system.file(package = "rDNA"), "/extdata"), 
@@ -44,18 +44,18 @@ test_that("initialise DNA",{
                  full.names = TRUE)
     dna_init(jar)
     rJava::.jarray(1:5)@jsig
-  }, "[I")
+  },  equals("[I"))
 })
 
 test_that("load sample", {
-  expect_equal({
+  expect_that({
     file.size(dna_sample())
-  }, file.size(system.file("extdata", "sample.dna", package = "rDNA")))
+  }, equals(file.size(system.file("extdata", "sample.dna", package = "rDNA"))))
 })
 
 test_that("connect to db", {
-  expect_equal(
+  expect_that(
     dna_connection(dna_sample(overwrite = TRUE, verbose = FALSE))$dna_connection@jclass,
-    "dna/export/ExporterR"
+    equals("dna/export/ExporterR")
   )
 })

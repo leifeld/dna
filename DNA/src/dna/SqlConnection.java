@@ -13,8 +13,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.TreeMap;
 
-import javax.swing.JOptionPane;
-
 import dna.dataStructures.AttributeVector;
 import dna.dataStructures.Coder;
 import dna.dataStructures.CoderRelation;
@@ -85,8 +83,7 @@ public class SqlConnection {
 			preStatement.execute();
 			preStatement.close();
 		} catch (SQLException e) {
-			JOptionPane.showMessageDialog(Dna.dna.gui, 
-					"Database access could not be executed properly. Report this problem along with the \n "
+			System.err.println("Database access could not be executed properly. Report this problem along with the \n "
 					+ "error log if you can see a systematic pattern here. Also, reload your file.");
 			e.printStackTrace();
 		}
@@ -768,8 +765,7 @@ public class SqlConnection {
 			preStatement.close();
 			connection.setAutoCommit(true);
 		} catch (SQLException e) {
-			JOptionPane.showMessageDialog(Dna.dna.gui, 
-					"Database access could not be executed properly. Report this problem along with the \n "
+			System.err.println("Database access could not be executed properly. Report this problem along with the \n "
 					+ "error log if you can see a systematic pattern here. Also, reload your file.");
 			e.printStackTrace();
 		}
@@ -1303,16 +1299,21 @@ public class SqlConnection {
 			throw new Exception("Data type in database for variable '" + variable + "' was not recognized.");
 		}
 		
-		// copy data from sourceTable to targetTable (and look up Variable ID),
-		// then delete in sourceTable,
-		// then change variable data type in VARIABLES
-		String string = "INSERT INTO " + targetTable + " (StatementID, VariableID, StatementTypeId, Value) VALUES "
-				+ "(SELECT StatementID, VariableID, StatementTypeId, Value FROM " + sourceTable + " WHERE "
+		// copy data from sourceTable to targetTable (and look up Variable ID)
+		String string = "INSERT INTO " + targetTable + " (StatementID, VariableID, StatementTypeId, Value) "
+				+ "SELECT StatementId, VariableId, StatementTypeId, Value FROM " + sourceTable + " WHERE "
 				+ "StatementTypeId = " + statementTypeId + " AND VariableID = (SELECT ID FROM VARIABLES WHERE StatementTypeId = " 
-				+ statementTypeId + " AND Variable = '" + variable + "'));"
-				+ "DELETE FROM " + sourceTable + " * WHERE StatementTypeId = " + statementTypeId + " AND Variable = '" + variable + "';"
-				+ "UPDATE VARIABLES SET DataType = '" + newDataType + "' WHERE StatementTypeId = " + statementTypeId 
-				+ "AND Variable = '" + variable + "';";
+				+ statementTypeId + " AND Variable = '" + variable + "');";
+		executeStatement(string);
+
+		// delete in sourceTable
+		string = " DELETE FROM " + sourceTable + " WHERE StatementTypeId = " + statementTypeId 
+				+ " AND VariableId = (SELECT ID FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + " AND Variable = '" + variable + "');";
+		executeStatement(string);
+
+		// change variable data type in VARIABLES
+		string = " UPDATE VARIABLES SET DataType = '" + newDataType + "' WHERE StatementTypeId = " + statementTypeId 
+				+ " AND Variable = '" + variable + "';";
 		executeStatement(string);
 	}
 
@@ -1606,10 +1607,10 @@ public class SqlConnection {
 		String password = coder.getPassword();
 		HashMap<String, Boolean> permissions = coder.getPermissions();
 		
-		if (dbtype == "sqlite") {
+		if (dbtype.equals("sqlite")) {
 			executeStatement("INSERT OR REPLACE INTO CODERS (ID, Name, Red, Green, Blue, Password) "
 					+ "VALUES (" + id + ", '" + name + "', " + red + ", " + green + ", " + blue + ", '" + password + "')");
-		} else if (dbtype == "mysql") {
+		} else if (dbtype.equals("mysql")) {
 			executeStatement("INSERT INTO CODERS (ID, Name, Red, Green, Blue, Password) "
 					+ "VALUES(" + id + ", '" + name + "', " + red + ", " + green + ", " + blue + ", '" + password + "') "
 					+ "ON DUPLICATE KEY UPDATE Name = '" + name + "', red = " + red + ", green = " + green + ", blue = "
@@ -1799,15 +1800,13 @@ public class SqlConnection {
 	 * @param value  Value corresponding to the property
 	 */
 	public void upsertSetting(String key, String value) {
-		if (dbtype == "sqlite") {
+		if (dbtype.equals("sqlite")) {
 			executeStatement("INSERT OR REPLACE INTO SETTINGS (Property, Value) VALUES ('" + key + "', '" + value + "')");
-		} else if (dbtype == "mysql") {
+		} else if (dbtype.equals("mysql")) {
 			executeStatement("INSERT INTO SETTINGS (Property, Value) VALUES('" + key + "', '" + value + "') "
 					+ "ON DUPLICATE KEY UPDATE Value = '" + value + "'");
 		}
 	}
-	
-	
 
 	
 	/* =================================================================================================================

@@ -14,24 +14,23 @@ import javax.swing.ImageIcon;
 public class Dna {
 	public static Data data = new Data();
 	public static Dna dna;
-	public Gui gui;
+	public static Gui gui;
 	public SqlConnection sql;
 	public String version, date;
 	PrintStream console;
 	
 	public Dna() {
-		date = "2019-01-27";
+		date = "2019-02-04";
 		version = "2.0 beta 23";
-		System.out.println("DNA version: " + version + " (" + date + ")");
-		System.out.println("Java version: " + System.getProperty("java.version"));
-		System.out.println("Operating system: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
-		console = System.err;
-		
-		gui = new Gui();
 	}
 	
 	public static void main (String[] args) {
 		dna = new Dna();
+		System.out.println("DNA version: " + dna.version + " (" + dna.date + ")");
+		System.out.println("Java version: " + System.getProperty("java.version"));
+		System.out.println("Operating system: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
+		dna.console = System.err;
+		gui = new Gui();
 
 		if (args.length == 1) {
 			new OpenDatabaseDialog(args[0]);
@@ -59,9 +58,9 @@ public class Dna {
 		ArrayList<Integer> docIds = new ArrayList<Integer>();
 		ArrayList<Integer> modelIndices = new ArrayList<Integer>();
 		for (int i = 0; i < documentRows.length; i++) {
-			int modelIndex = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToModel(documentRows[i]);
+			int modelIndex = Dna.gui.documentPanel.documentTable.convertRowIndexToModel(documentRows[i]);
 			modelIndices.add(modelIndex);
-			int docId = Dna.dna.gui.documentPanel.documentContainer.getIdByModelIndex(modelIndex);
+			int docId = Dna.gui.documentPanel.documentContainer.getIdByModelIndex(modelIndex);
 			docIds.add(docId);
 		}
 		
@@ -82,9 +81,9 @@ public class Dna {
 		ArrayList<Integer> docIds = new ArrayList<Integer>();
 		ArrayList<Integer> modelIndices = new ArrayList<Integer>();
 		for (int i = 0; i < documentRows.length; i++) {
-			int modelIndex = Dna.dna.gui.documentPanel.documentTable.convertRowIndexToModel(documentRows[i]);
+			int modelIndex = Dna.gui.documentPanel.documentTable.convertRowIndexToModel(documentRows[i]);
 			modelIndices.add(modelIndex);
-			int docId = Dna.dna.gui.documentPanel.documentContainer.getIdByModelIndex(modelIndex);
+			int docId = Dna.gui.documentPanel.documentContainer.getIdByModelIndex(modelIndex);
 			docIds.add(docId);
 		}
 		
@@ -144,11 +143,6 @@ public class Dna {
 		
 	}
 	
-	public void setActiveCoder(int activeCoder) {
-		data.setActiveCoder(activeCoder);
-		sql.upsertSetting("activeCoder", (new Integer(activeCoder)).toString());
-	}
-	
 	public void addRegex(Regex regex) {
 		data.addRegex(regex);
 		sql.upsertRegex(regex);
@@ -176,7 +170,7 @@ public class Dna {
 	 * @param row  Index of the attribute vector in the table/data structure
 	 */
 	public void deleteAttributeVector(int row) {
-		int attributeVectorId = Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.get(row).getId();
+		int attributeVectorId = Dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.get(row).getId();
 		Dna.data.getAttributes().remove(row);
 		sql.deleteAttributeVector(attributeVectorId);
 	}
@@ -240,53 +234,54 @@ public class Dna {
 		data = new Data();
 		sql.closeConnection();
 		sql = null;
-		Dna.dna.gui.leftPanel.coderPanel.clear();
-		Dna.dna.gui.statusBar.resetLabel();
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.clear();
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.updateUI();
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.updateUI();
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(false);
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(false);
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.addMissingButton.setEnabled(false);
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(false);
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(false);
-		Dna.dna.gui.textPanel.bottomCardPanel.attributePanel.cleanUpButton.setEnabled(false);
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.updateUI();
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.entryBox.updateUI();
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.tableModel.setRowCount(0);
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.listModel.clear();
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.applyButton.setEnabled(false);
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.resetButton.setEnabled(false);
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.setEnabled(false);
-		Dna.dna.gui.textPanel.bottomCardPanel.recodePanel.entryBox.setEnabled(false);
-		Dna.dna.gui.documentPanel.documentContainer.clear();
-		Dna.dna.gui.rightPanel.statementPanel.ssc.clear();
-		Dna.dna.gui.textPanel.setDocumentText("");
-		Dna.dna.gui.menuBar.openDatabase.setEnabled(true);
-		Dna.dna.gui.menuBar.newDatabase.setEnabled(true);
-		Dna.dna.gui.menuBar.colorCoderButton.setIcon(new ImageIcon(getClass().getResource("/icons/tick.png")));
-		Dna.dna.gui.menuBar.colorCoderButton.setEnabled(false);
-		Dna.dna.gui.menuBar.colorStatementTypeButton.setEnabled(false);
+		Dna.gui.leftPanel.coderPanel.clear();
+		Dna.gui.statusBar.resetLabel();
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.attributeTableModel.clear();
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.updateUI();
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.updateUI();
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(false);
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(false);
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.addMissingButton.setEnabled(false);
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.typeComboBox.setEnabled(false);
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.entryBox.setEnabled(false);
+		Dna.gui.textPanel.bottomCardPanel.attributePanel.cleanUpButton.setEnabled(false);
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.updateBoxes();
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.updateUI();
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.entryBox.updateUI();
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.tableModel.setRowCount(0);
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.listModel.clear();
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.applyButton.setEnabled(false);
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.resetButton.setEnabled(false);
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.typeComboBox.setEnabled(false);
+		Dna.gui.textPanel.bottomCardPanel.recodePanel.entryBox.setEnabled(false);
+		Dna.gui.documentPanel.documentContainer.clear();
+		Dna.gui.rightPanel.statementPanel.ssc.clear();
+		Dna.gui.textPanel.setDocumentText("");
+		Dna.gui.menuBar.openDatabase.setEnabled(true);
+		Dna.gui.menuBar.newDatabase.setEnabled(true);
+		Dna.gui.menuBar.colorCoderButton.setIcon(new ImageIcon(getClass().getResource("/icons/tick.png")));
+		Dna.gui.menuBar.colorCoderButton.setEnabled(false);
+		Dna.gui.menuBar.colorStatementTypeButton.setEnabled(false);
 		//Dna.dna.gui.menuBar.typeEditorButton.setEnabled(false);
-		Dna.dna.gui.menuBar.newDocumentButton.setEnabled(false);
-		Dna.dna.gui.menuBar.importTextButton.setEnabled(false);
-		Dna.dna.gui.menuBar.importOldButton.setEnabled(false);
-		Dna.dna.gui.menuBar.importDnaButton.setEnabled(false);
-		Dna.dna.gui.menuBar.recodeMetaData.setEnabled(false);
-		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
-		Dna.dna.gui.menuBar.closeDatabase.setEnabled(false);
-		Dna.dna.gui.menuBar.networkButton.setEnabled(false);
+		Dna.gui.menuBar.newDocumentButton.setEnabled(false);
+		Dna.gui.menuBar.importTextButton.setEnabled(false);
+		Dna.gui.menuBar.importOldButton.setEnabled(false);
+		Dna.gui.menuBar.importDnaButton.setEnabled(false);
+		Dna.gui.menuBar.recodeMetaData.setEnabled(false);
+		Dna.gui.menuBar.networkButton.setEnabled(false);
+		Dna.gui.menuBar.closeDatabase.setEnabled(false);
+		Dna.gui.menuBar.networkButton.setEnabled(false);
 		//Dna.dna.gui.rightPanel.statementPanel.updateStatementTypes();  //TODO: reimplement
-		Dna.dna.gui.rightPanel.rm.addButton.setEnabled(false);
-		Dna.dna.gui.rightPanel.rm.clear();
+		Dna.gui.rightPanel.rm.addButton.setEnabled(false);
+		Dna.gui.rightPanel.rm.clear();
 		//Dna.dna.gui.rightPanel.linkedTableModel.setRowCount(0);
-		Dna.dna.gui.rightPanel.rm.regexListModel.updateList();
-		Dna.dna.gui.rightPanel.rm.setFieldsEnabled(false);
-		Dna.dna.gui.leftPanel.docStats.clear();
-		Dna.dna.gui.leftPanel.docStats.refreshButton.setEnabled(false);
-		Dna.dna.gui.rightPanel.statementPanel.model.clear();
-		Dna.dna.gui.rightPanel.statementPanel.typeComboBox.setEnabled(false);
-		Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.setSelected(true);
-		Dna.dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();
+		Dna.gui.rightPanel.rm.regexListModel.updateList();
+		Dna.gui.rightPanel.rm.setFieldsEnabled(false);
+		Dna.gui.leftPanel.docStats.clear();
+		Dna.gui.leftPanel.docStats.refreshButton.setEnabled(false);
+		Dna.gui.rightPanel.statementPanel.model.clear();
+		Dna.gui.rightPanel.statementPanel.typeComboBox.setEnabled(false);
+		Dna.gui.rightPanel.statementPanel.statementFilter.showAll.setSelected(true);
+		Dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();
 	}
 }
