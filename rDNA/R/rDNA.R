@@ -59,6 +59,8 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
 #' dna_init()
 #' dna_connection(dna_sample())
 #' }
+#'
+#' @importFrom rJava .jnew
 #' @export
 dna_connection <- function(infile, login = NULL, password = NULL, create = FALSE, verbose = TRUE) {
   if (is.null(login) & is.null(password) & !file.exists(infile) & !isTRUE(create)) {
@@ -110,6 +112,8 @@ dna_connection <- function(infile, login = NULL, password = NULL, create = FALSE
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' conn
 #' }
+#'
+#' @importFrom rJava .jcall
 #' @export
 print.dna_connection <- function(x, ...) {
   cat(.jcall(x$dna_connection, "S", "rShow"))
@@ -400,6 +404,8 @@ dna_sample <- function(overwrite = FALSE,
 #' @param verbose Print details?
 #'
 #' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
 #' @export
 dna_addAttribute <- function(connection,
                              statementType = 1,
@@ -505,6 +511,8 @@ dna_addAttribute <- function(connection,
 #' @param verbose Print details?
 #'
 #' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
 #' @export
 dna_addDocument <- function(connection,
                             title = "",
@@ -610,6 +618,9 @@ dna_addDocument <- function(connection,
 #' \code{0}).
 #'
 #' @author Philip Leifeld
+#' 
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
 #' @export
 dna_addStatement <- function(connection,
                              documentID,
@@ -718,6 +729,8 @@ dna_addStatement <- function(connection,
 #'   contain any spaces, and the values that indicate the data types should be
 #'   of types "short text", "long text", "boolean", or "integer".
 #'
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
 #' @export
 dna_addStatementType <- function(connection, label, color = "#FFFF00", ...) {
   if (is.null(label) || is.na(label) || length(label) != 1 || !is.character(label)) {
@@ -787,6 +800,7 @@ dna_addStatementType <- function(connection, label, color = "#FFFF00", ...) {
 #' dna_addVariable(conn, 1, "location", "short text")
 #' }
 #'
+#' @importFrom rJava .jcall
 #' @export
 dna_addVariable <- function(connection,
                             statementType = 1,
@@ -844,6 +858,7 @@ dna_addVariable <- function(connection,
 #' @param color A color in the form of a hexadecimal RGB string, such as
 #'   \code{"#FFFF00"} for yellow.
 #'
+#' @importFrom rJava .jcall
 #' @export
 dna_colorStatementType <- function(connection, statementType, color = "#FFFF00") {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
@@ -898,6 +913,9 @@ dna_colorStatementType <- function(connection, statementType, color = "#FFFF00")
 #' }
 #'
 #' @author Philip Leifeld
+#'
+#' @importFrom rJava .jevalArray
+#' @importFrom rJava .jcall
 #' @export
 dna_getAttributes <- function(connection,
                               statementType = 1,
@@ -961,6 +979,9 @@ dna_getAttributes <- function(connection,
 #' }
 #'
 #' @author Philip Leifeld
+#'
+#' @importFrom rJava .jevalArray
+#' @importFrom rJava .jcall
 #' @export
 dna_getDocuments <- function(connection) {
   documents <- .jcall(connection$dna_connection,
@@ -1008,6 +1029,8 @@ dna_getDocuments <- function(connection) {
 #' }
 #'
 #' @author Philip Leifeld
+#'
+#' @importFrom rJava .jevalArray
 #' @export
 dna_getStatements <- function(connection, statementType) {
   if (is.numeric(statementType)) {
@@ -1059,6 +1082,7 @@ dna_getStatements <- function(connection, statementType) {
 #' statementTypes <- dna_getStatementTypes(conn)
 #' }
 #'
+#' @importFrom rJava .jevalArray
 #' @export
 dna_getStatementTypes <- function(connection) {
   statementTypes <- J(connection$dna_connection, "getStatementTypes")
@@ -1089,6 +1113,7 @@ dna_getStatementTypes <- function(connection) {
 #' variables <- dna_getVariables(conn, 1)
 #' }
 #'
+#' @importFrom rJava .jevalArray
 #' @export
 dna_getVariables <- function(connection, statementType) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1) {
@@ -1151,6 +1176,7 @@ dna_getVariables <- function(connection, statementType) {
 #'   plan more complex recode operations.
 #' @param verbose Print details about the recode operations?
 #'
+#' @importFrom rJava .jcall
 #' @export
 dna_recastVariable <- function(connection, statementType, variable, simulate = TRUE, verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
@@ -1205,6 +1231,8 @@ dna_recastVariable <- function(connection, statementType, variable, simulate = T
 #' @param verbose Print details on whether the attribute could be removed?
 #'
 #' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
 #' @export
 dna_removeAttribute <- function(connection,
                                 statementType = 1,
@@ -1262,6 +1290,8 @@ dna_removeAttribute <- function(connection,
 #' @param verbose Print details on whether the document could be removed?
 #'
 #' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
 #' @export
 dna_removeDocument <- function(connection,
                                id,
@@ -1295,6 +1325,8 @@ dna_removeDocument <- function(connection,
 #' @param verbose Print details on whether the document could be removed?
 #'
 #' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
 #' @export
 dna_removeStatement <- function(connection,
                                 id,
@@ -1331,6 +1363,7 @@ dna_removeStatement <- function(connection,
 #'   plan more complex recode operations.
 #' @param verbose Print details about the recode operations?
 #'
+#' @importFrom rJava .jcall
 #' @export
 dna_removeStatementType <- function(connection, statementType, simulate = TRUE, verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
@@ -1380,6 +1413,7 @@ dna_removeStatementType <- function(connection, statementType, simulate = TRUE, 
 #' dna_removeVariable(conn, 1, "person")
 #' }
 #'
+#' @importFrom rJava .jcall
 #' @export
 dna_removeVariable <- function(connection,
                                statementType = 1,
@@ -1427,6 +1461,7 @@ dna_removeVariable <- function(connection,
 #'   \code{"DNA Statement" or "My statement type"}. The label may contain
 #'   spaces.
 #'
+#' @importFrom rJava .jcall
 #' @export
 dna_renameStatementType <- function(connection, statementType, label) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
@@ -1462,6 +1497,7 @@ dna_renameStatementType <- function(connection, statementType, label) {
 #'   plan more complex recode operations.
 #' @param verbose Print details about the recode operations?
 #'
+#' @importFrom rJava .jcall
 #' @export
 dna_renameVariable <- function(connection, statementType, variable, label, simulate = TRUE, verbose = TRUE) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1
@@ -1561,6 +1597,9 @@ dna_renameVariable <- function(connection, statementType, variable, label, simul
 #' }
 #'
 #' @author Philip Leifeld
+#'
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
 #' @export
 dna_setAttributes <- function(connection,
                               attributes,
@@ -1719,6 +1758,9 @@ dna_setAttributes <- function(connection,
 #' }
 #'
 #' @author Philip Leifeld
+#'
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
 #' @export
 dna_setDocuments <- function(connection,
                              documents,
@@ -1910,6 +1952,10 @@ dna_setDocuments <- function(connection,
 #' }
 #'
 #' @author Philip Leifeld
+#'
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
+#' @importFrom rJava .jevalArray
 #' @export
 dna_setStatements <- function(connection,
                               statements,
@@ -4004,6 +4050,10 @@ print.dna_scale <- function(x, ...) {
 #' dna_plotNetwork(nw)
 #' dna_plotHive(nw)
 #' }
+#'
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
+#' @importFrom rJava .jevalArray
 #' @export
 dna_network <- function(connection,
                         networkType = "twomode",
@@ -4034,29 +4084,32 @@ dna_network <- function(connection,
                         invertSections = FALSE,
                         invertTypes = FALSE,
                         verbose = TRUE) {
-  # convert single values to vectors by means of duplication if necessary
-  if (length(excludeTypes) == 1) {
-    excludeTypes <- c(excludeTypes, excludeTypes)
+  
+  # check and convert exclude arguments
+  if (!is.character(excludeAuthors)) {
+    stop("'excludeAuthors' must be a character object.")
   }
-  if (length(excludeAuthors) == 1) {
-    excludeAuthors <- c(excludeAuthors, excludeAuthors)
+  if (!is.character(excludeSources)) {
+    stop("'excludeSources' must be a character object.")
   }
-  if (length(excludeSources) == 1) {
-    excludeSources <- c(excludeSources, excludeSources)
+  if (!is.character(excludeSections)) {
+    stop("'excludeSections' must be a character object.")
   }
-  if (length(excludeSections) == 1) {
-    excludeSections <- c(excludeSections, excludeSections)
+  if (!is.character(excludeTypes)) {
+    stop("'excludeTypes' must be a character object.")
   }
-  if (!is.null(excludeValues) && length(excludeValues) > 0) {
-    for (i in 1:length(excludeValues)) {
-      if (length(excludeValues[[i]]) == 1) {
-        excludeValues[[i]] <- c(excludeValues[[i]], excludeValues[[i]])
-      }
-    }
+  if (!is.list(excludeValues) || (length(excludeValues) > 0 && is.null(names(excludeValues)))) {
+    stop("'excludeValues' must be a named list.")
   }
+  excludeAuthors <- .jarray(excludeAuthors)
+  excludeSources <- .jarray(excludeSources)
+  excludeSections <- .jarray(excludeSections)
+  excludeTypes <- .jarray(excludeTypes)
+  
+  # compile exclude variables and values vectors
+  dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
+  count <- 0
   if (length(excludeValues) > 0) {
-    dat <- matrix("", nrow = sum(sapply(excludeValues, length)), ncol = 2)
-    count <- 0
     for (i in 1:length(excludeValues)) {
       if (length(excludeValues[[i]]) > 0) {
         for (j in 1:length(excludeValues[[i]])) {
@@ -4072,6 +4125,10 @@ dna_network <- function(connection,
     var <- character()
     val <- character()
   }
+  var <- .jarray(var)
+  val <- .jarray(val)
+  
+  # call Java function to create network
   .jcall(connection$dna_connection,
          "V",
          "rNetwork",

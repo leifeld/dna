@@ -24,4 +24,5 @@ dna_init()
 conn <- dna_connection(dna_sample(), verbose = FALSE)
 conn
 }
+
 }

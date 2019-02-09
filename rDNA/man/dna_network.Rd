@@ -233,4 +233,5 @@ nw <- dna_network(conn,
 dna_plotNetwork(nw)
 dna_plotHive(nw)
 }
+
 }
