@@ -1827,7 +1827,7 @@ dt <- dna_network(conn,
                   duplicates = "include",
                   timewindow = "no",
                   windowsize = 100,
-                  excludeValues = character(),
+                  excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "",
@@ -1854,7 +1854,7 @@ dt <- dna_network(conn,
                   duplicates = "include",
                   timewindow = "no",
                   windowsize = 100,
-                  excludeValues = character(),
+                  excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
@@ -1882,7 +1882,7 @@ dt <- dna_network(conn,
                   duplicates = "include",
                   timewindow = "no",
                   windowsize = 100,
-                  excludeValues = character(),
+                  excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
@@ -2001,7 +2001,7 @@ dt <- dna_network(conn,
                   duplicates = "include",
                   timewindow = "no",
                   windowsize = 100,
-                  excludeValues = character(),
+                  excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
@@ -2151,7 +2151,7 @@ dt <- dna_network(conn,
                   duplicates = "include",
                   timewindow = "no",
                   windowsize = 100,
-                  excludeValues = character(),
+                  excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
@@ -2203,7 +2203,7 @@ dt <- dna_network(conn,
                   duplicates = "include",
                   timewindow = "no",
                   windowsize = 100,
-                  excludeValues = character(),
+                  excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
@@ -2244,7 +2244,7 @@ dt <- dna_network(conn,
                   duplicates = "include",
                   timewindow = "no",
                   windowsize = 100,
-                  excludeValues = character(),
+                  excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
@@ -2281,7 +2281,7 @@ dt <- dna_network(conn,
                   duplicates = "include",
                   timewindow = "no",
                   windowsize = 100,
-                  excludeValues = character(),
+                  excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
@@ -2310,7 +2310,7 @@ dt <- dna_network(conn,
                   isolates = FALSE,
                   duplicates = "include",
                   windowsize = 100,
-                  excludeValues = character(),
+                  excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
@@ -2376,7 +2376,7 @@ dt <- dna_network(conn,
                   duplicates = "include",
                   timewindow = "no",
                   windowsize = 100,
-                  excludeValues = character(),
+                  excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
@@ -2421,7 +2421,7 @@ dt <- dna_network(conn,
                   duplicates = "acrossrange",
                   timewindow = "no",
                   windowsize = 100,
-                  excludeValues = character(),
+                  excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
@@ -2466,7 +2466,7 @@ dt <- dna_network(conn,
                   stop.time = "00:00:00",
                   timewindow = "days",
                   windowsize = 1,
-                  excludeValues = character(),
+                  excludeValues = list(),
                   verbose = TRUE)
 dt6 <- as.data.frame(dt[["networks"]][6], check.names = FALSE)
 dt14 <- as.data.frame(dt[["networks"]][14], check.names = FALSE))

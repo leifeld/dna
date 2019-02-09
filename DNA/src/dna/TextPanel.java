@@ -329,20 +329,21 @@ public class TextPanel extends JPanel {
 		
 		// the selection is too slow, so wait for it to finish...
 		SwingUtilities.invokeLater(new Runnable() {
+			@SuppressWarnings("deprecation") // modelToView becomes modelToView2D in Java 9, but we still want Java 8 compliance 
 			public void run() {
 				int start = Dna.data.getStatement(statementId).getStart();
 				Rectangle2D mtv = null;
 				try {
-					double y = textWindow.modelToView2D(start).getY();
+					double y = textWindow.modelToView(start).getY();
 					int l = textWindow.getText().length();
-					double last = textWindow.modelToView2D(l).getY();
+					double last = textWindow.modelToView(l).getY();
 					double frac = y / last;
 					double max = textScrollPane.getVerticalScrollBar().
 							getMaximum();
 					double h = textScrollPane.getHeight();
 					int value = (int) Math.ceil(frac * max - (h / 2));
 					textScrollPane.getVerticalScrollBar().setValue(value);
-					mtv = textWindow.modelToView2D(start);
+					mtv = textWindow.modelToView(start);
 					Point loc = textWindow.getLocationOnScreen();
 					new Popup(mtv.getX(), mtv.getY(), statementId, loc, editable);
 				} catch (BadLocationException e) {
