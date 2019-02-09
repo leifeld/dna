@@ -246,7 +246,7 @@ dna_gui <- function(infile = NULL,
   if (verbose == TRUE) {
     message("To return to R, close the DNA window when done.")
   }
-  system(paste0(jp, " -jar -Xmx", memory, "M ", djs, f), intern = !verbose)
+  system(paste0(jp, " -jar -Xmx", memory, "M \"", djs, "\"", f), intern = !verbose)
 }
 
 #' Initialize the connection with DNA
@@ -1457,6 +1457,10 @@ dna_renameStatementType <- function(connection, statementType, label) {
 #' @param variable The name of the variable that should be renamed.
 #' @param label A descriptive new label for the variable. For example
 #'   \code{"actor" or "intensity"}. The label must not contain spaces.
+#' @param simulate Should the changes only be simulated instead of actually
+#'   applied to the DNA connection and the SQL database? This can help to
+#'   plan more complex recode operations.
+#' @param verbose Print details about the recode operations?
 #'
 #' @export
 dna_renameVariable <- function(connection, statementType, variable, label, simulate = TRUE, verbose = TRUE) {

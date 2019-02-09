@@ -29,5 +29,5 @@ devtools::install_url("https://github.com/leifeld/dna/releases/download/v2.0-bet
 Note that the package relies on `rJava`, which needs to be installed first. For details on the installation process on different operating systems, consult the chapter "Installation of DNA and rDNA" in the manual.
 
 [![Build Status](https://travis-ci.org/leifeld/dna.svg?branch=master)](https://travis-ci.org/leifeld/dna)
-[![Coverage status](https://codecov.io/gh/JBGruber/dna/branch/master/graph/badge.svg)](https://codecov.io/github/JBGruber/dna?branch=master)
+[![Coverage status](https://codecov.io/gh/leifeld/dna/branch/master/graph/badge.svg)](https://codecov.io/github/leifeld/dna?branch=master)
 

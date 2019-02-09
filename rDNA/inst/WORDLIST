@@ -66,6 +66,7 @@ setDocuments
 setStatements
 startCaret
 statementTypeId
+timeseries
 timewindow
 twomode
 Unimodality

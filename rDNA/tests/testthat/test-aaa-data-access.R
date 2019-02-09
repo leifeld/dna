@@ -4,13 +4,13 @@ setup(
   unlink(dir(pattern = "^dna-.+\\.jar$"))
 )
 
-# set Sys.setenv(MAKE_DNA="TRUE") to run this part
+# set Sys.setenv(MAKE_DNA = "TRUE") to run this part
 if (Sys.getenv("MAKE_DNA") == "TRUE") {
   test_that("download Jar", {
     expect_that({
       file <- dna_downloadJar(path = ".", returnString = TRUE)
       file.exists(file)
-    }, equals(TRUE)) 
+    }, equals(TRUE))
   })
   test_that("make DNA", {
     expect_that({
@@ -31,18 +31,23 @@ if (Sys.getenv("MAKE_DNA") == "TRUE") {
     expect_that({
       file <- dna_downloadJar(returnString = TRUE)
       file.exists(file)
-    },  equals(TRUE)) 
+    },  equals(TRUE))
   })
 }
 
 test_that("initialise DNA",{
   expect_that({
     jar <- dir("../../inst/extdata", "^dna-.+\\.jar$", full.names = TRUE)
-    if (!length(jar) > 0) 
-      jar <- dir(paste0(system.file(package = "rDNA"), "/extdata"), 
-                 "^dna-.+\\.jar$", 
+    if (!length(jar) > 0) {
+      jar <- dir(paste0(system.file(package = "rDNA"), "/extdata"),
+                 "^dna-.+\\.jar$",
                  full.names = TRUE)
-    dna_init(jar)
+    }
+    if (length(jar) > 0) {
+      dna_init(jar)
+    } else {
+      dna_init()
+    }
     rJava::.jarray(1:5)@jsig
   },  equals("[I"))
 })
