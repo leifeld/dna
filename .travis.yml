@@ -23,7 +23,7 @@ r_github_packages:
   - igraph/rigraph
 
 jdk:
-  - oraclejdk11
+  - oraclejdk10
 
 before_script:
   - cd ..
