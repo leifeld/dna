@@ -23,9 +23,6 @@ r_packages:
 r_github_packages:  
   - igraph/rigraph
 
-jdk:
-  - oraclejdk10
-
 before_script:
   - cd ..
   - make dna
