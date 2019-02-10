@@ -63,6 +63,7 @@ dna: compile-java
 # then delete sources from output directory
 compile-java: extract-jar-libs
 	cd $(OUTPUT_DIR)/src/; \
+	$(JAVAC) -version; \
 	$(JAVAC) --release 8 dna/Dna.java; \
 	$(JAVAC) --release 8 dna/export/ExporterR.java; \
 	$(FIND) . -name '*.java' -exec $(RM) {} \;
