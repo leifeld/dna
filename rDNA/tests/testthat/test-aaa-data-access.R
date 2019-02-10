@@ -26,7 +26,8 @@ if (Sys.getenv("MAKE_DNA") == "TRUE" &
       )
     },  equals(TRUE))
   })
-} else if (tolower(Sys.getenv("NOT_CRAN")) %in% c("1", "yes", "true")) {
+} else if (tolower(Sys.getenv("NOT_CRAN")) %in% c("1", "yes", "true") &
+           !nchar(Sys.getenv("TRAVIS_R_VERSION")) > 0) {
   test_that("download Jar", {
     expect_that({
       file <- dna_downloadJar("../../inst/extdata/", returnString = TRUE)
