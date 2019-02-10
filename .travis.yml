@@ -1,3 +1,4 @@
+dist: xenial
 language: r
 sudo: required
 cache: packages
