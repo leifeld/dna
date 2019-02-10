@@ -12,7 +12,6 @@ before_install:
 addons:
   apt:
     packages:
-       - default-jdk
        - r-cran-rjava
        - libudunits2-dev
        - r-cran-mcmcpack
