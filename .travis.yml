@@ -1,38 +1,101 @@
 dist: xenial
-language: r
-sudo: required
-cache: packages
-
-r:
-  - devel
-  - release
+matrix:
+  include:
+      - name: "DNA Jar"
+        language: java
+        script:
+          - make dna
+          - bash test_size.sh "./output/dna*.jar"
+      - name: "manual"
+        language: r
+        sudo: required
+        cache: packages
+        before_install:
+          - tlmgr install xcolor colortbl koma-script placeins ltablex soul multirow wrapfig float tabu varwidth threeparttable ulem adjustbox pgf tikz-3dplot bigfoot cm-super collectbox pgf tikz-3dplot bigfoot cm-super
+          - cd rDNA
+        addons:
+          apt:
+            packages:
+               - r-cran-rjava
+               - libudunits2-dev
+               - r-cran-mcmcpack
+        r_packages:
+          - devtools
+          - ggplot2
+          - gridExtra
+          - kableExtra
+          - knitr
+          - LexisNexisTools
+          - quanteda
+          - statnet
+        r_github_packages:  
+          - igraph/rigraph
+        before_script:
+          - cd ..
+          - make dna
+          - cp ./output/dna-*.jar ./rDNA/inst/extdata/
+          - make rDNA
+          - R CMD INSTALL ./output/*.tar.gz
+          - make manual
+        script:
+          - bash test_size.sh "./output/dna-manual.pdf"
+      # Test rDNA
+      - name: "rDNA: devel"
+        language: r
+        sudo: required
+        cache: packages
+        r:
+          - devel
+        before_install:
+          - cd rDNA
+        addons:
+          apt:
+            packages:
+               - r-cran-rjava
+               - libudunits2-dev
+               - r-cran-mcmcpack
+        r_packages:
+          - devtools
+        r_github_packages:  
+          - igraph/rigraph
+        before_script:
+          - cd ..
+          - make dna
+          - cp ./output/dna-*.jar ./rDNA/inst/extdata/
+          - cd rDNA
+        script:
+          - Rscript -e "install.packages(c('rJava', 'ggraph'))" # Some packages need to be installed for every R version
+          - R CMD build .
+          - R CMD check *tar.gz
+        after_success:
+            - Rscript -e 'covr::codecov()'
+      - name: "rDNA: release"
+        language: r
+        sudo: required
+        cache: packages
+        r:
+          - release
+        before_install:
+          - cd rDNA
+        addons:
+          apt:
+            packages:
+               - r-cran-rjava
+               - libudunits2-dev
+               - r-cran-mcmcpack
+        r_packages:
+          - devtools
+        r_github_packages:  
+          - igraph/rigraph
+        before_script:
+          - cd ..
+          - make dna
+          - cp ./output/dna-*.jar ./rDNA/inst/extdata/
+          - cd rDNA
+        script:
+          - Rscript -e "install.packages(c('rJava', 'ggraph'))" # Some packages need to be installed for every R version
+          - R CMD build .
+          - R CMD check *tar.gz
+        after_success:
+            - Rscript -e 'covr::codecov()'
   
-before_install:
-  - cd rDNA
-
-addons:
-  apt:
-    packages:
-       - r-cran-rjava
-       - libudunits2-dev
-       - r-cran-mcmcpack
-       
-r_packages:
-  - devtools
-
-r_github_packages:  
-  - igraph/rigraph
-
-before_script:
-  - cd ..
-  - make dna
-  - cp ./output/dna-*.jar ./rDNA/inst/extdata/
-  - cd rDNA
-  
-script:
-  - Rscript -e "install.packages(c('rJava', 'ggraph'))" # Some packages need to be installed for every R version
-  - R CMD build .
-  - R CMD check *tar.gz
-
-after_success:
-    - Rscript -e 'covr::codecov()'
