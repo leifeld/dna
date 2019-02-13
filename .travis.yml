@@ -20,6 +20,7 @@ matrix:
                - r-cran-rjava
                - libudunits2-dev
                - r-cran-mcmcpack
+               - poppler-utils
         r_packages:
           - devtools
           - ggplot2
