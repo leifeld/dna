@@ -5,8 +5,8 @@ matrix:
         language: java
         script:
           - make dna
-          - if jar -tvf ./output/dna*.jar | grep 'Dna\.class'; then exit 1; else exit 0; fi
-          - if jar -tvf ./output/dna*.jar | grep 'ExporterR\.class'; then exit 1; else exit 0; fi
+          - if jar -tvf ./output/dna*.jar | grep 'Dna\.class'; then exit 0; else exit 1; fi
+          - if jar -tvf ./output/dna*.jar | grep 'ExporterR\.class'; then exit 0; else exit 1; fi
       - name: "manual"
         language: r
         sudo: required
@@ -40,7 +40,7 @@ matrix:
           - R CMD INSTALL ./output/*.tar.gz
           - make manual
         script:
-          - actualsize=$(pdftotext "./output/dna-manual.pdf." - | wc -w); echo pdf contains $actualsize words; if [ $actualsize -lt 30000 ]; then exit 1; else exit 0; fi
+          - actualsize=$(pdftotext "./output/dna-manual.pdf." - | wc -w); echo pdf contains $actualsize words; if [ $actualsize -gt 30000 ]; then exit 0; else exit 1; fi
       # Test rDNA
       - name: "rDNA: devel"
         language: r
