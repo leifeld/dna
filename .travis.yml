@@ -17,10 +17,11 @@ matrix:
         addons:
           apt:
             packages:
-               - r-cran-rjava
+               - ghostscript
                - libudunits2-dev
-               - r-cran-mcmcpack
                - poppler-utils
+               - r-cran-rjava
+               - r-cran-mcmcpack
         r_packages:
           - devtools
           - ggplot2
