@@ -76,6 +76,13 @@ public class Coder implements Comparable<Coder> {
 	}
 
 	/**
+	 * @param color the color to set
+	 */
+	public void setColor(String color) {
+		this.color = new Color(Integer.parseInt(color.substring(1), 16));
+	}
+
+	/**
 	 * @return the name
 	 */
 	public String getName() {

@@ -480,6 +480,134 @@ dna_addAttribute <- function(connection,
   }
 }
 
+#' Add a new coder to the DNA database
+#'
+#' Add a new coder to the DNA database.
+#'
+#' The \code{dna_addCoder} function can add a new coder to an existing DNA
+#' database. The user supplies a \link{dna_connection} object, the name of the
+#' new coder, the color used to display the coder in the graphical user
+#' interface, as well as various permissions of the coder.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param name A character object indicating the name of the new coder.
+#' @param color A character object indicating the color in which the new coder
+#'   should be displayed in the graphical user interface. The color must be
+#'   supplied as a hexadecimal string, for example \code{"#FFFF00"} for yellow.
+#' @param addDocuments Logical: should the coder have the permission to add new
+#'   documents via the graphical user interface?
+#' @param editDocuments Logical: should the coder have permission to edit the
+#'   meta-data of documents in the graphical user interface?
+#' @param deleteDocuments Logical: should the coder have permission to delete
+#'   documents from the database in the graphical user interface?
+#' @param importDocuments Logical: should the coder have permission to import
+#'   documents into the database via the graphical user interface?
+#' @param viewOthersDocuments Logical: should the coder have permission to view
+#'   the documents that were added by other coders?
+#' @param editOthersDocuments Logical: should the coder have permission to edit
+#'   the meta-data of documents added by other coders?
+#' @param addStatements Logical: should the coder have permission to add new
+#'   statements to the database?
+#' @param viewOthersStatements Logical: should the coder have permission to view
+#'   the statements in the graphical user interface that were added by other
+#'   coders?
+#' @param editOthersStatements Logical: should the coder have permission to edit
+#'   the statements in the graphical user interface that were added by other
+#'   coders?
+#' @param editCoders Logical: should the coder have permission to add, remove,
+#'   or edit coders in the graphical user interface?
+#' @param editStatementTypes Logical: should the coder have permission to add,
+#'   remove, or edit statement types in the graphical user interface?
+#' @param editRegex Logical: should the coder have permission to add, remove, or
+#'   edit regular expressions in the graphical user interface?
+#' @param verbose Print details?
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
+#' @export
+dna_addCoder <- function(connection,
+                         name,
+                         color,
+                         addDocuments = TRUE,
+                         editDocuments = TRUE,
+                         deleteDocuments = TRUE,
+                         importDocuments = TRUE,
+                         viewOthersDocuments = TRUE,
+                         editOthersDocuments = TRUE,
+                         addStatements = TRUE,
+                         viewOthersStatements = TRUE,
+                         editOthersStatements = TRUE,
+                         editCoders = TRUE,
+                         editStatementTypes = TRUE,
+                         editRegex = TRUE,
+                         verbose = TRUE) {
+  if (is.null(name) || is.na(name) || !is.character(name) || length(name) != 1) {
+    stop("'name' must be a character object of length 1.")
+  }
+  if (is.null(color) || is.na(color) || !is.character(color) || length(color) != 1) {
+    stop("'color' must be a character object of length 1 (in hexadecimal format, for example '#FFFF00' for yellow).")
+  }
+  if (is.null(addDocuments) || is.na(addDocuments) || !is.logical(addDocuments) || length(addDocuments) != 1) {
+    stop("'addDocuments' must be a TRUE or FALSE.")
+  }
+  if (is.null(editDocuments) || is.na(editDocuments) || !is.logical(editDocuments) || length(editDocuments) != 1) {
+    stop("'editDocuments' must be a TRUE or FALSE.")
+  }
+  if (is.null(deleteDocuments) || is.na(deleteDocuments) || !is.logical(deleteDocuments) || length(deleteDocuments) != 1) {
+    stop("'deleteDocuments' must be a TRUE or FALSE.")
+  }
+  if (is.null(importDocuments) || is.na(importDocuments) || !is.logical(importDocuments) || length(importDocuments) != 1) {
+    stop("'importDocuments' must be a TRUE or FALSE.")
+  }
+  if (is.null(viewOthersDocuments) || is.na(viewOthersDocuments) || !is.logical(viewOthersDocuments) || length(viewOthersDocuments) != 1) {
+    stop("'viewOthersDocuments' must be a TRUE or FALSE.")
+  }
+  if (is.null(editOthersDocuments) || is.na(editOthersDocuments) || !is.logical(editOthersDocuments) || length(editOthersDocuments) != 1) {
+    stop("'editOthersDocuments' must be a TRUE or FALSE.")
+  }
+  if (is.null(addStatements) || is.na(addStatements) || !is.logical(addStatements) || length(addStatements) != 1) {
+    stop("'addStatements' must be a TRUE or FALSE.")
+  }
+  if (is.null(viewOthersStatements) || is.na(viewOthersStatements) || !is.logical(viewOthersStatements) || length(viewOthersStatements) != 1) {
+    stop("'viewOthersStatements' must be a TRUE or FALSE.")
+  }
+  if (is.null(editOthersStatements) || is.na(editOthersStatements) || !is.logical(editOthersStatements) || length(editOthersStatements) != 1) {
+    stop("'editOthersStatements' must be a TRUE or FALSE.")
+  }
+  if (is.null(editCoders) || is.na(editCoders) || !is.logical(editCoders) || length(editCoders) != 1) {
+    stop("'editCoders' must be a TRUE or FALSE.")
+  }
+  if (is.null(editStatementTypes) || is.na(editStatementTypes) || !is.logical(editStatementTypes) || length(editStatementTypes) != 1) {
+    stop("'editStatementTypes' must be a TRUE or FALSE.")
+  }
+  if (is.null(editRegex) || is.na(editRegex) || !is.logical(editRegex) || length(editRegex) != 1) {
+    stop("'editRegex' must be a TRUE or FALSE.")
+  }
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
+    stop("'verbose' must be TRUE or FALSE.")
+  }
+  .jcall(connection$dna_connection,
+         "V",
+         "addCoder",
+         name,
+         color,
+         addDocuments,
+         editDocuments,
+         deleteDocuments,
+         importDocuments,
+         viewOthersDocuments,
+         editOthersDocuments,
+         addStatements,
+         viewOthersStatements,
+         editOthersStatements,
+         editCoders,
+         editStatementTypes,
+         editRegex,
+         verbose)
+}
+
 #' Add a document to the DNA database
 #'
 #' Add a new document to the DNA database.
@@ -828,10 +956,10 @@ dna_addVariable <- function(connection,
     stop("'dataType' must be 'short text', 'long text', 'integer', or 'boolean'.")
   }
   if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
-    stop("'simulate' must be a logical value of length 1")
+    stop("'simulate' must be TRUE or FALSE.")
   }
   if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
-    stop("'verbose' must be a logical value of length 1")
+    stop("'verbose' must be TRUE or FALSE.")
   }
   .jcall(connection$dna_connection,
          "V",
@@ -1193,10 +1321,10 @@ dna_recastVariable <- function(connection, statementType, variable, simulate = T
     stop("'variable' must not contain any spaces. Only characters and numbers are allowed.")
   }
   if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
-    stop("'simulate' must be a logical value of length 1")
+    stop("'simulate' must be TRUE or FALSE.")
   }
   if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
-    stop("'verbose' must be a logical value of length 1")
+    stop("'verbose' must be TRUE or FALSE.")
   }
   .jcall(connection$dna_connection, "V", "recastVariable", statementType, variable, simulate, verbose)
 }
@@ -1374,10 +1502,10 @@ dna_removeStatementType <- function(connection, statementType, simulate = TRUE, 
     statementType <- as.integer(statementType)
   }
   if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
-    stop("'simulate' must be a logical value of length 1")
+    stop("'simulate' must be TRUE or FALSE.")
   }
   if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
-    stop("'verbose' must be a logical value of length 1")
+    stop("'verbose' must be TRUE or FALSE.")
   }
   .jcall(connection$dna_connection,
          "V",
@@ -1431,10 +1559,10 @@ dna_removeVariable <- function(connection,
     stop("'variable' must be a character object of length 1.")
   }
   if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
-    stop("'simulate' must be a logical value of length 1")
+    stop("'simulate' must be TRUE or FALSE.")
   }
   if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
-    stop("'verbose' must be a logical value of length 1")
+    stop("'verbose' must be TRUE or FALSE.")
   }
   .jcall(connection$dna_connection,
          "V",
@@ -1520,10 +1648,10 @@ dna_renameVariable <- function(connection, statementType, variable, label, simul
     stop("'label' must not contain any spaces. Only characters and numbers are allowed.")
   }
   if (is.null(simulate) || is.na(simulate) || !is.logical(simulate) || length(simulate) != 1) {
-    stop("'simulate' must be a logical value of length 1")
+    stop("'simulate' must be TRUE or FALSE.")
   }
   if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
-    stop("'verbose' must be a logical value of length 1")
+    stop("'verbose' must be TRUE or FALSE.")
   }
   .jcall(connection$dna_connection, "V", "renameVariable", statementType, variable, label, simulate, verbose)
 }

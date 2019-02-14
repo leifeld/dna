@@ -2865,4 +2865,57 @@ public class ExporterR {
 			System.out.println("Updated statements: " + updateStatementCounter);
 		}
 	}
+
+	
+	/* =================================================================================================================
+	 * Functions for managing coders
+	 * =================================================================================================================
+	 */
+	
+	/**
+	 * Add a new coder and automatically generate new coder ID and coder relations.
+	 *  
+	 * @param name                 Name of the coder.
+	 * @param color                 Color of the coder as a hex string, for example "#FFFF00"
+	 * @param password              Password of the coder. By default an empty string "".
+	 * @param addDocuments          Does the coder have the permission to add documents?
+	 * @param editDocuments         Does the coder have the permission to edit document meta-data?
+	 * @param deleteDocuments       Does the coder have the permission to delete documents?
+	 * @param importDocuments       Does the coder have the permission to import documents?
+	 * @param viewOthersDocuments   Does the coder have the permission to view other coders' documents?
+	 * @param editOthersDocuments   Does the coder have the permission to edit other coders' document meta-data?
+	 * @param addStatements         Does the coder have the permission to add new statements?
+	 * @param viewOthersStatements  Does the coder have the permission to view other coders' statements?
+	 * @param editOthersStatements  Does the coder have the permission to edit other coders' statements?
+	 * @param editCoders            Does the coder have the permission to edit coders?
+	 * @param editStatementTypes    Does the coder have the permission to edit statement types?
+	 * @param editRegex             Does the coder have the permission to edit regular expressions?
+	 * @param verbose               Print details about the newly added coder?
+	 */
+	public void addCoder(String name, String color, String password, boolean addDocuments, boolean editDocuments,
+			boolean deleteDocuments, boolean importDocuments, boolean viewOthersDocuments, boolean editOthersDocuments,
+			boolean addStatements, boolean viewOthersStatements, boolean editOthersStatements, boolean editCoders,
+			boolean editStatementTypes, boolean editRegex, boolean verbose) {
+		Coder c = new Coder(this.data.generateNewId("coders"));
+		c.setName(name);
+		c.setColor(color);
+		c.setPassword(password);
+		c.getPermissions().put("addDocuments", addDocuments);
+		c.getPermissions().put("editDocuments", editDocuments);
+		c.getPermissions().put("deleteDocuments", deleteDocuments);
+		c.getPermissions().put("importDocuments", importDocuments);
+		c.getPermissions().put("viewOthersDocuments", viewOthersDocuments);
+		c.getPermissions().put("editOthersDocuments", editOthersDocuments);
+		c.getPermissions().put("addStatements", addStatements);
+		c.getPermissions().put("viewOthersStatements", viewOthersStatements);
+		c.getPermissions().put("editOthersStatements", editOthersStatements);
+		c.getPermissions().put("editCoders", editCoders);
+		c.getPermissions().put("editStatementTypes", editStatementTypes);
+		c.getPermissions().put("editRegex", editRegex);
+		this.data.addCoder(c);
+		this.sql.addCoder(c);
+		if (verbose == true) {
+			System.out.println("A new coder with ID " + c.getId() + " was added to the database.");
+		}
+	}
 }

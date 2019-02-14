@@ -735,13 +735,13 @@ public class ExportHelper {
 				if (verbose == true) {
 					System.out.print("\n       An edge weight of " + key + " maps onto integer combination: ");
 					for (int i = 0; i < values.size(); i++) {
-						if (verbose == true) {
-							System.out.print(values.get(i) + " ");
-						}
+						System.out.print(values.get(i) + " ");
 					}
 				}
 			}
-			System.out.print("\n");
+			if (verbose == true) {
+				System.out.print("\n");
+			}
 		}
 		
 		// normalization
