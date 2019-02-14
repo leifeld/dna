@@ -75,7 +75,7 @@ test_that("set Documents", {
 # saveRDS(dna_getDocuments(conn), "../files/dna_setDocuments.RDS")
 
 test_that("add coder", {
-  expect_message({
+  expect_output({
     dna_addCoder(conn, "new coder", "#FFFF00")
   }, "A new coder with ID 5 was added to the database.")
 })
