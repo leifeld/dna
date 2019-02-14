@@ -77,5 +77,5 @@ test_that("set Documents", {
 test_that("add coder", {
   expect_message({
     dna_addCoder(conn, "new coder", "#FFFF00")
-  }, "A new coder with ID 2 was added to the database.")
+  }, "A new coder with ID 5 was added to the database.")
 })
