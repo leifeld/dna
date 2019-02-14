@@ -971,15 +971,12 @@ devtools::install_github("leifeld/dna/rDNA", INSTALL_opts = "--no-multiarch")
 @
 
 After this is done as well, the final step of the installation is to test if \rdna\ can be loaded into \R\ correctly and to perform a basic operation with it---opening \dna\ from within \R.
-In order to do so, you first need to download \dna, which can also be done in \R\ with the \code{dna\_downloadJar} command (see Chapter~\ref{chp:rdna} for more details on what these commands mean).
+In order to do so, you first need to download \dna, which \rdna\ will do automatically when you initialise it for the first time (see Chapter~\ref{chp:rdna} for more details on what this command does).
 <<eval=FALSE, results = 'tex', message = FALSE>>=
-# download rDNA JAR
-dna_downloadJar() # download DNA jar
-
-# load library
+# load package
 library("rDNA")
 
-# initialise the file you just downloaded
+# initialise DNA (jar file will be downloaded)
 dna_init()
 
 # start up DNA from R with the sample file to see if everything worked
@@ -2689,7 +2686,7 @@ install.packages("rJava")
 install.packages("devtools")
 @
 
-Nefore going on, the \rdna\ package must be attached to the workspace.
+Before going on, the \rdna\ package must be attached to the workspace.
 If you have already set up \rdna\ (see Section~\ref{sec:installdna}) you can do this with:
 
 <<eval=TRUE, results = 'tex', message = FALSE>>=
@@ -2704,20 +2701,18 @@ set.seed(12345)
 
 Now we are able to use the package.
 The first step is to initialize \dna.
-Out of the box, \rdna\ does not know where the \dna\ \texttt{.jar} file is located, but will look for the newest version of it in your working directory.
-We also need to register \dna\ with \rdna\ to use them together.
-To do that, you need to save the \dna\ \texttt{.jar} file to the working directory of the current \R\ session.
-If you haven't already downlaoded \dna, you can do this from \R\ by running \code{dna\_downloadJar()}.
-This will place the newest version of \dna\ in your working directory.
-Then you can initialize \dna\ as follows:
+You can do so using \code{dna\_init()} without any arguments inside the brackets.
+This will download the newest version of the \dna\ \texttt{.jar} file if it is not already available on your system.
+If you want to download or update the \texttt{.jar} at some point, you can use the command \code{dna\_downloadJar()}.
+Now let's start using \rdna\:
 
 <<eval=FALSE>>=
 dna_init()
 @
 
-Now we are able to use all functions from the package.
+Now \rdna\ is initialised and we are able to use all functions from the package.
 To get started, we can open the \dna\ graphical user interface (GUI) from the \R\ command line.
-This is not necessary for further steps and while the GUI is open, you can in fact not do anything else with \R\ as the \texttt{Console} window will be used to display any messages or errors from \dna\ if they occur.\footnote{If no messages need to be printed to the Console, this might look like \R\ is ``frozen'', but don't worry: \R\ will return to its usual behaviour after you close the GUI.}
+This is not necessary for further steps and while the GUI is open, you can not do anything else with \R\ as the \texttt{Console} window will be used to display any messages or errors from \dna\ if they occur.\footnote{If no messages need to be printed to the Console, this might look like \R\ is ``frozen'', but don't worry: \R\ will return to its usual behaviour after you close the GUI.}
 
 <<eval=FALSE>>=
 dna_gui()

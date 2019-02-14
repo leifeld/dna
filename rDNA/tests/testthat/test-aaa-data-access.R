@@ -5,7 +5,8 @@ setup(
 )
 
 # set Sys.setenv(MAKE_DNA = "TRUE") to run this part
-if (Sys.getenv("MAKE_DNA") == "TRUE") {
+if (Sys.getenv("MAKE_DNA") == "TRUE" & 
+    tolower(Sys.getenv("NOT_CRAN")) %in% c("1", "yes", "true")) {
   test_that("download Jar", {
     expect_that({
       file <- dna_downloadJar(path = ".", returnString = TRUE)
@@ -29,7 +30,7 @@ if (Sys.getenv("MAKE_DNA") == "TRUE") {
            !nchar(Sys.getenv("TRAVIS_R_VERSION")) > 0) {
   test_that("download Jar", {
     expect_that({
-      file <- dna_downloadJar(returnString = TRUE)
+      file <- dna_downloadJar("../../inst/extdata/", returnString = TRUE)
       file.exists(file)
     },  equals(TRUE))
   })
