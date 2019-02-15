@@ -646,10 +646,10 @@ For more experienced users, here is a short version of the steps described below
       (On Mac: allow executing apps from an unidentified developer.)
 \item You can now run the standalone \dna\ or continue to install \rdna\ as well.
 \item Download and install \R\ (and \rstudio).
-\item In \R: install the necessary \R\ packages \texttt{rJava} and \texttt{devtools}.
+\item In \R: install the necessary \R\ packages \texttt{rJava} and \texttt{remotes}.
 \item In \R: install \rdna\ via
 <<eval=FALSE, results = 'tex', message = FALSE>>=
-devtools::install_github("leifeld/dna/rDNA", INSTALL_opts = "--no-multiarch")
+remotes::install_github("leifeld/dna/rDNA@*release", INSTALL_opts = "--no-multiarch")
 @
 \end{enumerate}
 
@@ -957,16 +957,16 @@ R.Version()$arch
 For \rdna\ to work properly, you need to ensure that \rjava\ works correctly.
 In particular, it is essential that the architectures of \java, your operating system, and your version of \R\ match (see comments~4, 5, and 6 in the code chunk above).
 
-Once this is done, you should install the package \texttt{devtools} \citep{wickham2018devtools}, which permits installing \R\ packages from \github.
+Once this is done, you should install the package \texttt{remotes} \citep{csardi2006remotes}, which permits installing \R\ packages from \github.
 <<eval=FALSE, results = 'tex', message = FALSE>>=
-install.packages("devtools")
+install.packages("remotes")
 @
 
-Since we only need one function from the package \texttt{devtools} at this point, it is not necessary to invoke the \code{library} command to load the whole package.
-Instead, you can write \code{devtools::} and then type the function you want to use.\footnote{The option \code{INSTALL\_opts = "--no-multiarch"} should normally not be necessary, but prevents errors on some operating systems.
-Since \texttt{devtools} tries to test both the 32-bit and 64-bit version of a package during installation, the process inevitably fails as only one architecture of \java\ is available.}
+Since we only need one function from the package \texttt{remotes} at this point, it is not necessary to invoke the \code{library} command to load the whole package.
+Instead, you can write \code{remotes::} and then type the function you want to use.\footnote{The option \code{INSTALL\_opts = "--no-multiarch"} should normally not be necessary, but prevents errors on some operating systems.
+Since \texttt{remotes} tries to test both the 32-bit and 64-bit version of a package during installation, the process inevitably fails as only one architecture of \java\ is available.}
 <<eval=FALSE, results = 'tex', message = FALSE>>=
-devtools::install_github("leifeld/dna/rDNA", INSTALL_opts = "--no-multiarch")
+remotes::install_github("leifeld/dna/rDNA@*release", INSTALL_opts = "--no-multiarch")
 @
 
 After this is done as well, the final step of the installation is to test if \rdna\ can be loaded into \R\ correctly and to perform a basic operation with it---opening \dna\ from within \R.
@@ -2673,7 +2673,7 @@ Examples include cluster analysis or community detection, scaling and applicatio
 \section{Getting Started with \rdna}
 The first step is to install \R---which was explained in Section~\ref{chp:installation}).
 Installing additional \R\ packages for network analysis and clustering, such as \texttt{statnet} \citep{handcock2008statnet, goodreau2008statnet, handcock2016statnet}, \texttt{xergm} \citep{leifeld2018temporal, leifeld2017xergm}, \texttt{igraph} \citep{csardi2006igraph}, and \texttt{cluster} \citep{maechler2017cluster}, is recommended.
-Moreover, it is necessary to install and correctly set up the \texttt{rJava} package \citep{urbanek2017rjava}, on which the \rdna\ package depends, and the \texttt{devtools} package \citep{wickham2018devtools}, which permits installing \R\ packages from GitHub (see Section~\ref{sec:installdna}).
+Moreover, it is necessary to install and correctly set up the \texttt{rJava} package \citep{urbanek2017rjava}, on which the \rdna\ package depends, and the \texttt{remotes} package \citep{csardi2006remotes}, which permits installing \R\ packages from GitHub (see Section~\ref{sec:installdna}).
 To install the packages neccessary for this section, simply execute the following commands:
 
 <<eval=FALSE>>=
@@ -2682,7 +2682,7 @@ install.packages("xergm")
 install.packages("igraph")
 install.packages("cluster")
 install.packages("rJava")
-install.packages("devtools")
+install.packages("remotes")
 @
 
 Before going on, the \rdna\ package must be attached to the workspace.
@@ -3595,7 +3595,7 @@ Many university libraries have access to this database which maintains a collect
 Its powerful search engine also allows for a finely grained search string to limit the number of articles for a specific topic.
 
 To convert the raw files from LexisNexis though, we need another \R\ package: \texttt{LexisNexisTools} \citep{gruber2018lexis}.
-You can install this package via \code{devtools::install\_github("JBGruber/LexisNexisTools")}.
+You can install this package via \code{remotes::install\_github("JBGruber/LexisNexisTools")}.
 The workflow looks as follows:
 
 <<eval=TRUE, warning = FALSE, message=FALSE, results = 'hide'>>=
