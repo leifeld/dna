@@ -12,7 +12,9 @@ matrix:
         sudo: required
         cache: packages
         before_install:
-          - tlmgr install xcolor colortbl koma-script placeins ltablex soul multirow wrapfig float tabu varwidth threeparttable ulem adjustbox pgf tikz-3dplot bigfoot cm-super collectbox pgf tikz-3dplot bigfoot cm-super
+          - tlmgr install xcolor colortbl koma-script placeins ltablex soul multirow wrapfig float \
+              tabu varwidth threeparttable ulem adjustbox pgf tikz-3dplot bigfoot cm-super \
+              collectbox pgf tikz-3dplot bigfoot cm-super
           - cd rDNA
         addons:
           apt:
@@ -30,7 +32,7 @@ matrix:
           - LexisNexisTools
           - quanteda
           - statnet
-        r_github_packages:  
+        r_github_packages:
           - igraph/rigraph
         before_script:
           - cd ..
@@ -40,7 +42,12 @@ matrix:
           - R CMD INSTALL ./output/*.tar.gz
           - make manual
         script:
-          - actualsize=$(wc -c < "./output/dna-manual.pdf"); echo size is $actualsize; if [ $actualsize -gt 6000000 ]; then exit 0; else exit 1; fi
+          - actualsize=$(wc -c < "./output/dna-manual.pdf");
+              echo size is $actualsize;
+              if [ $actualsize -gt 6000000 ];
+              then exit 0;
+              else exit 1;
+              fi
       # Test rDNA
       - name: "rDNA: devel"
         language: r
@@ -58,7 +65,7 @@ matrix:
                - r-cran-mcmcpack
         r_packages:
           - devtools
-        r_github_packages:  
+        r_github_packages:
           - igraph/rigraph
         before_script:
           - cd ..
@@ -87,7 +94,7 @@ matrix:
                - r-cran-mcmcpack
         r_packages:
           - devtools
-        r_github_packages:  
+        r_github_packages:
           - igraph/rigraph
         before_script:
           - cd ..
@@ -95,9 +102,8 @@ matrix:
           - cp ./output/dna-*.jar ./rDNA/inst/extdata/
           - cd rDNA
         script:
-          - Rscript -e "install.packages(c('rJava', 'ggraph'))" # Some packages need to be installed for every R version
+          - Rscript -e "install.packages(c('rJava', 'ggraph'))"
           - R CMD build .
           - R CMD check *tar.gz
         after_success:
             - Rscript -e 'covr::codecov()'
-  
