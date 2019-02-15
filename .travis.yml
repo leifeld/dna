@@ -22,6 +22,7 @@ matrix:
             packages:
                - ghostscript
                - libudunits2-dev
+               - poppler-utils
                - r-cran-rjava
                - r-cran-mcmcpack
         r_packages:
@@ -43,11 +44,11 @@ matrix:
           - R CMD INSTALL ./output/*.tar.gz
           - make manual
         script:
-          - actualsize=$(wc -c < "./output/dna-manual.pdf");
-              echo size is $actualsize;
-              if [ $actualsize -gt 6000000 ];
-              then exit 0;
-              else exit 1;
+          - actualsize=$(pdftotext "./output/dna-manual.pdf" - | wc -w); 
+              echo pdf contains $actualsize words;
+              if [ $actualsize -gt 30000 ]; 
+              then exit 0; 
+              else exit 1; 
               fi
       # Test rDNA
       - name: "rDNA: devel"
