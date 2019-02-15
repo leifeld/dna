@@ -1396,6 +1396,45 @@ dna_removeAttribute <- function(connection,
          verbose)
 }
 
+#' Removes a coder from the database
+#'
+#' Removes a coder from the database based on its ID or name.
+#'
+#' The user provides a connection object and the ID or name of a coder, and the
+#' function will remove the coder from the database. If there are documents or
+#' statements associated with the coder, an error will be printed instead.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \link{dna_connection} function.
+#' @param coder An integer value denoting the ID of the coder to be removed or
+#'   a character object of length 1 indicating the name of the coder to be
+#'   removed.
+#' @param verbose Print details?
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
+#' @export
+dna_removeCoder <- function(connection, coder, verbose = TRUE) {
+  if (!is.null(coder) && !is.na(coder) && is.character(coder) && length(coder) == 1) {
+    # fine: character
+  } else if (!is.null(coder) && !is.na(coder) && is.integer(coder) && length(coder) == 1) {
+    # fine: integer
+  } else if (!is.null(coder) && !is.na(coder) && is.numeric(coder) && length(coder) == 1) {
+    coder <- as.integer(coder) # convert to integer
+  } else {
+    stop("'coder' must be an integer coder ID or the name of the coder to be removed.")
+  }
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
+    stop("'verbose' must be TRUE or FALSE.")
+  }
+  .jcall(connection$dna_connection,
+         "V",
+         "removeCoder",
+         coder,
+         verbose)
+}
+
 #' Removes a document from the database
 #'
 #' Removes a document from the database based on its ID.

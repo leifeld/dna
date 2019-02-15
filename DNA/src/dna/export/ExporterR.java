@@ -2918,4 +2918,86 @@ public class ExporterR {
 			System.out.println("A new coder with ID " + c.getId() + " was added to the database.");
 		}
 	}
+
+	/**
+	 * Remove a coder. Print error messages if documents or statements still contain this coder.
+	 * 
+	 * @param coderName  ID of the coder to be removed.
+	 * @param verbose    Print details?
+	 */
+	public void removeCoder(String coderName, boolean verbose) {
+		int counter = 0;
+		int index = -1;
+		for (int i = 0; i < this.data.getCoders().size(); i++) {
+			if (this.data.getCoders().get(i).getName().equals(coderName)) {
+				index = i;
+				counter++;
+			}
+		}
+		if (counter > 1) {
+			System.err.println("More than one coder with the name '" + coderName + "' was found. Aborting.");
+		} else if (counter == 0 || index == -1) {
+			System.err.println("No coder with the name '" + coderName + "' was found. Aborting.");
+		} else {
+			removeCoder(index, verbose);
+		}
+	}
+	
+	/**
+	 * Remove a coder. Print error messages if documents or statements still contain this coder.
+	 * 
+	 * @param coderId  ID of the coder to be removed.
+	 * @param verbose  Print details?
+	 */
+	public void removeCoder(int coderId, boolean verbose) {
+		boolean abort = false;
+		
+		// check documents for coder ID
+		for (int i = 0; i < this.data.getDocuments().size(); i++) {
+			if (this.data.getDocuments().get(i).getCoder() == coderId) {
+				System.err.println("Documents with coder ID " + coderId + " found. Aborting.");
+				abort = true;
+				break;
+			}
+		}
+		
+		// check statements for coder ID
+		if (abort == false) {
+			for (int i = 0; i < this.data.getStatements().size(); i++) {
+				if (this.data.getStatements().get(i).getCoder() == coderId) {
+					System.err.println("Statements with coder ID " + coderId + " found. Aborting.");
+					abort = true;
+					break;
+				}
+			}
+		}
+		
+		// retrieve coder index
+		int index = -1;
+		if (abort == false) {
+			for (int i = 0; i < this.data.getCoders().size(); i++) {
+				if (this.data.getCoders().get(i).getId() == coderId) {
+					index = i;
+					break;
+				}
+			}
+			if (index == -1) {
+				System.err.println("Coder with ID " + coderId + " not found. Aborting.");
+				abort = true;
+			}
+		}
+		
+		// remove coder relations and coder, then print message
+		if (abort == false) {
+			for (int i = this.data.getCoderRelations().size() - 1; i > -1; i--) {
+				if (this.data.getCoderRelations().get(i).getCoder() == coderId || this.data.getCoderRelations().get(i).getOtherCoder() == coderId) {
+					this.data.getCoderRelations().remove(i);
+				}
+			}
+			this.data.getCoders().remove(index);
+			if (verbose == true) {
+				System.out.println("Coder with ID " + coderId + " was removed from the database.");
+			}
+		}
+	}
 }

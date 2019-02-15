@@ -79,3 +79,15 @@ test_that("add coder", {
     dna_addCoder(conn, "new coder", "#FFFF00")
   }, "A new coder with ID 5 was added to the database.")
 })
+
+test_that("remove coder", {
+  expect_output({
+    dna_removeCoder(conn, 5)
+  }, "Coder with ID 5 was removed from the database.")
+})
+
+test_that("remove coder abort", {
+  expect_output({
+    dna_removeCoder(conn, 6)
+  }, "Coder with ID 6 not found. Aborting.")
+})
