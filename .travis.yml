@@ -12,9 +12,10 @@ matrix:
         sudo: required
         cache: packages
         before_install:
-          - tlmgr install xcolor colortbl koma-script placeins ltablex soul multirow wrapfig float \
-              tabu varwidth threeparttable ulem adjustbox pgf tikz-3dplot bigfoot cm-super \
-              collectbox pgf tikz-3dplot bigfoot cm-super
+          - |
+            tlmgr install xcolor colortbl koma-script placeins ltablex soul multirow wrapfig \
+            float tabu varwidth threeparttable ulem adjustbox pgf tikz-3dplot bigfoot cm-super \
+            collectbox pgf tikz-3dplot bigfoot cm-super
           - cd rDNA
         addons:
           apt:
