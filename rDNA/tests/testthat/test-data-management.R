@@ -74,7 +74,7 @@ test_that("set Documents", {
 
 # saveRDS(dna_getDocuments(conn), "../files/dna_setDocuments.RDS")
 
-test_that("get Coders", {
+test_that("get coders", {
   expect_that({
     dna_getCoders(conn)
   }, equals(readRDS("../files/dna_getCoders.RDS")))
@@ -98,4 +98,11 @@ test_that("remove coder abort", {
   expect_output({
     dna_removeCoder(conn, 6)
   }, "Coder with ID 6 not found. Aborting.")
+})
+
+test_that("update coder", {
+  expect_output({
+    dna_updateCoder(conn, 3, color = "#CCCCCC", deleteDocuments = TRUE, editRegex = FALSE)
+  }, paste0("Updated color of coder 3: '#FF6633' -> '#CCCCCC'\n",
+            "Updated 'editRegex' permission of coder 3: true -> false"))
 })

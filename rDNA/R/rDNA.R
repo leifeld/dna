@@ -2302,6 +2302,250 @@ dna_setStatements <- function(connection,
          verbose)
 }
 
+#' Update the name, color, or permissions of a coder in the DNA database
+#'
+#' Update the name, color, or permissions of a coder in the DNA database.
+#'
+#' The \code{dna_updateCoder} function can update the name, color, or any
+#' permissions of an existing coder in a DNA database.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param name A character object indicating the name of the new coder. If
+#'   \code{NULL}, the current value is retained and no changes are made.
+#' @param color A character object indicating the color in which the coder
+#'   should be displayed in the graphical user interface. The color must be
+#'   supplied as a hexadecimal string, for example \code{"#FFFF00"} for yellow.
+#'   If \code{NULL}, the current value is retained and no changes are made.
+#' @param addDocuments Logical: should the coder have the permission to add new
+#'   documents via the graphical user interface? If \code{NULL}, the current
+#'   value is retained and no changes are made.
+#' @param editDocuments Logical: should the coder have permission to edit the
+#'   meta-data of documents in the graphical user interface? If \code{NULL},
+#'   the current value is retained and no changes are made.
+#' @param deleteDocuments Logical: should the coder have permission to delete
+#'   documents from the database in the graphical user interface? If
+#'   \code{NULL}, the current value is retained and no changes are made.
+#' @param importDocuments Logical: should the coder have permission to import
+#'   documents into the database via the graphical user interface? If
+#'   \code{NULL}, the current value is retained and no changes are made.
+#' @param viewOthersDocuments Logical: should the coder have permission to view
+#'   the documents that were added by other coders? If \code{NULL}, the current
+#'   value is retained and no changes are made.
+#' @param editOthersDocuments Logical: should the coder have permission to edit
+#'   the meta-data of documents added by other coders? If \code{NULL}, the
+#'   current value is retained and no changes are made.
+#' @param addStatements Logical: should the coder have permission to add new
+#'   statements to the database? If \code{NULL}, the current value is retained
+#'   and no changes are made.
+#' @param viewOthersStatements Logical: should the coder have permission to view
+#'   the statements in the graphical user interface that were added by other
+#'   coders? If \code{NULL}, the current value is retained and no changes are
+#'   made.
+#' @param editOthersStatements Logical: should the coder have permission to edit
+#'   the statements in the graphical user interface that were added by other
+#'   coders? If \code{NULL}, the current value is retained and no changes are
+#'   made.
+#' @param editCoders Logical: should the coder have permission to add, remove,
+#'   or edit coders in the graphical user interface? If \code{NULL}, the current
+#'   value is retained and no changes are made.
+#' @param editStatementTypes Logical: should the coder have permission to add,
+#'   remove, or edit statement types in the graphical user interface? If
+#'   \code{NULL}, the current value is retained and no changes are made.
+#' @param editRegex Logical: should the coder have permission to add, remove, or
+#'   edit regular expressions in the graphical user interface? If \code{NULL},
+#'   the current value is retained and no changes are made.
+#' @param verbose Print details?
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
+#' @export
+dna_updateCoder <- function(connection,
+                            coder,
+                            name = NULL,
+                            color = NULL,
+                            addDocuments = NULL,
+                            editDocuments = NULL,
+                            deleteDocuments = NULL,
+                            importDocuments = NULL,
+                            viewOthersDocuments = NULL,
+                            editOthersDocuments = NULL,
+                            addStatements = NULL,
+                            viewOthersStatements = NULL,
+                            editOthersStatements = NULL,
+                            editCoders = NULL,
+                            editStatementTypes = NULL,
+                            editRegex = NULL,
+                            verbose = TRUE) {
+  if (is.null(connection) || is.na(connection) || class(connection) != "dna_connection") {
+    stop("'connection' must be a 'dna_connection' object. Use the 'dna_connection' function to create one.")
+  }
+  if (!is.null(name) && !is.na(name) && (!is.character(name) || length(name) != 1)) {
+    stop("'name' must be NULL (for no changes) or a character object of length 1.")
+  }
+  if (!is.null(color) && !is.na(color) && (!is.character(color) || length(color) != 1)) {
+    stop("'color' must be NULL (for no changes) or a character object of length 1.")
+  }
+  if (!is.null(color) && !is.na(color) && !grepl("^#[0-9a-fA-F]{6}$", color)) {
+    stop("'color' is not a hex RGB value of the form '#FFFF00'.")
+  }
+  if (!is.null(addDocuments) && !is.na(addDocuments) && (!is.logical(addDocuments) || length(addDocuments) != 1)) {
+    stop("'addDocuments' must be NULL (for no changes) or TRUE or FALSE.")
+  }
+  if (!is.null(editDocuments) && !is.na(editDocuments) && (!is.logical(editDocuments) || length(editDocuments) != 1)) {
+    stop("'editDocuments' must be NULL (for no changes) or TRUE or FALSE.")
+  }
+  if (!is.null(deleteDocuments) && !is.na(deleteDocuments) && (!is.logical(deleteDocuments) || length(deleteDocuments) != 1)) {
+    stop("'deleteDocuments' must be NULL (for no changes) or TRUE or FALSE.")
+  }
+  if (!is.null(importDocuments) && !is.na(importDocuments) && (!is.logical(importDocuments) || length(importDocuments) != 1)) {
+    stop("'importDocuments' must be NULL (for no changes) or TRUE or FALSE.")
+  }
+  if (!is.null(viewOthersDocuments) && !is.na(viewOthersDocuments) && (!is.logical(viewOthersDocuments) || length(viewOthersDocuments) != 1)) {
+    stop("'viewOthersDocuments' must be NULL (for no changes) or TRUE or FALSE.")
+  }
+  if (!is.null(editOthersDocuments) && !is.na(editOthersDocuments) && (!is.logical(editOthersDocuments) || length(editOthersDocuments) != 1)) {
+    stop("'editOthersDocuments' must be NULL (for no changes) or TRUE or FALSE.")
+  }
+  if (!is.null(addStatements) && !is.na(addStatements) && (!is.logical(addStatements) || length(addStatements) != 1)) {
+    stop("'addStatements' must be NULL (for no changes) or TRUE or FALSE.")
+  }
+  if (!is.null(viewOthersStatements) && !is.na(viewOthersStatements) && (!is.logical(viewOthersStatements) || length(viewOthersStatements) != 1)) {
+    stop("'viewOthersStatements' must be NULL (for no changes) or TRUE or FALSE.")
+  }
+  if (!is.null(editOthersStatements) && !is.na(editOthersStatements) && (!is.logical(editOthersStatements) || length(editOthersStatements) != 1)) {
+    stop("'editOthersStatements' must be NULL (for no changes) or TRUE or FALSE.")
+  }
+  if (!is.null(editCoders) && !is.na(editCoders) && (!is.logical(editCoders) || length(editCoders) != 1)) {
+    stop("'editCoders' must be NULL (for no changes) or TRUE or FALSE.")
+  }
+  if (!is.null(editStatementTypes) && !is.na(editStatementTypes) && (!is.logical(editStatementTypes) || length(editStatementTypes) != 1)) {
+    stop("'editStatementTypes' must be NULL (for no changes) or TRUE or FALSE.")
+  }
+  if (!is.null(editRegex) && !is.na(editRegex) && (!is.logical(editRegex) || length(editRegex) != 1)) {
+    stop("'editRegex' must be NULL (for no changes) or TRUE or FALSE.")
+  }
+  if (!is.null(name) && is.na(name)) {
+    name <- NULL
+  }
+  if (!is.null(color) && is.na(color)) {
+    color <- NULL
+  }
+  if (!is.null(addDocuments) && is.na(addDocuments)) {
+    addDocuments <- NULL
+  }
+  if (!is.null(editDocuments) && is.na(editDocuments)) {
+    editDocuments <- NULL
+  }
+  if (!is.null(deleteDocuments) && is.na(deleteDocuments)) {
+    deleteDocuments <- NULL
+  }
+  if (!is.null(viewOthersDocuments) && is.na(viewOthersDocuments)) {
+    viewOthersDocuments <- NULL
+  }
+  if (!is.null(editOthersDocuments) && is.na(editOthersDocuments)) {
+    editOthersDocuments <- NULL
+  }
+  if (!is.null(addStatements) && is.na(addStatements)) {
+    addStatements <- NULL
+  }
+  if (!is.null(viewOthersStatements) && is.na(viewOthersStatements)) {
+    viewOthersStatements <- NULL
+  }
+  if (!is.null(editOthersStatements) && is.na(editOthersStatements)) {
+    editOthersStatements <- NULL
+  }
+  if (!is.null(editCoders) && is.na(editCoders)) {
+    editCoders <- NULL
+  }
+  if (!is.null(editStatementTypes) && is.na(editStatementTypes)) {
+    editStatementTypes <- NULL
+  }
+  if (!is.null(editRegex) && is.na(editRegex)) {
+    editRegex <- NULL
+  }
+  if (is.null(verbose) || is.na(verbose) || !is.logical(verbose) || length(verbose) != 1) {
+    stop("'verbose' must be TRUE or FALSE.")
+  }
+  coders <- dna_getCoders(connection)
+  if (is.character(name)) {
+    row <- which(coders$name == coder)
+    if (length(row) > 1) {
+      stop("More than one coder with name '" + coder + "' was found. Aborting.")
+    } else if (length(row) < 1) {
+      stop("No coder with name '" + coder + "' was found. Aborting.")
+    }
+  } else {
+    row <- which(coders$ID == coder)
+    if (length(row) < 1) {
+      stop("No coder with ID " + coder + " was found. Aborting.")
+    }
+  }
+  coderId <- coders$ID[row]
+  if (is.null(name)) {
+    name <- coders$name[row]
+  }
+  if (is.null(color)) {
+    color <- coders$color[row]
+  }
+  if (is.null(addDocuments)) {
+    addDocuments <- coders$addDocuments[row]
+  }
+  if (is.null(editDocuments)) {
+    editDocuments <- coders$editDocuments[row]
+  }
+  if (is.null(deleteDocuments)) {
+    deleteDocuments <- coders$deleteDocuments[row]
+  }
+  if (is.null(importDocuments)) {
+    importDocuments <- coders$importDocuments[row]
+  }
+  if (is.null(viewOthersDocuments)) {
+    viewOthersDocuments <- coders$viewOthersDocuments[row]
+  }
+  if (is.null(editOthersDocuments)) {
+    editOthersDocuments <- coders$editOthersDocuments[row]
+  }
+  if (is.null(addStatements)) {
+    addStatements <- coders$addStatements[row]
+  }
+  if (is.null(viewOthersStatements)) {
+    viewOthersStatements <- coders$viewOthersStatements[row]
+  }
+  if (is.null(editOthersStatements)) {
+    editOthersStatements <- coders$editOthersStatements[row]
+  }
+  if (is.null(editCoders)) {
+    editCoders <- coders$editCoders[row]
+  }
+  if (is.null(editStatementTypes)) {
+    editStatementTypes <- coders$editStatementTypes[row]
+  }
+  if (is.null(editRegex)) {
+    editRegex <- coders$editRegex[row]
+  }
+  .jcall(connection$dna_connection,
+         "V",
+         "updateCoder",
+         coderId,
+         name,
+         color,
+         "", # password; not used
+         addDocuments,
+         editDocuments,
+         deleteDocuments,
+         importDocuments,
+         viewOthersDocuments,
+         editOthersDocuments,
+         addStatements,
+         viewOthersStatements,
+         editOthersStatements,
+         editCoders,
+         editStatementTypes,
+         editRegex,
+         verbose)
+}
 
 # Analysis/Transformation ------------------------------------------------------
 

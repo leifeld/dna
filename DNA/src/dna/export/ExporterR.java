@@ -3092,4 +3092,117 @@ public class ExporterR {
 		
 		return o;
 	}
+	
+	/**
+	 * Update the name, color, password, or permissions of an existing coder.
+	 * 
+	 * @param coderId
+	 * @param name                  Updated name of the coder.
+	 * @param color                 Updated color of the coder as a hex string, for example "#FFFF00"
+	 * @param password              Updated password of the coder. By default an empty string "".
+	 * @param addDocuments          Should the coder have the permission to add documents?
+	 * @param editDocuments         Should the coder have the permission to edit document meta-data?
+	 * @param deleteDocuments       Should the coder have the permission to delete documents?
+	 * @param importDocuments       Should the coder have the permission to import documents?
+	 * @param viewOthersDocuments   Should the coder have the permission to view other coders' documents?
+	 * @param editOthersDocuments   Should the coder have the permission to edit other coders' document meta-data?
+	 * @param addStatements         Should the coder have the permission to add new statements?
+	 * @param viewOthersStatements  Should the coder have the permission to view other coders' statements?
+	 * @param editOthersStatements  Should the coder have the permission to edit other coders' statements?
+	 * @param editCoders            Should the coder have the permission to edit coders?
+	 * @param editStatementTypes    Should the coder have the permission to edit statement types?
+	 * @param editRegex             Should the coder have the permission to edit regular expressions?
+	 * @param verbose               Print details about the newly added coder?
+	 */
+	public void updateCoder(int coderId, String name, String color, String password, boolean addDocuments, 
+			boolean editDocuments, boolean deleteDocuments, boolean importDocuments, boolean viewOthersDocuments,
+			boolean editOthersDocuments, boolean addStatements, boolean viewOthersStatements,
+			boolean editOthersStatements, boolean editCoders, boolean editStatementTypes, boolean editRegex,
+			boolean verbose) {
+		Coder c = this.data.getCoderById(coderId);
+		String report = "";
+		if (name != null && !c.getName().equals(name)) {
+			report = report + "Updated name of coder " + coderId + ": '" + c.getName() + "' -> '" + name + "'\n";
+			c.setName(name);
+		}
+		String oldColor = String.format("#%02X%02X%02X", c.getColor().getRed(), c.getColor().getGreen(), c.getColor().getBlue());
+		if (color != null && !oldColor.equals(color)) {
+			report = report + "Updated color of coder " + coderId + ": '" + oldColor + "' -> '" + color + "'\n";
+			c.setColor(color);
+		}
+		if (password != null && !c.getPassword().equals(password)) {
+			report = report + "Updated password of coder " + coderId + ": '" + c.getPassword() + "' -> '" + password + "'\n";
+			c.setPassword(color);
+		}
+		if (!c.getPermissions().get("addDocuments") == addDocuments) {
+			report = report + "Updated 'addDocuments' permission of coder " + coderId + ": " + 
+					c.getPermissions().get("addDocuments").toString() + " -> " + String.valueOf(addDocuments) + "\n";
+			c.getPermissions().put("addDocuments", addDocuments);
+		}
+		if (!c.getPermissions().get("editDocuments") == editDocuments) {
+			report = report + "Updated 'editDocuments' permission of coder " + coderId + ": " + 
+					c.getPermissions().get("editDocuments").toString() + " -> " + String.valueOf(editDocuments) + "\n";
+			c.getPermissions().put("editDocuments", editDocuments);
+		}
+		if (!c.getPermissions().get("deleteDocuments") == deleteDocuments) {
+			report = report + "Updated 'deleteDocuments' permission of coder " + coderId + ": " + 
+					c.getPermissions().get("deleteDocuments").toString() + " -> " + String.valueOf(deleteDocuments) + "\n";
+			c.getPermissions().put("deleteDocuments", deleteDocuments);
+		}
+		if (!c.getPermissions().get("importDocuments") == importDocuments) {
+			report = report + "Updated 'importDocuments' permission of coder " + coderId + ": " + 
+					c.getPermissions().get("importDocuments").toString() + " -> " + String.valueOf(importDocuments) + "\n";
+			c.getPermissions().put("importDocuments", importDocuments);
+		}
+		if (!c.getPermissions().get("viewOthersDocuments") == viewOthersDocuments) {
+			report = report + "Updated 'viewOthersDocuments' permission of coder " + coderId + ": " + 
+					c.getPermissions().get("viewOthersDocuments").toString() + " -> " + String.valueOf(viewOthersDocuments) + "\n";
+			c.getPermissions().put("viewOthersDocuments", viewOthersDocuments);
+		}
+		if (!c.getPermissions().get("editOthersDocuments") == editOthersDocuments) {
+			report = report + "Updated 'editOthersDocuments' permission of coder " + coderId + ": " + 
+					c.getPermissions().get("editOthersDocuments").toString() + " -> " + String.valueOf(editOthersDocuments) + "\n";
+			c.getPermissions().put("editOthersDocuments", editOthersDocuments);
+		}
+		if (!c.getPermissions().get("addStatements") == addStatements) {
+			report = report + "Updated 'addStatements' permission of coder " + coderId + ": " + 
+					c.getPermissions().get("addStatements").toString() + " -> " + String.valueOf(addStatements) + "\n";
+			c.getPermissions().put("addStatements", addStatements);
+		}
+		if (!c.getPermissions().get("viewOthersStatements") == viewOthersStatements) {
+			report = report + "Updated 'viewOthersStatements' permission of coder " + coderId + ": " + 
+					c.getPermissions().get("viewOthersStatements").toString() + " -> " + String.valueOf(viewOthersStatements) + "\n";
+			c.getPermissions().put("viewOthersStatements", viewOthersStatements);
+		}
+		if (!c.getPermissions().get("editOthersStatements") == editOthersStatements) {
+			report = report + "Updated 'editOthersStatements' permission of coder " + coderId + ": " + 
+					c.getPermissions().get("editOthersStatements").toString() + " -> " + String.valueOf(editOthersStatements) + "\n";
+			c.getPermissions().put("editOthersStatements", editOthersStatements);
+		}
+		if (!c.getPermissions().get("editCoders") == editCoders) {
+			report = report + "Updated 'editCoders' permission of coder " + coderId + ": " + 
+					c.getPermissions().get("editCoders").toString() + " -> " + String.valueOf(editCoders) + "\n";
+			c.getPermissions().put("editCoders", editCoders);
+		}
+		if (!c.getPermissions().get("editStatementTypes") == editStatementTypes) {
+			report = report + "Updated 'editStatementTypes' permission of coder " + coderId + ": " + 
+					c.getPermissions().get("editStatementTypes").toString() + " -> " + String.valueOf(editStatementTypes) + "\n";
+			c.getPermissions().put("editStatementTypes", editStatementTypes);
+		}
+		if (!c.getPermissions().get("editRegex") == editRegex) {
+			report = report + "Updated 'editRegex' permission of coder " + coderId + ": " + 
+					c.getPermissions().get("editRegex").toString() + " -> " + String.valueOf(editRegex) + "\n";
+			c.getPermissions().put("editRegex", editRegex);
+		}
+		for (int i = 0; i < this.data.getCoders().size(); i++) {
+			if (this.data.getCoders().get(i).getId() == coderId) {
+				this.data.getCoders().set(i, c);
+				break;
+			}
+		}
+		this.sql.upsertCoder(c);
+		if (verbose == true) {
+			System.out.print(report);
+		}
+	}
 }
