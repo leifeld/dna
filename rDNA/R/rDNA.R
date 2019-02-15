@@ -184,10 +184,10 @@ dna_downloadJar <- function(path = paste0(dirname(system.file(".", package = "rD
 
 #' Open the DNA GUI
 #'
-#' Start DNA and optionally load a database.
+#' Start DNA graphical user interface and optionally load a database.
 #'
-#' Start the DNA GUI. Optionally load a .dna database or a mySQL online
-#' database upon start-up of the GUI.
+#' Start the DNA graphical user interface (GUI). Optionally load a .dna database
+#' or a mySQL online database upon start-up of the GUI.
 #'
 #' @param infile The file name of the .dna database or the URL of the mySQL
 #'   database to load upon start-up of the GUI or a \link{dna_connection}
@@ -210,6 +210,8 @@ dna_downloadJar <- function(path = paste0(dirname(system.file(".", package = "rD
 #' dna_init()
 #' dna_gui()
 #' }
+#'
+#' @importFrom rJava J
 #' @export
 dna_gui <- function(infile = NULL,
                     login = NULL,

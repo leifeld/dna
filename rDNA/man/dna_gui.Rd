@@ -4,12 +4,21 @@
 \alias{dna_gui}
 \title{Open the DNA GUI}
 \usage{
-dna_gui(infile = NULL, javapath = NULL, memory = 1024,
-  verbose = TRUE)
+dna_gui(infile = NULL, login = NULL, password = NULL,
+  javapath = NULL, memory = 1024, verbose = TRUE)
 }
 \arguments{
 \item{infile}{The file name of the .dna database or the URL of the mySQL
-database to load upon start-up of the GUI}
+database to load upon start-up of the GUI or a \link{dna_connection}
+object.}
+
+\item{login}{If \code{infile} is a mySQL connection string, \code{login} is
+the login user name for the database. This argument is not used if the
+\code{infile} is a file-based database.}
+
+\item{password}{If \code{infile} is a mySQL connection string,
+\code{password} is the password for the database. This argument is not used
+if the \code{infile} is a file-based database.}
 
 \item{javapath}{The path to the \code{java} command. This may be useful if
 the CLASSPATH is not set and the java command can not be found. Java
@@ -21,16 +30,16 @@ example \code{1024} or \code{4096}.}
 \item{verbose}{Print details and error messages from the call to DNA?}
 }
 \description{
-Start DNA and optionally load a database.
+Start DNA graphical user interface and optionally load a database.
 }
 \details{
-Start the DNA GUI. Optionally load a .dna database or a mySQL online
-database upon start-up of the GUI. This function is useful to use
-DNA on the fly to quickly recode statements or look something up.
+Start the DNA graphical user interface (GUI). Optionally load a .dna database
+or a mySQL online database upon start-up of the GUI.
 }
 \examples{
 \dontrun{
 dna_init()
 dna_gui()
 }
+
 }
