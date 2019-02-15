@@ -1084,6 +1084,43 @@ dna_getAttributes <- function(connection,
   return(attributes)
 }
 
+#' Retrieve a dataframe with all coders and their permissions
+#'
+#' Retrieve a dataframe with all coders and their permissions.
+#'
+#' This function creates a dataframe with one row per coder and contains columns
+#' for the ID, name, color, and 12 permissions of the coders. The permissions
+#' serve to govern what coders are allowed to do in the graphical user
+#' interface.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#'
+#' @importFrom rJava .jevalArray
+#' @importFrom rJava J
+#' @export
+dna_getCoders <- function(connection) {
+  coders <- J(connection$dna_connection, "getCoders")
+  coders <- lapply(coders, .jevalArray)
+  coders <- as.data.frame(coders, stringsAsFactors = FALSE)
+  colnames(coders) <- c("ID",
+                        "name",
+                        "color",
+                        "addDocuments",
+                        "editDocuments",
+                        "deleteDocuments",
+                        "importDocuments",
+                        "viewOthersDocuments",
+                        "editOthersDocuments",
+                        "addStatements",
+                        "viewOthersStatements",
+                        "editOthersStatements",
+                        "editCoders",
+                        "editStatementTypes",
+                        "editRegex")
+  return(coders)
+}
+
 #' Retrieve a dataframe with documents from a DNA connection
 #'
 #' Retrieve a dataframe with all documents from a DNA connection.
@@ -1160,6 +1197,7 @@ dna_getDocuments <- function(connection) {
 #' @author Philip Leifeld
 #'
 #' @importFrom rJava .jevalArray
+#' @importFrom rJava J
 #' @export
 dna_getStatements <- function(connection, statementType) {
   if (is.numeric(statementType)) {
@@ -1212,6 +1250,7 @@ dna_getStatements <- function(connection, statementType) {
 #' }
 #'
 #' @importFrom rJava .jevalArray
+#' @importFrom rJava J
 #' @export
 dna_getStatementTypes <- function(connection) {
   statementTypes <- J(connection$dna_connection, "getStatementTypes")
@@ -1243,6 +1282,7 @@ dna_getStatementTypes <- function(connection) {
 #' }
 #'
 #' @importFrom rJava .jevalArray
+#' @importFrom rJava J
 #' @export
 dna_getVariables <- function(connection, statementType) {
   if (is.null(statementType) || is.na(statementType) || length(statementType) != 1) {
@@ -2124,6 +2164,7 @@ dna_setDocuments <- function(connection,
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
 #' @importFrom rJava .jevalArray
+#' @importFrom rJava J
 #' @export
 dna_setStatements <- function(connection,
                               statements,

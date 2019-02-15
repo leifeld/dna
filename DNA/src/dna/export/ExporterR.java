@@ -2239,7 +2239,7 @@ public class ExporterR {
 			st = this.data.getStatementTypes().get(i);
 			ids[i] = st.getId();
 			labels[i] = st.getLabel();
-			colors[i] = String.format("#%02X%02X%02X", st.getColor().getRed(), st.getColor().getGreen(), st.getColor().getBlue()); 
+			colors[i] = String.format("#%02X%02X%02X", st.getColor().getRed(), st.getColor().getGreen(), st.getColor().getBlue());
 		}
 		Object[] object = new Object[3];
 		object[0] = ids;
@@ -2922,7 +2922,7 @@ public class ExporterR {
 	/**
 	 * Remove a coder. Print error messages if documents or statements still contain this coder.
 	 * 
-	 * @param coderName  ID of the coder to be removed.
+	 * @param coderName  Name of the coder to be removed.
 	 * @param verbose    Print details?
 	 */
 	public void removeCoder(String coderName, boolean verbose) {
@@ -2999,5 +2999,68 @@ public class ExporterR {
 				System.out.println("Coder with ID " + coderId + " was removed from the database.");
 			}
 		}
+	}
+	
+	/**
+	 * Return an object array with coders and their permissions.
+	 * 
+	 * @return  Object array with 15 vectors for coder ID, name, color, and 12 permissions. 
+	 */
+	public Object[] getCoders() {
+		int n = this.data.getCoders().size();
+		int[] id = new int[n];
+		String[] name = new String[n];
+		String[] color = new String[n];
+		boolean[] addDocuments = new boolean[n];
+		boolean[] editDocuments = new boolean[n];
+		boolean[] deleteDocuments = new boolean[n];
+		boolean[] importDocuments = new boolean[n];
+		boolean[] viewOthersDocuments = new boolean[n];
+		boolean[] editOthersDocuments = new boolean[n];
+		boolean[] addStatements = new boolean[n];
+		boolean[] viewOthersStatements = new boolean[n];
+		boolean[] editOthersStatements = new boolean[n];
+		boolean[] editCoders = new boolean[n];
+		boolean[] editStatementTypes = new boolean[n];
+		boolean[] editRegex = new boolean[n];
+		
+		Coder c;
+		for (int i = 0; i < n; i++) {
+			c = this.data.getCoders().get(i);
+			id[i] = c.getId();
+			name[i] = c.getName();
+			color[i] = String.format("#%02X%02X%02X", c.getColor().getRed(), c.getColor().getGreen(), c.getColor().getBlue());
+			addDocuments[i] = c.getPermissions().get("addDocuments");
+			editDocuments[i] = c.getPermissions().get("editDocuments");
+			deleteDocuments[i] = c.getPermissions().get("deleteDocuments");
+			importDocuments[i] = c.getPermissions().get("importDocuments");
+			viewOthersDocuments[i] = c.getPermissions().get("viewOthersDocuments");
+			editOthersDocuments[i] = c.getPermissions().get("editOthersDocuments");
+			addStatements[i] = c.getPermissions().get("addStatements");
+			viewOthersStatements[i] = c.getPermissions().get("viewOthersStatements");
+			editOthersStatements[i] = c.getPermissions().get("editOthersStatements");
+			editCoders[i] = c.getPermissions().get("editCoders");
+			editStatementTypes[i] = c.getPermissions().get("editStatementTypes");
+			editRegex[i] = c.getPermissions().get("editRegex");
+		}
+		
+		Object[] o = new Object[15];
+		o[0] = id;
+		o[1] = name;
+		o[2] = color;
+		o[3] = addDocuments;
+		o[4] = editDocuments;
+		o[5] = deleteDocuments;
+		o[6] = importDocuments;
+		o[7] = viewOthersDocuments;
+		o[8] = editOthersDocuments;
+		o[9] = addStatements;
+		o[10] = viewOthersStatements;
+		o[11] = editOthersStatements;
+		o[12] = editCoders;
+		o[13] = editStatementTypes;
+		o[14] = editRegex;
+		
+		return o;
 	}
 }

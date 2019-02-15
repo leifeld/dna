@@ -74,6 +74,14 @@ test_that("set Documents", {
 
 # saveRDS(dna_getDocuments(conn), "../files/dna_setDocuments.RDS")
 
+test_that("get Coders", {
+  expect_that({
+    dna_getCoders(conn)
+  }, equals(readRDS("../files/dna_getCoders.RDS")))
+})
+
+# saveRDS(dna_getCoders(conn), "../files/dna_getCoders.RDS")
+
 test_that("add coder", {
   expect_output({
     dna_addCoder(conn, "new coder", "#FFFF00")
