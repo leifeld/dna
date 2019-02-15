@@ -187,11 +187,17 @@ dna_downloadJar <- function(path = paste0(dirname(system.file(".", package = "rD
 #' Start DNA and optionally load a database.
 #'
 #' Start the DNA GUI. Optionally load a .dna database or a mySQL online
-#' database upon start-up of the GUI. This function is useful to use
-#' DNA on the fly to quickly recode statements or look something up.
+#' database upon start-up of the GUI.
 #'
 #' @param infile The file name of the .dna database or the URL of the mySQL
-#'   database to load upon start-up of the GUI
+#'   database to load upon start-up of the GUI or a \link{dna_connection}
+#'   object.
+#' @param login If \code{infile} is a mySQL connection string, \code{login} is
+#'   the login user name for the database. This argument is not used if the
+#'   \code{infile} is a file-based database.
+#' @param password If \code{infile} is a mySQL connection string,
+#'   \code{password} is the password for the database. This argument is not used
+#'   if the \code{infile} is a file-based database.
 #' @param javapath The path to the \code{java} command. This may be useful if
 #'   the CLASSPATH is not set and the java command can not be found. Java
 #'   is necessary to start the DNA GUI.
@@ -206,25 +212,28 @@ dna_downloadJar <- function(path = paste0(dirname(system.file(".", package = "rD
 #' }
 #' @export
 dna_gui <- function(infile = NULL,
+                    login = NULL,
+                    password = NULL,
                     javapath = NULL,
                     memory = 1024,
                     verbose = TRUE) {
   if (is.null(dnaEnvironment[["dnaJarString"]])) {
     stop("No connection between rDNA and DNA detected. Maybe dna_init() would help.")
   }
-  if (!is.null(infile)) if (!file.exists(infile)) {
-    stop(if (grepl("/", infile, fixed = TRUE)) {
-      paste0("'", infile, "' could not be located.")
-    } else {
-      paste0("'", infile, "' could not be located in working directory '", getwd(), "'."
-      )
-    })
-  }
   djs <- dnaEnvironment[["dnaJarString"]]
   if (is.null(djs)) {
     stop(paste0("'", djs, "' could not be located in working directory '", getwd(), "'."))
   }
   if (!is.null(infile)) {
+    if (class(infile) == "dna_connection") {
+      if (is.null(login)) {
+        login <- J(infile$dna_connection, "getLogin")
+      }
+      if (is.null(password)) {
+        password <- J(infile$dna_connection, "getPassword")
+      }
+      infile <- J(infile$dna_connection, "getDbfile")
+    }
     if (!file.exists(infile)) {
       stop(
         if (grepl("/", infile, fixed = TRUE)) {
@@ -235,10 +244,13 @@ dna_gui <- function(infile = NULL,
       )
     }
   }
+  
   if (is.null(infile)) {
     f <- ""
-  } else {
+  } else if (is.null(login) || is.null(password) || (login == "" && password == "")) {
     f <- paste0(" \"", infile, "\"")
+  } else {
+    f <- paste0(" \"", infile, "\" \"", login, "\" \"", password, "\"")
   }
   if (is.null(javapath)) {
     jp <- "java"

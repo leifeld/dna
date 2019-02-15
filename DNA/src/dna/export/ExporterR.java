@@ -34,7 +34,7 @@ public class ExporterR {
 	 */
 
 	// objects for R calls
-	String dbfile;
+	String dbfile, login, password;
 	SqlConnection sql;
 	Data data;
 	Matrix matrix;
@@ -59,6 +59,8 @@ public class ExporterR {
 		// check if database file or connection exists and connect
 		this.data = new Data();
 		this.dbfile = dbfile;
+		this.login = login;
+		this.password = password;
 		boolean dbExists = true;
 		if (dbtype.equals("sqlite")) {
 			File f = new File(this.dbfile);
@@ -134,7 +136,34 @@ public class ExporterR {
 		
 		this.exportHelper = new ExportHelper();
 	}
-	
+
+	/**
+	 * Return the file name or database connection string.
+	 * 
+	 * @return  the dbfile
+	 */
+	public String getDbfile() {
+		return dbfile;
+	}
+
+	/**
+	 * Return the login name for the database.
+	 * 
+	 * @return  the login
+	 */
+	public String getLogin() {
+		return login;
+	}
+
+	/**
+	 * Return the password for the database.
+	 * 
+	 * @return  the password
+	 */
+	public String getPassword() {
+		return password;
+	}
+
 	/**
 	 * A function for printing details about the dataset. Used by rDNA.
 	 * 
