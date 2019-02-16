@@ -307,10 +307,10 @@ public class OpenDatabaseDialog extends JDialog {
 		int ac = Dna.data.getActiveCoder();
 		Dna.gui.leftPanel.setComboEnabled(true);
 		
+		Dna.gui.documentPanel.documentFilter();
 		if (Dna.gui.documentPanel.documentTable.getRowCount() > 0) {
 			Dna.gui.documentPanel.documentTable.setRowSelectionInterval(0, 0);
 		}
-		Dna.gui.documentPanel.documentFilter();
 		
 		Dna.dna.sql.upsertSetting("version", Dna.dna.version);
 		Dna.dna.sql.upsertSetting("date", Dna.dna.date);
@@ -319,14 +319,14 @@ public class OpenDatabaseDialog extends JDialog {
 			Dna.dna.sql.upsertSetting("popupWidth", "220");
 		}
 		Dna.gui.popupWidthModel.setValue(Integer.parseInt(Dna.data.getSettings().get("popupWidth")));
-		
-		//Dna.dna.gui.leftPanel.coderPanel.coderBox.setSelectedItem(Dna.data.getCoderById(ac));
+
+		Dna.gui.rightPanel.statementPanel.typeComboBox.setEnabled(true);
 		Dna.gui.rightPanel.statementPanel.typeComboBox.setSelectedIndex(0);
 		Dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();
 		Dna.gui.leftPanel.coderPanel.model.setSelectedItem(Dna.data.getCoderById(ac));
-		
+
 		Dna.gui.refreshGui();
-		
+
 		dispose();
 	}
 }

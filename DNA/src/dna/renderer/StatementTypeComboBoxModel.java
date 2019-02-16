@@ -39,7 +39,7 @@ public class StatementTypeComboBoxModel extends AbstractListModel<StatementType>
 	public void setSelectedItem(Object anItem) {
 		selectedItem = anItem;
 		//System.out.println(((StatementType)selectedItem).getName());
-		//fireContentsChanged(this, 0, getSize() - 1);
+		fireContentsChanged(this, 0, getSize() - 1);
 	}
 	
 	@Override

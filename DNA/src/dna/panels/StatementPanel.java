@@ -304,7 +304,12 @@ public class StatementPanel extends JPanel {
 						if (Dna.dna.sql != null) {
 							typeComboBox.setEnabled(true);
 							typeComboBox.updateUI();
-							new CustomFilterPanel((StatementType) typeComboBox.getSelectedItem());
+							StatementType st = (StatementType) typeComboBox.getSelectedItem();
+							if (st == null) {
+								new CustomFilterPanel();
+							} else {
+								new CustomFilterPanel(st);
+							}
 						}
 
 					}

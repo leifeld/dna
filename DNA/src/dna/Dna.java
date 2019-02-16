@@ -279,7 +279,6 @@ public class Dna {
 		Dna.gui.rightPanel.rm.setFieldsEnabled(false);
 		Dna.gui.leftPanel.docStats.clear();
 		Dna.gui.leftPanel.docStats.refreshButton.setEnabled(false);
-		Dna.gui.rightPanel.statementPanel.model.clear();
 		Dna.gui.rightPanel.statementPanel.typeComboBox.setEnabled(false);
 		Dna.gui.rightPanel.statementPanel.statementFilter.showAll.setSelected(true);
 		Dna.gui.rightPanel.statementPanel.statementFilter.showAll.doClick();
