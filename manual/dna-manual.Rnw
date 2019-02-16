@@ -985,7 +985,7 @@ If these commands can be executed correctly, you are ready to use both \dna\ and
 
 Note that when updating \rdna\ you will also need the latest release of \dna\ for both programs to work together properly. You can update both by running the two following commands:
 
-<<>>=
+<<eval=FALSE, results = 'tex'>>=
 # install.packages("remotes")
 remotes::install_github("leifeld/dna/rDNA@*release", INSTALL_opts = "--no-multiarch")
 dna_downloadJar() # update DNA as well to have matching versions
