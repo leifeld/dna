@@ -641,15 +641,15 @@ For more experienced users, here is a short version of the steps described below
 \item (On Mac: install \href{https://support.apple.com/downloads/DL1572/en_US/javaforosx.dmg}{Apple's legacy version of \java}---even though we will never use it.)
 \item Install \java\ Runtime Environment (JDK) (Version 8) on your computer.
 \item (On Windows and Mac: set up the \code{JAVA\_HOME} to the installation path of your JDK.)
-\item Download the newest executable JAR from \url{https://github.com/leifeld/dna/releases}.
+\item Download the latest executable JAR from \url{https://github.com/leifeld/dna/releases}.
 \item (On Linux: make the JAR file executable.) \\
       (On Mac: allow executing apps from an unidentified developer.)
 \item You can now run the standalone \dna\ or continue to install \rdna\ as well.
 \item Download and install \R\ (and \rstudio).
-\item In \R: install the necessary \R\ packages \texttt{rJava} and \texttt{devtools}.
+\item In \R: install the necessary \R\ packages \texttt{rJava} and \texttt{remotes}.
 \item In \R: install \rdna\ via
 <<eval=FALSE, results = 'tex', message = FALSE>>=
-devtools::install_github("leifeld/dna/rDNA", INSTALL_opts = "--no-multiarch")
+remotes::install_github("leifeld/dna/rDNA@*release", INSTALL_opts = "--no-multiarch")
 @
 \end{enumerate}
 
@@ -957,16 +957,16 @@ R.Version()$arch
 For \rdna\ to work properly, you need to ensure that \rjava\ works correctly.
 In particular, it is essential that the architectures of \java, your operating system, and your version of \R\ match (see comments~4, 5, and 6 in the code chunk above).
 
-Once this is done, you should install the package \texttt{devtools} \citep{wickham2018devtools}, which permits installing \R\ packages from \github.
+Once this is done, you should install the package \texttt{remotes} \citep{csardi2006remotes}, which permits installing \R\ packages from \github.
 <<eval=FALSE, results = 'tex', message = FALSE>>=
-install.packages("devtools")
+install.packages("remotes")
 @
 
-Since we only need one function from the package \texttt{devtools} at this point, it is not necessary to invoke the \code{library} command to load the whole package.
-Instead, you can write \code{devtools::} and then type the function you want to use.\footnote{The option \code{INSTALL\_opts = "--no-multiarch"} should normally not be necessary, but prevents errors on some operating systems.
-Since \texttt{devtools} tries to test both the 32-bit and 64-bit version of a package during installation, the process inevitably fails as only one architecture of \java\ is available.}
+Since we only need one function from the package \texttt{remotes} at this point, it is not necessary to invoke the \code{library} command to load the whole package.
+Instead, you can write \code{remotes::} and then type the function you want to use.\footnote{The option \code{INSTALL\_opts = "--no-multiarch"} should normally not be necessary, but prevents errors on some operating systems.
+Since \texttt{remotes} tries to test both the 32-bit and 64-bit version of a package during installation, the process inevitably fails as only one architecture of \java\ is available.}
 <<eval=FALSE, results = 'tex', message = FALSE>>=
-devtools::install_github("leifeld/dna/rDNA", INSTALL_opts = "--no-multiarch")
+remotes::install_github("leifeld/dna/rDNA@*release", INSTALL_opts = "--no-multiarch")
 @
 
 After this is done as well, the final step of the installation is to test if \rdna\ can be loaded into \R\ correctly and to perform a basic operation with it---opening \dna\ from within \R.
@@ -982,6 +982,15 @@ dna_init()
 dna_gui(infile = dna_sample())
 @
 If these commands can be executed correctly, you are ready to use both \dna\ and \rdna.
+
+Note that when updating \rdna\ you will also need the latest release of \dna\ for both programs to work together properly. You can update both by running the two following commands:
+
+<<eval=FALSE, results = 'tex'>>=
+# install.packages("remotes")
+remotes::install_github("leifeld/dna/rDNA@*release", INSTALL_opts = "--no-multiarch")
+dna_downloadJar() # update DNA as well to have matching versions
+@
+
 
 
 \chapter{Preparation of your \dna\ Workspace} \label{chp:dna-prep}
@@ -1564,7 +1573,7 @@ Thus you can recode the document type for all documents at once, ensuring that a
 \chapterauthor{Johannes Gruber}
 Now that you know how to create a database and organise the documents in it, it's time to start with the actual coding.
 This section describes how to create, edit and navigate through statements as well as how to employ the regex highlighter and search function to make coding of statements easier and faster.
-If you want to recreate the steps outlined in this section for practice, you should download the file \code{sample.dna} from the \dna\ \url{https://github.com/leifeld/dna/releases} and open it with the newest version of \dna\ from the same page---if you haven't already done that.
+If you want to recreate the steps outlined in this section for practice, you should download the file \code{sample.dna} from the \dna\ \url{https://github.com/leifeld/dna/releases} and open it with the latest version of \dna\ from the same page---if you haven't already done that.
 This sample is a small excerpt from a larger empirical research project that tries to map the ideological debates around American climate politics in the U.S. Congress over time.
 Details about the dataset from which this excerpt is taken are provided by \citet{fisher2013mapping, fisher2013where}.
 Here, it suffices to say that the \texttt{sample.dna} file contains speeches from hearings in the U.S.\ Congress in which interest groups and legislators make statements about their views on climate politics.
@@ -1810,7 +1819,7 @@ trim <- function(x, n = 12, e = "..."){
 }
 @
 <<eval=TRUE, echo=FALSE, warning=FALSE>>=
-conn <- dna_connection(dna_sample())
+conn <- dna_connection(dna_sample(), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "onemode",
                   statementType = "DNA Statement",
@@ -1837,7 +1846,7 @@ A \emph{``Two-mode network''}, on the other hand, has different sets of nodes in
 In this case, what you select in Variable 1 will become the rows of the matrix while Variable 2 will be the columns.
 In the two-mode network case, the edge weights will be, all other options left on default, simple counts of all co-references of Variable 1 and 2.
 <<eval=TRUE, echo=FALSE, warning=FALSE>>=
-conn <- dna_connection(dna_sample())
+conn <- dna_connection(dna_sample(), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -1865,7 +1874,7 @@ Instead of summarising the statements over Variable 1 and 2, it simply lists all
 The event list is thus a more detailed version of the statements window in the \dna\ user interface.
 As you can see in Table~\ref{tab:eventl}, this table is a lot larger than the matrices produced by the summarising algorithms used to produce one-mode and two node networks.
 <<eval=TRUE, echo=FALSE, warning=FALSE>>=
-conn <- dna_connection(dna_sample())
+conn <- dna_connection(dna_sample(), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "eventlist",
                   statementType = "DNA Statement",
@@ -1984,7 +1993,7 @@ To make the logic underlying the use of the two variables even more clear we can
 By setting \code{Variable 1} to \code{organization} and \code{Variable 2} to \code{person} we can count how often statements reference organisations and persons together.
 Since every person belongs to just one organisation, the resulting matrix will count all statements by a person in one cell of her/his column while the result of all other cells in her/his column is zero:
 <<eval=TRUE, echo=FALSE, warning=FALSE>>=
-conn <- dna_connection(dna_sample())
+conn <- dna_connection(dna_sample(), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2029,7 +2038,7 @@ As you can see in Table~\ref{tab:onemode}, the edge weight between the Senate an
 We can use Table~\ref{tab:disagree} to calculate this number by hand.
 
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt1 <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2134,7 +2143,7 @@ We can repeat the same calculation, this time using Equation~\ref{eq:congruence_
 }
 
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "onemode",
                   statementType = "DNA Statement",
@@ -2186,7 +2195,7 @@ To make that easier to follow, we calcuate $x_{ijk} x_{i'jk'}$ individually for 
 }
 
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "onemode",
                   statementType = "DNA Statement",
@@ -2227,7 +2236,7 @@ See Table~\ref{tab:qual5} to check that this is correct.
 The meaning of this outcome is that Senate and Sierra Club do have in fact more differences than they have in common.
 You can also see that this is true for several of the other organisation pairs, suggesting a quite controversial discourse.
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "onemode",
                   statementType = "DNA Statement",
@@ -2264,7 +2273,7 @@ The \emph{National Petrochemical \& Refiners Association}, for example, disagree
 If the qualifier is an integer value, subtract basically does the same: the absolute values of the negative qualifier codes are subtracted from the positive ones.
 In the example from above, if an organisation agrees somewhat (+1) to a concept twice and then disagrees strongly (-2) to the same concept twice, the edge weight would be -2.
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2294,7 +2303,7 @@ You can see this in Table~\ref{tab:qual2}.
 With an integer variable, this may become more complex.
 As more combinations are possible and hence more qualitative categories need to be created (see Section~\ref{sec:twomode}.
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2359,7 +2368,7 @@ Details about normalisation can be found in \citet{leifeld2017discourse}.
 In Table~\ref{tab:normal} you can see how the two-mode network from Table~\ref{tab:twomode} looks like after applying the activity normalisation algorithm.
 
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2404,7 +2413,7 @@ This happened because this organisation contradicted itself by expressing both a
 
 Again we apply this transformation to Table~\ref{tab:twomode} to illustrate how the resulting matrix is affected:
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2445,7 +2454,7 @@ Consequently, \dna\ would export one network per day.
 These networks do not necessarily feature all organisations or concepts but will only show active nodes, as you can see in Table~\ref{tab:time}.
 Since there were only hearings on five of the selected 20 days (we excluded January 26th in the last step), the remaining 15 matrices are even completely empty.
 <<eval=FALSE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2571,7 +2580,7 @@ To include only NGOs in your network, you could select organization from \code{E
 The preview will now show which nodes are excluded.
 The exported network will miss all statements which reference one of these organisations and only contains statements made by NGOs:
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2613,7 +2622,7 @@ To achieve compatibility of the matrix dimensions anyway, it is possible to incl
 You can see this in Table~\ref{tab:isolates} which mirrors the information of Table~\ref{tab:exclud} but has the same dimensions as, for example, Table~\ref{tab:twomode}.
 
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2673,7 +2682,7 @@ Examples include cluster analysis or community detection, scaling and applicatio
 \section{Getting Started with \rdna}
 The first step is to install \R---which was explained in Section~\ref{chp:installation}).
 Installing additional \R\ packages for network analysis and clustering, such as \texttt{statnet} \citep{handcock2008statnet, goodreau2008statnet, handcock2016statnet}, \texttt{xergm} \citep{leifeld2018temporal, leifeld2017xergm}, \texttt{igraph} \citep{csardi2006igraph}, and \texttt{cluster} \citep{maechler2017cluster}, is recommended.
-Moreover, it is necessary to install and correctly set up the \texttt{rJava} package \citep{urbanek2017rjava}, on which the \rdna\ package depends, and the \texttt{devtools} package \citep{wickham2018devtools}, which permits installing \R\ packages from GitHub (see Section~\ref{sec:installdna}).
+Moreover, it is necessary to install and correctly set up the \texttt{rJava} package \citep{urbanek2017rjava}, on which the \rdna\ package depends, and the \texttt{remotes} package \citep{csardi2006remotes}, which permits installing \R\ packages from GitHub (see Section~\ref{sec:installdna}).
 To install the packages neccessary for this section, simply execute the following commands:
 
 <<eval=FALSE>>=
@@ -2682,7 +2691,7 @@ install.packages("xergm")
 install.packages("igraph")
 install.packages("cluster")
 install.packages("rJava")
-install.packages("devtools")
+install.packages("remotes")
 @
 
 Before going on, the \rdna\ package must be attached to the workspace.
@@ -2701,8 +2710,8 @@ set.seed(12345)
 Now we are able to use the package.
 The first step is to initialize \dna.
 You can do so using \code{dna\_init()} without any arguments inside the brackets.
-This will download the newest version of the \dna\ \texttt{.jar} file if it is not already available on your system.
-If you want to download or update the \texttt{.jar} at some point, you can use the command \code{dna\_downloadJar()}.
+This will download the latest version of the \dna\ \texttt{.jar} file if it is not already available on your system.
+If you want to download or update the \texttt{.jar} at some point, you can use the command \code{dna\_downloadJar()}.\footnote{When you update \rdna, don't forget to use \code{dna\_downloadJar()} again to download the latest version of the \texttt{.jar} as well.}
 Now let's start using \rdna\:
 
 <<eval=FALSE>>=
@@ -2738,7 +2747,7 @@ We use the \code{dna\_sample()} command again to access the \texttt{sample.dna} 
 If you ever change something about the sample, you can revert it to its original state with the setting \code{overwrite = TRUE}:
 
 <<eval=TRUE, warning=FALSE>>=
-conn <- dna_connection(dna_sample(overwrite = TRUE))
+conn <- dna_connection(dna_sample(overwrite = TRUE), verbose = FALSE)
 @
 
 The \code{dna\_connection} function accepts a file name of the database including full or relative path (or, alternatively, a connection string to a remote \texttt{MySQL} database) and optionally the login and password for the database (in case a remote \texttt{MySQL} database is used).
@@ -3595,7 +3604,7 @@ Many university libraries have access to this database which maintains a collect
 Its powerful search engine also allows for a finely grained search string to limit the number of articles for a specific topic.
 
 To convert the raw files from LexisNexis though, we need another \R\ package: \texttt{LexisNexisTools} \citep{gruber2018lexis}.
-You can install this package via \code{devtools::install\_github("JBGruber/LexisNexisTools")}.
+You can install this package via \code{remotes::install\_github("JBGruber/LexisNexisTools")}.
 The workflow looks as follows:
 
 <<eval=TRUE, warning = FALSE, message=FALSE, results = 'hide'>>=
