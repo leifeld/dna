@@ -33,3 +33,6 @@ Rename a variable by assigning a new label.
 This function renames a statement type by replacing its label with a new
 label.
 }
+\author{
+Philip Leifeld
+}

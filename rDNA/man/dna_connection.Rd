@@ -41,3 +41,6 @@ dna_connection(dna_sample())
 }
 
 }
+\author{
+Philip Leifeld
+}

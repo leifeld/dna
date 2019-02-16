@@ -38,6 +38,7 @@ dna_plotFrequency(connection = conn,
                   timewindow = "days",
                   bar = "stacked")
 }
+
 }
 \author{
 Johannes B. Gruber

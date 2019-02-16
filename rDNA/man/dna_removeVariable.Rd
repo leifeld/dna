@@ -39,3 +39,6 @@ dna_removeVariable(conn, 1, "person")
 }
 
 }
+\author{
+Philip Leifeld
+}

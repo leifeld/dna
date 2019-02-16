@@ -19,3 +19,6 @@ for the ID, name, color, and 12 permissions of the coders. The permissions
 serve to govern what coders are allowed to do in the graphical user
 interface.
 }
+\author{
+Philip Leifeld
+}

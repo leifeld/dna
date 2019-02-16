@@ -7,6 +7,11 @@ public class Regex implements Comparable<Regex> {
 	String label;
 	Color color;
 
+	public Regex(String label, String color) {
+		this.label = label;
+		this.color = new Color(Integer.parseInt(color.substring(1), 16));
+	}
+
 	public Regex(String label, Color color) {
 		this.label = label;
 		this.color = color;

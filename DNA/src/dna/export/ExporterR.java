@@ -23,6 +23,7 @@ import dna.dataStructures.AttributeVector;
 import dna.dataStructures.Coder;
 import dna.dataStructures.Data;
 import dna.dataStructures.Document;
+import dna.dataStructures.Regex;
 import dna.dataStructures.Statement;
 import dna.dataStructures.StatementType;
 
@@ -3204,5 +3205,67 @@ public class ExporterR {
 		if (verbose == true) {
 			System.out.print(report);
 		}
+	}
+	
+
+	/* =================================================================================================================
+	 * Functions for managing regular expressions
+	 * =================================================================================================================
+	 */
+	
+	/**
+	 * Add a regular expression.
+	 * 
+	 * @param label  The regular expression.
+	 * @param color  The color of the regex as a hex string, for example "#FF0000".
+	 */
+	public void addRegex(String label, String color) {
+		Regex r = new Regex(label, color);
+		this.data.getRegexes().add(r);
+		Collections.sort(this.data.getRegexes());
+		this.sql.upsertRegex(r);
+	}
+	
+	/**
+	 * Remove a regular expression.
+	 * 
+	 * @param label  The regular expression.
+	 */
+	public void removeRegex(String label) {
+		if (this.data.getRegexes().size() > 0) {
+			for (int i = this.data.getRegexes().size() - 1; i > -1; i--) {
+				if (this.data.getRegexes().get(i).getLabel().equals(label)) {
+					this.data.getRegexes().remove(i);
+					break;
+				}
+			}
+			this.sql.removeRegex(label);
+		} else {
+			System.err.println("Regex '" + label + "' was not found and cannot be removed. Aborting.");
+		}
+	}
+	
+	/**
+	 * Retrieve regular expressions as an Object vector with the first element being a vector of labels and the second
+	 * element being a vector of String colors.
+	 * 
+	 * @return  Object[] array of length 2, with the labels and the colors of the regular expressions.
+	 */
+	public Object[] getRegex() {
+		Object[] o = new Object[2];
+		int n = this.data.getRegexes().size();
+		String[] labels = new String[n];
+		String[] colors = new String[n];
+		if (n > 0) {
+			Regex r;
+			for (int i = 0; i < n; i++) {
+				r = this.data.getRegexes().get(i);
+				labels[i] = this.data.getRegexes().get(i).getLabel();
+				colors[i] = String.format("#%02X%02X%02X", r.getColor().getRed(), r.getColor().getGreen(), r.getColor().getBlue());
+			}
+		}
+		o[0] = labels;
+		o[1] = colors;
+		return o;
 	}
 }

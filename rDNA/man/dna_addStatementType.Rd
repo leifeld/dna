@@ -34,3 +34,6 @@ variables but can be populated with variables using the
 the statement type, a color needs to be supplied in order to display the
 statement type in this color in the GUI (see \link{dna_gui}).
 }
+\author{
+Philip Leifeld
+}

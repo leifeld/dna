@@ -30,3 +30,6 @@ variables <- dna_getVariables(conn, 1)
 }
 
 }
+\author{
+Philip Leifeld
+}

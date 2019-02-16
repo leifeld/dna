@@ -24,3 +24,6 @@ Change the color of a statement type.
 This function assigns a new color to a statement type. The color is used to
 display statements of this type in the DNA GUI (see \link{dna_gui}).
 }
+\author{
+Philip Leifeld
+}

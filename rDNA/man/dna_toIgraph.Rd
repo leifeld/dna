@@ -24,3 +24,6 @@ nw <- dna_network(conn, networkType = "onemode")
 graph <- dna_toIgraph(nw)
 }
 }
+\author{
+Johannes B. Gruber
+}

@@ -28,3 +28,6 @@ to the DNA software is established, and this connection is valid for the
 rest of the \R session. To initialize a connection with a different DNA
 version or path, the \R session would need to be restarted first.
 }
+\author{
+Philip Leifeld
+}

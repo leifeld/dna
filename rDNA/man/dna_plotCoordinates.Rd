@@ -90,6 +90,7 @@ mds <- dna_plotCoordinates(clust)
 library("ggplot2")
 mds + coord_flip()
 }
+
 }
 \author{
 Johannes B. Gruber

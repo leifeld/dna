@@ -106,3 +106,29 @@ test_that("update coder", {
   }, paste0("Updated color of coder 3: '#FF6633' -> '#CCCCCC'\n",
             "Updated 'editRegex' permission of coder 3: true -> false"))
 })
+
+test_that("get regex", {
+  expect_that({
+    dna_getRegex(conn)
+  }, equals(readRDS("../files/dna_getRegex.RDS")))
+})
+
+# saveRDS(dna_getRegex(conn), "../files/dna_getRegex.RDS")
+
+test_that("add regex", {
+  expect_that({
+    dna_addRegex(conn, "energy", "#FF0000")
+    dna_getRegex(conn)
+  }, equals(readRDS("../files/dna_addRegex.RDS")))
+})
+
+# saveRDS(dna_getRegex(conn), "../files/dna_addRegex.RDS")
+
+test_that("remove regex", {
+  expect_that({
+    dna_removeRegex(conn, "energy")
+    dna_getRegex(conn)
+  }, equals(readRDS("../files/dna_removeRegex.RDS")))
+})
+
+# saveRDS(dna_getRegex(conn), "../files/dna_removeRegex.RDS")

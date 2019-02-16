@@ -24,3 +24,6 @@ between this print method and the default print method for data frames is
 that the \code{text} column and other columns containing character strings
 are truncated for better readability on screen.
 }
+\author{
+Philip Leifeld
+}

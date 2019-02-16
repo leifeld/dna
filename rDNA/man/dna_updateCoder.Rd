@@ -16,6 +16,9 @@ dna_updateCoder(connection, coder, name = NULL, color = NULL,
 \item{connection}{A \code{dna_connection} object created by the
 \code{dna_connection} function.}
 
+\item{coder}{The ID (as an integer) or name (as a character object) of the
+coder whose values should be updated.}
+
 \item{name}{A character object indicating the name of the new coder. If
 \code{NULL}, the current value is retained and no changes are made.}
 

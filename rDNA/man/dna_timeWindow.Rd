@@ -109,5 +109,7 @@ dna_plotTimeWindow(mp, include.y = c(-1, 1)) + theme_bw()
 
 }
 \author{
+Philip Leifeld
+
 Philip Leifeld, Johannes B. Gruber
 }

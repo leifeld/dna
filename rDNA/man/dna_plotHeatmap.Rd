@@ -64,6 +64,7 @@ clust <- dna_cluster(conn)
 dend <- dna_plotHeatmap(clust,
 qualifierLevels = list("0" = "no", "1" = "yes"))
 }
+
 }
 \author{
 Johannes B. Gruber

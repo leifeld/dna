@@ -29,3 +29,6 @@ Completely remove a statement type from the database, including all
 variables, attributes, and statements that are associated with the statement
 type.
 }
+\author{
+Philip Leifeld
+}

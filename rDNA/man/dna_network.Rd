@@ -235,3 +235,6 @@ dna_plotHive(nw)
 }
 
 }
+\author{
+Philip Leifeld
+}

@@ -47,3 +47,6 @@ dna_addVariable(conn, 1, "location", "short text")
 }
 
 }
+\author{
+Philip Leifeld
+}

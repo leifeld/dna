@@ -46,3 +46,6 @@ eventSequence2 <- dna_toREM(conn, duplicates = "document")
 eventSequence3 <- dna_toREM(conn, excludeTypeOfDay = "Wednesday")
 }
 }
+\author{
+Johannes B. Gruber
+}

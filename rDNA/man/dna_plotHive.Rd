@@ -144,3 +144,6 @@ dna_plotHive(nw, axis = "group", groups = groups)
 }
 
 }
+\author{
+Johannes B. Gruber
+}

@@ -104,6 +104,7 @@ dend <- dna_plotDendro(clust)
 library("ggplot2")
 dend + coord_flip()
 }
+
 }
 \author{
 Johannes B. Gruber

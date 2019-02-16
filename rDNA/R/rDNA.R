@@ -60,6 +60,8 @@ if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
 #' dna_connection(dna_sample())
 #' }
 #'
+#' @author Philip Leifeld
+#'
 #' @importFrom rJava .jnew
 #' @export
 dna_connection <- function(infile, login = NULL, password = NULL, create = FALSE, verbose = TRUE) {
@@ -113,6 +115,8 @@ dna_connection <- function(infile, login = NULL, password = NULL, create = FALSE
 #' conn
 #' }
 #'
+#' @author Philip Leifeld
+#'
 #' @importFrom rJava .jcall
 #' @export
 print.dna_connection <- function(x, ...) {
@@ -133,6 +137,8 @@ print.dna_connection <- function(x, ...) {
 #' @param truncate Number of characters to which character columns in the data
 #'   frame should be truncated.
 #' @param ... Further options (currently not used).
+#'
+#' @author Philip Leifeld
 #'
 #' @export
 print.dna_dataframe <- function(x, truncate = 20, ...) {
@@ -157,9 +163,10 @@ print.dna_dataframe <- function(x, truncate = 20, ...) {
 #' @param force Logical. Should the file be overwritten if it already exists?
 #' @param returnString Logical. Return the file name of the downloaded jar file?
 #'
-#' @export
+#' @author Philip Leifeld, Johannes B. Gruber
 #'
 #' @importFrom utils download.file
+#' @export
 dna_downloadJar <- function(path = paste0(dirname(system.file(".", package = "rDNA")), "/", "extdata"),
                             force = FALSE,
                             returnString = FALSE) {
@@ -210,6 +217,8 @@ dna_downloadJar <- function(path = paste0(dirname(system.file(".", package = "rD
 #' dna_init()
 #' dna_gui()
 #' }
+#'
+#' @author Philip Leifeld
 #'
 #' @importFrom rJava J
 #' @export
@@ -285,6 +294,8 @@ dna_gui <- function(infile = NULL,
 #' @param memory The amount of memory in megabytes to allocate to DNA, for
 #'   example \code{1024} or \code{4096}.
 #' @param returnString Return a character object representing the jar file name?
+#'
+#' @author Philip Leifeld
 #'
 #' @export
 #' @import rJava
@@ -724,6 +735,39 @@ dna_addDocument <- function(connection,
   }
 }
 
+#' Add a new regular expression to the database
+#'
+#' Add a new regular expression to the database.
+#'
+#' Add a new statement type to a database. The statement type contains no
+#' variables but can be populated with variables using the
+#' \link{dna_addVariable} function. Along with the the label used to describe
+#' the statement type, a color needs to be supplied in order to display the
+#' statement type in this color in the GUI (see \link{dna_gui}).
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param regex A regular expression.
+#' @param color A color in the form of a hexadecimal RGB string, such as
+#'   \code{"#FFFF00"} for yellow.
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
+#' @export
+dna_addRegex <- function(connection, regex, color = "#FFFF00") {
+  if (is.null(regex) || is.na(regex) || length(regex) != 1 || !is.character(regex)) {
+    stop("'regex' must be a character object of length 1.")
+  }
+  if (is.null(color) || is.na(color) || length(color) != 1 || !is.character(color)) {
+    stop("'color' must be a character object of length 1 containing a hexadecimal RGB value.")
+  }
+  if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
+    stop("'color' is not a hex RGB value of the form '#FFFF00'.")
+  }
+  .jcall(connection$dna_connection, "V", "addRegex", regex, color)
+}
+
 #' Add a statement to the DNA database
 #'
 #' Add a new statement to the DNA database.
@@ -872,6 +916,8 @@ dna_addStatement <- function(connection,
 #'   contain any spaces, and the values that indicate the data types should be
 #'   of types "short text", "long text", "boolean", or "integer".
 #'
+#' @author Philip Leifeld
+#'
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
 #' @export
@@ -943,6 +989,8 @@ dna_addStatementType <- function(connection, label, color = "#FFFF00", ...) {
 #' dna_addVariable(conn, 1, "location", "short text")
 #' }
 #'
+#' @author Philip Leifeld
+#'
 #' @importFrom rJava .jcall
 #' @export
 dna_addVariable <- function(connection,
@@ -1000,6 +1048,8 @@ dna_addVariable <- function(connection,
 #' example \code{1} or \code{"DNA Statement"}.
 #' @param color A color in the form of a hexadecimal RGB string, such as
 #'   \code{"#FFFF00"} for yellow.
+#'
+#' @author Philip Leifeld
 #'
 #' @importFrom rJava .jcall
 #' @export
@@ -1110,6 +1160,8 @@ dna_getAttributes <- function(connection,
 #' @param connection A \code{dna_connection} object created by the
 #'   \code{dna_connection} function.
 #'
+#' @author Philip Leifeld
+#'
 #' @importFrom rJava .jevalArray
 #' @importFrom rJava J
 #' @export
@@ -1182,6 +1234,33 @@ dna_getDocuments <- function(connection) {
   documents <- as.data.frame(documents, stringsAsFactors = FALSE)
   class(documents) <- c("dna_dataframe", class(documents))
   return(documents)
+}
+
+#' Retrieve a dataframe with all regular expressions
+#'
+#' Retrieve a dataframe with all regular expressions.
+#'
+#' The DNA graphical user interface can highlight keywords with colors in the
+#' text. This facilitates the coding process. The \code{dna_getRegex} function
+#' retrieves all regular expressions defined in a DNA database along with their
+#' colors.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
+#' @importFrom rJava .jevalArray
+#' @export
+dna_getRegex <- function(connection) {
+  regex <- .jcall(connection$dna_connection,
+                  "[Ljava/lang/Object;",
+                  "getRegex")
+  names(regex) <- c("regex", "color")
+  regex <- lapply(regex, .jevalArray)
+  regex <- as.data.frame(regex, stringsAsFactors = FALSE)
+  return(regex)
 }
 
 #' Retrieve a dataframe with statements from a DNA connection
@@ -1263,6 +1342,8 @@ dna_getStatements <- function(connection, statementType) {
 #' statementTypes <- dna_getStatementTypes(conn)
 #' }
 #'
+#' @author Philip Leifeld
+#'
 #' @importFrom rJava .jevalArray
 #' @importFrom rJava J
 #' @export
@@ -1294,6 +1375,8 @@ dna_getStatementTypes <- function(connection) {
 #' conn <- dna_connection(dna_sample())
 #' variables <- dna_getVariables(conn, 1)
 #' }
+#'
+#' @author Philip Leifeld
 #'
 #' @importFrom rJava .jevalArray
 #' @importFrom rJava J
@@ -1358,6 +1441,8 @@ dna_getVariables <- function(connection, statementType) {
 #'   applied to the DNA connection and the SQL database? This can help to
 #'   plan more complex recode operations.
 #' @param verbose Print details about the recode operations?
+#'
+#' @author Philip Leifeld
 #'
 #' @importFrom rJava .jcall
 #' @export
@@ -1542,6 +1627,30 @@ dna_removeDocument <- function(connection,
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
+#' @param regex The regular expression that should be removed as a character
+#'   object.
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
+#' @export
+dna_removeRegex <- function(connection, regex) {
+  if (is.null(regex) || is.na(regex) || length(regex) != 1 || !is.character(regex)) {
+    stop("'regex' must be a character object of length 1.")
+  }
+  .jcall(connection$dna_connection, "V", "removeRegex", regex)
+}
+
+#' Removes a statement from the database
+#'
+#' Removes a statement from the database based on its ID.
+#'
+#' The user provides a connection object and the ID of an existing statement in
+#' the DNA database, and this statement is removed both from memory and from the
+#' SQL database.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \link{dna_connection} function.
 #' @param id An integer value denoting the ID of the statement to be removed.
 #' The \link{dna_getStatements} function can be used to look up IDs.
 #' @param verbose Print details on whether the document could be removed?
@@ -1584,6 +1693,8 @@ dna_removeStatement <- function(connection,
 #'   applied to the DNA connection and the SQL database? This can help to
 #'   plan more complex recode operations.
 #' @param verbose Print details about the recode operations?
+#'
+#' @author Philip Leifeld
 #'
 #' @importFrom rJava .jcall
 #' @export
@@ -1635,6 +1746,8 @@ dna_removeStatementType <- function(connection, statementType, simulate = TRUE, 
 #' dna_removeVariable(conn, 1, "person")
 #' }
 #'
+#' @author Philip Leifeld
+#'
 #' @importFrom rJava .jcall
 #' @export
 dna_removeVariable <- function(connection,
@@ -1683,6 +1796,8 @@ dna_removeVariable <- function(connection,
 #'   \code{"DNA Statement" or "My statement type"}. The label may contain
 #'   spaces.
 #'
+#' @author Philip Leifeld
+#'
 #' @importFrom rJava .jcall
 #' @export
 dna_renameStatementType <- function(connection, statementType, label) {
@@ -1718,6 +1833,8 @@ dna_renameStatementType <- function(connection, statementType, label) {
 #'   applied to the DNA connection and the SQL database? This can help to
 #'   plan more complex recode operations.
 #' @param verbose Print details about the recode operations?
+#'
+#' @author Philip Leifeld
 #'
 #' @importFrom rJava .jcall
 #' @export
@@ -2311,6 +2428,8 @@ dna_setStatements <- function(connection,
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \code{dna_connection} function.
+#' @param coder The ID (as an integer) or name (as a character object) of the
+#'   coder whose values should be updated.
 #' @param name A character object indicating the name of the new coder. If
 #'   \code{NULL}, the current value is retained and no changes are made.
 #' @param color A character object indicating the color in which the coder
@@ -4518,6 +4637,8 @@ print.dna_scale <- function(x, ...) {
 #' dna_plotHive(nw)
 #' }
 #'
+#' @author Philip Leifeld
+#'
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
 #' @importFrom rJava .jevalArray
@@ -4730,6 +4851,8 @@ dna_network <- function(connection,
 #' @param verbose Display messages if \code{TRUE} or \code{1}. Also displays
 #'   details about network construction when \code{2}.
 #' @param ... Additional arguments passed to \link{dna_network}.
+#'
+#' @author Philip Leifeld
 #'
 #' @examples
 #' \dontrun{
@@ -5289,6 +5412,8 @@ dna_timeWindow <- function(connection,
 #' @param weighted Logical. Should edge weights be used to create a weighted
 #'   graph from the dna_network object.
 #'
+#' @author Johannes B. Gruber
+#'
 #' @export
 #' @importFrom igraph graph_from_adjacency_matrix graph_from_incidence_matrix
 #'
@@ -5338,6 +5463,8 @@ dna_toIgraph <- function(x,
 #' models.
 #' @export
 #' @importFrom rem eventSequence
+#'
+#' @author Johannes B. Gruber
 #'
 #' @examples
 #' \dontrun{
@@ -5406,6 +5533,8 @@ dna_toREM <- function(x,
 #'
 #' @param x A dna_network.
 #' @param ... Additional arguments passed to \link[network]{as.network.matrix}.
+#'
+#' @author Johannes B. Gruber
 #'
 #' @export
 #' @importFrom network as.network.matrix
@@ -5508,7 +5637,9 @@ dna_toNetwork <- function(x,
 #' library("ggplot2")
 #' mds + coord_flip()
 #' }
+#'
 #' @author Johannes B. Gruber
+#'
 #' @export
 #' @import ggplot2
 #' @importFrom ggrepel geom_label_repel
@@ -5724,7 +5855,9 @@ dna_plotCoordinates <- function(clust,
 #' library("ggplot2")
 #' dend + coord_flip()
 #' }
+#'
 #' @author Johannes B. Gruber
+#'
 #' @export
 #' @import ggraph
 #' @importFrom stats as.dendrogram is.leaf dendrapply aggregate
@@ -6084,7 +6217,9 @@ dna_plotDendro <- function(clust,
 #' dend <- dna_plotHeatmap(clust,
 #' qualifierLevels = list("0" = "no", "1" = "yes"))
 #' }
+#'
 #' @author Johannes B. Gruber
+#'
 #' @export
 #' @import ggplot2
 #' @importFrom cowplot ggdraw insert_yaxis_grob insert_xaxis_grob
@@ -6354,6 +6489,8 @@ dna_plotHeatmap <- function(clust,
 #'   as any other value but provides that plots are always reproducible.
 #' @param show_legend Logical. Should a legend be displayed.
 #' @param ... Arguments passed on to \link[ggraph]{layout_igraph_hive}.
+#'
+#' @author Johannes B. Gruber
 #'
 #' @examples
 #' \dontrun{
@@ -6692,6 +6829,8 @@ dna_plotHive <- function(x,
 #' dna_plotNetwork(nw, node_attribute = "group", groups = groups)
 #' }
 #'
+#' @author Johannes B. Gruber
+#'
 #' @export
 #' @import ggraph
 #' @import igraph
@@ -7007,6 +7146,7 @@ dna_plotNetwork <- function(x,
 #' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
+#'
 #' @export
 #' @import ggplot2
 #' @importFrom coda HPDinterval
@@ -7865,6 +8005,7 @@ dna_barplot <- function(connection,
 #' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
+#'
 #' @export
 #' @import ggplot2
 #' @importFrom coda geweke.diag
@@ -8206,7 +8347,9 @@ dna_convergenceScale <- function(dna_scale,
 #'                   timewindow = "days",
 #'                   bar = "stacked")
 #' }
+#'
 #' @author Johannes B. Gruber
+#'
 #' @export
 #' @import ggplot2
 dna_plotFrequency <- function(connection,
@@ -8267,6 +8410,7 @@ dna_plotFrequency <- function(connection,
 #' @param e String added at the end of x to signal it was truncated.
 #'
 #' @noRd
+#'
 #' @author Johannes B. Gruber
 trim <- function(x, n, e = "...") {
   ifelse(nchar(x) > n,

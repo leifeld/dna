@@ -55,3 +55,6 @@ By default, changes are only simulated, but this can be changed using the
 \code{simulate} argument in order to actually apply the changes to the
 database.
 }
+\author{
+Philip Leifeld
+}

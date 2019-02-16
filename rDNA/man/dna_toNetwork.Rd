@@ -34,3 +34,6 @@ plot(network,
      edge.col = "gray")
 }
 }
+\author{
+Johannes B. Gruber
+}

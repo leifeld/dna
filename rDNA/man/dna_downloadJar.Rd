@@ -22,3 +22,6 @@ Downloads the newest released DNA jar file necessary for running
 This function uses GitHub's API to download the latest DNA jar file to the
 working directory.
 }
+\author{
+Philip Leifeld, Johannes B. Gruber
+}

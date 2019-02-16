@@ -27,3 +27,6 @@ statementTypes <- dna_getStatementTypes(conn)
 }
 
 }
+\author{
+Philip Leifeld
+}

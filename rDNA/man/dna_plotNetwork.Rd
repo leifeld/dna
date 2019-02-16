@@ -160,3 +160,6 @@ dna_plotNetwork(nw, node_attribute = "group", groups = groups)
 }
 
 }
+\author{
+Johannes B. Gruber
+}

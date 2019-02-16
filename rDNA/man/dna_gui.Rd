@@ -43,3 +43,6 @@ dna_gui()
 }
 
 }
+\author{
+Philip Leifeld
+}
