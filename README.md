@@ -23,6 +23,8 @@ remotes::install_github("leifeld/dna/rDNA@*release", INSTALL_opts = "--no-multia
 
 This is the recommended version for most users. Note that the package relies on `rJava`, which needs to be installed first. For details on the installation process on different operating systems, consult the chapter "Installation of DNA and rDNA" in the [manual](https://github.com/leifeld/dna/releases/download/v2.0-beta.23/dna-manual.pdf).
 
+You can run the same installation command above to update the software. However, the first time you run a new version of `rDNA`, invoke the command `dna_downloadJar()` to update `DNA` as well.
+
 Please note that if you prefer to use the very latest version, you are required to compile the current jar file from the sources on GitHub, for example using the provided make file. Then you can install `rDNA` from source using:
 
 ``` r

@@ -983,6 +983,8 @@ dna_gui(infile = dna_sample())
 @
 If these commands can be executed correctly, you are ready to use both \dna\ and \rdna.
 
+Note that when updating \rdna\ you will also need the newest release of \dna\ for both programs to work together properly. You can use the command \code{dna\_downloadJar()} to download the last release version of \dna.
+
 
 \chapter{Preparation of your \dna\ Workspace} \label{chp:dna-prep}
 \chapterauthor{Felix Rolf Bossner and Johannes Gruber}
@@ -1810,7 +1812,7 @@ trim <- function(x, n = 12, e = "..."){
 }
 @
 <<eval=TRUE, echo=FALSE, warning=FALSE>>=
-conn <- dna_connection(dna_sample())
+conn <- dna_connection(dna_sample(), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "onemode",
                   statementType = "DNA Statement",
@@ -1837,7 +1839,7 @@ A \emph{``Two-mode network''}, on the other hand, has different sets of nodes in
 In this case, what you select in Variable 1 will become the rows of the matrix while Variable 2 will be the columns.
 In the two-mode network case, the edge weights will be, all other options left on default, simple counts of all co-references of Variable 1 and 2.
 <<eval=TRUE, echo=FALSE, warning=FALSE>>=
-conn <- dna_connection(dna_sample())
+conn <- dna_connection(dna_sample(), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -1865,7 +1867,7 @@ Instead of summarising the statements over Variable 1 and 2, it simply lists all
 The event list is thus a more detailed version of the statements window in the \dna\ user interface.
 As you can see in Table~\ref{tab:eventl}, this table is a lot larger than the matrices produced by the summarising algorithms used to produce one-mode and two node networks.
 <<eval=TRUE, echo=FALSE, warning=FALSE>>=
-conn <- dna_connection(dna_sample())
+conn <- dna_connection(dna_sample(), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "eventlist",
                   statementType = "DNA Statement",
@@ -1984,7 +1986,7 @@ To make the logic underlying the use of the two variables even more clear we can
 By setting \code{Variable 1} to \code{organization} and \code{Variable 2} to \code{person} we can count how often statements reference organisations and persons together.
 Since every person belongs to just one organisation, the resulting matrix will count all statements by a person in one cell of her/his column while the result of all other cells in her/his column is zero:
 <<eval=TRUE, echo=FALSE, warning=FALSE>>=
-conn <- dna_connection(dna_sample())
+conn <- dna_connection(dna_sample(), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2029,7 +2031,7 @@ As you can see in Table~\ref{tab:onemode}, the edge weight between the Senate an
 We can use Table~\ref{tab:disagree} to calculate this number by hand.
 
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt1 <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2134,7 +2136,7 @@ We can repeat the same calculation, this time using Equation~\ref{eq:congruence_
 }
 
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "onemode",
                   statementType = "DNA Statement",
@@ -2186,7 +2188,7 @@ To make that easier to follow, we calcuate $x_{ijk} x_{i'jk'}$ individually for 
 }
 
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "onemode",
                   statementType = "DNA Statement",
@@ -2227,7 +2229,7 @@ See Table~\ref{tab:qual5} to check that this is correct.
 The meaning of this outcome is that Senate and Sierra Club do have in fact more differences than they have in common.
 You can also see that this is true for several of the other organisation pairs, suggesting a quite controversial discourse.
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "onemode",
                   statementType = "DNA Statement",
@@ -2264,7 +2266,7 @@ The \emph{National Petrochemical \& Refiners Association}, for example, disagree
 If the qualifier is an integer value, subtract basically does the same: the absolute values of the negative qualifier codes are subtracted from the positive ones.
 In the example from above, if an organisation agrees somewhat (+1) to a concept twice and then disagrees strongly (-2) to the same concept twice, the edge weight would be -2.
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2294,7 +2296,7 @@ You can see this in Table~\ref{tab:qual2}.
 With an integer variable, this may become more complex.
 As more combinations are possible and hence more qualitative categories need to be created (see Section~\ref{sec:twomode}.
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2359,7 +2361,7 @@ Details about normalisation can be found in \citet{leifeld2017discourse}.
 In Table~\ref{tab:normal} you can see how the two-mode network from Table~\ref{tab:twomode} looks like after applying the activity normalisation algorithm.
 
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2404,7 +2406,7 @@ This happened because this organisation contradicted itself by expressing both a
 
 Again we apply this transformation to Table~\ref{tab:twomode} to illustrate how the resulting matrix is affected:
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2445,7 +2447,7 @@ Consequently, \dna\ would export one network per day.
 These networks do not necessarily feature all organisations or concepts but will only show active nodes, as you can see in Table~\ref{tab:time}.
 Since there were only hearings on five of the selected 20 days (we excluded January 26th in the last step), the remaining 15 matrices are even completely empty.
 <<eval=FALSE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2571,7 +2573,7 @@ To include only NGOs in your network, you could select organization from \code{E
 The preview will now show which nodes are excluded.
 The exported network will miss all statements which reference one of these organisations and only contains statements made by NGOs:
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2613,7 +2615,7 @@ To achieve compatibility of the matrix dimensions anyway, it is possible to incl
 You can see this in Table~\ref{tab:isolates} which mirrors the information of Table~\ref{tab:exclud} but has the same dimensions as, for example, Table~\ref{tab:twomode}.
 
 <<eval=TRUE, echo=FALSE>>=
-conn <- dna_connection(dna_sample(verbose = FALSE))
+conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
@@ -2702,7 +2704,7 @@ Now we are able to use the package.
 The first step is to initialize \dna.
 You can do so using \code{dna\_init()} without any arguments inside the brackets.
 This will download the newest version of the \dna\ \texttt{.jar} file if it is not already available on your system.
-If you want to download or update the \texttt{.jar} at some point, you can use the command \code{dna\_downloadJar()}.
+If you want to download or update the \texttt{.jar} at some point, you can use the command \code{dna\_downloadJar()}.\footnote{When you update \rdna\ don't forget to use \code{dna\_downloadJar()} again to download the newest version of the \texttt{.jar} as well.}
 Now let's start using \rdna\:
 
 <<eval=FALSE>>=
@@ -2738,7 +2740,7 @@ We use the \code{dna\_sample()} command again to access the \texttt{sample.dna} 
 If you ever change something about the sample, you can revert it to its original state with the setting \code{overwrite = TRUE}:
 
 <<eval=TRUE, warning=FALSE>>=
-conn <- dna_connection(dna_sample(overwrite = TRUE))
+conn <- dna_connection(dna_sample(overwrite = TRUE), verbose = FALSE)
 @
 
 The \code{dna\_connection} function accepts a file name of the database including full or relative path (or, alternatively, a connection string to a remote \texttt{MySQL} database) and optionally the login and password for the database (in case a remote \texttt{MySQL} database is used).
