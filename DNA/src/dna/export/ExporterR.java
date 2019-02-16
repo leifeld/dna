@@ -3268,4 +3268,54 @@ public class ExporterR {
 		o[1] = colors;
 		return o;
 	}
+
+	
+	/* =================================================================================================================
+	 * Functions for managing settings
+	 * =================================================================================================================
+	 */
+
+	/**
+	 * Retrieve settings, such as active coder etc.
+	 * 
+	 * @return  Object vector with two elements: a String vector of keys and a String vector of values.
+	 */
+	public Object[] getSettings() {
+		int n = this.data.getSettings().size();
+		String[] keys = new String[n];
+		String[] values = new String[n];
+		int counter = 0;
+		Iterator<String> iterator = this.data.getSettings().keySet().iterator();
+		while (iterator.hasNext()) {
+			keys[counter] = iterator.next();
+			values[counter] = this.data.getSettings().get(keys[counter]);
+			counter++;
+		}
+		Object[] o = new Object[2];
+		o[0] = keys;
+		o[1] = values;
+		return o;
+	}
+	
+	/**
+	 * Update a setting.
+	 * 
+	 * @param key    Setting to update. Can be "statementColor", "activeCoder", "popupWidth", "version", or "date".
+	 * @param value  The corresponding value to be set.
+	 */
+	public void updateSetting(String key, String value) {
+		if (key.equals("statementColor") && (!value.equals("statementType") && !value.equals("coder"))) {
+			System.err.println("Setting 'statementColor' can only take values 'statementType' or 'coder'. Aborting.");
+		} else if (key.equals("activeCoder") && this.data.getCoderById(Integer.parseInt(value)) == null) {
+			System.err.println("Coder " + value + " was not found. Aborting.");
+		} else if (key.equals("popupWidth") && (Integer.parseInt(value) < 220) || (Integer.parseInt(value) > 9999)) {
+			System.err.println("Setting 'popupWidth' must be between 220 and 9999.");
+		} else if (key.equals("date") && !value.matches("\\d{4}\\.[0-1]\\d\\.[0-3]\\d")) {
+			System.err.println("Setting 'date' must be provided in the format 'YYYY-mm-dd'.");
+		} else if (!key.equals("statementColor") && !key.equals("activeCoder") && !key.equals("popupWidth") && !key.equals("version") && !key.equals("date")) {
+			System.err.println("Only settings 'statementColor', 'activeCoder', 'popupWidth', 'version', and 'date' are permitted.");
+		} else {
+			this.data.getSettings().put(key, value);
+		}
+	}
 }

@@ -1263,6 +1263,31 @@ dna_getRegex <- function(connection) {
   return(regex)
 }
 
+#' Retrieve a dataframe with all settings
+#'
+#' Retrieve a dataframe with all settings related to the GUI.
+#'
+#' The \code{dna_getSettings} function retrieves all settings related to the
+#' graphical user interface, including popup window width, active coder etc.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
+#' @importFrom rJava .jevalArray
+#' @export
+dna_getSettings <- function(connection) {
+  settings <- .jcall(connection$dna_connection,
+                     "[Ljava/lang/Object;",
+                     "getSettings")
+  names(settings) <- c("key", "value")
+  settings <- lapply(settings, .jevalArray)
+  settings <- as.data.frame(settings, stringsAsFactors = FALSE)
+  return(settings)
+}
+
 #' Retrieve a dataframe with statements from a DNA connection
 #'
 #' Retrieve a dataframe with all statements from a DNA connection.
@@ -2665,6 +2690,55 @@ dna_updateCoder <- function(connection,
          editRegex,
          verbose)
 }
+
+#' Update a setting related to the GUI
+#'
+#' Update a setting related to the graphical user interface.
+#'
+#' The \code{dna_updateSetting} function can update a setting related to the
+#' graphical user interface, such as the last active coder, the width of
+#' statement popup windows, or the criterion by which statements are colored in
+#' the text.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param key The setting to be updated. Valid keys are
+#'   \code{"statementColor"}, \code{"activeCoder"}, \code{"popupWidth"},
+#'   \code{"version"}, or \code{"date"}.
+#' @param value The value to be set. For \code{"statementColor"}, valid values
+#'   are \code{"statementType"} or \code{"coder"}. This setting determines by
+#'   which criterion statements are colored in the text: either by the color of
+#'   the respective statement type or by the color of the active coder. For
+#'   \code{"activeCoder"}, valid values are the coder IDs of existing coders
+#'   (see \link{dna_getCoders}), but as character objects. This setting ensures
+#'   that this coder is activated in the graphical user interface when the
+#'   database is opened. For \code{"popupWidth"}, valid values range from
+#'   \code{"220"} to \code{"9999"}. This determines the width of the popup
+#'   windows in the graphical user interface, in which the variables can be
+#'   coded. For \code{"version"}, a version string like \code{"2.0 beta 24"}
+#'   is permitted. This indicates the version number that was used to create the
+#'   database. \code{"date"} is the date the database was last changed by the
+#'   graphical user interface. It is given in the format \code{"YYYY-mm-dd"}.
+#'   All values must be supplied as character objects.
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
+#' @export
+dna_updateSetting <- function(connection, key, value) {
+  if (is.null(key) || is.na(key) || !is.character(key) || length(key) != 1) {
+    stop("'key' must be a character object of length 1.")
+  }
+  if (is.null(value) || is.na(value) || !is.character(value) || length(value) != 1) {
+    stop("'value' must be a character object of length 1.")
+  }
+  .jcall(connection$dna_connection,
+         "V",
+         "updateSetting",
+         key,
+         value)
+}
+
 
 # Analysis/Transformation ------------------------------------------------------
 

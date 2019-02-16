@@ -132,3 +132,18 @@ test_that("remove regex", {
 })
 
 # saveRDS(dna_getRegex(conn), "../files/dna_removeRegex.RDS")
+
+test_that("get settings", {
+  expect_that({
+    s <- dna_getSettings(conn)
+    s[s[, 1] == "statementColor", 2]
+  }, equals("statementType"))
+})
+
+test_that("update setting", {
+  expect_that({
+    dna_updateSetting(conn, "popupWidth", "400")
+    s <- dna_getSettings(conn)
+    s[s[, 1] == "popupWidth", 2]
+  }, equals("400"))
+})
