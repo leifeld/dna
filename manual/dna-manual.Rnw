@@ -641,7 +641,7 @@ For more experienced users, here is a short version of the steps described below
 \item (On Mac: install \href{https://support.apple.com/downloads/DL1572/en_US/javaforosx.dmg}{Apple's legacy version of \java}---even though we will never use it.)
 \item Install \java\ Runtime Environment (JDK) (Version 8) on your computer.
 \item (On Windows and Mac: set up the \code{JAVA\_HOME} to the installation path of your JDK.)
-\item Download the newest executable JAR from \url{https://github.com/leifeld/dna/releases}.
+\item Download the latest executable JAR from \url{https://github.com/leifeld/dna/releases}.
 \item (On Linux: make the JAR file executable.) \\
       (On Mac: allow executing apps from an unidentified developer.)
 \item You can now run the standalone \dna\ or continue to install \rdna\ as well.
@@ -983,7 +983,14 @@ dna_gui(infile = dna_sample())
 @
 If these commands can be executed correctly, you are ready to use both \dna\ and \rdna.
 
-Note that when updating \rdna\ you will also need the newest release of \dna\ for both programs to work together properly. You can use the command \code{dna\_downloadJar()} to download the last release version of \dna.
+Note that when updating \rdna\ you will also need the latest release of \dna\ for both programs to work together properly. You can update both by running the two following commands:
+
+<<>>=
+# install.packages("remotes")
+remotes::install_github("leifeld/dna/rDNA@*release", INSTALL_opts = "--no-multiarch")
+dna_downloadJar() # update DNA as well to have matching versions
+@
+
 
 
 \chapter{Preparation of your \dna\ Workspace} \label{chp:dna-prep}
@@ -1566,7 +1573,7 @@ Thus you can recode the document type for all documents at once, ensuring that a
 \chapterauthor{Johannes Gruber}
 Now that you know how to create a database and organise the documents in it, it's time to start with the actual coding.
 This section describes how to create, edit and navigate through statements as well as how to employ the regex highlighter and search function to make coding of statements easier and faster.
-If you want to recreate the steps outlined in this section for practice, you should download the file \code{sample.dna} from the \dna\ \url{https://github.com/leifeld/dna/releases} and open it with the newest version of \dna\ from the same page---if you haven't already done that.
+If you want to recreate the steps outlined in this section for practice, you should download the file \code{sample.dna} from the \dna\ \url{https://github.com/leifeld/dna/releases} and open it with the latest version of \dna\ from the same page---if you haven't already done that.
 This sample is a small excerpt from a larger empirical research project that tries to map the ideological debates around American climate politics in the U.S. Congress over time.
 Details about the dataset from which this excerpt is taken are provided by \citet{fisher2013mapping, fisher2013where}.
 Here, it suffices to say that the \texttt{sample.dna} file contains speeches from hearings in the U.S.\ Congress in which interest groups and legislators make statements about their views on climate politics.
@@ -2703,8 +2710,8 @@ set.seed(12345)
 Now we are able to use the package.
 The first step is to initialize \dna.
 You can do so using \code{dna\_init()} without any arguments inside the brackets.
-This will download the newest version of the \dna\ \texttt{.jar} file if it is not already available on your system.
-If you want to download or update the \texttt{.jar} at some point, you can use the command \code{dna\_downloadJar()}.\footnote{When you update \rdna\ don't forget to use \code{dna\_downloadJar()} again to download the newest version of the \texttt{.jar} as well.}
+This will download the latest version of the \dna\ \texttt{.jar} file if it is not already available on your system.
+If you want to download or update the \texttt{.jar} at some point, you can use the command \code{dna\_downloadJar()}.\footnote{When you update \rdna, don't forget to use \code{dna\_downloadJar()} again to download the latest version of the \texttt{.jar} as well.}
 Now let's start using \rdna\:
 
 <<eval=FALSE>>=
