@@ -1,11 +1,6 @@
 package dna.export;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -15,8 +10,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
-
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
@@ -40,13 +33,6 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
-
-import org.jdom.Attribute;
-import org.jdom.Comment;
-import org.jdom.Element;
-import org.jdom.Namespace;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
 
 import dna.Dna;
 import dna.SqlConnection;
@@ -983,7 +969,7 @@ public class ExporterGUI extends JDialog {
 	public boolean var1Document() {
 		int lastIndex = var1Box.getItemCount() - 1;
 		int selected = var1Box.getSelectedIndex();
-		if (selected > lastIndex - 4) {
+		if (selected > lastIndex - 6) {
 			return true;
 		} else {
 			return false;
@@ -998,7 +984,7 @@ public class ExporterGUI extends JDialog {
 	public boolean var2Document() {
 		int lastIndex = var2Box.getItemCount() - 1;
 		int selected = var2Box.getSelectedIndex();
-		if (selected > lastIndex - 4) {
+		if (selected > lastIndex - 6) {
 			return true;
 		} else {
 			return false;
@@ -1193,7 +1179,7 @@ public class ExporterGUI extends JDialog {
 			progressMonitor.setNote("(4/4) Writing to file...");
 			String fileFormat = (String) fileFormatBox.getSelectedItem();
 			if (networkModesBox.getSelectedItem().equals("Event list")) {
-				eventCSV(statements, documents, statementType, filename);
+				exportHelper.eventCSV(statements, documents, statementType, filename);
 			} else {
 				boolean twoMode = false;
 				if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
@@ -1201,24 +1187,24 @@ public class ExporterGUI extends JDialog {
 				}
 				if (fileFormat.equals(".csv")) {
 					if (timeWindowBox.getSelectedItem().equals("no time window")) {
-						exportCSV(matrix, filename);
+						exportHelper.exportCSV(matrix, filename);
 					} else {
 						String filename1 = filename.substring(0, filename.length() - 4);
 						String filename3 = filename.substring(filename.length() - 4, filename.length());
 						for (int i = 0; i < timeWindowMatrices.size(); i++) {
 							String filename2 = "-" + String.format("%0" + String.valueOf(timeWindowMatrices.size()).length() + "d", i + 1);
-							exportCSV(timeWindowMatrices.get(i), filename1 + filename2 + filename3);
+							exportHelper.exportCSV(timeWindowMatrices.get(i), filename1 + filename2 + filename3);
 						}
 					}
 				} else if (fileFormat.equals(".dl")) {
 					if (timeWindowBox.getSelectedItem().equals("no time window")) {
-						exportDL(matrix, filename, twoMode);
+						exportHelper.exportDL(matrix, filename, twoMode);
 					} else {
 						String filename1 = filename.substring(0, filename.length() - 3);
 						String filename3 = filename.substring(filename.length() - 3, filename.length());
 						for (int i = 0; i < timeWindowMatrices.size(); i++) {
 							String filename2 = "-" + String.format("%0" + String.valueOf(timeWindowMatrices.size()).length() + "d", i + 1);
-							exportDL(timeWindowMatrices.get(i), filename1 + filename2 + filename3, twoMode);
+							exportHelper.exportDL(timeWindowMatrices.get(i), filename1 + filename2 + filename3, twoMode);
 						}
 					}
 				} else if (fileFormat.equals(".graphml")) {
@@ -1232,14 +1218,14 @@ public class ExporterGUI extends JDialog {
 						qualifierBinary = true;
 					}
 					if (timeWindowBox.getSelectedItem().equals("no time window")) {
-						exportGraphml(matrix, twoMode, statementType, filename, var1Name, var2Name, frequencies1, frequencies2, 
+						exportHelper.exportGraphml(matrix, twoMode, statementType, filename, var1Name, var2Name, frequencies1, frequencies2, 
 								attributes, qualifierAggregation, qualifierBinary);
 					} else {
 						String filename1 = filename.substring(0, filename.length() - 8);
 						String filename3 = filename.substring(filename.length() - 8, filename.length());
 						for (int i = 0; i < timeWindowMatrices.size(); i++) {
 							String filename2 = "-" + String.format("%0" + String.valueOf(timeWindowMatrices.size()).length() + "d", i + 1);
-							exportGraphml(timeWindowMatrices.get(i), twoMode, statementType, filename1 + filename2 + filename3, 
+							exportHelper.exportGraphml(timeWindowMatrices.get(i), twoMode, statementType, filename1 + filename2 + filename3, 
 									var1Name, var2Name, frequencies1, frequencies2, attributes, qualifierAggregation, qualifierBinary);
 						}
 					}
@@ -1249,738 +1235,4 @@ public class ExporterGUI extends JDialog {
 			JOptionPane.showMessageDialog(Dna.gui, "Data were exported to \"" + filename + "\".");
 		}
 	}
-	
-	/**
-	 * This function accepts a list of statements that should be included in the relational event export, 
-	 * and it exports the variables of all statements to a CSV file, along with the statement ID and a 
-	 * date/time stamp. There is one statement per row, and the number of columns is the number of variables 
-	 * present in the statement type.
-	 * 
-	 * @param statements	 An array list of {@link Statement}s (of the same statement type) that should be exported.
-	 * @param documents      An array list of {@link Document}s in which the statements are embedded.
-	 * @param statementType  The statement type corresponding to the statements.
-	 * @param fileName		 String with the file name of the CSV file to which the event list will be exported.
-	 */
-	private void eventCSV(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, String fileName) {
-		String key, value;
-		int statementId;
-		Date d;
-		SimpleDateFormat dateFormat;
-		int statementTypeId = statementType.getId();
-		for (int i = 0; i < statements.size(); i++) {
-			if (statements.get(i).getStatementTypeId() != statementTypeId) {
-				throw new IllegalArgumentException("More than one statement type was selected. Cannot export to a spreadsheet!");
-			}
-		}
-
-		// HashMap for fast lookup of document indices by ID
-		HashMap<Integer, Integer> docMap = new HashMap<Integer, Integer>();
-		for (int i = 0; i < documents.size(); i++) {
-			docMap.put(documents.get(i).getId(), i);
-		}
-		
-		HashMap<String, String> variables = statementType.getVariables();
-		Iterator<String> keyIterator;
-		try {
-			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), "UTF-8"));
-			keyIterator = variables.keySet().iterator();
-			out.write("\"statement ID\";\"time\";\"document ID\";\"document title\";\"author\";\"source\";\"section\";\"type\";\"text\"");
-			while (keyIterator.hasNext()){
-				out.write(";\"" + keyIterator.next() + "\"");
-			}
-			for (int i = 0; i < statements.size(); i++) {
-				out.newLine();
-				statementId = statements.get(i).getId();
-				String stringId = Integer.valueOf(statementId).toString();
-				out.write(stringId);
-				d = statements.get(i).getDate();
-				dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-				out.write(";" + dateFormat.format(d));
-				Document doc = documents.get(docMap.get(statements.get(i).getDocumentId()));
-				out.write(";" + doc.getId());
-				out.write(";\"" + doc.getTitle().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				out.write(";\"" + doc.getAuthor().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				out.write(";\"" + doc.getSource().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				out.write(";\"" + doc.getSection().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				out.write(";\"" + doc.getType().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				out.write(";\"" + doc.getText().substring(statements.get(i).getStart(), 
-						statements.get(i).getStop()).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				keyIterator = variables.keySet().iterator();
-				while (keyIterator.hasNext()){
-					key = keyIterator.next();
-					value = variables.get(key);
-					if (value.equals("short text") || value.equals("long text")) {
-						out.write(";\"" + ((String) statements.get(i).getValues().get(key)).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-					} else if (value.equals("boolean") || value.equals("integer")) {
-						out.write(";" + statements.get(i).getValues().get(key));
-					}
-				}
-			}
-			out.close();
-			System.out.println("Event list has been exported to \"" + fileName + "\".");
-		} catch (IOException e) {
-			System.err.println("Error while saving CSV file: " + e);
-		}
-	}
-
-	/**
-	 * Export {@link Matrix} to a CSV matrix file.
-	 * 
-	 * @param matrix   The input {@link Matrix} object.
-	 * @param outfile  The path and file name of the target CSV file.
-	 */
-	private void exportCSV (Matrix m, String outfile) {
-		String[] rn = m.getRownames();
-		String[] cn = m.getColnames();
-		int nr = rn.length;
-		int nc = cn.length;
-		double[][] mat = m.getMatrix();
-		try {
-			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outfile), "UTF8"));
-			out.write("\"\"");
-			for (int i = 0; i < nc; i++) {
-				out.write(";\"" + cn[i].replaceAll("\"", "'") + "\"");
-			}
-			for (int i = 0; i < nr; i++) {
-				out.newLine();
-				out.write("\"" + rn[i].replaceAll("\"", "'") + "\"");
-				for (int j = 0; j < nc; j++) {
-					if (m.getInteger() == true) {
-						out.write(";" + (int) mat[i][j]);
-					} else {
-						out.write(";" + String.format(new Locale("en"), "%.6f", mat[i][j]));  // six decimal places
-					}
-				}
-			}
-			out.close();
-		} catch (IOException e) {
-			System.err.println("Error while saving CSV matrix file.");
-		}
-	}
-	
-	/**
-	 * Export network to a DL fullmatrix file for the software UCINET.
-	 * 
-	 * @param matrix   The input {@link Matrix} object.
-	 * @param outfile  The path and file name of the target .dl file.
-	 * @param twoMode  A {@link boolean} indicating if the input matrix is a two-mode network matrix (rather than one-mode). 
-	 */
-	public void exportDL (Matrix m, String outfile, boolean twoMode) {
-		String[] rn = m.getRownames();
-		String[] cn = m.getColnames();
-		int nr = rn.length;
-		int nc = cn.length;
-		double[][] mat = m.getMatrix();
-		try {
-			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outfile), "UTF8"));
-			out.write("dl ");
-			if (twoMode == false) {
-				out.write("n = " + nr);
-			} else if (twoMode == true) {
-				out.write("nr = " + nr + ", nc = " + nc);
-			}
-			out.write(", format = fullmatrix");
-			out.newLine();
-			if (twoMode == true) {
-				out.write("row labels:");
-			} else {
-				out.write("labels:");
-			}
-			for (int i = 0; i < nr; i++) {
-				out.newLine();
-				out.write("\"" + rn[i].replaceAll("\"", "'").replaceAll("'", "") + "\"");
-			}
-			if (twoMode == true) {
-				out.newLine();
-				out.write("col labels:");
-				for (int i = 0; i < nc; i++) {
-					out.newLine();
-					out.write("\"" + cn[i].replaceAll("\"", "'").replaceAll("'", "") + "\"");
-				}
-			}
-			out.newLine();
-			out.write("data:");
-			for (int i = 0; i < nr; i++) {
-				out.newLine();
-				for (int j = 0; j < nc; j++) {
-					if (m.getInteger() == true) {
-						out.write(" " + (int) mat[i][j]);
-					} else {
-						out.write(" " + String.format(new Locale("en"), "%.6f", mat[i][j]));
-					}
-				}
-			}
-			out.close();
-		} catch (IOException e) {
-			System.err.println("Error while saving DL fullmatrix file.");
-		}
-	}
-	
-	/*
-	private void exportGEFX(Matrix mt, boolean twoMode, StatementType statementType, String outfile, String var1, String var2, 
-			int[] frequencies1, int[] frequencies2, ArrayList<AttributeVector> attributes, String qualifierAggregation, 
-			boolean qualifierBinary) {
-
-		// extract attributes
-		String[] rn = mt.getRownames();
-		String[] cn = mt.getColnames();
-		String[] names;
-		String[] variables;
-		int[] frequencies;
-		if (twoMode == true) {
-			names = new String[rn.length + cn.length];
-			variables = new String[names.length];
-			frequencies = new int[names.length];
-		} else {
-			names = new String[rn.length];
-			variables = new String[rn.length];
-			frequencies = new int[rn.length];
-		}
-		for (int i = 0; i < rn.length; i++) {
-			names[i] = rn[i];
-			variables[i] = var1;
-			frequencies[i] = frequencies1[i];
-		}
-		if (twoMode == true) {
-			for (int i = 0; i < cn.length; i++) {
-				names[i + rn.length] = cn[i];
-				variables[i + rn.length] = var2;
-				frequencies[i + rn.length] = frequencies2[i];
-			}
-		}
-		int[] id = new int[names.length];
-		java.awt.Color[] color = new java.awt.Color[names.length];
-		String[] type = new String[names.length];
-		String[] alias = new String[names.length];
-		String[] notes = new String[names.length];
-		for (int i = 0; i < attributes.size(); i++) {
-			if (attributes.get(i).getStatementTypeId() == statementType.getId() && attributes.get(i).getVariable().equals(var1)) {
-				for (int j = 0; j < rn.length; j++) {
-					if (rn[j].equals(attributes.get(i).getValue())) {
-						id[j] = attributes.get(i).getId();
-						color[j] = attributes.get(i).getColor();
-						type[j] = attributes.get(i).getType();
-						alias[j] = attributes.get(i).getAlias();
-						notes[j] = attributes.get(i).getNotes();
-					}
-				}
-			} else if (attributes.get(i).getStatementTypeId() == statementType.getId() && attributes.get(i).getVariable().equals(var2) && twoMode == true) {
-				for (int j = 0; j < cn.length; j++) {
-					if (cn[j].equals(attributes.get(i).getValue())) {
-						id[j + rn.length] = attributes.get(i).getId();
-						color[j + rn.length] = attributes.get(i).getColor();
-						type[j + rn.length] = attributes.get(i).getType();
-						alias[j + rn.length] = attributes.get(i).getAlias();
-						notes[j + rn.length] = attributes.get(i).getNotes();
-					}
-				}
-			}
-		}
-		
-		
-		
-		DocType dt = new DocType("xml");
-		org.jdom.Document document = new org.jdom.Document();
-		document.setDocType(dt);
-		
-		// gexf element with schema information
-		Element gexfElement = new Element("gexf");
-		gexfElement.setAttribute(new Attribute("xmlns", "http://www.gexf.net/1.2draft"));
-		gexfElement.setAttribute(new Attribute("xmlns:viz", "http://www.gexf.net/1.2draft/viz"));
-		gexfElement.setAttribute(new Attribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance"));
-		gexfElement.setAttribute(new Attribute("xsi:schemaLocation", "http://www.gexf.net/1.2draft/gexf.xsd"));
-		gexfElement.setAttribute(new Attribute("version", "1.2"));
-		document.addContent(gexfElement);
-		
-		// meta data
-		Element meta = new Element("meta");
-		DateFormat df = new SimpleDateFormat("yyyy.MM.dd");
-		Date today = new Date();
-		meta.setAttribute(new Attribute("lastmodifieddate", df.format(today)));
-		Element creator = new Element("creator");
-		creator.setText("Discourse Network Analyzer (DNA)");
-		meta.addContent(creator);
-		Element description = new Element("description");
-		if (twoMode == true) {
-			description.setText("Two-mode network");
-		} else {
-			description.setText("One-mode network");
-		}
-		meta.addContent(description);
-		gexfElement.addContent(meta);
-		
-		// graph element with node and edge attribute definitions
-		Element graphElement = new Element("graph");
-		graphElement.setAttribute(new Attribute("mode", "static"));
-		graphElement.setAttribute(new Attribute("defaultedgetype", "undirected"));
-		
-		Element attributesElement = new Element("attributes");
-		attributesElement.setAttribute(new Attribute("class", "node"));
-		Element at0 = new Element("attribute");
-		at0.setAttribute(new Attribute("id", "0"));
-		at0.setAttribute(new Attribute("title", "type"));
-		at0.setAttribute(new Attribute("type", "string"));
-		attributesElement.addContent(at0);
-		Element at1 = new Element("attribute");
-		at1.setAttribute(new Attribute("id", "1"));
-		at1.setAttribute(new Attribute("title", "alias"));
-		at1.setAttribute(new Attribute("type", "string"));
-		attributesElement.addContent(at1);
-		Element at2 = new Element("attribute");
-		at2.setAttribute(new Attribute("id", "2"));
-		at2.setAttribute(new Attribute("title", "notes"));
-		at2.setAttribute(new Attribute("type", "string"));
-		attributesElement.addContent(at2);
-		
-		//<attributes class="node">
-	    //  <attribute id="0" title="url" type="string"/>
-	    //  <attribute id="1" title="indegree" type="float"/>
-	    //  <attribute id="2" title="frog" type="boolean">
-	    //    <default>true</default>
-	    //  </attribute>
-	    //</attributes>
-		
-		// add nodes
-		Element nodes = new Element("nodes");
-		for (int i = 0; i < names.length; i++) {
-			Element node = new Element("node");
-			node.setAttribute(new Attribute("id", "" + id[i]));
-			node.setAttribute(new Attribute("label", "" + names[i]));
-			
-			Element attvaluesElement = new Element("attvalues");
-			
-			Element attvalueElement0 = new Element("attvalue");
-			attvalueElement0.setAttribute(new Attribute("for", "0"));
-			attvalueElement0.setAttribute(new Attribute("value", type[i]));
-			attvaluesElement.addContent(attvalueElement0);
-
-			Element attvalueElement1 = new Element("attvalue");
-			attvalueElement1.setAttribute(new Attribute("for", "1"));
-			attvalueElement1.setAttribute(new Attribute("value", alias[i]));
-			attvaluesElement.addContent(attvalueElement1);
-
-			Element attvalueElement2 = new Element("attvalue");
-			attvalueElement2.setAttribute(new Attribute("for", "2"));
-			attvalueElement2.setAttribute(new Attribute("value", notes[i]));
-			attvaluesElement.addContent(attvalueElement2);
-
-			Element attvalueElement3 = new Element("attvalue");
-			attvalueElement3.setAttribute(new Attribute("for", "3"));
-			attvalueElement3.setAttribute(new Attribute("value", variables[i]));
-			attvaluesElement.addContent(attvalueElement3);
-
-			Element attvalueElement4 = new Element("attvalue");
-			attvalueElement4.setAttribute(new Attribute("for", "4"));
-			attvalueElement4.setAttribute(new Attribute("value", String.valueOf(frequencies[i])));
-			attvaluesElement.addContent(attvalueElement4);
-			
-			node.addContent(attvaluesElement);
-			
-			Element vizColor = new Element("viz:color");
-			vizColor.setAttribute(new Attribute("r", "" + color[i].getRed()));
-			vizColor.setAttribute(new Attribute("g", "" + color[i].getGreen()));
-			vizColor.setAttribute(new Attribute("b", "" + color[i].getBlue()));
-			vizColor.setAttribute(new Attribute("a", "" + color[i].getAlpha()));
-			node.addContent(vizColor);
-			
-			Element vizShape = new Element("viz:shape");
-			if (i < rn.length) {
-				vizShape.setAttribute(new Attribute("value", "disc"));
-			} else {
-				vizShape.setAttribute(new Attribute("value", "square"));
-			}
-			node.addContent(vizShape);
-			
-			nodes.addContent(node);
-		}
-		graphElement.addContent(nodes);
-		
-		// add edges
-		Element edges = new Element("edges");
-		
-		graphElement.addContent(edges);
-		
-		gexfElement.addContent(graphElement);
-		
-		// write to file
-		File dnaFile = new File(outfile);
-		try {
-			FileOutputStream outStream = new FileOutputStream(dnaFile);
-			XMLOutputter outToFile = new XMLOutputter();
-			Format format = Format.getPrettyFormat();
-			format.setEncoding("utf-8");
-			outToFile.setFormat(format);
-			outToFile.output(document, outStream);
-			outStream.flush();
-			outStream.close();
-		} catch (IOException e) {
-			System.err.println("Cannot save \"" + dnaFile + "\":" + e.getMessage());
-		}
-	}
-	*/
-	
-	/**
-	 * Export filter for graphML files.
-	 * 
-	 * @param matrix                 Input {@link Matrix}.
-	 * @param twoMode                Indicates whether the network is a two-mode network.
-	 * @param statementType          The statement type on which the network is based.
-	 * @param outfile                Name of the output file.
-	 * @param var1                   Name of the first variable (the rows of the matrix).
-	 * @param var2                   Name of the second variable (the columns of the matrix).
-	 * @param frequencies1           The number of statements in which the row node is involved (after filtering).
-	 * @param frequencies2           The number of statements in which the column node is involved (after filtering).
-	 * @param attributes             An ArrayList of {@link AttributeVector}s containing all attribute vectors in the database.
-	 * @param qualifierAggregation   A String denoting the qualifier aggregation. Valid values are "ignore", "combine", "subtract", "congruence", and "conflict".
-	 * @param qualifierBinary        Indicates whether the qualifier is a binary variable.
-	 */
-	private void exportGraphml(Matrix mt, boolean twoMode, StatementType statementType, String outfile, 
-			String var1, String var2, int[] frequencies1, int[] frequencies2, ArrayList<AttributeVector> attributes, 
-			String qualifierAggregation, boolean qualifierBinary) {
-		
-		// extract attributes
-		String[] rn = mt.getRownames();
-		String[] cn = mt.getColnames();
-		String[] names;
-		String[] variables;
-		int[] frequencies;
-		if (twoMode == true) {
-			names = new String[rn.length + cn.length];
-			variables = new String[names.length];
-			frequencies = new int[names.length];
-		} else {
-			names = new String[rn.length];
-			variables = new String[rn.length];
-			frequencies = new int[rn.length];
-		}
-		for (int i = 0; i < rn.length; i++) {
-			names[i] = rn[i];
-			variables[i] = var1;
-			frequencies[i] = frequencies1[i];
-		}
-		if (twoMode == true) {
-			for (int i = 0; i < cn.length; i++) {
-				names[i + rn.length] = cn[i];
-				variables[i + rn.length] = var2;
-				frequencies[i + rn.length] = frequencies2[i];
-			}
-		}
-		int[] id = new int[names.length];
-		String[] color = new String[names.length];
-		String[] type = new String[names.length];
-		String[] alias = new String[names.length];
-		String[] notes = new String[names.length];
-		for (int i = 0; i < attributes.size(); i++) {
-			if (attributes.get(i).getStatementTypeId() == statementType.getId() && attributes.get(i).getVariable().equals(var1)) {
-				for (int j = 0; j < rn.length; j++) {
-					if (rn[j].equals(attributes.get(i).getValue())) {
-						id[j] = attributes.get(i).getId();
-						color[j] = String.format("#%02X%02X%02X", attributes.get(i).getColor().getRed(), 
-								attributes.get(i).getColor().getGreen(), attributes.get(i).getColor().getBlue());
-						type[j] = attributes.get(i).getType();
-						alias[j] = attributes.get(i).getAlias();
-						notes[j] = attributes.get(i).getNotes();
-					}
-				}
-			} else if (attributes.get(i).getStatementTypeId() == statementType.getId() && attributes.get(i).getVariable().equals(var2) && twoMode == true) {
-				for (int j = 0; j < cn.length; j++) {
-					if (cn[j].equals(attributes.get(i).getValue())) {
-						id[j + rn.length] = attributes.get(i).getId();
-						color[j + rn.length] = String.format("#%02X%02X%02X", attributes.get(i).getColor().getRed(), 
-								attributes.get(i).getColor().getGreen(), attributes.get(i).getColor().getBlue());
-						type[j + rn.length] = attributes.get(i).getType();
-						alias[j + rn.length] = attributes.get(i).getAlias();
-						notes[j + rn.length] = attributes.get(i).getNotes();
-					}
-				}
-			}
-		}
-		
-		// set up graph structure
-		Namespace xmlns = Namespace.getNamespace("http://graphml.graphdrawing.org/xmlns");
-		Element graphml = new Element("graphml", xmlns);
-		Namespace visone = Namespace.getNamespace("visone", "http://visone.info/xmlns");
-		graphml.addNamespaceDeclaration(visone);
-		Namespace xsi = Namespace.getNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
-		graphml.addNamespaceDeclaration(xsi);
-		Namespace yNs = Namespace.getNamespace("y", "http://www.yworks.com/xml/graphml");
-		graphml.addNamespaceDeclaration(yNs);
-		Attribute attSchema = new Attribute("schemaLocation", "http://graphml.graphdrawing.org/xmlns/graphml http://www.yworks.com/xml/schema/graphml/1.0/ygraphml.xsd ", xsi);
-		graphml.setAttribute(attSchema);
-		org.jdom.Document document = new org.jdom.Document(graphml);
-		
-		Comment dataSchema = new Comment(" data schema ");
-		graphml.addContent(dataSchema);
-		
-		Element keyVisoneNode = new Element("key", xmlns);
-		keyVisoneNode.setAttribute(new Attribute("for", "node"));
-		keyVisoneNode.setAttribute(new Attribute("id", "d0"));
-		keyVisoneNode.setAttribute(new Attribute("yfiles.type", "nodegraphics"));
-		graphml.addContent(keyVisoneNode);
-
-		Element keyVisoneEdge = new Element("key", xmlns);
-		keyVisoneEdge.setAttribute(new Attribute("for", "edge"));
-		keyVisoneEdge.setAttribute(new Attribute("id", "e0"));
-		keyVisoneEdge.setAttribute(new Attribute("yfiles.type", "edgegraphics"));
-		graphml.addContent(keyVisoneEdge);
-
-		Element keyVisoneGraph = new Element("key", xmlns);
-		keyVisoneGraph.setAttribute(new Attribute("for", "graph"));
-		keyVisoneGraph.setAttribute(new Attribute("id", "prop"));
-		keyVisoneGraph.setAttribute(new Attribute("visone.type", "properties"));
-		graphml.addContent(keyVisoneGraph);
-		
-		Element keyId = new Element("key", xmlns);
-		keyId.setAttribute(new Attribute("id", "id"));
-		keyId.setAttribute(new Attribute("for", "node"));
-		keyId.setAttribute(new Attribute("attr.name", "id"));
-		keyId.setAttribute(new Attribute("attr.type", "string"));
-		graphml.addContent(keyId);
-
-		Element keyName = new Element("key", xmlns);
-		keyName.setAttribute(new Attribute("id", "name"));
-		keyName.setAttribute(new Attribute("for", "node"));
-		keyName.setAttribute(new Attribute("attr.name", "name"));
-		keyName.setAttribute(new Attribute("attr.type", "string"));
-		graphml.addContent(keyName);
-		
-		Element keyType = new Element("key", xmlns);
-		keyType.setAttribute(new Attribute("id", "type"));
-		keyType.setAttribute(new Attribute("for", "node"));
-		keyType.setAttribute(new Attribute("attr.name", "type"));
-		keyType.setAttribute(new Attribute("attr.type", "string"));
-		graphml.addContent(keyType);
-		
-		Element keyAlias = new Element("key", xmlns);
-		keyAlias.setAttribute(new Attribute("id", "alias"));
-		keyAlias.setAttribute(new Attribute("for", "node"));
-		keyAlias.setAttribute(new Attribute("attr.name", "alias"));
-		keyAlias.setAttribute(new Attribute("attr.type", "string"));
-		graphml.addContent(keyAlias);
-		
-		Element keyNote = new Element("key", xmlns);
-		keyNote.setAttribute(new Attribute("id", "note"));
-		keyNote.setAttribute(new Attribute("for", "node"));
-		keyNote.setAttribute(new Attribute("attr.name", "note"));
-		keyNote.setAttribute(new Attribute("attr.type", "string"));
-		graphml.addContent(keyNote);
-		
-		Element keyVariable = new Element("key", xmlns);
-		keyVariable.setAttribute(new Attribute("id", "variable"));
-		keyVariable.setAttribute(new Attribute("for", "node"));
-		keyVariable.setAttribute(new Attribute("attr.name", "variable"));
-		keyVariable.setAttribute(new Attribute("attr.type", "string"));
-		graphml.addContent(keyVariable);
-
-		Element keyFrequency = new Element("key", xmlns);
-		keyFrequency.setAttribute(new Attribute("id", "frequency"));
-		keyFrequency.setAttribute(new Attribute("for", "node"));
-		keyFrequency.setAttribute(new Attribute("attr.name", "frequency"));
-		keyFrequency.setAttribute(new Attribute("attr.type", "int"));
-		graphml.addContent(keyFrequency);
-
-		Element keyWeight = new Element("key", xmlns);
-		keyWeight.setAttribute(new Attribute("id", "weight"));
-		keyWeight.setAttribute(new Attribute("for", "edge"));
-		keyWeight.setAttribute(new Attribute("attr.name", "weight"));
-		keyWeight.setAttribute(new Attribute("attr.type", "double"));
-		graphml.addContent(keyWeight);
-		
-		Element graphElement = new Element("graph", xmlns);
-		graphElement.setAttribute(new Attribute("edgedefault", "undirected"));
-		
-		graphElement.setAttribute(new Attribute("id", "DNA"));
-		int numEdges = rn.length * cn.length;
-		if (twoMode == false) {
-			numEdges = (numEdges / 2) - rn.length;
-		}
-		int numNodes = rn.length;
-		if (twoMode == true) {
-			numNodes = numNodes + cn.length;
-		}
-		graphElement.setAttribute(new Attribute("parse.edges", String.valueOf(numEdges)));
-		graphElement.setAttribute(new Attribute("parse.nodes", String.valueOf(numNodes)));
-		graphElement.setAttribute(new Attribute("parse.order", "free"));
-		Element properties = new Element("data", xmlns);
-		properties.setAttribute(new Attribute("key", "prop"));
-		Element labelAttribute = new Element("labelAttribute", visone);
-		labelAttribute.setAttribute("edgeLabel", "weight");
-		labelAttribute.setAttribute("nodeLabel", "name");
-		properties.addContent(labelAttribute);
-		graphElement.addContent(properties);
-		
-		// add nodes
-		Comment nodes = new Comment(" nodes ");
-		graphElement.addContent(nodes);
-		
-		for (int i = 0; i < names.length; i++) {
-			Element node = new Element("node", xmlns);
-			node.setAttribute(new Attribute("id", "n" + id[i]));
-			
-			Element idElement = new Element("data", xmlns);
-			idElement.setAttribute(new Attribute("key", "id"));
-			idElement.setText(String.valueOf(id[i]));
-			node.addContent(idElement);
-			
-			Element nameElement = new Element("data", xmlns);
-			nameElement.setAttribute(new Attribute("key", "name"));
-			nameElement.setText(names[i]);
-			node.addContent(nameElement);
-			
-			Element typeElement = new Element("data", xmlns);
-			typeElement.setAttribute(new Attribute("key", "type"));
-			typeElement.setText(type[i]);
-			node.addContent(typeElement);
-			
-			Element aliasElement = new Element("data", xmlns);
-			aliasElement.setAttribute(new Attribute("key", "alias"));
-			aliasElement.setText(alias[i]);
-			node.addContent(aliasElement);
-			
-			Element notesElement = new Element("data", xmlns);
-			notesElement.setAttribute(new Attribute("key", "notes"));
-			notesElement.setText(notes[i]);
-			node.addContent(notesElement);
-			
-			Element variableElement = new Element("data", xmlns);
-			variableElement.setAttribute(new Attribute("key", "variable"));
-			variableElement.setText(variables[i]);
-			node.addContent(variableElement);
-			
-			Element frequency = new Element("data", xmlns);
-			frequency.setAttribute(new Attribute("key", "frequency"));
-			frequency.setText(String.valueOf(frequencies[i]));
-			node.addContent(frequency);
-			
-			Element vis = new Element("data", xmlns);
-			vis.setAttribute(new Attribute("key", "d0"));
-			Element visoneShapeNode = new Element("shapeNode", visone);
-			Element yShapeNode = new Element("ShapeNode", yNs);
-			Element geometry = new Element("Geometry", yNs);
-			geometry.setAttribute(new Attribute("height", "20.0"));
-			geometry.setAttribute(new Attribute("width", "20.0"));
-			geometry.setAttribute(new Attribute("x", String.valueOf(Math.random() * 800)));
-			geometry.setAttribute(new Attribute("y", String.valueOf(Math.random() * 600)));
-			yShapeNode.addContent(geometry);
-			Element fill = new Element("Fill", yNs);
-			fill.setAttribute(new Attribute("color", color[i]));
-
-			fill.setAttribute(new Attribute("transparent", "false"));
-			yShapeNode.addContent(fill);
-			Element borderStyle = new Element("BorderStyle", yNs);
-			borderStyle.setAttribute(new Attribute("color", "#000000"));
-			borderStyle.setAttribute(new Attribute("type", "line"));
-			borderStyle.setAttribute(new Attribute("width", "1.0"));
-			yShapeNode.addContent(borderStyle);
-
-			Element nodeLabel = new Element("NodeLabel", yNs);
-			nodeLabel.setAttribute(new Attribute("alignment", "center"));
-			nodeLabel.setAttribute(new Attribute("autoSizePolicy", "content"));
-			nodeLabel.setAttribute(new Attribute("backgroundColor", "#FFFFFF"));
-			nodeLabel.setAttribute(new Attribute("fontFamily", "Dialog"));
-			nodeLabel.setAttribute(new Attribute("fontSize", "12"));
-			nodeLabel.setAttribute(new Attribute("fontStyle", "plain"));
-			nodeLabel.setAttribute(new Attribute("hasLineColor", "false"));
-			nodeLabel.setAttribute(new Attribute("height", "19.0"));
-			nodeLabel.setAttribute(new Attribute("modelName", "eight_pos"));
-			nodeLabel.setAttribute(new Attribute("modelPosition", "n"));
-			nodeLabel.setAttribute(new Attribute("textColor", "#000000"));
-			nodeLabel.setAttribute(new Attribute("visible", "true"));
-			nodeLabel.setText(names[i]);
-			yShapeNode.addContent(nodeLabel);
-			
-			Element shape = new Element("Shape", yNs);
-			if (i < rn.length) {
-				shape.setAttribute(new Attribute("type", "ellipse"));
-			} else {
-				shape.setAttribute(new Attribute("type", "roundrectangle"));
-			}
-			yShapeNode.addContent(shape);
-			visoneShapeNode.addContent(yShapeNode);
-			vis.addContent(visoneShapeNode);
-			node.addContent(vis);
-			
-			graphElement.addContent(node);
-		}
-		
-		// add edges
-		double[][] m = mt.getMatrix();
-		Comment edges = new Comment(" edges ");
-		graphElement.addContent(edges);
-		for (int i = 0; i < rn.length; i++) {
-			for (int j = 0; j < cn.length; j++) {
-				if (m[i][j] != 0.0 && (twoMode == true || (twoMode == false && i < j))) {  // only lower triangle is used for one-mode networks
-					Element edge = new Element("edge", xmlns);
-					
-					int currentId = id[i];
-					edge.setAttribute(new Attribute("source", "n" + String.valueOf(currentId)));
-					if (twoMode == true) {
-						currentId = id[j + rn.length];
-					} else {
-						currentId = id[j];
-					}
-					edge.setAttribute(new Attribute("target", "n" + String.valueOf(currentId)));
-					
-					Element weight = new Element("data", xmlns);
-					weight.setAttribute(new Attribute("key", "weight"));
-					weight.setText(String.valueOf(m[i][j]));
-					edge.addContent(weight);
-
-					Element visEdge = new Element("data", xmlns);
-					visEdge.setAttribute("key", "e0");
-					Element visPolyLineEdge = new Element("polyLineEdge", visone);
-					Element yPolyLineEdge = new Element("PolyLineEdge", yNs);
-
-					Element yLineStyle = new Element("LineStyle", yNs);
-					if (qualifierAggregation.equals("combine") && qualifierBinary == true) {
-						if (m[i][j] == 1.0) {
-							yLineStyle.setAttribute("color", "#00ff00");
-						} else if (m[i][j] == 2.0) {
-							yLineStyle.setAttribute("color", "#ff0000");
-						} else if (m[i][j] == 3.0) {
-							yLineStyle.setAttribute("color", "#0000ff");
-						}
-					} else if (qualifierAggregation.equals("subtract")) {
-						if (m[i][j] < 0) {
-							yLineStyle.setAttribute("color", "#ff0000");
-						} else if (m[i][j] > 0) {
-							yLineStyle.setAttribute("color", "#00ff00");
-						}
-					} else if (qualifierAggregation.equals("conflict")) {
-						yLineStyle.setAttribute("color", "#ff0000");
-					} else if (qualifierAggregation.equals("congruence")) {
-						yLineStyle.setAttribute("color", "#00ff00");
-					} else {
-						yLineStyle.setAttribute("color", "#000000");
-					}
-					yLineStyle.setAttribute(new Attribute("type", "line"));
-					yLineStyle.setAttribute(new Attribute("width", "2.0"));
-					yPolyLineEdge.addContent(yLineStyle);
-					visPolyLineEdge.addContent(yPolyLineEdge);
-					visEdge.addContent(visPolyLineEdge);
-					edge.addContent(visEdge);
-					
-					graphElement.addContent(edge);
-				}
-			}
-		}
-		
-		graphml.addContent(graphElement);
-		
-		// write to file
-		File dnaFile = new File(outfile);
-		try {
-			FileOutputStream outStream = new FileOutputStream(dnaFile);
-			XMLOutputter outToFile = new XMLOutputter();
-			Format format = Format.getPrettyFormat();
-			format.setEncoding("utf-8");
-			outToFile.setFormat(format);
-			outToFile.output(document, outStream);
-			outStream.flush();
-			outStream.close();
-		} catch (IOException e) {
-			System.err.println("Cannot save \"" + dnaFile + "\":" + e.getMessage());
-		}
-	}
-	
 }

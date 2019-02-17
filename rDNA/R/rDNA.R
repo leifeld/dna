@@ -4704,6 +4704,13 @@ print.dna_scale <- function(x, ...) {
 #'   construction (\code{invertTypes = FALSE}) or if they should be the
 #'   only values that should be included during network construction
 #'   (\code{invertTypes = TRUE}).
+#' @param fileFormat An optional file format specification for saving the
+#'   resulting network(s) to a file instead of returning an object. Valid values
+#'   are \code{"csv"} (for network matrices or event lists), \code{"dl"} (for
+#'   UCINET DL full-matrix files), and \code{"graphml"} (for visone .graphml
+#'   files). The \code{"graphml"} specification is compatible with time windows.
+#' @param outfile An optional output file name for saving the resulting
+#'   network(s) to a file instead of returning an object.
 #' @param verbose A boolean value indicating whether details of network
 #'   construction should be printed to the R console.
 #'
@@ -4761,6 +4768,8 @@ dna_network <- function(connection,
                         invertSources = FALSE,
                         invertSections = FALSE,
                         invertTypes = FALSE,
+                        fileFormat = NULL,
+                        outfile = NULL,
                         verbose = TRUE) {
   
   # check and convert exclude arguments
@@ -4834,6 +4843,27 @@ dna_network <- function(connection,
     stop("'normalization' must be 'no', 'activity', or 'prominence' when networkType = 'twomode'.")
   }
 
+  if (!is.null(fileFormat) && !fileFormat %in% c("csv", "dl", "graphml")) {
+    stop("'fileFormat' must be 'csv', 'dl', or 'graphml'.")
+  }
+  if (!is.null(fileFormat) && timewindow != "no" && fileFormat %in% c("csv", "dl")) {
+    stop("Only .graphml files are currently compatible with time windows.")
+  }
+  if (!is.null(fileFormat) && networkType == "eventlist" && fileFormat %in% c("dl", "graphml")) {
+    stop("Only .csv files are currently compatible with event lists.")
+  }
+  if (is.null(outfile) || is.null(fileFormat)) {
+    fileExport <- TRUE
+  } else {
+    fileExport <- FALSE
+  }
+  if (is.null(fileFormat)) {
+    fileFormat <- .jnull(class = "java/lang/String")
+  }
+  if (is.null(outfile)) {
+    outfile <- .jnull(class = "java/lang/String")
+  }
+
   # call Java function to create network
   .jcall(connection$dna_connection,
          "V",
@@ -4866,52 +4896,57 @@ dna_network <- function(connection,
          invertSources,
          invertSections,
          invertTypes,
+         outfile,
+         fileFormat,
          verbose
   )
-  if (networkType == "eventlist") {
-    objects <- .jcall(connection$dna_connection, "[Ljava/lang/Object;", "getEventListColumnsR", simplify = TRUE)
-    columnNames <- .jcall(connection$dna_connection, "[S", "getEventListColumnsRNames", simplify = TRUE)
-    dta <- data.frame(id = .jevalArray(objects[[1]]))
-    dta$time <- as.POSIXct(.jevalArray(objects[[2]]), origin = "1970-01-01")
-    dta$docId <- .jevalArray(objects[[3]])
-    dta$docTitle <- .jevalArray(objects[[4]])
-    dta$docAuthor <- .jevalArray(objects[[5]])
-    dta$docSource <- .jevalArray(objects[[6]])
-    dta$docSection <- .jevalArray(objects[[7]])
-    dta$docType <- .jevalArray(objects[[8]])
-    for (i in 1:length(columnNames)) {
-      dta[[columnNames[i]]] <- .jevalArray(objects[[i + 8]])
+  
+  if (isTRUE(fileExport)) {
+    if (networkType == "eventlist") {
+      objects <- .jcall(connection$dna_connection, "[Ljava/lang/Object;", "getEventListColumnsR", simplify = TRUE)
+      columnNames <- .jcall(connection$dna_connection, "[S", "getEventListColumnsRNames", simplify = TRUE)
+      dta <- data.frame(id = .jevalArray(objects[[1]]))
+      dta$time <- as.POSIXct(.jevalArray(objects[[2]]), origin = "1970-01-01")
+      dta$docId <- .jevalArray(objects[[3]])
+      dta$docTitle <- .jevalArray(objects[[4]])
+      dta$docAuthor <- .jevalArray(objects[[5]])
+      dta$docSource <- .jevalArray(objects[[6]])
+      dta$docSection <- .jevalArray(objects[[7]])
+      dta$docType <- .jevalArray(objects[[8]])
+      for (i in 1:length(columnNames)) {
+        dta[[columnNames[i]]] <- .jevalArray(objects[[i + 8]])
+      }
+      attributes(dta)$call <- match.call()
+      class(dta) <- c("dna_eventlist", class(dta))
+      return(dta)
+    } else if (timewindow == "no") {
+      mat <- .jcall(connection$dna_connection, "[[D", "getMatrix", simplify = TRUE)
+      rownames(mat) <- .jcall(connection$dna_connection, "[S", "getRowNames", simplify = TRUE)
+      colnames(mat) <- .jcall(connection$dna_connection, "[S", "getColumnNames", simplify = TRUE)
+      attributes(mat)$call <- match.call()
+      class(mat) <- c(paste0("dna_network_", networkType), class(mat))
+      return(mat)
+    } else {
+      timeLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", simplify = TRUE)
+      timeLabels <- as.POSIXct(timeLabels, origin = "1970-01-01")
+      numStatements <- .jcall(connection$dna_connection, "[I", "getTimeWindowNumStatements", simplify = TRUE)
+      mat <- list()
+      for (t in 1:length(timeLabels)) {
+        m <- .jcall(connection$dna_connection, "[[D", "getTimeWindowNetwork", as.integer(t - 1), simplify = TRUE)
+        rownames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowRowNames", as.integer(t - 1), simplify = TRUE)
+        colnames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowColumnNames", as.integer(t - 1), simplify = TRUE)
+        attributes(m)$call <- match.call()
+        class(m) <- c(paste0("dna_network_", networkType), class(m))
+        mat[[t]] <- m
+      }
+      dta <- list()
+      dta$networks <- mat
+      dta$time <- timeLabels
+      dta$numStatements <- numStatements
+      attributes(dta)$call <- match.call()
+      class(dta) <- c(paste0("dna_network_", networkType, "_timewindows"), class(dta))
+      return(dta)
     }
-    attributes(dta)$call <- match.call()
-    class(dta) <- c("dna_eventlist", class(dta))
-    return(dta)
-  } else if (timewindow == "no") {
-    mat <- .jcall(connection$dna_connection, "[[D", "getMatrix", simplify = TRUE)
-    rownames(mat) <- .jcall(connection$dna_connection, "[S", "getRowNames", simplify = TRUE)
-    colnames(mat) <- .jcall(connection$dna_connection, "[S", "getColumnNames", simplify = TRUE)
-    attributes(mat)$call <- match.call()
-    class(mat) <- c(paste0("dna_network_", networkType), class(mat))
-    return(mat)
-  } else {
-    timeLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", simplify = TRUE)
-    timeLabels <- as.POSIXct(timeLabels, origin = "1970-01-01")
-    numStatements <- .jcall(connection$dna_connection, "[I", "getTimeWindowNumStatements", simplify = TRUE)
-    mat <- list()
-    for (t in 1:length(timeLabels)) {
-      m <- .jcall(connection$dna_connection, "[[D", "getTimeWindowNetwork", as.integer(t - 1), simplify = TRUE)
-      rownames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowRowNames", as.integer(t - 1), simplify = TRUE)
-      colnames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowColumnNames", as.integer(t - 1), simplify = TRUE)
-      attributes(m)$call <- match.call()
-      class(m) <- c(paste0("dna_network_", networkType), class(m))
-      mat[[t]] <- m
-    }
-    dta <- list()
-    dta$networks <- mat
-    dta$time <- timeLabels
-    dta$numStatements <- numStatements
-    attributes(dta)$call <- match.call()
-    class(dta) <- c(paste0("dna_network_", networkType, "_timewindows"), class(dta))
-    return(dta)
   }
 }
 

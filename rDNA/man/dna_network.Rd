@@ -16,7 +16,8 @@ dna_network(connection, networkType = "twomode",
   excludeAuthors = character(), excludeSources = character(),
   excludeSections = character(), excludeTypes = character(),
   invertValues = FALSE, invertAuthors = FALSE, invertSources = FALSE,
-  invertSections = FALSE, invertTypes = FALSE, verbose = TRUE)
+  invertSections = FALSE, invertTypes = FALSE, fileFormat = NULL,
+  outfile = NULL, verbose = TRUE)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
@@ -211,6 +212,15 @@ by the \code{excludeTypes} argument should be excluded from network
 construction (\code{invertTypes = FALSE}) or if they should be the
 only values that should be included during network construction
 (\code{invertTypes = TRUE}).}
+
+\item{fileFormat}{An optional file format specification for saving the
+resulting network(s) to a file instead of returning an object. Valid values
+are \code{"csv"} (for network matrices or event lists), \code{"dl"} (for
+UCINET DL full-matrix files), and \code{"graphml"} (for visone .graphml
+files). The \code{"graphml"} specification is compatible with time windows.}
+
+\item{outfile}{An optional output file name for saving the resulting
+network(s) to a file instead of returning an object.}
 
 \item{verbose}{A boolean value indicating whether details of network
 construction should be printed to the R console.}

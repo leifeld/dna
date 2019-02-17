@@ -227,6 +227,8 @@ public class ExporterR {
 	 * @param invertSources          boolean indicating whether the document-level source values should be included (= true) rather than excluded
 	 * @param invertSections         boolean indicating whether the document-level section values should be included (= true) rather than excluded
 	 * @param invertTypes            boolean indicating whether the document-level type values should be included (= true) rather than excluded
+	 * @param outfile                String with a file name under which the resulting network should be saved.
+	 * @param fileFormat             String with the file format. Valid values are "csv", "dl", "graphml", and null (for no file export).
 	 * @param verbose                Report progress to the console?
 	 * @return                       A Matrix object containing the resulting one-mode or two-mode network
 	 * @throws Exception 
@@ -236,7 +238,7 @@ public class ExporterR {
 			String duplicates, String startDate, String stopDate, String startTime, String stopTime, String timewindow, int windowsize, 
 			String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources, String[] excludeSections, 
 			String[] excludeTypes, boolean invertValues, boolean invertAuthors, boolean invertSources, boolean invertSections, 
-			boolean invertTypes, boolean verbose) throws Exception {
+			boolean invertTypes, String outfile, String fileFormat, boolean verbose) throws Exception {
 		
 		// step 1: preprocess arguments
 		int max = 5;
@@ -476,6 +478,20 @@ public class ExporterR {
 		if (verbose == true) {
 			System.out.print("Done.\n");
 		}
+		
+		// check file export format arguments
+		if (fileFormat != null && !fileFormat.equals("csv") && !fileFormat.equals("dl") && !fileFormat.equals("graphml")) {
+			throw new Exception("'fileFormat' must be 'csv', 'dl', 'graphml', or NULL.");
+		}
+		if (outfile != null) {
+			if (fileFormat.equals("graphml") && !outfile.toLowerCase().endsWith(".graphml")) {
+				outfile = outfile + ".graphml";
+			} else if (fileFormat.equals("csv") && !outfile.toLowerCase().endsWith(".csv")) {
+				outfile = outfile + ".csv";
+			} else if (fileFormat.equals("dl") && !outfile.toLowerCase().endsWith(".dl")) {
+				outfile = outfile + ".dl";
+			}
+		}
 
 		// step 2: filter
 		boolean filterEmptyFields = true;
@@ -677,6 +693,65 @@ public class ExporterR {
 				step = 4;
 			}
 			System.out.println("(" + step + "/" + max + "): Retrieving results.");
+		}
+		
+		// file export
+		if (fileFormat != null && outfile != null) {
+			if (fileFormat.equals("dl")) {
+				if (networkType.equals("Event List")) {
+					System.err.println("The DL file format does not currently support event lists. Aborting.");
+				} else if (!timewindow.equals("no time window")) {
+					System.err.println("The DL file format does not currently support time windows. Aborting.");
+				} else if (networkType.equals("One-mode network")) {
+					exportHelper.exportDL(this.matrix, outfile, false);
+				} else if (networkType.equals("Two-mode network")) {
+					exportHelper.exportDL(this.matrix, outfile, true);
+				}
+			} else if (fileFormat.equals("graphml")) {
+				String[] values1 = exportHelper.retrieveValues(filteredStatements, this.data.getDocuments(), variable1, variable1Document);
+				String[] values2 = exportHelper.retrieveValues(filteredStatements, this.data.getDocuments(), variable2, variable2Document);
+				int[] frequencies1 = exportHelper.countFrequencies(values1, names1);
+				int[] frequencies2 = exportHelper.countFrequencies(values2, names2);
+				boolean qualifierBinary = false;
+				if (st.getVariables().get(qualifier).equals("boolean")) {
+					qualifierBinary = true;
+				}
+				boolean twoMode = false;
+				if (networkType.equals("Two-mode network")) {
+					twoMode = true;
+				}
+				if (timewindow.equals("no time window")) {
+					if (networkType.equals("Event List")) {
+						System.out.println("The graphml file format does not currently support event lists. Aborting.");
+					} else {
+						exportHelper.exportGraphml(matrix, twoMode, st, outfile, variable1, variable2, frequencies1, frequencies2, 
+								this.data.getAttributes(), qualifierAggregation, qualifierBinary);
+					}
+				} else {
+					String filename1 = outfile.substring(0, outfile.length() - 8);
+					String filename3 = outfile.substring(outfile.length() - 8, outfile.length());
+					if (networkType.equals("Event List")) {
+						System.out.println("The graphml file format does not currently support event lists. Aborting.");
+					} else {
+						for (int i = 0; i < this.timeWindowMatrices.size(); i++) {
+							String filename2 = "-" + String.format("%0" + String.valueOf(this.timeWindowMatrices.size()).length() + "d", i + 1);
+							exportHelper.exportGraphml(this.timeWindowMatrices.get(i), twoMode, st, filename1 + filename2 + filename3, 
+									variable1, variable2, frequencies1, frequencies2, this.data.getAttributes(), qualifierAggregation, qualifierBinary);
+						}
+					}
+				}
+			} else if (fileFormat.equals("csv")) {
+				if (!timewindow.equals("no time window")) {
+					System.err.println("The CSV file export does not currently support time windows. Aborting.");
+				} else if (networkType.equals("Event list")) {
+					exportHelper.eventCSV(filteredStatements, this.data.getDocuments(), st, outfile);
+				} else {
+					exportHelper.exportCSV(this.matrix, outfile);
+				}
+			}
+			if (verbose == true) {
+				System.out.println("Network(s) exported to '" + outfile + "'.");
+			}
 		}
 	}
 
