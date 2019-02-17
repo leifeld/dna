@@ -859,10 +859,12 @@ public class NewDatabaseDialog extends JDialog {
 				ltext = new JRadioButton("long text");
 				integ = new JRadioButton("integer");
 				bool = new JRadioButton("boolean");
-				stext.setEnabled(false);
-				ltext.setEnabled(false);
-				integ.setEnabled(false);
-				bool.setEnabled(false);
+				if (nameField.getText().equals("")) {
+					stext.setEnabled(false);
+					ltext.setEnabled(false);
+					integ.setEnabled(false);
+					bool.setEnabled(false);
+				}
 				stext.setSelected(true);
 				buttonGroup.add(stext);
 				buttonGroup.add(ltext);
