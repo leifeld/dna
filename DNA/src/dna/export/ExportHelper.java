@@ -15,7 +15,7 @@ import dna.dataStructures.StatementType;
 public class ExportHelper {
 
 	public ExportHelper() {
-		// TODO Auto-generated constructor stub
+		// nothing to do here
 	}
 
 	/**
@@ -273,7 +273,7 @@ public class ExportHelper {
 								|| (duplicateSetting.equals("ignore per calendar week") && week == weekPrevious) )
 							&& values1[i].equals(previousVar1)
 							&& values2[i].equals(previousVar2)
-							&& (s.getValues().get(qualifierName).equals(al.get(j).getValues().get(qualifierName)) || ignoreQualifier == true) ) {
+							&& (ignoreQualifier == true || s.getValues().get(qualifierName).equals(al.get(j).getValues().get(qualifierName))) ) {
 						select = false;
 						break;
 					}
@@ -523,15 +523,17 @@ public class ExportHelper {
 			return mt;
 		}
 		
-		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
-		if (statementType.getVariables().get(qualifier).equals("integer")) {
+		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer or null?
+		if (qualifier == null || statementType.getVariables().get(qualifier).equals("integer")) {
 			booleanQualifier = false;
 		}
 		int[] qualifierValues;  // unique qualifier values (i.e., all of them found at least once in the dataset)
-		if (booleanQualifier == true) {
-			qualifierValues = new int[] {0, 1};
-		} else {
+		if (qualifier == null) {
+			qualifierValues = new int[] { 0 };
+		} else if (statementType.getVariables().get(qualifier).equals("integer")) {
 			qualifierValues = getIntValues(statements, qualifier);
+		} else {
+			qualifierValues = new int[] {0, 1};
 		}
 		
 		double[][][] array = createArray(statements, documents, statementType, var1, var2, var1Document, var2Document, 
@@ -674,16 +676,20 @@ public class ExportHelper {
 			Matrix mt = new Matrix(m, names1, names2, true);
 			return mt;
 		}
-		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
-		// TODO: it may be possible that there is no qualifier; adjust for this case (also in the one-mode case?)
-		if (statementType.getVariables().get(qualifier).equals("integer")) {
+		
+		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer or null?
+		if (qualifier == null) {
+			booleanQualifier = false;
+		} else if (statementType.getVariables().get(qualifier).equals("integer")) {
 			booleanQualifier = false;
 		}
 		int[] qualifierValues;  // unique qualifier values (i.e., all of them found at least once in the dataset)
-		if (booleanQualifier == true) {
-			qualifierValues = new int[] {0, 1};
-		} else {
+		if (qualifier == null) {
+			qualifierValues = new int[] { 0 };
+		} else if (statementType.getVariables().get(qualifier).equals("integer")) {
 			qualifierValues = getIntValues(statements, qualifier);
+		} else {
+			qualifierValues = new int[] {0, 1};
 		}
 		
 		double[][][] array = createArray(statements, documents, statementType, var1, var2, var1Document, var2Document, 
@@ -821,7 +827,7 @@ public class ExportHelper {
 	 * @param var2Document          {@link boolean} indicating whether the second variable is a document-level variable.
 	 * @param names1                {@link String} array containing the row labels.
 	 * @param names2                {@link String} array containing the column labels.
-	 * @param qualifier             {@link String} denoting the name of the qualifier variable.
+	 * @param qualifier             {@link String} denoting the name of the qualifier variable. Can be null.
 	 * @param qualifierAggregation  {@link String} indicating how different levels of the qualifier variable are aggregated. Valid values are "ignore", "subtract", and "combine".
 	 * @return                      3D double array
 	 */
@@ -829,15 +835,13 @@ public class ExportHelper {
 			String var1, String var2, boolean var1Document, boolean var2Document, String[] names1, String[] names2, String qualifier, 
 			String qualifierAggregation) {
 		
-		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer?
-		if (statementType.getVariables().get(qualifier).equals("integer")) {
-			booleanQualifier = false;
-		}
 		int[] qualifierValues;  // unique qualifier values (i.e., all of them found at least once in the dataset)
-		if (booleanQualifier == true) {
-			qualifierValues = new int[] {0, 1};
-		} else {
+		if (qualifier == null) {
+			qualifierValues = null;
+		} else if (statementType.getVariables().get(qualifier).equals("integer")) {
 			qualifierValues = getIntValues(statements, qualifier);
+		} else {
+			qualifierValues = new int[] {0, 1};
 		}
 
 		// Create arrays with variable values
@@ -845,11 +849,21 @@ public class ExportHelper {
 		String[] values2 = retrieveValues(statements, documents, var2, var2Document);
 		
 		// create and populate array
-		double[][][] array = new double[names1.length][names2.length][qualifierValues.length]; // 3D array: rows x cols x qualifier value
+		double[][][] array;
+		if (qualifierValues == null) {
+			array = new double[names1.length][names2.length][1];
+		} else {
+			array = new double[names1.length][names2.length][qualifierValues.length]; // 3D array: rows x cols x qualifier value
+		}
 		for (int i = 0; i < statements.size(); i++) {
 			String n1 = values1[i];  // retrieve first value from statement
 			String n2 = values2[i];  // retrieve second value from statement
-			int q = (int) statements.get(i).getValues().get(qualifier);  // retrieve qualifier value from statement
+			int q;
+			if (qualifier == null) {
+				q = 0;
+			} else {
+				q = (int) statements.get(i).getValues().get(qualifier);  // retrieve qualifier value from statement
+			}
 			
 			// find out which matrix row corresponds to the first value
 			int row = -1;
@@ -870,11 +884,16 @@ public class ExportHelper {
 			}
 			
 			// find out which qualifier level corresponds to the qualifier value
-			int qual = -1;  // qualifier level in the array
-			for (int j = 0; j < qualifierValues.length; j++) {
-				if (qualifierValues[j] == q) {
-					qual = j;
-					break;
+			int qual = -1;
+			if (qualifierValues == null) {
+				qual = 0;
+			} else {
+				qual = -1;  // qualifier level in the array
+				for (int j = 0; j < qualifierValues.length; j++) {
+					if (qualifierValues[j] == q) {
+						qual = j;
+						break;
+					}
 				}
 			}
 			

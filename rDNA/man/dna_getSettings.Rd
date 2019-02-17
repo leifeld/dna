@@ -15,7 +15,7 @@ Retrieve a dataframe with all settings related to the GUI.
 }
 \details{
 The \code{dna_getSettings} function retrieves all settings related to the
-graphical user interface, including popup window width, active coder etc.
+graphical user interface, including pop-up window width, active coder etc.
 }
 \author{
 Philip Leifeld

@@ -17,17 +17,22 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 }
 
 # more settings which quiet concerns of R CMD check about ggplot and dplyr pipelines
-if (getRversion() >= "2.15.1")utils::globalVariables(c("rn",
-                                                      "cols3",
-                                                      "labels_short",
-                                                      "leaf",
-                                                      "x",
-                                                      "y",
-                                                      "mean_dim1",
-                                                      "mean_dim2",
-                                                      "name",
-                                                      "it",
-                                                      "color"))
+if (getRversion() >= "2.15.1") {
+  utils::globalVariables(
+    c("rn",
+      "cols3",
+      "labels_short",
+      "leaf",
+      "x",
+      "y",
+      "mean_dim1",
+      "mean_dim2",
+      "name",
+      "it",
+      "color"
+    )
+  )
+}
 
 
 # Data access ------------------------------------------------------------------
@@ -1268,7 +1273,7 @@ dna_getRegex <- function(connection) {
 #' Retrieve a dataframe with all settings related to the GUI.
 #'
 #' The \code{dna_getSettings} function retrieves all settings related to the
-#' graphical user interface, including popup window width, active coder etc.
+#' graphical user interface, including pop-up window width, active coder etc.
 #'
 #' @param connection A \code{dna_connection} object created by the
 #'   \code{dna_connection} function.
@@ -2697,7 +2702,7 @@ dna_updateCoder <- function(connection,
 #'
 #' The \code{dna_updateSetting} function can update a setting related to the
 #' graphical user interface, such as the last active coder, the width of
-#' statement popup windows, or the criterion by which statements are colored in
+#' statement pop-up windows, or the criterion by which statements are colored in
 #' the text.
 #'
 #' @param connection A \code{dna_connection} object created by the
@@ -2713,7 +2718,7 @@ dna_updateCoder <- function(connection,
 #'   (see \link{dna_getCoders}), but as character objects. This setting ensures
 #'   that this coder is activated in the graphical user interface when the
 #'   database is opened. For \code{"popupWidth"}, valid values range from
-#'   \code{"220"} to \code{"9999"}. This determines the width of the popup
+#'   \code{"220"} to \code{"9999"}. This determines the width of the pop-up
 #'   windows in the graphical user interface, in which the variables can be
 #'   coded. For \code{"version"}, a version string like \code{"2.0 beta 24"}
 #'   is permitted. This indicates the version number that was used to create the
@@ -4567,12 +4572,20 @@ print.dna_scale <- function(x, ...) {
 #'   both organizations have a negative stance on the concept. With an
 #'   integer qualifier, the tie weight between the organizations would be
 #'   proportional to the similarity or distance between the two organizations
-#'   on the scale of the integer variable. In a two-mode network, the
-#'   qualifier variable can be used to retain only positive or only negative
-#'   statements or subtract negative from positive mentions. All of this
-#'   depends on the setting of the \code{qualifierAggregation} argument. For
-#'   event lists, the qualifier variable is only used for filtering out
-#'   duplicates (depending on the setting of the \code{duplicate} argument.
+#'   on the scale of the integer variable.
+#'   
+#'   In a two-mode network, the qualifier variable can be used to retain only
+#'   positive or only negative statements or subtract negative from positive
+#'   mentions. All of this depends on the setting of the
+#'   \code{qualifierAggregation} argument. For event lists, the qualifier
+#'   variable is only used for filtering out duplicates (depending on the
+#'   setting of the \code{duplicate} argument.
+#'   
+#'   The qualifier can also be \code{NULL}, in which case it is ignored, meaning
+#'   that values in \code{variable1} and \code{variable2} are unconditionally
+#'   associated with each other in the network when they co-occur. This is
+#'   identical to selecting a qualifier variable and setting
+#'   \code{qualifierAggregation = "ignore"}.
 #' @param qualifierAggregation The aggregation rule for the \code{qualifier}
 #'   variable. In one-mode networks, this must be \code{"ignore"} (for
 #'   ignoring the qualifier variable), \code{"congruence"} (for recording a
@@ -4716,6 +4729,7 @@ print.dna_scale <- function(x, ...) {
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
 #' @importFrom rJava .jevalArray
+#' @importFrom rJava .jnull
 #' @export
 dna_network <- function(connection,
                         networkType = "twomode",
@@ -4790,6 +4804,34 @@ dna_network <- function(connection,
   var <- .jarray(var)
   val <- .jarray(val)
   
+  if (is.null(variable1) || is.na(variable1) || length(variable1) != 1 || !is.character(variable1)) {
+    stop("'variable1' must be a character object of length 1.")
+  }
+  if (is.null(variable2) || is.na(variable2) || length(variable2) != 1 || !is.character(variable2)) {
+    stop("'variable2' must be a character object of length 1.")
+  }
+  if (is.null(qualifier) || is.na(qualifier)) {
+    qualifier <- .jnull(class = "java/lang/String")
+  } else if (length(qualifier) != 1 || !is.character(qualifier)) {
+    stop("'qualifier' must be NULL or a character object of length 1.")
+  }
+  if (is.null(variable1Document) || is.na(variable1Document) || length(variable1Document) != 1 || !is.logical(variable1Document)) {
+    stop("'variable1Document' must be TRUE or FALSE.")
+  }
+  if (is.null(variable2Document) || is.na(variable2Document) || length(variable2Document) != 1 || !is.logical(variable2Document)) {
+    stop("'variable2Document' must be TRUE or FALSE.")
+  }
+  if (is.null(normalization) || is.na(normalization) || length(normalization) != 1 || !is.character(normalization)
+      || !normalization %in% c("no", "activity", "prominence", "average", "Jaccard", "jaccard", "cosine")) {
+    stop("'normalization' must be 'no', 'activity', 'prominence', 'average', 'Jaccard', or 'cosine'.")
+  }
+  if (normalization %in% c("activity", "prominence") && networkType == "onemode") {
+    stop("'normalization' must be 'no', 'average', 'Jaccard', or 'cosine' when networkType = 'onemode'.")
+  }
+  if (normalization %in% c("average", "Jaccard", "jaccard", "cosine") && networkType == "twomode") {
+    stop("'normalization' must be 'no', 'activity', or 'prominence' when networkType = 'twomode'.")
+  }
+
   # call Java function to create network
   .jcall(connection$dna_connection,
          "V",

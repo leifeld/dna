@@ -229,13 +229,14 @@ public class ExporterR {
 	 * @param invertTypes            boolean indicating whether the document-level type values should be included (= true) rather than excluded
 	 * @param verbose                Report progress to the console?
 	 * @return                       A Matrix object containing the resulting one-mode or two-mode network
+	 * @throws Exception 
 	 */
 	public void rNetwork(String networkType, String statementType, String variable1, boolean variable1Document, String variable2, 
 			boolean variable2Document, String qualifier, String qualifierAggregation, String normalization, boolean includeIsolates, 
 			String duplicates, String startDate, String stopDate, String startTime, String stopTime, String timewindow, int windowsize, 
 			String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources, String[] excludeSections, 
 			String[] excludeTypes, boolean invertValues, boolean invertAuthors, boolean invertSources, boolean invertSections, 
-			boolean invertTypes, boolean verbose) {
+			boolean invertTypes, boolean verbose) throws Exception {
 		
 		// step 1: preprocess arguments
 		int max = 5;
@@ -256,56 +257,68 @@ public class ExporterR {
 		} else if (networkType.equals("onemode")) {
 			networkType = "One-mode network";
 		} else {
-			System.err.println("Network type was not recognized. Use 'twomode', 'onemode', or 'eventlist'.");
+			throw new Exception("Network type was not recognized. Use 'twomode', 'onemode', or 'eventlist'.");
 		}
 		
 		// process and check validity of statement type etc.
 		// valid R input for qualifierAggregation: 'ignore', 'combine', 'subtract', 'congruence', or 'conflict'
 		StatementType st = data.getStatementType(statementType);
 		if (st == null) {
-			System.err.println("Statement type '" + statementType + " does not exist!");
+			throw new Exception("Statement type '" + statementType + " does not exist!");
 		}
 		
 		if (!variable1.equals("author") && !variable1.equals("source") && !variable1.equals("section") && !variable1.equals("type")) {
 			if (!st.getVariables().containsKey(variable1)) {
-				System.err.println("Variable 1 ('" + variable1 + "') does not exist in this statement type.");
+				throw new Exception("Variable 1 ('" + variable1 + "') does not exist in this statement type.");
 			}
 			if (!st.getVariables().get(variable1).equals("short text")) {
-				System.err.println("Variable 1 ('" + variable1 + "') is not a short text variable.");
+				throw new Exception("Variable 1 ('" + variable1 + "') is not a short text variable.");
 			}
 		}
 		
 		if (!variable2.equals("author") && !variable2.equals("source") && !variable2.equals("section") && !variable2.equals("type")) {
 			if (!st.getVariables().containsKey(variable2)) {
-				System.err.println("Variable 2 ('" + variable2 + "') does not exist in this statement type.");
+				throw new Exception("Variable 2 ('" + variable2 + "') does not exist in this statement type.");
 			}
 			if (!st.getVariables().get(variable2).equals("short text")) {
-				System.err.println("Variable 2 ('" + variable2 + "') is not a short text variable.");
+				throw new Exception("Variable 2 ('" + variable2 + "') is not a short text variable.");
 			}
 		}
 		
-		if (!st.getVariables().containsKey(qualifier)) {
-			System.err.println("The qualifier variable ('" + qualifier + "') does not exist in this statement type.");
+		if (variable1Document == true && (!variable1.equals("author") && !variable1.equals("source") 
+				&& !variable1.equals("section") && !variable1.equals("type"))) {
+			throw new Exception("'" + variable1 + "' is not a valid document-level variable.");
 		}
-		if (!st.getVariables().get(qualifier).equals("boolean") && !st.getVariables().get(qualifier).equals("integer")) {
-			System.err.println("The qualifier variable ('" + qualifier + "') is not a boolean or integer variable.");
+		if (variable2Document == true && (!variable2.equals("author") && !variable2.equals("source") 
+				&& !variable2.equals("section") && !variable2.equals("type"))) {
+			throw new Exception("'" + variable2 + "' is not a valid document-level variable.");
+		}
+		
+		if (qualifier != null && !st.getVariables().containsKey(qualifier)) {
+			throw new Exception("The qualifier variable ('" + qualifier + "') does not exist in this statement type.");
+		}
+		if (qualifier != null && !st.getVariables().get(qualifier).equals("boolean") && !st.getVariables().get(qualifier).equals("integer")) {
+			throw new Exception("The qualifier variable ('" + qualifier + "') is not a boolean or integer variable.");
 		}
 		
 		if (!qualifierAggregation.equals("ignore") && !qualifierAggregation.equals("subtract") && !qualifierAggregation.equals("combine")
 				&& !qualifierAggregation.equals("congruence") && !qualifierAggregation.equals("conflict")) {
-			System.err.println("'qualifierAggregation' must be 'ignore', 'combine', 'subtract', 'congruence', or 'conflict'.");
+			throw new Exception("'qualifierAggregation' must be 'ignore', 'combine', 'subtract', 'congruence', or 'conflict'.");
 		}
 		if (qualifierAggregation.equals("combine") && !networkType.equals("Two-mode network")) {
-			System.err.println("qualifierAggregation = 'combine' is only possible with two-mode networks.");
+			throw new Exception("qualifierAggregation = 'combine' is only possible with two-mode networks.");
 		}
 		if (qualifierAggregation.equals("congruence") && !networkType.equals("One-mode network")) {
-			System.err.println("qualifierAggregation = 'congruence' is only possible with one-mode networks.");
+			throw new Exception("qualifierAggregation = 'congruence' is only possible with one-mode networks.");
 		}
 		if (qualifierAggregation.equals("conflict") && !networkType.equals("One-mode network")) {
-			System.err.println("qualifierAggregation = 'conflict' is only possible with one-mode networks.");
+			throw new Exception("qualifierAggregation = 'conflict' is only possible with one-mode networks.");
 		}
 		
-		boolean ignoreQualifier = qualifier.equals("ignore");
+		if (qualifier == null) {
+			qualifierAggregation = "ignore";
+		}
+		boolean ignoreQualifier = qualifierAggregation.equals("ignore");
 		int statementTypeId = st.getId();
 		
 		// format normalization argument
@@ -319,22 +332,22 @@ public class ExporterR {
 		}
 		if (!normalization.equals("no") && !normalization.equals("activity") && !normalization.equals("prominence") 
 				&& !normalization.equals("average") && !normalization.equals("Jaccard") && !normalization.equals("cosine")) {
-			System.err.println("'normalization' must be 'no', 'activity', 'prominence', 'average', 'Jaccard', or 'cosine'.");
+			throw new Exception("'normalization' must be 'no', 'activity', 'prominence', 'average', 'Jaccard', or 'cosine'.");
 		}
 		if (normalization.equals("activity") && !networkType.equals("Two-mode network")) {
-			System.err.println("'normalization = 'activity' is only possible with two-mode networks.");
+			throw new Exception("'normalization = 'activity' is only possible with two-mode networks.");
 		}
 		if (normalization.equals("prominence") && !networkType.equals("Two-mode network")) {
-			System.err.println("'normalization = 'prominence' is only possible with two-mode networks.");
+			throw new Exception("'normalization = 'prominence' is only possible with two-mode networks.");
 		}
 		if (normalization.equals("average") && !networkType.equals("One-mode network")) {
-			System.err.println("'normalization = 'average' is only possible with one-mode networks.");
+			throw new Exception("'normalization = 'average' is only possible with one-mode networks.");
 		}
 		if (normalization.equals("Jaccard") && !networkType.equals("One-mode network")) {
-			System.err.println("'normalization = 'Jaccard' is only possible with one-mode networks.");
+			throw new Exception("'normalization = 'Jaccard' is only possible with one-mode networks.");
 		}
 		if (normalization.equals("cosine") && !networkType.equals("One-mode network")) {
-			System.err.println("'normalization = 'cosine' is only possible with one-mode networks.");
+			throw new Exception("'normalization = 'cosine' is only possible with one-mode networks.");
 		}
 		if (normalization.equals("average")) {
 			normalization = "average activity";
@@ -345,7 +358,7 @@ public class ExporterR {
 		// valid Java output: 'include all duplicates', 'ignore per document', 'ignore per calendar week', 'ignore per calendar month', 'ignore per calendar year', or 'ignore across date range'
 		if (!duplicates.equals("include") && !duplicates.equals("document") && !duplicates.equals("week") && !duplicates.equals("month") 
 				&& !duplicates.equals("year") && !duplicates.equals("acrossrange")) {
-			System.err.println("'duplicates' must be 'include', 'document', 'week', 'month', 'year', or 'acrossrange'.");
+			throw new Exception("'duplicates' must be 'include', 'document', 'week', 'month', 'year', or 'acrossrange'.");
 		}
 		if (duplicates.equals("include")) {
 			duplicates = "include all duplicates";
@@ -368,22 +381,22 @@ public class ExporterR {
 		try {
 			start = df.parse(startString);
 		} catch (ParseException e) {
-			System.err.println("Start date or time is invalid!");
+			System.err.println("\nStart date or time is invalid!");
 		}
 		if (!startString.equals(df.format(start))) {
 			startDate = null;
-			System.err.println("Start date or time is invalid!");
+			System.err.println("\nStart date or time is invalid!");
 		}
 		String stopString = stopDate + " " + stopTime;
 		Date stop = null;
 		try {
 			stop = df.parse(stopString);
 		} catch (ParseException e) {
-			System.err.println("Stop date or time is invalid!");
+			System.err.println("\nStop date or time is invalid!");
 		}
 		if (!stopString.equals(df.format(stop))) {
 			stopDate = null;
-			System.err.println("Stop date or time is invalid!");
+			System.err.println("\nStop date or time is invalid!");
 		}
 		
 		// format time window arguments

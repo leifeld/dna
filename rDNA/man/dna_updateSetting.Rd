@@ -22,7 +22,7 @@ the respective statement type or by the color of the active coder. For
 (see \link{dna_getCoders}), but as character objects. This setting ensures
 that this coder is activated in the graphical user interface when the
 database is opened. For \code{"popupWidth"}, valid values range from
-\code{"220"} to \code{"9999"}. This determines the width of the popup
+\code{"220"} to \code{"9999"}. This determines the width of the pop-up
 windows in the graphical user interface, in which the variables can be
 coded. For \code{"version"}, a version string like \code{"2.0 beta 24"}
 is permitted. This indicates the version number that was used to create the
@@ -36,7 +36,7 @@ Update a setting related to the graphical user interface.
 \details{
 The \code{dna_updateSetting} function can update a setting related to the
 graphical user interface, such as the last active coder, the width of
-statement popup windows, or the criterion by which statements are colored in
+statement pop-up windows, or the criterion by which statements are colored in
 the text.
 }
 \author{
