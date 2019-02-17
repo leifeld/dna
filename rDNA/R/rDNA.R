@@ -260,7 +260,7 @@ dna_gui <- function(infile = NULL,
       )
     }
   }
-  
+
   if (is.null(infile)) {
     f <- ""
   } else if (is.null(login) || is.null(password) || (login == "" && password == "")) {
@@ -810,7 +810,7 @@ dna_addRegex <- function(connection, regex, color = "#FFFF00") {
 #' \code{0}).
 #'
 #' @author Philip Leifeld
-#' 
+#'
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
 #' @export
@@ -936,7 +936,7 @@ dna_addStatementType <- function(connection, label, color = "#FFFF00", ...) {
   if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
     stop("'color' is not a hex RGB value of the form '#FFFF00'.")
   }
-  
+
   dots <- list(...)
   if (any(sapply(dots, length) > 1)) {
     stop("Some arguments in ... are longer than 1. All variables need to be associated with exactly one data type.")
@@ -957,7 +957,7 @@ dna_addStatementType <- function(connection, label, color = "#FFFF00", ...) {
     variableTypes <- character()
   }
   variableTypes <- .jarray(variableTypes)  # wrap in .jarray in case there is only one element
-  
+
   .jcall(connection$dna_connection, "V", "addStatementType", label, color, variableNames, variableTypes)
 }
 
@@ -976,7 +976,7 @@ dna_addStatementType <- function(connection, label, color = "#FFFF00", ...) {
 #'   string, for example \code{1} or \code{"DNA Statement"}.
 #' @param variable The name of the new variable as a character object. Only
 #'   characters and numbers are allowed, i.e., no whitespace characters.
-#' @param dataType The data type of the new variable. Valid values are 
+#' @param dataType The data type of the new variable. Valid values are
 #'   \code{"short text"} (for things like persons, organizations, locations
 #'   etc., up to 200 characters), \code{"long text"} (for things like notes,
 #'   can store more than 200 characters), \code{"boolean"} (for qualifier
@@ -1420,12 +1420,12 @@ dna_getVariables <- function(connection, statementType) {
   } else if (!is.character(statementType) && !is.integer(statementType)) {
     stop("'statementType' must be an integer or character object of length 1.")
   }
-  
+
   variables <- J(connection$dna_connection, "getVariables", statementType)
   variables <- lapply(variables, .jevalArray)
   variables <- as.data.frame(variables, stringsAsFactors = FALSE)
   colnames(variables) <- c("label", "type")
-  
+
   return(variables)
 }
 
@@ -1436,7 +1436,7 @@ dna_getVariables <- function(connection, statementType) {
 #' This function converts a variable into a different data type. The user
 #' supplies the statement type in which the variable is defined and the variable
 #' name, and the variable is converted into a different data type.
-#' 
+#'
 #' Depending on the current data type of the variable, different actions are
 #' taken as follows:
 #' \describe{
@@ -1454,7 +1454,7 @@ dna_getVariables <- function(connection, statementType) {
 #'    there are more than two values across all statements, an error message
 #'    will be printed.}
 #' }
-#' 
+#'
 #' By default, changes are only simulated, but this can be changed using the
 #' \code{simulate} argument in order to actually apply the changes to the
 #' database.
@@ -3303,7 +3303,7 @@ print.dna_cluster <- function(x, ...) {
 #'   of the scaling should be printed to the R console. If set to a numeric
 #'   value, every \code{verboseth} iteration will be printed. If set to
 #'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in
-#'   divided by \code{100}.
+#'   divided by \code{10}.
 #' @param seed The random seed for the scaling.
 #' @param ... Additional arguments passed to \link{dna_network}. Actors can
 #'   e.g. be removed with the \code{excludeValues} arguments. The scaling can
@@ -3391,7 +3391,7 @@ dna_scale1dbin <- function(connection,
     mcmc = mcmc_iterations,
     thin = mcmc_thin,
     verbose = ifelse(verbose == TRUE,
-                     ((mcmc_iterations + mcmc_burnin) / 100),
+                     ((mcmc_iterations + mcmc_burnin) / 10),
                      verbose),
     seed = seed,
     theta.start = theta_start,
@@ -3462,14 +3462,6 @@ dna_scale1dbin <- function(connection,
     dna_scale$attributes <- actors
   } else if (store_variables == variable2){
     dna_scale$attributes <- concepts
-  }
-  if (drop_constant_concepts &
-      (store_variables == "both" | store_variables == variable2)) {
-    if (!(all(colnames(nw2) %in% concepts$Row.names))) {
-      warning("The following constant concepts have been dropped:\n",
-              paste(colnames(nw2)[!colnames(nw2) %in% concepts$Row.names],
-                    collapse = "\n"))
-    }
   }
   dna_scale$call <- mget(names(formals()), sys.frame(sys.nframe()))
   dna_scale$call$connection <- NULL
@@ -3623,7 +3615,7 @@ dna_scale1dbin <- function(connection,
 #'   of the scaling should be printed to the R console. If set to a numeric
 #'   value, every \code{verboseth} iteration will be printed. If set to
 #'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in
-#'   divided by \code{100}.
+#'   divided by \code{10}.
 #' @param seed The random seed for the scaling.
 #' @param ... Additional arguments passed to \link{dna_network}. Actors can
 #'   e.g., be removed with the \code{excludeValues} arguments. The scaling can
@@ -3671,7 +3663,7 @@ dna_scale1dord <- function(connection,
                            mcmc_burnin = 1000,
                            mcmc_thin = 10,
                            mcmc_tune = 1.5,
-                           mcmc_normalize = TRUE,
+                           mcmc_normalize = FALSE,
                            lambda_start = NA,
                            lambda_prior_mean = 0,
                            lambda_prior_variance = 1,
@@ -3708,7 +3700,7 @@ dna_scale1dord <- function(connection,
     thin = mcmc_thin,
     tune = mcmc_tune,
     verbose = ifelse(verbose == TRUE,
-                     ((mcmc_iterations + mcmc_burnin) / 100),
+                     ((mcmc_iterations + mcmc_burnin) / 10),
                      verbose),
     seed = seed,
     lambda.start = lambda_start,
@@ -3776,14 +3768,6 @@ dna_scale1dord <- function(connection,
     dna_scale$attributes <- actors
   } else if (store_variables == variable2){
     dna_scale$attributes <- concepts
-  }
-  if (drop_constant_concepts &
-      (store_variables == "both" | store_variables == variable2)) {
-    if (!(all(colnames(nw2) %in% concepts$Row.names))) {
-      warning("The following constant concepts have been dropped:\n",
-              paste(colnames(nw2)[!colnames(nw2) %in% concepts$Row.names],
-                    collapse = "\n"))
-    }
   }
   dna_scale$call <- mget(names(formals()), sys.frame(sys.nframe()))
   dna_scale$call$connection <- NULL
@@ -3897,7 +3881,7 @@ dna_scale1dord <- function(connection,
 #'   argument refers to the item difficulty parameters, which in
 #'   general should not be constrained. All values above \code{1} relate to the
 #'   item discrimination parameters on the single dimensions. These should be
-#'   used for constraints on concepts. Three possible forms of constraints are
+#'   used for constraints on concepts. Three forms of constraints are
 #'   possible: \code{conceptname = list(2, value)} will constrain a concept to
 #'   be equal to the specified value (e.g., 0) on the first dimension of the
 #'   item discrimination parameter. \code{conceptname = list(2,"+")} will
@@ -3938,7 +3922,7 @@ dna_scale1dord <- function(connection,
 #'   of the scaling should be printed to the R console. If set to a numeric
 #'   value, every \code{verboseth} iteration will be printed. If set to
 #'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in
-#'   divided by \code{100}.
+#'   divided by \code{10}.
 #' @param seed The random seed for the scaling.
 #' @param ... Additional arguments passed to \link{dna_network}. Actors can
 #'   e.g., be removed with the \code{excludeValues} arguments. The scaling can
@@ -4018,7 +4002,7 @@ dna_scale2dbin <- function(connection,
     mcmc = mcmc_iterations,
     thin = mcmc_thin,
     verbose = ifelse(verbose == TRUE,
-                     ((mcmc_iterations + mcmc_burnin) / 100),
+                     ((mcmc_iterations + mcmc_burnin) / 10),
                      verbose),
     seed = seed,
     alphabeta.start = alpha_beta_start,
@@ -4094,14 +4078,6 @@ dna_scale2dbin <- function(connection,
     dna_scale$attributes <- actors
   } else if (store_variables == variable2){
     dna_scale$attributes <- concepts
-  }
-  if (drop_constant_concepts &
-      (store_variables == "both" | store_variables == variable2)) {
-    if (!(all(colnames(nw2) %in% concepts$Row.names))) {
-      warning("The following constant concepts have been dropped:\n",
-              paste(colnames(nw2)[!colnames(nw2) %in% concepts$Row.names],
-                    collapse = "\n"))
-    }
   }
   dna_scale$call <- mget(names(formals()), sys.frame(sys.nframe()))
   dna_scale$call$connection <- NULL
@@ -4218,7 +4194,7 @@ dna_scale2dbin <- function(connection,
 #'   argument refers to the item difficulty parameters, which in
 #'   general should not be constrained. All values above \code{1} relate to the
 #'   item discrimination parameters on the single dimensions. These should be
-#'   used for constraints on concepts. Three possible forms of constraints are
+#'   used for constraints on concepts. Three forms of constraints are
 #'   possible: \code{conceptname = list(2, value)} will constrain a concept to
 #'   be equal to the specified value (e.g., 0) on the first dimension of the
 #'   item discrimination parameter. \code{conceptname = list(2,"+")} will
@@ -4261,7 +4237,7 @@ dna_scale2dbin <- function(connection,
 #'   of the scaling should be printed to the R console. If set to a numeric
 #'   value, every \code{verboseth} iteration will be printed. If set to
 #'   \code{TRUE}, \code{verbose} will print the total of iterations and burn-in
-#'   divided by \code{100}.
+#'   divided by \code{10}.
 #' @param seed The random seed for the scaling.
 #' @param ... Additional arguments passed to \link{dna_network}. Actors can
 #'   e.g., be removed with the \code{excludeValues} arguments. The scaling can
@@ -4346,7 +4322,7 @@ dna_scale2dord <- function(connection,
     thin = mcmc_thin,
     tune = mcmc_tune,
     verbose = ifelse(verbose == TRUE,
-                     ((mcmc_iterations + mcmc_burnin) / 100),
+                     ((mcmc_iterations + mcmc_burnin) / 10),
                      verbose),
     seed = seed,
     lambda.start = lambda_start,
@@ -4422,14 +4398,6 @@ dna_scale2dord <- function(connection,
     dna_scale$attributes <- actors
   } else if (store_variables == variable2){
     dna_scale$attributes <- concepts
-  }
-  if (drop_constant_concepts &
-      (store_variables == "both" | store_variables == variable2)) {
-    if (!(all(colnames(nw2) %in% concepts$Row.names))) {
-      warning("The following constant concepts have been dropped:\n",
-              paste(colnames(nw2)[!colnames(nw2) %in% concepts$Row.names],
-                    collapse = "\n"))
-    }
   }
   dna_scale$call <- mget(names(formals()), sys.frame(sys.nframe()))
   dna_scale$call$connection <- NULL
@@ -4575,14 +4543,14 @@ print.dna_scale <- function(x, ...) {
 #'   integer qualifier, the tie weight between the organizations would be
 #'   proportional to the similarity or distance between the two organizations
 #'   on the scale of the integer variable.
-#'   
+#'
 #'   In a two-mode network, the qualifier variable can be used to retain only
 #'   positive or only negative statements or subtract negative from positive
 #'   mentions. All of this depends on the setting of the
 #'   \code{qualifierAggregation} argument. For event lists, the qualifier
 #'   variable is only used for filtering out duplicates (depending on the
 #'   setting of the \code{duplicate} argument.
-#'   
+#'
 #'   The qualifier can also be \code{NULL}, in which case it is ignored, meaning
 #'   that values in \code{variable1} and \code{variable2} are unconditionally
 #'   associated with each other in the network when they co-occur. This is
@@ -4771,7 +4739,7 @@ dna_network <- function(connection,
                         fileFormat = NULL,
                         outfile = NULL,
                         verbose = TRUE) {
-  
+
   # check and convert exclude arguments
   if (!is.character(excludeAuthors)) {
     stop("'excludeAuthors' must be a character object.")
@@ -4792,7 +4760,7 @@ dna_network <- function(connection,
   excludeSources <- .jarray(excludeSources)
   excludeSections <- .jarray(excludeSections)
   excludeTypes <- .jarray(excludeTypes)
-  
+
   # compile exclude variables and values vectors
   dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
   count <- 0
@@ -4814,7 +4782,7 @@ dna_network <- function(connection,
   }
   var <- .jarray(var)
   val <- .jarray(val)
-  
+
   if (is.null(variable1) || is.na(variable1) || length(variable1) != 1 || !is.character(variable1)) {
     stop("'variable1' must be a character object of length 1.")
   }
@@ -5060,7 +5028,7 @@ dna_timeWindow <- function(connection,
                            ncpus = 1,
                            cl = NULL,
                            verbose = 1,
-                           ...) { # passed on to dna_network
+                           ...) {
   dots <- list(...)
   if ("excludeAuthors" %in% names(dots)) {
     excludeAuthors <- unname(unlist(dots["excludeAuthors"]))
@@ -5395,7 +5363,7 @@ dna_timeWindow <- function(connection,
         try({
           suppressWarnings(mi <- cor(x$subt))
           iter <- 1
-          while(any(abs(mi) <= 0.999) & iter <= 50) {
+          while (any(abs(mi) <= 0.999) & iter <= 50) {
             mi[is.na(mi)] <- 0
             mi <- cor(mi)
             iter <- iter + 1
@@ -5407,7 +5375,7 @@ dna_timeWindow <- function(connection,
         try({
           suppressWarnings(mi <- cor(t(combined)))
           iter <- 1
-          while(any(abs(mi) <= 0.999) & iter <= 50) {
+          while (any(abs(mi) <= 0.999) & iter <= 50) {
             mi[is.na(mi)] <- 0
             mi <- cor(mi)
             iter <- iter + 1
@@ -5491,7 +5459,7 @@ dna_timeWindow <- function(connection,
         )
       } else {
         mod.m <- lapply(Types, function(x) {
-          if (verbose|verbose == 2) {
+          if (verbose | verbose == 2) {
             cat("Retrieving time window networks... Calculating Type =", Types[Types %in% x], "\n")
           }
           nw <- do.call(dna_network,
@@ -8084,14 +8052,14 @@ dna_barplot <- function(connection,
 #' chain, while multimodality might indicate an identification problem leading
 #' to non-convergence.
 #'
-#' \code{"geweke"} conducts a difference of means test for the sampled values
-#' for two sections of the chain, by comparing the first 10 percent of
-#' iterations with the final 50 percent of iterations. If the samples are drawn
-#' from the stationary distribution of the chain, a difference of means test
-#' should be statistically significant at some conventional level (in our case
-#' 0.05). The returned test statistic is a standard Z-score. All values should
-#' be below the 1.96 value which indicates significance at the p =< 0.05
-#' level.
+#' Similar to the T-Test, \code{"geweke"} conducts a difference of means test
+#' for the sampled values for two sections of the chain, by comparing the means
+#' of the first 10 percent of iterations with the final 50 percent of
+#' iterations. This is done under the assumption that only the last half of
+#' the chain has converged to the target distribution. The returned test
+#' statistic is a standard Z-score. All values should be below the 1.96 value
+#' which indicates significance at the p =< 0.05 level, meaning that the chain
+#' has converged.
 #'
 #' In case your chain has not converged, a first solution could be to increase
 #' the \code{iterations} and the \code{burn-in} phase of your scaling. Other
@@ -8950,9 +8918,20 @@ ord_recode <- function(connection,
     }
   }
   if (isTRUE(drop_min_actors > 1) | isTRUE(drop_min_concepts > 1)) {
-    nw_exclude <- nw2
-    nw_exclude[nw_exclude > 1] <- 1
-    nw_exclude[is.na(nw_exclude)] <- 0
+    if (zero_as_na == FALSE) {
+      if (is.null(threshold)) {
+        nw_exclude <- nw
+        nw_exclude[nw_exclude > 1] <- 1
+      } else {
+        nw_exclude <- nw_com
+        nw_exclude[!is.nan(nw_exclude)] <- 1
+        nw_exclude[is.nan(nw_exclude)] <- 0
+      }
+    } else {
+      nw_exclude <- nw2
+      nw_exclude[nw_exclude > 1] <- 1
+      nw_exclude[is.na(nw_exclude)] <- 0
+    }
     if (isTRUE(drop_min_actors > 1)) {
       if (drop_min_actors > max(rowSums(nw_exclude))) {
         stop(paste0("The specified number in 'drop_min_actors' is higher than ",

@@ -65,14 +65,14 @@ values for each parameter. Unimodality should indicate convergence of the
 chain, while multimodality might indicate an identification problem leading
 to non-convergence.
 
-\code{"geweke"} conducts a difference of means test for the sampled values
-for two sections of the chain, by comparing the first 10 percent of
-iterations with the final 50 percent of iterations. If the samples are drawn
-from the stationary distribution of the chain, a difference of means test
-should be statistically significant at some conventional level (in our case
-0.05). The returned test statistic is a standard Z-score. All values should
-be below the 1.96 value which indicates significance at the p =< 0.05
-level.
+Similar to the T-Test, \code{"geweke"} conducts a difference of means test
+for the sampled values for two sections of the chain, by comparing the means
+of the first 10 percent of iterations with the final 50 percent of
+iterations. This is done under the assumption that only the last half of
+the chain has converged to the target distribution. The returned test
+statistic is a standard Z-score. All values should be below the 1.96 value
+which indicates significance at the p =< 0.05 level, meaning that the chain
+has converged.
 
 In case your chain has not converged, a first solution could be to increase
 the \code{iterations} and the \code{burn-in} phase of your scaling. Other

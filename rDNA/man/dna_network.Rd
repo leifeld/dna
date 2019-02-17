@@ -55,27 +55,27 @@ variable is at the document level (i.e., \code{"author"},
 \code{"title"}}
 
 \item{qualifier}{The qualifier variable. In a one-mode network, this
-variable can be used to count only congruence or conflict ties. For
-example, in an organization x organization network via common concepts,
-a binary \code{"agreement"} qualifier could be used to record only ties
-where both organizations have a positive stance on the concept or where
-both organizations have a negative stance on the concept. With an
-integer qualifier, the tie weight between the organizations would be
-proportional to the similarity or distance between the two organizations
-on the scale of the integer variable.
+  variable can be used to count only congruence or conflict ties. For
+  example, in an organization x organization network via common concepts,
+  a binary \code{"agreement"} qualifier could be used to record only ties
+  where both organizations have a positive stance on the concept or where
+  both organizations have a negative stance on the concept. With an
+  integer qualifier, the tie weight between the organizations would be
+  proportional to the similarity or distance between the two organizations
+  on the scale of the integer variable.
 
-In a two-mode network, the qualifier variable can be used to retain only
-positive or only negative statements or subtract negative from positive
-mentions. All of this depends on the setting of the
-\code{qualifierAggregation} argument. For event lists, the qualifier
-variable is only used for filtering out duplicates (depending on the
-setting of the \code{duplicate} argument.
+  In a two-mode network, the qualifier variable can be used to retain only
+  positive or only negative statements or subtract negative from positive
+  mentions. All of this depends on the setting of the
+  \code{qualifierAggregation} argument. For event lists, the qualifier
+  variable is only used for filtering out duplicates (depending on the
+  setting of the \code{duplicate} argument.
 
-The qualifier can also be \code{NULL}, in which case it is ignored, meaning
-that values in \code{variable1} and \code{variable2} are unconditionally
-associated with each other in the network when they co-occur. This is
-identical to selecting a qualifier variable and setting
-\code{qualifierAggregation = "ignore"}.}
+  The qualifier can also be \code{NULL}, in which case it is ignored, meaning
+  that values in \code{variable1} and \code{variable2} are unconditionally
+  associated with each other in the network when they co-occur. This is
+  identical to selecting a qualifier variable and setting
+  \code{qualifierAggregation = "ignore"}.}
 
 \item{qualifierAggregation}{The aggregation rule for the \code{qualifier}
   variable. In one-mode networks, this must be \code{"ignore"} (for

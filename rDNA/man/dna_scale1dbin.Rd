@@ -113,7 +113,7 @@ concept should have been jointly mentioned by actors. Defaults to \code{2}.}
 of the scaling should be printed to the R console. If set to a numeric
 value, every \code{verboseth} iteration will be printed. If set to
 \code{TRUE}, \code{verbose} will print the total of iterations and burn-in
-divided by \code{100}.}
+divided by \code{10}.}
 
 \item{seed}{The random seed for the scaling.}
 

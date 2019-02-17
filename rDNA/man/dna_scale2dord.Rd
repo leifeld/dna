@@ -48,7 +48,7 @@ concept parameters. Note that value \code{1} in the brackets of the
 argument refers to the item difficulty parameters, which in
 general should not be constrained. All values above \code{1} relate to the
 item discrimination parameters on the single dimensions. These should be
-used for constraints on concepts. Three possible forms of constraints are
+used for constraints on concepts. Three forms of constraints are
 possible: \code{conceptname = list(2, value)} will constrain a concept to
 be equal to the specified value (e.g., 0) on the first dimension of the
 item discrimination parameter. \code{conceptname = list(2,"+")} will
@@ -103,7 +103,7 @@ concept should have been jointly mentioned by actors. Defaults to \code{2}.}
 of the scaling should be printed to the R console. If set to a numeric
 value, every \code{verboseth} iteration will be printed. If set to
 \code{TRUE}, \code{verbose} will print the total of iterations and burn-in
-divided by \code{100}.}
+divided by \code{10}.}
 
 \item{seed}{The random seed for the scaling.}
 

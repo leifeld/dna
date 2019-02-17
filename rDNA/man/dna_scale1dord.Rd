@@ -8,7 +8,7 @@ dna_scale1dord(connection, variable1 = "organization",
   variable2 = "concept", qualifier = "agreement", zero_as_na = TRUE,
   threshold = NULL, lambda_constraints = NULL,
   mcmc_iterations = 20000, mcmc_burnin = 1000, mcmc_thin = 10,
-  mcmc_tune = 1.5, mcmc_normalize = TRUE, lambda_start = NA,
+  mcmc_tune = 1.5, mcmc_normalize = FALSE, lambda_start = NA,
   lambda_prior_mean = 0, lambda_prior_variance = 1,
   store_variables = "both", drop_constant_concepts = FALSE,
   drop_min_actors = 1, drop_min_concepts = 2, verbose = TRUE,
@@ -105,7 +105,7 @@ concept should have been jointly mentioned by actors. Defaults to \code{2}.}
 of the scaling should be printed to the R console. If set to a numeric
 value, every \code{verboseth} iteration will be printed. If set to
 \code{TRUE}, \code{verbose} will print the total of iterations and burn-in
-divided by \code{100}.}
+divided by \code{10}.}
 
 \item{seed}{The random seed for the scaling.}
 

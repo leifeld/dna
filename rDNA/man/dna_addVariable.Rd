@@ -18,7 +18,7 @@ string, for example \code{1} or \code{"DNA Statement"}.}
 \item{variable}{The name of the new variable as a character object. Only
 characters and numbers are allowed, i.e., no whitespace characters.}
 
-\item{dataType}{The data type of the new variable. Valid values are 
+\item{dataType}{The data type of the new variable. Valid values are
 \code{"short text"} (for things like persons, organizations, locations
 etc., up to 200 characters), \code{"long text"} (for things like notes,
 can store more than 200 characters), \code{"boolean"} (for qualifier
