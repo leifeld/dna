@@ -266,18 +266,22 @@ public class ExporterR {
 			System.err.println("Statement type '" + statementType + " does not exist!");
 		}
 		
-		if (!st.getVariables().containsKey(variable1)) {
-			System.err.println("Variable 1 ('" + variable1 + "') does not exist in this statement type.");
-		}
-		if (!st.getVariables().get(variable1).equals("short text")) {
-			System.err.println("Variable 1 ('" + variable1 + "') is not a short text variable.");
+		if (!variable1.equals("author") && !variable1.equals("source") && !variable1.equals("section") && !variable1.equals("type")) {
+			if (!st.getVariables().containsKey(variable1)) {
+				System.err.println("Variable 1 ('" + variable1 + "') does not exist in this statement type.");
+			}
+			if (!st.getVariables().get(variable1).equals("short text")) {
+				System.err.println("Variable 1 ('" + variable1 + "') is not a short text variable.");
+			}
 		}
 		
-		if (!st.getVariables().containsKey(variable2)) {
-			System.err.println("Variable 2 ('" + variable2 + "') does not exist in this statement type.");
-		}
-		if (!st.getVariables().get(variable2).equals("short text")) {
-			System.err.println("Variable 2 ('" + variable2 + "') is not a short text variable.");
+		if (!variable2.equals("author") && !variable2.equals("source") && !variable2.equals("section") && !variable2.equals("type")) {
+			if (!st.getVariables().containsKey(variable2)) {
+				System.err.println("Variable 2 ('" + variable2 + "') does not exist in this statement type.");
+			}
+			if (!st.getVariables().get(variable2).equals("short text")) {
+				System.err.println("Variable 2 ('" + variable2 + "') is not a short text variable.");
+			}
 		}
 		
 		if (!st.getVariables().containsKey(qualifier)) {
