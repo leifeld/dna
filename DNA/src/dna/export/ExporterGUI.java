@@ -976,7 +976,7 @@ public class ExporterGUI extends JDialog {
 	}
 	
 	/**
-	 * Indicates whether the first variable is a document-level variable (i.e., "author", "source", "section", or "type").
+	 * Indicates whether the first variable is a document-level variable (i.e., "author", "source", "section", "type", "id", or "title").
 	 * 
 	 * @return boolean indicating if variable 1 as selected in the Exporter GUI is a document-level variable
 	 */
@@ -991,7 +991,7 @@ public class ExporterGUI extends JDialog {
 	}
 	
 	/**
-	 * Indicates whether the second variable is a document-level variable (i.e., "author", "source", "section", or "type").
+	 * Indicates whether the second variable is a document-level variable (i.e., "author", "source", "section", "type", "id", or "title").
 	 * 
 	 * @return boolean indicating if variable 2 as selected in the Exporter GUI is a document-level variable
 	 */
@@ -1013,7 +1013,7 @@ public class ExporterGUI extends JDialog {
 		StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
 		String[] excludeVariableItems = getVariablesList(selected, true, true, true, true);
 		DefaultListModel<String> excludeVariableModel = new DefaultListModel<String>();
-		for (int i = 0; i < excludeVariableItems.length - 4; i++) {
+		for (int i = 0; i < excludeVariableItems.length - 6; i++) {
 			excludeVariableModel.addElement(excludeVariableItems[i]);
 			excludeValues.put(excludeVariableItems[i], new ArrayList<String>());
 		}
@@ -1065,6 +1065,8 @@ public class ExporterGUI extends JDialog {
 			items.add("source");
 			items.add("section");
 			items.add("type");
+			items.add("id");
+			items.add("title");
 		}
 		String[] vec = new String[items.size()];
 		if (vec.length > 0) {
@@ -1120,6 +1122,15 @@ public class ExporterGUI extends JDialog {
 			if (networkModesBox.getSelectedItem().equals("Event list")) {
 				filterEmptyFields = false;
 			}
+			
+			/*
+			Iterator<String> it = excludeValues.keySet().iterator();
+			while (it.hasNext()) {
+				String excludeVariable = it.next();
+				System.out.println(excludeVariable);
+			}
+			*/
+			
 			statements = exportHelper.filter(statements, documents, startDate, stopDate, statementType, var1Name, var2Name, 
 					var1Document(), var2Document(), qualifierName, ignoreQualifier, duplicateSetting, 
 					excludeAuthor, excludeSource, excludeSection, excludeType, excludeValues, filterEmptyFields, true);

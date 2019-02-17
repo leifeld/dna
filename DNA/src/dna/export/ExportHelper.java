@@ -65,6 +65,10 @@ public class ExportHelper {
 					n = documents.get(docMap.get(finalStatements.get(i).getDocumentId())).getSection();
 				} else if (variable.equals("type")) {
 					n = documents.get(docMap.get(finalStatements.get(i).getDocumentId())).getType();
+				} else if (variable.equals("id")) {
+					n = String.valueOf(documents.get(docMap.get(finalStatements.get(i).getDocumentId())).getId());
+				} else if (variable.equals("title")) {
+					n = documents.get(docMap.get(finalStatements.get(i).getDocumentId())).getTitle();
 				}
 				if (!names.contains(n)) {
 					names.add(n);
@@ -248,6 +252,10 @@ public class ExportHelper {
 				    	previousVar1 = documents.get(docMap.get(al.get(j).getDocumentId())).getSection();
 				    } else if (var1.equals("type")) {
 				    	previousVar1 = documents.get(docMap.get(al.get(j).getDocumentId())).getType();
+				    } else if (var1.equals("id")) {
+				    	previousVar1 = String.valueOf(documents.get(docMap.get(al.get(j).getDocumentId())).getId());
+				    } else if (var1.equals("title")) {
+				    	previousVar1 = documents.get(docMap.get(al.get(j).getDocumentId())).getTitle();
 				    }
 				    if (var2Document == false) {
 				    	previousVar2 = (String) al.get(j).getValues().get(var2);
@@ -259,6 +267,10 @@ public class ExportHelper {
 				    	previousVar2 = documents.get(docMap.get(al.get(j).getDocumentId())).getSection();
 				    } else if (var2.equals("type")) {
 				    	previousVar2 = documents.get(docMap.get(al.get(j).getDocumentId())).getType();
+				    } else if (var2.equals("id")) {
+				    	previousVar2 = String.valueOf(documents.get(docMap.get(al.get(j).getDocumentId())).getId());
+				    } else if (var2.equals("title")) {
+				    	previousVar2 = documents.get(docMap.get(al.get(j).getDocumentId())).getTitle();
 				    }
 					calPrevious = Calendar.getInstance();
 				    calPrevious.setTime(al.get(j).getDate());
@@ -311,23 +323,22 @@ public class ExportHelper {
 		}
 		
 		Statement s;
-		String docAuthor, docSource, docSection, docType;
 		String[] values = new String[statements.size()];
 		for (int i = 0; i < statements.size(); i++) {
 			s = statements.get(i);
-			docAuthor = documents.get(docMap.get(s.getDocumentId())).getAuthor();
-			docSource = documents.get(docMap.get(s.getDocumentId())).getSource();
-			docSection = documents.get(docMap.get(s.getDocumentId())).getSection();
-			docType = documents.get(docMap.get(s.getDocumentId())).getType();
 			if (documentLevel == true) {
 				if (variable.equals("author")) {
-					values[i] = docAuthor;
+					values[i] = documents.get(docMap.get(s.getDocumentId())).getAuthor();
 				} else if (variable.equals("source")) {
-					values[i] = docSource;
+					values[i] = documents.get(docMap.get(s.getDocumentId())).getSource();
 				} else if (variable.equals("section")) {
-					values[i] = docSection;
+					values[i] = documents.get(docMap.get(s.getDocumentId())).getSection();
 				} else if (variable.equals("type")) {
-					values[i] = docType;
+					values[i] = documents.get(docMap.get(s.getDocumentId())).getType();
+				} else if (variable.equals("id")) {
+					values[i] = String.valueOf(documents.get(docMap.get(s.getDocumentId())).getId());
+				} else if (variable.equals("title")) {
+					values[i] = documents.get(docMap.get(s.getDocumentId())).getTitle();
 				}
 			} else {
 				values[i] = (String) s.getValues().get(variable);

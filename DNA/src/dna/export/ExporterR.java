@@ -267,7 +267,8 @@ public class ExporterR {
 			throw new Exception("Statement type '" + statementType + " does not exist!");
 		}
 		
-		if (!variable1.equals("author") && !variable1.equals("source") && !variable1.equals("section") && !variable1.equals("type")) {
+		if (!variable1.equals("author") && !variable1.equals("source") && !variable1.equals("section") 
+				&& !variable1.equals("type") && !variable1.equals("id") && !variable1.equals("title")) {
 			if (!st.getVariables().containsKey(variable1)) {
 				throw new Exception("Variable 1 ('" + variable1 + "') does not exist in this statement type.");
 			}
@@ -276,7 +277,8 @@ public class ExporterR {
 			}
 		}
 		
-		if (!variable2.equals("author") && !variable2.equals("source") && !variable2.equals("section") && !variable2.equals("type")) {
+		if (!variable2.equals("author") && !variable2.equals("source") && !variable2.equals("section") 
+				&& !variable2.equals("type") && !variable2.equals("id") && !variable2.equals("title")) {
 			if (!st.getVariables().containsKey(variable2)) {
 				throw new Exception("Variable 2 ('" + variable2 + "') does not exist in this statement type.");
 			}
@@ -286,11 +288,13 @@ public class ExporterR {
 		}
 		
 		if (variable1Document == true && (!variable1.equals("author") && !variable1.equals("source") 
-				&& !variable1.equals("section") && !variable1.equals("type"))) {
+				&& !variable1.equals("section") && !variable1.equals("type") && !variable1.equals("id") 
+				&& !variable1.equals("title"))) {
 			throw new Exception("'" + variable1 + "' is not a valid document-level variable.");
 		}
 		if (variable2Document == true && (!variable2.equals("author") && !variable2.equals("source") 
-				&& !variable2.equals("section") && !variable2.equals("type"))) {
+				&& !variable2.equals("section") && !variable2.equals("type") && !variable2.equals("id") 
+				&& !variable2.equals("title"))) {
 			throw new Exception("'" + variable2 + "' is not a valid document-level variable.");
 		}
 		

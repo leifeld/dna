@@ -36,7 +36,8 @@ the setting of the \code{duplicate} argument).}
 
 \item{variable1Document}{A boolean value indicating whether the first
 variable is at the document level (i.e., \code{"author"},
-\code{"source"}, \code{"section"}, or \code{"type"}).}
+\code{"source"}, \code{"section"}, \code{"type"}, \code{"id"}, or
+\code{"title"}).}
 
 \item{variable2}{The second variable for network construction. In a one-mode
 network, this is the variable over which the ties are created. For
@@ -49,7 +50,8 @@ setting of the \code{duplicate} argument).}
 
 \item{variable2Document}{A boolean value indicating whether the second
 variable is at the document level (i.e., \code{"author"},
-\code{"source"}, \code{"section"}, or \code{"type"}).}
+\code{"source"}, \code{"section"}, \code{"type"}, \code{"id"}, or
+\code{"title"}}
 
 \item{qualifier}{The qualifier variable. In a one-mode network, this
 variable can be used to count only congruence or conflict ties. For
