@@ -6427,12 +6427,14 @@ dna_plotHeatmap <- function(clust,
                                 "mcquitty",
                                 "median",
                                 "centroid")) {
-    warning(paste0("The dendrogram on the x-axis of the ",
-                   "dna_plotHeatmap cannot be made using \"",
-                   args$clust.method,
-                   "\". This dendro",
-                   "gram is constructed using the method ",
-                   "\"ward.D2\" instead."))
+    if (dendro_x) {
+      warning(paste0("The dendrogram on the x-axis of the ",
+                     "dna_plotHeatmap cannot be made using \"",
+                     args$clust.method,
+                     "\". This dendro",
+                     "gram is constructed using the method ",
+                     "\"ward.D2\" instead."))
+    }
     args$clust.method <- "ward.D2"
   }
   if (all(t(nw) %in% c(0, 1))) {
@@ -7825,7 +7827,7 @@ dna_plotTimeWindow <- function(x,
 #' @param connection A \code{dna_connection} object created by the
 #'   \link{dna_connection} function.
 #' @param of Category over which (dis-)agreement will be plotted. Most useful
-#'   categories are \code{"concept"} and \code{"actor"} but document categories
+#'   categories are \code{"concept"} and \code{"organization"} but document categories
 #'   can be used.
 #' @param lab.pos,lab.neg Names for (dis-)agreement labels.
 #' @param lab Determines whether (dis-)agreement labels and title are displayed.
@@ -7990,7 +7992,7 @@ dna_barplot <- function(connection,
           axis.ticks.y = element_blank(),
           axis.text.y = element_text(size = fontSize),
           plot.title = element_text(hjust = ifelse(max(nchar(as.character(dta$of))) > 10, -0.15, 0))) +
-    scale_fill_manual(values = dta$colour) +
+    scale_fill_identity() +
     scale_color_identity()
   if (binary) {
     g <- g +

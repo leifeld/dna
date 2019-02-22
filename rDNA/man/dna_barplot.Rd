@@ -14,7 +14,7 @@ dna_barplot(connection, of = "concept", lab.pos = "Agreement",
 \link{dna_connection} function.}
 
 \item{of}{Category over which (dis-)agreement will be plotted. Most useful
-categories are \code{"concept"} and \code{"actor"} but document categories
+categories are \code{"concept"} and \code{"organization"} but document categories
 can be used.}
 
 \item{lab.pos, lab.neg}{Names for (dis-)agreement labels.}

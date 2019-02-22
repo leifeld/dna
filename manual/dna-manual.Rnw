@@ -3008,7 +3008,7 @@ However, this becomes difficult very quickly as soon as discourse network analys
 Additionally, different levels of access to the media or other public forums can lead one organisation to be able to make many more statements than others and therefore mask the strength of ties between actors.
 As briefly mentioned in Section~\ref{sec:normal}, it is therefore often fertile to perform certain clustering techniques on DNA networks to get a better grip of the characteristics of a discourse.
 
-\rdna users can perform this very easly, since our function \code{dna\_cluster} already comprises options for several clustering algorithms, along with the appropriate normalisation techniques.
+\rdna\ users can perform this very easly, since our function \code{dna\_cluster} already comprises options for several clustering algorithms, along with the appropriate normalisation techniques.
 Again you can get help on the function with \code{help(dna\_cluster)}.
 
 We can perform clustering directly on the connection to the sample database we have been using above and do not need to call \code{dna\_network} first:

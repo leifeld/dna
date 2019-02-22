@@ -28,6 +28,7 @@ To update `rDNA`, you can use:
 ``` r
 # install.packages("remotes")
 remotes::install_github("leifeld/dna/rDNA@*release", INSTALL_opts = "--no-multiarch")
+library("rDNA")
 dna_downloadJar() # update DNA as well to have matching versions
 ```
 
