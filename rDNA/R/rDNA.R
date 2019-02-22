@@ -6996,7 +6996,7 @@ dna_plotNetwork <- function(x,
     names(groups) <- V(graph)$name
   } else if (any(grepl("list|character", class(groups)))) {
     V(graph)$group <- groups[match(V(graph)$name, names(groups))]
-  } else if (any(grepl("list|character", class(groups)))) {
+  } else if (any(grepl("dna_cluster", class(groups)))) {
     V(graph)$group <- groups$group[match(V(graph)$name, groups$labels)]
   }
   # colour and attribute
@@ -7023,7 +7023,7 @@ dna_plotNetwork <- function(x,
   if (edge_weight) {
     E(graph)$Weight <- E(graph)$weight
   } else {
-    E(graph)$Weight <- NULL
+    E(graph)$Weight <- 1
   }
   if (!is.null(threshold)) {
     graph <- delete.edges(graph, which(!E(graph)$weight >= threshold))
