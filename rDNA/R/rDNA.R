@@ -8521,18 +8521,17 @@ dna_plotFrequency <- function(connection,
 #'
 #' Internal function, used to make hex colors.
 #'
-#' @param x A colour name
+#' @param x A colour name.
 #'
 #' @noRd
 #' @importFrom grDevices col2rgb rgb
 #' @author Johannes B. Gruber
 col2hex <- function(x) {
-  col <- col2rgb(x)[, 1] / 255
-  color <- rgb(col[1], col[2], col[3])
-  if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
+  col <- tryCatch(col2rgb(x)[, 1] / 255, error = function(x) {NA})
+  if (isTRUE(is.na(col))) {
     stop("'color' cannot be converted to hex RGB value.")
   }
-  return(color)
+  return(rgb(col[1], col[2], col[3]))
 }
 
 
