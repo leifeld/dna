@@ -767,9 +767,7 @@ dna_addRegex <- function(connection, regex, color = "#FFFF00") {
   if (is.null(color) || is.na(color) || length(color) != 1 || !is.character(color)) {
     stop("'color' must be a character object of length 1 containing a hexadecimal RGB value.")
   }
-  if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
-    stop("'color' is not a hex RGB value of the form '#FFFF00'.")
-  }
+  color <- col2hex(color)
   .jcall(connection$dna_connection, "V", "addRegex", regex, color)
 }
 
@@ -933,10 +931,7 @@ dna_addStatementType <- function(connection, label, color = "#FFFF00", ...) {
   if (is.null(color) || is.na(color) || length(color) != 1 || !is.character(color)) {
     stop("'color' must be a character object of length 1 containing a hexadecimal RGB value.")
   }
-  if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
-    stop("'color' is not a hex RGB value of the form '#FFFF00'.")
-  }
-
+  color <- col2hex(color)
   dots <- list(...)
   if (any(sapply(dots, length) > 1)) {
     stop("Some arguments in ... are longer than 1. All variables need to be associated with exactly one data type.")
@@ -1069,9 +1064,7 @@ dna_colorStatementType <- function(connection, statementType, color = "#FFFF00")
   if (is.null(color) || is.na(color) || length(color) != 1 || !is.character(color)) {
     stop("'color' must be a character object of length 1 containing a hexadecimal RGB value.")
   }
-  if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
-    stop("'color' is not a hex RGB value of the form '#FFFF00'.")
-  }
+  color <- col2hex(color)
   .jcall(connection$dna_connection, "V", "colorStatementType", statementType, color)
 }
 
@@ -2537,7 +2530,7 @@ dna_updateCoder <- function(connection,
     stop("'color' must be NULL (for no changes) or a character object of length 1.")
   }
   if (!is.null(color) && !is.na(color) && !grepl("^#[0-9a-fA-F]{6}$", color)) {
-    stop("'color' is not a hex RGB value of the form '#FFFF00'.")
+    color <- col2hex(color)
   }
   if (!is.null(addDocuments) && !is.na(addDocuments) && (!is.logical(addDocuments) || length(addDocuments) != 1)) {
     stop("'addDocuments' must be NULL (for no changes) or TRUE or FALSE.")
@@ -8522,6 +8515,26 @@ dna_plotFrequency <- function(connection,
   }
   return(g)
 }
+
+
+#' Change colours to hex RGB
+#'
+#' Internal function, used to make hex colors.
+#'
+#' @param x A colour name
+#'
+#' @noRd
+#' @importFrom grDevices col2rgb rgb
+#' @author Johannes B. Gruber
+col2hex <- function(x) {
+  col <- col2rgb(x)[, 1] / 255
+  color <- rgb(col[1], col[2], col[3])
+  if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
+    stop("'color' cannot be converted to hex RGB value.")
+  }
+  return(color)
+}
+
 
 #' Truncate labels
 #'
