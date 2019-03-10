@@ -6,9 +6,9 @@
 \usage{
 dna_plotNetwork(x, layout = "auto", edges = "link",
   edge_weight = TRUE, edge_size_range = c(0.2, 2),
-  edge_colour = "grey", edge_alpha = 1, node_size = 6,
-  node_attribute = "color", node_colours = "auto",
-  custom_colours = character(), node_shape = 19, node_label = TRUE,
+  edge_color = "grey", edge_alpha = 1, node_size = 6,
+  node_attribute = "color", node_colors = "auto",
+  custom_colors = character(), node_shape = 19, node_label = TRUE,
   font_size = 6, theme = "graph", label_repel = 0.5,
   label_lines = FALSE, truncate = 30, groups = list(),
   threshold = NULL, seed = 12345, show_legend = TRUE, ...)
@@ -37,7 +37,7 @@ width of the lines. The minimum and maximum width can be controlled with
 \item{edge_size_range}{Takes a numeric vector with two values: minimum and
 maximum \code{edge_weight}.}
 
-\item{edge_colour}{Provide the name of a colour to use for edges. Defaults to
+\item{edge_color}{Provide the name of a color to use for edges. Defaults to
 \code{"grey"}.}
 
 \item{edge_alpha}{Takes numeric values to control the alpha-transparency of
@@ -50,28 +50,28 @@ best.}
 
 \item{node_attribute}{Takes the name of an attribute in DNA (i.e.
 \code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
-\code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
+\code{"notes"} or \code{"frequency"}) or \code{"group"} to color nodes.
 The option \code{"group"} only makes sense if you provide group membership
 information to the \code{groups} argument.}
 
-\item{node_colours}{There are five options for colouring the nodes: (1.)
+\item{node_colors}{There are five options for coloring the nodes: (1.)
 \code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
-leaves the standard ggplot2 colours otherwise; (2.) \code{"identity"} tries
-to use \code{node_attribute} for colours (i.e., if you set
-\code{node_attribute = "color"} or have provided a colour name in another
-attribute field in DNA) but fails if names are not plottable colours; (3)
-\code{"manual"} lets you provide colours via custom_colours; (4.)
-\code{"brewer"} automatically selects nice colours from a
-\code{RColorBrewer} palette (palettes can be set in custom_colours); and
-(5.) \code{"single"} uses the first value in custom_colours for all nodes.}
+leaves the standard ggplot2 colors otherwise; (2.) \code{"identity"} tries
+to use \code{node_attribute} for colors (i.e., if you set
+\code{node_attribute = "color"} or have provided a color name in another
+attribute field in DNA) but fails if names are not plottable colors; (3)
+\code{"manual"} lets you provide colors via custom_colors; (4.)
+\code{"brewer"} automatically selects nice colors from a
+\code{RColorBrewer} palette (palettes can be set in custom_colors); and
+(5.) \code{"single"} uses the first value in custom_colors for all nodes.}
 
-\item{custom_colours}{Takes custom values to control the node colours. The
+\item{custom_colors}{Takes custom values to control the node colors. The
   format of the necessary values depends on the setting of
-  \code{node_colours}: When \code{node_colours = "manual"}, a character
-  object containing the enough colour names for all groups is needed; When
-\code{node_colours = "brewer"} you need to supply a a palette from
-\code{RColorBrewer} (defaults to \code{"Set3"} if \code{custom_colours} is
-  left empty); When \code{node_colours "single"} only a single colour name is
+  \code{node_colors}: When \code{node_colors = "manual"}, a character
+  object containing the enough color names for all groups is needed; When
+\code{node_colors = "brewer"} you need to supply a a palette from
+\code{RColorBrewer} (defaults to \code{"Set3"} if \code{custom_colors} is
+  left empty); When \code{node_colors "single"} only a single color name is
   needed (defaults to \code{"red"}).}
 
 \item{node_shape}{Controls the node shape. Available shapes range from
@@ -85,9 +85,9 @@ it easier to read. If \code{FALSE} no lables are drawn.}
 \code{6}, looks best on many viewers and knitr reports.}
 
 \item{theme}{Provide the name of a theme. Available options are
-\code{"graph"} (which is customised to look best with networks),
+\code{"graph"} (which is customized to look best with networks),
 \code{"bw"}, \code{"void"}, \code{"light"} and \code{"dark"}. Leave empty
-to use standard ggplot theme. Choose other themes or customise with tools
+to use standard ggplot theme. Choose other themes or customize with tools
 from \link{ggplot2} by adding \code{+ theme_*} after this function.}
 
 \item{label_repel}{Controls how far labels will be put from nodes. The exact
@@ -129,7 +129,7 @@ The available layouts are listed and explained in
 added to igraph, those should quickly become available as well.
 
 Use \code{RColorBrewer::display.brewer.all()} to see which palettes are
-available as \code{custom_colours} when \code{colours = "brewer"}.
+available as \code{custom_colors} when \code{colors = "brewer"}.
 }
 \examples{
 \dontrun{

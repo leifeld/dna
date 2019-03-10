@@ -42,9 +42,9 @@ the respective methods from \link[stats]{hclust} will be used. When set to
 respectively, will be used for clustering.}
 
 \item{attribute1, attribute2}{Which attribute of variable from DNA should be
-used to assign colours? There are two sets of colours saved in the
+used to assign colors? There are two sets of colors saved in the
 resulting object as \link{dna_plotDendro} has two graphical elements to
-distinguish between values: leaf_colours and leaf_ends. Possible values are
+distinguish between values: leaf_colors and leaf_ends. Possible values are
 \code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"}
 and \code{"note"}.}
 

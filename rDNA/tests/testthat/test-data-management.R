@@ -105,6 +105,9 @@ test_that("update coder", {
     dna_updateCoder(conn, 3, color = "#CCCCCC", deleteDocuments = TRUE, editRegex = FALSE)
   }, paste0("Updated color of coder 3: '#FF6633' -> '#CCCCCC'\n",
             "Updated 'editRegex' permission of coder 3: true -> false"))
+  expect_error({
+    dna_updateCoder(conn, 3, color = c("#CCCCCC", "#CCCCCC"), deleteDocuments = TRUE, editRegex = FALSE)
+  }, "'color' must be NULL (for no changes) or an object of length 1.", fixed = TRUE)
 })
 
 test_that("get regex", {
@@ -120,6 +123,9 @@ test_that("add regex", {
     dna_addRegex(conn, "energy", "#FF0000")
     dna_getRegex(conn)
   }, equals(readRDS("../files/dna_addRegex.RDS")))
+  expect_error({
+    dna_addRegex(conn, "energy", c("#CCCCCC", "#CCCCCC"))
+  }, "'color' must be an object of length 1.", fixed = TRUE)
 })
 
 # saveRDS(dna_getRegex(conn), "../files/dna_addRegex.RDS")

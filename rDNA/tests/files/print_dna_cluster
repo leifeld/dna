@@ -5,7 +5,7 @@ dna_cluster(connection = conn)
 Cluster method : ward.D2 
 Distance : jaccard 
 Number of objects: 7 
-Used for colours :
+Used for colors :
  attribute1: "color"
  attribute2: "value"
 
