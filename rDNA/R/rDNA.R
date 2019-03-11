@@ -5443,10 +5443,11 @@ dna_timeWindow <- function(connection,
                         ncol = 3)
       if (length(do.call(method, list(testmat))) != 1) {
         stop (
-          paste0("\"", method, "\" is not a valid method for dna_timeWindow.\n dna_timeWindow needs a
-                 function which provides exactly one value when applied to an object of class matrix.
-                 See ?dna_timeWindow for help.")
-          )
+          paste0("\"", method, "\" is not a valid method for dna_timeWindow.\n",
+                 "dna_timeWindow needs a function which provides exactly one ",
+                 "value when applied to an object of class matrix. See ",
+                 "?dna_timeWindow for help.")
+        )
       } else {
         mod.m <- lapply(Types, function(x) {
           if (verbose | verbose == 2) {
@@ -5501,7 +5502,7 @@ dna_timeWindow <- function(connection,
           return(mod.m)
         })
       }
-  }
+    }
     if (verbose > 0) {
       cat("Done.\n")
     }
