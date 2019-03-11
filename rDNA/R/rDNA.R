@@ -5505,11 +5505,11 @@ dna_timeWindow <- function(connection,
     if (verbose > 0) {
       cat("Done.\n")
     }
-    }
+  }
   mod.df <- do.call("rbind", mod.m)
   class(mod.df) <- c("data.frame", "dna_timeWindow")
   return(mod.df)
-  }
+}
 
 
 # Transformation ---------------------------------------------------------------
