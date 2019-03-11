@@ -468,12 +468,10 @@ dna_addAttribute <- function(connection,
   if (length(value) > 1) {
     stop("Only one single value must be provided, not multiple values.")
   }
-  if (!is.character(color)) {
-    stop("The color must be provided as a character object in hexadecimal RGB format.")
+  if (length(color) != 1) {
+    stop("'color' must be an object of length 1.")
   }
-  if (length(color) > 1) {
-    stop("Only one single color must be provided, not multiple colors.")
-  }
+  color <- col2hex(color)
   if (!is.character(type)) {
     stop("The type must be provided as a character object.")
   }
@@ -576,9 +574,10 @@ dna_addCoder <- function(connection,
   if (is.null(name) || is.na(name) || !is.character(name) || length(name) != 1) {
     stop("'name' must be a character object of length 1.")
   }
-  if (is.null(color) || is.na(color) || !is.character(color) || length(color) != 1) {
-    stop("'color' must be a character object of length 1 (in hexadecimal format, for example '#FFFF00' for yellow).")
+  if (length(color) != 1) {
+    stop("'color' must be an object of length 1.")
   }
+  color <- col2hex(color)
   if (is.null(addDocuments) || is.na(addDocuments) || !is.logical(addDocuments) || length(addDocuments) != 1) {
     stop("'addDocuments' must be a TRUE or FALSE.")
   }
@@ -764,12 +763,10 @@ dna_addRegex <- function(connection, regex, color = "#FFFF00") {
   if (is.null(regex) || is.na(regex) || length(regex) != 1 || !is.character(regex)) {
     stop("'regex' must be a character object of length 1.")
   }
-  if (is.null(color) || is.na(color) || length(color) != 1 || !is.character(color)) {
-    stop("'color' must be a character object of length 1 containing a hexadecimal RGB value.")
+  if (length(color) != 1) {
+    stop("'color' must be an object of length 1.")
   }
-  if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
-    stop("'color' is not a hex RGB value of the form '#FFFF00'.")
-  }
+  color <- col2hex(color)
   .jcall(connection$dna_connection, "V", "addRegex", regex, color)
 }
 
@@ -930,13 +927,10 @@ dna_addStatementType <- function(connection, label, color = "#FFFF00", ...) {
   if (is.null(label) || is.na(label) || length(label) != 1 || !is.character(label)) {
     stop("'label' must be a character object of length 1.")
   }
-  if (is.null(color) || is.na(color) || length(color) != 1 || !is.character(color)) {
-    stop("'color' must be a character object of length 1 containing a hexadecimal RGB value.")
+  if (length(color) != 1) {
+    stop("'color' must be an object of length 1.")
   }
-  if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
-    stop("'color' is not a hex RGB value of the form '#FFFF00'.")
-  }
-
+  color <- col2hex(color)
   dots <- list(...)
   if (any(sapply(dots, length) > 1)) {
     stop("Some arguments in ... are longer than 1. All variables need to be associated with exactly one data type.")
@@ -1066,12 +1060,10 @@ dna_colorStatementType <- function(connection, statementType, color = "#FFFF00")
   if (is.numeric(statementType) && !is.integer(statementType)) {
     statementType <- as.integer(statementType)
   }
-  if (is.null(color) || is.na(color) || length(color) != 1 || !is.character(color)) {
-    stop("'color' must be a character object of length 1 containing a hexadecimal RGB value.")
+  if (length(color) != 1) {
+    stop("'color' must be an object of length 1.")
   }
-  if (!grepl("^#[0-9a-fA-F]{6}$", color)) {
-    stop("'color' is not a hex RGB value of the form '#FFFF00'.")
-  }
+  color <- col2hex(color)
   .jcall(connection$dna_connection, "V", "colorStatementType", statementType, color)
 }
 
@@ -2533,11 +2525,12 @@ dna_updateCoder <- function(connection,
   if (!is.null(name) && !is.na(name) && (!is.character(name) || length(name) != 1)) {
     stop("'name' must be NULL (for no changes) or a character object of length 1.")
   }
-  if (!is.null(color) && !is.na(color) && (!is.character(color) || length(color) != 1)) {
-    stop("'color' must be NULL (for no changes) or a character object of length 1.")
-  }
-  if (!is.null(color) && !is.na(color) && !grepl("^#[0-9a-fA-F]{6}$", color)) {
-    stop("'color' is not a hex RGB value of the form '#FFFF00'.")
+  if (!is.null(color) && !is.na(color) && length(color) != 1) {
+    stop("'color' must be NULL (for no changes) or an object of length 1.")
+  } else if (!is.null(color) && is.na(color)) {
+    color <- NULL
+  } else if (!is.null(color)) {
+    color <- col2hex(color)
   }
   if (!is.null(addDocuments) && !is.na(addDocuments) && (!is.logical(addDocuments) || length(addDocuments) != 1)) {
     stop("'addDocuments' must be NULL (for no changes) or TRUE or FALSE.")
@@ -2577,9 +2570,6 @@ dna_updateCoder <- function(connection,
   }
   if (!is.null(name) && is.na(name)) {
     name <- NULL
-  }
-  if (!is.null(color) && is.na(color)) {
-    color <- NULL
   }
   if (!is.null(addDocuments) && is.na(addDocuments)) {
     addDocuments <- NULL
@@ -2797,9 +2787,9 @@ dna_updateSetting <- function(connection, key, value) {
 #'   \link[igraph]{cluster_leading_eigen} or \link[igraph]{cluster_walktrap}
 #'   respectively, will be used for clustering.
 #' @param attribute1,attribute2 Which attribute of variable from DNA should be
-#'   used to assign colours? There are two sets of colours saved in the
+#'   used to assign colors? There are two sets of colors saved in the
 #'   resulting object as \link{dna_plotDendro} has two graphical elements to
-#'   distinguish between values: leaf_colours and leaf_ends. Possible values are
+#'   distinguish between values: leaf_colors and leaf_ends. Possible values are
 #'   \code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"}
 #'   and \code{"note"}.
 #' @param cutree.k,cutree.h If cutree.k or cutree.h are provided, the tree from
@@ -3038,7 +3028,7 @@ dna_cluster <- function(connection,
   if (!is.null(c(cutree.k, cutree.h))) {
     hc$group <- cutree(hc, k = cutree.k, h = cutree.h)
   }
-  # Retrieve colours for variable1. Even if transpose, this is correct
+  # Retrieve colors for variable1. Even if transpose, this is correct
   col <- dna_getAttributes(connection = connection,
                            statementType = dots$statementType,
                            variable = variable1,
@@ -3104,7 +3094,7 @@ dna_cluster <- function(connection,
   hc$fa <- fa
   attributes(hc$mds)$stress <- stress
   hc$call <- match.call()
-  attr(hc, "colours") <- c("attribute1" = attribute1, "attribute2" = attribute2)
+  attr(hc, "colors") <- c("attribute1" = attribute1, "attribute2" = attribute2)
   class(hc) <- c("dna_cluster", class(hc))
   hc$network <- dta
   return(hc)
@@ -3148,12 +3138,12 @@ print.dna_cluster <- function(x, ...) {
                           collapse = ", "),
         "\n")
   }
-  cat("Used for colours :\n", paste(names(attr(x, "colours")),
-                                    paste0("\"",
-                                           attr(x, "colours"),
-                                           "\"\n"),
-                                    sep = ": ",
-                                    collapse = " "))
+  cat("Used for colors :\n", paste(names(attr(x, "colors")),
+                                   paste0("\"",
+                                          attr(x, "colors"),
+                                          "\"\n"),
+                                   sep = ": ",
+                                   collapse = " "))
   cat("\n")
   invisible(x)
 }
@@ -4868,7 +4858,7 @@ dna_network <- function(connection,
          fileFormat,
          verbose
   )
-  
+
   if (isTRUE(fileExport)) {
     if (networkType == "eventlist") {
       objects <- .jcall(connection$dna_connection, "[Ljava/lang/Object;", "getEventListColumnsR", simplify = TRUE)
@@ -4962,7 +4952,7 @@ dna_network <- function(connection,
 #' @param ncpus Number of CPU cores to use for parallel processing (if switched
 #'   on through the \code{parallel} argument).
 #' @param cl An optional \code{cluster} object for PSOCK parallel processing.
-#'   If no \code{cluster} object is provided (default behaviour), a cluster is
+#'   If no \code{cluster} object is provided (default behavior), a cluster is
 #'   created internally on the fly. If a \code{cluster} object is provided,
 #'   the \code{ncpus} argument is ignored because the \code{cluster} object
 #'   already contains the number of cores. It can be useful to supply a
@@ -5453,9 +5443,10 @@ dna_timeWindow <- function(connection,
                         ncol = 3)
       if (length(do.call(method, list(testmat))) != 1) {
         stop (
-          paste0("\"", method, "\" is not a valid method for dna_timeWindow.\n dna_timeWindow needs a
-                 function which provides exactly one value when applied to an object of class matrix.
-                 See ?dna_timeWindow for help.")
+          paste0("\"", method, "\" is not a valid method for dna_timeWindow.\n",
+                 "dna_timeWindow needs a function which provides exactly one ",
+                 "value when applied to an object of class matrix. See ",
+                 "?dna_timeWindow for help.")
         )
       } else {
         mod.m <- lapply(Types, function(x) {
@@ -5716,9 +5707,9 @@ dna_toNetwork <- function(x,
 #'   scaling or "FA" to plot two factors of the factor analysis.
 #' @param dimensions Provide two numeric values to determine which dimensions to
 #'   plot. The default, c(1, 2), will plot dimension 1 and dimension 2.
-#' @param draw_polygons Logical. Should clusters be highlighted with coloured
+#' @param draw_polygons Logical. Should clusters be highlighted with colored
 #'   polygons?
-#' @param custom_colours Manually provide colours for the points and polygons.
+#' @param custom_colors Manually provide colors for the points and polygons.
 #' @param custom_shape Manually provide shapes to use for the scatterplot.
 #' @param alpha The alpha level of the polygons drawn when \code{draw.clusters =
 #'   "polygon"}.
@@ -5728,10 +5719,10 @@ dna_toNetwork <- function(x,
 #'   points.
 #' @param seed Seed for jittering.
 #' @param label Logical. Should labels be plotted?
-#' @param label_size,font_colour,label_background Control the label size, font
-#'   colour of the labels and if a background should be displayed when
-#'   \code{label = TRUE}. label_size takes numeric values, font_colour takes a
-#'   character string with a valid colour value and label_background can be
+#' @param label_size,font_color,label_background Control the label size, font
+#'   color of the labels and if a background should be displayed when
+#'   \code{label = TRUE}. label_size takes numeric values, font_color takes a
+#'   character string with a valid color value and label_background can be
 #'   either TRUE or FALSE.
 #' @param point_size Size of the points in the scatterplot.
 #' @param expand Expand x- and y-axis (e.g., to make room for labels). The first
@@ -5775,16 +5766,23 @@ dna_plotCoordinates <- function(clust,
                                 label_size = 3.5,
                                 point_size = 1,
                                 label_background = FALSE,
-                                font_colour = "black",
+                                font_color = "black",
                                 expand = 0,
                                 stress = TRUE,
                                 truncate = 40,
-                                custom_colours = character(),
+                                custom_colors = character(),
                                 custom_shape = character(),
                                 axis_labels = character(),
                                 clust_method = "pam",
                                 title = "auto",
                                 ...) {
+  dots <- list(...)
+  if ("font_colour" %in% names(dots)) {
+    font_color <- dots[["font_colour"]]
+  }
+  if ("custom_colours" %in% names(dots)) {
+    custom_colors <- dots[["custom_colours"]]
+  }
   if (any(!is.vector(dimensions, mode = "numeric"),
           !any(grepl(paste0("Dimension_", dimensions[1]), colnames(clust[["mds"]]))),
           !any(grepl(paste0("Dimension_", dimensions[2]), colnames(clust[["mds"]]))))) {
@@ -5830,7 +5828,7 @@ dna_plotCoordinates <- function(clust,
                              fill = "cluster",
                              label = "variable"))
   g <- g +
-    geom_point(aes_string(colour = "cluster",
+    geom_point(aes_string(color = "cluster",
                           shape = "cluster"),
                size = point_size)
   if (draw_polygons) {
@@ -5847,12 +5845,12 @@ dna_plotCoordinates <- function(clust,
     if (label_background) {
       g <- g +
         ggrepel::geom_label_repel(size = label_size,
-                                  color = font_colour,
+                                  color = font_color,
                                   show.legend = FALSE)
     } else {
       g <- g +
         ggrepel::geom_text_repel(size = label_size,
-                                 color = font_colour,
+                                 color = font_color,
                                  show.legend = FALSE)
     }
   }
@@ -5870,10 +5868,10 @@ dna_plotCoordinates <- function(clust,
   } else {
     expand[1] <- 0
   }
-  if (length(custom_colours) > 0) {
+  if (length(custom_colors) > 0) {
     g <- g +
-      scale_color_manual(values = custom_colours) +
-      scale_fill_manual(values = custom_colours)
+      scale_color_manual(values = custom_colors) +
+      scale_fill_manual(values = custom_colors)
   }
   if (length(custom_shape) > 0) {
     g <- g +
@@ -5922,42 +5920,42 @@ dna_plotCoordinates <- function(clust,
 #' @param activity Should activity of variable in \link{dna_cluster} be used to
 #'   determine size of leaf_ends (logical). Activity means the number of
 #'   statements which remained after duplicates were removed.
-#' @param leaf_colours Determines which data is used to colour the leafs of the
+#' @param leaf_colors Determines which data is used to color the leafs of the
 #'   dendrogram. Can be either \code{attribute1}, \code{attribute2}or \code{group}. Set to
-#'   \code{character()} leafs-lines should not be coloured.
-#' @param colours There are three options from where to derive the colours in
-#'   the plot: (1.) \code{identity} tries to use the names of variables as colours
+#'   \code{character()} leafs-lines should not be colored.
+#' @param colors There are three options from where to derive the colors in
+#'   the plot: (1.) \code{identity} tries to use the names of variables as colors
 #'   (e.g., if you retrieved the names as attribute from DNA), fails if names
-#'   are not plottable colours; (2.) \code{manual} provide colours via
-#'   custom_colours; (3.) \code{brewer} automatically select nice colours from a
-#'   \code{RColorBrewer} palette (palettes can be set in custom_colours,
+#'   are not plottable colors; (2.) \code{manual} provide colors via
+#'   custom_colors; (3.) \code{brewer} automatically select nice colors from a
+#'   \code{RColorBrewer} palette (palettes can be set in custom_colors,
 #'   defaults to \code{Set3}).
-#' @param custom_colours Either provide enough colours to manually set the
-#'   colours in the plot (if colours = \code{manual"}) or select a palette from
-#'   \code{RColorBrewer} (if colours = \code{brewer"}).
-#' @param branch_colour Provide one colour in which all branches are coloured.
+#' @param custom_colors Either provide enough colors to manually set the
+#'   colors in the plot (if colors = \code{manual"}) or select a palette from
+#'   \code{RColorBrewer} (if colors = \code{brewer"}).
+#' @param branch_color Provide one color in which all branches are colored.
 #' @param line_width Width of all lines.
 #' @param line_alpha Alpha of all lines.
 #' @param ends_size If \code{activity = FALSE}, the size of the lineend symbols
 #'   can be set to one size for the whole plot.
-#' @param leaf_ends Determines which data is used to colour the leaf_ends of the
+#' @param leaf_ends Determines which data is used to color the leaf_ends of the
 #'   dendrogram. Can be either \code{attribute1}, \code{attribute2} or \code{group}. Set to
 #'   \code{character()} if no line ends should be displayed.
 #' @param custom_shapes If shapes are provided, those are used for leaf_ends
 #'   instead of the standard ones. Available shapes range from 0:25 and 32:127.
 #' @param ends_alpha Alpha of all leaf_ends.
-#' @param rectangles If a colour is provided, this will draw rectangles in given
-#'   colour around the groups.
+#' @param rectangles If a color is provided, this will draw rectangles in given
+#'   color around the groups.
 #' @param leaf_linetype,branch_linetype Determines which lines are used for
 #'   leafs and branches. Takes \code{a} for straight line or \code{b} for dotted line.
 #' @param font_size Set the font size for the entire plot.
-#' @param theme See themes in \code{ggplot2}. The theme \code{bw} was customised to
+#' @param theme See themes in \code{ggplot2}. The theme \code{bw} was customized to
 #'   look best with dendrograms. Leave empty to use standard ggplot theme.
-#'   Customise the theme by adding \code{+ theme_*} after this function...
+#'   customize the theme by adding \code{+ theme_*} after this function...
 #' @param truncate Sets the number of characters to which labels should be
 #'   truncated. Value \code{Inf} turns off truncation.
 #' @param leaf_labels Either \code{ticks} to display the labels as axis ticks or
-#'   \code{node} to label nodes directly. Node labels are also take the same colour
+#'   \code{node} to label nodes directly. Node labels are also take the same color
 #'   as the leaf the label.
 #' @param circular Logical. Should the layout be transformed to a circular
 #'   representation. See \link[ggraph]{layout_dendrogram_auto}.
@@ -5985,10 +5983,10 @@ dna_plotCoordinates <- function(clust,
 dna_plotDendro <- function(clust,
                            shape = "elbows",
                            activity = FALSE,
-                           leaf_colours = "attribute1",
-                           branch_colour = "#636363",
-                           colours = "identity",
-                           custom_colours = character(),
+                           leaf_colors = "attribute1",
+                           branch_color = "#636363",
+                           colors = "identity",
+                           custom_colors = character(),
                            leaf_ends = character(),
                            custom_shapes = character(),
                            ends_alpha = 1,
@@ -6005,6 +6003,20 @@ dna_plotDendro <- function(clust,
                            circular = FALSE,
                            show_legend = TRUE,
                            ...) {
+  dots <- list(...)
+  if ("leaf_colours" %in% names(dots)) {
+    leaf_colors <- dots[["leaf_colours"]]
+  }
+  if ("branch_colour" %in% names(dots)) {
+    branch_color <- dots[["branch_colour"]]
+  }
+  if ("colours" %in% names(dots)) {
+    colors <- dots[["colours"]]
+  }
+  if ("custom_colours" %in% names(dots)) {
+    custom_colors <- dots[["custom_colours"]]
+  }
+
   # truncate lables
   clust$labels_short <- ifelse(nchar(clust$labels) > truncate,
                                paste0(gsub("\\s+$", "",
@@ -6013,20 +6025,20 @@ dna_plotDendro <- function(clust,
                                clust$labels)
   # format as dendrogram
   hierarchy <- stats::as.dendrogram(clust)
-  # Add colours
+  # Add colors
   hierarchy <- stats::dendrapply(hierarchy, function(x) {
     if (stats::is.leaf(x)) {
-      if (length(leaf_colours) > 0) {
-        attr(x, "Colour1") <- as.character(clust[[leaf_colours]][match(as.character(labels(x)),
-                                                                       clust$labels)])
+      if (length(leaf_colors) > 0) {
+        attr(x, "Color1") <- as.character(clust[[leaf_colors]][match(as.character(labels(x)),
+                                                                     clust$labels)])
       } else {
-        attr(x, "Colour1") <- ""
+        attr(x, "Color1") <- ""
       }
       if (length(leaf_ends) > 0) {
-        attr(x, "Colour2") <- as.character(clust[[leaf_ends]][match(as.character(labels(x)),
-                                                                    clust$labels)])
+        attr(x, "Color2") <- as.character(clust[[leaf_ends]][match(as.character(labels(x)),
+                                                                   clust$labels)])
       } else {
-        attr(x, "Colour2") <- ""
+        attr(x, "Color2") <- ""
       }
       attr(x, "Activity") <- clust$activities[clust$order[match(as.character(labels(x)),
                                                                 clust$labels)]]
@@ -6034,25 +6046,25 @@ dna_plotDendro <- function(clust,
                                                           clust$labels)]
       attr(x, "linetype") <- leaf_linetype
     } else {
-      if (length(leaf_colours) > 0) {
-        attr(x, "Colour1") <- branch_colour
+      if (length(leaf_colors) > 0) {
+        attr(x, "Color1") <- branch_color
       } else {
-        attr(x, "Colour1") <- ""
+        attr(x, "Color1") <- ""
       }
       if (length(leaf_ends) > 0) {
-        attr(x, "Colour2") <- branch_colour
+        attr(x, "Color2") <- branch_color
       } else {
-        attr(x, "Colour2") <- ""
+        attr(x, "Color2") <- ""
       }
       attr(x, "Activity") <- 0
       attr(x, "labels_short") <- ""
       attr(x, "linetype") <- branch_linetype
     }
-    attr(x, "edgePar") <- list(cols1 = attr(x, "Colour1"),
-                               cols2 = attr(x, "Colour2"),
+    attr(x, "edgePar") <- list(cols1 = attr(x, "Color1"),
+                               cols2 = attr(x, "Color2"),
                                linetype = attr(x, "linetype"))
-    attr(x, "nodePar") <- list(cols3 = attr(x, "Colour1"),
-                               cols4 = attr(x, "Colour2"),
+    attr(x, "nodePar") <- list(cols3 = attr(x, "Color1"),
+                               cols4 = attr(x, "Color2"),
                                Activity = attr(x, "Activity"),
                                labels_short = attr(x, "labels_short"))
     x
@@ -6068,35 +6080,35 @@ dna_plotDendro <- function(clust,
   # shape
   if (shape == "elbows") {
     dg <- dg +
-      geom_edge_elbow(aes_string(colour = "cols1",
+      geom_edge_elbow(aes_string(color = "cols1",
                                  edge_linetype = "linetype"),
                       show.legend = show_legend,
                       width = line_width,
                       alpha = line_alpha)
   } else if (shape == "link") {
     dg <- dg +
-      geom_edge_link(aes_string(colour = "cols1",
+      geom_edge_link(aes_string(color = "cols1",
                                 edge_linetype = "linetype"),
                      show.legend = show_legend,
                      width = line_width,
                      alpha = line_alpha)
   } else if (shape == "diagonal") {
     dg <- dg +
-      geom_edge_diagonal(aes_string(colour = "cols1",
+      geom_edge_diagonal(aes_string(color = "cols1",
                                     edge_linetype = "linetype"),
                          show.legend = show_legend,
                          width = line_width,
                          alpha = line_alpha)
   } else if (shape == "arc") {
     dg <- dg +
-      geom_edge_arc(aes_string(colour = "cols1",
+      geom_edge_arc(aes_string(color = "cols1",
                                edge_linetype = "linetype"),
                     show.legend = show_legend,
                     width = line_width,
                     alpha = line_alpha)
   } else if (shape == "fan") {
     dg <- dg +
-      geom_edge_fan(aes_string(colour = "cols1",
+      geom_edge_fan(aes_string(color = "cols1",
                                edge_linetype = "linetype"),
                     show.legend = show_legend,
                     width = line_width,
@@ -6104,14 +6116,14 @@ dna_plotDendro <- function(clust,
   }
   dg <- dg +
     scale_edge_linetype_discrete(guide = "none")
-  if (length(leaf_colours) > 0) {
-    clust[[leaf_colours]] <- as.factor(clust[[leaf_colours]])
-    autoCols <- c(branch_colour, levels(clust[[leaf_colours]]))
+  if (length(leaf_colors) > 0) {
+    clust[[leaf_colors]] <- as.factor(clust[[leaf_colors]])
+    autoCols <- c(branch_color, levels(clust[[leaf_colors]]))
     if (is.na(show_legend)) {
       guide <- "legend"
-      if (leaf_colours == "attribute1") guidename <- attr(clust, "colours")[1]
-      if (leaf_colours == "attribute2") guidename <- attr(clust, "colours")[2]
-      if (leaf_colours == "group") guidename <- "group"
+      if (leaf_colors == "attribute1") guidename <- attr(clust, "colors")[1]
+      if (leaf_colors == "attribute2") guidename <- attr(clust, "colors")[2]
+      if (leaf_colors == "group") guidename <- "group"
       guidename <- paste0(toupper(substr(guidename, 1, 1)),
                           substr(guidename, 2, nchar(guidename)))
     } else {
@@ -6119,38 +6131,38 @@ dna_plotDendro <- function(clust,
       guidename <- waiver()
     }
   }
-  if (colours == "identity" & length(leaf_colours) > 0) {
-    autoCols <- setNames(autoCols, nm = c(branch_colour, levels(clust[[leaf_colours]])))
+  if (colors == "identity" & length(leaf_colors) > 0) {
+    autoCols <- setNames(autoCols, nm = c(branch_color, levels(clust[[leaf_colors]])))
     dg <- dg +
-      scale_edge_colour_manual(breaks = autoCols[-1],
-                               values = autoCols,
-                               guide = guide,
-                               name = guidename)
-  } else if (colours == "manual" & length(leaf_colours) > 0) {
-    manCols <- c(branch_colour, custom_colours)
-    manCols <- setNames(manCols, nm = c(branch_colour, levels(clust[[leaf_colours]])))
+      scale_edge_color_manual(breaks = autoCols[-1],
+                              values = autoCols,
+                              guide = guide,
+                              name = guidename)
+  } else if (colors == "manual" & length(leaf_colors) > 0) {
+    manCols <- c(branch_color, custom_colors)
+    manCols <- setNames(manCols, nm = c(branch_color, levels(clust[[leaf_colors]])))
     dg <- dg +
-      scale_edge_colour_manual(breaks = autoCols[-1],
-                               values = manCols,
-                               guide = guide,
-                               name = guidename)
-  } else if (colours == "brewer" & length(leaf_colours) > 0) {
-    if (length(custom_colours) == 0) {
-      custom_colours <- "Set3"
+      scale_edge_color_manual(breaks = autoCols[-1],
+                              values = manCols,
+                              guide = guide,
+                              name = guidename)
+  } else if (colors == "brewer" & length(leaf_colors) > 0) {
+    if (length(custom_colors) == 0) {
+      custom_colors <- "Set3"
     }
-    brewCols <- c(branch_colour,
+    brewCols <- c(branch_color,
                   scales::brewer_pal(type = "div",
-                                     palette = custom_colours)(length(levels(clust[[leaf_colours]]))))
-    brewCols <- setNames(brewCols, nm = c(branch_colour, levels(clust[[leaf_colours]])))
+                                     palette = custom_colors)(length(levels(clust[[leaf_colors]]))))
+    brewCols <- setNames(brewCols, nm = c(branch_color, levels(clust[[leaf_colors]])))
     dg <- dg +
-      scale_edge_colour_manual(breaks = autoCols[-1],
-                               values = brewCols,
-                               guide = guide,
-                               name = guidename)
+      scale_edge_color_manual(breaks = autoCols[-1],
+                              values = brewCols,
+                              guide = guide,
+                              name = guidename)
   }
-  if (length(leaf_colours) == 0) {
+  if (length(leaf_colors) == 0) {
     dg <- dg +
-      scale_edge_colour_manual(values = "black", guide = "none")
+      scale_edge_color_manual(values = "black", guide = "none")
   }
   # theme
   if (theme == "bw") {
@@ -6187,7 +6199,7 @@ dna_plotDendro <- function(clust,
       dg <- dg +
         geom_node_text(aes_string(label = "labels_short",
                                   filter = "leaf",
-                                  colour = "cols3"),
+                                  color = "cols3"),
                        angle = 270,
                        hjust = 0,
                        nudge_y = -0.02,
@@ -6205,7 +6217,7 @@ dna_plotDendro <- function(clust,
                            hjust = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90,
                                           1.05,
                                           -0.05),
-                           colour = cols3),
+                           color = cols3),
                        size = (font_size / .pt),
                        show.legend = FALSE) +
         expand_limits(x = c(-2.3, 2.3), y = c(-2.3, 2.3))
@@ -6215,8 +6227,8 @@ dna_plotDendro <- function(clust,
   if (length(leaf_ends) > 0) {
     if (is.na(show_legend)) {
       guide <- "legend"
-      if (leaf_ends == "attribute1") legendname <- attr(clust, "colours")[1]
-      if (leaf_ends == "attribute2") legendname <- attr(clust, "colours")[2]
+      if (leaf_ends == "attribute1") legendname <- attr(clust, "colors")[1]
+      if (leaf_ends == "attribute2") legendname <- attr(clust, "colors")[2]
       if (leaf_ends == "group") legendname <- "group"
       legendname <- paste0(toupper(substr(legendname, 1, 1)),
                            substr(legendname, 2, nchar(legendname)))
@@ -6226,7 +6238,7 @@ dna_plotDendro <- function(clust,
     if (activity) {
       dg <- dg +
         geom_node_point(aes_string(filter = "leaf",
-                                   colour = "cols3",
+                                   color = "cols3",
                                    size = "Activity",
                                    shape = "cols4"),
                         show.legend = show_legend,
@@ -6234,7 +6246,7 @@ dna_plotDendro <- function(clust,
     } else {
       dg <- dg +
         geom_node_point(aes_string(filter = "leaf",
-                                   colour = "cols3",
+                                   color = "cols3",
                                    shape = "cols4"),
                         size = ends_size,
                         show.legend = show_legend,
@@ -6271,26 +6283,26 @@ dna_plotDendro <- function(clust,
                 fill = NA)
   }
   # color node text and points
-  if (length(leaf_colours) > 0) {
-    if (colours == "identity") {
+  if (length(leaf_colors) > 0) {
+    if (colors == "identity") {
       dg <- dg +
-        scale_colour_identity(guide = "none")
-    } else if (colours == "manual") {
+        scale_color_identity(guide = "none")
+    } else if (colors == "manual") {
       dg <- dg +
-        scale_colour_manual(values = manCols[-1],
-                            guide = guide,
-                            name = guidename)
-    } else if (colours == "brewer") {
+        scale_color_manual(values = manCols[-1],
+                           guide = guide,
+                           name = guidename)
+    } else if (colors == "brewer") {
       dg <- dg +
-        scale_colour_manual(values = brewCols[-1],
-                            guide = guide,
-                            name = guidename)
+        scale_color_manual(values = brewCols[-1],
+                           guide = guide,
+                           name = guidename)
     }
   }else {
     dg <- dg +
-      scale_colour_manual(values = "black",
-                          guide = "none",
-                          name = waiver())
+      scale_color_manual(values = "black",
+                         guide = "none",
+                         name = waiver())
   }
   return(dg)
 }
@@ -6300,7 +6312,7 @@ dna_plotDendro <- function(clust,
 #' Plots a heatmap with dendrograms from objects derived via \link{dna_cluster}.
 #'
 #' This function plots a heatmap including dendrograms on the x- and y-axis of
-#' the heatmap plot. The available options for colouring the tiles can be
+#' the heatmap plot. The available options for coloring the tiles can be
 #' displayed using \code{RColorBrewer::display.brewer.all()} (RColorBrewer needs
 #' to be installed).
 #'
@@ -6309,16 +6321,16 @@ dna_plotDendro <- function(clust,
 #' @param truncate Sets the number of characters to which labels should be
 #'   truncated. Value \code{Inf} turns off truncation.
 #' @param values If TRUE, will display the values in the tiles of the heatmap.
-#' @param colours There are two options: When \code{"brewer"} is selected, the function
-#'   \link[ggplot2]{scale_fill_distiller} is used to colour the heatmap tiles.
+#' @param colors There are two options: When \code{"brewer"} is selected, the function
+#'   \link[ggplot2]{scale_fill_distiller} is used to color the heatmap tiles.
 #'   When \code{"gradient"} is selected, \link[ggplot2]{scale_fill_gradient} will be
-#'   used. The colour palette and low/high values can be supplied using the
-#'   argument \code{custom_colours}.
-#' @param custom_colours For \code{colours = "brewer"} you can use either a
+#'   used. The color palette and low/high values can be supplied using the
+#'   argument \code{custom_colors}.
+#' @param custom_colors For \code{colors = "brewer"} you can use either a
 #'   string with a palette name or the index number of a brewer palette (see
-#'   details). If \code{colours = "gradient"} you need to supply at least two
-#'   values. Colours are then derived from a sequential colour gradient palette.
-#'   \link[ggplot2]{scale_fill_gradient}. If more than two colours are provided
+#'   details). If \code{colors = "gradient"} you need to supply at least two
+#'   values. Colors are then derived from a sequential color gradient palette.
+#'   \link[ggplot2]{scale_fill_gradient}. If more than two colors are provided
 #'   \link[ggplot2]{scale_fill_gradientn} is used instead.
 #' @param square If TRUE, will make the tiles of the heatmap quadratic.
 #' @param dendro_x If TRUE, will draw a dendrogram on the x-axis.
@@ -6348,8 +6360,8 @@ dna_plotDendro <- function(clust,
 dna_plotHeatmap <- function(clust,
                             truncate = 40,
                             values = FALSE,
-                            colours = character(),
-                            custom_colours = character(),
+                            colors = character(),
+                            custom_colors = character(),
                             square = TRUE,
                             dendro_x = TRUE,
                             dendro_x_size = 0.2,
@@ -6446,13 +6458,10 @@ dna_plotHeatmap <- function(clust,
   dend_x$activities <- unname(rowSums(t(nw)))
   # plot clust y
   dots <- list(...)
-  if (!"leaf_colours" %in% names(dots)) {
+  if (!any(c("leaf_colors", "leaf_colors") %in% names(dots))) {
     dots <- c(dots,
-              list(leaf_colours = character()))
-  }
-  if (!"leaf_colours" %in% names(dots)) {
-    dots <- c(dots,
-              list(theme = "void"))
+              list(leaf_colors = character(),
+                   theme = "void"))
   }
   if (!"branch_linetype" %in% names(dots)) {
     dots <- c(dots,
@@ -6480,8 +6489,8 @@ dna_plotHeatmap <- function(clust,
                               rep,
                               length(levels(df$Var1))))
   plt_hmap <- ggplot(data = df, aes_string(x = "posx",
-                                            y = "posy",
-                                            fill = "value")) +
+                                           y = "posy",
+                                           fill = "value")) +
     geom_tile(show.legend = show_legend) +
     theme(axis.text.x = element_text(angle = 90,
                                      vjust = 0.5,
@@ -6509,19 +6518,19 @@ dna_plotHeatmap <- function(clust,
     plt_hmap <- plt_hmap +
       geom_text(aes_string(label = "value"))
   }
-  ## colour heatmap
-  if (length(colours) > 0) {
-    if (colours == "brewer") {
-      if (length(custom_colours) < 1) custom_colours <- 2
+  ## color heatmap
+  if (length(colors) > 0) {
+    if (colors == "brewer") {
+      if (length(custom_colors) < 1) custom_colors <- 2
       plt_hmap <- plt_hmap +
-        scale_fill_distiller(palette = custom_colours,
+        scale_fill_distiller(palette = custom_colors,
                              direction = 1)
-    } else if (colours == "gradient") {
-      if (length(custom_colours) < 1) {
-        custom_colours <- c("gray", "blue")
+    } else if (colors == "gradient") {
+      if (length(custom_colors) < 1) {
+        custom_colors <- c("gray", "blue")
       }
       plt_hmap <- plt_hmap +
-        scale_fill_gradientn(colours = custom_colours)
+        scale_fill_gradientn(colors = custom_colors)
     }
   }
   # merge plots
@@ -6552,7 +6561,7 @@ dna_plotHeatmap <- function(clust,
 #'   \link{dna_network} function.
 #' @param axis Takes the name of an attribute in DNA (i.e. \code{"id"},
 #'   \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
-#'   \code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
+#'   \code{"notes"} or \code{"frequency"}) or \code{"group"} to color nodes.
 #'   The option \code{"group"} only makes sense if you provide group membership
 #'   information to the \code{groups} argument.
 #' @param sort_by Either the name of an attribute to sort by or a name vector
@@ -6562,29 +6571,29 @@ dna_plotHeatmap <- function(clust,
 #'   per actor (see example).
 #' @param axis_label If \code{TRUE}, axis labels are plotted at the end of the
 #'   axis and are removed from the legend.
-#' @param axis_colours There are five options for colouring the axes: (1.)
+#' @param axis_colors There are five options for coloring the axes: (1.)
 #'   \code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
-#'   leaves the standard ggplot2 colours otherwise; (2.) \code{"identity"} tries
-#'   to use \code{axis} for colours (i.e., if you set \code{axis = "color"} or
-#'   have provided a colour name in another attribute field in DNA) but fails if
-#'   names are not plottable colours; (3) \code{"manual"} lets you provide
-#'   colours via custom_colours; (4.) \code{"brewer"} automatically selects nice
-#'   colours from a \code{RColorBrewer} palette (palettes can be set in
-#'   custom_colours); and (5.) \code{"single"} uses the first value in
-#'   custom_colours for all axes
-#' @param custom_colours Takes custom values to control the axes colours. The
+#'   leaves the standard ggplot2 colors otherwise; (2.) \code{"identity"} tries
+#'   to use \code{axis} for colors (i.e., if you set \code{axis = "color"} or
+#'   have provided a color name in another attribute field in DNA) but fails if
+#'   names are not plottable colors; (3) \code{"manual"} lets you provide
+#'   colors via custom_colors; (4.) \code{"brewer"} automatically selects nice
+#'   colors from a \code{RColorBrewer} palette (palettes can be set in
+#'   custom_colors); and (5.) \code{"single"} uses the first value in
+#'   custom_colors for all axes
+#' @param custom_colors Takes custom values to control the axes colors. The
 #'   format of the necessary values depends on the setting of \code{axis}: When
-#'   \code{axis = "manual"}, a character object containing the enough colour
+#'   \code{axis = "manual"}, a character object containing the enough color
 #'   names for all groups is needed; When \code{axis = "brewer"} you need to
 #'   supply a a palette from \code{RColorBrewer} (otherwise defaults to "Set3");
-#'   When \code{axis "single"} only a single colour name is needed (defaults to
+#'   When \code{axis "single"} only a single color name is needed (defaults to
 #'   "red").
 #' @param edge_weight If \code{TRUE}, edge weights will be used to determine
 #'   width of the lines between nodes. The minimum and maximum width can be
 #'   controlled with \code{edge_size_range}.
 #' @param edge_size_range Takes a numeric vector with two values: minimum and
 #'   maximum \code{edge_weight}.
-#' @param edge_colour Provide the name of a colour to use for edges.
+#' @param edge_color Provide the name of a color to use for edges.
 #' @param edge_alpha Takes numeric values to control the alpha-transparency of
 #'   edges. Possible values range from \code{0} (fully transparent) to \code{1}
 #'   (fully visible).
@@ -6597,9 +6606,9 @@ dna_plotHeatmap <- function(clust,
 #'   labels are further away from nodes.
 #' @param font_size Control the font size of the node labels.
 #' @param theme Provide the name of a theme. Available options are
-#'   \code{"graph"} (which is customised to look best with networks), "bw",
+#'   \code{"graph"} (which is customized to look best with networks), "bw",
 #'   "void", "light" and \code{"dark"}. Leave empty to use standard ggplot
-#'   theme. Choose other themes or customise with tools from \link{ggplot2} by
+#'   theme. Choose other themes or customize with tools from \link{ggplot2} by
 #'   adding \code{+ theme_*} after this function.
 #' @param truncate Sets the number of characters to which labels should be
 #'   truncated. Value \code{Inf} turns off truncation.
@@ -6659,11 +6668,11 @@ dna_plotHive <- function(x,
                          axis = "type",
                          sort_by = "degree",
                          axis_label = FALSE,
-                         axis_colours = "auto",
-                         custom_colours = character(),
+                         axis_colors = "auto",
+                         custom_colors = character(),
                          edge_weight = TRUE,
                          edge_size_range = c(0.2, 2),
-                         edge_colour = "grey",
+                         edge_color = "grey",
                          edge_alpha = 1,
                          node_label = TRUE,
                          label_repel = 0.5,
@@ -6676,6 +6685,20 @@ dna_plotHive <- function(x,
                          seed = 12345,
                          show_legend = TRUE,
                          ...) {
+  dots <- list(...)
+  if ("axis_colors" %in% names(dots)) {
+    axis_colors <- dots[["axis_colors"]]
+  }
+  if ("edge_color" %in% names(dots)) {
+    edge_color <- dots[["edge_color"]]
+  }
+  if ("node_colors" %in% names(dots)) {
+    node_colors <- dots[["node_colors"]]
+  }
+  if ("custom_colors" %in% names(dots)) {
+    custom_colors <- dots[["custom_colors"]]
+  }
+
   layout <- "hive"
   # Make igraph
   if (any(class(x) %in% "dna_network_twomode")) {
@@ -6685,7 +6708,7 @@ dna_plotHive <- function(x,
   if (!is.null(threshold)) {
     graph <- delete.edges(graph, which(!E(graph)$weight >= threshold))
   }
-  # colour and attribute
+  # color and attribute
   args <- c(as.list(attributes(x)$call)[-1])
   args["networkType"] <- "eventlist"
   if (is.null(args[["statementType"]])) {
@@ -6717,7 +6740,7 @@ dna_plotHive <- function(x,
                              substr(axis, 2, nchar(axis)))
   }
   if ((is.vector(sort_by, mode = "numeric") |
-      is.vector(sort_by, mode = "character")) &
+       is.vector(sort_by, mode = "character")) &
       length(sort_by) > 1) {
     V(graph)$sorting <- unname(sort_by[match(names(sort_by), V(graph)$name)])
     sort_by <- "sorting"
@@ -6736,14 +6759,14 @@ dna_plotHive <- function(x,
   g <- ggraph(lyt) +
     geom_edge_hive(aes_string(width = "Weight"),
                    alpha = edge_alpha,
-                   colour = edge_colour,
+                   color = edge_color,
                    show.legend = show_legend) +
     scale_edge_width(range = edge_size_range)
   if (axis_label) {
     yexp <- (max(lyt$y) - min(lyt$y)) / 4
     xexp <- (max(lyt$x) - min(lyt$x)) / 4
     g <- g +
-      geom_axis_hive(aes_string(colour = node_attribute),
+      geom_axis_hive(aes_string(color = node_attribute),
                      size = 2,
                      label = TRUE,
                      show.legend = FALSE) +
@@ -6751,7 +6774,7 @@ dna_plotHive <- function(x,
       scale_x_continuous(expand = c(0, xexp, 0, xexp))
   } else {
     g <- g +
-      geom_axis_hive(aes_string(colour = node_attribute),
+      geom_axis_hive(aes_string(color = node_attribute),
                      size = 2,
                      label = FALSE,
                      show.legend = show_legend)
@@ -6795,8 +6818,8 @@ dna_plotHive <- function(x,
     g <- g +
       theme_dark(base_size = font_size)
   }
-  # colours
-  if (axis_colours == "auto" & !node_attribute == "Membership") {
+  # colors
+  if (axis_colors == "auto" & !node_attribute == "Membership") {
     test <- sapply(unique(att[, tolower(node_attribute)]), function(a) {
       length(unique(att$color[att[, tolower(node_attribute)] == a])) == 1
     })
@@ -6805,25 +6828,25 @@ dna_plotHive <- function(x,
         scale_color_manual(values = unique(att$color)[order(unique(att[, tolower(node_attribute)]))])
     }
   } else {
-    if (axis_colours == "identity") {
+    if (axis_colors == "identity") {
       g <- g +
-        scale_colour_identity()
-    } else if (axis_colours == "manual" | axis_colours == "single") {
-      if (length(custom_colours) == 0) {
-        custom_colours <- "red"
+        scale_color_identity()
+    } else if (axis_colors == "manual" | axis_colors == "single") {
+      if (length(custom_colors) == 0) {
+        custom_colors <- "red"
       }
-      if (axis_colours == "single") {
-        custom_colours <- rep(custom_colours[1],
-                              length.out = length(unique(lyt[, node_attribute])))
-      }
-      g <- g +
-        scale_colour_manual(values = custom_colours)
-    } else if (axis_colours == "brewer") {
-      if (length(custom_colours) == 0) {
-        custom_colours <- "Set3"
+      if (axis_colors == "single") {
+        custom_colors <- rep(custom_colors[1],
+                             length.out = length(unique(lyt[, node_attribute])))
       }
       g <- g +
-        scale_colour_brewer(palette = custom_colours)
+        scale_color_manual(values = custom_colors)
+    } else if (axis_colors == "brewer") {
+      if (length(custom_colors) == 0) {
+        custom_colors <- "Set3"
+      }
+      g <- g +
+        scale_color_brewer(palette = custom_colors)
     }
   }
   return(g)
@@ -6844,7 +6867,7 @@ dna_plotHive <- function(x,
 #' added to igraph, those should quickly become available as well.
 #'
 #' Use \code{RColorBrewer::display.brewer.all()} to see which palettes are
-#' available as \code{custom_colours} when \code{colours = "brewer"}.
+#' available as \code{custom_colors} when \code{colors = "brewer"}.
 #'
 #' @param x A \code{dna_network} object created by the \link{dna_network}
 #'   function.
@@ -6864,7 +6887,7 @@ dna_plotHive <- function(x,
 #'   \code{edge_size_range}.
 #' @param edge_size_range Takes a numeric vector with two values: minimum and
 #'   maximum \code{edge_weight}.
-#' @param edge_colour Provide the name of a colour to use for edges. Defaults to
+#' @param edge_color Provide the name of a color to use for edges. Defaults to
 #'   \code{"grey"}.
 #' @param edge_alpha Takes numeric values to control the alpha-transparency of
 #'   edges. Possible values range from \code{0} (fully transparent) to \code{1}
@@ -6874,26 +6897,26 @@ dna_plotHive <- function(x,
 #'   best.
 #' @param node_attribute Takes the name of an attribute in DNA (i.e.
 #'   \code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
-#'   \code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
+#'   \code{"notes"} or \code{"frequency"}) or \code{"group"} to color nodes.
 #'   The option \code{"group"} only makes sense if you provide group membership
 #'   information to the \code{groups} argument.
-#' @param node_colours There are five options for colouring the nodes: (1.)
+#' @param node_colors There are five options for coloring the nodes: (1.)
 #'   \code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
-#'   leaves the standard ggplot2 colours otherwise; (2.) \code{"identity"} tries
-#'   to use \code{node_attribute} for colours (i.e., if you set
-#'   \code{node_attribute = "color"} or have provided a colour name in another
-#'   attribute field in DNA) but fails if names are not plottable colours; (3)
-#'   \code{"manual"} lets you provide colours via custom_colours; (4.)
-#'   \code{"brewer"} automatically selects nice colours from a
-#'   \code{RColorBrewer} palette (palettes can be set in custom_colours); and
-#'   (5.) \code{"single"} uses the first value in custom_colours for all nodes.
-#' @param custom_colours Takes custom values to control the node colours. The
+#'   leaves the standard ggplot2 colors otherwise; (2.) \code{"identity"} tries
+#'   to use \code{node_attribute} for colors (i.e., if you set
+#'   \code{node_attribute = "color"} or have provided a color name in another
+#'   attribute field in DNA) but fails if names are not plottable colors; (3)
+#'   \code{"manual"} lets you provide colors via custom_colors; (4.)
+#'   \code{"brewer"} automatically selects nice colors from a
+#'   \code{RColorBrewer} palette (palettes can be set in custom_colors); and
+#'   (5.) \code{"single"} uses the first value in custom_colors for all nodes.
+#' @param custom_colors Takes custom values to control the node colors. The
 #'   format of the necessary values depends on the setting of
-#'   \code{node_colours}: When \code{node_colours = "manual"}, a character
-#'   object containing the enough colour names for all groups is needed; When
-#' \code{node_colours = "brewer"} you need to supply a a palette from
-#' \code{RColorBrewer} (defaults to \code{"Set3"} if \code{custom_colours} is
-#'   left empty); When \code{node_colours "single"} only a single colour name is
+#'   \code{node_colors}: When \code{node_colors = "manual"}, a character
+#'   object containing the enough color names for all groups is needed; When
+#' \code{node_colors = "brewer"} you need to supply a a palette from
+#' \code{RColorBrewer} (defaults to \code{"Set3"} if \code{custom_colors} is
+#'   left empty); When \code{node_colors "single"} only a single color name is
 #'   needed (defaults to \code{"red"}).
 #' @param node_shape Controls the node shape. Available shapes range from
 #'   \code{0:25} and \code{32:127}.
@@ -6903,9 +6926,9 @@ dna_plotHive <- function(x,
 #' @param font_size Controls the font size of the node labels. The default,
 #'   \code{6}, looks best on many viewers and knitr reports.
 #' @param theme Provide the name of a theme. Available options are
-#'   \code{"graph"} (which is customised to look best with networks),
+#'   \code{"graph"} (which is customized to look best with networks),
 #'   \code{"bw"}, \code{"void"}, \code{"light"} and \code{"dark"}. Leave empty
-#'   to use standard ggplot theme. Choose other themes or customise with tools
+#'   to use standard ggplot theme. Choose other themes or customize with tools
 #'   from \link{ggplot2} by adding \code{+ theme_*} after this function.
 #' @param label_repel Controls how far labels will be put from nodes. The exact
 #'   position of text is random but overplotting is avoided.
@@ -6963,12 +6986,12 @@ dna_plotNetwork <- function(x,
                             edges = "link",
                             edge_weight = TRUE,
                             edge_size_range = c(0.2, 2),
-                            edge_colour = "grey",
+                            edge_color = "grey",
                             edge_alpha = 1,
                             node_size = 6,
                             node_attribute = "color",
-                            node_colours = "auto",
-                            custom_colours = character(),
+                            node_colors = "auto",
+                            custom_colors = character(),
                             node_shape = 19,
                             node_label = TRUE,
                             font_size = 6,
@@ -6981,6 +7004,17 @@ dna_plotNetwork <- function(x,
                             seed = 12345,
                             show_legend = TRUE,
                             ...) {
+  dots <- list(...)
+  if ("edge_color" %in% names(dots)) {
+    edge_color <- dots[["edge_color"]]
+  }
+  if ("node_colors" %in% names(dots)) {
+    node_colors <- dots[["node_colors"]]
+  }
+  if ("custom_colors" %in% names(dots)) {
+    custom_colors <- dots[["custom_colors"]]
+  }
+
   # Make igraph object
   set.seed(seed)
   if (any(class(x) %in% "dna_network_twomode")) {
@@ -6999,7 +7033,7 @@ dna_plotNetwork <- function(x,
   } else if (any(grepl("dna_cluster", class(groups)))) {
     V(graph)$group <- groups$group[match(V(graph)$name, groups$labels)]
   }
-  # colour and attribute
+  # color and attribute
   args <- c(as.list(attributes(x)$call)[-1])
   args["networkType"] <- "eventlist"
   if (is.null(args[["statementType"]])) {
@@ -7009,8 +7043,8 @@ dna_plotNetwork <- function(x,
     args[["variable1"]] <- formals("dna_network")[["variable1"]]
   }
   att <- dna_getAttributes(eval(args[["connection"]]), statementType = args[["statementType"]],
-                            variable = args[["variable1"]], values = row.names(x))
-  V(graph)$colour <- as.character(att$color)[match(V(graph)$name, att$value)]
+                           variable = args[["variable1"]], values = row.names(x))
+  V(graph)$color <- as.character(att$color)[match(V(graph)$name, att$value)]
   if (node_attribute == "group") {
     V(graph)$attribute <- V(graph)$group
   } else {
@@ -7039,13 +7073,13 @@ dna_plotNetwork <- function(x,
   lyt$name_short <- trim(as.character(lyt$name), n = truncate)
   if (any(class(x) %in% "dna_network_twomode")) {
     lyt$attribute <- as.character(lyt$attribute)
-    if (node_colours == "auto" & node_attribute == "Color") {
+    if (node_colors == "auto" & node_attribute == "Color") {
       att <- dna_getAttributes(eval(args[["connection"]]),
-                                statementType = args[["statementType"]],
-                                variable = "concept")
+                               statementType = args[["statementType"]],
+                               variable = "concept")
       lyt$attribute[is.na(lyt$attribute)] <-
         as.character(att$color)[match(lyt$name[is.na(lyt$attribute)],
-                                       att$value)]
+                                      att$value)]
     } else {
       lyt$attribute[is.na(lyt$attribute)] <- "Concept"
     }
@@ -7056,23 +7090,23 @@ dna_plotNetwork <- function(x,
   if (edges == "link") {
     g <- g +
       geom_edge_link(aes_string(width = "Weight"), alpha = edge_alpha,
-                     colour = edge_colour,
+                     color = edge_color,
                      show.legend = show_legend)
   } else if (edges == "arc") {
     g <- g +
       geom_edge_arc(aes_string(width = "Weight"), alpha = edge_alpha,
-                    colour = edge_colour,
+                    color = edge_color,
                     show.legend = show_legend)
   } else if (edges == "diagonal") {
     g <- g +
       geom_edge_diagonal(aes_string(width = "Weight"), alpha = edge_alpha,
-                         colour = edge_colour,
+                         color = edge_color,
                          show.legend = show_legend)
   } else if (edges == "fan") {
     g <- g +
       geom_edge_fan(aes_string(width = "Weight"),
                     alpha = edge_alpha,
-                    colour = edge_colour,
+                    color = edge_color,
                     show.legend = show_legend)
   }
   g <- g +
@@ -7081,19 +7115,19 @@ dna_plotNetwork <- function(x,
   show_legend <- ifelse(show_legend,
                         NA,
                         show_legend)
-  if (node_colours == "single") {
-    if (length(custom_colours) == 0) {
-      custom_colours <- "red"
+  if (node_colors == "single") {
+    if (length(custom_colors) == 0) {
+      custom_colors <- "red"
     }
     g <- g +
-      geom_node_point(colour = custom_colours,
+      geom_node_point(color = custom_colors,
                       size = node_size,
                       shape = node_shape,
                       show.legend = show_legend) +
       scale_color_identity()
   } else {
     g <- g +
-      geom_node_point(aes_string(colour = node_attribute),
+      geom_node_point(aes_string(color = node_attribute),
                       size = node_size,
                       shape = node_shape,
                       show.legend = show_legend)
@@ -7143,12 +7177,12 @@ dna_plotNetwork <- function(x,
     g <- g +
       theme_dark(base_size = font_size)
   }
-  # colours
-  if (!node_colours == "single") {
-    if (node_colours == "auto" & node_attribute == "Color") {
-      node_colours <- "identity"
+  # colors
+  if (!node_colors == "single") {
+    if (node_colors == "auto" & node_attribute == "Color") {
+      node_colors <- "identity"
     }
-    if (node_colours == "auto" & !node_attribute == "Membership") {
+    if (node_colors == "auto" & !node_attribute == "Membership") {
       test <- sapply(unique(att[, tolower(node_attribute)]), function(a) {
         length(unique(att$color[att[, tolower(node_attribute)] == a])) == 1
       })
@@ -7157,20 +7191,20 @@ dna_plotNetwork <- function(x,
           scale_color_manual(labels = att[, tolower(node_attribute)],
                              values = att$color)
       } else {
-        warning("Inconsistent assignment of colours to '", node_attribute, "'.")
+        warning("Inconsistent assignment of colors to '", node_attribute, "'.")
       }
-    } else if (node_colours == "identity") {
+    } else if (node_colors == "identity") {
       g <- g +
-        scale_colour_identity()
-    } else if (node_colours == "manual") {
+        scale_color_identity()
+    } else if (node_colors == "manual") {
       g <- g +
-        scale_colour_manual(values = custom_colours)
-    } else if (node_colours == "brewer") {
-      if (length(custom_colours) == 0) {
-        custom_colours <- "Set3"
+        scale_color_manual(values = custom_colors)
+    } else if (node_colors == "brewer") {
+      if (length(custom_colors) == 0) {
+        custom_colors <- "Set3"
       }
       g <- g +
-        scale_colour_brewer(palette = custom_colours)
+        scale_color_brewer(palette = custom_colors)
     }
   }
   return(g)
@@ -7708,7 +7742,7 @@ dna_plotScale <- function(dna_scale,
 #' A convenience function to plot an object created with \link{dna_timeWindow}
 #' function. Uses \link[ggplot2]{geom_line} under the hood to plot results from
 #' a call to \link{dna_timeWindow} and facets a grid view using
-#' \link[ggplot2]{facet_grid}. Customised themes and ggplot2 functions can be
+#' \link[ggplot2]{facet_grid}. Customized themes and ggplot2 functions can be
 #' passed on with \code{+}.
 #'
 #' @param x A \code{dna_timeWindow} object created by the \link{dna_timeWindow}
@@ -7831,7 +7865,7 @@ dna_plotTimeWindow <- function(x,
 #'   can be used.
 #' @param lab.pos,lab.neg Names for (dis-)agreement labels.
 #' @param lab Determines whether (dis-)agreement labels and title are displayed.
-#' @param colours If \code{TRUE}, statement colours will be used to fill the
+#' @param colors If \code{TRUE}, statement colors will be used to fill the
 #'   bars. Not possible for all categories.
 #' @param fontSize Text size in pts.
 #' @param barWidth Thickness of the bars. bars will touch when set to \code{1}.
@@ -7850,7 +7884,7 @@ dna_plotTimeWindow <- function(x,
 #'
 #' dna_barplot(connection = conn,
 #'             of = "concept",
-#'             colours = FALSE,
+#'             colors = FALSE,
 #'             barWidth = 0.5)
 #' }
 #'
@@ -7863,7 +7897,7 @@ dna_barplot <- function(connection,
                         lab.pos = "Agreement",
                         lab.neg = "Disagreement",
                         lab = TRUE,
-                        colours = FALSE,
+                        colors = FALSE,
                         fontSize = 12,
                         barWidth = 0.6,
                         axisWidth = 1.5,
@@ -7875,6 +7909,9 @@ dna_barplot <- function(connection,
                      verbose = FALSE,
                      ...)
   dots <- list(...)
+  if ("colors" %in% names(dots)) {
+    colors <- dots[["colors"]]
+  }
   # test validity of "of"-value
   if (!of %in% colnames(dta) | of %in% c("id", "agreement")) {
     stop(
@@ -7884,9 +7921,9 @@ dna_barplot <- function(connection,
   }
   if (of %in% c("time", "docId", "docTitle", "docAuthor", "docSource", "docSection", "docType")) {
     warning(
-      paste0("\"colours = TRUE\" not possible for \"of = \"", of, "\"\".", collapse = ",\n")
+      paste0("\"colors = TRUE\" not possible for \"of = \"", of, "\"\".", collapse = ",\n")
     )
-    colours <- FALSE
+    colors <- FALSE
   }
   if ("qualifier" %in% names(dots)) {
     colnames(dta) <- gsub(dots$qualifier, "agreement", colnames(dta))
@@ -7909,19 +7946,19 @@ dna_barplot <- function(connection,
   dta2 <- dta2[order(dta2$absFrequency, decreasing = TRUE), ]
   # replicate order of dta2$of to dta
   dta$of <- factor(dta$of, levels = rev(dta2$of))
-  # get bar colours
-  if (colours) {
+  # get bar colors
+  if (colors) {
     if (!"statementType" %in% names(dots)) {
       dots$statementType <- "DNA Statement"
     }
     col <- dna_getAttributes(connection = connection, statementType = dots$statementType,
                              variable = of, values = NULL)
-    dta$colour <- as.character(col$color[match(dta$of, col$value)])
-    dta$text_colour <- "black"
-    dta$text_colour[sum(grDevices::col2rgb(dta$colour) * c(299, 587, 114)) / 1000 < 123] <- "white"
+    dta$color <- as.character(col$color[match(dta$of, col$value)])
+    dta$text_color <- "black"
+    dta$text_color[sum(grDevices::col2rgb(dta$color) * c(299, 587, 114)) / 1000 < 123] <- "white"
   } else {
-    dta$colour <- "white"
-    dta$text_colour <- "black"
+    dta$color <- "white"
+    dta$text_color <- "black"
   }
   if (binary) {
     # setting disagreement as -1 instead 0
@@ -7973,8 +8010,8 @@ dna_barplot <- function(connection,
                          y = "Frequency",
                          fill = "agreement",
                          label = "label")) +
-    geom_bar(aes_string(fill = "colour",
-                        colour = "text_colour"),
+    geom_bar(aes_string(fill = "color",
+                        color = "text_color"),
              stat = "identity",
              width = barWidth,
              show.legend = FALSE) +
@@ -8004,7 +8041,7 @@ dna_barplot <- function(connection,
                 data = dta)
   } else {
     g <- g +
-      geom_text(aes_string(colour = "text_colour"),
+      geom_text(aes_string(color = "text_color"),
                 size = (fontSize / .pt),
                 position = position_stack(vjust = 0.5),
                 inherit.aes = TRUE)
@@ -8181,7 +8218,7 @@ dna_convergenceScale <- function(dna_scale,
     if (any(!value %in% dna_scale$attributes$Row.names)) {
       warning("The following values could not be found in dna_scale object:",
               "\n", paste(value[!value %in% dna_scale$attributes$Row.names],
-                         collapse = "\n"))
+                          collapse = "\n"))
     }
     if ("dna_scale1dbin" %in% class(dna_scale)) {
       colnames(dna_scale$sample) <- gsub("^theta.|^beta.", "",
@@ -8385,7 +8422,7 @@ dna_convergenceScale <- function(dna_scale,
     }
     if (method == "density") {
       g <- ggplot(z, aes(x = value)) +
-        geom_density(aes(colour = color, fill = color),
+        geom_density(aes(color = color, fill = color),
                      alpha = 0.3) +
         theme(axis.text.y = element_blank(),
               axis.ticks.y = element_blank(),
@@ -8402,11 +8439,11 @@ dna_convergenceScale <- function(dna_scale,
           stop(paste0("The specified 'facet_page' is higher than the maximum ",
                       "number of pages (", n_pages, ")."))
         }
-          g <- g + ggforce::facet_wrap_paginate(~variable,
-                                                scales = "free",
-                                                nrow = nrow,
-                                                ncol = ncol,
-                                                page = facet_page)
+        g <- g + ggforce::facet_wrap_paginate(~variable,
+                                              scales = "free",
+                                              nrow = nrow,
+                                              ncol = ncol,
+                                              page = facet_page)
       }
     } else if (method == "trace") {
       z$it <- 1:nrow(dna_scale$sample)
@@ -8428,11 +8465,11 @@ dna_convergenceScale <- function(dna_scale,
           stop(paste0("The specified 'facet_page' is higher than the maximum ",
                       "number of pages (", n_pages, ")."))
         }
-          g <- g + ggforce::facet_wrap_paginate(~variable,
-                                                scales = "free",
-                                                nrow = nrow,
-                                                ncol = ncol,
-                                                page = facet_page)
+        g <- g + ggforce::facet_wrap_paginate(~variable,
+                                              scales = "free",
+                                              nrow = nrow,
+                                              ncol = ncol,
+                                              page = facet_page)
       }
     }
     if (!is.null(colors)) {
@@ -8522,6 +8559,28 @@ dna_plotFrequency <- function(connection,
   }
   return(g)
 }
+
+
+#' Change colors to hex RGB
+#'
+#' Internal function, used to make hex colors.
+#'
+#' @param x A color name.
+#'
+#' @noRd
+#' @importFrom grDevices col2rgb rgb
+#' @author Johannes B. Gruber
+col2hex <- function(x) {
+  col <- tryCatch(col2rgb(x)[, 1] / 255,
+                  error = function(x) {
+                    NA
+                  })
+  if (isTRUE(is.na(col))) {
+    stop("'color' cannot be converted to hex RGB value.")
+  }
+  return(rgb(col[1], col[2], col[3]))
+}
+
 
 #' Truncate labels
 #'
@@ -8697,8 +8756,8 @@ bin_recode <- function(connection,
     if (isTRUE(drop_min_actors > 1)) {
       if (drop_min_actors > max(rowSums(nw_exclude))) {
         stop(paste0("The specified number in 'drop_min_actors' is higher than ",
-             "the maximum number of concepts mentioned by an actor (",
-             max(rowSums(nw_exclude))), ").")
+                    "the maximum number of concepts mentioned by an actor (",
+                    max(rowSums(nw_exclude))), ").")
       }
       nw2 <- nw2[rowSums(nw_exclude) >= drop_min_actors, ]
     }

@@ -5,7 +5,7 @@
 \title{Plot agreement and disagreement}
 \usage{
 dna_barplot(connection, of = "concept", lab.pos = "Agreement",
-  lab.neg = "Disagreement", lab = TRUE, colours = FALSE,
+  lab.neg = "Disagreement", lab = TRUE, colors = FALSE,
   fontSize = 12, barWidth = 0.6, axisWidth = 1.5, truncate = 40,
   ...)
 }
@@ -21,7 +21,7 @@ can be used.}
 
 \item{lab}{Determines whether (dis-)agreement labels and title are displayed.}
 
-\item{colours}{If \code{TRUE}, statement colours will be used to fill the
+\item{colors}{If \code{TRUE}, statement colors will be used to fill the
 bars. Not possible for all categories.}
 
 \item{fontSize}{Text size in pts.}
@@ -55,7 +55,7 @@ conn <- dna_connection(dna_sample())
 
 dna_barplot(connection = conn,
             of = "concept",
-            colours = FALSE,
+            colors = FALSE,
             barWidth = 0.5)
 }
 

@@ -7,8 +7,8 @@
 dna_plotCoordinates(clust, what = "MDS", dimensions = c(1, 2),
   draw_polygons = TRUE, alpha = 0.25, jitter = NULL, seed = 12345,
   label = FALSE, label_size = 3.5, point_size = 1,
-  label_background = FALSE, font_colour = "black", expand = 0,
-  stress = TRUE, truncate = 40, custom_colours = character(),
+  label_background = FALSE, font_color = "black", expand = 0,
+  stress = TRUE, truncate = 40, custom_colors = character(),
   custom_shape = character(), axis_labels = character(),
   clust_method = "pam", title = "auto", ...)
 }
@@ -22,7 +22,7 @@ scaling or "FA" to plot two factors of the factor analysis.}
 \item{dimensions}{Provide two numeric values to determine which dimensions to
 plot. The default, c(1, 2), will plot dimension 1 and dimension 2.}
 
-\item{draw_polygons}{Logical. Should clusters be highlighted with coloured
+\item{draw_polygons}{Logical. Should clusters be highlighted with colored
 polygons?}
 
 \item{alpha}{The alpha level of the polygons drawn when \code{draw.clusters =
@@ -37,10 +37,10 @@ points.}
 
 \item{label}{Logical. Should labels be plotted?}
 
-\item{label_size, font_colour, label_background}{Control the label size, font
-colour of the labels and if a background should be displayed when
-\code{label = TRUE}. label_size takes numeric values, font_colour takes a
-character string with a valid colour value and label_background can be
+\item{label_size, font_color, label_background}{Control the label size, font
+color of the labels and if a background should be displayed when
+\code{label = TRUE}. label_size takes numeric values, font_color takes a
+character string with a valid color value and label_background can be
 either TRUE or FALSE.}
 
 \item{point_size}{Size of the points in the scatterplot.}
@@ -54,7 +54,7 @@ second controls expansion of the y axis.}
 \item{truncate}{Sets the number of characters to which labels should be
 truncated. Value \code{Inf} turns off truncation.}
 
-\item{custom_colours}{Manually provide colours for the points and polygons.}
+\item{custom_colors}{Manually provide colors for the points and polygons.}
 
 \item{custom_shape}{Manually provide shapes to use for the scatterplot.}
 

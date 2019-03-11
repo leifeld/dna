@@ -5,7 +5,7 @@
 \title{Plots a heatmap from dna_cluster objects}
 \usage{
 dna_plotHeatmap(clust, truncate = 40, values = FALSE,
-  colours = character(), custom_colours = character(), square = TRUE,
+  colors = character(), custom_colors = character(), square = TRUE,
   dendro_x = TRUE, dendro_x_size = 0.2, dendro_y_size = 0.2,
   qualifierLevels = list(`0` = "no", `1` = "yes"), show_legend = TRUE,
   ...)
@@ -19,17 +19,17 @@ truncated. Value \code{Inf} turns off truncation.}
 
 \item{values}{If TRUE, will display the values in the tiles of the heatmap.}
 
-\item{colours}{There are two options: When \code{"brewer"} is selected, the function
-\link[ggplot2]{scale_fill_distiller} is used to colour the heatmap tiles.
+\item{colors}{There are two options: When \code{"brewer"} is selected, the function
+\link[ggplot2]{scale_fill_distiller} is used to color the heatmap tiles.
 When \code{"gradient"} is selected, \link[ggplot2]{scale_fill_gradient} will be
-used. The colour palette and low/high values can be supplied using the
-argument \code{custom_colours}.}
+used. The color palette and low/high values can be supplied using the
+argument \code{custom_colors}.}
 
-\item{custom_colours}{For \code{colours = "brewer"} you can use either a
+\item{custom_colors}{For \code{colors = "brewer"} you can use either a
 string with a palette name or the index number of a brewer palette (see
-details). If \code{colours = "gradient"} you need to supply at least two
-values. Colours are then derived from a sequential colour gradient palette.
-\link[ggplot2]{scale_fill_gradient}. If more than two colours are provided
+details). If \code{colors = "gradient"} you need to supply at least two
+values. Colors are then derived from a sequential color gradient palette.
+\link[ggplot2]{scale_fill_gradient}. If more than two colors are provided
 \link[ggplot2]{scale_fill_gradientn} is used instead.}
 
 \item{square}{If TRUE, will make the tiles of the heatmap quadratic.}
@@ -52,7 +52,7 @@ Plots a heatmap with dendrograms from objects derived via \link{dna_cluster}.
 }
 \details{
 This function plots a heatmap including dendrograms on the x- and y-axis of
-the heatmap plot. The available options for colouring the tiles can be
+the heatmap plot. The available options for coloring the tiles can be
 displayed using \code{RColorBrewer::display.brewer.all()} (RColorBrewer needs
 to be installed).
 }

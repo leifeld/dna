@@ -5,9 +5,9 @@
 \title{Produces a hive plot from DNA data}
 \usage{
 dna_plotHive(x, axis = "type", sort_by = "degree",
-  axis_label = FALSE, axis_colours = "auto",
-  custom_colours = character(), edge_weight = TRUE,
-  edge_size_range = c(0.2, 2), edge_colour = "grey", edge_alpha = 1,
+  axis_label = FALSE, axis_colors = "auto",
+  custom_colors = character(), edge_weight = TRUE,
+  edge_size_range = c(0.2, 2), edge_color = "grey", edge_alpha = 1,
   node_label = TRUE, label_repel = 0.5, label_lines = FALSE,
   font_size = 6, theme = "graph", truncate = 30, groups = list(),
   threshold = NULL, seed = 12345, show_legend = TRUE, ...)
@@ -18,7 +18,7 @@ dna_plotHive(x, axis = "type", sort_by = "degree",
 
 \item{axis}{Takes the name of an attribute in DNA (i.e. \code{"id"},
 \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
-\code{"notes"} or \code{"frequency"}) or \code{"group"} to colour nodes.
+\code{"notes"} or \code{"frequency"}) or \code{"group"} to color nodes.
 The option \code{"group"} only makes sense if you provide group membership
 information to the \code{groups} argument.}
 
@@ -31,23 +31,23 @@ per actor (see example).}
 \item{axis_label}{If \code{TRUE}, axis labels are plotted at the end of the
 axis and are removed from the legend.}
 
-\item{axis_colours}{There are five options for colouring the axes: (1.)
+\item{axis_colors}{There are five options for coloring the axes: (1.)
 \code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
-leaves the standard ggplot2 colours otherwise; (2.) \code{"identity"} tries
-to use \code{axis} for colours (i.e., if you set \code{axis = "color"} or
-have provided a colour name in another attribute field in DNA) but fails if
-names are not plottable colours; (3) \code{"manual"} lets you provide
-colours via custom_colours; (4.) \code{"brewer"} automatically selects nice
-colours from a \code{RColorBrewer} palette (palettes can be set in
-custom_colours); and (5.) \code{"single"} uses the first value in
-custom_colours for all axes}
+leaves the standard ggplot2 colors otherwise; (2.) \code{"identity"} tries
+to use \code{axis} for colors (i.e., if you set \code{axis = "color"} or
+have provided a color name in another attribute field in DNA) but fails if
+names are not plottable colors; (3) \code{"manual"} lets you provide
+colors via custom_colors; (4.) \code{"brewer"} automatically selects nice
+colors from a \code{RColorBrewer} palette (palettes can be set in
+custom_colors); and (5.) \code{"single"} uses the first value in
+custom_colors for all axes}
 
-\item{custom_colours}{Takes custom values to control the axes colours. The
+\item{custom_colors}{Takes custom values to control the axes colors. The
 format of the necessary values depends on the setting of \code{axis}: When
-\code{axis = "manual"}, a character object containing the enough colour
+\code{axis = "manual"}, a character object containing the enough color
 names for all groups is needed; When \code{axis = "brewer"} you need to
 supply a a palette from \code{RColorBrewer} (otherwise defaults to "Set3");
-When \code{axis "single"} only a single colour name is needed (defaults to
+When \code{axis "single"} only a single color name is needed (defaults to
 "red").}
 
 \item{edge_weight}{If \code{TRUE}, edge weights will be used to determine
@@ -57,7 +57,7 @@ controlled with \code{edge_size_range}.}
 \item{edge_size_range}{Takes a numeric vector with two values: minimum and
 maximum \code{edge_weight}.}
 
-\item{edge_colour}{Provide the name of a colour to use for edges.}
+\item{edge_color}{Provide the name of a color to use for edges.}
 
 \item{edge_alpha}{Takes numeric values to control the alpha-transparency of
 edges. Possible values range from \code{0} (fully transparent) to \code{1}
@@ -76,9 +76,9 @@ labels are further away from nodes.}
 \item{font_size}{Control the font size of the node labels.}
 
 \item{theme}{Provide the name of a theme. Available options are
-\code{"graph"} (which is customised to look best with networks), "bw",
+\code{"graph"} (which is customized to look best with networks), "bw",
 "void", "light" and \code{"dark"}. Leave empty to use standard ggplot
-theme. Choose other themes or customise with tools from \link{ggplot2} by
+theme. Choose other themes or customize with tools from \link{ggplot2} by
 adding \code{+ theme_*} after this function.}
 
 \item{truncate}{Sets the number of characters to which labels should be

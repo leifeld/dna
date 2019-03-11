@@ -4,7 +4,8 @@ setup(
   unlink(dir(pattern = "^dna-.+\\.jar$"))
 )
 
-# set Sys.setenv(MAKE_DNA = "TRUE") to run this part
+# set Sys.setenv(MAKE_DNA = "TRUE") (and possibly Sys.setenv(NOT_CRAN = "TRUE"))
+# to run this part
 if (Sys.getenv("MAKE_DNA") == "TRUE" & 
     tolower(Sys.getenv("NOT_CRAN")) %in% c("1", "yes", "true")) {
   test_that("download Jar", {

@@ -31,7 +31,7 @@ Plot \link{dna_timeWindow} objects in a grid separated by facet.
 A convenience function to plot an object created with \link{dna_timeWindow}
 function. Uses \link[ggplot2]{geom_line} under the hood to plot results from
 a call to \link{dna_timeWindow} and facets a grid view using
-\link[ggplot2]{facet_grid}. Customised themes and ggplot2 functions can be
+\link[ggplot2]{facet_grid}. Customized themes and ggplot2 functions can be
 passed on with \code{+}.
 }
 \examples{

@@ -51,7 +51,7 @@ provided using the \code{ncpus} argument.}
 on through the \code{parallel} argument).}
 
 \item{cl}{An optional \code{cluster} object for PSOCK parallel processing.
-If no \code{cluster} object is provided (default behaviour), a cluster is
+If no \code{cluster} object is provided (default behavior), a cluster is
 created internally on the fly. If a \code{cluster} object is provided,
 the \code{ncpus} argument is ignored because the \code{cluster} object
 already contains the number of cores. It can be useful to supply a
