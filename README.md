@@ -40,3 +40,11 @@ remotes::install_github("leifeld/dna/rDNA", INSTALL_opts = "--no-multiarch")
 ```
 
 [![Build Status](https://travis-ci.org/leifeld/dna.svg?branch=master)](https://travis-ci.org/leifeld/dna) [![Coverage status](https://codecov.io/gh/leifeld/dna/branch/master/graph/badge.svg)](https://codecov.io/github/leifeld/dna?branch=master)
+[<img src="http://img.shields.io/liberapay/patrons/leifeld.svg?logo=liberapay">](https://liberapay.com/leifeld)
+[<img src="http://img.shields.io/liberapay/receives/leifeld.svg?logo=liberapay">](https://liberapay.com/leifeld)
+
+## Contribute to the project
+
+Please consider contributing to the project by telling other people about the software; citing our underlying [research](https://www.philipleifeld.com/publications) in your publications; fixing [issues](https://github.com/leifeld/issues) or adding features via pull requests; or funding the development financially:
+
+<a href="https://liberapay.com/leifeld/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a>
