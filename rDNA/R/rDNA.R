@@ -5931,8 +5931,8 @@ dna_plotCoordinates <- function(clust,
 #'   \code{RColorBrewer} palette (palettes can be set in custom_colors,
 #'   defaults to \code{Set3}).
 #' @param custom_colors Either provide enough colors to manually set the
-#'   colors in the plot (if colors = \code{manual"}) or select a palette from
-#'   \code{RColorBrewer} (if colors = \code{brewer"}).
+#'   colors in the plot (if \code{colors = "manual"}) or select a palette from
+#'   \code{RColorBrewer} (if \code{colors = "brewer"}).
 #' @param branch_color Provide one color in which all branches are colored.
 #' @param line_width Width of all lines.
 #' @param line_alpha Alpha of all lines.

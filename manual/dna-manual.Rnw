@@ -60,7 +60,7 @@
 \definecolor{codecolorbg}{rgb}{0.969, 0.969, 0.969}
 \definecolor{codecolort}{rgb}{0.345, 0.345, 0.345}
 \definecolor{black}{RGB}{0,0,0}
-\definecolor{grey}{RGB}{240,240,240}
+\definecolor{gray}{RGB}{240,240,240}
 \definecolor{white}{RGB}{255,255,255}
 
 \usepackage{suffix}
@@ -119,7 +119,7 @@ library("knitr")
 site <- tryCatch({
   readLines("https://cran.r-project.org/bin/windows/base/", n = 10)
 }, 
-error = function(e) {warning("Internet connection neccessary to check for newest R version")})
+error = function(e) {warning("Internet connection necessary to check for newest R version")})
 R_vers <- site[grepl("^<title>", site)]
 R_vers <- as.character(regmatches(R_vers, gregexpr("\\d+.\\d+.\\d+", R_vers)))
 if (length(R_vers) == 0) {
@@ -129,7 +129,7 @@ if (length(R_vers) == 0) {
 site <- tryCatch({
   readLines("https://www.rstudio.com/products/rstudio/download/")
 }, 
-error = function(e) {warning("Internet connection neccessary to check for newest R version")})
+error = function(e) {warning("Internet connection necessary to check for newest R version")})
 RS_vers <- site[grepl("<h4 id=\"download\"><strong>RStudio Desktop", site)]
 RS_vers <- as.character(regmatches(RS_vers, gregexpr("\\d+.\\d+.\\d+", RS_vers)))
 if (length(RS_vers) == 0) {
@@ -178,7 +178,7 @@ The method comprises three basic steps:
 \begin{enumerate}
  \item annotating statements of actors in unstructured (text) sources,
  \item creating networks from the resulting structured data,
- \item analysing and interpreting the results by employing the toolbox of network analysis.
+ \item analyzing and interpreting the results by employing the toolbox of network analysis.
 \end{enumerate}
 The results can take a number of different forms, such as so-called congruence or conflict networks of actors or of concepts, affiliation networks of actors and concepts, and longitudinal versions of these networks (see Chapter~\ref{chp:algorithms} and \citealt{leifeld2017discourse} for a comprehensive overview of the method).
 
@@ -219,7 +219,7 @@ Chapter~\ref{chp:installation} explains how to install \dna\ and \rdna, which bo
 Only consult this chapter if you experience problems with the installation on your own.
 The following four sections describe the usage of \dna\ in detail:
 Chapter~\ref{chp:dna-prep} describes how to set up a project in \dna, including the creation of a database, adding and managing users, and how to set up or edit statement types and variables.
-Chapter~\ref{chp:dna-import} explains how you can import and organise your raw data (i.\,e., documents).
+Chapter~\ref{chp:dna-import} explains how you can import and organize your raw data (i.\,e., documents).
 Chapter~\ref{chp:dna-coding} provides an overview of how you annotate statements in \dna.
 Even though this process is very straightforward, the section also reveals some functions that can help you to annotate material faster and more reliably.
 Chapter~\ref{chp:dna-export} explains how data can be exported to other programs for further analysis.
@@ -233,7 +233,7 @@ Please feel free to post questions and bug reports to the issue tracker on \gith
 \chapter{Methods for Network Construction} \label{chp:algorithms}
 \chapterauthor{Philip Leifeld}
 \FloatBarrier
-This chapter summarises the main network algorithms implemented in \dna\ graphically and using mathematical notation.
+This chapter summarizes the main network algorithms implemented in \dna\ graphically and using mathematical notation.
 
 \section{Graphical Intuition}
 Figure~\ref{fig:algo_aff} illustrates how actors (as yellow nodes on the left) and concepts (as blue nodes on the right) are connected by dashed lines.
@@ -244,7 +244,7 @@ For example, actor~5 refers to concepts~3 and~4 in the debate.
 \tikzset{
  actor/.style ={circle,draw=red!50!yellow,fill=red!20!yellow,thick,inner sep=1pt},
  category/.style ={circle,draw=blue!70,fill=blue!40,thick,inner sep=1pt},
- grey/.style ={line width=0.5mm, dashed,color=gray,inner sep=0pt},
+ gray/.style ={line width=0.5mm, dashed,color=gray,inner sep=0pt},
  black/.style ={line width=0.5mm},
  annotation/.style = {fill=gray!50, rounded corners=3}
 }
@@ -262,15 +262,15 @@ For example, actor~5 refers to concepts~3 and~4 in the debate.
    \node [category] (c3) at (6,2) {$c_3$};
    \node [category] (c4) at (5,0) {$c_4$};
    \node [category] (c5) at (7,1) {$c_5$};
-   \draw [grey] (a1) to (c1);
-   \draw [grey] (a2) to (c1);
-   \draw [grey] (a2) to (c2);
-   \draw [grey] (a2) to (c3);
-   \draw [grey] (a3) to (c3);
-   \draw [grey] (a3) to (c5);
-   \draw [grey] (a4) to (c3);
-   \draw [grey] (a5) to (c3);
-   \draw [grey] (a5) to (c4);
+   \draw [gray] (a1) to (c1);
+   \draw [gray] (a2) to (c1);
+   \draw [gray] (a2) to (c2);
+   \draw [gray] (a2) to (c3);
+   \draw [gray] (a3) to (c3);
+   \draw [gray] (a3) to (c5);
+   \draw [gray] (a4) to (c3);
+   \draw [gray] (a5) to (c3);
+   \draw [gray] (a5) to (c4);
    \draw [black] (a1) to (a2);
    \draw [black] (a2) to (a3);
    \draw [black] (a2) to (a5);
@@ -307,7 +307,7 @@ Substantively, the edge weights between concepts can be interpreted as their sim
 
 Actors and concepts are merely a substantive application where other variables~1 and~2 could have been encoded instead, such as persons and locations or speakers and addressees.
 
-Simply modelling referral of a concept by an actor, however, is insufficient to capture agreement and opposition in policy debates.
+Simply modeling referral of a concept by an actor, however, is insufficient to capture agreement and opposition in policy debates.
 For example, actor~1 and actor~2 may either both support concept~1, they may both reject concept~1, or one of them may refer to concept~1 in a positive way while the other one may refer to concept~1 in a negative way.
 Depending on these configurations, one would infer a congruent or a conflictual relationship between actors~1 and~2.
 
@@ -321,31 +321,31 @@ In a conflict network, edges are counted when the two actors' agreement patterns
    \node [actor] (a1) at (0,1) {$a_1$};
    \node [actor] (a2) at (0,0) {$a_2$};
    \node [category] (c1) at (3,0.5) {$c_1$};
-   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
-   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
+   \draw [gray] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
+   \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
    \draw [black] (a1) to (a2);
    \node [annotation,right=-3mm] at (0,2.3) {congruence networks};
   
    \node [actor] (a1) at (5.5,1) {$a_1$};
    \node [actor] (a2) at (5.5,0) {$a_2$};
    \node [category] (c1) at (8.5,0.5) {$c_1$};
-   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
-   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
+   \draw [gray] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
+   \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
    \draw [black] (a1) to (a2);
    \node [annotation,right=-3mm] at (5.5,2.3) {conflict networks};
   
    \node [actor] (a1) at (0,-1.5) {$a_1$};
    \node [actor] (a2) at (0,-2.5) {$a_2$};
    \node [category] (c1) at (3,-2) {$c_1$};
-   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
-   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
+   \draw [gray] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
+   \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
    \draw [black] (a1) to (a2);
   
    \node [actor] (a1) at (5.5,-1.5) {$a_1$};
    \node [actor] (a2) at (5.5,-2.5) {$a_2$};
    \node [category] (c1) at (8.5,-2) {$c_1$};
-   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
-   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
+   \draw [gray] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
+   \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
    \draw [black] (a1) to (a2);
   \end{tikzpicture}
   \caption{Illustration: congruence and conflict networks with a binary qualifier variable.}
@@ -366,31 +366,31 @@ This calculation is illustrated in Figure~\ref{fig:algo_integercongruence}.
    \node [actor] (a1) at (0,1) {$a_1$};
    \node [actor] (a2) at (0,0) {$a_2$};
    \node [category] (c1) at (3,0.5) {$c_1$};
-   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
-   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+5$} (c1);
+   \draw [gray] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
+   \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+5$} (c1);
    \draw [black] (a1) to node [left=1mm,circle,solid,line width=0.2mm] {$\frac{7}{10}$} (a2);
    \node [annotation,right=-3mm] at (0,2.3) {congruence networks};
   
    \node [actor] (a1) at (5.5,1) {$a_1$};
    \node [actor] (a2) at (5.5,0) {$a_2$};
    \node [category] (c1) at (8.5,0.5) {$c_1$};
-   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
-   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+5$} (c1);
+   \draw [gray] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
+   \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+5$} (c1);
    \draw [black] (a1) to node [left=1mm,circle,solid,line width=0.2mm] {$\frac{3}{10}$} (a2);
    \node [annotation,right=-3mm] at (5.5,2.3) {conflict networks};
   
    \node [actor] (a1) at (0,-1.5) {$a_1$};
    \node [actor] (a2) at (0,-2.5) {$a_2$};
    \node [category] (c1) at (3,-2) {$c_1$};
-   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$-4$} (c1);
-   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
+   \draw [gray] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$-4$} (c1);
+   \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
    \draw [black] (a1) to node [left=1mm,circle,solid,line width=0.2mm] {$\frac{4}{10}$} (a2);
   
    \node [actor] (a1) at (5.5,-1.5) {$a_1$};
    \node [actor] (a2) at (5.5,-2.5) {$a_2$};
    \node [category] (c1) at (8.5,-2) {$c_1$};
-   \draw [grey] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$-4$} (c1);
-   \draw [grey] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
+   \draw [gray] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$-4$} (c1);
+   \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
    \draw [black] (a1) to node [left=1mm,circle,solid,line width=0.2mm] {$\frac{6}{10}$} (a2);
   \end{tikzpicture}
   \caption{Illustration: congruence and conflict networks with an integer qualifier variable.}
@@ -398,14 +398,14 @@ This calculation is illustrated in Figure~\ref{fig:algo_integercongruence}.
  \end{center}
 \end{figure}
 
-Finally, it may be necessary to normalise the resulting affiliation, congruence, or conflict network.
-Normalisation may be necessary to avoid a core--periphery structure where those actors end up at the center of the network who refer to most concepts.
-Normalisation corrects for the verbosity of actors (or, more generally, for the centrality of a node in the affiliation network).
-Several normalisation methods are available, and they will be described below.
-Graph clustering can then be applied to the normalised networks to identify coalitions in policy debates.
-More details, especially on the topic of normalisation, can be found in \citet{leifeld2017discourse}.
+Finally, it may be necessary to normalize the resulting affiliation, congruence, or conflict network.
+Normalization may be necessary to avoid a core--periphery structure where those actors end up at the center of the network who refer to most concepts.
+Normalization corrects for the verbosity of actors (or, more generally, for the centrality of a node in the affiliation network).
+Several normalization methods are available, and they will be described below.
+Graph clustering can then be applied to the normalized networks to identify coalitions in policy debates.
+More details, especially on the topic of normalization, can be found in \citet{leifeld2017discourse}.
 
-The next section will introduce some formal notation to represent the data structures and transformations introduced above; then these transformations will be re-introduced more formally using mathematical notation, and finally normalisation methods will be proposed.
+The next section will introduce some formal notation to represent the data structures and transformations introduced above; then these transformations will be re-introduced more formally using mathematical notation, and finally normalization methods will be proposed.
 
 \section{Notation}\label{sec:notation}
 $X$ is a three-dimensional array representing statement counts.
@@ -479,7 +479,7 @@ In the integer case, the similarity between nodes $i$ and $i'$ is defined as the
 where $\Phi_{ii'}(\cdot)$ denotes a normalization function (to be specified below).
 
 Here, $\vert k - k' \vert$ is the difference in assessment of second-mode node $k$ (e.\,g., concept) by two first-mode nodes $i$ and $i'$.
-$\vert K \vert - 1$ is the maximum diffference there can be, with $\vert K \vert$ indicating the number of levels in qualifier variable $K$.
+$\vert K \vert - 1$ is the maximum difference there can be, with $\vert K \vert$ indicating the number of levels in qualifier variable $K$.
 For example, if the qualifier scale is $[-5; 5]$, $\vert K \vert - 1 = 10$.
 The subtraction in the parentheses serves to convert distances (as in a conflict network) to similarities.
 The distances are counted over all statements, meaning that nodes $i$ and $i'$ count these similarities over all combinations of the levels $k$ (for node $i$) and $k'$ (for node $i'$) for each second-variable node $j$ (e.\,g., each concept) and weight them by how often these combinations occur.
@@ -514,7 +514,7 @@ For this reason, it might make sense to subtract conflict edge weights from cong
  y_{ii'}^\text{subtract} = y_{ii'}^\text{congruence} - y_{ii'}^\text{conflict}
 \end{equation}
 Here, positive $y_{ii'}^\text{subtract}$ values indicate congruence in excess of conflict while negative values indicate conflict in excess of congruence.
-In some practical applications---for example, for visualisations of the congruence network---, it may make sense to discard all negative values or introduce some other threshold value $c$ for recoding all $y_{ii'}^\text{subtract} < c$ values as $0$.
+In some practical applications---for example, for visualizations of the congruence network---, it may make sense to discard all negative values or introduce some other threshold value $c$ for recoding all $y_{ii'}^\text{subtract} < c$ values as $0$.
 
 \subsection{The Ignore Method} \label{subsec:ignore}
 In some applications, qualifiers do not matter substantively, or there is only one level on the qualifier variable.
@@ -523,13 +523,13 @@ In such applications, it is possible to just count all referrals of $j$ by $i$ a
  y_{ii'}^\text{ignore} = \Phi_{ii'}\left( \sum_{j = 1}^n \left( \left( \sum_{k} x_{ijk} \right) \left( \sum_{k} x_{i'jk} \right) \right) \right)
 \end{equation}
 
-\section{Normalisation for One-Mode Networks}\label{sec:normalis}
-\citet{leifeld2017discourse} discusses the normalisation of congruence networks.
-Normalisation, however, is also possible for affiliation networks, as will be demonstrated below.
+\section{Normalization for One-Mode Networks}\label{sec:normalis}
+\citet{leifeld2017discourse} discusses the normalization of congruence networks.
+Normalization, however, is also possible for affiliation networks, as will be demonstrated below.
 
-Normalisation can be necessary to correct networks for the activity or popularity of nodes.
+Normalization can be necessary to correct networks for the activity or popularity of nodes.
 For example, if some first-variable nodes refer to a substantial number of second-variable nodes while others refer to few, the former will be more likely to be connected to many other nodes and especially those with similar levels of activity, which leads to a core--periphery structure of the discourse network.
-Normalisation corrects for this pattern by cancelling out the effect of activity or popularity of nodes.
+Normalization corrects for this pattern by cancelling out the effect of activity or popularity of nodes.
 This will often lead to a clear cluster structure based on the similarity of node profiles, instead of a core--periphery structure.
 
 In the simplest case, normalization can be switched off, in which case
@@ -537,22 +537,22 @@ In the simplest case, normalization can be switched off, in which case
  \Phi_{ii'}^\text{no}(\omega) = \omega.
 \end{equation}
 
-\subsection{Average Activity Normalisation of One-Mode Networks}
+\subsection{Average Activity Normalization of One-Mode Networks}
 Edge weights can be divided by the \emph{average activity} of nodes $i$ and $i'$:
 \begin{equation}\label{eq:activity}
  \Phi_{ii'}^\text{avg} (\omega) = \frac{\omega}{ \frac{1}{2} \left( \sum_{j = 1}^n \sum_{k} x_{ijk} + \sum_{j = 1}^n \sum_{k} x_{i'jk} \right) }.
 \end{equation}
-\emph{Average activity normalisation} is the most commonly applied form of normalisation and works both with binary and weighted $X$ arrays, i.\,e., with or without duplicate statements.
+\emph{Average activity normalization} is the most commonly applied form of normalization and works both with binary and weighted $X$ arrays, i.\,e., with or without duplicate statements.
 It divides each weight by the mean of the number of second-variable referrals of nodes $i$ and $i'$.
 
-\subsection{Jaccard Normalisation for One-Mode Networks}
-With \emph{Jaccard normalisation}, we do not just count $i$'s and $i'$'s activity and sum them up independently, but we add up both their independent activities and their joint activity, i.\,e., both matches and non-matches:
+\subsection{Jaccard Normalization for One-Mode Networks}
+With \emph{Jaccard normalization}, we do not just count $i$'s and $i'$'s activity and sum them up independently, but we add up both their independent activities and their joint activity, i.\,e., both matches and non-matches:
 \begin{equation}\label{eq:jaccard}
  \Phi_{ii'}^\text{Jaccard} (\omega) = \frac{\omega}{ \sum_{j = 1}^n \sum_{k} x_{ijk} [x_{i'jk} = 0] + \sum_{j = 1}^n \sum_{k} x_{i'jk}[x_{ijk} = 0] + \sum_{j = 1}^n \sum_{k} x_{ijk} x_{i'jk} }.
 \end{equation}
-Jaccard normalisation works best with binary $X$ arrays, i.\,e., if duplicate statements are not possible in the data structure.
+Jaccard normalization works best with binary $X$ arrays, i.\,e., if duplicate statements are not possible in the data structure.
 
-\subsection{Cosine Normalisation for One-Mode Networks}
+\subsection{Cosine Normalization for One-Mode Networks}
 With \emph{cosine normalization}, we modify Equation~\ref{eq:activity} to take the product in the denominator instead of the mean:
 \begin{equation}\label{eq:cosine}
  \Phi_{ii'}^\text{cosine} (\omega) = \frac{\omega}{ \sqrt{(\sum_{j = 1}^n \sum_{k} x_{ijk})^2} \sqrt{(\sum_{j = 1}^n \sum_{k} x_{i'jk})^2} }.
@@ -560,7 +560,7 @@ With \emph{cosine normalization}, we modify Equation~\ref{eq:activity} to take t
 This works best when duplicates are admitted but can also be applied to binary $X$ arrays.
 
 \section{Affiliation Networks}\label{sec:twomode}
-While one-mode networks as portrayed in Section~\ref{sec:onemode} are most useful for analysing coalition structure in policy debates, affiliation networks convey more complexity.
+While one-mode networks as portrayed in Section~\ref{sec:onemode} are most useful for analyzing coalition structure in policy debates, affiliation networks convey more complexity.
 This makes them harder to interpret with increasing complexity of the data but can be more informative for less complex discourse networks.
 
 The simplest case is to ignore the qualifier variable:
@@ -584,7 +584,7 @@ In the binary case (assuming $K = \{0; 1\}$), $0$ values need to be transformed 
 \end{equation}
 
 Alternatively, in the binary case (assuming $K = \{0; 1\}$), it is possible to map all combinations of $k$ for each $(ij)$ dyad into a multiplex network with three distinct types of edges, where $0$ represents neither agreement nor disagreement, $1$ represents agreement$, $2$ represents disagreement$, and $3$ represents a mix of both agreement and disagreement.
-This can be useful, for example, for visualising agreement, disagreement, and ambiguity/ambivalence in the same affiliation network using different colours.
+This can be useful, for example, for visualizing agreement, disagreement, and ambiguity/ambivalence in the same affiliation network using different colors.
 More formally:
 \begin{equation}
  y_{ij}^\text{affiliation combine binary} =
@@ -596,14 +596,14 @@ More formally:
  \end{cases}
 \end{equation}
 
-\section{Normalisation of Affiliation Networks}
-Like one-mode networks, affiliation networks can be normalised.
-With \emph{activity normalisation}, ties from more active nodes receive lower weights:
+\section{Normalization of Affiliation Networks}
+Like one-mode networks, affiliation networks can be normalized.
+With \emph{activity normalization}, ties from more active nodes receive lower weights:
 \begin{equation}
  \Phi_{ij}^\text{activity}(\omega) = \frac{\omega}{\sum_{j = 1}^n \sum_k x_{ijk}}
 \end{equation}
 
-With \emph{prominence normalisation}, ties to more prominent nodes receive lower weights:
+With \emph{prominence normalization}, ties to more prominent nodes receive lower weights:
 \begin{equation}
  \Phi_{ij}^\text{prominence}(\omega) = \frac{\omega}{\sum_{i = 1}^m \sum_k x_{ijk}}
 \end{equation}
@@ -611,7 +611,7 @@ With \emph{prominence normalisation}, ties to more prominent nodes receive lower
 \section{Temporal Aggregation: Time Windows and Attenuation}\label{sec:longi}
 Networks can be temporally smoothed.
 For example, it is possible to create a series of temporally overlapping time slices and aggregate these slices into a single network to limit the temporal scope of congruence edges (\emph{time window algorithm}).
-Using the same algorithm, it is possible to visualise change over time using animations.
+Using the same algorithm, it is possible to visualize change over time using animations.
 Or it is possible to make the edge weight proportional to the time that has passed between the relevant statements of $i$ and $i'$ (\emph{attenuation algorithm}).
 These methods are more advanced and are introduced in \citet{leifeld2016policy}.
 
@@ -688,7 +688,7 @@ If you have not altered the default installation location, you should find \java
  \label{fig:javahome}
 \end{figure}
 
-Windows should now recognise \java\ and be able to run \java\ commands.
+Windows should now recognize \java\ and be able to run \java\ commands.
 To test this, we can open the command prompt (press the \win\ button on your keyboard and simply enter \code{cmd} and then hit \code{Enter}) and type a \java\ command, e.\,g., \code{java -version}.
 If the installation was successful, the output should display information about the \java-version and build as depicted in Figure~\ref{fig:javvers}.
 
@@ -727,8 +727,8 @@ print("Hello World!")
 
 The chunk of code above marks the first time we are using \R\ commands in this manual.
 It might be worth explaining what this means for users who are not familiar with documents containing \R\ code.
-Whenever code is shown in this manual it is decorated with a light grey background.
-Comments in \R\ code (i.\,e., text targeted at the user to explain what is happening in a specific line) are marked with a \code{\#} and are formatted in italic font and in dark grey.
+Whenever code is shown in this manual it is decorated with a light gray background.
+Comments in \R\ code (i.\,e., text targeted at the user to explain what is happening in a specific line) are marked with a \code{\#} and are formatted in italic font and in dark gray.
 The output, which is generated by running a command, is marked by two \code{\#} and formatted in black.
 This means that any line that does not start with \code{\#\#} contains \R\ code you can copy and paste to the console in \rstudio\ and run.
 Alternatively, you can also copy the code into an \R\ script and execute it by either clicking on the \rrun\ button in the upper right corner of the console in \rstudio, or you can use the shortcut \code{Ctrl+Enter}.
@@ -795,17 +795,14 @@ system("java -version")
 @
 If your output looks like the output above, you are almost ready to install \texttt{rJava}.
 The only thing left to do is to associate \java\ with \R.
-To do this, you can either use the terminal app, or you can invoke a system command directly from within \R\ using the \code{system} function:
+To do this, you use the terminal app\footnote{Press CMD + Space to open spotlight search, type ``terminal'' and hit return}:
+
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 $sudo R CMD javareconf
 @
-Or in \R:
-<<eval=FALSE, results = 'tex'>>=
-system("sudo R CMD javareconf")
-@
 
 If \code{/usr/libexec/java\_home -V} does not show \code{1.8.0\_162} (or any other version staring with \code{1.8.}), you need to install \java\ version~8 again (see above) and possibly reboot your computer.
-If \code{java -version} shows \code{java version "1.6.0\_65"}, but version~1.8 is listed in the output from the first command, you can set the default by excecuting the following command:
+If \code{java -version} shows \code{java version "1.6.0\_65"}, but version~1.8 is listed in the output from the first command, you can set the default by executing the following command:
 <<eval=FALSE, results = 'tex'>>=
 # Set JAVA_HOME
 system("export JAVA_HOME=`/usr/libexec/java_home -v 1.8`")
@@ -840,7 +837,7 @@ $sudo add-apt-repository \
 "deb [arch=amd64,i386] https://cran.rstudio.com/bin/linux/ubuntu \
 $(lsb_release -cs)/"
 @
-        Note, that \code{lsb\_release -a} automatically selects your flavour and version of Linux from the CRAN server.
+        Note, that \code{lsb\_release -a} automatically selects your flavor and version of Linux from the CRAN server.
         Visit \href{https://cran.rstudio.com/bin/linux/}{CRAN} to see for which  Linux distributions \R\ is available.
         \code{cran.rstudio.com} is also just one of several \href{https://cran.r-project.org/mirrors.html}{CRAN mirrors}, so you could replace it with a different one if you prefer.
   \item Next, you need to add \R\ to your keyring.
@@ -924,13 +921,13 @@ If that is the case, we can go ahead and install \rdna\ from within \R.
 
 First, we need to install the package \rjava\ \citep{urbanek2017rjava}, which is the most important dependency of \rdna:%
 \footnote{Again this sometimes doesn't work that easily on macOS. If the installation fails, you could try to install the package from source using \code{install.packages("rJava", type="source").}}\textsuperscript{,}%
-  \footnote{Alternativly, it can make sense on Linux systems to install \rjava\ via apt: \code{sudo apt-get install r-cran-rjava}.}
+  \footnote{Alternatively, it can make sense on Linux systems to install \rjava\ via apt: \code{sudo apt-get install r-cran-rjava}.}
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 install.packages("rJava")
 @
 
 To see if this worked, or to troubleshoot potential problems, we can run a few \java\ commands from within \R:
-\footnote{Loading \rjava\ for the first time regulary fails on macOS with the warning \code{...}.
+\footnote{Loading \rjava\ for the first time remotely fails on macOS with the warning \code{...}.
 If this is the case, try the command \code{sudo ln -s \$(/usr/libexec/java\_home)/jre/lib/server/libjvm.dylib /usr/local/lib} in your terminal app.}
 <<eval=TRUE, results = 'tex', message = FALSE>>=
 library("rJava")
@@ -972,12 +969,12 @@ remotes::install_github("leifeld/dna/rDNA@*release",
 @
 
 After this is done as well, the final step of the installation is to test if \rdna\ can be loaded into \R\ correctly and to perform a basic operation with it---opening \dna\ from within \R.
-In order to do so, you first need to download \dna, which \rdna\ will do automatically when you initialise it for the first time (see Chapter~\ref{chp:rdna} for more details on what this command does).
+In order to do so, you first need to download \dna, which \rdna\ will do automatically when you initialize it for the first time (see Chapter~\ref{chp:rdna} for more details on what this command does).
 <<eval=FALSE, results = 'tex', message = FALSE>>=
 # load package
 library("rDNA")
 
-# initialise DNA (jar file will be downloaded)
+# initialize DNA (jar file will be downloaded)
 dna_init()
 
 # start up DNA from R with the sample file to see if everything worked
@@ -1001,8 +998,8 @@ dna_downloadJar() # update DNA as well to have matching versions
 \FloatBarrier
 
 After installing the program (see Chapter~\ref{chp:installation}), you can now create your first DNA database for your own research project.
-How you set up a DNA database will mainly depend on the needs of your personal research design---which should usually be clear before you start analysing data.
-Therefore, \dna\ can be customised during the creation of a new database in accordance with how you are planning to use the tool.
+How you set up a DNA database will mainly depend on the needs of your personal research design---which should usually be clear before you start analyzing data.
+Therefore, \dna\ can be customized during the creation of a new database in accordance with how you are planning to use the tool.
 
 \section{Creating a new DNA Database}\label{sec:createnewdb}
 In order to create a new DNA database file, you have to click on the index tab \code{File} (in the upper left corner of your DNA program window) and select the option \code{New DNA database} (see Figure~\ref{fig:newdb}).
@@ -1017,7 +1014,7 @@ As a result, a new window will open (see Figure~\ref{fig:dbchoose}), in which yo
 
 \begin{figure}
   \includegraphics[frame, width=\linewidth]{04-3-chooseDB}
-  \caption{Choose if database will be stored locally or remotly}
+  \caption{Choose if database will be stored locally or remotely}
   \label{fig:dbchoose}
 \end{figure}
 
@@ -1036,7 +1033,7 @@ Which of these options best fits your research project is dependent on the circu
   This stores your data in a  MySQL database which could be stored locally on your machine---which would defy the purpose though---, on a private server---such as a Network-attached storage (NAS)---, or on an online cloud server.
   You should select this option if you employ a single coder working on multiple devices or multiple coders working on a single dataset at the same time.
   The preconditions for using this type of storage are that all coders have a stable connection to the database during the coding process---e.\,g., via the internet---and that you \href{https://dev.mysql.com/doc/mysql-getting-started/en/}{set up an online MySQL database} in advance.
-  If this is how you want to proceed, you can now jump directly to the section which descibes the necessary steps for \fullref{subsec:usingremote}.
+  If this is how you want to proceed, you can now jump directly to the section which describes the necessary steps for \fullref{subsec:usingremote}.
 \end{description}
 
 
@@ -1045,7 +1042,7 @@ Which of these options best fits your research project is dependent on the circu
 \subsection{Creating a Local DNA File}\label{subsec:createlocal}
 \begin{enumerate}
 \item Click on the button \code{Browse} (see Figure~\ref{fig:dbchoose}).
-Now a pop-up menu---similiar to the one shown in Figure~\ref{fig:path}---should be open.
+Now a pop-up menu---similar to the one shown in Figure~\ref{fig:path}---should be open.
 \item In this pop-up menu, you can choose the storage location of your database on your local device from the \code{Save in} slide down menu.
 Enter the name of your database in the field \code{File Name} and confirm your choices by pressing the \code{Save} button (see Figure~\ref{fig:path}).
 Now the pop-up menu will close.
@@ -1138,8 +1135,8 @@ Both options will open the pop-up menu shown in (see Figure~\ref{fig:coderdetail
 
 This pop-up menu allows you to configure an individual profile for each coder in three simple steps:
 \begin{enumerate}
- \item You can choose the \emph{colour} for the coder (see Figure~\ref{fig:coderdetail}, step 1).
-It is recommended to choose different---if possible---divergent colours for each coder, because this permits you to detect at the first glance, which user coded which statement, as every coded statement is marked in the individual colour of its respective coder (see middle column of Figure~\ref{fig:chacoder}).
+ \item You can choose the \emph{color} for the coder (see Figure~\ref{fig:coderdetail}, step 1).
+It is recommended to choose different---if possible---divergent colors for each coder, because this permits you to detect at the first glance, which user coded which statement, as every coded statement is marked in the individual color of its respective coder (see middle column of Figure~\ref{fig:chacoder}).
  \item You can enter the preferred name of each coder in the field \code{Name}.
 If possible with respect to data protection rules, it is recommended to use the real names of the coders.
 This makes it easier for them to select their profile (in the upper left of the main program window) the first time they start the program (see Figure~\ref{fig:chacoder}).
@@ -1196,7 +1193,7 @@ However, if you don't have a theoretically relevant set of keywords in advance o
 
 Finally you approve your choices by clicking the \code{OK} button (see Figure~\ref{fig:coderdetail}, step 4).
 It is possible to change the settings either in the ``new database'' menu by selecting the respective user and clicking the \code{Edit} button (see Figure~\ref{fig:chacoder}) or changing the coder settings in the main menu.
-To do so, simply select a coder from the drop-down menu in the window at the top left of the main menu and then push the pencil icon underneth.
+To do so, simply select a coder from the drop-down menu in the window at the top left of the main menu and then push the pencil icon underneath.
 The same menu as depicted in Figure~\ref{fig:chacoder} will open up again.
 
 \section{Statement Types and Variables} \label{sec:stattype}
@@ -1262,7 +1259,7 @@ In this case, you could first rename the statement type ``DNA Statement'' by sel
 Subsequently you would open a new pop-up window by clicking on the \code{Add} button in the statement type menu (left button in Figure~\ref{fig:stattype}).
 Then name the new statement type (in this case: ``Statement for Research Project 2'') in the text field on top of the pop-up window and choose a color (different from the other type) by clicking on the colored button next to this text field.
 Then you also need to specify the relevant variables synchronous to the procedure depicted in Section~\ref{subsec:adjusvarint}.
-However, please evaluate carefully, if it is really neccesary for your second research interest that you specify a second statement type or if it would be possible to either conceptualize it as a variable of the existing statement type or study it sequentially or with a different set of coders (and therefore in a different \dna\ dataset).
+However, please evaluate carefully, if it is really necessary for your second research interest that you specify a second statement type or if it would be possible to either conceptualize it as a variable of the existing statement type or study it sequentially or with a different set of coders (and therefore in a different \dna\ dataset).
 \emph{More than two statement types (besides ``Statement'' and ``Annotation'') can cause a confusion of the coders and therefore compromise the validity of the coding procedure}.
 
 \section{Final Step: Approving your Workspace and Creating the DNA File} \label{sec:finalstep}
@@ -1278,7 +1275,7 @@ After creating the database, the new database will open in the main DNA window (
 
 \begin{figure}
   \includegraphics[width=\linewidth]{04-15-nodb}
-  \caption{No databse selected (e.\,g., if choice was not applied)}
+  \caption{No database selected (e.\,g., if choice was not applied)}
   \label{fig:nodb}
 \end{figure}
 
@@ -1291,9 +1288,9 @@ After creating the database, the new database will open in the main DNA window (
 \chapterauthor{Felix Rolf Bossner and Johannes Gruber}
 \FloatBarrier
 This section describes how to upload and organize your research project's raw data---i.\,e., the text files (newspaper articles, press releases etc.) containing the uncoded statements---in DNA.
-First it will be layed out how you open an existing database---either locally or from a remote location.
-Then you will learn how to import new documenst into \dna---either by importing one document at a time or by selecting mutliple documents for import.
-Finally, we tell you how you can organise the documents in your database and how you can change your docuemtns' metadata.
+First it will be laid out how you open an existing database---either locally or from a remote location.
+Then you will learn how to import new documents into \dna---either by importing one document at a time or by selecting multiple documents for import.
+Finally, we tell you how you can organize the documents in your database and how you can change your documents' metadata.
 
 \section{Opening an Existing DNA Database}\label{chp:dna-open}
 First of all, you have to choose, in which \dna\ Database you want to upload and process your data.
@@ -1303,7 +1300,7 @@ If your database is stored on a remote server, you should choose the second opti
  If your dataset is stored in a folder on your local PC or device, you can proceed with the preset option and click on the button \code{Browse} (see Figure~\ref{fig:opendb}, step 2), which will open a further pop-up window, in which you can find your database by choosing its storage location from the  \code{Save in} slide down menu  (see step 3), selecting the respective database (see step 4) and clicking on the button \code{Open} both in the pop-up  and the ``Open existing database...'' window (see steps 5 and 6).
 \begin{figure}
   \includegraphics[width=\linewidth]{05-1-opendb}
-  \caption{Opene \dna database}
+  \caption{Open \dna database}
   \label{fig:opendb}
 \end{figure}
 
@@ -1327,8 +1324,8 @@ Duplicate article titles are not allowed.
   \item The field \code{date} is also mandatory and preset on the current time and day.
 You can change it by either clicking on the year, month, day or time and adjusting the respective value via the arrows on the right or by manually entering the date in the format \code{YYYY-MM-DD hh:mm:ss}.
 Please make sure you enter the date correctly because otherwise the algorithms for longitudinal data (see Section~\ref{sec:longi}) will not work properly.
-  \item The fields \code{author}, \code{source}, \code{section} and \code{type} are optional, but this additional information can help you to efficiently organize your data and ensure the reproducibilty, transparency and future usage of your research project.
-You can enter these information either manually or select an author, source, section or type you specified for a previously added document from the drop-down menu, which appears when you click on the downward arrow buttonon the left of the respective field.
+  \item The fields \code{author}, \code{source}, \code{section} and \code{type} are optional, but this additional information can help you to efficiently organize your data and ensure the reproducibility, transparency and future usage of your research project.
+You can enter these information either manually or select an author, source, section or type you specified for a previously added document from the drop-down menu, which appears when you click on the downward arrow button on the left of the respective field.
   \item To insert the content of your document, copy your article from a website or any other text source and paste it in the \emph{text field (largest field at the bottom of the pop-up window)}.
 Single line breaks are automatically removed, while double line breaks (paragraph breaks) are preserved.
 Some escape sequences and special characters are automatically removed when text is inserted.
@@ -1351,7 +1348,7 @@ This is why \dna\ also offers a semi-automatic way to upload multiple documents 
 \subsubsection{Downloading and Preparing your Raw Data}
 This way of importing raw data to \dna\ requires that you save all documents as \emph{separate \code{.txt} files} (one file for each article) \emph{in a common folder}.
 Please note, that you have to use the \code{.txt}format for saving your data, as \dna\ can not import \code{.doc} or \code{.pdf} files.\footnote{You can, however, save Word-documents as .txt files or use an online converter to transform PDFs into txt files.
-Note, that you need to make sure (both cases) that the .txt file is saved with UTF 8 encoding.} In case you use the newspaper database of LexisNexis---which is available through many university lbraries---for finding and retrieving your raw data, please make sure that you download all documents separately (by selecting the individual document before clicking the download button, see Figure~\ref{fig:nexis}, step 1-2) and choose the document format \code{Text} (under \code{Format Options} in the Download pop-up menu, (see Figure~\ref{fig:nexis}, step 3-4) before downloading the data (see Figure~\ref{fig:nexis}, step 5).\footnote{If you use \rdna\ it will soon also be possible to import LexisNexis data into \dna\ via using \rdna\ and a new \R package called \href{https://github.com/JBGruber/LexisNexisTools}{LexisNexisTools} \citep{gruber2018lexis}.}
+Note, that you need to make sure (both cases) that the .txt file is saved with UTF 8 encoding.} In case you use the newspaper database of LexisNexis---which is available through many university libraries---for finding and retrieving your raw data, please make sure that you download all documents separately (by selecting the individual document before clicking the download button, see Figure~\ref{fig:nexis}, step 1-2) and choose the document format \code{Text} (under \code{Format Options} in the Download pop-up menu, (see Figure~\ref{fig:nexis}, step 3-4) before downloading the data (see Figure~\ref{fig:nexis}, step 5).\footnote{If you use \rdna\ it will soon also be possible to import LexisNexis data into \dna\ via using \rdna\ and a new \R package called \href{https://github.com/JBGruber/LexisNexisTools}{LexisNexisTools} \citep{gruber2018lexis}.}
 \begin{figure}
   \includegraphics[frame, width=\linewidth]{05-3-nexis}
   \caption{Downloading files from the LexisNexis newspaper archive}
@@ -1362,7 +1359,7 @@ Note, that you need to make sure (both cases) that the .txt file is saved with U
 While \code{Author} and \code{Source} do not require a special format or length (e.\,g., you can use the first and/or last name of the author), the type of the document must always be indicated by capital letters.
 For example, the file name of the
 article \url{http://spon.de/aeclD}, which is used as an example here, would have the format \code{31.03.2014 - Ralf Neukirch - SPON International - DIGITALRESOURCE.txt}.
-Please note, that plain text files are somtimes saved as \code{.TXT} instead of \code{.txt} files.
+Please note, that plain text files are sometimes saved as \code{.TXT} instead of \code{.txt} files.
 While this is technically the same, it can cause problems while importing multiple text files.
 If this is the case, you have to either change the preset Regex configuration or correct the \code{.txt} suffix manually in the file name(s).
 Otherwise the automatic detection of your documents' meta data will not work.
@@ -1399,9 +1396,9 @@ Then click again on the \code{Refresh} button to check, whether your changes wer
 
 \subsubsection{Adjusting the Regex Configuration for automatic identification of meta data}\label{subsubsec:adjregex}
 The previous steps assumed that you use the preset configuration of \dna\ to detect and upload the meta data (Title, Author, Source, Type, Date) of your documents automatically into your database.
-However, if you are interested in automatically importing additional information about your source data (in the fields \code{Section} or \code{Notes}) or if your file names depart from the naming system layed out here (but nevertheless contain all relevant information in a systematic order), \dna\ allows you to change, adjust or amend the pattern, through which the meta data about your documents is derived from the file names.
+However, if you are interested in automatically importing additional information about your source data (in the fields \code{Section} or \code{Notes}) or if your file names depart from the naming system laid out here (but nevertheless contain all relevant information in a systematic order), \dna\ allows you to change, adjust or amend the pattern, through which the meta data about your documents is derived from the file names.
 The commands/rules, on which the ``translation'' of file names into meta data is based, are formulated in the
-\href{https://en.wikipedia.org/wiki/Regular_expression}{Regular expessions (in short: Regex) syntax} and can be edited for each kind of information (Title, Author, Source, Section, Tyoe, Notes, Date) in the field \code{Pattern} on the bottom left of the ``Import text files...'' window (see Figure~\ref{fig:txtfls}).
+\href{https://en.wikipedia.org/wiki/Regular_expression}{Regular expressions (in short: Regex) syntax} and can be edited for each kind of information (Title, Author, Source, Section, Type, Notes, Date) in the field \code{Pattern} on the bottom left of the ``Import text files...'' window (see Figure~\ref{fig:txtfls}).
 If you want to amend or adjust this settings it is recommended to use a Regex Cheatsheet (see e.\,g.,
 \href{https://www.cheatography.com/davechild/cheat-sheets/regular-expressions/}{cheatography.com}
 or
@@ -1425,7 +1422,7 @@ If you use this manual as a beginner's tutorial for working with \dna\ please do
 This file contains a small selection of documents and statements from a larger project about congressional hearings on climate change, employed in the project described in \citet{fisher2013mapping, fisher2013where}.
 
 To import documents (and the included code statements), click on the index tab \code{Documents} and select the option \code{Import from DNA 2.0 file}, if \dna\ 2.0 was used to create and edit the database.
-As the internal structure of .dna files has significantly changed since version 1.31, databases created with an older version of \dna\ need to be impored using the seperate method \code{Import from DNA 1.31 file} (see Figure~\ref{fig:importdna}, step 1).
+As the internal structure of .dna files has significantly changed since version 1.31, databases created with an older version of \dna\ need to be imported using the separate method \code{Import from DNA 1.31 file} (see Figure~\ref{fig:importdna}, step 1).
 As a result of either step, a further pop-up menu will open (see Figure~\ref{fig:importstat}).
 In this window, you have to select the folder, in which you saved the text files of your raw data, from the \code{Look in} slide down menu (see step 2) and \emph{select the respective \code{.dna} file} (see step 3).
 Click the button \code{Open} (see step 4) to then open the menu depicted in Figure~\ref{fig:importstat}.
@@ -1465,9 +1462,9 @@ If you use this manual as a beginner's tutorial for working with \dna, you shoul
 All your imported documents are listed in the upper middle table of the \dna\ main window.
 If you click on an article, its corresponding text (i.\,e., the speech) will be displayed in the text area below the document table.
 By clicking on, for example, the entry \code{109-1: Callahan, Kateri-NGO-Y} you open the speech of Kateri Callahan, a representative of the Alliance to Save Energy.
-You can adjust the size of the document table (by clicking on the bar above the text area and moving it vertically with your cursor) or its colums (by clicking on the edge of the column and moving it horizontally with your cursor).
+You can adjust the size of the document table (by clicking on the bar above the text area and moving it vertically with your cursor) or its columns (by clicking on the edge of the column and moving it horizontally with your cursor).
 You can also customize the meta information, which are displayed in the document table: Just right click on any document and use the appearing context menu to (un-)check the boxes of the information you (don't) want to be displayed (see Figure~\ref{fig:batchrecode}, step 1).
-A structured (and customised) overview of your raw data is essential for detecting missing information and thus efficiently controlling, organizing and coding your data.
+A structured (and customized) overview of your raw data is essential for detecting missing information and thus efficiently controlling, organizing and coding your data.
 For example, if you display the meta information ``Type'' (by checking the respective box in the context menu), you can see that the type of all documents from the \code{sample.dna} file is not listed.
 \begin{figure}
   \includegraphics[width=\linewidth]{05-9-batchrecode}
@@ -1479,11 +1476,11 @@ The same context menu can be used to delete documents from your database by \emp
 
 \subsection{Editing the Documents' Metadata (Author, Time etc...)}
 DNA allows you to edit, delete or complement the descriptive information related to your raw data (title, date, author, source, section and type of document).
-Similiar to the procedures outlined in Section~\ref{sec:importdoc} there is a manual as well as a semi-automatic way to adjust the meta data of your documents.
+Similar to the procedures outlined in Section~\ref{sec:importdoc} there is a manual as well as a semi-automatic way to adjust the meta data of your documents.
 
 \subsubsection{Editing the documents' meta data manually}
 The most basic way to edit your documents' metadata is to \emph{select the document}, of which you want to edit the information (by left-clicking on it) and adjusting the values in the \code{Document properties} submenu on the middle left of the \dna\ main window (see Figure~\ref{fig:batchrecode}, step 2) by either manually typing in the relevant information or by selecting an already specified author, a source, a section or a type from the drop-down menu on the right of the respective meta field.
-For example, in Figure~\ref{fig:batchrecode} (step 2) Kateri Callahans speech was selected, and the value ``NGO'' (for Non-Governmental Organisation) was manually specified as ``Type of document'' by entering it in the field \code{Type} of the ``Document properties'' submenu.
+For example, in Figure~\ref{fig:batchrecode} (step 2) Kateri Callahans speech was selected, and the value ``NGO'' (for Non-Governmental Organization) was manually specified as ``Type of document'' by entering it in the field \code{Type} of the ``Document properties'' submenu.
 Do not forget to press the button \code{Save} in the submenu (see Figure~\ref{fig:batchrecode}, step 2) to confirm your edits.
 
 Please note, that you can manually only edit the meta data of \emph{one document at one time}.
@@ -1493,7 +1490,7 @@ If you try to select multiple documents for editing, the ``Document properties''
 However if you want to adjust the meta data of a greater number of articles, it quickly becomes tedious to manually edit information about each document.
 This is why \dna\ also offers a semi-automatic way to edit, delete or complement the descriptive information related to your documents.
 In order to edit your documents' meta data semi-automatically, click on the index tab \code{Documents} and select the option \code{Batch-recode meta-data} (see Figure~\ref{fig:batchrecode}, step 3).
-As a result, a pop-up window similiar to Figure~\ref{fig:recodewin} will open.
+As a result, a pop-up window similar to Figure~\ref{fig:recodewin} will open.
 In the upper half of this pop-up window you find nine fields, which can be configured in order to adjust the meta data for \emph{multiple documents at once}:
 \begin{figure}
   \centering
@@ -1505,15 +1502,15 @@ In the upper half of this pop-up window you find nine fields, which can be confi
 \begin{itemize}
   \item The field \code{Target field:} specifies, which kind of meta information (i.\,e., title, author, source, section, type, notes) should be adjusted by choosing the respective meta data category from the slide-down menu (which you open by clicking the arrow on the right of the target field).
   \item The field \code{Source field:} specifies, where the data you want to use for adjusting the target field is stored.
-For example, if you simply want to delete or correct (e.\,g., misspelt) title-, author-, source-, section-, type- or notes-metadata, you usually choose the same field as source field as you have chosen as target field, since you want to adjust the data already stored in this field.
+For example, if you simply want to delete or correct (e.\,g., misspelled) title-, author-, source-, section-, type- or notes-metadata, you usually choose the same field as source field as you have chosen as target field, since you want to adjust the data already stored in this field.
 However, if you want to add new data to a (maybe empty or incomplete) target field, you have to choose the part of the meta information as source field, which contains the information, from which you want to derive the new data.
 As the document title should contain all relevant meta information, \code{Title} is usually used as source field for the latter case.
   \item The field \code{Matching on target regex} allows you to automatically delimit the documents which you want to adjust, based on the information stored in the document's target field.
-Similiar to all regex implementations in \dna\ you can either use search terms or regular expressions to filter the documents.
-If you, for instance, misspelt the author ``Ralf Neukirch'' sometimes as ``Ralf Neu\emph{n}kirch'', you can correct all your misspellings by simply selecting ``Author'' as \code{Target field}, entering ``Ralf Neu\emph{n}kirch'' in the field \code{Matching on target regex:} and the correct version (``Ralf Neukirch'') in the field \code{New target field}.
+Similar to all regex implementations in \dna\ you can either use search terms or regular expressions to filter the documents.
+If you, for instance, misspelled the author ``Ralf Neukirch'' sometimes as ``Ralf Neu\emph{n}kirch'', you can correct all your misspellings by simply selecting ``Author'' as \code{Target field}, entering ``Ralf Neu\emph{n}kirch'' in the field \code{Matching on target regex:} and the correct version (``Ralf Neukirch'') in the field \code{New target field}.
 As \code{Matching on target regex} automatically deselects all non-matching cases (here: All documents, who do not have ``Ralf Neunkirch'' specified as their author), the meta information (here: ``Author'') remains the same for all other documents.
   \item The field \code{Matching on source regex} similarly allows you to automatically filter the documents of which you want to alter the meta data, based on the information stored in the document's source field.
-For example, if you realise that Ralf Neukirch does not write for ``SPON International'' (as you erroneously specified), but for ``THE GUARDIAN'', you can simply correct all your misspecifications by first selecting \code{Source} as the \code{Target field} and \code{Author} as the \code{Source field}, secondly entering ``Ralf Neukirch'' in the field \code{Matching on source regex} and then specifying ``THE GUARDIAN'' as \code{New target field}.
+For example, if you realize that Ralf Neukirch does not write for ``SPON International'' (as you erroneously specified), but for ``THE GUARDIAN'', you can simply correct all your misspecifications by first selecting \code{Source} as the \code{Target field} and \code{Author} as the \code{Source field}, secondly entering ``Ralf Neukirch'' in the field \code{Matching on source regex} and then specifying ``THE GUARDIAN'' as \code{New target field}.
   \item The field \code{\%target regular expression} allows you to specify/match a part of the target field, which you want to use as new information in the same field.
 For example, if the field \code{Author} somehow contains the full document titles you can reduce the information in the field \code{Author} to just the name of the respective author by entering the regular expression \code{(?<=.+?---).+?(?= -)} (see Figure~\ref{fig:regex} or \href{https://www.cheatography.com/davechild/cheat-sheets/regular-expressions/}{regex cheatsheet}) in the field \code{\%target regular expression} and entering \code{\%target} in the field \code{New target field}.
 \emph{Please note, that if you do not use this function, you should not change the preset value \code{.+} in this field}---because if you do, your recoding might not obtain the expected results.
@@ -1548,14 +1545,14 @@ Your recodings are only applied, if you press the button \code{Recode} (on the l
 However, before pressing the \code{Recode} button, you \emph{can} revert all adjustments by pressing the button \code{Revert changes} and therefore are able to experiment with the meta data (regex) specifications.
 
 As noted previously, all documents from the file \code{sample.dna} do not specify any meta data concerning the type of the respective document.
-Both Figure~\ref{fig:recodewin} and Figure~\ref{fig:recoderegex} illustrate an exemplary semi-automatic procedure for complementing this information based on the information stored in the document title (here: The organisation, to which the respective speaker belongs to).
+Both Figure~\ref{fig:recodewin} and Figure~\ref{fig:recoderegex} illustrate an exemplary semi-automatic procedure for complementing this information based on the information stored in the document title (here: The organization, to which the respective speaker belongs to).
 Thus in both examples, \code{Type} is selected as \code{Target field}, while \code{Title} is selected as \code{Source field}.
 
 The example in Figure~\ref{fig:recodewin} uses manual search terms to specify the meta information for the document type.
 By entering ``NGO'' in the field \code{Matching on source regex} the adjustments are limited to the documents, which contain ``NGO'' in the document title.
 By entering ``NGO'' in the field \code{New target field}, the new value for \code{Type} is specified for the selected documents.
 As you can see in the table on the lower half of the \code{Recode meta-data} window, this very simple procedure is insofar successful, as only the target fields of documents containing hearings of NGO-representatives are changed and the target fields of all other documents (including those with already correct \code{Type} information) remain unchanged.
-However, this procedure would have to be repeated for each kind of organisation from the sample (NGO, GOV, BUS).
+However, this procedure would have to be repeated for each kind of organization from the sample (NGO, GOV, BUS).
 
 The more elegant way of semi-automatically specifying meta information is depicted in Figure~\ref{fig:recoderegex}, which uses the \emph{Regex-syntax}.
 Here, by entering \texttt{\^?} in the field \code{Matching on target regex}, only those documents are selected for amendment, which do not already contain any information about the document type (therefore excluding those documents with already correct \code{Type} information).
@@ -1574,7 +1571,7 @@ Thus you can recode the document type for all documents at once, ensuring that a
 \FloatBarrier
 \chapter{Coding the Data}\label{chp:dna-coding}
 \chapterauthor{Johannes Gruber}
-Now that you know how to create a database and organise the documents in it, it's time to start with the actual coding.
+Now that you know how to create a database and organize the documents in it, it's time to start with the actual coding.
 This section describes how to create, edit and navigate through statements as well as how to employ the regex highlighter and search function to make coding of statements easier and faster.
 If you want to recreate the steps outlined in this section for practice, you should download the file \code{sample.dna} from the \dna\ \url{https://github.com/leifeld/dna/releases} and open it with the latest version of \dna\ from the same page---if you haven't already done that.
 This sample is a small excerpt from a larger empirical research project that tries to map the ideological debates around American climate politics in the U.S. Congress over time.
@@ -1587,9 +1584,9 @@ For the sake of this tutorial, we can create a new coder.
 You could also select one of the existing coders from the drop-down menu to create statements but it's just nicer if our new statement is associated with our names.
 Simply click on the plus sign in the coder menu in the upper left corner of the main window (see Figure~\ref{fig:newuser}, step 1).
 In the new menu that opens, enter your name and just leave all permissions selected for now (see Figure~\ref{fig:newuser}, step 2).
-Then you should choose a personal colour.
-Either you select a predefined one from the swatches tab or you define your own colour using one of the menus in the other tabs (see Figure~\ref{fig:newuser}, step 3).
-Later on, the statements you have created will be highlighted in this colour.
+Then you should choose a personal color.
+Either you select a predefined one from the swatches tab or you define your own color using one of the menus in the other tabs (see Figure~\ref{fig:newuser}, step 3).
+Later on, the statements you have created will be highlighted in this color.
 After accepting the edit, you can select yourself from the drop-down coder menu.
 This should always be the first step before you or one of your coders start to work on the database.
 \begin{figure}
@@ -1610,10 +1607,10 @@ Every \dna\ Statement consists of four pieces of information which you should id
 
 \begin{description}
   \item[Person] The person or actor who speaks or makes the statement.
-In discourse network analysis it is most often assumed that the organisation, not the person, are the important actors in a policy process.
+In discourse network analysis it is most often assumed that the organization, not the person, are the important actors in a policy process.
 So if you have decided from the start of a project that this is the case, you could leave the person filed empty.
-However, it might nevertheless be interesting in a later step if there are differences between persons from the same organisation, so it is advised that you complete all fields.
-  \item[Organization] The organisation the person who makes a statement is affiliated with.
+However, it might nevertheless be interesting in a later step if there are differences between persons from the same organization, so it is advised that you complete all fields.
+  \item[Organization] The organization the person who makes a statement is affiliated with.
   \item[Concept] The concept to which the statement refers.
 Concepts are usually abstract representations of the topics which are discussed.
 In advocacy coalition research, for example, concepts are claims for
@@ -1634,16 +1631,16 @@ As you can see in Figure~\ref{fig:statdetails}, each statement also has a unique
 The ID can't be changed by the user, but it can be used as a primary key if you want to record additional information about your statements in a separate database---e.\,g., to automatically merge the information again once you move to analysis in \R\ or other programs.
 
 There are also two more symbols in the upper right corner of the Statement window: a plus sign, which creates a copy of the current statement.
-This can be helpful if the same text passage can be coded as multiple statements, for example, when it mentions multiple persons or organisations which refer to the same concept.
-And a trash bin symbol, which completly removes your \dna\ Statement, but leaves the document intact (see Figure~\ref{fig:statdetails}).
+This can be helpful if the same text passage can be coded as multiple statements, for example, when it mentions multiple persons or organizations which refer to the same concept.
+And a trash bin symbol, which completely removes your \dna\ Statement, but leaves the document intact (see Figure~\ref{fig:statdetails}).
 
 After you are done providing the detail information, you can simply click anywhere outside the menu to return to the main window.
 The moment you leave the \dna\ Statement window, all your edits are saved in your database---so there is no need to apply the changes or save your progress periodically (see Figure~\ref{fig:statdetails}).
 If you click outside the window by accident, you can return to edit the statement by simply clicking on it again (more in the next section).
-After you return to the main page, the statement is now highlighted either in yellow or in the personal colour of the coder you selected (see Figure~\ref{fig:stathl}).
-All \dna\ Statements have the colour which was selected when the \dna\ database was created.
-The only way to change the highlight colour would be to create a new database.
-However, by opening the \code{Settings} and selecting \code{Color statements by coder} the highlight colour changes to the colour of the coder who created each statement.
+After you return to the main page, the statement is now highlighted either in yellow or in the personal color of the coder you selected (see Figure~\ref{fig:stathl}).
+All \dna\ Statements have the color which was selected when the \dna\ database was created.
+The only way to change the highlight color would be to create a new database.
+However, by opening the \code{Settings} and selecting \code{Color statements by coder} the highlight color changes to the color of the coder who created each statement.
 \begin{figure}
   \includegraphics[frame, width=\linewidth]{06-03-statdetails}
   \caption{Create new \dna\ Statement}
@@ -1651,12 +1648,12 @@ However, by opening the \code{Settings} and selecting \code{Color statements by 
 \end{figure}
 \begin{figure}
   \includegraphics[frame, width=\linewidth]{06-04-stathl}
-  \caption{\dna\ Statements are highlighted in yellow, annotations in grey by default}
+  \caption{\dna\ Statements are highlighted in yellow, annotations in gray by default}
   \label{fig:stathl}
 \end{figure}
 
 Besides \dna\ Statements, you can also create annotations.
-In the sample database, annotations are highlighted in grey.
+In the sample database, annotations are highlighted in gray.
 You can use this feature, for example, if you are not quite sure if a text passage is a statement.
 Then you or another coder could review all annotations later on and decide if it should be coded as a statement or not.
 In projects with multiple coders who work on a remote database, the feature can also serve as a mean of communication between coders, for example, to provide instructions for a specific document or to make each other aware of a certain sentence or paragraph which might not be a statement but nevertheless important in other ways.
@@ -1718,8 +1715,8 @@ However, now we need the middle option which displays the mentioned field beneat
 \end{figure}
 
 In this window, you can make edits to persons, organizations or concepts in all \dna\ Statements at once, rather than to single statements.
-The advantage is that you do not have to edit each individual statement if you notice that you misspelt a name, that two concepts which you have coded actually represent the same idea or if you simply find a better concept name which adds some clarity.
-When you edit a concept (or person or organisation) in this menu, it is changed in all \dna\ Statements at once.
+The advantage is that you do not have to edit each individual statement if you notice that you misspelled a name, that two concepts which you have coded actually represent the same idea or if you simply find a better concept name which adds some clarity.
+When you edit a concept (or person or organization) in this menu, it is changed in all \dna\ Statements at once.
 When this menu is first opened, it contains no information before you select either \code{DNA Statement} or \code{Annotation} from the left drop-down menu (see Figure~\ref{fig:editstatm}).
 \begin{figure}
   \centering
@@ -1730,7 +1727,7 @@ When this menu is first opened, it contains no information before you select eit
 
 To provide additional information for persons, organizations or concepts you have to click on the label symbol in the top right corner of the same window (see Figure~\ref{fig:editdetails}, step 2).
 As in the other menu, the window contains no entries before you select if you want to edit statements or annotations from the left drop-down list (see Figure~\ref{fig:editdetails}, step 3).
-In the table presented now, you can add colour, type, alias and notes for each person, organization or concept.
+In the table presented now, you can add color, type, alias and notes for each person, organization or concept.
 This information is not directly used in \dna\ but, as we will see in Chapter~\ref{chp:rdna}, can be used during analysis with \rdna.
 
 \FloatBarrier
@@ -1753,8 +1750,8 @@ So for instance, you could write ``global warming\textbf{|}climate change" to br
 Combining multiple keywords can serve as a quick way to browse through documents which are yet to code or which have already been coded to identify the most relevant parts.
 
 The \emph{``Regex highlighter''} works in much the same way.
-But instead of browsing through the occurrences of a key term, you can change its font colour to a colour of your choice.
-Looking again at Figure~\ref{fig:search}, you can see that multiple words have a different font colour: ``dioxide'' is orange, ``greenhouse'' is green, ``clima'' is blue and so on.
+But instead of browsing through the occurrences of a key term, you can change its font color to a color of your choice.
+Looking again at Figure~\ref{fig:search}, you can see that multiple words have a different font color: ``dioxide'' is orange, ``greenhouse'' is green, ``clima'' is blue and so on.
 This can help coders to notice when theory induced keywords appear in a paragraph.
 Again, it can be of help if you know a few basics about regular expressions, but as you can see, most of the keywords are written in plain English and you can use that as well if you prefer.
 However, consider that instead of the regular expression C[Oo0]2 you would have to enter both ``CO2'' and ``C02''.
@@ -1774,8 +1771,8 @@ Even though this chapter turned out to be shorter than the two previous ones, th
 \chapterauthor{Johannes Gruber}
 \FloatBarrier
 This section will walk you through the process of exporting data from \dna\ to continue analysis in different programs and provide detailed information about each of the 15 options you can change during export.
-If you intend to use \rdna\ to analyse your data---which is recommended---you will not have to export the data from \dna\ first as you can directly use the .dna database.
-However, \rdna's function \code{dna\_network} mirrors the options in the export window and hence it makes sense to familiarise yourself with the different ways in which networks can be exported from \dna.
+If you intend to use \rdna\ to analyze your data---which is recommended---you will not have to export the data from \dna\ first as you can directly use the .dna database.
+However, \rdna's function \code{dna\_network} mirrors the options in the export window and hence it makes sense to familiarize yourself with the different ways in which networks can be exported from \dna.
 
 To open the window, simply open the drop-down menu ``Export'' and click on the only entry \code{Export network...}.
 This will open the export window as depicted in Figure~\ref{fig:exportwin}.
@@ -1795,11 +1792,11 @@ There are three options: one-mode networks, two-mode networks and event lists.
 If you select to export a \emph{``one-mode network''}, the resulting matrix will have the same nodes in the rows and columns  (e.\,g., organizations $\times$ organizations) (see Table~\ref{tab:onemode}).
 The values in the cells in Table~\ref{tab:onemode} are a function of how often Variable 1 and Variable 2 are referenced together in \dna\ Statements.
 These values represent the edge weights of a network.
-All other options left on default, in the one-mode network case, that is the sum of all products of co-references by e.\,e., ogranisation A with organisation B (see Section~\ref{subsec:ignore}).
-Note, that the edge weight of an organisation with itself is always zero.
-One could also expect that these values would be aggregations of all statements an organisation made.
-However, this would not make theoretical sense as there is no edge between an organisation and itself.
-The the choice of the value zero in cells where row and column mention the same organisation are all zero is deliberate.
+All other options left on default, in the one-mode network case, that is the sum of all products of co-references by e.\,e., organization A with organization B (see Section~\ref{subsec:ignore}).
+Note, that the edge weight of an organization with itself is always zero.
+One could also expect that these values would be aggregations of all statements an organization made.
+However, this would not make theoretical sense as there is no edge between an organization and itself.
+The the choice of the value zero in cells where row and column mention the same organization are all zero is deliberate.
 
 <<eval=TRUE, echo=FALSE, results='hide', message=FALSE, warning=FALSE>>=
 #' prep environment
@@ -1873,9 +1870,9 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
 @
 
 The \emph{``Event list''} is a little different from the other two options.
-Instead of summarising the statements over Variable 1 and 2, it simply lists all \dna\ Statements with each row containing all variables of a statement including the time which was set for the document a statement occurred in.
+Instead of summarizing the statements over Variable 1 and 2, it simply lists all \dna\ Statements with each row containing all variables of a statement including the time which was set for the document a statement occurred in.
 The event list is thus a more detailed version of the statements window in the \dna\ user interface.
-As you can see in Table~\ref{tab:eventl}, this table is a lot larger than the matrices produced by the summarising algorithms used to produce one-mode and two node networks.
+As you can see in Table~\ref{tab:eventl}, this table is a lot larger than the matrices produced by the summarizing algorithms used to produce one-mode and two node networks.
 <<eval=TRUE, echo=FALSE, warning=FALSE>>=
 conn <- dna_connection(dna_sample(), verbose = FALSE)
 dt <- dna_network(conn,
@@ -1913,8 +1910,8 @@ Choosing the statement type makes the most sense if you have created your own ty
 As outlined there, very are few scenarios exist in which you have more than one relevant statement type.
 
 \section{File Format}
-There are three diffrent file formats which can be used for export at the moment: .csv, .dl and .graphml.
-Alternativly, the data can be brought to \R\ using the \rdna\ pacakge to import data directly from a .dna file (see Chapter~\ref{chp:rdna}).
+There are three different file formats which can be used for export at the moment: .csv, .dl and .graphml.
+Alternatively, the data can be brought to \R\ using the \rdna\ package to import data directly from a .dna file (see Chapter~\ref{chp:rdna}).
 
 The \code{.csv} format (short for  comma-separated values) is basically a spreadsheet format in a text file.
 If you open it with a text editor, it will look something like this:
@@ -1965,12 +1962,12 @@ data:
 \ucinet\ is a Windows application which also runs on Mac and Linux if you use it with and emulators such as Wine or Bootcamp.
 A 60-day free trial version with all features included is available for free on their website:
 \url{https://sites.google.com/site/ucinetsoftware/downloads}.
-However, we advise to use either \visone\ or \R\ for visualising your networks as both are free, under active development and---in the case of \R---open source.
+However, we advise to use either \visone\ or \R\ for visualizing your networks as both are free, under active development and---in the case of \R---open source.
 
 The \code{.graphml} format is based on the open standard XML and while still readable by humans, the output file for Table~\ref{tab:twomode} would be too long to display it here.
 \code{.graphml} files can be opened using \visone, which is ``a software tool intended for research and teaching in social network analysis'' (see \url{http://visone.info/html/about.html}).
-Since it is a \java\ program like \dna\ itself, it can be run on any operating system capable of installing \java---which means bascially all of them.
-You can take a glimpse at its visualisation capabilities in Figure~\ref{fig:visone}, which shows the plot of Table~\ref{tab:twomode}.
+Since it is a \java\ program like \dna\ itself, it can be run on any operating system capable of installing \java---which means basically all of them.
+You can take a glimpse at its visualization capabilities in Figure~\ref{fig:visone}, which shows the plot of Table~\ref{tab:twomode}.
 
 \begin{figure}
   \centering
@@ -1990,11 +1987,11 @@ That means that the second variable should be set to \code{concept}.
 
 In a two-mode network, the first variable denotes the node class for the rows, while the second variable denotes the node class used for the columns of the resulting network matrix.
 For Table~\ref{tab:twomode}, for example, we set \code{Variable 1} to \code{concept} and \code{Variable 1} to \code{organization}.
-Instead of seeing which concepts were  referenced by which organisation, we could also create a table that displays person $\times$ concept.
+Instead of seeing which concepts were  referenced by which organization, we could also create a table that displays person $\times$ concept.
 To do that we simply set \code{Variable 1} to \code{concept} and \code{Variable 2} to \code{person}.
-To make the logic underlying the use of the two variables even more clear we can also choose to create a somewhat redundent two-mode matrix.
-By setting \code{Variable 1} to \code{organization} and \code{Variable 2} to \code{person} we can count how often statements reference organisations and persons together.
-Since every person belongs to just one organisation, the resulting matrix will count all statements by a person in one cell of her/his column while the result of all other cells in her/his column is zero:
+To make the logic underlying the use of the two variables even more clear we can also choose to create a somewhat redundant two-mode matrix.
+By setting \code{Variable 1} to \code{organization} and \code{Variable 2} to \code{person} we can count how often statements reference organizations and persons together.
+Since every person belongs to just one organization, the resulting matrix will count all statements by a person in one cell of her/his column while the result of all other cells in her/his column is zero:
 <<eval=TRUE, echo=FALSE, warning=FALSE>>=
 conn <- dna_connection(dna_sample(), verbose = FALSE)
 dt <- dna_network(conn,
@@ -2019,7 +2016,7 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
 
 @
 When you look at the column with Christine Todd Whitman in above's table, you can see that all of her statements co-reference the Environmental Protection Agency.
-This is, therefore, the organisation she belongs to.
+This is, therefore, the organization she belongs to.
 A table like that would be rarely useful in a research project though, except maybe for checking if there had been inconsistencies during the coding process.
 
 \section{Qualifier and Qualifier Aggregation}\label{sec:qualifier}
@@ -2100,13 +2097,13 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
   row_spec(6, bold = T)
 @
 
-Each value in Table~\ref{tab:disagree} represents a specific value in a three-dimensional array which was descibed in Chapter~\ref{chp:algorithms}.
-One of the $x_{ijk}$ values is, for example, the count for $i =$ \emph{``CO2 legislation will not hurt the economy.''}, $j =$  \emph{``Senate''} and $k =$ \emph{disgaree}.
+Each value in Table~\ref{tab:disagree} represents a specific value in a three-dimensional array which was described in Chapter~\ref{chp:algorithms}.
+One of the $x_{ijk}$ values is, for example, the count for $i =$ \emph{``CO2 legislation will not hurt the economy.''}, $j =$  \emph{``Senate''} and $k =$ \emph{disagree}.
 Look in Table~\ref{tab:disagree} to see that this specific value is 2.
 
 You can also see that the Senate and Sierra Club co-reference three concepts: `\emph{`CO2 legislation will not hurt the economy.''}, \emph{``Emissions legislation should regulate CO2.''} and \emph{``There should be legislation to regulate emissions.''}.
-The other three are not co-refenrced and are therefore not counted at all.
-For the co-referenced concepts, the edge weight is number of statments from Senate multiplied with number of statments from Sierra Club (see Equation~\ref{eq:ignore}; we are ignoring the normalisation for now):
+The other three are not co-referenced and are therefore not counted at all.
+For the co-referenced concepts, the edge weight is number of statements from Senate multiplied with number of statements from Sierra Club (see Equation~\ref{eq:ignore}; we are ignoring the normalization for now):
 \infobox{9cm}{
   First, we calculate $\left( \sum_{k} x_{ijk} \right) \left( \sum_{k} x_{i'jk} \right)$ with $i = \text{Senate}$ and $i = \text{Sierra Club}$ for each concept j:\\
 
@@ -2125,7 +2122,7 @@ For the co-referenced concepts, the edge weight is number of statments from Sena
 
 \item[Congruence] This option is only available for one-mode networks.
 It means that only similarity or matches on the qualifier variable are counted in order to construct an edge.
-In case of a binary second variable (e.\,g., (dis-)agreement) this means that the only statements counted are those where, for example, two organisations co-support or both co-reject a concept.
+In case of a binary second variable (e.\,g., (dis-)agreement) this means that the only statements counted are those where, for example, two organizations co-support or both co-reject a concept.
 You can see how this changes the output when you compare Table~\ref{tab:onemode} and Table~\ref{tab:qual3}.
 Focusing again on the edge between the Senate and the Sierra Club, you can see now that the value dropped from seven to two as they do not support or reject all of the same concepts.
 We can repeat the same calculation, this time using Equation~\ref{eq:congruence_binary} from Section~\ref{subsec:congruence}:
@@ -2177,7 +2174,7 @@ Taking the same example as above we can again calculate the edge weight of Senat
 
 \infobox{10cm}{
   First, we calculate $\sum_{k} x_{ijk} x_{i'jk'}$ for each concept $j$.
-To make that easier to follow, we calcuate $x_{ijk} x_{i'jk'}$ individually for the two possible cases: $k = \text{agreement}$ and $k' = \text{disagreement}$ as well as $k = \text{disagreement}$ and $k' = \text{agreement}$:\\
+To make that easier to follow, we calculate $x_{ijk} x_{i'jk'}$ individually for the two possible cases: $k = \text{agreement}$ and $k' = \text{disagreement}$ as well as $k = \text{disagreement}$ and $k' = \text{agreement}$:\\
  
   Concept 1 ($k = \text{agreement;} k' = \text{disagreement}$): \hfill $0 \cdot 0 = 0$ \\
   Concept 1 ($k = \text{disagreement;} k' = \text{agreement}$): \hfill $0 \cdot 0 = 0$ \\
@@ -2237,7 +2234,7 @@ Taking the example from above, the edge between Senate and Sierra Club would be 
 
 See Table~\ref{tab:qual5} to check that this is correct.
 The meaning of this outcome is that Senate and Sierra Club do have in fact more differences than they have in common.
-You can also see that this is true for several of the other organisation pairs, suggesting a quite controversial discourse.
+You can also see that this is true for several of the other organization pairs, suggesting a quite controversial discourse.
 <<eval=TRUE, echo=FALSE>>=
 conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
@@ -2265,16 +2262,16 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
 \subsection{Two-mode (Affiliation) Networks}
 \begin{description}
 \item[Ignore] The agreement qualifier variable is ignored, i\,.e., the network is constructed as if all values on the qualifier variable were the same.
-In the most common case, the qualifier being (dis-)agreement, this means that co-references of a concept are aggregated, no matter if persons or organisations agree on them or not (see Table~\ref{tab:onemode}).
+In the most common case, the qualifier being (dis-)agreement, this means that co-references of a concept are aggregated, no matter if persons or organizations agree on them or not (see Table~\ref{tab:onemode}).
 The way in which the edge weights are constructed was already mentioned in Section~\ref{sec:twomode}.
 In the simplest case, a two-mode network with a binary qualifier, the edge weights for ignore are simple counts of co-references of variable 1 and 2.
 
 \item[Subtract] If the qualifier is a regular binary (dis-)agreement value, all disagreeing statements will be subtracted from all agreeing statements.
-For example, if an organisation mentions a concept two times in a positive way and three times in a negative way, there will be an edge weight of -1 between the organization and the concept.
+For example, if an organization mentions a concept two times in a positive way and three times in a negative way, there will be an edge weight of -1 between the organization and the concept.
 You can see how this plays out for the sample file in Table~\ref{tab:qual}.
 The \emph{National Petrochemical \& Refiners Association}, for example, disagreed twice to both \emph{``CO2 legislation will not hurt the economy''} and \emph{``There should be legislation to regulate emissions.''} resulting in edge weights of -2 for both concepts.
 If the qualifier is an integer value, subtract basically does the same: the absolute values of the negative qualifier codes are subtracted from the positive ones.
-In the example from above, if an organisation agrees somewhat (+1) to a concept twice and then disagrees strongly (-2) to the same concept twice, the edge weight would be -2.
+In the example from above, if an organization agrees somewhat (+1) to a concept twice and then disagrees strongly (-2) to the same concept twice, the edge weight would be -2.
 <<eval=TRUE, echo=FALSE>>=
 conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
@@ -2301,7 +2298,7 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
 
 \item[Combine] This option is only available for two-mode networks.
 Instead of doing mathematical operations on the qualifier values, combine creates a set of qualitative categories.
-In the case of a organization $\times$ concept matrix, there would be four possible outcomes: If an organsation neither disagrees nor agrees (i.\,e., never references the concept at all) the value would be 0; if the organisation always agreed on the concept whenever it mentioned it, the value is 1; if the organisation always disagreed on the concept whenever it mentioned it, the value is 2; and when they reference a statment both in a positve and negative (i.\,e., when heir stance towards it is mixed or ambiguous), the edge value is 3.
+In the case of a organization $\times$ concept matrix, there would be four possible outcomes: If an organsation neither disagrees nor agrees (i.\,e., never references the concept at all) the value would be 0; if the organization always agreed on the concept whenever it mentioned it, the value is 1; if the organization always disagreed on the concept whenever it mentioned it, the value is 2; and when they reference a statement both in a positive and negative (i.\,e., when heir stance towards it is mixed or ambiguous), the edge value is 3.
 You can see this in Table~\ref{tab:qual2}.
 With an integer variable, this may become more complex.
 As more combinations are possible and hence more qualitative categories need to be created (see Section~\ref{sec:twomode}.
@@ -2330,14 +2327,14 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
 \end{description}
 
 \section{Normalization}\label{sec:normal}
-In most real-life networks, normalisation is important.
+In most real-life networks, normalization is important.
 The reason is that some actors are more salient than others in public discussion.
 Government officials in charge of a certain problem will usually be covered more intensely than public interest groups who have an opposite stance.
 Other actors, such as political parties, follow a membership logic according to which they are by definition more diverse than others with regard to opinions.
 That means that due to their activity and diversity, these actors have agreement or disagreement ties to most other actors in the network at some point.
 This can obscure the real structure of a network and make it much harder to identify coalitions \citep{leifeld2017discourse}.
 
-To cancel out this activity effect, one can divide the edge weight between two organisations by a function of the two organizations' activity or frequency of making statements (see Section~\ref{sec:normalis}).
+To cancel out this activity effect, one can divide the edge weight between two organizations by a function of the two organizations' activity or frequency of making statements (see Section~\ref{sec:normalis}).
 This normalization procedure leaves us with a network of edge weights that reflect similarity in opinions without taking into account centrality or activity.
 Once again, which options are available depends on the network type.
 Only the option \code{no} is available in both types---which switches off normalization and is the default value.
@@ -2346,9 +2343,9 @@ Only the option \code{no} is available in both types---which switches off normal
   \item \textbf{Two-mode network}
   \begin{description}
     \item[Activity] This divides the edge weights through the activity of the node from the first variable.
-For example, in concept $\times$ organisation network in which organisation A has made four statements in total, the edge with concept B, which A mentioned once, has the value 0.25.
+For example, in concept $\times$ organization network in which organization A has made four statements in total, the edge with concept B, which A mentioned once, has the value 0.25.
     \item[Prominence] This divides the edge weights through the prominence of the node from the second variable.
-For example, in concept $\times$ organisation network in which concept B was mentioned eight times by all organisations and once by organisation A, the edge of A and B has the value 0.125.
+For example, in concept $\times$ organization network in which concept B was mentioned eight times by all organizations and once by organization A, the edge of A and B has the value 0.125.
   \end{description}
   \item \textbf{One-mode network}
   \begin{description}
@@ -2358,17 +2355,17 @@ To achieve a better scaling, all edge weights in the resulting normalized one-mo
 The respective algorithm can be found in Equation~\ref{eq:activity}.
     \item[Jaccard similarity] Jaccard similarity is a similarity measure with known normalizing properties.
 In contrast to \code{average activity}, it divides the co-occurrence frequency by the activity count of both separate actors plus their joint activity.
-The algorithm used for this normalisation can be found in Equation~\ref{eq:jaccard}.
+The algorithm used for this normalization can be found in Equation~\ref{eq:jaccard}.
     \item[Cosine similarity] Cosine similarity is another similarity measure with normalizing properties.
 It divides edge weights by the product of the nodes' activity.
 Find this algorithm in Equation~\ref{eq:cosine}.
   \end{description}
 \end{itemize}
-Normalisation can be used in the different networks described in Section~\ref{sec:qualifier} to correct potential biases introduced by very active nodes.
-By using a threshold value on the edge weights before visualising the network, normalisation can make it easier to remove low-intensity ties without discriminating against organisations with a low media profile.
-Furthermore, the two normalisation algorithms which are based on vector similarities (Cosine and Jaccard) prepare networks to be fed into hierarchical cluster analyses, nonmetric multidimensional scaling, or other clustering techniques that are based on distance or similarity measures in order to identify coalitions in a policy debate as an alternative to community detection.
-Details about normalisation can be found in \citet{leifeld2017discourse}.
-In Table~\ref{tab:normal} you can see how the two-mode network from Table~\ref{tab:twomode} looks like after applying the activity normalisation algorithm.
+Normalization can be used in the different networks described in Section~\ref{sec:qualifier} to correct potential biases introduced by very active nodes.
+By using a threshold value on the edge weights before visualizing the network, normalization can make it easier to remove low-intensity ties without discriminating against organizations with a low media profile.
+Furthermore, the two normalization algorithms which are based on vector similarities (Cosine and Jaccard) prepare networks to be fed into hierarchical cluster analyses, nonmetric multidimensional scaling, or other clustering techniques that are based on distance or similarity measures in order to identify coalitions in a policy debate as an alternative to community detection.
+Details about normalization can be found in \citet{leifeld2017discourse}.
+In Table~\ref{tab:normal} you can see how the two-mode network from Table~\ref{tab:twomode} looks like after applying the activity normalization algorithm.
 
 <<eval=TRUE, echo=FALSE>>=
 conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
@@ -2388,7 +2385,7 @@ dt <- dna_network(conn,
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
 kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
-      caption = "Two-mode network (organizations $\\times$ concept) activity normalised\\label{tab:normal}") %>%
+      caption = "Two-mode network (organizations $\\times$ concept) activity normalized\\label{tab:normal}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
 
@@ -2397,7 +2394,7 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
 
 \section{Duplicates}
 The next option in the export window would be \code{Isolates}, but as you will see, it makes more sense to talk about that option last.
-The background of the Duplicates feature is that multiple statements from the same person or organisation referring to the same statement do not always indicate stronger agreement or disagreement.
+The background of the Duplicates feature is that multiple statements from the same person or organization referring to the same statement do not always indicate stronger agreement or disagreement.
 For removing duplicates, there are again several options.
 This time, these are independent of your other choices in the export window:
 
@@ -2406,12 +2403,12 @@ This time, these are independent of your other choices in the export window:
   \item[Ignore per document] This removes duplicated statements which occur in the same document.
 In a newspaper article, for example, the number of times an actor is quoted with a statement may be a function of the journalist's agenda or the reporting style of the news media outlet, rather than the actor's deliberate attempt to speak multiple times about a specific topic.
 In these cases it makes sense to remove all duplicated statements in this article.
-  \item[Ignore per calendar week/month/year] In cases in which one or several newspapers reprint interviews, quotes or reports multiple times in different documents, it might make sense to remove these artefacts over time rather than on a document level.
+  \item[Ignore per calendar week/month/year] In cases in which one or several newspapers reprint interviews, quotes or reports multiple times in different documents, it might make sense to remove these artifacts over time rather than on a document level.
   \item[Ignore across date range] This removes all duplicated statements in all documents in the database.
 Consequently, edge weights of the different networks are converted to 1 if there has been co-reference or co-rejection or 0 if there has not.
 Usually, \code{Ignore across date range.} therefore converts the network into a boolean matrix.
 However, as you can see in Table~\ref{tab:dupl}, there is one 2 value at the edge of ``Energy and Environmental Analysis, Inc.'' and ``Emissions legislation should regulate CO2.''.
-This happened because this organisation contradicted itself by expressing both agreement and disagreement during the hearings.
+This happened because this organization contradicted itself by expressing both agreement and disagreement during the hearings.
 \end{description}
 
 Again we apply this transformation to Table~\ref{tab:twomode} to illustrate how the resulting matrix is affected:
@@ -2454,7 +2451,7 @@ However, this is sufficient to emphasize how times series are exported in \dna.
 You could, for example, be interested in a fast moving debate with actors changing opinions and/or sides daily.
 In this case, you could set \code{Moving time window} to \code{using days} and \code{time window size} to one.
 Consequently, \dna\ would export one network per day.
-These networks do not necessarily feature all organisations or concepts but will only show active nodes, as you can see in Table~\ref{tab:time}.
+These networks do not necessarily feature all organizations or concepts but will only show active nodes, as you can see in Table~\ref{tab:time}.
 Since there were only hearings on five of the selected 20 days (we excluded January 26th in the last step), the remaining 15 matrices are even completely empty.
 <<eval=FALSE, echo=FALSE>>=
 conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
@@ -2578,10 +2575,10 @@ In this case, the resulting network time slice is more inclusive and also contai
 
 \section{Exclude from Variable}
 The last row in the export window includes options which can be used to exclude statements which reference certain values.
-This can make sense if you are, for example, only interested in a certain kind of organisation.
+This can make sense if you are, for example, only interested in a certain kind of organization.
 To include only NGOs in your network, you could select organization from \code{Exclude from variable} and then while holding the Ctrl key select ``Energy and Environmental Analysis, Inc.'', ``Environmental Protection Agency'', ``National Petrochemical \& Refiners Association'' and ``Senate'' from the list on the right.
 The preview will now show which nodes are excluded.
-The exported network will miss all statements which reference one of these organisations and only contains statements made by NGOs:
+The exported network will miss all statements which reference one of these organizations and only contains statements made by NGOs:
 <<eval=TRUE, echo=FALSE>>=
 conn <- dna_connection(dna_sample(verbose = FALSE), verbose = FALSE)
 dt <- dna_network(conn,
@@ -2609,13 +2606,13 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",  caption = "Two-mode 
 @
 
 Another common application for this feature is to exclude concepts which are very general and do not add to the structure of the discourse network.
-This will be shown in Section~\ref{sec:retnet} where one concept makes the difference between a fairly convoluted and a much more telling network visualisation.
+This will be shown in Section~\ref{sec:retnet} where one concept makes the difference between a fairly convoluted and a much more telling network visualization.
 
 
 
 \section{Isolates}
 We saved isolates for last because now that all non-NGOs are removed from the export, it is easier to explain what this option does.
-If you look again at Figure~\ref{tab:exclud}, you will notice that not only are the edge weights smaller than before the exclusion, the non-NGO organisation nodes are gone as well.
+If you look again at Figure~\ref{tab:exclud}, you will notice that not only are the edge weights smaller than before the exclusion, the non-NGO organization nodes are gone as well.
 If one of the concepts would have never been referenced by any of the NGOs, this concept would be gone as well.
 This is because by default only nodes that show at least minimal activity are included in the exported networks.
 As you can also see in Table~\ref{tab:time}, exclusion of statements can lead to very differently sized matrices.
@@ -2677,16 +2674,16 @@ This increases replicability because the script can be re-used many times.
 For example, after discovering a wrong code somewhere in the \dna\ database, it is sufficient to fix this problem in the \dna\ file and then re-run the \R\ script instead of manually setting all the options again.
 This reduces the probability of making errors and increases replicability.
 
-The second advantage is the immense flexibility of \R\ in terms of statistical modelling.
-Analysing \dna\ data in \R\ permits many forms of data analysis beyond simple visualization of the resulting networks.
-Examples include cluster analysis or community detection, scaling and application of data reduction techniques, centrality analysis, and even statistical modelling of network data.
+The second advantage is the immense flexibility of \R\ in terms of statistical modeling.
+Analyzing \dna\ data in \R\ permits many forms of data analysis beyond simple visualization of the resulting networks.
+Examples include cluster analysis or community detection, scaling and application of data reduction techniques, centrality analysis, and even statistical modeling of network data.
 \R\ is also flexible in terms of combining and matching the data from \dna\ with other data sources.
 
 \section{Getting Started with \rdna}
 The first step is to install \R---which was explained in Section~\ref{chp:installation}).
 Installing additional \R\ packages for network analysis and clustering, such as \texttt{statnet} \citep{handcock2008statnet, goodreau2008statnet, handcock2016statnet}, \texttt{xergm} \citep{leifeld2018temporal, leifeld2017xergm}, \texttt{igraph} \citep{csardi2006igraph}, and \texttt{cluster} \citep{maechler2017cluster}, is recommended.
 Moreover, it is necessary to install and correctly set up the \texttt{rJava} package \citep{urbanek2017rjava}, on which the \rdna\ package depends, and the \texttt{remotes} package \citep{csardi2006remotes}, which permits installing \R\ packages from GitHub (see Section~\ref{sec:installdna}).
-To install the packages neccessary for this section, simply execute the following commands:
+To install the packages necessary for this section, simply execute the following commands:
 
 <<eval=FALSE>>=
 install.packages("statnet")
@@ -2721,7 +2718,7 @@ Now let's start using \rdna\:
 dna_init()
 @
 
-Now \rdna\ is initialised and we are able to use all functions from the package.
+Now \rdna\ is initialized and we are able to use all functions from the package.
 To get started, we can open the \dna\ graphical user interface (GUI) from the \R\ command line.
 This is not necessary for further steps and while the GUI is open, you can not do anything else with \R\ as the \texttt{Console} window will be used to display any messages or errors from \dna\ if they occur.\footnote{If no messages need to be printed to the Console, this might look like \R\ is ``frozen'', but don't worry: \R\ will return to its usual behaviour after you close the GUI.}
 
@@ -2775,7 +2772,7 @@ library("statnet")
 gplot(nw)
 @
 
-It is also easily possible to retrieve the attributes of a variable, for example the colours and types of ogranisations , using the \code{dna\_attributes} function:
+It is also easily possible to retrieve the attributes of a variable, for example the colors and types of organizations , using the \code{dna\_attributes} function:
 
 <<eval=TRUE, results = 'tex'>>=
 at <- dna_getAttributes(conn)
@@ -2851,7 +2848,7 @@ That means tha if you want to learn more about the plotting method we used above
 
 Here, we additionally used the \code{edge.lwd} argument of the \code{plot.network} function to make the line width proportional to the strength of congruence between actors.
 We used squared edge weights to emphasize the difference between low and high edge weights.
-And we also displayed the labels of the nodes at half the normal size, suppressed arrow heads, and changed the colour of the edges to grey.
+And we also displayed the labels of the nodes at half the normal size, suppressed arrow heads, and changed the color of the edges to gray.
 More information about the visualization capabilities of the \texttt{network} and \texttt{sna} packages are provided by \citet{butts2008social, butts2008network, butts2015network}.
 
 As you can see now, the network is not particularly polarized.
@@ -2909,10 +2906,10 @@ There are two camps revolving around environmental groups on the right and indus
 The strongest belief congruence ties can be found within, rather than between, the coalitions.
 
 Next, we should tweak the congruence network further by changing the appearance of the nodes.
-We can use the colours for the organization types saved in the database and apply them to the nodes in the network.
+We can use the colors for the organization types saved in the database and apply them to the nodes in the network.
 We can also make the size of each node proportional to its activity.
 The \code{dna\_attributes} function serves to retrieve these additional data from \dna.
-The result is a data frame with the relevant data for each organization in the \texttt{colour} and \texttt{frequency} columns:%
+The result is a data frame with the relevant data for each organization in the \texttt{color} and \texttt{frequency} columns:%
 \footnote{This prints the data.frame directly to the console. If you wish to examine the data.frame in a spreadsheet-style viewer instead, you can use \code{View(at)}.}
 
 <<eval = TRUE, results = 'show'>>=
@@ -2962,7 +2959,7 @@ We have covered this before in detail in Section~\ref{sec:qualifier}.
 \rdna\ reports on the \R\ console what each combination means (if you set \code{verbose = TRUE}).
 
 As in the previous example, the resulting network matrix can be converted to a \texttt{network} object (as defined in the \texttt{network} package).
-The colours of the edges can be stored as an edge attribute, and the resulting object can be plotted with different colours representing positive, negative, and ambivalent mentions.
+The colors of the edges can be stored as an edge attribute, and the resulting object can be plotted with different colors representing positive, negative, and ambivalent mentions.
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 6, crop = TRUE>>=
 nw <- network(affil, bipartite = TRUE)
@@ -2981,19 +2978,19 @@ plot(nw,
      )
 @
 
-In this example, we first converted the two-mode matrix to a bipartite \texttt{network} object, then created a vector of colours for the edges (excluding zeros), and inserted this vector into the \texttt{network} object as an edge attribute.
+In this example, we first converted the two-mode matrix to a bipartite \texttt{network} object, then created a vector of colors for the edges (excluding zeros), and inserted this vector into the \texttt{network} object as an edge attribute.
 It was necessary to work with the transposed \texttt{affil} matrix (using the \code{t} function) because the \code{set.edge.attribute} function expects edge attributes in a row-wise order while the \code{as.character} function returns them in a column-wise order based on the \texttt{affil} matrix.
-Finally, we plotted the network object with edge colours and labels.
+Finally, we plotted the network object with edge colors and labels.
 In the visualization, we used white nodes for organizations and black nodes for concepts.
 
-A side not on colours in \R: As you can see in this code chunk, there are three kinds of colours which \R\ can process.
-Simple general colour names like \emph{black} and \emph{white}, very specific colour names like \emph{deepskyblue} and \emph{indianred}, and hexadecimal numbers that represent a specific mixture of red, green and blue.
-For finding the specific names, there is an extensive \href{https://www.nceas.ucsb.edu/~frazier/RSpatialGuides/colorPaletteCheatsheet.pdf}{R colour cheatsheet}, which is also a good resource to get a quick overview of colours in R as well.
-Using hexadecimal numbers might seem overly complicated for the task of picking a colour for a plot at first.
+A side not on colors in \R: As you can see in this code chunk, there are three kinds of colors which \R\ can process.
+Simple general color names like \emph{black} and \emph{white}, very specific color names like \emph{deepskyblue} and \emph{indianred}, and hexadecimal numbers that represent a specific mixture of red, green and blue.
+For finding the specific names, there is an extensive \href{https://www.nceas.ucsb.edu/~frazier/RSpatialGuides/colorPaletteCheatsheet.pdf}{R color cheatsheet}, which is also a good resource to get a quick overview of colors in R as well.
+Using hexadecimal numbers might seem overly complicated for the task of picking a color for a plot at first.
 However, there are two reasons why you should consider it anyway.
-First, it is nowadays very easy to install a colour picker addon in your web browser, which gives you the opportunity to pick any colour you like on a website and use it for your own plots in \R.
-And second, because there is a fantastic website called \url{http://colorbrewer2.org/} that offers a number of very pleasant looking colour palettes which can make your plots appear more modern.
-The easiest way to use colours from both sources is by entering the hexadecimal numbers, preceded by \texttt{\#}.
+First, it is nowadays very easy to install a color picker addon in your web browser, which gives you the opportunity to pick any color you like on a website and use it for your own plots in \R.
+And second, because there is a fantastic website called \url{http://colorbrewer2.org/} that offers a number of very pleasant looking color palettes which can make your plots appear more modern.
+The easiest way to use colors from both sources is by entering the hexadecimal numbers, preceded by \texttt{\#}.
 
 We can now see the opinions of all actors on the various concepts.
 The blue edge indicates that \texttt{Energy and Environmental Analysis, Inc.} has both positive and negative things to say about the concept \texttt{``Emissions legislation should regulate CO2''}.
@@ -3005,10 +3002,10 @@ The negative tie is ignored in the construction of the congruence network becaus
 \section{Cluster analysis}
 In the last section we have seen how you can identify communities in a discourse by visually inspecting network plots.
 However, this becomes difficult very quickly as soon as discourse network analysis is performed on a larger database with more than just a few actors.
-Additionally, different levels of access to the media or other public forums can lead one organisation to be able to make many more statements than others and therefore mask the strength of ties between actors.
+Additionally, different levels of access to the media or other public forums can lead one organization to be able to make many more statements than others and therefore mask the strength of ties between actors.
 As briefly mentioned in Section~\ref{sec:normal}, it is therefore often fertile to perform certain clustering techniques on DNA networks to get a better grip of the characteristics of a discourse.
 
-\rdna\ users can perform this very easly, since our function \code{dna\_cluster} already comprises options for several clustering algorithms, along with the appropriate normalisation techniques.
+\rdna\ users can perform this very easily, since our function \code{dna\_cluster} already comprises options for several clustering algorithms, along with the appropriate normalization techniques.
 Again you can get help on the function with \code{help(dna\_cluster)}.
 
 We can perform clustering directly on the connection to the sample database we have been using above and do not need to call \code{dna\_network} first:
@@ -3025,11 +3022,11 @@ As you can see from the information printed to the screen when \code{clust} was 
 The distance measure is set automatically, based on the properties of the network.
 Normally, this defaults to Euclidean distance, except if the network matrix which is constructed in the background is binary.
 Since the default of \code{dna\_cluster} is to exclude duplicated statements on the document level (\code{duplicates = "document"}), the resulting network matrix is binary in this case, meaning that 1 represents a connection between actors and 0 means there is no connection.
-This, in effect, normalises the network as it does not matter anymore how often an actor makes the same statement in the same document and since the actors in the sample database do not appear in more than one document each.
-In other scenarios, however, actors might make the same statment many times over different documents.
+This, in effect, normalizes the network as it does not matter anymore how often an actor makes the same statement in the same document and since the actors in the sample database do not appear in more than one document each.
+In other scenarios, however, actors might make the same statement many times over different documents.
 In this case, you might want to use a different setting for \code{duplicates} argument.
 \code{duplicates = "acrosstime"}, for example, will make sure a binary network is created in all cases.
-If you turn the removal of duplicates off, the Euclidean distance will be used for clustering in this case and the number of statments each organisation has made will influence the clustering results:
+If you turn the removal of duplicates off, the Euclidean distance will be used for clustering in this case and the number of statements each organization has made will influence the clustering results:
 
 <<eval=TRUE, results = 'tex'>>=
 clust <- dna_cluster(conn, duplicates = "include")
@@ -3042,16 +3039,16 @@ Objects created via \code{dna\_cluster} can be directly plotted in \R\ using the
 plot(clust)
 @
 
-\code{plot} produces a simple dendrogram in this case, which shows the different clusters as branches and the organisations as leafs of a tree.
-This plot might be informative enough in some cases, but it is neither very appealing nor is it particularly easy to customise its shape, colours or labels.
+\code{plot} produces a simple dendrogram in this case, which shows the different clusters as branches and the organizations as leafs of a tree.
+This plot might be informative enough in some cases, but it is neither very appealing nor is it particularly easy to customize its shape, colors or labels.
 This is why we have integrated a special plot function into \rdna\ to make the life of users easier and to produce arguably nicer plots which can often be directly used for publication:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 5, fig.height = 7, out.width = "40%", out.height = "40%", crop = TRUE>>=
 dna_plotDendro(clust)
 @
 
-As you can see, this is essentially the same plot but the overly long labels on the x-axis were truncated (you can set the maximum number of characters using the argument \code{truncate =}), the leaves of the dendrogram have the colours chosen for each organisation in \dna, and the branches now consist of dashed lines to highlight where branches split.
-When you look into the help for \code{dna\_plotDendro} you will see that the function is highly customisable and offers a range of extra features.
+As you can see, this is essentially the same plot but the overly long labels on the x-axis were truncated (you can set the maximum number of characters using the argument \code{truncate =}), the leaves of the dendrogram have the colors chosen for each organization in \dna, and the branches now consist of dashed lines to highlight where branches split.
+When you look into the help for \code{dna\_plotDendro} you will see that the function is highly customizable and offers a range of extra features.
 
 But first of all, what you can see from the plot is that it appears like the discussion consist of three broad clusters.
 ``National Petrochemical \& Refiners Association'', ``Energy and Environmental Analysis, Inc.'' and the ``Senate'' appear to form one cluster; the ``Alliance to Save Energy'', ``Sierra Club'' and ``U.S. Public Interest Research Group'' make up the second one; while the ``Environmental Protection Agency'' seems to be a single community on its own.
@@ -3070,25 +3067,25 @@ clust <- dna_cluster(conn,
                      cutree.k = 2,
                      excludeValues = list("concept" =
                      "There should be legislation to regulate emissions."))
-dna_plotDendro(clust, shape = "diagonal", colours = "brewer", rectangles = "red")
+dna_plotDendro(clust, shape = "diagonal", colors = "brewer", rectangles = "red")
 @
 
 Now we can see that the two main branches of the dendrogram show the same communities we have identified in the network plot.
-As you have noticed, we have also changed some other things about the plot such as its shape, the selection of colours and we have plotted red rectangles around the two main clusters.
-As mentioned before, the function is highly customisable and can visualise up to four sets of information about the variables:
+As you have noticed, we have also changed some other things about the plot such as its shape, the selection of colors and we have plotted red rectangles around the two main clusters.
+As mentioned before, the function is highly customizable and can visualize up to four sets of information about the variables:
 
 \begin{description}
-\item[\code{leaf\_colours}] Takes the values \code{"attribute1"} or \code{"attribute2"} and colours the leaves accordingly. 
-What values are in attribute1 and attribute2 of the object you are plotting can be set in \code{"dna\_cluster"} and can be checked using the command \code{attributes(clust)\$colours}. 
-In this example, \code{attribute1} was set to type, which means that the type of organisation was used to colour leaves.
-\item[\code{leaf\_ends}] This works in the same way as \code{leaf\_colours} but instead of the leaf colours, it assigns different shapes to the line ends of the leaves.
+\item[\code{leaf\_colors}] Takes the values \code{"attribute1"} or \code{"attribute2"} and colors the leaves accordingly. 
+What values are in attribute1 and attribute2 of the object you are plotting can be set in \code{"dna\_cluster"} and can be checked using the command \code{attributes(clust)\$colors}. 
+In this example, \code{attribute1} was set to type, which means that the type of organization was used to color leaves.
+\item[\code{leaf\_ends}] This works in the same way as \code{leaf\_colors} but instead of the leaf colors, it assigns different shapes to the line ends of the leaves.
 \item[\code{activity}] This can be either turned on or off via \code{TRUE} and \code{FALSE}. 
 If turned on, the size of the line ends will be determined by the activity of the leaf in the network---i\,.e., how many statements an actor made (minus the duplicated statements, if you chose to exclude them).
-\item[\code{rectangles}] You can either provide a colour value to draw rectangles around groups or leave this empty to make the boxes disappear (which is the default). The group membership of each organisation in above's example is determined by providing \code{cutree.k = 2} in \code{"dna\_cluster"}. 
+\item[\code{rectangles}] You can either provide a color value to draw rectangles around groups or leave this empty to make the boxes disappear (which is the default). The group membership of each organization in above's example is determined by providing \code{cutree.k = 2} in \code{"dna\_cluster"}. 
 If you neither provide a value for \code{cutree.k} nor \code{cutree.h}, all leaves will belong to the same group.
 \end{description}
 
-Therefore it is possible to visualise a lot of different information in just one plot, which is great for publication, or if you want to use the plot to discover patterns for further analysis. 
+Therefore it is possible to visualize a lot of different information in just one plot, which is great for publication, or if you want to use the plot to discover patterns for further analysis. 
 The following plot shows this by employing the full potential of the function.
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
@@ -3107,8 +3104,8 @@ clust$attribute1
 clust$attribute1 <- c("male", "female", "male", "male", "male", 
                       "female", "male")
 
-# You can change the legend by changing the colours attribute
-attr(clust, "colours") <- c("Gender", "Organisation Type")
+# You can change the legend by changing the colors attribute
+attr(clust, "colors") <- c("Gender", "Organization Type")
 
 # Then you are ready to plot
 library("ggplot2")
@@ -3116,9 +3113,9 @@ dna_plotDendro(clust,
                activity = TRUE,
                shape = "diagonal",
                truncate = 20,
-               leaf_colours = "attribute1",
-               colours = "brewer",
-               custom_colours = "Set1",
+               leaf_colors = "attribute1",
+               colors = "brewer",
+               custom_colors = "Set1",
                rectangles = "#e34a33",
                leaf_ends = "attribute2",
                ends_alpha = 0.8,
@@ -3127,13 +3124,13 @@ dna_plotDendro(clust,
   coord_flip()
 @
 
-As becomes clear from this plot, the three NGOs are clustered together, while other organisations make up the second cluster.
-You can also see that while the NGOs are roughly the same in terms of activity, the number of statements  from persons who belong to a business or government organisations or are in Congress, differ widely.
+As becomes clear from this plot, the three NGOs are clustered together, while other organizations make up the second cluster.
+You can also see that while the NGOs are roughly the same in terms of activity, the number of statements  from persons who belong to a business or government organizations or are in Congress, differ widely.
 Unsurprisingly, the gender of the speakers does not seem to influence in which cluster they end up, but at least now you know, how you can add this information.
 
 You can also see in this example, how you can make further changes to the plot using commands from the \texttt{ggplot2} package \citep{wickham2009ggplot2}: simply by adding them via \code{+} at the end of the plot function.
 \texttt{ggplot2} is very popular in the \R\ community and you can find many tutorials online on how to produce plots with it.
-As \code{dna\_plotDendro} essentially uses \texttt{ggplot2} under the hood, you can use functions from \texttt{ggplot2} and its extensions to manipulate the appearence of the dendrogram further.
+As \code{dna\_plotDendro} essentially uses \texttt{ggplot2} under the hood, you can use functions from \texttt{ggplot2} and its extensions to manipulate the appearance of the dendrogram further.
 In this case, we added \code{+ coord\_flip()} after the end of the call to \code{dna\_plotDendro} to rotate the plot by 90°.
 
 Another option might not be particularly useful with a small dataset but can work well with larger samples. When setting \code{circular = TRUE}, the dendrogram will be plotted as a circle, making room for more leaves without needing a large amount of horizontal space.
@@ -3141,10 +3138,10 @@ Another option might not be particularly useful with a small dataset but can wor
 <<eval=TRUE, results = 'tex', fig.width = 7, fig.height = 5, out.width = "70%", out.height = "30%", crop = TRUE>>=
 dna_plotDendro(clust,
                circular = TRUE,
-               leaf_colours = "attribute2",
+               leaf_colors = "attribute2",
                leaf_labels = "nodes",
-               colours = "brewer",
-               custom_colours = "Set2",
+               colors = "brewer",
+               custom_colors = "Set2",
                theme = "void")
 @
 
@@ -3200,7 +3197,7 @@ grid <- grid.arrange(dend_centroid,
 @
 
 As you can see, all but one of the cluster methods arrive at basically the same result:
-NGOs belong to one main cluster, while the other organisations form the second one.
+NGOs belong to one main cluster, while the other organizations form the second one.
 Only clustering the sample data based on the leading eigenvector algorithm from the \texttt{igraph} package arrives at a different result.
 
 Once your plot is displayed in the plot pane of RStudio, you can use the export button to save the image as a PNG or PDF file for later use.
@@ -3233,7 +3230,7 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "") %>%
     row_spec(0, angle = 90)
 @
 
-The ``- 0'' or ``- 1'' behind each concept label stand for disagreement or agreement respectively. However, this table is hard to read, especially when there are more than just a few organisations or concepts present in the database.
+The ``- 0'' or ``- 1'' behind each concept label stand for disagreement or agreement respectively. However, this table is hard to read, especially when there are more than just a few organizations or concepts present in the database.
 
 One approach to make it easier to inspect the distribution of (dis-)agreement on concepts among members of each cluster are heatmap plots.
 Heatmaps are especially helpful to get a quick overview of a matrix and see where values are high or low.
@@ -3244,8 +3241,8 @@ clust <- dna_cluster(conn)
 dna_plotHeatmap(clust)
 @
 
-The dendrograms on the x- and y-axis of the heatmap show how organisations and concepts are grouped together by the clustering algorithm used to construct the object \code{clust}.
-As you can see, the main feature the NGOs have in common is their agreement to many of the concepts, while the other organisations seem to be more cautious in stating agreement towards any of the statements.
+The dendrograms on the x- and y-axis of the heatmap show how organizations and concepts are grouped together by the clustering algorithm used to construct the object \code{clust}.
+As you can see, the main feature the NGOs have in common is their agreement to many of the concepts, while the other organizations seem to be more cautious in stating agreement towards any of the statements.
 
 Since the heatmap is ordered by the dendrograms on its axis, changing the clustering algorithm will also change the heatmap.
 This makes it easy to compare how concepts and actors are clustered together.
@@ -3255,21 +3252,21 @@ As many users---and some publishers---may prefer grayscale plots, we also use th
 clust <- dna_cluster(conn,
                      clust.method = "walktrap")
 dna_plotHeatmap(clust,
-                colours = "gradient",
-                custom_colours = c('gray', 'black'))
+                colors = "gradient",
+                custom_colors = c('gray', 'black'))
 @
 
-Using the walktrap algorithm changed the order of the four upper organisations and now grouped business and government organisations together.
+Using the walktrap algorithm changed the order of the four upper organizations and now grouped business and government organizations together.
 Note, however, that the dendrogram on the x-axis of the plot hasn't changed.
 This is because the concepts cannot be clustered using the "walktrap" algorithm but are instead ordered based on the default value \code{ward.D2}.
 If you prefer not doing that, you have the option to turn off the drawing of the dendrogram on the x-axis completely by using the parameter \code{dendro\_x = FALSE}.
 
-As you can see, by setting \code{colours} as \code{gradient} and providing two colour values, you can change the colour for low (first colour) and high (second colour) values in the underlying matrix.
+As you can see, by setting \code{colors} as \code{gradient} and providing two color values, you can change the color for low (first color) and high (second color) values in the underlying matrix.
 Providing more than two values within \code{c()}, will still lead to the first value being used for low values and the last value being used for high values.
-All additional colour values in between will also be used to construct a gradient of colours.
+All additional color values in between will also be used to construct a gradient of colors.
 
-Alternatively, \code{colours} takes the setting \code{brewer} which will automatically choose a pleasant set of colours for the heatmap.
-In this case, \code{custom\_colours}---if used---needs to be a name of one of the available colour palettes from the \texttt{RColorBrewer} package \citep{neuwirth2014rcolorbrewer}.
+Alternatively, \code{colors} takes the setting \code{brewer} which will automatically choose a pleasant set of colors for the heatmap.
+In this case, \code{custom\_colors}---if used---needs to be a name of one of the available color palettes from the \texttt{RColorBrewer} package \citep{neuwirth2014rcolorbrewer}.
 You can display the available options using the \R\ command \code{RColorBrewer::display.brewer.all()}.
 
 As you will have noted, the labels of the concept are separated by (dis-)agreement and the words ``yes'' and ``no'' are added at the end.
@@ -3288,8 +3285,8 @@ clust <- dna_cluster(conn,
 dna_plotHeatmap(clust,
                 values = TRUE,
                 truncate = 20,
-                colours = "brewer",
-                custom_colours = "YlOrRd",
+                colors = "brewer",
+                custom_colors = "YlOrRd",
                 dendro_x = FALSE,
                 dendro_y_size = 0.4,
                 qualifierLevels = list("0" = "disagree",
@@ -3306,7 +3303,7 @@ From the heatmap plot you got an idea now why the cluster analysis assigned cert
 Yet, what you cannot assess so far is how different or similar the clusters are to each other.
 The network matrix usually simply has too many columns to compare the different actors to each other all at once.
 One common tool to get around this problem is to reduce the number of dimensions---in this case the dimensions would be agreement and disagreement to each concept---until they can be plotted in a two-dimensional space.
-That is excatly what (non-metric) multidimensional scaling (MDS) does.\footnote{Specifically we use Kruskal's non-metric multidimensional scaling which makes most sense for our kind of network data.}
+That is exactly what (non-metric) multidimensional scaling (MDS) does.\footnote{Specifically we use Kruskal's non-metric multidimensional scaling which makes most sense for our kind of network data.}
 Taking agreement and disagreement information towards all concepts, MDS can reduce the differences and similarities between actors to plot them in a two-dimensional space.
 
 In \rdna\ we can perform this with the now well-known \code{dna\_cluster} function and the \code{dna\_plotCoordinates} command.
@@ -3316,21 +3313,24 @@ clust <- dna_cluster(conn)
 dna_plotCoordinates(clust)
 @
 
-Each point in this dotplot represents an organisation, in this case, and the points are highlighted with colours and shapes which represent their membership in one of the clusters.
+Each point in this dotplot represents an organization, in this case, and the points are highlighted with colors and shapes which represent their membership in one of the clusters.
 Clusters are derived in this case with the \code{pam} function from the \texttt{cluster} package \citep{maechler2017cluster} and the silhouette width is used to assess the best number of clusters automatically by default, which in this case happens to be one.
 
-However, looking at the plot, you probably wonder why there only appear to be three dots.
-In fact, there is one point for every one of the seven organisations, but since they are so similar, they are plotted in almost exactly the same place.
-There are, however, tools to make them visible nevertheless.
-The first of these tools is called jittering: by adding random noise to the data, it is possible to prevent overplotting.
-In the \code{dna\_plotCoordinates} function, this can be done by providing one or two numeric values to the \code{jitter} argument:
+%However, looking at the plot, you probably wonder why there only appear to be three dots.
+%In fact, there is one point for every one of the seven organizations, but since they are so similar, they are plotted in almost exactly the same place.
+%There are, however, tools to make them visible nevertheless.
+%The first of these tools is called jittering: by adding random noise to the data, it is possible to prevent overplotting.
+%In the \code{dna\_plotCoordinates} function, this can be done by providing one or two numeric values to the \code{jitter} argument:
+
+If some dots would be too close together or would even cover each other, we could use jittering.
+Jittering adds random noise to the data, which is a popular way to prevent overplotting.
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 dna_plotCoordinates(clust, jitter = c(0.5, 1.7))
 @
 
-Now you can see points for all of the seven organisations.
-Additionally, polygons now encompass all points of the same cluster to visualise the area of a specific cluster.
+Now you can see points for all of the seven organizations.
+%Additionally, polygons now encompass all points of the same cluster to visualize the area of a specific cluster.
 The first jitter value in the code chunk above determines the limits of how much a point can be displaced left or right on the x-axis.
 If a second value is provided, the points are additionally jittered on the y-axis.
 
@@ -3343,7 +3343,7 @@ Yet, if you change the seed, this will alter the position of the jittered points
 dna_plotCoordinates(clust, jitter = c(0.5, 1.7), seed = 23455)
 @
 
-Use the jittering option cautiously though, since it distorts the appearance of the plot heavily if you choose appearance high jitter values as in the examples above.
+Use the jittering option cautiously though, since it distorts the appearance of the plot heavily if you choose high jitter values, as in the examples above.
 
 To evade the problem of distortion, you can use the other tool to show overplotted points in \rdna.
 Use option \code{label = TRUE} to plot the actor labels closely to their respective dots.
@@ -3353,10 +3353,10 @@ In this case, the labels will be moved instead of the points if actors appear ve
 dna_plotCoordinates(clust, label = TRUE)
 @
 
-The downside in this case is that the polygons disappeared again, since you need at least three points in one cluster, before the become visible.
+%The downside in this case is that the polygons disappeared again, since you need at least three points in one cluster, before the become visible.
 
 Like in the plot functions we showed before, \code{dna\_plotCoordinates} again comes with several arguments to style the plots.
-Specifically, you can provide colours to \code{custom\_colours} and numeric values to \code{custom\_shape}.
+Specifically, you can provide colors to \code{custom\_colors} and numeric values to \code{custom\_shape}.
 
 Another important point to highlight about \code{dna\_plotCoordinates} is that there are two additional cluster algorithms to determine the groups.
 The first one, \code{pam}, was already mentioned above.
@@ -3365,12 +3365,12 @@ The second one, \code{cluster\_louvain} is from the \texttt{igraph} package \cit
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 dna_plotCoordinates(clust,
                     label = TRUE,
-                    custom_colours = c("red", "green", "blue"),
+                    custom_colors = c("red", "green", "blue"),
                     custom_shape = c(4,5),
                     clust_method = "louvain")
 @
 
-If you would rather use one of those explained above, you can simply set the option in \code{dna\_cluster} and then choose \code{clust\_method = "inherit"}:
+If you would rather use one of the methods explained above, you can simply set the option in \code{dna\_cluster} and then choose \code{clust\_method = "inherit"}:
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
 clust <- dna_cluster(conn, clust.method = "edge_betweenness", cutree.k = 2)
@@ -3412,16 +3412,16 @@ dna_plotCoordinates(clust,
   theme_bw() +
   labs(caption = paste0("Nonmetric MDS with STRESS = ",
                         round(attributes(clust$mds)$stress, 3),
-                        ". Clusters derived from ",
+                        "%. Clusters derived from ",
                         clust$method,
                         " calculation.")) +
   theme(panel.grid.minor = element_blank(),
         text = element_text(size = 9),
-        panel.grid.major = element_line(colour = "grey",
+        panel.grid.major = element_line(color = "gray",
                                         size = 0.3,
                                         linetype = 2),
         panel.background = element_rect(fill = "#F8F2E4"),
-        legend.position = c(0.85, 0.85),
+        legend.position = c(0.95, 0.9),
         legend.background = element_rect(fill = alpha(0.4)),
         legend.title = element_blank())
 @
@@ -3436,13 +3436,13 @@ Besides that, there are a number of packages in the \R\ universe that are quite 
 The already mentioned \texttt{igraph} package \citep{csardi2006igraph}, for example, comes with very powerful functions for plotting networks. 
 Other packages, such as \texttt{networkD3} \citep{allaire2017networkD3} are capable of creating interactive network plots, which are great to share, for example, on a website.
 The package \texttt{ggraph} \citep{linpedersen2017ggraph} was specifically developed to employ the same logic as \texttt{ggplot2}, the so-called grammar of graphics, to implement a consistent logic for plotting networks.
-This makes it possible to produce highly customised plots by combining a set of relatively few individual functions which each serve to control one specific aspect of a plot.
+This makes it possible to produce highly customized plots by combining a set of relatively few individual functions which each serve to control one specific aspect of a plot.
 
 Whatever package you might prefer though, all of them have one thing in common: unlike graphical solutions such as \gephi\ or \visone, using \R\ for network analysis and plotting enables you to do reproducible research.
 This often outweighs the alleged convenience of GUI applications, as reproducibility is not just of academic value, but also enables you to copy the same plotting code again and again in your own research, once you are happy with the appearance of the network plot.
 
 However, we do acknowledge that bringing the data into the right form and tweaking your network plots to look good can be daunting for beginners or even advanced \R\ users who are new to network analysis.
-This is why \rdna\ comes with two dedicated functions to create netwrok plots: \code{dna\_plotNetwork} and \code{dna\_plotHive}.
+This is why \rdna\ comes with two dedicated functions to create network plots: \code{dna\_plotNetwork} and \code{dna\_plotHive}.
 Both are capable of handling \dna\ network objects:\footnote{Both functions technically first create an \texttt{igraph} object from a \dna\ network which is then plotted using \texttt{ggraph}.}\footnote{There is a good chance that your own plot will not look exactly like this.
 Due to your screen size and the size of the plot window, the size of nodes and labels might differ.
 However, you can easily control this by changing the arguments \code{node\_size} and \code{font\_size}.}
@@ -3459,13 +3459,13 @@ dna_plotNetwork(nw, truncate = 20, label_repel = 0) +
   coord_flip()
 @
 
-As you might be aware though, network visualisation poses one problem: the choice of the right layout algorithm can be quite difficult and there is unfortunately not one that would solve the problems for all datasets.
+As you might be aware though, network visualization poses one problem: the choice of the right layout algorithm can be quite difficult and there is unfortunately not one that would solve the problems for all datasets.
 In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} package are available---not all of which are useful for plotting networks from \dna\ data. Here is the selection of algorithms which we think makes the most sense:
 
 \begin{description}
   \item[nicely] This is probably the most useful option. Not technically a network algorithm, it employs \texttt{igraph} package to pick an appropriate layout. See \code{?igraph::nicely} for the details.
   
-  \item[bipartite] This algorithm is only really useful for two-mode networks. It minimises edge-crossings by plotting the nodes for each of the two variables in a separate row. See \code{?igraph::as\_bipartite}.
+  \item[bipartite] This algorithm is only really useful for two-mode networks. It minimizes edge-crossings by plotting the nodes for each of the two variables in a separate row. See \code{?igraph::as\_bipartite}.
   
    \item[circle] Arranges the nodes in a circle.
   
@@ -3487,7 +3487,7 @@ In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} p
   
   \item[randomly] Places nodes randomly into the plot. See \code{?igraph::randomly}.
   
-  \item[star] This places one node in the centre and spreads the rest of the nodes in equal distances around it. See \code{?igraph::as\_star}.
+  \item[star] This places one node in the center and spreads the rest of the nodes in equal distances around it. See \code{?igraph::as\_star}.
 \end{description}
 
 To get a better idea of how this works, look at the code chunk and plot below to see a small selection of the algorithms in action.

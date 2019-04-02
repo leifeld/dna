@@ -40,8 +40,8 @@ custom_colors; (3.) \code{brewer} automatically select nice colors from a
 defaults to \code{Set3}).}
 
 \item{custom_colors}{Either provide enough colors to manually set the
-colors in the plot (if colors = \code{manual"}) or select a palette from
-\code{RColorBrewer} (if colors = \code{brewer"}).}
+colors in the plot (if \code{colors = "manual"}) or select a palette from
+\code{RColorBrewer} (if \code{colors = "brewer"}).}
 
 \item{leaf_ends}{Determines which data is used to color the leaf_ends of the
 dendrogram. Can be either \code{attribute1}, \code{attribute2} or \code{group}. Set to
