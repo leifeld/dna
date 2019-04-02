@@ -2956,13 +2956,14 @@ dna_cluster <- function(connection,
   nw <- do.call(dna_network,
                 c(list(connection = connection,
                        networkType = "onemode",
-                       qualifierAggregation = "subtract",
-                       normalization = normalization_onemode,
                        variable1 = variable1,
                        variable2 = variable2,
+                       qualifier = qualifier,
+                       qualifierAggregation = "subtract",
+                       normalization = normalization_onemode,
                        isolates = FALSE,
                        duplicates = duplicates,
-                       qualifier = qualifier,
+                       excludeValues = excludeValues,
                        verbose = FALSE)
                   , dots)
   )
