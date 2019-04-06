@@ -118,7 +118,7 @@ library("knitr")
 # get latest R version
 site <- tryCatch({
   readLines("https://cran.r-project.org/bin/windows/base/", n = 10)
-}, 
+},
 error = function(e) {warning("Internet connection necessary to check for newest R version")})
 R_vers <- site[grepl("^<title>", site)]
 R_vers <- as.character(regmatches(R_vers, gregexpr("\\d+.\\d+.\\d+", R_vers)))
@@ -128,7 +128,7 @@ if (length(R_vers) == 0) {
 # get latest RStudio version
 site <- tryCatch({
   readLines("https://www.rstudio.com/products/rstudio/download/")
-}, 
+},
 error = function(e) {warning("Internet connection necessary to check for newest R version")})
 RS_vers <- site[grepl("<h4 id=\"download\"><strong>RStudio Desktop", site)]
 RS_vers <- as.character(regmatches(RS_vers, gregexpr("\\d+.\\d+.\\d+", RS_vers)))
@@ -325,7 +325,7 @@ In a conflict network, edges are counted when the two actors' agreement patterns
    \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{+}} (c1);
    \draw [black] (a1) to (a2);
    \node [annotation,right=-3mm] at (0,2.3) {congruence networks};
-  
+
    \node [actor] (a1) at (5.5,1) {$a_1$};
    \node [actor] (a2) at (5.5,0) {$a_2$};
    \node [category] (c1) at (8.5,0.5) {$c_1$};
@@ -333,14 +333,14 @@ In a conflict network, edges are counted when the two actors' agreement patterns
    \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
    \draw [black] (a1) to (a2);
    \node [annotation,right=-3mm] at (5.5,2.3) {conflict networks};
-  
+
    \node [actor] (a1) at (0,-1.5) {$a_1$};
    \node [actor] (a2) at (0,-2.5) {$a_2$};
    \node [category] (c1) at (3,-2) {$c_1$};
    \draw [gray] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
    \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {\textbf{--}} (c1);
    \draw [black] (a1) to (a2);
-  
+
    \node [actor] (a1) at (5.5,-1.5) {$a_1$};
    \node [actor] (a2) at (5.5,-2.5) {$a_2$};
    \node [category] (c1) at (8.5,-2) {$c_1$};
@@ -370,7 +370,7 @@ This calculation is illustrated in Figure~\ref{fig:algo_integercongruence}.
    \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+5$} (c1);
    \draw [black] (a1) to node [left=1mm,circle,solid,line width=0.2mm] {$\frac{7}{10}$} (a2);
    \node [annotation,right=-3mm] at (0,2.3) {congruence networks};
-  
+
    \node [actor] (a1) at (5.5,1) {$a_1$};
    \node [actor] (a2) at (5.5,0) {$a_2$};
    \node [category] (c1) at (8.5,0.5) {$c_1$};
@@ -378,14 +378,14 @@ This calculation is illustrated in Figure~\ref{fig:algo_integercongruence}.
    \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+5$} (c1);
    \draw [black] (a1) to node [left=1mm,circle,solid,line width=0.2mm] {$\frac{3}{10}$} (a2);
    \node [annotation,right=-3mm] at (5.5,2.3) {conflict networks};
-  
+
    \node [actor] (a1) at (0,-1.5) {$a_1$};
    \node [actor] (a2) at (0,-2.5) {$a_2$};
    \node [category] (c1) at (3,-2) {$c_1$};
    \draw [gray] (a1) to node [above=1mm,circle,solid,line width=0.2mm] {$-4$} (c1);
    \draw [gray] (a2) to node [below=1mm,circle,solid,line width=0.2mm] {$+2$} (c1);
    \draw [black] (a1) to node [left=1mm,circle,solid,line width=0.2mm] {$\frac{4}{10}$} (a2);
-  
+
    \node [actor] (a1) at (5.5,-1.5) {$a_1$};
    \node [actor] (a2) at (5.5,-2.5) {$a_2$};
    \node [category] (c1) at (8.5,-2) {$c_1$};
@@ -428,28 +428,28 @@ $X$ can be represented as a cuboid, as illustrated in Figure~\ref{fig:algo_cuboi
      {
       \draw[grid] (\x,-0.5) -- (\x,2.5);
       \draw[grid] (-0.5,\y) -- (2.5,\y);
-     }			
-  
+     }
+
    %draw the axes
    \draw[axis] (0,0,0) -- (3,0,0) node[anchor=west]{$i$};
    \draw[axis] (0,0,0) -- (0,3,0) node[anchor=west]{$j$};
    \draw[axis] (0,0,0) -- (0,0,3) node[anchor=west]{$k$};
-  
+
    %draw the bottom of the cube
    \draw[cube] (0,0,0) -- (0,2,0) -- (2,2,0) -- (2,0,0) -- cycle;
-  
+
    %draw the back-right of the cube
    \draw[cube] (0,0,0) -- (0,2,0) -- (0,2,2) -- (0,0,2) -- cycle;
-  
+
    %draw the back-left of the cube
    \draw[cube] (0,0,0) -- (2,0,0) -- (2,0,2) -- (0,0,2) -- cycle;
-  
+
    %draw the front-right of the cube
    \draw[cube] (2,0,0) -- (2,2,0) -- (2,2,2) -- (2,0,2) -- cycle;
-  
+
    %draw the front-left of the cube
    \draw[cube] (0,2,0) -- (2,2,0) -- (2,2,2) -- (0,2,2) -- cycle;
-  
+
    %draw the top of the cube
    \draw[cube] (0,0,2) -- (0,2,2) -- (2,2,2) -- (2,0,2) -- cycle;
   \end{tikzpicture}
@@ -583,7 +583,7 @@ In the binary case (assuming $K = \{0; 1\}$), $0$ values need to be transformed 
  y_{ij}^\text{affiliation subtract binary} = \Phi_{ij}\left(\sum_{k} \left( k x_{ijk} - (1 - k) x_{ijk} \right) \right)
 \end{equation}
 
-Alternatively, in the binary case (assuming $K = \{0; 1\}$), it is possible to map all combinations of $k$ for each $(ij)$ dyad into a multiplex network with three distinct types of edges, where $0$ represents neither agreement nor disagreement, $1$ represents agreement$, $2$ represents disagreement$, and $3$ represents a mix of both agreement and disagreement.
+Alternatively, in the binary case (assuming $K = \{0; 1\}$), it is possible to map all combinations of $k$ for each $(ij)$ dyad into a multiplex network with three distinct types of edges, where $0$ represents neither agreement nor disagreement, $1$ represents agreement$, $2$ represents disagreement, and $3$ represents a mix of both agreement and disagreement.
 This can be useful, for example, for visualizing agreement, disagreement, and ambiguity/ambivalence in the same affiliation network using different colors.
 More formally:
 \begin{equation}
@@ -858,11 +858,11 @@ $wget https://download1.rstudio.org/rstudio-$RS_vers$-amd64.deb
 $sudo gdebi -n rstudio-$RS_vers$-amd64.deb
 $rm rstudio-$RS_vers$-amd64.deb
 @
- 
+
   Note, that as of version \Sexpr{RS_vers}, \rstudio\ depends on an outdated version of \texttt{libgstreamer}.
   This version has already been deprecated in some linux distributions, which can lead to an error during installation of \rstudio.
   If you run into trouble while installing \rstudio, you should try installing the old version of \texttt{libgstreamer} side-by-side the newer library:
- 
+
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 # Download files with wget
 $wget http://ftp.ca.debian.org/debian/pool/main/g/gstreamer0.10/libgstreamer\
@@ -877,7 +877,7 @@ $sudo gdebi libgstreamer-plugins-base0.10-0_0.10.36-2_amd64.deb
 # And then clean up
 $sudo rm libgstreamer0.10-0_0.10.36-1.5_amd64.deb libgstreamer-plugins-base0.10-0_0.10.36-2_amd64.deb
 @
-  
+
   \item For Linux, there are a few other system dependencies for \rdna\. You should install these using:
 
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
@@ -1372,13 +1372,13 @@ If you prepared your data adequately, you can retrieve the documents and the rel
 As a result, a new window will open, in which you press the button \code{Select folder} (see step 2).
 This will open a further pop-up menu.
 Here, you have to select the \emph{folder}, in which you saved the text files of your raw data, from the \emph{\code{Look in} slide down menu} (see step 3) and click the button \code{Open} (see step 4).
- 
+
 \begin{figure}
   \includegraphics[width=\linewidth]{05-4-importtxt}
   \caption{Import text files}
   \label{fig:importtxt}
 \end{figure}
- 
+
   \item   Now all documents, which are stored in the respective folder, should be listed in the main window of the \code{Import text files...} pop-up (see Figure~\ref{fig:txtfls}).
 If this isn't the case, please check if your documents are saved in the right file format (.txt).
 In order to check, whether \dna\ is able to automatically identify your documents' meta data, select one of the documents and click on the \code{Refresh} button (see Figure~\ref{fig:txtfls}).
@@ -1391,7 +1391,7 @@ Then click again on the \code{Refresh} button to check, whether your changes wer
     \caption{Import text files}
     \label{fig:txtfls}
   \end{figure}
- 
+
 \end{enumerate}
 
 \subsubsection{Adjusting the Regex Configuration for automatic identification of meta data}\label{subsubsec:adjregex}
@@ -1862,7 +1862,7 @@ dt <- dna_network(conn,
                   excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
-kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
+kable(dt, format = "latex", booktabs = TRUE, linesep = "",
       caption = "Two-mode network (concept $\\times$ organizations)\\label{tab:twomode}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
@@ -1890,7 +1890,7 @@ dt <- dna_network(conn,
                   excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
-kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
+kable(dt, format = "latex", booktabs = TRUE, linesep = "",
       caption = "Event list\\label{tab:eventl}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "float_left")) %>%
   row_spec(0, angle = 90) %>%
@@ -2009,7 +2009,7 @@ dt <- dna_network(conn,
                   excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
-kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
+kable(dt, format = "latex", booktabs = TRUE, linesep = "",
       caption = "Two-mode network (variable1 = organization $\\times$ variable2 = person)\\label{tab:variables}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
@@ -2052,7 +2052,7 @@ dt1 <- dna_network(conn,
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = list(agreement = 0),
-                 
+
                   verbose = TRUE)
 colnames(dt1) <- paste(colnames(dt1), "- agree")
 dt2 <- dna_network(conn,
@@ -2068,7 +2068,7 @@ dt2 <- dna_network(conn,
                   timewindow = "no",
                   windowsize = 100,
                   excludeValues = list(agreement = 1),
-                 
+
                   verbose = TRUE)
 colnames(dt2) <- paste(colnames(dt2), "- disagree")
 
@@ -2078,7 +2078,7 @@ dt <- cbind(dt1, dt2)
 dt <- dt[ , order(colnames(dt))]
 colnames(dt) <- gsub(".*- ", "", colnames(dt))
 
-kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
+kable(dt, format = "latex", booktabs = TRUE, linesep = "",
       caption = "Agreement and disagreement to concepts by Senate and Sierra Club\\label{tab:disagree}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   add_header_above(c(" " = 1,
@@ -2113,11 +2113,11 @@ For the co-referenced concepts, the edge weight is number of statements from Sen
   Concept 4: \hfill $(0 + 2) \cdot (2 + 0) = 4$ \\
   Concept 5: \hfill $(0 + 1) \cdot (1 + 0) = 1$ \\
   Concept 6: \hfill $(2 + 0) \cdot (1 + 0) = 2$ \\
- 
+
   Then we solve $\sum_{j = 1}^n$:\\
-     
+
   \centerline{\textbf{$0 + 0 + 0 + 4 + 1 + 2 = 7$}}
- 
+
 }
 
 \item[Congruence] This option is only available for one-mode networks.
@@ -2129,7 +2129,7 @@ We can repeat the same calculation, this time using Equation~\ref{eq:congruence_
 
 \infobox{9cm}{
   First, we calculate $\sum_{k} x_{ijk} x_{i'jk}$ for each concept $j$ and $k = \text{agreement}$ as well as $k = \text{disagreement}$:\\
- 
+
   Concept 1:    \hfill $0 \cdot 0 + 0 \cdot 0 = 0$ \\
   Concept 2:    \hfill $0 \cdot 1 + 0 \cdot 0 = 0$\\
   Concept 3:    \hfill $0 \cdot 0 + 0 \cdot 1 = 0$\\
@@ -2138,7 +2138,7 @@ We can repeat the same calculation, this time using Equation~\ref{eq:congruence_
   Concept 6:    \hfill $2 \cdot 1 + 0 \cdot 0 = 2$\\
 
   Then we solve $\sum_{j = 1}^6$:\\
-     
+
   \centerline{\textbf{$0 + 0 + 0 + 0 + 0 + 2 = 2$}}
 }
 
@@ -2159,7 +2159,7 @@ dt <- dna_network(conn,
                   excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
-kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
+kable(dt, format = "latex", booktabs = TRUE, linesep = "",
       caption = "One-mode congruence network (organizations $\\times$ organizations over concept)\\label{tab:qual3}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
@@ -2175,7 +2175,7 @@ Taking the same example as above we can again calculate the edge weight of Senat
 \infobox{10cm}{
   First, we calculate $\sum_{k} x_{ijk} x_{i'jk'}$ for each concept $j$.
 To make that easier to follow, we calculate $x_{ijk} x_{i'jk'}$ individually for the two possible cases: $k = \text{agreement}$ and $k' = \text{disagreement}$ as well as $k = \text{disagreement}$ and $k' = \text{agreement}$:\\
- 
+
   Concept 1 ($k = \text{agreement;} k' = \text{disagreement}$): \hfill $0 \cdot 0 = 0$ \\
   Concept 1 ($k = \text{disagreement;} k' = \text{agreement}$): \hfill $0 \cdot 0 = 0$ \\
   Concept 2 ($k = \text{agreement;} k' = \text{disagreement}$): \hfill $0 \cdot 0 = 0$ \\
@@ -2188,9 +2188,9 @@ To make that easier to follow, we calculate $x_{ijk} x_{i'jk'}$ individually for
   Concept 5 ($k = \text{disagreement;} k' = \text{agreement}$): \hfill $1 \cdot 1 = 1$ \\
   Concept 6 ($k = \text{agreement;} k' = \text{disagreement}$): \hfill $2 \cdot 0 = 0$ \\
   Concept 6 ($k = \text{disagreement;} k' = \text{agreement}$): \hfill $0 \cdot 1 = 0$ \\
- 
+
   Then we solve $\sum_{j = 1}^6 \sum_{k}$:\\
-     
+
   \centerline{\textbf{$(0 + 0) + (0 + 0) + (0 + 0) + (0 + 4) + (0 + 1) + (0 + 0) = 5$}}
 }
 
@@ -2211,7 +2211,7 @@ dt <- dna_network(conn,
                   excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
-kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
+kable(dt, format = "latex", booktabs = TRUE, linesep = "",
       caption = "One-mode conflict network (organizations $\\times$ organizations over concept)\\label{tab:qual4}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
@@ -2219,7 +2219,7 @@ kable(dt, format = "latex", booktabs = TRUE, linesep = "",
 
 Note, that the result of the congruence network plus the result of the conflict network equals the outcome of the ignore algorithm.
 This is because the difference between congruence and conflict is the factor which is ignored in the ignore network and all cases are added up.
-     
+
 With an integer qualifier, the absolute distance is used instead (see Section~\ref{subsec:conflict}).
 
 \item[Subtract] If the ignore network can be defined as adding up the cases on congruence and conflict, subtract is the exact opposite: to calculate it, a congruence network and a conflicting network are created separately and then the conflict network ties are subtracted from the congruence network ties.
@@ -2228,7 +2228,7 @@ Taking the example from above, the edge between Senate and Sierra Club would be 
   Congruence: $y_{ii'}^\text{congruence binary} = 2$\\
   Conflict: $y_{ii'}^\text{conflict binary} = 5$\\
   Therefore:\\
- 
+
   \centerline{\textbf{$2 - 5 = -3$}}
 }
 
@@ -2252,7 +2252,7 @@ dt <- dna_network(conn,
                   excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
-kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
+kable(dt, format = "latex", booktabs = TRUE, linesep = "",
       caption = "One-mode subtract network (organizations $\\times$ organizations over concept)\\label{tab:qual5}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
@@ -2289,7 +2289,7 @@ dt <- dna_network(conn,
                   excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
-kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
+kable(dt, format = "latex", booktabs = TRUE, linesep = "",
       caption = "Two-mode network (concept $\\times$ organizations) with disagreements subtracted from agreements\\label{tab:qual}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   column_spec(5, bold = T) %>%
@@ -2318,7 +2318,7 @@ dt <- dna_network(conn,
                   excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
-kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
+kable(dt, format = "latex", booktabs = TRUE, linesep = "",
       caption = "Two-mode network (concept $\\times$ organizations) with disagreements and agreements combined\\label{tab:qual2}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   column_spec(3, bold = T) %>%
@@ -2384,7 +2384,7 @@ dt <- dna_network(conn,
                   excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
-kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
+kable(dt, format = "latex", booktabs = TRUE, linesep = "",
       caption = "Two-mode network (organizations $\\times$ concept) activity normalized\\label{tab:normal}") %>%
   kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
@@ -2429,7 +2429,7 @@ dt <- dna_network(conn,
                   excludeValues = list(),
                   verbose = TRUE)
 colnames(dt) <- truncate(colnames(dt))
-kable(dt, format = "latex", booktabs = TRUE, linesep = "", 
+kable(dt, format = "latex", booktabs = TRUE, linesep = "",
       caption = "Two-mode network (organization $\\times$ concept) duplicates excluded across date range\\label{tab:dupl}") %>%
   kable_styling(latex_options = c("basic", "scale_down", "HOLD_position")) %>%
   row_spec(0, angle = 90)
@@ -2585,7 +2585,7 @@ dt <- dna_network(conn,
                   networkType = "twomode",
                   statementType = "DNA Statement",
                   variable1 = "concept",
-                  variable2 = "organization", 
+                  variable2 = "organization",
                   qualifier = "agreement",
                   qualifierAggregation = "subtract",
                   normalization = "no",
@@ -3075,17 +3075,17 @@ As you have noticed, we have also changed some other things about the plot such 
 As mentioned before, the function is highly customizable and can visualize up to four sets of information about the variables:
 
 \begin{description}
-\item[\code{leaf\_colors}] Takes the values \code{"attribute1"} or \code{"attribute2"} and colors the leaves accordingly. 
-What values are in attribute1 and attribute2 of the object you are plotting can be set in \code{"dna\_cluster"} and can be checked using the command \code{attributes(clust)\$colors}. 
+\item[\code{leaf\_colors}] Takes the values \code{"attribute1"} or \code{"attribute2"} and colors the leaves accordingly.
+What values are in attribute1 and attribute2 of the object you are plotting can be set in \code{"dna\_cluster"} and can be checked using the command \code{attributes(clust)\$colors}.
 In this example, \code{attribute1} was set to type, which means that the type of organization was used to color leaves.
 \item[\code{leaf\_ends}] This works in the same way as \code{leaf\_colors} but instead of the leaf colors, it assigns different shapes to the line ends of the leaves.
-\item[\code{activity}] This can be either turned on or off via \code{TRUE} and \code{FALSE}. 
+\item[\code{activity}] This can be either turned on or off via \code{TRUE} and \code{FALSE}.
 If turned on, the size of the line ends will be determined by the activity of the leaf in the network---i\,.e., how many statements an actor made (minus the duplicated statements, if you chose to exclude them).
-\item[\code{rectangles}] You can either provide a color value to draw rectangles around groups or leave this empty to make the boxes disappear (which is the default). The group membership of each organization in above's example is determined by providing \code{cutree.k = 2} in \code{"dna\_cluster"}. 
+\item[\code{rectangles}] You can either provide a color value to draw rectangles around groups or leave this empty to make the boxes disappear (which is the default). The group membership of each organization in above's example is determined by providing \code{cutree.k = 2} in \code{"dna\_cluster"}.
 If you neither provide a value for \code{cutree.k} nor \code{cutree.h}, all leaves will belong to the same group.
 \end{description}
 
-Therefore it is possible to visualize a lot of different information in just one plot, which is great for publication, or if you want to use the plot to discover patterns for further analysis. 
+Therefore it is possible to visualize a lot of different information in just one plot, which is great for publication, or if you want to use the plot to discover patterns for further analysis.
 The following plot shows this by employing the full potential of the function.
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
@@ -3101,7 +3101,7 @@ clust <- dna_cluster(conn,
 clust$attribute1
 
 # You can replace these values by something more informative like this
-clust$attribute1 <- c("male", "female", "male", "male", "male", 
+clust$attribute1 <- c("male", "female", "male", "male", "male",
                       "female", "male")
 
 # You can change the legend by changing the colors attribute
@@ -3270,7 +3270,7 @@ In this case, \code{custom\_colors}---if used---needs to be a name of one of the
 You can display the available options using the \R\ command \code{RColorBrewer::display.brewer.all()}.
 
 As you will have noted, the labels of the concept are separated by (dis-)agreement and the words ``yes'' and ``no'' are added at the end.
-You can control which suffixes to use for the different qualifier levels by providing a list with ``translations'' of each level as you can see below. 
+You can control which suffixes to use for the different qualifier levels by providing a list with ``translations'' of each level as you can see below.
 The level \code{"0"} will be replaced by ``disagree'' and \code{"1"} by ``agree''.
 More levels can be named in the same fashion by adding more entries to this list.
 If your qualifier levels have a different meaning, the default values should always be changed as \rdna\ does not detect the meaning automatically.
@@ -3431,9 +3431,9 @@ dna_plotCoordinates(clust,
 % TODO
 
 \section{Network plots}
-We have shown above already how you can use the \R\ infrastructure to produce some basic network plots with the \texttt{statnet} suite of packages. 
+We have shown above already how you can use the \R\ infrastructure to produce some basic network plots with the \texttt{statnet} suite of packages.
 Besides that, there are a number of packages in the \R\ universe that are quite capable to cater to your network plotting needs.
-The already mentioned \texttt{igraph} package \citep{csardi2006igraph}, for example, comes with very powerful functions for plotting networks. 
+The already mentioned \texttt{igraph} package \citep{csardi2006igraph}, for example, comes with very powerful functions for plotting networks.
 Other packages, such as \texttt{networkD3} \citep{allaire2017networkD3} are capable of creating interactive network plots, which are great to share, for example, on a website.
 The package \texttt{ggraph} \citep{linpedersen2017ggraph} was specifically developed to employ the same logic as \texttt{ggplot2}, the so-called grammar of graphics, to implement a consistent logic for plotting networks.
 This makes it possible to produce highly customized plots by combining a set of relatively few individual functions which each serve to control one specific aspect of a plot.
@@ -3464,29 +3464,29 @@ In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} p
 
 \begin{description}
   \item[nicely] This is probably the most useful option. Not technically a network algorithm, it employs \texttt{igraph} package to pick an appropriate layout. See \code{?igraph::nicely} for the details.
-  
+
   \item[bipartite] This algorithm is only really useful for two-mode networks. It minimizes edge-crossings by plotting the nodes for each of the two variables in a separate row. See \code{?igraph::as\_bipartite}.
-  
+
    \item[circle] Arranges the nodes in a circle.
-  
+
   \item[dh] Uses Davidson and Harels simulated annealing algorithm to place nodes. See \code{?igraph::with\_dh}.
-  
+
   \item[drl] Uses the force directed algorithm from the DrL toolbox to place nodes. See \code{?igraph::with\_drl}.
-  
+
   \item[fr] Spreads the nodes based on the force-directed algorithm of Fruchterman and Reingold. See \code{?igraph::with\_fr}
-  
+
   \item[gem] Places nodes on the plane using the GEM force-directed layout algorithm. See \code{?igraph::with\_gem}.
-  
+
   \item[graphopt] Employs the Graphopt algorithm based on alternating attraction and repulsion to place nodes.
-  
+
   \item[kk] Uses the spring-based algorithm by Kamada and Kawai to place nodes. See \code{?igraph::with\_kk}
-  
+
   \item[lgl] Uses the algorithm from Large Graph Layout to place nodes. See \code{?igraph::with\_lgl}.
-  
+
   \item[mds] Performs metric multidimensional scaling for generating the coordinates of the nodes. This algorithm is what comes closest to the "stress minimization" layout from \visone. See \code{?igraph::with\_mds}.
-  
+
   \item[randomly] Places nodes randomly into the plot. See \code{?igraph::randomly}.
-  
+
   \item[star] This places one node in the center and spreads the rest of the nodes in equal distances around it. See \code{?igraph::as\_star}.
 \end{description}
 
@@ -3510,7 +3510,7 @@ nw_mds <- dna_plotNetwork(nw, layout = "mds", show_legend = FALSE) +
    ggtitle("MDS")
 nw_randomly <- dna_plotNetwork(nw, layout = "kk") +
    ggtitle("Kamada and Kawai")
- 
+
 # The plots are again arranged in a grid
 grid <- grid.arrange(nw_fr, nw_graphopt, nw_mds, nw_randomly)
 
@@ -3634,7 +3634,7 @@ We only need to adjust the ID column, so that IDs are not duplicated and set a v
 <<eval=TRUE, warning = FALSE, results = 'tex'>>=
 docs_orig <- dna_getDocuments(conn)
 
-# We create new unique IDs by IDs with the highest ID from the original data 
+# We create new unique IDs by IDs with the highest ID from the original data
 docs$id <- docs$id + max(docs_orig$id)
 
 # We use coder 1 to import the new documents
@@ -3687,15 +3687,15 @@ Note, that not all of the columns in \dna\ makes sense for all data sources.
 Simply leave a column empty if you think it does not make sense in your case, as is done for ``section'' in the following:
 
 <<eval=TRUE, results = 'tex'>>=
-docs_new <- data.frame(id = df$number, 
-                       title = row.names(df), 
-                       text = df$texts, 
-                       coder = 1, 
-                       author = paste(df$foren, df$name), 
-                       source = "Budget Statement 2010", 
-                       section = "", 
-                       notes = df$party, 
-                       type = df$debate, 
+docs_new <- data.frame(id = df$number,
+                       title = row.names(df),
+                       text = df$texts,
+                       coder = 1,
+                       author = paste(df$foren, df$name),
+                       source = "Budget Statement 2010",
+                       section = "",
+                       notes = df$party,
+                       type = df$debate,
                        date = df$year,
                        stringsAsFactors = FALSE)
 @
