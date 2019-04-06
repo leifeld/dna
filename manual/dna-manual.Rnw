@@ -583,7 +583,7 @@ In the binary case (assuming $K = \{0; 1\}$), $0$ values need to be transformed 
  y_{ij}^\text{affiliation subtract binary} = \Phi_{ij}\left(\sum_{k} \left( k x_{ijk} - (1 - k) x_{ijk} \right) \right)
 \end{equation}
 
-Alternatively, in the binary case (assuming $K = \{0; 1\}$), it is possible to map all combinations of $k$ for each $(ij)$ dyad into a multiplex network with three distinct types of edges, where $0$ represents neither agreement nor disagreement, $1$ represents agreement$, $2$ represents disagreement, and $3$ represents a mix of both agreement and disagreement.
+Alternatively, in the binary case (assuming $K = \{0; 1\}$), it is possible to map all combinations of $k$ for each $(ij)$ dyad into a multiplex network with three distinct types of edges, where $0$ represents neither agreement nor disagreement, $1$ represents agreement, $2$ represents disagreement, and $3$ represents a mix of both agreement and disagreement.
 This can be useful, for example, for visualizing agreement, disagreement, and ambiguity/ambivalence in the same affiliation network using different colors.
 More formally:
 \begin{equation}
