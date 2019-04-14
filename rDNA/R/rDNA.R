@@ -4882,12 +4882,18 @@ dna_network <- function(connection,
       mat <- .jcall(connection$dna_connection, "[[D", "getMatrix", simplify = TRUE)
       rownames(mat) <- .jcall(connection$dna_connection, "[S", "getRowNames", simplify = TRUE)
       colnames(mat) <- .jcall(connection$dna_connection, "[S", "getColumnNames", simplify = TRUE)
+      attributes(mat)$start <- as.POSIXct(.jcall(connection$dna_connection, "J", "getTime", "start", simplify = TRUE), origin = "1970-01-01")
+      attributes(mat)$stop <- as.POSIXct(.jcall(connection$dna_connection, "J", "getTime", "stop", simplify = TRUE), origin = "1970-01-01")
       attributes(mat)$call <- match.call()
       class(mat) <- c(paste0("dna_network_", networkType), class(mat))
       return(mat)
     } else {
-      timeLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", simplify = TRUE)
+      timeLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", "middle", simplify = TRUE)
       timeLabels <- as.POSIXct(timeLabels, origin = "1970-01-01")
+      startLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", "start", simplify = TRUE)
+      startLabels <- as.POSIXct(startLabels, origin = "1970-01-01")
+      stopLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", "stop", simplify = TRUE)
+      stopLabels <- as.POSIXct(stopLabels, origin = "1970-01-01")
       numStatements <- .jcall(connection$dna_connection, "[I", "getTimeWindowNumStatements", simplify = TRUE)
       mat <- list()
       for (t in 1:length(timeLabels)) {
@@ -4900,7 +4906,9 @@ dna_network <- function(connection,
       }
       dta <- list()
       dta$networks <- mat
+      dta$start <- startLabels
       dta$time <- timeLabels
+      dta$stop <- stopLabels
       dta$numStatements <- numStatements
       attributes(dta)$call <- match.call()
       class(dta) <- c(paste0("dna_network_", networkType, "_timewindows"), class(dta))

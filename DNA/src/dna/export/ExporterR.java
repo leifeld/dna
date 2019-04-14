@@ -577,7 +577,7 @@ public class ExporterR {
 		if (networkType.equals("Two-mode network")) {
 			if (timewindow.equals("no time window")) {
 				m = exportHelper.computeTwoModeMatrix(filteredStatements, data.getDocuments(), st, variable1, variable2, variable1Document, 
-						variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, verbose);
+						variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, start, stop, verbose);
 			} else {
 				this.timeWindowMatrices = exportHelper.computeTimeWindowMatrices(filteredStatements, data.getDocuments(), st, variable1, variable2, 
 						variable1Document, variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, true, start, stop, 
@@ -587,7 +587,7 @@ public class ExporterR {
 		} else if (networkType.equals("One-mode network")) {
 			if (timewindow.equals("no time window")) {
 				m = exportHelper.computeOneModeMatrix(filteredStatements, data.getDocuments(), st, variable1, variable2, variable1Document, 
-						variable2Document, names1, names2, qualifier, qualifierAggregation, normalization);
+						variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, start, stop);
 			} else {
 				this.timeWindowMatrices = exportHelper.computeTimeWindowMatrices(filteredStatements, data.getDocuments(), st, variable1, variable2, 
 						variable1Document, variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, false, start, stop, 
@@ -845,6 +845,23 @@ public class ExporterR {
 	public String[] getColumnNames() {
 		return matrix.getColnames();
 	}
+
+	/**
+	 * Return start date/time from this.matrix.
+	 * 
+	 * @param type  The time indicator: 'start' (for the start date/time) or 'stop' (for the stop date/time).
+	 * @return      Long array of Unix times since 1/1/1970.
+	 * @throws      Exception 
+	 */
+	public long getTime(String type) throws Exception {
+		if (type.equals("start")) {
+			return (long) (matrix.getStart().getTime() / 1000);
+		} else if (type.equals("stop")) {
+			return (long) (matrix.getStop().getTime() / 1000);
+		} else {
+			throw new Exception("'type' must be 'start' or 'stop'.");
+		}
+	}
 	
 	/**
 	 * Return a single matrix in this.timeWindowMatrices.
@@ -876,14 +893,24 @@ public class ExporterR {
 	/**
 	 * Return time labels corresponding to a time window sequence.
 	 * 
-	 * @return   array of Unix times as seconds since 1/1/1970
-	 * @throws Exception 
+	 * @param type  The time indicator: 'start' (for the start date/time), 'stop' (for the stop date/time), 
+	 *              or 'middle' (for the mid-point of a time window).
+	 * @return      array of Unix times as seconds since 1/1/1970
+	 * @throws      Exception 
 	 */
-	public long[] getTimeWindowTimes() throws Exception {
+	public long[] getTimeWindowTimes(String type) throws Exception {
 		long[] times = new long[timeWindowMatrices.size()];
 		if (times.length > 0) {
 			for (int i = 0; i < timeWindowMatrices.size(); i++) {
-				times[i] = (long) (timeWindowMatrices.get(i).getDate().getTime() / 1000);
+				if (type.equals("start")) {
+					times[i] = (long) (timeWindowMatrices.get(i).getStart().getTime() / 1000);
+				} else if (type.equals("stop")) {
+					times[i] = (long) (timeWindowMatrices.get(i).getStop().getTime() / 1000);
+				} else if (type.equals("middle")) {
+					times[i] = (long) (timeWindowMatrices.get(i).getDate().getTime() / 1000);
+				} else {
+					throw new Exception("'type' must be 'start', 'stop', or 'middle'.");
+				}
 			}
 		} else {
 			throw new Exception("Not a single network matrix has been generated. Does the time window size exceed the time range?");

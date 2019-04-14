@@ -1109,14 +1109,6 @@ public class ExporterGUI extends JDialog {
 				filterEmptyFields = false;
 			}
 			
-			/*
-			Iterator<String> it = excludeValues.keySet().iterator();
-			while (it.hasNext()) {
-				String excludeVariable = it.next();
-				System.out.println(excludeVariable);
-			}
-			*/
-			
 			statements = exportHelper.filter(statements, documents, startDate, stopDate, statementType, var1Name, var2Name, 
 					var1Document(), var2Document(), qualifierName, ignoreQualifier, duplicateSetting, 
 					excludeAuthor, excludeSource, excludeSection, excludeType, excludeValues, filterEmptyFields, true);
@@ -1152,7 +1144,7 @@ public class ExporterGUI extends JDialog {
 					boolean verbose;
 					verbose = true;
 					matrix = exportHelper.computeTwoModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
-							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, verbose);
+							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, startDate, stopDate, verbose);
 				} else {
 					String timeWindowUnit = (String) timeWindowBox.getSelectedItem();
 					int timeWindowDuration = (int) timeWindowSpinner.getModel().getValue();
@@ -1163,7 +1155,7 @@ public class ExporterGUI extends JDialog {
 			} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
 				if (timeWindowBox.getSelectedItem().equals("no time window")) {
 					matrix = exportHelper.computeOneModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
-							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization);
+							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, startDate, stopDate);
 				} else {
 					String timeWindowUnit = (String) timeWindowBox.getSelectedItem();
 					int timeWindowDuration = (int) timeWindowSpinner.getModel().getValue();

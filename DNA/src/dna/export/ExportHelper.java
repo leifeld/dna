@@ -429,13 +429,29 @@ public class ExportHelper {
 							names1 = extractLabels(currentWindowStatements, statements, documents, var1, var1Document, statementType.getId(), includeIsolates);
 							names2 = extractLabels(currentWindowStatements, statements, documents, var2, var2Document, statementType.getId(), includeIsolates);
 						}
+						int firstDocId = currentWindowStatements.get(0).getDocumentId();
+						Date first = null;
+						for (int i = 0; i < documents.size(); i++) {
+							if (firstDocId == documents.get(i).getId()) {
+								first = documents.get(i).getDate();
+								break;
+							}
+						}
+						int lastDocId = currentWindowStatements.get(currentWindowStatements.size() - 1).getDocumentId();
+						Date last = null;
+						for (int i = documents.size() - 1; i > -1; i--) {
+							if (lastDocId == documents.get(i).getId()) {
+								last = documents.get(i).getDate();
+								break;
+							}
+						}
 						if (twoMode == true) {
 							boolean verbose = false;
 							m = computeTwoModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
-									var2Document, names1, names2, qualifier, qualifierAggregation, normalization, verbose);
+									var2Document, names1, names2, qualifier, qualifierAggregation, normalization, first, last, verbose);
 						} else {
 							m = computeOneModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
-									var2Document, names1, names2, qualifier, qualifierAggregation, normalization);
+									var2Document, names1, names2, qualifier, qualifierAggregation, normalization, first, last);
 						}
 						m.setDate(statements.get(t).getDate());
 						m.setNumStatements(currentWindowStatements.size());
@@ -506,10 +522,12 @@ public class ExportHelper {
 						if (twoMode == true) {
 							boolean verbose = false;
 							m = computeTwoModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
-									var2Document, names1, names2, qualifier, qualifierAggregation, normalization, verbose);
+									var2Document, names1, names2, qualifier, qualifierAggregation, normalization, 
+									windowStart.getTime(), windowStop.getTime(), verbose);
 						} else {
 							m = computeOneModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
-									var2Document, names1, names2, qualifier, qualifierAggregation, normalization);
+									var2Document, names1, names2, qualifier, qualifierAggregation, normalization, 
+									windowStart.getTime(), windowStop.getTime());
 						}
 						m.setDate(matrixTime);
 						m.setNumStatements(currentWindowStatements.size());
@@ -541,11 +559,11 @@ public class ExportHelper {
 	 */
 	Matrix computeOneModeMatrix(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, 
 			String var1, String var2, boolean var1Document, boolean var2Document, String[] names1, String[] names2, String qualifier, 
-			String qualifierAggregation, String normalization) {
+			String qualifierAggregation, String normalization, Date start, Date stop) {
 		
 		if (statements.size() == 0) {
 			double[][] m = new double[names1.length][names1.length];
-			Matrix mt = new Matrix(m, names1, names1, true);
+			Matrix mt = new Matrix(m, names1, names1, true, start, stop);
 			return mt;
 		}
 		
@@ -673,7 +691,7 @@ public class ExportHelper {
 			integerBoolean = false;
 		}
 		
-		Matrix matrix = new Matrix(m, names1, names1, integerBoolean);
+		Matrix matrix = new Matrix(m, names1, names1, integerBoolean, start, stop);
 		return matrix;
 	}
 	
@@ -696,10 +714,10 @@ public class ExportHelper {
 	 */
 	Matrix computeTwoModeMatrix(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, 
 			String var1, String var2, boolean var1Document, boolean var2Document, String[] names1, String[] names2, String qualifier, 
-			String qualifierAggregation, String normalization, boolean verbose) {
+			String qualifierAggregation, String normalization, Date start, Date stop, boolean verbose) {
 		if (statements.size() == 0) {
 			double[][] m = new double[names1.length][names2.length];
-			Matrix mt = new Matrix(m, names1, names2, true);
+			Matrix mt = new Matrix(m, names1, names2, true, start, stop);
 			return mt;
 		}
 		
@@ -837,7 +855,7 @@ public class ExportHelper {
 		}
 		
 		// create Matrix object and return
-		Matrix matrix = new Matrix(mat, names1, names2, integerBoolean); // assemble the Matrix object with labels
+		Matrix matrix = new Matrix(mat, names1, names2, integerBoolean, start, stop); // assemble the Matrix object with labels
 		return matrix;
 	}
 	

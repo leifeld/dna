@@ -17,13 +17,17 @@ public class Matrix {
 	String[] rownames, colnames;
 	boolean integer;
 	Date date;
+	Date start;
+	Date stop;
 	int numStatements;
 	
-	public Matrix(double[][] matrix, String[] rownames, String[] colnames, boolean integer) {
+	public Matrix(double[][] matrix, String[] rownames, String[] colnames, boolean integer, Date start, Date stop) {
 		this.matrix = matrix;
 		this.rownames = rownames;
 		this.colnames = colnames;
 		this.integer = integer;
+		this.start = start;
+		this.stop = stop;
 	}
 
 	/**
@@ -108,5 +112,33 @@ public class Matrix {
 	 */
 	public void setDate(Date date) {
 		this.date = date;
+	}
+
+	/**
+	 * @return the start
+	 */
+	public Date getStart() {
+		return start;
+	}
+
+	/**
+	 * @param start the start to set
+	 */
+	public void setStart(Date start) {
+		this.start = start;
+	}
+
+	/**
+	 * @return the stop
+	 */
+	public Date getStop() {
+		return stop;
+	}
+
+	/**
+	 * @param stop the stop to set
+	 */
+	public void setStop(Date stop) {
+		this.stop = stop;
 	}
 }
