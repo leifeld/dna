@@ -21,11 +21,11 @@ test_that("print dna_cluster", {
 
 test_that("dna_network without qualifier", {
   expect_equal({
-    dna_network(conn,
-                networkType = "onemode",
-                variable1 = "person",
-                variable2 = "concept",
-                qualifier = NULL)
+    nw <- dna_network(conn,
+                      networkType = "onemode",
+                      variable1 = "person",
+                      variable2 = "concept",
+                      qualifier = NULL)
   }, readRDS("../files/dna_network_no_qualifier.RDS"))
 })
 
