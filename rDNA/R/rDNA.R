@@ -3150,6 +3150,812 @@ print.dna_cluster <- function(x, ...) {
 }
 
 
+#' Compute multiple cluster solutions for a discourse network
+#'
+#' Compute multiple cluster solutions for a discourse network.
+#'
+#' This function applies a number of different graph clustering techniques to
+#' a discourse network dataset. The user provides a \link{dna_connection}
+#' object, along with many of the same arguments as in the \link{dna_network}
+#' function, and a few additional arguments that determine which kinds of
+#' clustering methods should be used and how. In particular, the \code{k}
+#' argument can be \code{0} (for arbitrary numbers of clusters) or any positive
+#' integer value (e.g., \code{2}, for constraining the number of clusters to
+#' exactly \code{k} groups). This is useful for assessing the polarization of a
+#' discourse network.
+#'
+#' In particular, the function can be used to compute the maximal modularity of
+#' a smoothed time series of discourse networks using the \code{timewindow} and
+#' \code{windowsize} arguments for a given \code{k} across a number of
+#' clustering methods. The resulting smoothed time series of bipolarization or
+#' multipolarization values can be plotted using the \link{dna_plotModularity}
+#' function.
+#'
+#' The \code{dna_multiclust} function replaces the \code{dna_timeWindow}
+#' function that was present in earlier versions of the \pkg{rDNA} package. In
+#' order to generate bipolarization measures, use \code{k = 2}. For
+#' multipolarization, use \code{k = 0}.
+#'
+#' It is also possible to switch off all but one clustering method using the
+#' respective arguments and carry out a simple cluster analysis with the method
+#' of choice for a certain time span of the discourse network, without any time
+#' window options.
+#'
+#' @param saveObjects Store the original output of the respective clustering
+#'   method in the \code{cl} slot of the return object? If \code{TRUE}, one
+#'   cluster object per time point will be saved, for all time points for which
+#'   network data are available. At each time point, only the cluster object
+#'   with the highest modularity score will be saved, all others discarded. The
+#'   \code{max_mod} slot of the object contains additional information on which
+#'   measure was saved at each time point and what the corresponding modularity
+#'   score is.
+#' @param k The number of clusters to compute. This constrains the choice of
+#'   clustering methods because some methods require a predefined \code{k} while
+#'   other methods do not. To permit arbitrary numbers of clusters, depending on
+#'   the respective algorithm (or the value of modularity in some cases), choose
+#'   \code{k = 0}. This corresponds to the theoretical notion of
+#'   "multipolarization". For "bipolarization", choose \code{k = 2} in order to
+#'   constrain the cluster solutions to exactly two groups.
+#' @param k.max If \code{k = 0}, there can be arbitrary numbers of clusters. In
+#'   this case, \code{k.max} sets the maximal number of clusters that can be
+#'   identified.
+#' @param single Include hierarchical clustering with single linkage in the pool
+#'   of clustering methods? The \code{\link[stats]{hclust}} function from
+#'   the \pkg{stats} package is applied to Jaccard distances in the affiliation
+#'   network for this purpose. Only valid if \code{k > 1}.
+#' @param average Include hierarchical clustering with average linkage in the
+#'   pool of clustering methods? The \code{\link[stats]{hclust}} function from
+#'   the \pkg{stats} package is applied to Jaccard distances in the affiliation
+#'   network for this purpose. Only valid if \code{k > 1}.
+#' @param complete Include hierarchical clustering with complete linkage in the
+#'   pool of clustering methods? The \code{\link[stats]{hclust}} function from
+#'   the \pkg{stats} package is applied to Jaccard distances in the affiliation
+#'   network for this purpose. Only valid if \code{k > 1}.
+#' @param ward Include hierarchical clustering with Ward's algorithm in the
+#'   pool of clustering methods? The \code{\link[stats]{hclust}} function from
+#'   the \pkg{stats} package is applied to Jaccard distances in the affiliation
+#'   network for this purpose. If \code{k = 0} is selected, different solutions
+#'   with varying \code{k} are attempted, and the solution with the highest
+#'   modularity is retained.
+#' @param kmeans Include k-means clustering in the pool of clustering methods?
+#'   The \code{\link[stats]{kmeans}} function from the \pkg{stats} package is
+#'   applied to Jaccard distances in the affiliation network for this purpose.
+#'   If \code{k = 0} is selected, different solutions with varying \code{k} are
+#'   attempted, and the solution with the highest modularity is retained.
+#' @param pam Include partitioning around medoids in the pool of clustering
+#'   methods? The \code{\link[cluster]{pam}} function from the \pkg{cluster}
+#'   package is applied to Jaccard distances in the affiliation network for this
+#'   purpose. If \code{k = 0} is selected, different solutions with varying
+#'   \code{k} are attempted, and the solution with the highest modularity is
+#'   retained.
+#' @param equivalence Include equivalence clustering (as implemented in the
+#'   \code{\link[sna]{equiv.clust}} function in the \pkg{sna} package), based on
+#'   shortest path distances between nodes (as implemented in the
+#'   \code{\link[sna]{sedist}} function in the \pkg{sna} package) in the
+#'   positive subtract network? If \code{k = 0} is selected, different solutions
+#'   with varying \code{k} are attempted, and the solution with the highest
+#'   modularity is retained.
+#' @param concor_one Include CONvergence of iterative CORrelations (CONCOR) in
+#'   the pool of clustering methods? The algorithm is applied to the positive
+#'   subtract network to identify \code{k = 2} clusters. The method is omitted
+#'   if \code{k != 2}.
+#' @param concor_two Include CONvergence of iterative CORrelations (CONCOR) in
+#'   the pool of clustering methods? The algorithm is applied to the affiliation
+#'   network to identify \code{k = 2} clusters. The method is omitted
+#'   if \code{k != 2}.
+#' @param louvain Include the Louvain community detection algorithm in the pool
+#'   of clustering methods? The \code{\link[igraph]{cluster_louvain}} function
+#'   in the \pkg{igraph} package is applied to the positive subtract network for
+#'   this purpose.
+#' @inheritParams dna_network
+#'
+#' @return The function creates a \code{dna_multiclust} object, which contains
+#'   the following items:
+#' \describe{
+#'   \item{k}{The number of clusters determined by the user.}
+#'   \item{cl}{Cluster objects returned by the respective cluster function. If
+#'     multiple methods are used, this returns the object with the highest
+#'     modularity.}
+#'   \item{max_mod}{A data frame with one row per time point (that is, only one
+#'     row in the default case and multiple rows if time windows are used) and
+#'     the maximal modularity for the given time point across all cluster
+#'     methods.}
+#'   \item{modularity}{A data frame with the modularity values for all separate
+#'     cluster methods and all time points.}
+#'   \item{membership}{A large data frame with all nodes' membership information
+#'     for each time point and each clustering method.}
+#' }
+#'
+#' @author Philip Leifeld
+#'
+#' @seealso \code{\link{print.dna_multiclust}}, \code{\link{dna_plotModularity}}
+#'
+#' @import ggplot2
+#' @importFrom cluster pam
+#' @importFrom dplyr bind_rows progress_estimated
+#' @importFrom igraph graph.adjacency modularity cluster_fast_greedy
+#'   cluster_walktrap cluster_leading_eigen cluster_edge_betweenness
+#'   cluster_louvain cut_at
+#' @importFrom sna equiv.clust sedist
+#' @importFrom stats kmeans hclust cutree cor
+#' @importFrom vegan vegdist
+#' @export
+dna_multiclust <- function(connection,
+                           statementType = "DNA Statement",
+                           variable1 = "organization",
+                           variable1Document = FALSE,
+                           variable2 = "concept",
+                           variable2Document = FALSE,
+                           qualifier = "agreement",
+                           duplicates = "include",
+                           start.date = "01.01.1900",
+                           stop.date = "31.12.2099",
+                           start.time = "00:00:00",
+                           stop.time = "23:59:59",
+                           timewindow = "no",
+                           windowsize = 100,
+                           excludeValues = list(),
+                           excludeAuthors = character(),
+                           excludeSources = character(),
+                           excludeSections = character(),
+                           excludeTypes = character(),
+                           invertValues = FALSE,
+                           invertAuthors = FALSE,
+                           invertSources = FALSE,
+                           invertSections = FALSE,
+                           invertTypes = FALSE,
+                           saveObjects = FALSE,
+                           k = 2,
+                           k.max = 5,
+                           single = TRUE,
+                           average = TRUE,
+                           complete = TRUE,
+                           ward = TRUE,
+                           kmeans = TRUE,
+                           pam = TRUE,
+                           equivalence = TRUE,
+                           concor_one = TRUE,
+                           concor_two = TRUE,
+                           louvain = TRUE,
+                           verbose = TRUE) {
+  
+  if (is.null(k) || is.na(k) || !is.numeric(k) || length(k) > 1 || is.infinite(k) || k < 0) {
+    stop("'k' must be a non-negative integer number. Can be 0 for flexible numbers of clusters.")
+  }
+  if (is.null(k.max) || is.na(k.max) || !is.numeric(k.max) || length(k.max) > 1 || is.infinite(k.max) || k.max < 1) {
+    stop("'k.max' must be a positive integer number.")
+  }
+  
+  # determine what kind of two-mode network to create
+  if (is.null(qualifier) || is.na(qualifier) || !is.character(qualifier)) {
+    qualifierAggregation <- "ignore"
+  } else {
+    v <- dna_getVariables(connection = connection, statementType = statementType)
+    if (v$type[v$label == qualifier] == "boolean") {
+      qualifierAggregation <- "combine"
+    } else {
+      qualifierAggregation <- "subtract"
+    }
+  }
+  
+  if (isTRUE(verbose)) {
+    message("(1/3) Computing networks... ", appendLF = FALSE)
+  }
+  nw_aff <- dna_network(connection,
+                        networkType = "twomode",
+                        statementType = statementType,
+                        variable1 = variable1,
+                        variable1Document = variable1Document,
+                        variable2 = variable2,
+                        variable2Document = variable2Document,
+                        qualifier = qualifier,
+                        qualifierAggregation = qualifierAggregation,
+                        normalization = "no",
+                        duplicates = duplicates,
+                        start.date = start.date,
+                        stop.date = stop.date,
+                        start.time = start.time,
+                        stop.time = stop.time,
+                        timewindow = timewindow,
+                        windowsize = windowsize,
+                        excludeValues = excludeValues,
+                        excludeAuthors = excludeAuthors,
+                        excludeSources = excludeSources,
+                        excludeSections = excludeSections,
+                        excludeTypes = excludeTypes,
+                        invertValues = invertValues,
+                        invertAuthors = invertAuthors,
+                        invertSources = invertSources,
+                        invertSections = invertSections,
+                        invertTypes = invertTypes,
+                        verbose = FALSE)
+  nw_sub <- dna_network(connection,
+                        networkType = "onemode",
+                        statementType = statementType,
+                        variable1 = variable1,
+                        variable1Document = variable1Document,
+                        variable2 = variable2,
+                        variable2Document = variable2Document,
+                        qualifier = qualifier,
+                        qualifierAggregation = "subtract",
+                        normalization = "average",
+                        duplicates = duplicates,
+                        start.date = start.date,
+                        stop.date = stop.date,
+                        start.time = start.time,
+                        stop.time = stop.time,
+                        timewindow = timewindow,
+                        windowsize = windowsize,
+                        excludeValues = excludeValues,
+                        excludeAuthors = excludeAuthors,
+                        excludeSources = excludeSources,
+                        excludeSections = excludeSections,
+                        excludeTypes = excludeTypes,
+                        invertValues = invertValues,
+                        invertAuthors = invertAuthors,
+                        invertSources = invertSources,
+                        invertSections = invertSections,
+                        invertTypes = invertTypes,
+                        verbose = FALSE)
+  
+  if (timewindow == "no") {
+    dta <- list()
+    dta$networks <- list(nw_sub)
+    nw_sub <- dta
+    dta <- list()
+    dta$networks <- list(nw_aff)
+    nw_aff <- dta
+  }
+  if (isTRUE(verbose)) {
+    message("done.")
+    if (timewindow == "no") {
+      message("(2/3) Computing cluster solutions... ", appendLF = FALSE)
+    } else {
+      message("(2/3) Computing cluster solutions... ", appendLF = TRUE)
+    }
+  }
+  
+  p <- dplyr::progress_estimated(length(nw_sub$networks))
+  
+  obj <- list()
+  if (isTRUE(saveObjects)) {
+    obj$cl <- list()
+  }
+  dta_dat <- list()
+  dta_mem <- list()
+  dta_mod <- list()
+  counter <- 1
+  for (i in 1:length(nw_sub$networks)) {
+    p$tick()$print()
+    
+    # prepare dates
+    if (timewindow == "no") {
+      dta_dat[[i]] <- data.frame(i = i,
+                                 start = attributes(nw_sub$networks[[i]])$start,
+                                 stop = attributes(nw_sub$networks[[i]])$stop)
+    } else {
+      dta_dat[[i]] <- data.frame(i = i,
+                                 start.date = nw_sub$start[i],
+                                 middle.date = nw_sub$time[i],
+                                 stop.date = nw_sub$stop[i])
+    }
+    
+    # prepare two-mode network
+    x <- nw_aff$networks[[i]]
+    if (qualifierAggregation == "combine") {
+      combined <- cbind(apply(x, 1:2, function(x) ifelse(x %in% c(1, 3), 1, 0)),
+                        apply(x, 1:2, function(x) ifelse(x %in% c(2, 3), 1, 0)))
+    } else {
+      combined <- x
+    }
+    combined <- combined[rowSums(combined) > 0, , drop = FALSE]
+    jac <- vegan::vegdist(combined, method = "jaccard")
+    
+    # prepare one-mode network
+    y <- nw_sub$networks[[i]]
+    y[y < 0] <- 0
+    class(y) <- "matrix"
+    g <- igraph::graph.adjacency(y, mode = "undirected", weighted = TRUE)
+    
+    if (nrow(combined) > 1) {
+      counter_current <- 1
+      current_cl <- list()
+      current_mod <- numeric()
+      
+      # Hierarchical clustering with single linkage
+      if (isTRUE(single) && k > 1) {
+        try({
+          suppressWarnings(cl <- hclust(jac, method = "single"))
+          mem <- cutree(cl, k = k)
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Hierarchical (Single)", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Hierarchical (Single)",
+                                           k = k,
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Hierarchical clustering with average linkage
+      if (isTRUE(average) && k > 1) {
+        try({
+          suppressWarnings(cl <- hclust(jac, method = "average"))
+          mem <- cutree(cl, k = k)
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Hierarchical (Average)", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Hierarchical (Average)",
+                                           k = k,
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Hierarchical clustering with complete linkage
+      if (isTRUE(complete) && k > 1) {
+        try({
+          suppressWarnings(cl <- hclust(jac, method = "complete"))
+          mem <- cutree(cl, k = k)
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Hierarchical (Complete)", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Hierarchical (Complete)",
+                                           k = k,
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Hierarchical clustering with the Ward algorithm
+      if (isTRUE(ward) && k > 1) {
+        try({
+          suppressWarnings(cl <- hclust(jac, method = "ward.D2"))
+          mem <- cutree(cl, k = k)
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Hierarchical (Ward)", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Hierarchical (Ward)",
+                                           k = k,
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Hierarchical clustering with the Ward algorithm with optimal k
+      if (isTRUE(ward) && k < 2) {
+        try({
+          suppressWarnings(cl <- hclust(jac, method = "ward.D2"))
+          opt_k <- lapply(2:k.max, function(x) {
+            mem <- cutree(cl, k = x)
+            mod <- igraph::modularity(x = g, membership = mem)
+            return(list(mem = mem, mod = mod))
+          })
+          mod <- sapply(opt_k, function(x) x$mod)
+          kk <- which.max(mod)
+          mod <- max(mod)
+          mem <- opt_k[[kk]]$mem
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Hierarchical (Ward)", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Hierarchical (Ward)",
+                                           k = kk + 1, # add one because the series started with k = 2
+                                           modularity = mod,
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # k-means
+      if (isTRUE(kmeans) && k > 1) {
+        try({
+          suppressWarnings(cl <- kmeans(jac, centers = k))
+          mem <- cl$cluster
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("k-Means", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "k-Means",
+                                           k = k,
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # k-means with optimal k
+      if (isTRUE(kmeans) && k < 2) {
+        try({
+          opt_k <- lapply(2:k.max, function(x) {
+            suppressWarnings(cl <- kmeans(jac, centers = x))
+            mem <- cl$cluster
+            mod <- igraph::modularity(x = g, membership = mem)
+            return(list(cl = cl, mem = mem, mod = mod))
+          })
+          mod <- sapply(opt_k, function(x) x$mod)
+          kk <- which.max(mod)
+          mod <- max(mod)
+          mem <- opt_k[[kk]]$mem
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("k-Means", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "k-Means",
+                                           k = kk + 1, # add one because the series started with k = 2
+                                           modularity = mod,
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            cl <- opt_k[[kk]]$cl
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # pam
+      if (isTRUE(pam) && k > 1) {
+        try({
+          suppressWarnings(cl <- cluster::pam(jac, k = k))
+          mem <- cl$cluster
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Partitioning around Medoids", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Partitioning around Medoids",
+                                           k = k,
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # pam with optimal k
+      if (isTRUE(pam) && k < 2) {
+        try({
+          opt_k <- lapply(2:k.max, function(x) {
+            suppressWarnings(cl <- cluster::pam(jac, k = x))
+            mem <- cl$cluster
+            mod <- igraph::modularity(x = g, membership = mem)
+            return(list(cl = cl, mem = mem, mod = mod))
+          })
+          mod <- sapply(opt_k, function(x) x$mod)
+          kk <- which.max(mod)
+          mod <- max(mod)
+          mem <- opt_k[[kk]]$mem
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Partitioning around Medoids", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Partitioning around Medoids",
+                                           k = kk + 1, # add one because the series started with k = 2
+                                           modularity = mod,
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            cl <- opt_k[[kk]]$cl
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Equivalence clustering
+      if (isTRUE(equivalence) && k > 1) {
+        try({
+          suppressWarnings(cl <- sna::equiv.clust(y, sna::sedist(y, method = "euclidean")))
+          mem <- cutree(cl$cluster, k = k)
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Equivalence", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Equivalence",
+                                           k = k,
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Equivalence clustering with optimal k
+      if (isTRUE(equivalence) && k < 2) {
+        try({
+          suppressWarnings(cl <- sna::equiv.clust(y, sna::sedist(y, method = "euclidean")))
+          opt_k <- lapply(2:k.max, function(x) {
+            mem <- cutree(cl$cluster, k = x)
+            mod <- igraph::modularity(x = g, membership = mem)
+            return(list(mem = mem, mod = mod))
+          })
+          mod <- sapply(opt_k, function(x) x$mod)
+          kk <- which.max(mod)
+          mod <- max(mod)
+          mem <- opt_k[[kk]]$mem
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Equivalence", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Equivalence",
+                                           k = kk + 1, # add one because the series started with k = 2
+                                           modularity = mod,
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # CONCOR based on the positive subtract network
+      if (isTRUE(concor_one) && k %in% c(0, 2)) {
+        try({
+          suppressWarnings(mi <- cor(y))
+          iter <- 1
+          while (any(abs(mi) <= 0.999) & iter <= 50) {
+            mi[is.na(mi)] <- 0
+            mi <- cor(mi)
+            iter <- iter + 1
+          }
+          mem <- ((mi[, 1] > 0) * 1) + 1
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("CONCOR (One-Mode)", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "CONCOR (One-Mode)",
+                                           k = 2,
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- mem
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # CONCOR based on the combined affiliation network
+      if (isTRUE(concor_two) && k %in% c(0, 2)) {
+        try({
+          suppressWarnings(mi <- cor(t(combined)))
+          iter <- 1
+          while (any(abs(mi) <= 0.999) & iter <= 50) {
+            mi[is.na(mi)] <- 0
+            mi <- cor(mi)
+            iter <- iter + 1
+          }
+          mem <- ((mi[, 1] > 0) * 1) + 1
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("CONCOR (Two-Mode)", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "CONCOR (Two-Mode)",
+                                           k = 2,
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- mem
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Louvain clustering
+      if (isTRUE(louvain) && k < 2) {
+        try({
+          suppressWarnings(cl <- igraph::cluster_louvain(g))
+          mem <- membership(cl)
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Louvain", length(mem)),
+                                           node = rownames(x),
+                                           cluster = as.numeric(mem),
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Louvain",
+                                           k = max(as.numeric(mem)),
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # TO DO:
+      # fast & greedy (bi + multi)
+      # walktrap (bi + multi)
+      # leading eigenvector (bi + multi)
+      # edge betweenness (bi + multi)
+      # infomap?
+      # label propagation?
+      # optimal modularity? (slow)
+      # spinglass? (slow)
+      
+      # retain cluster object where modularity was maximal
+      if (isTRUE(saveObjects) && length(current_cl) > 0) {
+        obj$cl[[i]] <- current_cl[[which.max(current_mod)]]
+      }
+    }
+  }
+  if (isTRUE(verbose)) {
+    if (timewindow == "no") {
+      message("done.")
+    } else {
+      message("\nDone.")
+    }
+    message("(3/3) Post-processing data... ", appendLF = FALSE)
+  }
+  obj$cl <- obj$cl[!sapply(obj$cl, is.null)] # remove NULL objects that may occur when the network is empty
+  obj$k <- k
+  obj$max_mod <- dplyr::bind_rows(dta_dat)
+  obj$memberships <- dplyr::bind_rows(dta_mem)
+  obj$modularity <- dplyr::bind_rows(dta_mod)
+  obj$max_mod <- obj$max_mod[obj$max_mod$i %in% obj$modularity$i, ] # remove date entries where the network is empty
+  obj$max_mod$max_mod <- sapply(obj$max_mod$i, function(x) max(obj$modularity$modularity[obj$modularity$i == x], na.rm = TRUE)) # attach max_mod to $max_mod
+  # attach max_method to $max_mod
+  obj$max_mod$max_method <- sapply(obj$max_mod$i,
+                                   function(x) obj$modularity$method[obj$modularity$i == x & obj$modularity$modularity == max(obj$modularity$modularity[obj$modularity$i == x], na.rm = TRUE)][1])
+  # attach k to max_mod
+  obj$max_mod$k <- sapply(obj$max_mod$i, function(x) max(obj$modularity$k[obj$modularity$i == x], na.rm = TRUE))
+  
+  # diagnostics
+  if (isTRUE(single) && !"Hierarchical (Single)" %in% obj$modularity$method && k > 1) {
+    warning("'single' omitted due to an unknown problem.")
+  }
+  if (isTRUE(average) && !"Hierarchical (Average)" %in% obj$modularity$method && k > 1) {
+    warning("'average' omitted due to an unknown problem.")
+  }
+  if (isTRUE(complete) && !"Hierarchical (Complete)" %in% obj$modularity$method && k > 1) {
+    warning("'complete' omitted due to an unknown problem.")
+  }
+  if (isTRUE(ward) && !"Hierarchical (Ward)" %in% obj$modularity$method) {
+    warning("'ward' omitted due to an unknown problem.")
+  }
+  if (isTRUE(kmeans) && !"k-Means" %in% obj$modularity$method) {
+    warning("'kmeans' omitted due to an unknown problem.")
+  }
+  if (isTRUE(pam) && !"Partitioning around Medoids" %in% obj$modularity$method) {
+    warning("'pam' omitted due to an unknown problem.")
+  }
+  if (isTRUE(equivalence) && !"Equivalence" %in% obj$modularity$method) {
+    warning("'equivalence' omitted due to an unknown problem.")
+  }
+  if (isTRUE(concor_one) && !"CONCOR (One-Mode)" %in% obj$modularity$method && k %in% c(0, 2)) {
+    warning("'concor_one' omitted due to an unknown problem.")
+  }
+  if (isTRUE(concor_two) && !"CONCOR (Two-Mode)" %in% obj$modularity$method && k %in% c(0, 2)) {
+    warning("'concor_two' omitted due to an unknown problem.")
+  }
+  if (isTRUE(louvain) && !"Louvain" %in% obj$modularity$method && k < 2) {
+    warning("'louvain' omitted due to an unknown problem.")
+  }
+  
+  class(obj) <- "dna_multiclust"
+  if (isTRUE(verbose)) {
+    message("done.")
+  }
+  return(obj)
+}
+
+#' Print the summary of a \code{dna_multiclust} object
+#'
+#' Show details of a \code{dna_multiclust} object.
+#'
+#' Print abbreviated contents for the slots of a \code{dna_multiclust} object,
+#' which can be created using the \link{dna_multiclust} function.
+#'
+#' @param x A \code{dna_multiclust} object.
+#' @param ... Further options (currently not used).
+#'
+#' @author Philip Leifeld
+#' @seealso \code{\link{dna_multiclust}}, \code{\link{dna_plotModularity}}
+#' @export
+print.dna_multiclust <- function(x, ...) {
+  cat(paste0("$k\n", x$k, "\n"))
+  if ("cl" %in% names(x)) {
+    cat(paste0("\n$cl\n", length(x$cl), " cluster object(s) embedded.\n"))
+  }
+  cat("\n$max_mod\n")
+  print(head(x$max_mod))
+  if (nrow(x$max_mod) > 6) {
+    cat(paste0("[... ", nrow(x$max_mod), " rows]\n"))
+  }
+  cat("\n$modularity\n")
+  print(head(x$modularity))
+  if (nrow(x$modularity) > 6) {
+    cat(paste0("[... ", nrow(x$modularity), " rows]\n"))
+  }
+  cat("\n$memberships\n")
+  print(head(x$memberships))
+  if (nrow(x$memberships) > 6) {
+    cat(paste0("[... ", nrow(x$memberships), " rows]\n"))
+  }
+}
+
+
 #' One-dimensional binary scaling from a DNA connection
 #'
 #' Scale ideological positions of two variables (e.g., organizations and
@@ -4731,6 +5537,25 @@ dna_network <- function(connection,
                         outfile = NULL,
                         verbose = TRUE) {
 
+  # check time window arguments
+  if (is.null(timewindow) ||
+      is.na(timewindow) ||
+      !is.character(timewindow) ||
+      length(timewindow) != 1 ||
+      !timewindow %in% c("no", "events", "seconds", "minutes", "hours", "days", "weeks", "months", "years")) {
+    timewindow <- "no"
+    warning("'timewindow' argument not recognized. Using 'timewindow = \"no\"'.")
+  }
+  if (is.null(windowsize) ||
+      is.na(windowsize) ||
+      !is.numeric(windowsize) ||
+      length(windowsize) != 1 ||
+      windowsize < 0 ||
+      (windowsize == 0 && timewindow != "no")) {
+    windowsize <- 100
+    warning("'windowsize' argument not recognized. Using 'windowsize = 100'.")
+  }
+  
   # check and convert exclude arguments
   if (!is.character(excludeAuthors)) {
     stop("'excludeAuthors' must be a character object.")
@@ -4915,610 +5740,6 @@ dna_network <- function(connection,
       return(dta)
     }
   }
-}
-
-#' Computes a temporal sequence of networks
-#'
-#' Computes a measure for each network in a temporal sequence of networks.
-#'
-#' This function serves as a convenience wrapper to calculate a measure for each
-#' network in a temporal sequence of networks. The standard is to calculate the
-#' modularity the best two-community solution (i.e., bipolarization) of the
-#' network for each time window. The function can also be used to split
-#' your data (facet) and calculate networks for each facet type and return the
-#' statistics by facet.
-#'
-#' @param connection A \link{dna_connection} object created by the
-#'   \link{dna_connection} function.
-#' @param method Is used to compute exactly one measurement for each network
-#'   computed in the temporal sequence of networks. Can contain the name of any
-#'   function which reduces a matrix to just one value or one of the following
-#'   character strings: \code{"bipolarization"} (for calculating the modularity of
-#'   different two-cluster solutions and choosing the highest one);
-#'   \code{"multipolarization"} (for calculating the modularity of different
-#'   community detection measures as implemented in \pkg{igraph}; or \code{"louvain"}
-#'   (for detecting communities using the fast Louvain algorithm and computing
-#'   modularity based on this result).
-#' @param timewindow Same as in \link{dna_network}.
-#' @param windowsize Same as in \link{dna_network}.
-#' @param facet Which value from the dna database should be used to subset the
-#'   networks. Can be \code{"Authors"} for document author, \code{"Sources"} for
-#'   document source, \code{"Sections"} for documents which contain a certain
-#'   section or \code{"Types"} to subset document types.
-#' @param facetValues Which values should be used to facet calculation of the
-#'   networks. Always contains the value "all" for comparison. Use e.g.
-#'   excludeTypes to exclude documents from comparison.
-#' @param parallel Use parallel processing for the computation of time series
-#'   measures? By default, this is switched off (\code{"no"}), meaning that only
-#'   one CPU node is used to compute the results. Other possible values are
-#'   \code{"FORK"} and \code{"PSOCK"}. The FORK option uses the \code{mclapply}
-#'   function under the hood. This works well on Unix systems with multiple
-#'   cores but not on Windows. If \code{"FORK"} is used, the \code{cl} argument is
-#'   ignored. The \code{"PSOCK"} option uses the \code{parSapply} function under
-#'   the hood. This works on any kind of system including Windows but is
-#'   slightly slower than forking. In either case, the number of cores can be
-#'   provided using the \code{ncpus} argument.
-#' @param ncpus Number of CPU cores to use for parallel processing (if switched
-#'   on through the \code{parallel} argument).
-#' @param cl An optional \code{cluster} object for PSOCK parallel processing.
-#'   If no \code{cluster} object is provided (default behavior), a cluster is
-#'   created internally on the fly. If a \code{cluster} object is provided,
-#'   the \code{ncpus} argument is ignored because the \code{cluster} object
-#'   already contains the number of cores. It can be useful to supply a
-#'   \code{cluster} object for example for use with the MPI protocol on a HPC
-#'   cluster. Note that the \code{cl} argument is ignored if
-#'   \code{parallel = "FORK"}.
-#' @param verbose Display messages if \code{TRUE} or \code{1}. Also displays
-#'   details about network construction when \code{2}.
-#' @param ... Additional arguments passed to \link{dna_network}.
-#'
-#' @author Philip Leifeld
-#'
-#' @examples
-#' \dontrun{
-#' library("ggplot2")
-#' dna_init()
-#' conn <- dna_connection(dna_sample())
-#'
-#' tW <- dna_timeWindow(connection = conn,
-#'                      timewindow = "days",
-#'                      windowsize = 10,
-#'                      facet = "Authors",
-#'                      facetValues = c("Bluestein, Joel",
-#'                                      "Voinovich, George"),
-#'                      method = "bipolarization",
-#'                      verbose = TRUE)
-#'
-#' dna_plotTimeWindow(tW,
-#'                    facetValues = c("Bluestein, Joel",
-#'                                    "Voinovich, George",
-#'                                    "all"),
-#'                    rows = 2)
-#'
-#' mp <- dna_timeWindow(connection = conn,
-#'                      timewindow = "days",
-#'                      windowsize = 15,
-#'                      method = "multipolarization",
-#'                      duplicates = "document",
-#'                      parallel = "PSOCK",
-#'                      ncpus = 3)
-#'
-#' dna_plotTimeWindow(mp, include.y = c(-1, 1)) + theme_bw()
-#' }
-#'
-#' @author Philip Leifeld, Johannes B. Gruber
-#'
-#' @export
-#' @import ggplot2
-#' @import parallel
-#' @importFrom cluster pam
-#' @importFrom igraph graph.adjacency modularity cluster_fast_greedy cluster_walktrap
-#'   cluster_leading_eigen cluster_edge_betweenness cluster_louvain cut_at
-#' @importFrom sna equiv.clust sedist
-#' @importFrom stats kmeans hclust cutree cor
-#' @importFrom vegan vegdist
-dna_timeWindow <- function(connection,
-                           method = "bipolarization",
-                           timewindow = "days",
-                           windowsize = 100,
-                           facet = "Types",
-                           facetValues = character(),
-                           parallel = c("no", "FORK", "PSOCK"),
-                           ncpus = 1,
-                           cl = NULL,
-                           verbose = 1,
-                           ...) {
-  dots <- list(...)
-  if ("excludeAuthors" %in% names(dots)) {
-    excludeAuthors <- unname(unlist(dots["excludeAuthors"]))
-    dots["excludeAuthors"] <- NULL
-  } else {
-    excludeAuthors <- character()
-  }
-  if ("excludeSources" %in% names(dots)) {
-    excludeSources <- unname(unlist(dots["excludeSources"]))
-    dots["excludeSources"] <- NULL
-  } else {
-    excludeSources <- character()
-  }
-  if ("excludeSections" %in% names(dots)) {
-    excludeSections <- unname(unlist(dots["excludeSections"]))
-    dots["excludeSections"] <- NULL
-  } else {
-    excludeSections <- character()
-  }
-  if ("excludeTypes" %in% names(dots)) {
-    excludeTypes <- unname(unlist(dots["excludeTypes"]))
-    dots["excludeTypes"] <- NULL
-  } else {
-    excludeTypes <- character()
-  }
-  facetValues <- c(facetValues, "all")
-  if (facet == "Authors" ) {
-    Authors <- facetValues
-  } else {
-    Authors <- character()
-  }
-  if (facet == "Sources") {
-    Sources <- facetValues
-  } else {
-    Sources <- character()
-  }
-  if (facet == "Sections") {
-    Sections <- facetValues
-  } else {
-    Sections <- character()
-  }
-  if (facet == "Types") {
-    Types <- facetValues
-  } else {
-    Types <- character()
-  }
-  if (any(Authors %in% excludeAuthors)) {
-    cat(paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "),
-        "is found in both \"Authors\" and \"excludeAuthors\".",
-        paste0("\"", Authors[Authors %in% excludeAuthors], "\"", collapse = ", "),
-        " was removed from \"excludeAuthors\".\n")
-    excludeAuthors <- excludeAuthors[!excludeAuthors %in% Authors]
-  }
-  if (any(Sources %in% excludeSources)) {
-    cat(paste0("\"", Sources[Sources %in% excludeSources], "\"", collapse = ", "),
-        "is found in both \"Sources\" and \"excludeSources\".",
-        paste0("\"", Sources[Sources %in% excludeSources], "\"", collapse = ", "),
-        " was removed from \"excludeSources\".\n")
-    excludeSources <- excludeSources[!excludeSources %in% Sources]
-  }
-  if (any(Sections %in% excludeSections)) {
-    cat(paste0("\"", Sections[Sections %in% excludeSections], "\"", collapse = ", "),
-        "is found in both \"Sections\" and \"excludeSections\".",
-        paste0("\"", Sections[Sections %in% excludeSections], "\"", collapse = ", "),
-        " was removed from \"excludeSections\".\n")
-    excludeSections <- excludeSections[!excludeSections %in% Sections]
-  }
-  if (any(Types %in% excludeTypes)) {
-    cat(paste0("\"", Types[Types %in% excludeTypes], "\"", collapse = ", "),
-        "is found in both \"Types\" and \"excludeTypes\".",
-        paste0("\"", Types[Types %in% excludeTypes], "\"", collapse = ", "),
-        " was removed from \"excludeTypes\".\n")
-    excludeTypes <- excludeTypes[!excludeTypes %in% Types]
-  }
-  if (is.character(method) && method == "louvain") {
-    mod.m <- lapply(facetValues, function(x) {
-      if (verbose > 0) {
-        cat("Retrieving time window networks... Calculating Type =", facetValues[facetValues %in% x], "\n")
-      }
-      nw <- do.call(dna_network,
-                    c(list(connection = connection,
-                           networkType = "onemode",
-                           qualifierAggregation = "subtract",
-                           normalization = "average",
-                           timewindow = timewindow,
-                           windowsize = windowsize,
-                           excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
-                           excludeSources = c(Sources[Sources %in% x], excludeSources),
-                           excludeSections = c(Sections[Sections %in% x], excludeSections),
-                           excludeTypes = c(Types[Types %in% x], excludeTypes),
-                           verbose = ifelse(verbose > 1, TRUE, FALSE)
-                    ), dots)
-      )
-
-      louvain <- function(x) {
-        if (nrow(x) < 2) {
-          return(NA)
-        }
-        x[x < 0] <- 0
-        return(modularity(cluster_louvain(graph.adjacency(x, mode = "undirected", weighted = TRUE))))
-      }
-
-      if (parallel[1] == "no") {
-        if (verbose > 0) {
-          cat("Computing Louvain modularity without parallelization...\n")
-        }
-        lvmod <- sapply(nw$networks, louvain)
-      } else if (parallel[1] == "FORK") {
-        if (verbose > 0) {
-          cat("Computing Louvain modularity (FORK cluster with", ncpus, "cores)...\n")
-        }
-        lvmod <- simplify2array(mclapply(nw$networks, louvain, mc.cores = ncpus))
-      } else if (parallel[1] == "PSOCK") {
-        newCluster <- FALSE
-        if (is.null(cl)) {
-          newCluster <- TRUE
-          cl <- makePSOCKcluster(ncpus)
-        }
-        clusterEvalQ(cl, library("igraph"))
-        if (verbose > 0) {
-          cat("Computing Louvain modularity (PSOCK cluster with", length(cl), "cores)...\n")
-        }
-        lvmod <- parSapply(cl = cl, nw$networks, louvain)
-        if (newCluster == TRUE) {
-          stopCluster(cl)
-        }
-      } else {
-        stop("'parallel' argument was not recognized.")
-      }
-
-      mod.m <- data.frame(index = 1:length(nw$networks),
-                          Time = nw$time,
-                          NumStatements = nw$numStatements,
-                          Modularity = lvmod,
-                          facet = rep(facetValues[facetValues %in% x], length(nw$networks)))
-      return(mod.m)
-    })
-  } else if (is.character(method) && method %in% c("multipolarization", "multipolarisation", "modularity")) {
-    mod.m <- lapply(facetValues, function(x) {
-      if (verbose > 0) {
-        cat("Retrieving time window networks... Calculating Type =", facetValues[facetValues %in% x], "\n")
-      }
-      nw <- do.call(dna_network,
-                    c(list(connection = connection,
-                           networkType = "onemode",
-                           qualifierAggregation = "subtract",
-                           normalization = "average",
-                           timewindow = timewindow,
-                           windowsize = windowsize,
-                           excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
-                           excludeSources = c(Sources[Sources %in% x], excludeSources),
-                           excludeSections = c(Sections[Sections %in% x], excludeSections),
-                           excludeTypes = c(Types[Types %in% x], excludeTypes),
-                           verbose = ifelse(verbose > 1, TRUE, FALSE)
-                    ), dots)
-      )
-
-      multipolarization <- function(x) {
-        if (nrow(x) < 2) {
-          return(as.numeric(rep(NA, 6)))
-        }
-        x[x < 0] <- 0
-        g <- graph.adjacency(x, mode = "undirected", weighted = TRUE)
-        values <- as.numeric(rep(NA, 5))
-
-        try({
-          values[1] <- modularity(cluster_fast_greedy(g))
-        }, silent = TRUE)
-
-        try({
-          values[2] <- modularity(cluster_walktrap(g))
-        }, silent = TRUE)
-
-        try({
-          values[3] <- modularity(cluster_leading_eigen(g))
-        }, silent = TRUE)
-
-        if (all(x == 0) && packageVersion("igraph") < "1.2.1") {
-          values[4] <- NA
-        } else {
-          try({
-            values[4] <- modularity(cluster_edge_betweenness(g, directed = FALSE))
-          }, silent = TRUE)
-        }
-
-        try({
-          values[5] <- modularity(cluster_louvain(g))
-        }, silent = TRUE)
-
-        return(c(max(values, na.rm = TRUE), values))
-      }
-
-      if (parallel[1] == "no") {
-        if (verbose > 0) {
-          cat("Computing multipolarization measure without parallelization...\n")
-        }
-        mod_matrix <- t(sapply(nw$networks, multipolarization))
-      } else if (parallel[1] == "FORK") {
-        if (verbose > 0) {
-          cat("Computing multipolarization measure (FORK cluster with", ncpus, "cores)...\n")
-        }
-        mod_matrix <- t(simplify2array(mclapply(nw$networks, multipolarization, mc.cores = ncpus)))
-      } else if (parallel[1] == "PSOCK") {
-        newCluster <- FALSE
-        if (is.null(cl)) {
-          newCluster <- TRUE
-          cl <- makePSOCKcluster(ncpus)
-        }
-        clusterEvalQ(cl, library("igraph"))
-        if (verbose > 0) {
-          cat("Computing multipolarization measure (PSOCK cluster with", length(cl), "cores)...\n")
-        }
-        mod_matrix <- t(parSapply(cl = cl, nw$networks, multipolarization))
-        if (newCluster == TRUE) {
-          stopCluster(cl)
-        }
-      } else {
-        stop("'parallel' argument was not recognized.")
-      }
-
-      mod.m <- data.frame(index = 1:length(nw$networks),
-                          Time = nw$time,
-                          NumStatements = nw$numStatements,
-                          Modularity = mod_matrix[, 1],
-                          "Fast & Greedy" = mod_matrix[, 2],
-                          "Walktrap" = mod_matrix[, 3],
-                          "Leading Eigenvector" = mod_matrix[, 4],
-                          "Edge Betweenness" = mod_matrix[, 5],
-                          "Louvain" = mod_matrix[, 6],
-                          facet = rep(facetValues[facetValues %in% x], length(nw$networks)),
-                          check.names = FALSE)
-      return(mod.m)
-    })
-  } else if (is.character(method) && method %in% c("bipolarization", "bipolarisation")) {
-    mod.m <- lapply(facetValues, function(x) {
-      if (verbose > 0) {
-        cat("Retrieving time window networks... Calculating Type =", facetValues[facetValues %in% x], "\n")
-      }
-      nw_aff <- do.call(dna_network,
-                        c(list(connection = connection,
-                               networkType = "twomode",
-                               qualifierAggregation = "combine",
-                               timewindow = timewindow,
-                               windowsize = windowsize,
-                               excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
-                               excludeSources = c(Sources[Sources %in% x], excludeSources),
-                               excludeSections = c(Sections[Sections %in% x], excludeSections),
-                               excludeTypes = c(Types[Types %in% x], excludeTypes),
-                               verbose = ifelse(verbose > 1, TRUE, FALSE)
-                        ), dots)
-      )
-      nw_subt <- do.call(dna_network,
-                         c(list(connection = connection,
-                                networkType = "onemode",
-                                qualifierAggregation = "subtract",
-                                timewindow = timewindow,
-                                windowsize = windowsize,
-                                normalization = "average",
-                                excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
-                                excludeSources = c(Sources[Sources %in% x], excludeSources),
-                                excludeSections = c(Sections[Sections %in% x], excludeSections),
-                                excludeTypes = c(Types[Types %in% x], excludeTypes),
-                                verbose = ifelse(verbose > 1, TRUE, FALSE)
-                         ), dots)
-      )
-
-      n <- length(nw_aff$networks)
-      l <- list(n)
-      for (i in 1:n) {
-        l[[i]] <- list()
-        l[[i]]$subt <- nw_subt$networks[[i]]
-        l[[i]]$aff <- nw_aff$networks[[i]]
-      }
-
-      bipolarization <- function(x) {
-        cong <- x$subt
-        if (nrow(cong) == 0) {
-          return(as.numeric(rep(NA, 12)))
-        }
-        cong[cong < 0] <- 0
-        g <- graph.adjacency(cong, mode = "undirected", weighted = TRUE)
-
-        combined <- cbind(apply(x$aff, 1:2, function(x) ifelse(x %in% c(1, 3), 1, 0)),
-                          apply(x$aff, 1:2, function(x) ifelse(x %in% c(2, 3), 1, 0)))
-        combined <- combined[rowSums(combined) > 0, , drop = FALSE]
-        if (nrow(combined) < 2) {  # less than two objects in current time window
-          return(rep(NA, 12))
-        }
-        values <- as.numeric(rep(NA, 11))
-
-        jac <- vegdist(combined, method = "jaccard")
-        try({
-          values[1] <- modularity(x = g, membership = kmeans(jac, centers = 2)$cluster)
-        }, silent = TRUE)
-
-        try({
-          values[2] <- modularity(x = g, membership = pam(jac, k = 2)$cluster)
-        }, silent = TRUE)
-
-        try({
-          values[3] <- modularity(x = g, membership = cutree(hclust(jac, method = "ward.D2"), k = 2))
-        }, silent = TRUE)
-
-        try({
-          values[4] <- modularity(x = g, membership = cutree(hclust(jac, method = "complete"), k = 2))
-        }, silent = TRUE)
-
-        try({
-          values[5] <- modularity(x = g, membership = cut_at(cluster_fast_greedy(g), no = 2))
-        }, silent = TRUE)
-
-        try({
-          values[6] <- modularity(x = g, membership = cut_at(cluster_walktrap(g), no = 2))
-        }, silent = TRUE)
-
-        try({
-          values[7] <- modularity(x = g, membership = cut_at(cluster_leading_eigen(g), no = 2))
-        }, silent = TRUE)
-
-        if (all(cong == 0) && packageVersion("igraph") < "1.2.1") {
-          values[8] <- NA
-        } else {
-          try({
-            values[8] <- modularity(x = g, membership = cut_at(cluster_edge_betweenness(g), no = 2))
-          }, silent = TRUE)
-        }
-
-        try({
-          values[9] <- modularity(x = g, membership = cutree(equiv.clust(x$subt, equiv.dist = sedist(x$subt, method = "euclidean"))$cluster, k = 2))
-        }, silent = TRUE)
-
-        try({
-          suppressWarnings(mi <- cor(x$subt))
-          iter <- 1
-          while (any(abs(mi) <= 0.999) & iter <= 50) {
-            mi[is.na(mi)] <- 0
-            mi <- cor(mi)
-            iter <- iter + 1
-          }
-          concor_cong <- ((mi[, 1] > 0) * 1) + 1
-          values[10] <- modularity(x = g, membership = concor_cong)
-        }, silent = TRUE)
-
-        try({
-          suppressWarnings(mi <- cor(t(combined)))
-          iter <- 1
-          while (any(abs(mi) <= 0.999) & iter <= 50) {
-            mi[is.na(mi)] <- 0
-            mi <- cor(mi)
-            iter <- iter + 1
-          }
-          concor_aff <- ((mi[, 1] > 0) * 1) + 1
-          values[11] <- modularity(x = g, membership = concor_aff)
-        }, silent = TRUE)
-
-        return(c(max(values, na.rm = TRUE), values))
-      }
-
-      if (parallel[1] == "no") {
-        if (verbose > 0) {
-          cat("Computing bipolarization measure without parallelization...\n")
-        }
-        mod_matrix <- t(sapply(l, bipolarization))
-      } else if (parallel[1] == "FORK") {
-        if (verbose > 0) {
-          cat("Computing bipolarization measure (FORK cluster with", ncpus, "cores)...\n")
-        }
-        mod_matrix <- t(simplify2array(mclapply(l, bipolarization, mc.cores = ncpus)))
-      } else if (parallel[1] == "PSOCK") {
-        newCluster <- FALSE
-        if (is.null(cl)) {
-          newCluster <- TRUE
-          cl <- makePSOCKcluster(ncpus)
-        }
-        clusterEvalQ(cl, library("igraph"))
-        clusterEvalQ(cl, library("vegan"))
-        clusterEvalQ(cl, library("cluster"))
-        clusterEvalQ(cl, library("sna"))
-        if (verbose > 0) {
-          cat("Computing bipolarization measure (PSOCK cluster with", length(cl), "cores)...\n")
-        }
-        mod_matrix <- t(parSapply(cl = cl, l, bipolarization))
-        if (newCluster == TRUE) {
-          stopCluster(cl)
-        }
-      } else {
-        stop("'parallel' argument was not recognized.")
-      }
-
-      mod.m <- data.frame(index = 1:n,
-                          Time = nw_aff$time,
-                          NumStatements = nw_aff$numStatements,
-                          Modularity = mod_matrix[, 1],
-                          "k-Means" = mod_matrix[, 2],
-                          "Partitioning around Medoids" = mod_matrix[, 3],
-                          "Hierarchical Clustering (Ward)" = mod_matrix[, 4],
-                          "Hierarchical Clustering (Complete)" = mod_matrix[, 5],
-                          "Fast & Greedy" = mod_matrix[, 6],
-                          "Walktrap" = mod_matrix[, 7],
-                          "Leading Eigenvector" = mod_matrix[, 8],
-                          "Edge Betweenness" = mod_matrix[, 9],
-                          "Equivalence Clustering" = mod_matrix[, 10],
-                          "CONCOR (One-Mode)" = mod_matrix[, 11],
-                          "CONCOR (Two-Mode)" = mod_matrix[, 12],
-                          facet = rep(facetValues[facetValues %in% x], n),
-                          check.names = FALSE)
-      return(mod.m)
-    })
-  } else {
-    if (verbose > 0) {
-      cat("Applying custom function to network time windows...\n")
-    }
-    if (!class(method) == "function") {
-      stop (
-        paste0("\"", method, "\" is not a valid function.")
-      )
-    } else {
-      testmat <- matrix(c(1, 2, 3,
-                          11, 12, 13,
-                          21, 22, 23),
-                        nrow = 3,
-                        ncol = 3)
-      if (length(do.call(method, list(testmat))) != 1) {
-        stop (
-          paste0("\"", method, "\" is not a valid method for dna_timeWindow.\n",
-                 "dna_timeWindow needs a function which provides exactly one ",
-                 "value when applied to an object of class matrix. See ",
-                 "?dna_timeWindow for help.")
-        )
-      } else {
-        mod.m <- lapply(Types, function(x) {
-          if (verbose | verbose == 2) {
-            cat("Retrieving time window networks... Calculating Type =", Types[Types %in% x], "\n")
-          }
-          nw <- do.call(dna_network,
-                        c(list(connection = connection,
-                               timewindow = timewindow,
-                               windowsize = windowsize,
-                               excludeAuthors = c(Authors[Authors %in% x], excludeAuthors),
-                               excludeSources = c(Sources[Sources %in% x], excludeSources),
-                               excludeSections = c(Sections[Sections %in% x], excludeSections),
-                               excludeTypes = c(Types[Types %in% x], excludeTypes),
-                               verbose = ifelse(verbose > 1, TRUE, FALSE)
-                        ), dots)
-          )
-
-          if (parallel[1] == "no") {
-            if (verbose > 0) {
-              cat("Computing custom measure without parallelization...\n")
-            }
-            results <- sapply(nw$networks, method)
-          } else if (parallel[1] == "FORK") {
-            if (verbose > 0) {
-              cat("Computing custom measure (FORK cluster with", ncpus, "cores)...\n")
-            }
-            results <- simplify2array(mclapply(nw$networks, method, mc.cores = ncpus))
-          } else if (parallel[1] == "PSOCK") {
-            newCluster <- FALSE
-            if (is.null(cl)) {
-              newCluster <- TRUE
-              cl <- makePSOCKcluster(ncpus)
-            }
-            clusterEvalQ(cl, library("igraph"))
-            if (verbose > 0) {
-              cat("Computing custom measure (PSOCK cluster with", length(cl), "cores)...\n")
-            }
-            results <- parSapply(cl = cl, nw$networks, method)
-            if (newCluster == TRUE) {
-              stopCluster(cl)
-            }
-          } else {
-            stop("'parallel' argument was not recognized.")
-          }
-
-          mod.m <- data.frame(index = 1:length(nw$networks),
-                              Time = nw$time,
-                              NumStatements = nw$numStatements,
-                              x = results,
-                              facet = rep(facetValues[facetValues %in% x], length(nw$networks)))
-          colnames(mod.m)[3] <- deparse(quote(method))
-          return(mod.m)
-        })
-      }
-    }
-    if (verbose > 0) {
-      cat("Done.\n")
-    }
-  }
-  mod.df <- do.call("rbind", mod.m)
-  class(mod.df) <- c("data.frame", "dna_timeWindow")
-  return(mod.df)
 }
 
 
@@ -6862,6 +7083,75 @@ dna_plotHive <- function(x,
 }
 
 
+#' Plot modularity values in a \code{dna_multiclust} object
+#'
+#' Plot modularity values in a \code{dna_multiclust} object.
+#'
+#' This function serves to plot the maximal modularity values saved in a
+#' \code{dna_multiclust} object (as created by the \code{\link{dna_multiclust}}
+#' function). For example, this can shed light on smoothed bipolarization or
+#' multipolarization over time.
+#'
+#' This function replaces the \code{dna_plotTimeWindow} function that was
+#' present in earlier versions of the package.
+#'
+#' @param x A \code{dna_multiclust} object, as created by the
+#'   \code{\link{dna_multiclust}} function. Ideally with multiple time points.
+#' @param only.max Only print the maximal modularity values, as opposed to
+#'   facets for the modularity values produced by each separate clustering
+#'   method?
+#' @param nrow,ncol The number of rows and columns for the facet layout if
+#'   \code{only.max = FALSE} is set.
+#' @param include.y Include specific y-axis value in the plot, for example
+#'   \code{0}.
+#' @return A \pkg{ggplot2} plot.
+#'
+#' @author Philip Leifeld
+#' @seealso \code{\link{dna_multiclust}}, \code{\link{print.dna_multiclust}}
+#'
+#' @importFrom ggplot2 ggplot aes_string geom_boxplot ylab xlab theme theme_bw
+#'   geom_line expand_limits geom_smooth facet_wrap
+#' @export
+dna_plotModularity <- function(x, only.max = TRUE, nrow = 4, ncol = 4, include.y = NULL) {
+  if (class(x) != "dna_multiclust") {
+    stop("Not a 'dna_multiclust' object. Use the 'dna_cluster' function.")
+  }
+  if (nrow(x$max_mod) == 1) { # only one time point (no time window): boxplot of modularity measures
+    ggplot2::ggplot(x$modularity, ggplot2::aes_string(y = "modularity")) +
+      geom_boxplot() +
+      ylab("Modularity") +
+      theme_bw() +
+      theme(axis.title.x = element_blank(),
+            axis.text.x = element_blank(),
+            axis.ticks.x = element_blank())
+  } else if (isTRUE(only.max)) { # only plot a single facet with the maximal modularity value over time
+    ggplot2::ggplot(x$max_mod, ggplot2::aes_string(x = "middle.date", y = "max_mod")) +
+      geom_line() +
+      geom_smooth(se = FALSE, stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
+      ylab("Modularity") +
+      xlab("Time") +
+      expand_limits(y = include.y) +
+      theme_bw()
+  } else { # plot modularity for all measures, including maximal
+    m <- merge(x = x$modularity, y = x$max_mod, by = c("i", "k"), all.x = TRUE, all.y = FALSE)
+    best <- x$max_mod
+    best$method <- rep("Maximum value", nrow(best))
+    best$modularity <- best$max_mod
+    best <- best[, c(1, 7:9, 2:6)]
+    m <- rbind(best, m)
+    m$method <- factor(m$method, levels = c("Maximum value", sort(unique(x$modularity$method))))
+    ggplot2::ggplot(m, ggplot2::aes_string(x = "middle.date", y = "modularity")) +
+      geom_line() +
+      geom_smooth(se = FALSE, stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
+      ylab("Modularity") +
+      xlab("Time") +
+      expand_limits(y = include.y) +
+      facet_wrap(~ method, nrow = nrow, ncol = ncol) +
+      theme_bw()
+  }
+}
+
+
 #' Plots a network from DNA data
 #'
 #' This function is an easy wrapper to create network plots from one- and
@@ -7743,116 +8033,6 @@ dna_plotScale <- function(dna_scale,
   return(g)
 }
 
-
-#' Plot \link{dna_timeWindow} objects
-#'
-#' Plot \link{dna_timeWindow} objects in a grid separated by facet.
-#'
-#' A convenience function to plot an object created with \link{dna_timeWindow}
-#' function. Uses \link[ggplot2]{geom_line} under the hood to plot results from
-#' a call to \link{dna_timeWindow} and facets a grid view using
-#' \link[ggplot2]{facet_grid}. Customized themes and ggplot2 functions can be
-#' passed on with \code{+}.
-#'
-#' @param x A \code{dna_timeWindow} object created by the \link{dna_timeWindow}
-#'   function.
-#' @param facetValues The name or names of the facet values which should be
-#'   included in the plot.
-#' @param include.y Include specific value of facet in the plot.
-#' @param rows,cols Number of rows and columns in which the plots are arranged.
-#'   plot.
-#' @param diagnostics Plot the different measures saved in the object?
-#' @param ... Currently not used. Additional parameters should be passed on to ggplot2 via
-#'   e.g. \code{+ theme_bw()}.
-#'
-#' @examples
-#' \dontrun{
-#' library("ggplot2")
-#' dna_init()
-#' conn <- dna_connection(dna_sample())
-#'
-#' tW <- dna_timeWindow(connection = conn,
-#'                      timewindow = "days",
-#'                      windowsize = 10,
-#'                      facet = "Authors",
-#'                      facetValues = c("Bluestein, Joel",
-#'                                      "Voinovich, George"),
-#'                      method = "bipolarization",
-#'                      verbose = TRUE)
-#'
-#' dna_plotTimeWindow(tW,
-#'                    facetValues = c("Bluestein, Joel",
-#'                                    "Voinovich, George",
-#'                                    "all"),
-#'                    rows = 2)
-#'
-#' mp <- dna_timeWindow(connection = conn,
-#'                      timewindow = "days",
-#'                      windowsize = 15,
-#'                      method = "multipolarization",
-#'                      duplicates = "document",
-#'                      parallel = "PSOCK",
-#'                      ncpus = 3)
-#'
-#' dna_plotTimeWindow(mp, include.y = c(-1, 1)) + theme_bw()
-#' }
-#' @author Johannes B. Gruber, Philip Leifeld
-#' @export
-#' @import ggplot2
-dna_plotTimeWindow <- function(x,
-                               facetValues = "all",
-                               include.y = NULL,
-                               rows = NULL,
-                               cols = NULL,
-                               diagnostics = FALSE,
-                               ...) {
-  method <- colnames(x)[4]
-  if (!any(class(x) %in% "dna_timeWindow")) {
-    warning("x is not an object of class \"dna_timeWindow\".")
-  }
-  if (identical(facetValues, "all")) {
-    if (diagnostics == TRUE) {
-      x_long <- x[, -ncol(x)]
-      x_long <- melt(x_long, id.vars = c("index", "Time", "NumStatements"))
-      colnames(x_long)[4] <- "Measure"
-      colnames(x_long)[5] <- "Polarization"
-      ggplot2::ggplot(x_long, aes_string(x = "Time", y = "Polarization")) +
-        geom_line() +
-        geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
-        facet_wrap(~ Measure, nrow = rows, ncol = cols) +
-        expand_limits(y = include.y) +
-        theme(legend.position = "none")
-    } else {
-      ggplot2::ggplot(x, aes_string(x = "Time", y = method)) +
-        geom_line() +
-        geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
-        expand_limits(y = include.y)
-    }
-  } else {
-    if (diagnostics == TRUE) {
-      warning("Diagnostics have not been implemented for multiple facets.")
-    }
-    if (all(facetValues %in% x$facet)) {
-      if (length(facetValues) == 1) {
-        ggplot2::ggplot(x[grep(paste0("^", facetValues, "$"), x$facet), ],
-                        aes_string(x = "Time", y = method)) +
-          geom_line() +
-          geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
-          expand_limits(y = include.y)
-      } else {
-        ggplot2::ggplot(x[x$facet %in% facetValues, ], aes_string(x = "Time", y = method)) +
-          geom_line() +
-          geom_smooth(stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
-          facet_wrap(~ facet, nrow = rows, ncol = cols) +
-          expand_limits(y = include.y)
-      }
-    } else {
-      stop(
-        paste0("\"", facetValues[!facetValues %in% x$facet], "\" was not found in facetValues")
-      )
-    }
-  }
-}
 
 
 # Summary plots ----------------------------------------------------------------
