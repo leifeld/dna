@@ -3247,6 +3247,39 @@ print.dna_cluster <- function(x, ...) {
 #'   of clustering methods? The \code{\link[igraph]{cluster_louvain}} function
 #'   in the \pkg{igraph} package is applied to the positive subtract network for
 #'   this purpose.
+#' @param fastgreedy Include the fast and greedy community detection algorithm
+#'   in the pool of clustering methods? The
+#'   \code{\link[igraph]{cluster_fast_greedy}} function in the \pkg{igraph}
+#'   package is applied to the positive subtract network for this purpose.
+#' @param walktrap Include the Walktrap community detection algorithm
+#'   in the pool of clustering methods? The
+#'   \code{\link[igraph]{cluster_walktrap}} function in the \pkg{igraph}
+#'   package is applied to the positive subtract network for this purpose.
+#' @param leading_eigen Include the leading eigenvector community detection
+#'   algorithm in the pool of clustering methods? The
+#'   \code{\link[igraph]{cluster_leading_eigen}} function in the \pkg{igraph}
+#'   package is applied to the positive subtract network for this purpose.
+#' @param edge_betweenness Include the edge betweenness community detection
+#'   algorithm by Girvan and Newman in the pool of clustering methods? The
+#'   \code{\link[igraph]{cluster_edge_betweenness}} function in the \pkg{igraph}
+#'   package is applied to the positive subtract network for this purpose. Note
+#'   that this method is disabled by default because there is a
+#'   non-deterministic bug in the implementation, which sometimes leads the \R
+#'   session to abort; see \url{https://github.com/igraph/rigraph/issues/336}
+#'   (as of 15 April 2019).
+#' @param infomap Include the infomap community detection algorithm
+#'   in the pool of clustering methods? The
+#'   \code{\link[igraph]{cluster_infomap}} function in the \pkg{igraph}
+#'   package is applied to the positive subtract network for this purpose.
+#' @param label_prop Include the label propagation community detection algorithm
+#'   in the pool of clustering methods? The
+#'   \code{\link[igraph]{cluster_label_prop}} function in the \pkg{igraph}
+#'   package is applied to the positive subtract network for this purpose.
+#' @param spinglass Include the spinglass community detection algorithm
+#'   in the pool of clustering methods? The
+#'   \code{\link[igraph]{cluster_spinglass}} function in the \pkg{igraph}
+#'   package is applied to the positive subtract network for this purpose. Note
+#'   that this method is disabled by default because it is relatively slow.
 #' @inheritParams dna_network
 #'
 #' @return The function creates a \code{dna_multiclust} object, which contains
@@ -3269,6 +3302,60 @@ print.dna_cluster <- function(x, ...) {
 #' @author Philip Leifeld
 #'
 #' @seealso \code{\link{print.dna_multiclust}}, \code{\link{dna_plotModularity}}
+#'
+#' @examples
+#' library("rDNA")  
+#' dna_init()  
+#' samp <- dna_sample()
+#' conn <- dna_connection(samp)
+#'
+#' # example 1: compute 12 cluster solutions for one time point
+#' mc1 <- dna_multiclust(connection = conn,
+#'                       variable1 = "organization",
+#'                       variable2 = "concept",
+#'                       qualifier = "agreement",
+#'                       duplicates = "document",
+#'                       k = 0,                # flexible numbers of clusters
+#'                       saveObjects = TRUE)   # retain hclust object
+#'
+#' mc1$modularity      # return modularity scores for 12 clustering methods
+#' mc1$max_mod         # return the maximal value of the 12, along with dates
+#' mc1$memberships     # return cluster memberships for all 12 cluster methods
+#' plot(mc1$cl[[1]])   # plot hclust dendrogram
+#'
+#' # example 2: compute only Girvan-Newman edge betweenness with two clusters
+#' set.seed(12345)
+#' mc2 <- dna_multiclust(connection = conn,
+#'                       k = 2,
+#'                       single = FALSE,
+#'                       average = FALSE,
+#'                       complete = FALSE,
+#'                       ward = FALSE,
+#'                       kmeans = FALSE,
+#'                       pam = FALSE,
+#'                       equivalence = FALSE,
+#'                       concor_one = FALSE,
+#'                       concor_two = FALSE,
+#'                       louvain = FALSE,
+#'                       fastgreedy = FALSE,
+#'                       walktrap = FALSE,
+#'                       leading_eigen = FALSE,
+#'                       edge_betweenness = TRUE,
+#'                       infomap = FALSE,
+#'                       label_prop = FALSE,
+#'                       spinglass = FALSE)
+#' mc2$memberships  # return membership in two clusters
+#' mc2$modularity   # return modularity of the cluster solution
+#'
+#' # example 3: smoothed bipolarization using time window algorithm
+#' mc3 <- dna_multiclust(connection = conn,
+#'                       k = 2,
+#'                       timewindow = "events",
+#'                       windowsize = 28)
+#' mc3$max_mod              # maximal modularity and method per time point
+#' dna_plotModularity(mc3)  # smoothed polarization curve (toy example)
+#' dna_plotModularity(mc3, only.max = FALSE)  # separately for all methods
+#' dna_plotModularity(mc3, anomalize = TRUE)  # anomaly detection
 #'
 #' @import ggplot2
 #' @importFrom cluster pam
@@ -3317,6 +3404,13 @@ dna_multiclust <- function(connection,
                            concor_one = TRUE,
                            concor_two = TRUE,
                            louvain = TRUE,
+                           fastgreedy = TRUE,
+                           walktrap = TRUE,
+                           leading_eigen = TRUE,
+                           edge_betweenness = FALSE,
+                           infomap = TRUE,
+                           label_prop = TRUE,
+                           spinglass = FALSE,
                            verbose = TRUE) {
   
   if (is.null(k) || is.na(k) || !is.numeric(k) || length(k) > 1 || is.infinite(k) || k < 0) {
@@ -3824,7 +3918,7 @@ dna_multiclust <- function(connection,
       if (isTRUE(louvain) && k < 2) {
         try({
           suppressWarnings(cl <- igraph::cluster_louvain(g))
-          mem <- membership(cl)
+          mem <- igraph::membership(cl)
           dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
                                            method = rep("Louvain", length(mem)),
                                            node = rownames(x),
@@ -3844,15 +3938,194 @@ dna_multiclust <- function(connection,
         }, silent = TRUE)
       }
       
-      # TO DO:
-      # fast & greedy (bi + multi)
-      # walktrap (bi + multi)
-      # leading eigenvector (bi + multi)
-      # edge betweenness (bi + multi)
-      # infomap?
-      # label propagation?
-      # optimal modularity? (slow)
-      # spinglass? (slow)
+      # Fast & Greedy community detection (with or without cut)
+      if (isTRUE(fastgreedy)) {
+        try({
+          suppressWarnings(cl <- igraph::cluster_fast_greedy(g))
+          if (k == 0) {
+            mem <- igraph::membership(cl)
+          } else {
+            mem <- suppressWarnings(igraph::cut_at(cl, no = k))
+            if ((k + 1) %in% as.numeric(mem)) {
+              stop()
+            }
+          }
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Fast & Greedy", length(mem)),
+                                           node = rownames(x),
+                                           cluster = as.numeric(mem),
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Fast & Greedy",
+                                           k = ifelse(k == 0, max(as.numeric(mem)), k),
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Walktrap community detection (with or without cut)
+      if (isTRUE(walktrap)) {
+        try({
+          suppressWarnings(cl <- igraph::cluster_walktrap(g))
+          if (k == 0) {
+            mem <- igraph::membership(cl)
+          } else {
+            mem <- suppressWarnings(igraph::cut_at(cl, no = k))
+            if ((k + 1) %in% as.numeric(mem)) {
+              stop()
+            }
+          }
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Walktrap", length(mem)),
+                                           node = rownames(x),
+                                           cluster = as.numeric(mem),
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Walktrap",
+                                           k = ifelse(k == 0, max(as.numeric(mem)), k),
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Leading Eigenvector community detection (with or without cut)
+      if (isTRUE(leading_eigen) && k < 2) { # it *should* work with cut_at because is.hierarchical(cl) returns TRUE, but it never works...
+        try({
+          suppressWarnings(cl <- igraph::cluster_leading_eigen(g))
+          mem <- igraph::membership(cl)
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Leading Eigenvector", length(mem)),
+                                           node = rownames(x),
+                                           cluster = as.numeric(mem),
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Leading Eigenvector",
+                                           k = max(as.numeric(mem)),
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Edge Betweenness community detection (with or without cut)
+      if (isTRUE(edge_betweenness)) {
+        try({
+          suppressWarnings(cl <- igraph::cluster_edge_betweenness(g))
+          if (k == 0) {
+            mem <- igraph::membership(cl)
+          } else {
+            mem <- suppressWarnings(igraph::cut_at(cl, no = k))
+            if ((k + 1) %in% as.numeric(mem)) {
+              stop()
+            }
+          }
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Edge Betweenness", length(mem)),
+                                           node = rownames(x),
+                                           cluster = as.numeric(mem),
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Edge Betweenness",
+                                           k = ifelse(k == 0, max(as.numeric(mem)), k),
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Infomap community detection
+      if (isTRUE(infomap) && k < 2) {
+        try({
+          suppressWarnings(cl <- igraph::cluster_infomap(g))
+          mem <- igraph::membership(cl)
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Infomap", length(mem)),
+                                           node = rownames(x),
+                                           cluster = as.numeric(mem),
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Infomap",
+                                           k = max(as.numeric(mem)),
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Label Propagation community detection
+      if (isTRUE(label_prop) && k < 2) {
+        try({
+          suppressWarnings(cl <- igraph::cluster_label_prop(g))
+          mem <- igraph::membership(cl)
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Label Propagation", length(mem)),
+                                           node = rownames(x),
+                                           cluster = as.numeric(mem),
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Label Propagation",
+                                           k = max(as.numeric(mem)),
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Spinglass community detection
+      if (isTRUE(spinglass) && k < 2) {
+        try({
+          suppressWarnings(cl <- igraph::cluster_spinglass(g))
+          mem <- igraph::membership(cl)
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Spinglass", length(mem)),
+                                           node = rownames(x),
+                                           cluster = as.numeric(mem),
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Spinglass",
+                                           k = max(as.numeric(mem)),
+                                           modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
       
       # retain cluster object where modularity was maximal
       if (isTRUE(saveObjects) && length(current_cl) > 0) {
@@ -3873,6 +4146,9 @@ dna_multiclust <- function(connection,
   obj$max_mod <- dplyr::bind_rows(dta_dat)
   obj$memberships <- dplyr::bind_rows(dta_mem)
   obj$modularity <- dplyr::bind_rows(dta_mod)
+  if (nrow(obj$modularity) == 0) {
+    stop("No output rows. Either you switched all clustering methods off, or all methods you used produced errors.")
+  }
   obj$max_mod <- obj$max_mod[obj$max_mod$i %in% obj$modularity$i, ] # remove date entries where the network is empty
   obj$max_mod$max_mod <- sapply(obj$max_mod$i, function(x) max(obj$modularity$modularity[obj$modularity$i == x], na.rm = TRUE)) # attach max_mod to $max_mod
   # attach max_method to $max_mod
@@ -3911,6 +4187,27 @@ dna_multiclust <- function(connection,
   }
   if (isTRUE(louvain) && !"Louvain" %in% obj$modularity$method && k < 2) {
     warning("'louvain' omitted due to an unknown problem.")
+  }
+  if (isTRUE(fastgreedy) && !"Fast & Greedy" %in% obj$modularity$method) {
+    warning("'fastgreedy' omitted due to an unknown problem.")
+  }
+  if (isTRUE(walktrap) && !"Walktrap" %in% obj$modularity$method) {
+    warning("'walktrap' omitted due to an unknown problem.")
+  }
+  if (isTRUE(leading_eigen) && !"Leading Eigenvector" %in% obj$modularity$method && k < 2) {
+    warning("'leading_eigen' omitted due to an unknown problem.")
+  }
+  if (isTRUE(edge_betweenness) && !"Edge Betweenness" %in% obj$modularity$method) {
+    warning("'edge_betweenness' omitted due to an unknown problem.")
+  }
+  if (isTRUE(infomap) && !"Infomap" %in% obj$modularity$method && k < 2) {
+    warning("'infomap' omitted due to an unknown problem.")
+  }
+  if (isTRUE(label_prop) && !"Label Propagation" %in% obj$modularity$method && k < 2) {
+    warning("'label_prop' omitted due to an unknown problem.")
+  }
+  if (isTRUE(spinglass) && !"Spinglass" %in% obj$modularity$method && k < 2) {
+    warning("'spinglass' omitted due to an unknown problem.")
   }
   
   class(obj) <- "dna_multiclust"
@@ -7100,10 +7397,17 @@ dna_plotHive <- function(x,
 #' @param only.max Only print the maximal modularity values, as opposed to
 #'   facets for the modularity values produced by each separate clustering
 #'   method?
-#' @param nrow,ncol The number of rows and columns for the facet layout if
+#' @param ncol The number of columns for the facet layout if
 #'   \code{only.max = FALSE} is set.
 #' @param include.y Include specific y-axis value in the plot, for example
 #'   \code{0}.
+#' @param zero.as.na Treat all zeros as \code{NA} such that they are not
+#'   plotted. This can be useful because zeros are often the result of a
+#'   malfunctioning clustering algorithm.
+#' @param anomalize Use the \pkg{anomalize} package for anomaly detection? This
+#'   requires that the packages \pkg{anomalize} and \pkg{tibbletime} are
+#'   installed on the system. In the resulting plot, outliers are annotated and
+#'   ignored when drawing the time trend.
 #' @return A \pkg{ggplot2} plot.
 #'
 #' @author Philip Leifeld
@@ -7111,12 +7415,27 @@ dna_plotHive <- function(x,
 #'
 #' @importFrom ggplot2 ggplot aes_string geom_boxplot ylab xlab theme theme_bw
 #'   geom_line expand_limits geom_smooth facet_wrap
+#' @importFrom dplyr arrange group_by sym
 #' @export
-dna_plotModularity <- function(x, only.max = TRUE, nrow = 4, ncol = 4, include.y = NULL) {
+dna_plotModularity <- function(x, only.max = TRUE, ncol = 3, include.y = NULL, zero.as.na = FALSE, anomalize = FALSE) {
   if (class(x) != "dna_multiclust") {
     stop("Not a 'dna_multiclust' object. Use the 'dna_cluster' function.")
   }
+  if (isTRUE(anomalize)) {
+    if (!requireNamespace("anomalize", quietly = TRUE)) {
+      stop("The 'anomalize' package needs to be installed for using 'anomalize = TRUE'.\nTry 'install.packages(\"anomalize\").")
+    }
+    if (!requireNamespace("tibbletime", quietly = TRUE)) {
+      stop("The 'tibbletime' package needs to be installed for using 'anomalize = TRUE'.\nTry 'install.packages(\"tibbletime\").")
+    }
+  }
   if (nrow(x$max_mod) == 1) { # only one time point (no time window): boxplot of modularity measures
+    if (isTRUE(zero.as.na)) {
+      x$modularity$modularity[x$modularity$modularity == 0] <- NA
+    }
+    if (isTRUE(anomalize)) {
+      warning("'anomalize' is not possible because there is only one time point.")
+    }
     ggplot2::ggplot(x$modularity, ggplot2::aes_string(y = "modularity")) +
       geom_boxplot() +
       ylab("Modularity") +
@@ -7125,14 +7444,34 @@ dna_plotModularity <- function(x, only.max = TRUE, nrow = 4, ncol = 4, include.y
             axis.text.x = element_blank(),
             axis.ticks.x = element_blank())
   } else if (isTRUE(only.max)) { # only plot a single facet with the maximal modularity value over time
-    ggplot2::ggplot(x$max_mod, ggplot2::aes_string(x = "middle.date", y = "max_mod")) +
-      geom_line() +
-      geom_smooth(se = FALSE, stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
-      ylab("Modularity") +
-      xlab("Time") +
-      expand_limits(y = include.y) +
-      theme_bw()
+    if (isTRUE(zero.as.na)) {
+      x$max_mod$max_mod[x$max_mod$max_mod == 0] <- NA
+    }
+    if (isTRUE(anomalize)) {
+      dat <- x$max_mod[, c("middle.date", "max_mod")]
+      tibbletime::as_tbl_time(dat, index = !!dplyr::sym("middle.date")) %>%
+        dplyr::arrange(!!dplyr::sym("middle.date")) %>%
+        anomalize::time_decompose("max_mod") %>%
+        anomalize::anomalize("remainder") %>%
+        anomalize::time_recompose() %>%
+        anomalize::plot_anomalies(time_recomposed = TRUE, alpha_dots = 0.25) +
+        ylab("Modularity") +
+        xlab("Time") +
+        expand_limits(y = include.y)
+    } else {
+      ggplot2::ggplot(x$max_mod, ggplot2::aes_string(x = "middle.date", y = "max_mod")) +
+        geom_line() +
+        geom_smooth(se = FALSE, stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
+        ylab("Modularity") +
+        xlab("Time") +
+        expand_limits(y = include.y) +
+        theme_bw()
+    }
   } else { # plot modularity for all measures, including maximal
+    if (isTRUE(zero.as.na)) {
+      x$modularity$modularity[x$modularity$modularity == 0] <- NA
+      x$max_mod$max_mod[x$max_mod$max_mod == 0] <- NA
+    }
     m <- merge(x = x$modularity, y = x$max_mod, by = c("i", "k"), all.x = TRUE, all.y = FALSE)
     best <- x$max_mod
     best$method <- rep("Maximum value", nrow(best))
@@ -7140,14 +7479,29 @@ dna_plotModularity <- function(x, only.max = TRUE, nrow = 4, ncol = 4, include.y
     best <- best[, c(1, 7:9, 2:6)]
     m <- rbind(best, m)
     m$method <- factor(m$method, levels = c("Maximum value", sort(unique(x$modularity$method))))
-    ggplot2::ggplot(m, ggplot2::aes_string(x = "middle.date", y = "modularity")) +
-      geom_line() +
-      geom_smooth(se = FALSE, stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
-      ylab("Modularity") +
-      xlab("Time") +
-      expand_limits(y = include.y) +
-      facet_wrap(~ method, nrow = nrow, ncol = ncol) +
-      theme_bw()
+    if (isTRUE(anomalize)) {
+      dat <- m[, c("i", "middle.date", "modularity", "method")]
+      # use !!sym() to avoid problems during R CMD check
+      tibbletime::as_tbl_time(dat, index = !!dplyr::sym("middle.date")) %>%
+        dplyr::arrange(!!dplyr::sym("middle.date")) %>%
+        dplyr::group_by(!!dplyr::sym("method")) %>%
+        anomalize::time_decompose("modularity") %>%
+        anomalize::anomalize("remainder") %>%
+        anomalize::time_recompose() %>%
+        anomalize::plot_anomalies(time_recomposed = TRUE, ncol = ncol, alpha_dots = 0.25) +
+        ylab("Modularity") +
+        xlab("Time") +
+        expand_limits(y = include.y)
+    } else {
+      ggplot2::ggplot(m, ggplot2::aes_string(x = "middle.date", y = "modularity")) +
+        geom_line() +
+        geom_smooth(se = FALSE, stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
+        ylab("Modularity") +
+        xlab("Time") +
+        expand_limits(y = include.y) +
+        facet_wrap(~ method, ncol = ncol) +
+        theme_bw()
+    }
   }
 }
 

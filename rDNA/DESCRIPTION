@@ -41,7 +41,10 @@ Imports:
 Suggests: 
     testthat,
     covr,
-    spelling
+    spelling,
+    anomalize (>= 0.1.1),
+    tibble (>= 2.1.1),
+    tibbletime (>= 0.1.2)
 SystemRequirements: Java (>= 1.8), libudunits2-dev (Linux)
 License: GPL-3
 LazyData: true

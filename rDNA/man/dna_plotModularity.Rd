@@ -4,8 +4,8 @@
 \alias{dna_plotModularity}
 \title{Plot modularity values in a \code{dna_multiclust} object}
 \usage{
-dna_plotModularity(x, only.max = TRUE, nrow = 4, ncol = 4,
-  include.y = NULL)
+dna_plotModularity(x, only.max = TRUE, ncol = 3, include.y = NULL,
+  zero.as.na = FALSE, anomalize = FALSE)
 }
 \arguments{
 \item{x}{A \code{dna_multiclust} object, as created by the
@@ -15,11 +15,20 @@ dna_plotModularity(x, only.max = TRUE, nrow = 4, ncol = 4,
 facets for the modularity values produced by each separate clustering
 method?}
 
-\item{nrow, ncol}{The number of rows and columns for the facet layout if
+\item{ncol}{The number of columns for the facet layout if
 \code{only.max = FALSE} is set.}
 
 \item{include.y}{Include specific y-axis value in the plot, for example
 \code{0}.}
+
+\item{zero.as.na}{Treat all zeros as \code{NA} such that they are not
+plotted. This can be useful because zeros are often the result of a
+malfunctioning clustering algorithm.}
+
+\item{anomalize}{Use the \pkg{anomalize} package for anomaly detection? This
+requires that the packages \pkg{anomalize} and \pkg{tibbletime} are
+installed on the system. In the resulting plot, outliers are annotated and
+ignored when drawing the time trend.}
 }
 \value{
 A \pkg{ggplot2} plot.

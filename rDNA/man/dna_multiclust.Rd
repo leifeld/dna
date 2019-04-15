@@ -18,7 +18,9 @@ dna_multiclust(connection, statementType = "DNA Statement",
   k = 2, k.max = 5, single = TRUE, average = TRUE,
   complete = TRUE, ward = TRUE, kmeans = TRUE, pam = TRUE,
   equivalence = TRUE, concor_one = TRUE, concor_two = TRUE,
-  louvain = TRUE, verbose = TRUE)
+  louvain = TRUE, fastgreedy = TRUE, walktrap = TRUE,
+  leading_eigen = TRUE, edge_betweenness = FALSE, infomap = TRUE,
+  label_prop = TRUE, spinglass = FALSE, verbose = TRUE)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
@@ -261,6 +263,46 @@ of clustering methods? The \code{\link[igraph]{cluster_louvain}} function
 in the \pkg{igraph} package is applied to the positive subtract network for
 this purpose.}
 
+\item{fastgreedy}{Include the fast and greedy community detection algorithm
+in the pool of clustering methods? The
+\code{\link[igraph]{cluster_fast_greedy}} function in the \pkg{igraph}
+package is applied to the positive subtract network for this purpose.}
+
+\item{walktrap}{Include the Walktrap community detection algorithm
+in the pool of clustering methods? The
+\code{\link[igraph]{cluster_walktrap}} function in the \pkg{igraph}
+package is applied to the positive subtract network for this purpose.}
+
+\item{leading_eigen}{Include the leading eigenvector community detection
+algorithm in the pool of clustering methods? The
+\code{\link[igraph]{cluster_leading_eigen}} function in the \pkg{igraph}
+package is applied to the positive subtract network for this purpose.}
+
+\item{edge_betweenness}{Include the edge betweenness community detection
+algorithm by Girvan and Newman in the pool of clustering methods? The
+\code{\link[igraph]{cluster_edge_betweenness}} function in the \pkg{igraph}
+package is applied to the positive subtract network for this purpose. Note
+that this method is disabled by default because there is a
+non-deterministic bug in the implementation, which sometimes leads the \R
+session to abort; see \url{https://github.com/igraph/rigraph/issues/336}
+(as of 15 April 2019).}
+
+\item{infomap}{Include the infomap community detection algorithm
+in the pool of clustering methods? The
+\code{\link[igraph]{cluster_infomap}} function in the \pkg{igraph}
+package is applied to the positive subtract network for this purpose.}
+
+\item{label_prop}{Include the label propagation community detection algorithm
+in the pool of clustering methods? The
+\code{\link[igraph]{cluster_label_prop}} function in the \pkg{igraph}
+package is applied to the positive subtract network for this purpose.}
+
+\item{spinglass}{Include the spinglass community detection algorithm
+in the pool of clustering methods? The
+\code{\link[igraph]{cluster_spinglass}} function in the \pkg{igraph}
+package is applied to the positive subtract network for this purpose. Note
+that this method is disabled by default because it is relatively slow.}
+
 \item{verbose}{A boolean value indicating whether details of network
 construction should be printed to the R console.}
 }
@@ -312,6 +354,61 @@ It is also possible to switch off all but one clustering method using the
 respective arguments and carry out a simple cluster analysis with the method
 of choice for a certain time span of the discourse network, without any time
 window options.
+}
+\examples{
+library("rDNA")  
+dna_init()  
+samp <- dna_sample()
+conn <- dna_connection(samp)
+
+# example 1: compute 12 cluster solutions for one time point
+mc1 <- dna_multiclust(connection = conn,
+                      variable1 = "organization",
+                      variable2 = "concept",
+                      qualifier = "agreement",
+                      duplicates = "document",
+                      k = 0,                # flexible numbers of clusters
+                      saveObjects = TRUE)   # retain hclust object
+
+mc1$modularity      # return modularity scores for 12 clustering methods
+mc1$max_mod         # return the maximal value of the 12, along with dates
+mc1$memberships     # return cluster memberships for all 12 cluster methods
+plot(mc1$cl[[1]])   # plot hclust dendrogram
+
+# example 2: compute only Girvan-Newman edge betweenness with two clusters
+set.seed(12345)
+mc2 <- dna_multiclust(connection = conn,
+                      k = 2,
+                      single = FALSE,
+                      average = FALSE,
+                      complete = FALSE,
+                      ward = FALSE,
+                      kmeans = FALSE,
+                      pam = FALSE,
+                      equivalence = FALSE,
+                      concor_one = FALSE,
+                      concor_two = FALSE,
+                      louvain = FALSE,
+                      fastgreedy = FALSE,
+                      walktrap = FALSE,
+                      leading_eigen = FALSE,
+                      edge_betweenness = TRUE,
+                      infomap = FALSE,
+                      label_prop = FALSE,
+                      spinglass = FALSE)
+mc2$memberships  # return membership in two clusters
+mc2$modularity   # return modularity of the cluster solution
+
+# example 3: smoothed bipolarization using time window algorithm
+mc3 <- dna_multiclust(connection = conn,
+                      k = 2,
+                      timewindow = "events",
+                      windowsize = 28)
+mc3$max_mod              # maximal modularity and method per time point
+dna_plotModularity(mc3)  # smoothed polarization curve (toy example)
+dna_plotModularity(mc3, only.max = FALSE)  # separately for all methods
+dna_plotModularity(mc3, anomalize = TRUE)  # anomaly detection
+
 }
 \seealso{
 \code{\link{print.dna_multiclust}}, \code{\link{dna_plotModularity}}
