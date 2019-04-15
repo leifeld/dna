@@ -1,6 +1,6 @@
 Package: rDNA
 Version: 2.1.17
-Date: 2019-04-15
+Date: 2019-04-16
 Title: Discourse Network Analysis in R
 Authors@R: 
     c(person("Philip", "Leifeld", email = "Philip.Leifeld@glasgow.ac.uk", 
@@ -43,7 +43,6 @@ Suggests:
     covr,
     spelling,
     anomalize (>= 0.1.1),
-    tibble (>= 2.1.1),
     tibbletime (>= 0.1.2)
 SystemRequirements: Java (>= 1.8), libudunits2-dev (Linux)
 License: GPL-3

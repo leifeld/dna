@@ -4000,7 +4000,7 @@ dna_multiclust <- function(connection,
         }, silent = TRUE)
       }
       
-      # Leading Eigenvector community detection (with or without cut)
+      # Leading Eigenvector community detection (only without cut)
       if (isTRUE(leading_eigen) && k < 2) { # it *should* work with cut_at because is.hierarchical(cl) returns TRUE, but it never works...
         try({
           suppressWarnings(cl <- igraph::cluster_leading_eigen(g))
@@ -7397,17 +7397,20 @@ dna_plotHive <- function(x,
 #' @param only.max Only print the maximal modularity values, as opposed to
 #'   facets for the modularity values produced by each separate clustering
 #'   method?
-#' @param ncol The number of columns for the facet layout if
-#'   \code{only.max = FALSE} is set.
-#' @param include.y Include specific y-axis value in the plot, for example
-#'   \code{0}.
-#' @param zero.as.na Treat all zeros as \code{NA} such that they are not
-#'   plotted. This can be useful because zeros are often the result of a
-#'   malfunctioning clustering algorithm.
 #' @param anomalize Use the \pkg{anomalize} package for anomaly detection? This
 #'   requires that the packages \pkg{anomalize} and \pkg{tibbletime} are
 #'   installed on the system. In the resulting plot, outliers are annotated and
 #'   ignored when drawing the time trend.
+#' @param durations Plot width of the time window at the respective time point
+#'   instead of the modularity? This can be useful for edge-based time windows
+#'   as a measure of uncertainty around the modularity point estimates.
+#' @param zero.as.na Treat all zeros as \code{NA} such that they are not
+#'   plotted. This can be useful because zeros are often the result of a
+#'   malfunctioning clustering algorithm.
+#' @param ncol The number of columns for the facet layout if
+#'   \code{only.max = FALSE} is set.
+#' @param include.y Include specific y-axis value in the plot, for example
+#'   \code{0}.
 #' @return A \pkg{ggplot2} plot.
 #'
 #' @author Philip Leifeld
@@ -7417,7 +7420,13 @@ dna_plotHive <- function(x,
 #'   geom_line expand_limits geom_smooth facet_wrap
 #' @importFrom dplyr arrange group_by sym
 #' @export
-dna_plotModularity <- function(x, only.max = TRUE, ncol = 3, include.y = NULL, zero.as.na = FALSE, anomalize = FALSE) {
+dna_plotModularity <- function(x,
+                               only.max = TRUE,
+                               anomalize = FALSE,
+                               durations = FALSE,
+                               zero.as.na = FALSE,
+                               ncol = 3,
+                               include.y = NULL) {
   if (class(x) != "dna_multiclust") {
     stop("Not a 'dna_multiclust' object. Use the 'dna_cluster' function.")
   }
@@ -7447,22 +7456,23 @@ dna_plotModularity <- function(x, only.max = TRUE, ncol = 3, include.y = NULL, z
     if (isTRUE(zero.as.na)) {
       x$max_mod$max_mod[x$max_mod$max_mod == 0] <- NA
     }
+    x$max_mod$duration <- as.numeric(x$max_mod$stop.date - x$max_mod$start.date)
     if (isTRUE(anomalize)) {
-      dat <- x$max_mod[, c("middle.date", "max_mod")]
+      dat <- x$max_mod[, c("middle.date", ifelse(isTRUE(durations), "duration", "max_mod"))]
       tibbletime::as_tbl_time(dat, index = !!dplyr::sym("middle.date")) %>%
         dplyr::arrange(!!dplyr::sym("middle.date")) %>%
-        anomalize::time_decompose("max_mod") %>%
+        anomalize::time_decompose(ifelse(isTRUE(durations), "duration", "max_mod")) %>%
         anomalize::anomalize("remainder") %>%
         anomalize::time_recompose() %>%
         anomalize::plot_anomalies(time_recomposed = TRUE, alpha_dots = 0.25) +
-        ylab("Modularity") +
+        ylab(ifelse(isTRUE(durations), "Time window duration", "Modularity")) +
         xlab("Time") +
         expand_limits(y = include.y)
     } else {
-      ggplot2::ggplot(x$max_mod, ggplot2::aes_string(x = "middle.date", y = "max_mod")) +
+      ggplot2::ggplot(x$max_mod, ggplot2::aes_string(x = "middle.date", y = ifelse(isTRUE(durations), "duration", "max_mod"))) +
         geom_line() +
         geom_smooth(se = FALSE, stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
-        ylab("Modularity") +
+        ylab(ifelse(isTRUE(durations), "Time window duration", "Modularity")) +
         xlab("Time") +
         expand_limits(y = include.y) +
         theme_bw()
@@ -7479,24 +7489,25 @@ dna_plotModularity <- function(x, only.max = TRUE, ncol = 3, include.y = NULL, z
     best <- best[, c(1, 7:9, 2:6)]
     m <- rbind(best, m)
     m$method <- factor(m$method, levels = c("Maximum value", sort(unique(x$modularity$method))))
+    m$duration <- as.numeric(m$stop.date - m$start.date)
     if (isTRUE(anomalize)) {
-      dat <- m[, c("i", "middle.date", "modularity", "method")]
+      dat <- m[, c("i", "middle.date", ifelse(isTRUE(durations), "duration", "modularity"), "method")]
       # use !!sym() to avoid problems during R CMD check
       tibbletime::as_tbl_time(dat, index = !!dplyr::sym("middle.date")) %>%
         dplyr::arrange(!!dplyr::sym("middle.date")) %>%
         dplyr::group_by(!!dplyr::sym("method")) %>%
-        anomalize::time_decompose("modularity") %>%
+        anomalize::time_decompose(ifelse(isTRUE(durations), "duration", "modularity")) %>%
         anomalize::anomalize("remainder") %>%
         anomalize::time_recompose() %>%
         anomalize::plot_anomalies(time_recomposed = TRUE, ncol = ncol, alpha_dots = 0.25) +
-        ylab("Modularity") +
+        ylab(ifelse(isTRUE(durations), "Time window duration", "Modularity")) +
         xlab("Time") +
         expand_limits(y = include.y)
     } else {
-      ggplot2::ggplot(m, ggplot2::aes_string(x = "middle.date", y = "modularity")) +
+      ggplot2::ggplot(m, ggplot2::aes_string(x = "middle.date", y = ifelse(isTRUE(durations), "duration", "modularity"))) +
         geom_line() +
         geom_smooth(se = FALSE, stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
-        ylab("Modularity") +
+        ylab(ifelse(isTRUE(durations), "Time window duration", "Modularity")) +
         xlab("Time") +
         expand_limits(y = include.y) +
         facet_wrap(~ method, ncol = ncol) +

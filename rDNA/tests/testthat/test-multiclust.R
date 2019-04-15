@@ -59,3 +59,13 @@ test_that("dna_multiclust works without qualifier", {
   expect_s3_class(mc, "dna_multiclust")
   expect_named(mc, c("k", "max_mod", "memberships", "modularity"))
 })
+
+test_that("dna_multiclust works with durations = TRUE", {
+  mc <- dna_multiclust(conn, timewindow = "events", windowsize = 28, verbose = FALSE)
+  p <- dna_plotModularity(mc, durations = TRUE)
+  expect_s3_class(p, "gg")
+  expect_s3_class(p, "ggplot")
+  p2 <- dna_plotModularity(mc, only.max = FALSE, durations = TRUE)
+  expect_s3_class(p2, "gg")
+  expect_s3_class(p2, "ggplot")
+})
