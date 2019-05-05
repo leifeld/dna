@@ -19,11 +19,11 @@ test_that("dna_multiclust works cross-sectionally with k = 0", {
   expect_equal(mc$k, 0)
   expect_equal(nrow(mc$max_mod), 1)
   expect_equal(ncol(mc$max_mod), 6)
-  expect_equal(nrow(mc$modularity), 12)
+  expect_equal(nrow(mc$modularity), 15)
   expect_equal(ncol(mc$modularity), 4)
-  expect_equal(nrow(mc$memberships), 84)
+  expect_equal(nrow(mc$memberships), 105)
   expect_equal(ncol(mc$memberships), 4)
-  expect_length(unique(mc$modularity$method), 12)
+  expect_length(unique(mc$modularity$method), 15)
   p <- dna_plotModularity(mc)
   expect_equal(class(p), c("gg", "ggplot"))
 })
@@ -35,11 +35,11 @@ test_that("dna_multiclust works longitudinally with k = 0", {
   expect_length(mc$cl, 12)
   expect_equal(nrow(mc$max_mod), 12)
   expect_equal(ncol(mc$max_mod), 7)
-  expect_equal(nrow(mc$modularity), 126)
+  expect_equal(nrow(mc$modularity), 162)
   expect_equal(ncol(mc$modularity), 4)
-  expect_equal(nrow(mc$memberships), 666)
+  expect_equal(nrow(mc$memberships), 855)
   expect_equal(ncol(mc$memberships), 4)
-  expect_length(unique(mc$modularity$method), 12)
+  expect_length(unique(mc$modularity$method), 15)
   p <- dna_plotModularity(mc)
   expect_equal(class(p), c("gg", "ggplot"))
   expect_equal({
@@ -68,4 +68,29 @@ test_that("dna_multiclust works with durations = TRUE", {
   p2 <- dna_plotModularity(mc, only.max = FALSE, durations = TRUE)
   expect_s3_class(p2, "gg")
   expect_s3_class(p2, "ggplot")
+})
+
+test_that("dna_dendrogram works", {
+  d <- dna_dendrogram(conn, method = "best", k = 0)
+  expect_s3_class(d, "ggplot")
+  
+  d <- dna_dendrogram(conn, method = "walktrap", k = 3, rectangle.colors = "purple")
+  expect_s3_class(d, "ggplot")
+  
+  d <- dna_dendrogram(conn,
+                      label.colors = "color",
+                      leaf.colors = "cluster",
+                      rectangle.colors = c("steelblue", "orange"),
+                      symbol.shapes = 17:18,
+                      symbol.colors = 3:4)
+  expect_s3_class(d, "ggplot")
+  
+  d <- dna_dendrogram(conn, circular = TRUE, label.truncate = 12)
+  expect_s3_class(d, "ggplot")
+  
+  d <- dna_dendrogram(conn, excludeValues = list(concept = "There should be legislation to regulate emissions."))
+  expect_s3_class(d, "ggplot")
+  
+  d <- dna_dendrogram(conn, k = 0, method = "best", return.multiclust = TRUE)
+  expect_s3_class(d, "dna_multiclust")
 })

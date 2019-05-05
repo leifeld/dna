@@ -15,7 +15,7 @@ dna_multiclust(connection, statementType = "DNA Statement",
   excludeSections = character(), excludeTypes = character(),
   invertValues = FALSE, invertAuthors = FALSE, invertSources = FALSE,
   invertSections = FALSE, invertTypes = FALSE, saveObjects = FALSE,
-  k = 2, k.max = 5, single = TRUE, average = TRUE,
+  k = 0, k.max = 5, single = TRUE, average = TRUE,
   complete = TRUE, ward = TRUE, kmeans = TRUE, pam = TRUE,
   equivalence = TRUE, concor_one = TRUE, concor_two = TRUE,
   louvain = TRUE, fastgreedy = TRUE, walktrap = TRUE,
@@ -356,8 +356,8 @@ of choice for a certain time span of the discourse network, without any time
 window options.
 }
 \examples{
-library("rDNA")  
-dna_init()  
+library("rDNA")
+dna_init()
 samp <- dna_sample()
 conn <- dna_connection(samp)
 

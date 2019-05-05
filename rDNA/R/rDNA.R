@@ -3304,8 +3304,8 @@ print.dna_cluster <- function(x, ...) {
 #' @seealso \code{\link{print.dna_multiclust}}, \code{\link{dna_plotModularity}}
 #'
 #' @examples
-#' library("rDNA")  
-#' dna_init()  
+#' library("rDNA")
+#' dna_init()
 #' samp <- dna_sample()
 #' conn <- dna_connection(samp)
 #'
@@ -3392,7 +3392,7 @@ dna_multiclust <- function(connection,
                            invertSections = FALSE,
                            invertTypes = FALSE,
                            saveObjects = FALSE,
-                           k = 2,
+                           k = 0,
                            k.max = 5,
                            single = TRUE,
                            average = TRUE,
@@ -3580,6 +3580,38 @@ dna_multiclust <- function(connection,
         }, silent = TRUE)
       }
       
+      # Hierarchical clustering with single linkage with optimal k
+      if (isTRUE(single) && k < 2) {
+        try({
+          suppressWarnings(cl <- hclust(jac, method = "single"))
+          opt_k <- lapply(2:k.max, function(x) {
+            mem <- cutree(cl, k = x)
+            mod <- igraph::modularity(x = g, membership = mem)
+            return(list(mem = mem, mod = mod))
+          })
+          mod <- sapply(opt_k, function(x) x$mod)
+          kk <- which.max(mod)
+          mod <- max(mod)
+          mem <- opt_k[[kk]]$mem
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Hierarchical (Single)", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Hierarchical (Single)",
+                                           k = kk + 1, # add one because the series started with k = 2
+                                           modularity = mod,
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
       # Hierarchical clustering with average linkage
       if (isTRUE(average) && k > 1) {
         try({
@@ -3604,6 +3636,38 @@ dna_multiclust <- function(connection,
         }, silent = TRUE)
       }
       
+      # Hierarchical clustering with average linkage with optimal k
+      if (isTRUE(average) && k < 2) {
+        try({
+          suppressWarnings(cl <- hclust(jac, method = "average"))
+          opt_k <- lapply(2:k.max, function(x) {
+            mem <- cutree(cl, k = x)
+            mod <- igraph::modularity(x = g, membership = mem)
+            return(list(mem = mem, mod = mod))
+          })
+          mod <- sapply(opt_k, function(x) x$mod)
+          kk <- which.max(mod)
+          mod <- max(mod)
+          mem <- opt_k[[kk]]$mem
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Hierarchical (Average)", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Hierarchical (Average)",
+                                           k = kk + 1, # add one because the series started with k = 2
+                                           modularity = mod,
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
       # Hierarchical clustering with complete linkage
       if (isTRUE(complete) && k > 1) {
         try({
@@ -3618,6 +3682,38 @@ dna_multiclust <- function(connection,
                                            method = "Hierarchical (Complete)",
                                            k = k,
                                            modularity = igraph::modularity(x = g, membership = mem),
+                                           stringsAsFactors = FALSE)
+          if (isTRUE(saveObjects)) {
+            current_cl[[counter_current]] <- cl
+            current_mod[counter_current] <- dta_mod[[counter]]$modularity[nrow(dta_mod[[counter]])]
+            counter_current <- counter_current + 1
+          }
+          counter <- counter + 1
+        }, silent = TRUE)
+      }
+      
+      # Hierarchical clustering with complete linkage with optimal k
+      if (isTRUE(complete) && k < 2) {
+        try({
+          suppressWarnings(cl <- hclust(jac, method = "complete"))
+          opt_k <- lapply(2:k.max, function(x) {
+            mem <- cutree(cl, k = x)
+            mod <- igraph::modularity(x = g, membership = mem)
+            return(list(mem = mem, mod = mod))
+          })
+          mod <- sapply(opt_k, function(x) x$mod)
+          kk <- which.max(mod)
+          mod <- max(mod)
+          mem <- opt_k[[kk]]$mem
+          dta_mem[[counter]] <- data.frame(i = rep(i, length(mem)),
+                                           method = rep("Hierarchical (Complete)", length(mem)),
+                                           node = rownames(x),
+                                           cluster = mem,
+                                           stringsAsFactors = FALSE)
+          dta_mod[[counter]] <- data.frame(i = i,
+                                           method = "Hierarchical (Complete)",
+                                           k = kk + 1, # add one because the series started with k = 2
+                                           modularity = mod,
                                            stringsAsFactors = FALSE)
           if (isTRUE(saveObjects)) {
             current_cl[[counter_current]] <- cl
@@ -3941,7 +4037,7 @@ dna_multiclust <- function(connection,
       # Fast & Greedy community detection (with or without cut)
       if (isTRUE(fastgreedy)) {
         try({
-          suppressWarnings(cl <- igraph::cluster_fast_greedy(g))
+          suppressWarnings(cl <- igraph::cluster_fast_greedy(g, merges = TRUE))
           if (k == 0) {
             mem <- igraph::membership(cl)
           } else {
@@ -3972,7 +4068,7 @@ dna_multiclust <- function(connection,
       # Walktrap community detection (with or without cut)
       if (isTRUE(walktrap)) {
         try({
-          suppressWarnings(cl <- igraph::cluster_walktrap(g))
+          suppressWarnings(cl <- igraph::cluster_walktrap(g, merges = TRUE))
           if (k == 0) {
             mem <- igraph::membership(cl)
           } else {
@@ -4027,7 +4123,7 @@ dna_multiclust <- function(connection,
       # Edge Betweenness community detection (with or without cut)
       if (isTRUE(edge_betweenness)) {
         try({
-          suppressWarnings(cl <- igraph::cluster_edge_betweenness(g))
+          suppressWarnings(cl <- igraph::cluster_edge_betweenness(g, merges = TRUE))
           if (k == 0) {
             mem <- igraph::membership(cl)
           } else {
@@ -6834,6 +6930,669 @@ dna_plotDendro <- function(clust,
   return(dg)
 }
 
+#' Create a cluster dendrogram for a DNA database
+#' 
+#' Create a cluster dendrogram based on a DNA database.
+#' 
+#' This function serves to conduct a cluster analysis of a DNA dataset and
+#' visualize the results as a dendrogram. The user can either select a specific
+#' clustering method or let the \code{\link{dna_multiclust}} function determine
+#' the best cluster solution. The following clustering methods are available for
+#' creating dendrograms:
+#' \itemize{
+#'  \item Hierarchical clustering with single linkage.
+#'  \item Hierarchical clustering with average linkage.
+#'  \item Hierarchical clustering with complete linkage.
+#'  \item Hierarchical clustering with Ward's algorithm.
+#'  \item Fast & greedy community detection.
+#'  \item Walktrap community detection.
+#'  \item Leading eigenvector community detection.
+#'  \item Edge betweenness community detection (Girvan-Newman algorithm).
+#' }
+#' The resulting dendrograms can have different label, leaf, and symbol
+#' properties as well as rectangles for the clusters and other customization
+#' options. It is possible to return the underlying \code{\link{dna_multiclust}}
+#' object instead of the plot by using the \code{return.multiclust} argument.
+#' 
+#' @inheritParams dna_multiclust
+#' @inheritParams dna_network
+#' @param method This argument represents the clustering method to be used for
+#'   the dendrogram. Only hierarchical clustering methods are compatible with
+#'   dendrograms. The following values are permitted:
+#'   \describe{
+#'     \item{"best"}{Automatically choose the best clustering method with a given
+#'       number of clusters \code{k} (or between 2 and \code{k.max} if
+#'       \code{k = 0}). The selection is based on network modularity of a given
+#'       cluster solution in the subtract network.}
+#'     \item{"single"}{Hierarchical clustering with single linkage.}
+#'     \item{"average"}{Hierarchical clustering with average linkage.}
+#'     \item{"complete"}{Hierarchical clustering with complete linkage.}
+#'     \item{"ward"}{Hierarchical clustering with Ward's algorithm.}
+#'     \item{"fastgreedy"}{Fast & greedy community detection.}
+#'     \item{"walktrap"}{Walktrap community detection.}
+#'     \item{"leading_eigen"}{Leading eigenvector community detection.}
+#'     \item{"edge_betweenness"}{Edge betweenness community detection
+#'       (Girvan-Newman algorithm).}
+#'   }
+#' @param k If \code{method = "best"} is selected, \code{k} is used to determine
+#'   at which level the respective clustering method works best. For example, if
+#'   \code{k = 3} is supplied, the algorithm will compare the modularity of the
+#'   different cluster solutions with three clusters each time to determine the
+#'   best-fitting cluster solution. If \code{k = 0} is supplied (the default),
+#'   all solutions between one and \code{k.max} clusters will be attempted. The
+#'   \code{k} argument also determines the number of rectangles that are drawn
+#'   if the \code{rectangle.colors} argument is used. If \code{k = 0}, the
+#'   actual number of clusters that works best will be used instead.
+#' @param k.max The maximal number of clusters to try if \code{method = "best"}
+#'   is used.
+#' @param rectangle.colors If \code{NULL}, no rectangles are drawn. If a single
+#'   color is provided (for example, \code{"purple"} or \code{"#AA9900"}),
+#'   \code{k} rectangles (one per cluster) will be drawn, and they will all be
+#'   in the same color. If \code{k} colors are provided as a vector, each
+#'   rectangle will be in a separate color. If \code{rectangle.colors =
+#'   "cluster"}, different colors will be picked for the rectangles based on
+#'   cluster membership.
+#' @param labels Which labels to use for variable 1. These can be:
+#'   \describe{
+#'     \item{"value"}{The actual variable values for \code{variable1} as extracted
+#'       from the "value" column in a \code{\link{dna_getAttributes}} call.}
+#'     \item{"color"}{The color designated for \code{variable1} in DNA, as
+#'       extracted from the "color" column in a \code{\link{dna_getAttributes}}
+#'       call.}
+#'     \item{"type"}{The type designated for \code{variable1} in DNA, as
+#'       extracted from the "type" column in a \code{\link{dna_getAttributes}}
+#'       call.}
+#'     \item{"alias"}{The alias designated for \code{variable1} in DNA, as
+#'       extracted from the "alias" column in a \code{\link{dna_getAttributes}}
+#'       call.}
+#'     \item{"notes"}{The notes designated for \code{variable1} in DNA, as
+#'       extracted from the "notes" column in a \code{\link{dna_getAttributes}}
+#'       call.}
+#'     \item{a vector of \code{character} objects}{A vector with as many labels
+#'       as there are rows in a \code{\link{dna_getAttributes}} call, in the
+#'       same order (i.e., replacing the original labels that are in
+#'       alphabetical order).}
+#'   }
+#' @param label.colors Colors for the labels. Numbers, string colors, or
+#'   hexadecimal strings are allowed. The following values are permitted:
+#'   \describe{
+#'     \item{a single color}{A single color for all labels.}
+#'     \item{a vector of \code{k} colors}{A separate color for the labels in
+#'       each cluster.}
+#'     \item{a vector of as many colors as labels}{A separate color for each
+#'       single label.}
+#'     \item{"cluster"}{A separate color is chosen automatically for the labels
+#'       in each cluster. There are \code{k} different colors.}
+#'     \item{"color"}{The colors stored in the "color" column in the attribute
+#'       manager of the DNA database are used, as extracted using the
+#'       \code{\link{dna_getAttributes}} function.}
+#'     \item{"type"}{A separate color for each value in the "type" column in the
+#'       attribute manager of DNA is used.}
+#'     \item{"alias"}{A separate color for each value in the "alias" column in
+#'       the attribute manager of DNA is used.}
+#'     \item{"notes"}{A separate color for each value in the "notes" column in
+#'       the attribute manager of DNA is used.}
+#'   }
+#' @param label.size Font size for the labels.
+#' @param label.truncate Number of characters to retain for each label. If all
+#'   characters should be kept, \code{Inf} can be set.
+#' @param leaf.shape The way the dendrogram leaves are drawn. The following
+#'   values are permitted:
+#'   \itemize{
+#'     \item "elbow"
+#'     \item "link"
+#'     \item "diagonal"
+#'     \item "arc"
+#'     \item "fan"
+#'   }
+#' @param leaf.colors The colors of the leaves in the dendrogram. The same
+#'   values as in the \code{label.colors} argument are permitted (see the
+#'   description above for details).
+#' @param leaf.width The line width of the leaves.
+#' @param leaf.alpha The opacity of the leaves and symbols (between 0 and 1).
+#' @param symbol.shapes The shapes of the leaf end symbols for each leaf. The
+#'   following values are permitted:
+#'   \describe{
+#'     \item{a single integer}{A single \code{pch} symbol to use for all leaves,
+#'       for example \code{2} or \code{19}.}
+#'     \item{an integer vector with \code{k} elements}{A vector of separate
+#'       \code{pch} symbol integer values for the labels in each cluster. For
+#'       example, if there are three clusters, this could be \code{1:3}.}
+#'     \item{an integer vector with as many elements as symbols}{A vector of
+#'       separate \code{pch} values for each value in \code{variable1}, in the
+#'       order as the rows produced by \code{\link{dna_getAttributes}} (i.e.,
+#'       alphabetical label order).}
+#'     \item{"cluster"}{A separate symbol is automatically selected for each
+#'       cluster.}
+#'     \item{"color"}{A separate symbol is automatically selected for each color
+#'       saved in the "color" column of the output of
+#'       \code{\link{dna_getAttributes}}, which represents the colors in the
+#'       attribute manager in DNA.}
+#'     \item{"type"}{A separate symbol is automatically selected for each type
+#'       saved in the "type" column of the output of
+#'       \code{\link{dna_getAttributes}}, which represents the types in the
+#'       attribute manager in DNA.}
+#'     \item{"alias"}{A separate symbol is automatically selected for each alias
+#'       saved in the "alias" column of the output of
+#'       \code{\link{dna_getAttributes}}, which represents the aliases in the
+#'       attribute manager in DNA.}
+#'     \item{"notes"}{A separate symbol is automatically selected for each note
+#'       saved in the "notes" column of the output of
+#'       \code{\link{dna_getAttributes}}, which represents the notes in the
+#'       attribute manager in DNA.}
+#'   }
+#' @param symbol.colors The colors of the symbols at the leaf ends. The same
+#'   values are permitted as in the \code{label.colors} argument (see the
+#'   description there).
+#' @param symbol.sizes The sizes of the symbols at the leaf ends. The default
+#'   value is \code{5} for all symbols. Instead of a single number, a vector of
+#'   \code{k} values (one for each cluster) or a vector with as many values
+#'   as there are leafs or labels can be supplied.
+#' @param circular Draw a dendrogram with a circular layout?
+#' @param theme The theme to be used. See \code{\link[ggplot2]{ggtheme}} for
+#'   details. Permitted values are:
+#'   \itemize{
+#'     \item "bw"
+#'     \item "classic"
+#'     \item "gray"
+#'     \item "dark"
+#'     \item "light"
+#'     \item "minimal"
+#'   }
+#' @param caption Add a caption with details at the bottom of the plot? The
+#'   details include the clustering method, the number of clusters, and the
+#'   modularity value given the number of clusters with this method.
+#' @param return.multiclust Instead of returning a \code{ggplot2} plot, return
+#'   the \code{dna_multiclust} object upon which the dendrogram is based?
+#' @return A \code{ggplot2} plot.
+#'
+#' @author Philip Leifeld, Johannes B. Gruber
+#'
+#' @examples
+#' library("rDNA")
+#' dna_init()
+#' samp <- dna_sample()
+#' conn <- dna_connection(samp)
+#' 
+#' # Single-linkage with k = 2 is chosen automatically based on modularity:
+#' dna_dendrogram(conn, method = "best", k = 0)
+#' 
+#' # Walktrap community detection with three clusters and rectangles:
+#' dna_dendrogram(conn, method = "walktrap", k = 3, rectangle.colors = "purple")
+#' 
+#' # Custom colors and shapes:
+#' dna_dendrogram(conn,
+#'                label.colors = "color",
+#'                leaf.colors = "cluster",
+#'                rectangle.colors = c("steelblue", "orange"),
+#'                symbol.shapes = 17:18,
+#'                symbol.colors = 3:4)
+#' 
+#' # Circular dendrogram:
+#' dna_dendrogram(conn, circular = TRUE, label.truncate = 12)
+#'
+#' # Modifying the underlying network, e.g., leaving out concepts:
+#' dna_dendrogram(conn, excludeValues = list(concept = 
+#'   "There should be legislation to regulate emissions."))
+#'
+#' # Return the dna_multiclust object
+#' mc <- dna_dendrogram(conn, k = 0, method = "best", return.multiclust = TRUE)
+#' mc
+#' 
+#' @import ggraph
+#' @importFrom ggplot2 .pt aes aes_string element_text expand_limits labs theme
+#'   theme_bw theme_classic theme_dark theme_grey theme_light theme_minimal
+#'   scale_color_identity scale_x_continuous scale_shape_identity
+#'   scale_size_identity waiver
+#' @importFrom stats aggregate as.dendrogram as.hclust dendrapply is.leaf
+#'   order.dendrogram
+#' @export
+dna_dendrogram <- function(connection,
+                           statementType = "DNA Statement",
+                           variable1 = "organization",
+                           variable1Document = FALSE,
+                           variable2 = "concept",
+                           variable2Document = FALSE,
+                           qualifier = "agreement",
+                           duplicates = "include",
+                           start.date = "01.01.1900",
+                           stop.date = "31.12.2099",
+                           start.time = "00:00:00",
+                           stop.time = "23:59:59",
+                           excludeValues = list(),
+                           excludeAuthors = character(),
+                           excludeSources = character(),
+                           excludeSections = character(),
+                           excludeTypes = character(),
+                           invertValues = FALSE,
+                           invertAuthors = FALSE,
+                           invertSources = FALSE,
+                           invertSections = FALSE,
+                           invertTypes = FALSE,
+                           method = "best",
+                           k = 0,
+                           k.max = 5,
+                           rectangle.colors = NULL,
+                           labels = "value",
+                           label.colors = "color",
+                           label.size = 12,
+                           label.truncate = 30,
+                           leaf.shape = "elbow",
+                           leaf.colors = label.colors,
+                           leaf.width = 1,
+                           leaf.alpha = 1,
+                           symbol.shapes = 19,
+                           symbol.colors = label.colors,
+                           symbol.sizes = 5,
+                           circular = FALSE,
+                           theme = "bw",
+                           caption = TRUE,
+                           return.multiclust = FALSE) {
+  
+  cl <- dna_multiclust(connection,
+                       statementType = statementType,
+                       variable1 = variable1,
+                       variable1Document = variable1Document,
+                       variable2 = variable2,
+                       variable2Document = variable2Document,
+                       qualifier = qualifier,
+                       duplicates = duplicates,
+                       start.date = start.date,
+                       stop.date = stop.date,
+                       start.time = start.time,
+                       stop.time = stop.time,
+                       timewindow = "no",
+                       windowsize = 100,
+                       excludeValues = excludeValues,
+                       excludeAuthors = excludeAuthors,
+                       excludeSources = excludeSources,
+                       excludeSections = excludeSections,
+                       excludeTypes = excludeTypes,
+                       invertValues = invertValues,
+                       invertAuthors = invertAuthors,
+                       invertSources = invertSources,
+                       invertSections = invertSections,
+                       invertTypes = invertTypes,
+                       saveObjects = TRUE,
+                       k = k,
+                       k.max = k.max,
+                       single = ifelse(method %in% c("best", "single"), TRUE, FALSE),
+                       average = ifelse(method %in% c("best", "average"), TRUE, FALSE),
+                       complete = ifelse(method %in% c("best", "complete"), TRUE, FALSE),
+                       ward = ifelse(method %in% c("best", "ward"), TRUE, FALSE),
+                       kmeans = FALSE, # not a hierarchical method
+                       pam = FALSE, # not a hierarchical method
+                       equivalence = FALSE, # not implemented as a hierarchical method
+                       concor_one = FALSE, # not implemented as a hierarchical method
+                       concor_two = FALSE, # not implemented as a hierarchical method
+                       louvain = FALSE, # not a hierarchical method
+                       fastgreedy = ifelse(method %in% c("best", "fastgreedy"), TRUE, FALSE),
+                       walktrap = ifelse(method %in% c("best", "walktrap"), TRUE, FALSE),
+                       leading_eigen = ifelse(method %in% c("best", "leading_eigen"), TRUE, FALSE),
+                       edge_betweenness = ifelse(method %in% c("best", "edge_betweenness"), TRUE, FALSE),
+                       infomap = FALSE, # not a hierarchical method
+                       label_prop = FALSE, # not a hierarchical method
+                       spinglass = FALSE, # not a hierarchical method
+                       verbose = FALSE)
+  if (isTRUE(return.multiclust)) {
+    return(cl)
+  }
+  mod <- cl$max_mod$max_mod
+  meth <- cl$max_mod$max_method
+  mem <- cl$memberships[cl$memberships$i == 1 & cl$memberships$method == meth, 3:4]
+  hierarchy <- stats::as.dendrogram(cl$cl[[1]])
+  at <- dna_getAttributes(connection = connection, statementType = statementType, variable = variable1, values = mem$node)
+  
+  # prepare labels
+  if (is.null(labels) || is.na(labels)) {
+    labels <- mem$node
+  } else if (!is.character(labels) || !length(labels) %in% c(1, nrow(mem), length(unique(mem$cluster)))) {
+    labels <- mem$node
+    warning("'labels' must be a character vector with one name for each ", variable1, ". Using default names.")
+  } else if (length(labels) == 1) {
+    if (labels == "cluster") {
+      labels <- as.character(mem$cluster)
+    } else if (labels == "value") {
+      labels <- mem$node
+    } else if (labels == "color") {
+      labels <- at$color
+    } else if (labels == "type") {
+      labels <- at$type
+    } else if (labels == "alias") {
+      labels <- at$alias
+    } else if (labels == "notes") {
+      labels <- at$notes
+    } else {
+      labels <- rep(labels, nrow(mem))
+    }
+  } else if (length(labels) == length(unique(mem$cluster))) {
+    labels <- labels[mem$cluster]
+  }
+  
+  # truncate labels
+  labels_short <- ifelse(nchar(labels) > label.truncate,
+                         paste0(gsub("\\s+$",
+                                     "",
+                                     strtrim(labels, width = label.truncate)),
+                                "..."),
+                         labels)
+  
+  # prepare label colors
+  if (is.null(label.colors) || is.na(label.colors)) {
+    label.colors <- at$color
+  } else if (!length(label.colors) %in% c(1, nrow(mem), length(unique(mem$cluster)))) {
+    label.colors <- at$color
+    warning("'label.colors' must be a vector with one color for each ", variable1, ". Using default attribute colors.")
+  } else if (length(label.colors) == 1) {
+    if (label.colors == "cluster") {
+      label.colors <- col2hex(mem$cluster)
+    } else if (label.colors == "color") {
+      label.colors <- at$color
+    } else if (label.colors == "type") {
+      label.colors <- col2hex(at$type)
+    } else if (label.colors == "alias") {
+      label.colors <- col2hex(at$alias)
+    } else if (label.colors == "notes") {
+      label.colors <- col2hex(at$notes)
+    } else {
+      label.colors <- rep(col2hex(label.colors), nrow(mem))
+    }
+  } else if (length(label.colors) == length(unique(mem$cluster))) {
+    label.colors <- col2hex(label.colors)[mem$cluster]
+  } else if (length(label.colors) == nrow(mem)) {
+    label.colors <- col2hex(label.colors)
+  }
+  
+  # prepare leaf colors
+  if (is.null(leaf.colors) || is.na(leaf.colors)) {
+    leaf.colors <- at$color
+  } else if (!length(leaf.colors) %in% c(1, nrow(mem), length(unique(mem$cluster)))) {
+    leaf.colors <- at$color
+    warning("'leaf.colors' must be a vector with one color for each ", variable1, ". Using default attribute colors.")
+  } else if (length(leaf.colors) == 1) {
+    if (leaf.colors == "cluster") {
+      leaf.colors <- col2hex(mem$cluster)
+    } else if (leaf.colors == "color") {
+      leaf.colors <- at$color
+    } else if (leaf.colors == "type") {
+      leaf.colors <- col2hex(at$type)
+    } else if (leaf.colors == "alias") {
+      leaf.colors <- col2hex(at$alias)
+    } else if (leaf.colors == "notes") {
+      leaf.colors <- col2hex(at$notes)
+    } else {
+      leaf.colors <- rep(col2hex(leaf.colors), nrow(mem))
+    }
+  } else if (length(leaf.colors) == length(unique(mem$cluster))) {
+    leaf.colors <- col2hex(leaf.colors)[mem$cluster]
+  } else if (length(leaf.colors) == nrow(mem)) {
+    leaf.colors <- col2hex(leaf.colors)
+  }
+  
+  # prepare symbol colors
+  if (is.null(symbol.colors) || is.na(symbol.colors)) {
+    symbol.colors <- at$color
+  } else if (!length(symbol.colors) %in% c(1, nrow(mem), length(unique(mem$cluster)))) {
+    symbol.colors <- at$color
+    warning("'symbol.colors' must be a vector with one color for each ", variable1, ". Using default attribute colors.")
+  } else if (length(symbol.colors) == 1) {
+    if (symbol.colors == "cluster") {
+      symbol.colors <- col2hex(mem$cluster)
+    } else if (symbol.colors == "color") {
+      symbol.colors <- at$color
+    } else if (symbol.colors == "type") {
+      symbol.colors <- col2hex(at$type)
+    } else if (symbol.colors == "alias") {
+      symbol.colors <- col2hex(at$alias)
+    } else if (symbol.colors == "notes") {
+      symbol.colors <- col2hex(at$notes)
+    } else {
+      symbol.colors <- rep(col2hex(symbol.colors), nrow(mem))
+    }
+  } else if (length(symbol.colors) == length(unique(mem$cluster))) {
+    symbol.colors <- col2hex(symbol.colors)[mem$cluster]
+  } else if (length(symbol.colors) == nrow(mem)) {
+    symbol.colors <- col2hex(symbol.colors)
+  }
+  
+  # prepare symbol sizes
+  if (is.null(symbol.sizes) || is.na(symbol.sizes)) {
+    symbol.sizes <- rep(5, length(symbol.colors))
+  } else if (!length(symbol.sizes) %in% c(1, nrow(mem), length(unique(mem$cluster)))) {
+    symbol.sizes <- rep(5, length(symbol.colors))
+    warning("'symbol.sizes' must be a vector with one symbol size for each ", variable1, ". Using default value of 5.")
+  } else if (length(symbol.sizes) == 1) {
+    symbol.sizes <- rep(symbol.sizes, nrow(mem))
+  } else if (length(symbol.sizes) == length(unique(mem$cluster))) {
+    symbol.sizes <- symbol.sizes[mem$cluster]
+  } else if (length(symbol.sizes) == nrow(mem)) {
+    # keep them as they are
+  }
+  
+  # prepare symbol shapes
+  if (is.null(symbol.shapes) || is.na(symbol.shapes)) {
+    symbol.shapes <- rep(19, length(symbol.colors))
+  } else if (!length(symbol.shapes) %in% c(1, nrow(mem), length(unique(mem$cluster)))) {
+    symbol.shapes <- rep(19, length(symbol.colors))
+    warning("'symbol.shapes' must be a vector with one symbol size for each ", variable1, ". Using default value of 19.")
+  } else if (length(symbol.shapes) == 1) {
+    if (symbol.shapes == "cluster") {
+      if (length(unique(mem$cluster)) < 5) { # use opaque symbols (but there are only four suitable shapes)
+        symbol.shapes <- mem$cluster
+        symbol.shapes[mem$cluster == 1] <- 19
+        symbol.shapes[mem$cluster == 2] <- 15
+        symbol.shapes[mem$cluster == 3] <- 17
+        symbol.shapes[mem$cluster == 4] <- 18
+      } else {
+        symbol.shapes <- mem$cluster - 1 # use the full range of pch symbols, which start with 0
+      }
+    } else if (symbol.shapes %in% c("color", "type", "alias", "notes")) {
+      if (symbol.shapes == "color") {
+        values <- sapply(at$color, function(x) which(sort(unique(at$color)) == x))
+      } else if (symbol.shapes == "type") {
+        values <- sapply(at$type, function(x) which(sort(unique(at$type)) == x))
+      } else if (symbol.shapes == "alias") {
+        values <- sapply(at$alias, function(x) which(sort(unique(at$alias)) == x))
+      } else if (symbol.shapes == "notes") {
+        values <- sapply(at$notes, function(x) which(sort(unique(at$notes)) == x))
+      }
+      if (length(unique(values)) < 5) { # use opaque symbols (but there are only four suitable shapes)
+        symbol.shapes <- numeric(length(values))
+        symbol.shapes[values == 1] <- 19
+        symbol.shapes[values == 2] <- 15
+        symbol.shapes[values == 3] <- 17
+        symbol.shapes[values == 4] <- 20
+      } else {
+        symbol.shapes <- values - 1 # use the full range of pch symbols, which start with 0
+      }
+    } else {
+      symbol.shapes <- rep(symbol.shapes, nrow(mem))
+    }
+  } else if (length(symbol.shapes) == length(unique(mem$cluster))) {
+    symbol.shapes <- symbol.shapes[mem$cluster]
+  } else if (length(symbol.shapes) == nrow(mem)) {
+    # keep them as they are
+  }
+  
+  # prepare rectangle colors
+  if (is.null(rectangle.colors) || is.na(rectangle.colors)) {
+    rectangle.colors <- NULL
+  } else if (!length(rectangle.colors) %in% c(1, length(unique(mem$cluster)))) {
+    rectangle.colors <- rep(col2hex("red"), length(unique(mem$cluster)))
+    warning("'rectangle.colors' must be a vector with one color for each cluster or just a single color.")
+  } else if (length(rectangle.colors) == 1) {
+    if (rectangle.colors == "cluster") {
+      rectangle.colors <- col2hex(sort(unique(mem$cluster)))
+    } else {
+      rectangle.colors <- rep(col2hex(rectangle.colors), length(unique(mem$cluster)))
+    }
+  } else if (length(rectangle.colors) == length(unique(mem$cluster))) {
+    # keep colors as they are
+  }
+  
+  # add labels, colors etc. to the dendrogram
+  hierarchy <- stats::dendrapply(hierarchy, function(node) {
+    index <- which(mem$node == attributes(node)$label)
+    if (stats::is.leaf(node)) {
+      attr(node, "label") <- labels_short[index]
+      attr(node, "label_color") <- label.colors[index]
+    } else {
+      attr(node, "label_color") <- "#636363"
+    }
+    l <- list(label_long = attr(node, "label"),
+              label_short = ifelse(is.leaf(node), labels_short[index], NA),
+              symbol_color = ifelse(is.leaf(node), symbol.colors[index], NA),
+              leaf_color = ifelse(is.leaf(node), leaf.colors[index], "#636363"),
+              label_color = ifelse(is.leaf(node), label.colors[index], NA),
+              symbol_size = ifelse(is.leaf(node), symbol.sizes[index], NA),
+              symbol_shape = ifelse(is.leaf(node), symbol.shapes[index], NA))
+    attr(node, "nodePar") <- l
+    attr(node, "edgePar") <- l
+    node
+  })
+  
+  # prepare basic dendrogram plot
+  dg <- ggraph(graph = hierarchy,
+               layout = "dendrogram",
+               circular = circular)
+  
+  # add stems and leaves to the plot
+  if (is.null(leaf.shape) || is.na(leaf.shape) || length(leaf.shape) != 1 || !is.character(leaf.shape)) {
+    stop("'leaf.shape' can take the values 'elbow', 'link', 'diagonal', 'arc', or 'fan'.")
+  } else if (leaf.shape == "elbow") {
+    dg <- dg + geom_edge_elbow(aes(color = leaf_color),
+                               width = leaf.width,
+                               alpha = leaf.alpha)
+  } else if (leaf.shape == "link") {
+    dg <- dg + geom_edge_link(aes(color = leaf_color),
+                              width = leaf.width,
+                              alpha = leaf.alpha)
+  } else if (leaf.shape == "diagonal") {
+    dg <- dg + geom_edge_diagonal(aes(color = leaf_color),
+                                  width = leaf.width,
+                                  alpha = leaf.alpha)
+  } else if (leaf.shape == "arc") {
+    dg <- dg + geom_edge_arc(aes(color = leaf_color),
+                             width = leaf.width,
+                             alpha = leaf.alpha)
+  } else if (leaf.shape == "fan") {
+    dg <- dg + geom_edge_fan(aes(color = leaf_color),
+                             width = leaf.width,
+                             alpha = leaf.alpha)
+  } else {
+    stop("'leaf.shape' can take the values 'elbow', 'link', 'diagonal', 'arc', or 'fan'.")
+  }
+  
+  # replace colors
+  dg <- dg + scale_edge_linetype_discrete(guide = "none")
+  leaf.colors <- as.factor(leaf.colors)
+  autoCols <- c("#636363", levels(leaf.colors))
+  guide <- "none"
+  guidename <- waiver()
+  autoCols <- setNames(autoCols, nm = c("#636363", levels(leaf.colors)))
+  dg <- dg + scale_edge_color_manual(breaks = autoCols[-1],
+                                     values = autoCols,
+                                     guide = guide,
+                                     name = guidename)
+  
+  # theme and label orientation
+  if (theme == "bw") {
+    dg <- dg + theme_bw()
+  } else if (theme == "light") {
+    dg <- dg + theme_light()
+  } else if (theme %in% c("grey", "gray")) {
+    dg <- dg + theme_grey()
+  } else if (theme == "dark") {
+    dg <- dg + theme_dark()
+  } else if (theme == "minimal") {
+    dg <- dg + theme_minimal()
+  } else if (theme == "classic") {
+    dg <- dg + theme_classic()
+  }
+  if (isTRUE(circular)) {
+    dg <- dg +
+      theme(panel.border = element_blank(),
+            axis.title = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            text = element_text(size = label.size),
+            axis.line = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank())
+  } else {
+    dg <- dg +
+      theme(panel.border = element_blank(),
+            axis.title = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            text = element_text(size = label.size),
+            axis.line = element_blank(),
+            axis.ticks.x = element_blank(),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  }
+  
+  # labels
+  if (isTRUE(circular)) {
+    dg <- dg +
+      geom_node_text(aes(filter = leaf,
+                         angle = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90, node_angle(x, y) + 180, node_angle(x, y)),
+                         label = label_short,
+                         hjust = ifelse(node_angle(x, y) < 270 & node_angle(x, y) > 90, 1.05, -0.05),
+                         color = label_color),
+                     size = (label.size / .pt),
+                     show.legend = FALSE) +
+      expand_limits(x = c(-2.3, 2.3), y = c(-2.3, 2.3))
+  } else {
+    dg <- dg +
+      scale_x_continuous(breaks = seq(0, length(labels) - 1, by = 1),
+                         labels = labels_short[order.dendrogram(hierarchy)]) +
+      theme(axis.text.x = element_text(colour = label.colors[order.dendrogram(hierarchy)]))
+  }
+  
+  # caption
+  if (isTRUE(caption)) {
+    dg <- dg + labs(caption = paste0("Method: ", meth, ". Modularity: ", round(mod, 3), " at k = ", length(unique(mem$cluster)), "."))
+  }
+  
+  # symbols (line ends)
+  dg <- dg +
+    geom_node_point(aes_string(filter = "leaf",
+                               color = "symbol_color",
+                               size = "symbol_size",
+                               shape = "symbol_shape"),
+                    alpha = leaf.alpha) +
+    scale_shape_identity() +
+    scale_size_identity() +
+    scale_color_identity()
+  
+  # rectangles
+  if (!circular && !is.null(rectangle.colors)) {
+    h <- stats::as.hclust(hierarchy)$height
+    y_offset <- h[length(h)] / 30
+    rect <- data.frame(label = labels_short[order.dendrogram(hierarchy)],
+                       cluster = mem$clust[order.dendrogram(hierarchy)],
+                       y = min(h),
+                       x = seq_along(labels_short[order.dendrogram(hierarchy)]) - 1)
+    rect <- stats::aggregate(x ~ cluster, rect, range)
+    rect$xmin <- rect$x[, 1] - 0.25
+    rect$xmax <- rect$x[, 2] + 0.25
+    rect$ymax <- rep(h[length(h) - nrow(rect) + 1], nrow(rect)) + y_offset
+    rect$ymin <- -y_offset
+    rect$color <- rectangle.colors
+    dg <- dg +
+      geom_rect(data = rect,
+                aes_string(xmin = "xmin",
+                           xmax = "xmax",
+                           ymin = "ymin",
+                           ymax = "ymax",
+                           color = "color"),
+                fill = NA)
+  }
+  
+  return(dg)
+}
+
+
 #' Plots a heatmap from dna_cluster objects
 #'
 #' Plots a heatmap with dendrograms from objects derived via \link{dna_cluster}.
@@ -9115,24 +9874,36 @@ dna_plotFrequency <- function(connection,
 }
 
 
-#' Change colors to hex RGB
+#' Convert colors to hex RGB
 #'
-#' Internal function, used to make hex colors.
+#' This function accepts one or more colors, provided as integer numeric values
+#' or character values, and converts them into hexadecimal RGB colors, such as
+#' "#00FF00".
 #'
-#' @param x A color name.
+#' @param x A single or multiple color names or numeric values.
+#' @return A single or multiple hexadecimal color strings.
 #'
-#' @noRd
 #' @importFrom grDevices col2rgb rgb
-#' @author Johannes B. Gruber
+#' @author Johannes B. Gruber, Philip Leifeld
+#' 
+#' @export
 col2hex <- function(x) {
-  col <- tryCatch(col2rgb(x)[, 1] / 255,
-                  error = function(x) {
-                    NA
-                  })
-  if (isTRUE(is.na(col))) {
-    stop("'color' cannot be converted to hex RGB value.")
-  }
-  return(rgb(col[1], col[2], col[3]))
+  x <- tryCatch({
+    grDevices::col2rgb(x)
+  }, error = function(e) {
+    if (is.character(x)) {
+      x <- as.factor(x)
+    }
+    if (is.factor(x)) {
+      if (length(unique(x)) > 8) {
+        warning("Too many unique values for converting factor levels into colors. A maximum of 8 is sensible. Repeating colors now.")
+      }
+      x <- as.numeric(x)
+    }
+    grDevices::col2rgb(x)
+  })
+  x <- apply(x, 2, function (x) grDevices::rgb(red = x[1] / 255, green = x[2] / 255, blue = x[3] / 255))
+  return(x)
 }
 
 
