@@ -179,7 +179,7 @@ dna_downloadJar <- function(path = paste0(dirname(system.file(".", package = "rD
   open(u)
   lines <- readLines(u, warn = FALSE)
   m <- gregexpr("https://github.com/leifeld/dna/releases/download/.{3,15}?/dna-.{3,15}?\\.jar", lines, perl = TRUE)
-  m <- regmatches(lines, m)[[1]]
+  m <- unlist(regmatches(lines, m))[1]
   close(u)
   filename <- strsplit(m[1], "/")[[1]]
   filename <- filename[length(filename)]
