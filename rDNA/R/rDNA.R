@@ -7109,6 +7109,7 @@ dna_plotDendro <- function(clust,
 #' @author Philip Leifeld, Johannes B. Gruber
 #'
 #' @examples
+#' \dontrun{
 #' library("rDNA")
 #' dna_init()
 #' samp <- dna_sample()
@@ -7138,6 +7139,7 @@ dna_plotDendro <- function(clust,
 #' # Return the dna_multiclust object
 #' mc <- dna_dendrogram(conn, k = 0, method = "best", return.multiclust = TRUE)
 #' mc
+#' }
 #' 
 #' @import ggraph
 #' @importFrom ggplot2 .pt aes aes_string element_text expand_limits labs theme

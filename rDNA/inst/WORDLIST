@@ -4,11 +4,10 @@ bw
 centroid
 CLASSPATH
 clust
+CONCOR
+CONvergence
 convergenceScale
-customise
-Customise
-customised
-Customised
+CORrelations
 cutree
 dbin
 DL
@@ -20,7 +19,6 @@ dyad
 eigen
 endCaret
 eventSequence
-excludeTypes
 factanal
 getAttributes
 getCoders
@@ -28,10 +26,11 @@ getDocuments
 getStatements
 getStatementTypes
 ggplot
+Girvan
 graphml
 gui
-HPC
 igraph
+infomap
 init
 isoMDS
 Jaccard
@@ -50,6 +49,7 @@ mcquitty
 MDS
 modularity
 multimodality
+multipolarization
 mySQL
 onemode
 pam
@@ -58,7 +58,6 @@ plotDendro
 plottable
 POSIXct
 pre
-PSOCK
 pts
 RColorBrewer
 recode
@@ -70,6 +69,7 @@ rescaling
 setAttributes
 setDocuments
 setStatements
+spinglass
 startCaret
 statementTypeId
 timeseries
@@ -80,5 +80,6 @@ Unimodality
 vegdist
 visone
 walktrap
+Walktrap
 wd
 yyyy

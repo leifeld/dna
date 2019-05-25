@@ -1,6 +1,6 @@
 context("Analysis/Transformation")
 
-conn <- dna_connection("sample.dna")
+conn <- dna_connection(dna_sample(overwrite = TRUE, verbose = FALSE))
 
 test_that("cluster", {
   expect_equal({

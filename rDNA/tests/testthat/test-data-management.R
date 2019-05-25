@@ -1,6 +1,6 @@
 context("Data management")
 
-conn <- dna_connection("sample.dna")
+conn <- dna_connection(dna_sample(overwrite = TRUE, verbose = FALSE))
 
 test_that("add Attribute message", {
   expect_message({
@@ -102,6 +102,7 @@ test_that("remove coder abort", {
 
 test_that("update coder", {
   expect_output({
+    skip_on_cran()
     dna_updateCoder(conn, 3, color = "#CCCCCC", deleteDocuments = TRUE, editRegex = FALSE)
   }, paste0("Updated color of coder 3: '#FF6633' -> '#CCCCCC'\n",
             "Updated 'editRegex' permission of coder 3: true -> false"))

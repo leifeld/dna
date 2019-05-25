@@ -352,6 +352,7 @@ options. It is possible to return the underlying \code{\link{dna_multiclust}}
 object instead of the plot by using the \code{return.multiclust} argument.
 }
 \examples{
+\dontrun{
 library("rDNA")
 dna_init()
 samp <- dna_sample()
@@ -381,6 +382,7 @@ dna_dendrogram(conn, excludeValues = list(concept =
 # Return the dna_multiclust object
 mc <- dna_dendrogram(conn, k = 0, method = "best", return.multiclust = TRUE)
 mc
+}
 
 }
 \author{

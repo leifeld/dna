@@ -1,6 +1,6 @@
 context("dna_multiclust")
 
-conn <- dna_connection("sample.dna")
+conn <- dna_connection(dna_sample(overwrite = TRUE, verbose = FALSE))
 
 test_that("dna_multiclust works cross-sectionally with k = 2", {
   mc <- dna_multiclust(conn, k = 2, verbose = FALSE)
@@ -71,6 +71,7 @@ test_that("dna_multiclust works with durations = TRUE", {
 })
 
 test_that("dna_dendrogram works", {
+  skip_on_cran()
   d <- dna_dendrogram(conn, method = "best", k = 0)
   expect_s3_class(d, "ggplot")
   
