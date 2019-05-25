@@ -40,12 +40,15 @@ if (Sys.getenv("MAKE_DNA") == "TRUE") {
 test_that("initialise DNA",{
   expect_that({
     skip_on_cran()
-    skip_on_travis()
     jar <- dir("../../inst/extdata", "^dna-.+\\.jar$", full.names = TRUE)
     if (!length(jar) > 0) {
       jar <- dir(paste0(system.file(package = "rDNA"), "/extdata"),
                  "^dna-.+\\.jar$",
                  full.names = TRUE)
+    }
+    if (length(jar) == 0) {
+      jar <- list.files(system.file(".", package = "rDNA"),
+                        pattern = ".jar$")
     }
     if (length(jar) > 0) {
       dna_init(jar)
