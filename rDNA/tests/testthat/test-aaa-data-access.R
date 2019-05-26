@@ -37,7 +37,7 @@ if (Sys.getenv("MAKE_DNA") == "TRUE") {
   })
 }
 
-test_that("initialise DNA", {
+test_that("initialize DNA", {
   expect_that({
     skip_on_cran()
     jar <- dir("../../inst/extdata", "^dna-.+\\.jar$", full.names = TRUE)

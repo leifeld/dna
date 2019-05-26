@@ -236,7 +236,6 @@ a temporal sequence of networks using the moving time window approach, in
 which case the networks are retrieved as a list of matrices.
 }
 \examples{
-\dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
 nw <- dna_network(conn,
@@ -252,7 +251,6 @@ nw <- dna_network(conn,
 # plot network
 dna_plotNetwork(nw)
 dna_plotHive(nw)
-}
 
 }
 \author{

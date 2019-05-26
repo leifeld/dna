@@ -17,12 +17,10 @@ This function can convert objects of class 'dna_network_onemode' or
 'dna_network_twomode' to igraph objects.
 }
 \examples{
-\dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
 nw <- dna_network(conn, networkType = "onemode")
 graph <- dna_toIgraph(nw)
-}
 }
 \author{
 Johannes B. Gruber
