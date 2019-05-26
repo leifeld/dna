@@ -37,11 +37,11 @@ test_that("remove Attribute", {
             "Statements removed: 0"))
 })
 
-test_that("remove Document",{
+test_that("remove Document", {
   expect_output({
     dna_removeDocument(conn, id = 8)
   }, paste0("Simulation mode: no actual changes are made to the database!\n",
-            "Statements removed in Document 8: 0\n",                         
+            "Statements removed in Document 8: 0\n",
             "Removal of Document 8: successful."))
 })
 
@@ -64,7 +64,7 @@ test_that("set Documents", {
     docs <- rbind(docs, docs)
     docs$id <- seq_along(docs$id)
     dna_setDocuments(
-      conn, 
+      conn,
       documents = docs,
       simulate = FALSE, verbose = TRUE
     )
