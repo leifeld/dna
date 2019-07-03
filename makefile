@@ -90,3 +90,12 @@ mkdir-output:
 .PHONY: clean
 clean:
 	$(RM) $(OUTPUT_DIR)
+	
+# run checks
+checks: dna; \
+	cp $(OUTPUT_DIR)/${JARFILE} $(R_DIR)/inst/extdata/; \
+	make rDNA; \
+	rm $(R_DIR)/inst/extdata/${JARFILE}; \
+	cd $(OUTPUT_DIR); \
+	R CMD check --as-cran *.tar.gz; 
+	cd ..

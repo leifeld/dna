@@ -1,6 +1,6 @@
 context("dna_multiclust")
 
-conn <- dna_connection("sample.dna")
+conn <- dna_connection(dna_sample(overwrite = TRUE, verbose = FALSE))
 
 test_that("dna_multiclust works cross-sectionally with k = 2", {
   mc <- dna_multiclust(conn, k = 2, verbose = FALSE)
@@ -71,12 +71,13 @@ test_that("dna_multiclust works with durations = TRUE", {
 })
 
 test_that("dna_dendrogram works", {
+  skip_on_cran()
   d <- dna_dendrogram(conn, method = "best", k = 0)
   expect_s3_class(d, "ggplot")
-  
+
   d <- dna_dendrogram(conn, method = "walktrap", k = 3, rectangle.colors = "purple")
   expect_s3_class(d, "ggplot")
-  
+
   d <- dna_dendrogram(conn,
                       label.colors = "color",
                       leaf.colors = "cluster",
@@ -84,13 +85,13 @@ test_that("dna_dendrogram works", {
                       symbol.shapes = 17:18,
                       symbol.colors = 3:4)
   expect_s3_class(d, "ggplot")
-  
+
   d <- dna_dendrogram(conn, circular = TRUE, label.truncate = 12)
   expect_s3_class(d, "ggplot")
-  
+
   d <- dna_dendrogram(conn, excludeValues = list(concept = "There should be legislation to regulate emissions."))
   expect_s3_class(d, "ggplot")
-  
+
   d <- dna_dendrogram(conn, k = 0, method = "best", return.multiclust = TRUE)
   expect_s3_class(d, "dna_multiclust")
 })

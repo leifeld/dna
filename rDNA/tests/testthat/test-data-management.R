@@ -1,6 +1,6 @@
 context("Data management")
 
-conn <- dna_connection("sample.dna")
+conn <- dna_connection(dna_sample(overwrite = TRUE, verbose = FALSE))
 
 test_that("add Attribute message", {
   expect_message({
@@ -37,11 +37,11 @@ test_that("remove Attribute", {
             "Statements removed: 0"))
 })
 
-test_that("remove Document",{
+test_that("remove Document", {
   expect_output({
     dna_removeDocument(conn, id = 8)
   }, paste0("Simulation mode: no actual changes are made to the database!\n",
-            "Statements removed in Document 8: 0\n",                         
+            "Statements removed in Document 8: 0\n",
             "Removal of Document 8: successful."))
 })
 
@@ -64,7 +64,7 @@ test_that("set Documents", {
     docs <- rbind(docs, docs)
     docs$id <- seq_along(docs$id)
     dna_setDocuments(
-      conn, 
+      conn,
       documents = docs,
       simulate = FALSE, verbose = TRUE
     )
@@ -102,6 +102,7 @@ test_that("remove coder abort", {
 
 test_that("update coder", {
   expect_output({
+    skip_on_cran()
     dna_updateCoder(conn, 3, color = "#CCCCCC", deleteDocuments = TRUE, editRegex = FALSE)
   }, paste0("Updated color of coder 3: '#FF6633' -> '#CCCCCC'\n",
             "Updated 'editRegex' permission of coder 3: true -> false"))

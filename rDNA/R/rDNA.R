@@ -2806,7 +2806,6 @@ dna_updateSetting <- function(connection, key, value) {
 #'   network.
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
@@ -2816,7 +2815,6 @@ dna_updateSetting <- function(connection, key, value) {
 #' dna_plotHeatmap(clust.l)
 #' dna_plotCoordinates(clust.l,
 #' jitter = c(0.5, 0.7))
-#' }
 #'
 #' @author Johannes B. Gruber
 #' @export
@@ -3113,12 +3111,11 @@ dna_cluster <- function(connection,
 #' @param ... Further options (currently not used).
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' clust.l <- dna_cluster(conn)
 #' clust.l
-#' }
+#' 
 #' @export
 #' @importFrom stats na.omit
 print.dna_cluster <- function(x, ...) {
@@ -4501,7 +4498,6 @@ print.dna_multiclust <- function(x, ...) {
 #'   \code{stop.date}.
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale1dbin(
@@ -4527,7 +4523,6 @@ print.dna_multiclust <- function(x, ...) {
 #'   verbose = TRUE,
 #'   seed = 12345
 #' )
-#' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
@@ -4813,7 +4808,6 @@ dna_scale1dbin <- function(connection,
 #'   \code{stop.date}.
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale1dord(
@@ -4836,7 +4830,6 @@ dna_scale1dbin <- function(connection,
 #'   verbose = TRUE,
 #'   seed = 12345
 #' )
-#' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
@@ -5120,7 +5113,6 @@ dna_scale1dord <- function(connection,
 #'   \code{stop.date}.
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale2dbin(
@@ -5143,7 +5135,6 @@ dna_scale1dord <- function(connection,
 #'   verbose = TRUE,
 #'   seed = 12345
 #' )
-#' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
@@ -5435,7 +5426,6 @@ dna_scale2dbin <- function(connection,
 #'   \code{stop.date}.
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale2dord(
@@ -5460,7 +5450,6 @@ dna_scale2dbin <- function(connection,
 #'   verbose = TRUE,
 #'   seed = 12345
 #' )
-#' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
@@ -5609,7 +5598,6 @@ dna_scale2dord <- function(connection,
 #' @param ... Further options (currently not used).
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale1dbin(conn,
@@ -5624,7 +5612,6 @@ dna_scale2dord <- function(connection,
 #'                             drop_min_actors = 1,
 #'                             seed = 12345)
 #' plot(dna_scale)
-#' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
@@ -5648,7 +5635,6 @@ plot.dna_scale <- function(x, ...) {
 #' @param ... Further options (currently not used).
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale1dbin(conn,
@@ -5661,7 +5647,6 @@ plot.dna_scale <- function(x, ...) {
 #'                             mcmc_thin = 10,
 #'                             store_variables = "both")
 #' dna_scale
-#' }
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
 print.dna_scale <- function(x, ...) {
@@ -5873,7 +5858,6 @@ print.dna_scale <- function(x, ...) {
 #'   construction should be printed to the R console.
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn,
@@ -5889,7 +5873,6 @@ print.dna_scale <- function(x, ...) {
 #' # plot network
 #' dna_plotNetwork(nw)
 #' dna_plotHive(nw)
-#' }
 #'
 #' @author Philip Leifeld
 #'
@@ -6153,12 +6136,10 @@ dna_network <- function(connection,
 #' @importFrom igraph graph_from_adjacency_matrix graph_from_incidence_matrix
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, networkType = "onemode")
 #' graph <- dna_toIgraph(nw)
-#' }
 dna_toIgraph <- function(x,
                          weighted = TRUE) {
   if (any(class(x) %in% "dna_network_onemode")) {
@@ -6202,7 +6183,6 @@ dna_toIgraph <- function(x,
 #' @author Johannes B. Gruber
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
@@ -6218,7 +6198,6 @@ dna_toIgraph <- function(x,
 #'
 #' ### Pass on arguments to eventSequence
 #' eventSequence3 <- dna_toREM(conn, excludeTypeOfDay = "Wednesday")
-#' }
 dna_toREM <- function(x,
                       variable = "organization",
                       ...) {
@@ -6275,12 +6254,12 @@ dna_toREM <- function(x,
 #' @importFrom network as.network.matrix
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, networkType = "onemode")
 #' network <- dna_toNetwork(nw)
 #'
+#' \dontrun{
 #' library("statnet")
 #' plot(network)
 #' nw <- dna_network(conn, networkType = "twomode")
@@ -6362,7 +6341,6 @@ dna_toNetwork <- function(x,
 #' @param ... Not used. If you want to add more plot options use \code{+} and
 #'   the ggplot2 logic (see example).
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
@@ -6371,7 +6349,6 @@ dna_toNetwork <- function(x,
 #' # Flip plot with ggplot2 command
 #' library("ggplot2")
 #' mds + coord_flip()
-#' }
 #'
 #' @author Johannes B. Gruber
 #'
@@ -6587,7 +6564,6 @@ dna_plotCoordinates <- function(clust,
 #'   the ggplot2 logic (see example).
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
@@ -6596,7 +6572,6 @@ dna_plotCoordinates <- function(clust,
 #' # Flip plot with ggplot2 command
 #' library("ggplot2")
 #' dend + coord_flip()
-#' }
 #'
 #' @author Johannes B. Gruber
 #'
@@ -7109,6 +7084,7 @@ dna_plotDendro <- function(clust,
 #' @author Philip Leifeld, Johannes B. Gruber
 #'
 #' @examples
+#' \dontrun{
 #' library("rDNA")
 #' dna_init()
 #' samp <- dna_sample()
@@ -7138,6 +7114,7 @@ dna_plotDendro <- function(clust,
 #' # Return the dna_multiclust object
 #' mc <- dna_dendrogram(conn, k = 0, method = "best", return.multiclust = TRUE)
 #' mc
+#' }
 #' 
 #' @import ggraph
 #' @importFrom ggplot2 .pt aes aes_string element_text expand_limits labs theme
@@ -7629,13 +7606,11 @@ dna_dendrogram <- function(connection,
 #' @param ... Additional arguments passed to \link{dna_plotDendro}.
 #'
 #' @examples
-#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' dend <- dna_plotHeatmap(clust,
 #' qualifierLevels = list("0" = "no", "1" = "yes"))
-#' }
 #'
 #' @author Johannes B. Gruber
 #'

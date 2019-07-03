@@ -6,8 +6,7 @@ setup(
 
 # set Sys.setenv(MAKE_DNA = "TRUE") (and possibly Sys.setenv(NOT_CRAN = "TRUE"))
 # to run this part
-if (Sys.getenv("MAKE_DNA") == "TRUE" & 
-    tolower(Sys.getenv("NOT_CRAN")) %in% c("1", "yes", "true")) {
+if (Sys.getenv("MAKE_DNA") == "TRUE") {
   test_that("download Jar", {
     expect_that({
       file <- dna_downloadJar(path = ".", returnString = TRUE)
@@ -27,9 +26,10 @@ if (Sys.getenv("MAKE_DNA") == "TRUE" &
       )
     },  equals(TRUE))
   })
-} else if (tolower(Sys.getenv("NOT_CRAN")) %in% c("1", "yes", "true") &
-           !nchar(Sys.getenv("TRAVIS_R_VERSION")) > 0) {
+} else {
   test_that("download Jar", {
+    skip_on_cran()
+    skip_on_travis()
     expect_that({
       file <- dna_downloadJar("../../inst/extdata/", returnString = TRUE)
       file.exists(file)
@@ -37,13 +37,18 @@ if (Sys.getenv("MAKE_DNA") == "TRUE" &
   })
 }
 
-test_that("initialise DNA",{
+test_that("initialize DNA", {
   expect_that({
+    skip_on_cran()
     jar <- dir("../../inst/extdata", "^dna-.+\\.jar$", full.names = TRUE)
     if (!length(jar) > 0) {
       jar <- dir(paste0(system.file(package = "rDNA"), "/extdata"),
                  "^dna-.+\\.jar$",
                  full.names = TRUE)
+    }
+    if (length(jar) == 0) {
+      jar <- list.files(system.file(".", package = "rDNA"),
+                        pattern = ".jar$")
     }
     if (length(jar) > 0) {
       dna_init(jar)

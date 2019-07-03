@@ -20,7 +20,6 @@ Plots \code{trace plots} of the \code{dna_scale} MCMC output. For further
 convergence diagnostics, see \link{dna_convergenceScale}.
 }
 \examples{
-\dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
 dna_scale <- dna_scale1dbin(conn,
@@ -35,7 +34,6 @@ dna_scale <- dna_scale1dbin(conn,
                             drop_min_actors = 1,
                             seed = 12345)
 plot(dna_scale)
-}
 
 }
 \author{
