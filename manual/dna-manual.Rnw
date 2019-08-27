@@ -484,7 +484,7 @@ For example, if the qualifier scale is $[-5; 5]$, $\vert K \vert - 1 = 10$.
 The subtraction in the parentheses serves to convert distances (as in a conflict network) to similarities.
 The distances are counted over all statements, meaning that nodes $i$ and $i'$ count these similarities over all combinations of the levels $k$ (for node $i$) and $k'$ (for node $i'$) for each second-variable node $j$ (e.\,g., each concept) and weight them by how often these combinations occur.
 This weighting occurs in the $x_{ijk} x_{i'jk'}$ part.
-For example, if $i$ mentions $j$ at intensity $-4$ twice and $i'$ mentions $j$ at intensity $+2$ three times on an intensity scale $[-5; +5]$, this contributes $2 \cdot 3 \cdot (1 - \frac{\vert-4 - 2\vert}{11 - 1}) = 4.2$ to the edge weight between $i$ and $i'$ in the congruence network.
+For example, if $i$ mentions $j$ at intensity $-4$ twice and $i'$ mentions $j$ at intensity $+2$ three times on an intensity scale $[-5; +5]$, this contributes $2 \cdot 3 \cdot (1 - \frac{\vert-4 - 2\vert}{11 - 1}) = 2.4$ to the edge weight between $i$ and $i'$ in the congruence network.
 
 The binary case with $\vert K \vert = 2$ is a special case of the integer congruence network with a negative or positive agreement pattern, for example reflecting rejection or support of a concept by an actor.
 In the binary case, congruent opinions always reduce to $1 - \frac{\vert k - k' \vert}{\vert K \vert - 1} = 1$, and differences in opinion always reduce to $1 - \frac{\vert k - k' \vert}{\vert K \vert - 1} = 0$.
