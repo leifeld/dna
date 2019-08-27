@@ -376,7 +376,7 @@ dna_dendrogram(conn,
 dna_dendrogram(conn, circular = TRUE, label.truncate = 12)
 
 # Modifying the underlying network, e.g., leaving out concepts:
-dna_dendrogram(conn, excludeValues = list(concept = 
+dna_dendrogram(conn, excludeValues = list(concept =
   "There should be legislation to regulate emissions."))
 
 # Return the dna_multiclust object
