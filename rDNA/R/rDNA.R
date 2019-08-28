@@ -7222,6 +7222,11 @@ dna_dendrogram <- function(connection,
   hierarchy <- stats::as.dendrogram(cl$cl[[1]])
   at <- dna_getAttributes(connection = connection, statementType = statementType, variable = variable1, values = mem$node)
 
+  # fix no visible binding issue
+  leaf_color <- NULL
+  label_short <- NULL
+  label_color <- NULL
+  
   # prepare labels
   if (is.null(labels) || is.na(labels)) {
     labels <- mem$node
@@ -8013,7 +8018,12 @@ dna_plotHive <- function(x,
   } else {
     E(graph)$Weight <- NULL
   }
-  lyt <- create_layout(graph, layout = layout, axis = "attribute", sort.by = sort_by, ...)
+  if (packageVersion("ggraph") > "1.0.2") {
+    attribute <- NULL
+    lyt <- create_layout(graph, layout = layout, axis = attribute, sort.by = sort_by, ...)
+  } else {
+    lyt <- create_layout(graph, layout = layout, axis = "attribute", sort.by = sort_by, ...)
+  }
   lyt$name_short <- trim(as.character(lyt$name), n = truncate)
   colnames(lyt) <- gsub("attribute", node_attribute, colnames(lyt))
   show_legend <- ifelse(show_legend, # ggplot wants this recoding for some reason
