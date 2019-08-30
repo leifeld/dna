@@ -6,6 +6,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -13,6 +14,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Random;
 
 import org.rosuda.JRI.RConsoleOutputStream;
 import org.rosuda.JRI.Rengine;
@@ -38,12 +40,12 @@ public class ExporterR {
 	String dbfile, login, password;
 	SqlConnection sql;
 	Data data;
-	Matrix matrix;
-	ArrayList<Matrix> timeWindowMatrices;
+	ArrayList<Matrix> matrices;
 	AttributeVector[] attributes;
 	Object[] eventListColumnsR;
 	String[] columnNames, columnTypes;
 	ExportHelper exportHelper;
+	GeneticAlgorithm ga;
 
 	/**
 	 * Constructor for external R calls. Load and prepare data for export.
@@ -326,7 +328,7 @@ public class ExporterR {
 		}
 		boolean ignoreQualifier = qualifierAggregation.equals("ignore");
 		int statementTypeId = st.getId();
-		
+
 		// format normalization argument
 		// R input can be: 'no', 'activity', 'prominence', 'average', 'Jaccard', or 'cosine'
 		// formatted Java output can be: 'no', 'activity', 'prominence', 'average activity', 'Jaccard', or 'cosine'
@@ -358,7 +360,7 @@ public class ExporterR {
 		if (normalization.equals("average")) {
 			normalization = "average activity";
 		}
-		
+
 		// format duplicates argument
 		// valid R input: 'include', 'document', 'week', 'month', 'year', or 'acrossrange'
 		// valid Java output: 'include all duplicates', 'ignore per document', 'ignore per calendar week', 'ignore per calendar month', 'ignore per calendar year', or 'ignore across date range'
@@ -404,7 +406,7 @@ public class ExporterR {
 			stopDate = null;
 			System.err.println("\nStop date or time is invalid!");
 		}
-		
+
 		// format time window arguments
 		if (timewindow == null || timewindow.startsWith("no")) {
 			timewindow = "no time window";
@@ -433,7 +435,7 @@ public class ExporterR {
 		if (timewindow.equals("events")) {
 			timewindow = "using events";
 		}
-		
+
 		// process exclude variables: create HashMap with variable:value pairs
 		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
 		if (excludeVariables.length > 0) {
@@ -464,7 +466,7 @@ public class ExporterR {
 				map.put(key, newValues);
 			}
 		}
-		
+
 		// process document-level exclude variables using repeated calls of private function 'processExcludeDocument'
 		ArrayList<String> authorExclude = processExcludeDocument("author", excludeAuthors, invertAuthors, data.getStatements(), data.getStatements(), 
 				data.getDocuments(), statementTypeId, includeIsolates);
@@ -478,11 +480,14 @@ public class ExporterR {
 		if (verbose == true) {
 			System.out.print("Done.\n");
 		}
-		
+
 		// check file export format arguments
-		if (fileFormat != null && !fileFormat.equals("csv") && !fileFormat.equals("dl") && !fileFormat.equals("graphml")) {
-			throw new Exception("'fileFormat' must be 'csv', 'dl', 'graphml', or NULL.");
+		if (fileFormat != null) {
+			if (!fileFormat.equals("csv") && !fileFormat.equals("dl") && !fileFormat.equals("graphml")) {
+				throw new Exception("'fileFormat' must be 'csv', 'dl', 'graphml', or NULL.");
+			}
 		}
+
 		if (outfile != null) {
 			if (fileFormat.equals("graphml") && !outfile.toLowerCase().endsWith(".graphml")) {
 				outfile = outfile + ".graphml";
@@ -573,30 +578,31 @@ public class ExporterR {
 			System.out.print("(" + step + "/" + max + "): Computing network matrix... ");
 		}
 		Matrix m = null;
-		timeWindowMatrices = null;
+		matrices = null;
 		if (networkType.equals("Two-mode network")) {
 			if (timewindow.equals("no time window")) {
 				m = exportHelper.computeTwoModeMatrix(filteredStatements, data.getDocuments(), st, variable1, variable2, variable1Document, 
 						variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, start, stop, verbose);
+				this.matrices = new ArrayList<Matrix>();
+				this.matrices.add(m);
 			} else {
-				this.timeWindowMatrices = exportHelper.computeTimeWindowMatrices(filteredStatements, data.getDocuments(), st, variable1, variable2, 
+				this.matrices = exportHelper.computeTimeWindowMatrices(filteredStatements, data.getDocuments(), st, variable1, variable2, 
 						variable1Document, variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, true, start, stop, 
 						timewindow, windowsize, includeIsolates);
 			}
-			this.matrix = m;
 		} else if (networkType.equals("One-mode network")) {
 			if (timewindow.equals("no time window")) {
 				m = exportHelper.computeOneModeMatrix(filteredStatements, data.getDocuments(), st, variable1, variable2, variable1Document, 
 						variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, start, stop);
+				this.matrices = new ArrayList<Matrix>();
+				this.matrices.add(m);
 			} else {
-				this.timeWindowMatrices = exportHelper.computeTimeWindowMatrices(filteredStatements, data.getDocuments(), st, variable1, variable2, 
+				this.matrices = exportHelper.computeTimeWindowMatrices(filteredStatements, data.getDocuments(), st, variable1, variable2, 
 						variable1Document, variable2Document, names1, names2, qualifier, qualifierAggregation, normalization, false, start, stop, 
 						timewindow, windowsize, includeIsolates);
 			}
-			this.matrix = m;
 		} else if (networkType.equals("Event list")) {
 			// convert list of filtered statements into event list in the form of an Object[], including all statement- and document-level variables
-			this.matrix = null;
 		    String key, value;
 			Document doc;
 			for (int i = 0; i < filteredStatements.size(); i++) {
@@ -703,9 +709,9 @@ public class ExporterR {
 				} else if (!timewindow.equals("no time window")) {
 					System.err.println("The DL file format does not currently support time windows. Aborting.");
 				} else if (networkType.equals("One-mode network")) {
-					exportHelper.exportDL(this.matrix, outfile, false);
+					exportHelper.exportDL(this.matrices.get(0), outfile, false);
 				} else if (networkType.equals("Two-mode network")) {
-					exportHelper.exportDL(this.matrix, outfile, true);
+					exportHelper.exportDL(this.matrices.get(0), outfile, true);
 				}
 			} else if (fileFormat.equals("graphml")) {
 				String[] values1 = exportHelper.retrieveValues(filteredStatements, this.data.getDocuments(), variable1, variable1Document);
@@ -724,7 +730,7 @@ public class ExporterR {
 					if (networkType.equals("Event List")) {
 						System.out.println("The graphml file format does not currently support event lists. Aborting.");
 					} else {
-						exportHelper.exportGraphml(matrix, twoMode, st, outfile, variable1, variable2, frequencies1, frequencies2, 
+						exportHelper.exportGraphml(this.matrices.get(0), twoMode, st, outfile, variable1, variable2, frequencies1, frequencies2, 
 								this.data.getAttributes(), qualifierAggregation, qualifierBinary);
 					}
 				} else {
@@ -733,9 +739,9 @@ public class ExporterR {
 					if (networkType.equals("Event List")) {
 						System.out.println("The graphml file format does not currently support event lists. Aborting.");
 					} else {
-						for (int i = 0; i < this.timeWindowMatrices.size(); i++) {
-							String filename2 = "-" + String.format("%0" + String.valueOf(this.timeWindowMatrices.size()).length() + "d", i + 1);
-							exportHelper.exportGraphml(this.timeWindowMatrices.get(i), twoMode, st, filename1 + filename2 + filename3, 
+						for (int i = 0; i < this.matrices.size(); i++) {
+							String filename2 = "-" + String.format("%0" + String.valueOf(this.matrices.size()).length() + "d", i + 1);
+							exportHelper.exportGraphml(this.matrices.get(i), twoMode, st, filename1 + filename2 + filename3, 
 									variable1, variable2, frequencies1, frequencies2, this.data.getAttributes(), qualifierAggregation, qualifierBinary);
 						}
 					}
@@ -746,7 +752,7 @@ public class ExporterR {
 				} else if (networkType.equals("Event list")) {
 					exportHelper.eventCSV(filteredStatements, this.data.getDocuments(), st, outfile);
 				} else {
-					exportHelper.exportCSV(this.matrix, outfile);
+					exportHelper.exportCSV(this.matrices.get(0), outfile);
 				}
 			}
 			if (verbose == true) {
@@ -825,7 +831,7 @@ public class ExporterR {
 	 * @return   network matrix
 	 */
 	public double[][] getMatrix() {
-		return matrix.getMatrix();
+		return this.matrices.get(0).getMatrix();
 	}
 	
 	/**
@@ -834,7 +840,7 @@ public class ExporterR {
 	 * @return   String array of node names for the row variable.
 	 */
 	public String[] getRowNames() {
-		return matrix.getRownames();
+		return this.matrices.get(0).getRownames();
 	}
 	
 	/**
@@ -843,11 +849,11 @@ public class ExporterR {
 	 * @return   String array of node names for the column variable.
 	 */
 	public String[] getColumnNames() {
-		return matrix.getColnames();
+		return this.matrices.get(0).getColnames();
 	}
 
 	/**
-	 * Return start date/time from this.matrix.
+	 * Return start date/time from the first matrix.
 	 * 
 	 * @param type  The time indicator: 'start' (for the start date/time) or 'stop' (for the stop date/time).
 	 * @return      Long array of Unix times since 1/1/1970.
@@ -855,9 +861,9 @@ public class ExporterR {
 	 */
 	public long getTime(String type) throws Exception {
 		if (type.equals("start")) {
-			return (long) (matrix.getStart().getTime() / 1000);
+			return (long) (this.matrices.get(0).getStart().getTime() / 1000);
 		} else if (type.equals("stop")) {
-			return (long) (matrix.getStop().getTime() / 1000);
+			return (long) (this.matrices.get(0).getStop().getTime() / 1000);
 		} else {
 			throw new Exception("'type' must be 'start' or 'stop'.");
 		}
@@ -869,7 +875,7 @@ public class ExporterR {
 	 * @return   double[][] matrix
 	 */
 	public double[][] getTimeWindowNetwork(int t) {
-		return this.timeWindowMatrices.get(t).getMatrix();
+		return this.matrices.get(t).getMatrix();
 	}
 
 	/**
@@ -878,7 +884,7 @@ public class ExporterR {
 	 * @return   String[] row names
 	 */
 	public String[] getTimeWindowRowNames(int t) {
-		return timeWindowMatrices.get(t).getRownames();
+		return matrices.get(t).getRownames();
 	}
 
 	/**
@@ -887,7 +893,7 @@ public class ExporterR {
 	 * @return   String[] column names
 	 */
 	public String[] getTimeWindowColumnNames(int t) {
-		return timeWindowMatrices.get(t).getColnames();
+		return matrices.get(t).getColnames();
 	}
 	
 	/**
@@ -899,15 +905,15 @@ public class ExporterR {
 	 * @throws      Exception 
 	 */
 	public long[] getTimeWindowTimes(String type) throws Exception {
-		long[] times = new long[timeWindowMatrices.size()];
+		long[] times = new long[this.matrices.size()];
 		if (times.length > 0) {
-			for (int i = 0; i < timeWindowMatrices.size(); i++) {
+			for (int i = 0; i < this.matrices.size(); i++) {
 				if (type.equals("start")) {
-					times[i] = (long) (timeWindowMatrices.get(i).getStart().getTime() / 1000);
+					times[i] = (long) (this.matrices.get(i).getStart().getTime() / 1000);
 				} else if (type.equals("stop")) {
-					times[i] = (long) (timeWindowMatrices.get(i).getStop().getTime() / 1000);
+					times[i] = (long) (this.matrices.get(i).getStop().getTime() / 1000);
 				} else if (type.equals("middle")) {
-					times[i] = (long) (timeWindowMatrices.get(i).getDate().getTime() / 1000);
+					times[i] = (long) (this.matrices.get(i).getDate().getTime() / 1000);
 				} else {
 					throw new Exception("'type' must be 'start', 'stop', or 'middle'.");
 				}
@@ -925,17 +931,17 @@ public class ExporterR {
 	 * @throws Exception 
 	 */
 	public int[] getTimeWindowNumStatements() throws Exception {
-		int[] numStatements = new int[timeWindowMatrices.size()];
+		int[] numStatements = new int[this.matrices.size()];
 		if (numStatements.length > 0) {
-			for (int i = 0; i < timeWindowMatrices.size(); i++) {
-				numStatements[i] = timeWindowMatrices.get(i).getNumStatements();
+			for (int i = 0; i < this.matrices.size(); i++) {
+				numStatements[i] = this.matrices.get(i).getNumStatements();
 			}
 		} else {
 			throw new Exception("Not a single network matrix has been generated. Does the time window size exceed the time range?");
 		}
 		return numStatements;
 	}
-
+	
 	
 	/* =================================================================================================================
 	 * Functions for managing attributes
@@ -3439,6 +3445,1124 @@ public class ExporterR {
 			System.err.println("Only settings 'statementColor', 'activeCoder', 'popupWidth', 'version', and 'date' are permitted.");
 		} else {
 			this.data.getSettings().put(key, value);
+		}
+	}
+	
+
+	/* =================================================================================================================
+	 * Genetic algorithm for estimating polarization
+	 * =================================================================================================================
+	 */
+
+	public void computePolarization(
+			String statementType,
+			String variable1,
+			boolean variable1Document,
+			String variable2,
+			boolean variable2Document,
+			String qualifier,
+			String normalization,
+			String duplicates,
+			String startDate,
+			String stopDate,
+			String startTime,
+			String stopTime,
+			String timewindow,
+			int windowsize,
+			String[] excludeVariables,
+			String[] excludeValues,
+			String[] excludeAuthors,
+			String[] excludeSources,
+			String[] excludeSections,
+			String[] excludeTypes,
+			boolean invertValues,
+			boolean invertAuthors,
+			boolean invertSources,
+			boolean invertSections,
+			boolean invertTypes,
+			int k,
+			int numClusterSolutions,
+			int iterations,
+			String qualityFunction,
+			double eliteShare,
+			double mutationShare,
+			boolean verbose
+			) throws Exception {
+		
+		ga = new GeneticAlgorithm(
+				statementType,
+				variable1,
+				variable1Document,
+				variable2,
+				variable2Document,
+				qualifier,
+				normalization,
+				duplicates,
+				startDate,
+				stopDate,
+				startTime,
+				stopTime,
+				timewindow,
+				windowsize,
+				excludeVariables,
+				excludeValues,
+				excludeAuthors,
+				excludeSources,
+				excludeSections,
+				excludeTypes,
+				invertValues,
+				invertAuthors,
+				invertSources,
+				invertSections,
+				invertTypes,
+				k,
+				numClusterSolutions,
+				iterations,
+				qualityFunction,
+				eliteShare,
+				mutationShare
+				);
+	}
+
+	public double[] getFinalMaxQ() {
+		int T = ga.getResults().size();
+		double[] maxQArray = new double[T];
+		for (int i = 0; i < T; i++) {
+			maxQArray[i] = ga.getResults().get(i).getFinalMaxQ();
+		}
+		return maxQArray;
+	}
+
+	public double[] getFinalMeanQ() {
+		int T = ga.getResults().size();
+		double[] meanQArray = new double[T];
+		for (int i = 0; i < T; i++) {
+			meanQArray[i] = ga.getResults().get(i).getAvgQ()[ga.getResults().get(i).getAvgQ().length - 1];
+		}
+		return meanQArray;
+	}
+
+	public double[] getFinalSdQ() {
+		int T = ga.getResults().size();
+		double[] sdQArray = new double[T];
+		for (int i = 0; i < T; i++) {
+			sdQArray[i] = ga.getResults().get(i).getSdQ()[ga.getResults().get(i).getSdQ().length - 1];
+		}
+		return sdQArray;
+	}
+
+	public double[] getMaxQ(int t) {
+		return ga.getResults().get(t).getMaxQ();
+	}
+
+	public double[] getMeanQ(int t) {
+		return ga.getResults().get(t).getAvgQ();
+	}
+
+	public double[] getSdQ(int t) {
+		return ga.getResults().get(t).getSdQ();
+	}
+	
+	public int[] getMemberships(int t) {
+		return ga.getResults().get(t).getMemberships();
+	}
+	
+	public ArrayList<PolarizationResult> getResults() {
+		return ga.getResults();
+	}
+	
+	private class GeneticAlgorithm {
+		
+		ArrayList<PolarizationResult> polarizationResults;
+		
+		/**
+		 * Genetic optimization of polarization.
+		 * 
+		 * @param k                    Number of clusters, usually 2.
+		 * @param numClusterSolutions  Population size; number of cluster solutions in each generation. Suggested values are around 30-50.
+		 * @param iterations           Maximal number of generations through which optimization should be attempted. Will be lower if early convergence is detected. A suggested starting value is 1000. 
+		 * @param qualityFunction      The function used to assess the quality, or fitness, of a cluster solution. Can be "modularity" (for modularity) or "ei" (for Krackhardt's E-I index).
+		 * @param eliteShare           The fraction of highest-quality cluster solutions in the parent generation that should be retained as is in the children generation. A suggested value is 0.2. 
+		 * @param mutationShare        The fraction of nodes in each cluster solution for which cluster memberships should be randomly mutated after cross-over. For example, a value of 0.2 will select 10% of the nodes plus another 10% as targets to swap their cluster membership with.
+		 * @throws Exception
+		 */
+		public GeneticAlgorithm(
+				String statementType,
+				String variable1,
+				boolean variable1Document,
+				String variable2,
+				boolean variable2Document,
+				String qualifier,
+				String normalization,
+				String duplicates,
+				String startDate,
+				String stopDate,
+				String startTime,
+				String stopTime,
+				String timewindow,
+				int windowsize,
+				String[] excludeVariables,
+				String[] excludeValues,
+				String[] excludeAuthors,
+				String[] excludeSources,
+				String[] excludeSections,
+				String[] excludeTypes,
+				boolean invertValues,
+				boolean invertAuthors,
+				boolean invertSources,
+				boolean invertSections,
+				boolean invertTypes,
+				int k,
+				int numClusterSolutions,
+				int iterations,
+				String qualityFunction,
+				double eliteShare,
+				double mutationShare
+				) throws Exception {
+			
+			rNetwork(
+					"onemode", // networkType
+					statementType,
+					variable1,
+					variable1Document,
+					variable2,
+					variable2Document,
+					qualifier,
+					"congruence", // qualifierAggregation
+					normalization,
+					false, // includeIsolates
+					duplicates,
+					startDate,
+					stopDate,
+					startTime,
+					stopTime,
+					timewindow,
+					windowsize,
+					excludeVariables,
+					excludeValues,
+					excludeAuthors,
+					excludeSources,
+					excludeSections, 
+					excludeTypes,
+					invertValues,
+					invertAuthors,
+					invertSources,
+					invertSections,
+					invertTypes,
+					null, // outfile
+					null, // fileFormat
+					false // verbose
+					);
+			
+			int i;
+			ArrayList<Matrix> congruenceList = new ArrayList<Matrix>();
+			for (i = 0; i < ExporterR.this.matrices.size(); i++) {
+				congruenceList.add((Matrix) ExporterR.this.matrices.get(i).clone());
+			}
+			
+			rNetwork(
+					"onemode", // networkType
+					statementType,
+					variable1,
+					variable1Document,
+					variable2,
+					variable2Document,
+					qualifier,
+					"conflict", // qualifierAggregation
+					normalization,
+					false, // includeIsolates
+					duplicates,
+					startDate,
+					stopDate,
+					startTime,
+					stopTime,
+					timewindow,
+					windowsize,
+					excludeVariables,
+					excludeValues,
+					excludeAuthors,
+					excludeSources,
+					excludeSections, 
+					excludeTypes,
+					invertValues,
+					invertAuthors,
+					invertSources,
+					invertSections,
+					invertTypes,
+					null, // outfile
+					null, // fileFormat
+					false // verbose
+					);
+
+			ArrayList<Matrix> conflictList = new ArrayList<Matrix>();
+			for (i = 0; i < ExporterR.this.matrices.size(); i++) {
+				conflictList.add((Matrix) ExporterR.this.matrices.get(i).clone());
+			}
+			
+			run(numClusterSolutions, k, iterations, eliteShare, mutationShare, qualityFunction, congruenceList, conflictList);
+		}
+		
+		public ArrayList<PolarizationResult> getResults() {
+			return this.polarizationResults;
+		}
+
+		private void run (
+				int numClusterSolutions,
+				int k,
+				int iterations,
+				double eliteShare,
+				double mutationShare,
+				String qualityFunction,
+				ArrayList<Matrix> congruenceList,
+				ArrayList<Matrix> conflictList
+				) throws Exception {
+			
+			boolean verbose = false;
+			
+			// create variables and check validity of arguments
+			polarizationResults = new ArrayList<PolarizationResult>();
+			int i, numNodes;
+			if (k < 2) {
+				System.err.println("There must be at least k = 2 clusters.");
+			}
+			if (numClusterSolutions % 2 != 0 || numClusterSolutions < 3) {
+				System.err.println("numClusterSolutions must be an even number above 2.");
+			}
+			if (congruenceList.size() != conflictList.size()) {
+				System.err.println("Congruence and conflict lists have different sizes.");
+			}
+			
+			// for each time step, run the genetic algorithm over the cluster solutions
+			// for a certain number of iterations; retain max/mean/SD quality and memberships
+			double[][] congruence, conflict;
+			double[] qualityScores;
+			double maxQ;
+			double avgQ, sdQ;
+			int j, t;
+			int maxIndex = -1;
+			double[] maxQArray = new double[iterations];
+			double[] avgQArray = new double[iterations];
+			double[] sdQArray = new double[iterations];
+			boolean earlyConvergence = false;
+			int lastIndex = -1;
+			for (t = 0; t < congruenceList.size(); t++) {
+				System.out.println("Time step: " + t);
+				congruence = congruenceList.get(t).getMatrix();
+				conflict = conflictList.get(t).getMatrix();
+				
+				if (congruenceList.get(t).getMatrix().length > 0) { // if the network has no nodes, skip this step and return 0 directly
+
+					// create an array list of cluster solutions with random memberships
+					numNodes = congruence.length;
+					ArrayList<ClusterSolution> cs = new ArrayList<ClusterSolution>();
+					for (i = 0; i < numClusterSolutions; i++) {
+						cs.add(new ClusterSolution(numNodes, k));
+						cs.get(i).validateMemberships();
+					}
+
+					// run through iterations and do the breeding, then collect results and stats
+					lastIndex = iterations - 1; // choose last possible value here as a default if early convergence does not happen
+					for (i = 0; i < iterations; i++) {
+						cs = iteration(cs, congruence, conflict, qualityFunction, numNodes, eliteShare, mutationShare, k); // iteration step
+
+						// compute summary statistics based on iteration step and retain them
+						qualityScores = new double[numClusterSolutions];
+						maxQ = -1.0;
+						avgQ = 0.0;
+						sdQ = 0.0;
+						maxIndex = -1;
+						for (j = 0; j < cs.size(); j++) {
+							cs.get(j).validateMemberships(); // check if the membership vector still has a uniform size distribution
+							if (qualityFunction.equals("modularity")) {
+								qualityScores[j] = cs.get(j).qualityModularity(congruence, conflict);
+							} else if (qualityFunction.equals("ei")) {
+								qualityScores[j] = cs.get(j).qualityEI(congruence, conflict);
+							} else {
+								throw new Exception("Quality function '" + qualityFunction + "' not supported.");
+							}
+							avgQ += qualityScores[j];
+							if (qualityScores[j] > maxQ) {
+								maxQ = qualityScores[j];
+								maxIndex = j;
+							}
+						}
+						avgQ = avgQ / numClusterSolutions;
+						for (j = 0; j < numClusterSolutions; j++) {
+							sdQ = sdQ + Math.sqrt(((qualityScores[j] - avgQ) * (qualityScores[j] - avgQ)) / numClusterSolutions);
+						}
+						if (verbose == true) {
+							System.out.printf("Max Q: %.2f. Mean Q: %.2f. SD Q: %.2f.\n", maxQ, avgQ, sdQ);
+						}
+						maxQArray[i] = maxQ;
+						avgQArray[i] = avgQ;
+						sdQArray[i] = sdQ;
+						
+						// check early convergence
+						earlyConvergence = true;
+						if (i >= 10 && (double) Math.round(sdQ * 100) / 100 == 0.00 && (double) Math.round(maxQ * 100) / 100 == (double) Math.round(avgQ * 100) / 100) {
+							for (j = i - 10; j < i; j++) {
+								if ((double) Math.round(maxQArray[j] * 100) / 100 != (double) Math.round(maxQ * 100) / 100 ||
+										(double) Math.round(avgQArray[j] * 100) / 100 != (double) Math.round(avgQ * 100) / 100 ||
+												(double) Math.round(sdQArray[j] * 100) / 100 != 0.00) {
+									earlyConvergence = false;
+								}
+							}
+						} else {
+							earlyConvergence = false;
+						}
+						if (earlyConvergence == true) {
+							if (verbose == true) {
+								System.out.println("Early convergence detected after iteration " + i + ". Stopping here and saving result.");
+							}
+							lastIndex = i;
+							break;
+						}
+					}
+					
+					// correct for early convergence in results vectors
+					if (lastIndex < iterations - 1) {
+						for (i = lastIndex + 1; i < iterations; i++) {
+							maxQArray[i] = maxQArray[lastIndex];
+							avgQArray[i] = avgQArray[lastIndex];
+							sdQArray[i] = sdQArray[lastIndex];
+						}
+					}
+					
+					// save results in array as a complex object
+					PolarizationResult pr = new PolarizationResult(
+							maxQArray.clone(),
+							avgQArray.clone(),
+							sdQArray.clone(),
+							maxQArray[lastIndex],
+							cs.get(maxIndex).getMemberships().clone(),
+							congruenceList.get(t).getRownames(),
+							earlyConvergence,
+							congruenceList.get(t).getStart(),
+							congruenceList.get(t).getStop(),
+							congruenceList.get(t).getDate());
+					polarizationResults.add(pr);
+				} else { // zero result because network is empty
+					PolarizationResult pr = new PolarizationResult(
+							new double[] { 0 },
+							new double[] { 0 },
+							new double[] { 0 },
+							0.0,
+							new int[0],
+							new String[0],
+							true,
+							congruenceList.get(t).getStart(),
+							congruenceList.get(t).getStop(),
+							congruenceList.get(t).getDate());
+					polarizationResults.add(pr);
+				}
+			}
+		}
+		
+		private ArrayList<ClusterSolution> iteration (
+				ArrayList<ClusterSolution> clusterSolutions,
+				double[][] congruence,
+				double[][] conflict,
+				String qualityFunction,
+				int n,
+				double eliteShare,
+				double mutationShare,
+				int k) throws Exception {
+			
+			boolean verbose = false;
+			
+			int numClusterSolutions = clusterSolutions.size();
+			int elites = (int) Math.ceil(eliteShare * numClusterSolutions);
+			int crossOvers = numClusterSolutions - elites;
+			int mutantChromosomes = (int) Math.round((mutationShare / 2) * n); // for how many pairs should we swap cluster memberships (i.e., half the number of nodes)? 
+			int i, i2, j;
+			
+			if (verbose == true) {
+				System.out.println("--------------------------");
+				System.out.println("Number of cluster solutions: " + numClusterSolutions);
+				System.out.println(" - of which are elites: " + elites + " (fraction: " + eliteShare + ")");
+				System.out.println(" - of which are cross-over solutions: " + crossOvers + " (fraction: " + (1 - eliteShare) + ")");
+				System.out.println("Number of nodes: " + n);
+				System.out.println("Number of cluster levels k: " + k);
+			}
+
+			// compute quality for all initial solutions; if not even the elite share is positive, sample completely new numbers
+			double[] q = new double[numClusterSolutions]; // quality values for all cluster solutions
+			int positiveQ = 0;
+			while (positiveQ < elites) {
+				for (i = 0; i < clusterSolutions.size(); i++) {
+					if (qualityFunction.equals("modularity")) {
+						q[i] = clusterSolutions.get(i).qualityModularity(congruence, conflict);
+					} else if (qualityFunction.equals("ei")) {
+						q[i] = clusterSolutions.get(i).qualityEI(congruence, conflict);
+					} else {
+						throw new Exception("Quality function '" + qualityFunction + "' not supported.");
+					}
+				}
+				for (i = 0; i < numClusterSolutions; i++) {
+					if (q[i] > 0) {
+						positiveQ++;
+					}
+				}
+				if (positiveQ < elites) {
+					clusterSolutions.clear();
+					for (i = 0; i < numClusterSolutions; i++) {
+						clusterSolutions.add(new ClusterSolution(n, k));
+					}
+					if (verbose == true) {
+						System.out.println("Resampling initial cluster solution...");
+					}
+				}
+			}
+
+			if (verbose == true) {
+				System.out.print("Initial quality:");
+				for (i = 0; i < q.length; i++) {
+					System.out.printf(" %.2f ", q[i]);
+				}
+				System.out.print("\n");
+				System.out.print("First solution: ");
+				for (i = 0; i < clusterSolutions.get(0).getMemberships().length; i++) {
+					System.out.print(clusterSolutions.get(0).getMemberships()[i] + " ");
+				}
+				System.out.print("\n");
+			}
+			
+			// compute ranks of quality values
+			int[] qRanks = calculateRanks(q);
+
+			if (verbose == true) {
+				System.out.print("Q ranks: ");
+				for (i = 0; i < qRanks.length; i++) {
+					System.out.print(qRanks[i] + " ");
+				}
+				System.out.print("\n");
+			}
+			
+			// select elite children by considering most highly ranked quality values
+			ArrayList<ClusterSolution> children = new ArrayList<ClusterSolution>();
+			for (i = 0; i < qRanks.length; i++) {
+				if (qRanks[i] < elites) {
+					children.add((ClusterSolution) clusterSolutions.get(i).clone());
+					if (verbose == true) {
+						System.out.println("Elite child added: index " + i);
+					}
+				}
+			}
+
+			// replace all negative quality values by zero; otherwise the roulette sampling wouldn't work
+			for (i = 0; i < q.length; i++) {
+				if (q[i] < 0) {
+					q[i] = 0;
+				}
+			}
+			
+			// compute total non-negative quality over all cluster solutions for roulette sampling
+			double qTotal = 0.0;
+			for (i = 0; i < q.length; i++) {
+				qTotal += q[i];
+			}
+
+			// weighted (roulette) sampling of two individuals according to their
+			// quality scores, then cross-over step and add to list of children
+			Random rand = new Random();
+			double cumulative1, cumulative2;
+			ClusterSolution c;
+			while (children.size() < numClusterSolutions) {
+				double r = rand.nextDouble() * qTotal;
+				cumulative1 = 0.0;
+				for (i = 0; i < q.length; i++) {
+					cumulative1 += q[i];
+					if (r <= cumulative1) {
+						double r2 = rand.nextDouble() * qTotal;
+						cumulative2 = 0.0;
+						for (i2 = 0; i2 < q.length; i2++) {
+							cumulative2 += q[i2];
+							if (r2 <= cumulative2) {
+								c = (ClusterSolution) clusterSolutions.get(i).clone();
+								c.crossOver(clusterSolutions.get(i2).getMemberships());
+								children.add(c);
+								break;
+							}
+						}
+						break;
+					}
+				}
+			}
+			
+			// define a class that represents pairs of two indices of membership bits (i.e.,index
+			// of the first node and index of the second node in a membership solution, with a maximum of N nodes
+			class Pair {
+				int firstIndex;
+				int secondIndex;
+				
+				public Pair(int firstIndex, int secondIndex) {
+					this.firstIndex = firstIndex;
+					this.secondIndex = secondIndex;
+				}
+				
+				public int getFirstIndex() {
+					return this.firstIndex;
+				}
+
+				public int getSecondIndex() {
+					return this.secondIndex;
+				}
+			}
+			
+			// mutation step: select some percentage of the non-elite chromosomes (governed by the
+			// mutantChromosomes parameter) as pairs and swap around their cluster membership
+			ArrayList<Pair> mutationPairs = new ArrayList<Pair>();
+			int[] mem;
+			boolean contained;
+			for (i = elites; i < numClusterSolutions; i++) {
+				mem = children.get(i).getMemberships();
+				mutationPairs.clear();
+				int firstIndex = -1, secondIndex = -1, firstK = 0, secondK = 1;
+				contained = true;
+				while (mutationPairs.size() < mutantChromosomes) {
+					firstIndex = rand.nextInt(n);
+					secondIndex = rand.nextInt(n);
+					firstK = mem[firstIndex];
+					secondK = mem[secondIndex];
+					contained = false;
+					for (j = 0; j < mutationPairs.size(); j++) { // check if a pair was randomly chosen in which at least one node had already been sampled
+						if (mutationPairs.get(j).getFirstIndex() == firstIndex ||
+								mutationPairs.get(j).getSecondIndex() == secondIndex ||
+								mutationPairs.get(j).getFirstIndex() == secondIndex ||
+								mutationPairs.get(j).getSecondIndex() == firstIndex) {
+							contained = true;
+						}
+					}
+					if (firstIndex != secondIndex && firstK == secondK && contained == false) {
+						mutationPairs.add(new Pair(firstIndex, secondIndex));
+					}
+				}
+				for (j = 0; j < mutationPairs.size(); j++) { // swap each pair's cluster memberships
+					firstK = mem[firstIndex];
+					secondK = mem[secondIndex];
+					mem[firstIndex] = secondK;
+					mem[secondIndex] = firstK;
+				}
+			}
+			
+			return children;
+		}
+
+		private class ClusterSolution implements Cloneable {
+			
+			int[] memberships; // cluster memberships of all nodes as integer values, starting with 0
+			int N; // number of nodes
+			int K; // number of clusters
+			
+			public ClusterSolution(int n, int k) {
+				this.N = n;
+				this.K = k;
+				this.createRandomMemberships();
+			}
+			
+			// it is necessary to implement Cloneable to avoid passing the object from the parent
+			// generation to the children generation as a reference only; this would lead to indirect
+			// changes of the elite children via the parent generation otherwise
+			protected Object clone() throws CloneNotSupportedException {
+		        return super.clone();
+		    }
+			
+			public int[] getMemberships() {
+				return memberships;
+			}
+
+			private void validateMemberships() throws Exception {
+				int counter, i, j;
+				for (i = 0; i < K; i++) {
+					counter = 0;
+					for (j = 0; j < memberships.length; j++) {
+						if (memberships[j] == i) {
+							counter++;
+						}
+					}
+					if (counter == 0) {
+						throw new Exception("There is no cluster membership in cluster " + i + ".");
+					}
+					if (counter > Math.ceil(N / K) + 1) {
+						throw new Exception("Too many memberships of level " + i + " (" + counter + " out of " + N + ").");
+					}
+					if (counter < Math.ceil(N / K)) {
+						throw new Exception("Too few memberships of level " + i + " (" + counter + " out of " + N + ").");
+					}
+				}
+			}
+			
+			private void createRandomMemberships() {
+				boolean verbose = false;
+				int i, j;
+				
+				int num = (int) Math.floor(N / K);
+				ArrayList<Integer> membership = new ArrayList<Integer>();
+				for (i = 0; i < K; i++) {
+					for (j = 0; j < num; j++) {
+						membership.add(i);
+					}
+				}
+				while (membership.size() < N) { // fill up if too few due to Math.floor function discrepancy
+					for (i = 0; i < K; i++) {
+						membership.add(i);
+					}
+				}
+				Collections.shuffle(membership);
+				int[] membershipArray = new int[N];
+				for (i = 0; i < N; i++) {
+					membershipArray[i] = membership.get(i);
+				}
+				this.memberships = membershipArray;
+				if (verbose == true) {
+					System.out.print("New cluster solution:");
+					for (i = 0; i < membershipArray.length; i++) {
+						System.out.print(" " + membershipArray[i]);
+					}
+					System.out.print("\n");
+				}
+			}
+			
+			public void crossOver(int[] foreignMemberships) throws Exception {
+				if (foreignMemberships.length != this.memberships.length) {
+					throw new Exception("Cross-over attempt failed due to incompatible membership vector lengths.");
+				}
+				
+				boolean verbose = false;
+				
+				int i, j;
+				
+				// create a K x K matrix indicating which k of the own membership
+				// vector maps onto which k of another cluster solution how often
+				int[][] kk = new int[K][K];
+				for (i = 0; i < N; i++) {
+					kk[this.memberships[i]][foreignMemberships[i]]++;
+				}
+
+				if (verbose == true) {
+					System.out.println("kk matrix:");
+					for (i = 0; i < K; i++) {
+						for (j = 0; j < K; j++) {
+							System.out.print(" " + kk[i][j]);
+						}
+						System.out.print("\n");
+					}
+					System.out.print("For vector 1:");
+					for (i = 0; i < this.memberships.length; i++) {
+						System.out.print(" " + this.memberships[i]);
+					}
+					System.out.print("\n");
+					System.out.print("For vector 2:");
+					for (i = 0; i < foreignMemberships.length; i++) {
+						System.out.print(" " + foreignMemberships[i]);
+					}
+					System.out.print("\n");
+				}
+				
+				// find the maximum values for all rows and columns, respectively; these
+				// are used to relabel the cluster levels to put them on a joint scale;
+				// the level with the highest overlap with the other organism becomes the 
+				// new number one, the level with the second highest overlap becomes the 
+				// new number two etc., from both the domestic (row) perspective and the 
+				// foreign (column) perspective; by doing this, the k level with the highest 
+				// joint membership count becomes the same new shared k level etc.
+				int[] rowMax = new int[K];
+				for (i = 0; i < K; i++) {
+					for (j = 0; j < K; j++) {
+						if (kk[i][j] > rowMax[i]) {
+							rowMax[i] = kk[i][j];
+						}
+					}
+				}
+				int[] colMax = new int[K];
+				for (i = 0; i < K; i++) {
+					for (j = 0; j < K; j++) {
+						if (kk[i][j] > colMax[j]) {
+							colMax[j] = kk[i][j];
+						}
+					}
+				}
+				
+				if (verbose == true) {
+					System.out.print("Row max:");
+					for (i = 0; i < rowMax.length; i++) {
+						System.out.print(" " + rowMax[i]);
+					}
+					System.out.print("\n");
+					System.out.print("Col max:");
+					for (i = 0; i < colMax.length; i++) {
+						System.out.print(" " + colMax[i]);
+					}
+					System.out.print("\n");
+				}
+
+				// go through all cluster levels; determine the maximum overlap value;
+				// determine which row or column index holds this value; save the index
+				// as the new next best cluster level and blacklist it for the next iteration
+				int[] newClusterLevelsRow = calculateRanks(rowMax);
+				int[] newClusterLevelsCol = calculateRanks(colMax);
+				
+				if (verbose == true) {
+					System.out.print("New cluster levels row:");
+					for (i = 0; i < newClusterLevelsRow.length; i++) {
+						System.out.print(" " + newClusterLevelsRow[i]);
+					}
+					System.out.print("\n");
+					System.out.print("New cluster levels col:");
+					for (i = 0; i < newClusterLevelsCol.length; i++) {
+						System.out.print(" " + newClusterLevelsCol[i]);
+					}
+					System.out.print("\n");
+				}
+				
+				// for all membership bits, replace the level with the new level, from both 
+				// organisms' perspectives; this establishes comparable cluster membership chromosomes
+				int[] newRowMem = new int[N];
+				int[] newColMem = new int[N];
+				for (i = 0; i < N; i++) {
+					newRowMem[i] = newClusterLevelsRow[this.memberships[i]];
+					newColMem[i] = newClusterLevelsCol[foreignMemberships[i]];
+				}
+				
+				if (verbose == true) {
+					System.out.print("Relabeled solution row:");
+					for (i = 0; i < newRowMem.length; i++) {
+						System.out.print(" " + newRowMem[i]);
+					}
+					System.out.print("\n");
+					System.out.print("Relabeled solution col:");
+					for (i = 0; i < newColMem.length; i++) {
+						System.out.print(" " + newColMem[i]);
+					}
+					System.out.print("\n");
+				}
+				
+				// cross-over: swap with a probability of 0.5
+				Random rand = new Random();
+				for (i = 0; i < newRowMem.length; i++) {
+					if (rand.nextInt(2) == 1) {
+						newRowMem[i] = newColMem[i];
+					}
+				}
+				
+				if (verbose == true) {
+					System.out.print("Recombined solution:");
+					for (i = 0; i < newRowMem.length; i++) {
+						System.out.print(" " + newRowMem[i]);
+					}
+					System.out.print("\n");
+				}
+				
+				// determine distribution of k levels
+				double expectation = Math.ceil(N / K);
+				int[] sums = new int[K];
+				for (i = 0; i < newRowMem.length; i++) {
+					sums[newRowMem[i]]++;
+				}
+
+				if (verbose == true) {
+					System.out.print("K distribution after recombination:");
+					for (i = 0; i < sums.length; i++) {
+						System.out.print(" " + sums[i]);
+					}
+					System.out.print("\n");
+				}
+				
+				// put indices in a nested array list
+				ArrayList<ArrayList<Integer>> indicesArray = new ArrayList<ArrayList<Integer>>();
+				ArrayList<Integer> indices;
+				for (i = 0; i < sums.length; i++) {
+					indices = new ArrayList<Integer>();
+					for (j = 0; j < N; j++) {
+						if (newRowMem[j] == i) {
+							indices.add(j);
+						}
+					}
+					indicesArray.add(indices);
+				}
+				
+				// fixing K distribution: compare the distribution of the K levels to a uniform distribution;
+				// recode a random over-represented chromosome into an underrepresented chromosome;
+				// keep repeating until the distribution is equal
+				int index;
+				for (i = 0; i < sums.length; i++) {
+					for (j = 0; j < sums.length; j++) {
+						while (sums[i] > expectation && sums[j] < expectation) { //  && sums[i] - sums[j] > 2
+							indices = indicesArray.get(i);
+							index = rand.nextInt(indices.size());
+							int indexedValue = indices.get(index);
+							newRowMem[indexedValue] = j;
+							
+							Iterator<Integer> itr = indices.iterator();
+					        while (itr.hasNext()) { 
+					            int x = (Integer) itr.next(); 
+					            if (x == indexedValue) {
+					                itr.remove();
+					            } 
+					        }
+					        indicesArray.set(i, indices);
+							indicesArray.get(j).add(indexedValue);
+							Collections.sort(indicesArray.get(j));
+							sums[i]--;
+							sums[j]++;
+						}
+					}
+				}
+				
+				if (verbose == true) {
+					System.out.print("Mutated solution:   ");
+					for (i = 0; i < newRowMem.length; i++) {
+						System.out.print(" " + newRowMem[i]);
+					}
+					System.out.print("\n");
+				}
+
+				// determine distribution of k levels
+				sums = new int[K];
+				for (i = 0; i < newRowMem.length; i++) {
+					sums[newRowMem[i]]++;
+				}
+
+				if (verbose == true) {
+					System.out.print("K distribution after mutation:");
+					for (i = 0; i < sums.length; i++) {
+						System.out.print(" " + sums[i]);
+					}
+					System.out.print("\n");
+				}
+				
+				this.memberships = newRowMem;
+			}
+			
+			private double ei(double[][] mat ) {
+				double external = 0.0;
+				double internal = 0.0;
+				int i, j;
+
+				// remove negative values from matrix
+				for (i = 0; i < mat.length; i++) {
+					for (j = 0; j < mat[0].length; j++) {
+						if (mat[i][j] < 0.0) {
+							mat[i][j] = 0.0;
+						}
+					}
+				}
+				
+				for (i = 0; i < mat.length; i++) {
+					for (j = 0; j < mat[0].length; j++) {
+						if (i < j) {
+							if (memberships[i] == memberships[j]) {
+								internal += mat[i][j];
+							} else if (memberships[i] != memberships[j]) {
+								external += mat[i][j];
+							}
+						}
+					}
+				}
+				double ei = (external - internal) / (external + internal);
+				return ei;
+			}
+			
+			private double qualityEI(double[][] congruence, double[][] conflict) {
+				double eiCongruence = ei(congruence);
+				double eiConflict = ei(conflict);
+				return (eiCongruence / 2) - (eiConflict / 2);
+			}
+			
+			private double modularity(double[][] mat) {
+				boolean verbose = false;
+				int i, j, k = 0;
+				
+				// enumerate unique cluster memberships
+				ArrayList<Integer> values = new ArrayList<Integer>();
+				for (i = 0; i < K; i++) {
+					values.add(i);
+				}
+
+				// create 'e' matrix for fraction of ties within/across communities
+				double[][] e = new double[K][K];
+				double total = 0.0;
+				for (i = 0; i < this.memberships.length; i++) {
+					for (j = 0; j < this.memberships.length; j++) {
+						e[this.memberships[i]][this.memberships[j]] += mat[i][j];
+						total += mat[i][j];
+					}
+				}
+				for (i = 0; i < e.length; i++) {
+					for (j = 0; j < e[0].length; j++) {
+						e[i][j] = e[i][j] / total;
+					}
+				}
+
+				// first part of Newman (2004) equation 4: the Trace of 'e'
+				double tr = 0.0;
+				for (i = 0; i < e.length; i++) {
+					tr += e[i][i];
+				}
+				
+				// second part of Newman (2004) equation 4: the random expectation
+				double b = 0.0;
+				for (i = 0; i < values.size(); i++) {
+					for (j = 0; j < values.size(); j++) {
+						for (k = 0; k < values.size(); k++) {
+							b += (e[i][j] * e[k][i]);
+						}
+					}
+				}
+
+				if (verbose == true) {
+					System.out.print("Cluster memberships: ");
+					for (i = 0; i < this.memberships.length; i++) {
+						System.out.print(this.memberships[i] + " ");
+					}
+					System.out.print("\n\n");
+					
+					System.out.print("Unique cluster memberships: ");
+					for (i = 0; i < values.size(); i++) {
+						System.out.print(values.get(i) + " ");
+					}
+					System.out.print("\n\n");
+					
+					System.out.print("e matrix:");
+					for (i = 0; i < e.length; i++) {
+						System.out.print("\n");
+						for (j = 0; j < e[0].length; j++) {
+							System.out.printf(" %.2f", e[i][j]);
+						}
+					}
+					System.out.print("\n\n");
+					
+					System.out.println(tr + " - " + b + "\n");
+				}
+				
+				return tr - b;
+			}
+			
+			private double qualityModularity(double[][] congruence, double[][] conflict) throws Exception {
+				double modCongruence = modularity(congruence);
+				double modConflict = modularity(conflict);
+				return (modCongruence / 2) - (modConflict / 2);  // subtract conflict from congruence modularity; if lots of conflict, a negative value will be subtracted, i.e., something is added
+			}
+		}
+
+		public int[] calculateRanks(double... arr) {
+		    class Pair {
+		        final double value;
+		        final int index;
+
+		        Pair(double value, int index) {
+		            this.value = value;
+		            this.index = index;
+		        }
+		    }
+
+		    Pair[] pairs = new Pair[arr.length];
+		    for (int index = 0; index < arr.length; ++index) {
+		        pairs[index] = new Pair(arr[index], index);
+		    }
+
+		    Arrays.sort(pairs, (o1, o2) -> -Double.compare(o1.value, o2.value));
+
+		    int[] ranks = new int[arr.length];
+		    ranks[pairs[0].index] = 1;
+		    int i;
+		    for (i = 1; i < pairs.length; ++i) {
+		    	ranks[pairs[i].index] = i + 1;
+		    }
+		    for (i = 0; i < ranks.length; ++i) {
+		    	ranks[i]--;
+		    }
+		    return ranks;
+		}
+		
+		public int[] calculateRanks(int... arr) {
+		    class Pair {
+		        final int value;
+		        final int index;
+
+		        Pair(int value, int index) {
+		            this.value = value;
+		            this.index = index;
+		        }
+		    }
+
+		    Pair[] pairs = new Pair[arr.length];
+		    for (int index = 0; index < arr.length; ++index) {
+		        pairs[index] = new Pair(arr[index], index);
+		    }
+
+		    Arrays.sort(pairs, (o1, o2) -> -Integer.compare(o1.value, o2.value));
+
+		    int[] ranks = new int[arr.length];
+		    ranks[pairs[0].index] = 1;
+		    int i;
+		    for (i = 1; i < pairs.length; ++i) {
+		    	ranks[pairs[i].index] = i + 1;
+		    }
+		    for (i = 0; i < ranks.length; ++i) {
+		    	ranks[i]--;
+		    }
+		    return ranks;
+		}
+	}
+
+	public class PolarizationResult {
+		double[] maxQ;
+		double[] avgQ;
+		double[] sdQ;
+		double finalMaxQ;
+		int[] memberships;
+		String[] names;
+		boolean earlyConvergence;
+		Date start, stop, middle;
+		
+		public PolarizationResult(double[] maxQ, double[] avgQ, double[] sdQ, double finalMaxQ, int[] memberships, String[] names, boolean earlyConvergence, Date start, Date stop, Date middle) {
+			this.maxQ = maxQ;
+			this.avgQ = avgQ;
+			this.sdQ = sdQ;
+			this.finalMaxQ = finalMaxQ;
+			this.memberships = memberships;
+			this.names = names;
+			this.earlyConvergence = earlyConvergence;
+			this.start = start;
+			this.stop = stop;
+			this.middle = middle;
+		}
+		
+		public Date getStart() {
+			return start;
+		}
+
+		public Date getStop() {
+			return stop;
+		}
+		
+		public Date getMiddle() {
+			return middle;
+		}
+
+		public int[] getMemberships() {
+			return memberships;
+		}
+
+		public String[] getNames() {
+			return names;
+		}
+
+		public double[] getMaxQ() {
+			return maxQ;
+		}
+
+		public double[] getAvgQ() {
+			return avgQ;
+		}
+
+		public double[] getSdQ() {
+			return sdQ;
+		}
+
+		public double getFinalMaxQ() {
+			return finalMaxQ;
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package dna;
 
 import dna.dataStructures.*;
+import dna.export.ExporterR;
 
 import java.awt.Color;
 import java.io.PrintStream;
@@ -20,7 +21,7 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2019-04-30";
+		date = "2019-08-30";
 		version = "2.0 beta 25";
 	}
 	

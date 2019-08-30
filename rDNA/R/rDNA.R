@@ -9,7 +9,7 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
   packageStartupMessage(
     'Version:      ', desc$Version, '\n',
     'Date:         ', desc$Date, '\n',
-    'Author:       Philip Leifeld  (University of Glasgow)\n',
+    'Author:       Philip Leifeld  (University of Essex)\n',
     'Contributors: Johannes B. Gruber (University of Glasgow),\n',
     '              Tim Henrichsen  (Scuola superiore Sant\'Anna Pisa)\n',
     'Project home: github.com/leifeld/dna'
@@ -2806,6 +2806,7 @@ dna_updateSetting <- function(connection, key, value) {
 #'   network.
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
@@ -2815,6 +2816,7 @@ dna_updateSetting <- function(connection, key, value) {
 #' dna_plotHeatmap(clust.l)
 #' dna_plotCoordinates(clust.l,
 #' jitter = c(0.5, 0.7))
+#' }
 #'
 #' @author Johannes B. Gruber
 #' @export
@@ -3111,11 +3113,12 @@ dna_cluster <- function(connection,
 #' @param ... Further options (currently not used).
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample(), verbose = FALSE)
 #' clust.l <- dna_cluster(conn)
 #' clust.l
-#' 
+#' }
 #' @export
 #' @importFrom stats na.omit
 print.dna_cluster <- function(x, ...) {
@@ -4498,6 +4501,7 @@ print.dna_multiclust <- function(x, ...) {
 #'   \code{stop.date}.
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale1dbin(
@@ -4523,6 +4527,7 @@ print.dna_multiclust <- function(x, ...) {
 #'   verbose = TRUE,
 #'   seed = 12345
 #' )
+#' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
@@ -4808,6 +4813,7 @@ dna_scale1dbin <- function(connection,
 #'   \code{stop.date}.
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale1dord(
@@ -4830,6 +4836,7 @@ dna_scale1dbin <- function(connection,
 #'   verbose = TRUE,
 #'   seed = 12345
 #' )
+#' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
@@ -5113,6 +5120,7 @@ dna_scale1dord <- function(connection,
 #'   \code{stop.date}.
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale2dbin(
@@ -5135,6 +5143,7 @@ dna_scale1dord <- function(connection,
 #'   verbose = TRUE,
 #'   seed = 12345
 #' )
+#' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
@@ -5426,6 +5435,7 @@ dna_scale2dbin <- function(connection,
 #'   \code{stop.date}.
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale2dord(
@@ -5450,6 +5460,7 @@ dna_scale2dbin <- function(connection,
 #'   verbose = TRUE,
 #'   seed = 12345
 #' )
+#' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
@@ -5598,6 +5609,7 @@ dna_scale2dord <- function(connection,
 #' @param ... Further options (currently not used).
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale1dbin(conn,
@@ -5612,6 +5624,7 @@ dna_scale2dord <- function(connection,
 #'                             drop_min_actors = 1,
 #'                             seed = 12345)
 #' plot(dna_scale)
+#' }
 #'
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
@@ -5635,6 +5648,7 @@ plot.dna_scale <- function(x, ...) {
 #' @param ... Further options (currently not used).
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' dna_scale <- dna_scale1dbin(conn,
@@ -5647,6 +5661,7 @@ plot.dna_scale <- function(x, ...) {
 #'                             mcmc_thin = 10,
 #'                             store_variables = "both")
 #' dna_scale
+#' }
 #' @author Tim Henrichsen, Johannes B. Gruber
 #' @export
 print.dna_scale <- function(x, ...) {
@@ -5858,6 +5873,7 @@ print.dna_scale <- function(x, ...) {
 #'   construction should be printed to the R console.
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn,
@@ -5873,6 +5889,7 @@ print.dna_scale <- function(x, ...) {
 #' # plot network
 #' dna_plotNetwork(nw)
 #' dna_plotHive(nw)
+#' }
 #'
 #' @author Philip Leifeld
 #'
@@ -6118,6 +6135,260 @@ dna_network <- function(connection,
   }
 }
 
+#' Compute polarization of a discourse network
+#'
+#' Compute polarization of a discourse network using a genetic algorithm.
+#'
+#' This function compute the polarization of a discourse network using a
+#' genetic algorithm. The algorithm divides the nodes into \code{k}
+#' equally-sized clusters (usually two) and then optimizes a quality function,
+#' such as modularity or the E-I index. Optimization is done through elite
+#' retention, cross-over breeding, and mutation over a number of iterations.
+#' The maximal quality value of the cluster solution is retained as the final
+#' polarization estimate. It is possible to use the polarization measure with
+#' time windows to measure the variation of polarization over time.
+#' 
+#' @inheritParams dna_network
+#' @param k The number of clusters. Usually \code{2} for bipolarization or more
+#'   for multipolarization.
+#' @param qualityFunction The quality, or fitness, function for evaluating how
+#'   good a given cluster function is. Can be \code{"modularity"} or \code{"ei"}
+#'   (for the E-I index).
+#' @param iterations The number of generations over which the genetic algorithm
+#'   should run. This can be large because an early-convergence check is carried
+#'   out and may proceed before this maximal number of iterations is reached.
+#' @param numClusterSolutions How large should the population of initially
+#'   random cluster solutions be for the genetic optimization? More is better,
+#'   but also slower.
+#' @param eliteShare The fraction of elite nodes with the highest quality or
+#'   fitness that are copied into the children generation without any changes at
+#'   any time point in the optimization process.
+#' @param mutationShare The fraction of cluster membership bits per cluster
+#'   solution that is randomly mutated after the cross-over step is completed.
+#'   This is done by swapping around cluster memberships randomly between
+#'   sampled pairs of nodes while retaining equal cluster sizes.
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' conn <- dna_connection("sample.dna")
+#' 
+#' pol <- dna_polarization(conn)
+#' pol$finalResults
+#' 
+#' pol2 <- dna_polarization(conn, timewindow = "events", windowsize = 20)
+#' pol2$finalResults
+#' dna_plotPolarization(pol2)
+#' 
+#' pol3 <- dna_polarization(conn,
+#'                          qualityFunction = "ei",
+#'                          numClusterSolutions = 80)
+#' pol3$finalResults
+#' }
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
+#' @export
+dna_polarization <- function(connection,
+                             statementType = "DNA Statement",
+                             variable1 = "organization",
+                             variable1Document = FALSE,
+                             variable2 = "concept",
+                             variable2Document = FALSE,
+                             qualifier = "agreement",
+                             normalization = "average",
+                             duplicates = "include",
+                             start.date = "01.01.1900",
+                             stop.date = "31.12.2099",
+                             start.time = "00:00:00",
+                             stop.time = "23:59:59",
+                             timewindow = "no",
+                             windowsize = 100,
+                             excludeValues = list(),
+                             excludeAuthors = character(),
+                             excludeSources = character(),
+                             excludeSections = character(),
+                             excludeTypes = character(),
+                             invertValues = FALSE,
+                             invertAuthors = FALSE,
+                             invertSources = FALSE,
+                             invertSections = FALSE,
+                             invertTypes = FALSE,
+                             k = 2,
+                             qualityFunction = "modularity",
+                             iterations = 1000,
+                             numClusterSolutions = 30,
+                             eliteShare = 0.2,
+                             mutationShare = 0.2,
+                             verbose = TRUE) {
+  
+  # check time window arguments
+  if (is.null(timewindow) ||
+      is.na(timewindow) ||
+      !is.character(timewindow) ||
+      length(timewindow) != 1 ||
+      !timewindow %in% c("no", "events", "seconds", "minutes", "hours", "days", "weeks", "months", "years")) {
+    timewindow <- "no"
+    warning("'timewindow' argument not recognized. Using 'timewindow = \"no\"'.")
+  }
+  if (is.null(windowsize) ||
+      is.na(windowsize) ||
+      !is.numeric(windowsize) ||
+      length(windowsize) != 1 ||
+      windowsize < 0 ||
+      (windowsize == 0 && timewindow != "no")) {
+    windowsize <- 100
+    warning("'windowsize' argument not recognized. Using 'windowsize = 100'.")
+  }
+  
+  # check and convert exclude arguments
+  if (!is.character(excludeAuthors)) {
+    stop("'excludeAuthors' must be a character object.")
+  }
+  if (!is.character(excludeSources)) {
+    stop("'excludeSources' must be a character object.")
+  }
+  if (!is.character(excludeSections)) {
+    stop("'excludeSections' must be a character object.")
+  }
+  if (!is.character(excludeTypes)) {
+    stop("'excludeTypes' must be a character object.")
+  }
+  if (!is.list(excludeValues) || (length(excludeValues) > 0 && is.null(names(excludeValues)))) {
+    stop("'excludeValues' must be a named list.")
+  }
+  excludeAuthors <- .jarray(excludeAuthors)
+  excludeSources <- .jarray(excludeSources)
+  excludeSections <- .jarray(excludeSections)
+  excludeTypes <- .jarray(excludeTypes)
+  
+  # compile exclude variables and values vectors
+  dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
+  count <- 0
+  if (length(excludeValues) > 0) {
+    for (i in 1:length(excludeValues)) {
+      if (length(excludeValues[[i]]) > 0) {
+        for (j in 1:length(excludeValues[[i]])) {
+          count <- count + 1
+          dat[count, 1] <- names(excludeValues)[i]
+          dat[count, 2] <- excludeValues[[i]][j]
+        }
+      }
+    }
+    var <- dat[, 1]
+    val <- dat[, 2]
+  } else {
+    var <- character()
+    val <- character()
+  }
+  var <- .jarray(var)
+  val <- .jarray(val)
+  
+  if (is.null(variable1) || is.na(variable1) || length(variable1) != 1 || !is.character(variable1)) {
+    stop("'variable1' must be a character object of length 1.")
+  }
+  if (is.null(variable2) || is.na(variable2) || length(variable2) != 1 || !is.character(variable2)) {
+    stop("'variable2' must be a character object of length 1.")
+  }
+  if (is.null(qualifier) || is.na(qualifier)) {
+    qualifier <- .jnull(class = "java/lang/String")
+  } else if (length(qualifier) != 1 || !is.character(qualifier)) {
+    stop("'qualifier' must be NULL or a character object of length 1.")
+  }
+  if (is.null(variable1Document) || is.na(variable1Document) || length(variable1Document) != 1 || !is.logical(variable1Document)) {
+    stop("'variable1Document' must be TRUE or FALSE.")
+  }
+  if (is.null(variable2Document) || is.na(variable2Document) || length(variable2Document) != 1 || !is.logical(variable2Document)) {
+    stop("'variable2Document' must be TRUE or FALSE.")
+  }
+  if (is.null(normalization) || is.na(normalization) || length(normalization) != 1 || !is.character(normalization)
+      || !normalization %in% c("no", "activity", "prominence", "average", "Jaccard", "jaccard", "cosine")) {
+    stop("'normalization' must be 'no', 'activity', 'prominence', 'average', 'Jaccard', or 'cosine'.")
+  }
+  if (!normalization %in% c("average", "Jaccard", "jaccard", "cosine")) {
+    stop("'normalization' must be 'no', 'average', 'Jaccard', or 'cosine'.")
+  }
+  
+  # call Java function to create network(s) and run genetic algorithm
+  .jcall(connection$dna_connection,
+         "V",
+         "computePolarization",
+         statementType,
+         variable1,
+         variable1Document,
+         variable2,
+         variable2Document,
+         qualifier,
+         normalization,
+         duplicates,
+         start.date,
+         stop.date,
+         start.time,
+         stop.time,
+         timewindow,
+         as.integer(windowsize),
+         var,
+         val,
+         excludeAuthors,
+         excludeSources,
+         excludeSections,
+         excludeTypes,
+         invertValues,
+         invertAuthors,
+         invertSources,
+         invertSections,
+         invertTypes,
+         as.integer(k),
+         as.integer(numClusterSolutions),
+         as.integer(iterations),
+         qualityFunction,
+         as.double(eliteShare),
+         as.double(mutationShare),
+         verbose
+  )
+  
+  message("Processing results...")
+  
+  finalMaxQ <- .jcall(connection$dna_connection, "[D", "getFinalMaxQ", simplify = TRUE)
+  finalSdQ <- .jcall(connection$dna_connection, "[D", "getFinalSdQ", simplify = TRUE)
+  finalMeanQ <- .jcall(connection$dna_connection, "[D", "getFinalMeanQ", simplify = TRUE)
+  
+  resultsObject <- .jcall(connection$dna_connection, "Ljava/util/ArrayList;", "getResults")
+  results <- list()
+  times <- .POSIXct(character(length(finalMaxQ)))
+  for (i in 0:(resultsObject$size() - 1)) {
+    result <- list()
+    if (resultsObject$size() > 1) {
+      time <- as.POSIXct(resultsObject$get(as.integer(i))$getMiddle()$getTime() / 1000, origin = "1970-01-01")
+      times[i] <- time
+      result$time <- time
+    }
+    start <- as.POSIXct(resultsObject$get(as.integer(i))$getStart()$getTime() / 1000, origin = "1970-01-01")
+    stop <- as.POSIXct(resultsObject$get(as.integer(i))$getStop()$getTime() / 1000, origin = "1970-01-01")
+    result$start <- start
+    result$stop <- stop
+    mem <- resultsObject$get(as.integer(i))$getMemberships()
+    names(mem) <- resultsObject$get(as.integer(i))$getNames()
+    result$memberships <- mem
+    maxQArray <- resultsObject$get(as.integer(i))$getMaxQ()
+    meanQArray <- resultsObject$get(as.integer(i))$getAvgQ()
+    sdQArray <- resultsObject$get(as.integer(i))$getSdQ()
+    result$maxQConvergence <- maxQArray
+    result$meanQConvergence <- meanQArray
+    result$stdevQConvergence <- sdQArray
+    results[[i + 1]] <- result
+  }
+  finalList <- list()
+  finalList$finalResults <- data.frame(t = 1:length(finalMaxQ), time = times, maxQuality = finalMaxQ, meanQuality = finalMeanQ, stdevQuality = finalSdQ)
+  finalList$details <- results
+  class(finalList) <- "dna_polarization"
+  message("Done.")
+  return(finalList)
+}
+
 
 # Transformation ---------------------------------------------------------------
 
@@ -6136,10 +6407,12 @@ dna_network <- function(connection,
 #' @importFrom igraph graph_from_adjacency_matrix graph_from_incidence_matrix
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, networkType = "onemode")
 #' graph <- dna_toIgraph(nw)
+#' }
 dna_toIgraph <- function(x,
                          weighted = TRUE) {
   if (any(class(x) %in% "dna_network_onemode")) {
@@ -6183,6 +6456,7 @@ dna_toIgraph <- function(x,
 #' @author Johannes B. Gruber
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #'
@@ -6198,6 +6472,7 @@ dna_toIgraph <- function(x,
 #'
 #' ### Pass on arguments to eventSequence
 #' eventSequence3 <- dna_toREM(conn, excludeTypeOfDay = "Wednesday")
+#' }
 dna_toREM <- function(x,
                       variable = "organization",
                       ...) {
@@ -6254,12 +6529,12 @@ dna_toREM <- function(x,
 #' @importFrom network as.network.matrix
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, networkType = "onemode")
 #' network <- dna_toNetwork(nw)
 #'
-#' \dontrun{
 #' library("statnet")
 #' plot(network)
 #' nw <- dna_network(conn, networkType = "twomode")
@@ -6291,7 +6566,7 @@ dna_toNetwork <- function(x,
 }
 
 
-# Visualisation ----------------------------------------------------------------
+# Visualization ----------------------------------------------------------------
 
 #' Plots an MDS scatterplot from dna.cluster objects
 #'
@@ -6341,6 +6616,7 @@ dna_toNetwork <- function(x,
 #' @param ... Not used. If you want to add more plot options use \code{+} and
 #'   the ggplot2 logic (see example).
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
@@ -6349,6 +6625,7 @@ dna_toNetwork <- function(x,
 #' # Flip plot with ggplot2 command
 #' library("ggplot2")
 #' mds + coord_flip()
+#' }
 #'
 #' @author Johannes B. Gruber
 #'
@@ -6564,6 +6841,7 @@ dna_plotCoordinates <- function(clust,
 #'   the ggplot2 logic (see example).
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
@@ -6572,6 +6850,7 @@ dna_plotCoordinates <- function(clust,
 #' # Flip plot with ggplot2 command
 #' library("ggplot2")
 #' dend + coord_flip()
+#' }
 #'
 #' @author Johannes B. Gruber
 #'
@@ -7084,7 +7363,6 @@ dna_plotDendro <- function(clust,
 #' @author Philip Leifeld, Johannes B. Gruber
 #'
 #' @examples
-#' \dontrun{
 #' library("rDNA")
 #' dna_init()
 #' samp <- dna_sample()
@@ -7114,7 +7392,6 @@ dna_plotDendro <- function(clust,
 #' # Return the dna_multiclust object
 #' mc <- dna_dendrogram(conn, k = 0, method = "best", return.multiclust = TRUE)
 #' mc
-#' }
 #' 
 #' @import ggraph
 #' @importFrom ggplot2 .pt aes aes_string element_text expand_limits labs theme
@@ -7606,11 +7883,13 @@ dna_dendrogram <- function(connection,
 #' @param ... Additional arguments passed to \link{dna_plotDendro}.
 #'
 #' @examples
+#' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' clust <- dna_cluster(conn)
 #' dend <- dna_plotHeatmap(clust,
 #' qualifierLevels = list("0" = "no", "1" = "yes"))
+#' }
 #'
 #' @author Johannes B. Gruber
 #'
@@ -8606,6 +8885,49 @@ dna_plotNetwork <- function(x,
     }
   }
   return(g)
+}
+
+
+#' Plot polarization values in a \code{dna_polarization} object
+#'
+#' Plot polarization values in a \code{dna_polarization} object.
+#'
+#' This function serves to plot the polarization values saved in a
+#' \code{dna_polarization} object (as created by the
+#' \code{\link{dna_polarization}} function). For example, this can shed light on
+#' smoothed bipolarization or multipolarization over time. Note that this only
+#' works when using the time window arguments in the
+#' \code{\link{dna_polariztation}} function.
+#'
+#' @param x A \code{dna_polarization} object, as created by the
+#'   \code{\link{dna_polarization}} function. Must have multiple time points for
+#'   visualizing the results.
+#' @param convergence Plot convergence diagnostics for the genetic algorithm.
+#' @return A \pkg{ggplot2} plot.
+#'
+#' @author Philip Leifeld
+#' @seealso \code{\link{dna_polarization}}
+#'
+#' @importFrom ggplot2 ggplot aes aes_string geom_line ylab xlab theme theme_bw
+#'   geom_smooth
+#' @export
+dna_plotPolarization <- function(x, convergence = FALSE) {
+  if (nrow(x$finalResults) == 1) {
+    stop("Only time window polarization results can be plotted with 'convergence = FALSE'.")
+  }
+  if (convergence == FALSE) {
+    ggplot2::ggplot(x$finalResults, ggplot2::aes_string(x = "time", y = "maxQuality")) +
+      geom_line() +
+      geom_smooth(se = FALSE, stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
+      ylab("Polarization") +
+      xlab("Time") +
+      theme_bw()
+  } else {
+    dat <- data.frame(Estimate = unlist(lapply(x$details, function(x) x$maxQ)),
+                      Iteration = rep(1:length(x$details[[1]]$maxQConvergence), length(x$details)),
+                      t = sort(rep(1:length(x$details), length(x$details[[1]]$maxQConvergence))))
+    ggplot2::ggplot(dat, ggplot2::aes(x = Iteration, y = Estimate)) + geom_line() + theme_bw()
+  }
 }
 
 

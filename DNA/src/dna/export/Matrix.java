@@ -12,7 +12,7 @@ import java.util.Date;
  * used.
  *
  */
-public class Matrix {
+public class Matrix implements Cloneable {
 	double[][] matrix;
 	String[] rownames, colnames;
 	boolean integer;
@@ -30,6 +30,10 @@ public class Matrix {
 		this.stop = stop;
 	}
 
+	protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+	
 	/**
 	 * @return the numStatements
 	 */
