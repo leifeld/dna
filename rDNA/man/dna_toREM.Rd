@@ -28,6 +28,7 @@ This function can produce eventSequence objects (see
 \link[rem]{eventSequence}) used in the package rem from DNA connections.
 }
 \examples{
+\dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
 
@@ -43,6 +44,7 @@ eventSequence2 <- dna_toREM(conn, duplicates = "document")
 
 ### Pass on arguments to eventSequence
 eventSequence3 <- dna_toREM(conn, excludeTypeOfDay = "Wednesday")
+}
 }
 \author{
 Johannes B. Gruber

@@ -20,9 +20,11 @@ Print original call to the function, the information from the
 plotting the object.
 }
 \examples{
+\dontrun{
 dna_init()
 conn <- dna_connection(dna_sample(), verbose = FALSE)
 clust.l <- dna_cluster(conn)
 clust.l
+}
 
 }

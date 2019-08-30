@@ -57,11 +57,13 @@ displayed using \code{RColorBrewer::display.brewer.all()} (RColorBrewer needs
 to be installed).
 }
 \examples{
+\dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
 clust <- dna_cluster(conn)
 dend <- dna_plotHeatmap(clust,
 qualifierLevels = list("0" = "no", "1" = "yes"))
+}
 
 }
 \author{

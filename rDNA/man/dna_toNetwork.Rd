@@ -17,12 +17,12 @@ This function can convert objects of class 'dna_network_onemode' and
 package.
 }
 \examples{
+\dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
 nw <- dna_network(conn, networkType = "onemode")
 network <- dna_toNetwork(nw)
 
-\dontrun{
 library("statnet")
 plot(network)
 nw <- dna_network(conn, networkType = "twomode")

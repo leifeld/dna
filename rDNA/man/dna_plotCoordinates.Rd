@@ -80,6 +80,7 @@ performed in \link{dna_cluster}. It can also add ellipses of polygons to
 highlight clusters.
 }
 \examples{
+\dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
 clust <- dna_cluster(conn)
@@ -88,6 +89,7 @@ mds <- dna_plotCoordinates(clust)
 # Flip plot with ggplot2 command
 library("ggplot2")
 mds + coord_flip()
+}
 
 }
 \author{

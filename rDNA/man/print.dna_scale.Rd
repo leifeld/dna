@@ -20,6 +20,7 @@ Prints the method that was used for the scaling, the number of values in the
 object and their means.
 }
 \examples{
+\dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
 dna_scale <- dna_scale1dbin(conn,
@@ -32,6 +33,7 @@ dna_scale <- dna_scale1dbin(conn,
                             mcmc_thin = 10,
                             store_variables = "both")
 dna_scale
+}
 }
 \author{
 Tim Henrichsen, Johannes B. Gruber

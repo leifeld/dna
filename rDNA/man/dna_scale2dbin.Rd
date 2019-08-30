@@ -185,6 +185,7 @@ convergence often requires setting the iterations of the MCMC chain to
 several million.
 }
 \examples{
+\dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
 dna_scale <- dna_scale2dbin(
@@ -207,6 +208,7 @@ dna_scale <- dna_scale2dbin(
   verbose = TRUE,
   seed = 12345
 )
+}
 
 }
 \author{

@@ -90,6 +90,7 @@ object using \code{clust.l$mds} or \code{clust.l$fa} respectively. Both
 results can also be plotted using \link{dna_plotCoordinates}.
 }
 \examples{
+\dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
 
@@ -99,6 +100,7 @@ dna_plotDendro(clust.l)
 dna_plotHeatmap(clust.l)
 dna_plotCoordinates(clust.l,
 jitter = c(0.5, 0.7))
+}
 
 }
 \author{

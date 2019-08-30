@@ -94,6 +94,7 @@ This function is a convenience wrapper for several different dendrogram
 types, which can be plotted using the \pkg{ggraph} package.
 }
 \examples{
+\dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
 clust <- dna_cluster(conn)
@@ -102,6 +103,7 @@ dend <- dna_plotDendro(clust)
 # Flip plot with ggplot2 command
 library("ggplot2")
 dend + coord_flip()
+}
 
 }
 \author{

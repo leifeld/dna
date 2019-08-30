@@ -7395,7 +7395,6 @@ dna_plotDendro <- function(clust,
 #' # Return the dna_multiclust object
 #' mc <- dna_dendrogram(conn, k = 0, method = "best", return.multiclust = TRUE)
 #' mc
-#' }
 #'
 #' @import ggraph
 #' @importFrom ggplot2 .pt aes aes_string element_text expand_limits labs theme
@@ -8911,7 +8910,7 @@ dna_plotNetwork <- function(x,
 #' \code{\link{dna_polarization}} function). For example, this can shed light on
 #' smoothed bipolarization or multipolarization over time. Note that this only
 #' works when using the time window arguments in the
-#' \code{\link{dna_polariztation}} function.
+#' \code{\link{dna_polarization}} function.
 #'
 #' @param x A \code{dna_polarization} object, as created by the
 #'   \code{\link{dna_polarization}} function. Must have multiple time points for
@@ -8937,10 +8936,10 @@ dna_plotPolarization <- function(x, convergence = FALSE) {
       xlab("Time") +
       theme_bw()
   } else {
-    dat <- data.frame(Estimate = unlist(lapply(x$details, function(x) x$maxQ)),
-                      Iteration = rep(1:length(x$details[[1]]$maxQConvergence), length(x$details)),
-                      t = sort(rep(1:length(x$details), length(x$details[[1]]$maxQConvergence))))
-    ggplot2::ggplot(dat, ggplot2::aes(x = Iteration, y = Estimate)) + geom_line() + theme_bw()
+    dat <- data.frame("Estimate" = unlist(lapply(x$details, function(x) x$maxQ)),
+                      "Iteration" = rep(1:length(x$details[[1]]$maxQConvergence), length(x$details)),
+                      "t" = sort(rep(1:length(x$details), length(x$details[[1]]$maxQConvergence))))
+    ggplot2::ggplot(dat, ggplot2::aes_string(x = "Iteration", y = "Estimate")) + geom_line() + theme_bw()
   }
 }
 
