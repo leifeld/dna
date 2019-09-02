@@ -3486,7 +3486,9 @@ public class ExporterR {
 			String qualityFunction,
 			double eliteShare,
 			double mutationShare,
-			boolean verbose
+			double congruenceParameter,
+			double conflictParameter,
+			double sizeParameter
 			) throws Exception {
 		
 		ga = new GeneticAlgorithm(
@@ -3520,7 +3522,10 @@ public class ExporterR {
 				iterations,
 				qualityFunction,
 				eliteShare,
-				mutationShare
+				mutationShare,
+				congruenceParameter,
+				conflictParameter,
+				sizeParameter
 				);
 	}
 
@@ -3581,9 +3586,12 @@ public class ExporterR {
 		 * @param k                    Number of clusters, usually 2.
 		 * @param numClusterSolutions  Population size; number of cluster solutions in each generation. Suggested values are around 30-50.
 		 * @param iterations           Maximal number of generations through which optimization should be attempted. Will be lower if early convergence is detected. A suggested starting value is 1000. 
-		 * @param qualityFunction      The function used to assess the quality, or fitness, of a cluster solution. Can be "modularity" (for modularity) or "ei" (for Krackhardt's E-I index).
+		 * @param qualityFunction      The function used to assess the quality, or fitness, of a cluster solution. Can be "modularity" (for modularity), "ei" (for Krackhardt's E-I index), or "penalty" (for a multiplicative penalty function involving the congruenceParameter, conflictParameter, and sizeParameter arguments).
 		 * @param eliteShare           The fraction of highest-quality cluster solutions in the parent generation that should be retained as is in the children generation. A suggested value is 0.2. 
 		 * @param mutationShare        The fraction of nodes in each cluster solution for which cluster memberships should be randomly mutated after cross-over. For example, a value of 0.2 will select 10% of the nodes plus another 10% as targets to swap their cluster membership with.
+		 * @param congruenceParameter  How important should congruence be in the definition of polarization, from 0.0 to 1.0? Only relevant when qualityFunction = "penalty".
+		 * @param conflictParameter    How important should conflict be in the definition of polarization, from 0.0 to 1.0? Only relevant when qualityFunction = "penalty".
+		 * @param sizeParameter        How important should equal cluster sizes be in the definition of polarization, from 0.0 to 1.0? Only relevant when qualityFunction = "penalty".
 		 * @throws Exception
 		 */
 		public GeneticAlgorithm(
@@ -3617,7 +3625,10 @@ public class ExporterR {
 				int iterations,
 				String qualityFunction,
 				double eliteShare,
-				double mutationShare
+				double mutationShare,
+				double congruenceParameter,
+				double conflictParameter,
+				double sizeParameter
 				) throws Exception {
 			
 			rNetwork(
@@ -3699,7 +3710,19 @@ public class ExporterR {
 				conflictList.add((Matrix) ExporterR.this.matrices.get(i).clone());
 			}
 			
-			run(numClusterSolutions, k, iterations, eliteShare, mutationShare, qualityFunction, congruenceList, conflictList);
+			run(
+					numClusterSolutions,
+					k,
+					iterations,
+					eliteShare,
+					mutationShare,
+					qualityFunction,
+					congruenceList,
+					conflictList,
+					congruenceParameter,
+					conflictParameter,
+					sizeParameter
+					);
 		}
 		
 		public ArrayList<PolarizationResult> getResults() {
@@ -3714,7 +3737,10 @@ public class ExporterR {
 				double mutationShare,
 				String qualityFunction,
 				ArrayList<Matrix> congruenceList,
-				ArrayList<Matrix> conflictList
+				ArrayList<Matrix> conflictList,
+				double congruenceParameter,
+				double conflictParameter,
+				double sizeParameter
 				) throws Exception {
 			
 			boolean verbose = false;
@@ -3723,13 +3749,13 @@ public class ExporterR {
 			polarizationResults = new ArrayList<PolarizationResult>();
 			int i, numNodes;
 			if (k < 2) {
-				System.err.println("There must be at least k = 2 clusters.");
+				throw new Exception("There must be at least k = 2 clusters.");
 			}
 			if (numClusterSolutions % 2 != 0 || numClusterSolutions < 3) {
-				System.err.println("numClusterSolutions must be an even number above 2.");
+				throw new Exception("numClusterSolutions must be an even number above 2.");
 			}
 			if (congruenceList.size() != conflictList.size()) {
-				System.err.println("Congruence and conflict lists have different sizes.");
+				throw new Exception("Congruence and conflict lists have different sizes.");
 			}
 			
 			// for each time step, run the genetic algorithm over the cluster solutions
@@ -3756,14 +3782,25 @@ public class ExporterR {
 					numNodes = congruence.length;
 					ArrayList<ClusterSolution> cs = new ArrayList<ClusterSolution>();
 					for (i = 0; i < numClusterSolutions; i++) {
-						cs.add(new ClusterSolution(numNodes, k));
+						cs.add(new ClusterSolution(numNodes, k, qualityFunction));
 						cs.get(i).validateMemberships();
 					}
 
 					// run through iterations and do the breeding, then collect results and stats
 					lastIndex = iterations - 1; // choose last possible value here as a default if early convergence does not happen
 					for (i = 0; i < iterations; i++) {
-						cs = iteration(cs, congruence, conflict, qualityFunction, numNodes, eliteShare, mutationShare, k); // iteration step
+						cs = iteration(
+								cs,
+								congruence,
+								conflict,
+								qualityFunction,
+								numNodes,
+								eliteShare,
+								mutationShare,
+								k,
+								congruenceParameter,
+								conflictParameter,
+								sizeParameter); // iteration step
 
 						// compute summary statistics based on iteration step and retain them
 						qualityScores = new double[numClusterSolutions];
@@ -3866,7 +3903,10 @@ public class ExporterR {
 				int n,
 				double eliteShare,
 				double mutationShare,
-				int k) throws Exception {
+				int k,
+				double congruenceParameter,
+				double conflictParameter,
+				double sizeParameter) throws Exception {
 			
 			boolean verbose = false;
 			
@@ -3894,6 +3934,8 @@ public class ExporterR {
 						q[i] = clusterSolutions.get(i).qualityModularity(congruence, conflict);
 					} else if (qualityFunction.equals("ei")) {
 						q[i] = clusterSolutions.get(i).qualityEI(congruence, conflict);
+					} else if (qualityFunction.equals("penalty")) {
+						q[i] = clusterSolutions.get(i).qualityPenaltyModularity(congruence, conflict, clusterSolutions.get(i).getMemberships(), congruenceParameter, conflictParameter, sizeParameter);
 					} else {
 						throw new Exception("Quality function '" + qualityFunction + "' not supported.");
 					}
@@ -3906,7 +3948,7 @@ public class ExporterR {
 				if (positiveQ < elites) {
 					clusterSolutions.clear();
 					for (i = 0; i < numClusterSolutions; i++) {
-						clusterSolutions.add(new ClusterSolution(n, k));
+						clusterSolutions.add(new ClusterSolution(n, k, qualityFunction));
 					}
 					if (verbose == true) {
 						System.out.println("Resampling initial cluster solution...");
@@ -3979,7 +4021,7 @@ public class ExporterR {
 							cumulative2 += q[i2];
 							if (r2 <= cumulative2) {
 								c = (ClusterSolution) clusterSolutions.get(i).clone();
-								c.crossOver(clusterSolutions.get(i2).getMemberships());
+								c.crossOver(clusterSolutions.get(i2).getMemberships(), qualityFunction);
 								children.add(c);
 								break;
 							}
@@ -4010,38 +4052,57 @@ public class ExporterR {
 			}
 			
 			// mutation step: select some percentage of the non-elite chromosomes (governed by the
-			// mutantChromosomes parameter) as pairs and swap around their cluster membership
-			ArrayList<Pair> mutationPairs = new ArrayList<Pair>();
+			// mutantChromosomes parameter) as pairs and swap around their cluster membership;
+			// if the solutions are not constrained to equal sizes (penalty method), do not swap
+			// memberships, but simply toggle them with a certain probability instead
 			int[] mem;
-			boolean contained;
-			for (i = elites; i < numClusterSolutions; i++) {
-				mem = children.get(i).getMemberships();
-				mutationPairs.clear();
-				int firstIndex = -1, secondIndex = -1, firstK = 0, secondK = 1;
-				contained = true;
-				while (mutationPairs.size() < mutantChromosomes) {
-					firstIndex = rand.nextInt(n);
-					secondIndex = rand.nextInt(n);
-					firstK = mem[firstIndex];
-					secondK = mem[secondIndex];
-					contained = false;
-					for (j = 0; j < mutationPairs.size(); j++) { // check if a pair was randomly chosen in which at least one node had already been sampled
-						if (mutationPairs.get(j).getFirstIndex() == firstIndex ||
-								mutationPairs.get(j).getSecondIndex() == secondIndex ||
-								mutationPairs.get(j).getFirstIndex() == secondIndex ||
-								mutationPairs.get(j).getSecondIndex() == firstIndex) {
-							contained = true;
+			if (!qualityFunction.equals("penalty")) {
+				ArrayList<Pair> mutationPairs = new ArrayList<Pair>();
+				boolean contained;
+				for (i = elites; i < numClusterSolutions; i++) {
+					mem = children.get(i).getMemberships();
+					mutationPairs.clear();
+					int firstIndex = -1, secondIndex = -1, firstK = 0, secondK = 1;
+					contained = true;
+					while (mutationPairs.size() < mutantChromosomes) {
+						firstIndex = rand.nextInt(n);
+						secondIndex = rand.nextInt(n);
+						firstK = mem[firstIndex];
+						secondK = mem[secondIndex];
+						contained = false;
+						for (j = 0; j < mutationPairs.size(); j++) { // check if a pair was randomly chosen in which at least one node had already been sampled
+							if (mutationPairs.get(j).getFirstIndex() == firstIndex ||
+									mutationPairs.get(j).getSecondIndex() == secondIndex ||
+									mutationPairs.get(j).getFirstIndex() == secondIndex ||
+									mutationPairs.get(j).getSecondIndex() == firstIndex) {
+								contained = true;
+							}
+						}
+						if (firstIndex != secondIndex && firstK == secondK && contained == false) {
+							mutationPairs.add(new Pair(firstIndex, secondIndex));
 						}
 					}
-					if (firstIndex != secondIndex && firstK == secondK && contained == false) {
-						mutationPairs.add(new Pair(firstIndex, secondIndex));
+					for (j = 0; j < mutationPairs.size(); j++) { // swap each pair's cluster memberships
+						firstK = mem[firstIndex];
+						secondK = mem[secondIndex];
+						mem[firstIndex] = secondK;
+						mem[secondIndex] = firstK;
 					}
 				}
-				for (j = 0; j < mutationPairs.size(); j++) { // swap each pair's cluster memberships
-					firstK = mem[firstIndex];
-					secondK = mem[secondIndex];
-					mem[firstIndex] = secondK;
-					mem[secondIndex] = firstK;
+			} else {
+				for (i = elites; i < numClusterSolutions; i++) {
+					mem = children.get(i).getMemberships();
+					for (j = 0; j < mem.length; j++) {
+						if (rand.nextDouble() <= mutationShare) {
+							// toggle to another k level randomly
+							int newLevel = mem[j];
+							while (newLevel == mem[j]) {
+								newLevel = rand.nextInt(k + 1);
+							}
+							mem[j] = newLevel;
+						}
+					}
+					children.get(i).setMemberships(mem);
 				}
 			}
 			
@@ -4054,10 +4115,10 @@ public class ExporterR {
 			int N; // number of nodes
 			int K; // number of clusters
 			
-			public ClusterSolution(int n, int k) {
+			public ClusterSolution(int n, int k, String qualityFunction) {
 				this.N = n;
 				this.K = k;
-				this.createRandomMemberships();
+				this.createRandomMemberships(qualityFunction);
 			}
 			
 			// it is necessary to implement Cloneable to avoid passing the object from the parent
@@ -4069,6 +4130,10 @@ public class ExporterR {
 			
 			public int[] getMemberships() {
 				return memberships;
+			}
+			
+			public void setMemberships(int[] memberships) {
+				this.memberships = memberships;
 			}
 
 			private void validateMemberships() throws Exception {
@@ -4092,20 +4157,42 @@ public class ExporterR {
 				}
 			}
 			
-			private void createRandomMemberships() {
+			private void createRandomMemberships(String qualityFunction) {
 				boolean verbose = false;
 				int i, j;
 				
-				int num = (int) Math.floor(N / K);
 				ArrayList<Integer> membership = new ArrayList<Integer>();
-				for (i = 0; i < K; i++) {
-					for (j = 0; j < num; j++) {
-						membership.add(i);
-					}
-				}
-				while (membership.size() < N) { // fill up if too few due to Math.floor function discrepancy
+				if (!qualityFunction.equals("penalty")) { // i.e., equal sizes required
+					int num = (int) Math.floor(N / K);
 					for (i = 0; i < K; i++) {
-						membership.add(i);
+						for (j = 0; j < num; j++) {
+							membership.add(i);
+						}
+					}
+					while (membership.size() < N) { // fill up if too few due to Math.floor function discrepancy
+						for (i = 0; i < K; i++) {
+							membership.add(i);
+						}
+					}
+				} else { // cluster sizes can be non-uniform because the penalty quality function is not selected
+					Random rand = new Random();
+					ArrayList<Integer> splits = new ArrayList<Integer>();
+					for (i = 0; i < K - 1; i++) { // one less than K because a single split already induces two segments
+						splits.add(rand.nextInt(N));
+					}
+					Collections.sort(splits);
+					for (i = 0; i < splits.get(0); i++) { // add members between 0 and first split
+						membership.add(0);
+					}
+					if (K > 2) {
+						for (i = 1; i < splits.size(); i++) { // go through splits one by one...
+							for (j = splits.get(i - 1); j < splits.get(i); j++) { // add members between first and second, second and third etc. splits, until last split
+								membership.add(i);
+							}
+						}
+					}
+					for (i = splits.get(splits.size() - 1); i < N; i++) { // add members between last split and N
+						membership.add(K - 1);
 					}
 				}
 				Collections.shuffle(membership);
@@ -4114,16 +4201,17 @@ public class ExporterR {
 					membershipArray[i] = membership.get(i);
 				}
 				this.memberships = membershipArray;
+				
 				if (verbose == true) {
 					System.out.print("New cluster solution:");
-					for (i = 0; i < membershipArray.length; i++) {
-						System.out.print(" " + membershipArray[i]);
+					for (i = 0; i < this.memberships.length; i++) {
+						System.out.print(" " + this.memberships[i]);
 					}
 					System.out.print("\n");
 				}
 			}
 			
-			public void crossOver(int[] foreignMemberships) throws Exception {
+			public void crossOver(int[] foreignMemberships, String qualityFunction) throws Exception {
 				if (foreignMemberships.length != this.memberships.length) {
 					throw new Exception("Cross-over attempt failed due to incompatible membership vector lengths.");
 				}
@@ -4284,51 +4372,53 @@ public class ExporterR {
 				// fixing K distribution: compare the distribution of the K levels to a uniform distribution;
 				// recode a random over-represented chromosome into an underrepresented chromosome;
 				// keep repeating until the distribution is equal
-				int index;
-				for (i = 0; i < sums.length; i++) {
-					for (j = 0; j < sums.length; j++) {
-						while (sums[i] > expectation && sums[j] < expectation) { //  && sums[i] - sums[j] > 2
-							indices = indicesArray.get(i);
-							index = rand.nextInt(indices.size());
-							int indexedValue = indices.get(index);
-							newRowMem[indexedValue] = j;
-							
-							Iterator<Integer> itr = indices.iterator();
-					        while (itr.hasNext()) { 
-					            int x = (Integer) itr.next(); 
-					            if (x == indexedValue) {
-					                itr.remove();
-					            } 
-					        }
-					        indicesArray.set(i, indices);
-							indicesArray.get(j).add(indexedValue);
-							Collections.sort(indicesArray.get(j));
-							sums[i]--;
-							sums[j]++;
+				if (!qualityFunction.equals("penalty")) {
+					int index;
+					for (i = 0; i < sums.length; i++) {
+						for (j = 0; j < sums.length; j++) {
+							while (sums[i] > expectation && sums[j] < expectation) { //  && sums[i] - sums[j] > 2
+								indices = indicesArray.get(i);
+								index = rand.nextInt(indices.size());
+								int indexedValue = indices.get(index);
+								newRowMem[indexedValue] = j;
+								
+								Iterator<Integer> itr = indices.iterator();
+						        while (itr.hasNext()) { 
+						            int x = (Integer) itr.next(); 
+						            if (x == indexedValue) {
+						                itr.remove();
+						            } 
+						        }
+						        indicesArray.set(i, indices);
+								indicesArray.get(j).add(indexedValue);
+								Collections.sort(indicesArray.get(j));
+								sums[i]--;
+								sums[j]++;
+							}
 						}
 					}
-				}
-				
-				if (verbose == true) {
-					System.out.print("Mutated solution:   ");
+					
+					if (verbose == true) {
+						System.out.print("Mutated solution:   ");
+						for (i = 0; i < newRowMem.length; i++) {
+							System.out.print(" " + newRowMem[i]);
+						}
+						System.out.print("\n");
+					}
+
+					// determine distribution of k levels
+					sums = new int[K];
 					for (i = 0; i < newRowMem.length; i++) {
-						System.out.print(" " + newRowMem[i]);
+						sums[newRowMem[i]]++;
 					}
-					System.out.print("\n");
-				}
 
-				// determine distribution of k levels
-				sums = new int[K];
-				for (i = 0; i < newRowMem.length; i++) {
-					sums[newRowMem[i]]++;
-				}
-
-				if (verbose == true) {
-					System.out.print("K distribution after mutation:");
-					for (i = 0; i < sums.length; i++) {
-						System.out.print(" " + sums[i]);
+					if (verbose == true) {
+						System.out.print("K distribution after mutation:");
+						for (i = 0; i < sums.length; i++) {
+							System.out.print(" " + sums[i]);
+						}
+						System.out.print("\n");
 					}
-					System.out.print("\n");
 				}
 				
 				this.memberships = newRowMem;
@@ -4442,6 +4532,56 @@ public class ExporterR {
 				double modCongruence = modularity(congruence);
 				double modConflict = modularity(conflict);
 				return (modCongruence / 2) - (modConflict / 2);  // subtract conflict from congruence modularity; if lots of conflict, a negative value will be subtracted, i.e., something is added
+			}
+
+			
+			private double qualityPenaltyModularity(double[][] congruence, double[][] conflict, int[] memberships, double congruenceParameter, double conflictParameter, double sizeParameter) throws Exception {
+				
+				// check validity of parameters
+				if (congruenceParameter < 0 || congruenceParameter > 1.0) {
+					throw new Exception("The congruence parameter must be between 0.0 and 1.0.");
+				}
+				if (conflictParameter < 0 || conflictParameter > 1.0) {
+					throw new Exception("The conflict parameter must be between 0.0 and 1.0.");
+				}
+				if (sizeParameter < 0 || sizeParameter > 1.0) {
+					throw new Exception("The equal-size parameter must be between 0.0 and 1.0.");
+				}
+				
+				// first part: modularity of the congruence network
+				double modCongruence = (2 / 3) * (modularity(congruence) + 0.5); // scale between 0 and 1; modularity is defined in the range [-0.5; 1]
+				
+				// second part: modularity of the conflict network
+				double modConflict = (2 / 3) * (modularity(conflict) + 0.5); // scale between 0 and 1; modularity is defined in the range [-0.5; 1]
+				
+				// third part: penalty for deviating from equal cluster sizes
+				int k = 0;
+				int i;
+				for (i = 0; i < memberships.length; i++) { // figure out maximal cluster int label, e.g., k = 2 for three cluster levels b/c starting at 0
+					if (memberships[i] > k) {
+						k = memberships[i];
+					}
+				}
+				int[] frequencies = new int[k + 1]; // save number of occurrences for each k level
+				for (i = 0; i < memberships.length; i++) { // count each cluster membership per k level
+					frequencies[memberships[i]]++;
+				}
+				double expectation = memberships.length / k;
+				double deviation = 0.0;
+				for (i = 0; i < k + 1; i++) { // sum up deviations from size expectation for all clusters
+					if (frequencies[i] > expectation) {
+						deviation += frequencies[i] - expectation;
+					} else {
+						deviation += expectation - frequencies[i];
+					}
+				}
+				// scale deviations between 0 and 1
+				deviation = deviation / ((Math.abs(memberships.length - expectation) + (k - 1) * expectation)); // maximal possible value = |n - expectation| + (k - 1) * expectation
+				deviation = 1 - deviation; // convert difference from expectation into similarity to expectation between 0 and 1
+				
+				// put the three parts together
+				double result = Math.pow((congruenceParameter * modCongruence) * (conflictParameter * modConflict) * (sizeParameter * deviation), 1 / (congruenceParameter + conflictParameter + sizeParameter)); // multiply the three components, then take the cube root (or less, if the parameters are smaller than 1.0) to correct for the three-component multiplication
+				return result;
 			}
 		}
 
