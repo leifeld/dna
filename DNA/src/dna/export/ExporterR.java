@@ -3485,11 +3485,16 @@ public class ExporterR {
 			int iterations,
 			String qualityFunction,
 			double eliteShare,
-			double mutationShare,
-			double congruenceParameter,
-			double conflictParameter,
-			double sizeParameter
+			double mutationShare // ,
+			// double congruenceParameter,
+			// double conflictParameter,
+			// double sizeParameter
 			) throws Exception {
+		
+		// TODO: re-integrate these three doubles as arguments
+		double congruenceParameter = 1.0;
+		double conflictParameter = 1.0;
+		double sizeParameter = 1.0;
 		
 		ga = new GeneticAlgorithm(
 				statementType,
@@ -3709,9 +3714,8 @@ public class ExporterR {
 			for (i = 0; i < ExporterR.this.matrices.size(); i++) {
 				conflictList.add((Matrix) ExporterR.this.matrices.get(i).clone());
 			}
-			
-			run(
-					numClusterSolutions,
+
+			run(numClusterSolutions,
 					k,
 					iterations,
 					eliteShare,
@@ -3721,8 +3725,7 @@ public class ExporterR {
 					conflictList,
 					congruenceParameter,
 					conflictParameter,
-					sizeParameter
-					);
+					sizeParameter);
 		}
 		
 		public ArrayList<PolarizationResult> getResults() {
@@ -3772,7 +3775,9 @@ public class ExporterR {
 			boolean earlyConvergence = false;
 			int lastIndex = -1;
 			for (t = 0; t < congruenceList.size(); t++) {
-				System.out.println("Time step: " + t);
+				if (congruenceList.size() > 1) {
+					System.out.println("Time step: " + t);
+				}
 				congruence = congruenceList.get(t).getMatrix();
 				conflict = conflictList.get(t).getMatrix();
 				
@@ -3783,9 +3788,9 @@ public class ExporterR {
 					ArrayList<ClusterSolution> cs = new ArrayList<ClusterSolution>();
 					for (i = 0; i < numClusterSolutions; i++) {
 						cs.add(new ClusterSolution(numNodes, k, qualityFunction));
-						cs.get(i).validateMemberships();
+						cs.get(i).validateMemberships(qualityFunction);
 					}
-
+					
 					// run through iterations and do the breeding, then collect results and stats
 					lastIndex = iterations - 1; // choose last possible value here as a default if early convergence does not happen
 					for (i = 0; i < iterations; i++) {
@@ -3809,11 +3814,13 @@ public class ExporterR {
 						sdQ = 0.0;
 						maxIndex = -1;
 						for (j = 0; j < cs.size(); j++) {
-							cs.get(j).validateMemberships(); // check if the membership vector still has a uniform size distribution
+							// cs.get(j).validateMemberships(qualityFunction); // check if the membership vector still has a uniform size distribution and/or valid k levels
 							if (qualityFunction.equals("modularity")) {
 								qualityScores[j] = cs.get(j).qualityModularity(congruence, conflict);
 							} else if (qualityFunction.equals("ei")) {
 								qualityScores[j] = cs.get(j).qualityEI(congruence, conflict);
+							} else if (qualityFunction.equals("penalty")) {
+								qualityScores[j] = cs.get(j).qualityPenaltyModularity(congruence, conflict, congruenceParameter, conflictParameter, sizeParameter);
 							} else {
 								throw new Exception("Quality function '" + qualityFunction + "' not supported.");
 							}
@@ -3908,34 +3915,25 @@ public class ExporterR {
 				double conflictParameter,
 				double sizeParameter) throws Exception {
 			
-			boolean verbose = false;
-			
 			int numClusterSolutions = clusterSolutions.size();
 			int elites = (int) Math.ceil(eliteShare * numClusterSolutions);
-			int crossOvers = numClusterSolutions - elites;
 			int mutantChromosomes = (int) Math.round((mutationShare / 2) * n); // for how many pairs should we swap cluster memberships (i.e., half the number of nodes)? 
 			int i, i2, j;
 			
-			if (verbose == true) {
-				System.out.println("--------------------------");
-				System.out.println("Number of cluster solutions: " + numClusterSolutions);
-				System.out.println(" - of which are elites: " + elites + " (fraction: " + eliteShare + ")");
-				System.out.println(" - of which are cross-over solutions: " + crossOvers + " (fraction: " + (1 - eliteShare) + ")");
-				System.out.println("Number of nodes: " + n);
-				System.out.println("Number of cluster levels k: " + k);
-			}
-
 			// compute quality for all initial solutions; if not even the elite share is positive, sample completely new numbers
 			double[] q = new double[numClusterSolutions]; // quality values for all cluster solutions
 			int positiveQ = 0;
+			
 			while (positiveQ < elites) {
+				positiveQ = 0;
 				for (i = 0; i < clusterSolutions.size(); i++) {
+					// clusterSolutions.get(i).validateMemberships(qualityFunction);
 					if (qualityFunction.equals("modularity")) {
 						q[i] = clusterSolutions.get(i).qualityModularity(congruence, conflict);
 					} else if (qualityFunction.equals("ei")) {
 						q[i] = clusterSolutions.get(i).qualityEI(congruence, conflict);
 					} else if (qualityFunction.equals("penalty")) {
-						q[i] = clusterSolutions.get(i).qualityPenaltyModularity(congruence, conflict, clusterSolutions.get(i).getMemberships(), congruenceParameter, conflictParameter, sizeParameter);
+						q[i] = clusterSolutions.get(i).qualityPenaltyModularity(congruence, conflict, congruenceParameter, conflictParameter, sizeParameter);
 					} else {
 						throw new Exception("Quality function '" + qualityFunction + "' not supported.");
 					}
@@ -3945,52 +3943,25 @@ public class ExporterR {
 						positiveQ++;
 					}
 				}
-				if (positiveQ < elites) {
+				if (positiveQ < elites) { // resample initial cluster solution until there are at least some positive modularity values in the initial solution
 					clusterSolutions.clear();
 					for (i = 0; i < numClusterSolutions; i++) {
 						clusterSolutions.add(new ClusterSolution(n, k, qualityFunction));
 					}
-					if (verbose == true) {
-						System.out.println("Resampling initial cluster solution...");
-					}
 				}
 			}
 
-			if (verbose == true) {
-				System.out.print("Initial quality:");
-				for (i = 0; i < q.length; i++) {
-					System.out.printf(" %.2f ", q[i]);
-				}
-				System.out.print("\n");
-				System.out.print("First solution: ");
-				for (i = 0; i < clusterSolutions.get(0).getMemberships().length; i++) {
-					System.out.print(clusterSolutions.get(0).getMemberships()[i] + " ");
-				}
-				System.out.print("\n");
-			}
-			
 			// compute ranks of quality values
 			int[] qRanks = calculateRanks(q);
 
-			if (verbose == true) {
-				System.out.print("Q ranks: ");
-				for (i = 0; i < qRanks.length; i++) {
-					System.out.print(qRanks[i] + " ");
-				}
-				System.out.print("\n");
-			}
-			
 			// select elite children by considering most highly ranked quality values
 			ArrayList<ClusterSolution> children = new ArrayList<ClusterSolution>();
 			for (i = 0; i < qRanks.length; i++) {
 				if (qRanks[i] < elites) {
 					children.add((ClusterSolution) clusterSolutions.get(i).clone());
-					if (verbose == true) {
-						System.out.println("Elite child added: index " + i);
-					}
 				}
 			}
-
+			
 			// replace all negative quality values by zero; otherwise the roulette sampling wouldn't work
 			for (i = 0; i < q.length; i++) {
 				if (q[i] < 0) {
@@ -4030,7 +4001,7 @@ public class ExporterR {
 					}
 				}
 			}
-			
+
 			// define a class that represents pairs of two indices of membership bits (i.e.,index
 			// of the first node and index of the second node in a membership solution, with a maximum of N nodes
 			class Pair {
@@ -4097,7 +4068,7 @@ public class ExporterR {
 							// toggle to another k level randomly
 							int newLevel = mem[j];
 							while (newLevel == mem[j]) {
-								newLevel = rand.nextInt(k + 1);
+								newLevel = rand.nextInt(k);
 							}
 							mem[j] = newLevel;
 						}
@@ -4105,7 +4076,7 @@ public class ExporterR {
 					children.get(i).setMemberships(mem);
 				}
 			}
-			
+
 			return children;
 		}
 
@@ -4136,45 +4107,50 @@ public class ExporterR {
 				this.memberships = memberships;
 			}
 
-			private void validateMemberships() throws Exception {
+			private void validateMemberships(String qualityFunction) throws Exception {
 				int counter, i, j;
-				for (i = 0; i < K; i++) {
-					counter = 0;
-					for (j = 0; j < memberships.length; j++) {
-						if (memberships[j] == i) {
-							counter++;
+				if (!qualityFunction.equals("penalty")) {
+					for (i = 0; i < K; i++) {
+						counter = 0;
+						for (j = 0; j < memberships.length; j++) {
+							if (memberships[j] == i) {
+								counter++;
+							}
+						}
+						if (counter == 0) {
+							throw new Exception("There is no cluster membership in cluster " + i + ".");
+						}
+						if (counter > Math.ceil(N / K) + 1) {
+							throw new Exception("Too many memberships of level " + i + " (" + counter + " out of " + N + ").");
+						}
+						if (counter < Math.ceil(N / K)) {
+							throw new Exception("Too few memberships of level " + i + " (" + counter + " out of " + N + ").");
 						}
 					}
-					if (counter == 0) {
-						throw new Exception("There is no cluster membership in cluster " + i + ".");
-					}
-					if (counter > Math.ceil(N / K) + 1) {
-						throw new Exception("Too many memberships of level " + i + " (" + counter + " out of " + N + ").");
-					}
-					if (counter < Math.ceil(N / K)) {
-						throw new Exception("Too few memberships of level " + i + " (" + counter + " out of " + N + ").");
+				}
+				for (i = 0; i < memberships.length; i++) {
+					if (memberships[i] > K - 1) {
+						throw new Exception("K = " + K + ", but there is a membership with level " + memberships[i] + ".");
 					}
 				}
 			}
 			
 			private void createRandomMemberships(String qualityFunction) {
-				boolean verbose = false;
 				int i, j;
 				
 				ArrayList<Integer> membership = new ArrayList<Integer>();
 				if (!qualityFunction.equals("penalty")) { // i.e., equal sizes required
-					int num = (int) Math.floor(N / K);
-					for (i = 0; i < K; i++) {
-						for (j = 0; j < num; j++) {
-							membership.add(i);
-						}
-					}
-					while (membership.size() < N) { // fill up if too few due to Math.floor function discrepancy
+					while (membership.size() < N) {
 						for (i = 0; i < K; i++) {
 							membership.add(i);
 						}
 					}
-				} else { // cluster sizes can be non-uniform because the penalty quality function is not selected
+					i = K - 1;
+					while (membership.size() > N) {
+						membership.remove(i);
+						i--;
+					}
+				} else { // cluster sizes can be non-uniform because the penalty quality function is selected
 					Random rand = new Random();
 					ArrayList<Integer> splits = new ArrayList<Integer>();
 					for (i = 0; i < K - 1; i++) { // one less than K because a single split already induces two segments
@@ -4201,22 +4177,12 @@ public class ExporterR {
 					membershipArray[i] = membership.get(i);
 				}
 				this.memberships = membershipArray;
-				
-				if (verbose == true) {
-					System.out.print("New cluster solution:");
-					for (i = 0; i < this.memberships.length; i++) {
-						System.out.print(" " + this.memberships[i]);
-					}
-					System.out.print("\n");
-				}
 			}
 			
 			public void crossOver(int[] foreignMemberships, String qualityFunction) throws Exception {
 				if (foreignMemberships.length != this.memberships.length) {
 					throw new Exception("Cross-over attempt failed due to incompatible membership vector lengths.");
 				}
-				
-				boolean verbose = false;
 				
 				int i, j;
 				
@@ -4225,26 +4191,6 @@ public class ExporterR {
 				int[][] kk = new int[K][K];
 				for (i = 0; i < N; i++) {
 					kk[this.memberships[i]][foreignMemberships[i]]++;
-				}
-
-				if (verbose == true) {
-					System.out.println("kk matrix:");
-					for (i = 0; i < K; i++) {
-						for (j = 0; j < K; j++) {
-							System.out.print(" " + kk[i][j]);
-						}
-						System.out.print("\n");
-					}
-					System.out.print("For vector 1:");
-					for (i = 0; i < this.memberships.length; i++) {
-						System.out.print(" " + this.memberships[i]);
-					}
-					System.out.print("\n");
-					System.out.print("For vector 2:");
-					for (i = 0; i < foreignMemberships.length; i++) {
-						System.out.print(" " + foreignMemberships[i]);
-					}
-					System.out.print("\n");
 				}
 				
 				// find the maximum values for all rows and columns, respectively; these
@@ -4271,37 +4217,11 @@ public class ExporterR {
 					}
 				}
 				
-				if (verbose == true) {
-					System.out.print("Row max:");
-					for (i = 0; i < rowMax.length; i++) {
-						System.out.print(" " + rowMax[i]);
-					}
-					System.out.print("\n");
-					System.out.print("Col max:");
-					for (i = 0; i < colMax.length; i++) {
-						System.out.print(" " + colMax[i]);
-					}
-					System.out.print("\n");
-				}
-
 				// go through all cluster levels; determine the maximum overlap value;
 				// determine which row or column index holds this value; save the index
 				// as the new next best cluster level and blacklist it for the next iteration
 				int[] newClusterLevelsRow = calculateRanks(rowMax);
 				int[] newClusterLevelsCol = calculateRanks(colMax);
-				
-				if (verbose == true) {
-					System.out.print("New cluster levels row:");
-					for (i = 0; i < newClusterLevelsRow.length; i++) {
-						System.out.print(" " + newClusterLevelsRow[i]);
-					}
-					System.out.print("\n");
-					System.out.print("New cluster levels col:");
-					for (i = 0; i < newClusterLevelsCol.length; i++) {
-						System.out.print(" " + newClusterLevelsCol[i]);
-					}
-					System.out.print("\n");
-				}
 				
 				// for all membership bits, replace the level with the new level, from both 
 				// organisms' perspectives; this establishes comparable cluster membership chromosomes
@@ -4312,33 +4232,12 @@ public class ExporterR {
 					newColMem[i] = newClusterLevelsCol[foreignMemberships[i]];
 				}
 				
-				if (verbose == true) {
-					System.out.print("Relabeled solution row:");
-					for (i = 0; i < newRowMem.length; i++) {
-						System.out.print(" " + newRowMem[i]);
-					}
-					System.out.print("\n");
-					System.out.print("Relabeled solution col:");
-					for (i = 0; i < newColMem.length; i++) {
-						System.out.print(" " + newColMem[i]);
-					}
-					System.out.print("\n");
-				}
-				
 				// cross-over: swap with a probability of 0.5
 				Random rand = new Random();
 				for (i = 0; i < newRowMem.length; i++) {
 					if (rand.nextInt(2) == 1) {
 						newRowMem[i] = newColMem[i];
 					}
-				}
-				
-				if (verbose == true) {
-					System.out.print("Recombined solution:");
-					for (i = 0; i < newRowMem.length; i++) {
-						System.out.print(" " + newRowMem[i]);
-					}
-					System.out.print("\n");
 				}
 				
 				// determine distribution of k levels
@@ -4348,14 +4247,6 @@ public class ExporterR {
 					sums[newRowMem[i]]++;
 				}
 
-				if (verbose == true) {
-					System.out.print("K distribution after recombination:");
-					for (i = 0; i < sums.length; i++) {
-						System.out.print(" " + sums[i]);
-					}
-					System.out.print("\n");
-				}
-				
 				// put indices in a nested array list
 				ArrayList<ArrayList<Integer>> indicesArray = new ArrayList<ArrayList<Integer>>();
 				ArrayList<Integer> indices;
@@ -4398,26 +4289,10 @@ public class ExporterR {
 						}
 					}
 					
-					if (verbose == true) {
-						System.out.print("Mutated solution:   ");
-						for (i = 0; i < newRowMem.length; i++) {
-							System.out.print(" " + newRowMem[i]);
-						}
-						System.out.print("\n");
-					}
-
 					// determine distribution of k levels
 					sums = new int[K];
 					for (i = 0; i < newRowMem.length; i++) {
 						sums[newRowMem[i]]++;
-					}
-
-					if (verbose == true) {
-						System.out.print("K distribution after mutation:");
-						for (i = 0; i < sums.length; i++) {
-							System.out.print(" " + sums[i]);
-						}
-						System.out.print("\n");
 					}
 				}
 				
@@ -4460,7 +4335,6 @@ public class ExporterR {
 			}
 			
 			private double modularity(double[][] mat) {
-				boolean verbose = false;
 				int i, j, k = 0;
 				
 				// enumerate unique cluster memberships
@@ -4499,31 +4373,6 @@ public class ExporterR {
 						}
 					}
 				}
-
-				if (verbose == true) {
-					System.out.print("Cluster memberships: ");
-					for (i = 0; i < this.memberships.length; i++) {
-						System.out.print(this.memberships[i] + " ");
-					}
-					System.out.print("\n\n");
-					
-					System.out.print("Unique cluster memberships: ");
-					for (i = 0; i < values.size(); i++) {
-						System.out.print(values.get(i) + " ");
-					}
-					System.out.print("\n\n");
-					
-					System.out.print("e matrix:");
-					for (i = 0; i < e.length; i++) {
-						System.out.print("\n");
-						for (j = 0; j < e[0].length; j++) {
-							System.out.printf(" %.2f", e[i][j]);
-						}
-					}
-					System.out.print("\n\n");
-					
-					System.out.println(tr + " - " + b + "\n");
-				}
 				
 				return tr - b;
 			}
@@ -4535,8 +4384,8 @@ public class ExporterR {
 			}
 
 			
-			private double qualityPenaltyModularity(double[][] congruence, double[][] conflict, int[] memberships, double congruenceParameter, double conflictParameter, double sizeParameter) throws Exception {
-				
+			private double qualityPenaltyModularity(double[][] congruence, double[][] conflict, double congruenceParameter, double conflictParameter, double sizeParameter) throws Exception {
+
 				// check validity of parameters
 				if (congruenceParameter < 0 || congruenceParameter > 1.0) {
 					throw new Exception("The congruence parameter must be between 0.0 and 1.0.");
@@ -4549,38 +4398,60 @@ public class ExporterR {
 				}
 				
 				// first part: modularity of the congruence network
-				double modCongruence = (2 / 3) * (modularity(congruence) + 0.5); // scale between 0 and 1; modularity is defined in the range [-0.5; 1]
+				double modCongruence = modularity(congruence);
+				if (modCongruence < 0) { // set zero if negative because multiplication with negative values would lead to undefined results
+					modCongruence = 0.0;
+				}
 				
 				// second part: modularity of the conflict network
-				double modConflict = (2 / 3) * (modularity(conflict) + 0.5); // scale between 0 and 1; modularity is defined in the range [-0.5; 1]
+				double modConflict = modularity(conflict);
+				if (modConflict > 0) { // set positive values to zero because values will be inverted
+					modConflict = 0.0;
+				}
+				modConflict = -2.0 * modConflict; // expand scale because modularity is only defined for [-0.5; 1.0]
 				
 				// third part: penalty for deviating from equal cluster sizes
-				int k = 0;
-				int i;
-				for (i = 0; i < memberships.length; i++) { // figure out maximal cluster int label, e.g., k = 2 for three cluster levels b/c starting at 0
-					if (memberships[i] > k) {
-						k = memberships[i];
-					}
-				}
-				int[] frequencies = new int[k + 1]; // save number of occurrences for each k level
-				for (i = 0; i < memberships.length; i++) { // count each cluster membership per k level
-					frequencies[memberships[i]]++;
-				}
-				double expectation = memberships.length / k;
 				double deviation = 0.0;
-				for (i = 0; i < k + 1; i++) { // sum up deviations from size expectation for all clusters
-					if (frequencies[i] > expectation) {
-						deviation += frequencies[i] - expectation;
-					} else {
-						deviation += expectation - frequencies[i];
+				if (sizeParameter > 0.0) {
+					int k = 0;
+					int i;
+					for (i = 0; i < this.memberships.length; i++) { // figure out maximal cluster int label, e.g., k = 2 for three cluster levels b/c starting at 0
+						if (this.memberships[i] > k) {
+							k = this.memberships[i];
+						}
 					}
+					int[] frequencies = new int[k + 1]; // save number of occurrences for each k level
+					for (i = 0; i < this.memberships.length; i++) { // count each cluster membership per k level
+						frequencies[this.memberships[i]]++;
+					}
+					double expectation = this.memberships.length / (k + 1);
+					for (i = 0; i < k + 1; i++) { // sum up deviations from size expectation for all clusters
+						if (frequencies[i] > expectation) {
+							deviation += frequencies[i] - expectation;
+						} else {
+							deviation += expectation - frequencies[i];
+						}
+					}
+					double a = (double) N - expectation; // scale deviations between 0 and 1
+					double b = (double) k * expectation; // maximal possible value = |n - expectation| + (K - 1) * expectation (note that k is used in the code because it contains 0 and 1)
+					a = Math.abs(a);
+					double denominator = a + b;
+					deviation = deviation / denominator;
+					deviation = 1.0 - deviation; // convert difference from expectation into similarity to expectation between 0 and 1
 				}
-				// scale deviations between 0 and 1
-				deviation = deviation / ((Math.abs(memberships.length - expectation) + (k - 1) * expectation)); // maximal possible value = |n - expectation| + (k - 1) * expectation
-				deviation = 1 - deviation; // convert difference from expectation into similarity to expectation between 0 and 1
-				
+
 				// put the three parts together
-				double result = Math.pow((congruenceParameter * modCongruence) * (conflictParameter * modConflict) * (sizeParameter * deviation), 1 / (congruenceParameter + conflictParameter + sizeParameter)); // multiply the three components, then take the cube root (or less, if the parameters are smaller than 1.0) to correct for the three-component multiplication
+				double terms = 0.0; // multiply the three components
+				if (congruenceParameter > 0) {
+					terms = (congruenceParameter * modCongruence);
+				}
+				if (conflictParameter > 0) {
+					terms = terms * (conflictParameter * modConflict);
+				}
+				if (sizeParameter > 0) {
+					terms = terms * (sizeParameter * deviation);
+				}
+				double result = Math.pow(terms, (double) (1.0 / (congruenceParameter + conflictParameter + sizeParameter))); // take the cube root (or less, if the parameters are smaller than 1.0) to correct for the three-component multiplication
 				return result;
 			}
 		}
