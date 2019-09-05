@@ -215,7 +215,6 @@ public class GeneticAlgorithm {
 				ArrayList<ClusterSolution> cs = new ArrayList<ClusterSolution>();
 				for (i = 0; i < numClusterSolutions; i++) {
 					cs.add(new ClusterSolution(numNodes, k, qualityFunction));
-					cs.get(i).validateMemberships(qualityFunction);
 				}
 				
 				// run through iterations and do the breeding, then collect results and stats
@@ -534,34 +533,6 @@ public class GeneticAlgorithm {
 			this.memberships = memberships;
 		}
 
-		private void validateMemberships(String qualityFunction) throws Exception {
-			int counter, i, j;
-			if (!qualityFunction.equals("penalty")) {
-				for (i = 0; i < K; i++) {
-					counter = 0;
-					for (j = 0; j < memberships.length; j++) {
-						if (memberships[j] == i) {
-							counter++;
-						}
-					}
-					if (counter == 0) {
-						throw new Exception("There is no cluster membership in cluster " + i + ".");
-					}
-					if (counter > Math.ceil(N / K) + 1) {
-						throw new Exception("Too many memberships of level " + i + " (" + counter + " out of " + N + ").");
-					}
-					if (counter < Math.ceil(N / K)) {
-						throw new Exception("Too few memberships of level " + i + " (" + counter + " out of " + N + ").");
-					}
-				}
-			}
-			for (i = 0; i < memberships.length; i++) {
-				if (memberships[i] > K - 1) {
-					throw new Exception("K = " + K + ", but there is a membership with level " + memberships[i] + ".");
-				}
-			}
-		}
-		
 		private void createRandomMemberships(String qualityFunction) {
 			int i, j;
 			
@@ -606,6 +577,15 @@ public class GeneticAlgorithm {
 			this.memberships = membershipArray;
 		}
 		
+		/**
+		 * Cross-over breeding. This function takes a foreign and the domestic membership vectors, relabels the
+		 * cluster levels to make them comparable, and creates an offspring version in which the different bits
+		 * are randomly combined between the domestic and the foreign cluster solution.
+		 * 
+		 * @param foreignMemberships  A vector of memberships of a foreign cluster solution.
+		 * @param qualityFunction     The quality function used to assess fitness. Used here to determine if the solutions must be constrained to equal sizes.
+		 * @throws Exception
+		 */
 		public void crossOver(int[] foreignMemberships, String qualityFunction) throws Exception {
 			if (foreignMemberships.length != this.memberships.length) {
 				throw new Exception("Cross-over attempt failed due to incompatible membership vector lengths.");
@@ -726,6 +706,12 @@ public class GeneticAlgorithm {
 			this.memberships = newRowMem;
 		}
 		
+		/**
+		 * Compute the E-I index by Krackhardt.
+		 * 
+		 * @param mat  The network matrix for which the index should be computed.
+		 * @return     The E-I score.
+		 */
 		private double ei(double[][] mat ) {
 			double external = 0.0;
 			double internal = 0.0;
@@ -755,12 +741,25 @@ public class GeneticAlgorithm {
 			return ei;
 		}
 		
+		/**
+		 * A quality or fitness function that combines the E-I index of a congruence and a conflict network.
+		 * 
+		 * @param congruence  A network matrix with positive/agreement/congruence ties.
+		 * @param conflict    A network matrix with negative/disagreement/conflict ties.
+		 * @return            A score that indicates how polarized a given pair of congruence and conflict networks is.
+		 */
 		private double qualityEI(double[][] congruence, double[][] conflict) {
 			double eiCongruence = ei(congruence);
 			double eiConflict = ei(conflict);
 			return (eiCongruence / 2) - (eiConflict / 2);
 		}
 		
+		/**
+		 * Compute Newman's modularity score for a given binary or weighted network matrix.
+		 * 
+		 * @param mat  The network matrix for which the index should be computed.
+		 * @return     The modularity score.
+		 */
 		private double modularity(double[][] mat) {
 			int i, j, k = 0;
 			
@@ -804,6 +803,13 @@ public class GeneticAlgorithm {
 			return tr - b;
 		}
 		
+		/**
+		 * A quality or fitness function that combines the modularity of a congruence and a conflict network.
+		 * 
+		 * @param congruence  A network matrix with positive/agreement/congruence ties.
+		 * @param conflict    A network matrix with negative/disagreement/conflict ties.
+		 * @return            A score that indicates how polarized a given pair of congruence and conflict networks is.
+		 */
 		private double qualityModularity(double[][] congruence, double[][] conflict) throws Exception {
 			double modCongruence = modularity(congruence);
 			double modConflict = modularity(conflict);
@@ -953,6 +959,20 @@ public class GeneticAlgorithm {
 		boolean earlyConvergence;
 		Date start, stop, middle;
 
+		/**
+		 * Create a polarization result for a single time step.
+		 * 
+		 * @param maxQ              The maximum quality score for each iteration of the genetic algorithm.
+		 * @param avgQ              The mean quality score for each iteration of the genetic algorithm.
+		 * @param sdQ               The standard deviation of the quality scores for each iteration of the genetic algorithm.
+		 * @param finalMaxQ         The maximum quality score of the final iteration of the genetic algorithm.
+		 * @param memberships       A membership array containing the cluster levels for each node, starting with 0 and going up to K - 1.
+		 * @param names             The node labels of the network.
+		 * @param earlyConvergence  A boolean indicating whether the genetic algorithm converged before the last iteration.
+		 * @param start             The start date and time of the time window network. Can be arbitrarily small if it is only a single network.
+		 * @param stop              The end date and time of the time window network. Can be arbitrarily large if it is only a single network.
+		 * @param middle            The mid-point date of the time window network. This is used to position the time polarization score on the time axis.
+		 */
 		public PolarizationResult(double[] maxQ, double[] avgQ, double[] sdQ, double finalMaxQ, int[] memberships, String[] names, boolean earlyConvergence, Date start, Date stop, Date middle) {
 			this.maxQ = maxQ;
 			this.avgQ = avgQ;
