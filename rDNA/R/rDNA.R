@@ -8562,13 +8562,15 @@ dna_plotModularity <- function(x,
 #' @param x A \code{dna_network} object created by the \link{dna_network}
 #'   function.
 #' @param layout The type of layout to use. Available layouts include
-#'   \code{"nicely"} (which tries to choose a suiting layout),
-#'   \code{"bipartite"} (for two-mode networks), \code{"circle"}, \code{"dh"},
-#'   \code{"drl"}, \code{"fr"}, \code{"gem"}, \code{"graphopt"}, \code{"kk"},
-#'   \code{"lgl"}, \code{"mds"}, \code{"randomly"} and \code{"star"}. The
-#'   default, \code{"auto"} chooses \code{"nicely"} if \code{x} is a one-mode
-#'   network and \code{"bipartite"} in case of two-mode networks. Other layouts
-#'   might be available (see \link[ggraph]{layout_igraph_auto} for details).
+#'   \code{"stress"} (the default), \code{"bipartite"} (for two-mode networks),
+#'   \code{"circle"}, \code{"dh"}, \code{"drl"}, \code{"focus"}, \code{"fr"},
+#'   \code{"gem"}, \code{"graphopt"}, \code{"kk"}, \code{"lgl"}, \code{"mds"},
+#'   \code{"nicely"}, \code{"randomly"} and \code{"star"}. The default,
+#'   \code{"auto"} chooses \code{"stress"} if \code{x} is a one-mode network and
+#'   \code{"bipartite"} in case of two-mode networks. Other layouts might be
+#'   available (see \link[ggraph]{layout_igraph_auto},
+#'   \link[graphlayouts]{layout_igraph_stress} and
+#'   \link[graphlayouts]{layout_igraph_stress} for details).
 #' @param edges When set to \code{"link"} (default) straight lines are used to
 #'   connect nodes. Other available options are \code{"arc"}, \code{"diagonal"}
 #'   and \code{"fan"}.
@@ -8587,8 +8589,8 @@ dna_plotModularity <- function(x,
 #'   best.
 #' @param node_attribute Takes the name of an attribute in DNA (i.e.
 #'   \code{"id"}, \code{"value"}, \code{"color"}, \code{"type"}, \code{"alias"},
-#'   \code{"notes"} or \code{"frequency"}) or \code{"group"} to color nodes.
-#'   The option \code{"group"} only makes sense if you provide group membership
+#'   \code{"notes"} or \code{"frequency"}) or \code{"group"} to color nodes. The
+#'   option \code{"group"} only makes sense if you provide group membership
 #'   information to the \code{groups} argument.
 #' @param node_colors There are five options for coloring the nodes: (1.)
 #'   \code{"auto"} uses \code{"identity"} if \code{node_attribute = "color"} and
@@ -8602,10 +8604,10 @@ dna_plotModularity <- function(x,
 #'   (5.) \code{"single"} uses the first value in custom_colors for all nodes.
 #' @param custom_colors Takes custom values to control the node colors. The
 #'   format of the necessary values depends on the setting of
-#'   \code{node_colors}: When \code{node_colors = "manual"}, a character
-#'   object containing the enough color names for all groups is needed; When
-#' \code{node_colors = "brewer"} you need to supply a a palette from
-#' \code{RColorBrewer} (defaults to \code{"Set3"} if \code{custom_colors} is
+#'   \code{node_colors}: When \code{node_colors = "manual"}, a character object
+#'   containing the enough color names for all groups is needed; When
+#'   \code{node_colors = "brewer"} you need to supply a a palette from
+#'   \code{RColorBrewer} (defaults to \code{"Set3"} if \code{custom_colors} is
 #'   left empty); When \code{node_colors "single"} only a single color name is
 #'   needed (defaults to \code{"red"}).
 #' @param node_shape Controls the node shape. Available shapes range from
@@ -8645,6 +8647,9 @@ dna_plotModularity <- function(x,
 #' # Plot from one-mode network
 #' nw <- dna_network(conn, networkType = "onemode")
 #' dna_plotNetwork(nw)
+#'
+#' # Use focus layout to highlight a specific node
+#' dna_plotNetwork(nw, layout = "focus", focus = 2)
 #'
 #' # Plot from two-mode network (and add ggplot option)
 #' nw2 <- dna_network(conn, networkType = "twomode")

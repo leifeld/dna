@@ -3463,7 +3463,7 @@ As you might be aware though, network visualization poses one problem: the choic
 In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} package are available---not all of which are useful for plotting networks from \dna\ data. Here is the selection of algorithms which we think makes the most sense:
 
 \begin{description}
-  \item[nicely] This is probably the most useful option. Not technically a network algorithm, it employs \texttt{igraph} package to pick an appropriate layout. See \code{?igraph::nicely} for the details.
+  \item[stress] The default layout uses a force-directed graph layout based on stress majorization. This is the same layout as used in \visone~(you can read more about it in \citet{gansner2005stress}).
 
   \item[bipartite] This algorithm is only really useful for two-mode networks. It minimizes edge-crossings by plotting the nodes for each of the two variables in a separate row. See \code{?igraph::as\_bipartite}.
 
@@ -3483,7 +3483,9 @@ In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} p
 
   \item[lgl] Uses the algorithm from Large Graph Layout to place nodes. See \code{?igraph::with\_lgl}.
 
-  \item[mds] Performs metric multidimensional scaling for generating the coordinates of the nodes. This algorithm is what comes closest to the "stress minimization" layout from \visone. See \code{?igraph::with\_mds}.
+  \item[mds] Performs metric multidimensional scaling for generating the coordinates of the nodes.
+
+  \item[nicely] Not technically a network algorithm, it employs \texttt{igraph} package to pick an appropriate layout. See \code{?igraph::nicely} for the details.
 
   \item[randomly] Places nodes randomly into the plot. See \code{?igraph::randomly}.
 
