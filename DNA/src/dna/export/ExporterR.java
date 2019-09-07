@@ -3486,16 +3486,8 @@ public class ExporterR {
 			int iterations,
 			String qualityFunction,
 			double eliteShare,
-			double mutationShare // ,
-			// double congruenceParameter,
-			// double conflictParameter,
-			// double sizeParameter
+			double mutationShare
 			) throws Exception {
-		
-		// TODO: re-integrate these three doubles as arguments
-		double congruenceParameter = 1.0;
-		double conflictParameter = 1.0;
-		double sizeParameter = 1.0;
 		
 		ga = new GeneticAlgorithm(
 				this,
@@ -3529,10 +3521,7 @@ public class ExporterR {
 				iterations,
 				qualityFunction,
 				eliteShare,
-				mutationShare,
-				congruenceParameter,
-				conflictParameter,
-				sizeParameter
+				mutationShare
 				);
 	}
 

@@ -16,8 +16,7 @@ dna_polarization(connection, statementType = "DNA Statement",
   excludeTypes = character(), invertValues = FALSE,
   invertAuthors = FALSE, invertSources = FALSE,
   invertSections = FALSE, invertTypes = FALSE, k = 2,
-  qualityFunction = "modularity", congruenceParameter = 1,
-  conflictParameter = 1, equalSizeParameter = 1, iterations = 1000,
+  qualityFunction = "modularity", iterations = 1000,
   numClusterSolutions = 30, eliteShare = 0.2, mutationShare = 0.2)
 }
 \arguments{

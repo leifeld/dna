@@ -6222,9 +6222,6 @@ dna_polarization <- function(connection,
                              invertTypes = FALSE,
                              k = 2,
                              qualityFunction = "modularity",
-                             congruenceParameter = 1.0,
-                             conflictParameter = 1.0,
-                             equalSizeParameter = 1.0,
                              iterations = 1000,
                              numClusterSolutions = 30,
                              eliteShare = 0.2,
@@ -6353,10 +6350,7 @@ dna_polarization <- function(connection,
          as.integer(iterations),
          as.character(qualityFunction),
          as.double(eliteShare),
-         as.double(mutationShare)#,
-         #as.double(congruenceParameter),
-         #as.double(conflictParameter),
-         #as.double(equalSizeParameter)
+         as.double(mutationShare)
   )
   
   message("Done.")
