@@ -150,6 +150,21 @@ public class GeneticAlgorithm {
 		return this.polarizationResults;
 	}
 
+	/**
+	 * Prepare the genetic algorithm and run all the iterations over all time steps.
+	 * Take out the maximum quality measure at the last step and create an object
+	 * that stores the polarization results.
+	 * 
+	 * @param numClusterSolutions  How many cluster solutions should be in each generation?
+	 * @param k                    How many clusters of equal size should there be?
+	 * @param iterations           For how many generations should the genetic algorithm run?
+	 * @param eliteShare           The share of cluster solutions in each parent generation that is copied into the children generation without changes, between 0.0 and 1.0, usually around 0.1 when there are many or 0.2 when there are few cluster solutions per generation.
+	 * @param mutationShare        The probability with which each bit in any cluster solution is selected for mutation after the cross-over step. For example 0.2 to select 20% of the nodes to swap their memberships.
+	 * @param qualityFunction      Which quality or fitness function should be used? Valid values are "modularity" and "ei".
+	 * @param congruenceList       Array list of congruence network matrices.
+	 * @param conflictList         Array list of conflict network matrices.
+	 * @throws Exception
+	 */
 	private void run (
 			int numClusterSolutions,
 			int k,
@@ -189,7 +204,7 @@ public class GeneticAlgorithm {
 		double[] sdQArray = new double[iterations];
 		boolean earlyConvergence = false;
 		int lastIndex = -1;
-		for (t = 0; t < congruenceList.size(); t++) {
+		for (t = 0; t < congruenceList.size(); t++) { // go through all time steps of the time window networks
 			if (congruenceList.size() > 1) {
 				System.out.println("Time step: " + t);
 			}
@@ -311,6 +326,20 @@ public class GeneticAlgorithm {
 		}
 	}
 	
+	/**
+	 * Execute a single iteration of the genetic algorithm, including elite retention, cross-over, and mutation.
+	 * 
+	 * @param clusterSolutions  The parent generation of cluster solutions as an array list.
+	 * @param congruence        A congruence network as a two-dimensional double array.
+	 * @param conflict          A conflict network as a two-dimensional double array.
+	 * @param qualityFunction   Quality of fitness function to use ("modularity" or "ei").
+	 * @param n                 The number of nodes in the network, which is also the number of bits in each membership vector.
+	 * @param eliteShare        The share of cluster solutions to copy into the children generation without modification.
+	 * @param mutationShare     The probability with which each membership bit is selected for mutation (by swapping membership with another node).
+	 * @param k                 The number of clusters of equal size.
+	 * @return                  An array list with the children generation of cluster solutions.
+	 * @throws Exception
+	 */
 	private ArrayList<ClusterSolution> iteration (
 			ArrayList<ClusterSolution> clusterSolutions,
 			double[][] congruence,
@@ -405,8 +434,11 @@ public class GeneticAlgorithm {
 			}
 		}
 
-		// define a class that represents pairs of two indices of membership bits (i.e.,index
-		// of the first node and index of the second node in a membership solution, with a maximum of N nodes
+		/**
+		 * Define a class that represents pairs of two indices of membership
+		 * bits (i.e., index of the first node and index of the second node in a
+		 * membership solution, with a maximum of N nodes.
+		 */
 		class Pair {
 			int firstIndex;
 			int secondIndex;
@@ -466,6 +498,16 @@ public class GeneticAlgorithm {
 		return children;
 	}
 
+	/**
+	 * This class represents a cluster solution, including the membership
+	 * vector, which contains information on cluster membership for each node in
+	 * the network. It also contains the number of nodes N and the number of
+	 * clusters K. In terms of methods, the class can populate its membership
+	 * vector with random values with the given number of clusters and nodes; it
+	 * can do the cross-over with a foreign membership vector and return
+	 * offspring; and it can determine its quality with regard to a congruence
+	 * and conflict network using modularity or the E-I index.
+	 */
 	private class ClusterSolution implements Cloneable {
 		
 		int[] memberships; // cluster memberships of all nodes as integer values, starting with 0
@@ -747,6 +789,12 @@ public class GeneticAlgorithm {
 		}
 	}
 
+	/**
+	 * For a given double array, rank its values, starting at 0.
+	 * 
+	 * @param arr  A double array.
+	 * @return     A vector of ranks, starting with 0.
+	 */
 	public int[] calculateRanks(double... arr) {
 	    class Pair {
 	        final double value;
@@ -776,7 +824,13 @@ public class GeneticAlgorithm {
 	    }
 	    return ranks;
 	}
-	
+
+	/**
+	 * For a given int array, rank its values, starting at 0.
+	 * 
+	 * @param arr  An int array.
+	 * @return     A vector of ranks, starting with 0.
+	 */
 	public int[] calculateRanks(int... arr) {
 	    class Pair {
 	        final int value;
@@ -807,6 +861,11 @@ public class GeneticAlgorithm {
 	    return ranks;
 	}
 
+	/**
+	 * Store the results of a single run of the genetic algorithm, i.e., for a
+	 * single time step of the time window algorithm or the whole network if no
+	 * time window was set.
+	 */
 	public class PolarizationResult {
 		double[] maxQ;
 		double[] avgQ;
