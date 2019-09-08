@@ -17,16 +17,7 @@ dna_plotNetwork(x, layout = "auto", edges = "link",
 \item{x}{A \code{dna_network} object created by the \link{dna_network}
 function.}
 
-\item{layout}{The type of layout to use. Available layouts include
-\code{"stress"} (the default), \code{"bipartite"} (for two-mode networks),
-\code{"circle"}, \code{"dh"}, \code{"drl"}, \code{"focus"}, \code{"fr"},
-\code{"gem"}, \code{"graphopt"}, \code{"kk"}, \code{"lgl"}, \code{"mds"},
-\code{"nicely"}, \code{"randomly"} and \code{"star"}. The default,
-\code{"auto"} chooses \code{"stress"} if \code{x} is a one-mode network and
-\code{"bipartite"} in case of two-mode networks. Other layouts might be
-available (see \link[ggraph]{layout_igraph_auto},
-\link[graphlayouts]{layout_igraph_stress} and
-\link[graphlayouts]{layout_igraph_stress} for details).}
+\item{layout}{The type of layout to use. See Details for available layouts.}
 
 \item{edges}{When set to \code{"link"} (default) straight lines are used to
 connect nodes. Other available options are \code{"arc"}, \code{"diagonal"}
@@ -132,6 +123,18 @@ added to igraph, those should quickly become available as well.
 
 Use \code{RColorBrewer::display.brewer.all()} to see which palettes are
 available as \code{custom_colors} when \code{colors = "brewer"}.
+
+Available layouts include:
+  \code{"stress"} (the default), \code{"bipartite"} (for two-mode networks),
+  \code{"circle"}, \code{"dh"}, \code{"drl"}, \code{"focus"} (which uses the
+  additional argument \code{focus}; see example), \code{"fr"}, \code{"gem"},
+  \code{"graphopt"}, \code{"kk"}, \code{"lgl"}, \code{"mds"},
+  \code{"nicely"}, \code{"randomly"} and \code{"star"}. The default,
+  \code{"auto"} chooses \code{"stress"} if \code{x} is a one-mode network and
+  \code{"bipartite"} in case of two-mode networks. Other layouts might be
+  available (see \link[ggraph]{layout_igraph_auto},
+  \link[graphlayouts]{layout_igraph_stress} and
+  \link[graphlayouts]{layout_igraph_stress} for more details).
 }
 \examples{
 \dontrun{

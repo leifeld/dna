@@ -96,7 +96,7 @@ as any other value but provides that plots are always reproducible.}
 
 \item{show_legend}{Logical. Should a legend be displayed.}
 
-\item{...}{Arguments passed on to \link[ggraph]{layout_igraph_hive}.}
+\item{...}{Arguments passed on to \link[ggraph]{create_layout}.}
 }
 \description{
 This function is an easy wrapper to create hive plots from one-mode networks

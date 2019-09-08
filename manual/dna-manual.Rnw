@@ -3460,7 +3460,8 @@ dna_plotNetwork(nw, truncate = 20, label_repel = 0) +
 @
 
 As you might be aware though, network visualization poses one problem: the choice of the right layout algorithm can be quite difficult and there is unfortunately not one that would solve the problems for all datasets.
-In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} package are available---not all of which are useful for plotting networks from \dna\ data. Here is the selection of algorithms which we think makes the most sense:
+In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} \citep{csardi2006igraph} and \texttt{graphlayouts} \citep{schoch2019graphlayouts} package are available---not all of which are useful for plotting networks from \dna\ data. 
+Following is a selection of algorithms suitable to use with \dna data:
 
 \begin{description}
   \item[stress] The default layout uses a force-directed graph layout based on stress majorization. This is the same layout as used in \visone~(you can read more about it in \citet{gansner2005stress}).
@@ -3474,6 +3475,8 @@ In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} p
   \item[drl] Uses the force directed algorithm from the DrL toolbox to place nodes. See \code{?igraph::with\_drl}.
 
   \item[fr] Spreads the nodes based on the force-directed algorithm of Fruchterman and Reingold. See \code{?igraph::with\_fr}
+  
+  \item[focus] creates a radial layout around a focal node. All nodes with the same distance from the focal node are on the same circle. To select the focal node, use the arguemnt `focus` (e.g., `focus = 2` to select node `2`). See \code{?graphlayouts::layout\_with\_focus}.
 
   \item[gem] Places nodes on the plane using the GEM force-directed layout algorithm. See \code{?igraph::with\_gem}.
 
@@ -3510,11 +3513,11 @@ nw_graphopt <- dna_plotNetwork(nw, layout = "graphopt", show_legend = FALSE) +
    ggtitle("Graphopt")
 nw_mds <- dna_plotNetwork(nw, layout = "mds", show_legend = FALSE) +
    ggtitle("MDS")
-nw_randomly <- dna_plotNetwork(nw, layout = "kk") +
+nw_kk <- dna_plotNetwork(nw, layout = "kk") +
    ggtitle("Kamada and Kawai")
 
 # The plots are again arranged in a grid
-grid <- grid.arrange(nw_fr, nw_graphopt, nw_mds, nw_randomly)
+grid <- grid.arrange(nw_fr, nw_graphopt, nw_mds, nw_kk)
 
 @
 
@@ -3524,9 +3527,9 @@ Some critics, however, doubt the usefulness of the common network plots---often 
 \citet{krzywinski2012hive}, for example, have argued that these network plots ``lack reproducibility and perceptual uniformity because they do not use a node coordinate system''. In the function \code{dna\_plotNetwork} a seed is automatically set to ensure at least reproducibility when you run the same code. You can change the argument \code{seed} to get an idea of how much chance is involved in calculating the layout.
 
 <<eval=TRUE, message = FALSE, warning = FALSE, results = 'tex', fig.width = 8, fig.height = 4, crop = TRUE>>=
-nw_1 <- dna_plotNetwork(nw, show_legend = FALSE, seed = 1)
-nw_2 <- dna_plotNetwork(nw, show_legend = FALSE, seed = 2)
-nw_12345 <- dna_plotNetwork(nw, show_legend = FALSE, seed = 12345)
+nw_1 <- dna_plotNetwork(nw, layout = "nicely", show_legend = FALSE, seed = 1)
+nw_2 <- dna_plotNetwork(nw, layout = "nicely", show_legend = FALSE, seed = 2)
+nw_12345 <- dna_plotNetwork(nw, layout = "nicely", show_legend = FALSE, seed = 12345)
 
 # The plots are again arranged in a grid
 grid <- grid.arrange(nw_1, nw_2, nw_12345, nrow = 1)
@@ -3561,14 +3564,14 @@ In the example below, we first retrieve the documents from \dna\ then alter two 
 
 <<eval=TRUE, results = 'tex'>>=
 docs <- dna_getDocuments(conn)
-print(docs, truncate = 9) # truncate column width in output
+print(docs, truncate = 6) # truncate column width in output
 @
 <<eval=TRUE, results = 'tex'>>=
 # Fill empty column with the same word in every row
 docs$type <-  "hearing"
 # Use regular expression to change the order of name and surname of the authors
 docs$author <- sub('^(.*), (.*)', '\\2 \\1', docs$author)
-print(docs, truncate = 8)
+print(docs, truncate = 6)
 @
 
 So how do we get this new dataframe back into \dna? The answer is the next function we will discuss: \code{dna\_setDocuments}.

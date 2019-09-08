@@ -18,8 +18,7 @@ dna_plotDendro(clust, shape = "elbows", activity = FALSE,
 function.}
 
 \item{shape}{The shape of the dendrogram. Available options are \code{elbows},
-\code{link}, \code{diagonal}, \code{arc}, and \code{fan}. See
-\link[ggraph]{layout_dendrogram_auto}.}
+\code{link}, \code{diagonal}, \code{arc}, and \code{fan}.}
 
 \item{activity}{Should activity of variable in \link{dna_cluster} be used to
 determine size of leaf_ends (logical). Activity means the number of
@@ -79,7 +78,7 @@ truncated. Value \code{Inf} turns off truncation.}
 as the leaf the label.}
 
 \item{circular}{Logical. Should the layout be transformed to a circular
-representation. See \link[ggraph]{layout_dendrogram_auto}.}
+representation.}
 
 \item{show_legend}{Logical. Should a legend be displayed.}
 

@@ -6795,8 +6795,7 @@ dna_plotCoordinates <- function(clust,
 #' @param clust A \code{dna_cluster} object created by the \link{dna_cluster}
 #'   function.
 #' @param shape The shape of the dendrogram. Available options are \code{elbows},
-#'   \code{link}, \code{diagonal}, \code{arc}, and \code{fan}. See
-#'   \link[ggraph]{layout_dendrogram_auto}.
+#'   \code{link}, \code{diagonal}, \code{arc}, and \code{fan}.
 #' @param activity Should activity of variable in \link{dna_cluster} be used to
 #'   determine size of leaf_ends (logical). Activity means the number of
 #'   statements which remained after duplicates were removed.
@@ -6838,7 +6837,7 @@ dna_plotCoordinates <- function(clust,
 #'   \code{node} to label nodes directly. Node labels are also take the same color
 #'   as the leaf the label.
 #' @param circular Logical. Should the layout be transformed to a circular
-#'   representation. See \link[ggraph]{layout_dendrogram_auto}.
+#'   representation.
 #' @param show_legend Logical. Should a legend be displayed.
 #' @param ... Not used. If you want to add more plot options use \code{+} and
 #'   the ggplot2 logic (see example).
@@ -8168,7 +8167,7 @@ dna_plotHeatmap <- function(clust,
 #' @param seed Numeric value passed to \link{set.seed}. The default is as good
 #'   as any other value but provides that plots are always reproducible.
 #' @param show_legend Logical. Should a legend be displayed.
-#' @param ... Arguments passed on to \link[ggraph]{layout_igraph_hive}.
+#' @param ... Arguments passed on to \link[ggraph]{create_layout}.
 #'
 #' @author Johannes B. Gruber
 #'
@@ -8551,26 +8550,24 @@ dna_plotModularity <- function(x,
 #' This function is a convenience wrapper to plot networks with
 #' \link[ggraph]{ggraph} from network objects created in rDNA. Specifically,
 #' one- and two-mode networks from calls to \link{dna_network} are supported.
-#'
-#' The available layouts are listed and explained in
-#' \link[ggraph]{layout_igraph_auto} under "Standard layouts". When layouts are
-#' added to igraph, those should quickly become available as well.
-#'
+#' 
 #' Use \code{RColorBrewer::display.brewer.all()} to see which palettes are
 #' available as \code{custom_colors} when \code{colors = "brewer"}.
 #'
+#' Available layouts include: \code{"stress"} (the default), \code{"bipartite"}
+#' (for two-mode networks), \code{"circle"}, \code{"dh"}, \code{"drl"},
+#' \code{"focus"} (which uses the additional argument \code{focus}; see
+#' example), \code{"fr"}, \code{"gem"}, \code{"graphopt"}, \code{"kk"},
+#' \code{"lgl"}, \code{"mds"}, \code{"nicely"}, \code{"randomly"} and
+#' \code{"star"}. The default, \code{"auto"} chooses \code{"stress"} if \code{x}
+#' is a one-mode network and \code{"bipartite"} in case of two-mode networks.
+#' Other layouts might be available (see \link[ggraph]{layout_igraph_auto},
+#' \link[graphlayouts]{layout_igraph_stress} and
+#' \link[graphlayouts]{layout_igraph_stress} for more details).
+#'
 #' @param x A \code{dna_network} object created by the \link{dna_network}
 #'   function.
-#' @param layout The type of layout to use. Available layouts include
-#'   \code{"stress"} (the default), \code{"bipartite"} (for two-mode networks),
-#'   \code{"circle"}, \code{"dh"}, \code{"drl"}, \code{"focus"}, \code{"fr"},
-#'   \code{"gem"}, \code{"graphopt"}, \code{"kk"}, \code{"lgl"}, \code{"mds"},
-#'   \code{"nicely"}, \code{"randomly"} and \code{"star"}. The default,
-#'   \code{"auto"} chooses \code{"stress"} if \code{x} is a one-mode network and
-#'   \code{"bipartite"} in case of two-mode networks. Other layouts might be
-#'   available (see \link[ggraph]{layout_igraph_auto},
-#'   \link[graphlayouts]{layout_igraph_stress} and
-#'   \link[graphlayouts]{layout_igraph_stress} for details).
+#' @param layout The type of layout to use. See Details for available layouts.
 #' @param edges When set to \code{"link"} (default) straight lines are used to
 #'   connect nodes. Other available options are \code{"arc"}, \code{"diagonal"}
 #'   and \code{"fan"}.
@@ -8709,6 +8706,10 @@ dna_plotNetwork <- function(x,
   if ("custom_colors" %in% names(dots)) {
     custom_colors <- dots[["custom_colors"]]
   }
+  if (layout == "focus" && is.null(dots[["focus"]])) {
+    message("Using `1` as default focus")
+    dots[["focus"]] <- 1L
+  }
 
   # Make igraph object
   set.seed(seed)
@@ -8758,7 +8759,7 @@ dna_plotNetwork <- function(x,
     graph <- delete.edges(graph, which(!E(graph)$weight >= threshold))
   }
   # start the plot
-  lyt <- create_layout(graph, layout = layout, ...)
+  lyt <- do.call(create_layout, c(list(graph, layout), dots))
   if (node_attribute == "group") {
     node_attribute <- "Membership"
   } else {
