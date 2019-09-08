@@ -12,7 +12,13 @@ public class GeneticAlgorithm {
 	ArrayList<PolarizationResult> polarizationResults;
 	
 	/**
-	 * Genetic optimization of polarization.
+	 * Genetic optimization of polarization. This algorithm finds the extent of
+	 * polarization of a given discourse network by optimizing for the partition
+	 * into k equally-sized clusters that maximizes a combined quality measure
+	 * taking into account congruence and conflict. The user can choose network
+	 * modularity or the E-I index for the quality measure. Optimization is done
+	 * by applying a genetic algorithm to the quality of the respective cluster
+	 * solutions with k levels.
 	 * 
 	 * @param k                    Number of clusters, usually 2.
 	 * @param numClusterSolutions  Population size; number of cluster solutions in each generation. Suggested values are around 30-50.
@@ -57,7 +63,7 @@ public class GeneticAlgorithm {
 			double mutationShare
 			) throws Exception {
 		
-		exporterR.rNetwork(
+		exporterR.rNetwork( // call rNetwork to compute the congruence network(s) (and later again for the conflict network(s))
 				"onemode", // networkType
 				statementType,
 				variable1,
@@ -199,12 +205,15 @@ public class GeneticAlgorithm {
 		double avgQ, sdQ;
 		int j, t;
 		int maxIndex = -1;
-		double[] maxQArray = new double[iterations];
-		double[] avgQArray = new double[iterations];
-		double[] sdQArray = new double[iterations];
+		double[] maxQArray;
+		double[] avgQArray;
+		double[] sdQArray;
 		boolean earlyConvergence = false;
 		int lastIndex = -1;
 		for (t = 0; t < congruenceList.size(); t++) { // go through all time steps of the time window networks
+			maxQArray = new double[iterations];
+			avgQArray = new double[iterations];
+			sdQArray = new double[iterations];
 			if (congruenceList.size() > 1) {
 				System.out.println("Time step: " + t);
 			}
@@ -289,11 +298,17 @@ public class GeneticAlgorithm {
 				
 				// correct for early convergence in results vectors
 				if (lastIndex < iterations - 1) {
-					for (i = lastIndex + 1; i < iterations; i++) {
-						maxQArray[i] = maxQArray[lastIndex];
-						avgQArray[i] = avgQArray[lastIndex];
-						sdQArray[i] = sdQArray[lastIndex];
+					double[] maxQArrayTemp = new double[lastIndex + 1];
+					double[] avgQArrayTemp = new double[lastIndex + 1];
+					double[] sdQArrayTemp = new double[lastIndex + 1];
+					for (i = 0; i < lastIndex + 1; i++) {
+						maxQArrayTemp[i] = maxQArray[i];
+						avgQArrayTemp[i] = avgQArray[i];
+						sdQArrayTemp[i] = sdQArray[i];
 					}
+					maxQArray = maxQArrayTemp;
+					avgQArray = avgQArrayTemp;
+					sdQArray = sdQArrayTemp;
 				}
 				
 				// save results in array as a complex object
@@ -434,35 +449,12 @@ public class GeneticAlgorithm {
 			}
 		}
 
-		/**
-		 * Define a class that represents pairs of two indices of membership
-		 * bits (i.e., index of the first node and index of the second node in a
-		 * membership solution, with a maximum of N nodes.
-		 */
-		class Pair {
-			int firstIndex;
-			int secondIndex;
-			
-			public Pair(int firstIndex, int secondIndex) {
-				this.firstIndex = firstIndex;
-				this.secondIndex = secondIndex;
-			}
-			
-			public int getFirstIndex() {
-				return this.firstIndex;
-			}
-
-			public int getSecondIndex() {
-				return this.secondIndex;
-			}
-		}
-		
 		// mutation step: select some percentage of the non-elite chromosomes (governed by the
 		// mutantChromosomes parameter) as pairs and swap around their cluster membership;
 		// if the solutions are not constrained to equal sizes (penalty method), do not swap
 		// memberships, but simply toggle them with a certain probability instead
 		int[] mem;
-		ArrayList<Pair> mutationPairs = new ArrayList<Pair>();
+		ArrayList<MembershipPair> mutationPairs = new ArrayList<MembershipPair>();
 		boolean contained;
 		for (i = elites; i < numClusterSolutions; i++) {
 			mem = children.get(i).getMemberships();
@@ -484,7 +476,7 @@ public class GeneticAlgorithm {
 					}
 				}
 				if (firstIndex != secondIndex && firstK == secondK && contained == false) {
-					mutationPairs.add(new Pair(firstIndex, secondIndex));
+					mutationPairs.add(new MembershipPair(firstIndex, secondIndex));
 				}
 			}
 			for (j = 0; j < mutationPairs.size(); j++) { // swap each pair's cluster memberships
@@ -861,6 +853,31 @@ public class GeneticAlgorithm {
 	    return ranks;
 	}
 
+
+	/**
+	 * Define a class that represents pairs of two indices of membership
+	 * bits (i.e., index of the first node and index of the second node in a
+	 * membership solution, with a maximum of N nodes.
+	 */
+	class MembershipPair {
+		int firstIndex;
+		int secondIndex;
+		
+		public MembershipPair(int firstIndex, int secondIndex) {
+			this.firstIndex = firstIndex;
+			this.secondIndex = secondIndex;
+		}
+		
+		public int getFirstIndex() {
+			return this.firstIndex;
+		}
+
+		public int getSecondIndex() {
+			return this.secondIndex;
+		}
+	}
+	
+	
 	/**
 	 * Store the results of a single run of the genetic algorithm, i.e., for a
 	 * single time step of the time window algorithm or the whole network if no
