@@ -41,6 +41,7 @@ lineend
 linetype
 linewidth
 Linewidth
+loess
 Louvain
 MCMCirt
 MCMCirtKd

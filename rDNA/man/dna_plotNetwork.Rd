@@ -117,24 +117,19 @@ This function is a convenience wrapper to plot networks with
 \link[ggraph]{ggraph} from network objects created in rDNA. Specifically,
 one- and two-mode networks from calls to \link{dna_network} are supported.
 
-The available layouts are listed and explained in
-\link[ggraph]{layout_igraph_auto} under "Standard layouts". When layouts are
-added to igraph, those should quickly become available as well.
+Available layouts include: \code{"stress"} (the default), \code{"bipartite"}
+(for two-mode networks), \code{"circle"}, \code{"dh"}, \code{"drl"},
+\code{"focus"} (which uses the additional argument \code{focus}; see
+example), \code{"fr"}, \code{"gem"}, \code{"graphopt"}, \code{"kk"},
+\code{"lgl"}, \code{"mds"}, \code{"nicely"}, \code{"randomly"} and
+\code{"star"}. The default, \code{"auto"} chooses \code{"stress"} if \code{x}
+is a one-mode network and \code{"bipartite"} in case of two-mode networks.
+Other layouts might be available (see \link[ggraph]{layout_igraph_auto},
+\link[graphlayouts]{layout_igraph_stress} and
+\link[graphlayouts]{layout_igraph_stress} for more details).
 
 Use \code{RColorBrewer::display.brewer.all()} to see which palettes are
 available as \code{custom_colors} when \code{colors = "brewer"}.
-
-Available layouts include:
-  \code{"stress"} (the default), \code{"bipartite"} (for two-mode networks),
-  \code{"circle"}, \code{"dh"}, \code{"drl"}, \code{"focus"} (which uses the
-  additional argument \code{focus}; see example), \code{"fr"}, \code{"gem"},
-  \code{"graphopt"}, \code{"kk"}, \code{"lgl"}, \code{"mds"},
-  \code{"nicely"}, \code{"randomly"} and \code{"star"}. The default,
-  \code{"auto"} chooses \code{"stress"} if \code{x} is a one-mode network and
-  \code{"bipartite"} in case of two-mode networks. Other layouts might be
-  available (see \link[ggraph]{layout_igraph_auto},
-  \link[graphlayouts]{layout_igraph_stress} and
-  \link[graphlayouts]{layout_igraph_stress} for more details).
 }
 \examples{
 \dontrun{

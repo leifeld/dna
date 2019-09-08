@@ -8551,9 +8551,6 @@ dna_plotModularity <- function(x,
 #' This function is a convenience wrapper to plot networks with
 #' \link[ggraph]{ggraph} from network objects created in rDNA. Specifically,
 #' one- and two-mode networks from calls to \link{dna_network} are supported.
-#' 
-#' Use \code{RColorBrewer::display.brewer.all()} to see which palettes are
-#' available as \code{custom_colors} when \code{colors = "brewer"}.
 #'
 #' Available layouts include: \code{"stress"} (the default), \code{"bipartite"}
 #' (for two-mode networks), \code{"circle"}, \code{"dh"}, \code{"drl"},
@@ -8565,6 +8562,9 @@ dna_plotModularity <- function(x,
 #' Other layouts might be available (see \link[ggraph]{layout_igraph_auto},
 #' \link[graphlayouts]{layout_igraph_stress} and
 #' \link[graphlayouts]{layout_igraph_stress} for more details).
+#' 
+#' Use \code{RColorBrewer::display.brewer.all()} to see which palettes are
+#' available as \code{custom_colors} when \code{colors = "brewer"}.
 #'
 #' @param x A \code{dna_network} object created by the \link{dna_network}
 #'   function.
