@@ -17,8 +17,7 @@ dna_polarization(connection, statementType = "DNA Statement",
   invertAuthors = FALSE, invertSources = FALSE,
   invertSections = FALSE, invertTypes = FALSE, k = 2,
   qualityFunction = "modularity", iterations = 1000,
-  numClusterSolutions = 30, eliteShare = 0.2, mutationShare = 0.2,
-  verbose = TRUE)
+  numClusterSolutions = 30, eliteShare = 0.2, mutationShare = 0.2)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
@@ -213,9 +212,6 @@ any time point in the optimization process.}
 solution that is randomly mutated after the cross-over step is completed.
 This is done by swapping around cluster memberships randomly between
 sampled pairs of nodes while retaining equal cluster sizes.}
-
-\item{verbose}{A boolean value indicating whether details of network
-construction should be printed to the R console.}
 }
 \description{
 Compute polarization of a discourse network using a genetic algorithm.

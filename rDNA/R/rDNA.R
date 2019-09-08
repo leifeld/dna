@@ -6225,8 +6225,7 @@ dna_polarization <- function(connection,
                              iterations = 1000,
                              numClusterSolutions = 30,
                              eliteShare = 0.2,
-                             mutationShare = 0.2,
-                             verbose = TRUE) {
+                             mutationShare = 0.2) {
   
   # check time window arguments
   if (is.null(timewindow) ||
@@ -6315,6 +6314,8 @@ dna_polarization <- function(connection,
     stop("'normalization' must be 'no', 'average', 'Jaccard', or 'cosine'.")
   }
   
+  message("Running genetic algorithm...")
+  
   # call Java function to create network(s) and run genetic algorithm
   .jcall(connection$dna_connection,
          "V",
@@ -6347,12 +6348,12 @@ dna_polarization <- function(connection,
          as.integer(k),
          as.integer(numClusterSolutions),
          as.integer(iterations),
-         qualityFunction,
+         as.character(qualityFunction),
          as.double(eliteShare),
-         as.double(mutationShare),
-         verbose
+         as.double(mutationShare)
   )
   
+  message("Done.")
   message("Processing results...")
   
   finalMaxQ <- .jcall(connection$dna_connection, "[D", "getFinalMaxQ", simplify = TRUE)
@@ -8916,37 +8917,97 @@ dna_plotNetwork <- function(x,
 #' \code{\link{dna_polarization}} function). For example, this can shed light on
 #' smoothed bipolarization or multipolarization over time. Note that this only
 #' works when using the time window arguments in the
-#' \code{\link{dna_polarization}} function.
+#' \code{\link{dna_polarization}} function. The function can also plot details
+#' about the convergence of the genetic algorithm, in which case the time window
+#' arguments are not strictly necessary.
 #'
 #' @param x A \code{dna_polarization} object, as created by the
 #'   \code{\link{dna_polarization}} function. Must have multiple time points for
 #'   visualizing the results.
-#' @param convergence Plot convergence diagnostics for the genetic algorithm.
+#' @param include.y Include a point on the y-axis, for example \code{0}.
+#' @param loess Plot a loess smoother as a blue line?
+#' @param plot.convergence Plot convergence diagnostics for the genetic
+#'   algorithm? This plots the maximal polarization values at each iteration,
+#'   for all time steps.
+#' @param conv.distribution If time windows are used, this creates a histogram
+#'   of convergence times of the genetic algorithm, for all time steps.
 #' @return A \pkg{ggplot2} plot.
 #'
 #' @author Philip Leifeld
 #' @seealso \code{\link{dna_polarization}}
 #'
 #' @importFrom ggplot2 ggplot aes aes_string geom_line ylab xlab theme theme_bw
-#'   geom_smooth
+#'   geom_smooth geom_ribbon
+#' @importFrom dplyr bind_rows
+#' @importFrom stats sd
 #' @export
-dna_plotPolarization <- function(x, convergence = FALSE) {
-  if (nrow(x$finalResults) == 1) {
-    stop("Only time window polarization results can be plotted with 'convergence = FALSE'.")
-  }
-  if (convergence == FALSE) {
-    ggplot2::ggplot(x$finalResults, ggplot2::aes_string(x = "time", y = "maxQuality")) +
+dna_plotPolarization <- function(x, include.y = NULL, loess = TRUE, plot.convergence = FALSE, conv.distribution = FALSE) {
+  if (plot.convergence == FALSE) {
+    if (nrow(x$finalResults) == 1) {
+      stop("Only time window polarization results can be plotted with 'convergence = FALSE'.")
+    }
+    uniqueTimePoints <- sort(unique(x$finalResults$time)) # plot mean of each time point +/- 1 standard deviation
+    dat <- data.frame("Time" = uniqueTimePoints,
+                      "Polarization" = sapply(uniqueTimePoints, function(t) {
+                        mean(x$finalResults$maxQuality[x$finalResults$time == t])
+                      }),
+                      "sd" = sapply(uniqueTimePoints, function(t) {
+                        stats::sd(x$finalResults$maxQuality[x$finalResults$time == t])
+                      }))
+    dat$sd[is.na(dat$sd)] <- 0
+    dat$upper_bound <- dat$Polarization + dat$sd
+    dat$lower_bound <- dat$Polarization - dat$sd
+    
+    g <- ggplot(dat, aes_string(x = "Time", y = "Polarization", group = 1)) +
       geom_line() +
-      geom_smooth(se = FALSE, stat = "smooth", method = "gam", formula = y ~ s(x, bs = "cs")) +
-      ylab("Polarization") +
-      xlab("Time") +
+      geom_ribbon(aes_string(ymin = "lower_bound", ymax = "upper_bound"), alpha = 0.2) +
+      expand_limits(y = include.y) +
       theme_bw()
+    
+    if (loess == TRUE) {
+      g <- g +  geom_smooth(se = FALSE)
+    }
   } else {
-    dat <- data.frame("Estimate" = unlist(lapply(x$details, function(x) x$maxQ)),
-                      "Iteration" = rep(1:length(x$details[[1]]$maxQConvergence), length(x$details)),
-                      "t" = sort(rep(1:length(x$details), length(x$details[[1]]$maxQConvergence))))
-    ggplot2::ggplot(dat, ggplot2::aes_string(x = "Iteration", y = "Estimate")) + geom_line() + theme_bw()
+    if (conv.distribution == FALSE) {
+      dat_list <- list()
+      for (t in 1:length(x$details)) {
+        mconv <- x$details[[t]]$maxQConvergence
+        dat <- data.frame("t" = rep(t, length(mconv)),
+                          "Iteration" = 1:length(mconv),
+                          "Polarization" = mconv)
+        for (i in 11:nrow(dat)) {
+          if (length(unique(dat$Polarization[(i - 10):i])) == 1) {
+            dat <- dat[1:i, ]
+            break
+          }
+        }
+        dat_list[[t]] <- dat
+      }
+      dat <- dplyr::bind_rows(dat_list)
+      dat$t <- as.factor(dat$t)
+      g <- ggplot2::ggplot(dat, aes_string(x = "Iteration", y = "Polarization", by = "t")) +
+        geom_line(alpha = 0.4) +
+        ylab("Maximal Polarization")
+    } else {
+      if (nrow(x$finalResults) == 1) {
+        stop("Only time window polarization results can be plotted with 'conv.distribution = TRUE'.")
+      }
+      dat <- numeric()
+      for (t in 1:length(x$details)) {
+        mconv <- x$details[[t]]$maxQConvergence
+        for (i in 11:length(mconv)) {
+          if (length(unique(mconv[(i - 10):i])) == 1) {
+            dat[t] <- i - 10
+            break
+          }
+        }
+      }
+      dat <- data.frame("Iteration" = dat,
+                        "Time" = 1:length(dat))
+      g <- ggplot(dat, aes_string("Iteration")) + geom_histogram() + ylab("Count")
+    }
   }
+  return(g)
 }
 
 
