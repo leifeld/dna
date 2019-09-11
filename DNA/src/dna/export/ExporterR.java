@@ -6,7 +6,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -14,7 +13,6 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.Random;
 
 import org.rosuda.JRI.RConsoleOutputStream;
 import org.rosuda.JRI.Rengine;
@@ -198,6 +196,117 @@ public class ExporterR {
 	 * Functions for generating and retrieving networks
 	 * =================================================================================================================
 	 */
+	
+	/*
+	public void filterStatements(
+			String statementType,
+			String duplicates,
+			String startDate,
+			String stopDate,
+			String startTime,
+			String stopTime,
+			String[] excludeVariables,
+			String[] excludeValues,
+			String[] excludeAuthors,
+			String[] excludeSources,
+			String[] excludeSections,
+			String[] excludeTypes,
+			boolean invertValues,
+			boolean invertAuthors,
+			boolean invertSources,
+			boolean invertSections, 
+			boolean invertTypes) throws Exception {
+		
+		// format duplicates argument
+		// valid R input: 'include', 'document', 'week', 'month', 'year', or 'acrossrange'
+		// valid Java output: 'include all duplicates', 'ignore per document', 'ignore per calendar week', 'ignore per calendar month', 'ignore per calendar year', or 'ignore across date range'
+		if (!duplicates.equals("include") && !duplicates.equals("document") && !duplicates.equals("week") && !duplicates.equals("month") 
+				&& !duplicates.equals("year") && !duplicates.equals("acrossrange")) {
+			throw new Exception("'duplicates' must be 'include', 'document', 'week', 'month', 'year', or 'acrossrange'.");
+		}
+		if (duplicates.equals("include")) {
+			duplicates = "include all duplicates";
+		} else if (duplicates.equals("document")) {
+			duplicates = "ignore per document";
+		} else if (duplicates.equals("week")) {
+			duplicates = "ignore per calendar week";
+		} else if (duplicates.equals("month")) {
+			duplicates = "ignore per calendar month";
+		} else if (duplicates.equals("year")) {
+			duplicates = "ignore per calendar year";
+		} else if (duplicates.equals("acrossrange")) {
+			duplicates = "ignore across date range";
+		}
+
+		// format dates and times with input formats "dd.MM.yyyy" and "HH:mm:ss"
+		DateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+		String startString = startDate + " " + startTime;
+		Date start = null;
+		try {
+			start = df.parse(startString);
+		} catch (ParseException e) {
+			System.err.println("\nStart date or time is invalid!");
+		}
+		if (!startString.equals(df.format(start))) {
+			startDate = null;
+			System.err.println("\nStart date or time is invalid!");
+		}
+		String stopString = stopDate + " " + stopTime;
+		Date stop = null;
+		try {
+			stop = df.parse(stopString);
+		} catch (ParseException e) {
+			System.err.println("\nStop date or time is invalid!");
+		}
+		if (!stopString.equals(df.format(stop))) {
+			stopDate = null;
+			System.err.println("\nStop date or time is invalid!");
+		}
+
+		// process exclude variables: create HashMap with variable:value pairs
+		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
+		if (excludeVariables.length > 0) {
+			for (int i = 0; i < excludeVariables.length; i++) {
+				ArrayList<String> values = map.get(excludeVariables[i]);
+				if (values == null) {
+					values = new ArrayList<String>();
+				}
+				if (!values.contains(excludeValues[i])) {
+					values.add(excludeValues[i]);
+				}
+				Collections.sort(values);
+				map.put(excludeVariables[i], values);
+			}
+		}
+		if (invertValues == true) {
+			Iterator<String> mapIterator = map.keySet().iterator();
+			while (mapIterator.hasNext()) {
+				String key = mapIterator.next();
+				ArrayList<String> values = map.get(key);
+				String[] labels = this.exportHelper.extractLabels(data.getStatements(), data.getStatements(), data.getDocuments(), key, false, statementTypeId, includeIsolates);
+				ArrayList<String> newValues = new ArrayList<String>();
+				for (int i = 0; i < labels.length; i++) {
+					if (!values.contains(labels[i])) {
+						newValues.add(labels[i]);
+					}
+				}
+				map.put(key, newValues);
+			}
+		}
+
+		// process document-level exclude variables using repeated calls of private function 'processExcludeDocument'
+		ArrayList<String> authorExclude = processExcludeDocument("author", excludeAuthors, invertAuthors, data.getStatements(), data.getStatements(), 
+				data.getDocuments(), statementTypeId, includeIsolates);
+		ArrayList<String> sourceExclude = processExcludeDocument("source", excludeSources, invertSources, data.getStatements(), data.getStatements(),  
+				data.getDocuments(), statementTypeId, includeIsolates);
+		ArrayList<String> sectionExclude = processExcludeDocument("section", excludeSections, invertSections, data.getStatements(), data.getStatements(), 
+				data.getDocuments(), statementTypeId, includeIsolates);
+		ArrayList<String> typeExclude = processExcludeDocument("type", excludeTypes, invertTypes, data.getStatements(), data.getStatements(), 
+				data.getDocuments(), statementTypeId, includeIsolates);
+
+		
+	}
+	*/
 	
 	/**
 	 * Compute one-mode or two-mode network matrix based on R arguments.

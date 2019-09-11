@@ -21,7 +21,7 @@ Imports:
     dplyr (>= 0.7.0),
     ggforce (>= 0.1.3),
     ggplot2 (>= 2.2.1),
-    ggraph (>= 1.0.0), 
+    ggraph (>= 2.0.0), 
     ggrepel (>= 0.7.0),
     grDevices (>= 3.0.0),
     MASS (>= 7.3.0),
