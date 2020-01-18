@@ -4,9 +4,20 @@
 \alias{dna_addDocument}
 \title{Add a document to the DNA database}
 \usage{
-dna_addDocument(connection, title = "", text = "", coder = 1,
-  author = "", source = "", section = "", notes = "", type = "",
-  date = Sys.time(), returnID = FALSE, verbose = TRUE)
+dna_addDocument(
+  connection,
+  title = "",
+  text = "",
+  coder = 1,
+  author = "",
+  source = "",
+  section = "",
+  notes = "",
+  type = "",
+  date = Sys.time(),
+  returnID = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

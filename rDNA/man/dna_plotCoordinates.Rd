@@ -4,13 +4,29 @@
 \alias{dna_plotCoordinates}
 \title{Plots an MDS scatterplot from dna.cluster objects}
 \usage{
-dna_plotCoordinates(clust, what = "MDS", dimensions = c(1, 2),
-  draw_polygons = TRUE, alpha = 0.25, jitter = NULL, seed = 12345,
-  label = FALSE, label_size = 3.5, point_size = 1,
-  label_background = FALSE, font_color = "black", expand = 0,
-  stress = TRUE, truncate = 40, custom_colors = character(),
-  custom_shape = character(), axis_labels = character(),
-  clust_method = "pam", title = "auto", ...)
+dna_plotCoordinates(
+  clust,
+  what = "MDS",
+  dimensions = c(1, 2),
+  draw_polygons = TRUE,
+  alpha = 0.25,
+  jitter = NULL,
+  seed = 12345,
+  label = FALSE,
+  label_size = 3.5,
+  point_size = 1,
+  label_background = FALSE,
+  font_color = "black",
+  expand = 0,
+  stress = TRUE,
+  truncate = 40,
+  custom_colors = character(),
+  custom_shape = character(),
+  axis_labels = character(),
+  clust_method = "pam",
+  title = "auto",
+  ...
+)
 }
 \arguments{
 \item{clust}{A \code{dna_cluster} object created by the \link{dna_cluster}

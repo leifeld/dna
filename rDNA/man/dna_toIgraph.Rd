@@ -4,13 +4,15 @@
 \alias{dna_toIgraph}
 \title{Convert DNA networks to igraph objects}
 \usage{
-dna_toIgraph(x, weighted = TRUE)
+dna_toIgraph(x, weighted = TRUE, attributes = NULL)
 }
 \arguments{
 \item{x}{A dna_network (one- or two-mode).}
 
 \item{weighted}{Logical. Should edge weights be used to create a weighted
 graph from the dna_network object.}
+
+\item{attributes}{A data.frame with node or edge attributes.}
 }
 \description{
 This function can convert objects of class 'dna_network_onemode' or

@@ -4,8 +4,14 @@
 \alias{dna_gui}
 \title{Open the DNA GUI}
 \usage{
-dna_gui(infile = NULL, login = NULL, password = NULL,
-  javapath = NULL, memory = 1024, verbose = TRUE)
+dna_gui(
+  infile = NULL,
+  login = NULL,
+  password = NULL,
+  javapath = NULL,
+  memory = 1024,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{infile}{The file name of the .dna database or the URL of the mySQL

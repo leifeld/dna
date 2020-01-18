@@ -4,20 +4,39 @@
 \alias{dna_network}
 \title{Compute and retrieve a network}
 \usage{
-dna_network(connection, networkType = "twomode",
-  statementType = "DNA Statement", variable1 = "organization",
-  variable1Document = FALSE, variable2 = "concept",
-  variable2Document = FALSE, qualifier = "agreement",
-  qualifierAggregation = "ignore", normalization = "no",
-  isolates = FALSE, duplicates = "include",
-  start.date = "01.01.1900", stop.date = "31.12.2099",
-  start.time = "00:00:00", stop.time = "23:59:59", timewindow = "no",
-  windowsize = 100, excludeValues = list(),
-  excludeAuthors = character(), excludeSources = character(),
-  excludeSections = character(), excludeTypes = character(),
-  invertValues = FALSE, invertAuthors = FALSE, invertSources = FALSE,
-  invertSections = FALSE, invertTypes = FALSE, fileFormat = NULL,
-  outfile = NULL, verbose = TRUE)
+dna_network(
+  connection,
+  networkType = "twomode",
+  statementType = "DNA Statement",
+  variable1 = "organization",
+  variable1Document = FALSE,
+  variable2 = "concept",
+  variable2Document = FALSE,
+  qualifier = "agreement",
+  qualifierAggregation = "ignore",
+  normalization = "no",
+  isolates = FALSE,
+  duplicates = "include",
+  start.date = "01.01.1900",
+  stop.date = "31.12.2099",
+  start.time = "00:00:00",
+  stop.time = "23:59:59",
+  timewindow = "no",
+  windowsize = 100,
+  excludeValues = list(),
+  excludeAuthors = character(),
+  excludeSources = character(),
+  excludeSections = character(),
+  excludeTypes = character(),
+  invertValues = FALSE,
+  invertAuthors = FALSE,
+  invertSources = FALSE,
+  invertSections = FALSE,
+  invertTypes = FALSE,
+  fileFormat = NULL,
+  outfile = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

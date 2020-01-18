@@ -4,9 +4,15 @@
 \alias{dna_plotModularity}
 \title{Plot modularity values in a \code{dna_multiclust} object}
 \usage{
-dna_plotModularity(x, only.max = TRUE, anomalize = FALSE,
-  durations = FALSE, zero.as.na = FALSE, ncol = 3,
-  include.y = NULL)
+dna_plotModularity(
+  x,
+  only.max = TRUE,
+  anomalize = FALSE,
+  durations = FALSE,
+  zero.as.na = FALSE,
+  ncol = 3,
+  include.y = NULL
+)
 }
 \arguments{
 \item{x}{A \code{dna_multiclust} object, as created by the
