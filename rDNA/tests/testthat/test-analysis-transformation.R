@@ -4,8 +4,14 @@ conn <- dna_connection(dna_sample(overwrite = TRUE, verbose = FALSE))
 
 test_that("cluster", {
   expect_equal({
-    dna_cluster(conn)
-  }, readRDS("../files/dna_cluster.RDS"))
+    clust <- dna_cluster(conn)
+    c(length(clust),
+      names(clust),
+      clust$merge)
+  }, c("14", "merge", "height", "order", "labels", "method", "call", 
+       "dist.method", "activities", "attribute1", "attribute2", "group", 
+       "mds", "fa", "network", "-3", "-6", "-1", "-2", "-4", "3", "-5", 
+       "-7", "2", "1", "4", "5"))
 })
 
 # saveRDS(dna_cluster(conn), "../files/dna_cluster.RDS", version = 2)
