@@ -31,7 +31,11 @@ test_that("dna_network without qualifier", {
                       networkType = "onemode",
                       variable1 = "person",
                       variable2 = "concept",
-                      qualifier = NULL)
+                      qualifier = NULL,
+                      start.date = "01.01.2000",
+                      stop.date = "31.12.2010",
+                      start.time = "00:00:00",
+                      stop.time = "00:00:00")
   }, readRDS("../files/dna_network_no_qualifier.RDS"))
 })
 
