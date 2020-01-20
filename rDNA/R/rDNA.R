@@ -6404,20 +6404,38 @@ dna_polarization <- function(connection,
 #' @param x A dna_network (one- or two-mode).
 #' @param weighted Logical. Should edge weights be used to create a weighted
 #'   graph from the dna_network object.
-#' @param attributes A data.frame with node or edge attributes.
+#' @param attributes A data.frame with node/vertex  attributes (for example from
+#'   \link{dna_getAttributes}.
 #'
 #' @author Johannes B. Gruber
 #'
 #' @export
 #' @importFrom igraph graph_from_adjacency_matrix graph_from_incidence_matrix
+#'   vertex_attr
 #'
 #' @examples
-#' \dontrun{
+#' # convert without attributes
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, networkType = "onemode")
 #' graph <- dna_toIgraph(nw)
-#' }
+#'
+#'
+#' # convert with attributes
+#' # onemode:
+#' nw <- dna_network(conn, networkType = "onemode", variable1 = "organization")
+#' graph <- dna_toIgraph(nw, attributes = dna_getAttributes(conn, variable = "organization"))
+#' plot(graph)
+#'
+#' # twomode:
+#' nw2 <- dna_network(conn, networkType = "twomode",
+#'                    variable1 = "organization",
+#'                    variable2 = "concept")
+#' graph2 <- dna_toIgraph(nw2, attributes = rbind(
+#'   dna_getAttributes(conn, variable = "organization"),
+#'   dna_getAttributes(conn, variable = "concept")))
+#'
+#' plot(graph2)
 dna_toIgraph <- function(x,
                          weighted = TRUE,
                          attributes = NULL) {
@@ -6444,6 +6462,18 @@ dna_toIgraph.dna_network_onemode <- function(x,
                                        diag = FALSE,
                                        add.colnames = NULL,
                                        add.rownames = NA)
+  
+  if (is.data.frame(attributes)) {
+    att <- merge(x = data.frame(name = igraph::get.vertex.attribute(graph, "name"),
+                                stringsAsFactors = FALSE), 
+                 y = attributes, 
+                 by.x = "name", 
+                 by.y = "value",
+                 all.x = TRUE)
+    
+    igraph::vertex_attr(graph) <- as.list(att)
+  }
+  
   return(graph)
 }
 
@@ -6454,10 +6484,22 @@ dna_toIgraph.dna_network_onemode <- function(x,
 dna_toIgraph.dna_network_twomode <- function(x,
                                              weighted = TRUE,
                                              attributes = NULL) {
+  
   graph <- graph_from_incidence_matrix(x,
                                        directed = FALSE,
                                        weighted = weighted,
                                        add.names = NULL)
+  if (is.data.frame(attributes)) {
+    att <- merge(x = data.frame(name = igraph::get.vertex.attribute(graph, "name"),
+                                stringsAsFactors = FALSE), 
+                 y = attributes, 
+                 by.x = "name", 
+                 by.y = "value",
+                 all.x = TRUE)
+    
+    igraph::vertex_attr(graph) <- as.list(att)
+  }
+  
   return(graph)
 }
 

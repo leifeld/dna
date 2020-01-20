@@ -35,8 +35,10 @@ test_that("dna_network without qualifier", {
   }, readRDS("../files/dna_network_no_qualifier.RDS"))
 })
 
-# saveRDS(nw, file = "../files/dna_network_no_qualifier.RDS")
-test_that("dna_network without qualifier", {
+# saveRDS(nw, file = "../files/dna_network_no_qualifier.RDS", version = 2)
+
+# conversions
+test_that("dna_toIgraph", {
   expect_equal({
     nw <- dna_network(conn,
                       networkType = "onemode",
@@ -61,6 +63,32 @@ test_that("dna_network without qualifier", {
       igraph::vcount(ig),
       igraph::ecount(ig))
   }, c("igraph", "13", "22"))
+  expect_equal({
+    nw <- dna_network(conn,
+                      networkType = "onemode",
+                      variable1 = "organization",
+                      variable2 = "concept",
+                      qualifier = NULL,
+                      verbose = FALSE)
+    ig <- dna_toIgraph(nw, attributes = dna_getAttributes(conn, 
+                                                          variable = "organization"))
+    igraph::get.vertex.attribute(ig)$color
+  }, c("#00CC00", "#FF9900", "#000000", "#FF9900", "#000000", "#00CC00", 
+       "#00CC00"))
+  expect_equal({
+    nw <- dna_network(conn,
+                      networkType = "twomode",
+                      variable1 = "organization",
+                      variable2 = "concept",
+                      qualifier = NULL,
+                      verbose = FALSE)
+    ig <- dna_toIgraph(nw, attributes = rbind(
+      dna_getAttributes(conn, variable = "organization"),
+      dna_getAttributes(conn, variable = "concept")))
+    igraph::get.vertex.attribute(ig)$color
+  }, c("#00CC00", "#000000", "#000000", "#000000", "#000000", "#000000", 
+       "#FF9900", "#000000", "#FF9900", "#000000", "#00CC00", "#000000", 
+       "#00CC00"))
   expect_error({
     nw <- dna_network(conn,
                       networkType = "eventlist",
