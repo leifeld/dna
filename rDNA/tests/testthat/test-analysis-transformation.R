@@ -32,6 +32,8 @@ test_that("dna_network without qualifier", {
                       variable1 = "person",
                       variable2 = "concept",
                       qualifier = NULL)
+    attr(nw, "start") <- "1900-01-01 00:00:00 CET"
+    attr(nw, "stop") <- "2099-12-31 23:59:59 CET"
     nw
   }, readRDS("../files/dna_network_no_qualifier.RDS"))
 })
