@@ -4,9 +4,17 @@
 \alias{dna_convergenceScale}
 \title{Convergence diagnostics for \code{dna_scale} objects}
 \usage{
-dna_convergenceScale(dna_scale, variable = "both", method = "geweke",
-  colors = TRUE, trace_size = 0.5, nrow = 3, ncol = 3,
-  facet_page = 1, value = NULL)
+dna_convergenceScale(
+  dna_scale,
+  variable = "both",
+  method = "geweke",
+  colors = TRUE,
+  trace_size = 0.5,
+  nrow = 3,
+  ncol = 3,
+  facet_page = 1,
+  value = NULL
+)
 }
 \arguments{
 \item{dna_scale}{A \code{dna_scale} object.}

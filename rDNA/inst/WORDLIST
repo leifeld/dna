@@ -73,6 +73,7 @@ setStatements
 spinglass
 startCaret
 statementTypeId
+tbl
 timeseries
 timewindow
 twomode

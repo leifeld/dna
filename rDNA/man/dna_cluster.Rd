@@ -4,11 +4,21 @@
 \alias{dna_cluster}
 \title{Cluster network from a DNA connection}
 \usage{
-dna_cluster(connection, variable1 = "organization",
-  variable2 = "concept", transpose = FALSE, collate = TRUE,
-  duplicates = "document", clust.method = "ward.D2",
-  attribute1 = "color", attribute2 = "value", cutree.k = NULL,
-  cutree.h = NULL, dimensions = 2, ...)
+dna_cluster(
+  connection,
+  variable1 = "organization",
+  variable2 = "concept",
+  transpose = FALSE,
+  collate = TRUE,
+  duplicates = "document",
+  clust.method = "ward.D2",
+  attribute1 = "color",
+  attribute2 = "value",
+  cutree.k = NULL,
+  cutree.h = NULL,
+  dimensions = 2,
+  ...
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

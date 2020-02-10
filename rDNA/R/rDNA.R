@@ -6404,38 +6404,105 @@ dna_polarization <- function(connection,
 #' @param x A dna_network (one- or two-mode).
 #' @param weighted Logical. Should edge weights be used to create a weighted
 #'   graph from the dna_network object.
+#' @param attributes A data.frame with node/vertex  attributes (for example from
+#'   \link{dna_getAttributes}.
 #'
 #' @author Johannes B. Gruber
 #'
 #' @export
 #' @importFrom igraph graph_from_adjacency_matrix graph_from_incidence_matrix
+#'   vertex_attr
 #'
 #' @examples
-#' \dontrun{
+#' # convert without attributes
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
 #' nw <- dna_network(conn, networkType = "onemode")
 #' graph <- dna_toIgraph(nw)
-#' }
+#'
+#'
+#' # convert with attributes
+#' # onemode:
+#' nw <- dna_network(conn, networkType = "onemode", variable1 = "organization")
+#' graph <- dna_toIgraph(nw, attributes = dna_getAttributes(conn, variable = "organization"))
+#' plot(graph)
+#'
+#' # twomode:
+#' nw2 <- dna_network(conn, networkType = "twomode",
+#'                    variable1 = "organization",
+#'                    variable2 = "concept")
+#' graph2 <- dna_toIgraph(nw2, attributes = rbind(
+#'   dna_getAttributes(conn, variable = "organization"),
+#'   dna_getAttributes(conn, variable = "concept")))
+#'
+#' plot(graph2)
 dna_toIgraph <- function(x,
-                         weighted = TRUE) {
-  if (any(class(x) %in% "dna_network_onemode")) {
-    graph <- graph_from_adjacency_matrix(x,
-                                         mode = "undirected",
-                                         weighted = weighted,
-                                         diag = FALSE,
-                                         add.colnames = NULL,
-                                         add.rownames = NA)
-  } else if (any(class(x) %in% "dna_network_twomode")) {
-    graph <- graph_from_incidence_matrix(x,
-                                         directed = FALSE,
-                                         weighted = weighted,
-                                         add.names = NULL)
-  } else {
-    stop("Only takes objects of class 'dna_network_onemode' or 'dna_network_twomode'.")
+                         weighted = TRUE,
+                         attributes = NULL) {
+  UseMethod("dna_toIgraph")
+}
+
+#' @export
+dna_toIgraph.default <- function(x,
+                                 weighted = TRUE,
+                                 attributes = NULL) {
+  stop("Only takes objects of class 'dna_network_onemode' or 'dna_network_twomode'.")
+}
+
+
+#' @noRd
+#' @method dna_toIgraph dna_network_onemode
+#' @export
+dna_toIgraph.dna_network_onemode <- function(x,
+                                             weighted = TRUE,
+                                             attributes = NULL) {
+  graph <- graph_from_adjacency_matrix(x,
+                                       mode = "undirected",
+                                       weighted = weighted,
+                                       diag = FALSE,
+                                       add.colnames = NULL,
+                                       add.rownames = NA)
+  
+  if (is.data.frame(attributes)) {
+    att <- merge(x = data.frame(name = igraph::get.vertex.attribute(graph, "name"),
+                                stringsAsFactors = FALSE), 
+                 y = attributes, 
+                 by.x = "name", 
+                 by.y = "value",
+                 all.x = TRUE)
+    
+    igraph::vertex_attr(graph) <- as.list(att)
   }
+  
   return(graph)
 }
+
+
+#' @noRd
+#' @method dna_toIgraph dna_network_twomode
+#' @export
+dna_toIgraph.dna_network_twomode <- function(x,
+                                             weighted = TRUE,
+                                             attributes = NULL) {
+  
+  graph <- graph_from_incidence_matrix(x,
+                                       directed = FALSE,
+                                       weighted = weighted,
+                                       add.names = NULL)
+  if (is.data.frame(attributes)) {
+    att <- merge(x = data.frame(name = igraph::get.vertex.attribute(graph, "name"),
+                                stringsAsFactors = FALSE), 
+                 y = attributes, 
+                 by.x = "name", 
+                 by.y = "value",
+                 all.x = TRUE)
+    
+    igraph::vertex_attr(graph) <- as.list(att)
+  }
+  
+  return(graph)
+}
+
 
 #' Convert DNA networks to eventSequence objects
 #'
@@ -7366,6 +7433,7 @@ dna_plotDendro <- function(clust,
 #' @author Philip Leifeld, Johannes B. Gruber
 #'
 #' @examples
+#' \dontrun{
 #' library("rDNA")
 #' dna_init()
 #' samp <- dna_sample()
@@ -7395,7 +7463,8 @@ dna_plotDendro <- function(clust,
 #' # Return the dna_multiclust object
 #' mc <- dna_dendrogram(conn, k = 0, method = "best", return.multiclust = TRUE)
 #' mc
-#'
+#' }
+#' 
 #' @import ggraph
 #' @importFrom ggplot2 .pt aes aes_string element_text expand_limits labs theme
 #'   theme_bw theme_classic theme_dark theme_grey theme_light theme_minimal
@@ -8559,7 +8628,7 @@ dna_plotModularity <- function(x,
 #' \code{"lgl"}, \code{"mds"}, \code{"nicely"}, \code{"randomly"} and
 #' \code{"star"}. The default, \code{"auto"} chooses \code{"stress"} if \code{x}
 #' is a one-mode network and \code{"bipartite"} in case of two-mode networks.
-#' Other layouts might be available (see \link[ggraph]{layout_igraph_auto},
+#' Other layouts might be available (see \link[ggraph]{layout_tbl_graph_auto},
 #' \link[graphlayouts]{layout_igraph_stress} and
 #' \link[graphlayouts]{layout_igraph_stress} for more details).
 #' 
@@ -8635,7 +8704,7 @@ dna_plotModularity <- function(x,
 #'   as any other value but provides that plots are always reproducible.
 #' @param show_legend If \code{TRUE}, displays a legend.
 #' @param ... Arguments passed on to the layout function (see
-#'   \link[ggraph]{layout_igraph_auto}). If you want to add more plot options
+#'   \link[ggraph]{layout_tbl_graph_auto}). If you want to add more plot options
 #'   use \code{+} and ggplot2 functions.
 #' @examples
 #' \dontrun{
