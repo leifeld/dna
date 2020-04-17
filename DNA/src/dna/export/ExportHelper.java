@@ -1431,7 +1431,13 @@ public class ExportHelper {
 			geometry.setAttribute(new Attribute("y", String.valueOf(Math.random() * 600)));
 			yShapeNode.addContent(geometry);
 			Element fill = new Element("Fill", yNs);
-			fill.setAttribute(new Attribute("color", color[i]));
+			String col;
+			if (color[i] == null) {
+				col = "";
+			} else {
+				col = color[i];
+			}
+			fill.setAttribute(new Attribute("color", col));
 
 			fill.setAttribute(new Attribute("transparent", "false"));
 			yShapeNode.addContent(fill);
