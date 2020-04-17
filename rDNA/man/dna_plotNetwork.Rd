@@ -4,14 +4,31 @@
 \alias{dna_plotNetwork}
 \title{Plots a network from DNA data}
 \usage{
-dna_plotNetwork(x, layout = "auto", edges = "link",
-  edge_weight = TRUE, edge_size_range = c(0.2, 2),
-  edge_color = "grey", edge_alpha = 1, node_size = 6,
-  node_attribute = "color", node_colors = "auto",
-  custom_colors = character(), node_shape = 19, node_label = TRUE,
-  font_size = 6, theme = "graph", label_repel = 0.5,
-  label_lines = FALSE, truncate = 30, groups = list(),
-  threshold = NULL, seed = 12345, show_legend = TRUE, ...)
+dna_plotNetwork(
+  x,
+  layout = "auto",
+  edges = "link",
+  edge_weight = TRUE,
+  edge_size_range = c(0.2, 2),
+  edge_color = "grey",
+  edge_alpha = 1,
+  node_size = 6,
+  node_attribute = "color",
+  node_colors = "auto",
+  custom_colors = character(),
+  node_shape = 19,
+  node_label = TRUE,
+  font_size = 6,
+  theme = "graph",
+  label_repel = 0.5,
+  label_lines = FALSE,
+  truncate = 30,
+  groups = list(),
+  threshold = NULL,
+  seed = 12345,
+  show_legend = TRUE,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{dna_network} object created by the \link{dna_network}
@@ -105,7 +122,7 @@ as any other value but provides that plots are always reproducible.}
 \item{show_legend}{If \code{TRUE}, displays a legend.}
 
 \item{...}{Arguments passed on to the layout function (see
-\link[ggraph]{layout_igraph_auto}). If you want to add more plot options
+\link[ggraph]{layout_tbl_graph_auto}). If you want to add more plot options
 use \code{+} and ggplot2 functions.}
 }
 \description{
@@ -124,7 +141,7 @@ example), \code{"fr"}, \code{"gem"}, \code{"graphopt"}, \code{"kk"},
 \code{"lgl"}, \code{"mds"}, \code{"nicely"}, \code{"randomly"} and
 \code{"star"}. The default, \code{"auto"} chooses \code{"stress"} if \code{x}
 is a one-mode network and \code{"bipartite"} in case of two-mode networks.
-Other layouts might be available (see \link[ggraph]{layout_igraph_auto},
+Other layouts might be available (see \link[ggraph]{layout_tbl_graph_auto},
 \link[graphlayouts]{layout_igraph_stress} and
 \link[graphlayouts]{layout_igraph_stress} for more details).
 

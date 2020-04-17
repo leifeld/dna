@@ -4,23 +4,49 @@
 \alias{dna_dendrogram}
 \title{Create a cluster dendrogram for a DNA database}
 \usage{
-dna_dendrogram(connection, statementType = "DNA Statement",
-  variable1 = "organization", variable1Document = FALSE,
-  variable2 = "concept", variable2Document = FALSE,
-  qualifier = "agreement", duplicates = "include",
-  start.date = "01.01.1900", stop.date = "31.12.2099",
-  start.time = "00:00:00", stop.time = "23:59:59",
-  excludeValues = list(), excludeAuthors = character(),
-  excludeSources = character(), excludeSections = character(),
-  excludeTypes = character(), invertValues = FALSE,
-  invertAuthors = FALSE, invertSources = FALSE,
-  invertSections = FALSE, invertTypes = FALSE, method = "best",
-  k = 0, k.max = 5, rectangle.colors = NULL, labels = "value",
-  label.colors = "color", label.size = 12, label.truncate = 30,
-  leaf.shape = "elbow", leaf.colors = label.colors, leaf.width = 1,
-  leaf.alpha = 1, symbol.shapes = 19, symbol.colors = label.colors,
-  symbol.sizes = 5, circular = FALSE, theme = "bw", caption = TRUE,
-  return.multiclust = FALSE)
+dna_dendrogram(
+  connection,
+  statementType = "DNA Statement",
+  variable1 = "organization",
+  variable1Document = FALSE,
+  variable2 = "concept",
+  variable2Document = FALSE,
+  qualifier = "agreement",
+  duplicates = "include",
+  start.date = "01.01.1900",
+  stop.date = "31.12.2099",
+  start.time = "00:00:00",
+  stop.time = "23:59:59",
+  excludeValues = list(),
+  excludeAuthors = character(),
+  excludeSources = character(),
+  excludeSections = character(),
+  excludeTypes = character(),
+  invertValues = FALSE,
+  invertAuthors = FALSE,
+  invertSources = FALSE,
+  invertSections = FALSE,
+  invertTypes = FALSE,
+  method = "best",
+  k = 0,
+  k.max = 5,
+  rectangle.colors = NULL,
+  labels = "value",
+  label.colors = "color",
+  label.size = 12,
+  label.truncate = 30,
+  leaf.shape = "elbow",
+  leaf.colors = label.colors,
+  leaf.width = 1,
+  leaf.alpha = 1,
+  symbol.shapes = 19,
+  symbol.colors = label.colors,
+  symbol.sizes = 5,
+  circular = FALSE,
+  theme = "bw",
+  caption = TRUE,
+  return.multiclust = FALSE
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
@@ -352,6 +378,7 @@ options. It is possible to return the underlying \code{\link{dna_multiclust}}
 object instead of the plot by using the \code{return.multiclust} argument.
 }
 \examples{
+\dontrun{
 library("rDNA")
 dna_init()
 samp <- dna_sample()
@@ -381,6 +408,7 @@ dna_dendrogram(conn, excludeValues = list(concept =
 # Return the dna_multiclust object
 mc <- dna_dendrogram(conn, k = 0, method = "best", return.multiclust = TRUE)
 mc
+}
 
 }
 \author{

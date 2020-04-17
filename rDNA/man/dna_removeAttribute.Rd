@@ -4,9 +4,15 @@
 \alias{dna_removeAttribute}
 \title{Removes an attribute entry from the database}
 \usage{
-dna_removeAttribute(connection, statementType = 1,
-  variable = "organization", attribute, removeStatements = FALSE,
-  simulate = TRUE, verbose = TRUE)
+dna_removeAttribute(
+  connection,
+  statementType = 1,
+  variable = "organization",
+  attribute,
+  removeStatements = FALSE,
+  simulate = TRUE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

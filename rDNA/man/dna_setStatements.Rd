@@ -4,8 +4,7 @@
 \alias{dna_setStatements}
 \title{Recode statements in the DNA database}
 \usage{
-dna_setStatements(connection, statements, simulate = TRUE,
-  verbose = TRUE)
+dna_setStatements(connection, statements, simulate = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

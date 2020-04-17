@@ -4,8 +4,14 @@
 \alias{dna_renameVariable}
 \title{Rename a variable}
 \usage{
-dna_renameVariable(connection, statementType, variable, label,
-  simulate = TRUE, verbose = TRUE)
+dna_renameVariable(
+  connection,
+  statementType,
+  variable,
+  label,
+  simulate = TRUE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

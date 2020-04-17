@@ -4,9 +4,17 @@
 \alias{dna_addStatement}
 \title{Add a statement to the DNA database}
 \usage{
-dna_addStatement(connection, documentID, startCaret = 1, endCaret = 2,
-  statementType = "DNA Statement", coder = 1, returnID = FALSE,
-  verbose = TRUE, ...)
+dna_addStatement(
+  connection,
+  documentID,
+  startCaret = 1,
+  endCaret = 2,
+  statementType = "DNA Statement",
+  coder = 1,
+  returnID = FALSE,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

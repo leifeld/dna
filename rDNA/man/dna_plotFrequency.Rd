@@ -4,8 +4,13 @@
 \alias{dna_plotFrequency}
 \title{Plots frequency of statements over time.}
 \usage{
-dna_plotFrequency(connection, of = "agreement", timewindow = "days",
-  bar = "stacked", ...)
+dna_plotFrequency(
+  connection,
+  of = "agreement",
+  timewindow = "days",
+  bar = "stacked",
+  ...
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

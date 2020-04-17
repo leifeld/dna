@@ -4,13 +4,29 @@
 \alias{dna_plotHive}
 \title{Produces a hive plot from DNA data}
 \usage{
-dna_plotHive(x, axis = "type", sort_by = "degree",
-  axis_label = FALSE, axis_colors = "auto",
-  custom_colors = character(), edge_weight = TRUE,
-  edge_size_range = c(0.2, 2), edge_color = "grey", edge_alpha = 1,
-  node_label = TRUE, label_repel = 0.5, label_lines = FALSE,
-  font_size = 6, theme = "graph", truncate = 30, groups = list(),
-  threshold = NULL, seed = 12345, show_legend = TRUE, ...)
+dna_plotHive(
+  x,
+  axis = "type",
+  sort_by = "degree",
+  axis_label = FALSE,
+  axis_colors = "auto",
+  custom_colors = character(),
+  edge_weight = TRUE,
+  edge_size_range = c(0.2, 2),
+  edge_color = "grey",
+  edge_alpha = 1,
+  node_label = TRUE,
+  label_repel = 0.5,
+  label_lines = FALSE,
+  font_size = 6,
+  theme = "graph",
+  truncate = 30,
+  groups = list(),
+  threshold = NULL,
+  seed = 12345,
+  show_legend = TRUE,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{dna_network_onemode} object created by the

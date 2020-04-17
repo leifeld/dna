@@ -834,8 +834,8 @@ In order to use \rdna, the rest of this section will explain how to install \R\ 
   \item Since the version of \R\ in the default repositories tends to be fairly outdated, we add the repository of the Comprehensive R Archive Network (CRAN) to our \code{sources.list}:
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 $sudo add-apt-repository \
-"deb [arch=amd64,i386] https://cran.rstudio.com/bin/linux/ubuntu \
-$(lsb_release -cs)/"
+"deb [arch=amd64,i386] https://cloud.r-project.org/bin/linux/ubuntu \
+$(lsb_release -cs)-cran35/"
 @
         Note, that \code{lsb\_release -a} automatically selects your flavor and version of Linux from the CRAN server.
         Visit \href{https://cran.rstudio.com/bin/linux/}{CRAN} to see for which  Linux distributions \R\ is available.

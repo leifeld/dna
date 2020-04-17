@@ -4,8 +4,13 @@
 \alias{dna_plotPolarization}
 \title{Plot polarization values in a \code{dna_polarization} object}
 \usage{
-dna_plotPolarization(x, include.y = NULL, loess = TRUE,
-  plot.convergence = FALSE, conv.distribution = FALSE)
+dna_plotPolarization(
+  x,
+  include.y = NULL,
+  loess = TRUE,
+  plot.convergence = FALSE,
+  conv.distribution = FALSE
+)
 }
 \arguments{
 \item{x}{A \code{dna_polarization} object, as created by the

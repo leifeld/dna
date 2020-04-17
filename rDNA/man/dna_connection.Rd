@@ -4,8 +4,13 @@
 \alias{dna_connection}
 \title{Establish a database connection}
 \usage{
-dna_connection(infile, login = NULL, password = NULL, create = FALSE,
-  verbose = TRUE)
+dna_connection(
+  infile,
+  login = NULL,
+  password = NULL,
+  create = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{infile}{The file name of the .dna database or the URL of the mySQL

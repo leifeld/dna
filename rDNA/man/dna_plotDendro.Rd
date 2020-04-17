@@ -4,14 +4,31 @@
 \alias{dna_plotDendro}
 \title{Plots a dendrogram from dna_cluster objects}
 \usage{
-dna_plotDendro(clust, shape = "elbows", activity = FALSE,
-  leaf_colors = "attribute1", branch_color = "#636363",
-  colors = "identity", custom_colors = character(),
-  leaf_ends = character(), custom_shapes = character(),
-  ends_alpha = 1, ends_size = 3, rectangles = character(),
-  leaf_linetype = "a", branch_linetype = "b", line_width = 1,
-  line_alpha = 1, font_size = 12, theme = "bw", truncate = 30,
-  leaf_labels = "ticks", circular = FALSE, show_legend = TRUE, ...)
+dna_plotDendro(
+  clust,
+  shape = "elbows",
+  activity = FALSE,
+  leaf_colors = "attribute1",
+  branch_color = "#636363",
+  colors = "identity",
+  custom_colors = character(),
+  leaf_ends = character(),
+  custom_shapes = character(),
+  ends_alpha = 1,
+  ends_size = 3,
+  rectangles = character(),
+  leaf_linetype = "a",
+  branch_linetype = "b",
+  line_width = 1,
+  line_alpha = 1,
+  font_size = 12,
+  theme = "bw",
+  truncate = 30,
+  leaf_labels = "ticks",
+  circular = FALSE,
+  show_legend = TRUE,
+  ...
+)
 }
 \arguments{
 \item{clust}{A \code{dna_cluster} object created by the \link{dna_cluster}

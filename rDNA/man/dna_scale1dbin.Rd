@@ -4,16 +4,32 @@
 \alias{dna_scale1dbin}
 \title{One-dimensional binary scaling from a DNA connection}
 \usage{
-dna_scale1dbin(connection, variable1 = "organization",
-  variable2 = "concept", qualifier = "agreement", threshold = NULL,
-  theta_constraints = NULL, mcmc_iterations = 20000,
-  mcmc_burnin = 1000, mcmc_thin = 10, mcmc_normalize = FALSE,
-  theta_start = NA, alpha_start = NA, beta_start = NA,
-  theta_prior_mean = 0, theta_prior_variance = 1,
-  alpha_beta_prior_mean = 0, alpha_beta_prior_variance = 0.25,
-  store_variables = "both", drop_constant_concepts = FALSE,
-  drop_min_actors = 1, drop_min_concepts = 2, verbose = TRUE,
-  seed = 12345, ...)
+dna_scale1dbin(
+  connection,
+  variable1 = "organization",
+  variable2 = "concept",
+  qualifier = "agreement",
+  threshold = NULL,
+  theta_constraints = NULL,
+  mcmc_iterations = 20000,
+  mcmc_burnin = 1000,
+  mcmc_thin = 10,
+  mcmc_normalize = FALSE,
+  theta_start = NA,
+  alpha_start = NA,
+  beta_start = NA,
+  theta_prior_mean = 0,
+  theta_prior_variance = 1,
+  alpha_beta_prior_mean = 0,
+  alpha_beta_prior_variance = 0.25,
+  store_variables = "both",
+  drop_constant_concepts = FALSE,
+  drop_min_actors = 1,
+  drop_min_concepts = 2,
+  verbose = TRUE,
+  seed = 12345,
+  ...
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

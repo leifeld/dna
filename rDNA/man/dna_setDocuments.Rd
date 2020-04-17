@@ -4,8 +4,13 @@
 \alias{dna_setDocuments}
 \title{Recode documents and metadata in the DNA database}
 \usage{
-dna_setDocuments(connection, documents, removeStatements = FALSE,
-  simulate = TRUE, verbose = TRUE)
+dna_setDocuments(
+  connection,
+  documents,
+  removeStatements = FALSE,
+  simulate = TRUE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

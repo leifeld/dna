@@ -4,14 +4,29 @@
 \alias{dna_plotScale}
 \title{Plot ideological ideal points from a dna_scale object}
 \usage{
-dna_plotScale(dna_scale, variable = "organization", dimensions = 1,
-  hpd = 0.95, label = TRUE, label_size = 10, label_colors = FALSE,
-  point_size = 4, point_colors = TRUE, hpd_lwd = 0.8,
-  hpd_colors = TRUE, intercept_lwd = 0.8,
-  intercept_color = "#525252", intercept_lty = "dashed",
-  intercept_alpha = 0.4, facet = NULL, truncate = 60,
-  x_axis_label = NULL, y_axis_label = NULL, exclude_min = 1,
-  exclude = NULL)
+dna_plotScale(
+  dna_scale,
+  variable = "organization",
+  dimensions = 1,
+  hpd = 0.95,
+  label = TRUE,
+  label_size = 10,
+  label_colors = FALSE,
+  point_size = 4,
+  point_colors = TRUE,
+  hpd_lwd = 0.8,
+  hpd_colors = TRUE,
+  intercept_lwd = 0.8,
+  intercept_color = "#525252",
+  intercept_lty = "dashed",
+  intercept_alpha = 0.4,
+  facet = NULL,
+  truncate = 60,
+  x_axis_label = NULL,
+  y_axis_label = NULL,
+  exclude_min = 1,
+  exclude = NULL
+)
 }
 \arguments{
 \item{dna_scale}{A \code{dna_scale} object.}

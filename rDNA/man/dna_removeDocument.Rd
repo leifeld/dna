@@ -4,8 +4,13 @@
 \alias{dna_removeDocument}
 \title{Removes a document from the database}
 \usage{
-dna_removeDocument(connection, id, removeStatements = FALSE,
-  simulate = TRUE, verbose = TRUE)
+dna_removeDocument(
+  connection,
+  id,
+  removeStatements = FALSE,
+  simulate = TRUE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

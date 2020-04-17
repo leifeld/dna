@@ -4,13 +4,24 @@
 \alias{dna_addCoder}
 \title{Add a new coder to the DNA database}
 \usage{
-dna_addCoder(connection, name, color, addDocuments = TRUE,
-  editDocuments = TRUE, deleteDocuments = TRUE,
-  importDocuments = TRUE, viewOthersDocuments = TRUE,
-  editOthersDocuments = TRUE, addStatements = TRUE,
-  viewOthersStatements = TRUE, editOthersStatements = TRUE,
-  editCoders = TRUE, editStatementTypes = TRUE, editRegex = TRUE,
-  verbose = TRUE)
+dna_addCoder(
+  connection,
+  name,
+  color,
+  addDocuments = TRUE,
+  editDocuments = TRUE,
+  deleteDocuments = TRUE,
+  importDocuments = TRUE,
+  viewOthersDocuments = TRUE,
+  editOthersDocuments = TRUE,
+  addStatements = TRUE,
+  viewOthersStatements = TRUE,
+  editOthersStatements = TRUE,
+  editCoders = TRUE,
+  editStatementTypes = TRUE,
+  editRegex = TRUE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the

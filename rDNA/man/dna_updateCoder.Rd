@@ -4,13 +4,25 @@
 \alias{dna_updateCoder}
 \title{Update the name, color, or permissions of a coder in the DNA database}
 \usage{
-dna_updateCoder(connection, coder, name = NULL, color = NULL,
-  addDocuments = NULL, editDocuments = NULL, deleteDocuments = NULL,
-  importDocuments = NULL, viewOthersDocuments = NULL,
-  editOthersDocuments = NULL, addStatements = NULL,
-  viewOthersStatements = NULL, editOthersStatements = NULL,
-  editCoders = NULL, editStatementTypes = NULL, editRegex = NULL,
-  verbose = TRUE)
+dna_updateCoder(
+  connection,
+  coder,
+  name = NULL,
+  color = NULL,
+  addDocuments = NULL,
+  editDocuments = NULL,
+  deleteDocuments = NULL,
+  importDocuments = NULL,
+  viewOthersDocuments = NULL,
+  editOthersDocuments = NULL,
+  addStatements = NULL,
+  viewOthersStatements = NULL,
+  editOthersStatements = NULL,
+  editCoders = NULL,
+  editStatementTypes = NULL,
+  editRegex = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{connection}{A \code{dna_connection} object created by the
