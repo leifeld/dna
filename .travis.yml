@@ -37,7 +37,6 @@ matrix:
         r_github_packages:
           - igraph/rigraph
         before_script:
-          - Rscript -e "update.packages(checkBuilt = TRUE, ask = FALSE)"
           - cd ..
           - make dna
           - cp ./output/dna-*.jar ./rDNA/inst/extdata/
@@ -63,16 +62,13 @@ matrix:
         addons:
           apt:
             packages:
-               - r-cran-coda
                - r-cran-rjava
                - libudunits2-dev
-               - r-cran-mcmcpack
         r_packages:
           - devtools
         r_github_packages:
           - igraph/rigraph
         before_script:
-          - Rscript -e "update.packages(checkBuilt = TRUE, ask = FALSE)"
           - cd ..
           - make dna
           - cp ./output/dna-*.jar ./rDNA/inst/extdata/
@@ -94,7 +90,6 @@ matrix:
         addons:
           apt:
             packages:
-               - r-cran-coda
                - r-cran-rjava
                - libudunits2-dev
                - r-cran-mcmcpack
