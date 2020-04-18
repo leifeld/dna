@@ -37,6 +37,7 @@ matrix:
         r_github_packages:
           - igraph/rigraph
         before_script:
+          - Rscript -e "update.packages(checkBuilt = TRUE, ask = FALSE)"
           - cd ..
           - make dna
           - cp ./output/dna-*.jar ./rDNA/inst/extdata/
@@ -71,6 +72,7 @@ matrix:
         r_github_packages:
           - igraph/rigraph
         before_script:
+          - Rscript -e "update.packages(checkBuilt = TRUE, ask = FALSE)"
           - cd ..
           - make dna
           - cp ./output/dna-*.jar ./rDNA/inst/extdata/
