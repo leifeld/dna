@@ -1803,7 +1803,7 @@ The the choice of the value zero in cells where row and column mention the same 
 library("rDNA")
 library("kableExtra")
 dna_init()
-truncate <- function(x, trunc = 12){
+truncate <- function(x, trunc = 12) {
   x <- ifelse(nchar(x) > trunc,
                         paste0(gsub("\\s+$", "",
                                     substr(x, start = 1, stop = trunc)),
@@ -3460,7 +3460,7 @@ dna_plotNetwork(nw, truncate = 20, label_repel = 0) +
 @
 
 As you might be aware though, network visualization poses one problem: the choice of the right layout algorithm can be quite difficult and there is unfortunately not one that would solve the problems for all datasets.
-In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} \citep{csardi2006igraph} and \texttt{graphlayouts} \citep{schoch2019graphlayouts} package are available---not all of which are useful for plotting networks from \dna\ data. 
+In \code{dna\_plotNetwork}, more than a dozen options from the \texttt{igraph} \citep{csardi2006igraph} and \texttt{graphlayouts} \citep{schoch2019graphlayouts} package are available---not all of which are useful for plotting networks from \dna\ data.
 Following is a selection of algorithms suitable to use with \dna data:
 
 \begin{description}
@@ -3475,7 +3475,7 @@ Following is a selection of algorithms suitable to use with \dna data:
   \item[drl] Uses the force directed algorithm from the DrL toolbox to place nodes. See \code{?igraph::with\_drl}.
 
   \item[fr] Spreads the nodes based on the force-directed algorithm of Fruchterman and Reingold. See \code{?igraph::with\_fr}
-  
+
   \item[focus] creates a radial layout around a focal node. All nodes with the same distance from the focal node are on the same circle. To select the focal node, use the arguemnt `focus` (e.g., `focus = 2` to select node `2`). See \code{?graphlayouts::layout\_with\_focus}.
 
   \item[gem] Places nodes on the plane using the GEM force-directed layout algorithm. See \code{?igraph::with\_gem}.
@@ -3668,11 +3668,12 @@ Luckily, many people who use \R\ have had similar problems and developed useful 
 There are many tutorials online on how to get your specific format in which you retrieved raw text data into \R\ which is why we will not cover this part.
 However, before you can hand the documents over to \dna, you have to bring them into the correct format first.
 
-We use the dataset ``Irish budget speeches from 2010'' from \citet{lowe2013validate} which is integrated in the \texttt{quanteda} package \citep{benoit2018quanteda} to exemplify the process of how this is done:\footnote{Install \texttt{quanteda} first with \code{install.packages("quanteda")} if you do not have it on your system already.}
+We use the dataset ``Irish budget speeches from 2010'' from \citet{lowe2013validate} which is integrated in the \texttt{quanteda.textmodels} package \citep{benoit2018quanteda} to exemplify the process of how this is done:\footnote{Install \texttt{quanteda.textmodels} first with \code{install.packages("quanteda.textmodels")} if you do not have it on your system already.}
 
 <<eval=TRUE, results = 'tex', message=FALSE>>=
-library("quanteda")
+library("quanteda.textmodels")
 # First load the data
+data(data_corpus_irishbudget2010, package = "quanteda.textmodels")
 corpus <- data_corpus_irishbudget2010
 
 # To get to the text data we have to subset the corpus object which transforms

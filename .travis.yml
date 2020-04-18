@@ -31,7 +31,7 @@ matrix:
           - kableExtra
           - knitr
           - LexisNexisTools
-          - quanteda
+          - quanteda.textmodels
           - statnet
         r_github_packages:
           - igraph/rigraph
