@@ -24,7 +24,6 @@ matrix:
                - libudunits2-dev
                - poppler-utils
                - r-cran-rjava
-               - r-cran-mcmcpack
         r_packages:
           - devtools
           - ggplot2
@@ -92,7 +91,6 @@ matrix:
             packages:
                - r-cran-rjava
                - libudunits2-dev
-               - r-cran-mcmcpack
         r_packages:
           - devtools
         r_github_packages:
