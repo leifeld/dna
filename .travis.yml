@@ -76,6 +76,7 @@ matrix:
           - cd rDNA
         script:
           - Rscript -e "install.packages(c('rJava', 'ggraph', 'coda'))" # Some packages need to be installed for every R version
+          - Rscript -e "update.packages('coda')"
           - R CMD build .
           - R CMD check *tar.gz
         after_success:
@@ -104,7 +105,8 @@ matrix:
           - cp ./output/dna-*.jar ./rDNA/inst/extdata/
           - cd rDNA
         script:
-          - Rscript -e "install.packages(c('rJava', 'ggraph', 'coda'))"
+          - Rscript -e "install.packages(c('rJava', 'ggraph'))"
+          - Rscript -e "update.packages('coda')"
           - R CMD build .
           - R CMD check *tar.gz
         after_success:
