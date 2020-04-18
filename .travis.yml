@@ -1,4 +1,4 @@
-dist: xenial
+dist: bionic
 matrix:
   include:
       - name: "DNA Jar"
