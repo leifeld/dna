@@ -1201,10 +1201,12 @@ public class ExportHelper {
 	 * @param attributes             An ArrayList of {@link AttributeVector}s containing all attribute vectors in the database.
 	 * @param qualifierAggregation   A String denoting the qualifier aggregation. Valid values are "ignore", "combine", "subtract", "congruence", and "conflict".
 	 * @param qualifierBinary        Indicates whether the qualifier is a binary variable.
+	 * @param var1Doc                Indicates whether the first variable is a document-level variable (and thus has no attributes).
+	 * @param var2Doc                Indicates whether the second variable is a document-level variable (and thus has no attributes).
 	 */
 	void exportGraphml(Matrix mt, boolean twoMode, StatementType statementType, String outfile, 
 			String var1, String var2, int[] frequencies1, int[] frequencies2, ArrayList<AttributeVector> attributes, 
-			String qualifierAggregation, boolean qualifierBinary) {
+			String qualifierAggregation, boolean qualifierBinary, boolean var1Doc, boolean var2Doc) {
 		
 		// extract attributes
 		String[] rn = mt.getRownames();
@@ -1238,31 +1240,86 @@ public class ExportHelper {
 		String[] type = new String[names.length];
 		String[] alias = new String[names.length];
 		String[] notes = new String[names.length];
-		for (int i = 0; i < attributes.size(); i++) {
-			if (attributes.get(i).getStatementTypeId() == statementType.getId() && attributes.get(i).getVariable().equals(var1)) {
-				for (int j = 0; j < rn.length; j++) {
-					if (rn[j].equals(attributes.get(i).getValue())) {
-						id[j] = attributes.get(i).getId();
-						color[j] = String.format("#%02X%02X%02X", attributes.get(i).getColor().getRed(), 
-								attributes.get(i).getColor().getGreen(), attributes.get(i).getColor().getBlue());
-						type[j] = attributes.get(i).getType();
-						alias[j] = attributes.get(i).getAlias();
-						notes[j] = attributes.get(i).getNotes();
-					}
-				}
-			} else if (attributes.get(i).getStatementTypeId() == statementType.getId() && attributes.get(i).getVariable().equals(var2) && twoMode == true) {
-				for (int j = 0; j < cn.length; j++) {
-					if (cn[j].equals(attributes.get(i).getValue())) {
-						id[j + rn.length] = attributes.get(i).getId();
-						color[j + rn.length] = String.format("#%02X%02X%02X", attributes.get(i).getColor().getRed(), 
-								attributes.get(i).getColor().getGreen(), attributes.get(i).getColor().getBlue());
-						type[j + rn.length] = attributes.get(i).getType();
-						alias[j + rn.length] = attributes.get(i).getAlias();
-						notes[j + rn.length] = attributes.get(i).getNotes();
+		for (int i = 0; i < rn.length; i++) {
+			if (var1Doc == true) {
+				id[i] = i;
+				color[i] = "#000000";
+				type[i] = "";
+				alias[i] = "";
+				notes[i] = "";
+			} else {
+				for (int j = 0; j < attributes.size(); j++) {
+					if (attributes.get(j).getStatementTypeId() == statementType.getId() &&
+							attributes.get(j).getVariable().equals(var1) &&
+							rn[i].equals(attributes.get(j).getValue())) {
+						id[i] = attributes.get(j).getId();
+						color[i] = String.format("#%02X%02X%02X", attributes.get(j).getColor().getRed(), 
+								attributes.get(j).getColor().getGreen(), attributes.get(j).getColor().getBlue());
+						type[i] = attributes.get(j).getType();
+						alias[i] = attributes.get(j).getAlias();
+						notes[i] = attributes.get(j).getNotes();
 					}
 				}
 			}
 		}
+		if (twoMode == true) {
+			for (int i = rn.length; i < id.length; i++) {
+				if (var2Doc == true) {
+					id[i] = i;
+					color[i] = "#000000";
+					type[i] = "";
+					alias[i] = "";
+					notes[i] = "";
+				} else {
+					for (int j = 0; j < attributes.size(); j++) {
+						if (attributes.get(j).getStatementTypeId() == statementType.getId() &&
+								attributes.get(j).getVariable().equals(var2) &&
+								names[i].equals(attributes.get(j).getValue())) {
+							id[i] = attributes.get(j).getId();
+							color[i] = String.format("#%02X%02X%02X", attributes.get(j).getColor().getRed(), 
+									attributes.get(j).getColor().getGreen(), attributes.get(j).getColor().getBlue());
+							type[i] = attributes.get(j).getType();
+							alias[i] = attributes.get(j).getAlias();
+							notes[i] = attributes.get(j).getNotes();
+						}
+					}
+				}
+			}
+		}
+		
+		/*
+		if (var2Doc == true && twoMode == true) {
+			for (int i = 0; i < names.length; i++) {
+				id[i + rn.length] = i + rn.length;
+			}
+		} else {
+			for (int i = 0; i < attributes.size(); i++) {
+				if (attributes.get(i).getStatementTypeId() == statementType.getId() && attributes.get(i).getVariable().equals(var1)) {
+					for (int j = 0; j < rn.length; j++) {
+						if (rn[j].equals(attributes.get(i).getValue())) {
+							id[j] = attributes.get(i).getId();
+							color[j] = String.format("#%02X%02X%02X", attributes.get(i).getColor().getRed(), 
+									attributes.get(i).getColor().getGreen(), attributes.get(i).getColor().getBlue());
+							type[j] = attributes.get(i).getType();
+							alias[j] = attributes.get(i).getAlias();
+							notes[j] = attributes.get(i).getNotes();
+						}
+					}
+				} else if (attributes.get(i).getStatementTypeId() == statementType.getId() && attributes.get(i).getVariable().equals(var2) && twoMode == true) {
+					for (int j = 0; j < cn.length; j++) {
+						if (cn[j].equals(attributes.get(i).getValue())) {
+							id[j + rn.length] = attributes.get(i).getId();
+							color[j + rn.length] = String.format("#%02X%02X%02X", attributes.get(i).getColor().getRed(), 
+									attributes.get(i).getColor().getGreen(), attributes.get(i).getColor().getBlue());
+							type[j + rn.length] = attributes.get(i).getType();
+							alias[j + rn.length] = attributes.get(i).getAlias();
+							notes[j + rn.length] = attributes.get(i).getNotes();
+						}
+					}
+				}
+			}
+		}
+		*/
 		
 		// set up graph structure
 		Namespace xmlns = Namespace.getNamespace("http://graphml.graphdrawing.org/xmlns");
@@ -1431,13 +1488,7 @@ public class ExportHelper {
 			geometry.setAttribute(new Attribute("y", String.valueOf(Math.random() * 600)));
 			yShapeNode.addContent(geometry);
 			Element fill = new Element("Fill", yNs);
-			String col;
-			if (color[i] == null) {
-				col = "";
-			} else {
-				col = color[i];
-			}
-			fill.setAttribute(new Attribute("color", col));
+			fill.setAttribute(new Attribute("color", color[i]));
 
 			fill.setAttribute(new Attribute("transparent", "false"));
 			yShapeNode.addContent(fill);

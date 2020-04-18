@@ -841,7 +841,7 @@ public class ExporterR {
 						System.out.println("The graphml file format does not currently support event lists. Aborting.");
 					} else {
 						exportHelper.exportGraphml(this.matrices.get(0), twoMode, st, outfile, variable1, variable2, frequencies1, frequencies2, 
-								this.data.getAttributes(), qualifierAggregation, qualifierBinary);
+								this.data.getAttributes(), qualifierAggregation, qualifierBinary, variable1Document, variable2Document);
 					}
 				} else {
 					String filename1 = outfile.substring(0, outfile.length() - 8);
@@ -852,7 +852,8 @@ public class ExporterR {
 						for (int i = 0; i < this.matrices.size(); i++) {
 							String filename2 = "-" + String.format("%0" + String.valueOf(this.matrices.size()).length() + "d", i + 1);
 							exportHelper.exportGraphml(this.matrices.get(i), twoMode, st, filename1 + filename2 + filename3, 
-									variable1, variable2, frequencies1, frequencies2, this.data.getAttributes(), qualifierAggregation, qualifierBinary);
+									variable1, variable2, frequencies1, frequencies2, this.data.getAttributes(), qualifierAggregation, 
+									qualifierBinary, variable1Document, variable2Document);
 						}
 					}
 				}

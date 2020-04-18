@@ -1211,14 +1211,15 @@ public class ExporterGUI extends JDialog {
 					}
 					if (timeWindowBox.getSelectedItem().equals("no time window")) {
 						exportHelper.exportGraphml(matrix, twoMode, statementType, filename, var1Name, var2Name, frequencies1, frequencies2, 
-								attributes, qualifierAggregation, qualifierBinary);
+								attributes, qualifierAggregation, qualifierBinary, var1Document(), var2Document());
 					} else {
 						String filename1 = filename.substring(0, filename.length() - 8);
 						String filename3 = filename.substring(filename.length() - 8, filename.length());
 						for (int i = 0; i < timeWindowMatrices.size(); i++) {
 							String filename2 = "-" + String.format("%0" + String.valueOf(timeWindowMatrices.size()).length() + "d", i + 1);
 							exportHelper.exportGraphml(timeWindowMatrices.get(i), twoMode, statementType, filename1 + filename2 + filename3, 
-									var1Name, var2Name, frequencies1, frequencies2, attributes, qualifierAggregation, qualifierBinary);
+									var1Name, var2Name, frequencies1, frequencies2, attributes, qualifierAggregation, qualifierBinary, 
+									var1Document(), var2Document());
 						}
 					}
 				}
