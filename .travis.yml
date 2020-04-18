@@ -62,6 +62,7 @@ matrix:
         addons:
           apt:
             packages:
+               - r-cran-coda
                - r-cran-rjava
                - libudunits2-dev
                - r-cran-mcmcpack
@@ -70,13 +71,12 @@ matrix:
         r_github_packages:
           - igraph/rigraph
         before_script:
-          - Rscript -e "install.packages('coda')"
           - cd ..
           - make dna
           - cp ./output/dna-*.jar ./rDNA/inst/extdata/
           - cd rDNA
         script:
-          - Rscript -e "install.packages(c('rJava', 'ggraph', 'coda'))" # Some packages need to be installed for every R version
+          - Rscript -e "install.packages(c('rJava', 'ggraph'))" # Some packages need to be installed for every R version
           - R CMD build .
           - R CMD check *tar.gz
         after_success:
@@ -92,6 +92,7 @@ matrix:
         addons:
           apt:
             packages:
+               - r-cran-coda
                - r-cran-rjava
                - libudunits2-dev
                - r-cran-mcmcpack
@@ -100,7 +101,6 @@ matrix:
         r_github_packages:
           - igraph/rigraph
         before_script:
-          - Rscript -e "install.packages('coda')"
           - cd ..
           - make dna
           - cp ./output/dna-*.jar ./rDNA/inst/extdata/
