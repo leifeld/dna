@@ -3668,21 +3668,25 @@ Luckily, many people who use \R\ have had similar problems and developed useful 
 There are many tutorials online on how to get your specific format in which you retrieved raw text data into \R\ which is why we will not cover this part.
 However, before you can hand the documents over to \dna, you have to bring them into the correct format first.
 
-We use the dataset ``Irish budget speeches from 2010'' from \citet{lowe2013validate} which is integrated in the \texttt{quanteda.textmodels} package \citep{benoit2018quanteda} to exemplify the process of how this is done:\footnote{Install \texttt{quanteda.textmodels} first with \code{install.packages("quanteda.textmodels")} if you do not have it on your system already.}
+We use the dataset ``Irish budget speeches from 2010'' from \citet{lowe2013validate} which is integrated in the \texttt{quanteda.corpora} package \citep{benoit2018quanteda} to exemplify the process of how this is done:
 
 <<eval=TRUE, results = 'tex', message=FALSE>>=
-library("quanteda.textmodels")
+# install quanteda.corpora if not present
+# remotes::install_github("quanteda/quanteda.corpora")
 # First load the data
-data(data_corpus_irishbudget2010, package = "quanteda.textmodels")
-corpus <- data_corpus_irishbudget2010
+data(data_corpus_irishbudgets, package = "quanteda.corpora")
+corpus <- data_corpus_irishbudgets
 
 # To get to the text data we have to subset the corpus object which transforms
 # it into a data.frame
-df <- corpus$documents
+df <- data.frame(texts = as.character(corpus),
+                 attr(corpus, "docvars"),
+                 stringsAsFactors = FALSE)
 @
 <<eval=TRUE, results = 'tex', echo=FALSE>>=
-df2 <- df
-row.names(df2) <- trim(row.names(df2), n = 14)
+df2 <- head(df, 14)[, c("number", "docid_", "texts", 
+                        "namefirst", "namelast", "party")]
+row.names(df2) <- NULL
 df2$texts <- trim(df2$texts, n = 14)
 kable(df2, format = "latex", booktabs = TRUE, linesep = "") %>%
   kable_styling(latex_options = c("striped", "HOLD_position"), font_size = 7)
@@ -3697,8 +3701,8 @@ docs_new <- data.frame(id = df$number,
                        title = row.names(df),
                        text = df$texts,
                        coder = 1,
-                       author = paste(df$foren, df$name),
-                       source = "Budget Statement 2010",
+                       author = paste(df$namefirst, df$namelast),
+                       source = "Annual budget speeches 2008-2012",
                        section = "",
                        notes = df$party,
                        type = df$debate,
@@ -3706,7 +3710,7 @@ docs_new <- data.frame(id = df$number,
                        stringsAsFactors = FALSE)
 @
 <<eval=TRUE, results = 'tex', echo=FALSE>>=
-docs_new2 <- docs_new
+docs_new2 <- head(docs_new, 14)
 docs_new2$title <- trim(docs_new2$title, n = 14)
 docs_new2$text <- trim(docs_new2$text, n = 14)
 docs_new2$source <- trim(docs_new2$source, n = 10)
