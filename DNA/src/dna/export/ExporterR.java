@@ -377,9 +377,6 @@ public class ExporterR {
 		// process and check validity of statement type etc.
 		// valid R input for qualifierAggregation: 'ignore', 'combine', 'subtract', 'congruence', or 'conflict'
 		StatementType st = data.getStatementType(statementType);
-		if (st == null) {
-			throw new Exception("Statement type '" + statementType + " does not exist!");
-		}
 		
 		if (!variable1.equals("author") && !variable1.equals("source") && !variable1.equals("section") 
 				&& !variable1.equals("type") && !variable1.equals("id") && !variable1.equals("title")) {
@@ -1066,8 +1063,9 @@ public class ExporterR {
 	 * @param variable            Variable name for which the values and attributes should be retrieved.
 	 * @param values              An array of values to which the attributes should be limited. Useful for handing over the nodes of a network, for example.
 	 * @return                    Object array containing arrays with the ID, value, color, type, alias, notes, and frequency of each entry.
+	 * @throws Exception 
 	 */
-	public Object[] getAttributes(String statementTypeLabel, String variable, String[] values) {
+	public Object[] getAttributes(String statementTypeLabel, String variable, String[] values) throws Exception {
 		StatementType st = this.data.getStatementType(statementTypeLabel);
 		int id = -1;
 		if (st != null) {
@@ -2301,7 +2299,7 @@ public class ExporterR {
 		int statementTypeId = -1;
 		try {
 			statementTypeId = this.data.getStatementType(statementType).getId();
-		} catch (NullPointerException npe) {
+		} catch (Exception npe) {
 			System.err.println("Statement could not be added because the statement type is unknown.");
 			return -1;
 		}
@@ -2327,7 +2325,7 @@ public class ExporterR {
 		int statementTypeId = -1;
 		try {
 			statementTypeId = this.data.getStatementType(statementType).getId();
-		} catch (NullPointerException npe) {
+		} catch (Exception npe) {
 			System.err.println("Statement could not be added because the statement type is unknown.");
 			return -1;
 		}
@@ -2641,8 +2639,9 @@ public class ExporterR {
 	 * 
 	 * @param statementTypeLabel  Label of the statement type to be renamed.
 	 * @param newLabel            New label as a string.
+	 * @throws Exception 
 	 */
-	public void renameStatementType(String statementTypeLabel, String newLabel) {
+	public void renameStatementType(String statementTypeLabel, String newLabel) throws Exception {
 		int statementTypeId = this.data.getStatementType(statementTypeLabel).getId();
 		this.data.getStatementTypeById(statementTypeId).setLabel(newLabel);
 		this.sql.renameStatementType(statementTypeId, newLabel);
@@ -2664,8 +2663,9 @@ public class ExporterR {
 	 * 
 	 * @param statementTypeLabel  Label of the statement type to be updated.
 	 * @param color               String with a hexadecimal RGB color, for example "#FFFF00".
+	 * @throws Exception 
 	 */
-	public void colorStatementType(String statementTypeLabel, String color) {
+	public void colorStatementType(String statementTypeLabel, String color) throws Exception {
 		int statementTypeId = this.data.getStatementType(statementTypeLabel).getId();
 		colorStatementType(statementTypeId, color);
 	}
@@ -2695,8 +2695,9 @@ public class ExporterR {
 	 * 
 	 * @param statementTypeLabel  Label of the statement type for which variables should be retrieved.
 	 * @return                    Object array of variables and data type definitions.
+	 * @throws Exception 
 	 */
-	public Object[] getVariables(String statementTypeLabel) {
+	public Object[] getVariables(String statementTypeLabel) throws Exception {
 		int id = this.data.getStatementType(statementTypeLabel).getId();
 		return getVariables(id);
 	}

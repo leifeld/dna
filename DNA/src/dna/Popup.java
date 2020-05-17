@@ -197,7 +197,12 @@ public class Popup extends JDialog {
 		gbc.gridy = 0;
 		gbc.anchor = GridBagConstraints.EAST;
 		
-		HashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
+		HashMap<String, String> variables = null;
+		try {
+			variables = Dna.data.getStatementType(type).getVariables();
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
 		
 		Iterator<String> keyIterator = variables.keySet().iterator();
 		while (keyIterator.hasNext()) {

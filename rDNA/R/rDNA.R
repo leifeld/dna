@@ -3422,6 +3422,10 @@ dna_multiclust <- function(connection,
   if (is.null(k.max) || is.na(k.max) || !is.numeric(k.max) || length(k.max) > 1 || is.infinite(k.max) || k.max < 1) {
     stop("'k.max' must be a positive integer number.")
   }
+  if (k == 1) {
+    k <- 0
+    warning("'k' must be 0 (for arbitrary numbers of clusters) or larger than 1 (to constrain number of clusters). Using 'k = 0'.")
+  }
 
   # determine what kind of two-mode network to create
   if (is.null(qualifier) || is.na(qualifier) || !is.character(qualifier)) {
@@ -7504,11 +7508,11 @@ dna_dendrogram <- function(connection,
                            label.size = 12,
                            label.truncate = 30,
                            leaf.shape = "elbow",
-                           leaf.colors = label.colors,
+                           leaf.colors = "color",
                            leaf.width = 1,
                            leaf.alpha = 1,
                            symbol.shapes = 19,
-                           symbol.colors = label.colors,
+                           symbol.colors = "color",
                            symbol.sizes = 5,
                            circular = FALSE,
                            theme = "bw",

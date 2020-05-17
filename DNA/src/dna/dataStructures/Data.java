@@ -362,7 +362,7 @@ public class Data {
 		return null;
 	}
 	
-	public StatementType getStatementType(String label) {
+	public StatementType getStatementType(String label) throws Exception {
 		ArrayList<StatementType> s = new ArrayList<StatementType>();
 		for (int i = 0; i < statementTypes.size(); i++) {
 			if (statementTypes.get(i).getLabel().equals(label)) {
@@ -373,7 +373,7 @@ public class Data {
 			System.err.println("Multiple statement types with the same name were found. Using the first one with ID " + s.get(0).getId() + ".");
 		}
 		if (s.size() < 1) {
-			return null;
+			throw new Exception("Statement type '" + label + "' does not exist!");
 		}
 		return s.get(0);
 	}

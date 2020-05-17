@@ -181,7 +181,12 @@ public class ContradictionPanel extends JPanel {
 		String type = (String) filterComboBoxType.getSelectedItem();
 		if (type != null && !type.equals("")) {
 			//HashMap<String, String> variables = Dna.dna.db.getVariables(type);
-			HashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
+			HashMap<String, String> variables = null;
+			try {
+				variables = Dna.data.getStatementType(type).getVariables();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			Iterator<String> keyIterator = variables.keySet().iterator();
 			while (keyIterator.hasNext()){
 				String key = keyIterator.next();
@@ -220,7 +225,12 @@ public class ContradictionPanel extends JPanel {
 		filterComboBoxBoolean.removeAllItems();
 		String type = (String) filterComboBoxType.getSelectedItem();
 		if (type != null && !type.equals("")) {
-			ArrayList<String> variables = Dna.data.getStatementType(type).getVariablesByType("boolean");
+			ArrayList<String> variables = null;
+			try {
+				variables = Dna.data.getStatementType(type).getVariablesByType("boolean");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			if (variables.size() == 0) {
 				goButton.setEnabled(false);
 				clearButton.setEnabled(false);
@@ -245,7 +255,12 @@ public class ContradictionPanel extends JPanel {
 			filterComboBoxVar2.removeAllItems();
 			String type = (String) filterComboBoxType.getSelectedItem();
 			if (type != null && !type.equals("")) {
-				HashMap<String, String> variables = Dna.data.getStatementType(type).getVariables();
+				HashMap<String, String> variables = null;
+				try {
+					variables = Dna.data.getStatementType(type).getVariables();
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
 				String variable1 = (String) filterComboBoxVar1.getSelectedItem();
 				// remove item from HashMap: http://stackoverflow.com/questions/6531132/java-hashmap-removing-key-value
 				variables.remove(variable1);

@@ -340,7 +340,12 @@ public class ImportDnaDocuments extends JDialog {
 			ArrayList<StatementType> foreignStatementTypes = foreignData.getStatementTypes();
 			for (int i = 0; i < foreignStatementTypes.size(); i++) {  // iterate through all foreign statement types also present in current database
 				if (Dna.data.getStatementTypes().contains(foreignStatementTypes.get(i))) {
-					int statementTypeId = Dna.data.getStatementType(foreignStatementTypes.get(i).getLabel()).getId();
+					int statementTypeId = 0;
+					try {
+						statementTypeId = Dna.data.getStatementType(foreignStatementTypes.get(i).getLabel()).getId();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 					ArrayList<Statement> statements = Dna.data.getStatementsByStatementTypeId(statementTypeId);
 					LinkedHashMap<String, String> variables = foreignStatementTypes.get(i).getVariables();
 					Iterator<String> keyIterator = variables.keySet().iterator();
