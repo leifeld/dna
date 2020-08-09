@@ -26,7 +26,6 @@ import dna.dataStructures.Document;
 import dna.dataStructures.Regex;
 import dna.dataStructures.Statement;
 import dna.dataStructures.StatementType;
-import dna.export.GeneticAlgorithm.PolarizationResult;
 
 public class ExporterR {
 
@@ -44,7 +43,7 @@ public class ExporterR {
 	Object[] eventListColumnsR;
 	String[] columnNames, columnTypes;
 	ExportHelper exportHelper;
-	GeneticAlgorithm ga;
+	ArrayList<PolarizationResult> pol;
 
 	/**
 	 * Constructor for external R calls. Load and prepare data for export.
@@ -3562,7 +3561,7 @@ public class ExporterR {
 	
 
 	/* =================================================================================================================
-	 * Genetic algorithm for estimating polarization
+	 * Optimization algorithm for estimating polarization
 	 * =================================================================================================================
 	 */
 
@@ -3592,15 +3591,16 @@ public class ExporterR {
 			boolean invertSources,
 			boolean invertSections,
 			boolean invertTypes,
+			String algorithm,
 			int k,
+			String qualityFunction,
 			int numClusterSolutions,
 			int iterations,
-			String qualityFunction,
 			double eliteShare,
 			double mutationShare
 			) throws Exception {
-		
-		ga = new GeneticAlgorithm(
+
+		pol = new Polarization(
 				this,
 				statementType,
 				variable1,
@@ -3627,43 +3627,44 @@ public class ExporterR {
 				invertSources,
 				invertSections,
 				invertTypes,
+				algorithm,
 				k,
+				qualityFunction,
 				numClusterSolutions,
 				iterations,
-				qualityFunction,
 				eliteShare,
 				mutationShare
-				);
+				).getResults();
 	}
 
 	public double[] getFinalMaxQ() {
-		int T = ga.getResults().size();
+		int T = pol.size();
 		double[] maxQArray = new double[T];
 		for (int i = 0; i < T; i++) {
-			maxQArray[i] = ga.getResults().get(i).getFinalMaxQ();
+			maxQArray[i] = pol.get(i).getFinalMaxQ();
 		}
 		return maxQArray;
 	}
 
 	public double[] getFinalMeanQ() {
-		int T = ga.getResults().size();
+		int T = pol.size();
 		double[] meanQArray = new double[T];
 		for (int i = 0; i < T; i++) {
-			meanQArray[i] = ga.getResults().get(i).getAvgQ()[ga.getResults().get(i).getAvgQ().length - 1];
+			meanQArray[i] = pol.get(i).getAvgQ()[pol.get(i).getAvgQ().length - 1];
 		}
 		return meanQArray;
 	}
 
 	public double[] getFinalSdQ() {
-		int T = ga.getResults().size();
+		int T = pol.size();
 		double[] sdQArray = new double[T];
 		for (int i = 0; i < T; i++) {
-			sdQArray[i] = ga.getResults().get(i).getSdQ()[ga.getResults().get(i).getSdQ().length - 1];
+			sdQArray[i] = pol.get(i).getSdQ()[pol.get(i).getSdQ().length - 1];
 		}
 		return sdQArray;
 	}
 	
 	public ArrayList<PolarizationResult> getResults() {
-		return ga.getResults();
+		return pol;
 	}
 }

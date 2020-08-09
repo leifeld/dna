@@ -6142,52 +6142,74 @@ dna_network <- function(connection,
   }
 }
 
+
 #' Compute polarization of a discourse network
 #'
-#' Compute polarization of a discourse network using a genetic algorithm.
+#' Compute polarization of a discourse network using an optimization algorithm.
 #'
 #' This function compute the polarization of a discourse network using a
-#' genetic algorithm. The algorithm divides the nodes into \code{k}
-#' equally-sized clusters (usually two) and then optimizes a quality function,
-#' such as modularity or the E-I index. Optimization is done through elite
-#' retention, cross-over breeding, and mutation over a number of iterations.
-#' The maximal quality value of the cluster solution is retained as the final
-#' polarization estimate. It is possible to use the polarization measure with
-#' time windows to measure the variation of polarization over time.
+#' genetic algorithm or an iterative membership swapping algorithm. The
+#' algorithm divides the nodes into \code{k} equally-sized clusters (usually
+#' two) and then optimizes a quality function, such as modularity or the E-I
+#' index, over a combination of congruence and conflict.
 #' 
+#' Optimization in the genetic algorithm is done through elite retention,
+#' cross-over breeding, and mutation over a number of iterations with a number
+#' of cluster solution organisms per iteration/generation. The algorithm
+#' "breeds" the optimal partition into k clusters of equal size according to the
+#' modularity or E-I index function as a fitness criterion and then
+#' extracts the maximal quality score of the final generation as the
+#' polarization estimate for the network.
+#' 
+#' Optimization with the membership swapping algorithm starts with a random
+#' partition of nodes into k clusters of equal size and iteratively swaps
+#' membership pairs in the cluster solution until no further improvement in
+#' modularity of E-I index can be achieved. The final quality score is extracted
+#' as the polarization estimate for the network.
+#' 
+#' It is possible to use the polarization measure with time windows to measure
+#' the variation of polarization over time. The polarization curve can be
+#' visualized using the \link{plot_polarization} function.
+#'
 #' @inheritParams dna_network
+#' @param algorithm The algorithm that shall optimize the polarization measure.
+#'   This can be \code{"genetic"} (for a genetic algorithm) or \code{"swapping"}
+#'   (for an iterative membership swapping algorithm).
 #' @param k The number of clusters. Usually \code{2} for bipolarization or more
 #'   for multipolarization.
 #' @param qualityFunction The quality, or fitness, function for evaluating how
 #'   good a given cluster function is. Can be \code{"modularity"} or \code{"ei"}
 #'   (for the E-I index).
-#' @param iterations The number of generations over which the genetic algorithm
-#'   should run. This can be large because an early-convergence check is carried
-#'   out and may proceed before this maximal number of iterations is reached.
-#' @param numClusterSolutions How large should the population of initially
-#'   random cluster solutions be for the genetic optimization? More is better,
-#'   but also slower.
-#' @param eliteShare The fraction of elite nodes with the highest quality or
-#'   fitness that are copied into the children generation without any changes at
-#'   any time point in the optimization process.
-#' @param mutationShare The fraction of cluster membership bits per cluster
-#'   solution that is randomly mutated after the cross-over step is completed.
-#'   This is done by swapping around cluster memberships randomly between
-#'   sampled pairs of nodes while retaining equal cluster sizes.
+#' @param iterations Applicable only to the genetic algorithm: The number of
+#'   generations over which the genetic algorithm should run. This can be large
+#'   because an early-convergence check is carried out and may proceed before
+#'   this maximal number of iterations is reached.
+#' @param numClusterSolutions Applicable only to the genetic algorithm: How
+#'   large should the population of initially random cluster solutions be for
+#'   the genetic optimization? More is better, but also slower.
+#' @param eliteShare Applicable only to the genetic algorithm: The fraction of
+#'   elite nodes with the highest quality or fitness that are copied into the
+#'   children generation without any changes at any time point in the
+#'   optimization process.
+#' @param mutationShare Applicable only to the genetic algorithm: The fraction
+#'   of cluster membership bits per cluster solution that is randomly mutated
+#'   after the cross-over step is completed. This is done by swapping around
+#'   cluster memberships randomly between sampled pairs of nodes while retaining
+#'   equal cluster sizes.
 #'
 #' @examples
 #' \dontrun{
 #' dna_init()
 #' dna_sample()
 #' conn <- dna_connection("sample.dna")
-#' 
+#'
 #' pol <- dna_polarization(conn)
 #' pol$finalResults
-#' 
+#'
 #' pol2 <- dna_polarization(conn, timewindow = "events", windowsize = 20)
 #' pol2$finalResults
 #' dna_plotPolarization(pol2)
-#' 
+#'
 #' pol3 <- dna_polarization(conn,
 #'                          qualityFunction = "ei",
 #'                          numClusterSolutions = 80)
@@ -6224,12 +6246,18 @@ dna_polarization <- function(connection,
                              invertSources = FALSE,
                              invertSections = FALSE,
                              invertTypes = FALSE,
+                             algorithm = "genetic",
                              k = 2,
                              qualityFunction = "modularity",
                              iterations = 1000,
                              numClusterSolutions = 30,
                              eliteShare = 0.2,
                              mutationShare = 0.2) {
+  
+  # check algorithm argument
+  if (!algorithm %in% c("genetic", "swapping")) {
+    stop("Only 'genetic' and 'swapping' are currently supported as 'algorithm' arguments.")
+  }
   
   # check time window arguments
   if (is.null(timewindow) ||
@@ -6318,9 +6346,9 @@ dna_polarization <- function(connection,
     stop("'normalization' must be 'no', 'average', 'Jaccard', or 'cosine'.")
   }
   
-  message("Running genetic algorithm...")
+  message("Running optimization algorithm...")
   
-  # call Java function to create network(s) and run genetic algorithm
+  # call Java function to create network(s) and run optimization algorithm
   .jcall(connection$dna_connection,
          "V",
          "computePolarization",
@@ -6349,10 +6377,11 @@ dna_polarization <- function(connection,
          invertSources,
          invertSections,
          invertTypes,
+         as.character(algorithm),
          as.integer(k),
+         as.character(qualityFunction),
          as.integer(numClusterSolutions),
          as.integer(iterations),
-         as.character(qualityFunction),
          as.double(eliteShare),
          as.double(mutationShare)
   )
@@ -8997,13 +9026,14 @@ dna_plotNetwork <- function(x,
 #' @param x A \code{dna_polarization} object, as created by the
 #'   \code{\link{dna_polarization}} function. Must have multiple time points for
 #'   visualizing the results.
+#' @param type Type of plot. This can be \code{"curve"} (for a time series plot
+#'   of the polarization curve, including a smoother), \code{"convergence"} (for
+#'   a plot of the optimization trajectories over the number of iterations,
+#'   which can be used to diagnose convergence issues), or \code{"distribution"}
+#'   (for a boxplot of the number of iterations it took the algorithm to
+#'   converge, which can also be used to diagnose convergence issues).
 #' @param include.y Include a point on the y-axis, for example \code{0}.
 #' @param loess Plot a loess smoother as a blue line?
-#' @param plot.convergence Plot convergence diagnostics for the genetic
-#'   algorithm? This plots the maximal polarization values at each iteration,
-#'   for all time steps.
-#' @param conv.distribution If time windows are used, this creates a histogram
-#'   of convergence times of the genetic algorithm, for all time steps.
 #' @return A \pkg{ggplot2} plot.
 #'
 #' @author Philip Leifeld
@@ -9014,8 +9044,8 @@ dna_plotNetwork <- function(x,
 #' @importFrom dplyr bind_rows
 #' @importFrom stats sd
 #' @export
-dna_plotPolarization <- function(x, include.y = NULL, loess = TRUE, plot.convergence = FALSE, conv.distribution = FALSE) {
-  if (plot.convergence == FALSE) {
+dna_plotPolarization <- function(x, type = "curve", include.y = NULL, loess = TRUE) {
+  if (type == "curve") {
     if (nrow(x$finalResults) == 1) {
       stop("Only time window polarization results can be plotted with 'convergence = FALSE'.")
     }
@@ -9040,47 +9070,38 @@ dna_plotPolarization <- function(x, include.y = NULL, loess = TRUE, plot.converg
     if (loess == TRUE) {
       g <- g +  geom_smooth(se = FALSE)
     }
-  } else {
-    if (conv.distribution == FALSE) {
-      dat_list <- list()
-      for (t in 1:length(x$details)) {
-        mconv <- x$details[[t]]$maxQConvergence
-        dat <- data.frame("t" = rep(t, length(mconv)),
-                          "Iteration" = 1:length(mconv),
-                          "Polarization" = mconv)
-        for (i in 11:nrow(dat)) {
-          if (length(unique(dat$Polarization[(i - 10):i])) == 1) {
-            dat <- dat[1:i, ]
-            break
-          }
-        }
-        dat_list[[t]] <- dat
-      }
-      dat <- dplyr::bind_rows(dat_list)
-      dat$t <- as.factor(dat$t)
-      g <- ggplot2::ggplot(dat, aes_string(x = "Iteration", y = "Polarization", by = "t")) +
-        geom_line(alpha = 0.4) +
-        ylab("Maximal Polarization")
-    } else {
-      if (nrow(x$finalResults) == 1) {
-        stop("Only time window polarization results can be plotted with 'conv.distribution = TRUE'.")
-      }
-      dat <- numeric()
-      for (t in 1:length(x$details)) {
-        mconv <- x$details[[t]]$maxQConvergence
-        for (i in 11:length(mconv)) {
-          if (length(unique(mconv[(i - 10):i])) == 1) {
-            dat[t] <- i - 10
-            break
-          }
-        }
-      }
-      dat <- data.frame("Iteration" = dat,
-                        "Time" = 1:length(dat))
-      g <- ggplot(dat, aes_string("Iteration")) + geom_histogram() + ylab("Count")
+    return(g)
+  } else if (type == "convergence") {
+    dat_list <- list()
+    for (t in 1:length(x$details)) {
+      mconv <- x$details[[t]]$maxQConvergence
+      dat <- data.frame("t" = rep(t, length(mconv)),
+                        "Iteration" = 1:length(mconv),
+                        "Polarization" = mconv)
+      dat_list[[t]] <- dat
     }
+    dat <- dplyr::bind_rows(dat_list)
+    dat$t <- as.factor(dat$t)
+    g <- ggplot2::ggplot(dat, aes_string(x = "Iteration", y = "Polarization", by = "t")) +
+      geom_line(alpha = 0.3) +
+      ylab("Maximal Polarization") +
+      theme_bw()
+    return(g)
+  } else if (type == "distribution") {
+    if (nrow(x$finalResults) == 1) {
+      stop("Only time window polarization results can be plotted with 'conv.distribution = TRUE'.")
+    }
+    dat <- numeric()
+    for (t in 1:length(x$details)) {
+      dat[t] <- length(x$details[[t]]$maxQConvergence)
+    }
+    dat <- data.frame("Iteration" = dat,
+                      "Time" = 1:length(dat))
+    g <- ggplot(dat, aes_string("Iteration")) + geom_histogram() + ylab("Count") + theme_bw()
+    return(g)
+  } else {
+    stop("'type' must be 'curve', 'convergence', or 'distribution'.")
   }
-  return(g)
 }
 
 
