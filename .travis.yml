@@ -23,7 +23,6 @@ matrix:
                - ghostscript
                - libudunits2-dev
                - poppler-utils
-               - r-cran-rjava
         r_packages:
           - devtools
           - ggplot2
@@ -34,6 +33,7 @@ matrix:
           - quanteda.textmodels
           - statnet
           - igraph
+          - rJava
         r_github_packages:
           - quanteda/quanteda.corpora
         before_script:
