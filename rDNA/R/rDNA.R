@@ -6255,7 +6255,7 @@ dna_polarization <- function(connection,
                              mutationShare = 0.2) {
   
   # check algorithm argument
-  if (!algorithm %in% c("genetic", "swapping")) {
+  if (is.null(algorithm) || length(algorithm) > 1 || !is.character(algorithm) || !algorithm %in% c("genetic", "swapping")) {
     stop("Only 'genetic' and 'swapping' are currently supported as 'algorithm' arguments.")
   }
   
@@ -6346,7 +6346,11 @@ dna_polarization <- function(connection,
     stop("'normalization' must be 'no', 'average', 'Jaccard', or 'cosine'.")
   }
   
-  message("Running optimization algorithm...")
+  if (algorithm == "genetic") {
+    message("Running genetic algorithm...")
+  } else if (algorithm == "swapping") {
+    message("Running iterative membership swapping algorithm...")
+  }
   
   # call Java function to create network(s) and run optimization algorithm
   .jcall(connection$dna_connection,
@@ -6400,7 +6404,7 @@ dna_polarization <- function(connection,
     result <- list()
     if (resultsObject$size() > 1) {
       time <- as.POSIXct(resultsObject$get(as.integer(i))$getMiddle()$getTime() / 1000, origin = "1970-01-01")
-      times[i] <- time
+      times[i + 1] <- time
       result$time <- time
     }
     start <- as.POSIXct(resultsObject$get(as.integer(i))$getStart()$getTime() / 1000, origin = "1970-01-01")

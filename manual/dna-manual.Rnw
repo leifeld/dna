@@ -3684,7 +3684,7 @@ df <- data.frame(texts = as.character(corpus),
                  stringsAsFactors = FALSE)
 @
 <<eval=TRUE, results = 'tex', echo=FALSE>>=
-df2 <- head(df, 14)[, c("number", "docid_", "texts", 
+df2 <- head(df, 14)[, c("number", "docid_", "texts",
                         "namefirst", "namelast", "party")]
 row.names(df2) <- NULL
 df2$texts <- trim(df2$texts, n = 14)

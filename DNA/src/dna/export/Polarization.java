@@ -218,7 +218,7 @@ public class Polarization {
 		// for a certain number of iterations; retain max/mean/SD quality and memberships
 		double[][] congruence, conflict;
 		double[] qualityScores;
-		double maxQ;
+		double maxQ = -1;
 		double avgQ, sdQ;
 		int j, t;
 		int maxIndex = -1;
@@ -315,26 +315,33 @@ public class Polarization {
 				}
 
 				// correct for early convergence in results vectors
-				if (lastIndex < iterations - 1) {
-					double[] maxQArrayTemp = new double[lastIndex + 1 - 10];
-					double[] avgQArrayTemp = new double[lastIndex + 1 - 10];
-					double[] sdQArrayTemp = new double[lastIndex + 1 - 10];
-					for (i = 0; i < lastIndex + 1 - 10; i++) {
-						maxQArrayTemp[i] = maxQArray[i];
-						avgQArrayTemp[i] = avgQArray[i];
-						sdQArrayTemp[i] = sdQArray[i];
+				int finalIndex = lastIndex;
+				for (i = lastIndex; i >= 0; i--) {
+					if (maxQArray[i] == maxQArray[lastIndex]) {
+						finalIndex = i;
+					} else {
+						break;
 					}
-					maxQArray = maxQArrayTemp;
-					avgQArray = avgQArrayTemp;
-					sdQArray = sdQArrayTemp;
 				}
+				
+				double[] maxQArrayTemp = new double[finalIndex + 1];
+				double[] avgQArrayTemp = new double[finalIndex + 1];
+				double[] sdQArrayTemp = new double[finalIndex + 1];
+				for (i = 0; i < finalIndex + 1; i++) {
+					maxQArrayTemp[i] = maxQArray[i];
+					avgQArrayTemp[i] = avgQArray[i];
+					sdQArrayTemp[i] = sdQArray[i];
+				}
+				maxQArray = maxQArrayTemp;
+				avgQArray = avgQArrayTemp;
+				sdQArray = sdQArrayTemp;
 
 				// save results in array as a complex object
 				PolarizationResult pr = new PolarizationResult(
 						maxQArray.clone(),
 						avgQArray.clone(),
 						sdQArray.clone(),
-						maxQArray[lastIndex - 10],
+						maxQ,
 						cs.get(maxIndex).getMemberships().clone(),
 						congruenceList.get(t).getRownames(),
 						earlyConvergence,
