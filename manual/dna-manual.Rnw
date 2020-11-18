@@ -123,14 +123,14 @@ error = function(e) {warning("Internet connection necessary to check for newest 
 R_vers <- site[grepl("^<title>", site)]
 R_vers <- as.character(regmatches(R_vers, gregexpr("\\d+.\\d+.\\d+", R_vers)))
 if (length(R_vers) == 0) {
-  R_vers <- "3.5.0"
+  R_vers <- "4.0.0"
 }
 # get latest RStudio version
 site <- tryCatch({
-  readLines("https://www.rstudio.com/products/rstudio/download/")
+   readLines("https://www.rstudio.com/products/rstudio/download/")
 },
 error = function(e) {warning("Internet connection necessary to check for newest R version")})
-RS_vers <- site[grepl("<h4 id=\"download\"><strong>RStudio Desktop", site)]
+RS_vers <- site[grepl("href=\"https://download1.rstudio.org/desktop/windows/RStudio", site)][1]
 RS_vers <- as.character(regmatches(RS_vers, gregexpr("\\d+.\\d+.\\d+", RS_vers)))
 if (length(RS_vers) == 0) {
   RS_vers <- "1.1.447"
@@ -835,20 +835,20 @@ In order to use \rdna, the rest of this section will explain how to install \R\ 
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 $sudo add-apt-repository \
 "deb [arch=amd64,i386] https://cloud.r-project.org/bin/linux/ubuntu \
-$(lsb_release -cs)-cran35/"
+$(lsb_release -cs)-cran40/"
 @
         Note, that \code{lsb\_release -a} automatically selects your flavor and version of Linux from the CRAN server.
         Visit \href{https://cran.rstudio.com/bin/linux/}{CRAN} to see for which  Linux distributions \R\ is available.
-        \code{cran.rstudio.com} is also just one of several \href{https://cran.r-project.org/mirrors.html}{CRAN mirrors}, so you could replace it with a different one if you prefer.
+        \code{cran.rstudio.com} is also just one of several \href{https://cran.r-project.org/mirrors.html}{CRAN mirrors}, so you could replace it with a different one if you prefer.\footnote{Additionally, you might want to add the repository \code{cran2deb4ubuntu 4.0}, which provides many \R\ packages as binary deb versions (run \code{sudo add-apt-repository ppa:c2d4u.team/c2d4u4.0+} in the terminal). Once this is done you can install packages in the terminal with \code{sudo apt install r-cran-*} (e.g., \code{sudo apt install r-cran-tidyverse}.}
   \item Next, you need to add \R\ to your keyring.
         Here is how you would accomplish this in Ubuntu:
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
-$sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+$sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 51716619E084DAB9
 @
   \item Update apt and install \R\ (or \code{r-base-dev} if you wish to compile packages from source):
 <<eval=FALSE, engine = 'bash', results = 'tex'>>=
 $sudo apt-get update
-$sudo apt-get install r-base
+$sudo apt-get install r-base r-base-dev
 @
   \item Now install \rstudio\ via gdebi (and install gdebi first if you do not already have it):%
   \footnote{Alternatively, you can download an installation file from \url{https://www.rstudio.com/products/rstudio/download/}.}\textsuperscript{,}
@@ -857,25 +857,6 @@ $sudo apt-get install gdebi-core
 $wget https://download1.rstudio.org/rstudio-$RS_vers$-amd64.deb
 $sudo gdebi -n rstudio-$RS_vers$-amd64.deb
 $rm rstudio-$RS_vers$-amd64.deb
-@
-
-  Note, that as of version \Sexpr{RS_vers}, \rstudio\ depends on an outdated version of \texttt{libgstreamer}.
-  This version has already been deprecated in some linux distributions, which can lead to an error during installation of \rstudio.
-  If you run into trouble while installing \rstudio, you should try installing the old version of \texttt{libgstreamer} side-by-side the newer library:
-
-<<eval=FALSE, engine = 'bash', results = 'tex'>>=
-# Download files with wget
-$wget http://ftp.ca.debian.org/debian/pool/main/g/gstreamer0.10/libgstreamer\
-0.10-0_0.10.36-1.5_amd64.deb
-$wget http://ftp.ca.debian.org/debian/pool/main/g/gst-plugins-base0.10/libgs\
-treamer-plugins-base0.10-0_0.10.36-2_amd64.deb
-
-# Now install with gdebi
-$sudo gdebi libgstreamer0.10-0_0.10.36-1.5_amd64.deb
-$sudo gdebi libgstreamer-plugins-base0.10-0_0.10.36-2_amd64.deb
-
-# And then clean up
-$sudo rm libgstreamer0.10-0_0.10.36-1.5_amd64.deb libgstreamer-plugins-base0.10-0_0.10.36-2_amd64.deb
 @
 
   \item For Linux, there are a few other system dependencies for \rdna\. You should install these using:
