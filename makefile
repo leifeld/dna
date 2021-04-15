@@ -27,14 +27,26 @@ MANUAL_FILE := dna-manual
 # 6. wrap in file name
 VERSION     := $(shell grep -P 'version = ".+"' DNA/src/dna/Dna.java | sed 's/";//' | sed 's/\t\tversion = "//' | sed 's/ /-/ ' | sed 's/ //')
 JARFILE     := dna-${VERSION}.jar
+RDNAVERSION := $(shell grep -P '^Version: .+' $(R_DIR)/DESCRIPTION | sed 's/Version: //')
 
 # make all and print a final message that we're done
-all: sample dna rDNA manual
+all: sample rDNA manual
 	@echo done.
 
 # compile the manual using knitr and texi2pdf
-manual: mkdir-output
-	$(CP) $(MANUAL_DIR) $(OUTPUT_DIR);                       \
+manual: rdnainst
+	$(RSCRIPT) "if(! 'knitr' %in% installed.packages()) install.packages('knitr')"; \
+	$(RSCRIPT) "if(! 'ggplot2' %in% installed.packages()) install.packages('ggplot2')"; \
+	$(RSCRIPT) "if(! 'gridExtra' %in% installed.packages()) install.packages('gridExtra')"; \
+	$(RSCRIPT) "if(! 'kableExtra' %in% installed.packages()) install.packages('kableExtra')"; \
+	$(RSCRIPT) "if(! 'LexisNexisTools' %in% installed.packages()) install.packages('LexisNexisTools')"; \
+	$(RSCRIPT) "if(! 'quanteda.textmodels' %in% installed.packages()) install.packages('quanteda.textmodels')"; \
+	$(RSCRIPT) "if(! 'statnet' %in% installed.packages()) install.packages('statnet')"; \
+	$(RSCRIPT) "if(! 'igraph' %in% installed.packages()) install.packages('igraph')"; \
+	$(RSCRIPT) "if(! 'rJava' %in% installed.packages()) install.packages('rJava')"; \
+	$(RSCRIPT) "if(! 'quanteda.corpora' %in% installed.packages()) remotes::install_github('quanteda/quanteda.corpora')"; \
+	$(MKDIR) $(OUTPUT_DIR); \
+	$(CP) $(MANUAL_DIR) $(OUTPUT_DIR); \
 	cd $(OUTPUT_DIR)/$(MANUAL_DIR);                          \
 	$(RSCRIPT) "library(knitr); knit('$(MANUAL_FILE).Rnw')"; \
 	$(LATEX) $(MANUAL_FILE).tex;                             \
@@ -42,10 +54,42 @@ manual: mkdir-output
 	cd ..;                                                   \
 	$(RM) $(MANUAL_DIR)
 
-# compile rDNA source package
+# install rDNA
+rdnainst: rDNA-full-temp
+	$(RSCRIPT) "if(! 'devtools' %in% installed.packages()) install.packages('devtools')"; \
+	cd $(OUTPUT_DIR)/rtemp; \
+	$(RSCRIPT) "devtools::install('rDNA', dependencies = TRUE, upgrade = FALSE)"; \
+	cd ..; \
+	$(RM) rtemp; \
+	cd ..; \
+	rmdir --ignore-fail-on-non-empty $(OUTPUT_DIR)
+
+# compile rDNA source package without DNA
 rDNA: mkdir-output
 	$(RBUILD) $(R_DIR); \
 	mv $(R_DIR)*.tar.gz $(OUTPUT_DIR)
+
+# compile rDNA source package with DNA
+rDNA-full: rDNA-full-temp
+	cd $(OUTPUT_DIR)/rtemp; \
+	$(RBUILD) $(R_DIR); \
+	mv $(R_DIR)_${RDNAVERSION}.tar.gz ../$(R_DIR)_full_${RDNAVERSION}.tar.gz; \
+	cd ..; \
+	$(RM) rtemp
+
+# create temporary version of full rDNA package
+rDNA-full-temp: mkdir-output compile-java
+	$(MKDIR) $(OUTPUT_DIR)/rtemp; \
+	$(CP) $(R_DIR) $(OUTPUT_DIR)/rtemp; \
+	cd $(OUTPUT_DIR); \
+	$(MKDIR) temp; \
+	mv src temp/; \
+	cd temp/src; \
+	jar cmf ../../../$(SOURCE_DIR)/META-INF/MANIFEST.MF ../../${JARFILE} *; \
+	chmod +x ../../$(JARFILE); \
+	cd ../..; \
+	mv ${JARFILE} rtemp/$(R_DIR)/inst/extdata/; \
+	$(RM) temp; \
 
 # copy-sample - copy the sample.dna database to the output directory
 sample: mkdir-output
@@ -90,12 +134,58 @@ mkdir-output:
 .PHONY: clean
 clean:
 	$(RM) $(OUTPUT_DIR)
-	
-# run checks
-checks: dna; \
-	cp $(OUTPUT_DIR)/${JARFILE} $(R_DIR)/inst/extdata/; \
-	make rDNA; \
-	rm $(R_DIR)/inst/extdata/${JARFILE}; \
+
+# check and test rDNA
+test-rDNA: mkdir-output
 	cd $(OUTPUT_DIR); \
-	R CMD check --as-cran *.tar.gz; 
-	cd ..
+	$(RSCRIPT) "if(! 'rcmdcheck' %in% installed.packages()) install.packages('rcmdcheck')"; \
+	$(RSCRIPT) "options(crayon.enabled = TRUE)"; \
+	$(RSCRIPT) "library('rcmdcheck'); rcmdcheck('../$(R_DIR)', args = c('--no-manual', '--as-cran'), error_on = 'warning', check_dir = '.')"; \
+
+# test manual
+test-manual:
+	$(eval MANUALSIZE = $(shell pdftotext '$(OUTPUT_DIR)/$(MANUAL_FILE).pdf' - | wc -w))
+	@if [ ${MANUALSIZE} -gt 40000 ]; \
+	then echo "PASS: DNA manual PDF contains ${MANUALSIZE} words (test requires > 40000)."; \
+	exit 0; \
+	else echo "FAIL: DNA manual PDF contains ${MANUALSIZE} words (test requires > 40000)."; \
+	exit 1; \
+	fi
+
+# test sample
+test-sample:
+	$(eval SAMPLETEST1 = $(shell sqlite3 $(OUTPUT_DIR)/$(SAMPLE_FILE) "SELECT EXISTS (SELECT * FROM sqlite_master WHERE type='table' AND name='<tableName>');"))
+	@if [ ${SAMPLETEST1} = 0 ]; \
+	then echo PASS: sample.dna contains tables.; \
+	exit 0; \
+	else echo FAIL: sample.dna does not contain any tables.; \
+	exit 1; \
+	fi
+	$(eval SAMPLETEST2 = $(shell sqlite3 $(OUTPUT_DIR)/$(SAMPLE_FILE) "PRAGMA integrity_check;"))
+	@if [ ${SAMPLETEST2} = ok ]; \
+	then echo PASS: sample.dna passed sqlite3 integrity test.; \
+	exit 0; \
+	else echo FAIL: sample.dna did not pass sqlite3 integrity test.; \
+	exit 1; \
+	fi
+
+# test dna
+test-dna:
+	@if jar -tvf $(OUTPUT_DIR)/$(JARFILE) | grep ' dna/Dna\.class'; \
+	then echo PASS: $(JARFILE) contains Dna.class.; \
+	exit 0; \
+	else echo FAIL: $(JARFILE) does not contain Dna.class.; \
+	exit 1; \
+	fi
+	@if jar -tvf $(OUTPUT_DIR)/$(JARFILE) | grep ' dna/export/ExporterR\.class'; \
+	then echo PASS: $(JARFILE) contains ExporterR.class.; \
+	exit 0; \
+	else echo FAIL: $(JARFILE) does not contain ExporterR.class.; \
+	exit 1; \
+	fi
+	@if jar -tvf $(OUTPUT_DIR)/$(JARFILE) | grep ' libjri.so'; \
+	then echo PASS: $(JARFILE) contains libjri.so in root directory.; \
+	exit 0; \
+	else echo FAIL: $(JARFILE) does not contain libjri.so in root directory.; \
+	exit 1; \
+	fi

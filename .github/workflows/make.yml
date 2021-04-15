@@ -1,0 +1,237 @@
+name: make
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+
+  dna:
+    runs-on: ${{matrix.os}}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    steps:
+      - uses: actions/checkout@v2
+      
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '14'
+
+      - name: Make dna
+        run: make dna
+
+      - name: Test dna
+        run: make test-dna
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: DNA jar file (${{ matrix.os }})
+          path: ${{ github.workspace }}/output/dna*.jar
+
+  sample:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install system dependencies
+        run: sudo apt-get install sqlite3
+        
+      - name: Make sample
+        run: make sample
+        
+      - name: Test sample
+        run: make test-sample
+        
+      - uses: actions/upload-artifact@v2
+        with:
+          name: sample database
+          path: output/sample.dna
+
+  manual:
+    runs-on: ubuntu-latest
+
+    env:
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - uses: r-lib/actions/setup-tinytex@master
+
+      - uses: r-lib/actions/setup-r@v1
+        with:
+          r-version: 'release'
+      
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '14'
+
+      - name: Setup R Java support
+        run: "echo export PATH=$PATH > reconf.sh; echo export JAVA_HOME=$JAVA_HOME >> reconf.sh; echo R CMD javareconf >> reconf.sh; sudo bash reconf.sh"
+
+      - uses: r-lib/actions/setup-pandoc@v1
+      
+      - name: Query dependencies
+        run: |
+          if(! 'remotes' %in% installed.packages()) install.packages('remotes')
+          saveRDS(remotes::dev_package_deps('rDNA', dependencies = TRUE), ".github/depends.Rds", version = 2)
+          writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
+        shell: Rscript {0}
+
+      - name: Restore R package cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
+          restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
+
+      - name: Install system dependencies
+        run: sudo apt-get install libudunits2-dev libcurl4-openssl-dev ghostscript poppler-utils
+
+      - name: Add TeX dependencies
+        run: |
+          if(! 'tinytex' %in% installed.packages()) install.packages('tinytex')
+          tinytex::tlmgr_install("xcolor")
+          tinytex::tlmgr_install("colortbl")
+          tinytex::tlmgr_install("koma-script")
+          tinytex::tlmgr_install("placeins")
+          tinytex::tlmgr_install("ltablex")
+          tinytex::tlmgr_install("soul")
+          tinytex::tlmgr_install("multirow")
+          tinytex::tlmgr_install("wrapfig")
+          tinytex::tlmgr_install("float")
+          tinytex::tlmgr_install("tabu")
+          tinytex::tlmgr_install("varwidth")
+          tinytex::tlmgr_install("threeparttable")
+          tinytex::tlmgr_install("ulem")
+          tinytex::tlmgr_install("adjustbox")
+          tinytex::tlmgr_install("pgf")
+          tinytex::tlmgr_install("tikz-3dplot")
+          tinytex::tlmgr_install("bigfoot")
+          tinytex::tlmgr_install("cm-super")
+          tinytex::tlmgr_install("collectbox")
+          tinytex::tlmgr_install("pdflscape")
+        shell: Rscript {0}
+
+      - name: Install dependencies
+        run: remotes::install_deps('rDNA', dependencies = TRUE)
+        shell: Rscript {0}
+
+      - name: Session info
+        run: |
+          options(width = 100)
+          pkgs <- installed.packages()[, "Package"]
+          sessioninfo::session_info(pkgs, include_base = TRUE)
+        shell: Rscript {0}
+
+      - name: Make manual
+        run: make manual
+
+      - name: Test manual
+        run: make test-manual
+        
+      - uses: actions/upload-artifact@v2
+        with:
+          name: DNA manual
+          path: output/dna-manual.pdf
+
+  rDNA:
+    runs-on: ${{ matrix.config.os }}
+
+    name: rDNA (${{ matrix.config.os }}, ${{ matrix.config.r }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: windows-latest, r: 'release'}
+          - {os: macOS-latest, r: 'release'}
+          - {os: ubuntu-20.04, r: 'release', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
+          - {os: ubuntu-20.04, r: 'devel', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
+        platform: [x32, x64]
+
+    env:
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      RSPM: ${{ matrix.config.rspm }}
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '15'
+          
+      - uses: r-lib/actions/setup-r@v1
+        with:
+          r-version: ${{ matrix.config.r }}
+
+      - name: Query dependencies
+        run: |
+          install.packages('remotes')
+          saveRDS(remotes::dev_package_deps('rDNA', dependencies = TRUE), ".github/depends.Rds", version = 2)
+          writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
+        shell: Rscript {0}
+
+      - name: Cache R packages
+        if: runner.os != 'Windows'
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
+          restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
+
+      - name: Install system dependencies
+        if: runner.os == 'Linux'
+        working-directory: rDNA
+        run: |
+          sudo apt-get install libudunits2-dev
+          while read -r cmd
+          do
+            eval sudo $cmd
+          done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
+
+      - name: Make dna
+        run: make dna
+
+      - name: Install dependencies
+        run: |
+          install.packages("rcmdcheck")
+          remotes::install_deps("rDNA", dependencies = TRUE)
+        shell: Rscript {0}
+
+      - name: Check
+        env:
+          _R_CHECK_CRAN_INCOMING_REMOTE_: false
+        run: make test-rDNA
+
+      - name: Upload check results
+        if: failure()
+        uses: actions/upload-artifact@main
+        with:
+          name: rDNA check (${{ runner.os }}-r${{ matrix.config.r }})
+          path: output/
+
+      - name: Install R packages for code coverage
+        if: runner.os == 'macOS'
+        run: |
+          remotes::install_cran("covr")
+          install.packages("withr")
+        shell: Rscript {0}
+        
+      - name: Test coverage
+        working-directory: rDNA
+        run: withr::with_envvar(c("NOT_CRAN" = "true"), covr::codecov(quiet = FALSE))
+        shell: Rscript {0}
