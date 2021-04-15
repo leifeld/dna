@@ -136,11 +136,9 @@ clean:
 	$(RM) $(OUTPUT_DIR)
 
 # check and test rDNA
-test-rDNA: mkdir-output
+test-rDNA: rDNA
 	cd $(OUTPUT_DIR); \
-	$(RSCRIPT) "if(! 'rcmdcheck' %in% installed.packages()) install.packages('rcmdcheck')"; \
-	$(RSCRIPT) "options(crayon.enabled = TRUE)"; \
-	$(RSCRIPT) "library('rcmdcheck'); rcmdcheck('../$(R_DIR)', args = c('--no-manual', '--as-cran'), error_on = 'warning', check_dir = '.')"; \
+	R CMD check --no-multiarch --no-manual --as-cran $(R_DIR)_$(RDNAVERSION).tar.gz
 
 # test manual
 test-manual:

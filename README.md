@@ -39,7 +39,7 @@ Please note that if you prefer to use the very latest version, you are required 
 remotes::install_github("leifeld/dna/rDNA", INSTALL_opts = "--no-multiarch")
 ```
 
-[![Build Status](https://travis-ci.org/leifeld/dna.svg?branch=master)](https://travis-ci.org/leifeld/dna) [![Coverage status](https://codecov.io/gh/leifeld/dna/branch/master/graph/badge.svg)](https://codecov.io/github/leifeld/dna?branch=master)
+[![R-CMD-check](https://github.com/leifeld/dna/workflows/make/badge.svg)](https://github.com/leifeld/dna/actions) [![Coverage status](https://codecov.io/gh/leifeld/dna/branch/master/graph/badge.svg)](https://codecov.io/github/leifeld/dna?branch=master)
 [<img src="http://img.shields.io/liberapay/patrons/leifeld.svg?logo=liberapay">](https://liberapay.com/leifeld)
 [<img src="http://img.shields.io/liberapay/receives/leifeld.svg?logo=liberapay">](https://liberapay.com/leifeld)
 
