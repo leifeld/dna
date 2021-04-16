@@ -5,8 +5,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.math.BigInteger;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -21,6 +23,8 @@ import org.jdom.Element;
 import org.jdom.Namespace;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
+
+import org.apache.commons.math3.util.Combinations;
 
 import dna.dataStructures.AttributeVector;
 import dna.dataStructures.Document;
@@ -381,7 +385,7 @@ public class ExportHelper {
 		}
 		return frequencies;
 	}
-
+	
 	/**
 	 * Create a series of one-mode or two-mode networks using a moving time window.
 	 * 
@@ -395,7 +399,7 @@ public class ExportHelper {
 	 * @param names1                {@link String} array containing the row labels.
 	 * @param names2                {@link String} array containing the column labels.
 	 * @param qualifier             {@link String} denoting the name of the qualifier variable.
-	 * @param qualifierAggregation  {@link String} indicating how different levels of the qualifier variable are aggregated. Valid values are "ignore", "subtract", and "combine".
+	 * @param qualifierAggregation  {@link String} indicating how different levels of the qualifier variable are aggregated. Valid values are "ignore", "subtract", "combine", "congruence", "conflict", and "congruence & conflict".
 	 * @param normalization         {@link String} indicating what type of normalization will be used. Valid values are "no", "average activity", "Jaccard", and "cosine".
 	 * @param twoMode               Create two-mode networks? If false, one-mode networks are created.
 	 * @param start                 Start date of the time range over which the time window moves.
@@ -404,58 +408,140 @@ public class ExportHelper {
 	 * @param timeUnits             How large is the time window? E.g., 100 days, where "days" are defined in the unit type argument.
 	 * @param includeIsolates       Boolean indicating whether all nodes should be present at all times
 	 * @return                      {@link Matrix} object containing a one-mode network matrix.
+	 * @throws Exception 
 	 */
 	ArrayList<Matrix> computeTimeWindowMatrices(ArrayList<Statement> statements, ArrayList<Document> documents, StatementType statementType, 
 			String var1, String var2, boolean var1Document, boolean var2Document, String[] names1, String[] names2, String qualifier, 
 			String qualifierAggregation, String normalization, boolean twoMode, Date start, Date stop, String unitType, int timeUnits, 
-			boolean includeIsolates) {
+			boolean includeIsolates) throws Exception {
 		
 		ArrayList<Matrix> timeWindowMatrices = new ArrayList<Matrix>();
 		Collections.sort(statements);
-		ArrayList<Statement> currentWindowStatements = new ArrayList<Statement>();
+		ArrayList<Statement> currentWindowStatements = new ArrayList<Statement>(); // holds all statements in the current time window
+		ArrayList<Statement> startStatements = new ArrayList<Statement>(); // holds all statements corresponding to the time stamp of the first statement in the window
+		ArrayList<Statement> stopStatements = new ArrayList<Statement>(); // holds all statements corresponding to the time stamp of the last statement in the window
+		ArrayList<Statement> beforeStatements = new ArrayList<Statement>(); // holds all statements between (and excluding) the time stamp of the first statement in the window and the focal statement
+		ArrayList<Statement> afterStatements = new ArrayList<Statement>(); // holds all statements between (and excluding) the the focal statement and the time stamp of the last statement in the window
 		Matrix m;
 		if (unitType.equals("using events")) {
-			int iteratorStart, iteratorStop;
+			if (timeUnits < 2) {
+				throw new Exception("You must choose a timeUnits parameter of at least 2, otherwise it is impossible to create a time window.");
+			}
+			int iteratorStart, iteratorStop, i, j;
+			int samples;
 			for (int t = 0; t < statements.size(); t++) {
-				currentWindowStatements.clear();
-				iteratorStart = t - (int) Math.round((double) (timeUnits - 1) / 2);
-				iteratorStop = t + (int) Math.round((double) (timeUnits - 1) / 2);
+				int halfDuration = (int) Math.floor(timeUnits / 2);
+				iteratorStart = t - halfDuration;
+				iteratorStop = t + halfDuration;
+				
+				startStatements.clear();
+				stopStatements.clear();
+				beforeStatements.clear();
+				afterStatements.clear();
 				if (iteratorStart >= 0 && iteratorStop < statements.size()) {
-					for (int i = iteratorStart; i <= iteratorStop; i++) {
-						currentWindowStatements.add(statements.get(i));
+					for (i = 0; i < statements.size(); i++) {
+						if (statements.get(i).getDate().equals(statements.get(iteratorStart).getDate())) {
+							startStatements.add(statements.get(i));
+						}
+						if (statements.get(i).getDate().equals(statements.get(iteratorStop).getDate())) {
+							stopStatements.add(statements.get(i));
+						}
+						if (statements.get(i).getDate().after(statements.get(iteratorStart).getDate()) && i < t) {
+							beforeStatements.add(statements.get(i));
+						}
+						if (statements.get(i).getDate().before(statements.get(iteratorStop).getDate()) && i > t) {
+							afterStatements.add(statements.get(i));
+						}
 					}
-					if (currentWindowStatements.size() > 0) {
-						if (includeIsolates == false) {
-							names1 = extractLabels(currentWindowStatements, statements, documents, var1, var1Document, statementType.getId(), includeIsolates);
-							names2 = extractLabels(currentWindowStatements, statements, documents, var2, var2Document, statementType.getId(), includeIsolates);
+					if (startStatements.size() + beforeStatements.size() > halfDuration || stopStatements.size() + afterStatements.size() > halfDuration) {
+						samples = 1; // this number should be larger than the one below, for example 10 (for 10 random combinations of start and stop statements)
+					} else {
+						samples = 1;
+					}
+					
+					for (j = 0; j < samples; j++) {
+						// add statements from start, before, after, and stop set to current window
+						currentWindowStatements.clear();
+						Collections.shuffle(startStatements);
+						for (i = 0; i < halfDuration - beforeStatements.size(); i++) {
+							currentWindowStatements.add(startStatements.get(i));
 						}
-						int firstDocId = currentWindowStatements.get(0).getDocumentId();
-						Date first = null;
-						for (int i = 0; i < documents.size(); i++) {
-							if (firstDocId == documents.get(i).getId()) {
-								first = documents.get(i).getDate();
-								break;
+						currentWindowStatements.addAll(beforeStatements);
+						currentWindowStatements.add(statements.get(t));
+						currentWindowStatements.addAll(afterStatements);
+						Collections.shuffle(stopStatements);
+						for (i = 0; i < halfDuration - afterStatements.size(); i++) {
+							currentWindowStatements.add(stopStatements.get(i));
+						}
+
+						// convert time window to network and add to list
+						if (currentWindowStatements.size() > 0) {
+							if (includeIsolates == false) {
+								names1 = extractLabels(currentWindowStatements, statements, documents, var1, var1Document, statementType.getId(), includeIsolates);
+								names2 = extractLabels(currentWindowStatements, statements, documents, var2, var2Document, statementType.getId(), includeIsolates);
+							}
+							int firstDocId = currentWindowStatements.get(0).getDocumentId();
+							Date first = null;
+							for (i = 0; i < documents.size(); i++) {
+								if (firstDocId == documents.get(i).getId()) {
+									first = documents.get(i).getDate();
+									break;
+								}
+							}
+							int lastDocId = currentWindowStatements.get(currentWindowStatements.size() - 1).getDocumentId();
+							Date last = null;
+							for (i = documents.size() - 1; i > -1; i--) {
+								if (lastDocId == documents.get(i).getId()) {
+									last = documents.get(i).getDate();
+									break;
+								}
+							}
+							if (twoMode == true) {
+								boolean verbose = false;
+								if (qualifierAggregation.equals("congruence & conflict")) { // note: the networks are saved in alternating order and need to be disentangled
+									// congruence
+									m = computeTwoModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
+											var2Document, names1, names2, qualifier, "congruence", normalization, first, last, verbose);
+									m.setDate(statements.get(t).getDate());
+									m.setNumStatements(currentWindowStatements.size());
+									timeWindowMatrices.add(m);
+									
+									// conflict
+									m = computeTwoModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
+											var2Document, names1, names2, qualifier, "conflict", normalization, first, last, verbose);
+									m.setDate(statements.get(t).getDate());
+									m.setNumStatements(currentWindowStatements.size());
+									timeWindowMatrices.add(m);
+								} else {
+									m = computeTwoModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
+											var2Document, names1, names2, qualifier, qualifierAggregation, normalization, first, last, verbose);
+									m.setDate(statements.get(t).getDate());
+									m.setNumStatements(currentWindowStatements.size());
+									timeWindowMatrices.add(m);
+								}
+							} else {
+								if (qualifierAggregation.equals("congruence & conflict")) { // note: the networks are saved in alternating order and need to be disentangled
+									m = computeOneModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
+											var2Document, names1, names2, qualifier, "congruence", normalization, first, last);
+									m.setDate(statements.get(t).getDate());
+									m.setNumStatements(currentWindowStatements.size());
+									timeWindowMatrices.add(m);
+									m = computeOneModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
+											var2Document, names1, names2, qualifier, "conflict", normalization, first, last);
+									m.setDate(statements.get(t).getDate());
+									m.setNumStatements(currentWindowStatements.size());
+									timeWindowMatrices.add(m);
+								} else {
+									m = computeOneModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
+											var2Document, names1, names2, qualifier, qualifierAggregation, normalization, first, last);
+									m.setDate(statements.get(t).getDate());
+									m.setNumStatements(currentWindowStatements.size());
+									timeWindowMatrices.add(m);
+								}
+								
 							}
 						}
-						int lastDocId = currentWindowStatements.get(currentWindowStatements.size() - 1).getDocumentId();
-						Date last = null;
-						for (int i = documents.size() - 1; i > -1; i--) {
-							if (lastDocId == documents.get(i).getId()) {
-								last = documents.get(i).getDate();
-								break;
-							}
-						}
-						if (twoMode == true) {
-							boolean verbose = false;
-							m = computeTwoModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
-									var2Document, names1, names2, qualifier, qualifierAggregation, normalization, first, last, verbose);
-						} else {
-							m = computeOneModeMatrix(currentWindowStatements, documents, statementType, var1, var2, var1Document, 
-									var2Document, names1, names2, qualifier, qualifierAggregation, normalization, first, last);
-						}
-						m.setDate(statements.get(t).getDate());
-						m.setNumStatements(currentWindowStatements.size());
-						timeWindowMatrices.add(m);
+						// System.out.println("i = " + timeWindowMatrices.size() + ". t = " + t + ". Num = " + currentWindowStatements.size() + ". Start size: " + startStatements.size() + ". Before: " + beforeStatements.size() + ". Stop size: " + stopStatements.size() + ". After: " + afterStatements.size() + ". Samples: " + samples + ".");
 					}
 				}
 			}

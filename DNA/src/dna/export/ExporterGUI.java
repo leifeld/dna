@@ -1148,9 +1148,14 @@ public class ExporterGUI extends JDialog {
 				} else {
 					String timeWindowUnit = (String) timeWindowBox.getSelectedItem();
 					int timeWindowDuration = (int) timeWindowSpinner.getModel().getValue();
-					timeWindowMatrices = exportHelper.computeTimeWindowMatrices(statements, documents, statementType, var1Name, var2Name, var1Document(), 
-							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, true, startDate, stopDate, 
-							timeWindowUnit, timeWindowDuration, includeIsolates);
+					try {
+						timeWindowMatrices = exportHelper.computeTimeWindowMatrices(statements, documents, statementType, var1Name, var2Name, var1Document(), 
+								var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, true, startDate, stopDate, 
+								timeWindowUnit, timeWindowDuration, includeIsolates);
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
 				if (timeWindowBox.getSelectedItem().equals("no time window")) {
@@ -1159,9 +1164,14 @@ public class ExporterGUI extends JDialog {
 				} else {
 					String timeWindowUnit = (String) timeWindowBox.getSelectedItem();
 					int timeWindowDuration = (int) timeWindowSpinner.getModel().getValue();
-					timeWindowMatrices = exportHelper.computeTimeWindowMatrices(statements, documents, statementType, var1Name, var2Name, var1Document(), 
-							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, false, startDate, stopDate, 
-							timeWindowUnit, timeWindowDuration, includeIsolates);
+					try {
+						timeWindowMatrices = exportHelper.computeTimeWindowMatrices(statements, documents, statementType, var1Name, var2Name, var1Document(), 
+								var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, false, startDate, stopDate, 
+								timeWindowUnit, timeWindowDuration, includeIsolates);
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 			System.out.println("Network has been created.");
