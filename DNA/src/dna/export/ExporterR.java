@@ -416,7 +416,7 @@ public class ExporterR {
 		}
 		
 		if (!qualifierAggregation.equals("ignore") && !qualifierAggregation.equals("subtract") && !qualifierAggregation.equals("combine")
-				&& !qualifierAggregation.equals("congruence") && !qualifierAggregation.equals("conflict")) {
+				&& !qualifierAggregation.equals("congruence") && !qualifierAggregation.equals("conflict") && !(qualifierAggregation.equals("congruence & conflict") && timewindow.equals("events"))) {
 			throw new Exception("'qualifierAggregation' must be 'ignore', 'combine', 'subtract', 'congruence', or 'conflict'.");
 		}
 		if (qualifierAggregation.equals("combine") && !networkType.equals("Two-mode network")) {

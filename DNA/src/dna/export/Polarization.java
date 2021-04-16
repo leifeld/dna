@@ -63,85 +63,131 @@ public class Polarization {
 			double mutationShare
 			) throws Exception {
 
-		exporterR.rNetwork( // call rNetwork to compute the congruence network(s) (and later again for the conflict network(s))
-				"onemode", // networkType
-				statementType,
-				variable1,
-				variable1Document,
-				variable2,
-				variable2Document,
-				qualifier,
-				"congruence", // qualifierAggregation
-				normalization,
-				false, // includeIsolates
-				duplicates,
-				startDate,
-				stopDate,
-				startTime,
-				stopTime,
-				timewindow,
-				windowsize,
-				excludeVariables,
-				excludeValues,
-				excludeAuthors,
-				excludeSources,
-				excludeSections, 
-				excludeTypes,
-				invertValues,
-				invertAuthors,
-				invertSources,
-				invertSections,
-				invertTypes,
-				null, // outfile
-				null, // fileFormat
-				false // verbose
-				);
-
 		int i;
 		ArrayList<Matrix> congruenceList = new ArrayList<Matrix>();
-		for (i = 0; i < exporterR.matrices.size(); i++) {
-			congruenceList.add((Matrix) exporterR.matrices.get(i).clone());
-		}
-
-		exporterR.rNetwork(
-				"onemode", // networkType
-				statementType,
-				variable1,
-				variable1Document,
-				variable2,
-				variable2Document,
-				qualifier,
-				"conflict", // qualifierAggregation
-				normalization,
-				false, // includeIsolates
-				duplicates,
-				startDate,
-				stopDate,
-				startTime,
-				stopTime,
-				timewindow,
-				windowsize,
-				excludeVariables,
-				excludeValues,
-				excludeAuthors,
-				excludeSources,
-				excludeSections, 
-				excludeTypes,
-				invertValues,
-				invertAuthors,
-				invertSources,
-				invertSections,
-				invertTypes,
-				null, // outfile
-				null, // fileFormat
-				false // verbose
-				);
-
 		ArrayList<Matrix> conflictList = new ArrayList<Matrix>();
-		for (i = 0; i < exporterR.matrices.size(); i++) {
-			conflictList.add((Matrix) exporterR.matrices.get(i).clone());
-		}
+		
+		if (timewindow.equals("events")) {
+			exporterR.rNetwork( // call rNetwork to compute the congruence network(s) (and later again for the conflict network(s))
+					"onemode", // networkType
+					statementType,
+					variable1,
+					variable1Document,
+					variable2,
+					variable2Document,
+					qualifier,
+					"congruence & conflict", // qualifierAggregation
+					normalization,
+					true, // includeIsolates
+					duplicates,
+					startDate,
+					stopDate,
+					startTime,
+					stopTime,
+					timewindow,
+					windowsize,
+					excludeVariables,
+					excludeValues,
+					excludeAuthors,
+					excludeSources,
+					excludeSections, 
+					excludeTypes,
+					invertValues,
+					invertAuthors,
+					invertSources,
+					invertSections,
+					invertTypes,
+					null, // outfile
+					null, // fileFormat
+					false // verbose
+					);
 
+			for (i = 0; i < exporterR.matrices.size(); i++) {
+				if (i % 2 == 0) {
+					congruenceList.add((Matrix) exporterR.matrices.get(i).clone());
+				} else {
+					conflictList.add((Matrix) exporterR.matrices.get(i).clone());
+				}
+			}
+		} else {
+			exporterR.rNetwork( // call rNetwork to compute the congruence network(s) (and later again for the conflict network(s))
+					"onemode", // networkType
+					statementType,
+					variable1,
+					variable1Document,
+					variable2,
+					variable2Document,
+					qualifier,
+					"congruence", // qualifierAggregation
+					normalization,
+					true, // includeIsolates
+					duplicates,
+					startDate,
+					stopDate,
+					startTime,
+					stopTime,
+					timewindow,
+					windowsize,
+					excludeVariables,
+					excludeValues,
+					excludeAuthors,
+					excludeSources,
+					excludeSections, 
+					excludeTypes,
+					invertValues,
+					invertAuthors,
+					invertSources,
+					invertSections,
+					invertTypes,
+					null, // outfile
+					null, // fileFormat
+					false // verbose
+					);
+
+			for (i = 0; i < exporterR.matrices.size(); i++) {
+				congruenceList.add((Matrix) exporterR.matrices.get(i).clone());
+			}
+
+			exporterR.rNetwork(
+					"onemode", // networkType
+					statementType,
+					variable1,
+					variable1Document,
+					variable2,
+					variable2Document,
+					qualifier,
+					"conflict", // qualifierAggregation
+					normalization,
+					true, // includeIsolates
+					duplicates,
+					startDate,
+					stopDate,
+					startTime,
+					stopTime,
+					timewindow,
+					windowsize,
+					excludeVariables,
+					excludeValues,
+					excludeAuthors,
+					excludeSources,
+					excludeSections, 
+					excludeTypes,
+					invertValues,
+					invertAuthors,
+					invertSources,
+					invertSections,
+					invertTypes,
+					null, // outfile
+					null, // fileFormat
+					false // verbose
+					);
+
+			for (i = 0; i < exporterR.matrices.size(); i++) {
+				conflictList.add((Matrix) exporterR.matrices.get(i).clone());
+			}
+		}
+		
+		
 		if (algorithm.equals("genetic")) {
 			geneticAlgorithm(
 					numClusterSolutions,
@@ -228,6 +274,7 @@ public class Polarization {
 		boolean earlyConvergence = false;
 		int lastIndex = -1;
 		for (t = 0; t < congruenceList.size(); t++) { // go through all time steps of the time window networks
+			System.out.println("t = " + t);
 			maxQArray = new double[iterations];
 			avgQArray = new double[iterations];
 			sdQArray = new double[iterations];
@@ -511,7 +558,6 @@ public class Polarization {
 				mem[secondIndex] = firstK;
 			}
 		}
-
 		return children;
 	}
 
