@@ -21,8 +21,8 @@ public class Dna {
 	PrintStream console;
 	
 	public Dna() {
-		date = "2020-08-04";
-		version = "2.0 beta 26e3";
+		date = "2021-04-16";
+		version = "2.1.20";
 	}
 	
 	public static void main (String[] args) {
