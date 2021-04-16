@@ -1,6 +1,6 @@
 Package: rDNA
-Version: 2.1.19
-Date: 2020-08-09
+Version: 2.1.20
+Date: 2021-04-16
 Title: Discourse Network Analysis in R
 Authors@R: 
     c(person("Philip", "Leifeld", email = "Philip.Leifeld@essex.ac.uk", 
@@ -13,7 +13,7 @@ Maintainer: Philip Leifeld <Philip.Leifeld@essex.ac.uk>
 Description: Qualitative content analysis and discourse network analysis 
     using the Java software Discourse Network Analyzer (DNA).
 Depends:
-    R (>= 3.0.0)
+    R (>= 3.6.0)
 Imports:
     cluster (>= 2.0.0),
     coda (>= 0.19.1),
@@ -23,7 +23,8 @@ Imports:
     ggplot2 (>= 2.2.1),
     ggraph (>= 2.0.0), 
     ggrepel (>= 0.7.0),
-    grDevices (>= 3.0.0),
+    grDevices (>= 3.0.0), 
+    igraph (>= 1.1.0),
     MASS (>= 7.3.0),
     MCMCpack (>= 1.4.3),
     network (>= 1.13.0.1),
@@ -35,19 +36,17 @@ Imports:
     splitstackshape (>= 1.4.2),
     stats (>= 3.0.0),
     utils (>= 3.0.0),
-    vegan (>= 2.4.6), 
-    igraph (>= 1.1.0)
+    vegan (>= 2.4.6)
 Suggests: 
-    testthat,
-    covr,
-    spelling,
     anomalize (>= 0.1.1),
+    covr,
+    testthat,
     tibbletime (>= 0.1.2)
 SystemRequirements: Java (>= 1.8), libudunits2-dev (Linux)
 License: GPL-3
 LazyData: true
 URL: https://github.com/leifeld/dna
 BugReports: https://github.com/leifeld/dna/issues
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.1
 Encoding: UTF-8
 Language: en-US

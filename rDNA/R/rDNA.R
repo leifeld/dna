@@ -2525,7 +2525,7 @@ dna_updateCoder <- function(connection,
   if (!is.null(name) && !is.na(name) && (!is.character(name) || length(name) != 1)) {
     stop("'name' must be NULL (for no changes) or a character object of length 1.")
   }
-  if (!is.null(color) && !is.na(color) && length(color) != 1) {
+  if (!is.null(color) && !any(is.na(color)) && length(color) != 1) {
     stop("'color' must be NULL (for no changes) or an object of length 1.")
   } else if (!is.null(color) && is.na(color)) {
     color <- NULL
@@ -3307,6 +3307,7 @@ print.dna_cluster <- function(x, ...) {
 #' @seealso \code{\link{print.dna_multiclust}}, \code{\link{dna_plotModularity}}
 #'
 #' @examples
+#' \dontrun{
 #' library("rDNA")
 #' dna_init()
 #' samp <- dna_sample()
@@ -3359,10 +3360,11 @@ print.dna_cluster <- function(x, ...) {
 #' dna_plotModularity(mc3)  # smoothed polarization curve (toy example)
 #' dna_plotModularity(mc3, only.max = FALSE)  # separately for all methods
 #' dna_plotModularity(mc3, anomalize = TRUE)  # anomaly detection
+#' }
 #'
 #' @import ggplot2
 #' @importFrom cluster pam
-#' @importFrom dplyr bind_rows progress_estimated
+#' @importFrom dplyr bind_rows
 #' @importFrom igraph graph.adjacency modularity cluster_fast_greedy
 #'   cluster_walktrap cluster_leading_eigen cluster_edge_betweenness
 #'   cluster_louvain cut_at
@@ -3516,8 +3518,6 @@ dna_multiclust <- function(connection,
     }
   }
 
-  p <- dplyr::progress_estimated(length(nw_sub$networks))
-
   obj <- list()
   if (isTRUE(saveObjects)) {
     obj$cl <- list()
@@ -3527,7 +3527,6 @@ dna_multiclust <- function(connection,
   dta_mod <- list()
   counter <- 1
   for (i in 1:length(nw_sub$networks)) {
-    p$tick()$print()
 
     # prepare dates
     if (timewindow == "no") {
@@ -6169,7 +6168,7 @@ dna_network <- function(connection,
 #' 
 #' It is possible to use the polarization measure with time windows to measure
 #' the variation of polarization over time. The polarization curve can be
-#' visualized using the \link{plot_polarization} function.
+#' visualized using the \code{\link{dna_plotPolarization}} function.
 #'
 #' @inheritParams dna_network
 #' @param algorithm The algorithm that shall optimize the polarization measure.
@@ -6217,6 +6216,7 @@ dna_network <- function(connection,
 #' }
 #'
 #' @author Philip Leifeld
+#' @seealso \code{\link{dna_plotPolarization}}
 #'
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
@@ -7612,7 +7612,7 @@ dna_dendrogram <- function(connection,
   label_color <- NULL
   
   # prepare labels
-  if (is.null(labels) || is.na(labels)) {
+  if (is.null(labels) || any(is.na(labels))) {
     labels <- mem$node
   } else if (!is.character(labels) || !length(labels) %in% c(1, nrow(mem), length(unique(mem$cluster)))) {
     labels <- mem$node
@@ -7646,7 +7646,7 @@ dna_dendrogram <- function(connection,
                          labels)
 
   # prepare label colors
-  if (is.null(label.colors) || is.na(label.colors)) {
+  if (is.null(label.colors) || any(is.na(label.colors))) {
     label.colors <- at$color
   } else if (!length(label.colors) %in% c(1, nrow(mem), length(unique(mem$cluster)))) {
     label.colors <- at$color
@@ -7672,7 +7672,7 @@ dna_dendrogram <- function(connection,
   }
 
   # prepare leaf colors
-  if (is.null(leaf.colors) || is.na(leaf.colors)) {
+  if (is.null(leaf.colors) || any(is.na(leaf.colors))) {
     leaf.colors <- at$color
   } else if (!length(leaf.colors) %in% c(1, nrow(mem), length(unique(mem$cluster)))) {
     leaf.colors <- at$color
@@ -7698,7 +7698,7 @@ dna_dendrogram <- function(connection,
   }
 
   # prepare symbol colors
-  if (is.null(symbol.colors) || is.na(symbol.colors)) {
+  if (is.null(symbol.colors) || any(is.na(symbol.colors))) {
     symbol.colors <- at$color
   } else if (!length(symbol.colors) %in% c(1, nrow(mem), length(unique(mem$cluster)))) {
     symbol.colors <- at$color
@@ -7724,7 +7724,7 @@ dna_dendrogram <- function(connection,
   }
 
   # prepare symbol sizes
-  if (is.null(symbol.sizes) || is.na(symbol.sizes)) {
+  if (is.null(symbol.sizes) || any(is.na(symbol.sizes))) {
     symbol.sizes <- rep(5, length(symbol.colors))
   } else if (!length(symbol.sizes) %in% c(1, nrow(mem), length(unique(mem$cluster)))) {
     symbol.sizes <- rep(5, length(symbol.colors))
@@ -7738,7 +7738,7 @@ dna_dendrogram <- function(connection,
   }
 
   # prepare symbol shapes
-  if (is.null(symbol.shapes) || is.na(symbol.shapes)) {
+  if (is.null(symbol.shapes) || any(is.na(symbol.shapes))) {
     symbol.shapes <- rep(19, length(symbol.colors))
   } else if (!length(symbol.shapes) %in% c(1, nrow(mem), length(unique(mem$cluster)))) {
     symbol.shapes <- rep(19, length(symbol.colors))
@@ -7783,7 +7783,7 @@ dna_dendrogram <- function(connection,
   }
 
   # prepare rectangle colors
-  if (is.null(rectangle.colors) || is.na(rectangle.colors)) {
+  if (is.null(rectangle.colors) || any(is.na(rectangle.colors))) {
     rectangle.colors <- NULL
   } else if (!length(rectangle.colors) %in% c(1, length(unique(mem$cluster)))) {
     rectangle.colors <- rep(col2hex("red"), length(unique(mem$cluster)))
@@ -7914,7 +7914,7 @@ dna_dendrogram <- function(connection,
     dg <- dg +
       scale_x_continuous(breaks = seq(0, length(labels) - 1, by = 1),
                          labels = labels_short[order.dendrogram(hierarchy)]) +
-      theme(axis.text.x = element_text(colour = label.colors[order.dendrogram(hierarchy)]))
+      theme(axis.text.x = suppressWarnings(element_text(colour = label.colors[order.dendrogram(hierarchy)])))
   }
 
   # caption
@@ -9014,12 +9014,12 @@ dna_plotNetwork <- function(x,
 }
 
 
-#' Plot polarization values in a \code{dna_polarization} object
+#' Plot polarization values in a \code{\link{dna_polarization}} object
 #'
-#' Plot polarization values in a \code{dna_polarization} object.
+#' Plot polarization values in a \code{\link{dna_polarization}} object.
 #'
 #' This function serves to plot the polarization values saved in a
-#' \code{dna_polarization} object (as created by the
+#' \code{\link{dna_polarization}} object (as created by the
 #' \code{\link{dna_polarization}} function). For example, this can shed light on
 #' smoothed bipolarization or multipolarization over time. Note that this only
 #' works when using the time window arguments in the
@@ -9027,7 +9027,7 @@ dna_plotNetwork <- function(x,
 #' about the convergence of the genetic algorithm, in which case the time window
 #' arguments are not strictly necessary.
 #'
-#' @param x A \code{dna_polarization} object, as created by the
+#' @param x A \code{\link{dna_polarization}} object, as created by the
 #'   \code{\link{dna_polarization}} function. Must have multiple time points for
 #'   visualizing the results.
 #' @param type Type of plot. This can be \code{"curve"} (for a time series plot

@@ -386,6 +386,7 @@ of choice for a certain time span of the discourse network, without any time
 window options.
 }
 \examples{
+\dontrun{
 library("rDNA")
 dna_init()
 samp <- dna_sample()
@@ -438,6 +439,7 @@ mc3$max_mod              # maximal modularity and method per time point
 dna_plotModularity(mc3)  # smoothed polarization curve (toy example)
 dna_plotModularity(mc3, only.max = FALSE)  # separately for all methods
 dna_plotModularity(mc3, anomalize = TRUE)  # anomaly detection
+}
 
 }
 \seealso{

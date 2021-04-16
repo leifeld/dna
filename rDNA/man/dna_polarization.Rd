@@ -30,6 +30,7 @@ dna_polarization(
   invertSources = FALSE,
   invertSections = FALSE,
   invertTypes = FALSE,
+  algorithm = "genetic",
   k = 2,
   qualityFunction = "modularity",
   iterations = 1000,
@@ -208,6 +209,10 @@ construction (\code{invertTypes = FALSE}) or if they should be the
 only values that should be included during network construction
 (\code{invertTypes = TRUE}).}
 
+\item{algorithm}{The algorithm that shall optimize the polarization measure.
+This can be \code{"genetic"} (for a genetic algorithm) or \code{"swapping"}
+(for an iterative membership swapping algorithm).}
+
 \item{k}{The number of clusters. Usually \code{2} for bipolarization or more
 for multipolarization.}
 
@@ -215,35 +220,53 @@ for multipolarization.}
 good a given cluster function is. Can be \code{"modularity"} or \code{"ei"}
 (for the E-I index).}
 
-\item{iterations}{The number of generations over which the genetic algorithm
-should run. This can be large because an early-convergence check is carried
-out and may proceed before this maximal number of iterations is reached.}
+\item{iterations}{Applicable only to the genetic algorithm: The number of
+generations over which the genetic algorithm should run. This can be large
+because an early-convergence check is carried out and may proceed before
+this maximal number of iterations is reached.}
 
-\item{numClusterSolutions}{How large should the population of initially
-random cluster solutions be for the genetic optimization? More is better,
-but also slower.}
+\item{numClusterSolutions}{Applicable only to the genetic algorithm: How
+large should the population of initially random cluster solutions be for
+the genetic optimization? More is better, but also slower.}
 
-\item{eliteShare}{The fraction of elite nodes with the highest quality or
-fitness that are copied into the children generation without any changes at
-any time point in the optimization process.}
+\item{eliteShare}{Applicable only to the genetic algorithm: The fraction of
+elite nodes with the highest quality or fitness that are copied into the
+children generation without any changes at any time point in the
+optimization process.}
 
-\item{mutationShare}{The fraction of cluster membership bits per cluster
-solution that is randomly mutated after the cross-over step is completed.
-This is done by swapping around cluster memberships randomly between
-sampled pairs of nodes while retaining equal cluster sizes.}
+\item{mutationShare}{Applicable only to the genetic algorithm: The fraction
+of cluster membership bits per cluster solution that is randomly mutated
+after the cross-over step is completed. This is done by swapping around
+cluster memberships randomly between sampled pairs of nodes while retaining
+equal cluster sizes.}
 }
 \description{
-Compute polarization of a discourse network using a genetic algorithm.
+Compute polarization of a discourse network using an optimization algorithm.
 }
 \details{
 This function compute the polarization of a discourse network using a
-genetic algorithm. The algorithm divides the nodes into \code{k}
-equally-sized clusters (usually two) and then optimizes a quality function,
-such as modularity or the E-I index. Optimization is done through elite
-retention, cross-over breeding, and mutation over a number of iterations.
-The maximal quality value of the cluster solution is retained as the final
-polarization estimate. It is possible to use the polarization measure with
-time windows to measure the variation of polarization over time.
+genetic algorithm or an iterative membership swapping algorithm. The
+algorithm divides the nodes into \code{k} equally-sized clusters (usually
+two) and then optimizes a quality function, such as modularity or the E-I
+index, over a combination of congruence and conflict.
+
+Optimization in the genetic algorithm is done through elite retention,
+cross-over breeding, and mutation over a number of iterations with a number
+of cluster solution organisms per iteration/generation. The algorithm
+"breeds" the optimal partition into k clusters of equal size according to the
+modularity or E-I index function as a fitness criterion and then
+extracts the maximal quality score of the final generation as the
+polarization estimate for the network.
+
+Optimization with the membership swapping algorithm starts with a random
+partition of nodes into k clusters of equal size and iteratively swaps
+membership pairs in the cluster solution until no further improvement in
+modularity of E-I index can be achieved. The final quality score is extracted
+as the polarization estimate for the network.
+
+It is possible to use the polarization measure with time windows to measure
+the variation of polarization over time. The polarization curve can be
+visualized using the \code{\link{dna_plotPolarization}} function.
 }
 \examples{
 \dontrun{
@@ -264,6 +287,9 @@ pol3 <- dna_polarization(conn,
 pol3$finalResults
 }
 
+}
+\seealso{
+\code{\link{dna_plotPolarization}}
 }
 \author{
 Philip Leifeld

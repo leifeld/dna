@@ -2,41 +2,35 @@
 % Please edit documentation in R/rDNA.R
 \name{dna_plotPolarization}
 \alias{dna_plotPolarization}
-\title{Plot polarization values in a \code{dna_polarization} object}
+\title{Plot polarization values in a \code{\link{dna_polarization}} object}
 \usage{
-dna_plotPolarization(
-  x,
-  include.y = NULL,
-  loess = TRUE,
-  plot.convergence = FALSE,
-  conv.distribution = FALSE
-)
+dna_plotPolarization(x, type = "curve", include.y = NULL, loess = TRUE)
 }
 \arguments{
-\item{x}{A \code{dna_polarization} object, as created by the
+\item{x}{A \code{\link{dna_polarization}} object, as created by the
 \code{\link{dna_polarization}} function. Must have multiple time points for
 visualizing the results.}
+
+\item{type}{Type of plot. This can be \code{"curve"} (for a time series plot
+of the polarization curve, including a smoother), \code{"convergence"} (for
+a plot of the optimization trajectories over the number of iterations,
+which can be used to diagnose convergence issues), or \code{"distribution"}
+(for a boxplot of the number of iterations it took the algorithm to
+converge, which can also be used to diagnose convergence issues).}
 
 \item{include.y}{Include a point on the y-axis, for example \code{0}.}
 
 \item{loess}{Plot a loess smoother as a blue line?}
-
-\item{plot.convergence}{Plot convergence diagnostics for the genetic
-algorithm? This plots the maximal polarization values at each iteration,
-for all time steps.}
-
-\item{conv.distribution}{If time windows are used, this creates a histogram
-of convergence times of the genetic algorithm, for all time steps.}
 }
 \value{
 A \pkg{ggplot2} plot.
 }
 \description{
-Plot polarization values in a \code{dna_polarization} object.
+Plot polarization values in a \code{\link{dna_polarization}} object.
 }
 \details{
 This function serves to plot the polarization values saved in a
-\code{dna_polarization} object (as created by the
+\code{\link{dna_polarization}} object (as created by the
 \code{\link{dna_polarization}} function). For example, this can shed light on
 smoothed bipolarization or multipolarization over time. Note that this only
 works when using the time window arguments in the
