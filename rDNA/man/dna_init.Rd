@@ -8,9 +8,9 @@ dna_init(jarfile = NULL, memory = 1024, returnString = FALSE)
 }
 \arguments{
 \item{jarfile}{The file name of the DNA jar file, e.g.,
-\code{"dna-2.0-beta23.jar"}. Will be auto-detected by choosing the most
-recent version stored in the library path or working directory if
-\code{jarfile = NULL}.}
+\code{"dna-2.1.20.jar"}. Will be auto-detected by choosing the most recent
+version stored in the \code{java} library path or current working directory
+if \code{jarfile = NULL}.}
 
 \item{memory}{The amount of memory in megabytes to allocate to DNA, for
 example \code{1024} or \code{4096}.}

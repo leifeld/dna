@@ -156,23 +156,40 @@ print.dna_dataframe <- function(x, truncate = 20, ...) {
   print(x2)
 }
 
-#' Download the binary DNA jar file
+#' Download the binary DNA JAR file
 #'
-#' Downloads the newest released DNA jar file necessary for running
+#' Downloads the newest released DNA JAR file necessary for running
 #' \link{dna_init}.
 #'
 #' This function uses GitHub's API to download the latest DNA jar file to the
-#' working directory.
+#' working directory. If you would like to store the DNA JAR file permanently
+#' in the rDNA library path, you can use the argument
+#' \code{path = paste0(dirname(system.file(".", package = "rDNA")), "/", "java")}.
+#' Do this only if the library path does not already contain a DNA JAR file with
+#' the same version number as the rDNA package. To list the contents of the
+#' \code{java} sub-directory of the library path, where the DNA JAR file is
+#' usually stored, you can try:
+#' \code{p <- paste0(dirname(system.file(".", package = "rDNA")), "/", "java")}
+#' followed by \code{dir(p)}.
+#' 
+#' The correct DNA JAR file is normally downloaded and stored in the rDNA
+#' library path when the rDNA package is installed. Use \code{dna_downloadJar}
+#' only if this failed or if you want to download an additional or newer copy
+#' of the DNA JAR file to your working directory, perhaps for purposes of
+#' replicability. Note that the DNA JAR file and the rDNA package must have the
+#' same version number for full compatibility. To check your rDNA version, try
+#' \code{packageVersion("rDNA")}.
 #'
 #' @param path Directory path in which the jar file will be stored.
 #' @param force Logical. Should the file be overwritten if it already exists?
 #' @param returnString Logical. Return the file name of the downloaded jar file?
 #'
 #' @author Philip Leifeld, Johannes B. Gruber
+#' @seealso \code{\link{dna_installJar}}
 #'
 #' @importFrom utils download.file
 #' @export
-dna_downloadJar <- function(path = paste0(dirname(system.file(".", package = "rDNA")), "/", "extdata"),
+dna_downloadJar <- function(path = getwd(),
                             force = FALSE,
                             returnString = FALSE) {
   u <- url("https://api.github.com/repos/leifeld/dna/releases")
@@ -183,6 +200,9 @@ dna_downloadJar <- function(path = paste0(dirname(system.file(".", package = "rD
   close(u)
   filename <- strsplit(m[1], "/")[[1]]
   filename <- filename[length(filename)]
+  if(!file.exists(path)) {
+    dir.create(path)
+  }
   filename <- paste0(path, ifelse(endsWith(path, "/"), "", "/"), filename)
   if (force == TRUE || (force == FALSE && !file.exists(filename))) {
     download.file(url = m[1], destfile = filename, mode = "wb", cacheOK = FALSE)
@@ -293,9 +313,9 @@ dna_gui <- function(infile = NULL,
 #' version or path, the \R session would need to be restarted first.
 #'
 #' @param jarfile The file name of the DNA jar file, e.g.,
-#'   \code{"dna-2.0-beta23.jar"}. Will be auto-detected by choosing the most
-#'   recent version stored in the library path or working directory if
-#'   \code{jarfile = NULL}.
+#'   \code{"dna-2.1.20.jar"}. Will be auto-detected by choosing the most recent
+#'   version stored in the \code{java} library path or current working directory
+#'   if \code{jarfile = NULL}.
 #' @param memory The amount of memory in megabytes to allocate to DNA, for
 #'   example \code{1024} or \code{4096}.
 #' @param returnString Return a character object representing the jar file name?
@@ -308,7 +328,7 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
   if (is.null(jarfile) || is.na(jarfile)) {
 
     # auto-detect file name in library directory
-    path <- paste0(dirname(system.file(".", package = "rDNA")), "/", "extdata")
+    path <- paste0(dirname(system.file(".", package = "rDNA")), "/", "java")
     files <- dir(path)
     files <- files[grepl("^dna-.+\\.jar$", files)]
     files <- sort(files)
@@ -333,13 +353,13 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
 
     # if none was found whatsoever, attempt to download to library path
     if (is.null(jarfile)) {
-      message("No jar file found. Trying to download most recent version to library path.")
+      message("No jar file found. Trying to download most recent version to java library path.")
       jarfile <- dna_downloadJar(path = path, returnString = TRUE)
       message("Done.")
     }
   }
   if (is.null(jarfile) || length(jarfile) == 0) {
-    message("No DNA jar file found in the library path or working directory.")
+    message("No DNA jar file found in the java library path or working directory.")
     if (isTRUE(returnString)) {
       return(NULL)
     }
@@ -350,6 +370,15 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
   if (!file.exists(jarfile)) {
     stop(paste0("jarfile '", jarfile, "' could not be located."))
   }
+  
+  if (!grepl(as.character(packageVersion("rDNA")), jarfile)) {
+    jarvers <- gsub("\\.jar", "", gsub(".+dna-", "", jarfile))
+    warning("The rDNA package version and the version of the DNA JAR file ",
+            "differ. They should be identical for full compatibility. rDNA 
+            version: ", as.character(packageVersion("rDNA")), ". DNA JAR file ",
+            "version: ", jarvers, ".")
+  }
+  
   assign("dnaJarString", jarfile, pos = dnaEnvironment)
   message(paste("Jar file:", dnaEnvironment[["dnaJarString"]]))
   .jinit(dnaEnvironment[["dnaJarString"]],
@@ -357,6 +386,180 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
          parameters = paste0("-Xmx", memory, "m"))
   if (isTRUE(returnString)) {
     return(jarfile)
+  }
+}
+
+#' Install DNA JAR file into \code{inst/java/} sub-directory
+#'
+#' Install DNA JAR file into \code{inst/java/} sub-directory of current path.
+#' 
+#' rDNA requires the installation of a DNA JAR file to run properly. While it is
+#' possible to store the JAR file in the respective working directory, it is
+#' preferable to install it in the rDNA package installation directory under
+#' \code{inst/java/}. The \code{dna_installJar} function attempts doing so. It
+#' is called automatically during rDNA package installation, but it can also be
+#' called manually. If it is called manually by the user, the working directory
+#' must be the root directory of the source files of the rDNA package (i.e., the
+#' directory where the \code{DESCRIPTION} file is located).
+#' 
+#' The function first attempts to locate a JAR file in the \code{inst/java/}
+#' directory. If a JAR file is found there, the function exits, and installation
+#' of the package can normally resume, with the JAR file being installed in the
+#' \code{java} sub-directory of the installation directory. If no JAR file can
+#' be located, an attempt is made to download a JAR file with the same version
+#' number as the rDNA package in the file name from the GitHub release page of
+#' the DNA repository. The JAR file is then stored under \code{inst/java/} and
+#' installed in the rDNA installation directory. If this also fails, the
+#' function then attempts to download the most recent source code of DNA from
+#' the \code{master} branch of DNA on GitHub and compile the DNA JAR file from
+#' source. This can only work if the local system has at least version 8.0 of
+#' the Java Development Toolkit (JDK) installed. The JDK can be downloaded from
+#' \url{https://jdk.java.net/}. Open JDK versions are permitted as an
+#' alternative. The JAR file is only compiled from source and used for
+#' installation if the latest DNA version on the GitHub master branch has the
+#' same version number as the rDNA package. If this also fails, the function
+#' exits and prints instructions on downloading and installing the DNA JAR file
+#' manually.
+#' 
+#' @return The function returns \code{0} upon success and \code{1} upon failure.
+#' 
+#' @author Philip Leifeld
+#' @seealso \code{\link{dna_installJar}}
+#' 
+#' @importFrom utils download.file unzip
+#' @export
+dna_installJar <- function() {
+  # first attempt: try to locate an existing DNA JAR file in inst/java/
+  message("Attempting to install DNA JAR file in /inst/java/.")
+  target_dir <- "inst/java"
+  if (!grepl('/rDNA$', getwd())) stop("Current working directory is not rDNA/.")
+  if (file.exists(target_dir)) {
+    if(length(list.files(target_dir)) > 0) {
+      if (grepl("^dna-.+\\.jar$", list.files(target_dir))) {
+        message("DNA JAR file detected in ", target_dir, "/. Using for installation.")
+        return(0)
+      }
+    }
+  }
+  
+  # second attempt: download DNA JAR file with the same version number as rDNA from GitHub release directory
+  v <- gsub("Version: ", "", readLines(con = "DESCRIPTION")[2]) # rDNA version
+  f <- paste0("https://github.com/leifeld/dna/releases/download/", v, "/dna-", v, ".jar") # JAR download URL
+  dir.create(target_dir, showWarnings = FALSE)
+  tryCatch({
+    suppressWarnings(download.file(url = f,
+                                   destfile = paste0(target_dir, "/dna-", v, ".jar"),
+                                   mode = "wb",
+                                   cacheOK = FALSE))
+    return(0)
+  }, 
+  error = function(e) message("Compiled JAR with compatible version number to rDNA could not be downloaded. Trying to compile JAR from source.")
+  )
+  
+  # third attempt: download latest GitHub sources and compile DNA JAR file and check version number compatiblity with rDNA
+  tryCatch(
+    download.file(url = "https://github.com/leifeld/dna/archive/master.zip", destfile = "master.zip"),
+    error = function(e) {
+      message("DNA source code could not be downloaded from GitHub. Please download DNA JAR file manually; see manual.")
+      return(1)
+    }
+  )
+  tryCatch({
+    unzip(zipfile = "master.zip")
+    output <- file.remove("master.zip")
+  },
+  error = function(e) {
+    message("DNA source code could not be unzipped locally. Please download DNA JAR file manually; see manual.")
+    unlink("dna-master", recursive = TRUE)
+    return(1)
+  }
+  )
+  tryCatch({
+    v2 <- readLines(con = "dna-master/DNA/src/dna/Dna.java", warn = FALSE)
+    v2 <- gsub('.+ = \\"', "", v2[grep("version = ", v2)])
+    v2 <- gsub('\\";$', "", v2)
+  },
+  error = function(e) {
+    message("DNA version in source code could not be determined. Please download DNA JAR file manually; see manual.")
+    unlink("dna-master", recursive = TRUE)
+    return(1)
+  }
+  )
+  if (v2 != v) {
+    message(paste0("The DNA version in the latest source code has an incompatible version: ",
+                   v2, ". rDNA package version: ", v, ". Please download DNA JAR file manually; see manual."))
+    unlink("dna-master", recursive = TRUE)
+    return(1)
+  }
+  if (system("javac --version") != 0) {
+    message("JDK (and command javac) >= 8.0 is required but was not found on this system. Please download DNA JAR file manually; see manual.")
+    unlink("dna-master", recursive = TRUE)
+    return(1)
+  }
+  if (system("jar --version") != 0) {
+    message("JDK (and command jar) >= 8.0 is required but was not found on this system. Please download DNA JAR file manually; see manual.")
+    unlink("dna-master", recursive = TRUE)
+    return(1)
+  }
+  tryCatch({
+    message("Trying to compile DNA sources into JAR file.")
+    dir.create("dna-master/output")
+    output <- file.copy("dna-master/DNA/src", "dna-master/output/", recursive = TRUE)
+    jars <- list.files(path = "dna-master/DNA/lib/", pattern = ".+\\.jar")
+    output <- lapply(jars,
+                     function(f) file.copy(from = paste0("dna-master/DNA/lib/", f),
+                                           to = "dna-master/output/src/"))
+    jars <- list.files(path = "dna-master/output/src/", pattern = ".+\\.jar")
+    wd <- getwd()
+    setwd("dna-master/output/src")
+    output <- lapply(jars, function(f) system(paste("jar xf", f)))
+    if (sum(unlist(output)) != 0) {
+      message("Jar dependencies could not be extracted.")
+      setwd(wd)
+      unlink("dna-master", recursive = TRUE)
+      return(1)
+    }
+    output <- file.remove(jars)
+    output <- system("javac --release 8 dna/Dna.java")
+    if (output != 0) {
+      message("dna/Dna.java could not be compiled. Check javac compiler. Please download DNA JAR file manually; see manual.")
+      setwd(wd)
+      unlink("dna-master", recursive = TRUE)
+      return(1)
+    }
+    output <- system("javac --release 8 dna/export/ExporterR.java")
+    if (output != 0) {
+      message("dna/export/ExporterR.java could not be compiled. Check javac compiler. Please download DNA JAR file manually; see manual.")
+      setwd(wd)
+      unlink("dna-master", recursive = TRUE)
+      return(1)
+    }
+    java_files <- list.files(pattern = ".+\\.java", recursive = TRUE)
+    output <- file.remove(java_files)
+    output <- system(paste0("jar cmf ../../DNA/src/META-INF/MANIFEST.MF ../dna-", v, ".jar *"))
+    if (output != 0) {
+      message("DNA JAR file could not be compiled. Please download DNA JAR file manually; see manual.")
+      setwd(wd)
+      unlink("dna-master", recursive = TRUE)
+      return(1)
+    }
+    setwd(wd)
+    output <- file.copy(from = paste0("dna-master/output/dna-", v, ".jar"),
+                        to = paste0(target_dir, "/dna-", v, ".jar"))
+    output <- unlink("dna-master", recursive = TRUE)
+  },
+  error = function(e) {
+    message("DNA source code could not be unzipped locally. Please download DNA JAR file manually; see manual.")
+    return(1)
+  }
+  )
+  unlink("dna-master", recursive = TRUE)
+  if (file.exists(paste0(target_dir, "/dna-", v, ".jar"))) {
+    message("DNA JAR file successfully deposited as ", paste0(target_dir, "/dna-", v, ".jar"), ".")
+    return(0)
+  } else {
+    message("Something went wrong while depositing the DNA JAR file in the installation path. Please download DNA JAR file manually; see manual.")
+    return(1)
   }
 }
 
