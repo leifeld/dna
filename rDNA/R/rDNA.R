@@ -443,6 +443,12 @@ dna_installJar <- function() {
   }
   
   # second attempt: download DNA JAR file with the same version number as rDNA from GitHub release directory
+  if (!file.exists("DESCRIPTION")) {
+    stop("DESCRIPTION file not found. dna_installJar() must be executed in an R package root directory to work.")
+  }
+  if (!file.exists("inst")) {
+    stop("inst/ directory not found. dna_installJar() must be executed in an R package root directory to work.")
+  }
   v <- gsub("Version: ", "", readLines(con = "DESCRIPTION")[2]) # rDNA version
   f <- paste0("https://github.com/leifeld/dna/releases/download/", v, "/dna-", v, ".jar") # JAR download URL
   dir.create(target_dir, showWarnings = FALSE)
