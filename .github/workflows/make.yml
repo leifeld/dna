@@ -194,7 +194,11 @@ jobs:
         run: make rDNA
 
       - name: Install dependencies
-        run: remotes::install_deps("rDNA", dependencies = TRUE)
+        run: |
+          remotes::install_deps("rDNA", dependencies = TRUE)
+          if (! "rJava" %in% installed.packages()) tryCatch(install.packages("rJava", repos="http://rforge.net"), error = function(e) message("rJava could not be installed from R-Forge."))
+          if (! "covr" %in% installed.packages()) tryCatch(remotes::install_github("r-lib/covr"), error = function(e) message("covr could not be installed from GitHub."))
+          if (! "anomalize" %in% installed.packages()) tryCatch(remotes::install_github("business-science/anomalize"), error = function(e) message("anomalize could not be installed from GitHub."))
         shell: Rscript {0}
 
       - name: Check rDNA package (Windows)
