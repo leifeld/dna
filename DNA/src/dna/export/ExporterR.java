@@ -108,17 +108,16 @@ public class ExporterR {
 			this.sql.upsertSetting("activeCoder", Integer.toString(adminCoder.getId()));
 			
 			// create default statement types
-			try {
-				this.addStatementType("DNA Statement", "#FFFF00", new String[0], new String[0]);
-				this.addVariable("DNA Statement", "person", "short text", false, false);
-				this.addVariable("DNA Statement", "organization", "short text", false, false);
-				this.addVariable("DNA Statement", "concept", "short text", false, false);
-				this.addVariable("DNA Statement", "agreement", "boolean", false, false);
-				this.addStatementType("Annotation", "#D3D3D3", new String[0], new String[0]);
-				this.addVariable("Annotation", "note", "long text", false, false);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			this.addStatementType(
+					"DNA Statement",
+					"#FFFF00",
+					new String[] {"person", "organization", "concept", "agreement"},
+					new String[] {"short text", "short text", "short text", "boolean"});
+			this.addStatementType(
+					"Annotation",
+					"#D3D3D3",
+					new String[] {"note"},
+					new String[] {"long text"});
 		}
 		
 		// read in all data from the database and report summary
@@ -2525,7 +2524,7 @@ public class ExporterR {
 	 * @throws Exception
 	 */
 	public void addStatementType(String statementTypeLabel, String color, String[] variableNames, String[] variableTypes) throws Exception {
-		if (this.data.getStatementType(statementTypeLabel) != null) {
+		if (this.data.containsStatementType(statementTypeLabel)) {
 			throw new Exception("A statement type called '" + statementTypeLabel + "' already exists and will not be added.");
 		}
 		int statementTypeId = this.data.generateNewId("statementTypes");

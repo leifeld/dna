@@ -362,6 +362,15 @@ public class Data {
 		return null;
 	}
 	
+	public boolean containsStatementType(String label) {
+		for (int i = 0; i < statementTypes.size(); i++) {
+			if (statementTypes.get(i).getLabel().equals(label)) {
+				return(true);
+			}
+		}
+		return(false);
+	}
+	
 	public StatementType getStatementType(String label) throws Exception {
 		ArrayList<StatementType> s = new ArrayList<StatementType>();
 		for (int i = 0; i < statementTypes.size(); i++) {
