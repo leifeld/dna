@@ -214,9 +214,13 @@ jobs:
         run: "bash -c 'R CMD check --no-multiarch --no-manual --as-cran rDNA_*.tar.gz'"
 
       - name: Check rDNA package (Unix)
-        if: runner.os != 'Windows'
+        if: runner.os == 'Linux'
         working-directory: output
         run: R CMD check --no-multiarch --no-manual --as-cran rDNA_*.tar.gz
+
+      - name: Check rDNA package (macOS)
+        if: runner.os == 'macOS'
+        run: "bash -c 'NOAWT=1 R CMD check --no-manual --as-cran rDNA_*.tar.gz'"
 
       - name: Upload check results
         uses: actions/upload-artifact@main
