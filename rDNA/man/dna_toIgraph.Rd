@@ -20,6 +20,7 @@ This function can convert objects of class 'dna_network_onemode' or
 'dna_network_twomode' to igraph objects.
 }
 \examples{
+\dontrun{
 # convert without attributes
 dna_init()
 conn <- dna_connection(dna_sample())
@@ -42,6 +43,7 @@ graph2 <- dna_toIgraph(nw2, attributes = rbind(
   dna_getAttributes(conn, variable = "concept")))
 
 plot(graph2)
+}
 }
 \author{
 Johannes B. Gruber

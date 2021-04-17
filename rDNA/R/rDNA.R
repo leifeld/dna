@@ -6660,6 +6660,7 @@ dna_polarization <- function(connection,
 #'   vertex_attr
 #'
 #' @examples
+#' \dontrun{
 #' # convert without attributes
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
@@ -6682,6 +6683,7 @@ dna_polarization <- function(connection,
 #'   dna_getAttributes(conn, variable = "concept")))
 #'
 #' plot(graph2)
+#' }
 dna_toIgraph <- function(x,
                          weighted = TRUE,
                          attributes = NULL) {
