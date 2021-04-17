@@ -1,5 +1,6 @@
 context("Analysis/Transformation")
 
+dna_init()
 conn <- dna_connection(dna_sample(overwrite = TRUE, verbose = FALSE))
 
 test_that("cluster", {
@@ -103,3 +104,4 @@ test_that("dna_toIgraph", {
   }, "Only takes objects of class 'dna_network_onemode' or 'dna_network_twomode'.")
 })
 
+unlink("sample.dna")

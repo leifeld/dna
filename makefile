@@ -88,7 +88,8 @@ rDNA-full-temp: mkdir-output compile-java
 	jar cmf ../../../$(SOURCE_DIR)/META-INF/MANIFEST.MF ../../${JARFILE} *; \
 	chmod +x ../../$(JARFILE); \
 	cd ../..; \
-	mv ${JARFILE} rtemp/$(R_DIR)/inst/extdata/; \
+	$(MKDIR) rtemp/$(R_DIR)/inst/java/; \
+	mv ${JARFILE} rtemp/$(R_DIR)/inst/java/; \
 	$(RM) temp; \
 
 # copy-sample - copy the sample.dna database to the output directory

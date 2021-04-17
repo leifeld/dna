@@ -154,3 +154,5 @@ test_that("update setting", {
     s[s[, 1] == "popupWidth", 2]
   }, equals("400"))
 })
+
+unlink("sample.dna")
