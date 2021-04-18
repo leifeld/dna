@@ -186,7 +186,7 @@ jobs:
         shell: Rscript {0}
 
       - name: Check if rJava works (macOS)
-        if: runner.os == "macOS'
+        if: runner.os == 'macOS'
         run: |
           install.packages("rJava", type = "source", repos = "http://cran.us.r-project.org")
           library("rJava")
