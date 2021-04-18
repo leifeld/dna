@@ -170,6 +170,9 @@ jobs:
           distribution: 'adopt'
           java-version: '14'
 
+      - name: Java reconf
+        run: sudo R CMD javareconf
+
       - name: Check if rJava works
         run: |
           if (! "rJava" %in% installed.packages()) tryCatch(install.packages("rJava"), error = function(e) message("rJava could not be installed from CRAN."))
