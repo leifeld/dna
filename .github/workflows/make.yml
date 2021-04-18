@@ -195,7 +195,7 @@ jobs:
 
       - name: Install system dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get install libudunits2-dev
+        run: sudo apt-get install libudunits2-dev libcurl4-openssl-dev
 
       - name: Make rDNA
         run: make rDNA
