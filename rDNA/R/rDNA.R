@@ -393,6 +393,7 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
     }
   }
   if (!is.character(jarfile) || length(jarfile) > 1 || !grepl("^dna-.+\\.jar$", basename(jarfile))) {
+    print(jarfile)
     stop("'jarfile' must be a character object of length 1 that points to the DNA jar file.")
   }
   if (!file.exists(jarfile)) {
