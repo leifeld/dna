@@ -170,9 +170,13 @@ jobs:
           distribution: 'adopt'
           java-version: '14'
 
-      - name: Setup R Java support
-        if: runner.os != 'Windows'
+      - name: Setup R Java support (Linux)
+        if: runner.os == 'Linux'
         run: "echo export PATH=$PATH > reconf.sh; echo export JAVA_HOME=$JAVA_HOME >> reconf.sh; echo R CMD javareconf >> reconf.sh; sudo bash reconf.sh"
+
+      - name: Setup R Java support (macOS)
+        if: runner.os == 'macOS'
+        run: echo export "JAVA_HOME=\$(/usr/libexec/java_home)" >> ~/.bash_profile
 
       - name: Check Java version
         run: java --version
@@ -227,7 +231,7 @@ jobs:
         uses: actions/upload-artifact@main
         with:
           name: rDNA check (${{ runner.os }}-r${{ matrix.config.r }})
-          path: output/rDNA.check/
+          path: output/rDNA.Rcheck/
 
       - name: Test coverage
         working-directory: rDNA
