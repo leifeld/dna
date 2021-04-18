@@ -19,7 +19,8 @@ test_that("connecting to sample database works", {
   error = function(e) print("Uh-oh, Java failed."))
   
   tryCatch({
-    conn <- dna_connection(s)
+    print("Trying connection...")
+    export <- .jnew("dna.export/ExporterR", "sqlite", s, "", "", TRUE)
     print("Connection works fine.")
   },
   error = function(e) print("Uh-oh, connection failed."))
