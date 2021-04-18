@@ -87,9 +87,6 @@ dna_connection <- function(infile, login = NULL, password = NULL, create = FALSE
   if (!grepl("/", infile, fixed = TRUE)) {
     infile <- paste0(getwd(), "/", infile)
   }
-  if (is.null(dnaEnvironment[["dnaJarString"]])) {
-    stop("No connection between rDNA and DNA detected. Maybe dna_init() would help.")
-  }
   if (is.null(login) || is.null(password)) {
     export <- .jnew("dna.export/ExporterR", "sqlite", infile, "", "", verbose)
   } else {
