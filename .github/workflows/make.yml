@@ -170,6 +170,10 @@ jobs:
           distribution: 'adopt'
           java-version: '14'
 
+      - name: rJava configuration on macOS
+        if: runner.os == 'macOS'
+        run: "bash -c 'NOAWT=1 R CMD javareconf'"
+
       - name: Check Java version
         run: java --version
 
