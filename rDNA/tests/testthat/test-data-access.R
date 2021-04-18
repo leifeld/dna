@@ -9,6 +9,17 @@ test_that("dna_sample works", {
   unlink("sample.dna")
 })
 
+test_that("connecting to sample database works", {
+  s <- dna_sample(overwrite = TRUE, verbose = FALSE)
+  tryCatch({
+    .jinit(force.init = TRUE,
+           parameters = paste0("-Xmx1024m"))
+    print("Works fine.")
+  },
+  error = function(e) print("Uh-oh, Java failed."))
+  unlink(s)
+})
+
 test_that("loading sample database works", {
   unlink("sample.dna")
   expect_equal(dna_sample(), paste0(getwd(), "/sample.dna"))

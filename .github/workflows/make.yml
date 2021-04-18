@@ -246,7 +246,7 @@ jobs:
         run: "bash -c 'NOAWT=1 R CMD check --no-manual --as-cran rDNA_*.tar.gz'"
 
       - name: Upload check results
-        uses: actions/upload-artifact@main
+        uses: actions/upload-artifact@v2
         with:
           name: rDNA check (${{ runner.os }}-r${{ matrix.config.r }})
           path: output/rDNA.Rcheck/
