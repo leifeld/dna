@@ -171,16 +171,11 @@ jobs:
           java-version: '14'
 
       - name: Check if rJava works
-        if: runner.os == 'macOS'
         run: |
           if (! "rJava" %in% installed.packages()) tryCatch(install.packages("rJava"), error = function(e) message("rJava could not be installed from CRAN."))
           library("rJava")
           .jinit()
         shell: Rscript {0}
-
-      - name: rJava configuration on macOS
-        if: runner.os == 'macOS'
-        run: "bash -c 'NOAWT=1 R CMD javareconf'"
 
       - name: Check Java version
         run: java --version
@@ -211,7 +206,6 @@ jobs:
       - name: Install dependencies
         run: |
           remotes::install_deps("rDNA", dependencies = TRUE)
-          if (! "rJava" %in% installed.packages()) tryCatch(install.packages("rJava", repos="http://rforge.net"), error = function(e) message("rJava could not be installed from R-Forge."))
           if (! "covr" %in% installed.packages()) tryCatch(remotes::install_github("r-lib/covr"), error = function(e) message("covr could not be installed from GitHub."))
           if (! "anomalize" %in% installed.packages()) tryCatch(remotes::install_github("business-science/anomalize"), error = function(e) message("anomalize could not be installed from GitHub."))
         shell: Rscript {0}
