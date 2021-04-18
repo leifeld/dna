@@ -170,6 +170,13 @@ jobs:
           distribution: 'adopt'
           java-version: '14'
 
+      - name: Check if rJava works
+        if: runner.os == 'macOS'
+        run: |
+          if (! "rJava" %in% installed.packages()) tryCatch(install.packages("rJava"), error = function(e) message("rJava could not be installed from CRAN."))
+          library("rJava")
+          .jinit()
+
       - name: rJava configuration on macOS
         if: runner.os == 'macOS'
         run: "bash -c 'NOAWT=1 R CMD javareconf'"
