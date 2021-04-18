@@ -233,6 +233,13 @@ jobs:
         working-directory: output
         run: R CMD check --no-multiarch --no-manual --as-cran rDNA_*.tar.gz
 
+      - name: Check if rJava works (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          library("rJava")
+          if (.jinit() != 0) stop("rJava does not work.")
+        shell: Rscript {0}
+
       - name: Check rDNA package (macOS)
         if: runner.os == 'macOS'
         working-directory: output
