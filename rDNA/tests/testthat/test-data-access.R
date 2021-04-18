@@ -11,6 +11,11 @@ test_that("dna_sample works", {
 
 test_that("connecting to sample database works", {
   s <- dna_sample(overwrite = TRUE, verbose = FALSE)
+  if (.jinit() == 0) {
+    message("Java init works.")
+  } else {
+    message("Java init fails to work.")
+  }
   dna_init()
   expect_that(
     dna_connection(s, verbose = FALSE)$dna_connection@jclass,
