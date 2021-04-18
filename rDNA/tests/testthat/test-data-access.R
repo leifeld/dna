@@ -12,13 +12,17 @@ test_that("dna_sample works", {
 test_that("connecting to sample database works", {
   s <- dna_sample(overwrite = TRUE, verbose = FALSE)
   tryCatch({
-    #.jinit(force.init = TRUE,
-    #       parameters = paste0("-Xmx1024m"))
     test <- dna_init(returnString = TRUE)
     print("Works fine.")
     print(test)
   },
   error = function(e) print("Uh-oh, Java failed."))
+  
+  tryCatch({
+    conn <- dna_connection(s)
+    print("Connection works fine.")
+  },
+  error = function(e) print("Uh-oh, connection failed."))
   unlink(s)
 })
 
