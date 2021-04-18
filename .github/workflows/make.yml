@@ -177,7 +177,7 @@ jobs:
         if: runner.os != 'Windows'
         run: sudo R CMD javareconf
 
-      - name: Check if rJava works (non-macOS)
+      - name: Ensure that rJava works (non-macOS)
         if: runner.os != 'macOS'
         run: |
           if (! "rJava" %in% installed.packages()) tryCatch(install.packages("rJava"), error = function(e) message("rJava could not be installed from CRAN."))
@@ -185,7 +185,7 @@ jobs:
           if (.jinit() != 0) stop("rJava does not work.")
         shell: Rscript {0}
 
-      - name: Check if rJava works (macOS)
+      - name: Ensure that rJava works (macOS)
         if: runner.os == 'macOS'
         run: |
           install.packages("rJava", type = "source", repos = "http://cran.us.r-project.org")
