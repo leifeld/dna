@@ -331,7 +331,7 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
     if (file.exists("../../java") && file.exists("../../DESCRIPTION")) {
       v <- gsub("Version: ", "", readLines(con = "../../DESCRIPTION")[2])
       if (file.exists(paste0("../../java/dna-", v, "\\.jar"))) {
-        jarfile <- paste0("../../java/dna-", v, "\\.jar")
+        jarfile <- normalizePath(paste0("../../java/dna-", v, "\\.jar"))
       }
     }
   }
@@ -341,9 +341,30 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
     if (file.exists("../../inst/java") && file.exists("../../DESCRIPTION")) {
       v <- gsub("Version: ", "", readLines(con = "../../DESCRIPTION")[2])
       if (file.exists(paste0("../../inst/java/dna-", v, "\\.jar"))) {
-        jarfile <- paste0("../../inst/java/dna-", v, "\\.jar")
+        jarfile <- normalizePath(paste0("../../inst/java/dna-", v, "\\.jar"))
       }
     }
+  }
+  
+  # auto-detect file name recursively from two directory levels up (e.g., for testing)
+  if (is.null(jarfile) || is.na(jarfile)) {
+    wd <- getwd()
+    setwd("../..")
+    l <- list.files(pattern = "DESCRIPTION$", recursive = TRUE)
+    if (length(l) > 0) {
+      v <- gsub("Version: ", "", readLines(con = l[length(l)])[2])
+      j <- list.files(pattern = paste0("dna-", v, "\\.jar"), recursive = TRUE, full.names = TRUE)
+      if (length(j) > 0) {
+        jarfile <- normalizePath(j[length(j)])
+      }
+    }
+    if (is.null(jarfile) || is.na(jarfile)) {
+      j <- list.files(pattern = "dna-.+\\.jar$", recursive = TRUE, full.names = TRUE)
+      if (length(j) > 0) {
+        jarfile <- normalizePath(j[length(j)])
+      }
+    }
+    setwd(wd)
   }
   
   # auto-detect file name in java or java/inst directory of R library package installation path
@@ -356,7 +377,7 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
         jarfile <- list.files(paste0(path, "/java"), pattern = "dna-.+\\.jar$", full.names = TRUE)
         if (length(jarfile) > 1) {
           jarfile <- sort(jarfile)
-          jarfile <- jarfile[length(jarfile)]
+          jarfile <- normalizePath(jarfile[length(jarfile)])
         } else if (length(jarfile) < 1) {
           jarfile <- NULL
         }
@@ -364,7 +385,7 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
         jarfile <- list.files(paste0(path, "/inst/java"), pattern = "dna-.+\\.jar$", full.names = TRUE)
         if (length(jarfile) > 1) {
           jarfile <- sort(jarfile)
-          jarfile <- jarfile[length(jarfile)]
+          jarfile <- normalizePath(jarfile[length(jarfile)])
         } else if (length(jarfile) < 1) {
           jarfile <- NULL
         }
@@ -377,7 +398,7 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
     jarfile <- list.files(getwd(), pattern = "dna-.+\\.jar$", full.names = TRUE)
     if (length(jarfile) > 1) {
       jarfile <- sort(jarfile)
-      jarfile <- jarfile[length(jarfile)]
+      jarfile <- normalizePath(jarfile[length(jarfile)])
     } else if (length(jarfile) < 1) {
       jarfile <- NULL
     }
@@ -392,12 +413,6 @@ dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
       return(NULL)
     }
   }
-  print("Diagnostics:")
-  print(getwd())
-  print("----------DIR----------")
-  print(dir())
-  print("----------TWO UP----------")
-  print(dir("../.."))
   if (!is.character(jarfile) || length(jarfile) > 1 || !grepl("^dna-.+\\.jar$", basename(jarfile))) {
     stop("'jarfile' must be a character object of length 1 that points to the DNA jar file.")
   }
