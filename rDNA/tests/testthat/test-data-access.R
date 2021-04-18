@@ -12,18 +12,15 @@ test_that("dna_sample works", {
 test_that("connecting to sample database works", {
   s <- dna_sample(overwrite = TRUE, verbose = FALSE)
   tryCatch({
-    test <- dna_init(returnString = TRUE)
+    .jinit()
     print("Works fine.")
-    print(test)
   },
   error = function(e) print("Uh-oh, Java failed."))
-  
-  tryCatch({
-    print("Trying connection...")
-    export <- .jnew("dna.export/ExporterR", "sqlite", s, "", "", TRUE)
-    print("Connection works fine.")
-  },
-  error = function(e) print("Uh-oh, connection failed."))
+  dna_init()
+  expect_that(
+    dna_connection(s, verbose = FALSE)$dna_connection@jclass,
+    equals("dna/export/ExporterR")
+  )
   unlink(s)
 })
 
