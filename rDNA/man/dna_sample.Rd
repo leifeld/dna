@@ -27,5 +27,5 @@ dna_connection(dna_sample())
 
 }
 \author{
-Johannes B. Gruber
+Johannes B. Gruber, Philip Leifeld
 }

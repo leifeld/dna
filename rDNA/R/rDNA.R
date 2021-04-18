@@ -325,41 +325,69 @@ dna_gui <- function(infile = NULL,
 #' @export
 #' @import rJava
 dna_init <- function(jarfile = NULL, memory = 1024, returnString = FALSE) {
+  
+  # auto-detect file name in java directory of current temporary installation path (e.g., for testing)
   if (is.null(jarfile) || is.na(jarfile)) {
-
-    # auto-detect file name in library directory
-    path <- paste0(dirname(system.file(".", package = "rDNA")), "/", "java")
-    files <- dir(path)
-    files <- files[grepl("^dna-.+\\.jar$", files)]
-    files <- sort(files)
-    if (length(files) > 0) {
-      jarfile <- paste0(path, "/", files[length(files)])
-    }
-
-    # auto-detect file name in working directory
-    jarfile_wd <- NULL
-    path_wd <- getwd()
-    files_wd <- dir(path_wd)
-    files_wd <- files_wd[grepl("^dna-.+\\.jar$", files_wd)]
-    files_wd <- sort(files_wd)
-    if (length(files_wd) > 0) {
-      jarfile_wd <- paste0(path_wd, "/", files_wd[length(files_wd)])
-    }
-
-    # use file in working directory if version is more recent or none found in library path
-    if ((!is.null(jarfile) && !is.null(jarfile_wd) && basename(jarfile_wd) > basename(jarfile)) || is.null(jarfile)) {
-      jarfile <- jarfile_wd
-    }
-
-    # if none was found whatsoever, attempt to download to library path
-    if (is.null(jarfile)) {
-      message("No jar file found. Trying to download most recent version to java library path.")
-      jarfile <- dna_downloadJar(path = path, returnString = TRUE)
-      message("Done.")
+    if (file.exists("../../java") && file.exists("../../DESCRIPTION")) {
+      v <- gsub("Version: ", "", readLines(con = "../../DESCRIPTION")[2])
+      if (file.exists(paste0("../../java/dna-", v, "\\.jar"))) {
+        jarfile <- paste0("../../java/dna-", v, "\\.jar")
+      }
     }
   }
+  
+  # auto-detect file name in inst/java directory of current temporary installation path (e.g., for testing)
+  if (is.null(jarfile) || is.na(jarfile)) {
+    if (file.exists("../../inst/java") && file.exists("../../DESCRIPTION")) {
+      v <- gsub("Version: ", "", readLines(con = "../../DESCRIPTION")[2])
+      if (file.exists(paste0("../../inst/java/dna-", v, "\\.jar"))) {
+        jarfile <- paste0("../../inst/java/dna-", v, "\\.jar")
+      }
+    }
+  }
+  
+  # auto-detect file name in java or java/inst directory of R library package installation path
+  if (is.null(jarfile) || is.na(jarfile)) {
+    tryCatch(path <- dirname(system.file(".", package = "rDNA", mustWork = TRUE)),
+             warning = function(e) path <- "",
+             error = function(e) path <- "")
+    if (path != "") {
+      if (file.exists(paste0(path, "/java"))) {
+        jarfile <- list.files(paste0(path, "/java"), pattern = "dna-.+\\.jar$", full.names = TRUE)
+        if (length(jarfile) > 1) {
+          jarfile <- sort(jarfile)
+          jarfile <- jarfile[length(jarfile)]
+        } else if (length(jarfile) < 1) {
+          jarfile <- NULL
+        }
+      } else if (file.exists(paste0(path, "/inst/java"))) {
+        jarfile <- list.files(paste0(path, "/inst/java"), pattern = "dna-.+\\.jar$", full.names = TRUE)
+        if (length(jarfile) > 1) {
+          jarfile <- sort(jarfile)
+          jarfile <- jarfile[length(jarfile)]
+        } else if (length(jarfile) < 1) {
+          jarfile <- NULL
+        }
+      }
+    }
+  }
+  
+  # auto-detect file name in working directory
+  if (is.null(jarfile) || is.na(jarfile)) {
+    jarfile <- list.files(getwd(), pattern = "dna-.+\\.jar$", full.names = TRUE)
+    if (length(jarfile) > 1) {
+      jarfile <- sort(jarfile)
+      jarfile <- jarfile[length(jarfile)]
+    } else if (length(jarfile) < 1) {
+      jarfile <- NULL
+    }
+  }
+
   if (is.null(jarfile) || length(jarfile) == 0) {
-    message("No DNA jar file found in the java library path or working directory.")
+    message("No DNA JAR file found in the rDNA library path or working ", 
+            "directory. Please download the DNA JAR file and save it in your ",
+            "rDNA package installation directory in a sub-directory called ",
+            "'java'.")
     if (isTRUE(returnString)) {
       return(NULL)
     }
@@ -586,7 +614,7 @@ dna_installJar <- function() {
 #' dna_connection(dna_sample())
 #' }
 #'
-#' @author Johannes B. Gruber
+#' @author Johannes B. Gruber, Philip Leifeld
 #'
 #' @export
 dna_sample <- function(overwrite = FALSE,
@@ -597,6 +625,10 @@ dna_sample <- function(overwrite = FALSE,
         "Sample file already exists in working directory. Use 'overwrite = TRUE' to create fresh sample file."
       )
     }
+  } else if (file.exists("../../inst/extdata/sample.dna")) {
+    file.copy(from = "../../inst/extdata/sample.dna",
+              to = paste0(getwd(), "/sample.dna"),
+              overwrite = overwrite)
   } else {
     file.copy(from = system.file("extdata", "sample.dna", package = "rDNA"),
               to = paste0(getwd(), "/sample.dna"),

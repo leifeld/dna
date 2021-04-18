@@ -229,14 +229,11 @@ jobs:
           name: rDNA check (${{ runner.os }}-r${{ matrix.config.r }})
           path: output/rDNA.check/
 
-      - name: Install R packages for code coverage
-        if: runner.os == 'macOS'
-        run: |
-          remotes::install_cran("covr")
-          install.packages("withr")
-        shell: Rscript {0}
-        
       - name: Test coverage
         working-directory: rDNA
-        run: withr::with_envvar(c("NOT_CRAN" = "true"), covr::codecov(quiet = FALSE))
+        if: runner.os == 'macOS'
+        run: |
+          if (! "covr" %in% installed.packages()) tryCatch(remotes::install_cran("covr"), error = function(e) message("covr could not be installed from CRAN."))
+          if (! "withr" %in% installed.packages()) tryCatch(install.packages("withr"), error = function(e) message("withr could not be installed."))
+          withr::with_envvar(c("NOT_CRAN" = "true"), covr::codecov(quiet = FALSE))
         shell: Rscript {0}

@@ -2,7 +2,6 @@ context("cleanup")
 
 teardown({
   unlink("sample.dna")
-  unlink(dir(path = "../../inst/extdata/",
-             pattern = "^dna-.+\\.jar$",
-             full.names = TRUE))
+  unlink("../../java", recursive = TRUE)
+  unlink("../../inst/java", recursive = TRUE)
 })
