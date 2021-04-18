@@ -178,7 +178,7 @@ jobs:
         run: sudo R CMD javareconf
 
       - name: Check if rJava works (non-macOS)
-        if: runner.os != "macOS'
+        if: runner.os != 'macOS'
         run: |
           if (! "rJava" %in% installed.packages()) tryCatch(install.packages("rJava"), error = function(e) message("rJava could not be installed from CRAN."))
           library("rJava")
