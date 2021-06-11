@@ -1,0 +1,665 @@
+package sql;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+
+import javax.sql.DataSource;
+
+import org.apache.commons.dbcp2.BasicDataSource;
+import org.jasypt.util.password.StrongPasswordEncryptor;
+import org.sqlite.SQLiteConnection;
+
+import com.mysql.cj.jdbc.MysqlDataSource;
+
+import dna.Dna;
+import guiCoder.Coder;
+import guiCoder.ConnectionProfile;
+
+public class Sql {
+	ConnectionProfile cp;
+	public SQLiteConnection sqliteConnection;
+	public DataSource ds;
+	
+	public ConnectionProfile getConnectionProfile() {
+		return cp;
+	}
+
+	public void setConnectionProfile(ConnectionProfile cp) {
+		this.cp = cp;
+	}
+
+	public SQLiteConnection getSqliteConnection() {
+		return sqliteConnection;
+	}
+
+	public void setSqliteConnection(SQLiteConnection sqliteConnection) {
+		this.sqliteConnection = sqliteConnection;
+	}
+
+	public DataSource getDs() {
+		return ds;
+	}
+
+	public void setDs(DataSource ds) {
+		this.ds = ds;
+	}
+
+	public Sql(ConnectionProfile cp) {
+		this.cp = cp;
+		
+		// prepare data source or connection
+		if (cp.getType().equals("sqlite")) { // a single connection is kept open for SQLite because the db would get locked with concurrency
+			try {
+				Class.forName("org.sqlite.JDBC");
+				this.sqliteConnection = (SQLiteConnection) DriverManager.getConnection("jdbc:sqlite:" + cp.getUrl());
+			} catch (SQLException | ClassNotFoundException e) {
+				System.err.println("Connection to database " + cp.getUrl() + " could not be established.");
+				e.printStackTrace();
+			}
+		} else if (cp.getType().equals("mysql")) { // connection pooling is used with MySQL for efficient concurrency
+			ds = new MysqlDataSource();
+			((MysqlDataSource) ds).setUrl("jdbc:mysql://" + cp.getUrl());
+			((MysqlDataSource) ds).setUser(cp.getUser());
+			((MysqlDataSource) ds).setPassword(cp.getPassword());
+		} else if (cp.getType().equals("postgresql")) { // connection pooling is used with PostgreSQL for efficient concurrency
+			ds = new BasicDataSource(); // use Apache DBCP for connection pooling with PostgreSQL
+			((BasicDataSource) ds).setDriverClassName("org.postgresql.Driver");
+			((BasicDataSource) ds).setUrl("jdbc:postgresql://" + cp.getUrl());
+			((BasicDataSource) ds).setUsername(cp.getUser());
+			((BasicDataSource) ds).setPassword(cp.getPassword());
+		} else {
+			System.err.println("Database format not recognized: " + cp.getType() + ".");
+		}
+	}
+
+	public void closeConnection() {
+		if (sqliteConnection != null) {
+			try {
+				sqliteConnection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		// TODO: document table etc must be cleared when the connection is closed.
+	}
+
+	/**
+	 * Retrieve a coder based on its ID.
+	 * 
+	 * @return The coder to be retrieved.
+	 */
+	public guiCoder.Coder getCoder(int coderId) {
+		guiCoder.Coder c = null;
+		if (cp.getType().equals("sqlite")) {
+			c = getCoderHelper(sqliteConnection, coderId);
+		} else if (cp.getType().equals("mysql") || cp.getType().equals("postgresql")) {
+			try (Connection conn = ds.getConnection()) {
+				c = getCoderHelper(conn, coderId);
+			} catch (SQLException e) {
+				System.err.println("Could not establish connection to database to retrieve the coder.");
+				e.printStackTrace();
+			}
+		} else {
+			System.err.println("Database type not recognized.");
+		}
+		return c;
+	}
+	
+	private guiCoder.Coder getCoderHelper(Connection conn, int coderId) {
+		guiCoder.Coder c = null;
+		try (PreparedStatement s = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;")) {
+			s.setInt(1, coderId);
+			ResultSet result = s.executeQuery();
+			while (result.next()) {
+			    c = new guiCoder.Coder(coderId, result.getString("Name"), result.getInt("Red"), result.getInt("Green"), result.getInt("Blue"));
+			}
+		} catch (SQLException e) {
+			System.err.println("Could not retrieve coder from database.");
+			e.printStackTrace();
+		}
+		return c;
+	}
+
+	/**
+	 * Check if a user-provided clear-text password for the current coder
+	 * matches the hash of the password stored for the coder in the database.
+	 * 
+	 * @param clearPassword Clear-text password provided by the coder.
+	 * @return              boolean, true if the password matches, false if not.
+	 */
+	public boolean authenticate(String clearPassword) {
+		String encryptedHash = null;
+		if (this.cp.getType().equals("sqlite")) {
+			try (PreparedStatement s = this.sqliteConnection.prepareStatement("SELECT Password FROM CODERS WHERE ID = ?;")) {
+				s.setInt(1, this.cp.getCoderId());
+				ResultSet result = s.executeQuery();
+				while (result.next()) {
+				    encryptedHash = result.getString("Password");
+				}
+			} catch (SQLException e) {
+				System.err.println("Could not retrieve password hash from database.");
+				e.printStackTrace();
+			}
+		} else if (this.cp.getType().equals("mysql") || this.cp.getType().equals("postgresql")) {
+			try (Connection conn = this.ds.getConnection();
+					PreparedStatement s = conn.prepareStatement("SELECT Password FROM CODERS WHERE ID = ?;")) {
+				s.setInt(1, this.cp.getCoderId());
+				ResultSet result = s.executeQuery();
+				while (result.next()) {
+				    encryptedHash = result.getString("Password");
+				}
+			} catch (SQLException e) {
+				System.err.println("Could not retrieve password hash from database.");
+				e.printStackTrace();
+			}
+		} else {
+			System.err.println("Database type not recognized.");
+		}
+		
+		// check if the provided clear-text password corresponds to the hashed password in the database
+		StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();
+		return passwordEncryptor.checkPassword(clearPassword, encryptedHash);
+	}
+
+	/**
+	 * Retrieve a list of coders in the database.
+	 * 
+	 * @return An array list of coders.
+	 */
+	public ArrayList<Coder> getCoders() {
+		ArrayList<Coder> coders = new ArrayList<Coder>();
+		String s = "SELECT * FROM Coders;";
+		if (cp.getType().equals("sqlite")) {
+            try (PreparedStatement ps = sqliteConnection.prepareStatement(s)) {
+            	ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                	coders.add(new Coder(rs.getInt("ID"), rs.getString("Name"), rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue")));
+                }
+				rs.close();
+            } catch (SQLException e1) {
+				System.err.println("Could not retrieve coders from database.");
+                e1.printStackTrace();
+            }
+    	} else if (cp.getType().equals("mysql") || cp.getType().equals("postgresql")) {
+    		try (Connection conn = ds.getConnection();
+					PreparedStatement tableStatement = conn.prepareStatement(s)) {
+            	ResultSet rs = tableStatement.executeQuery();
+            	while (rs.next()) {
+                	coders.add(new Coder(rs.getInt("ID"), rs.getString("Name"), rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue")));
+                }
+			} catch (SQLException e1) {
+				System.err.println("Could not retrieve coders from database.");
+				e1.printStackTrace();
+			}
+    	} else {
+    		System.err.println("Database type not recognized.");
+    	}
+		return coders;
+	}
+	
+	public boolean createTables(String encryptedAdminPassword) {
+		boolean success = true;
+		ArrayList<String> s = new ArrayList<String>();
+		if (cp.getType().equals("sqlite")) {
+			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
+					+ "Property TEXT PRIMARY KEY, "
+					+ "Value TEXT);");
+			s.add("CREATE TABLE IF NOT EXISTS CODERS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, "
+					+ "Name TEXT, "
+					+ "Red INTEGER, "
+					+ "Green INTEGER, "
+					+ "Blue INTEGER, "
+					+ "Password TEXT);");
+			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, "
+					+ "Title TEXT, "
+					+ "Text TEXT, "
+					+ "Coder INTEGER, "
+					+ "Author TEXT, "
+					+ "Source TEXT, "
+					+ "Section TEXT, "
+					+ "Notes TEXT, "
+					+ "Type TEXT, "
+					+ "Date INTEGER, "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, "
+					+ "Label TEXT, "
+					+ "Red INTEGER, "
+					+ "Green INTEGER, "
+					+ "Blue INTEGER);");
+			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, "
+					+ "Variable TEXT, "
+					+ "DataType TEXT, "
+					+ "StatementTypeId INTEGER, "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE (Variable, StatementTypeId));");
+			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
+					+ "Label TEXT PRIMARY KEY, "
+					+ "Red INTEGER, "
+					+ "Green INTEGER, "
+					+ "Blue INTEGER);");
+			s.add("CREATE TABLE IF NOT EXISTS CODERPERMISSIONS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, "
+					+ "Coder INTEGER, "
+					+ "Type TEXT, "
+					+ "Permission INTEGER, "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
+					+ "UNIQUE (Coder, Type));");
+			s.add("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, "
+					+ "Coder INTEGER, "
+					+ "OtherCoder INTEGER, "
+					+ "viewStatements INTEGER, "
+					+ "editStatements INTEGER, "
+					+ "viewDocuments INTEGER, "
+					+ "editDocuments INTEGER, "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
+					+ "FOREIGN KEY(OtherCoder) REFERENCES CODERS(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS STATEMENTS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, "
+					+ "StatementTypeId INTEGER, "
+					+ "DocumentId INTEGER, "
+					+ "Start INTEGER, "
+					+ "Stop INTEGER, "
+					+ "Coder INTEGER, "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
+					+ "FOREIGN KEY(DocumentId) REFERENCES DOCUMENTS(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
+					+ "ID INTEGER PRIMARY KEY NOT NULL, "
+					+ "SourceId INTEGER NOT NULL, "
+					+ "TargetId INTEGER NOT NULL, "
+					+ "FOREIGN KEY(SourceId) REFERENCES STATEMENTS(ID),"
+					+ "FOREIGN KEY(TargetId) REFERENCES STATEMENTS(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS DATABOOLEAN("
+					+ "ID INTEGER PRIMARY KEY NOT NULL, "
+					+ "StatementId INTEGER NOT NULL, "
+					+ "VariableId INTEGER NOT NULL, "
+					+ "StatementTypeId INTEGER, "
+					+ "Value INTEGER, "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE (StatementId, VariableId));");
+			s.add("CREATE TABLE IF NOT EXISTS DATAINTEGER("
+					+ "ID INTEGER PRIMARY KEY NOT NULL, "
+					+ "StatementId INTEGER NOT NULL, "
+					+ "VariableId INTEGER NOT NULL, "
+					+ "StatementTypeId INTEGER, "
+					+ "Value INTEGER, "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE (StatementId, VariableId));");
+			s.add("CREATE TABLE IF NOT EXISTS DATASHORTTEXT("
+					+ "ID INTEGER PRIMARY KEY NOT NULL, "
+					+ "StatementId INTEGER NOT NULL, "
+					+ "VariableId INTEGER NOT NULL, "
+					+ "StatementTypeId INTEGER, "
+					+ "Value TEXT, "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE (StatementId, VariableId));");
+			s.add("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
+					+ "ID INTEGER PRIMARY KEY NOT NULL, "
+					+ "StatementId INTEGER NOT NULL, "
+					+ "VariableId INTEGER NOT NULL, "
+					+ "StatementTypeId INTEGER, "
+					+ "Value TEXT, "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE (StatementId, VariableId));");
+			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTES("
+					+ "ID INTEGER PRIMARY KEY NOT NULL, "
+					+ "VariableId INTEGER NOT NULL, "
+					+ "Value TEXT NOT NULL, "
+					+ "Red INTEGER, "
+					+ "Green INTEGER, "
+					+ "Blue INTEGER, "
+					+ "Type TEXT, "
+					+ "Alias TEXT, "
+					+ "Notes TEXT, "
+					+ "ChildOf TEXT, "
+					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
+					+ "ID SMALLINT UNSIGNED NOT NULL, "
+					+ "Label VARCHAR(200), "
+					+ "Red SMALLINT UNSIGNED, "
+					+ "Green SMALLINT UNSIGNED, "
+					+ "Blue SMALLINT UNSIGNED, "
+					+ "PRIMARY KEY(ID));");
+		} else if (cp.getType().equals("mysql")) {
+			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
+					+ "Property VARCHAR(500), "
+					+ "Value VARCHAR(500),"
+					+ "PRIMARY KEY (Property));");
+			s.add("CREATE TABLE IF NOT EXISTS CODERS("
+					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "Name VARCHAR(5000), "
+					+ "Red SMALLINT UNSIGNED, "
+					+ "Green SMALLINT UNSIGNED, "
+					+ "Blue SMALLINT UNSIGNED, "
+					+ "Password VARCHAR(300), "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "Title VARCHAR(5000), "
+					+ "Text MEDIUMTEXT, "
+					+ "Coder SMALLINT UNSIGNED NOT NULL, "
+					+ "Author VARCHAR(5000), "
+					+ "Source VARCHAR(5000), "
+					+ "Section VARCHAR(5000), "
+					+ "Notes TEXT, "
+					+ "Type VARCHAR(5000), "
+					+ "Date BIGINT, "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
+					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "Label VARCHAR(5000), "
+					+ "Red SMALLINT UNSIGNED, "
+					+ "Green SMALLINT UNSIGNED, "
+					+ "Blue SMALLINT UNSIGNED, "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
+					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "Variable VARCHAR(500), "
+					+ "DataType VARCHAR(200), "
+					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE KEY (Variable, StatementTypeId), "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
+					+ "Label VARCHAR(2000), "
+					+ "Red SMALLINT UNSIGNED, "
+					+ "Green SMALLINT UNSIGNED, "
+					+ "Blue SMALLINT UNSIGNED, "
+					+ "PRIMARY KEY(Label));");
+			s.add("CREATE TABLE IF NOT EXISTS CODERPERMISSIONS("
+					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "Coder SMALLINT UNSIGNED NOT NULL, "
+					+ "Type VARCHAR(50), "
+					+ "Permission SMALLINT UNSIGNED, "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
+					+ "UNIQUE KEY CoderPerm (Coder, Type), "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
+					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "Coder SMALLINT UNSIGNED NOT NULL, "
+					+ "OtherCoder SMALLINT UNSIGNED NOT NULL, "
+					+ "viewStatements SMALLINT UNSIGNED, "
+					+ "editStatements SMALLINT UNSIGNED, "
+					+ "viewDocuments SMALLINT UNSIGNED, "
+					+ "editDocuments SMALLINT UNSIGNED, "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
+					+ "FOREIGN KEY(OtherCoder) REFERENCES CODERS(ID), "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS STATEMENTS("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
+					+ "DocumentId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "Start BIGINT UNSIGNED, "
+					+ "Stop BIGINT UNSIGNED, "
+					+ "Coder SMALLINT UNSIGNED NOT NULL, "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
+					+ "FOREIGN KEY(DocumentId) REFERENCES DOCUMENTS(ID), "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "SourceId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "TargetId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "FOREIGN KEY(SourceId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(TargetId) REFERENCES STATEMENTS(ID), "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS DATABOOLEAN("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
+					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
+					+ "Value SMALLINT UNSIGNED NOT NULL, "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE KEY (StatementId, VariableId), "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS DATAINTEGER("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
+					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
+					+ "Value MEDIUMINT NOT NULL, "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE KEY (StatementId, VariableId), "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS DATASHORTTEXT("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
+					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
+					+ "Value VARCHAR(5000), "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE KEY (StatementId, VariableId), "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
+					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
+					+ "Value TEXT, "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE KEY (StatementId, VariableId), "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTES("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
+					+ "Value TEXT, "
+					+ "Red SMALLINT UNSIGNED, "
+					+ "Green SMALLINT UNSIGNED, "
+					+ "Blue SMALLINT UNSIGNED, "
+					+ "Type TEXT, "
+					+ "Alias TEXT, "
+					+ "Notes TEXT, "
+					+ "ChildOf MEDIUMINT UNSIGNED NOT NULL, "
+					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
+					+ "FOREIGN KEY(ChildOf) REFERENCES ATTRIBUTES(ID), "
+					+ "PRIMARY KEY(ID));");
+		} else if (cp.getType().equals("postgresql")) {
+			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
+					+ "Property VARCHAR(500) PRIMARY KEY, "
+					+ "Value VARCHAR(500));");
+			s.add("CREATE TABLE IF NOT EXISTS CODERS("
+					+ "ID SERIAL NOT NULL PRIMARY KEY CHECK (ID > 0), "
+					+ "Name VARCHAR(5000), "
+					+ "Red SERIAL CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green SERIAL CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue SERIAL CHECK (Blue BETWEEN 0 AND 255), "
+					+ "Password VARCHAR(300));");
+			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "Title VARCHAR(5000), "
+					+ "Text TEXT, "
+					+ "Coder INT NOT NULL REFERENCES CODERS(ID), "
+					+ "Author VARCHAR(5000), "
+					+ "Source VARCHAR(5000), "
+					+ "Section VARCHAR(5000), "
+					+ "Notes TEXT, "
+					+ "Type VARCHAR(5000), "
+					+ "Date BIGINT);");
+			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "Label VARCHAR(5000), "
+					+ "Red SERIAL CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green SERIAL CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue SERIAL CHECK (Blue BETWEEN 0 AND 255));");
+			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "Variable VARCHAR(500), "
+					+ "DataType VARCHAR(200), "
+					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID), "
+					+ "UNIQUE (Variable, StatementTypeId));");
+			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
+					+ "Label VARCHAR(2000) PRIMARY KEY, "
+					+ "Red SERIAL CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green SERIAL CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue SERIAL CHECK (Blue BETWEEN 0 AND 255));");
+			s.add("CREATE TABLE IF NOT EXISTS CODERPERMISSIONS("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "Coder INT NOT NULL CHECK(Coder > 0) REFERENCES CODERS(ID), "
+					+ "Type VARCHAR(50), "
+					+ "Permission INT CHECK(Permission BETWEEN 0 AND 1), "
+					+ "UNIQUE (Coder, Type));");
+			s.add("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "Coder INT NOT NULL CHECK(Coder > 0 AND Coder != OtherCoder) REFERENCES CODERS(ID), "
+					+ "OtherCoder INT NOT NULL CHECK(OtherCoder > 0 AND OtherCoder != Coder) REFERENCES CODERS(ID), "
+					+ "viewStatements INT CHECK(viewStatements BETWEEN 0 AND 1), "
+					+ "editStatements INT CHECK(editStatements BETWEEN 0 AND 1), "
+					+ "viewDocuments INT CHECK(viewDocuments BETWEEN 0 AND 1), "
+					+ "editDocuments INT CHECK(editDocuments BETWEEN 0 AND 1));");
+			s.add("CREATE TABLE IF NOT EXISTS STATEMENTS("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID), "
+					+ "DocumentId INT NOT NULL CHECK(DocumentId > 0) REFERENCES DOCUMENTS(ID), "
+					+ "Start BIGINT CHECK(Start >= 0), "
+					+ "Stop BIGINT CHECK(Stop >= 0), "
+					+ "Coder INT NOT NULL CHECK(Coder > 0) REFERENCES CODERS(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "SourceId INT NOT NULL CHECK(SourceId > 0 AND SourceId != TargetId) REFERENCES STATEMENTS(ID), "
+					+ "TargetId INT NOT NULL CHECK(TargetId > 0 AND TargetId != SourceId) REFERENCES STATEMENTS(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS DATABOOLEAN("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID), "
+					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID), "
+					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID), "
+					+ "Value INT NOT NULL CHECK(Value BETWEEN 0 AND 1), "
+					+ "UNIQUE (StatementId, VariableId));");
+			s.add("CREATE TABLE IF NOT EXISTS DATAINTEGER("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID), "
+					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID), "
+					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID), "
+					+ "Value INT NOT NULL, "
+					+ "UNIQUE (StatementId, VariableId));");
+			s.add("CREATE TABLE IF NOT EXISTS DATASHORTTEXT("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID), "
+					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID), "
+					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID), "
+					+ "Value VARCHAR(5000), "
+					+ "UNIQUE (StatementId, VariableId));");
+			s.add("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID), "
+					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID), "
+					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID), "
+					+ "Value TEXT, "
+					+ "UNIQUE (StatementId, VariableId));");
+			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTES("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID), "
+					+ "Value TEXT, "
+					+ "Red SERIAL CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green SERIAL CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue SERIAL CHECK (Blue BETWEEN 0 AND 255), "
+					+ "Type TEXT, "
+					+ "Alias TEXT, "
+					+ "Notes TEXT, "
+					+ "ChildOf INT NOT NULL CHECK(ChildOf > 0 AND ChildOf != ID) REFERENCES ATTRIBUTES(ID));");
+		}
+		// fill default data into the tables (Admin coder, settings, statement types)
+		s.add("INSERT INTO CODERS (ID, Name, Red, Green, Blue, Password) VALUES (1, 'Admin', 239, 208, 51, '" + encryptedAdminPassword + "');");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'deleteDocuments', 1);");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'addDocuments', 1);");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'importDocuments', 1);");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editDocuments', 1);");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'addStatements', 1);");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editRegex', 1);");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editAttributes', 1);");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'viewOthersDocuments', 1);");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editOthersDocuments', 1);");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'viewOthersStatements', 1);");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editOthersStatements', 1);");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editStatementTypes', 1);");
+		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editCoders', 1);");
+		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('version', '" + Dna.dna.version + "');");
+		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('date', '" + Dna.dna.date + "');");
+		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('popupWidth', '300');");
+		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('statementColor', 'statementType');");
+		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (1, 'DNA Statement', 239, 208, 51);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(1, 'person', 'short text', 1);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(2, 'organization', 'short text', 1);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(3, 'concept', 'short text', 1);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(4, 'agreement', 'boolean', 1);");
+		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (2, 'Annotation', 211, 211, 211);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(5, 'note', 'long text', 2);");
+		if (cp.getType().equals("sqlite")) {
+			try {
+				sqliteConnection.setAutoCommit(false);
+				for (int i = 0; i < s.size(); i++) {
+					PreparedStatement p = sqliteConnection.prepareStatement(s.get(i));
+					p.executeUpdate();
+				}
+			} catch (SQLException e) {
+				success = false;
+				System.err.println("Could not establish connection to database to create tables.");
+				e.printStackTrace();
+				if (sqliteConnection != null) {
+					try {
+						System.err.println("Transaction is being rolled back.");
+						sqliteConnection.rollback();
+					} catch (SQLException excep) {
+						System.err.println("Transaction could not be rolled back.");
+						excep.printStackTrace();
+					}
+				}
+			} finally {
+				try {
+					sqliteConnection.setAutoCommit(true);
+				} catch (SQLException excep) {
+					System.err.println("Could not set AutoCommit back to true.");
+					excep.printStackTrace();
+				}
+			}
+		} else if (cp.getType().equals("mysql") || cp.getType().equals("postgresql")) {
+			try (Connection conn = ds.getConnection();
+					SQLCloseable finish = conn::rollback) {
+				conn.setAutoCommit(false);
+				for (int i = 0; i < s.size(); i++) {
+					PreparedStatement p = conn.prepareStatement(s.get(i));
+					p.executeUpdate();
+					p.close();
+				}
+				conn.commit();
+			} catch (SQLException e) {
+				success = false;
+				System.err.println("Could not establish connection to database to create tables.");
+				e.printStackTrace();
+			}
+		} else {
+			success = false;
+			System.err.println("Database type not recognized.");
+		}
+		return success;
+	}
+	
+	public interface SQLCloseable extends AutoCloseable {
+	    @Override public void close() throws SQLException;
+	}
+}

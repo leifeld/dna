@@ -1,0 +1,23 @@
+package dna;
+
+import guiCoder.GuiCoder;
+import sql.Sql;
+
+public class Dna {
+	public static Dna dna;
+	public static GuiCoder guiCoder;
+	public static Sql sql;
+	public final String date;
+	public final String version;
+	
+	public Dna() {
+		date = "2021-05-03";
+		version = "3.0.0";
+
+		guiCoder = new GuiCoder();
+	}
+	
+	public static void main(String[] args) {
+		dna = new Dna();
+	}
+}
