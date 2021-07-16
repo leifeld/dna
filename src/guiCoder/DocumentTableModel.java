@@ -92,7 +92,7 @@ public class DocumentTableModel extends AbstractTableModel {
 		}
 	}
 	
-	//which type of object (i.e., class) shall be shown in the columns?
+	// which type of object (i.e., class) shall be shown in the columns?
 	public Class<?> getColumnClass(int columnIndex) {
 		switch( columnIndex ){
 			case 0: return Integer.class; // ID
@@ -112,6 +112,10 @@ public class DocumentTableModel extends AbstractTableModel {
 
 	public boolean isCellEditable(int rowIndex, int columnIndex) {
 		return false;
+	}
+	
+	public String getDocumentText(int documentId) {
+		return Dna.sql.getDocumentText(documentId);
 	}
 	
 	public void reloadTableFromSQL() {

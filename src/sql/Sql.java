@@ -86,6 +86,38 @@ public class Sql {
 		}
 		// TODO: document table etc must be cleared when the connection is closed.
 	}
+	
+	public String getDocumentText(int documentId) {
+		String text = null;
+		if (cp.getType().equals("sqlite")) {
+			text = getDocumentTextHelper(sqliteConnection, documentId);
+		} else if (cp.getType().equals("mysql") || cp.getType().equals("postgresql")) {
+			try (Connection conn = ds.getConnection()) {
+				text = getDocumentTextHelper(conn, documentId);
+			} catch (SQLException e) {
+				System.err.println("Could not establish connection to database to retrieve the document text.");
+				e.printStackTrace();
+			}
+		} else {
+			System.err.println("Database type not recognized.");
+		}
+		return text;
+	}
+
+	private String getDocumentTextHelper(Connection conn, int documentId) {
+		String text = null;
+		try (PreparedStatement s = conn.prepareStatement("SELECT Text FROM DOCUMENTS WHERE ID = ?;")) {
+			s.setInt(1, documentId);
+			ResultSet result = s.executeQuery();
+			while (result.next()) {
+			    text = result.getString("Text");
+			}
+		} catch (SQLException e) {
+			System.err.println("Could not retrieve document text from database.");
+			e.printStackTrace();
+		}
+		return text;
+	}
 
 	/**
 	 * Retrieve a coder based on its ID.

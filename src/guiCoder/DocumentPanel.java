@@ -25,6 +25,8 @@ import javax.swing.JTable;
 import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIDefaults;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
@@ -34,9 +36,46 @@ import stack.AddDocumentsEvent;
 
 @SuppressWarnings("serial")
 class DocumentPanel extends JPanel {
+	TextPanel textPanel;
 
 	public DocumentPanel(DocumentTableModel documentTableModel) {
 		this.setLayout(new BorderLayout());
+		
+		// toolbar of the document panel
+		JToolBar tb = new JToolBar("Document toolbar");
+		
+		Icon addDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus-16.png")); // https://tabler-icons.io/i/file-plus
+		JButton addDocumentButton = new JButton(addDocumentIcon);
+		addDocumentButton.setToolTipText( "Add document" );
+		addDocumentButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// TODO: add document
+			}
+		});
+		tb.add(addDocumentButton);
+
+		Icon removeDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-minus-16.png")); // https://tabler-icons.io/i/file-minus
+		JButton removeDocumentButton = new JButton(removeDocumentIcon);
+		removeDocumentButton.setToolTipText( "Remove document" );
+		removeDocumentButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// TODO: remove documents
+			}
+		});
+		tb.add(removeDocumentButton);
+
+		Icon editDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-edit-16.png")); // https://tabler-icons.io/i/edit
+		JButton editDocumentButton = new JButton(editDocumentIcon);
+		editDocumentButton.setToolTipText( "Edit document" );
+		editDocumentButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// TODO: edit document(s)
+			}
+		});
+		tb.add(editDocumentButton);
+
+        tb.setRollover(true);
+		this.add(tb, BorderLayout.NORTH);
 
 		// create document table and model
 		JTable documentTable = new JTable(documentTableModel);
@@ -271,41 +310,65 @@ class DocumentPanel extends JPanel {
 		menuItemType.addActionListener(al);
 		menuItemNotes.addActionListener(al);
 		
+
+		documentTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				if (e.getValueIsAdjusting()) {
+					return;
+				}
+				
+				int rowCount = documentTable.getSelectedRowCount();
+				if (rowCount == 0 || rowCount > 1) {
+					textPanel.setDocumentText("");
+				} else if (rowCount == 1) {
+					int selectedRow = documentTable.getSelectedRow();
+					int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
+					int id = (int) documentTableModel.getValueAt(selectedModelIndex, 0);
+					String text = documentTableModel.getDocumentText(id);
+					textPanel.setDocumentText(text);
+					//Dna.gui.textPanel.setEnabled(true);
+				} else {
+					System.err.println("Negative number of rows in the document table!");
+				}
+				// if (Dna.gui.rightPanel.statementPanel.statementFilter.showCurrent.isSelected()) {
+				// 	Dna.gui.rightPanel.statementPanel.statementFilter.currentDocumentFilter();
+				// }
+				
+				// if (Dna.dna.sql != null) {
+				// 	Dna.gui.textPanel.paintStatements();
+				// }
+				textPanel.setCaretPosition(0);
+				
+				/*
+				int ac = Dna.data.getActiveCoder();
+				if (Dna.gui.leftPanel.editDocPanel.saveDetailsButton != null) {
+					if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
+						Dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(false);
+						Dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
+					} else {
+						Dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(true);
+						Dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
+					}
+				}
+				
+				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
+					Dna.gui.documentPanel.menuItemDelete.setEnabled(false);
+				} else {
+					Dna.gui.documentPanel.menuItemDelete.setEnabled(true);
+				}
+				
+				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
+					Dna.gui.menuBar.newDocumentButton.setEnabled(false);
+				} else {
+					Dna.gui.menuBar.newDocumentButton.setEnabled(true);
+				}
+				*/
+			}
+		});
 		
-		JToolBar tb = new JToolBar("Document toolbar");
-		
-		Icon addDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus-16.png")); // https://tabler-icons.io/i/file-plus
-		JButton addDocumentButton = new JButton(addDocumentIcon);
-		addDocumentButton.setToolTipText( "Add document" );
-		addDocumentButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// TODO: add document
-			}
-		});
-		tb.add(addDocumentButton);
-
-		Icon removeDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-minus-16.png")); // https://tabler-icons.io/i/file-minus
-		JButton removeDocumentButton = new JButton(removeDocumentIcon);
-		removeDocumentButton.setToolTipText( "Remove document" );
-		removeDocumentButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// TODO: remove documents
-			}
-		});
-		tb.add(removeDocumentButton);
-
-		Icon editDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-edit-16.png")); // https://tabler-icons.io/i/edit
-		JButton editDocumentButton = new JButton(editDocumentIcon);
-		editDocumentButton.setToolTipText( "Edit document" );
-		editDocumentButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// TODO: edit document(s)
-			}
-		});
-		tb.add(editDocumentButton);
-
-        tb.setRollover(true);
-		this.add(tb, BorderLayout.NORTH);
+		// text panel
+		textPanel = new TextPanel();
+		this.add(textPanel, BorderLayout.SOUTH);
 	}
 	
 	private class CoderTableCellRenderer extends DefaultTableCellRenderer {
