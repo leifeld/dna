@@ -493,7 +493,7 @@ public class NewDatabaseDialog extends JDialog {
 						// test connection and create tables
 						boolean connectionValid = true;
 						if (type.equals("mysql") || type.equals("postgresql")) {
-			    			try (Connection conn = testConnection.ds.getConnection();
+			    			try (Connection conn = testConnection.getDataSource().getConnection();
 			    					PreparedStatement ps = conn.prepareStatement("SELECT 1;")) {
 			    				ResultSet rs = ps.executeQuery();
 			    				while (rs.next()) {

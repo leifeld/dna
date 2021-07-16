@@ -1,16 +1,17 @@
-package stack;
+package dna;
+
 
 import java.util.ArrayList;
 import java.util.Date;
 
-public class StackDocument {
+public class Document {
 	int id, coder;
 	String title, text, author, source, section, documentType, notes;
 	Date date;
-	ArrayList<StackStatement> statements;
+	ArrayList<Statement> statements;
 	
-	public StackDocument(int id, int coder, String title, String text, String author, String source, String section,
-			String documentType, String notes, Date date, ArrayList<StackStatement> statements) {
+	public Document(int id, int coder, String title, String text, String author, String source, String section,
+			String documentType, String notes, Date date, ArrayList<Statement> statements) {
 		this.id = id;
 		this.coder = coder;
 		this.title = title;
@@ -104,11 +105,11 @@ public class StackDocument {
 		this.date = date;
 	}
 	
-	public ArrayList<StackStatement> getStatements() {
+	public ArrayList<Statement> getStatements() {
 		return statements;
 	}
 	
-	void setStatements(ArrayList<StackStatement> statements) {
+	void setStatements(ArrayList<Statement> statements) {
 		this.statements = statements;
 	}
 }

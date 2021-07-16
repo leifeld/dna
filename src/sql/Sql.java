@@ -1,7 +1,6 @@
 package sql;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,18 +10,18 @@ import javax.sql.DataSource;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.jasypt.util.password.StrongPasswordEncryptor;
-import org.sqlite.SQLiteConnection;
+import org.sqlite.SQLiteDataSource;
 
 import com.mysql.cj.jdbc.MysqlDataSource;
 
 import dna.Dna;
+import dna.Document;
 import guiCoder.Coder;
 import guiCoder.ConnectionProfile;
 
 public class Sql {
-	ConnectionProfile cp;
-	public SQLiteConnection sqliteConnection;
-	public DataSource ds;
+	private ConnectionProfile cp;
+	private DataSource ds;
 	
 	public ConnectionProfile getConnectionProfile() {
 		return cp;
@@ -31,20 +30,12 @@ public class Sql {
 	public void setConnectionProfile(ConnectionProfile cp) {
 		this.cp = cp;
 	}
-
-	public SQLiteConnection getSqliteConnection() {
-		return sqliteConnection;
-	}
-
-	public void setSqliteConnection(SQLiteConnection sqliteConnection) {
-		this.sqliteConnection = sqliteConnection;
-	}
-
-	public DataSource getDs() {
+	
+	public DataSource getDataSource() {
 		return ds;
 	}
 
-	public void setDs(DataSource ds) {
+	public void setDataSource(DataSource ds) {
 		this.ds = ds;
 	}
 
@@ -52,20 +43,15 @@ public class Sql {
 		this.cp = cp;
 		
 		// prepare data source or connection
-		if (cp.getType().equals("sqlite")) { // a single connection is kept open for SQLite because the db would get locked with concurrency
-			try {
-				Class.forName("org.sqlite.JDBC");
-				this.sqliteConnection = (SQLiteConnection) DriverManager.getConnection("jdbc:sqlite:" + cp.getUrl());
-			} catch (SQLException | ClassNotFoundException e) {
-				System.err.println("Connection to database " + cp.getUrl() + " could not be established.");
-				e.printStackTrace();
-			}
-		} else if (cp.getType().equals("mysql")) { // connection pooling is used with MySQL for efficient concurrency
+		if (cp.getType().equals("sqlite")) { // no user name and password needed for file-based database
+			ds = new SQLiteDataSource();
+	        ((SQLiteDataSource) ds).setUrl("jdbc:sqlite:" + cp.getUrl());
+		} else if (cp.getType().equals("mysql")) {
 			ds = new MysqlDataSource();
 			((MysqlDataSource) ds).setUrl("jdbc:mysql://" + cp.getUrl());
 			((MysqlDataSource) ds).setUser(cp.getUser());
 			((MysqlDataSource) ds).setPassword(cp.getPassword());
-		} else if (cp.getType().equals("postgresql")) { // connection pooling is used with PostgreSQL for efficient concurrency
+		} else if (cp.getType().equals("postgresql")) {
 			ds = new BasicDataSource(); // use Apache DBCP for connection pooling with PostgreSQL
 			((BasicDataSource) ds).setDriverClassName("org.postgresql.Driver");
 			((BasicDataSource) ds).setUrl("jdbc:postgresql://" + cp.getUrl());
@@ -75,50 +61,63 @@ public class Sql {
 			System.err.println("Database format not recognized: " + cp.getType() + ".");
 		}
 	}
-
-	public void closeConnection() {
-		if (sqliteConnection != null) {
-			try {
-				sqliteConnection.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		}
-		// TODO: document table etc must be cleared when the connection is closed.
-	}
 	
 	public String getDocumentText(int documentId) {
 		String text = null;
-		if (cp.getType().equals("sqlite")) {
-			text = getDocumentTextHelper(sqliteConnection, documentId);
-		} else if (cp.getType().equals("mysql") || cp.getType().equals("postgresql")) {
-			try (Connection conn = ds.getConnection()) {
-				text = getDocumentTextHelper(conn, documentId);
-			} catch (SQLException e) {
-				System.err.println("Could not establish connection to database to retrieve the document text.");
-				e.printStackTrace();
-			}
-		} else {
-			System.err.println("Database type not recognized.");
-		}
-		return text;
-	}
-
-	private String getDocumentTextHelper(Connection conn, int documentId) {
-		String text = null;
-		try (PreparedStatement s = conn.prepareStatement("SELECT Text FROM DOCUMENTS WHERE ID = ?;")) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("SELECT Text FROM DOCUMENTS WHERE ID = ?;")) {
 			s.setInt(1, documentId);
 			ResultSet result = s.executeQuery();
 			while (result.next()) {
 			    text = result.getString("Text");
 			}
 		} catch (SQLException e) {
-			System.err.println("Could not retrieve document text from database.");
+			System.err.println("Could not establish connection to database to retrieve the document text.");
 			e.printStackTrace();
 		}
 		return text;
 	}
-
+	
+	public void deleteDocuments(int[] documentIds) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("DELETE FROM DOCUMENTS WHERE ID = ?"); // will cascade to statements
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			for (int i = 0; i < documentIds.length; i++) {
+				s.setInt(1, documentIds[i]);
+				s.executeUpdate();
+			}
+			conn.commit();
+		} catch (SQLException e) {
+			System.err.println("Could not establish connection to database to remove document(s).");
+			e.printStackTrace();
+		}
+	}
+	
+	public void addDocuments(ArrayList<Document> documents) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement stmt = conn.prepareStatement("INSERT INTO DOCUMENTS (Title, Text, Coder, Author, Source, Section, Notes, Type, Date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);");
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			for (int i = 0; i < documents.size(); i++) {
+				stmt.setString(1, documents.get(i).getTitle());
+				stmt.setString(2, documents.get(i).getText());
+				stmt.setInt(3, documents.get(i).getCoder());
+				stmt.setString(4, documents.get(i).getAuthor());
+				stmt.setString(5, documents.get(i).getSource());
+				stmt.setString(6, documents.get(i).getSection());
+				stmt.setString(7, documents.get(i).getNotes());
+				stmt.setString(8, documents.get(i).getDocumentType());
+				stmt.setLong(9, documents.get(i).getDate().getTime());
+				stmt.executeUpdate();
+			}
+			conn.commit();
+		} catch (SQLException e) {
+			System.err.println("Could not establish connection to database to add or remove documents.");
+			e.printStackTrace();
+		}
+	}
+	
 	/**
 	 * Retrieve a coder based on its ID.
 	 * 
@@ -126,36 +125,20 @@ public class Sql {
 	 */
 	public guiCoder.Coder getCoder(int coderId) {
 		guiCoder.Coder c = null;
-		if (cp.getType().equals("sqlite")) {
-			c = getCoderHelper(sqliteConnection, coderId);
-		} else if (cp.getType().equals("mysql") || cp.getType().equals("postgresql")) {
-			try (Connection conn = ds.getConnection()) {
-				c = getCoderHelper(conn, coderId);
-			} catch (SQLException e) {
-				System.err.println("Could not establish connection to database to retrieve the coder.");
-				e.printStackTrace();
-			}
-		} else {
-			System.err.println("Database type not recognized.");
-		}
-		return c;
-	}
-	
-	private guiCoder.Coder getCoderHelper(Connection conn, int coderId) {
-		guiCoder.Coder c = null;
-		try (PreparedStatement s = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;")) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;")) {
 			s.setInt(1, coderId);
 			ResultSet result = s.executeQuery();
 			while (result.next()) {
 			    c = new guiCoder.Coder(coderId, result.getString("Name"), result.getInt("Red"), result.getInt("Green"), result.getInt("Blue"));
 			}
 		} catch (SQLException e) {
-			System.err.println("Could not retrieve coder from database.");
+			System.err.println("Could not establish connection to database to retrieve the coder.");
 			e.printStackTrace();
 		}
 		return c;
 	}
-
+	
 	/**
 	 * Check if a user-provided clear-text password for the current coder
 	 * matches the hash of the password stored for the coder in the database.
@@ -165,31 +148,16 @@ public class Sql {
 	 */
 	public boolean authenticate(String clearPassword) {
 		String encryptedHash = null;
-		if (this.cp.getType().equals("sqlite")) {
-			try (PreparedStatement s = this.sqliteConnection.prepareStatement("SELECT Password FROM CODERS WHERE ID = ?;")) {
-				s.setInt(1, this.cp.getCoderId());
-				ResultSet result = s.executeQuery();
-				while (result.next()) {
-				    encryptedHash = result.getString("Password");
-				}
-			} catch (SQLException e) {
-				System.err.println("Could not retrieve password hash from database.");
-				e.printStackTrace();
+		try (Connection conn = this.ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("SELECT Password FROM CODERS WHERE ID = ?;")) {
+			s.setInt(1, this.cp.getCoderId());
+			ResultSet result = s.executeQuery();
+			while (result.next()) {
+			    encryptedHash = result.getString("Password");
 			}
-		} else if (this.cp.getType().equals("mysql") || this.cp.getType().equals("postgresql")) {
-			try (Connection conn = this.ds.getConnection();
-					PreparedStatement s = conn.prepareStatement("SELECT Password FROM CODERS WHERE ID = ?;")) {
-				s.setInt(1, this.cp.getCoderId());
-				ResultSet result = s.executeQuery();
-				while (result.next()) {
-				    encryptedHash = result.getString("Password");
-				}
-			} catch (SQLException e) {
-				System.err.println("Could not retrieve password hash from database.");
-				e.printStackTrace();
-			}
-		} else {
-			System.err.println("Database type not recognized.");
+		} catch (SQLException e) {
+			System.err.println("Could not retrieve password hash from database.");
+			e.printStackTrace();
 		}
 		
 		// check if the provided clear-text password corresponds to the hashed password in the database
@@ -204,32 +172,16 @@ public class Sql {
 	 */
 	public ArrayList<Coder> getCoders() {
 		ArrayList<Coder> coders = new ArrayList<Coder>();
-		String s = "SELECT * FROM Coders;";
-		if (cp.getType().equals("sqlite")) {
-            try (PreparedStatement ps = sqliteConnection.prepareStatement(s)) {
-            	ResultSet rs = ps.executeQuery();
-                while (rs.next()) {
-                	coders.add(new Coder(rs.getInt("ID"), rs.getString("Name"), rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue")));
-                }
-				rs.close();
-            } catch (SQLException e1) {
-				System.err.println("Could not retrieve coders from database.");
-                e1.printStackTrace();
+		try (Connection conn = ds.getConnection();
+				PreparedStatement tableStatement = conn.prepareStatement("SELECT * FROM Coders;")) {
+        	ResultSet rs = tableStatement.executeQuery();
+        	while (rs.next()) {
+            	coders.add(new Coder(rs.getInt("ID"), rs.getString("Name"), rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue")));
             }
-    	} else if (cp.getType().equals("mysql") || cp.getType().equals("postgresql")) {
-    		try (Connection conn = ds.getConnection();
-					PreparedStatement tableStatement = conn.prepareStatement(s)) {
-            	ResultSet rs = tableStatement.executeQuery();
-            	while (rs.next()) {
-                	coders.add(new Coder(rs.getInt("ID"), rs.getString("Name"), rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue")));
-                }
-			} catch (SQLException e1) {
-				System.err.println("Could not retrieve coders from database.");
-				e1.printStackTrace();
-			}
-    	} else {
-    		System.err.println("Database type not recognized.");
-    	}
+		} catch (SQLException e1) {
+			System.err.println("Could not retrieve coders from database.");
+			e1.printStackTrace();
+		}
 		return coders;
 	}
 	
@@ -303,20 +255,20 @@ public class Sql {
 					+ "Coder INTEGER, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
-					+ "FOREIGN KEY(DocumentId) REFERENCES DOCUMENTS(ID));");
+					+ "FOREIGN KEY(DocumentId) REFERENCES DOCUMENTS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "SourceId INTEGER NOT NULL, "
 					+ "TargetId INTEGER NOT NULL, "
-					+ "FOREIGN KEY(SourceId) REFERENCES STATEMENTS(ID),"
-					+ "FOREIGN KEY(TargetId) REFERENCES STATEMENTS(ID));");
+					+ "FOREIGN KEY(SourceId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE,"
+					+ "FOREIGN KEY(TargetId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS DATABOOLEAN("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "StatementId INTEGER NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
 					+ "StatementTypeId INTEGER, "
 					+ "Value INTEGER, "
-					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "UNIQUE (StatementId, VariableId));");
@@ -326,7 +278,7 @@ public class Sql {
 					+ "VariableId INTEGER NOT NULL, "
 					+ "StatementTypeId INTEGER, "
 					+ "Value INTEGER, "
-					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "UNIQUE (StatementId, VariableId));");
@@ -336,7 +288,7 @@ public class Sql {
 					+ "VariableId INTEGER NOT NULL, "
 					+ "StatementTypeId INTEGER, "
 					+ "Value TEXT, "
-					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "UNIQUE (StatementId, VariableId));");
@@ -346,7 +298,7 @@ public class Sql {
 					+ "VariableId INTEGER NOT NULL, "
 					+ "StatementTypeId INTEGER, "
 					+ "Value TEXT, "
-					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "UNIQUE (StatementId, VariableId));");
@@ -444,14 +396,14 @@ public class Sql {
 					+ "Coder SMALLINT UNSIGNED NOT NULL, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID), "
-					+ "FOREIGN KEY(DocumentId) REFERENCES DOCUMENTS(ID), "
+					+ "FOREIGN KEY(DocumentId) REFERENCES DOCUMENTS(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "SourceId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "TargetId MEDIUMINT UNSIGNED NOT NULL, "
-					+ "FOREIGN KEY(SourceId) REFERENCES STATEMENTS(ID), "
-					+ "FOREIGN KEY(TargetId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(SourceId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(TargetId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS DATABOOLEAN("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
@@ -459,7 +411,7 @@ public class Sql {
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
 					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "Value SMALLINT UNSIGNED NOT NULL, "
-					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "UNIQUE KEY (StatementId, VariableId), "
@@ -470,7 +422,7 @@ public class Sql {
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
 					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "Value MEDIUMINT NOT NULL, "
-					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "UNIQUE KEY (StatementId, VariableId), "
@@ -481,7 +433,7 @@ public class Sql {
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
 					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "Value VARCHAR(5000), "
-					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "UNIQUE KEY (StatementId, VariableId), "
@@ -492,7 +444,7 @@ public class Sql {
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
 					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "Value TEXT, "
-					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID), "
+					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID), "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID), "
 					+ "UNIQUE KEY (StatementId, VariableId), "
@@ -567,38 +519,38 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID), "
-					+ "DocumentId INT NOT NULL CHECK(DocumentId > 0) REFERENCES DOCUMENTS(ID), "
+					+ "DocumentId INT NOT NULL CHECK(DocumentId > 0) REFERENCES DOCUMENTS(ID) ON DELETE CASCADE, "
 					+ "Start BIGINT CHECK(Start >= 0), "
 					+ "Stop BIGINT CHECK(Stop >= 0), "
 					+ "Coder INT NOT NULL CHECK(Coder > 0) REFERENCES CODERS(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "SourceId INT NOT NULL CHECK(SourceId > 0 AND SourceId != TargetId) REFERENCES STATEMENTS(ID), "
-					+ "TargetId INT NOT NULL CHECK(TargetId > 0 AND TargetId != SourceId) REFERENCES STATEMENTS(ID));");
+					+ "SourceId INT NOT NULL CHECK(SourceId > 0 AND SourceId != TargetId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
+					+ "TargetId INT NOT NULL CHECK(TargetId > 0 AND TargetId != SourceId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS DATABOOLEAN("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID), "
+					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID), "
 					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID), "
 					+ "Value INT NOT NULL CHECK(Value BETWEEN 0 AND 1), "
 					+ "UNIQUE (StatementId, VariableId));");
 			s.add("CREATE TABLE IF NOT EXISTS DATAINTEGER("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID), "
+					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID), "
 					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID), "
 					+ "Value INT NOT NULL, "
 					+ "UNIQUE (StatementId, VariableId));");
 			s.add("CREATE TABLE IF NOT EXISTS DATASHORTTEXT("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID), "
+					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID), "
 					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID), "
 					+ "Value VARCHAR(5000), "
 					+ "UNIQUE (StatementId, VariableId));");
 			s.add("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID), "
+					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID), "
 					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID), "
 					+ "Value TEXT, "
@@ -641,52 +593,19 @@ public class Sql {
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(4, 'agreement', 'boolean', 1);");
 		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (2, 'Annotation', 211, 211, 211);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(5, 'note', 'long text', 2);");
-		if (cp.getType().equals("sqlite")) {
-			try {
-				sqliteConnection.setAutoCommit(false);
-				for (int i = 0; i < s.size(); i++) {
-					PreparedStatement p = sqliteConnection.prepareStatement(s.get(i));
-					p.executeUpdate();
-				}
-			} catch (SQLException e) {
-				success = false;
-				System.err.println("Could not establish connection to database to create tables.");
-				e.printStackTrace();
-				if (sqliteConnection != null) {
-					try {
-						System.err.println("Transaction is being rolled back.");
-						sqliteConnection.rollback();
-					} catch (SQLException excep) {
-						System.err.println("Transaction could not be rolled back.");
-						excep.printStackTrace();
-					}
-				}
-			} finally {
-				try {
-					sqliteConnection.setAutoCommit(true);
-				} catch (SQLException excep) {
-					System.err.println("Could not set AutoCommit back to true.");
-					excep.printStackTrace();
-				}
+		try (Connection conn = ds.getConnection();
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			for (int i = 0; i < s.size(); i++) {
+				PreparedStatement p = conn.prepareStatement(s.get(i));
+				p.executeUpdate();
+				p.close();
 			}
-		} else if (cp.getType().equals("mysql") || cp.getType().equals("postgresql")) {
-			try (Connection conn = ds.getConnection();
-					SQLCloseable finish = conn::rollback) {
-				conn.setAutoCommit(false);
-				for (int i = 0; i < s.size(); i++) {
-					PreparedStatement p = conn.prepareStatement(s.get(i));
-					p.executeUpdate();
-					p.close();
-				}
-				conn.commit();
-			} catch (SQLException e) {
-				success = false;
-				System.err.println("Could not establish connection to database to create tables.");
-				e.printStackTrace();
-			}
-		} else {
+			conn.commit();
+		} catch (SQLException e) {
 			success = false;
-			System.err.println("Database type not recognized.");
+			System.err.println("Could not establish connection to database to create tables.");
+			e.printStackTrace();
 		}
 		return success;
 	}

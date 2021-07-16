@@ -1,12 +1,13 @@
-package stack;
+package dna;
+
 
 import java.util.ArrayList;
 
-public class StackStatement {
+public class Statement {
 	int id, coder, start, stop, statementTypeId;
-	ArrayList<StackValue> values;
+	ArrayList<Value> values;
 	
-	public StackStatement(int id, int coder, int start, int stop, int statementTypeId, ArrayList<StackValue> values) {
+	public Statement(int id, int coder, int start, int stop, int statementTypeId, ArrayList<Value> values) {
 		this.id = id;
 		this.coder = coder;
 		this.start = start;
@@ -44,10 +45,10 @@ public class StackStatement {
 	void setStatementTypeId(int statementTypeId) {
 		this.statementTypeId = statementTypeId;
 	}
-	public ArrayList<StackValue> getValues() {
+	public ArrayList<Value> getValues() {
 		return values;
 	}
-	void setValues(ArrayList<StackValue> values) {
+	void setValues(ArrayList<Value> values) {
 		this.values = values;
 	}
 }

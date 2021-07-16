@@ -1,10 +1,11 @@
-package stack;
+package dna;
 
-public class StackValue {
+
+public class Value {
 	String key, dataType;
 	Object value;
 	
-	public StackValue(String key, String dataType, Object value) {
+	public Value(String key, String dataType, Object value) {
 		this.key = key;
 		this.dataType = dataType;
 		this.value = value;

@@ -38,8 +38,8 @@ import org.jdesktop.swingx.JXTextField;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
 import dna.Dna;
-import stack.StackDocument;
-import stack.StackStatement;
+import dna.Document;
+import dna.Statement;
 
 @SuppressWarnings("serial")
 public class DocumentEditor extends JDialog {
@@ -53,13 +53,22 @@ public class DocumentEditor extends JDialog {
 	JXTextField titleField;
 	JXTextArea textArea, notesArea;
 	JXComboBox authorBox, sourceBox, sectionBox, typeBox;
-	ArrayList<StackDocument> stackDocuments = null;
+	ArrayList<Document> documents = null;
 	
-	public ArrayList<StackDocument> getStackDocuments() {
-		return stackDocuments;
+	public ArrayList<Document> getDocuments() {
+		return documents;
+	}
+	
+	public DocumentEditor(int[] documentIds) {
+		createGui();
+		System.out.println(documentIds.length);
 	}
 	
 	public DocumentEditor() {
+		createGui();
+	}
+
+	private void createGui() {
 		this.setModal(true);
 		this.setTitle("Add new document...");
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -253,10 +262,10 @@ public class DocumentEditor extends JDialog {
 				String notes = notesArea.getText();
 				String type = (String) typeBox.getModel().getSelectedItem();
 				
-				ArrayList<StackDocument> al = new ArrayList<StackDocument>();
-				StackDocument d = new StackDocument(-1, Dna.sql.getConnectionProfile().getCoderId(), title, text, author, source, section, type, notes, date, new ArrayList<StackStatement>());
+				ArrayList<Document> al = new ArrayList<Document>();
+				Document d = new Document(-1, Dna.sql.getConnectionProfile().getCoderId(), title, text, author, source, section, type, notes, date, new ArrayList<Statement>());
 				al.add(d);
-				stackDocuments = al;
+				documents = al;
 				dispose();
 			}
 		});
@@ -271,7 +280,7 @@ public class DocumentEditor extends JDialog {
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 	}
-
+	
 	// Swing worker to populate the author, source, section, and type combo boxes without blocking the event thread and GUI
 	// https://stackoverflow.com/questions/43161033/cant-add-tablerowsorter-to-jtable-produced-by-swingworker
 	private class JDBCWorker extends SwingWorker<List<String>, String> {
@@ -283,32 +292,18 @@ public class DocumentEditor extends JDialog {
 		
         @Override
         protected List<String> doInBackground() {
-    		if (Dna.sql.getConnectionProfile().getType().equals("sqlite")) {
-    			selectDocumentFieldEntriesHelper(field, Dna.sql.sqliteConnection);
-    		} else if (Dna.sql.getConnectionProfile().getType().equals("mysql") || Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
-    			try (Connection conn = Dna.sql.ds.getConnection()) {
-    				selectDocumentFieldEntriesHelper(field, conn);
-    			} catch (SQLException e) {
-    				System.err.println("Could not establish connection to database to retrieve document field entries.");
-    				e.printStackTrace();
-    			}
-    		} else {
-    			System.err.println("Database type not recognized.");
-    		}
-			return null;
-        }
-
-    	private void selectDocumentFieldEntriesHelper(String field, Connection conn) {
-    		try (PreparedStatement s = conn.prepareStatement("SELECT DISTINCT " + field + " FROM DOCUMENTS WHERE " + field + " IS NOT NULL ORDER BY " + field + ";")) {
-    			ResultSet result = s.executeQuery();
+        	try (Connection conn = Dna.sql.getDataSource().getConnection();
+        			PreparedStatement s = conn.prepareStatement("SELECT DISTINCT " + field + " FROM DOCUMENTS WHERE " + field + " IS NOT NULL ORDER BY " + field + ";")) {
+        		ResultSet result = s.executeQuery();
     			while (result.next()) {
     				publish(result.getString(field));
     			}
-    		} catch (SQLException e) {
-    			System.err.println("Could not retrieve document field entries from database.");
-    			e.printStackTrace();
-    		}
-    	}
+			} catch (SQLException e) {
+				System.err.println("Could not establish connection to database to retrieve document field entries.");
+				e.printStackTrace();
+			}
+			return null;
+        }
     	
         @SuppressWarnings("unchecked")
 		@Override

@@ -26,19 +26,15 @@ import javax.swing.filechooser.FileFilter;
 
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.jasypt.util.text.AES256TextEncryptor;
-import org.sqlite.SQLiteCommitListener;
-import org.sqlite.SQLiteConnection;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import dna.Dna;
 import sql.Sql;
-import stack.Stack;
 
 @SuppressWarnings("serial")
 public class GuiCoder extends JFrame {
-	public Stack stack;
 	Container c;
 	DocumentTableModel documentTableModel;
 	
@@ -46,6 +42,7 @@ public class GuiCoder extends JFrame {
 		documentTableModel.reloadTableFromSQL();
 
 		// database update listener
+		/*
 		if (Dna.sql.getConnectionProfile().getType().equals("sqlite")) {
 			((SQLiteConnection) Dna.sql.sqliteConnection).addCommitListener(new SQLiteCommitListener() {
 
@@ -61,6 +58,7 @@ public class GuiCoder extends JFrame {
 				
 			});
 		}
+		*/
 	}
 	
 	public GuiCoder() {
@@ -75,8 +73,6 @@ public class GuiCoder extends JFrame {
 	    } catch (IllegalAccessException e) {
 			System.err.println("Illegal access exception. Using default theme.");
 	    }
-		
-		stack = new Stack();
 
 		c = getContentPane();
 		this.setTitle("Discourse Network Analyzer");
@@ -87,9 +83,6 @@ public class GuiCoder extends JFrame {
 		// close SQL connection before exit
 		this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-				if (Dna.sql != null) {
-					Dna.sql.closeConnection();
-				}
 				// TODO: DNA does not quit when using remote SQL connection; all Swing workers closed?
 				documentTableModel = null;
 				dispose();
@@ -141,7 +134,7 @@ public class GuiCoder extends JFrame {
 		
 		// DNA toolbar button: open an existing database
 		Icon openIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-database-16.png"));
-		JButton openButton = new JButton(openIcon);
+		JButton openButton = new JButton("Connect", openIcon);
 		openButton.setToolTipText( "Open DNA database" );
 		openButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -149,9 +142,6 @@ public class GuiCoder extends JFrame {
 				ConnectionProfile cp = n.getConnectionProfile();
 				if (cp != null) {
 					//setSql(new Sql(cp));
-					if (Dna.sql != null) {
-						Dna.sql.closeConnection();
-					}
 					Dna.sql = new Sql(cp);
 					updateGUI();
 				} // user must have clicked cancel; do nothing
@@ -162,7 +152,7 @@ public class GuiCoder extends JFrame {
 		
 		// DNA toolbar button: open a connection profile
 		Icon openProfileIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-link-16.png"));
-		JButton openProfileButton = new JButton(openProfileIcon);
+		JButton openProfileButton = new JButton("Open profile", openProfileIcon);
 		openProfileButton.setToolTipText( "Open database connection profile" );
 		openProfileButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -220,9 +210,6 @@ public class GuiCoder extends JFrame {
 									boolean authenticated = sqlTemp.authenticate(key);
 									if (authenticated == true) {
 										validPasswordInput = true; // authenticated; quit the while-loop
-										if (Dna.sql != null) {
-											Dna.sql.closeConnection();
-										}
 										Dna.sql = sqlTemp;
 										updateGUI();
 									} else {
@@ -251,7 +238,7 @@ public class GuiCoder extends JFrame {
 		
 		// DNA toolbar button: save connection profile
 		Icon saveProfileIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-download-16.png"));
-		JButton saveProfileButton = new JButton(saveProfileIcon);
+		JButton saveProfileButton = new JButton("Save profile", saveProfileIcon);
 		saveProfileButton.setToolTipText( "Save database connection profile..." );
 		saveProfileButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -327,16 +314,13 @@ public class GuiCoder extends JFrame {
 		
 		// DNA toolbar button: create a new database
 		Icon newDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-plus-16.png"));
-		JButton newDatabaseButton = new JButton(newDatabaseIcon);
+		JButton newDatabaseButton = new JButton("New DB", newDatabaseIcon);
 		newDatabaseButton.setToolTipText( "Create a new DNA database..." );
 		newDatabaseButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				NewDatabaseDialog n = new NewDatabaseDialog(false);
 				ConnectionProfile cp = n.getConnectionProfile();
 				if (cp != null) {
-					if (Dna.sql != null) {
-						Dna.sql.closeConnection();
-					}
 					Dna.sql = new Sql(cp);
 					updateGUI();
 				}
@@ -344,31 +328,9 @@ public class GuiCoder extends JFrame {
 		});
 		tb.add(newDatabaseButton);
 		
-		// DNA toolbar button: undo event
-		Icon undoIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-arrow-back-up-16.png"));
-		JButton undoButton = new JButton(undoIcon);
-		undoButton.setToolTipText( "Undo last action" );
-		undoButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// TODO: undo
-			}
-		});
-		tb.add(undoButton);
-		
-		// DNA toolbar button: redo event
-		Icon redoIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-arrow-forward-up-16.png"));
-		JButton redoButton = new JButton(redoIcon);
-		redoButton.setToolTipText( "Redo last action" );
-		redoButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// TODO: redo
-			}
-		});
-		tb.add(redoButton);
-		
 		// DNA toolbar button: refresh GUI from database
 		Icon refreshIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-refresh-16.png"));
-		JButton refreshButton = new JButton(refreshIcon);
+		JButton refreshButton = new JButton("Refresh", refreshIcon);
 		refreshButton.setToolTipText( "Refresh GUI" );
 		refreshButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {

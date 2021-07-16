@@ -32,44 +32,63 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
 import dna.Dna;
-import stack.AddDocumentsEvent;
 
 @SuppressWarnings("serial")
 class DocumentPanel extends JPanel {
-	TextPanel textPanel;
+	private DocumentTableModel documentTableModel;
+	private TextPanel textPanel;
+	private JTable documentTable;
 
 	public DocumentPanel(DocumentTableModel documentTableModel) {
+		this.documentTableModel = documentTableModel;
 		this.setLayout(new BorderLayout());
 		
 		// toolbar of the document panel
 		JToolBar tb = new JToolBar("Document toolbar");
 		
 		Icon addDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus-16.png")); // https://tabler-icons.io/i/file-plus
-		JButton addDocumentButton = new JButton(addDocumentIcon);
+		JButton addDocumentButton = new JButton("Add", addDocumentIcon);
 		addDocumentButton.setToolTipText( "Add document" );
 		addDocumentButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// TODO: add document
+				DocumentEditor de = new DocumentEditor();
+				if (de.getDocuments() != null) {
+					Dna.sql.addDocuments(de.getDocuments());
+					documentTableModel.reloadTableFromSQL();
+				}
 			}
 		});
 		tb.add(addDocumentButton);
 
 		Icon removeDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-minus-16.png")); // https://tabler-icons.io/i/file-minus
-		JButton removeDocumentButton = new JButton(removeDocumentIcon);
+		JButton removeDocumentButton = new JButton("Delete", removeDocumentIcon);
 		removeDocumentButton.setToolTipText( "Remove document" );
 		removeDocumentButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// TODO: remove documents
+				int[] selectedRows = documentTable.getSelectedRows();
+				String message = "Are you sure you want to delete " + selectedRows.length + " document(s) including all statements?";
+				int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+				if (dialog == 0) {
+					for (int i = 0; i < selectedRows.length; i++) {
+						selectedRows[i] = documentTable.convertRowIndexToModel(selectedRows[i]);
+					}
+					documentTableModel.removeDocuments(selectedRows);
+				}
+				Dna.guiCoder.updateGUI();
 			}
 		});
 		tb.add(removeDocumentButton);
 
-		Icon editDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-edit-16.png")); // https://tabler-icons.io/i/edit
-		JButton editDocumentButton = new JButton(editDocumentIcon);
+		Icon editDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-edit-16.png"));
+		JButton editDocumentButton = new JButton("Edit", editDocumentIcon);
 		editDocumentButton.setToolTipText( "Edit document" );
 		editDocumentButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// TODO: edit document(s)
+				int[] selectedRows = documentTable.getSelectedRows();
+				for (int i = 0; i < selectedRows.length; i++) {
+					selectedRows[i] = documentTableModel.getIdByModelRow(documentTable.convertRowIndexToModel(selectedRows[i]));
+				}
+				DocumentEditor de = new DocumentEditor(selectedRows); // TODO: implement document editing infrastructure
 			}
 		});
 		tb.add(editDocumentButton);
@@ -78,7 +97,7 @@ class DocumentPanel extends JPanel {
 		this.add(tb, BorderLayout.NORTH);
 
 		// create document table and model
-		JTable documentTable = new JTable(documentTableModel);
+		documentTable = new JTable(documentTableModel);
 		documentTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		TableRowSorter<DocumentTableModel> sorter = new TableRowSorter<DocumentTableModel>(documentTableModel);
 		documentTable.setRowSorter(sorter);
@@ -185,8 +204,10 @@ class DocumentPanel extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				if (e.getSource() == menuItemAddDocument) {
 					DocumentEditor d = new DocumentEditor();
-					Dna.guiCoder.stack.add(new AddDocumentsEvent(d.getStackDocuments()));
-					Dna.guiCoder.updateGUI();
+					if (d.getDocuments() != null) {
+						Dna.sql.addDocuments(d.getDocuments());
+						documentTableModel.reloadTableFromSQL();
+					}
 				} else if (e.getSource() == menuItemDelete) {
 					int[] selectedRows = documentTable.getSelectedRows();
 					String message = "Are you sure you want to delete " + selectedRows.length + " document(s) including all statements?";
@@ -370,6 +391,13 @@ class DocumentPanel extends JPanel {
 		textPanel = new TextPanel();
 		this.add(textPanel, BorderLayout.SOUTH);
 	}
+	
+	/*
+	private void selectDocument(int documentId) {
+		int index = documentTable.convertRowIndexToView(this.documentTableModel.getModelRowById(documentId));
+		this.documentTable.setRowSelectionInterval(index, index);
+	}
+	*/
 	
 	private class CoderTableCellRenderer extends DefaultTableCellRenderer {
 		@Override

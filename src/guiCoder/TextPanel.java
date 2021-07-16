@@ -6,9 +6,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Point;
 
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.text.DefaultStyledDocument;
