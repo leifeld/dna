@@ -14,12 +14,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JToolBar;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileFilter;
@@ -83,7 +84,6 @@ public class GuiCoder extends JFrame {
 		// close SQL connection before exit
 		this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-				// TODO: DNA does not quit when using remote SQL connection; all Swing workers closed?
 				documentTableModel = null;
 				dispose();
 			}
@@ -97,47 +97,25 @@ public class GuiCoder extends JFrame {
 		
 		//c.add(documentTableScroller);
 		
-		/*
+		// menu bar
 		JMenuBar menu = new JMenuBar();
-		JMenu fileMenu = new JMenu("File");
-		menu.add(fileMenu);
-		JMenuItem createItem = new JMenuItem("Create data structure");
-		fileMenu.add(createItem);
-		createItem.addActionListener(new ActionListener() {
+		framePanel.add(menu, BorderLayout.NORTH);
+		JMenu databaseMenu = new JMenu("Database");
+		menu.add(databaseMenu);
+		JMenu documentMenu = new JMenu("Document");
+		menu.add(documentMenu);
+		JMenu exportMenu = new JMenu("Export");
+		menu.add(exportMenu);
+		JMenu settingsMenu = new JMenu("Settings");
+		menu.add(settingsMenu);
 
+		// database menu: open a database
+		Icon openDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-database-16.png"));
+		JMenuItem openDatabaseItem = new JMenuItem("Open DNA database", openDatabaseIcon);
+		databaseMenu.add(openDatabaseItem);
+		openDatabaseItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				System.out.println("bla");
-			}
-			
-		});
-		documentTablePanel.add(menu, BorderLayout.NORTH);
-		*/
-		
-		
-		/*
-		 * TODO:
-		 * - debug hash code authentication
-		 * - check if all error messages are working for new db creation, saving connection profiles, and loading them
-		 * - add undo/redo functionality to toolbar and test it
-		 * - add open database functionality (with GUI) to toolbar and test it
-		 * - add delete/add document functionality to document toolbar
-		 * - debug timezone issue in DocumentEditor
-		 * - add document filter to document panel
-		 * - add refresh to connection profile and GUI
-		 * - add icons to document table context menu
-		 * - add editing functionality to DocumentEditor class
-		 */
-		
-
-		JToolBar tb = new JToolBar("DNA toolbar");
-		
-		// DNA toolbar button: open an existing database
-		Icon openIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-database-16.png"));
-		JButton openButton = new JButton("Connect", openIcon);
-		openButton.setToolTipText( "Open DNA database" );
-		openButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
 				NewDatabaseDialog n = new NewDatabaseDialog(true);
 				ConnectionProfile cp = n.getConnectionProfile();
 				if (cp != null) {
@@ -145,16 +123,31 @@ public class GuiCoder extends JFrame {
 					Dna.sql = new Sql(cp);
 					updateGUI();
 				} // user must have clicked cancel; do nothing
-				
 			}
 		});
-		tb.add(openButton);
+
+		// database menu: create a new database
+		Icon newDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-plus-16.png"));
+		JMenuItem newDatabaseItem = new JMenuItem("Create new DNA database", newDatabaseIcon);
+		databaseMenu.add(newDatabaseItem);
+		newDatabaseItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				NewDatabaseDialog n = new NewDatabaseDialog(false);
+				ConnectionProfile cp = n.getConnectionProfile();
+				if (cp != null) {
+					Dna.sql = new Sql(cp);
+					updateGUI();
+				}
+			}
+		});
 		
-		// DNA toolbar button: open a connection profile
+		// database menu: open a connection profile
 		Icon openProfileIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-link-16.png"));
-		JButton openProfileButton = new JButton("Open profile", openProfileIcon);
-		openProfileButton.setToolTipText( "Open database connection profile" );
-		openProfileButton.addActionListener(new ActionListener() {
+		JMenuItem openProfileItem = new JMenuItem("Open connection profile", openProfileIcon);
+		databaseMenu.add(openProfileItem);
+		openProfileItem.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				String filename = null;
 				boolean validFileInput = false;
@@ -234,13 +227,13 @@ public class GuiCoder extends JFrame {
 				}
 			}
 		});
-		tb.add(openProfileButton);
-		
-		// DNA toolbar button: save connection profile
+
+		// database menu: save connection profile
 		Icon saveProfileIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-download-16.png"));
-		JButton saveProfileButton = new JButton("Save profile", saveProfileIcon);
-		saveProfileButton.setToolTipText( "Save database connection profile..." );
-		saveProfileButton.addActionListener(new ActionListener() {
+		JMenuItem saveProfileItem = new JMenuItem("Save connection profile", saveProfileIcon);
+		databaseMenu.add(saveProfileItem);
+		saveProfileItem.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				String filename = null;
 				File file = null;
@@ -310,23 +303,9 @@ public class GuiCoder extends JFrame {
 				}
 			}
 		});
-		tb.add(saveProfileButton);
-		
-		// DNA toolbar button: create a new database
-		Icon newDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-plus-16.png"));
-		JButton newDatabaseButton = new JButton("New DB", newDatabaseIcon);
-		newDatabaseButton.setToolTipText( "Create a new DNA database..." );
-		newDatabaseButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				NewDatabaseDialog n = new NewDatabaseDialog(false);
-				ConnectionProfile cp = n.getConnectionProfile();
-				if (cp != null) {
-					Dna.sql = new Sql(cp);
-					updateGUI();
-				}
-			}
-		});
-		tb.add(newDatabaseButton);
+
+		/*
+		JToolBar tb = new JToolBar("DNA toolbar");
 		
 		// DNA toolbar button: refresh GUI from database
 		Icon refreshIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-refresh-16.png"));
@@ -340,7 +319,8 @@ public class GuiCoder extends JFrame {
 		tb.add(refreshButton);
 		
         tb.setRollover(true);
-		framePanel.add(tb, BorderLayout.NORTH);
+		//framePanel.add(tb, BorderLayout.NORTH);
+		*/
 		
 		c.add(framePanel);
 

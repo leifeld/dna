@@ -97,7 +97,7 @@ class DocumentPanel extends JPanel {
 		this.add(tb, BorderLayout.NORTH);
 
 		// create document table and model
-		documentTable = new JTable(documentTableModel);
+		documentTable = new JTable(this.documentTableModel);
 		documentTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		TableRowSorter<DocumentTableModel> sorter = new TableRowSorter<DocumentTableModel>(documentTableModel);
 		documentTable.setRowSorter(sorter);
