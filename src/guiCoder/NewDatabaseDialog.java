@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -174,7 +175,7 @@ public class NewDatabaseDialog extends JDialog {
 		
 		
 		g.gridx = 2;
-		Icon folderIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-folder-16.png"));
+		ImageIcon folderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-folder.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		JButton folderButton = new JButton("Browse...", folderIcon);
 		folderButton.setToolTipText(ttUrl);
 		panel.add(folderButton, g);
@@ -407,18 +408,18 @@ public class NewDatabaseDialog extends JDialog {
 		
 		// button panel at the bottom of the dialog
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-		Icon clearIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace-16.png"));
+		ImageIcon clearIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		JButton clearButton = new JButton("Clear form", clearIcon);
 		buttonPanel.add(clearButton);
-		Icon cancelIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-x-16.png"));
+		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		JButton cancelButton = new JButton("Cancel", cancelIcon);
 		buttonPanel.add(cancelButton);
-		Icon saveIcon;
+		ImageIcon saveIcon;
 		if (openExistingDatabase == true) {
-			saveIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-database-16.png"));
+			saveIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 			saveButton = new JButton("Connect", saveIcon);
 		} else {
-			saveIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-device-floppy-16.png"));
+			saveIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-device-floppy.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 			saveButton = new JButton("Create data structures...", saveIcon);
 		}
 		saveButton.setEnabled(false);

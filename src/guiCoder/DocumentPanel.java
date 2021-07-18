@@ -6,6 +6,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -77,17 +78,17 @@ class DocumentPanel extends JPanel {
 		this.add(documentTableScroller, BorderLayout.CENTER);
 
 		// items for documents menu toolbar
-		ImageIcon addDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus-16.png"));
+		ImageIcon addDocumentIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		addDocumentAction = new AddDocumentAction("Add document", addDocumentIcon, "Open a dialog window to enter details of a new document", KeyEvent.VK_A);
 		addDocumentItem = new JMenuItem(addDocumentAction);
 		addDocumentAction.setEnabled(false);
 		
-		ImageIcon removeDocumentsIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-minus-16.png"));
+		ImageIcon removeDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-minus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		RemoveDocumentsAction removeDocumentsAction = new RemoveDocumentsAction("Remove document(s)", removeDocumentsIcon, "Remove the document(s) currently selected in the document table", KeyEvent.VK_R);
 		removeDocumentsItem = new JMenuItem(removeDocumentsAction);
 		removeDocumentsAction.setEnabled(false);
 		
-		ImageIcon editDocumentsIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-edit-16.png"));
+		ImageIcon editDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-edit.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		EditDocumentsAction editDocumentsAction = new EditDocumentsAction("Edit document(s)", editDocumentsIcon, "Edit the document(s) currently selected in the document table", KeyEvent.VK_E);
 		editDocumentsItem = new JMenuItem(editDocumentsAction);
 		editDocumentsAction.setEnabled(false);
@@ -120,8 +121,8 @@ class DocumentPanel extends JPanel {
 		popupMenu.add(menuItemResetTime);
 		JSeparator sep = new JSeparator();
 		popupMenu.add(sep);
-		ImageIcon checkedIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-checkbox-16.png"));
-		ImageIcon uncheckedIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-square-16.png"));
+		ImageIcon checkedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-checkbox.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon uncheckedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-square.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		JMenuItem menuItemId = new JMenuItem("ID", checkedIcon);
 		popupMenu.add(menuItemId);
 		JMenuItem menuItemTitle = new JMenuItem("Title", checkedIcon);

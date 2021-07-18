@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,7 +19,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -72,7 +72,7 @@ public class DocumentEditor extends JDialog {
 		this.setModal(true);
 		this.setTitle("Add new document...");
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		ImageIcon tableAddIcon = new ImageIcon(getClass().getResource("/icons/table_add.png"));
+		ImageIcon tableAddIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus.png"));
 		this.setIconImage(tableAddIcon.getImage());
 		this.setLayout(new FlowLayout(FlowLayout.LEFT));
 		
@@ -248,7 +248,7 @@ public class DocumentEditor extends JDialog {
 		newArticlePanel = new JPanel(new BorderLayout());
 		newArticlePanel.add(fieldsPanel, BorderLayout.NORTH);
 
-		Icon okIcon = new ImageIcon(getClass().getResource("/icons/tick.png"));
+		ImageIcon okIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
 		okButton = new JButton("add", okIcon);
 		okButton.setToolTipText( "insert a new article based on the information you entered in this window" );
 		okButton.addActionListener(new ActionListener() {

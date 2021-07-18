@@ -2,6 +2,7 @@ package guiCoder;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
@@ -89,36 +90,42 @@ public class GuiCoder extends JFrame {
 		menu.add(settingsMenu);
 
 		// database menu: open a database
-		ImageIcon openDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-database-16.png"));
+		ImageIcon openDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		OpenDatabaseAction openDatabaseAction = new OpenDatabaseAction("Open DNA database", openDatabaseIcon, "Open a dialog window to establish a connection to a remote or file-based database", KeyEvent.VK_O);
 		JMenuItem openDatabaseItem = new JMenuItem(openDatabaseAction);
 		databaseMenu.add(openDatabaseItem);
 
 		// database menu: close database
-		ImageIcon closeDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-x-16.png"));
+		ImageIcon closeDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		closeDatabaseAction = new CloseDatabaseAction("Close database", closeDatabaseIcon, "Close the connection to the current database and reset graphical user interface", KeyEvent.VK_X);
 		JMenuItem closeDatabaseItem = new JMenuItem(closeDatabaseAction);
 		databaseMenu.add(closeDatabaseItem);
 		closeDatabaseAction.setEnabled(false);
 
 		// database menu: create a new database
-		ImageIcon createDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-plus-16.png"));
+		ImageIcon createDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-plus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		CreateDatabaseAction createDatabaseAction = new CreateDatabaseAction("Create new DNA database", createDatabaseIcon, "Open a dialog window to create a new remote or file-based database", KeyEvent.VK_C);
 		JMenuItem createDatabaseItem = new JMenuItem(createDatabaseAction);
 		databaseMenu.add(createDatabaseItem);
 
 		// database menu: open a connection profile
-		ImageIcon openProfileIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-link-16.png"));
+		ImageIcon openProfileIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-link.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		OpenProfileAction openProfileAction = new OpenProfileAction("Open connection profile", openProfileIcon, "Open a connection profile, which acts as a bookmark to a database", KeyEvent.VK_P);
 		JMenuItem openProfileItem = new JMenuItem(openProfileAction);
 		databaseMenu.add(openProfileItem);
 
 		// database menu: save a connection profile
-		ImageIcon saveProfileIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-download-16.png"));
+		ImageIcon saveProfileIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-download.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		saveProfileAction = new SaveProfileAction("Save connection profile", saveProfileIcon, "Save a connection profile, which acts as a bookmark to a database", KeyEvent.VK_S);
 		JMenuItem saveProfileItem = new JMenuItem(saveProfileAction);
 		databaseMenu.add(saveProfileItem);
 		saveProfileAction.setEnabled(false);
+
+		// database menu: quit DNA
+		ImageIcon quitIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-logout.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		QuitAction quitAction = new QuitAction("Exit / quit", quitIcon, "Close the Discourse Network Analyzer", KeyEvent.VK_Q);
+		JMenuItem quitItem = new JMenuItem(quitAction);
+		databaseMenu.add(quitItem);
 
 		documentMenu.add(documentPanel.addDocumentItem);
 		documentMenu.add(documentPanel.removeDocumentsItem);
@@ -428,6 +435,19 @@ public class GuiCoder extends JFrame {
 					}
 				}
 			}
+		}
+	}
+
+	// quit DNA action
+	class QuitAction extends AbstractAction {
+		public QuitAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			documentTableModel = null;
+			dispose();
 		}
 	}
 
