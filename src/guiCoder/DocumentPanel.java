@@ -8,12 +8,13 @@ import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import javax.swing.Icon;
+
+import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -38,64 +39,15 @@ class DocumentPanel extends JPanel {
 	private DocumentTableModel documentTableModel;
 	private TextPanel textPanel;
 	private JTable documentTable;
+	public JMenuItem addDocumentItem, removeDocumentsItem, editDocumentsItem;
+	public AddDocumentAction addDocumentAction;
+	public RemoveDocumentsAction removeDocumentsAction;
+	public EditDocumentsAction editDocumentsAction;
 
 	public DocumentPanel(DocumentTableModel documentTableModel) {
 		this.documentTableModel = documentTableModel;
 		this.setLayout(new BorderLayout());
 		
-		// toolbar of the document panel
-		JToolBar tb = new JToolBar("Document toolbar");
-		
-		Icon addDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus-16.png")); // https://tabler-icons.io/i/file-plus
-		JButton addDocumentButton = new JButton("Add", addDocumentIcon);
-		addDocumentButton.setToolTipText( "Add document" );
-		addDocumentButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				DocumentEditor de = new DocumentEditor();
-				if (de.getDocuments() != null) {
-					Dna.sql.addDocuments(de.getDocuments());
-					documentTableModel.reloadTableFromSQL();
-				}
-			}
-		});
-		tb.add(addDocumentButton);
-
-		Icon removeDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-minus-16.png")); // https://tabler-icons.io/i/file-minus
-		JButton removeDocumentButton = new JButton("Delete", removeDocumentIcon);
-		removeDocumentButton.setToolTipText( "Remove document" );
-		removeDocumentButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int[] selectedRows = documentTable.getSelectedRows();
-				String message = "Are you sure you want to delete " + selectedRows.length + " document(s) including all statements?";
-				int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
-				if (dialog == 0) {
-					for (int i = 0; i < selectedRows.length; i++) {
-						selectedRows[i] = documentTable.convertRowIndexToModel(selectedRows[i]);
-					}
-					documentTableModel.removeDocuments(selectedRows);
-				}
-				Dna.guiCoder.updateGUI();
-			}
-		});
-		tb.add(removeDocumentButton);
-
-		Icon editDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-edit-16.png"));
-		JButton editDocumentButton = new JButton("Edit", editDocumentIcon);
-		editDocumentButton.setToolTipText( "Edit document" );
-		editDocumentButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int[] selectedRows = documentTable.getSelectedRows();
-				for (int i = 0; i < selectedRows.length; i++) {
-					selectedRows[i] = documentTableModel.getIdByModelRow(documentTable.convertRowIndexToModel(selectedRows[i]));
-				}
-				DocumentEditor de = new DocumentEditor(selectedRows); // TODO: implement document editing infrastructure
-			}
-		});
-		tb.add(editDocumentButton);
-
-        tb.setRollover(true);
-		this.add(tb, BorderLayout.NORTH);
-
 		// create document table and model
 		documentTable = new JTable(this.documentTableModel);
 		documentTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -108,14 +60,7 @@ class DocumentPanel extends JPanel {
 	        column[i] = documentTable.getColumnModel().getColumn(i);
 	    }
 	    Boolean[] columnsVisible = new Boolean[] {true, true, true, true, true, true, true, true, true, true, true};
-		while (documentTable.getColumnModel().getColumnCount() > 0) {
-			documentTable.getColumnModel().removeColumn(documentTable.getColumnModel().getColumn(0));
-	    }
-	    for (int i = 0; i < columnsVisible.length; i++) {
-	    	if (columnsVisible[i] == true) {
-	    		documentTable.getColumnModel().addColumn(column[i]);
-	    	}
-	    }
+	    
 		documentTable.getColumnModel().getColumn(0).setPreferredWidth(50);
 		documentTable.getColumnModel().getColumn(1).setPreferredWidth(600);
 		documentTable.getColumnModel().getColumn(2).setPreferredWidth(30);
@@ -130,38 +75,74 @@ class DocumentPanel extends JPanel {
 		documentTableScroller.setViewportView(documentTable);
 		documentTableScroller.setPreferredSize(new Dimension(1000, 200));
 		this.add(documentTableScroller, BorderLayout.CENTER);
+
+		// items for documents menu toolbar
+		ImageIcon addDocumentIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus-16.png"));
+		addDocumentAction = new AddDocumentAction("Add document", addDocumentIcon, "Open a dialog window to enter details of a new document", KeyEvent.VK_A);
+		addDocumentItem = new JMenuItem(addDocumentAction);
+		addDocumentAction.setEnabled(false);
 		
+		ImageIcon removeDocumentsIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-minus-16.png"));
+		RemoveDocumentsAction removeDocumentsAction = new RemoveDocumentsAction("Remove document(s)", removeDocumentsIcon, "Remove the document(s) currently selected in the document table", KeyEvent.VK_R);
+		removeDocumentsItem = new JMenuItem(removeDocumentsAction);
+		removeDocumentsAction.setEnabled(false);
+		
+		ImageIcon editDocumentsIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-edit-16.png"));
+		EditDocumentsAction editDocumentsAction = new EditDocumentsAction("Edit document(s)", editDocumentsIcon, "Edit the document(s) currently selected in the document table", KeyEvent.VK_E);
+		editDocumentsItem = new JMenuItem(editDocumentsAction);
+		editDocumentsAction.setEnabled(false);
+		
+		// toolbar of the document panel
+		JToolBar tb = new JToolBar("Document toolbar");
+		
+		JButton addDocumentButton = new JButton(addDocumentAction);
+		addDocumentButton.setText("Add");
+		tb.add(addDocumentButton);
+
+		JButton removeDocumentsButton = new JButton(removeDocumentsAction);
+		removeDocumentsButton.setText("Remove");
+		tb.add(removeDocumentsButton);
+
+		JButton editDocumentsButton = new JButton(editDocumentsAction);
+		editDocumentsButton.setText("Edit");
+		tb.add(editDocumentsButton);
+		
+        tb.setRollover(true);
+		this.add(tb, BorderLayout.NORTH);
+
 	    // right-click menu for document table
 		JPopupMenu popupMenu = new JPopupMenu();
-		JMenuItem menuItemAddDocument = new JMenuItem("Add new document");
+		JMenuItem menuItemAddDocument = new JMenuItem(addDocumentAction);
 		popupMenu.add(menuItemAddDocument);
-		JMenuItem menuItemDelete = new JMenuItem("Delete selected document(s)");
+		JMenuItem menuItemDelete = new JMenuItem(removeDocumentsAction);
 		popupMenu.add(menuItemDelete);
 		JMenuItem menuItemResetTime = new JMenuItem("Set document time to 00:00:00");
 		popupMenu.add(menuItemResetTime);
 		JSeparator sep = new JSeparator();
 		popupMenu.add(sep);
-		JCheckBoxMenuItem menuItemId = new JCheckBoxMenuItem("ID", true);
+		ImageIcon checkedIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-checkbox-16.png"));
+		ImageIcon uncheckedIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-square-16.png"));
+		JMenuItem menuItemId = new JMenuItem("ID", checkedIcon);
 		popupMenu.add(menuItemId);
-		JCheckBoxMenuItem menuItemTitle = new JCheckBoxMenuItem("Title", true);
+		JMenuItem menuItemTitle = new JMenuItem("Title", checkedIcon);
 		popupMenu.add(menuItemTitle);
-		JCheckBoxMenuItem menuItemNumber = new JCheckBoxMenuItem("#", true);
+		JMenuItem menuItemNumber = new JMenuItem("#", checkedIcon);
 		popupMenu.add(menuItemNumber);
-		JCheckBoxMenuItem menuItemDate = new JCheckBoxMenuItem("Date", true);
+		JMenuItem menuItemDate = new JMenuItem("Date", checkedIcon);
 		popupMenu.add(menuItemDate);
-		JCheckBoxMenuItem menuItemTime = new JCheckBoxMenuItem("Time", true);
+		JMenuItem menuItemTime = new JMenuItem("Time", checkedIcon);
 		popupMenu.add(menuItemTime);
-		JCheckBoxMenuItem menuItemCoder = new JCheckBoxMenuItem("Coder", true);
+		JMenuItem menuItemCoder = new JMenuItem("Coder", checkedIcon);
 		popupMenu.add(menuItemCoder);
-		JCheckBoxMenuItem menuItemAuthor = new JCheckBoxMenuItem("Author", true);
+		JMenuItem menuItemAuthor = new JMenuItem("Author", checkedIcon);
 		popupMenu.add(menuItemAuthor);
-		JCheckBoxMenuItem menuItemSource = new JCheckBoxMenuItem("Source", true);
+		JMenuItem menuItemSource = new JMenuItem("Source", checkedIcon);
 		popupMenu.add(menuItemSource);
-		JCheckBoxMenuItem menuItemSection = new JCheckBoxMenuItem("Section", true);
+		JMenuItem menuItemSection = new JMenuItem("Section", checkedIcon);
 		popupMenu.add(menuItemSection);
-		JCheckBoxMenuItem menuItemType = new JCheckBoxMenuItem("Type", true);
+		JMenuItem menuItemType = new JMenuItem("Type", checkedIcon);
 		popupMenu.add(menuItemType);
-		JCheckBoxMenuItem menuItemNotes = new JCheckBoxMenuItem("Notes", true);
+		JMenuItem menuItemNotes = new JMenuItem("Notes", checkedIcon);
 		popupMenu.add(menuItemNotes);
 		documentTable.setComponentPopupMenu(popupMenu);
 		documentTable.getTableHeader().setComponentPopupMenu(popupMenu);
@@ -171,11 +152,6 @@ class DocumentPanel extends JPanel {
 		documentTable.addMouseListener(new MouseListener() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if (documentTable.getSelectedRowCount() > 0) {
-					menuItemDelete.setEnabled(true);
-				} else {
-					menuItemDelete.setEnabled(false);
-				}
 			}
 
 			@Override
@@ -202,24 +178,7 @@ class DocumentPanel extends JPanel {
 		// ActionListener with actions for right-click document menu
 		ActionListener al = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (e.getSource() == menuItemAddDocument) {
-					DocumentEditor d = new DocumentEditor();
-					if (d.getDocuments() != null) {
-						Dna.sql.addDocuments(d.getDocuments());
-						documentTableModel.reloadTableFromSQL();
-					}
-				} else if (e.getSource() == menuItemDelete) {
-					int[] selectedRows = documentTable.getSelectedRows();
-					String message = "Are you sure you want to delete " + selectedRows.length + " document(s) including all statements?";
-					int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
-					if (dialog == 0) {
-						for (int i = 0; i < selectedRows.length; i++) {
-							selectedRows[i] = documentTable.convertRowIndexToModel(selectedRows[i]);
-						}
-						documentTableModel.removeDocuments(selectedRows);
-					}
-					Dna.guiCoder.updateGUI();
-				} else if (e.getSource() == menuItemResetTime) {
+				if (e.getSource() == menuItemResetTime) {
 					int[] selectedRows = documentTable.getSelectedRows();
 					String message = "";
 					if (selectedRows.length == 1) {
@@ -234,70 +193,92 @@ class DocumentPanel extends JPanel {
 					}
 				} else {
 					if (e.getSource() == menuItemId) {
-						if (menuItemId.isSelected()) {
+						if (columnsVisible[0] == false) {
 							columnsVisible[0] = true;
+							menuItemId.setIcon(checkedIcon);
 						} else {
 							columnsVisible[0] = false;
+							menuItemId.setIcon(uncheckedIcon);
 						}
 					} else if (e.getSource() == menuItemTitle) {
-						if (menuItemTitle.isSelected()) {
+						if (columnsVisible[1] == false) {
 							columnsVisible[1] = true;
+							menuItemTitle.setIcon(checkedIcon);
 						} else {
 							columnsVisible[1] = false;
+							menuItemTitle.setIcon(uncheckedIcon);
 						}
 					} else if (e.getSource() == menuItemNumber) {
-						if (menuItemNumber.isSelected()) {
+						if (columnsVisible[2] == false) {
 							columnsVisible[2] = true;
+							menuItemNumber.setIcon(checkedIcon);
 						} else {
 							columnsVisible[2] = false;
+							menuItemNumber.setIcon(uncheckedIcon);
 						}
 					} else if (e.getSource() == menuItemDate) {
-						if (menuItemDate.isSelected()) {
+						if (columnsVisible[3] == false) {
 							columnsVisible[3] = true;
+							menuItemDate.setIcon(checkedIcon);
 						} else {
 							columnsVisible[3] = false;
+							menuItemDate.setIcon(uncheckedIcon);
 						}
 					} else if (e.getSource() == menuItemTime) {
-						if (menuItemTime.isSelected()) {
+						if (columnsVisible[4] == false) {
 							columnsVisible[4] = true;
+							menuItemTime.setIcon(checkedIcon);
 						} else {
 							columnsVisible[4] = false;
+							menuItemTime.setIcon(uncheckedIcon);
 						}
 					} else if (e.getSource() == menuItemCoder) {
-						if (menuItemCoder.isSelected()) {
+						if (columnsVisible[5] == false) {
 							columnsVisible[5] = true;
+							menuItemCoder.setIcon(checkedIcon);
 						} else {
 							columnsVisible[5] = false;
+							menuItemCoder.setIcon(uncheckedIcon);
 						}
 					} else if (e.getSource() == menuItemAuthor) {
-						if (menuItemAuthor.isSelected()) {
+						if (columnsVisible[6] == false) {
 							columnsVisible[6] = true;
+							menuItemAuthor.setIcon(checkedIcon);
 						} else {
 							columnsVisible[6] = false;
+							menuItemAuthor.setIcon(uncheckedIcon);
 						}
 					} else if (e.getSource() == menuItemSource) {
-						if (menuItemSource.isSelected()) {
+						if (columnsVisible[7] == false) {
 							columnsVisible[7] = true;
+							menuItemSource.setIcon(checkedIcon);
 						} else {
 							columnsVisible[7] = false;
+							menuItemSource.setIcon(uncheckedIcon);
 						}
 					} else if (e.getSource() == menuItemSection) {
-						if (menuItemSection.isSelected()) {
+						if (columnsVisible[8] == false) {
 							columnsVisible[8] = true;
+							menuItemSection.setIcon(checkedIcon);
 						} else {
 							columnsVisible[8] = false;
+							menuItemSection.setIcon(uncheckedIcon);
 						}
 					} else if (e.getSource() == menuItemType) {
-						if (menuItemType.isSelected()) {
+						if (columnsVisible[9] == false) {
 							columnsVisible[9] = true;
+							menuItemType.setIcon(checkedIcon);
 						} else {
 							columnsVisible[9] = false;
+							menuItemType.setIcon(uncheckedIcon);
 						}
 					} else if (e.getSource() == menuItemNotes) {
-						if (menuItemNotes.isSelected()) {
+						if (columnsVisible[10] == false) {
 							columnsVisible[10] = true;
+							menuItemNotes.setIcon(checkedIcon);
 						} else {
 							columnsVisible[10] = false;
+							menuItemNotes.setIcon(uncheckedIcon);
 						}
 					}
 					
@@ -316,8 +297,6 @@ class DocumentPanel extends JPanel {
 
 		};
 		
-		menuItemAddDocument.addActionListener(al);
-		menuItemDelete.addActionListener(al);
 		menuItemResetTime.addActionListener(al);
 		menuItemId.addActionListener(al);
 		menuItemTitle.addActionListener(al);
@@ -331,7 +310,6 @@ class DocumentPanel extends JPanel {
 		menuItemType.addActionListener(al);
 		menuItemNotes.addActionListener(al);
 		
-
 		documentTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
 				if (e.getValueIsAdjusting()) {
@@ -339,6 +317,13 @@ class DocumentPanel extends JPanel {
 				}
 				
 				int rowCount = documentTable.getSelectedRowCount();
+				if (rowCount > 0) {
+					removeDocumentsAction.setEnabled(true);
+					editDocumentsAction.setEnabled(true);
+				} else {
+					removeDocumentsAction.setEnabled(false);
+					editDocumentsAction.setEnabled(false);
+				}
 				if (rowCount == 0 || rowCount > 1) {
 					textPanel.setDocumentText("");
 				} else if (rowCount == 1) {
@@ -390,6 +375,63 @@ class DocumentPanel extends JPanel {
 		// text panel
 		textPanel = new TextPanel();
 		this.add(textPanel, BorderLayout.SOUTH);
+	}
+
+	// add new document action
+	class AddDocumentAction extends AbstractAction {
+		public AddDocumentAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			DocumentEditor de = new DocumentEditor();
+			if (de.getDocuments() != null) {
+				Dna.sql.addDocuments(de.getDocuments());
+				documentTableModel.reloadTableFromSQL();
+			}
+		}
+	}
+
+	// remove documents action
+	class RemoveDocumentsAction extends AbstractAction {
+		public RemoveDocumentsAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			int[] selectedRows = documentTable.getSelectedRows();
+			String message = "Are you sure you want to delete " + selectedRows.length + " document(s) including all statements?";
+			int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+			if (dialog == 0) {
+				for (int i = 0; i < selectedRows.length; i++) {
+					selectedRows[i] = documentTable.convertRowIndexToModel(selectedRows[i]);
+				}
+				documentTableModel.removeDocuments(selectedRows);
+			}
+			Dna.guiCoder.updateGUI();
+		}
+	}
+
+	// edit documents action
+	class EditDocumentsAction extends AbstractAction {
+		public EditDocumentsAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			int[] selectedRows = documentTable.getSelectedRows();
+			for (int i = 0; i < selectedRows.length; i++) {
+				selectedRows[i] = documentTableModel.getIdByModelRow(documentTable.convertRowIndexToModel(selectedRows[i]));
+			}
+			DocumentEditor de = new DocumentEditor(selectedRows); // TODO: implement document editing infrastructure
+		}
+	}
+
+	public void enableActions(boolean enabled) {
+		addDocumentAction.setEnabled(enabled);
 	}
 	
 	/*

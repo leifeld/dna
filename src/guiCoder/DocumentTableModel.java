@@ -35,7 +35,7 @@ public class DocumentTableModel extends AbstractTableModel {
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		if (rowIndex > rows.size() - 1) {
+		if (rows.size() == 0 || rowIndex > rows.size() - 1) {
 			return null;
 		}
 		switch(columnIndex) {
@@ -113,8 +113,12 @@ public class DocumentTableModel extends AbstractTableModel {
 	
 	public void reloadTableFromSQL() {
     	rows.clear();
-		worker = new JDBCWorker();
-        worker.execute();
+    	if (Dna.sql != null) {
+    		worker = new JDBCWorker();
+            worker.execute();
+    	} else {
+            fireTableDataChanged();
+    	}
 	}
 
 	public void removeDocuments(int[] rows) {

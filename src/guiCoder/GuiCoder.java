@@ -3,7 +3,7 @@ package guiCoder;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
@@ -12,7 +12,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import javax.swing.Icon;
+
+import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -37,30 +38,10 @@ import sql.Sql;
 @SuppressWarnings("serial")
 public class GuiCoder extends JFrame {
 	Container c;
+	DocumentPanel documentPanel;
 	DocumentTableModel documentTableModel;
-	
-	public void updateGUI() {
-		documentTableModel.reloadTableFromSQL();
-
-		// database update listener
-		/*
-		if (Dna.sql.getConnectionProfile().getType().equals("sqlite")) {
-			((SQLiteConnection) Dna.sql.sqliteConnection).addCommitListener(new SQLiteCommitListener() {
-
-				@Override
-				public void onCommit() {
-					documentTableModel.reloadTableFromSQL();
-				}
-
-				@Override
-				public void onRollback() {
-					// nothing to do
-				}
-				
-			});
-		}
-		*/
-	}
+	CloseDatabaseAction closeDatabaseAction;
+	SaveProfileAction saveProfileAction;
 	
 	public GuiCoder() {
 		try {
@@ -92,10 +73,8 @@ public class GuiCoder extends JFrame {
 		JPanel framePanel = new JPanel(new BorderLayout());
 		
 		documentTableModel = new DocumentTableModel();
-		DocumentPanel documentPanel = new DocumentPanel(documentTableModel);
+		documentPanel = new DocumentPanel(documentTableModel);
 		framePanel.add(documentPanel, BorderLayout.CENTER);
-		
-		//c.add(documentTableScroller);
 		
 		// menu bar
 		JMenuBar menu = new JMenuBar();
@@ -110,223 +89,50 @@ public class GuiCoder extends JFrame {
 		menu.add(settingsMenu);
 
 		// database menu: open a database
-		Icon openDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-database-16.png"));
-		JMenuItem openDatabaseItem = new JMenuItem("Open DNA database", openDatabaseIcon);
+		ImageIcon openDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-database-16.png"));
+		OpenDatabaseAction openDatabaseAction = new OpenDatabaseAction("Open DNA database", openDatabaseIcon, "Open a dialog window to establish a connection to a remote or file-based database", KeyEvent.VK_O);
+		JMenuItem openDatabaseItem = new JMenuItem(openDatabaseAction);
 		databaseMenu.add(openDatabaseItem);
-		openDatabaseItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				NewDatabaseDialog n = new NewDatabaseDialog(true);
-				ConnectionProfile cp = n.getConnectionProfile();
-				if (cp != null) {
-					//setSql(new Sql(cp));
-					Dna.sql = new Sql(cp);
-					updateGUI();
-				} // user must have clicked cancel; do nothing
-			}
-		});
+
+		// database menu: close database
+		ImageIcon closeDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-x-16.png"));
+		closeDatabaseAction = new CloseDatabaseAction("Close database", closeDatabaseIcon, "Close the connection to the current database and reset graphical user interface", KeyEvent.VK_X);
+		JMenuItem closeDatabaseItem = new JMenuItem(closeDatabaseAction);
+		databaseMenu.add(closeDatabaseItem);
+		closeDatabaseAction.setEnabled(false);
 
 		// database menu: create a new database
-		Icon newDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-plus-16.png"));
-		JMenuItem newDatabaseItem = new JMenuItem("Create new DNA database", newDatabaseIcon);
-		databaseMenu.add(newDatabaseItem);
-		newDatabaseItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				NewDatabaseDialog n = new NewDatabaseDialog(false);
-				ConnectionProfile cp = n.getConnectionProfile();
-				if (cp != null) {
-					Dna.sql = new Sql(cp);
-					updateGUI();
-				}
-			}
-		});
-		
+		ImageIcon createDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-plus-16.png"));
+		CreateDatabaseAction createDatabaseAction = new CreateDatabaseAction("Create new DNA database", createDatabaseIcon, "Open a dialog window to create a new remote or file-based database", KeyEvent.VK_C);
+		JMenuItem createDatabaseItem = new JMenuItem(createDatabaseAction);
+		databaseMenu.add(createDatabaseItem);
+
 		// database menu: open a connection profile
-		Icon openProfileIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-link-16.png"));
-		JMenuItem openProfileItem = new JMenuItem("Open connection profile", openProfileIcon);
+		ImageIcon openProfileIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-link-16.png"));
+		OpenProfileAction openProfileAction = new OpenProfileAction("Open connection profile", openProfileIcon, "Open a connection profile, which acts as a bookmark to a database", KeyEvent.VK_P);
+		JMenuItem openProfileItem = new JMenuItem(openProfileAction);
 		databaseMenu.add(openProfileItem);
-		openProfileItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				String filename = null;
-				boolean validFileInput = false;
-				while (!validFileInput) {
-					JFileChooser fc = new JFileChooser();
-					fc.setFileFilter(new FileFilter() {
-						public boolean accept(File f) {
-							return f.getName().toLowerCase().endsWith(".dnc") || f.isDirectory();
-						}
-						public String getDescription() {
-							return "DNA connection profile (*.dnc)";
-						}
-					});
-					int returnVal = fc.showOpenDialog(c);
-					
-					if (returnVal == JFileChooser.APPROVE_OPTION) {
-						File file = fc.getSelectedFile();
-						if (file.exists()) {
-							filename = new String(file.getPath());
-							if (!filename.endsWith(".dnc")) {
-								filename = filename + ".dnc";
-							}
-							validFileInput = true; // file choice accepted
-						} else {
-							JOptionPane.showMessageDialog(c, "The file name you entered does not exist. Please choose a new file.");
-						}
-					} else { // cancel button; mark as valid file input, but reset file name
-						filename = null;
-						validFileInput = true;
-					}
-				}
-				
-				if (filename != null) { // if file has been chosen successfully, go on with authentication
-					boolean validPasswordInput = false;
-					while (!validPasswordInput) {
-						// ask user for password (for the user in the connection profile) to decrypt the profile
-						CoderPasswordCheckDialog d = new CoderPasswordCheckDialog();
-						String key = d.getPassword();
-						
-						// decrypt connection profile, create SQL connection, and set as default SQL connection
-						if (key == null) {
-							validPasswordInput = true; // user must have pressed cancel; quit the while-loop
-						} else {
-							if (!key.equals("")) {
-								ConnectionProfile cp = null;
-								try {
-									cp = readConnectionProfile(filename, key);
-								} catch (EncryptionOperationNotPossibleException e2) {
-									cp = null;
-								}
-								if (cp != null) {
-									Sql sqlTemp = new Sql(cp);
-									boolean authenticated = sqlTemp.authenticate(key);
-									if (authenticated == true) {
-										validPasswordInput = true; // authenticated; quit the while-loop
-										Dna.sql = sqlTemp;
-										updateGUI();
-									} else {
-										cp = null;
-									}
-								}
-								if (cp == null) {
-									JOptionPane.showMessageDialog(null,
-						        			"Database credentials could not be decrypted.\n"
-						        					+ "Did you enter the right password?",
-										    "Check failed",
-										    JOptionPane.ERROR_MESSAGE);
-								}
-							} else {
-								JOptionPane.showMessageDialog(c,
-					        			"Password check failed. Zero-length passwords are not permitted.",
-									    "Check failed",
-									    JOptionPane.ERROR_MESSAGE);
-							}
-						}
-					}
-				}
-			}
-		});
 
-		// database menu: save connection profile
-		Icon saveProfileIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-download-16.png"));
-		JMenuItem saveProfileItem = new JMenuItem("Save connection profile", saveProfileIcon);
+		// database menu: save a connection profile
+		ImageIcon saveProfileIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-download-16.png"));
+		saveProfileAction = new SaveProfileAction("Save connection profile", saveProfileIcon, "Save a connection profile, which acts as a bookmark to a database", KeyEvent.VK_S);
+		JMenuItem saveProfileItem = new JMenuItem(saveProfileAction);
 		databaseMenu.add(saveProfileItem);
-		saveProfileItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				String filename = null;
-				File file = null;
-				boolean validFileInput = false;
-				while (!validFileInput) {
-					JFileChooser fc;
-					if (file == null) {
-						fc = new JFileChooser();
-					} else {
-						fc = new JFileChooser(file);
-					}
-					fc.setDialogTitle("Save connection profile...");
-					fc.setApproveButtonText("Save");
-					fc.setFileFilter(new FileFilter() {
-						public boolean accept(File f) {
-							return f.getName().toLowerCase().endsWith(".dnc") || f.isDirectory();
-						}
-						public String getDescription() {
-							return "DNA connection profile (*.dnc)";
-						}
-					});
-					int returnVal = fc.showOpenDialog(c);
-					
-					if (returnVal == JFileChooser.APPROVE_OPTION) {
-						file = fc.getSelectedFile();
-						filename = new String(file.getPath());
-						if (!filename.endsWith(".dnc")) {
-							filename = filename + ".dnc";
-						}
-						file = new File(filename);
-						if (!file.exists()) {
-							validFileInput = true; // file approved
-						} else {
-							file = null;
-							JOptionPane.showMessageDialog(null, "The file name you entered already exists. Please choose a new file.");
-						}
-					} else {
-						validFileInput = true; // user must have clicked cancel in file chooser
-					}
-				}
-				// after getting a valid file, authenticate coder and write to file
-				if (file != null) {
-					boolean validPasswordInput = false;
-					while (!validPasswordInput) {
-						CoderPasswordCheckDialog d = new CoderPasswordCheckDialog(Dna.sql, false);
-						String key = d.getPassword();
-						if (key == null) { // user must have pressed cancel
-							validPasswordInput = true;
-						} else {
-							boolean authenticated = Dna.sql.authenticate(key);
-							if (authenticated == true) {
-								// write the connection profile to disk, with an encrypted version of the password
-								writeConnectionProfile(filename, Dna.sql.getConnectionProfile(), key);
-								validPasswordInput = true; // quit the while-loop after successful export
-								JOptionPane.showMessageDialog(null,
-										"The profile was saved as:\n" + new File(filename).getAbsolutePath(),
-										"Success",
-									    JOptionPane.PLAIN_MESSAGE);
-							} else {
-					        	JOptionPane.showMessageDialog(null,
-					        			"Coder password could not be verified. Try again.",
-									    "Check failed",
-									    JOptionPane.ERROR_MESSAGE);
-							}
-						}
-					}
-				}
-			}
-		});
+		saveProfileAction.setEnabled(false);
 
-		/*
-		JToolBar tb = new JToolBar("DNA toolbar");
-		
-		// DNA toolbar button: refresh GUI from database
-		Icon refreshIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-refresh-16.png"));
-		JButton refreshButton = new JButton("Refresh", refreshIcon);
-		refreshButton.setToolTipText( "Refresh GUI" );
-		refreshButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				updateGUI();
-			}
-		});
-		tb.add(refreshButton);
-		
-        tb.setRollover(true);
-		//framePanel.add(tb, BorderLayout.NORTH);
-		*/
-		
+		documentMenu.add(documentPanel.addDocumentItem);
+		documentMenu.add(documentPanel.removeDocumentsItem);
+		documentMenu.add(documentPanel.editDocumentsItem);
+
 		c.add(framePanel);
 
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
+	}
+
+	public void updateGUI() {
+		documentTableModel.reloadTableFromSQL();
 	}
 	
 	/**
@@ -385,7 +191,246 @@ public class GuiCoder extends JFrame {
 			e.printStackTrace();
 		}
 	}
-	
+
+	// open database action
+	class OpenDatabaseAction extends AbstractAction {
+		public OpenDatabaseAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			NewDatabaseDialog n = new NewDatabaseDialog(true);
+			ConnectionProfile cp = n.getConnectionProfile();
+			if (cp != null) {
+				Dna.sql = new Sql(cp);
+				updateGUI();
+				documentPanel.enableActions(true);
+				if (closeDatabaseAction != null) {
+					closeDatabaseAction.setEnabled(true);
+				}
+				if (saveProfileAction != null) {
+					saveProfileAction.setEnabled(true);
+				}
+			}
+		}
+	}
+
+	// close database action
+	class CloseDatabaseAction extends AbstractAction {
+		public CloseDatabaseAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			Dna.sql = null;
+			documentPanel.enableActions(false);
+			if (closeDatabaseAction != null) {
+				closeDatabaseAction.setEnabled(false);
+			}
+			if (saveProfileAction != null) {
+				saveProfileAction.setEnabled(false);
+			}
+			updateGUI();
+		}
+	}
+
+	// create new database action
+	class CreateDatabaseAction extends AbstractAction {
+		public CreateDatabaseAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			NewDatabaseDialog n = new NewDatabaseDialog(false);
+			ConnectionProfile cp = n.getConnectionProfile();
+			if (cp != null) {
+				Dna.sql = new Sql(cp);
+				updateGUI();
+				documentPanel.enableActions(true);
+				if (closeDatabaseAction != null) {
+					closeDatabaseAction.setEnabled(true);
+				}
+				if (saveProfileAction != null) {
+					saveProfileAction.setEnabled(true);
+				}
+			}
+		}
+	}
+
+	// open connection profile action
+	class OpenProfileAction extends AbstractAction {
+		public OpenProfileAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			String filename = null;
+			boolean validFileInput = false;
+			while (!validFileInput) {
+				JFileChooser fc = new JFileChooser();
+				fc.setFileFilter(new FileFilter() {
+					public boolean accept(File f) {
+						return f.getName().toLowerCase().endsWith(".dnc") || f.isDirectory();
+					}
+					public String getDescription() {
+						return "DNA connection profile (*.dnc)";
+					}
+				});
+				int returnVal = fc.showOpenDialog(c);
+				
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File file = fc.getSelectedFile();
+					if (file.exists()) {
+						filename = new String(file.getPath());
+						if (!filename.endsWith(".dnc")) {
+							filename = filename + ".dnc";
+						}
+						validFileInput = true; // file choice accepted
+					} else {
+						JOptionPane.showMessageDialog(c, "The file name you entered does not exist. Please choose a new file.");
+					}
+				} else { // cancel button; mark as valid file input, but reset file name
+					filename = null;
+					validFileInput = true;
+				}
+			}
+			
+			if (filename != null) { // if file has been chosen successfully, go on with authentication
+				boolean validPasswordInput = false;
+				while (!validPasswordInput) {
+					// ask user for password (for the user in the connection profile) to decrypt the profile
+					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog();
+					String key = d.getPassword();
+					
+					// decrypt connection profile, create SQL connection, and set as default SQL connection
+					if (key == null) {
+						validPasswordInput = true; // user must have pressed cancel; quit the while-loop
+					} else {
+						if (!key.equals("")) {
+							ConnectionProfile cp = null;
+							try {
+								cp = readConnectionProfile(filename, key);
+							} catch (EncryptionOperationNotPossibleException e2) {
+								cp = null;
+							}
+							if (cp != null) {
+								Sql sqlTemp = new Sql(cp);
+								boolean authenticated = sqlTemp.authenticate(key);
+								if (authenticated == true) {
+									validPasswordInput = true; // authenticated; quit the while-loop
+									Dna.sql = sqlTemp;
+									updateGUI();
+								} else {
+									cp = null;
+								}
+							}
+							if (cp == null) {
+								JOptionPane.showMessageDialog(null,
+					        			"Database credentials could not be decrypted.\n"
+					        					+ "Did you enter the right password?",
+									    "Check failed",
+									    JOptionPane.ERROR_MESSAGE);
+							}
+						} else {
+							JOptionPane.showMessageDialog(c,
+				        			"Password check failed. Zero-length passwords are not permitted.",
+								    "Check failed",
+								    JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}
+			}
+			documentPanel.enableActions(true);
+			if (closeDatabaseAction != null) {
+				closeDatabaseAction.setEnabled(true);
+			}
+			if (saveProfileAction != null) {
+				saveProfileAction.setEnabled(true);
+			}
+		}
+	}
+
+	// save connection profile action
+	class SaveProfileAction extends AbstractAction {
+		public SaveProfileAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			String filename = null;
+			File file = null;
+			boolean validFileInput = false;
+			while (!validFileInput) {
+				JFileChooser fc;
+				if (file == null) {
+					fc = new JFileChooser();
+				} else {
+					fc = new JFileChooser(file);
+				}
+				fc.setDialogTitle("Save connection profile...");
+				fc.setApproveButtonText("Save");
+				fc.setFileFilter(new FileFilter() {
+					public boolean accept(File f) {
+						return f.getName().toLowerCase().endsWith(".dnc") || f.isDirectory();
+					}
+					public String getDescription() {
+						return "DNA connection profile (*.dnc)";
+					}
+				});
+				int returnVal = fc.showOpenDialog(c);
+				
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					file = fc.getSelectedFile();
+					filename = new String(file.getPath());
+					if (!filename.endsWith(".dnc")) {
+						filename = filename + ".dnc";
+					}
+					file = new File(filename);
+					if (!file.exists()) {
+						validFileInput = true; // file approved
+					} else {
+						file = null;
+						JOptionPane.showMessageDialog(null, "The file name you entered already exists. Please choose a new file.");
+					}
+				} else {
+					validFileInput = true; // user must have clicked cancel in file chooser
+				}
+			}
+			// after getting a valid file, authenticate coder and write to file
+			if (file != null) {
+				boolean validPasswordInput = false;
+				while (!validPasswordInput) {
+					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog(Dna.sql, false);
+					String key = d.getPassword();
+					if (key == null) { // user must have pressed cancel
+						validPasswordInput = true;
+					} else {
+						boolean authenticated = Dna.sql.authenticate(key);
+						if (authenticated == true) {
+							// write the connection profile to disk, with an encrypted version of the password
+							writeConnectionProfile(filename, Dna.sql.getConnectionProfile(), key);
+							validPasswordInput = true; // quit the while-loop after successful export
+							JOptionPane.showMessageDialog(null,
+									"The profile was saved as:\n" + new File(filename).getAbsolutePath(),
+									"Success",
+								    JOptionPane.PLAIN_MESSAGE);
+						} else {
+				        	JOptionPane.showMessageDialog(null,
+				        			"Coder password could not be verified. Try again.",
+								    "Check failed",
+								    JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	/*
 	public class CoderTableCellEditor extends AbstractCellEditor implements TableCellEditor {
 
