@@ -1,12 +1,12 @@
 package guiCoder;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 public class TableDocument {
 	int id, frequency;
 	Coder coder;
 	String title, author, source, section, type, notes;
-	Date date;
+	LocalDateTime dateTime;
 
 	public int getId() {
 		return id;
@@ -80,12 +80,12 @@ public class TableDocument {
 		this.notes = notes;
 	}
 
-	public Date getDate() {
-		return date;
+	public LocalDateTime getDateTime() {
+		return dateTime;
 	}
 
-	public void setDate(Date date) {
-		this.date = date;
+	public void setDateTime(LocalDateTime dateTime) {
+		this.dateTime = dateTime;
 	}
 
 	public TableDocument() {
@@ -93,7 +93,7 @@ public class TableDocument {
 	}
 
 	TableDocument(int id, String title, int frequency, Coder coder, String author, String source, String section,
-			String type, String notes, Date date) {
+			String type, String notes, LocalDateTime dateTime) {
 		this.id = id;
 		this.frequency = frequency;
 		this.coder = coder;
@@ -103,6 +103,6 @@ public class TableDocument {
 		this.section = section;
 		this.type = type;
 		this.notes = notes;
-		this.date = date;
+		this.dateTime = dateTime;
 	}
 }

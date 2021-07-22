@@ -1,17 +1,17 @@
 package dna;
 
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 
 public class Document {
 	int id, coder;
 	String title, text, author, source, section, documentType, notes;
-	Date date;
+	LocalDateTime dateTime;
 	ArrayList<Statement> statements;
 	
 	public Document(int id, int coder, String title, String text, String author, String source, String section,
-			String documentType, String notes, Date date, ArrayList<Statement> statements) {
+			String documentType, String notes, LocalDateTime dateTime, ArrayList<Statement> statements) {
 		this.id = id;
 		this.coder = coder;
 		this.title = title;
@@ -21,7 +21,7 @@ public class Document {
 		this.section = section;
 		this.documentType = documentType;
 		this.notes = notes;
-		this.date = date;
+		this.dateTime = dateTime;
 		this.statements = statements;
 	}
 	
@@ -97,12 +97,12 @@ public class Document {
 		this.notes = notes;
 	}
 	
-	public Date getDate() {
-		return date;
+	public LocalDateTime getDateTime() {
+		return dateTime;
 	}
 	
-	void setDate(Date date) {
-		this.date = date;
+	void setDate(LocalDateTime dateTime) {
+		this.dateTime = dateTime;
 	}
 	
 	public ArrayList<Statement> getStatements() {

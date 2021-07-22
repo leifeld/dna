@@ -117,8 +117,8 @@ class DocumentPanel extends JPanel {
 		popupMenu.add(menuItemAddDocument);
 		JMenuItem menuItemDelete = new JMenuItem(removeDocumentsAction);
 		popupMenu.add(menuItemDelete);
-		JMenuItem menuItemResetTime = new JMenuItem("Set document time to 00:00:00");
-		popupMenu.add(menuItemResetTime);
+		JMenuItem menuItemEdit = new JMenuItem(editDocumentsAction);
+		popupMenu.add(menuItemEdit);
 		JSeparator sep = new JSeparator();
 		popupMenu.add(sep);
 		ImageIcon checkedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-checkbox.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
@@ -149,156 +149,111 @@ class DocumentPanel extends JPanel {
 		documentTable.getTableHeader().setComponentPopupMenu(popupMenu);
 		documentTableScroller.setComponentPopupMenu(popupMenu);
 		
-		// disable document right-click menu items if no document was selected
-		documentTable.addMouseListener(new MouseListener() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				mouseClicked(e);
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				mouseClicked(e);
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				mouseClicked(e);
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				mouseClicked(e);
-			}
-		});
-		
 		// ActionListener with actions for right-click document menu
 		ActionListener al = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (e.getSource() == menuItemResetTime) {
-					int[] selectedRows = documentTable.getSelectedRows();
-					String message = "";
-					if (selectedRows.length == 1) {
-						message = "Are you sure you want to reset the time stamp of the selected document?";
+				if (e.getSource() == menuItemId) {
+					if (columnsVisible[0] == false) {
+						columnsVisible[0] = true;
+						menuItemId.setIcon(checkedIcon);
 					} else {
-						message = "Are you sure you want to reset the time stamp of these " + selectedRows.length + " documents?";
+						columnsVisible[0] = false;
+						menuItemId.setIcon(uncheckedIcon);
 					}
-					int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
-					if (dialog == 0) {
-						//TODO: create ChangeMultipleDocumentPropertiesEvent and hand over to event stack
-						//Dna.dna.resetTimeOfDocuments(selectedRows);
+				} else if (e.getSource() == menuItemTitle) {
+					if (columnsVisible[1] == false) {
+						columnsVisible[1] = true;
+						menuItemTitle.setIcon(checkedIcon);
+					} else {
+						columnsVisible[1] = false;
+						menuItemTitle.setIcon(uncheckedIcon);
 					}
-				} else {
-					if (e.getSource() == menuItemId) {
-						if (columnsVisible[0] == false) {
-							columnsVisible[0] = true;
-							menuItemId.setIcon(checkedIcon);
-						} else {
-							columnsVisible[0] = false;
-							menuItemId.setIcon(uncheckedIcon);
-						}
-					} else if (e.getSource() == menuItemTitle) {
-						if (columnsVisible[1] == false) {
-							columnsVisible[1] = true;
-							menuItemTitle.setIcon(checkedIcon);
-						} else {
-							columnsVisible[1] = false;
-							menuItemTitle.setIcon(uncheckedIcon);
-						}
-					} else if (e.getSource() == menuItemNumber) {
-						if (columnsVisible[2] == false) {
-							columnsVisible[2] = true;
-							menuItemNumber.setIcon(checkedIcon);
-						} else {
-							columnsVisible[2] = false;
-							menuItemNumber.setIcon(uncheckedIcon);
-						}
-					} else if (e.getSource() == menuItemDate) {
-						if (columnsVisible[3] == false) {
-							columnsVisible[3] = true;
-							menuItemDate.setIcon(checkedIcon);
-						} else {
-							columnsVisible[3] = false;
-							menuItemDate.setIcon(uncheckedIcon);
-						}
-					} else if (e.getSource() == menuItemTime) {
-						if (columnsVisible[4] == false) {
-							columnsVisible[4] = true;
-							menuItemTime.setIcon(checkedIcon);
-						} else {
-							columnsVisible[4] = false;
-							menuItemTime.setIcon(uncheckedIcon);
-						}
-					} else if (e.getSource() == menuItemCoder) {
-						if (columnsVisible[5] == false) {
-							columnsVisible[5] = true;
-							menuItemCoder.setIcon(checkedIcon);
-						} else {
-							columnsVisible[5] = false;
-							menuItemCoder.setIcon(uncheckedIcon);
-						}
-					} else if (e.getSource() == menuItemAuthor) {
-						if (columnsVisible[6] == false) {
-							columnsVisible[6] = true;
-							menuItemAuthor.setIcon(checkedIcon);
-						} else {
-							columnsVisible[6] = false;
-							menuItemAuthor.setIcon(uncheckedIcon);
-						}
-					} else if (e.getSource() == menuItemSource) {
-						if (columnsVisible[7] == false) {
-							columnsVisible[7] = true;
-							menuItemSource.setIcon(checkedIcon);
-						} else {
-							columnsVisible[7] = false;
-							menuItemSource.setIcon(uncheckedIcon);
-						}
-					} else if (e.getSource() == menuItemSection) {
-						if (columnsVisible[8] == false) {
-							columnsVisible[8] = true;
-							menuItemSection.setIcon(checkedIcon);
-						} else {
-							columnsVisible[8] = false;
-							menuItemSection.setIcon(uncheckedIcon);
-						}
-					} else if (e.getSource() == menuItemType) {
-						if (columnsVisible[9] == false) {
-							columnsVisible[9] = true;
-							menuItemType.setIcon(checkedIcon);
-						} else {
-							columnsVisible[9] = false;
-							menuItemType.setIcon(uncheckedIcon);
-						}
-					} else if (e.getSource() == menuItemNotes) {
-						if (columnsVisible[10] == false) {
-							columnsVisible[10] = true;
-							menuItemNotes.setIcon(checkedIcon);
-						} else {
-							columnsVisible[10] = false;
-							menuItemNotes.setIcon(uncheckedIcon);
-						}
+				} else if (e.getSource() == menuItemNumber) {
+					if (columnsVisible[2] == false) {
+						columnsVisible[2] = true;
+						menuItemNumber.setIcon(checkedIcon);
+					} else {
+						columnsVisible[2] = false;
+						menuItemNumber.setIcon(uncheckedIcon);
 					}
-					
-					while (documentTable.getColumnModel().getColumnCount() > 0) {
-						documentTable.getColumnModel().removeColumn(documentTable.getColumnModel().getColumn(0));
-				    }
-					
-				    for (int i = 0; i < columnsVisible.length; i++) {
-				    	if (columnsVisible[i] == true) {
-				    		documentTable.getColumnModel().addColumn(column[i]);
-				    	}
-				    }
+				} else if (e.getSource() == menuItemDate) {
+					if (columnsVisible[3] == false) {
+						columnsVisible[3] = true;
+						menuItemDate.setIcon(checkedIcon);
+					} else {
+						columnsVisible[3] = false;
+						menuItemDate.setIcon(uncheckedIcon);
+					}
+				} else if (e.getSource() == menuItemTime) {
+					if (columnsVisible[4] == false) {
+						columnsVisible[4] = true;
+						menuItemTime.setIcon(checkedIcon);
+					} else {
+						columnsVisible[4] = false;
+						menuItemTime.setIcon(uncheckedIcon);
+					}
+				} else if (e.getSource() == menuItemCoder) {
+					if (columnsVisible[5] == false) {
+						columnsVisible[5] = true;
+						menuItemCoder.setIcon(checkedIcon);
+					} else {
+						columnsVisible[5] = false;
+						menuItemCoder.setIcon(uncheckedIcon);
+					}
+				} else if (e.getSource() == menuItemAuthor) {
+					if (columnsVisible[6] == false) {
+						columnsVisible[6] = true;
+						menuItemAuthor.setIcon(checkedIcon);
+					} else {
+						columnsVisible[6] = false;
+						menuItemAuthor.setIcon(uncheckedIcon);
+					}
+				} else if (e.getSource() == menuItemSource) {
+					if (columnsVisible[7] == false) {
+						columnsVisible[7] = true;
+						menuItemSource.setIcon(checkedIcon);
+					} else {
+						columnsVisible[7] = false;
+						menuItemSource.setIcon(uncheckedIcon);
+					}
+				} else if (e.getSource() == menuItemSection) {
+					if (columnsVisible[8] == false) {
+						columnsVisible[8] = true;
+						menuItemSection.setIcon(checkedIcon);
+					} else {
+						columnsVisible[8] = false;
+						menuItemSection.setIcon(uncheckedIcon);
+					}
+				} else if (e.getSource() == menuItemType) {
+					if (columnsVisible[9] == false) {
+						columnsVisible[9] = true;
+						menuItemType.setIcon(checkedIcon);
+					} else {
+						columnsVisible[9] = false;
+						menuItemType.setIcon(uncheckedIcon);
+					}
+				} else if (e.getSource() == menuItemNotes) {
+					if (columnsVisible[10] == false) {
+						columnsVisible[10] = true;
+						menuItemNotes.setIcon(checkedIcon);
+					} else {
+						columnsVisible[10] = false;
+						menuItemNotes.setIcon(uncheckedIcon);
+					}
+				}
+
+				while (documentTable.getColumnModel().getColumnCount() > 0) {
+					documentTable.getColumnModel().removeColumn(documentTable.getColumnModel().getColumn(0));
+				}
+
+				for (int i = 0; i < columnsVisible.length; i++) {
+					if (columnsVisible[i] == true) {
+						documentTable.getColumnModel().addColumn(column[i]);
+					}
 				}
 			}
-			
-
 		};
-		
-		menuItemResetTime.addActionListener(al);
+
 		menuItemId.addActionListener(al);
 		menuItemTitle.addActionListener(al);
 		menuItemNumber.addActionListener(al);
@@ -427,7 +382,8 @@ class DocumentPanel extends JPanel {
 			for (int i = 0; i < selectedRows.length; i++) {
 				selectedRows[i] = documentTableModel.getIdByModelRow(documentTable.convertRowIndexToModel(selectedRows[i]));
 			}
-			DocumentEditor de = new DocumentEditor(selectedRows); // TODO: implement document editing infrastructure
+			new DocumentEditor(selectedRows);
+			Dna.guiCoder.updateGUI();
 		}
 	}
 

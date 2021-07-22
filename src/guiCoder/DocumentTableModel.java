@@ -4,9 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.swing.SwingWorker;
@@ -18,6 +19,8 @@ import dna.Dna;
 public class DocumentTableModel extends AbstractTableModel {
 	private List<TableDocument> rows;
 	JDBCWorker worker;
+	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MM yyyy");
+	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 	
 	public DocumentTableModel() {
 		rows = new ArrayList<>();
@@ -42,8 +45,8 @@ public class DocumentTableModel extends AbstractTableModel {
 		case 0: return rows.get(rowIndex).getId();
 		case 1: return rows.get(rowIndex).getTitle();
 		case 2: return rows.get(rowIndex).getFrequency();
-		case 3: return rows.get(rowIndex).getDate();
-		case 4: return new SimpleDateFormat("HH:mm:ss").format(rows.get(rowIndex).getDate());
+		case 3: return rows.get(rowIndex).getDateTime().format(dateFormatter);
+		case 4: return rows.get(rowIndex).getDateTime().format(timeFormatter);
 		case 5: return rows.get(rowIndex).getCoder();
 		case 6: return rows.get(rowIndex).getAuthor();
 		case 7: return rows.get(rowIndex).getSource();
@@ -78,7 +81,7 @@ public class DocumentTableModel extends AbstractTableModel {
 			case 0: return Integer.class; // ID
 			case 1: return String.class;  // Title
 			case 2: return Integer.class; // #
-			case 3: return Date.class;    // Date
+			case 3: return String.class;  // Date
 			case 4: return String.class;  // Time
 			case 5: return Coder.class;   // Coder
 			case 6: return String.class;  // Author
@@ -138,7 +141,21 @@ public class DocumentTableModel extends AbstractTableModel {
 					PreparedStatement tableStatement = conn.prepareStatement("SELECT D.ID, Title, (SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = D.ID) AS Frequency, C.ID AS CoderId, Name AS CoderName, Red, Green, Blue, Date, Author, Source, Section, Type, Notes FROM CODERS C INNER JOIN DOCUMENTS D ON D.Coder = C.ID;")) {
             	ResultSet rs = tableStatement.executeQuery();
                 while (rs.next()) {
-                	TableDocument r = new TableDocument(rs.getInt("ID"), rs.getString("Title"), rs.getInt("Frequency"), new Coder(rs.getInt("CoderId"), rs.getString("CoderName"), rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue")), rs.getString("Author"), rs.getString("Source"), rs.getString("Section"), rs.getString("Type"), rs.getString("Notes"), new Date(rs.getLong("Date")));
+                	TableDocument r = new TableDocument(
+                			rs.getInt("ID"),
+                			rs.getString("Title"),
+                			rs.getInt("Frequency"),
+                			new Coder(rs.getInt("CoderId"),
+                					rs.getString("CoderName"),
+                					rs.getInt("Red"),
+                					rs.getInt("Green"),
+                					rs.getInt("Blue")),
+                			rs.getString("Author"),
+                			rs.getString("Source"),
+                			rs.getString("Section"),
+                			rs.getString("Type"),
+                			rs.getString("Notes"),
+                			LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC));
                     publish(r);
                 }
 			} catch (SQLException e) {
