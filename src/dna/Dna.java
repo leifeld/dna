@@ -11,7 +11,7 @@ public class Dna {
 	public final String version;
 	
 	public Dna() {
-		date = "2021-07-14";
+		date = "2021-07-25";
 		version = "3.0.0";
 
 		guiCoder = new GuiCoder();

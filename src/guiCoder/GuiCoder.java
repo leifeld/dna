@@ -67,7 +67,7 @@ public class GuiCoder extends JFrame {
 		this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
 				documentTableModel = null;
-				dispose();
+				System.exit(0);
 			}
 		});
 
