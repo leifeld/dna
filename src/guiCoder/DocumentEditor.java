@@ -426,7 +426,6 @@ public class DocumentEditor extends JDialog {
 				for (int i = 0; i < documents.size(); i++) {
 					if (!documents.get(i).getDateTime().equals(contentDateTime)) {
 						dateTimePicker.clear();
-						System.out.println(dateTimePicker.getDateTimeStrict());
 						break;
 					}
 				}

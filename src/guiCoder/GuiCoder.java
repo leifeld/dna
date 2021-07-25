@@ -130,6 +130,7 @@ public class GuiCoder extends JFrame {
 		documentMenu.add(documentPanel.addDocumentItem);
 		documentMenu.add(documentPanel.removeDocumentsItem);
 		documentMenu.add(documentPanel.editDocumentsItem);
+		documentMenu.add(documentPanel.batchImportDocumentsItem);
 
 		c.add(framePanel);
 
@@ -351,12 +352,14 @@ public class GuiCoder extends JFrame {
 					}
 				}
 			}
-			documentPanel.enableActions(true);
-			if (closeDatabaseAction != null) {
-				closeDatabaseAction.setEnabled(true);
-			}
-			if (saveProfileAction != null) {
-				saveProfileAction.setEnabled(true);
+			if (Dna.sql != null) { // pressed cancel
+				documentPanel.enableActions(true);
+				if (closeDatabaseAction != null) {
+					closeDatabaseAction.setEnabled(true);
+				}
+				if (saveProfileAction != null) {
+					saveProfileAction.setEnabled(true);
+				}
 			}
 		}
 	}

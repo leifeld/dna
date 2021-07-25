@@ -122,6 +122,21 @@ public class Sql {
 		}
 	}
 	
+	public int countDocuments() {
+		int count = 0;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("SELECT COUNT(*) FROM DOCUMENTS;")) {
+			ResultSet r = s.executeQuery();
+			while (r.next()) {
+				count = r.getInt(1);
+			}
+		} catch (SQLException e) {
+			System.err.println("Could not count documents in the database.");
+			e.printStackTrace();
+		}
+		return count;
+	}
+	
 	/**
 	 * Retrieve a coder based on its ID.
 	 * 
