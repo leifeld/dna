@@ -6,12 +6,12 @@ import java.util.ArrayList;
 
 public class Document {
 	int id, coder;
-	String title, text, author, source, section, documentType, notes;
+	String title, text, author, source, section, type, notes;
 	LocalDateTime dateTime;
 	ArrayList<Statement> statements;
 	
 	public Document(int id, int coder, String title, String text, String author, String source, String section,
-			String documentType, String notes, LocalDateTime dateTime, ArrayList<Statement> statements) {
+			String type, String notes, LocalDateTime dateTime, ArrayList<Statement> statements) {
 		this.id = id;
 		this.coder = coder;
 		this.title = title;
@@ -19,7 +19,7 @@ public class Document {
 		this.author = author;
 		this.source = source;
 		this.section = section;
-		this.documentType = documentType;
+		this.type = type;
 		this.notes = notes;
 		this.dateTime = dateTime;
 		this.statements = statements;
@@ -81,12 +81,12 @@ public class Document {
 		this.section = section;
 	}
 	
-	public String getDocumentType() {
-		return documentType;
+	public String getType() {
+		return type;
 	}
 	
-	void setDocumentType(String documentType) {
-		this.documentType = documentType;
+	void setType(String type) {
+		this.type = type;
 	}
 	
 	public String getNotes() {

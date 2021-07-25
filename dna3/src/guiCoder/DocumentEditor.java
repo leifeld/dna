@@ -400,11 +400,11 @@ public class DocumentEditor extends JDialog {
 					}
 				}
 			}
-			String contentType = documents.get(0).getDocumentType();
+			String contentType = documents.get(0).getType();
 			typeBox.setSelectedItem(contentType);
 			if (numDocuments > 1) {
 				for (int i = 0; i < documents.size(); i++) {
-					if (!documents.get(i).getDocumentType().equals(contentType)) {
+					if (!documents.get(i).getType().equals(contentType)) {
 						typeBox.setSelectedItem("%type");
 						break;
 					}

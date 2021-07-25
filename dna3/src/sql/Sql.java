@@ -111,7 +111,7 @@ public class Sql {
 				stmt.setString(5, documents.get(i).getSource());
 				stmt.setString(6, documents.get(i).getSection());
 				stmt.setString(7, documents.get(i).getNotes());
-				stmt.setString(8, documents.get(i).getDocumentType());
+				stmt.setString(8, documents.get(i).getType());
 				stmt.setLong(9, documents.get(i).getDateTime().toEpochSecond(ZoneOffset.UTC)); // convert date-time to seconds since 01/01/1970 at 00:00:00 in UTC time zone
 				stmt.executeUpdate();
 			}
