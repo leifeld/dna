@@ -13,6 +13,17 @@ RDNAVERSION := $(shell grep -P '^Version: .+' rDNA/DESCRIPTION | sed 's/Version:
 all: sample dna rDNA manual
 	@echo Done.
 
+# compile rDNA source package with DNA jar
+rDNA-full: dna
+	mkdir -p output/rtemp; \
+	cp -r rDNA output/rtemp; \
+	cd output; \
+	mkdir -p rDNA/inst/java/; \
+	cp ${JARFILE} rDNA/inst/java/; \
+	R CMD build rDNA; \
+	mv rDNA_${RDNAVERSION}.tar.gz rDNA_full_${RDNAVERSION}.tar.gz; \
+	cd ..
+
 # compile rDNA source package without DNA
 rDNA: mkdir-output
 	R CMD build rDNA; \
@@ -82,5 +93,15 @@ test-dna:
 	then echo PASS: $(JARFILE) contains MANIFEST.; \
 	exit 0; \
 	else echo FAIL: $(JARFILE) does not contain MANIFEST.; \
+	exit 1; \
+	fi
+
+# test manual
+test-manual:
+	$(eval MANUALSIZE = $(shell pdftotext '$(OUTPUT_DIR)/$(MANUAL_FILE).pdf' - | wc -w))
+	@if [ ${MANUALSIZE} -gt 40000 ]; \
+	then echo "PASS: DNA manual PDF contains ${MANUALSIZE} words (test requires > 40000)."; \
+	exit 0; \
+	else echo "FAIL: DNA manual PDF contains ${MANUALSIZE} words (test requires > 40000)."; \
 	exit 1; \
 	fi
