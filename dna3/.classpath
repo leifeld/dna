@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="lib/commons-dbcp2-2.8.0.jar"/>
+	<classpathentry kind="lib" path="lib/gson-2.8.5.jar"/>
+	<classpathentry kind="lib" path="lib/jasypt-1.9.3.jar"/>
+	<classpathentry kind="lib" path="lib/JRI.jar"/>
+	<classpathentry kind="lib" path="lib/LGoodDatePicker-11.2.1.jar"/>
+	<classpathentry kind="lib" path="lib/mysql-connector-java-8.0.24.jar"/>
+	<classpathentry kind="lib" path="lib/postgresql-42.2.20.jar"/>
+	<classpathentry kind="lib" path="lib/sqlite-jdbc-3.34.0.jar"/>
+	<classpathentry kind="lib" path="lib/swingx-all-1.6.5-1.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
