@@ -33,6 +33,8 @@ import org.jasypt.util.text.AES256TextEncryptor;
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
+
+import dna.AboutWindow;
 import dna.Dna;
 import sql.Sql;
 
@@ -132,6 +134,12 @@ public class GuiCoder extends JFrame {
 		documentMenu.add(documentPanel.editDocumentsItem);
 		documentMenu.add(documentPanel.batchImportDocumentsItem);
 
+		// settings menu: display about DNA window
+		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		AboutWindowAction aboutWindowAction = new AboutWindowAction("About DNA", aboutIcon, "Display information about DNA", KeyEvent.VK_B);
+		JMenuItem aboutWindowItem = new JMenuItem(aboutWindowAction);
+		settingsMenu.add(aboutWindowItem);
+		
 		c.add(framePanel);
 
 		this.pack();
@@ -451,6 +459,18 @@ public class GuiCoder extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 			documentTableModel = null;
 			dispose();
+		}
+	}
+
+	// About window action
+	class AboutWindowAction extends AbstractAction {
+		public AboutWindowAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			new AboutWindow(Dna.dna.version, Dna.dna.date);
 		}
 	}
 
