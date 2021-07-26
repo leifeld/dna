@@ -123,6 +123,12 @@ public class DocumentTableModel extends AbstractTableModel {
             fireTableDataChanged();
     	}
 	}
+	
+	public void updateFrequency(int documentId) {
+		int row = getModelRowById(documentId);
+		rows.get(row).setFrequency(rows.get(row).getFrequency() + 1);
+		fireTableCellUpdated(row, 2);
+	}
 
 	public void removeDocuments(int[] rows) {
 		for (int i = 0; i < rows.length; i++) {

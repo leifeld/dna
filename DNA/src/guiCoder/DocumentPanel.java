@@ -285,13 +285,12 @@ class DocumentPanel extends JPanel {
 					editDocumentsAction.setEnabled(false);
 				}
 				if (rowCount == 0 || rowCount > 1) {
-					textPanel.setDocumentText("");
+					textPanel.setContents(-1, "");
 				} else if (rowCount == 1) {
 					int selectedRow = documentTable.getSelectedRow();
 					int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
 					int id = (int) documentTableModel.getValueAt(selectedModelIndex, 0);
-					String text = documentTableModel.getDocumentText(id);
-					textPanel.setDocumentText(text);
+					textPanel.setContents(id, documentTableModel.getDocumentText(id));
 					//Dna.gui.textPanel.setEnabled(true);
 				} else {
 					System.err.println("Negative number of rows in the document table!");
