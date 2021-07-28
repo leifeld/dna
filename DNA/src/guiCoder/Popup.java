@@ -2,6 +2,7 @@ package guiCoder;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -16,6 +17,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.Connection;
 import java.util.ArrayList;
+
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -23,6 +25,7 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -30,11 +33,15 @@ import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
 import javax.swing.border.LineBorder;
-
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
+import dna.Dna;
 import dna.Statement;
+import dna.Attribute;
 import dna.Value;
 
 public class Popup extends JDialog {
@@ -179,20 +186,62 @@ public class Popup extends JDialog {
 			String dataType = variables.get(i).getDataType();
 			JLabel label = new JLabel(key, JLabel.TRAILING);
 			if (dataType.equals("short text")) {
-				String val = (String) variables.get(i).getValue();
-				// TODO: take the value out of the attribute vector and color it, instead of taking it out of the statement directly: write JDBCWorker
-				String[] entryArray = new String[] {"a", "b", "c"};
-				JComboBox<String> box = new JComboBox<String>(entryArray);
-				//box.setRenderer(new AttributeComboBoxRenderer());
+				// TODO: write JDBCWorker
+				Attribute[] attributeArray = Dna.sql.getAttributes(variables.get(i).getVariableId());
+				JComboBox<Attribute> box = new JComboBox<Attribute>(attributeArray);
+				box.setRenderer(new AttributeComboBoxRenderer());
 				box.setEditable(true);
+
+				// paint the selected value in the attribute color
+				String s = ((JTextField) box.getEditor().getEditorComponent()).getText();
+				Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
+				for (int j = 0; j < box.getModel().getSize(); j++) {
+					if (s.equals(box.getModel().getElementAt(j).getValue())) {
+						fg = box.getModel().getElementAt(j).getColor();
+					}
+				}
+				((JTextField) box.getEditor().getEditorComponent()).setSelectedTextColor(fg);
+				((JTextField) box.getEditor().getEditorComponent()).setForeground(fg);
+				
+				// add a document listener to the combobox to paint the selected value in the attribute color, despite being highlighted
+				((JTextField) box.getEditor().getEditorComponent()).getDocument().addDocumentListener(new DocumentListener() {
+					@Override
+					public void changedUpdate(DocumentEvent arg0) {
+						formatEntry();
+					}
+					@Override
+					public void insertUpdate(DocumentEvent arg0) {
+						formatEntry();
+					}
+					@Override
+					public void removeUpdate(DocumentEvent arg0) {
+						formatEntry();
+					}
+					private void formatEntry() {
+						Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
+						for (int i = 0; i < box.getModel().getSize(); i++) {
+							if (((JTextField) box.getEditor().getEditorComponent()).getText().equals(box.getModel().getElementAt(i).getValue())) {
+								fg = box.getModel().getElementAt(i).getColor();
+							}
+						}
+						((JTextField) box.getEditor().getEditorComponent()).setSelectedTextColor(fg);
+						((JTextField) box.getEditor().getEditorComponent()).setForeground(fg);
+					}
+				});
+				
+				// TODO: make autocompletion optional
+    			AutoCompleteDecorator.decorate(box); // autocomplete entries; part of SwingX
+    			
+    			// TODO: set boxes editable depending on coder privileges
+				/*
 				if (editable == true) {
 					box.setEnabled(true);
 				} else {
 					box.setEnabled(false);
 				}
+				*/
     			box.setPreferredSize(new Dimension(this.textFieldWidth, 20));
-    			//box.setSelectedItem((AttributeVector)entry);
-    			AutoCompleteDecorator.decorate(box);
+    			box.setSelectedItem((Attribute) variables.get(i).getValue());
     			
 				gbc.anchor = GridBagConstraints.EAST;
 	    		gridBagPanel.add(label, gbc);
@@ -205,11 +254,13 @@ public class Popup extends JDialog {
 				String entry = (String) variables.get(i).getValue();
     			JTextArea box = new JTextArea();
     			box.setEditable(true);
+    			/*
 				if (editable == true) {
 					box.setEnabled(true);
 				} else {
 					box.setEnabled(false);
 				}
+				*/
     			box.setWrapStyleWord(true);
     			box.setLineWrap(true);
     			box.setText(entry);
@@ -234,11 +285,13 @@ public class Popup extends JDialog {
 				}
 				JCheckBox box = new JCheckBox();
     			box.setPreferredSize(new Dimension(20, 20));
+    			/*
 				if (editable == true) {
 					box.setEnabled(true);
 				} else {
 					box.setEnabled(false);
 				}
+				*/
     			if (val == true) {
     				box.setSelected(true);
     			} else {
@@ -262,11 +315,13 @@ public class Popup extends JDialog {
     			jsp.setEnabled(true);
     			JPanel jp = new JPanel(new FlowLayout(FlowLayout.LEFT));
     			jp.add(jsp);
+    			/*
 				if (editable == true) {
 					jsp.setEnabled(true);
 				} else {
 					jsp.setEnabled(false);
 				}
+    			*/
     			
 				gbc.anchor = GridBagConstraints.EAST;
 	    		gridBagPanel.add(label, gbc);
@@ -281,11 +336,9 @@ public class Popup extends JDialog {
 		}
 		
 		contentsPanel.add(gridBagPanel, BorderLayout.CENTER);
-		
 		c.add(contentsPanel);
 		
 		this.pack();
-		
 		double xDouble = los.getX() + X;
 		double yDouble = los.getY() + Y;
 		int x = (int) xDouble + 6;
@@ -293,7 +346,7 @@ public class Popup extends JDialog {
 		this.setLocation(x, y);
 		this.setVisible(true);
 	}
-	
+
 	/**
 	 * In a statement popup window, read the contents from all combo boxes and save them into the database and GUI data structure.
 	 * 
@@ -366,4 +419,32 @@ public class Popup extends JDialog {
 		}
 	}
 	*/
+	
+	public class AttributeComboBoxRenderer implements ListCellRenderer<Object> {
+		@Override
+		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+			Attribute a = (Attribute) value;
+			JLabel label = new JLabel(a.getValue());
+			label.setForeground(a.getColor());
+			
+			// list background
+			Color selectedColor = javax.swing.UIManager.getColor("List.dropCellBackground");
+			Color notInDatabaseColor = new Color(255, 102, 102);
+			// selected entry that is not in database: average of the previous two colors
+			Color selectedAndNotInDatabaseColor = new Color((selectedColor.getRed() + notInDatabaseColor.getRed()) / 2, (selectedColor.getGreen() + notInDatabaseColor.getGreen()) / 2, (selectedColor.getBlue() + notInDatabaseColor.getBlue()) / 2);
+			Color defaultColor = javax.swing.UIManager.getColor("List.background");
+			if (isSelected == true && a.isInDatabase() == true) {
+				label.setBackground(selectedColor);
+			} else if (isSelected == true && a.isInDatabase() == false) {
+				label.setBackground(selectedAndNotInDatabaseColor);
+			} else if (isSelected == false && a.isInDatabase() == false) {
+				label.setBackground(notInDatabaseColor);
+			} else if (isSelected == false && a.isInDatabase() == true) {
+				label.setBackground(defaultColor);
+			}
+			label.setOpaque(true);
+			
+			return label;
+		}
+	}
 }

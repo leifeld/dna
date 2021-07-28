@@ -18,6 +18,7 @@ import org.sqlite.SQLiteDataSource;
 
 import com.mysql.cj.jdbc.MysqlDataSource;
 
+import dna.Attribute;
 import dna.Dna;
 import dna.Document;
 import dna.Statement;
@@ -88,11 +89,11 @@ public class Sql {
 		ArrayList<Value> values;
 		int statementId, statementTypeId, variableId;
 		String variable, dataType;
-		Color sColor, cColor;
+		Color aColor, sColor, cColor;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("SELECT STATEMENTS.ID AS StatementId, StatementTypeId, STATEMENTTYPES.Label AS StatementTypeLabel, STATEMENTTYPES.Red AS StatementTypeRed, STATEMENTTYPES.Green AS StatementTypeGreen, STATEMENTTYPES.Blue AS StatementTypeBlue, Start, Stop, Coder AS CoderId, CODERS.Red AS CoderRed, CODERS.Green AS CoderGreen, CODERS.Blue AS CoderBlue FROM STATEMENTS INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID WHERE DocumentId = ?;");
 				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT Value FROM DATASHORTTEXT WHERE VariableId = ? AND StatementId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
 				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
 				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
 				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
@@ -112,11 +113,13 @@ public class Sql {
 			    	variable = r2.getString("Variable");
 			    	dataType = r2.getString("DataType");
 			    	if (dataType.equals("short text")) {
-				    	s3.setInt(1, variableId);
-				    	s3.setInt(2, statementId);
+				    	s3.setInt(1, statementId);
+				    	s3.setInt(2, variableId);
 				    	r3 = s3.executeQuery();
 				    	while (r3.next()) {
-				    		values.add(new Value(variableId, variable, dataType, r3.getString("Value")));
+			            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
+			            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getString("Type"), r3.getString("Alias"), r3.getString("Notes"), r3.getInt("ChildOf"), true);
+				    		values.add(new Value(variableId, variable, dataType, attribute));
 				    	}
 			    	} else if (dataType.equals("long text")) {
 				    	s4.setInt(1, variableId);
@@ -349,9 +352,10 @@ public class Sql {
 				PreparedStatement s = conn.prepareStatement(sel);
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
+			ResultSet r;
 			for (int i = 0; i < documentIds.length; i++) {
 				s.setInt(1, documentIds[i]);
-				ResultSet r = s.executeQuery();
+				r = s.executeQuery();
 				while (r.next()) {
 					titleTemp1 = r.getString("Title");
 					textTemp1 = r.getString("Text");
@@ -555,7 +559,6 @@ public class Sql {
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "StatementId INTEGER NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
-					+ "StatementTypeId INTEGER, "
 					+ "Value INTEGER, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
@@ -564,7 +567,6 @@ public class Sql {
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "StatementId INTEGER NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
-					+ "StatementTypeId INTEGER, "
 					+ "Value INTEGER, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
@@ -573,16 +575,15 @@ public class Sql {
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "StatementId INTEGER NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
-					+ "StatementTypeId INTEGER, "
-					+ "Value TEXT, "
+					+ "Value INTEGER NOT NULL, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(Value) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (StatementId, VariableId));");
 			s.add("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "StatementId INTEGER NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
-					+ "StatementTypeId INTEGER, "
 					+ "Value TEXT, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
@@ -597,7 +598,9 @@ public class Sql {
 					+ "Type TEXT, "
 					+ "Alias TEXT, "
 					+ "Notes TEXT, "
-					+ "ChildOf INTEGER NOT NULL CHECK(ChildOf > 0 AND ChildOf != ID), "
+					+ "ChildOf INTEGER CHECK(ChildOf > 0 AND ChildOf != ID), "
+					+ "UNIQUE (VariableId, Value), "
+					+ "FOREIGN KEY(ChildOf) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE);");
 		} else if (cp.getType().equals("mysql")) {
 			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
@@ -687,7 +690,6 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "Value SMALLINT UNSIGNED NOT NULL, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
@@ -697,7 +699,6 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "Value MEDIUMINT NOT NULL, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
@@ -707,8 +708,7 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
-					+ "Value VARCHAR(5000), "
+					+ "Value INT NOT NULL REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (StatementId, VariableId), "
@@ -717,7 +717,6 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "Value TEXT, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
@@ -733,9 +732,10 @@ public class Sql {
 					+ "Type TEXT, "
 					+ "Alias TEXT, "
 					+ "Notes TEXT, "
-					+ "ChildOf MEDIUMINT UNSIGNED NOT NULL CHECK(ChildOf > 0 AND ChildOf != ID), "
+					+ "ChildOf MEDIUMINT UNSIGNED CHECK(ChildOf > 0 AND ChildOf != ID), "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(ChildOf) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
+					+ "UNIQUE KEY (VariableId, Value), "
 					+ "PRIMARY KEY(ID));");
 		} else if (cp.getType().equals("postgresql")) {
 			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
@@ -817,7 +817,7 @@ public class Sql {
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "Value VARCHAR(5000), "
+					+ "Value INT NOT NULL CHECK(Value > 0) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (StatementId, VariableId));");
 			s.add("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
@@ -835,7 +835,8 @@ public class Sql {
 					+ "Type TEXT, "
 					+ "Alias TEXT, "
 					+ "Notes TEXT, "
-					+ "ChildOf INT NOT NULL CHECK(ChildOf > 0 AND ChildOf != ID) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE);");
+					+ "ChildOf INT CHECK(ChildOf > 0 AND ChildOf != ID) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
+					+ "UNIQUE KEY (VariableId, Value));");
 		}
 		// fill default data into the tables (Admin coder, settings, statement types)
 		s.add("INSERT INTO CODERS (ID, Name, Red, Green, Blue, Password) VALUES (1, 'Admin', 239, 208, 51, '" + encryptedAdminPassword + "');");
@@ -913,15 +914,18 @@ public class Sql {
 	}
 	
 	public int addStatement(Statement statement, int documentId) {
-		int statementId = -1;
+		int statementId = -1, attributeId = -1;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("INSERT INTO STATEMENTS (StatementTypeId, DocumentId, Start, Stop, Coder) VALUES (?, ?, ?, ?, ?);");
 				PreparedStatement s2 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 				PreparedStatement s3 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 				PreparedStatement s4 = conn.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 				PreparedStatement s5 = conn.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+				PreparedStatement s6 = conn.prepareStatement("INSERT INTO ATTRIBUTES (VariableId, Value, Red, Green, Blue, Type, Alias, Notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?);");
+				PreparedStatement s7 = conn.prepareStatement("SELECT ID FROM ATTRIBUTES WHERE VariableId = ? AND Value = ?;");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
+			ResultSet r;
 			s1.setInt(1, statement.getStatementTypeId());
 			s1.setInt(2, documentId);
 			s1.setInt(3, statement.getStart());
@@ -933,9 +937,40 @@ public class Sql {
 			}
 			for (int i = 0; i < statement.getValues().size(); i++) {
 				if (statement.getValues().get(i).getDataType().equals("short text")) {
+					s6.setInt(1, statement.getValues().get(i).getVariableId());
+					String value = "";
+					if (statement.getValues().get(i).getValue() == null) {
+						value = "";
+					} else {
+						value = ((Attribute) statement.getValues().get(i).getValue()).getValue(); // not sure if this case ever occurs
+					}
+					s6.setString(2, value);
+					s6.setInt(3, 255);
+					s6.setInt(4, 255);
+					s6.setInt(5,  255);
+					s6.setString(6, "");
+					s6.setString(7, "");
+					s6.setString(8,  "");
+					try {
+						s6.executeUpdate();
+					} catch (SQLException e2) {
+						if (e2.getMessage().contains("UNIQUE constraint failed")) {
+							// do nothing; attribute already exists and does not need to be added
+						} else {
+							System.err.println("Could not add attribute.");
+							e2.printStackTrace();
+						}
+					}
+					attributeId = -1;
+					s7.setInt(1, statement.getValues().get(i).getVariableId());
+					s7.setString(2, value);
+					r = s7.executeQuery();
+					while (r.next()) {
+						attributeId = r.getInt("ID");
+					}
 					s2.setInt(1, statementId);
 					s2.setInt(2, statement.getValues().get(i).getVariableId());
-					s2.setString(3, (String) statement.getValues().get(i).getValue());
+					s2.setInt(3, attributeId);
 					s2.executeUpdate();
 				} else if (statement.getValues().get(i).getDataType().equals("long text")) {
 					s3.setInt(1, statementId);
@@ -960,5 +995,36 @@ public class Sql {
 			e.printStackTrace();
 		}
 		return -1;
+	}
+
+	public Attribute[] getAttributes(int variableId) {
+		ArrayList<Attribute> attributesList = new ArrayList<Attribute>();
+		boolean inDatabase;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("SELECT ID, Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM ATTRIBUTES WHERE VariableId = ?;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT COUNT(ID) FROM DATASHORTTEXT WHERE VariableId = ? AND Value = ?;")) {
+			ResultSet r1, r2;
+			Color color;
+			s1.setInt(1, variableId);
+			s2.setInt(1, variableId);
+			r1 = s1.executeQuery();
+        	while (r1.next()) {
+            	color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
+            	s2.setInt(2, r1.getInt("ID"));
+            	r2 = s2.executeQuery();
+            	if (r2.getInt(1) > 0) {
+            		inDatabase = true;
+            	} else {
+            		inDatabase = false;
+            	}
+            	attributesList.add(new Attribute(r1.getInt("ID"), r1.getString("Value"), color, r1.getString("Type"), r1.getString("Alias"), r1.getString("Notes"), r1.getInt("ChildOf"), inDatabase));
+            }
+		} catch (SQLException e1) {
+			System.err.println("Could not retrieve attributes for variable " + variableId + " from database.");
+			e1.printStackTrace();
+		}
+		Attribute[] attributesArray = new Attribute[attributesList.size()];
+		attributesArray = attributesList.toArray(attributesArray);
+		return attributesArray;
 	}
 }

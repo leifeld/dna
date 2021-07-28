@@ -17,7 +17,9 @@ public class Value {
 		this.variableId = variableId;
 		this.key = key;
 		this.dataType = dataType;
-		if (dataType.equals("short text") || dataType.equals("long text")) {
+		if (dataType.equals("short text")) {
+			this.value = null;
+		} else if (dataType.equals("long text")) {
 			this.value = "";
 		} else if (dataType.equals("integer")) {
 			this.value = 0;

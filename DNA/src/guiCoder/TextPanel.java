@@ -6,12 +6,10 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
 import javax.swing.JMenuItem;
@@ -19,8 +17,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
-import javax.swing.SwingUtilities;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
@@ -37,7 +33,6 @@ public class TextPanel extends JPanel {
 	private DefaultStyledDocument doc;
 	StyleContext sc;
 	JPopupMenu popmen;
-	//JMenuItem menu1;
 	int documentId;
 	ArrayList<Statement> statements;
 	
@@ -230,7 +225,6 @@ public class TextPanel extends JPanel {
 					int selectionStart = textWindow.getSelectionStart();
 					int selectionEnd = textWindow.getSelectionEnd();
 					Statement statement = new Statement(-1, Dna.sql.getConnectionProfile().getCoderId(), selectionStart, selectionEnd, statementType.getId(), statementType.getVariables());
-					
 					Dna.sql.addStatement(statement, documentId);
 					Dna.guiCoder.documentTableModel.updateFrequency(documentId);
 					paintStatements();
