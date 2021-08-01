@@ -1,4 +1,4 @@
-package dna;
+package guiCoder;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;

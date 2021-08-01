@@ -34,7 +34,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
-import dna.AboutWindow;
 import dna.Dna;
 import sql.Sql;
 
