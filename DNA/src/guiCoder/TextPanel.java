@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
 import javax.swing.JMenuItem;
@@ -17,6 +18,8 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
@@ -35,6 +38,14 @@ public class TextPanel extends JPanel {
 	JPopupMenu popmen;
 	int documentId;
 	ArrayList<Statement> statements;
+	
+	// popup settings
+	// TODO: take the popup settings from database
+	boolean popupAutocomplete = true;
+	boolean popupWindowDecoration = false;
+	boolean popupEditable = true;
+	int popupTextFieldWidth = 300;
+	boolean popupColorCoder = false;
 	
 	public TextPanel() {
 		this.setLayout(new BorderLayout());
@@ -159,7 +170,14 @@ public class TextPanel extends JPanel {
 								new Popup(p.getX(), p.getY(), statementId, location, false);
 							}
 							*/
-							new Popup(p.getX(), p.getY(), statements.get(i), location, true);
+
+							Color color;
+							if (popupColorCoder == true) {
+								color = statements.get(i).getCoderColor();
+							} else {
+								color = statements.get(i).getStatementTypeColor();
+							}
+							new Popup(p.getX(), p.getY(), statements.get(i), documentId, location, popupTextFieldWidth, popupEditable, color, popupWindowDecoration, popupAutocomplete);
 							break;
 						//}
 					}
@@ -229,7 +247,6 @@ public class TextPanel extends JPanel {
 					Dna.guiCoder.documentTableModel.updateFrequency(documentId);
 					paintStatements();
 					textWindow.setCaretPosition(selectionEnd);
-					//Dna.gui.textPanel.selectStatement(statementId, documentId, true);
 				}
 			});
 		}
@@ -242,13 +259,12 @@ public class TextPanel extends JPanel {
 	 * @param statementId
 	 * @param documentId
 	 */
-	/*
 	public void selectStatement(final int statementId, int documentId, boolean editable) {
-		textWindow.setText(Dna.data.getDocument(documentId).getText());
-		paintStatements();
+		this.setContents(documentId, Dna.sql.getDocumentText(documentId));
+		Statement s = Dna.sql.getStatement(statementId);
 		
-		int start = Dna.data.getStatement(statementId).getStart();
-		int stop = Dna.data.getStatement(statementId).getStop();
+		int start = s.getStart();
+		int stop = s.getStop();
 		textWindow.grabFocus();
 		textWindow.select(start, stop);
 		
@@ -256,42 +272,29 @@ public class TextPanel extends JPanel {
 		SwingUtilities.invokeLater(new Runnable() {
 			@SuppressWarnings("deprecation") // modelToView becomes modelToView2D in Java 9, but we still want Java 8 compliance 
 			public void run() {
-				int start = Dna.data.getStatement(statementId).getStart();
 				Rectangle2D mtv = null;
 				try {
 					double y = textWindow.modelToView(start).getY();
 					int l = textWindow.getText().length();
 					double last = textWindow.modelToView(l).getY();
 					double frac = y / last;
-					double max = textScrollPane.getVerticalScrollBar().
-							getMaximum();
+					double max = textScrollPane.getVerticalScrollBar().getMaximum();
 					double h = textScrollPane.getHeight();
 					int value = (int) Math.ceil(frac * max - (h / 2));
 					textScrollPane.getVerticalScrollBar().setValue(value);
 					mtv = textWindow.modelToView(start);
 					Point loc = textWindow.getLocationOnScreen();
-					new Popup(mtv.getX(), mtv.getY(), statementId, loc, editable);
+					Color color;
+					if (popupColorCoder == true) {
+						color = s.getCoderColor();
+					} else {
+						color = s.getStatementTypeColor();
+					}
+					new Popup(mtv.getX(), mtv.getY(), s, documentId, loc, popupTextFieldWidth, popupEditable, color, popupWindowDecoration, popupAutocomplete);
 				} catch (BadLocationException e) {
 					System.err.println("Statement " + statementId + ": Popup window cannot be opened because the location is outside the document text.");
 				}
 			}
 		});
 	}
-	*/
-	
-	/**
-	 * @author Shraddha Highlight text in the editor pane, select statement
-	 * @param statementId
-	 */
-	/*
-	public void highlightSelectedStatement(final int statementId) {
-		textWindow.setText(Dna.data.getDocument(documentId).getText());
-		paintStatements();
-		
-		int start = Dna.data.getStatement(statementId).getStart();
-		int stop = Dna.data.getStatement(statementId).getStart();
-		textWindow.grabFocus();
-		textWindow.select(start, stop);
-	}
-	*/
 }

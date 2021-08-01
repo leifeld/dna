@@ -36,7 +36,7 @@ import dna.Dna;
 @SuppressWarnings("serial")
 class DocumentPanel extends JPanel {
 	private DocumentTableModel documentTableModel;
-	private TextPanel textPanel;
+	public TextPanel textPanel;
 	private JTable documentTable;
 	public JMenuItem addDocumentItem, removeDocumentsItem, editDocumentsItem, batchImportDocumentsItem;
 	public AddDocumentAction addDocumentAction;

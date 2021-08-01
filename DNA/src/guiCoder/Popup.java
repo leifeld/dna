@@ -18,9 +18,9 @@ import java.awt.event.WindowEvent;
 import java.sql.Connection;
 import java.util.ArrayList;
 
+import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -28,6 +28,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
@@ -44,48 +45,76 @@ import dna.Statement;
 import dna.Attribute;
 import dna.Value;
 
+/**
+ * Show a small popup window to display and/or edit the variables of a statement.
+ */
 public class Popup extends JDialog {
-	
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = -4955213646188753456L;
 	Container c;
 	double X, Y;
 	Point los;
 	static int statementTypeId;
 	Color color;
+	boolean windowDecoration;
 	static int statementId;
 	JPanel gridBagPanel;
 	Connection conn;
 	int textFieldWidth;
+	ArrayList<Value> variables;
 	
-	public Popup(double X, double Y, Statement statement, Point location, boolean editable) {
+	/**
+	 * Popup dialog window to display the contents of a statements. The user can
+	 * edit the values of each variable.
+	 * 
+	 * @param X                 Horizontal coordinate for the window
+	 * @param Y                 Vertical coordinate for the window
+	 * @param statement         The {@link Statement} to be edited
+	 * @param location          Location of the DNA text panel on screen
+	 * @param textFieldWidth    Width of a text field or combo box in pixels
+	 * @param editable          Should the statement be editable?
+	 * @param color             Color to be displayed in the upper left corner
+	 * @param windowDecoration  Draw a frame and buttons around the window?
+	 */
+	public Popup(double X, double Y, Statement statement, int documentId, Point location, int textFieldWidth, boolean editable, Color color, boolean windowDecoration, boolean autocomplete) {
 		this.X = X;
 		this.Y = Y;
 		Popup.statementId = statement.getId();
 		this.los = location;
-		this.textFieldWidth = 300; // TODO: take popup width from settings
-		this.color = statement.getStatementTypeColor(); // TODO: replace by coder color depending on settings
+		this.textFieldWidth = textFieldWidth;
+		this.color = color;
+		this.windowDecoration = windowDecoration;
 		statementTypeId = statement.getStatementTypeId();
 		
-		//this.setModal(true);
-		this.setUndecorated(true);
+		if (windowDecoration == true) {
+			this.setModal(true);
+		} else {
+			this.setUndecorated(true);
+		}
 		this.setTitle("Statement details");
 		this.setAlwaysOnTop(true);
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		
-		//this is only needed if close buttons are implemented
-		//this.addWindowListener(new WindowAdapter() {
-		//	public void windowClosing(WindowEvent e) {
-		//		saveContents();
-		//	}
-		//});
-		
-		this.addWindowFocusListener(new WindowAdapter() {
-			public void windowLostFocus(WindowEvent e) {
-				// TODO: save contents
-				// saveContents(gridBagPanel, statementId);
-                dispose();
-			}
-		});
+		if (windowDecoration == true) {
+			this.addWindowListener(new WindowAdapter() {
+				public void windowClosing(WindowEvent e) {
+					if (editable == true) {
+						String message = "Save any changes in Statement " + statement.getId() + "?";
+						int dialog = JOptionPane.showConfirmDialog(Popup.this, message, "Confirmation", JOptionPane.YES_NO_OPTION);
+						if (dialog == 0) {
+							saveContents(gridBagPanel, statementId, variables);
+						}
+					}
+					dispose();
+				}
+			});
+		} else {
+			this.addWindowFocusListener(new WindowAdapter() {
+				public void windowLostFocus(WindowEvent e) {
+					saveContents(gridBagPanel, statementId, variables);
+	                dispose();
+				}
+			});
+		}
 
 		ImageIcon statementIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-message-2.png"));
 		this.setIconImage(statementIcon.getImage());
@@ -93,7 +122,7 @@ public class Popup extends JDialog {
 		c = getContentPane();
 		
 		JPanel contentsPanel = new JPanel(new BorderLayout());
-		contentsPanel.setBorder(new LineBorder(Color.black));
+		contentsPanel.setBorder(new LineBorder(Color.BLACK));
 		JPanel titleDecorationPanel = new JPanel(new BorderLayout());
 		JPanel idAndPositionPanel = new JPanel();
 		
@@ -109,8 +138,7 @@ public class Popup extends JDialog {
 		endPos.setEditable(false);
 
 		JLabel idLabel = new JLabel(" ID:");
-		JTextField idField = 
-				new JTextField(Integer.toString(statementId));
+		JTextField idField = new JTextField(Integer.toString(statementId));
 		idField.setEditable(false);
 
 		String type = statement.getStatementTypeLabel();
@@ -128,12 +156,16 @@ public class Popup extends JDialog {
 		duplicate.setPreferredSize(new Dimension(16, 16));
 		duplicate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// TODO: save contents
-				// saveContents(gridBagPanel, statementId);
-				// TODO: create copy of statement in database, then reload statements in text panel
-				// TODO: update # frequency in document table
-				// TODO: select the new statement
-				// Dna.gui.textPanel.selectStatement(newId, newStatement.getDocumentId(), true);
+				if (editable == true && windowDecoration == true) {
+					String message = "Save any changes in Statement " + statement.getId() + " before creating copy?";
+					int dialog = JOptionPane.showConfirmDialog(Popup.this, message, "Confirmation", JOptionPane.YES_NO_OPTION);
+					if (dialog == 0) {
+						saveContents(gridBagPanel, statementId, variables);
+					}
+				}
+				int newStatementId = Dna.sql.cloneStatement(statementId, Dna.sql.getConnectionProfile().getCoderId());
+				Dna.guiCoder.documentPanel.textPanel.selectStatement(newStatementId, documentId, true);
+				dispose();
 			}
 		});
 		
@@ -147,7 +179,8 @@ public class Popup extends JDialog {
 						"Are you sure you want to remove this statement?", 
 						"Remove?", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
-					// TODO: delete statement in database, then reload text panel, then paint statements again, then update # frequency
+					Dna.sql.deleteStatement(statementId);
+					Dna.guiCoder.documentPanel.textPanel.paintStatements();
 					dispose();
 				}
 			}
@@ -180,7 +213,7 @@ public class Popup extends JDialog {
 		gbc.gridy = 0;
 		gbc.anchor = GridBagConstraints.EAST;
 		
-		ArrayList<Value> variables = statement.getValues();
+		variables = statement.getValues();
 		for (int i = 0; i < variables.size(); i++) {
 			String key = variables.get(i).getKey();
 			String dataType = variables.get(i).getDataType();
@@ -191,7 +224,7 @@ public class Popup extends JDialog {
 				JComboBox<Attribute> box = new JComboBox<Attribute>(attributeArray);
 				box.setRenderer(new AttributeComboBoxRenderer());
 				box.setEditable(true);
-
+				
 				// paint the selected value in the attribute color
 				String s = ((JTextField) box.getEditor().getEditorComponent()).getText();
 				Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
@@ -229,17 +262,14 @@ public class Popup extends JDialog {
 					}
 				});
 				
-				// TODO: make autocompletion optional
-    			AutoCompleteDecorator.decorate(box); // autocomplete entries; part of SwingX
-    			
-    			// TODO: set boxes editable depending on coder privileges
-				/*
+				if (autocomplete == true) {
+					AutoCompleteDecorator.decorate(box); // auto-complete short text values; part of SwingX
+				}
 				if (editable == true) {
 					box.setEnabled(true);
 				} else {
 					box.setEnabled(false);
 				}
-				*/
     			box.setPreferredSize(new Dimension(this.textFieldWidth, 20));
     			box.setSelectedItem((Attribute) variables.get(i).getValue());
     			
@@ -254,13 +284,11 @@ public class Popup extends JDialog {
 				String entry = (String) variables.get(i).getValue();
     			JTextArea box = new JTextArea();
     			box.setEditable(true);
-    			/*
 				if (editable == true) {
 					box.setEnabled(true);
 				} else {
 					box.setEnabled(false);
 				}
-				*/
     			box.setWrapStyleWord(true);
     			box.setLineWrap(true);
     			box.setText(entry);
@@ -283,27 +311,24 @@ public class Popup extends JDialog {
 				} else {
 					val = true;
 				}
-				JCheckBox box = new JCheckBox();
-    			box.setPreferredSize(new Dimension(20, 20));
-    			/*
-				if (editable == true) {
-					box.setEnabled(true);
+				BooleanButtonPanel buttons = new BooleanButtonPanel();
+				if (val == true) {
+					buttons.setYes(true);
 				} else {
-					box.setEnabled(false);
+					buttons.setYes(false);
 				}
-				*/
-    			if (val == true) {
-    				box.setSelected(true);
-    			} else {
-    				box.setSelected(false);
-    			}
+				if (editable == true) {
+					buttons.setEnabled(true);
+				} else {
+					buttons.setEnabled(false);
+				}
     			
 				gbc.anchor = GridBagConstraints.EAST;
 	    		gridBagPanel.add(label, gbc);
 				gbc.insets = new Insets(0,0,0,0);
 				gbc.anchor = GridBagConstraints.WEST;
 				gbc.gridx++;
-				gridBagPanel.add(box, gbc);
+				gridBagPanel.add(buttons, gbc);
 				gbc.insets = new Insets(3,3,3,3);
 				gbc.gridx--;
 				gbc.gridy++;
@@ -315,13 +340,11 @@ public class Popup extends JDialog {
     			jsp.setEnabled(true);
     			JPanel jp = new JPanel(new FlowLayout(FlowLayout.LEFT));
     			jp.add(jsp);
-    			/*
 				if (editable == true) {
 					jsp.setEnabled(true);
 				} else {
 					jsp.setEnabled(false);
 				}
-    			*/
     			
 				gbc.anchor = GridBagConstraints.EAST;
 	    		gridBagPanel.add(label, gbc);
@@ -336,6 +359,36 @@ public class Popup extends JDialog {
 		}
 		
 		contentsPanel.add(gridBagPanel, BorderLayout.CENTER);
+		
+		if (windowDecoration == true) {
+			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+			ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+			JButton cancelButton = new JButton("Cancel", cancelIcon);
+			cancelButton.setToolTipText("close this window without making any changes");
+			cancelButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					dispose();
+				}
+			});
+			buttonPanel.add(cancelButton);
+			ImageIcon saveIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+			JButton saveButton = new JButton("Save", saveIcon);
+			saveButton.setToolTipText("save each variable into the database and close this window");
+			saveButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					saveContents(gridBagPanel, statementId, variables);
+					dispose();
+				}
+			});
+			buttonPanel.add(saveButton);
+			if (editable == false) {
+				saveButton.setEnabled(false);
+			}
+			contentsPanel.add(buttonPanel, BorderLayout.SOUTH);
+		}
+		
 		c.add(contentsPanel);
 		
 		this.pack();
@@ -348,78 +401,147 @@ public class Popup extends JDialog {
 	}
 
 	/**
-	 * In a statement popup window, read the contents from all combo boxes and save them into the database and GUI data structure.
+	 * In a statement popup window, read the contents from all combo boxes and save them into the database.
 	 * 
 	 * @param gridBagPanel  The panel that contains the combo boxes
 	 * @param statementID   The ID of the statement that is being edited
 	 */
-	/*
-	@SuppressWarnings("unchecked")
-	public static void saveContents(JPanel gridBagPanel, int statementID) {
+	public static void saveContents(JPanel gridBagPanel, int statementID, ArrayList<Value> variables) {
 		Component[] com = gridBagPanel.getComponents();
-		
-		for (int i = 0; i < com.length; i++) {
-			Object content = null;      // the value of a variable, e.g., "EPA"
-			String contentType = null;  // the variable name, e.g., "organization"
-			if (com[i].getClass().getName().equals("javax.swing.JComboBox")) {  // short text
-				contentType = ((JLabel)com[i-1]).getText();
-				
-				JComboBox<?> box = (JComboBox<?>) com[i];  // save the combo box
-				String value = box.getEditor().getItem().toString();  // save its value as a string (no matter if it's a string or an attribute vector)
-				int attributeId = Dna.data.getAttributeId((String) value, contentType, statementTypeId);  // look up if it's an attribute vector
-				boolean newAttribute = false;
-				if (attributeId == -1) {  // if not, create a new attribute vector and interpret as string below
-					newAttribute = true;
-					int id = Dna.data.generateNewId("attributes");
-					int statementTypeId = Dna.data.getStatement(statementID).getStatementTypeId();
-					AttributeVector attributeVector = new AttributeVector(id, (String) value, new Color(0, 0, 0), "", "", "", "", 
-							statementTypeId, contentType);
-					Dna.dna.addAttributeVector(attributeVector);
-				}
-				
-				if (newAttribute == false) {
-					try {
-						content = ((AttributeVector) ((JComboBox<AttributeVector>) com[i]).getEditor().getItem()).getValue();
-					} catch (java.lang.ClassCastException e) {  // attribute exists, but combo box only contains text for some weird reason
-						content = value;
-					}
+		int i, j;
+		for (i = 0; i < com.length; i++) {
+			Object content = null; // the value of a variable, e.g., "EPA"
+			String variableName; // the name of the variable, e.g., "organization"
+			if (com[i].getClass().getName().equals("javax.swing.JComboBox")) { // short text
+				variableName = ((JLabel) com[i - 1]).getText();
+				@SuppressWarnings("unchecked")
+				JComboBox<Attribute> box = (JComboBox<Attribute>) com[i]; // save the combo box
+				Object object = box.getSelectedItem();
+				Attribute attribute;
+				if (object.getClass().getName().endsWith("String")) { // if not an existing attribute, the editor returns a String
+					attribute = new Attribute((String) object); // the new attribute has an ID of -1; the SQL class needs to take care of this when writing into the database
 				} else {
-					content = value;
+					attribute = (Attribute) box.getSelectedItem();
 				}
+				for (j = 0; j < variables.size(); j++) { // update the variable corresponding to the variable name identified
+					if (variables.get(j).getKey().equals(variableName)) {
+						variables.get(j).setValue(attribute);
+					}
+				}
+			} else if (com[i].getClass().getName().equals("javax.swing.JScrollPane")) { // long text
+				variableName = ((JLabel) com[i - 1]).getText();
+				JScrollPane jsp = ((JScrollPane) com[i]);
+				JTextArea jta = (JTextArea) jsp.getViewport().getView();
+				content = jta.getText();
 				if (content == null) {
 					content = "";
 				}
-				Dna.dna.updateVariable(statementId, statementTypeId, content, contentType);
-			} else if (com[i].getClass().getName().equals("javax.swing.JCheckBox")) {  // boolean
-				contentType = ((JLabel)com[i-1]).getText();
-				content = ((JCheckBox)com[i]).isSelected();
+				for (j = 0; j < variables.size(); j++) {
+					if (variables.get(j).getKey().equals(variableName)) {
+						variables.get(j).setValue(content);
+					}
+				}
+			} else if (com[i].getClass().getName().equals("javax.swing.JPanel")) { // integer
+				variableName = ((JLabel) com[i - 1]).getText();
+				JPanel jp = (JPanel) com[i];
+				JSpinner jsp = (JSpinner) jp.getComponent(0);
+				content = jsp.getValue();
+				for (j = 0; j < variables.size(); j++) {
+					if (variables.get(j).getKey().equals(variableName)) {
+						variables.get(j).setValue(content);
+					}
+				}
+			} else if (com[i].getClass().getName().endsWith("BooleanButtonPanel")) { // boolean
+				variableName = ((JLabel) com[i - 1]).getText();
+				content = ((BooleanButtonPanel) com[i]).isYes();
 				int intBool;
 				if ((Boolean) content == false) {
 					intBool = 0;
 				} else {
 					intBool = 1;
 				}
-				Dna.dna.updateVariable(statementId, statementTypeId, intBool, contentType);
-			} else if (com[i].getClass().getName().equals("javax.swing.JScrollPane")) {  // long text
-				contentType = ((JLabel)com[i-1]).getText();
-				JScrollPane jsp = ((JScrollPane)com[i]);
-				JTextArea jta = (JTextArea) jsp.getViewport().getView();
-				content = jta.getText();
-				if (content == null) {
-					content = "";
+				for (j = 0; j < variables.size(); j++) {
+					if (variables.get(j).getKey().equals(variableName)) {
+						variables.get(j).setValue(intBool);
+					}
 				}
-				Dna.dna.updateVariable(statementId, statementTypeId, content, contentType);
-			} else if (com[i].getClass().getName().equals("javax.swing.JPanel")) {  // integer
-				contentType = ((JLabel)com[i-1]).getText();
-				JPanel jp = (JPanel) com[i];
-				JSpinner jsp = (JSpinner) jp.getComponent(0);
-				content = jsp.getValue();
-				Dna.dna.updateVariable(statementId, statementTypeId, content, contentType);
+			}
+		}
+		Dna.sql.updateStatement(statementID, variables); // write changes into the database
+	}
+	
+	/**
+	 * A panel with a yes and a no radio button to represent boolean variables
+	 * in statement popup windows.
+	 */
+	private class BooleanButtonPanel extends JPanel {
+		private static final long serialVersionUID = 2614141772546080638L;
+		JRadioButton yes, no;
+		
+		BooleanButtonPanel() {
+			FlowLayout fl = new FlowLayout(FlowLayout.LEFT);
+			fl.setVgap(0);
+			this.setLayout(fl);
+			yes = new JRadioButton("yes");
+			no = new JRadioButton("no");
+			ButtonGroup group = new ButtonGroup();
+			group.add(yes);
+			group.add(no);
+			this.add(yes);
+			this.add(no);
+			yes.setSelected(true);
+		}
+		
+		/**
+		 * Select the "yes" or "no" button
+		 * 
+		 * @param b  true if yes should be selected; false if no should be selected
+		 */
+		public void setYes(boolean b) {
+			if (b == true) {
+				this.yes.setSelected(true);
+			} else if (b == false) {
+				this.no.setSelected(true);
+			}
+		}
+		
+		/**
+		 * Is the "yes" button selected?
+		 * 
+		 * @return boolean yes selected?
+		 */
+		public boolean isYes() {
+			if (yes.isSelected()) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+		
+		/**
+		 * Enable or disable the buttons
+		 * 
+		 * @param enabled Enable the buttons if true and disabled them otherwise
+		 */
+		public void setEnabled(boolean enabled) {
+			if (enabled == true) {
+				yes.setEnabled(true);
+				no.setEnabled(true);
+			} else {
+				yes.setEnabled(false);
+				no.setEnabled(false);
 			}
 		}
 	}
-	*/
 	
+	/**
+	 * A renderer for JComboBox items that represent {@link Attribute} objects.
+	 * The value is shown as text. The color is shown as the foreground color.
+	 * If the attribute is not present in the database, it gets a red background
+	 * color. The renderer is used to display combo boxes for short text
+	 * variables in popup windows. The renderer only displays the list items,
+	 * not the contents of the text editor at the top of the list.
+	 */
 	public class AttributeComboBoxRenderer implements ListCellRenderer<Object> {
 		@Override
 		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {

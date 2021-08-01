@@ -20,6 +20,7 @@ public class Attribute {
 	}
 	
 	public Attribute(String value) {
+		this.value = value;
 		this.id = -1;
 		this.color = Color.BLACK;
 		this.type = "";

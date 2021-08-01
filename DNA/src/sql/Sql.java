@@ -52,6 +52,7 @@ public class Sql {
 		if (cp.getType().equals("sqlite")) { // no user name and password needed for file-based database
 			ds = new SQLiteDataSource();
 	        ((SQLiteDataSource) ds).setUrl("jdbc:sqlite:" + cp.getUrl());
+	        ((SQLiteDataSource) ds).setEnforceForeignKeys(true); // if this is not set, ON DELETE CASCADE won't work
 		} else if (cp.getType().equals("mysql")) {
 			ds = new MysqlDataSource();
 			((MysqlDataSource) ds).setUrl("jdbc:mysql://" + cp.getUrl());
@@ -997,6 +998,239 @@ public class Sql {
 		return -1;
 	}
 
+	public void updateStatement(int statementId, ArrayList<Value> values) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
+				PreparedStatement s2 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("UPDATE DATALONGTEXT SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
+				PreparedStatement s4 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
+				PreparedStatement s5 = conn.prepareStatement("INSERT INTO ATTRIBUTES (VariableId, Value, Red, Green, Blue, Type, Alias, Notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?);");
+				PreparedStatement s6 = conn.prepareStatement("SELECT ID FROM ATTRIBUTES WHERE VariableId = ? AND Value = ?;");
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			Attribute attribute;
+			int attributeId, variableId;
+			ResultSet r;
+			for (int i = 0; i < values.size(); i++) {
+				variableId = values.get(i).getVariableId();
+				if (values.get(i).getDataType().equals("boolean")) {
+					s1.setInt(1, (int) values.get(i).getValue());
+					s1.setInt(2, statementId);
+					s1.setInt(3, variableId);
+					s1.executeUpdate();
+				} else if (values.get(i).getDataType().equals("integer")) {
+					s2.setInt(1, (int) values.get(i).getValue());
+					s2.setInt(2, statementId);
+					s2.setInt(3, variableId);
+					s2.executeUpdate();
+				} else if (values.get(i).getDataType().equals("long text")) {
+					s3.setString(1, (String) values.get(i).getValue());
+					s3.setInt(2, statementId);
+					s3.setInt(3, variableId);
+					s3.executeUpdate();
+				} else if (values.get(i).getDataType().equals("short text")) {
+					// try to recognise attribute ID from database; should be more reliable (e.g., with empty Strings)
+					attribute = (Attribute) values.get(i).getValue();
+					attributeId = -1;
+					s6.setInt(1, variableId);
+					s6.setString(2, attribute.getValue());
+					r = s6.executeQuery();
+					while (r.next()) {
+						attributeId = r.getInt("ID");
+					}
+					
+					if (attributeId == -1) {
+						// if the attribute does not exist, insert new attribute with given String value
+						s5.setInt(1, variableId);
+						s5.setString(2, attribute.getValue());
+						s5.setInt(3, attribute.getColor().getRed());
+						s5.setInt(4, attribute.getColor().getGreen());
+						s5.setInt(5, attribute.getColor().getBlue());
+						s5.setString(6, attribute.getType());
+						s5.setString(7, attribute.getAlias());
+						s5.setString(8, attribute.getNotes());
+						s5.executeUpdate();
+
+						// new attribute has been created; now we have to get its ID
+						s6.setInt(1, variableId);
+						s6.setString(2, attribute.getValue());
+						r = s6.executeQuery();
+						while (r.next()) {
+							attributeId = r.getInt(1);
+						}
+					}
+
+					// write the attribute ID as the value in the DATASHORTTEXT table
+					s4.setInt(1, attributeId);
+					s4.setInt(2, statementId);
+					s4.setInt(3, variableId);
+					s4.executeUpdate();
+				}
+			}
+			conn.commit();
+		} catch (SQLException e) {
+			System.err.println("Could not update statement " + statementId + ".");
+			e.printStackTrace();
+		}
+	}
+	
+	public int cloneStatement(int statementId, int newCoderId) {
+		int id = statementId;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("INSERT INTO STATEMENTS (StatementTypeId, DocumentId, Start, Stop, Coder) SELECT StatementTypeId, DocumentId, Start, Stop, Coder FROM STATEMENTS WHERE ID = ?;");
+				PreparedStatement s2 = conn.prepareStatement("UPDATE STATEMENTS SET Coder = ? WHERE ID = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT VariableId, Value FROM DATABOOLEAN WHERE StatementId = ?;");
+				PreparedStatement s4 = conn.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+				PreparedStatement s5 = conn.prepareStatement("SELECT VariableId, Value FROM DATAINTEGER WHERE StatementId = ?;");
+				PreparedStatement s6 = conn.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+				PreparedStatement s7 = conn.prepareStatement("SELECT VariableId, Value FROM DATASHORTTEXT WHERE StatementId = ?;");
+				PreparedStatement s8 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+				PreparedStatement s9 = conn.prepareStatement("SELECT VariableId, Value FROM DATALONGTEXT WHERE StatementId = ?;");
+				PreparedStatement s10 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+				SQLCloseable finish = conn::rollback) {
+			ResultSet r;
+			conn.setAutoCommit(false);
+			
+			// copy the statement in the STATEMENTS table
+			s1.setInt(1, statementId);
+			s1.executeUpdate();
+			if (s1.getGeneratedKeys().next()) {
+				id = s1.getGeneratedKeys().getInt(1);
+			}
+			System.out.println(id);
+			
+			// set new coder
+			s2.setInt(1, newCoderId);
+			s2.setInt(2, id);
+			s2.executeUpdate();
+			
+			// clone relevant entries in the DATABOOLEAN table
+			s3.setInt(1, statementId);
+			r = s3.executeQuery();
+			while (r.next()) {
+				s4.setInt(1, id);
+				s4.setInt(2, r.getInt("VariableId"));
+				s4.setInt(3, r.getInt("Value"));
+				s4.executeUpdate();
+			}
+			
+			// clone relevant entries in the DATAINTEGER table
+			s5.setInt(1, statementId);
+			r = s5.executeQuery();
+			while (r.next()) {
+				s6.setInt(1, id);
+				s6.setInt(2, r.getInt("VariableId"));
+				s6.setInt(3, r.getInt("Value"));
+				s6.executeUpdate();
+			}
+
+			// clone relevant entries in the DATASHORTTEXT table
+			s7.setInt(1, statementId);
+			r = s7.executeQuery();
+			while (r.next()) {
+				s8.setInt(1, id);
+				s8.setInt(2, r.getInt("VariableId"));
+				s8.setInt(3, r.getInt("Value"));
+				s8.executeUpdate();
+			}
+
+			// clone relevant entries in the DATALONGTEXT table
+			s9.setInt(1, statementId);
+			r = s9.executeQuery();
+			while (r.next()) {
+				s10.setInt(1, id);
+				s10.setInt(2, r.getInt("VariableId"));
+				s10.setString(3, r.getString("Value"));
+				s10.executeUpdate();
+			}
+			
+			conn.commit();
+		} catch (SQLException e1) {
+			System.err.println("Could not clone statement " + statementId + "in database.");
+			e1.printStackTrace();
+		}
+		return id;
+	}
+
+	public Statement getStatement(int statementId) {
+		Statement statement = null;
+		ArrayList<Value> values;
+		int statementTypeId, variableId;
+		String variable, dataType;
+		Color aColor, sColor, cColor;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("SELECT STATEMENTS.ID AS StatementId, StatementTypeId, STATEMENTTYPES.Label AS StatementTypeLabel, STATEMENTTYPES.Red AS StatementTypeRed, STATEMENTTYPES.Green AS StatementTypeGreen, STATEMENTTYPES.Blue AS StatementTypeBlue, Start, Stop, Coder AS CoderId, CODERS.Red AS CoderRed, CODERS.Green AS CoderGreen, CODERS.Blue AS CoderBlue FROM STATEMENTS INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID WHERE StatementId = ?;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
+				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
+				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
+				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
+			ResultSet r1, r2, r3;
+			s1.setInt(1, statementId);
+			r1 = s1.executeQuery();
+			while (r1.next()) {
+			    statementTypeId = r1.getInt("StatementTypeId");
+			    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
+			    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
+			    s2.setInt(1, statementTypeId);
+			    r2 = s2.executeQuery();
+			    values = new ArrayList<Value>();
+			    while (r2.next()) {
+			    	variableId = r2.getInt("ID");
+			    	variable = r2.getString("Variable");
+			    	dataType = r2.getString("DataType");
+			    	if (dataType.equals("short text")) {
+				    	s3.setInt(1, statementId);
+				    	s3.setInt(2, variableId);
+				    	r3 = s3.executeQuery();
+				    	while (r3.next()) {
+			            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
+			            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getString("Type"), r3.getString("Alias"), r3.getString("Notes"), r3.getInt("ChildOf"), true);
+				    		values.add(new Value(variableId, variable, dataType, attribute));
+				    	}
+			    	} else if (dataType.equals("long text")) {
+				    	s4.setInt(1, variableId);
+				    	s4.setInt(2, statementId);
+				    	r3 = s4.executeQuery();
+				    	while (r3.next()) {
+				    		values.add(new Value(variableId, variable, dataType, r3.getString("Value")));
+				    	}
+			    	} else if (dataType.equals("integer")) {
+				    	s5.setInt(1, variableId);
+				    	s5.setInt(2, statementId);
+				    	r3 = s5.executeQuery();
+				    	while (r3.next()) {
+				    		values.add(new Value(variableId, variable, dataType, r3.getInt("Value")));
+				    	}
+			    	} else if (dataType.equals("boolean")) {
+				    	s6.setInt(1, variableId);
+				    	s6.setInt(2, statementId);
+				    	r3 = s6.executeQuery();
+				    	while (r3.next()) {
+				    		values.add(new Value(variableId, variable, dataType, r3.getInt("Value")));
+				    	}
+			    	}
+			    }
+			    statement = new Statement(statementId, r1.getInt("CoderId"), r1.getInt("Start"), r1.getInt("Stop"), statementTypeId, values, sColor, cColor, r1.getString("StatementTypeLabel"));
+			}
+		} catch (SQLException e) {
+			System.err.println("Could not retrieve statement " + statementId + " from database.");
+			e.printStackTrace();
+		}
+		return statement;
+	}
+	
+	public void deleteStatement(int statementId) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("DELETE FROM STATEMENTS WHERE ID = ?;");) {
+			s.setInt(1, statementId);
+			s.executeUpdate();
+		} catch (SQLException e1) {
+			System.err.println("Could not delete statement " + statementId + " from database.");
+			e1.printStackTrace();
+		}
+	}
+	
 	public Attribute[] getAttributes(int variableId) {
 		ArrayList<Attribute> attributesList = new ArrayList<Attribute>();
 		boolean inDatabase;

@@ -40,7 +40,7 @@ public class Value {
 		return key;
 	}
 	
-	void setKey(String key) {
+	public void setKey(String key) {
 		this.key = key;
 	}
 	
@@ -48,7 +48,7 @@ public class Value {
 		return dataType;
 	}
 	
-	void setDataType(String dataType) {
+	public void setDataType(String dataType) {
 		this.dataType = dataType;
 	}
 	
@@ -56,7 +56,7 @@ public class Value {
 		return value;
 	}
 	
-	void setValue(Object value) {
+	public void setValue(Object value) {
 		this.value = value;
 	}
 }
