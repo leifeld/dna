@@ -219,7 +219,6 @@ public class Popup extends JDialog {
 			String dataType = variables.get(i).getDataType();
 			JLabel label = new JLabel(key, JLabel.TRAILING);
 			if (dataType.equals("short text")) {
-				// TODO: write JDBCWorker
 				Attribute[] attributeArray = Dna.sql.getAttributes(variables.get(i).getVariableId());
 				JComboBox<Attribute> box = new JComboBox<Attribute>(attributeArray);
 				box.setRenderer(new AttributeComboBoxRenderer());

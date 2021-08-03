@@ -1,5 +1,6 @@
 package guiCoder;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
@@ -29,7 +30,13 @@ class CoderBadgePanel extends JPanel {
 	 * Constructor for CoderBadgePanel which looks up the active coder
 	 */
 	public CoderBadgePanel() {
-		Coder coder = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
+		Coder coder;
+		if (Dna.sql == null) {
+			coder = new Coder(-1, "(no coder)", Color.BLACK);
+		} else {
+			coder = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
+		}
+		
 		createLayout(coder);
 	}
 	

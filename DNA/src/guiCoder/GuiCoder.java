@@ -1,9 +1,14 @@
 package guiCoder;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -16,19 +21,24 @@ import java.io.IOException;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileFilter;
 
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.jasypt.util.text.AES256TextEncryptor;
+import org.jdesktop.swingx.JXStatusBar;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
@@ -42,6 +52,7 @@ public class GuiCoder extends JFrame {
 	Container c;
 	DocumentPanel documentPanel;
 	DocumentTableModel documentTableModel;
+	StatusBar statusBar;
 	CloseDatabaseAction closeDatabaseAction;
 	SaveProfileAction saveProfileAction;
 	
@@ -139,13 +150,17 @@ public class GuiCoder extends JFrame {
 		JMenuItem aboutWindowItem = new JMenuItem(aboutWindowAction);
 		settingsMenu.add(aboutWindowItem);
 		
+		// status bar
+		statusBar = new StatusBar();
+		framePanel.add(statusBar, BorderLayout.SOUTH);
+		
 		c.add(framePanel);
 
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 	}
-
+	
 	public void updateGUI() {
 		documentTableModel.reloadTableFromSQL();
 	}
@@ -207,6 +222,154 @@ public class GuiCoder extends JFrame {
 		}
 	}
 
+	/**
+	 * A status bar panel showing the database on the left and messages on the right. 
+	 */
+	class StatusBar extends JPanel {
+		JLabel urlLabel, documentRefreshLabel, documentRefreshIconLabel, statementRefreshLabel, statementRefreshIconLabel;
+		int messagesLowPriority, messagesHighPriority;
+		JButton messageIconButton, highButton, lowButton;
+		JSeparator sep;
+		
+		/**
+		 * Create a new status bar.
+		 */
+		public StatusBar() {
+			this.setLayout(new BorderLayout());
+			
+			JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			ImageIcon databaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			OpenDatabaseAction openDatabaseAction = new OpenDatabaseAction(null, databaseIcon, "Open a dialog window to establish a connection to a remote or file-based database", KeyEvent.VK_O);
+			JButton databaseButton = new JButton(openDatabaseAction);
+			databaseButton.setContentAreaFilled(false);
+			databaseButton.setBorderPainted(false);
+			databaseButton.setBorder(null);
+			databaseButton.setMargin(new Insets(0, 0, 0, 0));
+			leftPanel.add(databaseButton);
+			urlLabel = new JLabel("");
+			leftPanel.add(urlLabel);
+			this.add(leftPanel, BorderLayout.WEST);
+			
+			JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+			ImageIcon refreshIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-refresh.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			documentRefreshIconLabel = new JLabel(refreshIcon);
+			documentRefreshIconLabel.setVisible(false);
+			rightPanel.add(documentRefreshIconLabel);
+			documentRefreshLabel = new JLabel("Documents");
+			rightPanel.add(documentRefreshLabel);
+			documentRefreshLabel.setVisible(false);
+			statementRefreshIconLabel = new JLabel(refreshIcon);
+			statementRefreshIconLabel.setVisible(false);
+			rightPanel.add(statementRefreshIconLabel);
+			statementRefreshLabel = new JLabel("Statements");
+			rightPanel.add(statementRefreshLabel);
+			statementRefreshLabel.setVisible(false);
+			
+			ImageIcon messageIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			messageIconButton = new JButton(messageIcon);
+			messageIconButton.setContentAreaFilled(false);
+			messageIconButton.setBorderPainted(false);
+			messageIconButton.setBorder(null);
+			messageIconButton.setMargin(new Insets(0, 0, 0, 0));
+			messagesLowPriority = 0;
+			messagesHighPriority = 0;
+			
+			highButton = new JButton(messagesHighPriority + "");
+			highButton.setContentAreaFilled(false);
+			highButton.setBorderPainted(false);
+			highButton.setForeground(new Color(153, 0, 0));
+			highButton.setBorder(null);
+			highButton.setMargin(new Insets(0, 0, 0, 0));
+			highButton.setVisible(false);
+			
+			lowButton = new JButton(messagesLowPriority + "");
+			lowButton.setContentAreaFilled(false);
+			lowButton.setBorderPainted(false);
+			lowButton.setForeground(new Color(0, 153, 0));
+			lowButton.setBorder(null);
+			lowButton.setMargin(new Insets(0, 0, 0, 0));
+			lowButton.setVisible(false);
+			
+			ActionListener messageButtonListener = new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					// TODO: open message log (to be implemented)
+					// updateMessageCount(messagesHighPriority + 1, true);
+				}
+			};
+			messageIconButton.addActionListener(messageButtonListener);
+			highButton.addActionListener(messageButtonListener);
+			lowButton.addActionListener(messageButtonListener);
+			
+			rightPanel.add(messageIconButton);
+			rightPanel.add(highButton);
+			rightPanel.add(lowButton);
+			this.add(rightPanel, BorderLayout.EAST);
+		}
+		
+		/**
+		 * Read the database URL from the {@link Sql} object and update it in
+		 * the status bar. Show an empty string if no database is open.
+		 */
+		public void updateUrl() {
+			if (Dna.sql == null) {
+				this.urlLabel.setText("");
+				this.urlLabel.setVisible(false);
+			} else {
+				this.urlLabel.setText(Dna.sql.getConnectionProfile().getUrl());
+				this.urlLabel.setVisible(true);
+			}
+		}
+		
+		/**
+		 * Show or hide a status bar message stating the documents are being loaded.
+		 * 
+		 * @param refreshing Show the message (true) or hide the message (false)?
+		 */
+		public void setDocumentRefreshing(boolean refreshing) {
+			this.documentRefreshIconLabel.setVisible(refreshing);
+			this.documentRefreshLabel.setVisible(refreshing);
+		}
+		
+		/**
+		 * Show or hide a status bar message stating the statements are being loaded.
+		 * 
+		 * @param refreshing Show the message (true) or hide the message (false)?
+		 */
+		public void setStatementRefreshing(boolean refreshing) {
+			this.statementRefreshIconLabel.setVisible(refreshing);
+			this.statementRefreshLabel.setVisible(refreshing);
+		}
+		
+		/**
+		 * Refresh the count of high- or low-priority messages. The respective
+		 * count is only shown if it is greater than zero.
+		 *  
+		 * @param messages Number of new messages.
+		 * @param highPriority Refresh the count of high priority messages
+		 * (true) or low-priority messages (false)?
+		 */
+		public void updateMessageCount(int messages, boolean highPriority) {
+			if (highPriority == true) {
+				messagesHighPriority = messages;
+				highButton.setText(messagesHighPriority + "");
+				if (messages == 0) {
+					highButton.setVisible(false);
+				} else {
+					highButton.setVisible(true);
+				}
+			} else {
+				messagesLowPriority = messages;
+				highButton.setText(messagesLowPriority + "");
+				if (messages == 0) {
+					lowButton.setVisible(false);
+				} else {
+					lowButton.setVisible(true);
+				}
+			}
+		}
+	}
+
 	// open database action
 	class OpenDatabaseAction extends AbstractAction {
 		public OpenDatabaseAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
@@ -227,6 +390,7 @@ public class GuiCoder extends JFrame {
 				if (saveProfileAction != null) {
 					saveProfileAction.setEnabled(true);
 				}
+				statusBar.updateUrl();
 			}
 		}
 	}
@@ -247,6 +411,7 @@ public class GuiCoder extends JFrame {
 			if (saveProfileAction != null) {
 				saveProfileAction.setEnabled(false);
 			}
+			statusBar.updateUrl();
 			updateGUI();
 		}
 	}
@@ -271,6 +436,7 @@ public class GuiCoder extends JFrame {
 				if (saveProfileAction != null) {
 					saveProfileAction.setEnabled(true);
 				}
+				statusBar.updateUrl();
 			}
 		}
 	}
@@ -367,6 +533,7 @@ public class GuiCoder extends JFrame {
 				if (saveProfileAction != null) {
 					saveProfileAction.setEnabled(true);
 				}
+				statusBar.updateUrl();
 			}
 		}
 	}

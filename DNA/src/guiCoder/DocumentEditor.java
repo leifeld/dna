@@ -438,8 +438,12 @@ public class DocumentEditor extends JDialog {
 		this.setVisible(true);
 	}
 	
-	// Swing worker to populate the author, source, section, and type combo boxes without blocking the event thread and GUI
-	// https://stackoverflow.com/questions/43161033/cant-add-tablerowsorter-to-jtable-produced-by-swingworker
+	/**
+	 * Swing worker to populate the author, source, section, and type combo
+	 * boxes without blocking the event thread and GUI.
+	 * 
+	 * https://stackoverflow.com/questions/43161033/cant-add-tablerowsorter-to-jtable-produced-by-swingworker
+	 */
 	private class JDBCWorker extends SwingWorker<List<String>, String> {
 		String field;
 		
