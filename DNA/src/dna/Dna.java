@@ -9,11 +9,14 @@ public class Dna {
 	public static Sql sql;
 	public final String date;
 	public final String version;
+	public Logger logger;
 	
 	public Dna() {
 		date = "2021-07-25";
 		version = "3.0.0";
 
+		logger = new Logger();
+		
 		guiCoder = new GuiCoder();
 	}
 	

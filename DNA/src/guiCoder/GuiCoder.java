@@ -3,7 +3,6 @@ package guiCoder;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Image;
 import java.awt.Insets;
@@ -18,7 +17,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -33,13 +31,9 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileFilter;
-
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.jasypt.util.text.AES256TextEncryptor;
-import org.jdesktop.swingx.JXStatusBar;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
@@ -52,7 +46,7 @@ public class GuiCoder extends JFrame {
 	Container c;
 	DocumentPanel documentPanel;
 	DocumentTableModel documentTableModel;
-	StatusBar statusBar;
+	public StatusBar statusBar;
 	CloseDatabaseAction closeDatabaseAction;
 	SaveProfileAction saveProfileAction;
 	
@@ -225,10 +219,10 @@ public class GuiCoder extends JFrame {
 	/**
 	 * A status bar panel showing the database on the left and messages on the right. 
 	 */
-	class StatusBar extends JPanel {
+	public class StatusBar extends JPanel {
 		JLabel urlLabel, documentRefreshLabel, documentRefreshIconLabel, statementRefreshLabel, statementRefreshIconLabel;
-		int messagesLowPriority, messagesHighPriority;
-		JButton messageIconButton, highButton, lowButton;
+		int numWarnings, numErrors;
+		JButton messageIconButton, messageButton, warningButton, errorButton;
 		JSeparator sep;
 		
 		/**
@@ -271,39 +265,38 @@ public class GuiCoder extends JFrame {
 			messageIconButton.setBorderPainted(false);
 			messageIconButton.setBorder(null);
 			messageIconButton.setMargin(new Insets(0, 0, 0, 0));
-			messagesLowPriority = 0;
-			messagesHighPriority = 0;
+			numWarnings = 0;
+			numErrors = 0;
 			
-			highButton = new JButton(messagesHighPriority + "");
-			highButton.setContentAreaFilled(false);
-			highButton.setBorderPainted(false);
-			highButton.setForeground(new Color(153, 0, 0));
-			highButton.setBorder(null);
-			highButton.setMargin(new Insets(0, 0, 0, 0));
-			highButton.setVisible(false);
+			errorButton = new JButton(numErrors + "");
+			errorButton.setContentAreaFilled(false);
+			errorButton.setBorderPainted(false);
+			errorButton.setForeground(new Color(153, 0, 0));
+			errorButton.setBorder(null);
+			errorButton.setMargin(new Insets(0, 0, 0, 0));
+			errorButton.setVisible(false);
 			
-			lowButton = new JButton(messagesLowPriority + "");
-			lowButton.setContentAreaFilled(false);
-			lowButton.setBorderPainted(false);
-			lowButton.setForeground(new Color(0, 153, 0));
-			lowButton.setBorder(null);
-			lowButton.setMargin(new Insets(0, 0, 0, 0));
-			lowButton.setVisible(false);
-			
+			warningButton = new JButton(numWarnings + "");
+			warningButton.setContentAreaFilled(false);
+			warningButton.setBorderPainted(false);
+			warningButton.setForeground(new Color(153, 153, 0));
+			warningButton.setBorder(null);
+			warningButton.setMargin(new Insets(0, 0, 0, 0));
+			warningButton.setVisible(false);
+
 			ActionListener messageButtonListener = new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					// TODO: open message log (to be implemented)
-					// updateMessageCount(messagesHighPriority + 1, true);
+					new LoggerDialog();
 				}
 			};
 			messageIconButton.addActionListener(messageButtonListener);
-			highButton.addActionListener(messageButtonListener);
-			lowButton.addActionListener(messageButtonListener);
+			errorButton.addActionListener(messageButtonListener);
+			warningButton.addActionListener(messageButtonListener);
 			
 			rightPanel.add(messageIconButton);
-			rightPanel.add(highButton);
-			rightPanel.add(lowButton);
+			rightPanel.add(errorButton);
+			rightPanel.add(warningButton);
 			this.add(rightPanel, BorderLayout.EAST);
 		}
 		
@@ -342,30 +335,26 @@ public class GuiCoder extends JFrame {
 		}
 		
 		/**
-		 * Refresh the count of high- or low-priority messages. The respective
+		 * Refresh the count of warnings and errors. The respective
 		 * count is only shown if it is greater than zero.
 		 *  
-		 * @param messages Number of new messages.
-		 * @param highPriority Refresh the count of high priority messages
-		 * (true) or low-priority messages (false)?
+		 * @param warnings Number of new warnings in the logger.
+		 * @param errors Number of new errors in the logger.
 		 */
-		public void updateMessageCount(int messages, boolean highPriority) {
-			if (highPriority == true) {
-				messagesHighPriority = messages;
-				highButton.setText(messagesHighPriority + "");
-				if (messages == 0) {
-					highButton.setVisible(false);
-				} else {
-					highButton.setVisible(true);
-				}
+		public void updateLog(int warnings, int errors) {
+			this.numWarnings = warnings;
+			warningButton.setText(this.numWarnings + "");
+			if (warnings == 0) {
+				warningButton.setVisible(false);
 			} else {
-				messagesLowPriority = messages;
-				highButton.setText(messagesLowPriority + "");
-				if (messages == 0) {
-					lowButton.setVisible(false);
-				} else {
-					lowButton.setVisible(true);
-				}
+				warningButton.setVisible(true);
+			}
+			this.numErrors = errors;
+			errorButton.setText(this.numErrors + "");
+			if (errors == 0) {
+				errorButton.setVisible(false);
+			} else {
+				errorButton.setVisible(true);
 			}
 		}
 	}
@@ -664,5 +653,4 @@ public class GuiCoder extends JFrame {
 		
 	}
 	*/
-
 }

@@ -14,6 +14,8 @@ import javax.swing.SwingWorker;
 import javax.swing.table.AbstractTableModel;
 
 import dna.Dna;
+import dna.LogEvent;
+import dna.Logger;
 
 @SuppressWarnings("serial")
 public class DocumentTableModel extends AbstractTableModel {
@@ -180,8 +182,9 @@ public class DocumentTableModel extends AbstractTableModel {
                     publish(r);
                 }
 			} catch (SQLException e) {
-				System.err.println("Could not retrieve documents from database.");
-				e.printStackTrace();
+				new LogEvent(Logger.WARNING,
+						"Could not retrieve documents from database.",
+						"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved. The document table may be incomplete. Error message: " + e.getStackTrace());
 			}
             return null;
         }
@@ -200,7 +203,11 @@ public class DocumentTableModel extends AbstractTableModel {
             // fireTableDataChanged();
     		Dna.guiCoder.statusBar.setDocumentRefreshing(false);
     		long elapsed = System.nanoTime();
-    		System.out.println("(Re)loaded all documents in " + (elapsed - time) / 1000000 + " milliseconds.");
+    		new LogEvent(Logger.MESSAGE,
+    				"(Re)loaded all documents in " + (elapsed - time) / 1000000 + " milliseconds.",
+    				"The document table swing worker loaded the documents from the DNA database in the "
+    				+ "background and stored them in the document table. This took "
+    				+ (elapsed - time) / 1000000 + " seconds.");
         }
     }
 
