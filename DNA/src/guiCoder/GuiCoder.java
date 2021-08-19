@@ -49,13 +49,14 @@ import com.google.gson.JsonSyntaxException;
 import dna.Dna;
 import dna.LogEvent;
 import dna.Logger;
+import dna.Logger.LogListener;
 import sql.Sql;
 
 /**
  * GUI of the Discourse Network Analyzer. Creates the layout of the main coding window.
  */
 @SuppressWarnings("serial")
-public class GuiCoder extends JFrame {
+public class GuiCoder extends JFrame implements LogListener {
 	Container c;
 	AddDocumentAction addDocumentAction;
 	EditDocumentsAction editDocumentsAction;
@@ -258,7 +259,7 @@ public class GuiCoder extends JFrame {
 				LogEvent le = new LogEvent(Logger.WARNING,
 						"Could not retrieve documents from database.",
 						"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved. The document table may be incomplete. Error message: " + e.getStackTrace());
-				log(le);
+				Dna.logger.log(le);
 			}
             return null;
         }
@@ -277,37 +278,10 @@ public class GuiCoder extends JFrame {
     				"The document table swing worker loaded the documents from the DNA database in the "
     				+ "background and stored them in the document table. This took "
     				+ (elapsed - time) / 1000000 + " seconds.");
-    		log(le);
+    		Dna.logger.log(le);
         }
     }
 
-	/**
-	 * Log an event. Add the coder ID to the {@link LogEvent} object, add it as
-	 * a new entry to the {@link Logger} instance in DNA, and update the event
-	 * counts in the status bar to reflect the change.
-	 * 
-	 * @param e The {@link LogEvent} event to record. It needn't have the
-	 * correct coder as this will be added here.
-	 */
-	void log(LogEvent e) {
-		if (Dna.sql != null) {
-			e.setCoder(Dna.sql.getConnectionProfile().getCoderId());
-		}
-		
-		Dna.logger.addRow(e);
-
-		int numWarnings = 0;
-		int numErrors = 0;
-		for (int i = 0; i < Dna.logger.getRowCount(); i++) {
-			if (Dna.logger.getRow(i).getPriority() == 2) {
-				numWarnings++;
-			} else if (Dna.logger.getRow(i).getPriority() == 3) {
-				numErrors++;
-			}
-		}
-		statusBar.updateLog(numWarnings, numErrors);
-	}
-	
 	/**
 	 * Read in a saved connection profile from a JSON file, decrypt the
 	 * credentials, and return the connection profile.
@@ -365,6 +339,24 @@ public class GuiCoder extends JFrame {
 		}
 	}
 
+	/**
+	 * Listen to changes in the Logger in DNA and respond by updating the event
+	 * counts in the status bar.
+	 */
+	@Override
+	public void processLogEvents() {
+		int numWarnings = 0;
+		int numErrors = 0;
+		for (int i = 0; i < Dna.logger.getRowCount(); i++) {
+			if (Dna.logger.getRow(i).getPriority() == 2) {
+				numWarnings++;
+			} else if (Dna.logger.getRow(i).getPriority() == 3) {
+				numErrors++;
+			}
+		}
+		statusBar.updateLog(numWarnings, numErrors);
+	}
+	
 	/**
 	 * A status bar panel showing the database on the left and messages on the right. 
 	 */
@@ -481,7 +473,7 @@ public class GuiCoder extends JFrame {
 			this.statementRefreshIconLabel.setVisible(refreshing);
 			this.statementRefreshLabel.setVisible(refreshing);
 		}
-		
+
 		/**
 		 * Refresh the count of warnings and errors. The respective
 		 * count is only shown if it is greater than zero.

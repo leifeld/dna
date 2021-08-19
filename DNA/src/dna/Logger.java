@@ -2,6 +2,7 @@ package dna;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
@@ -15,6 +16,7 @@ public class Logger extends AbstractTableModel {
 	public static final int WARNING = 2;
 	public static final int ERROR = 3;
 	ArrayList<LogEvent> rows;
+	private List<LogListener> listeners = new ArrayList<LogListener>();
 	
 	/**
 	 * Create a new logger.
@@ -108,10 +110,41 @@ public class Logger extends AbstractTableModel {
 	 * 
 	 * @param logEntry The {@link LogEvent} object to be added.
 	 */
-	public void addRow(LogEvent logEntry) {
+	public void log(LogEvent logEntry) {
 		this.rows.add(logEntry);
 		fireTableDataChanged(); // TODO: replace by fireTableRowsInserted
+		for (LogListener l : listeners) {
+			l.processLogEvents();
+		}
 	}
 	
-	// TODO: add methods for deleting/clearing events
+	/**
+	 * Add a log listener. This can be an object that implements the
+	 * {@link LogListener} interface.
+	 * 
+	 * @param listener An object implementing the {@link LogListener} interface.
+	 */
+	public void addListener(LogListener listener) {
+        listeners.add(listener);
+    }
+	
+	/**
+	 * Clear all log events and notify listeners.
+	 */
+	public void clear() {
+		this.rows.clear();
+		fireTableDataChanged();
+		for (LogListener l : listeners) {
+			l.processLogEvents();
+		}
+	}
+
+	/**
+	 * An interface for listeners for log events. For example, the main window
+	 * should react to changes in the Logger by adjusting the information in the
+	 * status bar. It thus needs to be registered as a listener to the Logger.
+	 */
+	public interface LogListener {
+		void processLogEvents();
+	}
 }

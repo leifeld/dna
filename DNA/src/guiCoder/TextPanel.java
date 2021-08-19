@@ -144,7 +144,7 @@ public class TextPanel extends JPanel {
 			int pos = textWindow.getCaretPosition(); //click caret position
 			Point p = me.getPoint();
 			
-			if (statements.size() > 0) {
+			if (statements != null && statements.size() > 0) {
 				for (int i = 0; i < statements.size(); i++) {
 					if (statements.get(i).getStart() < pos && statements.get(i).getStop() > pos) {
 						//boolean[] b = Dna.data.getActiveStatementPermissions(Dna.data.getStatements().get(i).getId());
