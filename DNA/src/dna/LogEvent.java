@@ -7,8 +7,9 @@ import java.time.LocalDateTime;
 /**
  * A throwable event that captures details like the priority/severity of the
  * event, a summary and details of the event, the stack trace, and the coder ID.
- * When the event is created, it adds itself to the logger. It generates the
- * stack trace automatically.
+ * It generates the stack trace automatically. Upon instantiation, a log event
+ * has a default coder ID of -1; this needs to be set using the appropriate
+ * setter method, {@link setCoder}.
  */
 public class LogEvent extends Throwable {
 	private static final long serialVersionUID = 776936228209151721L;
@@ -20,8 +21,9 @@ public class LogEvent extends Throwable {
 	/**
 	 * Create a new log event.
 	 * 
-	 * @param priority Priority of the event, which can be 1 ({@link Logger.MESSAGE},
-	 *     2 ({@link Logger.WARNING}), or 3 ({@link Logger.ERROR}).
+	 * @param priority Priority of the event, which can be 1
+	 *   ({@link Logger.MESSAGE}, 2 ({@link Logger.WARNING}), or 3
+	 *   ({@link Logger.ERROR}).
 	 * @param summary The title or short version of the event.
 	 * @param details A more detailed description of the event.
 	 */
@@ -29,22 +31,14 @@ public class LogEvent extends Throwable {
 		this.priority = priority;
 		this.summary = summary;
 		this.details = details;
-		
+		this.coder = -1;
 		this.time = LocalDateTime.now();
 		
-		if (Dna.sql == null) {
-			this.coder = -1;
-		} else {
-			this.coder = Dna.sql.getConnectionProfile().getCoderId();
-		}
-
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
 		printStackTrace(pw);
 		this.stackTraceString = sw.toString();
 		pw.close();
-		
-		Dna.dna.logger.addRow(this);
 	}
 	
 	public String getStackTraceString() {
@@ -91,6 +85,12 @@ public class LogEvent extends Throwable {
 		return coder;
 	}
 	
+	/**
+	 * Set the coder ID of the coder who triggered the log entry.
+	 * 
+	 * @param coder An integer coder ID, which represents the coder's primary
+	 *   key in the database.
+	 */
 	public void setCoder(int coder) {
 		this.coder = coder;
 	}

@@ -9,14 +9,12 @@ import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 
-import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -31,20 +29,33 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
-import dna.Dna;
-
+/**
+ * Panel with a toolbar, a document table, and a text pane for displaying
+ * documents and their metadata. Typically used at the center of the main window
+ * GUI of the Discourse Network Analyzer.
+ */
 @SuppressWarnings("serial")
 class DocumentPanel extends JPanel {
 	private DocumentTableModel documentTableModel;
 	public TextPanel textPanel;
 	private JTable documentTable;
-	public JMenuItem addDocumentItem, removeDocumentsItem, editDocumentsItem, batchImportDocumentsItem;
-	public AddDocumentAction addDocumentAction;
-	public RemoveDocumentsAction removeDocumentsAction;
-	public EditDocumentsAction editDocumentsAction;
-	public BatchImportDocumentsAction batchImportDocumentsAction;
 
-	public DocumentPanel(DocumentTableModel documentTableModel) {
+	/**
+	 * Create an instance of the document panel class, using a table model and
+	 * some actions from the surrounding GUI, which are handed over via the
+	 * constructor.
+	 * 
+	 * @param documentTableModel The document table model used in the GUI.
+	 * @param addDocumentAction An {@link Action} for adding a document to the
+	 *   database.
+	 * @param editDocumentsAction An {@link Action} for editing the metadata of
+	 *   one or more documents in the database.
+	 * @param removeDocumentsAction An {@link Action} for deleting one or more
+	 *   documents from the database.
+	 * @param BatchImportDocumentsAction An {@link Action} for creating a
+	 *   document batch importer window.
+	 */
+	public DocumentPanel(DocumentTableModel documentTableModel, Action addDocumentAction, Action editDocumentsAction, Action removeDocumentsAction, Action BatchImportDocumentsAction) {
 		this.documentTableModel = documentTableModel;
 		this.setLayout(new BorderLayout());
 		
@@ -76,27 +87,6 @@ class DocumentPanel extends JPanel {
 		documentTableScroller.setPreferredSize(new Dimension(1000, 200));
 		this.add(documentTableScroller, BorderLayout.CENTER);
 
-		// items for documents menu
-		ImageIcon addDocumentIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		addDocumentAction = new AddDocumentAction("Add document", addDocumentIcon, "Open a dialog window to enter details of a new document", KeyEvent.VK_A);
-		addDocumentItem = new JMenuItem(addDocumentAction);
-		addDocumentAction.setEnabled(false);
-		
-		ImageIcon removeDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-minus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		removeDocumentsAction = new RemoveDocumentsAction("Remove document(s)", removeDocumentsIcon, "Remove the document(s) currently selected in the document table", KeyEvent.VK_R);
-		removeDocumentsItem = new JMenuItem(removeDocumentsAction);
-		removeDocumentsAction.setEnabled(false);
-		
-		ImageIcon editDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-edit.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		editDocumentsAction = new EditDocumentsAction("Edit document(s)", editDocumentsIcon, "Edit the document(s) currently selected in the document table", KeyEvent.VK_E);
-		editDocumentsItem = new JMenuItem(editDocumentsAction);
-		editDocumentsAction.setEnabled(false);
-
-		ImageIcon batchImportDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-import.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		batchImportDocumentsAction = new BatchImportDocumentsAction("Import from directory", batchImportDocumentsIcon, "Batch-import all text files from a folder as new documents", KeyEvent.VK_I);
-		batchImportDocumentsItem = new JMenuItem(batchImportDocumentsAction);
-		batchImportDocumentsAction.setEnabled(false);
-		
 		// toolbar of the document panel
 		JToolBar tb = new JToolBar("Document toolbar");
 		
@@ -336,76 +326,24 @@ class DocumentPanel extends JPanel {
 		this.add(textPanel, BorderLayout.SOUTH);
 	}
 
-	// add new document action
-	class AddDocumentAction extends AbstractAction {
-		public AddDocumentAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
-			super(text, icon);
-			putValue(SHORT_DESCRIPTION, desc);
-			putValue(MNEMONIC_KEY, mnemonic);
-		}
-		public void actionPerformed(ActionEvent e) {
-			DocumentEditor de = new DocumentEditor();
-			if (de.getDocuments() != null) {
-				Dna.sql.addDocuments(de.getDocuments());
-				documentTableModel.reloadTableFromSQL();
-			}
-		}
+	/**
+	 * Return the indices of the rows that are currently selected in the
+	 * document table.
+	 * 
+	 * @return A one-dimensional integer array of row indices in the table.
+	 */
+	int[] getSelectedRows() {
+		return documentTable.getSelectedRows();
 	}
-
-	// remove documents action
-	class RemoveDocumentsAction extends AbstractAction {
-		public RemoveDocumentsAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
-			super(text, icon);
-			putValue(SHORT_DESCRIPTION, desc);
-			putValue(MNEMONIC_KEY, mnemonic);
-		}
-		public void actionPerformed(ActionEvent e) {
-			int[] selectedRows = documentTable.getSelectedRows();
-			String message = "Are you sure you want to delete " + selectedRows.length + " document(s) including all statements?";
-			int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
-			if (dialog == 0) {
-				for (int i = 0; i < selectedRows.length; i++) {
-					selectedRows[i] = documentTable.convertRowIndexToModel(selectedRows[i]);
-				}
-				documentTableModel.removeDocuments(selectedRows);
-			}
-			Dna.guiCoder.updateGUI();
-		}
-	}
-
-	// edit documents action
-	class EditDocumentsAction extends AbstractAction {
-		public EditDocumentsAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
-			super(text, icon);
-			putValue(SHORT_DESCRIPTION, desc);
-			putValue(MNEMONIC_KEY, mnemonic);
-		}
-		public void actionPerformed(ActionEvent e) {
-			int[] selectedRows = documentTable.getSelectedRows();
-			for (int i = 0; i < selectedRows.length; i++) {
-				selectedRows[i] = documentTableModel.getIdByModelRow(documentTable.convertRowIndexToModel(selectedRows[i]));
-			}
-			new DocumentEditor(selectedRows);
-			Dna.guiCoder.updateGUI();
-		}
-	}
-
-	// batch-import documents action
-	class BatchImportDocumentsAction extends AbstractAction {
-		public BatchImportDocumentsAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
-			super(text, icon);
-			putValue(SHORT_DESCRIPTION, desc);
-			putValue(MNEMONIC_KEY, mnemonic);
-		}
-		public void actionPerformed(ActionEvent e) {
-			new DocumentBatchImporter();
-			Dna.guiCoder.updateGUI();
-		}
-	}
-
-	public void enableActions(boolean enabled) {
-		addDocumentAction.setEnabled(enabled);
-		batchImportDocumentsAction.setEnabled(enabled);
+	
+	/**
+	 * Convert a row index in the document table to a document table model index.
+	 * 
+	 * @param rowIndex The row index in the table to convert.
+	 * @return The row index in the table model corresponding to the table row index.
+	 */
+	int convertRowIndexToModel(int rowIndex) {
+		return documentTable.convertRowIndexToModel(rowIndex);
 	}
 	
 	/*
@@ -415,6 +353,9 @@ class DocumentPanel extends JPanel {
 	}
 	*/
 	
+	/**
+	 * A renderer for {@link Coder} objects in {@link JTable} tables.
+	 */
 	private class CoderTableCellRenderer extends DefaultTableCellRenderer {
 		@Override
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {

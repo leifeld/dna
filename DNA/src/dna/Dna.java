@@ -6,10 +6,10 @@ import sql.Sql;
 public class Dna {
 	public static Dna dna;
 	public static GuiCoder guiCoder;
+	public static Logger logger;
 	public static Sql sql;
 	public final String date;
 	public final String version;
-	public Logger logger;
 	
 	public Dna() {
 		date = "2021-07-25";

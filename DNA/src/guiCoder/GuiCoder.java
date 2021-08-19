@@ -17,6 +17,14 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -28,7 +36,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JSeparator;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileFilter;
@@ -39,17 +47,30 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
 import dna.Dna;
+import dna.LogEvent;
+import dna.Logger;
 import sql.Sql;
 
+/**
+ * GUI of the Discourse Network Analyzer. Creates the layout of the main coding window.
+ */
 @SuppressWarnings("serial")
 public class GuiCoder extends JFrame {
 	Container c;
+	AddDocumentAction addDocumentAction;
+	EditDocumentsAction editDocumentsAction;
+	RemoveDocumentsAction removeDocumentsAction;
+	BatchImportDocumentsAction batchImportDocumentsAction;
 	DocumentPanel documentPanel;
 	DocumentTableModel documentTableModel;
+	DocumentTableSwingWorker worker;
 	public StatusBar statusBar;
 	CloseDatabaseAction closeDatabaseAction;
 	SaveProfileAction saveProfileAction;
 	
+	/**
+	 * Constructor of the graphical user interface class; creates a new instance of the main window.
+	 */
 	public GuiCoder() {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -78,11 +99,7 @@ public class GuiCoder extends JFrame {
 		});
 
 		JPanel framePanel = new JPanel(new BorderLayout());
-		
-		documentTableModel = new DocumentTableModel();
-		documentPanel = new DocumentPanel(documentTableModel);
-		framePanel.add(documentPanel, BorderLayout.CENTER);
-		
+
 		// menu bar
 		JMenuBar menu = new JMenuBar();
 		framePanel.add(menu, BorderLayout.NORTH);
@@ -133,16 +150,44 @@ public class GuiCoder extends JFrame {
 		JMenuItem quitItem = new JMenuItem(quitAction);
 		databaseMenu.add(quitItem);
 
-		documentMenu.add(documentPanel.addDocumentItem);
-		documentMenu.add(documentPanel.removeDocumentsItem);
-		documentMenu.add(documentPanel.editDocumentsItem);
-		documentMenu.add(documentPanel.batchImportDocumentsItem);
+		// document menu: add new document
+		ImageIcon addDocumentIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		addDocumentAction = new AddDocumentAction("Add document", addDocumentIcon, "Open a dialog window to enter details of a new document", KeyEvent.VK_A);
+		JMenuItem addDocumentItem = new JMenuItem(addDocumentAction);
+		addDocumentAction.setEnabled(false);
+		documentMenu.add(addDocumentItem);
+		
+		// document menu: remove documents
+		ImageIcon removeDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-minus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		removeDocumentsAction = new RemoveDocumentsAction("Remove document(s)", removeDocumentsIcon, "Remove the document(s) currently selected in the document table", KeyEvent.VK_R);
+		JMenuItem removeDocumentsItem = new JMenuItem(removeDocumentsAction);
+		removeDocumentsAction.setEnabled(false);
+		documentMenu.add(removeDocumentsItem);
+		
+		// document menu: edit documents
+		ImageIcon editDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-edit.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		editDocumentsAction = new EditDocumentsAction("Edit document(s)", editDocumentsIcon, "Edit the document(s) currently selected in the document table", KeyEvent.VK_E);
+		JMenuItem editDocumentsItem = new JMenuItem(editDocumentsAction);
+		editDocumentsAction.setEnabled(false);
+		documentMenu.add(editDocumentsItem);
+
+		// document menu: batch import documents
+		ImageIcon batchImportDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-import.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		batchImportDocumentsAction = new BatchImportDocumentsAction("Import from directory", batchImportDocumentsIcon, "Batch-import all text files from a folder as new documents", KeyEvent.VK_I);
+		JMenuItem batchImportDocumentsItem = new JMenuItem(batchImportDocumentsAction);
+		batchImportDocumentsAction.setEnabled(false);
+		documentMenu.add(batchImportDocumentsItem);
 
 		// settings menu: display about DNA window
 		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		AboutWindowAction aboutWindowAction = new AboutWindowAction("About DNA", aboutIcon, "Display information about DNA", KeyEvent.VK_B);
 		JMenuItem aboutWindowItem = new JMenuItem(aboutWindowAction);
 		settingsMenu.add(aboutWindowItem);
+		
+		// document panel
+		documentTableModel = new DocumentTableModel();
+		documentPanel = new DocumentPanel(documentTableModel, addDocumentAction, editDocumentsAction, removeDocumentsAction, batchImportDocumentsAction);
+		framePanel.add(documentPanel, BorderLayout.CENTER);
 		
 		// status bar
 		statusBar = new StatusBar();
@@ -155,8 +200,112 @@ public class GuiCoder extends JFrame {
 		this.setVisible(true);
 	}
 	
-	public void updateGUI() {
-		documentTableModel.reloadTableFromSQL();
+	/**
+	 * Create a new swing worker to (re-) load all documents from the database
+	 * into the document table model.
+	 */
+	public void reloadTableFromSQL() {
+    	if (Dna.sql != null) {
+    		worker = new DocumentTableSwingWorker();
+            worker.execute();
+    	} else {
+            documentTableModel.clear();
+    	}
+	}
+	
+	/**
+	 * Swing worker class for loading documents from the database and adding
+	 * them to the document table in a background thread.
+	 * 
+	 * https://stackoverflow.com/questions/43161033/cant-add-tablerowsorter-to-jtable-produced-by-swingworker
+	 */
+	private class DocumentTableSwingWorker extends SwingWorker<List<TableDocument>, TableDocument> {
+		long time;
+		
+		/**
+		 * Create a new swing worker.
+		 */
+		public DocumentTableSwingWorker() {
+    		statusBar.setDocumentRefreshing(true); // display a message in the status bar that documents are being loaded
+    		documentTableModel.clear();
+    		time = System.nanoTime();
+		}
+		
+        @Override
+        protected List<TableDocument> doInBackground() {
+        	try (Connection conn = Dna.sql.getDataSource().getConnection();
+					PreparedStatement tableStatement = conn.prepareStatement("SELECT D.ID, Title, (SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = D.ID) AS Frequency, C.ID AS CoderId, Name AS CoderName, Red, Green, Blue, Date, Author, Source, Section, Type, Notes FROM CODERS C INNER JOIN DOCUMENTS D ON D.Coder = C.ID;")) {
+            	ResultSet rs = tableStatement.executeQuery();
+                while (rs.next()) {
+                	TableDocument r = new TableDocument(
+                			rs.getInt("ID"),
+                			rs.getString("Title"),
+                			rs.getInt("Frequency"),
+                			new Coder(rs.getInt("CoderId"),
+                					rs.getString("CoderName"),
+                					rs.getInt("Red"),
+                					rs.getInt("Green"),
+                					rs.getInt("Blue")),
+                			rs.getString("Author"),
+                			rs.getString("Source"),
+                			rs.getString("Section"),
+                			rs.getString("Type"),
+                			rs.getString("Notes"),
+                			LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC));
+                    publish(r);
+                }
+			} catch (SQLException e) {
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"Could not retrieve documents from database.",
+						"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved. The document table may be incomplete. Error message: " + e.getStackTrace());
+				log(le);
+			}
+            return null;
+        }
+        
+        @Override
+        protected void process(List<TableDocument> chunks) {
+        	documentTableModel.addRows(chunks);
+        }
+
+        @Override
+        protected void done() {
+            statusBar.setDocumentRefreshing(false);
+    		long elapsed = System.nanoTime();
+    		LogEvent le = new LogEvent(Logger.MESSAGE,
+    				"(Re)loaded all documents in " + (elapsed - time) / 1000000 + " milliseconds.",
+    				"The document table swing worker loaded the documents from the DNA database in the "
+    				+ "background and stored them in the document table. This took "
+    				+ (elapsed - time) / 1000000 + " seconds.");
+    		log(le);
+        }
+    }
+
+	/**
+	 * Log an event. Add the coder ID to the {@link LogEvent} object, add it as
+	 * a new entry to the {@link Logger} instance in DNA, and update the event
+	 * counts in the status bar to reflect the change.
+	 * 
+	 * @param e The {@link LogEvent} event to record. It needn't have the
+	 * correct coder as this will be added here.
+	 */
+	void log(LogEvent e) {
+		if (Dna.sql != null) {
+			e.setCoder(Dna.sql.getConnectionProfile().getCoderId());
+		}
+		
+		Dna.logger.addRow(e);
+
+		int numWarnings = 0;
+		int numErrors = 0;
+		for (int i = 0; i < Dna.logger.getRowCount(); i++) {
+			if (Dna.logger.getRow(i).getPriority() == 2) {
+				numWarnings++;
+			} else if (Dna.logger.getRow(i).getPriority() == 3) {
+				numErrors++;
+			}
+		}
+		statusBar.updateLog(numWarnings, numErrors);
 	}
 	
 	/**
@@ -219,11 +368,10 @@ public class GuiCoder extends JFrame {
 	/**
 	 * A status bar panel showing the database on the left and messages on the right. 
 	 */
-	public class StatusBar extends JPanel {
+	class StatusBar extends JPanel {
 		JLabel urlLabel, documentRefreshLabel, documentRefreshIconLabel, statementRefreshLabel, statementRefreshIconLabel;
 		int numWarnings, numErrors;
-		JButton messageIconButton, messageButton, warningButton, errorButton;
-		JSeparator sep;
+		JButton messageIconButton, warningButton, errorButton;
 		
 		/**
 		 * Create a new status bar.
@@ -371,8 +519,9 @@ public class GuiCoder extends JFrame {
 			ConnectionProfile cp = n.getConnectionProfile();
 			if (cp != null) {
 				Dna.sql = new Sql(cp);
-				updateGUI();
-				documentPanel.enableActions(true);
+				reloadTableFromSQL();
+				addDocumentAction.setEnabled(true);
+				batchImportDocumentsAction.setEnabled(true);
 				if (closeDatabaseAction != null) {
 					closeDatabaseAction.setEnabled(true);
 				}
@@ -393,7 +542,8 @@ public class GuiCoder extends JFrame {
 		}
 		public void actionPerformed(ActionEvent e) {
 			Dna.sql = null;
-			documentPanel.enableActions(false);
+			addDocumentAction.setEnabled(false);
+			batchImportDocumentsAction.setEnabled(false);
 			if (closeDatabaseAction != null) {
 				closeDatabaseAction.setEnabled(false);
 			}
@@ -401,7 +551,7 @@ public class GuiCoder extends JFrame {
 				saveProfileAction.setEnabled(false);
 			}
 			statusBar.updateUrl();
-			updateGUI();
+			reloadTableFromSQL();
 		}
 	}
 
@@ -417,8 +567,9 @@ public class GuiCoder extends JFrame {
 			ConnectionProfile cp = n.getConnectionProfile();
 			if (cp != null) {
 				Dna.sql = new Sql(cp);
-				updateGUI();
-				documentPanel.enableActions(true);
+				reloadTableFromSQL();
+				addDocumentAction.setEnabled(true);
+				batchImportDocumentsAction.setEnabled(true);
 				if (closeDatabaseAction != null) {
 					closeDatabaseAction.setEnabled(true);
 				}
@@ -493,7 +644,7 @@ public class GuiCoder extends JFrame {
 								if (authenticated == true) {
 									validPasswordInput = true; // authenticated; quit the while-loop
 									Dna.sql = sqlTemp;
-									updateGUI();
+									reloadTableFromSQL();
 								} else {
 									cp = null;
 								}
@@ -515,7 +666,8 @@ public class GuiCoder extends JFrame {
 				}
 			}
 			if (Dna.sql != null) { // pressed cancel
-				documentPanel.enableActions(true);
+				addDocumentAction.setEnabled(true);
+				batchImportDocumentsAction.setEnabled(true);
 				if (closeDatabaseAction != null) {
 					closeDatabaseAction.setEnabled(true);
 				}
@@ -617,6 +769,73 @@ public class GuiCoder extends JFrame {
 		}
 	}
 
+	// add new document action
+	class AddDocumentAction extends AbstractAction {
+		public AddDocumentAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			DocumentEditor de = new DocumentEditor();
+			if (de.getDocuments() != null) {
+				Dna.sql.addDocuments(de.getDocuments());
+				reloadTableFromSQL();
+			}
+		}
+	}
+
+	// remove documents action
+	class RemoveDocumentsAction extends AbstractAction {
+		public RemoveDocumentsAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			int[] selectedRows = documentPanel.getSelectedRows();
+			String message = "Are you sure you want to delete " + selectedRows.length + " document(s) including all statements?";
+			int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+			if (dialog == 0) {
+				for (int i = 0; i < selectedRows.length; i++) {
+					selectedRows[i] = documentPanel.convertRowIndexToModel(selectedRows[i]);
+				}
+				documentTableModel.removeDocuments(selectedRows);
+			}
+			reloadTableFromSQL();
+		}
+	}
+
+	// edit documents action
+	class EditDocumentsAction extends AbstractAction {
+		public EditDocumentsAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			int[] selectedRows = documentPanel.getSelectedRows();
+			for (int i = 0; i < selectedRows.length; i++) {
+				selectedRows[i] = documentTableModel.getIdByModelRow(documentPanel.convertRowIndexToModel(selectedRows[i]));
+			}
+			new DocumentEditor(selectedRows);
+			reloadTableFromSQL();
+		}
+	}
+
+	// batch-import documents action
+	class BatchImportDocumentsAction extends AbstractAction {
+		public BatchImportDocumentsAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			new DocumentBatchImporter();
+			reloadTableFromSQL();
+		}
+	}
+
 	// About window action
 	class AboutWindowAction extends AbstractAction {
 		public AboutWindowAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
@@ -628,29 +847,4 @@ public class GuiCoder extends JFrame {
 			new AboutWindow(Dna.dna.version, Dna.dna.date);
 		}
 	}
-
-	/*
-	public class CoderTableCellEditor extends AbstractCellEditor implements TableCellEditor {
-
-		CoderComboBoxRenderer renderer;
-		CoderComboBoxModel model;
-		JComboBox<Coder> coderBox;
-		
-		@Override
-		public Object getCellEditorValue() {
-			return model.getSelectedItem();
-		}
-
-		@Override
-		public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int col) {
-			renderer = new CoderComboBoxRenderer();
-			model = new CoderComboBoxModel();
-			coderBox = new JComboBox<Coder>(model);
-			coderBox.setRenderer(renderer);
-			coderBox.setEnabled(true);
-			return coderBox;
-		}
-		
-	}
-	*/
 }

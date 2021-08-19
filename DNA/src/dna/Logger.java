@@ -104,23 +104,12 @@ public class Logger extends AbstractTableModel {
 	}
 	
 	/**
-	 * Add a {@link LogEvent} object to the array list and updated the status
-	 * bar counts in the GUI coder.
+	 * Add a {@link LogEvent} object to the array list and notify listeners.
 	 * 
 	 * @param logEntry The {@link LogEvent} object to be added.
 	 */
 	public void addRow(LogEvent logEntry) {
-		rows.add(logEntry);
-		int numWarnings = 0;
-		int numErrors = 0;
-		for (int i = 0; i < rows.size(); i++) {
-			if (rows.get(i).getPriority() == 2) {
-				numWarnings++;
-			} else if (rows.get(i).getPriority() == 3) {
-				numErrors++;
-			}
-		}
-		Dna.guiCoder.statusBar.updateLog(numWarnings, numErrors);
+		this.rows.add(logEntry);
 		fireTableDataChanged(); // TODO: replace by fireTableRowsInserted
 	}
 	
