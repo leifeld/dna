@@ -419,7 +419,7 @@ public class GuiCoder extends JFrame implements LogListener {
 			warningButton = new JButton(numWarnings + "");
 			warningButton.setContentAreaFilled(false);
 			warningButton.setBorderPainted(false);
-			warningButton.setForeground(new Color(153, 153, 0));
+			warningButton.setForeground(new Color(153, 153, 0)); // TODO: check color, make sure it is orange
 			warningButton.setBorder(null);
 			warningButton.setMargin(new Insets(0, 0, 0, 0));
 			warningButton.setVisible(false);

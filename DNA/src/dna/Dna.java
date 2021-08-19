@@ -18,6 +18,7 @@ public class Dna {
 		logger = new Logger();
 		
 		guiCoder = new GuiCoder();
+		logger.addListener(guiCoder);
 	}
 	
 	public static void main(String[] args) {

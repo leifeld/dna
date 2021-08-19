@@ -1,5 +1,7 @@
 package dna;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -146,5 +148,21 @@ public class Logger extends AbstractTableModel {
 	 */
 	public interface LogListener {
 		void processLogEvents();
+	}
+	
+	/**
+	 * Take a throwable object (e.g., an Exception of any kind) and convert its
+	 * stack trace into a printable String object and return it.
+	 * 
+	 * @param t  A throwable object, for example an exception.
+	 * @return   A String representing the stack trace of the throwable.
+	 */
+	public String stackTraceToString(Throwable t) {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		t.printStackTrace(pw);
+		String s = sw.toString();
+		pw.close();
+		return s;
 	}
 }

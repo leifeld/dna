@@ -21,6 +21,8 @@ import com.mysql.cj.jdbc.MysqlDataSource;
 import dna.Attribute;
 import dna.Dna;
 import dna.Document;
+import dna.LogEvent;
+import dna.Logger;
 import dna.Statement;
 import dna.StatementType;
 import dna.Value;
@@ -1008,6 +1010,10 @@ public class Sql {
 				PreparedStatement s6 = conn.prepareStatement("SELECT ID FROM ATTRIBUTES WHERE VariableId = ? AND Value = ?;");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
+			LogEvent e1 = new LogEvent(Logger.MESSAGE,
+					"Started SQL transaction to update Statement " + statementId + ".",
+					"Started a new SQL transaction to update the variables in the statement with ID " + statementId + ". The contents will not be written into the database until the transaction is committed.");
+			Dna.logger.log(e1);
 			Attribute attribute;
 			int attributeId, variableId;
 			ResultSet r;
@@ -1018,16 +1024,28 @@ public class Sql {
 					s1.setInt(2, statementId);
 					s1.setInt(3, variableId);
 					s1.executeUpdate();
+					LogEvent e2 = new LogEvent(Logger.MESSAGE,
+							"    Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
+							"Variable " + variableId + " (boolean) in Statement " + statementId + " was updated in the SQL transaction with value: " + (int) values.get(i).getValue() + ".");
+					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("integer")) {
 					s2.setInt(1, (int) values.get(i).getValue());
 					s2.setInt(2, statementId);
 					s2.setInt(3, variableId);
 					s2.executeUpdate();
+					LogEvent e2 = new LogEvent(Logger.MESSAGE,
+							"    Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
+							"Variable " + variableId + " (integer) in Statement " + statementId + " was updated in the SQL transaction with value: " + (int) values.get(i).getValue() + ".");
+					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("long text")) {
 					s3.setString(1, (String) values.get(i).getValue());
 					s3.setInt(2, statementId);
 					s3.setInt(3, variableId);
 					s3.executeUpdate();
+					LogEvent e2 = new LogEvent(Logger.MESSAGE,
+							"    Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
+							"Variable " + variableId + " (long text) in Statement " + statementId + " was updated in the SQL transaction.");
+					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("short text")) {
 					// try to recognise attribute ID from database; should be more reliable (e.g., with empty Strings)
 					attribute = (Attribute) values.get(i).getValue();
@@ -1058,6 +1076,10 @@ public class Sql {
 						while (r.next()) {
 							attributeId = r.getInt(1);
 						}
+						LogEvent e2 = new LogEvent(Logger.MESSAGE,
+								"    Attribute with ID " + attributeId + " added to the transaction.",
+								"An attribute with ID " + attributeId + " and value \"" + attribute.getValue() + "\" was created for variable ID " + variableId + " and added to the SQL transaction.");
+						Dna.logger.log(e2);
 					}
 
 					// write the attribute ID as the value in the DATASHORTTEXT table
@@ -1065,12 +1087,22 @@ public class Sql {
 					s4.setInt(2, statementId);
 					s4.setInt(3, variableId);
 					s4.executeUpdate();
+					LogEvent e2 = new LogEvent(Logger.MESSAGE,
+							"    Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
+							"Variable " + variableId + " (short text) in Statement " + statementId + " was updated in the SQL transaction with Attribute " + attributeId + ".");
+					Dna.logger.log(e2);
 				}
 			}
 			conn.commit();
+			LogEvent e2 = new LogEvent(Logger.MESSAGE,
+					"Completed SQL transaction to update Statement " + statementId + ".",
+					"Completed SQL transaction to update the variables in the statement with ID " + statementId + ". The contents have been written into the database.");
+			Dna.logger.log(e2);
 		} catch (SQLException e) {
-			System.err.println("Could not update statement " + statementId + ".");
-			e.printStackTrace();
+			LogEvent e2 = new LogEvent(Logger.ERROR,
+					"Statement " + statementId + " could not be updated in the database.",
+					"When the statement popup window for Statement " + statementId + " was closed, the contents for the different variables could not be saved into the database. The database still contains the old values before the contents were edited. Please double-check to make sure that the statement contains the right values for all variables. Check whether the database may be locked and close all programs other than DNA that are currently accessing the database before trying again. The full stack trace will follow:\n" + Dna.logger.stackTraceToString(e));
+			Dna.logger.log(e2);
 		}
 	}
 	
@@ -1097,7 +1129,6 @@ public class Sql {
 			if (s1.getGeneratedKeys().next()) {
 				id = s1.getGeneratedKeys().getInt(1);
 			}
-			System.out.println(id);
 			
 			// set new coder
 			s2.setInt(1, newCoderId);
@@ -1145,9 +1176,15 @@ public class Sql {
 			}
 			
 			conn.commit();
+			LogEvent e = new LogEvent(Logger.MESSAGE,
+					"Cloned Statement " + statementId + " --> " + id + ".",
+					"Cloned Statement " + statementId + ". The new statement ID of the copy is " + id + " (new Coder ID: " + newCoderId + ") and successfully saved to the database.");
+			Dna.logger.log(e);
 		} catch (SQLException e1) {
-			System.err.println("Could not clone statement " + statementId + "in database.");
-			e1.printStackTrace();
+			LogEvent e = new LogEvent(Logger.ERROR,
+					"Failed to clone Statement " + statementId + ".",
+					"Failed to clone Statement " + statementId + " in the database. The original statement is still there, but a copy of the statement was not created. Check whether the database may be locked and close all programs other than DNA that are currently accessing the database before trying again. The full stack trace will follow:\n" + Dna.logger.stackTraceToString(e1));
+			Dna.logger.log(e);
 		}
 		return id;
 	}
@@ -1253,9 +1290,15 @@ public class Sql {
             	}
             	attributesList.add(new Attribute(r1.getInt("ID"), r1.getString("Value"), color, r1.getString("Type"), r1.getString("Alias"), r1.getString("Notes"), r1.getInt("ChildOf"), inDatabase));
             }
+        	LogEvent e = new LogEvent(Logger.MESSAGE,
+        			attributesList.size() + " attributes retrieved for Variable " + variableId + ".",
+        			attributesList.size() + " attributes retrieved from the database for Variable " + variableId + ".");
+        	Dna.logger.log(e);
 		} catch (SQLException e1) {
-			System.err.println("Could not retrieve attributes for variable " + variableId + " from database.");
-			e1.printStackTrace();
+        	LogEvent e = new LogEvent(Logger.WARNING,
+        			"Attributes for Variable " + variableId + " could not be retrieved.",
+        			"Attributes for Variable " + variableId + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again. The complete stack trace follows:\n" + Dna.logger.stackTraceToString(e1));
+        	Dna.logger.log(e);
 		}
 		Attribute[] attributesArray = new Attribute[attributesList.size()];
 		attributesArray = attributesList.toArray(attributesArray);
