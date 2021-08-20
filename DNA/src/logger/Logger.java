@@ -1,7 +1,5 @@
-package dna;
+package logger;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +27,7 @@ public class Logger extends AbstractTableModel {
 
 	@Override
 	public int getColumnCount() {
-		return 5;
+		return 6;
 	}
 
 	@Override
@@ -46,8 +44,9 @@ public class Logger extends AbstractTableModel {
 		case 0: return rows.get(rowIndex).getTime();
 		case 1: return rows.get(rowIndex).getSummary();
 		case 2: return rows.get(rowIndex).getDetails();
-		case 3: return rows.get(rowIndex).getStackTraceString();
-		case 4: return rows.get(rowIndex).getCoder();
+		case 3: return rows.get(rowIndex).getLogStackTraceString();
+		case 4: return rows.get(rowIndex).getExceptionStackTraceString();
+		case 5: return rows.get(rowIndex).getCoder();
 		default: return null;
 		}
 	}
@@ -62,8 +61,9 @@ public class Logger extends AbstractTableModel {
 			case 0: return LocalDateTime.class; // Date and time
 			case 1: return String.class;        // Summary
 			case 2: return String.class;        // Details
-			case 3: return String.class;        // Stack trace
-			case 4: return Integer.class;       // Coder ID
+			case 3: return String.class;        // Exception stack trace
+			case 4: return String.class;        // Log stack trace
+			case 5: return Integer.class;       // Coder ID
 			default: return null;
 		}
 	}
@@ -78,8 +78,9 @@ public class Logger extends AbstractTableModel {
 			case 0: return "Date and time";
 			case 1: return "Summary";
 			case 2: return "Details";
-			case 3: return "Stack trace";
-			case 4: return "Coder";
+			case 3: return "Log stack trace";
+			case 4: return "Exception stack trace";
+			case 5: return "Coder";
 			default: return null;
 		}
 	}
@@ -106,7 +107,7 @@ public class Logger extends AbstractTableModel {
 	public LogEvent getRow(int row) {
 		return rows.get(row);
 	}
-	
+
 	/**
 	 * Add a {@link LogEvent} object to the array list and notify listeners.
 	 * 
@@ -148,21 +149,5 @@ public class Logger extends AbstractTableModel {
 	 */
 	public interface LogListener {
 		void processLogEvents();
-	}
-	
-	/**
-	 * Take a throwable object (e.g., an Exception of any kind) and convert its
-	 * stack trace into a printable String object and return it.
-	 * 
-	 * @param t  A throwable object, for example an exception.
-	 * @return   A String representing the stack trace of the throwable.
-	 */
-	public String stackTraceToString(Throwable t) {
-		StringWriter sw = new StringWriter();
-		PrintWriter pw = new PrintWriter(sw);
-		t.printStackTrace(pw);
-		String s = sw.toString();
-		pw.close();
-		return s;
 	}
 }

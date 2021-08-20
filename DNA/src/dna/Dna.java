@@ -1,6 +1,7 @@
 package dna;
 
 import guiCoder.GuiCoder;
+import logger.Logger;
 import sql.Sql;
 
 public class Dna {
@@ -12,7 +13,7 @@ public class Dna {
 	public final String version;
 	
 	public Dna() {
-		date = "2021-08-19";
+		date = "2021-08-20";
 		version = "3.0.0";
 
 		logger = new Logger();

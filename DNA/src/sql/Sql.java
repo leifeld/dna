@@ -21,13 +21,13 @@ import com.mysql.cj.jdbc.MysqlDataSource;
 import dna.Attribute;
 import dna.Dna;
 import dna.Document;
-import dna.LogEvent;
-import dna.Logger;
 import dna.Statement;
 import dna.StatementType;
 import dna.Value;
 import guiCoder.Coder;
 import guiCoder.ConnectionProfile;
+import logger.LogEvent;
+import logger.Logger;
 
 public class Sql {
 	private ConnectionProfile cp;
@@ -1101,7 +1101,8 @@ public class Sql {
 		} catch (SQLException e) {
 			LogEvent e2 = new LogEvent(Logger.ERROR,
 					"Statement " + statementId + " could not be updated in the database.",
-					"When the statement popup window for Statement " + statementId + " was closed, the contents for the different variables could not be saved into the database. The database still contains the old values before the contents were edited. Please double-check to make sure that the statement contains the right values for all variables. Check whether the database may be locked and close all programs other than DNA that are currently accessing the database before trying again. The full stack trace will follow:\n" + Dna.logger.stackTraceToString(e));
+					"When the statement popup window for Statement " + statementId + " was closed, the contents for the different variables could not be saved into the database. The database still contains the old values before the contents were edited. Please double-check to make sure that the statement contains the right values for all variables. Check whether the database may be locked and close all programs other than DNA that are currently accessing the database before trying again.",
+					e);
 			Dna.logger.log(e2);
 		}
 	}
@@ -1183,7 +1184,8 @@ public class Sql {
 		} catch (SQLException e1) {
 			LogEvent e = new LogEvent(Logger.ERROR,
 					"Failed to clone Statement " + statementId + ".",
-					"Failed to clone Statement " + statementId + " in the database. The original statement is still there, but a copy of the statement was not created. Check whether the database may be locked and close all programs other than DNA that are currently accessing the database before trying again. The full stack trace will follow:\n" + Dna.logger.stackTraceToString(e1));
+					"Failed to clone Statement " + statementId + " in the database. The original statement is still there, but a copy of the statement was not created. Check whether the database may be locked and close all programs other than DNA that are currently accessing the database before trying again.",
+					e1);
 			Dna.logger.log(e);
 		}
 		return id;
@@ -1262,9 +1264,16 @@ public class Sql {
 				PreparedStatement s = conn.prepareStatement("DELETE FROM STATEMENTS WHERE ID = ?;");) {
 			s.setInt(1, statementId);
 			s.executeUpdate();
+        	LogEvent l = new LogEvent(Logger.MESSAGE,
+        			"Statement with ID " + statementId + " was deleted.",
+        			"Statement with ID " + statementId + " was deleted.");
+        	Dna.logger.log(l);
 		} catch (SQLException e1) {
-			System.err.println("Could not delete statement " + statementId + " from database.");
-			e1.printStackTrace();
+        	LogEvent l = new LogEvent(Logger.ERROR,
+        			"Failed to delete Statement " + statementId + ".",
+        			"Attempted to delete the Statement with ID " + statementId + ", but the attempt failed. Check if the database is locked, the database file has been moved, or the connection is interrupted, then try again.",
+        			e1);
+        	Dna.logger.log(l);
 		}
 	}
 	
@@ -1291,13 +1300,14 @@ public class Sql {
             	attributesList.add(new Attribute(r1.getInt("ID"), r1.getString("Value"), color, r1.getString("Type"), r1.getString("Alias"), r1.getString("Notes"), r1.getInt("ChildOf"), inDatabase));
             }
         	LogEvent e = new LogEvent(Logger.MESSAGE,
-        			attributesList.size() + " attributes retrieved for Variable " + variableId + ".",
-        			attributesList.size() + " attributes retrieved from the database for Variable " + variableId + ".");
+        			attributesList.size() + " attribute(s) retrieved for Variable " + variableId + ".",
+        			attributesList.size() + " attribute(s) retrieved from the database for Variable " + variableId + ".");
         	Dna.logger.log(e);
 		} catch (SQLException e1) {
         	LogEvent e = new LogEvent(Logger.WARNING,
         			"Attributes for Variable " + variableId + " could not be retrieved.",
-        			"Attributes for Variable " + variableId + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again. The complete stack trace follows:\n" + Dna.logger.stackTraceToString(e1));
+        			"Attributes for Variable " + variableId + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again.",
+        			e1);
         	Dna.logger.log(e);
 		}
 		Attribute[] attributesArray = new Attribute[attributesList.size()];

@@ -4,8 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -354,7 +352,7 @@ class DocumentPanel extends JPanel {
 	*/
 	
 	/**
-	 * A renderer for {@link Coder} objects in {@link JTable} tables.
+	 * A renderer for {@link guiCoder.Coder} objects in {@link JTable} tables.
 	 */
 	private class CoderTableCellRenderer extends DefaultTableCellRenderer {
 		@Override
@@ -363,34 +361,13 @@ class DocumentPanel extends JPanel {
 				return new JLabel("");
 			} else {
 				Coder coder = (Coder) value;
-				JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+				CoderBadgePanel cbp = new CoderBadgePanel(coder, 14, 22);
 				if (isSelected) {
 					UIDefaults defaults = javax.swing.UIManager.getDefaults();
 					Color bg = defaults.getColor("List.selectionBackground");
-					panel.setBackground(bg);
+					cbp.setBackground(bg);
 				}
-				JButton colorButton = (new JButton() {
-					public void paintComponent(Graphics g) {
-						super.paintComponent(g);
-						g.setColor(coder.getColor());
-						g.fillRect(2, 2, 14, 14);
-					}
-				});
-				colorButton.setPreferredSize(new Dimension(14, 14));
-				colorButton.setEnabled(false);
-				panel.add(colorButton);
-
-				String name = coder.getName();
-
-				int nameLength = name.length();
-				if (nameLength > 22) {
-					nameLength = 22 - 3;
-					name = name.substring(0,  nameLength);
-					name = name + "...";
-				}
-
-				panel.add(new JLabel(name));
-				return panel;
+				return cbp;
 			}
 		}
 	}

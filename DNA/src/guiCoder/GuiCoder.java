@@ -47,9 +47,10 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
 import dna.Dna;
-import dna.LogEvent;
-import dna.Logger;
-import dna.Logger.LogListener;
+import logger.LogEvent;
+import logger.Logger;
+import logger.LoggerDialog;
+import logger.Logger.LogListener;
 import sql.Sql;
 
 /**
@@ -419,7 +420,7 @@ public class GuiCoder extends JFrame implements LogListener {
 			warningButton = new JButton(numWarnings + "");
 			warningButton.setContentAreaFilled(false);
 			warningButton.setBorderPainted(false);
-			warningButton.setForeground(new Color(153, 153, 0)); // TODO: check color, make sure it is orange
+			warningButton.setForeground(new Color(255, 255, 130));
 			warningButton.setBorder(null);
 			warningButton.setMargin(new Insets(0, 0, 0, 0));
 			warningButton.setVisible(false);
