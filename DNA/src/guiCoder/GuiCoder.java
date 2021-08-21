@@ -51,6 +51,7 @@ import logger.LogEvent;
 import logger.Logger;
 import logger.LoggerDialog;
 import logger.Logger.LogListener;
+import sql.ConnectionProfile;
 import sql.Sql;
 
 /**

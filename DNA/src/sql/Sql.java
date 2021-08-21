@@ -25,30 +25,39 @@ import dna.Statement;
 import dna.StatementType;
 import dna.Value;
 import guiCoder.Coder;
-import guiCoder.ConnectionProfile;
 import logger.LogEvent;
 import logger.Logger;
 
 public class Sql {
+	/**
+	 * The {@link sql.ConnectionProfile ConnectionProfile} to be used for
+	 * connecting to a database.
+	 * 
+	 * @category setup
+	 */
 	private ConnectionProfile cp;
+	/**
+	 * The {@link javax.sql.DataSource DataSource} to be used for connections.
+	 * 
+	 * @category setup
+	 */
 	private DataSource ds;
 	
-	public ConnectionProfile getConnectionProfile() {
-		return cp;
-	}
-
-	public void setConnectionProfile(ConnectionProfile cp) {
-		this.cp = cp;
-	}
 	
-	public DataSource getDataSource() {
-		return ds;
-	}
+	/* =========================================================================
+	 * Setup
+	 * ====================================================================== */
 
-	public void setDataSource(DataSource ds) {
-		this.ds = ds;
-	}
-
+	/**
+	 * Create an instance of the Sql class and create a data source based on a
+	 * {@link sql.ConnectionProfile connectionProfile} object for SQLite,
+	 * MySQL, or PostgreSQL.
+	 * 
+	 * @param cp  A {@link sql.ConnectionProfile connectionProfile} object,
+	 *   which contains connection details for a DNA database.
+	 *   
+	 * @category setup
+	 */
 	public Sql(ConnectionProfile cp) {
 		this.cp = cp;
 		if (cp.getType().equals("sqlite")) { // no user name and password needed for file-based database
@@ -86,481 +95,73 @@ public class Sql {
 		}
 	}
 
-	public String getDocumentText(int documentId) {
-		String text = null;
-		try (Connection conn = ds.getConnection();
-				PreparedStatement s = conn.prepareStatement("SELECT Text FROM DOCUMENTS WHERE ID = ?;")) {
-			s.setInt(1, documentId);
-			ResultSet result = s.executeQuery();
-			while (result.next()) {
-			    text = result.getString("Text");
-			}
-		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.WARNING,
-					"[SQL] Failed to retrieve text for Document " + documentId + ".",
-					"Attempted to retrieve the text contents for the document with ID " + documentId + " from the DOCUMENTS table of the database, but something went wrong, and nothing was retrieved. Check your connection.",
-					e);
-			Dna.logger.log(l);
-		}
-		return text;
-	}
-	
-	public ArrayList<Statement> getStatementsByDocument(int documentId) {
-		ArrayList<Statement> statements = new ArrayList<Statement>();
-		ArrayList<Value> values;
-		int statementId, statementTypeId, variableId;
-		String variable, dataType;
-		Color aColor, sColor, cColor;
-		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("SELECT STATEMENTS.ID AS StatementId, StatementTypeId, STATEMENTTYPES.Label AS StatementTypeLabel, STATEMENTTYPES.Red AS StatementTypeRed, STATEMENTTYPES.Green AS StatementTypeGreen, STATEMENTTYPES.Blue AS StatementTypeBlue, Start, Stop, Coder AS CoderId, CODERS.Red AS CoderRed, CODERS.Green AS CoderGreen, CODERS.Blue AS CoderBlue FROM STATEMENTS INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID WHERE DocumentId = ?;");
-				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
-				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
-				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
-				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
-			ResultSet r1, r2, r3;
-			s1.setInt(1, documentId);
-			r1 = s1.executeQuery();
-			while (r1.next()) {
-			    statementId = r1.getInt("StatementId");
-			    statementTypeId = r1.getInt("StatementTypeId");
-			    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
-			    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
-			    s2.setInt(1, statementTypeId);
-			    r2 = s2.executeQuery();
-			    values = new ArrayList<Value>();
-			    while (r2.next()) {
-			    	variableId = r2.getInt("ID");
-			    	variable = r2.getString("Variable");
-			    	dataType = r2.getString("DataType");
-			    	if (dataType.equals("short text")) {
-				    	s3.setInt(1, statementId);
-				    	s3.setInt(2, variableId);
-				    	r3 = s3.executeQuery();
-				    	while (r3.next()) {
-			            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
-			            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getString("Type"), r3.getString("Alias"), r3.getString("Notes"), r3.getInt("ChildOf"), true);
-				    		values.add(new Value(variableId, variable, dataType, attribute));
-				    	}
-			    	} else if (dataType.equals("long text")) {
-				    	s4.setInt(1, variableId);
-				    	s4.setInt(2, statementId);
-				    	r3 = s4.executeQuery();
-				    	while (r3.next()) {
-				    		values.add(new Value(variableId, variable, dataType, r3.getString("Value")));
-				    	}
-			    	} else if (dataType.equals("integer")) {
-				    	s5.setInt(1, variableId);
-				    	s5.setInt(2, statementId);
-				    	r3 = s5.executeQuery();
-				    	while (r3.next()) {
-				    		values.add(new Value(variableId, variable, dataType, r3.getInt("Value")));
-				    	}
-			    	} else if (dataType.equals("boolean")) {
-				    	s6.setInt(1, variableId);
-				    	s6.setInt(2, statementId);
-				    	r3 = s6.executeQuery();
-				    	while (r3.next()) {
-				    		values.add(new Value(variableId, variable, dataType, r3.getInt("Value")));
-				    	}
-			    	}
-			    }
-			    statements.add(new Statement(statementId, r1.getInt("CoderId"), r1.getInt("Start"), r1.getInt("Stop"), statementTypeId, values, sColor, cColor, r1.getString("StatementTypeLabel")));
-			}
-			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[SQL] " + statements.size() + " statements have been retrieved for Document " + documentId + ".",
-					statements.size() + " statements have been retrieved for Document " + documentId + ".");
-			Dna.logger.log(l);
-		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.WARNING,
-					"[SQL] Failed to retrieve statements for Document " + documentId + ".",
-					"Attempted to retrieve all statements for Document " + documentId + " from the database, but something went wrong. You should double-check if the statements are all shown!",
-					e);
-			Dna.logger.log(l);
-		}
-		return statements;
-	}
-	
-	public void deleteDocuments(int[] documentIds) {
-		try (Connection conn = ds.getConnection();
-				PreparedStatement s = conn.prepareStatement("DELETE FROM DOCUMENTS WHERE ID = ?"); // will cascade to statements
-				SQLCloseable finish = conn::rollback) {
-			conn.setAutoCommit(false);
-			for (int i = 0; i < documentIds.length; i++) {
-				s.setInt(1, documentIds[i]);
-				s.executeUpdate();
-			}
-			conn.commit();
-			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[SQL] Deleted " + documentIds.length + " documents (and their statements).",
-					"Successfully deleted " + documentIds.length + " documents from the DOCUMENTS table in the database, and also deleted all statements that may have been contained in these documents. The transaction has been committed to the database.");
-			Dna.logger.log(l);
-		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.ERROR,
-					"[SQL] Failed to delete documents from database.",
-					"Attempted to remove " + documentIds.length + " documents from the DOCUMENTS table in the database, including all associated statements, but something went wrong. The transaction has been rolled back, and nothing has been removed.",
-					e);
-			Dna.logger.log(l);
-		}
-	}
-	
-	public void addDocuments(ArrayList<Document> documents) {
-		try (Connection conn = ds.getConnection();
-				PreparedStatement stmt = conn.prepareStatement("INSERT INTO DOCUMENTS (Title, Text, Coder, Author, Source, Section, Notes, Type, Date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);");
-				SQLCloseable finish = conn::rollback) {
-			conn.setAutoCommit(false);
-			for (int i = 0; i < documents.size(); i++) {
-				stmt.setString(1, documents.get(i).getTitle());
-				stmt.setString(2, documents.get(i).getText());
-				stmt.setInt(3, documents.get(i).getCoder());
-				stmt.setString(4, documents.get(i).getAuthor());
-				stmt.setString(5, documents.get(i).getSource());
-				stmt.setString(6, documents.get(i).getSection());
-				stmt.setString(7, documents.get(i).getNotes());
-				stmt.setString(8, documents.get(i).getType());
-				stmt.setLong(9, documents.get(i).getDateTime().toEpochSecond(ZoneOffset.UTC)); // convert date-time to seconds since 01/01/1970 at 00:00:00 in UTC time zone
-				stmt.executeUpdate();
-			}
-			conn.commit();
-			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[SQL] Added " + documents.size() + " documents to the DOCUMENTS table in the database.",
-					"Successfully added " + documents.size() + " new documents to the DOCUMENTS table in the database. The transaction is complete and has been committed to the database.");
-			Dna.logger.log(l);
-		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.ERROR,
-					"[SQL] Failed to add documents to the database.",
-					"Attempted to add " + documents.size() + " new documents to the DOCUMENTS table in the database, but something went wrong. The transaction has been rolled back; nothing has been committed to the database. Check your connection.",
-					e);
-			Dna.logger.log(l);
-		}
-	}
-	
-	public int countDocuments() {
-		int count = 0;
-		try (Connection conn = ds.getConnection();
-				PreparedStatement s = conn.prepareStatement("SELECT COUNT(*) FROM DOCUMENTS;")) {
-			ResultSet r = s.executeQuery();
-			while (r.next()) {
-				count = r.getInt(1);
-			}
-		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.WARNING,
-					"[SQL] Failed to count number of documents in the database.",
-					"Attempted to count how many documents are in the DOCUMENTS table of the database, but failed. Check your connection.",
-					e);
-			Dna.logger.log(l);
-		}
-		return count;
-	}
-	
 	/**
-	 * Retrieve a coder based on its ID.
+	 * Get the connection profile.
 	 * 
-	 * @return The coder to be retrieved.
-	 */
-	public guiCoder.Coder getCoder(int coderId) {
-		guiCoder.Coder c = null;
-		try (Connection conn = ds.getConnection();
-				PreparedStatement s = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;")) {
-			s.setInt(1, coderId);
-			ResultSet result = s.executeQuery();
-			while (result.next()) {
-			    c = new guiCoder.Coder(coderId, result.getString("Name"), result.getInt("Red"), result.getInt("Green"), result.getInt("Blue"));
-			}
-		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.WARNING,
-					"[SQL] Coder with ID " + coderId + " could not be retrieved from the database.",
-					"The details of the coder with ID " + coderId + " could not be retrieved from the database. Check your database connection.",
-					e);
-			Dna.logger.log(l);
-		}
-		return c;
-	}
-	
-	/**
-	 * Check if a user-provided clear-text password for the current coder
-	 * matches the hash of the password stored for the coder in the database.
+	 * @return A {@link sql.ConnectionProfile connectionProfile} object.
 	 * 
-	 * @param clearPassword Clear-text password provided by the coder.
-	 * @return              boolean, true if the password matches, false if not.
+	 * @category setup
 	 */
-	public boolean authenticate(String clearPassword) {
-		String encryptedHash = null;
-		try (Connection conn = this.ds.getConnection();
-				PreparedStatement s = conn.prepareStatement("SELECT Password FROM CODERS WHERE ID = ?;")) {
-			s.setInt(1, this.cp.getCoderId());
-			ResultSet result = s.executeQuery();
-			while (result.next()) {
-			    encryptedHash = result.getString("Password");
-			}
-		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.WARNING,
-					"[SQL] Failed to retrieve hashed password for Coder " + this.cp.getCoderId() + " from database.",
-					"Attempted to authenticate the coder with ID " + this.cp.getCoderId() + ", but the password hash could not be retrieved from the database. Check your connection and database integrity.",
-					e);
-			Dna.logger.log(l);
-		}
-		
-		// check if the provided clear-text password corresponds to the hashed password in the database
-		if (encryptedHash == null) {
-			return false;
-		} else {
-			StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();
-			boolean correct = passwordEncryptor.checkPassword(clearPassword, encryptedHash);
-			if (correct == true) {
-				LogEvent l = new LogEvent(Logger.MESSAGE,
-						"[SQL] Coder successfully authenticated.",
-						"The password provided by the coder with ID " + this.cp.getCoderId() + " matches the hash stored in the database.");
-				Dna.logger.log(l);
-			} else {
-				LogEvent l = new LogEvent(Logger.WARNING,
-						"[SQL] Coder failed to authenticate.",
-						"The password provided by the coder with ID " + this.cp.getCoderId() + " does not match the hash stored in the database.");
-				Dna.logger.log(l);
-			}
-			return correct;
-		}
+	public ConnectionProfile getConnectionProfile() {
+		return this.cp;
 	}
 
 	/**
-	 * Retrieve a list of coders in the database.
+	 * Set the connection profile.
 	 * 
-	 * @return An array list of coders.
+	 * @param cp A {@link sql.ConnectionProfile connectionProfile} object.
+	 * 
+	 * @category setup
 	 */
-	public ArrayList<Coder> getCoders() {
-		ArrayList<Coder> coders = new ArrayList<Coder>();
-		try (Connection conn = ds.getConnection();
-				PreparedStatement tableStatement = conn.prepareStatement("SELECT * FROM Coders;")) {
-        	ResultSet rs = tableStatement.executeQuery();
-        	while (rs.next()) {
-            	coders.add(new Coder(rs.getInt("ID"), rs.getString("Name"), rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue")));
-            }
-		} catch (SQLException e1) {
-        	LogEvent l = new LogEvent(Logger.WARNING,
-        			"[SQL] Failed to retrieve coders from the database.",
-        			"Attempted to retrieve all coders from the database. Check your connection.",
-        			e1);
-        	Dna.logger.log(l);
-		}
-		return coders;
+	public void setConnectionProfile(ConnectionProfile cp) {
+		this.cp = cp;
 	}
 	
-	// get documents corresponding to specific document IDs, but without their statements etc.
-	public ArrayList<Document> getDocuments(int[] documentIds) {
-		ArrayList<Document> documents = new ArrayList<Document>();
-		String sql = "SELECT * FROM DOCUMENTS WHERE ID IN (";
-		for (int i = 0; i < documentIds.length; i++) {
-			sql = sql + documentIds[i];
-			if (i < documentIds.length - 1) {
-				sql = sql + ", ";
-			}
-		}
-		sql = sql + ");";
-		try (Connection conn = getDataSource().getConnection();
-				PreparedStatement s = conn.prepareStatement(sql)) {
-			ResultSet rs = s.executeQuery();
-			while (rs.next()) {
-				Document d = new Document(
-						rs.getInt("ID"),
-						rs.getInt("Coder"),
-						rs.getString("Title"),
-						rs.getString("Text"),
-						rs.getString("Author"),
-						rs.getString("Source"),
-						rs.getString("Section"),
-						rs.getString("Type"),
-						rs.getString("Notes"),
-						LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC),
-						new ArrayList<Statement>());
-				documents.add(d);
-			}
-		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.WARNING,
-					"[SQL] Failed to retrieve document meta-data from the database.",
-					"Attempted to retrieve document data (other than the document text) for " + documentIds.length + " documents, but this failed. Check if all documents are being displayed in the user interface.",
-					e);
-			Dna.logger.log(l);
-		}
-		return documents;
+	/**
+	 * Get the data source stored in the {@link sql.Sql Sql} object.
+	 * 
+	 * @return A {@link javax.sql.DataSource DataSource} object.
+	 * 
+	 * @category setup
+	 */
+	public DataSource getDataSource() {
+		return ds;
 	}
-	
-	public boolean documentsContainStatements(int[] documentIds) {
-		boolean contains = true;
-		String s = "[SQL] SELECT COUNT(*) FROM STATEMENTS WHERE DocumentId IN (";
-		for (int i = 0; i < documentIds.length; i++) {
-			s = s + documentIds[i];
-			if (i < documentIds.length - 1) {
-				s = s + ", ";
-			}
-		}
-		s = s + ");";
-		try (Connection conn = getDataSource().getConnection();
-				PreparedStatement ps = conn.prepareStatement(s)) {
-			ResultSet rs = ps.executeQuery();
-			while (rs.next()) {
-				if (rs.getInt(1) == 0) {
-					contains = false;
-				}
-			}
-		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.WARNING,
-					"[SQL] Failed to count number of statements in document selection.",
-					"Attempted to count how many statements are contained in each of the " + documentIds.length + " selected documents, but something went wrong while accessing the database. Most likely this means that the document table shows misleading counts, but there should be no other negative consequences.",
-					e);
-			Dna.logger.log(l);
-		}
-		return contains;
+
+	/**
+	 * Set the data source for the {@link sql.Sql Sql} class.
+	 * 
+	 * @param ds A {@link javax.sql.DataSource DataSource} object.
+	 * 
+	 * @category setup
+	 */
+	public void setDataSource(DataSource ds) {
+		this.ds = ds;
 	}
-	
-	public void updateDocuments(int[] documentIds, String title, String text, String author, String source, String section, String type, String notes, LocalDateTime dateTime) {
-		String sel = "SELECT Title, Text, Author, Source, Section, Type, Notes, Date FROM DOCUMENTS WHERE ID = ?;";
-		String upd = "UPDATE DOCUMENTS SET Title = ?, Text = ?, Author = ?, Source = ?, Section = ?, Type = ?, Notes = ?, Date = ? WHERE ID = ?;";
-		String titleTemp1 = "", titleTemp2, textTemp1 = "", textTemp2, authorTemp1 = "", authorTemp2, sourceTemp1 = "", sourceTemp2, sectionTemp1 = "", sectionTemp2, typeTemp1 = "", typeTemp2, notesTemp1 = "", notesTemp2, day = "", month = "", year = "", hour = "", minute = "";
-		long dateTimeTemp = 0;
-		LocalDateTime ldt = null;
-		DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("dd");
-		DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("MM");
-		DateTimeFormatter yearFormatter = DateTimeFormatter.ofPattern("yyyy");
-		DateTimeFormatter hourFormatter = DateTimeFormatter.ofPattern("HH");
-		DateTimeFormatter minuteFormatter = DateTimeFormatter.ofPattern("mm");
-		try (Connection conn = getDataSource().getConnection();
-				PreparedStatement u = conn.prepareStatement(upd);
-				PreparedStatement s = conn.prepareStatement(sel);
-				SQLCloseable finish = conn::rollback) {
-			conn.setAutoCommit(false);
-			ResultSet r;
-			for (int i = 0; i < documentIds.length; i++) {
-				s.setInt(1, documentIds[i]);
-				r = s.executeQuery();
-				while (r.next()) {
-					titleTemp1 = r.getString("Title");
-					textTemp1 = r.getString("Text");
-					authorTemp1 = r.getString("Author");
-					sectionTemp1 = r.getString("Section");
-					sourceTemp1 = r.getString("Source");
-					typeTemp1 = r.getString("Type");
-					notesTemp1 = r.getString("Notes");
-					dateTimeTemp = r.getLong("Date");
-					ldt = LocalDateTime.ofEpochSecond(dateTimeTemp, 0, ZoneOffset.UTC);
-					day = ldt.format(dayFormatter);
-					month = ldt.format(monthFormatter);
-					year = ldt.format(yearFormatter);
-					hour = ldt.format(hourFormatter);
-					minute = ldt.format(minuteFormatter);
-				}
-				titleTemp2 = title.replaceAll("%title", titleTemp1);
-				titleTemp2 = titleTemp2.replaceAll("%text", textTemp1);
-				titleTemp2 = titleTemp2.replaceAll("%author", authorTemp1);
-				titleTemp2 = titleTemp2.replaceAll("%source", sourceTemp1);
-				titleTemp2 = titleTemp2.replaceAll("%section", sectionTemp1);
-				titleTemp2 = titleTemp2.replaceAll("%type", typeTemp1);
-				titleTemp2 = titleTemp2.replaceAll("%notes", notesTemp1);
-				titleTemp2 = titleTemp2.replaceAll("%day", day);
-				titleTemp2 = titleTemp2.replaceAll("%month", month);
-				titleTemp2 = titleTemp2.replaceAll("%year", year);
-				titleTemp2 = titleTemp2.replaceAll("%hour", hour);
-				titleTemp2 = titleTemp2.replaceAll("%minute", minute);
-				u.setString(1, titleTemp2);
-				textTemp2 = text.replaceAll("%title", titleTemp1);
-				textTemp2 = textTemp2.replaceAll("%text", textTemp1);
-				textTemp2 = textTemp2.replaceAll("%author", authorTemp1);
-				textTemp2 = textTemp2.replaceAll("%source", sourceTemp1);
-				textTemp2 = textTemp2.replaceAll("%section", sectionTemp1);
-				textTemp2 = textTemp2.replaceAll("%type", typeTemp1);
-				textTemp2 = textTemp2.replaceAll("%notes", notesTemp1);
-				textTemp2 = textTemp2.replaceAll("%day", day);
-				textTemp2 = textTemp2.replaceAll("%month", month);
-				textTemp2 = textTemp2.replaceAll("%year", year);
-				textTemp2 = textTemp2.replaceAll("%hour", hour);
-				textTemp2 = textTemp2.replaceAll("%minute", minute);
-				u.setString(2, textTemp2);
-				authorTemp2 = author.replaceAll("%title", titleTemp1);
-				authorTemp2 = authorTemp2.replaceAll("%text", textTemp1);
-				authorTemp2 = authorTemp2.replaceAll("%author", authorTemp1);
-				authorTemp2 = authorTemp2.replaceAll("%source", sourceTemp1);
-				authorTemp2 = authorTemp2.replaceAll("%section", sectionTemp1);
-				authorTemp2 = authorTemp2.replaceAll("%type", typeTemp1);
-				authorTemp2 = authorTemp2.replaceAll("%notes", notesTemp1);
-				authorTemp2 = authorTemp2.replaceAll("%day", day);
-				authorTemp2 = authorTemp2.replaceAll("%month", month);
-				authorTemp2 = authorTemp2.replaceAll("%year", year);
-				authorTemp2 = authorTemp2.replaceAll("%hour", hour);
-				authorTemp2 = authorTemp2.replaceAll("%minute", minute);
-				u.setString(3, authorTemp2);
-				sourceTemp2 = source.replaceAll("%title", titleTemp1);
-				sourceTemp2 = sourceTemp2.replaceAll("%text", textTemp1);
-				sourceTemp2 = sourceTemp2.replaceAll("%author", authorTemp1);
-				sourceTemp2 = sourceTemp2.replaceAll("%source", sourceTemp1);
-				sourceTemp2 = sourceTemp2.replaceAll("%section", sectionTemp1);
-				sourceTemp2 = sourceTemp2.replaceAll("%type", typeTemp1);
-				sourceTemp2 = sourceTemp2.replaceAll("%notes", notesTemp1);
-				sourceTemp2 = sourceTemp2.replaceAll("%day", day);
-				sourceTemp2 = sourceTemp2.replaceAll("%month", month);
-				sourceTemp2 = sourceTemp2.replaceAll("%year", year);
-				sourceTemp2 = sourceTemp2.replaceAll("%hour", hour);
-				sourceTemp2 = sourceTemp2.replaceAll("%minute", minute);
-				u.setString(4, sourceTemp2);
-				sectionTemp2 = section.replaceAll("%title", titleTemp1);
-				sectionTemp2 = sectionTemp2.replaceAll("%text", textTemp1);
-				sectionTemp2 = sectionTemp2.replaceAll("%author", authorTemp1);
-				sectionTemp2 = sectionTemp2.replaceAll("%source", sourceTemp1);
-				sectionTemp2 = sectionTemp2.replaceAll("%section", sectionTemp1);
-				sectionTemp2 = sectionTemp2.replaceAll("%type", typeTemp1);
-				sectionTemp2 = sectionTemp2.replaceAll("%notes", notesTemp1);
-				sectionTemp2 = sectionTemp2.replaceAll("%day", day);
-				sectionTemp2 = sectionTemp2.replaceAll("%month", month);
-				sectionTemp2 = sectionTemp2.replaceAll("%year", year);
-				sectionTemp2 = sectionTemp2.replaceAll("%hour", hour);
-				sectionTemp2 = sectionTemp2.replaceAll("%minute", minute);
-				u.setString(5, sectionTemp2);
-				typeTemp2 = type.replaceAll("%title", titleTemp1);
-				typeTemp2 = typeTemp2.replaceAll("%text", textTemp1);
-				typeTemp2 = typeTemp2.replaceAll("%author", authorTemp1);
-				typeTemp2 = typeTemp2.replaceAll("%source", sourceTemp1);
-				typeTemp2 = typeTemp2.replaceAll("%section", sectionTemp1);
-				typeTemp2 = typeTemp2.replaceAll("%type", typeTemp1);
-				typeTemp2 = typeTemp2.replaceAll("%notes", notesTemp1);
-				typeTemp2 = typeTemp2.replaceAll("%day", day);
-				typeTemp2 = typeTemp2.replaceAll("%month", month);
-				typeTemp2 = typeTemp2.replaceAll("%year", year);
-				typeTemp2 = typeTemp2.replaceAll("%hour", hour);
-				typeTemp2 = typeTemp2.replaceAll("%minute", minute);
-				u.setString(6, typeTemp2);
-				notesTemp2 = notes.replaceAll("%title", titleTemp1);
-				notesTemp2 = notesTemp2.replaceAll("%text", textTemp1);
-				notesTemp2 = notesTemp2.replaceAll("%author", authorTemp1);
-				notesTemp2 = notesTemp2.replaceAll("%source", sourceTemp1);
-				notesTemp2 = notesTemp2.replaceAll("%section", sectionTemp1);
-				notesTemp2 = notesTemp2.replaceAll("%type", typeTemp1);
-				notesTemp2 = notesTemp2.replaceAll("%notes", notesTemp1);
-				notesTemp2 = notesTemp2.replaceAll("%day", day);
-				notesTemp2 = notesTemp2.replaceAll("%month", month);
-				notesTemp2 = notesTemp2.replaceAll("%year", year);
-				notesTemp2 = notesTemp2.replaceAll("%hour", hour);
-				notesTemp2 = notesTemp2.replaceAll("%minute", minute);
-				u.setString(7, notesTemp2);
-				if (dateTime != null) {
-					u.setLong(8, dateTime.toEpochSecond(ZoneOffset.UTC));
-				} else {
-					u.setLong(8, dateTimeTemp);
-				}
-				u.setInt(9, documentIds[i]);
-				u.executeUpdate();
-			}
-			conn.commit();
-			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[SQL] The meta-data of " + documentIds.length + " documents have been updated.",
-					"The meta-data of " + documentIds.length + " documents have been updated.");
-			Dna.logger.log(l);
-		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.ERROR,
-					"[SQL] Failed to update the meta-data of " + documentIds.length + " documents.",
-					"Attempted to recode/edit " + documentIds.length + " documents. The transaction has been rolled back, and none of the documents has been updated in the database.",
-					e);
-			Dna.logger.log(l);
-		}
+
+	/**
+	 * An interface that rolls back failed execution attempts of SQL connections
+	 * in {@literal try}-with-resources headers. Use this as the last code line
+	 * in any {@literal try}-with-resources header that uses SQL transactions.
+	 * 
+	 * @category setup
+	 */
+	public interface SQLCloseable extends AutoCloseable {
+	    @Override public void close() throws SQLException;
 	}
-	
+
+	/**
+	 * Create data structures (tables and basic contents) in a new DNA database.
+	 * 
+	 * @param encryptedAdminPassword  The encrypted/hashed password of the
+	 *   {@code Admin} coder for storage in the {@code CODERS} table of the
+	 *   database.
+	 *   
+	 * @return A {@link boolean} indicator of whether the data structures were
+	 *   successfully created ({@code true}) or rolled back ({@code false}).
+	 * 
+	 * @category setup
+	 */
 	public boolean createTables(String encryptedAdminPassword) {
 		boolean success = true;
 		ArrayList<String> s = new ArrayList<String>();
@@ -970,47 +571,550 @@ public class Sql {
 		}
 		return success;
 	}
-	
-	public interface SQLCloseable extends AutoCloseable {
-	    @Override public void close() throws SQLException;
-	}
 
-	public ArrayList<StatementType> getStatementTypes() {
-		ArrayList<StatementType> statementTypes = new ArrayList<StatementType>();
+	
+	/* =========================================================================
+	 * Coders
+	 * ====================================================================== */
+
+	/**
+	 * Retrieve a coder based on its ID.
+	 * 
+	 * @param coderId  The ID of the coder to be retrieved from the database.
+	 * @return         The coder to be retrieved, as a {@link guiCoder.Coder
+	 *   Coder} object.
+	 * 
+	 * @category coder
+	 */
+	public guiCoder.Coder getCoder(int coderId) {
+		guiCoder.Coder c = null;
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("SELECT * FROM STATEMENTTYPES;");
-				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM VARIABLES WHERE StatementTypeId = ?;")) {
-        	ArrayList<Value> variables;
-        	int statementTypeId;
-			ResultSet r1 = s1.executeQuery();
-			ResultSet r2;
-			Color color;
-        	while (r1.next()) {
-            	variables = new ArrayList<Value>();
-            	statementTypeId = r1.getInt("ID");
-            	color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
-            	s2.setInt(1, statementTypeId);
-            	r2 = s2.executeQuery();
-            	while (r2.next()) {
-            		variables.add(new Value(r2.getInt("ID"), r2.getString("Variable"), r2.getString("DataType")));
-            	}
-            	statementTypes.add(new StatementType(r1.getInt("ID"), r1.getString("Label"), color, variables));
-            }
-        	LogEvent l = new LogEvent(Logger.MESSAGE,
-        			"[SQL] Retrieved " + statementTypes.size() + " statement types from the database.",
-        			"Retrieved " + statementTypes.size() + " statement types from the database.");
-        	Dna.logger.log(l);
-		} catch (SQLException e1) {
-			LogEvent l = new LogEvent(Logger.ERROR,
-					"[SQL] Failed to retrieve statement types from the database.",
-					"Failed to retrieve statement types from the database. Check database connection and consistency of the STATEMENTTYPES and VARIABLES tables in the database.",
-					e1);
+				PreparedStatement s = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;")) {
+			s.setInt(1, coderId);
+			ResultSet result = s.executeQuery();
+			while (result.next()) {
+			    c = new guiCoder.Coder(coderId, result.getString("Name"), result.getInt("Red"), result.getInt("Green"), result.getInt("Blue"));
+			}
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Coder with ID " + coderId + " could not be retrieved from the database.",
+					"The details of the coder with ID " + coderId + " could not be retrieved from the database. Check your database connection.",
+					e);
 			Dna.logger.log(l);
 		}
-		return statementTypes;
+		return c;
+	}
+
+	/**
+	 * Retrieve a list of coders in the database.
+	 * 
+	 * @return An array list of coders, {@link java.util.ArrayList
+	 *   ArrayList}<{@link guiCoder.Coder Coder}>.
+	 * 
+	 * @category coder
+	 */
+	public ArrayList<Coder> getCoders() {
+		ArrayList<Coder> coders = new ArrayList<Coder>();
+		try (Connection conn = ds.getConnection();
+				PreparedStatement tableStatement = conn.prepareStatement("SELECT * FROM Coders;")) {
+        	ResultSet rs = tableStatement.executeQuery();
+        	while (rs.next()) {
+            	coders.add(new Coder(rs.getInt("ID"), rs.getString("Name"), rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue")));
+            }
+		} catch (SQLException e1) {
+        	LogEvent l = new LogEvent(Logger.WARNING,
+        			"[SQL] Failed to retrieve coders from the database.",
+        			"Attempted to retrieve all coders from the database. Check your connection.",
+        			e1);
+        	Dna.logger.log(l);
+		}
+		return coders;
 	}
 	
-	public int addStatement(Statement statement, int documentId) {
+	/**
+	 * Authenticate a coder. Check if a user-provided clear-text password for
+	 * the current coder matches the hash of the password stored for the coder
+	 * in the database.
+	 * 
+	 * @param clearPassword Clear-text password provided by the coder.
+	 * @return              boolean value: {@code true} if the password matches,
+	 *   {@code false} if not.
+	 * 
+	 * @category coder
+	 */
+	public boolean authenticate(String clearPassword) {
+		String encryptedHash = null;
+		try (Connection conn = this.ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("SELECT Password FROM CODERS WHERE ID = ?;")) {
+			s.setInt(1, this.cp.getCoderId());
+			ResultSet result = s.executeQuery();
+			while (result.next()) {
+			    encryptedHash = result.getString("Password");
+			}
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve hashed password for Coder " + this.cp.getCoderId() + " from database.",
+					"Attempted to authenticate the coder with ID " + this.cp.getCoderId() + ", but the password hash could not be retrieved from the database. Check your connection and database integrity.",
+					e);
+			Dna.logger.log(l);
+		}
+		
+		// check if the provided clear-text password corresponds to the hashed password in the database
+		if (encryptedHash == null) {
+			return false;
+		} else {
+			StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();
+			boolean correct = passwordEncryptor.checkPassword(clearPassword, encryptedHash);
+			if (correct == true) {
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[SQL] Coder successfully authenticated.",
+						"The password provided by the coder with ID " + this.cp.getCoderId() + " matches the hash stored in the database.");
+				Dna.logger.log(l);
+			} else {
+				LogEvent l = new LogEvent(Logger.WARNING,
+						"[SQL] Coder failed to authenticate.",
+						"The password provided by the coder with ID " + this.cp.getCoderId() + " does not match the hash stored in the database.");
+				Dna.logger.log(l);
+			}
+			return correct;
+		}
+	}
+
+	
+	/* =========================================================================
+	 * Documents
+	 * ====================================================================== */
+
+	/**
+	 * Add a batch of documents to the database.
+	 * 
+	 * @param documents An {@link java.util.ArrayList
+	 *   ArrayList}<{@link dna.Document Document}}> containing the documents to
+	 *   be added to the database.
+	 * 
+	 * @category document
+	 */
+	public void addDocuments(ArrayList<Document> documents) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement stmt = conn.prepareStatement("INSERT INTO DOCUMENTS (Title, Text, Coder, Author, Source, Section, Notes, Type, Date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);");
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			for (int i = 0; i < documents.size(); i++) {
+				stmt.setString(1, documents.get(i).getTitle());
+				stmt.setString(2, documents.get(i).getText());
+				stmt.setInt(3, documents.get(i).getCoder());
+				stmt.setString(4, documents.get(i).getAuthor());
+				stmt.setString(5, documents.get(i).getSource());
+				stmt.setString(6, documents.get(i).getSection());
+				stmt.setString(7, documents.get(i).getNotes());
+				stmt.setString(8, documents.get(i).getType());
+				stmt.setLong(9, documents.get(i).getDateTime().toEpochSecond(ZoneOffset.UTC)); // convert date-time to seconds since 01/01/1970 at 00:00:00 in UTC time zone
+				stmt.executeUpdate();
+			}
+			conn.commit();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Added " + documents.size() + " documents to the DOCUMENTS table in the database.",
+					"Successfully added " + documents.size() + " new documents to the DOCUMENTS table in the database. The transaction is complete and has been committed to the database.");
+			Dna.logger.log(l);
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to add documents to the database.",
+					"Attempted to add " + documents.size() + " new documents to the DOCUMENTS table in the database, but something went wrong. The transaction has been rolled back; nothing has been committed to the database. Check your connection.",
+					e);
+			Dna.logger.log(l);
+		}
+	}
+	
+	/**
+	 * Count the number of documents. Use an SQL query to get the number of rows
+	 * in the {@code DOCUMENTS} table of the database.
+	 * 
+	 * @return The number of documents.
+	 * 
+	 * @category document
+	 */
+	public int countDocuments() {
+		int count = 0;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("SELECT COUNT(*) FROM DOCUMENTS;")) {
+			ResultSet r = s.executeQuery();
+			while (r.next()) {
+				count = r.getInt(1);
+			}
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to count number of documents in the database.",
+					"Attempted to count how many documents are in the DOCUMENTS table of the database, but failed. Check your connection.",
+					e);
+			Dna.logger.log(l);
+		}
+		return count;
+	}
+
+	/**
+	 * Check for an array of documents whether any of them contains a statement.
+	 * Used to determine in the {@link guiCoder.DocumentEditor DocumentEditor}
+	 * dialog whether the text field should be editable.
+	 * 
+	 * @param documentIds  An array of document IDs.
+	 * @return             boolean value indicating the presence of statements.
+	 * 
+	 * @category document
+	 */
+	public boolean documentsContainStatements(int[] documentIds) {
+		boolean contains = true;
+		String s = "[SQL] SELECT COUNT(*) FROM STATEMENTS WHERE DocumentId IN (";
+		for (int i = 0; i < documentIds.length; i++) {
+			s = s + documentIds[i];
+			if (i < documentIds.length - 1) {
+				s = s + ", ";
+			}
+		}
+		s = s + ");";
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement ps = conn.prepareStatement(s)) {
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				if (rs.getInt(1) == 0) {
+					contains = false;
+				}
+			}
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to count number of statements in document selection.",
+					"Attempted to count how many statements are contained in each of the " + documentIds.length + " selected documents, but something went wrong while accessing the database. Most likely this means that the document table shows misleading counts, but there should be no other negative consequences.",
+					e);
+			Dna.logger.log(l);
+		}
+		return contains;
+	}
+	
+	/**
+	 * Get documents for a batch of document IDs. The data can be displayed and
+	 * edited in a {@link guiCoder.DocumentEditor DocumentEditor} dialog. The
+	 * documents do not contain any statements.
+	 * 
+	 * @param documentIds  An array of document IDs for which the data should be
+	 *   queried.
+	 * @return             An {@link java.util.ArrayList
+	 *   ArrayList}<{@link dna.Document Document}}> containing the documents and
+	 *   their meta-data.
+	 * 
+	 * @category document
+	 */
+	public ArrayList<Document> getDocuments(int[] documentIds) {
+		ArrayList<Document> documents = new ArrayList<Document>();
+		String sql = "SELECT * FROM DOCUMENTS WHERE ID IN (";
+		for (int i = 0; i < documentIds.length; i++) {
+			sql = sql + documentIds[i];
+			if (i < documentIds.length - 1) {
+				sql = sql + ", ";
+			}
+		}
+		sql = sql + ");";
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement(sql)) {
+			ResultSet rs = s.executeQuery();
+			while (rs.next()) {
+				Document d = new Document(
+						rs.getInt("ID"),
+						rs.getInt("Coder"),
+						rs.getString("Title"),
+						rs.getString("Text"),
+						rs.getString("Author"),
+						rs.getString("Source"),
+						rs.getString("Section"),
+						rs.getString("Type"),
+						rs.getString("Notes"),
+						LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC),
+						new ArrayList<Statement>());
+				documents.add(d);
+			}
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve document meta-data from the database.",
+					"Attempted to retrieve document data (other than the document text) for " + documentIds.length + " documents, but this failed. Check if all documents are being displayed in the user interface.",
+					e);
+			Dna.logger.log(l);
+		}
+		return documents;
+	}
+
+	/**
+	 * Get the document text for a specified document ID.
+	 * 
+	 * @param documentId  The ID of a document.
+	 * @return            A String representing the document text.
+	 * 
+	 * @category document
+	 */
+	public String getDocumentText(int documentId) {
+		String text = null;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("SELECT Text FROM DOCUMENTS WHERE ID = ?;")) {
+			s.setInt(1, documentId);
+			ResultSet result = s.executeQuery();
+			while (result.next()) {
+			    text = result.getString("Text");
+			}
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve text for Document " + documentId + ".",
+					"Attempted to retrieve the text contents for the document with ID " + documentId + " from the DOCUMENTS table of the database, but something went wrong, and nothing was retrieved. Check your connection.",
+					e);
+			Dna.logger.log(l);
+		}
+		return text;
+	}
+	
+	/**
+	 * <p>Update a batch of documents at once. The text and meta-data for the
+	 * document IDs are provided as arguments. The information from the
+	 * arguments is replaced in all the documents supplied by their document IDs
+	 * in the database, i.e., the title, author etc. is going to be identical
+	 * across all selected documents after the updating is complete.</p>
+	 * <p>The arguments can contain wildcards that are replaced by the
+	 * respective field from the document in the database. For example, {@code
+	 * %author} reads the author field (before replacement) from the database
+	 * and replaces the String {@code %author} by the actual contents of the
+	 * author field in any field it is used in. Valid wildcards are the
+	 * following partial Strings:</p>
+	 * <dl>
+	 *   <dt>{@code %title}</dt>
+	 *   <dd>The title field of the document.</dd>
+	 *   <dt>{@code %text}</dt>
+	 *   <dd>The text of the document.</dd>
+	 *   <dt>{@code %author}</dt>
+	 *   <dd>The author field of the document.</dd>
+	 *   <dt>{@code %source}</dt>
+	 *   <dd>The source field of the document.</dd>
+	 *   <dt>{@code %section}</dt>
+	 *   <dd>The section field of the document.</dd>
+	 *   <dt>{@code %type}</dt>
+	 *   <dd>The type field of the document.</dd>
+	 *   <dt>{@code %notes}</dt>
+	 *   <dd>The notes field of the document.</dd>
+	 *   <dt>{@code %day}</dt>
+	 *   <dd>The day from the date-time field of the document.</dd>
+	 *   <dt>{@code %month}</dt>
+	 *   <dd>The month from the date-time field of the document.</dd>
+	 *   <dt>{@code %year}</dt>
+	 *   <dd>The year from the date-time field of the document.</dd>
+	 *   <dt>{@code %hour}</dt>
+	 *   <dd>The hour from the date-time field of the document.</dd>
+	 *   <dt>{@code %minute}</dt>
+	 *   <dd>The minute from the date-time field of the document.</dd>
+	 * </dl>
+	 * 
+	 * @param documentIds An array of document IDs for which the contents should
+	 *   be replaced in the database.
+	 * @param title       A new title.
+	 * @param text        A new text.
+	 * @param author      A new author.
+	 * @param source      A new source.
+	 * @param section     A new section.
+	 * @param type        A new type.
+	 * @param notes       A new notes String.
+	 * @param dateTime    A new date-time stamp (as a {@link
+	 *   java.time.LocalDateTime LocalDateTime} object).
+	 * 
+	 * @category document
+	 */
+	public void updateDocuments(int[] documentIds, String title, String text, String author, String source, String section, String type, String notes, LocalDateTime dateTime) {
+		String sel = "SELECT Title, Text, Author, Source, Section, Type, Notes, Date FROM DOCUMENTS WHERE ID = ?;";
+		String upd = "UPDATE DOCUMENTS SET Title = ?, Text = ?, Author = ?, Source = ?, Section = ?, Type = ?, Notes = ?, Date = ? WHERE ID = ?;";
+		String titleTemp1 = "", titleTemp2, textTemp1 = "", textTemp2, authorTemp1 = "", authorTemp2, sourceTemp1 = "", sourceTemp2, sectionTemp1 = "", sectionTemp2, typeTemp1 = "", typeTemp2, notesTemp1 = "", notesTemp2, day = "", month = "", year = "", hour = "", minute = "";
+		long dateTimeTemp = 0;
+		LocalDateTime ldt = null;
+		DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("dd");
+		DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("MM");
+		DateTimeFormatter yearFormatter = DateTimeFormatter.ofPattern("yyyy");
+		DateTimeFormatter hourFormatter = DateTimeFormatter.ofPattern("HH");
+		DateTimeFormatter minuteFormatter = DateTimeFormatter.ofPattern("mm");
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement u = conn.prepareStatement(upd);
+				PreparedStatement s = conn.prepareStatement(sel);
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			ResultSet r;
+			for (int i = 0; i < documentIds.length; i++) {
+				s.setInt(1, documentIds[i]);
+				r = s.executeQuery();
+				while (r.next()) {
+					titleTemp1 = r.getString("Title");
+					textTemp1 = r.getString("Text");
+					authorTemp1 = r.getString("Author");
+					sectionTemp1 = r.getString("Section");
+					sourceTemp1 = r.getString("Source");
+					typeTemp1 = r.getString("Type");
+					notesTemp1 = r.getString("Notes");
+					dateTimeTemp = r.getLong("Date");
+					ldt = LocalDateTime.ofEpochSecond(dateTimeTemp, 0, ZoneOffset.UTC);
+					day = ldt.format(dayFormatter);
+					month = ldt.format(monthFormatter);
+					year = ldt.format(yearFormatter);
+					hour = ldt.format(hourFormatter);
+					minute = ldt.format(minuteFormatter);
+				}
+				titleTemp2 = title.replaceAll("%title", titleTemp1);
+				titleTemp2 = titleTemp2.replaceAll("%text", textTemp1);
+				titleTemp2 = titleTemp2.replaceAll("%author", authorTemp1);
+				titleTemp2 = titleTemp2.replaceAll("%source", sourceTemp1);
+				titleTemp2 = titleTemp2.replaceAll("%section", sectionTemp1);
+				titleTemp2 = titleTemp2.replaceAll("%type", typeTemp1);
+				titleTemp2 = titleTemp2.replaceAll("%notes", notesTemp1);
+				titleTemp2 = titleTemp2.replaceAll("%day", day);
+				titleTemp2 = titleTemp2.replaceAll("%month", month);
+				titleTemp2 = titleTemp2.replaceAll("%year", year);
+				titleTemp2 = titleTemp2.replaceAll("%hour", hour);
+				titleTemp2 = titleTemp2.replaceAll("%minute", minute);
+				u.setString(1, titleTemp2);
+				textTemp2 = text.replaceAll("%title", titleTemp1);
+				textTemp2 = textTemp2.replaceAll("%text", textTemp1);
+				textTemp2 = textTemp2.replaceAll("%author", authorTemp1);
+				textTemp2 = textTemp2.replaceAll("%source", sourceTemp1);
+				textTemp2 = textTemp2.replaceAll("%section", sectionTemp1);
+				textTemp2 = textTemp2.replaceAll("%type", typeTemp1);
+				textTemp2 = textTemp2.replaceAll("%notes", notesTemp1);
+				textTemp2 = textTemp2.replaceAll("%day", day);
+				textTemp2 = textTemp2.replaceAll("%month", month);
+				textTemp2 = textTemp2.replaceAll("%year", year);
+				textTemp2 = textTemp2.replaceAll("%hour", hour);
+				textTemp2 = textTemp2.replaceAll("%minute", minute);
+				u.setString(2, textTemp2);
+				authorTemp2 = author.replaceAll("%title", titleTemp1);
+				authorTemp2 = authorTemp2.replaceAll("%text", textTemp1);
+				authorTemp2 = authorTemp2.replaceAll("%author", authorTemp1);
+				authorTemp2 = authorTemp2.replaceAll("%source", sourceTemp1);
+				authorTemp2 = authorTemp2.replaceAll("%section", sectionTemp1);
+				authorTemp2 = authorTemp2.replaceAll("%type", typeTemp1);
+				authorTemp2 = authorTemp2.replaceAll("%notes", notesTemp1);
+				authorTemp2 = authorTemp2.replaceAll("%day", day);
+				authorTemp2 = authorTemp2.replaceAll("%month", month);
+				authorTemp2 = authorTemp2.replaceAll("%year", year);
+				authorTemp2 = authorTemp2.replaceAll("%hour", hour);
+				authorTemp2 = authorTemp2.replaceAll("%minute", minute);
+				u.setString(3, authorTemp2);
+				sourceTemp2 = source.replaceAll("%title", titleTemp1);
+				sourceTemp2 = sourceTemp2.replaceAll("%text", textTemp1);
+				sourceTemp2 = sourceTemp2.replaceAll("%author", authorTemp1);
+				sourceTemp2 = sourceTemp2.replaceAll("%source", sourceTemp1);
+				sourceTemp2 = sourceTemp2.replaceAll("%section", sectionTemp1);
+				sourceTemp2 = sourceTemp2.replaceAll("%type", typeTemp1);
+				sourceTemp2 = sourceTemp2.replaceAll("%notes", notesTemp1);
+				sourceTemp2 = sourceTemp2.replaceAll("%day", day);
+				sourceTemp2 = sourceTemp2.replaceAll("%month", month);
+				sourceTemp2 = sourceTemp2.replaceAll("%year", year);
+				sourceTemp2 = sourceTemp2.replaceAll("%hour", hour);
+				sourceTemp2 = sourceTemp2.replaceAll("%minute", minute);
+				u.setString(4, sourceTemp2);
+				sectionTemp2 = section.replaceAll("%title", titleTemp1);
+				sectionTemp2 = sectionTemp2.replaceAll("%text", textTemp1);
+				sectionTemp2 = sectionTemp2.replaceAll("%author", authorTemp1);
+				sectionTemp2 = sectionTemp2.replaceAll("%source", sourceTemp1);
+				sectionTemp2 = sectionTemp2.replaceAll("%section", sectionTemp1);
+				sectionTemp2 = sectionTemp2.replaceAll("%type", typeTemp1);
+				sectionTemp2 = sectionTemp2.replaceAll("%notes", notesTemp1);
+				sectionTemp2 = sectionTemp2.replaceAll("%day", day);
+				sectionTemp2 = sectionTemp2.replaceAll("%month", month);
+				sectionTemp2 = sectionTemp2.replaceAll("%year", year);
+				sectionTemp2 = sectionTemp2.replaceAll("%hour", hour);
+				sectionTemp2 = sectionTemp2.replaceAll("%minute", minute);
+				u.setString(5, sectionTemp2);
+				typeTemp2 = type.replaceAll("%title", titleTemp1);
+				typeTemp2 = typeTemp2.replaceAll("%text", textTemp1);
+				typeTemp2 = typeTemp2.replaceAll("%author", authorTemp1);
+				typeTemp2 = typeTemp2.replaceAll("%source", sourceTemp1);
+				typeTemp2 = typeTemp2.replaceAll("%section", sectionTemp1);
+				typeTemp2 = typeTemp2.replaceAll("%type", typeTemp1);
+				typeTemp2 = typeTemp2.replaceAll("%notes", notesTemp1);
+				typeTemp2 = typeTemp2.replaceAll("%day", day);
+				typeTemp2 = typeTemp2.replaceAll("%month", month);
+				typeTemp2 = typeTemp2.replaceAll("%year", year);
+				typeTemp2 = typeTemp2.replaceAll("%hour", hour);
+				typeTemp2 = typeTemp2.replaceAll("%minute", minute);
+				u.setString(6, typeTemp2);
+				notesTemp2 = notes.replaceAll("%title", titleTemp1);
+				notesTemp2 = notesTemp2.replaceAll("%text", textTemp1);
+				notesTemp2 = notesTemp2.replaceAll("%author", authorTemp1);
+				notesTemp2 = notesTemp2.replaceAll("%source", sourceTemp1);
+				notesTemp2 = notesTemp2.replaceAll("%section", sectionTemp1);
+				notesTemp2 = notesTemp2.replaceAll("%type", typeTemp1);
+				notesTemp2 = notesTemp2.replaceAll("%notes", notesTemp1);
+				notesTemp2 = notesTemp2.replaceAll("%day", day);
+				notesTemp2 = notesTemp2.replaceAll("%month", month);
+				notesTemp2 = notesTemp2.replaceAll("%year", year);
+				notesTemp2 = notesTemp2.replaceAll("%hour", hour);
+				notesTemp2 = notesTemp2.replaceAll("%minute", minute);
+				u.setString(7, notesTemp2);
+				if (dateTime != null) {
+					u.setLong(8, dateTime.toEpochSecond(ZoneOffset.UTC));
+				} else {
+					u.setLong(8, dateTimeTemp);
+				}
+				u.setInt(9, documentIds[i]);
+				u.executeUpdate();
+			}
+			conn.commit();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] The meta-data of " + documentIds.length + " documents have been updated.",
+					"The meta-data of " + documentIds.length + " documents have been updated.");
+			Dna.logger.log(l);
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to update the meta-data of " + documentIds.length + " documents.",
+					"Attempted to recode/edit " + documentIds.length + " documents. The transaction has been rolled back, and none of the documents has been updated in the database.",
+					e);
+			Dna.logger.log(l);
+		}
+	}
+
+	/**
+	 * Delete documents from the database, given an array of document IDs.
+	 * 
+	 * @param documentIds  An array of document IDs to be deleted.
+	 * 
+	 * @category document
+	 */
+	public void deleteDocuments(int[] documentIds) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("DELETE FROM DOCUMENTS WHERE ID = ?"); // will cascade to statements
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			for (int i = 0; i < documentIds.length; i++) {
+				s.setInt(1, documentIds[i]);
+				s.executeUpdate();
+			}
+			conn.commit();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Deleted " + documentIds.length + " documents (and their statements).",
+					"Successfully deleted " + documentIds.length + " documents from the DOCUMENTS table in the database, and also deleted all statements that may have been contained in these documents. The transaction has been committed to the database.");
+			Dna.logger.log(l);
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to delete documents from database.",
+					"Attempted to remove " + documentIds.length + " documents from the DOCUMENTS table in the database, including all associated statements, but something went wrong. The transaction has been rolled back, and nothing has been removed.",
+					e);
+			Dna.logger.log(l);
+		}
+	}
+
+	
+	/* =========================================================================
+	 * Statements
+	 * ====================================================================== */
+
+	/**
+	 * Add a statement (with variable values) to the database.
+	 * 
+	 * @param statement   A {@link dna.Statement Statement} object, including
+	 *   the values for the different variables.
+	 * @param documentId  The ID of the document in which the statement is
+	 *   nested.
+	 * 
+	 * @category statement
+	 */
+	public void addStatement(Statement statement, int documentId) {
 		int statementId = -1, attributeId = -1;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("INSERT INTO STATEMENTS (StatementTypeId, DocumentId, Start, Stop, Coder) VALUES (?, ?, ?, ?, ?);");
@@ -1136,9 +1240,17 @@ public class Sql {
 					e);
 			Dna.logger.log(l);
 		}
-		return -1;
 	}
 
+	/**
+	 * Update the variable contents of a statement using new values.
+	 * 
+	 * @param statementId  The ID of the statement to be updated.
+	 * @param values       An ArrayList of {@link dna.Value Value} objects. They
+	 *   are used to update each variable value in the statement.
+	 * 
+	 * @category statement
+	 */
 	public void updateStatement(int statementId, ArrayList<Value> values) {
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
@@ -1246,6 +1358,15 @@ public class Sql {
 		}
 	}
 	
+	/**
+	 * Create a copy of a statement in the database.
+	 * 
+	 * @param statementId  The ID of the statement to be cloned.
+	 * @param newCoderId   The ID of the coder who will own the statement copy.
+	 * @return             The ID of the new (cloned) statement.
+	 * 
+	 * @category statement
+	 */
 	public int cloneStatement(int statementId, int newCoderId) {
 		int id = statementId;
 		try (Connection conn = ds.getConnection();
@@ -1330,6 +1451,15 @@ public class Sql {
 		return id;
 	}
 
+	/**
+	 * Get a statement from the database based on its ID.
+	 * 
+	 * @param statementId  The statement ID of the statement to be retrieved.
+	 * @return             A {@link dna.Statement Statement} with all relevant
+	 *   values for the different variables.
+	 * 
+	 * @category statement
+	 */
 	public Statement getStatement(int statementId) {
 		Statement statement = null;
 		ArrayList<Value> values;
@@ -1404,7 +1534,100 @@ public class Sql {
 		}
 		return statement;
 	}
+
+	/**
+	 * Get all statements nested in a specific document.
+	 * 
+	 * @param documentId  The ID of the document for which statements should be
+	 *   retrieved.
+	 * @return            An ArrayList of {@link dna.Statement Statement}
+	 *   objects, including their variable contents.
+	 * 
+	 * @category statement
+	 */
+	public ArrayList<Statement> getStatementsByDocument(int documentId) {
+		ArrayList<Statement> statements = new ArrayList<Statement>();
+		ArrayList<Value> values;
+		int statementId, statementTypeId, variableId;
+		String variable, dataType;
+		Color aColor, sColor, cColor;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("SELECT STATEMENTS.ID AS StatementId, StatementTypeId, STATEMENTTYPES.Label AS StatementTypeLabel, STATEMENTTYPES.Red AS StatementTypeRed, STATEMENTTYPES.Green AS StatementTypeGreen, STATEMENTTYPES.Blue AS StatementTypeBlue, Start, Stop, Coder AS CoderId, CODERS.Red AS CoderRed, CODERS.Green AS CoderGreen, CODERS.Blue AS CoderBlue FROM STATEMENTS INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID WHERE DocumentId = ?;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
+				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
+				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
+				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
+			ResultSet r1, r2, r3;
+			s1.setInt(1, documentId);
+			r1 = s1.executeQuery();
+			while (r1.next()) {
+			    statementId = r1.getInt("StatementId");
+			    statementTypeId = r1.getInt("StatementTypeId");
+			    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
+			    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
+			    s2.setInt(1, statementTypeId);
+			    r2 = s2.executeQuery();
+			    values = new ArrayList<Value>();
+			    while (r2.next()) {
+			    	variableId = r2.getInt("ID");
+			    	variable = r2.getString("Variable");
+			    	dataType = r2.getString("DataType");
+			    	if (dataType.equals("short text")) {
+				    	s3.setInt(1, statementId);
+				    	s3.setInt(2, variableId);
+				    	r3 = s3.executeQuery();
+				    	while (r3.next()) {
+			            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
+			            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getString("Type"), r3.getString("Alias"), r3.getString("Notes"), r3.getInt("ChildOf"), true);
+				    		values.add(new Value(variableId, variable, dataType, attribute));
+				    	}
+			    	} else if (dataType.equals("long text")) {
+				    	s4.setInt(1, variableId);
+				    	s4.setInt(2, statementId);
+				    	r3 = s4.executeQuery();
+				    	while (r3.next()) {
+				    		values.add(new Value(variableId, variable, dataType, r3.getString("Value")));
+				    	}
+			    	} else if (dataType.equals("integer")) {
+				    	s5.setInt(1, variableId);
+				    	s5.setInt(2, statementId);
+				    	r3 = s5.executeQuery();
+				    	while (r3.next()) {
+				    		values.add(new Value(variableId, variable, dataType, r3.getInt("Value")));
+				    	}
+			    	} else if (dataType.equals("boolean")) {
+				    	s6.setInt(1, variableId);
+				    	s6.setInt(2, statementId);
+				    	r3 = s6.executeQuery();
+				    	while (r3.next()) {
+				    		values.add(new Value(variableId, variable, dataType, r3.getInt("Value")));
+				    	}
+			    	}
+			    }
+			    statements.add(new Statement(statementId, r1.getInt("CoderId"), r1.getInt("Start"), r1.getInt("Stop"), statementTypeId, values, sColor, cColor, r1.getString("StatementTypeLabel")));
+			}
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] " + statements.size() + " statements have been retrieved for Document " + documentId + ".",
+					statements.size() + " statements have been retrieved for Document " + documentId + ".");
+			Dna.logger.log(l);
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve statements for Document " + documentId + ".",
+					"Attempted to retrieve all statements for Document " + documentId + " from the database, but something went wrong. You should double-check if the statements are all shown!",
+					e);
+			Dna.logger.log(l);
+		}
+		return statements;
+	}
 	
+	/**
+	 * Delete a statement from the database based on its ID.
+	 * 
+	 * @param statementId  ID of the statement to be deleted.
+	 * 
+	 * @category statement
+	 */
 	public void deleteStatement(int statementId) {
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s = conn.prepareStatement("DELETE FROM STATEMENTS WHERE ID = ?;");) {
@@ -1422,7 +1645,21 @@ public class Sql {
         	Dna.logger.log(l);
 		}
 	}
+
 	
+	/* =========================================================================
+	 * Attributes
+	 * ====================================================================== */
+
+	/**
+	 * Get an array of all attributes corresponding to a variable.
+	 *  
+	 * @param variableId  The ID of the variable for which all attributes will
+	 *   be retrieved.
+	 * @return            An array of {@link dna.Attribute Attribute} objects.
+	 * 
+	 * @category attribute
+	 */
 	public Attribute[] getAttributes(int variableId) {
 		ArrayList<Attribute> attributesList = new ArrayList<Attribute>();
 		boolean inDatabase;
@@ -1459,5 +1696,52 @@ public class Sql {
 		Attribute[] attributesArray = new Attribute[attributesList.size()];
 		attributesArray = attributesList.toArray(attributesArray);
 		return attributesArray;
+	}
+
+	
+	/* =========================================================================
+	 * Statement types
+	 * ====================================================================== */
+
+	/**
+	 * Get an array list of all statement types in the database.
+	 * 
+	 * @return An ArrayList of {@link dna.StatementType StatementType} objects.
+	 * 
+	 * @category statementtype
+	 */
+	public ArrayList<StatementType> getStatementTypes() {
+		ArrayList<StatementType> statementTypes = new ArrayList<StatementType>();
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("SELECT * FROM STATEMENTTYPES;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM VARIABLES WHERE StatementTypeId = ?;")) {
+        	ArrayList<Value> variables;
+        	int statementTypeId;
+			ResultSet r1 = s1.executeQuery();
+			ResultSet r2;
+			Color color;
+        	while (r1.next()) {
+            	variables = new ArrayList<Value>();
+            	statementTypeId = r1.getInt("ID");
+            	color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
+            	s2.setInt(1, statementTypeId);
+            	r2 = s2.executeQuery();
+            	while (r2.next()) {
+            		variables.add(new Value(r2.getInt("ID"), r2.getString("Variable"), r2.getString("DataType")));
+            	}
+            	statementTypes.add(new StatementType(r1.getInt("ID"), r1.getString("Label"), color, variables));
+            }
+        	LogEvent l = new LogEvent(Logger.MESSAGE,
+        			"[SQL] Retrieved " + statementTypes.size() + " statement types from the database.",
+        			"Retrieved " + statementTypes.size() + " statement types from the database.");
+        	Dna.logger.log(l);
+		} catch (SQLException e1) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to retrieve statement types from the database.",
+					"Failed to retrieve statement types from the database. Check database connection and consistency of the STATEMENTTYPES and VARIABLES tables in the database.",
+					e1);
+			Dna.logger.log(l);
+		}
+		return statementTypes;
 	}
 }

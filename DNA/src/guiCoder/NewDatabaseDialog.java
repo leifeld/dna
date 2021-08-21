@@ -44,6 +44,7 @@ import org.jasypt.util.password.StrongPasswordEncryptor;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
+import sql.ConnectionProfile;
 
 /**
  * This class represents a dialog window for creating a new DNA database. The

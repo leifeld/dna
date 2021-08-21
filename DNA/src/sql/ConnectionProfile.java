@@ -1,4 +1,4 @@
-package guiCoder;
+package sql;
 
 public class ConnectionProfile {
 	String type, url, user, password;
