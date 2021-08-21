@@ -10,13 +10,15 @@ import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import dna.Dna;
+import logger.LogEvent;
+import logger.Logger;
+
 @SuppressWarnings("serial")
 public class AboutWindow extends JDialog {
 
 	/**
 	 * This class shows an about window with instructions.
-	 * 
-	 * @author Philip Leifeld
 	 */
 	JPanel aboutContents;
 	JEditorPane aboutText;
@@ -27,11 +29,11 @@ public class AboutWindow extends JDialog {
 		ImageIcon dna32Icon = new ImageIcon(getClass().getResource("/icons/dna32.png"));
 		this.setIconImage(dna32Icon.getImage());
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		aboutContents = new JPanel( new BorderLayout() );
+		aboutContents = new JPanel(new BorderLayout());
 
 		Icon dnaTextIcon = new ImageIcon(getClass().getResource("/icons/dna32text.png"));
 		JLabel dnaIcon = new JLabel(dnaTextIcon);
-		JPanel dnaIconPanel = new JPanel( new FlowLayout() );
+		JPanel dnaIconPanel = new JPanel(new FlowLayout());
 		dnaIconPanel.add(dnaIcon);
 		aboutContents.add(dnaIconPanel, BorderLayout.NORTH);
 
@@ -53,10 +55,28 @@ public class AboutWindow extends JDialog {
 					if(Desktop.isDesktopSupported()) {
 						try {
 							Desktop.getDesktop().browse(e.getURL().toURI());
+							LogEvent l = new LogEvent(Logger.MESSAGE,
+									"[GUI] URL in About DNA window opened.",
+									"A link from the About DNA window was successfully opened in a browser.");
+							Dna.logger.log(l);
+						} catch (UnsupportedOperationException e1) {
+							LogEvent l = new LogEvent(Logger.WARNING,
+									"[GUI] URL in About DNA window could not be opened.",
+									"On some operating systems (notably Linux), Java does not support opening URLs by clicking on a hyperlink, such as the one in the About DNA window. The link you clicked on was not opened.",
+									e1);
+							Dna.logger.log(l);
 						} catch (IOException e1) {
-							System.out.println("URL cannot be opened.");
+							LogEvent l = new LogEvent(Logger.WARNING,
+									"[GUI] URL in About DNA window could not be opened.",
+									"An input-output exception occurred when you tried to click on a link in the About DNA window. The link was not opened in a browser.",
+									e1);
+							Dna.logger.log(l);
 						} catch (URISyntaxException e1) {
-							System.out.println("URL cannot be opened.");
+							LogEvent l = new LogEvent(Logger.WARNING,
+									"[GUI] URL in About DNA window could not be opened.",
+									"A URI syntax exception occurred when you tried to click on a link in the About DNA window. Something must have been wrong with the URL you clicked on; perhaps a bug in the code? The link was not opened in a browser.",
+									e1);
+							Dna.logger.log(l);
 						}
 					}
 				}
@@ -80,6 +100,11 @@ public class AboutWindow extends JDialog {
 		aboutContents.add(buttonPanel, BorderLayout.SOUTH);
 		
 		this.add(aboutContents);
+		
+		LogEvent l = new LogEvent(Logger.MESSAGE,
+				"[GUI] About DNA window was opened.",
+				"[GUI] About DNA window was successfully opened.");
+		Dna.logger.log(l);
 
 		// set location and pack window
 		this.setModal(true);

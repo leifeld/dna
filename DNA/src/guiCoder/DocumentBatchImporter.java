@@ -49,6 +49,8 @@ import javax.swing.border.TitledBorder;
 import dna.Dna;
 import dna.Document;
 import dna.Statement;
+import logger.LogEvent;
+import logger.Logger;
 
 public class DocumentBatchImporter extends JDialog {
 	private static final long serialVersionUID = 1156604686298665919L;
@@ -73,6 +75,11 @@ public class DocumentBatchImporter extends JDialog {
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setLayout(new BorderLayout());
 
+		LogEvent l = new LogEvent(Logger.MESSAGE,
+				"[GUI] Opened document batch import window.",
+				"Opened a document batch import window.");
+		Dna.logger.log(l);
+		
 		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
 		JButton cancelButton = new JButton("Cancel", cancelIcon);
         cancelButton.addActionListener(new ActionListener() {
@@ -187,16 +194,22 @@ public class DocumentBatchImporter extends JDialog {
 					try {
 						is = new FileInputStream(files[fileList.getSelectedIndex()]);
 					} catch (FileNotFoundException e1) {
-						System.err.println("Input file not found while batch-importing documents: " + files[fileList.getSelectedIndex()]);
-						e1.printStackTrace();
+						LogEvent l = new LogEvent(Logger.ERROR,
+								"[GUI] Input file for batch import of documents not found.",
+								"Attempted to open file but failed: " + files[fileList.getSelectedIndex()].getAbsolutePath() + ".",
+								e1);
+						Dna.logger.log(l);
 					}
 					
     				InputStreamReader isr = null;
 					try {
 						isr = new InputStreamReader(is, "UTF-8");
 					} catch (UnsupportedEncodingException e1) {
-						System.err.println("Unsupported coding exception: Document could not be read using UTF-8 encoding.");
-						e1.printStackTrace();
+						LogEvent l = new LogEvent(Logger.ERROR,
+								"[GUI] Failed to decode input document for batch import.",
+								"Unsupported coding exception. Document could not be read using UTF-8 encoding: " + files[fileList.getSelectedIndex()].getAbsolutePath() + ".",
+								e1);
+						Dna.logger.log(l);
 					}
 					
     				BufferedReader br = new BufferedReader(isr);
@@ -207,8 +220,11 @@ public class DocumentBatchImporter extends JDialog {
 							document = document + sCurrentLine + "\n";
 						}
 					} catch (IOException e1) {
-						System.err.println("Input/output exception while reading document.");
-						e1.printStackTrace();
+						LogEvent l = new LogEvent(Logger.ERROR,
+								"[GUI] Failed to read document for batch import.",
+								"Input/output exception while reading document: " + files[fileList.getSelectedIndex()].getAbsolutePath() + ".",
+								e1);
+						Dna.logger.log(l);
 					}
     				textPreviewArea.setText(document);
     				textPreviewArea.setCaretPosition(0);
@@ -668,6 +684,11 @@ public class DocumentBatchImporter extends JDialog {
         		String sectionPattern,
         		String typePattern,
         		String notesPattern) {
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Initializing import document thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"Initializing import document thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+			Dna.logger.log(l);
+			
         	this.dialog = dialog;
             this.files = files;
         	progressMonitor = new ProgressMonitor(null, "Importing text files...", "", 0, this.files.length - 1);
@@ -788,11 +809,19 @@ public class DocumentBatchImporter extends JDialog {
         protected void done() {
 			Dna.sql.addDocuments(documents);
 			int numDocumentsAfter = Dna.sql.countDocuments();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Batch import: " + good + " document(s) imported, " + bad + " skipped.",
+					"There were " + numDocumentsBefore + " document(s) before the batch import, and there are " + numDocumentsAfter + " document(s) after completing the import.");
+			Dna.logger.log(l);
 			if (numDocumentsAfter > numDocumentsBefore) {
 				JOptionPane.showMessageDialog(null, good + " documents were imported, " + bad + " skipped.");
 			} else {
 				JOptionPane.showMessageDialog(null, "No new documents were imported.");
 			}
+			l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Closing import document thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"Closing import document thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+			Dna.logger.log(l);
 			dialog.dispose();
         }
     }

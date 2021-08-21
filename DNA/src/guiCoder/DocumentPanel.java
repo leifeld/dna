@@ -27,6 +27,10 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
+import dna.Dna;
+import logger.LogEvent;
+import logger.Logger;
+
 /**
  * Panel with a toolbar, a document table, and a text pane for displaying
  * documents and their metadata. Typically used at the center of the main window
@@ -281,7 +285,10 @@ class DocumentPanel extends JPanel {
 					textPanel.setContents(id, documentTableModel.getDocumentText(id));
 					//Dna.gui.textPanel.setEnabled(true);
 				} else {
-					System.err.println("Negative number of rows in the document table!");
+					LogEvent l = new LogEvent(Logger.WARNING,
+							"[GUI] Negative number of rows in the document table!",
+							"When a document is selected in the document table in the DNA coding window, the text of the document is displayed in the text panel. When checking which row in the table was selected, it was found that the table contained negative numbers of documents. This is obviously an error. Please report it by submitting a bug report along with the saved log.");
+					Dna.logger.log(l);
 				}
 				// if (Dna.gui.rightPanel.statementPanel.statementFilter.showCurrent.isSelected()) {
 				// 	Dna.gui.rightPanel.statementPanel.statementFilter.currentDocumentFilter();

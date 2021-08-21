@@ -45,6 +45,8 @@ import com.github.lgooddatepicker.components.TimePickerSettings;
 import dna.Dna;
 import dna.Document;
 import dna.Statement;
+import logger.LogEvent;
+import logger.Logger;
 
 @SuppressWarnings("serial")
 public class DocumentEditor extends JDialog {
@@ -61,10 +63,6 @@ public class DocumentEditor extends JDialog {
 	int[] documentIds;
 	ArrayList<Document> documents;
 
-	public ArrayList<Document> getDocuments() {
-		return documents;
-	}
-	
 	public DocumentEditor(int[] documentIds) {
 		this.documentIds = documentIds;
 		documents = Dna.sql.getDocuments(documentIds);
@@ -311,6 +309,11 @@ public class DocumentEditor extends JDialog {
 					Document d = new Document(-1, Dna.sql.getConnectionProfile().getCoderId(), title, text, author, source, section, type, notes, dateTime, new ArrayList<Statement>());
 					al.add(d);
 					documents = al;
+					Dna.sql.addDocuments(documents);
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI] A new document was added to the database.",
+							"A new document was manually added to the database by clicking on the Add button in a New Document dialog window.");
+					Dna.logger.log(l);
 					dispose();
 				}
 			});
@@ -324,6 +327,10 @@ public class DocumentEditor extends JDialog {
 					int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
 						Dna.sql.updateDocuments(documentIds, titleField.getText(), textArea.getText(), (String) authorBox.getSelectedItem(), (String) sourceBox.getSelectedItem(), (String) sectionBox.getSelectedItem(), (String) typeBox.getSelectedItem(), notesArea.getText(), dateTimePicker.getDateTimeStrict());
+						LogEvent l = new LogEvent(Logger.MESSAGE,
+								"[GUI] " + documentIds.length + " documents were updated in the database.",
+								"Using a Document Editor dialog window, the meta-data of " + documentIds.length + " documents were updated in the database.");
+						Dna.logger.log(l);
 					}
 					dispose();
 				}
@@ -448,6 +455,11 @@ public class DocumentEditor extends JDialog {
 		String field;
 		
 		public JDBCWorker(String field) {
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Initializing thread to populate Document Editor: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"Initializing a new thread to populate the author, source, section, and type combo boxes in a Document Editor dialog window: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+			Dna.logger.log(l);
+			
 			this.field = field;
 		}
 		
@@ -490,7 +502,10 @@ public class DocumentEditor extends JDialog {
 
         @Override
         protected void done() {
-        	// nothing to do
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Closing thread to populate Document Editor: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"All combo boxes in the Document Editor window have been filled. Closing thread to populate Document Editor: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+			Dna.logger.log(l);
         }
     }
 }

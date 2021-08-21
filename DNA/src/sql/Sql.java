@@ -55,19 +55,34 @@ public class Sql {
 			ds = new SQLiteDataSource();
 	        ((SQLiteDataSource) ds).setUrl("jdbc:sqlite:" + cp.getUrl());
 	        ((SQLiteDataSource) ds).setEnforceForeignKeys(true); // if this is not set, ON DELETE CASCADE won't work
+	        LogEvent l = new LogEvent(Logger.MESSAGE,
+	        		"[SQL] An SQLite DNA database has been opened as a data source.",
+	        		"An SQLite DNA database has been opened as a data source.");
+	        Dna.logger.log(l);
 		} else if (cp.getType().equals("mysql")) {
 			ds = new MysqlDataSource();
 			((MysqlDataSource) ds).setUrl("jdbc:mysql://" + cp.getUrl());
 			((MysqlDataSource) ds).setUser(cp.getUser());
 			((MysqlDataSource) ds).setPassword(cp.getPassword());
+	        LogEvent l = new LogEvent(Logger.MESSAGE,
+	        		"[SQL] A MySQL DNA database has been opened as a data source.",
+	        		"A MySQL DNA database has been opened as a data source.");
+	        Dna.logger.log(l);
 		} else if (cp.getType().equals("postgresql")) {
 			ds = new BasicDataSource(); // use Apache DBCP for connection pooling with PostgreSQL
 			((BasicDataSource) ds).setDriverClassName("org.postgresql.Driver");
 			((BasicDataSource) ds).setUrl("jdbc:postgresql://" + cp.getUrl());
 			((BasicDataSource) ds).setUsername(cp.getUser());
 			((BasicDataSource) ds).setPassword(cp.getPassword());
+	        LogEvent l = new LogEvent(Logger.MESSAGE,
+	        		"[SQL] A PostgreSQL DNA database has been opened as a data source.",
+	        		"A PostgreSQL DNA database has been opened as a data source.");
+	        Dna.logger.log(l);
 		} else {
-			System.err.println("Database format not recognized: " + cp.getType() + ".");
+	        LogEvent l = new LogEvent(Logger.ERROR,
+	        		"[SQL] Failed to regognize database format.",
+	        		"Attempted to open a database of type \"" + cp.getType() + "\", but the type does not seem to be supported.");
+	        Dna.logger.log(l);
 		}
 	}
 
@@ -81,8 +96,11 @@ public class Sql {
 			    text = result.getString("Text");
 			}
 		} catch (SQLException e) {
-			System.err.println("Could not establish connection to database to retrieve the document text.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve text for Document " + documentId + ".",
+					"Attempted to retrieve the text contents for the document with ID " + documentId + " from the DOCUMENTS table of the database, but something went wrong, and nothing was retrieved. Check your connection.",
+					e);
+			Dna.logger.log(l);
 		}
 		return text;
 	}
@@ -149,9 +167,16 @@ public class Sql {
 			    }
 			    statements.add(new Statement(statementId, r1.getInt("CoderId"), r1.getInt("Start"), r1.getInt("Stop"), statementTypeId, values, sColor, cColor, r1.getString("StatementTypeLabel")));
 			}
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] " + statements.size() + " statements have been retrieved for Document " + documentId + ".",
+					statements.size() + " statements have been retrieved for Document " + documentId + ".");
+			Dna.logger.log(l);
 		} catch (SQLException e) {
-			System.err.println("Could not establish connection to database to retrieve the statements in document " + documentId + ".");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve statements for Document " + documentId + ".",
+					"Attempted to retrieve all statements for Document " + documentId + " from the database, but something went wrong. You should double-check if the statements are all shown!",
+					e);
+			Dna.logger.log(l);
 		}
 		return statements;
 	}
@@ -166,9 +191,16 @@ public class Sql {
 				s.executeUpdate();
 			}
 			conn.commit();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Deleted " + documentIds.length + " documents (and their statements).",
+					"Successfully deleted " + documentIds.length + " documents from the DOCUMENTS table in the database, and also deleted all statements that may have been contained in these documents. The transaction has been committed to the database.");
+			Dna.logger.log(l);
 		} catch (SQLException e) {
-			System.err.println("Could not establish connection to database to remove document(s).");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to delete documents from database.",
+					"Attempted to remove " + documentIds.length + " documents from the DOCUMENTS table in the database, including all associated statements, but something went wrong. The transaction has been rolled back, and nothing has been removed.",
+					e);
+			Dna.logger.log(l);
 		}
 	}
 	
@@ -190,9 +222,16 @@ public class Sql {
 				stmt.executeUpdate();
 			}
 			conn.commit();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Added " + documents.size() + " documents to the DOCUMENTS table in the database.",
+					"Successfully added " + documents.size() + " new documents to the DOCUMENTS table in the database. The transaction is complete and has been committed to the database.");
+			Dna.logger.log(l);
 		} catch (SQLException e) {
-			System.err.println("Could not establish connection to database to add or remove documents.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to add documents to the database.",
+					"Attempted to add " + documents.size() + " new documents to the DOCUMENTS table in the database, but something went wrong. The transaction has been rolled back; nothing has been committed to the database. Check your connection.",
+					e);
+			Dna.logger.log(l);
 		}
 	}
 	
@@ -205,8 +244,11 @@ public class Sql {
 				count = r.getInt(1);
 			}
 		} catch (SQLException e) {
-			System.err.println("Could not count documents in the database.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to count number of documents in the database.",
+					"Attempted to count how many documents are in the DOCUMENTS table of the database, but failed. Check your connection.",
+					e);
+			Dna.logger.log(l);
 		}
 		return count;
 	}
@@ -226,8 +268,11 @@ public class Sql {
 			    c = new guiCoder.Coder(coderId, result.getString("Name"), result.getInt("Red"), result.getInt("Green"), result.getInt("Blue"));
 			}
 		} catch (SQLException e) {
-			System.err.println("Could not establish connection to database to retrieve the coder.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Coder with ID " + coderId + " could not be retrieved from the database.",
+					"The details of the coder with ID " + coderId + " could not be retrieved from the database. Check your database connection.",
+					e);
+			Dna.logger.log(l);
 		}
 		return c;
 	}
@@ -249,13 +294,32 @@ public class Sql {
 			    encryptedHash = result.getString("Password");
 			}
 		} catch (SQLException e) {
-			System.err.println("Could not retrieve password hash from database.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve hashed password for Coder " + this.cp.getCoderId() + " from database.",
+					"Attempted to authenticate the coder with ID " + this.cp.getCoderId() + ", but the password hash could not be retrieved from the database. Check your connection and database integrity.",
+					e);
+			Dna.logger.log(l);
 		}
 		
 		// check if the provided clear-text password corresponds to the hashed password in the database
-		StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();
-		return passwordEncryptor.checkPassword(clearPassword, encryptedHash);
+		if (encryptedHash == null) {
+			return false;
+		} else {
+			StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();
+			boolean correct = passwordEncryptor.checkPassword(clearPassword, encryptedHash);
+			if (correct == true) {
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[SQL] Coder successfully authenticated.",
+						"The password provided by the coder with ID " + this.cp.getCoderId() + " matches the hash stored in the database.");
+				Dna.logger.log(l);
+			} else {
+				LogEvent l = new LogEvent(Logger.WARNING,
+						"[SQL] Coder failed to authenticate.",
+						"The password provided by the coder with ID " + this.cp.getCoderId() + " does not match the hash stored in the database.");
+				Dna.logger.log(l);
+			}
+			return correct;
+		}
 	}
 
 	/**
@@ -272,8 +336,11 @@ public class Sql {
             	coders.add(new Coder(rs.getInt("ID"), rs.getString("Name"), rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue")));
             }
 		} catch (SQLException e1) {
-			System.err.println("Could not retrieve coders from database.");
-			e1.printStackTrace();
+        	LogEvent l = new LogEvent(Logger.WARNING,
+        			"[SQL] Failed to retrieve coders from the database.",
+        			"Attempted to retrieve all coders from the database. Check your connection.",
+        			e1);
+        	Dna.logger.log(l);
 		}
 		return coders;
 	}
@@ -308,15 +375,18 @@ public class Sql {
 				documents.add(d);
 			}
 		} catch (SQLException e) {
-			System.err.println("Could not retrieve documents from database.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve document meta-data from the database.",
+					"Attempted to retrieve document data (other than the document text) for " + documentIds.length + " documents, but this failed. Check if all documents are being displayed in the user interface.",
+					e);
+			Dna.logger.log(l);
 		}
 		return documents;
 	}
 	
 	public boolean documentsContainStatements(int[] documentIds) {
 		boolean contains = true;
-		String s = "SELECT COUNT(*) FROM STATEMENTS WHERE DocumentId IN (";
+		String s = "[SQL] SELECT COUNT(*) FROM STATEMENTS WHERE DocumentId IN (";
 		for (int i = 0; i < documentIds.length; i++) {
 			s = s + documentIds[i];
 			if (i < documentIds.length - 1) {
@@ -333,8 +403,11 @@ public class Sql {
 				}
 			}
 		} catch (SQLException e) {
-			System.err.println("Could not count statements in document selection.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to count number of statements in document selection.",
+					"Attempted to count how many statements are contained in each of the " + documentIds.length + " selected documents, but something went wrong while accessing the database. Most likely this means that the document table shows misleading counts, but there should be no other negative consequences.",
+					e);
+			Dna.logger.log(l);
 		}
 		return contains;
 	}
@@ -475,9 +548,16 @@ public class Sql {
 				u.executeUpdate();
 			}
 			conn.commit();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] The meta-data of " + documentIds.length + " documents have been updated.",
+					"The meta-data of " + documentIds.length + " documents have been updated.");
+			Dna.logger.log(l);
 		} catch (SQLException e) {
-			System.err.println("Could not update documents in the database.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to update the meta-data of " + documentIds.length + " documents.",
+					"Attempted to recode/edit " + documentIds.length + " documents. The transaction has been rolled back, and none of the documents has been updated in the database.",
+					e);
+			Dna.logger.log(l);
 		}
 	}
 	
@@ -876,10 +956,17 @@ public class Sql {
 				p.close();
 			}
 			conn.commit();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Created data structures successfully in " + cp.getType().toUpperCase() + " database.",
+					"New tables and initial contents have been successfully created in " + cp.getType().toUpperCase() + " database.");
+			Dna.logger.log(l);
 		} catch (SQLException e) {
 			success = false;
-			System.err.println("Could not establish connection to database to create tables.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to create data structures in " + cp.getType().toUpperCase() + " database.",
+					"Attempted to create new tables and initial contents in " + cp.getType().toUpperCase() + " database, but failed during the transaction. No tables have been created, and no data have been written into the database; the transaction was rolled back. Check your database connection and SQL user rights.",
+					e);
+			Dna.logger.log(l);
 		}
 		return success;
 	}
@@ -909,9 +996,16 @@ public class Sql {
             	}
             	statementTypes.add(new StatementType(r1.getInt("ID"), r1.getString("Label"), color, variables));
             }
+        	LogEvent l = new LogEvent(Logger.MESSAGE,
+        			"[SQL] Retrieved " + statementTypes.size() + " statement types from the database.",
+        			"Retrieved " + statementTypes.size() + " statement types from the database.");
+        	Dna.logger.log(l);
 		} catch (SQLException e1) {
-			System.err.println("Could not retrieve coders from database.");
-			e1.printStackTrace();
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to retrieve statement types from the database.",
+					"Failed to retrieve statement types from the database. Check database connection and consistency of the STATEMENTTYPES and VARIABLES tables in the database.",
+					e1);
+			Dna.logger.log(l);
 		}
 		return statementTypes;
 	}
@@ -928,6 +1022,10 @@ public class Sql {
 				PreparedStatement s7 = conn.prepareStatement("SELECT ID FROM ATTRIBUTES WHERE VariableId = ? AND Value = ?;");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Started SQL transaction to add statement to Document " + documentId + ".",
+					"Started a new SQL transaction to add a new statement to the document with ID " + documentId + ". The contents will not be written into the database until the transaction is committed.");
+			Dna.logger.log(l);
 			ResultSet r;
 			s1.setInt(1, statement.getStatementTypeId());
 			s1.setInt(2, documentId);
@@ -938,6 +1036,10 @@ public class Sql {
 			if (s1.getGeneratedKeys().next()) {
 				statementId = s1.getGeneratedKeys().getInt(1);
 			}
+			l = new LogEvent(Logger.MESSAGE,
+					"[SQL]     Transaction: Row with ID " + statementId + " added to the STATEMENTS table.",
+					"Added a row to the STATEMENTS table during the transaction. The new statement has ID " + statementId + ".");
+			Dna.logger.log(l);
 			for (int i = 0; i < statement.getValues().size(); i++) {
 				if (statement.getValues().get(i).getDataType().equals("short text")) {
 					s6.setInt(1, statement.getValues().get(i).getVariableId());
@@ -956,12 +1058,22 @@ public class Sql {
 					s6.setString(8,  "");
 					try {
 						s6.executeUpdate();
+						l = new LogEvent(Logger.MESSAGE,
+								"[SQL]     Transaction: Added \"" + value + "\" to the ATTRIBUTES table.",
+								"Added a row with value \"" + value + "\" to the ATTRIBUTES table during the transaction.");
+						Dna.logger.log(l);
 					} catch (SQLException e2) {
 						if (e2.getMessage().contains("UNIQUE constraint failed")) {
-							// do nothing; attribute already exists and does not need to be added
+							l = new LogEvent(Logger.MESSAGE,
+									"[SQL]     Transaction: Value \"" + value + "\" was already present in the ATTRIBUTES table.",
+									"A row with value \"" + value + "\" did not have to be added to the ATTRIBUTES table during the transaction because it was already present.");
+							Dna.logger.log(l);
 						} else {
-							System.err.println("Could not add attribute.");
-							e2.printStackTrace();
+							l = new LogEvent(Logger.WARNING,
+									"[SQL] Failed to add value \"" + value + "\" to the ATTRIBUTES table.",
+									"Failed to add value \"" + value + "\" to the ATTRIBUTES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
+									e2);
+							Dna.logger.log(l);
 						}
 					}
 					attributeId = -1;
@@ -971,31 +1083,58 @@ public class Sql {
 					while (r.next()) {
 						attributeId = r.getInt("ID");
 					}
+					l = new LogEvent(Logger.MESSAGE,
+							"[SQL]     Transaction: Attribute ID identified as " + attributeId + ".",
+							"The attribute for value \"" + value + "\", which was added to, or identified in, the ATTRIBUTES table during the transaction, has ID " + attributeId + ".");
+					Dna.logger.log(l);
 					s2.setInt(1, statementId);
 					s2.setInt(2, statement.getValues().get(i).getVariableId());
 					s2.setInt(3, attributeId);
 					s2.executeUpdate();
+					l = new LogEvent(Logger.MESSAGE,
+							"[SQL]     Transaction: Added a value to the DATASHORTTEXT table for Variable " + statement.getValues().get(i).getVariableId() + ".",
+							"Added a row with attribute ID " + attributeId + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATASHORTTEXT table during the transaction.");
+					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("long text")) {
 					s3.setInt(1, statementId);
 					s3.setInt(2, statement.getValues().get(i).getVariableId());
 					s3.setString(3, (String) statement.getValues().get(i).getValue());
 					s3.executeUpdate();
+					l = new LogEvent(Logger.MESSAGE,
+							"[SQL]     Transaction: Added a value to the DATALONGTEXT table for Variable " + statement.getValues().get(i).getVariableId() + ".",
+							"Added a row for Variable " + statement.getValues().get(i).getVariableId() + " to the DATALONGTEXT table during the transaction.");
+					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("integer")) {
 					s4.setInt(1, statementId);
 					s4.setInt(2, statement.getValues().get(i).getVariableId());
 					s4.setInt(3, (int) statement.getValues().get(i).getValue());
 					s4.executeUpdate();
+					l = new LogEvent(Logger.MESSAGE,
+							"[SQL]     Transaction: Added a value to the DATAINTEGER table for Variable " + statement.getValues().get(i).getVariableId() + ".",
+							"Added a row with Value " + (int) statement.getValues().get(i).getValue() + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATAINTEGER table during the transaction.");
+					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("boolean")) {
 					s5.setInt(1, statementId);
 					s5.setInt(2, statement.getValues().get(i).getVariableId());
 					s5.setInt(3, (int) statement.getValues().get(i).getValue());
 					s5.executeUpdate();
+					l = new LogEvent(Logger.MESSAGE,
+							"[SQL]     Transaction: Added a value to the DATABOOLEAN table for Variable " + statement.getValues().get(i).getVariableId() + ".",
+							"Added a row with Value " + (int) statement.getValues().get(i).getValue() + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATABOOLEAN table during the transaction.");
+					Dna.logger.log(l);
 				}
 			}
 			conn.commit();
+			l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Completed SQL transaction to add Statement " + statementId + ".",
+					"Completed SQL transaction to add a new statement with ID " + statementId + " to Document " + documentId + ". The contents have been written into the database.");
+			Dna.logger.log(l);
 		} catch (SQLException e) {
-			System.err.println("Could not establish connection to database to add statement.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to add statement to Document " + documentId + ".",
+					"Failed to add statement to Document " + documentId + ". Check the connection and database availability.",
+					e);
+			Dna.logger.log(l);
 		}
 		return -1;
 	}
@@ -1011,7 +1150,7 @@ public class Sql {
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent e1 = new LogEvent(Logger.MESSAGE,
-					"Started SQL transaction to update Statement " + statementId + ".",
+					"[SQL] Started SQL transaction to update Statement " + statementId + ".",
 					"Started a new SQL transaction to update the variables in the statement with ID " + statementId + ". The contents will not be written into the database until the transaction is committed.");
 			Dna.logger.log(e1);
 			Attribute attribute;
@@ -1025,7 +1164,7 @@ public class Sql {
 					s1.setInt(3, variableId);
 					s1.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
-							"    Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
+							"[SQL]     Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
 							"Variable " + variableId + " (boolean) in Statement " + statementId + " was updated in the SQL transaction with value: " + (int) values.get(i).getValue() + ".");
 					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("integer")) {
@@ -1034,7 +1173,7 @@ public class Sql {
 					s2.setInt(3, variableId);
 					s2.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
-							"    Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
+							"[SQL]     Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
 							"Variable " + variableId + " (integer) in Statement " + statementId + " was updated in the SQL transaction with value: " + (int) values.get(i).getValue() + ".");
 					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("long text")) {
@@ -1043,7 +1182,7 @@ public class Sql {
 					s3.setInt(3, variableId);
 					s3.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
-							"    Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
+							"[SQL]     Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
 							"Variable " + variableId + " (long text) in Statement " + statementId + " was updated in the SQL transaction.");
 					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("short text")) {
@@ -1077,7 +1216,7 @@ public class Sql {
 							attributeId = r.getInt(1);
 						}
 						LogEvent e2 = new LogEvent(Logger.MESSAGE,
-								"    Attribute with ID " + attributeId + " added to the transaction.",
+								"[SQL]     Attribute with ID " + attributeId + " added to the transaction.",
 								"An attribute with ID " + attributeId + " and value \"" + attribute.getValue() + "\" was created for variable ID " + variableId + " and added to the SQL transaction.");
 						Dna.logger.log(e2);
 					}
@@ -1088,19 +1227,19 @@ public class Sql {
 					s4.setInt(3, variableId);
 					s4.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
-							"    Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
+							"[SQL]     Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
 							"Variable " + variableId + " (short text) in Statement " + statementId + " was updated in the SQL transaction with Attribute " + attributeId + ".");
 					Dna.logger.log(e2);
 				}
 			}
 			conn.commit();
 			LogEvent e2 = new LogEvent(Logger.MESSAGE,
-					"Completed SQL transaction to update Statement " + statementId + ".",
+					"[SQL] Completed SQL transaction to update Statement " + statementId + ".",
 					"Completed SQL transaction to update the variables in the statement with ID " + statementId + ". The contents have been written into the database.");
 			Dna.logger.log(e2);
 		} catch (SQLException e) {
 			LogEvent e2 = new LogEvent(Logger.ERROR,
-					"Statement " + statementId + " could not be updated in the database.",
+					"[SQL] Statement " + statementId + " could not be updated in the database.",
 					"When the statement popup window for Statement " + statementId + " was closed, the contents for the different variables could not be saved into the database. The database still contains the old values before the contents were edited. Please double-check to make sure that the statement contains the right values for all variables. Check whether the database may be locked and close all programs other than DNA that are currently accessing the database before trying again.",
 					e);
 			Dna.logger.log(e2);
@@ -1178,12 +1317,12 @@ public class Sql {
 			
 			conn.commit();
 			LogEvent e = new LogEvent(Logger.MESSAGE,
-					"Cloned Statement " + statementId + " --> " + id + ".",
+					"[SQL] Cloned Statement " + statementId + " --> " + id + ".",
 					"Cloned Statement " + statementId + ". The new statement ID of the copy is " + id + " (new Coder ID: " + newCoderId + ") and successfully saved to the database.");
 			Dna.logger.log(e);
 		} catch (SQLException e1) {
 			LogEvent e = new LogEvent(Logger.ERROR,
-					"Failed to clone Statement " + statementId + ".",
+					"[SQL] Failed to clone Statement " + statementId + ".",
 					"Failed to clone Statement " + statementId + " in the database. The original statement is still there, but a copy of the statement was not created. Check whether the database may be locked and close all programs other than DNA that are currently accessing the database before trying again.",
 					e1);
 			Dna.logger.log(e);
@@ -1251,10 +1390,17 @@ public class Sql {
 			    	}
 			    }
 			    statement = new Statement(statementId, r1.getInt("CoderId"), r1.getInt("Start"), r1.getInt("Stop"), statementTypeId, values, sColor, cColor, r1.getString("StatementTypeLabel"));
+			    LogEvent l = new LogEvent(Logger.MESSAGE,
+			    		"[SQL] Statement " + statementId + " was retrieved from the database.",
+			    		"Statement " + statementId + " was retrieved from the database.");
+			    Dna.logger.log(l);
 			}
 		} catch (SQLException e) {
-			System.err.println("Could not retrieve statement " + statementId + " from database.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve Statement " + statementId + " from database.",
+					"Failed to retrieve Statement " + statementId + " from database. Check if the connection is still there, the database file has not been moved, and make sure a statement with this ID actually exists in the database.",
+					e);
+			Dna.logger.log(l);
 		}
 		return statement;
 	}
@@ -1265,12 +1411,12 @@ public class Sql {
 			s.setInt(1, statementId);
 			s.executeUpdate();
         	LogEvent l = new LogEvent(Logger.MESSAGE,
-        			"Statement with ID " + statementId + " was deleted.",
+        			"[SQL] Statement with ID " + statementId + " was deleted.",
         			"Statement with ID " + statementId + " was deleted.");
         	Dna.logger.log(l);
 		} catch (SQLException e1) {
         	LogEvent l = new LogEvent(Logger.ERROR,
-        			"Failed to delete Statement " + statementId + ".",
+        			"[SQL] Failed to delete Statement " + statementId + ".",
         			"Attempted to delete the Statement with ID " + statementId + ", but the attempt failed. Check if the database is locked, the database file has been moved, or the connection is interrupted, then try again.",
         			e1);
         	Dna.logger.log(l);
@@ -1300,12 +1446,12 @@ public class Sql {
             	attributesList.add(new Attribute(r1.getInt("ID"), r1.getString("Value"), color, r1.getString("Type"), r1.getString("Alias"), r1.getString("Notes"), r1.getInt("ChildOf"), inDatabase));
             }
         	LogEvent e = new LogEvent(Logger.MESSAGE,
-        			attributesList.size() + " attribute(s) retrieved for Variable " + variableId + ".",
+        			"[SQL] " + attributesList.size() + " attribute(s) retrieved for Variable " + variableId + ".",
         			attributesList.size() + " attribute(s) retrieved from the database for Variable " + variableId + ".");
         	Dna.logger.log(e);
 		} catch (SQLException e1) {
         	LogEvent e = new LogEvent(Logger.WARNING,
-        			"Attributes for Variable " + variableId + " could not be retrieved.",
+        			"[SQL] Attributes for Variable " + variableId + " could not be retrieved.",
         			"Attributes for Variable " + variableId + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again.",
         			e1);
         	Dna.logger.log(e);

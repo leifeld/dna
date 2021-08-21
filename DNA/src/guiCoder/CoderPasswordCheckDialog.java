@@ -18,6 +18,9 @@ import javax.swing.JPasswordField;
 import javax.swing.ListCellRenderer;
 import javax.swing.event.ListDataListener;
 
+import dna.Dna;
+import logger.LogEvent;
+import logger.Logger;
 import sql.Sql;
 
 /**
@@ -39,6 +42,11 @@ public class CoderPasswordCheckDialog {
 		
 		JPasswordField pw = new JPasswordField(20);
 		panel.add(pw);
+		
+		LogEvent l = new LogEvent(Logger.MESSAGE,
+				"[GUI] User was asked to enter coder password for connection profile.",
+				"A password check dialog was displayed to authenticate the coder associated with a connection profile.");
+		Dna.logger.log(l);
 		
 		@SuppressWarnings("serial")
 		JOptionPane pane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION) {
@@ -79,10 +87,19 @@ public class CoderPasswordCheckDialog {
 			comboBox.setRenderer(new CoderComboBoxRenderer());
 			comboBox.setSelectedIndex(0);
 			questionPanel.add(comboBox);
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] User was asked to select coder and enter coder password.",
+					"A password check dialog was displayed to select and authenticate a coder.");
+			Dna.logger.log(l);
+			
 		} else {
 			coder = sql.getCoder(sql.getConnectionProfile().getCoderId());
 			CoderBadgePanel cdp = new CoderBadgePanel(coder);
 			questionPanel.add(cdp);
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] User was asked to enter coder password.",
+					"A password check dialog was displayed to authenticate a coder in a database.");
+			Dna.logger.log(l);
 		}
 		panel.add(questionPanel, BorderLayout.NORTH);
 		

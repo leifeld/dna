@@ -28,6 +28,8 @@ import javax.swing.text.StyleContext;
 import dna.Dna;
 import dna.Statement;
 import dna.StatementType;
+import logger.LogEvent;
+import logger.Logger;
 
 public class TextPanel extends JPanel {
 	private static final long serialVersionUID = -8094978928012991210L;
@@ -292,7 +294,10 @@ public class TextPanel extends JPanel {
 					}
 					new Popup(mtv.getX(), mtv.getY(), s, documentId, loc, popupTextFieldWidth, popupEditable, color, popupWindowDecoration, popupAutocomplete);
 				} catch (BadLocationException e) {
-					System.err.println("Statement " + statementId + ": Popup window cannot be opened because the location is outside the document text.");
+					LogEvent l = new LogEvent(Logger.WARNING,
+							"[GUI] Statement " + statementId + ": Popup window bad location exception.",
+							"Statement " + statementId + ": Popup window cannot be opened because the location is outside the document text.");
+					Dna.logger.log(l);
 				}
 			}
 		});

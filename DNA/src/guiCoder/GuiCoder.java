@@ -96,6 +96,10 @@ public class GuiCoder extends JFrame implements LogListener {
 		this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
 				documentTableModel = null;
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"Exiting DNA from the GUI main window.",
+						"Exiting DNA from the GUI main window.");
+				Dna.logger.log(l);
 				System.exit(0);
 			}
 		});
@@ -230,6 +234,10 @@ public class GuiCoder extends JFrame implements LogListener {
 		public DocumentTableSwingWorker() {
     		statusBar.setDocumentRefreshing(true); // display a message in the status bar that documents are being loaded
     		documentTableModel.clear();
+			LogEvent le = new LogEvent(Logger.MESSAGE,
+					"[GUI] Initializing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"A new swing worker thread has been started to populate the document table with documents from the database in the background: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+			Dna.logger.log(le);
     		time = System.nanoTime();
 		}
 		
@@ -258,7 +266,7 @@ public class GuiCoder extends JFrame implements LogListener {
                 }
 			} catch (SQLException e) {
 				LogEvent le = new LogEvent(Logger.WARNING,
-						"Could not retrieve documents from database.",
+						"[SQL] Could not retrieve documents from database.",
 						"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved. The document table may be incomplete. Error message: " + e.getStackTrace());
 				Dna.logger.log(le);
 			}
@@ -275,11 +283,15 @@ public class GuiCoder extends JFrame implements LogListener {
             statusBar.setDocumentRefreshing(false);
     		long elapsed = System.nanoTime();
     		LogEvent le = new LogEvent(Logger.MESSAGE,
-    				"(Re)loaded all documents in " + (elapsed - time) / 1000000 + " milliseconds.",
+    				"[GUI] (Re)loaded all documents in " + (elapsed - time) / 1000000 + " milliseconds.",
     				"The document table swing worker loaded the documents from the DNA database in the "
     				+ "background and stored them in the document table. This took "
     				+ (elapsed - time) / 1000000 + " seconds.");
     		Dna.logger.log(le);
+			le = new LogEvent(Logger.MESSAGE,
+					"[GUI] Closing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"The document table has been populated with documents from the database. Closing thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+			Dna.logger.log(le);
         }
     }
 
@@ -299,8 +311,11 @@ public class GuiCoder extends JFrame implements LogListener {
 		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
 			cp = gson.fromJson(br, ConnectionProfile.class);
 		} catch (JsonSyntaxException | JsonIOException | IOException e) {
-			System.err.println("Connection profile could not be read from file.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[GUI] Failed to read connection profile.",
+					"Tried to read a connection profile from a JSON file and failed.",
+					e);
+			Dna.logger.log(l);
 		}
 		
 		// decrypt the URL, user name, and SQL connection password inside the profile
@@ -322,7 +337,6 @@ public class GuiCoder extends JFrame implements LogListener {
 	 * @param key   The key/password of the coder to encrypt the credentials
 	 */
 	private void writeConnectionProfile(String file, ConnectionProfile cp, String key) {
-		
 		// encrypt URL, user, and password using Jasypt
 		AES256TextEncryptor textEncryptor = new AES256TextEncryptor();
 		textEncryptor.setPassword(key);
@@ -335,8 +349,11 @@ public class GuiCoder extends JFrame implements LogListener {
 			Gson gson = new Gson();
 			gson.toJson(cp, writer);
 		} catch (IOException e) {
-			System.err.println("Could not write connection profile to disk.");
-			e.printStackTrace();
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[GUI] Failed to write connection profile.",
+					"Tried to write a connection profile to a JSON file and failed.",
+					e);
+			Dna.logger.log(l);
 		}
 	}
 
@@ -522,6 +539,10 @@ public class GuiCoder extends JFrame implements LogListener {
 					saveProfileAction.setEnabled(true);
 				}
 				statusBar.updateUrl();
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[GUI] Action executed: opened database.",
+						"Opened a database connection from the GUI.");
+				Dna.logger.log(l);
 			}
 		}
 	}
@@ -545,6 +566,10 @@ public class GuiCoder extends JFrame implements LogListener {
 			}
 			statusBar.updateUrl();
 			reloadTableFromSQL();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: closed database.",
+					"Closed database connection from the GUI.");
+			Dna.logger.log(l);
 		}
 	}
 
@@ -570,6 +595,10 @@ public class GuiCoder extends JFrame implements LogListener {
 					saveProfileAction.setEnabled(true);
 				}
 				statusBar.updateUrl();
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[GUI] Action executed: created new database.",
+						"Created a new database from the GUI.");
+				Dna.logger.log(l);
 			}
 		}
 	}
@@ -669,6 +698,10 @@ public class GuiCoder extends JFrame implements LogListener {
 				}
 				statusBar.updateUrl();
 			}
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: opened connection profile.",
+					"Opened a connection profile from the GUI.");
+			Dna.logger.log(l);
 		}
 	}
 
@@ -746,6 +779,10 @@ public class GuiCoder extends JFrame implements LogListener {
 					}
 				}
 			}
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: saved connection profile.",
+					"Saved a connection profile from the GUI.");
+			Dna.logger.log(l);
 		}
 	}
 
@@ -758,6 +795,10 @@ public class GuiCoder extends JFrame implements LogListener {
 		}
 		public void actionPerformed(ActionEvent e) {
 			documentTableModel = null;
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: quit DNA.",
+					"Quit DNA from the GUI.");
+			Dna.logger.log(l);
 			dispose();
 		}
 	}
@@ -770,11 +811,12 @@ public class GuiCoder extends JFrame implements LogListener {
 			putValue(MNEMONIC_KEY, mnemonic);
 		}
 		public void actionPerformed(ActionEvent e) {
-			DocumentEditor de = new DocumentEditor();
-			if (de.getDocuments() != null) {
-				Dna.sql.addDocuments(de.getDocuments());
-				reloadTableFromSQL();
-			}
+			new DocumentEditor();
+			reloadTableFromSQL();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: added a new document.",
+					"Added a new document from the GUI.");
+			Dna.logger.log(l);
 		}
 	}
 
@@ -796,6 +838,10 @@ public class GuiCoder extends JFrame implements LogListener {
 				documentTableModel.removeDocuments(selectedRows);
 			}
 			reloadTableFromSQL();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: removed document(s).",
+					"Deleted one or more documents in the database from the GUI.");
+			Dna.logger.log(l);
 		}
 	}
 
@@ -813,6 +859,10 @@ public class GuiCoder extends JFrame implements LogListener {
 			}
 			new DocumentEditor(selectedRows);
 			reloadTableFromSQL();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: edited meta-data for document(s).",
+					"Edited the meta-data for one or more documents in the database.");
+			Dna.logger.log(l);
 		}
 	}
 
@@ -826,6 +876,10 @@ public class GuiCoder extends JFrame implements LogListener {
 		public void actionPerformed(ActionEvent e) {
 			new DocumentBatchImporter();
 			reloadTableFromSQL();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: used document batch importer.",
+					"Batch-imported documents to the database.");
+			Dna.logger.log(l);
 		}
 	}
 
@@ -838,6 +892,10 @@ public class GuiCoder extends JFrame implements LogListener {
 		}
 		public void actionPerformed(ActionEvent e) {
 			new AboutWindow(Dna.dna.version, Dna.dna.date);
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: opened About DNA window.",
+					"Opened an About DNA window from the GUI.");
+			Dna.logger.log(l);
 		}
 	}
 }

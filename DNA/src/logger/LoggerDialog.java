@@ -210,6 +210,10 @@ public class LoggerDialog extends JDialog {
 							int dialog = JOptionPane.showConfirmDialog(null, "Overwrite existing file?", "Confirmation required", JOptionPane.YES_NO_OPTION);
 							if (dialog == 0) {
 								validFileInput = true;
+								LogEvent l = new LogEvent(Logger.MESSAGE,
+										"Overwriting existing " + format + " file.",
+										"Overwriting existing file: " + file.getAbsolutePath() + ".");
+								Dna.logger.log(l);
 							} else {
 								validFileInput = false;
 								file = null;
@@ -217,6 +221,10 @@ public class LoggerDialog extends JDialog {
 						}
 					} else {
 						validFileInput = true; // user must have clicked cancel in file chooser
+						LogEvent l = new LogEvent(Logger.MESSAGE,
+								"Saving the event log to a file was canceled.",
+								"Saving the event log to a file was canceled by the user.");
+						Dna.logger.log(l);
 					}
 				}
 				if (file != null) {
@@ -240,12 +248,16 @@ public class LoggerDialog extends JDialog {
 					}
 					try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
 						writer.write(s);
+						LogEvent l = new LogEvent(Logger.MESSAGE,
+								"Log in " + format.toUpperCase() + " format was save to disk.",
+								"Log in " + format.toUpperCase() + " format was save to file: " + file.getAbsolutePath() + ".");
+						Dna.logger.log(l);
 						JOptionPane.showMessageDialog(null,
 								"The log was saved as:\n" + new File(filename).getAbsolutePath(),
 								"Success",
 							    JOptionPane.PLAIN_MESSAGE);
 					} catch (IOException exception) {
-						LogEvent l = new LogEvent(Logger.WARNING,
+						LogEvent l = new LogEvent(Logger.ERROR,
 								"Log could not be saved to " + format.toUpperCase() + " file.",
 								"Attempted to save the log events from the Logger to a " + format.toUpperCase() + " file. The file saving operation did not work, possibly because the file could not be written to disk or because the log could not be converted to " + format.toUpperCase() + " format.",
 								exception);

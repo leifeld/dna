@@ -18,6 +18,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -39,6 +40,10 @@ import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 
 import org.jasypt.util.password.StrongPasswordEncryptor;
+
+import dna.Dna;
+import logger.LogEvent;
+import logger.Logger;
 
 /**
  * This class represents a dialog window for creating a new DNA database. The
@@ -442,6 +447,10 @@ public class NewDatabaseDialog extends JDialog {
 						pw2Field.setText("");
 					}
 				} else if (e.getSource() == cancelButton) {
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI] Canceled opening a database or creating a new database.",
+							"Closed the New Database dialog window.");
+					Dna.logger.log(l);
 					dispose();
 				} else if (e.getSource() == saveButton) {
 					String type = null;
@@ -484,6 +493,10 @@ public class NewDatabaseDialog extends JDialog {
 								}
 							}
 						}
+						LogEvent l = new LogEvent(Logger.MESSAGE,
+								"[GUI] Opened database using a dialog window.",
+								"Opened a database from the GUI using a dialog window.");
+						Dna.logger.log(l);
 					} else { // new database: digest password, test database, and create data structures
 						// generate hash from password
 						String plainPassword = new String(pw1Field.getPassword()); // this must be the coder password, not the database password!
@@ -499,7 +512,10 @@ public class NewDatabaseDialog extends JDialog {
 			    				while (rs.next()) {
 			    					if (rs.getInt(1) != 1) {
 			    						connectionValid = false;
-			    						System.err.println("Connection test failed with a simple database query.");
+			    						LogEvent l = new LogEvent(Logger.ERROR,
+			    								"[SQL] Connection test failed with a simple database query.",
+			    								"Connection test failed with a simple database query while trying to create data structure in new DNA database.");
+			    						Dna.logger.log(l);
 					    				JOptionPane.showMessageDialog(null,
 					    					    "Connection test failed. Please check your database.",
 					    					    "Check failed",
@@ -508,19 +524,25 @@ public class NewDatabaseDialog extends JDialog {
 			    				}
 			    			} catch (SQLException e1) {
 	    						connectionValid = false;
-			    				System.err.println("Could not establish connection to remote database. Please check URL, login, and password.");
+	    						LogEvent l = new LogEvent(Logger.ERROR,
+	    								"[SQL] Could not establish connection to remote database.",
+	    								"Could not establish connection to remote database. Please check URL, login, and password.",
+	    								e1);
+	    						Dna.logger.log(l);
 			    				JOptionPane.showMessageDialog(null,
 			    					    "Could not establish connection to remote database.\nPlease check URL, login, and password.",
 			    					    "Check failed",
 			    					    JOptionPane.ERROR_MESSAGE);
-			    				e1.printStackTrace();
 			    			}
 			    			if (connectionValid == true) {
 								connectionValid = testConnection.createTables(encryptedPassword);
 								if (connectionValid == false) {
-									System.err.println("Could not create tables in the database.");
+		    						LogEvent l = new LogEvent(Logger.ERROR,
+		    								"[SQL] Failed to create tables in the database.",
+		    								"Failed to create tables in the database.");
+		    						Dna.logger.log(l);
 				    				JOptionPane.showMessageDialog(null,
-				    					    "Could not create tables in the database.",
+				    					    "Failed to create tables in the database.",
 				    					    "Operation failed",
 				    					    JOptionPane.ERROR_MESSAGE);
 				    			}
@@ -528,7 +550,10 @@ public class NewDatabaseDialog extends JDialog {
 			    		} else if (type.equals("sqlite")) {
 			    			connectionValid = testConnection.createTables(encryptedPassword);
 			    			if (connectionValid == false) {
-								System.err.println("Could not create tables in the database.");
+	    						LogEvent l = new LogEvent(Logger.ERROR,
+	    								"[SQL] Failed to create tables in the database.",
+	    								"Failed to create tables in the database.");
+	    						Dna.logger.log(l);
 			    				JOptionPane.showMessageDialog(null,
 			    					    "Could not create tables in the database.",
 			    					    "Operation failed",
@@ -539,6 +564,10 @@ public class NewDatabaseDialog extends JDialog {
 						// save the connection profile for retrieval from parent class via getConnectionProfile() method
 						if (connectionValid == true) {
 							cp = tempConnectionProfile;
+    						LogEvent l = new LogEvent(Logger.MESSAGE,
+    								"[GUI] Data structures were set up in SQLite database.",
+    								"Data structures were set up in: " + new File(dbUrlField.getText()).getAbsolutePath());
+    						Dna.logger.log(l);
 							JOptionPane.showMessageDialog(null,
 								    "Data structures were set up in:\n" + new File(dbUrlField.getText()).getAbsolutePath(),
 								    "Success",

@@ -113,11 +113,11 @@ public class Logger extends AbstractTableModel {
 	 * 
 	 * @param logEntry The {@link LogEvent} object to be added.
 	 */
-	public void log(LogEvent logEntry) {
-		this.rows.add(logEntry);
-		fireTableDataChanged(); // TODO: replace by fireTableRowsInserted
-		for (LogListener l : listeners) {
-			l.processLogEvents();
+	public void log(LogEvent l) {
+		this.rows.add(l);
+		fireTableRowsInserted(this.rows.size() - 1, this.rows.size() - 1);
+		for (LogListener listener : listeners) {
+			listener.processLogEvents();
 		}
 	}
 	
