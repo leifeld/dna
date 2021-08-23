@@ -25,13 +25,15 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 
+import dna.Coder;
 import dna.Dna;
+import dna.Dna.CoderListener;
 import dna.Statement;
 import dna.StatementType;
 import logger.LogEvent;
 import logger.Logger;
 
-public class TextPanel extends JPanel {
+public class TextPanel extends JPanel implements CoderListener {
 	private static final long serialVersionUID = -8094978928012991210L;
 	JTextPane textWindow;
 	JScrollPane textScrollPane;
@@ -40,17 +42,11 @@ public class TextPanel extends JPanel {
 	JPopupMenu popmen;
 	int documentId;
 	ArrayList<Statement> statements;
+	Coder coder;
 	
-	// popup settings
-	// TODO: take the popup settings from database
-	boolean popupAutocomplete = true;
-	boolean popupWindowDecoration = false;
-	boolean popupEditable = true;
-	int popupTextFieldWidth = 300;
-	boolean popupColorCoder = false;
-	
-	public TextPanel() {
+	public TextPanel(int popupTextFieldWidth) {
 		this.setLayout(new BorderLayout());
+		Dna.addCoderListener(this);
 		sc = new StyleContext();
 	    doc = new DefaultStyledDocument(sc);
 		textWindow = new JTextPane(doc);
@@ -117,7 +113,13 @@ public class TextPanel extends JPanel {
 			for (i = 0; i < statements.size(); i++) {
 				start = statements.get(i).getStart();
 				Style bgStyle = sc.addStyle("ConstantWidth", null);
-				StyleConstants.setBackground(bgStyle, statements.get(i).getStatementTypeColor());
+				if (coder != null) {
+					if (coder.getColorByCoder() == 1) {
+						StyleConstants.setBackground(bgStyle, coder.getColor());
+					} else {
+						StyleConstants.setBackground(bgStyle, statements.get(i).getStatementTypeColor());
+					}
+				}
 				doc.setCharacterAttributes(start, statements.get(i).getStop() - start, bgStyle, false);
 			}
 		}
@@ -129,9 +131,15 @@ public class TextPanel extends JPanel {
 		paintStatements();
 	}
 	
+	/**
+	 * Add a new statement.
+	 * 
+	 * @param me  A mouse event.
+	 * @throws ArrayIndexOutOfBoundsException
+	 */
 	public void mouseListenPopup(MouseEvent me) throws ArrayIndexOutOfBoundsException {
 		if (me.isPopupTrigger()) {
-			if (!(textWindow.getSelectedText() == null)) { //  && Dna.data.getCoderById(Dna.data.getActiveCoder()).getPermissions().get("addStatements") == true
+			if (!(textWindow.getSelectedText() == null) && coder != null && coder.getPermissionAddStatements() == 1) {
 				popupMenu(me.getComponent(), me.getX(), me.getY());
 			}
 		}
@@ -148,20 +156,23 @@ public class TextPanel extends JPanel {
 			
 			if (statements != null && statements.size() > 0) {
 				for (int i = 0; i < statements.size(); i++) {
-					if (statements.get(i).getStart() < pos && statements.get(i).getStop() > pos) {
-						//boolean[] b = Dna.data.getActiveStatementPermissions(Dna.data.getStatements().get(i).getId());
-						//if (b[0] == true) {  // statement is visible to the active coder
-							Point location = textWindow.getLocationOnScreen();
-							textWindow.setSelectionStart(statements.get(i).getStart());
-							textWindow.setSelectionEnd(statements.get(i).getStop());
-							/*
+					if (statements.get(i).getStart() < pos
+							&& statements.get(i).getStop() > pos
+							&& coder != null
+							&& (coder.getPermissionViewOthersStatements() == 1 || statements.get(i).getCoder() == coder.getId())
+							// TODO here: check also the CODERRELATIONS table
+							) {
+						Point location = textWindow.getLocationOnScreen();
+						textWindow.setSelectionStart(statements.get(i).getStart());
+						textWindow.setSelectionEnd(statements.get(i).getStop());
+						/*
 							int row = Dna.gui.rightPanel.statementPanel.ssc.getIndexByStatementId(statementId);
 							if (row > -1) {
 								Dna.gui.rightPanel.statementPanel.statementTable.setRowSelectionInterval(row, row);
 								Dna.gui.rightPanel.statementPanel.statementTable.scrollRectToVisible(new Rectangle(  // scroll to selected row
 										Dna.gui.rightPanel.statementPanel.statementTable.getCellRect(i, 0, true)));
 							}
-							
+
 							int docModelIndex = Dna.gui.documentPanel.documentContainer.getModelIndexById(Dna.data.getStatements().get(i).getDocumentId());
 							int docRow = Dna.gui.documentPanel.documentTable.convertRowIndexToView(docModelIndex);
 							//int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(Dna.data.getStatements().get(i).getDocumentId());
@@ -171,16 +182,9 @@ public class TextPanel extends JPanel {
 							} else {
 								new Popup(p.getX(), p.getY(), statementId, location, false);
 							}
-							*/
-
-							Color color;
-							if (popupColorCoder == true) {
-								color = statements.get(i).getCoderColor();
-							} else {
-								color = statements.get(i).getStatementTypeColor();
-							}
-							new Popup(p.getX(), p.getY(), statements.get(i), documentId, location, popupTextFieldWidth, popupEditable, color, popupWindowDecoration, popupAutocomplete);
-							break;
+						 */
+						new Popup(p.getX(), p.getY(), statements.get(i), documentId, location, coder);
+						break;
 						//}
 					}
 				}
@@ -244,7 +248,7 @@ public class TextPanel extends JPanel {
 				public void actionPerformed(ActionEvent e) {
 					int selectionStart = textWindow.getSelectionStart();
 					int selectionEnd = textWindow.getSelectionEnd();
-					Statement statement = new Statement(-1, Dna.sql.getConnectionProfile().getCoderId(), selectionStart, selectionEnd, statementType.getId(), statementType.getVariables());
+					Statement statement = new Statement(-1, coder.getId(), selectionStart, selectionEnd, statementType.getId(), statementType.getVariables());
 					Dna.sql.addStatement(statement, documentId);
 					Dna.guiCoder.documentTableModel.updateFrequency(documentId);
 					paintStatements();
@@ -286,13 +290,7 @@ public class TextPanel extends JPanel {
 					textScrollPane.getVerticalScrollBar().setValue(value);
 					mtv = textWindow.modelToView(start);
 					Point loc = textWindow.getLocationOnScreen();
-					Color color;
-					if (popupColorCoder == true) {
-						color = s.getCoderColor();
-					} else {
-						color = s.getStatementTypeColor();
-					}
-					new Popup(mtv.getX(), mtv.getY(), s, documentId, loc, popupTextFieldWidth, popupEditable, color, popupWindowDecoration, popupAutocomplete);
+					new Popup(mtv.getX(), mtv.getY(), s, documentId, loc, coder);
 				} catch (BadLocationException e) {
 					LogEvent l = new LogEvent(Logger.WARNING,
 							"[GUI] Statement " + statementId + ": Popup window bad location exception.",
@@ -301,5 +299,18 @@ public class TextPanel extends JPanel {
 				}
 			}
 		});
+	}
+
+	@Override
+	public void adjustToChangedCoder() {
+		if (Dna.sql == null) {
+			this.coder = null;
+		    Font font = new Font("Monospaced", Font.PLAIN, 14);
+	        textWindow.setFont(font);
+		} else {
+			this.coder = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
+		    Font font = new Font("Monospaced", Font.PLAIN, this.coder.getFontSize());
+	        textWindow.setFont(font);
+		}
 	}
 }

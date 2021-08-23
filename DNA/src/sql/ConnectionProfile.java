@@ -2,28 +2,21 @@ package sql;
 
 public class ConnectionProfile {
 	String type, url, user, password;
-	int refresh, coderId;
+	int coderId;
 
 	public ConnectionProfile(String type, String url, String user, String password) {
 		this.type = type;
 		this.url = url;
 		this.user = user;
 		this.password = password;
-
-		// set default values that are not part of the constructor
-		this.coderId = 1;
-		this.refresh = 20;
-		if (type.equals("sqlite")) {
-			refresh = 0;
-		}
+		this.coderId = 1; // default value; not part of the constructor
 	}
 	
-	public ConnectionProfile(int coderId, String type, String url, String user, String password, int refresh) {
+	public ConnectionProfile(int coderId, String type, String url, String user, String password) {
 		this.type = type;
 		this.url = url;
 		this.user = user;
 		this.password = password;
-		this.refresh = refresh;
 	}
 	
 	public int getCoderId() {
@@ -64,13 +57,5 @@ public class ConnectionProfile {
 	
 	public void setPassword(String password) {
 		this.password = password;
-	}
-	
-	public int getRefresh() {
-		return refresh;
-	}
-	
-	public void setRefresh(int refresh) {
-		this.refresh = refresh;
 	}
 }

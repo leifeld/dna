@@ -43,6 +43,7 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import dna.Dna;
 import dna.Statement;
 import dna.Attribute;
+import dna.Coder;
 import dna.Value;
 
 /**
@@ -55,7 +56,7 @@ public class Popup extends JDialog {
 	Point los;
 	static int statementTypeId;
 	Color color;
-	boolean windowDecoration;
+	boolean windowDecoration, editable;
 	static int statementId;
 	JPanel gridBagPanel;
 	Connection conn;
@@ -66,30 +67,41 @@ public class Popup extends JDialog {
 	 * Popup dialog window to display the contents of a statements. The user can
 	 * edit the values of each variable.
 	 * 
-	 * @param X                 Horizontal coordinate for the window
-	 * @param Y                 Vertical coordinate for the window
-	 * @param statement         The {@link Statement} to be edited
-	 * @param location          Location of the DNA text panel on screen
-	 * @param textFieldWidth    Width of a text field or combo box in pixels
-	 * @param editable          Should the statement be editable?
-	 * @param color             Color to be displayed in the upper left corner
-	 * @param windowDecoration  Draw a frame and buttons around the window?
+	 * @param X         Horizontal coordinate for the window.
+	 * @param Y         Vertical coordinate for the window.
+	 * @param statement The {@link Statement} to be edited.
+	 * @param location  Location of the DNA text panel on screen.
+	 * @param coder     The current coder who is viewing the statement.
 	 */
-	public Popup(double X, double Y, Statement statement, int documentId, Point location, int textFieldWidth, boolean editable, Color color, boolean windowDecoration, boolean autocomplete) {
+	public Popup(double X, double Y, Statement statement, int documentId, Point location, Coder coder) {
 		this.X = X;
 		this.Y = Y;
 		Popup.statementId = statement.getId();
 		this.los = location;
-		this.textFieldWidth = textFieldWidth;
-		this.color = color;
-		this.windowDecoration = windowDecoration;
-		statementTypeId = statement.getStatementTypeId();
-		
-		if (windowDecoration == true) {
+		this.textFieldWidth = coder.getPopupWidth();
+		if (coder.getColorByCoder() == 1) {
+			this.color = coder.getColor();
+		} else {
+			this.color = statement.getStatementTypeColor();
+		}
+		if (coder.getPopupDecoration() == 1) {
+			this.windowDecoration = true;
 			this.setModal(true);
 		} else {
+			this.windowDecoration = false;
 			this.setUndecorated(true);
 		}
+		statementTypeId = statement.getStatementTypeId();
+		
+		// should the changes in the statements be saved? check permissions...
+		editable = true;
+		if (statement.getCoder() != coder.getId() && coder.getPermissionEditOthersStatements() == 0) {
+			editable = false;
+		}
+		if (coder.getPermissionEditStatements() == 0) {
+			editable = false;
+		}
+		
 		this.setTitle("Statement details");
 		this.setAlwaysOnTop(true);
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -156,18 +168,23 @@ public class Popup extends JDialog {
 		duplicate.setPreferredSize(new Dimension(16, 16));
 		duplicate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (editable == true && windowDecoration == true) {
-					String message = "Save any changes in Statement " + statement.getId() + " before creating copy?";
-					int dialog = JOptionPane.showConfirmDialog(Popup.this, message, "Confirmation", JOptionPane.YES_NO_OPTION);
-					if (dialog == 0) {
-						saveContents(gridBagPanel, statementId, variables);
+				if (coder.getPermissionAddStatements() == 1) {
+					if (editable == true && windowDecoration == true) {
+						String message = "Save any changes in Statement " + statement.getId() + " before creating copy?";
+						int dialog = JOptionPane.showConfirmDialog(Popup.this, message, "Confirmation", JOptionPane.YES_NO_OPTION);
+						if (dialog == 0) {
+							saveContents(gridBagPanel, statementId, variables);
+						}
 					}
+					int newStatementId = Dna.sql.cloneStatement(statementId, coder.getId());
+					Dna.guiCoder.documentPanel.textPanel.selectStatement(newStatementId, documentId, true);
+					dispose();
 				}
-				int newStatementId = Dna.sql.cloneStatement(statementId, Dna.sql.getConnectionProfile().getCoderId());
-				Dna.guiCoder.documentPanel.textPanel.selectStatement(newStatementId, documentId, true);
-				dispose();
 			}
 		});
+		if (coder.getPermissionAddStatements() == 0) {
+			duplicate.setEnabled(false);
+		}
 		
 		ImageIcon removeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-trash.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
 		JButton remove = new JButton(removeIcon);
@@ -185,7 +202,7 @@ public class Popup extends JDialog {
 				}
 			}
 		});
-		if (editable == true) {
+		if (coder.getPermissionDeleteStatements() == 1 && (statement.getCoder() == coder.getId() || coder.getPermissionEditOthersStatements() == 1)) {
 			remove.setEnabled(true);
 		} else {
 			remove.setEnabled(false);
@@ -261,7 +278,7 @@ public class Popup extends JDialog {
 					}
 				});
 				
-				if (autocomplete == true) {
+				if (coder.getPopupAutoComplete() == 1) {
 					AutoCompleteDecorator.decorate(box); // auto-complete short text values; part of SwingX
 				}
 				if (editable == true) {

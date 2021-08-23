@@ -7,6 +7,10 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.time.format.DateTimeFormatter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.swing.Action;
 import javax.swing.ImageIcon;
@@ -17,17 +21,31 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JSpinner;
+import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
 import javax.swing.UIDefaults;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
+import org.jdesktop.swingx.JXTextField;
+
+import dna.Coder;
 import dna.Dna;
+import dna.Dna.CoderListener;
+import dna.Dna.SqlListener;
 import logger.LogEvent;
 import logger.Logger;
 
@@ -37,10 +55,13 @@ import logger.Logger;
  * GUI of the Discourse Network Analyzer.
  */
 @SuppressWarnings("serial")
-class DocumentPanel extends JPanel {
+class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 	private DocumentTableModel documentTableModel;
-	public TextPanel textPanel;
+	TextPanel textPanel;
 	private JTable documentTable;
+	private JTextField documentFilterField;
+	private JButton documentFilterResetButton;
+	private SpinnerNumberModel popupWidthModel, fontSizeModel;
 
 	/**
 	 * Create an instance of the document panel class, using a table model and
@@ -58,6 +79,8 @@ class DocumentPanel extends JPanel {
 	 *   document batch importer window.
 	 */
 	public DocumentPanel(DocumentTableModel documentTableModel, Action addDocumentAction, Action editDocumentsAction, Action removeDocumentsAction, Action BatchImportDocumentsAction) {
+		Dna.addCoderListener(this);
+		Dna.addSqlListener(this);
 		this.documentTableModel = documentTableModel;
 		this.setLayout(new BorderLayout());
 		
@@ -86,26 +109,148 @@ class DocumentPanel extends JPanel {
 
 		JScrollPane documentTableScroller = new JScrollPane(documentTable);
 		documentTableScroller.setViewportView(documentTable);
-		documentTableScroller.setPreferredSize(new Dimension(1000, 200));
+		documentTableScroller.setPreferredSize(new Dimension(1200, 200));
 		this.add(documentTableScroller, BorderLayout.CENTER);
 
+		// row filter
+		RowFilter<DocumentTableModel, Integer> documentFilter = new RowFilter<DocumentTableModel, Integer>() {
+			public boolean include(Entry<? extends DocumentTableModel, ? extends Integer> entry) {
+				TableDocument d = documentTableModel.getRow(entry.getIdentifier());
+				try {
+					Pattern pattern = Pattern.compile(documentFilterField.getText());
+					Matcher matcherTitle = pattern.matcher(d.getTitle());
+					Matcher matcherAuthor = pattern.matcher(d.getAuthor());
+					Matcher matcherSource = pattern.matcher(d.getSource());
+					Matcher matcherSection = pattern.matcher(d.getSection());
+					Matcher matcherType = pattern.matcher(d.getType());
+					Matcher matcherNotes = pattern.matcher(d.getTitle());
+					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MM yyyy HH:mm");
+					Matcher matcherDateTime = pattern.matcher(d.getDateTime().format(formatter));
+					if (documentFilterField.getText().equals("")) {
+						return true;
+					} else if (matcherTitle.find()) {
+						return true;
+					} else if (matcherAuthor.find()) {
+						return true;
+					} else if (matcherSource.find()) {
+						return true;
+					} else if (matcherSection.find()) {
+						return true;
+					} else if (matcherType.find()) {
+						return true;
+					} else if (matcherNotes.find()) {
+						return true;
+					} else if (matcherDateTime.find()) {
+						return true;
+					} else {
+						return false;
+					}
+				} catch(PatternSyntaxException pse) {
+					return true;
+				}
+				
+			}
+		};
+		sorter.setRowFilter(documentFilter);
+		
 		// toolbar of the document panel
-		JToolBar tb = new JToolBar("Document toolbar");
+		JPanel toolbarPanel = new JPanel(new BorderLayout());
+		JToolBar tb1 = new JToolBar("Document toolbar");
 		
 		JButton addDocumentButton = new JButton(addDocumentAction);
 		addDocumentButton.setText("Add");
-		tb.add(addDocumentButton);
+		tb1.add(addDocumentButton);
 
 		JButton removeDocumentsButton = new JButton(removeDocumentsAction);
 		removeDocumentsButton.setText("Remove");
-		tb.add(removeDocumentsButton);
+		tb1.add(removeDocumentsButton);
 
 		JButton editDocumentsButton = new JButton(editDocumentsAction);
 		editDocumentsButton.setText("Edit");
-		tb.add(editDocumentsButton);
+		tb1.add(editDocumentsButton);
+
+		ImageIcon documentFilterResetIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		documentFilterResetButton = new JButton(documentFilterResetIcon);
+		documentFilterResetButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				documentFilterField.setText("");
+			}
+		});
+		documentFilterResetButton.setEnabled(false);
+		documentFilterField = new JXTextField("Document regex filter");
+		documentFilterField.setPreferredSize(new Dimension(200, 16));
+        documentFilterField.getDocument().addDocumentListener(new DocumentListener() {
+			@Override
+			public void changedUpdate(DocumentEvent arg0) {
+				processFilterDocumentChanges();
+			}
+			@Override
+			public void insertUpdate(DocumentEvent arg0) {
+				processFilterDocumentChanges();
+			}
+			@Override
+			public void removeUpdate(DocumentEvent arg0) {
+				processFilterDocumentChanges();
+			}
+			
+			private void processFilterDocumentChanges() {
+				documentTableModel.fireTableDataChanged();
+				if (documentFilterField.getText().equals("")) {
+					documentFilterResetButton.setEnabled(false);
+				} else {
+					documentFilterResetButton.setEnabled(true);
+				}
+			}
+		});
+		documentFilterField.setEnabled(false);
+		tb1.addSeparator(new Dimension(8, 8));
+		tb1.add(documentFilterField);
+		tb1.add(documentFilterResetButton);
 		
-        tb.setRollover(true);
-		this.add(tb, BorderLayout.NORTH);
+        tb1.setRollover(true);
+        toolbarPanel.add(tb1, BorderLayout.WEST);
+        
+        JToolBar tb2 = new JToolBar();
+
+        ImageIcon fontSizeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-typography.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		JLabel fontSizeLabel = new JLabel(fontSizeIcon);
+        fontSizeModel = new SpinnerNumberModel(14, 1, 99, 1);
+		JSpinner fontSizeSpinner = new JSpinner(fontSizeModel);
+		((DefaultEditor) fontSizeSpinner.getEditor()).getTextField().setColumns(2);
+		fontSizeLabel.setLabelFor(fontSizeSpinner);
+		fontSizeSpinner.addChangeListener(new ChangeListener(){
+			public void stateChanged(ChangeEvent e) {
+				if (Dna.sql != null) {
+					Dna.sql.setCoderFontSize(Dna.sql.getConnectionProfile().getCoderId(), (int) fontSizeSpinner.getValue());
+					Dna.fireCoderChange();
+				}
+			}
+		});
+		fontSizeSpinner.transferFocus();
+		tb2.add(fontSizeLabel);
+		tb2.add(fontSizeSpinner);
+		tb2.addSeparator(new Dimension(8, 8));
+		
+        ImageIcon popupWidthIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-chart-arrows.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		JLabel popupWidthLabel = new JLabel(popupWidthIcon);
+        popupWidthModel = new SpinnerNumberModel(300, 160, 9990, 10);
+		JSpinner popupWidthSpinner = new JSpinner(popupWidthModel);
+		((DefaultEditor) popupWidthSpinner.getEditor()).getTextField().setColumns(4);
+		popupWidthLabel.setLabelFor(popupWidthSpinner);
+		popupWidthSpinner.addChangeListener(new ChangeListener(){
+			public void stateChanged(ChangeEvent e) {
+				if (Dna.sql != null) {
+					Dna.sql.setCoderPopupWidth(Dna.sql.getConnectionProfile().getCoderId(), (int) popupWidthSpinner.getValue());
+					Dna.fireCoderChange();
+				}
+			}
+		});
+		tb2.add(popupWidthLabel);
+		tb2.add(popupWidthSpinner);
+		
+        toolbarPanel.add(tb2, BorderLayout.EAST);
+		this.add(toolbarPanel, BorderLayout.NORTH);
 
 	    // right-click menu for document table
 		JPopupMenu popupMenu = new JPopupMenu();
@@ -327,7 +472,7 @@ class DocumentPanel extends JPanel {
 		});
 		
 		// text panel
-		textPanel = new TextPanel();
+		textPanel = new TextPanel((int) popupWidthSpinner.getValue());
 		this.add(textPanel, BorderLayout.SOUTH);
 	}
 
@@ -359,7 +504,7 @@ class DocumentPanel extends JPanel {
 	*/
 	
 	/**
-	 * A renderer for {@link guiCoder.Coder} objects in {@link JTable} tables.
+	 * A renderer for {@link dna.Coder} objects in {@link JTable} tables.
 	 */
 	private class CoderTableCellRenderer extends DefaultTableCellRenderer {
 		@Override
@@ -375,6 +520,38 @@ class DocumentPanel extends JPanel {
 					cbp.setBackground(bg);
 				}
 				return cbp;
+			}
+		}
+	}
+
+	@Override
+	public void adjustToChangedCoder() {
+		if (Dna.sql == null) {
+			popupWidthModel.setValue(300);
+			fontSizeModel.setValue(14);
+		} else {
+			Coder coder = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
+			popupWidthModel.setValue(coder.getPopupWidth());
+			fontSizeModel.setValue(coder.getFontSize());
+		}
+		LogEvent l = new LogEvent(Logger.MESSAGE,
+				"Document panel adjusted to changed coder (or closed database).",
+				"Document panel adjusted to changed coder (or closed database).");
+		Dna.logger.log(l);
+	}
+
+	@Override
+	public void adjustToDatabaseState() {
+		if (Dna.sql == null) {
+			documentFilterField.setText("");
+			documentFilterField.setEnabled(false);
+			documentFilterResetButton.setEnabled(false);
+		} else {
+			documentFilterField.setEnabled(true);
+			if (documentFilterField.getText().equals("")) {
+				documentFilterResetButton.setEnabled(false);
+			} else {
+				documentFilterResetButton.setEnabled(true);
 			}
 		}
 	}

@@ -9,6 +9,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import dna.Coder;
 import dna.Dna;
 
 /**
@@ -41,7 +42,7 @@ public class CoderBadgePanel extends JPanel {
 	public CoderBadgePanel() {
 		Coder coder;
 		if (Dna.sql == null) {
-			coder = new Coder(-1, "(no coder)", Color.BLACK);
+			coder = new Coder(-1, "(no coder)", Color.BLACK, 0, 14, 300, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 		} else {
 			coder = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
 		}

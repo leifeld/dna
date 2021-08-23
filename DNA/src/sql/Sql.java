@@ -19,15 +19,21 @@ import org.sqlite.SQLiteDataSource;
 import com.mysql.cj.jdbc.MysqlDataSource;
 
 import dna.Attribute;
+import dna.Coder;
 import dna.Dna;
 import dna.Document;
 import dna.Statement;
 import dna.StatementType;
 import dna.Value;
-import guiCoder.Coder;
 import logger.LogEvent;
 import logger.Logger;
 
+/**
+ * This class contains information on the database connection, the data source
+ * for establishing connections, and methods for interacting with the database.
+ * 
+ * @category setup
+ */
 public class Sql {
 	/**
 	 * The {@link sql.ConnectionProfile ConnectionProfile} to be used for
@@ -147,6 +153,11 @@ public class Sql {
 	 * @category setup
 	 */
 	public interface SQLCloseable extends AutoCloseable {
+	    /**
+	     * Close the object, which rolls back any initiated transactions.
+	     * 
+	     * @category setup
+	     */
 	    @Override public void close() throws SQLException;
 	}
 
@@ -175,7 +186,28 @@ public class Sql {
 					+ "Red INTEGER CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green INTEGER CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue INTEGER CHECK (Blue BETWEEN 0 AND 255), "
-					+ "Password TEXT);");
+					+ "Refresh INTEGER CHECK (Refresh BETWEEN 0 AND 9999) DEFAULT 0, "
+					+ "FontSize INTEGER NOT NULL CHECK (FontSize BETWEEN 1 AND 99) DEFAULT 14, "
+					+ "Password TEXT, "
+					+ "PopupWidth INTEGER CHECK (PopupWidth BETWEEN 100 AND 9999) DEFAULT 300, "
+					+ "ColorByCoder INTEGER NOT NULL CHECK (ColorByCoder BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PopupDecoration INTEGER NOT NULL CHECK (PopupDecoration BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PopupAutoComplete INTEGER NOT NULL CHECK (PopupAutoComplete BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionAddDocuments INTEGER NOT NULL CHECK (PermissionAddDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditDocuments INTEGER NOT NULL CHECK (PermissionEditDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionDeleteDocuments INTEGER NOT NULL CHECK (PermissionDeleteDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionImportDocuments INTEGER NOT NULL CHECK (PermissionImportDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionAddStatements INTEGER NOT NULL CHECK (PermissionAddStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditStatements INTEGER NOT NULL CHECK (PermissionEditStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionDeleteStatements INTEGER NOT NULL CHECK (PermissionDeleteStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditAttributes INTEGER NOT NULL CHECK (PermissionEditAttributes BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditRegex INTEGER NOT NULL CHECK (PermissionEditRegex BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditStatementTypes INTEGER NOT NULL CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PermissionEditCoders INTEGER NOT NULL CHECK (PermissionEditCoders BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PermissionViewOthersDocuments INTEGER NOT NULL CHECK (PermissionViewOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditOthersDocuments INTEGER NOT NULL CHECK (PermissionEditOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionViewOthersStatements INTEGER NOT NULL CHECK (PermissionViewOthersStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditOthersStatements INTEGER NOT NULL CHECK (PermissionEditOthersStatements BETWEEN 0 AND 1) DEFAULT 1);");
 			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
 					+ "Title TEXT, "
@@ -206,13 +238,6 @@ public class Sql {
 					+ "Red INTEGER CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green INTEGER CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue INTEGER CHECK (Blue BETWEEN 0 AND 255));");
-			s.add("CREATE TABLE IF NOT EXISTS CODERPERMISSIONS("
-					+ "ID INTEGER NOT NULL PRIMARY KEY, "
-					+ "Coder INTEGER, "
-					+ "Type TEXT, "
-					+ "Permission INTEGER CHECK(Permission BETWEEN 0 AND 1), "
-					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
-					+ "UNIQUE (Coder, Type));");
 			s.add("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
 					+ "Coder INTEGER CHECK(Coder > 0 AND Coder != OtherCoder), "
@@ -297,7 +322,28 @@ public class Sql {
 					+ "Red SMALLINT UNSIGNED CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT UNSIGNED CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT UNSIGNED CHECK (Blue BETWEEN 0 AND 255), "
+					+ "Refresh SMALLINT UNSIGNED NOT NULL CHECK (Refresh BETWEEN 0 AND 9999) DEFAULT 20, "
+					+ "FontSize SMALLINT UNSIGNED NOT NULL CHECK (FontSize BETWEEN 1 AND 99) DEFAULT 14, "
 					+ "Password VARCHAR(300), "
+					+ "PopupWidth SMALLINT UNSIGNED NOT NULL CHECK (PopupWidth BETWEEN 100 AND 9999) DEFAULT 300, "
+					+ "ColorByCoder TINYINT UNSIGNED NOT NULL CHECK (ColorByCoder BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PopupDecoration TINYINT UNSIGNED NOT NULL CHECK (PopupDecoration BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PopupAutoComplete TINYINT UNSIGNED NOT NULL CHECK (PopupAutoComplete BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionAddDocuments TINYINT UNSIGNED NOT NULL CHECK (PermissionAddDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditDocuments TINYINT UNSIGNED NOT NULL CHECK (PermissionEditDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionDeleteDocuments TINYINT UNSIGNED NOT NULL CHECK (PermissionDeleteDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionImportDocuments TINYINT UNSIGNED NOT NULL CHECK (PermissionImportDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionAddStatements TINYINT UNSIGNED NOT NULL CHECK (PermissionAddStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditStatements TINYINT UNSIGNED NOT NULL CHECK (PermissionEditStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionDeleteStatements TINYINT UNSIGNED NOT NULL CHECK (PermissionDeleteStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditAttributes TINYINT UNSIGNED NOT NULL CHECK (PermissionEditAttributes BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditRegex TINYINT UNSIGNED NOT NULL CHECK (PermissionEditRegex BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditStatementTypes TINYINT UNSIGNED NOT NULL CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PermissionEditCoders TINYINT UNSIGNED NOT NULL CHECK (PermissionEditCoders BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PermissionViewOthersDocuments TINYINT UNSIGNED NOT NULL CHECK (PermissionViewOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditOthersDocuments TINYINT UNSIGNED NOT NULL CHECK (PermissionEditOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionViewOthersStatements TINYINT UNSIGNED NOT NULL CHECK (PermissionViewOthersStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditOthersStatements TINYINT UNSIGNED NOT NULL CHECK (PermissionEditOthersStatements BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
@@ -333,14 +379,6 @@ public class Sql {
 					+ "Green SMALLINT UNSIGNED CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT UNSIGNED CHECK (Blue BETWEEN 0 AND 255), "
 					+ "PRIMARY KEY(Label));");
-			s.add("CREATE TABLE IF NOT EXISTS CODERPERMISSIONS("
-					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Coder SMALLINT UNSIGNED NOT NULL, "
-					+ "Type VARCHAR(50), "
-					+ "Permission SMALLINT UNSIGNED CHECK(Permission BETWEEN 0 AND 1), "
-					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
-					+ "UNIQUE KEY CoderPerm (Coder, Type), "
-					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "Coder SMALLINT UNSIGNED NOT NULL CHECK(Coder > 0 AND Coder != OtherCoder), "
@@ -431,7 +469,28 @@ public class Sql {
 					+ "Red SERIAL CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SERIAL CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SERIAL CHECK (Blue BETWEEN 0 AND 255), "
-					+ "Password VARCHAR(300));");
+					+ "Refresh SMALLINT NOT NULL CHECK (Refresh BETWEEN 0 AND 9999) DEFAULT 20, "
+					+ "FontSize SMALLINT NOT NULL CHECK (FontSize BETWEEN 1 AND 99) DEFAULT 14, "
+					+ "Password VARCHAR(300), "
+					+ "PopupWidth SMALLINT CHECK (PopupWidth BETWEEN 100 AND 9999) DEFAULT 300, "
+					+ "ColorByCoder SMALLINT NOT NULL CHECK (ColorByCoder BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PopupDecoration SMALLINT NOT NULL CHECK (PopupDecoration BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PopupAutoComplete SMALLINT NOT NULL CHECK (PopupAutoComplete BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionAddDocuments SMALLINT NOT NULL CHECK (PermissionAddDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditDocuments SMALLINT NOT NULL CHECK (PermissionEditDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionDeleteDocuments SMALLINT NOT NULL CHECK (PermissionDeleteDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionImportDocuments SMALLINT NOT NULL CHECK (PermissionImportDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionAddStatements SMALLINT NOT NULL CHECK (PermissionAddStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditStatements SMALLINT NOT NULL CHECK (PermissionEditStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionDeleteStatements SMALLINT NOT NULL CHECK (PermissionDeleteStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditAttributes SMALLINT NOT NULL CHECK (PermissionEditAttributes BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditRegex SMALLINT NOT NULL CHECK (PermissionEditRegex BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditStatementTypes SMALLINT NOT NULL CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PermissionEditCoders SMALLINT NOT NULL CHECK (PermissionEditCoders BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PermissionViewOthersDocuments SMALLINT NOT NULL CHECK (PermissionViewOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditOthersDocuments SMALLINT NOT NULL CHECK (PermissionEditOthersDocuments BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PermissionViewOthersStatements SMALLINT NOT NULL CHECK (PermissionViewOthersStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditOthersStatements SMALLINT NOT NULL CHECK (PermissionEditOthersStatements BETWEEN 0 AND 1) DEFAULT 0);");
 			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "Title VARCHAR(5000), "
@@ -460,12 +519,6 @@ public class Sql {
 					+ "Red SERIAL CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SERIAL CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SERIAL CHECK (Blue BETWEEN 0 AND 255));");
-			s.add("CREATE TABLE IF NOT EXISTS CODERPERMISSIONS("
-					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "Coder INT NOT NULL CHECK(Coder > 0) REFERENCES CODERS(ID) ON DELETE CASCADE, "
-					+ "Type VARCHAR(50), "
-					+ "Permission INT CHECK(Permission BETWEEN 0 AND 1), "
-					+ "UNIQUE (Coder, Type));");
 			s.add("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "Coder INT NOT NULL CHECK(Coder > 0 AND Coder != OtherCoder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
@@ -523,24 +576,9 @@ public class Sql {
 					+ "UNIQUE KEY (VariableId, Value));");
 		}
 		// fill default data into the tables (Admin coder, settings, statement types)
-		s.add("INSERT INTO CODERS (ID, Name, Red, Green, Blue, Password) VALUES (1, 'Admin', 239, 208, 51, '" + encryptedAdminPassword + "');");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'deleteDocuments', 1);");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'addDocuments', 1);");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'importDocuments', 1);");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editDocuments', 1);");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'addStatements', 1);");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editRegex', 1);");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editAttributes', 1);");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'viewOthersDocuments', 1);");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editOthersDocuments', 1);");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'viewOthersStatements', 1);");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editOthersStatements', 1);");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editStatementTypes', 1);");
-		s.add("INSERT INTO CODERPERMISSIONS (Coder, Type, Permission) VALUES(1, 'editCoders', 1);");
+		s.add("INSERT INTO CODERS (ID, Name, Red, Green, Blue, Password, PermissionEditStatementTypes, PermissionEditCoders, PermissionEditOthersDocuments, PermissionEditOthersStatements) VALUES (1, 'Admin', 255, 255, 0, '" + encryptedAdminPassword + "', 1, 1, 1, 1);");
 		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('version', '" + Dna.dna.version + "');");
 		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('date', '" + Dna.dna.date + "');");
-		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('popupWidth', '300');");
-		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('statementColor', 'statementType');");
 		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (1, 'DNA Statement', 239, 208, 51);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(1, 'person', 'short text', 1);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(2, 'organization', 'short text', 1);");
@@ -581,19 +619,44 @@ public class Sql {
 	 * Retrieve a coder based on its ID.
 	 * 
 	 * @param coderId  The ID of the coder to be retrieved from the database.
-	 * @return         The coder to be retrieved, as a {@link guiCoder.Coder
+	 * @return         The coder to be retrieved, as a {@link dna.Coder
 	 *   Coder} object.
 	 * 
 	 * @category coder
 	 */
-	public guiCoder.Coder getCoder(int coderId) {
-		guiCoder.Coder c = null;
+	public dna.Coder getCoder(int coderId) {
+		dna.Coder c = null;
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;")) {
+				PreparedStatement s = conn.prepareStatement("SELECT * FROM CODERS WHERE ID = ?;")) {
 			s.setInt(1, coderId);
 			ResultSet result = s.executeQuery();
 			while (result.next()) {
-			    c = new guiCoder.Coder(coderId, result.getString("Name"), result.getInt("Red"), result.getInt("Green"), result.getInt("Blue"));
+			    c = new dna.Coder(coderId,
+			    		result.getString("Name"),
+			    		result.getInt("Red"),
+			    		result.getInt("Green"),
+			    		result.getInt("Blue"),
+			    		result.getInt("Refresh"),
+			    		result.getInt("FontSize"),
+			    		result.getInt("PopupWidth"),
+			    		result.getInt("ColorByCoder"),
+			    		result.getInt("PopupDecoration"),
+			    		result.getInt("popupAutoComplete"),
+			    		result.getInt("PermissionAddDocuments"),
+			    		result.getInt("PermissionEditDocuments"),
+			    		result.getInt("PermissionDeleteDocuments"),
+			    		result.getInt("PermissionImportDocuments"),
+			    		result.getInt("PermissionAddStatements"),
+			    		result.getInt("PermissionEditStatements"),
+			    		result.getInt("PermissionDeleteStatements"),
+			    		result.getInt("PermissionEditAttributes"),
+			    		result.getInt("PermissionEditRegex"),
+			    		result.getInt("PermissionEditStatementTypes"),
+			    		result.getInt("PermissionEditCoders"),
+			    		result.getInt("PermissionViewOthersDocuments"),
+			    		result.getInt("PermissionEditOthersDocuments"),
+			    		result.getInt("PermissionViewOthersStatements"),
+			    		result.getInt("PermissionEditOthersStatements"));
 			}
 		} catch (SQLException e) {
 			LogEvent l = new LogEvent(Logger.WARNING,
@@ -608,27 +671,94 @@ public class Sql {
 	/**
 	 * Retrieve a list of coders in the database.
 	 * 
-	 * @return An array list of coders, {@link java.util.ArrayList
-	 *   ArrayList}<{@link guiCoder.Coder Coder}>.
+	 * @return An {@link java.util.ArrayList ArrayList} of {@link dna.Coder
+	 *   Coder} objects.
 	 * 
 	 * @category coder
 	 */
 	public ArrayList<Coder> getCoders() {
 		ArrayList<Coder> coders = new ArrayList<Coder>();
 		try (Connection conn = ds.getConnection();
-				PreparedStatement tableStatement = conn.prepareStatement("SELECT * FROM Coders;")) {
-        	ResultSet rs = tableStatement.executeQuery();
-        	while (rs.next()) {
-            	coders.add(new Coder(rs.getInt("ID"), rs.getString("Name"), rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue")));
+				PreparedStatement s = conn.prepareStatement("SELECT * FROM Coders;")) {
+        	ResultSet result = s.executeQuery();
+        	while (result.next()) {
+            	coders.add(new dna.Coder(result.getInt("ID"),
+            			result.getString("Name"),
+            			result.getInt("Red"),
+			    		result.getInt("Green"),
+			    		result.getInt("Blue"),
+			    		result.getInt("Refresh"),
+			    		result.getInt("FontSize"),
+			    		result.getInt("PopupWidth"),
+			    		result.getInt("ColorByCoder"),
+			    		result.getInt("PopupDecoration"),
+			    		result.getInt("popupAutoComplete"),
+			    		result.getInt("PermissionAddDocuments"),
+			    		result.getInt("PermissionEditDocuments"),
+			    		result.getInt("PermissionDeleteDocuments"),
+			    		result.getInt("PermissionImportDocuments"),
+			    		result.getInt("PermissionAddStatements"),
+			    		result.getInt("PermissionEditStatements"),
+			    		result.getInt("PermissionDeleteStatements"),
+			    		result.getInt("PermissionEditAttributes"),
+			    		result.getInt("PermissionEditRegex"),
+			    		result.getInt("PermissionEditStatementTypes"),
+			    		result.getInt("PermissionEditCoders"),
+			    		result.getInt("PermissionViewOthersDocuments"),
+			    		result.getInt("PermissionEditOthersDocuments"),
+			    		result.getInt("PermissionViewOthersStatements"),
+			    		result.getInt("PermissionEditOthersStatements")));
             }
-		} catch (SQLException e1) {
+		} catch (SQLException e) {
         	LogEvent l = new LogEvent(Logger.WARNING,
         			"[SQL] Failed to retrieve coders from the database.",
         			"Attempted to retrieve all coders from the database. Check your connection.",
-        			e1);
+        			e);
         	Dna.logger.log(l);
 		}
 		return coders;
+	}
+
+	/**
+	 * Set a new font size for a coder.
+	 * 
+	 * @param coderId   ID of the coder in the database.
+	 * @param fontSize  New font size, between 1 and 99.
+	 */
+	public void setCoderFontSize(int coderId, int fontSize) {
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("UPDATE CODERS SET FontSize = ? WHERE ID = ?;")) {
+        	s.setInt(1, fontSize);
+        	s.setInt(2,  coderId);
+        	s.executeUpdate();
+		} catch (SQLException e) {
+        	LogEvent l = new LogEvent(Logger.WARNING,
+        			"[SQL] Failed to update font size for Coder " + coderId + " in the database.",
+        			"Attempted to set a new font size for Coder " + coderId + ", but the database access failed.",
+        			e);
+        	Dna.logger.log(l);
+		}
+	}
+	
+	/**
+	 * Set a new popup window width for a coder.
+	 * 
+	 * @param coderId     ID of the coder in the database.
+	 * @param popupWidth  New popup window width, between 100 and 9999.
+	 */
+	public void setCoderPopupWidth(int coderId, int popupWidth) {
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("UPDATE CODERS SET PopupWidth = ? WHERE ID = ?;")) {
+        	s.setInt(1, popupWidth);
+        	s.setInt(2,  coderId);
+        	s.executeUpdate();
+		} catch (SQLException e1) {
+        	LogEvent l = new LogEvent(Logger.WARNING,
+        			"[SQL] Failed to update popup window width for Coder " + coderId + " in the database.",
+        			"Attempted to set a new short text field display width for statement popup windows for Coder " + coderId + ", but the database access failed.",
+        			e1);
+        	Dna.logger.log(l);
+		}
 	}
 	
 	/**
@@ -688,8 +818,8 @@ public class Sql {
 	/**
 	 * Add a batch of documents to the database.
 	 * 
-	 * @param documents An {@link java.util.ArrayList
-	 *   ArrayList}<{@link dna.Document Document}}> containing the documents to
+	 * @param documents An {@link java.util.ArrayList ArrayList} of
+	 *   {@link dna.Document Document} objects, containing the documents to
 	 *   be added to the database.
 	 * 
 	 * @category document
@@ -796,8 +926,8 @@ public class Sql {
 	 * 
 	 * @param documentIds  An array of document IDs for which the data should be
 	 *   queried.
-	 * @return             An {@link java.util.ArrayList
-	 *   ArrayList}<{@link dna.Document Document}}> containing the documents and
+	 * @return             An {@link java.util.ArrayList ArrayList} of
+	 *   {@link dna.Document Document} objects, containing the documents and
 	 *   their meta-data.
 	 * 
 	 * @category document
@@ -1744,4 +1874,84 @@ public class Sql {
 		}
 		return statementTypes;
 	}
+
+	
+	/* =========================================================================
+	 * Settings
+	 * ====================================================================== */
+
+	/**
+	 * Get a setting for a specific coder from the SETTINGS database table.
+	 * 
+	 * @param coderId   ID of the coder for whom the setting was saved.
+	 * @param property  The name of the setting that is to be retrieved.
+	 * @return          A String of the setting value.
+	 */
+	/*
+	public String getSetting(int coderId, String property) {
+		String value = null;
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("SELECT Value FROM SETTINGS WHERE Property = ? AND Coder = ?;")) {
+        	s.setString(1, property);
+        	s.setInt(2, coderId);
+			ResultSet r = s.executeQuery();
+        	while (r.next()) {
+            	value = r.getString("Value");
+            }
+        	LogEvent l = new LogEvent(Logger.MESSAGE,
+        			"[SQL] Retrieved " + property + " setting from the database.",
+        			"Queried the database for the setting \"" + property + "\" for Coder " + coderId + ". The value is: \"" + value + "\".");
+        	Dna.logger.log(l);
+		} catch (SQLException e1) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to retrieve setting from the database.",
+					"Queried the database for the setting \"" + property + "\" for Coder " + coderId + ", but the query failed. Check database connection.",
+					e1);
+			Dna.logger.log(l);
+		}
+		return value;
+	}
+	*/
+
+	/**
+	 * Insert or update a setting for a coder in the SETTINGS table.
+	 * 
+	 * @param coderId   The ID of the coder to whom the setting applies.
+	 * @param property  The name of the setting to be updated or inserted.
+	 * @param value     The value of the setting to be updated or inserted.
+	 */
+	/*
+	public void setSetting(int coderId, String property, String value) {
+		String dbtype, sql;
+		if (getConnectionProfile().getType().equals("mysql")) {
+			dbtype = "MySQL";
+			sql = "INSERT INTO SETTINGS (Property, Coder, Value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Value = ?;";
+		} else {
+			if (getConnectionProfile().getType().equals("sqlite")) {
+				dbtype = "SQLite";
+			} else {
+				dbtype = "PostgreSQL";
+			}
+			sql = "INSERT INTO SETTINGS (Property, Coder, Value) VALUES (?, ?, ?) ON CONFLICT (Property, Coder) DO UPDATE SET Value = ?;";
+		}
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement(sql)) {
+			s.setString(1, property);
+			s.setInt(2, coderId);
+			s.setString(3, value);
+			s.setString(4, value);
+			s.executeUpdate();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Setting \"" + property + "\" has been updated in the database.",
+					"Updated property \"" + property + "\" for Coder " + coderId + ". The new value is: \"" + value + "\".");
+			Dna.logger.log(l);
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to update setting in the database.",
+					"Attempted to update the setting \"" + property + "\" for Coder " + coderId + " in the SETTINGS table of the " + dbtype + " database, but the update failed.",
+					e);
+			Dna.logger.log(l);
+		}
+	}
+	*/
 }

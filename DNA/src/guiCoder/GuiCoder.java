@@ -46,7 +46,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
+import dna.Coder;
 import dna.Dna;
+import dna.Dna.SqlListener;
 import logger.LogEvent;
 import logger.Logger;
 import logger.LoggerDialog;
@@ -58,7 +60,7 @@ import sql.Sql;
  * GUI of the Discourse Network Analyzer. Creates the layout of the main coding window.
  */
 @SuppressWarnings("serial")
-public class GuiCoder extends JFrame implements LogListener {
+public class GuiCoder extends JFrame implements LogListener, SqlListener {
 	Container c;
 	AddDocumentAction addDocumentAction;
 	EditDocumentsAction editDocumentsAction;
@@ -191,6 +193,12 @@ public class GuiCoder extends JFrame implements LogListener {
 		JMenuItem aboutWindowItem = new JMenuItem(aboutWindowAction);
 		settingsMenu.add(aboutWindowItem);
 		
+		// settings menu: display logger dialog window
+		ImageIcon loggerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		LoggerDialogAction loggerDialogAction = new LoggerDialogAction("Message log", loggerIcon, "Display a log of messages, warnings, and errors in a dialog window", KeyEvent.VK_L);
+		JMenuItem loggerDialogItem = new JMenuItem(loggerDialogAction);
+		settingsMenu.add(loggerDialogItem);
+		
 		// document panel
 		documentTableModel = new DocumentTableModel();
 		documentPanel = new DocumentPanel(documentTableModel, addDocumentAction, editDocumentsAction, removeDocumentsAction, batchImportDocumentsAction);
@@ -211,12 +219,41 @@ public class GuiCoder extends JFrame implements LogListener {
 	 * Create a new swing worker to (re-) load all documents from the database
 	 * into the document table model.
 	 */
-	public void reloadTableFromSQL() {
-    	if (Dna.sql != null) {
+	private void reloadTableFromSql() {
+		if (Dna.sql != null) {
     		worker = new DocumentTableSwingWorker();
             worker.execute();
-    	} else {
+		} else {
             documentTableModel.clear();
+		}
+	}
+	
+	/**
+	 * React to changes in the state (= presence or absence) of the DNA database
+	 * in the {@link dna.Dna Dna} class.
+	 */
+	public void adjustToDatabaseState() {
+		reloadTableFromSql();
+    	if (Dna.sql != null) {
+			addDocumentAction.setEnabled(true);
+			batchImportDocumentsAction.setEnabled(true);
+			if (closeDatabaseAction != null) {
+				closeDatabaseAction.setEnabled(true);
+			}
+			if (saveProfileAction != null) {
+				saveProfileAction.setEnabled(true);
+			}
+			statusBar.updateUrl();
+    	} else {
+			addDocumentAction.setEnabled(false);
+			batchImportDocumentsAction.setEnabled(false);
+			if (closeDatabaseAction != null) {
+				closeDatabaseAction.setEnabled(false);
+			}
+			if (saveProfileAction != null) {
+				saveProfileAction.setEnabled(false);
+			}
+			statusBar.updateUrl();
     	}
 	}
 	
@@ -256,7 +293,8 @@ public class GuiCoder extends JFrame implements LogListener {
                 					rs.getString("CoderName"),
                 					rs.getInt("Red"),
                 					rs.getInt("Green"),
-                					rs.getInt("Blue")),
+                					rs.getInt("Blue"),
+                					0, 14, 300, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
                 			rs.getString("Author"),
                 			rs.getString("Source"),
                 			rs.getString("Section"),
@@ -379,7 +417,7 @@ public class GuiCoder extends JFrame implements LogListener {
 	/**
 	 * A status bar panel showing the database on the left and messages on the right. 
 	 */
-	class StatusBar extends JPanel {
+	private class StatusBar extends JPanel {
 		JLabel urlLabel, documentRefreshLabel, documentRefreshIconLabel, statementRefreshLabel, statementRefreshIconLabel;
 		int numWarnings, numErrors;
 		JButton messageIconButton, warningButton, errorButton;
@@ -438,7 +476,7 @@ public class GuiCoder extends JFrame implements LogListener {
 			warningButton = new JButton(numWarnings + "");
 			warningButton.setContentAreaFilled(false);
 			warningButton.setBorderPainted(false);
-			warningButton.setForeground(new Color(255, 255, 130));
+			warningButton.setForeground(new Color(220, 153, 0));
 			warningButton.setBorder(null);
 			warningButton.setMargin(new Insets(0, 0, 0, 0));
 			warningButton.setVisible(false);
@@ -529,17 +567,7 @@ public class GuiCoder extends JFrame implements LogListener {
 			NewDatabaseDialog n = new NewDatabaseDialog(true);
 			ConnectionProfile cp = n.getConnectionProfile();
 			if (cp != null) {
-				Dna.sql = new Sql(cp);
-				reloadTableFromSQL();
-				addDocumentAction.setEnabled(true);
-				batchImportDocumentsAction.setEnabled(true);
-				if (closeDatabaseAction != null) {
-					closeDatabaseAction.setEnabled(true);
-				}
-				if (saveProfileAction != null) {
-					saveProfileAction.setEnabled(true);
-				}
-				statusBar.updateUrl();
+				Dna.setSql(new Sql(cp));
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: opened database.",
 						"Opened a database connection from the GUI.");
@@ -556,17 +584,7 @@ public class GuiCoder extends JFrame implements LogListener {
 			putValue(MNEMONIC_KEY, mnemonic);
 		}
 		public void actionPerformed(ActionEvent e) {
-			Dna.sql = null;
-			addDocumentAction.setEnabled(false);
-			batchImportDocumentsAction.setEnabled(false);
-			if (closeDatabaseAction != null) {
-				closeDatabaseAction.setEnabled(false);
-			}
-			if (saveProfileAction != null) {
-				saveProfileAction.setEnabled(false);
-			}
-			statusBar.updateUrl();
-			reloadTableFromSQL();
+			Dna.setSql(null);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: closed database.",
 					"Closed database connection from the GUI.");
@@ -585,17 +603,7 @@ public class GuiCoder extends JFrame implements LogListener {
 			NewDatabaseDialog n = new NewDatabaseDialog(false);
 			ConnectionProfile cp = n.getConnectionProfile();
 			if (cp != null) {
-				Dna.sql = new Sql(cp);
-				reloadTableFromSQL();
-				addDocumentAction.setEnabled(true);
-				batchImportDocumentsAction.setEnabled(true);
-				if (closeDatabaseAction != null) {
-					closeDatabaseAction.setEnabled(true);
-				}
-				if (saveProfileAction != null) {
-					saveProfileAction.setEnabled(true);
-				}
-				statusBar.updateUrl();
+				Dna.setSql(new Sql(cp));
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: created new database.",
 						"Created a new database from the GUI.");
@@ -666,8 +674,7 @@ public class GuiCoder extends JFrame implements LogListener {
 								boolean authenticated = sqlTemp.authenticate(key);
 								if (authenticated == true) {
 									validPasswordInput = true; // authenticated; quit the while-loop
-									Dna.sql = sqlTemp;
-									reloadTableFromSQL();
+									Dna.setSql(sqlTemp);
 								} else {
 									cp = null;
 								}
@@ -687,17 +694,6 @@ public class GuiCoder extends JFrame implements LogListener {
 						}
 					}
 				}
-			}
-			if (Dna.sql != null) { // pressed cancel
-				addDocumentAction.setEnabled(true);
-				batchImportDocumentsAction.setEnabled(true);
-				if (closeDatabaseAction != null) {
-					closeDatabaseAction.setEnabled(true);
-				}
-				if (saveProfileAction != null) {
-					saveProfileAction.setEnabled(true);
-				}
-				statusBar.updateUrl();
 			}
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: opened connection profile.",
@@ -813,7 +809,7 @@ public class GuiCoder extends JFrame implements LogListener {
 		}
 		public void actionPerformed(ActionEvent e) {
 			new DocumentEditor();
-			reloadTableFromSQL();
+			reloadTableFromSql();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: added a new document.",
 					"Added a new document from the GUI.");
@@ -838,7 +834,7 @@ public class GuiCoder extends JFrame implements LogListener {
 				}
 				documentTableModel.removeDocuments(selectedRows);
 			}
-			reloadTableFromSQL();
+			reloadTableFromSql();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: removed document(s).",
 					"Deleted one or more documents in the database from the GUI.");
@@ -859,7 +855,7 @@ public class GuiCoder extends JFrame implements LogListener {
 				selectedRows[i] = documentTableModel.getIdByModelRow(documentPanel.convertRowIndexToModel(selectedRows[i]));
 			}
 			new DocumentEditor(selectedRows);
-			reloadTableFromSQL();
+			reloadTableFromSql();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: edited meta-data for document(s).",
 					"Edited the meta-data for one or more documents in the database.");
@@ -876,11 +872,23 @@ public class GuiCoder extends JFrame implements LogListener {
 		}
 		public void actionPerformed(ActionEvent e) {
 			new DocumentBatchImporter();
-			reloadTableFromSQL();
+			reloadTableFromSql();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: used document batch importer.",
 					"Batch-imported documents to the database.");
 			Dna.logger.log(l);
+		}
+	}
+
+	// logger window action
+	class LoggerDialogAction extends AbstractAction {
+		public LoggerDialogAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			new LoggerDialog();
 		}
 	}
 

@@ -6,14 +6,16 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
+import dna.Coder;
 import dna.Dna;
 
 /**
- * A document table model that holds {@link TableDocument} objects, which are a
- * shallow representation of document metadata without the actual text (to make
- * their retrieval from the database more efficient). The table model knows how
- * to remove documents from the database and edit metadata in the database and
- * represent document metadata in a table.
+ * A document table model that holds {@link guiCoder.TableDocument
+ * TableDocument} objects, which are a shallow representation of document
+ * meta-data without the actual text (to make their retrieval from the database
+ * more efficient). The table model knows how to remove documents from the
+ * database and edit meta-data in the database and represent document meta-data
+ * in a table.
  */
 @SuppressWarnings("serial")
 public class DocumentTableModel extends AbstractTableModel {
@@ -110,6 +112,19 @@ public class DocumentTableModel extends AbstractTableModel {
 			}
 		}
 		return -1;
+	}
+	
+	/**
+	 * Return the table document (i.e., a shallow representation of the document
+	 * without the actual text) that corresponds to a model index. This is
+	 * useful for filtering the table in the GUI.
+	 * 
+	 * @param modelRowIndex The index of the document in the model.
+	 * @return              A {@link guiCoder.TableDocument TableDocument}
+	 *   object.
+	 */
+	public TableDocument getRow(int modelRowIndex) {
+		return rows.get(modelRowIndex);
 	}
 	
 	public String getDocumentText(int documentId) {

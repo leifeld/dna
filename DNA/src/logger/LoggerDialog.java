@@ -49,8 +49,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.thoughtworks.xstream.XStream;
 
+import dna.Coder;
 import dna.Dna;
-import guiCoder.Coder;
 import guiCoder.CoderBadgePanel;
 
 /**

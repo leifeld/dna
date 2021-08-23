@@ -18,7 +18,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -41,6 +40,7 @@ import javax.swing.filechooser.FileFilter;
 
 import org.jasypt.util.password.StrongPasswordEncryptor;
 
+import dna.Coder;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
@@ -485,7 +485,10 @@ public class NewDatabaseDialog extends JDialog {
 										cp = tempConnectionProfile;
 										dispose();
 									} else {
-			    						System.err.println("Authentication failed. Check your password.");
+			    						LogEvent l = new LogEvent(Logger.WARNING,
+			    								"Authentication failed. Check your password.",
+			    								"Tried to open database, but a wrong password was entered for Coder " + coder.getId() + ".");
+			    						Dna.logger.log(l);
 					    				JOptionPane.showMessageDialog(null,
 					    						"Authentication failed. Check your password.",
 					    					    "Check failed",

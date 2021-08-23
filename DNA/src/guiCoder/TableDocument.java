@@ -2,6 +2,8 @@ package guiCoder;
 
 import java.time.LocalDateTime;
 
+import dna.Coder;
+
 /**
  * Represents the rows in a {@link DocumentTableModel}.
  */
