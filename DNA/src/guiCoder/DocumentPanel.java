@@ -25,6 +25,7 @@ import javax.swing.JSpinner;
 import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
@@ -44,6 +45,7 @@ import org.jdesktop.swingx.JXTextField;
 
 import dna.Coder;
 import dna.Dna;
+import dna.TableDocument;
 import dna.Dna.CoderListener;
 import dna.Dna.SqlListener;
 import logger.LogEvent;
@@ -62,6 +64,7 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 	private JTextField documentFilterField;
 	private JButton documentFilterResetButton;
 	private SpinnerNumberModel popupWidthModel, fontSizeModel;
+	private JToggleButton popupDecorationButton;
 
 	/**
 	 * Create an instance of the document panel class, using a table model and
@@ -178,8 +181,10 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 			}
 		});
 		documentFilterResetButton.setEnabled(false);
+		documentFilterResetButton.setToolTipText("Filter the documents using a regular expression.");
 		documentFilterField = new JXTextField("Document regex filter");
 		documentFilterField.setPreferredSize(new Dimension(200, 16));
+		documentFilterField.setToolTipText("Filter the documents using a regular expression.");
         documentFilterField.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
 			public void changedUpdate(DocumentEvent arg0) {
@@ -215,9 +220,11 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 
         ImageIcon fontSizeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-typography.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
 		JLabel fontSizeLabel = new JLabel(fontSizeIcon);
+		fontSizeLabel.setToolTipText("Set the font size of the text area.");
         fontSizeModel = new SpinnerNumberModel(14, 1, 99, 1);
 		JSpinner fontSizeSpinner = new JSpinner(fontSizeModel);
 		((DefaultEditor) fontSizeSpinner.getEditor()).getTextField().setColumns(2);
+		fontSizeSpinner.setToolTipText("Set the font size of the text area.");
 		fontSizeLabel.setLabelFor(fontSizeSpinner);
 		fontSizeSpinner.addChangeListener(new ChangeListener(){
 			public void stateChanged(ChangeEvent e) {
@@ -227,16 +234,17 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 				}
 			}
 		});
-		fontSizeSpinner.transferFocus();
 		tb2.add(fontSizeLabel);
 		tb2.add(fontSizeSpinner);
 		tb2.addSeparator(new Dimension(8, 8));
 		
         ImageIcon popupWidthIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-chart-arrows.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
 		JLabel popupWidthLabel = new JLabel(popupWidthIcon);
+		popupWidthLabel.setToolTipText("Set the width of the text fields for the variables in a statement popup window (in px).");
         popupWidthModel = new SpinnerNumberModel(300, 160, 9990, 10);
 		JSpinner popupWidthSpinner = new JSpinner(popupWidthModel);
 		((DefaultEditor) popupWidthSpinner.getEditor()).getTextField().setColumns(4);
+		popupWidthSpinner.setToolTipText("Set the width of the text fields for the variables in a statement popup window (in px).");
 		popupWidthLabel.setLabelFor(popupWidthSpinner);
 		popupWidthSpinner.addChangeListener(new ChangeListener(){
 			public void stateChanged(ChangeEvent e) {
@@ -248,6 +256,22 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 		});
 		tb2.add(popupWidthLabel);
 		tb2.add(popupWidthSpinner);
+		
+		ImageIcon popupDecorationIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-border-outer.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		popupDecorationButton = new JToggleButton(popupDecorationIcon);
+		popupDecorationButton.setToolTipText("If the button is pressed, statement popup windows will have buttons and a frame. If not, statements will auto-save.");
+		popupDecorationButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (Dna.sql != null) {
+					Dna.sql.setCoderPopupDecoration(Dna.sql.getConnectionProfile().getCoderId(), popupDecorationButton.isSelected());
+					Dna.fireCoderChange();
+				}
+			}
+		});
+		popupDecorationButton.setEnabled(false);
+		tb2.addSeparator(new Dimension(8, 8));
+		tb2.add(popupDecorationButton);
 		
         toolbarPanel.add(tb2, BorderLayout.EAST);
 		this.add(toolbarPanel, BorderLayout.NORTH);
@@ -529,14 +553,20 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 		if (Dna.sql == null) {
 			popupWidthModel.setValue(300);
 			fontSizeModel.setValue(14);
+			popupDecorationButton.setSelected(false);
 		} else {
 			Coder coder = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
 			popupWidthModel.setValue(coder.getPopupWidth());
 			fontSizeModel.setValue(coder.getFontSize());
+			if (coder.getPopupDecoration() == 1) {
+				popupDecorationButton.setSelected(true);
+			} else {
+				popupDecorationButton.setSelected(false);
+			}
 		}
 		LogEvent l = new LogEvent(Logger.MESSAGE,
-				"Document panel adjusted to changed coder (or closed database).",
-				"Document panel adjusted to changed coder (or closed database).");
+				"[GUI] Document panel adjusted to updated coder settings (or closed database).",
+				"[GUI] Document panel adjusted to updated coder settings (or closed database).");
 		Dna.logger.log(l);
 	}
 
@@ -546,6 +576,7 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 			documentFilterField.setText("");
 			documentFilterField.setEnabled(false);
 			documentFilterResetButton.setEnabled(false);
+			popupDecorationButton.setEnabled(false);
 		} else {
 			documentFilterField.setEnabled(true);
 			if (documentFilterField.getText().equals("")) {
@@ -553,6 +584,7 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 			} else {
 				documentFilterResetButton.setEnabled(true);
 			}
+			popupDecorationButton.setEnabled(true);
 		}
 	}
 }

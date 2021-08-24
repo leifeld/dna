@@ -17,8 +17,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -48,6 +46,7 @@ import com.google.gson.JsonSyntaxException;
 
 import dna.Coder;
 import dna.Dna;
+import dna.TableDocument;
 import dna.Dna.SqlListener;
 import logger.LogEvent;
 import logger.Logger;
@@ -55,6 +54,7 @@ import logger.LoggerDialog;
 import logger.Logger.LogListener;
 import sql.ConnectionProfile;
 import sql.Sql;
+import sql.Sql.SqlResults;
 
 /**
  * GUI of the Discourse Network Analyzer. Creates the layout of the main coding window.
@@ -256,19 +256,17 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 			statusBar.updateUrl();
     	}
 	}
-	
+
 	/**
 	 * Swing worker class for loading documents from the database and adding
 	 * them to the document table in a background thread.
 	 * 
 	 * https://stackoverflow.com/questions/43161033/cant-add-tablerowsorter-to-jtable-produced-by-swingworker
+	 * https://stackoverflow.com/questions/68884145/how-do-i-use-a-jdbc-swing-worker-with-connection-pooling-ideally-while-separati
 	 */
 	private class DocumentTableSwingWorker extends SwingWorker<List<TableDocument>, TableDocument> {
 		long time;
 		
-		/**
-		 * Create a new swing worker.
-		 */
 		public DocumentTableSwingWorker() {
     		statusBar.setDocumentRefreshing(true); // display a message in the status bar that documents are being loaded
     		documentTableModel.clear();
@@ -279,38 +277,40 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
     		time = System.nanoTime();
 		}
 		
-        @Override
-        protected List<TableDocument> doInBackground() {
-        	try (Connection conn = Dna.sql.getDataSource().getConnection();
-					PreparedStatement tableStatement = conn.prepareStatement("SELECT D.ID, Title, (SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = D.ID) AS Frequency, C.ID AS CoderId, Name AS CoderName, Red, Green, Blue, Date, Author, Source, Section, Type, Notes FROM CODERS C INNER JOIN DOCUMENTS D ON D.Coder = C.ID;")) {
-            	ResultSet rs = tableStatement.executeQuery();
-                while (rs.next()) {
-                	TableDocument r = new TableDocument(
-                			rs.getInt("ID"),
-                			rs.getString("Title"),
-                			rs.getInt("Frequency"),
-                			new Coder(rs.getInt("CoderId"),
-                					rs.getString("CoderName"),
-                					rs.getInt("Red"),
-                					rs.getInt("Green"),
-                					rs.getInt("Blue"),
-                					0, 14, 300, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-                			rs.getString("Author"),
-                			rs.getString("Source"),
-                			rs.getString("Section"),
-                			rs.getString("Type"),
-                			rs.getString("Notes"),
-                			LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC));
-                    publish(r);
-                }
+		@Override
+		protected List<TableDocument> doInBackground() {
+			SqlResults s = Dna.sql.getTableDocumentResultSet();
+			ResultSet rs = s.getResultSet();
+			try {
+				while (rs.next()) {
+					TableDocument r = new TableDocument(
+							rs.getInt("ID"),
+							rs.getString("Title"),
+							rs.getInt("Frequency"),
+							new Coder(rs.getInt("CoderId"),
+									rs.getString("CoderName"),
+									rs.getInt("Red"),
+									rs.getInt("Green"),
+									rs.getInt("Blue"),
+									0, 14, 300, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+							rs.getString("Author"),
+							rs.getString("Source"),
+							rs.getString("Section"),
+							rs.getString("Type"),
+							rs.getString("Notes"),
+							LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC));
+					publish(r);
+				}
 			} catch (SQLException e) {
 				LogEvent le = new LogEvent(Logger.WARNING,
 						"[SQL] Could not retrieve documents from database.",
-						"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved. The document table may be incomplete. Error message: " + e.getStackTrace());
+						"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved because there was a problem while processing the result set. The document table may be incomplete.",
+						e);
 				Dna.logger.log(le);
 			}
-            return null;
-        }
+			s.close();
+			return null;
+		}
         
         @Override
         protected void process(List<TableDocument> chunks) {
@@ -322,10 +322,9 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
             statusBar.setDocumentRefreshing(false);
     		long elapsed = System.nanoTime();
     		LogEvent le = new LogEvent(Logger.MESSAGE,
-    				"[GUI] (Re)loaded all documents in " + (elapsed - time) / 1000000 + " milliseconds.",
-    				"The document table swing worker loaded the documents from the DNA database in the "
-    				+ "background and stored them in the document table. This took "
-    				+ (elapsed - time) / 1000000 + " seconds.");
+    				"[GUI] (Re)loaded all " + documentTableModel.getRowCount() + " documents in " + (elapsed - time) / 1000000 + " milliseconds.",
+    				"The document table swing worker loaded the " + documentTableModel.getRowCount() + " documents from the DNA database in the "
+    				+ "background and stored them in the document table. This took " + (elapsed - time) / 1000000 + " seconds.");
     		Dna.logger.log(le);
 			le = new LogEvent(Logger.MESSAGE,
 					"[GUI] Closing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",

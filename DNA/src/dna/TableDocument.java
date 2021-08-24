@@ -1,13 +1,13 @@
-package guiCoder;
+package dna;
 
 import java.time.LocalDateTime;
 
-import dna.Coder;
+import guiCoder.DocumentTableModel;
 
 /**
  * Represents the rows in a {@link DocumentTableModel}.
  */
-class TableDocument {
+public class TableDocument {
 	int id, frequency;
 	Coder coder;
 	String title, author, source, section, type, notes;
@@ -27,7 +27,7 @@ class TableDocument {
 	 * @param notes Notes for the {@link Document}.
 	 * @param dateTime The date and time the {@link Document} happened.
 	 */
-	TableDocument(int id, String title, int frequency, Coder coder, String author, String source, String section,
+	public TableDocument(int id, String title, int frequency, Coder coder, String author, String source, String section,
 			String type, String notes, LocalDateTime dateTime) {
 		this.id = id;
 		this.frequency = frequency;

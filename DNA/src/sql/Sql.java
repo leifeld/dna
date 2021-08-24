@@ -752,11 +752,37 @@ public class Sql {
         	s.setInt(1, popupWidth);
         	s.setInt(2,  coderId);
         	s.executeUpdate();
-		} catch (SQLException e1) {
+		} catch (SQLException e) {
         	LogEvent l = new LogEvent(Logger.WARNING,
         			"[SQL] Failed to update popup window width for Coder " + coderId + " in the database.",
         			"Attempted to set a new short text field display width for statement popup windows for Coder " + coderId + ", but the database access failed.",
-        			e1);
+        			e);
+        	Dna.logger.log(l);
+		}
+	}
+
+	/**
+	 * Update window decoration setting for a coder.
+	 * 
+	 * @param coderId     ID of the coder in the database.
+	 * @param decoration  boolean value indicating whether popup windows should
+	 *   have buttons and a dialog frame for the user.
+	 */
+	public void setCoderPopupDecoration(int coderId, boolean decoration) {
+		int d = 0;
+		if (decoration == true) {
+			d = 1;
+		}
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("UPDATE CODERS SET PopupDecoration = ? WHERE ID = ?;")) {
+        	s.setInt(1, d);
+        	s.setInt(2,  coderId);
+        	s.executeUpdate();
+		} catch (SQLException e) {
+        	LogEvent l = new LogEvent(Logger.WARNING,
+        			"[SQL] Failed to update popup decoration setting for Coder " + coderId + " in the database.",
+        			"Attempted to update window decoration settings for statement popup windows for Coder " + coderId + ", but the database access failed.",
+        			e);
         	Dna.logger.log(l);
 		}
 	}
@@ -995,6 +1021,84 @@ public class Sql {
 			Dna.logger.log(l);
 		}
 		return text;
+	}
+
+	/**
+	 * A class that contains a JDBC connection, a prepared statement, and a
+	 * result set for processing results in another class and closing the
+	 * connection there when done. For example, the class can be used to
+	 * transport results between the {@link sql.Sql Sql} class and a Swing
+	 * worker. The Swing worker can use the result set and then invoke the
+	 * {@code close} method to close the connection when done.
+	 */
+	public class SqlResults {
+		ResultSet rs;
+		PreparedStatement ps;
+		Connection c;
+		
+		/**
+		 * Create a new instance of an {@link SqlResults}
+		 * container.
+		 * 
+		 * @param rs  A {@link java.sql.ResultSet ResultSet} object.
+		 * @param ps  A {@link java.sql.PreparedStatement PreparedStatement}.
+		 * @param c   A {@link java.sql.Connection Connection} object.
+		 */
+		public SqlResults(ResultSet rs, PreparedStatement ps, Connection c) {
+			this.rs = rs;
+			this.ps = ps;
+			this.c = c;
+		}
+
+		public void close() {
+			try {
+				rs.close();
+				ps.close();
+				c.close();
+			} catch (SQLException e) {
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[SQL] Failed to close SQL results.",
+						"Tried to close an SQL connection, statement, and result set, and there was an error. There is no data loss, but if this keeps happening, it will eat a lot of resources.");
+				Dna.logger.log(l);
+			}
+		}
+		
+		/**
+		 * Get the result set.
+		 * 
+		 * @return An SQL/JDBC result set.
+		 */
+		public ResultSet getResultSet() {
+			return rs;
+		}
+	}
+	
+	/**
+	 * Query the database for shallow representations of all documents (i.e.,
+	 * the documents without their text or any contained statements but with
+	 * their associated statement frequencies) for display in a document table.
+	 * 
+	 * @return An {@link SqlResults} object.
+	 */
+	public SqlResults getTableDocumentResultSet() {
+		ResultSet rs = null;
+		Connection conn = null;
+		PreparedStatement tableStatement = null;
+		try {
+			conn = getDataSource().getConnection();
+			tableStatement = conn.prepareStatement("SELECT D.ID, Title, (SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = D.ID) AS Frequency, C.ID AS CoderId, Name AS CoderName, Red, Green, Blue, Date, Author, Source, Section, Type, Notes FROM CODERS C INNER JOIN DOCUMENTS D ON D.Coder = C.ID;");
+			rs = tableStatement.executeQuery();
+		} catch (SQLException e) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"[SQL] Could not retrieve documents from database.",
+					"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved. The document table may be incomplete.",
+					e);
+			Dna.logger.log(le);
+		} finally {
+			// nothing gets closed here because the results would no longer be valid
+		}
+		SqlResults s = new SqlResults(rs, tableStatement, conn);
+		return s;
 	}
 	
 	/**
