@@ -122,79 +122,79 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 		menu.add(settingsMenu);
 
 		// database menu: open a database
-		ImageIcon openDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon openDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		OpenDatabaseAction openDatabaseAction = new OpenDatabaseAction("Open DNA database", openDatabaseIcon, "Open a dialog window to establish a connection to a remote or file-based database", KeyEvent.VK_O);
 		JMenuItem openDatabaseItem = new JMenuItem(openDatabaseAction);
 		databaseMenu.add(openDatabaseItem);
 
 		// database menu: close database
-		ImageIcon closeDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon closeDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		closeDatabaseAction = new CloseDatabaseAction("Close database", closeDatabaseIcon, "Close the connection to the current database and reset graphical user interface", KeyEvent.VK_X);
 		JMenuItem closeDatabaseItem = new JMenuItem(closeDatabaseAction);
 		databaseMenu.add(closeDatabaseItem);
 		closeDatabaseAction.setEnabled(false);
 
 		// database menu: create a new database
-		ImageIcon createDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-plus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon createDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-plus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		CreateDatabaseAction createDatabaseAction = new CreateDatabaseAction("Create new DNA database", createDatabaseIcon, "Open a dialog window to create a new remote or file-based database", KeyEvent.VK_C);
 		JMenuItem createDatabaseItem = new JMenuItem(createDatabaseAction);
 		databaseMenu.add(createDatabaseItem);
 
 		// database menu: open a connection profile
-		ImageIcon openProfileIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-link.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon openProfileIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-link.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		OpenProfileAction openProfileAction = new OpenProfileAction("Open connection profile", openProfileIcon, "Open a connection profile, which acts as a bookmark to a database", KeyEvent.VK_P);
 		JMenuItem openProfileItem = new JMenuItem(openProfileAction);
 		databaseMenu.add(openProfileItem);
 
 		// database menu: save a connection profile
-		ImageIcon saveProfileIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-download.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon saveProfileIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-download.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		saveProfileAction = new SaveProfileAction("Save connection profile", saveProfileIcon, "Save a connection profile, which acts as a bookmark to a database", KeyEvent.VK_S);
 		JMenuItem saveProfileItem = new JMenuItem(saveProfileAction);
 		databaseMenu.add(saveProfileItem);
 		saveProfileAction.setEnabled(false);
 
 		// database menu: quit DNA
-		ImageIcon quitIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-logout.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon quitIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-logout.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		QuitAction quitAction = new QuitAction("Exit / quit", quitIcon, "Close the Discourse Network Analyzer", KeyEvent.VK_Q);
 		JMenuItem quitItem = new JMenuItem(quitAction);
 		databaseMenu.add(quitItem);
 
 		// document menu: add new document
-		ImageIcon addDocumentIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon addDocumentIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		addDocumentAction = new AddDocumentAction("Add document", addDocumentIcon, "Open a dialog window to enter details of a new document", KeyEvent.VK_A);
 		JMenuItem addDocumentItem = new JMenuItem(addDocumentAction);
 		addDocumentAction.setEnabled(false);
 		documentMenu.add(addDocumentItem);
 		
 		// document menu: remove documents
-		ImageIcon removeDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-minus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon removeDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		removeDocumentsAction = new RemoveDocumentsAction("Remove document(s)", removeDocumentsIcon, "Remove the document(s) currently selected in the document table", KeyEvent.VK_R);
 		JMenuItem removeDocumentsItem = new JMenuItem(removeDocumentsAction);
 		removeDocumentsAction.setEnabled(false);
 		documentMenu.add(removeDocumentsItem);
 		
 		// document menu: edit documents
-		ImageIcon editDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-edit.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon editDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-edit.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		editDocumentsAction = new EditDocumentsAction("Edit document(s)", editDocumentsIcon, "Edit the document(s) currently selected in the document table", KeyEvent.VK_E);
 		JMenuItem editDocumentsItem = new JMenuItem(editDocumentsAction);
 		editDocumentsAction.setEnabled(false);
 		documentMenu.add(editDocumentsItem);
 
 		// document menu: batch import documents
-		ImageIcon batchImportDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-import.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon batchImportDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-import.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		batchImportDocumentsAction = new BatchImportDocumentsAction("Import from directory", batchImportDocumentsIcon, "Batch-import all text files from a folder as new documents", KeyEvent.VK_I);
 		JMenuItem batchImportDocumentsItem = new JMenuItem(batchImportDocumentsAction);
 		batchImportDocumentsAction.setEnabled(false);
 		documentMenu.add(batchImportDocumentsItem);
 
 		// settings menu: display about DNA window
-		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		AboutWindowAction aboutWindowAction = new AboutWindowAction("About DNA", aboutIcon, "Display information about DNA", KeyEvent.VK_B);
 		JMenuItem aboutWindowItem = new JMenuItem(aboutWindowAction);
 		settingsMenu.add(aboutWindowItem);
 		
 		// settings menu: display logger dialog window
-		ImageIcon loggerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon loggerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		LoggerDialogAction loggerDialogAction = new LoggerDialogAction("Message log", loggerIcon, "Display a log of messages, warnings, and errors in a dialog window", KeyEvent.VK_L);
 		JMenuItem loggerDialogItem = new JMenuItem(loggerDialogAction);
 		settingsMenu.add(loggerDialogItem);
@@ -279,9 +279,8 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 		
 		@Override
 		protected List<TableDocument> doInBackground() {
-			SqlResults s = Dna.sql.getTableDocumentResultSet();
-			ResultSet rs = s.getResultSet();
-			try {
+			try (SqlResults s = Dna.sql.getTableDocumentResultSet();
+					ResultSet rs = s.getResultSet();) {
 				while (rs.next()) {
 					TableDocument r = new TableDocument(
 							rs.getInt("ID"),
@@ -308,7 +307,6 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 						e);
 				Dna.logger.log(le);
 			}
-			s.close();
 			return null;
 		}
         

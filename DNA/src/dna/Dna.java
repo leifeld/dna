@@ -68,6 +68,7 @@ public class Dna {
 	 */
 	public static void setSql(Sql sql) {
 		Dna.sql = sql;
+		Dna.logger.clear();
 		for (SqlListener listener : sqlListeners) {
 			listener.adjustToDatabaseState();
 		}

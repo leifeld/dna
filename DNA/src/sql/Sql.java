@@ -162,6 +162,51 @@ public class Sql {
 	}
 
 	/**
+	 * A class that contains a JDBC connection, a prepared statement, and a
+	 * result set for processing results in another class and closing the
+	 * connection there when done. For example, the class can be used to
+	 * transport results between the {@link sql.Sql Sql} class and a Swing
+	 * worker. The Swing worker can use the result set and then invoke the
+	 * {@code close} method to close the connection when done.
+	 * 
+	 * @category setup
+	 */
+	public class SqlResults implements AutoCloseable {
+		ResultSet rs;
+		PreparedStatement ps;
+		Connection c;
+		
+		/**
+		 * Create a new instance of an {@link SqlResults}
+		 * container.
+		 * 
+		 * @param rs  A {@link java.sql.ResultSet ResultSet} object.
+		 * @param ps  A {@link java.sql.PreparedStatement PreparedStatement}.
+		 * @param c   A {@link java.sql.Connection Connection} object.
+		 */
+		public SqlResults(ResultSet rs, PreparedStatement ps, Connection c) {
+			this.rs = rs;
+			this.ps = ps;
+			this.c = c;
+		}
+
+		public void close() throws SQLException {
+			rs.close();
+			ps.close();
+			c.close();
+		}
+		
+		/**
+		 * Get the result set.
+		 * 
+		 * @return An SQL/JDBC result set.
+		 */
+		public ResultSet getResultSet() {
+			return rs;
+		}
+	}
+	
+	/**
 	 * Create data structures (tables and basic contents) in a new DNA database.
 	 * 
 	 * @param encryptedAdminPassword  The encrypted/hashed password of the
@@ -739,7 +784,35 @@ public class Sql {
         	Dna.logger.log(l);
 		}
 	}
-	
+
+	/**
+	 * Update a coder's color by coder setting, i.e., write into the database
+	 * whether the statements in the text should be painted according to the
+	 * color of the respective coder (= 1) or the color of the respective
+	 * statement type (= 0).
+	 * 
+	 * @param coderId       ID of the coder in the database.
+	 * @param colorByCoder  Color statements in the text by coder color?
+	 */
+	public void setColorByCoder(int coderId, boolean colorByCoder) {
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("UPDATE CODERS SET ColorByCoder = ? WHERE ID = ?;")) {
+			int c = 0;
+			if (colorByCoder == true) {
+				c = 1;
+			}
+        	s.setInt(1, c);
+        	s.setInt(2,  coderId);
+        	s.executeUpdate();
+		} catch (SQLException e) {
+        	LogEvent l = new LogEvent(Logger.WARNING,
+        			"[SQL] Failed to update color by coder setting for Coder " + coderId + " in the database.",
+        			"Attempted to update the color setting that is used for painting statements in the text (statement type color or coder color) for Coder " + coderId + ", but the database access failed.",
+        			e);
+        	Dna.logger.log(l);
+		}
+	}
+
 	/**
 	 * Set a new popup window width for a coder.
 	 * 
@@ -782,6 +855,32 @@ public class Sql {
         	LogEvent l = new LogEvent(Logger.WARNING,
         			"[SQL] Failed to update popup decoration setting for Coder " + coderId + " in the database.",
         			"Attempted to update window decoration settings for statement popup windows for Coder " + coderId + ", but the database access failed.",
+        			e);
+        	Dna.logger.log(l);
+		}
+	}
+
+	/**
+	 * Update popup autocomplete setting for a coder.
+	 * 
+	 * @param coderId       ID of the coder in the database.
+	 * @param autoComplete  boolean value indicating whether autocomplete should
+	 *   be set as active for the coder.
+	 */
+	public void setCoderPopupAutoComplete(int coderId, boolean autoComplete) {
+		int a = 0;
+		if (autoComplete == true) {
+			a = 1;
+		}
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("UPDATE CODERS SET PopupAutoComplete = ? WHERE ID = ?;")) {
+        	s.setInt(1, a);
+        	s.setInt(2,  coderId);
+        	s.executeUpdate();
+		} catch (SQLException e) {
+        	LogEvent l = new LogEvent(Logger.WARNING,
+        			"[SQL] Failed to update popup auto-complete setting for Coder " + coderId + " in the database.",
+        			"Attempted to update auto-completion settings for text fields in statement popup windows for Coder " + coderId + ", but the database access failed.",
         			e);
         	Dna.logger.log(l);
 		}
@@ -1023,56 +1122,6 @@ public class Sql {
 		return text;
 	}
 
-	/**
-	 * A class that contains a JDBC connection, a prepared statement, and a
-	 * result set for processing results in another class and closing the
-	 * connection there when done. For example, the class can be used to
-	 * transport results between the {@link sql.Sql Sql} class and a Swing
-	 * worker. The Swing worker can use the result set and then invoke the
-	 * {@code close} method to close the connection when done.
-	 */
-	public class SqlResults {
-		ResultSet rs;
-		PreparedStatement ps;
-		Connection c;
-		
-		/**
-		 * Create a new instance of an {@link SqlResults}
-		 * container.
-		 * 
-		 * @param rs  A {@link java.sql.ResultSet ResultSet} object.
-		 * @param ps  A {@link java.sql.PreparedStatement PreparedStatement}.
-		 * @param c   A {@link java.sql.Connection Connection} object.
-		 */
-		public SqlResults(ResultSet rs, PreparedStatement ps, Connection c) {
-			this.rs = rs;
-			this.ps = ps;
-			this.c = c;
-		}
-
-		public void close() {
-			try {
-				rs.close();
-				ps.close();
-				c.close();
-			} catch (SQLException e) {
-				LogEvent l = new LogEvent(Logger.MESSAGE,
-						"[SQL] Failed to close SQL results.",
-						"Tried to close an SQL connection, statement, and result set, and there was an error. There is no data loss, but if this keeps happening, it will eat a lot of resources.");
-				Dna.logger.log(l);
-			}
-		}
-		
-		/**
-		 * Get the result set.
-		 * 
-		 * @return An SQL/JDBC result set.
-		 */
-		public ResultSet getResultSet() {
-			return rs;
-		}
-	}
-	
 	/**
 	 * Query the database for shallow representations of all documents (i.e.,
 	 * the documents without their text or any contained statements but with
@@ -1375,7 +1424,7 @@ public class Sql {
 				statementId = s1.getGeneratedKeys().getInt(1);
 			}
 			l = new LogEvent(Logger.MESSAGE,
-					"[SQL]     Transaction: Row with ID " + statementId + " added to the STATEMENTS table.",
+					"[SQL]  ├─ Transaction: Row with ID " + statementId + " added to the STATEMENTS table.",
 					"Added a row to the STATEMENTS table during the transaction. The new statement has ID " + statementId + ".");
 			Dna.logger.log(l);
 			for (int i = 0; i < statement.getValues().size(); i++) {
@@ -1397,18 +1446,18 @@ public class Sql {
 					try {
 						s6.executeUpdate();
 						l = new LogEvent(Logger.MESSAGE,
-								"[SQL]     Transaction: Added \"" + value + "\" to the ATTRIBUTES table.",
+								"[SQL]  ├─ Transaction: Added \"" + value + "\" to the ATTRIBUTES table.",
 								"Added a row with value \"" + value + "\" to the ATTRIBUTES table during the transaction.");
 						Dna.logger.log(l);
 					} catch (SQLException e2) {
 						if (e2.getMessage().contains("UNIQUE constraint failed")) {
 							l = new LogEvent(Logger.MESSAGE,
-									"[SQL]     Transaction: Value \"" + value + "\" was already present in the ATTRIBUTES table.",
+									"[SQL]  ├─ Transaction: Value \"" + value + "\" was already present in the ATTRIBUTES table.",
 									"A row with value \"" + value + "\" did not have to be added to the ATTRIBUTES table during the transaction because it was already present.");
 							Dna.logger.log(l);
 						} else {
 							l = new LogEvent(Logger.WARNING,
-									"[SQL] Failed to add value \"" + value + "\" to the ATTRIBUTES table.",
+									"[SQL]  ├─ Failed to add value \"" + value + "\" to the ATTRIBUTES table.",
 									"Failed to add value \"" + value + "\" to the ATTRIBUTES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
 									e2);
 							Dna.logger.log(l);
@@ -1422,7 +1471,7 @@ public class Sql {
 						attributeId = r.getInt("ID");
 					}
 					l = new LogEvent(Logger.MESSAGE,
-							"[SQL]     Transaction: Attribute ID identified as " + attributeId + ".",
+							"[SQL]  ├─ Transaction: Attribute ID identified as " + attributeId + ".",
 							"The attribute for value \"" + value + "\", which was added to, or identified in, the ATTRIBUTES table during the transaction, has ID " + attributeId + ".");
 					Dna.logger.log(l);
 					s2.setInt(1, statementId);
@@ -1430,7 +1479,7 @@ public class Sql {
 					s2.setInt(3, attributeId);
 					s2.executeUpdate();
 					l = new LogEvent(Logger.MESSAGE,
-							"[SQL]     Transaction: Added a value to the DATASHORTTEXT table for Variable " + statement.getValues().get(i).getVariableId() + ".",
+							"[SQL]  ├─ Transaction: Added a value to the DATASHORTTEXT table for Variable " + statement.getValues().get(i).getVariableId() + ".",
 							"Added a row with attribute ID " + attributeId + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATASHORTTEXT table during the transaction.");
 					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("long text")) {
@@ -1439,7 +1488,7 @@ public class Sql {
 					s3.setString(3, (String) statement.getValues().get(i).getValue());
 					s3.executeUpdate();
 					l = new LogEvent(Logger.MESSAGE,
-							"[SQL]     Transaction: Added a value to the DATALONGTEXT table for Variable " + statement.getValues().get(i).getVariableId() + ".",
+							"[SQL]  ├─ Transaction: Added a value to the DATALONGTEXT table for Variable " + statement.getValues().get(i).getVariableId() + ".",
 							"Added a row for Variable " + statement.getValues().get(i).getVariableId() + " to the DATALONGTEXT table during the transaction.");
 					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("integer")) {
@@ -1448,7 +1497,7 @@ public class Sql {
 					s4.setInt(3, (int) statement.getValues().get(i).getValue());
 					s4.executeUpdate();
 					l = new LogEvent(Logger.MESSAGE,
-							"[SQL]     Transaction: Added a value to the DATAINTEGER table for Variable " + statement.getValues().get(i).getVariableId() + ".",
+							"[SQL]  ├─ Transaction: Added a value to the DATAINTEGER table for Variable " + statement.getValues().get(i).getVariableId() + ".",
 							"Added a row with Value " + (int) statement.getValues().get(i).getValue() + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATAINTEGER table during the transaction.");
 					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("boolean")) {
@@ -1457,19 +1506,19 @@ public class Sql {
 					s5.setInt(3, (int) statement.getValues().get(i).getValue());
 					s5.executeUpdate();
 					l = new LogEvent(Logger.MESSAGE,
-							"[SQL]     Transaction: Added a value to the DATABOOLEAN table for Variable " + statement.getValues().get(i).getVariableId() + ".",
+							"[SQL]  ├─ Transaction: Added a value to the DATABOOLEAN table for Variable " + statement.getValues().get(i).getVariableId() + ".",
 							"Added a row with Value " + (int) statement.getValues().get(i).getValue() + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATABOOLEAN table during the transaction.");
 					Dna.logger.log(l);
 				}
 			}
 			conn.commit();
 			l = new LogEvent(Logger.MESSAGE,
-					"[SQL] Completed SQL transaction to add Statement " + statementId + ".",
+					"[SQL]  └─ Completed SQL transaction to add Statement " + statementId + ".",
 					"Completed SQL transaction to add a new statement with ID " + statementId + " to Document " + documentId + ". The contents have been written into the database.");
 			Dna.logger.log(l);
 		} catch (SQLException e) {
 			LogEvent l = new LogEvent(Logger.ERROR,
-					"[SQL] Failed to add statement to Document " + documentId + ".",
+					"[SQL]  └─ Failed to add statement to Document " + documentId + ".",
 					"Failed to add statement to Document " + documentId + ". Check the connection and database availability.",
 					e);
 			Dna.logger.log(l);
@@ -1510,7 +1559,7 @@ public class Sql {
 					s1.setInt(3, variableId);
 					s1.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
-							"[SQL]     Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
+							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
 							"Variable " + variableId + " (boolean) in Statement " + statementId + " was updated in the SQL transaction with value: " + (int) values.get(i).getValue() + ".");
 					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("integer")) {
@@ -1519,7 +1568,7 @@ public class Sql {
 					s2.setInt(3, variableId);
 					s2.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
-							"[SQL]     Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
+							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
 							"Variable " + variableId + " (integer) in Statement " + statementId + " was updated in the SQL transaction with value: " + (int) values.get(i).getValue() + ".");
 					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("long text")) {
@@ -1528,7 +1577,7 @@ public class Sql {
 					s3.setInt(3, variableId);
 					s3.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
-							"[SQL]     Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
+							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
 							"Variable " + variableId + " (long text) in Statement " + statementId + " was updated in the SQL transaction.");
 					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("short text")) {
@@ -1562,7 +1611,7 @@ public class Sql {
 							attributeId = r.getInt(1);
 						}
 						LogEvent e2 = new LogEvent(Logger.MESSAGE,
-								"[SQL]     Attribute with ID " + attributeId + " added to the transaction.",
+								"[SQL]  ├─ Attribute with ID " + attributeId + " added to the transaction.",
 								"An attribute with ID " + attributeId + " and value \"" + attribute.getValue() + "\" was created for variable ID " + variableId + " and added to the SQL transaction.");
 						Dna.logger.log(e2);
 					}
@@ -1573,19 +1622,19 @@ public class Sql {
 					s4.setInt(3, variableId);
 					s4.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
-							"[SQL]     Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
+							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
 							"Variable " + variableId + " (short text) in Statement " + statementId + " was updated in the SQL transaction with Attribute " + attributeId + ".");
 					Dna.logger.log(e2);
 				}
 			}
 			conn.commit();
 			LogEvent e2 = new LogEvent(Logger.MESSAGE,
-					"[SQL] Completed SQL transaction to update Statement " + statementId + ".",
+					"[SQL]  └─ Completed SQL transaction to update Statement " + statementId + ".",
 					"Completed SQL transaction to update the variables in the statement with ID " + statementId + ". The contents have been written into the database.");
 			Dna.logger.log(e2);
 		} catch (SQLException e) {
 			LogEvent e2 = new LogEvent(Logger.ERROR,
-					"[SQL] Statement " + statementId + " could not be updated in the database.",
+					"[SQL]  └─ Statement " + statementId + " could not be updated in the database.",
 					"When the statement popup window for Statement " + statementId + " was closed, the contents for the different variables could not be saved into the database. The database still contains the old values before the contents were edited. Please double-check to make sure that the statement contains the right values for all variables. Check whether the database may be locked and close all programs other than DNA that are currently accessing the database before trying again.",
 					e);
 			Dna.logger.log(e2);
@@ -1842,8 +1891,8 @@ public class Sql {
 			    statements.add(new Statement(statementId, r1.getInt("CoderId"), r1.getInt("Start"), r1.getInt("Stop"), statementTypeId, values, sColor, cColor, r1.getString("StatementTypeLabel")));
 			}
 			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[SQL] " + statements.size() + " statements have been retrieved for Document " + documentId + ".",
-					statements.size() + " statements have been retrieved for Document " + documentId + ".");
+					"[SQL] " + statements.size() + " statement(s) have been retrieved for Document " + documentId + ".",
+					statements.size() + " statement(s) have been retrieved for Document " + documentId + ".");
 			Dna.logger.log(l);
 		} catch (SQLException e) {
 			LogEvent l = new LogEvent(Logger.WARNING,
@@ -1917,8 +1966,8 @@ public class Sql {
             	attributesList.add(new Attribute(r1.getInt("ID"), r1.getString("Value"), color, r1.getString("Type"), r1.getString("Alias"), r1.getString("Notes"), r1.getInt("ChildOf"), inDatabase));
             }
         	LogEvent e = new LogEvent(Logger.MESSAGE,
-        			"[SQL] " + attributesList.size() + " attribute(s) retrieved for Variable " + variableId + ".",
-        			attributesList.size() + " attribute(s) retrieved from the database for Variable " + variableId + ".");
+        			"[SQL] Retrieved " + attributesList.size() + " attribute(s) for Variable " + variableId + ".",
+        			"Retrieved " + attributesList.size() + " attribute(s) from the database for Variable " + variableId + ".");
         	Dna.logger.log(e);
 		} catch (SQLException e1) {
         	LogEvent e = new LogEvent(Logger.WARNING,

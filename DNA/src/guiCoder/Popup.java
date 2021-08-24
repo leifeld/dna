@@ -79,11 +79,7 @@ public class Popup extends JDialog {
 		Popup.statementId = statement.getId();
 		this.los = location;
 		this.textFieldWidth = coder.getPopupWidth();
-		if (coder.getColorByCoder() == 1) {
-			this.color = coder.getColor();
-		} else {
-			this.color = statement.getStatementTypeColor();
-		}
+		this.color = statement.getStatementTypeColor();
 		if (coder.getPopupDecoration() == 1) {
 			this.windowDecoration = true;
 			this.setModal(true);
@@ -198,6 +194,7 @@ public class Popup extends JDialog {
 				if (question == 0) {
 					Dna.sql.deleteStatement(statementId);
 					Dna.guiCoder.documentPanel.textPanel.paintStatements();
+					Dna.guiCoder.documentTableModel.decreaseFrequency(documentId);
 					dispose();
 				}
 			}

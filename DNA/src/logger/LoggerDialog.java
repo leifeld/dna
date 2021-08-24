@@ -490,7 +490,7 @@ public class LoggerDialog extends JDialog {
         		String s = ((LocalDateTime) value).format(formatter);
         		c = renderer.getTableCellRendererComponent(table, s, isSelected, hasFocus, row, column);
         	} else if (column == 5) {
-        		if ((int) value == -1) {
+        		if (Dna.sql == null || (int) value == -1) {
         			value = null;
         		} else {
         			Coder coder = Dna.sql.getCoder((int) value);

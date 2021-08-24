@@ -250,7 +250,7 @@ public class TextPanel extends JPanel implements CoderListener {
 					int selectionEnd = textWindow.getSelectionEnd();
 					Statement statement = new Statement(-1, coder.getId(), selectionStart, selectionEnd, statementType.getId(), statementType.getVariables());
 					Dna.sql.addStatement(statement, documentId);
-					Dna.guiCoder.documentTableModel.updateFrequency(documentId);
+					Dna.guiCoder.documentTableModel.increaseFrequency(documentId);
 					paintStatements();
 					textWindow.setCaretPosition(selectionEnd);
 				}
@@ -311,6 +311,7 @@ public class TextPanel extends JPanel implements CoderListener {
 			this.coder = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
 		    Font font = new Font("Monospaced", Font.PLAIN, this.coder.getFontSize());
 	        textWindow.setFont(font);
+	        paintStatements();
 		}
 	}
 }

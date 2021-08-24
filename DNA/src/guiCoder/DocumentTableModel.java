@@ -132,10 +132,18 @@ public class DocumentTableModel extends AbstractTableModel {
 		return Dna.sql.getDocumentText(documentId);
 	}
 	
-	public void updateFrequency(int documentId) {
+	public void increaseFrequency(int documentId) {
 		int row = getModelRowById(documentId);
 		rows.get(row).setFrequency(rows.get(row).getFrequency() + 1);
 		fireTableCellUpdated(row, 2);
+	}
+
+	public void decreaseFrequency(int documentId) {
+		int row = getModelRowById(documentId);
+		if (rows.get(row).getFrequency() > 0) {
+			rows.get(row).setFrequency(rows.get(row).getFrequency() - 1);
+			fireTableCellUpdated(row, 2);
+		}
 	}
 
 	public void removeDocuments(int[] rows) {
