@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import guiCoder.GuiCoder;
+import logger.LogEvent;
 import logger.Logger;
 import sql.Sql;
 
@@ -12,8 +13,8 @@ public class Dna {
 	public static GuiCoder guiCoder;
 	public static Logger logger;
 	public static Sql sql;
-	public final String date;
-	public final String version;
+	public static final String date = "2021-08-25";
+	public static final String version = "3.0.0";
 	/**
 	 * Keep a list of classes that depend on resets of the {@link #sql} slot,
 	 * including setting it to null, for example the document panel. 
@@ -26,10 +27,12 @@ public class Dna {
 	public static List<CoderListener> coderListeners = new ArrayList<CoderListener>();
 	
 	public Dna() {
-		date = "2021-08-23";
-		version = "3.0.0";
-
 		logger = new Logger();
+
+		LogEvent l = new LogEvent(Logger.MESSAGE,
+				"DNA started. Version " + version + " (" + date + ").",
+				"DNA started. Version " + version + " (" + date + ").");
+		Dna.logger.log(l);
 		
 		guiCoder = new GuiCoder();
 		addSqlListener(guiCoder);

@@ -232,25 +232,26 @@ public class LoggerDialog extends JDialog {
 					for(int row = 0; row < table.getRowCount(); row++) {
 						events[row] = new OutputLogEvent(Dna.logger.getRow(table.convertRowIndexToModel(row)));
 					}
+					OutputLog log = new OutputLog(Dna.version, Dna.date, events);
 					String s = "";
 					if (format.equals("xml")) {
 						XStream xstream = new XStream();
-						xstream.alias("events", logger.OutputLogEvent[].class); // give more pleasant names to the XML tags
-						xstream.alias("event", logger.OutputLogEvent.class);
-						s = xstream.toXML(events);
+						xstream.alias("log", OutputLog.class); // give more pleasant names to the XML tags
+						xstream.alias("event", OutputLogEvent.class);
+						s = xstream.toXML(log);
 					} else if (format.equals("json")) {
 						Gson prettyGson = new GsonBuilder()
 					            .setPrettyPrinting()
 					            .serializeNulls()
 					            .disableHtmlEscaping()
 					            .create();
-						s = prettyGson.toJson(events);
+						s = prettyGson.toJson(log);
 					}
 					try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
 						writer.write(s);
 						LogEvent l = new LogEvent(Logger.MESSAGE,
-								"Log in " + format.toUpperCase() + " format was save to disk.",
-								"Log in " + format.toUpperCase() + " format was save to file: " + file.getAbsolutePath() + ".");
+								"Log in " + format.toUpperCase() + " format was saved to disk.",
+								"Log in " + format.toUpperCase() + " format was saved to file: " + file.getAbsolutePath() + ".");
 						Dna.logger.log(l);
 						JOptionPane.showMessageDialog(null,
 								"The log was saved as:\n" + new File(filename).getAbsolutePath(),

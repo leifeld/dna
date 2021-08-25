@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter;
  * A simplified version of {@link logger.LogEvent} objects for output to XML or
  * JSON data files. 
  */
-public class OutputLogEvent implements Serializable {
+class OutputLogEvent implements Serializable {
 	private static final long serialVersionUID = -2275301137294798275L;
 	String date;
 	int priority, coder;
@@ -19,7 +19,7 @@ public class OutputLogEvent implements Serializable {
 	 * 
 	 * @param l  A {@link logger.LogEvent} object.
 	 */
-	public OutputLogEvent(LogEvent l) {
+	OutputLogEvent(LogEvent l) {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss.SSS");
 		this.date = l.getTime().format(formatter);
 		this.priority = l.getPriority();
