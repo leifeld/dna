@@ -35,8 +35,8 @@ import logger.Logger;
 
 public class TextPanel extends JPanel implements CoderListener {
 	private static final long serialVersionUID = -8094978928012991210L;
-	JTextPane textWindow;
-	JScrollPane textScrollPane;
+	private JTextPane textWindow;
+	private JScrollPane textScrollPane;
 	private DefaultStyledDocument doc;
 	StyleContext sc;
 	JPopupMenu popmen;
@@ -96,8 +96,46 @@ public class TextPanel extends JPanel implements CoderListener {
 			}
 		});
 	}
-
-	public void paintStatements() {
+	
+	/**
+	 * Set the vertical position to scroll to in the scroll pane of the text
+	 * pane, for example for restoring the viewport location after reloading
+	 * documents from the database.
+	 * 
+	 * @param y  Vertical point position of the viewport of the scroll pane.
+	 * 
+	 * @see {@link #getViewportPosition()}
+	 * @see {@link guiCoder.DocumentPanel#getSelectedDocumentId()}
+	 * @see {@link guiCoder.DocumentPanel#setUserLocation(int documentId, int y)}
+	 * @see {@link guiCoder.DocumentPanel#getViewportPosition()}
+	 * @see {@link guiCoder.DocumentPanel#setViewportPosition(int y)}
+	 */
+	void setViewportPosition(int y) {
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				textScrollPane.getViewport().setViewPosition(new Point(0, y));
+			}
+		});
+	}
+	
+	/**
+	 * Return the vertical position that is currently being displayed in the
+	 * scroll pane, for example for restoring it after reloading documents from
+	 * the database.
+	 * 
+	 * @return  Vertical point position of the viewport of the scroll pane.
+	 * 
+	 * @see {@link #setViewportPosition(int y)}
+	 * @see {@link guiCoder.DocumentPanel#getSelectedDocumentId()}
+	 * @see {@link guiCoder.DocumentPanel#setUserLocation(int documentId, int y)}
+	 * @see {@link guiCoder.DocumentPanel#getViewportPosition()}
+	 * @see {@link guiCoder.DocumentPanel#setViewportPosition(int y)}
+	 */
+	int getViewportPosition() {
+		return (int) textScrollPane.getViewport().getViewPosition().getY();
+	}
+	
+	void paintStatements() {
 		if (documentId > -1) {
 			//remove all initial foreground color styles
 			int initialStart = 0;
@@ -125,7 +163,7 @@ public class TextPanel extends JPanel implements CoderListener {
 		}
 	}
 	
-	public void setContents(int documentId, String text) {
+	void setContents(int documentId, String text) {
 		this.textWindow.setText(text);
 		this.documentId = documentId;
 		paintStatements();
@@ -137,7 +175,7 @@ public class TextPanel extends JPanel implements CoderListener {
 	 * @param me  A mouse event.
 	 * @throws ArrayIndexOutOfBoundsException
 	 */
-	public void mouseListenPopup(MouseEvent me) throws ArrayIndexOutOfBoundsException {
+	private void mouseListenPopup(MouseEvent me) throws ArrayIndexOutOfBoundsException {
 		if (me.isPopupTrigger()) {
 			if (!(textWindow.getSelectedText() == null) && coder != null && coder.getPermissionAddStatements() == 1) {
 				popupMenu(me.getComponent(), me.getX(), me.getY());
@@ -145,7 +183,7 @@ public class TextPanel extends JPanel implements CoderListener {
 		}
 	}
 
-	public void mouseListenSelect(MouseEvent me) throws ArrayIndexOutOfBoundsException {
+	private void mouseListenSelect(MouseEvent me) throws ArrayIndexOutOfBoundsException {
 		if (me.isPopupTrigger()) {
 			if (!(textWindow.getSelectedText() == null)) {
 				popupMenu(me.getComponent(), me.getX(), me.getY());
@@ -192,48 +230,50 @@ public class TextPanel extends JPanel implements CoderListener {
 		}
 	}
 	
-	public void setDocumentText(String text) {
-		textWindow.setText(text);
-	}
-
-	public String getDocumentText() {
+	private String getDocumentText() {
 		return(textWindow.getText());
 	}
 
-	public void setDocumentId(int documentId) {
+	/*
+	private void setDocumentText(String text) {
+		textWindow.setText(text);
+	}
+
+	private void setDocumentId(int documentId) {
 		this.documentId = documentId;
 	}
 
-	public int getDocumentId() {
+	private int getDocumentId() {
 		return this.documentId;
 	}
 	
-	public void highlightText(int startCaret, int stopCaret) {
+	private void highlightText(int startCaret, int stopCaret) {
 		textWindow.grabFocus();
 		textWindow.select(startCaret, stopCaret);
 	}
 	
-	public int getCaretPosition() {
+	private int getCaretPosition() {
 		return(textWindow.getCaretPosition());
 	}
-
-	public void setCaretPosition(int position) {
-		textWindow.setCaretPosition(position);
-	}
 	
-	public int getSelectionStart() {
+	private int getSelectionStart() {
 		return(textWindow.getSelectionStart());
 	}
 
-	public int getSelectionEnd() {
+	private int getSelectionEnd() {
 		return(textWindow.getSelectionEnd());
+	}
+	*/
+	
+	void setCaretPosition(int position) {
+		textWindow.setCaretPosition(position);
 	}
 	
 	public Point getLocationOnScreen() {
 		return(textWindow.getLocationOnScreen());
 	}
 	
-	public void popupMenu(Component comp, int x, int y) {
+	private void popupMenu(Component comp, int x, int y) {
 		popmen = new JPopupMenu();
 		ArrayList<StatementType> statementTypes = Dna.sql.getStatementTypes();
 		for (int i = 0; i < statementTypes.size(); i++) {

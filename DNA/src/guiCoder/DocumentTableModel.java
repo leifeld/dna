@@ -163,6 +163,15 @@ public class DocumentTableModel extends AbstractTableModel {
 		fireTableDataChanged();
 	}
 	
+	boolean containsId(int documentId) {
+		for (int i = 0 ; i < rows.size(); i ++) {
+			if (rows.get(i).getId() == documentId) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	/**
 	 * Add a list of {@link TableDocument} objects to the table model and notify
 	 * the listeners.

@@ -66,9 +66,10 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 	EditDocumentsAction editDocumentsAction;
 	RemoveDocumentsAction removeDocumentsAction;
 	BatchImportDocumentsAction batchImportDocumentsAction;
+	DocumentTableRefreshAction documentTableRefreshAction;
 	DocumentPanel documentPanel;
 	DocumentTableModel documentTableModel;
-	DocumentTableSwingWorker worker;
+	DocumentTableRefreshWorker worker;
 	public StatusBar statusBar;
 	CloseDatabaseAction closeDatabaseAction;
 	SaveProfileAction saveProfileAction;
@@ -186,6 +187,13 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 		JMenuItem batchImportDocumentsItem = new JMenuItem(batchImportDocumentsAction);
 		batchImportDocumentsAction.setEnabled(false);
 		documentMenu.add(batchImportDocumentsItem);
+		
+		// document menu: refresh document table
+		ImageIcon documentTableRefreshIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-refresh.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		documentTableRefreshAction = new DocumentTableRefreshAction("Refresh document table", documentTableRefreshIcon, "Fetch new documents from the database and insert them into the document table and remove deleted rows from the table", KeyEvent.VK_F);
+		JMenuItem documentTableRefreshItem = new JMenuItem(documentTableRefreshAction);
+		documentTableRefreshAction.setEnabled(false);
+		documentMenu.add(documentTableRefreshItem);
 
 		// settings menu: display about DNA window
 		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
@@ -201,7 +209,7 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 		
 		// document panel
 		documentTableModel = new DocumentTableModel();
-		documentPanel = new DocumentPanel(documentTableModel, addDocumentAction, editDocumentsAction, removeDocumentsAction, batchImportDocumentsAction);
+		documentPanel = new DocumentPanel(documentTableModel, addDocumentAction, editDocumentsAction, removeDocumentsAction, batchImportDocumentsAction, documentTableRefreshAction);
 		framePanel.add(documentPanel, BorderLayout.CENTER);
 		
 		// status bar
@@ -221,7 +229,7 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 	 */
 	private void reloadTableFromSql() {
 		if (Dna.sql != null) {
-    		worker = new DocumentTableSwingWorker();
+    		worker = new DocumentTableRefreshWorker();
             worker.execute();
 		} else {
             documentTableModel.clear();
@@ -237,6 +245,7 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
     	if (Dna.sql != null) {
 			addDocumentAction.setEnabled(true);
 			batchImportDocumentsAction.setEnabled(true);
+			documentTableRefreshAction.setEnabled(true);
 			if (closeDatabaseAction != null) {
 				closeDatabaseAction.setEnabled(true);
 			}
@@ -247,6 +256,7 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
     	} else {
 			addDocumentAction.setEnabled(false);
 			batchImportDocumentsAction.setEnabled(false);
+			documentTableRefreshAction.setEnabled(false);
 			if (closeDatabaseAction != null) {
 				closeDatabaseAction.setEnabled(false);
 			}
@@ -264,22 +274,40 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 	 * @see <a href="https://stackoverflow.com/questions/43161033/cant-add-tablerowsorter-to-jtable-produced-by-swingworker" target="_top">https://stackoverflow.com/questions/43161033/</a>
 	 * @see <a href="https://stackoverflow.com/questions/68884145/how-do-i-use-a-jdbc-swing-worker-with-connection-pooling-ideally-while-separati" target="_top">https://stackoverflow.com/questions/68884145/</a>
 	 */
-	private class DocumentTableSwingWorker extends SwingWorker<List<TableDocument>, TableDocument> {
-		long time;
-		
-		public DocumentTableSwingWorker() {
+	private class DocumentTableRefreshWorker extends SwingWorker<List<TableDocument>, TableDocument> {
+		/**
+		 * Time stamp to measure the duration it takes to update the table. The
+		 * duration is logged when the table has been updated.
+		 */
+		private long time;
+		/**
+		 * ID of the document that is currently selected. After updating the
+		 * table model and table, the document is selected again, and for this
+		 * the ID needs to be stored.
+		 */
+		private int selectedId;
+		/**
+		 * Vertical scroll position of the selected document in the text pane,
+		 * to restore it later and scroll back to the position from before the
+		 * table update.
+		 */
+		private int y;
+
+		public DocumentTableRefreshWorker() {
+    		time = System.nanoTime(); // take the time to compute later how long the updating took
     		statusBar.setDocumentRefreshing(true); // display a message in the status bar that documents are being loaded
-    		documentTableModel.clear();
+    		selectedId = documentPanel.getSelectedDocumentId(); // remember the document ID to select the same document when done
+    		y = documentPanel.getViewportPosition(); // remember the vertical position in the text area to go back to the same position when done
+    		documentTableModel.clear(); // remove all documents from the table model before re-populating the table
 			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI] Initializing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
 					"A new swing worker thread has been started to populate the document table with documents from the database in the background: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
 			Dna.logger.log(le);
-    		time = System.nanoTime();
 		}
 		
 		@Override
 		protected List<TableDocument> doInBackground() {
-			try (SqlResults s = Dna.sql.getTableDocumentResultSet();
+			try (SqlResults s = Dna.sql.getTableDocumentResultSet(); // result set and connection are automatically closed when done because SqlResults implements AutoCloseable
 					ResultSet rs = s.getResultSet();) {
 				while (rs.next()) {
 					TableDocument r = new TableDocument(
@@ -298,11 +326,11 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 							rs.getString("Type"),
 							rs.getString("Notes"),
 							LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC));
-					publish(r);
+					publish(r); // send the new document row out of the background thread
 				}
 			} catch (SQLException e) {
 				LogEvent le = new LogEvent(Logger.WARNING,
-						"[SQL] Could not retrieve documents from database.",
+						"[SQL]  ├─ Could not retrieve documents from database.",
 						"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved because there was a problem while processing the result set. The document table may be incomplete.",
 						e);
 				Dna.logger.log(le);
@@ -312,20 +340,21 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
         
         @Override
         protected void process(List<TableDocument> chunks) {
-        	documentTableModel.addRows(chunks);
+        	documentTableModel.addRows(chunks); // transfer a batch of rows to the table model
+			documentPanel.setUserLocation(selectedId, y); // select the document from before and scroll to the right position; skipped if the document not found in this batch
         }
 
         @Override
         protected void done() {
-            statusBar.setDocumentRefreshing(false);
-    		long elapsed = System.nanoTime();
+            statusBar.setDocumentRefreshing(false); // stop displaying the update message in the status bar
+    		long elapsed = System.nanoTime(); // measure time again for calculating difference
     		LogEvent le = new LogEvent(Logger.MESSAGE,
-    				"[GUI] (Re)loaded all " + documentTableModel.getRowCount() + " documents in " + (elapsed - time) / 1000000 + " milliseconds.",
+    				"[GUI]  ├─ (Re)loaded all " + documentTableModel.getRowCount() + " documents in " + (elapsed - time) / 1000000 + " milliseconds.",
     				"The document table swing worker loaded the " + documentTableModel.getRowCount() + " documents from the DNA database in the "
     				+ "background and stored them in the document table. This took " + (elapsed - time) / 1000000 + " seconds.");
     		Dna.logger.log(le);
 			le = new LogEvent(Logger.MESSAGE,
-					"[GUI] Closing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"[GUI]  └─ Closing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
 					"The document table has been populated with documents from the database. Closing thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
 			Dna.logger.log(le);
         }
@@ -877,6 +906,20 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 		}
 	}
 
+	// document refresh action
+	class DocumentTableRefreshAction extends AbstractAction {
+		public DocumentTableRefreshAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			DocumentTableRefreshWorker worker = new DocumentTableRefreshWorker();
+			worker.execute();
+			// documentPanel.textPanel.textScrollPane.getViewport().setViewPosition(new Point(0, 200));
+		}
+	}
+
 	// logger window action
 	class LoggerDialogAction extends AbstractAction {
 		public LoggerDialogAction(String text, ImageIcon icon, String desc, Integer mnemonic) {
@@ -897,7 +940,7 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 			putValue(MNEMONIC_KEY, mnemonic);
 		}
 		public void actionPerformed(ActionEvent e) {
-			new AboutWindow(Dna.dna.version, Dna.dna.date);
+			new AboutWindow(Dna.version, Dna.date);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: opened About DNA window.",
 					"Opened an About DNA window from the GUI.");

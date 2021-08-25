@@ -60,7 +60,7 @@ import logger.Logger;
 class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 	private DocumentTableModel documentTableModel;
 	TextPanel textPanel;
-	private JTable documentTable;
+	JTable documentTable;
 	private JTextField documentFilterField;
 	private JButton documentFilterResetButton;
 	private JLabel popupWidthLabel, fontSizeLabel;
@@ -83,7 +83,12 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 	 * @param BatchImportDocumentsAction An {@link Action} for creating a
 	 *   document batch importer window.
 	 */
-	public DocumentPanel(DocumentTableModel documentTableModel, Action addDocumentAction, Action editDocumentsAction, Action removeDocumentsAction, Action BatchImportDocumentsAction) {
+	public DocumentPanel(DocumentTableModel documentTableModel,
+			Action addDocumentAction,
+			Action editDocumentsAction,
+			Action removeDocumentsAction,
+			Action batchImportDocumentsAction,
+			Action documentTableRefreshAction) {
 		Dna.addCoderListener(this);
 		Dna.addSqlListener(this);
 		this.documentTableModel = documentTableModel;
@@ -174,6 +179,10 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 		editDocumentsButton.setText("Edit");
 		tb1.add(editDocumentsButton);
 
+		JButton documentTableRefreshButton = new JButton(documentTableRefreshAction);
+		documentTableRefreshButton.setText("Refresh");
+		tb1.add(documentTableRefreshButton);
+
 		ImageIcon documentFilterResetIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		documentFilterResetButton = new JButton(documentFilterResetIcon);
 		documentFilterResetButton.addActionListener(new ActionListener() {
@@ -214,7 +223,7 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 		tb1.addSeparator(new Dimension(8, 8));
 		tb1.add(documentFilterField);
 		tb1.add(documentFilterResetButton);
-		
+
         tb1.setRollover(true);
         toolbarPanel.add(tb1, BorderLayout.WEST);
         
@@ -543,6 +552,73 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 		this.add(textPanel, BorderLayout.SOUTH);
 	}
 
+	/**
+	 * Set the vertical position to scroll to in the scroll pane of the text
+	 * panel, for example for restoring the viewport location after reloading
+	 * documents from the database.
+	 * 
+	 * @param y  Vertical point position of the viewport of the scroll pane.
+	 * 
+	 * @see {@link #getViewportPosition()}
+	 * @see {@link #getSelectedDocumentId()}
+	 * @see {@link #setUserLocation(int documentId, int y)}
+	 * @see {@link guiCoder.TextPanel#getViewportPosition()}
+	 * @see {@link guiCoder.TextPanel#setViewportPosition(int y)}
+	 */
+	public void setViewportPosition(int y) {
+		this.textPanel.setViewportPosition(y);
+	}
+	
+	/**
+	 * Return the vertical position that is currently being displayed in the
+	 * text panel, for example for restoring it after reloading documents from
+	 * the database.
+	 * 
+	 * @return  Vertical point position of the viewport of the scroll pane.
+	 * 
+	 * @see {@link #setViewportPosition(int y)}
+	 * @see {@link #getSelectedDocumentId()}
+	 * @see {@link #setUserLocation(int documentId, int y)}
+	 * @see {@link guiCoder.TextPanel#getViewportPosition()}
+	 * @see {@link guiCoder.TextPanel#setViewportPosition(int y)}
+	 */
+	int getViewportPosition() {
+		return this.textPanel.getViewportPosition();
+	}
+	
+	/**
+	 * Select a specific document in the document table and scroll to a vertical
+	 * position in the document. This method is useful to restore a viewport
+	 * after reloading documents from the database.
+	 * 
+	 * @param documentId The ID of the document to be selected.
+	 * @param y          The vertical viewport point position to be scrolled to.
+	 */
+	void setUserLocation(int documentId, int y) {
+		int modelRowIndex = documentTableModel.getModelRowById(documentId);
+		if (modelRowIndex > -1) {
+			int tableRow = documentTable.convertRowIndexToView(modelRowIndex);
+			this.documentTable.setRowSelectionInterval(tableRow, tableRow);
+			this.setViewportPosition(y);
+		}
+	}
+	
+	/**
+	 * Retrieve the ID of the document that is currently selected in the table.
+	 * 
+	 * @return  The document ID. Can be {@code -1} if nothing is selected.
+	 */
+	int getSelectedDocumentId() {
+		int viewRow = this.documentTable.getSelectedRow();
+		if (viewRow > -1) {
+			int modelRow = this.convertRowIndexToModel(viewRow);
+			int id = this.documentTableModel.getIdByModelRow(modelRow);
+			return id;
+		} else {
+			return -1;
+		}
+	}
+	
 	/**
 	 * Return the indices of the rows that are currently selected in the
 	 * document table.
