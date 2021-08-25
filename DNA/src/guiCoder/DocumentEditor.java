@@ -10,8 +10,6 @@ import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -48,6 +46,7 @@ import dna.Document;
 import dna.Statement;
 import logger.LogEvent;
 import logger.Logger;
+import sql.Sql.SqlResults;
 
 @SuppressWarnings("serial")
 public class DocumentEditor extends JDialog {
@@ -220,17 +219,12 @@ public class DocumentEditor extends JDialog {
 		gbc.gridx = 1;
 		authorBox = new JXComboBox();
 		authorBox.setEditable(true);
-		JDBCWorker workerAuthor = new JDBCWorker("Author");
-        workerAuthor.execute();
-		authorBox.setSelectedItem("");
 		AutoCompleteDecorator.decorate(authorBox);
 		fieldsPanel.add(authorBox, gbc);
 		
 		gbc.gridy = 4;
 		gbc.gridx = 1;
 		sourceBox = new JXComboBox();
-		JDBCWorker workerSource = new JDBCWorker("Source");
-        workerSource.execute();
 		sourceBox.setEditable(true);
 		sourceBox.setSelectedItem("");
 		AutoCompleteDecorator.decorate(sourceBox);
@@ -239,8 +233,6 @@ public class DocumentEditor extends JDialog {
 		gbc.gridy = 5;
 		gbc.gridx = 1;
 		sectionBox = new JXComboBox();
-		JDBCWorker workerSection = new JDBCWorker("Section");
-        workerSection.execute();
 		sectionBox.setEditable(true);
 		sectionBox.setSelectedItem("");
 		AutoCompleteDecorator.decorate(sectionBox);
@@ -249,11 +241,11 @@ public class DocumentEditor extends JDialog {
 		gbc.gridy = 6;
 		gbc.gridx = 1;
 		typeBox = new JXComboBox();
-		JDBCWorker workerType = new JDBCWorker("Type");
-        workerType.execute();
 		typeBox.setEditable(true);
 		typeBox.setSelectedItem("");
 		AutoCompleteDecorator.decorate(typeBox);
+		JDBCWorker worker = new JDBCWorker();
+        worker.execute();
 		fieldsPanel.add(typeBox, gbc);
 
 		gbc.gridy = 7;
@@ -450,59 +442,66 @@ public class DocumentEditor extends JDialog {
 	 * Swing worker to populate the author, source, section, and type combo
 	 * boxes without blocking the event thread and GUI.
 	 * 
-	 * https://stackoverflow.com/questions/43161033/cant-add-tablerowsorter-to-jtable-produced-by-swingworker
+	 * @see <a href="https://stackoverflow.com/questions/43161033/cant-add-tablerowsorter-to-jtable-produced-by-swingworker" target="_top">https://stackoverflow.com/questions/43161033/</a>
+	 * @see <a href="https://stackoverflow.com/questions/68884145/how-do-i-use-a-jdbc-swing-worker-with-connection-pooling-ideally-while-separati" target="_top">https://stackoverflow.com/questions/68884145/</a>
 	 */
-	private class JDBCWorker extends SwingWorker<List<String>, String> {
-		String field;
+	private class JDBCWorker extends SwingWorker<List<String[]>, String[]> {
 		
-		public JDBCWorker(String field) {
+		/**
+		 * Initialize JDBC worker.
+		 */
+		public JDBCWorker() {
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Initializing thread to populate Document Editor: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
 					"Initializing a new thread to populate the author, source, section, and type combo boxes in a Document Editor dialog window: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
 			Dna.logger.log(l);
-			
-			this.field = field;
 		}
 		
         @Override
-        protected List<String> doInBackground() {
-        	try (Connection conn = Dna.sql.getDataSource().getConnection();
-        			PreparedStatement s = conn.prepareStatement("SELECT DISTINCT " + field + " FROM DOCUMENTS WHERE " + field + " IS NOT NULL ORDER BY " + field + ";")) {
-        		ResultSet result = s.executeQuery();
-    			while (result.next()) {
-    				publish(result.getString(field));
-    			}
+        protected List<String[]> doInBackground() {
+        	try (SqlResults s = Dna.sql.getDocumentFieldResultSet();
+					ResultSet rs = s.getResultSet();) {
+				while (rs.next()) {
+					String[] pair = new String[] {rs.getString("Field"), rs.getString("Value")};
+					publish(pair);
+				}
 			} catch (SQLException e) {
-				System.err.println("Could not establish connection to database to retrieve document field entries.");
-				e.printStackTrace();
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"[GUI] Could not retrieve document fields from database.",
+						"The document editor swing worker tried to retrieve all unique values for the author, source, section, and type fields of all documents from the database to display them in combo boxes, but some or all values could not be retrieved because there was a problem while processing the result set. The combo box choices may be incomplete.",
+						e);
+				Dna.logger.log(le);
 			}
 			return null;
         }
     	
         @SuppressWarnings("unchecked")
-		@Override
-        protected void process(List<String> chunks) {
-    		int w = authorBox.getWidth();
-    		int h = authorBox.getHeight();
-            for (String row : chunks) {
-            	if (field.equals("Author")) {
-                    authorBox.addItem(row);
-            	} else if (field.equals("Source")) {
-            		sourceBox.addItem(row);
-            	} else if (field.equals("Section")) {
-            		sectionBox.addItem(row);
-            	} else if (field.equals("Type")) {
-            		typeBox.addItem(row);
+		protected void process(List<String[]> chunks) {
+            for (String[] p: chunks) {
+            	if (p[0].equals("Author")) {
+                    authorBox.addItem(p[1]);
+            	} else if (p[0].equals("Source")) {
+            		sourceBox.addItem(p[1]);
+            	} else if (p[0].equals("Section")) {
+            		sectionBox.addItem(p[1]);
+            	} else if (p[0].equals("Type")) {
+            		typeBox.addItem(p[1]);
             	}
             }
-            authorBox.setPreferredSize(new Dimension(w, h));
-            sourceBox.setPreferredSize(new Dimension(w, h));
-            sectionBox.setPreferredSize(new Dimension(w, h));
-            typeBox.setPreferredSize(new Dimension(w, h));
         }
 
         @Override
         protected void done() {
+    		int w = authorBox.getWidth();
+    		int h = authorBox.getHeight();
+            authorBox.setPreferredSize(new Dimension(w, h));
+            sourceBox.setPreferredSize(new Dimension(w, h));
+            sectionBox.setPreferredSize(new Dimension(w, h));
+            typeBox.setPreferredSize(new Dimension(w, h));
+    		authorBox.setSelectedItem("");
+    		sourceBox.setSelectedItem("");
+    		sectionBox.setSelectedItem("");
+    		typeBox.setSelectedItem("");
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Closing thread to populate Document Editor: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
 					"All combo boxes in the Document Editor window have been filled. Closing thread to populate Document Editor: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");

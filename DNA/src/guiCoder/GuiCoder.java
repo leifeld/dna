@@ -261,8 +261,8 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 	 * Swing worker class for loading documents from the database and adding
 	 * them to the document table in a background thread.
 	 * 
-	 * https://stackoverflow.com/questions/43161033/cant-add-tablerowsorter-to-jtable-produced-by-swingworker
-	 * https://stackoverflow.com/questions/68884145/how-do-i-use-a-jdbc-swing-worker-with-connection-pooling-ideally-while-separati
+	 * @see <a href="https://stackoverflow.com/questions/43161033/cant-add-tablerowsorter-to-jtable-produced-by-swingworker" target="_top">https://stackoverflow.com/questions/43161033/</a>
+	 * @see <a href="https://stackoverflow.com/questions/68884145/how-do-i-use-a-jdbc-swing-worker-with-connection-pooling-ideally-while-separati" target="_top">https://stackoverflow.com/questions/68884145/</a>
 	 */
 	private class DocumentTableSwingWorker extends SwingWorker<List<TableDocument>, TableDocument> {
 		long time;

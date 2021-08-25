@@ -622,8 +622,8 @@ public class Sql {
 		}
 		// fill default data into the tables (Admin coder, settings, statement types)
 		s.add("INSERT INTO CODERS (ID, Name, Red, Green, Blue, Password, PermissionEditStatementTypes, PermissionEditCoders, PermissionEditOthersDocuments, PermissionEditOthersStatements) VALUES (1, 'Admin', 255, 255, 0, '" + encryptedAdminPassword + "', 1, 1, 1, 1);");
-		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('version', '" + Dna.dna.version + "');");
-		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('date', '" + Dna.dna.date + "');");
+		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('version', '" + Dna.version + "');");
+		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('date', '" + Dna.date + "');");
 		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (1, 'DNA Statement', 239, 208, 51);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(1, 'person', 'short text', 1);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(2, 'organization', 'short text', 1);");
@@ -1121,7 +1121,47 @@ public class Sql {
 		}
 		return text;
 	}
-
+	
+	/**
+	 * Query the database for unique values of the author, source, section, and
+	 * type meta-data fields of all documents in the database. These will be
+	 * used to populate JComboBoxes with possible choices for new documents or
+	 * altering existing documents.
+	 * 
+	 * @return An {@link SqlResults} object with a connection, statement, and
+	 *   result set.
+	 */
+	public SqlResults getDocumentFieldResultSet() {
+		ResultSet rs = null;
+		Connection conn = null;
+		PreparedStatement s = null;
+		String sql = "SELECT DISTINCT * " + 
+				"FROM (" + 
+				"SELECT 'Author' AS Field, Author as Value FROM DOCUMENTS " + 
+				"UNION ALL " + 
+				"SELECT 'Source' AS Field, Source as Value FROM DOCUMENTS " + 
+				"UNION ALL " + 
+				"SELECT 'Section' AS Field, Section as Value FROM DOCUMENTS " + 
+				"UNION ALL " + 
+				"SELECT 'Type' AS Field, Type as Value FROM DOCUMENTS) " + 
+				"WHERE Field IS NOT NULL ORDER BY Field, Value;";
+		try {
+			conn = getDataSource().getConnection();
+			s = conn.prepareStatement(sql);
+			rs = s.executeQuery();
+		} catch (SQLException e) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"[SQL] Could not retrieve document meta-data fields from database.",
+					"The document editor swing worker tried to retrieve all unique values for the selected documents' authors, sources, sections, and types from the database to display them as possible choices in the combo boxes for these variables, but the data could not be retrieved.",
+					e);
+			Dna.logger.log(le);
+		} finally {
+			// nothing gets closed here because the results would no longer be valid
+		}
+		SqlResults sr = new SqlResults(rs, s, conn);
+		return sr;
+	}
+	
 	/**
 	 * Query the database for shallow representations of all documents (i.e.,
 	 * the documents without their text or any contained statements but with
