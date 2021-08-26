@@ -60,7 +60,7 @@ import logger.Logger;
 class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 	private DocumentTableModel documentTableModel;
 	TextPanel textPanel;
-	JTable documentTable;
+	private JTable documentTable;
 	private JTextField documentFilterField;
 	private JButton documentFilterResetButton;
 	private JLabel popupWidthLabel, fontSizeLabel;
