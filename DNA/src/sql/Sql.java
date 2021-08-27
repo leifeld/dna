@@ -1943,6 +1943,40 @@ public class Sql {
 		}
 		return statements;
 	}
+
+	/**
+	 * Query the database for shallow representations of all statements (i.e.,
+	 * the statements for display in a statement table).
+	 * 
+	 * @return An {@link SqlResults} object.
+	 */
+	public SqlResults getTableStatementResultSet() {
+		String query = "SELECT S.ID, S.Coder, Start, Stop, "
+				+ "C.Red AS CoderRed, C.Green AS CoderGreen, C.Blue AS CoderBlue, "
+				+ "T.Red AS StatementTypeRed, T.Green AS StatementTypeGreen, T.Blue AS StatementTypeBlue, "
+				+ "Date, SUBSTRING(D.Text, Start + 1, Stop - Start) AS Text FROM STATEMENTS S "
+				+ "INNER JOIN CODERS C ON C.ID = S.Coder "
+				+ "INNER JOIN DOCUMENTS D ON D.ID = S.DocumentId "
+				+ "INNER JOIN STATEMENTTYPES T ON T.ID = S.StatementTypeId;";
+		ResultSet rs = null;
+		Connection conn = null;
+		PreparedStatement tableStatement = null;
+		try {
+			conn = getDataSource().getConnection();
+			tableStatement = conn.prepareStatement(query);
+			rs = tableStatement.executeQuery();
+		} catch (SQLException e) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"[SQL] Could not retrieve statements from database.",
+					"The statement table model swing worker tried to retrieve all statements from the database to display them in the statement table, but some or all statements could not be retrieved. The statement table may be incomplete.",
+					e);
+			Dna.logger.log(le);
+		} finally {
+			// nothing gets closed here because the results would no longer be valid
+		}
+		SqlResults s = new SqlResults(rs, tableStatement, conn);
+		return s;
+	}
 	
 	/**
 	 * Delete a statement from the database based on its ID.

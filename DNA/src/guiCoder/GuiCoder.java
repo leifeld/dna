@@ -47,6 +47,7 @@ import com.google.gson.JsonSyntaxException;
 import dna.Coder;
 import dna.Dna;
 import dna.TableDocument;
+import dna.TableStatement;
 import dna.Dna.SqlListener;
 import logger.LogEvent;
 import logger.Logger;
@@ -69,8 +70,10 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 	DocumentTableRefreshAction documentTableRefreshAction;
 	DocumentPanel documentPanel;
 	DocumentTableModel documentTableModel;
-	DocumentTableRefreshWorker worker;
-	public StatusBar statusBar;
+	DocumentTableRefreshWorker documentWorker;
+	StatementTableModel statementTableModel;
+	StatementTableRefreshWorker statementWorker;
+	StatusBar statusBar;
 	CloseDatabaseAction closeDatabaseAction;
 	SaveProfileAction saveProfileAction;
 	
@@ -207,9 +210,10 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 		JMenuItem loggerDialogItem = new JMenuItem(loggerDialogAction);
 		settingsMenu.add(loggerDialogItem);
 		
-		// document panel
+		// document panel (including statement side bar)
 		documentTableModel = new DocumentTableModel();
-		documentPanel = new DocumentPanel(documentTableModel, addDocumentAction, editDocumentsAction, removeDocumentsAction, batchImportDocumentsAction, documentTableRefreshAction);
+		statementTableModel = new StatementTableModel();
+		documentPanel = new DocumentPanel(documentTableModel, addDocumentAction, editDocumentsAction, removeDocumentsAction, batchImportDocumentsAction, documentTableRefreshAction, statementTableModel);
 		framePanel.add(documentPanel, BorderLayout.CENTER);
 		
 		// status bar
@@ -229,10 +233,13 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 	 */
 	private void reloadTableFromSql() {
 		if (Dna.sql != null) {
-    		worker = new DocumentTableRefreshWorker();
-            worker.execute();
+    		documentWorker = new DocumentTableRefreshWorker();
+            documentWorker.execute();
+            StatementTableRefreshWorker statementWorker = new StatementTableRefreshWorker();
+            statementWorker.execute();
 		} else {
             documentTableModel.clear();
+            statementTableModel.clear();
 		}
 	}
 	
@@ -356,6 +363,86 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 			le = new LogEvent(Logger.MESSAGE,
 					"[GUI]  └─ Closing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
 					"The document table has been populated with documents from the database. Closing thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+			Dna.logger.log(le);
+        }
+    }
+
+	/**
+	 * Swing worker class for loading statements from the database and adding
+	 * them to the statement table in a background thread.
+	 */
+	private class StatementTableRefreshWorker extends SwingWorker<List<TableStatement>, TableStatement> {
+		/**
+		 * Time stamp to measure the duration it takes to update the table. The
+		 * duration is logged when the table has been updated.
+		 */
+		private long time;
+		/**
+		 * ID of the document that is currently selected. After updating the
+		 * table model and table, the document is selected again, and for this
+		 * the ID needs to be stored.
+		 */
+		private int selectedId;
+		/**
+		 * ID of the selected statement in the statement table, to restore it
+		 * later and scroll back to the same position in the table after update.
+		 */
+
+		public StatementTableRefreshWorker() {
+    		time = System.nanoTime(); // take the time to compute later how long the updating took
+    		statusBar.setStatementRefreshing(true); // display a message in the status bar that statements are being loaded
+    		selectedId = documentPanel.getSelectedStatementId(); // remember the statement ID to select the same statement when done
+    		statementTableModel.clear(); // remove all documents from the table model before re-populating the table
+			LogEvent le = new LogEvent(Logger.MESSAGE,
+					"[GUI] Initializing thread to populate statement table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"A new swing worker thread has been started to populate the statement table with statements from the database in the background: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+			Dna.logger.log(le);
+		}
+		
+		@Override
+		protected List<TableStatement> doInBackground() {
+			try (SqlResults s = Dna.sql.getTableStatementResultSet(); // result set and connection are automatically closed when done because SqlResults implements AutoCloseable
+					ResultSet rs = s.getResultSet();) {
+				while (rs.next()) {
+					TableStatement r = new TableStatement(
+							rs.getInt("ID"),
+							rs.getInt("Coder"),
+							rs.getInt("Start"),
+							rs.getInt("Stop"),
+							LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC),
+							rs.getString("Text"),
+							new Color(rs.getInt("StatementTypeRed"), rs.getInt("StatementTypeGreen"), rs.getInt("StatementTypeBlue")),
+							new Color(rs.getInt("CoderRed"), rs.getInt("CoderGreen"), rs.getInt("CoderBlue")));
+					publish(r); // send the new statement row out of the background thread
+				}
+			} catch (SQLException e) {
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"[SQL]  ├─ Could not retrieve statements from database.",
+						"The statement table model swing worker tried to retrieve all statements from the database to display them in the statement table, but some or all statements could not be retrieved because there was a problem while processing the result set. The statement table may be incomplete.",
+						e);
+				Dna.logger.log(le);
+			}
+			return null;
+		}
+        
+        @Override
+        protected void process(List<TableStatement> chunks) {
+        	statementTableModel.addRows(chunks); // transfer a batch of rows to the table model
+			documentPanel.setSelectedStatementId(selectedId); // select the statement from before; skipped if the statement not found in this batch
+        }
+
+        @Override
+        protected void done() {
+            statusBar.setStatementRefreshing(false); // stop displaying the update message in the status bar
+    		long elapsed = System.nanoTime(); // measure time again for calculating difference
+    		LogEvent le = new LogEvent(Logger.MESSAGE,
+    				"[GUI]  ├─ (Re)loaded all " + statementTableModel.getRowCount() + " statements in " + (elapsed - time) / 1000000 + " milliseconds.",
+    				"The statement table swing worker loaded the " + statementTableModel.getRowCount() + " statements from the DNA database in the "
+    				+ "background and stored them in the statement table. This took " + (elapsed - time) / 1000000 + " seconds.");
+    		Dna.logger.log(le);
+			le = new LogEvent(Logger.MESSAGE,
+					"[GUI]  └─ Closing thread to populate statement table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"The statement table has been populated with statements from the database. Closing thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
 			Dna.logger.log(le);
         }
     }
@@ -566,14 +653,14 @@ public class GuiCoder extends JFrame implements LogListener, SqlListener {
 		 */
 		public void updateLog(int warnings, int errors) {
 			this.numWarnings = warnings;
-			warningButton.setText(this.numWarnings + "");
+			warningButton.setText(this.numWarnings + " warnings");
 			if (warnings == 0) {
 				warningButton.setVisible(false);
 			} else {
 				warningButton.setVisible(true);
 			}
 			this.numErrors = errors;
-			errorButton.setText(this.numErrors + "");
+			errorButton.setText(this.numErrors + " errors");
 			if (errors == 0) {
 				errorButton.setVisible(false);
 			} else {

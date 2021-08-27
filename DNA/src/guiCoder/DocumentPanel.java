@@ -23,6 +23,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JSpinner.DefaultEditor;
+import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
@@ -30,6 +31,7 @@ import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.UIDefaults;
+import javax.swing.border.EmptyBorder;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -60,6 +62,7 @@ import logger.Logger;
 class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 	private DocumentTableModel documentTableModel;
 	TextPanel textPanel;
+	private StatementPanel statementPanel;
 	private JTable documentTable;
 	private JTextField documentFilterField;
 	private JButton documentFilterResetButton;
@@ -88,7 +91,8 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 			Action editDocumentsAction,
 			Action removeDocumentsAction,
 			Action batchImportDocumentsAction,
-			Action documentTableRefreshAction) {
+			Action documentTableRefreshAction,
+			StatementTableModel statementTableModel) {
 		Dna.addCoderListener(this);
 		Dna.addSqlListener(this);
 		this.documentTableModel = documentTableModel;
@@ -120,7 +124,6 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 		JScrollPane documentTableScroller = new JScrollPane(documentTable);
 		documentTableScroller.setViewportView(documentTable);
 		documentTableScroller.setPreferredSize(new Dimension(1200, 200));
-		this.add(documentTableScroller, BorderLayout.CENTER);
 
 		// row filter
 		RowFilter<DocumentTableModel, Integer> documentFilter = new RowFilter<DocumentTableModel, Integer>() {
@@ -163,25 +166,9 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 		};
 		sorter.setRowFilter(documentFilter);
 		
-		// toolbar of the document panel
-		JPanel toolbarPanel = new JPanel(new BorderLayout());
-		JToolBar tb1 = new JToolBar("Document toolbar");
-		
-		JButton addDocumentButton = new JButton(addDocumentAction);
-		addDocumentButton.setText("Add");
-		tb1.add(addDocumentButton);
-
-		JButton removeDocumentsButton = new JButton(removeDocumentsAction);
-		removeDocumentsButton.setText("Remove");
-		tb1.add(removeDocumentsButton);
-
-		JButton editDocumentsButton = new JButton(editDocumentsAction);
-		editDocumentsButton.setText("Edit");
-		tb1.add(editDocumentsButton);
-
-		JButton documentTableRefreshButton = new JButton(documentTableRefreshAction);
-		documentTableRefreshButton.setText("Refresh");
-		tb1.add(documentTableRefreshButton);
+		JToolBar toolBar = new JToolBar();
+		toolBar.setFloatable(false);
+		toolBar.setRollover(true);
 
 		ImageIcon documentFilterResetIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		documentFilterResetButton = new JButton(documentFilterResetIcon);
@@ -194,7 +181,6 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 		documentFilterResetButton.setEnabled(false);
 		documentFilterResetButton.setToolTipText("Filter the documents using a regular expression.");
 		documentFilterField = new JXTextField("Document regex filter");
-		documentFilterField.setPreferredSize(new Dimension(200, 16));
 		documentFilterField.setToolTipText("Filter the documents using a regular expression.");
         documentFilterField.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
@@ -220,14 +206,97 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 			}
 		});
 		documentFilterField.setEnabled(false);
-		tb1.addSeparator(new Dimension(8, 8));
-		tb1.add(documentFilterField);
-		tb1.add(documentFilterResetButton);
+		toolBar.add(documentFilterField);
+		toolBar.add(documentFilterResetButton);
 
-        tb1.setRollover(true);
-        toolbarPanel.add(tb1, BorderLayout.WEST);
-        
-        JToolBar tb2 = new JToolBar();
+		JButton addDocumentButton = new JButton(addDocumentAction);
+		addDocumentButton.setText("Add");
+		toolBar.add(addDocumentButton);
+
+		JButton removeDocumentsButton = new JButton(removeDocumentsAction);
+		removeDocumentsButton.setText("Remove");
+		toolBar.add(removeDocumentsButton);
+
+		JButton editDocumentsButton = new JButton(editDocumentsAction);
+		editDocumentsButton.setText("Edit");
+		toolBar.add(editDocumentsButton);
+
+		JButton documentTableRefreshButton = new JButton(documentTableRefreshAction);
+		documentTableRefreshButton.setText("Refresh");
+		toolBar.add(documentTableRefreshButton);
+
+        // font size spinner
+        ImageIcon fontSizeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-typography.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		fontSizeLabel = new JLabel(fontSizeIcon);
+		fontSizeLabel.setToolTipText("Set the font size of the text area.");
+        fontSizeModel = new SpinnerNumberModel(14, 1, 99, 1);
+		fontSizeSpinner = new JSpinner(fontSizeModel);
+		((DefaultEditor) fontSizeSpinner.getEditor()).getTextField().setColumns(2);
+		fontSizeSpinner.setToolTipText("Set the font size of the text area.");
+		fontSizeLabel.setLabelFor(fontSizeSpinner);
+		fontSizeSpinner.addChangeListener(new ChangeListener(){
+			public void stateChanged(ChangeEvent e) {
+				if (Dna.sql != null) {
+					Dna.sql.setCoderFontSize(Dna.sql.getConnectionProfile().getCoderId(), (int) fontSizeSpinner.getValue());
+					Dna.fireCoderChange();
+				}
+			}
+		});
+		fontSizeLabel.setEnabled(false);
+		fontSizeSpinner.setEnabled(false);
+		toolBar.add(fontSizeLabel);
+		toolBar.add(fontSizeSpinner);
+
+		// color statements by coder toggle button
+		ImageIcon colorByCoderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-palette.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		colorByCoderButton = new JToggleButton(colorByCoderIcon);
+		colorByCoderButton.setToolTipText("If the button is selected, statements in the text are highlighted using the color of the coder who created them; otherwise using the statement type color.");
+		colorByCoderButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (Dna.sql != null) {
+					Dna.sql.setColorByCoder(Dna.sql.getConnectionProfile().getCoderId(), colorByCoderButton.isSelected());
+					Dna.fireCoderChange();
+				}
+			}
+		});
+		colorByCoderButton.setEnabled(false);
+		toolBar.addSeparator(new Dimension(3, 3));
+		toolBar.add(colorByCoderButton);
+
+		// popup window decoration toggle button
+		ImageIcon popupDecorationIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-border-outer.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		popupDecorationButton = new JToggleButton(popupDecorationIcon);
+		popupDecorationButton.setToolTipText("If the button is selected, statement popup windows will have buttons and a frame. If not, statements will auto-save.");
+		popupDecorationButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (Dna.sql != null) {
+					Dna.sql.setCoderPopupDecoration(Dna.sql.getConnectionProfile().getCoderId(), popupDecorationButton.isSelected());
+					Dna.fireCoderChange();
+				}
+			}
+		});
+		popupDecorationButton.setEnabled(false);
+		toolBar.addSeparator(new Dimension(3, 3));
+		toolBar.add(popupDecorationButton);
+
+		// popup auto-completion toggle button
+		ImageIcon popupAutoCompleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-forms.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		popupAutoCompleteButton = new JToggleButton(popupAutoCompleteIcon);
+		popupAutoCompleteButton.setToolTipText("If the button is selected, text fields in statement popup windows will have auto-complete activated for entries.");
+		popupAutoCompleteButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (Dna.sql != null) {
+					Dna.sql.setCoderPopupAutoComplete(Dna.sql.getConnectionProfile().getCoderId(), popupAutoCompleteButton.isSelected());
+					Dna.fireCoderChange();
+				}
+			}
+		});
+		popupAutoCompleteButton.setEnabled(false);
+		toolBar.addSeparator(new Dimension(3, 3));
+		toolBar.add(popupAutoCompleteButton);
 
 		// popup width spinner
         ImageIcon popupWidthIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-chart-arrows.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
@@ -248,85 +317,12 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 		});
 		popupWidthLabel.setEnabled(false);
 		popupWidthSpinner.setEnabled(false);
-		tb2.add(popupWidthLabel);
-		tb2.add(popupWidthSpinner);
+		toolBar.add(popupWidthLabel);
+		toolBar.add(popupWidthSpinner);
 		
-		// popup window decoration toggle button
-		ImageIcon popupDecorationIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-border-outer.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
-		popupDecorationButton = new JToggleButton(popupDecorationIcon);
-		popupDecorationButton.setToolTipText("If the button is selected, statement popup windows will have buttons and a frame. If not, statements will auto-save.");
-		popupDecorationButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				if (Dna.sql != null) {
-					Dna.sql.setCoderPopupDecoration(Dna.sql.getConnectionProfile().getCoderId(), popupDecorationButton.isSelected());
-					Dna.fireCoderChange();
-				}
-			}
-		});
-		popupDecorationButton.setEnabled(false);
-		tb2.addSeparator(new Dimension(3, 3));
-		tb2.add(popupDecorationButton);
-
-		// popup auto-completion toggle button
-		ImageIcon popupAutoCompleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-forms.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
-		popupAutoCompleteButton = new JToggleButton(popupAutoCompleteIcon);
-		popupAutoCompleteButton.setToolTipText("If the button is selected, text fields in statement popup windows will have auto-complete activated for entries.");
-		popupAutoCompleteButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				if (Dna.sql != null) {
-					Dna.sql.setCoderPopupAutoComplete(Dna.sql.getConnectionProfile().getCoderId(), popupAutoCompleteButton.isSelected());
-					Dna.fireCoderChange();
-				}
-			}
-		});
-		popupAutoCompleteButton.setEnabled(false);
-		tb2.addSeparator(new Dimension(3, 3));
-		tb2.add(popupAutoCompleteButton);
-
-		// color statements by coder toggle button
-		ImageIcon colorByCoderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-palette.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
-		colorByCoderButton = new JToggleButton(colorByCoderIcon);
-		colorByCoderButton.setToolTipText("If the button is selected, statements in the text are highlighted using the color of the coder who created them; otherwise using the statement type color.");
-		colorByCoderButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				if (Dna.sql != null) {
-					Dna.sql.setColorByCoder(Dna.sql.getConnectionProfile().getCoderId(), colorByCoderButton.isSelected());
-					Dna.fireCoderChange();
-				}
-			}
-		});
-		colorByCoderButton.setEnabled(false);
-		tb2.addSeparator(new Dimension(3, 3));
-		tb2.add(colorByCoderButton);
-		
-        // font size spinner
-        ImageIcon fontSizeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-typography.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
-		fontSizeLabel = new JLabel(fontSizeIcon);
-		fontSizeLabel.setToolTipText("Set the font size of the text area.");
-        fontSizeModel = new SpinnerNumberModel(14, 1, 99, 1);
-		fontSizeSpinner = new JSpinner(fontSizeModel);
-		((DefaultEditor) fontSizeSpinner.getEditor()).getTextField().setColumns(2);
-		fontSizeSpinner.setToolTipText("Set the font size of the text area.");
-		fontSizeLabel.setLabelFor(fontSizeSpinner);
-		fontSizeSpinner.addChangeListener(new ChangeListener(){
-			public void stateChanged(ChangeEvent e) {
-				if (Dna.sql != null) {
-					Dna.sql.setCoderFontSize(Dna.sql.getConnectionProfile().getCoderId(), (int) fontSizeSpinner.getValue());
-					Dna.fireCoderChange();
-				}
-			}
-		});
-		fontSizeLabel.setEnabled(false);
-		fontSizeSpinner.setEnabled(false);
-		tb2.addSeparator(new Dimension(3, 3));
-		tb2.add(fontSizeLabel);
-		tb2.add(fontSizeSpinner);
-
-        toolbarPanel.add(tb2, BorderLayout.EAST);
-		this.add(toolbarPanel, BorderLayout.NORTH);
+        JPanel toolbarAndDocumentPanel = new JPanel(new BorderLayout());
+        this.add(toolbarAndDocumentPanel);
+        toolbarAndDocumentPanel.add(toolBar, BorderLayout.NORTH);
 
 	    // right-click menu for document table
 		JPopupMenu popupMenu = new JPopupMenu();
@@ -547,9 +543,20 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 			}
 		});
 		
-		// text panel
+		// text panel and vertical split pane
 		textPanel = new TextPanel((int) popupWidthSpinner.getValue());
-		this.add(textPanel, BorderLayout.SOUTH);
+		JSplitPane verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, documentTableScroller, textPanel);
+		verticalSplitPane.setOneTouchExpandable(true);
+		
+		// statement panel and split pane
+		JPanel rightPanel = new JPanel();
+		statementPanel = new StatementPanel(statementTableModel);
+		rightPanel.add(statementPanel);
+		JSplitPane rightSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, verticalSplitPane, rightPanel);
+		rightSplitPane.setOneTouchExpandable(true);
+		toolbarAndDocumentPanel.add(rightSplitPane, BorderLayout.SOUTH);
+		toolbarAndDocumentPanel.setBorder( new EmptyBorder(0, 5, 0, 0));
+		this.add(toolbarAndDocumentPanel);
 	}
 
 	/**
@@ -637,6 +644,14 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 	 */
 	int convertRowIndexToModel(int rowIndex) {
 		return documentTable.convertRowIndexToModel(rowIndex);
+	}
+	
+	int getSelectedStatementId() {
+		return statementPanel.getSelectedStatementId();
+	}
+	
+	void setSelectedStatementId(int statementId) {
+		statementPanel.setSelectedStatementId(statementId);
 	}
 	
 	/*
