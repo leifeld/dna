@@ -646,12 +646,8 @@ class DocumentPanel extends JPanel implements SqlListener, CoderListener {
 		return documentTable.convertRowIndexToModel(rowIndex);
 	}
 	
-	int getSelectedStatementId() {
-		return statementPanel.getSelectedStatementId();
-	}
-	
-	void setSelectedStatementId(int statementId) {
-		statementPanel.setSelectedStatementId(statementId);
+	void addStatementListener(StatementListener statementListener) {
+		statementPanel.addStatementListener(statementListener);
 	}
 	
 	/*

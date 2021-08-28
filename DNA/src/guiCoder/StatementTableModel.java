@@ -5,7 +5,6 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
-import dna.TableDocument;
 import dna.TableStatement;
 
 class StatementTableModel extends AbstractTableModel {
@@ -18,7 +17,7 @@ class StatementTableModel extends AbstractTableModel {
 
 	@Override
 	public int getColumnCount() {
-		return 5;
+		return 6;
 	}
 
 	@Override
@@ -33,10 +32,11 @@ class StatementTableModel extends AbstractTableModel {
 		}
 		switch(columnIndex) {
 		case 0: return rows.get(rowIndex).getId();
-		case 1: return rows.get(rowIndex).getStart();
-		case 2: return rows.get(rowIndex).getStop();
-		case 3: return rows.get(rowIndex).getCoderId();
-		case 4: return rows.get(rowIndex).getText();
+		case 1: return rows.get(rowIndex).getDocumentId();
+		case 2: return rows.get(rowIndex).getStart();
+		case 3: return rows.get(rowIndex).getStop();
+		case 4: return rows.get(rowIndex).getCoderId();
+		case 5: return rows.get(rowIndex).getText();
 		default: return null;
 		}
 	}
@@ -45,10 +45,11 @@ class StatementTableModel extends AbstractTableModel {
 	public String getColumnName(int column) {
 		switch( column ){
 			case 0: return "ID";
-			case 1: return "Start";
-			case 2: return "End";
-			case 3: return "Coder";
-			case 4: return "Text";
+			case 1: return "Document";
+			case 2: return "Start";
+			case 3: return "End";
+			case 4: return "Coder";
+			case 5: return "Text";
 			default: return null;
 		}
 	}
@@ -56,11 +57,12 @@ class StatementTableModel extends AbstractTableModel {
 	// which type of object (i.e., class) shall be shown in the columns?
 	public Class<?> getColumnClass(int columnIndex) {
 		switch( columnIndex ){
-			case 0: return Integer.class; // ID
-			case 1: return Integer.class; // Start
-			case 2: return Integer.class; // End
-			case 3: return Integer.class; // Coder
-			case 4: return String.class;  // Text
+			case 0: return Integer.class; // Statement ID
+			case 1: return Integer.class; // Document ID
+			case 2: return Integer.class; // Start
+			case 3: return Integer.class; // End
+			case 4: return Integer.class; // Coder
+			case 5: return String.class;  // Text
 			default: return null;
 		}
 	}

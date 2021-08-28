@@ -1951,7 +1951,7 @@ public class Sql {
 	 * @return An {@link SqlResults} object.
 	 */
 	public SqlResults getTableStatementResultSet() {
-		String query = "SELECT S.ID, S.Coder, Start, Stop, "
+		String query = "SELECT S.ID, S.Coder, S.DocumentId, Start, Stop, "
 				+ "C.Red AS CoderRed, C.Green AS CoderGreen, C.Blue AS CoderBlue, "
 				+ "T.Red AS StatementTypeRed, T.Green AS StatementTypeGreen, T.Blue AS StatementTypeBlue, "
 				+ "Date, SUBSTRING(D.Text, Start + 1, Stop - Start) AS Text FROM STATEMENTS S "
