@@ -18,15 +18,15 @@ import org.sqlite.SQLiteDataSource;
 
 import com.mysql.cj.jdbc.MysqlDataSource;
 
-import dna.Attribute;
-import dna.Coder;
 import dna.Dna;
-import dna.Document;
-import dna.Statement;
-import dna.StatementType;
-import dna.Value;
 import logger.LogEvent;
 import logger.Logger;
+import model.Attribute;
+import model.Coder;
+import model.Document;
+import model.Statement;
+import model.StatementType;
+import model.Value;
 
 /**
  * This class contains information on the database connection, the data source
@@ -664,19 +664,19 @@ public class Sql {
 	 * Retrieve a coder based on its ID.
 	 * 
 	 * @param coderId  The ID of the coder to be retrieved from the database.
-	 * @return         The coder to be retrieved, as a {@link dna.Coder
+	 * @return         The coder to be retrieved, as a {@link model.Coder
 	 *   Coder} object.
 	 * 
 	 * @category coder
 	 */
-	public dna.Coder getCoder(int coderId) {
-		dna.Coder c = null;
+	public model.Coder getCoder(int coderId) {
+		model.Coder c = null;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s = conn.prepareStatement("SELECT * FROM CODERS WHERE ID = ?;")) {
 			s.setInt(1, coderId);
 			ResultSet result = s.executeQuery();
 			while (result.next()) {
-			    c = new dna.Coder(coderId,
+			    c = new model.Coder(coderId,
 			    		result.getString("Name"),
 			    		result.getInt("Red"),
 			    		result.getInt("Green"),
@@ -716,7 +716,7 @@ public class Sql {
 	/**
 	 * Retrieve a list of coders in the database.
 	 * 
-	 * @return An {@link java.util.ArrayList ArrayList} of {@link dna.Coder
+	 * @return An {@link java.util.ArrayList ArrayList} of {@link model.Coder
 	 *   Coder} objects.
 	 * 
 	 * @category coder
@@ -727,7 +727,7 @@ public class Sql {
 				PreparedStatement s = conn.prepareStatement("SELECT * FROM Coders;")) {
         	ResultSet result = s.executeQuery();
         	while (result.next()) {
-            	coders.add(new dna.Coder(result.getInt("ID"),
+            	coders.add(new model.Coder(result.getInt("ID"),
             			result.getString("Name"),
             			result.getInt("Red"),
 			    		result.getInt("Green"),
@@ -944,7 +944,7 @@ public class Sql {
 	 * Add a batch of documents to the database.
 	 * 
 	 * @param documents An {@link java.util.ArrayList ArrayList} of
-	 *   {@link dna.Document Document} objects, containing the documents to
+	 *   {@link model.Document Document} objects, containing the documents to
 	 *   be added to the database.
 	 * 
 	 * @category document
@@ -1008,7 +1008,7 @@ public class Sql {
 
 	/**
 	 * Check for an array of documents whether any of them contains a statement.
-	 * Used to determine in the {@link guiCoder.DocumentEditor DocumentEditor}
+	 * Used to determine in the {@link gui.DocumentEditor DocumentEditor}
 	 * dialog whether the text field should be editable.
 	 * 
 	 * @param documentIds  An array of document IDs.
@@ -1046,13 +1046,13 @@ public class Sql {
 	
 	/**
 	 * Get documents for a batch of document IDs. The data can be displayed and
-	 * edited in a {@link guiCoder.DocumentEditor DocumentEditor} dialog. The
+	 * edited in a {@link gui.DocumentEditor DocumentEditor} dialog. The
 	 * documents do not contain any statements.
 	 * 
 	 * @param documentIds  An array of document IDs for which the data should be
 	 *   queried.
 	 * @return             An {@link java.util.ArrayList ArrayList} of
-	 *   {@link dna.Document Document} objects, containing the documents and
+	 *   {@link model.Document Document} objects, containing the documents and
 	 *   their meta-data.
 	 * 
 	 * @category document
@@ -1430,7 +1430,7 @@ public class Sql {
 	/**
 	 * Add a statement (with variable values) to the database.
 	 * 
-	 * @param statement   A {@link dna.Statement Statement} object, including
+	 * @param statement   A {@link model.Statement Statement} object, including
 	 *   the values for the different variables.
 	 * @param documentId  The ID of the document in which the statement is
 	 *   nested.
@@ -1569,7 +1569,7 @@ public class Sql {
 	 * Update the variable contents of a statement using new values.
 	 * 
 	 * @param statementId  The ID of the statement to be updated.
-	 * @param values       An ArrayList of {@link dna.Value Value} objects. They
+	 * @param values       An ArrayList of {@link model.Value Value} objects. They
 	 *   are used to update each variable value in the statement.
 	 * 
 	 * @category statement
@@ -1778,7 +1778,7 @@ public class Sql {
 	 * Get a statement from the database based on its ID.
 	 * 
 	 * @param statementId  The statement ID of the statement to be retrieved.
-	 * @return             A {@link dna.Statement Statement} with all relevant
+	 * @return             A {@link model.Statement Statement} with all relevant
 	 *   values for the different variables.
 	 * 
 	 * @category statement
@@ -1863,7 +1863,7 @@ public class Sql {
 	 * 
 	 * @param documentId  The ID of the document for which statements should be
 	 *   retrieved.
-	 * @return            An ArrayList of {@link dna.Statement Statement}
+	 * @return            An ArrayList of {@link model.Statement Statement}
 	 *   objects, including their variable contents.
 	 * 
 	 * @category statement
@@ -2063,7 +2063,7 @@ public class Sql {
 	/**
 	 * Get an array list of all statement types in the database.
 	 * 
-	 * @return An ArrayList of {@link dna.StatementType StatementType} objects.
+	 * @return An ArrayList of {@link model.StatementType StatementType} objects.
 	 * 
 	 * @category statementtype
 	 */

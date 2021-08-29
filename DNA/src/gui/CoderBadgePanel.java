@@ -1,4 +1,4 @@
-package guiCoder;
+package gui;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -9,8 +9,8 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import dna.Coder;
 import dna.Dna;
+import model.Coder;
 
 /**
  * JPanel displaying the color and name of a coder.

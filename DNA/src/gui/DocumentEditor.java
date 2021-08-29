@@ -1,4 +1,4 @@
-package guiCoder;
+package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -40,12 +40,12 @@ import com.github.lgooddatepicker.components.DatePickerSettings;
 import com.github.lgooddatepicker.components.DateTimePicker;
 import com.github.lgooddatepicker.components.TimePickerSettings;
 
-import dna.Coder;
 import dna.Dna;
-import dna.Document;
-import dna.Statement;
 import logger.LogEvent;
 import logger.Logger;
+import model.Coder;
+import model.Document;
+import model.Statement;
 import sql.Sql.SqlResults;
 
 @SuppressWarnings("serial")

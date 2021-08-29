@@ -1,4 +1,4 @@
-package guiCoder;
+package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -19,22 +19,21 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
 import dna.Dna;
-import dna.TableStatement;
 import dna.Dna.CoderListener;
 import dna.Dna.SqlListener;
+import dna.StatementListener;
 import logger.LogEvent;
 import logger.Logger;
+import model.TableStatement;
 import sql.Sql.SqlResults;
 
 public class StatementPanel extends JPanel implements SqlListener, CoderListener {
 	private static final long serialVersionUID = 1044070479152247253L;
-	public static List<StatementListener> statementListeners = new ArrayList<StatementListener>();
-	JTable statementTable;
-	StatementTableModel statementTableModel;
+	private List<StatementListener> statementListeners = new ArrayList<StatementListener>();
+	private JTable statementTable;
+	private StatementTableModel statementTableModel;
 
 	public StatementPanel(StatementTableModel statementTableModel) {
-		Dna.addCoderListener(this);
-		Dna.addSqlListener(this);
 		this.setLayout(new BorderLayout());
 		this.statementTableModel = statementTableModel;
 		statementTable = new JTable(statementTableModel);
@@ -59,9 +58,8 @@ public class StatementPanel extends JPanel implements SqlListener, CoderListener
 		
 		JScrollPane statementTableScroller = new JScrollPane(statementTable);
 		statementTableScroller.setViewportView(statementTable);
-		//statementTableScroller.setPreferredSize(new Dimension(1200, 200));
-
-		this.add(statementTableScroller, BorderLayout.NORTH);
+		statementTableScroller.setPreferredSize(new Dimension(400, 600));
+		this.add(statementTableScroller, BorderLayout.CENTER);
 	}
 	
 	public int getSelectedStatementId() {
@@ -79,10 +77,6 @@ public class StatementPanel extends JPanel implements SqlListener, CoderListener
 			this.statementTable.setRowSelectionInterval(tableRow, tableRow);
 		}
 	}
-	
-	public void addStatementListener(StatementListener listener) {
-        statementListeners.add(listener);
-    }
 	
 	/**
 	 * Swing worker class for loading statements from the database and adding
@@ -108,7 +102,7 @@ public class StatementPanel extends JPanel implements SqlListener, CoderListener
 		public StatementTableRefreshWorker() {
     		time = System.nanoTime(); // take the time to compute later how long the updating took
     		//statusBar.setStatementRefreshing(true); // display a message in the status bar that statements are being loaded
-    		//selectedId = documentPanel.getSelectedStatementId(); // remember the statement ID to select the same statement when done
+    		selectedId = getSelectedStatementId();
     		statementTableModel.clear(); // remove all documents from the table model before re-populating the table
 			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI] Initializing thread to populate statement table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
@@ -147,7 +141,7 @@ public class StatementPanel extends JPanel implements SqlListener, CoderListener
         @Override
         protected void process(List<TableStatement> chunks) {
         	statementTableModel.addRows(chunks); // transfer a batch of rows to the table model
-			//documentPanel.setSelectedStatementId(selectedId); // select the statement from before; skipped if the statement not found in this batch
+			setSelectedStatementId(selectedId); // select the statement from before; skipped if the statement not found in this batch
         }
 
         @Override
@@ -166,6 +160,22 @@ public class StatementPanel extends JPanel implements SqlListener, CoderListener
         }
     }
 
+	public void addStatementListener(StatementListener listener) {
+        statementListeners.add(listener);
+    }
+
+	void fireStatementRefreshStart(ArrayList<StatementListener> statementListeners) {
+		for (int i = 0; i < statementListeners.size(); i++) {
+			statementListeners.get(i).statementRefreshStart();
+		}
+	}
+
+	void fireStatementRefreshEnd(ArrayList<StatementListener> statementListeners) {
+		for (int i = 0; i < statementListeners.size(); i++) {
+			statementListeners.get(i).statementRefreshEnd();
+		}
+	}
+
 	@Override
 	public void adjustToChangedCoder() {
 		// TODO Auto-generated method stub
@@ -176,8 +186,8 @@ public class StatementPanel extends JPanel implements SqlListener, CoderListener
 		if (Dna.sql == null) {
 			statementTableModel.clear();
 		} else {
-	        StatementTableRefreshWorker statementWorker = new StatementTableRefreshWorker();
-	        statementWorker.execute();
+	        // StatementTableRefreshWorker statementWorker = new StatementTableRefreshWorker();
+	        // statementWorker.execute(); // TODO
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package guiCoder;
+package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -47,10 +47,10 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
 import dna.Dna;
-import dna.Document;
-import dna.Statement;
 import logger.LogEvent;
 import logger.Logger;
+import model.Document;
+import model.Statement;
 
 public class DocumentBatchImporter extends JDialog {
 	private static final long serialVersionUID = 1156604686298665919L;

@@ -1,4 +1,4 @@
-package guiCoder;
+package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -18,10 +18,10 @@ import javax.swing.JPasswordField;
 import javax.swing.ListCellRenderer;
 import javax.swing.event.ListDataListener;
 
-import dna.Coder;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
+import model.Coder;
 import sql.Sql;
 
 /**

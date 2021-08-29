@@ -1,4 +1,4 @@
-package guiCoder;
+package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -41,10 +41,10 @@ import javax.swing.event.DocumentListener;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
 import dna.Dna;
-import dna.Statement;
-import dna.Attribute;
-import dna.Coder;
-import dna.Value;
+import model.Attribute;
+import model.Coder;
+import model.Statement;
+import model.Value;
 
 /**
  * Show a small popup window to display and/or edit the variables of a statement.
@@ -173,7 +173,7 @@ public class Popup extends JDialog {
 						}
 					}
 					int newStatementId = Dna.sql.cloneStatement(statementId, coder.getId());
-					Dna.guiCoder.documentPanel.textPanel.selectStatement(newStatementId, documentId, true);
+					Dna.dna.getMainWindow().getTextPanel().selectStatement(newStatementId, documentId, true);
 					dispose();
 				}
 			}
@@ -193,8 +193,8 @@ public class Popup extends JDialog {
 						"Remove?", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
 					Dna.sql.deleteStatement(statementId);
-					Dna.guiCoder.documentPanel.textPanel.paintStatements();
-					Dna.guiCoder.documentTableModel.decreaseFrequency(documentId);
+					Dna.dna.getMainWindow().getTextPanel().paintStatements();
+					Dna.dna.getMainWindow().getDocumentTableModel().decreaseFrequency(documentId);
 					dispose();
 				}
 			}

@@ -1,4 +1,4 @@
-package guiCoder;
+package gui;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -6,12 +6,12 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
-import dna.Coder;
 import dna.Dna;
-import dna.TableDocument;
+import model.Coder;
+import model.TableDocument;
 
 /**
- * A document table model that holds {@link dna.TableDocument
+ * A document table model that holds {@link model.TableDocument
  * TableDocument} objects, which are a shallow representation of document
  * meta-data without the actual text (to make their retrieval from the database
  * more efficient). The table model knows how to remove documents from the
@@ -121,7 +121,7 @@ public class DocumentTableModel extends AbstractTableModel {
 	 * useful for filtering the table in the GUI.
 	 * 
 	 * @param modelRowIndex The index of the document in the model.
-	 * @return              A {@link dna.TableDocument TableDocument}
+	 * @return              A {@link model.TableDocument TableDocument}
 	 *   object.
 	 */
 	public TableDocument getRow(int modelRowIndex) {

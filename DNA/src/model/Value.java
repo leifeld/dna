@@ -1,4 +1,4 @@
-package dna;
+package model;
 
 
 public class Value {

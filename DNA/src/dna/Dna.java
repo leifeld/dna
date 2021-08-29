@@ -3,18 +3,19 @@ package dna;
 import java.util.ArrayList;
 import java.util.List;
 
-import guiCoder.GuiCoder;
+import gui.MainWindow;
 import logger.LogEvent;
 import logger.Logger;
 import sql.Sql;
 
 public class Dna {
 	public static Dna dna;
-	public static GuiCoder guiCoder;
 	public static Logger logger;
 	public static Sql sql;
 	public static final String date = "2021-08-25";
 	public static final String version = "3.0.0";
+	MainWindow mainWindow;
+	
 	/**
 	 * Keep a list of classes that depend on resets of the {@link #sql} slot,
 	 * including setting it to null, for example the document panel. 
@@ -34,13 +35,15 @@ public class Dna {
 				"DNA started. Version " + version + " (" + date + ").");
 		Dna.logger.log(l);
 		
-		guiCoder = new GuiCoder();
-		addSqlListener(guiCoder);
-		logger.addListener(guiCoder);
+		mainWindow = new MainWindow();
 	}
 	
 	public static void main(String[] args) {
 		dna = new Dna();
+	}
+
+	public MainWindow getMainWindow() {
+		return mainWindow;
 	}
 
 	/**

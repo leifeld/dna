@@ -1,11 +1,11 @@
-package guiCoder;
+package gui;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
-import dna.TableStatement;
+import model.TableStatement;
 
 class StatementTableModel extends AbstractTableModel {
 	private static final long serialVersionUID = 3231569380143470667L;
@@ -81,7 +81,7 @@ class StatementTableModel extends AbstractTableModel {
 	}
 	
 	/**
-	 * Delete all {@link dna.TableStatement TableStatement} objects from the
+	 * Delete all {@link model.TableStatement TableStatement} objects from the
 	 * table model and notify the listeners.
 	 */
 	void clear() {
@@ -90,10 +90,10 @@ class StatementTableModel extends AbstractTableModel {
 	}
 	
 	/**
-	 * Add a list of {@link dna.TableStatement TableStatement} objects to
+	 * Add a list of {@link model.TableStatement TableStatement} objects to
 	 * the table model and notify the listeners.
 	 * 
-	 * @param chunks A list of {@link dna.TableStatement TableStatement}
+	 * @param chunks A list of {@link model.TableStatement TableStatement}
 	 *   objects.
 	 */
 	void addRows(List<TableStatement> chunks) {

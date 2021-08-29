@@ -1,4 +1,4 @@
-package dna;
+package model;
 
 import java.awt.Color;
 

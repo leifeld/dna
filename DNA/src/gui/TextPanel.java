@@ -1,4 +1,4 @@
-package guiCoder;
+package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -25,28 +25,30 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 
-import dna.Coder;
 import dna.Dna;
 import dna.Dna.CoderListener;
-import dna.Statement;
-import dna.StatementType;
 import logger.LogEvent;
 import logger.Logger;
+import model.Coder;
+import model.Statement;
+import model.StatementType;
 
-public class TextPanel extends JPanel implements CoderListener {
+class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 	private static final long serialVersionUID = -8094978928012991210L;
 	private JTextPane textWindow;
 	private JScrollPane textScrollPane;
 	private DefaultStyledDocument doc;
-	StyleContext sc;
-	JPopupMenu popmen;
-	int documentId;
-	ArrayList<Statement> statements;
-	Coder coder;
+	private StyleContext sc;
+	private JPopupMenu popmen;
+	private int documentId;
+	private ArrayList<Statement> statements;
+	private Coder coder;
+	private int verticalScrollLocation;
+	private DocumentTableModel documentTableModel;
 	
-	public TextPanel(int popupTextFieldWidth) {
+	TextPanel(DocumentTableModel documentTableModel) {
+		this.documentTableModel = documentTableModel;
 		this.setLayout(new BorderLayout());
-		Dna.addCoderListener(this);
 		sc = new StyleContext();
 	    doc = new DefaultStyledDocument(sc);
 		textWindow = new JTextPane(doc);
@@ -167,6 +169,7 @@ public class TextPanel extends JPanel implements CoderListener {
 		this.textWindow.setText(text);
 		this.documentId = documentId;
 		paintStatements();
+		setCaretPosition(0);
 	}
 	
 	/**
@@ -290,7 +293,7 @@ public class TextPanel extends JPanel implements CoderListener {
 					int selectionEnd = textWindow.getSelectionEnd();
 					Statement statement = new Statement(-1, coder.getId(), selectionStart, selectionEnd, statementType.getId(), statementType.getVariables());
 					Dna.sql.addStatement(statement, documentId);
-					Dna.guiCoder.documentTableModel.increaseFrequency(documentId);
+					documentTableModel.increaseFrequency(documentId);
 					paintStatements();
 					textWindow.setCaretPosition(selectionEnd);
 				}
@@ -353,5 +356,35 @@ public class TextPanel extends JPanel implements CoderListener {
 	        textWindow.setFont(font);
 	        paintStatements();
 		}
+	}
+
+	@Override
+	public void documentTableSingleSelection(int documentId, String documentText) {
+		setContents(documentId, documentText);
+	}
+
+	@Override
+	public void documentTableMultipleSelection(int[] documentId) {
+		setContents(-1, "");
+	}
+
+	@Override
+	public void documentTableNoSelection() {
+		setContents(-1, "");
+	}
+
+	@Override
+	public void documentRefreshStarted() {
+		verticalScrollLocation = getViewportPosition();
+	}
+
+	@Override
+	public void documentRefreshEnded() {
+		setViewportPosition(verticalScrollLocation);
+	}
+
+	@Override
+	public void documentRefreshChunkComplete() {
+		// TODO
 	}
 }

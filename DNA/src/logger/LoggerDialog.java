@@ -49,9 +49,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.thoughtworks.xstream.XStream;
 
-import dna.Coder;
 import dna.Dna;
-import guiCoder.CoderBadgePanel;
+import gui.CoderBadgePanel;
+import model.Coder;
 
 /**
  * A dialog window with a table, showing log messages, warnings, and errors that

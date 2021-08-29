@@ -1,4 +1,4 @@
-package guiCoder;
+package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -40,10 +40,10 @@ import javax.swing.filechooser.FileFilter;
 
 import org.jasypt.util.password.StrongPasswordEncryptor;
 
-import dna.Coder;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
+import model.Coder;
 import sql.ConnectionProfile;
 
 /**

@@ -1,8 +1,8 @@
-package dna;
+package model;
 
 import java.time.LocalDateTime;
 
-import guiCoder.DocumentTableModel;
+import gui.DocumentTableModel;
 
 /**
  * Represents the rows in a {@link DocumentTableModel}.
