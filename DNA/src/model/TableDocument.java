@@ -2,8 +2,6 @@ package model;
 
 import java.time.LocalDateTime;
 
-import gui.DocumentTableModel;
-
 /**
  * Represents the rows in a {@link DocumentTableModel}.
  */

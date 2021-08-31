@@ -75,12 +75,12 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 		documentTable.getColumnModel().getColumn(4).setPreferredWidth(80);
 		documentTable.getColumnModel().getColumn(5).setPreferredWidth(110);
 		
-		// document table cell renderers
+		// document table cell renderer
         documentTable.setDefaultRenderer(Coder.class, new CoderTableCellRenderer());
 
 		JScrollPane documentTableScroller = new JScrollPane(documentTable);
 		documentTableScroller.setViewportView(documentTable);
-		documentTableScroller.setPreferredSize(new Dimension(1000, 300));
+		documentTableScroller.setPreferredSize(new Dimension(1000, 200));
 		this.add(documentTableScroller, BorderLayout.CENTER);
 
 		// row filter
@@ -371,13 +371,13 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 		 * duration is logged when the table has been updated.
 		 */
 		private long time;
+		int selectedId;
 
 		DocumentTableRefreshWorker() {
 			fireDocumentRefreshStart();
 			time = System.nanoTime(); // take the time to compute later how long the updating took
-			//statusBar.setDocumentRefreshing(true); // display a message in the status bar that documents are being loaded
-			//selectedId = getSelectedDocumentId(); // remember the document ID to select the same document when done
-			//y = documentPanel.getViewportPosition(); // remember the vertical position in the text area to go back to the same position when done
+			selectedId = getSelectedDocumentId(); // remember the document ID to select the same document when done
+			//y = getViewportPosition(); // remember the vertical position in the text area to go back to the same position when done
 			documentTableModel.clear(); // remove all documents from the table model before re-populating the table
 			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI] Initializing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
@@ -421,6 +421,7 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 	    @Override
 	    protected void process(List<TableDocument> chunks) {
 	    	documentTableModel.addRows(chunks); // transfer a batch of rows to the table model
+	    	setSelectedDocumentId(selectedId);
 	    	fireDocumentRefreshChunk();
 			//documentPanel.setUserLocation(selectedId, y); // select the document from before and scroll to the right position; skipped if the document not found in this batch
 	    }
@@ -457,7 +458,6 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 	 * 
 	 * @return  The document ID. Can be {@code -1} if nothing is selected.
 	 */
-	/*
 	int getSelectedDocumentId() {
 		int viewRow = this.documentTable.getSelectedRow();
 		if (viewRow > -1) {
@@ -468,8 +468,24 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 			return -1;
 		}
 	}
-	*/
-	
+
+	/**
+	 * Select a document in the table based on its ID.
+	 * 
+	 * @param documentId  ID of the document to be selected in the table.
+	 */
+	private void setSelectedDocumentId(int documentId) {
+		if (documentId > -1) {
+			int modelRow = this.documentTableModel.getModelRowById(documentId);
+			if (modelRow > -1) {
+				int index = documentTable.convertRowIndexToView(modelRow);
+				if (index > -1) {
+					this.documentTable.setRowSelectionInterval(index, index);
+				}
+			}
+		}
+	}
+
 	/**
 	 * Convert a row index in the document table to a document table model index.
 	 * 
@@ -480,13 +496,6 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 		return documentTable.convertRowIndexToModel(rowIndex);
 	}
 	
-	/*
-	private void selectDocument(int documentId) {
-		int index = documentTable.convertRowIndexToView(this.documentTableModel.getModelRowById(documentId));
-		this.documentTable.setRowSelectionInterval(index, index);
-	}
-	*/
-
 	private void fireNoSelection() {
 		for (int i = 0; i < listeners.size(); i++) {
 			listeners.get(i).documentTableNoSelection();

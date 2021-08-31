@@ -33,6 +33,12 @@ import model.Coder;
 import model.Statement;
 import model.StatementType;
 
+/**
+ * Text panel, which displays the text of the selected document and stores a
+ * list of the statements contained in the document. It paints the statements in
+ * the text and can initiate a context menu for inserting statements or popup
+ * dialog window to display the contents of a statement.
+ */
 class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 	private static final long serialVersionUID = -8094978928012991210L;
 	private JTextPane textWindow;
@@ -46,6 +52,12 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 	private int verticalScrollLocation;
 	private DocumentTableModel documentTableModel;
 	
+	/**
+	 * Create a new text panel.
+	 * 
+	 * @param documentTableModel A reference to the table model in which the
+	 *   documents are stored.
+	 */
 	TextPanel(DocumentTableModel documentTableModel) {
 		this.documentTableModel = documentTableModel;
 		this.setLayout(new BorderLayout());
@@ -100,48 +112,13 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 	}
 	
 	/**
-	 * Set the vertical position to scroll to in the scroll pane of the text
-	 * pane, for example for restoring the viewport location after reloading
-	 * documents from the database.
-	 * 
-	 * @param y  Vertical point position of the viewport of the scroll pane.
-	 * 
-	 * @see {@link #getViewportPosition()}
-	 * @see {@link guiCoder.DocumentPanel#getSelectedDocumentId()}
-	 * @see {@link guiCoder.DocumentPanel#setUserLocation(int documentId, int y)}
-	 * @see {@link guiCoder.DocumentPanel#getViewportPosition()}
-	 * @see {@link guiCoder.DocumentPanel#setViewportPosition(int y)}
+	 * Highlight statements in the text by adding background color.
 	 */
-	void setViewportPosition(int y) {
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				textScrollPane.getViewport().setViewPosition(new Point(0, y));
-			}
-		});
-	}
-	
-	/**
-	 * Return the vertical position that is currently being displayed in the
-	 * scroll pane, for example for restoring it after reloading documents from
-	 * the database.
-	 * 
-	 * @return  Vertical point position of the viewport of the scroll pane.
-	 * 
-	 * @see {@link #setViewportPosition(int y)}
-	 * @see {@link guiCoder.DocumentPanel#getSelectedDocumentId()}
-	 * @see {@link guiCoder.DocumentPanel#setUserLocation(int documentId, int y)}
-	 * @see {@link guiCoder.DocumentPanel#getViewportPosition()}
-	 * @see {@link guiCoder.DocumentPanel#setViewportPosition(int y)}
-	 */
-	int getViewportPosition() {
-		return (int) textScrollPane.getViewport().getViewPosition().getY();
-	}
-	
 	void paintStatements() {
 		if (documentId > -1) {
 			//remove all initial foreground color styles
 			int initialStart = 0;
-			int initialEnd = getDocumentText().length();
+			int initialEnd = textWindow.getText().length();
 			Style blackStyle = sc.addStyle("ConstantWidth", null);
 			StyleConstants.setForeground(blackStyle, Color.black);
 			StyleConstants.setBackground(blackStyle, Color.white);
@@ -165,15 +142,23 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 		}
 	}
 	
-	void setContents(int documentId, String text) {
+	/**
+	 * Set the contents of the text panel, including the document ID and text,
+	 * and paint the statements in the text, then scroll to the top of the text.
+	 * 
+	 * @param documentId  ID of the document to display.
+	 * @param text        Text of the document to display.
+	 */
+	private void setContents(int documentId, String text) {
 		this.textWindow.setText(text);
 		this.documentId = documentId;
 		paintStatements();
-		setCaretPosition(0);
+		textWindow.setCaretPosition(0);
 	}
 	
 	/**
-	 * Add a new statement.
+	 * Add a new statement and display a popup dialog window with the new
+	 *   statement.
 	 * 
 	 * @param me  A mouse event.
 	 * @throws ArrayIndexOutOfBoundsException
@@ -186,6 +171,14 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 		}
 	}
 
+	/**
+	 * Check the current position in the text for statements and display a
+	 * statement popup window if there is a statement.
+	 * 
+	 * @param me  The mouse event that triggers the popup window, including the
+	 *   location.
+	 * @throws ArrayIndexOutOfBoundsException
+	 */
 	private void mouseListenSelect(MouseEvent me) throws ArrayIndexOutOfBoundsException {
 		if (me.isPopupTrigger()) {
 			if (!(textWindow.getSelectedText() == null)) {
@@ -233,10 +226,11 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 		}
 	}
 	
+	/*
 	private String getDocumentText() {
 		return(textWindow.getText());
 	}
-
+*/
 	/*
 	private void setDocumentText(String text) {
 		textWindow.setText(text);
@@ -268,14 +262,30 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 	}
 	*/
 	
-	void setCaretPosition(int position) {
+	/**
+	 * Set the caret position of the viewport (e.g., scroll to the beginning).
+	 * 
+	 * @param position  Caret position.
+	 */
+	/*
+	private void setCaretPosition(int position) {
 		textWindow.setCaretPosition(position);
 	}
+	*/
 	
+	/*
 	public Point getLocationOnScreen() {
 		return(textWindow.getLocationOnScreen());
 	}
+	*/
 	
+	/**
+	 * Show a text popup menu upon right mouse click to insert statements.
+	 * 
+	 * @param comp  The AWT component on which to draw the dialog window.
+	 * @param x     The horizontal coordinate where the dialog should be shown.
+	 * @param y     The vertical coordinate where the dialog should be shown.
+	 */
 	private void popupMenu(Component comp, int x, int y) {
 		popmen = new JPopupMenu();
 		ArrayList<StatementType> statementTypes = Dna.sql.getStatementTypes();
@@ -308,7 +318,7 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 	 * @param statementId
 	 * @param documentId
 	 */
-	public void selectStatement(final int statementId, int documentId, boolean editable) {
+	void selectStatement(final int statementId, int documentId, boolean editable) {
 		this.setContents(documentId, Dna.sql.getDocumentText(documentId));
 		Statement s = Dna.sql.getStatement(statementId);
 		
@@ -375,16 +385,20 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 
 	@Override
 	public void documentRefreshStarted() {
-		verticalScrollLocation = getViewportPosition();
+		verticalScrollLocation = (int) textScrollPane.getViewport().getViewPosition().getY(); // get the scroll position to restore it later
 	}
 
 	@Override
 	public void documentRefreshEnded() {
-		setViewportPosition(verticalScrollLocation);
+		// nothing to do because the viewport position is already refreshed after each chunk is completed
 	}
 
 	@Override
-	public void documentRefreshChunkComplete() {
-		// TODO
+	public void documentRefreshChunkComplete() { // document ID has already been selected in the document table refresh worker
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				textScrollPane.getViewport().setViewPosition(new Point(0, verticalScrollLocation)); // scroll to previously saved position
+			}
+		});
 	}
 }

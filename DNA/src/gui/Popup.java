@@ -15,7 +15,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.sql.Connection;
 import java.util.ArrayList;
 
 import javax.swing.ButtonGroup;
@@ -49,19 +48,15 @@ import model.Value;
 /**
  * Show a small popup window to display and/or edit the variables of a statement.
  */
-public class Popup extends JDialog {
+class Popup extends JDialog {
 	private static final long serialVersionUID = -4955213646188753456L;
-	Container c;
-	double X, Y;
-	Point los;
-	static int statementTypeId;
-	Color color;
-	boolean windowDecoration, editable;
-	static int statementId;
-	JPanel gridBagPanel;
-	Connection conn;
-	int textFieldWidth;
-	ArrayList<Value> variables;
+	private Container c;
+	private Point los;
+	private Color color;
+	private boolean windowDecoration, editable;
+	private JPanel gridBagPanel;
+	private int textFieldWidth;
+	private ArrayList<Value> variables;
 	
 	/**
 	 * Popup dialog window to display the contents of a statements. The user can
@@ -73,10 +68,8 @@ public class Popup extends JDialog {
 	 * @param location  Location of the DNA text panel on screen.
 	 * @param coder     The current coder who is viewing the statement.
 	 */
-	public Popup(double X, double Y, Statement statement, int documentId, Point location, Coder coder) {
-		this.X = X;
-		this.Y = Y;
-		Popup.statementId = statement.getId();
+	Popup(double X, double Y, Statement statement, int documentId, Point location, Coder coder) {
+		int statementId = statement.getId();
 		this.los = location;
 		this.textFieldWidth = coder.getPopupWidth();
 		this.color = statement.getStatementTypeColor();
@@ -87,7 +80,6 @@ public class Popup extends JDialog {
 			this.windowDecoration = false;
 			this.setUndecorated(true);
 		}
-		statementTypeId = statement.getStatementTypeId();
 		
 		// should the changes in the statements be saved? check permissions...
 		editable = true;
@@ -414,12 +406,13 @@ public class Popup extends JDialog {
 	}
 
 	/**
-	 * In a statement popup window, read the contents from all combo boxes and save them into the database.
+	 * In a statement popup window, read the contents from all combo boxes and
+	 * save them into the database.
 	 * 
-	 * @param gridBagPanel  The panel that contains the combo boxes
-	 * @param statementID   The ID of the statement that is being edited
+	 * @param gridBagPanel  The panel that contains the combo boxes.
+	 * @param statementID   The ID of the statement that is being edited.
 	 */
-	public static void saveContents(JPanel gridBagPanel, int statementID, ArrayList<Value> variables) {
+	private static void saveContents(JPanel gridBagPanel, int statementID, ArrayList<Value> variables) {
 		Component[] com = gridBagPanel.getComponents();
 		int i, j;
 		for (i = 0; i < com.length; i++) {
@@ -508,9 +501,10 @@ public class Popup extends JDialog {
 		/**
 		 * Select the "yes" or "no" button
 		 * 
-		 * @param b  true if yes should be selected; false if no should be selected
+		 * @param b  {@code true} if "yes" should be selected; {@code false} if
+		 *   "no" should be selected.
 		 */
-		public void setYes(boolean b) {
+		void setYes(boolean b) {
 			if (b == true) {
 				this.yes.setSelected(true);
 			} else if (b == false) {
@@ -523,7 +517,7 @@ public class Popup extends JDialog {
 		 * 
 		 * @return boolean yes selected?
 		 */
-		public boolean isYes() {
+		boolean isYes() {
 			if (yes.isSelected()) {
 				return true;
 			} else {
@@ -532,9 +526,10 @@ public class Popup extends JDialog {
 		}
 		
 		/**
-		 * Enable or disable the buttons
+		 * Enable or disable the buttons.
 		 * 
-		 * @param enabled Enable the buttons if true and disabled them otherwise
+		 * @param enabled  Enable the buttons if {@code true} and disabled them
+		 *   otherwise.
 		 */
 		public void setEnabled(boolean enabled) {
 			if (enabled == true) {
@@ -548,14 +543,14 @@ public class Popup extends JDialog {
 	}
 	
 	/**
-	 * A renderer for JComboBox items that represent {@link Attribute} objects.
-	 * The value is shown as text. The color is shown as the foreground color.
-	 * If the attribute is not present in the database, it gets a red background
-	 * color. The renderer is used to display combo boxes for short text
-	 * variables in popup windows. The renderer only displays the list items,
-	 * not the contents of the text editor at the top of the list.
+	 * A renderer for JComboBox items that represent {@link model.Attribute
+	 * Attribute} objects. The value is shown as text. The color is shown as the
+	 * foreground color. If the attribute is not present in the database, it
+	 * gets a red background color. The renderer is used to display combo boxes
+	 * for short text variables in popup windows. The renderer only displays the
+	 * list items, not the contents of the text editor at the top of the list.
 	 */
-	public class AttributeComboBoxRenderer implements ListCellRenderer<Object> {
+	private class AttributeComboBoxRenderer implements ListCellRenderer<Object> {
 		@Override
 		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 			Attribute a = (Attribute) value;

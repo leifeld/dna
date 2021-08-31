@@ -19,7 +19,7 @@ import model.TableDocument;
  * in a table.
  */
 @SuppressWarnings("serial")
-public class DocumentTableModel extends AbstractTableModel {
+class DocumentTableModel extends AbstractTableModel {
 	private List<TableDocument> rows;
 	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MM yyyy");
 	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
@@ -27,7 +27,7 @@ public class DocumentTableModel extends AbstractTableModel {
 	/**
 	 * Create an instance of the document table model class.
 	 */
-	public DocumentTableModel() {
+	DocumentTableModel() {
 		rows = new ArrayList<>();
 	}
 	
@@ -62,7 +62,12 @@ public class DocumentTableModel extends AbstractTableModel {
 		}
 	}
 
-	//return the name of a column
+	/**
+	 * Return the name of a column.
+	 * 
+	 * @param column  The column index.
+	 * @return        The name of the column for the table header.
+	 */
 	public String getColumnName(int column) {
 		switch( column ){
 			case 0: return "ID";
@@ -79,8 +84,14 @@ public class DocumentTableModel extends AbstractTableModel {
 			default: return null;
 		}
 	}
-	
-	// which type of object (i.e., class) shall be shown in the columns?
+
+	/**
+	 * Which type of object (i.e., class) shall be shown in the columns?
+	 * 
+	 * @param columnIndex  The column index (starting at {@code 0} of the column
+	 *   for which the class should be returned.
+	 * @return             The class of the column.
+	 */
 	public Class<?> getColumnClass(int columnIndex) {
 		switch( columnIndex ){
 			case 0: return Integer.class; // ID
@@ -98,14 +109,38 @@ public class DocumentTableModel extends AbstractTableModel {
 		}
 	}
 
+	/**
+	 * Is a specific cell editable?
+	 * 
+	 * @param rowIndex     The row index of the cell.
+	 * @param columnIndex  The column index of the cell.
+	 * @return boolean indicating if the cell can be edited.
+	 */
 	public boolean isCellEditable(int rowIndex, int columnIndex) {
 		return false;
 	}
 
+	/**
+	 * Get the ID of a document stored in a specific model row.
+	 * 
+	 * @param row  The model row.
+	 * @return     The ID of the document.
+	 * 
+	 * @see {@link #getModelRowById(int documentId)}
+	 */
 	public int getIdByModelRow(int row) {
 		return rows.get(row).getId();
 	}
 	
+	/**
+	 * Get the row in the model list in which a document with a specific ID is
+	 * stored.
+	 * 
+	 * @param documentId  The document ID.
+	 * @return            The model row.
+	 * 
+	 * @see {@link #getIdByModelRow(int row)}
+	 */
 	public int getModelRowById(int documentId) {
 		for (int i = 0; i < rows.size(); i++) {
 			if (rows.get(i).getId() == documentId) {
@@ -128,16 +163,32 @@ public class DocumentTableModel extends AbstractTableModel {
 		return rows.get(modelRowIndex);
 	}
 	
+	/**
+	 * Retrieve the document text for a specific document, given by an ID.
+	 * 
+	 * @param documentId  The document ID.
+	 * @return            A String containing the document text.
+	 */
 	public String getDocumentText(int documentId) {
 		return Dna.sql.getDocumentText(documentId);
 	}
 	
+	/**
+	 * Add one to the frequency column for a specific document.
+	 * 
+	 * @param documentId  ID of the document.
+	 */
 	public void increaseFrequency(int documentId) {
 		int row = getModelRowById(documentId);
 		rows.get(row).setFrequency(rows.get(row).getFrequency() + 1);
 		fireTableCellUpdated(row, 2);
 	}
 
+	/**
+	 * Subtract one from the frequency column for a specific document.
+	 * 
+	 * @param documentId  ID of the document.
+	 */
 	public void decreaseFrequency(int documentId) {
 		int row = getModelRowById(documentId);
 		if (rows.get(row).getFrequency() > 0) {
@@ -146,6 +197,11 @@ public class DocumentTableModel extends AbstractTableModel {
 		}
 	}
 
+	/**
+	 * Remove an array of documents from the model and notify the table.
+	 * 
+	 * @param rows  The model rows of the documents.
+	 */
 	public void removeDocuments(int[] rows) {
 		for (int i = 0; i < rows.length; i++) {
 			rows[i] = getIdByModelRow(rows[i]);

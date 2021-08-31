@@ -16,7 +16,6 @@ import javax.swing.JPanel;
 
 import dna.Dna;
 import dna.Dna.SqlListener;
-import dna.StatementListener;
 import logger.Logger.LogListener;
 import logger.LoggerDialog;
 import sql.Sql;

@@ -4,29 +4,29 @@ import java.awt.Color;
 import java.time.LocalDateTime;
 
 public class TableStatement {
-	int id, coderId, documentId, start, stop;
+	int id, documentId, start, stop;
+	Coder coder;
 	LocalDateTime dateTime;
 	String text;
-	Color statementTypeColor, coderColor;
+	Color statementTypeColor;
 	
-	public TableStatement(int id, int coderId, int documentId, int start, int stop, LocalDateTime dateTime, String text, Color statementTypeColor, Color coderColor) {
+	public TableStatement(int id, Coder coder, int documentId, int start, int stop, LocalDateTime dateTime, String text, Color statementTypeColor) {
 		this.id = id;
-		this.coderId = coderId;
+		this.coder = coder;
 		this.documentId = documentId;
 		this.start = start;
 		this.stop = stop;
 		this.dateTime = dateTime;
 		this.text = text;
 		this.statementTypeColor = statementTypeColor;
-		this.coderColor = coderColor;
 	}
 
 	public int getId() {
 		return id;
 	}
 
-	public int getCoderId() {
-		return coderId;
+	public Coder getCoder() {
+		return coder;
 	}
 
 	public int getDocumentId() {
@@ -51,9 +51,5 @@ public class TableStatement {
 
 	public Color getStatementTypeColor() {
 		return statementTypeColor;
-	}
-
-	public Color getCoderColor() {
-		return coderColor;
 	}
 }
