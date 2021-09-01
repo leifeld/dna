@@ -41,6 +41,7 @@ import model.StatementType;
  */
 class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 	private static final long serialVersionUID = -8094978928012991210L;
+	private ArrayList<TextPanelListener> listeners = new ArrayList<TextPanelListener>();
 	private JTextPane textWindow;
 	private JScrollPane textScrollPane;
 	private DefaultStyledDocument doc;
@@ -125,7 +126,7 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 			doc.setCharacterAttributes(initialStart, initialEnd - initialStart, blackStyle, false);
 
 			// color statements
-			statements = Dna.sql.getStatementsByDocument(documentId);
+			statements = Dna.sql.getStatements(documentId);
 			int i, start;
 			for (i = 0; i < statements.size(); i++) {
 				start = statements.get(i).getStart();
@@ -154,6 +155,7 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 		this.documentId = documentId;
 		paintStatements();
 		textWindow.setCaretPosition(0);
+		fireDocumentIdChange();
 	}
 	
 	/**
@@ -193,7 +195,7 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 					if (statements.get(i).getStart() < pos
 							&& statements.get(i).getStop() > pos
 							&& coder != null
-							&& (coder.getPermissionViewOthersStatements() == 1 || statements.get(i).getCoder() == coder.getId())
+							&& (coder.getPermissionViewOthersStatements() == 1 || statements.get(i).getCoderId() == coder.getId())
 							// TODO here: check also the CODERRELATIONS table
 							) {
 						Point location = textWindow.getLocationOnScreen();
@@ -301,7 +303,11 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 				public void actionPerformed(ActionEvent e) {
 					int selectionStart = textWindow.getSelectionStart();
 					int selectionEnd = textWindow.getSelectionEnd();
-					Statement statement = new Statement(-1, coder.getId(), selectionStart, selectionEnd, statementType.getId(), statementType.getVariables());
+					Statement statement = new Statement(selectionStart,
+							selectionEnd,
+							statementType.getId(),
+							coder.getId(),
+							statementType.getVariables());
 					Dna.sql.addStatement(statement, documentId);
 					documentTableModel.increaseFrequency(documentId);
 					paintStatements();
@@ -354,6 +360,33 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 		});
 	}
 
+	/**
+	 * Text panel listener interface to notify other GUI elements that a new
+	 * text document has been set, permitting them to react accordingly.
+	 */
+	public interface TextPanelListener {
+		void adjustToSelectedDocument(int documentId);
+	}
+	
+	/**
+	 * Add a text panel listener.
+	 * 
+	 * @param listener  An object whose class implements {@link
+	 *   TextPanelListener}.
+	 */
+	public void addTextPanelListener(TextPanelListener listener) {
+		listeners.add(listener);
+	}
+	
+	/**
+	 * Notify the listeners that the document ID of the text panel has changed.
+	 */
+	public void fireDocumentIdChange() {
+		for (int i = 0; i < listeners.size(); i++) {
+			listeners.get(i).adjustToSelectedDocument(this.documentId);
+		}
+	}
+	
 	@Override
 	public void adjustToChangedCoder() {
 		if (Dna.sql == null) {

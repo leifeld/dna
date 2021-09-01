@@ -377,7 +377,6 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 			fireDocumentRefreshStart();
 			time = System.nanoTime(); // take the time to compute later how long the updating took
 			selectedId = getSelectedDocumentId(); // remember the document ID to select the same document when done
-			//y = getViewportPosition(); // remember the vertical position in the text area to go back to the same position when done
 			documentTableModel.clear(); // remove all documents from the table model before re-populating the table
 			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI] Initializing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
@@ -423,12 +422,10 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 	    	documentTableModel.addRows(chunks); // transfer a batch of rows to the table model
 	    	setSelectedDocumentId(selectedId);
 	    	fireDocumentRefreshChunk();
-			//documentPanel.setUserLocation(selectedId, y); // select the document from before and scroll to the right position; skipped if the document not found in this batch
 	    }
 
 	    @Override
 	    protected void done() {
-	        //statusBar.setDocumentRefreshing(false); // stop displaying the update message in the status bar
 			long elapsed = System.nanoTime(); // measure time again for calculating difference
 			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI]  ├─ (Re)loaded all " + documentTableModel.getRowCount() + " documents in " + (elapsed - time) / 1000000 + " milliseconds.",

@@ -1,5 +1,6 @@
 package gui;
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -10,6 +11,7 @@ import java.util.List;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
@@ -30,11 +32,12 @@ import gui.MainWindow.ActionAddDocument;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionRefresh;
 import gui.MainWindow.ActionRemoveDocuments;
+import gui.MainWindow.ActionRemoveStatements;
 import logger.LogEvent;
 import logger.Logger;
 import model.Coder;
 
-class Toolbar extends JToolBar implements SqlListener, CoderListener {
+class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 	private static final long serialVersionUID = 5561195349172139438L;
 	private List<ToolbarListener> listeners = new ArrayList<ToolbarListener>();
 	private JTextField documentFilterField;
@@ -44,13 +47,17 @@ class Toolbar extends JToolBar implements SqlListener, CoderListener {
 	private SpinnerNumberModel popupWidthModel, fontSizeModel;
 	private JToggleButton popupDecorationButton, popupAutoCompleteButton, colorByCoderButton;
 
-	public Toolbar(DocumentTableModel documentTableModel,
+	public ToolbarPanel(DocumentTableModel documentTableModel,
 			ActionAddDocument actionAddDocument,
 			ActionRemoveDocuments actionRemoveDocuments,
 			ActionEditDocuments actionEditDocuments,
-			ActionRefresh actionRefresh) {
-		this.setFloatable(false);
-		this.setRollover(true);
+			ActionRefresh actionRefresh,
+			ActionRemoveStatements actionRemoveStatements) {
+		
+		this.setLayout(new BorderLayout());
+		JToolBar toolBar = new JToolBar();
+		toolBar.setFloatable(false);
+		toolBar.setRollover(true);
 
 		ImageIcon documentFilterResetIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		documentFilterResetButton = new JButton(documentFilterResetIcon);
@@ -89,24 +96,20 @@ class Toolbar extends JToolBar implements SqlListener, CoderListener {
 			}
 		});
 		documentFilterField.setEnabled(false);
-		this.add(documentFilterField);
-		this.add(documentFilterResetButton);
+		toolBar.add(documentFilterField);
+		toolBar.add(documentFilterResetButton);
 
 		JButton addDocumentButton = new JButton(actionAddDocument);
-		addDocumentButton.setText("Add");
-		this.add(addDocumentButton);
+		addDocumentButton.setText("Add document");
+		toolBar.add(addDocumentButton);
 
 		JButton removeDocumentsButton = new JButton(actionRemoveDocuments);
-		removeDocumentsButton.setText("Remove");
-		this.add(removeDocumentsButton);
+		removeDocumentsButton.setText("Remove document(s)");
+		toolBar.add(removeDocumentsButton);
 
 		JButton editDocumentsButton = new JButton(actionEditDocuments);
-		editDocumentsButton.setText("Edit");
-		this.add(editDocumentsButton);
-
-		JButton documentTableRefreshButton = new JButton(actionRefresh);
-		documentTableRefreshButton.setText("Refresh");
-		this.add(documentTableRefreshButton);
+		editDocumentsButton.setText("Edit document(s)");
+		toolBar.add(editDocumentsButton);
 
         // font size spinner
         ImageIcon fontSizeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-typography.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
@@ -127,8 +130,8 @@ class Toolbar extends JToolBar implements SqlListener, CoderListener {
 		});
 		fontSizeLabel.setEnabled(false);
 		fontSizeSpinner.setEnabled(false);
-		this.add(fontSizeLabel);
-		this.add(fontSizeSpinner);
+		toolBar.add(fontSizeLabel);
+		toolBar.add(fontSizeSpinner);
 
 		// color statements by coder toggle button
 		ImageIcon colorByCoderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-palette.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
@@ -144,8 +147,8 @@ class Toolbar extends JToolBar implements SqlListener, CoderListener {
 			}
 		});
 		colorByCoderButton.setEnabled(false);
-		this.addSeparator(new Dimension(3, 3));
-		this.add(colorByCoderButton);
+		toolBar.addSeparator(new Dimension(3, 3));
+		toolBar.add(colorByCoderButton);
 
 		// popup window decoration toggle button
 		ImageIcon popupDecorationIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-border-outer.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
@@ -161,8 +164,8 @@ class Toolbar extends JToolBar implements SqlListener, CoderListener {
 			}
 		});
 		popupDecorationButton.setEnabled(false);
-		this.addSeparator(new Dimension(3, 3));
-		this.add(popupDecorationButton);
+		toolBar.addSeparator(new Dimension(3, 3));
+		toolBar.add(popupDecorationButton);
 
 		// popup auto-completion toggle button
 		ImageIcon popupAutoCompleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-forms.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
@@ -178,8 +181,8 @@ class Toolbar extends JToolBar implements SqlListener, CoderListener {
 			}
 		});
 		popupAutoCompleteButton.setEnabled(false);
-		this.addSeparator(new Dimension(3, 3));
-		this.add(popupAutoCompleteButton);
+		toolBar.addSeparator(new Dimension(3, 3));
+		toolBar.add(popupAutoCompleteButton);
 
 		// popup width spinner
         ImageIcon popupWidthIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-chart-arrows.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
@@ -200,9 +203,18 @@ class Toolbar extends JToolBar implements SqlListener, CoderListener {
 		});
 		popupWidthLabel.setEnabled(false);
 		popupWidthSpinner.setEnabled(false);
-		this.add(popupWidthLabel);
-		this.add(popupWidthSpinner);
+		toolBar.add(popupWidthLabel);
+		toolBar.add(popupWidthSpinner);
 		
+		JButton removeStatementsButton = new JButton(actionRemoveStatements);
+		removeStatementsButton.setText("Remove statement(s)");
+		toolBar.add(removeStatementsButton);
+
+		JButton documentTableRefreshButton = new JButton(actionRefresh);
+		documentTableRefreshButton.setText("Refresh");
+		toolBar.add(documentTableRefreshButton);
+
+		this.add(toolBar, BorderLayout.NORTH);
 	}
 	
 	private void fireUpdatedDocumentFilterPattern(String pattern) {

@@ -207,4 +207,9 @@ class StatusBar extends JPanel implements LogListener, SqlListener, DocumentPane
 	public void adjustToDatabaseState() {
 		updateUrl();
 	}
+
+	@Override
+	public void statementSelected(int statementId) {
+		// nothing to do
+	}
 }

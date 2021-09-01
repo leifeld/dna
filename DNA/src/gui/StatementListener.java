@@ -9,4 +9,5 @@ package gui;
 public interface StatementListener {
 	void statementRefreshStart();
 	void statementRefreshEnd();
+	void statementSelected(int statementId);
 }

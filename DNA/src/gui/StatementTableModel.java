@@ -5,22 +5,22 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
+import dna.Dna;
 import model.Coder;
-import model.TableDocument;
-import model.TableStatement;
+import model.Statement;
 
 /**
  * A table model for the statements shown in the statement panel.
  */
 class StatementTableModel extends AbstractTableModel {
 	private static final long serialVersionUID = 3231569380143470667L;
-	ArrayList<TableStatement> rows;
+	ArrayList<Statement> rows;
 	
 	/**
 	 * Create a new statement table model.
 	 */
 	StatementTableModel() {
-		rows = new ArrayList<TableStatement>();
+		rows = new ArrayList<Statement>();
 	}
 
 	@Override
@@ -43,7 +43,10 @@ class StatementTableModel extends AbstractTableModel {
 		case 1: return rows.get(rowIndex).getDocumentId();
 		case 2: return rows.get(rowIndex).getStart();
 		case 3: return rows.get(rowIndex).getStop();
-		case 4: return rows.get(rowIndex).getCoder();
+		case 4: return new Coder(rows.get(rowIndex).getCoderId(),
+				rows.get(rowIndex).getCoderName(),
+				rows.get(rowIndex).getCoderColor(),
+				300, 0, 0, 14, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 		case 5: return rows.get(rowIndex).getText();
 		default: return null;
 		}
@@ -98,10 +101,24 @@ class StatementTableModel extends AbstractTableModel {
 	}
 
 	/**
+	 * Get the ID of a statement stored in a specific model row.
+	 * 
+	 * @param row  The model row.
+	 * @return     The ID of the statement.
+	 * 
+	 * @see {@link #getModelRowById(int statementId)}
+	 */
+	public int getIdByModelRow(int row) {
+		return rows.get(row).getId();
+	}
+	
+	/**
 	 * Get the model row in which a statement with a specific ID is stored.
 	 * 
 	 * @param statementId  ID of the statement.
 	 * @return             Row in the model.
+	 * 
+	 * @see {@link #getIdByModelRow(int row)}
 	 */
 	public int getModelRowById(int statementId) {
 		for (int i = 0; i < rows.size(); i++) {
@@ -120,8 +137,21 @@ class StatementTableModel extends AbstractTableModel {
 	 * @return              A {@link model.TableStatement TableStatement}
 	 *   object.
 	 */
-	public TableStatement getRow(int modelRowIndex) {
+	public Statement getRow(int modelRowIndex) {
 		return rows.get(modelRowIndex);
+	}
+
+	/**
+	 * Remove an array of statements from the model and notify the table.
+	 * 
+	 * @param rows  The model rows of the statements.
+	 */
+	public void removeStatements(int[] rows) {
+		for (int i = 0; i < rows.length; i++) {
+			rows[i] = getIdByModelRow(rows[i]);
+		}
+		Dna.sql.deleteStatements(rows);
+		fireTableDataChanged();
 	}
 	
 	/**
@@ -140,9 +170,9 @@ class StatementTableModel extends AbstractTableModel {
 	 * @param chunks A list of {@link model.TableStatement TableStatement}
 	 *   objects.
 	 */
-	void addRows(List<TableStatement> chunks) {
+	void addRows(List<Statement> chunks) {
     	int n = this.rows.size();
-        for (TableStatement row : chunks) {
+        for (Statement row : chunks) {
             rows.add(row);
         }
         fireTableRowsInserted(n, n + chunks.size() - 1); // subtract one because we don't need the cursor to be at the next position; it should refer to the last position

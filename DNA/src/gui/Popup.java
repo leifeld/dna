@@ -83,7 +83,7 @@ class Popup extends JDialog {
 		
 		// should the changes in the statements be saved? check permissions...
 		editable = true;
-		if (statement.getCoder() != coder.getId() && coder.getPermissionEditOthersStatements() == 0) {
+		if (statement.getCoderId() != coder.getId() && coder.getPermissionEditOthersStatements() == 0) {
 			editable = false;
 		}
 		if (coder.getPermissionEditStatements() == 0) {
@@ -191,7 +191,7 @@ class Popup extends JDialog {
 				}
 			}
 		});
-		if (coder.getPermissionDeleteStatements() == 1 && (statement.getCoder() == coder.getId() || coder.getPermissionEditOthersStatements() == 1)) {
+		if (coder.getPermissionDeleteStatements() == 1 && (statement.getCoderId() == coder.getId() || coder.getPermissionEditOthersStatements() == 1)) {
 			remove.setEnabled(true);
 		} else {
 			remove.setEnabled(false);

@@ -1458,7 +1458,7 @@ public class Sql {
 			s1.setInt(2, documentId);
 			s1.setInt(3, statement.getStart());
 			s1.setInt(4, statement.getStop());
-			s1.setInt(5, statement.getCoder());
+			s1.setInt(5, statement.getCoderId());
 			s1.executeUpdate();
 			if (s1.getGeneratedKeys().next()) {
 				statementId = s1.getGeneratedKeys().getInt(1);
@@ -1790,7 +1790,7 @@ public class Sql {
 		String variable, dataType;
 		Color aColor, sColor, cColor;
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("SELECT STATEMENTS.ID AS StatementId, StatementTypeId, STATEMENTTYPES.Label AS StatementTypeLabel, STATEMENTTYPES.Red AS StatementTypeRed, STATEMENTTYPES.Green AS StatementTypeGreen, STATEMENTTYPES.Blue AS StatementTypeBlue, Start, Stop, Coder AS CoderId, CODERS.Red AS CoderRed, CODERS.Green AS CoderGreen, CODERS.Blue AS CoderBlue FROM STATEMENTS INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID WHERE StatementId = ?;");
+				PreparedStatement s1 = conn.prepareStatement("SELECT STATEMENTS.ID AS StatementId, StatementTypeId, STATEMENTTYPES.Label AS StatementTypeLabel, STATEMENTTYPES.Red AS StatementTypeRed, STATEMENTTYPES.Green AS StatementTypeGreen, STATEMENTTYPES.Blue AS StatementTypeBlue, Start, Stop, Coder AS CoderId, CODERS.Name AS CoderName, CODERS.Red AS CoderRed, CODERS.Green AS CoderGreen, CODERS.Blue AS CoderBlue, DocumentId, DOCUMENTS.Date AS Date, SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text FROM STATEMENTS INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId WHERE StatementId = ?;");
 				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
 				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
 				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
@@ -1842,7 +1842,19 @@ public class Sql {
 				    	}
 			    	}
 			    }
-			    statement = new Statement(statementId, r1.getInt("CoderId"), r1.getInt("Start"), r1.getInt("Stop"), statementTypeId, values, sColor, cColor, r1.getString("StatementTypeLabel"));
+			    statement = new Statement(statementId,
+			    		r1.getInt("Start"),
+			    		r1.getInt("Stop"),
+			    		statementTypeId,
+			    		r1.getString("StatementTypeLabel"),
+			    		sColor,
+			    		r1.getInt("CoderId"),
+			    		r1.getString("CoderName"),
+			    		cColor,
+			    		values,
+			    		r1.getInt("DocumentId"),
+			    		r1.getString("Text"),
+			    		LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC));
 			    LogEvent l = new LogEvent(Logger.MESSAGE,
 			    		"[SQL] Statement " + statementId + " was retrieved from the database.",
 			    		"Statement " + statementId + " was retrieved from the database.");
@@ -1859,30 +1871,59 @@ public class Sql {
 	}
 
 	/**
-	 * Get all statements nested in a specific document.
+	 * Get all statements, or get all statements nested in a specific document.
 	 * 
 	 * @param documentId  The ID of the document for which statements should be
-	 *   retrieved.
+	 *   retrieved. If the document ID is {@code -1}, the statements from all
+	 *   documents are retrieved.
 	 * @return            An ArrayList of {@link model.Statement Statement}
 	 *   objects, including their variable contents.
 	 * 
 	 * @category statement
 	 */
-	public ArrayList<Statement> getStatementsByDocument(int documentId) {
+	public ArrayList<Statement> getStatements(int documentId) {
+		String where = "";
+		String forDocument = "";
+		if (documentId > -1) {
+			where = " WHERE DocumentId = ?"; // for restricting the query to a single document
+			forDocument = " for Document " + documentId; // for log messages at the end
+		}
+		String query = "SELECT STATEMENTS.ID AS StatementId, "
+				+ "StatementTypeId, "
+				+ "STATEMENTTYPES.Label AS StatementTypeLabel, "
+				+ "STATEMENTTYPES.Red AS StatementTypeRed, "
+				+ "STATEMENTTYPES.Green AS StatementTypeGreen, "
+				+ "STATEMENTTYPES.Blue AS StatementTypeBlue, "
+				+ "Start, "
+				+ "Stop, "
+				+ "STATEMENTS.Coder AS CoderId, "
+				+ "CODERS.Name AS CoderName, "
+				+ "CODERS.Red AS CoderRed, "
+				+ "CODERS.Green AS CoderGreen, "
+				+ "CODERS.Blue AS CoderBlue, "
+				+ "DocumentId, "
+				+ "DOCUMENTS.Date AS Date, "
+				+ "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text "
+				+ "FROM STATEMENTS "
+				+ "INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID "
+				+ "INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID "
+				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId" + where + " ORDER BY DOCUMENTS.DATE ASC;";
 		ArrayList<Statement> statements = new ArrayList<Statement>();
 		ArrayList<Value> values;
 		int statementId, statementTypeId, variableId;
 		String variable, dataType;
 		Color aColor, sColor, cColor;
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("SELECT STATEMENTS.ID AS StatementId, StatementTypeId, STATEMENTTYPES.Label AS StatementTypeLabel, STATEMENTTYPES.Red AS StatementTypeRed, STATEMENTTYPES.Green AS StatementTypeGreen, STATEMENTTYPES.Blue AS StatementTypeBlue, Start, Stop, Coder AS CoderId, CODERS.Red AS CoderRed, CODERS.Green AS CoderGreen, CODERS.Blue AS CoderBlue FROM STATEMENTS INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID WHERE DocumentId = ?;");
+				PreparedStatement s1 = conn.prepareStatement(query);
 				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
 				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
 				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
 				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
 				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
 			ResultSet r1, r2, r3;
-			s1.setInt(1, documentId);
+			if (documentId > -1) { // restrict to a single document if necessary
+				s1.setInt(1, documentId);
+			}
 			r1 = s1.executeQuery();
 			while (r1.next()) {
 			    statementId = r1.getInt("StatementId");
@@ -1928,56 +1969,34 @@ public class Sql {
 				    	}
 			    	}
 			    }
-			    statements.add(new Statement(statementId, r1.getInt("CoderId"), r1.getInt("Start"), r1.getInt("Stop"), statementTypeId, values, sColor, cColor, r1.getString("StatementTypeLabel")));
+			    statements.add(new Statement(statementId,
+			    		r1.getInt("Start"),
+			    		r1.getInt("Stop"),
+			    		statementTypeId,
+			    		r1.getString("StatementTypeLabel"),
+			    		sColor,
+			    		r1.getInt("CoderId"),
+			    		r1.getString("CoderName"),
+			    		cColor,
+			    		values,
+			    		r1.getInt("DocumentId"),
+			    		r1.getString("Text"),
+			    		LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC)));
 			}
 			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[SQL] " + statements.size() + " statement(s) have been retrieved for Document " + documentId + ".",
-					statements.size() + " statement(s) have been retrieved for Document " + documentId + ".");
+					"[SQL] " + statements.size() + " statement(s) have been retrieved" + forDocument + ".",
+					statements.size() + " statement(s) have been retrieved for" + forDocument + ".");
 			Dna.logger.log(l);
 		} catch (SQLException e) {
 			LogEvent l = new LogEvent(Logger.WARNING,
-					"[SQL] Failed to retrieve statements for Document " + documentId + ".",
-					"Attempted to retrieve all statements for Document " + documentId + " from the database, but something went wrong. You should double-check if the statements are all shown!",
+					"[SQL] Failed to retrieve statements" + forDocument + ".",
+					"Attempted to retrieve all statements" + forDocument + " from the database, but something went wrong. You should double-check if the statements are all shown!",
 					e);
 			Dna.logger.log(l);
 		}
 		return statements;
 	}
 
-	/**
-	 * Query the database for shallow representations of all statements (i.e.,
-	 * the statements for display in a statement table).
-	 * 
-	 * @return An {@link SqlResults} object.
-	 */
-	public SqlResults getTableStatementResultSet() {
-		String query = "SELECT S.ID, S.Coder AS CoderId, S.DocumentId, Start, Stop, "
-				+ "C.Name AS CoderName, C.Red AS CoderRed, C.Green AS CoderGreen, C.Blue AS CoderBlue, "
-				+ "T.Red AS StatementTypeRed, T.Green AS StatementTypeGreen, T.Blue AS StatementTypeBlue, "
-				+ "Date, SUBSTRING(D.Text, Start + 1, Stop - Start) AS Text FROM STATEMENTS S "
-				+ "INNER JOIN CODERS C ON C.ID = S.Coder "
-				+ "INNER JOIN DOCUMENTS D ON D.ID = S.DocumentId "
-				+ "INNER JOIN STATEMENTTYPES T ON T.ID = S.StatementTypeId;";
-		ResultSet rs = null;
-		Connection conn = null;
-		PreparedStatement tableStatement = null;
-		try {
-			conn = getDataSource().getConnection();
-			tableStatement = conn.prepareStatement(query);
-			rs = tableStatement.executeQuery();
-		} catch (SQLException e) {
-			LogEvent le = new LogEvent(Logger.WARNING,
-					"[SQL] Could not retrieve statements from database.",
-					"The statement table model swing worker tried to retrieve all statements from the database to display them in the statement table, but some or all statements could not be retrieved. The statement table may be incomplete.",
-					e);
-			Dna.logger.log(le);
-		} finally {
-			// nothing gets closed here because the results would no longer be valid
-		}
-		SqlResults s = new SqlResults(rs, tableStatement, conn);
-		return s;
-	}
-	
 	/**
 	 * Delete a statement from the database based on its ID.
 	 * 
@@ -2000,6 +2019,36 @@ public class Sql {
         			"Attempted to delete the Statement with ID " + statementId + ", but the attempt failed. Check if the database is locked, the database file has been moved, or the connection is interrupted, then try again.",
         			e1);
         	Dna.logger.log(l);
+		}
+	}
+
+	/**
+	 * Delete statements from the database, given an array of statement IDs.
+	 * 
+	 * @param statementIds  An array of statement IDs to be deleted.
+	 * 
+	 * @category statement
+	 */
+	public void deleteStatements(int[] statementIds) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("DELETE FROM STATEMENTS WHERE ID = ?");
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			for (int i = 0; i < statementIds.length; i++) {
+				s.setInt(1, statementIds[i]);
+				s.executeUpdate();
+			}
+			conn.commit();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Deleted " + statementIds.length + " statements.",
+					"Successfully deleted " + statementIds.length + " statements from the STATEMENTS table in the database. The transaction has been committed to the database.");
+			Dna.logger.log(l);
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to delete statements from database.",
+					"Attempted to remove " + statementIds.length + " statements from the STATEMENTS table in the database, but something went wrong. The transaction has been rolled back, and nothing has been removed.",
+					e);
+			Dna.logger.log(l);
 		}
 	}
 

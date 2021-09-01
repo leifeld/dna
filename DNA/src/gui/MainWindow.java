@@ -40,6 +40,8 @@ public class MainWindow extends JFrame implements SqlListener {
 	Container c;
 	DocumentTablePanel documentTablePanel;
 	DocumentTableModel documentTableModel;
+	StatementPanel statementPanel;
+	StatementTableModel statementTableModel;
 	TextPanel textPanel;
 	StatusBar statusBar;
 	ActionSaveProfile actionSaveProfile;
@@ -49,6 +51,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	ActionEditDocuments actionEditDocuments;
 	ActionRefresh actionRefresh;
 	ActionBatchImportDocuments actionBatchImportDocuments;
+	ActionRemoveStatements actionRemoveStatements;
 
 	public MainWindow() {
 		try {
@@ -109,17 +112,22 @@ public class MainWindow extends JFrame implements SqlListener {
 		ImageIcon batchImportDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-import.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		actionBatchImportDocuments = new ActionBatchImportDocuments("Import from directory", batchImportDocumentsIcon, "Batch-import all text files from a folder as new documents", KeyEvent.VK_I);
 		actionBatchImportDocuments.setEnabled(false);
+
+		ImageIcon removeStatementsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-square-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionRemoveStatements = new ActionRemoveStatements("Remove statement(s)", removeStatementsIcon, "Remove the statement(s) currently selected in the statement table", KeyEvent.VK_D);
+		actionRemoveStatements.setEnabled(false);
 		
 		// define models
 		documentTableModel = new DocumentTableModel();
-		StatementTableModel statementTableModel = new StatementTableModel();
+		statementTableModel = new StatementTableModel();
 		
 		// define GUI elements
-		Toolbar toolbar = new Toolbar(documentTableModel,
+		ToolbarPanel toolbar = new ToolbarPanel(documentTableModel,
 				actionAddDocument,
 				actionRemoveDocuments,
 				actionEditDocuments,
-				actionRefresh);
+				actionRefresh,
+				actionRemoveStatements);
 		documentTablePanel = new DocumentTablePanel(documentTableModel,
 				actionAddDocument,
 				actionRemoveDocuments,
@@ -132,7 +140,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionRefresh,
 				actionBatchImportDocuments);
 		statusBar = new StatusBar();
-		StatementPanel statementPanel = new StatementPanel(statementTableModel);
+		statementPanel = new StatementPanel(statementTableModel, actionRemoveStatements);
 		textPanel = new TextPanel(documentTableModel);
 		
 		// add listeners
@@ -148,6 +156,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		Dna.addCoderListener(toolbar);
 		documentTablePanel.addDocumentPanelListener(textPanel);
 		toolbar.addToolbarListener(documentTablePanel);
+		textPanel.addTextPanelListener(statementPanel);
 		
 		// layout
 		JSplitPane verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, documentTablePanel, textPanel);
@@ -157,7 +166,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		
 		JPanel innerPanel = new JPanel(new BorderLayout());
 		innerPanel.add(toolbar, BorderLayout.NORTH);
-		innerPanel.add(rightSplitPane, BorderLayout.SOUTH);
+		innerPanel.add(rightSplitPane, BorderLayout.CENTER);
 		innerPanel.setBorder(new EmptyBorder(0, 5, 0, 0));
 		
 		JPanel mainPanel = new JPanel(new BorderLayout());
@@ -165,9 +174,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		mainPanel.add(innerPanel, BorderLayout.CENTER);
 		mainPanel.add(statusBar, BorderLayout.SOUTH);
 
-		//c.setPreferredSize(new Dimension(1200, 800));
 		c.add(mainPanel);
-		
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
@@ -436,6 +443,35 @@ public class MainWindow extends JFrame implements SqlListener {
 		
 		public void actionPerformed(ActionEvent e) {
 			documentTablePanel.refresh();
+			statementPanel.refresh();
 		}
 	}
+
+	class ActionRemoveStatements extends AbstractAction {
+		private static final long serialVersionUID = -4938838325040431112L;
+
+		public ActionRemoveStatements(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			int[] selectedRows = statementPanel.getSelectedRows();
+			String message = "Are you sure you want to delete " + selectedRows.length + " statement(s)?";
+			int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+			if (dialog == 0) {
+				for (int i = 0; i < selectedRows.length; i++) {
+					selectedRows[i] = statementPanel.convertRowIndexToModel(selectedRows[i]);
+				}
+				statementTableModel.removeStatements(selectedRows);
+			}
+			statementPanel.refresh();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: removed statement(s).",
+					"Deleted one or more statements in the database from the GUI.");
+			Dna.logger.log(l);
+		}
+	}
+	
 }
