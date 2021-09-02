@@ -472,7 +472,7 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 	 * 
 	 * @param documentId  ID of the document to be selected in the table.
 	 */
-	private void setSelectedDocumentId(int documentId) {
+	void setSelectedDocumentId(int documentId) {
 		if (documentId > -1) {
 			int modelRow = this.documentTableModel.getModelRowById(documentId);
 			if (modelRow > -1) {

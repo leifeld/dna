@@ -120,6 +120,7 @@ public class Dna {
 	 */
 	public void changeActiveCoder(int coderId) {
 		Dna.sql.getConnectionProfile().setCoder(coderId);
+		Dna.sql.setActiveCoder();
 		fireCoderChange();
 	}
 }

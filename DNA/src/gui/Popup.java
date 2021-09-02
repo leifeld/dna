@@ -165,6 +165,7 @@ class Popup extends JDialog {
 						}
 					}
 					int newStatementId = Dna.sql.cloneStatement(statementId, coder.getId());
+					Dna.dna.getMainWindow().getTextPanel().fireStatementAdded(newStatementId);
 					Dna.dna.getMainWindow().getTextPanel().selectStatement(newStatementId, documentId, true);
 					dispose();
 				}
@@ -187,6 +188,7 @@ class Popup extends JDialog {
 					Dna.sql.deleteStatement(statementId);
 					Dna.dna.getMainWindow().getTextPanel().paintStatements();
 					Dna.dna.getMainWindow().getDocumentTableModel().decreaseFrequency(documentId);
+					Dna.dna.getMainWindow().getTextPanel().fireStatementDeleted(statementId);
 					dispose();
 				}
 			}

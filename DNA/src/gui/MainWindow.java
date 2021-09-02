@@ -181,6 +181,10 @@ public class MainWindow extends JFrame implements SqlListener {
 		this.setVisible(true);
 	}
 
+	DocumentTablePanel getDocumentTablePanel() {
+		return documentTablePanel;
+	}
+	
 	TextPanel getTextPanel() {
 		return textPanel;
 	}

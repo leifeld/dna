@@ -48,6 +48,10 @@ public class Sql {
 	 * @category setup
 	 */
 	private DataSource ds;
+	/**
+	 * The active {@link model.Coder Coder} including permissions.
+	 */
+	private Coder activeCoder;
 	
 	
 	/* =========================================================================
@@ -99,6 +103,7 @@ public class Sql {
 	        		"Attempted to open a database of type \"" + cp.getType() + "\", but the type does not seem to be supported.");
 	        Dna.logger.log(l);
 		}
+		setActiveCoder();
 	}
 
 	/**
@@ -113,7 +118,7 @@ public class Sql {
 	}
 
 	/**
-	 * Set the connection profile.
+	 * Set the connection profile and save the current coder with permissions.
 	 * 
 	 * @param cp A {@link sql.ConnectionProfile connectionProfile} object.
 	 * 
@@ -121,8 +126,29 @@ public class Sql {
 	 */
 	public void setConnectionProfile(ConnectionProfile cp) {
 		this.cp = cp;
+		if (cp == null) {
+			this.activeCoder = null;
+		} else {
+			this.activeCoder = getCoder(cp.getCoderId());
+		}
 	}
 	
+	/**
+	 * Get the active coder.
+	 * 
+	 * @return A {@link model.Coder Coder} object with all permissions.
+	 */
+	public Coder getActiveCoder() {
+		return activeCoder;
+	}
+
+	/**
+	 * Set the active coder.
+	 */
+	public void setActiveCoder() {
+		this.activeCoder = getCoder(cp.getCoderId());
+	}
+
 	/**
 	 * Get the data source stored in the {@link sql.Sql Sql} object.
 	 * 
@@ -1790,7 +1816,7 @@ public class Sql {
 		String variable, dataType;
 		Color aColor, sColor, cColor;
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("SELECT STATEMENTS.ID AS StatementId, StatementTypeId, STATEMENTTYPES.Label AS StatementTypeLabel, STATEMENTTYPES.Red AS StatementTypeRed, STATEMENTTYPES.Green AS StatementTypeGreen, STATEMENTTYPES.Blue AS StatementTypeBlue, Start, Stop, Coder AS CoderId, CODERS.Name AS CoderName, CODERS.Red AS CoderRed, CODERS.Green AS CoderGreen, CODERS.Blue AS CoderBlue, DocumentId, DOCUMENTS.Date AS Date, SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text FROM STATEMENTS INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId WHERE StatementId = ?;");
+				PreparedStatement s1 = conn.prepareStatement("SELECT STATEMENTS.ID AS StatementId, StatementTypeId, STATEMENTTYPES.Label AS StatementTypeLabel, STATEMENTTYPES.Red AS StatementTypeRed, STATEMENTTYPES.Green AS StatementTypeGreen, STATEMENTTYPES.Blue AS StatementTypeBlue, Start, Stop, STATEMENTS.Coder AS CoderId, CODERS.Name AS CoderName, CODERS.Red AS CoderRed, CODERS.Green AS CoderGreen, CODERS.Blue AS CoderBlue, DocumentId, DOCUMENTS.Date AS Date, SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text FROM STATEMENTS INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId WHERE StatementId = ?;");
 				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
 				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
 				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");

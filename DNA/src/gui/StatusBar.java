@@ -20,6 +20,7 @@ import gui.DocumentTablePanel.DocumentPanelListener;
 import gui.StatementPanel.StatementListener;
 import logger.Logger.LogListener;
 import logger.LoggerDialog;
+import model.Statement;
 import sql.Sql;
 
 /**
@@ -211,7 +212,7 @@ class StatusBar extends JPanel implements LogListener, SqlListener, DocumentPane
 	}
 
 	@Override
-	public void statementSelected(int statementId) {
+	public void statementSelectedInStatementTable(Statement statement) {
 		// nothing to do
 	}
 }

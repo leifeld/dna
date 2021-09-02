@@ -134,8 +134,20 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener, TextP
 				if (rowCount == 1) {
 					int selectedRow = statementTable.getSelectedRow();
 					int selectedModelIndex = statementTable.convertRowIndexToModel(selectedRow);
-					int id = (int) statementTableModel.getValueAt(selectedModelIndex, 0);
-					fireSingleSelection(id);
+					Statement s = statementTableModel.getRow(selectedModelIndex);
+					int statementId = s.getId();
+					fireSingleSelection(s);
+					
+					// call methods in document and text panel directly to avoid circular notifications
+					Dna.dna.getMainWindow().getDocumentTablePanel().setSelectedDocumentId(s.getDocumentId());
+					
+					boolean editable = false;
+					if (Dna.sql.getActiveCoder().getPermissionEditStatements() == 1 &&
+							(Dna.sql.getActiveCoder().getPermissionEditOthersStatements() == 1 ||
+							(Dna.sql.getActiveCoder().getPermissionEditOthersStatements() == 0 && Dna.sql.getActiveCoder().getId() == s.getCoderId()))) {
+						editable = true;
+					}
+					Dna.dna.getMainWindow().getTextPanel().selectStatement(statementId, documentId, editable);
 				}
 			}
 		});
@@ -801,7 +813,7 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener, TextP
 	public interface StatementListener {
 		void statementRefreshStart();
 		void statementRefreshEnd();
-		void statementSelected(int statementId);
+		void statementSelectedInStatementTable(Statement statement);
 	}
 	
 	/**
@@ -832,9 +844,9 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener, TextP
 		}
 	}
 
-	private void fireSingleSelection(int statementId) {
+	private void fireSingleSelection(Statement statement) {
 		for (int i = 0; i < statementListeners.size(); i++) {
-			statementListeners.get(i).statementSelected(statementId);
+			statementListeners.get(i).statementSelectedInStatementTable(statement);
 		}
 	}
 	
@@ -864,5 +876,24 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener, TextP
 	public void adjustToSelectedDocument(int documentId) {
 		this.documentId = documentId;
 		statementTableModel.fireTableDataChanged(); // update statement filter when a new document is selected
+	}
+
+	@Override
+	public void statementAdded(int statementId) {
+		refresh();
+	}
+
+	@Override
+	public void statementDeleted(int statementId) {
+		refresh();
+	}
+
+	@Override
+	public void statementSelected(int statementId) {
+		if (this.statementTable.getSelectedRowCount() == 1 && this.getSelectedStatementId() == statementId) {
+			// right statement selected; do not clear selection
+		} else {
+			this.statementTable.clearSelection();
+		}
 	}
 }

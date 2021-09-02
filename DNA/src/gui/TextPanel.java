@@ -28,6 +28,7 @@ import javax.swing.text.StyleContext;
 import dna.Dna;
 import dna.Dna.CoderListener;
 import gui.DocumentTablePanel.DocumentPanelListener;
+import gui.Popup;
 import logger.LogEvent;
 import logger.Logger;
 import model.Coder;
@@ -199,6 +200,7 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 							&& (coder.getPermissionViewOthersStatements() == 1 || statements.get(i).getCoderId() == coder.getId())
 							// TODO here: check also the CODERRELATIONS table
 							) {
+						fireStatementSelected(statements.get(i).getId());
 						Point location = textWindow.getLocationOnScreen();
 						textWindow.setSelectionStart(statements.get(i).getStart());
 						textWindow.setSelectionEnd(statements.get(i).getStop());
@@ -313,6 +315,7 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 					documentTableModel.increaseFrequency(documentId);
 					paintStatements();
 					textWindow.setCaretPosition(selectionEnd);
+					fireStatementAdded(statement.getId());
 				}
 			});
 		}
@@ -326,7 +329,6 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 	 * @param documentId
 	 */
 	void selectStatement(final int statementId, int documentId, boolean editable) {
-		this.setContents(documentId, Dna.sql.getDocumentText(documentId));
 		Statement s = Dna.sql.getStatement(statementId);
 		
 		int start = s.getStart();
@@ -367,6 +369,9 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 	 */
 	public interface TextPanelListener {
 		void adjustToSelectedDocument(int documentId);
+		void statementAdded(int statementId);
+		void statementDeleted(int statementId);
+		void statementSelected(int statementId);
 	}
 	
 	/**
@@ -385,6 +390,40 @@ class TextPanel extends JPanel implements CoderListener, DocumentPanelListener {
 	public void fireDocumentIdChange() {
 		for (int i = 0; i < listeners.size(); i++) {
 			listeners.get(i).adjustToSelectedDocument(this.documentId);
+		}
+	}
+	
+	/**
+	 * Notify the listeners that a statement has been added.
+	 * 
+	 * @param statementId  The ID of the statement that has been added.
+	 */
+	public void fireStatementAdded(int statementId) {
+		for (int i = 0; i < listeners.size(); i++) {
+			listeners.get(i).statementAdded(statementId);
+		}
+	}
+
+	/**
+	 * Notify the listeners that a statement has been deleted.
+	 * 
+	 * @param statementId  The ID of the statement that has been deleted.
+	 */
+	public void fireStatementDeleted(int statementId) {
+		for (int i = 0; i < listeners.size(); i++) {
+			listeners.get(i).statementDeleted(statementId);
+		}
+	}
+
+	/**
+	 * Notify the listeners that a statement has been selected from within the
+	 * text panel.
+	 * 
+	 * @param statementId  The ID of the statement that has been selected.
+	 */
+	public void fireStatementSelected(int statementId) {
+		for (int i = 0; i < listeners.size(); i++) {
+			listeners.get(i).statementSelected(statementId);
 		}
 	}
 	
