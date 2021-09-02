@@ -27,6 +27,7 @@ import javax.swing.text.StyleContext;
 
 import dna.Dna;
 import dna.Dna.CoderListener;
+import gui.DocumentTablePanel.DocumentPanelListener;
 import logger.LogEvent;
 import logger.Logger;
 import model.Coder;

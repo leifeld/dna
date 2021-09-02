@@ -37,6 +37,7 @@ import dna.Dna.SqlListener;
 import gui.MainWindow.ActionAddDocument;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionRemoveDocuments;
+import gui.ToolbarPanel.ToolbarListener;
 import logger.LogEvent;
 import logger.Logger;
 import model.Coder;
@@ -491,6 +492,15 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 	 */
 	int convertRowIndexToModel(int rowIndex) {
 		return documentTable.convertRowIndexToModel(rowIndex);
+	}
+	
+	interface DocumentPanelListener {
+		void documentTableSingleSelection(int documentId, String documentText);
+		void documentTableMultipleSelection(int[] documentId);
+		void documentTableNoSelection();
+		void documentRefreshStarted();
+		void documentRefreshChunkComplete();
+		void documentRefreshEnded();
 	}
 	
 	private void fireNoSelection() {

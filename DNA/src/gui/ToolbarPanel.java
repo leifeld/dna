@@ -217,6 +217,10 @@ class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 		this.add(toolBar, BorderLayout.NORTH);
 	}
 	
+	interface ToolbarListener {
+		void updatedDocumentFilterPattern(String pattern);
+	}
+	
 	private void fireUpdatedDocumentFilterPattern(String pattern) {
 		for (int i = 0; i < listeners.size(); i++) {
 			listeners.get(i).updatedDocumentFilterPattern(pattern);
