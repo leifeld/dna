@@ -75,6 +75,7 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener, TextP
 	private JTable statementTable;
 	private StatementTableModel statementTableModel;
 	private ArrayList<Value> variables;
+	private String idFieldPattern = "";
 	private JRadioButton allButton, docButton, filterButton;
 	private JComboBox<StatementType> statementTypeBox;
 	private int documentId; // needed for the filter to check if a statement is in the current document; updated by listener
@@ -350,28 +351,35 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener, TextP
 	 */
 	private boolean filter(Statement s, int documentId) {
 		if (allButton.isSelected()) {
-			return true;
+			return true; // show all statements
 		} else if (docButton.isSelected()) {
 			if (s.getDocumentId() == documentId) {
-				return true;
+				return true; // show statement if it's in the right document
 			} else {
 				return false;
 			}
 		} else if (variables == null || variables.size() == 0) {
 			if (statementTypeBox.getSelectedItem() == null) {
-				return true;
+				return true; // no statement type -> something went wrong; show the statement
 			} else if (s.getStatementTypeId() == ((StatementType) statementTypeBox.getSelectedItem()).getId()) {
-				return true;
+				return true; // statement type matches, variables cannot be found; show the statement
 			} else {
-				return false;
+				return false; // statement type does not match and there are no variables; don't show the statement
 			}
 		} else {
+			// check statement type from statement type box for a non-match
 			if (s.getStatementTypeId() != ((StatementType) statementTypeBox.getSelectedItem()).getId()) {
 				return false;
 			} else {
+				// check ID field for a non-match
+				Pattern pattern = Pattern.compile(idFieldPattern);
+				Matcher m = pattern.matcher(String.valueOf((int) s.getId()));
+				if (!m.find()) {
+					return false;
+				}
+				// check variables for a non-match 
 				for (int i = 0; i < variables.size(); i++) {
-					Pattern pattern = Pattern.compile((String) variables.get(i).getValue());
-					Matcher m;
+					pattern = Pattern.compile((String) variables.get(i).getValue());
 					if (s.getValues().get(i).getDataType().equals("short text")) {
 						m = pattern.matcher(((Attribute) s.getValues().get(i).getValue()).getValue());
 					} else if (s.getValues().get(i).getDataType().equals("boolean") || s.getValues().get(i).getDataType().equals("integer")) {
@@ -433,6 +441,35 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener, TextP
 					gbc.anchor = GridBagConstraints.WEST;
 					gbc.fill = GridBagConstraints.HORIZONTAL;
 					gbc.weightx = 1.0;
+					
+					// first, create a filter field for statement ID
+					JLabel idLabel = new JLabel("statement ID");
+					varPanel.add(idLabel, gbc);
+					gbc.gridx++;
+					JTextField idFilterField = new JTextField(5);
+					varPanel.add(idFilterField, gbc);
+					idFilterField.getDocument().addDocumentListener(new DocumentListener() {
+						@Override
+						public void changedUpdate(DocumentEvent arg0) {
+							updatePatterns();
+						}
+						@Override
+						public void insertUpdate(DocumentEvent arg0) {
+							updatePatterns();
+						}
+						@Override
+						public void removeUpdate(DocumentEvent arg0) {
+							updatePatterns();
+						}
+						private void updatePatterns() {
+							idFieldPattern = idFilterField.getText();
+							statementTableModel.fireTableDataChanged();
+						}
+					});
+					gbc.gridx--;
+					gbc.gridy++;
+					
+					// second, go through variables and create more filter fields
 					for (int i = 0; i < variables.size(); i++) {
 						final int VARINDEX = i;
 						variables.get(i).setValue("");
