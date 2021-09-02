@@ -14,6 +14,7 @@ import gui.MainWindow.ActionCloseDatabase;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionRefresh;
 import gui.MainWindow.ActionRemoveDocuments;
+import gui.MainWindow.ActionRemoveStatements;
 import gui.MainWindow.ActionSaveProfile;
 
 public class MenuBar extends JMenuBar {
@@ -31,11 +32,14 @@ public class MenuBar extends JMenuBar {
 			ActionRemoveDocuments actionRemoveDocuments,
 			ActionEditDocuments actionEditDocuments,
 			ActionRefresh actionRefresh,
-			ActionBatchImportDocuments actionBatchImportDocuments) {
+			ActionBatchImportDocuments actionBatchImportDocuments,
+			ActionRemoveStatements actionRemoveStatements) {
 		JMenu databaseMenu = new JMenu("Database");
 		this.add(databaseMenu);
 		JMenu documentMenu = new JMenu("Document");
 		this.add(documentMenu);
+		JMenu statementsMenu = new JMenu("Statements");
+		this.add(statementsMenu);
 		JMenu exportMenu = new JMenu("Export");
 		this.add(exportMenu);
 		JMenu settingsMenu = new JMenu("Settings");
@@ -92,6 +96,10 @@ public class MenuBar extends JMenuBar {
 		// document menu: refresh document table
 		JMenuItem refreshItem = new JMenuItem(actionRefresh);
 		documentMenu.add(refreshItem);
+
+		// statements menu: remove statements
+		JMenuItem removeStatementsItem = new JMenuItem(actionRemoveStatements);
+		documentMenu.add(removeStatementsItem);
 
 		// settings menu: display about DNA window
 		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));

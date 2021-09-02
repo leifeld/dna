@@ -138,7 +138,8 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionRemoveDocuments,
 				actionEditDocuments,
 				actionRefresh,
-				actionBatchImportDocuments);
+				actionBatchImportDocuments,
+				actionRemoveStatements);
 		statusBar = new StatusBar();
 		statementPanel = new StatementPanel(statementTableModel, actionRemoveStatements);
 		textPanel = new TextPanel(documentTableModel);
