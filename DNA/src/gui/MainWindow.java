@@ -1,27 +1,48 @@
 package gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JSplitPane;
+import javax.swing.JTable;
+import javax.swing.JTextPane;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
 import org.jasypt.util.text.AES256TextEncryptor;
@@ -33,8 +54,21 @@ import dna.Dna;
 import dna.Dna.SqlListener;
 import logger.LogEvent;
 import logger.Logger;
+import model.Attribute;
+import model.Coder;
+import model.Statement;
+import model.StatementType;
+import model.TableDocument;
+import model.Value;
 import sql.ConnectionProfile;
+import sql.Sql.SqlResults;
 
+/**
+ * Main window that instantiates and plugs the different view components
+ * together. It contains controls for the different actions and defines
+ * listeners that are attached to the view components to interact between the
+ * components. 
+ */
 public class MainWindow extends JFrame implements SqlListener {
 	private static final long serialVersionUID = 2740437090361841747L;
 	Container c;
@@ -53,6 +87,24 @@ public class MainWindow extends JFrame implements SqlListener {
 	ActionBatchImportDocuments actionBatchImportDocuments;
 	ActionRemoveStatements actionRemoveStatements;
 
+	// TODO: reorder methods and classes in main window, popup, text panel, document table, and statement table panel classes
+	// TODO: add javadoc to the aforementioned classes and methods
+	// TODO: popup colouring and window decoration have a bug: sometimes multiple popups shown after switching
+	// TODO: remove toolbar listener interface and move the document listener here into the main window class for controlling the document table filter
+	// TODO: document swing worker: disable the actions that would start a new document swing worker while the thread is active (similar to the statement worker)
+	// TODO: ensure all actions are initiated centrally here in the main window class
+	// TODO: when a statement popup is closed, unselect the statement in the statement table
+	// TODO: double-check if interaction between statement table selection, document selection, and popups in the text panel works well
+	// TODO: double-check if there is view-specific code in the main window class that can be moved into the view components
+	// TODO: probably the statement table should be refreshed every time the document table is refreshed (?)
+	// TODO: ensure statements are sorted chronologically and by position in the statement table (implement Comparable interface in Statement class?)
+	// TODO: take into account coder permissions and relations everywhere in the controls in the main window class
+	// TODO: popups with window decoration should check if the contents have changed when closed, instead of just asking anyway if changes should be saved
+	// TODO: make the attribute table and usage more flexible, with additional variables
+	
+	/**
+	 * Create a new main window.
+	 */
 	public MainWindow() {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -142,22 +194,18 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionRemoveStatements);
 		statusBar = new StatusBar();
 		statementPanel = new StatementPanel(statementTableModel, actionRemoveStatements);
-		textPanel = new TextPanel(documentTableModel);
+		textPanel = new TextPanel(statementPanel);
 		
 		// add listeners
 		Dna.addSqlListener(this);
 		Dna.logger.addListener(statusBar);
-		statementPanel.addStatementListener(statusBar);
 		Dna.addCoderListener(textPanel);
-		Dna.addSqlListener(documentTablePanel);
 		Dna.addCoderListener(documentTablePanel);
 		Dna.addSqlListener(statementPanel);
 		Dna.addCoderListener(statementPanel);
 		Dna.addSqlListener(toolbar);
 		Dna.addCoderListener(toolbar);
-		documentTablePanel.addDocumentPanelListener(textPanel);
 		toolbar.addToolbarListener(documentTablePanel);
-		textPanel.addTextPanelListener(statementPanel);
 		
 		// layout
 		JSplitPane verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, documentTablePanel, textPanel);
@@ -174,24 +222,548 @@ public class MainWindow extends JFrame implements SqlListener {
 		mainPanel.add(menuBar, BorderLayout.NORTH);
 		mainPanel.add(innerPanel, BorderLayout.CENTER);
 		mainPanel.add(statusBar, BorderLayout.SOUTH);
+		
+		// selection listener for the statement table; select statement or enable remove statements action
+		JTable statementTable = statementPanel.getStatementTable();
+		statementTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				if (e.getValueIsAdjusting()) {
+					return;
+				}
+				
+				int rowCount = statementTable.getSelectedRowCount();
+				if (rowCount > 0) {
+					actionRemoveStatements.setEnabled(true);
+				} else {
+					actionRemoveStatements.setEnabled(false);
+				}
+				if (rowCount == 1) {
+					int selectedRow = statementTable.getSelectedRow();
+					int selectedModelIndex = statementTable.convertRowIndexToModel(selectedRow);
+					Statement s = statementTableModel.getRow(selectedModelIndex);
+					
+					documentTablePanel.setSelectedDocumentId(s.getDocumentId());
+					
+					boolean editable = false;
+					if (Dna.sql.getActiveCoder().getPermissionEditStatements() == 1 &&
+							(Dna.sql.getActiveCoder().getPermissionEditOthersStatements() == 1 ||
+							(Dna.sql.getActiveCoder().getPermissionEditOthersStatements() == 0 && Dna.sql.getActiveCoder().getId() == s.getCoderId()))) {
+						editable = true;
+					}
+					textPanel.selectStatement(s, s.getDocumentId(), editable); // TODO: is s enough or do we need to pull the statement from the database to get all values?
+				}
+			}
+		});
+		
+		// selection listener for the document table; set contents of the text panel, update statement table, and enable or disable actions
+		JTable documentTable = documentTablePanel.getDocumentTable();
+		documentTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				if (e.getValueIsAdjusting()) {
+					return;
+				}
+				
+				int rowCount = documentTable.getSelectedRowCount();
+				if (rowCount > 0) {
+					actionRemoveDocuments.setEnabled(true);
+					actionEditDocuments.setEnabled(true);
+				} else {
+					actionRemoveDocuments.setEnabled(false);
+					actionEditDocuments.setEnabled(false);
+				}
+				if (rowCount == 0) {
+					textPanel.setContents(-1, "");
+					statementPanel.setDocumentId(-1);
+					statementTableModel.fireTableDataChanged();
+				} else if (rowCount > 1) {
+					int[] selectedRows = documentTable.getSelectedRows();
+					int[] selectedDocumentIds = new int[selectedRows.length];
+					for (int i = 0; i < selectedRows.length; i++) {
+						selectedDocumentIds[i] = documentTableModel.getIdByModelRow(documentTable.convertRowIndexToModel(selectedRows[i]));
+					}
+					textPanel.setContents(-1, "");
+					statementPanel.setDocumentId(-1);
+					statementTableModel.fireTableDataChanged();
+				} else if (rowCount == 1) {
+					int selectedRow = documentTable.getSelectedRow();
+					int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
+					int id = (int) documentTableModel.getValueAt(selectedModelIndex, 0);
+					textPanel.setContents(id, documentTableModel.getDocumentText(id));
+					statementPanel.setDocumentId(id);
+					statementTableModel.fireTableDataChanged();
+				} else {
+					LogEvent l = new LogEvent(Logger.WARNING,
+							"[GUI] Negative number of rows in the document table!",
+							"When a document is selected in the document table in the DNA coding window, the text of the document is displayed in the text panel. When checking which row in the table was selected, it was found that the table contained negative numbers of documents. This is obviously an error. Please report it by submitting a bug report along with the saved log.");
+					Dna.logger.log(l);
+				}
+				// if (Dna.gui.rightPanel.statementPanel.statementFilter.showCurrent.isSelected()) {
+				// 	Dna.gui.rightPanel.statementPanel.statementFilter.currentDocumentFilter();
+				// }
+				
+				// if (Dna.dna.sql != null) {
+				// 	Dna.gui.textPanel.paintStatements();
+				// }
+				
+				/*
+				int ac = Dna.data.getActiveCoder();
+				if (Dna.gui.leftPanel.editDocPanel.saveDetailsButton != null) {
+					if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
+						Dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(false);
+						Dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
+					} else {
+						Dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(true);
+						Dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
+					}
+				}
+				
+				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
+					Dna.gui.documentPanel.menuItemDelete.setEnabled(false);
+				} else {
+					Dna.gui.documentPanel.menuItemDelete.setEnabled(true);
+				}
+				
+				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
+					Dna.gui.menuBar.newDocumentButton.setEnabled(false);
+				} else {
+					Dna.gui.menuBar.newDocumentButton.setEnabled(true);
+				}
+				*/
+			}
+		});
+
+		//MouseListener for text window to show popups or context menu in text area; one method for Windows and one for Unix
+		JTextPane textWindow = textPanel.getTextWindow();
+		textWindow.addMouseListener(new MouseAdapter() {
+			public void mouseReleased(MouseEvent me) {
+				try {
+					mouseListenPopup(me);
+				} catch (ArrayIndexOutOfBoundsException ex) {
+					//no documents available
+				}
+			}
+			public void mousePressed(MouseEvent me) {
+				try {
+					mouseListenPopup(me);
+				} catch (ArrayIndexOutOfBoundsException ex) {
+					//no documents available
+				}
+			}
+
+			public void mouseClicked(MouseEvent me) {
+				try {
+					mouseListenSelect(me);
+				} catch (ArrayIndexOutOfBoundsException ex) {
+					//no documents available
+				}
+			}
+
+			/**
+			 * Show a text popup menu upon right mouse click to insert statements.
+			 * 
+			 * @param comp  The AWT component on which to draw the dialog window.
+			 * @param x     The horizontal coordinate where the dialog should be shown.
+			 * @param y     The vertical coordinate where the dialog should be shown.
+			 */
+			private void popupMenu(Component comp, int x, int y) {
+				JPopupMenu popmen = new JPopupMenu();
+				ArrayList<StatementType> statementTypes = Dna.sql.getStatementTypes();
+				for (int i = 0; i < statementTypes.size(); i++) {
+					StatementType statementType = statementTypes.get(i);
+					JMenuItem menuItem = new JMenuItem("Format as " + statementType.getLabel());
+					menuItem.setOpaque(true);
+					menuItem.setBackground(statementType.getColor());
+					popmen.add(menuItem);
+					
+					menuItem.addActionListener(new ActionListener() {
+						@Override
+						public void actionPerformed(ActionEvent e) {
+							int selectionStart = textWindow.getSelectionStart();
+							int selectionEnd = textWindow.getSelectionEnd();
+							Statement statement = new Statement(selectionStart,
+									selectionEnd,
+									statementType.getId(),
+									Dna.sql.getActiveCoder().getId(),
+									statementType.getVariables());
+							Dna.sql.addStatement(statement, documentTablePanel.getSelectedDocumentId());
+							documentTableModel.increaseFrequency(documentTablePanel.getSelectedDocumentId());
+							textPanel.paintStatements();
+							textWindow.setCaretPosition(selectionEnd);
+						}
+					});
+				}
+				popmen.show(comp, x, y);
+			}
+
+			/**
+			 * Add a new statement and display a popup dialog window with the
+			 * new statement.
+			 * 
+			 * @param me  A mouse event.
+			 * @throws ArrayIndexOutOfBoundsException
+			 */
+			private void mouseListenPopup(MouseEvent me) throws ArrayIndexOutOfBoundsException {
+				if (me.isPopupTrigger()) {
+					if (!(textWindow.getSelectedText() == null) && Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().getPermissionAddStatements() == 1) {
+						popupMenu(me.getComponent(), me.getX(), me.getY());
+					}
+				}
+			}
+
+			/**
+			 * Check the current position in the text for statements and display
+			 * a statement popup window if there is a statement.
+			 * 
+			 * @param me  The mouse event that triggers the popup window,
+			 *   including the location.
+			 * @throws ArrayIndexOutOfBoundsException
+			 */
+			private void mouseListenSelect(MouseEvent me) throws ArrayIndexOutOfBoundsException {
+				if (me.isPopupTrigger()) {
+					if (!(textWindow.getSelectedText() == null)) {
+						popupMenu(me.getComponent(), me.getX(), me.getY());
+					}
+				} else {
+					int pos = textWindow.getCaretPosition(); //click caret position
+					Point p = me.getPoint();
+					
+					ArrayList<Statement> statements = Dna.sql.getStatements(documentTablePanel.getSelectedDocumentId());
+					if (statements != null && statements.size() > 0) {
+						for (int i = 0; i < statements.size(); i++) {
+							if (statements.get(i).getStart() < pos
+									&& statements.get(i).getStop() > pos
+									&& Dna.sql.getActiveCoder() != null
+									&& (Dna.sql.getActiveCoder().getPermissionViewOthersStatements() == 1 || statements.get(i).getCoderId() == Dna.sql.getActiveCoder().getId())
+									// TODO here: check also the CODERRELATIONS table
+									) {
+								statementPanel.setSelectedStatementId(statements.get(i).getId());
+								Point location = textWindow.getLocationOnScreen();
+								textWindow.setSelectionStart(statements.get(i).getStart());
+								textWindow.setSelectionEnd(statements.get(i).getStop());
+								/*
+									int row = Dna.gui.rightPanel.statementPanel.ssc.getIndexByStatementId(statementId);
+									if (row > -1) {
+										Dna.gui.rightPanel.statementPanel.statementTable.setRowSelectionInterval(row, row);
+										Dna.gui.rightPanel.statementPanel.statementTable.scrollRectToVisible(new Rectangle(  // scroll to selected row
+												Dna.gui.rightPanel.statementPanel.statementTable.getCellRect(i, 0, true)));
+									}
+
+									int docModelIndex = Dna.gui.documentPanel.documentContainer.getModelIndexById(Dna.data.getStatements().get(i).getDocumentId());
+									int docRow = Dna.gui.documentPanel.documentTable.convertRowIndexToView(docModelIndex);
+									//int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(Dna.data.getStatements().get(i).getDocumentId());
+									Dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(Dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));
+									if (b[1] == true) {  // statement is editable by the active coder
+										new Popup(p.getX(), p.getY(), statementId, location, true);
+									} else {
+										new Popup(p.getX(), p.getY(), statementId, location, false);
+									}
+								 */
+								new Popup(p.getX(), p.getY(), statements.get(i), documentTablePanel.getSelectedDocumentId(), location, Dna.sql.getActiveCoder(), statementPanel);
+								break;
+								//}
+							}
+						}
+					}
+				}
+			}
+		});
 
 		c.add(mainPanel);
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 	}
-
-	DocumentTablePanel getDocumentTablePanel() {
-		return documentTablePanel;
-	}
 	
+	/**
+	 * Retrieve the text panel.
+	 * 
+	 * @return Text panel.
+	 */
 	TextPanel getTextPanel() {
 		return textPanel;
 	}
 
+	/**
+	 * Retrieve the document table model.
+	 * 
+	 * @return Document table model.
+	 */
 	DocumentTableModel getDocumentTableModel() {
 		return documentTableModel;
 	}
+
+	/**
+	 * Refresh the document table using a Swing worker in the background.
+	 */
+	void refreshDocumentTable() {
+		if (Dna.sql == null) {
+			documentTableModel.clear();
+		} else {
+	        DocumentTableRefreshWorker documentWorker = new DocumentTableRefreshWorker();
+	        documentWorker.execute();
+		}
+	}
+
+	/**
+	 * Refresh the statement table using a Swing worker in the background.
+	 */
+	void refreshStatementTable() {
+		if (Dna.sql == null) {
+			statementTableModel.clear();
+		} else {
+	        StatementTableRefreshWorker statementWorker = new StatementTableRefreshWorker();
+	        statementWorker.execute();
+		}
+	}
+
+	/**
+	 * Swing worker class for loading documents from the database and adding
+	 * them to the document table in a background thread.
+	 * 
+	 * @see <a href="https://stackoverflow.com/questions/43161033/cant-add-tablerowsorter-to-jtable-produced-by-swingworker" target="_top">https://stackoverflow.com/questions/43161033/</a>
+	 * @see <a href="https://stackoverflow.com/questions/68884145/how-do-i-use-a-jdbc-swing-worker-with-connection-pooling-ideally-while-separati" target="_top">https://stackoverflow.com/questions/68884145/</a>
+	 */
+	private class DocumentTableRefreshWorker extends SwingWorker<List<TableDocument>, TableDocument> {
+		/**
+		 * Time stamp to measure the duration it takes to update the table. The
+		 * duration is logged when the table has been updated.
+		 */
+		private long time;
+		int selectedId;
+		int verticalScrollLocation;
+
+		private DocumentTableRefreshWorker() {
+			statusBar.documentRefreshStarted();
+			time = System.nanoTime(); // take the time to compute later how long the updating took
+			verticalScrollLocation = textPanel.getVerticalScrollLocation();
+			selectedId = documentTablePanel.getSelectedDocumentId(); // remember the document ID to select the same document when done
+			documentTableModel.clear(); // remove all documents from the table model before re-populating the table
+			LogEvent le = new LogEvent(Logger.MESSAGE,
+					"[GUI] Initializing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"A new swing worker thread has been started to populate the document table with documents from the database in the background: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+			Dna.logger.log(le);
+		}
+		
+		@Override
+		protected List<TableDocument> doInBackground() {
+			try (SqlResults s = Dna.sql.getTableDocumentResultSet(); // result set and connection are automatically closed when done because SqlResults implements AutoCloseable
+					ResultSet rs = s.getResultSet();) {
+				while (rs.next()) {
+					TableDocument r = new TableDocument(
+							rs.getInt("ID"),
+							rs.getString("Title"),
+							rs.getInt("Frequency"),
+							new Coder(rs.getInt("CoderId"),
+									rs.getString("CoderName"),
+									rs.getInt("Red"),
+									rs.getInt("Green"),
+									rs.getInt("Blue"),
+									0, 14, 300, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+							rs.getString("Author"),
+							rs.getString("Source"),
+							rs.getString("Section"),
+							rs.getString("Type"),
+							rs.getString("Notes"),
+							LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC));
+					publish(r); // send the new document row out of the background thread
+				}
+			} catch (SQLException e) {
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"[SQL]  ├─ Could not retrieve documents from database.",
+						"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved because there was a problem while processing the result set. The document table may be incomplete.",
+						e);
+				Dna.logger.log(le);
+			}
+			return null;
+		}
+	    
+	    @Override
+	    protected void process(List<TableDocument> chunks) {
+	    	documentTableModel.addRows(chunks); // transfer a batch of rows to the table model
+	    	documentTablePanel.setSelectedDocumentId(selectedId);
+	    	textPanel.setVerticalScrollLocation(this.verticalScrollLocation);
+	    }
+
+	    @Override
+	    protected void done() {
+			long elapsed = System.nanoTime(); // measure time again for calculating difference
+			LogEvent le = new LogEvent(Logger.MESSAGE,
+					"[GUI]  ├─ (Re)loaded all " + documentTableModel.getRowCount() + " documents in " + (elapsed - time) / 1000000 + " milliseconds.",
+					"The document table swing worker loaded the " + documentTableModel.getRowCount() + " documents from the DNA database in the "
+					+ "background and stored them in the document table. This took " + (elapsed - time) / 1000000 + " seconds.");
+			Dna.logger.log(le);
+			le = new LogEvent(Logger.MESSAGE,
+					"[GUI]  └─ Closing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"The document table has been populated with documents from the database. Closing thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+			Dna.logger.log(le);
+			statusBar.documentRefreshEnded();
+	    }
+	}
+
+	/**
+	 * Swing worker class for loading statements from the database and adding
+	 * them to the statement table in a background thread. The class contains
+	 * SQL code right here instead of moving the SQL code to the {@link sql.Sql
+	 * Sql} class because it contains nested {@code publish} calls that need
+	 * to be in the SQL code but also need to remain in the Swing worker class. 
+	 */
+	private class StatementTableRefreshWorker extends SwingWorker<List<Statement>, Statement> {
+		/**
+		 * Time stamp to measure the duration it takes to update the table. The
+		 * duration is logged when the table has been updated.
+		 */
+		private long time;
+		/**
+		 * ID of the selected statement in the statement table, to restore it
+		 * later and scroll back to the same position in the table after update.
+		 */
+		private int selectedId;
+
+		/**
+		 * A Swing worker that reloads all statements from the database and
+		 * stores them in the table model for displaying them in the statement
+		 * table.
+		 */
+		private StatementTableRefreshWorker() {
+			actionRefresh.setEnabled(false);
+    		time = System.nanoTime(); // take the time to compute later how long the updating took
+    		statusBar.statementRefreshStart();
+    		selectedId = statementPanel.getSelectedStatementId();
+    		statementTableModel.clear(); // remove all documents from the table model before re-populating the table
+			LogEvent le = new LogEvent(Logger.MESSAGE,
+					"[GUI] Initializing thread to populate statement table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"A new swing worker thread has been started to populate the statement table with statements from the database in the background: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+			Dna.logger.log(le);
+		}
+		
+		@Override
+		protected List<Statement> doInBackground() {
+			String query = "SELECT STATEMENTS.ID AS StatementId, "
+					+ "StatementTypeId, "
+					+ "STATEMENTTYPES.Label AS StatementTypeLabel, "
+					+ "STATEMENTTYPES.Red AS StatementTypeRed, "
+					+ "STATEMENTTYPES.Green AS StatementTypeGreen, "
+					+ "STATEMENTTYPES.Blue AS StatementTypeBlue, "
+					+ "Start, "
+					+ "Stop, "
+					+ "STATEMENTS.Coder AS CoderId, "
+					+ "CODERS.Name AS CoderName, "
+					+ "CODERS.Red AS CoderRed, "
+					+ "CODERS.Green AS CoderGreen, "
+					+ "CODERS.Blue AS CoderBlue, "
+					+ "DocumentId, "
+					+ "DOCUMENTS.Date AS Date, "
+					+ "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text "
+					+ "FROM STATEMENTS "
+					+ "INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID "
+					+ "INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID "
+					+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId ORDER BY DOCUMENTS.DATE ASC;";
+			ArrayList<Value> values;
+			int statementId, statementTypeId, variableId;
+			String variable, dataType;
+			Color aColor, sColor, cColor;
+			try (Connection conn = Dna.sql.getDataSource().getConnection();
+					PreparedStatement s1 = conn.prepareStatement(query);
+					PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
+					PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
+					PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
+					PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
+					PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
+				ResultSet r1, r2, r3;
+				r1 = s1.executeQuery();
+				while (r1.next()) {
+				    statementId = r1.getInt("StatementId");
+				    statementTypeId = r1.getInt("StatementTypeId");
+				    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
+				    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
+				    s2.setInt(1, statementTypeId);
+				    r2 = s2.executeQuery();
+				    values = new ArrayList<Value>();
+				    while (r2.next()) {
+				    	variableId = r2.getInt("ID");
+				    	variable = r2.getString("Variable");
+				    	dataType = r2.getString("DataType");
+				    	if (dataType.equals("short text")) {
+					    	s3.setInt(1, statementId);
+					    	s3.setInt(2, variableId);
+					    	r3 = s3.executeQuery();
+					    	while (r3.next()) {
+				            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
+				            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getString("Type"), r3.getString("Alias"), r3.getString("Notes"), r3.getInt("ChildOf"), true);
+					    		values.add(new Value(variableId, variable, dataType, attribute));
+					    	}
+				    	} else if (dataType.equals("long text")) {
+					    	s4.setInt(1, variableId);
+					    	s4.setInt(2, statementId);
+					    	r3 = s4.executeQuery();
+					    	while (r3.next()) {
+					    		values.add(new Value(variableId, variable, dataType, r3.getString("Value")));
+					    	}
+				    	} else if (dataType.equals("integer")) {
+					    	s5.setInt(1, variableId);
+					    	s5.setInt(2, statementId);
+					    	r3 = s5.executeQuery();
+					    	while (r3.next()) {
+					    		values.add(new Value(variableId, variable, dataType, r3.getInt("Value")));
+					    	}
+				    	} else if (dataType.equals("boolean")) {
+					    	s6.setInt(1, variableId);
+					    	s6.setInt(2, statementId);
+					    	r3 = s6.executeQuery();
+					    	while (r3.next()) {
+					    		values.add(new Value(variableId, variable, dataType, r3.getInt("Value")));
+					    	}
+				    	}
+				    }
+				    Statement statement = new Statement(statementId,
+				    		r1.getInt("Start"),
+				    		r1.getInt("Stop"),
+				    		statementTypeId,
+				    		r1.getString("StatementTypeLabel"),
+				    		sColor,
+				    		r1.getInt("CoderId"),
+				    		r1.getString("CoderName"),
+				    		cColor,
+				    		values,
+				    		r1.getInt("DocumentId"),
+				    		r1.getString("Text"),
+				    		LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC));
+				    publish(statement);
+				}
+			} catch (SQLException e) {
+				LogEvent l = new LogEvent(Logger.WARNING,
+						"[SQL] Failed to retrieve statements.",
+						"Attempted to retrieve all statements from the database, but something went wrong. You should double-check if the statements are all shown!",
+						e);
+				Dna.logger.log(l);
+			}
+			return null;
+		}
+        
+        @Override
+        protected void process(List<Statement> chunks) {
+        	statementTableModel.addRows(chunks); // transfer a batch of rows to the statement table model
+			statementPanel.setSelectedStatementId(selectedId); // select the statement from before; skipped if the statement not found in this batch
+        }
+
+        @Override
+        protected void done() {
+        	statusBar.statementRefreshEnd(); // stop displaying the update message in the status bar
+			statementTableModel.fireTableDataChanged(); // update the statement filter
+			statementPanel.setSelectedStatementId(selectedId);
+    		long elapsed = System.nanoTime(); // measure time again for calculating difference
+    		LogEvent le = new LogEvent(Logger.MESSAGE,
+    				"[GUI]  ├─ (Re)loaded all " + statementTableModel.getRowCount() + " statements in " + (elapsed - time) / 1000000 + " milliseconds.",
+    				"The statement table swing worker loaded the " + statementTableModel.getRowCount() + " statements from the DNA database in the "
+    				+ "background and stored them in the statement table. This took " + (elapsed - time) / 1000000 + " seconds.");
+    		Dna.logger.log(le);
+			le = new LogEvent(Logger.MESSAGE,
+					"[GUI]  └─ Closing thread to populate statement table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+					"The statement table has been populated with statements from the database. Closing thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+			Dna.logger.log(le);
+			actionRefresh.setEnabled(false);
+        }
+    }
 
 	/**
 	 * React to changes in the state (= presence or absence) of the DNA database
@@ -219,6 +791,8 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionSaveProfile.setEnabled(false);
 			}
     	}
+    	refreshDocumentTable();
+    	refreshStatementTable();
 	}
 
 	class ActionSaveProfile extends AbstractAction {
@@ -360,7 +934,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		
 		public void actionPerformed(ActionEvent e) {
 			new DocumentEditor();
-			documentTablePanel.refresh();
+	    	refreshDocumentTable();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: added a new document.",
 					"Added a new document from the GUI.");
@@ -387,7 +961,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				}
 				documentTableModel.removeDocuments(selectedRows);
 			}
-			documentTablePanel.refresh();
+	    	refreshDocumentTable();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: removed document(s).",
 					"Deleted one or more documents in the database from the GUI.");
@@ -410,7 +984,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				selectedRows[i] = documentTableModel.getIdByModelRow(documentTablePanel.convertRowIndexToModel(selectedRows[i]));
 			}
 			new DocumentEditor(selectedRows);
-			documentTablePanel.refresh();
+	    	refreshDocumentTable();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: edited meta-data for document(s).",
 					"Edited the meta-data for one or more documents in the database.");
@@ -429,7 +1003,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		
 		public void actionPerformed(ActionEvent e) {
 			new DocumentBatchImporter();
-			documentTablePanel.refresh();
+	    	refreshDocumentTable();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: used document batch importer.",
 					"Batch-imported documents to the database.");
@@ -447,8 +1021,8 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			documentTablePanel.refresh();
-			statementPanel.refresh();
+	    	refreshDocumentTable();
+			refreshStatementTable();
 		}
 	}
 
@@ -471,12 +1045,11 @@ public class MainWindow extends JFrame implements SqlListener {
 				}
 				statementTableModel.removeStatements(selectedRows);
 			}
-			statementPanel.refresh();
+			refreshStatementTable();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: removed statement(s).",
 					"Deleted one or more statements in the database from the GUI.");
 			Dna.logger.log(l);
 		}
 	}
-	
 }

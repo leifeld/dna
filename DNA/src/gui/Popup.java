@@ -68,7 +68,7 @@ class Popup extends JDialog {
 	 * @param location  Location of the DNA text panel on screen.
 	 * @param coder     The current coder who is viewing the statement.
 	 */
-	Popup(double X, double Y, Statement statement, int documentId, Point location, Coder coder) {
+	Popup(double X, double Y, Statement statement, int documentId, Point location, Coder coder, StatementPanel statementPanel) {
 		int statementId = statement.getId();
 		this.los = location;
 		this.textFieldWidth = coder.getPopupWidth();
@@ -165,8 +165,8 @@ class Popup extends JDialog {
 						}
 					}
 					int newStatementId = Dna.sql.cloneStatement(statementId, coder.getId());
-					Dna.dna.getMainWindow().getTextPanel().fireStatementAdded(newStatementId);
-					Dna.dna.getMainWindow().getTextPanel().selectStatement(newStatementId, documentId, true);
+					Dna.dna.getMainWindow().refreshStatementTable();
+					statementPanel.setSelectedStatementId(newStatementId);
 					dispose();
 				}
 			}
@@ -186,9 +186,9 @@ class Popup extends JDialog {
 						"Remove?", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
 					Dna.sql.deleteStatement(statementId);
+					Dna.dna.getMainWindow().refreshStatementTable();
 					Dna.dna.getMainWindow().getTextPanel().paintStatements();
 					Dna.dna.getMainWindow().getDocumentTableModel().decreaseFrequency(documentId);
-					Dna.dna.getMainWindow().getTextPanel().fireStatementDeleted(statementId);
 					dispose();
 				}
 			}

@@ -7,6 +7,8 @@ import java.util.List;
 import javax.swing.table.AbstractTableModel;
 
 import dna.Dna;
+import logger.LogEvent;
+import logger.Logger;
 import model.Coder;
 import model.TableDocument;
 
@@ -191,7 +193,12 @@ class DocumentTableModel extends AbstractTableModel {
 	 */
 	public void decreaseFrequency(int documentId) {
 		int row = getModelRowById(documentId);
-		if (rows.get(row).getFrequency() > 0) {
+		if (row == -1) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"Document row could not be identified in the document table model.",
+					"Document row for Document " + documentId + " could not be identified in the document table model.");
+			Dna.logger.log(l);
+		} else if (rows.get(row).getFrequency() > 0) {
 			rows.get(row).setFrequency(rows.get(row).getFrequency() - 1);
 			fireTableCellUpdated(row, 2);
 		}

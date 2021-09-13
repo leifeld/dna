@@ -99,7 +99,7 @@ public class MenuBar extends JMenuBar {
 
 		// statements menu: remove statements
 		JMenuItem removeStatementsItem = new JMenuItem(actionRemoveStatements);
-		documentMenu.add(removeStatementsItem);
+		statementsMenu.add(removeStatementsItem);
 
 		// settings menu: display about DNA window
 		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));

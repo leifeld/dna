@@ -5,13 +5,7 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -25,28 +19,19 @@ import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
-import javax.swing.SwingWorker;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
-import dna.Dna;
 import dna.Dna.CoderListener;
-import dna.Dna.SqlListener;
 import gui.MainWindow.ActionAddDocument;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionRemoveDocuments;
 import gui.ToolbarPanel.ToolbarListener;
-import logger.LogEvent;
-import logger.Logger;
 import model.Coder;
 import model.TableDocument;
-import sql.Sql.SqlResults;
 
-class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, ToolbarListener {
+class DocumentTablePanel extends JPanel implements CoderListener, ToolbarListener {
 	private static final long serialVersionUID = 4543056929753553570L;
-	private ArrayList<DocumentPanelListener> listeners = new ArrayList<DocumentPanelListener>();
 	private JTable documentTable;
 	private DocumentTableModel documentTableModel;
 	private String documentFilterPattern = "";
@@ -279,168 +264,12 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 		menuItemSection.addActionListener(al);
 		menuItemType.addActionListener(al);
 		menuItemNotes.addActionListener(al);
-		
-		documentTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-			public void valueChanged(ListSelectionEvent e) {
-				if (e.getValueIsAdjusting()) {
-					return;
-				}
-				
-				int rowCount = documentTable.getSelectedRowCount();
-				if (rowCount > 0) {
-					actionRemoveDocuments.setEnabled(true);
-					actionEditDocuments.setEnabled(true);
-				} else {
-					actionRemoveDocuments.setEnabled(false);
-					actionEditDocuments.setEnabled(false);
-				}
-				if (rowCount == 0) {
-					fireNoSelection();
-				} else if (rowCount > 1) {
-					int[] selectedRows = documentTable.getSelectedRows();
-					int[] selectedDocumentIds = new int[selectedRows.length];
-					for (int i = 0; i < selectedRows.length; i++) {
-						selectedDocumentIds[i] = documentTableModel.getIdByModelRow(documentTable.convertRowIndexToModel(selectedRows[i]));
-					}
-					fireMultipleSelection(selectedDocumentIds);
-				} else if (rowCount == 1) {
-					int selectedRow = documentTable.getSelectedRow();
-					int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
-					int id = (int) documentTableModel.getValueAt(selectedModelIndex, 0);
-					fireSingleSelection(id, documentTableModel.getDocumentText(id));
-				} else {
-					LogEvent l = new LogEvent(Logger.WARNING,
-							"[GUI] Negative number of rows in the document table!",
-							"When a document is selected in the document table in the DNA coding window, the text of the document is displayed in the text panel. When checking which row in the table was selected, it was found that the table contained negative numbers of documents. This is obviously an error. Please report it by submitting a bug report along with the saved log.");
-					Dna.logger.log(l);
-				}
-				// if (Dna.gui.rightPanel.statementPanel.statementFilter.showCurrent.isSelected()) {
-				// 	Dna.gui.rightPanel.statementPanel.statementFilter.currentDocumentFilter();
-				// }
-				
-				// if (Dna.dna.sql != null) {
-				// 	Dna.gui.textPanel.paintStatements();
-				// }
-				
-				/*
-				int ac = Dna.data.getActiveCoder();
-				if (Dna.gui.leftPanel.editDocPanel.saveDetailsButton != null) {
-					if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
-						Dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(false);
-						Dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
-					} else {
-						Dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(true);
-						Dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
-					}
-				}
-				
-				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
-					Dna.gui.documentPanel.menuItemDelete.setEnabled(false);
-				} else {
-					Dna.gui.documentPanel.menuItemDelete.setEnabled(true);
-				}
-				
-				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
-					Dna.gui.menuBar.newDocumentButton.setEnabled(false);
-				} else {
-					Dna.gui.menuBar.newDocumentButton.setEnabled(true);
-				}
-				*/
-			}
-		});
 	}
 	
-	void refresh() {
-		if (Dna.sql != null) {
-			DocumentTableRefreshWorker worker = new DocumentTableRefreshWorker();
-			worker.execute();
-		} else {
-			documentTableModel.clear();
-		}
+	JTable getDocumentTable() {
+		return documentTable;
 	}
-
-	/**
-	 * Swing worker class for loading documents from the database and adding
-	 * them to the document table in a background thread.
-	 * 
-	 * @see <a href="https://stackoverflow.com/questions/43161033/cant-add-tablerowsorter-to-jtable-produced-by-swingworker" target="_top">https://stackoverflow.com/questions/43161033/</a>
-	 * @see <a href="https://stackoverflow.com/questions/68884145/how-do-i-use-a-jdbc-swing-worker-with-connection-pooling-ideally-while-separati" target="_top">https://stackoverflow.com/questions/68884145/</a>
-	 */
-	class DocumentTableRefreshWorker extends SwingWorker<List<TableDocument>, TableDocument> {
-		/**
-		 * Time stamp to measure the duration it takes to update the table. The
-		 * duration is logged when the table has been updated.
-		 */
-		private long time;
-		int selectedId;
-
-		DocumentTableRefreshWorker() {
-			fireDocumentRefreshStart();
-			time = System.nanoTime(); // take the time to compute later how long the updating took
-			selectedId = getSelectedDocumentId(); // remember the document ID to select the same document when done
-			documentTableModel.clear(); // remove all documents from the table model before re-populating the table
-			LogEvent le = new LogEvent(Logger.MESSAGE,
-					"[GUI] Initializing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
-					"A new swing worker thread has been started to populate the document table with documents from the database in the background: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
-			Dna.logger.log(le);
-		}
-		
-		@Override
-		protected List<TableDocument> doInBackground() {
-			try (SqlResults s = Dna.sql.getTableDocumentResultSet(); // result set and connection are automatically closed when done because SqlResults implements AutoCloseable
-					ResultSet rs = s.getResultSet();) {
-				while (rs.next()) {
-					TableDocument r = new TableDocument(
-							rs.getInt("ID"),
-							rs.getString("Title"),
-							rs.getInt("Frequency"),
-							new Coder(rs.getInt("CoderId"),
-									rs.getString("CoderName"),
-									rs.getInt("Red"),
-									rs.getInt("Green"),
-									rs.getInt("Blue"),
-									0, 14, 300, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-							rs.getString("Author"),
-							rs.getString("Source"),
-							rs.getString("Section"),
-							rs.getString("Type"),
-							rs.getString("Notes"),
-							LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC));
-					publish(r); // send the new document row out of the background thread
-				}
-			} catch (SQLException e) {
-				LogEvent le = new LogEvent(Logger.WARNING,
-						"[SQL]  ├─ Could not retrieve documents from database.",
-						"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved because there was a problem while processing the result set. The document table may be incomplete.",
-						e);
-				Dna.logger.log(le);
-			}
-			return null;
-		}
-	    
-	    @Override
-	    protected void process(List<TableDocument> chunks) {
-	    	documentTableModel.addRows(chunks); // transfer a batch of rows to the table model
-	    	setSelectedDocumentId(selectedId);
-	    	fireDocumentRefreshChunk();
-	    }
-
-	    @Override
-	    protected void done() {
-			long elapsed = System.nanoTime(); // measure time again for calculating difference
-			LogEvent le = new LogEvent(Logger.MESSAGE,
-					"[GUI]  ├─ (Re)loaded all " + documentTableModel.getRowCount() + " documents in " + (elapsed - time) / 1000000 + " milliseconds.",
-					"The document table swing worker loaded the " + documentTableModel.getRowCount() + " documents from the DNA database in the "
-					+ "background and stored them in the document table. This took " + (elapsed - time) / 1000000 + " seconds.");
-			Dna.logger.log(le);
-			le = new LogEvent(Logger.MESSAGE,
-					"[GUI]  └─ Closing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
-					"The document table has been populated with documents from the database. Closing thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
-			Dna.logger.log(le);
-			fireDocumentRefreshEnd();
-	    }
-	}
-
+	
 	/**
 	 * Return the indices of the rows that are currently selected in the
 	 * document table.
@@ -494,55 +323,6 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 		return documentTable.convertRowIndexToModel(rowIndex);
 	}
 	
-	interface DocumentPanelListener {
-		void documentTableSingleSelection(int documentId, String documentText);
-		void documentTableMultipleSelection(int[] documentId);
-		void documentTableNoSelection();
-		void documentRefreshStarted();
-		void documentRefreshChunkComplete();
-		void documentRefreshEnded();
-	}
-	
-	private void fireNoSelection() {
-		for (int i = 0; i < listeners.size(); i++) {
-			listeners.get(i).documentTableNoSelection();
-		}
-	}
-	
-	private void fireMultipleSelection(int[] documentId) {
-		for (int i = 0; i < listeners.size(); i++) {
-			listeners.get(i).documentTableMultipleSelection(documentId);
-		}
-	}
-	
-	private void fireSingleSelection(int documentId, String documentText) {
-		for (int i = 0; i < listeners.size(); i++) {
-			listeners.get(i).documentTableSingleSelection(documentId, documentText);
-		}
-	}
-
-    private void fireDocumentRefreshStart() {
-    	for (int i = 0; i < listeners.size(); i++) {
-    		listeners.get(i).documentRefreshStarted();
-    	}
-    }
-
-    private void fireDocumentRefreshChunk() {
-    	for (int i = 0; i < listeners.size(); i++) {
-    		listeners.get(i).documentRefreshChunkComplete();
-    	}
-    }
-
-    private void fireDocumentRefreshEnd() {
-    	for (int i = 0; i < listeners.size(); i++) {
-    		listeners.get(i).documentRefreshEnded();
-    	}
-    }
-
-	void addDocumentPanelListener(DocumentPanelListener listener) {
-		listeners.add(listener);
-	}
-
 	@Override
 	public void updatedDocumentFilterPattern(String pattern) {
 		this.documentFilterPattern = pattern;
@@ -551,10 +331,5 @@ class DocumentTablePanel extends JPanel implements SqlListener, CoderListener, T
 	@Override
 	public void adjustToChangedCoder() {
 		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void adjustToDatabaseState() {
-		refresh();
 	}
 }

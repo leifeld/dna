@@ -16,17 +16,14 @@ import javax.swing.JPanel;
 
 import dna.Dna;
 import dna.Dna.SqlListener;
-import gui.DocumentTablePanel.DocumentPanelListener;
-import gui.StatementPanel.StatementListener;
 import logger.Logger.LogListener;
 import logger.LoggerDialog;
-import model.Statement;
 import sql.Sql;
 
 /**
  * A status bar panel showing the database on the left and messages on the right. 
  */
-class StatusBar extends JPanel implements LogListener, SqlListener, DocumentPanelListener, StatementListener {
+class StatusBar extends JPanel implements LogListener, SqlListener {
 	private static final long serialVersionUID = -1987834394140569531L;
 	JLabel urlLabel, documentRefreshLabel, documentRefreshIconLabel, statementRefreshLabel, statementRefreshIconLabel;
 	int numWarnings, numErrors;
@@ -144,13 +141,11 @@ class StatusBar extends JPanel implements LogListener, SqlListener, DocumentPane
 		}
 	}
 
-	@Override
 	public void statementRefreshStart() {
 		this.statementRefreshIconLabel.setVisible(true);
 		this.statementRefreshLabel.setVisible(true);
 	}
 
-	@Override
 	public void statementRefreshEnd() {
 		this.statementRefreshIconLabel.setVisible(false);
 		this.statementRefreshLabel.setVisible(false);
@@ -174,33 +169,11 @@ class StatusBar extends JPanel implements LogListener, SqlListener, DocumentPane
 		updateLog(numWarnings, numErrors);
 	}
 
-	@Override
-	public void documentTableSingleSelection(int documentId, String documentText) {
-		// nothing to do
-	}
-
-	@Override
-	public void documentTableMultipleSelection(int[] documentId) {
-		// nothing to do
-	}
-
-	@Override
-	public void documentTableNoSelection() {
-		// nothing to do
-	}
-
-	@Override
 	public void documentRefreshStarted() {
 		this.documentRefreshIconLabel.setVisible(true);
 		this.documentRefreshLabel.setVisible(true);
 	}
 
-	@Override
-	public void documentRefreshChunkComplete() {
-		// nothing to do
-	}
-
-	@Override
 	public void documentRefreshEnded() {
 		this.documentRefreshIconLabel.setVisible(false);
 		this.documentRefreshLabel.setVisible(false);
@@ -209,10 +182,5 @@ class StatusBar extends JPanel implements LogListener, SqlListener, DocumentPane
 	@Override
 	public void adjustToDatabaseState() {
 		updateUrl();
-	}
-
-	@Override
-	public void statementSelectedInStatementTable(Statement statement) {
-		// nothing to do
 	}
 }
