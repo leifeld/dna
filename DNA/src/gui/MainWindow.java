@@ -13,8 +13,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
@@ -45,15 +47,19 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
+import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.jasypt.util.text.AES256TextEncryptor;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 
 import gui.DocumentTablePanel;
 import dna.Dna;
 import dna.Dna.SqlListener;
 import logger.LogEvent;
 import logger.Logger;
+import logger.LoggerDialog;
 import model.Attribute;
 import model.Coder;
 import model.Statement;
@@ -61,6 +67,7 @@ import model.StatementType;
 import model.TableDocument;
 import model.Value;
 import sql.ConnectionProfile;
+import sql.Sql;
 import sql.Sql.SqlResults;
 
 /**
@@ -78,7 +85,11 @@ public class MainWindow extends JFrame implements SqlListener {
 	private StatementTableModel statementTableModel;
 	private TextPanel textPanel;
 	private StatusBar statusBar;
+	private ActionOpenDatabase actionOpenDatabase;
+	private ActionCreateDatabase actionCreateDatabase;
+	private ActionOpenProfile actionOpenProfile; 
 	private ActionSaveProfile actionSaveProfile;
+	private ActionQuit actionQuit;
 	private ActionCloseDatabase actionCloseDatabase;
 	private ActionAddDocument actionAddDocument;
 	private ActionRemoveDocuments actionRemoveDocuments;
@@ -86,12 +97,13 @@ public class MainWindow extends JFrame implements SqlListener {
 	private ActionRefresh actionRefresh;
 	private ActionBatchImportDocuments actionBatchImportDocuments;
 	private ActionRemoveStatements actionRemoveStatements;
+	private ActionLoggerDialog actionLoggerDialog;
+	private ActionAboutWindow actionAboutWindow;
 
 	// TODO: reorder methods and classes in main window, popup, text panel, document table, and statement table panel classes
 	// TODO: add javadoc to the aforementioned classes and methods
 	// TODO: popup colouring and window decoration have a bug: sometimes multiple popups shown after switching
 	// TODO: remove toolbar listener interface and move the document listener here into the main window class for controlling the document table filter
-	// TODO: ensure all actions are initiated centrally here in the main window class
 	// TODO: when a statement popup is closed, unselect the statement in the statement table
 	// TODO: double-check if interaction between statement table selection, document selection, and popups in the text panel works well
 	// TODO: double-check if there is view-specific code in the main window class that can be moved into the view components
@@ -136,13 +148,25 @@ public class MainWindow extends JFrame implements SqlListener {
 		});
 		
 		// initialize actions
+		ImageIcon openDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionOpenDatabase = new ActionOpenDatabase("Open DNA database", openDatabaseIcon, "Open a dialog window to establish a connection to a remote or file-based database", KeyEvent.VK_O);
+
+		ImageIcon closeDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionCloseDatabase = new ActionCloseDatabase("Close database", closeDatabaseIcon, "Close the connection to the current database and reset graphical user interface", KeyEvent.VK_X);
+		actionCloseDatabase.setEnabled(false);
+		
+		ImageIcon createDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-plus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionCreateDatabase = new ActionCreateDatabase("Create new DNA database", createDatabaseIcon, "Open a dialog window to create a new remote or file-based database", KeyEvent.VK_C);
+		
+		ImageIcon openProfileIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-link.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionOpenProfile = new ActionOpenProfile("Open connection profile", openProfileIcon, "Open a connection profile, which acts as a bookmark to a database", KeyEvent.VK_P);
+		
 		ImageIcon saveProfileIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-download.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		actionSaveProfile = new ActionSaveProfile("Save connection profile", saveProfileIcon, "Save a connection profile, which acts as a bookmark to a database", KeyEvent.VK_S);
 		actionSaveProfile.setEnabled(false);
 		
-		ImageIcon closeDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
-		actionCloseDatabase = new ActionCloseDatabase("Close database", closeDatabaseIcon, "Close the connection to the current database and reset graphical user interface", KeyEvent.VK_X);
-		actionCloseDatabase.setEnabled(false);
+		ImageIcon quitIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-logout.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionQuit = new ActionQuit("Exit / quit", quitIcon, "Close the Discourse Network Analyzer", KeyEvent.VK_Q);
 		
 		ImageIcon addDocumentIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		actionAddDocument = new ActionAddDocument("Add document", addDocumentIcon, "Open a dialog window to enter details of a new document", KeyEvent.VK_A);
@@ -168,6 +192,12 @@ public class MainWindow extends JFrame implements SqlListener {
 		actionRemoveStatements = new ActionRemoveStatements("Remove statement(s)", removeStatementsIcon, "Remove the statement(s) currently selected in the statement table", KeyEvent.VK_D);
 		actionRemoveStatements.setEnabled(false);
 		
+		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionAboutWindow = new ActionAboutWindow("About DNA", aboutIcon, "Display information about DNA", KeyEvent.VK_B);
+		
+		ImageIcon loggerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionLoggerDialog = new ActionLoggerDialog("Message log", loggerIcon, "Display a log of messages, warnings, and errors in a dialog window", KeyEvent.VK_L);
+		
 		// define models
 		documentTableModel = new DocumentTableModel();
 		statementTableModel = new StatementTableModel();
@@ -183,14 +213,20 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionAddDocument,
 				actionRemoveDocuments,
 				actionEditDocuments);
-		MenuBar menuBar = new MenuBar(actionSaveProfile,
+		MenuBar menuBar = new MenuBar(actionOpenDatabase,
 				actionCloseDatabase,
+				actionCreateDatabase,
+				actionOpenProfile,
+				actionSaveProfile,
+				actionQuit,
 				actionAddDocument,
 				actionRemoveDocuments,
 				actionEditDocuments,
-				actionRefresh,
 				actionBatchImportDocuments,
-				actionRemoveStatements);
+				actionRefresh,
+				actionRemoveStatements,
+				actionLoggerDialog,
+				actionAboutWindow);
 		statusBar = new StatusBar();
 		statementPanel = new StatementPanel(statementTableModel, actionRemoveStatements);
 		textPanel = new TextPanel(statementPanel);
@@ -825,6 +861,178 @@ public class MainWindow extends JFrame implements SqlListener {
 	}
 
 	/**
+	 * An action to close the open SQL database.
+	 */
+	class ActionCloseDatabase extends AbstractAction {
+		private static final long serialVersionUID = -4463742124397662610L;
+		public ActionCloseDatabase(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		public void actionPerformed(ActionEvent e) {
+			Dna.setSql(null);
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: closed database.",
+					"Closed database connection from the GUI.");
+			Dna.logger.log(l);
+		}
+	}
+	
+	/**
+	 * An action to display a new database dialog to create a new DNA database.
+	 */
+	class ActionCreateDatabase extends AbstractAction {
+		private static final long serialVersionUID = -9019267411134217476L;
+
+		public ActionCreateDatabase(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			NewDatabaseDialog n = new NewDatabaseDialog(false);
+			ConnectionProfile cp = n.getConnectionProfile();
+			if (cp != null) {
+				Dna.setSql(new Sql(cp));
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[GUI] Action executed: created new database.",
+						"Created a new database from the GUI.");
+				Dna.logger.log(l);
+			}
+		}
+	}
+	
+	/**
+	 * An action to display a file chooser and open a connection profile.
+	 */
+	class ActionOpenProfile extends AbstractAction {
+		private static final long serialVersionUID = -1985734783855268915L;
+		
+		public ActionOpenProfile(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			String filename = null;
+			boolean validFileInput = false;
+			while (!validFileInput) {
+				JFileChooser fc = new JFileChooser();
+				fc.setFileFilter(new FileFilter() {
+					public boolean accept(File f) {
+						return f.getName().toLowerCase().endsWith(".dnc") || f.isDirectory();
+					}
+					public String getDescription() {
+						return "DNA connection profile (*.dnc)";
+					}
+				});
+				int returnVal = fc.showOpenDialog(null);
+				
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File file = fc.getSelectedFile();
+					if (file.exists()) {
+						filename = new String(file.getPath());
+						if (!filename.endsWith(".dnc")) {
+							filename = filename + ".dnc";
+						}
+						validFileInput = true; // file choice accepted
+					} else {
+						JOptionPane.showMessageDialog(null, "The file name you entered does not exist. Please choose a new file.");
+					}
+				} else { // cancel button; mark as valid file input, but reset file name
+					filename = null;
+					validFileInput = true;
+				}
+			}
+			
+			if (filename != null) { // if file has been chosen successfully, go on with authentication
+				boolean validPasswordInput = false;
+				while (!validPasswordInput) {
+					// ask user for password (for the user in the connection profile) to decrypt the profile
+					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog();
+					String key = d.getPassword();
+					
+					// decrypt connection profile, create SQL connection, and set as default SQL connection
+					if (key == null) {
+						validPasswordInput = true; // user must have pressed cancel; quit the while-loop
+					} else {
+						if (!key.equals("")) {
+							ConnectionProfile cp = null;
+							try {
+								cp = readConnectionProfile(filename, key);
+							} catch (EncryptionOperationNotPossibleException e2) {
+								cp = null;
+							}
+							if (cp != null) {
+								Sql sqlTemp = new Sql(cp);
+								boolean authenticated = sqlTemp.authenticate(key);
+								if (authenticated == true) {
+									validPasswordInput = true; // authenticated; quit the while-loop
+									Dna.setSql(sqlTemp);
+								} else {
+									cp = null;
+								}
+							}
+							if (cp == null) {
+								JOptionPane.showMessageDialog(null,
+					        			"Database credentials could not be decrypted.\n"
+					        					+ "Did you enter the right password?",
+									    "Check failed",
+									    JOptionPane.ERROR_MESSAGE);
+							}
+						} else {
+							JOptionPane.showMessageDialog(null,
+				        			"Password check failed. Zero-length passwords are not permitted.",
+								    "Check failed",
+								    JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}
+			}
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: opened connection profile.",
+					"Opened a connection profile from the GUI.");
+			Dna.logger.log(l);
+		}
+
+		/**
+		 * Read in a saved connection profile from a JSON file, decrypt the
+		 * credentials, and return the connection profile.
+		 * 
+		 * @param file  The file name including path of the JSON connection profile
+		 * @param key   The key/password of the coder to decrypt the credentials
+		 * @return      Decrypted connection profile
+		 */
+		private ConnectionProfile readConnectionProfile(String file, String key) throws EncryptionOperationNotPossibleException {
+
+			// read connection profile JSON file in, in String format but with encrypted credentials
+			ConnectionProfile cp = null;
+			Gson gson = new Gson();
+			try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+				cp = gson.fromJson(br, ConnectionProfile.class);
+			} catch (JsonSyntaxException | JsonIOException | IOException e) {
+				LogEvent l = new LogEvent(Logger.ERROR,
+						"[GUI] Failed to read connection profile.",
+						"Tried to read a connection profile from a JSON file and failed.",
+						e);
+				Dna.logger.log(l);
+			}
+			
+			// decrypt the URL, user name, and SQL connection password inside the profile
+			AES256TextEncryptor textEncryptor = new AES256TextEncryptor();
+			textEncryptor.setPassword(key);
+			cp.setUrl(textEncryptor.decrypt(cp.getUrl()));
+			cp.setUser(textEncryptor.decrypt(cp.getUser()));
+			cp.setPassword(textEncryptor.decrypt(cp.getPassword()));
+			
+			return cp;
+		}
+	}
+
+	/**
 	 * An action to display a file chooser and save a connection profile.
 	 */
 	class ActionSaveProfile extends AbstractAction {
@@ -940,21 +1148,23 @@ public class MainWindow extends JFrame implements SqlListener {
 	}
 	
 	/**
-	 * An action to close the open SQL database.
+	 * An action to quit DNA.
 	 */
-	class ActionCloseDatabase extends AbstractAction {
-		private static final long serialVersionUID = -4463742124397662610L;
-		public ActionCloseDatabase(String text, ImageIcon icon, String desc, Integer mnemonic) {
+	class ActionQuit extends AbstractAction {
+		private static final long serialVersionUID = 3334696382161923841L;
+
+		public ActionQuit(String text, ImageIcon icon, String desc, Integer mnemonic) {
 			super(text, icon);
 			putValue(SHORT_DESCRIPTION, desc);
 			putValue(MNEMONIC_KEY, mnemonic);
 		}
+		
 		public void actionPerformed(ActionEvent e) {
-			Dna.setSql(null);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[GUI] Action executed: closed database.",
-					"Closed database connection from the GUI.");
+					"[GUI] Action executed: quit DNA.",
+					"Quit DNA from the GUI.");
 			Dna.logger.log(l);
+			System.exit(0);
 		}
 	}
 	
@@ -1102,6 +1312,44 @@ public class MainWindow extends JFrame implements SqlListener {
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: removed statement(s).",
 					"Deleted one or more statements in the database from the GUI.");
+			Dna.logger.log(l);
+		}
+	}
+	
+	/**
+	 * An action to open a new logger dialog window.
+	 */
+	class ActionLoggerDialog extends AbstractAction {
+		private static final long serialVersionUID = -629086240908166990L;
+
+		public ActionLoggerDialog(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			new LoggerDialog();
+		}
+	}
+	
+	/**
+	 * An action to display a new About DNA window.
+	 */
+	class ActionAboutWindow extends AbstractAction {
+		private static final long serialVersionUID = -9078666078201409563L;
+		
+		public ActionAboutWindow(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			new AboutWindow(Dna.version, Dna.date);
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: opened About DNA window.",
+					"Opened an About DNA window from the GUI.");
 			Dna.logger.log(l);
 		}
 	}

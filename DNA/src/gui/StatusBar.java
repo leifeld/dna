@@ -35,8 +35,9 @@ class StatusBar extends JPanel implements LogListener, SqlListener {
 	public StatusBar() {
 		this.setLayout(new BorderLayout());
 		JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		ImageIcon databaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		ActionOpenDatabase actionOpenDatabase = new ActionOpenDatabase(null, databaseIcon, "Open a dialog window to establish a connection to a remote or file-based database", KeyEvent.VK_O);
+
+		ImageIcon openDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		ActionOpenDatabase actionOpenDatabase = new ActionOpenDatabase("", openDatabaseIcon, "Open a dialog window to establish a connection to a remote or file-based database", KeyEvent.VK_O);
 		JButton databaseButton = new JButton(actionOpenDatabase);
 		databaseButton.setContentAreaFilled(false);
 		databaseButton.setBorderPainted(false);

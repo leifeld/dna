@@ -221,6 +221,7 @@ class Popup extends JDialog {
 		gbc.gridy = 0;
 		gbc.anchor = GridBagConstraints.EAST;
 		
+		// add fields for the values
 		variables = statement.getValues();
 		for (int i = 0; i < variables.size(); i++) {
 			String key = variables.get(i).getKey();
@@ -367,6 +368,7 @@ class Popup extends JDialog {
 		
 		contentsPanel.add(gridBagPanel, BorderLayout.CENTER);
 		
+		// add buttons if window decoration is true
 		if (windowDecoration == true) {
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 			ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
@@ -484,7 +486,7 @@ class Popup extends JDialog {
 	 */
 	private class BooleanButtonPanel extends JPanel {
 		private static final long serialVersionUID = 2614141772546080638L;
-		JRadioButton yes, no;
+		private JRadioButton yes, no;
 		
 		BooleanButtonPanel() {
 			FlowLayout fl = new FlowLayout(FlowLayout.LEFT);

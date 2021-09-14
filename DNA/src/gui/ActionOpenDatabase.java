@@ -11,23 +11,26 @@ import logger.Logger;
 import sql.ConnectionProfile;
 import sql.Sql;
 
-class ActionCreateDatabase extends AbstractAction {
-	private static final long serialVersionUID = -9019267411134217476L;
-
-	public ActionCreateDatabase(String text, ImageIcon icon, String desc, Integer mnemonic) {
+/**
+ * An action to display a dialog to open a database.
+ */
+class ActionOpenDatabase extends AbstractAction {
+	private static final long serialVersionUID = 5076889002458881750L;
+	
+	public ActionOpenDatabase(String text, ImageIcon icon, String desc, Integer mnemonic) {
 		super(text, icon);
 		putValue(SHORT_DESCRIPTION, desc);
 		putValue(MNEMONIC_KEY, mnemonic);
 	}
 	
 	public void actionPerformed(ActionEvent e) {
-		NewDatabaseDialog n = new NewDatabaseDialog(false);
+		NewDatabaseDialog n = new NewDatabaseDialog(true);
 		ConnectionProfile cp = n.getConnectionProfile();
 		if (cp != null) {
 			Dna.setSql(new Sql(cp));
 			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[GUI] Action executed: created new database.",
-					"Created a new database from the GUI.");
+					"[GUI] Action executed: opened database.",
+					"Opened a database connection from the GUI.");
 			Dna.logger.log(l);
 		}
 	}
