@@ -13,6 +13,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.Rectangle2D;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -36,9 +37,11 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -46,6 +49,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.text.BadLocationException;
 
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.jasypt.util.text.AES256TextEncryptor;
@@ -100,6 +104,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	private ActionLoggerDialog actionLoggerDialog;
 	private ActionAboutWindow actionAboutWindow;
 
+	// TODO: move control code from the popup class to the main window class
 	// TODO: popup colouring and window decoration have a bug: sometimes multiple popups shown after switching
 	// TODO: remove toolbar listener interface and move the document listener here into the main window class for controlling the document table filter
 	// TODO: when a statement popup is closed, unselect the statement in the statement table
@@ -227,15 +232,15 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionAboutWindow);
 		statusBar = new StatusBar();
 		statementPanel = new StatementPanel(statementTableModel, actionRemoveStatements);
-		textPanel = new TextPanel(statementPanel);
+		textPanel = new TextPanel();
 		
 		// add listeners
 		Dna.addSqlListener(this);
 		Dna.logger.addListener(statusBar);
 		Dna.addCoderListener(textPanel);
 		Dna.addCoderListener(documentTablePanel);
-		Dna.addSqlListener(statementPanel);
-		Dna.addCoderListener(statementPanel);
+		Dna.addSqlListener(getStatementPanel());
+		Dna.addCoderListener(getStatementPanel());
 		Dna.addSqlListener(toolbar);
 		Dna.addCoderListener(toolbar);
 		toolbar.addToolbarListener(documentTablePanel);
@@ -243,7 +248,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		// layout
 		JSplitPane verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, documentTablePanel, textPanel);
 		verticalSplitPane.setOneTouchExpandable(true);
-		JSplitPane rightSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, verticalSplitPane, statementPanel);
+		JSplitPane rightSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, verticalSplitPane, getStatementPanel());
 		rightSplitPane.setOneTouchExpandable(true);
 		
 		JPanel innerPanel = new JPanel(new BorderLayout());
@@ -257,7 +262,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		mainPanel.add(statusBar, BorderLayout.SOUTH);
 		
 		// selection listener for the statement table; select statement or enable remove statements action
-		JTable statementTable = statementPanel.getStatementTable();
+		JTable statementTable = getStatementPanel().getStatementTable();
 		statementTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
 				if (e.getValueIsAdjusting()) {
@@ -283,7 +288,7 @@ public class MainWindow extends JFrame implements SqlListener {
 							(Dna.sql.getActiveCoder().getPermissionEditOthersStatements() == 0 && Dna.sql.getActiveCoder().getId() == s.getCoderId()))) {
 						editable = true;
 					}
-					textPanel.selectStatement(s, s.getDocumentId(), editable);
+					selectStatement(s, s.getDocumentId(), editable);
 				}
 			}
 		});
@@ -307,7 +312,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				}
 				if (rowCount == 0) {
 					textPanel.setContents(-1, "");
-					statementPanel.setDocumentId(-1);
+					getStatementPanel().setDocumentId(-1);
 					statementTableModel.fireTableDataChanged();
 				} else if (rowCount > 1) {
 					int[] selectedRows = documentTable.getSelectedRows();
@@ -316,14 +321,14 @@ public class MainWindow extends JFrame implements SqlListener {
 						selectedDocumentIds[i] = documentTableModel.getIdByModelRow(documentTable.convertRowIndexToModel(selectedRows[i]));
 					}
 					textPanel.setContents(-1, "");
-					statementPanel.setDocumentId(-1);
+					getStatementPanel().setDocumentId(-1);
 					statementTableModel.fireTableDataChanged();
 				} else if (rowCount == 1) {
 					int selectedRow = documentTable.getSelectedRow();
 					int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
 					int id = (int) documentTableModel.getValueAt(selectedModelIndex, 0);
 					textPanel.setContents(id, documentTableModel.getDocumentText(id));
-					statementPanel.setDocumentId(id);
+					getStatementPanel().setDocumentId(id);
 					statementTableModel.fireTableDataChanged();
 				} else {
 					LogEvent l = new LogEvent(Logger.WARNING,
@@ -470,7 +475,7 @@ public class MainWindow extends JFrame implements SqlListener {
 									&& (Dna.sql.getActiveCoder().getPermissionViewOthersStatements() == 1 || statements.get(i).getCoderId() == Dna.sql.getActiveCoder().getId())
 									// TODO here: check also the CODERRELATIONS table
 									) {
-								statementPanel.setSelectedStatementId(statements.get(i).getId());
+								getStatementPanel().setSelectedStatementId(statements.get(i).getId());
 								Point location = textWindow.getLocationOnScreen();
 								textWindow.setSelectionStart(statements.get(i).getStart());
 								textWindow.setSelectionEnd(statements.get(i).getStop());
@@ -492,7 +497,7 @@ public class MainWindow extends JFrame implements SqlListener {
 										new Popup(p.getX(), p.getY(), statementId, location, false);
 									}
 								 */
-								new Popup(p.getX(), p.getY(), statements.get(i), documentTablePanel.getSelectedDocumentId(), location, Dna.sql.getActiveCoder(), statementPanel);
+								newPopup(p.getX(), p.getY(), statements.get(i), documentTablePanel.getSelectedDocumentId(), location, Dna.sql.getActiveCoder());
 								break;
 								//}
 							}
@@ -518,12 +523,77 @@ public class MainWindow extends JFrame implements SqlListener {
 	}
 
 	/**
+	 * Get the statement panel.
+	 * 
+	 * @return The statement panel.
+	 */
+	StatementPanel getStatementPanel() {
+		return statementPanel;
+	}
+
+	/**
 	 * Retrieve the document table model.
 	 * 
 	 * @return Document table model.
 	 */
 	DocumentTableModel getDocumentTableModel() {
 		return documentTableModel;
+	}
+
+	/**
+	 * Set text in the editor pane, select statement, and open popup window
+	 * 
+	 * @param s           The statement to be displayed in a popup dialog.
+	 * @param documentId  The ID of the document.
+	 * @param editable    Should the popup dialog be editable?
+	 */
+	void selectStatement(Statement s, int documentId, boolean editable) {
+		JTextPane textWindow = getTextPanel().getTextWindow();
+		JScrollPane textScrollPane = getTextPanel().getTextScrollPane();
+		int start = s.getStart();
+		int stop = s.getStop();
+		textWindow.grabFocus();
+		textWindow.select(start, stop);
+		
+		// the selection is too slow, so wait for it to finish...
+		SwingUtilities.invokeLater(new Runnable() {
+			@SuppressWarnings("deprecation") // modelToView becomes modelToView2D in Java 9, but we still want Java 8 compliance
+			public void run() {
+				Rectangle2D mtv = null;
+				try {
+					double y = textWindow.modelToView(start).getY();
+					int l = textWindow.getText().length();
+					double last = textWindow.modelToView(l).getY();
+					double frac = y / last;
+					double max = textScrollPane.getVerticalScrollBar().getMaximum();
+					double h = textScrollPane.getHeight();
+					int value = (int) Math.ceil(frac * max - (h / 2));
+					textScrollPane.getVerticalScrollBar().setValue(value);
+					mtv = textWindow.modelToView(start);
+					Point loc = textWindow.getLocationOnScreen();
+					newPopup(mtv.getX(), mtv.getY(), s, documentId, loc, Dna.sql.getActiveCoder());
+				} catch (BadLocationException e) {
+					LogEvent l = new LogEvent(Logger.WARNING,
+							"[GUI] Statement " + s.getId() + ": Popup window bad location exception.",
+							"Statement " + s.getId() + ": Popup window cannot be opened because the location is outside the document text.");
+					Dna.logger.log(l);
+				}
+			}
+		});
+	}
+	
+	/**
+	 * Show a statement popup window.
+	 * 
+	 * @param x           X location on the screen.
+	 * @param y           Y location on the screen.
+	 * @param s           The statement to show.
+	 * @param documentId  The document ID for the statement.
+	 * @param location    The location of the popup window.
+	 * @param coder       The active coder.
+	 */
+	private void newPopup(double x, double y, Statement s, int documentId, Point location, Coder coder) {
+		new Popup(x, y, s, documentId, location, coder);
 	}
 
 	/**
@@ -689,7 +759,7 @@ public class MainWindow extends JFrame implements SqlListener {
 			actionRefresh.setEnabled(false);
     		time = System.nanoTime(); // take the time to compute later how long the updating took
     		statusBar.statementRefreshStart();
-    		selectedId = statementPanel.getSelectedStatementId();
+    		selectedId = getStatementPanel().getSelectedStatementId();
     		statementTableModel.clear(); // remove all documents from the table model before re-populating the table
 			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI] Initializing thread to populate statement table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
@@ -804,14 +874,14 @@ public class MainWindow extends JFrame implements SqlListener {
         @Override
         protected void process(List<Statement> chunks) {
         	statementTableModel.addRows(chunks); // transfer a batch of rows to the statement table model
-			statementPanel.setSelectedStatementId(selectedId); // select the statement from before; skipped if the statement not found in this batch
+			getStatementPanel().setSelectedStatementId(selectedId); // select the statement from before; skipped if the statement not found in this batch
         }
 
         @Override
         protected void done() {
         	statusBar.statementRefreshEnd(); // stop displaying the update message in the status bar
 			statementTableModel.fireTableDataChanged(); // update the statement filter
-			statementPanel.setSelectedStatementId(selectedId);
+			getStatementPanel().setSelectedStatementId(selectedId);
     		long elapsed = System.nanoTime(); // measure time again for calculating difference
     		LogEvent le = new LogEvent(Logger.MESSAGE,
     				"[GUI]  ├─ (Re)loaded all " + statementTableModel.getRowCount() + " statements in " + (elapsed - time) / 1000000 + " milliseconds.",
@@ -1297,12 +1367,12 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			int[] selectedRows = statementPanel.getStatementTable().getSelectedRows();
+			int[] selectedRows = getStatementPanel().getStatementTable().getSelectedRows();
 			String message = "Are you sure you want to delete " + selectedRows.length + " statement(s)?";
 			int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 			if (dialog == 0) {
 				for (int i = 0; i < selectedRows.length; i++) {
-					selectedRows[i] = statementPanel.getStatementTable().convertRowIndexToModel(selectedRows[i]);
+					selectedRows[i] = getStatementPanel().getStatementTable().convertRowIndexToModel(selectedRows[i]);
 				}
 				statementTableModel.removeStatements(selectedRows);
 			}

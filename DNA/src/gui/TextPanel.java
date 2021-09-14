@@ -5,14 +5,12 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Point;
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
@@ -20,9 +18,6 @@ import javax.swing.text.StyleContext;
 
 import dna.Dna;
 import dna.Dna.CoderListener;
-import gui.Popup;
-import logger.LogEvent;
-import logger.Logger;
 import model.Coder;
 import model.Statement;
 
@@ -39,13 +34,11 @@ class TextPanel extends JPanel implements CoderListener {
 	private StyleContext sc;
 	private int documentId;
 	private Coder coder;
-	private StatementPanel statementPanel;
 	
 	/**
 	 * Create a new text panel.
 	 */
-	TextPanel(StatementPanel statementPanel) {
-		this.statementPanel = statementPanel;
+	TextPanel() {
 		this.setLayout(new BorderLayout());
 		sc = new StyleContext();
 	    doc = new DefaultStyledDocument(sc);
@@ -80,6 +73,15 @@ class TextPanel extends JPanel implements CoderListener {
 		return textWindow;
 	}
 
+	/**
+	 * Return the text scroll pane.
+	 * 
+	 * @return The text scroll pane that holds the text pane.
+	 */
+	JScrollPane getTextScrollPane() {
+		return textScrollPane;
+	}
+	
 	/**
 	 * Get the current vertical scroll location. This can be used to restore the
 	 * scroll location after reloading the document data from the database.
@@ -149,48 +151,6 @@ class TextPanel extends JPanel implements CoderListener {
 		}
 	}
 	
-	/**
-	 * Set text in the editor pane, select statement, and open popup window
-	 * 
-	 * @param s           The statement to be displayed in a popup dialog.
-	 * @param documentId  The ID of the document.
-	 * @param editable    Should the popup dialog be editable?
-	 */
-	void selectStatement(Statement s, int documentId, boolean editable) {
-		//Statement s = Dna.sql.getStatement(statementId);
-		
-		int start = s.getStart();
-		int stop = s.getStop();
-		textWindow.grabFocus();
-		textWindow.select(start, stop);
-		
-		// the selection is too slow, so wait for it to finish...
-		SwingUtilities.invokeLater(new Runnable() {
-			@SuppressWarnings("deprecation") // modelToView becomes modelToView2D in Java 9, but we still want Java 8 compliance 
-			public void run() {
-				Rectangle2D mtv = null;
-				try {
-					double y = textWindow.modelToView(start).getY();
-					int l = textWindow.getText().length();
-					double last = textWindow.modelToView(l).getY();
-					double frac = y / last;
-					double max = textScrollPane.getVerticalScrollBar().getMaximum();
-					double h = textScrollPane.getHeight();
-					int value = (int) Math.ceil(frac * max - (h / 2));
-					textScrollPane.getVerticalScrollBar().setValue(value);
-					mtv = textWindow.modelToView(start);
-					Point loc = textWindow.getLocationOnScreen();
-					new Popup(mtv.getX(), mtv.getY(), s, documentId, loc, coder, statementPanel);
-				} catch (BadLocationException e) {
-					LogEvent l = new LogEvent(Logger.WARNING,
-							"[GUI] Statement " + s.getId() + ": Popup window bad location exception.",
-							"Statement " + s.getId() + ": Popup window cannot be opened because the location is outside the document text.");
-					Dna.logger.log(l);
-				}
-			}
-		});
-	}
-
 	@Override
 	public void adjustToChangedCoder() {
 		if (Dna.sql == null) {

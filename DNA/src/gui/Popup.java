@@ -69,7 +69,7 @@ class Popup extends JDialog {
 	 * @param coder     The current coder who is viewing the statement.
 	 * @param statementPanel A reference to the statement panel.
 	 */
-	Popup(double X, double Y, Statement statement, int documentId, Point location, Coder coder, StatementPanel statementPanel) {
+	Popup(double X, double Y, Statement statement, int documentId, Point location, Coder coder) {
 		int statementId = statement.getId();
 		this.los = location;
 		this.textFieldWidth = coder.getPopupWidth();
@@ -167,7 +167,7 @@ class Popup extends JDialog {
 					}
 					int newStatementId = Dna.sql.cloneStatement(statementId, coder.getId());
 					Dna.dna.getMainWindow().refreshStatementTable();
-					statementPanel.setSelectedStatementId(newStatementId);
+					Dna.dna.getMainWindow().getStatementPanel().setSelectedStatementId(newStatementId);
 					dispose();
 				}
 			}
