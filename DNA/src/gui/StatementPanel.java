@@ -222,29 +222,24 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener {
 		StatementFilterPanel sfp = new StatementFilterPanel();
 		this.add(sfp, BorderLayout.SOUTH);
 	}
-	
+
+	/**
+	 * Set the document ID stored in the statement panel, which is used for
+	 * filtering statements.
+	 * 
+	 * @param documentId  Document ID of the currently displayed document.
+	 */
+	void setDocumentId(int documentId) {
+		this.documentId = documentId;
+	}
+
+	/**
+	 * Get a reference to the statement table.
+	 * 
+	 * @return The statement table.
+	 */
 	JTable getStatementTable() {
 		return statementTable;
-	}
-	
-	/**
-	 * Convert a statement table row index (view) to a row index in the table
-	 * model.
-	 * 
-	 * @param row  The row in the table.
-	 * @return     The row in the model.
-	 */
-	int convertRowIndexToModel(int row) {
-		return this.statementTable.convertRowIndexToModel(row);
-	}
-	
-	/**
-	 * Get the selected rows in the statement table.
-	 * 
-	 * @return  An int array with the selected row indices.
-	 */
-	int[] getSelectedRows() {
-		return this.statementTable.getSelectedRows();
 	}
 	
 	/**
@@ -608,8 +603,4 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener {
 			filterButton.setEnabled(true);
 		}
 	}
-	
-	void setDocumentId(int documentId) {
-		this.documentId = documentId;
 	}
-}

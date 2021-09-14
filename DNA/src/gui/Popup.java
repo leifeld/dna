@@ -67,6 +67,7 @@ class Popup extends JDialog {
 	 * @param statement The {@link Statement} to be edited.
 	 * @param location  Location of the DNA text panel on screen.
 	 * @param coder     The current coder who is viewing the statement.
+	 * @param statementPanel A reference to the statement panel.
 	 */
 	Popup(double X, double Y, Statement statement, int documentId, Point location, Coder coder, StatementPanel statementPanel) {
 		int statementId = statement.getId();

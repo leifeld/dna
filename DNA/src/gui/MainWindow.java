@@ -100,8 +100,6 @@ public class MainWindow extends JFrame implements SqlListener {
 	private ActionLoggerDialog actionLoggerDialog;
 	private ActionAboutWindow actionAboutWindow;
 
-	// TODO: reorder methods and classes in main window, popup, text panel, document table, and statement table panel classes
-	// TODO: add javadoc to the aforementioned classes and methods
 	// TODO: popup colouring and window decoration have a bug: sometimes multiple popups shown after switching
 	// TODO: remove toolbar listener interface and move the document listener here into the main window class for controlling the document table filter
 	// TODO: when a statement popup is closed, unselect the statement in the statement table
@@ -1299,12 +1297,12 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			int[] selectedRows = statementPanel.getSelectedRows();
+			int[] selectedRows = statementPanel.getStatementTable().getSelectedRows();
 			String message = "Are you sure you want to delete " + selectedRows.length + " statement(s)?";
 			int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 			if (dialog == 0) {
 				for (int i = 0; i < selectedRows.length; i++) {
-					selectedRows[i] = statementPanel.convertRowIndexToModel(selectedRows[i]);
+					selectedRows[i] = statementPanel.getStatementTable().convertRowIndexToModel(selectedRows[i]);
 				}
 				statementTableModel.removeStatements(selectedRows);
 			}

@@ -142,16 +142,53 @@ class StatusBar extends JPanel implements LogListener, SqlListener {
 		}
 	}
 
+	/**
+	 * Start displaying a statement refresh message in the status bar.
+	 */
 	public void statementRefreshStart() {
 		this.statementRefreshIconLabel.setVisible(true);
 		this.statementRefreshLabel.setVisible(true);
 	}
 
+	/**
+	 * Stop displaying the statement refresh message in the status bar.
+	 */
 	public void statementRefreshEnd() {
 		this.statementRefreshIconLabel.setVisible(false);
 		this.statementRefreshLabel.setVisible(false);
 	}
 
+	/**
+	 * Start displaying a document refresh message in the status bar.
+	 */
+	public void documentRefreshStarted() {
+		this.documentRefreshIconLabel.setVisible(true);
+		this.documentRefreshLabel.setVisible(true);
+	}
+
+	/**
+	 * Stop displaying the document refresh message in the status bar.
+	 */
+	public void documentRefreshEnded() {
+		this.documentRefreshIconLabel.setVisible(false);
+		this.documentRefreshLabel.setVisible(false);
+	}
+
+	/**
+	 * Check if a document or statement refresh is in progress, meaning that
+	 * either a document or a statement swing worker is still running and a
+	 * status bar message is being displayed.
+	 * 
+	 * @return  Boolean indicating if a refresh swing worker is running.
+	 */
+	public boolean isRefreshInProgress() {
+		if (this.documentRefreshLabel.isVisible() || this.statementRefreshLabel.isVisible()) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	/**
 	 * Listen to changes in the Logger in DNA and respond by updating the event
 	 * counts in the status bar.
@@ -170,24 +207,6 @@ class StatusBar extends JPanel implements LogListener, SqlListener {
 		updateLog(numWarnings, numErrors);
 	}
 
-	public void documentRefreshStarted() {
-		this.documentRefreshIconLabel.setVisible(true);
-		this.documentRefreshLabel.setVisible(true);
-	}
-
-	public void documentRefreshEnded() {
-		this.documentRefreshIconLabel.setVisible(false);
-		this.documentRefreshLabel.setVisible(false);
-	}
-
-	public boolean isRefreshInProgress() {
-		if (this.documentRefreshLabel.isVisible() || this.statementRefreshLabel.isVisible()) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-	
 	@Override
 	public void adjustToDatabaseState() {
 		updateUrl();

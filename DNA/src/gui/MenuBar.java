@@ -18,9 +18,30 @@ import gui.MainWindow.ActionRemoveDocuments;
 import gui.MainWindow.ActionRemoveStatements;
 import gui.MainWindow.ActionSaveProfile;
 
+/**
+ * Menu bar with actions as menu items.
+ */
 public class MenuBar extends JMenuBar {
 	private static final long serialVersionUID = 6631392079690346097L;
 
+	/**
+	 * Create a new menu bar.
+	 * 
+	 * @param actionOpenDatabase          Action for opening a new database.
+	 * @param actionCloseDatabase         Action for closing the database.
+	 * @param actionCreateDatabase        Action for creating a new database.
+	 * @param actionOpenProfile           Action for opening connection profile.
+	 * @param actionSaveProfile           Action for saving connection profile.
+	 * @param actionQuit                  Action for quitting DNA.
+	 * @param actionAddDocument           Action for adding a document.
+	 * @param actionRemoveDocuments       Action for removing documents.
+	 * @param actionEditDocuments         Action for editing documents.
+	 * @param actionBatchImportDocuments  Action for batch-importing documents.
+	 * @param actionRefresh               Action for reloading data.
+	 * @param actionRemoveStatements      Action for removing statements.
+	 * @param actionLoggerDialog          Action for opening logger dialog.
+	 * @param actionAboutWindow           Action for opening DNA About window.
+	 */
 	public MenuBar(ActionOpenDatabase actionOpenDatabase,
 			ActionCloseDatabase actionCloseDatabase,
 			ActionCreateDatabase actionCreateDatabase,

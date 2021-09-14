@@ -27,10 +27,9 @@ import model.Coder;
 import model.Statement;
 
 /**
- * Text panel, which displays the text of the selected document and stores a
- * list of the statements contained in the document. It paints the statements in
- * the text and can initiate a context menu for inserting statements or popup
- * dialog window to display the contents of a statement.
+ * Text panel, which displays the text of the selected document and paints the
+ * statements in the given document in different colors. It keeps the current
+ * document ID on record to paint only the statements in the current document.
  */
 class TextPanel extends JPanel implements CoderListener {
 	private static final long serialVersionUID = -8094978928012991210L;
@@ -44,9 +43,6 @@ class TextPanel extends JPanel implements CoderListener {
 	
 	/**
 	 * Create a new text panel.
-	 * 
-	 * @param documentTableModel A reference to the table model in which the
-	 *   documents are stored.
 	 */
 	TextPanel(StatementPanel statementPanel) {
 		this.statementPanel = statementPanel;
@@ -75,6 +71,53 @@ class TextPanel extends JPanel implements CoderListener {
 		this.add(textScrollPane);
 	}
 	
+	/**
+	 * Return the text pane component.
+	 * 
+	 * @return The text pane in which the document text is displayed.
+	 */
+	JTextPane getTextWindow() {
+		return textWindow;
+	}
+
+	/**
+	 * Get the current vertical scroll location. This can be used to restore the
+	 * scroll location after reloading the document data from the database.
+	 * 
+	 * @return  An integer giving the vertical scroll position.
+	 */
+	int getVerticalScrollLocation() {
+		return (int) textScrollPane.getViewport().getViewPosition().getY(); // get the scroll position to restore it later
+	}
+
+	/**
+	 * Set the vertical scroll location. This can be used to restore the scroll
+	 * location after reloading the document data from the database.
+	 * 
+	 * @param verticalScrollLocation  The vertical scroll location.
+	 */
+	void setVerticalScrollLocation(int verticalScrollLocation) {
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				textScrollPane.getViewport().setViewPosition(new Point(0, verticalScrollLocation)); // scroll to previously saved position
+			}
+		});
+	}
+
+	/**
+	 * Set the contents of the text panel, including the document ID and text,
+	 * and paint the statements in the text, then scroll to the top of the text.
+	 * 
+	 * @param documentId  ID of the document to display.
+	 * @param text        Text of the document to display.
+	 */
+	void setContents(int documentId, String text) {
+		this.textWindow.setText(text);
+		this.documentId = documentId;
+		paintStatements();
+		textWindow.setCaretPosition(0);
+	}
+
 	/**
 	 * Highlight statements in the text by adding background color.
 	 */
@@ -107,28 +150,11 @@ class TextPanel extends JPanel implements CoderListener {
 	}
 	
 	/**
-	 * Set the contents of the text panel, including the document ID and text,
-	 * and paint the statements in the text, then scroll to the top of the text.
-	 * 
-	 * @param documentId  ID of the document to display.
-	 * @param text        Text of the document to display.
-	 */
-	void setContents(int documentId, String text) {
-		this.textWindow.setText(text);
-		this.documentId = documentId;
-		paintStatements();
-		textWindow.setCaretPosition(0);
-	}
-
-	JTextPane getTextWindow() {
-		return textWindow;
-	}
-	
-	/**
 	 * Set text in the editor pane, select statement, and open popup window
 	 * 
-	 * @param statementId
-	 * @param documentId
+	 * @param s           The statement to be displayed in a popup dialog.
+	 * @param documentId  The ID of the document.
+	 * @param editable    Should the popup dialog be editable?
 	 */
 	void selectStatement(Statement s, int documentId, boolean editable) {
 		//Statement s = Dna.sql.getStatement(statementId);
@@ -177,17 +203,5 @@ class TextPanel extends JPanel implements CoderListener {
 	        textWindow.setFont(font);
 	        paintStatements();
 		}
-	}
-
-	int getVerticalScrollLocation() {
-		return (int) textScrollPane.getViewport().getViewPosition().getY(); // get the scroll position to restore it later
-	}
-
-	public void setVerticalScrollLocation(int verticalScrollLocation) {
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				textScrollPane.getViewport().setViewPosition(new Point(0, verticalScrollLocation)); // scroll to previously saved position
-			}
-		});
 	}
 }
