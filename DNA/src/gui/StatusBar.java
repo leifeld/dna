@@ -179,6 +179,14 @@ class StatusBar extends JPanel implements LogListener, SqlListener {
 		this.documentRefreshLabel.setVisible(false);
 	}
 
+	public boolean isRefreshInProgress() {
+		if (this.documentRefreshLabel.isVisible() || this.statementRefreshLabel.isVisible()) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	@Override
 	public void adjustToDatabaseState() {
 		updateUrl();

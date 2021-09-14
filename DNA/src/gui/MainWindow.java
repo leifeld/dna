@@ -71,27 +71,26 @@ import sql.Sql.SqlResults;
  */
 public class MainWindow extends JFrame implements SqlListener {
 	private static final long serialVersionUID = 2740437090361841747L;
-	Container c;
-	DocumentTablePanel documentTablePanel;
-	DocumentTableModel documentTableModel;
-	StatementPanel statementPanel;
-	StatementTableModel statementTableModel;
-	TextPanel textPanel;
-	StatusBar statusBar;
-	ActionSaveProfile actionSaveProfile;
-	ActionCloseDatabase actionCloseDatabase;
-	ActionAddDocument actionAddDocument;
-	ActionRemoveDocuments actionRemoveDocuments;
-	ActionEditDocuments actionEditDocuments;
-	ActionRefresh actionRefresh;
-	ActionBatchImportDocuments actionBatchImportDocuments;
-	ActionRemoveStatements actionRemoveStatements;
+	private Container c;
+	private DocumentTablePanel documentTablePanel;
+	private DocumentTableModel documentTableModel;
+	private StatementPanel statementPanel;
+	private StatementTableModel statementTableModel;
+	private TextPanel textPanel;
+	private StatusBar statusBar;
+	private ActionSaveProfile actionSaveProfile;
+	private ActionCloseDatabase actionCloseDatabase;
+	private ActionAddDocument actionAddDocument;
+	private ActionRemoveDocuments actionRemoveDocuments;
+	private ActionEditDocuments actionEditDocuments;
+	private ActionRefresh actionRefresh;
+	private ActionBatchImportDocuments actionBatchImportDocuments;
+	private ActionRemoveStatements actionRemoveStatements;
 
 	// TODO: reorder methods and classes in main window, popup, text panel, document table, and statement table panel classes
 	// TODO: add javadoc to the aforementioned classes and methods
 	// TODO: popup colouring and window decoration have a bug: sometimes multiple popups shown after switching
 	// TODO: remove toolbar listener interface and move the document listener here into the main window class for controlling the document table filter
-	// TODO: document swing worker: disable the actions that would start a new document swing worker while the thread is active (similar to the statement worker)
 	// TODO: ensure all actions are initiated centrally here in the main window class
 	// TODO: when a statement popup is closed, unselect the statement in the statement table
 	// TODO: double-check if interaction between statement table selection, document selection, and popups in the text panel works well
@@ -250,12 +249,13 @@ public class MainWindow extends JFrame implements SqlListener {
 							(Dna.sql.getActiveCoder().getPermissionEditOthersStatements() == 0 && Dna.sql.getActiveCoder().getId() == s.getCoderId()))) {
 						editable = true;
 					}
-					textPanel.selectStatement(s, s.getDocumentId(), editable); // TODO: is s enough or do we need to pull the statement from the database to get all values?
+					textPanel.selectStatement(s, s.getDocumentId(), editable);
 				}
 			}
 		});
 		
-		// selection listener for the document table; set contents of the text panel, update statement table, and enable or disable actions
+		// selection listener for the document table; set contents of the text panel,
+		// update statement table, and enable or disable actions
 		JTable documentTable = documentTablePanel.getDocumentTable();
 		documentTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
@@ -332,7 +332,7 @@ public class MainWindow extends JFrame implements SqlListener {
 			}
 		});
 
-		//MouseListener for text window to show popups or context menu in text area; one method for Windows and one for Unix
+		// MouseListener for text window to show popups or context menu in text area; one method for Windows and one for Unix
 		JTextPane textWindow = textPanel.getTextWindow();
 		textWindow.addMouseListener(new MouseAdapter() {
 			public void mouseReleased(MouseEvent me) {
@@ -529,10 +529,29 @@ public class MainWindow extends JFrame implements SqlListener {
 		 * duration is logged when the table has been updated.
 		 */
 		private long time;
-		int selectedId;
-		int verticalScrollLocation;
+		
+		/**
+		 * ID of the selected document to reinstated the selection after
+		 * repopulating the document table.
+		 */
+		private int selectedId;
 
+		/**
+		 * Vertical scroll position of the scroll pane in the text window before
+		 * reloading the documents, in order to reinstate the scroll position
+		 * after refreshing the document table.
+		 */
+		private int verticalScrollLocation;
+
+		/**
+		 * Create a new document table swing worker.
+		 */
 		private DocumentTableRefreshWorker() {
+			actionAddDocument.setEnabled(false);
+			actionRemoveDocuments.setEnabled(false);
+			actionEditDocuments.setEnabled(false);
+			actionBatchImportDocuments.setEnabled(false);
+			actionRefresh.setEnabled(false);
 			statusBar.documentRefreshStarted();
 			time = System.nanoTime(); // take the time to compute later how long the updating took
 			verticalScrollLocation = textPanel.getVerticalScrollLocation();
@@ -597,6 +616,13 @@ public class MainWindow extends JFrame implements SqlListener {
 					"The document table has been populated with documents from the database. Closing thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
 			Dna.logger.log(le);
 			statusBar.documentRefreshEnded();
+			if (!statusBar.isRefreshInProgress()) {
+				actionAddDocument.setEnabled(true);
+				actionRemoveDocuments.setEnabled(true);
+				actionEditDocuments.setEnabled(true);
+				actionBatchImportDocuments.setEnabled(true);
+				actionRefresh.setEnabled(true);
+			}
 	    }
 	}
 
@@ -613,12 +639,13 @@ public class MainWindow extends JFrame implements SqlListener {
 		 * duration is logged when the table has been updated.
 		 */
 		private long time;
+		
 		/**
 		 * ID of the selected statement in the statement table, to restore it
 		 * later and scroll back to the same position in the table after update.
 		 */
 		private int selectedId;
-
+		
 		/**
 		 * A Swing worker that reloads all statements from the database and
 		 * stores them in the table model for displaying them in the statement
@@ -761,7 +788,9 @@ public class MainWindow extends JFrame implements SqlListener {
 					"[GUI]  └─ Closing thread to populate statement table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
 					"The statement table has been populated with statements from the database. Closing thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
 			Dna.logger.log(le);
-			actionRefresh.setEnabled(false);
+			if (!statusBar.isRefreshInProgress()) {
+				actionRefresh.setEnabled(true);
+			}
         }
     }
 
@@ -795,6 +824,9 @@ public class MainWindow extends JFrame implements SqlListener {
     	refreshStatementTable();
 	}
 
+	/**
+	 * An action to display a file chooser and save a connection profile.
+	 */
 	class ActionSaveProfile extends AbstractAction {
 		private static final long serialVersionUID = 6515595073332160633L;
 		
@@ -907,6 +939,9 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 	}
 	
+	/**
+	 * An action to close the open SQL database.
+	 */
 	class ActionCloseDatabase extends AbstractAction {
 		private static final long serialVersionUID = -4463742124397662610L;
 		public ActionCloseDatabase(String text, ImageIcon icon, String desc, Integer mnemonic) {
@@ -923,6 +958,9 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 	}
 	
+	/**
+	 * An action to open a document editor dialog and add a new document.
+	 */
 	class ActionAddDocument extends AbstractAction {
 		private static final long serialVersionUID = -3332492885668412485L;
 
@@ -942,6 +980,9 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 	}
 	
+	/**
+	 * An action to remove the selected documents.
+	 */
 	class ActionRemoveDocuments extends AbstractAction {
 		private static final long serialVersionUID = -5326085918049798694L;
 
@@ -969,6 +1010,9 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 	}
 	
+	/**
+	 * An action to edit the selected document(s).
+	 */
 	class ActionEditDocuments extends AbstractAction {
 		private static final long serialVersionUID = 4411902324874635324L;
 
@@ -992,6 +1036,9 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 	}
 	
+	/**
+	 * An action to start a dialog for batch-importing documents from a folder.
+	 */
 	class ActionBatchImportDocuments extends AbstractAction {
 		private static final long serialVersionUID = -1460878736275897716L;
 		
@@ -1011,6 +1058,9 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 	}
 	
+	/**
+	 * An action to reload the documents and statements from the database.
+	 */
 	class ActionRefresh extends AbstractAction {
 		private static final long serialVersionUID = -5684628034931158710L;
 
@@ -1026,6 +1076,9 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 	}
 
+	/**
+	 * An action to remove the selected statements from the database.
+	 */
 	class ActionRemoveStatements extends AbstractAction {
 		private static final long serialVersionUID = -4938838325040431112L;
 
