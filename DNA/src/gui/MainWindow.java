@@ -40,12 +40,15 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
@@ -106,7 +109,6 @@ public class MainWindow extends JFrame implements SqlListener {
 
 	// TODO: move control code from the popup class to the main window class
 	// TODO: popup colouring and window decoration have a bug: sometimes multiple popups shown after switching
-	// TODO: remove toolbar listener interface and move the document listener here into the main window class for controlling the document table filter
 	// TODO: when a statement popup is closed, unselect the statement in the statement table
 	// TODO: double-check if interaction between statement table selection, document selection, and popups in the text panel works well
 	// TODO: double-check if there is view-specific code in the main window class that can be moved into the view components
@@ -243,7 +245,6 @@ public class MainWindow extends JFrame implements SqlListener {
 		Dna.addCoderListener(getStatementPanel());
 		Dna.addSqlListener(toolbar);
 		Dna.addCoderListener(toolbar);
-		toolbar.addToolbarListener(documentTablePanel);
 		
 		// layout
 		JSplitPane verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, documentTablePanel, textPanel);
@@ -507,6 +508,28 @@ public class MainWindow extends JFrame implements SqlListener {
 			}
 		});
 
+		// toolbar document filter field listener
+		JTextField documentFilterField = toolbar.getDocumentFilterField();
+		documentFilterField.getDocument().addDocumentListener(new DocumentListener() {
+			@Override
+			public void changedUpdate(DocumentEvent arg0) {
+				processFilterDocumentChanges();
+			}
+			@Override
+			public void insertUpdate(DocumentEvent arg0) {
+				processFilterDocumentChanges();
+			}
+			@Override
+			public void removeUpdate(DocumentEvent arg0) {
+				processFilterDocumentChanges();
+			}
+			
+			private void processFilterDocumentChanges() {
+				documentTablePanel.setDocumentFilterPattern(documentFilterField.getText());
+				documentTableModel.fireTableDataChanged();
+			}
+		});
+		
 		c.add(mainPanel);
 		this.pack();
 		this.setLocationRelativeTo(null);

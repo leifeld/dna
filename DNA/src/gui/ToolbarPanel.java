@@ -5,9 +5,6 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -20,9 +17,6 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-
 import org.jdesktop.swingx.JXTextField;
 
 import dna.Dna;
@@ -39,9 +33,7 @@ import model.Coder;
 
 class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 	private static final long serialVersionUID = 5561195349172139438L;
-	private List<ToolbarListener> listeners = new ArrayList<ToolbarListener>();
 	private JTextField documentFilterField;
-	private JButton documentFilterResetButton;
 	private JLabel popupWidthLabel, fontSizeLabel;
 	private JSpinner popupWidthSpinner, fontSizeSpinner;
 	private SpinnerNumberModel popupWidthModel, fontSizeModel;
@@ -59,45 +51,10 @@ class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 		toolBar.setFloatable(false);
 		toolBar.setRollover(true);
 
-		ImageIcon documentFilterResetIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
-		documentFilterResetButton = new JButton(documentFilterResetIcon);
-		documentFilterResetButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				documentFilterField.setText("");
-			}
-		});
-		documentFilterResetButton.setEnabled(false);
-		documentFilterResetButton.setToolTipText("Filter the documents using a regular expression.");
 		documentFilterField = new JXTextField("Document regex filter");
 		documentFilterField.setToolTipText("Filter the documents using a regular expression.");
-        documentFilterField.getDocument().addDocumentListener(new DocumentListener() {
-			@Override
-			public void changedUpdate(DocumentEvent arg0) {
-				processFilterDocumentChanges();
-			}
-			@Override
-			public void insertUpdate(DocumentEvent arg0) {
-				processFilterDocumentChanges();
-			}
-			@Override
-			public void removeUpdate(DocumentEvent arg0) {
-				processFilterDocumentChanges();
-			}
-			
-			private void processFilterDocumentChanges() {
-				fireUpdatedDocumentFilterPattern(documentFilterField.getText());
-				if (documentFilterField.getText().equals("")) {
-					documentFilterResetButton.setEnabled(false);
-				} else {
-					documentFilterResetButton.setEnabled(true);
-				}
-				documentTableModel.fireTableDataChanged();
-			}
-		});
 		documentFilterField.setEnabled(false);
 		toolBar.add(documentFilterField);
-		toolBar.add(documentFilterResetButton);
 
 		JButton addDocumentButton = new JButton(actionAddDocument);
 		addDocumentButton.setText("Add document");
@@ -217,18 +174,13 @@ class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 		this.add(toolBar, BorderLayout.NORTH);
 	}
 	
-	interface ToolbarListener {
-		void updatedDocumentFilterPattern(String pattern);
-	}
-	
-	private void fireUpdatedDocumentFilterPattern(String pattern) {
-		for (int i = 0; i < listeners.size(); i++) {
-			listeners.get(i).updatedDocumentFilterPattern(pattern);
-		}
-	}
-
-	void addToolbarListener(ToolbarListener listener) {
-		listeners.add(listener);
+	/**
+	 * Get a reference to the document filter field.
+	 * 
+	 * @return The document filter text field.
+	 */
+	JTextField getDocumentFilterField() {
+		return documentFilterField;
 	}
 
 	@Override
@@ -270,7 +222,6 @@ class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 		if (Dna.sql == null) {
 			documentFilterField.setText("");
 			documentFilterField.setEnabled(false);
-			documentFilterResetButton.setEnabled(false);
 			popupWidthLabel.setEnabled(false);
 			popupWidthSpinner.setEnabled(false);
 			fontSizeLabel.setEnabled(false);
@@ -280,11 +231,6 @@ class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 			colorByCoderButton.setEnabled(false);
 		} else {
 			documentFilterField.setEnabled(true);
-			if (documentFilterField.getText().equals("")) {
-				documentFilterResetButton.setEnabled(false);
-			} else {
-				documentFilterResetButton.setEnabled(true);
-			}
 			popupWidthLabel.setEnabled(true);
 			popupWidthSpinner.setEnabled(true);
 			fontSizeLabel.setEnabled(true);

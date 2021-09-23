@@ -26,11 +26,10 @@ import dna.Dna.CoderListener;
 import gui.MainWindow.ActionAddDocument;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionRemoveDocuments;
-import gui.ToolbarPanel.ToolbarListener;
 import model.Coder;
 import model.TableDocument;
 
-class DocumentTablePanel extends JPanel implements CoderListener, ToolbarListener {
+class DocumentTablePanel extends JPanel implements CoderListener {
 	private static final long serialVersionUID = 4543056929753553570L;
 	private JTable documentTable;
 	private DocumentTableModel documentTableModel;
@@ -323,9 +322,13 @@ class DocumentTablePanel extends JPanel implements CoderListener, ToolbarListene
 		return documentTable.convertRowIndexToModel(rowIndex);
 	}
 	
-	@Override
-	public void updatedDocumentFilterPattern(String pattern) {
-		this.documentFilterPattern = pattern;
+	/**
+	 * Set the document filter pattern.
+	 * 
+	 * @param documentFilterPattern The document filter pattern.
+	 */
+	void setDocumentFilterPattern(String documentFilterPattern) {
+		this.documentFilterPattern = documentFilterPattern;
 	}
 
 	@Override
