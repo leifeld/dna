@@ -51,12 +51,14 @@ import model.Value;
 class Popup extends JDialog {
 	private static final long serialVersionUID = -4955213646188753456L;
 	private Container c;
+	private Statement statement;
 	private Point los;
 	private Color color;
 	private boolean windowDecoration, editable;
 	private JPanel gridBagPanel;
 	private int textFieldWidth;
 	private ArrayList<Value> variables;
+	JButton duplicate, remove;
 	
 	/**
 	 * Popup dialog window to display the contents of a statements. The user can
@@ -70,6 +72,7 @@ class Popup extends JDialog {
 	 * @param statementPanel A reference to the statement panel.
 	 */
 	Popup(double X, double Y, Statement statement, int documentId, Point location, Coder coder) {
+		this.statement = statement;
 		int statementId = statement.getId();
 		this.los = location;
 		this.textFieldWidth = coder.getPopupWidth();
@@ -102,7 +105,7 @@ class Popup extends JDialog {
 						String message = "Save any changes in Statement " + statement.getId() + "?";
 						int dialog = JOptionPane.showConfirmDialog(Popup.this, message, "Confirmation", JOptionPane.YES_NO_OPTION);
 						if (dialog == 0) {
-							saveContents(gridBagPanel, statementId, variables);
+							saveContents();
 						}
 					}
 					dispose();
@@ -111,7 +114,7 @@ class Popup extends JDialog {
 		} else {
 			this.addWindowFocusListener(new WindowAdapter() {
 				public void windowLostFocus(WindowEvent e) {
-					saveContents(gridBagPanel, statementId, variables);
+					saveContents();
 	                dispose();
 				}
 			});
@@ -152,48 +155,17 @@ class Popup extends JDialog {
 		colorPanel.setPreferredSize(new Dimension(4, 4));
 		
 		ImageIcon duplicateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-copy.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		JButton duplicate = new JButton(duplicateIcon);
+		duplicate = new JButton(duplicateIcon);
 		duplicate.setToolTipText("create a copy of this statement at the same location");
 		duplicate.setPreferredSize(new Dimension(16, 16));
-		duplicate.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (coder.getPermissionAddStatements() == 1) {
-					if (editable == true && windowDecoration == true) {
-						String message = "Save any changes in Statement " + statement.getId() + " before creating copy?";
-						int dialog = JOptionPane.showConfirmDialog(Popup.this, message, "Confirmation", JOptionPane.YES_NO_OPTION);
-						if (dialog == 0) {
-							saveContents(gridBagPanel, statementId, variables);
-						}
-					}
-					int newStatementId = Dna.sql.cloneStatement(statementId, coder.getId());
-					Dna.dna.getMainWindow().refreshStatementTable();
-					Dna.dna.getMainWindow().getStatementPanel().setSelectedStatementId(newStatementId);
-					dispose();
-				}
-			}
-		});
 		if (coder.getPermissionAddStatements() == 0) {
 			duplicate.setEnabled(false);
 		}
 		
 		ImageIcon removeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-trash.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		JButton remove = new JButton(removeIcon);
+		remove = new JButton(removeIcon);
 		remove.setToolTipText("completely remove the whole statement (but keep the text)");
 		remove.setPreferredSize(new Dimension(16, 16));
-		remove.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int question = JOptionPane.showConfirmDialog(null, 
-						"Are you sure you want to remove this statement?", 
-						"Remove?", JOptionPane.YES_NO_OPTION);
-				if (question == 0) {
-					Dna.sql.deleteStatement(statementId);
-					Dna.dna.getMainWindow().refreshStatementTable();
-					Dna.dna.getMainWindow().getTextPanel().paintStatements();
-					Dna.dna.getMainWindow().getDocumentTableModel().decreaseFrequency(documentId);
-					dispose();
-				}
-			}
-		});
 		if (coder.getPermissionDeleteStatements() == 1 && (statement.getCoderId() == coder.getId() || coder.getPermissionEditOthersStatements() == 1)) {
 			remove.setEnabled(true);
 		} else {
@@ -388,7 +360,7 @@ class Popup extends JDialog {
 			saveButton.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					saveContents(gridBagPanel, statementId, variables);
+					saveContents();
 					dispose();
 				}
 			});
@@ -409,7 +381,43 @@ class Popup extends JDialog {
 		this.setLocation(x, y);
 		this.setVisible(true);
 	}
+	
+	/**
+	 * Get a reference to the duplicate button.
+	 * 
+	 * @return The duplicate button.
+	 */
+	JButton getDuplicateButton() {
+		return duplicate;
+	}
+	
+	/**
+	 * Get a reference to the remove button.
+	 * 
+	 * @return The remove button.
+	 */
+	JButton getRemoveButton() {
+		return remove;
+	}
 
+	/**
+	 * Is the popup window editable?
+	 * 
+	 * @return True if the values can be changed and false otherwise.
+	 */
+	boolean isEditable() {
+		return this.editable;
+	}
+	
+	/**
+	 * Does the popup window have window decoration?
+	 * 
+	 * @return True if the popup has window decoration and false otherwise.
+	 */
+	boolean hasWindowDecoration() {
+		return this.windowDecoration;
+	}
+	
 	/**
 	 * In a statement popup window, read the contents from all combo boxes and
 	 * save them into the database.
@@ -417,8 +425,8 @@ class Popup extends JDialog {
 	 * @param gridBagPanel  The panel that contains the combo boxes.
 	 * @param statementID   The ID of the statement that is being edited.
 	 */
-	private static void saveContents(JPanel gridBagPanel, int statementID, ArrayList<Value> variables) {
-		Component[] com = gridBagPanel.getComponents();
+	void saveContents() {
+		Component[] com = this.gridBagPanel.getComponents();
 		int i, j;
 		for (i = 0; i < com.length; i++) {
 			Object content = null; // the value of a variable, e.g., "EPA"
@@ -434,9 +442,9 @@ class Popup extends JDialog {
 				} else {
 					attribute = (Attribute) box.getSelectedItem();
 				}
-				for (j = 0; j < variables.size(); j++) { // update the variable corresponding to the variable name identified
-					if (variables.get(j).getKey().equals(variableName)) {
-						variables.get(j).setValue(attribute);
+				for (j = 0; j < this.variables.size(); j++) { // update the variable corresponding to the variable name identified
+					if (this.variables.get(j).getKey().equals(variableName)) {
+						this.variables.get(j).setValue(attribute);
 					}
 				}
 			} else if (com[i].getClass().getName().equals("javax.swing.JScrollPane")) { // long text
@@ -447,9 +455,9 @@ class Popup extends JDialog {
 				if (content == null) {
 					content = "";
 				}
-				for (j = 0; j < variables.size(); j++) {
-					if (variables.get(j).getKey().equals(variableName)) {
-						variables.get(j).setValue(content);
+				for (j = 0; j < this.variables.size(); j++) {
+					if (this.variables.get(j).getKey().equals(variableName)) {
+						this.variables.get(j).setValue(content);
 					}
 				}
 			} else if (com[i].getClass().getName().equals("javax.swing.JPanel")) { // integer
@@ -457,9 +465,9 @@ class Popup extends JDialog {
 				JPanel jp = (JPanel) com[i];
 				JSpinner jsp = (JSpinner) jp.getComponent(0);
 				content = jsp.getValue();
-				for (j = 0; j < variables.size(); j++) {
-					if (variables.get(j).getKey().equals(variableName)) {
-						variables.get(j).setValue(content);
+				for (j = 0; j < this.variables.size(); j++) {
+					if (this.variables.get(j).getKey().equals(variableName)) {
+						this.variables.get(j).setValue(content);
 					}
 				}
 			} else if (com[i].getClass().getName().endsWith("BooleanButtonPanel")) { // boolean
@@ -471,14 +479,14 @@ class Popup extends JDialog {
 				} else {
 					intBool = 1;
 				}
-				for (j = 0; j < variables.size(); j++) {
-					if (variables.get(j).getKey().equals(variableName)) {
-						variables.get(j).setValue(intBool);
+				for (j = 0; j < this.variables.size(); j++) {
+					if (this.variables.get(j).getKey().equals(variableName)) {
+						this.variables.get(j).setValue(intBool);
 					}
 				}
 			}
 		}
-		Dna.sql.updateStatement(statementID, variables); // write changes into the database
+		Dna.sql.updateStatement(this.statement.getId(), this.variables); // write changes into the database
 	}
 	
 	/**

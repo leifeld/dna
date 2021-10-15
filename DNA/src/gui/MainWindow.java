@@ -31,6 +31,7 @@ import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -107,7 +108,6 @@ public class MainWindow extends JFrame implements SqlListener {
 	private ActionLoggerDialog actionLoggerDialog;
 	private ActionAboutWindow actionAboutWindow;
 
-	// TODO: move control code from the popup class to the main window class
 	// TODO: popup colouring and window decoration have a bug: sometimes multiple popups shown after switching
 	// TODO: when a statement popup is closed, unselect the statement in the statement table
 	// TODO: double-check if interaction between statement table selection, document selection, and popups in the text panel works well
@@ -614,7 +614,42 @@ public class MainWindow extends JFrame implements SqlListener {
 	 * @param coder       The active coder.
 	 */
 	private void newPopup(double x, double y, Statement s, int documentId, Point location, Coder coder) {
-		new Popup(x, y, s, documentId, location, coder);
+		Popup popup = new Popup(x, y, s, documentId, location, coder);
+		
+		JButton duplicate = popup.getDuplicateButton();
+		duplicate.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (coder.getPermissionAddStatements() == 1) {
+					if (popup.isEditable() == true && popup.hasWindowDecoration() == true) {
+						String message = "Save any changes in Statement " + s.getId() + " before creating copy?";
+						int dialog = JOptionPane.showConfirmDialog(popup, message, "Confirmation", JOptionPane.YES_NO_OPTION);
+						if (dialog == 0) {
+							popup.saveContents();
+						}
+					}
+					int newStatementId = Dna.sql.cloneStatement(s.getId(), coder.getId());
+			        StatementTableRefreshWorker statementWorker = new StatementTableRefreshWorker(newStatementId);
+			        statementWorker.execute();
+					popup.dispose();
+				}
+			}
+		});
+		
+		JButton remove = popup.getRemoveButton();
+		remove.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int question = JOptionPane.showConfirmDialog(null, 
+						"Are you sure you want to remove this statement?", 
+						"Remove?", JOptionPane.YES_NO_OPTION);
+				if (question == 0) {
+					Dna.sql.deleteStatement(s.getId());
+					refreshStatementTable();
+					getTextPanel().paintStatements();
+					getDocumentTableModel().decreaseFrequency(documentId);
+					popup.dispose();
+				}
+			}
+		});
 	}
 
 	/**
@@ -771,17 +806,38 @@ public class MainWindow extends JFrame implements SqlListener {
 		 * later and scroll back to the same position in the table after update.
 		 */
 		private int selectedId;
+
+		/**
+		 * A Swing worker that reloads all statements from the database and
+		 * stores them in the table model for displaying them in the statement
+		 * table. Selects the previously selected statement when done.
+		 */
+		private StatementTableRefreshWorker() {
+			selectedId = getStatementPanel().getSelectedStatementId();
+			initialiseRefreshWorker();
+		}
 		
 		/**
 		 * A Swing worker that reloads all statements from the database and
 		 * stores them in the table model for displaying them in the statement
 		 * table.
+		 * 
+		 * @param statementIdToSelect The ID of the statement that should be
+		 *   selected when done refreshing.
 		 */
-		private StatementTableRefreshWorker() {
+		private StatementTableRefreshWorker(int statementIdToSelect) {
+			selectedId = statementIdToSelect;
+			initialiseRefreshWorker();
+		}
+		
+		/**
+		 * Initialise the statement table refresh worker. This common code is
+		 * executed by both constructors.
+		 */
+		private void initialiseRefreshWorker() {
 			actionRefresh.setEnabled(false);
     		time = System.nanoTime(); // take the time to compute later how long the updating took
     		statusBar.statementRefreshStart();
-    		selectedId = getStatementPanel().getSelectedStatementId();
     		statementTableModel.clear(); // remove all documents from the table model before re-populating the table
 			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI] Initializing thread to populate statement table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
