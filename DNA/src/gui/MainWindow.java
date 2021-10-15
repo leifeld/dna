@@ -113,7 +113,6 @@ public class MainWindow extends JFrame implements SqlListener {
 	// TODO: double-check if interaction between statement table selection, document selection, and popups in the text panel works well
 	// TODO: double-check if there is view-specific code in the main window class that can be moved into the view components
 	// TODO: probably the statement table should be refreshed every time the document table is refreshed (?)
-	// TODO: ensure statements are sorted chronologically and by position in the statement table (implement Comparable interface in Statement class?)
 	// TODO: take into account coder permissions and relations everywhere in the controls in the main window class
 	// TODO: popups with window decoration should check if the contents have changed when closed, instead of just asking anyway if changes should be saved
 	// TODO: make the attribute table and usage more flexible, with additional variables
@@ -899,7 +898,6 @@ public class MainWindow extends JFrame implements SqlListener {
         protected void process(List<Statement> chunks) {
         	statementTableModel.addRows(chunks); // transfer a batch of rows to the statement table model
         	statementTableModel.sort();
-    		statementPanel.sort(); // TODO: this does not work... check Comparable in Statement class and adjust sorter in statement panel
 			getStatementPanel().setSelectedStatementId(selectedId); // select the statement from before; skipped if the statement not found in this batch
         }
 

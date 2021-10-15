@@ -6,10 +6,10 @@ import java.time.LocalDateTime;
  * Represents the rows in a {@link DocumentTableModel}.
  */
 public class TableDocument implements Comparable<TableDocument> {
-	int id, frequency;
-	Coder coder;
-	String title, author, source, section, type, notes;
-	LocalDateTime dateTime;
+	private int id, frequency;
+	private Coder coder;
+	private String title, author, source, section, type, notes;
+	private LocalDateTime dateTime;
 
 	/**
 	 * Create an instance of a table row.
@@ -39,86 +39,111 @@ public class TableDocument implements Comparable<TableDocument> {
 		this.dateTime = dateTime;
 	}
 
+	/**
+	 * Get the ID of the document.
+	 * 
+	 * @return The document ID.
+	 */
 	public int getId() {
 		return id;
 	}
 
-	public void setId(int id) {
-		this.id = id;
-	}
-
+	/**
+	 * Get the number of statements in the document. This is taken from the
+	 * frequency field, which is set manually, not from the database or by
+	 * counting anything.
+	 * 
+	 * @return The number of statements in the document.
+	 */
 	public int getFrequency() {
 		return frequency;
 	}
 
+	/**
+	 * Set the number of statements in the document.
+	 * 
+	 * @param frequency The number of statements in the document.
+	 */
 	public void setFrequency(int frequency) {
 		this.frequency = frequency;
 	}
 
+	/**
+	 * Get the coder ID of the document.
+	 * 
+	 * @return The coder ID.
+	 */
 	public Coder getCoder() {
 		return coder;
 	}
 
-	public void setCoder(Coder coder) {
-		this.coder = coder;
-	}
-
+	/**
+	 * Get the document title.
+	 * 
+	 * @return The title of the document.
+	 */
 	public String getTitle() {
 		return title;
 	}
 
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
+	/**
+	 * Get the document author.
+	 * 
+	 * @return The author of the document.
+	 */
 	public String getAuthor() {
 		return author;
 	}
 
-	public void setAuthor(String author) {
-		this.author = author;
-	}
-
+	/**
+	 * Get the document source.
+	 * 
+	 * @return The source of the document.
+	 */
 	public String getSource() {
 		return source;
 	}
 
-	public void setSource(String source) {
-		this.source = source;
-	}
-
+	/**
+	 * Get the document section.
+	 * 
+	 * @return The section field of the document.
+	 */
 	public String getSection() {
 		return section;
 	}
 
-	public void setSection(String section) {
-		this.section = section;
-	}
-
+	/**
+	 * Get the document type.
+	 * 
+	 * @return The type of the document.
+	 */
 	public String getType() {
 		return type;
 	}
 
-	public void setType(String type) {
-		this.type = type;
-	}
-
+	/**
+	 * Get the document notes.
+	 * 
+	 * @return The notes of the document.
+	 */
 	public String getNotes() {
 		return notes;
 	}
 
-	public void setNotes(String notes) {
-		this.notes = notes;
-	}
-
+	/**
+	 * Get the document date/time stamp.
+	 * 
+	 * @return The document date/time stamp.
+	 */
 	public LocalDateTime getDateTime() {
 		return dateTime;
 	}
 
-	public void setDateTime(LocalDateTime dateTime) {
-		this.dateTime = dateTime;
-	}
-
+	/**
+	 * Implementation of the {@link java.lang.Comparable Comparable} interface
+	 * to sort documents in the document table and possibly elsewhere.
+	 */
 	@Override
 	public int compareTo(TableDocument d) {
 		if (this.dateTime != null && this.getDateTime().isBefore(d.getDateTime())) {

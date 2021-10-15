@@ -223,10 +223,6 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener {
 		StatementFilterPanel sfp = new StatementFilterPanel();
 		this.add(sfp, BorderLayout.SOUTH);
 	}
-
-	void sort() {
-		sorter.sort();
-	}
 	
 	/**
 	 * Set the document ID stored in the statement panel, which is used for

@@ -4,12 +4,32 @@ package model;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
+/**
+ * Represents documents as required by the document editor, document batch
+ * importer, and the SQL class.
+ */
 public class Document implements Comparable<Document> {
-	int id, coder;
-	String title, text, author, source, section, type, notes;
-	LocalDateTime dateTime;
-	ArrayList<Statement> statements;
+	private int id, coder;
+	private String title, text, author, source, section, type, notes;
+	private LocalDateTime dateTime;
+	private ArrayList<Statement> statements;
 	
+	/**
+	 * Create a new document representation.
+	 * 
+	 * @param id          The document ID.
+	 * @param coder       The coder ID.
+	 * @param title       The title of the document.
+	 * @param text        The text of the document.
+	 * @param author      The author of the document.
+	 * @param source      The source of the document.
+	 * @param section     The section of the document.
+	 * @param type        The type of the document.
+	 * @param notes       Notes for the document.
+	 * @param dateTime    The date/time stamp of the document.
+	 * @param statements  An array list with the statements contained in the
+	 *   document.
+	 */
 	public Document(int id, int coder, String title, String text, String author, String source, String section,
 			String type, String notes, LocalDateTime dateTime, ArrayList<Statement> statements) {
 		this.id = id;
@@ -25,94 +45,109 @@ public class Document implements Comparable<Document> {
 		this.statements = statements;
 	}
 	
+	/**
+	 * Get the ID of the document.
+	 * 
+	 * @return The document ID.
+	 */
 	public int getId() {
 		return id;
 	}
 	
-	public void setId(int id) {
-		this.id = id;
-	}
-	
+	/**
+	 * Get the coder ID of the document.
+	 * 
+	 * @return The coder ID.
+	 */
 	public int getCoder() {
 		return coder;
 	}
 	
-	void setCoder(int coder) {
-		this.coder = coder;
-	}
-	
+	/**
+	 * Get the document title.
+	 * 
+	 * @return The title of the document.
+	 */
 	public String getTitle() {
 		return title;
 	}
 	
-	void setTitle(String title) {
-		this.title = title;
-	}
-	
+	/**
+	 * Get the document text.
+	 * 
+	 * @return The text of the document.
+	 */
 	public String getText() {
 		return text;
 	}
 	
-	void setText(String text) {
-		this.text = text;
-	}
-	
+	/**
+	 * Get the document author.
+	 * 
+	 * @return The author of the document.
+	 */
 	public String getAuthor() {
 		return author;
 	}
 	
-	void setAuthor(String author) {
-		this.author = author;
-	}
-	
+	/**
+	 * Get the document source.
+	 * 
+	 * @return The source of the document.
+	 */
 	public String getSource() {
 		return source;
 	}
 	
-	void setSource(String source) {
-		this.source = source;
-	}
-	
+	/**
+	 * Get the document section.
+	 * 
+	 * @return The section field of the document.
+	 */
 	public String getSection() {
 		return section;
 	}
 	
-	void setSection(String section) {
-		this.section = section;
-	}
-	
+	/**
+	 * Get the document type.
+	 * 
+	 * @return The type of the document.
+	 */
 	public String getType() {
 		return type;
 	}
 	
-	void setType(String type) {
-		this.type = type;
-	}
-	
+	/**
+	 * Get the document notes.
+	 * 
+	 * @return The notes of the document.
+	 */
 	public String getNotes() {
 		return notes;
 	}
 	
-	void setNotes(String notes) {
-		this.notes = notes;
-	}
-	
+	/**
+	 * Get the document date/time stamp.
+	 * 
+	 * @return The document date/time stamp.
+	 */
 	public LocalDateTime getDateTime() {
 		return dateTime;
 	}
 	
-	void setDate(LocalDateTime dateTime) {
-		this.dateTime = dateTime;
-	}
-	
+	/**
+	 * Get the statements nested in the document.
+	 * 
+	 * @return An array list of statements saved in the document instance.
+	 */
 	public ArrayList<Statement> getStatements() {
 		return statements;
 	}
-	
-	void setStatements(ArrayList<Statement> statements) {
-		this.statements = statements;
-	}
 
+	/**
+	 * Implementation of the {@link java.lang.Comparable Comparable} interface
+	 * to sort documents.
+	 */
 	@Override
 	public int compareTo(Document d) {
 		if (this.dateTime != null && this.getDateTime().isBefore(d.getDateTime())) {

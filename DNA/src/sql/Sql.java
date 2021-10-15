@@ -1044,7 +1044,7 @@ public class Sql {
 	 */
 	public boolean documentsContainStatements(int[] documentIds) {
 		boolean contains = true;
-		String s = "[SQL] SELECT COUNT(*) FROM STATEMENTS WHERE DocumentId IN (";
+		String s = "SELECT COUNT(*) FROM STATEMENTS WHERE DocumentId IN (";
 		for (int i = 0; i < documentIds.length; i++) {
 			s = s + documentIds[i];
 			if (i < documentIds.length - 1) {
