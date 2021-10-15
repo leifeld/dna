@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 /**
  * Represents the rows in a {@link DocumentTableModel}.
  */
-public class TableDocument {
+public class TableDocument implements Comparable<TableDocument> {
 	int id, frequency;
 	Coder coder;
 	String title, author, source, section, type, notes;
@@ -117,5 +117,16 @@ public class TableDocument {
 
 	public void setDateTime(LocalDateTime dateTime) {
 		this.dateTime = dateTime;
+	}
+
+	@Override
+	public int compareTo(TableDocument d) {
+		if (this.dateTime != null && this.getDateTime().isBefore(d.getDateTime())) {
+			return -1;
+		} else if (this.getId() < d.getId()) {
+			return -1;
+		} else {
+			return 1;
+		}
 	}
 }

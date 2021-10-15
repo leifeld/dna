@@ -5,7 +5,7 @@ import java.awt.Color;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
-public class Statement {
+public class Statement implements Comparable<Statement> {
 	int id;
 	int start, stop;
 	int statementTypeId;
@@ -154,11 +154,31 @@ public class Statement {
 		this.statementTypeId = statementTypeId;
 	}
 	
+	/**
+	 * Get the date/time stored in the statement.
+	 * 
+	 * @return The date/time as a LocalDateTime object.
+	 */
+	LocalDateTime getDateTime() {
+		return dateTime;
+	}
+
 	public ArrayList<Value> getValues() {
 		return values;
 	}
 	
 	void setValues(ArrayList<Value> values) {
 		this.values = values;
+	}
+
+	@Override
+	public int compareTo(Statement s) {
+		if (this.dateTime != null && this.getDateTime().isBefore(s.getDateTime())) {
+			return -1;
+		} else if (this.getDocumentId() == s.getDocumentId() && this.getStart() < s.getStart()) {
+			return -1;
+		} else {
+			return 1;
+		}
 	}
 }

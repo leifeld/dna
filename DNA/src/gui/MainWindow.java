@@ -726,6 +726,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	    @Override
 	    protected void process(List<TableDocument> chunks) {
 	    	documentTableModel.addRows(chunks); // transfer a batch of rows to the table model
+        	documentTableModel.sort();
 	    	documentTablePanel.setSelectedDocumentId(selectedId);
 	    	textPanel.setVerticalScrollLocation(this.verticalScrollLocation);
 	    }
@@ -897,6 +898,8 @@ public class MainWindow extends JFrame implements SqlListener {
         @Override
         protected void process(List<Statement> chunks) {
         	statementTableModel.addRows(chunks); // transfer a batch of rows to the statement table model
+        	statementTableModel.sort();
+    		statementPanel.sort(); // TODO: this does not work... check Comparable in Statement class and adjust sorter in statement panel
 			getStatementPanel().setSelectedStatementId(selectedId); // select the statement from before; skipped if the statement not found in this batch
         }
 

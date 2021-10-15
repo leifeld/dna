@@ -65,6 +65,7 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener {
 	private JRadioButton allButton, docButton, filterButton;
 	private JComboBox<StatementType> statementTypeBox;
 	private int documentId; // needed for the filter to check if a statement is in the current document; updated by listener
+	private TableRowSorter<StatementTableModel> sorter;
 
 	/**
 	 * Create a new statement panel.
@@ -78,7 +79,7 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener {
 		statementTable = new JTable(statementTableModel);
 
 		statementTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-		TableRowSorter<StatementTableModel> sorter = new TableRowSorter<StatementTableModel>(statementTableModel);
+		sorter = new TableRowSorter<StatementTableModel>(statementTableModel);
 		statementTable.setRowSorter(sorter);
 
 		// set column visibility
@@ -223,6 +224,10 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener {
 		this.add(sfp, BorderLayout.SOUTH);
 	}
 
+	void sort() {
+		sorter.sort();
+	}
+	
 	/**
 	 * Set the document ID stored in the statement panel, which is used for
 	 * filtering statements.

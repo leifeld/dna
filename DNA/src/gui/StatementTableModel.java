@@ -1,6 +1,7 @@
 package gui;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
@@ -176,5 +177,10 @@ class StatementTableModel extends AbstractTableModel {
             rows.add(row);
         }
         fireTableRowsInserted(n, n + chunks.size() - 1); // subtract one because we don't need the cursor to be at the next position; it should refer to the last position
+	}
+	
+	void sort() {
+		Collections.sort(rows);
+		fireTableDataChanged();
 	}
 }

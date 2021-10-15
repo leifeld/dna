@@ -4,7 +4,7 @@ package model;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
-public class Document {
+public class Document implements Comparable<Document> {
 	int id, coder;
 	String title, text, author, source, section, type, notes;
 	LocalDateTime dateTime;
@@ -111,5 +111,16 @@ public class Document {
 	
 	void setStatements(ArrayList<Statement> statements) {
 		this.statements = statements;
+	}
+
+	@Override
+	public int compareTo(Document d) {
+		if (this.dateTime != null && this.getDateTime().isBefore(d.getDateTime())) {
+			return -1;
+		} else if (this.getId() < d.getId()) {
+			return -1;
+		} else {
+			return 1;
+		}
 	}
 }

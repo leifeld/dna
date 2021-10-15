@@ -2,6 +2,7 @@ package gui;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
@@ -22,7 +23,7 @@ import model.TableDocument;
  */
 @SuppressWarnings("serial")
 class DocumentTableModel extends AbstractTableModel {
-	private List<TableDocument> rows;
+	private ArrayList<TableDocument> rows;
 	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MM yyyy");
 	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 	
@@ -30,7 +31,7 @@ class DocumentTableModel extends AbstractTableModel {
 	 * Create an instance of the document table model class.
 	 */
 	DocumentTableModel() {
-		rows = new ArrayList<>();
+		rows = new ArrayList<TableDocument>();
 	}
 	
 	@Override
@@ -238,5 +239,10 @@ class DocumentTableModel extends AbstractTableModel {
             rows.add(row);
         }
         fireTableRowsInserted(n, n + chunks.size() - 1); // subtract one because we don't need the cursor to be at the next position; it should refer to the last position
+	}
+	
+	void sort() {
+		Collections.sort(rows);
+		fireTableDataChanged();
 	}
 }
