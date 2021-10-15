@@ -112,7 +112,6 @@ public class MainWindow extends JFrame implements SqlListener {
 	// TODO: when a statement popup is closed, unselect the statement in the statement table
 	// TODO: double-check if interaction between statement table selection, document selection, and popups in the text panel works well
 	// TODO: double-check if there is view-specific code in the main window class that can be moved into the view components
-	// TODO: probably the statement table should be refreshed every time the document table is refreshed (?)
 	// TODO: take into account coder permissions and relations everywhere in the controls in the main window class
 	// TODO: popups with window decoration should check if the contents have changed when closed, instead of just asking anyway if changes should be saved
 	// TODO: make the attribute table and usage more flexible, with additional variables
@@ -1305,6 +1304,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				documentTableModel.removeDocuments(selectedRows);
 			}
 	    	refreshDocumentTable();
+			refreshStatementTable();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: removed document(s).",
 					"Deleted one or more documents in the database from the GUI.");
@@ -1353,6 +1353,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		public void actionPerformed(ActionEvent e) {
 			new DocumentBatchImporter();
 	    	refreshDocumentTable();
+			refreshStatementTable();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: used document batch importer.",
 					"Batch-imported documents to the database.");
