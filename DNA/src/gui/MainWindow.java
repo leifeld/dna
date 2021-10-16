@@ -108,10 +108,6 @@ public class MainWindow extends JFrame implements SqlListener {
 	private ActionLoggerDialog actionLoggerDialog;
 	private ActionAboutWindow actionAboutWindow;
 
-	// TODO: popup colouring and window decoration have a bug: sometimes multiple popups shown after switching
-	// TODO: when a statement popup is closed, unselect the statement in the statement table
-	// TODO: double-check if interaction between statement table selection, document selection, and popups in the text panel works well
-	// TODO: double-check if there is view-specific code in the main window class that can be moved into the view components
 	// TODO: take into account coder permissions and relations everywhere in the controls in the main window class
 	// TODO: make the attribute table and usage more flexible, with additional variables
 	
@@ -121,14 +117,34 @@ public class MainWindow extends JFrame implements SqlListener {
 	public MainWindow() {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"Set system look and feel for GUI.",
+					"Set system look and feel for GUI.");
+			Dna.logger.log(l);
 		} catch (UnsupportedLookAndFeelException e) {
-			System.err.println("Unsupport look and feel. Using default theme.");
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"Unsupport look and feel. Using default theme.",
+					"Unsupport look and feel. Using default theme.",
+					e);
+			Dna.logger.log(l);
 	    } catch (ClassNotFoundException e) {
-			System.err.println("Class not found. Using default theme.");
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"Look and feel class not found. Using default theme.",
+					"Look and feel class not found. Using default theme.",
+					e);
+			Dna.logger.log(l);
 	    } catch (InstantiationException e) {
-			System.err.println("Instantiation exception. Using default theme.");
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"Look and feel instantiation exception. Using default theme.",
+					"Look and feel instantiation exception. Using default theme.",
+					e);
+			Dna.logger.log(l);
 	    } catch (IllegalAccessException e) {
-			System.err.println("Illegal access exception. Using default theme.");
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"Look and feel illegal access exception. Using default theme.",
+					"Look and feel illegal access exception. Using default theme.",
+					e);
+			Dna.logger.log(l);
 	    }
 
 		c = getContentPane();
@@ -472,7 +488,6 @@ public class MainWindow extends JFrame implements SqlListener {
 									&& (Dna.sql.getActiveCoder().getPermissionViewOthersStatements() == 1 || statements.get(i).getCoderId() == Dna.sql.getActiveCoder().getId())
 									// TODO here: check also the CODERRELATIONS table
 									) {
-								getStatementPanel().setSelectedStatementId(statements.get(i).getId());
 								Point location = textWindow.getLocationOnScreen();
 								textWindow.setSelectionStart(statements.get(i).getStart());
 								textWindow.setSelectionEnd(statements.get(i).getStop());
@@ -614,6 +629,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	private void newPopup(double x, double y, Statement s, int documentId, Point location, Coder coder) {
 		Popup popup = new Popup(x, y, s, documentId, location, coder);
 		
+		// duplicate button action listener
 		JButton duplicate = popup.getDuplicateButton();
 		duplicate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -626,13 +642,14 @@ public class MainWindow extends JFrame implements SqlListener {
 						}
 					}
 					int newStatementId = Dna.sql.cloneStatement(s.getId(), coder.getId());
-			        StatementTableRefreshWorker statementWorker = new StatementTableRefreshWorker(newStatementId);
+			        StatementTableRefreshWorker statementWorker = new StatementTableRefreshWorker(newStatementId); // do not use refreshStatementTable method because we need to select the new statement ID
 			        statementWorker.execute();
 					popup.dispose();
 				}
 			}
 		});
 		
+		// remove button action listener
 		JButton remove = popup.getRemoveButton();
 		remove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -648,6 +665,35 @@ public class MainWindow extends JFrame implements SqlListener {
 				}
 			}
 		});
+		
+		// save and close window or focus listener
+		if (popup.hasWindowDecoration() == true) {
+			popup.addWindowListener(new WindowAdapter() {
+				public void windowClosing(WindowEvent e) {
+					if (popup.isEditable() == true) {
+						if (popup.saveContents(true) == true) { // check first if there are any changes; ask to save only if necessary
+							String message = "Save changes in Statement " + s.getId() + "?";
+							int dialog = JOptionPane.showConfirmDialog(popup, message, "Confirmation", JOptionPane.YES_NO_OPTION);
+							if (dialog == 0) {
+								popup.saveContents(false);
+							}
+						}
+					}
+					statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
+					popup.dispose();
+				}
+			});
+			popup.setModal(true); // set modal after adding controls because otherwise controls can't be added anymore while modal
+		} else {
+			popup.addWindowFocusListener(new WindowAdapter() {
+				public void windowLostFocus(WindowEvent e) {
+					popup.saveContents(false);
+					statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
+	                popup.dispose();
+				}
+			});
+		}
+		popup.setVisible(true); // needs to be called after setting modal; hence here instead of in the Popup class
 	}
 
 	/**
@@ -663,7 +709,9 @@ public class MainWindow extends JFrame implements SqlListener {
 	}
 
 	/**
-	 * Refresh the statement table using a Swing worker in the background.
+	 * Refresh the statement table using a Swing worker in the background and
+	 * select the previously selected statement again (if applicable and
+	 * available).
 	 */
 	void refreshStatementTable() {
 		if (Dna.sql == null) {

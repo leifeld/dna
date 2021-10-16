@@ -139,6 +139,7 @@ public class Sql {
 	 * @return A {@link model.Coder Coder} object with all permissions.
 	 */
 	public Coder getActiveCoder() {
+		activeCoder = getCoder(activeCoder.getId()); // update settings and permissions before returning active coder
 		return activeCoder;
 	}
 

@@ -13,8 +13,6 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
 import javax.swing.ButtonGroup;
@@ -25,7 +23,6 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
@@ -82,7 +79,6 @@ class Popup extends JDialog {
 		this.color = statement.getStatementTypeColor();
 		if (coder.getPopupDecoration() == 1) {
 			this.windowDecoration = true;
-			this.setModal(true);
 		} else {
 			this.windowDecoration = false;
 			this.setUndecorated(true);
@@ -101,30 +97,6 @@ class Popup extends JDialog {
 		this.setAlwaysOnTop(true);
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		
-		if (windowDecoration == true) {
-			this.addWindowListener(new WindowAdapter() {
-				public void windowClosing(WindowEvent e) {
-					if (editable == true) {
-						if (saveContents(true) == true) { // check first if there are any changes; ask to save only if necessary
-							String message = "Save changes in Statement " + statement.getId() + "?";
-							int dialog = JOptionPane.showConfirmDialog(Popup.this, message, "Confirmation", JOptionPane.YES_NO_OPTION);
-							if (dialog == 0) {
-								saveContents(false);
-							}
-						}
-					}
-					dispose();
-				}
-			});
-		} else {
-			this.addWindowFocusListener(new WindowAdapter() {
-				public void windowLostFocus(WindowEvent e) {
-					saveContents(false);
-	                dispose();
-				}
-			});
-		}
-
 		ImageIcon statementIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-message-2.png"));
 		this.setIconImage(statementIcon.getImage());
 		
@@ -383,7 +355,6 @@ class Popup extends JDialog {
 		int x = (int) xDouble + 6;
 		int y = (int) yDouble + 13;
 		this.setLocation(x, y);
-		this.setVisible(true);
 	}
 	
 	/**
