@@ -40,6 +40,8 @@ import javax.swing.event.DocumentListener;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
 import dna.Dna;
+import logger.LogEvent;
+import logger.Logger;
 import model.Attribute;
 import model.Coder;
 import model.Statement;
@@ -73,6 +75,7 @@ class Popup extends JDialog {
 	 */
 	Popup(double X, double Y, Statement statement, int documentId, Point location, Coder coder) {
 		this.statement = statement;
+		this.variables = statement.getValues();
 		int statementId = statement.getId();
 		this.los = location;
 		this.textFieldWidth = coder.getPopupWidth();
@@ -102,10 +105,12 @@ class Popup extends JDialog {
 			this.addWindowListener(new WindowAdapter() {
 				public void windowClosing(WindowEvent e) {
 					if (editable == true) {
-						String message = "Save any changes in Statement " + statement.getId() + "?";
-						int dialog = JOptionPane.showConfirmDialog(Popup.this, message, "Confirmation", JOptionPane.YES_NO_OPTION);
-						if (dialog == 0) {
-							saveContents();
+						if (saveContents(true) == true) { // check first if there are any changes; ask to save only if necessary
+							String message = "Save changes in Statement " + statement.getId() + "?";
+							int dialog = JOptionPane.showConfirmDialog(Popup.this, message, "Confirmation", JOptionPane.YES_NO_OPTION);
+							if (dialog == 0) {
+								saveContents(false);
+							}
 						}
 					}
 					dispose();
@@ -114,7 +119,7 @@ class Popup extends JDialog {
 		} else {
 			this.addWindowFocusListener(new WindowAdapter() {
 				public void windowLostFocus(WindowEvent e) {
-					saveContents();
+					saveContents(false);
 	                dispose();
 				}
 			});
@@ -195,7 +200,6 @@ class Popup extends JDialog {
 		gbc.anchor = GridBagConstraints.EAST;
 		
 		// add fields for the values
-		variables = statement.getValues();
 		for (int i = 0; i < variables.size(); i++) {
 			String key = variables.get(i).getKey();
 			String dataType = variables.get(i).getDataType();
@@ -360,7 +364,7 @@ class Popup extends JDialog {
 			saveButton.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					saveContents();
+					saveContents(false);
 					dispose();
 				}
 			});
@@ -422,71 +426,103 @@ class Popup extends JDialog {
 	 * In a statement popup window, read the contents from all combo boxes and
 	 * save them into the database.
 	 * 
-	 * @param gridBagPanel  The panel that contains the combo boxes.
-	 * @param statementID   The ID of the statement that is being edited.
+	 * @param simulate  If true, do not actually write the changes.
+	 * @return          True if at least one of the values has changed.
 	 */
-	void saveContents() {
+	boolean saveContents(boolean simulate) {
+		boolean changed = false;
 		Component[] com = this.gridBagPanel.getComponents();
 		int i, j;
-		for (i = 0; i < com.length; i++) {
-			Object content = null; // the value of a variable, e.g., "EPA"
-			String variableName; // the name of the variable, e.g., "organization"
-			if (com[i].getClass().getName().equals("javax.swing.JComboBox")) { // short text
-				variableName = ((JLabel) com[i - 1]).getText();
-				@SuppressWarnings("unchecked")
-				JComboBox<Attribute> box = (JComboBox<Attribute>) com[i]; // save the combo box
-				Object object = box.getSelectedItem();
-				Attribute attribute;
-				if (object.getClass().getName().endsWith("String")) { // if not an existing attribute, the editor returns a String
-					attribute = new Attribute((String) object); // the new attribute has an ID of -1; the SQL class needs to take care of this when writing into the database
-				} else {
-					attribute = (Attribute) box.getSelectedItem();
-				}
-				for (j = 0; j < this.variables.size(); j++) { // update the variable corresponding to the variable name identified
-					if (this.variables.get(j).getKey().equals(variableName)) {
-						this.variables.get(j).setValue(attribute);
+		try {
+			for (i = 0; i < com.length; i++) {
+				Object content = null; // the value of a variable, e.g., "EPA"
+				String variableName; // the name of the variable, e.g., "organization"
+				if (com[i].getClass().getName().equals("javax.swing.JComboBox")) { // short text
+					variableName = ((JLabel) com[i - 1]).getText();
+					@SuppressWarnings("unchecked")
+					JComboBox<Attribute> box = (JComboBox<Attribute>) com[i]; // save the combo box
+					Object object = box.getSelectedItem();
+					Attribute attribute;
+					if (object.getClass().getName().endsWith("String")) { // if not an existing attribute, the editor returns a String
+						attribute = new Attribute((String) object); // the new attribute has an ID of -1; the SQL class needs to take care of this when writing into the database
+					} else {
+						attribute = (Attribute) box.getSelectedItem();
 					}
-				}
-			} else if (com[i].getClass().getName().equals("javax.swing.JScrollPane")) { // long text
-				variableName = ((JLabel) com[i - 1]).getText();
-				JScrollPane jsp = ((JScrollPane) com[i]);
-				JTextArea jta = (JTextArea) jsp.getViewport().getView();
-				content = jta.getText();
-				if (content == null) {
-					content = "";
-				}
-				for (j = 0; j < this.variables.size(); j++) {
-					if (this.variables.get(j).getKey().equals(variableName)) {
-						this.variables.get(j).setValue(content);
+					for (j = 0; j < this.variables.size(); j++) { // update the variable corresponding to the variable name identified
+						if (this.variables.get(j).getKey().equals(variableName)) {
+							if (!((Attribute) this.variables.get(j).getValue()).getValue().equals(attribute.getValue())) {
+								if (simulate == false) {
+									this.variables.get(j).setValue(attribute);
+								}
+								changed = true;
+							}
+						}
 					}
-				}
-			} else if (com[i].getClass().getName().equals("javax.swing.JPanel")) { // integer
-				variableName = ((JLabel) com[i - 1]).getText();
-				JPanel jp = (JPanel) com[i];
-				JSpinner jsp = (JSpinner) jp.getComponent(0);
-				content = jsp.getValue();
-				for (j = 0; j < this.variables.size(); j++) {
-					if (this.variables.get(j).getKey().equals(variableName)) {
-						this.variables.get(j).setValue(content);
+				} else if (com[i].getClass().getName().equals("javax.swing.JScrollPane")) { // long text
+					variableName = ((JLabel) com[i - 1]).getText();
+					JScrollPane jsp = ((JScrollPane) com[i]);
+					JTextArea jta = (JTextArea) jsp.getViewport().getView();
+					content = jta.getText();
+					if (content == null) {
+						content = "";
 					}
-				}
-			} else if (com[i].getClass().getName().endsWith("BooleanButtonPanel")) { // boolean
-				variableName = ((JLabel) com[i - 1]).getText();
-				content = ((BooleanButtonPanel) com[i]).isYes();
-				int intBool;
-				if ((Boolean) content == false) {
-					intBool = 0;
-				} else {
-					intBool = 1;
-				}
-				for (j = 0; j < this.variables.size(); j++) {
-					if (this.variables.get(j).getKey().equals(variableName)) {
-						this.variables.get(j).setValue(intBool);
+					for (j = 0; j < this.variables.size(); j++) {
+						if (this.variables.get(j).getKey().equals(variableName)) {
+							if (!this.variables.get(j).getValue().equals(content)) {
+								if (simulate == false) {
+									this.variables.get(j).setValue(content);
+								}
+								changed = true;
+							}
+						}
+					}
+				} else if (com[i].getClass().getName().equals("javax.swing.JPanel")) { // integer
+					variableName = ((JLabel) com[i - 1]).getText();
+					JPanel jp = (JPanel) com[i];
+					JSpinner jsp = (JSpinner) jp.getComponent(0);
+					content = jsp.getValue();
+					for (j = 0; j < this.variables.size(); j++) {
+						if (this.variables.get(j).getKey().equals(variableName)) {
+							if ((Integer) this.variables.get(j).getValue() != content) {
+								if (simulate == false) {
+									this.variables.get(j).setValue(content);
+								}
+								changed = true;
+							}
+						}
+					}
+				} else if (com[i].getClass().getName().endsWith("BooleanButtonPanel")) { // boolean
+					variableName = ((JLabel) com[i - 1]).getText();
+					content = ((BooleanButtonPanel) com[i]).isYes();
+					int intBool;
+					if ((Boolean) content == false) {
+						intBool = 0;
+					} else {
+						intBool = 1;
+					}
+					for (j = 0; j < this.variables.size(); j++) {
+						if (this.variables.get(j).getKey().equals(variableName)) {
+							if ((Integer) this.variables.get(j).getValue() != intBool) {
+								if (simulate == false) {
+									this.variables.get(j).setValue(intBool);
+								}
+								changed = true;
+							}
+						}
 					}
 				}
 			}
+			if (changed == true && simulate == false) {
+				Dna.sql.updateStatement(this.statement.getId(), this.variables); // write changes into the database
+			}
+		} catch (Exception e) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"Could not update statement contents in the database.",
+					"Read contents from popup and tried to save them in the SQL database, but something went wrong. Changes are being reverted. See exception for details.",
+					e);
+			Dna.logger.log(l);
 		}
-		Dna.sql.updateStatement(this.statement.getId(), this.variables); // write changes into the database
+		return changed;
 	}
 	
 	/**

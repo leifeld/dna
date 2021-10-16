@@ -113,7 +113,6 @@ public class MainWindow extends JFrame implements SqlListener {
 	// TODO: double-check if interaction between statement table selection, document selection, and popups in the text panel works well
 	// TODO: double-check if there is view-specific code in the main window class that can be moved into the view components
 	// TODO: take into account coder permissions and relations everywhere in the controls in the main window class
-	// TODO: popups with window decoration should check if the contents have changed when closed, instead of just asking anyway if changes should be saved
 	// TODO: make the attribute table and usage more flexible, with additional variables
 	
 	/**
@@ -141,7 +140,6 @@ public class MainWindow extends JFrame implements SqlListener {
 		// close SQL connection before exit
 		this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-				// documentTableModel = null;
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"Exiting DNA from the GUI main window.",
 						"Exiting DNA from the GUI main window.");
@@ -624,7 +622,7 @@ public class MainWindow extends JFrame implements SqlListener {
 						String message = "Save any changes in Statement " + s.getId() + " before creating copy?";
 						int dialog = JOptionPane.showConfirmDialog(popup, message, "Confirmation", JOptionPane.YES_NO_OPTION);
 						if (dialog == 0) {
-							popup.saveContents();
+							popup.saveContents(false);
 						}
 					}
 					int newStatementId = Dna.sql.cloneStatement(s.getId(), coder.getId());
