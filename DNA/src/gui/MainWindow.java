@@ -64,7 +64,6 @@ import com.google.gson.JsonSyntaxException;
 
 import gui.DocumentTablePanel;
 import dna.Dna;
-import dna.Dna.SqlListener;
 import logger.LogEvent;
 import logger.Logger;
 import logger.LoggerDialog;
@@ -76,6 +75,7 @@ import model.TableDocument;
 import model.Value;
 import sql.ConnectionProfile;
 import sql.Sql;
+import sql.Sql.SqlListener;
 import sql.Sql.SqlResults;
 
 /**
@@ -108,9 +108,6 @@ public class MainWindow extends JFrame implements SqlListener {
 	private ActionLoggerDialog actionLoggerDialog;
 	private ActionAboutWindow actionAboutWindow;
 
-	// TODO: take into account coder permissions and relations everywhere in the controls in the main window class
-	// TODO: make the attribute table and usage more flexible, with additional variables
-	
 	/**
 	 * Create a new main window.
 	 */
@@ -249,14 +246,12 @@ public class MainWindow extends JFrame implements SqlListener {
 		textPanel = new TextPanel();
 		
 		// add listeners
-		Dna.addSqlListener(this);
+		Dna.sql.addSqlListener(this);
 		Dna.logger.addListener(statusBar);
-		Dna.addCoderListener(textPanel);
-		Dna.addCoderListener(documentTablePanel);
-		Dna.addSqlListener(getStatementPanel());
-		Dna.addCoderListener(getStatementPanel());
-		Dna.addSqlListener(toolbar);
-		Dna.addCoderListener(toolbar);
+		Dna.sql.addSqlListener(textPanel);
+		Dna.sql.addSqlListener(documentTablePanel);
+		Dna.sql.addSqlListener(getStatementPanel());
+		Dna.sql.addSqlListener(toolbar);
 		
 		// layout
 		JSplitPane verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, documentTablePanel, textPanel);
@@ -281,27 +276,52 @@ public class MainWindow extends JFrame implements SqlListener {
 				if (e.getValueIsAdjusting()) {
 					return;
 				}
-				
+				boolean editable = false;
 				int rowCount = statementTable.getSelectedRowCount();
-				if (rowCount > 0) {
-					actionRemoveStatements.setEnabled(true);
-				} else {
-					actionRemoveStatements.setEnabled(false);
-				}
 				if (rowCount == 1) {
 					int selectedRow = statementTable.getSelectedRow();
 					int selectedModelIndex = statementTable.convertRowIndexToModel(selectedRow);
 					Statement s = statementTableModel.getRow(selectedModelIndex);
-					
 					documentTablePanel.setSelectedDocumentId(s.getDocumentId());
-					
-					boolean editable = false;
-					if (Dna.sql.getActiveCoder().getPermissionEditStatements() == 1 &&
-							(Dna.sql.getActiveCoder().getPermissionEditOthersStatements() == 1 ||
-							(Dna.sql.getActiveCoder().getPermissionEditOthersStatements() == 0 && Dna.sql.getActiveCoder().getId() == s.getCoderId()))) {
+					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true &&
+							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true ||
+							Dna.sql.getActiveCoder().getId() == s.getCoderId())) {
+						actionRemoveStatements.setEnabled(true);
+					} else {
+						actionRemoveStatements.setEnabled(false);
+					}
+					if (Dna.sql.getActiveCoder().isPermissionEditStatements() == true &&
+							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true ||
+							Dna.sql.getActiveCoder().getId() == s.getCoderId())) {
 						editable = true;
 					}
-					selectStatement(s, s.getDocumentId(), editable);
+					if (Dna.sql.getActiveCoder().getId() == s.getCoderId() ||
+							Dna.sql.getActiveCoder().isPermissionViewOthersStatements() == true) {
+						selectStatement(s, s.getDocumentId(), editable);
+					}
+				} else if (rowCount > 1) {
+					int[] rows = statementTable.getSelectedRows();
+					boolean allOwned = true;
+					for (int i = 0; i < rows.length; i++) {
+						int modelRow = statementTable.convertRowIndexToModel(rows[i]);
+						int coderId = statementTableModel.getRow(modelRow).getCoderId();
+						if (coderId != Dna.sql.getActiveCoder().getId()) {
+							allOwned = false;
+						}
+					}
+					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true &&
+							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true || allOwned == true)) {
+						actionRemoveStatements.setEnabled(true);
+					} else {
+						actionRemoveStatements.setEnabled(false);
+					}
+					if (Dna.sql.getActiveCoder().isPermissionEditStatements() == true &&
+							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true || allOwned == true)) {
+						editable = true;
+					}
+					// no particular statement to select because multiple statements highlighted in table
+				} else {
+					actionRemoveStatements.setEnabled(false);
 				}
 			}
 		});
@@ -316,71 +336,52 @@ public class MainWindow extends JFrame implements SqlListener {
 				}
 				
 				int rowCount = documentTable.getSelectedRowCount();
+				boolean allOwned = true;
+				int[] rows = documentTable.getSelectedRows();
 				if (rowCount > 0) {
+					for (int i = 0; i < rows.length; i++) {
+						int modelRow = documentTable.convertRowIndexToModel(rows[i]);
+						int coderId = documentTableModel.getRow(modelRow).getCoder().getId();
+						if (coderId != Dna.sql.getActiveCoder().getId()) {
+							allOwned = false; // does the active coder own all selected documents?
+						}
+					}
+				}
+				// enable or disable action for deleting documents depending on selection and user rights
+				if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionDeleteDocuments() == true &&
+						(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true)) {
 					actionRemoveDocuments.setEnabled(true);
-					actionEditDocuments.setEnabled(true);
 				} else {
 					actionRemoveDocuments.setEnabled(false);
+				}
+				// enable or disable action for editing documents depending on selection and user rights
+				if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionEditDocuments() == true &&
+						(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true)) {
+					actionEditDocuments.setEnabled(true);
+				} else {
 					actionEditDocuments.setEnabled(false);
 				}
-				if (rowCount == 0) {
-					textPanel.setContents(-1, "");
-					getStatementPanel().setDocumentId(-1);
-					statementTableModel.fireTableDataChanged();
-				} else if (rowCount > 1) {
-					int[] selectedRows = documentTable.getSelectedRows();
-					int[] selectedDocumentIds = new int[selectedRows.length];
-					for (int i = 0; i < selectedRows.length; i++) {
-						selectedDocumentIds[i] = documentTableModel.getIdByModelRow(documentTable.convertRowIndexToModel(selectedRows[i]));
-					}
+				if (rowCount == 0 || rowCount > 1) {
 					textPanel.setContents(-1, "");
 					getStatementPanel().setDocumentId(-1);
 					statementTableModel.fireTableDataChanged();
 				} else if (rowCount == 1) {
 					int selectedRow = documentTable.getSelectedRow();
 					int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
-					int id = (int) documentTableModel.getValueAt(selectedModelIndex, 0);
-					textPanel.setContents(id, documentTableModel.getDocumentText(id));
-					getStatementPanel().setDocumentId(id);
-					statementTableModel.fireTableDataChanged();
+					int id = documentTableModel.getIdByModelRow(selectedModelIndex);
+					int coderId = documentTableModel.getRow(selectedModelIndex).getCoder().getId();
+					if (Dna.sql.getActiveCoder().isPermissionViewOthersDocuments() == true ||
+							coderId == Dna.sql.getActiveCoder().getId()) {
+						textPanel.setContents(id, documentTableModel.getDocumentText(id));
+						getStatementPanel().setDocumentId(id);
+						statementTableModel.fireTableDataChanged();
+					}
 				} else {
 					LogEvent l = new LogEvent(Logger.WARNING,
 							"[GUI] Negative number of rows in the document table!",
 							"When a document is selected in the document table in the DNA coding window, the text of the document is displayed in the text panel. When checking which row in the table was selected, it was found that the table contained negative numbers of documents. This is obviously an error. Please report it by submitting a bug report along with the saved log.");
 					Dna.logger.log(l);
 				}
-				// if (Dna.gui.rightPanel.statementPanel.statementFilter.showCurrent.isSelected()) {
-				// 	Dna.gui.rightPanel.statementPanel.statementFilter.currentDocumentFilter();
-				// }
-				
-				// if (Dna.dna.sql != null) {
-				// 	Dna.gui.textPanel.paintStatements();
-				// }
-				
-				/*
-				int ac = Dna.data.getActiveCoder();
-				if (Dna.gui.leftPanel.editDocPanel.saveDetailsButton != null) {
-					if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("editDocuments") == false) {
-						Dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(false);
-						Dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(false);
-					} else {
-						Dna.gui.leftPanel.editDocPanel.saveDetailsButton.setEnabled(true);
-						Dna.gui.leftPanel.editDocPanel.cancelButton.setEnabled(true);
-					}
-				}
-				
-				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("deleteDocuments") == false) {
-					Dna.gui.documentPanel.menuItemDelete.setEnabled(false);
-				} else {
-					Dna.gui.documentPanel.menuItemDelete.setEnabled(true);
-				}
-				
-				if (Dna.dna.sql == null || Dna.data.getCoderById(ac).getPermissions().get("addDocuments") == false) {
-					Dna.gui.menuBar.newDocumentButton.setEnabled(false);
-				} else {
-					Dna.gui.menuBar.newDocumentButton.setEnabled(true);
-				}
-				*/
 			}
 		});
 
@@ -456,7 +457,7 @@ public class MainWindow extends JFrame implements SqlListener {
 			 */
 			private void mouseListenPopup(MouseEvent me) throws ArrayIndexOutOfBoundsException {
 				if (me.isPopupTrigger()) {
-					if (!(textWindow.getSelectedText() == null) && Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().getPermissionAddStatements() == 1) {
+					if (!(textWindow.getSelectedText() == null) && Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionAddStatements() == true) {
 						popupMenu(me.getComponent(), me.getX(), me.getY());
 					}
 				}
@@ -485,7 +486,8 @@ public class MainWindow extends JFrame implements SqlListener {
 							if (statements.get(i).getStart() < pos
 									&& statements.get(i).getStop() > pos
 									&& Dna.sql.getActiveCoder() != null
-									&& (Dna.sql.getActiveCoder().getPermissionViewOthersStatements() == 1 || statements.get(i).getCoderId() == Dna.sql.getActiveCoder().getId())
+									&& (Dna.sql.getActiveCoder().isPermissionViewOthersStatements() == true ||
+									statements.get(i).getCoderId() == Dna.sql.getActiveCoder().getId())
 									// TODO here: check also the CODERRELATIONS table
 									) {
 								Point location = textWindow.getLocationOnScreen();
@@ -509,7 +511,7 @@ public class MainWindow extends JFrame implements SqlListener {
 										new Popup(p.getX(), p.getY(), statementId, location, false);
 									}
 								 */
-								newPopup(p.getX(), p.getY(), statements.get(i), documentTablePanel.getSelectedDocumentId(), location, Dna.sql.getActiveCoder());
+								newPopup(p.getX(), p.getY(), statements.get(i), documentTablePanel.getSelectedDocumentId(), location);
 								break;
 								//}
 							}
@@ -605,7 +607,7 @@ public class MainWindow extends JFrame implements SqlListener {
 					textScrollPane.getVerticalScrollBar().setValue(value);
 					mtv = textWindow.modelToView(start);
 					Point loc = textWindow.getLocationOnScreen();
-					newPopup(mtv.getX(), mtv.getY(), s, documentId, loc, Dna.sql.getActiveCoder());
+					newPopup(mtv.getX(), mtv.getY(), s, documentId, loc);
 				} catch (BadLocationException e) {
 					LogEvent l = new LogEvent(Logger.WARNING,
 							"[GUI] Statement " + s.getId() + ": Popup window bad location exception.",
@@ -626,14 +628,14 @@ public class MainWindow extends JFrame implements SqlListener {
 	 * @param location    The location of the popup window.
 	 * @param coder       The active coder.
 	 */
-	private void newPopup(double x, double y, Statement s, int documentId, Point location, Coder coder) {
-		Popup popup = new Popup(x, y, s, documentId, location, coder);
+	private void newPopup(double x, double y, Statement s, int documentId, Point location) {
+		Popup popup = new Popup(x, y, s, documentId, location, Dna.sql.getActiveCoder());
 		
 		// duplicate button action listener
 		JButton duplicate = popup.getDuplicateButton();
 		duplicate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (coder.getPermissionAddStatements() == 1) {
+				if (Dna.sql.getActiveCoder().isPermissionAddStatements() == true) {
 					if (popup.isEditable() == true && popup.hasWindowDecoration() == true) {
 						String message = "Save any changes in Statement " + s.getId() + " before creating copy?";
 						int dialog = JOptionPane.showConfirmDialog(popup, message, "Confirmation", JOptionPane.YES_NO_OPTION);
@@ -641,7 +643,7 @@ public class MainWindow extends JFrame implements SqlListener {
 							popup.saveContents(false);
 						}
 					}
-					int newStatementId = Dna.sql.cloneStatement(s.getId(), coder.getId());
+					int newStatementId = Dna.sql.cloneStatement(s.getId(), Dna.sql.getActiveCoder().getId());
 			        StatementTableRefreshWorker statementWorker = new StatementTableRefreshWorker(newStatementId); // do not use refreshStatementTable method because we need to select the new statement ID
 			        statementWorker.execute();
 					popup.dispose();
@@ -780,10 +782,7 @@ public class MainWindow extends JFrame implements SqlListener {
 							rs.getInt("Frequency"),
 							new Coder(rs.getInt("CoderId"),
 									rs.getString("CoderName"),
-									rs.getInt("Red"),
-									rs.getInt("Green"),
-									rs.getInt("Blue"),
-									0, 14, 300, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+									new Color(rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue"))),
 							rs.getString("Author"),
 							rs.getString("Source"),
 							rs.getString("Section"),
@@ -824,11 +823,25 @@ public class MainWindow extends JFrame implements SqlListener {
 			Dna.logger.log(le);
 			statusBar.documentRefreshEnded();
 			if (!statusBar.isRefreshInProgress()) {
-				actionAddDocument.setEnabled(true);
-				actionRemoveDocuments.setEnabled(true);
-				actionEditDocuments.setEnabled(true);
-				actionBatchImportDocuments.setEnabled(true);
-				actionRefresh.setEnabled(true);
+				if (Dna.sql.getConnectionProfile() != null) {
+					actionRefresh.setEnabled(true);
+				} else {
+					actionRefresh.setEnabled(false);
+				}
+				adjustToChangedCoder();
+				int rowCount = documentTablePanel.getDocumentTable().getSelectedRowCount();
+				// enable or disable action for deleting documents depending on selection and user rights
+				if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionDeleteDocuments() == true) {
+					actionRemoveDocuments.setEnabled(true);
+				} else {
+					actionRemoveDocuments.setEnabled(false);
+				}
+				// enable or disable action for editing documents depending on selection and user rights
+				if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionEditDocuments() == true) {
+					actionEditDocuments.setEnabled(true);
+				} else {
+					actionEditDocuments.setEnabled(false);
+				}
 			}
 	    }
 	}
@@ -1018,19 +1031,22 @@ public class MainWindow extends JFrame implements SqlListener {
 					"The statement table has been populated with statements from the database. Closing thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
 			Dna.logger.log(le);
 			if (!statusBar.isRefreshInProgress()) {
-				actionRefresh.setEnabled(true);
+				if (Dna.sql.getConnectionProfile() != null) {
+					actionRefresh.setEnabled(true);
+				} else {
+					actionRefresh.setEnabled(false);
+				}
 			}
         }
     }
 
 	/**
 	 * React to changes in the state (= presence or absence) of the DNA database
-	 * in the {@link dna.Dna Dna} class.
+	 * in the {@link sql.Sql Sql} class.
 	 */
-	public void adjustToDatabaseState() {
-    	if (Dna.sql != null) {
-			actionAddDocument.setEnabled(true);
-			actionBatchImportDocuments.setEnabled(true);
+	@Override
+	public void adjustToChangedConnection() {
+    	if (Dna.sql.getConnectionProfile() != null) {
 			actionRefresh.setEnabled(true);
 			if (actionCloseDatabase != null) {
 				actionCloseDatabase.setEnabled(true);
@@ -1039,8 +1055,6 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionSaveProfile.setEnabled(true);
 			}
     	} else {
-			actionAddDocument.setEnabled(false);
-			actionBatchImportDocuments.setEnabled(false);
 			actionRefresh.setEnabled(false);
 			if (actionCloseDatabase != null) {
 				actionCloseDatabase.setEnabled(false);
@@ -1049,8 +1063,32 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionSaveProfile.setEnabled(false);
 			}
     	}
+    	adjustToChangedCoder();
     	refreshDocumentTable();
     	refreshStatementTable();
+	}
+
+	/**
+	 * React to changes in the active coder in the {@link dna.Sql Sql} class.
+	 */
+	@Override
+	public void adjustToChangedCoder() {
+		if (Dna.sql.getActiveCoder() == null) {
+			actionAddDocument.setEnabled(false);
+			actionBatchImportDocuments.setEnabled(false);
+		} else {
+			if (Dna.sql.getActiveCoder().isPermissionAddDocuments() == true) {
+				actionAddDocument.setEnabled(true);
+			} else {
+				actionAddDocument.setEnabled(false);
+			}
+			if (Dna.sql.getActiveCoder().isPermissionImportDocuments() == true) {
+				actionBatchImportDocuments.setEnabled(true);
+			} else {
+				actionBatchImportDocuments.setEnabled(false);
+			}
+			// edit and remove documents actions are governed by the selection listener of the document table
+		}
 	}
 
 	/**
@@ -1058,13 +1096,15 @@ public class MainWindow extends JFrame implements SqlListener {
 	 */
 	class ActionCloseDatabase extends AbstractAction {
 		private static final long serialVersionUID = -4463742124397662610L;
+		
 		public ActionCloseDatabase(String text, ImageIcon icon, String desc, Integer mnemonic) {
 			super(text, icon);
 			putValue(SHORT_DESCRIPTION, desc);
 			putValue(MNEMONIC_KEY, mnemonic);
 		}
+		
 		public void actionPerformed(ActionEvent e) {
-			Dna.setSql(null);
+			Dna.sql.changeActiveCoder(-1);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: closed database.",
 					"Closed database connection from the GUI.");
@@ -1087,8 +1127,13 @@ public class MainWindow extends JFrame implements SqlListener {
 		public void actionPerformed(ActionEvent e) {
 			NewDatabaseDialog n = new NewDatabaseDialog(false);
 			ConnectionProfile cp = n.getConnectionProfile();
-			if (cp != null) {
-				Dna.setSql(new Sql(cp));
+			Dna.sql.setConnectionProfile(cp);
+			if (cp == null) {
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[GUI] Action executed: new database was not created.",
+						"Started creating a new database from the GUI, but a connection was not established.");
+				Dna.logger.log(l);
+			} else {
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: created new database.",
 						"Created a new database from the GUI.");
@@ -1164,7 +1209,7 @@ public class MainWindow extends JFrame implements SqlListener {
 								boolean authenticated = sqlTemp.authenticate(key);
 								if (authenticated == true) {
 									validPasswordInput = true; // authenticated; quit the while-loop
-									Dna.setSql(sqlTemp);
+									Dna.sql.setConnectionProfile(cp);
 								} else {
 									cp = null;
 								}

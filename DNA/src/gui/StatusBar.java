@@ -15,10 +15,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import dna.Dna;
-import dna.Dna.SqlListener;
 import logger.Logger.LogListener;
 import logger.LoggerDialog;
 import sql.Sql;
+import sql.Sql.SqlListener;
 
 /**
  * A status bar panel showing the database on the left and messages on the right. 
@@ -109,7 +109,7 @@ class StatusBar extends JPanel implements LogListener, SqlListener {
 	 * the status bar. Show an empty string if no database is open.
 	 */
 	public void updateUrl() {
-		if (Dna.sql == null) {
+		if (Dna.sql.getConnectionProfile() == null) {
 			this.urlLabel.setText("");
 			this.urlLabel.setVisible(false);
 		} else {
@@ -208,7 +208,13 @@ class StatusBar extends JPanel implements LogListener, SqlListener {
 	}
 
 	@Override
-	public void adjustToDatabaseState() {
+	public void adjustToChangedConnection() {
 		updateUrl();
+	}
+
+	@Override
+	public void adjustToChangedCoder() {
+		// TODO Auto-generated method stub
+		
 	}
 }

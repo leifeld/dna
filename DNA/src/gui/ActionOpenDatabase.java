@@ -9,7 +9,6 @@ import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import sql.ConnectionProfile;
-import sql.Sql;
 
 /**
  * An action to display a dialog to open a database.
@@ -26,8 +25,13 @@ class ActionOpenDatabase extends AbstractAction {
 	public void actionPerformed(ActionEvent e) {
 		NewDatabaseDialog n = new NewDatabaseDialog(true);
 		ConnectionProfile cp = n.getConnectionProfile();
-		if (cp != null) {
-			Dna.setSql(new Sql(cp));
+		Dna.sql.setConnectionProfile(cp);
+		if (cp == null) {
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: could not open database.",
+					"Started opening a database connection from the GUI, but the connection was not established.");
+			Dna.logger.log(l);
+		} else {
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: opened database.",
 					"Opened a database connection from the GUI.");

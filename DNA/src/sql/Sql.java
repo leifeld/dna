@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -23,6 +25,7 @@ import logger.LogEvent;
 import logger.Logger;
 import model.Attribute;
 import model.Coder;
+import model.CoderRelation;
 import model.Document;
 import model.Statement;
 import model.StatementType;
@@ -35,6 +38,7 @@ import model.Value;
  * @category setup
  */
 public class Sql {
+	
 	/**
 	 * The {@link sql.ConnectionProfile ConnectionProfile} to be used for
 	 * connecting to a database.
@@ -42,16 +46,24 @@ public class Sql {
 	 * @category setup
 	 */
 	private ConnectionProfile cp;
+	
 	/**
 	 * The {@link javax.sql.DataSource DataSource} to be used for connections.
 	 * 
 	 * @category setup
 	 */
 	private DataSource ds;
+	
 	/**
 	 * The active {@link model.Coder Coder} including permissions.
 	 */
 	private Coder activeCoder;
+	
+	/**
+	 * Keep a list of classes that depend on which coder is selected and what
+	 * characteristics the coder has, for examples text panel.
+	 */
+	private static List<SqlListener> sqlListeners = new ArrayList<SqlListener>();
 	
 	
 	/* =========================================================================
@@ -69,8 +81,41 @@ public class Sql {
 	 * @category setup
 	 */
 	public Sql(ConnectionProfile cp) {
+		this.setConnectionProfile(cp);
+	}
+
+	/**
+	 * Create an instance of the Sql class without an initial connection.
+	 *   
+	 * @category setup
+	 */
+	public Sql() {
+		this.setConnectionProfile(null);
+	}
+
+	/**
+	 * Get the connection profile.
+	 * 
+	 * @return A {@link sql.ConnectionProfile connectionProfile} object.
+	 * 
+	 * @category setup
+	 */
+	public ConnectionProfile getConnectionProfile() {
+		return this.cp;
+	}
+
+	/**
+	 * Set the connection profile and save the current coder with permissions.
+	 * 
+	 * @param cp A {@link sql.ConnectionProfile connectionProfile} object.
+	 * 
+	 * @category setup
+	 */
+	public void setConnectionProfile(ConnectionProfile cp) {
 		this.cp = cp;
-		if (cp.getType().equals("sqlite")) { // no user name and password needed for file-based database
+		if (cp == null) { // null connection
+			ds = null;
+		} else if (cp.getType().equals("sqlite")) { // no user name and password needed for file-based database
 			ds = new SQLiteDataSource();
 	        ((SQLiteDataSource) ds).setUrl("jdbc:sqlite:" + cp.getUrl());
 	        ((SQLiteDataSource) ds).setEnforceForeignKeys(true); // if this is not set, ON DELETE CASCADE won't work
@@ -103,51 +148,19 @@ public class Sql {
 	        		"Attempted to open a database of type \"" + cp.getType() + "\", but the type does not seem to be supported.");
 	        Dna.logger.log(l);
 		}
-		setActiveCoder();
-	}
-
-	/**
-	 * Get the connection profile.
-	 * 
-	 * @return A {@link sql.ConnectionProfile connectionProfile} object.
-	 * 
-	 * @category setup
-	 */
-	public ConnectionProfile getConnectionProfile() {
-		return this.cp;
-	}
-
-	/**
-	 * Set the connection profile and save the current coder with permissions.
-	 * 
-	 * @param cp A {@link sql.ConnectionProfile connectionProfile} object.
-	 * 
-	 * @category setup
-	 */
-	public void setConnectionProfile(ConnectionProfile cp) {
-		this.cp = cp;
-		if (cp == null) {
-			this.activeCoder = null;
-		} else {
-			this.activeCoder = getCoder(cp.getCoderId());
-		}
+		fireConnectionChange();
+		updateActiveCoder();  // update active coder and notify listeners about the update
 	}
 	
 	/**
 	 * Get the active coder.
 	 * 
 	 * @return A {@link model.Coder Coder} object with all permissions.
+	 * 
+	 * @category setup
 	 */
 	public Coder getActiveCoder() {
-		activeCoder = getCoder(activeCoder.getId()); // update settings and permissions before returning active coder
 		return activeCoder;
-	}
-
-	/**
-	 * Set the active coder.
-	 */
-	public void setActiveCoder() {
-		this.activeCoder = getCoder(cp.getCoderId());
 	}
 
 	/**
@@ -162,14 +175,85 @@ public class Sql {
 	}
 
 	/**
-	 * Set the data source for the {@link sql.Sql Sql} class.
-	 * 
-	 * @param ds A {@link javax.sql.DataSource DataSource} object.
+	 * An interface for listeners for changes in the active connection or coder,
+	 * including selection of a different coder and changes in any coder
+	 * details, such as permissions, and a change of connection profile. For
+	 * example, the GUI should react to permission changes or change of coder by
+	 * enabling or disabling statement popups windows, repainting statements in
+	 * the text etc. The GUI components thus need to be registered as listeners.
 	 * 
 	 * @category setup
 	 */
-	public void setDataSource(DataSource ds) {
-		this.ds = ds;
+	public interface SqlListener {
+		void adjustToChangedConnection();
+		void adjustToChangedCoder();
+	}
+
+	/**
+	 * Add a coder listener. This can be an object that implements the
+	 * {@link CoderListener} interface.
+	 * 
+	 * @param listener An object implementing the {@link SqlListener}
+	 *   interface.
+	 * 
+	 * @category setup
+	 */
+	public void addSqlListener(SqlListener listener) {
+        sqlListeners.add(listener);
+    }
+
+	/**
+	 * Notify listeners that the connection has changed.
+	 * 
+	 * @category setup
+	 */
+	public static void fireConnectionChange() {
+		for (SqlListener listener : sqlListeners) {
+			listener.adjustToChangedConnection();
+		}
+	}
+
+	/**
+	 * Notify listeners that the active coder has changed.
+	 * 
+	 * @category setup
+	 */
+	public static void fireCoderChange() {
+		for (SqlListener listener : sqlListeners) {
+			listener.adjustToChangedCoder();
+		}
+	}
+
+	/**
+	 * Set a new active coder.
+	 * 
+	 * @param coderId
+	 * 
+	 * @category setup
+	 */
+	public void changeActiveCoder(int coderId) {
+		if (coderId > -1) {
+			getConnectionProfile().setCoder(coderId);
+			this.activeCoder = getCoder(coderId);
+		} else {
+			setConnectionProfile(null);
+			this.activeCoder = null;
+		}
+		fireCoderChange();
+	}
+
+	/**
+	 * Reload settings and permissions of active coder.
+	 * 
+	 * @category setup
+	 */
+	public void updateActiveCoder() {
+		if (getConnectionProfile() == null) {
+			this.activeCoder = null;
+		} else {
+			this.activeCoder = getCoder(cp.getCoderId());
+		}
+		fireCoderChange();
 	}
 
 	/**
@@ -696,39 +780,52 @@ public class Sql {
 	 * 
 	 * @category coder
 	 */
-	public model.Coder getCoder(int coderId) {
-		model.Coder c = null;
+	public Coder getCoder(int coderId) {
+		Coder c = null;
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s = conn.prepareStatement("SELECT * FROM CODERS WHERE ID = ?;")) {
-			s.setInt(1, coderId);
-			ResultSet result = s.executeQuery();
-			while (result.next()) {
-			    c = new model.Coder(coderId,
-			    		result.getString("Name"),
-			    		result.getInt("Red"),
-			    		result.getInt("Green"),
-			    		result.getInt("Blue"),
-			    		result.getInt("Refresh"),
-			    		result.getInt("FontSize"),
-			    		result.getInt("PopupWidth"),
-			    		result.getInt("ColorByCoder"),
-			    		result.getInt("PopupDecoration"),
-			    		result.getInt("popupAutoComplete"),
-			    		result.getInt("PermissionAddDocuments"),
-			    		result.getInt("PermissionEditDocuments"),
-			    		result.getInt("PermissionDeleteDocuments"),
-			    		result.getInt("PermissionImportDocuments"),
-			    		result.getInt("PermissionAddStatements"),
-			    		result.getInt("PermissionEditStatements"),
-			    		result.getInt("PermissionDeleteStatements"),
-			    		result.getInt("PermissionEditAttributes"),
-			    		result.getInt("PermissionEditRegex"),
-			    		result.getInt("PermissionEditStatementTypes"),
-			    		result.getInt("PermissionEditCoders"),
-			    		result.getInt("PermissionViewOthersDocuments"),
-			    		result.getInt("PermissionEditOthersDocuments"),
-			    		result.getInt("PermissionViewOthersStatements"),
-			    		result.getInt("PermissionEditOthersStatements"));
+				PreparedStatement s1 = conn.prepareStatement("SELECT * FROM CODERS WHERE ID = ?;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM CODERRELATIONS WHERE Coder = ?;")) {
+			s1.setInt(1, coderId);
+			ResultSet rs1 = s1.executeQuery();
+			while (rs1.next()) {
+				s2.setInt(1, coderId);
+				ResultSet rs2 = s2.executeQuery();
+				HashMap<Integer, CoderRelation> map = new HashMap<Integer, CoderRelation>();
+				while (rs2.next()) {
+					map.put(rs2.getInt("OtherCoder"),
+							new CoderRelation(
+									rs2.getInt("viewDocuments") == 1,
+									rs2.getInt("viewStatements") == 1,
+									rs2.getInt("editDocuments") == 1,
+									rs2.getInt("editStatements") == 1));
+				}
+			    c = new Coder(coderId,
+			    		rs1.getString("Name"),
+			    		rs1.getInt("Red"),
+			    		rs1.getInt("Green"),
+			    		rs1.getInt("Blue"),
+			    		rs1.getInt("Refresh"),
+			    		rs1.getInt("FontSize"),
+			    		rs1.getInt("PopupWidth"),
+			    		rs1.getInt("ColorByCoder") == 1,
+			    		rs1.getInt("PopupDecoration") == 1,
+			    		rs1.getInt("popupAutoComplete") == 1,
+			    		rs1.getInt("PermissionAddDocuments") == 1,
+			    		rs1.getInt("PermissionEditDocuments") == 1,
+			    		rs1.getInt("PermissionDeleteDocuments") == 1,
+			    		rs1.getInt("PermissionImportDocuments") == 1,
+			    		rs1.getInt("PermissionAddStatements") == 1,
+			    		rs1.getInt("PermissionEditStatements") == 1,
+			    		rs1.getInt("PermissionDeleteStatements") == 1,
+			    		rs1.getInt("PermissionEditAttributes") == 1,
+			    		rs1.getInt("PermissionEditRegex") == 1,
+			    		rs1.getInt("PermissionEditStatementTypes") == 1,
+			    		rs1.getInt("PermissionEditCoders") == 1,
+			    		rs1.getInt("PermissionViewOthersDocuments") == 1,
+			    		rs1.getInt("PermissionEditOthersDocuments") == 1,
+			    		rs1.getInt("PermissionViewOthersStatements") == 1,
+			    		rs1.getInt("PermissionEditOthersStatements") == 1,
+			    		map);
 			}
 		} catch (SQLException e) {
 			LogEvent l = new LogEvent(Logger.WARNING,
@@ -751,35 +848,48 @@ public class Sql {
 	public ArrayList<Coder> getCoders() {
 		ArrayList<Coder> coders = new ArrayList<Coder>();
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s = conn.prepareStatement("SELECT * FROM Coders;")) {
-        	ResultSet result = s.executeQuery();
-        	while (result.next()) {
-            	coders.add(new model.Coder(result.getInt("ID"),
-            			result.getString("Name"),
-            			result.getInt("Red"),
-			    		result.getInt("Green"),
-			    		result.getInt("Blue"),
-			    		result.getInt("Refresh"),
-			    		result.getInt("FontSize"),
-			    		result.getInt("PopupWidth"),
-			    		result.getInt("ColorByCoder"),
-			    		result.getInt("PopupDecoration"),
-			    		result.getInt("popupAutoComplete"),
-			    		result.getInt("PermissionAddDocuments"),
-			    		result.getInt("PermissionEditDocuments"),
-			    		result.getInt("PermissionDeleteDocuments"),
-			    		result.getInt("PermissionImportDocuments"),
-			    		result.getInt("PermissionAddStatements"),
-			    		result.getInt("PermissionEditStatements"),
-			    		result.getInt("PermissionDeleteStatements"),
-			    		result.getInt("PermissionEditAttributes"),
-			    		result.getInt("PermissionEditRegex"),
-			    		result.getInt("PermissionEditStatementTypes"),
-			    		result.getInt("PermissionEditCoders"),
-			    		result.getInt("PermissionViewOthersDocuments"),
-			    		result.getInt("PermissionEditOthersDocuments"),
-			    		result.getInt("PermissionViewOthersStatements"),
-			    		result.getInt("PermissionEditOthersStatements")));
+				PreparedStatement s1 = conn.prepareStatement("SELECT * FROM Coders;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM CODERRELATIONS WHERE Coder = ?;")) {
+        	ResultSet rs1 = s1.executeQuery();
+        	while (rs1.next()) {
+        		s2.setInt(1, rs1.getInt("ID"));
+				ResultSet rs2 = s2.executeQuery();
+				HashMap<Integer, CoderRelation> map = new HashMap<Integer, CoderRelation>();
+				while (rs2.next()) {
+					map.put(rs2.getInt("OtherCoder"),
+							new CoderRelation(
+									rs2.getInt("viewDocuments") == 1,
+									rs2.getInt("viewStatements") == 1,
+									rs2.getInt("editDocuments") == 1,
+									rs2.getInt("editStatements") == 1));
+				}
+            	coders.add(new Coder(rs1.getInt("ID"),
+            			rs1.getString("Name"),
+			    		rs1.getInt("Red"),
+			    		rs1.getInt("Green"),
+			    		rs1.getInt("Blue"),
+			    		rs1.getInt("Refresh"),
+			    		rs1.getInt("FontSize"),
+			    		rs1.getInt("PopupWidth"),
+			    		rs1.getInt("ColorByCoder") == 1,
+			    		rs1.getInt("PopupDecoration") == 1,
+			    		rs1.getInt("popupAutoComplete") == 1,
+			    		rs1.getInt("PermissionAddDocuments") == 1,
+			    		rs1.getInt("PermissionEditDocuments") == 1,
+			    		rs1.getInt("PermissionDeleteDocuments") == 1,
+			    		rs1.getInt("PermissionImportDocuments") == 1,
+			    		rs1.getInt("PermissionAddStatements") == 1,
+			    		rs1.getInt("PermissionEditStatements") == 1,
+			    		rs1.getInt("PermissionDeleteStatements") == 1,
+			    		rs1.getInt("PermissionEditAttributes") == 1,
+			    		rs1.getInt("PermissionEditRegex") == 1,
+			    		rs1.getInt("PermissionEditStatementTypes") == 1,
+			    		rs1.getInt("PermissionEditCoders") == 1,
+			    		rs1.getInt("PermissionViewOthersDocuments") == 1,
+			    		rs1.getInt("PermissionEditOthersDocuments") == 1,
+			    		rs1.getInt("PermissionViewOthersStatements") == 1,
+			    		rs1.getInt("PermissionEditOthersStatements") == 1,
+			    		map));
             }
 		} catch (SQLException e) {
         	LogEvent l = new LogEvent(Logger.WARNING,
@@ -810,6 +920,7 @@ public class Sql {
         			e);
         	Dna.logger.log(l);
 		}
+		updateActiveCoder();
 	}
 
 	/**
@@ -838,6 +949,7 @@ public class Sql {
         			e);
         	Dna.logger.log(l);
 		}
+		updateActiveCoder();
 	}
 
 	/**
@@ -859,6 +971,7 @@ public class Sql {
         			e);
         	Dna.logger.log(l);
 		}
+		updateActiveCoder();
 	}
 
 	/**
@@ -885,6 +998,7 @@ public class Sql {
         			e);
         	Dna.logger.log(l);
 		}
+		updateActiveCoder();
 	}
 
 	/**
@@ -911,6 +1025,7 @@ public class Sql {
         			e);
         	Dna.logger.log(l);
 		}
+		updateActiveCoder();
 	}
 	
 	/**

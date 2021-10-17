@@ -22,14 +22,14 @@ import javax.swing.RowFilter;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
-import dna.Dna.CoderListener;
 import gui.MainWindow.ActionAddDocument;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionRemoveDocuments;
 import model.Coder;
 import model.TableDocument;
+import sql.Sql.SqlListener;
 
-class DocumentTablePanel extends JPanel implements CoderListener {
+class DocumentTablePanel extends JPanel implements SqlListener {
 	private static final long serialVersionUID = 4543056929753553570L;
 	private JTable documentTable;
 	private DocumentTableModel documentTableModel;
@@ -265,6 +265,11 @@ class DocumentTablePanel extends JPanel implements CoderListener {
 		menuItemNotes.addActionListener(al);
 	}
 	
+	/**
+	 * Get a reference to the document table.
+	 * 
+	 * @return The document table.
+	 */
 	JTable getDocumentTable() {
 		return documentTable;
 	}
@@ -334,5 +339,10 @@ class DocumentTablePanel extends JPanel implements CoderListener {
 	@Override
 	public void adjustToChangedCoder() {
 		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void adjustToChangedConnection() {
+		// nothing to do
 	}
 }

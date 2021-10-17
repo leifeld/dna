@@ -415,7 +415,7 @@ public class DocumentEditor extends JDialog {
 			if (numDocuments > 1) {
 				for (int i = 0; i < documents.size(); i++) {
 					if (documents.get(i).getCoder() != contentCoder) {
-						coderPanel = new CoderBadgePanel(new Coder(-1, "(multiple coders)", new Color(0, 0, 0, 0), 0, 14, 300, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+						coderPanel = new CoderBadgePanel(new Coder(-1, "(multiple coders)", new Color(0, 0, 0, 0)));
 						break;
 					}
 				}

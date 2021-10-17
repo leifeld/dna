@@ -1,13 +1,16 @@
 package model;
 
 import java.awt.Color;
+import java.util.HashMap;
 
 public class Coder {
 	int id,
 	popupWidth,
-	colorByCoder,
 	refresh,
-	fontSize,
+	fontSize;
+	String name;
+	Color color;
+	boolean colorByCoder,
 	popupDecoration,
 	popupAutoComplete,
 	permissionAddDocuments,
@@ -25,33 +28,33 @@ public class Coder {
 	permissionEditOthersDocuments,
 	permissionViewOthersStatements,
 	permissionEditOthersStatements;
-	String name;
-	Color color;
-
+	HashMap<Integer, CoderRelation> coderRelations;
+	
 	public Coder(int id,
 			String name,
 			Color color,  // color defined as java.awt.Color
 			int refresh,
 			int fontSize,
 			int popupWidth,
-			int colorByCoder,
-			int popupDecoration,
-			int popupAutoComplete,
-			int permissionAddDocuments,
-			int permissionEditDocuments,
-			int permissionDeleteDocuments,
-			int permissionImportDocuments,
-			int permissionAddStatements,
-			int permissionEditStatements,
-			int permissionDeleteStatements,
-			int permissionEditAttributes,
-			int permissionEditRegex,
-			int permissionEditStatementTypes,
-			int permissionEditCoders,
-			int permissionViewOthersDocuments,
-			int permissionEditOthersDocuments,
-			int permissionViewOthersStatements,
-			int permissionEditOthersStatements) {
+			boolean colorByCoder,
+			boolean popupDecoration,
+			boolean popupAutoComplete,
+			boolean permissionAddDocuments,
+			boolean permissionEditDocuments,
+			boolean permissionDeleteDocuments,
+			boolean permissionImportDocuments,
+			boolean permissionAddStatements,
+			boolean permissionEditStatements,
+			boolean permissionDeleteStatements,
+			boolean permissionEditAttributes,
+			boolean permissionEditRegex,
+			boolean permissionEditStatementTypes,
+			boolean permissionEditCoders,
+			boolean permissionViewOthersDocuments,
+			boolean permissionEditOthersDocuments,
+			boolean permissionViewOthersStatements,
+			boolean permissionEditOthersStatements,
+			HashMap<Integer, CoderRelation> coderRelations) {
 		this.id = id;
 		this.name = name;
 		this.color = color;
@@ -76,6 +79,7 @@ public class Coder {
 		this.permissionEditOthersDocuments = permissionEditOthersDocuments;
 		this.permissionViewOthersStatements = permissionViewOthersStatements;
 		this.permissionEditOthersStatements = permissionEditOthersStatements;
+		this.coderRelations = coderRelations;
 	}
 
 	public Coder(int id,
@@ -86,24 +90,25 @@ public class Coder {
 			int refresh,
 			int fontSize,
 			int popupWidth,
-			int colorByCoder,
-			int popupDecoration,
-			int popupAutoComplete,
-			int permissionAddDocuments,
-			int permissionEditDocuments,
-			int permissionDeleteDocuments,
-			int permissionImportDocuments,
-			int permissionAddStatements,
-			int permissionEditStatements,
-			int permissionDeleteStatements,
-			int permissionEditAttributes,
-			int permissionEditRegex,
-			int permissionEditStatementTypes,
-			int permissionEditCoders,
-			int permissionViewOthersDocuments,
-			int permissionEditOthersDocuments,
-			int permissionViewOthersStatements,
-			int permissionEditOthersStatements) {
+			boolean colorByCoder,
+			boolean popupDecoration,
+			boolean popupAutoComplete,
+			boolean permissionAddDocuments,
+			boolean permissionEditDocuments,
+			boolean permissionDeleteDocuments,
+			boolean permissionImportDocuments,
+			boolean permissionAddStatements,
+			boolean permissionEditStatements,
+			boolean permissionDeleteStatements,
+			boolean permissionEditAttributes,
+			boolean permissionEditRegex,
+			boolean permissionEditStatementTypes,
+			boolean permissionEditCoders,
+			boolean permissionViewOthersDocuments,
+			boolean permissionEditOthersDocuments,
+			boolean permissionViewOthersStatements,
+			boolean permissionEditOthersStatements,
+			HashMap<Integer, CoderRelation> coderRelations) {
 		this.id = id;
 		this.name = name;
 		this.color = new Color(red, green, blue);
@@ -128,6 +133,44 @@ public class Coder {
 		this.permissionEditOthersDocuments = permissionEditOthersDocuments;
 		this.permissionViewOthersStatements = permissionViewOthersStatements;
 		this.permissionEditOthersStatements = permissionEditOthersStatements;
+		this.coderRelations = coderRelations;
+	}
+
+	/**
+	 * Create a minimal-information dummy Coder for table display.
+	 * 
+	 * @param id     Coder ID.
+	 * @param name   Name of the coder.
+	 * @param color  Color of the coder.
+	 */
+	public Coder(int id,
+			String name,
+			Color color) { // color defined as java.awt.Color
+		this.id = id;
+		this.name = name;
+		this.color = color;
+		this.refresh = 0;
+		this.fontSize = 14;
+		this.popupWidth = 300;
+		this.colorByCoder = false;
+		this.popupDecoration = false;
+		this.popupAutoComplete = false;
+		this.permissionAddDocuments = false;
+		this.permissionEditDocuments = false;
+		this.permissionDeleteDocuments = false;
+		this.permissionImportDocuments = false;
+		this.permissionAddStatements = false;
+		this.permissionEditStatements = false;
+		this.permissionDeleteStatements = false;
+		this.permissionEditAttributes = false;
+		this.permissionEditRegex = false;
+		this.permissionEditStatementTypes = false;
+		this.permissionEditCoders = false;
+		this.permissionViewOthersDocuments = false;
+		this.permissionEditOthersDocuments = false;
+		this.permissionViewOthersStatements = false;
+		this.permissionEditOthersStatements = false;
+		this.coderRelations = new HashMap<Integer, CoderRelation>();
 	}
 
 	public int getId() {
@@ -178,147 +221,269 @@ public class Coder {
 		this.popupWidth = popupWidth;
 	}
 
-	public int getColorByCoder() {
+	/**
+	 * @return the colorByCoder
+	 */
+	public boolean isColorByCoder() {
 		return colorByCoder;
 	}
 
-	public void setColorByCoder(int colorByCoder) {
+	/**
+	 * @param colorByCoder the colorByCoder to set
+	 */
+	public void setColorByCoder(boolean colorByCoder) {
 		this.colorByCoder = colorByCoder;
 	}
 
-	public int getPopupDecoration() {
+	/**
+	 * @return the popupDecoration
+	 */
+	public boolean isPopupDecoration() {
 		return popupDecoration;
 	}
 
-	public void setPopupDecoration(int popupDecoration) {
+	/**
+	 * @param popupDecoration the popupDecoration to set
+	 */
+	public void setPopupDecoration(boolean popupDecoration) {
 		this.popupDecoration = popupDecoration;
 	}
 
-	public int getPopupAutoComplete() {
+	/**
+	 * @return the popupAutoComplete
+	 */
+	public boolean isPopupAutoComplete() {
 		return popupAutoComplete;
 	}
 
-	public void setPopupAutoComplete(int popupAutoComplete) {
+	/**
+	 * @param popupAutoComplete the popupAutoComplete to set
+	 */
+	public void setPopupAutoComplete(boolean popupAutoComplete) {
 		this.popupAutoComplete = popupAutoComplete;
 	}
 
-	public int getPermissionAddDocuments() {
+	/**
+	 * @return the permissionAddDocuments
+	 */
+	public boolean isPermissionAddDocuments() {
 		return permissionAddDocuments;
 	}
 
-	public void setPermissionAddDocuments(int permissionAddDocuments) {
+	/**
+	 * @param permissionAddDocuments the permissionAddDocuments to set
+	 */
+	public void setPermissionAddDocuments(boolean permissionAddDocuments) {
 		this.permissionAddDocuments = permissionAddDocuments;
 	}
 
-	public int getPermissionEditDocuments() {
+	/**
+	 * @return the permissionEditDocuments
+	 */
+	public boolean isPermissionEditDocuments() {
 		return permissionEditDocuments;
 	}
 
-	public void setPermissionEditDocuments(int permissionEditDocuments) {
+	/**
+	 * @param permissionEditDocuments the permissionEditDocuments to set
+	 */
+	public void setPermissionEditDocuments(boolean permissionEditDocuments) {
 		this.permissionEditDocuments = permissionEditDocuments;
 	}
 
-	public int getPermissionDeleteDocuments() {
+	/**
+	 * @return the permissionDeleteDocuments
+	 */
+	public boolean isPermissionDeleteDocuments() {
 		return permissionDeleteDocuments;
 	}
 
-	public void setPermissionDeleteDocuments(int permissionDeleteDocuments) {
+	/**
+	 * @param permissionDeleteDocuments the permissionDeleteDocuments to set
+	 */
+	public void setPermissionDeleteDocuments(boolean permissionDeleteDocuments) {
 		this.permissionDeleteDocuments = permissionDeleteDocuments;
 	}
 
-	public int getPermissionImportDocuments() {
+	/**
+	 * @return the permissionImportDocuments
+	 */
+	public boolean isPermissionImportDocuments() {
 		return permissionImportDocuments;
 	}
 
-	public void setPermissionImportDocuments(int permissionImportDocuments) {
+	/**
+	 * @param permissionImportDocuments the permissionImportDocuments to set
+	 */
+	public void setPermissionImportDocuments(boolean permissionImportDocuments) {
 		this.permissionImportDocuments = permissionImportDocuments;
 	}
 
-	public int getPermissionAddStatements() {
+	/**
+	 * @return the permissionAddStatements
+	 */
+	public boolean isPermissionAddStatements() {
 		return permissionAddStatements;
 	}
 
-	public void setPermissionAddStatements(int permissionAddStatements) {
+	/**
+	 * @param permissionAddStatements the permissionAddStatements to set
+	 */
+	public void setPermissionAddStatements(boolean permissionAddStatements) {
 		this.permissionAddStatements = permissionAddStatements;
 	}
 
-	public int getPermissionEditStatements() {
+	/**
+	 * @return the permissionEditStatements
+	 */
+	public boolean isPermissionEditStatements() {
 		return permissionEditStatements;
 	}
 
-	public void setPermissionEditStatements(int permissionEditStatements) {
+	/**
+	 * @param permissionEditStatements the permissionEditStatements to set
+	 */
+	public void setPermissionEditStatements(boolean permissionEditStatements) {
 		this.permissionEditStatements = permissionEditStatements;
 	}
 
-	public int getPermissionDeleteStatements() {
+	/**
+	 * @return the permissionDeleteStatements
+	 */
+	public boolean isPermissionDeleteStatements() {
 		return permissionDeleteStatements;
 	}
 
-	public void setPermissionDeleteStatements(int permissionDeleteStatements) {
+	/**
+	 * @param permissionDeleteStatements the permissionDeleteStatements to set
+	 */
+	public void setPermissionDeleteStatements(boolean permissionDeleteStatements) {
 		this.permissionDeleteStatements = permissionDeleteStatements;
 	}
 
-	public int getPermissionEditAttributes() {
+	/**
+	 * @return the permissionEditAttributes
+	 */
+	public boolean isPermissionEditAttributes() {
 		return permissionEditAttributes;
 	}
 
-	public void setPermissionEditAttributes(int permissionEditAttributes) {
+	/**
+	 * @param permissionEditAttributes the permissionEditAttributes to set
+	 */
+	public void setPermissionEditAttributes(boolean permissionEditAttributes) {
 		this.permissionEditAttributes = permissionEditAttributes;
 	}
 
-	public int getPermissionEditRegex() {
+	/**
+	 * @return the permissionEditRegex
+	 */
+	public boolean isPermissionEditRegex() {
 		return permissionEditRegex;
 	}
 
-	public void setPermissionEditRegex(int permissionEditRegex) {
+	/**
+	 * @param permissionEditRegex the permissionEditRegex to set
+	 */
+	public void setPermissionEditRegex(boolean permissionEditRegex) {
 		this.permissionEditRegex = permissionEditRegex;
 	}
 
-	public int getPermissionEditStatementTypes() {
+	/**
+	 * @return the permissionEditStatementTypes
+	 */
+	public boolean isPermissionEditStatementTypes() {
 		return permissionEditStatementTypes;
 	}
 
-	public void setPermissionEditStatementTypes(int permissionEditStatementTypes) {
+	/**
+	 * @param permissionEditStatementTypes the permissionEditStatementTypes to set
+	 */
+	public void setPermissionEditStatementTypes(boolean permissionEditStatementTypes) {
 		this.permissionEditStatementTypes = permissionEditStatementTypes;
 	}
 
-	public int getPermissionEditCoders() {
+	/**
+	 * @return the permissionEditCoders
+	 */
+	public boolean isPermissionEditCoders() {
 		return permissionEditCoders;
 	}
 
-	public void setPermissionEditCoders(int permissionEditCoders) {
+	/**
+	 * @param permissionEditCoders the permissionEditCoders to set
+	 */
+	public void setPermissionEditCoders(boolean permissionEditCoders) {
 		this.permissionEditCoders = permissionEditCoders;
 	}
 
-	public int getPermissionViewOthersDocuments() {
+	/**
+	 * @return the permissionViewOthersDocuments
+	 */
+	public boolean isPermissionViewOthersDocuments() {
 		return permissionViewOthersDocuments;
 	}
 
-	public void setPermissionViewOthersDocuments(int permissionViewOthersDocuments) {
+	/**
+	 * @param permissionViewOthersDocuments the permissionViewOthersDocuments to set
+	 */
+	public void setPermissionViewOthersDocuments(boolean permissionViewOthersDocuments) {
 		this.permissionViewOthersDocuments = permissionViewOthersDocuments;
 	}
 
-	public int getPermissionEditOthersDocuments() {
+	/**
+	 * @return the permissionEditOthersDocuments
+	 */
+	public boolean isPermissionEditOthersDocuments() {
 		return permissionEditOthersDocuments;
 	}
 
-	public void setPermissionEditOthersDocuments(int permissionEditOthersDocuments) {
+	/**
+	 * @param permissionEditOthersDocuments the permissionEditOthersDocuments to set
+	 */
+	public void setPermissionEditOthersDocuments(boolean permissionEditOthersDocuments) {
 		this.permissionEditOthersDocuments = permissionEditOthersDocuments;
 	}
 
-	public int getPermissionViewOthersStatements() {
+	/**
+	 * @return the permissionViewOthersStatements
+	 */
+	public boolean isPermissionViewOthersStatements() {
 		return permissionViewOthersStatements;
 	}
 
-	public void setPermissionViewOthersStatements(int permissionViewOthersStatements) {
+	/**
+	 * @param permissionViewOthersStatements the permissionViewOthersStatements to set
+	 */
+	public void setPermissionViewOthersStatements(boolean permissionViewOthersStatements) {
 		this.permissionViewOthersStatements = permissionViewOthersStatements;
 	}
 
-	public int getPermissionEditOthersStatements() {
+	/**
+	 * @return the permissionEditOthersStatements
+	 */
+	public boolean isPermissionEditOthersStatements() {
 		return permissionEditOthersStatements;
 	}
 
-	public void setPermissionEditOthersStatements(int permissionEditOthersStatements) {
+	/**
+	 * @param permissionEditOthersStatements the permissionEditOthersStatements to set
+	 */
+	public void setPermissionEditOthersStatements(boolean permissionEditOthersStatements) {
 		this.permissionEditOthersStatements = permissionEditOthersStatements;
+	}
+
+	/**
+	 * @return the coderRelations
+	 */
+	public HashMap<Integer, CoderRelation> getCoderRelations() {
+		return coderRelations;
+	}
+
+	/**
+	 * @param coderRelations the coderRelations to set
+	 */
+	public void setCoderRelations(HashMap<Integer, CoderRelation> coderRelations) {
+		this.coderRelations = coderRelations;
 	}
 }

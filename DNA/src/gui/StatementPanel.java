@@ -44,19 +44,18 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
 import dna.Dna;
-import dna.Dna.CoderListener;
-import dna.Dna.SqlListener;
 import gui.MainWindow.ActionRemoveStatements;
 import model.Attribute;
 import model.Coder;
 import model.Statement;
 import model.StatementType;
 import model.Value;
+import sql.Sql.SqlListener;
 
 /**
  * Statement panel on the right side of the screen.
  */
-class StatementPanel extends JPanel implements SqlListener, CoderListener {
+class StatementPanel extends JPanel implements SqlListener {
 	private static final long serialVersionUID = 1044070479152247253L;
 	private JTable statementTable;
 	private StatementTableModel statementTableModel;
@@ -585,14 +584,14 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener {
 			}
 		}
 	}
-	
+
 	@Override
 	public void adjustToChangedCoder() {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-	public void adjustToDatabaseState() {
+	public void adjustToChangedConnection() {
 		if (Dna.sql == null) {
 			allButton.setSelected(true);
 			allButton.setEnabled(false);
@@ -604,4 +603,4 @@ class StatementPanel extends JPanel implements SqlListener, CoderListener {
 			filterButton.setEnabled(true);
 		}
 	}
-	}
+}

@@ -77,7 +77,7 @@ class Popup extends JDialog {
 		this.los = location;
 		this.textFieldWidth = coder.getPopupWidth();
 		this.color = statement.getStatementTypeColor();
-		if (coder.getPopupDecoration() == 1) {
+		if (coder.isPopupDecoration() == true) {
 			this.windowDecoration = true;
 		} else {
 			this.windowDecoration = false;
@@ -86,10 +86,10 @@ class Popup extends JDialog {
 		
 		// should the changes in the statements be saved? check permissions...
 		editable = true;
-		if (statement.getCoderId() != coder.getId() && coder.getPermissionEditOthersStatements() == 0) {
+		if (statement.getCoderId() != coder.getId() && coder.isPermissionEditOthersStatements() == false) {
 			editable = false;
 		}
-		if (coder.getPermissionEditStatements() == 0) {
+		if (coder.isPermissionEditStatements() == false) {
 			editable = false;
 		}
 		
@@ -135,7 +135,7 @@ class Popup extends JDialog {
 		duplicate = new JButton(duplicateIcon);
 		duplicate.setToolTipText("create a copy of this statement at the same location");
 		duplicate.setPreferredSize(new Dimension(16, 16));
-		if (coder.getPermissionAddStatements() == 0) {
+		if (coder.isPermissionAddStatements() == false) {
 			duplicate.setEnabled(false);
 		}
 		
@@ -143,7 +143,7 @@ class Popup extends JDialog {
 		remove = new JButton(removeIcon);
 		remove.setToolTipText("completely remove the whole statement (but keep the text)");
 		remove.setPreferredSize(new Dimension(16, 16));
-		if (coder.getPermissionDeleteStatements() == 1 && (statement.getCoderId() == coder.getId() || coder.getPermissionEditOthersStatements() == 1)) {
+		if (coder.isPermissionDeleteStatements() == true && (statement.getCoderId() == coder.getId() || coder.isPermissionEditOthersStatements() == true)) {
 			remove.setEnabled(true);
 		} else {
 			remove.setEnabled(false);
@@ -219,7 +219,7 @@ class Popup extends JDialog {
 					}
 				});
 				
-				if (coder.getPopupAutoComplete() == 1) {
+				if (coder.isPopupAutoComplete() == true) {
 					AutoCompleteDecorator.decorate(box); // auto-complete short text values; part of SwingX
 				}
 				if (editable == true) {

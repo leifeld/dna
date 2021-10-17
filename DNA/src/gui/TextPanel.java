@@ -17,23 +17,21 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 
 import dna.Dna;
-import dna.Dna.CoderListener;
-import model.Coder;
 import model.Statement;
+import sql.Sql.SqlListener;
 
 /**
  * Text panel, which displays the text of the selected document and paints the
  * statements in the given document in different colors. It keeps the current
  * document ID on record to paint only the statements in the current document.
  */
-class TextPanel extends JPanel implements CoderListener {
+class TextPanel extends JPanel implements SqlListener {
 	private static final long serialVersionUID = -8094978928012991210L;
 	private JTextPane textWindow;
 	private JScrollPane textScrollPane;
 	private DefaultStyledDocument doc;
 	private StyleContext sc;
 	private int documentId;
-	private Coder coder;
 	
 	/**
 	 * Create a new text panel.
@@ -139,9 +137,9 @@ class TextPanel extends JPanel implements CoderListener {
 			for (i = 0; i < statements.size(); i++) {
 				start = statements.get(i).getStart();
 				Style bgStyle = sc.addStyle("ConstantWidth", null);
-				if (coder != null) {
-					if (coder.getColorByCoder() == 1) {
-						StyleConstants.setBackground(bgStyle, coder.getColor());
+				if (Dna.sql.getActiveCoder() != null) {
+					if (Dna.sql.getActiveCoder().isColorByCoder() == true) {
+						StyleConstants.setBackground(bgStyle, Dna.sql.getActiveCoder().getColor());
 					} else {
 						StyleConstants.setBackground(bgStyle, statements.get(i).getStatementTypeColor());
 					}
@@ -153,15 +151,19 @@ class TextPanel extends JPanel implements CoderListener {
 	
 	@Override
 	public void adjustToChangedCoder() {
-		if (Dna.sql == null) {
-			this.coder = null;
+		if (Dna.sql.getConnectionProfile() == null) {
 		    Font font = new Font("Monospaced", Font.PLAIN, 14);
 	        textWindow.setFont(font);
 		} else {
-			this.coder = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
-		    Font font = new Font("Monospaced", Font.PLAIN, this.coder.getFontSize());
+		    Font font = new Font("Monospaced", Font.PLAIN, Dna.sql.getActiveCoder().getFontSize());
 	        textWindow.setFont(font);
 	        paintStatements();
 		}
+	}
+
+	@Override
+	public void adjustToChangedConnection() {
+		// TODO Auto-generated method stub
+		
 	}
 }

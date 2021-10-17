@@ -20,8 +20,6 @@ import javax.swing.event.ChangeListener;
 import org.jdesktop.swingx.JXTextField;
 
 import dna.Dna;
-import dna.Dna.CoderListener;
-import dna.Dna.SqlListener;
 import gui.MainWindow.ActionAddDocument;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionRefresh;
@@ -29,9 +27,9 @@ import gui.MainWindow.ActionRemoveDocuments;
 import gui.MainWindow.ActionRemoveStatements;
 import logger.LogEvent;
 import logger.Logger;
-import model.Coder;
+import sql.Sql.SqlListener;
 
-class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
+class ToolbarPanel extends JPanel implements SqlListener {
 	private static final long serialVersionUID = 5561195349172139438L;
 	private JTextField documentFilterField;
 	private JLabel popupWidthLabel, fontSizeLabel;
@@ -79,9 +77,8 @@ class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 		fontSizeLabel.setLabelFor(fontSizeSpinner);
 		fontSizeSpinner.addChangeListener(new ChangeListener(){
 			public void stateChanged(ChangeEvent e) {
-				if (Dna.sql != null) {
+				if (Dna.sql.getConnectionProfile() != null) {
 					Dna.sql.setCoderFontSize(Dna.sql.getConnectionProfile().getCoderId(), (int) fontSizeSpinner.getValue());
-					Dna.fireCoderChange();
 				}
 			}
 		});
@@ -97,9 +94,8 @@ class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 		colorByCoderButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				if (Dna.sql != null) {
+				if (Dna.sql.getConnectionProfile() != null) {
 					Dna.sql.setColorByCoder(Dna.sql.getConnectionProfile().getCoderId(), colorByCoderButton.isSelected());
-					Dna.fireCoderChange();
 				}
 			}
 		});
@@ -114,9 +110,8 @@ class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 		popupDecorationButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				if (Dna.sql != null) {
+				if (Dna.sql.getConnectionProfile() != null) {
 					Dna.sql.setCoderPopupDecoration(Dna.sql.getConnectionProfile().getCoderId(), popupDecorationButton.isSelected());
-					Dna.fireCoderChange();
 				}
 			}
 		});
@@ -131,9 +126,8 @@ class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 		popupAutoCompleteButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				if (Dna.sql != null) {
+				if (Dna.sql.getConnectionProfile() != null) {
 					Dna.sql.setCoderPopupAutoComplete(Dna.sql.getConnectionProfile().getCoderId(), popupAutoCompleteButton.isSelected());
-					Dna.fireCoderChange();
 				}
 			}
 		});
@@ -152,9 +146,8 @@ class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 		popupWidthLabel.setLabelFor(popupWidthSpinner);
 		popupWidthSpinner.addChangeListener(new ChangeListener(){
 			public void stateChanged(ChangeEvent e) {
-				if (Dna.sql != null) {
+				if (Dna.sql.getConnectionProfile() != null) {
 					Dna.sql.setCoderPopupWidth(Dna.sql.getConnectionProfile().getCoderId(), (int) popupWidthSpinner.getValue());
-					Dna.fireCoderChange();
 				}
 			}
 		});
@@ -185,27 +178,26 @@ class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 
 	@Override
 	public void adjustToChangedCoder() {
-		if (Dna.sql == null) {
+		if (Dna.sql.getConnectionProfile() == null) {
 			popupWidthModel.setValue(300);
 			fontSizeModel.setValue(14);
 			popupDecorationButton.setSelected(false);
 			popupAutoCompleteButton.setSelected(false);
 			colorByCoderButton.setSelected(false);
 		} else {
-			Coder coder = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
-			popupWidthModel.setValue(coder.getPopupWidth());
-			fontSizeModel.setValue(coder.getFontSize());
-			if (coder.getPopupDecoration() == 1) {
+			popupWidthModel.setValue(Dna.sql.getActiveCoder().getPopupWidth());
+			fontSizeModel.setValue(Dna.sql.getActiveCoder().getFontSize());
+			if (Dna.sql.getActiveCoder().isPopupDecoration() == true) {
 				popupDecorationButton.setSelected(true);
 			} else {
 				popupDecorationButton.setSelected(false);
 			}
-			if (coder.getPopupAutoComplete() == 1) {
+			if (Dna.sql.getActiveCoder().isPopupAutoComplete() == true) {
 				popupAutoCompleteButton.setSelected(true);
 			} else {
 				popupAutoCompleteButton.setSelected(false);
 			}
-			if (coder.getColorByCoder() == 1) {
+			if (Dna.sql.getActiveCoder().isColorByCoder() == true) {
 				colorByCoderButton.setSelected(true);
 			} else {
 				colorByCoderButton.setSelected(false);
@@ -218,8 +210,8 @@ class ToolbarPanel extends JPanel implements SqlListener, CoderListener {
 	}
 
 	@Override
-	public void adjustToDatabaseState() {
-		if (Dna.sql == null) {
+	public void adjustToChangedConnection() {
+		if (Dna.sql.getConnectionProfile() == null) {
 			documentFilterField.setText("");
 			documentFilterField.setEnabled(false);
 			popupWidthLabel.setEnabled(false);

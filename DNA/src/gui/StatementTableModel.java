@@ -44,10 +44,7 @@ class StatementTableModel extends AbstractTableModel {
 		case 1: return rows.get(rowIndex).getDocumentId();
 		case 2: return rows.get(rowIndex).getStart();
 		case 3: return rows.get(rowIndex).getStop();
-		case 4: return new Coder(rows.get(rowIndex).getCoderId(),
-				rows.get(rowIndex).getCoderName(),
-				rows.get(rowIndex).getCoderColor(),
-				300, 0, 0, 14, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		case 4: return new Coder(rows.get(rowIndex).getCoderId(), rows.get(rowIndex).getCoderName(), rows.get(rowIndex).getCoderColor());
 		case 5: return rows.get(rowIndex).getText();
 		default: return null;
 		}
