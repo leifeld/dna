@@ -214,7 +214,6 @@ class StatusBar extends JPanel implements LogListener, SqlListener {
 
 	@Override
 	public void adjustToChangedCoder() {
-		// TODO Auto-generated method stub
-		
+		// nothing to do
 	}
 }

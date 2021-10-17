@@ -8,6 +8,8 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -32,6 +34,7 @@ import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -93,6 +96,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	private StatementTableModel statementTableModel;
 	private TextPanel textPanel;
 	private StatusBar statusBar;
+	private CoderSelectionPanel coderSelectionPanel;
 	private ActionOpenDatabase actionOpenDatabase;
 	private ActionCreateDatabase actionCreateDatabase;
 	private ActionOpenProfile actionOpenProfile; 
@@ -244,29 +248,38 @@ public class MainWindow extends JFrame implements SqlListener {
 		statusBar = new StatusBar();
 		statementPanel = new StatementPanel(statementTableModel, actionRemoveStatements);
 		textPanel = new TextPanel();
+		coderSelectionPanel = new CoderSelectionPanel();
 		
 		// add listeners
 		Dna.sql.addSqlListener(this);
 		Dna.logger.addListener(statusBar);
+		Dna.sql.addSqlListener(statusBar);
 		Dna.sql.addSqlListener(textPanel);
 		Dna.sql.addSqlListener(documentTablePanel);
 		Dna.sql.addSqlListener(getStatementPanel());
 		Dna.sql.addSqlListener(toolbar);
+		Dna.sql.addSqlListener(menuBar);
+		Dna.sql.addSqlListener(coderSelectionPanel);
 		
 		// layout
-		JSplitPane verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, documentTablePanel, textPanel);
+		JPanel documentsAndToolBarPanel = new JPanel(new BorderLayout());
+		documentsAndToolBarPanel.add(toolbar, BorderLayout.NORTH);
+		documentsAndToolBarPanel.add(documentTablePanel, BorderLayout.CENTER);
+		
+		JPanel statementsAndCoderPanel = new JPanel(new BorderLayout());
+		statementsAndCoderPanel.add(coderSelectionPanel, BorderLayout.NORTH);
+		statementsAndCoderPanel.add(getStatementPanel(), BorderLayout.CENTER);
+		
+		JSplitPane verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, documentsAndToolBarPanel, textPanel);
 		verticalSplitPane.setOneTouchExpandable(true);
-		JSplitPane rightSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, verticalSplitPane, getStatementPanel());
+		JSplitPane rightSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, verticalSplitPane, statementsAndCoderPanel);
 		rightSplitPane.setOneTouchExpandable(true);
-		
-		JPanel innerPanel = new JPanel(new BorderLayout());
-		innerPanel.add(toolbar, BorderLayout.NORTH);
-		innerPanel.add(rightSplitPane, BorderLayout.CENTER);
-		innerPanel.setBorder(new EmptyBorder(0, 5, 0, 0));
-		
+		rightSplitPane.setBorder(new EmptyBorder(0, 5, 0, 0));
+		rightSplitPane.setResizeWeight(0.9); // right pane gets 10% of any extra space if resized (e.g., maximized)
+
 		JPanel mainPanel = new JPanel(new BorderLayout());
 		mainPanel.add(menuBar, BorderLayout.NORTH);
-		mainPanel.add(innerPanel, BorderLayout.CENTER);
+		mainPanel.add(rightSplitPane, BorderLayout.CENTER);
 		mainPanel.add(statusBar, BorderLayout.SOUTH);
 		
 		// selection listener for the statement table; select statement or enable remove statements action
@@ -492,6 +505,18 @@ public class MainWindow extends JFrame implements SqlListener {
 			private void processFilterDocumentChanges() {
 				documentTablePanel.setDocumentFilterPattern(documentFilterField.getText());
 				documentTableModel.fireTableDataChanged();
+			}
+		});
+
+		// selection listener for coder selection combo box
+		JComboBox<Coder> coderBox = coderSelectionPanel.getCoderBox();
+		coderBox.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent event) {
+				if (event.getStateChange() == ItemEvent.SELECTED) {
+					Coder item = (Coder) event.getItem();
+					Dna.sql.changeActiveCoder(item.getId());
+				}
 			}
 		});
 		
@@ -1540,7 +1565,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		
 		public void actionPerformed(ActionEvent e) {
 			int[] selectedRows = getStatementPanel().getStatementTable().getSelectedRows();
-			String message = "Are you sure you want to delete " + selectedRows.length + " statement(s)?";
+			String message = "Are you sure you want to delete " + selectedRows.length + " statements?";
 			int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 			if (dialog == 0) {
 				for (int i = 0; i < selectedRows.length; i++) {
@@ -1551,7 +1576,7 @@ public class MainWindow extends JFrame implements SqlListener {
 			refreshStatementTable();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: removed statement(s).",
-					"Deleted one or more statements in the database from the GUI.");
+					"Deleted multiple statements in the database from the GUI.");
 			Dna.logger.log(l);
 		}
 	}

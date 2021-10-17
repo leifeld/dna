@@ -58,7 +58,7 @@ public class LogEvent extends Throwable {
 		this.summary = summary;
 		this.details = details;
 		this.exceptionStackTraceString = this.stackTraceToString(exception);
-		if (Dna.sql == null) {
+		if (Dna.sql.getConnectionProfile() == null) {
 			this.coder = -1;
 		} else {
 			this.coder = Dna.sql.getConnectionProfile().getCoderId();

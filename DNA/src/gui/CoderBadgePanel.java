@@ -41,7 +41,7 @@ public class CoderBadgePanel extends JPanel {
 	 */
 	public CoderBadgePanel() {
 		Coder coder;
-		if (Dna.sql == null) {
+		if (Dna.sql.getConnectionProfile() == null || Dna.sql.getActiveCoder() == null) {
 			coder = new Coder(-1, "(no coder)", Color.BLACK);
 		} else {
 			coder = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());

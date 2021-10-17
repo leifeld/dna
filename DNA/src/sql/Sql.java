@@ -229,7 +229,7 @@ public class Sql {
 	/**
 	 * Set a new active coder.
 	 * 
-	 * @param coderId
+	 * @param coderId  ID of the new active coder.
 	 * 
 	 * @category setup
 	 */
