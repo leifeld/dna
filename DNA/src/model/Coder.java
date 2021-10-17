@@ -3,6 +3,9 @@ package model;
 import java.awt.Color;
 import java.util.HashMap;
 
+/**
+ * Represents a coder, including all permissions and coder-specific settings.
+ */
 public class Coder {
 	int id,
 	popupWidth,
@@ -29,7 +32,36 @@ public class Coder {
 	permissionViewOthersStatements,
 	permissionEditOthersStatements;
 	HashMap<Integer, CoderRelation> coderRelations;
-	
+
+	/**
+	 * Create a coder with full information.
+	 * 
+	 * @param id                              The ID of the coder.
+	 * @param name                            The name of the coder.
+	 * @param color                           The color of the coder.
+	 * @param refresh                         Refresh rate in seconds.
+	 * @param fontSize                        Text font size in px (default 14).
+	 * @param popupWidth                      Short text field width for popups.
+	 * @param colorByCoder                    Color statements in text by coder?
+	 * @param popupDecoration                 Show popup window decoration?
+	 * @param popupAutoComplete               Auto-complete short text fields?
+	 * @param permissionAddDocuments          Permission to add documents?
+	 * @param permissionEditDocuments         Permission to edit documents?
+	 * @param permissionDeleteDocuments       Permission to delete documents?
+	 * @param permissionImportDocuments       Permission to import documents?
+	 * @param permissionAddStatements         Permission to add statements?
+	 * @param permissionEditStatements        Permission to edit statements?
+	 * @param permissionDeleteStatements      Permission to delete statements?
+	 * @param permissionEditAttributes        Permission to edit attributes?
+	 * @param permissionEditRegex             Permission to edit regexes?
+	 * @param permissionEditStatementTypes    Permission to edit statemnt types.
+	 * @param permissionEditCoders            Permission to edit coders.
+	 * @param permissionViewOthersDocuments   Permission to view others' docs.
+	 * @param permissionEditOthersDocuments   Permission to edit others' docs.
+	 * @param permissionViewOthersStatements  Permission to view others' stmnts.
+	 * @param permissionEditOthersStatements  Permission to edit others' stmnts.
+	 * @param coderRelations                  HashMap with coder relations.
+	 */
 	public Coder(int id,
 			String name,
 			Color color,  // color defined as java.awt.Color
@@ -82,6 +114,37 @@ public class Coder {
 		this.coderRelations = coderRelations;
 	}
 
+	/**
+	 * Create a coder with full information (with RGB color).
+	 * 
+	 * @param id                              The ID of the coder.
+	 * @param name                            The name of the coder.
+	 * @param red                             The red RGB color value (0-255).
+	 * @param green                           The green RGB color value (0-255).
+	 * @param blue                            The blue RGB color value (0-255).
+	 * @param refresh                         Refresh rate in seconds.
+	 * @param fontSize                        Text font size in px (default 14).
+	 * @param popupWidth                      Short text field width for popups.
+	 * @param colorByCoder                    Color statements in text by coder?
+	 * @param popupDecoration                 Show popup window decoration?
+	 * @param popupAutoComplete               Auto-complete short text fields?
+	 * @param permissionAddDocuments          Permission to add documents?
+	 * @param permissionEditDocuments         Permission to edit documents?
+	 * @param permissionDeleteDocuments       Permission to delete documents?
+	 * @param permissionImportDocuments       Permission to import documents?
+	 * @param permissionAddStatements         Permission to add statements?
+	 * @param permissionEditStatements        Permission to edit statements?
+	 * @param permissionDeleteStatements      Permission to delete statements?
+	 * @param permissionEditAttributes        Permission to edit attributes?
+	 * @param permissionEditRegex             Permission to edit regexes?
+	 * @param permissionEditStatementTypes    Permission to edit statemnt types.
+	 * @param permissionEditCoders            Permission to edit coders.
+	 * @param permissionViewOthersDocuments   Permission to view others' docs.
+	 * @param permissionEditOthersDocuments   Permission to edit others' docs.
+	 * @param permissionViewOthersStatements  Permission to view others' stmnts.
+	 * @param permissionEditOthersStatements  Permission to edit others' stmnts.
+	 * @param coderRelations                  HashMap with coder relations.
+	 */
 	public Coder(int id,
 			String name,
 			int red,  // color defined as RGB values
@@ -172,318 +235,301 @@ public class Coder {
 		this.permissionEditOthersStatements = false;
 		this.coderRelations = new HashMap<Integer, CoderRelation>();
 	}
-
+	
+	/**
+	 * Get the ID of the coder.
+	 * 
+	 * @return The coder's ID.
+	 */
 	public int getId() {
 		return id;
 	}
 
-	public void setId(int id) {
-		this.id = id;
-	}
-
+	/**
+	 * Get the name of the coder.
+	 * 
+	 * @return The coder's name.
+	 */
 	public String getName() {
 		return name;
 	}
 
-	public void setName(String name) {
-		this.name = name;
-	}
-
+	/**
+	 * Get the color of the coder.
+	 * 
+	 * @return The coder's color.
+	 */
 	public Color getColor() {
 		return color;
 	}
 
-	public void setColor(Color color) {
-		this.color = color;
-	}
-
+	/**
+	 * Get the refresh rate with which the coder's document and statement table
+	 * are refreshed from the database (if enabled).
+	 * 
+	 * @return The refresh rate in seconds (0 by default).
+	 */
 	public int getRefresh() {
 		return refresh;
 	}
 
-	public void setRefresh(int refresh) {
-		this.refresh = refresh;
-	}
-
+	/**
+	 * Get the font size with which document text is displayed in the text panel
+	 * from the perspective of the coder.
+	 * 
+	 * @return The font size in px.
+	 */
 	public int getFontSize() {
 		return fontSize;
 	}
 
-	public void setFontSize(int fontSize) {
-		this.fontSize = fontSize;
-	}
-
+	/**
+	 * When the coder opens a statement popup window, what is the display width
+	 * of short text fields in px?
+	 * 
+	 * @return The popup text field width.
+	 */
 	public int getPopupWidth() {
 		return popupWidth;
 	}
 
-	public void setPopupWidth(int popupWidth) {
-		this.popupWidth = popupWidth;
-	}
-
 	/**
-	 * @return the colorByCoder
+	 * From the perspective of the coder, are the statements in the text painted
+	 * in the color of the respective coder the statements belong to? If not,
+	 * they are coded in the color corresponding to the statement type (the
+	 * default behavior).
+	 * 
+	 * @return The colorByCoder boolean indicator.
 	 */
 	public boolean isColorByCoder() {
 		return colorByCoder;
 	}
 
 	/**
-	 * @param colorByCoder the colorByCoder to set
-	 */
-	public void setColorByCoder(boolean colorByCoder) {
-		this.colorByCoder = colorByCoder;
-	}
-
-	/**
-	 * @return the popupDecoration
+	 * When the coder opens a statement popup window, does the window have a
+	 * window decoration (i.e., a frame with an {@code X} and {@code cancel} and
+	 * {@code save} buttons?
+	 * 
+	 * @return The popupDecoration boolean indicator.
 	 */
 	public boolean isPopupDecoration() {
 		return popupDecoration;
 	}
 
 	/**
-	 * @param popupDecoration the popupDecoration to set
-	 */
-	public void setPopupDecoration(boolean popupDecoration) {
-		this.popupDecoration = popupDecoration;
-	}
-
-	/**
-	 * @return the popupAutoComplete
+	 * When the coder opens a statement popup window, are entries in short text
+	 * fields auto-completed when text is entered by the user?
+	 * 
+	 * @return The popupAutoComplete boolean indicator.
 	 */
 	public boolean isPopupAutoComplete() {
 		return popupAutoComplete;
 	}
 
 	/**
-	 * @param popupAutoComplete the popupAutoComplete to set
-	 */
-	public void setPopupAutoComplete(boolean popupAutoComplete) {
-		this.popupAutoComplete = popupAutoComplete;
-	}
-
-	/**
-	 * @return the permissionAddDocuments
+	 * Is the coder allowed to add new documents?
+	 * 
+	 * @return The permissionAddDocuments boolean indicator.
 	 */
 	public boolean isPermissionAddDocuments() {
 		return permissionAddDocuments;
 	}
 
 	/**
-	 * @param permissionAddDocuments the permissionAddDocuments to set
-	 */
-	public void setPermissionAddDocuments(boolean permissionAddDocuments) {
-		this.permissionAddDocuments = permissionAddDocuments;
-	}
-
-	/**
-	 * @return the permissionEditDocuments
+	 * Is the coder allowed to edit documents?
+	 * 
+	 * @return The permissionEditDocuments boolean indicator.
 	 */
 	public boolean isPermissionEditDocuments() {
 		return permissionEditDocuments;
 	}
 
 	/**
-	 * @param permissionEditDocuments the permissionEditDocuments to set
-	 */
-	public void setPermissionEditDocuments(boolean permissionEditDocuments) {
-		this.permissionEditDocuments = permissionEditDocuments;
-	}
-
-	/**
-	 * @return the permissionDeleteDocuments
+	 * Is the coder allowed to delete existing documents?
+	 * 
+	 * @return The permissionDeleteDocuments boolean indicator.
 	 */
 	public boolean isPermissionDeleteDocuments() {
 		return permissionDeleteDocuments;
 	}
 
 	/**
-	 * @param permissionDeleteDocuments the permissionDeleteDocuments to set
-	 */
-	public void setPermissionDeleteDocuments(boolean permissionDeleteDocuments) {
-		this.permissionDeleteDocuments = permissionDeleteDocuments;
-	}
-
-	/**
-	 * @return the permissionImportDocuments
+	 * Is the coder allowed to import documents from other files?
+	 * 
+	 * @return The permissionImportDocuments boolean indicator.
 	 */
 	public boolean isPermissionImportDocuments() {
 		return permissionImportDocuments;
 	}
 
 	/**
-	 * @param permissionImportDocuments the permissionImportDocuments to set
-	 */
-	public void setPermissionImportDocuments(boolean permissionImportDocuments) {
-		this.permissionImportDocuments = permissionImportDocuments;
-	}
-
-	/**
-	 * @return the permissionAddStatements
+	 * Is the coder allowed to add new statements?
+	 * 
+	 * @return The permissionAddStatements boolean indicator.
 	 */
 	public boolean isPermissionAddStatements() {
 		return permissionAddStatements;
 	}
 
 	/**
-	 * @param permissionAddStatements the permissionAddStatements to set
-	 */
-	public void setPermissionAddStatements(boolean permissionAddStatements) {
-		this.permissionAddStatements = permissionAddStatements;
-	}
-
-	/**
-	 * @return the permissionEditStatements
+	 * Is the coder allowed to edit statements?
+	 * 
+	 * @return The permissionEditStatements boolean indicator.
 	 */
 	public boolean isPermissionEditStatements() {
 		return permissionEditStatements;
 	}
 
 	/**
-	 * @param permissionEditStatements the permissionEditStatements to set
-	 */
-	public void setPermissionEditStatements(boolean permissionEditStatements) {
-		this.permissionEditStatements = permissionEditStatements;
-	}
-
-	/**
-	 * @return the permissionDeleteStatements
+	 * Is the coder allowed to delete statements?
+	 * 
+	 * @return The permissionDeleteStatements boolean indicator.
 	 */
 	public boolean isPermissionDeleteStatements() {
 		return permissionDeleteStatements;
 	}
 
 	/**
-	 * @param permissionDeleteStatements the permissionDeleteStatements to set
-	 */
-	public void setPermissionDeleteStatements(boolean permissionDeleteStatements) {
-		this.permissionDeleteStatements = permissionDeleteStatements;
-	}
-
-	/**
-	 * @return the permissionEditAttributes
+	 * Is the coder allowed to edit attributes?
+	 * 
+	 * @return The permissionEditAttributes boolean indicator.
 	 */
 	public boolean isPermissionEditAttributes() {
 		return permissionEditAttributes;
 	}
 
 	/**
-	 * @param permissionEditAttributes the permissionEditAttributes to set
-	 */
-	public void setPermissionEditAttributes(boolean permissionEditAttributes) {
-		this.permissionEditAttributes = permissionEditAttributes;
-	}
-
-	/**
-	 * @return the permissionEditRegex
+	 * Is the coder allowed to edit regular expressions?
+	 * 
+	 * @return The permissionEditRegex boolean indicator.
 	 */
 	public boolean isPermissionEditRegex() {
 		return permissionEditRegex;
 	}
 
 	/**
-	 * @param permissionEditRegex the permissionEditRegex to set
-	 */
-	public void setPermissionEditRegex(boolean permissionEditRegex) {
-		this.permissionEditRegex = permissionEditRegex;
-	}
-
-	/**
-	 * @return the permissionEditStatementTypes
+	 * Is the coder allowed to edit statement types?
+	 * 
+	 * @return The permissionEditStatementTypes boolean indicator.
 	 */
 	public boolean isPermissionEditStatementTypes() {
 		return permissionEditStatementTypes;
 	}
 
 	/**
-	 * @param permissionEditStatementTypes the permissionEditStatementTypes to set
-	 */
-	public void setPermissionEditStatementTypes(boolean permissionEditStatementTypes) {
-		this.permissionEditStatementTypes = permissionEditStatementTypes;
-	}
-
-	/**
-	 * @return the permissionEditCoders
+	 * Is the coder allowed to edit the list and user rights of coders?
+	 * 
+	 * @return The permissionEditCoders boolean indicator.
 	 */
 	public boolean isPermissionEditCoders() {
 		return permissionEditCoders;
 	}
 
 	/**
-	 * @param permissionEditCoders the permissionEditCoders to set
-	 */
-	public void setPermissionEditCoders(boolean permissionEditCoders) {
-		this.permissionEditCoders = permissionEditCoders;
-	}
-
-	/**
-	 * @return the permissionViewOthersDocuments
+	 * Is the coder allowed to view other coders' documents (in general)?
+	 * 
+	 * @return The permissionViewOthersDocuments boolean indicator.
 	 */
 	public boolean isPermissionViewOthersDocuments() {
 		return permissionViewOthersDocuments;
 	}
 
 	/**
-	 * @param permissionViewOthersDocuments the permissionViewOthersDocuments to set
-	 */
-	public void setPermissionViewOthersDocuments(boolean permissionViewOthersDocuments) {
-		this.permissionViewOthersDocuments = permissionViewOthersDocuments;
-	}
-
-	/**
-	 * @return the permissionEditOthersDocuments
+	 * Is the coder allowed to edit other coders' documents (in general)?
+	 * 
+	 * @return The permissionEditOthersDocuments boolean indicator.
 	 */
 	public boolean isPermissionEditOthersDocuments() {
 		return permissionEditOthersDocuments;
 	}
 
 	/**
-	 * @param permissionEditOthersDocuments the permissionEditOthersDocuments to set
-	 */
-	public void setPermissionEditOthersDocuments(boolean permissionEditOthersDocuments) {
-		this.permissionEditOthersDocuments = permissionEditOthersDocuments;
-	}
-
-	/**
-	 * @return the permissionViewOthersStatements
+	 * Is the coder allowed to view other coders' statements (in general)?
+	 * 
+	 * @return The permissionViewOthersStatements boolean indicator.
 	 */
 	public boolean isPermissionViewOthersStatements() {
 		return permissionViewOthersStatements;
 	}
 
 	/**
-	 * @param permissionViewOthersStatements the permissionViewOthersStatements to set
-	 */
-	public void setPermissionViewOthersStatements(boolean permissionViewOthersStatements) {
-		this.permissionViewOthersStatements = permissionViewOthersStatements;
-	}
-
-	/**
-	 * @return the permissionEditOthersStatements
+	 * Is the coder allowed to edit other coders' statements (in general)?
+	 * 
+	 * @return The permissionEditOthersStatements boolean indicator.
 	 */
 	public boolean isPermissionEditOthersStatements() {
 		return permissionEditOthersStatements;
 	}
 
 	/**
-	 * @param permissionEditOthersStatements the permissionEditOthersStatements to set
+	 * Is the coder allowed to view the statements by a specific other coder?
+	 * 
+	 * @param otherCoderId  ID of the other coder.
+	 * @return              Boolean indicating if the coder may view statements.
 	 */
-	public void setPermissionEditOthersStatements(boolean permissionEditOthersStatements) {
-		this.permissionEditOthersStatements = permissionEditOthersStatements;
+	public boolean isPermissionViewOthersStatements(int otherCoderId) {
+		if (coderRelations.containsKey(otherCoderId)) {
+			if (coderRelations.get(otherCoderId).isViewStatements() == true) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
 	}
 
 	/**
-	 * @return the coderRelations
+	 * Is the coder allowed to view the documents by a specific other coder?
+	 * 
+	 * @param otherCoderId  ID of the other coder.
+	 * @return              Boolean indicating if the coder may view documents.
 	 */
-	public HashMap<Integer, CoderRelation> getCoderRelations() {
-		return coderRelations;
+	public boolean isPermissionViewOthersDocuments(int otherCoderId) {
+		if (coderRelations.containsKey(otherCoderId)) {
+			if (coderRelations.get(otherCoderId).isViewDocuments() == true) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
 	}
 
 	/**
-	 * @param coderRelations the coderRelations to set
+	 * Is the coder allowed to edit the statements by a specific other coder?
+	 * 
+	 * @param otherCoderId  ID of the other coder.
+	 * @return              Boolean indicating if the coder may edit statements.
 	 */
-	public void setCoderRelations(HashMap<Integer, CoderRelation> coderRelations) {
-		this.coderRelations = coderRelations;
+	public boolean isPermissionEditOthersStatements(int otherCoderId) {
+		if (coderRelations.containsKey(otherCoderId)) {
+			if (coderRelations.get(otherCoderId).isEditStatements() == true) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Is the coder allowed to edit the documents by a specific other coder?
+	 * 
+	 * @param otherCoderId  ID of the other coder.
+	 * @return              Boolean indicating if the coder may edit documents.
+	 */
+	public boolean isPermissionEditOthersDocuments(int otherCoderId) {
+		if (coderRelations.containsKey(otherCoderId)) {
+			if (coderRelations.get(otherCoderId).isEditDocuments() == true) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
 	}
 }

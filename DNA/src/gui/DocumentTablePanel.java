@@ -22,6 +22,7 @@ import javax.swing.RowFilter;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
+import dna.Dna;
 import gui.MainWindow.ActionAddDocument;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionRemoveDocuments;
@@ -72,6 +73,13 @@ class DocumentTablePanel extends JPanel implements SqlListener {
 		RowFilter<DocumentTableModel, Integer> documentFilter = new RowFilter<DocumentTableModel, Integer>() {
 			public boolean include(Entry<? extends DocumentTableModel, ? extends Integer> entry) {
 				TableDocument d = documentTableModel.getRow(entry.getIdentifier());
+				if (d.getCoder().getId() != Dna.sql.getActiveCoder().getId()) {
+					if (Dna.sql.getActiveCoder().isPermissionViewOthersDocuments() == false) {
+						return false;
+					} else if (Dna.sql.getActiveCoder().isPermissionViewOthersDocuments(d.getCoder().getId()) == false) {
+						return false;
+					}
+				}
 				try {
 					Pattern pattern = Pattern.compile(documentFilterPattern);
 					Matcher matcherTitle = pattern.matcher(d.getTitle());

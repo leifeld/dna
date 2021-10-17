@@ -318,6 +318,13 @@ class StatementPanel extends JPanel implements SqlListener {
 	 * @return            Whether the statement should be shown or not.
 	 */
 	private boolean filter(Statement s, int documentId) {
+		if (s.getCoderId() != Dna.sql.getActiveCoder().getId()) {
+			if (Dna.sql.getActiveCoder().isPermissionViewOthersStatements() == false) {
+				return false;
+			} else if (Dna.sql.getActiveCoder().isPermissionViewOthersStatements(s.getCoderId()) == false) {
+				return false;
+			}
+		}
 		if (allButton.isSelected()) {
 			return true; // show all statements
 		} else if (docButton.isSelected()) {

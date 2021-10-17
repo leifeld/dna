@@ -285,40 +285,53 @@ public class MainWindow extends JFrame implements SqlListener {
 					documentTablePanel.setSelectedDocumentId(s.getDocumentId());
 					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true &&
 							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true ||
-							Dna.sql.getActiveCoder().getId() == s.getCoderId())) {
+							Dna.sql.getActiveCoder().getId() == s.getCoderId()) &&
+							(Dna.sql.getActiveCoder().getId() == s.getCoderId() ||
+							Dna.sql.getActiveCoder().isPermissionEditOthersStatements(s.getCoderId()) == true)) {
 						actionRemoveStatements.setEnabled(true);
 					} else {
 						actionRemoveStatements.setEnabled(false);
 					}
 					if (Dna.sql.getActiveCoder().isPermissionEditStatements() == true &&
 							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true ||
-							Dna.sql.getActiveCoder().getId() == s.getCoderId())) {
+							Dna.sql.getActiveCoder().getId() == s.getCoderId()) &&
+							(Dna.sql.getActiveCoder().getId() == s.getCoderId() ||
+									Dna.sql.getActiveCoder().isPermissionEditOthersStatements(s.getCoderId()) == true)) {
 						editable = true;
 					}
 					if (Dna.sql.getActiveCoder().getId() == s.getCoderId() ||
-							Dna.sql.getActiveCoder().isPermissionViewOthersStatements() == true) {
+							(Dna.sql.getActiveCoder().isPermissionViewOthersStatements() == true &&
+									Dna.sql.getActiveCoder().isPermissionViewOthersStatements(s.getCoderId()) == true)) {
 						selectStatement(s, s.getDocumentId(), editable);
 					}
 				} else if (rowCount > 1) {
 					int[] rows = statementTable.getSelectedRows();
 					boolean allOwned = true;
+					boolean allOthersEditPermitted = true;
 					for (int i = 0; i < rows.length; i++) {
 						int modelRow = statementTable.convertRowIndexToModel(rows[i]);
 						int coderId = statementTableModel.getRow(modelRow).getCoderId();
 						if (coderId != Dna.sql.getActiveCoder().getId()) {
 							allOwned = false;
 						}
+						if (Dna.sql.getActiveCoder().isPermissionEditOthersStatements(coderId) == false) {
+							allOthersEditPermitted = false;
+						}
 					}
 					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true &&
-							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true || allOwned == true)) {
+							(allOwned == true ||
+							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true &&	allOthersEditPermitted == true))) {
 						actionRemoveStatements.setEnabled(true);
 					} else {
 						actionRemoveStatements.setEnabled(false);
 					}
+					/*
 					if (Dna.sql.getActiveCoder().isPermissionEditStatements() == true &&
-							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true || allOwned == true)) {
+							(allOwned == true ||
+							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true && allOthersEditPermitted == true))) {
 						editable = true;
 					}
+					*/
 					// no particular statement to select because multiple statements highlighted in table
 				} else {
 					actionRemoveStatements.setEnabled(false);
@@ -337,6 +350,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				
 				int rowCount = documentTable.getSelectedRowCount();
 				boolean allOwned = true;
+				boolean allOthersEditPermitted = true;
 				int[] rows = documentTable.getSelectedRows();
 				if (rowCount > 0) {
 					for (int i = 0; i < rows.length; i++) {
@@ -344,19 +358,24 @@ public class MainWindow extends JFrame implements SqlListener {
 						int coderId = documentTableModel.getRow(modelRow).getCoder().getId();
 						if (coderId != Dna.sql.getActiveCoder().getId()) {
 							allOwned = false; // does the active coder own all selected documents?
+							if (Dna.sql.getActiveCoder().isPermissionEditOthersDocuments(coderId) == false) {
+								allOthersEditPermitted = false;
+							}
 						}
 					}
 				}
 				// enable or disable action for deleting documents depending on selection and user rights
 				if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionDeleteDocuments() == true &&
-						(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true)) {
+						(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
+						allOthersEditPermitted == true) {
 					actionRemoveDocuments.setEnabled(true);
 				} else {
 					actionRemoveDocuments.setEnabled(false);
 				}
 				// enable or disable action for editing documents depending on selection and user rights
 				if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionEditDocuments() == true &&
-						(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true)) {
+						(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
+						allOthersEditPermitted == true) {
 					actionEditDocuments.setEnabled(true);
 				} else {
 					actionEditDocuments.setEnabled(false);
@@ -369,13 +388,16 @@ public class MainWindow extends JFrame implements SqlListener {
 					int selectedRow = documentTable.getSelectedRow();
 					int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
 					int id = documentTableModel.getIdByModelRow(selectedModelIndex);
+					/*
 					int coderId = documentTableModel.getRow(selectedModelIndex).getCoder().getId();
-					if (Dna.sql.getActiveCoder().isPermissionViewOthersDocuments() == true ||
-							coderId == Dna.sql.getActiveCoder().getId()) {
+					if (coderId == Dna.sql.getActiveCoder().getId() ||
+							(Dna.sql.getActiveCoder().isPermissionViewOthersDocuments() == true &&
+							allOthersEditPermitted == true)) {
+					*/
 						textPanel.setContents(id, documentTableModel.getDocumentText(id));
 						getStatementPanel().setDocumentId(id);
 						statementTableModel.fireTableDataChanged();
-					}
+					//}
 				} else {
 					LogEvent l = new LogEvent(Logger.WARNING,
 							"[GUI] Negative number of rows in the document table!",
@@ -444,6 +466,10 @@ public class MainWindow extends JFrame implements SqlListener {
 							textWindow.setCaretPosition(selectionEnd);
 						}
 					});
+					
+					if (Dna.sql.getActiveCoder().isPermissionAddStatements() == false) {
+						menuItem.setEnabled(false);
+					}
 				}
 				popmen.show(comp, x, y);
 			}
@@ -482,38 +508,20 @@ public class MainWindow extends JFrame implements SqlListener {
 					
 					ArrayList<Statement> statements = Dna.sql.getStatements(documentTablePanel.getSelectedDocumentId());
 					if (statements != null && statements.size() > 0) {
+						Statement s;
 						for (int i = 0; i < statements.size(); i++) {
-							if (statements.get(i).getStart() < pos
-									&& statements.get(i).getStop() > pos
+							s = statements.get(i);
+							if (s.getStart() < pos
+									&& s.getStop() > pos
 									&& Dna.sql.getActiveCoder() != null
-									&& (Dna.sql.getActiveCoder().isPermissionViewOthersStatements() == true ||
-									statements.get(i).getCoderId() == Dna.sql.getActiveCoder().getId())
-									// TODO here: check also the CODERRELATIONS table
-									) {
+									&& ((Dna.sql.getActiveCoder().isPermissionViewOthersStatements() == true &&
+									Dna.sql.getActiveCoder().isPermissionEditOthersStatements(s.getCoderId()) == true) ||
+									s.getCoderId() == Dna.sql.getActiveCoder().getId())) {
 								Point location = textWindow.getLocationOnScreen();
-								textWindow.setSelectionStart(statements.get(i).getStart());
-								textWindow.setSelectionEnd(statements.get(i).getStop());
-								/*
-									int row = Dna.gui.rightPanel.statementPanel.ssc.getIndexByStatementId(statementId);
-									if (row > -1) {
-										Dna.gui.rightPanel.statementPanel.statementTable.setRowSelectionInterval(row, row);
-										Dna.gui.rightPanel.statementPanel.statementTable.scrollRectToVisible(new Rectangle(  // scroll to selected row
-												Dna.gui.rightPanel.statementPanel.statementTable.getCellRect(i, 0, true)));
-									}
-
-									int docModelIndex = Dna.gui.documentPanel.documentContainer.getModelIndexById(Dna.data.getStatements().get(i).getDocumentId());
-									int docRow = Dna.gui.documentPanel.documentTable.convertRowIndexToView(docModelIndex);
-									//int docRow = Dna.dna.gui.documentPanel.documentContainer.getRowIndexById(Dna.data.getStatements().get(i).getDocumentId());
-									Dna.gui.documentPanel.documentTable.scrollRectToVisible(new Rectangle(Dna.gui.documentPanel.documentTable.getCellRect(docRow, 0, true)));
-									if (b[1] == true) {  // statement is editable by the active coder
-										new Popup(p.getX(), p.getY(), statementId, location, true);
-									} else {
-										new Popup(p.getX(), p.getY(), statementId, location, false);
-									}
-								 */
+								textWindow.setSelectionStart(s.getStart());
+								textWindow.setSelectionEnd(s.getStop());
 								newPopup(p.getX(), p.getY(), statements.get(i), documentTablePanel.getSelectedDocumentId(), location);
 								break;
-								//}
 							}
 						}
 					}

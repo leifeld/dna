@@ -92,6 +92,10 @@ class Popup extends JDialog {
 		if (coder.isPermissionEditStatements() == false) {
 			editable = false;
 		}
+		if (statement.getCoderId() != coder.getId() &&
+				coder.isPermissionEditOthersStatements(statement.getCoderId()) == false) {
+			editable = false;
+		}
 		
 		this.setTitle("Statement details");
 		this.setAlwaysOnTop(true);
@@ -143,9 +147,16 @@ class Popup extends JDialog {
 		remove = new JButton(removeIcon);
 		remove.setToolTipText("completely remove the whole statement (but keep the text)");
 		remove.setPreferredSize(new Dimension(16, 16));
-		if (coder.isPermissionDeleteStatements() == true && (statement.getCoderId() == coder.getId() || coder.isPermissionEditOthersStatements() == true)) {
-			remove.setEnabled(true);
-		} else {
+		remove.setEnabled(true);
+		if (coder.isPermissionDeleteStatements() == false) {
+			remove.setEnabled(false);
+		}
+		if (this.statement.getCoderId() != coder.getId() &&
+				Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == false) {
+			remove.setEnabled(false);
+		}
+		if (this.statement.getCoderId() != coder.getId() &&
+				coder.isPermissionEditOthersStatements(statement.getCoderId()) == false) {
 			remove.setEnabled(false);
 		}
 		
