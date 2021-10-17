@@ -115,6 +115,8 @@ public class Sql {
 		this.cp = cp;
 		if (cp == null) { // null connection
 			ds = null;
+			this.cp = null;
+			this.activeCoder = null;
 		} else if (cp.getType().equals("sqlite")) { // no user name and password needed for file-based database
 			ds = new SQLiteDataSource();
 	        ((SQLiteDataSource) ds).setUrl("jdbc:sqlite:" + cp.getUrl());

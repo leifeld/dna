@@ -347,63 +347,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				if (e.getValueIsAdjusting()) {
 					return;
 				}
-				
-				int rowCount = documentTable.getSelectedRowCount();
-				boolean allOwned = true;
-				boolean allOthersEditPermitted = true;
-				int[] rows = documentTable.getSelectedRows();
-				if (rowCount > 0) {
-					for (int i = 0; i < rows.length; i++) {
-						int modelRow = documentTable.convertRowIndexToModel(rows[i]);
-						int coderId = documentTableModel.getRow(modelRow).getCoder().getId();
-						if (coderId != Dna.sql.getActiveCoder().getId()) {
-							allOwned = false; // does the active coder own all selected documents?
-							if (Dna.sql.getActiveCoder().isPermissionEditOthersDocuments(coderId) == false) {
-								allOthersEditPermitted = false;
-							}
-						}
-					}
-				}
-				// enable or disable action for deleting documents depending on selection and user rights
-				if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionDeleteDocuments() == true &&
-						(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
-						allOthersEditPermitted == true) {
-					actionRemoveDocuments.setEnabled(true);
-				} else {
-					actionRemoveDocuments.setEnabled(false);
-				}
-				// enable or disable action for editing documents depending on selection and user rights
-				if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionEditDocuments() == true &&
-						(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
-						allOthersEditPermitted == true) {
-					actionEditDocuments.setEnabled(true);
-				} else {
-					actionEditDocuments.setEnabled(false);
-				}
-				if (rowCount == 0 || rowCount > 1) {
-					textPanel.setContents(-1, "");
-					getStatementPanel().setDocumentId(-1);
-					statementTableModel.fireTableDataChanged();
-				} else if (rowCount == 1) {
-					int selectedRow = documentTable.getSelectedRow();
-					int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
-					int id = documentTableModel.getIdByModelRow(selectedModelIndex);
-					/*
-					int coderId = documentTableModel.getRow(selectedModelIndex).getCoder().getId();
-					if (coderId == Dna.sql.getActiveCoder().getId() ||
-							(Dna.sql.getActiveCoder().isPermissionViewOthersDocuments() == true &&
-							allOthersEditPermitted == true)) {
-					*/
-						textPanel.setContents(id, documentTableModel.getDocumentText(id));
-						getStatementPanel().setDocumentId(id);
-						statementTableModel.fireTableDataChanged();
-					//}
-				} else {
-					LogEvent l = new LogEvent(Logger.WARNING,
-							"[GUI] Negative number of rows in the document table!",
-							"When a document is selected in the document table in the DNA coding window, the text of the document is displayed in the text panel. When checking which row in the table was selected, it was found that the table contained negative numbers of documents. This is obviously an error. Please report it by submitting a bug report along with the saved log.");
-					Dna.logger.log(l);
-				}
+				changedDocumentTableSelection();
 			}
 		});
 
@@ -502,7 +446,7 @@ public class MainWindow extends JFrame implements SqlListener {
 					if (!(textWindow.getSelectedText() == null)) {
 						popupMenu(me.getComponent(), me.getX(), me.getY());
 					}
-				} else {
+				} else if (documentTable.getSelectedRowCount() > 0) {
 					int pos = textWindow.getCaretPosition(); //click caret position
 					Point p = me.getPoint();
 					
@@ -555,6 +499,79 @@ public class MainWindow extends JFrame implements SqlListener {
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
+	}
+	
+	/**
+	 * Adjust controls to document table selection.
+	 */
+	private void changedDocumentTableSelection() {
+		JTable documentTable = documentTablePanel.getDocumentTable();
+		int rowCount = documentTable.getSelectedRowCount();
+		boolean allOwned = true;
+		boolean allOthersEditPermitted = true;
+		int[] rows = documentTable.getSelectedRows();
+		if (rowCount > 0) {
+			for (int i = 0; i < rows.length; i++) {
+				int modelRow = documentTable.convertRowIndexToModel(rows[i]);
+				int coderId = documentTableModel.getRow(modelRow).getCoder().getId();
+				if (coderId != Dna.sql.getActiveCoder().getId()) {
+					allOwned = false; // does the active coder own all selected documents?
+					if (Dna.sql.getActiveCoder().isPermissionEditOthersDocuments(coderId) == false) {
+						allOthersEditPermitted = false;
+					}
+				}
+			}
+		}
+		// enable or disable action for deleting documents depending on selection and user rights
+		if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionDeleteDocuments() == true &&
+				(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
+				allOthersEditPermitted == true) {
+			actionRemoveDocuments.setEnabled(true);
+		} else {
+			actionRemoveDocuments.setEnabled(false);
+		}
+		// enable or disable action for editing documents depending on selection and user rights
+		if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionEditDocuments() == true &&
+				(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
+				allOthersEditPermitted == true) {
+			actionEditDocuments.setEnabled(true);
+		} else {
+			actionEditDocuments.setEnabled(false);
+		}
+		if (rowCount == 0 || rowCount > 1) {
+			textPanel.setContents(-1, "");
+			getStatementPanel().setDocumentId(-1);
+			statementTableModel.fireTableDataChanged();
+		} else if (rowCount == 1) {
+			int selectedRow = documentTable.getSelectedRow();
+			int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
+			int id = documentTableModel.getIdByModelRow(selectedModelIndex);
+			textPanel.setContents(id, documentTableModel.getDocumentText(id));
+			getStatementPanel().setDocumentId(id);
+			statementTableModel.fireTableDataChanged();
+		} else {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[GUI] Negative number of rows in the document table!",
+					"When a document is selected in the document table in the DNA coding window, the text of the document is displayed in the text panel. When checking which row in the table was selected, it was found that the table contained negative numbers of documents. This is obviously an error. Please report it by submitting a bug report along with the saved log.");
+			Dna.logger.log(l);
+		}
+		
+		// enable or disable actions for adding and importing documents
+		if (Dna.sql.getActiveCoder() == null || Dna.sql.getConnectionProfile() == null) {
+			actionAddDocument.setEnabled(false);
+			actionBatchImportDocuments.setEnabled(false);
+		} else {
+			if (Dna.sql.getActiveCoder().isPermissionAddDocuments() == true) {
+				actionAddDocument.setEnabled(true);
+			} else {
+				actionAddDocument.setEnabled(false);
+			}
+			if (Dna.sql.getActiveCoder().isPermissionImportDocuments() == true) {
+				actionBatchImportDocuments.setEnabled(true);
+			} else {
+				actionBatchImportDocuments.setEnabled(false);
+			}
+		}
 	}
 	
 	/**
@@ -710,7 +727,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	 * Refresh the document table using a Swing worker in the background.
 	 */
 	void refreshDocumentTable() {
-		if (Dna.sql == null) {
+		if (Dna.sql.getConnectionProfile() == null) {
 			documentTableModel.clear();
 		} else {
 	        DocumentTableRefreshWorker documentWorker = new DocumentTableRefreshWorker();
@@ -724,7 +741,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	 * available).
 	 */
 	void refreshStatementTable() {
-		if (Dna.sql == null) {
+		if (Dna.sql.getConnectionProfile() == null) {
 			statementTableModel.clear();
 		} else {
 	        StatementTableRefreshWorker statementWorker = new StatementTableRefreshWorker();
@@ -836,20 +853,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				} else {
 					actionRefresh.setEnabled(false);
 				}
-				adjustToChangedCoder();
-				int rowCount = documentTablePanel.getDocumentTable().getSelectedRowCount();
-				// enable or disable action for deleting documents depending on selection and user rights
-				if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionDeleteDocuments() == true) {
-					actionRemoveDocuments.setEnabled(true);
-				} else {
-					actionRemoveDocuments.setEnabled(false);
-				}
-				// enable or disable action for editing documents depending on selection and user rights
-				if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionEditDocuments() == true) {
-					actionEditDocuments.setEnabled(true);
-				} else {
-					actionEditDocuments.setEnabled(false);
-				}
+				changedDocumentTableSelection();
 			}
 	    }
 	}
@@ -1081,22 +1085,10 @@ public class MainWindow extends JFrame implements SqlListener {
 	 */
 	@Override
 	public void adjustToChangedCoder() {
-		if (Dna.sql.getActiveCoder() == null) {
-			actionAddDocument.setEnabled(false);
-			actionBatchImportDocuments.setEnabled(false);
-		} else {
-			if (Dna.sql.getActiveCoder().isPermissionAddDocuments() == true) {
-				actionAddDocument.setEnabled(true);
-			} else {
-				actionAddDocument.setEnabled(false);
-			}
-			if (Dna.sql.getActiveCoder().isPermissionImportDocuments() == true) {
-				actionBatchImportDocuments.setEnabled(true);
-			} else {
-				actionBatchImportDocuments.setEnabled(false);
-			}
-			// edit and remove documents actions are governed by the selection listener of the document table
+		if (Dna.sql.getConnectionProfile() != null) {
+			changedDocumentTableSelection();
 		}
+		
 	}
 
 	/**
@@ -1112,7 +1104,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			Dna.sql.changeActiveCoder(-1);
+			Dna.sql.setConnectionProfile(null);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: closed database.",
 					"Closed database connection from the GUI.");

@@ -72,6 +72,9 @@ class DocumentTablePanel extends JPanel implements SqlListener {
 		// row filter
 		RowFilter<DocumentTableModel, Integer> documentFilter = new RowFilter<DocumentTableModel, Integer>() {
 			public boolean include(Entry<? extends DocumentTableModel, ? extends Integer> entry) {
+				if (Dna.sql.getActiveCoder() == null || Dna.sql.getConnectionProfile() == null) {
+					return false;
+				}
 				TableDocument d = documentTableModel.getRow(entry.getIdentifier());
 				if (d.getCoder().getId() != Dna.sql.getActiveCoder().getId()) {
 					if (Dna.sql.getActiveCoder().isPermissionViewOthersDocuments() == false) {

@@ -163,7 +163,6 @@ class TextPanel extends JPanel implements SqlListener {
 
 	@Override
 	public void adjustToChangedConnection() {
-		// TODO Auto-generated method stub
-		
+		setContents(-1, "");
 	}
 }
