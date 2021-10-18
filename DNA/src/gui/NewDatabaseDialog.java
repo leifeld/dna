@@ -465,7 +465,7 @@ public class NewDatabaseDialog extends JDialog {
 					
 					// create connection profile with the details provided
 					ConnectionProfile tempConnectionProfile = new ConnectionProfile(type, dbUrlField.getText(), dbUserField.getText(), new String(dbPasswordField.getPassword()));
-					sql.Sql testConnection = new sql.Sql(tempConnectionProfile);
+					sql.Sql testConnection = new sql.Sql(tempConnectionProfile, true); // connection test, so true
 					
 					if (openExistingDatabase == true) { // existing database: select and authenticate user, then open connection as main database in DNA
 						boolean validInput = false;

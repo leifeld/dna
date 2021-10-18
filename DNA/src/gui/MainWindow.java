@@ -970,7 +970,7 @@ public class MainWindow extends JFrame implements SqlListener {
 			try (Connection conn = Dna.sql.getDataSource().getConnection();
 					PreparedStatement s1 = conn.prepareStatement(query);
 					PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
-					PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
+					PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
 					PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
 					PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
 					PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
@@ -994,8 +994,8 @@ public class MainWindow extends JFrame implements SqlListener {
 					    	r3 = s3.executeQuery();
 					    	while (r3.next()) {
 				            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
-				            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getString("Type"), r3.getString("Alias"), r3.getString("Notes"), r3.getInt("ChildOf"), true);
-					    		values.add(new Value(variableId, variable, dataType, attribute));
+				            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getInt("ChildOf"), true);
+				            	values.add(new Value(variableId, variable, dataType, attribute));
 					    	}
 				    	} else if (dataType.equals("long text")) {
 					    	s4.setInt(1, variableId);
@@ -1129,7 +1129,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			Dna.sql.setConnectionProfile(null);
+			Dna.sql.setConnectionProfile(null, false);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: closed database.",
 					"Closed database connection from the GUI.");
@@ -1152,7 +1152,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		public void actionPerformed(ActionEvent e) {
 			NewDatabaseDialog n = new NewDatabaseDialog(false);
 			ConnectionProfile cp = n.getConnectionProfile();
-			Dna.sql.setConnectionProfile(cp);
+			Dna.sql.setConnectionProfile(cp, false); // this is after creating data structures, so no test (= false)
 			if (cp == null) {
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: new database was not created.",
@@ -1230,11 +1230,11 @@ public class MainWindow extends JFrame implements SqlListener {
 								cp = null;
 							}
 							if (cp != null) {
-								Sql sqlTemp = new Sql(cp);
+								Sql sqlTemp = new Sql(cp, true); // just for authentication purposes, so a test
 								boolean authenticated = sqlTemp.authenticate(key);
 								if (authenticated == true) {
 									validPasswordInput = true; // authenticated; quit the while-loop
-									Dna.sql.setConnectionProfile(cp);
+									Dna.sql.setConnectionProfile(cp, false); // use the connection profile, so no test
 								} else {
 									cp = null;
 								}

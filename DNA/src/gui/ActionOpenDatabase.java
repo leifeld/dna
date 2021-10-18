@@ -25,7 +25,7 @@ class ActionOpenDatabase extends AbstractAction {
 	public void actionPerformed(ActionEvent e) {
 		NewDatabaseDialog n = new NewDatabaseDialog(true);
 		ConnectionProfile cp = n.getConnectionProfile();
-		Dna.sql.setConnectionProfile(cp);
+		Dna.sql.setConnectionProfile(cp, false); // not a connection test, so false
 		if (cp == null) {
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: could not open database.",

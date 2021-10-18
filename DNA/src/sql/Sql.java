@@ -75,13 +75,16 @@ public class Sql {
 	 * {@link sql.ConnectionProfile connectionProfile} object for SQLite,
 	 * MySQL, or PostgreSQL.
 	 * 
-	 * @param cp  A {@link sql.ConnectionProfile connectionProfile} object,
+	 * @param cp    A {@link sql.ConnectionProfile connectionProfile} object,
 	 *   which contains connection details for a DNA database.
+	 * @param test  Boolean indicating whether this is just a connection test.
+	 *   In that event, it is assumed that no data structures/tables are present
+	 *   yet, and no coder will be selected.
 	 *   
 	 * @category setup
 	 */
-	public Sql(ConnectionProfile cp) {
-		this.setConnectionProfile(cp);
+	public Sql(ConnectionProfile cp, boolean test) {
+		this.setConnectionProfile(cp, test);
 	}
 
 	/**
@@ -90,7 +93,7 @@ public class Sql {
 	 * @category setup
 	 */
 	public Sql() {
-		this.setConnectionProfile(null);
+		this.setConnectionProfile(null, false);
 	}
 
 	/**
@@ -107,11 +110,14 @@ public class Sql {
 	/**
 	 * Set the connection profile and save the current coder with permissions.
 	 * 
-	 * @param cp A {@link sql.ConnectionProfile connectionProfile} object.
+	 * @param cp    A {@link sql.ConnectionProfile connectionProfile} object.
+	 * @param test  Boolean indicating whether this is just a connection test.
+	 *   In that event, it is assumed that no data structures/tables are present
+	 *   yet, and no coder will be selected.
 	 * 
 	 * @category setup
 	 */
-	public void setConnectionProfile(ConnectionProfile cp) {
+	public void setConnectionProfile(ConnectionProfile cp, boolean test) {
 		this.cp = cp;
 		if (cp == null) { // null connection
 			ds = null;
@@ -151,7 +157,9 @@ public class Sql {
 	        Dna.logger.log(l);
 		}
 		fireConnectionChange();
-		updateActiveCoder();  // update active coder and notify listeners about the update
+		if (test == false) {
+			updateActiveCoder();  // update active coder and notify listeners about the update
+		}
 	}
 	
 	/**
@@ -238,7 +246,7 @@ public class Sql {
 			getConnectionProfile().setCoder(coderId);
 			this.activeCoder = getCoder(coderId);
 		} else {
-			setConnectionProfile(null);
+			setConnectionProfile(null, false); // not a connection test, so false
 			this.activeCoder = null;
 		}
 		fireCoderChange();
@@ -337,16 +345,16 @@ public class Sql {
 		if (cp.getType().equals("sqlite")) {
 			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
 					+ "Property TEXT PRIMARY KEY, "
-					+ "Value TEXT);");
+					+ "Value TEXT NOT NULL);");
 			s.add("CREATE TABLE IF NOT EXISTS CODERS("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
-					+ "Name TEXT, "
-					+ "Red INTEGER CHECK (Red BETWEEN 0 AND 255), "
-					+ "Green INTEGER CHECK (Green BETWEEN 0 AND 255), "
-					+ "Blue INTEGER CHECK (Blue BETWEEN 0 AND 255), "
-					+ "Refresh INTEGER CHECK (Refresh BETWEEN 0 AND 9999) DEFAULT 0, "
+					+ "Name TEXT NOT NULL, "
+					+ "Red INTEGER NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green INTEGER NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue INTEGER NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
+					+ "Refresh INTEGER NOT NULL CHECK (Refresh BETWEEN 0 AND 9999) DEFAULT 0, "
 					+ "FontSize INTEGER NOT NULL CHECK (FontSize BETWEEN 1 AND 99) DEFAULT 14, "
-					+ "Password TEXT, "
+					+ "Password TEXT NOT NULL, "
 					+ "PopupWidth INTEGER CHECK (PopupWidth BETWEEN 100 AND 9999) DEFAULT 300, "
 					+ "ColorByCoder INTEGER NOT NULL CHECK (ColorByCoder BETWEEN 0 AND 1) DEFAULT 0, "
 					+ "PopupDecoration INTEGER NOT NULL CHECK (PopupDecoration BETWEEN 0 AND 1) DEFAULT 0, "
@@ -368,50 +376,50 @@ public class Sql {
 					+ "PermissionEditOthersStatements INTEGER NOT NULL CHECK (PermissionEditOthersStatements BETWEEN 0 AND 1) DEFAULT 1);");
 			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
-					+ "Title TEXT, "
-					+ "Text TEXT, "
+					+ "Title TEXT NOT NULL, "
+					+ "Text TEXT NOT NULL, "
 					+ "Coder INTEGER, "
-					+ "Author TEXT, "
-					+ "Source TEXT, "
-					+ "Section TEXT, "
-					+ "Notes TEXT, "
-					+ "Type TEXT, "
-					+ "Date INTEGER, "
+					+ "Author TEXT NOT NULL DEFAULT '', "
+					+ "Source TEXT NOT NULL DEFAULT '', "
+					+ "Section TEXT NOT NULL DEFAULT '', "
+					+ "Notes TEXT NOT NULL DEFAULT '', "
+					+ "Type TEXT NOT NULL DEFAULT '', "
+					+ "Date INTEGER NOT NULL, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
-					+ "Label TEXT, "
-					+ "Red INTEGER CHECK (Red BETWEEN 0 AND 255), "
-					+ "Green INTEGER CHECK (Green BETWEEN 0 AND 255), "
-					+ "Blue INTEGER CHECK (Blue BETWEEN 0 AND 255));");
+					+ "Label TEXT NOT NULL, "
+					+ "Red INTEGER NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green INTEGER NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue INTEGER NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255));");
 			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
-					+ "Variable TEXT, "
-					+ "DataType TEXT, "
+					+ "Variable TEXT NOT NULL, "
+					+ "DataType TEXT NOT NULL DEFAULT 'short text', "
 					+ "StatementTypeId INTEGER, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (Variable, StatementTypeId));");
 			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
 					+ "Label TEXT PRIMARY KEY, "
-					+ "Red INTEGER CHECK (Red BETWEEN 0 AND 255), "
-					+ "Green INTEGER CHECK (Green BETWEEN 0 AND 255), "
-					+ "Blue INTEGER CHECK (Blue BETWEEN 0 AND 255));");
+					+ "Red INTEGER NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green INTEGER NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue INTEGER NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255));");
 			s.add("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
 					+ "Coder INTEGER CHECK(Coder > 0 AND Coder != OtherCoder), "
 					+ "OtherCoder INTEGER CHECK(OtherCoder > 0 AND OtherCoder != Coder), "
-					+ "viewStatements INTEGER CHECK(viewStatements BETWEEN 0 AND 1), "
-					+ "editStatements INTEGER CHECK(viewStatements BETWEEN 0 AND 1), "
-					+ "viewDocuments INTEGER CHECK(viewStatements BETWEEN 0 AND 1), "
-					+ "editDocuments INTEGER CHECK(viewStatements BETWEEN 0 AND 1), "
+					+ "viewStatements INTEGER NOT NULL DEFAULT 1 CHECK(viewStatements BETWEEN 0 AND 1), "
+					+ "editStatements INTEGER NOT NULL DEFAULT 1 CHECK(viewStatements BETWEEN 0 AND 1), "
+					+ "viewDocuments INTEGER NOT NULL DEFAULT 1 CHECK(viewStatements BETWEEN 0 AND 1), "
+					+ "editDocuments INTEGER NOT NULL DEFAULT 1 CHECK(viewStatements BETWEEN 0 AND 1), "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(OtherCoder) REFERENCES CODERS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTS("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
 					+ "StatementTypeId INTEGER, "
 					+ "DocumentId INTEGER, "
-					+ "Start INTEGER CHECK(Start >= 0 AND Start < Stop), "
-					+ "Stop INTEGER CHECK(Stop >= 0 AND Stop > Start), "
+					+ "Start INTEGER NOT NULL CHECK(Start >= 0 AND Start < Stop), "
+					+ "Stop INTEGER NOT NULL CHECK(Stop >= 0 AND Stop > Start), "
 					+ "Coder INTEGER, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
@@ -426,7 +434,7 @@ public class Sql {
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "StatementId INTEGER NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
-					+ "Value INTEGER, "
+					+ "Value INTEGER NOT NULL DEFAULT 1, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (StatementId, VariableId));");
@@ -434,7 +442,7 @@ public class Sql {
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "StatementId INTEGER NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
-					+ "Value INTEGER, "
+					+ "Value INTEGER NOT NULL DEFAULT 0, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (StatementId, VariableId));");
@@ -451,38 +459,49 @@ public class Sql {
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "StatementId INTEGER NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
-					+ "Value TEXT, "
+					+ "Value TEXT DEFAULT '', "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (StatementId, VariableId));");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTES("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
-					+ "Value TEXT NOT NULL, "
+					+ "Value TEXT NOT NULL DEFAULT '', "
 					+ "Red INTEGER CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green INTEGER CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue INTEGER CHECK (Blue BETWEEN 0 AND 255), "
-					+ "Type TEXT, "
-					+ "Alias TEXT, "
-					+ "Notes TEXT, "
 					+ "ChildOf INTEGER CHECK(ChildOf > 0 AND ChildOf != ID), "
 					+ "UNIQUE (VariableId, Value), "
 					+ "FOREIGN KEY(ChildOf) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE);");
+			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
+					+ "ID INTEGER PRIMARY KEY NOT NULL, "
+					+ "VariableId INTEGER NOT NULL, "
+					+ "MetaVariable TEXT NOT NULL, "
+					+ "UNIQUE(VariableId, MetaVariable), "
+					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE);");
+			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEMETADATA("
+					+ "ID INTEGER PRIMARY KEY NOT NULL, "
+					+ "AttributeId INTEGER NOT NULL, "
+					+ "MetaVariableId INTEGER NOT NULL, "
+					+ "Value TEXT NOT NULL DEFAULT '', "
+					+ "UNIQUE (AttributeId, MetaVariableId), "
+					+ "FOREIGN KEY(AttributeId) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(MetaVariableId) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE);");
 		} else if (cp.getType().equals("mysql")) {
 			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
 					+ "Property VARCHAR(500), "
-					+ "Value VARCHAR(500),"
+					+ "Value VARCHAR(500) NOT NULL,"
 					+ "PRIMARY KEY (Property));");
 			s.add("CREATE TABLE IF NOT EXISTS CODERS("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Name VARCHAR(5000), "
-					+ "Red SMALLINT UNSIGNED CHECK (Red BETWEEN 0 AND 255), "
-					+ "Green SMALLINT UNSIGNED CHECK (Green BETWEEN 0 AND 255), "
-					+ "Blue SMALLINT UNSIGNED CHECK (Blue BETWEEN 0 AND 255), "
-					+ "Refresh SMALLINT UNSIGNED NOT NULL CHECK (Refresh BETWEEN 0 AND 9999) DEFAULT 20, "
+					+ "Name VARCHAR(5000) NOT NULL, "
+					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
+					+ "Refresh SMALLINT UNSIGNED NOT NULL CHECK (Refresh BETWEEN 0 AND 9999) DEFAULT 0, "
 					+ "FontSize SMALLINT UNSIGNED NOT NULL CHECK (FontSize BETWEEN 1 AND 99) DEFAULT 14, "
-					+ "Password VARCHAR(300), "
+					+ "Password VARCHAR(300) NOT NULL, "
 					+ "PopupWidth SMALLINT UNSIGNED NOT NULL CHECK (PopupWidth BETWEEN 100 AND 9999) DEFAULT 300, "
 					+ "ColorByCoder TINYINT UNSIGNED NOT NULL CHECK (ColorByCoder BETWEEN 0 AND 1) DEFAULT 0, "
 					+ "PopupDecoration TINYINT UNSIGNED NOT NULL CHECK (PopupDecoration BETWEEN 0 AND 1) DEFAULT 0, "
@@ -505,46 +524,46 @@ public class Sql {
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Title VARCHAR(5000), "
-					+ "Text MEDIUMTEXT, "
+					+ "Title VARCHAR(5000) NOT NULL, "
+					+ "Text MEDIUMTEXT NOT NULL, "
 					+ "Coder SMALLINT UNSIGNED NOT NULL, "
-					+ "Author VARCHAR(5000), "
-					+ "Source VARCHAR(5000), "
-					+ "Section VARCHAR(5000), "
-					+ "Notes TEXT, "
-					+ "Type VARCHAR(5000), "
-					+ "Date BIGINT, "
+					+ "Author VARCHAR(5000) NOT NULL DEFAULT '', "
+					+ "Source VARCHAR(5000) NOT NULL DEFAULT '', "
+					+ "Section VARCHAR(5000) NOT NULL DEFAULT '', "
+					+ "Notes TEXT NOT NULL DEFAULT '', "
+					+ "Type VARCHAR(5000) NOT NULL DEFAULT '', "
+					+ "Date BIGINT NOT NULL, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Label VARCHAR(5000), "
-					+ "Red SMALLINT UNSIGNED CHECK (Red BETWEEN 0 AND 255), "
-					+ "Green SMALLINT UNSIGNED CHECK (Green BETWEEN 0 AND 255), "
-					+ "Blue SMALLINT UNSIGNED CHECK (Blue BETWEEN 0 AND 255), "
+					+ "Label VARCHAR(5000) NOT NULL, "
+					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Variable VARCHAR(500), "
-					+ "DataType VARCHAR(200), "
+					+ "Variable VARCHAR(500) NOT NULL, "
+					+ "DataType VARCHAR(200) NOT NULL DEFAULT 'short text', "
 					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (Variable, StatementTypeId), "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
 					+ "Label VARCHAR(2000), "
-					+ "Red SMALLINT UNSIGNED CHECK (Red BETWEEN 0 AND 255), "
-					+ "Green SMALLINT UNSIGNED CHECK (Green BETWEEN 0 AND 255), "
-					+ "Blue SMALLINT UNSIGNED CHECK (Blue BETWEEN 0 AND 255), "
+					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
 					+ "PRIMARY KEY(Label));");
 			s.add("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "Coder SMALLINT UNSIGNED NOT NULL CHECK(Coder > 0 AND Coder != OtherCoder), "
 					+ "OtherCoder SMALLINT UNSIGNED NOT NULL CHECK(OtherCoder > 0 AND OtherCoder != Coder), "
-					+ "viewStatements SMALLINT UNSIGNED CHECK(viewStatements BETWEEN 0 AND 1), "
-					+ "editStatements SMALLINT UNSIGNED CHECK(viewStatements BETWEEN 0 AND 1), "
-					+ "viewDocuments SMALLINT UNSIGNED CHECK(viewStatements BETWEEN 0 AND 1), "
-					+ "editDocuments SMALLINT UNSIGNED CHECK(viewStatements BETWEEN 0 AND 1), "
+					+ "viewStatements SMALLINT UNSIGNED NOT NULL DEFAULT 1 CHECK(viewStatements BETWEEN 0 AND 1), "
+					+ "editStatements SMALLINT UNSIGNED NOT NULL DEFAULT 1 CHECK(viewStatements BETWEEN 0 AND 1), "
+					+ "viewDocuments SMALLINT UNSIGNED NOT NULL DEFAULT 1 CHECK(viewStatements BETWEEN 0 AND 1), "
+					+ "editDocuments SMALLINT UNSIGNED NOT NULL DEFAULT 1 CHECK(viewStatements BETWEEN 0 AND 1), "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(OtherCoder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
@@ -552,8 +571,8 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "DocumentId MEDIUMINT UNSIGNED NOT NULL, "
-					+ "Start BIGINT UNSIGNED CHECK(Start >= 0 AND Start < Stop), "
-					+ "Stop BIGINT UNSIGNED CHECK(Stop >= 0 AND Stop > Start), "
+					+ "Start BIGINT UNSIGNED NOT NULL CHECK(Start >= 0 AND Start < Stop), "
+					+ "Stop BIGINT UNSIGNED NOT NULL CHECK(Stop >= 0 AND Stop > Start), "
 					+ "Coder SMALLINT UNSIGNED NOT NULL, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
@@ -570,7 +589,7 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "Value SMALLINT UNSIGNED NOT NULL, "
+					+ "Value SMALLINT UNSIGNED NOT NULL DEFAULT 1, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (StatementId, VariableId), "
@@ -579,7 +598,7 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "Value MEDIUMINT NOT NULL, "
+					+ "Value MEDIUMINT NOT NULL DEFAULT 0, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (StatementId, VariableId), "
@@ -597,7 +616,7 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "Value TEXT, "
+					+ "Value TEXT NOT NULL DEFAULT '', "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (StatementId, VariableId), "
@@ -605,31 +624,44 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTES("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "Value TEXT, "
-					+ "Red SMALLINT UNSIGNED CHECK (Red BETWEEN 0 AND 255), "
-					+ "Green SMALLINT UNSIGNED CHECK (Green BETWEEN 0 AND 255), "
-					+ "Blue SMALLINT UNSIGNED CHECK (Blue BETWEEN 0 AND 255), "
-					+ "Type TEXT, "
-					+ "Alias TEXT, "
-					+ "Notes TEXT, "
+					+ "Value TEXT NOT NULL DEFAULT '', "
+					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
 					+ "ChildOf MEDIUMINT UNSIGNED CHECK(ChildOf > 0 AND ChildOf != ID), "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(ChildOf) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (VariableId, Value), "
 					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "VariableId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "MetaVariable TEXT NOT NULL, "
+					+ "UNIQUE KEY(VariableId, MetaVariable), "
+					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEMETADATA("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "AttributeId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "MetaVariableId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "Value TEXT NOT NULL DEFAULT '', "
+					+ "UNIQUE KEY (AttributeId, MetaVariableId), "
+					+ "FOREIGN KEY(AttributeId) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(MetaVariableId) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE, "
+					+ "PRIMARY KEY(ID));");
 		} else if (cp.getType().equals("postgresql")) {
 			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
 					+ "Property VARCHAR(500) PRIMARY KEY, "
-					+ "Value VARCHAR(500));");
+					+ "Value VARCHAR(500) NOT NULL);");
 			s.add("CREATE TABLE IF NOT EXISTS CODERS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY CHECK (ID > 0), "
-					+ "Name VARCHAR(5000), "
-					+ "Red SERIAL CHECK (Red BETWEEN 0 AND 255), "
-					+ "Green SERIAL CHECK (Green BETWEEN 0 AND 255), "
-					+ "Blue SERIAL CHECK (Blue BETWEEN 0 AND 255), "
-					+ "Refresh SMALLINT NOT NULL CHECK (Refresh BETWEEN 0 AND 9999) DEFAULT 20, "
+					+ "Name VARCHAR(5000) NOT NULL, "
+					+ "Red SERIAL NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green SERIAL NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue SERIAL NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
+					+ "Refresh SMALLINT NOT NULL CHECK (Refresh BETWEEN 0 AND 9999) DEFAULT 0, "
 					+ "FontSize SMALLINT NOT NULL CHECK (FontSize BETWEEN 1 AND 99) DEFAULT 14, "
-					+ "Password VARCHAR(300), "
+					+ "Password VARCHAR(300) NOT NULL, "
 					+ "PopupWidth SMALLINT CHECK (PopupWidth BETWEEN 100 AND 9999) DEFAULT 300, "
 					+ "ColorByCoder SMALLINT NOT NULL CHECK (ColorByCoder BETWEEN 0 AND 1) DEFAULT 0, "
 					+ "PopupDecoration SMALLINT NOT NULL CHECK (PopupDecoration BETWEEN 0 AND 1) DEFAULT 0, "
@@ -651,46 +683,46 @@ public class Sql {
 					+ "PermissionEditOthersStatements SMALLINT NOT NULL CHECK (PermissionEditOthersStatements BETWEEN 0 AND 1) DEFAULT 0);");
 			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "Title VARCHAR(5000), "
-					+ "Text TEXT, "
+					+ "Title VARCHAR(5000) NOT NULL, "
+					+ "Text TEXT NOT NULL, "
 					+ "Coder INT NOT NULL REFERENCES CODERS(ID) ON DELETE CASCADE, "
-					+ "Author VARCHAR(5000), "
-					+ "Source VARCHAR(5000), "
-					+ "Section VARCHAR(5000), "
-					+ "Notes TEXT, "
-					+ "Type VARCHAR(5000), "
-					+ "Date BIGINT);");
+					+ "Author VARCHAR(5000) NOT NULL DEFAULT '', "
+					+ "Source VARCHAR(5000) NOT NULL DEFAULT '', "
+					+ "Section VARCHAR(5000) NOT NULL DEFAULT '', "
+					+ "Notes TEXT NOT NULL DEFAULT '', "
+					+ "Type VARCHAR(5000) NOT NULL DEFAULT '', "
+					+ "Date BIGINT NOT NULL);");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "Label VARCHAR(5000), "
-					+ "Red SERIAL CHECK (Red BETWEEN 0 AND 255), "
-					+ "Green SERIAL CHECK (Green BETWEEN 0 AND 255), "
-					+ "Blue SERIAL CHECK (Blue BETWEEN 0 AND 255));");
+					+ "Label VARCHAR(5000) NOT NULL, "
+					+ "Red SERIAL NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green SERIAL NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue SERIAL NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255));");
 			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "Variable VARCHAR(500), "
-					+ "DataType VARCHAR(200), "
+					+ "Variable VARCHAR(500) NOT NULL, "
+					+ "DataType VARCHAR(200) NOT NULL DEFAULT 'short text', "
 					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (Variable, StatementTypeId));");
 			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
 					+ "Label VARCHAR(2000) PRIMARY KEY, "
-					+ "Red SERIAL CHECK (Red BETWEEN 0 AND 255), "
-					+ "Green SERIAL CHECK (Green BETWEEN 0 AND 255), "
-					+ "Blue SERIAL CHECK (Blue BETWEEN 0 AND 255));");
+					+ "Red SERIAL NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green SERIAL NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue SERIAL NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255));");
 			s.add("CREATE TABLE IF NOT EXISTS CODERRELATIONS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "Coder INT NOT NULL CHECK(Coder > 0 AND Coder != OtherCoder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
 					+ "OtherCoder INT NOT NULL CHECK(OtherCoder > 0 AND OtherCoder != Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
-					+ "viewStatements INT CHECK(viewStatements BETWEEN 0 AND 1), "
-					+ "editStatements INT CHECK(editStatements BETWEEN 0 AND 1), "
-					+ "viewDocuments INT CHECK(viewDocuments BETWEEN 0 AND 1), "
-					+ "editDocuments INT CHECK(editDocuments BETWEEN 0 AND 1));");
+					+ "viewStatements INT NOT NULL DEFAULT 1 CHECK(viewStatements BETWEEN 0 AND 1), "
+					+ "editStatements INT NOT NULL DEFAULT 1 CHECK(editStatements BETWEEN 0 AND 1), "
+					+ "viewDocuments INT NOT NULL DEFAULT 1 CHECK(viewDocuments BETWEEN 0 AND 1), "
+					+ "editDocuments INT NOT NULL DEFAULT 1 CHECK(editDocuments BETWEEN 0 AND 1));");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "DocumentId INT NOT NULL CHECK(DocumentId > 0) REFERENCES DOCUMENTS(ID) ON DELETE CASCADE, "
-					+ "Start BIGINT CHECK(Start >= 0 AND Start < Stop), "
-					+ "Stop BIGINT CHECK(Stop >= 0 AND Stop > Start), "
+					+ "Start BIGINT NOT NULL CHECK(Start >= 0 AND Start < Stop), "
+					+ "Stop BIGINT NOT NULL CHECK(Stop >= 0 AND Stop > Start), "
 					+ "Coder INT NOT NULL CHECK(Coder > 0) REFERENCES CODERS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
@@ -700,13 +732,13 @@ public class Sql {
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "Value INT NOT NULL CHECK(Value BETWEEN 0 AND 1), "
+					+ "Value INT NOT NULL DEFAULT 1 CHECK(Value BETWEEN 0 AND 1), "
 					+ "UNIQUE (StatementId, VariableId));");
 			s.add("CREATE TABLE IF NOT EXISTS DATAINTEGER("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "Value INT NOT NULL, "
+					+ "Value INT NOT NULL DEFAULT 0, "
 					+ "UNIQUE (StatementId, VariableId));");
 			s.add("CREATE TABLE IF NOT EXISTS DATASHORTTEXT("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
@@ -718,20 +750,28 @@ public class Sql {
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "Value TEXT, "
+					+ "Value TEXT NOT NULL DEFAULT '', "
 					+ "UNIQUE (StatementId, VariableId));");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "Value TEXT, "
-					+ "Red SERIAL CHECK (Red BETWEEN 0 AND 255), "
-					+ "Green SERIAL CHECK (Green BETWEEN 0 AND 255), "
-					+ "Blue SERIAL CHECK (Blue BETWEEN 0 AND 255), "
-					+ "Type TEXT, "
-					+ "Alias TEXT, "
-					+ "Notes TEXT, "
+					+ "Value TEXT NOT NULL DEFAULT '', "
+					+ "Red SERIAL NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green SERIAL NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue SERIAL NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
 					+ "ChildOf INT CHECK(ChildOf > 0 AND ChildOf != ID) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
-					+ "UNIQUE KEY (VariableId, Value));");
+					+ "UNIQUE (VariableId, Value));");
+			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
+					+ "MetaVariable TEXT NOT NULL, "
+					+ "UNIQUE (VariableId, MetaVariable));");
+			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEMETADATA("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "AttributeId INT NOT NULL CHECK(AttributeId > 0) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
+					+ "MetaVariableId INT NOT NULL CHECK(MetaVariableId > 0) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE, "
+					+ "Value TEXT NOT NULL DEFAULT '', "
+					+ "UNIQUE (AttributeId, MetaVariableId));");
 		}
 		// fill default data into the tables (Admin coder, settings, statement types)
 		s.add("INSERT INTO CODERS (ID, Name, Red, Green, Blue, Password, PermissionEditStatementTypes, PermissionEditCoders, PermissionEditOthersDocuments, PermissionEditOthersStatements) VALUES (1, 'Admin', 255, 255, 0, '" + encryptedAdminPassword + "', 1, 1, 1, 1);");
@@ -744,6 +784,15 @@ public class Sql {
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(4, 'agreement', 'boolean', 1);");
 		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (2, 'Annotation', 211, 211, 211);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(5, 'note', 'long text', 2);");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (1, 'Type');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (2, 'Type');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (3, 'Type');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (1, 'Alias');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (2, 'Alias');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (3, 'Alias');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (1, 'Notes');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (2, 'Notes');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (3, 'Notes');");
 		try (Connection conn = ds.getConnection();
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
@@ -1589,8 +1638,10 @@ public class Sql {
 				PreparedStatement s3 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 				PreparedStatement s4 = conn.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 				PreparedStatement s5 = conn.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, ?);");
-				PreparedStatement s6 = conn.prepareStatement("INSERT INTO ATTRIBUTES (VariableId, Value, Red, Green, Blue, Type, Alias, Notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?);");
+				PreparedStatement s6 = conn.prepareStatement("INSERT INTO ATTRIBUTES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
 				PreparedStatement s7 = conn.prepareStatement("SELECT ID FROM ATTRIBUTES WHERE VariableId = ? AND Value = ?;");
+				PreparedStatement s8 = conn.prepareStatement("SELECT ID, MetaVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
+				PreparedStatement s9 = conn.prepareStatement("INSERT INTO ATTRIBUTEMETADATA (AttributeId, MetaVariableId, Value) VALUES (?, ?, ?);");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
@@ -1613,7 +1664,10 @@ public class Sql {
 			Dna.logger.log(l);
 			for (int i = 0; i < statement.getValues().size(); i++) {
 				if (statement.getValues().get(i).getDataType().equals("short text")) {
-					s6.setInt(1, statement.getValues().get(i).getVariableId());
+					
+					// first, try to create an attribute and catch error if it already exists
+					int variableId = statement.getValues().get(i).getVariableId();
+					s6.setInt(1, variableId);
 					String value = "";
 					if (statement.getValues().get(i).getValue() == null) {
 						value = "";
@@ -1624,9 +1678,6 @@ public class Sql {
 					s6.setInt(3, 255);
 					s6.setInt(4, 255);
 					s6.setInt(5,  255);
-					s6.setString(6, "");
-					s6.setString(7, "");
-					s6.setString(8,  "");
 					try {
 						s6.executeUpdate();
 						l = new LogEvent(Logger.MESSAGE,
@@ -1647,8 +1698,10 @@ public class Sql {
 							Dna.logger.log(l);
 						}
 					}
+					
+					// find the attribute ID for the attribute that was just added (or that may have already existed)
 					attributeId = -1;
-					s7.setInt(1, statement.getValues().get(i).getVariableId());
+					s7.setInt(1, variableId);
 					s7.setString(2, value);
 					r = s7.executeQuery();
 					while (r.next()) {
@@ -1658,6 +1711,37 @@ public class Sql {
 							"[SQL]  ├─ Transaction: Attribute ID identified as " + attributeId + ".",
 							"The attribute for value \"" + value + "\", which was added to, or identified in, the ATTRIBUTES table during the transaction, has ID " + attributeId + ".");
 					Dna.logger.log(l);
+					
+					// find attribute meta variable IDs for the attribute and insert new entries to the ATTRIBUTEMETADATA table (catch errors if they already exist)
+					s8.setInt(1, variableId); // set variable ID to find all meta variables by ID corresponding to the attribute
+					r = s8.executeQuery();
+					while (r.next()) {
+						try {
+							s9.setInt(1, attributeId); // attribute ID
+							s9.setInt(2, r.getInt("ID")); // meta variable ID
+							s9.setString(3, ""); // put an empty value into the meta variable field initially
+							s9.executeUpdate();
+							l = new LogEvent(Logger.MESSAGE,
+									"[SQL]  ├─ Transaction: Added meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table.",
+									"Added meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table during the transaction.");
+							Dna.logger.log(l);
+						} catch (Exception e2) {
+							if (e2.getMessage().contains("UNIQUE constraint failed")) {
+								l = new LogEvent(Logger.MESSAGE,
+										"[SQL]  ├─ Transaction: A value for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " was already present in the ATTRIBUTEMETADATA table.",
+										"A row for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " did not have to be added to the ATTRIBUTEMETADATA table during the transaction because it was already present.");
+								Dna.logger.log(l);
+							} else {
+								l = new LogEvent(Logger.WARNING,
+										"[SQL]  ├─ Failed to add a new value for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table.",
+										"Failed to add a new value for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table. The next step will check if the entry is already there. If so, no problem. If not, there will be another log event with an error message.",
+										e2);
+								Dna.logger.log(l);
+							}
+						}
+					}
+					
+					// finally, write into the DATASHORTTEXT table
 					s2.setInt(1, statementId);
 					s2.setInt(2, statement.getValues().get(i).getVariableId());
 					s2.setInt(3, attributeId);
@@ -1724,8 +1808,10 @@ public class Sql {
 				PreparedStatement s2 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
 				PreparedStatement s3 = conn.prepareStatement("UPDATE DATALONGTEXT SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
 				PreparedStatement s4 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
-				PreparedStatement s5 = conn.prepareStatement("INSERT INTO ATTRIBUTES (VariableId, Value, Red, Green, Blue, Type, Alias, Notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?);");
+				PreparedStatement s5 = conn.prepareStatement("INSERT INTO ATTRIBUTES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
 				PreparedStatement s6 = conn.prepareStatement("SELECT ID FROM ATTRIBUTES WHERE VariableId = ? AND Value = ?;");
+				PreparedStatement s7 = conn.prepareStatement("SELECT ID, MetaVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
+				PreparedStatement s8 = conn.prepareStatement("INSERT INTO ATTRIBUTEMETADATA (AttributeId, MetaVariableId, Value) VALUES (?, ?, ?);");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent e1 = new LogEvent(Logger.MESSAGE,
@@ -1782,11 +1868,8 @@ public class Sql {
 						s5.setInt(3, attribute.getColor().getRed());
 						s5.setInt(4, attribute.getColor().getGreen());
 						s5.setInt(5, attribute.getColor().getBlue());
-						s5.setString(6, attribute.getType());
-						s5.setString(7, attribute.getAlias());
-						s5.setString(8, attribute.getNotes());
 						s5.executeUpdate();
-
+						
 						// new attribute has been created; now we have to get its ID
 						s6.setInt(1, variableId);
 						s6.setString(2, attribute.getValue());
@@ -1798,6 +1881,36 @@ public class Sql {
 								"[SQL]  ├─ Attribute with ID " + attributeId + " added to the transaction.",
 								"An attribute with ID " + attributeId + " and value \"" + attribute.getValue() + "\" was created for variable ID " + variableId + " and added to the SQL transaction.");
 						Dna.logger.log(e2);
+						
+						// since the attribute did not exist, we also need to add metavariable entries;
+						// first get the IDs of the meta-variables, then add the values
+						s7.setInt(1, variableId); // set variable ID to find all meta variables by ID corresponding to the variable
+						r = s7.executeQuery();
+						while (r.next()) {
+							try {
+								s8.setInt(1, attributeId); // attribute ID
+								s8.setInt(2, r.getInt("ID")); // meta variable ID
+								s8.setString(3, ""); // put an empty value into the meta variable field initially
+								s8.executeUpdate();
+								LogEvent l = new LogEvent(Logger.MESSAGE,
+										"[SQL]  ├─ Transaction: Added meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table.",
+										"Added meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table during the transaction.");
+								Dna.logger.log(l);
+							} catch (Exception e3) {
+								if (e3.getMessage().contains("UNIQUE constraint failed")) {
+									LogEvent l = new LogEvent(Logger.MESSAGE,
+											"[SQL]  ├─ Transaction: A value for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " was already present in the ATTRIBUTEMETADATA table.",
+											"A row for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " did not have to be added to the ATTRIBUTEMETADATA table during the transaction because it was already present.");
+									Dna.logger.log(l);
+								} else {
+									LogEvent l = new LogEvent(Logger.WARNING,
+											"[SQL]  ├─ Failed to add a new value for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table.",
+											"Failed to add a new value for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table. The next step will check if the entry is already there. If so, no problem. If not, there will be another log event with an error message.",
+											e3);
+									Dna.logger.log(l);
+								}
+							}
+						}
 					}
 
 					// write the attribute ID as the value in the DATASHORTTEXT table
@@ -1936,7 +2049,7 @@ public class Sql {
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("SELECT STATEMENTS.ID AS StatementId, StatementTypeId, STATEMENTTYPES.Label AS StatementTypeLabel, STATEMENTTYPES.Red AS StatementTypeRed, STATEMENTTYPES.Green AS StatementTypeGreen, STATEMENTTYPES.Blue AS StatementTypeBlue, Start, Stop, STATEMENTS.Coder AS CoderId, CODERS.Name AS CoderName, CODERS.Red AS CoderRed, CODERS.Green AS CoderGreen, CODERS.Blue AS CoderBlue, DocumentId, DOCUMENTS.Date AS Date, SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text FROM STATEMENTS INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId WHERE StatementId = ?;");
 				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
 				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
 				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
 				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
@@ -1960,7 +2073,7 @@ public class Sql {
 				    	r3 = s3.executeQuery();
 				    	while (r3.next()) {
 			            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
-			            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getString("Type"), r3.getString("Alias"), r3.getString("Notes"), r3.getInt("ChildOf"), true);
+			            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getInt("ChildOf"), true);
 				    		values.add(new Value(variableId, variable, dataType, attribute));
 				    	}
 			    	} else if (dataType.equals("long text")) {
@@ -2060,7 +2173,7 @@ public class Sql {
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement(query);
 				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
 				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
 				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
 				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
@@ -2087,8 +2200,8 @@ public class Sql {
 				    	r3 = s3.executeQuery();
 				    	while (r3.next()) {
 			            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
-			            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getString("Type"), r3.getString("Alias"), r3.getString("Notes"), r3.getInt("ChildOf"), true);
-				    		values.add(new Value(variableId, variable, dataType, attribute));
+			            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getInt("ChildOf"), true);
+			            	values.add(new Value(variableId, variable, dataType, attribute));
 				    	}
 			    	} else if (dataType.equals("long text")) {
 				    	s4.setInt(1, variableId);
@@ -2214,7 +2327,7 @@ public class Sql {
 		ArrayList<Attribute> attributesList = new ArrayList<Attribute>();
 		boolean inDatabase;
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("SELECT ID, Value, Red, Green, Blue, Type, Alias, Notes, ChildOf FROM ATTRIBUTES WHERE VariableId = ?;");
+				PreparedStatement s1 = conn.prepareStatement("SELECT ID, Value, Red, Green, Blue, ChildOf FROM ATTRIBUTES WHERE VariableId = ?;");
 				PreparedStatement s2 = conn.prepareStatement("SELECT COUNT(ID) FROM DATASHORTTEXT WHERE VariableId = ? AND Value = ?;")) {
 			ResultSet r1, r2;
 			Color color;
@@ -2230,7 +2343,7 @@ public class Sql {
             	} else {
             		inDatabase = false;
             	}
-            	attributesList.add(new Attribute(r1.getInt("ID"), r1.getString("Value"), color, r1.getString("Type"), r1.getString("Alias"), r1.getString("Notes"), r1.getInt("ChildOf"), inDatabase));
+            	attributesList.add(new Attribute(r1.getInt("ID"), r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase));
             }
         	LogEvent e = new LogEvent(Logger.MESSAGE,
         			"[SQL] Retrieved " + attributesList.size() + " attribute(s) for Variable " + variableId + ".",
