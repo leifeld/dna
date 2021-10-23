@@ -20,6 +20,7 @@ import javax.swing.event.ChangeListener;
 import dna.Dna;
 import gui.MainWindow.ActionAboutWindow;
 import gui.MainWindow.ActionAddDocument;
+import gui.MainWindow.ActionAttributeManager;
 import gui.MainWindow.ActionBatchImportDocuments;
 import gui.MainWindow.ActionCloseDatabase;
 import gui.MainWindow.ActionCreateDatabase;
@@ -60,6 +61,7 @@ public class MenuBar extends JMenuBar implements SqlListener {
 	 * @param actionBatchImportDocuments  Action for batch-importing documents.
 	 * @param actionRefresh               Action for reloading data.
 	 * @param actionRemoveStatements      Action for removing statements.
+	 * @param actionAttributeManager      Action for opening attribute manager.
 	 * @param actionLoggerDialog          Action for opening logger dialog.
 	 * @param actionAboutWindow           Action for opening DNA About window.
 	 */
@@ -75,6 +77,7 @@ public class MenuBar extends JMenuBar implements SqlListener {
 			ActionBatchImportDocuments actionBatchImportDocuments,
 			ActionRefresh actionRefresh,
 			ActionRemoveStatements actionRemoveStatements,
+			ActionAttributeManager actionAttributeManager,
 			ActionLoggerDialog actionLoggerDialog,
 			ActionAboutWindow actionAboutWindow) {
 
@@ -139,16 +142,9 @@ public class MenuBar extends JMenuBar implements SqlListener {
 		statementsMenu.add(removeStatementsItem);
 
 		// statements menu: open attribute manager
-		ImageIcon attributeManagerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-list.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
-		JMenuItem attributeManagerItem = new JMenuItem("Open attribute manager", attributeManagerIcon);
-		attributeManagerItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				new AttributeManager();
-			}
-		});
+		JMenuItem attributeManagerItem = new JMenuItem(actionAttributeManager);
 		statementsMenu.add(attributeManagerItem);
-		
+
 		// export menu
 		JMenu exportMenu = new JMenu("Export");
 		this.add(exportMenu);

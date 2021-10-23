@@ -109,6 +109,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	private ActionRefresh actionRefresh;
 	private ActionBatchImportDocuments actionBatchImportDocuments;
 	private ActionRemoveStatements actionRemoveStatements;
+	private ActionAttributeManager actionAttributeManager;
 	private ActionLoggerDialog actionLoggerDialog;
 	private ActionAboutWindow actionAboutWindow;
 
@@ -209,12 +210,16 @@ public class MainWindow extends JFrame implements SqlListener {
 		ImageIcon removeStatementsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-square-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		actionRemoveStatements = new ActionRemoveStatements("Remove statement(s)", removeStatementsIcon, "Remove the statement(s) currently selected in the statement table", KeyEvent.VK_D);
 		actionRemoveStatements.setEnabled(false);
+
+		ImageIcon attributeManagerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-list.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionAttributeManager = new ActionAttributeManager("Open attribute manager", attributeManagerIcon, "Open the attribute manager to edit entities and their attribute values.", KeyEvent.VK_A);
+		actionAttributeManager.setEnabled(false);
+		
+		ImageIcon loggerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionLoggerDialog = new ActionLoggerDialog("Display message log", loggerIcon, "Display a log of messages, warnings, and errors in a dialog window", KeyEvent.VK_L);
 		
 		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		actionAboutWindow = new ActionAboutWindow("About DNA", aboutIcon, "Display information about DNA", KeyEvent.VK_B);
-		
-		ImageIcon loggerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
-		actionLoggerDialog = new ActionLoggerDialog("Message log", loggerIcon, "Display a log of messages, warnings, and errors in a dialog window", KeyEvent.VK_L);
 		
 		// define models
 		documentTableModel = new DocumentTableModel();
@@ -243,6 +248,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionBatchImportDocuments,
 				actionRefresh,
 				actionRemoveStatements,
+				actionAttributeManager,
 				actionLoggerDialog,
 				actionAboutWindow);
 		statusBar = new StatusBar();
@@ -976,12 +982,16 @@ public class MainWindow extends JFrame implements SqlListener {
 					PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
 					PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
 				ResultSet r1, r2, r3;
+
+				// first, get the statement information, including coder and statement type info
 				r1 = s1.executeQuery();
 				while (r1.next()) {
 				    statementId = r1.getInt("StatementId");
 				    statementTypeId = r1.getInt("StatementTypeId");
 				    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
 				    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
+
+				    // second, get the variables associated with the statement type
 				    s2.setInt(1, statementTypeId);
 				    r2 = s2.executeQuery();
 				    values = new ArrayList<Value>();
@@ -989,13 +999,16 @@ public class MainWindow extends JFrame implements SqlListener {
 				    	variableId = r2.getInt("ID");
 				    	variable = r2.getString("Variable");
 				    	dataType = r2.getString("DataType");
+
+				    	// third, get the values from DATABOOLEAN, DATAINTEGER, DATALONGTEXT, and DATASHORTTEXT
 				    	if (dataType.equals("short text")) {
 					    	s3.setInt(1, statementId);
 					    	s3.setInt(2, variableId);
 					    	r3 = s3.executeQuery();
 					    	while (r3.next()) {
 				            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
-				            	Entity entity = new Entity(r3.getInt("EntityId"), r3.getString("Value"), aColor, r3.getInt("ChildOf"), true, null); // don't submit hash map with attributes because they are not needed for the statement table
+				            	// unlike in similar functions in the Sql class, we don't care about the entity attributes here and can just create a dumbed-down version of the entity
+				            	Entity entity = new Entity(r3.getInt("EntityId"), variableId, r3.getString("Value"), aColor, r3.getInt("ChildOf"), true, null); // i.e., don't submit hash map with attributes because they are not needed for the statement table
 				            	values.add(new Value(variableId, variable, dataType, entity));
 					    	}
 				    	} else if (dataType.equals("long text")) {
@@ -1021,6 +1034,8 @@ public class MainWindow extends JFrame implements SqlListener {
 					    	}
 				    	}
 				    }
+
+				    // assemble the statement with all the information from the previous steps
 				    Statement statement = new Statement(statementId,
 				    		r1.getInt("Start"),
 				    		r1.getInt("Stop"),
@@ -1114,7 +1129,15 @@ public class MainWindow extends JFrame implements SqlListener {
 		if (Dna.sql.getConnectionProfile() != null) {
 			changedDocumentTableSelection();
 		}
-		
+		if (Dna.sql.getActiveCoder() != null) {
+			if (Dna.sql.getActiveCoder().isPermissionEditAttributes() == true) {
+				actionAttributeManager.setEnabled(true);
+			} else {
+				actionAttributeManager.setEnabled(false);
+			}
+		} else {
+			actionAttributeManager.setEnabled(false);
+		}
 	}
 
 	/**
@@ -1581,7 +1604,34 @@ public class MainWindow extends JFrame implements SqlListener {
 			Dna.logger.log(l);
 		}
 	}
-	
+
+	/**
+	 * An action to display an attribute manager dialog window.
+	 */
+	class ActionAttributeManager extends AbstractAction {
+		private static final long serialVersionUID = -9078666078201409563L;
+		
+		public ActionAttributeManager(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			if (Dna.sql.getActiveCoder().isPermissionEditAttributes() == true) {
+				new AttributeManager();
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[GUI] Action executed: opened attribute manager.",
+						"Opened an attribute manager window from the GUI.");
+				Dna.logger.log(l);
+			} else {
+				LogEvent l = new LogEvent(Logger.WARNING,
+						"[GUI] Action could not be executed: insufficient permissions to open attribute manager.",
+						"Attempted to open an attribute manager from the GUI, but the coder did not have sufficient permissions for editing attributes. This message should never appear because the menu item for opening an attribute manager should be grayed out when the active coder has insufficient permissions. Please report the full error log to the developers through the issue tracker on GitHub.");
+				Dna.logger.log(l);
+			}
+		}
+	}
 	/**
 	 * An action to open a new logger dialog window.
 	 */

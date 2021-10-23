@@ -395,7 +395,7 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
 					+ "Variable TEXT NOT NULL, "
-					+ "DataType TEXT NOT NULL DEFAULT 'short text', "
+					+ "DataType TEXT NOT NULL CHECK (DataType = 'boolean' OR DataType = 'integer' OR DataType = 'long text' OR DataType = 'short text') DEFAULT 'short text', "
 					+ "StatementTypeId INTEGER, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (Variable, StatementTypeId));");
@@ -424,12 +424,6 @@ public class Sql {
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(DocumentId) REFERENCES DOCUMENTS(ID) ON DELETE CASCADE);");
-			s.add("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
-					+ "ID INTEGER PRIMARY KEY NOT NULL, "
-					+ "SourceId INTEGER NOT NULL CHECK(SourceId > 0 AND SourceId != TargetId), "
-					+ "TargetId INTEGER NOT NULL CHECK(TargetId > 0 AND SourceId != TargetId), "
-					+ "FOREIGN KEY(SourceId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE,"
-					+ "FOREIGN KEY(TargetId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS DATABOOLEAN("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "StatementId INTEGER NOT NULL, "
@@ -545,7 +539,7 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "Variable VARCHAR(500) NOT NULL, "
-					+ "DataType VARCHAR(200) NOT NULL DEFAULT 'short text', "
+					+ "DataType VARCHAR(200) NOT NULL CHECK (DataType = 'boolean' OR DataType = 'integer' OR DataType = 'long text' OR DataType = 'short text') DEFAULT 'short text', "
 					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (Variable, StatementTypeId), "
@@ -577,13 +571,6 @@ public class Sql {
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(DocumentId) REFERENCES DOCUMENTS(ID) ON DELETE CASCADE, "
-					+ "PRIMARY KEY(ID));");
-			s.add("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
-					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "SourceId MEDIUMINT UNSIGNED NOT NULL CHECK(SourceId > 0 AND SourceId != TargetId), "
-					+ "TargetId MEDIUMINT UNSIGNED NOT NULL CHECK(TargetId > 0 AND SourceId != TargetId), "
-					+ "FOREIGN KEY(SourceId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
-					+ "FOREIGN KEY(TargetId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS DATABOOLEAN("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
@@ -701,7 +688,7 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "Variable VARCHAR(500) NOT NULL, "
-					+ "DataType VARCHAR(200) NOT NULL DEFAULT 'short text', "
+					+ "DataType VARCHAR(200) NOT NULL CHECK (DataType = 'boolean' OR DataType = 'integer' OR DataType = 'long text' OR DataType = 'short text') DEFAULT 'short text', "
 					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (Variable, StatementTypeId));");
 			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
@@ -724,10 +711,6 @@ public class Sql {
 					+ "Start BIGINT NOT NULL CHECK(Start >= 0 AND Start < Stop), "
 					+ "Stop BIGINT NOT NULL CHECK(Stop >= 0 AND Stop > Start), "
 					+ "Coder INT NOT NULL CHECK(Coder > 0) REFERENCES CODERS(ID) ON DELETE CASCADE);");
-			s.add("CREATE TABLE IF NOT EXISTS STATEMENTLINKS("
-					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "SourceId INT NOT NULL CHECK(SourceId > 0 AND SourceId != TargetId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
-					+ "TargetId INT NOT NULL CHECK(TargetId > 0 AND TargetId != SourceId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS DATABOOLEAN("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
@@ -777,13 +760,12 @@ public class Sql {
 		s.add("INSERT INTO CODERS (ID, Name, Red, Green, Blue, Password, PermissionEditStatementTypes, PermissionEditCoders, PermissionEditOthersDocuments, PermissionEditOthersStatements) VALUES (1, 'Admin', 255, 255, 0, '" + encryptedAdminPassword + "', 1, 1, 1, 1);");
 		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('version', '" + Dna.version + "');");
 		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('date', '" + Dna.date + "');");
+		// DNA Statement
 		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (1, 'DNA Statement', 239, 208, 51);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(1, 'person', 'short text', 1);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(2, 'organization', 'short text', 1);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(3, 'concept', 'short text', 1);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(4, 'agreement', 'boolean', 1);");
-		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (2, 'Annotation', 211, 211, 211);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(5, 'note', 'long text', 2);");
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (1, 'Type');");
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (2, 'Type');");
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (3, 'Type');");
@@ -793,6 +775,9 @@ public class Sql {
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (1, 'Notes');");
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (2, 'Notes');");
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (3, 'Notes');");
+		// Annotation
+		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (2, 'Annotation', 211, 211, 211);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(5, 'note', 'long text', 2);");
 		try (Connection conn = ds.getConnection();
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
@@ -1665,7 +1650,7 @@ public class Sql {
 			for (int i = 0; i < statement.getValues().size(); i++) {
 				if (statement.getValues().get(i).getDataType().equals("short text")) {
 					
-					// first, try to create an attribute and catch error if it already exists
+					// first, try to create an entity and catch error if it already exists
 					int variableId = statement.getValues().get(i).getVariableId();
 					s6.setInt(1, variableId);
 					String value = "";
@@ -1712,8 +1697,8 @@ public class Sql {
 							"The entity \"" + value + "\", which was added to, or identified in, the ENTITIES table during the transaction, has ID " + entityId + ".");
 					Dna.logger.log(l);
 					
-					// find attribute meta variable IDs for the attribute and insert new entries to the ATTRIBUTEMETADATA table (catch errors if they already exist)
-					s8.setInt(1, variableId); // set variable ID to find all meta variables by ID corresponding to the attribute
+					// find attribute variable IDs for the entity and insert new values to the ATTRIBUTEVALUES table (catch errors if they already exist)
+					s8.setInt(1, variableId); // set variable ID to find all attribute variables by ID corresponding to the entity
 					r = s8.executeQuery();
 					while (r.next()) {
 						try {
@@ -2056,12 +2041,16 @@ public class Sql {
 				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;");
 				PreparedStatement s7 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
 			ResultSet r1, r2, r3, r4;
+			
+			// first, get the statement information, including coder and statement type info
 			s1.setInt(1, statementId);
 			r1 = s1.executeQuery();
 			while (r1.next()) {
 			    statementTypeId = r1.getInt("StatementTypeId");
 			    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
 			    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
+			    
+			    // second, get the variables associated with the statement type
 			    s2.setInt(1, statementTypeId);
 			    r2 = s2.executeQuery();
 			    values = new ArrayList<Value>();
@@ -2069,20 +2058,24 @@ public class Sql {
 			    	variableId = r2.getInt("ID");
 			    	variable = r2.getString("Variable");
 			    	dataType = r2.getString("DataType");
+			    	
+			    	// third, get the values from DATABOOLEAN, DATAINTEGER, DATALONGTEXT, and DATASHORTTEXT
 			    	if (dataType.equals("short text")) {
 				    	s3.setInt(1, statementId);
-				    	s3.setInt(2, variableId);
+			    		s3.setInt(2, variableId);
 				    	r3 = s3.executeQuery();
 				    	while (r3.next()) {
 				    		entityId = r3.getInt("EntityId");
 			            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
+			            	
+			            	// fourth, in the case of short text, also look up information in ENTITIES table
 			            	s7.setInt(1, entityId);
 			            	r4 = s7.executeQuery();
 			            	map = new HashMap<String, String>();
 			            	while (r4.next()) {
 			            		map.put(r4.getString("AttributeVariable"), r4.getString("AttributeValue"));
 			            	}
-			            	Entity entity = new Entity(entityId, r3.getString("Value"), aColor, r3.getInt("ChildOf"), true, map);
+			            	Entity entity = new Entity(entityId, variableId, r3.getString("Value"), aColor, r3.getInt("ChildOf"), true, map);
 				    		values.add(new Value(variableId, variable, dataType, entity));
 				    	}
 			    	} else if (dataType.equals("long text")) {
@@ -2108,6 +2101,8 @@ public class Sql {
 				    	}
 			    	}
 			    }
+			    
+			    // assemble the statement with all the information from the previous steps
 			    statement = new Statement(statementId,
 			    		r1.getInt("Start"),
 			    		r1.getInt("Stop"),
@@ -2189,6 +2184,8 @@ public class Sql {
 				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;");
 				PreparedStatement s7 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
 			ResultSet r1, r2, r3, r4;
+
+			// first, get the statement information, including coder and statement type info
 			if (documentId > -1) { // restrict to a single document if necessary
 				s1.setInt(1, documentId);
 			}
@@ -2198,6 +2195,8 @@ public class Sql {
 			    statementTypeId = r1.getInt("StatementTypeId");
 			    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
 			    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
+
+			    // second, get the variables associated with the statement type
 			    s2.setInt(1, statementTypeId);
 			    r2 = s2.executeQuery();
 			    values = new ArrayList<Value>();
@@ -2205,6 +2204,8 @@ public class Sql {
 			    	variableId = r2.getInt("ID");
 			    	variable = r2.getString("Variable");
 			    	dataType = r2.getString("DataType");
+			    	
+			    	// third, get the values from DATABOOLEAN, DATAINTEGER, DATALONGTEXT, and DATASHORTTEXT
 			    	if (dataType.equals("short text")) {
 				    	s3.setInt(1, statementId);
 				    	s3.setInt(2, variableId);
@@ -2212,13 +2213,15 @@ public class Sql {
 				    	while (r3.next()) {
 				    		entityId = r3.getInt("EntityId");
 			            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
+			            	
+			            	// fourth, in the case of short text, also look up information in ENTITIES table
 			            	s7.setInt(1, entityId);
 			            	r4 = s7.executeQuery();
 			            	map = new HashMap<String, String>();
 			            	while (r4.next()) {
 			            		map.put(r4.getString("AttributeVariable"), r4.getString("AttributeValue"));
 			            	}
-			            	Entity entity = new Entity(entityId, r3.getString("Value"), aColor, r3.getInt("ChildOf"), true, map);
+			            	Entity entity = new Entity(entityId, variableId, r3.getString("Value"), aColor, r3.getInt("ChildOf"), true, map);
 			            	values.add(new Value(variableId, variable, dataType, entity));
 				    	}
 			    	} else if (dataType.equals("long text")) {
@@ -2244,6 +2247,8 @@ public class Sql {
 				    	}
 			    	}
 			    }
+			    
+			    // assemble the statement with all the information from the previous steps
 			    statements.add(new Statement(statementId,
 			    		r1.getInt("Start"),
 			    		r1.getInt("Stop"),
@@ -2332,7 +2337,15 @@ public class Sql {
 	 * Entities and attributes
 	 * ====================================================================== */
 
-	public int addEntity(Entity entity, int variableId) {
+	/**
+	 * Add an entity to the ENTITIES table of the database and save the
+	 * attribute values contained in the entity into the ATTRIBUTEVALUES table
+	 * of the database, in a transaction. Return the ID of the new entity.
+	 * 
+	 * @param entity  An entity.
+	 * @return        The ID of the newly saved entity.
+	 */
+	public int addEntity(Entity entity) {
 		int entityId = -1;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
@@ -2342,7 +2355,7 @@ public class Sql {
 			conn.setAutoCommit(false);
 			
 			// insert entity into ENTITIES table
-			s1.setInt(1, variableId);
+			s1.setInt(1, entity.getVariableId());
 			s1.setString(2, entity.getValue());
 			s1.setInt(3, entity.getColor().getRed());
 			s1.setInt(4, entity.getColor().getGreen());
@@ -2353,7 +2366,7 @@ public class Sql {
 			}
 			
 			// get the attribute variable IDs from the ATTRIBUTEVARIABLES table
-			s3.setInt(1, variableId);
+			s3.setInt(1, entity.getVariableId());
 			ResultSet r = s3.executeQuery();
 			while (r.next()) {
 				// insert attribute values into ATTRIBUTEVALUES table
@@ -2369,7 +2382,7 @@ public class Sql {
 			Dna.logger.log(e);
 		} catch (SQLException e1) {
         	LogEvent e = new LogEvent(Logger.WARNING,
-        			"[SQL] Entity with value \"" + entity.getValue() + "\" (variable ID " + variableId + ") could not be added.",
+        			"[SQL] Entity with value \"" + entity.getValue() + "\" (variable ID " + entity.getVariableId() + ") could not be added.",
         			"New entity could not be added to the ENTITIES and ATTRIBUTEVALUES tables in the database. Check if the database is still there and/or if the connection has been interrupted, then try again.",
         			e1);
         	Dna.logger.log(e);
@@ -2417,7 +2430,7 @@ public class Sql {
             	while (r2.next()) {
             		map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
             	}
-            	entitiesList.add(new Entity(entityId, r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase, map));
+            	entitiesList.add(new Entity(entityId, variableId, r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase, map));
             }
         	LogEvent e = new LogEvent(Logger.MESSAGE,
         			"[SQL] Retrieved " + entitiesList.size() + " entities for Variable " + variableId + ".",
@@ -2433,6 +2446,13 @@ public class Sql {
 		return entitiesList;
 	}
 	
+	/**
+	 * Delete all entities corresponding to certain entity IDs. Check if the
+	 * entities can be deleted safely and log a warning instead of deleting the
+	 * entities if deleting them would also delete existing statements.
+	 * 
+	 * @param entityIds  An int array of entity IDs to be deleted.
+	 */
 	public void deleteEntities(int[] entityIds) {
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("DELETE FROM ENTITIES WHERE ID = ?;");
@@ -2474,22 +2494,31 @@ public class Sql {
 		}
 	}
 	
-	public class EntityUpdateException extends Exception {
-		private static final long serialVersionUID = -5010190783141791679L;
-		public EntityUpdateException(String errorMessage) {
-	        super(errorMessage);
-	    }
-	}
-	
+	/**
+	 * Update/set the value of an entity.
+	 * 
+	 * @param entityId       ID of the entity.
+	 * @param newValue       The new value to be set in the entity.
+	 * @throws SQLException
+	 */
 	public void setEntityValue(int entityId, String newValue) throws SQLException {
 		try (Connection conn = getDataSource().getConnection();
 				PreparedStatement s = conn.prepareStatement("UPDATE ENTITIES SET Value = ? WHERE ID = ?;")) {
         	s.setString(1, newValue);
         	s.setInt(2,  entityId);
         	s.executeUpdate();
+		} catch (SQLException ex) {
+			throw ex;
 		}
 	}
 
+	/**
+	 * Update/set the color of an entity.
+	 * 
+	 * @param entityId       ID of the entity.
+	 * @param newColor       The new color to be set in the entity.
+	 * @throws SQLException
+	 */
 	public void setEntityColor(int entityId, Color newColor) throws SQLException {
 		try (Connection conn = getDataSource().getConnection();
 				PreparedStatement s = conn.prepareStatement("UPDATE ENTITIES SET Red = ?, Green = ?, Blue = ? WHERE ID = ?;")) {
@@ -2498,16 +2527,28 @@ public class Sql {
         	s.setInt(3, newColor.getBlue());
         	s.setInt(4, entityId);
         	s.executeUpdate();
+		} catch (SQLException ex) {
+			throw ex;
 		}
 	}
 
-	public void setAttributeValue(int entityId, String attributeVariable, String newValue) throws SQLException {
+	/**
+	 * Update/set an attribute value for an entity.
+	 * 
+	 * @param entityId    ID of the entity.
+	 * @param variableId  The variable ID to which the entity belongs.
+	 * @param newValue    The new attribute value.
+	 * @throws SQLException
+	 */
+	public void setAttributeValue(int entityId, int variableId, String newValue) throws SQLException {
 		try (Connection conn = getDataSource().getConnection();
-				PreparedStatement s = conn.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE (EntityId = ? AND AttributeVariableId = (SELECT ID FROM ATTRIBUTEVARIABLES WHERE AttributeVariable = ?));")) {
+				PreparedStatement s = conn.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE (EntityId = ? AND AttributeVariableId = (SELECT ID FROM ATTRIBUTEVARIABLES WHERE VariableId = ?));")) {
         	s.setString(1, newValue);
         	s.setInt(2,  entityId);
-        	s.setString(3, attributeVariable);
+        	s.setInt(3, variableId);
         	s.executeUpdate();
+		} catch (SQLException ex) {
+			throw ex;
 		}
 	}
 
@@ -2543,7 +2584,9 @@ public class Sql {
 	 * ====================================================================== */
 
 	/**
-	 * Get an array list of all statement types in the database.
+	 * Get an array list of all statement types in the database. The variable
+	 * definitions are saved as an array list of {@link model.Value Value}
+	 * objects containing the variable ID, variable name, and data type.
 	 * 
 	 * @return An ArrayList of {@link model.StatementType StatementType} objects.
 	 * 
@@ -2583,84 +2626,4 @@ public class Sql {
 		}
 		return statementTypes;
 	}
-
-	
-	/* =========================================================================
-	 * Settings
-	 * ====================================================================== */
-
-	/**
-	 * Get a setting for a specific coder from the SETTINGS database table.
-	 * 
-	 * @param coderId   ID of the coder for whom the setting was saved.
-	 * @param property  The name of the setting that is to be retrieved.
-	 * @return          A String of the setting value.
-	 */
-	/*
-	public String getSetting(int coderId, String property) {
-		String value = null;
-		try (Connection conn = getDataSource().getConnection();
-				PreparedStatement s = conn.prepareStatement("SELECT Value FROM SETTINGS WHERE Property = ? AND Coder = ?;")) {
-        	s.setString(1, property);
-        	s.setInt(2, coderId);
-			ResultSet r = s.executeQuery();
-        	while (r.next()) {
-            	value = r.getString("Value");
-            }
-        	LogEvent l = new LogEvent(Logger.MESSAGE,
-        			"[SQL] Retrieved " + property + " setting from the database.",
-        			"Queried the database for the setting \"" + property + "\" for Coder " + coderId + ". The value is: \"" + value + "\".");
-        	Dna.logger.log(l);
-		} catch (SQLException e1) {
-			LogEvent l = new LogEvent(Logger.ERROR,
-					"[SQL] Failed to retrieve setting from the database.",
-					"Queried the database for the setting \"" + property + "\" for Coder " + coderId + ", but the query failed. Check database connection.",
-					e1);
-			Dna.logger.log(l);
-		}
-		return value;
-	}
-	*/
-
-	/**
-	 * Insert or update a setting for a coder in the SETTINGS table.
-	 * 
-	 * @param coderId   The ID of the coder to whom the setting applies.
-	 * @param property  The name of the setting to be updated or inserted.
-	 * @param value     The value of the setting to be updated or inserted.
-	 */
-	/*
-	public void setSetting(int coderId, String property, String value) {
-		String dbtype, sql;
-		if (getConnectionProfile().getType().equals("mysql")) {
-			dbtype = "MySQL";
-			sql = "INSERT INTO SETTINGS (Property, Coder, Value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Value = ?;";
-		} else {
-			if (getConnectionProfile().getType().equals("sqlite")) {
-				dbtype = "SQLite";
-			} else {
-				dbtype = "PostgreSQL";
-			}
-			sql = "INSERT INTO SETTINGS (Property, Coder, Value) VALUES (?, ?, ?) ON CONFLICT (Property, Coder) DO UPDATE SET Value = ?;";
-		}
-		try (Connection conn = getDataSource().getConnection();
-				PreparedStatement s = conn.prepareStatement(sql)) {
-			s.setString(1, property);
-			s.setInt(2, coderId);
-			s.setString(3, value);
-			s.setString(4, value);
-			s.executeUpdate();
-			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[SQL] Setting \"" + property + "\" has been updated in the database.",
-					"Updated property \"" + property + "\" for Coder " + coderId + ". The new value is: \"" + value + "\".");
-			Dna.logger.log(l);
-		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.ERROR,
-					"[SQL] Failed to update setting in the database.",
-					"Attempted to update the setting \"" + property + "\" for Coder " + coderId + " in the SETTINGS table of the " + dbtype + " database, but the update failed.",
-					e);
-			Dna.logger.log(l);
-		}
-	}
-	*/
 }

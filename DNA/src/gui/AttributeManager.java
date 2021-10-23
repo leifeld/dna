@@ -56,18 +56,67 @@ import model.Entity;
 import model.StatementType;
 import model.Value;
 
+/**
+ * Represents an attribute manager dialog window to create and delete entities
+ * and edit attribute values.
+ */
 public class AttributeManager extends JDialog {
+	
 	private static final long serialVersionUID = 6180793159551336995L;
+
+	/**
+	 * A table that shows the entities and their attributes. A new table is
+	 * created each time a new variable is selected.
+	 */
 	private JTable attributeTable;
+	
+	/**
+	 * A custom table model for the attribute/entity table.
+	 */
 	private AttributeTableModel model;
+	
+	/**
+	 * A table sorter for the table.
+	 */
 	private TableRowSorter<AttributeTableModel> sorter;
+	
+	/**
+	 * A scroll pane containing the table with the entities and attributes.
+	 */
 	private JScrollPane scrollPane;
+	
+	/**
+	 * A panel holding the table.
+	 */
 	private JPanel tablePanel;
+	
+	/**
+	 * A combo box showing the statement types in the database. When selecting
+	 * a statement type, the variable combo box is populated with variables.
+	 * The boxes serve to select which entities to show in the table.
+	 */
 	private JComboBox<StatementType> statementTypeBox;
+	
+	/**
+	 * A combo box showing the variables. Used to select the variable for which
+	 * the entities will be shown in the table.
+	 */
 	private JComboBox<Value> variableBox;
+	
+	/**
+	 * A list of swing worker threads to make sure all threads are terminated
+	 * before a new worker is executed to populate the table.
+	 */
 	private ArrayList<AttributeTableRefreshWorker> workers;
+	
+	/**
+	 * A button that deletes unused selected entities.
+	 */
 	private JButton deleteButton;
 	
+	/**
+	 * Create a new attribute manager dialog window.
+	 */
 	public AttributeManager() {
 		this.setModal(true);
 		this.setTitle("Attribute manager");
@@ -105,8 +154,10 @@ public class AttributeManager extends JDialog {
 		variableBox.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				int variableId = ((Value) variableBox.getSelectedItem()).getVariableId();
-				createNewTable(variableId);
+				if (variableBox.getItemCount() > 0) {
+					int variableId = ((Value) variableBox.getSelectedItem()).getVariableId();
+					createNewTable(variableId);
+				}
 			}
 		});
 		VariableComboBoxRenderer variableRenderer = new VariableComboBoxRenderer();
@@ -124,6 +175,7 @@ public class AttributeManager extends JDialog {
 		newField.setPreferredSize(new Dimension(newField.getPreferredSize().width, newField.getPreferredSize().height + 4));
 		buttonPanel.add(newField);
 		
+		// add entity button
 		ImageIcon addIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-plus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		JButton addButton = new JButton("Add entity", addIcon);
 		addButton.setToolTipText("Add a new entity to the list. It can then be coded in a statement popup window.");
@@ -131,6 +183,7 @@ public class AttributeManager extends JDialog {
 		addButton.setEnabled(false);
 		buttonPanel.add(addButton);
 		
+		// document listener to react to changes in the new entity field
 		newField.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
 			public void changedUpdate(DocumentEvent e) {
@@ -154,6 +207,7 @@ public class AttributeManager extends JDialog {
 			}
 		});
 		
+		// action listener for the add entity button
 		addButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -161,14 +215,15 @@ public class AttributeManager extends JDialog {
 				for (int i = 0; i < model.getAttributeVariables().size(); i++) {
 					map.put(model.getAttributeVariables().get(i), "");
 				}
-				Entity entity = new Entity(-1, newField.getText(), Color.BLACK, -1, false, map);
 				int variableId = ((Value) variableBox.getSelectedItem()).getVariableId();
-				Dna.sql.addEntity(entity, variableId);
+				Entity entity = new Entity(-1, variableId, newField.getText(), Color.BLACK, -1, false, map);
+				Dna.sql.addEntity(entity);
 				refreshTable(variableId);
 				newField.setText("");
 			}
 		});
 		
+		// delete entity button and action listener
 		ImageIcon deleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		deleteButton = new JButton("Delete entry", deleteIcon);
 		deleteButton.setToolTipText("Delete the selected unused entities (the selected rows highlighted in red).");
@@ -191,6 +246,7 @@ public class AttributeManager extends JDialog {
 			}
 		});
 
+		// clean up button and action listener
 		ImageIcon cleanUpIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-0.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		JButton cleanUpButton = new JButton("Clean up", cleanUpIcon);
 		cleanUpButton.setToolTipText("Delete all unused entities (the rows highlighted in red) at once.");
@@ -202,7 +258,7 @@ public class AttributeManager extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				ArrayList<Integer> entityIds = new ArrayList<Integer>();
 				for (int i = 0; i < model.getRowCount(); i++) {
-					if (!model.getRow(i).isInDatabase()) {
+					if (!model.getRow(i).isInDatabase() && !model.getRow(i).getValue().equals("")) { // don't add the empty entity
 						entityIds.add(model.getRow(i).getId());
 					}
 				}
@@ -222,7 +278,7 @@ public class AttributeManager extends JDialog {
 
 		this.add(buttonPanel, BorderLayout.SOUTH);
 		
-		// close button, upper right corner
+		// close button, upper right corner, and action listener
 		JPanel closePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		ImageIcon closeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		JButton closeButton = new JButton("Close", closeIcon);
@@ -251,9 +307,14 @@ public class AttributeManager extends JDialog {
 		this.setVisible(true);
 	}
 	
+	/**
+	 * Populate the variable combo box with variables after a statement type has
+	 * been selected in the statement type combo box.
+	 */
 	private void updateVariableBox() {
 		StatementType st = (StatementType) statementTypeBox.getSelectedItem();
 		ArrayList<Value> values = st.getVariables();
+		variableBox.removeAllItems();
 		for (int i = 0; i < values.size(); i++) {
 			if (values.get(i).getDataType().equals("short text")) {
 				variableBox.addItem(values.get(i));
@@ -261,6 +322,14 @@ public class AttributeManager extends JDialog {
 		}
 	}
 	
+	/**
+	 * Create a new table with a table model, put it in a panel, and replace the
+	 * old with the new table panel. Set all the renderers and editors for the
+	 * table and format the table's appearance.
+	 * 
+	 * @param variableId  The variable ID for which entities should be shown in
+	 *   the table.
+	 */
 	private void createNewTable(int variableId) {
 		// remove the table panel and update GUI
 		this.remove(tablePanel);
@@ -308,7 +377,8 @@ public class AttributeManager extends JDialog {
 				boolean noneInDatabase = true;
 				int[] selectedRows = attributeTable.getSelectedRows();
 				for (int i = 0; i < selectedRows.length; i++) {
-					if (model.getRow(attributeTable.convertRowIndexToModel(selectedRows[i])).isInDatabase()) {
+					Entity entity = model.getRow(attributeTable.convertRowIndexToModel(selectedRows[i]));
+					if (entity.isInDatabase() || entity.getValue().equals("")) { // never delete the empty entity
 						noneInDatabase = false;
 						break;
 					}
@@ -328,6 +398,13 @@ public class AttributeManager extends JDialog {
 		this.pack();
 	}
 	
+	/**
+	 * Refresh the existing table (without creating a new table), for example
+	 * after adding or removing an entity. The method calls a Swing worker to
+	 * populate the table after terminating all existing Swing worker threads.
+	 * 
+	 * @param variableId  The ID of the variable for which entities are shown.
+	 */
 	private void refreshTable(int variableId) {
 		if (workers.size() > 0) {
 			for (int i = workers.size() - 1; i >= 0; i--) {
@@ -340,14 +417,32 @@ public class AttributeManager extends JDialog {
 		worker.execute();
 	}
 	
+	/**
+	 * A Swing worker that loads entities from the database and populates the
+	 * entity/attribute table with these entities and their attributes. The
+	 * class contains SQL code instead of moving the SQL code to the Sql class
+	 * because chunks of the results need to be published inside the result set.
+	 */
 	private class AttributeTableRefreshWorker extends SwingWorker<List<Entity>, Entity> {
+		/**
+		 * The variable ID for which entities should be added.
+		 */
 		int variableId;
 		
+		/**
+		 * Constructor. Creates a new Swing worker.
+		 * 
+		 * @param variableId  The variable ID for the entities.
+		 */
 		private AttributeTableRefreshWorker(int variableId) {
 			this.variableId = variableId;
 			model.clearRows();
 		}
 		
+		/**
+		 * The code of the background thread to retrieve the entities from the
+		 * database and publish them such that they can be added to the table.
+		 */
 		@Override
 		protected List<Entity> doInBackground() {
 			boolean inDatabase;
@@ -379,7 +474,7 @@ public class AttributeManager extends JDialog {
 	            	while (r2.next()) {
 	            		map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
 	            	}
-	            	publish(new Entity(entityId, r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase, map));
+	            	publish(new Entity(entityId, variableId, r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase, map));
 	            }
 			} catch (SQLException e1) {
 	        	LogEvent e = new LogEvent(Logger.WARNING,
@@ -391,37 +486,82 @@ public class AttributeManager extends JDialog {
 			return null;
 		}
         
+        /**
+         * Transfer the entities that have been retrieved from the database to
+         * the table model. 
+         */
         @Override
         protected void process(List<Entity> chunks) {
         	model.addRows(chunks); // transfer a batch of rows to the table model
         }
 
+        /**
+         * Execute any code after all entities have been transferred to the
+         * table model. Currently no code needs to be executed here.
+         */
         @Override
         protected void done() {
-        	// nothing to do
+        	if (attributeTable.getSelectedRowCount() == 0) {
+        		deleteButton.setEnabled(false);
+        	}
         }
     }
 	
+	/**
+	 * A table model for representing entities including their attributes, along
+	 * with an array of attribute variable names. The table model also contains
+	 * methods for editing cells.
+	 */
 	class AttributeTableModel extends AbstractTableModel {
 		private static final long serialVersionUID = 7576473809983501603L;
+		/**
+		 * The names of the attribute variables that are stored in each entity.
+		 */
 		private ArrayList<String> attributeVariables;
+		
+		/**
+		 * The entities including their attributes.
+		 */
 		private ArrayList<Entity> rows;
 		
+		/**
+		 * Constructor. Creates an attribute table model and sets the attribute
+		 * variable names. The entities are added later by the Swing worker.
+		 * 
+		 * @param attributeVariables  An array list of attribute variable names.
+		 */
 		public AttributeTableModel(ArrayList<String> attributeVariables) {
 			this.attributeVariables = attributeVariables;
 			this.rows = new ArrayList<Entity>();
 		}
 		
+		/**
+		 * How many columns are in the table?
+		 * 
+		 * @return The number of columns.
+		 */
 		@Override
 		public int getColumnCount() {
 			return (3 + this.attributeVariables.size());
 		}
 
+		/**
+		 * How many rows are in the table?
+		 * 
+		 * @return The number of rows.
+		 */
 		@Override
 		public int getRowCount() {
 			return this.rows.size();
 		}
 
+		/**
+		 * Get the contents of any cell in the table.
+		 * 
+		 * @param row  The row index, starting with 0.
+		 * @param col  The column index, starting with 0.
+		 * @return     The contents of the cell as an Object.
+		 */
 		@Override
 		public Object getValueAt(int row, int col) {
 			if (this.rows.size() == 0 || row > rows.size() - 1) {
@@ -440,6 +580,13 @@ public class AttributeManager extends JDialog {
 			}
 		}
 		
+		/**
+		 * Set/edit/update the value of any cell and write it into the database.
+		 * 
+		 * @param aValue  The new value to be written into the cell/database.
+		 * @param row     The row index to update.
+		 * @param col     The column index to update.
+		 */
 		public void setValueAt(Object aValue, int row, int col) {
 			if (col > (this.attributeVariables.size() + 2) || row > rows.size() - 1) {
 				// do nothing because row or col outside of table; not sure if this condition is ever reached
@@ -473,8 +620,9 @@ public class AttributeManager extends JDialog {
 				}
 			} else { // an attribute value
 				String attributeVariable = this.attributeVariables.get(col - 3);
+				int variableId = this.rows.get(row).getVariableId();
 				try {
-					Dna.sql.setAttributeValue(this.rows.get(row).getId(), attributeVariable, (String) aValue);
+					Dna.sql.setAttributeValue(this.rows.get(row).getId(), variableId, (String) aValue);
 					this.rows.get(row).getAttributeValues().put(attributeVariable, (String) aValue);
 				} catch (SQLException ex) {
 		        	LogEvent l = new LogEvent(Logger.ERROR,
@@ -486,6 +634,11 @@ public class AttributeManager extends JDialog {
 			}
 		}
 		
+		/**
+		 * Get the name of a column.
+		 * 
+		 * @param col  The column index.
+		 */
 		public String getColumnName(int col) {
 			if (col == 0) {
 				return "ID";
@@ -500,6 +653,11 @@ public class AttributeManager extends JDialog {
 			}
 		}
 		
+		/**
+		 * Get the class of a column.
+		 * 
+		 * @param col  The column index.
+		 */
 		public Class<?> getColumnClass(int col) {
 			if (this.rows.size() == 0) {
 				return null;
@@ -517,6 +675,14 @@ public class AttributeManager extends JDialog {
 			}
 		}
 		
+		/**
+		 * Is the cell editable? The ID should not be editable, all other cells
+		 * can be edited.
+		 * 
+		 * @param row  The row index.
+		 * @param col  The column index.
+		 * @return     Is the cell editable?
+		 */
 		public boolean isCellEditable(int row, int col) {
 			if (col == 0) {
 				return false;
@@ -525,6 +691,13 @@ public class AttributeManager extends JDialog {
 			}
 		}
 		
+		/**
+		 * Does the table contain an entity that corresponds to a certain String
+		 * value? Used to check if an entity can be edited or already exists.
+		 * 
+		 * @param value  The value to look for.
+		 * @return       Boolean indicating if an entity with the value exists.
+		 */
 		public boolean containsValue(String value) {
 			for (int i = 0; i < rows.size(); i++) {
 				if (rows.get(i).getValue().equals(value)) {
@@ -534,10 +707,21 @@ public class AttributeManager extends JDialog {
 			return false;
 		}
 		
+		/**
+		 * Get an entity specified by a model row index.
+		 * 
+		 * @param row  The row index.
+		 * @return     The entity corresponding to the row index.
+		 */
 		public Entity getRow(int row) {
 			return this.rows.get(row);
 		}
 		
+		/**
+		 * Add a batch of rows to the table model and sort the entities.
+		 * 
+		 * @param entities  A list of entities to add.
+		 */
 		public void addRows(List<Entity> entities) {
 			for (int i = 0; i < entities.size(); i++) {
 				rows.add(entities.get(i));
@@ -545,14 +729,30 @@ public class AttributeManager extends JDialog {
 			sort();
 		}
 		
+		/**
+		 * Get an array list of attribute names for the entities.
+		 * 
+		 * @return  An array list of attribute variable names.
+		 */
 		public ArrayList<String> getAttributeVariables() {
 			return this.attributeVariables;
 		}
 		
+		/**
+		 * Set the array list of attribute variable names for the entities.
+		 * 
+		 * @param attributeVariables  The array list of attribute names.
+		 */
 		public void setAttributeVariables(ArrayList<String> attributeVariables) {
 			this.attributeVariables = attributeVariables;
 		}
 		
+		/**
+		 * Clear all entities from the table model and notify the listeners if
+		 * possible. But keep the attribute variable names. This is used to
+		 * repopulate the table after changes to the underlying database have
+		 * occurred.
+		 */
 		void clearRows() {
 			this.rows.clear();
 			try {
@@ -562,12 +762,18 @@ public class AttributeManager extends JDialog {
 			}
 		}
 
+		/**
+		 * Sort the entities in the table model.
+		 */
 		void sort() {
 			Collections.sort(this.rows);
 			fireTableDataChanged();
 		}
 	}
 	
+	/**
+	 * A table cell renderer that can display the contents of the table.
+	 */
 	private class EntityTableCellRenderer extends JLabel implements TableCellRenderer {
 		private static final long serialVersionUID = 5436254013893853394L;
 
@@ -592,6 +798,7 @@ public class AttributeManager extends JDialog {
 	        	c.setBackground(defaultColor);
 	        }
 	        
+	        // the entity color
         	if (attributeTable.convertColumnIndexToModel(column) == 2) {
         		JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER));
     			JButton colorButton = (new JButton() {
@@ -615,7 +822,7 @@ public class AttributeManager extends JDialog {
     	        	panel.setBackground(defaultColor);
     	        }
     			return panel;
-        	} else {
+        	} else { // all other (String) cells
     	        if (!entity.isInDatabase() && isSelected) {
     	        	c.setBackground(selectedAndNotInDatabaseColor);
     	        } else if (isSelected) {
@@ -630,12 +837,18 @@ public class AttributeManager extends JDialog {
 		}
 	}
 	
+	/**
+	 * A table cell editor for colors, which displays a color picker dialog.
+	 */
 	public class ColorChooserEditor extends AbstractCellEditor implements TableCellEditor {
 		private static final long serialVersionUID = 2145176699224057432L;
 		private JButton delegate = new JButton();
 		JPanel panel;
 		Color savedColor;
 		
+		/**
+		 * Create a new color chooser editor.
+		 */
 		public ColorChooserEditor() {
 			panel = new JPanel();
 			panel.add(delegate);
@@ -650,10 +863,20 @@ public class AttributeManager extends JDialog {
 			delegate.addActionListener(actionListener);
 		}
 		
+		/**
+		 * Get the saved color.
+		 * 
+		 * @return  The saved color as an Object.
+		 */
 		public Object getCellEditorValue() {
 			return savedColor;
 		}
 
+		/**
+		 * Change the color of the class.
+		 * 
+		 * @param color  The new color to change into.
+		 */
 		private void changeColor(Color color) {
 			if (color != null) {
 				savedColor = color;
@@ -661,6 +884,15 @@ public class AttributeManager extends JDialog {
 			}
 		}
 
+		/**
+		 * Get the panel with the color.
+		 * 
+		 * @param table       The table.
+		 * @param value       The color as an Object.
+		 * @param isSelected  Is the cell selected?
+		 * @param row         The row index of the cell.
+		 * @param column      The column index of the cell.
+		 */
 		public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
 			changeColor((Color) value);
 			panel.setBackground(UIManager.getColor("Table.selectionBackground"));
@@ -668,6 +900,11 @@ public class AttributeManager extends JDialog {
 		}
 	}
 	
+	/**
+	 * A combo box renderer for statement types. Used to display the name of the
+	 * statement type in the combo box in the upper left corner of the attribute
+	 * manager.
+	 */
 	private class StatementTypeComboBoxRenderer implements ListCellRenderer<StatementType> {
 		@Override
 		public Component getListCellRendererComponent(JList<? extends StatementType> list, StatementType statementType, int index, boolean isSelected, boolean cellHasFocus) {
@@ -682,6 +919,12 @@ public class AttributeManager extends JDialog {
 		}
 	}
 
+	/**
+	 * A combo box renderer for variables in a statement type. Used to display
+	 * the variable names in the combo box in the upper part of the attribute
+	 * manager, where the user selects what types of entities to display in the
+	 * table.
+	 */
 	private class VariableComboBoxRenderer implements ListCellRenderer<Value> {
 		@Override
 		public Component getListCellRendererComponent(JList<? extends Value> list, Value value, int index, boolean isSelected, boolean cellHasFocus) {
