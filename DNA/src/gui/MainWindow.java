@@ -70,7 +70,7 @@ import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import logger.LoggerDialog;
-import model.Attribute;
+import model.Entity;
 import model.Coder;
 import model.Statement;
 import model.StatementType;
@@ -421,6 +421,7 @@ public class MainWindow extends JFrame implements SqlListener {
 							documentTableModel.increaseFrequency(documentTablePanel.getSelectedDocumentId());
 							textPanel.paintStatements();
 							textWindow.setCaretPosition(selectionEnd);
+							refreshStatementTable();
 						}
 					});
 					
@@ -604,7 +605,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	 * 
 	 * @return Text panel.
 	 */
-	TextPanel getTextPanel() {
+	private TextPanel getTextPanel() {
 		return textPanel;
 	}
 
@@ -613,7 +614,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	 * 
 	 * @return The statement panel.
 	 */
-	StatementPanel getStatementPanel() {
+	private StatementPanel getStatementPanel() {
 		return statementPanel;
 	}
 
@@ -622,7 +623,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	 * 
 	 * @return Document table model.
 	 */
-	DocumentTableModel getDocumentTableModel() {
+	private DocumentTableModel getDocumentTableModel() {
 		return documentTableModel;
 	}
 
@@ -633,7 +634,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	 * @param documentId  The ID of the document.
 	 * @param editable    Should the popup dialog be editable?
 	 */
-	void selectStatement(Statement s, int documentId, boolean editable) {
+	private void selectStatement(Statement s, int documentId, boolean editable) {
 		JTextPane textWindow = getTextPanel().getTextWindow();
 		JScrollPane textScrollPane = getTextPanel().getTextScrollPane();
 		int start = s.getStart();
@@ -751,7 +752,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	/**
 	 * Refresh the document table using a Swing worker in the background.
 	 */
-	void refreshDocumentTable() {
+	private void refreshDocumentTable() {
 		if (Dna.sql.getConnectionProfile() == null) {
 			documentTableModel.clear();
 		} else {
@@ -765,7 +766,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	 * select the previously selected statement again (if applicable and
 	 * available).
 	 */
-	void refreshStatementTable() {
+	private void refreshStatementTable() {
 		if (Dna.sql.getConnectionProfile() == null) {
 			statementTableModel.clear();
 		} else {
@@ -970,7 +971,7 @@ public class MainWindow extends JFrame implements SqlListener {
 			try (Connection conn = Dna.sql.getDataSource().getConnection();
 					PreparedStatement s1 = conn.prepareStatement(query);
 					PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
-					PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
+					PreparedStatement s3 = conn.prepareStatement("SELECT E.ID AS EntityId, StatementId, E.VariableId, DST.ID AS DataId, E.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ENTITIES AS E ON E.ID = DST.Entity AND E.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
 					PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
 					PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
 					PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
@@ -994,8 +995,8 @@ public class MainWindow extends JFrame implements SqlListener {
 					    	r3 = s3.executeQuery();
 					    	while (r3.next()) {
 				            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
-				            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getInt("ChildOf"), true);
-				            	values.add(new Value(variableId, variable, dataType, attribute));
+				            	Entity entity = new Entity(r3.getInt("EntityId"), r3.getString("Value"), aColor, r3.getInt("ChildOf"), true, null); // don't submit hash map with attributes because they are not needed for the statement table
+				            	values.add(new Value(variableId, variable, dataType, entity));
 					    	}
 				    	} else if (dataType.equals("long text")) {
 					    	s4.setInt(1, variableId);

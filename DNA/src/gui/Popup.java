@@ -39,7 +39,7 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
-import model.Attribute;
+import model.Entity;
 import model.Coder;
 import model.Statement;
 import model.Value;
@@ -188,8 +188,10 @@ class Popup extends JDialog {
 			String dataType = variables.get(i).getDataType();
 			JLabel label = new JLabel(key, JLabel.TRAILING);
 			if (dataType.equals("short text")) {
-				Attribute[] attributeArray = Dna.sql.getAttributes(variables.get(i).getVariableId());
-				JComboBox<Attribute> box = new JComboBox<Attribute>(attributeArray);
+				ArrayList<Entity> entitiesList = Dna.sql.getEntities(variables.get(i).getVariableId());
+				Entity[] entitiesArray = new Entity[entitiesList.size()];
+				entitiesArray = entitiesList.toArray(entitiesArray);
+				JComboBox<Entity> box = new JComboBox<Entity>(entitiesArray);
 				box.setRenderer(new AttributeComboBoxRenderer());
 				box.setEditable(true);
 				
@@ -239,7 +241,7 @@ class Popup extends JDialog {
 					box.setEnabled(false);
 				}
     			box.setPreferredSize(new Dimension(this.textFieldWidth, 20));
-    			box.setSelectedItem((Attribute) variables.get(i).getValue());
+    			box.setSelectedItem((Entity) variables.get(i).getValue());
     			
 				gbc.anchor = GridBagConstraints.EAST;
 	    		gridBagPanel.add(label, gbc);
@@ -422,19 +424,23 @@ class Popup extends JDialog {
 				if (com[i].getClass().getName().equals("javax.swing.JComboBox")) { // short text
 					variableName = ((JLabel) com[i - 1]).getText();
 					@SuppressWarnings("unchecked")
-					JComboBox<Attribute> box = (JComboBox<Attribute>) com[i]; // save the combo box
+					JComboBox<Entity> box = (JComboBox<Entity>) com[i]; // save the combo box
 					Object object = box.getSelectedItem();
-					Attribute attribute;
-					if (object.getClass().getName().endsWith("String")) { // if not an existing attribute, the editor returns a String
-						attribute = new Attribute((String) object); // the new attribute has an ID of -1; the SQL class needs to take care of this when writing into the database
+					Entity entity;
+					if (object.getClass().getName().endsWith("String")) { // if not an existing entity, the editor returns a String
+						String s = (String) object;
+						if (s.length() > 0 && s.matches("^\\s+$")) { // replace a (multiple) whitespace string by an empty string
+							s = "";
+						}
+						entity = new Entity(s); // the new entity has an ID of -1; the SQL class needs to take care of this when writing into the database
 					} else {
-						attribute = (Attribute) box.getSelectedItem();
+						entity = (Entity) box.getSelectedItem();
 					}
 					for (j = 0; j < this.variables.size(); j++) { // update the variable corresponding to the variable name identified
 						if (this.variables.get(j).getKey().equals(variableName)) {
-							if (!((Attribute) this.variables.get(j).getValue()).getValue().equals(attribute.getValue())) {
+							if (!((Entity) this.variables.get(j).getValue()).getValue().equals(entity.getValue())) {
 								if (simulate == false) {
-									this.variables.get(j).setValue(attribute);
+									this.variables.get(j).setValue(entity);
 								}
 								changed = true;
 							}
@@ -574,8 +580,8 @@ class Popup extends JDialog {
 	}
 	
 	/**
-	 * A renderer for JComboBox items that represent {@link model.Attribute
-	 * Attribute} objects. The value is shown as text. The color is shown as the
+	 * A renderer for JComboBox items that represent {@link model.Entity
+	 * Entity} objects. The value is shown as text. The color is shown as the
 	 * foreground color. If the attribute is not present in the database, it
 	 * gets a red background color. The renderer is used to display combo boxes
 	 * for short text variables in popup windows. The renderer only displays the
@@ -584,7 +590,7 @@ class Popup extends JDialog {
 	private class AttributeComboBoxRenderer implements ListCellRenderer<Object> {
 		@Override
 		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-			Attribute a = (Attribute) value;
+			Entity a = (Entity) value;
 			JLabel label = new JLabel(a.getValue());
 			label.setForeground(a.getColor());
 			

@@ -45,7 +45,7 @@ import javax.swing.table.TableRowSorter;
 
 import dna.Dna;
 import gui.MainWindow.ActionRemoveStatements;
-import model.Attribute;
+import model.Entity;
 import model.Coder;
 import model.Statement;
 import model.StatementType;
@@ -359,7 +359,7 @@ class StatementPanel extends JPanel implements SqlListener {
 				for (int i = 0; i < variables.size(); i++) {
 					pattern = Pattern.compile((String) variables.get(i).getValue());
 					if (s.getValues().get(i).getDataType().equals("short text")) {
-						m = pattern.matcher(((Attribute) s.getValues().get(i).getValue()).getValue());
+						m = pattern.matcher(((Entity) s.getValues().get(i).getValue()).getValue());
 					} else if (s.getValues().get(i).getDataType().equals("boolean") || s.getValues().get(i).getDataType().equals("integer")) {
 						m = pattern.matcher(String.valueOf((int) s.getValues().get(i).getValue()));
 					} else {

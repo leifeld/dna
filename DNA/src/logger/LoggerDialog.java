@@ -59,8 +59,8 @@ import model.Coder;
  */
 public class LoggerDialog extends JDialog {
 	private static final long serialVersionUID = -8365310356679647056L;
-	JTable table;
-	JTextArea summaryTextArea, detailsTextArea, logTextArea, exceptionTextArea;
+	private JTable table;
+	private JTextArea summaryTextArea, detailsTextArea, logTextArea, exceptionTextArea;
 
 	/**
 	 * Create a new instance of the logger dialog window.

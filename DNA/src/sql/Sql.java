@@ -23,7 +23,7 @@ import com.mysql.cj.jdbc.MysqlDataSource;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
-import model.Attribute;
+import model.Entity;
 import model.Coder;
 import model.CoderRelation;
 import model.Document;
@@ -450,10 +450,10 @@ public class Sql {
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "StatementId INTEGER NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
-					+ "Value INTEGER NOT NULL, "
+					+ "Entity INTEGER NOT NULL, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "FOREIGN KEY(Value) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(Entity) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (StatementId, VariableId));");
 			s.add("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
@@ -463,7 +463,7 @@ public class Sql {
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (StatementId, VariableId));");
-			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTES("
+			s.add("CREATE TABLE IF NOT EXISTS ENTITIES("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
 					+ "Value TEXT NOT NULL DEFAULT '', "
@@ -472,22 +472,22 @@ public class Sql {
 					+ "Blue INTEGER CHECK (Blue BETWEEN 0 AND 255), "
 					+ "ChildOf INTEGER CHECK(ChildOf > 0 AND ChildOf != ID), "
 					+ "UNIQUE (VariableId, Value), "
-					+ "FOREIGN KEY(ChildOf) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(ChildOf) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
-					+ "MetaVariable TEXT NOT NULL, "
-					+ "UNIQUE(VariableId, MetaVariable), "
+					+ "AttributeVariable TEXT NOT NULL, "
+					+ "UNIQUE(VariableId, AttributeVariable), "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE);");
-			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEMETADATA("
+			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVALUES("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
-					+ "AttributeId INTEGER NOT NULL, "
-					+ "MetaVariableId INTEGER NOT NULL, "
-					+ "Value TEXT NOT NULL DEFAULT '', "
-					+ "UNIQUE (AttributeId, MetaVariableId), "
-					+ "FOREIGN KEY(AttributeId) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
-					+ "FOREIGN KEY(MetaVariableId) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE);");
+					+ "EntityId INTEGER NOT NULL, "
+					+ "AttributeVariableId INTEGER NOT NULL, "
+					+ "AttributeValue TEXT NOT NULL DEFAULT '', "
+					+ "UNIQUE (EntityId, AttributeVariableId), "
+					+ "FOREIGN KEY(EntityId) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(AttributeVariableId) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE);");
 		} else if (cp.getType().equals("mysql")) {
 			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
 					+ "Property VARCHAR(500), "
@@ -607,7 +607,7 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "Value INT NOT NULL REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
+					+ "Entity INT NOT NULL REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (StatementId, VariableId), "
@@ -621,7 +621,7 @@ public class Sql {
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (StatementId, VariableId), "
 					+ "PRIMARY KEY(ID));");
-			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTES("
+			s.add("CREATE TABLE IF NOT EXISTS ENTITIES("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
 					+ "Value TEXT NOT NULL DEFAULT '', "
@@ -630,24 +630,24 @@ public class Sql {
 					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
 					+ "ChildOf MEDIUMINT UNSIGNED CHECK(ChildOf > 0 AND ChildOf != ID), "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "FOREIGN KEY(ChildOf) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(ChildOf) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (VariableId, Value), "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "VariableId MEDIUMINT UNSIGNED NOT NULL, "
-					+ "MetaVariable TEXT NOT NULL, "
-					+ "UNIQUE KEY(VariableId, MetaVariable), "
+					+ "AttributeVariable TEXT NOT NULL, "
+					+ "UNIQUE KEY(VariableId, AttributeVariable), "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
-			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEMETADATA("
+			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVALUES("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "AttributeId MEDIUMINT UNSIGNED NOT NULL, "
-					+ "MetaVariableId MEDIUMINT UNSIGNED NOT NULL, "
-					+ "Value TEXT NOT NULL DEFAULT '', "
-					+ "UNIQUE KEY (AttributeId, MetaVariableId), "
-					+ "FOREIGN KEY(AttributeId) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
-					+ "FOREIGN KEY(MetaVariableId) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE, "
+					+ "EntityId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "AttributeVariableId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "AttributeValue TEXT NOT NULL DEFAULT '', "
+					+ "UNIQUE KEY (EntityId, AttributeVariableId), "
+					+ "FOREIGN KEY(EntityId) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(AttributeVariableId) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 		} else if (cp.getType().equals("postgresql")) {
 			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
@@ -744,7 +744,7 @@ public class Sql {
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "Value INT NOT NULL CHECK(Value > 0) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
+					+ "Entity INT NOT NULL CHECK(Value > 0) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (StatementId, VariableId));");
 			s.add("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
@@ -752,26 +752,26 @@ public class Sql {
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "Value TEXT NOT NULL DEFAULT '', "
 					+ "UNIQUE (StatementId, VariableId));");
-			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTES("
+			s.add("CREATE TABLE IF NOT EXISTS ENTITIES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "Value TEXT NOT NULL DEFAULT '', "
 					+ "Red SERIAL NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SERIAL NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SERIAL NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
-					+ "ChildOf INT CHECK(ChildOf > 0 AND ChildOf != ID) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
+					+ "ChildOf INT CHECK(ChildOf > 0 AND ChildOf != ID) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (VariableId, Value));");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "MetaVariable TEXT NOT NULL, "
-					+ "UNIQUE (VariableId, MetaVariable));");
-			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEMETADATA("
+					+ "AttributeVariable TEXT NOT NULL, "
+					+ "UNIQUE (VariableId, AttributeVariable));");
+			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVALUES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "AttributeId INT NOT NULL CHECK(AttributeId > 0) REFERENCES ATTRIBUTES(ID) ON DELETE CASCADE, "
-					+ "MetaVariableId INT NOT NULL CHECK(MetaVariableId > 0) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE, "
-					+ "Value TEXT NOT NULL DEFAULT '', "
-					+ "UNIQUE (AttributeId, MetaVariableId));");
+					+ "EntityId INT NOT NULL CHECK(EntityId > 0) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
+					+ "AttributeVariableId INT NOT NULL CHECK(AttributeVariableId > 0) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE, "
+					+ "AttributeValue TEXT NOT NULL DEFAULT '', "
+					+ "UNIQUE (EntityId, AttributeVariableId));");
 		}
 		// fill default data into the tables (Admin coder, settings, statement types)
 		s.add("INSERT INTO CODERS (ID, Name, Red, Green, Blue, Password, PermissionEditStatementTypes, PermissionEditCoders, PermissionEditOthersDocuments, PermissionEditOthersStatements) VALUES (1, 'Admin', 255, 255, 0, '" + encryptedAdminPassword + "', 1, 1, 1, 1);");
@@ -784,15 +784,15 @@ public class Sql {
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(4, 'agreement', 'boolean', 1);");
 		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (2, 'Annotation', 211, 211, 211);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(5, 'note', 'long text', 2);");
-		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (1, 'Type');");
-		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (2, 'Type');");
-		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (3, 'Type');");
-		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (1, 'Alias');");
-		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (2, 'Alias');");
-		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (3, 'Alias');");
-		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (1, 'Notes');");
-		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (2, 'Notes');");
-		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, MetaVariable) VALUES (3, 'Notes');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (1, 'Type');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (2, 'Type');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (3, 'Type');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (1, 'Alias');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (2, 'Alias');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (3, 'Alias');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (1, 'Notes');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (2, 'Notes');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (3, 'Notes');");
 		try (Connection conn = ds.getConnection();
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
@@ -1631,17 +1631,17 @@ public class Sql {
 	 * @category statement
 	 */
 	public void addStatement(Statement statement, int documentId) {
-		int statementId = -1, attributeId = -1;
+		int statementId = -1, entityId = -1;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("INSERT INTO STATEMENTS (StatementTypeId, DocumentId, Start, Stop, Coder) VALUES (?, ?, ?, ?, ?);");
-				PreparedStatement s2 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+				PreparedStatement s2 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Entity) VALUES (?, ?, ?);");
 				PreparedStatement s3 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 				PreparedStatement s4 = conn.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 				PreparedStatement s5 = conn.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, ?);");
-				PreparedStatement s6 = conn.prepareStatement("INSERT INTO ATTRIBUTES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
-				PreparedStatement s7 = conn.prepareStatement("SELECT ID FROM ATTRIBUTES WHERE VariableId = ? AND Value = ?;");
-				PreparedStatement s8 = conn.prepareStatement("SELECT ID, MetaVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
-				PreparedStatement s9 = conn.prepareStatement("INSERT INTO ATTRIBUTEMETADATA (AttributeId, MetaVariableId, Value) VALUES (?, ?, ?);");
+				PreparedStatement s6 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
+				PreparedStatement s7 = conn.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
+				PreparedStatement s8 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
+				PreparedStatement s9 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
@@ -1672,44 +1672,44 @@ public class Sql {
 					if (statement.getValues().get(i).getValue() == null) {
 						value = "";
 					} else {
-						value = ((Attribute) statement.getValues().get(i).getValue()).getValue(); // not sure if this case ever occurs
+						value = ((Entity) statement.getValues().get(i).getValue()).getValue(); // not sure if this case ever occurs
 					}
 					s6.setString(2, value);
-					s6.setInt(3, 255);
-					s6.setInt(4, 255);
-					s6.setInt(5,  255);
+					s6.setInt(3, 0);
+					s6.setInt(4, 0);
+					s6.setInt(5,  0);
 					try {
 						s6.executeUpdate();
 						l = new LogEvent(Logger.MESSAGE,
-								"[SQL]  ├─ Transaction: Added \"" + value + "\" to the ATTRIBUTES table.",
-								"Added a row with value \"" + value + "\" to the ATTRIBUTES table during the transaction.");
+								"[SQL]  ├─ Transaction: Added \"" + value + "\" to the ENTITIES table.",
+								"Added a row with value \"" + value + "\" to the ENTITIES table during the transaction.");
 						Dna.logger.log(l);
 					} catch (SQLException e2) {
 						if (e2.getMessage().contains("UNIQUE constraint failed")) {
 							l = new LogEvent(Logger.MESSAGE,
-									"[SQL]  ├─ Transaction: Value \"" + value + "\" was already present in the ATTRIBUTES table.",
-									"A row with value \"" + value + "\" did not have to be added to the ATTRIBUTES table during the transaction because it was already present.");
+									"[SQL]  ├─ Transaction: Value \"" + value + "\" was already present in the ENTITIES table.",
+									"A row with value \"" + value + "\" did not have to be added to the ENTITIES table during the transaction because it was already present.");
 							Dna.logger.log(l);
 						} else {
 							l = new LogEvent(Logger.WARNING,
-									"[SQL]  ├─ Failed to add value \"" + value + "\" to the ATTRIBUTES table.",
-									"Failed to add value \"" + value + "\" to the ATTRIBUTES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
+									"[SQL]  ├─ Failed to add value \"" + value + "\" to the ENTITIES table.",
+									"Failed to add value \"" + value + "\" to the ENTITIES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
 									e2);
 							Dna.logger.log(l);
 						}
 					}
 					
 					// find the attribute ID for the attribute that was just added (or that may have already existed)
-					attributeId = -1;
+					entityId = -1;
 					s7.setInt(1, variableId);
 					s7.setString(2, value);
 					r = s7.executeQuery();
 					while (r.next()) {
-						attributeId = r.getInt("ID");
+						entityId = r.getInt("ID");
 					}
 					l = new LogEvent(Logger.MESSAGE,
-							"[SQL]  ├─ Transaction: Attribute ID identified as " + attributeId + ".",
-							"The attribute for value \"" + value + "\", which was added to, or identified in, the ATTRIBUTES table during the transaction, has ID " + attributeId + ".");
+							"[SQL]  ├─ Transaction: Entity ID identified as " + entityId + ".",
+							"The entity \"" + value + "\", which was added to, or identified in, the ENTITIES table during the transaction, has ID " + entityId + ".");
 					Dna.logger.log(l);
 					
 					// find attribute meta variable IDs for the attribute and insert new entries to the ATTRIBUTEMETADATA table (catch errors if they already exist)
@@ -1717,24 +1717,24 @@ public class Sql {
 					r = s8.executeQuery();
 					while (r.next()) {
 						try {
-							s9.setInt(1, attributeId); // attribute ID
-							s9.setInt(2, r.getInt("ID")); // meta variable ID
-							s9.setString(3, ""); // put an empty value into the meta variable field initially
+							s9.setInt(1, entityId); // entity ID
+							s9.setInt(2, r.getInt("ID")); // attribute variable ID
+							s9.setString(3, ""); // put an empty value into the attribute value field initially
 							s9.executeUpdate();
 							l = new LogEvent(Logger.MESSAGE,
-									"[SQL]  ├─ Transaction: Added meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table.",
-									"Added meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table during the transaction.");
+									"[SQL]  ├─ Transaction: Added attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
+									"Added attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table during the transaction.");
 							Dna.logger.log(l);
 						} catch (Exception e2) {
 							if (e2.getMessage().contains("UNIQUE constraint failed")) {
 								l = new LogEvent(Logger.MESSAGE,
-										"[SQL]  ├─ Transaction: A value for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " was already present in the ATTRIBUTEMETADATA table.",
-										"A row for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " did not have to be added to the ATTRIBUTEMETADATA table during the transaction because it was already present.");
+										"[SQL]  ├─ Transaction: A value for attribute variable \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " was already present in the ATTRIBUTEVALUES table.",
+										"A row for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " did not have to be added to the ATTRIBUTEVALUES table during the transaction because it was already present.");
 								Dna.logger.log(l);
 							} else {
 								l = new LogEvent(Logger.WARNING,
-										"[SQL]  ├─ Failed to add a new value for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table.",
-										"Failed to add a new value for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table. The next step will check if the entry is already there. If so, no problem. If not, there will be another log event with an error message.",
+										"[SQL]  ├─ Failed to add a new value for attribute variable \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
+										"Failed to add a new value for attribute variable \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
 										e2);
 								Dna.logger.log(l);
 							}
@@ -1744,11 +1744,11 @@ public class Sql {
 					// finally, write into the DATASHORTTEXT table
 					s2.setInt(1, statementId);
 					s2.setInt(2, statement.getValues().get(i).getVariableId());
-					s2.setInt(3, attributeId);
+					s2.setInt(3, entityId);
 					s2.executeUpdate();
 					l = new LogEvent(Logger.MESSAGE,
-							"[SQL]  ├─ Transaction: Added a value to the DATASHORTTEXT table for Variable " + statement.getValues().get(i).getVariableId() + ".",
-							"Added a row with attribute ID " + attributeId + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATASHORTTEXT table during the transaction.");
+							"[SQL]  ├─ Transaction: Added an entity to the DATASHORTTEXT table for Variable " + statement.getValues().get(i).getVariableId() + ".",
+							"Added a row with entity ID " + entityId + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATASHORTTEXT table during the transaction.");
 					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("long text")) {
 					s3.setInt(1, statementId);
@@ -1807,19 +1807,19 @@ public class Sql {
 				PreparedStatement s1 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
 				PreparedStatement s2 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
 				PreparedStatement s3 = conn.prepareStatement("UPDATE DATALONGTEXT SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
-				PreparedStatement s4 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
-				PreparedStatement s5 = conn.prepareStatement("INSERT INTO ATTRIBUTES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
-				PreparedStatement s6 = conn.prepareStatement("SELECT ID FROM ATTRIBUTES WHERE VariableId = ? AND Value = ?;");
-				PreparedStatement s7 = conn.prepareStatement("SELECT ID, MetaVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
-				PreparedStatement s8 = conn.prepareStatement("INSERT INTO ATTRIBUTEMETADATA (AttributeId, MetaVariableId, Value) VALUES (?, ?, ?);");
+				PreparedStatement s4 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Entity = ? WHERE StatementId = ? AND VariableId = ?;");
+				PreparedStatement s5 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
+				PreparedStatement s6 = conn.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
+				PreparedStatement s7 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
+				PreparedStatement s8 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent e1 = new LogEvent(Logger.MESSAGE,
 					"[SQL] Started SQL transaction to update Statement " + statementId + ".",
 					"Started a new SQL transaction to update the variables in the statement with ID " + statementId + ". The contents will not be written into the database until the transaction is committed.");
 			Dna.logger.log(e1);
-			Attribute attribute;
-			int attributeId, variableId;
+			Entity entity;
+			int entityId, variableId;
 			ResultSet r;
 			for (int i = 0; i < values.size(); i++) {
 				variableId = values.get(i).getVariableId();
@@ -1851,61 +1851,61 @@ public class Sql {
 							"Variable " + variableId + " (long text) in Statement " + statementId + " was updated in the SQL transaction.");
 					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("short text")) {
-					// try to recognise attribute ID from database; should be more reliable (e.g., with empty Strings)
-					attribute = (Attribute) values.get(i).getValue();
-					attributeId = -1;
+					// try to recognise entity ID from database; should be more reliable (e.g., with empty Strings)
+					entity = (Entity) values.get(i).getValue();
+					entityId = -1;
 					s6.setInt(1, variableId);
-					s6.setString(2, attribute.getValue());
+					s6.setString(2, entity.getValue());
 					r = s6.executeQuery();
 					while (r.next()) {
-						attributeId = r.getInt("ID");
+						entityId = r.getInt("ID");
 					}
 					
-					if (attributeId == -1) {
+					if (entityId == -1) {
 						// if the attribute does not exist, insert new attribute with given String value
 						s5.setInt(1, variableId);
-						s5.setString(2, attribute.getValue());
-						s5.setInt(3, attribute.getColor().getRed());
-						s5.setInt(4, attribute.getColor().getGreen());
-						s5.setInt(5, attribute.getColor().getBlue());
+						s5.setString(2, entity.getValue());
+						s5.setInt(3, entity.getColor().getRed());
+						s5.setInt(4, entity.getColor().getGreen());
+						s5.setInt(5, entity.getColor().getBlue());
 						s5.executeUpdate();
 						
 						// new attribute has been created; now we have to get its ID
 						s6.setInt(1, variableId);
-						s6.setString(2, attribute.getValue());
+						s6.setString(2, entity.getValue());
 						r = s6.executeQuery();
 						while (r.next()) {
-							attributeId = r.getInt(1);
+							entityId = r.getInt(1);
 						}
 						LogEvent e2 = new LogEvent(Logger.MESSAGE,
-								"[SQL]  ├─ Attribute with ID " + attributeId + " added to the transaction.",
-								"An attribute with ID " + attributeId + " and value \"" + attribute.getValue() + "\" was created for variable ID " + variableId + " and added to the SQL transaction.");
+								"[SQL]  ├─ Entity with ID " + entityId + " added to the transaction.",
+								"An entity with ID " + entityId + " and value \"" + entity.getValue() + "\" was created for variable ID " + variableId + " and added to the SQL transaction.");
 						Dna.logger.log(e2);
 						
-						// since the attribute did not exist, we also need to add metavariable entries;
-						// first get the IDs of the meta-variables, then add the values
-						s7.setInt(1, variableId); // set variable ID to find all meta variables by ID corresponding to the variable
+						// since the attribute did not exist, we also need to add attributes;
+						// first get the IDs of the attribute variables, then add the attribute values
+						s7.setInt(1, variableId); // set variable ID to find all attribute variables by ID corresponding to the variable
 						r = s7.executeQuery();
 						while (r.next()) {
 							try {
-								s8.setInt(1, attributeId); // attribute ID
-								s8.setInt(2, r.getInt("ID")); // meta variable ID
-								s8.setString(3, ""); // put an empty value into the meta variable field initially
+								s8.setInt(1, entityId); // entity ID
+								s8.setInt(2, r.getInt("ID")); // attribute variable ID
+								s8.setString(3, ""); // put an empty value into the attribute variable field initially
 								s8.executeUpdate();
 								LogEvent l = new LogEvent(Logger.MESSAGE,
-										"[SQL]  ├─ Transaction: Added meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table.",
-										"Added meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table during the transaction.");
+										"[SQL]  ├─ Transaction: Added value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
+										"Added attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table during the transaction.");
 								Dna.logger.log(l);
 							} catch (Exception e3) {
 								if (e3.getMessage().contains("UNIQUE constraint failed")) {
 									LogEvent l = new LogEvent(Logger.MESSAGE,
-											"[SQL]  ├─ Transaction: A value for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " was already present in the ATTRIBUTEMETADATA table.",
-											"A row for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " did not have to be added to the ATTRIBUTEMETADATA table during the transaction because it was already present.");
+											"[SQL]  ├─ Transaction: A value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " was already present in the ATTRIBUTEVALUES table.",
+											"A row for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " did not have to be added to the ATTRIBUTEVALUES table during the transaction because it was already present.");
 									Dna.logger.log(l);
 								} else {
 									LogEvent l = new LogEvent(Logger.WARNING,
-											"[SQL]  ├─ Failed to add a new value for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table.",
-											"Failed to add a new value for meta-variable \"" + r.getString("MetaVariable") + "\" for Attribute " + attributeId + " to the ATTRIBUTEMETADATA table. The next step will check if the entry is already there. If so, no problem. If not, there will be another log event with an error message.",
+											"[SQL]  ├─ Failed to add a new value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
+											"Failed to add a new value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
 											e3);
 									Dna.logger.log(l);
 								}
@@ -1914,13 +1914,13 @@ public class Sql {
 					}
 
 					// write the attribute ID as the value in the DATASHORTTEXT table
-					s4.setInt(1, attributeId);
+					s4.setInt(1, entityId);
 					s4.setInt(2, statementId);
 					s4.setInt(3, variableId);
 					s4.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
 							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
-							"Variable " + variableId + " (short text) in Statement " + statementId + " was updated in the SQL transaction with Attribute " + attributeId + ".");
+							"Variable " + variableId + " (short text) in Statement " + statementId + " was updated in the SQL transaction with Entity " + entityId + ".");
 					Dna.logger.log(e2);
 				}
 			}
@@ -1956,8 +1956,8 @@ public class Sql {
 				PreparedStatement s4 = conn.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 				PreparedStatement s5 = conn.prepareStatement("SELECT VariableId, Value FROM DATAINTEGER WHERE StatementId = ?;");
 				PreparedStatement s6 = conn.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
-				PreparedStatement s7 = conn.prepareStatement("SELECT VariableId, Value FROM DATASHORTTEXT WHERE StatementId = ?;");
-				PreparedStatement s8 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+				PreparedStatement s7 = conn.prepareStatement("SELECT VariableId, Entity FROM DATASHORTTEXT WHERE StatementId = ?;");
+				PreparedStatement s8 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Entity) VALUES (?, ?, ?);");
 				PreparedStatement s9 = conn.prepareStatement("SELECT VariableId, Value FROM DATALONGTEXT WHERE StatementId = ?;");
 				PreparedStatement s10 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 				SQLCloseable finish = conn::rollback) {
@@ -2002,7 +2002,7 @@ public class Sql {
 			while (r.next()) {
 				s8.setInt(1, id);
 				s8.setInt(2, r.getInt("VariableId"));
-				s8.setInt(3, r.getInt("Value"));
+				s8.setInt(3, r.getInt("Entity"));
 				s8.executeUpdate();
 			}
 
@@ -2043,17 +2043,19 @@ public class Sql {
 	public Statement getStatement(int statementId) {
 		Statement statement = null;
 		ArrayList<Value> values;
-		int statementTypeId, variableId;
+		int statementTypeId, variableId, entityId;
 		String variable, dataType;
 		Color aColor, sColor, cColor;
+		HashMap<String, String> map;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("SELECT STATEMENTS.ID AS StatementId, StatementTypeId, STATEMENTTYPES.Label AS StatementTypeLabel, STATEMENTTYPES.Red AS StatementTypeRed, STATEMENTTYPES.Green AS StatementTypeGreen, STATEMENTTYPES.Blue AS StatementTypeBlue, Start, Stop, STATEMENTS.Coder AS CoderId, CODERS.Name AS CoderName, CODERS.Red AS CoderRed, CODERS.Green AS CoderGreen, CODERS.Blue AS CoderBlue, DocumentId, DOCUMENTS.Date AS Date, SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text FROM STATEMENTS INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId WHERE StatementId = ?;");
 				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT E.ID AS EntityId, StatementId, E.VariableId, DST.ID AS DataId, E.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ENTITIES AS E ON E.ID = DST.Entity AND E.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
 				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
 				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
-				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
-			ResultSet r1, r2, r3;
+				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;");
+				PreparedStatement s7 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
+			ResultSet r1, r2, r3, r4;
 			s1.setInt(1, statementId);
 			r1 = s1.executeQuery();
 			while (r1.next()) {
@@ -2072,9 +2074,16 @@ public class Sql {
 				    	s3.setInt(2, variableId);
 				    	r3 = s3.executeQuery();
 				    	while (r3.next()) {
+				    		entityId = r3.getInt("EntityId");
 			            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
-			            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getInt("ChildOf"), true);
-				    		values.add(new Value(variableId, variable, dataType, attribute));
+			            	s7.setInt(1, entityId);
+			            	r4 = s7.executeQuery();
+			            	map = new HashMap<String, String>();
+			            	while (r4.next()) {
+			            		map.put(r4.getString("AttributeVariable"), r4.getString("AttributeValue"));
+			            	}
+			            	Entity entity = new Entity(entityId, r3.getString("Value"), aColor, r3.getInt("ChildOf"), true, map);
+				    		values.add(new Value(variableId, variable, dataType, entity));
 				    	}
 			    	} else if (dataType.equals("long text")) {
 				    	s4.setInt(1, variableId);
@@ -2167,17 +2176,19 @@ public class Sql {
 				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId" + where + " ORDER BY DOCUMENTS.DATE ASC;";
 		ArrayList<Statement> statements = new ArrayList<Statement>();
 		ArrayList<Value> values;
-		int statementId, statementTypeId, variableId;
+		int statementId, statementTypeId, variableId, entityId;
 		String variable, dataType;
 		Color aColor, sColor, cColor;
+		HashMap<String, String> map;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement(query);
 				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT A.ID AS AttributeId, StatementId, A.VariableId, DST.ID AS DataId, A.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ATTRIBUTES AS A ON A.ID = DST.Value AND A.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT E.ID AS EntityId, StatementId, E.VariableId, DST.ID AS DataId, E.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ENTITIES AS E ON E.ID = DST.Entity AND E.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
 				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
 				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
-				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
-			ResultSet r1, r2, r3;
+				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;");
+				PreparedStatement s7 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
+			ResultSet r1, r2, r3, r4;
 			if (documentId > -1) { // restrict to a single document if necessary
 				s1.setInt(1, documentId);
 			}
@@ -2199,9 +2210,16 @@ public class Sql {
 				    	s3.setInt(2, variableId);
 				    	r3 = s3.executeQuery();
 				    	while (r3.next()) {
+				    		entityId = r3.getInt("EntityId");
 			            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
-			            	Attribute attribute = new Attribute(r3.getInt("AttributeId"), r3.getString("Value"), aColor, r3.getInt("ChildOf"), true);
-			            	values.add(new Value(variableId, variable, dataType, attribute));
+			            	s7.setInt(1, entityId);
+			            	r4 = s7.executeQuery();
+			            	map = new HashMap<String, String>();
+			            	while (r4.next()) {
+			            		map.put(r4.getString("AttributeVariable"), r4.getString("AttributeValue"));
+			            	}
+			            	Entity entity = new Entity(entityId, r3.getString("Value"), aColor, r3.getInt("ChildOf"), true, map);
+			            	values.add(new Value(variableId, variable, dataType, entity));
 				    	}
 			    	} else if (dataType.equals("long text")) {
 				    	s4.setInt(1, variableId);
@@ -2311,26 +2329,74 @@ public class Sql {
 
 	
 	/* =========================================================================
-	 * Attributes
+	 * Entities and attributes
 	 * ====================================================================== */
 
+	public int addEntity(Entity entity, int variableId) {
+		int entityId = -1;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
+				PreparedStatement s2 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
+				PreparedStatement s3 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			
+			// insert entity into ENTITIES table
+			s1.setInt(1, variableId);
+			s1.setString(2, entity.getValue());
+			s1.setInt(3, entity.getColor().getRed());
+			s1.setInt(4, entity.getColor().getGreen());
+			s1.setInt(5, entity.getColor().getBlue());
+			s1.executeUpdate();
+			if (s1.getGeneratedKeys().next()) {
+				entityId = s1.getGeneratedKeys().getInt(1);
+			}
+			
+			// get the attribute variable IDs from the ATTRIBUTEVARIABLES table
+			s3.setInt(1, variableId);
+			ResultSet r = s3.executeQuery();
+			while (r.next()) {
+				// insert attribute values into ATTRIBUTEVALUES table
+				s2.setInt(1, entityId);
+				s2.setInt(2, r.getInt("ID"));
+				s2.setString(3, entity.getAttributeValues().get(r.getString("AttributeVariable")));
+				s2.executeUpdate();
+			}
+        	conn.commit();
+			LogEvent e = new LogEvent(Logger.MESSAGE,
+					"[SQL] Added Entity " + entityId + " (" + entity.getValue() + ") to database.",
+					"Added Entity " + entityId + " (" + entity.getValue() + " ) and successfully saved to the database.");
+			Dna.logger.log(e);
+		} catch (SQLException e1) {
+        	LogEvent e = new LogEvent(Logger.WARNING,
+        			"[SQL] Entity with value \"" + entity.getValue() + "\" (variable ID " + variableId + ") could not be added.",
+        			"New entity could not be added to the ENTITIES and ATTRIBUTEVALUES tables in the database. Check if the database is still there and/or if the connection has been interrupted, then try again.",
+        			e1);
+        	Dna.logger.log(e);
+		}
+		return entityId;
+	}
+	
 	/**
-	 * Get an array of all attributes corresponding to a variable.
+	 * Get an array list of all entities corresponding to a variable.
 	 *  
-	 * @param variableId  The ID of the variable for which all attributes will
-	 *   be retrieved.
-	 * @return            An array of {@link dna.Attribute Attribute} objects.
+	 * @param variableId  The ID of the variable for which all entities will be
+	 *   retrieved.
+	 * @return            An array list of {@link dna.Entity Entity} objects.
 	 * 
-	 * @category attribute
+	 * @category entity
 	 */
-	public Attribute[] getAttributes(int variableId) {
-		ArrayList<Attribute> attributesList = new ArrayList<Attribute>();
+	public ArrayList<Entity> getEntities(int variableId) {
+		ArrayList<Entity> entitiesList = new ArrayList<Entity>();
 		boolean inDatabase;
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("SELECT ID, Value, Red, Green, Blue, ChildOf FROM ATTRIBUTES WHERE VariableId = ?;");
-				PreparedStatement s2 = conn.prepareStatement("SELECT COUNT(ID) FROM DATASHORTTEXT WHERE VariableId = ? AND Value = ?;")) {
+				PreparedStatement s1 = conn.prepareStatement("SELECT ID, Value, Red, Green, Blue, ChildOf FROM ENTITIES WHERE VariableId = ?;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT COUNT(ID) FROM DATASHORTTEXT WHERE VariableId = ? AND Entity = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
 			ResultSet r1, r2;
 			Color color;
+			int entityId;
+			HashMap<String, String> map;
 			s1.setInt(1, variableId);
 			s2.setInt(1, variableId);
 			r1 = s1.executeQuery();
@@ -2343,22 +2409,132 @@ public class Sql {
             	} else {
             		inDatabase = false;
             	}
-            	attributesList.add(new Attribute(r1.getInt("ID"), r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase));
+            	
+            	entityId = r1.getInt("ID");
+            	map = new HashMap<String, String>();
+            	s3.setInt(1, entityId);
+            	r2 = s3.executeQuery();
+            	while (r2.next()) {
+            		map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
+            	}
+            	entitiesList.add(new Entity(entityId, r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase, map));
             }
         	LogEvent e = new LogEvent(Logger.MESSAGE,
-        			"[SQL] Retrieved " + attributesList.size() + " attribute(s) for Variable " + variableId + ".",
-        			"Retrieved " + attributesList.size() + " attribute(s) from the database for Variable " + variableId + ".");
+        			"[SQL] Retrieved " + entitiesList.size() + " entities for Variable " + variableId + ".",
+        			"Retrieved " + entitiesList.size() + " entities from the database for Variable " + variableId + ".");
         	Dna.logger.log(e);
 		} catch (SQLException e1) {
         	LogEvent e = new LogEvent(Logger.WARNING,
-        			"[SQL] Attributes for Variable " + variableId + " could not be retrieved.",
-        			"Attributes for Variable " + variableId + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again.",
+        			"[SQL] Entities for Variable " + variableId + " could not be retrieved.",
+        			"Entities for Variable " + variableId + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again.",
         			e1);
         	Dna.logger.log(e);
 		}
-		Attribute[] attributesArray = new Attribute[attributesList.size()];
-		attributesArray = attributesList.toArray(attributesArray);
-		return attributesArray;
+		return entitiesList;
+	}
+	
+	public void deleteEntities(int[] entityIds) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("DELETE FROM ENTITIES WHERE ID = ?;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT COUNT(ID) FROM DATASHORTTEXT WHERE Entity = ?;");
+				SQLCloseable finish = conn::rollback) {
+			ResultSet r;
+			int i;
+			int numDeletedStatements = 0;
+			for (i = 0; i < entityIds.length; i++) {
+				s2.setInt(1, entityIds[i]);
+				r = s2.executeQuery();
+				while (r.next()) {
+					numDeletedStatements = numDeletedStatements + r.getInt(1);
+				}
+			}
+			if (numDeletedStatements > 0) {
+				LogEvent e = new LogEvent(Logger.WARNING,
+						"[SQL] Could not delete row(s) in the attribute manager.",
+						"Attempted to delete " + entityIds.length + " rows in the ENTITIES table in the database. But this would also lead to the deletion of " + numDeletedStatements + " statements. The entries were not deleted to prevent accidental damage. Please choose the rows to delete more carefully.");
+				Dna.logger.log(e);
+			} else {
+				conn.setAutoCommit(false);
+				for (i = 0; i < entityIds.length; i++) {
+					s1.setInt(1, entityIds[i]);
+					s1.executeUpdate();
+				}
+	        	conn.commit();
+				LogEvent e = new LogEvent(Logger.MESSAGE,
+						"[SQL] Deleted " + entityIds.length + " row(s) from ENTITIES table in the database.",
+						"Successfully deleted " + entityIds.length + " unused entities from the database without affecting any statements.");
+				Dna.logger.log(e);
+			}
+		} catch (SQLException e1) {
+        	LogEvent e = new LogEvent(Logger.WARNING,
+        			"[SQL] Entities could not be deleted.",
+        			"Tried to delete " + entityIds.length + " row(s) from the ENTITIES table in the database. These are variable values that are not in use in any statement. Since the transaction failed, the database commit has been rolled back, and the entities are still in the database.",
+        			e1);
+        	Dna.logger.log(e);
+		}
+	}
+	
+	public class EntityUpdateException extends Exception {
+		private static final long serialVersionUID = -5010190783141791679L;
+		public EntityUpdateException(String errorMessage) {
+	        super(errorMessage);
+	    }
+	}
+	
+	public void setEntityValue(int entityId, String newValue) throws SQLException {
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("UPDATE ENTITIES SET Value = ? WHERE ID = ?;")) {
+        	s.setString(1, newValue);
+        	s.setInt(2,  entityId);
+        	s.executeUpdate();
+		}
+	}
+
+	public void setEntityColor(int entityId, Color newColor) throws SQLException {
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("UPDATE ENTITIES SET Red = ?, Green = ?, Blue = ? WHERE ID = ?;")) {
+        	s.setInt(1, newColor.getRed());
+        	s.setInt(2, newColor.getGreen());
+        	s.setInt(3, newColor.getBlue());
+        	s.setInt(4, entityId);
+        	s.executeUpdate();
+		}
+	}
+
+	public void setAttributeValue(int entityId, String attributeVariable, String newValue) throws SQLException {
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE (EntityId = ? AND AttributeVariableId = (SELECT ID FROM ATTRIBUTEVARIABLES WHERE AttributeVariable = ?));")) {
+        	s.setString(1, newValue);
+        	s.setInt(2,  entityId);
+        	s.setString(3, attributeVariable);
+        	s.executeUpdate();
+		}
+	}
+
+	/**
+	 * Retrieve a list of attribute variable names for a given variable from the
+	 * database.
+	 * 
+	 * @param variableId  ID of the variable.
+	 * @return            ArrayList of attribute variable names.
+	 */
+	public ArrayList<String> getAttributeVariables(int variableId) {
+		ArrayList<String> attributeVariables = new ArrayList<String>();
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("SELECT AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;")) {
+			s1.setInt(1, variableId);
+			ResultSet r1 = s1.executeQuery();
+			while (r1.next()) {
+				attributeVariables.add(r1.getString("AttributeVariable"));
+			}
+		} catch (SQLException e1) {
+        	LogEvent e = new LogEvent(Logger.WARNING,
+        			"[SQL] Attribute variables for Variable " + variableId + " could not be retrieved.",
+        			"Attribute variable names for Variable " + variableId + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again.",
+        			e1);
+        	Dna.logger.log(e);
+		}
+		return attributeVariables;
 	}
 
 	
