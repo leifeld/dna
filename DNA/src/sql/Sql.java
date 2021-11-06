@@ -399,6 +399,12 @@ public class Sql {
 					+ "StatementTypeId INTEGER, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (Variable, StatementTypeId));");
+			s.add("CREATE TABLE IF NOT EXISTS VARIABLELINKS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, "
+					+ "SourceVariableId INTEGER, "
+					+ "TargetVariableId INTEGER CHECK (TargetVariableId != SourceVariableId), "
+					+ "FOREIGN KEY(SourceVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(TargetVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
 					+ "Label TEXT PRIMARY KEY, "
 					+ "Red INTEGER NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
@@ -543,6 +549,13 @@ public class Sql {
 					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (Variable, StatementTypeId), "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS VARIABLELINKS("
+					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "SourceVariableId SMALLINT UNSIGNED NOT NULL, "
+					+ "TargetVariableId SMALLINT UNSIGNED NOT NULL CHECK (TargetVariableId != SourceVariableId), "
+					+ "FOREIGN KEY(SourceVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(TargetVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
 					+ "Label VARCHAR(2000), "
@@ -691,6 +704,10 @@ public class Sql {
 					+ "DataType VARCHAR(200) NOT NULL CHECK (DataType = 'boolean' OR DataType = 'integer' OR DataType = 'long text' OR DataType = 'short text') DEFAULT 'short text', "
 					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (Variable, StatementTypeId));");
+			s.add("CREATE TABLE IF NOT EXISTS VARIABLELINKS("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "SourceVariableId INT NOT NULL REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
+					+ "TargetVariableId INT NOT NULL CHECK (TargetVariableId != SourceVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
 					+ "Label VARCHAR(2000) PRIMARY KEY, "
 					+ "Red SERIAL NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "

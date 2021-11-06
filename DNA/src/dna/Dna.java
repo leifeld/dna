@@ -9,7 +9,7 @@ public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2021-10-23";
+	public static final String date = "2021-11-06";
 	public static final String version = "3.0.0";
 	MainWindow mainWindow;
 	

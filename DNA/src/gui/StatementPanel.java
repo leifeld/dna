@@ -608,7 +608,8 @@ class StatementPanel extends JPanel implements SqlListener {
 			docButton.setEnabled(false);
 			filterButton.setEnabled(false);
 		} else {
-			allButton.setEnabled(true);
+			allButton.setSelected(true);
+			allButton.setEnabled(false);
 			docButton.setEnabled(true);
 			filterButton.setEnabled(true);
 		}
