@@ -950,6 +950,10 @@ public class MainWindow extends JFrame implements SqlListener {
 		
 		@Override
 		protected List<Statement> doInBackground() {
+			String subString = "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text ";
+			if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
+				subString = "SUBSTRING(DOCUMENTS.Text, CAST(Start + 1 AS INT4), CAST(Stop - Start AS INT4)) AS Text ";
+			}
 			String query = "SELECT STATEMENTS.ID AS StatementId, "
 					+ "StatementTypeId, "
 					+ "STATEMENTTYPES.Label AS StatementTypeLabel, "
@@ -965,7 +969,7 @@ public class MainWindow extends JFrame implements SqlListener {
 					+ "CODERS.Blue AS CoderBlue, "
 					+ "DocumentId, "
 					+ "DOCUMENTS.Date AS Date, "
-					+ "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text "
+					+ subString
 					+ "FROM STATEMENTS "
 					+ "INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID "
 					+ "INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID "

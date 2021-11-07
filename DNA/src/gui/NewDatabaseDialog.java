@@ -53,9 +53,10 @@ import sql.ConnectionProfile;
  */
 @SuppressWarnings("serial")
 public class NewDatabaseDialog extends JDialog {
+	boolean openExistingDatabase;
+	ConnectionDetailsPanel connectionDetailsPanel;
 	JButton saveButton;
 	JRadioButton typeSqliteButton, typeMysqlButton, typePostgresqlButton;
-	JTextField dbUrlField;
 	JPasswordField pw1Field, pw2Field;
 	ConnectionProfile cp = null;
 	
@@ -72,6 +73,7 @@ public class NewDatabaseDialog extends JDialog {
 	 * Constructor that shows the dialog window.
 	 */
 	public NewDatabaseDialog(boolean openExistingDatabase) {
+		this.openExistingDatabase = openExistingDatabase;
 
 		this.setModal(true);
 		if (openExistingDatabase == true) {
@@ -83,16 +85,13 @@ public class NewDatabaseDialog extends JDialog {
 		ImageIcon tableDatabaseIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png"));
 		this.setIconImage(tableDatabaseIcon.getImage());
 		this.setLayout(new BorderLayout());
-		
-		// upper panel for the database credentials and URL
-		JPanel panel = new JPanel(new GridBagLayout());
-		GridBagConstraints g = new GridBagConstraints();
 
-		g.fill = GridBagConstraints.HORIZONTAL;
-		g.anchor = GridBagConstraints.WEST;
-		g.gridwidth = 2;
-		g.gridx = 1;
-		g.gridy = 0;
+		// connection details panel (CENTER)
+		connectionDetailsPanel = new ConnectionDetailsPanel();
+		this.add(connectionDetailsPanel, BorderLayout.CENTER);
+		
+		// panel with radio buttons for selecting database type (NORTH)
+		JPanel typePanel = new JPanel(new GridBagLayout());
 		typeSqliteButton = new JRadioButton("SQLite (file-based)");
 		typeMysqlButton = new JRadioButton("MySQL (remote database)");
 		typePostgresqlButton = new JRadioButton("PostgreSQL (remote database)");
@@ -100,12 +99,27 @@ public class NewDatabaseDialog extends JDialog {
 		bg.add(typeSqliteButton);
 		bg.add(typeMysqlButton);
 		bg.add(typePostgresqlButton);
-		panel.add(typeSqliteButton, g);
-		g.gridy = 1;
-		panel.add(typeMysqlButton, g);
-		g.gridy = 2;
-		panel.add(typePostgresqlButton, g);
 		typeSqliteButton.setSelected(true);
+		
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.anchor = GridBagConstraints.WEST;
+		gbc.weightx = 1;
+		gbc.insets = new Insets(5, 5, 0, 0);
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		typePanel.add(typeSqliteButton, gbc);
+		gbc.gridy = 1;
+		typePanel.add(typeMysqlButton, gbc);
+		gbc.gridy = 2;
+		typePanel.add(typePostgresqlButton, gbc);
+		
+		CompoundBorder borderType;
+		borderType = BorderFactory.createCompoundBorder(new EmptyBorder(10, 10, 10, 10), new TitledBorder("Database type"));
+		typePanel.setBorder(borderType);
+		
+		String ttType =
+				"<html><p width=\"500\">DNA offers a choice of three database types for storing data. "
+				+ "Look at the tooltips for the three formats for more information.</p></html>";
 		String ttSqlite = 
 				"<html><p width=\"500\"><b>SQLite</b> is a file-based format. You can conveniently save "
 				+ "your work in a file on your local computer and do not need to worry "
@@ -147,215 +161,54 @@ public class NewDatabaseDialog extends JDialog {
 		typeSqliteButton.setToolTipText(ttSqlite);
 		typeMysqlButton.setToolTipText(ttMysql);
 		typePostgresqlButton.setToolTipText(ttPostgresql);
-
-		g.gridwidth = 1;
-		g.insets = new Insets(0, 5, 5, 5);
-		g.gridx = 1;
-		g.gridy = 3;
-		dbUrlField = new JTextField(20);
-		panel.add(dbUrlField, g);
-		dbUrlField.getDocument().addDocumentListener(new DocumentListener() {
-			@Override
-			public void changedUpdate(DocumentEvent e) {
-				checkButton(openExistingDatabase);
-			}
-			@Override
-			public void insertUpdate(DocumentEvent e) {
-				checkButton(openExistingDatabase);
-			}
-			@Override
-			public void removeUpdate(DocumentEvent e) {
-				checkButton(openExistingDatabase);
-			}
-		});
-		String ttUrl =
-				"<html><p width=\"500\">If SQLite, enter the file name of the new "
-				+ "SQLite DNA database, ending with \".dna\". You can browse to select "
-				+ "the path and file name. Do not select an existing file. If MySQL "
-				+ "or PostgreSQL, enter the remote address (IP or server name with "
-				+ "database name), without the mysql:// or postgresql:// prefix. "
-				+ "This is an address for an existing but empty database. DNA will "
-				+ "create the required table structure once you go ahead.</p></html>";
-		dbUrlField.setToolTipText(ttUrl);
-		
-		
-		g.gridx = 2;
-		ImageIcon folderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-folder.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		JButton folderButton = new JButton("Browse...", folderIcon);
-		folderButton.setToolTipText(ttUrl);
-		panel.add(folderButton, g);
-		folderButton.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				String filename = null;
-				JFileChooser fc = new JFileChooser();
-				fc.setApproveButtonText("OK");
-				fc.setDialogTitle("New database...");
-				fc.setFileFilter(new FileFilter() {
-					public boolean accept(File f) {
-						return f.getName().toLowerCase().endsWith(".dna") || f.isDirectory();
-					}
-					public String getDescription() {
-						return "DNA SQLite database (*.dna)";
-					}
-				});
-				int returnVal = fc.showOpenDialog(null);
-				
-				// extract chosen file name and check its validity
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = fc.getSelectedFile();
-					if ((!openExistingDatabase && !file.exists()) || (openExistingDatabase && file.exists())) {
-						filename = new String(file.getPath());
-						if (!filename.endsWith(".dna")) {
-							filename = filename + ".dna";
-						}
-						dbUrlField.setText(filename);
-					} else {
-						dbUrlField.setText("");
-						if (openExistingDatabase) {
-							JOptionPane.showMessageDialog(null,
-								    "The file does not exist. Please choose a new file.",
-								    "Error",
-								    JOptionPane.ERROR_MESSAGE);
-						} else {
-							JOptionPane.showMessageDialog(null,
-								    "The file already exists and will not be overwritten.\nPlease choose a new file.",
-								    "Error",
-								    JOptionPane.ERROR_MESSAGE);
-						}
-					}
-				}
-			}
-			
-		});
-
-		g.gridwidth = 2;
-		g.gridx = 1;
-		g.gridy = 4;
-		JTextField dbUserField = new JTextField();
-		dbUserField.setEnabled(false);
-		panel.add(dbUserField, g);
-		String ttUser =
-				"<html><p width=\"500\">Enter the user name (= login) for the remote "
-				+ "database. This must be a login with user permissions for creating "
-				+ "tables because this is done in the next step. Once the tables have "
-				+ "been created, you can close the connection and log in again with "
-				+ "login details with read and write access but without table creation "
-				+ "user rights, for peace of mind. A user name cannot be set for SQLite "
-				+ "databases because these reside on a local hard drive in a file.</p></html>";
-		dbUserField.setToolTipText(ttUser);
-
-		g.gridx = 1;
-		g.gridy = 5;
-		JPasswordField dbPasswordField = new JPasswordField();
-		dbPasswordField.setEnabled(false);
-		panel.add(dbPasswordField, g);
-		String ttPassword =
-				"<html><p width=\"500\">Enter the password corresponding to the database "
-				+ "login provided above. Note that this is the database password, not the "
-				+ "Admin coder password, which is defined below. The database password is "
-				+ "used to establish the remote connection to the database as such and has "
-				+ "nothing to do with DNA and coder management per se. A database password "
-				+ "is not required (nor possible) for SQLite databases.</p></html>";
-		dbPasswordField.setToolTipText(ttPassword);
-
-		g.gridwidth = 1;
-		g.insets = new Insets(0, 5, 0, 0);
-		g.gridx = 0;
-		g.gridy = 0;
-		JLabel dbTypeLabel = new JLabel("Database type", JLabel.RIGHT);
-		dbTypeLabel.setLabelFor(typeSqliteButton);
-		String ttType =
-				"<html><p width=\"500\">DNA offers a choice of three database types for storing data. "
-				+ "Look at the tooltips for the three formats for more information.</p></html>";
-		dbTypeLabel.setToolTipText(ttType);
-		panel.add(dbTypeLabel, g);
-
-		g.insets = new Insets(0, 5, 5, 0);
-		g.gridx = 0;
-		g.gridy = 3;
-		JLabel dbUrlLabel = new JLabel("File name", JLabel.RIGHT);
-		dbUrlLabel.setLabelFor(dbUrlField);
-		dbUrlLabel.setToolTipText(ttUrl);
-		panel.add(dbUrlLabel, g);
-		
-		g.gridx = 0;
-		g.gridy = 4;
-		JLabel dbUserLabel = new JLabel("Database login", JLabel.RIGHT);
-		dbUserLabel.setLabelFor(dbUserField);
-		dbUserLabel.setToolTipText(ttUser);
-		dbUserLabel.setEnabled(false);
-		panel.add(dbUserLabel, g);
-
-		g.gridx = 0;
-		g.gridy = 5;
-		JLabel dbPasswordLabel = new JLabel("Database password", JLabel.RIGHT);
-		dbPasswordLabel.setLabelFor(dbPasswordField);
-		dbPasswordLabel.setToolTipText(ttPassword);
-		dbPasswordLabel.setEnabled(false);
-		panel.add(dbPasswordLabel, g);
+		typePanel.setToolTipText(ttType);
 
 		ActionListener al = new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (e.getSource() == typeSqliteButton) {
-					dbUrlLabel.setText("File name");
-					dbUserLabel.setEnabled(false);
-					dbUserField.setEnabled(false);
-					dbPasswordLabel.setEnabled(false);
-					dbPasswordField.setEnabled(false);
-					folderButton.setEnabled(true);
+					connectionDetailsPanel.setConnectionType("sqlite");
 				} else if (e.getSource() == typeMysqlButton) {
-					dbUrlLabel.setText("URL:   mysql://");
-					dbUserLabel.setEnabled(true);
-					dbUserField.setEnabled(true);
-					dbPasswordLabel.setEnabled(true);
-					dbPasswordField.setEnabled(true);
-					folderButton.setEnabled(false);
+					connectionDetailsPanel.setConnectionType("mysql");
 				} else if (e.getSource() == typePostgresqlButton) {
-					dbUrlLabel.setText("URL:   postgresql://");
-					dbUserLabel.setEnabled(true);
-					dbUserField.setEnabled(true);
-					dbPasswordLabel.setEnabled(true);
-					dbPasswordField.setEnabled(true);
-					folderButton.setEnabled(false);
-				} else {
-					System.err.println("Database type not recognized.");
+					connectionDetailsPanel.setConnectionType("postgresql");
 				}
-				checkButton(openExistingDatabase);
+				checkButton();
 			}
 		};
 		typeSqliteButton.addActionListener(al);
 		typeMysqlButton.addActionListener(al);
 		typePostgresqlButton.addActionListener(al);
 		
-		CompoundBorder border;
-		border = BorderFactory.createCompoundBorder(new EmptyBorder(10, 10, 10, 10), new TitledBorder("Database settings"));
-		panel.setBorder(border);
-		this.add(panel, BorderLayout.NORTH);
+		this.add(typePanel, BorderLayout.NORTH);
+		
+		JPanel southPanel = new JPanel(new BorderLayout());
 		
 		// lower panel for setting the Admin coder password
-		if (openExistingDatabase == false) {
+		if (this.openExistingDatabase == false) {
 			JPanel coderPanel = new JPanel(new GridBagLayout());
-			GridBagConstraints gbc = new GridBagConstraints();
+			gbc = new GridBagConstraints();
 			gbc.fill = GridBagConstraints.HORIZONTAL;
 			gbc.anchor = GridBagConstraints.WEST;
-			gbc.insets = new Insets(5, 5, 5, 0);
+			gbc.weightx = 0;
+			gbc.insets = new Insets(5, 5, 0, 0);
 			gbc.gridx = 0;
 			gbc.gridy = 0;
 			JLabel pw1 = new JLabel("Admin password", JLabel.RIGHT);
 			coderPanel.add(pw1, gbc);
+			gbc.weightx = 1;
 			gbc.gridx = 1;
 			pw1Field = new JPasswordField();
 			pw1.setLabelFor(pw1Field);
 			coderPanel.add(pw1Field, gbc);
-			
+
+			gbc.weightx = 0;
 			gbc.gridx = 0;
 			gbc.gridy = 1;
 			gbc.insets = new Insets(0, 5, 5, 0);
 			JLabel pw2 = new JLabel("Confirm password", JLabel.RIGHT);
 			coderPanel.add(pw2, gbc);
+			gbc.weightx = 1;
 			gbc.gridx = 1;
 			pw2Field = new JPasswordField();
 			pw2.setLabelFor(pw2Field);
@@ -364,15 +217,15 @@ public class NewDatabaseDialog extends JDialog {
 			DocumentListener pwListener = new DocumentListener() {
 				@Override
 				public void changedUpdate(DocumentEvent e) {
-					checkButton(openExistingDatabase);
+					checkButton();
 				}
 				@Override
 				public void insertUpdate(DocumentEvent e) {
-					checkButton(openExistingDatabase);
+					checkButton();
 				}
 				@Override
 				public void removeUpdate(DocumentEvent e) {
-					checkButton(openExistingDatabase);
+					checkButton();
 				}
 			};
 			pw1Field.getDocument().addDocumentListener(pwListener);
@@ -381,7 +234,7 @@ public class NewDatabaseDialog extends JDialog {
 			gbc.gridx = 0;
 			gbc.gridy = 2;
 			gbc.gridwidth = 2;
-			gbc.insets = new Insets(10, 0, 0, 0);
+			gbc.insets = new Insets(10, 5, 5, 0);
 			JLabel coderInstructions = new JLabel("Keep the Admin password in a safe place. If you lose it, you lose database access.");
 			coderPanel.add(coderInstructions, gbc);
 			
@@ -408,7 +261,7 @@ public class NewDatabaseDialog extends JDialog {
 			coderPanel.setToolTipText(ttCoder);
 			pw1Field.setToolTipText(ttCoder);
 			pw2Field.setToolTipText(ttCoder);
-			this.add(coderPanel, BorderLayout.CENTER);
+			southPanel.add(coderPanel, BorderLayout.CENTER);
 		}
 		
 		// button panel at the bottom of the dialog
@@ -433,16 +286,9 @@ public class NewDatabaseDialog extends JDialog {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (e.getSource() == clearButton) {
-					dbUrlLabel.setText("File name");
 					typeSqliteButton.setSelected(true);
-					dbUserField.setText("");
-					dbPasswordField.setText("");
-					dbUrlField.setText("");
-					dbUserLabel.setEnabled(false);
-					dbUserField.setEnabled(false);
-					dbPasswordLabel.setEnabled(false);
-					dbPasswordField.setEnabled(false);
-					folderButton.setEnabled(true);
+					connectionDetailsPanel.setConnectionType("sqlite");
+					connectionDetailsPanel.clear();
 					if (openExistingDatabase == false) {
 						pw1Field.setText("");
 						pw2Field.setText("");
@@ -464,7 +310,18 @@ public class NewDatabaseDialog extends JDialog {
 					}
 					
 					// create connection profile with the details provided
-					ConnectionProfile tempConnectionProfile = new ConnectionProfile(type, dbUrlField.getText(), dbUserField.getText(), new String(dbPasswordField.getPassword()));
+					String url = connectionDetailsPanel.getUrl()
+							.replaceAll("^jdbc:mysql://", "")
+							.replaceAll("^mysql://", "")
+							.replaceAll("^jdbc:postgresql://", "")
+							.replaceAll("^postgresql://", "");
+					ConnectionProfile tempConnectionProfile = new ConnectionProfile(
+							type,
+							url,
+							connectionDetailsPanel.getDatabaseName(),
+							connectionDetailsPanel.getPort(),
+							connectionDetailsPanel.getLogin(),
+							connectionDetailsPanel.getPassword());
 					sql.Sql testConnection = new sql.Sql(tempConnectionProfile, true); // connection test, so true
 					
 					if (openExistingDatabase == true) { // existing database: select and authenticate user, then open connection as main database in DNA
@@ -570,10 +427,10 @@ public class NewDatabaseDialog extends JDialog {
 							cp = tempConnectionProfile;
     						LogEvent l = new LogEvent(Logger.MESSAGE,
     								"[GUI] Data structures were set up in SQLite database.",
-    								"Data structures were set up in: " + new File(dbUrlField.getText()).getAbsolutePath());
+    								"Data structures were set up in: " + new File(connectionDetailsPanel.getUrl()).getAbsolutePath());
     						Dna.logger.log(l);
 							JOptionPane.showMessageDialog(null,
-								    "Data structures were set up in:\n" + new File(dbUrlField.getText()).getAbsolutePath(),
+								    "Data structures were set up in:\n" + new File(connectionDetailsPanel.getUrl()).getAbsolutePath(),
 								    "Success",
 								    JOptionPane.PLAIN_MESSAGE);
 							dispose();
@@ -585,11 +442,435 @@ public class NewDatabaseDialog extends JDialog {
 		clearButton.addActionListener(buttonListener);
 		cancelButton.addActionListener(buttonListener);
 		saveButton.addActionListener(buttonListener);
-		this.add(buttonPanel, BorderLayout.SOUTH);
+		southPanel.add(buttonPanel, BorderLayout.SOUTH);
+		
+		this.add(southPanel, BorderLayout.SOUTH);
 		
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
+	}
+	
+	/**
+	 * Connection details panel for the database credentials and URL
+	 */
+	private class ConnectionDetailsPanel extends JPanel {
+		
+		/**
+		 * A String containing the connection type. This can be one of the
+		 * following: {\code "sqlite"}; {\code "mysql"}; {\code "postgresql"}.
+		 */
+		private String connectionType;
+		
+		private JTextField urlField, databaseNameField, portField, loginField;
+		private JLabel urlLabel, databaseNameLabel, portLabel, loginLabel, passwordLabel;
+		private JPasswordField passwordField;
+		private JButton folderButton;
+		private String ttUrl;
+		
+		/**
+		 * Create a new panel with fields for the connection details.
+		 */
+		ConnectionDetailsPanel() {
+			this.connectionType = "sqlite";
+			setLayout(new GridBagLayout());
+			GridBagConstraints g = new GridBagConstraints();
+
+			// URL label
+			g.fill = GridBagConstraints.HORIZONTAL;
+			g.anchor = GridBagConstraints.WEST;
+			g.insets = new Insets(5, 5, 0, 0);
+			g.gridx = 0;
+			g.gridy = 0;
+			urlLabel = new JLabel("File name", JLabel.RIGHT);
+			urlLabel.setLabelFor(urlField);
+			this.add(urlLabel, g);
+			
+			// URL field
+			g.gridwidth = 3;
+			g.gridx = 1;
+			urlField = new JTextField(10);
+			urlField.getDocument().addDocumentListener(new DocumentListener() {
+				@Override
+				public void changedUpdate(DocumentEvent e) {
+					checkButton();
+				}
+				@Override
+				public void insertUpdate(DocumentEvent e) {
+					checkButton();
+				}
+				@Override
+				public void removeUpdate(DocumentEvent e) {
+					checkButton();
+				}
+			});
+			this.add(urlField, g);
+			
+			// folder browse button
+			g.gridwidth = 1;
+			g.gridx = 4;
+			ImageIcon folderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-folder.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			folderButton = new JButton("Browse...", folderIcon);
+			folderButton.setToolTipText(ttUrl);
+			this.add(folderButton, g);
+			folderButton.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					String filename = null;
+					JFileChooser fc = new JFileChooser();
+					fc.setApproveButtonText("OK");
+					if (openExistingDatabase == true) {
+						fc.setDialogTitle("Select database...");
+					} else {
+						fc.setDialogTitle("New database...");
+					}
+					fc.setFileFilter(new FileFilter() {
+						public boolean accept(File f) {
+							return f.getName().toLowerCase().endsWith(".dna") || f.isDirectory();
+						}
+						public String getDescription() {
+							return "DNA SQLite database (*.dna)";
+						}
+					});
+					int returnVal = fc.showOpenDialog(null);
+					
+					// extract chosen file name and check its validity
+					if (returnVal == JFileChooser.APPROVE_OPTION) {
+						File file = fc.getSelectedFile();
+						if ((!openExistingDatabase && !file.exists()) || (openExistingDatabase && file.exists())) {
+							filename = new String(file.getPath());
+							if (!filename.endsWith(".dna")) {
+								filename = filename + ".dna";
+							}
+							urlField.setText(filename);
+						} else {
+							urlField.setText("");
+							if (openExistingDatabase) {
+								JOptionPane.showMessageDialog(null,
+									    "The file does not exist. Please choose a new file.",
+									    "Error",
+									    JOptionPane.ERROR_MESSAGE);
+							} else {
+								JOptionPane.showMessageDialog(null,
+									    "The file already exists and will not be overwritten.\nPlease choose a new file.",
+									    "Error",
+									    JOptionPane.ERROR_MESSAGE);
+							}
+						}
+					}
+				}
+			});
+			
+			// database name field
+			g.gridx = 0;
+			g.gridy = 1;
+			databaseNameLabel = new JLabel("Database name", JLabel.RIGHT);
+			databaseNameField = new JTextField(10);
+			databaseNameLabel.setLabelFor(databaseNameField);
+			String ttDatabaseName = "<html><p width=\"500\">Enter the name of the remote database "
+					+ "at the address you specified.</p></html>";
+			databaseNameField.setToolTipText(ttDatabaseName);
+			databaseNameLabel.setToolTipText(ttDatabaseName);
+			this.add(databaseNameLabel, g);
+			g.gridx = 1;
+			this.add(databaseNameField, g);
+
+			// port field
+			g.gridx = 2;
+			portLabel = new JLabel("Port", JLabel.RIGHT);
+			portField = new JTextField(10);
+			portField.getDocument().addDocumentListener(new DocumentListener() {
+				@Override
+				public void changedUpdate(DocumentEvent e) {
+					checkButton();
+				}
+				@Override
+				public void insertUpdate(DocumentEvent e) {
+					checkButton();
+				}
+				@Override
+				public void removeUpdate(DocumentEvent e) {
+					checkButton();
+				}
+			});
+			
+			portLabel.setLabelFor(portField);
+			String ttPort = "<html><p width=\"500\">The port at which a connection should be established "
+					+ "on the server. The default port for MySQL is 3306. The default port for PostgreSQL is "
+					+ "5432. But your server settings may be different.</p></html>";
+			portField.setToolTipText(ttPort);
+			portLabel.setToolTipText(ttPort);
+			this.add(portLabel, g);
+			g.gridx = 3;
+			this.add(portField, g);
+
+			// user name field
+			g.gridx = 0;
+			g.gridy = 2;
+			loginLabel = new JLabel("Database login", JLabel.RIGHT);
+			loginField = new JTextField(10);
+			loginField.getDocument().addDocumentListener(new DocumentListener() {
+				@Override
+				public void changedUpdate(DocumentEvent e) {
+					checkButton();
+				}
+				@Override
+				public void insertUpdate(DocumentEvent e) {
+					checkButton();
+				}
+				@Override
+				public void removeUpdate(DocumentEvent e) {
+					checkButton();
+				}
+			});
+			loginLabel.setLabelFor(loginField);
+			String ttLogin =
+					"<html><p width=\"500\">Enter the user name (= login) for the remote "
+							+ "database. This must be a login with user permissions for creating "
+							+ "tables because this is done in the next step. Once the tables have "
+							+ "been created, you can close the connection and log in again with "
+							+ "login details with read and write access but without table creation "
+							+ "user rights, for peace of mind.</p></html>";
+			loginField.setToolTipText(ttLogin);
+			loginLabel.setToolTipText(ttLogin);
+			this.add(loginLabel, g);
+			g.gridx = 1;
+			this.add(loginField, g);
+
+			// password field
+			g.gridx = 2;
+			passwordLabel = new JLabel("Database password", JLabel.RIGHT);
+			passwordField = new JPasswordField();
+			passwordLabel.setLabelFor(passwordField);
+			String ttPassword =
+					"<html><p width=\"500\">Enter the password corresponding to the database "
+							+ "login provided above. Note that this is the database password, not the "
+							+ "Admin coder password, which is defined below. The database password is "
+							+ "used to establish the remote connection to the database as such and has "
+							+ "nothing to do with DNA and coder management per se.</p></html>";
+			passwordField.setToolTipText(ttPassword);
+			passwordLabel.setToolTipText(ttPassword);
+			this.add(passwordLabel, g);
+			g.gridx = 3;
+			this.add(passwordField, g);
+			
+			CompoundBorder border;
+			border = BorderFactory.createCompoundBorder(new EmptyBorder(10, 10, 10, 10), new TitledBorder("Database settings"));
+			this.setBorder(border);
+			
+			this.setConnectionType("sqlite");
+		}
+		
+		/**
+		 * Set the connection type and adjust all fields.
+		 * 
+		 * @param connectionType The connection type. Valid values are
+		 *   {@code "sqlite"}, {@code "mysql"}, and {@code "postgresql"}.
+		 */
+		void setConnectionType(String connectionType) {
+			String tempUrl = getUrl();
+			if (this.connectionType == null) {
+				// do nothing here
+			} else if (connectionType.equals("sqlite")) {
+				this.connectionType = connectionType;
+				this.urlField.setText(tempUrl);
+				this.folderButton.setEnabled(true);
+				this.databaseNameField.setText("");
+				this.loginField.setText("");
+				this.passwordField.setText("");
+				this.portField.setText("");
+				this.databaseNameLabel.setEnabled(false);
+				this.databaseNameField.setEnabled(false);
+				this.portLabel.setEnabled(false);
+				this.portField.setEnabled(false);
+				this.loginLabel.setEnabled(false);
+				this.loginField.setEnabled(false);
+				this.passwordLabel.setEnabled(false);
+				this.passwordField.setEnabled(false);
+				this.urlLabel.setText("File name");
+			} else {
+				this.folderButton.setEnabled(false);
+				this.databaseNameLabel.setEnabled(true);
+				this.databaseNameField.setEnabled(true);
+				this.portLabel.setEnabled(true);
+				this.portField.setEnabled(true);
+				this.loginLabel.setEnabled(true);
+				this.loginField.setEnabled(true);
+				this.passwordLabel.setEnabled(true);
+				this.passwordField.setEnabled(true);
+				String tempDatabaseName = getDatabaseName();
+				String tempLogin = getLogin();
+				String tempPassword = getPassword();
+				this.connectionType = connectionType;
+				if (this.connectionType.equals("mysql")) {
+					this.portField.setText("3306");
+				} else if (this.connectionType.equals("postgresql")) {
+					this.portField.setText("5432");
+				}
+				this.databaseNameField.setText(tempDatabaseName);
+				this.loginField.setText(tempLogin);
+				this.passwordField.setText(tempPassword);
+				this.urlLabel.setText("Server");
+			}
+
+			// set URL tooltip
+			if (openExistingDatabase == true && connectionType.equals("sqlite")) {
+				ttUrl = "<html><p width=\"500\">Enter the file name of the SQLite DNA database, "
+						+ "ending with \".dna\". You can browse to select the path and file name.</p></html>";
+			} else if (openExistingDatabase == false && connectionType.equals("sqlite")) {
+				ttUrl = "<html><p width=\"500\">Enter the file name of a new SQLite DNA database, "
+						+ "ending with \".dna\". You can browse to select the path and enter a file name. "
+						+ "Do not select an existing file.</p></html>";
+			} else if (openExistingDatabase == true && !connectionType.equals("sqlite")) {
+				ttUrl = "<html><p width=\"500\">Enter the remote address (IP address or server "
+						+ "name) of the database you wish to connect to. The database must have the DNA "
+						+ "data structures and tables in order to create a connection.</p></html>";
+			} else if (openExistingDatabase == false && !connectionType.equals("sqlite")) {
+				ttUrl = "<html><p width=\"500\">Enter the remote address (IP address or server "
+						+ "name) of an existing but empty remote database. The database must have no "
+						+ "tables, and your user account must have the user right to create new tables "
+						+ "in the database. DNA will create the table structures in this vanilla "
+						+ "database for you, but it is your responsibility to ensure that the database "
+						+ "does not contain any tables.</p></html>";
+			}
+			this.urlLabel.setToolTipText(ttUrl);
+			this.urlField.setToolTipText(ttUrl);
+		}
+
+		/**
+		 * Get the URL or file name for establishing a database connection.
+		 * 
+		 * @return The URL or file name as a String.
+		 */
+		String getUrl() {
+			return urlField.getText();
+		}
+		
+		/**
+		 * Get the port number on the database server for establishing the
+		 * database connection.
+		 * 
+		 * @return The port number on the server.
+		 */
+		int getPort() {
+			if (this.connectionType.equals("sqlite")) {
+				return -1;
+			} else {
+				int result = -1;
+				try {
+					result = Integer.parseInt(this.portField.getText());
+				} catch (NumberFormatException e) {
+					LogEvent l = new LogEvent(Logger.ERROR,
+							"Port number could not be parsed.",
+							"Port number could not be parsed. Try entering an integer number.");
+					Dna.logger.log(l);
+				}
+				return result;
+			}
+		}
+		
+		/**
+		 * Get the name of the remote database on the server.
+		 * 
+		 * @return The database name as a String.
+		 */
+		String getDatabaseName() {
+			if (this.connectionType.equals("sqlite")) {
+				return "";
+			} else {
+				return databaseNameField.getText();
+			}
+		}
+		
+		/**
+		 * Get the login user name for the database from the login field.
+		 * 
+		 * @return The database login user name as a String. 
+		 */
+		String getLogin() {
+			if (this.connectionType.equals("sqlite")) {
+				return "";
+			} else {
+				return loginField.getText();
+			}
+		}
+		
+		/**
+		 * Get the password from the password field.
+		 * 
+		 * @return The password as a String.
+		 */
+		String getPassword() {
+			if (this.connectionType.equals("sqlite")) {
+				return "";
+			} else {
+				return new String(passwordField.getPassword());
+			}
+		}
+		
+		/**
+		 * Is the input provided by the user valid?
+		 * 
+		 * @return Boolean indicating if the user input is valid.
+		 */
+		boolean isValidInput() {
+			boolean valid = true;
+			if (connectionType.equals("sqlite")) {
+				File f = new File(getUrl());
+				if ((!openExistingDatabase && f.exists()) || (openExistingDatabase && !f.exists())) { // only a file that does not exist yet is valid
+					valid = false;
+				}
+				try { // check if the path of the file is valid or has weird characters (not working on Linux)
+	                Paths.get(getUrl());
+	            } catch (InvalidPathException ex) {
+	                valid = false;
+	            }
+				try { // another path check that does not work on Linux
+					f.getCanonicalPath();
+				} catch (IOException e) {
+					valid = false;
+				}
+				if (!getUrl().endsWith(".dna")) {
+					valid = false;
+				}
+			} else {
+				if (getUrl().endsWith(".dna")) {
+					valid = false;
+				}
+			}
+			if (getUrl().equals("") || getUrl().startsWith(" ") || getUrl().endsWith(" ")) {
+				valid = false;
+			}
+			if (valid == true) {
+				this.urlField.setForeground(Color.BLACK);
+			} else {
+				this.urlField.setForeground(Color.RED);
+			}
+			if (this.portField.getText().matches(".*\\D.*")) {
+				this.portField.setForeground(Color.RED);
+				valid = false;
+			} else {
+				this.portField.setForeground(Color.BLACK);
+			}
+			if (getLogin().matches("\\s")) {
+				valid = false;
+			}
+			if (valid) {
+				saveButton.setEnabled(true);
+			} else {
+				saveButton.setEnabled(false);
+			}
+			return valid;
+		}
+		
+		/**
+		 * Reset all fields.
+		 */
+		void clear() {
+			this.setConnectionType("sqlite");
+			this.urlField.setText("");
+		}
 	}
 
 	/**
@@ -598,46 +879,9 @@ public class NewDatabaseDialog extends JDialog {
 	 * should be enabled and what fields should be colored in red as a hint on
 	 * what part of the input is invalid. Various validity checks are performed.
 	 */
-	public void checkButton(boolean openExistingDatabase) {
+	public void checkButton() {
 		boolean valid = true;
-		if (typeSqliteButton.isSelected()) {
-			File f = new File(dbUrlField.getText());
-			if ((!openExistingDatabase && f.exists()) || (openExistingDatabase && !f.exists())) { // only a file that does not exist yet is valid
-				valid = false;
-			}
-			try { // check if the path of the file is valid or has weird characters (not working on Linux)
-                Paths.get(dbUrlField.getText());
-            } catch (InvalidPathException ex) {
-                valid = false;
-            }
-			try { // another path check that does not work on Linux
-				f.getCanonicalPath();
-			} catch (IOException e) {
-				valid = false;
-			}
-			if (!dbUrlField.getText().endsWith(".dna")) {
-				valid = false;
-			}
-		} else {
-			if (dbUrlField.getText().startsWith("mysql://")) {
-				dbUrlField.setText(dbUrlField.getText().substring(8, dbUrlField.getText().length()));
-			}
-			if (dbUrlField.getText().startsWith("postgresql://")) {
-				dbUrlField.setText(dbUrlField.getText().substring(13, dbUrlField.getText().length()));
-			}
-			if (dbUrlField.getText().endsWith(".dna")) {
-				valid = false;
-			}
-		}
-		if (dbUrlField.getText().equals("")) {
-			valid = false;
-		}
-		if (valid == true) {
-			dbUrlField.setForeground(Color.BLACK);
-		} else {
-			dbUrlField.setForeground(Color.RED);
-		}
-		if (openExistingDatabase == false) {
+		if (!openExistingDatabase) {
 			String p1 = new String(pw1Field.getPassword());
 			String p2 = new String(pw2Field.getPassword());
 			if (p1.equals("") || p2.equals("") || !p1.equals(p2)) {
@@ -649,7 +893,10 @@ public class NewDatabaseDialog extends JDialog {
 				pw2Field.setForeground(Color.BLACK);
 			}
 		}
-		if (valid == true) {
+		if (!connectionDetailsPanel.isValidInput()) {
+			valid = false;
+		}
+		if (valid) {
 			saveButton.setEnabled(true);
 		} else {
 			saveButton.setEnabled(false);

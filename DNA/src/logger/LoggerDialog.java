@@ -105,7 +105,7 @@ public class LoggerDialog extends JDialog {
 		JCheckBox warningCheckBox = new JCheckBox("Warnings", true);
 		warningCheckBox.setToolTipText("Display log events with priority 2 (warnings)?");
 		warningCheckBox.setBackground(new Color(255, 255, 130));
-		JCheckBox messageCheckBox = new JCheckBox("Messages", true);
+		JCheckBox messageCheckBox = new JCheckBox("Messages", false);
 		messageCheckBox.setToolTipText("Display log events with priority 1 (messages)?");
 		messageCheckBox.setBackground(Color.BLACK);
 		messageCheckBox.setForeground(Color.WHITE);
@@ -229,7 +229,7 @@ public class LoggerDialog extends JDialog {
 				}
 				if (file != null) {
 					OutputLogEvent[] events = new OutputLogEvent[table.getRowCount()];
-					for(int row = 0; row < table.getRowCount(); row++) {
+					for (int row = 0; row < table.getRowCount(); row++) {
 						events[row] = new OutputLogEvent(Dna.logger.getRow(table.convertRowIndexToModel(row)));
 					}
 					OutputLog log = new OutputLog(Dna.version, Dna.date, events);
