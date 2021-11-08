@@ -19,5 +19,8 @@
 	<classpathentry kind="lib" path="lib/xpp3_min-1.1.4c.jar"/>
 	<classpathentry kind="lib" path="lib/commons-pool2-2.11.1.jar"/>
 	<classpathentry kind="lib" path="lib/commons-logging-1.2.jar"/>
+	<classpathentry kind="lib" path="lib/HikariCP-5.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-nop-2.0.0-alpha5.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-api-2.0.0-alpha5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

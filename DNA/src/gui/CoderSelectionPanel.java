@@ -87,6 +87,7 @@ class CoderSelectionPanel extends JPanel implements SqlListener {
 			}
 			coderBox.setEnabled(true);
 		} else {
+			coderBox.removeAllItems();
 			coderBox.setEnabled(false);
 		}
 	}

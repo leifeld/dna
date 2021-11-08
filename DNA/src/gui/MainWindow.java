@@ -469,7 +469,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				} else if (documentTable.getSelectedRowCount() > 0) {
 					int pos = textWindow.getCaretPosition(); //click caret position
 					Point p = me.getPoint();
-					
+
 					ArrayList<Statement> statements = Dna.sql.getStatements(documentTablePanel.getSelectedDocumentId());
 					if (statements != null && statements.size() > 0) {
 						Statement s;

@@ -15,10 +15,11 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.jasypt.util.password.StrongPasswordEncryptor;
-import org.postgresql.ds.PGSimpleDataSource;
 import org.sqlite.SQLiteDataSource;
 
 import com.mysql.cj.jdbc.MysqlDataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import dna.Dna;
 import logger.LogEvent;
@@ -145,6 +146,21 @@ public class Sql {
 	        		"A MySQL DNA database has been opened as a data source.");
 	        Dna.logger.log(l);
 		} else if (cp.getType().equals("postgresql")) {
+			// Hikari connection pool requires the following JAR dependencies:
+			// - HikariCP-5.0.0.jar
+			// - slf4j-api-2.0.0-alpha5.jar (required for logging)
+			// - slf4j-nop-2.0.0-alpha5.jar (optional; switches logging off)
+			HikariConfig config = new HikariConfig();
+			config.setMaximumPoolSize(30);
+			config.setMinimumIdle(5);
+			config.setPassword(cp.getPassword());
+			config.setUsername(cp.getUser());
+			config.setJdbcUrl("jdbc:postgresql://" + cp.getUrl() + ":" + cp.getPort() + "/" + cp.getDatabaseName());
+			ds = new HikariDataSource(config);
+			
+			/*
+			 * old code without connection pooling (takes almost twice as long):
+			 * 
 			PGSimpleDataSource pgsds = new PGSimpleDataSource();
 			String[] serverAddresses = { cp.getUrl() };
 			pgsds.setServerNames(serverAddresses);
@@ -154,6 +170,7 @@ public class Sql {
 			int[] serverPortNumbers = { cp.getPort() };
 			pgsds.setPortNumbers(serverPortNumbers);
 			ds = pgsds;
+			*/
 	        LogEvent l = new LogEvent(Logger.MESSAGE,
 	        		"[SQL] A PostgreSQL DNA database has been opened as a data source.",
 	        		"A PostgreSQL DNA database has been opened as a data source.");
@@ -503,49 +520,49 @@ public class Sql {
 					+ "PRIMARY KEY (Property));");
 			s.add("CREATE TABLE IF NOT EXISTS CODERS("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Name VARCHAR(5000) NOT NULL, "
+					+ "Name VARCHAR(3000) NOT NULL, "
 					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
-					+ "Refresh SMALLINT UNSIGNED NOT NULL CHECK (Refresh BETWEEN 0 AND 9999) DEFAULT 0, "
-					+ "FontSize SMALLINT UNSIGNED NOT NULL CHECK (FontSize BETWEEN 1 AND 99) DEFAULT 14, "
+					+ "Refresh SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Refresh BETWEEN 0 AND 9999), "
+					+ "FontSize SMALLINT UNSIGNED NOT NULL DEFAULT 14 CHECK (FontSize BETWEEN 1 AND 99), "
 					+ "Password VARCHAR(300) NOT NULL, "
-					+ "PopupWidth SMALLINT UNSIGNED NOT NULL CHECK (PopupWidth BETWEEN 100 AND 9999) DEFAULT 300, "
-					+ "ColorByCoder TINYINT UNSIGNED NOT NULL CHECK (ColorByCoder BETWEEN 0 AND 1) DEFAULT 0, "
-					+ "PopupDecoration TINYINT UNSIGNED NOT NULL CHECK (PopupDecoration BETWEEN 0 AND 1) DEFAULT 0, "
-					+ "PopupAutoComplete TINYINT UNSIGNED NOT NULL CHECK (PopupAutoComplete BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionAddDocuments TINYINT UNSIGNED NOT NULL CHECK (PermissionAddDocuments BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionEditDocuments TINYINT UNSIGNED NOT NULL CHECK (PermissionEditDocuments BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionDeleteDocuments TINYINT UNSIGNED NOT NULL CHECK (PermissionDeleteDocuments BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionImportDocuments TINYINT UNSIGNED NOT NULL CHECK (PermissionImportDocuments BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionAddStatements TINYINT UNSIGNED NOT NULL CHECK (PermissionAddStatements BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionEditStatements TINYINT UNSIGNED NOT NULL CHECK (PermissionEditStatements BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionDeleteStatements TINYINT UNSIGNED NOT NULL CHECK (PermissionDeleteStatements BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionEditAttributes TINYINT UNSIGNED NOT NULL CHECK (PermissionEditAttributes BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionEditRegex TINYINT UNSIGNED NOT NULL CHECK (PermissionEditRegex BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionEditStatementTypes TINYINT UNSIGNED NOT NULL CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1) DEFAULT 0, "
-					+ "PermissionEditCoders TINYINT UNSIGNED NOT NULL CHECK (PermissionEditCoders BETWEEN 0 AND 1) DEFAULT 0, "
-					+ "PermissionViewOthersDocuments TINYINT UNSIGNED NOT NULL CHECK (PermissionViewOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionEditOthersDocuments TINYINT UNSIGNED NOT NULL CHECK (PermissionEditOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionViewOthersStatements TINYINT UNSIGNED NOT NULL CHECK (PermissionViewOthersStatements BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionEditOthersStatements TINYINT UNSIGNED NOT NULL CHECK (PermissionEditOthersStatements BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PopupWidth SMALLINT UNSIGNED NOT NULL DEFAULT 300 CHECK (PopupWidth BETWEEN 100 AND 9999), "
+					+ "ColorByCoder TINYINT UNSIGNED NOT NULL DEFAULT 0 CHECK (ColorByCoder BETWEEN 0 AND 1), "
+					+ "PopupDecoration TINYINT UNSIGNED NOT NULL DEFAULT 0 CHECK (PopupDecoration BETWEEN 0 AND 1), "
+					+ "PopupAutoComplete TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PopupAutoComplete BETWEEN 0 AND 1), "
+					+ "PermissionAddDocuments TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionAddDocuments BETWEEN 0 AND 1), "
+					+ "PermissionEditDocuments TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditDocuments BETWEEN 0 AND 1), "
+					+ "PermissionDeleteDocuments TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionDeleteDocuments BETWEEN 0 AND 1), "
+					+ "PermissionImportDocuments TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionImportDocuments BETWEEN 0 AND 1), "
+					+ "PermissionAddStatements TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionAddStatements BETWEEN 0 AND 1), "
+					+ "PermissionEditStatements TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditStatements BETWEEN 0 AND 1), "
+					+ "PermissionDeleteStatements TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionDeleteStatements BETWEEN 0 AND 1), "
+					+ "PermissionEditAttributes TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditAttributes BETWEEN 0 AND 1), "
+					+ "PermissionEditRegex TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditRegex BETWEEN 0 AND 1), "
+					+ "PermissionEditStatementTypes TINYINT UNSIGNED NOT NULL DEFAULT 0 CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1), "
+					+ "PermissionEditCoders TINYINT UNSIGNED NOT NULL DEFAULT 0 CHECK (PermissionEditCoders BETWEEN 0 AND 1), "
+					+ "PermissionViewOthersDocuments TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionViewOthersDocuments BETWEEN 0 AND 1), "
+					+ "PermissionEditOthersDocuments TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditOthersDocuments BETWEEN 0 AND 1), "
+					+ "PermissionViewOthersStatements TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionViewOthersStatements BETWEEN 0 AND 1), "
+					+ "PermissionEditOthersStatements TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditOthersStatements BETWEEN 0 AND 1), "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Title VARCHAR(5000) NOT NULL, "
+					+ "Title VARCHAR(3000) NOT NULL, "
 					+ "Text MEDIUMTEXT NOT NULL, "
 					+ "Coder SMALLINT UNSIGNED NOT NULL, "
-					+ "Author VARCHAR(5000) NOT NULL DEFAULT '', "
-					+ "Source VARCHAR(5000) NOT NULL DEFAULT '', "
-					+ "Section VARCHAR(5000) NOT NULL DEFAULT '', "
-					+ "Notes TEXT NOT NULL DEFAULT '', "
-					+ "Type VARCHAR(5000) NOT NULL DEFAULT '', "
+					+ "Author VARCHAR(3000) NOT NULL DEFAULT '', "
+					+ "Source VARCHAR(3000) NOT NULL DEFAULT '', "
+					+ "Section VARCHAR(3000) NOT NULL DEFAULT '', "
+					+ "Notes TEXT NOT NULL, "
+					+ "Type VARCHAR(3000) NOT NULL DEFAULT '', "
 					+ "Date BIGINT NOT NULL, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Label VARCHAR(5000) NOT NULL, "
+					+ "Label VARCHAR(3000) NOT NULL, "
 					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
@@ -553,7 +570,7 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "Variable VARCHAR(500) NOT NULL, "
-					+ "DataType VARCHAR(200) NOT NULL CHECK (DataType = 'boolean' OR DataType = 'integer' OR DataType = 'long text' OR DataType = 'short text') DEFAULT 'short text', "
+					+ "DataType VARCHAR(200) NOT NULL DEFAULT 'short text' CHECK (DataType = 'boolean' OR DataType = 'integer' OR DataType = 'long text' OR DataType = 'short text'), "
 					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (Variable, StatementTypeId), "
@@ -566,7 +583,7 @@ public class Sql {
 					+ "FOREIGN KEY(TargetVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
-					+ "Label VARCHAR(2000), "
+					+ "Label VARCHAR(500), "
 					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
@@ -614,7 +631,7 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS ENTITIES("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "Value TEXT NOT NULL DEFAULT '', "
+					+ "Value VARCHAR(500) NOT NULL DEFAULT '', "
 					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
@@ -636,15 +653,15 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "Value TEXT NOT NULL DEFAULT '', "
+					+ "Value TEXT NOT NULL, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (StatementId, VariableId), "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "VariableId MEDIUMINT UNSIGNED NOT NULL, "
-					+ "AttributeVariable TEXT NOT NULL, "
+					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
+					+ "AttributeVariable VARCHAR(500) NOT NULL, "
 					+ "UNIQUE KEY(VariableId, AttributeVariable), "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
@@ -652,7 +669,7 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "EntityId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "AttributeVariableId MEDIUMINT UNSIGNED NOT NULL, "
-					+ "AttributeValue TEXT NOT NULL DEFAULT '', "
+					+ "AttributeValue VARCHAR(3000) NOT NULL DEFAULT '', "
 					+ "UNIQUE KEY (EntityId, AttributeVariableId), "
 					+ "FOREIGN KEY(EntityId) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(AttributeVariableId) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE, "
@@ -663,7 +680,7 @@ public class Sql {
 					+ "Value VARCHAR(500) NOT NULL);");
 			s.add("CREATE TABLE IF NOT EXISTS CODERS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY CHECK (ID > 0), "
-					+ "Name VARCHAR(5000) NOT NULL, "
+					+ "Name VARCHAR(3000) NOT NULL, "
 					+ "Red SMALLINT NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
@@ -691,18 +708,18 @@ public class Sql {
 					+ "PermissionEditOthersStatements SMALLINT NOT NULL CHECK (PermissionEditOthersStatements BETWEEN 0 AND 1) DEFAULT 0);");
 			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "Title VARCHAR(5000) NOT NULL, "
+					+ "Title VARCHAR(3000) NOT NULL, "
 					+ "Text TEXT NOT NULL, "
 					+ "Coder INT NOT NULL REFERENCES CODERS(ID) ON DELETE CASCADE, "
-					+ "Author VARCHAR(5000) NOT NULL DEFAULT '', "
-					+ "Source VARCHAR(5000) NOT NULL DEFAULT '', "
-					+ "Section VARCHAR(5000) NOT NULL DEFAULT '', "
+					+ "Author VARCHAR(3000) NOT NULL DEFAULT '', "
+					+ "Source VARCHAR(3000) NOT NULL DEFAULT '', "
+					+ "Section VARCHAR(3000) NOT NULL DEFAULT '', "
 					+ "Notes TEXT NOT NULL DEFAULT '', "
-					+ "Type VARCHAR(5000) NOT NULL DEFAULT '', "
+					+ "Type VARCHAR(3000) NOT NULL DEFAULT '', "
 					+ "Date BIGINT NOT NULL);");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "Label VARCHAR(5000) NOT NULL, "
+					+ "Label VARCHAR(3000) NOT NULL, "
 					+ "Red SMALLINT NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255));");
@@ -717,7 +734,7 @@ public class Sql {
 					+ "SourceVariableId INT NOT NULL REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "TargetVariableId INT NOT NULL CHECK (TargetVariableId != SourceVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
-					+ "Label VARCHAR(2000) PRIMARY KEY, "
+					+ "Label VARCHAR(500) PRIMARY KEY, "
 					+ "Red SMALLINT NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255));");
@@ -751,7 +768,7 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS ENTITIES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "Value TEXT NOT NULL DEFAULT '', "
+					+ "Value VARCHAR(500) NOT NULL DEFAULT '', "
 					+ "Red SMALLINT NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
@@ -767,18 +784,18 @@ public class Sql {
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "Value TEXT NOT NULL DEFAULT '', "
+					+ "Value TEXT NOT NULL, "
 					+ "UNIQUE (StatementId, VariableId));");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "AttributeVariable TEXT NOT NULL, "
+					+ "AttributeVariable VARCHAR(500) NOT NULL, "
 					+ "UNIQUE (VariableId, AttributeVariable));");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVALUES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "EntityId INT NOT NULL CHECK(EntityId > 0) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "AttributeVariableId INT NOT NULL CHECK(AttributeVariableId > 0) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE, "
-					+ "AttributeValue TEXT NOT NULL DEFAULT '', "
+					+ "AttributeValue VARCHAR(3000) NOT NULL DEFAULT '', "
 					+ "UNIQUE (EntityId, AttributeVariableId));");
 		}
 		// fill default data into the tables (Admin coder, settings, statement types)
@@ -1641,7 +1658,7 @@ public class Sql {
 	 * @category statement
 	 */
 	public void addStatement(Statement statement, int documentId) {
-		int statementId = -1, entityId = -1;
+		int statementId = -1, entityId = -1, attributeVariableId = -1;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("INSERT INTO STATEMENTS (StatementTypeId, DocumentId, Start, Stop, Coder) VALUES (?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
 				PreparedStatement s2 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Entity) VALUES (?, ?, ?);");
@@ -1652,13 +1669,15 @@ public class Sql {
 				PreparedStatement s7 = conn.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
 				PreparedStatement s8 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
 				PreparedStatement s9 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
+				PreparedStatement s10 = conn.prepareStatement("SELECT COUNT(ID) FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
+				PreparedStatement s11 = conn.prepareStatement("SELECT COUNT(ID) FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[SQL] Started SQL transaction to add statement to Document " + documentId + ".",
 					"Started a new SQL transaction to add a new statement to the document with ID " + documentId + ". The contents will not be written into the database until the transaction is committed.");
 			Dna.logger.log(l);
-			ResultSet r;
+			ResultSet r, r2;
 			s1.setInt(1, statement.getStatementTypeId());
 			s1.setInt(2, documentId);
 			s1.setInt(3, statement.getStart());
@@ -1675,37 +1694,41 @@ public class Sql {
 			for (int i = 0; i < statement.getValues().size(); i++) {
 				if (statement.getValues().get(i).getDataType().equals("short text")) {
 					
-					// first, try to create an entity and catch error if it already exists
+					// first, try to create an entity if it does not exist yet
 					int variableId = statement.getValues().get(i).getVariableId();
-					s6.setInt(1, variableId);
 					String value = "";
 					if (statement.getValues().get(i).getValue() == null) {
 						value = "";
 					} else {
 						value = ((Entity) statement.getValues().get(i).getValue()).getValue(); // not sure if this case ever occurs
 					}
-					s6.setString(2, value);
-					s6.setInt(3, 0);
-					s6.setInt(4, 0);
-					s6.setInt(5,  0);
-					try {
-						s6.executeUpdate();
-						l = new LogEvent(Logger.MESSAGE,
-								"[SQL]  ├─ Transaction: Added \"" + value + "\" to the ENTITIES table.",
-								"Added a row with value \"" + value + "\" to the ENTITIES table during the transaction.");
-						Dna.logger.log(l);
-					} catch (SQLException e2) {
-						if (e2.getMessage().contains("UNIQUE constraint failed") || e2.getMessage().contains("duplicate key value")) {
-							l = new LogEvent(Logger.MESSAGE,
-									"[SQL]  ├─ Transaction: Value \"" + value + "\" was already present in the ENTITIES table.",
-									"A row with value \"" + value + "\" did not have to be added to the ENTITIES table during the transaction because it was already present.");
-							Dna.logger.log(l);
+
+					s10.setInt(1, variableId);
+					s10.setString(2, value);
+					r = s10.executeQuery();
+					while (r.next()) {
+						if (r.getInt(1) > 0) {
+							// entity exists already; do nothing
 						} else {
-							l = new LogEvent(Logger.WARNING,
-									"[SQL]  ├─ Failed to add value \"" + value + "\" to the ENTITIES table.",
-									"Failed to add value \"" + value + "\" to the ENTITIES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
-									e2);
-							Dna.logger.log(l);
+							// entity does not exist; add it to ENTITIES table
+							s6.setInt(1, variableId);
+							s6.setString(2, value);
+							s6.setInt(3, 0);
+							s6.setInt(4, 0);
+							s6.setInt(5, 0);
+							try {
+								s6.executeUpdate();
+								l = new LogEvent(Logger.MESSAGE,
+										"[SQL]  ├─ Transaction: Added \"" + value + "\" to the ENTITIES table.",
+										"Added a row with value \"" + value + "\" to the ENTITIES table during the transaction.");
+								Dna.logger.log(l);
+							} catch (SQLException e2) {
+								l = new LogEvent(Logger.WARNING,
+										"[SQL]  ├─ Failed to add value \"" + value + "\" to the ENTITIES table.",
+										"Failed to add value \"" + value + "\" to the ENTITIES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
+										e2);
+								Dna.logger.log(l);
+							}
 						}
 					}
 					
@@ -1727,27 +1750,30 @@ public class Sql {
 					r = s8.executeQuery();
 					while (r.next()) {
 						try {
-							s9.setInt(1, entityId); // entity ID
-							s9.setInt(2, r.getInt("ID")); // attribute variable ID
-							s9.setString(3, ""); // put an empty value into the attribute value field initially
-							s9.executeUpdate();
-							l = new LogEvent(Logger.MESSAGE,
-									"[SQL]  ├─ Transaction: Added attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
-									"Added attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table during the transaction.");
-							Dna.logger.log(l);
-						} catch (Exception e2) {
-							if (e2.getMessage().contains("UNIQUE constraint failed") || e2.getMessage().contains("duplicate key value")) {
-								l = new LogEvent(Logger.MESSAGE,
-										"[SQL]  ├─ Transaction: A value for attribute variable \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " was already present in the ATTRIBUTEVALUES table.",
-										"A row for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " did not have to be added to the ATTRIBUTEVALUES table during the transaction because it was already present.");
-								Dna.logger.log(l);
-							} else {
-								l = new LogEvent(Logger.WARNING,
-										"[SQL]  ├─ Failed to add a new value for attribute variable \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
-										"Failed to add a new value for attribute variable \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
-										e2);
-								Dna.logger.log(l);
+							attributeVariableId = r.getInt("ID");
+							s11.setInt(1, entityId);
+							s11.setInt(2, attributeVariableId);
+							r2 = s11.executeQuery();
+							while (r2.next()) {
+								if (r2.getInt(1) > 0) {
+									// attribute value already exists in the ATTRIBUTEVALUES table; don't do anything
+								} else {
+									s9.setInt(1, entityId); // entity ID
+									s9.setInt(2, attributeVariableId); // attribute variable ID
+									s9.setString(3, ""); // put an empty value into the attribute value field initially
+									s9.executeUpdate();
+									l = new LogEvent(Logger.MESSAGE,
+											"[SQL]  ├─ Transaction: Added attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
+											"Added attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table during the transaction.");
+									Dna.logger.log(l);
+								}
 							}
+						} catch (Exception e2) {
+							l = new LogEvent(Logger.WARNING,
+									"[SQL]  ├─ Failed to add a new value for attribute variable \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
+									"Failed to add a new value for attribute variable \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
+									e2);
+							Dna.logger.log(l);
 						}
 					}
 					
@@ -1822,6 +1848,7 @@ public class Sql {
 				PreparedStatement s6 = conn.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
 				PreparedStatement s7 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
 				PreparedStatement s8 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
+				PreparedStatement s9 = conn.prepareStatement("SELECT COUNT(ID) FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent e1 = new LogEvent(Logger.MESSAGE,
@@ -1829,8 +1856,8 @@ public class Sql {
 					"Started a new SQL transaction to update the variables in the statement with ID " + statementId + ". The contents will not be written into the database until the transaction is committed.");
 			Dna.logger.log(e1);
 			Entity entity;
-			int entityId, variableId;
-			ResultSet r;
+			int entityId, variableId, attributeVariableId;
+			ResultSet r, r2;
 			for (int i = 0; i < values.size(); i++) {
 				variableId = values.get(i).getVariableId();
 				if (values.get(i).getDataType().equals("boolean")) {
@@ -1898,27 +1925,30 @@ public class Sql {
 						r = s7.executeQuery();
 						while (r.next()) {
 							try {
-								s8.setInt(1, entityId); // entity ID
-								s8.setInt(2, r.getInt("ID")); // attribute variable ID
-								s8.setString(3, ""); // put an empty value into the attribute variable field initially
-								s8.executeUpdate();
-								LogEvent l = new LogEvent(Logger.MESSAGE,
-										"[SQL]  ├─ Transaction: Added value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
-										"Added attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table during the transaction.");
-								Dna.logger.log(l);
-							} catch (Exception e3) {
-								if (e3.getMessage().contains("UNIQUE constraint failed") || e3.getMessage().contains("duplicate key value")) {
-									LogEvent l = new LogEvent(Logger.MESSAGE,
-											"[SQL]  ├─ Transaction: A value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " was already present in the ATTRIBUTEVALUES table.",
-											"A row for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " did not have to be added to the ATTRIBUTEVALUES table during the transaction because it was already present.");
-									Dna.logger.log(l);
-								} else {
-									LogEvent l = new LogEvent(Logger.WARNING,
-											"[SQL]  ├─ Failed to add a new value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
-											"Failed to add a new value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
-											e3);
-									Dna.logger.log(l);
+								attributeVariableId = r.getInt("ID");
+								s9.setInt(1, entityId);
+								s9.setInt(2, attributeVariableId);
+								r2 = s9.executeQuery();
+								while (r2.next()) {
+									if (r2.getInt(1) > 0) {
+										// attribute value already exists in the ATTRIBUTEVALUES table; don't do anything
+									} else {
+										s8.setInt(1, entityId); // entity ID
+										s8.setInt(2, attributeVariableId); // attribute variable ID
+										s8.setString(3, ""); // put an empty value into the attribute variable field initially
+										s8.executeUpdate();
+										LogEvent l = new LogEvent(Logger.MESSAGE,
+												"[SQL]  ├─ Transaction: Added value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
+												"Added attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table during the transaction.");
+										Dna.logger.log(l);
+									}
 								}
+							} catch (Exception e3) {
+								LogEvent l = new LogEvent(Logger.WARNING,
+										"[SQL]  ├─ Failed to add a new value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
+										"Failed to add a new value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
+										e3);
+								Dna.logger.log(l);
 							}
 						}
 					}
@@ -2445,16 +2475,19 @@ public class Sql {
 	}
 	
 	/**
-	 * Get an array list of all entities corresponding to a variable.
+	 * Retrieve the full set of entities for a set of variable IDs. The result
+	 * is an array list with nested array lists of entities for each variable
+	 * ID.
 	 *  
-	 * @param variableId  The ID of the variable for which all entities will be
-	 *   retrieved.
-	 * @return            An array list of {@link dna.Entity Entity} objects.
+	 * @param variableIds  The IDs of the variables for which all entities will
+	 *   be retrieved, supplied as an array list of integers.
+	 * @return            An array list of array lists of {@link dna.Entity
+	 *   Entity} objects.
 	 * 
 	 * @category entity
 	 */
-	public ArrayList<Entity> getEntities(int variableId) {
-		ArrayList<Entity> entitiesList = new ArrayList<Entity>();
+	public ArrayList<ArrayList<Entity>> getEntities(ArrayList<Integer> variableIds) {
+		ArrayList<ArrayList<Entity>> entities = new ArrayList<ArrayList<Entity>>();
 		boolean inDatabase = true;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("SELECT ID, Value, Red, Green, Blue, ChildOf FROM ENTITIES WHERE VariableId = ?;");
@@ -2464,44 +2497,49 @@ public class Sql {
 			Color color;
 			int entityId;
 			HashMap<String, String> map;
-			s1.setInt(1, variableId);
-			s2.setInt(1, variableId);
-			r1 = s1.executeQuery();
-        	while (r1.next()) {
-            	color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
-            	s2.setInt(2, r1.getInt("ID"));
-            	r2 = s2.executeQuery();
-            	while (r2.next()) {
-            		if (r2.getInt(1) > 0) {
-                		inDatabase = true;
-                	} else {
-                		inDatabase = false;
-                	}
-            	}
-            	
-            	entityId = r1.getInt("ID");
-            	map = new HashMap<String, String>();
-            	s3.setInt(1, entityId);
-            	r2 = s3.executeQuery();
-            	while (r2.next()) {
-            		map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
-            	}
-            	entitiesList.add(new Entity(entityId, variableId, r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase, map));
-            }
+			ArrayList<Entity> entitiesList;
+			for (int i = 0; i < variableIds.size(); i++) {
+				entitiesList = new ArrayList<Entity>();
+				s1.setInt(1, variableIds.get(i));
+				s2.setInt(1, variableIds.get(i));
+				r1 = s1.executeQuery();
+	        	while (r1.next()) {
+	            	color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
+	            	s2.setInt(2, r1.getInt("ID"));
+	            	r2 = s2.executeQuery();
+	            	while (r2.next()) {
+	            		if (r2.getInt(1) > 0) {
+	                		inDatabase = true;
+	                	} else {
+	                		inDatabase = false;
+	                	}
+	            	}
+	            	
+	            	entityId = r1.getInt("ID");
+	            	map = new HashMap<String, String>();
+	            	s3.setInt(1, entityId);
+	            	r2 = s3.executeQuery();
+	            	while (r2.next()) {
+	            		map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
+	            	}
+	            	entitiesList.add(new Entity(entityId, variableIds.get(i), r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase, map));
+	            }
+            	entities.add(entitiesList);
+			}
         	LogEvent e = new LogEvent(Logger.MESSAGE,
-        			"[SQL] Retrieved " + entitiesList.size() + " entities for Variable " + variableId + ".",
-        			"Retrieved " + entitiesList.size() + " entities from the database for Variable " + variableId + ".");
+        			"[SQL] Retrieved entities for " + variableIds.size() + " variables.",
+        			"Retrieved entities for " + variableIds.size() + " variables.");
         	Dna.logger.log(e);
 		} catch (SQLException e1) {
         	LogEvent e = new LogEvent(Logger.WARNING,
-        			"[SQL] Entities for Variable " + variableId + " could not be retrieved.",
-        			"Entities for Variable " + variableId + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again.",
+        			"[SQL] Entities could not be retrieved.",
+        			"Entities for " + variableIds.size() + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again.",
         			e1);
         	Dna.logger.log(e);
 		}
-		return entitiesList;
+		return entities;
 	}
-	
+
 	/**
 	 * Delete all entities corresponding to certain entity IDs. Check if the
 	 * entities can be deleted safely and log a warning instead of deleting the

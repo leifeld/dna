@@ -411,7 +411,11 @@ public class DocumentEditor extends JDialog {
 				}
 			}
 			int contentCoder = documents.get(0).getCoder();
-			coderPanel = new CoderBadgePanel(Dna.sql.getCoder(contentCoder));
+			if (Dna.sql.getConnectionProfile().getCoderId() == contentCoder) {
+				coderPanel = new CoderBadgePanel(Dna.sql.getActiveCoder());
+			} else {
+				coderPanel = new CoderBadgePanel(Dna.sql.getCoder(contentCoder));
+			}
 			if (numDocuments > 1) {
 				for (int i = 0; i < documents.size(); i++) {
 					if (documents.get(i).getCoder() != contentCoder) {

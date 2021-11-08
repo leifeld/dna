@@ -445,7 +445,7 @@ public class AttributeManager extends JDialog {
 		 */
 		@Override
 		protected List<Entity> doInBackground() {
-			boolean inDatabase;
+			boolean inDatabase = true;
 			try (Connection conn = Dna.sql.getDataSource().getConnection();
 					PreparedStatement s1 = conn.prepareStatement("SELECT ID, Value, Red, Green, Blue, ChildOf FROM ENTITIES WHERE VariableId = ?;");
 					PreparedStatement s2 = conn.prepareStatement("SELECT COUNT(ID) FROM DATASHORTTEXT WHERE VariableId = ? AND Entity = ?;");
@@ -461,10 +461,12 @@ public class AttributeManager extends JDialog {
 	            	color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
 	            	s2.setInt(2, r1.getInt("ID"));
 	            	r2 = s2.executeQuery();
-	            	if (r2.getInt(1) > 0) {
-	            		inDatabase = true;
-	            	} else {
-	            		inDatabase = false;
+	            	while (r2.next()) {
+		            	if (r2.getInt(1) > 0) {
+		            		inDatabase = true;
+		            	} else {
+		            		inDatabase = false;
+		            	}
 	            	}
 	            	
 	            	entityId = r1.getInt("ID");

@@ -86,7 +86,9 @@ public class CoderPasswordCheckDialog {
 			CoderComboBoxModel comboBoxModel = new CoderComboBoxModel(coders);
 			comboBox.setModel(comboBoxModel);
 			comboBox.setRenderer(new CoderComboBoxRenderer());
-			comboBox.setSelectedIndex(0);
+			if (coders.size() > 0) {
+				comboBox.setSelectedIndex(0);
+			}
 			questionPanel.add(comboBox);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] User was asked to select coder and enter coder password.",
@@ -94,7 +96,8 @@ public class CoderPasswordCheckDialog {
 			Dna.logger.log(l);
 			
 		} else {
-			coder = sql.getCoder(sql.getConnectionProfile().getCoderId());
+			coder = sql.getActiveCoder();
+			//coder = sql.getCoder(sql.getConnectionProfile().getCoderId());
 			CoderBadgePanel cdp = new CoderBadgePanel(coder);
 			questionPanel.add(cdp);
 			LogEvent l = new LogEvent(Logger.MESSAGE,

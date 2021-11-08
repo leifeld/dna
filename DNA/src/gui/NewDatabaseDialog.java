@@ -31,6 +31,7 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
+import javax.swing.ProgressMonitor;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -55,7 +56,7 @@ import sql.ConnectionProfile;
 public class NewDatabaseDialog extends JDialog {
 	boolean openExistingDatabase;
 	ConnectionDetailsPanel connectionDetailsPanel;
-	JButton saveButton;
+	JButton clearButton, cancelButton, saveButton;
 	JRadioButton typeSqliteButton, typeMysqlButton, typePostgresqlButton;
 	JPasswordField pw1Field, pw2Field;
 	ConnectionProfile cp = null;
@@ -267,10 +268,10 @@ public class NewDatabaseDialog extends JDialog {
 		// button panel at the bottom of the dialog
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 		ImageIcon clearIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		JButton clearButton = new JButton("Clear form", clearIcon);
+		clearButton = new JButton("Clear form", clearIcon);
 		buttonPanel.add(clearButton);
 		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		JButton cancelButton = new JButton("Cancel", cancelIcon);
+		cancelButton = new JButton("Cancel", cancelIcon);
 		buttonPanel.add(cancelButton);
 		ImageIcon saveIcon;
 		if (openExistingDatabase == true) {
@@ -364,77 +365,12 @@ public class NewDatabaseDialog extends JDialog {
 						StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();
 						String encryptedPassword = passwordEncryptor.encryptPassword(plainPassword);
 						
-						// test connection and create tables
-						boolean connectionValid = true;
-						if (type.equals("mysql") || type.equals("postgresql")) {
-			    			try (Connection conn = testConnection.getDataSource().getConnection();
-			    					PreparedStatement ps = conn.prepareStatement("SELECT 1;")) {
-			    				ResultSet rs = ps.executeQuery();
-			    				while (rs.next()) {
-			    					if (rs.getInt(1) != 1) {
-			    						connectionValid = false;
-			    						LogEvent l = new LogEvent(Logger.ERROR,
-			    								"[SQL] Connection test failed with a simple database query.",
-			    								"Connection test failed with a simple database query while trying to create data structure in new DNA database.");
-			    						Dna.logger.log(l);
-					    				JOptionPane.showMessageDialog(null,
-					    					    "Connection test failed. Please check your database.",
-					    					    "Check failed",
-					    					    JOptionPane.ERROR_MESSAGE);
-			    					}
-			    				}
-			    			} catch (SQLException e1) {
-	    						connectionValid = false;
-	    						LogEvent l = new LogEvent(Logger.ERROR,
-	    								"[SQL] Could not establish connection to remote database.",
-	    								"Could not establish connection to remote database. Please check URL, login, and password.",
-	    								e1);
-	    						Dna.logger.log(l);
-			    				JOptionPane.showMessageDialog(null,
-			    					    "Could not establish connection to remote database.\nPlease check URL, login, and password.",
-			    					    "Check failed",
-			    					    JOptionPane.ERROR_MESSAGE);
-			    			}
-			    			if (connectionValid == true) {
-								connectionValid = testConnection.createTables(encryptedPassword);
-								if (connectionValid == false) {
-		    						LogEvent l = new LogEvent(Logger.ERROR,
-		    								"[SQL] Failed to create tables in the database.",
-		    								"Failed to create tables in the database.");
-		    						Dna.logger.log(l);
-				    				JOptionPane.showMessageDialog(null,
-				    					    "Failed to create tables in the database.",
-				    					    "Operation failed",
-				    					    JOptionPane.ERROR_MESSAGE);
-				    			}
-			    			}
-			    		} else if (type.equals("sqlite")) {
-			    			connectionValid = testConnection.createTables(encryptedPassword);
-			    			if (connectionValid == false) {
-	    						LogEvent l = new LogEvent(Logger.ERROR,
-	    								"[SQL] Failed to create tables in the database.",
-	    								"Failed to create tables in the database.");
-	    						Dna.logger.log(l);
-			    				JOptionPane.showMessageDialog(null,
-			    					    "Could not create tables in the database.",
-			    					    "Operation failed",
-			    					    JOptionPane.ERROR_MESSAGE);
-			    			}
-			    		}
+						clearButton.setEnabled(false);
+						cancelButton.setEnabled(false);
+						saveButton.setEnabled(false);
 						
-						// save the connection profile for retrieval from parent class via getConnectionProfile() method
-						if (connectionValid == true) {
-							cp = tempConnectionProfile;
-    						LogEvent l = new LogEvent(Logger.MESSAGE,
-    								"[GUI] Data structures were set up in SQLite database.",
-    								"Data structures were set up in: " + new File(connectionDetailsPanel.getUrl()).getAbsolutePath());
-    						Dna.logger.log(l);
-							JOptionPane.showMessageDialog(null,
-								    "Data structures were set up in:\n" + new File(connectionDetailsPanel.getUrl()).getAbsolutePath(),
-								    "Success",
-								    JOptionPane.PLAIN_MESSAGE);
-							dispose();
-						}
+						Thread createTablesThread = new Thread( new CreateTablesThread(type, testConnection, encryptedPassword), "Create tables" );
+						createTablesThread.start();
 					}
 				}
 			}
@@ -449,6 +385,114 @@ public class NewDatabaseDialog extends JDialog {
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
+	}
+	
+	private class CreateTablesThread implements Runnable {
+		private String type, encryptedPassword;
+		private sql.Sql testConnection;
+		private ProgressMonitor progressMonitor;
+
+		CreateTablesThread(String type, sql.Sql testConnection, String encryptedPassword) {
+			this.type = type;
+			this.testConnection = testConnection;
+			this.encryptedPassword = encryptedPassword;
+		}
+
+		public void run() {
+			progressMonitor = new ProgressMonitor(NewDatabaseDialog.this, "Creating database structures", "(1/3) Testing connection...", 0, 3);
+			progressMonitor.setMillisToDecideToPopup(1);
+			progressMonitor.setProgress(0);
+
+			// test connection and create tables
+			boolean connectionValid = true;
+			if (type.equals("mysql") || type.equals("postgresql")) {
+    			try (Connection conn = testConnection.getDataSource().getConnection();
+    					PreparedStatement ps = conn.prepareStatement("SELECT 1;")) {
+    				ResultSet rs = ps.executeQuery();
+    				while (rs.next()) {
+    					if (rs.getInt(1) != 1) {
+    						connectionValid = false;
+    						LogEvent l = new LogEvent(Logger.ERROR,
+    								"[SQL] Connection test failed with a simple database query.",
+    								"Connection test failed with a simple database query while trying to create data structure in new DNA database.");
+    						Dna.logger.log(l);
+		    				JOptionPane.showMessageDialog(null,
+		    					    "Connection test failed. Please check your database.",
+		    					    "Check failed",
+		    					    JOptionPane.ERROR_MESSAGE);
+    					}
+    				}
+    			} catch (SQLException e1) {
+					connectionValid = false;
+					LogEvent l = new LogEvent(Logger.ERROR,
+							"[SQL] Could not establish connection to remote database.",
+							"Could not establish connection to remote database. Please check URL, login, and password.",
+							e1);
+					Dna.logger.log(l);
+    				JOptionPane.showMessageDialog(null,
+    					    "Could not establish connection to remote database.\nPlease check URL, login, and password.",
+    					    "Check failed",
+    					    JOptionPane.ERROR_MESSAGE);
+    			}
+    			if (connectionValid) {
+    				progressMonitor.setProgress(1);
+        			progressMonitor.setNote("2/3 Creating tables...");
+    			} else {
+    				progressMonitor.setProgress(3);
+    			}
+    			if (connectionValid == true) {
+					connectionValid = testConnection.createTables(encryptedPassword);
+					if (connectionValid == false) {
+						LogEvent l = new LogEvent(Logger.ERROR,
+								"[SQL] Failed to create tables in the database.",
+								"Failed to create tables in the database.");
+						Dna.logger.log(l);
+	    				JOptionPane.showMessageDialog(null,
+	    					    "Failed to create tables in the database.",
+	    					    "Operation failed",
+	    					    JOptionPane.ERROR_MESSAGE);
+	    			}
+    			}
+    		} else if (type.equals("sqlite")) {
+    			progressMonitor.setProgress(1);
+    			progressMonitor.setNote("2/3 Creating tables...");
+    			connectionValid = testConnection.createTables(encryptedPassword);
+    			if (connectionValid == false) {
+					LogEvent l = new LogEvent(Logger.ERROR,
+							"[SQL] Failed to create tables in the database.",
+							"Failed to create tables in the database.");
+					Dna.logger.log(l);
+    				JOptionPane.showMessageDialog(null,
+    					    "Could not create tables in the database.",
+    					    "Operation failed",
+    					    JOptionPane.ERROR_MESSAGE);
+    			}
+    		}
+
+			// save the connection profile for retrieval from parent class via getConnectionProfile() method
+			if (connectionValid) {
+				progressMonitor.setProgress(2);
+    			progressMonitor.setNote("3/3 Logging changes...");
+			} else {
+				progressMonitor.setProgress(3);
+			}
+			if (connectionValid == true) {
+				cp = testConnection.getConnectionProfile();
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[GUI] Data structures were set up in SQLite database.",
+						"Data structures were set up in: " + new File(connectionDetailsPanel.getUrl()).getAbsolutePath());
+				Dna.logger.log(l);
+				JOptionPane.showMessageDialog(null,
+					    "Data structures were set up in:\n" + new File(connectionDetailsPanel.getUrl()).getAbsolutePath(),
+					    "Success",
+					    JOptionPane.PLAIN_MESSAGE);
+				progressMonitor.setProgress(3);
+				NewDatabaseDialog.this.dispose();
+			}
+			clearButton.setEnabled(true);
+			cancelButton.setEnabled(true);
+			saveButton.setEnabled(true);
+		}
 	}
 	
 	/**

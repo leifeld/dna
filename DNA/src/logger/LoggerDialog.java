@@ -16,6 +16,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -61,6 +63,7 @@ public class LoggerDialog extends JDialog {
 	private static final long serialVersionUID = -8365310356679647056L;
 	private JTable table;
 	private JTextArea summaryTextArea, detailsTextArea, logTextArea, exceptionTextArea;
+	private HashMap<Integer, Coder> coders;
 
 	/**
 	 * Create a new instance of the logger dialog window.
@@ -69,6 +72,18 @@ public class LoggerDialog extends JDialog {
 		this.setModal(true);
 		this.setTitle("Log entries");
 		JPanel mainPanel = new JPanel(new BorderLayout());
+		
+		// store coders to avoid re-accessing SQL in the table cell renderer
+		ArrayList<Coder> coderList;
+		if (Dna.sql.getActiveCoder() == null || Dna.sql.getConnectionProfile() == null) {
+			coderList = new ArrayList<Coder>();
+		} else {
+			coderList = Dna.sql.getCoders();
+		}
+		coders = new HashMap<Integer, Coder>();
+		for (int i = 0; i < coderList.size(); i++) {
+			coders.put(coderList.get(i).getId(), coderList.get(i));
+		}
 
 		// upper panel with filters and buttons
 		JPanel filterPanel = new JPanel(new BorderLayout());
@@ -105,7 +120,7 @@ public class LoggerDialog extends JDialog {
 		JCheckBox warningCheckBox = new JCheckBox("Warnings", true);
 		warningCheckBox.setToolTipText("Display log events with priority 2 (warnings)?");
 		warningCheckBox.setBackground(new Color(255, 255, 130));
-		JCheckBox messageCheckBox = new JCheckBox("Messages", false);
+		JCheckBox messageCheckBox = new JCheckBox("Messages", true);
 		messageCheckBox.setToolTipText("Display log events with priority 1 (messages)?");
 		messageCheckBox.setBackground(Color.BLACK);
 		messageCheckBox.setForeground(Color.WHITE);
@@ -491,11 +506,10 @@ public class LoggerDialog extends JDialog {
         		String s = ((LocalDateTime) value).format(formatter);
         		c = renderer.getTableCellRendererComponent(table, s, isSelected, hasFocus, row, column);
         	} else if (column == 5) {
-        		if (Dna.sql == null || (int) value == -1) {
+        		if (Dna.sql.getConnectionProfile() == null || (int) value == -1 || coders.isEmpty() || !coders.containsKey((int) value)) {
         			value = null;
         		} else {
-        			Coder coder = Dna.sql.getCoder((int) value);
-        			c = new CoderBadgePanel(coder, 14, 22);
+        			c = new CoderBadgePanel(coders.get((int) value), 14, 22);
         		}
         	}
         	if (isSelected == true) {

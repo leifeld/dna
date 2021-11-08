@@ -183,14 +183,24 @@ class Popup extends JDialog {
 		gbc.anchor = GridBagConstraints.EAST;
 		
 		// add fields for the values
+		ArrayList<Integer> variableIndices = new ArrayList<Integer>();
+		ArrayList<Integer> variableIds = new ArrayList<Integer>();
+		for (int i = 0; i < variables.size(); i++) {
+			if (variables.get(i).getDataType().equals("short text")) {
+				variableIndices.add(i);
+				variableIds.add(variables.get(i).getVariableId());
+			}
+		}
+		ArrayList<ArrayList<Entity>> entities = Dna.sql.getEntities(variableIds);
+		
+		// create boxes with values
 		for (int i = 0; i < variables.size(); i++) {
 			String key = variables.get(i).getKey();
 			String dataType = variables.get(i).getDataType();
 			JLabel label = new JLabel(key, JLabel.TRAILING);
 			if (dataType.equals("short text")) {
-				ArrayList<Entity> entitiesList = Dna.sql.getEntities(variables.get(i).getVariableId());
-				Entity[] entitiesArray = new Entity[entitiesList.size()];
-				entitiesArray = entitiesList.toArray(entitiesArray);
+				Entity[] entitiesArray = new Entity[entities.get(variableIndices.get(i)).size()];
+				entitiesArray = entities.get(variableIndices.get(i)).toArray(entitiesArray);
 				JComboBox<Entity> box = new JComboBox<Entity>(entitiesArray);
 				box.setRenderer(new AttributeComboBoxRenderer());
 				box.setEditable(true);
