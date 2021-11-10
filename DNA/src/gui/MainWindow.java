@@ -101,6 +101,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	private ActionCreateDatabase actionCreateDatabase;
 	private ActionOpenProfile actionOpenProfile; 
 	private ActionSaveProfile actionSaveProfile;
+	private ActionCoderManager actionCoderManager;
 	private ActionQuit actionQuit;
 	private ActionCloseDatabase actionCloseDatabase;
 	private ActionAddDocument actionAddDocument;
@@ -183,6 +184,10 @@ public class MainWindow extends JFrame implements SqlListener {
 		ImageIcon saveProfileIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-download.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		actionSaveProfile = new ActionSaveProfile("Save connection profile", saveProfileIcon, "Save a connection profile, which acts as a bookmark to a database", KeyEvent.VK_S);
 		actionSaveProfile.setEnabled(false);
+
+		ImageIcon coderManagerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-users.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionCoderManager = new ActionCoderManager("Open coder manager", coderManagerIcon, "Open the coder manager to edit coders and their permissions.", KeyEvent.VK_M);
+		actionCoderManager.setEnabled(false);
 		
 		ImageIcon quitIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-logout.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		actionQuit = new ActionQuit("Exit / quit", quitIcon, "Close the Discourse Network Analyzer", KeyEvent.VK_Q);
@@ -241,6 +246,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionCreateDatabase,
 				actionOpenProfile,
 				actionSaveProfile,
+				actionCoderManager,
 				actionQuit,
 				actionAddDocument,
 				actionRemoveDocuments,
@@ -1136,12 +1142,18 @@ public class MainWindow extends JFrame implements SqlListener {
 			changedDocumentTableSelection();
 		}
 		if (Dna.sql.getActiveCoder() != null) {
+			if (Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
+				actionCoderManager.setEnabled(true);
+			} else {
+				actionCoderManager.setEnabled(false);
+			}
 			if (Dna.sql.getActiveCoder().isPermissionEditAttributes() == true) {
 				actionAttributeManager.setEnabled(true);
 			} else {
 				actionAttributeManager.setEnabled(false);
 			}
 		} else {
+			actionCoderManager.setEnabled(false);
 			actionAttributeManager.setEnabled(false);
 		}
 	}
@@ -1439,6 +1451,34 @@ public class MainWindow extends JFrame implements SqlListener {
 			}
 		}
 	}
+
+	/**
+	 * An action to display a coder manager dialog window.
+	 */
+	class ActionCoderManager extends AbstractAction {
+		private static final long serialVersionUID = -771898426024889217L;
+
+		public ActionCoderManager(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			if (Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
+				new CoderManager();
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[GUI] Action executed: opened coder manager.",
+						"Opened a coder manager window from the GUI.");
+				Dna.logger.log(l);
+			} else {
+				LogEvent l = new LogEvent(Logger.WARNING,
+						"[GUI] Action could not be executed: insufficient permissions to open coder manager.",
+						"Attempted to open a coder manager from the GUI, but the coder did not have sufficient permissions for editing attributes. This message should never appear because the menu item for opening a coder manager should be grayed out when the active coder has insufficient permissions. Please report the full error log to the developers through the issue tracker on GitHub.");
+				Dna.logger.log(l);
+			}
+		}
+	}
 	
 	/**
 	 * An action to quit DNA.
@@ -1638,6 +1678,7 @@ public class MainWindow extends JFrame implements SqlListener {
 			}
 		}
 	}
+	
 	/**
 	 * An action to open a new logger dialog window.
 	 */

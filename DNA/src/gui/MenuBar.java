@@ -23,6 +23,7 @@ import gui.MainWindow.ActionAddDocument;
 import gui.MainWindow.ActionAttributeManager;
 import gui.MainWindow.ActionBatchImportDocuments;
 import gui.MainWindow.ActionCloseDatabase;
+import gui.MainWindow.ActionCoderManager;
 import gui.MainWindow.ActionCreateDatabase;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionLoggerDialog;
@@ -54,6 +55,7 @@ public class MenuBar extends JMenuBar implements SqlListener {
 	 * @param actionCreateDatabase        Action for creating a new database.
 	 * @param actionOpenProfile           Action for opening connection profile.
 	 * @param actionSaveProfile           Action for saving connection profile.
+	 * @param actionCoderManager          Action for opening coder manager.
 	 * @param actionQuit                  Action for quitting DNA.
 	 * @param actionAddDocument           Action for adding a document.
 	 * @param actionRemoveDocuments       Action for removing documents.
@@ -70,6 +72,7 @@ public class MenuBar extends JMenuBar implements SqlListener {
 			ActionCreateDatabase actionCreateDatabase,
 			ActionOpenProfile actionOpenProfile,
 			ActionSaveProfile actionSaveProfile,
+			ActionCoderManager actionCoderManager,
 			ActionQuit actionQuit,
 			ActionAddDocument actionAddDocument,
 			ActionRemoveDocuments actionRemoveDocuments,
@@ -104,6 +107,10 @@ public class MenuBar extends JMenuBar implements SqlListener {
 		// database menu: save a connection profile
 		JMenuItem saveProfileItem = new JMenuItem(actionSaveProfile);
 		databaseMenu.add(saveProfileItem);
+
+		// database menu: open coder manager
+		JMenuItem coderManagerItem = new JMenuItem(actionCoderManager);
+		databaseMenu.add(coderManagerItem);
 
 		// database menu: quit DNA
 		JMenuItem quitItem = new JMenuItem(actionQuit);

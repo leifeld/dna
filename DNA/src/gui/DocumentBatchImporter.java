@@ -60,7 +60,6 @@ public class DocumentBatchImporter extends JDialog {
 	private File[] files;
 	private JList<String> fileList;
 	private DefaultListModel<String> listModel;
-	// private SpinnerDateModel model;
 	private JTextField titlePatternField, authorPatternField, sourcePatternField, sectionPatternField, typePatternField, notesPatternField, datePatternField, dateFormatField;
 	private JTextField titlePreviewField, authorPreviewField, sourcePreviewField, sectionPreviewField, typePreviewField, notesPreviewField, datePreviewField;
 	private JTextField dateFormatPreview;
