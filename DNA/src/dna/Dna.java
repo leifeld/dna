@@ -9,7 +9,7 @@ public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2021-11-08";
+	public static final String date = "2021-11-10";
 	public static final String version = "3.0.0";
 	MainWindow mainWindow;
 	
@@ -26,11 +26,12 @@ public class Dna {
 		mainWindow = new MainWindow();
 	}
 	
+	/**
+	 * Main class. Start DNA.
+	 * 
+	 * @param args Any arguments from the terminal/command line/shell.
+	 */
 	public static void main(String[] args) {
 		dna = new Dna();
-	}
-
-	public MainWindow getMainWindow() {
-		return mainWindow;
 	}
 }

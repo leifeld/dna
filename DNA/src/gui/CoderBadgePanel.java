@@ -30,7 +30,9 @@ public class CoderBadgePanel extends JPanel {
 	/**
 	 * Constructor for CoderBadgePanel
 	 * 
-	 * @param coder  A Coder object, which contains ID, name, and color.
+	 * @param coder          A Coder object, which contains ID, name, and color.
+	 * @param size           Height/width of the color button.
+	 * @param maxNameLength  Maximal character length of the name.
 	 */
 	public CoderBadgePanel(Coder coder, int size, int maxNameLength) {
 		createLayout(coder, size, maxNameLength);
@@ -50,6 +52,14 @@ public class CoderBadgePanel extends JPanel {
 		createLayout(coder, 18, 22);
 	}
 	
+	/**
+	 * Creates the layout of the coder badge panel. For internal use in the
+	 * class.
+	 * 
+	 * @param coder          The coder.
+	 * @param size           Height/width of the color button.
+	 * @param maxNameLength  Maximal character length of the name.
+	 */
 	private void createLayout(Coder coder, int size, int maxNameLength) {
 		this.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
 		JButton colorButton = (new JButton() {

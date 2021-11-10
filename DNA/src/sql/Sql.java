@@ -17,7 +17,6 @@ import javax.sql.DataSource;
 import org.jasypt.util.password.StrongPasswordEncryptor;
 import org.sqlite.SQLiteDataSource;
 
-import com.mysql.cj.jdbc.MysqlDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -133,57 +132,27 @@ public class Sql {
 	        		"[SQL] An SQLite DNA database has been opened as a data source.",
 	        		"An SQLite DNA database has been opened as a data source.");
 	        Dna.logger.log(l);
-		} else if (cp.getType().equals("mysql")) {
-			MysqlDataSource msds = new MysqlDataSource();
-			msds.setServerName(cp.getUrl());
-			msds.setPort(cp.getPort());
-			msds.setUser(cp.getUser());
-			msds.setPassword(cp.getPassword());
-			msds.setDatabaseName(cp.getDatabaseName());
-			ds = msds;
-	        LogEvent l = new LogEvent(Logger.MESSAGE,
-	        		"[SQL] A MySQL DNA database has been opened as a data source.",
-	        		"A MySQL DNA database has been opened as a data source.");
-	        Dna.logger.log(l);
-		} else if (cp.getType().equals("postgresql")) {
-			// Hikari connection pool requires the following JAR dependencies:
-			// - HikariCP-5.0.0.jar
-			// - slf4j-api-2.0.0-alpha5.jar (required for logging)
-			// - slf4j-nop-2.0.0-alpha5.jar (optional; switches logging off)
+		} else if (cp.getType().equals("mysql") || cp.getType().equals("postgresql")) {
 			HikariConfig config = new HikariConfig();
 			config.setMaximumPoolSize(30);
 			config.setMinimumIdle(5);
 			config.setPassword(cp.getPassword());
 			config.setUsername(cp.getUser());
-			config.setJdbcUrl("jdbc:postgresql://" + cp.getUrl() + ":" + cp.getPort() + "/" + cp.getDatabaseName());
+			config.setJdbcUrl("jdbc:" + cp.getType() + "://" + cp.getUrl() + ":" + cp.getPort() + "/" + cp.getDatabaseName());
 			ds = new HikariDataSource(config);
-			
-			/*
-			 * old code without connection pooling (takes almost twice as long):
-			 * 
-			PGSimpleDataSource pgsds = new PGSimpleDataSource();
-			String[] serverAddresses = { cp.getUrl() };
-			pgsds.setServerNames(serverAddresses);
-			pgsds.setUser(cp.getUser());
-			pgsds.setPassword(cp.getPassword());
-			pgsds.setDatabaseName(cp.getDatabaseName());
-			int[] serverPortNumbers = { cp.getPort() };
-			pgsds.setPortNumbers(serverPortNumbers);
-			ds = pgsds;
-			*/
 	        LogEvent l = new LogEvent(Logger.MESSAGE,
-	        		"[SQL] A PostgreSQL DNA database has been opened as a data source.",
-	        		"A PostgreSQL DNA database has been opened as a data source.");
+	        		"[SQL] A " + cp.getType() + " DNA database has been opened as a data source.",
+	        		"A " + cp.getType() + " DNA database has been opened as a data source.");
 	        Dna.logger.log(l);
 		} else {
-	        LogEvent l = new LogEvent(Logger.ERROR,
+			LogEvent l = new LogEvent(Logger.ERROR,
 	        		"[SQL] Failed to regognize database format.",
 	        		"Attempted to open a database of type \"" + cp.getType() + "\", but the type does not seem to be supported.");
 	        Dna.logger.log(l);
 		}
 		fireConnectionChange();
 		if (test == false) {
-			updateActiveCoder();  // update active coder and notify listeners about the update
+			updateActiveCoder(); // update active coder and notify listeners about the update
 		}
 	}
 	
@@ -926,7 +895,7 @@ public class Sql {
 	public ArrayList<Coder> getCoders() {
 		ArrayList<Coder> coders = new ArrayList<Coder>();
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("SELECT * FROM Coders;");
+				PreparedStatement s1 = conn.prepareStatement("SELECT * FROM CODERS;");
 				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM CODERRELATIONS WHERE Coder = ?;")) {
         	ResultSet rs1 = s1.executeQuery();
         	while (rs1.next()) {
@@ -1658,7 +1627,7 @@ public class Sql {
 	 * @category statement
 	 */
 	public void addStatement(Statement statement, int documentId) {
-		int statementId = -1, entityId = -1, attributeVariableId = -1;
+		long statementId = -1, entityId = -1, attributeVariableId = -1;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("INSERT INTO STATEMENTS (StatementTypeId, DocumentId, Start, Stop, Coder) VALUES (?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
 				PreparedStatement s2 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Entity) VALUES (?, ?, ?);");
@@ -1684,8 +1653,9 @@ public class Sql {
 			s1.setInt(4, statement.getStop());
 			s1.setInt(5, statement.getCoderId());
 			s1.executeUpdate();
-			if (s1.getGeneratedKeys().next()) {
-				statementId = s1.getGeneratedKeys().getInt(1);
+			ResultSet generatedKeysResultSet = s1.getGeneratedKeys();
+			while (generatedKeysResultSet.next()) {
+				statementId = generatedKeysResultSet.getInt(1);
 			}
 			l = new LogEvent(Logger.MESSAGE,
 					"[SQL]  ├─ Transaction: Row with ID " + statementId + " added to the STATEMENTS table.",
@@ -1751,15 +1721,15 @@ public class Sql {
 					while (r.next()) {
 						try {
 							attributeVariableId = r.getInt("ID");
-							s11.setInt(1, entityId);
-							s11.setInt(2, attributeVariableId);
+							s11.setLong(1, entityId);
+							s11.setLong(2, attributeVariableId);
 							r2 = s11.executeQuery();
 							while (r2.next()) {
 								if (r2.getInt(1) > 0) {
 									// attribute value already exists in the ATTRIBUTEVALUES table; don't do anything
 								} else {
-									s9.setInt(1, entityId); // entity ID
-									s9.setInt(2, attributeVariableId); // attribute variable ID
+									s9.setLong(1, entityId); // entity ID
+									s9.setLong(2, attributeVariableId); // attribute variable ID
 									s9.setString(3, ""); // put an empty value into the attribute value field initially
 									s9.executeUpdate();
 									l = new LogEvent(Logger.MESSAGE,
@@ -1778,16 +1748,16 @@ public class Sql {
 					}
 					
 					// finally, write into the DATASHORTTEXT table
-					s2.setInt(1, statementId);
+					s2.setLong(1, statementId);
 					s2.setInt(2, statement.getValues().get(i).getVariableId());
-					s2.setInt(3, entityId);
+					s2.setLong(3, entityId);
 					s2.executeUpdate();
 					l = new LogEvent(Logger.MESSAGE,
 							"[SQL]  ├─ Transaction: Added an entity to the DATASHORTTEXT table for Variable " + statement.getValues().get(i).getVariableId() + ".",
 							"Added a row with entity ID " + entityId + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATASHORTTEXT table during the transaction.");
 					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("long text")) {
-					s3.setInt(1, statementId);
+					s3.setLong(1, statementId);
 					s3.setInt(2, statement.getValues().get(i).getVariableId());
 					s3.setString(3, (String) statement.getValues().get(i).getValue());
 					s3.executeUpdate();
@@ -1796,7 +1766,7 @@ public class Sql {
 							"Added a row for Variable " + statement.getValues().get(i).getVariableId() + " to the DATALONGTEXT table during the transaction.");
 					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("integer")) {
-					s4.setInt(1, statementId);
+					s4.setLong(1, statementId);
 					s4.setInt(2, statement.getValues().get(i).getVariableId());
 					s4.setInt(3, (int) statement.getValues().get(i).getValue());
 					s4.executeUpdate();
@@ -1805,7 +1775,7 @@ public class Sql {
 							"Added a row with Value " + (int) statement.getValues().get(i).getValue() + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATAINTEGER table during the transaction.");
 					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("boolean")) {
-					s5.setInt(1, statementId);
+					s5.setLong(1, statementId);
 					s5.setInt(2, statement.getValues().get(i).getVariableId());
 					s5.setInt(3, (int) statement.getValues().get(i).getValue());
 					s5.executeUpdate();
@@ -2007,8 +1977,9 @@ public class Sql {
 			// copy the statement in the STATEMENTS table
 			s1.setInt(1, statementId);
 			s1.executeUpdate();
-			if (s1.getGeneratedKeys().next()) {
-				id = s1.getGeneratedKeys().getInt(1);
+			ResultSet generatedKeysResultSet = s1.getGeneratedKeys();
+			while (generatedKeysResultSet.next()) {
+				id = generatedKeysResultSet.getInt(1);
 			}
 			
 			// set new coder
@@ -2445,8 +2416,9 @@ public class Sql {
 			s1.setInt(4, entity.getColor().getGreen());
 			s1.setInt(5, entity.getColor().getBlue());
 			s1.executeUpdate();
-			if (s1.getGeneratedKeys().next()) {
-				entityId = s1.getGeneratedKeys().getInt(1);
+			ResultSet generatedKeysResultSet = s1.getGeneratedKeys();
+			while (generatedKeysResultSet.next()) {
+				entityId = generatedKeysResultSet.getInt(1);
 			}
 			
 			// get the attribute variable IDs from the ATTRIBUTEVARIABLES table

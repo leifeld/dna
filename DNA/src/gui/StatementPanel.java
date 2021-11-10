@@ -290,14 +290,22 @@ class StatementPanel extends JPanel implements SqlListener {
 				if (isSelected) {
             		cbp.setBackground(javax.swing.UIManager.getColor("Table.dropCellBackground"));
 				} else {
-					cbp.setBackground(s.getStatementTypeColor()); // TODO: if-clause to use Coder color; store coder in Sql class?
+					if (Dna.sql.getActiveCoder().isColorByCoder()) {
+						cbp.setBackground(s.getCoderColor());
+					} else {
+						cbp.setBackground(s.getStatementTypeColor());
+					}
 				}
 				return cbp;
         	} else {
             	if (isSelected) {
             		c.setBackground(javax.swing.UIManager.getColor("Table.dropCellBackground"));
             	} else {
-            		c.setBackground(s.getStatementTypeColor()); // TODO: if-clause to use Coder color; store coder in Sql class?
+            		if (Dna.sql.getActiveCoder().isColorByCoder()) {
+						c.setBackground(s.getCoderColor());
+					} else {
+						c.setBackground(s.getStatementTypeColor());
+					}
             	}
     	        return c;
         	}

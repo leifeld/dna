@@ -40,7 +40,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ProgressMonitor;
-import javax.swing.SpinnerDateModel;
 import javax.swing.SwingWorker;
 import javax.swing.ToolTipManager;
 import javax.swing.border.EtchedBorder;
@@ -52,22 +51,25 @@ import logger.Logger;
 import model.Document;
 import model.Statement;
 
+/**
+ * Represents a dialog window that can batch-import documents from a folder.
+ */
 public class DocumentBatchImporter extends JDialog {
 	private static final long serialVersionUID = 1156604686298665919L;
-	File folder;
-	File[] files;
-	JList<String> fileList;
-	DefaultListModel<String> listModel;
-	SpinnerDateModel model;
-	public JTextField titlePatternField, authorPatternField, sourcePatternField, sectionPatternField, typePatternField, notesPatternField, 
-			datePatternField, dateFormatField;
-	public JTextField titlePreviewField, authorPreviewField, sourcePreviewField, sectionPreviewField, typePreviewField, notesPreviewField, 
-			datePreviewField;
+	private File folder;
+	private File[] files;
+	private JList<String> fileList;
+	private DefaultListModel<String> listModel;
+	// private SpinnerDateModel model;
+	private JTextField titlePatternField, authorPatternField, sourcePatternField, sectionPatternField, typePatternField, notesPatternField, datePatternField, dateFormatField;
+	private JTextField titlePreviewField, authorPreviewField, sourcePreviewField, sectionPreviewField, typePreviewField, notesPreviewField, datePreviewField;
 	private JTextField dateFormatPreview;
 	private JCheckBox titleCheckBox, authorCheckBox, sectionCheckBox, sourceCheckBox, typeCheckBox, dateCheckBox, notesCheckBox;
-	JTextArea textPreviewArea;
+	private JTextArea textPreviewArea;
 	
-	
+	/**
+	 * Create an instance of the document batch importer dialog window.
+	 */
 	public DocumentBatchImporter() {
 		this.setTitle("Import text files...");
 		ImageIcon tableAddIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-import.png"));
@@ -615,7 +617,14 @@ public class DocumentBatchImporter extends JDialog {
         this.setVisible(true);
 	}
 	
-	public static String patternToString(String text, String pattern) {
+	/**
+	 * Match a pattern in a String and return the resulting match.
+	 * 
+	 * @param text     The input text.
+	 * @param pattern  The pattern to be found in the text.
+	 * @return         The substring that matches the pattern.
+	 */
+	private static String patternToString(String text, String pattern) {
 		Pattern p;
 		try {
 			p = Pattern.compile(pattern);
@@ -635,7 +644,14 @@ public class DocumentBatchImporter extends JDialog {
 		}
 	}
 
-	public static LocalDateTime stringToDateTime(String text, String dateTimeFormat) {
+	/**
+	 * Convert a String to a date using a specific date-time format.
+	 * 
+	 * @param text            The input text, representing the date as a String.
+	 * @param dateTimeFormat  The date/time format pattern.
+	 * @return                The converted local date-time object.
+	 */
+	private static LocalDateTime stringToDateTime(String text, String dateTimeFormat) {
 		LocalDateTime dateTime = null;
 		if (text.equals("")) {
 			dateTime = LocalDateTime.now();
@@ -650,7 +666,11 @@ public class DocumentBatchImporter extends JDialog {
 		return dateTime;
 	}
 	
-	static class ImportWorker extends SwingWorker<Void, Document> {
+	/**
+	 * Represents a Swing worker for batch-importing documents into the DNA
+	 * database.
+	 */
+	private static class ImportWorker extends SwingWorker<Void, Document> {
 		JDialog dialog;
 		File[] files;
 		boolean parseDate, parseTitle, parseAuthor, parseSource, parseSection, parseType, parseNotes;
@@ -666,7 +686,29 @@ public class DocumentBatchImporter extends JDialog {
         int good, bad, numDocumentsBefore;
         ProgressMonitor progressMonitor;
         
-        public ImportWorker(
+        /**
+         * Create a new batch document importer Swing worker.
+         * 
+         * @param dialog          A reference to the enclosing dialog in order
+         *   to be able to dispose of the dialog from within this thread.
+         * @param files           An array of files to be imported.
+         * @param parseDate       Should the date field be used for parsing?
+         * @param parseTitle      Should the title field be used for parsing?
+         * @param parseAuthor     Should the author field be used for parsing?
+         * @param parseSource     Should the source field be used for parsing?
+         * @param parseSection    Should the section field be used for parsing?
+         * @param parseType       Should the type field be used for parsing?
+         * @param parseNotes      Should the notes field be used for parsing?
+         * @param datePattern     The pattern to identify/parse the date/time.
+         * @param dateFormat      The format of the date/time for conversion.
+         * @param titlePattern    The pattern to parse the title.
+         * @param authorPattern   The pattern to parse the author.
+         * @param sourcePattern   The pattern to parse the source.
+         * @param sectionPattern  The pattern to parse the section.
+         * @param typePattern     The pattern to parse the type.
+         * @param notesPattern    The pattern to parse the notes.
+         */
+        ImportWorker(
         		JDialog dialog,
         		File[] files,
         		boolean parseDate,

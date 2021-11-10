@@ -14,16 +14,22 @@ import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 
+/**
+ * This class shows an about window with instructions.
+ */
 @SuppressWarnings("serial")
 public class AboutWindow extends JDialog {
 
-	/**
-	 * This class shows an about window with instructions.
-	 */
-	JPanel aboutContents;
-	JEditorPane aboutText;
-	JScrollPane aboutScrollPane;
+	private JPanel aboutContents;
+	private JEditorPane aboutText;
+	private JScrollPane aboutScrollPane;
 
+	/**
+	 * Create and show a new About DNA window.
+	 * 
+	 * @param version DNA version.
+	 * @param date    Date of the DNA version.
+	 */
 	public AboutWindow(String version, String date) {
 		this.setTitle("About DNA");
 		ImageIcon dna32Icon = new ImageIcon(getClass().getResource("/icons/dna32.png"));

@@ -146,6 +146,9 @@ public class CoderPasswordCheckDialog {
 		}
 	}
 
+	/**
+	 * A model for holding coders in a combo box.
+	 */
 	public class CoderComboBoxModel extends AbstractListModel<Coder> implements ComboBoxModel<Coder> {
 		private static final long serialVersionUID = 8412600030500406168L;
 		private Object selectedItem;
@@ -180,7 +183,6 @@ public class CoderPasswordCheckDialog {
 		@Override
 		public void setSelectedItem(Object anItem) {
 			selectedItem = anItem;
-			//fireContentsChanged(this, 0, getSize() - 1);
 		}
 		
 		@Override

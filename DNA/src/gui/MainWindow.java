@@ -699,6 +699,8 @@ public class MainWindow extends JFrame implements SqlListener {
 						if (dialog == 0) {
 							popup.saveContents(false);
 						}
+					} else if (popup.isEditable() && popup.hasWindowDecoration() == false) {
+						popup.saveContents(false);
 					}
 					int newStatementId = Dna.sql.cloneStatement(s.getId(), Dna.sql.getActiveCoder().getId());
 			        StatementTableRefreshWorker statementWorker = new StatementTableRefreshWorker(newStatementId); // do not use refreshStatementTable method because we need to select the new statement ID

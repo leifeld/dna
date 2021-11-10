@@ -10,7 +10,6 @@
 	<classpathentry kind="lib" path="lib/jasypt-1.9.3.jar"/>
 	<classpathentry kind="lib" path="lib/JRI.jar"/>
 	<classpathentry kind="lib" path="lib/LGoodDatePicker-11.2.1.jar"/>
-	<classpathentry kind="lib" path="lib/mysql-connector-java-8.0.24.jar"/>
 	<classpathentry kind="lib" path="lib/postgresql-42.2.20.jar"/>
 	<classpathentry kind="lib" path="lib/sqlite-jdbc-3.34.0.jar"/>
 	<classpathentry kind="lib" path="lib/swingx-all-1.6.5-1.jar"/>
@@ -22,5 +21,6 @@
 	<classpathentry kind="lib" path="lib/HikariCP-5.0.0.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-nop-2.0.0-alpha5.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-api-2.0.0-alpha5.jar"/>
+	<classpathentry kind="lib" path="lib/mysql-connector-java-8.0.24.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
