@@ -3,7 +3,6 @@ package gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
@@ -543,17 +542,184 @@ public class CoderManager extends JDialog {
 		JButton applyButton = new JButton("Apply/save", applyIcon);
 		applyButton.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				/*
-				Coder c = coderList.getSelectedValue();
-				c.setName(nameField.getText());
-				c.setColor(colorButton.getColor());
-				String plainPassword = new String(pw1Field.getPassword());
-				StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();
-				String encryptedPassword = passwordEncryptor.encryptPassword(plainPassword);
-				*/
+			public void actionPerformed(ActionEvent e) {
+				boolean changedValues = false;
 				
-				// TODO: extract all the updated information and call a new function updateCoder in the Sql class
+				// password
+				String newPasswordHash = null;
+				String plainPassword = new String(pw1Field.getPassword());
+				String repeatPassword = new String(pw2Field.getPassword());
+				if (!plainPassword.equals("^\\s*$") && plainPassword.equals(repeatPassword)) {
+					StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();
+					newPasswordHash = passwordEncryptor.encryptPassword(plainPassword);
+					changedValues = true;
+				}
+				
+				Coder c = new Coder(coderList.getSelectedValue());
+				
+				// coder name
+				if (!c.getName().equals(nameField.getText()) && !nameField.getText().matches("^\\s*$") && c.getId() != 1) {
+					c.setName(nameField.getText());
+					changedValues = true;
+				}
+				
+				// coder color
+				if (!c.getColor().equals(colorButton.getColor()) && c.getId() != 1) {
+					c.setColor(colorButton.getColor());
+					changedValues = true;
+				}
+				
+				// permission: add documents
+				if (boxAddDocuments.isSelected() == true && c.isPermissionAddDocuments() == false) {
+					c.setPermissionAddDocuments(true);
+					changedValues = true;
+				}
+				if (boxAddDocuments.isSelected() == false && c.isPermissionAddDocuments() == true && c.getId() != 1) {
+					c.setPermissionAddDocuments(false);
+					changedValues = true;
+				}
+
+				// permission: edit documents
+				if (boxEditDocuments.isSelected() == true && c.isPermissionEditDocuments() == false) {
+					c.setPermissionEditDocuments(true);
+					changedValues = true;
+				}
+				if (boxEditDocuments.isSelected() == false && c.isPermissionEditDocuments() == true && c.getId() != 1) {
+					c.setPermissionEditDocuments(false);
+					changedValues = true;
+				}
+
+				// permission: delete documents
+				if (boxDeleteDocuments.isSelected() == true && c.isPermissionDeleteDocuments() == false) {
+					c.setPermissionDeleteDocuments(true);
+					changedValues = true;
+				}
+				if (boxDeleteDocuments.isSelected() == false && c.isPermissionDeleteDocuments() == true && c.getId() != 1) {
+					c.setPermissionDeleteDocuments(false);
+					changedValues = true;
+				}
+
+				// permission: import documents
+				if (boxImportDocuments.isSelected() == true && c.isPermissionImportDocuments() == false) {
+					c.setPermissionImportDocuments(true);
+					changedValues = true;
+				}
+				if (boxImportDocuments.isSelected() == false && c.isPermissionImportDocuments() == true && c.getId() != 1) {
+					c.setPermissionImportDocuments(false);
+					changedValues = true;
+				}
+
+				// permission: add statements
+				if (boxAddStatements.isSelected() == true && c.isPermissionAddStatements() == false) {
+					c.setPermissionAddStatements(true);
+					changedValues = true;
+				}
+				if (boxAddStatements.isSelected() == false && c.isPermissionAddStatements() == true && c.getId() != 1) {
+					c.setPermissionAddStatements(false);
+					changedValues = true;
+				}
+
+				// permission: edit statements
+				if (boxEditStatements.isSelected() == true && c.isPermissionEditStatements() == false) {
+					c.setPermissionEditStatements(true);
+					changedValues = true;
+				}
+				if (boxEditStatements.isSelected() == false && c.isPermissionEditStatements() == true && c.getId() != 1) {
+					c.setPermissionEditStatements(false);
+					changedValues = true;
+				}
+
+				// permission: delete statements
+				if (boxDeleteStatements.isSelected() == true && c.isPermissionDeleteStatements() == false) {
+					c.setPermissionDeleteStatements(true);
+					changedValues = true;
+				}
+				if (boxDeleteStatements.isSelected() == false && c.isPermissionDeleteStatements() == true && c.getId() != 1) {
+					c.setPermissionDeleteStatements(false);
+					changedValues = true;
+				}
+
+				// permission: edit attributes
+				if (boxEditAttributes.isSelected() == true && c.isPermissionEditAttributes() == false) {
+					c.setPermissionEditAttributes(true);
+					changedValues = true;
+				}
+				if (boxEditAttributes.isSelected() == false && c.isPermissionEditAttributes() == true && c.getId() != 1) {
+					c.setPermissionEditAttributes(false);
+					changedValues = true;
+				}
+
+				// permission: edit regex
+				if (boxEditRegex.isSelected() == true && c.isPermissionEditRegex() == false) {
+					c.setPermissionEditRegex(true);
+					changedValues = true;
+				}
+				if (boxEditRegex.isSelected() == false && c.isPermissionEditRegex() == true && c.getId() != 1) {
+					c.setPermissionEditRegex(false);
+					changedValues = true;
+				}
+
+				// permission: edit statement types
+				if (boxEditStatementTypes.isSelected() == true && c.isPermissionEditStatementTypes() == false) {
+					c.setPermissionEditStatementTypes(true);
+					changedValues = true;
+				}
+				if (boxEditStatementTypes.isSelected() == false && c.isPermissionEditStatementTypes() == true && c.getId() != 1) {
+					c.setPermissionEditStatementTypes(false);
+					changedValues = true;
+				}
+
+				// permission: edit coders
+				if (boxEditCoders.isSelected() == true && c.isPermissionEditCoders() == false) {
+					c.setPermissionEditCoders(true);
+					changedValues = true;
+				}
+				if (boxEditCoders.isSelected() == false && c.isPermissionEditCoders() == true && c.getId() != 1) {
+					c.setPermissionEditCoders(false);
+					changedValues = true;
+				}
+
+				// permission: view others' documents
+				if (boxViewOthersDocuments.isSelected() == true && c.isPermissionViewOthersDocuments() == false) {
+					c.setPermissionViewOthersDocuments(true);
+					changedValues = true;
+				}
+				if (boxViewOthersDocuments.isSelected() == false && c.isPermissionViewOthersDocuments() == true && c.getId() != 1) {
+					c.setPermissionViewOthersDocuments(false);
+					changedValues = true;
+				}
+
+				// permission: edit others' documents
+				if (boxEditOthersDocuments.isSelected() == true && c.isPermissionEditOthersDocuments() == false) {
+					c.setPermissionEditOthersDocuments(true);
+					changedValues = true;
+				}
+				if (boxEditOthersDocuments.isSelected() == false && c.isPermissionEditOthersDocuments() == true && c.getId() != 1) {
+					c.setPermissionEditOthersDocuments(false);
+					changedValues = true;
+				}
+
+				// permission: view others' statements
+				if (boxViewOthersStatements.isSelected() == true && c.isPermissionViewOthersStatements() == false) {
+					c.setPermissionViewOthersStatements(true);
+					changedValues = true;
+				}
+				if (boxViewOthersStatements.isSelected() == false && c.isPermissionViewOthersStatements() == true && c.getId() != 1) {
+					c.setPermissionViewOthersStatements(false);
+					changedValues = true;
+				}
+
+				// permission: edit others' statements
+				if (boxEditOthersStatements.isSelected() == true && c.isPermissionEditOthersStatements() == false) {
+					c.setPermissionEditOthersStatements(true);
+					changedValues = true;
+				}
+				if (boxEditOthersStatements.isSelected() == false && c.isPermissionEditOthersStatements() == true && c.getId() != 1) {
+					c.setPermissionEditOthersStatements(false);
+					changedValues = true;
+				}
+				
+				// TODO: update coder relations as well + call Dna.sql.updateCoders at the end + add listeners to the check boxes etc to forbid any changes for Admin coder + check valid input and activate/deactivate buttons
 			}
 		});
 		buttonPanel.add(applyButton);

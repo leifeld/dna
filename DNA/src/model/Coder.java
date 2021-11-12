@@ -237,6 +237,41 @@ public class Coder {
 	}
 	
 	/**
+	 * Copy constructor. Creates a deep copy of an existing coder.
+	 * 
+	 * @param coder Existing coder to be cloned.
+	 */
+	public Coder(Coder coder) {
+		this.id = coder.getId();
+		this.name = coder.getName();
+		this.color = coder.getColor();
+		this.refresh = coder.getRefresh();
+		this.fontSize = coder.getFontSize();
+		this.popupWidth = coder.getPopupWidth();
+		this.colorByCoder = coder.isColorByCoder();
+		this.popupDecoration = coder.isPopupDecoration();
+		this.popupAutoComplete = coder.isPopupAutoComplete();
+		this.permissionAddDocuments = coder.isPermissionAddDocuments();
+		this.permissionEditDocuments = coder.isPermissionEditDocuments();
+		this.permissionDeleteDocuments = coder.isPermissionDeleteDocuments();
+		this.permissionImportDocuments = coder.isPermissionImportDocuments();
+		this.permissionAddStatements = coder.isPermissionAddStatements();
+		this.permissionEditStatements = coder.isPermissionEditStatements();
+		this.permissionDeleteStatements = coder.isPermissionDeleteStatements();
+		this.permissionEditAttributes = coder.isPermissionEditAttributes();
+		this.permissionEditRegex = coder.isPermissionEditRegex();
+		this.permissionEditStatementTypes = coder.isPermissionEditStatementTypes();
+		this.permissionEditCoders = coder.isPermissionEditCoders();
+		this.permissionViewOthersDocuments = coder.isPermissionViewOthersDocuments();
+		this.permissionEditOthersDocuments = coder.isPermissionEditOthersDocuments();
+		this.permissionViewOthersStatements = coder.isPermissionEditOthersStatements();
+		this.coderRelations = new HashMap<Integer, CoderRelation>();
+		for (HashMap.Entry<Integer, CoderRelation> entry : coder.getCoderRelations().entrySet()) {
+			this.coderRelations.put(entry.getKey(), new CoderRelation(entry.getValue()));
+		}
+	}
+	
+	/**
 	 * Get the ID of the coder.
 	 * 
 	 * @return The coder's ID.
@@ -659,5 +694,65 @@ public class Coder {
 	 */
 	public HashMap<Integer, CoderRelation> getCoderRelations() {
 		return coderRelations;
+	}
+	
+	/**
+	 * Is the coder identical to another coder?
+	 * 
+	 * @param coder  The other coder.
+	 * @return       Boolean indicator.
+	 */
+	public boolean equals(Coder coder) {
+		boolean sourceIdenticalInTarget = true;
+		boolean targetIdenticalInSource = true;
+		for (HashMap.Entry<Integer, CoderRelation> entry : coder.getCoderRelations().entrySet()) {
+			if (!this.coderRelations.containsKey(entry.getKey())) {
+				targetIdenticalInSource = false;
+				break;
+			} else if (!this.coderRelations.get(entry.getKey()).equals(entry.getValue())) {
+				targetIdenticalInSource = false;
+				break;
+			}
+		}
+		if (targetIdenticalInSource) {
+			for (HashMap.Entry<Integer, CoderRelation> entry : this.coderRelations.entrySet()) {
+				if (!coder.getCoderRelations().containsKey(entry.getKey())) {
+					sourceIdenticalInTarget = false;
+					break;
+				} else if (!coder.getCoderRelations().get(entry.getKey()).equals(entry.getValue())) {
+					sourceIdenticalInTarget = false;
+					break;
+				}
+			}
+		}
+		if (this.id == coder.getId() &&
+				this.name == coder.getName() &&
+				this.color.equals(coder.getColor()) &&
+				this.refresh == coder.getRefresh() &&
+				this.fontSize == coder.getFontSize() &&
+				this.popupWidth == coder.getPopupWidth() &&
+				this.colorByCoder == coder.isColorByCoder() &&
+				this.popupDecoration == coder.isPopupDecoration() &&
+				this.popupAutoComplete == coder.isPopupAutoComplete() &&
+				this.permissionAddDocuments == coder.isPermissionAddDocuments() &&
+				this.permissionEditDocuments == coder.isPermissionEditDocuments() &&
+				this.permissionDeleteDocuments == coder.isPermissionDeleteDocuments() &&
+				this.permissionImportDocuments == coder.isPermissionImportDocuments() &&
+				this.permissionAddStatements == coder.isPermissionAddStatements() &&
+				this.permissionEditStatements == coder.isPermissionEditStatements() &&
+				this.permissionDeleteStatements == coder.isPermissionDeleteStatements() &&
+				this.permissionEditAttributes == coder.isPermissionEditAttributes() &&
+				this.permissionEditRegex == coder.isPermissionEditRegex() &&
+				this.permissionEditStatementTypes == coder.isPermissionEditStatementTypes() &&
+				this.permissionEditCoders == coder.isPermissionEditCoders() &&
+				this.permissionViewOthersDocuments == coder.isPermissionViewOthersDocuments() &&
+				this.permissionEditOthersDocuments == coder.isPermissionEditOthersDocuments() &&
+				this.permissionViewOthersStatements == coder.isPermissionEditOthersStatements() &&
+				sourceIdenticalInTarget &&
+				targetIdenticalInSource) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 }

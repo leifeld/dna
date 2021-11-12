@@ -1078,6 +1078,142 @@ public class Sql {
 	}
 	
 	/**
+	 * Update an existing coder in the database.
+	 * 
+	 * @param coder            The coder with all details, permissions, and
+	 *   coder relations.
+	 * @param newPasswordHash  The new password hash String. Can be {@code ""}
+	 *   or {@code null}, in which case the existing password is retained.
+	 */
+	public void updateCoder(Coder coder, String newPasswordHash) {
+		int coderId = coder.getId();
+		String sql1 = "UPDATE CODERS SET "
+				+ "Name = ?, "
+				+ "Red = ?, "
+				+ "Green = ?, "
+				+ "Blue = ?, "
+				+ "Password = ?, "
+				+ "PermissionAddDocuments = ?, "
+				+ "PermissionEditDocuments = ?, "
+				+ "PermissionDeleteDocuments = ?, "
+				+ "PermissionImportDocuments = ?, "
+				+ "PermissionAddStatements = ?, "
+				+ "PermissionEditStatements = ?, "
+				+ "PermissionDeleteStatements = ?, "
+				+ "PermissionEditAttributes = ?, "
+				+ "PermissionEditRegex = ?, "
+				+ "PermissionEditStatementTypes = ?, "
+				+ "PermissionEditCoders = ?, "
+				+ "PermissionViewOthersDocuments = ?, "
+				+ "PermissionEditOthersDocuments = ?, "
+				+ "PermissionViewOthersStatements = ?, "
+				+ "PermissionEditOthersStatements = ? "
+				+ "WHERE ID = ?;";
+		String sql2 = "UPDATE CODERRELATIONS SET "
+				+ "viewDocuments = ?, "
+				+ "editDocuments = ?, "
+				+ "viewStatements = ?, "
+				+ "editStatements = ? "
+				+ "WHERE Coder = ? AND OtherCoder = ?;";
+		String sql3 = "SELECT COUNT(ID) FROM CODERRELATIONS WHERE Coder = ? AND OtherCoder = ?;";
+		String sql4 = "INSERT INTO CODERRELATIONS ("
+				+ "viewDocuments = ?, "
+				+ "editDocuments = ?, "
+				+ "viewStatements = ?, "
+				+ "editStatements = ?) "
+				+ "VALUES (?, ?, ?, ?) "
+				+ "WHERE Coder = ? AND OtherCoder = ?;";
+		String sql5 = "SELECT Password FROM CODERS WHERE Coder = ?;";
+		
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s1 = conn.prepareStatement(sql1);
+				PreparedStatement s2 = conn.prepareStatement(sql2);
+				PreparedStatement s3 = conn.prepareStatement(sql3);
+				PreparedStatement s4 = conn.prepareStatement(sql4);
+				PreparedStatement s5 = conn.prepareStatement(sql5);
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			ResultSet r;
+			
+			// determine if the new password is the same as the old one
+			String password = null;
+			if (newPasswordHash != null && !newPasswordHash.equals("")) {
+				password = newPasswordHash;
+			} else {
+				s5.setInt(1, coderId);
+				r = s5.executeQuery();
+				while(r.next()) {
+					password = r.getString("Password");
+				}
+			}
+			
+			// update coder permissions and details
+			s1.setString(1, coder.getName());
+			s1.setInt(2, coder.getColor().getRed());
+			s1.setInt(3, coder.getColor().getGreen());
+			s1.setInt(4, coder.getColor().getBlue());
+			s1.setString(5, password);
+			s1.setInt(6, coder.isPermissionAddDocuments() ? 1 : 0);
+			s1.setInt(7, coder.isPermissionEditDocuments() ? 1 : 0);
+			s1.setInt(8, coder.isPermissionDeleteDocuments() ? 1 : 0);
+			s1.setInt(9, coder.isPermissionImportDocuments() ? 1 : 0);
+			s1.setInt(10, coder.isPermissionAddStatements() ? 1 : 0);
+			s1.setInt(11, coder.isPermissionEditStatements() ? 1 : 0);
+			s1.setInt(12, coder.isPermissionDeleteStatements() ? 1 : 0);
+			s1.setInt(13, coder.isPermissionEditAttributes() ? 1 : 0);
+			s1.setInt(14, coder.isPermissionEditRegex() ? 1 : 0);
+			s1.setInt(15, coder.isPermissionEditStatementTypes() ? 1 : 0);
+			s1.setInt(16, coder.isPermissionEditCoders() ? 1 : 0);
+			s1.setInt(17, coder.isPermissionViewOthersDocuments() ? 1 : 0);
+			s1.setInt(18, coder.isPermissionEditOthersDocuments() ? 1 : 0);
+			s1.setInt(19, coder.isPermissionViewOthersStatements() ? 1 : 0);
+			s1.setInt(20, coder.isPermissionEditOthersStatements() ? 1 : 0);
+			s1.setInt(21, coderId);
+        	s1.executeUpdate();
+        	
+        	// go through coder relations and update or insert
+        	for (HashMap.Entry<Integer, CoderRelation> entry : coder.getCoderRelations().entrySet()) {
+        		s3.setInt(1, coderId);
+        		s3.setInt(2, entry.getValue().getTargetCoderId());
+        		r = s3.executeQuery();
+        		while (r.next()) {
+        			if (r.getInt(1) == 0) {
+        				// insert new coder relation
+        				s4.setInt(1, entry.getValue().isViewDocuments() ? 1 : 0);
+        				s4.setInt(2, entry.getValue().isEditDocuments() ? 1 : 0);
+        				s4.setInt(3, entry.getValue().isViewStatements() ? 1 : 0);
+        				s4.setInt(4, entry.getValue().isEditStatements() ? 1 : 0);
+        				s4.setInt(5,  coderId);
+        				s4.setInt(6, entry.getValue().getTargetCoderId());
+        				s4.executeUpdate();
+        			} else {
+        				// update existing coder relation
+        				s2.setInt(1, entry.getValue().isViewDocuments() ? 1 : 0);
+        				s2.setInt(2, entry.getValue().isEditDocuments() ? 1 : 0);
+        				s2.setInt(3, entry.getValue().isViewStatements() ? 1 : 0);
+        				s2.setInt(4, entry.getValue().isEditStatements() ? 1 : 0);
+        				s2.setInt(5,  coderId);
+        				s2.setInt(6, entry.getValue().getTargetCoderId());
+        				s2.executeUpdate();
+        			}
+        		}
+        	}
+        	
+        	conn.commit();
+        	LogEvent l = new LogEvent(Logger.MESSAGE,
+        			"[SQL] Coder " + coderId + " successfully updated.",
+        			"Coder " + coderId + " successfully updated.");
+        	Dna.logger.log(l);
+		} catch (SQLException e) {
+        	LogEvent l = new LogEvent(Logger.ERROR,
+        			"[SQL] Failed to update Coder " + coderId + " in the database.",
+        			"Attempted to update Coder " + coderId + ", but the database access failed.",
+        			e);
+        	Dna.logger.log(l);
+		}
+	}
+	
+	/**
 	 * Authenticate a coder. Check if a user-provided clear-text password for
 	 * the current coder matches the hash of the password stored for the coder
 	 * in the database.
