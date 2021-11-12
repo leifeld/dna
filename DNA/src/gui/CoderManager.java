@@ -2,16 +2,21 @@ package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
+import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
@@ -22,6 +27,7 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -31,11 +37,15 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.jasypt.util.password.StrongPasswordEncryptor;
+
 import dna.Dna;
 import model.Coder;
+import model.CoderRelation;
 
 public class CoderManager extends JDialog {
 	private static final long serialVersionUID = -2714067204780133808L;
+	private ListModel listModel;
 	private JList<Coder> coderList;
 	
 	private JLabel nameLabel, colorLabel, pw1Label, pw2Label;
@@ -47,6 +57,9 @@ public class CoderManager extends JDialog {
 	private JCheckBox boxAddStatements, boxEditStatements, boxDeleteStatements;
 	private JCheckBox boxEditAttributes, boxEditRegex, boxEditStatementTypes, boxEditCoders;
 	private JCheckBox boxViewOthersDocuments, boxEditOthersDocuments, boxViewOthersStatements, boxEditOthersStatements;
+	
+	private JLabel viewOthersDocumentsLabel, editOthersDocumentsLabel, viewOthersStatementsLabel, editOthersStatementsLabel;
+	private JList<CoderRelation> viewOthersDocumentsList, editOthersDocumentsList, viewOthersStatementsList, editOthersStatementsList;
 
 	public CoderManager() {
 		this.setModal(true);
@@ -63,11 +76,11 @@ public class CoderManager extends JDialog {
 		coderList.setCellRenderer(new CoderRenderer());
 		coderList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 		JScrollPane listScroller = new JScrollPane(coderList);
-		listScroller.setPreferredSize(new Dimension(200, 800));
+		listScroller.setPreferredSize(new Dimension(200, 600));
 		coderList.addListSelectionListener(new ListSelectionListener() {
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
-				if (e.getValueIsAdjusting() == false) { // trigger only if selection has been completed
+				if (e.getValueIsAdjusting() == false && !coderList.isSelectionEmpty()) { // trigger only if selection has been completed and a coder is selected
 					Coder c = coderList.getSelectedValue();
 					boxAddDocuments.setEnabled(true);
 					boxEditDocuments.setEnabled(true);
@@ -171,6 +184,93 @@ public class CoderManager extends JDialog {
 					
 					nameField.setText(c.getName());
 					colorButton.setColor(c.getColor());
+					
+					// coder relations
+					listModel.clear();
+					viewOthersDocumentsList.setEnabled(true);
+					viewOthersDocumentsLabel.setEnabled(true);
+					editOthersDocumentsList.setEnabled(true);
+					editOthersDocumentsLabel.setEnabled(true);
+					viewOthersStatementsList.setEnabled(true);
+					viewOthersStatementsLabel.setEnabled(true);
+					editOthersStatementsList.setEnabled(true);
+					editOthersStatementsLabel.setEnabled(true);
+					for (int i = 0; i < coderArrayList.size(); i++) {
+						if (coderArrayList.get(i).getId() != c.getId()) {
+							CoderRelation cr = c.getCoderRelations().get(coderArrayList.get(i).getId());
+							cr.setTargetCoderName(coderArrayList.get(i).getName());
+							cr.setTargetCoderColor(coderArrayList.get(i).getColor());
+							listModel.add(cr);
+						}
+					}
+					viewOthersDocumentsList.setSelectedIndices(listModel.getSelectedViewOthersDocuments());
+					editOthersDocumentsList.setSelectedIndices(listModel.getSelectedEditOthersDocuments());
+					viewOthersStatementsList.setSelectedIndices(listModel.getSelectedViewOthersStatements());
+					editOthersStatementsList.setSelectedIndices(listModel.getSelectedEditOthersStatements());
+				} else if (e.getValueIsAdjusting() == false && coderList.isSelectionEmpty()) { // reset button was pressed
+					boxAddDocuments.setEnabled(false);
+					boxEditDocuments.setEnabled(false);
+					boxDeleteDocuments.setEnabled(false);
+					boxImportDocuments.setEnabled(false);
+					boxAddStatements.setEnabled(false);
+					boxEditStatements.setEnabled(false);
+					boxDeleteStatements.setEnabled(false);
+					boxEditAttributes.setEnabled(false);
+					boxEditRegex.setEnabled(false);
+					boxEditStatementTypes.setEnabled(false);
+					boxEditCoders.setEnabled(false);
+					boxViewOthersDocuments.setEnabled(false);
+					boxEditOthersDocuments.setEnabled(false);
+					boxViewOthersStatements.setEnabled(false);
+					boxEditOthersStatements.setEnabled(false);
+					
+					boxAddDocuments.setSelected(false);
+					boxEditDocuments.setSelected(false);
+					boxDeleteDocuments.setSelected(false);
+					boxImportDocuments.setSelected(false);
+					boxAddStatements.setSelected(false);
+					boxEditStatements.setSelected(false);
+					boxDeleteStatements.setSelected(false);
+					boxEditAttributes.setSelected(false);
+					boxEditRegex.setSelected(false);
+					boxEditStatementTypes.setSelected(false);
+					boxEditCoders.setSelected(false);
+					boxViewOthersDocuments.setSelected(false);
+					boxEditOthersDocuments.setSelected(false);
+					boxViewOthersStatements.setSelected(false);
+					boxEditOthersStatements.setSelected(false);
+					
+					nameLabel.setEnabled(false);
+					nameField.setEnabled(false);
+					colorLabel.setEnabled(false);
+					colorButton.setEnabled(false);
+					pw1Label.setEnabled(false);
+					pw1Field.setEnabled(false);
+					pw2Label.setEnabled(false);
+					pw2Field.setEnabled(false);
+					
+					nameField.setText("");
+					colorButton.setColor(Color.BLACK);
+					
+					// coder relations
+					listModel.clear();
+					viewOthersDocumentsList.clearSelection();
+					viewOthersDocumentsList.removeAll();
+					viewOthersDocumentsList.setEnabled(false);
+					viewOthersDocumentsLabel.setEnabled(false);
+					editOthersDocumentsList.clearSelection();
+					editOthersDocumentsList.removeAll();
+					editOthersDocumentsList.setEnabled(false);
+					editOthersDocumentsLabel.setEnabled(false);
+					viewOthersStatementsList.clearSelection();
+					viewOthersStatementsList.removeAll();
+					viewOthersStatementsList.setEnabled(false);
+					viewOthersStatementsLabel.setEnabled(false);
+					editOthersStatementsList.clearSelection();
+					editOthersStatementsList.removeAll();
+					editOthersStatementsList.setEnabled(false);
+					editOthersStatementsLabel.setEnabled(false);
+					
 				}
 			}
 		});
@@ -346,9 +446,120 @@ public class CoderManager extends JDialog {
 		JPanel contentPanel = new JPanel(new BorderLayout());
 		contentPanel.add(detailsPanel, BorderLayout.NORTH);
 		contentPanel.add(permissionPanel, BorderLayout.CENTER);
-		
 		this.add(contentPanel, BorderLayout.CENTER);
+		
+		// coder relations panel
+		JPanel coderRelationsPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints g2 = new GridBagConstraints();
+		g2.gridx = 0;
+		g2.gridy = 0;
+		g2.anchor = GridBagConstraints.WEST;
+		g2.fill = GridBagConstraints.BOTH;
+		g2.insets = new Insets(5, 5, 0, 5);
+		
+		listModel = new ListModel();
+		viewOthersDocumentsList = new JList<CoderRelation>(listModel);
+		editOthersDocumentsList = new JList<CoderRelation>(listModel);
+		viewOthersStatementsList = new JList<CoderRelation>(listModel);
+		editOthersStatementsList = new JList<CoderRelation>(listModel);
+		
+		viewOthersDocumentsList.setPreferredSize(new Dimension(200, 300));
+		editOthersDocumentsList.setPreferredSize(new Dimension(200, 300));
+		viewOthersStatementsList.setPreferredSize(new Dimension(200, 300));
+		editOthersStatementsList.setPreferredSize(new Dimension(200, 300));
+		
+		CoderRelationRenderer listRenderer = new CoderRelationRenderer();
+		viewOthersDocumentsList.setCellRenderer(listRenderer);
+		editOthersDocumentsList.setCellRenderer(listRenderer);
+		viewOthersStatementsList.setCellRenderer(listRenderer);
+		editOthersStatementsList.setCellRenderer(listRenderer);
+		
+		viewOthersDocumentsLabel = new JLabel("Can view documents by:");
+		editOthersDocumentsLabel = new JLabel("Can edit documents by:");
+		viewOthersStatementsLabel = new JLabel("Can view statements by:");
+		editOthersStatementsLabel = new JLabel("Can edit statements by:");
+		
+		coderRelationsPanel.add(viewOthersDocumentsLabel, g2);
+		g2.gridx = 1;
+		coderRelationsPanel.add(editOthersDocumentsLabel, g2);
+		g2.insets = new Insets(5, 5, 5, 5);
+		g2.gridx = 0;
+		g2.gridy = 1;
+		coderRelationsPanel.add(viewOthersDocumentsList, g2);
+		g2.gridx = 1;
+		coderRelationsPanel.add(editOthersDocumentsList, g2);
+		g2.insets = new Insets(5, 5, 0, 5);
+		g2.gridx = 0;
+		g2.gridy = 2;
+		coderRelationsPanel.add(viewOthersStatementsLabel, g2);
+		g2.gridx = 1;
+		coderRelationsPanel.add(editOthersStatementsLabel, g2);
+		g2.insets = new Insets(5, 5, 5, 5);
+		g2.gridx = 0;
+		g2.gridy = 3;
+		coderRelationsPanel.add(viewOthersStatementsList, g2);
+		g2.gridx = 1;
+		coderRelationsPanel.add(editOthersStatementsList, g2);
 
+		viewOthersDocumentsList.setEnabled(false);
+		viewOthersDocumentsLabel.setEnabled(false);
+		editOthersDocumentsList.setEnabled(false);
+		editOthersDocumentsLabel.setEnabled(false);
+		viewOthersStatementsList.setEnabled(false);
+		viewOthersStatementsLabel.setEnabled(false);
+		editOthersStatementsList.setEnabled(false);
+		editOthersStatementsLabel.setEnabled(false);
+		
+		CompoundBorder borderRelations;
+		borderRelations = BorderFactory.createCompoundBorder(new EmptyBorder(10, 10, 10, 10), new TitledBorder("Coder relations"));
+		coderRelationsPanel.setBorder(borderRelations);
+		
+		this.add(coderRelationsPanel, BorderLayout.EAST);
+
+		// button panel
+		JPanel buttonPanel = new JPanel();
+		
+		ImageIcon resetIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		JButton resetButton = new JButton("Revert changes", resetIcon);
+		resetButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				coderList.clearSelection();
+			}
+		});
+		buttonPanel.add(resetButton);
+
+		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		JButton cancelButton = new JButton("Cancel", cancelIcon);
+		cancelButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				CoderManager.this.dispose();
+			}
+		});
+		buttonPanel.add(cancelButton);
+
+		ImageIcon applyIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-device-floppy.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		JButton applyButton = new JButton("Apply/save", applyIcon);
+		applyButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				/*
+				Coder c = coderList.getSelectedValue();
+				c.setName(nameField.getText());
+				c.setColor(colorButton.getColor());
+				String plainPassword = new String(pw1Field.getPassword());
+				StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();
+				String encryptedPassword = passwordEncryptor.encryptPassword(plainPassword);
+				*/
+				
+				// TODO: extract all the updated information and call a new function updateCoder in the Sql class
+			}
+		});
+		buttonPanel.add(applyButton);
+		
+		this.add(buttonPanel, BorderLayout.SOUTH);
+		
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
@@ -379,6 +590,127 @@ public class CoderManager extends JDialog {
 		
 		Color getColor() {
 			return this.color;
+		}
+	}
+	
+	class CoderRelationRenderer implements ListCellRenderer<Object> {
+		@Override
+		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+			CoderRelation cr = (CoderRelation) value;
+			
+			Color coderColor = Color.LIGHT_GRAY;
+			if (isSelected) {
+				coderColor = cr.getTargetCoderColor();
+			}
+			CoderBadgePanel cbp = new CoderBadgePanel(new Coder(cr.getTargetCoderId(), cr.getTargetCoderName(), coderColor));
+			if (!isSelected) {
+				cbp.setCoderNameColor(Color.LIGHT_GRAY);
+			}
+			
+			// list background
+			Color selectedColor = javax.swing.UIManager.getColor("List.dropCellBackground");
+			Color defaultColor = javax.swing.UIManager.getColor("List.background");
+			if (isSelected == true) {
+				cbp.setBackground(selectedColor);
+				
+			} else {
+				cbp.setBackground(defaultColor);
+			}
+			cbp.setOpaque(true);
+			cbp.setBorder(new EmptyBorder(5, 5, 5, 5));
+			
+			return cbp;
+		}
+	}
+	
+	private class ListModel extends AbstractListModel<CoderRelation> {
+		private static final long serialVersionUID = -777621550003651581L;
+		
+		int sourceCoderId;
+		ArrayList<CoderRelation> relations;
+
+		public ListModel() {
+			this.sourceCoderId = -1;
+			this.relations = new ArrayList<CoderRelation>();
+		}
+		
+		@Override
+		public CoderRelation getElementAt(int index) {
+			return relations.get(index);
+		}
+
+		@Override
+		public int getSize() {
+			return relations.size();
+		}
+		
+		void add(CoderRelation cr) {
+			relations.add(cr);
+		}
+		
+		void setSourceCoderId(int sourceCoderId) {
+			this.sourceCoderId = sourceCoderId;
+		}
+		
+		void clear() {
+			sourceCoderId = -1;
+			relations.clear();
+		}
+
+		int[] getSelectedViewOthersDocuments() {
+			ArrayList<Integer> indicesArrayList = new ArrayList<Integer>();
+			for (int i = 0; i < relations.size(); i++) {
+				if (relations.get(i).isViewDocuments()) {
+					indicesArrayList.add(i);
+				}
+			}
+			int[] indices = new int[indicesArrayList.size()];
+			for (int i = 0; i < indicesArrayList.size(); i++) {
+				indices[i] = indicesArrayList.get(i);
+			}
+			return indices;
+		}
+		
+		int[] getSelectedEditOthersDocuments() {
+			ArrayList<Integer> indicesArrayList = new ArrayList<Integer>();
+			for (int i = 0; i < relations.size(); i++) {
+				if (relations.get(i).isEditDocuments()) {
+					indicesArrayList.add(i);
+				}
+			}
+			int[] indices = new int[indicesArrayList.size()];
+			for (int i = 0; i < indicesArrayList.size(); i++) {
+				indices[i] = indicesArrayList.get(i);
+			}
+			return indices;
+		}
+
+		int[] getSelectedViewOthersStatements() {
+			ArrayList<Integer> indicesArrayList = new ArrayList<Integer>();
+			for (int i = 0; i < relations.size(); i++) {
+				if (relations.get(i).isViewStatements()) {
+					indicesArrayList.add(i);
+				}
+			}
+			int[] indices = new int[indicesArrayList.size()];
+			for (int i = 0; i < indicesArrayList.size(); i++) {
+				indices[i] = indicesArrayList.get(i);
+			}
+			return indices;
+		}
+		
+		int[] getSelectedEditOthersStatements() {
+			ArrayList<Integer> indicesArrayList = new ArrayList<Integer>();
+			for (int i = 0; i < relations.size(); i++) {
+				if (relations.get(i).isEditStatements()) {
+					indicesArrayList.add(i);
+				}
+			}
+			int[] indices = new int[indicesArrayList.size()];
+			for (int i = 0; i < indicesArrayList.size(); i++) {
+				indices[i] = indicesArrayList.get(i);
+			}
+			return indices;
 		}
 	}
 }

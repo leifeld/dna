@@ -17,6 +17,7 @@ import model.Coder;
  */
 public class CoderBadgePanel extends JPanel {
 	private static final long serialVersionUID = 2559090800466724235L;
+	JLabel coderName;
 
 	/**
 	 * Constructor for CoderBadgePanel
@@ -81,9 +82,18 @@ public class CoderBadgePanel extends JPanel {
 			name = name + "...";
 		}
 
-		JLabel coderName = new JLabel(name);
+		coderName = new JLabel(name);
 		coderName.setLabelFor(colorButton);
 		this.add(colorButton);
 		this.add(coderName);
+	}
+	
+	/**
+	 * Set the color of the coder name label.
+	 * 
+	 * @param color The new color for the name.
+	 */
+	void setCoderNameColor(Color color) {
+		coderName.setForeground(color);
 	}
 }

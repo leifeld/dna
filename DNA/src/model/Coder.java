@@ -532,4 +532,132 @@ public class Coder {
 			return false;
 		}
 	}
+
+	/**
+	 * @param name the name to set
+	 */
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	/**
+	 * @param color the color to set
+	 */
+	public void setColor(Color color) {
+		this.color = color;
+	}
+
+	/**
+	 * @param permissionAddDocuments the permissionAddDocuments to set
+	 */
+	public void setPermissionAddDocuments(boolean permissionAddDocuments) {
+		this.permissionAddDocuments = permissionAddDocuments;
+	}
+
+	/**
+	 * @param permissionEditDocuments the permissionEditDocuments to set
+	 */
+	public void setPermissionEditDocuments(boolean permissionEditDocuments) {
+		this.permissionEditDocuments = permissionEditDocuments;
+	}
+
+	/**
+	 * @param permissionDeleteDocuments the permissionDeleteDocuments to set
+	 */
+	public void setPermissionDeleteDocuments(boolean permissionDeleteDocuments) {
+		this.permissionDeleteDocuments = permissionDeleteDocuments;
+	}
+
+	/**
+	 * @param permissionImportDocuments the permissionImportDocuments to set
+	 */
+	public void setPermissionImportDocuments(boolean permissionImportDocuments) {
+		this.permissionImportDocuments = permissionImportDocuments;
+	}
+
+	/**
+	 * @param permissionAddStatements the permissionAddStatements to set
+	 */
+	public void setPermissionAddStatements(boolean permissionAddStatements) {
+		this.permissionAddStatements = permissionAddStatements;
+	}
+
+	/**
+	 * @param permissionEditStatements the permissionEditStatements to set
+	 */
+	public void setPermissionEditStatements(boolean permissionEditStatements) {
+		this.permissionEditStatements = permissionEditStatements;
+	}
+
+	/**
+	 * @param permissionDeleteStatements the permissionDeleteStatements to set
+	 */
+	public void setPermissionDeleteStatements(boolean permissionDeleteStatements) {
+		this.permissionDeleteStatements = permissionDeleteStatements;
+	}
+
+	/**
+	 * @param permissionEditAttributes the permissionEditAttributes to set
+	 */
+	public void setPermissionEditAttributes(boolean permissionEditAttributes) {
+		this.permissionEditAttributes = permissionEditAttributes;
+	}
+
+	/**
+	 * @param permissionEditRegex the permissionEditRegex to set
+	 */
+	public void setPermissionEditRegex(boolean permissionEditRegex) {
+		this.permissionEditRegex = permissionEditRegex;
+	}
+
+	/**
+	 * @param permissionEditStatementTypes the permissionEditStatementTypes to set
+	 */
+	public void setPermissionEditStatementTypes(boolean permissionEditStatementTypes) {
+		this.permissionEditStatementTypes = permissionEditStatementTypes;
+	}
+
+	/**
+	 * @param permissionEditCoders the permissionEditCoders to set
+	 */
+	public void setPermissionEditCoders(boolean permissionEditCoders) {
+		this.permissionEditCoders = permissionEditCoders;
+	}
+
+	/**
+	 * @param permissionViewOthersDocuments the permissionViewOthersDocuments to set
+	 */
+	public void setPermissionViewOthersDocuments(boolean permissionViewOthersDocuments) {
+		this.permissionViewOthersDocuments = permissionViewOthersDocuments;
+	}
+
+	/**
+	 * @param permissionEditOthersDocuments the permissionEditOthersDocuments to set
+	 */
+	public void setPermissionEditOthersDocuments(boolean permissionEditOthersDocuments) {
+		this.permissionEditOthersDocuments = permissionEditOthersDocuments;
+	}
+
+	/**
+	 * @param permissionViewOthersStatements the permissionViewOthersStatements to set
+	 */
+	public void setPermissionViewOthersStatements(boolean permissionViewOthersStatements) {
+		this.permissionViewOthersStatements = permissionViewOthersStatements;
+	}
+
+	/**
+	 * @param permissionEditOthersStatements the permissionEditOthersStatements to set
+	 */
+	public void setPermissionEditOthersStatements(boolean permissionEditOthersStatements) {
+		this.permissionEditOthersStatements = permissionEditOthersStatements;
+	}
+
+	/**
+	 * Get the coder relations as a hash map.
+	 * 
+	 * @return Hash map of the four permissions with respect to other coders.
+	 */
+	public HashMap<Integer, CoderRelation> getCoderRelations() {
+		return coderRelations;
+	}
 }

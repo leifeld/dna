@@ -841,6 +841,7 @@ public class Sql {
 				while (rs2.next()) {
 					map.put(rs2.getInt("OtherCoder"),
 							new CoderRelation(
+									rs2.getInt("OtherCoder"),
 									rs2.getInt("viewDocuments") == 1,
 									rs2.getInt("viewStatements") == 1,
 									rs2.getInt("editDocuments") == 1,
@@ -905,6 +906,7 @@ public class Sql {
 				while (rs2.next()) {
 					map.put(rs2.getInt("OtherCoder"),
 							new CoderRelation(
+									rs2.getInt("OtherCoder"),
 									rs2.getInt("viewDocuments") == 1,
 									rs2.getInt("viewStatements") == 1,
 									rs2.getInt("editDocuments") == 1,
