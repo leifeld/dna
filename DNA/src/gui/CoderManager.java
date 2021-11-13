@@ -15,6 +15,7 @@ import java.util.ArrayList;
 
 import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -366,7 +367,23 @@ class CoderManager extends JDialog {
 		addButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO: create a new dialog with fields for name, color, and password; call SQL function addCoder
+				AddCoderDialog addCoderDialog = new AddCoderDialog();
+				String coderName = addCoderDialog.getCoderName();
+				String coderPasswordHash = addCoderDialog.getCoderPasswordHash();
+				Color coderColor = addCoderDialog.getCoderColor();
+				addCoderDialog.dispose();
+				int coderId = Dna.sql.addCoder(coderName, coderColor, coderPasswordHash);
+				int coderIndex = -1;
+				DefaultListModel<Coder> model = new DefaultListModel<Coder>();
+				coderArrayList = Dna.sql.getCoders();
+				for (int i = 0; i < coderArrayList.size(); i++) {
+					model.addElement(coderArrayList.get(i));
+					if (coderArrayList.get(i).getId() == coderId) {
+						coderIndex = i;
+					}
+				}
+				coderList.setModel(model);
+				coderList.setSelectedIndex(coderIndex);
 			}
 		});
 		buttonPanel.add(addButton);
@@ -803,6 +820,11 @@ class CoderManager extends JDialog {
 				viewOthersStatementsList.setEnabled(true);
 				editOthersStatementsList.setEnabled(true);
 			}
+
+			viewOthersDocumentsList.revalidate();
+			viewOthersDocumentsList.repaint();
+			// TODO: why are the lists with coder relations not getting populated?
+			// System.out.println("Length: " + viewOthersDocumentsList.getSize());
 		} else if (coderList.isSelectionEmpty()) { // reset button was pressed
 			boxAddDocuments.setEnabled(false);
 			boxEditDocuments.setEnabled(false);
@@ -885,7 +907,7 @@ class CoderManager extends JDialog {
 				deleteButton.setEnabled(true);
 			}
 		}
-		if (coderList.getSelectedValue().getId() == 1) {
+		if (coderList.getSelectedValue() != null && coderList.getSelectedValue().getId() == 1) {
 			valid = false;
 			deleteButton.setEnabled(false);
 		}
@@ -903,171 +925,176 @@ class CoderManager extends JDialog {
 			pw2Field.setForeground(Color.BLACK);
 		}
 		
-		Coder c = new Coder(coderList.getSelectedValue());
+		Coder c = null;
 		boolean changedValues = false;
-		
-		// coder name
-		if (!c.getName().equals(nameField.getText()) && !nameField.getText().matches("^\\s*$") && c.getId() != 1) {
-			changedValues = true;
-		}
-		
-		// coder color
-		if (!c.getColor().equals(colorButton.getColor()) && c.getId() != 1) {
-			changedValues = true;
-		}
-		
-		// permission: add documents
-		if (boxAddDocuments.isSelected() == true && c.isPermissionAddDocuments() == false) {
-			changedValues = true;
-		}
-		if (boxAddDocuments.isSelected() == false && c.isPermissionAddDocuments() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: edit documents
-		if (boxEditDocuments.isSelected() == true && c.isPermissionEditDocuments() == false) {
-			changedValues = true;
-		}
-		if (boxEditDocuments.isSelected() == false && c.isPermissionEditDocuments() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: delete documents
-		if (boxDeleteDocuments.isSelected() == true && c.isPermissionDeleteDocuments() == false) {
-			changedValues = true;
-		}
-		if (boxDeleteDocuments.isSelected() == false && c.isPermissionDeleteDocuments() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: import documents
-		if (boxImportDocuments.isSelected() == true && c.isPermissionImportDocuments() == false) {
-			changedValues = true;
-		}
-		if (boxImportDocuments.isSelected() == false && c.isPermissionImportDocuments() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: add statements
-		if (boxAddStatements.isSelected() == true && c.isPermissionAddStatements() == false) {
-			changedValues = true;
-		}
-		if (boxAddStatements.isSelected() == false && c.isPermissionAddStatements() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: edit statements
-		if (boxEditStatements.isSelected() == true && c.isPermissionEditStatements() == false) {
-			changedValues = true;
-		}
-		if (boxEditStatements.isSelected() == false && c.isPermissionEditStatements() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: delete statements
-		if (boxDeleteStatements.isSelected() == true && c.isPermissionDeleteStatements() == false) {
-			changedValues = true;
-		}
-		if (boxDeleteStatements.isSelected() == false && c.isPermissionDeleteStatements() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: edit attributes
-		if (boxEditAttributes.isSelected() == true && c.isPermissionEditAttributes() == false) {
-			changedValues = true;
-		}
-		if (boxEditAttributes.isSelected() == false && c.isPermissionEditAttributes() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: edit regex
-		if (boxEditRegex.isSelected() == true && c.isPermissionEditRegex() == false) {
-			changedValues = true;
-		}
-		if (boxEditRegex.isSelected() == false && c.isPermissionEditRegex() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: edit statement types
-		if (boxEditStatementTypes.isSelected() == true && c.isPermissionEditStatementTypes() == false) {
-			changedValues = true;
-		}
-		if (boxEditStatementTypes.isSelected() == false && c.isPermissionEditStatementTypes() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: edit coders
-		if (boxEditCoders.isSelected() == true && c.isPermissionEditCoders() == false) {
-			changedValues = true;
-		}
-		if (boxEditCoders.isSelected() == false && c.isPermissionEditCoders() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: view others' documents
-		if (boxViewOthersDocuments.isSelected() == true && c.isPermissionViewOthersDocuments() == false) {
-			changedValues = true;
-		}
-		if (boxViewOthersDocuments.isSelected() == false && c.isPermissionViewOthersDocuments() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: edit others' documents
-		if (boxEditOthersDocuments.isSelected() == true && c.isPermissionEditOthersDocuments() == false) {
-			changedValues = true;
-		}
-		if (boxEditOthersDocuments.isSelected() == false && c.isPermissionEditOthersDocuments() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: view others' statements
-		if (boxViewOthersStatements.isSelected() == true && c.isPermissionViewOthersStatements() == false) {
-			changedValues = true;
-		}
-		if (boxViewOthersStatements.isSelected() == false && c.isPermissionViewOthersStatements() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-
-		// permission: edit others' statements
-		if (boxEditOthersStatements.isSelected() == true && c.isPermissionEditOthersStatements() == false) {
-			changedValues = true;
-		}
-		if (boxEditOthersStatements.isSelected() == false && c.isPermissionEditOthersStatements() == true && c.getId() != 1) {
-			changedValues = true;
-		}
-		
-		// coder relations
-		for (int i = 0; i < listModel.getSize(); i++) {
-			int targetCoderId = listModel.getElementAt(i).getTargetCoderId();
-			if (viewOthersDocumentsList.isSelectedIndex(i) && !c.getCoderRelations().get(targetCoderId).isViewDocuments()) {
-				changedValues = true;
-			} else if (!viewOthersDocumentsList.isSelectedIndex(i) && c.getCoderRelations().get(targetCoderId).isViewDocuments()) {
+		if (coderList.getSelectedValue() != null) {
+			c = new Coder(coderList.getSelectedValue());
+			
+			// coder name
+			if (!c.getName().equals(nameField.getText()) && !nameField.getText().matches("^\\s*$") && c.getId() != 1) {
 				changedValues = true;
 			}
-			if (editOthersDocumentsList.isSelectedIndex(i) && !c.getCoderRelations().get(targetCoderId).isEditDocuments()) {
-				changedValues = true;
-			} else if (!editOthersDocumentsList.isSelectedIndex(i) && c.getCoderRelations().get(targetCoderId).isEditDocuments()) {
-				changedValues = true;
-			}
-			if (viewOthersStatementsList.isSelectedIndex(i) && !c.getCoderRelations().get(targetCoderId).isViewStatements()) {
-				changedValues = true;
-			} else if (!viewOthersStatementsList.isSelectedIndex(i) && c.getCoderRelations().get(targetCoderId).isViewStatements()) {
+			
+			// coder color
+			if (!c.getColor().equals(colorButton.getColor()) && c.getId() != 1) {
 				changedValues = true;
 			}
-			if (editOthersStatementsList.isSelectedIndex(i) && !c.getCoderRelations().get(targetCoderId).isEditStatements()) {
+			
+			// permission: add documents
+			if (boxAddDocuments.isSelected() == true && c.isPermissionAddDocuments() == false) {
 				changedValues = true;
-			} else if (!editOthersStatementsList.isSelectedIndex(i) && c.getCoderRelations().get(targetCoderId).isEditStatements()) {
+			}
+			if (boxAddDocuments.isSelected() == false && c.isPermissionAddDocuments() == true && c.getId() != 1) {
 				changedValues = true;
+			}
+
+			// permission: edit documents
+			if (boxEditDocuments.isSelected() == true && c.isPermissionEditDocuments() == false) {
+				changedValues = true;
+			}
+			if (boxEditDocuments.isSelected() == false && c.isPermissionEditDocuments() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: delete documents
+			if (boxDeleteDocuments.isSelected() == true && c.isPermissionDeleteDocuments() == false) {
+				changedValues = true;
+			}
+			if (boxDeleteDocuments.isSelected() == false && c.isPermissionDeleteDocuments() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: import documents
+			if (boxImportDocuments.isSelected() == true && c.isPermissionImportDocuments() == false) {
+				changedValues = true;
+			}
+			if (boxImportDocuments.isSelected() == false && c.isPermissionImportDocuments() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: add statements
+			if (boxAddStatements.isSelected() == true && c.isPermissionAddStatements() == false) {
+				changedValues = true;
+			}
+			if (boxAddStatements.isSelected() == false && c.isPermissionAddStatements() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: edit statements
+			if (boxEditStatements.isSelected() == true && c.isPermissionEditStatements() == false) {
+				changedValues = true;
+			}
+			if (boxEditStatements.isSelected() == false && c.isPermissionEditStatements() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: delete statements
+			if (boxDeleteStatements.isSelected() == true && c.isPermissionDeleteStatements() == false) {
+				changedValues = true;
+			}
+			if (boxDeleteStatements.isSelected() == false && c.isPermissionDeleteStatements() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: edit attributes
+			if (boxEditAttributes.isSelected() == true && c.isPermissionEditAttributes() == false) {
+				changedValues = true;
+			}
+			if (boxEditAttributes.isSelected() == false && c.isPermissionEditAttributes() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: edit regex
+			if (boxEditRegex.isSelected() == true && c.isPermissionEditRegex() == false) {
+				changedValues = true;
+			}
+			if (boxEditRegex.isSelected() == false && c.isPermissionEditRegex() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: edit statement types
+			if (boxEditStatementTypes.isSelected() == true && c.isPermissionEditStatementTypes() == false) {
+				changedValues = true;
+			}
+			if (boxEditStatementTypes.isSelected() == false && c.isPermissionEditStatementTypes() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: edit coders
+			if (boxEditCoders.isSelected() == true && c.isPermissionEditCoders() == false) {
+				changedValues = true;
+			}
+			if (boxEditCoders.isSelected() == false && c.isPermissionEditCoders() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: view others' documents
+			if (boxViewOthersDocuments.isSelected() == true && c.isPermissionViewOthersDocuments() == false) {
+				changedValues = true;
+			}
+			if (boxViewOthersDocuments.isSelected() == false && c.isPermissionViewOthersDocuments() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: edit others' documents
+			if (boxEditOthersDocuments.isSelected() == true && c.isPermissionEditOthersDocuments() == false) {
+				changedValues = true;
+			}
+			if (boxEditOthersDocuments.isSelected() == false && c.isPermissionEditOthersDocuments() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: view others' statements
+			if (boxViewOthersStatements.isSelected() == true && c.isPermissionViewOthersStatements() == false) {
+				changedValues = true;
+			}
+			if (boxViewOthersStatements.isSelected() == false && c.isPermissionViewOthersStatements() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+
+			// permission: edit others' statements
+			if (boxEditOthersStatements.isSelected() == true && c.isPermissionEditOthersStatements() == false) {
+				changedValues = true;
+			}
+			if (boxEditOthersStatements.isSelected() == false && c.isPermissionEditOthersStatements() == true && c.getId() != 1) {
+				changedValues = true;
+			}
+			
+			// coder relations
+			for (int i = 0; i < listModel.getSize(); i++) {
+				int targetCoderId = listModel.getElementAt(i).getTargetCoderId();
+				if (viewOthersDocumentsList.isSelectedIndex(i) && !c.getCoderRelations().get(targetCoderId).isViewDocuments()) {
+					changedValues = true;
+				} else if (!viewOthersDocumentsList.isSelectedIndex(i) && c.getCoderRelations().get(targetCoderId).isViewDocuments()) {
+					changedValues = true;
+				}
+				if (editOthersDocumentsList.isSelectedIndex(i) && !c.getCoderRelations().get(targetCoderId).isEditDocuments()) {
+					changedValues = true;
+				} else if (!editOthersDocumentsList.isSelectedIndex(i) && c.getCoderRelations().get(targetCoderId).isEditDocuments()) {
+					changedValues = true;
+				}
+				if (viewOthersStatementsList.isSelectedIndex(i) && !c.getCoderRelations().get(targetCoderId).isViewStatements()) {
+					changedValues = true;
+				} else if (!viewOthersStatementsList.isSelectedIndex(i) && c.getCoderRelations().get(targetCoderId).isViewStatements()) {
+					changedValues = true;
+				}
+				if (editOthersStatementsList.isSelectedIndex(i) && !c.getCoderRelations().get(targetCoderId).isEditStatements()) {
+					changedValues = true;
+				} else if (!editOthersStatementsList.isSelectedIndex(i) && c.getCoderRelations().get(targetCoderId).isEditStatements()) {
+					changedValues = true;
+				}
 			}
 		}
 		
 		if (!changedValues) {
 			valid = false;
 			reloadButton.setEnabled(false);
-		} else if (c.getId() == 1) {
+		} else if (c != null && c.getId() == 1) {
 			reloadButton.setEnabled(false);
-		} else {
+		} else if (c != null) {
 			reloadButton.setEnabled(true);
+		} else {
+			reloadButton.setEnabled(false);
 		}
 		
 		if (valid) {
@@ -1221,6 +1248,196 @@ class CoderManager extends JDialog {
 				indices[i] = indicesArrayList.get(i);
 			}
 			return indices;
+		}
+	}
+	
+	/**
+	 * A dialog window for adding a new coder. It contains a simple form for the
+	 * name, color, and password of the new coder as well as two buttons.
+	 */
+	private class AddCoderDialog extends JDialog {
+		private static final long serialVersionUID = 2704900961177249691L;
+		private JButton addOkButton, addCancelButton;
+		private JTextField addNameField;
+		private JPasswordField addPw1Field, addPw2Field;
+		private String name;
+		private Color color;
+		private String passwordHash;
+		
+		/**
+		 * Create a new instance of an add coder dialog.
+		 */
+		AddCoderDialog() {
+			this.setModal(true);
+			this.setTitle("Add new coder");
+			this.setLayout(new BorderLayout());
+			
+			JLabel addNameLabel = new JLabel("Name");
+			addNameField = new JTextField(20);
+			addNameLabel.setLabelFor(addNameField);
+			addNameLabel.setToolTipText("Enter the name of a new coder here.");
+			addNameField.setToolTipText("Enter the name of a new coder here.");
+			addNameField.getDocument().addDocumentListener(new DocumentListener() {
+				@Override
+				public void changedUpdate(DocumentEvent arg0) {
+					checkAddButtons();
+				}
+				@Override
+				public void insertUpdate(DocumentEvent arg0) {
+					checkAddButtons();
+				}
+				@Override
+				public void removeUpdate(DocumentEvent arg0) {
+					checkAddButtons();
+				}
+			});
+
+			ColorButton addColorButton = new ColorButton();
+			addColorButton.setColor(new Color(28, 165, 186));
+			JLabel addColorLabel = new JLabel("Color", JLabel.TRAILING);
+			addColorLabel.setLabelFor(addColorButton);
+			addColorButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					Color newColor = JColorChooser.showDialog(AddCoderDialog.this, "Choose color...", colorButton.getColor());
+					if (newColor != null) {
+						addColorButton.setColor(newColor);
+					}
+				}
+			});
+			
+			addPw1Field = new JPasswordField(20);
+			JLabel addPw1Label = new JLabel("Password", JLabel.TRAILING);
+			addPw1Label.setLabelFor(addPw1Field);
+			addPw2Field = new JPasswordField(20);
+			JLabel addPw2Label = new JLabel("Repeat password", JLabel.TRAILING);
+			addPw2Label.setLabelFor(addPw2Field);
+			DocumentListener addPwListener = new DocumentListener() {
+				@Override
+				public void changedUpdate(DocumentEvent arg0) {
+					checkAddButtons();
+				}
+				@Override
+				public void insertUpdate(DocumentEvent arg0) {
+					checkAddButtons();
+				}
+				@Override
+				public void removeUpdate(DocumentEvent arg0) {
+					checkAddButtons();
+				}
+			};
+			addPw1Field.getDocument().addDocumentListener(addPwListener);
+			addPw2Field.getDocument().addDocumentListener(addPwListener);
+
+			JPanel formPanel = new JPanel(new GridBagLayout());
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.weightx = 1.0;
+			gbc.insets = new Insets(5, 5, 0, 5);
+			gbc.anchor = GridBagConstraints.WEST;
+			gbc.gridx = 0;
+			gbc.gridy = 0;
+			formPanel.add(addNameLabel, gbc);
+			gbc.gridx = 1;
+			formPanel.add(addNameField, gbc);
+			gbc.gridx = 0;
+			gbc.gridy = 1;
+			formPanel.add(addColorLabel, gbc);
+			gbc.gridx = 1;
+			formPanel.add(addColorButton, gbc);
+			gbc.gridx = 0;
+			gbc.gridy = 2;
+			formPanel.add(addPw1Label, gbc);
+			gbc.gridx = 1;
+			formPanel.add(addPw1Field, gbc);
+			gbc.insets = new Insets(5, 5, 5, 5);
+			gbc.gridx = 0;
+			gbc.gridy = 3;
+			formPanel.add(addPw2Label, gbc);
+			gbc.gridx = 1;
+			formPanel.add(addPw2Field, gbc);
+			this.add(formPanel, BorderLayout.CENTER);
+			
+			JPanel addButtonPanel = new JPanel();
+			ImageIcon addCancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			addCancelButton = new JButton("Cancel", addCancelIcon);
+			addCancelButton.setToolTipText("Close without adding a new coder.");
+			addCancelButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					AddCoderDialog.this.dispose();
+				}
+			});
+			addButtonPanel.add(addCancelButton);
+
+			ImageIcon addOkIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			addOkButton = new JButton("OK", addOkIcon);
+			addOkButton.setToolTipText("Add this new coder to the database.");
+			addOkButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					AddCoderDialog.this.name = addNameField.getText();
+					AddCoderDialog.this.color = addColorButton.getColor();
+					String addPlainPassword = new String(addPw1Field.getPassword());
+					StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();
+					AddCoderDialog.this.passwordHash = passwordEncryptor.encryptPassword(addPlainPassword);
+					AddCoderDialog.this.dispose();
+				}
+			});
+			addOkButton.setEnabled(false);
+			addButtonPanel.add(addOkButton);
+
+			this.add(addButtonPanel, BorderLayout.SOUTH);
+			
+			this.pack();
+			this.setLocationRelativeTo(null);
+			this.setVisible(true);
+		}
+		
+		/**
+		 * Check if all the input is valid and enable or disable the OK button.
+		 */
+		private void checkAddButtons() {
+			boolean valid = true;
+			if (addNameField.getText().matches("^\\s*$")) {
+				valid = false;
+			}
+			String p1 = new String(addPw1Field.getPassword());
+			String p2 = new String(addPw2Field.getPassword());
+			if (p1.matches("^\\s*$") || !p1.equals(p2)) {
+				valid = false;
+			}
+			if (valid) {
+				addOkButton.setEnabled(true);
+			} else {
+				addOkButton.setEnabled(false);
+			}
+		}
+		
+		/**
+		 * Retrieve the new coder name. Accessible from outside the dialog.
+		 * 
+		 * @return Name of the new coder.
+		 */
+		String getCoderName() {
+			return this.name;
+		}
+		
+		/**
+		 * Retrieve the encrypted password hash String. Accessible from outside
+		 * the dialog.
+		 * 
+		 * @return The hash String corresponding to the entered password.
+		 */
+		String getCoderPasswordHash() {
+			return this.passwordHash;
+		}
+		
+		/**
+		 * Retrieve the selected color. Accessible from outside the dialog.
+		 * 
+		 * @return The selected color.
+		 */
+		Color getCoderColor() {
+			return this.color;
 		}
 	}
 }

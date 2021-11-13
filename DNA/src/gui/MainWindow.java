@@ -350,13 +350,6 @@ public class MainWindow extends JFrame implements SqlListener {
 					} else {
 						actionRemoveStatements.setEnabled(false);
 					}
-					/*
-					if (Dna.sql.getActiveCoder().isPermissionEditStatements() == true &&
-							(allOwned == true ||
-							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true && allOthersEditPermitted == true))) {
-						editable = true;
-					}
-					*/
 					// no particular statement to select because multiple statements highlighted in table
 				} else {
 					actionRemoveStatements.setEnabled(false);

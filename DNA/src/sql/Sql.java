@@ -956,8 +956,10 @@ public class Sql {
 	 * @param coderName     Name of the new coder.
 	 * @param coderColor    Color of the new coder.
 	 * @param passwordHash  Encrypted password hash for the new coder.
+	 * @return              ID of the new coder.
 	 */
-	public void addCoder(String coderName, Color coderColor, String passwordHash) {
+	public int addCoder(String coderName, Color coderColor, String passwordHash) {
+		int coderId = -1;
 		String sql1 = "INSERT INTO CODERS (Name, Red, Green, Blue, Password) VALUES (?, ?, ?, ?, ?);";
 		String sql2 = "INSERT INTO CODERRELATIONS(Coder, OtherCoder) VALUES (?, ?);";
 		String sql3 = "SELECT ID FROM CODERS WHERE ID != ?;";
@@ -978,7 +980,6 @@ public class Sql {
 			
 			// find ID of the new coder
 			ResultSet generatedKeysResultSet = s1.getGeneratedKeys();
-			int coderId = -1;
 			while (generatedKeysResultSet.next()) {
 				coderId = generatedKeysResultSet.getInt(1);
 			}
@@ -1010,6 +1011,7 @@ public class Sql {
         			e);
         	Dna.logger.log(l);
 		}
+		return coderId;
 	}
 	
 	/**
@@ -1180,13 +1182,9 @@ public class Sql {
 				+ "editStatements = ? "
 				+ "WHERE Coder = ? AND OtherCoder = ?;";
 		String sql3 = "SELECT COUNT(ID) FROM CODERRELATIONS WHERE Coder = ? AND OtherCoder = ?;";
-		String sql4 = "INSERT INTO CODERRELATIONS ("
-				+ "viewDocuments = ?, "
-				+ "editDocuments = ?, "
-				+ "viewStatements = ?, "
-				+ "editStatements = ?) "
-				+ "VALUES (?, ?, ?, ?) "
-				+ "WHERE Coder = ? AND OtherCoder = ?;";
+		String sql4 = "INSERT INTO CODERRELATIONS "
+				+ "(Coder, OtherCoder, viewDocuments, editDocuments, viewStatements, editStatements) "
+				+ "VALUES (?, ?, ?, ?, ?, ?);";
 		String sql5 = "SELECT Password FROM CODERS WHERE Coder = ?;";
 		
 		try (Connection conn = getDataSource().getConnection();
@@ -1243,12 +1241,12 @@ public class Sql {
         		while (r.next()) {
         			if (r.getInt(1) == 0) {
         				// insert new coder relation
-        				s4.setInt(1, entry.getValue().isViewDocuments() ? 1 : 0);
-        				s4.setInt(2, entry.getValue().isEditDocuments() ? 1 : 0);
-        				s4.setInt(3, entry.getValue().isViewStatements() ? 1 : 0);
-        				s4.setInt(4, entry.getValue().isEditStatements() ? 1 : 0);
-        				s4.setInt(5,  coderId);
-        				s4.setInt(6, entry.getValue().getTargetCoderId());
+        				s4.setInt(1,  coderId);
+        				s4.setInt(2, entry.getValue().getTargetCoderId());
+        				s4.setInt(3, entry.getValue().isViewDocuments() ? 1 : 0);
+        				s4.setInt(4, entry.getValue().isEditDocuments() ? 1 : 0);
+        				s4.setInt(5, entry.getValue().isViewStatements() ? 1 : 0);
+        				s4.setInt(6, entry.getValue().isEditStatements() ? 1 : 0);
         				s4.executeUpdate();
         			} else {
         				// update existing coder relation
