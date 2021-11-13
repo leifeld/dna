@@ -951,6 +951,68 @@ public class Sql {
 	}
 
 	/**
+	 * Create a new coder with default permissions and coder relations.
+	 * 
+	 * @param coderName     Name of the new coder.
+	 * @param coderColor    Color of the new coder.
+	 * @param passwordHash  Encrypted password hash for the new coder.
+	 */
+	public void addCoder(String coderName, Color coderColor, String passwordHash) {
+		String sql1 = "INSERT INTO CODERS (Name, Red, Green, Blue, Password) VALUES (?, ?, ?, ?, ?);";
+		String sql2 = "INSERT INTO CODERRELATIONS(Coder, OtherCoder) VALUES (?, ?);";
+		String sql3 = "SELECT ID FROM CODERS WHERE ID != ?;";
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s1 = conn.prepareStatement(sql1, PreparedStatement.RETURN_GENERATED_KEYS);
+				PreparedStatement s2 = conn.prepareStatement(sql2);
+				PreparedStatement s3 = conn.prepareStatement(sql3);
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			
+			// add new coder
+			s1.setString(1, coderName);
+			s1.setInt(2, coderColor.getRed());
+			s1.setInt(3, coderColor.getGreen());
+			s1.setInt(4, coderColor.getBlue());
+			s1.setString(5, passwordHash);
+			s1.executeUpdate();
+			
+			// find ID of the new coder
+			ResultSet generatedKeysResultSet = s1.getGeneratedKeys();
+			int coderId = -1;
+			while (generatedKeysResultSet.next()) {
+				coderId = generatedKeysResultSet.getInt(1);
+			}
+			
+			// identify other coders
+			s3.setInt(1, coderId);
+			ResultSet r = s3.executeQuery();
+			while (r.next()) {
+				// coder relations from current coder to other coders
+				s2.setInt(1, coderId);
+				s2.setInt(2, r.getInt(1));
+				s2.executeUpdate();
+				
+				// coder relations from other coders to current coder
+				s2.setInt(1, r.getInt(1));
+				s2.setInt(2, coderId);
+				s2.executeUpdate();
+			}
+			
+        	conn.commit();
+        	LogEvent l = new LogEvent(Logger.MESSAGE,
+        			"[SQL] New Coder " + coderId + " successfully created.",
+        			"New Coder " + coderId + " successfully created.");
+        	Dna.logger.log(l);
+		} catch (SQLException e) {
+        	LogEvent l = new LogEvent(Logger.ERROR,
+        			"[SQL] Failed to create new coder in the database.",
+        			"Attempted to create a new coder, but the database access failed.",
+        			e);
+        	Dna.logger.log(l);
+		}
+	}
+	
+	/**
 	 * Set a new font size for a coder.
 	 * 
 	 * @param coderId   ID of the coder in the database.
@@ -1084,9 +1146,11 @@ public class Sql {
 	 *   coder relations.
 	 * @param newPasswordHash  The new password hash String. Can be {@code ""}
 	 *   or {@code null}, in which case the existing password is retained.
+	 * @return                 Indicator of success.
 	 */
-	public void updateCoder(Coder coder, String newPasswordHash) {
+	public boolean updateCoder(Coder coder, String newPasswordHash) {
 		int coderId = coder.getId();
+		boolean success = false;
 		String sql1 = "UPDATE CODERS SET "
 				+ "Name = ?, "
 				+ "Red = ?, "
@@ -1200,17 +1264,80 @@ public class Sql {
         	}
         	
         	conn.commit();
+        	success = true;
         	LogEvent l = new LogEvent(Logger.MESSAGE,
         			"[SQL] Coder " + coderId + " successfully updated.",
         			"Coder " + coderId + " successfully updated.");
         	Dna.logger.log(l);
 		} catch (SQLException e) {
+			success = false;
         	LogEvent l = new LogEvent(Logger.ERROR,
         			"[SQL] Failed to update Coder " + coderId + " in the database.",
         			"Attempted to update Coder " + coderId + ", but the database access failed.",
         			e);
         	Dna.logger.log(l);
 		}
+		return success;
+	}
+	
+	/**
+	 * Delete a coder from the database. Note that this will also delete all
+	 * documents, statements etc. created by the coder.
+	 * 
+	 * @param coderId The ID of the coder to be deleted.
+	 * @return        An indicator of whether the deletion was successful.
+	 */
+	public boolean deleteCoder(int coderId) {
+		boolean success = false;
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("DELETE FROM CODERS WHERE ID = ?;")) {
+			s.setInt(1, coderId);
+			s.executeUpdate();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+        			"[SQL] Successfully deleted Coder " + coderId + " from the database.",
+        			"Successfully deleted Coder " + coderId + " from the database.");
+        	Dna.logger.log(l);
+		} catch (SQLException e) {
+			success = false;
+        	LogEvent l = new LogEvent(Logger.ERROR,
+        			"[SQL] Failed to delete Coder " + coderId + " from the database.",
+        			"Attempted to delete Coder " + coderId + ", but the database operation failed.",
+        			e);
+        	Dna.logger.log(l);
+		}
+		return success;
+	}
+	
+	/**
+	 * Count how many documents and statements a coder owns.
+	 * 
+	 * @param coderId  The ID of the coder.
+	 * @return         An int[] array with frequency counts of documents and
+	 *   statements.
+	 */
+	public int[] countCoderItems(int coderId) {
+		int[] results = new int[2];
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s1 = conn.prepareStatement("SELECT COUNT(ID) FROM DOCUMENTS WHERE Coder = ?;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT COUNT(ID) FROM STATEMENTS WHERE Coder = ?;")) {
+			s1.setInt(1, coderId);
+			ResultSet r1 = s1.executeQuery();
+			while (r1.next()) {
+				results[0] = r1.getInt(1);
+			}
+			s2.setInt(1, coderId);
+			ResultSet r2 = s2.executeQuery();
+			while (r2.next()) {
+				results[1] = r2.getInt(1);
+			}
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+        			"[SQL] Failed to count documents and statements for Coder " + coderId + ".",
+        			"Attempted to count with how many documents and statements Coder " + coderId + " is associated with, but the database operation failed.",
+        			e);
+        	Dna.logger.log(l);
+		}
+		return results;
 	}
 	
 	/**
