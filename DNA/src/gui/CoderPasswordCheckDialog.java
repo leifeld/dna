@@ -97,7 +97,6 @@ public class CoderPasswordCheckDialog {
 			
 		} else {
 			coder = sql.getActiveCoder();
-			//coder = sql.getCoder(sql.getConnectionProfile().getCoderId());
 			CoderBadgePanel cdp = new CoderBadgePanel(coder);
 			questionPanel.add(cdp);
 			LogEvent l = new LogEvent(Logger.MESSAGE,

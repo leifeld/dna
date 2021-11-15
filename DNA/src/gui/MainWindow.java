@@ -522,6 +522,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				if (event.getStateChange() == ItemEvent.SELECTED) {
 					Coder item = (Coder) event.getItem();
 					Dna.sql.changeActiveCoder(item.getId());
+					// TODO: ask for coder password and make sure it does not switch to Admin after loading db
 				}
 			}
 		});

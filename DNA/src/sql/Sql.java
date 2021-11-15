@@ -843,8 +843,8 @@ public class Sql {
 							new CoderRelation(
 									rs2.getInt("OtherCoder"),
 									rs2.getInt("viewDocuments") == 1,
-									rs2.getInt("viewStatements") == 1,
 									rs2.getInt("editDocuments") == 1,
+									rs2.getInt("viewStatements") == 1,
 									rs2.getInt("editStatements") == 1));
 				}
 			    c = new Coder(coderId,
@@ -908,8 +908,8 @@ public class Sql {
 							new CoderRelation(
 									rs2.getInt("OtherCoder"),
 									rs2.getInt("viewDocuments") == 1,
-									rs2.getInt("viewStatements") == 1,
 									rs2.getInt("editDocuments") == 1,
+									rs2.getInt("viewStatements") == 1,
 									rs2.getInt("editStatements") == 1));
 				}
             	coders.add(new Coder(rs1.getInt("ID"),
@@ -1185,7 +1185,7 @@ public class Sql {
 		String sql4 = "INSERT INTO CODERRELATIONS "
 				+ "(Coder, OtherCoder, viewDocuments, editDocuments, viewStatements, editStatements) "
 				+ "VALUES (?, ?, ?, ?, ?, ?);";
-		String sql5 = "SELECT Password FROM CODERS WHERE Coder = ?;";
+		String sql5 = "SELECT Password FROM CODERS WHERE ID = ?;";
 		
 		try (Connection conn = getDataSource().getConnection();
 				PreparedStatement s1 = conn.prepareStatement(sql1);
@@ -1291,6 +1291,7 @@ public class Sql {
 				PreparedStatement s = conn.prepareStatement("DELETE FROM CODERS WHERE ID = ?;")) {
 			s.setInt(1, coderId);
 			s.executeUpdate();
+			success = true;
 			LogEvent l = new LogEvent(Logger.MESSAGE,
         			"[SQL] Successfully deleted Coder " + coderId + " from the database.",
         			"Successfully deleted Coder " + coderId + " from the database.");

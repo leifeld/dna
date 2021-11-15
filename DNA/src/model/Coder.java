@@ -264,7 +264,8 @@ public class Coder {
 		this.permissionEditCoders = coder.isPermissionEditCoders();
 		this.permissionViewOthersDocuments = coder.isPermissionViewOthersDocuments();
 		this.permissionEditOthersDocuments = coder.isPermissionEditOthersDocuments();
-		this.permissionViewOthersStatements = coder.isPermissionEditOthersStatements();
+		this.permissionViewOthersStatements = coder.isPermissionViewOthersStatements();
+		this.permissionEditOthersStatements = coder.isPermissionEditOthersStatements();
 		this.coderRelations = new HashMap<Integer, CoderRelation>();
 		for (HashMap.Entry<Integer, CoderRelation> entry : coder.getCoderRelations().entrySet()) {
 			this.coderRelations.put(entry.getKey(), new CoderRelation(entry.getValue()));
@@ -709,9 +710,13 @@ public class Coder {
 			if (!this.coderRelations.containsKey(entry.getKey())) {
 				targetIdenticalInSource = false;
 				break;
-			} else if (!this.coderRelations.get(entry.getKey()).equals(entry.getValue())) {
-				targetIdenticalInSource = false;
-				break;
+			} else {
+				CoderRelation thisCR = this.coderRelations.get(entry.getKey());
+				CoderRelation otherCR = entry.getValue();
+				if (!thisCR.equals(otherCR)) {
+					targetIdenticalInSource = false;
+					break;
+				}
 			}
 		}
 		if (targetIdenticalInSource) {
@@ -725,8 +730,9 @@ public class Coder {
 				}
 			}
 		}
+		
 		if (this.id == coder.getId() &&
-				this.name == coder.getName() &&
+				this.name.equals(coder.getName()) &&
 				this.color.equals(coder.getColor()) &&
 				this.refresh == coder.getRefresh() &&
 				this.fontSize == coder.getFontSize() &&
@@ -747,7 +753,8 @@ public class Coder {
 				this.permissionEditCoders == coder.isPermissionEditCoders() &&
 				this.permissionViewOthersDocuments == coder.isPermissionViewOthersDocuments() &&
 				this.permissionEditOthersDocuments == coder.isPermissionEditOthersDocuments() &&
-				this.permissionViewOthersStatements == coder.isPermissionEditOthersStatements() &&
+				this.permissionViewOthersStatements == coder.isPermissionViewOthersStatements() &&
+				this.permissionEditOthersStatements == coder.isPermissionEditOthersStatements() &&
 				sourceIdenticalInTarget &&
 				targetIdenticalInSource) {
 			return true;

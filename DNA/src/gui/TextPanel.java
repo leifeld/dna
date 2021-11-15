@@ -139,7 +139,7 @@ class TextPanel extends JPanel implements SqlListener {
 				Style bgStyle = sc.addStyle("ConstantWidth", null);
 				if (Dna.sql.getActiveCoder() != null) {
 					if (Dna.sql.getActiveCoder().isColorByCoder() == true) {
-						StyleConstants.setBackground(bgStyle, Dna.sql.getActiveCoder().getColor());
+						StyleConstants.setBackground(bgStyle, statements.get(i).getCoderColor());
 					} else {
 						StyleConstants.setBackground(bgStyle, statements.get(i).getStatementTypeColor());
 					}

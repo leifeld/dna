@@ -27,13 +27,13 @@ public class CoderRelation {
 	 * @param viewStatements   Permission to view the target coder's statements?
 	 * @param editStatements   Permission to edit the target coder's statements?
 	 */
-	public CoderRelation(int targetCoderId, String targetCoderName, Color targetCoderColor, boolean viewDocuments, boolean viewStatements, boolean editDocuments, boolean editStatements) {
+	public CoderRelation(int targetCoderId, String targetCoderName, Color targetCoderColor, boolean viewDocuments, boolean editDocuments, boolean viewStatements, boolean editStatements) {
 		this.targetCoderId = targetCoderId;
 		this.targetCoderName = targetCoderName;
 		this.targetCoderColor = targetCoderColor;
 		this.viewDocuments = viewDocuments;
-		this.viewStatements = viewStatements;
 		this.editDocuments = editDocuments;
+		this.viewStatements = viewStatements;
 		this.editStatements = editStatements;
 	}
 
@@ -51,8 +51,8 @@ public class CoderRelation {
 	public CoderRelation(int targetCoderId, boolean viewDocuments, boolean editDocuments, boolean viewStatements, boolean editStatements) {
 		this.targetCoderId = targetCoderId;
 		this.viewDocuments = viewDocuments;
-		this.viewStatements = viewStatements;
 		this.editDocuments = editDocuments;
+		this.viewStatements = viewStatements;
 		this.editStatements = editStatements;
 	}
 	
@@ -177,8 +177,12 @@ public class CoderRelation {
 	 */
 	boolean equals(CoderRelation cr) {
 		if (this.targetCoderId != cr.getTargetCoderId() ||
-				!this.targetCoderName.equals(cr.getTargetCoderName()) ||
-				!this.targetCoderColor.equals(cr.getTargetCoderColor()) ||
+				(this.targetCoderName == null && cr.getTargetCoderName() != null) ||
+				(this.targetCoderName != null && cr.getTargetCoderName() == null) ||
+				(this.targetCoderName != null && cr.getTargetCoderName() != null && !this.targetCoderName.equals(cr.getTargetCoderName())) ||
+				(this.targetCoderColor == null && cr.getTargetCoderColor() != null) ||
+				(this.targetCoderColor != null && cr.getTargetCoderColor() == null) ||
+				(this.targetCoderColor != null && cr.getTargetCoderColor() != null && !this.targetCoderColor.equals(cr.getTargetCoderColor())) ||
 				this.viewDocuments != cr.isViewDocuments() ||
 				this.editDocuments != cr.isEditDocuments() ||
 				this.viewStatements != cr.isViewStatements() ||
