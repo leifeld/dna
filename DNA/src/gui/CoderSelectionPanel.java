@@ -1,12 +1,18 @@
 package gui;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.util.ArrayList;
-
-import javax.swing.JComboBox;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import dna.Dna;
+import logger.LogEvent;
+import logger.Logger;
 import model.Coder;
 import sql.Sql.SqlListener;
 
@@ -15,48 +21,91 @@ import sql.Sql.SqlListener;
  */
 class CoderSelectionPanel extends JPanel implements SqlListener {
 	private static final long serialVersionUID = 7852541276993938860L;
-	JComboBox<Coder> coderBox;
+	private CoderBadgePanel coderBadgePanel;
+	private JButton changeCoderButton;
+	private GridBagConstraints gbc;
 
 	/**
 	 * Create a new coder selection panel.
 	 */
 	public CoderSelectionPanel() {
-		setLayout(new BorderLayout());
-		coderBox = new JComboBox<Coder>();
-		coderBox.setRenderer(new CoderRenderer());
-		coderBox.setPreferredSize(new Dimension(34, 34));
-		coderBox.setEnabled(false);
-		this.add(coderBox, BorderLayout.CENTER);
-	}
-	
-	/**
-	 * Get a reference to the JComboBox containing the coders.
-	 * 
-	 * @return The coder box.
-	 */
-	JComboBox<Coder> getCoderBox() {
-		return coderBox;
-	}
-
-	@Override
-	public void adjustToChangedConnection() {
-		if (Dna.sql.getConnectionProfile() != null) {
-			ArrayList<Coder> coders = Dna.sql.getCoders();
-			coderBox.removeAllItems();
-			if (coders.size() > 0) {
-				for (int i = 0; i < coders.size(); i++) {
-					coderBox.addItem(coders.get(i));
+		setLayout(new GridBagLayout());
+		ImageIcon changeCoderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-users.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		changeCoderButton = new JButton("Change coder", changeCoderIcon);
+		changeCoderButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				boolean authenticated = false;
+				int coderIdToSelect = -1;
+				if (Dna.sql.getActiveCoder() != null) {
+					coderIdToSelect = Dna.sql.getActiveCoder().getId();
+				}
+				while (!authenticated) {
+					CoderPasswordCheckDialog dialog = new CoderPasswordCheckDialog(Dna.sql, true, coderIdToSelect);
+					Coder coder = dialog.getCoder();
+					String clearPassword = dialog.getPassword();
+					if (coder != null && clearPassword != null) {
+						coderIdToSelect = coder.getId();
+						if (Dna.sql.authenticate(coder.getId(), clearPassword)) {
+							authenticated = true;
+							Dna.sql.changeActiveCoder(coder.getId());
+						} else {
+							LogEvent l = new LogEvent(Logger.WARNING,
+    								"Authentication failed. Check your password.",
+    								"Tried to select coder, but a wrong password was entered for Coder " + coder.getId() + ".");
+    						Dna.logger.log(l);
+		    				JOptionPane.showMessageDialog(null,
+		    						"Authentication failed. Check your password.",
+		    					    "Check failed",
+		    					    JOptionPane.ERROR_MESSAGE);
+						}
+					} else {
+						authenticated = true; // user must have pressed cancel
+					}
 				}
 			}
-			coderBox.setEnabled(true);
-		} else {
-			coderBox.removeAllItems();
-			coderBox.setEnabled(false);
-		}
+		});
+		changeCoderButton.setEnabled(false);
+		changeCoderButton.setPreferredSize(new Dimension(changeCoderButton.getPreferredSize().width, 34));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.weightx = 1.0;
+		gbc.anchor = GridBagConstraints.WEST;
+		this.add(changeCoderButton, gbc);
+		
+		coderBadgePanel = new CoderBadgePanel();
+		gbc.gridx = 1;
+		gbc.weightx = 0.0;
+		this.add(coderBadgePanel, gbc);
+	}
+	
+	@Override
+	public void adjustToChangedConnection() {
+		// nothing to do
 	}
 
 	@Override
 	public void adjustToChangedCoder() {
-		// nothing to do; coder updates must be done manually in the main window to avoid infinite looping
+		this.gbc.gridx = 1;
+		this.gbc.gridy = 0;
+		gbc.anchor = GridBagConstraints.WEST;
+		this.gbc.weightx = 0.0;
+		this.remove(coderBadgePanel);
+		Coder coder = Dna.sql.getActiveCoder();
+		if (coder != null) {
+			this.coderBadgePanel = new CoderBadgePanel(coder, 18, 30);
+		} else {
+			this.coderBadgePanel = new CoderBadgePanel();
+		}
+		this.add(this.coderBadgePanel);
+		this.revalidate();
+		this.repaint();
+		changeCoderButton.setEnabled(true);
+		if (Dna.sql.getConnectionProfile() == null || Dna.sql.getActiveCoder() == null) {
+			changeCoderButton.setEnabled(false);
+		} else {
+			changeCoderButton.setEnabled(true);
+		}
 	}
 }

@@ -8,8 +8,6 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -34,7 +32,6 @@ import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -477,9 +474,8 @@ public class MainWindow extends JFrame implements SqlListener {
 							if (s.getStart() < pos
 									&& s.getStop() > pos
 									&& Dna.sql.getActiveCoder() != null
-									&& ((Dna.sql.getActiveCoder().isPermissionViewOthersStatements() == true &&
-									Dna.sql.getActiveCoder().isPermissionEditOthersStatements(s.getCoderId()) == true) ||
-									s.getCoderId() == Dna.sql.getActiveCoder().getId())) {
+									&& (s.getCoderId() == Dna.sql.getActiveCoder().getId() || Dna.sql.getActiveCoder().isPermissionViewOthersStatements())
+									&& (s.getCoderId() == Dna.sql.getActiveCoder().getId() || Dna.sql.getActiveCoder().getCoderRelations().get(s.getCoderId()).isViewStatements())) {
 								Point location = textWindow.getLocationOnScreen();
 								textWindow.setSelectionStart(s.getStart());
 								textWindow.setSelectionEnd(s.getStop());
@@ -511,19 +507,6 @@ public class MainWindow extends JFrame implements SqlListener {
 			private void processFilterDocumentChanges() {
 				documentTablePanel.setDocumentFilterPattern(documentFilterField.getText());
 				documentTableModel.fireTableDataChanged();
-			}
-		});
-
-		// selection listener for coder selection combo box
-		JComboBox<Coder> coderBox = coderSelectionPanel.getCoderBox();
-		coderBox.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent event) {
-				if (event.getStateChange() == ItemEvent.SELECTED) {
-					Coder item = (Coder) event.getItem();
-					Dna.sql.changeActiveCoder(item.getId());
-					// TODO: ask for coder password and make sure it does not switch to Admin after loading db
-				}
 			}
 		});
 		
@@ -1267,7 +1250,7 @@ public class MainWindow extends JFrame implements SqlListener {
 							}
 							if (cp != null) {
 								Sql sqlTemp = new Sql(cp, true); // just for authentication purposes, so a test
-								boolean authenticated = sqlTemp.authenticate(key);
+								boolean authenticated = sqlTemp.authenticate(-1, key);
 								if (authenticated == true) {
 									validPasswordInput = true; // authenticated; quit the while-loop
 									Dna.sql.setConnectionProfile(cp, false); // use the connection profile, so no test
@@ -1387,12 +1370,12 @@ public class MainWindow extends JFrame implements SqlListener {
 			if (file != null) {
 				boolean validPasswordInput = false;
 				while (!validPasswordInput) {
-					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog(Dna.sql, false);
+					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog(Dna.sql, false, -1);
 					String key = d.getPassword();
 					if (key == null) { // user must have pressed cancel
 						validPasswordInput = true;
 					} else {
-						boolean authenticated = Dna.sql.authenticate(key);
+						boolean authenticated = Dna.sql.authenticate(-1, key);
 						if (authenticated == true) {
 							// write the connection profile to disk, with an encrypted version of the password
 							writeConnectionProfile(filename, Dna.sql.getConnectionProfile(), key);

@@ -150,10 +150,10 @@ public class Sql {
 	        		"Attempted to open a database of type \"" + cp.getType() + "\", but the type does not seem to be supported.");
 	        Dna.logger.log(l);
 		}
-		fireConnectionChange();
 		if (test == false) {
 			updateActiveCoder(); // update active coder and notify listeners about the update
 		}
+		fireConnectionChange();
 	}
 	
 	/**
@@ -1341,20 +1341,26 @@ public class Sql {
 	
 	/**
 	 * Authenticate a coder. Check if a user-provided clear-text password for
-	 * the current coder matches the hash of the password stored for the coder
-	 * in the database.
+	 * the current coder or a provided coder ID matches the hash of the password
+	 * stored for the coder in the database.
 	 * 
+	 * @param coderId       ID of the coder to authenticate. Can be {@code -1}
+	 *   if the currently active coder is supposed to be authenticated.
 	 * @param clearPassword Clear-text password provided by the coder.
 	 * @return              boolean value: {@code true} if the password matches,
 	 *   {@code false} if not.
 	 * 
 	 * @category coder
 	 */
-	public boolean authenticate(String clearPassword) {
+	public boolean authenticate(int coderId, String clearPassword) {
 		String encryptedHash = null;
 		try (Connection conn = this.ds.getConnection();
 				PreparedStatement s = conn.prepareStatement("SELECT Password FROM CODERS WHERE ID = ?;")) {
-			s.setInt(1, this.cp.getCoderId());
+			if (coderId > 0) {
+				s.setInt(1, coderId);
+			} else {
+				s.setInt(1, this.cp.getCoderId());
+			}
 			ResultSet result = s.executeQuery();
 			while (result.next()) {
 			    encryptedHash = result.getString("Password");

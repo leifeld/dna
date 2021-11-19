@@ -509,7 +509,7 @@ public class LoggerDialog extends JDialog {
         		if (Dna.sql.getConnectionProfile() == null || (int) value == -1 || coders.isEmpty() || !coders.containsKey((int) value)) {
         			value = null;
         		} else {
-        			c = new CoderBadgePanel(coders.get((int) value), 14, 22);
+        			c = new CoderBadgePanel(coders.get((int) value), 14, 13); // show 13 characters of the coder name
         		}
         	}
         	if (isSelected == true) {

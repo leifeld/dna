@@ -1,6 +1,7 @@
 package gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.ListCellRenderer;
+import javax.swing.UIDefaults;
 import javax.swing.event.ListDataListener;
 
 import dna.Dna;
@@ -28,9 +30,45 @@ import sql.Sql;
  * Class for creating a coder password dialog and returning the password.
  */
 public class CoderPasswordCheckDialog {
-	public Coder coder = null;
-	public String password = null;
+	Coder coder = null;
+	String password = null;
 
+	/**
+	 * Constructor with a specified coder.
+	 */
+	public CoderPasswordCheckDialog(Coder coder) {
+		this.coder = coder;
+		JPanel panel = new JPanel(new BorderLayout());
+
+		JPanel questionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		JLabel pwLabel = new JLabel("Please enter the password for coder: ");
+		questionPanel.add(pwLabel);
+		CoderBadgePanel cbp = new CoderBadgePanel(coder);
+		questionPanel.add(cbp);
+		panel.add(questionPanel, BorderLayout.NORTH);
+		
+		JPasswordField pw = new JPasswordField(20);
+		panel.add(pw);
+		
+		LogEvent l = new LogEvent(Logger.MESSAGE,
+				"[GUI] User was asked to enter coder password for connection profile.",
+				"A password check dialog was displayed to authenticate Coder " + coder.getId() + ".");
+		Dna.logger.log(l);
+		
+		@SuppressWarnings("serial")
+		JOptionPane pane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION) {
+			@Override
+			public void selectInitialValue() {
+				pw.requestFocusInWindow();
+			}
+		};
+		JDialog dialog = pane.createDialog(null, "Coder verification");
+		dialog.setVisible(true);
+		if ((int) pane.getValue() == 0) { // 0 = OK button pressed
+			this.password = new String(pw.getPassword());
+		}
+	}
+	
 	/**
 	 * Constructor with unknown coder (because the connection profile was
 	 * encrypted and the coder details could not be read yet before getting the
@@ -72,8 +110,10 @@ public class CoderPasswordCheckDialog {
 	 * @param chooseCoder  boolean value indicating whether a combo box should
 	 *   be created to select the coder (true) or whether the coder from the SQL
 	 *   connection profile should be used (false).
+	 * @param selectId     A coder ID to select. The ID is ignored if it is not
+	 *   found among the coders, otherwise selected in the combo box.
 	 */
-	public CoderPasswordCheckDialog(Sql sql, boolean chooseCoder) {
+	public CoderPasswordCheckDialog(Sql sql, boolean chooseCoder, int selectId) {
 		JPanel panel = new JPanel(new BorderLayout());
 		
 		JPanel questionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -83,11 +123,23 @@ public class CoderPasswordCheckDialog {
 
 		if (chooseCoder == true) {
 			ArrayList<Coder> coders = sql.getCoders();
+			int selectIndex = -1;
+			if (selectId > 0) {
+				for (int i = 0; i < coders.size(); i++) {
+					if (coders.get(i).getId() == selectId) {
+						selectIndex = i;
+					}
+				}
+			}
 			CoderComboBoxModel comboBoxModel = new CoderComboBoxModel(coders);
 			comboBox.setModel(comboBoxModel);
 			comboBox.setRenderer(new CoderComboBoxRenderer());
 			if (coders.size() > 0) {
-				comboBox.setSelectedIndex(0);
+				if (selectIndex > -1) {
+					comboBox.setSelectedIndex(selectIndex);
+				} else {
+					comboBox.setSelectedIndex(0);
+				}
 			}
 			questionPanel.add(comboBox);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
@@ -140,7 +192,13 @@ public class CoderPasswordCheckDialog {
 				return new JLabel("select coder...");
 			} else {
 				Coder coder = (Coder) value;
-				return new CoderBadgePanel(coder);
+				CoderBadgePanel cbp = new CoderBadgePanel(coder);
+				if (isSelected) {
+					UIDefaults defaults = javax.swing.UIManager.getDefaults();
+					Color bg = defaults.getColor("List.selectionBackground");
+					cbp.setBackground(bg);
+				}
+				return cbp;
 			}
 		}
 	}
