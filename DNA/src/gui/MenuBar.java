@@ -24,6 +24,7 @@ import gui.MainWindow.ActionAttributeManager;
 import gui.MainWindow.ActionBatchImportDocuments;
 import gui.MainWindow.ActionCloseDatabase;
 import gui.MainWindow.ActionCoderManager;
+import gui.MainWindow.ActionCoderRelationsEditor;
 import gui.MainWindow.ActionCreateDatabase;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionLoggerDialog;
@@ -64,6 +65,7 @@ public class MenuBar extends JMenuBar implements SqlListener {
 	 * @param actionRefresh               Action for reloading data.
 	 * @param actionRemoveStatements      Action for removing statements.
 	 * @param actionAttributeManager      Action for opening attribute manager.
+	 * @param actionCoderRelationsEditor  Action for editing coder relations.
 	 * @param actionLoggerDialog          Action for opening logger dialog.
 	 * @param actionAboutWindow           Action for opening DNA About window.
 	 */
@@ -81,6 +83,7 @@ public class MenuBar extends JMenuBar implements SqlListener {
 			ActionRefresh actionRefresh,
 			ActionRemoveStatements actionRemoveStatements,
 			ActionAttributeManager actionAttributeManager,
+			ActionCoderRelationsEditor actionCoderRelationsEditor,
 			ActionLoggerDialog actionLoggerDialog,
 			ActionAboutWindow actionAboutWindow) {
 
@@ -151,7 +154,7 @@ public class MenuBar extends JMenuBar implements SqlListener {
 		// statements menu: open attribute manager
 		JMenuItem attributeManagerItem = new JMenuItem(actionAttributeManager);
 		statementsMenu.add(attributeManagerItem);
-
+		
 		// export menu
 		JMenu exportMenu = new JMenu("Export");
 		this.add(exportMenu);
@@ -259,6 +262,10 @@ public class MenuBar extends JMenuBar implements SqlListener {
 		colorByCoderItem.setEnabled(false);
 		settingsMenu.add(colorByCoderItem);
 
+		// settings menu: open coder relations editor
+		JMenuItem coderRelationsEditorItem = new JMenuItem(actionCoderRelationsEditor);
+		settingsMenu.add(coderRelationsEditorItem);
+		
 		// settings menu: display logger dialog window
 		JMenuItem loggerDialogItem = new JMenuItem(actionLoggerDialog);
 		settingsMenu.add(loggerDialogItem);

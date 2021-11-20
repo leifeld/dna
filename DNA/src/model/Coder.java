@@ -7,60 +7,45 @@ import java.util.HashMap;
  * Represents a coder, including all permissions and coder-specific settings.
  */
 public class Coder {
-	int id,
-	popupWidth,
-	refresh,
-	fontSize;
-	String name;
-	Color color;
-	boolean colorByCoder,
-	popupDecoration,
-	popupAutoComplete,
-	permissionAddDocuments,
-	permissionEditDocuments,
-	permissionDeleteDocuments,
-	permissionImportDocuments,
-	permissionAddStatements,
-	permissionEditStatements,
-	permissionDeleteStatements,
-	permissionEditAttributes,
-	permissionEditRegex,
-	permissionEditStatementTypes,
-	permissionEditCoders,
-	permissionViewOthersDocuments,
-	permissionEditOthersDocuments,
-	permissionViewOthersStatements,
-	permissionEditOthersStatements;
-	HashMap<Integer, CoderRelation> coderRelations;
+	private int id, popupWidth, refresh, fontSize;
+	private String name;
+	private Color color;
+	private boolean colorByCoder, popupDecoration, popupAutoComplete;
+	private boolean permissionAddDocuments,	permissionEditDocuments, permissionDeleteDocuments,	permissionImportDocuments;
+	private boolean permissionAddStatements, permissionEditStatements, permissionDeleteStatements;
+	private boolean permissionEditAttributes, permissionEditRegex, permissionEditStatementTypes, permissionEditCoders, permissionEditCoderRelations;
+	private boolean permissionViewOthersDocuments, permissionEditOthersDocuments, permissionViewOthersStatements, permissionEditOthersStatements;
+	private HashMap<Integer, CoderRelation> coderRelations;
 
 	/**
 	 * Create a coder with full information.
 	 * 
-	 * @param id                              The ID of the coder.
-	 * @param name                            The name of the coder.
-	 * @param color                           The color of the coder.
-	 * @param refresh                         Refresh rate in seconds.
-	 * @param fontSize                        Text font size in px (default 14).
-	 * @param popupWidth                      Short text field width for popups.
-	 * @param colorByCoder                    Color statements in text by coder?
-	 * @param popupDecoration                 Show popup window decoration?
-	 * @param popupAutoComplete               Auto-complete short text fields?
-	 * @param permissionAddDocuments          Permission to add documents?
-	 * @param permissionEditDocuments         Permission to edit documents?
-	 * @param permissionDeleteDocuments       Permission to delete documents?
-	 * @param permissionImportDocuments       Permission to import documents?
-	 * @param permissionAddStatements         Permission to add statements?
-	 * @param permissionEditStatements        Permission to edit statements?
-	 * @param permissionDeleteStatements      Permission to delete statements?
-	 * @param permissionEditAttributes        Permission to edit attributes?
-	 * @param permissionEditRegex             Permission to edit regexes?
-	 * @param permissionEditStatementTypes    Permission to edit statemnt types.
-	 * @param permissionEditCoders            Permission to edit coders.
-	 * @param permissionViewOthersDocuments   Permission to view others' docs.
-	 * @param permissionEditOthersDocuments   Permission to edit others' docs.
-	 * @param permissionViewOthersStatements  Permission to view others' stmnts.
-	 * @param permissionEditOthersStatements  Permission to edit others' stmnts.
-	 * @param coderRelations                  HashMap with coder relations.
+	 * @param id                             The ID of the coder.
+	 * @param name                           The name of the coder.
+	 * @param color                          The color of the coder.
+	 * @param refresh                        Refresh rate in seconds.
+	 * @param fontSize                       Text font size in px (default 14).
+	 * @param popupWidth                     Short text field width for popups.
+	 * @param colorByCoder                   Color statements in text by coder?
+	 * @param popupDecoration                Show popup window decoration?
+	 * @param popupAutoComplete              Auto-complete short text fields?
+	 * @param permissionAddDocuments         Permission to add documents?
+	 * @param permissionEditDocuments        Permission to edit documents?
+	 * @param permissionDeleteDocuments      Permission to delete documents?
+	 * @param permissionImportDocuments      Permission to import documents?
+	 * @param permissionAddStatements        Permission to add statements?
+	 * @param permissionEditStatements       Permission to edit statements?
+	 * @param permissionDeleteStatements     Permission to delete statements?
+	 * @param permissionEditAttributes       Permission to edit attributes?
+	 * @param permissionEditRegex            Permission to edit regexes?
+	 * @param permissionEditStatementTypes   Permission to edit statemnt types.
+	 * @param permissionEditCoders           Permission to edit coders.
+	 * @param permissionEditCoderRelations   Permission to edit coder relations.
+	 * @param permissionViewOthersDocuments  Permission to view others' docs.
+	 * @param permissionEditOthersDocuments  Permission to edit others' docs.
+	 * @param permissionViewOthersStatements Permission to view others' stmnts.
+	 * @param permissionEditOthersStatements Permission to edit others' stmnts.
+	 * @param coderRelations                 HashMap with coder relations.
 	 */
 	public Coder(int id,
 			String name,
@@ -82,6 +67,7 @@ public class Coder {
 			boolean permissionEditRegex,
 			boolean permissionEditStatementTypes,
 			boolean permissionEditCoders,
+			boolean permissionEditCoderRelations,
 			boolean permissionViewOthersDocuments,
 			boolean permissionEditOthersDocuments,
 			boolean permissionViewOthersStatements,
@@ -107,6 +93,7 @@ public class Coder {
 		this.permissionEditRegex = permissionEditRegex;
 		this.permissionEditStatementTypes = permissionEditStatementTypes;
 		this.permissionEditCoders = permissionEditCoders;
+		this.permissionEditCoderRelations = permissionEditCoderRelations;
 		this.permissionViewOthersDocuments = permissionViewOthersDocuments;
 		this.permissionEditOthersDocuments = permissionEditOthersDocuments;
 		this.permissionViewOthersStatements = permissionViewOthersStatements;
@@ -117,33 +104,34 @@ public class Coder {
 	/**
 	 * Create a coder with full information (with RGB color).
 	 * 
-	 * @param id                              The ID of the coder.
-	 * @param name                            The name of the coder.
-	 * @param red                             The red RGB color value (0-255).
-	 * @param green                           The green RGB color value (0-255).
-	 * @param blue                            The blue RGB color value (0-255).
-	 * @param refresh                         Refresh rate in seconds.
-	 * @param fontSize                        Text font size in px (default 14).
-	 * @param popupWidth                      Short text field width for popups.
-	 * @param colorByCoder                    Color statements in text by coder?
-	 * @param popupDecoration                 Show popup window decoration?
-	 * @param popupAutoComplete               Auto-complete short text fields?
-	 * @param permissionAddDocuments          Permission to add documents?
-	 * @param permissionEditDocuments         Permission to edit documents?
-	 * @param permissionDeleteDocuments       Permission to delete documents?
-	 * @param permissionImportDocuments       Permission to import documents?
-	 * @param permissionAddStatements         Permission to add statements?
-	 * @param permissionEditStatements        Permission to edit statements?
-	 * @param permissionDeleteStatements      Permission to delete statements?
-	 * @param permissionEditAttributes        Permission to edit attributes?
-	 * @param permissionEditRegex             Permission to edit regexes?
-	 * @param permissionEditStatementTypes    Permission to edit statemnt types.
-	 * @param permissionEditCoders            Permission to edit coders.
-	 * @param permissionViewOthersDocuments   Permission to view others' docs.
-	 * @param permissionEditOthersDocuments   Permission to edit others' docs.
-	 * @param permissionViewOthersStatements  Permission to view others' stmnts.
-	 * @param permissionEditOthersStatements  Permission to edit others' stmnts.
-	 * @param coderRelations                  HashMap with coder relations.
+	 * @param id                             The ID of the coder.
+	 * @param name                           The name of the coder.
+	 * @param red                            The red RGB color value (0-255).
+	 * @param green                          The green RGB color value (0-255).
+	 * @param blue                           The blue RGB color value (0-255).
+	 * @param refresh                        Refresh rate in seconds.
+	 * @param fontSize                       Text font size in px (default 14).
+	 * @param popupWidth                     Short text field width for popups.
+	 * @param colorByCoder                   Color statements in text by coder?
+	 * @param popupDecoration                Show popup window decoration?
+	 * @param popupAutoComplete              Auto-complete short text fields?
+	 * @param permissionAddDocuments         Permission to add documents?
+	 * @param permissionEditDocuments        Permission to edit documents?
+	 * @param permissionDeleteDocuments      Permission to delete documents?
+	 * @param permissionImportDocuments      Permission to import documents?
+	 * @param permissionAddStatements        Permission to add statements?
+	 * @param permissionEditStatements       Permission to edit statements?
+	 * @param permissionDeleteStatements     Permission to delete statements?
+	 * @param permissionEditAttributes       Permission to edit attributes?
+	 * @param permissionEditRegex            Permission to edit regexes?
+	 * @param permissionEditStatementTypes   Permission to edit statemnt types.
+	 * @param permissionEditCoders           Permission to edit coders.
+	 * @param permissionEditCoderRelations   Permission to edit coder relations.
+	 * @param permissionViewOthersDocuments  Permission to view others' docs.
+	 * @param permissionEditOthersDocuments  Permission to edit others' docs.
+	 * @param permissionViewOthersStatements Permission to view others' stmnts.
+	 * @param permissionEditOthersStatements Permission to edit others' stmnts.
+	 * @param coderRelations                 HashMap with coder relations.
 	 */
 	public Coder(int id,
 			String name,
@@ -167,6 +155,7 @@ public class Coder {
 			boolean permissionEditRegex,
 			boolean permissionEditStatementTypes,
 			boolean permissionEditCoders,
+			boolean permissionEditCoderRelations,
 			boolean permissionViewOthersDocuments,
 			boolean permissionEditOthersDocuments,
 			boolean permissionViewOthersStatements,
@@ -192,6 +181,7 @@ public class Coder {
 		this.permissionEditRegex = permissionEditRegex;
 		this.permissionEditStatementTypes = permissionEditStatementTypes;
 		this.permissionEditCoders = permissionEditCoders;
+		this.permissionEditCoderRelations = permissionEditCoderRelations;
 		this.permissionViewOthersDocuments = permissionViewOthersDocuments;
 		this.permissionEditOthersDocuments = permissionEditOthersDocuments;
 		this.permissionViewOthersStatements = permissionViewOthersStatements;
@@ -229,6 +219,7 @@ public class Coder {
 		this.permissionEditRegex = false;
 		this.permissionEditStatementTypes = false;
 		this.permissionEditCoders = false;
+		this.permissionEditCoderRelations = false;
 		this.permissionViewOthersDocuments = false;
 		this.permissionEditOthersDocuments = false;
 		this.permissionViewOthersStatements = false;
@@ -262,6 +253,7 @@ public class Coder {
 		this.permissionEditRegex = coder.isPermissionEditRegex();
 		this.permissionEditStatementTypes = coder.isPermissionEditStatementTypes();
 		this.permissionEditCoders = coder.isPermissionEditCoders();
+		this.permissionEditCoderRelations = coder.isPermissionEditCoderRelations();
 		this.permissionViewOthersDocuments = coder.isPermissionViewOthersDocuments();
 		this.permissionEditOthersDocuments = coder.isPermissionEditOthersDocuments();
 		this.permissionViewOthersStatements = coder.isPermissionViewOthersStatements();
@@ -459,6 +451,15 @@ public class Coder {
 	 */
 	public boolean isPermissionEditCoders() {
 		return permissionEditCoders;
+	}
+
+	/**
+	 * Is the coder allowed to edit its coder relations?
+	 * 
+	 * @return The permissionEditCoderRelations boolean indicator.
+	 */
+	public boolean isPermissionEditCoderRelations() {
+		return permissionEditCoderRelations;
 	}
 
 	/**
@@ -661,6 +662,14 @@ public class Coder {
 	}
 
 	/**
+	 * @param permissionEditCoderRelations the permissionEditCoderRelations to
+	 *   set
+	 */
+	public void setPermissionEditCoderRelations(boolean permissionEditCoderRelations) {
+		this.permissionEditCoderRelations = permissionEditCoderRelations;
+	}
+
+	/**
 	 * @param permissionViewOthersDocuments the permissionViewOthersDocuments to set
 	 */
 	public void setPermissionViewOthersDocuments(boolean permissionViewOthersDocuments) {
@@ -751,6 +760,7 @@ public class Coder {
 				this.permissionEditRegex == coder.isPermissionEditRegex() &&
 				this.permissionEditStatementTypes == coder.isPermissionEditStatementTypes() &&
 				this.permissionEditCoders == coder.isPermissionEditCoders() &&
+				this.permissionEditCoderRelations == coder.isPermissionEditCoderRelations() &&
 				this.permissionViewOthersDocuments == coder.isPermissionViewOthersDocuments() &&
 				this.permissionEditOthersDocuments == coder.isPermissionEditOthersDocuments() &&
 				this.permissionViewOthersStatements == coder.isPermissionViewOthersStatements() &&

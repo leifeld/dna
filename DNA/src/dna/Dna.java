@@ -5,14 +5,22 @@ import logger.LogEvent;
 import logger.Logger;
 import sql.Sql;
 
+/**
+ * Main class of the Discourse Network Analyzer (DNA).
+ * 
+ * @author Philip Leifeld <philip.leifeld@essex.ac.uk>
+ */
 public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2021-11-19";
+	public static final String date = "2021-11-20";
 	public static final String version = "3.0.0";
 	MainWindow mainWindow;
 	
+	/**
+	 * Create a new instance of DNA including the GUI.
+	 */
 	public Dna() {
 		logger = new Logger();
 
@@ -27,7 +35,7 @@ public class Dna {
 	}
 	
 	/**
-	 * Main class. Start DNA.
+	 * Start DNA.
 	 * 
 	 * @param args Any arguments from the terminal/command line/shell.
 	 */

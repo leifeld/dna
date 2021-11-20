@@ -108,6 +108,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	private ActionBatchImportDocuments actionBatchImportDocuments;
 	private ActionRemoveStatements actionRemoveStatements;
 	private ActionAttributeManager actionAttributeManager;
+	private ActionCoderRelationsEditor actionCoderRelationsEditor;
 	private ActionLoggerDialog actionLoggerDialog;
 	private ActionAboutWindow actionAboutWindow;
 
@@ -216,6 +217,10 @@ public class MainWindow extends JFrame implements SqlListener {
 		ImageIcon attributeManagerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-list.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		actionAttributeManager = new ActionAttributeManager("Open attribute manager", attributeManagerIcon, "Open the attribute manager to edit entities and their attribute values.", KeyEvent.VK_A);
 		actionAttributeManager.setEnabled(false);
+
+		ImageIcon coderRelationsEditorIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-user-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionCoderRelationsEditor = new ActionCoderRelationsEditor("Edit coder relations", coderRelationsEditorIcon, "Open the coder relations editor define whose documents and statements you can view and edit.", KeyEvent.VK_R);
+		actionCoderRelationsEditor.setEnabled(false);
 		
 		ImageIcon loggerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		actionLoggerDialog = new ActionLoggerDialog("Display message log", loggerIcon, "Display a log of messages, warnings, and errors in a dialog window", KeyEvent.VK_L);
@@ -252,6 +257,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionRefresh,
 				actionRemoveStatements,
 				actionAttributeManager,
+				actionCoderRelationsEditor,
 				actionLoggerDialog,
 				actionAboutWindow);
 		statusBar = new StatusBar();
@@ -870,8 +876,8 @@ public class MainWindow extends JFrame implements SqlListener {
 				} else {
 					actionRefresh.setEnabled(false);
 				}
-				changedDocumentTableSelection();
 			}
+			changedDocumentTableSelection();
 	    }
 	}
 
@@ -1129,9 +1135,15 @@ public class MainWindow extends JFrame implements SqlListener {
 			} else {
 				actionAttributeManager.setEnabled(false);
 			}
+			if (Dna.sql.getActiveCoder().isPermissionEditCoderRelations() == true && Dna.sql.getActiveCoder().getId() != 1) {
+				actionCoderRelationsEditor.setEnabled(true);
+			} else {
+				actionCoderRelationsEditor.setEnabled(false);
+			}
 		} else {
 			actionCoderManager.setEnabled(false);
 			actionAttributeManager.setEnabled(false);
+			actionCoderRelationsEditor.setEnabled(false);
 		}
 	}
 
@@ -1451,12 +1463,12 @@ public class MainWindow extends JFrame implements SqlListener {
 			} else {
 				LogEvent l = new LogEvent(Logger.WARNING,
 						"[GUI] Action could not be executed: insufficient permissions to open coder manager.",
-						"Attempted to open a coder manager from the GUI, but the coder did not have sufficient permissions for editing attributes. This message should never appear because the menu item for opening a coder manager should be grayed out when the active coder has insufficient permissions. Please report the full error log to the developers through the issue tracker on GitHub.");
+						"Attempted to open a coder manager from the GUI, but the coder did not have sufficient permissions for editing coders. This message should never appear because the menu item for opening a coder manager should be grayed out when the active coder has insufficient permissions. Please report the full error log to the developers through the issue tracker on GitHub.");
 				Dna.logger.log(l);
 			}
 		}
 	}
-	
+
 	/**
 	 * An action to quit DNA.
 	 */
@@ -1651,6 +1663,34 @@ public class MainWindow extends JFrame implements SqlListener {
 				LogEvent l = new LogEvent(Logger.WARNING,
 						"[GUI] Action could not be executed: insufficient permissions to open attribute manager.",
 						"Attempted to open an attribute manager from the GUI, but the coder did not have sufficient permissions for editing attributes. This message should never appear because the menu item for opening an attribute manager should be grayed out when the active coder has insufficient permissions. Please report the full error log to the developers through the issue tracker on GitHub.");
+				Dna.logger.log(l);
+			}
+		}
+	}
+
+	/**
+	 * An action to display a coder manager dialog window.
+	 */
+	class ActionCoderRelationsEditor extends AbstractAction {
+		private static final long serialVersionUID = -6341308994517637774L;
+
+		public ActionCoderRelationsEditor(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			if (Dna.sql.getActiveCoder().isPermissionEditCoderRelations() && Dna.sql.getActiveCoder().getId() != 1) {
+				new CoderRelationsEditor();
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[GUI] Action executed: opened coder relations editor.",
+						"Opened a coder relations editor window from the GUI.");
+				Dna.logger.log(l);
+			} else {
+				LogEvent l = new LogEvent(Logger.WARNING,
+						"[GUI] Action could not be executed: insufficient permissions to open coder relations editor.",
+						"Attempted to open a coder relations editor from the GUI, but the coder did not have sufficient permissions for editing coder relations. This message should never appear because the menu item for opening a coder relations editor should be grayed out when the active coder has insufficient permissions. Please report the full error log to the developers through the issue tracker on GitHub.");
 				Dna.logger.log(l);
 			}
 		}

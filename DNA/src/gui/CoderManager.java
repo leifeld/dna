@@ -2,7 +2,6 @@ package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
@@ -37,9 +36,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableCellRenderer;
-
 import org.jasypt.util.password.StrongPasswordEncryptor;
 
 import dna.Dna;
@@ -62,12 +58,10 @@ class CoderManager extends JDialog {
 	
 	private JCheckBox boxAddDocuments, boxEditDocuments, boxDeleteDocuments, boxImportDocuments;
 	private JCheckBox boxAddStatements, boxEditStatements, boxDeleteStatements;
-	private JCheckBox boxEditAttributes, boxEditRegex, boxEditStatementTypes, boxEditCoders;
+	private JCheckBox boxEditAttributes, boxEditRegex, boxEditStatementTypes, boxEditCoders, boxEditCoderRelations;
 	private JCheckBox boxViewOthersDocuments, boxEditOthersDocuments, boxViewOthersStatements, boxEditOthersStatements;
 	
-	JTable coderRelationTable;
-	CoderRelationTableModel coderRelationTableModel;
-	
+	CoderRelationsPanel coderRelationsPanel;
 	Coder selectedCoderCopy;
 	
 	private JButton reloadButton, addButton, deleteButton, applyButton;
@@ -82,9 +76,6 @@ class CoderManager extends JDialog {
 		
 		// get coders from database
 		coderArrayList = Dna.sql.getCoders();
-		for (int i = 0; i < coderArrayList.size(); i++) {
-			coderArrayList.set(i, injectDetailsIntoCoderRelation(coderArrayList.get(i), coderArrayList));
-		}
 		Coder[] coders = new Coder[coderArrayList.size()];
 		coders = coderArrayList.toArray(coders);
 
@@ -210,6 +201,7 @@ class CoderManager extends JDialog {
 		boxEditRegex = new JCheckBox("Permission to edit regex search terms");
 		boxEditStatementTypes = new JCheckBox("Permission to edit statement types");
 		boxEditCoders = new JCheckBox("Permission to edit coders");
+		boxEditCoderRelations = new JCheckBox("Permission to edit coder relations");
 		boxViewOthersDocuments = new JCheckBox("Permission to view documents of other coders");
 		boxEditOthersDocuments = new JCheckBox("Permission to edit documents of other coders");
 		boxViewOthersStatements = new JCheckBox("Permission to view statements of other coders");
@@ -284,6 +276,12 @@ class CoderManager extends JDialog {
 					} else {
 						selectedCoderCopy.setPermissionEditCoders(false);
 					}
+				} else if (e.getSource().equals(boxEditCoderRelations)) {
+					if (boxEditCoderRelations.isSelected()) {
+						selectedCoderCopy.setPermissionEditCoderRelations(true);
+					} else {
+						selectedCoderCopy.setPermissionEditCoderRelations(false);
+					}
 				} else if (e.getSource().equals(boxViewOthersDocuments)) {
 					if (boxViewOthersDocuments.isSelected()) {
 						selectedCoderCopy.setPermissionViewOthersDocuments(true);
@@ -323,6 +321,7 @@ class CoderManager extends JDialog {
 		boxEditRegex.addActionListener(al);
 		boxEditStatementTypes.addActionListener(al);
 		boxEditCoders.addActionListener(al);
+		boxEditCoderRelations.addActionListener(al);
 		boxViewOthersDocuments.addActionListener(al);
 		boxEditOthersDocuments.addActionListener(al);
 		boxViewOthersStatements.addActionListener(al);
@@ -339,6 +338,7 @@ class CoderManager extends JDialog {
 		boxEditRegex.setEnabled(false);
 		boxEditStatementTypes.setEnabled(false);
 		boxEditCoders.setEnabled(false);
+		boxEditCoderRelations.setEnabled(false);
 		boxViewOthersDocuments.setEnabled(false);
 		boxEditOthersDocuments.setEnabled(false);
 		boxViewOthersStatements.setEnabled(false);
@@ -371,6 +371,8 @@ class CoderManager extends JDialog {
 		g.gridy++;
 		permissionPanel.add(boxEditCoders, g);
 		g.gridy++;
+		permissionPanel.add(boxEditCoderRelations, g);
+		g.gridy++;
 		permissionPanel.add(boxViewOthersDocuments, g);
 		g.gridy++;
 		permissionPanel.add(boxEditOthersDocuments, g);
@@ -390,27 +392,9 @@ class CoderManager extends JDialog {
 		this.add(contentPanel, BorderLayout.CENTER);
 		
 		// coder relations panel
-		JPanel coderRelationsPanel = new JPanel(new BorderLayout());
-		coderRelationTableModel = new CoderRelationTableModel();
-		coderRelationTable = new JTable(coderRelationTableModel);
-		CoderRelationTableCellRenderer coderRelationTableCellRenderer = new CoderRelationTableCellRenderer();
-		coderRelationTable.setDefaultRenderer(Coder.class, coderRelationTableCellRenderer);
-		coderRelationTable.setDefaultRenderer(boolean.class, coderRelationTableCellRenderer);
-		coderRelationTable.getTableHeader().setReorderingAllowed(false);
-		JScrollPane coderRelationScrollPane = new JScrollPane(coderRelationTable);
-		coderRelationScrollPane.setPreferredSize(new Dimension(600, 300));
-		JPanel tablePanel = new JPanel(new BorderLayout());
-		tablePanel.add(coderRelationScrollPane, BorderLayout.CENTER);
-		
-		EmptyBorder tablePanelBorder = new EmptyBorder(5, 5, 5, 5);
-		tablePanel.setBorder(tablePanelBorder);
-		coderRelationsPanel.add(tablePanel, BorderLayout.CENTER);
-		
-		CompoundBorder borderRelations = BorderFactory.createCompoundBorder(new EmptyBorder(10, 10, 10, 10), new TitledBorder("Coder relations: Whose documents/statements can the coder view/edit?"));
-		coderRelationsPanel.setBorder(borderRelations);
-
-		// monitor mouse clicks in the coder relation table to edit boolean permissions
-		coderRelationTable.addMouseListener(new java.awt.event.MouseAdapter() {
+		coderRelationsPanel = new CoderRelationsPanel();
+		JTable coderRelationTable = coderRelationsPanel.getTable();
+		coderRelationTable.addMouseListener(new java.awt.event.MouseAdapter() { // monitor mouse clicks in the coder relation table to edit boolean permissions
 			@Override
 			public void mouseClicked(java.awt.event.MouseEvent evt) {
 				int row = coderRelationTable.rowAtPoint(evt.getPoint());
@@ -432,7 +416,6 @@ class CoderManager extends JDialog {
 				}
 			}
 		});
-		
 		this.add(coderRelationsPanel, BorderLayout.EAST);
 
 		// button panel
@@ -487,7 +470,7 @@ class CoderManager extends JDialog {
 		buttonPanel.add(addButton);
 
 		ImageIcon reloadIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-rotate-clockwise.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		reloadButton = new JButton("Reload coder", reloadIcon);
+		reloadButton = new JButton("Reset", reloadIcon);
 		reloadButton.setToolTipText("Reset all the changes made for the current coder and reload the coder details.");
 		reloadButton.addActionListener(new ActionListener() {
 			@Override
@@ -508,7 +491,7 @@ class CoderManager extends JDialog {
 				String newPasswordHash = null;
 				String plainPassword = new String(pw1Field.getPassword());
 				String repeatPassword = new String(pw2Field.getPassword());
-				if (!plainPassword.equals("^\\s*$") && plainPassword.equals(repeatPassword)) {
+				if (!plainPassword.matches("^\\s*$") && plainPassword.equals(repeatPassword)) {
 					StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();
 					newPasswordHash = passwordEncryptor.encryptPassword(plainPassword);
 				}
@@ -525,6 +508,7 @@ class CoderManager extends JDialog {
 							JOptionPane.showMessageDialog(CoderManager.this, "Changes for Coder " + selectedCoderCopy.getId() + " could not be saved. Check the message log for details.");
 						}
 					}
+					checkButtons();
 				}
 			}
 		});
@@ -532,7 +516,7 @@ class CoderManager extends JDialog {
 		buttonPanel.add(applyButton);
 
 		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		JButton cancelButton = new JButton("Close / Cancel", cancelIcon);
+		JButton cancelButton = new JButton("Close", cancelIcon);
 		cancelButton.setToolTipText("Close the coder manager without saving any changes.");
 		cancelButton.addActionListener(new ActionListener() {
 			@Override
@@ -559,9 +543,6 @@ class CoderManager extends JDialog {
 	private void repopulateCoderListFromDatabase(int selectCoderId) {
 		DefaultListModel<Coder> model = new DefaultListModel<Coder>();
 		coderArrayList = Dna.sql.getCoders();
-		for (int i = 0; i < coderArrayList.size(); i++) {
-			coderArrayList.set(i, injectDetailsIntoCoderRelation(coderArrayList.get(i), coderArrayList));
-		}
 		int coderIndex = -1;
 		for (int i = 0; i < coderArrayList.size(); i++) {
 			model.addElement(coderArrayList.get(i));
@@ -594,6 +575,7 @@ class CoderManager extends JDialog {
 				boxEditRegex.setEnabled(false);
 				boxEditStatementTypes.setEnabled(false);
 				boxEditCoders.setEnabled(false);
+				boxEditCoderRelations.setEnabled(false);
 				boxViewOthersDocuments.setEnabled(false);
 				boxEditOthersDocuments.setEnabled(false);
 				boxViewOthersStatements.setEnabled(false);
@@ -610,6 +592,7 @@ class CoderManager extends JDialog {
 				boxEditRegex.setEnabled(true);
 				boxEditStatementTypes.setEnabled(true);
 				boxEditCoders.setEnabled(true);
+				boxEditCoderRelations.setEnabled(true);
 				boxViewOthersDocuments.setEnabled(true);
 				boxEditOthersDocuments.setEnabled(true);
 				boxViewOthersStatements.setEnabled(true);
@@ -670,6 +653,11 @@ class CoderManager extends JDialog {
 			} else {
 				boxEditCoders.setSelected(false);
 			}
+			if (selectedCoderCopy.isPermissionEditCoderRelations()) {
+				boxEditCoderRelations.setSelected(true);
+			} else {
+				boxEditCoderRelations.setSelected(false);
+			}
 			if (selectedCoderCopy.isPermissionViewOthersDocuments()) {
 				boxViewOthersDocuments.setSelected(true);
 			} else {
@@ -712,16 +700,16 @@ class CoderManager extends JDialog {
 			}
 			
 			// coder relations
-			coderRelationTableModel.clear();
-			coderRelationTable.setEnabled(true);
+			coderRelationsPanel.getTable().setEnabled(true);
+			coderRelationsPanel.getModel().clear();
 			for (HashMap.Entry<Integer, CoderRelation> entry : selectedCoderCopy.getCoderRelations().entrySet()) {
-				coderRelationTableModel.addRow(entry.getValue());
+				coderRelationsPanel.getModel().addRow(entry.getValue());
 			}
 			
 			if (selectedCoderCopy.getId() == 1) { // do not permitting selecting or unselecting coders if the Admin coder is selected (ID = 1)
-				coderRelationTable.setEnabled(false);
+				coderRelationsPanel.getTable().setEnabled(false);
 			} else {
-				coderRelationTable.setEnabled(true);
+				coderRelationsPanel.getTable().setEnabled(true);
 			}
 		} else if (coderList.isSelectionEmpty()) { // reset button was pressed
 			selectedCoderCopy = null;
@@ -737,6 +725,7 @@ class CoderManager extends JDialog {
 			boxEditRegex.setEnabled(false);
 			boxEditStatementTypes.setEnabled(false);
 			boxEditCoders.setEnabled(false);
+			boxEditCoderRelations.setEnabled(false);
 			boxViewOthersDocuments.setEnabled(false);
 			boxEditOthersDocuments.setEnabled(false);
 			boxViewOthersStatements.setEnabled(false);
@@ -753,6 +742,7 @@ class CoderManager extends JDialog {
 			boxEditRegex.setSelected(false);
 			boxEditStatementTypes.setSelected(false);
 			boxEditCoders.setSelected(false);
+			boxEditCoderRelations.setSelected(false);
 			boxViewOthersDocuments.setSelected(false);
 			boxEditOthersDocuments.setSelected(false);
 			boxViewOthersStatements.setSelected(false);
@@ -771,40 +761,11 @@ class CoderManager extends JDialog {
 			colorButton.setColor(Color.BLACK);
 			
 			// coder relations
-			coderRelationTableModel.clear();
-			coderRelationTable.setEnabled(false);
+			coderRelationsPanel.getModel().clear();
+			coderRelationsPanel.getTable().setEnabled(false);
 		}
 	}
 
-	/**
-	 * Add names and colors to the target coders in a coder's relations. The
-	 * user supplies a coder whose coder relations should be fixed and an array
-	 * list of coders including names and colors, and the function matches the
-	 * target coders in the coder relations hash map with the coders in the
-	 * array list and saves the name and color in the hash map. It then returns
-	 * the coder with the fixed (= completed) coder relations hash map with all
-	 * names and colors. The step is necessary because names and colors are not
-	 * by default saved in a {@code model.CoderRelation CoderRelation} object.
-	 * 
-	 * @param c       A coder.
-	 * @param coders  An array list of coders.
-	 * @return        Coder with fixed coder relations including names/colors.
-	 */
-	private Coder injectDetailsIntoCoderRelation(Coder c, ArrayList<Coder> coders) {
-		for (HashMap.Entry<Integer, CoderRelation> entry : c.getCoderRelations().entrySet()) {
-			for (int i = 0; i < coders.size(); i++) {
-				if (coders.get(i).getId() == entry.getKey()) {
-					CoderRelation cr = entry.getValue();
-					cr.setTargetCoderName(coders.get(i).getName());
-					cr.setTargetCoderColor(coders.get(i).getColor());
-					c.getCoderRelations().put(entry.getKey(), cr);
-					break;
-				}
-			}
-		}
-		return c;
-	}
-	
 	/**
 	 * Check all the details and permissions for changes and adjust buttons.
 	 */
@@ -889,175 +850,6 @@ class CoderManager extends JDialog {
 	}
 	
 	/**
-	 * A table cell renderer that can display coder relations.
-	 */
-	private class CoderRelationTableCellRenderer extends JLabel implements TableCellRenderer {
-		private static final long serialVersionUID = -4743373298435293984L;
-
-		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-			if (value == null) {
-				return null;
-			} else if (table.convertColumnIndexToModel(column) == 0) {
-        		return new CoderBadgePanel((Coder) value, 16, 14);
-        	} else if ((boolean) value == true) {
-        		ImageIcon eyeIconGreen = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-eye-green.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-        		return new JLabel(eyeIconGreen);
-        	} else {
-        		ImageIcon eyeIconRed = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-eye-off-red.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-        		return new JLabel(eyeIconRed);
-        	}
-		}
-	}
-	
-	/**
-	 * A table model for coder relations.
-	 */
-	class CoderRelationTableModel extends AbstractTableModel {
-		private static final long serialVersionUID = 6531584132561341365L;
-		ArrayList<CoderRelation> coderRelations;
-
-		/**
-		 * Create a new coder relation table model.
-		 */
-		CoderRelationTableModel() {
-			this.coderRelations = new ArrayList<CoderRelation>();
-		}
-		
-		@Override
-		public int getColumnCount() {
-			return 5;
-		}
-
-		@Override
-		public int getRowCount() {
-			return this.coderRelations.size();
-		}
-
-		@Override
-		public Object getValueAt(int row, int col) {
-			if (row > -1 && row < coderRelations.size()) {
-				if (col == 0) {
-					return new Coder(coderRelations.get(row).getTargetCoderId(),
-							coderRelations.get(row).getTargetCoderName(),
-							coderRelations.get(row).getTargetCoderColor());
-				} else if (col == 1) {
-					return coderRelations.get(row).isViewDocuments();
-				} else if (col == 2) {
-					return coderRelations.get(row).isEditDocuments();
-				} else if (col == 3) {
-					return coderRelations.get(row).isViewStatements();
-				} else if (col == 4) {
-					return coderRelations.get(row).isEditStatements();
-				}
-			}
-			return null;
-		}
-		
-		/**
-		 * Set the value for an arbitrary table cell.
-		 * 
-		 * @param object The object to save for the cell.
-		 * @param row    The table row.
-		 * @param col    The table column.
-		 */
-		public void setValueAt(Object object, int row, int col) {
-			if (row > -1 && row < coderRelations.size()) {
-				if (col == 0) {
-					coderRelations.get(row).setTargetCoderId(((Coder) object).getId());
-					coderRelations.get(row).setTargetCoderName(((Coder) object).getName());
-					coderRelations.get(row).setTargetCoderColor(((Coder) object).getColor());
-				} else if (col == 1) {
-					coderRelations.get(row).setViewDocuments((boolean) object); 
-				} else if (col == 2) {
-					coderRelations.get(row).setEditDocuments((boolean) object); 
-				} else if (col == 3) {
-					coderRelations.get(row).setViewStatements((boolean) object); 
-				} else if (col == 4) {
-					coderRelations.get(row).setEditStatements((boolean) object); 
-				}
-			}
-			fireTableCellUpdated(row, col);
-		}
-		
-		/**
-		 * Is the cell editable?
-		 * 
-		 * @param row The table row.
-		 * @param col The table column.
-		 */
-		public boolean isCellEditable(int row, int col) {
-			if (row > -1 && row < coderRelations.size() && col > 0 && col < 5) {
-				return true;
-			} else {
-				return false;
-			}
-		}
-
-		/**
-		 * Return the name of a column.
-		 * 
-		 * @param column The column index of the table for which the name should be returned, starting at 0.
-		 */
-		public String getColumnName(int column) {
-			switch(column) {
-				case 0: return "Other coder";
-				case 1: return "View documents";
-				case 2: return "Edit documents";
-				case 3: return "View statements";
-				case 4: return "Edit statements";
-				default: return null;
-			}
-		}
-
-		/**
-		 * Return a row of the table based on the internal array list of coder
-		 * relations.
-		 * 
-		 * @param row Index of the {@link model.CoderRelation CoderRelation}
-		 *   object in the array list.
-		 * @return The {@link model.CoderRelation CoderRelation} object.
-		 */
-		public CoderRelation getRow(int row) {
-			return coderRelations.get(row);
-		}
-
-		/**
-		 * Which type of object (i.e., class) shall be shown in the columns?
-		 * 
-		 * @param col The column index of the table for which the class type
-		 *   should be returned, starting at 0.
-		 */
-		public Class<?> getColumnClass(int col) {
-			switch (col) {
-				case 0: return Coder.class;
-				case 1: return boolean.class;
-				case 2: return boolean.class;
-				case 3: return boolean.class;
-				case 4: return boolean.class;
-				default: return null;
-			}
-		}
-		
-		/**
-		 * Remove all coder relation objects from the model.
-		 */
-		public void clear() {
-			coderRelations.clear();
-			fireTableDataChanged();
-		}
-		
-		/**
-		 * Add a new coder relation to the model.
-		 * 
-		 * @param cr A new {@link model.CoderRelation CoderRelation} object.
-		 */
-		public void addRow(CoderRelation cr) {
-			coderRelations.add(cr);
-			fireTableRowsInserted(coderRelations.size() - 1, coderRelations.size() - 1);
-		}
-	}
-	
-	/**
 	 * A dialog window for adding a new coder. It contains a simple form for the
 	 * name, color, and password of the new coder as well as two buttons.
 	 */
@@ -1099,7 +891,7 @@ class CoderManager extends JDialog {
 			});
 
 			ColorButton addColorButton = new ColorButton();
-			addColorButton.setColor(new Color(28, 165, 186));
+			addColorButton.setColor(new Color(69, 212, 255));
 			JLabel addColorLabel = new JLabel("Color", JLabel.TRAILING);
 			addColorLabel.setLabelFor(addColorButton);
 			addColorButton.addActionListener(new ActionListener() {

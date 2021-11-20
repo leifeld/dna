@@ -327,8 +327,12 @@ public class NewDatabaseDialog extends JDialog {
 					
 					if (openExistingDatabase == true) { // existing database: select and authenticate user, then open connection as main database in DNA
 						boolean validInput = false;
+						int coderIdToSelect = -1;
+						if (Dna.sql.getActiveCoder() != null) {
+							coderIdToSelect = Dna.sql.getActiveCoder().getId();
+						}
 						while (!validInput) {
-							CoderPasswordCheckDialog cpcd = new CoderPasswordCheckDialog(testConnection, true, -1);
+							CoderPasswordCheckDialog cpcd = new CoderPasswordCheckDialog(testConnection, true, coderIdToSelect);
 							Coder coder = cpcd.getCoder();
 							if (coder == null) { // user must have pressed cancel
 								validInput = true;
@@ -337,6 +341,7 @@ public class NewDatabaseDialog extends JDialog {
 								testConnection.getConnectionProfile().setCoder(coder.getId());
 								String password = cpcd.getPassword();
 								if (coder != null && password != null) {
+									coderIdToSelect = coder.getId();
 									boolean authenticated = testConnection.authenticate(-1, password);
 									if (authenticated == true) {
 										validInput = true; // password check passed; quit while-loop

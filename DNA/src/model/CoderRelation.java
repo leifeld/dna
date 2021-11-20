@@ -9,10 +9,10 @@ import java.awt.Color;
  * documents/statements.
  */
 public class CoderRelation {
-	int targetCoderId;
-	String targetCoderName;
-	Color targetCoderColor;
-	boolean viewDocuments, viewStatements, editDocuments, editStatements;
+	private int targetCoderId;
+	private String targetCoderName;
+	private Color targetCoderColor;
+	private boolean viewDocuments, viewStatements, editDocuments, editStatements;
 
 	/**
 	 * Creates a new coder relation object. This constructor contains the name

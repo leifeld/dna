@@ -364,6 +364,7 @@ public class Sql {
 					+ "PermissionEditRegex INTEGER NOT NULL CHECK (PermissionEditRegex BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionEditStatementTypes INTEGER NOT NULL CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1) DEFAULT 0, "
 					+ "PermissionEditCoders INTEGER NOT NULL CHECK (PermissionEditCoders BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PermissionEditCoderRelations INTEGER NOT NULL CHECK (PermissionEditCoderRelations BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionViewOthersDocuments INTEGER NOT NULL CHECK (PermissionViewOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionEditOthersDocuments INTEGER NOT NULL CHECK (PermissionEditOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionViewOthersStatements INTEGER NOT NULL CHECK (PermissionViewOthersStatements BETWEEN 0 AND 1) DEFAULT 1, "
@@ -511,6 +512,7 @@ public class Sql {
 					+ "PermissionEditRegex TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditRegex BETWEEN 0 AND 1), "
 					+ "PermissionEditStatementTypes TINYINT UNSIGNED NOT NULL DEFAULT 0 CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1), "
 					+ "PermissionEditCoders TINYINT UNSIGNED NOT NULL DEFAULT 0 CHECK (PermissionEditCoders BETWEEN 0 AND 1), "
+					+ "PermissionEditCoderRelations TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditCoderRelations BETWEEN 0 AND 1), "
 					+ "PermissionViewOthersDocuments TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionViewOthersDocuments BETWEEN 0 AND 1), "
 					+ "PermissionEditOthersDocuments TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditOthersDocuments BETWEEN 0 AND 1), "
 					+ "PermissionViewOthersStatements TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionViewOthersStatements BETWEEN 0 AND 1), "
@@ -671,6 +673,7 @@ public class Sql {
 					+ "PermissionEditRegex SMALLINT NOT NULL CHECK (PermissionEditRegex BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionEditStatementTypes SMALLINT NOT NULL CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1) DEFAULT 0, "
 					+ "PermissionEditCoders SMALLINT NOT NULL CHECK (PermissionEditCoders BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PermissionEditCoderRelations SMALLINT NOT NULL CHECK (PermissionEditCoderRelations BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionViewOthersDocuments SMALLINT NOT NULL CHECK (PermissionViewOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionEditOthersDocuments SMALLINT NOT NULL CHECK (PermissionEditOthersDocuments BETWEEN 0 AND 1) DEFAULT 0, "
 					+ "PermissionViewOthersStatements SMALLINT NOT NULL CHECK (PermissionViewOthersStatements BETWEEN 0 AND 1) DEFAULT 1, "
@@ -831,17 +834,32 @@ public class Sql {
 		Coder c = null;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("SELECT * FROM CODERS WHERE ID = ?;");
-				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM CODERRELATIONS WHERE Coder = ?;")) {
+				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM CODERRELATIONS WHERE Coder = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;")) {
+			ResultSet rs2, rs3;
+        	int sourceCoderId, targetCoderId;
+        	String targetCoderName = null;
+        	Color targetCoderColor = null;
 			s1.setInt(1, coderId);
 			ResultSet rs1 = s1.executeQuery();
 			while (rs1.next()) {
-				s2.setInt(1, coderId);
-				ResultSet rs2 = s2.executeQuery();
+        		sourceCoderId = rs1.getInt("ID");
+        		s2.setInt(1, sourceCoderId);
+				rs2 = s2.executeQuery();
 				HashMap<Integer, CoderRelation> map = new HashMap<Integer, CoderRelation>();
 				while (rs2.next()) {
+					targetCoderId = rs2.getInt("OtherCoder");
+					s3.setInt(1, targetCoderId);
+					rs3 = s3.executeQuery();
+					while (rs3.next()) {
+						targetCoderName = rs3.getString("Name");
+						targetCoderColor = new Color(rs3.getInt("Red"), rs3.getInt("Green"), rs3.getInt("Blue"));
+					}
 					map.put(rs2.getInt("OtherCoder"),
 							new CoderRelation(
-									rs2.getInt("OtherCoder"),
+									targetCoderId,
+									targetCoderName,
+									targetCoderColor,
 									rs2.getInt("viewDocuments") == 1,
 									rs2.getInt("editDocuments") == 1,
 									rs2.getInt("viewStatements") == 1,
@@ -869,6 +887,7 @@ public class Sql {
 			    		rs1.getInt("PermissionEditRegex") == 1,
 			    		rs1.getInt("PermissionEditStatementTypes") == 1,
 			    		rs1.getInt("PermissionEditCoders") == 1,
+			    		rs1.getInt("PermissionEditCoderRelations") == 1,
 			    		rs1.getInt("PermissionViewOthersDocuments") == 1,
 			    		rs1.getInt("PermissionEditOthersDocuments") == 1,
 			    		rs1.getInt("PermissionViewOthersStatements") == 1,
@@ -897,16 +916,31 @@ public class Sql {
 		ArrayList<Coder> coders = new ArrayList<Coder>();
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("SELECT * FROM CODERS;");
-				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM CODERRELATIONS WHERE Coder = ?;")) {
-        	ResultSet rs1 = s1.executeQuery();
+				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM CODERRELATIONS WHERE Coder = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;")) {
+			ResultSet rs1, rs2, rs3;
+        	rs1 = s1.executeQuery();
+        	int sourceCoderId, targetCoderId;
+        	String targetCoderName = null;
+        	Color targetCoderColor = null;
         	while (rs1.next()) {
-        		s2.setInt(1, rs1.getInt("ID"));
-				ResultSet rs2 = s2.executeQuery();
+        		sourceCoderId = rs1.getInt("ID");
+        		s2.setInt(1, sourceCoderId);
+				rs2 = s2.executeQuery();
 				HashMap<Integer, CoderRelation> map = new HashMap<Integer, CoderRelation>();
 				while (rs2.next()) {
+					targetCoderId = rs2.getInt("OtherCoder");
+					s3.setInt(1, targetCoderId);
+					rs3 = s3.executeQuery();
+					while (rs3.next()) {
+						targetCoderName = rs3.getString("Name");
+						targetCoderColor = new Color(rs3.getInt("Red"), rs3.getInt("Green"), rs3.getInt("Blue"));
+					}
 					map.put(rs2.getInt("OtherCoder"),
 							new CoderRelation(
-									rs2.getInt("OtherCoder"),
+									targetCoderId,
+									targetCoderName,
+									targetCoderColor,
 									rs2.getInt("viewDocuments") == 1,
 									rs2.getInt("editDocuments") == 1,
 									rs2.getInt("viewStatements") == 1,
@@ -934,6 +968,7 @@ public class Sql {
 			    		rs1.getInt("PermissionEditRegex") == 1,
 			    		rs1.getInt("PermissionEditStatementTypes") == 1,
 			    		rs1.getInt("PermissionEditCoders") == 1,
+			    		rs1.getInt("PermissionEditCoderRelations") == 1,
 			    		rs1.getInt("PermissionViewOthersDocuments") == 1,
 			    		rs1.getInt("PermissionEditOthersDocuments") == 1,
 			    		rs1.getInt("PermissionViewOthersStatements") == 1,
@@ -1170,6 +1205,7 @@ public class Sql {
 				+ "PermissionEditRegex = ?, "
 				+ "PermissionEditStatementTypes = ?, "
 				+ "PermissionEditCoders = ?, "
+				+ "PermissionEditCoderRelations = ?, "
 				+ "PermissionViewOthersDocuments = ?, "
 				+ "PermissionEditOthersDocuments = ?, "
 				+ "PermissionViewOthersStatements = ?, "
@@ -1226,11 +1262,12 @@ public class Sql {
 			s1.setInt(14, coder.isPermissionEditRegex() ? 1 : 0);
 			s1.setInt(15, coder.isPermissionEditStatementTypes() ? 1 : 0);
 			s1.setInt(16, coder.isPermissionEditCoders() ? 1 : 0);
-			s1.setInt(17, coder.isPermissionViewOthersDocuments() ? 1 : 0);
-			s1.setInt(18, coder.isPermissionEditOthersDocuments() ? 1 : 0);
-			s1.setInt(19, coder.isPermissionViewOthersStatements() ? 1 : 0);
-			s1.setInt(20, coder.isPermissionEditOthersStatements() ? 1 : 0);
-			s1.setInt(21, coderId);
+			s1.setInt(17, coder.isPermissionEditCoderRelations() ? 1 : 0);
+			s1.setInt(18, coder.isPermissionViewOthersDocuments() ? 1 : 0);
+			s1.setInt(19, coder.isPermissionEditOthersDocuments() ? 1 : 0);
+			s1.setInt(20, coder.isPermissionViewOthersStatements() ? 1 : 0);
+			s1.setInt(21, coder.isPermissionEditOthersStatements() ? 1 : 0);
+			s1.setInt(22, coderId);
         	s1.executeUpdate();
         	
         	// go through coder relations and update or insert
