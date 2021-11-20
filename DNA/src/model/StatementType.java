@@ -47,6 +47,21 @@ public class StatementType {
 	}
 
 	/**
+	 * Copy constructor for statement type objects to create a deep clone.
+	 * 
+	 * @param st A statement type.
+	 */
+	public StatementType(StatementType st) {
+		this.id = st.getId();
+		this.label = st.getLabel();
+		this.color = st.getColor();
+		this.variables = new ArrayList<Value>();
+		for (int i = 0; i < st.getVariables().size(); i++) {
+			this.variables.add(new Value(st.getVariables().get(i)));
+		}
+	}
+	
+	/**
 	 * Get the statement type ID.
 	 * 
 	 * @return The statement type ID.
@@ -65,12 +80,26 @@ public class StatementType {
 	}
 
 	/**
+	 * @param label the label to set
+	 */
+	public void setLabel(String label) {
+		this.label = label;
+	}
+
+	/**
 	 * Get the statement type color.
 	 * 
 	 * @return The color of the statement type.
 	 */
 	public Color getColor() {
 		return color;
+	}
+
+	/**
+	 * @param color the color to set
+	 */
+	public void setColor(Color color) {
+		this.color = color;
 	}
 
 	/**
@@ -81,5 +110,33 @@ public class StatementType {
 	 */
 	public ArrayList<Value> getVariables() {
 		return variables;
+	}
+	
+	/**
+	 * Is this statement type equal to another statement type?
+	 * 
+	 * @param st  The other statement type for comparison.
+	 * @return    Boolean indicator: Is the other statement type identical?
+	 */
+	public boolean equals(StatementType st) {
+		boolean valuesEqual = true;
+		if (this.getVariables().size() == st.getVariables().size()) {
+			for (int i = 0; i < this.getVariables().size(); i++) {
+				if (!this.getVariables().get(i).equals(st.getVariables().get(i))) {
+					valuesEqual = false;
+					break;
+				}
+			}
+		} else {
+			valuesEqual = false;
+		}
+		if (this.getId() == st.getId() &&
+				this.getLabel().equals(st.getLabel()) &&
+				this.getClass().equals(st.getColor()) &&
+				valuesEqual) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 }

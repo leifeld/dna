@@ -2999,4 +2999,40 @@ public class Sql {
 		}
 		return statementTypes;
 	}
+	
+	/**
+	 * Add a variable to the VARIABLES table.
+	 * 
+	 * @param statementTypeId ID of the statement type.
+	 * @param variableName    Name of the new variable.
+	 * @param dataType        The data type of the variable. Must be one of the
+	 *   following: {@code "short text"}, {@code "long text"},
+	 *   {@code "integer"}, or {@code "boolean"}.
+	 * @return                The ID of the new variable.
+	 */
+	public int addVariable(int statementTypeId, String variableName, String dataType) {
+		int variableId = -1;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("INSERT INTO VARIABLES (Variable, DataType, StatementTypeId) VALUES (?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS)) {
+        	s.setString(1, variableName);
+        	s.setString(2, dataType);
+        	s.setInt(3, statementTypeId);
+        	s.executeUpdate();
+        	ResultSet generatedKeysResultSet = s.getGeneratedKeys();
+			while (generatedKeysResultSet.next()) {
+				variableId = generatedKeysResultSet.getInt(1);
+			}
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Variable added to the database.",
+					"Added new variable \"" + variableName + "\" (ID " + variableId + ") to statement type " + statementTypeId + ".");
+			Dna.logger.log(l);
+		} catch (SQLException e1) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to add new variable to the database.",
+					"Tried to add a new variable to Statement Type " + statementTypeId + ", but something went wrong. Check the database connection and the message log.",
+					e1);
+			Dna.logger.log(l);
+		}
+		return variableId;
+	}
 }

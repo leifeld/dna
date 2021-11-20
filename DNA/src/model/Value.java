@@ -54,6 +54,18 @@ public class Value {
 			this.value = 1;
 		}
 	}
+	
+	/**
+	 * Copy constructor to create a deep clone of a value object.
+	 * 
+	 * @param value A value.
+	 */
+	public Value(Value value) {
+		this.variableId = value.getVariableId();
+		this.key = value.getKey();
+		this.dataType = value.getDataType();
+		this.value = value.getValue();
+	}
 
 	/**
 	 * Get the variable ID.
@@ -74,6 +86,15 @@ public class Value {
 	}
 	
 	/**
+	 * Set the variable key (= name).
+	 * 
+	 * @param key The variable key or name.
+	 */
+	public void setKey(String key) {
+		this.key = key;
+	}
+	
+	/**
 	 * Get the data type.
 	 * 
 	 * @return The data type of the variable. Can be one of {@code
@@ -82,6 +103,15 @@ public class Value {
 	 */
 	public String getDataType() {
 		return dataType;
+	}
+
+	/**
+	 * Set the variable data type.
+	 * 
+	 * @param dataType The variable data type as a String.
+	 */
+	public void setDataType(String dataType) {
+		this.dataType = dataType;
 	}
 	
 	/**
@@ -100,5 +130,22 @@ public class Value {
 	 */
 	public void setValue(Object value) {
 		this.value = value;
+	}
+	
+	/**
+	 * Is this value equal to another value?
+	 * 
+	 * @param v A value for comparison.
+	 * @return  A boolean indicator of whether the other value is identical.
+	 */
+	public boolean equals(Value v) {
+		if (this.variableId == v.getVariableId() &&
+				this.getKey().equals(v.getKey()) &&
+				this.getValue().equals(v.getValue()) &&
+				this.getDataType().equals(v.getDataType())) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 }

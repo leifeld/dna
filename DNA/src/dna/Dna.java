@@ -8,13 +8,13 @@ import sql.Sql;
 /**
  * Main class of the Discourse Network Analyzer (DNA).
  * 
- * @author Philip Leifeld <philip.leifeld@essex.ac.uk>
+ * @author Philip Leifeld {@literal <philip.leifeld@essex.ac.uk>}
  */
 public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2021-11-20";
+	public static final String date = "2021-11-21";
 	public static final String version = "3.0.0";
 	MainWindow mainWindow;
 	

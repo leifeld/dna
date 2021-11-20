@@ -107,6 +107,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	private ActionRefresh actionRefresh;
 	private ActionBatchImportDocuments actionBatchImportDocuments;
 	private ActionRemoveStatements actionRemoveStatements;
+	private ActionStatementTypeEditor actionStatementTypeEditor;
 	private ActionAttributeManager actionAttributeManager;
 	private ActionCoderRelationsEditor actionCoderRelationsEditor;
 	private ActionLoggerDialog actionLoggerDialog;
@@ -214,6 +215,10 @@ public class MainWindow extends JFrame implements SqlListener {
 		actionRemoveStatements = new ActionRemoveStatements("Remove statement(s)", removeStatementsIcon, "Remove the statement(s) currently selected in the statement table", KeyEvent.VK_D);
 		actionRemoveStatements.setEnabled(false);
 
+		ImageIcon statementTypeEditorIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-2.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionStatementTypeEditor = new ActionStatementTypeEditor("Edit statement types", statementTypeEditorIcon, "Open the statement type editor to edit statement types and their variables.", KeyEvent.VK_T);
+		actionStatementTypeEditor.setEnabled(false);
+
 		ImageIcon attributeManagerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-list.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		actionAttributeManager = new ActionAttributeManager("Open attribute manager", attributeManagerIcon, "Open the attribute manager to edit entities and their attribute values.", KeyEvent.VK_A);
 		actionAttributeManager.setEnabled(false);
@@ -256,6 +261,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionBatchImportDocuments,
 				actionRefresh,
 				actionRemoveStatements,
+				actionStatementTypeEditor,
 				actionAttributeManager,
 				actionCoderRelationsEditor,
 				actionLoggerDialog,
@@ -1130,6 +1136,11 @@ public class MainWindow extends JFrame implements SqlListener {
 			} else {
 				actionCoderManager.setEnabled(false);
 			}
+			if (Dna.sql.getActiveCoder().isPermissionEditStatementTypes() == true) {
+				actionStatementTypeEditor.setEnabled(true);
+			} else {
+				actionStatementTypeEditor.setEnabled(false);
+			}
 			if (Dna.sql.getActiveCoder().isPermissionEditAttributes() == true) {
 				actionAttributeManager.setEnabled(true);
 			} else {
@@ -1142,6 +1153,7 @@ public class MainWindow extends JFrame implements SqlListener {
 			}
 		} else {
 			actionCoderManager.setEnabled(false);
+			actionStatementTypeEditor.setEnabled(false);
 			actionAttributeManager.setEnabled(false);
 			actionCoderRelationsEditor.setEnabled(false);
 		}
@@ -1637,6 +1649,34 @@ public class MainWindow extends JFrame implements SqlListener {
 					"[GUI] Action executed: removed statement(s).",
 					"Deleted multiple statements in the database from the GUI.");
 			Dna.logger.log(l);
+		}
+	}
+
+	/**
+	 * An action to display a statement type editor dialog window.
+	 */
+	class ActionStatementTypeEditor extends AbstractAction {
+		private static final long serialVersionUID = -9078666078201409563L;
+		
+		public ActionStatementTypeEditor(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			if (Dna.sql.getActiveCoder().isPermissionEditStatementTypes()) {
+				new StatementTypeEditor();
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[GUI] Action executed: opened statement type editor.",
+						"Opened a statement type editor window from the GUI.");
+				Dna.logger.log(l);
+			} else {
+				LogEvent l = new LogEvent(Logger.WARNING,
+						"[GUI] Action could not be executed: insufficient permissions to open statement type editor.",
+						"Attempted to open a statement type editor from the GUI, but the coder did not have sufficient permissions for editing statement types. This message should never appear because the menu item for opening a statement type editor dialog window should be grayed out when the active coder has insufficient permissions. Please report the full error log to the developers through the issue tracker on GitHub.");
+				Dna.logger.log(l);
+			}
 		}
 	}
 

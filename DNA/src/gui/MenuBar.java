@@ -34,6 +34,7 @@ import gui.MainWindow.ActionRefresh;
 import gui.MainWindow.ActionRemoveDocuments;
 import gui.MainWindow.ActionRemoveStatements;
 import gui.MainWindow.ActionSaveProfile;
+import gui.MainWindow.ActionStatementTypeEditor;
 import sql.Sql.SqlListener;
 
 /**
@@ -64,6 +65,7 @@ public class MenuBar extends JMenuBar implements SqlListener {
 	 * @param actionBatchImportDocuments  Action for batch-importing documents.
 	 * @param actionRefresh               Action for reloading data.
 	 * @param actionRemoveStatements      Action for removing statements.
+	 * @param actionStatementTypeEditor   Action for editing statement types.
 	 * @param actionAttributeManager      Action for opening attribute manager.
 	 * @param actionCoderRelationsEditor  Action for editing coder relations.
 	 * @param actionLoggerDialog          Action for opening logger dialog.
@@ -82,6 +84,7 @@ public class MenuBar extends JMenuBar implements SqlListener {
 			ActionBatchImportDocuments actionBatchImportDocuments,
 			ActionRefresh actionRefresh,
 			ActionRemoveStatements actionRemoveStatements,
+			ActionStatementTypeEditor actionStatementTypeEditor,
 			ActionAttributeManager actionAttributeManager,
 			ActionCoderRelationsEditor actionCoderRelationsEditor,
 			ActionLoggerDialog actionLoggerDialog,
@@ -151,6 +154,10 @@ public class MenuBar extends JMenuBar implements SqlListener {
 		JMenuItem removeStatementsItem = new JMenuItem(actionRemoveStatements);
 		statementsMenu.add(removeStatementsItem);
 
+		// statements menu: open statement type editor
+		JMenuItem statementTypeEditorItem = new JMenuItem(actionStatementTypeEditor);
+		statementsMenu.add(statementTypeEditorItem);
+		
 		// statements menu: open attribute manager
 		JMenuItem attributeManagerItem = new JMenuItem(actionAttributeManager);
 		statementsMenu.add(attributeManagerItem);

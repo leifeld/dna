@@ -31,6 +31,8 @@ class CoderRelationsEditor extends JDialog {
 	 * coder relations.
 	 */
 	CoderRelationsEditor() {
+		ImageIcon coderRelationsIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-user-check.png"));
+		this.setIconImage(coderRelationsIcon.getImage());
 		this.setModal(true);
 		this.setTitle("Coder relations editor");
 		this.setLayout(new BorderLayout());
