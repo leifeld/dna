@@ -141,7 +141,7 @@ public class Value {
 	public boolean equals(Value v) {
 		if (this.variableId == v.getVariableId() &&
 				this.getKey().equals(v.getKey()) &&
-				this.getValue().equals(v.getValue()) &&
+				((this.getValue() == null && v.getValue() == null) || this.getValue().equals(v.getValue())) &&
 				this.getDataType().equals(v.getDataType())) {
 			return true;
 		} else {

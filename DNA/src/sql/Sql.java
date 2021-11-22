@@ -2694,6 +2694,31 @@ public class Sql {
 		}
 	}
 
+	/**
+	 * Count how many statements of a certain statement type exist.
+	 * 
+	 * @param statementTypeId  The ID of the statement type.
+	 * @return                 An integer count of the statement frequency.
+	 */
+	public int countStatements(int statementTypeId) {
+		int result = -1;
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("SELECT COUNT(ID) FROM STATEMENTS WHERE StatementTypeId = ?;")) {
+			s.setInt(1, statementTypeId);
+			ResultSet r = s.executeQuery();
+			while (r.next()) {
+				result = r.getInt(1);
+			}
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+        			"[SQL] Failed to count statements of Statement Type " + statementTypeId + ".",
+        			"Attempted to count with how many statements of Statement Type " + statementTypeId + " exist in the database, but the database operation failed.",
+        			e);
+        	Dna.logger.log(l);
+		}
+		return result;
+	}
+	
 	
 	/* =========================================================================
 	 * Entities and attributes
@@ -2999,6 +3024,104 @@ public class Sql {
 		}
 		return statementTypes;
 	}
+
+	/**
+	 * Add a statement type (without any variables) to the database.
+	 * 
+	 * @param label  Label, or name, of the statement type.
+	 * @param color  Color of the statement type.
+	 * @return       The ID of the new statement type.
+	 */
+	public int addStatementType(String label, Color color) {
+		int statementTypeId = -1;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("INSERT INTO STATEMENTTYPES (Label, Red, Green, Blue) VALUES (?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS)) {
+        	s.setString(1, label);
+        	s.setInt(2, color.getRed());
+        	s.setInt(3, color.getGreen());
+        	s.setInt(4, color.getBlue());
+        	s.executeUpdate();
+        	ResultSet generatedKeysResultSet = s.getGeneratedKeys();
+			while (generatedKeysResultSet.next()) {
+				statementTypeId = generatedKeysResultSet.getInt(1);
+			}
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Statement type added to the database.",
+					"Added new statement type (ID " + statementTypeId + ") to the STATEMENTTYPES table in the database.");
+			Dna.logger.log(l);
+		} catch (SQLException e1) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to add new statement type to the database.",
+					"Tried to add a new statement type (ID " + statementTypeId + ") to the STATEMENTTYPES table in the database, but something went wrong. Check the database connection and the message log.",
+					e1);
+			Dna.logger.log(l);
+		}
+		return statementTypeId;
+	}
+
+	/**
+	 * Delete a statement type from the database. Note that this will also
+	 * delete all statements and entities/attributes corresponding to this
+	 * statement type.
+	 * 
+	 * @param statementTypeId The ID of the statement type to be deleted.
+	 * @return                Was the deletion successful?
+	 */
+	public boolean deleteStatementType(int statementTypeId) {
+		boolean success = false;
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("DELETE FROM STATEMENTTYPES WHERE ID = ?;")) {
+			s.setInt(1, statementTypeId);
+			s.executeUpdate();
+			success = true;
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+        			"[SQL] Successfully deleted Statement Type " + statementTypeId + " from the database.",
+        			"Successfully deleted Statement Type " + statementTypeId + " from the database.");
+        	Dna.logger.log(l);
+		} catch (SQLException e) {
+			success = false;
+        	LogEvent l = new LogEvent(Logger.ERROR,
+        			"[SQL] Failed to delete Statement Type " + statementTypeId + " from the database.",
+        			"Attempted to delete Statement Type " + statementTypeId + ", but the database operation failed.",
+        			e);
+        	Dna.logger.log(l);
+		}
+		return success;
+	}
+	
+	/**
+	 * Update the label and color of a statement type in the STATEMENTTYPES
+	 * table.
+	 * 
+	 * @param statementTypeId  ID of the statement type to update.
+	 * @param label            The new label or name of the statement type.
+	 * @param color            The new color of the statement type.
+	 * @return                 Was the update successful?
+	 */
+	public boolean updateStatementType(int statementTypeId, String label, Color color) {
+		boolean success = false;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("UPDATE STATEMENTTYPES SET Label = ?, Red = ?, Green = ?, Blue = ? WHERE ID = ?;")) {
+			s.setString(1, label);
+			s.setInt(2, color.getRed());
+			s.setInt(3, color.getGreen());
+			s.setInt(4, color.getBlue());
+			s.setInt(5, statementTypeId);
+			s.executeUpdate();
+			success = true;
+			LogEvent e = new LogEvent(Logger.MESSAGE,
+        			"[SQL] Statement type " + statementTypeId + " was updated.",
+        			"Statement type " + statementTypeId + " was successfully updated in the STATEMENTTYPES table in the database.");
+        	Dna.logger.log(e);
+		} catch (SQLException e1) {
+        	LogEvent e = new LogEvent(Logger.ERROR,
+        			"[SQL] Statement type " + statementTypeId + " could not be updated.",
+        			"Tried to update statement type " + statementTypeId + " in the STATEMENTTYPES table in the database, but the update was unsuccessful.",
+        			e1);
+        	Dna.logger.log(e);
+		}
+		return success;
+	}
 	
 	/**
 	 * Add a variable to the VARIABLES table.
@@ -3034,5 +3157,64 @@ public class Sql {
 			Dna.logger.log(l);
 		}
 		return variableId;
+	}
+
+	/**
+	 * Delete a variable from the database. Note that this will also delete all
+	 * corresponding entities and their attributes if applicable.
+	 * 
+	 * @param variableId The ID of the statement type to be deleted.
+	 * @return           Was the deletion successful?
+	 */
+	public boolean deleteVariable(int variableId) {
+		boolean success = false;
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("DELETE FROM VARIABLES WHERE ID = ?;")) {
+			s.setInt(1, variableId);
+			s.executeUpdate();
+			success = true;
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+        			"[SQL] Successfully deleted Variable " + variableId + " from the database.",
+        			"Successfully deleted Variable " + variableId + " from the database.");
+        	Dna.logger.log(l);
+		} catch (SQLException e) {
+			success = false;
+        	LogEvent l = new LogEvent(Logger.ERROR,
+        			"[SQL] Failed to delete Variable " + variableId + " from the database.",
+        			"Attempted to delete Variable " + variableId + ", but the database operation failed.",
+        			e);
+        	Dna.logger.log(l);
+		}
+		return success;
+	}
+
+	/**
+	 * Update the name of a variable in the VARIABLES table.
+	 * 
+	 * @param variableId  ID of the variable to update.
+	 * @param name        The new name of the variable.
+	 * @return            Was the update successful?
+	 */
+	public boolean updateVariableName(int variableId, String name) {
+		boolean success = false;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("UPDATE VARIABLES SET Variable = ? WHERE ID = ?;")) {
+			s.setString(1, name);
+			s.setInt(2, variableId);
+			s.executeUpdate();
+			System.out.println(name);
+			success = true;
+			LogEvent e = new LogEvent(Logger.MESSAGE,
+        			"[SQL] Name of variable " + variableId + " was updated.",
+        			"The name of variable " + variableId + " was successfully updated in the VARIABLES table in the database.");
+        	Dna.logger.log(e);
+		} catch (SQLException e1) {
+        	LogEvent e = new LogEvent(Logger.ERROR,
+        			"[SQL] Name of variable " + variableId + " could not be updated.",
+        			"Tried to update the name of variable " + variableId + " in the VARIABLES table in the database, but the update was unsuccessful.",
+        			e1);
+        	Dna.logger.log(e);
+		}
+		return success;
 	}
 }

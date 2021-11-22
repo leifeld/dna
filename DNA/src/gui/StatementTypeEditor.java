@@ -6,14 +6,15 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import javax.swing.AbstractCellEditor;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
+import javax.swing.DefaultListSelectionModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
@@ -21,6 +22,7 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -35,24 +37,31 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableCellEditor;
-
 import dna.Dna;
 import model.StatementType;
 import model.Value;
 
+/**
+ * Statement type editor. A dialog window for adding new statement types,
+ * deleting existing statement types, changing the name or color of a statement
+ * type, and adding, renaming, or deleting variables of statement types.
+ */
 public class StatementTypeEditor extends JDialog {
 	private static final long serialVersionUID = 3646305292547200629L;
 	private JList<StatementType> statementTypeList;
 	private ArrayList<StatementType> statementTypes;
-	private JTextField idField, nameField, variableField;
+	private JTextField idField, nameField;
 	private JLabel idLabel, nameLabel, colorLabel;
 	private ColorButton colorButton;
-	private StatementType selectedStatementTypeCopy;
 	private JTable variableTable;
 	private VariableTableModel variableTableModel;
+	private JButton resetDetailsButton, applyDetailsButton;
 	private JButton addVariableButton, deleteVariableButton, renameVariableButton;
+	private JButton addStatementTypeButton, deleteStatementTypeButton;
 
+	/**
+	 * Create a new instance of a statement type editor dialog window.
+	 */
 	public StatementTypeEditor() {
 		this.setModal(true);
 		this.setTitle("Edit statement types");
@@ -66,20 +75,72 @@ public class StatementTypeEditor extends JDialog {
 		st = statementTypes.toArray(st);
 
 		// statement type list
+		JPanel listPanel = new JPanel(new BorderLayout());
 		statementTypeList = new JList<StatementType>(st);
 		statementTypeList.setCellRenderer(new StatementTypeRenderer());
 		statementTypeList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 		JScrollPane listScroller = new JScrollPane(statementTypeList);
-		listScroller.setPreferredSize(new Dimension(200, 600));
+		listScroller.setPreferredSize(new Dimension(200, 500));
 		statementTypeList.addListSelectionListener(new ListSelectionListener() {
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
 				if (e.getValueIsAdjusting() == false) {
-					loadStatementTypes();
+					updateUI(e.getSource());
 				}
 			}
 		});
-		this.add(listScroller, BorderLayout.WEST);
+		listPanel.add(listScroller, BorderLayout.CENTER);
+		
+		JPanel listButtonPanel = new JPanel(new GridLayout(0, 2));
+		ImageIcon addStatementTypeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-plus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		addStatementTypeButton = new JButton("Add", addStatementTypeIcon);
+		addStatementTypeButton.setToolTipText("Add new statement type to the database");
+		addStatementTypeButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int dialog = JOptionPane.showConfirmDialog(StatementTypeEditor.this, "Add a new statement type to the database?\nThis action will be written to the database now.", "Confirmation", JOptionPane.YES_NO_OPTION);
+				if (dialog == 0) {
+					int id = Dna.sql.addStatementType("(New statement type)", new Color(181, 255, 0));
+					repopulateStatementTypeListFromDatabase(id);
+					updateUI(e.getSource());
+				}
+			}
+		});
+		listButtonPanel.add(addStatementTypeButton);
+
+		ImageIcon deleteStatementTypeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-minus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		deleteStatementTypeButton = new JButton("Delete", deleteStatementTypeIcon);
+		deleteStatementTypeButton.setToolTipText("Delete the selected statement type");
+		deleteStatementTypeButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int id = statementTypeList.getSelectedValue().getId();
+				if (id > 0) {
+					int count = Dna.sql.countStatements(id);
+					int dialog = JOptionPane.showConfirmDialog(StatementTypeEditor.this, "Delete statement type " + id + " permanently from the database?\nThis will also delete " + count + " statements of this type and all associated entities/attributes now.\nWarning: There is no option to undo this action.", "Confirmation", JOptionPane.YES_NO_OPTION);
+					if (dialog == 0) {
+						boolean success = Dna.sql.deleteStatementType(id);
+						repopulateStatementTypeListFromDatabase(-1);
+						updateUI(e.getSource());
+						if (success) {
+							JOptionPane.showMessageDialog(StatementTypeEditor.this, "Statement type " + id + " was successfully deleted from the database.");
+						} else {
+							JOptionPane.showMessageDialog(StatementTypeEditor.this, "Statement type " + id + " could not be deleted. Check the message log for details.");
+						}
+					}
+				}
+			}
+		});
+		deleteStatementTypeButton.setEnabled(false);
+		listButtonPanel.add(deleteStatementTypeButton);
+		
+		listPanel.add(listButtonPanel, BorderLayout.SOUTH);
+		
+		CompoundBorder borderList;
+		borderList = BorderFactory.createCompoundBorder(new EmptyBorder(10, 10, 10, 10), new TitledBorder("Statement types"));
+		listPanel.setBorder(borderList);
+		
+		this.add(listPanel, BorderLayout.WEST);
 
 		// details panel
 		idField = new JTextField(2);
@@ -96,24 +157,15 @@ public class StatementTypeEditor extends JDialog {
 		DocumentListener documentListener = new DocumentListener() {
 			@Override
 			public void changedUpdate(DocumentEvent e) {
-				if (selectedStatementTypeCopy != null) {
-					selectedStatementTypeCopy.setLabel(nameField.getText());
-				}
-				checkButtons();
+				updateUI(e);
 			}
 			@Override
 			public void insertUpdate(DocumentEvent e) {
-				if (selectedStatementTypeCopy != null) {
-					selectedStatementTypeCopy.setLabel(nameField.getText());
-				}
-				checkButtons();
+				updateUI(e);
 			}
 			@Override
 			public void removeUpdate(DocumentEvent e) {
-				if (selectedStatementTypeCopy != null) {
-					selectedStatementTypeCopy.setLabel(nameField.getText());
-				}
-				checkButtons();
+				updateUI(e);
 			}
 		};
 		nameField.getDocument().addDocumentListener(documentListener);
@@ -129,14 +181,47 @@ public class StatementTypeEditor extends JDialog {
 				if (newColor != null) {
 					colorButton.setColor(newColor);
 				}
-				selectedStatementTypeCopy.setColor(newColor);
-				checkButtons();
+				updateUI(e.getSource());
 			}
 		});
 
+		JPanel detailsButtonPanel = new JPanel();
+		ImageIcon resetDetailsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-rotate-clockwise.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		resetDetailsButton = new JButton("Reset", resetDetailsIcon);
+		resetDetailsButton.setToolTipText("Reload the statement type name/label and color from the database and undo any changes made here");
+		resetDetailsButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (!statementTypeList.getSelectedValue().getLabel().equals(nameField.getText()) ||
+						!statementTypeList.getSelectedValue().getColor().equals(colorButton.getColor())) {
+					Dna.sql.updateStatementType(statementTypeList.getSelectedValue().getId(), nameField.getText(), colorButton.getColor());
+					colorButton.setColor(statementTypeList.getSelectedValue().getColor());
+					nameField.setText(statementTypeList.getSelectedValue().getLabel()); // triggers button check
+				}
+			}
+		});
+		resetDetailsButton.setEnabled(false);
+		detailsButtonPanel.add(resetDetailsButton);
+		
+		ImageIcon applyDetailsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-device-floppy.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		applyDetailsButton = new JButton("Apply / Save", applyDetailsIcon);
+		applyDetailsButton.setToolTipText("Update the statement type name/label and color in the database, making them permanent");
+		applyDetailsButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (!statementTypeList.getSelectedValue().getLabel().equals(nameField.getText()) ||
+						!statementTypeList.getSelectedValue().getColor().equals(colorButton.getColor())) {
+					Dna.sql.updateStatementType(statementTypeList.getSelectedValue().getId(), nameField.getText(), colorButton.getColor());
+					repopulateStatementTypeListFromDatabase(statementTypeList.getSelectedValue().getId());
+					updateUI(e.getSource());
+				}
+			}
+		});
+		applyDetailsButton.setEnabled(false);
+		detailsButtonPanel.add(applyDetailsButton);
+
 		JPanel detailsPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.weightx = 1.0;
 		gbc.insets = new Insets(5, 5, 0, 5);
 		gbc.anchor = GridBagConstraints.WEST;
 		gbc.gridx = 0;
@@ -153,9 +238,12 @@ public class StatementTypeEditor extends JDialog {
 		gbc.gridy = 2;
 		detailsPanel.add(colorLabel, gbc);
 		gbc.gridx = 1;
-		gbc.insets = new Insets(5, 5, 5, 5);
 		detailsPanel.add(colorButton, gbc);
-
+		gbc.gridy = 3;
+		gbc.insets = new Insets(5, 0, 5, 5);
+		gbc.weightx = 1.0;
+		detailsPanel.add(detailsButtonPanel, gbc);
+		
 		CompoundBorder borderDetails;
 		borderDetails = BorderFactory.createCompoundBorder(new EmptyBorder(10, 10, 10, 10), new TitledBorder("Statement type details"));
 		detailsPanel.setBorder(borderDetails);
@@ -165,58 +253,41 @@ public class StatementTypeEditor extends JDialog {
         variableTableModel = new VariableTableModel();
         variableTable = new JTable(variableTableModel);
 		variableTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        ArrayList<String> dataTypes = new ArrayList<String>();
-        dataTypes.add("short text");
-        dataTypes.add("long text");
-        dataTypes.add("boolean");
-        dataTypes.add("integer");
-        variableTable.getColumnModel().getColumn(2).setCellEditor(new ComboBoxCellEditor(dataTypes));
-        variableTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+		variableTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
-				if (variableTable.getSelectedRowCount() == 1 && variableTable.getSelectedRow() > -1) {
-					variableField.setText((String) variableTable.getValueAt(variableTable.getSelectedRow(), 1));
-				} else {
-					variableField.setText("");
-				}
+				updateUI(e.getSource());
 			}
-        });
-        JScrollPane variableScrollPane = new JScrollPane(variableTable);
-        variableScrollPane.setPreferredSize(new Dimension(300, 300));
+		});
+		JScrollPane variableScrollPane = new JScrollPane(variableTable);
+        variableScrollPane.setPreferredSize(new Dimension(500, 300));
         variablePanel.add(variableScrollPane, BorderLayout.CENTER);
 
         JPanel variableButtonPanel = new JPanel();
-        
-        variableField = new JTextField(15);
-        variableField.setEnabled(false);
-        variableField.getDocument().addDocumentListener(new DocumentListener() {
-			@Override
-			public void changedUpdate(DocumentEvent e) {
-				checkButtons();
-			}
-			@Override
-			public void insertUpdate(DocumentEvent e) {
-				checkButtons();
-			}
-			@Override
-			public void removeUpdate(DocumentEvent e) {
-				checkButtons();
-			}
-        });
-        variableButtonPanel.add(variableField);
 
 		ImageIcon addVariableIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-code-plus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		addVariableButton = new JButton("Add", addVariableIcon);
+		addVariableButton = new JButton("Add...", addVariableIcon);
 		addVariableButton.setToolTipText("Add new variable to the statement type");
 		addVariableButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				Value v = new Value(0, variableField.getText(), "short text");
-				selectedStatementTypeCopy.getVariables().add(v);
-				variableTableModel.addRow(v);
-				variableField.setText("");
+				VariableDialog vd = new VariableDialog(null, null);
+				if (!vd.canceled) {
+					String name = vd.getVariableName();
+					String type = vd.getDataType();
+					int sid = statementTypeList.getSelectedValue().getId();
+					int vid = Dna.sql.addVariable(sid, name, type);
+					if (vid > -1) {
+						repopulateStatementTypeListFromDatabase(statementTypeList.getSelectedValue().getId());
+						updateUI(e.getSource());
+						JOptionPane.showMessageDialog(StatementTypeEditor.this, "Variable " + vid + " was successfully added to statement type " + sid + ".");
+					} else {
+						JOptionPane.showMessageDialog(StatementTypeEditor.this, "Variable could not be added to statement type " + sid + ".\nCheck the message log for details.");
+					}
+				}
 			}
 		});
+		addVariableButton.setEnabled(false);
 		variableButtonPanel.add(addVariableButton);
 
 		ImageIcon deleteVariableIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-code-minus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
@@ -225,19 +296,23 @@ public class StatementTypeEditor extends JDialog {
 		deleteVariableButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				int row = variableTable.getSelectedRow();
-				row = variableTable.convertRowIndexToModel(row);
-				Value v = variableTableModel.getRow(row);
-				variableTableModel.removeRow(row);
-				for (int i = 0; i < selectedStatementTypeCopy.getVariables().size(); i++) {
-					if (v.getVariableId() == selectedStatementTypeCopy.getVariables().get(i).getVariableId()) {
-						selectedStatementTypeCopy.getVariables().remove(i);
-						break;
+				int sid = statementTypeList.getSelectedValue().getId();
+				int vid = (int) variableTable.getValueAt(variableTable.getSelectedRow(), 0);
+				int count = Dna.sql.countStatements(sid);
+				int dialog = JOptionPane.showConfirmDialog(StatementTypeEditor.this, "Delete Variable " + vid + " permanently from the database?\nThis operation affects " + count + " statements of this type.\nAll associated values/entities/attributes will be deleted.\nWarning: There is no option to undo this action.", "Confirmation", JOptionPane.YES_NO_OPTION);
+				if (dialog == 0) {
+					boolean success = Dna.sql.deleteVariable(vid);
+					repopulateStatementTypeListFromDatabase(statementTypeList.getSelectedValue().getId());
+					updateUI(e.getSource());
+					if (success) {
+						JOptionPane.showMessageDialog(StatementTypeEditor.this, "Variable " + vid + " was successfully deleted from statement type " + sid + ".");
+					} else {
+						JOptionPane.showMessageDialog(StatementTypeEditor.this, "Variable " + vid + " could not be deleted from statement type " + sid + ".\nCheck the message log for details.");
 					}
 				}
-				variableField.setText("");
 			}
 		});
+		deleteVariableButton.setEnabled(false);
 		variableButtonPanel.add(deleteVariableButton);
 
 		ImageIcon renameVariableIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-forms.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
@@ -246,23 +321,28 @@ public class StatementTypeEditor extends JDialog {
 		renameVariableButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				int row = variableTable.getSelectedRow();
-				int rowModel = variableTable.convertRowIndexToModel(row);
-				variableTable.setValueAt(variableField.getText(), rowModel, 1);
-				Value v = variableTableModel.getRow(rowModel);
-				for (int i = 0; i < selectedStatementTypeCopy.getVariables().size(); i++) {
-					if (v.getVariableId() == selectedStatementTypeCopy.getVariables().get(i).getVariableId()) {
-						selectedStatementTypeCopy.getVariables().get(i).setKey(variableField.getText());
-						break;
+				int vid = (int) variableTable.getValueAt(variableTable.getSelectedRow(), 0);
+				String oldName = (String) variableTable.getValueAt(variableTable.getSelectedRow(), 1);
+				String oldType = (String) variableTable.getValueAt(variableTable.getSelectedRow(), 2);
+				VariableDialog vd = new VariableDialog(oldName, oldType);
+				if (!vd.canceled()) {
+					String name = vd.getVariableName();
+					int sid = statementTypeList.getSelectedValue().getId();
+					boolean success = Dna.sql.updateVariableName(vid, name);
+					if (success) {
+						repopulateStatementTypeListFromDatabase(statementTypeList.getSelectedValue().getId());
+						updateUI(e.getSource());
+						JOptionPane.showMessageDialog(StatementTypeEditor.this, "Variable " + vid + " in statement type " + sid + " was successfully renamed.");
+					} else {
+						JOptionPane.showMessageDialog(StatementTypeEditor.this, "Variable " + vid + " in statement type " + sid + " could not be renamed.\\nCheck the message log for details.");
 					}
 				}
-				variableTable.setRowSelectionInterval(row, row);
-				checkButtons();
 			}
 		});
+		renameVariableButton.setEnabled(false);
 		variableButtonPanel.add(renameVariableButton);
 		variablePanel.add(variableButtonPanel, BorderLayout.SOUTH);
-        
+
 		CompoundBorder borderVariables;
 		borderVariables = BorderFactory.createCompoundBorder(new EmptyBorder(10, 10, 10, 10), new TitledBorder("Variables"));
 		variablePanel.setBorder(borderVariables);
@@ -302,88 +382,118 @@ public class StatementTypeEditor extends JDialog {
 		}
 	}
 	
-	private void loadStatementTypes() {
-		if (!statementTypeList.isSelectionEmpty()) { // trigger only if selection has been completed and a statement type is selected
-			selectedStatementTypeCopy = new StatementType(statementTypeList.getSelectedValue());
-			
-			if (selectedStatementTypeCopy.getId() == 1) { // do not make details editable if it is the DNA Statement type (ID = 1)
-				idField.setEnabled(false);
-				nameField.setEnabled(false);
-				colorButton.setEnabled(false);
-				variableField.setEnabled(false);
-			} else {
-				idField.setEnabled(true);
-				nameField.setEnabled(true);
-				colorButton.setEnabled(true);
-				variableField.setEnabled(true);
-			}
-			
-			idLabel.setEnabled(true);
-			nameLabel.setEnabled(true);
-			colorLabel.setEnabled(true);
-			
-			idField.setText(selectedStatementTypeCopy.getId() + "");
-			nameField.setText(selectedStatementTypeCopy.getLabel());
-			colorButton.setColor(selectedStatementTypeCopy.getColor());
-			variableField.setText("");
-			
-			variableTableModel.clear();
-			for (int i = 0; i < selectedStatementTypeCopy.getVariables().size(); i++) {
-				variableTableModel.addRow(selectedStatementTypeCopy.getVariables().get(i));
-			}
-			if (variableTable.isEditing()) { // this condition fixes a bug where the combo box editor is still active when selecting a different statement type
-				variableTable.getCellEditor().stopCellEditing();
-			}
-			if (statementTypeList.getSelectedValue().getId() == 1) {
-				variableTable.setEnabled(false);
-			} else {
-				variableTable.setEnabled(true);
-			}
-		} else if (statementTypeList.isSelectionEmpty()) { // reset button was pressed
-			selectedStatementTypeCopy = null;
-
+	/**
+	 * (Re)load a statement type from the array list after changes to details or
+	 * variables have been made or after the list has been reloaded from the
+	 * database. Adjust the controls after selecting the statement type.
+	 */
+	private void updateUI(Object source) {
+		// statement type delete button
+		if (statementTypeList.isSelectionEmpty() || statementTypeList.getSelectedValue().getId() == 1) {
+			deleteStatementTypeButton.setEnabled(false);
+		} else {
+			deleteStatementTypeButton.setEnabled(true);
+		}
+		
+		// ID, name, and color details
+		if (statementTypeList.isSelectionEmpty()) {
 			idLabel.setEnabled(false);
 			idField.setEnabled(false);
 			nameLabel.setEnabled(false);
 			nameField.setEnabled(false);
 			colorLabel.setEnabled(false);
 			colorButton.setEnabled(false);
-			variableField.setEnabled(false);
-			
 			idField.setText("");
-			nameField.setText("");
+			if (!(source instanceof DocumentEvent)) {
+				nameField.setText("");
+			}
 			colorButton.setColor(Color.BLACK);
-			variableField.setText("");
-			
-			variableTableModel.clear();
-			variableTable.setEnabled(false);
+		} else {
+			if (statementTypeList.getSelectedValue().getId() == 1) { // do not make details editable if it is the DNA Statement type (ID = 1)
+				idField.setEnabled(false);
+				nameField.setEnabled(false);
+				colorButton.setEnabled(false);
+			} else {
+				idField.setEnabled(true);
+				nameField.setEnabled(true);
+				colorButton.setEnabled(true);
+			}
+			idLabel.setEnabled(true);
+			nameLabel.setEnabled(true);
+			colorLabel.setEnabled(true);
+			idField.setText(statementTypeList.getSelectedValue().getId() + "");
+			if (!(source instanceof DocumentEvent || source instanceof DefaultListSelectionModel)) {
+				nameField.setText(statementTypeList.getSelectedValue().getLabel());
+			}
+			if (source == statementTypeList ||
+					source == addStatementTypeButton ||
+					source == deleteStatementTypeButton ||
+					source == applyDetailsButton ||
+					source == resetDetailsButton) {
+				colorButton.setColor(statementTypeList.getSelectedValue().getColor());
+			}
 		}
-	}
-	
-	private void checkButtons() {
-		if (statementTypeList.isSelectionEmpty() || variableField.getText().matches("^\\s*$")) {
+		
+		// apply details button
+		if (statementTypeList.isSelectionEmpty() ||
+				statementTypeList.getSelectedValue().getId() == 1 ||
+				nameField.getText().matches("^\\s*$") ||
+				(statementTypeList.getSelectedValue().getLabel().equals(nameField.getText()) &&
+				statementTypeList.getSelectedValue().getColor().equals(colorButton.getColor()))) {
+			applyDetailsButton.setEnabled(false);
+		} else {
+			applyDetailsButton.setEnabled(true);
+		}
+		
+		// reset details button
+		if (!statementTypeList.isSelectionEmpty() &&
+				(!statementTypeList.getSelectedValue().getLabel().equals(nameField.getText()) ||
+				!statementTypeList.getSelectedValue().getColor().equals(colorButton.getColor()))) {
+			resetDetailsButton.setEnabled(true);
+		} else {
+			resetDetailsButton.setEnabled(false);
+		}
+		
+		// variable table
+		if (!(source instanceof DefaultListSelectionModel)) {
+			variableTableModel.clear();
+			if (statementTypeList.isSelectionEmpty()) {
+				variableTable.setEnabled(false);
+			} else {
+				for (int i = 0; i < statementTypeList.getSelectedValue().getVariables().size(); i++) {
+					variableTableModel.addRow(statementTypeList.getSelectedValue().getVariables().get(i));
+				}
+				if (statementTypeList.getSelectedValue().getId() == 1) {
+					variableTable.setEnabled(false);
+				} else {
+					variableTable.setEnabled(true);
+				}
+			}
+		}
+		
+		// add variable button
+		if (statementTypeList.isSelectionEmpty() || statementTypeList.getSelectedValue().getId() == 1) {
 			addVariableButton.setEnabled(false);
 		} else {
 			addVariableButton.setEnabled(true);
 		}
+		
+		// delete and rename variable buttons
 		if (variableTable.getSelectedRowCount() < 1 ||
 				statementTypeList.isSelectionEmpty() ||
-				variableField.getText().matches("^\\s*$") ||
-				!variableField.getText().equals(variableTable.getValueAt(variableTable.getSelectedRow(), 1))) {
+				statementTypeList.getSelectedValue().getId() == 1) {
 			deleteVariableButton.setEnabled(false);
-		} else {
-			deleteVariableButton.setEnabled(true);
-		}
-		if (variableTable.getSelectedRowCount() < 1 ||
-				statementTypeList.isSelectionEmpty() ||
-				variableField.getText().matches("^\\s*$") ||
-				variableField.getText().equals(variableTable.getValueAt(variableTable.getSelectedRow(), 1))) {
 			renameVariableButton.setEnabled(false);
 		} else {
+			deleteVariableButton.setEnabled(true);
 			renameVariableButton.setEnabled(true);
 		}
 	}
 
+	/**
+	 * List cell renderer for statement types. Displays just the label of the
+	 * statement type.
+	 */
 	class StatementTypeRenderer implements ListCellRenderer<Object> {
 		@Override
 		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -400,56 +510,6 @@ public class StatementTypeEditor extends JDialog {
 		}
 	}
 
-	/**
-	 * Table cell editor for data types.
-	 */
-	public class ComboBoxCellEditor extends AbstractCellEditor implements TableCellEditor, ActionListener {
-		private static final long serialVersionUID = -8838177513367736701L;
-		private String dataType;
-		private ArrayList<String> dataTypes;
-
-		public ComboBoxCellEditor(ArrayList<String> dataTypes) {
-			this.dataTypes = dataTypes;
-		}
-
-		@Override
-		public Object getCellEditorValue() {
-			return this.dataType;
-		}
-
-		@Override
-		public Component getTableCellEditorComponent(JTable table, Object value,
-				boolean isSelected, int row, int column) {
-			if (value instanceof String) {
-				this.dataType = (String) value;
-			}
-
-			JComboBox<String> comboDataTypes = new JComboBox<String>();
-
-			for (String aString : dataTypes) {
-				comboDataTypes.addItem(aString);
-			}
-
-			comboDataTypes.setSelectedItem(this.dataType);
-			comboDataTypes.addActionListener(this);
-
-			if (isSelected) {
-				comboDataTypes.setBackground(javax.swing.UIManager.getColor("Table.dropCellBackground"));
-			} else {
-				comboDataTypes.setBackground(javax.swing.UIManager.getColor("Table.background"));
-			}
-
-			return comboDataTypes;
-		}
-
-		@Override
-		public void actionPerformed(ActionEvent event) {
-			@SuppressWarnings("unchecked")
-			JComboBox<String> comboDataTypes = (JComboBox<String>) event.getSource();
-			this.dataType = (String) comboDataTypes.getSelectedItem();
-		}
-	}
-	
 	/**
 	 * A table model for variables.
 	 */
@@ -513,11 +573,7 @@ public class StatementTypeEditor extends JDialog {
 		 * @param col The table column.
 		 */
 		public boolean isCellEditable(int row, int col) {
-			if (row > -1 && row < variables.size() && col > 1 && col < 3) {
-				return true;
-			} else {
-				return false;
-			}
+			return false;
 		}
 
 		/**
@@ -533,17 +589,6 @@ public class StatementTypeEditor extends JDialog {
 				case 2: return "Data type";
 				default: return null;
 			}
-		}
-
-		/**
-		 * Return a row of the table based on the internal array list of values.
-		 * 
-		 * @param row Index of the {@link model.Value Value} object in the array
-		 *   list.
-		 * @return The {@link model.Value Value} object.
-		 */
-		public Value getRow(int row) {
-			return variables.get(row);
 		}
 
 		/**
@@ -578,15 +623,167 @@ public class StatementTypeEditor extends JDialog {
 			variables.add(variable);
 			fireTableRowsInserted(variables.size() - 1, variables.size() - 1);
 		}
+	}
+	
+	/**
+	 * A dialog window for adding a new variable or renaming and existing
+	 * variable. It contains a simple form for the name and data type of the
+	 * variable as well as two buttons.
+	 */
+	private class VariableDialog extends JDialog {
+		private static final long serialVersionUID = -3845428777468313134L;
+		private JButton okButton, cancelButton;
+		private JTextField variableNameField;
+		private JComboBox<String> box;
+		private String name, type;
+		private boolean canceled = true;
 		
 		/**
-		 * Delete a variable at a specified row index.
-		 * 
-		 * @param modelRow The position in the array list.
+		 * Create a new instance of a variable dialog.
 		 */
-		public void removeRow(int modelRow) {
-			variables.remove(modelRow);
-			fireTableRowsDeleted(modelRow, modelRow);
+		VariableDialog(String name, String type) {
+			this.setModal(true);
+			if (name == null || type == null) {
+				this.setTitle("Add new variable");
+			} else {
+				this.setTitle("Rename variable");
+			}
+			this.setLayout(new BorderLayout());
+
+			JPanel buttonPanel = new JPanel();
+			ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			cancelButton = new JButton("Cancel", cancelIcon);
+			cancelButton.setToolTipText("Close without saving.");
+			cancelButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					canceled = true;
+					VariableDialog.this.dispose();
+				}
+			});
+			buttonPanel.add(cancelButton);
+
+			ImageIcon okIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			okButton = new JButton("OK", okIcon);
+			okButton.setToolTipText("Add or rename variable and save changes to the database.");
+			okButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					VariableDialog.this.name = variableNameField.getText();
+					VariableDialog.this.type = (String) box.getSelectedItem();
+					canceled = false;
+					VariableDialog.this.dispose();
+				}
+			});
+			okButton.setEnabled(false);
+			buttonPanel.add(okButton);
+
+			this.add(buttonPanel, BorderLayout.SOUTH);
+			
+			JLabel variableNameLabel = new JLabel("Name");
+			variableNameField = new JTextField(20);
+			variableNameLabel.setLabelFor(variableNameField);
+			variableNameLabel.setToolTipText("Enter the name of the variable here.");
+			variableNameField.setToolTipText("Enter the name of the variable here.");
+			variableNameField.getDocument().addDocumentListener(new DocumentListener() {
+				@Override
+				public void changedUpdate(DocumentEvent e) {
+					if (variableNameField.getText().matches("^\\s*$")) {
+						okButton.setEnabled(false);
+					} else {
+						okButton.setEnabled(true);
+					}
+				}
+				@Override
+				public void insertUpdate(DocumentEvent e) {
+					if (variableNameField.getText().matches("^\\s*$")) {
+						okButton.setEnabled(false);
+					} else {
+						okButton.setEnabled(true);
+					}
+				}
+				@Override
+				public void removeUpdate(DocumentEvent e) {
+					if (variableNameField.getText().matches("^\\s*$")) {
+						okButton.setEnabled(false);
+					} else {
+						okButton.setEnabled(true);
+					}
+				}
+			});
+			if (name != null) {
+				this.name = name;
+				variableNameField.setText(name);
+			} else {
+				this.name = "";
+				variableNameField.setText("");
+			}
+			
+			String[] dataTypes = new String[] {"short text", "long text", "integer", "boolean"};
+			box = new JComboBox<String>(dataTypes);
+			JLabel boxLabel = new JLabel("Data type");
+			boxLabel.setLabelFor(box);
+			boxLabel.setToolTipText("Select the data type of the variable here.");
+			box.setToolTipText("Select the data type of the variable here.");
+			if (type != null) {
+				this.type = type;
+				box.setSelectedItem(type);
+				box.setVisible(false);
+				boxLabel.setVisible(false);
+			} else {
+				this.type = "short text";
+				box.setSelectedItem("short text");
+				box.setVisible(true);
+				boxLabel.setVisible(true);
+			}
+			
+			JPanel formPanel = new JPanel(new GridBagLayout());
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.weightx = 1.0;
+			gbc.insets = new Insets(5, 5, 0, 5);
+			gbc.anchor = GridBagConstraints.WEST;
+			gbc.gridx = 0;
+			gbc.gridy = 0;
+			formPanel.add(variableNameLabel, gbc);
+			gbc.gridx = 1;
+			formPanel.add(variableNameField, gbc);
+			gbc.gridx = 0;
+			gbc.gridy = 1;
+			formPanel.add(boxLabel, gbc);
+			gbc.gridx = 1;
+			formPanel.add(box, gbc);
+			this.add(formPanel, BorderLayout.CENTER);
+			
+			this.pack();
+			this.setLocationRelativeTo(null);
+			this.setVisible(true);
+		}
+		
+		/**
+		 * Retrieve the variable name. Accessible from outside the dialog.
+		 * 
+		 * @return Name of the variable.
+		 */
+		String getVariableName() {
+			return this.name;
+		}
+		
+		/**
+		 * Retrieve the selected data type. Accessible from outside the dialog.
+		 * 
+		 * @return The selected data type.
+		 */
+		String getDataType() {
+			return this.type;
+		}
+		
+		/**
+		 * Was the dialog closed without saving?
+		 * 
+		 * @return Boolean indicator of whether the dialog was canceled.
+		 */
+		boolean canceled() {
+			return this.canceled;
 		}
 	}
 }
