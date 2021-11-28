@@ -1,6 +1,5 @@
 package gui;
 
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -10,6 +9,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JToolBar;
+
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
@@ -66,13 +67,16 @@ class CoderSelectionPanel extends JPanel implements SqlListener {
 			}
 		});
 		changeCoderButton.setEnabled(false);
-		changeCoderButton.setPreferredSize(new Dimension(changeCoderButton.getPreferredSize().width, 34));
+		JToolBar tb = new JToolBar();
+		tb.add(changeCoderButton);
+		tb.setFloatable(false);
+		tb.setRollover(true);
 		gbc = new GridBagConstraints();
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		gbc.weightx = 1.0;
 		gbc.anchor = GridBagConstraints.WEST;
-		this.add(changeCoderButton, gbc);
+		this.add(tb, gbc);
 		
 		coderBadgePanel = new CoderBadgePanel();
 		gbc.gridx = 1;

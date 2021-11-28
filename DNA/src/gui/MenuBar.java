@@ -27,6 +27,7 @@ import gui.MainWindow.ActionCoderManager;
 import gui.MainWindow.ActionCoderRelationsEditor;
 import gui.MainWindow.ActionCreateDatabase;
 import gui.MainWindow.ActionEditDocuments;
+import gui.MainWindow.ActionImporter;
 import gui.MainWindow.ActionLoggerDialog;
 import gui.MainWindow.ActionOpenProfile;
 import gui.MainWindow.ActionQuit;
@@ -63,6 +64,7 @@ public class MenuBar extends JMenuBar implements SqlListener {
 	 * @param actionRemoveDocuments       Action for removing documents.
 	 * @param actionEditDocuments         Action for editing documents.
 	 * @param actionBatchImportDocuments  Action for batch-importing documents.
+	 * @param actionImporter              Action for importing from database.
 	 * @param actionRefresh               Action for reloading data.
 	 * @param actionRemoveStatements      Action for removing statements.
 	 * @param actionStatementTypeEditor   Action for editing statement types.
@@ -82,6 +84,7 @@ public class MenuBar extends JMenuBar implements SqlListener {
 			ActionRemoveDocuments actionRemoveDocuments,
 			ActionEditDocuments actionEditDocuments,
 			ActionBatchImportDocuments actionBatchImportDocuments,
+			ActionImporter actionImporter,
 			ActionRefresh actionRefresh,
 			ActionRemoveStatements actionRemoveStatements,
 			ActionStatementTypeEditor actionStatementTypeEditor,
@@ -141,6 +144,10 @@ public class MenuBar extends JMenuBar implements SqlListener {
 		// document menu: batch import documents
 		JMenuItem batchImportDocumentsItem = new JMenuItem(actionBatchImportDocuments);
 		documentMenu.add(batchImportDocumentsItem);
+
+		// document menu: import from other DNA database
+		JMenuItem importerItem = new JMenuItem(actionImporter);
+		documentMenu.add(importerItem);
 		
 		// document menu: refresh document table
 		JMenuItem refreshItem = new JMenuItem(actionRefresh);

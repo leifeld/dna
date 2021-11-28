@@ -138,9 +138,9 @@ class CoderManager extends JDialog {
 				Color newColor = JColorChooser.showDialog(CoderManager.this, "Choose color...", colorButton.getColor());
 				if (newColor != null) {
 					colorButton.setColor(newColor);
+					selectedCoderCopy.setColor(newColor);
+					checkButtons();
 				}
-				selectedCoderCopy.setColor(newColor);
-				checkButtons();
 			}
 		});
 		

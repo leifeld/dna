@@ -106,6 +106,7 @@ public class MainWindow extends JFrame implements SqlListener {
 	private ActionEditDocuments actionEditDocuments;
 	private ActionRefresh actionRefresh;
 	private ActionBatchImportDocuments actionBatchImportDocuments;
+	private ActionImporter actionImporter;
 	private ActionRemoveStatements actionRemoveStatements;
 	private ActionStatementTypeEditor actionStatementTypeEditor;
 	private ActionAttributeManager actionAttributeManager;
@@ -211,6 +212,10 @@ public class MainWindow extends JFrame implements SqlListener {
 		actionBatchImportDocuments = new ActionBatchImportDocuments("Import from directory", batchImportDocumentsIcon, "Batch-import all text files from a folder as new documents", KeyEvent.VK_I);
 		actionBatchImportDocuments.setEnabled(false);
 
+		ImageIcon importerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database-import.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		actionImporter = new ActionImporter("Import from DNA database", importerIcon, "Import documents, statements, entities, attributes, and regexes from another DNA database", KeyEvent.VK_D);
+		actionImporter.setEnabled(false);
+
 		ImageIcon removeStatementsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-square-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
 		actionRemoveStatements = new ActionRemoveStatements("Remove statement(s)", removeStatementsIcon, "Remove the statement(s) currently selected in the statement table", KeyEvent.VK_D);
 		actionRemoveStatements.setEnabled(false);
@@ -259,6 +264,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionRemoveDocuments,
 				actionEditDocuments,
 				actionBatchImportDocuments,
+				actionImporter,
 				actionRefresh,
 				actionRemoveStatements,
 				actionStatementTypeEditor,
@@ -590,13 +596,15 @@ public class MainWindow extends JFrame implements SqlListener {
 		} else {
 			if (Dna.sql.getActiveCoder().isPermissionAddDocuments() == true) {
 				actionAddDocument.setEnabled(true);
-			} else {
-				actionAddDocument.setEnabled(false);
-			}
-			if (Dna.sql.getActiveCoder().isPermissionImportDocuments() == true) {
 				actionBatchImportDocuments.setEnabled(true);
 			} else {
+				actionAddDocument.setEnabled(false);
 				actionBatchImportDocuments.setEnabled(false);
+			}
+			if (Dna.sql.getActiveCoder().isPermissionImportDocuments() == true) {
+				actionImporter.setEnabled(true);
+			} else {
+				actionImporter.setEnabled(false);
 			}
 		}
 	}
@@ -1600,6 +1608,29 @@ public class MainWindow extends JFrame implements SqlListener {
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: used document batch importer.",
 					"Batch-imported documents to the database.");
+			Dna.logger.log(l);
+		}
+	}
+
+	/**
+	 * An action to start a dialog for importing from another DNA database.
+	 */
+	class ActionImporter extends AbstractAction {
+		private static final long serialVersionUID = 4613926523251135254L;
+
+		public ActionImporter(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			new Importer();
+	    	refreshDocumentTable();
+			refreshStatementTable();
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: used DNA database import dialog.",
+					"Imported from another database into the current DNA database.");
 			Dna.logger.log(l);
 		}
 	}
