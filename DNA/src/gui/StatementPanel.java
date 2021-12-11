@@ -286,7 +286,7 @@ class StatementPanel extends JPanel implements SqlListener {
         	Statement s = model.getRow(table.convertRowIndexToModel(row));
         	if (value.getClass().toString().endsWith("Coder")) {
         		Coder coder = (Coder) value;
-				CoderBadgePanel cbp = new CoderBadgePanel(coder, 14, 22);
+				CoderBadgePanel cbp = new CoderBadgePanel(coder, 14, 0, 22);
 				if (isSelected) {
             		cbp.setBackground(javax.swing.UIManager.getColor("Table.dropCellBackground"));
 				} else {

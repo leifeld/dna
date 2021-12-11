@@ -5,7 +5,6 @@ import java.awt.Component;
 
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
-import javax.swing.border.EmptyBorder;
 
 import model.Coder;
 
@@ -20,7 +19,7 @@ class CoderRenderer implements ListCellRenderer<Object> {
 		if (coder == null) {
 			cbp = new CoderBadgePanel();
 		} else {
-			cbp = new CoderBadgePanel(coder, 18, 100);
+			cbp = new CoderBadgePanel(coder, 18, 5, 100);
 		}
 		
 		// list background
@@ -34,7 +33,6 @@ class CoderRenderer implements ListCellRenderer<Object> {
 			cbp.setBackground(defaultColor);
 		}
 		cbp.setOpaque(true);
-		cbp.setBorder(new EmptyBorder(5, 5, 5, 5));
 		
 		return cbp;
 	}

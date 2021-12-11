@@ -8,6 +8,7 @@ import java.awt.Graphics;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
 
 import dna.Dna;
 import model.Coder;
@@ -25,18 +26,19 @@ public class CoderBadgePanel extends JPanel {
 	 * @param coder  A Coder object, which contains ID, name, and color.
 	 */
 	public CoderBadgePanel(Coder coder) {
-		createLayout(coder, 18, 22);
+		createLayout(coder, 18, 0, 22);
 	}
 
 	/**
 	 * Constructor for CoderBadgePanel
 	 * 
 	 * @param coder          A Coder object, which contains ID, name, and color.
-	 * @param size           Height/width of the color button.
+	 * @param buttonSize     Height/width of the color button.
+	 * @param border         Border margin. Can be 0.
 	 * @param maxNameLength  Maximal character length of the name.
 	 */
-	public CoderBadgePanel(Coder coder, int size, int maxNameLength) {
-		createLayout(coder, size, maxNameLength);
+	public CoderBadgePanel(Coder coder, int buttonSize, int border, int maxNameLength) {
+		createLayout(coder, buttonSize, border, maxNameLength);
 	}
 
 	/**
@@ -50,7 +52,7 @@ public class CoderBadgePanel extends JPanel {
 			coder = Dna.sql.getActiveCoder();
 		}
 		
-		createLayout(coder, 18, 22);
+		createLayout(coder, 18, 0, 22);
 	}
 	
 	/**
@@ -58,20 +60,21 @@ public class CoderBadgePanel extends JPanel {
 	 * class.
 	 * 
 	 * @param coder          The coder.
-	 * @param size           Height/width of the color button.
+	 * @param buttonSize     Height/width of the color button.
+	 * @param border         Border margin. Can be 0.
 	 * @param maxNameLength  Maximal character length of the name.
 	 */
-	private void createLayout(Coder coder, int size, int maxNameLength) {
+	private void createLayout(Coder coder, int buttonSize, int border, int maxNameLength) {
 		this.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
 		JButton colorButton = (new JButton() {
 			private static final long serialVersionUID = -7254611710375602710L;
 			public void paintComponent(Graphics g) {
 				super.paintComponent(g);
 				g.setColor(coder.getColor());
-				g.fillRect(0, 0, size, size);
+				g.fillRect(0, 0, buttonSize, buttonSize);
 			}
 		});
-		colorButton.setPreferredSize(new Dimension(size, size));
+		colorButton.setPreferredSize(new Dimension(buttonSize, buttonSize));
 		colorButton.setEnabled(false);
 		String name = coder.getName();
 
@@ -86,6 +89,9 @@ public class CoderBadgePanel extends JPanel {
 		coderName.setLabelFor(colorButton);
 		this.add(colorButton);
 		this.add(coderName);
+		if (border > 0) {
+			this.setBorder(new EmptyBorder(border, 0, border, 0));
+		}
 	}
 	
 	/**
