@@ -36,6 +36,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.ProgressMonitor;
 import javax.swing.SwingWorker;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -47,8 +48,9 @@ import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import model.Coder;
-import model.Document;
+import model.StatementType;
 import model.TableDocument;
+import model.Value;
 import sql.ConnectionProfile;
 import sql.Sql;
 import sql.Sql.SQLCloseable;
@@ -240,6 +242,7 @@ class Importer extends JDialog {
 						}
 						coderTableModel.addCoderPair(foreignCoders.get(i), c);
 					}
+					Importer.this.sql = s;
 					(new DocumentTableRefreshWorker()).execute();
 				}
 			}
@@ -311,10 +314,8 @@ class Importer extends JDialog {
 						"Confirmation", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
 					try {
-						// Thread importThread = new Thread( new DocumentInserter(file), "Import documents" );
-						// importThread.start();
-						System.out.println("test");
-						// TODO: start swing worker or thread here
+						Thread importThread = new Thread( new ImportWorker(), "Import data" );
+						importThread.start();
 					} catch (OutOfMemoryError ome) {
 						System.err.println("Out of memory. File has been " +
 								"closed. Please start Java with\nthe " +
@@ -571,27 +572,25 @@ class Importer extends JDialog {
 			importButton.setEnabled(true);
 	    }
 	}
-	
-	private class ImportWorker extends SwingWorker<List<Document>, Document> {
+
+	private class ImportWorker implements Runnable {
 		HashMap<Integer, Integer> coderMap;
 		ArrayList<Integer> docIds;
-		
-		/**
-		 * Create a new document import swing worker.
-		 */
-		private ImportWorker() {
+		ProgressMonitor progressMonitor;
+
+		public ImportWorker() {
 			// disable buttons
 			dbButton.setEnabled(false);
 			filterButton.setEnabled(false);
 			selectAll.setEnabled(false);
 			importButton.setEnabled(false);
-			
+
 			// create coder hash map for easier look-up of corresponding coder ID
 			coderMap = new HashMap<Integer, Integer>();
 			for (int i = 0; i < coderTableModel.getRowCount(); i++) {
 				coderMap.put(((Coder) coderTableModel.getValueAt(i, 0)).getId(), ((Coder) coderTableModel.getValueAt(i, 1)).getId());
 			}
-			
+
 			// some preprocessing: compile list of document IDs to import after skipping unselected/empty/full/unmapped documents
 			docIds = new ArrayList<Integer>();
 			for (int i = 0; i < dtm.getRowCount(); i++) {
@@ -607,9 +606,8 @@ class Importer extends JDialog {
 				}
 			}
 		}
-		
-		@Override
-		protected List<Document> doInBackground() {
+
+		public void run() {
 			String documentSelectSql = "SELECT * FROM DOCUMENTS WHERE ID IN (";
 			for (int i = 0; i < docIds.size(); i++) {
 				documentSelectSql = documentSelectSql + docIds.get(i);
@@ -621,32 +619,362 @@ class Importer extends JDialog {
 			
 			try (Connection connForeign = Importer.this.sql.getDataSource().getConnection();
 					Connection connDomestic = Dna.sql.getDataSource().getConnection();
-					PreparedStatement s1 = connDomestic.prepareStatement("INSERT INTO DOCUMENTS (Title, Text, Coder, Author, Source, Section, Notes, Type, Date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
-					PreparedStatement s2 = connForeign.prepareStatement(documentSelectSql);
-					PreparedStatement s3 = connDomestic.prepareStatement("SELECT COUNT(ID) FROM DOCUMENTS WHERE Title = ? AND Text = ?;");
+					PreparedStatement d1 = connDomestic.prepareStatement("INSERT INTO DOCUMENTS (Title, Text, Coder, Author, Source, Section, Notes, Type, Date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+					PreparedStatement f1 = connForeign.prepareStatement(documentSelectSql);
+					PreparedStatement d2 = connDomestic.prepareStatement("SELECT COUNT(ID) FROM DOCUMENTS WHERE Title = ? AND Text = ?;");
+					PreparedStatement f2 = connForeign.prepareStatement("SELECT * FROM REGEXES;");
+					PreparedStatement d3 = connDomestic.prepareStatement("SELECT Label FROM REGEXES;");
+					PreparedStatement d4 = connDomestic.prepareStatement("INSERT INTO REGEXES (Label, Red, Green, Blue) VALUES (?, ?, ?, ?);");
+					PreparedStatement f3 = connForeign.prepareStatement("SELECT * FROM STATEMENTTYPES");
+					PreparedStatement f4 = connForeign.prepareStatement("SELECT * FROM VARIABLES WHERE StatementTypeId = ?;");
+					PreparedStatement d5 = connDomestic.prepareStatement("SELECT * FROM STATEMENTTYPES");
+					PreparedStatement d6 = connDomestic.prepareStatement("SELECT * FROM VARIABLES WHERE StatementTypeId = ?;");
+					PreparedStatement d7 = connDomestic.prepareStatement("INSERT INTO STATEMENTTYPES (Label, Red, Green, Blue) VALUES (?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+					PreparedStatement d8 = connDomestic.prepareStatement("INSERT INTO VARIABLES (Variable, DataType, StatementTypeId) VALUES (?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+					PreparedStatement f5 = connForeign.prepareStatement("SELECT * FROM VARIABLELINKS;");
+					PreparedStatement d9 = connDomestic.prepareStatement("SELECT COUNT(ID) FROM VARIABLELINKS WHERE SourceVariableId = ? AND TargetVariableId = ?;");
+					PreparedStatement d10 = connDomestic.prepareStatement("INSERT INTO VARIABLELINKS (SourceVariableId, TargetVariableId) VALUES (?, ?);");
+					PreparedStatement d11 = connDomestic.prepareStatement("INSERT INTO STATEMENTS (StatementTypeId, DocumentId, Start, Stop, Coder) VALUES (?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+					PreparedStatement f6 = connForeign.prepareStatement("SELECT * FROM STATEMENTS WHERE DocumentId = ?;");
+					PreparedStatement f7 = connForeign.prepareStatement("SELECT * FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
+					PreparedStatement f8 = connForeign.prepareStatement("SELECT * FROM DATABOOLEAN WHERE StatementId = ?;");
+					PreparedStatement f9 = connForeign.prepareStatement("SELECT * FROM DATAINTEGER WHERE StatementId = ?;");
+					PreparedStatement f10 = connForeign.prepareStatement("SELECT * FROM DATALONGTEXT WHERE StatementId = ?;");
+					PreparedStatement f11 = connForeign.prepareStatement("SELECT * FROM DATASHORTTEXT WHERE StatementId = ?;");
+					PreparedStatement f12 = connForeign.prepareStatement("SELECT * FROM ATTRIBUTEVALUES;");
+					PreparedStatement f13 = connForeign.prepareStatement("SELECT * FROM ENTITIES WHERE VariableId = ?;");
+					PreparedStatement d12 = connDomestic.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+					PreparedStatement d13 = connDomestic.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+					PreparedStatement d14 = connDomestic.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+					PreparedStatement d15 = connDomestic.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Entity) VALUES (?, ?, ?);");
+					PreparedStatement d16 = connDomestic.prepareStatement("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+					PreparedStatement d17 = connDomestic.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
+					PreparedStatement d18 = connDomestic.prepareStatement("SELECT * FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
+					PreparedStatement d19 = connDomestic.prepareStatement("SELECT ID FROM ATTRIBUTEVARIABLES WHERE VariableId = ? AND AttributeVariable = ?;");
+					PreparedStatement d20 = connDomestic.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+					PreparedStatement d21 = connDomestic.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
+					PreparedStatement d22 = connDomestic.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE EntityId = ? AND AttributeVariableId = ?;");
+					PreparedStatement d23 = connDomestic.prepareStatement("SELECT AttributeValue FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
 					SQLCloseable finish = connDomestic::rollback;) {
-				connDomestic.setAutoCommit(false);
 				
-				/*
-				 * TODO:
-				 * - match statement types and put in hash map; import unknown statement types
-				 * - import regexes
-				 * - for each document, check if statements should be imported (if any)
-				 * - statement coder check
-				 * - for each statement, check entities and create; merge attributes depending on settings
-				 */
+				connDomestic.setAutoCommit(false);
+				ResultSet r1, r2, r3;
+
+				// process regex keywords
+				progressMonitor = new ProgressMonitor(Importer.this, "Importing data", "(1/5) Processing regex keywords...", 0, 5);
+				progressMonitor.setMillisToDecideToPopup(1);
+				progressMonitor.setProgress(0);
+				
+				if (importRegexBox.isSelected()) {
+					ArrayList<String> existingRegexes = new ArrayList<String>();
+					r1 = d3.executeQuery();
+					while (r1.next()) {
+						existingRegexes.add(r1.getString("Label"));
+					}
+					r1 = f2.executeQuery();
+					while (r1.next()) {
+						if (!existingRegexes.contains(r1.getString("Label"))) {
+							d4.setString(1, r1.getString("Label"));
+							d4.setInt(2, r1.getInt("Red"));
+							d4.setInt(3, r1.getInt("Green"));
+							d4.setInt(4, r1.getInt("Blue"));
+							d4.executeUpdate();
+						}
+					}
+				}
+				
+				// process statement types; first, create array list of foreign statement types
+				progressMonitor.setProgress(1);
+				progressMonitor.setNote("(2/5) Processing statement types and entities...");
+				
+				ArrayList<StatementType> foreignStatementTypes = new ArrayList<StatementType>();
+				r1 = f3.executeQuery();
+				while (r1.next()) {
+					f4.setInt(1, r1.getInt("ID"));
+					r2 = f4.executeQuery();
+					ArrayList<Value> variables = new ArrayList<Value>();
+					while (r2.next()) {
+						variables.add(new Value(r2.getInt("ID"), r2.getString("Variable"), r2.getString("DataType"), ""));
+					}
+					foreignStatementTypes.add(new StatementType(
+							r1.getInt("ID"),
+							r1.getString("Label"),
+							new Color(r1.getInt("Red"),
+									r1.getInt("Green"),
+									r1.getInt("Blue")),
+							variables));
+				}
+				// create array list of domestic statement types
+				ArrayList<StatementType> domesticStatementTypes = new ArrayList<StatementType>();
+				r1 = d5.executeQuery();
+				while (r1.next()) {
+					d6.setInt(1, r1.getInt("ID"));
+					r2 = d6.executeQuery();
+					ArrayList<Value> variables = new ArrayList<Value>();
+					while (r2.next()) {
+						variables.add(new Value(r2.getInt("ID"), r2.getString("Variable"), r2.getString("DataType"), ""));
+					}
+					domesticStatementTypes.add(new StatementType(
+							r1.getInt("ID"),
+							r1.getString("Label"),
+							new Color(r1.getInt("Red"),
+									r1.getInt("Green"),
+									r1.getInt("Blue")),
+							variables));
+				}
+				// compare foreign and domestic types, save correspondence in a hash map, and add new statement types
+				HashMap<Integer, Integer> statementTypeMap = new HashMap<Integer, Integer>();
+				HashMap<Integer, StatementType> statementTypeIdToTypeMap = new HashMap<Integer, StatementType>(); // reference new domestic statement type by its ID
+				HashMap<Integer, Integer> variableMap = new HashMap<Integer, Integer>();
+				HashMap<Integer, Integer> attributeVariableMap = new HashMap<Integer, Integer>();
+				HashMap<Integer, Integer> entityMap = new HashMap<Integer, Integer>();
+				for (int i = 0; i < foreignStatementTypes.size(); i++) {
+					for (int j = 0; j < domesticStatementTypes.size(); j++) {
+						if (foreignStatementTypes.get(i).getLabel().equals(domesticStatementTypes.get(j).getLabel())) {
+							boolean currentEntryNotAMatch = false;
+							for (int k = 0; k < foreignStatementTypes.get(i).getVariables().size(); k++) {
+								boolean variableExists = false;
+								for (int l = 0; l < domesticStatementTypes.get(j).getVariables().size(); l++) {
+									if (foreignStatementTypes.get(i).getVariables().get(k).getKey().equals(domesticStatementTypes.get(j).getVariables().get(l).getKey()) &&
+											foreignStatementTypes.get(i).getVariables().get(k).getDataType().equals(domesticStatementTypes.get(j).getVariables().get(l).getDataType())) {
+										if (!foreignStatementTypes.get(i).getVariables().get(k).getDataType().equals("short text")) {
+											variableExists = true;
+											break;
+										} else {
+											boolean differentAttributeVariables = false;
+											d18.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
+											r2 = d18.executeQuery();
+											ArrayList<String> attributes = new ArrayList<String>();
+											while (r2.next()) {
+												attributes.add(r2.getString("AttributeVariable"));
+											}
+											f7.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+											r2 = f7.executeQuery();
+											while (r2.next()) {
+												if (!attributes.contains(r2.getString("AttributeVariable"))) {
+													differentAttributeVariables = true;
+													break;
+												}
+											}
+											if (!differentAttributeVariables) {
+												variableExists = true;
+												break;
+											}
+										}
+									}
+								}
+								if (!variableExists) {
+									currentEntryNotAMatch = true;
+									break;
+								}
+							}
+							if (!currentEntryNotAMatch) { // put statement type and variable IDs into hash maps to establish correspondence
+								statementTypeMap.put(foreignStatementTypes.get(i).getId(), domesticStatementTypes.get(j).getId());
+								statementTypeIdToTypeMap.put(domesticStatementTypes.get(j).getId(), domesticStatementTypes.get(j));
+								for (int k = 0; k < foreignStatementTypes.get(i).getVariables().size(); k++) {
+									for (int l = 0; l < domesticStatementTypes.get(j).getVariables().size(); l++) {
+										if (foreignStatementTypes.get(i).getVariables().get(k).getKey().equals(domesticStatementTypes.get(j).getVariables().get(l).getKey()) &&
+												foreignStatementTypes.get(i).getVariables().get(k).getDataType().equals(domesticStatementTypes.get(j).getVariables().get(l).getDataType())) {
+											
+											// put variable ID correspondence in map
+											variableMap.put(foreignStatementTypes.get(i).getVariables().get(k).getVariableId(), domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
+											
+											// put attribute variable ID correspondence in map
+											f7.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+											r2 = f7.executeQuery();
+											while (r2.next()) {
+												boolean attributeVariablePresent = false;
+												d19.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
+												d19.setString(2, r2.getString("AttributeVariable"));
+												r3 = d19.executeQuery();
+												while (r3.next()) {
+													attributeVariablePresent = true;
+													attributeVariableMap.put(r2.getInt("ID"), r3.getInt("ID"));
+												}
+												if (!attributeVariablePresent && mergeAttributesBox.isSelected()) {
+													d16.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
+													d16.setString(2, r2.getString("AttributeVariable"));
+													d16.executeUpdate();
+													ResultSet keySetAttributeVariable = d16.getGeneratedKeys();
+													int attributeVariableId = -1;
+													while (keySetAttributeVariable.next()) {
+														attributeVariableId = keySetAttributeVariable.getInt(1);
+													}
+													attributeVariableMap.put(r2.getInt("ID"), attributeVariableId);
+												}
+											}
+
+											// put entity IDs in correspondence map
+											if (foreignStatementTypes.get(i).getVariables().get(k).getDataType().equals("short text")) {
+												f13.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+												r2 = f13.executeQuery();
+												while (r2.next()) {
+													d21.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
+													d21.setString(2, r2.getString("Value"));
+													r3 = d21.executeQuery();
+													boolean entityPresent = false;
+													while (r3.next()) {
+														entityPresent = true;
+														entityMap.put(r2.getInt("ID"), r3.getInt("ID"));
+													}
+													if (!entityPresent && importEntitiesBox.isSelected()) {
+														d20.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId()); // variable ID
+														d20.setString(2, r2.getString("Value"));
+														d20.setInt(3, r2.getInt("Red"));
+														d20.setInt(4, r2.getInt("Green"));
+														d20.setInt(5, r2.getInt("Blue"));
+														d20.executeUpdate();
+														ResultSet keySetEntity = d20.getGeneratedKeys();
+														int entityId = -1;
+														while (keySetEntity.next()) {
+															entityId = keySetEntity.getInt(1);
+														}
+														entityMap.put(r2.getInt("ID"), entityId);
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					// add new statement type (if unknown statement types are imported) and save correspondence in hash maps
+					if (!statementTypeMap.containsKey(foreignStatementTypes.get(i).getId()) && statementTypeBox.isSelected()) {
+						d7.setString(1, foreignStatementTypes.get(i).getLabel());
+						d7.setInt(2, foreignStatementTypes.get(i).getColor().getRed());
+						d7.setInt(3, foreignStatementTypes.get(i).getColor().getGreen());
+						d7.setInt(4, foreignStatementTypes.get(i).getColor().getBlue());
+						d7.executeUpdate();
+						ResultSet keySetStatementType = d7.getGeneratedKeys();
+						int statementTypeId = -1;
+						while (keySetStatementType.next()) {
+							statementTypeId = keySetStatementType.getInt(1);
+						}
+						
+						// add variables
+						for (int k = 0; k < foreignStatementTypes.get(i).getVariables().size(); k++) {
+							d8.setString(1, foreignStatementTypes.get(i).getVariables().get(k).getKey());
+							d8.setString(2, foreignStatementTypes.get(i).getVariables().get(k).getDataType());
+							d8.setInt(3, statementTypeId);
+							d8.executeUpdate();
+							ResultSet keySetVariable = d8.getGeneratedKeys();
+							int variableId = -1;
+							while (keySetVariable.next()) {
+								variableId = keySetVariable.getInt(1);
+							}
+							variableMap.put(foreignStatementTypes.get(i).getVariables().get(k).getVariableId(), variableId);
+							
+							// add attribute variables
+							f7.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+							r2 = f7.executeQuery();
+							while (r2.next()) {
+								d16.setInt(1, variableId);
+								d16.setString(2, r2.getString("AttributeVariable"));
+								d16.executeUpdate();
+								ResultSet keySetAttributeVariable = d16.getGeneratedKeys();
+								int attributeVariableId = -1;
+								while (keySetAttributeVariable.next()) {
+									attributeVariableId = keySetAttributeVariable.getInt(1);
+								}
+								attributeVariableMap.put(r2.getInt("ID"), attributeVariableId);
+							}
+
+							// add all entities and put entity IDs in correspondence map
+							if (foreignStatementTypes.get(i).getVariables().get(k).getDataType().equals("short text")) {
+								f13.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+								r2 = f13.executeQuery();
+								while (r2.next()) {
+									d20.setInt(1, variableId);
+									d20.setString(2, r2.getString("Value"));
+									d20.setInt(3, r2.getInt("Red"));
+									d20.setInt(4, r2.getInt("Green"));
+									d20.setInt(5, r2.getInt("Blue"));
+									d20.executeUpdate();
+									ResultSet keySetEntity = d20.getGeneratedKeys();
+									int entityId = -1;
+									while (keySetEntity.next()) {
+										entityId = keySetEntity.getInt(1);
+									}
+									entityMap.put(r2.getInt("ID"), entityId);
+								}
+							}
+						}
+						statementTypeMap.put(foreignStatementTypes.get(i).getId(), statementTypeId);
+						statementTypeIdToTypeMap.put(statementTypeId, foreignStatementTypes.get(i));
+					}
+				}
+				
+				// process variable links
+				progressMonitor.setProgress(2);
+				progressMonitor.setNote("(3/5) Processing variable links...");
+				
+				if (statementTypeBox.isSelected()) {
+					r1 = f5.executeQuery();
+					while (r1.next()) {
+						int source = variableMap.get(r1.getInt("SourceVariableId"));
+						int target = variableMap.get(r1.getInt("TargetVariableId"));
+						d9.setInt(1, source);
+						d9.setInt(2, target);
+						r2 = d9.executeQuery();
+						while (r2.next()) {
+							if (r2.getInt(0) == 0) {
+								d10.setInt(1, source);
+								d10.setInt(2, target);
+								d10.executeUpdate();
+							}
+						}
+					}
+				}
+				
+				// process attribute values
+				progressMonitor.setProgress(3);
+				progressMonitor.setNote("(4/5) Processing attribute values...");
+				
+				r1 = f12.executeQuery(); // select all attribute values
+				while (r1.next()) {
+					int foreignEntityId = r1.getInt("EntityId");
+					int foreignAttributeVariableId = r1.getInt("AttributeVariableId");
+					String foreignAttributeValue = r1.getString("AttributeValue");
+					d23.setInt(1, entityMap.get(foreignEntityId));
+					d23.setInt(2, attributeVariableMap.get(foreignAttributeVariableId));
+					r2 = d23.executeQuery();
+					boolean attributeExists = false;
+					while (r2.next()) {
+						attributeExists = true;
+						String domesticAttributeValue = r2.getString("AttributeValue");
+						if (!foreignAttributeValue.equals(domesticAttributeValue)) {
+							if (overwriteAttributesBox.isSelected() ||
+									(mergeAttributesBox.isSelected() && (domesticAttributeValue == null || domesticAttributeValue.equals("")))) {
+								d22.setString(1, foreignAttributeValue);
+								d22.setInt(2, entityMap.get(foreignEntityId));
+								d22.setInt(3, attributeVariableMap.get(foreignAttributeVariableId));
+								d22.executeUpdate();
+							}
+						}
+					}
+					if (!attributeExists) {
+						d17.setInt(1, entityMap.get(foreignEntityId));
+						d17.setInt(2, attributeVariableMap.get(foreignAttributeVariableId));
+						d17.setString(3, foreignAttributeValue);
+						d17.executeUpdate();
+					}
+				}
 				
 				// process documents
+				progressMonitor.setProgress(4);
+				progressMonitor.setNote("(5/5) Processing documents and statements...");
+				
 				if (docIds.size() > 0) {
-					ResultSet r1 = s2.executeQuery(); // select documents
+					r1 = f1.executeQuery(); // select documents
 					while (r1.next()) {
 						
 						// check for duplicate title and text if necessary
 						boolean proceed = true;
 						if (skipDuplicatesBox.isSelected()) {
-							s3.setString(1, r1.getString("Title"));
-							s3.setString(2, r1.getString("Text"));
-							ResultSet r2 = s3.executeQuery();
+							d2.setString(1, r1.getString("Title"));
+							d2.setString(2, r1.getString("Text"));
+							r2 = d2.executeQuery();
 							while (r2.next()) {
 								 if (r2.getInt(0) > 0) {
 									 proceed = false;
@@ -666,54 +994,114 @@ class Importer extends JDialog {
 								}
 							}
 							// extract remaining document details and insert document into domestic database
-							s1.setString(1, r1.getString("Title"));
-							s1.setString(2, r1.getString("Text"));
-							s1.setInt(3, coderMap.get(r1.getInt("Coder"))); // replace by mapped coder
-							s1.setString(4, r1.getString("Author"));
-							s1.setString(5, r1.getString("Source"));
-							s1.setString(6, r1.getString("Section"));
-							s1.setString(7, r1.getString("Notes"));
-							s1.setString(8, r1.getString("Type"));
-							s1.setLong(10, date.toEpochSecond(ZoneOffset.UTC));
-							s1.executeUpdate();
+							d1.setString(1, r1.getString("Title"));
+							d1.setString(2, r1.getString("Text"));
+							d1.setInt(3, coderMap.get(r1.getInt("Coder"))); // replace by mapped coder
+							d1.setString(4, r1.getString("Author"));
+							d1.setString(5, r1.getString("Source"));
+							d1.setString(6, r1.getString("Section"));
+							d1.setString(7, r1.getString("Notes"));
+							d1.setString(8, r1.getString("Type"));
+							d1.setLong(9, date.toEpochSecond(ZoneOffset.UTC));
+							d1.executeUpdate();
 							
 							// get generated document ID
-							ResultSet keySetDocument = s1.getGeneratedKeys();
+							ResultSet keySetDocument = d1.getGeneratedKeys();
 							int documentId = -1;
 							while (keySetDocument.next()) {
 								documentId = keySetDocument.getInt(1);
 							}
 							
 							// import statements contained in the document
+							System.out.println("About to start...");
 							if (importStatementsBox.isSelected()) {
-								// TODO
+								f6.setInt(1, r1.getInt("ID"));
+								r2 = f6.executeQuery();
+								System.out.println("Query f6 executed");
+								while (r2.next()) {
+									System.out.println("While");
+									// add statement
+									int newStatementTypeId = statementTypeMap.get(r2.getInt("StatementTypeId"));
+									d11.setInt(1, newStatementTypeId);
+									d11.setInt(2, documentId);
+									d11.setInt(3, r2.getInt("Start"));
+									d11.setInt(4, r2.getInt("Stop"));
+									d11.setInt(5, coderMap.get(r2.getInt("Coder")));
+									d11.executeUpdate();
+									System.out.println("Added statement");
+
+									// get generated statement ID
+									ResultSet keySetStatement = d11.getGeneratedKeys();
+									int statementId = -1;
+									while (keySetStatement.next()) {
+										statementId = keySetStatement.getInt(1);
+									}
+									System.out.println("Statement ID: " + statementId);
+									
+									// add values
+									ArrayList<Value> variables = statementTypeIdToTypeMap.get(newStatementTypeId).getVariables();
+									for (int i = 0; i < variables.size(); i++) {
+										if (variables.get(i).getDataType().equals("boolean")) {
+											f8.setInt(1, r2.getInt("ID"));
+											r3 = f8.executeQuery();
+											while (r3.next()) {
+												d12.setInt(1, statementId);
+												d12.setInt(2, variableMap.get(r3.getInt("VariableId")));
+												d12.setInt(3, r3.getInt("Value"));
+												d12.executeUpdate();
+											}
+										} else if (variables.get(i).getDataType().equals("integer")) {
+											f9.setInt(1, r2.getInt("ID"));
+											r3 = f9.executeQuery();
+											while (r3.next()) {
+												d13.setInt(1, statementId);
+												d13.setInt(2, variableMap.get(r3.getInt("VariableId")));
+												d13.setInt(3, r3.getInt("Value"));
+												d13.executeUpdate();
+											}
+										} else if (variables.get(i).getDataType().equals("long text")) {
+											f10.setInt(1, r2.getInt("ID"));
+											r3 = f10.executeQuery();
+											while (r3.next()) {
+												d14.setInt(1, statementId);
+												d14.setInt(2, variableMap.get(r3.getInt("VariableId")));
+												d14.setString(3, r3.getString("Value"));
+												d14.executeUpdate();
+											}
+										} else if (variables.get(i).getDataType().equals("short text")) {
+											f11.setInt(1, r2.getInt("ID"));
+											r3 = f11.executeQuery();
+											while (r3.next()) {
+												// TODO: debug this part because statements are not added
+												d15.setInt(1, statementId);
+												d15.setInt(2, variableMap.get(r3.getInt("VariableId")));
+												d15.setInt(3, entityMap.get(r3.getInt("Entity")));
+												d15.executeUpdate();
+											}
+										}
+									}
+								}
 							}
 						}
 					}
 				}
 				
 				connDomestic.commit();
-			} catch (SQLException e) {
+			} catch (Exception e) {
 				LogEvent le = new LogEvent(Logger.WARNING,
 						"[SQL] Failed to retrieve documents from database for import.",
 						"The import document table model swing worker tried to retrieve all documents from the selected database to display them in the importer document table, but some or all documents could not be retrieved because there was a problem while processing the result set. The resulting document table may be incomplete.",
 						e);
 				dna.Dna.logger.log(le);
 			}
-			return null;
-		}
-	    
-	    @Override
-	    protected void process(List<Document> chunks) {
-	    	// TODO
-	    }
-
-	    @Override
-	    protected void done() {
+			
+			// enable buttons again after the import work is done
 			dbButton.setEnabled(true);
 			filterButton.setEnabled(true);
 			selectAll.setEnabled(true);
 			importButton.setEnabled(true);
-	    }
+
+			progressMonitor.setProgress(5);
+		}
 	}
 }
