@@ -877,7 +877,7 @@ public class MainWindow extends JFrame implements SqlListener {
 			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI]  ├─ (Re)loaded all " + documentTableModel.getRowCount() + " documents in " + (elapsed - time) / 1000000 + " milliseconds.",
 					"The document table swing worker loaded the " + documentTableModel.getRowCount() + " documents from the DNA database in the "
-					+ "background and stored them in the document table. This took " + (elapsed - time) / 1000000 + " seconds.");
+					+ "background and stored them in the document table. This took " + (elapsed - time) / 1000000 + " milliseconds.");
 			Dna.logger.log(le);
 			le = new LogEvent(Logger.MESSAGE,
 					"[GUI]  └─ Closing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
@@ -1086,7 +1086,7 @@ public class MainWindow extends JFrame implements SqlListener {
     		LogEvent le = new LogEvent(Logger.MESSAGE,
     				"[GUI]  ├─ (Re)loaded all " + statementTableModel.getRowCount() + " statements in " + (elapsed - time) / 1000000 + " milliseconds.",
     				"The statement table swing worker loaded the " + statementTableModel.getRowCount() + " statements from the DNA database in the "
-    				+ "background and stored them in the statement table. This took " + (elapsed - time) / 1000000 + " seconds.");
+    				+ "background and stored them in the statement table. This took " + (elapsed - time) / 1000000 + " milliseconds.");
     		Dna.logger.log(le);
 			le = new LogEvent(Logger.MESSAGE,
 					"[GUI]  └─ Closing thread to populate statement table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",

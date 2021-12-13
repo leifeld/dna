@@ -56,6 +56,14 @@ import sql.Sql;
 import sql.Sql.SQLCloseable;
 import sql.Sql.SqlResults;
 
+/**
+ * A class for importing documents and statements from another database,
+ * including statement types, entities, attributes, attribute variables, and
+ * regular expressions if required. The class uses a dialog window to select
+ * documents for import and maps foreign to domestic coders and let the user
+ * select a range of options for the import. A separate background thread does
+ * the actual import work.
+ */
 class Importer extends JDialog {
 	private static final long serialVersionUID = -5295303422543731461L;
 	private JButton dbButton, filterButton, selectAll, cancelButton, importButton;
@@ -66,6 +74,10 @@ class Importer extends JDialog {
 	private Sql sql;
 	private JCheckBox importStatementsBox, statementTypeBox, skipFullBox, skipEmptyBox, coderDocumentBox, coderStatementBox, skipDuplicatesBox, fixDatesBox, mergeAttributesBox, overwriteAttributesBox, importEntitiesBox, importRegexBox;
 
+	/**
+	 * Constructor of the Importer class. Creates a new instance of the dialog
+	 * window and creates the GUI with all action listeners.
+	 */
 	public Importer() {
 		ImageIcon importerIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-database-import.png"));
 		this.setIconImage(importerIcon.getImage());
@@ -87,7 +99,6 @@ class Importer extends JDialog {
         coderTable.setRowHeight(28);
         column.setCellEditor(new DefaultCellEditor(comboBox));
         CoderTableCellRenderer coderTableCellRenderer = new CoderTableCellRenderer();
-        //coderTableCellRenderer.setHorizontalAlignment(JLabel.CENTER);
         coderTableCellRenderer.setBorder(5);
         coderTable.setDefaultRenderer(Coder.class, coderTableCellRenderer);
 		coderTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -275,6 +286,7 @@ class Importer extends JDialog {
 				}
 			}
 		});
+		filterButton.setEnabled(false);
 		buttonPanel.add(filterButton);
 
 		ImageIcon selectIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-checks.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
@@ -293,6 +305,7 @@ class Importer extends JDialog {
 				
 			}
 		});
+		selectAll.setEnabled(false);
 		buttonPanel.add(selectAll);
 
 		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
@@ -329,10 +342,10 @@ class Importer extends JDialog {
 								"allocate to DNA. The manual provides " +
 								"further details.");
 					}
-					dispose();
 				}
 			}
 		});
+		importButton.setEnabled(false);
 		buttonPanel.add(importButton);
 		panel.add(buttonPanel, BorderLayout.SOUTH);
 		this.add(panel);
@@ -342,19 +355,51 @@ class Importer extends JDialog {
 		this.setVisible(true);
 	}
 	
+	/**
+	 * Table model for matching coders from a foreign database with coders from
+	 * the currently open ("domestic") database.
+	 */
 	private class CoderTableModel extends AbstractTableModel {
 		private static final long serialVersionUID = 6251543822435460514L;
+		
+		/**
+		 * A list of coders in a foreign database.
+		 */
 		private ArrayList<Coder> coderForeign = new ArrayList<Coder>();
+		
+		/**
+		 * A list of coders, possibly including duplicates, taken from the
+		 * currently open ("domestic") database. Each item in the list indicates
+		 * which coder in the domestic database a foreign coder from the foreign
+		 * coder list is translated into.
+		 */
 		private ArrayList<Coder> coderDomestic = new ArrayList<Coder>();
 		
+		/**
+		 * Get the class of a table column.
+		 * 
+		 * @param columnIndex  The column index.
+		 * @return             The class of the column.
+		 */
 		public Class<?> getColumnClass(int columnIndex) {
 			return Coder.class;
 		}
 		
+		/**
+		 * Get the number of columns.
+		 * 
+		 * @return  The column count.
+		 */
 		public int getColumnCount() {
 			return 2;
 		}
 		
+		/**
+		 * Get the name of a column for the header.
+		 * 
+		 * @param column  The column index.
+		 * @return        The name of the column.
+		 */
 		public String getColumnName(int column) {
 			switch( column ){
 				case 0: return "Coder in imported document";
@@ -363,11 +408,23 @@ class Importer extends JDialog {
 			}
 		}
 		
+		/**
+		 * Get the number of rows in the table.
+		 * 
+		 * @return  The row count.
+		 */
 		public int getRowCount() {
 			int count = coderForeign.size();
 			return count;
 		}
 		
+		/**
+		 * Get the value represented by a cell.
+		 * 
+		 * @param rowIndex     The row index of the cell.
+		 * @param columnIndex  The column index of the cell.
+		 * @return             The object corresponding to the cell.
+		 */
 		public Object getValueAt(int rowIndex, int columnIndex) {
 			switch( columnIndex ){
 				case 0:	return coderForeign.get(rowIndex);
@@ -376,6 +433,13 @@ class Importer extends JDialog {
 			}
 		}
 		
+		/**
+		 * Is the cell editable?
+		 * 
+		 * @param rowIndex     The row index of the cell.
+		 * @param columnIndex  The column index of the cell.
+		 * @return             Indicator of whether the cell can be edited.
+		 */
 		public boolean isCellEditable(int rowIndex, int columnIndex) {
 			if (columnIndex == 0) {
 				return false;
@@ -384,6 +448,13 @@ class Importer extends JDialog {
 			}
 		}
 		
+		/**
+		 * Set the contents of a cell.
+		 * 
+		 * @param aValue       The new object to store in the cell.
+		 * @param rowIndex     The row index of the cell.
+		 * @param columnIndex  The column index of the cell.
+		 */
 		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
 			Coder coder = (Coder) aValue;
 			if (columnIndex == 0) {
@@ -394,12 +465,22 @@ class Importer extends JDialog {
 			fireTableDataChanged();
 		}
 		
+		/**
+		 * Remove all items from the table by clearing the foreign and domestic
+		 * lists of coders.
+		 */
 		void clear() {
 			coderForeign.clear();
 			coderDomestic.clear();
 			fireTableDataChanged();
 		}
 		
+		/**
+		 * Add a foreign coder and its corresponding domestic coder to the list.
+		 * 
+		 * @param foreign   The foreign {@link model.Coder Coder}.
+		 * @param domestic  The domestic {@link model.Coder Coder}.
+		 */
 		void addCoderPair(Coder foreign, Coder domestic) {
 			coderForeign.add(foreign);
 			coderDomestic.add(domestic);
@@ -407,19 +488,51 @@ class Importer extends JDialog {
 		}
 	}
 	
+	/**
+	 * A table model for the documents in the GUI. It is light-weight because it
+	 * does not save the text of the documents. For this purpose, it uses the
+	 * {@link model.TableDocument TableDocument} class.
+	 */
 	private class DocumentTableModel extends AbstractTableModel {
 		private static final long serialVersionUID = 7098098353712215778L;
-		ArrayList<TableDocument> documents = new ArrayList<TableDocument>();
-		ArrayList<Boolean> selections = new ArrayList<Boolean>();
 		
+		/**
+		 * An array list with {@link model.TableDocument TableDocument} objects
+		 * that represent the documents of the foreign database in a
+		 * light-weight way (i.e., without text).
+		 */
+		private ArrayList<TableDocument> documents = new ArrayList<TableDocument>();
+		
+		/**
+		 * An array list that stores for each document whether it has been
+		 * selected for inclusion in the import.
+		 */
+		private ArrayList<Boolean> selections = new ArrayList<Boolean>();
+		
+		/**
+		 * Get the number of columns in the table.
+		 * 
+		 * @return Number of columns.
+		 */
 		public int getColumnCount() {
 			return 5;
 		}
 		
+		/**
+		 * Get the number of rows in the table.
+		 * 
+		 * @return Number of rows.
+		 */
 		public int getRowCount() {
 			return documents.size();
 		}
 		
+		/**
+		 * Get the name of a column in the table.
+		 * 
+		 * @param column  The index of the column, starting with 0.
+		 * @return        The name of the column.
+		 */
 		public String getColumnName(int column) {
 			switch (column) {
 				case 0: return "Import?";
@@ -431,14 +544,34 @@ class Importer extends JDialog {
 			}
 		}
 		
+		/**
+		 * Get the table document corresponding to a row index in the table.
+		 * 
+		 * @param index  The row index.
+		 * @return       A {@link model.TableDocument TableDocument} object.
+		 */
 		public TableDocument getTableDocument(int index) {
 			return this.documents.get(index);
 		}
 		
+		/**
+		 * Is the document represented by the table row selected for import?
+		 * 
+		 * @param index  The row index of the document in the table.
+		 * @return       A boolean value indicating if the document will be
+		 *   imported.
+		 */
 		public boolean isSelected(int index) {
 			return this.selections.get(index);
 		}
 		
+		/**
+		 * Get the value in a table cell.
+		 * 
+		 * @param rowIndex     The row index.
+		 * @param columnIndex  The column index.
+		 * @return             The object in the table cell.
+		 */
 		public Object getValueAt(int rowIndex, int columnIndex) {
 			if (rowIndex < 0 || rowIndex > this.documents.size() - 1 || this.documents.size() == 0 || columnIndex > getColumnCount()) {
 				return null;
@@ -452,7 +585,7 @@ class Importer extends JDialog {
 				return documents.get(rowIndex).getCoder();
 			} else if (columnIndex == 4) {
 				LocalDateTime d = documents.get(rowIndex).getDateTime();
-				DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd MM yyyy, hh:mm:ss");
+				DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd MM yyyy, HH:mm:ss");
 				String dateString = d.format(dateTimeFormatter);
 				return dateString;
 			} else {
@@ -460,6 +593,12 @@ class Importer extends JDialog {
 			}
 		}
 		
+		/**
+		 * Get the class of a column in the table.
+		 * 
+		 * @param columnIndex  The index of the column.
+		 * @return             The class of the column.
+		 */
 		public Class<?> getColumnClass(int columnIndex) {
 			switch( columnIndex ){
 				case 0: return Boolean.class;
@@ -471,6 +610,13 @@ class Importer extends JDialog {
 			}	
 		}
 		
+		/**
+		 * Is the cell editable?
+		 * 
+		 * @param rowIndex     The index of the row of the cell.
+		 * @param columnIndex  The index of the column of the cell.
+		 * @return             Indicates if the cell is editable.
+		 */
 		public boolean isCellEditable(int rowIndex, int columnIndex) {
 			switch( columnIndex ){
 				case 0: return true;
@@ -482,6 +628,13 @@ class Importer extends JDialog {
 			}
 		}
 		
+		/**
+		 * Set the value of a cell in the table.
+		 * 
+		 * @param aValue       The new value for the cell.
+		 * @param rowIndex     The row index for the cell.
+		 * @param columnIndex  The column index for the cell.
+		 */
 		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
 			if (columnIndex == 0) {
 				selections.set(rowIndex, (Boolean)aValue);
@@ -490,7 +643,8 @@ class Importer extends JDialog {
 		}
 
 		/**
-		 * Delete all {@link TableDocument} objects from the table model and notify
+		 * Delete all {@link model.TableDocument TableDocument} objects
+		 * including their selection indicators from the table model and notify
 		 * the listeners.
 		 */
 		void clear() {
@@ -499,6 +653,13 @@ class Importer extends JDialog {
 			fireTableDataChanged();
 		}
 		
+		/**
+		 * Add a chunk of new documents to the table model, including selection
+		 * values, which are by default true.
+		 * 
+		 * @param chunks  A list of {@link model.TableDocument TableDocument}
+		 *   objects for addition to the table.
+		 */
 		void addDocuments(List<TableDocument> chunks) {
 			this.documents.addAll(chunks);
 			for (int i = 0; i < chunks.size(); i++) {
@@ -567,17 +728,33 @@ class Importer extends JDialog {
 	    @Override
 	    protected void done() {
 			dbButton.setEnabled(true);
-			filterButton.setEnabled(true);
-			selectAll.setEnabled(true);
-			importButton.setEnabled(true);
+			if (dtm.getRowCount() > 0) {
+				filterButton.setEnabled(true);
+				selectAll.setEnabled(true);
+				importButton.setEnabled(true);
+			} else {
+				filterButton.setEnabled(false);
+				selectAll.setEnabled(false);
+				importButton.setEnabled(false);
+			}
 	    }
 	}
 
+	/**
+	 * An import thread that attempts to read in the necessary data from the
+	 * foreign database in the background and insert them into the current DNA
+	 * database.
+	 */
 	private class ImportWorker implements Runnable {
 		HashMap<Integer, Integer> coderMap;
 		ArrayList<Integer> docIds;
 		ProgressMonitor progressMonitor;
 
+		/**
+		 * Start a new import worker. This constructor creates a coder hash map
+		 * for easier lookup later and filters out some document IDs depending
+		 * on the settings in the GUI.
+		 */
 		public ImportWorker() {
 			// disable buttons
 			dbButton.setEnabled(false);
@@ -607,7 +784,12 @@ class Importer extends JDialog {
 			}
 		}
 
+		/**
+		 * Execute the background tasks and try to import the data into the
+		 * current database.
+		 */
 		public void run() {
+			long time = System.nanoTime(); // take the time to compute later how long the updating took
 			String documentSelectSql = "SELECT * FROM DOCUMENTS WHERE ID IN (";
 			for (int i = 0; i < docIds.size(); i++) {
 				documentSelectSql = documentSelectSql + docIds.get(i);
@@ -655,8 +837,13 @@ class Importer extends JDialog {
 					PreparedStatement d21 = connDomestic.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
 					PreparedStatement d22 = connDomestic.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE EntityId = ? AND AttributeVariableId = ?;");
 					PreparedStatement d23 = connDomestic.prepareStatement("SELECT AttributeValue FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
+					PreparedStatement d24 = connDomestic.prepareStatement("SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = ?;");
 					SQLCloseable finish = connDomestic::rollback;) {
-				
+
+				LogEvent le1 = new LogEvent(Logger.MESSAGE,
+						"[SQL] Initializing thread to import data: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+						"A new thread has been started to import data from another database into the current database in the background: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+				Dna.logger.log(le1);
 				connDomestic.setAutoCommit(false);
 				ResultSet r1, r2, r3;
 
@@ -665,6 +852,7 @@ class Importer extends JDialog {
 				progressMonitor.setMillisToDecideToPopup(1);
 				progressMonitor.setProgress(0);
 				
+				int regexCount = 0;
 				if (importRegexBox.isSelected()) {
 					ArrayList<String> existingRegexes = new ArrayList<String>();
 					r1 = d3.executeQuery();
@@ -679,14 +867,23 @@ class Importer extends JDialog {
 							d4.setInt(3, r1.getInt("Green"));
 							d4.setInt(4, r1.getInt("Blue"));
 							d4.executeUpdate();
+							regexCount++;
 						}
 					}
 				}
+				LogEvent le2 = new LogEvent(Logger.MESSAGE,
+						"[SQL]  ├─ Added " + regexCount + " regex keywords to import transaction.",
+						"Added " + regexCount + " regex keywords to the import transaction." +
+						" The transaction has not been committed yet and will be rolled" +
+						" back in the event of an error during further processing of the transaction.");
+				Dna.logger.log(le2);
 				
 				// process statement types; first, create array list of foreign statement types
 				progressMonitor.setProgress(1);
 				progressMonitor.setNote("(2/5) Processing statement types and entities...");
 				
+				int statementTypeCount = 0;
+				int entityCount = 0;
 				ArrayList<StatementType> foreignStatementTypes = new ArrayList<StatementType>();
 				r1 = f3.executeQuery();
 				while (r1.next()) {
@@ -779,7 +976,7 @@ class Importer extends JDialog {
 											// put variable ID correspondence in map
 											variableMap.put(foreignStatementTypes.get(i).getVariables().get(k).getVariableId(), domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
 											
-											// put attribute variable ID correspondence in map
+											// put attribute variable ID correspondence in map and add attribute variables if necessary
 											f7.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
 											r2 = f7.executeQuery();
 											while (r2.next()) {
@@ -804,7 +1001,7 @@ class Importer extends JDialog {
 												}
 											}
 
-											// put entity IDs in correspondence map
+											// put entity IDs in correspondence map and add entities if necessary
 											if (foreignStatementTypes.get(i).getVariables().get(k).getDataType().equals("short text")) {
 												f13.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
 												r2 = f13.executeQuery();
@@ -830,6 +1027,7 @@ class Importer extends JDialog {
 															entityId = keySetEntity.getInt(1);
 														}
 														entityMap.put(r2.getInt("ID"), entityId);
+														entityCount++;
 													}
 												}
 											}
@@ -897,13 +1095,22 @@ class Importer extends JDialog {
 										entityId = keySetEntity.getInt(1);
 									}
 									entityMap.put(r2.getInt("ID"), entityId);
+									entityCount++;
 								}
 							}
 						}
 						statementTypeMap.put(foreignStatementTypes.get(i).getId(), statementTypeId);
 						statementTypeIdToTypeMap.put(statementTypeId, foreignStatementTypes.get(i));
+						statementTypeCount++;
 					}
 				}
+				LogEvent le3 = new LogEvent(Logger.MESSAGE,
+						"[SQL]  ├─ Added " + statementTypeCount + " statement types and " + entityCount + " entities.",
+						"Added " + statementTypeCount + " statement types and " + entityCount +
+						" entities and added attribute variables where necessary to the entity definitions." +
+						" The transaction has not been committed yet and will be rolled" +
+						" back in the event of an error during further processing of the transaction.");
+				Dna.logger.log(le3);
 				
 				// process variable links
 				progressMonitor.setProgress(2);
@@ -931,6 +1138,7 @@ class Importer extends JDialog {
 				progressMonitor.setProgress(3);
 				progressMonitor.setNote("(4/5) Processing attribute values...");
 				
+				int attributeCount = 0;
 				r1 = f12.executeQuery(); // select all attribute values
 				while (r1.next()) {
 					int foreignEntityId = r1.getInt("EntityId");
@@ -950,6 +1158,7 @@ class Importer extends JDialog {
 								d22.setInt(2, entityMap.get(foreignEntityId));
 								d22.setInt(3, attributeVariableMap.get(foreignAttributeVariableId));
 								d22.executeUpdate();
+								attributeCount++;
 							}
 						}
 					}
@@ -958,13 +1167,24 @@ class Importer extends JDialog {
 						d17.setInt(2, attributeVariableMap.get(foreignAttributeVariableId));
 						d17.setString(3, foreignAttributeValue);
 						d17.executeUpdate();
+						attributeCount++;
 					}
 				}
+				LogEvent le4 = new LogEvent(Logger.MESSAGE,
+						"[SQL]  ├─ Added or updated " + attributeCount + " attribute values in import transaction.",
+						"The import thread has added or updated " + attributeCount + " attributes " +
+						" in the SQL transaction. The transaction has not been committed yet and will be rolled" +
+						" back in the event of an error during further processing of the transaction.");
+				Dna.logger.log(le4);
 				
-				// process documents
+				// process documents and statements
 				progressMonitor.setProgress(4);
 				progressMonitor.setNote("(5/5) Processing documents and statements...");
 				
+				int documentCount = 0;
+				int statementCount = 0;
+				int dateFixCount = 0;
+				int ignoredStatementCount = 0;
 				if (docIds.size() > 0) {
 					r1 = f1.executeQuery(); // select documents
 					while (r1.next()) {
@@ -982,16 +1202,28 @@ class Importer extends JDialog {
 							}
 						}
 						
+						// check empty/full document options
+						if (skipFullBox.isSelected() || skipEmptyBox.isSelected()) {
+							d24.setInt(1, r1.getInt("ID"));
+							r2 = d24.executeQuery();
+							while (r2.next()) {
+								if ((skipFullBox.isSelected() && r2.getInt(1) > 0) || (skipEmptyBox.isSelected() && r2.getInt(1) == 0)) {
+									proceed = false;
+								}
+							}
+						}
+						
 						// insert document
 						if (proceed) {
 							// fix date if necessary
 							LocalDateTime date = LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC);
-							if (fixDatesBox.isSelected()) {
+							if (fixDatesBox.isSelected() && (date.getHour() != 0 || date.getMinute() != 0 || date.getSecond() != 0)) {
 								if (date.truncatedTo(ChronoUnit.DAYS).isBefore(date.plusHours(12).truncatedTo(ChronoUnit.DAYS))) {
 									date = date.plusHours(12).truncatedTo(ChronoUnit.DAYS);
 								} else {
 									date = date.truncatedTo(ChronoUnit.DAYS);
 								}
+								dateFixCount++;
 							}
 							// extract remaining document details and insert document into domestic database
 							d1.setString(1, r1.getString("Title"));
@@ -1013,86 +1245,108 @@ class Importer extends JDialog {
 							}
 							
 							// import statements contained in the document
-							System.out.println("About to start...");
 							if (importStatementsBox.isSelected()) {
 								f6.setInt(1, r1.getInt("ID"));
 								r2 = f6.executeQuery();
-								System.out.println("Query f6 executed");
 								while (r2.next()) {
-									System.out.println("While");
-									// add statement
-									int newStatementTypeId = statementTypeMap.get(r2.getInt("StatementTypeId"));
-									d11.setInt(1, newStatementTypeId);
-									d11.setInt(2, documentId);
-									d11.setInt(3, r2.getInt("Start"));
-									d11.setInt(4, r2.getInt("Stop"));
-									d11.setInt(5, coderMap.get(r2.getInt("Coder")));
-									d11.executeUpdate();
-									System.out.println("Added statement");
+									// ignore unknown statement types and statements with the wrong coder if required by user options
+									if (statementTypeMap.containsKey(r2.getInt("StatementTypeId")) ||
+											(coderStatementBox.isSelected() && (coderMap.get(r2.getInt("Coder")) != Dna.sql.getActiveCoder().getId()))) {
+										
+										// add statement
+										int newStatementTypeId = statementTypeMap.get(r2.getInt("StatementTypeId"));
+										d11.setInt(1, newStatementTypeId);
+										d11.setInt(2, documentId);
+										d11.setInt(3, r2.getInt("Start"));
+										d11.setInt(4, r2.getInt("Stop"));
+										d11.setInt(5, coderMap.get(r2.getInt("Coder")));
+										d11.executeUpdate();
 
-									// get generated statement ID
-									ResultSet keySetStatement = d11.getGeneratedKeys();
-									int statementId = -1;
-									while (keySetStatement.next()) {
-										statementId = keySetStatement.getInt(1);
-									}
-									System.out.println("Statement ID: " + statementId);
-									
-									// add values
-									ArrayList<Value> variables = statementTypeIdToTypeMap.get(newStatementTypeId).getVariables();
-									for (int i = 0; i < variables.size(); i++) {
-										if (variables.get(i).getDataType().equals("boolean")) {
-											f8.setInt(1, r2.getInt("ID"));
-											r3 = f8.executeQuery();
-											while (r3.next()) {
-												d12.setInt(1, statementId);
-												d12.setInt(2, variableMap.get(r3.getInt("VariableId")));
-												d12.setInt(3, r3.getInt("Value"));
-												d12.executeUpdate();
-											}
-										} else if (variables.get(i).getDataType().equals("integer")) {
-											f9.setInt(1, r2.getInt("ID"));
-											r3 = f9.executeQuery();
-											while (r3.next()) {
-												d13.setInt(1, statementId);
-												d13.setInt(2, variableMap.get(r3.getInt("VariableId")));
-												d13.setInt(3, r3.getInt("Value"));
-												d13.executeUpdate();
-											}
-										} else if (variables.get(i).getDataType().equals("long text")) {
-											f10.setInt(1, r2.getInt("ID"));
-											r3 = f10.executeQuery();
-											while (r3.next()) {
-												d14.setInt(1, statementId);
-												d14.setInt(2, variableMap.get(r3.getInt("VariableId")));
-												d14.setString(3, r3.getString("Value"));
-												d14.executeUpdate();
-											}
-										} else if (variables.get(i).getDataType().equals("short text")) {
-											f11.setInt(1, r2.getInt("ID"));
-											r3 = f11.executeQuery();
-											while (r3.next()) {
-												// TODO: debug this part because statements are not added
-												d15.setInt(1, statementId);
-												d15.setInt(2, variableMap.get(r3.getInt("VariableId")));
-												d15.setInt(3, entityMap.get(r3.getInt("Entity")));
-												d15.executeUpdate();
-											}
+										// get generated statement ID
+										ResultSet keySetStatement = d11.getGeneratedKeys();
+										int statementId = -1;
+										while (keySetStatement.next()) {
+											statementId = keySetStatement.getInt(1);
 										}
+										
+										// add boolean values
+										f8.setInt(1, r2.getInt("ID"));
+										r3 = f8.executeQuery();
+										while (r3.next()) {
+											d12.setInt(1, statementId);
+											d12.setInt(2, variableMap.get(r3.getInt("VariableId")));
+											d12.setInt(3, r3.getInt("Value"));
+											d12.executeUpdate();
+										}
+										
+										// add integer values
+										f9.setInt(1, r2.getInt("ID"));
+										r3 = f9.executeQuery();
+										while (r3.next()) {
+											d13.setInt(1, statementId);
+											d13.setInt(2, variableMap.get(r3.getInt("VariableId")));
+											d13.setInt(3, r3.getInt("Value"));
+											d13.executeUpdate();
+										}
+										
+										// add long text values
+										f10.setInt(1, r2.getInt("ID"));
+										r3 = f10.executeQuery();
+										while (r3.next()) {
+											d14.setInt(1, statementId);
+											d14.setInt(2, variableMap.get(r3.getInt("VariableId")));
+											d14.setString(3, r3.getString("Value"));
+											d14.executeUpdate();
+										}
+										
+										// add short text entity references
+										f11.setInt(1, r2.getInt("ID"));
+										r3 = f11.executeQuery();
+										while (r3.next()) {
+											d15.setInt(1, statementId);
+											d15.setInt(2, variableMap.get(r3.getInt("VariableId")));
+											d15.setInt(3, entityMap.get(r3.getInt("Entity")));
+											d15.executeUpdate();
+										}
+										statementCount++;
+									} else {
+										ignoredStatementCount++;
 									}
 								}
 							}
 						}
+						documentCount++;
 					}
+					LogEvent le5 = new LogEvent(Logger.MESSAGE,
+							"[SQL]  ├─ Added " + documentCount + " documents and " + statementCount + " statements to import transaction.",
+							"The import thread has added " + documentCount + " documents and " + statementCount +
+							" statements to the SQL transaction. It ignored " + ignoredStatementCount +
+							" statements due to unknown statement types and rounded " + dateFixCount +
+							" dates. The documents and statements have been added to the database, but the transaction has not" +
+							" been committed yet and will be rolled back in the event of an error during further processing of the transaction.");
+					Dna.logger.log(le5);
 				}
 				
 				connDomestic.commit();
+				
+				// log the results
+				long elapsed = System.nanoTime(); // measure time again for calculating difference
+				LogEvent le6 = new LogEvent(Logger.MESSAGE,
+						"[SQL]  └─ Successfully imported all data and committed to database.",
+						"Imported " + documentCount + " documents, " + statementCount + " statements, " + statementTypeCount +
+						" statement types, " + entityCount + " entities, " + attributeCount + " attribute values, and " + regexCount +
+						" regex keywords from another database and rounded " + dateFixCount +
+						" date/time stamps and ignored " + ignoredStatementCount +
+						" statements because they had an unknown statement type or wrong coder. It took " + (elapsed - time) / 1000000 +
+						" milliseconds.");
+				dna.Dna.logger.log(le6);
+				dispose(); // close the importer when done
 			} catch (Exception e) {
-				LogEvent le = new LogEvent(Logger.WARNING,
-						"[SQL] Failed to retrieve documents from database for import.",
-						"The import document table model swing worker tried to retrieve all documents from the selected database to display them in the importer document table, but some or all documents could not be retrieved because there was a problem while processing the result set. The resulting document table may be incomplete.",
+				LogEvent le7 = new LogEvent(Logger.ERROR,
+						"[SQL] Failed to import data from other database.",
+						"Attempted importing data from another database, but the import failed. The transaction has been rolled back, and no changes have been written to the currently open database. Check the exception message stack for details.",
 						e);
-				dna.Dna.logger.log(le);
+				dna.Dna.logger.log(le7);
 			}
 			
 			// enable buttons again after the import work is done

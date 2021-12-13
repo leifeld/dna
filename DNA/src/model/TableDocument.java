@@ -3,7 +3,7 @@ package model;
 import java.time.LocalDateTime;
 
 /**
- * Represents the rows in a {@link DocumentTableModel}.
+ * Represents the rows in a document table model.
  */
 public class TableDocument implements Comparable<TableDocument> {
 	private int id, frequency;
