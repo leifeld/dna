@@ -986,6 +986,113 @@ public class Sql {
 	}
 
 	/**
+	 * Retrieve a list of coders in the database for DNA 2.0.
+	 * 
+	 * @return An {@link java.util.ArrayList ArrayList} of {@link model.Coder
+	 *   Coder} objects.
+	 * 
+	 * @category coder
+	 */
+	public ArrayList<Coder> getCodersDna2() {
+		ArrayList<Coder> coders = new ArrayList<Coder>();
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("SELECT * FROM CODERS;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM CODERRELATIONS WHERE Coder = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;");
+				PreparedStatement s4 = conn.prepareStatement("SELECT Type, Permission FROM CODERPERMISSIONS WHERE Coder = ?;")) {
+			ResultSet rs1, rs2, rs3;
+        	rs1 = s1.executeQuery();
+        	int sourceCoderId, targetCoderId;
+        	String targetCoderName = null;
+        	Color targetCoderColor = null;
+        	while (rs1.next()) {
+        		sourceCoderId = rs1.getInt("ID");
+        		s2.setInt(1, sourceCoderId);
+				rs2 = s2.executeQuery();
+				HashMap<Integer, CoderRelation> map = new HashMap<Integer, CoderRelation>();
+				while (rs2.next()) {
+					targetCoderId = rs2.getInt("OtherCoder");
+					s3.setInt(1, targetCoderId);
+					rs3 = s3.executeQuery();
+					while (rs3.next()) {
+						targetCoderName = rs3.getString("Name");
+						targetCoderColor = new Color(rs3.getInt("Red"), rs3.getInt("Green"), rs3.getInt("Blue"));
+					}
+					map.put(rs2.getInt("OtherCoder"),
+							new CoderRelation(
+									targetCoderId,
+									targetCoderName,
+									targetCoderColor,
+									rs2.getInt("viewDocuments") == 1,
+									rs2.getInt("editDocuments") == 1,
+									rs2.getInt("viewStatements") == 1,
+									rs2.getInt("editStatements") == 1));
+				}
+				rs2.close();
+				s4.setInt(1, sourceCoderId);
+				rs2 = s4.executeQuery();
+				HashMap<String, Boolean> perm = new HashMap<String, Boolean>();
+				while (rs2.next()) {
+					if (rs2.getString("Type").equals("deleteDocuments")) {
+						perm.put("PermissionDeleteDocuments", rs2.getInt("Permission") == 1);
+					}
+					if (rs2.getString("Type").equals("addDocuments")) {
+						perm.put("PermissionAddDocuments", rs2.getInt("Permission") == 1);
+					}
+					if (rs2.getString("Type").equals("editDocuments")) {
+						perm.put("PermissionEditDocuments", rs2.getInt("Permission") == 1);
+					}
+					if (rs2.getString("Type").equals("importDocuments")) {
+						perm.put("PermissionImportDocuments", rs2.getInt("Permission") == 1);
+					}
+					if (rs2.getString("Type").equals("addStatements")) {
+						perm.put("PermissionAddStatements", rs2.getInt("Permission") == 1);
+					}
+					if (rs2.getString("Type").equals("editStatements")) {
+						perm.put("PermissionEditStatements", rs2.getInt("Permission") == 1);
+					}
+					// TODO: add more, then check if the hash map contains all and add if necessary, then add coder accordingly
+				}
+            	coders.add(new Coder(rs1.getInt("ID"),
+            			rs1.getString("Name"),
+			    		rs1.getInt("Red"),
+			    		rs1.getInt("Green"),
+			    		rs1.getInt("Blue"),
+			    		rs1.getInt("Refresh"),
+			    		rs1.getInt("FontSize"),
+			    		rs1.getInt("PopupWidth"),
+			    		rs1.getInt("ColorByCoder") == 1,
+			    		rs1.getInt("PopupDecoration") == 1,
+			    		rs1.getInt("popupAutoComplete") == 1,
+			    		rs1.getInt("PermissionAddDocuments") == 1,
+			    		rs1.getInt("PermissionEditDocuments") == 1,
+			    		rs1.getInt("PermissionDeleteDocuments") == 1,
+			    		rs1.getInt("PermissionImportDocuments") == 1,
+			    		rs1.getInt("PermissionAddStatements") == 1,
+			    		rs1.getInt("PermissionEditStatements") == 1,
+			    		rs1.getInt("PermissionDeleteStatements") == 1,
+			    		rs1.getInt("PermissionEditAttributes") == 1,
+			    		rs1.getInt("PermissionEditRegex") == 1,
+			    		rs1.getInt("PermissionEditStatementTypes") == 1,
+			    		rs1.getInt("PermissionEditCoders") == 1,
+			    		rs1.getInt("PermissionEditCoderRelations") == 1,
+			    		rs1.getInt("PermissionViewOthersDocuments") == 1,
+			    		rs1.getInt("PermissionEditOthersDocuments") == 1,
+			    		rs1.getInt("PermissionViewOthersStatements") == 1,
+			    		rs1.getInt("PermissionEditOthersStatements") == 1,
+			    		map));
+            }
+		} catch (SQLException e) {
+        	LogEvent l = new LogEvent(Logger.WARNING,
+        			"[SQL] Failed to retrieve coders from the database.",
+        			"Attempted to retrieve all coders from the database. Check your connection.",
+        			e);
+        	Dna.logger.log(l);
+		}
+		return coders;
+	}
+
+	/**
 	 * Create a new coder with default permissions and coder relations.
 	 * 
 	 * @param coderName     Name of the new coder.
@@ -3216,5 +3323,28 @@ public class Sql {
         	Dna.logger.log(e);
 		}
 		return success;
+	}
+
+	/**
+	 * Query the database for the version saved in the SETTINGS table.
+	 * 
+	 * @return The DNA version the database was created with.
+	 */
+	public String getVersion() {
+		String version = "";
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("SELECT Value FROM SETTINGS WHERE Property = 'version';");
+				ResultSet r = s.executeQuery()) {
+			while (r.next()) {
+				version = r.getString("version");
+			}
+		} catch (SQLException e) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"[SQL] Could not retrieve DNA version from database.",
+					"Tried to read the DNA with version the database was created from the database, but the version could not be read from the database.",
+					e);
+			Dna.logger.log(le);
+		}
+		return version;
 	}
 }

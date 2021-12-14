@@ -115,7 +115,7 @@ public class CoderPasswordCheckDialog {
 	 * @param selectId     A coder ID to select. The ID is ignored if it is not
 	 *   found among the coders, otherwise selected in the combo box.
 	 */
-	public CoderPasswordCheckDialog(Sql sql, boolean chooseCoder, int selectId) {
+	public CoderPasswordCheckDialog(Sql sql, boolean chooseCoder, int selectId, int version) {
 		JPanel panel = new JPanel(new BorderLayout());
 		
 		JPanel questionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -124,7 +124,12 @@ public class CoderPasswordCheckDialog {
 		JComboBox<Coder> comboBox = new JComboBox<Coder>();
 
 		if (chooseCoder == true) {
-			ArrayList<Coder> coders = sql.getCoders();
+			ArrayList<Coder> coders;
+			if (version == 3) {
+				coders = sql.getCoders();
+			} else {
+				coders = sql.getCodersDna2();
+			}
 			int selectIndex = -1;
 			if (selectId > 0) {
 				for (int i = 0; i < coders.size(); i++) {
@@ -149,7 +154,7 @@ public class CoderPasswordCheckDialog {
 					"A password check dialog was displayed to select and authenticate a coder.");
 			Dna.logger.log(l);
 			
-		} else {
+		} else { // works only when version == 3
 			coder = sql.getActiveCoder();
 			CoderBadgePanel cdp = new CoderBadgePanel(coder);
 			questionPanel.add(cdp);
@@ -162,6 +167,9 @@ public class CoderPasswordCheckDialog {
 		
 		JPasswordField pw = new JPasswordField(20);
 		panel.add(pw);
+		if (version == 2) {
+			pw.setVisible(false);
+		}
 		
 		@SuppressWarnings("serial")
 		JOptionPane pane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION) {

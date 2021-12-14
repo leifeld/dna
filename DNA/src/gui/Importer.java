@@ -72,6 +72,7 @@ class Importer extends JDialog {
 	private ArrayList<Coder> domesticCoders;
 	private JTable documentTable;
 	private Sql sql;
+	private int version;
 	private JCheckBox importStatementsBox, statementTypeBox, skipFullBox, skipEmptyBox, coderDocumentBox, coderStatementBox, skipDuplicatesBox, fixDatesBox, mergeAttributesBox, overwriteAttributesBox, importEntitiesBox, importRegexBox;
 
 	/**
@@ -238,6 +239,14 @@ class Importer extends JDialog {
 					dna.Dna.logger.log(l);
 				} else {
 					Sql s = new Sql(cp, false);
+					
+					String v = s.getVersion();
+					if (v.startsWith("3")) {
+						Importer.this.version = 3;
+					} else if (v.startsWith("2")) {
+						Importer.this.version = 2;
+					}
+					
 					ArrayList<Coder> foreignCoders = s.getCoders();
 					coderTableModel.clear();
 					for (int i = 0; i < foreignCoders.size(); i++) {
@@ -618,7 +627,7 @@ class Importer extends JDialog {
 		 * @return             Indicates if the cell is editable.
 		 */
 		public boolean isCellEditable(int rowIndex, int columnIndex) {
-			switch( columnIndex ){
+			switch (columnIndex) {
 				case 0: return true;
 				case 1: return false;
 				case 2: return false;
@@ -824,7 +833,7 @@ class Importer extends JDialog {
 					PreparedStatement f10 = connForeign.prepareStatement("SELECT * FROM DATALONGTEXT WHERE StatementId = ?;");
 					PreparedStatement f11 = connForeign.prepareStatement("SELECT * FROM DATASHORTTEXT WHERE StatementId = ?;");
 					PreparedStatement f12 = connForeign.prepareStatement("SELECT * FROM ATTRIBUTEVALUES;");
-					PreparedStatement f13 = connForeign.prepareStatement("SELECT * FROM ENTITIES WHERE VariableId = ?;");
+					PreparedStatement f13 = connForeign.prepareStatement("SELECT *, (SELECT COUNT(ID) FROM DATASHORTTEXT WHERE Value = Entities.ID AND VariableId = ENTITIES.VariableId) AS Count FROM ENTITIES WHERE VariableId = ?;");
 					PreparedStatement d12 = connDomestic.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 					PreparedStatement d13 = connDomestic.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 					PreparedStatement d14 = connDomestic.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
@@ -838,6 +847,7 @@ class Importer extends JDialog {
 					PreparedStatement d22 = connDomestic.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE EntityId = ? AND AttributeVariableId = ?;");
 					PreparedStatement d23 = connDomestic.prepareStatement("SELECT AttributeValue FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
 					PreparedStatement d24 = connDomestic.prepareStatement("SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = ?;");
+					PreparedStatement f14v2 = connForeign.prepareStatement("SELECT *, (SELECT COUNT(ID) FROM DATASHORTTEXT WHERE Value = ATTRIBUTES.Value AND VariableId = ATTRIBUTES.VariableId) AS Count FROM ATTRIBUTES WHERE VariableId = ? AND ATTRIBUTES.Value != '';");
 					SQLCloseable finish = connDomestic::rollback;) {
 
 				LogEvent le1 = new LogEvent(Logger.MESSAGE,
@@ -845,7 +855,7 @@ class Importer extends JDialog {
 						"A new thread has been started to import data from another database into the current database in the background: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
 				Dna.logger.log(le1);
 				connDomestic.setAutoCommit(false);
-				ResultSet r1, r2, r3;
+				ResultSet r1, r2, r3, r4;
 
 				// process regex keywords
 				progressMonitor = new ProgressMonitor(Importer.this, "Importing data", "(1/5) Processing regex keywords...", 0, 5);
@@ -859,6 +869,7 @@ class Importer extends JDialog {
 					while (r1.next()) {
 						existingRegexes.add(r1.getString("Label"));
 					}
+					r1.close();
 					r1 = f2.executeQuery();
 					while (r1.next()) {
 						if (!existingRegexes.contains(r1.getString("Label"))) {
@@ -870,6 +881,7 @@ class Importer extends JDialog {
 							regexCount++;
 						}
 					}
+					r1.close();
 				}
 				LogEvent le2 = new LogEvent(Logger.MESSAGE,
 						"[SQL]  ├─ Added " + regexCount + " regex keywords to import transaction.",
@@ -901,6 +913,7 @@ class Importer extends JDialog {
 									r1.getInt("Blue")),
 							variables));
 				}
+				r1.close();
 				// create array list of domestic statement types
 				ArrayList<StatementType> domesticStatementTypes = new ArrayList<StatementType>();
 				r1 = d5.executeQuery();
@@ -911,6 +924,7 @@ class Importer extends JDialog {
 					while (r2.next()) {
 						variables.add(new Value(r2.getInt("ID"), r2.getString("Variable"), r2.getString("DataType"), ""));
 					}
+					r2.close();
 					domesticStatementTypes.add(new StatementType(
 							r1.getInt("ID"),
 							r1.getString("Label"),
@@ -919,12 +933,14 @@ class Importer extends JDialog {
 									r1.getInt("Blue")),
 							variables));
 				}
+				r1.close();
 				// compare foreign and domestic types, save correspondence in a hash map, and add new statement types
 				HashMap<Integer, Integer> statementTypeMap = new HashMap<Integer, Integer>();
 				HashMap<Integer, StatementType> statementTypeIdToTypeMap = new HashMap<Integer, StatementType>(); // reference new domestic statement type by its ID
 				HashMap<Integer, Integer> variableMap = new HashMap<Integer, Integer>();
 				HashMap<Integer, Integer> attributeVariableMap = new HashMap<Integer, Integer>();
 				HashMap<Integer, Integer> entityMap = new HashMap<Integer, Integer>();
+				int attributeCount = 0;
 				for (int i = 0; i < foreignStatementTypes.size(); i++) {
 					for (int j = 0; j < domesticStatementTypes.size(); j++) {
 						if (foreignStatementTypes.get(i).getLabel().equals(domesticStatementTypes.get(j).getLabel())) {
@@ -945,14 +961,24 @@ class Importer extends JDialog {
 											while (r2.next()) {
 												attributes.add(r2.getString("AttributeVariable"));
 											}
-											f7.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
-											r2 = f7.executeQuery();
-											while (r2.next()) {
-												if (!attributes.contains(r2.getString("AttributeVariable"))) {
+											r2.close();
+											if (Importer.this.version == 3) {
+												f7.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+												r2 = f7.executeQuery();
+												while (r2.next()) {
+													if (!attributes.contains(r2.getString("AttributeVariable"))) {
+														differentAttributeVariables = true;
+														break;
+													}
+												}
+												r2.close();
+											} else if (Importer.this.version == 2) { // In DNA 2.0, only three fixed attribute variables were present
+												if (!attributes.contains("Type") || !attributes.contains("Alias") || !attributes.contains("Notes")) {
 													differentAttributeVariables = true;
 													break;
 												}
 											}
+											
 											if (!differentAttributeVariables) {
 												variableExists = true;
 												break;
@@ -977,34 +1003,69 @@ class Importer extends JDialog {
 											variableMap.put(foreignStatementTypes.get(i).getVariables().get(k).getVariableId(), domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
 											
 											// put attribute variable ID correspondence in map and add attribute variables if necessary
-											f7.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
-											r2 = f7.executeQuery();
-											while (r2.next()) {
-												boolean attributeVariablePresent = false;
-												d19.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
-												d19.setString(2, r2.getString("AttributeVariable"));
-												r3 = d19.executeQuery();
-												while (r3.next()) {
-													attributeVariablePresent = true;
-													attributeVariableMap.put(r2.getInt("ID"), r3.getInt("ID"));
-												}
-												if (!attributeVariablePresent && mergeAttributesBox.isSelected()) {
-													d16.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
-													d16.setString(2, r2.getString("AttributeVariable"));
-													d16.executeUpdate();
-													ResultSet keySetAttributeVariable = d16.getGeneratedKeys();
-													int attributeVariableId = -1;
-													while (keySetAttributeVariable.next()) {
-														attributeVariableId = keySetAttributeVariable.getInt(1);
+											if (Importer.this.version == 3) {
+												f7.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+												r2 = f7.executeQuery();
+												while (r2.next()) {
+													boolean attributeVariablePresent = false;
+													d19.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
+													d19.setString(2, r2.getString("AttributeVariable"));
+													r3 = d19.executeQuery();
+													while (r3.next()) {
+														attributeVariablePresent = true;
+														attributeVariableMap.put(r2.getInt("ID"), r3.getInt("ID"));
 													}
-													attributeVariableMap.put(r2.getInt("ID"), attributeVariableId);
+													r3.close();
+													if (!attributeVariablePresent && mergeAttributesBox.isSelected()) {
+														d16.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
+														d16.setString(2, r2.getString("AttributeVariable"));
+														d16.executeUpdate();
+														ResultSet keySetAttributeVariable = d16.getGeneratedKeys();
+														int attributeVariableId = -1;
+														while (keySetAttributeVariable.next()) {
+															attributeVariableId = keySetAttributeVariable.getInt(1);
+														}
+														keySetAttributeVariable.close();
+														attributeVariableMap.put(r2.getInt("ID"), attributeVariableId);
+													}
+												}
+												r2.close();
+											} else if (Importer.this.version == 2) { // in DNA 2.0, assume attribute ID 1 = Type, 2 = Alias, 3 = Notes
+												String[] foreignAttributes = new String[] {"Type", "Alias", "Notes"};
+												for (int f = 0; f < foreignAttributes.length; f++) {
+													boolean attributeVariablePresent = false;
+													d19.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
+													d19.setString(2, foreignAttributes[f]);
+													r3 = d19.executeQuery();
+													while (r3.next()) {
+														attributeVariablePresent = true;
+														attributeVariableMap.put(f + 1, r3.getInt("ID")); // may not be valid with DNA 2.0 because there is no attribute variable ID
+													}
+													r3.close();
+													if (!attributeVariablePresent && mergeAttributesBox.isSelected()) {
+														d16.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
+														d16.setString(2, foreignAttributes[f]);
+														d16.executeUpdate();
+														ResultSet keySetAttributeVariable = d16.getGeneratedKeys();
+														int attributeVariableId = -1;
+														while (keySetAttributeVariable.next()) {
+															attributeVariableId = keySetAttributeVariable.getInt(1);
+														}
+														keySetAttributeVariable.close();
+														attributeVariableMap.put(f + 1, attributeVariableId); // may not be valid with DNA 2.0 because there is no attribute variable ID
+													}
 												}
 											}
 
 											// put entity IDs in correspondence map and add entities if necessary
 											if (foreignStatementTypes.get(i).getVariables().get(k).getDataType().equals("short text")) {
-												f13.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
-												r2 = f13.executeQuery();
+												if (Importer.this.version == 3) {
+													f13.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+													r2 = f13.executeQuery();
+												} else {
+													f14v2.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+													r2 = f14v2.executeQuery();
+												}
 												while (r2.next()) {
 													d21.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
 													d21.setString(2, r2.getString("Value"));
@@ -1012,9 +1073,10 @@ class Importer extends JDialog {
 													boolean entityPresent = false;
 													while (r3.next()) {
 														entityPresent = true;
-														entityMap.put(r2.getInt("ID"), r3.getInt("ID"));
+														entityMap.put(r2.getInt("ID"), r3.getInt("ID")); // may not be valid with DNA 2.0 because there is no entity ID; works only with version 3
 													}
-													if (!entityPresent && importEntitiesBox.isSelected()) {
+													r3.close();
+													if (!entityPresent && (importEntitiesBox.isSelected() || r2.getInt("Count") > 0)) { // import if not present yet and the entity is either used in the foreign file or unused entities are imported, too 
 														d20.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId()); // variable ID
 														d20.setString(2, r2.getString("Value"));
 														d20.setInt(3, r2.getInt("Red"));
@@ -1026,10 +1088,67 @@ class Importer extends JDialog {
 														while (keySetEntity.next()) {
 															entityId = keySetEntity.getInt(1);
 														}
-														entityMap.put(r2.getInt("ID"), entityId);
+														keySetEntity.close();
+														entityMap.put(r2.getInt("ID"), entityId); // may not be valid with DNA 2.0 because there is no entity ID; works only with version 3
 														entityCount++;
 													}
+													
+													// import attributes for DNA 2.0 here already because they are part of ResultSet r2 anyway
+													if (Importer.this.version == 2) {
+														String[] foreignAttributes = new String[] {"Type", "Alias", "Notes"};
+														for (int f = 0; f < foreignAttributes.length; f++) {
+															
+															// get attribute value in foreign database
+															String foreignAttributeValue = "";
+															if (f == 0) {
+																foreignAttributeValue = r2.getString("Type");
+															} else if (f == 1) {
+																foreignAttributeValue = r2.getString("Alias");
+															} else if (f == 2) {
+																foreignAttributeValue = r2.getString("Notes");
+															}
+															
+															// get attribute variable ID in domestic database
+															d19.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
+															d19.setString(2, foreignAttributes[f]);
+															r3 = d19.executeQuery();
+															int attributeVariableId = -1;
+															while (r3.next()) {
+																attributeVariableId = r3.getInt("ID");
+															}
+															r3.close();
+															
+															// determine the current attribute value in the domestic database and overwrite or merge if desired
+															d23.setInt(1, entityMap.get(r2.getInt("ID")));
+															d23.setInt(2, attributeVariableId);
+															r3 = d23.executeQuery();
+															boolean attributeExists = false;
+															while (r3.next()) {
+																attributeExists = true;
+																String domesticAttributeValue = r3.getString("AttributeValue");
+																if (!foreignAttributeValue.equals(domesticAttributeValue)) {
+																	if (overwriteAttributesBox.isSelected() ||
+																			(mergeAttributesBox.isSelected() && (domesticAttributeValue == null || domesticAttributeValue.equals("")))) {
+																		d22.setString(1, foreignAttributeValue);
+																		d22.setInt(2, entityMap.get(r2.getInt("ID")));
+																		d22.setInt(3, attributeVariableId);
+																		d22.executeUpdate();
+																		attributeCount++;
+																	}
+																}
+															}
+															r3.close();
+															if (!attributeExists) {
+																d17.setInt(1, entityMap.get(r2.getInt("ID")));
+																d17.setInt(2, attributeVariableId);
+																d17.setString(3, foreignAttributeValue);
+																d17.executeUpdate();
+																attributeCount++;
+															}
+														}
+													}
 												}
+												r2.close();
 											}
 										}
 									}
@@ -1064,24 +1183,47 @@ class Importer extends JDialog {
 							variableMap.put(foreignStatementTypes.get(i).getVariables().get(k).getVariableId(), variableId);
 							
 							// add attribute variables
-							f7.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
-							r2 = f7.executeQuery();
-							while (r2.next()) {
-								d16.setInt(1, variableId);
-								d16.setString(2, r2.getString("AttributeVariable"));
-								d16.executeUpdate();
-								ResultSet keySetAttributeVariable = d16.getGeneratedKeys();
-								int attributeVariableId = -1;
-								while (keySetAttributeVariable.next()) {
-									attributeVariableId = keySetAttributeVariable.getInt(1);
+							if (Importer.this.version == 3) {
+								f7.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+								r2 = f7.executeQuery();
+								while (r2.next()) {
+									d16.setInt(1, variableId);
+									d16.setString(2, r2.getString("AttributeVariable"));
+									d16.executeUpdate();
+									ResultSet keySetAttributeVariable = d16.getGeneratedKeys();
+									int attributeVariableId = -1;
+									while (keySetAttributeVariable.next()) {
+										attributeVariableId = keySetAttributeVariable.getInt(1);
+									}
+									attributeVariableMap.put(r2.getInt("ID"), attributeVariableId);
 								}
-								attributeVariableMap.put(r2.getInt("ID"), attributeVariableId);
+								r2.close();
+							} else if (Importer.this.version == 2) { // for DNA 2.0, do not retrieve attribute variables because they are fixed and known
+								String[] foreignAttributes = new String[] {"Type", "Alias", "Notes"};
+								for (int f = 0; f < foreignAttributes.length; f++) {
+									d16.setInt(1, variableId);
+									d16.setString(2, foreignAttributes[f]);
+									d16.executeUpdate();
+									ResultSet keySetAttributeVariable = d16.getGeneratedKeys();
+									int attributeVariableId = -1;
+									while (keySetAttributeVariable.next()) {
+										attributeVariableId = keySetAttributeVariable.getInt(1);
+									}
+									keySetAttributeVariable.close();
+									attributeVariableMap.put(f + 1, attributeVariableId); // may not be valid with DNA 2.0 because there is no attribute variable ID
+								}
 							}
+							
 
 							// add all entities and put entity IDs in correspondence map
 							if (foreignStatementTypes.get(i).getVariables().get(k).getDataType().equals("short text")) {
-								f13.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
-								r2 = f13.executeQuery();
+								if (Importer.this.version == 3) {
+									f13.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+									r2 = f13.executeQuery();
+								} else { // version 2
+									f14v2.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+									r2 = f14v2.executeQuery();
+								}
 								while (r2.next()) {
 									d20.setInt(1, variableId);
 									d20.setString(2, r2.getString("Value"));
@@ -1094,9 +1236,10 @@ class Importer extends JDialog {
 									while (keySetEntity.next()) {
 										entityId = keySetEntity.getInt(1);
 									}
-									entityMap.put(r2.getInt("ID"), entityId);
+									entityMap.put(r2.getInt("ID"), entityId); // may not be valid with DNA 2.0 because there is no entity ID
 									entityCount++;
 								}
+								r2.close();
 							}
 						}
 						statementTypeMap.put(foreignStatementTypes.get(i).getId(), statementTypeId);
@@ -1116,7 +1259,7 @@ class Importer extends JDialog {
 				progressMonitor.setProgress(2);
 				progressMonitor.setNote("(3/5) Processing variable links...");
 				
-				if (statementTypeBox.isSelected()) {
+				if (statementTypeBox.isSelected() && Importer.this.version == 3) {
 					r1 = f5.executeQuery();
 					while (r1.next()) {
 						int source = variableMap.get(r1.getInt("SourceVariableId"));
@@ -1132,43 +1275,47 @@ class Importer extends JDialog {
 							}
 						}
 					}
+					r1.close();
 				}
 				
 				// process attribute values
 				progressMonitor.setProgress(3);
 				progressMonitor.setNote("(4/5) Processing attribute values...");
-				
-				int attributeCount = 0;
-				r1 = f12.executeQuery(); // select all attribute values
-				while (r1.next()) {
-					int foreignEntityId = r1.getInt("EntityId");
-					int foreignAttributeVariableId = r1.getInt("AttributeVariableId");
-					String foreignAttributeValue = r1.getString("AttributeValue");
-					d23.setInt(1, entityMap.get(foreignEntityId));
-					d23.setInt(2, attributeVariableMap.get(foreignAttributeVariableId));
-					r2 = d23.executeQuery();
-					boolean attributeExists = false;
-					while (r2.next()) {
-						attributeExists = true;
-						String domesticAttributeValue = r2.getString("AttributeValue");
-						if (!foreignAttributeValue.equals(domesticAttributeValue)) {
-							if (overwriteAttributesBox.isSelected() ||
-									(mergeAttributesBox.isSelected() && (domesticAttributeValue == null || domesticAttributeValue.equals("")))) {
-								d22.setString(1, foreignAttributeValue);
-								d22.setInt(2, entityMap.get(foreignEntityId));
-								d22.setInt(3, attributeVariableMap.get(foreignAttributeVariableId));
-								d22.executeUpdate();
-								attributeCount++;
+
+				if (Importer.this.version == 3) {
+					r1 = f12.executeQuery(); // select all attribute values
+					while (r1.next()) {
+						int foreignEntityId = r1.getInt("EntityId");
+						int foreignAttributeVariableId = r1.getInt("AttributeVariableId");
+						String foreignAttributeValue = r1.getString("AttributeValue");
+						d23.setInt(1, entityMap.get(foreignEntityId));
+						d23.setInt(2, attributeVariableMap.get(foreignAttributeVariableId));
+						r2 = d23.executeQuery();
+						boolean attributeExists = false;
+						while (r2.next()) {
+							attributeExists = true;
+							String domesticAttributeValue = r2.getString("AttributeValue");
+							if (!foreignAttributeValue.equals(domesticAttributeValue)) {
+								if (overwriteAttributesBox.isSelected() ||
+										(mergeAttributesBox.isSelected() && (domesticAttributeValue == null || domesticAttributeValue.equals("")))) {
+									d22.setString(1, foreignAttributeValue);
+									d22.setInt(2, entityMap.get(foreignEntityId));
+									d22.setInt(3, attributeVariableMap.get(foreignAttributeVariableId));
+									d22.executeUpdate();
+									attributeCount++;
+								}
 							}
 						}
+						r2.close();
+						if (!attributeExists) {
+							d17.setInt(1, entityMap.get(foreignEntityId));
+							d17.setInt(2, attributeVariableMap.get(foreignAttributeVariableId));
+							d17.setString(3, foreignAttributeValue);
+							d17.executeUpdate();
+							attributeCount++;
+						}
 					}
-					if (!attributeExists) {
-						d17.setInt(1, entityMap.get(foreignEntityId));
-						d17.setInt(2, attributeVariableMap.get(foreignAttributeVariableId));
-						d17.setString(3, foreignAttributeValue);
-						d17.executeUpdate();
-						attributeCount++;
-					}
+					r1.close();
 				}
 				LogEvent le4 = new LogEvent(Logger.MESSAGE,
 						"[SQL]  ├─ Added or updated " + attributeCount + " attribute values in import transaction.",
@@ -1200,6 +1347,7 @@ class Importer extends JDialog {
 									 proceed = false;
 								 }
 							}
+							r2.close();
 						}
 						
 						// check empty/full document options
@@ -1211,6 +1359,7 @@ class Importer extends JDialog {
 									proceed = false;
 								}
 							}
+							r2.close();
 						}
 						
 						// insert document
@@ -1243,6 +1392,7 @@ class Importer extends JDialog {
 							while (keySetDocument.next()) {
 								documentId = keySetDocument.getInt(1);
 							}
+							keySetDocument.close();
 							
 							// import statements contained in the document
 							if (importStatementsBox.isSelected()) {
@@ -1268,6 +1418,7 @@ class Importer extends JDialog {
 										while (keySetStatement.next()) {
 											statementId = keySetStatement.getInt(1);
 										}
+										keySetStatement.close();
 										
 										// add boolean values
 										f8.setInt(1, r2.getInt("ID"));
@@ -1278,6 +1429,7 @@ class Importer extends JDialog {
 											d12.setInt(3, r3.getInt("Value"));
 											d12.executeUpdate();
 										}
+										r3.close();
 										
 										// add integer values
 										f9.setInt(1, r2.getInt("ID"));
@@ -1288,6 +1440,7 @@ class Importer extends JDialog {
 											d13.setInt(3, r3.getInt("Value"));
 											d13.executeUpdate();
 										}
+										r3.close();
 										
 										// add long text values
 										f10.setInt(1, r2.getInt("ID"));
@@ -1298,6 +1451,7 @@ class Importer extends JDialog {
 											d14.setString(3, r3.getString("Value"));
 											d14.executeUpdate();
 										}
+										r3.close();
 										
 										// add short text entity references
 										f11.setInt(1, r2.getInt("ID"));
@@ -1305,18 +1459,33 @@ class Importer extends JDialog {
 										while (r3.next()) {
 											d15.setInt(1, statementId);
 											d15.setInt(2, variableMap.get(r3.getInt("VariableId")));
-											d15.setInt(3, entityMap.get(r3.getInt("Entity")));
+											if (Importer.this.version == 3) {
+												d15.setInt(3, entityMap.get(r3.getInt("Entity")));
+											} else if (Importer.this.version == 2) { // if DNA 2.0, the entity map is not valid and we need to query the entity ID
+												d21.setInt(1, r3.getInt("VariableId"));
+												d21.setString(2, r3.getString("Value"));
+												r4 = d21.executeQuery();
+												int entityId = -1;
+												while (r4.next()) {
+													entityId = r4.getInt("ID");
+												}
+												r4.close();
+												d15.setInt(3, entityId);
+											}
 											d15.executeUpdate();
 										}
+										r3.close();
 										statementCount++;
 									} else {
 										ignoredStatementCount++;
 									}
 								}
+								r2.close();
 							}
 						}
 						documentCount++;
 					}
+					r1.close();
 					LogEvent le5 = new LogEvent(Logger.MESSAGE,
 							"[SQL]  ├─ Added " + documentCount + " documents and " + statementCount + " statements to import transaction.",
 							"The import thread has added " + documentCount + " documents and " + statementCount +
