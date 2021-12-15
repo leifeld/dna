@@ -331,8 +331,13 @@ public class NewDatabaseDialog extends JDialog {
 						if (Dna.sql.getActiveCoder() != null) {
 							coderIdToSelect = Dna.sql.getActiveCoder().getId();
 						}
+						String version = testConnection.getVersion();
+						int v = 3;
+						if (version.startsWith("2")) {
+							v = 2;
+						}
 						while (!validInput) {
-							CoderPasswordCheckDialog cpcd = new CoderPasswordCheckDialog(testConnection, true, coderIdToSelect);
+							CoderPasswordCheckDialog cpcd = new CoderPasswordCheckDialog(testConnection, true, coderIdToSelect, v);
 							Coder coder = cpcd.getCoder();
 							if (coder == null) { // user must have pressed cancel
 								validInput = true;
@@ -342,7 +347,10 @@ public class NewDatabaseDialog extends JDialog {
 								String password = cpcd.getPassword();
 								if (coder != null && password != null) {
 									coderIdToSelect = coder.getId();
-									boolean authenticated = testConnection.authenticate(-1, password);
+									boolean authenticated = false;
+									if (v == 2 || testConnection.authenticate(-1, password)) {
+										authenticated = true;
+									}
 									if (authenticated == true) {
 										validInput = true; // password check passed; quit while-loop
 										cp = tempConnectionProfile;

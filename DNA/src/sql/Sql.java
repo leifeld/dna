@@ -822,7 +822,7 @@ public class Sql {
 	 * ====================================================================== */
 
 	/**
-	 * Retrieve a coder based on its ID.
+	 * Retrieve a coder based on its ID. Works with DNA 2 and 3.
 	 * 
 	 * @param coderId  The ID of the coder to be retrieved from the database.
 	 * @return         The coder to be retrieved, as a {@link model.Coder
@@ -835,19 +835,41 @@ public class Sql {
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("SELECT * FROM CODERS WHERE ID = ?;");
 				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM CODERRELATIONS WHERE Coder = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;")) {
-			ResultSet rs2, rs3;
+				PreparedStatement s3 = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;");
+				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM SETTINGS WHERE Property = 'version';")) {
+			ResultSet rs1, rs2, rs3;
+			
+			// get DNA version
+			int v = 3;
+			rs1 = s4.executeQuery();
+			while (rs1.next()) {
+				if (rs1.getString("Value").startsWith("2")) {
+					v = 2;
+				}
+			}
+			rs1.close();
+
+			PreparedStatement s5V2 = null;
+			if (v == 2) {
+				s5V2 = conn.prepareStatement("SELECT Type, Permission FROM CODERPERMISSIONS WHERE Coder = ?;");
+			}
+			
+			// get coder
         	int sourceCoderId, targetCoderId;
         	String targetCoderName = null;
         	Color targetCoderColor = null;
 			s1.setInt(1, coderId);
-			ResultSet rs1 = s1.executeQuery();
+			rs1 = s1.executeQuery();
 			while (rs1.next()) {
         		sourceCoderId = rs1.getInt("ID");
+        		
+        		// get coder relations
         		s2.setInt(1, sourceCoderId);
 				rs2 = s2.executeQuery();
 				HashMap<Integer, CoderRelation> map = new HashMap<Integer, CoderRelation>();
 				while (rs2.next()) {
+					
+					// get details from other coder and create coder relations map
 					targetCoderId = rs2.getInt("OtherCoder");
 					s3.setInt(1, targetCoderId);
 					rs3 = s3.executeQuery();
@@ -865,37 +887,175 @@ public class Sql {
 									rs2.getInt("viewStatements") == 1,
 									rs2.getInt("editStatements") == 1));
 				}
-			    c = new Coder(coderId,
-			    		rs1.getString("Name"),
-			    		rs1.getInt("Red"),
-			    		rs1.getInt("Green"),
-			    		rs1.getInt("Blue"),
-			    		rs1.getInt("Refresh"),
-			    		rs1.getInt("FontSize"),
-			    		rs1.getInt("PopupWidth"),
-			    		rs1.getInt("ColorByCoder") == 1,
-			    		rs1.getInt("PopupDecoration") == 1,
-			    		rs1.getInt("popupAutoComplete") == 1,
-			    		rs1.getInt("PermissionAddDocuments") == 1,
-			    		rs1.getInt("PermissionEditDocuments") == 1,
-			    		rs1.getInt("PermissionDeleteDocuments") == 1,
-			    		rs1.getInt("PermissionImportDocuments") == 1,
-			    		rs1.getInt("PermissionAddStatements") == 1,
-			    		rs1.getInt("PermissionEditStatements") == 1,
-			    		rs1.getInt("PermissionDeleteStatements") == 1,
-			    		rs1.getInt("PermissionEditAttributes") == 1,
-			    		rs1.getInt("PermissionEditRegex") == 1,
-			    		rs1.getInt("PermissionEditStatementTypes") == 1,
-			    		rs1.getInt("PermissionEditCoders") == 1,
-			    		rs1.getInt("PermissionEditCoderRelations") == 1,
-			    		rs1.getInt("PermissionViewOthersDocuments") == 1,
-			    		rs1.getInt("PermissionEditOthersDocuments") == 1,
-			    		rs1.getInt("PermissionViewOthersStatements") == 1,
-			    		rs1.getInt("PermissionEditOthersStatements") == 1,
-			    		map);
+				
+				// create coder
+				if (v == 2) { // DNA 2.0
+					s5V2.setInt(1, sourceCoderId);
+					rs2 = s5V2.executeQuery();
+					HashMap<String, Boolean> perm = new HashMap<String, Boolean>();
+					while (rs2.next()) {
+						if (rs2.getString("Type").equals("addDocuments")) {
+							perm.put("PermissionAddDocuments", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editDocuments")) {
+							perm.put("PermissionEditDocuments", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("deleteDocuments")) {
+							perm.put("PermissionDeleteDocuments", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("importDocuments")) {
+							perm.put("PermissionImportDocuments", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("addStatements")) {
+							perm.put("PermissionAddStatements", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editStatements")) {
+							perm.put("PermissionEditStatements", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("deleteStatements")) {
+							perm.put("PermissionDeleteStatements", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editAttributes")) {
+							perm.put("PermissionEditAttributes", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editRegex")) {
+							perm.put("PermissionEditRegex", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editStatementTypes")) {
+							perm.put("PermissionEditStatementTypes", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editCoders")) {
+							perm.put("PermissionEditCoders", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editCoderRelations")) {
+							perm.put("PermissionEditCoderRelations", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("viewOthersDocuments")) {
+							perm.put("PermissionViewOthersDocuments", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editOthersDocuments")) {
+							perm.put("PermissionEditOthersDocuments", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("viewOthersStatements")) {
+							perm.put("PermissionViewOthersStatements", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editOthersStatements")) {
+							perm.put("PermissionEditOthersStatements", rs2.getInt("Permission") == 1);
+						}
+					}
+					rs2.close();
+					if (!perm.containsKey("permissionAddDocuments")) {
+						perm.put("PermissionAddDocuments", true);
+					}
+					if (!perm.containsKey("permissionEditDocuments")) {
+						perm.put("PermissionEditDocuments", true);
+					}
+					if (!perm.containsKey("permissionDeleteDocuments")) {
+						perm.put("PermissionDeleteDocuments", true);
+					}
+					if (!perm.containsKey("permissionImportDocuments")) {
+						perm.put("PermissionImportDocuments", true);
+					}
+					if (!perm.containsKey("permissionAddStatements")) {
+						perm.put("PermissionAddStatements", true);
+					}
+					if (!perm.containsKey("permissionEditStatements")) {
+						perm.put("PermissionEditStatements", true);
+					}
+					if (!perm.containsKey("permissionDeleteStatements")) {
+						perm.put("PermissionDeleteStatements", true);
+					}
+					if (!perm.containsKey("permissionEditAttributes")) {
+						perm.put("PermissionEditAttributes", true);
+					}
+					if (!perm.containsKey("permissionEditRegex")) {
+						perm.put("PermissionEditRegex", true);
+					}
+					if (!perm.containsKey("permissionEditStatementTypes")) {
+						perm.put("PermissionEditStatementTypes", true);
+					}
+					if (!perm.containsKey("permissionEditCoders")) {
+						perm.put("PermissionEditCoders", true);
+					}
+					if (!perm.containsKey("permissionEditCoderRelations")) {
+						perm.put("PermissionEditCoderRelations", true);
+					}
+					if (!perm.containsKey("permissionViewOthersDocuments")) {
+						perm.put("PermissionViewOthersDocuments", true);
+					}
+					if (!perm.containsKey("permissionEditOthersDocuments")) {
+						perm.put("PermissionEditOthersDocuments", true);
+					}
+					if (!perm.containsKey("permissionViewOthersStatements")) {
+						perm.put("PermissionViewOthersStatements", true);
+					}
+					if (!perm.containsKey("permissionEditOthersStatements")) {
+						perm.put("PermissionEditOthersStatements", true);
+					}
+	            	c = new Coder(coderId,
+	            			rs1.getString("Name"),
+				    		rs1.getInt("Red"),
+				    		rs1.getInt("Green"),
+				    		rs1.getInt("Blue"),
+				    		0,
+				    		14,
+				    		300,
+				    		false,
+				    		false,
+				    		true,
+				    		perm.get("PermissionAddDocuments"),
+				    		perm.get("PermissionEditDocuments"),
+				    		perm.get("PermissionDeleteDocuments"),
+				    		perm.get("PermissionImportDocuments"),
+				    		perm.get("PermissionAddStatements"),
+				    		perm.get("PermissionEditStatements"),
+				    		perm.get("PermissionDeleteStatements"),
+				    		perm.get("PermissionEditAttributes"),
+				    		perm.get("PermissionEditRegex"),
+				    		perm.get("PermissionEditStatementTypes"),
+				    		perm.get("PermissionEditCoders"),
+				    		perm.get("PermissionEditCoderRelations"),
+				    		perm.get("PermissionViewOthersDocuments"),
+				    		perm.get("PermissionEditOthersDocuments"),
+				    		perm.get("PermissionViewOthersStatements"),
+				    		perm.get("PermissionEditOthersStatements"),
+				    		map);
+				} else { // DNA 3.0
+					c = new Coder(coderId,
+				    		rs1.getString("Name"),
+				    		rs1.getInt("Red"),
+				    		rs1.getInt("Green"),
+				    		rs1.getInt("Blue"),
+				    		rs1.getInt("Refresh"),
+				    		rs1.getInt("FontSize"),
+				    		rs1.getInt("PopupWidth"),
+				    		rs1.getInt("ColorByCoder") == 1,
+				    		rs1.getInt("PopupDecoration") == 1,
+				    		rs1.getInt("popupAutoComplete") == 1,
+				    		rs1.getInt("PermissionAddDocuments") == 1,
+				    		rs1.getInt("PermissionEditDocuments") == 1,
+				    		rs1.getInt("PermissionDeleteDocuments") == 1,
+				    		rs1.getInt("PermissionImportDocuments") == 1,
+				    		rs1.getInt("PermissionAddStatements") == 1,
+				    		rs1.getInt("PermissionEditStatements") == 1,
+				    		rs1.getInt("PermissionDeleteStatements") == 1,
+				    		rs1.getInt("PermissionEditAttributes") == 1,
+				    		rs1.getInt("PermissionEditRegex") == 1,
+				    		rs1.getInt("PermissionEditStatementTypes") == 1,
+				    		rs1.getInt("PermissionEditCoders") == 1,
+				    		rs1.getInt("PermissionEditCoderRelations") == 1,
+				    		rs1.getInt("PermissionViewOthersDocuments") == 1,
+				    		rs1.getInt("PermissionEditOthersDocuments") == 1,
+				    		rs1.getInt("PermissionViewOthersStatements") == 1,
+				    		rs1.getInt("PermissionEditOthersStatements") == 1,
+				    		map);
+				}
+			}
+			if (v == 2) {
+				s5V2.close();
 			}
 		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.WARNING,
+			LogEvent l = new LogEvent(Logger.ERROR,
 					"[SQL] Coder with ID " + coderId + " could not be retrieved from the database.",
 					"The details of the coder with ID " + coderId + " could not be retrieved from the database. Check your database connection.",
 					e);
@@ -905,7 +1065,7 @@ public class Sql {
 	}
 
 	/**
-	 * Retrieve a list of coders in the database.
+	 * Retrieve a list of coders in the database. Works with DNA 2 and 3.
 	 * 
 	 * @return An {@link java.util.ArrayList ArrayList} of {@link model.Coder
 	 *   Coder} objects.
@@ -917,100 +1077,40 @@ public class Sql {
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("SELECT * FROM CODERS;");
 				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM CODERRELATIONS WHERE Coder = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;")) {
-			ResultSet rs1, rs2, rs3;
-        	rs1 = s1.executeQuery();
-        	int sourceCoderId, targetCoderId;
-        	String targetCoderName = null;
-        	Color targetCoderColor = null;
-        	while (rs1.next()) {
-        		sourceCoderId = rs1.getInt("ID");
-        		s2.setInt(1, sourceCoderId);
-				rs2 = s2.executeQuery();
-				HashMap<Integer, CoderRelation> map = new HashMap<Integer, CoderRelation>();
-				while (rs2.next()) {
-					targetCoderId = rs2.getInt("OtherCoder");
-					s3.setInt(1, targetCoderId);
-					rs3 = s3.executeQuery();
-					while (rs3.next()) {
-						targetCoderName = rs3.getString("Name");
-						targetCoderColor = new Color(rs3.getInt("Red"), rs3.getInt("Green"), rs3.getInt("Blue"));
-					}
-					map.put(rs2.getInt("OtherCoder"),
-							new CoderRelation(
-									targetCoderId,
-									targetCoderName,
-									targetCoderColor,
-									rs2.getInt("viewDocuments") == 1,
-									rs2.getInt("editDocuments") == 1,
-									rs2.getInt("viewStatements") == 1,
-									rs2.getInt("editStatements") == 1));
-				}
-            	coders.add(new Coder(rs1.getInt("ID"),
-            			rs1.getString("Name"),
-			    		rs1.getInt("Red"),
-			    		rs1.getInt("Green"),
-			    		rs1.getInt("Blue"),
-			    		rs1.getInt("Refresh"),
-			    		rs1.getInt("FontSize"),
-			    		rs1.getInt("PopupWidth"),
-			    		rs1.getInt("ColorByCoder") == 1,
-			    		rs1.getInt("PopupDecoration") == 1,
-			    		rs1.getInt("popupAutoComplete") == 1,
-			    		rs1.getInt("PermissionAddDocuments") == 1,
-			    		rs1.getInt("PermissionEditDocuments") == 1,
-			    		rs1.getInt("PermissionDeleteDocuments") == 1,
-			    		rs1.getInt("PermissionImportDocuments") == 1,
-			    		rs1.getInt("PermissionAddStatements") == 1,
-			    		rs1.getInt("PermissionEditStatements") == 1,
-			    		rs1.getInt("PermissionDeleteStatements") == 1,
-			    		rs1.getInt("PermissionEditAttributes") == 1,
-			    		rs1.getInt("PermissionEditRegex") == 1,
-			    		rs1.getInt("PermissionEditStatementTypes") == 1,
-			    		rs1.getInt("PermissionEditCoders") == 1,
-			    		rs1.getInt("PermissionEditCoderRelations") == 1,
-			    		rs1.getInt("PermissionViewOthersDocuments") == 1,
-			    		rs1.getInt("PermissionEditOthersDocuments") == 1,
-			    		rs1.getInt("PermissionViewOthersStatements") == 1,
-			    		rs1.getInt("PermissionEditOthersStatements") == 1,
-			    		map));
-            }
-		} catch (SQLException e) {
-        	LogEvent l = new LogEvent(Logger.WARNING,
-        			"[SQL] Failed to retrieve coders from the database.",
-        			"Attempted to retrieve all coders from the database. Check your connection.",
-        			e);
-        	Dna.logger.log(l);
-		}
-		return coders;
-	}
-
-	/**
-	 * Retrieve a list of coders in the database for DNA 2.0.
-	 * 
-	 * @return An {@link java.util.ArrayList ArrayList} of {@link model.Coder
-	 *   Coder} objects.
-	 * 
-	 * @category coder
-	 */
-	public ArrayList<Coder> getCodersDna2() {
-		ArrayList<Coder> coders = new ArrayList<Coder>();
-		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("SELECT * FROM CODERS;");
-				PreparedStatement s2 = conn.prepareStatement("SELECT * FROM CODERRELATIONS WHERE Coder = ?;");
 				PreparedStatement s3 = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;");
-				PreparedStatement s4 = conn.prepareStatement("SELECT Type, Permission FROM CODERPERMISSIONS WHERE Coder = ?;")) {
+				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM SETTINGS WHERE Property = 'version';")) {
 			ResultSet rs1, rs2, rs3;
+			
+			// get DNA version
+			int v = 3;
+			rs1 = s4.executeQuery();
+			while (rs1.next()) {
+				if (rs1.getString("Value").startsWith("2")) {
+					v = 2;
+				}
+			}
+			rs1.close();
+			
+			PreparedStatement s5V2 = null;
+			if (v == 2) {
+				s5V2 = conn.prepareStatement("SELECT Type, Permission FROM CODERPERMISSIONS WHERE Coder = ?;");
+			}
+			
+			// get coders
         	rs1 = s1.executeQuery();
         	int sourceCoderId, targetCoderId;
         	String targetCoderName = null;
         	Color targetCoderColor = null;
         	while (rs1.next()) {
         		sourceCoderId = rs1.getInt("ID");
+        		
+        		// get coder relations
         		s2.setInt(1, sourceCoderId);
 				rs2 = s2.executeQuery();
 				HashMap<Integer, CoderRelation> map = new HashMap<Integer, CoderRelation>();
 				while (rs2.next()) {
+					
+					// get details from other coder and create coder relations map
 					targetCoderId = rs2.getInt("OtherCoder");
 					s3.setInt(1, targetCoderId);
 					rs3 = s3.executeQuery();
@@ -1029,61 +1129,175 @@ public class Sql {
 									rs2.getInt("editStatements") == 1));
 				}
 				rs2.close();
-				s4.setInt(1, sourceCoderId);
-				rs2 = s4.executeQuery();
-				HashMap<String, Boolean> perm = new HashMap<String, Boolean>();
-				while (rs2.next()) {
-					if (rs2.getString("Type").equals("deleteDocuments")) {
-						perm.put("PermissionDeleteDocuments", rs2.getInt("Permission") == 1);
+				
+				// create coder and add to list
+				if (v == 2) { // DNA 2.0
+					s5V2.setInt(1, sourceCoderId);
+					rs2 = s5V2.executeQuery();
+					HashMap<String, Boolean> perm = new HashMap<String, Boolean>();
+					while (rs2.next()) {
+						if (rs2.getString("Type").equals("addDocuments")) {
+							perm.put("PermissionAddDocuments", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editDocuments")) {
+							perm.put("PermissionEditDocuments", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("deleteDocuments")) {
+							perm.put("PermissionDeleteDocuments", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("importDocuments")) {
+							perm.put("PermissionImportDocuments", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("addStatements")) {
+							perm.put("PermissionAddStatements", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editStatements")) {
+							perm.put("PermissionEditStatements", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("deleteStatements")) {
+							perm.put("PermissionDeleteStatements", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editAttributes")) {
+							perm.put("PermissionEditAttributes", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editRegex")) {
+							perm.put("PermissionEditRegex", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editStatementTypes")) {
+							perm.put("PermissionEditStatementTypes", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editCoders")) {
+							perm.put("PermissionEditCoders", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editCoderRelations")) {
+							perm.put("PermissionEditCoderRelations", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("viewOthersDocuments")) {
+							perm.put("PermissionViewOthersDocuments", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editOthersDocuments")) {
+							perm.put("PermissionEditOthersDocuments", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("viewOthersStatements")) {
+							perm.put("PermissionViewOthersStatements", rs2.getInt("Permission") == 1);
+						}
+						if (rs2.getString("Type").equals("editOthersStatements")) {
+							perm.put("PermissionEditOthersStatements", rs2.getInt("Permission") == 1);
+						}
 					}
-					if (rs2.getString("Type").equals("addDocuments")) {
-						perm.put("PermissionAddDocuments", rs2.getInt("Permission") == 1);
+					rs2.close();
+					if (!perm.containsKey("permissionAddDocuments")) {
+						perm.put("PermissionAddDocuments", true);
 					}
-					if (rs2.getString("Type").equals("editDocuments")) {
-						perm.put("PermissionEditDocuments", rs2.getInt("Permission") == 1);
+					if (!perm.containsKey("permissionEditDocuments")) {
+						perm.put("PermissionEditDocuments", true);
 					}
-					if (rs2.getString("Type").equals("importDocuments")) {
-						perm.put("PermissionImportDocuments", rs2.getInt("Permission") == 1);
+					if (!perm.containsKey("permissionDeleteDocuments")) {
+						perm.put("PermissionDeleteDocuments", true);
 					}
-					if (rs2.getString("Type").equals("addStatements")) {
-						perm.put("PermissionAddStatements", rs2.getInt("Permission") == 1);
+					if (!perm.containsKey("permissionImportDocuments")) {
+						perm.put("PermissionImportDocuments", true);
 					}
-					if (rs2.getString("Type").equals("editStatements")) {
-						perm.put("PermissionEditStatements", rs2.getInt("Permission") == 1);
+					if (!perm.containsKey("permissionAddStatements")) {
+						perm.put("PermissionAddStatements", true);
 					}
-					// TODO: add more, then check if the hash map contains all and add if necessary, then add coder accordingly
+					if (!perm.containsKey("permissionEditStatements")) {
+						perm.put("PermissionEditStatements", true);
+					}
+					if (!perm.containsKey("permissionDeleteStatements")) {
+						perm.put("PermissionDeleteStatements", true);
+					}
+					if (!perm.containsKey("permissionEditAttributes")) {
+						perm.put("PermissionEditAttributes", true);
+					}
+					if (!perm.containsKey("permissionEditRegex")) {
+						perm.put("PermissionEditRegex", true);
+					}
+					if (!perm.containsKey("permissionEditStatementTypes")) {
+						perm.put("PermissionEditStatementTypes", true);
+					}
+					if (!perm.containsKey("permissionEditCoders")) {
+						perm.put("PermissionEditCoders", true);
+					}
+					if (!perm.containsKey("permissionEditCoderRelations")) {
+						perm.put("PermissionEditCoderRelations", true);
+					}
+					if (!perm.containsKey("permissionViewOthersDocuments")) {
+						perm.put("PermissionViewOthersDocuments", true);
+					}
+					if (!perm.containsKey("permissionEditOthersDocuments")) {
+						perm.put("PermissionEditOthersDocuments", true);
+					}
+					if (!perm.containsKey("permissionViewOthersStatements")) {
+						perm.put("PermissionViewOthersStatements", true);
+					}
+					if (!perm.containsKey("permissionEditOthersStatements")) {
+						perm.put("PermissionEditOthersStatements", true);
+					}
+	            	coders.add(new Coder(rs1.getInt("ID"),
+	            			rs1.getString("Name"),
+				    		rs1.getInt("Red"),
+				    		rs1.getInt("Green"),
+				    		rs1.getInt("Blue"),
+				    		0,
+				    		14,
+				    		300,
+				    		false,
+				    		false,
+				    		true,
+				    		perm.get("PermissionAddDocuments"),
+				    		perm.get("PermissionEditDocuments"),
+				    		perm.get("PermissionDeleteDocuments"),
+				    		perm.get("PermissionImportDocuments"),
+				    		perm.get("PermissionAddStatements"),
+				    		perm.get("PermissionEditStatements"),
+				    		perm.get("PermissionDeleteStatements"),
+				    		perm.get("PermissionEditAttributes"),
+				    		perm.get("PermissionEditRegex"),
+				    		perm.get("PermissionEditStatementTypes"),
+				    		perm.get("PermissionEditCoders"),
+				    		perm.get("PermissionEditCoderRelations"),
+				    		perm.get("PermissionViewOthersDocuments"),
+				    		perm.get("PermissionEditOthersDocuments"),
+				    		perm.get("PermissionViewOthersStatements"),
+				    		perm.get("PermissionEditOthersStatements"),
+				    		map));
+				} else { // DNA 3.0
+					coders.add(new Coder(rs1.getInt("ID"),
+	            			rs1.getString("Name"),
+				    		rs1.getInt("Red"),
+				    		rs1.getInt("Green"),
+				    		rs1.getInt("Blue"),
+				    		rs1.getInt("Refresh"),
+				    		rs1.getInt("FontSize"),
+				    		rs1.getInt("PopupWidth"),
+				    		rs1.getInt("ColorByCoder") == 1,
+				    		rs1.getInt("PopupDecoration") == 1,
+				    		rs1.getInt("popupAutoComplete") == 1,
+				    		rs1.getInt("PermissionAddDocuments") == 1,
+				    		rs1.getInt("PermissionEditDocuments") == 1,
+				    		rs1.getInt("PermissionDeleteDocuments") == 1,
+				    		rs1.getInt("PermissionImportDocuments") == 1,
+				    		rs1.getInt("PermissionAddStatements") == 1,
+				    		rs1.getInt("PermissionEditStatements") == 1,
+				    		rs1.getInt("PermissionDeleteStatements") == 1,
+				    		rs1.getInt("PermissionEditAttributes") == 1,
+				    		rs1.getInt("PermissionEditRegex") == 1,
+				    		rs1.getInt("PermissionEditStatementTypes") == 1,
+				    		rs1.getInt("PermissionEditCoders") == 1,
+				    		rs1.getInt("PermissionEditCoderRelations") == 1,
+				    		rs1.getInt("PermissionViewOthersDocuments") == 1,
+				    		rs1.getInt("PermissionEditOthersDocuments") == 1,
+				    		rs1.getInt("PermissionViewOthersStatements") == 1,
+				    		rs1.getInt("PermissionEditOthersStatements") == 1,
+				    		map));
 				}
-            	coders.add(new Coder(rs1.getInt("ID"),
-            			rs1.getString("Name"),
-			    		rs1.getInt("Red"),
-			    		rs1.getInt("Green"),
-			    		rs1.getInt("Blue"),
-			    		rs1.getInt("Refresh"),
-			    		rs1.getInt("FontSize"),
-			    		rs1.getInt("PopupWidth"),
-			    		rs1.getInt("ColorByCoder") == 1,
-			    		rs1.getInt("PopupDecoration") == 1,
-			    		rs1.getInt("popupAutoComplete") == 1,
-			    		rs1.getInt("PermissionAddDocuments") == 1,
-			    		rs1.getInt("PermissionEditDocuments") == 1,
-			    		rs1.getInt("PermissionDeleteDocuments") == 1,
-			    		rs1.getInt("PermissionImportDocuments") == 1,
-			    		rs1.getInt("PermissionAddStatements") == 1,
-			    		rs1.getInt("PermissionEditStatements") == 1,
-			    		rs1.getInt("PermissionDeleteStatements") == 1,
-			    		rs1.getInt("PermissionEditAttributes") == 1,
-			    		rs1.getInt("PermissionEditRegex") == 1,
-			    		rs1.getInt("PermissionEditStatementTypes") == 1,
-			    		rs1.getInt("PermissionEditCoders") == 1,
-			    		rs1.getInt("PermissionEditCoderRelations") == 1,
-			    		rs1.getInt("PermissionViewOthersDocuments") == 1,
-			    		rs1.getInt("PermissionEditOthersDocuments") == 1,
-			    		rs1.getInt("PermissionViewOthersStatements") == 1,
-			    		rs1.getInt("PermissionEditOthersStatements") == 1,
-			    		map));
             }
+			if (v == 2) {
+				s5V2.close();
+			}
 		} catch (SQLException e) {
-        	LogEvent l = new LogEvent(Logger.WARNING,
+        	LogEvent l = new LogEvent(Logger.ERROR,
         			"[SQL] Failed to retrieve coders from the database.",
         			"Attempted to retrieve all coders from the database. Check your connection.",
         			e);
@@ -2890,20 +3104,81 @@ public class Sql {
 	 * is an array list with nested array lists of entities for each variable
 	 * ID.
 	 *  
-	 * @param variableIds  The IDs of the variables for which all entities will
+	 * @param variableIds     The IDs of the variables for which all entities will
 	 *   be retrieved, supplied as an array list of integers.
-	 * @return            An array list of array lists of {@link dna.Entity
+	 * @param withAttributes  Include attributes and indicator of whether the
+	 *   entity has been used in the database in each {@link model.Entity
+	 *   Entity}? Doing so takes much longer for large databases.
+	 * @return                An array list of array lists of {@link dna.Entity
 	 *   Entity} objects.
 	 * 
 	 * @category entity
 	 */
-	public ArrayList<ArrayList<Entity>> getEntities(ArrayList<Integer> variableIds) {
+	public ArrayList<ArrayList<Entity>> getEntities(ArrayList<Integer> variableIds, boolean withAttributes) {
 		ArrayList<ArrayList<Entity>> entities = new ArrayList<ArrayList<Entity>>();
-		boolean inDatabase = true;
+		String sqlString = "SELECT ID, Value, Red, Green, Blue FROM ENTITIES WHERE VariableId = ?;";
+		if (withAttributes) {
+			sqlString = "SELECT ID, Value, Red, Green, Blue, ChildOf, (SELECT COUNT(ID) FROM DATASHORTTEXT WHERE DATASHORTTEXT.VariableId = ENTITIES.VariableId AND Entity = ENTITIES.ID) AS Count FROM ENTITIES WHERE VariableId = ?;";
+		}
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("SELECT ID, Value, Red, Green, Blue, ChildOf FROM ENTITIES WHERE VariableId = ?;");
-				PreparedStatement s2 = conn.prepareStatement("SELECT COUNT(ID) FROM DATASHORTTEXT WHERE VariableId = ? AND Entity = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
+				PreparedStatement s1 = conn.prepareStatement(sqlString);
+				PreparedStatement s2 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
+			long time = System.nanoTime();
+			ResultSet r1, r2;
+			HashMap<String, String> map;
+			ArrayList<Entity> entitiesList;
+			for (int i = 0; i < variableIds.size(); i++) {
+				entitiesList = new ArrayList<Entity>();
+				s1.setInt(1, variableIds.get(i));
+				r1 = s1.executeQuery();
+	        	while (r1.next()) {
+	        		if (withAttributes) {
+	        			map = new HashMap<String, String>();
+		            	s2.setInt(1, r1.getInt("ID"));
+		            	r2 = s2.executeQuery();
+		            	while (r2.next()) {
+		            		map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
+		            	}
+	        			entitiesList.add(
+		            			new Entity(r1.getInt("ID"),
+		            					variableIds.get(i),
+		            					r1.getString("Value"),
+		            					new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue")),
+		            					r1.getInt("ChildOf"),
+		            					r1.getInt("Count") > 0,
+		            					map));
+	        		} else {
+	        			entitiesList.add(
+		            			new Entity(r1.getInt("ID"),
+		            					variableIds.get(i),
+		            					r1.getString("Value"),
+		            					new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"))));
+	        		}
+	        	}
+            	entities.add(entitiesList);
+			}
+			long time2 = System.nanoTime();
+			System.out.println((time2 - time) / 1000000);
+        	LogEvent e = new LogEvent(Logger.MESSAGE,
+        			"[SQL] Retrieved entities for " + variableIds.size() + " variables.",
+        			"Retrieved entities for " + variableIds.size() + " variables.");
+        	Dna.logger.log(e);
+		} catch (SQLException e1) {
+        	LogEvent e = new LogEvent(Logger.WARNING,
+        			"[SQL] Entities could not be retrieved.",
+        			"Entities for " + variableIds.size() + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again.",
+        			e1);
+        	Dna.logger.log(e);
+		}
+		return entities;
+	}
+	
+	public ArrayList<ArrayList<Entity>> getEntitiesOld(ArrayList<Integer> variableIds) {
+		ArrayList<ArrayList<Entity>> entities = new ArrayList<ArrayList<Entity>>();
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("SELECT ID, ENTITIES.VariableId, Value, Red, Green, Blue, ChildOf, (SELECT COUNT(ID) FROM DATASHORTTEXT WHERE DATASHORTTEXT.VariableId = ENTITIES.VariableId AND Entity = ENTITIES.ID) AS Count FROM ENTITIES WHERE VariableId = ?;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
+			long time = System.nanoTime();
 			ResultSet r1, r2;
 			Color color;
 			int entityId;
@@ -2916,27 +3191,26 @@ public class Sql {
 				r1 = s1.executeQuery();
 	        	while (r1.next()) {
 	            	color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
-	            	s2.setInt(2, r1.getInt("ID"));
-	            	r2 = s2.executeQuery();
-	            	while (r2.next()) {
-	            		if (r2.getInt(1) > 0) {
-	                		inDatabase = true;
-	                	} else {
-	                		inDatabase = false;
-	                	}
-	            	}
-	            	
 	            	entityId = r1.getInt("ID");
 	            	map = new HashMap<String, String>();
-	            	s3.setInt(1, entityId);
-	            	r2 = s3.executeQuery();
+	            	s2.setInt(1, entityId);
+	            	r2 = s2.executeQuery();
 	            	while (r2.next()) {
 	            		map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
 	            	}
-	            	entitiesList.add(new Entity(entityId, variableIds.get(i), r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase, map));
-	            }
+	            	entitiesList.add(
+	            			new Entity(entityId,
+	            					variableIds.get(i),
+	            					r1.getString("Value"),
+	            					color,
+	            					r1.getInt("ChildOf"),
+	            					r1.getInt("Count") > 0,
+	            					map));
+	        	}
             	entities.add(entitiesList);
 			}
+			long time2 = System.nanoTime();
+			System.out.println((time2 - time) / 1000000);
         	LogEvent e = new LogEvent(Logger.MESSAGE,
         			"[SQL] Retrieved entities for " + variableIds.size() + " variables.",
         			"Retrieved entities for " + variableIds.size() + " variables.");
@@ -3333,10 +3607,10 @@ public class Sql {
 	public String getVersion() {
 		String version = "";
 		try (Connection conn = getDataSource().getConnection();
-				PreparedStatement s = conn.prepareStatement("SELECT Value FROM SETTINGS WHERE Property = 'version';");
-				ResultSet r = s.executeQuery()) {
+				PreparedStatement s = conn.prepareStatement("SELECT Value FROM SETTINGS WHERE Property = 'version';")) {
+			ResultSet r = s.executeQuery();
 			while (r.next()) {
-				version = r.getString("version");
+				version = r.getString("Value");
 			}
 		} catch (SQLException e) {
 			LogEvent le = new LogEvent(Logger.WARNING,

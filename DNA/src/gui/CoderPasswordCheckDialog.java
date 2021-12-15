@@ -114,22 +114,24 @@ public class CoderPasswordCheckDialog {
 	 *   connection profile should be used (false).
 	 * @param selectId     A coder ID to select. The ID is ignored if it is not
 	 *   found among the coders, otherwise selected in the combo box.
+	 * @param version      Can be either {@code 2} or {@code 3}, to denote the
+	 *   DNA version. If {@code 2}, no password will be requested, and a
+	 *   different function is called to retrieve coders from the database.
 	 */
 	public CoderPasswordCheckDialog(Sql sql, boolean chooseCoder, int selectId, int version) {
 		JPanel panel = new JPanel(new BorderLayout());
 		
 		JPanel questionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		JLabel pwLabel = new JLabel("Please enter the password for coder: ");
+		if (version == 2) {
+			pwLabel.setText("Please select the coder: ");
+		}
 		questionPanel.add(pwLabel);
 		JComboBox<Coder> comboBox = new JComboBox<Coder>();
 
 		if (chooseCoder == true) {
 			ArrayList<Coder> coders;
-			if (version == 3) {
-				coders = sql.getCoders();
-			} else {
-				coders = sql.getCodersDna2();
-			}
+			coders = sql.getCoders();
 			int selectIndex = -1;
 			if (selectId > 0) {
 				for (int i = 0; i < coders.size(); i++) {

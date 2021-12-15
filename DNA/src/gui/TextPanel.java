@@ -17,6 +17,8 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 
 import dna.Dna;
+import logger.LogEvent;
+import logger.Logger;
 import model.Statement;
 import sql.Sql.SqlListener;
 
@@ -157,9 +159,17 @@ class TextPanel extends JPanel implements SqlListener {
 		    Font font = new Font("Monospaced", Font.PLAIN, 14);
 	        textWindow.setFont(font);
 		} else {
-		    Font font = new Font("Monospaced", Font.PLAIN, Dna.sql.getActiveCoder().getFontSize());
-	        textWindow.setFont(font);
-	        paintStatements();
+			try {
+				Font font = new Font("Monospaced", Font.PLAIN, Dna.sql.getActiveCoder().getFontSize());
+		        textWindow.setFont(font);
+		        paintStatements();
+			} catch (NullPointerException e) {
+				LogEvent l = new LogEvent(Logger.ERROR,
+						"Statements could not be painted in text.",
+						"The statements could not be painted in the current document. This could be because you attempted to open a database that was created with DNA 2.0. Please create a new DNA 3 database and import documents from the old file if that is the case. Make sure you close the current database as soon as possible to avoid damage.",
+						e);
+				Dna.logger.log(l);
+			}
 		}
 	}
 

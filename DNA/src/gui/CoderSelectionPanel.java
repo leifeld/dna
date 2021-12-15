@@ -42,7 +42,7 @@ class CoderSelectionPanel extends JPanel implements SqlListener {
 					coderIdToSelect = Dna.sql.getActiveCoder().getId();
 				}
 				while (!authenticated) {
-					CoderPasswordCheckDialog dialog = new CoderPasswordCheckDialog(Dna.sql, true, coderIdToSelect);
+					CoderPasswordCheckDialog dialog = new CoderPasswordCheckDialog(Dna.sql, true, coderIdToSelect, 3);
 					Coder coder = dialog.getCoder();
 					String clearPassword = dialog.getPassword();
 					if (coder != null && clearPassword != null) {

@@ -67,7 +67,21 @@ public class Entity implements Comparable<Entity> {
 		this.inDatabase = inDatabase;
 		this.attributeValues = attributeValues;
 	}
-	
+
+	/**
+	 * A minimal constructor for this class to create a new entity.
+	 * 
+	 * @param value  The value of the entity.
+	 */
+	public Entity(int id, int variableId, String value, Color color) {
+		this.value = value;
+		this.id = id;
+		this.variableId = variableId;
+		this.color = color;
+		this.inDatabase = true;
+		this.attributeValues = null;
+	}
+
 	/**
 	 * A minimal constructor for this class to create a new entity.
 	 * 

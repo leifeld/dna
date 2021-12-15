@@ -866,13 +866,13 @@ public class MainWindow extends JFrame implements SqlListener {
 	    @Override
 	    protected void process(List<TableDocument> chunks) {
 	    	documentTableModel.addRows(chunks); // transfer a batch of rows to the table model
-        	documentTableModel.sort();
 	    	documentTablePanel.setSelectedDocumentId(selectedId);
 	    	textPanel.setVerticalScrollLocation(this.verticalScrollLocation);
 	    }
 
 	    @Override
 	    protected void done() {
+        	documentTableModel.sort();
 			long elapsed = System.nanoTime(); // measure time again for calculating difference
 			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI]  ├─ (Re)loaded all " + documentTableModel.getRowCount() + " documents in " + (elapsed - time) / 1000000 + " milliseconds.",
@@ -1402,7 +1402,7 @@ public class MainWindow extends JFrame implements SqlListener {
 			if (file != null) {
 				boolean validPasswordInput = false;
 				while (!validPasswordInput) {
-					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog(Dna.sql, false, -1);
+					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog(Dna.sql, false, -1, 3);
 					String key = d.getPassword();
 					if (key == null) { // user must have pressed cancel
 						validPasswordInput = true;

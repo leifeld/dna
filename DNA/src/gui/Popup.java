@@ -191,8 +191,8 @@ class Popup extends JDialog {
 				variableIds.add(variables.get(i).getVariableId());
 			}
 		}
-		ArrayList<ArrayList<Entity>> entities = Dna.sql.getEntities(variableIds);
-		
+		ArrayList<ArrayList<Entity>> entities = Dna.sql.getEntities(variableIds, false); // switch to true to color unused entities in red; but it takes much longer with large databases
+
 		// create boxes with values
 		for (int i = 0; i < variables.size(); i++) {
 			String key = variables.get(i).getKey();

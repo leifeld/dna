@@ -14,11 +14,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -179,7 +182,7 @@ class Importer extends JDialog {
 
 		g.gridy = 10;
 		importEntitiesBox = new JCheckBox("Import unused entities");
-		importEntitiesBox.setSelected(true);
+		importEntitiesBox.setSelected(false);
 		checkBoxPanel.add(importEntitiesBox, g);
 
 		g.gridy = 11;
@@ -699,7 +702,15 @@ class Importer extends JDialog {
 		protected List<TableDocument> doInBackground() {
 			try (SqlResults s = Importer.this.sql.getTableDocumentResultSet(); // result set and connection are automatically closed when done because SqlResults implements AutoCloseable
 					ResultSet rs = s.getResultSet();) {
+				LocalDateTime dateTime;
+				Date dateV2;
 				while (rs.next()) {
+					if (Importer.this.version == 2) {
+						dateV2 = new Date(rs.getLong("Date"));
+						dateTime = Instant.ofEpochMilli(dateV2.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+					} else {
+						dateTime = LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC);
+					}
 					TableDocument r = new TableDocument(
 							rs.getInt("ID"),
 							rs.getString("Title"),
@@ -712,7 +723,7 @@ class Importer extends JDialog {
 							rs.getString("Section"),
 							rs.getString("Type"),
 							rs.getString("Notes"),
-							LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC));
+							dateTime);
 					if (Importer.this.sql.getActiveCoder().isPermissionImportDocuments() && 
 							(Importer.this.sql.getActiveCoder().getId() == r.getCoder().getId() || Importer.this.sql.getActiveCoder().getCoderRelations().get(r.getCoder().getId()).isViewDocuments() && Importer.this.sql.getActiveCoder().isPermissionViewOthersDocuments()) &&
 							Dna.sql.getActiveCoder().isPermissionImportDocuments()) {
@@ -822,18 +833,12 @@ class Importer extends JDialog {
 					PreparedStatement d6 = connDomestic.prepareStatement("SELECT * FROM VARIABLES WHERE StatementTypeId = ?;");
 					PreparedStatement d7 = connDomestic.prepareStatement("INSERT INTO STATEMENTTYPES (Label, Red, Green, Blue) VALUES (?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
 					PreparedStatement d8 = connDomestic.prepareStatement("INSERT INTO VARIABLES (Variable, DataType, StatementTypeId) VALUES (?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
-					PreparedStatement f5 = connForeign.prepareStatement("SELECT * FROM VARIABLELINKS;");
-					PreparedStatement d9 = connDomestic.prepareStatement("SELECT COUNT(ID) FROM VARIABLELINKS WHERE SourceVariableId = ? AND TargetVariableId = ?;");
-					PreparedStatement d10 = connDomestic.prepareStatement("INSERT INTO VARIABLELINKS (SourceVariableId, TargetVariableId) VALUES (?, ?);");
 					PreparedStatement d11 = connDomestic.prepareStatement("INSERT INTO STATEMENTS (StatementTypeId, DocumentId, Start, Stop, Coder) VALUES (?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
 					PreparedStatement f6 = connForeign.prepareStatement("SELECT * FROM STATEMENTS WHERE DocumentId = ?;");
-					PreparedStatement f7 = connForeign.prepareStatement("SELECT * FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
 					PreparedStatement f8 = connForeign.prepareStatement("SELECT * FROM DATABOOLEAN WHERE StatementId = ?;");
 					PreparedStatement f9 = connForeign.prepareStatement("SELECT * FROM DATAINTEGER WHERE StatementId = ?;");
 					PreparedStatement f10 = connForeign.prepareStatement("SELECT * FROM DATALONGTEXT WHERE StatementId = ?;");
 					PreparedStatement f11 = connForeign.prepareStatement("SELECT * FROM DATASHORTTEXT WHERE StatementId = ?;");
-					PreparedStatement f12 = connForeign.prepareStatement("SELECT * FROM ATTRIBUTEVALUES;");
-					PreparedStatement f13 = connForeign.prepareStatement("SELECT *, (SELECT COUNT(ID) FROM DATASHORTTEXT WHERE Value = Entities.ID AND VariableId = ENTITIES.VariableId) AS Count FROM ENTITIES WHERE VariableId = ?;");
 					PreparedStatement d12 = connDomestic.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 					PreparedStatement d13 = connDomestic.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 					PreparedStatement d14 = connDomestic.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
@@ -847,7 +852,6 @@ class Importer extends JDialog {
 					PreparedStatement d22 = connDomestic.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE EntityId = ? AND AttributeVariableId = ?;");
 					PreparedStatement d23 = connDomestic.prepareStatement("SELECT AttributeValue FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
 					PreparedStatement d24 = connDomestic.prepareStatement("SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = ?;");
-					PreparedStatement f14v2 = connForeign.prepareStatement("SELECT *, (SELECT COUNT(ID) FROM DATASHORTTEXT WHERE Value = ATTRIBUTES.Value AND VariableId = ATTRIBUTES.VariableId) AS Count FROM ATTRIBUTES WHERE VariableId = ? AND ATTRIBUTES.Value != '';");
 					SQLCloseable finish = connDomestic::rollback;) {
 
 				LogEvent le1 = new LogEvent(Logger.MESSAGE,
@@ -856,7 +860,26 @@ class Importer extends JDialog {
 				Dna.logger.log(le1);
 				connDomestic.setAutoCommit(false);
 				ResultSet r1, r2, r3, r4;
-
+				
+				// create statement for getting short text values when using DNA 2.0
+				PreparedStatement f5 = null,
+						f7 = null,
+						f12 = null,
+						f13 = null,
+						f14V2 = null,
+						d9 = null,
+						d10 = null;
+				if (Importer.this.version == 2) {
+					f14V2 = connForeign.prepareStatement("SELECT *, (SELECT COUNT(ID) FROM DATASHORTTEXT WHERE Value = ATTRIBUTES.Value AND VariableId = ATTRIBUTES.VariableId) AS Count FROM ATTRIBUTES WHERE VariableId = ? AND ATTRIBUTES.Value != '';");
+				} else {
+					f5 = connForeign.prepareStatement("SELECT * FROM VARIABLELINKS;");
+					f7 = connForeign.prepareStatement("SELECT * FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
+					f12 = connForeign.prepareStatement("SELECT * FROM ATTRIBUTEVALUES;");
+					f13 = connForeign.prepareStatement("SELECT *, (SELECT COUNT(ID) FROM DATASHORTTEXT WHERE Value = Entities.ID AND VariableId = ENTITIES.VariableId) AS Count FROM ENTITIES WHERE VariableId = ?;");
+					d9 = connDomestic.prepareStatement("SELECT COUNT(ID) FROM VARIABLELINKS WHERE SourceVariableId = ? AND TargetVariableId = ?;");
+					d10 = connDomestic.prepareStatement("INSERT INTO VARIABLELINKS (SourceVariableId, TargetVariableId) VALUES (?, ?);");
+				}
+				
 				// process regex keywords
 				progressMonitor = new ProgressMonitor(Importer.this, "Importing data", "(1/5) Processing regex keywords...", 0, 5);
 				progressMonitor.setMillisToDecideToPopup(1);
@@ -1063,8 +1086,8 @@ class Importer extends JDialog {
 													f13.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
 													r2 = f13.executeQuery();
 												} else {
-													f14v2.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
-													r2 = f14v2.executeQuery();
+													f14V2.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+													r2 = f14V2.executeQuery();
 												}
 												while (r2.next()) {
 													d21.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
@@ -1221,8 +1244,8 @@ class Importer extends JDialog {
 									f13.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
 									r2 = f13.executeQuery();
 								} else { // version 2
-									f14v2.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
-									r2 = f14v2.executeQuery();
+									f14V2.setInt(1, foreignStatementTypes.get(i).getVariables().get(k).getVariableId());
+									r2 = f14V2.executeQuery();
 								}
 								while (r2.next()) {
 									d20.setInt(1, variableId);
@@ -1277,7 +1300,6 @@ class Importer extends JDialog {
 					}
 					r1.close();
 				}
-				
 				// process attribute values
 				progressMonitor.setProgress(3);
 				progressMonitor.setNote("(4/5) Processing attribute values...");
@@ -1365,7 +1387,13 @@ class Importer extends JDialog {
 						// insert document
 						if (proceed) {
 							// fix date if necessary
-							LocalDateTime date = LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC);
+							LocalDateTime date;
+							if (Importer.this.version == 3) {
+								date = LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC);
+							} else { // DNA 2.0: use old Date class and convert
+								Date dateV2 = new Date(r1.getLong("Date"));
+								date = Instant.ofEpochMilli(dateV2.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+							}
 							if (fixDatesBox.isSelected() && (date.getHour() != 0 || date.getMinute() != 0 || date.getSecond() != 0)) {
 								if (date.truncatedTo(ChronoUnit.DAYS).isBefore(date.plusHours(12).truncatedTo(ChronoUnit.DAYS))) {
 									date = date.plusHours(12).truncatedTo(ChronoUnit.DAYS);
@@ -1496,6 +1524,16 @@ class Importer extends JDialog {
 					Dna.logger.log(le5);
 				}
 				
+				// close statements after use if not part of the try-with-resources header
+				if (Importer.this.version == 3) {
+					f5.close();
+					f7.close();
+					f12.close();
+					f13.close();
+					d9.close();
+					d10.close();
+				}
+				
 				connDomestic.commit();
 				
 				// log the results
@@ -1516,6 +1554,8 @@ class Importer extends JDialog {
 						"Attempted importing data from another database, but the import failed. The transaction has been rolled back, and no changes have been written to the currently open database. Check the exception message stack for details.",
 						e);
 				dna.Dna.logger.log(le7);
+			} finally {
+				progressMonitor.setProgress(5);
 			}
 			
 			// enable buttons again after the import work is done
@@ -1523,8 +1563,6 @@ class Importer extends JDialog {
 			filterButton.setEnabled(true);
 			selectAll.setEnabled(true);
 			importButton.setEnabled(true);
-
-			progressMonitor.setProgress(5);
 		}
 	}
 }
