@@ -810,6 +810,16 @@ class Importer extends JDialog {
 		 */
 		public void run() {
 			long time = System.nanoTime(); // take the time to compute later how long the updating took
+			
+			progressMonitor = new ProgressMonitor(Importer.this, "Importing data", "(1/5) Processing regex keywords...", 0, 5);
+			progressMonitor.setMillisToDecideToPopup(1);
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			progressMonitor.setProgress(0);
+			
 			String documentSelectSql = "SELECT * FROM DOCUMENTS WHERE ID IN (";
 			for (int i = 0; i < docIds.size(); i++) {
 				documentSelectSql = documentSelectSql + docIds.get(i);
@@ -818,7 +828,7 @@ class Importer extends JDialog {
 				}
 			}
 			documentSelectSql = documentSelectSql + ");";
-			
+
 			try (Connection connForeign = Importer.this.sql.getDataSource().getConnection();
 					Connection connDomestic = Dna.sql.getDataSource().getConnection();
 					PreparedStatement d1 = connDomestic.prepareStatement("INSERT INTO DOCUMENTS (Title, Text, Coder, Author, Source, Section, Notes, Type, Date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
@@ -881,9 +891,6 @@ class Importer extends JDialog {
 				}
 				
 				// process regex keywords
-				progressMonitor = new ProgressMonitor(Importer.this, "Importing data", "(1/5) Processing regex keywords...", 0, 5);
-				progressMonitor.setMillisToDecideToPopup(1);
-				progressMonitor.setProgress(0);
 				
 				int regexCount = 0;
 				if (importRegexBox.isSelected()) {
@@ -915,7 +922,7 @@ class Importer extends JDialog {
 				
 				// process statement types; first, create array list of foreign statement types
 				progressMonitor.setProgress(1);
-				progressMonitor.setNote("(2/5) Processing statement types and entities...");
+				progressMonitor.setNote("(2/5) Entities, attributes, statement types...");
 				
 				int statementTypeCount = 0;
 				int entityCount = 0;
@@ -937,6 +944,7 @@ class Importer extends JDialog {
 							variables));
 				}
 				r1.close();
+				
 				// create array list of domestic statement types
 				ArrayList<StatementType> domesticStatementTypes = new ArrayList<StatementType>();
 				r1 = d5.executeQuery();
@@ -957,6 +965,7 @@ class Importer extends JDialog {
 							variables));
 				}
 				r1.close();
+				
 				// compare foreign and domestic types, save correspondence in a hash map, and add new statement types
 				HashMap<Integer, Integer> statementTypeMap = new HashMap<Integer, Integer>();
 				HashMap<Integer, StatementType> statementTypeIdToTypeMap = new HashMap<Integer, StatementType>(); // reference new domestic statement type by its ID
@@ -1101,7 +1110,7 @@ class Importer extends JDialog {
 													r3.close();
 													if (!entityPresent && (importEntitiesBox.isSelected() || r2.getInt("Count") > 0)) { // import if not present yet and the entity is either used in the foreign file or unused entities are imported, too 
 														d20.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId()); // variable ID
-														d20.setString(2, r2.getString("Value"));
+														d20.setString(2, r2.getString("Value").substring(0, Math.min(2999, r2.getString("Value").length())));
 														d20.setInt(3, r2.getInt("Red"));
 														d20.setInt(4, r2.getInt("Green"));
 														d20.setInt(5, r2.getInt("Blue"));
@@ -1152,7 +1161,7 @@ class Importer extends JDialog {
 																if (!foreignAttributeValue.equals(domesticAttributeValue)) {
 																	if (overwriteAttributesBox.isSelected() ||
 																			(mergeAttributesBox.isSelected() && (domesticAttributeValue == null || domesticAttributeValue.equals("")))) {
-																		d22.setString(1, foreignAttributeValue);
+																		d22.setString(1, foreignAttributeValue.substring(0, Math.min(2999, foreignAttributeValue.length())));
 																		d22.setInt(2, entityMap.get(r2.getInt("ID")));
 																		d22.setInt(3, attributeVariableId);
 																		d22.executeUpdate();
@@ -1164,7 +1173,7 @@ class Importer extends JDialog {
 															if (!attributeExists) {
 																d17.setInt(1, entityMap.get(r2.getInt("ID")));
 																d17.setInt(2, attributeVariableId);
-																d17.setString(3, foreignAttributeValue);
+																d17.setString(3, foreignAttributeValue.substring(0, Math.min(2999, foreignAttributeValue.length())));
 																d17.executeUpdate();
 																attributeCount++;
 															}
@@ -1280,7 +1289,7 @@ class Importer extends JDialog {
 				
 				// process variable links
 				progressMonitor.setProgress(2);
-				progressMonitor.setNote("(3/5) Processing variable links...");
+				progressMonitor.setNote("(3/5) Variable links...");
 				
 				if (statementTypeBox.isSelected() && Importer.this.version == 3) {
 					r1 = f5.executeQuery();
@@ -1300,9 +1309,10 @@ class Importer extends JDialog {
 					}
 					r1.close();
 				}
+				
 				// process attribute values
 				progressMonitor.setProgress(3);
-				progressMonitor.setNote("(4/5) Processing attribute values...");
+				progressMonitor.setNote("(4/5) Attribute values...");
 
 				if (Importer.this.version == 3) {
 					r1 = f12.executeQuery(); // select all attribute values
@@ -1348,7 +1358,7 @@ class Importer extends JDialog {
 				
 				// process documents and statements
 				progressMonitor.setProgress(4);
-				progressMonitor.setNote("(5/5) Processing documents and statements...");
+				progressMonitor.setNote("(5/5) Documents and statements...");
 				
 				int documentCount = 0;
 				int statementCount = 0;
@@ -1403,14 +1413,14 @@ class Importer extends JDialog {
 								dateFixCount++;
 							}
 							// extract remaining document details and insert document into domestic database
-							d1.setString(1, r1.getString("Title"));
+							d1.setString(1, r1.getString("Title").substring(0, Math.min(2999, r1.getString("Title").length())));
 							d1.setString(2, r1.getString("Text"));
 							d1.setInt(3, coderMap.get(r1.getInt("Coder"))); // replace by mapped coder
-							d1.setString(4, r1.getString("Author"));
-							d1.setString(5, r1.getString("Source"));
-							d1.setString(6, r1.getString("Section"));
+							d1.setString(4, r1.getString("Author").substring(0, Math.min(2999, r1.getString("Author").length())));
+							d1.setString(5, r1.getString("Source").substring(0, Math.min(2999, r1.getString("Source").length())));
+							d1.setString(6, r1.getString("Section").substring(0, Math.min(2999, r1.getString("Section").length())));
 							d1.setString(7, r1.getString("Notes"));
-							d1.setString(8, r1.getString("Type"));
+							d1.setString(8, r1.getString("Type").substring(0, Math.min(2999, r1.getString("Type").length())));
 							d1.setLong(9, date.toEpochSecond(ZoneOffset.UTC));
 							d1.executeUpdate();
 							

@@ -3123,7 +3123,6 @@ public class Sql {
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement(sqlString);
 				PreparedStatement s2 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
-			long time = System.nanoTime();
 			ResultSet r1, r2;
 			HashMap<String, String> map;
 			ArrayList<Entity> entitiesList;
@@ -3157,60 +3156,6 @@ public class Sql {
 	        	}
             	entities.add(entitiesList);
 			}
-			long time2 = System.nanoTime();
-			System.out.println((time2 - time) / 1000000);
-        	LogEvent e = new LogEvent(Logger.MESSAGE,
-        			"[SQL] Retrieved entities for " + variableIds.size() + " variables.",
-        			"Retrieved entities for " + variableIds.size() + " variables.");
-        	Dna.logger.log(e);
-		} catch (SQLException e1) {
-        	LogEvent e = new LogEvent(Logger.WARNING,
-        			"[SQL] Entities could not be retrieved.",
-        			"Entities for " + variableIds.size() + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again.",
-        			e1);
-        	Dna.logger.log(e);
-		}
-		return entities;
-	}
-	
-	public ArrayList<ArrayList<Entity>> getEntitiesOld(ArrayList<Integer> variableIds) {
-		ArrayList<ArrayList<Entity>> entities = new ArrayList<ArrayList<Entity>>();
-		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("SELECT ID, ENTITIES.VariableId, Value, Red, Green, Blue, ChildOf, (SELECT COUNT(ID) FROM DATASHORTTEXT WHERE DATASHORTTEXT.VariableId = ENTITIES.VariableId AND Entity = ENTITIES.ID) AS Count FROM ENTITIES WHERE VariableId = ?;");
-				PreparedStatement s2 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
-			long time = System.nanoTime();
-			ResultSet r1, r2;
-			Color color;
-			int entityId;
-			HashMap<String, String> map;
-			ArrayList<Entity> entitiesList;
-			for (int i = 0; i < variableIds.size(); i++) {
-				entitiesList = new ArrayList<Entity>();
-				s1.setInt(1, variableIds.get(i));
-				s2.setInt(1, variableIds.get(i));
-				r1 = s1.executeQuery();
-	        	while (r1.next()) {
-	            	color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
-	            	entityId = r1.getInt("ID");
-	            	map = new HashMap<String, String>();
-	            	s2.setInt(1, entityId);
-	            	r2 = s2.executeQuery();
-	            	while (r2.next()) {
-	            		map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
-	            	}
-	            	entitiesList.add(
-	            			new Entity(entityId,
-	            					variableIds.get(i),
-	            					r1.getString("Value"),
-	            					color,
-	            					r1.getInt("ChildOf"),
-	            					r1.getInt("Count") > 0,
-	            					map));
-	        	}
-            	entities.add(entitiesList);
-			}
-			long time2 = System.nanoTime();
-			System.out.println((time2 - time) / 1000000);
         	LogEvent e = new LogEvent(Logger.MESSAGE,
         			"[SQL] Retrieved entities for " + variableIds.size() + " variables.",
         			"Retrieved entities for " + variableIds.size() + " variables.");

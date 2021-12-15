@@ -59,6 +59,7 @@ import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.jasypt.util.text.AES256TextEncryptor;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
@@ -1449,8 +1450,15 @@ public class MainWindow extends JFrame implements SqlListener {
 			
 			// serialize Connection object to JSON file and save to disk
 			try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-				Gson gson = new Gson();
-				gson.toJson(cp, writer);
+				// Gson gson = new Gson();
+				// gson.toJson(cp, writer);
+				Gson prettyGson = new GsonBuilder()
+			            .setPrettyPrinting()
+			            .serializeNulls()
+			            .disableHtmlEscaping()
+			            .create();
+				String g = prettyGson.toJson(cp);
+				writer.write(g);
 			} catch (IOException e) {
 				LogEvent l = new LogEvent(Logger.ERROR,
 						"[GUI] Failed to write connection profile.",
