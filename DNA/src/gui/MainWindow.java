@@ -69,7 +69,6 @@ import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import logger.LoggerDialog;
-import model.Entity;
 import model.Coder;
 import model.Statement;
 import model.StatementType;
@@ -338,8 +337,10 @@ public class MainWindow extends JFrame implements SqlListener {
 				if (rowCount == 1) {
 					int selectedRow = statementTable.getSelectedRow();
 					int selectedModelIndex = statementTable.convertRowIndexToModel(selectedRow);
-					Statement s = statementTableModel.getRow(selectedModelIndex);
-					documentTablePanel.setSelectedDocumentId(s.getDocumentId());
+					Statement statementWithoutValues = statementTableModel.getRow(selectedModelIndex);
+					int statementId = statementWithoutValues.getId();
+					Statement s = Dna.sql.getStatement(statementId);
+					documentTablePanel.setSelectedDocumentId(statementWithoutValues.getDocumentId());
 					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true &&
 							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true ||
 							Dna.sql.getActiveCoder().getId() == s.getCoderId()) &&
@@ -1044,21 +1045,14 @@ public class MainWindow extends JFrame implements SqlListener {
 					+ "INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID "
 					+ "INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID "
 					+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId ORDER BY DOCUMENTS.DATE ASC;";
-			ArrayList<Value> values;
-			int statementId, statementTypeId, variableId;
-			String variable, dataType;
-			Color aColor, sColor, cColor;
+			ArrayList<Value> values = new ArrayList<Value>();
+			int statementId, statementTypeId;
+			Color sColor, cColor;
 			try (Connection conn = Dna.sql.getDataSource().getConnection();
-					PreparedStatement s1 = conn.prepareStatement(query);
-					PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
-					PreparedStatement s3 = conn.prepareStatement("SELECT E.ID AS EntityId, StatementId, E.VariableId, DST.ID AS DataId, E.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ENTITIES AS E ON E.ID = DST.Entity AND E.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
-					PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
-					PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
-					PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;")) {
-				ResultSet r1, r2, r3;
+					PreparedStatement s1 = conn.prepareStatement(query);) {
 
 				// first, get the statement information, including coder and statement type info
-				r1 = s1.executeQuery();
+				ResultSet r1 = s1.executeQuery();
 				while (r1.next()) {
 					if (isCancelled()) {
 						return null;
@@ -1067,50 +1061,6 @@ public class MainWindow extends JFrame implements SqlListener {
 				    statementTypeId = r1.getInt("StatementTypeId");
 				    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
 				    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
-
-				    // second, get the variables associated with the statement type
-				    s2.setInt(1, statementTypeId);
-				    r2 = s2.executeQuery();
-				    values = new ArrayList<Value>();
-				    while (r2.next()) {
-				    	variableId = r2.getInt("ID");
-				    	variable = r2.getString("Variable");
-				    	dataType = r2.getString("DataType");
-
-				    	// third, get the values from DATABOOLEAN, DATAINTEGER, DATALONGTEXT, and DATASHORTTEXT
-				    	if (dataType.equals("short text")) {
-					    	s3.setInt(1, statementId);
-					    	s3.setInt(2, variableId);
-					    	r3 = s3.executeQuery();
-					    	while (r3.next()) {
-				            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
-				            	// unlike in similar functions in the Sql class, we don't care about the entity attributes here and can just create a dumbed-down version of the entity
-				            	Entity entity = new Entity(r3.getInt("EntityId"), variableId, r3.getString("Value"), aColor, r3.getInt("ChildOf"), true, null); // i.e., don't submit hash map with attributes because they are not needed for the statement table
-				            	values.add(new Value(variableId, variable, dataType, entity));
-					    	}
-				    	} else if (dataType.equals("long text")) {
-					    	s4.setInt(1, variableId);
-					    	s4.setInt(2, statementId);
-					    	r3 = s4.executeQuery();
-					    	while (r3.next()) {
-					    		values.add(new Value(variableId, variable, dataType, r3.getString("Value")));
-					    	}
-				    	} else if (dataType.equals("integer")) {
-					    	s5.setInt(1, variableId);
-					    	s5.setInt(2, statementId);
-					    	r3 = s5.executeQuery();
-					    	while (r3.next()) {
-					    		values.add(new Value(variableId, variable, dataType, r3.getInt("Value")));
-					    	}
-				    	} else if (dataType.equals("boolean")) {
-					    	s6.setInt(1, variableId);
-					    	s6.setInt(2, statementId);
-					    	r3 = s6.executeQuery();
-					    	while (r3.next()) {
-					    		values.add(new Value(variableId, variable, dataType, r3.getInt("Value")));
-					    	}
-				    	}
-				    }
 
 				    // assemble the statement with all the information from the previous steps
 				    Statement statement = new Statement(statementId,
@@ -1211,8 +1161,6 @@ public class MainWindow extends JFrame implements SqlListener {
 			}
     	}
     	adjustToChangedCoder();
-    	refreshDocumentTable();
-    	refreshStatementTable();
 	}
 
 	/**
@@ -1250,7 +1198,7 @@ public class MainWindow extends JFrame implements SqlListener {
 			actionAttributeManager.setEnabled(false);
 			actionCoderRelationsEditor.setEnabled(false);
 		}
-		refreshDocumentTable();
+		refreshDocumentTable(); // TODO: this introduces duplicate document table rows; same for statements below
 		refreshStatementTable();
 	}
 
@@ -1848,8 +1796,6 @@ public class MainWindow extends JFrame implements SqlListener {
 				CoderRelationsEditor cre = new CoderRelationsEditor();
 				if (cre.isUpdated()) {
 					Dna.sql.updateActiveCoder();
-					//refreshDocumentTable();
-					//refreshStatementTable();
 				}
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: opened coder relations editor.",

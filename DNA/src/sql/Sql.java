@@ -2602,7 +2602,7 @@ public class Sql {
 				+ "INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID "
 				+ "INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID "
 				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
-				+ "WHERE StatementId = ?;";
+				+ "WHERE STATEMENTS.ID = ?;";
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement(s1Query);
 				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
