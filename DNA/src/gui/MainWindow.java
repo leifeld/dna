@@ -25,6 +25,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,7 +78,6 @@ import model.Value;
 import sql.ConnectionProfile;
 import sql.Sql;
 import sql.Sql.SqlListener;
-import sql.Sql.SqlResults;
 
 /**
  * Main window that instantiates and plugs the different view components
@@ -115,6 +115,16 @@ public class MainWindow extends JFrame implements SqlListener {
 	private ActionLoggerDialog actionLoggerDialog;
 	private ActionAboutWindow actionAboutWindow;
 
+	/**
+	 * A document table swing worker thread.
+	 */
+	private DocumentTableRefreshWorker documentTableWorker;
+
+	/**
+	 * A statement table swing worker thread.
+	 */
+	private StatementTableRefreshWorker statementTableWorker;
+	
 	/**
 	 * Create a new main window.
 	 */
@@ -160,6 +170,12 @@ public class MainWindow extends JFrame implements SqlListener {
 		// close SQL connection before exit
 		this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
+				if (documentTableWorker != null) {
+					documentTableWorker.cancel(true);
+				}
+				if (statementTableWorker != null) {
+					statementTableWorker.cancel(true);
+				}
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"Exiting DNA from the GUI main window.",
 						"Exiting DNA from the GUI main window.");
@@ -707,8 +723,12 @@ public class MainWindow extends JFrame implements SqlListener {
 						popup.saveContents(false);
 					}
 					int newStatementId = Dna.sql.cloneStatement(s.getId(), Dna.sql.getActiveCoder().getId());
-			        StatementTableRefreshWorker statementWorker = new StatementTableRefreshWorker(newStatementId); // do not use refreshStatementTable method because we need to select the new statement ID
-			        statementWorker.execute();
+					if (statementTableWorker != null) {
+						statementTableWorker.cancel(true);
+						statusBar.statementRefreshEnd();
+					}
+			        statementTableWorker = new StatementTableRefreshWorker(LocalTime.now().toString(), newStatementId); // do not use refreshStatementTable method because we need to select the new statement ID
+			        statementTableWorker.execute();
 					popup.dispose();
 				}
 			}
@@ -768,8 +788,12 @@ public class MainWindow extends JFrame implements SqlListener {
 		if (Dna.sql.getConnectionProfile() == null) {
 			documentTableModel.clear();
 		} else {
-	        DocumentTableRefreshWorker documentWorker = new DocumentTableRefreshWorker();
-	        documentWorker.execute();
+			if (documentTableWorker != null) {
+				documentTableWorker.cancel(true);
+				statusBar.documentRefreshEnd();
+			}
+	        documentTableWorker = new DocumentTableRefreshWorker(LocalTime.now().toString());
+	        documentTableWorker.execute();
 		}
 	}
 
@@ -782,8 +806,12 @@ public class MainWindow extends JFrame implements SqlListener {
 		if (Dna.sql.getConnectionProfile() == null) {
 			statementTableModel.clear();
 		} else {
-	        StatementTableRefreshWorker statementWorker = new StatementTableRefreshWorker();
-	        statementWorker.execute();
+			if (statementTableWorker != null) {
+				statementTableWorker.cancel(true);
+				statusBar.statementRefreshEnd();
+			}
+	        statementTableWorker = new StatementTableRefreshWorker(LocalTime.now().toString());
+	        statementTableWorker.execute();
 		}
 	}
 
@@ -813,32 +841,44 @@ public class MainWindow extends JFrame implements SqlListener {
 		 * after refreshing the document table.
 		 */
 		private int verticalScrollLocation;
+		
+		/**
+		 * A name for the swing worker thread to identify it in the message log.
+		 */
+		private String name;
 
 		/**
 		 * Create a new document table swing worker.
+		 * 
+		 * @param name  The name of the thread.
 		 */
-		private DocumentTableRefreshWorker() {
+		private DocumentTableRefreshWorker(String name) {
+			this.name = name;
 			actionAddDocument.setEnabled(false);
 			actionRemoveDocuments.setEnabled(false);
 			actionEditDocuments.setEnabled(false);
 			actionBatchImportDocuments.setEnabled(false);
 			actionRefresh.setEnabled(false);
-			statusBar.documentRefreshStarted();
+			statusBar.documentRefreshStart();
 			time = System.nanoTime(); // take the time to compute later how long the updating took
 			verticalScrollLocation = textPanel.getVerticalScrollLocation();
 			selectedId = documentTablePanel.getSelectedDocumentId(); // remember the document ID to select the same document when done
 			documentTableModel.clear(); // remove all documents from the table model before re-populating the table
 			LogEvent le = new LogEvent(Logger.MESSAGE,
-					"[GUI] Initializing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
-					"A new swing worker thread has been started to populate the document table with documents from the database in the background: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+					"[GUI] Initializing thread to populate document table: " + this.getName() + ".",
+					"A new swing worker thread has been started to populate the document table with documents from the database in the background: " + this.getName() + ".");
 			Dna.logger.log(le);
 		}
 		
 		@Override
 		protected List<TableDocument> doInBackground() {
-			try (SqlResults s = Dna.sql.getTableDocumentResultSet(); // result set and connection are automatically closed when done because SqlResults implements AutoCloseable
-					ResultSet rs = s.getResultSet();) {
+			try (Connection conn = Dna.sql.getDataSource().getConnection();
+					PreparedStatement s = conn.prepareStatement("SELECT D.ID, Title, (SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = D.ID) AS Frequency, C.ID AS CoderId, Name AS CoderName, Red, Green, Blue, Date, Author, Source, Section, Type, Notes FROM CODERS C INNER JOIN DOCUMENTS D ON D.Coder = C.ID;");
+					ResultSet rs = s.executeQuery();) {
 				while (rs.next()) {
+					if (isCancelled()) {
+						return null;
+					}
 					TableDocument r = new TableDocument(
 							rs.getInt("ID"),
 							rs.getString("Title"),
@@ -855,11 +895,19 @@ public class MainWindow extends JFrame implements SqlListener {
 					publish(r); // send the new document row out of the background thread
 				}
 			} catch (SQLException e) {
-				LogEvent le = new LogEvent(Logger.WARNING,
-						"[SQL]  ├─ Could not retrieve documents from database.",
-						"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved because there was a problem while processing the result set. The document table may be incomplete.",
-						e);
-				Dna.logger.log(le);
+				if (e.getMessage().matches(".*Interrupted during connection acquisition.*")) {
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI]  ├─ Document retrieval canceled in Thread " + this.getName() + ".",
+							"Refreshing the document table by reloading all documents from the database and populating the document table with them was canceled, presumably because a new swing worker to retrieve documents was initiated, which then superseded the existing thread.",
+							e);
+					Dna.logger.log(l);
+				} else {
+					LogEvent le = new LogEvent(Logger.WARNING,
+							"[SQL]  ├─ Could not retrieve documents from database.",
+							"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved because there was a problem while processing the result set. The document table may be incomplete.",
+							e);
+					Dna.logger.log(le);
+				}
 			}
 			return null;
 		}
@@ -881,10 +929,10 @@ public class MainWindow extends JFrame implements SqlListener {
 					+ "background and stored them in the document table. This took " + (elapsed - time) / 1000000 + " milliseconds.");
 			Dna.logger.log(le);
 			le = new LogEvent(Logger.MESSAGE,
-					"[GUI]  └─ Closing thread to populate document table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
-					"The document table has been populated with documents from the database. Closing thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+					"[GUI]  └─ Closing thread to populate document table: " + this.getName() + ".",
+					"The document table has been populated with documents from the database. Closing thread: " + this.getName() + ".");
 			Dna.logger.log(le);
-			statusBar.documentRefreshEnded();
+			statusBar.documentRefreshEnd();
 			if (!statusBar.isRefreshInProgress()) {
 				if (Dna.sql.getConnectionProfile() != null) {
 					actionRefresh.setEnabled(true);
@@ -893,6 +941,15 @@ public class MainWindow extends JFrame implements SqlListener {
 				}
 			}
 			changedDocumentTableSelection();
+	    }
+	    
+	    /**
+	     * Get the name of the thread.
+	     * 
+	     * @return  Thread name.
+	     */
+	    String getName() {
+	    	return this.name;
 	    }
 	}
 
@@ -909,7 +966,12 @@ public class MainWindow extends JFrame implements SqlListener {
 		 * duration is logged when the table has been updated.
 		 */
 		private long time;
-		
+
+		/**
+		 * A name for the swing worker thread to identify it in the message log.
+		 */
+		private String name;
+
 		/**
 		 * ID of the selected statement in the statement table, to restore it
 		 * later and scroll back to the same position in the table after update.
@@ -921,7 +983,8 @@ public class MainWindow extends JFrame implements SqlListener {
 		 * stores them in the table model for displaying them in the statement
 		 * table. Selects the previously selected statement when done.
 		 */
-		private StatementTableRefreshWorker() {
+		private StatementTableRefreshWorker(String name) {
+			this.name = name;
 			selectedId = getStatementPanel().getSelectedStatementId();
 			initialiseRefreshWorker();
 		}
@@ -934,7 +997,8 @@ public class MainWindow extends JFrame implements SqlListener {
 		 * @param statementIdToSelect The ID of the statement that should be
 		 *   selected when done refreshing.
 		 */
-		private StatementTableRefreshWorker(int statementIdToSelect) {
+		private StatementTableRefreshWorker(String name, int statementIdToSelect) {
+			this.name = name;
 			selectedId = statementIdToSelect;
 			initialiseRefreshWorker();
 		}
@@ -949,8 +1013,8 @@ public class MainWindow extends JFrame implements SqlListener {
     		statusBar.statementRefreshStart();
     		statementTableModel.clear(); // remove all documents from the table model before re-populating the table
 			LogEvent le = new LogEvent(Logger.MESSAGE,
-					"[GUI] Initializing thread to populate statement table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
-					"A new swing worker thread has been started to populate the statement table with statements from the database in the background: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+					"[GUI] Initializing thread to populate statement table: " + this.getName() + ".",
+					"A new swing worker thread has been started to populate the statement table with statements from the database in the background: " + this.getName() + ".");
 			Dna.logger.log(le);
 		}
 		
@@ -996,6 +1060,9 @@ public class MainWindow extends JFrame implements SqlListener {
 				// first, get the statement information, including coder and statement type info
 				r1 = s1.executeQuery();
 				while (r1.next()) {
+					if (isCancelled()) {
+						return null;
+					}
 				    statementId = r1.getInt("StatementId");
 				    statementTypeId = r1.getInt("StatementTypeId");
 				    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
@@ -1062,11 +1129,19 @@ public class MainWindow extends JFrame implements SqlListener {
 				    publish(statement);
 				}
 			} catch (SQLException e) {
-				LogEvent l = new LogEvent(Logger.WARNING,
-						"[SQL] Failed to retrieve statements.",
-						"Attempted to retrieve all statements from the database, but something went wrong. You should double-check if the statements are all shown!",
-						e);
-				Dna.logger.log(l);
+				if (e.getMessage().matches(".*Interrupted during connection acquisition.*")) {
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI]  ├─ Statement retrieval canceled in Thread " + this.getName() + ".",
+							"Refreshing the statement table by reloading all statements from the database and populating the statement table with them was canceled, presumably because a new swing worker to retrieve statements was initiated, which then superseded the existing thread.",
+							e);
+					Dna.logger.log(l);
+				} else {
+					LogEvent l = new LogEvent(Logger.WARNING,
+							"[SQL] Failed to retrieve statements.",
+							"Attempted to retrieve all statements from the database, but something went wrong. You should double-check if the statements are all shown!",
+							e);
+					Dna.logger.log(l);
+				}
 			}
 			return null;
 		}
@@ -1074,12 +1149,12 @@ public class MainWindow extends JFrame implements SqlListener {
         @Override
         protected void process(List<Statement> chunks) {
         	statementTableModel.addRows(chunks); // transfer a batch of rows to the statement table model
-        	statementTableModel.sort();
 			getStatementPanel().setSelectedStatementId(selectedId); // select the statement from before; skipped if the statement not found in this batch
         }
 
         @Override
         protected void done() {
+        	statementTableModel.sort();
         	statusBar.statementRefreshEnd(); // stop displaying the update message in the status bar
 			statementTableModel.fireTableDataChanged(); // update the statement filter
 			getStatementPanel().setSelectedStatementId(selectedId);
@@ -1090,8 +1165,8 @@ public class MainWindow extends JFrame implements SqlListener {
     				+ "background and stored them in the statement table. This took " + (elapsed - time) / 1000000 + " milliseconds.");
     		Dna.logger.log(le);
 			le = new LogEvent(Logger.MESSAGE,
-					"[GUI]  └─ Closing thread to populate statement table: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
-					"The statement table has been populated with statements from the database. Closing thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+					"[GUI]  └─ Closing thread to populate statement table: " + this.getName() + ".",
+					"The statement table has been populated with statements from the database. Closing thread: " + this.getName() + ".");
 			Dna.logger.log(le);
 			if (!statusBar.isRefreshInProgress()) {
 				if (Dna.sql.getConnectionProfile() != null) {
@@ -1101,6 +1176,15 @@ public class MainWindow extends JFrame implements SqlListener {
 				}
 			}
         }
+	    
+	    /**
+	     * Get the name of the thread.
+	     * 
+	     * @return  Thread name.
+	     */
+	    String getName() {
+	    	return this.name;
+	    }
     }
 
 	/**
@@ -1166,6 +1250,8 @@ public class MainWindow extends JFrame implements SqlListener {
 			actionAttributeManager.setEnabled(false);
 			actionCoderRelationsEditor.setEnabled(false);
 		}
+		refreshDocumentTable();
+		refreshStatementTable();
 	}
 
 	/**
@@ -1450,8 +1536,6 @@ public class MainWindow extends JFrame implements SqlListener {
 			
 			// serialize Connection object to JSON file and save to disk
 			try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-				// Gson gson = new Gson();
-				// gson.toJson(cp, writer);
 				Gson prettyGson = new GsonBuilder()
 			            .setPrettyPrinting()
 			            .serializeNulls()
@@ -1761,7 +1845,12 @@ public class MainWindow extends JFrame implements SqlListener {
 		
 		public void actionPerformed(ActionEvent e) {
 			if (Dna.sql.getActiveCoder().isPermissionEditCoderRelations() && Dna.sql.getActiveCoder().getId() != 1) {
-				new CoderRelationsEditor();
+				CoderRelationsEditor cre = new CoderRelationsEditor();
+				if (cre.isUpdated()) {
+					Dna.sql.updateActiveCoder();
+					//refreshDocumentTable();
+					//refreshStatementTable();
+				}
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: opened coder relations editor.",
 						"Opened a coder relations editor window from the GUI.");

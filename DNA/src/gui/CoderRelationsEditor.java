@@ -25,12 +25,14 @@ class CoderRelationsEditor extends JDialog {
 	private JButton reloadButton, okButton;
 	private Coder activeCoderCopy;
 	private CoderRelationsPanel coderRelationsPanel;
+	private boolean success;
 	
 	/**
 	 * Create and show a dialog to edit the currently active coder's
 	 * coder relations.
 	 */
 	CoderRelationsEditor() {
+		success = false;
 		ImageIcon coderRelationsIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-user-check.png"));
 		this.setIconImage(coderRelationsIcon.getImage());
 		this.setModal(true);
@@ -106,7 +108,7 @@ class CoderRelationsEditor extends JDialog {
 				if (!activeCoderCopy.equals(Dna.sql.getActiveCoder())) {
 					int dialog = JOptionPane.showConfirmDialog(CoderRelationsEditor.this, "Save changes for Coder " + activeCoderCopy.getId() + " to the database?", "Confirmation", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
-						boolean success = Dna.sql.updateCoder(activeCoderCopy, null);
+						success = Dna.sql.updateCoder(activeCoderCopy, null);
 						if (success) {
 							JOptionPane.showMessageDialog(CoderRelationsEditor.this, "Changes for Coder " + activeCoderCopy.getId() + " were successfully saved.");
 						} else {
@@ -124,6 +126,15 @@ class CoderRelationsEditor extends JDialog {
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
+	}
+	
+	/**
+	 * Have the coder's relations been updated?
+	 * 
+	 * @return Indicator that is true if any coder relation has been modified.
+	 */
+	boolean isUpdated() {
+		return this.success;
 	}
 	
 	/**

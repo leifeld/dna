@@ -161,7 +161,7 @@ class StatusBar extends JPanel implements LogListener, SqlListener {
 	/**
 	 * Start displaying a document refresh message in the status bar.
 	 */
-	public void documentRefreshStarted() {
+	public void documentRefreshStart() {
 		this.documentRefreshIconLabel.setVisible(true);
 		this.documentRefreshLabel.setVisible(true);
 	}
@@ -169,7 +169,7 @@ class StatusBar extends JPanel implements LogListener, SqlListener {
 	/**
 	 * Stop displaying the document refresh message in the status bar.
 	 */
-	public void documentRefreshEnded() {
+	public void documentRefreshEnd() {
 		this.documentRefreshIconLabel.setVisible(false);
 		this.documentRefreshLabel.setVisible(false);
 	}

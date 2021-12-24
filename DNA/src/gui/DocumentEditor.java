@@ -10,6 +10,8 @@ import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -46,7 +48,6 @@ import logger.Logger;
 import model.Coder;
 import model.Document;
 import model.Statement;
-import sql.Sql.SqlResults;
 
 @SuppressWarnings("serial")
 public class DocumentEditor extends JDialog {
@@ -463,8 +464,19 @@ public class DocumentEditor extends JDialog {
 		
         @Override
         protected List<String[]> doInBackground() {
-        	try (SqlResults s = Dna.sql.getDocumentFieldResultSet();
-					ResultSet rs = s.getResultSet();) {
+        	String sql = "SELECT DISTINCT * " + 
+    				"FROM (" + 
+    				"SELECT 'Author' AS Field, Author as Value FROM DOCUMENTS " + 
+    				"UNION ALL " + 
+    				"SELECT 'Source' AS Field, Source as Value FROM DOCUMENTS " + 
+    				"UNION ALL " + 
+    				"SELECT 'Section' AS Field, Section as Value FROM DOCUMENTS " + 
+    				"UNION ALL " + 
+    				"SELECT 'Type' AS Field, Type as Value FROM DOCUMENTS) AS RESULT " + 
+    				"WHERE Field IS NOT NULL ORDER BY Field, Value;";
+        	try (Connection conn = Dna.sql.getDataSource().getConnection();
+        			PreparedStatement s = conn.prepareStatement(sql);
+        			ResultSet rs = s.executeQuery();) {
 				while (rs.next()) {
 					String[] pair = new String[] {rs.getString("Field"), rs.getString("Value")};
 					publish(pair);

@@ -139,6 +139,11 @@ public class Sql {
 			config.setPassword(cp.getPassword());
 			config.setUsername(cp.getUser());
 			config.setJdbcUrl("jdbc:" + cp.getType() + "://" + cp.getUrl() + ":" + cp.getPort() + "/" + cp.getDatabaseName());
+			if (cp.getType().equals("mysql")) {
+				config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+			} else {
+				config.setDriverClassName("org.postgresql.Driver");
+			}
 			ds = new HikariDataSource(config);
 	        LogEvent l = new LogEvent(Logger.MESSAGE,
 	        		"[SQL] A " + cp.getType() + " DNA database has been opened as a data source.",
@@ -276,51 +281,6 @@ public class Sql {
 	    @Override public void close() throws SQLException;
 	}
 
-	/**
-	 * A class that contains a JDBC connection, a prepared statement, and a
-	 * result set for processing results in another class and closing the
-	 * connection there when done. For example, the class can be used to
-	 * transport results between the {@link sql.Sql Sql} class and a Swing
-	 * worker. The Swing worker can use the result set and then invoke the
-	 * {@code close} method to close the connection when done.
-	 * 
-	 * @category setup
-	 */
-	public class SqlResults implements AutoCloseable {
-		ResultSet rs;
-		PreparedStatement ps;
-		Connection c;
-		
-		/**
-		 * Create a new instance of an {@link SqlResults}
-		 * container.
-		 * 
-		 * @param rs  A {@link java.sql.ResultSet ResultSet} object.
-		 * @param ps  A {@link java.sql.PreparedStatement PreparedStatement}.
-		 * @param c   A {@link java.sql.Connection Connection} object.
-		 */
-		public SqlResults(ResultSet rs, PreparedStatement ps, Connection c) {
-			this.rs = rs;
-			this.ps = ps;
-			this.c = c;
-		}
-
-		public void close() throws SQLException {
-			rs.close();
-			ps.close();
-			c.close();
-		}
-		
-		/**
-		 * Get the result set.
-		 * 
-		 * @return An SQL/JDBC result set.
-		 */
-		public ResultSet getResultSet() {
-			return rs;
-		}
-	}
-	
 	/**
 	 * Create data structures (tables and basic contents) in a new DNA database.
 	 * 
@@ -1937,74 +1897,6 @@ public class Sql {
 			Dna.logger.log(l);
 		}
 		return text;
-	}
-	
-	/**
-	 * Query the database for unique values of the author, source, section, and
-	 * type meta-data fields of all documents in the database. These will be
-	 * used to populate JComboBoxes with possible choices for new documents or
-	 * altering existing documents.
-	 * 
-	 * @return An {@link SqlResults} object with a connection, statement, and
-	 *   result set.
-	 */
-	public SqlResults getDocumentFieldResultSet() {
-		ResultSet rs = null;
-		Connection conn = null;
-		PreparedStatement s = null;
-		String sql = "SELECT DISTINCT * " + 
-				"FROM (" + 
-				"SELECT 'Author' AS Field, Author as Value FROM DOCUMENTS " + 
-				"UNION ALL " + 
-				"SELECT 'Source' AS Field, Source as Value FROM DOCUMENTS " + 
-				"UNION ALL " + 
-				"SELECT 'Section' AS Field, Section as Value FROM DOCUMENTS " + 
-				"UNION ALL " + 
-				"SELECT 'Type' AS Field, Type as Value FROM DOCUMENTS) AS RESULT " + 
-				"WHERE Field IS NOT NULL ORDER BY Field, Value;";
-		try {
-			conn = getDataSource().getConnection();
-			s = conn.prepareStatement(sql);
-			rs = s.executeQuery();
-		} catch (SQLException e) {
-			LogEvent le = new LogEvent(Logger.WARNING,
-					"[SQL] Could not retrieve document meta-data fields from database.",
-					"The document editor swing worker tried to retrieve all unique values for the selected documents' authors, sources, sections, and types from the database to display them as possible choices in the combo boxes for these variables, but the data could not be retrieved.",
-					e);
-			Dna.logger.log(le);
-		} finally {
-			// nothing gets closed here because the results would no longer be valid
-		}
-		SqlResults sr = new SqlResults(rs, s, conn);
-		return sr;
-	}
-	
-	/**
-	 * Query the database for shallow representations of all documents (i.e.,
-	 * the documents without their text or any contained statements but with
-	 * their associated statement frequencies) for display in a document table.
-	 * 
-	 * @return An {@link SqlResults} object.
-	 */
-	public SqlResults getTableDocumentResultSet() {
-		ResultSet rs = null;
-		Connection conn = null;
-		PreparedStatement tableStatement = null;
-		try {
-			conn = getDataSource().getConnection();
-			tableStatement = conn.prepareStatement("SELECT D.ID, Title, (SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = D.ID) AS Frequency, C.ID AS CoderId, Name AS CoderName, Red, Green, Blue, Date, Author, Source, Section, Type, Notes FROM CODERS C INNER JOIN DOCUMENTS D ON D.Coder = C.ID;");
-			rs = tableStatement.executeQuery();
-		} catch (SQLException e) {
-			LogEvent le = new LogEvent(Logger.WARNING,
-					"[SQL] Could not retrieve documents from database.",
-					"The document table model swing worker tried to retrieve all documents from the database to display them in the document table, but some or all documents could not be retrieved. The document table may be incomplete.",
-					e);
-			Dna.logger.log(le);
-		} finally {
-			// nothing gets closed here because the results would no longer be valid
-		}
-		SqlResults s = new SqlResults(rs, tableStatement, conn);
-		return s;
 	}
 	
 	/**

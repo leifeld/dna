@@ -57,7 +57,6 @@ import model.Value;
 import sql.ConnectionProfile;
 import sql.Sql;
 import sql.Sql.SQLCloseable;
-import sql.Sql.SqlResults;
 
 /**
  * A class for importing documents and statements from another database,
@@ -700,8 +699,9 @@ class Importer extends JDialog {
 		
 		@Override
 		protected List<TableDocument> doInBackground() {
-			try (SqlResults s = Importer.this.sql.getTableDocumentResultSet(); // result set and connection are automatically closed when done because SqlResults implements AutoCloseable
-					ResultSet rs = s.getResultSet();) {
+			try (Connection conn = Dna.sql.getDataSource().getConnection();
+					PreparedStatement s = conn.prepareStatement("SELECT D.ID, Title, (SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = D.ID) AS Frequency, C.ID AS CoderId, Name AS CoderName, Red, Green, Blue, Date, Author, Source, Section, Type, Notes FROM CODERS C INNER JOIN DOCUMENTS D ON D.Coder = C.ID;");
+					ResultSet rs = s.executeQuery();) {
 				LocalDateTime dateTime;
 				Date dateV2;
 				while (rs.next()) {
@@ -808,10 +808,11 @@ class Importer extends JDialog {
 		 * Execute the background tasks and try to import the data into the
 		 * current database.
 		 */
+		@SuppressWarnings("resource")
 		public void run() {
 			long time = System.nanoTime(); // take the time to compute later how long the updating took
 			
-			progressMonitor = new ProgressMonitor(Importer.this, "Importing data", "(1/5) Processing regex keywords...", 0, 5);
+			progressMonitor = new ProgressMonitor(Importer.this, "Preparing data for import", "(1/5) Processing regex keywords...", 0, 5);
 			progressMonitor.setMillisToDecideToPopup(1);
 			try {
 				Thread.sleep(500);
