@@ -177,6 +177,8 @@ public class MainWindow extends JFrame {
 		 * - Add a fourth logger message category to track actual changes in the document only; streamline logger events
 		 * - Scale icons better for Windows and other operating systems
 		 * - Fix any issues with resizing dialog windows and the main window on different operating systems
+		 * - Add auto-refresh
+		 * - Add regex editor
 		 */
 
 		c = getContentPane();
