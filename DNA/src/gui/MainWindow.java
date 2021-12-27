@@ -33,6 +33,7 @@ import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -40,6 +41,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -49,6 +51,8 @@ import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -76,7 +80,6 @@ import model.TableDocument;
 import model.Value;
 import sql.ConnectionProfile;
 import sql.Sql;
-import sql.Sql.SqlListener;
 
 /**
  * Main window that instantiates and plugs the different view components
@@ -84,7 +87,7 @@ import sql.Sql.SqlListener;
  * listeners that are attached to the view components to interact between the
  * components. 
  */
-public class MainWindow extends JFrame implements SqlListener {
+public class MainWindow extends JFrame {
 	private static final long serialVersionUID = 2740437090361841747L;
 	private Container c;
 	private DocumentTablePanel documentTablePanel;
@@ -92,6 +95,8 @@ public class MainWindow extends JFrame implements SqlListener {
 	private StatementPanel statementPanel;
 	private StatementTableModel statementTableModel;
 	private TextPanel textPanel;
+	private MenuBar menuBar;
+	private ToolbarPanel toolbar;
 	private StatusBar statusBar;
 	private CoderSelectionPanel coderSelectionPanel;
 	private ActionOpenDatabase actionOpenDatabase;
@@ -159,6 +164,20 @@ public class MainWindow extends JFrame implements SqlListener {
 					e);
 			Dna.logger.log(l);
 	    }
+		
+		/*
+		 * TODO:
+		 * - Popup window bad location exception when coder relations make a document disappear but user clicks on a statement in the statement table and the statement is in a hidden document
+		 * - Opening a popup window from the statement table does not move the scrollbar of the document table to the right position
+		 * - Statement filter produces IndexOutOfBoundsException
+		 * - No statement filter fields for statement ID and text
+		 * - Statement table: make ID column wider to accommodate four- and five-digit IDs
+		 * - Entering something in the notes field in the attribute manager (e.g., under organization) changes the alias field instead of the notes field when reopened
+		 * - Change the status bar messages for loading statements and documents to have cancellable buttons and a status bar
+		 * - Add a fourth logger message category to track actual changes in the document only; streamline logger events
+		 * - Scale icons better for Windows and other operating systems
+		 * - Fix any issues with resizing dialog windows and the main window on different operating systems
+		 */
 
 		c = getContentPane();
 		this.setTitle("Discourse Network Analyzer");
@@ -259,7 +278,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		statementTableModel = new StatementTableModel();
 		
 		// define GUI elements
-		ToolbarPanel toolbar = new ToolbarPanel(documentTableModel,
+		toolbar = new ToolbarPanel(documentTableModel,
 				actionAddDocument,
 				actionRemoveDocuments,
 				actionEditDocuments,
@@ -269,7 +288,7 @@ public class MainWindow extends JFrame implements SqlListener {
 				actionAddDocument,
 				actionRemoveDocuments,
 				actionEditDocuments);
-		MenuBar menuBar = new MenuBar(actionOpenDatabase,
+		menuBar = new MenuBar(actionOpenDatabase,
 				actionCloseDatabase,
 				actionCreateDatabase,
 				actionOpenProfile,
@@ -294,15 +313,7 @@ public class MainWindow extends JFrame implements SqlListener {
 		coderSelectionPanel = new CoderSelectionPanel();
 		
 		// add listeners
-		Dna.sql.addSqlListener(this);
 		Dna.logger.addListener(statusBar);
-		Dna.sql.addSqlListener(statusBar);
-		Dna.sql.addSqlListener(textPanel);
-		Dna.sql.addSqlListener(documentTablePanel);
-		Dna.sql.addSqlListener(getStatementPanel());
-		Dna.sql.addSqlListener(toolbar);
-		Dna.sql.addSqlListener(menuBar);
-		Dna.sql.addSqlListener(coderSelectionPanel);
 		
 		// layout
 		JPanel documentsAndToolBarPanel = new JPanel(new BorderLayout());
@@ -546,85 +557,108 @@ public class MainWindow extends JFrame implements SqlListener {
 			}
 		});
 		
+		// listeners for menu items
+		JSpinner fontSizeSpinner = menuBar.getFontSizeSpinner();
+		fontSizeSpinner.addChangeListener(new ChangeListener(){
+			public void stateChanged(ChangeEvent e) {
+				if (Dna.sql.getConnectionProfile() != null) {
+					Dna.sql.setCoderFontSize(Dna.sql.getConnectionProfile().getCoderId(), (int) fontSizeSpinner.getValue());
+					textPanel.adjustToChangedCoder();
+				}
+			}
+		});
+		JSpinner popupWidthSpinner = menuBar.getPopupWidthSpinner();
+		popupWidthSpinner.addChangeListener(new ChangeListener(){
+			public void stateChanged(ChangeEvent e) {
+				if (Dna.sql.getConnectionProfile() != null) {
+					Dna.sql.setCoderPopupWidth(Dna.sql.getConnectionProfile().getCoderId(), (int) popupWidthSpinner.getValue());
+				}
+			}
+		});
+		JCheckBoxMenuItem popupAutoCompleteItem = menuBar.getPopupAutoCompleteItem();
+		popupAutoCompleteItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (Dna.sql.getConnectionProfile() != null) {
+					Dna.sql.setCoderPopupAutoComplete(Dna.sql.getConnectionProfile().getCoderId(), popupAutoCompleteItem.isSelected());
+				}
+			}
+		});
+		JCheckBoxMenuItem popupDecorationItem = menuBar.getPopupDecorationItem();
+		popupDecorationItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (Dna.sql.getConnectionProfile() != null) {
+					Dna.sql.setCoderPopupDecoration(Dna.sql.getConnectionProfile().getCoderId(), popupDecorationItem.isSelected());
+				}
+			}
+		});
+		JCheckBoxMenuItem colorByCoderItem = menuBar.getColorByCoderItem();
+		colorByCoderItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (Dna.sql.getConnectionProfile() != null) {
+					Dna.sql.setColorByCoder(Dna.sql.getConnectionProfile().getCoderId(), colorByCoderItem.isSelected());
+					textPanel.adjustToChangedCoder();
+				}
+			}
+		});
+		
+		// change coder button listener
+		JButton changeCoderButton = coderSelectionPanel.getChangeCoderButton();
+		changeCoderButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				boolean authenticated = false;
+				int coderIdToSelect = -1;
+				if (Dna.sql.getActiveCoder() != null) {
+					coderIdToSelect = Dna.sql.getActiveCoder().getId();
+				}
+				while (!authenticated) {
+					CoderPasswordCheckDialog dialog = new CoderPasswordCheckDialog(Dna.sql, true, coderIdToSelect, 3);
+					Coder coder = dialog.getCoder();
+					String clearPassword = dialog.getPassword();
+					if (coder != null && clearPassword != null) {
+						coderIdToSelect = coder.getId();
+						if (Dna.sql.authenticate(coder.getId(), clearPassword)) {
+							authenticated = true;
+							boolean reloadDocumentTable = coder.differentViewDocumentPermissions(Dna.sql.getActiveCoder());
+							boolean reloadStatementTable = coder.differentViewStatementPermissions(Dna.sql.getActiveCoder());
+							boolean repaintDocument = coder.differentPaintSettings(Dna.sql.getActiveCoder());
+							Dna.sql.selectCoder(coder.getId());
+							if (reloadDocumentTable) {
+								refreshDocumentTable();
+							}
+							if (reloadStatementTable) {
+								refreshStatementTable();
+							}
+							if (repaintDocument) {
+								textPanel.adjustToChangedCoder();
+							}
+							coderSelectionPanel.changeCoderBadge();
+							menuBar.adjustToChangedCoder();
+							MainWindow.this.adjustToCoderSelection();
+						} else {
+							LogEvent l = new LogEvent(Logger.WARNING,
+    								"Authentication failed. Check your password.",
+    								"Tried to select coder, but a wrong password was entered for Coder " + coder.getId() + ".");
+    						Dna.logger.log(l);
+		    				JOptionPane.showMessageDialog(null,
+		    						"Authentication failed. Check your password.",
+		    					    "Check failed",
+		    					    JOptionPane.ERROR_MESSAGE);
+						}
+					} else {
+						authenticated = true; // user must have pressed cancel
+					}
+				}
+			}
+		});
+		
 		c.add(mainPanel);
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
-	}
-	
-	/**
-	 * Adjust controls to document table selection.
-	 */
-	private void changedDocumentTableSelection() {
-		JTable documentTable = documentTablePanel.getDocumentTable();
-		int rowCount = documentTable.getSelectedRowCount();
-		boolean allOwned = true;
-		boolean allOthersEditPermitted = true;
-		int[] rows = documentTable.getSelectedRows();
-		if (rowCount > 0) {
-			for (int i = 0; i < rows.length; i++) {
-				int modelRow = documentTable.convertRowIndexToModel(rows[i]);
-				int coderId = documentTableModel.getRow(modelRow).getCoder().getId();
-				if (coderId != Dna.sql.getActiveCoder().getId()) {
-					allOwned = false; // does the active coder own all selected documents?
-					if (Dna.sql.getActiveCoder().isPermissionEditOthersDocuments(coderId) == false) {
-						allOthersEditPermitted = false;
-					}
-				}
-			}
-		}
-		// enable or disable action for deleting documents depending on selection and user rights
-		if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionDeleteDocuments() == true &&
-				(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
-				allOthersEditPermitted == true) {
-			actionRemoveDocuments.setEnabled(true);
-		} else {
-			actionRemoveDocuments.setEnabled(false);
-		}
-		// enable or disable action for editing documents depending on selection and user rights
-		if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionEditDocuments() == true &&
-				(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
-				allOthersEditPermitted == true) {
-			actionEditDocuments.setEnabled(true);
-		} else {
-			actionEditDocuments.setEnabled(false);
-		}
-		if (rowCount == 0 || rowCount > 1) {
-			textPanel.setContents(-1, "");
-			getStatementPanel().setDocumentId(-1);
-			statementTableModel.fireTableDataChanged();
-		} else if (rowCount == 1) {
-			int selectedRow = documentTable.getSelectedRow();
-			int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
-			int id = documentTableModel.getIdByModelRow(selectedModelIndex);
-			textPanel.setContents(id, documentTableModel.getDocumentText(id));
-			getStatementPanel().setDocumentId(id);
-			statementTableModel.fireTableDataChanged();
-		} else {
-			LogEvent l = new LogEvent(Logger.WARNING,
-					"[GUI] Negative number of rows in the document table!",
-					"When a document is selected in the document table in the DNA coding window, the text of the document is displayed in the text panel. When checking which row in the table was selected, it was found that the table contained negative numbers of documents. This is obviously an error. Please report it by submitting a bug report along with the saved log.");
-			Dna.logger.log(l);
-		}
-		
-		// enable or disable actions for adding and importing documents
-		if (Dna.sql.getActiveCoder() == null || Dna.sql.getConnectionProfile() == null) {
-			actionAddDocument.setEnabled(false);
-			actionBatchImportDocuments.setEnabled(false);
-		} else {
-			if (Dna.sql.getActiveCoder().isPermissionAddDocuments() == true) {
-				actionAddDocument.setEnabled(true);
-				actionBatchImportDocuments.setEnabled(true);
-			} else {
-				actionAddDocument.setEnabled(false);
-				actionBatchImportDocuments.setEnabled(false);
-			}
-			if (Dna.sql.getActiveCoder().isPermissionImportDocuments() == true) {
-				actionImporter.setEnabled(true);
-			} else {
-				actionImporter.setEnabled(false);
-			}
-		}
 	}
 	
 	/**
@@ -876,7 +910,7 @@ public class MainWindow extends JFrame implements SqlListener {
 			try (Connection conn = Dna.sql.getDataSource().getConnection();
 					PreparedStatement s = conn.prepareStatement("SELECT D.ID, Title, (SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = D.ID) AS Frequency, C.ID AS CoderId, Name AS CoderName, Red, Green, Blue, Date, Author, Source, Section, Type, Notes FROM CODERS C INNER JOIN DOCUMENTS D ON D.Coder = C.ID;");
 					ResultSet rs = s.executeQuery();) {
-				while (rs.next()) {
+				while (!isCancelled() && rs.next()) {
 					if (isCancelled()) {
 						return null;
 					}
@@ -1053,7 +1087,7 @@ public class MainWindow extends JFrame implements SqlListener {
 
 				// first, get the statement information, including coder and statement type info
 				ResultSet r1 = s1.executeQuery();
-				while (r1.next()) {
+				while (!isCancelled() && r1.next()) {
 					if (isCancelled()) {
 						return null;
 					}
@@ -1138,70 +1172,162 @@ public class MainWindow extends JFrame implements SqlListener {
     }
 
 	/**
-	 * React to changes in the state (= presence or absence) of the DNA database
-	 * in the {@link sql.Sql Sql} class.
+	 * Adjust controls to document table selection.
 	 */
-	@Override
-	public void adjustToChangedConnection() {
-    	if (Dna.sql.getConnectionProfile() != null) {
-			actionRefresh.setEnabled(true);
-			if (actionCloseDatabase != null) {
-				actionCloseDatabase.setEnabled(true);
+	private void changedDocumentTableSelection() {
+		JTable documentTable = documentTablePanel.getDocumentTable();
+		int rowCount = documentTable.getSelectedRowCount();
+		boolean allOwned = true;
+		boolean allOthersEditPermitted = true;
+		int[] rows = documentTable.getSelectedRows();
+		if (rowCount > 0) {
+			for (int i = 0; i < rows.length; i++) {
+				int modelRow = documentTable.convertRowIndexToModel(rows[i]);
+				int coderId = documentTableModel.getRow(modelRow).getCoder().getId();
+				if (coderId != Dna.sql.getActiveCoder().getId()) {
+					allOwned = false; // does the active coder own all selected documents?
+					if (Dna.sql.getActiveCoder().isPermissionEditOthersDocuments(coderId) == false) {
+						allOthersEditPermitted = false;
+					}
+				}
 			}
-			if (actionSaveProfile != null) {
-				actionSaveProfile.setEnabled(true);
+		}
+		// enable or disable action for deleting documents depending on selection and user rights
+		if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionDeleteDocuments() == true &&
+				(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
+				allOthersEditPermitted == true) {
+			actionRemoveDocuments.setEnabled(true);
+		} else {
+			actionRemoveDocuments.setEnabled(false);
+		}
+		// enable or disable action for editing documents depending on selection and user rights
+		if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionEditDocuments() == true &&
+				(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
+				allOthersEditPermitted == true) {
+			actionEditDocuments.setEnabled(true);
+		} else {
+			actionEditDocuments.setEnabled(false);
+		}
+		if (rowCount == 0 || rowCount > 1) {
+			textPanel.setContents(-1, "");
+			getStatementPanel().setDocumentId(-1);
+			statementTableModel.fireTableDataChanged();
+		} else if (rowCount == 1) {
+			int selectedRow = documentTable.getSelectedRow();
+			int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
+			int id = documentTableModel.getIdByModelRow(selectedModelIndex);
+			textPanel.setContents(id, documentTableModel.getDocumentText(id));
+			getStatementPanel().setDocumentId(id);
+			statementTableModel.fireTableDataChanged();
+		} else {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[GUI] Negative number of rows in the document table!",
+					"When a document is selected in the document table in the DNA coding window, the text of the document is displayed in the text panel. When checking which row in the table was selected, it was found that the table contained negative numbers of documents. This is obviously an error. Please report it by submitting a bug report along with the saved log.");
+			Dna.logger.log(l);
+		}
+		
+		// enable or disable actions for adding and importing documents
+		if (Dna.sql.getActiveCoder() == null || Dna.sql.getConnectionProfile() == null) {
+			actionAddDocument.setEnabled(false);
+			actionBatchImportDocuments.setEnabled(false);
+		} else {
+			if (Dna.sql.getActiveCoder().isPermissionAddDocuments() == true) {
+				actionAddDocument.setEnabled(true);
+				actionBatchImportDocuments.setEnabled(true);
+			} else {
+				actionAddDocument.setEnabled(false);
+				actionBatchImportDocuments.setEnabled(false);
 			}
-    	} else {
-			actionRefresh.setEnabled(false);
-			if (actionCloseDatabase != null) {
-				actionCloseDatabase.setEnabled(false);
+			if (Dna.sql.getActiveCoder().isPermissionImportDocuments() == true) {
+				actionImporter.setEnabled(true);
+			} else {
+				actionImporter.setEnabled(false);
 			}
-			if (actionSaveProfile != null) {
-				actionSaveProfile.setEnabled(false);
-			}
-    	}
-    	adjustToChangedCoder();
+		}
 	}
-
+	
 	/**
 	 * React to changes in the active coder in the {@link dna.Sql Sql} class.
 	 */
-	@Override
-	public void adjustToChangedCoder() {
-		if (Dna.sql.getConnectionProfile() != null) {
-			changedDocumentTableSelection();
-		}
-		if (Dna.sql.getActiveCoder() != null) {
-			if (Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
-				actionCoderManager.setEnabled(true);
-			} else {
-				actionCoderManager.setEnabled(false);
-			}
-			if (Dna.sql.getActiveCoder().isPermissionEditStatementTypes() == true) {
-				actionStatementTypeEditor.setEnabled(true);
-			} else {
-				actionStatementTypeEditor.setEnabled(false);
-			}
-			if (Dna.sql.getActiveCoder().isPermissionEditAttributes() == true) {
-				actionAttributeManager.setEnabled(true);
-			} else {
-				actionAttributeManager.setEnabled(false);
-			}
-			if (Dna.sql.getActiveCoder().isPermissionEditCoderRelations() == true && Dna.sql.getActiveCoder().getId() != 1) {
-				actionCoderRelationsEditor.setEnabled(true);
-			} else {
-				actionCoderRelationsEditor.setEnabled(false);
-			}
+	public void adjustToCoderSelection() {
+		actionCloseDatabase.setEnabled(true);
+		actionCreateDatabase.setEnabled(true);
+		actionOpenProfile.setEnabled(true);
+		actionSaveProfile.setEnabled(true);
+		if (Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
+			actionCoderManager.setEnabled(true);
 		} else {
 			actionCoderManager.setEnabled(false);
+		}
+		changedDocumentTableSelection();
+		actionRefresh.setEnabled(true);
+		if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true) {
+			actionRemoveStatements.setEnabled(true);
+		} else {
+			actionRemoveStatements.setEnabled(false);
+		}
+		if (Dna.sql.getActiveCoder().isPermissionEditStatementTypes() == true) {
+			actionStatementTypeEditor.setEnabled(true);
+		} else {
 			actionStatementTypeEditor.setEnabled(false);
+		}
+		if (Dna.sql.getActiveCoder().isPermissionEditAttributes() == true) {
+			actionAttributeManager.setEnabled(true);
+		} else {
 			actionAttributeManager.setEnabled(false);
+		}
+		if (Dna.sql.getActiveCoder().isPermissionEditCoderRelations() == true && Dna.sql.getActiveCoder().getId() != 1) {
+			actionCoderRelationsEditor.setEnabled(true);
+		} else {
 			actionCoderRelationsEditor.setEnabled(false);
 		}
-		refreshDocumentTable(); // TODO: this introduces duplicate document table rows; same for statements below
+		refreshDocumentTable();
 		refreshStatementTable();
 	}
-
+	
+	/**
+	 * An action to display a dialog to open a database.
+	 */
+	class ActionOpenDatabase extends AbstractAction {
+		private static final long serialVersionUID = 5076889002458881750L;
+		
+		public ActionOpenDatabase(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			NewDatabaseDialog n = new NewDatabaseDialog(true);
+			ConnectionProfile cp = n.getConnectionProfile();
+			if (cp != null) {
+				Dna.sql.setConnectionProfile(cp, false);
+				adjustToCoderSelection();
+				
+				// changes in other classes
+				statusBar.updateUrl();
+				toolbar.adjustToChangedConnection();
+				textPanel.setContents(-1, "");
+				statementPanel.adjustToChangedConnection();
+				menuBar.adjustToChangedCoder();
+				coderSelectionPanel.changeCoderBadge();
+			}
+			
+			if (cp == null) {
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[GUI] Action executed: could not open database.",
+						"Started opening a database connection from the GUI, but the connection was not established.");
+				Dna.logger.log(l);
+			} else {
+				Dna.sql.setConnectionProfile(cp, false); // not a connection test, so false
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[GUI] Action executed: opened database.",
+						"Opened a database connection from the GUI.");
+				Dna.logger.log(l);
+			}
+		}
+	}
+	
 	/**
 	 * An action to close the open SQL database.
 	 */
@@ -1215,7 +1341,35 @@ public class MainWindow extends JFrame implements SqlListener {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			Dna.sql.setConnectionProfile(null, false);
+			Dna.sql.selectCoder(-1);
+			
+			// subsequent changes in main window class
+			actionCloseDatabase.setEnabled(false);
+			actionCreateDatabase.setEnabled(true);
+			actionOpenProfile.setEnabled(true);
+			actionSaveProfile.setEnabled(false);
+			actionCoderManager.setEnabled(false);
+			actionAddDocument.setEnabled(false);
+			actionRemoveDocuments.setEnabled(false);
+			actionEditDocuments.setEnabled(false);
+			actionBatchImportDocuments.setEnabled(false);
+			actionImporter.setEnabled(false);
+			actionRefresh.setEnabled(false);
+			actionRemoveStatements.setEnabled(false);
+			actionStatementTypeEditor.setEnabled(false);
+			actionAttributeManager.setEnabled(false);
+			actionCoderRelationsEditor.setEnabled(false);
+			documentTableModel.clear();
+			statementTableModel.clear();
+			
+			// changes in other classes
+			statusBar.updateUrl();
+			toolbar.adjustToChangedConnection();
+			textPanel.setContents(-1, "");
+			statementPanel.adjustToChangedConnection();
+			menuBar.adjustToChangedCoder();
+			coderSelectionPanel.changeCoderBadge();
+			
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: closed database.",
 					"Closed database connection from the GUI.");
@@ -1239,6 +1393,16 @@ public class MainWindow extends JFrame implements SqlListener {
 			NewDatabaseDialog n = new NewDatabaseDialog(false);
 			ConnectionProfile cp = n.getConnectionProfile();
 			Dna.sql.setConnectionProfile(cp, false); // this is after creating data structures, so no test (= false)
+			adjustToCoderSelection();
+			
+			// changes in other classes
+			statusBar.updateUrl();
+			toolbar.adjustToChangedConnection();
+			textPanel.setContents(-1, "");
+			statementPanel.adjustToChangedConnection();
+			menuBar.adjustToChangedCoder();
+			coderSelectionPanel.changeCoderBadge();
+			
 			if (cp == null) {
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: new database was not created.",
@@ -1321,6 +1485,15 @@ public class MainWindow extends JFrame implements SqlListener {
 								if (authenticated == true) {
 									validPasswordInput = true; // authenticated; quit the while-loop
 									Dna.sql.setConnectionProfile(cp, false); // use the connection profile, so no test
+									adjustToCoderSelection();
+									
+									// changes in other classes
+									statusBar.updateUrl();
+									toolbar.adjustToChangedConnection();
+									textPanel.setContents(-1, "");
+									statementPanel.adjustToChangedConnection();
+									menuBar.adjustToChangedCoder();
+									coderSelectionPanel.changeCoderBadge();
 								} else {
 									cp = null;
 								}
@@ -1516,6 +1689,61 @@ public class MainWindow extends JFrame implements SqlListener {
 		public void actionPerformed(ActionEvent e) {
 			if (Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
 				new CoderManager();
+				if (Dna.sql.getActiveCoder().getId() != 1) {
+					Coder coderCopy = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
+					
+					// refresh document and statement table and repaint text if necessary; reselect the coder
+					boolean updateViewDocuments = false;
+					if (coderCopy.differentViewDocumentPermissions(Dna.sql.getActiveCoder())) {
+						updateViewDocuments = true;
+					}
+					boolean updateViewStatements = false;
+					if (coderCopy.differentViewStatementPermissions(Dna.sql.getActiveCoder())) {
+						updateViewStatements = true;
+					}
+					boolean updatePaintSettings = false;
+					if (coderCopy.differentPaintSettings(Dna.sql.getActiveCoder())) {
+						updatePaintSettings = true;
+					}
+					Dna.sql.selectCoder(coderCopy);
+					if (updateViewDocuments) {
+						refreshDocumentTable();
+					}
+					if (updateViewStatements) {
+						refreshStatementTable();
+					}
+					if (updatePaintSettings) {
+						textPanel.adjustToChangedCoder();
+					}
+					
+					// enable or disable actions as necessary after update
+					if (Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
+						actionCoderManager.setEnabled(true);
+					} else {
+						actionCoderManager.setEnabled(false);
+					}
+					changedDocumentTableSelection();
+					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true) {
+						actionRemoveStatements.setEnabled(true);
+					} else {
+						actionRemoveStatements.setEnabled(false);
+					}
+					if (Dna.sql.getActiveCoder().isPermissionEditStatementTypes() == true) {
+						actionStatementTypeEditor.setEnabled(true);
+					} else {
+						actionStatementTypeEditor.setEnabled(false);
+					}
+					if (Dna.sql.getActiveCoder().isPermissionEditAttributes() == true) {
+						actionAttributeManager.setEnabled(true);
+					} else {
+						actionAttributeManager.setEnabled(false);
+					}
+					if (Dna.sql.getActiveCoder().isPermissionEditCoderRelations() == true) {
+						actionCoderRelationsEditor.setEnabled(true);
+					} else {
+						actionCoderRelationsEditor.setEnabled(false);
+					}
+				}
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: opened coder manager.",
 						"Opened a coder manager window from the GUI.");
@@ -1794,8 +2022,11 @@ public class MainWindow extends JFrame implements SqlListener {
 		public void actionPerformed(ActionEvent e) {
 			if (Dna.sql.getActiveCoder().isPermissionEditCoderRelations() && Dna.sql.getActiveCoder().getId() != 1) {
 				CoderRelationsEditor cre = new CoderRelationsEditor();
-				if (cre.isUpdated()) {
-					Dna.sql.updateActiveCoder();
+				if (cre.isUpdateViewDocuments()) {
+					refreshDocumentTable();
+				}
+				if (cre.isUpdateViewStatements()) {
+					refreshStatementTable();
 				}
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: opened coder relations editor.",

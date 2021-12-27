@@ -13,9 +13,8 @@ import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionRefresh;
 import gui.MainWindow.ActionRemoveDocuments;
 import gui.MainWindow.ActionRemoveStatements;
-import sql.Sql.SqlListener;
 
-class ToolbarPanel extends JPanel implements SqlListener {
+class ToolbarPanel extends JPanel {
 	private static final long serialVersionUID = 5561195349172139438L;
 	private JTextField documentFilterField;
 
@@ -64,12 +63,9 @@ class ToolbarPanel extends JPanel implements SqlListener {
 		return documentFilterField;
 	}
 
-	@Override
-	public void adjustToChangedCoder() {
-		// nothing to do
-	}
-
-	@Override
+	/**
+	 * Adjust the document filter field after a new database has been opened.
+	 */
 	public void adjustToChangedConnection() {
 		if (Dna.sql.getConnectionProfile() == null) {
 			documentFilterField.setText("");

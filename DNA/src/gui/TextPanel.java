@@ -20,14 +20,13 @@ import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import model.Statement;
-import sql.Sql.SqlListener;
 
 /**
  * Text panel, which displays the text of the selected document and paints the
  * statements in the given document in different colors. It keeps the current
  * document ID on record to paint only the statements in the current document.
  */
-class TextPanel extends JPanel implements SqlListener {
+class TextPanel extends JPanel {
 	private static final long serialVersionUID = -8094978928012991210L;
 	private JTextPane textWindow;
 	private JScrollPane textScrollPane;
@@ -153,8 +152,11 @@ class TextPanel extends JPanel implements SqlListener {
 		}
 	}
 	
-	@Override
-	public void adjustToChangedCoder() {
+	/**
+	 * Repaint statements and update font size after a new coder has been
+	 * selected.
+	 */
+	void adjustToChangedCoder() {
 		if (Dna.sql.getConnectionProfile() == null) {
 		    Font font = new Font("Monospaced", Font.PLAIN, 14);
 	        textWindow.setFont(font);
@@ -171,10 +173,5 @@ class TextPanel extends JPanel implements SqlListener {
 				Dna.logger.log(l);
 			}
 		}
-	}
-
-	@Override
-	public void adjustToChangedConnection() {
-		setContents(-1, "");
 	}
 }

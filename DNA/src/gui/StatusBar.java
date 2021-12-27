@@ -7,8 +7,6 @@ import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -18,12 +16,11 @@ import dna.Dna;
 import logger.Logger.LogListener;
 import logger.LoggerDialog;
 import sql.Sql;
-import sql.Sql.SqlListener;
 
 /**
  * A status bar panel showing the database on the left and messages on the right. 
  */
-class StatusBar extends JPanel implements LogListener, SqlListener {
+class StatusBar extends JPanel implements LogListener {
 	private static final long serialVersionUID = -1987834394140569531L;
 	JLabel urlLabel, documentRefreshLabel, documentRefreshIconLabel, statementRefreshLabel, statementRefreshIconLabel;
 	int numWarnings, numErrors;
@@ -37,8 +34,7 @@ class StatusBar extends JPanel implements LogListener, SqlListener {
 		JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
 		ImageIcon openDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
-		ActionOpenDatabase actionOpenDatabase = new ActionOpenDatabase("", openDatabaseIcon, "Open a dialog window to establish a connection to a remote or file-based database", KeyEvent.VK_O);
-		JButton databaseButton = new JButton(actionOpenDatabase);
+		JButton databaseButton = new JButton(openDatabaseIcon);
 		databaseButton.setContentAreaFilled(false);
 		databaseButton.setBorderPainted(false);
 		databaseButton.setBorder(null);
@@ -205,15 +201,5 @@ class StatusBar extends JPanel implements LogListener, SqlListener {
 			}
 		}
 		updateLog(numWarnings, numErrors);
-	}
-
-	@Override
-	public void adjustToChangedConnection() {
-		updateUrl();
-	}
-
-	@Override
-	public void adjustToChangedCoder() {
-		// nothing to do
 	}
 }

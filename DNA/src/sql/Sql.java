@@ -10,7 +10,6 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -63,7 +62,7 @@ public class Sql {
 	 * Keep a list of classes that depend on which coder is selected and what
 	 * characteristics the coder has, for examples text panel.
 	 */
-	private static List<SqlListener> sqlListeners = new ArrayList<SqlListener>();
+	// private static List<SqlListener> sqlListeners = new ArrayList<SqlListener>();
 	
 	
 	/* =========================================================================
@@ -155,10 +154,9 @@ public class Sql {
 	        		"Attempted to open a database of type \"" + cp.getType() + "\", but the type does not seem to be supported.");
 	        Dna.logger.log(l);
 		}
-		if (test == false) {
-			updateActiveCoder(); // update active coder and notify listeners about the update
+		if (test == false && cp != null) {
+			selectCoder(cp.getCoderId());
 		}
-		fireConnectionChange();
 	}
 	
 	/**
@@ -184,53 +182,28 @@ public class Sql {
 	}
 
 	/**
-	 * An interface for listeners for changes in the active connection or coder,
-	 * including selection of a different coder and changes in any coder
-	 * details, such as permissions, and a change of connection profile. For
-	 * example, the GUI should react to permission changes or change of coder by
-	 * enabling or disabling statement popups windows, repainting statements in
-	 * the text etc. The GUI components thus need to be registered as listeners.
+	 * Retrieve a coder from the database and set it as the active coder.
 	 * 
-	 * @category setup
+	 * @param coderId  The ID of the coder to be selected.
 	 */
-	public interface SqlListener {
-		void adjustToChangedConnection();
-		void adjustToChangedCoder();
-	}
-
-	/**
-	 * Add a coder listener. This can be an object that implements the
-	 * {@link CoderListener} interface.
-	 * 
-	 * @param listener An object implementing the {@link SqlListener}
-	 *   interface.
-	 * 
-	 * @category setup
-	 */
-	public void addSqlListener(SqlListener listener) {
-        sqlListeners.add(listener);
-    }
-
-	/**
-	 * Notify listeners that the connection has changed.
-	 * 
-	 * @category setup
-	 */
-	public static void fireConnectionChange() {
-		for (SqlListener listener : sqlListeners) {
-			listener.adjustToChangedConnection();
+	public void selectCoder(int coderId) {
+		if (coderId < 1) {
+			setConnectionProfile(null, false); // not a connection test, so false
+			this.activeCoder = null;
+		} else {
+			getConnectionProfile().setCoder(coderId);
+			this.activeCoder = getCoder(coderId);
 		}
 	}
 
 	/**
-	 * Notify listeners that the active coder has changed.
+	 * Select a specified coder as the active coder.
 	 * 
-	 * @category setup
+	 * @param coder  The coder to be selected.
 	 */
-	public static void fireCoderChange() {
-		for (SqlListener listener : sqlListeners) {
-			listener.adjustToChangedCoder();
-		}
+	public void selectCoder(Coder coder) {
+		getConnectionProfile().setCoder(coder.getId());
+		this.activeCoder = coder;
 	}
 
 	/**
@@ -240,7 +213,7 @@ public class Sql {
 	 * 
 	 * @category setup
 	 */
-	public void changeActiveCoder(int coderId) {
+	public void changeActiveCoder2(int coderId) {
 		if (coderId > -1) {
 			getConnectionProfile().setCoder(coderId);
 			this.activeCoder = getCoder(coderId);
@@ -248,7 +221,7 @@ public class Sql {
 			setConnectionProfile(null, false); // not a connection test, so false
 			this.activeCoder = null;
 		}
-		fireCoderChange();
+		// fireCoderChange();
 	}
 
 	/**
@@ -256,13 +229,13 @@ public class Sql {
 	 * 
 	 * @category setup
 	 */
-	public void updateActiveCoder() {
+	public void updateActiveCoder2() {
 		if (getConnectionProfile() == null) {
 			this.activeCoder = null;
 		} else {
 			this.activeCoder = getCoder(cp.getCoderId());
 		}
-		fireCoderChange();
+		// fireCoderChange();
 	}
 
 	/**
@@ -1342,6 +1315,7 @@ public class Sql {
         	s.setInt(1, fontSize);
         	s.setInt(2,  coderId);
         	s.executeUpdate();
+    		this.activeCoder.setFontSize(fontSize);
 		} catch (SQLException e) {
         	LogEvent l = new LogEvent(Logger.WARNING,
         			"[SQL] Failed to update font size for Coder " + coderId + " in the database.",
@@ -1349,7 +1323,6 @@ public class Sql {
         			e);
         	Dna.logger.log(l);
 		}
-		updateActiveCoder();
 	}
 
 	/**
@@ -1371,6 +1344,7 @@ public class Sql {
         	s.setInt(1, c);
         	s.setInt(2,  coderId);
         	s.executeUpdate();
+    		this.activeCoder.setColorByCoder(colorByCoder);
 		} catch (SQLException e) {
         	LogEvent l = new LogEvent(Logger.WARNING,
         			"[SQL] Failed to update color by coder setting for Coder " + coderId + " in the database.",
@@ -1378,7 +1352,6 @@ public class Sql {
         			e);
         	Dna.logger.log(l);
 		}
-		updateActiveCoder();
 	}
 
 	/**
@@ -1393,6 +1366,7 @@ public class Sql {
         	s.setInt(1, popupWidth);
         	s.setInt(2,  coderId);
         	s.executeUpdate();
+        	this.activeCoder.setPopupWidth(popupWidth);
 		} catch (SQLException e) {
         	LogEvent l = new LogEvent(Logger.WARNING,
         			"[SQL] Failed to update popup window width for Coder " + coderId + " in the database.",
@@ -1400,7 +1374,6 @@ public class Sql {
         			e);
         	Dna.logger.log(l);
 		}
-		updateActiveCoder();
 	}
 
 	/**
@@ -1420,6 +1393,7 @@ public class Sql {
         	s.setInt(1, d);
         	s.setInt(2,  coderId);
         	s.executeUpdate();
+        	this.activeCoder.setPopupDecoration(decoration);
 		} catch (SQLException e) {
         	LogEvent l = new LogEvent(Logger.WARNING,
         			"[SQL] Failed to update popup decoration setting for Coder " + coderId + " in the database.",
@@ -1427,7 +1401,6 @@ public class Sql {
         			e);
         	Dna.logger.log(l);
 		}
-		updateActiveCoder();
 	}
 
 	/**
@@ -1447,6 +1420,7 @@ public class Sql {
         	s.setInt(1, a);
         	s.setInt(2,  coderId);
         	s.executeUpdate();
+        	this.activeCoder.setPopupAutoComplete(autoComplete);
 		} catch (SQLException e) {
         	LogEvent l = new LogEvent(Logger.WARNING,
         			"[SQL] Failed to update popup auto-complete setting for Coder " + coderId + " in the database.",
@@ -1454,7 +1428,6 @@ public class Sql {
         			e);
         	Dna.logger.log(l);
 		}
-		updateActiveCoder();
 	}
 	
 	/**

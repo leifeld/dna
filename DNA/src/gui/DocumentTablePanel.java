@@ -28,9 +28,8 @@ import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionRemoveDocuments;
 import model.Coder;
 import model.TableDocument;
-import sql.Sql.SqlListener;
 
-class DocumentTablePanel extends JPanel implements SqlListener {
+class DocumentTablePanel extends JPanel {
 	private static final long serialVersionUID = 4543056929753553570L;
 	private JTable documentTable;
 	private DocumentTableModel documentTableModel;
@@ -345,15 +344,5 @@ class DocumentTablePanel extends JPanel implements SqlListener {
 	 */
 	void setDocumentFilterPattern(String documentFilterPattern) {
 		this.documentFilterPattern = documentFilterPattern;
-	}
-
-	@Override
-	public void adjustToChangedCoder() {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void adjustToChangedConnection() {
-		// nothing to do
 	}
 }

@@ -1,8 +1,6 @@
 package gui;
 
 import java.awt.Image;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
@@ -14,8 +12,6 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.JSpinner.DefaultEditor;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import dna.Dna;
 import gui.MainWindow.ActionAboutWindow;
@@ -29,6 +25,7 @@ import gui.MainWindow.ActionCreateDatabase;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionImporter;
 import gui.MainWindow.ActionLoggerDialog;
+import gui.MainWindow.ActionOpenDatabase;
 import gui.MainWindow.ActionOpenProfile;
 import gui.MainWindow.ActionQuit;
 import gui.MainWindow.ActionRefresh;
@@ -36,12 +33,11 @@ import gui.MainWindow.ActionRemoveDocuments;
 import gui.MainWindow.ActionRemoveStatements;
 import gui.MainWindow.ActionSaveProfile;
 import gui.MainWindow.ActionStatementTypeEditor;
-import sql.Sql.SqlListener;
 
 /**
  * Menu bar with actions as menu items.
  */
-public class MenuBar extends JMenuBar implements SqlListener {
+public class MenuBar extends JMenuBar {
 	private static final long serialVersionUID = 6631392079690346097L;
 	private JLabel popupWidthIconLabel, popupWidthDescriptionLabel;
 	private JSpinner popupWidthSpinner;
@@ -188,13 +184,6 @@ public class MenuBar extends JMenuBar implements SqlListener {
 		((DefaultEditor) fontSizeSpinner.getEditor()).getTextField().setColumns(2);
 		fontSizeSpinner.setToolTipText(fontSizeIconLabel.getToolTipText());
 		fontSizeDescriptionLabel.setLabelFor(fontSizeSpinner);
-		fontSizeSpinner.addChangeListener(new ChangeListener(){
-			public void stateChanged(ChangeEvent e) {
-				if (Dna.sql.getConnectionProfile() != null) {
-					Dna.sql.setCoderFontSize(Dna.sql.getConnectionProfile().getCoderId(), (int) fontSizeSpinner.getValue());
-				}
-			}
-		});
 		fontSizeIconLabel.setEnabled(false);
 		fontSizeDescriptionLabel.setEnabled(false);
 		fontSizeSpinner.setEnabled(false);
@@ -215,13 +204,6 @@ public class MenuBar extends JMenuBar implements SqlListener {
 		((DefaultEditor) popupWidthSpinner.getEditor()).getTextField().setColumns(4);
 		popupWidthSpinner.setToolTipText(popupWidthIconLabel.getToolTipText());
 		popupWidthDescriptionLabel.setLabelFor(popupWidthSpinner);
-		popupWidthSpinner.addChangeListener(new ChangeListener(){
-			public void stateChanged(ChangeEvent e) {
-				if (Dna.sql.getConnectionProfile() != null) {
-					Dna.sql.setCoderPopupWidth(Dna.sql.getConnectionProfile().getCoderId(), (int) popupWidthSpinner.getValue());
-				}
-			}
-		});
 		popupWidthIconLabel.setEnabled(false);
 		popupWidthDescriptionLabel.setEnabled(false);
 		popupWidthSpinner.setEnabled(false);
@@ -235,14 +217,6 @@ public class MenuBar extends JMenuBar implements SqlListener {
 		ImageIcon popupAutoCompleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-forms.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
 		popupAutoCompleteItem = new JCheckBoxMenuItem("Popup field auto-completion     ", popupAutoCompleteIcon, false);
 		popupAutoCompleteItem.setToolTipText("If the menu item is selected, text fields in statement popup windows will have auto-complete activated for entries.");
-		popupAutoCompleteItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				if (Dna.sql.getConnectionProfile() != null) {
-					Dna.sql.setCoderPopupAutoComplete(Dna.sql.getConnectionProfile().getCoderId(), popupAutoCompleteItem.isSelected());
-				}
-			}
-		});
 		popupAutoCompleteItem.setEnabled(false);
 		settingsMenu.add(popupAutoCompleteItem);
 
@@ -250,14 +224,6 @@ public class MenuBar extends JMenuBar implements SqlListener {
 		ImageIcon popupDecorationIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-border-outer.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
 		popupDecorationItem = new JCheckBoxMenuItem("Popup window frame and buttons     ", popupDecorationIcon, false);
 		popupDecorationItem.setToolTipText("If the menu item is selected, statement popup windows will have buttons and a frame. If not, statements will auto-save.");
-		popupDecorationItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				if (Dna.sql.getConnectionProfile() != null) {
-					Dna.sql.setCoderPopupDecoration(Dna.sql.getConnectionProfile().getCoderId(), popupDecorationItem.isSelected());
-				}
-			}
-		});
 		popupDecorationItem.setEnabled(false);
 		settingsMenu.add(popupDecorationItem);
 
@@ -265,14 +231,6 @@ public class MenuBar extends JMenuBar implements SqlListener {
 		ImageIcon colorByCoderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-palette.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
 		colorByCoderItem = new JCheckBoxMenuItem("Color statements by coder", colorByCoderIcon);
 		colorByCoderItem.setToolTipText("If the menu item is selected, statements in the text are highlighted using the color of the coder who created them; otherwise using the statement type color.");
-		colorByCoderItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				if (Dna.sql.getConnectionProfile() != null) {
-					Dna.sql.setColorByCoder(Dna.sql.getConnectionProfile().getCoderId(), colorByCoderItem.isSelected());
-				}
-			}
-		});
 		colorByCoderItem.setEnabled(false);
 		settingsMenu.add(colorByCoderItem);
 
@@ -289,12 +247,55 @@ public class MenuBar extends JMenuBar implements SqlListener {
 		settingsMenu.add(aboutWindowItem);
 	}
 
-	@Override
-	public void adjustToChangedConnection() {
-		adjustToChangedCoder();
+	/**
+	 * Get a reference to the font size spinner from the Settings menu.
+	 * 
+	 * @return  The font size spinner.
+	 */
+	JSpinner getFontSizeSpinner() {
+		return fontSizeSpinner;
 	}
 
-	@Override
+	/**
+	 * Get a reference to the popup width spinner from the Settings menu.
+	 * 
+	 * @return  The popup width spinner.
+	 */
+	JSpinner getPopupWidthSpinner() {
+		return popupWidthSpinner;
+	}
+
+	/**
+	 * Get a reference to the popup autocomplete item from the Settings menu.
+	 * 
+	 * @return  The popup autocomplete menu item.
+	 */
+	JCheckBoxMenuItem getPopupAutoCompleteItem() {
+		return popupAutoCompleteItem;
+	}
+
+	/**
+	 * Get a reference to the popup decoration menu item from the Settings menu.
+	 * 
+	 * @return  The popup decoration menu item.
+	 */
+	JCheckBoxMenuItem getPopupDecorationItem() {
+		return popupDecorationItem;
+	}
+
+	/**
+	 * Get a reference to the color by coder menu item from the Settings menu.
+	 * 
+	 * @return  The color by coder menu item.
+	 */
+	JCheckBoxMenuItem getColorByCoderItem() {
+		return colorByCoderItem;
+	}
+
+	/**
+	 * When a new coder has been selected, make the necessary changes in the
+	 * menu bar to reflect the new coder's permissions and settings.
+	 */
 	public void adjustToChangedCoder() {
 		if (Dna.sql.getConnectionProfile() == null || Dna.sql.getActiveCoder() == null) {
 			popupWidthIconLabel.setEnabled(false);

@@ -25,14 +25,16 @@ class CoderRelationsEditor extends JDialog {
 	private JButton reloadButton, okButton;
 	private Coder activeCoderCopy;
 	private CoderRelationsPanel coderRelationsPanel;
-	private boolean success;
+	private boolean success, updateViewDocuments, updateViewStatements;
 	
 	/**
 	 * Create and show a dialog to edit the currently active coder's
 	 * coder relations.
 	 */
 	CoderRelationsEditor() {
-		success = false;
+		this.success = false;
+		this.updateViewDocuments = false;
+		this.updateViewStatements = false;
 		ImageIcon coderRelationsIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-user-check.png"));
 		this.setIconImage(coderRelationsIcon.getImage());
 		this.setModal(true);
@@ -108,8 +110,11 @@ class CoderRelationsEditor extends JDialog {
 				if (!activeCoderCopy.equals(Dna.sql.getActiveCoder())) {
 					int dialog = JOptionPane.showConfirmDialog(CoderRelationsEditor.this, "Save changes for Coder " + activeCoderCopy.getId() + " to the database?", "Confirmation", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
-						success = Dna.sql.updateCoder(activeCoderCopy, null);
-						if (success) {
+						CoderRelationsEditor.this.success = Dna.sql.updateCoder(activeCoderCopy, null);
+						if (CoderRelationsEditor.this.success) {
+							CoderRelationsEditor.this.updateViewDocuments = activeCoderCopy.differentViewDocumentPermissions(Dna.sql.getActiveCoder());
+							CoderRelationsEditor.this.updateViewStatements = activeCoderCopy.differentViewStatementPermissions(Dna.sql.getActiveCoder());
+							Dna.sql.selectCoder(Dna.sql.getConnectionProfile().getCoderId());
 							JOptionPane.showMessageDialog(CoderRelationsEditor.this, "Changes for Coder " + activeCoderCopy.getId() + " were successfully saved.");
 						} else {
 							JOptionPane.showMessageDialog(CoderRelationsEditor.this, "Changes for Coder " + activeCoderCopy.getId() + " could not be saved. Check the message log for details.");
@@ -129,12 +134,30 @@ class CoderRelationsEditor extends JDialog {
 	}
 	
 	/**
-	 * Have the coder's relations been updated?
+	 * Have the editor relations been successfully updated and saved?
 	 * 
-	 * @return Indicator that is true if any coder relation has been modified.
+	 * @return Indicator of success.
 	 */
 	boolean isUpdated() {
-		return this.success;
+		return CoderRelationsEditor.this.success;
+	}
+	
+	/**
+	 * Have the view document permissions been changed?
+	 *  
+	 * @return Indicator of whether the view document permissions were changed.
+	 */
+	boolean isUpdateViewDocuments() {
+		return CoderRelationsEditor.this.updateViewDocuments;
+	}
+
+	/**
+	 * Have the view statement permissions been changed?
+	 *  
+	 * @return Indicator of whether the view statement permissions were changed.
+	 */
+	boolean isUpdateViewStatements() {
+		return CoderRelationsEditor.this.updateViewStatements;
 	}
 	
 	/**

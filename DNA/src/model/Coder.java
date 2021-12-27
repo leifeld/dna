@@ -265,6 +265,94 @@ public class Coder {
 	}
 	
 	/**
+	 * Check if switching to this coder from another coder means that the
+	 * permissions to view other coders' documents have changed. This is useful
+	 * for determining if the document table should be updated after switching
+	 * to a new coder.
+	 * 
+	 * @param c  Another coder.
+	 * @return   An indicator of whether the view needs to be updated.
+	 */
+	public boolean differentViewDocumentPermissions(Coder c) {
+		if (this.isPermissionViewOthersDocuments() != c.isPermissionViewOthersDocuments() || (this.id != c.getId()) && !this.isPermissionViewOthersDocuments()) {
+			return true;
+		}
+		for (HashMap.Entry<Integer, CoderRelation> entry : this.getCoderRelations().entrySet()) {
+			if (c.getCoderRelations().containsKey(entry.getKey()) && entry.getValue().isViewDocuments() != c.getCoderRelations().get(entry.getKey()).isViewDocuments()) {
+				return true;
+			} else if (!c.getCoderRelations().containsKey(entry.getKey()) && entry.getKey() != c.getId()) {
+				return true;
+			} else if (entry.getKey() == c.getId() && !entry.getValue().isViewDocuments()) {
+				return true;
+			}
+		}
+		for (HashMap.Entry<Integer, CoderRelation> entry : c.getCoderRelations().entrySet()) {
+			if (this.getCoderRelations().containsKey(entry.getKey()) && entry.getValue().isViewDocuments() != this.getCoderRelations().get(entry.getKey()).isViewDocuments()) {
+				return true;
+			} else if (!this.getCoderRelations().containsKey(entry.getKey()) && entry.getKey() != this.getId()) {
+				return true;
+			} else if (entry.getKey() == this.getId() && !entry.getValue().isViewDocuments()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Check if switching to this coder from another coder means that the
+	 * permissions to view other coders' statements have changed. This is useful
+	 * for determining if the statement table should be updated after switching
+	 * to a new coder.
+	 * 
+	 * @param c  Another coder.
+	 * @return   An indicator of whether the view needs to be updated.
+	 */
+	public boolean differentViewStatementPermissions(Coder c) {
+		if (this.isPermissionViewOthersStatements() != c.isPermissionViewOthersStatements() || (this.id != c.getId()) && !this.isPermissionViewOthersStatements()) {
+			return true;
+		}
+		for (HashMap.Entry<Integer, CoderRelation> entry : this.getCoderRelations().entrySet()) {
+			if (c.getCoderRelations().containsKey(entry.getKey()) && entry.getValue().isViewStatements() != c.getCoderRelations().get(entry.getKey()).isViewStatements()) {
+				return true;
+			} else if (!c.getCoderRelations().containsKey(entry.getKey()) && entry.getKey() != c.getId()) {
+				return true;
+			} else if (entry.getKey() == c.getId() && !entry.getValue().isViewStatements()) {
+				return true;
+			}
+		}
+		for (HashMap.Entry<Integer, CoderRelation> entry : c.getCoderRelations().entrySet()) {
+			if (this.getCoderRelations().containsKey(entry.getKey()) && entry.getValue().isViewStatements() != this.getCoderRelations().get(entry.getKey()).isViewStatements()) {
+				return true;
+			} else if (!this.getCoderRelations().containsKey(entry.getKey()) && entry.getKey() != this.getId()) {
+				return true;
+			} else if (entry.getKey() == this.getId() && !entry.getValue().isViewStatements()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Check if switching to this coder from another coder means that the
+	 * coder settings for displaying document text and painting statements in
+	 * document text have changed. This is useful for determining if the
+	 * statements should be repainted in the current document and if the
+	 * document text should be redrawn after switching to a new coder.
+	 * 
+	 * @param c  Another coder.
+	 * @return   An indicator of whether the view needs to be updated.
+	 */
+	public boolean differentPaintSettings(Coder c) {
+		if (this.isColorByCoder() != c.isColorByCoder()) {
+			return true;
+		}
+		if (this.getFontSize() != c.getFontSize()) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Get the ID of the coder.
 	 * 
 	 * @return The coder's ID.
@@ -312,6 +400,13 @@ public class Coder {
 	}
 
 	/**
+	 * @param fontSize the fontSize to set
+	 */
+	public void setFontSize(int fontSize) {
+		this.fontSize = fontSize;
+	}
+
+	/**
 	 * When the coder opens a statement popup window, what is the display width
 	 * of short text fields in px?
 	 * 
@@ -319,6 +414,13 @@ public class Coder {
 	 */
 	public int getPopupWidth() {
 		return popupWidth;
+	}
+
+	/**
+	 * @param popupWidth the popupWidth to set
+	 */
+	public void setPopupWidth(int popupWidth) {
+		this.popupWidth = popupWidth;
 	}
 
 	/**
@@ -334,6 +436,13 @@ public class Coder {
 	}
 
 	/**
+	 * @param colorByCoder the colorByCoder to set
+	 */
+	public void setColorByCoder(boolean colorByCoder) {
+		this.colorByCoder = colorByCoder;
+	}
+
+	/**
 	 * When the coder opens a statement popup window, does the window have a
 	 * window decoration (i.e., a frame with an {@code X} and {@code cancel} and
 	 * {@code save} buttons?
@@ -342,6 +451,13 @@ public class Coder {
 	 */
 	public boolean isPopupDecoration() {
 		return popupDecoration;
+	}
+
+	/**
+	 * @param popupDecoration the popupDecoration to set
+	 */
+	public void setPopupDecoration(boolean popupDecoration) {
+		this.popupDecoration = popupDecoration;
 	}
 
 	/**
@@ -354,6 +470,13 @@ public class Coder {
 		return popupAutoComplete;
 	}
 
+	/**
+	 * @param popupAutoComplete the popupAutoComplete to set
+	 */
+	public void setPopupAutoComplete(boolean popupAutoComplete) {
+		this.popupAutoComplete = popupAutoComplete;
+	}
+	
 	/**
 	 * Is the coder allowed to add new documents?
 	 * 

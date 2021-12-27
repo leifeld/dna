@@ -50,12 +50,11 @@ import model.Coder;
 import model.Statement;
 import model.StatementType;
 import model.Value;
-import sql.Sql.SqlListener;
 
 /**
  * Statement panel on the right side of the screen.
  */
-class StatementPanel extends JPanel implements SqlListener {
+class StatementPanel extends JPanel {
 	private static final long serialVersionUID = 1044070479152247253L;
 	private JTable statementTable;
 	private StatementTableModel statementTableModel;
@@ -603,12 +602,9 @@ class StatementPanel extends JPanel implements SqlListener {
 		}
 	}
 
-	@Override
-	public void adjustToChangedCoder() {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
+	/**
+	 * Adjust the filter buttons when a database has been opened or closed.
+	 */
 	public void adjustToChangedConnection() {
 		if (Dna.sql == null) {
 			allButton.setSelected(true);
