@@ -92,7 +92,7 @@ public class StatementTypeEditor extends JDialog {
 		listPanel.add(listScroller, BorderLayout.CENTER);
 		
 		JPanel listButtonPanel = new JPanel(new GridLayout(0, 2));
-		ImageIcon addStatementTypeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-plus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon addStatementTypeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-plus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		addStatementTypeButton = new JButton("Add", addStatementTypeIcon);
 		addStatementTypeButton.setToolTipText("Add new statement type to the database");
 		addStatementTypeButton.addActionListener(new ActionListener() {
@@ -108,7 +108,7 @@ public class StatementTypeEditor extends JDialog {
 		});
 		listButtonPanel.add(addStatementTypeButton);
 
-		ImageIcon deleteStatementTypeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-minus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon deleteStatementTypeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		deleteStatementTypeButton = new JButton("Delete", deleteStatementTypeIcon);
 		deleteStatementTypeButton.setToolTipText("Delete the selected statement type");
 		deleteStatementTypeButton.addActionListener(new ActionListener() {
@@ -186,7 +186,7 @@ public class StatementTypeEditor extends JDialog {
 		});
 
 		JPanel detailsButtonPanel = new JPanel();
-		ImageIcon resetDetailsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-rotate-clockwise.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon resetDetailsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-rotate-clockwise.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		resetDetailsButton = new JButton("Reset", resetDetailsIcon);
 		resetDetailsButton.setToolTipText("Reload the statement type name/label and color from the database and undo any changes made here");
 		resetDetailsButton.addActionListener(new ActionListener() {
@@ -203,7 +203,7 @@ public class StatementTypeEditor extends JDialog {
 		resetDetailsButton.setEnabled(false);
 		detailsButtonPanel.add(resetDetailsButton);
 		
-		ImageIcon applyDetailsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-device-floppy.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon applyDetailsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-device-floppy.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		applyDetailsButton = new JButton("Apply / Save", applyDetailsIcon);
 		applyDetailsButton.setToolTipText("Update the statement type name/label and color in the database, making them permanent");
 		applyDetailsButton.addActionListener(new ActionListener() {
@@ -265,7 +265,7 @@ public class StatementTypeEditor extends JDialog {
 
         JPanel variableButtonPanel = new JPanel();
 
-		ImageIcon addVariableIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-code-plus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon addVariableIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-code-plus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		addVariableButton = new JButton("Add...", addVariableIcon);
 		addVariableButton.setToolTipText("Add new variable to the statement type");
 		addVariableButton.addActionListener(new ActionListener() {
@@ -290,7 +290,7 @@ public class StatementTypeEditor extends JDialog {
 		addVariableButton.setEnabled(false);
 		variableButtonPanel.add(addVariableButton);
 
-		ImageIcon deleteVariableIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-code-minus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon deleteVariableIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-code-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		deleteVariableButton = new JButton("Delete", deleteVariableIcon);
 		deleteVariableButton.setToolTipText("Delete selected variable from the statement type");
 		deleteVariableButton.addActionListener(new ActionListener() {
@@ -315,7 +315,7 @@ public class StatementTypeEditor extends JDialog {
 		deleteVariableButton.setEnabled(false);
 		variableButtonPanel.add(deleteVariableButton);
 
-		ImageIcon renameVariableIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-forms.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon renameVariableIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-forms.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		renameVariableButton = new JButton("Rename", renameVariableIcon);
 		renameVariableButton.setToolTipText("Rename selected variable");
 		renameVariableButton.addActionListener(new ActionListener() {
@@ -500,7 +500,7 @@ public class StatementTypeEditor extends JDialog {
 			StatementType statementType = (StatementType) value;
 			JLabel label = new JLabel(statementType.getLabel());
 			if (isSelected == true) {
-				label.setBackground(javax.swing.UIManager.getColor("List.dropCellBackground"));
+				label.setBackground(javax.swing.UIManager.getColor("List.selectionBackground"));
 			} else {
 				label.setBackground(javax.swing.UIManager.getColor("List.background"));
 			}
@@ -651,7 +651,7 @@ public class StatementTypeEditor extends JDialog {
 			this.setLayout(new BorderLayout());
 
 			JPanel buttonPanel = new JPanel();
-			ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 			cancelButton = new JButton("Cancel", cancelIcon);
 			cancelButton.setToolTipText("Close without saving.");
 			cancelButton.addActionListener(new ActionListener() {
@@ -663,7 +663,7 @@ public class StatementTypeEditor extends JDialog {
 			});
 			buttonPanel.add(cancelButton);
 
-			ImageIcon okIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			ImageIcon okIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 			okButton = new JButton("OK", okIcon);
 			okButton.setToolTipText("Add or rename variable and save changes to the database.");
 			okButton.addActionListener(new ActionListener() {

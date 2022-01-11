@@ -422,7 +422,7 @@ class CoderManager extends JDialog {
 		// button panel
 		JPanel buttonPanel = new JPanel();
 
-		ImageIcon deleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-user-minus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon deleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-user-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		deleteButton = new JButton("Delete coder", deleteIcon);
 		deleteButton.setToolTipText("Delete the currently selected coder.");
 		deleteButton.addActionListener(new ActionListener() {
@@ -451,7 +451,7 @@ class CoderManager extends JDialog {
 		deleteButton.setEnabled(false);
 		buttonPanel.add(deleteButton);
 
-		ImageIcon addIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-user-plus.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon addIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-user-plus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		addButton = new JButton("Add new coder...", addIcon);
 		addButton.setToolTipText("Create and add a new coder...");
 		addButton.addActionListener(new ActionListener() {
@@ -470,7 +470,7 @@ class CoderManager extends JDialog {
 		});
 		buttonPanel.add(addButton);
 
-		ImageIcon reloadIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-rotate-clockwise.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon reloadIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-rotate-clockwise.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		reloadButton = new JButton("Reset", reloadIcon);
 		reloadButton.setToolTipText("Reset all the changes made for the current coder and reload the coder details.");
 		reloadButton.addActionListener(new ActionListener() {
@@ -482,7 +482,7 @@ class CoderManager extends JDialog {
 		reloadButton.setEnabled(false);
 		buttonPanel.add(reloadButton);
 
-		ImageIcon applyIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-user-check.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon applyIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-user-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		applyButton = new JButton("Apply / Save", applyIcon);
 		applyButton.setToolTipText("Save the changes for the current coder to the database and make them effective.");
 		applyButton.addActionListener(new ActionListener() {
@@ -516,7 +516,7 @@ class CoderManager extends JDialog {
 		applyButton.setEnabled(false);
 		buttonPanel.add(applyButton);
 
-		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton cancelButton = new JButton("Close", cancelIcon);
 		cancelButton.setToolTipText("Close the coder manager without saving any changes.");
 		cancelButton.addActionListener(new ActionListener() {
@@ -928,7 +928,7 @@ class CoderManager extends JDialog {
 			this.add(formPanel, BorderLayout.CENTER);
 			
 			JPanel addButtonPanel = new JPanel();
-			ImageIcon addCancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			ImageIcon addCancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 			addCancelButton = new JButton("Cancel", addCancelIcon);
 			addCancelButton.setToolTipText("Close without adding a new coder.");
 			addCancelButton.addActionListener(new ActionListener() {
@@ -939,7 +939,7 @@ class CoderManager extends JDialog {
 			});
 			addButtonPanel.add(addCancelButton);
 
-			ImageIcon addOkIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			ImageIcon addOkIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 			addOkButton = new JButton("OK", addOkIcon);
 			addOkButton.setToolTipText("Add this new coder to the database.");
 			addOkButton.addActionListener(new ActionListener() {

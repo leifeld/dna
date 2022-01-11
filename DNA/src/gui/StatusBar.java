@@ -32,9 +32,9 @@ class StatusBar extends JPanel implements LogListener {
 	public StatusBar() {
 		this.setLayout(new BorderLayout());
 		JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-
-		ImageIcon openDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		ImageIcon openDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton databaseButton = new JButton(openDatabaseIcon);
+		
 		databaseButton.setContentAreaFilled(false);
 		databaseButton.setBorderPainted(false);
 		databaseButton.setBorder(null);
@@ -45,7 +45,7 @@ class StatusBar extends JPanel implements LogListener {
 		this.add(leftPanel, BorderLayout.WEST);
 		
 		JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-		ImageIcon refreshIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-refresh.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon refreshIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-refresh.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		documentRefreshIconLabel = new JLabel(refreshIcon);
 		documentRefreshIconLabel.setVisible(false);
 		rightPanel.add(documentRefreshIconLabel);
@@ -59,7 +59,7 @@ class StatusBar extends JPanel implements LogListener {
 		rightPanel.add(statementRefreshLabel);
 		statementRefreshLabel.setVisible(false);
 		
-		ImageIcon messageIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon messageIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		messageIconButton = new JButton(messageIcon);
 		messageIconButton.setContentAreaFilled(false);
 		messageIconButton.setBorderPainted(false);

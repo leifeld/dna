@@ -81,7 +81,7 @@ public class DocumentBatchImporter extends JDialog {
 				"Opened a document batch import window.");
 		Dna.logger.log(l);
 		
-		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton cancelButton = new JButton("Cancel", cancelIcon);
         cancelButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -90,7 +90,7 @@ public class DocumentBatchImporter extends JDialog {
 		});
         cancelButton.setToolTipText("<html><p width=\"500\">Close this window and abort batch-import.</p></html>");
 
-		ImageIcon folderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-folder.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		ImageIcon folderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-folder.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton browseButton = new JButton("Select folder", folderIcon);
         browseButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -113,7 +113,7 @@ public class DocumentBatchImporter extends JDialog {
 		});
         browseButton.setToolTipText("<html><p width=\"500\">Select a directory with text files to import into the current database. Each file should contain one document. Metadata can be parsed from the file names.</p></html>");
 
-		ImageIcon updateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-refresh.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		ImageIcon updateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-refresh.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
         JButton updateButton = new JButton("Refresh preview", updateIcon);
         updateButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -234,7 +234,7 @@ public class DocumentBatchImporter extends JDialog {
 		});
         updateButton.setToolTipText("<html><p width=\"500\">Refresh the metadata and text preview. Display the contents that will be added to the database for the currently highlighted file from the list.</p></html>");
         
-		ImageIcon goIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		ImageIcon goIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
         JButton goButton = new JButton("Import files", goIcon);
         goButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {

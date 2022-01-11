@@ -135,7 +135,7 @@ class Popup extends JDialog {
 		colorPanel.setBackground(color);
 		colorPanel.setPreferredSize(new Dimension(4, 4));
 		
-		ImageIcon duplicateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-copy.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon duplicateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-copy.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
 		duplicate = new JButton(duplicateIcon);
 		duplicate.setToolTipText("create a copy of this statement at the same location");
 		duplicate.setPreferredSize(new Dimension(16, 16));
@@ -143,7 +143,7 @@ class Popup extends JDialog {
 			duplicate.setEnabled(false);
 		}
 		
-		ImageIcon removeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-trash.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon removeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-trash.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
 		remove = new JButton(removeIcon);
 		remove.setToolTipText("completely remove the whole statement (but keep the text)");
 		remove.setPreferredSize(new Dimension(16, 16));
@@ -343,7 +343,7 @@ class Popup extends JDialog {
 		// add buttons if window decoration is true
 		if (windowDecoration == true) {
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-			ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+			ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 			JButton cancelButton = new JButton("Cancel", cancelIcon);
 			cancelButton.setToolTipText("close this window without making any changes");
 			cancelButton.addActionListener(new ActionListener() {
@@ -353,7 +353,7 @@ class Popup extends JDialog {
 				}
 			});
 			buttonPanel.add(cancelButton);
-			ImageIcon saveIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+			ImageIcon saveIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 			JButton saveButton = new JButton("Save", saveIcon);
 			saveButton.setToolTipText("save each variable into the database and close this window");
 			saveButton.addActionListener(new ActionListener() {
@@ -605,7 +605,7 @@ class Popup extends JDialog {
 			label.setForeground(a.getColor());
 			
 			// list background
-			Color selectedColor = javax.swing.UIManager.getColor("List.dropCellBackground");
+			Color selectedColor = javax.swing.UIManager.getColor("List.selectionBackground");
 			Color notInDatabaseColor = new Color(255, 102, 102);
 			// selected entry that is not in database: average of the previous two colors
 			Color selectedAndNotInDatabaseColor = new Color((selectedColor.getRed() + notInDatabaseColor.getRed()) / 2, (selectedColor.getGreen() + notInDatabaseColor.getGreen()) / 2, (selectedColor.getBlue() + notInDatabaseColor.getBlue()) / 2);

@@ -200,11 +200,11 @@ public class DocumentEditor extends JDialog {
         DateTimePicker dateTimePicker = new DateTimePicker(dateSettings, timeSettings);
         dateTimePicker.getDatePicker().setDateToToday();
         dateTimePicker.getTimePicker().setTime(LocalTime.MIDNIGHT);
-		ImageIcon dateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-calendar-event.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon dateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-calendar-event.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
         JButton dateButton = dateTimePicker.getDatePicker().getComponentToggleCalendarButton();
         dateButton.setText("");
         dateButton.setIcon(dateIcon);
-		ImageIcon timeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-clock.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon timeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-clock.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
         JButton timeButton = dateTimePicker.getTimePicker().getComponentToggleTimeMenuButton();
         timeButton.setText("");
         timeButton.setIcon(timeIcon);
@@ -268,7 +268,7 @@ public class DocumentEditor extends JDialog {
 
 		FlowLayout fl = new FlowLayout(FlowLayout.RIGHT);
 		JPanel buttons = new JPanel(fl);
-		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton cancelButton = new JButton("Cancel", cancelIcon);
 		cancelButton.setToolTipText("close this window without making any changes");
 		cancelButton.addActionListener(new ActionListener() {
@@ -279,7 +279,7 @@ public class DocumentEditor extends JDialog {
 		});
 		buttons.add(cancelButton);
 		
-		ImageIcon okIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		ImageIcon okIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		String okString = "Add";
 		if (numDocuments > 0) {
 			okString = "Update";

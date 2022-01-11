@@ -77,7 +77,7 @@ class CoderRelationsEditor extends JDialog {
 		this.add(coderRelationsPanel, BorderLayout.CENTER);
 
 		JPanel buttonPanel = new JPanel();
-		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton cancelButton = new JButton("Cancel", cancelIcon);
 		cancelButton.setToolTipText("Close the coder manager without saving any changes.");
 		cancelButton.addActionListener(new ActionListener() {
@@ -88,7 +88,7 @@ class CoderRelationsEditor extends JDialog {
 		});
 		buttonPanel.add(cancelButton);
 
-		ImageIcon reloadIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-rotate-clockwise.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon reloadIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-rotate-clockwise.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		reloadButton = new JButton("Reset", reloadIcon);
 		reloadButton.setToolTipText("Reset all the changes made for the active coder and reload the coder relations.");
 		reloadButton.addActionListener(new ActionListener() {
@@ -100,7 +100,7 @@ class CoderRelationsEditor extends JDialog {
 		reloadButton.setEnabled(false);
 		buttonPanel.add(reloadButton);
 
-		ImageIcon okIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-user-check.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon okIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-user-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		okButton = new JButton("Save and close", okIcon);
 		okButton.setToolTipText("Save the changes for the active coder to the database and make them effective.");
 		okButton.addActionListener(new ActionListener() {

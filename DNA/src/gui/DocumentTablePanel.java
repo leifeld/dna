@@ -129,8 +129,8 @@ class DocumentTablePanel extends JPanel {
 		popupMenu.add(menuItemEdit);
 		JSeparator sep = new JSeparator();
 		popupMenu.add(sep);
-		ImageIcon checkedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-checkbox.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		ImageIcon uncheckedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-square.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon checkedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-checkbox.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon uncheckedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-square.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JMenuItem menuItemId = new JMenuItem("ID", checkedIcon);
 		popupMenu.add(menuItemId);
 		JMenuItem menuItemTitle = new JMenuItem("Title", checkedIcon);

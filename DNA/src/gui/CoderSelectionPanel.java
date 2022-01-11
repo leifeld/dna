@@ -25,7 +25,7 @@ class CoderSelectionPanel extends JPanel {
 	 */
 	public CoderSelectionPanel() {
 		setLayout(new GridBagLayout());
-		ImageIcon changeCoderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-users.png")).getImage().getScaledInstance(18, 18, Image.SCALE_DEFAULT));
+		ImageIcon changeCoderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-users.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		changeCoderButton = new JButton("Change coder", changeCoderIcon);
 		changeCoderButton.setEnabled(false);
 		JToolBar tb = new JToolBar();

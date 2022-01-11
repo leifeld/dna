@@ -93,7 +93,7 @@ public class AboutWindow extends JDialog {
 		aboutContents.add(aboutScrollPane, BorderLayout.CENTER);
 
 		// close button at the bottom of the window
-		ImageIcon closeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		ImageIcon closeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton closeButton = new JButton("Close", closeIcon);
 		closeButton.addActionListener(new ActionListener() {
 			@Override

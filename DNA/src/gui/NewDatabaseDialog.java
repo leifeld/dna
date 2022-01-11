@@ -267,18 +267,18 @@ public class NewDatabaseDialog extends JDialog {
 		
 		// button panel at the bottom of the dialog
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-		ImageIcon clearIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon clearIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		clearButton = new JButton("Clear form", clearIcon);
 		buttonPanel.add(clearButton);
-		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		cancelButton = new JButton("Cancel", cancelIcon);
 		buttonPanel.add(cancelButton);
 		ImageIcon saveIcon;
 		if (openExistingDatabase == true) {
-			saveIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			saveIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 			saveButton = new JButton("Connect", saveIcon);
 		} else {
-			saveIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-device-floppy.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			saveIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-device-floppy.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 			saveButton = new JButton("Create data structures...", saveIcon);
 		}
 		saveButton.setEnabled(false);
@@ -566,7 +566,7 @@ public class NewDatabaseDialog extends JDialog {
 			// folder browse button
 			g.gridwidth = 1;
 			g.gridx = 4;
-			ImageIcon folderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-folder.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+			ImageIcon folderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-folder.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 			folderButton = new JButton("Browse...", folderIcon);
 			folderButton.setToolTipText(ttUrl);
 			this.add(folderButton, g);

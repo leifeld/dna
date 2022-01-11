@@ -23,7 +23,7 @@ class CoderRenderer implements ListCellRenderer<Object> {
 		}
 		
 		// list background
-		Color selectedColor = javax.swing.UIManager.getColor("List.dropCellBackground");
+		Color selectedColor = javax.swing.UIManager.getColor("List.selectionBackground");
 		
 		// selected entry that is not in database: average of the previous two colors
 		Color defaultColor = javax.swing.UIManager.getColor("List.background");

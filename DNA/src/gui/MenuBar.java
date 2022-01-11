@@ -174,7 +174,7 @@ public class MenuBar extends JMenuBar {
 		this.add(settingsMenu);
 
         // settings menu: font size spinner
-        ImageIcon fontSizeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-typography.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+        ImageIcon fontSizeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-typography.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		fontSizeIconLabel = new JLabel(fontSizeIcon);
 		fontSizeIconLabel.setToolTipText("Set the font size of the text area.");
 		fontSizeDescriptionLabel = new JLabel("Font size of document text");
@@ -194,7 +194,7 @@ public class MenuBar extends JMenuBar {
 		settingsMenu.add(spinnerFontPanel);
 
 		// settings menu: popup width spinner
-        ImageIcon popupWidthIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-chart-arrows.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+        ImageIcon popupWidthIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-chart-arrows.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		popupWidthIconLabel = new JLabel(popupWidthIcon);
 		popupWidthIconLabel.setToolTipText("Set the width of the text fields for the variables in a statement popup window (in px).");
 		popupWidthDescriptionLabel = new JLabel("Popup text field width");
@@ -214,21 +214,21 @@ public class MenuBar extends JMenuBar {
 		settingsMenu.add(spinnerPanel);
 
 		// settings menu: popup auto-completion toggle button
-		ImageIcon popupAutoCompleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-forms.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		ImageIcon popupAutoCompleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-forms.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		popupAutoCompleteItem = new JCheckBoxMenuItem("Popup field auto-completion     ", popupAutoCompleteIcon, false);
 		popupAutoCompleteItem.setToolTipText("If the menu item is selected, text fields in statement popup windows will have auto-complete activated for entries.");
 		popupAutoCompleteItem.setEnabled(false);
 		settingsMenu.add(popupAutoCompleteItem);
 
 		// settings menu: popup window decoration toggle button
-		ImageIcon popupDecorationIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-border-outer.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		ImageIcon popupDecorationIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-border-outer.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		popupDecorationItem = new JCheckBoxMenuItem("Popup window frame and buttons     ", popupDecorationIcon, false);
 		popupDecorationItem.setToolTipText("If the menu item is selected, statement popup windows will have buttons and a frame. If not, statements will auto-save.");
 		popupDecorationItem.setEnabled(false);
 		settingsMenu.add(popupDecorationItem);
 
 		// settings menu: color statements by coder toggle button
-		ImageIcon colorByCoderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-palette.png")).getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+		ImageIcon colorByCoderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-palette.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		colorByCoderItem = new JCheckBoxMenuItem("Color statements by coder", colorByCoderIcon);
 		colorByCoderItem.setToolTipText("If the menu item is selected, statements in the text are highlighted using the color of the coder who created them; otherwise using the statement type color.");
 		colorByCoderItem.setEnabled(false);

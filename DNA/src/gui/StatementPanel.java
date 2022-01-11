@@ -110,8 +110,8 @@ class StatementPanel extends JPanel {
 		popupMenu.add(menuItemDelete);
 		JSeparator sep = new JSeparator();
 		popupMenu.add(sep);
-		ImageIcon checkedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-checkbox.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
-		ImageIcon uncheckedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-square.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon checkedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-checkbox.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon uncheckedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-square.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JMenuItem menuItemStatementId = new JMenuItem("ID", checkedIcon);
 		popupMenu.add(menuItemStatementId);
 		JMenuItem menuItemDocumentId = new JMenuItem("Document ID", uncheckedIcon);
@@ -287,7 +287,7 @@ class StatementPanel extends JPanel {
         		Coder coder = (Coder) value;
 				CoderBadgePanel cbp = new CoderBadgePanel(coder, 14, 0, 22);
 				if (isSelected) {
-            		cbp.setBackground(javax.swing.UIManager.getColor("Table.dropCellBackground"));
+            		cbp.setBackground(javax.swing.UIManager.getColor("Table.selectionBackground"));
 				} else {
 					if (Dna.sql.getActiveCoder().isColorByCoder()) {
 						cbp.setBackground(s.getCoderColor());
@@ -298,7 +298,7 @@ class StatementPanel extends JPanel {
 				return cbp;
         	} else {
             	if (isSelected) {
-            		c.setBackground(javax.swing.UIManager.getColor("Table.dropCellBackground"));
+            		c.setBackground(javax.swing.UIManager.getColor("Table.selectionBackground"));
             	} else {
             		if (Dna.sql.getActiveCoder().isColorByCoder()) {
 						c.setBackground(s.getCoderColor());

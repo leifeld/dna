@@ -141,7 +141,7 @@ public class LoggerDialog extends JDialog {
 
 		// clear filter button, upper right corner
 		JPanel buttonPanel = new JPanel();
-		ImageIcon resetIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-rotate-clockwise.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon resetIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-rotate-clockwise.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton resetButton = new JButton("Clear filter", resetIcon);
 		resetButton.setToolTipText("Reset the filter settings and display all log events again.");
 		resetButton.addActionListener(new ActionListener() {
@@ -157,7 +157,7 @@ public class LoggerDialog extends JDialog {
 		buttonPanel.add(resetButton);
 		
 		// clear list button, upper right corner
-		ImageIcon clearIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon clearIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton clearButton = new JButton("Clear list", clearIcon);
 		clearButton.setToolTipText("Delete all log events. You cannot get them back after clearing the table.");
 		clearButton.addActionListener(new ActionListener() {
@@ -169,10 +169,10 @@ public class LoggerDialog extends JDialog {
 		buttonPanel.add(clearButton);
 		
 		// save to XML and JSON buttons, upper right corner
-		ImageIcon xmlIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-code.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon xmlIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-code.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton xmlButton = new JButton("Save to XML", xmlIcon);
 		xmlButton.setToolTipText("Save the filtered log events (i.e., those currently displayed in the table) to an XML file.");
-		ImageIcon jsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-brand-javascript.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon jsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-brand-javascript.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton jsonButton = new JButton("Save to JSON", jsIcon);
 		jsonButton.setToolTipText("Save the filtered log events (i.e., those currently displayed in the table) to a JSON file.");
 		ActionListener saveButtonListener = new ActionListener() {
@@ -288,7 +288,7 @@ public class LoggerDialog extends JDialog {
 		buttonPanel.add(jsonButton);
 		
 		// close button, upper right corner
-		ImageIcon closeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon closeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton closeButton = new JButton("Close", closeIcon);
 		closeButton.setToolTipText("Close this window.");
 		closeButton.addActionListener(new ActionListener() {
@@ -492,7 +492,7 @@ public class LoggerDialog extends JDialog {
 	        LogEvent logEntry = model.getRow(table.convertRowIndexToModel(row));
 	        
 			Color priorityColor = javax.swing.UIManager.getColor("Table.background");
-	        Color selectedColor = javax.swing.UIManager.getColor("Table.dropCellBackground");
+	        Color selectedColor = javax.swing.UIManager.getColor("Table.selectionBackground");
 	        if (logEntry.getPriority() == 1) {
 	        	// priorityColor = new Color(130, 255, 130);
 	        } else if (logEntry.getPriority() == 2) {

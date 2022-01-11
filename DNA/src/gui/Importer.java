@@ -228,7 +228,7 @@ class Importer extends JDialog {
 		// button panel
 		JPanel buttonPanel = new JPanel(new GridLayout(1, 0));
 
-		ImageIcon dbIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database-import.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon dbIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database-import.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		dbButton = new JButton("Select database...", dbIcon);
 		dbButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -271,7 +271,7 @@ class Importer extends JDialog {
 		});
 		buttonPanel.add(dbButton);
 
-		ImageIcon filterIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-filter.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon filterIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-filter.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		filterButton = new JButton("Keyword filter...", filterIcon);
 		filterButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -300,7 +300,7 @@ class Importer extends JDialog {
 		filterButton.setEnabled(false);
 		buttonPanel.add(filterButton);
 
-		ImageIcon selectIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-checks.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon selectIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-checks.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		selectAll = new JButton("(Un)select all", selectIcon);
 		selectAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -319,7 +319,7 @@ class Importer extends JDialog {
 		selectAll.setEnabled(false);
 		buttonPanel.add(selectAll);
 
-		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		cancelButton = new JButton("Cancel / close", cancelIcon);
 		cancelButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -328,7 +328,7 @@ class Importer extends JDialog {
 		});
 		buttonPanel.add(cancelButton);
 
-		ImageIcon okIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database-import.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+		ImageIcon okIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database-import.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		importButton = new JButton("Import selected", okIcon);
 		importButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {

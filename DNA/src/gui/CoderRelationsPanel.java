@@ -83,10 +83,10 @@ public class CoderRelationsPanel extends JPanel {
 			} else if (table.convertColumnIndexToModel(column) == 0) {
 				return new CoderBadgePanel((Coder) value, 16, 0, 13);
         	} else if ((boolean) value == true) {
-				ImageIcon eyeIconGreen = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-eye-green.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+				ImageIcon eyeIconGreen = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-eye-green.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
         		return new JLabel(eyeIconGreen);
         	} else {
-				ImageIcon eyeIconRed = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-eye-off-red.png")).getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT));
+				ImageIcon eyeIconRed = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-eye-off-red.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
         		return new JLabel(eyeIconRed);
         	}
 		}
