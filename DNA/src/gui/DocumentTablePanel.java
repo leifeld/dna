@@ -3,6 +3,7 @@ package gui;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.time.format.DateTimeFormatter;
@@ -321,7 +322,8 @@ class DocumentTablePanel extends JPanel {
 			if (modelRow > -1) {
 				int index = documentTable.convertRowIndexToView(modelRow);
 				if (index > -1) {
-					this.documentTable.setRowSelectionInterval(index, index);
+					this.documentTable.setRowSelectionInterval(index, index); // select the row
+					this.documentTable.scrollRectToVisible(new Rectangle(this.documentTable.getCellRect(index, 0, true))); // scroll to the right row in the table
 				}
 			}
 		}

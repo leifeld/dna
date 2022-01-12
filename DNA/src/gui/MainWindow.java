@@ -167,9 +167,7 @@ public class MainWindow extends JFrame {
 		
 		/*
 		 * TODO:
-		 * - Popup window bad location exception when coder relations make a document disappear but user clicks on a statement in the statement table and the statement is in a hidden document
-		 * - Opening a popup window from the statement table does not move the scrollbar of the document table to the right position
-		 * - Statement filter produces IndexOutOfBoundsException
+		 * - Statement filter produces IndexOutOfBoundsException: add the variable values (only value in case of Entity) back in to the statement refresh swing worker?
 		 * - No statement filter fields for statement ID and text
 		 * - Statement table: make ID column wider to accommodate four- and five-digit IDs
 		 * - Entering something in the notes field in the attribute manager (e.g., under organization) changes the alias field instead of the notes field when reopened
@@ -697,38 +695,48 @@ public class MainWindow extends JFrame {
 	 * @param editable    Should the popup dialog be editable?
 	 */
 	private void selectStatement(Statement s, int documentId, boolean editable) {
-		JTextPane textWindow = getTextPanel().getTextWindow();
-		JScrollPane textScrollPane = getTextPanel().getTextScrollPane();
-		int start = s.getStart();
-		int stop = s.getStop();
-		textWindow.grabFocus();
-		textWindow.select(start, stop);
-		
-		// the selection is too slow, so wait for it to finish...
-		SwingUtilities.invokeLater(new Runnable() {
-			@SuppressWarnings("deprecation") // modelToView becomes modelToView2D in Java 9, but we still want Java 8 compliance
-			public void run() {
-				Rectangle2D mtv = null;
-				try {
-					double y = textWindow.modelToView(start).getY();
-					int l = textWindow.getText().length();
-					double last = textWindow.modelToView(l).getY();
-					double frac = y / last;
-					double max = textScrollPane.getVerticalScrollBar().getMaximum();
-					double h = textScrollPane.getHeight();
-					int value = (int) Math.ceil(frac * max - (h / 2));
-					textScrollPane.getVerticalScrollBar().setValue(value);
-					mtv = textWindow.modelToView(start);
-					Point loc = textWindow.getLocationOnScreen();
-					newPopup(mtv.getX(), mtv.getY(), s, documentId, loc);
-				} catch (BadLocationException e) {
-					LogEvent l = new LogEvent(Logger.WARNING,
-							"[GUI] Statement " + s.getId() + ": Popup window bad location exception.",
-							"Statement " + s.getId() + ": Popup window cannot be opened because the location is outside the document text.");
-					Dna.logger.log(l);
+		int documentCoderId = this.documentTableModel.getRow(this.documentTableModel.getModelRowById(documentId)).getCoder().getId();
+		if (Dna.sql.getActiveCoder().getId() != documentCoderId &&
+				(Dna.sql.getActiveCoder().isPermissionViewOthersDocuments() == false ||
+				!Dna.sql.getActiveCoder().isPermissionViewOthersDocuments(documentCoderId))) {
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Statement " + s.getId() + ": Cannot open statement popup due to lack of permissions.",
+					"Statement " + s.getId() + " cannot be opened in a popup window because the document in which it is contained is owned by a different coder and the current coder does not have permission to view this coder's documents.");
+			Dna.logger.log(l);
+		} else {
+			JTextPane textWindow = getTextPanel().getTextWindow();
+			JScrollPane textScrollPane = getTextPanel().getTextScrollPane();
+			int start = s.getStart();
+			int stop = s.getStop();
+			textWindow.grabFocus();
+			textWindow.select(start, stop);
+			
+			// the selection is too slow, so wait for it to finish...
+			SwingUtilities.invokeLater(new Runnable() {
+				@SuppressWarnings("deprecation") // modelToView becomes modelToView2D in Java 9, but we still want Java 8 compliance
+				public void run() {
+					Rectangle2D mtv = null;
+					try {
+						double y = textWindow.modelToView(start).getY();
+						int l = textWindow.getText().length();
+						double last = textWindow.modelToView(l).getY();
+						double frac = y / last;
+						double max = textScrollPane.getVerticalScrollBar().getMaximum();
+						double h = textScrollPane.getHeight();
+						int value = (int) Math.ceil(frac * max - (h / 2));
+						textScrollPane.getVerticalScrollBar().setValue(value);
+						mtv = textWindow.modelToView(start);
+						Point loc = textWindow.getLocationOnScreen();
+						newPopup(mtv.getX(), mtv.getY(), s, documentId, loc);
+					} catch (BadLocationException e) {
+						LogEvent l = new LogEvent(Logger.WARNING,
+								"[GUI] Statement " + s.getId() + ": Popup window bad location exception.",
+								"Statement " + s.getId() + ": Popup window cannot be opened because the location is outside the document text.");
+						Dna.logger.log(l);
+					}
 				}
-			}
-		});
+			});
+		}
 	}
 	
 	/**

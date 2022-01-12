@@ -10,6 +10,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -267,6 +268,7 @@ class StatementPanel extends JPanel {
 			if (modelRowIndex > -1) { // if no statement was previously selected, don't select a statement now.
 				int tableRow = statementTable.convertRowIndexToView(modelRowIndex);
 				this.statementTable.setRowSelectionInterval(tableRow, tableRow);
+				this.statementTable.scrollRectToVisible(new Rectangle(this.statementTable.getCellRect(tableRow, 0, true)));
 			}
 		}
 	}
