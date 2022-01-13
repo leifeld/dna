@@ -10,7 +10,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -46,7 +45,6 @@ import javax.swing.table.TableRowSorter;
 
 import dna.Dna;
 import gui.MainWindow.ActionRemoveStatements;
-import model.Entity;
 import model.Coder;
 import model.Statement;
 import model.StatementType;
@@ -86,13 +84,13 @@ class StatementPanel extends JPanel {
 	    for (int i = 0; i < column.length; i++) {
 	        column[i] = statementTable.getColumnModel().getColumn(i);
 	    }
-	    Boolean[] columnsVisible = new Boolean[] {true, false, false, false, false, true};
+	    Boolean[] columnsVisible = new Boolean[] {true, false, false, false, true, true};
 	    
-		statementTable.getColumnModel().getColumn(0).setPreferredWidth(20);
+		statementTable.getColumnModel().getColumn(0).setPreferredWidth(40);
 		statementTable.getColumnModel().getColumn(1).setPreferredWidth(20);
 		statementTable.getColumnModel().getColumn(2).setPreferredWidth(20);
 		statementTable.getColumnModel().getColumn(3).setPreferredWidth(20);
-		statementTable.getColumnModel().getColumn(4).setPreferredWidth(70);
+		statementTable.getColumnModel().getColumn(4).setPreferredWidth(100);
 		statementTable.getColumnModel().getColumn(5).setPreferredWidth(250);
 
 		// statement table cell renderer
@@ -102,7 +100,7 @@ class StatementPanel extends JPanel {
 
 		JScrollPane statementTableScroller = new JScrollPane(statementTable);
 		statementTableScroller.setViewportView(statementTable);
-		statementTableScroller.setPreferredSize(new Dimension(300, 300));
+		statementTableScroller.setPreferredSize(new Dimension(350, 300));
 		this.add(statementTableScroller, BorderLayout.CENTER);
 
 	    // right-click menu for statement table
@@ -268,7 +266,6 @@ class StatementPanel extends JPanel {
 			if (modelRowIndex > -1) { // if no statement was previously selected, don't select a statement now.
 				int tableRow = statementTable.convertRowIndexToView(modelRowIndex);
 				this.statementTable.setRowSelectionInterval(tableRow, tableRow);
-				this.statementTable.scrollRectToVisible(new Rectangle(this.statementTable.getCellRect(tableRow, 0, true)));
 			}
 		}
 	}
@@ -367,13 +364,7 @@ class StatementPanel extends JPanel {
 				// check variables for a non-match 
 				for (int i = 0; i < variables.size(); i++) {
 					pattern = Pattern.compile((String) variables.get(i).getValue());
-					if (s.getValues().get(i).getDataType().equals("short text")) {
-						m = pattern.matcher(((Entity) s.getValues().get(i).getValue()).getValue());
-					} else if (s.getValues().get(i).getDataType().equals("boolean") || s.getValues().get(i).getDataType().equals("integer")) {
-						m = pattern.matcher(String.valueOf((int) s.getValues().get(i).getValue()));
-					} else {
-						m = pattern.matcher((String) s.getValues().get(i).getValue());
-					}
+					m = pattern.matcher((String) s.getValues().get(i).getValue());
 					if (!m.find()) {
 						return false;
 					}

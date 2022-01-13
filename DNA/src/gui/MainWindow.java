@@ -28,6 +28,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.swing.AbstractAction;
@@ -1064,6 +1067,7 @@ public class MainWindow extends JFrame {
 		
 		@Override
 		protected List<Statement> doInBackground() {
+			/*
 			String subString = "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text ";
 			if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
 				subString = "SUBSTRING(DOCUMENTS.Text, CAST(Start + 1 AS INT4), CAST(Stop - Start AS INT4)) AS Text ";
@@ -1121,6 +1125,236 @@ public class MainWindow extends JFrame {
 				    		LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC));
 				    publish(statement);
 				}
+			} catch (SQLException e) {
+				if (e.getMessage().matches(".*Interrupted during connection acquisition.*")) {
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI]  ├─ Statement retrieval canceled in Thread " + this.getName() + ".",
+							"Refreshing the statement table by reloading all statements from the database and populating the statement table with them was canceled, presumably because a new swing worker to retrieve statements was initiated, which then superseded the existing thread.",
+							e);
+					Dna.logger.log(l);
+				} else {
+					LogEvent l = new LogEvent(Logger.WARNING,
+							"[SQL] Failed to retrieve statements.",
+							"Attempted to retrieve all statements from the database, but something went wrong. You should double-check if the statements are all shown!",
+							e);
+					Dna.logger.log(l);
+				}
+			}
+			*/
+			
+			/*
+			String subString = "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text ";
+			if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
+				subString = "SUBSTRING(DOCUMENTS.Text, CAST(Start + 1 AS INT4), CAST(Stop - Start AS INT4)) AS Text ";
+			}
+			String queryStatement = "SELECT STATEMENTS.ID AS StatementId, "
+					+ "StatementTypeId, "
+					+ "STATEMENTTYPES.Label AS StatementTypeLabel, "
+					+ "STATEMENTTYPES.Red AS StatementTypeRed, "
+					+ "STATEMENTTYPES.Green AS StatementTypeGreen, "
+					+ "STATEMENTTYPES.Blue AS StatementTypeBlue, "
+					+ "Start, "
+					+ "Stop, "
+					+ "STATEMENTS.Coder AS CoderId, "
+					+ "CODERS.Name AS CoderName, "
+					+ "CODERS.Red AS CoderRed, "
+					+ "CODERS.Green AS CoderGreen, "
+					+ "CODERS.Blue AS CoderBlue, "
+					+ "DocumentId, "
+					+ "DOCUMENTS.Date AS Date, "
+					+ subString
+					+ "FROM STATEMENTS "
+					+ "INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID "
+					+ "INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID "
+					+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId ORDER BY DOCUMENTS.DATE ASC;";
+			
+			String queryValues = "SELECT VARIABLES.ID, VARIABLES.Variable, VARIABLES.DataType, ENTITIES.Value AS Value FROM DATASHORTTEXT "
+					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId "
+					+ "INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity WHERE DATASHORTTEXT.StatementId = ? "
+					+ "UNION "
+					+ "SELECT VARIABLES.ID, VARIABLES.Variable, VARIABLES.DataType, DATALONGTEXT.Value FROM DATALONGTEXT "
+					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId WHERE DATALONGTEXT.StatementId = ? "
+					+ "UNION "
+					+ "SELECT VARIABLES.ID, VARIABLES.Variable, VARIABLES.DataType, DATABOOLEAN.Value FROM DATABOOLEAN "
+					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId WHERE DATABOOLEAN.StatementId = ? "
+					+ "UNION "
+					+ "SELECT VARIABLES.ID, VARIABLES.Variable, VARIABLES.DataType, DATAINTEGER.Value FROM DATAINTEGER "
+					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId WHERE DATAINTEGER.StatementId = ? "
+					+ "ORDER BY 1 ASC;";
+			
+			ArrayList<Value> values;
+			int statementId, statementTypeId;
+			Color sColor, cColor;
+			
+			try (Connection conn = Dna.sql.getDataSource().getConnection();
+					PreparedStatement s1 = conn.prepareStatement(queryStatement);
+					PreparedStatement s2 = conn.prepareStatement(queryValues);) {
+
+				// first, get the statement information, including coder and statement type info
+				ResultSet r2;
+				ResultSet r1 = s1.executeQuery();
+				while (!isCancelled() && r1.next()) {
+					if (isCancelled()) {
+						return null;
+					}
+				    statementId = r1.getInt("StatementId");
+				    statementTypeId = r1.getInt("StatementTypeId");
+				    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
+				    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
+
+				    values = new ArrayList<Value>();
+				    s2.setInt(1, statementId);
+				    s2.setInt(2, statementId);
+				    s2.setInt(3, statementId);
+				    s2.setInt(4, statementId);
+				    r2 = s2.executeQuery();
+				    while (r2.next()) {
+				    	values.add(new Value(r2.getInt("ID"), r2.getString("Variable"), r2.getString("DataType"), r2.getString("Value")));
+				    }
+				    
+				    // assemble the statement with all the information from the previous steps
+				    Statement statement = new Statement(statementId,
+				    		r1.getInt("Start"),
+				    		r1.getInt("Stop"),
+				    		statementTypeId,
+				    		r1.getString("StatementTypeLabel"),
+				    		sColor,
+				    		r1.getInt("CoderId"),
+				    		r1.getString("CoderName"),
+				    		cColor,
+				    		values,
+				    		r1.getInt("DocumentId"),
+				    		r1.getString("Text"),
+				    		LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC));
+				    publish(statement);
+				}
+			} catch (SQLException e) {
+				if (e.getMessage().matches(".*Interrupted during connection acquisition.*")) {
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI]  ├─ Statement retrieval canceled in Thread " + this.getName() + ".",
+							"Refreshing the statement table by reloading all statements from the database and populating the statement table with them was canceled, presumably because a new swing worker to retrieve statements was initiated, which then superseded the existing thread.",
+							e);
+					Dna.logger.log(l);
+				} else {
+					LogEvent l = new LogEvent(Logger.WARNING,
+							"[SQL] Failed to retrieve statements.",
+							"Attempted to retrieve all statements from the database, but something went wrong. You should double-check if the statements are all shown!",
+							e);
+					Dna.logger.log(l);
+				}
+			}
+			*/
+			
+
+			String subString = "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text ";
+			if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
+				subString = "SUBSTRING(DOCUMENTS.Text, CAST(Start + 1 AS INT4), CAST(Stop - Start AS INT4)) AS Text ";
+			}
+			String q1 = "SELECT STATEMENTS.ID AS StatementId, "
+					+ "StatementTypeId, "
+					+ "STATEMENTTYPES.Label AS StatementTypeLabel, "
+					+ "STATEMENTTYPES.Red AS StatementTypeRed, "
+					+ "STATEMENTTYPES.Green AS StatementTypeGreen, "
+					+ "STATEMENTTYPES.Blue AS StatementTypeBlue, "
+					+ "Start, "
+					+ "Stop, "
+					+ "STATEMENTS.Coder AS CoderId, "
+					+ "CODERS.Name AS CoderName, "
+					+ "CODERS.Red AS CoderRed, "
+					+ "CODERS.Green AS CoderGreen, "
+					+ "CODERS.Blue AS CoderBlue, "
+					+ "DocumentId, "
+					+ "DOCUMENTS.Date AS Date, "
+					+ subString
+					+ "FROM STATEMENTS "
+					+ "INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID "
+					+ "INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID "
+					+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId ORDER BY DOCUMENTS.DATE ASC;";
+			
+			String q2 = "SELECT ID FROM STATEMENTTYPES;";
+			
+			String q3 = "SELECT ID, Variable, DataType FROM VARIABLES;";
+			
+			String q4 = "SELECT DATASHORTTEXT.StatementId, VARIABLES.ID AS VariableId, ENTITIES.Value AS Value FROM DATASHORTTEXT "
+					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId "
+					+ "INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity WHERE VARIABLES.StatementTypeId = ? "
+					+ "UNION "
+					+ "SELECT DATALONGTEXT.StatementId, VARIABLES.ID AS VariableId, DATALONGTEXT.Value FROM DATALONGTEXT "
+					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId WHERE VARIABLES.StatementTypeId = ? "
+					+ "UNION "
+					+ "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, DATABOOLEAN.Value FROM DATABOOLEAN "
+					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId WHERE VARIABLES.StatementTypeId = ? "
+					+ "UNION "
+					+ "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, DATAINTEGER.Value FROM DATAINTEGER "
+					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId WHERE VARIABLES.StatementTypeId = ? "
+					+ "ORDER BY 1, 2 ASC;";
+			
+			int statementTypeId, statementId, variableId;
+			Color sColor, cColor;
+			HashMap<Integer, String> variableNameMap = new HashMap<Integer, String>(); // variable ID to variable name
+			HashMap<Integer, String> variableDataTypeMap = new HashMap<Integer, String>(); // variable ID to data type
+			HashMap<Integer, Statement> statementMap = new HashMap<Integer, Statement>(); // statement ID to Statement
+			ResultSet r3, r4;
+			try (Connection conn = Dna.sql.getDataSource().getConnection();
+					PreparedStatement s1 = conn.prepareStatement(q1);
+					PreparedStatement s2 = conn.prepareStatement(q2);
+					PreparedStatement s3 = conn.prepareStatement(q3);
+					PreparedStatement s4 = conn.prepareStatement(q4);) {
+				
+				// assemble statements without values for now and save them in a hash map
+				ResultSet r1 = s1.executeQuery();
+				while (r1.next()) {
+					statementId = r1.getInt("StatementId");
+				    statementTypeId = r1.getInt("StatementTypeId");
+				    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
+				    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
+				    Statement statement = new Statement(statementId,
+				    		r1.getInt("Start"),
+				    		r1.getInt("Stop"),
+				    		statementTypeId,
+				    		r1.getString("StatementTypeLabel"),
+				    		sColor,
+				    		r1.getInt("CoderId"),
+				    		r1.getString("CoderName"),
+				    		cColor,
+				    		new ArrayList<Value>(),
+				    		r1.getInt("DocumentId"),
+				    		r1.getString("Text"),
+				    		LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC));
+				    statementMap.put(statementId, statement);
+				}
+				
+				// get variables
+				r3 = s3.executeQuery();
+				while (r3.next()) {
+					variableNameMap.put(r3.getInt("ID"), r3.getString("Variable"));
+					variableDataTypeMap.put(r3.getInt("ID"), r3.getString("DataType"));
+				}
+				
+				// get statement types
+				ResultSet r2 = s2.executeQuery();
+				while (r2.next()) {
+					statementTypeId = r2.getInt("ID");
+					
+					// get values and put them into the statements
+					s4.setInt(1, statementTypeId);
+					s4.setInt(2, statementTypeId);
+					s4.setInt(3, statementTypeId);
+					s4.setInt(4, statementTypeId);
+					r4 = s4.executeQuery();
+					while (r4.next()) {
+						variableId = r4.getInt("VariableId");
+						statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), r4.getString("Value")));
+					}
+				}
+				
+				// publish all statements
+				Collection<Statement> s = statementMap.values();
+		        ArrayList<Statement> listOfStatements = new ArrayList<Statement>(s);
+				Collections.sort(listOfStatements);
+		        for (int i = 0; i < listOfStatements.size(); i++) {
+		        	publish(listOfStatements.get(i));
+		        }
 			} catch (SQLException e) {
 				if (e.getMessage().matches(".*Interrupted during connection acquisition.*")) {
 					LogEvent l = new LogEvent(Logger.MESSAGE,
