@@ -170,10 +170,6 @@ public class MainWindow extends JFrame {
 		
 		/*
 		 * TODO:
-		 * - Statement filter produces IndexOutOfBoundsException: add the variable values (only value in case of Entity) back in to the statement refresh swing worker?
-		 * - No statement filter fields for statement ID and text
-		 * - Statement table: make ID column wider to accommodate four- and five-digit IDs
-		 * - Entering something in the notes field in the attribute manager (e.g., under organization) changes the alias field instead of the notes field when reopened
 		 * - Change the status bar messages for loading statements and documents to have cancellable buttons and a status bar
 		 * - Add a fourth logger message category to track actual changes in the document only; streamline logger events
 		 * - Fix any issues with resizing dialog windows and the main window on different operating systems

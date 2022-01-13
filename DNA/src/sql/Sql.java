@@ -3124,17 +3124,19 @@ public class Sql {
 	/**
 	 * Update/set an attribute value for an entity.
 	 * 
-	 * @param entityId    ID of the entity.
-	 * @param variableId  The variable ID to which the entity belongs.
-	 * @param newValue    The new attribute value.
+	 * @param entityId          ID of the entity.
+	 * @param variableId        The variable ID to which the entity belongs.
+	 * @param attributeVariable The name of the attribute variable to update.
+	 * @param newValue          The new attribute value.
 	 * @throws SQLException
 	 */
-	public void setAttributeValue(int entityId, int variableId, String newValue) throws SQLException {
+	public void setAttributeValue(int entityId, int variableId, String attributeVariable, String newValue) throws SQLException {
 		try (Connection conn = getDataSource().getConnection();
-				PreparedStatement s = conn.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE (EntityId = ? AND AttributeVariableId = (SELECT ID FROM ATTRIBUTEVARIABLES WHERE VariableId = ?));")) {
+				PreparedStatement s = conn.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE (EntityId = ? AND AttributeVariableId = (SELECT ID FROM ATTRIBUTEVARIABLES WHERE VariableId = ? AND AttributeVariable = ?));")) {
         	s.setString(1, newValue);
         	s.setInt(2,  entityId);
         	s.setInt(3, variableId);
+        	s.setString(4, attributeVariable);
         	s.executeUpdate();
 		} catch (SQLException ex) {
 			throw ex;

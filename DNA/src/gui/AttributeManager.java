@@ -61,7 +61,6 @@ import model.Value;
  * and edit attribute values.
  */
 public class AttributeManager extends JDialog {
-	
 	private static final long serialVersionUID = 6180793159551336995L;
 
 	/**
@@ -624,7 +623,7 @@ public class AttributeManager extends JDialog {
 				String attributeVariable = this.attributeVariables.get(col - 3);
 				int variableId = this.rows.get(row).getVariableId();
 				try {
-					Dna.sql.setAttributeValue(this.rows.get(row).getId(), variableId, (String) aValue);
+					Dna.sql.setAttributeValue(this.rows.get(row).getId(), variableId, attributeVariable, (String) aValue);
 					this.rows.get(row).getAttributeValues().put(attributeVariable, (String) aValue);
 				} catch (SQLException ex) {
 		        	LogEvent l = new LogEvent(Logger.ERROR,
