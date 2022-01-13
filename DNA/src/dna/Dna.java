@@ -14,7 +14,7 @@ public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2022-01-11";
+	public static final String date = "2022-01-13";
 	public static final String version = "3.0.0 alpha 2";
 	MainWindow mainWindow;
 	
