@@ -422,7 +422,7 @@ public class StatementTypeEditor extends JDialog {
 			nameLabel.setEnabled(true);
 			colorLabel.setEnabled(true);
 			idField.setText(statementTypeList.getSelectedValue().getId() + "");
-			if (!(source instanceof DocumentEvent || source instanceof DefaultListSelectionModel)) {
+			if (!(source instanceof DocumentEvent || source instanceof DefaultListSelectionModel || source == colorButton)) {
 				nameField.setText(statementTypeList.getSelectedValue().getLabel());
 			}
 			if (source == statementTypeList ||
