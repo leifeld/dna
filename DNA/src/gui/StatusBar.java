@@ -11,6 +11,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 
 import dna.Dna;
 import logger.Logger.LogListener;
@@ -22,7 +23,8 @@ import sql.Sql;
  */
 class StatusBar extends JPanel implements LogListener {
 	private static final long serialVersionUID = -1987834394140569531L;
-	JLabel urlLabel, documentRefreshLabel, documentRefreshIconLabel, statementRefreshLabel, statementRefreshIconLabel;
+	JLabel urlLabel, documentRefreshIconLabel, statementRefreshIconLabel;
+	JProgressBar documentProgressBar, statementProgressBar;
 	int numWarnings, numErrors;
 	JButton messageIconButton, warningButton, errorButton;
 	
@@ -49,15 +51,24 @@ class StatusBar extends JPanel implements LogListener {
 		documentRefreshIconLabel = new JLabel(refreshIcon);
 		documentRefreshIconLabel.setVisible(false);
 		rightPanel.add(documentRefreshIconLabel);
-		documentRefreshLabel = new JLabel("Documents");
-		rightPanel.add(documentRefreshLabel);
-		documentRefreshLabel.setVisible(false);
+		
+		documentProgressBar = new JProgressBar();
+	    documentProgressBar.setIndeterminate(true);
+	    documentProgressBar.setString("Reloading documents...");
+	    documentProgressBar.setStringPainted(true);
+	    documentProgressBar.setVisible(false);
+	    rightPanel.add(documentProgressBar);
+	    
 		statementRefreshIconLabel = new JLabel(refreshIcon);
 		statementRefreshIconLabel.setVisible(false);
 		rightPanel.add(statementRefreshIconLabel);
-		statementRefreshLabel = new JLabel("Statements");
-		rightPanel.add(statementRefreshLabel);
-		statementRefreshLabel.setVisible(false);
+		
+		statementProgressBar = new JProgressBar();
+		statementProgressBar.setIndeterminate(true);
+		statementProgressBar.setString("Reloading statements...");
+		statementProgressBar.setStringPainted(true);
+		statementProgressBar.setVisible(false);
+	    rightPanel.add(statementProgressBar);
 		
 		ImageIcon messageIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		messageIconButton = new JButton(messageIcon);
@@ -143,7 +154,7 @@ class StatusBar extends JPanel implements LogListener {
 	 */
 	public void statementRefreshStart() {
 		this.statementRefreshIconLabel.setVisible(true);
-		this.statementRefreshLabel.setVisible(true);
+		this.statementProgressBar.setVisible(true);
 	}
 
 	/**
@@ -151,7 +162,7 @@ class StatusBar extends JPanel implements LogListener {
 	 */
 	public void statementRefreshEnd() {
 		this.statementRefreshIconLabel.setVisible(false);
-		this.statementRefreshLabel.setVisible(false);
+		this.statementProgressBar.setVisible(false);
 	}
 
 	/**
@@ -159,7 +170,7 @@ class StatusBar extends JPanel implements LogListener {
 	 */
 	public void documentRefreshStart() {
 		this.documentRefreshIconLabel.setVisible(true);
-		this.documentRefreshLabel.setVisible(true);
+		this.documentProgressBar.setVisible(true);
 	}
 
 	/**
@@ -167,7 +178,7 @@ class StatusBar extends JPanel implements LogListener {
 	 */
 	public void documentRefreshEnd() {
 		this.documentRefreshIconLabel.setVisible(false);
-		this.documentRefreshLabel.setVisible(false);
+		this.documentProgressBar.setVisible(false);
 	}
 
 	/**
@@ -178,7 +189,7 @@ class StatusBar extends JPanel implements LogListener {
 	 * @return  Boolean indicating if a refresh swing worker is running.
 	 */
 	public boolean isRefreshInProgress() {
-		if (this.documentRefreshLabel.isVisible() || this.statementRefreshLabel.isVisible()) {
+		if (this.documentProgressBar.isVisible() || this.statementProgressBar.isVisible()) {
 			return true;
 		} else {
 			return false;

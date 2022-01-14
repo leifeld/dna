@@ -170,7 +170,6 @@ public class MainWindow extends JFrame {
 		
 		/*
 		 * TODO:
-		 * - Change the status bar messages for loading statements and documents to have cancellable buttons and a status bar
 		 * - Add a fourth logger message category to track actual changes in the document only; streamline logger events
 		 * - Fix any issues with resizing dialog windows and the main window on different operating systems
 		 * - Add auto-refresh

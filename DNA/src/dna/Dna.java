@@ -1,5 +1,7 @@
 package dna;
 
+import java.awt.EventQueue;
+
 import gui.MainWindow;
 import logger.LogEvent;
 import logger.Logger;
@@ -14,7 +16,7 @@ public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2022-01-13";
+	public static final String date = "2022-01-14";
 	public static final String version = "3.0.0 alpha 2";
 	MainWindow mainWindow;
 	
@@ -30,8 +32,20 @@ public class Dna {
 				"DNA started. Version " + version + " (" + date + ").",
 				"DNA started. Version " + version + " (" + date + ").");
 		Dna.logger.log(l);
-		
-		mainWindow = new MainWindow();
+
+		// ensure the GUI is started on the event dispatch thread
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					mainWindow = new MainWindow();
+				} catch (Exception e) {
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"DNA GUI failed to initialize. Version " + version + " (" + date + ").",
+							"DNA GUI failed to initialize. Version " + version + " (" + date + ").");
+					Dna.logger.log(l);
+				}
+			}
+		});
 	}
 	
 	/**
