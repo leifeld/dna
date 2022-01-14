@@ -725,6 +725,14 @@ public class Sql {
 		// Annotation
 		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (2, 'Annotation', 211, 211, 211);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(5, 'note', 'long text', 2);");
+		// NPF Story Element
+		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (3, 'NPF Story Element', 0, 255, 150);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(6, 'actor', 'short text', 3);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(7, 'victim', 'short text', 3);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(8, 'villain', 'short text', 3);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(9, 'plot', 'integer', 3);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(10, 'hero', 'short text', 3);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(11, 'policy solution', 'short text', 3);");
 		try (Connection conn = ds.getConnection();
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);

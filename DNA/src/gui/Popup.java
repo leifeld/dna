@@ -14,6 +14,7 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -183,11 +184,13 @@ class Popup extends JDialog {
 		gbc.anchor = GridBagConstraints.EAST;
 		
 		// add fields for the values
-		ArrayList<Integer> variableIndices = new ArrayList<Integer>();
 		ArrayList<Integer> variableIds = new ArrayList<Integer>();
+		HashMap<Integer, Integer> indexMap = new HashMap<Integer, Integer>();
+		int counter = 0;
 		for (int i = 0; i < variables.size(); i++) {
 			if (variables.get(i).getDataType().equals("short text")) {
-				variableIndices.add(i);
+				indexMap.put(i, counter);
+				counter++;
 				variableIds.add(variables.get(i).getVariableId());
 			}
 		}
@@ -199,8 +202,8 @@ class Popup extends JDialog {
 			String dataType = variables.get(i).getDataType();
 			JLabel label = new JLabel(key, JLabel.TRAILING);
 			if (dataType.equals("short text")) {
-				Entity[] entitiesArray = new Entity[entities.get(variableIndices.get(i)).size()];
-				entitiesArray = entities.get(variableIndices.get(i)).toArray(entitiesArray);
+				Entity[] entitiesArray = new Entity[entities.get(indexMap.get(i)).size()];
+				entitiesArray = entities.get(indexMap.get(i)).toArray(entitiesArray);
 				JComboBox<Entity> box = new JComboBox<Entity>(entitiesArray);
 				box.setRenderer(new AttributeComboBoxRenderer());
 				box.setEditable(true);

@@ -1313,29 +1313,29 @@ public class MainWindow extends JFrame {
 		actionCreateDatabase.setEnabled(true);
 		actionOpenProfile.setEnabled(true);
 		actionSaveProfile.setEnabled(true);
-		if (Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
+		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
 			actionCoderManager.setEnabled(true);
 		} else {
 			actionCoderManager.setEnabled(false);
 		}
 		changedDocumentTableSelection();
 		actionRefresh.setEnabled(true);
-		if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true) {
+		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true) {
 			actionRemoveStatements.setEnabled(true);
 		} else {
 			actionRemoveStatements.setEnabled(false);
 		}
-		if (Dna.sql.getActiveCoder().isPermissionEditStatementTypes() == true) {
+		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditStatementTypes() == true) {
 			actionStatementTypeEditor.setEnabled(true);
 		} else {
 			actionStatementTypeEditor.setEnabled(false);
 		}
-		if (Dna.sql.getActiveCoder().isPermissionEditAttributes() == true) {
+		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditAttributes() == true) {
 			actionAttributeManager.setEnabled(true);
 		} else {
 			actionAttributeManager.setEnabled(false);
 		}
-		if (Dna.sql.getActiveCoder().isPermissionEditCoderRelations() == true && Dna.sql.getActiveCoder().getId() != 1) {
+		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditCoderRelations() == true && Dna.sql.getActiveCoder().getId() != 1) {
 			actionCoderRelationsEditor.setEnabled(true);
 		} else {
 			actionCoderRelationsEditor.setEnabled(false);
