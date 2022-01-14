@@ -103,10 +103,10 @@ public class AttributeManager extends JDialog {
 	private JComboBox<Value> variableBox;
 	
 	/**
-	 * A list of swing worker threads to make sure all threads are terminated
+	 * A swing worker thread reference to make sure the thread is terminated
 	 * before a new worker is executed to populate the table.
 	 */
-	private ArrayList<AttributeTableRefreshWorker> workers;
+	private AttributeTableRefreshWorker worker;
 	
 	/**
 	 * A button that deletes unused selected entities.
@@ -120,8 +120,6 @@ public class AttributeManager extends JDialog {
 		this.setModal(true);
 		this.setTitle("Attribute manager");
 		this.setLayout(new BorderLayout());
-		
-		workers = new ArrayList<AttributeTableRefreshWorker>();
 		
 		// create empty table panel, which will be overwritten after setting the other components
 		this.tablePanel = new JPanel();
@@ -145,19 +143,20 @@ public class AttributeManager extends JDialog {
 		statementTypeBox.addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
-				updateVariableBox();
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					updateVariableBox();
+				}
 			}
 		});
 		StatementTypeComboBoxRenderer statementTypeRenderer = new StatementTypeComboBoxRenderer();
 		statementTypeBox.setRenderer(statementTypeRenderer);
-		variableBox.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (variableBox.getItemCount() > 0) {
+		variableBox.addItemListener(new ItemListener() {
+		    public void itemStateChanged(ItemEvent e) {
+		    	if (e.getStateChange() == ItemEvent.SELECTED && variableBox.getItemCount() > 0) {
 					int variableId = ((Value) variableBox.getSelectedItem()).getVariableId();
 					createNewTable(variableId);
 				}
-			}
+		    }
 		});
 		VariableComboBoxRenderer variableRenderer = new VariableComboBoxRenderer();
 		variableBox.setRenderer(variableRenderer);
@@ -286,11 +285,8 @@ public class AttributeManager extends JDialog {
 		closeButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (workers.size() > 0) {
-					for (int i = workers.size() - 1; i >= 0; i--) {
-						workers.get(i).cancel(true);
-						workers.remove(i);
-					}
+				if (worker != null) {
+					worker.cancel(true);
 				}
 				dispose();
 			}
@@ -346,6 +342,7 @@ public class AttributeManager extends JDialog {
 		attributeTable.setDefaultRenderer(Integer.class, tableRenderer);
 		ColorChooserEditor cce = new ColorChooserEditor();
 		attributeTable.getColumnModel().getColumn(2).setCellEditor(cce);
+		attributeTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 		
 		// appearance of the table
 		attributeTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -405,14 +402,13 @@ public class AttributeManager extends JDialog {
 	 * @param variableId  The ID of the variable for which entities are shown.
 	 */
 	private void refreshTable(int variableId) {
-		if (workers.size() > 0) {
-			for (int i = workers.size() - 1; i >= 0; i--) {
-				workers.get(i).cancel(true);
-				workers.remove(i);
+		if (worker != null) {
+			worker.cancel(true);
+			while (!worker.isDone()) {
+				// pause until the existing worker is done
 			}
 		}
-		AttributeTableRefreshWorker worker = new AttributeTableRefreshWorker(variableId);
-		workers.add(worker);
+		worker = new AttributeTableRefreshWorker(variableId);
 		worker.execute();
 	}
 	
@@ -456,7 +452,10 @@ public class AttributeManager extends JDialog {
 				s1.setInt(1, variableId);
 				s2.setInt(1, variableId);
 				r1 = s1.executeQuery();
-	        	while (r1.next()) {
+				while (!isCancelled() && !isDone() && r1.next()) {
+					if (isCancelled() || isDone()) {
+						return null;
+					}
 	            	color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
 	            	s2.setInt(2, r1.getInt("ID"));
 	            	r2 = s2.executeQuery();
@@ -473,9 +472,11 @@ public class AttributeManager extends JDialog {
 	            	s3.setInt(1, entityId);
 	            	r2 = s3.executeQuery();
 	            	while (r2.next()) {
-	            		map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
+            			map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
 	            	}
-	            	publish(new Entity(entityId, variableId, r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase, map));
+	            	if (!isCancelled()) {
+	            		publish(new Entity(entityId, variableId, r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase, map));
+	            	}
 	            }
 			} catch (SQLException e1) {
 	        	LogEvent e = new LogEvent(Logger.WARNING,
@@ -493,7 +494,9 @@ public class AttributeManager extends JDialog {
          */
         @Override
         protected void process(List<Entity> chunks) {
-        	model.addRows(chunks); // transfer a batch of rows to the table model
+        	if (!isCancelled()) {
+        		model.addRows(chunks); // transfer a batch of rows to the table model
+        	}
         }
 
         /**
