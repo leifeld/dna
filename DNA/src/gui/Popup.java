@@ -455,6 +455,9 @@ class Popup extends JDialog {
 					variableName = ((JLabel) com[i - 1]).getText();
 					@SuppressWarnings("unchecked")
 					JComboBox<Entity> box = (JComboBox<Entity>) com[i]; // save the combo box
+					if (!((String) box.getSelectedItem().toString()).equals(box.getEditor().getItem().toString())) {
+						box.setSelectedItem(box.getEditor().getItem()); // make sure combo box edits are saved even if the editor has not lost its focus yet
+					}
 					Object object = box.getSelectedItem();
 					Entity entity;
 					if (object.getClass().getName().endsWith("String")) { // if not an existing entity, the editor returns a String
