@@ -471,7 +471,11 @@ public class MainWindow extends JFrame {
 						}
 					});
 					
-					if (Dna.sql.getActiveCoder().isPermissionAddStatements() == false) {
+					// disable menu items if the coder does not have the permission to add statements or edit other coders' documents (if the document belongs to another coder)
+					int documentCoderId = ((Coder) documentTable.getValueAt(documentTable.getSelectedRow(), 5)).getId();
+					if (Dna.sql.getActiveCoder().isPermissionAddStatements() == false ||
+							(documentCoderId != Dna.sql.getActiveCoder().getId() && !Dna.sql.getActiveCoder().isPermissionEditOthersDocuments()) ||
+							(documentCoderId != Dna.sql.getActiveCoder().getId() &&	!Dna.sql.getActiveCoder().isPermissionEditOthersDocuments(documentCoderId))) {
 						menuItem.setEnabled(false);
 					}
 				}
@@ -597,6 +601,7 @@ public class MainWindow extends JFrame {
 				if (Dna.sql.getConnectionProfile() != null) {
 					Dna.sql.setColorByCoder(Dna.sql.getConnectionProfile().getCoderId(), colorByCoderItem.isSelected());
 					textPanel.adjustToChangedCoder();
+					refreshStatementTable();
 				}
 			}
 		});

@@ -410,15 +410,9 @@ public class StatementTypeEditor extends JDialog {
 			}
 			colorButton.setColor(Color.BLACK);
 		} else {
-			if (statementTypeList.getSelectedValue().getId() == 1) { // do not make details editable if it is the DNA Statement type (ID = 1)
-				idField.setEnabled(false);
-				nameField.setEnabled(false);
-				colorButton.setEnabled(false);
-			} else {
-				idField.setEnabled(true);
-				nameField.setEnabled(true);
-				colorButton.setEnabled(true);
-			}
+			idField.setEnabled(true);
+			nameField.setEnabled(true);
+			colorButton.setEnabled(true);
 			idLabel.setEnabled(true);
 			nameLabel.setEnabled(true);
 			colorLabel.setEnabled(true);
@@ -437,7 +431,6 @@ public class StatementTypeEditor extends JDialog {
 		
 		// apply details button
 		if (statementTypeList.isSelectionEmpty() ||
-				statementTypeList.getSelectedValue().getId() == 1 ||
 				nameField.getText().matches("^\\s*$") ||
 				(statementTypeList.getSelectedValue().getLabel().equals(nameField.getText()) &&
 				statementTypeList.getSelectedValue().getColor().equals(colorButton.getColor()))) {
@@ -464,25 +457,19 @@ public class StatementTypeEditor extends JDialog {
 				for (int i = 0; i < statementTypeList.getSelectedValue().getVariables().size(); i++) {
 					variableTableModel.addRow(statementTypeList.getSelectedValue().getVariables().get(i));
 				}
-				if (statementTypeList.getSelectedValue().getId() == 1) {
-					variableTable.setEnabled(false);
-				} else {
-					variableTable.setEnabled(true);
-				}
+				variableTable.setEnabled(true);
 			}
 		}
 		
 		// add variable button
-		if (statementTypeList.isSelectionEmpty() || statementTypeList.getSelectedValue().getId() == 1) {
+		if (statementTypeList.isSelectionEmpty()) {
 			addVariableButton.setEnabled(false);
 		} else {
 			addVariableButton.setEnabled(true);
 		}
 		
 		// delete and rename variable buttons
-		if (variableTable.getSelectedRowCount() < 1 ||
-				statementTypeList.isSelectionEmpty() ||
-				statementTypeList.getSelectedValue().getId() == 1) {
+		if (variableTable.getSelectedRowCount() < 1 || statementTypeList.isSelectionEmpty()) {
 			deleteVariableButton.setEnabled(false);
 			renameVariableButton.setEnabled(false);
 		} else {

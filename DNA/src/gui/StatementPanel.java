@@ -46,6 +46,8 @@ import javax.swing.table.TableRowSorter;
 
 import dna.Dna;
 import gui.MainWindow.ActionRemoveStatements;
+import logger.LogEvent;
+import logger.Logger;
 import model.Coder;
 import model.Statement;
 import model.StatementType;
@@ -266,7 +268,16 @@ class StatementPanel extends JPanel {
 			int modelRowIndex = statementTableModel.getModelRowById(statementId);
 			if (modelRowIndex > -1) { // if no statement was previously selected, don't select a statement now.
 				int tableRow = statementTable.convertRowIndexToView(modelRowIndex);
-				this.statementTable.setRowSelectionInterval(tableRow, tableRow);
+				try {
+					this.statementTable.setRowSelectionInterval(tableRow, tableRow);
+				} catch (IllegalArgumentException e) {
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"Tried to select a statement that was not selectable.",
+							"Attempted selecting a statement from the statement table to show it in a popup window, but the active statement filter prevented the statement from being shown in the table, hence it could not be selected.",
+							e);
+					Dna.logger.log(l);
+				}
+				
 			}
 		}
 	}

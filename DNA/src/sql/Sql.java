@@ -3337,15 +3337,64 @@ public class Sql {
 	public int addVariable(int statementTypeId, String variableName, String dataType) {
 		int variableId = -1;
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s = conn.prepareStatement("INSERT INTO VARIABLES (Variable, DataType, StatementTypeId) VALUES (?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS)) {
-        	s.setString(1, variableName);
-        	s.setString(2, dataType);
-        	s.setInt(3, statementTypeId);
-        	s.executeUpdate();
-        	ResultSet generatedKeysResultSet = s.getGeneratedKeys();
+				PreparedStatement s1 = conn.prepareStatement("INSERT INTO VARIABLES (Variable, DataType, StatementTypeId) VALUES (?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+				PreparedStatement s2 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value) VALUES (?, '');", PreparedStatement.RETURN_GENERATED_KEYS);
+				PreparedStatement s3 = conn.prepareStatement("SELECT ID FROM STATEMENTS WHERE StatementTypeId = ?;");
+				PreparedStatement s4 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Entity) VALUES (?, ?, ?);");
+				PreparedStatement s5 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, '');");
+				PreparedStatement s6 = conn.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, 1);");
+				PreparedStatement s7 = conn.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, 0);");
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			
+			// add variable to VARIABLES table
+        	s1.setString(1, variableName);
+        	s1.setString(2, dataType);
+        	s1.setInt(3, statementTypeId);
+        	s1.executeUpdate();
+        	ResultSet generatedKeysResultSet = s1.getGeneratedKeys();
 			while (generatedKeysResultSet.next()) {
 				variableId = generatedKeysResultSet.getInt(1);
 			}
+			
+			// create an entity in the ENTITIES table if short text
+			int entityId = -1;
+			if (dataType.equals("short text")) {
+				s2.setInt(1, variableId);
+				s2.executeUpdate();
+				generatedKeysResultSet = s2.getGeneratedKeys();
+				while (generatedKeysResultSet.next()) {
+					entityId = generatedKeysResultSet.getInt(1);
+				}
+			}
+			
+			// get statement IDs to update
+			s3.setInt(1, statementTypeId);
+			ResultSet r3 = s3.executeQuery();
+			int statementId = -1;
+			while (r3.next()) {
+				statementId = r3.getInt("ID");
+				if (dataType.equals("short text")) { // update short text statements
+					s4.setInt(1, statementId);
+					s4.setInt(2, variableId);
+					s4.setInt(3, entityId);
+					s4.executeUpdate();
+				} else if (dataType.equals("long text")) { // update long text statements
+					s5.setInt(1, statementId);
+					s5.setInt(2, variableId);
+					s5.executeUpdate();
+				} else if (dataType.equals("boolean")) { // update boolean statements
+					s6.setInt(1, statementId);
+					s6.setInt(2, variableId);
+					s6.executeUpdate();
+				} else if (dataType.equals("integer")) { // update integer statements
+					s7.setInt(1, statementId);
+					s7.setInt(2, variableId);
+					s7.executeUpdate();
+				}
+			}
+			
+			conn.commit();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[SQL] Variable added to the database.",
 					"Added new variable \"" + variableName + "\" (ID " + variableId + ") to statement type " + statementTypeId + ".");
@@ -3403,7 +3452,6 @@ public class Sql {
 			s.setString(1, name);
 			s.setInt(2, variableId);
 			s.executeUpdate();
-			System.out.println(name);
 			success = true;
 			LogEvent e = new LogEvent(Logger.MESSAGE,
         			"[SQL] Name of variable " + variableId + " was updated.",

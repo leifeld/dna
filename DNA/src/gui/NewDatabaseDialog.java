@@ -139,9 +139,7 @@ public class NewDatabaseDialog extends JDialog {
 				+ "coding with multiple users. DNA uses connection pooling, and "
 				+ "coders can log in from different locations and collaborate, even simultaneously. "
 				+ "A slight disadvantage is that changes made by other users are "
-				+ "not instantly visible. The refresh interval determines how "
-				+ "often the documents and statements are updated from the "
-				+ "database (e.g., every 20 seconds), and it can be changed in the DNA user interface. "
+				+ "not instantly visible. The document and statement table must be refreshed to see the changes. "
 				+ "IT departments and web hosting companies can "
 				+ "provide empty MySQL databases to you. You can enter the URL, login, and password for "
 				+ "the empty database here, and DNA can then create the data structures for you. "
@@ -252,13 +250,7 @@ public class NewDatabaseDialog extends JDialog {
 					+ "It is therefore very important to store it safely. If a non-Admin "
 					+ "password is lost, you can log in as Admin and reset that coder's "
 					+ "password. You cannot reset the Admin password without knowing the "
-					+ "Admin password. You can also provide empty (zero-length) passwords, "
-					+ "in which case you will not be asked to confirm your password when "
-					+ "you connect to the DNA database. But without password, you will not "
-					+ "be able to save a connection profile because your password would "
-					+ "be needed to encrypt the database credentials on your hard disk. So "
-					+ "it is probably better to use a password unless you are using SQLite "
-					+ "and don't need a connection profile anyway.</p></html>";
+					+ "Admin password.</p></html>";
 			coderPanel.setToolTipText(ttCoder);
 			pw1Field.setToolTipText(ttCoder);
 			pw2Field.setToolTipText(ttCoder);
