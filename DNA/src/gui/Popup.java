@@ -13,6 +13,8 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -55,7 +57,7 @@ class Popup extends JDialog {
 	private Point los;
 	private Color color;
 	private boolean windowDecoration, editable;
-	private JPanel gridBagPanel;
+	JPanel gridBagPanel;
 	private int textFieldWidth;
 	private ArrayList<Value> variables;
 	JButton duplicate, remove;
@@ -255,6 +257,20 @@ class Popup extends JDialog {
 				}
     			box.setPreferredSize(new Dimension(this.textFieldWidth, 20));
     			box.setSelectedItem((Entity) variables.get(i).getValue());
+    			
+    			// need to add a focus listener to save the contents; otherwise without auto-completion the last edited box will not be saved
+    			box.getEditor().getEditorComponent().addFocusListener(new FocusListener() {
+    				
+					@Override
+					public void focusGained(FocusEvent e) {
+						// no action needed when focus is gained
+					}
+					
+					@Override
+					public void focusLost(FocusEvent e) {
+						box.setSelectedItem(box.getEditor().getItem());
+					}
+    			});
     			
 				gbc.anchor = GridBagConstraints.EAST;
 	    		gridBagPanel.add(label, gbc);
