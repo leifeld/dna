@@ -129,6 +129,7 @@ class CoderManager extends JDialog {
 		nameField.getDocument().addDocumentListener(documentListener);
 		
 		colorButton = new ColorButton();
+		colorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		colorButton.setEnabled(false);
 		colorLabel = new JLabel("Color", JLabel.TRAILING);
 		colorLabel.setLabelFor(colorButton);
@@ -865,6 +866,7 @@ class CoderManager extends JDialog {
 
 			ColorButton addColorButton = new ColorButton();
 			addColorButton.setColor(new Color(69, 212, 255));
+			addColorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 			JLabel addColorLabel = new JLabel("Color", JLabel.TRAILING);
 			addColorLabel.setLabelFor(addColorButton);
 			addColorButton.addActionListener(new ActionListener() {

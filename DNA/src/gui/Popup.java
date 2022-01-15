@@ -57,10 +57,10 @@ class Popup extends JDialog {
 	private Point los;
 	private Color color;
 	private boolean windowDecoration, editable;
-	JPanel gridBagPanel;
+	private JPanel gridBagPanel;
 	private int textFieldWidth;
 	private ArrayList<Value> variables;
-	JButton duplicate, remove;
+	private JButton duplicate, remove;
 	
 	/**
 	 * Popup dialog window to display the contents of a statements. The user can
@@ -138,18 +138,19 @@ class Popup extends JDialog {
 		colorPanel.setBackground(color);
 		colorPanel.setPreferredSize(new Dimension(4, 4));
 		
-		ImageIcon duplicateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-copy.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
+		int h = endPos.getPreferredSize().height;
+		ImageIcon duplicateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-copy.png")).getImage().getScaledInstance(h, h, Image.SCALE_SMOOTH));
 		duplicate = new JButton(duplicateIcon);
 		duplicate.setToolTipText("create a copy of this statement at the same location");
-		duplicate.setPreferredSize(new Dimension(16, 16));
+		duplicate.setPreferredSize(new Dimension(h, h));
 		if (coder.isPermissionAddStatements() == false) {
 			duplicate.setEnabled(false);
 		}
 		
-		ImageIcon removeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-trash.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
+		ImageIcon removeIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-trash.png")).getImage().getScaledInstance(h, h, Image.SCALE_SMOOTH));
 		remove = new JButton(removeIcon);
 		remove.setToolTipText("completely remove the whole statement (but keep the text)");
-		remove.setPreferredSize(new Dimension(16, 16));
+		remove.setPreferredSize(new Dimension(h, h));
 		remove.setEnabled(true);
 		if (coder.isPermissionDeleteStatements() == false) {
 			remove.setEnabled(false);

@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.swing.AbstractCellEditor;
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
@@ -814,6 +815,7 @@ public class AttributeManager extends JDialog {
     				}
     			});
     			colorButton.setPreferredSize(new Dimension(30, 8));
+    			colorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
     			colorButton.setEnabled(false);
     			panel.add(colorButton);
     	        if (!entity.isInDatabase() && isSelected) {

@@ -22,6 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -397,25 +398,25 @@ public class LoggerDialog extends JDialog {
 		g.fill = GridBagConstraints.HORIZONTAL;
 		g.insets = new Insets(3, 5, 3, 5);
 		g.anchor = GridBagConstraints.NORTH;
+		g.weightx = 0.0;
 		g.gridx = 0;
 		g.gridy = 0;
 		JLabel summaryLabel = new JLabel("Summary:", JLabel.TRAILING);
 		summaryLabel.setToolTipText("The summary shows a short summary of the log event.");
 		summaryTextArea = new JXTextArea();
 		summaryTextArea.setToolTipText("The summary shows a short summary of the log event.");
-		summaryTextArea.setLineWrap(true);
-		summaryTextArea.setWrapStyleWord(true);
 		summaryTextArea.setRows(1);
 		summaryTextArea.setColumns(95);
 		summaryTextArea.setEnabled(false);
 		summaryTextArea.setEditable(false);
-		JScrollPane summaryScroller = new JScrollPane(summaryTextArea);
-		summaryScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		summaryTextArea.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		summaryLabel.setLabelFor(summaryTextArea);
 		detailsPanel.add(summaryLabel, g);
+		g.weightx = 1.0;
 		g.gridx = 1;
-		detailsPanel.add(summaryScroller, g);
-		
+		detailsPanel.add(summaryTextArea, g);
+
+		g.weightx = 0.0;
 		g.gridx = 0;
 		g.gridy = 1;
 		JLabel detailsLabel = new JLabel("Details:", JLabel.TRAILING);
@@ -431,9 +432,11 @@ public class LoggerDialog extends JDialog {
 		detailsScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		detailsLabel.setLabelFor(detailsTextArea);
 		detailsPanel.add(detailsLabel, g);
+		g.weightx = 1.0;
 		g.gridx = 1;
 		detailsPanel.add(detailsScroller, g);
 
+		g.weightx = 0.0;
 		g.gridx = 0;
 		g.gridy = 2;
 		JLabel logLabel = new JLabel("Log stack trace:", JLabel.TRAILING);
@@ -442,16 +445,18 @@ public class LoggerDialog extends JDialog {
 		logTextArea.setToolTipText("Show where in the class hierarchy the log event was triggered in the code.");
 		logTextArea.setLineWrap(true);
 		logTextArea.setWrapStyleWord(true);
-		logTextArea.setRows(6);
+		logTextArea.setRows(9);
 		logTextArea.setEnabled(false);
 		logTextArea.setEditable(false);
 		JScrollPane logScroller = new JScrollPane(logTextArea);
 		logScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		logLabel.setLabelFor(logTextArea);
 		detailsPanel.add(logLabel, g);
+		g.weightx = 1.0;
 		g.gridx = 1;
 		detailsPanel.add(logScroller, g);
 
+		g.weightx = 0.0;
 		g.gridx = 0;
 		g.gridy = 3;
 		JLabel exceptionLabel = new JLabel("Exception stack trace:", JLabel.TRAILING);
@@ -460,13 +465,14 @@ public class LoggerDialog extends JDialog {
 		exceptionTextArea.setToolTipText("Show details of the error that was logged while executing the code.");
 		exceptionTextArea.setLineWrap(true);
 		exceptionTextArea.setWrapStyleWord(true);
-		exceptionTextArea.setRows(6);
+		exceptionTextArea.setRows(9);
 		exceptionTextArea.setEnabled(false);
 		exceptionTextArea.setEditable(false);
 		JScrollPane exceptionScroller = new JScrollPane(exceptionTextArea);
 		exceptionScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		exceptionLabel.setLabelFor(exceptionTextArea);
 		detailsPanel.add(exceptionLabel, g);
+		g.weightx = 1.0;
 		g.gridx = 1;
 		detailsPanel.add(exceptionScroller, g);
 		mainPanel.add(detailsPanel, BorderLayout.SOUTH);
@@ -509,7 +515,7 @@ public class LoggerDialog extends JDialog {
         		if (Dna.sql.getConnectionProfile() == null || (int) value == -1 || coders.isEmpty() || !coders.containsKey((int) value)) {
         			value = null;
         		} else {
-        			c = new CoderBadgePanel(coders.get((int) value), 14, 0, 12); // show 12 characters of the coder name
+        			c = new CoderBadgePanel(coders.get((int) value), 13, 1, 12); // show 12 characters of the coder name
         		}
         	}
         	if (isSelected == true) {

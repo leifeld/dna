@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -52,7 +53,7 @@ public class CoderBadgePanel extends JPanel {
 			coder = Dna.sql.getActiveCoder();
 		}
 		
-		createLayout(coder, 18, 0, 22);
+		createLayout(coder, 18, 1, 22);
 	}
 	
 	/**
@@ -75,6 +76,7 @@ public class CoderBadgePanel extends JPanel {
 			}
 		});
 		colorButton.setPreferredSize(new Dimension(buttonSize, buttonSize));
+		colorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		colorButton.setEnabled(false);
 		String name = coder.getName();
 

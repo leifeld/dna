@@ -182,7 +182,7 @@ public class CoderPasswordCheckDialog {
 		};
 		JDialog dialog = pane.createDialog(null, "Coder verification");
 		dialog.setVisible(true);
-		if ((int) pane.getValue() == 0) { // 0 = OK button pressed
+		if (pane.getValue() != null && (int) pane.getValue() == 0) { // 0 = OK button pressed; pane.getValue() can be null if X was pressed to close the window
 			password = new String(pw.getPassword());
 			coder = (Coder) comboBox.getSelectedItem();
 		}

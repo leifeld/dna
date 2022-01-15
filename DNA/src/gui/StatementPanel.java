@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -284,7 +285,7 @@ class StatementPanel extends JPanel {
         	Statement s = model.getRow(table.convertRowIndexToModel(row));
         	if (value.getClass().toString().endsWith("Coder")) {
         		Coder coder = (Coder) value;
-				CoderBadgePanel cbp = new CoderBadgePanel(coder, 14, 0, 22);
+				CoderBadgePanel cbp = new CoderBadgePanel(coder, 13, 1, 22);
 				if (isSelected) {
             		cbp.setBackground(javax.swing.UIManager.getColor("Table.selectionBackground"));
 				} else {
@@ -577,6 +578,7 @@ class StatementPanel extends JPanel {
 						}
 					});
 					colorRectangle.setPreferredSize(new Dimension(14, 14));
+					colorRectangle.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 					colorRectangle.setEnabled(false);
 					
 					JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));

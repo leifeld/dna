@@ -1,5 +1,6 @@
 package gui;
 
+import java.awt.FlowLayout;
 import java.awt.Image;
 
 import javax.swing.ImageIcon;
@@ -187,7 +188,7 @@ public class MenuBar extends JMenuBar {
 		fontSizeIconLabel.setEnabled(false);
 		fontSizeDescriptionLabel.setEnabled(false);
 		fontSizeSpinner.setEnabled(false);
-		JPanel spinnerFontPanel = new JPanel();
+		JPanel spinnerFontPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		spinnerFontPanel.add(fontSizeIconLabel);
 		spinnerFontPanel.add(fontSizeDescriptionLabel);
 		spinnerFontPanel.add(fontSizeSpinner);
@@ -207,7 +208,7 @@ public class MenuBar extends JMenuBar {
 		popupWidthIconLabel.setEnabled(false);
 		popupWidthDescriptionLabel.setEnabled(false);
 		popupWidthSpinner.setEnabled(false);
-		JPanel spinnerPanel = new JPanel();
+		JPanel spinnerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		spinnerPanel.add(popupWidthIconLabel);
 		spinnerPanel.add(popupWidthDescriptionLabel);
 		spinnerPanel.add(popupWidthSpinner);

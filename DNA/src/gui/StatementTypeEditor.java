@@ -171,6 +171,7 @@ public class StatementTypeEditor extends JDialog {
 		nameField.getDocument().addDocumentListener(documentListener);
 		
 		colorButton = new ColorButton();
+		colorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		colorButton.setEnabled(false);
 		colorLabel = new JLabel("Color", JLabel.TRAILING);
 		colorLabel.setLabelFor(colorButton);

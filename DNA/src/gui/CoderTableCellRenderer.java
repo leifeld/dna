@@ -15,7 +15,7 @@ import model.Coder;
  */
 class CoderTableCellRenderer extends DefaultTableCellRenderer {
 	private static final long serialVersionUID = 5929937877823094103L;
-	private int border = 0;
+	private int border = 1;
 
 	@Override
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -23,7 +23,7 @@ class CoderTableCellRenderer extends DefaultTableCellRenderer {
 			return new JLabel("");
 		} else {
 			Coder coder = (Coder) value;
-			CoderBadgePanel cbp = new CoderBadgePanel(coder, 14, border, 22);
+			CoderBadgePanel cbp = new CoderBadgePanel(coder, 13, border, 22);
 			if (isSelected) {
 				UIDefaults defaults = javax.swing.UIManager.getDefaults();
 				Color bg = defaults.getColor("List.selectionBackground");

@@ -65,7 +65,7 @@ class CoderSelectionPanel extends JPanel {
 		this.remove(coderBadgePanel);
 		Coder coder = Dna.sql.getActiveCoder();
 		if (coder != null) {
-			this.coderBadgePanel = new CoderBadgePanel(coder, 18, 0, 30);
+			this.coderBadgePanel = new CoderBadgePanel(coder, 18, 1, 30);
 		} else {
 			this.coderBadgePanel = new CoderBadgePanel();
 		}

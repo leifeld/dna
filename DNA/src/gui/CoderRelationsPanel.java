@@ -81,7 +81,7 @@ public class CoderRelationsPanel extends JPanel {
 			if (value == null) {
 				return null;
 			} else if (table.convertColumnIndexToModel(column) == 0) {
-				return new CoderBadgePanel((Coder) value, 16, 0, 13);
+				return new CoderBadgePanel((Coder) value, 13, 1, 13);
         	} else if ((boolean) value == true) {
 				ImageIcon eyeIconGreen = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-eye-green.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
         		return new JLabel(eyeIconGreen);
