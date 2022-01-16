@@ -224,7 +224,7 @@ public class AttributeManager extends JDialog {
 		
 		// delete entity button and action listener
 		ImageIcon deleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
-		deleteButton = new JButton("Delete entry", deleteIcon);
+		deleteButton = new JButton("Delete entity", deleteIcon);
 		deleteButton.setToolTipText("Delete the selected unused entities (the selected rows highlighted in red).");
 		deleteButton.setPreferredSize(new Dimension(deleteButton.getPreferredSize().width, newField.getPreferredSize().height));
 		deleteButton.setEnabled(false);

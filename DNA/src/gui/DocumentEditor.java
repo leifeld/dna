@@ -75,6 +75,34 @@ public class DocumentEditor extends JDialog {
 	}
 
 	private void createGui(int numDocuments) {
+		String toolTipText = "<html><p width=\"500\">Overwrite the document contents and meta-data "
+				+ "by editing the fields shown in this editor dialog.</p>"
+				+ "<p width=\"500\">Note that the document text field is only editable if there are "
+				+ "no statements contained in the document.</p>"
+				+ "<p width=\"500\">In the title, author, source, section, type, notes, and text "
+				+ "fields, the following wildcards can be used (across the different fields) to "
+				+ "represent the contents of the respective field that are currently saved "
+				+ "in the database:</p>"
+				+ "<dl>"
+				+ "<dt><b>%title</b></dt><dd>Represents the current contents of the title field.</dd>"
+				+ "<dt><b>%author</b></dt><dd>Represents the current contents of the author field.</dd>"
+				+ "<dt><b>%source</b></dt><dd>Represents the current contents of the source field.</dd>"
+				+ "<dt><b>%section</b></dt><dd>Represents the current contents of the section field.</dd>"
+				+ "<dt><b>%type</b></dt><dd>Represents the current contents of the type field.</dd>"
+				+ "<dt><b>%notes</b></dt><dd>Represents the current contents of the notes field.</dd>"
+				+ "<dt><b>%text</b></dt><dd>Represents the current contents of the text field.</dd>"
+				+ "<dt><b>%day</b></dt><dd>Represents the current day (1-31) of the document.</dd>"
+				+ "<dt><b>%month</b></dt><dd>Represents the current month (1-12) of the document.</dd>"
+				+ "<dt><b>%year</b></dt><dd>Represents the current year (e.g., 2007) of the document.</dd>"
+				+ "<dt><b>%hour</b></dt><dd>Represents the current hour (0-23) of the document.</dd>"
+				+ "<dt><b>%minute</b></dt><dd>Represents the current minute (0-59) of the document.</dd>"
+				+ "</dl>"
+				+ "<p width=\"500\">For example, you can combine title and date like this: "
+				+ "%title (%day.%month.%year).</p>"
+				+ "<p width=\"500\">Note that the date/time field may show as empty when multiple "
+				+ "documents are edited simultaneously. This just means the original date will be "
+				+ "kept when saving unless edited.</p></html>";
+		
 		this.setModal(true);
 		if (numDocuments == 0) {
 			this.setTitle("Add new document...");
@@ -97,6 +125,9 @@ public class DocumentEditor extends JDialog {
 		textScroller = new JScrollPane(textArea);
 		textScroller.setPreferredSize(new Dimension(700, 500));
 		textScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		if (numDocuments > 0) {
+			textScroller.setToolTipText(toolTipText);
+		}
 		
 		JPanel fieldsPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -107,11 +138,17 @@ public class DocumentEditor extends JDialog {
 		gbc.gridy = 0;
 		gbc.gridx = 0;
 		JLabel titleLabel = new JLabel("title", JLabel.RIGHT);
+		if (numDocuments > 0) {
+			titleLabel.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(titleLabel, gbc);
 
 		gbc.gridy = 1;
 		gbc.gridx = 0;
 		JLabel dateLabel = new JLabel("date", JLabel.RIGHT);
+		if (numDocuments > 0) {
+			dateLabel.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(dateLabel, gbc);
 
 		gbc.gridy = 2;
@@ -122,32 +159,50 @@ public class DocumentEditor extends JDialog {
 		gbc.gridy = 3;
 		gbc.gridx = 0;
 		JLabel authorLabel = new JLabel("author", JLabel.RIGHT);
+		if (numDocuments > 0) {
+			authorLabel.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(authorLabel, gbc);
 
 		gbc.gridy = 4;
 		gbc.gridx = 0;
 		JLabel sourceLabel = new JLabel("source", JLabel.RIGHT);
+		if (numDocuments > 0) {
+			sourceLabel.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(sourceLabel, gbc);
 
 		gbc.gridy = 5;
 		gbc.gridx = 0;
 		JLabel sectionLabel = new JLabel("section", JLabel.RIGHT);
+		if (numDocuments > 0) {
+			sectionLabel.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(sectionLabel, gbc);
 
 		gbc.gridy = 6;
 		gbc.gridx = 0;
 		JLabel typeLabel = new JLabel("type", JLabel.RIGHT);
+		if (numDocuments > 0) {
+			typeLabel.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(typeLabel, gbc);
 
 		gbc.gridy = 7;
 		gbc.gridx = 0;
 		gbc.anchor = GridBagConstraints.NORTH;
 		JLabel notesLabel = new JLabel("notes", JLabel.RIGHT);
+		if (numDocuments > 0) {
+			notesLabel.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(notesLabel, gbc);
 
 		gbc.gridy = 8;
 		gbc.gridx = 0;
 		JLabel textLabel = new JLabel("text", JLabel.RIGHT);
+		if (numDocuments > 0) {
+			textLabel.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(textLabel, gbc);
 
 		// second column: fields
@@ -157,6 +212,9 @@ public class DocumentEditor extends JDialog {
 		gbc.gridwidth = 3;
 		titleField = new JXTextField("paste the title of the document here using Ctrl-V...");
 		titleField.setColumns(50);
+		if (numDocuments > 0) {
+			titleField.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(titleField, gbc);
 
 		if (numDocuments < 2) {
@@ -208,6 +266,11 @@ public class DocumentEditor extends JDialog {
         JButton timeButton = dateTimePicker.getTimePicker().getComponentToggleTimeMenuButton();
         timeButton.setText("");
         timeButton.setIcon(timeIcon);
+		if (numDocuments > 0) {
+			dateTimePicker.setToolTipText(toolTipText);
+			dateButton.setToolTipText(toolTipText);
+			timeButton.setToolTipText(toolTipText);
+		}
         fieldsPanel.add(dateTimePicker, gbc);
 		
 		gbc.gridy = 2;
@@ -221,6 +284,9 @@ public class DocumentEditor extends JDialog {
 		authorBox = new JXComboBox();
 		authorBox.setEditable(true);
 		AutoCompleteDecorator.decorate(authorBox);
+		if (numDocuments > 0) {
+			authorBox.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(authorBox, gbc);
 		
 		gbc.gridy = 4;
@@ -229,6 +295,9 @@ public class DocumentEditor extends JDialog {
 		sourceBox.setEditable(true);
 		sourceBox.setSelectedItem("");
 		AutoCompleteDecorator.decorate(sourceBox);
+		if (numDocuments > 0) {
+			sourceBox.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(sourceBox, gbc);
 
 		gbc.gridy = 5;
@@ -237,6 +306,9 @@ public class DocumentEditor extends JDialog {
 		sectionBox.setEditable(true);
 		sectionBox.setSelectedItem("");
 		AutoCompleteDecorator.decorate(sectionBox);
+		if (numDocuments > 0) {
+			sectionBox.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(sectionBox, gbc);
 		
 		gbc.gridy = 6;
@@ -245,7 +317,10 @@ public class DocumentEditor extends JDialog {
 		typeBox.setEditable(true);
 		typeBox.setSelectedItem("");
 		AutoCompleteDecorator.decorate(typeBox);
-		JDBCWorker worker = new JDBCWorker();
+		if (numDocuments > 0) {
+			typeBox.setToolTipText(toolTipText);
+		}
+		JDBCWorker worker = new JDBCWorker(numDocuments == 0);
         worker.execute();
 		fieldsPanel.add(typeBox, gbc);
 
@@ -257,6 +332,9 @@ public class DocumentEditor extends JDialog {
 		notesArea.setRows(4);
 		JScrollPane notesScroller = new JScrollPane(notesArea);
 		notesScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		if (numDocuments > 0) {
+			notesScroller.setToolTipText(toolTipText);
+		}
 		fieldsPanel.add(notesScroller, gbc);
 		
 		gbc.gridy = 8;
@@ -451,11 +529,13 @@ public class DocumentEditor extends JDialog {
 	 * @see <a href="https://stackoverflow.com/questions/68884145/how-do-i-use-a-jdbc-swing-worker-with-connection-pooling-ideally-while-separati" target="_top">https://stackoverflow.com/questions/68884145/</a>
 	 */
 	private class JDBCWorker extends SwingWorker<List<String[]>, String[]> {
+		boolean newDocument;
 		
 		/**
 		 * Initialize JDBC worker.
 		 */
-		public JDBCWorker() {
+		public JDBCWorker(boolean newDocument) {
+			this.newDocument = newDocument;
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Initializing thread to populate Document Editor: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
 					"Initializing a new thread to populate the author, source, section, and type combo boxes in a Document Editor dialog window: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
@@ -514,10 +594,12 @@ public class DocumentEditor extends JDialog {
             sourceBox.setPreferredSize(new Dimension(w, h));
             sectionBox.setPreferredSize(new Dimension(w, h));
             typeBox.setPreferredSize(new Dimension(w, h));
-    		authorBox.setSelectedItem("");
-    		sourceBox.setSelectedItem("");
-    		sectionBox.setSelectedItem("");
-    		typeBox.setSelectedItem("");
+            if (newDocument) {
+            	authorBox.setSelectedItem("");
+        		sourceBox.setSelectedItem("");
+        		sectionBox.setSelectedItem("");
+        		typeBox.setSelectedItem("");
+            }
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Closing thread to populate Document Editor: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
 					"All combo boxes in the Document Editor window have been filled. Closing thread to populate Document Editor: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
