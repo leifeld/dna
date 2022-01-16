@@ -241,6 +241,9 @@ class DocumentTableModel extends AbstractTableModel {
         fireTableRowsInserted(n, n + chunks.size() - 1); // subtract one because we don't need the cursor to be at the next position; it should refer to the last position
 	}
 	
+	/**
+	 * Sort the table documents by date and then ID.
+	 */
 	void sort() {
 		Collections.sort(rows);
 		fireTableDataChanged();

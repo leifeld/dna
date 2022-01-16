@@ -150,9 +150,14 @@ public class Document implements Comparable<Document> {
 	 */
 	@Override
 	public int compareTo(Document d) {
-		if (this.dateTime != null && this.getDateTime().isBefore(d.getDateTime())) {
-			return -1;
-		} else if (this.getId() < d.getId()) {
+		if (this.dateTime != null) {
+			if (this.getDateTime().isBefore(d.getDateTime())) {
+				return -1;
+			} else if (this.getDateTime().isAfter(d.getDateTime())) {
+				return 1;
+			}
+		}
+		if (this.getId() < d.getId()) {
 			return -1;
 		} else {
 			return 1;
