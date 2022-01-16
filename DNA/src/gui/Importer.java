@@ -46,6 +46,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableRowSorter;
 
 import dna.Dna;
 import logger.LogEvent;
@@ -99,10 +100,10 @@ class Importer extends JDialog {
 		coderTableModel = new CoderTableModel();
 		JTable coderTable = new JTable( coderTableModel );
         TableColumn column = coderTable.getColumnModel().getColumn(1);
-        coderTable.setRowHeight(28);
+        //coderTable.setRowHeight(28);
         column.setCellEditor(new DefaultCellEditor(comboBox));
         CoderTableCellRenderer coderTableCellRenderer = new CoderTableCellRenderer();
-        coderTableCellRenderer.setBorder(5);
+        //coderTableCellRenderer.setBorder(5);
         coderTable.setDefaultRenderer(Coder.class, coderTableCellRenderer);
 		coderTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane coderScroller = new JScrollPane(coderTable);
@@ -132,61 +133,142 @@ class Importer extends JDialog {
 		g.gridy = 0;
 		importStatementsBox = new JCheckBox("Import statements");
 		importStatementsBox.setSelected(true);
+		importStatementsBox.setToolTipText("<html><p width=\"500\">If checked, statements will be imported. "
+				+ "If unchecked, only the documents will be imported, without the statements contained in "
+				+ "these documents.</p></html>");
 		checkBoxPanel.add(importStatementsBox, g);
 
 		g.gridy = 1;
 		statementTypeBox = new JCheckBox("Include unknown statement types in import");
 		statementTypeBox.setSelected(true);
+		statementTypeBox.setToolTipText("<html><p width=\"500\">The source database may have statement "
+				+ "types that are not present in the current/target database. If checked, these foreign "
+				+ "statement types will be created as new statement types in the current/target database, "
+				+ "and the statements corresponding to these statement types will be imported. The import "
+				+ "process checks if the name and all variables are identical between the two databases to "
+				+ "establish whether a statement type in the source database can be mapped onto a statement "
+				+ "type in the current/target database. This also means that if you add a new variable to "
+				+ "the default statement types (such as to the DNA Statement definition) in the source "
+				+ "database, this will lead to the creation of a new statement type in the current/target "
+				+ "database if that exact statement type definition is not found in the current/target "
+				+ "database. If you want to map the statements to an existing statement type, you would "
+				+ "need to delete superfluous variables and rename the statement type and variables such "
+				+ "that it maps exactly onto an existing statement type. The color and ID of statement types "
+				+ "are not taken into account for the comparison.</p></html>");
 		checkBoxPanel.add(statementTypeBox, g);
 
 		g.gridy = 2;
 		skipFullBox = new JCheckBox("Skip documents with statements");
 		skipFullBox.setSelected(false);
+		skipFullBox.setToolTipText("<html><p width=\"500\">If checked, only documents will be imported that "
+				+ "do not contain any statements. If unchecked, all selected documents will be imported "
+				+ "(subject to the remaining import options).</p></html>");
 		checkBoxPanel.add(skipFullBox, g);
 
 		g.gridy = 3;
 		skipEmptyBox = new JCheckBox("Skip documents without statements");
 		skipEmptyBox.setSelected(false);
+		skipEmptyBox.setToolTipText("<html><p width=\"500\">If checked, only documents will be imported that "
+				+ "contain at least one statement. If unchecked, all selected documents will be imported "
+				+ "(subject to the remaining import options).</p></html>");
 		checkBoxPanel.add(skipEmptyBox, g);
 
 		g.gridy = 4;
 		coderDocumentBox = new JCheckBox("Skip documents not mapped to active coder");
 		coderDocumentBox.setSelected(false);
+		coderDocumentBox.setToolTipText("<html><p width=\"500\">If checked, only those documents among the "
+				+ "selected documents are imported that are mapped onto the currently active coder in the "
+				+ "table at the top of the dialog window. That is, documents mapped to another coder will "
+				+ "be ignored. If unchecked, all selected documents will be imported (subject to the "
+				+ "remaining import options). Note that document ownership will be recoded during import "
+				+ "according to the coder mapping table at the top of the dialog window.</p></html>");
 		checkBoxPanel.add(coderDocumentBox, g);
 
 		g.gridy = 5;
 		coderStatementBox = new JCheckBox("Skip statements not mapped to active coder");
 		coderStatementBox.setSelected(false);
+		coderStatementBox.setToolTipText("<html><p width=\"500\">If checked, only those statements among the "
+				+ "selected statements are imported that are mapped onto the currently active coder in the "
+				+ "table at the top of the dialog window. That is, statements mapped to another coder will "
+				+ "be ignored. If unchecked, all statements will be imported (subject to the remaining import "
+				+ "options). Note that statement ownership will be recoded during import according to the "
+				+ "coder mapping table at the top of the dialog window.</p></html>");
 		checkBoxPanel.add(coderStatementBox, g);
 
 		g.gridy = 6;
 		skipDuplicatesBox = new JCheckBox("Skip documents with identical title and text");
 		skipDuplicatesBox.setSelected(false);
+		skipDuplicatesBox.setToolTipText("<html><p width=\"500\">If checked, documents in the source database "
+				+ "(including the statements contained in these documents) are omitted from the import "
+				+ "process if a document with the same title and text exists in the current/target database. "
+				+ "If unchecked, they will be inserted anyway as new documents.</p></html>");
 		checkBoxPanel.add(skipDuplicatesBox, g);
 
 		g.gridy = 7;
 		fixDatesBox = new JCheckBox("Round date/time to nearest date at 00:00");
 		fixDatesBox.setSelected(false);
+		fixDatesBox.setToolTipText("<html><p width=\"500\">If checked, the time stamp of the documents will be "
+				+ "erased and set to 00:00 at the nearest full day. For example, if a document has the date "
+				+ "24 June 2011 and a time of 11:36, the date/time will be rounded to 24 June 2011 at 00:00. "
+				+ "If a document has the date 24 June 2011 and a time of 13:15, the date/time will be rounded "
+				+ "to 25 June 2011 at 00:00. In some older DNA versions, the date/time stamp was relative to "
+				+ "the local time zone, meaning that reopening the database in a different time zone could "
+				+ "change the date. Checking this box fixes these imprecisions by rounding the dates.</p></html>");
 		checkBoxPanel.add(fixDatesBox, g);
 
 		g.gridy = 8;
 		mergeAttributesBox = new JCheckBox("Merge attributes upon import");
 		mergeAttributesBox.setSelected(true);
+		mergeAttributesBox.setToolTipText("<html><p width=\"500\">The source database may have different attribute "
+				+ "variables from the current/target database. If checked, any attribute variables from the "
+				+ "source database will also be copied into the target database if they do not exist yet.</p>"
+				+ "<p width=\"500\">The source database may also contain attribute values where the current/target "
+				+ "database contains empty values. For example, if the source database contains statements that "
+				+ "have the same person as some statements in the current/target database and if the source "
+				+ "database has a 'type' or 'alias' defined for person while the current/target database does not, "
+				+ "then the attribute value will be transferred into the current/target database as well, without "
+				+ "overwriting any existing attribute values (unless the 'Overwrite attribute data on conflict' "
+				+ "option is selected) if this box is checked.</p>"
+				+ "<p width=\"500\">If not checked, then attribute values in the source database will be ignored "
+				+ "and not transferred into the current/target database.</p></html>");
 		checkBoxPanel.add(mergeAttributesBox, g);
 
 		g.gridy = 9;
 		overwriteAttributesBox = new JCheckBox("Overwrite attribute data on conflict");
 		overwriteAttributesBox.setSelected(false);
+		overwriteAttributesBox.setToolTipText("<html><p width=\"500\">If checked (and if the previous option is "
+				+ "checked as well), attributes will not only be merged into the current/target database when "
+				+ "there is no attribute value present in the current/target database, but any existing "
+				+ "attribute values in the current/target database will be overwritten with corresponding "
+				+ "attribute values from the source database if both databases contain attribute values for "
+				+ "the same entity and the same attribute variable. That is, the source attribute value takes "
+				+ "priority over the existing attribute data. If there is no attribute value in the source but "
+				+ "there is one present in the current/target database, the existing attribute value in the "
+				+ "current/target database will not be changed. If unchecked, attribute data are not overwritten "
+				+ "upon conflict and will be imported only if there is no existing attribute value in the "
+				+ "current/target database for the respective entity and attribute variable.</p></html>");
 		checkBoxPanel.add(overwriteAttributesBox, g);
 
 		g.gridy = 10;
 		importEntitiesBox = new JCheckBox("Import unused entities");
 		importEntitiesBox.setSelected(false);
+		importEntitiesBox.setToolTipText("<html><p width=\"500\">In DNA, it is possible to add entities to "
+				+ "a variable that do not have any instances in any of the coded statements. For example, one "
+				+ "could add a list of persons before starting the coding process. These unused entities are "
+				+ "highlighted in red in the attribute manager. Used entities can also become unused if all "
+				+ "statements that contain instances of them are deleted. If this box is checked, all unused "
+				+ "entities are imported from the source database into the current/target database, "
+				+ "irrespective of document or statement or statement type, for all variables. If unchecked, "
+				+ "unused entities will not be imported.</p></html>");
 		checkBoxPanel.add(importEntitiesBox, g);
 
 		g.gridy = 11;
 		importRegexBox = new JCheckBox("Import regex keywords");
 		importRegexBox.setSelected(true);
+		importRegexBox.setToolTipText("<html><p width=\"500\">If checked, regular expressions (to be "
+				+ "highlighted in the text) are imported from the source database into the current/target "
+				+ "database. Regex terms that already exist (even if in a different color) are ignored during "
+				+ "import. If unchecked, no regex terms are imported.</p></html>");
 		checkBoxPanel.add(importRegexBox, g);
 
 		CompoundBorder borderCheckBoxes;
@@ -208,6 +290,10 @@ class Importer extends JDialog {
 		documentTable.getColumnModel().getColumn(3).setPreferredWidth(80);
 		documentTable.getColumnModel().getColumn(4).setPreferredWidth(130);
 		documentTable.getTableHeader().setReorderingAllowed(false);
+		
+		// allow rows to be sorted by column by pressing on column header
+		TableRowSorter<DocumentTableModel> sorter = new TableRowSorter<DocumentTableModel>(dtm);
+		documentTable.setRowSorter(sorter);
 
 		JScrollPane tableScrollPane = new JScrollPane(documentTable);
 		tableScrollPane.setPreferredSize(new Dimension(1000, 300));
@@ -699,7 +785,7 @@ class Importer extends JDialog {
 		
 		@Override
 		protected List<TableDocument> doInBackground() {
-			try (Connection conn = Dna.sql.getDataSource().getConnection();
+			try (Connection conn = Importer.this.sql.getDataSource().getConnection();
 					PreparedStatement s = conn.prepareStatement("SELECT D.ID, Title, (SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = D.ID) AS Frequency, C.ID AS CoderId, Name AS CoderName, Red, Green, Blue, Date, Author, Source, Section, Type, Notes FROM CODERS C INNER JOIN DOCUMENTS D ON D.Coder = C.ID;");
 					ResultSet rs = s.executeQuery();) {
 				LocalDateTime dateTime;
@@ -892,7 +978,6 @@ class Importer extends JDialog {
 				}
 				
 				// process regex keywords
-				
 				int regexCount = 0;
 				if (importRegexBox.isSelected()) {
 					ArrayList<String> existingRegexes = new ArrayList<String>();
