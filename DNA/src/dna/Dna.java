@@ -55,5 +55,11 @@ public class Dna {
 	 */
 	public static void main(String[] args) {
 		dna = new Dna();
+
+		// TODO: remove this placeholder and add database update log events throughout the code
+		LogEvent l = new LogEvent(Logger.UPDATE,
+				"Testing log events for database updates.",
+				"Please ignore this message. It is just a placeholder to test if database updates can be logged. It will be removed in the future when DNA is able to show database updates in the log.");
+		Dna.logger.log(l);
 	}
 }

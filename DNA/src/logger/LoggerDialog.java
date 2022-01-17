@@ -123,8 +123,12 @@ public class LoggerDialog extends JDialog {
 		warningCheckBox.setBackground(new Color(255, 255, 130));
 		JCheckBox messageCheckBox = new JCheckBox("Messages", true);
 		messageCheckBox.setToolTipText("Display log events with priority 1 (messages)?");
-		messageCheckBox.setBackground(Color.BLACK);
-		messageCheckBox.setForeground(Color.WHITE);
+		messageCheckBox.setBackground(new Color(130, 255, 130));
+		JCheckBox updateCheckBox = new JCheckBox("Database updates", true);
+		updateCheckBox.setToolTipText("Display log events with priority 0 (database updates)?");
+		updateCheckBox.setBackground(Color.BLACK);
+		updateCheckBox.setForeground(Color.WHITE);
+		
 		ActionListener al = new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -134,10 +138,12 @@ public class LoggerDialog extends JDialog {
 		errorCheckBox.addActionListener(al);
 		warningCheckBox.addActionListener(al);
 		messageCheckBox.addActionListener(al);
+		updateCheckBox.addActionListener(al);
 		JPanel checkBoxPanel = new JPanel();
 		checkBoxPanel.add(errorCheckBox);
 		checkBoxPanel.add(warningCheckBox);
 		checkBoxPanel.add(messageCheckBox);
+		checkBoxPanel.add(updateCheckBox);
 		filterPanel.add(checkBoxPanel, BorderLayout.CENTER);
 
 		// clear filter button, upper right corner
@@ -152,6 +158,7 @@ public class LoggerDialog extends JDialog {
 				errorCheckBox.setSelected(true);
 				warningCheckBox.setSelected(true);
 				messageCheckBox.setSelected(true);
+				updateCheckBox.setSelected(true);
 				Dna.logger.fireTableDataChanged();
 			}
 		});
@@ -333,6 +340,9 @@ public class LoggerDialog extends JDialog {
 				if (l.getPriority() == 1 && !messageCheckBox.isSelected()) {
 					return false;
 				}
+				if (l.getPriority() == 0 && !updateCheckBox.isSelected()) {
+					return false;
+				}
 				try {
 					Pattern pattern = Pattern.compile(filterField.getText());
 					Matcher matcherSummary = pattern.matcher(l.getSummary());
@@ -500,7 +510,7 @@ public class LoggerDialog extends JDialog {
 			Color priorityColor = javax.swing.UIManager.getColor("Table.background");
 	        Color selectedColor = javax.swing.UIManager.getColor("Table.selectionBackground");
 	        if (logEntry.getPriority() == 1) {
-	        	// priorityColor = new Color(130, 255, 130);
+	        	priorityColor = new Color(130, 255, 130);
 	        } else if (logEntry.getPriority() == 2) {
 	        	priorityColor = new Color(255, 255, 130);
 	        } else if (logEntry.getPriority() == 3) {

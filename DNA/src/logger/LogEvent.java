@@ -16,15 +16,15 @@ public class LogEvent extends Throwable {
 	private static final long serialVersionUID = 776936228209151721L;
 	LocalDateTime time;
 	String summary, details, exceptionStackTraceString, logStackTraceString;
-	int priority; // 1 = message; 2 = warning; 3 = error
+	int priority; // 0 = update; 1 = message; 2 = warning; 3 = error
 	int coder;
 	
 	/**
 	 * Create a new log event with empty exception stack trace string.
 	 * 
-	 * @param priority Priority of the event, which can be 1
-	 *   ({@link Logger.MESSAGE}, 2 ({@link Logger.WARNING}), or 3
-	 *   ({@link Logger.ERROR}).
+	 * @param priority Priority of the event, which can be 0
+	 *   ({@link Logger.UPDATE}), 1 ({@link Logger.MESSAGE}), 2
+	 *   ({@link Logger.WARNING}), or 3 ({@link Logger.ERROR}).
 	 * @param summary The title or short version of the event.
 	 * @param details A more detailed description of the event.
 	 */
@@ -45,9 +45,9 @@ public class LogEvent extends Throwable {
 	/**
 	 * Create a new log event with an exception whose stack trace is saved.
 	 * 
-	 * @param priority Priority of the event, which can be 1
-	 *   ({@link Logger.MESSAGE}, 2 ({@link Logger.WARNING}), or 3
-	 *   ({@link Logger.ERROR}).
+	 * @param priority Priority of the event, which can be 0
+	 *   ({@link Logger.UPDATE}), 1 ({@link Logger.MESSAGE}), 2
+	 *   ({@link Logger.WARNING}), or 3 ({@link Logger.ERROR}).
 	 * @param summary    The title or short version of the event.
 	 * @param details    A more detailed description of the event.
 	 * @param exception  The Throwable object from which the exception should be

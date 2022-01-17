@@ -619,6 +619,7 @@ class StatementPanel extends JPanel {
 			filterButton.setEnabled(false);
 		} else {
 			allButton.setSelected(true);
+			allButton.doClick();
 			allButton.setEnabled(false);
 			docButton.setEnabled(true);
 			filterButton.setEnabled(true);

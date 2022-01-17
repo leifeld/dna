@@ -12,6 +12,7 @@ import javax.swing.table.AbstractTableModel;
  */
 public class Logger extends AbstractTableModel {
 	private static final long serialVersionUID = -4311166671521091151L;
+	public static final int UPDATE = 0;
 	public static final int MESSAGE = 1;
 	public static final int WARNING = 2;
 	public static final int ERROR = 3;
