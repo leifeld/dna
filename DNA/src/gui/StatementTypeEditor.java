@@ -390,7 +390,7 @@ public class StatementTypeEditor extends JDialog {
 	 */
 	private void updateUI(Object source) {
 		// statement type delete button
-		if (statementTypeList.isSelectionEmpty() || statementTypeList.getSelectedValue().getId() == 1) {
+		if (statementTypeList.isSelectionEmpty()) {
 			deleteStatementTypeButton.setEnabled(false);
 		} else {
 			deleteStatementTypeButton.setEnabled(true);

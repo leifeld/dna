@@ -252,9 +252,19 @@ public class Statement implements Comparable<Statement> {
 	 */
 	@Override
 	public int compareTo(Statement s) {
-		if (this.dateTime != null && this.getDateTime().isBefore(s.getDateTime())) {
+		if (this.dateTime != null) {
+			if (this.getDateTime().isBefore(s.getDateTime())) {
+				return -1;
+			} else if (this.getDateTime().isAfter(s.getDateTime())) {
+				return 1;
+			}
+		}
+		if (this.getDocumentId() < s.getDocumentId()) {
 			return -1;
-		} else if (this.getDocumentId() == s.getDocumentId() && this.getStart() < s.getStart()) {
+		} else if (this.getDocumentId() > s.getDocumentId()) {
+			return 1;
+		}
+		if (this.getId() < s.getId()) {
 			return -1;
 		} else {
 			return 1;
