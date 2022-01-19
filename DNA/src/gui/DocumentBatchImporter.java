@@ -634,7 +634,7 @@ public class DocumentBatchImporter extends JDialog {
 		if (m.find()) {
 			try {
 				String string = m.group(0);
-			    return string;
+			    return string.substring(0, Math.min(190, string.length()));
 			} catch (IndexOutOfBoundsException e) {
 				return("");
 			}

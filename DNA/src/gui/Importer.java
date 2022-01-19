@@ -981,13 +981,13 @@ class Importer extends JDialog {
 					ArrayList<String> existingRegexes = new ArrayList<String>();
 					r1 = d3.executeQuery();
 					while (r1.next()) {
-						existingRegexes.add(r1.getString("Label"));
+						existingRegexes.add(r1.getString("Label").substring(0, Math.min(190, r1.getString("Label").length())));
 					}
 					r1.close();
 					r1 = f2.executeQuery();
 					while (r1.next()) {
-						if (!existingRegexes.contains(r1.getString("Label"))) {
-							d4.setString(1, r1.getString("Label"));
+						if (!existingRegexes.contains(r1.getString("Label").substring(0, Math.min(190, r1.getString("Label").length())))) {
+							d4.setString(1, r1.getString("Label").substring(0, Math.min(190, r1.getString("Label").length())));
 							d4.setInt(2, r1.getInt("Red"));
 							d4.setInt(3, r1.getInt("Green"));
 							d4.setInt(4, r1.getInt("Blue"));
@@ -1194,7 +1194,7 @@ class Importer extends JDialog {
 													r3.close();
 													if (!entityPresent && (importEntitiesBox.isSelected() || r2.getInt("Count") > 0)) { // import if not present yet and the entity is either used in the foreign file or unused entities are imported, too 
 														d20.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId()); // variable ID
-														d20.setString(2, r2.getString("Value").substring(0, Math.min(2999, r2.getString("Value").length())));
+														d20.setString(2, r2.getString("Value").substring(0, Math.min(190, r2.getString("Value").length())));
 														d20.setInt(3, r2.getInt("Red"));
 														d20.setInt(4, r2.getInt("Green"));
 														d20.setInt(5, r2.getInt("Blue"));
@@ -1236,7 +1236,7 @@ class Importer extends JDialog {
 															
 															// get entity ID in domestic database
 															d21.setInt(1, domesticStatementTypes.get(j).getVariables().get(l).getVariableId());
-															d21.setString(2, r2.getString("Value").substring(0, Math.min(2999, r2.getString("Value").length())));
+															d21.setString(2, r2.getString("Value").substring(0, Math.min(190, r2.getString("Value").length())));
 															r3 = d21.executeQuery();
 															int entityId = -1;
 															while (r3.next()) {
@@ -1246,7 +1246,7 @@ class Importer extends JDialog {
 															
 															// determine the current attribute value in the domestic database and overwrite or merge if desired
 															if (entityId > 0) { // if entityId == -1, that's because it was an unused entity/attribute and unused entities are not being imported; can be ignored.
-																d23.setInt(1, entityId); // TODO
+																d23.setInt(1, entityId);
 																d23.setInt(2, attributeVariableId);
 																r3 = d23.executeQuery();
 																boolean attributeExists = false;
@@ -1256,7 +1256,7 @@ class Importer extends JDialog {
 																	if (!foreignAttributeValue.equals(domesticAttributeValue)) {
 																		if (overwriteAttributesBox.isSelected() ||
 																				(mergeAttributesBox.isSelected() && (domesticAttributeValue == null || domesticAttributeValue.equals("")))) {
-																			d22.setString(1, foreignAttributeValue.substring(0, Math.min(2999, foreignAttributeValue.length())));
+																			d22.setString(1, foreignAttributeValue.substring(0, Math.min(190, foreignAttributeValue.length())));
 																			d22.setInt(2, entityMap.get(r2.getInt("ID")));
 																			d22.setInt(3, attributeVariableId);
 																			d22.executeUpdate();
@@ -1268,7 +1268,7 @@ class Importer extends JDialog {
 																if (!attributeExists) {
 																	d17.setInt(1, entityMap.get(r2.getInt("ID")));
 																	d17.setInt(2, attributeVariableId);
-																	d17.setString(3, foreignAttributeValue.substring(0, Math.min(2999, foreignAttributeValue.length())));
+																	d17.setString(3, foreignAttributeValue.substring(0, Math.min(190, foreignAttributeValue.length())));
 																	d17.executeUpdate();
 																	attributeCount++;
 																}
@@ -1357,7 +1357,7 @@ class Importer extends JDialog {
 										if (Importer.this.version == 3) {
 											d20.setString(2, r2.getString("Value"));
 										} else {
-											d20.setString(2, r2.getString("Value").substring(0, Math.min(2999, r2.getString("Value").length())));
+											d20.setString(2, r2.getString("Value").substring(0, Math.min(190, r2.getString("Value").length())));
 										}
 										d20.setInt(3, r2.getInt("Red"));
 										d20.setInt(4, r2.getInt("Green"));
@@ -1399,7 +1399,7 @@ class Importer extends JDialog {
 											
 											// get entity ID in domestic database
 											d21.setInt(1, variableId);
-											d21.setString(2, r2.getString("Value").substring(0, Math.min(2999, r2.getString("Value").length())));
+											d21.setString(2, r2.getString("Value").substring(0, Math.min(190, r2.getString("Value").length())));
 											r3 = d21.executeQuery();
 											int entityId = -1;
 											while (r3.next()) {
@@ -1411,7 +1411,7 @@ class Importer extends JDialog {
 											if (entityId > 0) { // if entityId == -1, that's because it was an unused entity/attribute and unused entities are not being imported; can be ignored.
 												d17.setInt(1, entityId);
 												d17.setInt(2, attributeVariableId);
-												d17.setString(3, foreignAttributeValue.substring(0, Math.min(2999, foreignAttributeValue.length())));
+												d17.setString(3, foreignAttributeValue.substring(0, Math.min(190, foreignAttributeValue.length())));
 												d17.executeUpdate();
 												attributeCount++;
 											}
@@ -1518,7 +1518,11 @@ class Importer extends JDialog {
 						// check for duplicate title and text if necessary
 						boolean proceed = true;
 						if (skipDuplicatesBox.isSelected()) {
-							d2.setString(1, r1.getString("Title"));
+							if (Importer.this.version == 3) {
+								d2.setString(1, r1.getString("Title"));
+							} else {
+								d2.setString(1, r1.getString("Title").substring(0, Math.min(190, r1.getString("Title").length())));
+							}
 							d2.setString(2, r1.getString("Text"));
 							r2 = d2.executeQuery();
 							while (r2.next()) {
@@ -1560,14 +1564,14 @@ class Importer extends JDialog {
 								dateFixCount++;
 							}
 							// extract remaining document details and insert document into domestic database
-							d1.setString(1, r1.getString("Title").substring(0, Math.min(2999, r1.getString("Title").length())));
+							d1.setString(1, r1.getString("Title").substring(0, Math.min(190, r1.getString("Title").length())));
 							d1.setString(2, r1.getString("Text"));
 							d1.setInt(3, coderMap.get(r1.getInt("Coder"))); // replace by mapped coder
-							d1.setString(4, r1.getString("Author").substring(0, Math.min(2999, r1.getString("Author").length())));
-							d1.setString(5, r1.getString("Source").substring(0, Math.min(2999, r1.getString("Source").length())));
-							d1.setString(6, r1.getString("Section").substring(0, Math.min(2999, r1.getString("Section").length())));
+							d1.setString(4, r1.getString("Author").substring(0, Math.min(190, r1.getString("Author").length())));
+							d1.setString(5, r1.getString("Source").substring(0, Math.min(190, r1.getString("Source").length())));
+							d1.setString(6, r1.getString("Section").substring(0, Math.min(190, r1.getString("Section").length())));
 							d1.setString(7, r1.getString("Notes"));
-							d1.setString(8, r1.getString("Type").substring(0, Math.min(2999, r1.getString("Type").length())));
+							d1.setString(8, r1.getString("Type").substring(0, Math.min(190, r1.getString("Type").length())));
 							d1.setLong(9, date.toEpochSecond(ZoneOffset.UTC));
 							d1.executeUpdate();
 							
@@ -1650,7 +1654,7 @@ class Importer extends JDialog {
 												
 												// get entity ID in domestic database
 												d21.setInt(1, variableMap.get(r3.getInt("VariableId"))); // variable ID may have changed, so look up
-												d21.setString(2, r3.getString("Value").substring(0, Math.min(2999, r3.getString("Value").length())));
+												d21.setString(2, r3.getString("Value").substring(0, Math.min(190, r3.getString("Value").length())));
 												r4 = d21.executeQuery();
 												int entityId = -1;
 												while (r4.next()) {

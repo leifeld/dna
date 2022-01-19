@@ -787,7 +787,7 @@ class CoderManager extends JDialog {
 			valid = false;
 			deleteButton.setEnabled(false);
 		}
-		if (nameField.getText().matches("^\\s*$")) {
+		if (nameField.getText().matches("^\\s*$") || nameField.getText().length() > 190) {
 			valid = false;
 		}
 		

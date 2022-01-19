@@ -198,7 +198,7 @@ public class AttributeManager extends JDialog {
 			}
 			public void checkButton() {
 				String newValue = newField.getText();
-				if (newValue.matches("^\\s*$") || model.containsValue(newValue)) {
+				if (newValue.matches("^\\s*$") || model.containsValue(newValue) || newValue.length() > 190) {
 					addButton.setEnabled(false);
 				} else {
 					addButton.setEnabled(true);

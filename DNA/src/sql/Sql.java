@@ -18,6 +18,7 @@ import org.sqlite.SQLiteDataSource;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 
 import dna.Dna;
 import logger.LogEvent;
@@ -143,7 +144,16 @@ public class Sql {
 			} else {
 				config.setDriverClassName("org.postgresql.Driver");
 			}
-			ds = new HikariDataSource(config);
+			try {
+				ds = new HikariDataSource(config);
+			} catch (PoolInitializationException e) {
+				LogEvent l = new LogEvent(Logger.ERROR,
+		        		"[SQL] Database access denied. Failed to initialize connection pool.",
+		        		"Database access denied. Failed to initialize connection pool.",
+		        		e);
+		        Dna.logger.log(l);
+			}
+			
 	        LogEvent l = new LogEvent(Logger.MESSAGE,
 	        		"[SQL] A " + cp.getType() + " DNA database has been opened as a data source.",
 	        		"A " + cp.getType() + " DNA database has been opened as a data source.");
@@ -275,13 +285,13 @@ public class Sql {
 					+ "Value TEXT NOT NULL);");
 			s.add("CREATE TABLE IF NOT EXISTS CODERS("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
-					+ "Name TEXT NOT NULL, "
+					+ "Name TEXT NOT NULL CHECK (LENGTH(Name) < 191), "
 					+ "Red INTEGER NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green INTEGER NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue INTEGER NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
 					+ "Refresh INTEGER NOT NULL CHECK (Refresh BETWEEN 0 AND 9999) DEFAULT 0, "
 					+ "FontSize INTEGER NOT NULL CHECK (FontSize BETWEEN 1 AND 99) DEFAULT 14, "
-					+ "Password TEXT NOT NULL, "
+					+ "Password TEXT NOT NULL CHECK (LENGTH(Password) < 191), "
 					+ "PopupWidth INTEGER CHECK (PopupWidth BETWEEN 100 AND 9999) DEFAULT 300, "
 					+ "ColorByCoder INTEGER NOT NULL CHECK (ColorByCoder BETWEEN 0 AND 1) DEFAULT 0, "
 					+ "PopupDecoration INTEGER NOT NULL CHECK (PopupDecoration BETWEEN 0 AND 1) DEFAULT 0, "
@@ -304,25 +314,25 @@ public class Sql {
 					+ "PermissionEditOthersStatements INTEGER NOT NULL CHECK (PermissionEditOthersStatements BETWEEN 0 AND 1) DEFAULT 1);");
 			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
-					+ "Title TEXT NOT NULL, "
+					+ "Title TEXT NOT NULL CHECK (LENGTH(Title) < 191), "
 					+ "Text TEXT NOT NULL, "
 					+ "Coder INTEGER, "
-					+ "Author TEXT NOT NULL DEFAULT '', "
-					+ "Source TEXT NOT NULL DEFAULT '', "
-					+ "Section TEXT NOT NULL DEFAULT '', "
+					+ "Author TEXT NOT NULL DEFAULT '' CHECK (LENGTH(Author) < 191), "
+					+ "Source TEXT NOT NULL DEFAULT '' CHECK (LENGTH(Source) < 191), "
+					+ "Section TEXT NOT NULL DEFAULT '' CHECK (LENGTH(Section) < 191), "
 					+ "Notes TEXT NOT NULL DEFAULT '', "
-					+ "Type TEXT NOT NULL DEFAULT '', "
+					+ "Type TEXT NOT NULL DEFAULT '' CHECK (LENGTH(Type) < 191), "
 					+ "Date INTEGER NOT NULL, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
-					+ "Label TEXT NOT NULL, "
+					+ "Label TEXT NOT NULL CHECK (LENGTH(Label) < 191), "
 					+ "Red INTEGER NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green INTEGER NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue INTEGER NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255));");
 			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
-					+ "Variable TEXT NOT NULL, "
+					+ "Variable TEXT NOT NULL CHECK (LENGTH(Variable) < 191), "
 					+ "DataType TEXT NOT NULL CHECK (DataType = 'boolean' OR DataType = 'integer' OR DataType = 'long text' OR DataType = 'short text') DEFAULT 'short text', "
 					+ "StatementTypeId INTEGER, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
@@ -334,7 +344,7 @@ public class Sql {
 					+ "FOREIGN KEY(SourceVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(TargetVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
-					+ "Label TEXT PRIMARY KEY, "
+					+ "Label TEXT PRIMARY KEY CHECK (LENGTH(Label) < 191), "
 					+ "Red INTEGER NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green INTEGER NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue INTEGER NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255));");
@@ -377,7 +387,7 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS ENTITIES("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
-					+ "Value TEXT NOT NULL DEFAULT '', "
+					+ "Value TEXT NOT NULL DEFAULT '' CHECK (LENGTH(Value) < 191), "
 					+ "Red INTEGER CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green INTEGER CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue INTEGER CHECK (Blue BETWEEN 0 AND 255), "
@@ -405,31 +415,31 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
-					+ "AttributeVariable TEXT NOT NULL, "
+					+ "AttributeVariable TEXT NOT NULL CHECK (LENGTH(AttributeVariable) < 191), "
 					+ "UNIQUE(VariableId, AttributeVariable), "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVALUES("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "EntityId INTEGER NOT NULL, "
 					+ "AttributeVariableId INTEGER NOT NULL, "
-					+ "AttributeValue TEXT NOT NULL DEFAULT '', "
+					+ "AttributeValue TEXT NOT NULL DEFAULT '' CHECK (LENGTH(AttributeValue) < 191), "
 					+ "UNIQUE (EntityId, AttributeVariableId), "
 					+ "FOREIGN KEY(EntityId) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(AttributeVariableId) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE);");
 		} else if (cp.getType().equals("mysql")) {
 			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
-					+ "Property VARCHAR(500), "
-					+ "Value VARCHAR(500) NOT NULL,"
+					+ "Property VARCHAR(190), "
+					+ "Value VARCHAR(190) NOT NULL,"
 					+ "PRIMARY KEY (Property));");
 			s.add("CREATE TABLE IF NOT EXISTS CODERS("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Name VARCHAR(3000) NOT NULL, "
+					+ "Name VARCHAR(190) NOT NULL, "
 					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
 					+ "Refresh SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Refresh BETWEEN 0 AND 9999), "
 					+ "FontSize SMALLINT UNSIGNED NOT NULL DEFAULT 14 CHECK (FontSize BETWEEN 1 AND 99), "
-					+ "Password VARCHAR(300) NOT NULL, "
+					+ "Password VARCHAR(190) NOT NULL, "
 					+ "PopupWidth SMALLINT UNSIGNED NOT NULL DEFAULT 300 CHECK (PopupWidth BETWEEN 100 AND 9999), "
 					+ "ColorByCoder TINYINT UNSIGNED NOT NULL DEFAULT 0 CHECK (ColorByCoder BETWEEN 0 AND 1), "
 					+ "PopupDecoration TINYINT UNSIGNED NOT NULL DEFAULT 0 CHECK (PopupDecoration BETWEEN 0 AND 1), "
@@ -453,28 +463,28 @@ public class Sql {
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Title VARCHAR(3000) NOT NULL, "
+					+ "Title VARCHAR(190) NOT NULL, "
 					+ "Text MEDIUMTEXT NOT NULL, "
 					+ "Coder SMALLINT UNSIGNED NOT NULL, "
-					+ "Author VARCHAR(3000) NOT NULL DEFAULT '', "
-					+ "Source VARCHAR(3000) NOT NULL DEFAULT '', "
-					+ "Section VARCHAR(3000) NOT NULL DEFAULT '', "
+					+ "Author VARCHAR(190) NOT NULL DEFAULT '', "
+					+ "Source VARCHAR(190) NOT NULL DEFAULT '', "
+					+ "Section VARCHAR(190) NOT NULL DEFAULT '', "
 					+ "Notes TEXT NOT NULL, "
-					+ "Type VARCHAR(3000) NOT NULL DEFAULT '', "
+					+ "Type VARCHAR(190) NOT NULL DEFAULT '', "
 					+ "Date BIGINT NOT NULL, "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Label VARCHAR(3000) NOT NULL, "
+					+ "Label VARCHAR(190) NOT NULL, "
 					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
 					+ "ID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT, "
-					+ "Variable VARCHAR(500) NOT NULL, "
-					+ "DataType VARCHAR(200) NOT NULL DEFAULT 'short text' CHECK (DataType = 'boolean' OR DataType = 'integer' OR DataType = 'long text' OR DataType = 'short text'), "
+					+ "Variable VARCHAR(190) NOT NULL, "
+					+ "DataType VARCHAR(190) NOT NULL DEFAULT 'short text' CHECK (DataType = 'boolean' OR DataType = 'integer' OR DataType = 'long text' OR DataType = 'short text'), "
 					+ "StatementTypeId SMALLINT UNSIGNED NOT NULL, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (Variable, StatementTypeId), "
@@ -487,7 +497,7 @@ public class Sql {
 					+ "FOREIGN KEY(TargetVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
-					+ "Label VARCHAR(500), "
+					+ "Label VARCHAR(190), "
 					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
@@ -535,7 +545,7 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS ENTITIES("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "Value VARCHAR(500) NOT NULL DEFAULT '', "
+					+ "Value VARCHAR(190) NOT NULL DEFAULT '', "
 					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
@@ -565,7 +575,7 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "VariableId SMALLINT UNSIGNED NOT NULL, "
-					+ "AttributeVariable VARCHAR(500) NOT NULL, "
+					+ "AttributeVariable VARCHAR(190) NOT NULL, "
 					+ "UNIQUE KEY(VariableId, AttributeVariable), "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
@@ -573,24 +583,24 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "EntityId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "AttributeVariableId MEDIUMINT UNSIGNED NOT NULL, "
-					+ "AttributeValue VARCHAR(3000) NOT NULL DEFAULT '', "
+					+ "AttributeValue VARCHAR(190) NOT NULL DEFAULT '', "
 					+ "UNIQUE KEY (EntityId, AttributeVariableId), "
 					+ "FOREIGN KEY(EntityId) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(AttributeVariableId) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 		} else if (cp.getType().equals("postgresql")) {
 			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
-					+ "Property VARCHAR(500) PRIMARY KEY, "
-					+ "Value VARCHAR(500) NOT NULL);");
+					+ "Property VARCHAR(190) PRIMARY KEY, "
+					+ "Value VARCHAR(190) NOT NULL);");
 			s.add("CREATE TABLE IF NOT EXISTS CODERS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY CHECK (ID > 0), "
-					+ "Name VARCHAR(3000) NOT NULL, "
+					+ "Name VARCHAR(190) NOT NULL, "
 					+ "Red SMALLINT NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
 					+ "Refresh SMALLINT NOT NULL CHECK (Refresh BETWEEN 0 AND 9999) DEFAULT 0, "
 					+ "FontSize SMALLINT NOT NULL CHECK (FontSize BETWEEN 1 AND 99) DEFAULT 14, "
-					+ "Password VARCHAR(300) NOT NULL, "
+					+ "Password VARCHAR(190) NOT NULL, "
 					+ "PopupWidth SMALLINT CHECK (PopupWidth BETWEEN 100 AND 9999) DEFAULT 300, "
 					+ "ColorByCoder SMALLINT NOT NULL CHECK (ColorByCoder BETWEEN 0 AND 1) DEFAULT 0, "
 					+ "PopupDecoration SMALLINT NOT NULL CHECK (PopupDecoration BETWEEN 0 AND 1) DEFAULT 0, "
@@ -613,25 +623,25 @@ public class Sql {
 					+ "PermissionEditOthersStatements SMALLINT NOT NULL CHECK (PermissionEditOthersStatements BETWEEN 0 AND 1) DEFAULT 0);");
 			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "Title VARCHAR(3000) NOT NULL, "
+					+ "Title VARCHAR(190) NOT NULL, "
 					+ "Text TEXT NOT NULL, "
 					+ "Coder INT NOT NULL REFERENCES CODERS(ID) ON DELETE CASCADE, "
-					+ "Author VARCHAR(3000) NOT NULL DEFAULT '', "
-					+ "Source VARCHAR(3000) NOT NULL DEFAULT '', "
-					+ "Section VARCHAR(3000) NOT NULL DEFAULT '', "
+					+ "Author VARCHAR(190) NOT NULL DEFAULT '', "
+					+ "Source VARCHAR(190) NOT NULL DEFAULT '', "
+					+ "Section VARCHAR(190) NOT NULL DEFAULT '', "
 					+ "Notes TEXT NOT NULL DEFAULT '', "
-					+ "Type VARCHAR(3000) NOT NULL DEFAULT '', "
+					+ "Type VARCHAR(190) NOT NULL DEFAULT '', "
 					+ "Date BIGINT NOT NULL);");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "Label VARCHAR(3000) NOT NULL, "
+					+ "Label VARCHAR(190) NOT NULL, "
 					+ "Red SMALLINT NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255));");
 			s.add("CREATE TABLE IF NOT EXISTS VARIABLES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
-					+ "Variable VARCHAR(500) NOT NULL, "
-					+ "DataType VARCHAR(200) NOT NULL CHECK (DataType = 'boolean' OR DataType = 'integer' OR DataType = 'long text' OR DataType = 'short text') DEFAULT 'short text', "
+					+ "Variable VARCHAR(190) NOT NULL, "
+					+ "DataType VARCHAR(190) NOT NULL CHECK (DataType = 'boolean' OR DataType = 'integer' OR DataType = 'long text' OR DataType = 'short text') DEFAULT 'short text', "
 					+ "StatementTypeId INT NOT NULL CHECK(StatementTypeId > 0) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (Variable, StatementTypeId));");
 			s.add("CREATE TABLE IF NOT EXISTS VARIABLELINKS("
@@ -639,7 +649,7 @@ public class Sql {
 					+ "SourceVariableId INT NOT NULL REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "TargetVariableId INT NOT NULL CHECK (TargetVariableId != SourceVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS REGEXES("
-					+ "Label VARCHAR(500) PRIMARY KEY, "
+					+ "Label VARCHAR(190) PRIMARY KEY, "
 					+ "Red SMALLINT NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255));");
@@ -673,7 +683,7 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS ENTITIES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "Value VARCHAR(500) NOT NULL DEFAULT '', "
+					+ "Value VARCHAR(190) NOT NULL DEFAULT '', "
 					+ "Red SMALLINT NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
@@ -694,13 +704,13 @@ public class Sql {
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
-					+ "AttributeVariable VARCHAR(500) NOT NULL, "
+					+ "AttributeVariable VARCHAR(190) NOT NULL, "
 					+ "UNIQUE (VariableId, AttributeVariable));");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVALUES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "EntityId INT NOT NULL CHECK(EntityId > 0) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "AttributeVariableId INT NOT NULL CHECK(AttributeVariableId > 0) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE, "
-					+ "AttributeValue VARCHAR(3000) NOT NULL DEFAULT '', "
+					+ "AttributeValue VARCHAR(190) NOT NULL DEFAULT '', "
 					+ "UNIQUE (EntityId, AttributeVariableId));");
 		}
 		// fill default data into the tables (Admin coder, settings, statement types)

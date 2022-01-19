@@ -465,6 +465,7 @@ class Popup extends JDialog {
 						if (s.length() > 0 && s.matches("^\\s+$")) { // replace a (multiple) whitespace string by an empty string
 							s = "";
 						}
+						s = s.substring(0, Math.min(190, s.length()));
 						entity = new Entity(s); // the new entity has an ID of -1; the SQL class needs to take care of this when writing into the database
 					} else {
 						entity = (Entity) box.getSelectedItem();

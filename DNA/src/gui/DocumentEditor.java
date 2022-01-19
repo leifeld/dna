@@ -369,13 +369,13 @@ public class DocumentEditor extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					String text = textArea.getText();
-					String title = titleField.getText();
+					String title = titleField.getText().substring(0, Math.min(190, titleField.getText().length()));
 					LocalDateTime dateTime = dateTimePicker.getDateTimeStrict();
-					String author = (String) authorBox.getModel().getSelectedItem();
-					String source = (String) sourceBox.getModel().getSelectedItem();
-					String section = (String) sectionBox.getModel().getSelectedItem();
+					String author = ((String) authorBox.getModel().getSelectedItem()).substring(0, Math.min(190, ((String) authorBox.getModel().getSelectedItem()).length()));
+					String source = ((String) sourceBox.getModel().getSelectedItem()).substring(0, Math.min(190, ((String) sourceBox.getModel().getSelectedItem()).length()));
+					String section = ((String) sectionBox.getModel().getSelectedItem()).substring(0, Math.min(190, ((String) sectionBox.getModel().getSelectedItem()).length()));
 					String notes = notesArea.getText();
-					String type = (String) typeBox.getModel().getSelectedItem();
+					String type = ((String) typeBox.getModel().getSelectedItem()).substring(0, Math.min(190, ((String) typeBox.getModel().getSelectedItem()).length()));
 					
 					ArrayList<Document> al = new ArrayList<Document>();
 					Document d = new Document(-1, Dna.sql.getConnectionProfile().getCoderId(), title, text, author, source, section, type, notes, dateTime, new ArrayList<Statement>());
