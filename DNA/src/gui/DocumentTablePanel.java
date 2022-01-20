@@ -1,17 +1,20 @@
 package gui;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -20,6 +23,7 @@ import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
@@ -63,6 +67,7 @@ class DocumentTablePanel extends JPanel {
 		
 		// document table cell renderer
         documentTable.setDefaultRenderer(Coder.class, new CoderTableCellRenderer());
+        documentTable.setDefaultRenderer(LocalDateTime.class, new LocalDateTimeTableCellRenderer());
 
 		JScrollPane documentTableScroller = new JScrollPane(documentTable);
 		documentTableScroller.setViewportView(documentTable);
@@ -346,5 +351,32 @@ class DocumentTablePanel extends JPanel {
 	 */
 	void setDocumentFilterPattern(String documentFilterPattern) {
 		this.documentFilterPattern = documentFilterPattern;
+	}
+
+
+	/**
+	 * A renderer for {@link LocalDateTime} objects in {@link JTable} tables,
+	 * with separate date and time formatters for columns 3 and 4.
+	 */
+	class LocalDateTimeTableCellRenderer extends DefaultTableCellRenderer {
+		private static final long serialVersionUID = 3224334825532616165L;
+
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+			if (value == null) {
+				return new JLabel("");
+			} else {
+				LocalDateTime d = (LocalDateTime) value;
+				DateTimeFormatter formatter;
+				if (column == 3) {
+					formatter = DateTimeFormatter.ofPattern("dd MM yyyy");
+				} else if (column == 4) {
+					formatter = DateTimeFormatter.ofPattern("HH:mm");
+				} else {
+					return new JLabel(d.toString());
+				}
+				return new JLabel(d.format(formatter));
+			}
+		}
 	}
 }
