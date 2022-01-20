@@ -441,44 +441,61 @@ public class AttributeManager extends JDialog {
 		 */
 		@Override
 		protected List<Entity> doInBackground() {
-			boolean inDatabase = true;
+			// all entities with a given variable ID and an additional variable that checks if the entity was used in a statement, i.e., exists in DATASHORTTEXT
+			String q1 = "SELECT E.ID, E.VariableId, E.Value, E.Red, E.Green, E.Blue, E.ChildOf, " + 
+					"CASE WHEN EXISTS (SELECT ID from DATASHORTTEXT D WHERE D.Entity = E.ID AND D.VariableId = E.VariableId) " + 
+					"THEN 1 " + 
+					"ELSE 0 " + 
+					"END AS InDatabase " + 
+					"FROM " + 
+					"ENTITIES E WHERE E.VariableId = ?;";
+			
+			// attribute variables and their values corresponding to a given entity ID
+			String q2 = "SELECT EntityId, AttributeVariable, AttributeValue "
+					+ "FROM ATTRIBUTEVALUES AS AVAL "
+					+ "INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID "
+					+ "WHERE VariableId = ?;";
+			
 			try (Connection conn = Dna.sql.getDataSource().getConnection();
-					PreparedStatement s1 = conn.prepareStatement("SELECT ID, Value, Red, Green, Blue, ChildOf FROM ENTITIES WHERE VariableId = ?;");
-					PreparedStatement s2 = conn.prepareStatement("SELECT COUNT(ID) FROM DATASHORTTEXT WHERE VariableId = ? AND Entity = ?;");
-					PreparedStatement s3 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
-				ResultSet r1, r2;
+					PreparedStatement s1 = conn.prepareStatement(q1);
+					PreparedStatement s2 = conn.prepareStatement(q2)) {
+				ArrayList<Entity> l = new ArrayList<Entity>();
+				HashMap<Integer, Integer> indexMap = new HashMap<Integer, Integer>(); // entity ID to index
+				ResultSet r;
+				
+				// save entities in a list
 				Color color;
 				int entityId;
-				HashMap<String, String> map;
 				s1.setInt(1, variableId);
-				s2.setInt(1, variableId);
-				r1 = s1.executeQuery();
-				while (!isCancelled() && !isDone() && r1.next()) {
+				r = s1.executeQuery();
+				while (!isCancelled() && !isDone() && r.next()) {
 					if (isCancelled() || isDone()) {
 						return null;
 					}
-	            	color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
-	            	s2.setInt(2, r1.getInt("ID"));
-	            	r2 = s2.executeQuery();
-	            	while (r2.next()) {
-		            	if (r2.getInt(1) > 0) {
-		            		inDatabase = true;
-		            	} else {
-		            		inDatabase = false;
-		            	}
-	            	}
-	            	
-	            	entityId = r1.getInt("ID");
-	            	map = new HashMap<String, String>();
-	            	s3.setInt(1, entityId);
-	            	r2 = s3.executeQuery();
-	            	while (r2.next()) {
-            			map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
-	            	}
-	            	if (!isCancelled()) {
-	            		publish(new Entity(entityId, variableId, r1.getString("Value"), color, r1.getInt("ChildOf"), inDatabase, map));
-	            	}
+	            	color = new Color(r.getInt("Red"), r.getInt("Green"), r.getInt("Blue"));
+	            	entityId = r.getInt("ID");
+	            	indexMap.put(entityId, l.size());
+	            	l.add(new Entity(entityId, variableId, r.getString("Value"), color, r.getInt("ChildOf"), r.getInt("InDatabase") == 1, new HashMap<String, String>()));
 	            }
+				r.close();
+				
+				// add attributes to the list elements via map
+				s2.setInt(1, variableId);
+				r = s2.executeQuery();
+				while (!isCancelled() && !isDone() && r.next()) {
+					if (isCancelled() || isDone()) {
+						return null;
+					}
+	            	l.get(indexMap.get(r.getInt("EntityId"))).getAttributeValues().put(r.getString("AttributeVariable"), r.getString("AttributeValue"));
+	            }
+				r.close();
+				
+				// publish complete entities
+            	if (!isCancelled()) {
+            		for (int i = 0; i < l.size(); i++) {
+            			publish(l.get(i));
+            		}
+            	}
 			} catch (SQLException e1) {
 	        	LogEvent e = new LogEvent(Logger.WARNING,
 	        			"[SQL] Entities for Variable " + variableId + " could not be retrieved.",
