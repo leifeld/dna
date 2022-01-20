@@ -1526,7 +1526,7 @@ class Importer extends JDialog {
 							d2.setString(2, r1.getString("Text"));
 							r2 = d2.executeQuery();
 							while (r2.next()) {
-								 if (r2.getInt(0) > 0) {
+								 if (r2.getInt(1) > 0) {
 									 proceed = false;
 								 }
 							}
