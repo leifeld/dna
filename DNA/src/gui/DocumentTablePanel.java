@@ -1,6 +1,7 @@
 package gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Image;
@@ -23,6 +24,8 @@ import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
+import javax.swing.UIDefaults;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
@@ -370,12 +373,23 @@ class DocumentTablePanel extends JPanel {
 				DateTimeFormatter formatter;
 				if (column == 3) {
 					formatter = DateTimeFormatter.ofPattern("dd MM yyyy");
+					setText(d.format(formatter));
 				} else if (column == 4) {
 					formatter = DateTimeFormatter.ofPattern("HH:mm");
+					setText(d.format(formatter));
 				} else {
-					return new JLabel(d.toString());
+					setText(d.toString());
 				}
-				return new JLabel(d.format(formatter));
+				
+				if (isSelected) {
+		            setBackground(table.getSelectionBackground());
+		            setForeground(table.getSelectionForeground());
+		        } else {
+		        	setBackground(table.getBackground());
+		            setForeground(table.getForeground());
+		        }
+	            setFont(table.getFont());
+				return this;
 			}
 		}
 	}

@@ -26,7 +26,7 @@ class CoderTableCellRenderer extends DefaultTableCellRenderer {
 			CoderBadgePanel cbp = new CoderBadgePanel(coder, 13, border, 22);
 			if (isSelected) {
 				UIDefaults defaults = javax.swing.UIManager.getDefaults();
-				Color bg = defaults.getColor("List.selectionBackground");
+				Color bg = defaults.getColor("Table.selectionBackground");
 				cbp.setBackground(bg);
 			}
 			return cbp;

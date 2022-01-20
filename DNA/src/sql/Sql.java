@@ -305,8 +305,8 @@ public class Sql {
 					+ "PermissionDeleteStatements INTEGER NOT NULL CHECK (PermissionDeleteStatements BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionEditAttributes INTEGER NOT NULL CHECK (PermissionEditAttributes BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionEditRegex INTEGER NOT NULL CHECK (PermissionEditRegex BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionEditStatementTypes INTEGER NOT NULL CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1) DEFAULT 0, "
-					+ "PermissionEditCoders INTEGER NOT NULL CHECK (PermissionEditCoders BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PermissionEditStatementTypes INTEGER NOT NULL CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditCoders INTEGER NOT NULL CHECK (PermissionEditCoders BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionEditCoderRelations INTEGER NOT NULL CHECK (PermissionEditCoderRelations BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionViewOthersDocuments INTEGER NOT NULL CHECK (PermissionViewOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionEditOthersDocuments INTEGER NOT NULL CHECK (PermissionEditOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
@@ -453,8 +453,8 @@ public class Sql {
 					+ "PermissionDeleteStatements TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionDeleteStatements BETWEEN 0 AND 1), "
 					+ "PermissionEditAttributes TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditAttributes BETWEEN 0 AND 1), "
 					+ "PermissionEditRegex TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditRegex BETWEEN 0 AND 1), "
-					+ "PermissionEditStatementTypes TINYINT UNSIGNED NOT NULL DEFAULT 0 CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1), "
-					+ "PermissionEditCoders TINYINT UNSIGNED NOT NULL DEFAULT 0 CHECK (PermissionEditCoders BETWEEN 0 AND 1), "
+					+ "PermissionEditStatementTypes TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1), "
+					+ "PermissionEditCoders TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditCoders BETWEEN 0 AND 1), "
 					+ "PermissionEditCoderRelations TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditCoderRelations BETWEEN 0 AND 1), "
 					+ "PermissionViewOthersDocuments TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionViewOthersDocuments BETWEEN 0 AND 1), "
 					+ "PermissionEditOthersDocuments TINYINT UNSIGNED NOT NULL DEFAULT 1 CHECK (PermissionEditOthersDocuments BETWEEN 0 AND 1), "
@@ -614,13 +614,13 @@ public class Sql {
 					+ "PermissionDeleteStatements SMALLINT NOT NULL CHECK (PermissionDeleteStatements BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionEditAttributes SMALLINT NOT NULL CHECK (PermissionEditAttributes BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionEditRegex SMALLINT NOT NULL CHECK (PermissionEditRegex BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionEditStatementTypes SMALLINT NOT NULL CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1) DEFAULT 0, "
-					+ "PermissionEditCoders SMALLINT NOT NULL CHECK (PermissionEditCoders BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PermissionEditStatementTypes SMALLINT NOT NULL CHECK (PermissionEditStatementTypes BETWEEN 0 AND 1) DEFAULT 1, "
+					+ "PermissionEditCoders SMALLINT NOT NULL CHECK (PermissionEditCoders BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionEditCoderRelations SMALLINT NOT NULL CHECK (PermissionEditCoderRelations BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionViewOthersDocuments SMALLINT NOT NULL CHECK (PermissionViewOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionEditOthersDocuments SMALLINT NOT NULL CHECK (PermissionEditOthersDocuments BETWEEN 0 AND 1) DEFAULT 0, "
+					+ "PermissionEditOthersDocuments SMALLINT NOT NULL CHECK (PermissionEditOthersDocuments BETWEEN 0 AND 1) DEFAULT 1, "
 					+ "PermissionViewOthersStatements SMALLINT NOT NULL CHECK (PermissionViewOthersStatements BETWEEN 0 AND 1) DEFAULT 1, "
-					+ "PermissionEditOthersStatements SMALLINT NOT NULL CHECK (PermissionEditOthersStatements BETWEEN 0 AND 1) DEFAULT 0);");
+					+ "PermissionEditOthersStatements SMALLINT NOT NULL CHECK (PermissionEditOthersStatements BETWEEN 0 AND 1) DEFAULT 1);");
 			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTS("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "Title VARCHAR(190) NOT NULL, "
@@ -732,17 +732,17 @@ public class Sql {
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (1, 'Notes');");
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (2, 'Notes');");
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (3, 'Notes');");
-		// Annotation
-		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (2, 'Annotation', 211, 211, 211);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(5, 'note', 'long text', 2);");
 		// NPF Story Element
-		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (3, 'NPF Story Element', 0, 255, 150);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(6, 'actor', 'short text', 3);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(7, 'victim', 'short text', 3);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(8, 'villain', 'short text', 3);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(9, 'plot', 'integer', 3);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(10, 'hero', 'short text', 3);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(11, 'policy solution', 'short text', 3);");
+		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (2, 'NPF Story Element', 100, 200, 190);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(5, 'actor', 'short text', 2);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(6, 'victim', 'short text', 2);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(7, 'villain', 'short text', 2);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(8, 'plot', 'integer', 2);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(9, 'hero', 'short text', 2);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(10, 'policy solution', 'short text', 2);");
+		// Annotation
+		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (3, 'Annotation', 211, 211, 211);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(11, 'note', 'long text', 3);");
 		try (Connection conn = ds.getConnection();
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
