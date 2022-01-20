@@ -938,6 +938,7 @@ class Importer extends JDialog {
 					PreparedStatement d13 = connDomestic.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 					PreparedStatement d14 = connDomestic.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
 					PreparedStatement d15 = connDomestic.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Entity) VALUES (?, ?, ?);");
+					PreparedStatement f15 = connForeign.prepareStatement("SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = ?;");
 					PreparedStatement d16 = connDomestic.prepareStatement("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
 					PreparedStatement d17 = connDomestic.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
 					PreparedStatement d18 = connDomestic.prepareStatement("SELECT * FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
@@ -946,7 +947,6 @@ class Importer extends JDialog {
 					PreparedStatement d21 = connDomestic.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
 					PreparedStatement d22 = connDomestic.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE EntityId = ? AND AttributeVariableId = ?;");
 					PreparedStatement d23 = connDomestic.prepareStatement("SELECT AttributeValue FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
-					PreparedStatement d24 = connDomestic.prepareStatement("SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = ?;");
 					SQLCloseable finish = connDomestic::rollback;) {
 
 				LogEvent le1 = new LogEvent(Logger.MESSAGE,
@@ -1535,8 +1535,8 @@ class Importer extends JDialog {
 						
 						// check empty/full document options
 						if (skipFullBox.isSelected() || skipEmptyBox.isSelected()) {
-							d24.setInt(1, r1.getInt("ID"));
-							r2 = d24.executeQuery();
+							f15.setInt(1, r1.getInt("ID"));
+							r2 = f15.executeQuery();
 							while (r2.next()) {
 								if ((skipFullBox.isSelected() && r2.getInt(1) > 0) || (skipEmptyBox.isSelected() && r2.getInt(1) == 0)) {
 									proceed = false;
@@ -1545,7 +1545,6 @@ class Importer extends JDialog {
 							r2.close();
 						}
 						
-						// insert document
 						if (proceed) {
 							// fix date if necessary
 							LocalDateTime date;
