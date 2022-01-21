@@ -52,7 +52,6 @@ import logger.Logger;
 import model.Coder;
 import model.Document;
 import model.Statement;
-import model.Value;
 
 @SuppressWarnings("serial")
 public class DocumentEditor extends JDialog {
@@ -621,6 +620,11 @@ public class DocumentEditor extends JDialog {
         }
     }
 	
+	/**
+	 * Combo box renderer for the author, source, section, and type combo boxes.
+	 * The renderer cuts of entries after 100 words to ensure the fields do not
+	 * get too wide.
+	 */
 	private class ComboBoxRenderer implements ListCellRenderer<String> {
 		@Override
 		public Component getListCellRendererComponent(JList<? extends String> list, String value, int index, boolean isSelected, boolean cellHasFocus) {

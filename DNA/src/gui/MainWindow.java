@@ -1096,6 +1096,12 @@ public class MainWindow extends JFrame {
 			
 			String q3 = "SELECT ID, Variable, DataType FROM VARIABLES;";
 			
+			String q4castBoolean = "DATABOOLEAN.Value";
+			String q4castInteger = "DATAINTEGER.Value";
+			if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
+				q4castBoolean = "CAST(DATABOOLEAN.Value AS TEXT)";
+				q4castInteger = "CAST(DATAINTEGER.Value AS TEXT)";
+			}
 			String q4 = "SELECT DATASHORTTEXT.StatementId, VARIABLES.ID AS VariableId, ENTITIES.Value AS Value FROM DATASHORTTEXT "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId "
 					+ "INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity WHERE VARIABLES.StatementTypeId = ? "
@@ -1103,10 +1109,10 @@ public class MainWindow extends JFrame {
 					+ "SELECT DATALONGTEXT.StatementId, VARIABLES.ID AS VariableId, DATALONGTEXT.Value FROM DATALONGTEXT "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId WHERE VARIABLES.StatementTypeId = ? "
 					+ "UNION "
-					+ "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, CAST(DATABOOLEAN.Value AS TEXT) FROM DATABOOLEAN "
+					+ "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, " + q4castBoolean + " FROM DATABOOLEAN "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId WHERE VARIABLES.StatementTypeId = ? "
 					+ "UNION "
-					+ "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, CAST(DATAINTEGER.Value AS TEXT) FROM DATAINTEGER "
+					+ "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, " + q4castInteger + " FROM DATAINTEGER "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId WHERE VARIABLES.StatementTypeId = ? "
 					+ "ORDER BY 1, 2 ASC;";
 			
