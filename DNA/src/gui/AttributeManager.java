@@ -332,7 +332,7 @@ public class AttributeManager extends JDialog {
 		this.revalidate();
 		
 		// create new panel with table
-		tablePanel = new JPanel();
+		tablePanel = new JPanel(new BorderLayout());
 		model = new AttributeTableModel(Dna.sql.getAttributeVariables(variableId));
 		attributeTable = new JTable(model);
 		
@@ -360,7 +360,7 @@ public class AttributeManager extends JDialog {
 				attributeTable.getColumnModel().getColumn(viewColumn).setPreferredWidth(900 / (model.getAttributeVariables().size() + 1));
 			}
 		}
-		tablePanel.add(scrollPane);
+		tablePanel.add(scrollPane, BorderLayout.CENTER);
 		
 		// populate table using swing worker
 		refreshTable(variableId);

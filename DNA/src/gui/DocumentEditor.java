@@ -2,6 +2,7 @@ package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -24,12 +25,15 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.ListCellRenderer;
 import javax.swing.SpinnerDateModel;
 import javax.swing.SwingWorker;
+import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -48,6 +52,7 @@ import logger.Logger;
 import model.Coder;
 import model.Document;
 import model.Statement;
+import model.Value;
 
 @SuppressWarnings("serial")
 public class DocumentEditor extends JDialog {
@@ -125,6 +130,7 @@ public class DocumentEditor extends JDialog {
 		textScroller = new JScrollPane(textArea);
 		textScroller.setPreferredSize(new Dimension(700, 500));
 		textScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		textScroller.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		if (numDocuments > 0) {
 			textScroller.setToolTipText(toolTipText);
 		}
@@ -210,8 +216,10 @@ public class DocumentEditor extends JDialog {
 		gbc.gridy = 0;
 		gbc.gridx = 1;
 		gbc.gridwidth = 3;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 1.0;
 		titleField = new JXTextField("paste the title of the document here using Ctrl-V...");
-		titleField.setColumns(50);
+		titleField.setColumns(60);
 		if (numDocuments > 0) {
 			titleField.setToolTipText(toolTipText);
 		}
@@ -287,6 +295,7 @@ public class DocumentEditor extends JDialog {
 		if (numDocuments > 0) {
 			authorBox.setToolTipText(toolTipText);
 		}
+		authorBox.setRenderer(new ComboBoxRenderer());
 		fieldsPanel.add(authorBox, gbc);
 		
 		gbc.gridy = 4;
@@ -298,6 +307,7 @@ public class DocumentEditor extends JDialog {
 		if (numDocuments > 0) {
 			sourceBox.setToolTipText(toolTipText);
 		}
+		sourceBox.setRenderer(new ComboBoxRenderer());
 		fieldsPanel.add(sourceBox, gbc);
 
 		gbc.gridy = 5;
@@ -309,6 +319,7 @@ public class DocumentEditor extends JDialog {
 		if (numDocuments > 0) {
 			sectionBox.setToolTipText(toolTipText);
 		}
+		sectionBox.setRenderer(new ComboBoxRenderer());
 		fieldsPanel.add(sectionBox, gbc);
 		
 		gbc.gridy = 6;
@@ -320,6 +331,7 @@ public class DocumentEditor extends JDialog {
 		if (numDocuments > 0) {
 			typeBox.setToolTipText(toolTipText);
 		}
+		typeBox.setRenderer(new ComboBoxRenderer());
 		JDBCWorker worker = new JDBCWorker(numDocuments == 0);
         worker.execute();
 		fieldsPanel.add(typeBox, gbc);
@@ -342,7 +354,7 @@ public class DocumentEditor extends JDialog {
 		fieldsPanel.add(textScroller, gbc);
 		
 		newArticlePanel = new JPanel(new BorderLayout());
-		newArticlePanel.add(fieldsPanel, BorderLayout.NORTH);
+		newArticlePanel.add(fieldsPanel, BorderLayout.CENTER);
 
 		FlowLayout fl = new FlowLayout(FlowLayout.RIGHT);
 		JPanel buttons = new JPanel(fl);
@@ -351,7 +363,7 @@ public class DocumentEditor extends JDialog {
 		cancelButton.setToolTipText("close this window without making any changes");
 		cancelButton.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				dispose();
 			}
 		});
@@ -425,7 +437,6 @@ public class DocumentEditor extends JDialog {
 				}
 			}
 			String contentText = documents.get(0).getText();
-			textArea.setText(contentText);
 			if (Dna.sql.documentsContainStatements(documentIds) == true) {
 				textArea.setEditable(false);
 			}
@@ -437,6 +448,9 @@ public class DocumentEditor extends JDialog {
 						break;
 					}
 				}
+			}
+			if (textArea.getText().equals("")) {
+				textArea.setText(contentText);
 			}
 			String contentNotes = documents.get(0).getNotes();
 			notesArea.setText(contentNotes);
@@ -606,4 +620,21 @@ public class DocumentEditor extends JDialog {
 			Dna.logger.log(l);
         }
     }
+	
+	private class ComboBoxRenderer implements ListCellRenderer<String> {
+		@Override
+		public Component getListCellRendererComponent(JList<? extends String> list, String value, int index, boolean isSelected, boolean cellHasFocus) {
+			int l = value.length();
+			if (l > 100) {
+				value = value.substring(0, Math.min(97, value.length())) + "...";
+			}
+			JLabel label = new JLabel(value);
+			JPanel panel = new JPanel(new BorderLayout());
+			panel.add(label, BorderLayout.CENTER);
+			if (isSelected) {
+				panel.setBackground(UIManager.getColor("List.selectionBackground"));
+			}
+			return panel;
+		}
+	}
 }
