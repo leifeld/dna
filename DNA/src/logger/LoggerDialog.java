@@ -324,7 +324,7 @@ public class LoggerDialog extends JDialog {
 		table.setDefaultRenderer(Integer.class, new LogTableCellRenderer());
 		JScrollPane scroller = new JScrollPane(table);
 		scroller.setViewportView(table);
-		scroller.setPreferredSize(new Dimension(1200, 400));
+		scroller.setPreferredSize(new Dimension(1200, 280));
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		mainPanel.add(scroller, BorderLayout.CENTER);
 		

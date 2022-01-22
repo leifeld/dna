@@ -351,7 +351,7 @@ public class AttributeManager extends JDialog {
 		attributeTable.setRowSorter(sorter);
 		scrollPane = new JScrollPane(attributeTable, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scrollPane.setViewportView(attributeTable);
-		scrollPane.setPreferredSize(new Dimension(1000, 700));
+		scrollPane.setPreferredSize(new Dimension(1000, 600));
 		for (int i = 0; i < (model.getAttributeVariables().size() + 3); i++) {
 			int viewColumn = attributeTable.convertColumnIndexToView(i);
 			if (i == 0 || i == 2) {

@@ -129,7 +129,7 @@ public class DocumentEditor extends JDialog {
 		textArea.setWrapStyleWord(true);
 		
 		textScroller = new JScrollPane(textArea);
-		textScroller.setPreferredSize(new Dimension(700, 500));
+		textScroller.setPreferredSize(new Dimension(700, 360));
 		textScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		textScroller.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		if (numDocuments > 0) {

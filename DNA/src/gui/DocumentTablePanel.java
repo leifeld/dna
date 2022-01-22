@@ -71,7 +71,7 @@ class DocumentTablePanel extends JPanel {
 
 		JScrollPane documentTableScroller = new JScrollPane(documentTable);
 		documentTableScroller.setViewportView(documentTable);
-		documentTableScroller.setPreferredSize(new Dimension(1000, 200));
+		documentTableScroller.setPreferredSize(new Dimension(1000, 140));
 		this.add(documentTableScroller, BorderLayout.CENTER);
 
 		// row filter

@@ -58,7 +58,7 @@ class TextPanel extends JPanel {
 		textWindow.setEditable(false);
 
 		textScrollPane = new JScrollPane(textWindow);
-		textScrollPane.setPreferredSize(new Dimension(500, 500));
+		textScrollPane.setPreferredSize(new Dimension(500, 450));
 		textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		this.add(textScrollPane);
 	}
