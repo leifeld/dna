@@ -141,6 +141,78 @@ public class TableDocument implements Comparable<TableDocument> {
 	}
 
 	/**
+	 * Set the document coder.
+	 * 
+	 * @param coder The coder to set.
+	 */
+	public void setCoder(Coder coder) {
+		this.coder = coder;
+	}
+
+	/**
+	 * Set the document title.
+	 * 
+	 * @param title The title to set.
+	 */
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	/**
+	 * Set the document author.
+	 * 
+	 * @param author The author to set.
+	 */
+	public void setAuthor(String author) {
+		this.author = author;
+	}
+
+	/**
+	 * Set the document source.
+	 * 
+	 * @param source The source to set.
+	 */
+	public void setSource(String source) {
+		this.source = source;
+	}
+
+	/**
+	 * The document section to set.
+	 * 
+	 * @param section The section to set.
+	 */
+	public void setSection(String section) {
+		this.section = section;
+	}
+
+	/**
+	 * Set the document type.
+	 * 
+	 * @param type The type to set.
+	 */
+	public void setType(String type) {
+		this.type = type;
+	}
+
+	/**
+	 * Set the document notes.
+	 * 
+	 * @param notes The notes to set.
+	 */
+	public void setNotes(String notes) {
+		this.notes = notes;
+	}
+
+	/**
+	 * Set the document date/time.
+	 * 
+	 * @param dateTime The date/time to set.
+	 */
+	public void setDateTime(LocalDateTime dateTime) {
+		this.dateTime = dateTime;
+	}
+
+	/**
 	 * Implementation of the {@link java.lang.Comparable Comparable} interface
 	 * to sort documents in the document table and possibly elsewhere.
 	 */

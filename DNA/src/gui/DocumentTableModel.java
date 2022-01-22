@@ -62,6 +62,30 @@ class DocumentTableModel extends AbstractTableModel {
 		default: return null;
 		}
 	}
+	
+	/**
+	 * Set the value of a table cell.
+	 * 
+	 * @param object  The new object to set.
+	 * @param row     The row in which to set a new value.
+	 * @param column  The column in which to set a new value.
+	 */
+	public void setValueAt(Object object, int row, int column) {
+		switch(column) {
+		case 0: break;
+		case 1: rows.get(row).setTitle((String) object); break;
+		case 2: rows.get(row).setFrequency((int) object); break;
+		case 3: rows.get(row).setDateTime((LocalDateTime) object); break;
+		case 4: rows.get(row).setDateTime((LocalDateTime) object); break;
+		case 5: rows.get(row).setCoder((Coder) object); break;
+		case 6: rows.get(row).setAuthor((String) object); break;
+		case 7: rows.get(row).setSource((String) object); break;
+		case 8: rows.get(row).setSection((String) object); break;
+		case 9: rows.get(row).setType((String) object); break;
+		case 10: rows.get(row).setNotes((String) object); break;
+		}
+		fireTableCellUpdated(row, column);
+	}
 
 	/**
 	 * Return the name of a column.
@@ -118,7 +142,11 @@ class DocumentTableModel extends AbstractTableModel {
 	 * @return boolean indicating if the cell can be edited.
 	 */
 	public boolean isCellEditable(int rowIndex, int columnIndex) {
-		return false;
+		if (rowIndex < 0 || rowIndex > rows.size() - 1 || columnIndex == 0) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 
 	/**

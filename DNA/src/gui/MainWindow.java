@@ -168,14 +168,6 @@ public class MainWindow extends JFrame {
 			Dna.logger.log(l);
 	    }
 		
-		/*
-		 * TODO:
-		 * - Add a fourth logger message category to track actual changes in the document only; streamline logger events
-		 * - Fix any issues with resizing dialog windows and the main window on different operating systems
-		 * - Add auto-refresh
-		 * - Add regex editor
-		 */
-
 		c = getContentPane();
 		this.setTitle("Discourse Network Analyzer");
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -1914,16 +1906,64 @@ public class MainWindow extends JFrame {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			int[] selectedRows = documentTablePanel.getSelectedRows();
+			JTable t = documentTablePanel.getDocumentTable();
+			int[] selectedRows = t.getSelectedRows();
+			int[] modelRows = new int[selectedRows.length];
+			int[] selectedDocumentIds = new int[selectedRows.length];
 			for (int i = 0; i < selectedRows.length; i++) {
-				selectedRows[i] = documentTableModel.getIdByModelRow(documentTablePanel.convertRowIndexToModel(selectedRows[i]));
+				modelRows[i] = t.convertRowIndexToModel(selectedRows[i]);
+				selectedDocumentIds[i] = documentTableModel.getIdByModelRow(modelRows[i]);
 			}
-			new DocumentEditor(selectedRows);
-	    	refreshDocumentTable();
-			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[GUI] Action executed: edited meta-data for document(s).",
-					"Edited the meta-data for one or more documents in the database.");
-			Dna.logger.log(l);
+			DocumentEditor de = new DocumentEditor(selectedDocumentIds);
+			if (de.isChangesApplied()) {
+				// update current document document text and repaint
+				if (selectedRows.length == 1) {
+					String newDocumentText = Dna.sql.getDocumentText(selectedDocumentIds[0]);
+					if (!newDocumentText.equals(textPanel.getTextWindow().getText())) {
+						textPanel.setContents(selectedDocumentIds[0], newDocumentText);
+					}
+				}
+				
+				// update changed table cells
+				ArrayList<TableDocument> updatedDocuments = Dna.sql.getTableDocuments(selectedDocumentIds);
+				for (int i = 0; i < updatedDocuments.size(); i++) {
+					if (!t.getValueAt(selectedRows[i], 1).equals(updatedDocuments.get(i).getTitle())) {
+						t.setValueAt(updatedDocuments.get(i).getTitle(), selectedRows[i], 1);
+					}
+					if ((int) t.getValueAt(selectedRows[i], 2) != updatedDocuments.get(i).getFrequency()) {
+						t.setValueAt(updatedDocuments.get(i).getFrequency(), selectedRows[i], 2);
+					}
+					if (!t.getValueAt(selectedRows[i], 3).equals(updatedDocuments.get(i).getDateTime())) {
+						t.setValueAt(updatedDocuments.get(i).getDateTime(), selectedRows[i], 3);
+					}
+					if (!t.getValueAt(selectedRows[i], 4).equals(updatedDocuments.get(i).getDateTime())) {
+						t.setValueAt(updatedDocuments.get(i).getDateTime(), selectedRows[i], 4);
+					}
+					if (((Coder) t.getValueAt(selectedRows[i], 5)).getId() != updatedDocuments.get(i).getCoder().getId()) {
+						t.setValueAt(updatedDocuments.get(i).getCoder(), selectedRows[i], 5);
+					}
+					if (!t.getValueAt(selectedRows[i], 6).equals(updatedDocuments.get(i).getAuthor())) {
+						t.setValueAt(updatedDocuments.get(i).getAuthor(), selectedRows[i], 6);
+					}
+					if (!t.getValueAt(selectedRows[i], 7).equals(updatedDocuments.get(i).getSource())) {
+						t.setValueAt(updatedDocuments.get(i).getSource(), selectedRows[i], 7);
+					}
+					if (!t.getValueAt(selectedRows[i], 8).equals(updatedDocuments.get(i).getSection())) {
+						t.setValueAt(updatedDocuments.get(i).getSection(), selectedRows[i], 8);
+					}
+					if (!t.getValueAt(selectedRows[i], 9).equals(updatedDocuments.get(i).getType())) {
+						t.setValueAt(updatedDocuments.get(i).getType(), selectedRows[i], 9);
+					}
+					if (!t.getValueAt(selectedRows[i], 10).equals(updatedDocuments.get(i).getNotes())) {
+						t.setValueAt(updatedDocuments.get(i).getNotes(), selectedRows[i], 10);
+					}
+				}
+				
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[GUI] Action executed: edited meta-data for document(s).",
+						"Edited the meta-data for one or more documents in the database and updated document view in GUI.");
+				Dna.logger.log(l);
+			}
 		}
 	}
 	

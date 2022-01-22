@@ -65,8 +65,10 @@ public class DocumentEditor extends JDialog {
 	JXTextField titleField;
 	JXTextArea textArea, notesArea;
 	JXComboBox authorBox, sourceBox, sectionBox, typeBox;
+	DateTimePicker dateTimePicker;
 	int[] documentIds;
 	ArrayList<Document> documents;
+	boolean changesApplied = false;
 
 	public DocumentEditor(int[] documentIds) {
 		this.documentIds = documentIds;
@@ -262,7 +264,7 @@ public class DocumentEditor extends JDialog {
         TimePickerSettings timeSettings = new TimePickerSettings();
         timeSettings.setFormatForDisplayTime("HH:mm");
         timeSettings.setFormatForMenuTimes("HH:mm");
-        DateTimePicker dateTimePicker = new DateTimePicker(dateSettings, timeSettings);
+        dateTimePicker = new DateTimePicker(dateSettings, timeSettings);
         dateTimePicker.getDatePicker().setDateToToday();
         dateTimePicker.getTimePicker().setTime(LocalTime.MIDNIGHT);
 		ImageIcon dateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-calendar-event.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
@@ -393,6 +395,7 @@ public class DocumentEditor extends JDialog {
 					al.add(d);
 					documents = al;
 					Dna.sql.addDocuments(documents);
+					changesApplied = true;
 					LogEvent l = new LogEvent(Logger.MESSAGE,
 							"[GUI] A new document was added to the database.",
 							"A new document was manually added to the database by clicking on the Add button in a New Document dialog window.");
@@ -410,6 +413,7 @@ public class DocumentEditor extends JDialog {
 					int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
 						Dna.sql.updateDocuments(documentIds, titleField.getText(), textArea.getText(), (String) authorBox.getSelectedItem(), (String) sourceBox.getSelectedItem(), (String) sectionBox.getSelectedItem(), (String) typeBox.getSelectedItem(), notesArea.getText(), dateTimePicker.getDateTimeStrict());
+						changesApplied = true;
 						LogEvent l = new LogEvent(Logger.MESSAGE,
 								"[GUI] " + documentIds.length + " documents were updated in the database.",
 								"Using a Document Editor dialog window, the meta-data of " + documentIds.length + " documents were updated in the database.");
@@ -535,6 +539,15 @@ public class DocumentEditor extends JDialog {
 	}
 	
 	/**
+	 * Check if any changes have been written to the database.
+	 * 
+	 * @return  Have the document(s) been added or updated in the database?
+	 */
+	boolean isChangesApplied() {
+		return changesApplied;
+	}
+	
+	/**
 	 * Swing worker to populate the author, source, section, and type combo
 	 * boxes without blocking the event thread and GUI.
 	 * 
@@ -601,7 +614,7 @@ public class DocumentEditor extends JDialog {
 
         @Override
         protected void done() {
-    		int w = authorBox.getWidth();
+        	int w = authorBox.getWidth();
     		int h = authorBox.getHeight();
             authorBox.setPreferredSize(new Dimension(w, h));
             sourceBox.setPreferredSize(new Dimension(w, h));

@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Matcher;
 
 import javax.sql.DataSource;
 
@@ -29,6 +30,7 @@ import model.CoderRelation;
 import model.Document;
 import model.Statement;
 import model.StatementType;
+import model.TableDocument;
 import model.Value;
 
 /**
@@ -1813,12 +1815,72 @@ public class Sql {
 	}
 	
 	/**
+	 * Get documents for a batch of document IDs. The documents are of class
+	 * {@link model.TableDocument TableDocument} and contain neither the
+	 * document text nor any statement statements. They do contain the full
+	 * coder and the number of statements at the time of execution of the method
+	 * as a field.
+	 * 
+	 * @param documentIds    An array of document IDs for which the data should
+	 *   be queried.
+	 * @return             An {@link java.util.ArrayList ArrayList} of
+	 *   {@link model.TableDocument TableDocument} objects, containing the
+	 *   document meta-data.
+	 * 
+	 * @category document
+	 */
+	public ArrayList<TableDocument> getTableDocuments(int[] documentIds) {
+		ArrayList<TableDocument> documents = new ArrayList<TableDocument>();
+		String sql = "SELECT DOCUMENTS.ID, Title, Author, Source, Section, Type, Notes, Date, "
+				+ "CODERS.ID AS CoderId, Name AS CoderName, Red, Green, Blue, "
+				+ "COALESCE(Frequency, 0) AS Frequency "
+				+ "FROM DOCUMENTS LEFT JOIN "
+				+ "(SELECT DocumentId, COUNT(DocumentId) AS Frequency FROM STATEMENTS GROUP BY DocumentId) AS C ON C.DocumentId = DOCUMENTS.ID "
+				+ "LEFT JOIN CODERS ON CODERS.ID = DOCUMENTS.Coder WHERE DOCUMENTS.ID IN(";
+		
+		for (int i = 0; i < documentIds.length; i++) {
+			sql = sql + documentIds[i];
+			if (i < documentIds.length - 1) {
+				sql = sql + ", ";
+			}
+		}
+		sql = sql + ");";
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement(sql)) {
+			ResultSet rs = s.executeQuery();
+			while (rs.next()) {
+				TableDocument d = new TableDocument(
+						rs.getInt("ID"),
+						rs.getString("Title"),
+						rs.getInt("Frequency"),
+						new Coder(rs.getInt("CoderId"),
+								rs.getString("CoderName"),
+								new Color(rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue"))),
+						rs.getString("Author"),
+						rs.getString("Source"),
+						rs.getString("Section"),
+						rs.getString("Type"),
+						rs.getString("Notes"),
+						LocalDateTime.ofEpochSecond(rs.getLong("Date"), 0, ZoneOffset.UTC));
+				documents.add(d);
+			}
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve document meta-data from the database.",
+					"Attempted to retrieve document data (other than the document text) for " + documentIds.length + " documents, but this failed. Check if all documents are being displayed in the user interface.",
+					e);
+			Dna.logger.log(l);
+		}
+		return documents;
+	}
+
+	/**
 	 * Get documents for a batch of document IDs. The data can be displayed and
 	 * edited in a {@link gui.DocumentEditor DocumentEditor} dialog. The
 	 * documents do not contain any statements.
 	 * 
-	 * @param documentIds  An array of document IDs for which the data should be
-	 *   queried.
+	 * @param documentIds    An array of document IDs for which the data should
+	 *   be queried.
 	 * @return             An {@link java.util.ArrayList ArrayList} of
 	 *   {@link model.Document Document} objects, containing the documents and
 	 *   their meta-data.
@@ -1964,13 +2026,13 @@ public class Sql {
 				s.setInt(1, documentIds[i]);
 				r = s.executeQuery();
 				while (r.next()) {
-					titleTemp1 = r.getString("Title");
-					textTemp1 = r.getString("Text");
-					authorTemp1 = r.getString("Author");
-					sectionTemp1 = r.getString("Section");
-					sourceTemp1 = r.getString("Source");
-					typeTemp1 = r.getString("Type");
-					notesTemp1 = r.getString("Notes");
+					titleTemp1 = Matcher.quoteReplacement(r.getString("Title"));
+					textTemp1 = Matcher.quoteReplacement(r.getString("Text"));
+					authorTemp1 = Matcher.quoteReplacement(r.getString("Author"));
+					sectionTemp1 = Matcher.quoteReplacement(r.getString("Section"));
+					sourceTemp1 = Matcher.quoteReplacement(r.getString("Source"));
+					typeTemp1 = Matcher.quoteReplacement(r.getString("Type"));
+					notesTemp1 = Matcher.quoteReplacement(r.getString("Notes"));
 					dateTimeTemp = r.getLong("Date");
 					ldt = LocalDateTime.ofEpochSecond(dateTimeTemp, 0, ZoneOffset.UTC);
 					day = ldt.format(dayFormatter);
