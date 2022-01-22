@@ -2904,6 +2904,59 @@ public class Sql {
 		}
 		return statements;
 	}
+	
+	/**
+	 * Get a shallow representation of all statements in a specific document for
+	 * the purpose of painting the statements in the text. For this purpose,
+	 * variable contents, date, coder name etc. are unnecessary. This speeds up
+	 * the retrieval.
+	 * 
+	 * @param documentId  ID of the document for which statements are retrieved.
+	 * @return Array list of statements.
+	 */
+	public ArrayList<Statement> getShallowStatements(int documentId) {
+		String query = "SELECT S.ID, S.Start, S.Stop, S.StatementTypeId, "
+				+ "T.Label AS StatementTypeLabel, T.Red AS StatementTypeRed, "
+				+ "T.Green AS StatementTypeGreen, T.Blue AS StatementTypeBlue, "
+				+ "S.Coder, C.Red AS CoderRed, C.Green AS CoderGreen, C.Blue AS CoderBlue "
+				+ "FROM STATEMENTS S LEFT JOIN CODERS C ON C.ID = S.Coder "
+				+ "LEFT JOIN STATEMENTTYPES T ON T.ID = S.StatementTypeId "
+				+ "WHERE S.DocumentId = ? ORDER BY Start ASC;";
+		ArrayList<Statement> statements = new ArrayList<Statement>();
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement(query)) {
+			ResultSet r;
+			s.setInt(1, documentId);
+			r = s.executeQuery();
+			while (r.next()) {
+				Statement statement = new Statement(r.getInt("ID"),
+						r.getInt("Start"),
+						r.getInt("Stop"),
+						r.getInt("StatementTypeId"),
+						r.getString("StatementTypeLabel"),
+						new Color(r.getInt("StatementTypeRed"), r.getInt("StatementTypeGreen"), r.getInt("StatementTypeBlue")),
+						r.getInt("Coder"),
+						"",
+						new Color(r.getInt("CoderRed"), r.getInt("CoderGreen"), r.getInt("CoderBlue")),
+						new ArrayList<Value>(),
+						documentId,
+						null,
+						null);
+				statements.add(statement);
+			}
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] " + statements.size() + " statement(s) have been retrieved for Document " + documentId + ".",
+					statements.size() + " statement(s) have been retrieved for for Document " + documentId + ".");
+			Dna.logger.log(l);
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve statements for Document " + documentId + ".",
+					"Attempted to retrieve all statements for Document " + documentId + " from the database, but something went wrong. You should double-check if the statements are all shown!",
+					e);
+			Dna.logger.log(l);
+		}
+		return statements;
+	}
 
 	/**
 	 * Delete a statement from the database based on its ID.

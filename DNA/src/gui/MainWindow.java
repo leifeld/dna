@@ -332,15 +332,13 @@ public class MainWindow extends JFrame {
 				if (e.getValueIsAdjusting()) {
 					return;
 				}
-				boolean editable = false;
 				int rowCount = statementTable.getSelectedRowCount();
 				if (rowCount == 1) {
 					int selectedRow = statementTable.getSelectedRow();
 					int selectedModelIndex = statementTable.convertRowIndexToModel(selectedRow);
-					Statement statementWithoutValues = statementTableModel.getRow(selectedModelIndex);
-					int statementId = statementWithoutValues.getId();
+					int statementId = statementTableModel.getRow(selectedModelIndex).getId();
 					Statement s = Dna.sql.getStatement(statementId);
-					documentTablePanel.setSelectedDocumentId(statementWithoutValues.getDocumentId());
+					documentTablePanel.setSelectedDocumentId(s.getDocumentId());
 					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true &&
 							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true ||
 							Dna.sql.getActiveCoder().getId() == s.getCoderId()) &&
@@ -350,17 +348,49 @@ public class MainWindow extends JFrame {
 					} else {
 						actionRemoveStatements.setEnabled(false);
 					}
-					if (Dna.sql.getActiveCoder().isPermissionEditStatements() == true &&
-							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true ||
-							Dna.sql.getActiveCoder().getId() == s.getCoderId()) &&
-							(Dna.sql.getActiveCoder().getId() == s.getCoderId() ||
-									Dna.sql.getActiveCoder().isPermissionEditOthersStatements(s.getCoderId()) == true)) {
-						editable = true;
-					}
 					if (Dna.sql.getActiveCoder().getId() == s.getCoderId() ||
 							(Dna.sql.getActiveCoder().isPermissionViewOthersStatements() == true &&
 									Dna.sql.getActiveCoder().isPermissionViewOthersStatements(s.getCoderId()) == true)) {
-						selectStatement(s, s.getDocumentId(), editable);
+						int documentCoderId = documentTableModel.getRow(documentTableModel.getModelRowById(s.getDocumentId())).getCoder().getId();
+						if (Dna.sql.getActiveCoder().getId() != documentCoderId &&
+								(Dna.sql.getActiveCoder().isPermissionViewOthersDocuments() == false ||
+								!Dna.sql.getActiveCoder().isPermissionViewOthersDocuments(documentCoderId))) {
+							LogEvent l = new LogEvent(Logger.MESSAGE,
+									"[GUI] Statement " + s.getId() + ": Cannot open statement popup due to lack of permissions.",
+									"Statement " + s.getId() + " cannot be opened in a popup window because the document in which it is contained is owned by a different coder and the current coder does not have permission to view this coder's documents.");
+							Dna.logger.log(l);
+						} else {
+							JTextPane textWindow = getTextPanel().getTextWindow();
+							JScrollPane textScrollPane = getTextPanel().getTextScrollPane();
+							textWindow.grabFocus();
+							textWindow.select(s.getStart(), s.getStop());
+							
+							// the selection is too slow, so wait for it to finish, otherwise the popup is sometimes displayed in random locations...
+							SwingUtilities.invokeLater(new Runnable() {
+								@SuppressWarnings("deprecation") // modelToView becomes modelToView2D in Java 9, but we still want Java 8 compliance
+								public void run() {
+									Rectangle2D mtv = null;
+									try {
+										double y = textWindow.modelToView(s.getStart()).getY();
+										int l = textWindow.getText().length();
+										double last = textWindow.modelToView(l).getY();
+										double frac = y / last;
+										double max = textScrollPane.getVerticalScrollBar().getMaximum();
+										double h = textScrollPane.getHeight();
+										int value = (int) Math.ceil(frac * max - (h / 2));
+										textScrollPane.getVerticalScrollBar().setValue(value);
+										mtv = textWindow.modelToView(s.getStart());
+										Point loc = textWindow.getLocationOnScreen();
+										newPopup(mtv.getX(), mtv.getY(), s, loc);
+									} catch (BadLocationException e) {
+										LogEvent l = new LogEvent(Logger.WARNING,
+												"[GUI] Statement " + s.getId() + ": Popup window bad location exception.",
+												"Statement " + s.getId() + ": Popup window cannot be opened because the location is outside the document text.");
+										Dna.logger.log(l);
+									}
+								}
+							});
+						}
 					}
 				} else if (rowCount > 1) {
 					int[] rows = statementTable.getSelectedRows();
@@ -519,7 +549,7 @@ public class MainWindow extends JFrame {
 								Point location = textWindow.getLocationOnScreen();
 								textWindow.setSelectionStart(s.getStart());
 								textWindow.setSelectionEnd(s.getStop());
-								newPopup(p.getX(), p.getY(), statements.get(i), documentTablePanel.getSelectedDocumentId(), location);
+								newPopup(p.getX(), p.getY(), statements.get(i), location);
 								break;
 							}
 						}
@@ -683,58 +713,6 @@ public class MainWindow extends JFrame {
 	}
 
 	/**
-	 * Set text in the editor pane, select statement, and open popup window
-	 * 
-	 * @param s           The statement to be displayed in a popup dialog.
-	 * @param documentId  The ID of the document.
-	 * @param editable    Should the popup dialog be editable?
-	 */
-	private void selectStatement(Statement s, int documentId, boolean editable) {
-		int documentCoderId = this.documentTableModel.getRow(this.documentTableModel.getModelRowById(documentId)).getCoder().getId();
-		if (Dna.sql.getActiveCoder().getId() != documentCoderId &&
-				(Dna.sql.getActiveCoder().isPermissionViewOthersDocuments() == false ||
-				!Dna.sql.getActiveCoder().isPermissionViewOthersDocuments(documentCoderId))) {
-			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[GUI] Statement " + s.getId() + ": Cannot open statement popup due to lack of permissions.",
-					"Statement " + s.getId() + " cannot be opened in a popup window because the document in which it is contained is owned by a different coder and the current coder does not have permission to view this coder's documents.");
-			Dna.logger.log(l);
-		} else {
-			JTextPane textWindow = getTextPanel().getTextWindow();
-			JScrollPane textScrollPane = getTextPanel().getTextScrollPane();
-			int start = s.getStart();
-			int stop = s.getStop();
-			textWindow.grabFocus();
-			textWindow.select(start, stop);
-			
-			// the selection is too slow, so wait for it to finish...
-			SwingUtilities.invokeLater(new Runnable() {
-				@SuppressWarnings("deprecation") // modelToView becomes modelToView2D in Java 9, but we still want Java 8 compliance
-				public void run() {
-					Rectangle2D mtv = null;
-					try {
-						double y = textWindow.modelToView(start).getY();
-						int l = textWindow.getText().length();
-						double last = textWindow.modelToView(l).getY();
-						double frac = y / last;
-						double max = textScrollPane.getVerticalScrollBar().getMaximum();
-						double h = textScrollPane.getHeight();
-						int value = (int) Math.ceil(frac * max - (h / 2));
-						textScrollPane.getVerticalScrollBar().setValue(value);
-						mtv = textWindow.modelToView(start);
-						Point loc = textWindow.getLocationOnScreen();
-						newPopup(mtv.getX(), mtv.getY(), s, documentId, loc);
-					} catch (BadLocationException e) {
-						LogEvent l = new LogEvent(Logger.WARNING,
-								"[GUI] Statement " + s.getId() + ": Popup window bad location exception.",
-								"Statement " + s.getId() + ": Popup window cannot be opened because the location is outside the document text.");
-						Dna.logger.log(l);
-					}
-				}
-			});
-		}
-	}
-	
-	/**
 	 * Show a statement popup window.
 	 * 
 	 * @param x           X location on the screen.
@@ -744,8 +722,8 @@ public class MainWindow extends JFrame {
 	 * @param location    The location of the popup window.
 	 * @param coder       The active coder.
 	 */
-	private void newPopup(double x, double y, Statement s, int documentId, Point location) {
-		Popup popup = new Popup(x, y, s, documentId, location, Dna.sql.getActiveCoder());
+	private void newPopup(double x, double y, Statement s, Point location) {
+		Popup popup = new Popup(x, y, s, location, Dna.sql.getActiveCoder());
 		
 		// duplicate button action listener
 		JButton duplicate = popup.getDuplicateButton();
@@ -784,7 +762,7 @@ public class MainWindow extends JFrame {
 					Dna.sql.deleteStatement(s.getId());
 					refreshStatementTable();
 					getTextPanel().paintStatements();
-					getDocumentTableModel().decreaseFrequency(documentId);
+					getDocumentTableModel().decreaseFrequency(s.getDocumentId());
 					popup.dispose();
 				}
 			}
@@ -1278,7 +1256,7 @@ public class MainWindow extends JFrame {
 			int selectedRow = documentTable.getSelectedRow();
 			int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
 			int id = documentTableModel.getIdByModelRow(selectedModelIndex);
-			textPanel.setContents(id, documentTableModel.getDocumentText(id));
+			textPanel.setContents(id, Dna.sql.getDocumentText(id));
 			getStatementPanel().setDocumentId(id);
 			statementTableModel.fireTableDataChanged();
 		} else {

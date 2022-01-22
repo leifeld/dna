@@ -193,16 +193,6 @@ class DocumentTableModel extends AbstractTableModel {
 	}
 	
 	/**
-	 * Retrieve the document text for a specific document, given by an ID.
-	 * 
-	 * @param documentId  The document ID.
-	 * @return            A String containing the document text.
-	 */
-	public String getDocumentText(int documentId) {
-		return Dna.sql.getDocumentText(documentId);
-	}
-	
-	/**
 	 * Add one to the frequency column for a specific document.
 	 * 
 	 * @param documentId  ID of the document.

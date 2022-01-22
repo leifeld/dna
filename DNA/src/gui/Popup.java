@@ -73,7 +73,7 @@ class Popup extends JDialog {
 	 * @param coder     The current coder who is viewing the statement.
 	 * @param statementPanel A reference to the statement panel.
 	 */
-	Popup(double X, double Y, Statement statement, int documentId, Point location, Coder coder) {
+	Popup(double X, double Y, Statement statement, Point location, Coder coder) {
 		this.statement = statement;
 		this.variables = statement.getValues();
 		int statementId = statement.getId();

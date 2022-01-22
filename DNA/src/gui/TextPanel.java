@@ -133,7 +133,8 @@ class TextPanel extends JPanel {
 			doc.setCharacterAttributes(initialStart, initialEnd - initialStart, blackStyle, false);
 
 			// color statements
-			ArrayList<Statement> statements = Dna.sql.getStatements(documentId);
+			ArrayList<Statement> statements;
+			statements = Dna.sql.getShallowStatements(documentId);
 			int i, start;
 			for (i = 0; i < statements.size(); i++) {
 				start = statements.get(i).getStart();
