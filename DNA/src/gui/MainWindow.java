@@ -886,7 +886,7 @@ public class MainWindow extends JFrame {
 		 * reloading the documents, in order to reinstate the scroll position
 		 * after refreshing the document table.
 		 */
-		private int verticalScrollLocation;
+		//private int verticalScrollLocation;
 		
 		/**
 		 * A name for the swing worker thread to identify it in the message log.
@@ -907,7 +907,7 @@ public class MainWindow extends JFrame {
 			actionRefresh.setEnabled(false);
 			statusBar.documentRefreshStart();
 			time = System.nanoTime(); // take the time to compute later how long the updating took
-			verticalScrollLocation = textPanel.getVerticalScrollLocation();
+			//verticalScrollLocation = textPanel.getVerticalScrollLocation();
 			selectedId = documentTablePanel.getSelectedDocumentId(); // remember the document ID to select the same document when done
 			documentTableModel.clear(); // remove all documents from the table model before re-populating the table
 			LogEvent le = new LogEvent(Logger.MESSAGE,
@@ -961,13 +961,13 @@ public class MainWindow extends JFrame {
 	    @Override
 	    protected void process(List<TableDocument> chunks) {
 	    	documentTableModel.addRows(chunks); // transfer a batch of rows to the table model
-	    	documentTablePanel.setSelectedDocumentId(selectedId);
-	    	textPanel.setVerticalScrollLocation(this.verticalScrollLocation);
 	    }
 
 	    @Override
 	    protected void done() {
         	documentTableModel.sort();
+        	documentTablePanel.setSelectedDocumentId(this.selectedId);
+        	//textPanel.setVerticalScrollLocation(this.verticalScrollLocation);
 			long elapsed = System.nanoTime(); // measure time again for calculating difference
 			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI]  ├─ (Re)loaded all " + documentTableModel.getRowCount() + " documents in " + (elapsed - time) / 1000000 + " milliseconds.",

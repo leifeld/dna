@@ -11,8 +11,6 @@ import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import model.Coder;
-import model.Document;
-import model.Statement;
 import model.TableDocument;
 
 /**
