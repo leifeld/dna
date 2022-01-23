@@ -11,6 +11,8 @@ import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import model.Coder;
+import model.Document;
+import model.Statement;
 import model.TableDocument;
 
 /**
@@ -241,6 +243,28 @@ class DocumentTableModel extends AbstractTableModel {
 	void clear() {
 		rows.clear();
 		fireTableDataChanged();
+	}
+
+	/**
+	 * Insert a table document into the array list of documents at the right
+	 * index and fire table update.
+	 * 
+	 * @param d  The table document to insert.
+	 */
+	void addRow(TableDocument d) {
+		boolean inserted = false;
+		for (int i = 0; i < rows.size(); i++) {
+			if (d.compareTo(rows.get(i)) == -1) {
+				rows.add(i, d);
+				fireTableRowsInserted(i, i);
+				inserted = true;
+				break;
+			}
+		}
+		if (!inserted && d.compareTo(rows.get(rows.size() - 1)) == 1) {
+			rows.add(d);
+			fireTableRowsInserted(rows.size() - 1, rows.size() - 1);
+		}
 	}
 	
 	/**

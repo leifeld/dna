@@ -1716,14 +1716,17 @@ public class Sql {
 	 * @param documents An {@link java.util.ArrayList ArrayList} of
 	 *   {@link model.Document Document} objects, containing the documents to
 	 *   be added to the database.
+	 * @return          Array of generated document IDs.
 	 * 
 	 * @category document
 	 */
-	public void addDocuments(ArrayList<Document> documents) {
+	public int[] addDocuments(ArrayList<Document> documents) {
+		int[] documentIds = new int[documents.size()];
 		try (Connection conn = ds.getConnection();
-				PreparedStatement stmt = conn.prepareStatement("INSERT INTO DOCUMENTS (Title, Text, Coder, Author, Source, Section, Notes, Type, Date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);");
+				PreparedStatement stmt = conn.prepareStatement("INSERT INTO DOCUMENTS (Title, Text, Coder, Author, Source, Section, Notes, Type, Date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
+			ResultSet generatedKeysResultSet;
 			for (int i = 0; i < documents.size(); i++) {
 				stmt.setString(1, documents.get(i).getTitle());
 				stmt.setString(2, documents.get(i).getText());
@@ -1735,6 +1738,12 @@ public class Sql {
 				stmt.setString(8, documents.get(i).getType());
 				stmt.setLong(9, documents.get(i).getDateTime().toEpochSecond(ZoneOffset.UTC)); // convert date-time to seconds since 01/01/1970 at 00:00:00 in UTC time zone
 				stmt.executeUpdate();
+				
+				// get generated document ID and save in array
+				generatedKeysResultSet = stmt.getGeneratedKeys();
+				while (generatedKeysResultSet.next()) {
+					documentIds[i] = generatedKeysResultSet.getInt(1);
+				}
 			}
 			conn.commit();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
@@ -1748,6 +1757,7 @@ public class Sql {
 					e);
 			Dna.logger.log(l);
 		}
+		return documentIds;
 	}
 	
 	/**

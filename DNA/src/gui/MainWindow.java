@@ -1863,12 +1863,18 @@ public class MainWindow extends JFrame {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			new DocumentEditor();
-	    	refreshDocumentTable();
-			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[GUI] Action executed: added a new document.",
-					"Added a new document from the GUI.");
-			Dna.logger.log(l);
+			DocumentEditor de = new DocumentEditor();
+			if (de.isChangesApplied()) {
+				int[] documentIds = de.getDocumentIds();
+				ArrayList<TableDocument> d = Dna.sql.getTableDocuments(documentIds);
+				if (d.size() > 0) {
+					documentTableModel.addRow(d.get(0));
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI] Action executed: added a new document.",
+							"Added a new document from the GUI.");
+					Dna.logger.log(l);
+				}
+			}
 		}
 	}
 	
