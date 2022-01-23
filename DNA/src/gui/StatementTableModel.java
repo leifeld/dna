@@ -6,7 +6,6 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
-import dna.Dna;
 import model.Coder;
 import model.Statement;
 
@@ -144,12 +143,11 @@ class StatementTableModel extends AbstractTableModel {
 	 * 
 	 * @param rows  The model rows of the statements.
 	 */
-	public void removeStatements(int[] rows) {
-		for (int i = 0; i < rows.length; i++) {
-			rows[i] = getIdByModelRow(rows[i]);
+	public void removeStatements(int[] modelRowIndices) {
+		for (int i = modelRowIndices.length - 1; i >= 0; i--) {
+			rows.remove(modelRowIndices[i]);
+			fireTableRowsDeleted(modelRowIndices[i], modelRowIndices[i]);
 		}
-		Dna.sql.deleteStatements(rows);
-		fireTableDataChanged();
 	}
 	
 	/**

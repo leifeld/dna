@@ -2987,10 +2987,12 @@ public class Sql {
 	 * Delete statements from the database, given an array of statement IDs.
 	 * 
 	 * @param statementIds  An array of statement IDs to be deleted.
+	 * @return              Were the statements successfully deleted?
 	 * 
 	 * @category statement
 	 */
-	public void deleteStatements(int[] statementIds) {
+	public boolean deleteStatements(int[] statementIds) {
+		boolean committed = false;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s = conn.prepareStatement("DELETE FROM STATEMENTS WHERE ID = ?");
 				SQLCloseable finish = conn::rollback) {
@@ -3000,6 +3002,7 @@ public class Sql {
 				s.executeUpdate();
 			}
 			conn.commit();
+			committed = true;
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[SQL] Deleted " + statementIds.length + " statements.",
 					"Successfully deleted " + statementIds.length + " statements from the STATEMENTS table in the database. The transaction has been committed to the database.");
@@ -3011,6 +3014,7 @@ public class Sql {
 					e);
 			Dna.logger.log(l);
 		}
+		return committed;
 	}
 
 	/**
