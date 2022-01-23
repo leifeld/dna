@@ -1461,18 +1461,21 @@ public class MainWindow extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 			NewDatabaseDialog n = new NewDatabaseDialog(false);
 			ConnectionProfile cp = n.getConnectionProfile();
-			Dna.sql.setConnectionProfile(cp, false); // this is after creating data structures, so no test (= false)
-			refreshDocumentTable();
-			refreshStatementTable();
-			adjustToCoderSelection();
 			
-			// changes in other classes
-			statusBar.updateUrl();
-			toolbar.adjustToChangedConnection();
-			textPanel.setContents(-1, "");
-			statementPanel.adjustToChangedConnection();
-			menuBar.adjustToChangedCoder();
-			coderSelectionPanel.changeCoderBadge();
+			if (cp != null) {
+				Dna.sql.setConnectionProfile(cp, false); // this is after creating data structures, so no test (= false)
+				refreshDocumentTable();
+				refreshStatementTable();
+				adjustToCoderSelection();
+				
+				// changes in other classes
+				statusBar.updateUrl();
+				toolbar.adjustToChangedConnection();
+				textPanel.setContents(-1, "");
+				statementPanel.adjustToChangedConnection();
+				menuBar.adjustToChangedCoder();
+				coderSelectionPanel.changeCoderBadge();
+			}
 			
 			if (cp == null) {
 				LogEvent l = new LogEvent(Logger.MESSAGE,
