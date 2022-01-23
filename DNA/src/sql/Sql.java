@@ -2196,10 +2196,11 @@ public class Sql {
 	 *   the values for the different variables.
 	 * @param documentId  The ID of the document in which the statement is
 	 *   nested.
+	 * @return            The generated statement ID of the new statement.
 	 * 
 	 * @category statement
 	 */
-	public void addStatement(Statement statement, int documentId) {
+	public int addStatement(Statement statement, int documentId) {
 		long statementId = -1, entityId = -1, attributeVariableId = -1;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("INSERT INTO STATEMENTS (StatementTypeId, DocumentId, Start, Stop, Coder) VALUES (?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
@@ -2370,6 +2371,7 @@ public class Sql {
 					e);
 			Dna.logger.log(l);
 		}
+		return (int) statementId;
 	}
 
 	/**
@@ -2959,31 +2961,6 @@ public class Sql {
 	}
 
 	/**
-	 * Delete a statement from the database based on its ID.
-	 * 
-	 * @param statementId  ID of the statement to be deleted.
-	 * 
-	 * @category statement
-	 */
-	public void deleteStatement(int statementId) {
-		try (Connection conn = ds.getConnection();
-				PreparedStatement s = conn.prepareStatement("DELETE FROM STATEMENTS WHERE ID = ?;");) {
-			s.setInt(1, statementId);
-			s.executeUpdate();
-        	LogEvent l = new LogEvent(Logger.MESSAGE,
-        			"[SQL] Statement with ID " + statementId + " was deleted.",
-        			"Statement with ID " + statementId + " was deleted.");
-        	Dna.logger.log(l);
-		} catch (SQLException e1) {
-        	LogEvent l = new LogEvent(Logger.ERROR,
-        			"[SQL] Failed to delete Statement " + statementId + ".",
-        			"Attempted to delete the Statement with ID " + statementId + ", but the attempt failed. Check if the database is locked, the database file has been moved, or the connection is interrupted, then try again.",
-        			e1);
-        	Dna.logger.log(l);
-		}
-	}
-
-	/**
 	 * Delete statements from the database, given an array of statement IDs.
 	 * 
 	 * @param statementIds  An array of statement IDs to be deleted.
@@ -3004,13 +2981,13 @@ public class Sql {
 			conn.commit();
 			committed = true;
 			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[SQL] Deleted " + statementIds.length + " statements.",
-					"Successfully deleted " + statementIds.length + " statements from the STATEMENTS table in the database. The transaction has been committed to the database.");
+					"[SQL] Deleted " + statementIds.length + " statement(s).",
+					"Successfully deleted " + statementIds.length + " statement(s) from the STATEMENTS table in the database. The transaction has been committed to the database.");
 			Dna.logger.log(l);
 		} catch (SQLException e) {
 			LogEvent l = new LogEvent(Logger.ERROR,
-					"[SQL] Failed to delete statements from database.",
-					"Attempted to remove " + statementIds.length + " statements from the STATEMENTS table in the database, but something went wrong. The transaction has been rolled back, and nothing has been removed.",
+					"[SQL] Failed to delete statement(s) from database.",
+					"Attempted to remove " + statementIds.length + " statement(s) from the STATEMENTS table in the database, but something went wrong. The transaction has been rolled back, and nothing has been removed.",
 					e);
 			Dna.logger.log(l);
 		}

@@ -14,7 +14,7 @@ import model.Statement;
  */
 class StatementTableModel extends AbstractTableModel {
 	private static final long serialVersionUID = 3231569380143470667L;
-	ArrayList<Statement> rows;
+	private ArrayList<Statement> rows;
 	
 	/**
 	 * Create a new statement table model.
@@ -138,6 +138,10 @@ class StatementTableModel extends AbstractTableModel {
 		return rows.get(modelRowIndex);
 	}
 
+	public ArrayList<Statement> getRows() {
+		return rows;
+	}
+	
 	/**
 	 * Remove an array of statements from the model and notify the table.
 	 * 
@@ -157,6 +161,28 @@ class StatementTableModel extends AbstractTableModel {
 	void clear() {
 		rows.clear();
 		fireTableDataChanged();
+	}
+	
+	/**
+	 * Insert a statement into the array list of statements at the right index
+	 * and fire table update.
+	 * 
+	 * @param s  The statement to insert.
+	 */
+	void addRow(Statement s) {
+		boolean inserted = false;
+		for (int i = 0; i < rows.size(); i++) {
+			if (s.compareTo(rows.get(i)) == -1) {
+				rows.add(i, s);
+				fireTableRowsInserted(i, i);
+				inserted = true;
+				break;
+			}
+		}
+		if (!inserted && s.compareTo(rows.get(rows.size() - 1)) == 1) {
+			rows.add(s);
+			fireTableRowsInserted(rows.size() - 1, rows.size() - 1);
+		}
 	}
 	
 	/**

@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
@@ -334,7 +335,6 @@ public class MainWindow extends JFrame {
 				}
 				int rowCount = statementTable.getSelectedRowCount();
 				if (rowCount == 0) {
-					System.out.println("Zero selected rows.");
 					actionRemoveStatements.setEnabled(false);
 				} else if (rowCount == 1) {
 					int selectedRow = statementTable.getSelectedRow();
@@ -481,6 +481,9 @@ public class MainWindow extends JFrame {
 					menuItem.addActionListener(new ActionListener() {
 						@Override
 						public void actionPerformed(ActionEvent e) {
+							statusBar.statementRefreshStart();
+							int documentId = documentTablePanel.getSelectedDocumentId();
+							int documentModelRow = documentTableModel.getModelRowById(documentId);
 							int selectionStart = textWindow.getSelectionStart();
 							int selectionEnd = textWindow.getSelectionEnd();
 							Statement statement = new Statement(selectionStart,
@@ -488,11 +491,25 @@ public class MainWindow extends JFrame {
 									statementType.getId(),
 									Dna.sql.getActiveCoder().getId(),
 									statementType.getVariables());
-							Dna.sql.addStatement(statement, documentTablePanel.getSelectedDocumentId());
-							documentTableModel.increaseFrequency(documentTablePanel.getSelectedDocumentId());
-							textPanel.paintStatements();
-							textWindow.setCaretPosition(selectionEnd);
-							refreshStatementTable();
+							int statementId = Dna.sql.addStatement(statement, documentId);
+							if (statementId > 0) {
+								documentTableModel.increaseFrequency(documentId);
+								textPanel.paintStatements();
+								textWindow.setCaretPosition(selectionEnd);
+								
+								// add statement to statement table in GUI
+								statement.setId(statementId);
+								statement.getValues().clear();
+								statement.setStatementTypeLabel(statementType.getLabel());
+								statement.setStatementTypeColor(statementType.getColor());
+								statement.setCoderName(Dna.sql.getActiveCoder().getName());
+								statement.setCoderColor(Dna.sql.getActiveCoder().getColor());
+								statement.setDocumentId(documentId);
+								statement.setDateTime(documentTableModel.getRow(documentModelRow).getDateTime());
+								statement.setText(textWindow.getText().substring(selectionStart, selectionEnd));
+								statementTableModel.addRow(statement);
+							}
+							statusBar.statementRefreshEnd();
 						}
 					});
 					
@@ -536,26 +553,24 @@ public class MainWindow extends JFrame {
 						popupMenu(me.getComponent(), me.getX(), me.getY());
 					}
 				} else if (documentTable.getSelectedRowCount() > 0) {
-					int pos = textWindow.getCaretPosition(); //click caret position
+					int pos = textWindow.getCaretPosition(); // click caret position
 					Point p = me.getPoint();
-
-					ArrayList<Statement> statements = Dna.sql.getStatements(documentTablePanel.getSelectedDocumentId());
-					if (statements != null && statements.size() > 0) {
-						Statement s;
-						for (int i = 0; i < statements.size(); i++) {
-							s = statements.get(i);
-							if (s.getStart() < pos
-									&& s.getStop() > pos
-									&& Dna.sql.getActiveCoder() != null
-									&& (s.getCoderId() == Dna.sql.getActiveCoder().getId() || Dna.sql.getActiveCoder().isPermissionViewOthersStatements())
-									&& (s.getCoderId() == Dna.sql.getActiveCoder().getId() || Dna.sql.getActiveCoder().getCoderRelations().get(s.getCoderId()).isViewStatements())) {
-								Point location = textWindow.getLocationOnScreen();
-								textWindow.setSelectionStart(s.getStart());
-								textWindow.setSelectionEnd(s.getStop());
-								newPopup(p.getX(), p.getY(), statements.get(i), location);
-								break;
-							}
-						}
+					
+					// filter statements from statement table using stream API
+					List<Statement> currentStatements = statementTableModel.getRows().stream().filter(
+							s -> s.getDocumentId() == documentTablePanel.getSelectedDocumentId() &&
+							s.getStart() < pos &&
+							s.getStop() > pos &&
+							(s.getCoderId() == Dna.sql.getActiveCoder().getId() || Dna.sql.getActiveCoder().isPermissionViewOthersStatements()) &&
+							(s.getCoderId() == Dna.sql.getActiveCoder().getId() || Dna.sql.getActiveCoder().getCoderRelations().get(s.getCoderId()).isViewStatements())).collect(Collectors.toList());
+					
+					// if the text selection contains a statement, get it from the database and display it
+					if (currentStatements.size() > 0 && Dna.sql.getActiveCoder() != null) {
+						Statement s = Dna.sql.getStatement(currentStatements.get(0).getId());
+						Point location = textWindow.getLocationOnScreen();
+						textWindow.setSelectionStart(s.getStart());
+						textWindow.setSelectionEnd(s.getStop());
+						newPopup(p.getX(), p.getY(), s, location);
 					}
 				}
 			}
@@ -622,11 +637,11 @@ public class MainWindow extends JFrame {
 		JCheckBoxMenuItem colorByCoderItem = menuBar.getColorByCoderItem();
 		colorByCoderItem.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				if (Dna.sql.getConnectionProfile() != null) {
 					Dna.sql.setColorByCoder(Dna.sql.getConnectionProfile().getCoderId(), colorByCoderItem.isSelected());
 					textPanel.adjustToChangedCoder();
-					refreshStatementTable();
+					statementTableModel.fireTableDataChanged();
 				}
 			}
 		});
@@ -654,10 +669,10 @@ public class MainWindow extends JFrame {
 							boolean repaintDocument = coder.differentPaintSettings(Dna.sql.getActiveCoder());
 							Dna.sql.selectCoder(coder.getId());
 							if (reloadDocumentTable) {
-								refreshDocumentTable();
+								documentTableModel.fireTableDataChanged();
 							}
 							if (reloadStatementTable) {
-								refreshStatementTable();
+								statementTableModel.fireTableDataChanged();
 							}
 							if (repaintDocument) {
 								textPanel.adjustToChangedCoder();
@@ -707,15 +722,6 @@ public class MainWindow extends JFrame {
 	}
 
 	/**
-	 * Retrieve the document table model.
-	 * 
-	 * @return Document table model.
-	 */
-	private DocumentTableModel getDocumentTableModel() {
-		return documentTableModel;
-	}
-
-	/**
 	 * Show a statement popup window.
 	 * 
 	 * @param x           X location on the screen.
@@ -742,14 +748,20 @@ public class MainWindow extends JFrame {
 					} else if (popup.isEditable() && popup.hasWindowDecoration() == false) {
 						popup.saveContents(false);
 					}
+					statusBar.statementRefreshStart();
 					int newStatementId = Dna.sql.cloneStatement(s.getId(), Dna.sql.getActiveCoder().getId());
-					if (statementTableWorker != null) {
-						statementTableWorker.cancel(true);
-						statusBar.statementRefreshEnd();
+					if (newStatementId > 0) {
+						documentTableModel.increaseFrequency(s.getDocumentId());
+						textPanel.paintStatements();
+						
+						// clone the statement in memory as well and insert into statement table
+						Statement statement = new Statement(s);
+						statement.setId(newStatementId);
+						statementTableModel.addRow(statement);
+						statementPanel.setSelectedStatementId(newStatementId);
 					}
-			        statementTableWorker = new StatementTableRefreshWorker(LocalTime.now().toString(), newStatementId); // do not use refreshStatementTable method because we need to select the new statement ID
-			        statementTableWorker.execute();
 					popup.dispose();
+					statusBar.statementRefreshEnd();
 				}
 			}
 		});
@@ -762,11 +774,24 @@ public class MainWindow extends JFrame {
 						"Are you sure you want to remove this statement?", 
 						"Remove?", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
-					Dna.sql.deleteStatement(s.getId());
-					refreshStatementTable();
-					getTextPanel().paintStatements();
-					getDocumentTableModel().decreaseFrequency(s.getDocumentId());
-					popup.dispose();
+					statusBar.statementRefreshStart();
+					boolean deleted = Dna.sql.deleteStatements(new int[] {s.getId()});
+					if (deleted) {
+						getTextPanel().paintStatements();
+						documentTableModel.decreaseFrequency(s.getDocumentId());
+						int statementModelRow = statementTableModel.getModelRowById(s.getId());
+						getStatementPanel().getStatementTable().clearSelection();
+						statementTableModel.removeStatements(new int[] {statementModelRow});
+
+						// log deleted statements
+						LogEvent l = new LogEvent(Logger.MESSAGE,
+								"[GUI] Action executed: removed statement(s).",
+								"Deleted statement(s) in the database and GUI.");
+						Dna.logger.log(l);
+						
+						popup.dispose();
+					}
+					statusBar.statementRefreshEnd();
 				}
 			}
 		});
@@ -1324,8 +1349,6 @@ public class MainWindow extends JFrame {
 		} else {
 			actionCoderRelationsEditor.setEnabled(false);
 		}
-		refreshDocumentTable();
-		refreshStatementTable();
 	}
 	
 	/**
@@ -1345,6 +1368,8 @@ public class MainWindow extends JFrame {
 			ConnectionProfile cp = n.getConnectionProfile();
 			if (cp != null) {
 				Dna.sql.setConnectionProfile(cp, false);
+				refreshDocumentTable();
+				refreshStatementTable();
 				adjustToCoderSelection();
 				
 				// changes in other classes
@@ -1436,6 +1461,8 @@ public class MainWindow extends JFrame {
 			NewDatabaseDialog n = new NewDatabaseDialog(false);
 			ConnectionProfile cp = n.getConnectionProfile();
 			Dna.sql.setConnectionProfile(cp, false); // this is after creating data structures, so no test (= false)
+			refreshDocumentTable();
+			refreshStatementTable();
 			adjustToCoderSelection();
 			
 			// changes in other classes
@@ -1528,6 +1555,8 @@ public class MainWindow extends JFrame {
 								if (authenticated == true) {
 									validPasswordInput = true; // authenticated; quit the while-loop
 									Dna.sql.setConnectionProfile(cp, false); // use the connection profile, so no test
+									refreshDocumentTable();
+									refreshStatementTable();
 									adjustToCoderSelection();
 									
 									// changes in other classes
@@ -1750,10 +1779,10 @@ public class MainWindow extends JFrame {
 					}
 					Dna.sql.selectCoder(coderCopy);
 					if (updateViewDocuments) {
-						refreshDocumentTable();
+						documentTableModel.fireTableDataChanged();
 					}
 					if (updateViewStatements) {
-						refreshStatementTable();
+						statementTableModel.fireTableDataChanged();
 					}
 					if (updatePaintSettings) {
 						textPanel.adjustToChangedCoder();
@@ -1963,7 +1992,6 @@ public class MainWindow extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 			new DocumentBatchImporter();
 	    	refreshDocumentTable();
-			refreshStatementTable();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: used document batch importer.",
 					"Batch-imported documents to the database.");
@@ -2030,19 +2058,26 @@ public class MainWindow extends JFrame {
 			int[] selectedRows = statementTable.getSelectedRows();
 			int[] modelRows = new int[selectedRows.length];
 			int[] statementIds = new int[selectedRows.length];
+			int[] documentIds = new int[selectedRows.length];
 			for (int i = 0; i < selectedRows.length; i++) {
 				modelRows[i] = statementTable.convertRowIndexToModel(selectedRows[i]);
 				statementIds[i] = statementTableModel.getRow(modelRows[i]).getId();
+				documentIds[i] = statementTableModel.getRow(modelRows[i]).getDocumentId();
 			}
 			
 			// confirmation dialog, then delete statements from database and table
 			String message = "Are you sure you want to delete " + selectedRows.length + " statements?";
 			int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 			if (dialog == 0) {
+				statusBar.statementRefreshStart();
 				boolean deleted = Dna.sql.deleteStatements(statementIds);
 				if (deleted) {
+					getTextPanel().paintStatements();
 					statementTable.clearSelection();
-					statementTableModel.removeStatements(selectedRows);
+					statementTableModel.removeStatements(modelRows);
+					for (int i = 0; i < documentIds.length; i++) {
+						documentTableModel.decreaseFrequency(documentIds[i]);
+					}
 					
 					// log deleted statements
 					LogEvent l = new LogEvent(Logger.MESSAGE,
@@ -2050,6 +2085,7 @@ public class MainWindow extends JFrame {
 							"Deleted statement(s) in the database and GUI.");
 					Dna.logger.log(l);
 				}
+				statusBar.statementRefreshEnd();
 			}
 		}
 	}
@@ -2126,10 +2162,10 @@ public class MainWindow extends JFrame {
 			if (Dna.sql.getActiveCoder().isPermissionEditCoderRelations() && Dna.sql.getActiveCoder().getId() != 1) {
 				CoderRelationsEditor cre = new CoderRelationsEditor();
 				if (cre.isUpdateViewDocuments()) {
-					refreshDocumentTable();
+					documentTableModel.fireTableDataChanged();
 				}
 				if (cre.isUpdateViewStatements()) {
-					refreshStatementTable();
+					statementTableModel.fireTableDataChanged();
 				}
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: opened coder relations editor.",

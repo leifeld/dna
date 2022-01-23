@@ -87,6 +87,30 @@ public class Statement implements Comparable<Statement> {
 		this.coderId = coderId;
 		this.values = values;
 	}
+	
+	/**
+	 * Copy constructor. Creates a deep copy/clone of another statement.
+	 * 
+	 * @param statement  The other statement to clone.
+	 */
+	public Statement(Statement statement) {
+		this.id = statement.getId();
+		this.start = statement.getStart();
+		this.stop = statement.getStop();
+		this.statementTypeId = statement.getStatementTypeId();
+		this.statementTypeLabel = statement.getStatementTypeLabel();
+		this.statementTypeColor = statement.getStatementTypeColor();
+		this.coderId = statement.getCoderId();
+		this.coderName = statement.getCoderName();
+		this.coderColor = statement.getCoderColor();
+		this.values = new ArrayList<Value>();
+		for (int i = 0; i < statement.getValues().size(); i++) {
+			values.add(new Value(statement.getValues().get(i))); // use copy constructor of Value class
+		}
+		this.documentId = statement.getDocumentId();
+		this.text = statement.getText();
+		this.dateTime = statement.getDateTime();
+	}
 
 	/**
 	 * Get the coder name.
@@ -95,6 +119,15 @@ public class Statement implements Comparable<Statement> {
 	 */
 	public String getCoderName() {
 		return coderName;
+	}
+
+	/**
+	 * Set the coder name.
+	 * 
+	 * @param coderName The coder name to set.
+	 */
+	public void setCoderName(String coderName) {
+		this.coderName = coderName;
 	}
 
 	/**
@@ -107,12 +140,30 @@ public class Statement implements Comparable<Statement> {
 	}
 
 	/**
+	 * Set the coder color.
+	 * 
+	 * @param coderColor The coder color to set.
+	 */
+	public void setCoderColor(Color coderColor) {
+		this.coderColor = coderColor;
+	}
+
+	/**
 	 * Get the document ID.
 	 * 
 	 * @return The ID of the document the statement is nested in.
 	 */
 	public int getDocumentId() {
 		return documentId;
+	}
+
+	/**
+	 * Set the document ID.
+	 * 
+	 * @param documentId The document ID to set.
+	 */
+	public void setDocumentId(int documentId) {
+		this.documentId = documentId;
 	}
 
 	/**
@@ -125,6 +176,15 @@ public class Statement implements Comparable<Statement> {
 	}
 
 	/**
+	 * Set the statement text.
+	 * 
+	 * @param text The text to set.
+	 */
+	public void setText(String text) {
+		this.text = text;
+	}
+
+	/**
 	 * Get the statement type label.
 	 * 
 	 * @return The name or label of the statement type associated with the
@@ -133,7 +193,16 @@ public class Statement implements Comparable<Statement> {
 	public String getStatementTypeLabel() {
 		return statementTypeLabel;
 	}
-	
+
+	/**
+	 * Set the statement type label.
+	 * 
+	 * @param statementTypeLabel The statement type label to set.
+	 */
+	public void setStatementTypeLabel(String statementTypeLabel) {
+		this.statementTypeLabel = statementTypeLabel;
+	}
+
 	/**
 	 * Get the color of the statement type associated with the statement.
 	 * 
@@ -142,7 +211,16 @@ public class Statement implements Comparable<Statement> {
 	public Color getStatementTypeColor() {
 		return statementTypeColor;
 	}
-	
+
+	/**
+	 * Set the statement type color.
+	 * 
+	 * @param statementTypeColor The statement type color to set.
+	 */
+	public void setStatementTypeColor(Color statementTypeColor) {
+		this.statementTypeColor = statementTypeColor;
+	}
+
 	/**
 	 * Get the statement ID.
 	 * 
@@ -152,6 +230,15 @@ public class Statement implements Comparable<Statement> {
 		return id;
 	}
 	
+	/**
+	 * Set the statement ID.
+	 * 
+	 * @param id The ID to set.
+	 */
+	public void setId(int id) {
+		this.id = id;
+	}
+
 	/**
 	 * Get the ID of the coder who owns the statement.
 	 * 
@@ -220,10 +307,19 @@ public class Statement implements Comparable<Statement> {
 	 * 
 	 * @return The date/time as a {@link LocalDateTime} object.
 	 */
-	LocalDateTime getDateTime() {
+	public LocalDateTime getDateTime() {
 		return dateTime;
 	}
 
+	/**
+	 * Set the date/time of the corresponding document.
+	 * 
+	 * @param dateTime The new date/time to set.
+	 */
+	public void setDateTime(LocalDateTime dateTime) {
+		this.dateTime = dateTime;
+	}
+	
 	/**
 	 * Get the values of the variables stored in the statement.
 	 * 
@@ -262,6 +358,16 @@ public class Statement implements Comparable<Statement> {
 		if (this.getDocumentId() < s.getDocumentId()) {
 			return -1;
 		} else if (this.getDocumentId() > s.getDocumentId()) {
+			return 1;
+		}
+		if (this.getStart() < s.getStart()) {
+			return -1;
+		} else if (this.getStart() > s.getStart()) {
+			return 1;
+		}
+		if (this.getStop() < s.getStop()) {
+			return -1;
+		} else if (this.getStop() > s.getStop()) {
 			return 1;
 		}
 		if (this.getId() < s.getId()) {
