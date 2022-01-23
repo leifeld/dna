@@ -224,18 +224,17 @@ class DocumentTableModel extends AbstractTableModel {
 	}
 
 	/**
-	 * Remove an array of documents from the model and notify the table.
+	 * Remove an array of document indices from the model and notify the table.
 	 * 
 	 * @param rows  The model rows of the documents.
 	 */
-	public void removeDocuments(int[] rows) {
-		for (int i = 0; i < rows.length; i++) {
-			rows[i] = getIdByModelRow(rows[i]);
+	public void removeDocuments(int[] modelRowIndices) {
+		for (int i = modelRowIndices.length - 1; i >= 0; i--) {
+			rows.remove(modelRowIndices[i]);
+			fireTableRowsDeleted(modelRowIndices[i], modelRowIndices[i]);
 		}
-		Dna.sql.deleteDocuments(rows);
-		fireTableDataChanged();
 	}
-	
+
 	/**
 	 * Delete all {@link TableDocument} objects from the table model and notify
 	 * the listeners.
@@ -250,13 +249,16 @@ class DocumentTableModel extends AbstractTableModel {
 	 * index and fire table update.
 	 * 
 	 * @param d  The table document to insert.
+	 * @return   Model index where the new document was inserted.
 	 */
-	void addRow(TableDocument d) {
+	int addRow(TableDocument d) {
+		int newRowIndex = -1;
 		boolean inserted = false;
 		for (int i = 0; i < rows.size(); i++) {
 			if (d.compareTo(rows.get(i)) == -1) {
 				rows.add(i, d);
 				fireTableRowsInserted(i, i);
+				newRowIndex = i;
 				inserted = true;
 				break;
 			}
@@ -264,7 +266,9 @@ class DocumentTableModel extends AbstractTableModel {
 		if (!inserted && d.compareTo(rows.get(rows.size() - 1)) == 1) {
 			rows.add(d);
 			fireTableRowsInserted(rows.size() - 1, rows.size() - 1);
+			newRowIndex = rows.size() - 1;
 		}
+		return newRowIndex;
 	}
 	
 	/**

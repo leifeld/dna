@@ -138,12 +138,17 @@ class StatementTableModel extends AbstractTableModel {
 		return rows.get(modelRowIndex);
 	}
 
+	/**
+	 * Get all statements from the table.
+	 * 
+	 * @return An array list of all statements.
+	 */
 	public ArrayList<Statement> getRows() {
 		return rows;
 	}
 	
 	/**
-	 * Remove an array of statements from the model and notify the table.
+	 * Remove an array of statement indices from the model and notify the table.
 	 * 
 	 * @param rows  The model rows of the statements.
 	 */
@@ -151,6 +156,21 @@ class StatementTableModel extends AbstractTableModel {
 		for (int i = modelRowIndices.length - 1; i >= 0; i--) {
 			rows.remove(modelRowIndices[i]);
 			fireTableRowsDeleted(modelRowIndices[i], modelRowIndices[i]);
+		}
+	}
+
+	/**
+	 * Remove statements from a set of documents from the model and notify the
+	 * table.
+	 * 
+	 * @param documentIds  An array list of document IDs.
+	 */
+	public void removeStatementsByDocuments(ArrayList<Integer> documentIds) {
+		for (int i = rows.size() - 1; i >= 0; i--) {
+			if (documentIds.contains(rows.get(i).getDocumentId())) {
+				rows.remove(i);
+				fireTableRowsDeleted(i, i);
+			}
 		}
 	}
 	

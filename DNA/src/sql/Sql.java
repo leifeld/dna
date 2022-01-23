@@ -2168,10 +2168,12 @@ public class Sql {
 	 * Delete documents from the database, given an array of document IDs.
 	 * 
 	 * @param documentIds  An array of document IDs to be deleted.
+	 * @return             Were the documents successfully deleted?
 	 * 
 	 * @category document
 	 */
-	public void deleteDocuments(int[] documentIds) {
+	public boolean deleteDocuments(int[] documentIds) {
+		boolean success = false;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s = conn.prepareStatement("DELETE FROM DOCUMENTS WHERE ID = ?"); // will cascade to statements
 				SQLCloseable finish = conn::rollback) {
@@ -2181,6 +2183,7 @@ public class Sql {
 				s.executeUpdate();
 			}
 			conn.commit();
+			success = true;
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[SQL] Deleted " + documentIds.length + " documents (and their statements).",
 					"Successfully deleted " + documentIds.length + " documents from the DOCUMENTS table in the database, and also deleted all statements that may have been contained in these documents. The transaction has been committed to the database.");
@@ -2192,6 +2195,7 @@ public class Sql {
 					e);
 			Dna.logger.log(l);
 		}
+		return success;
 	}
 
 	

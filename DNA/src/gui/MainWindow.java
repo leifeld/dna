@@ -6,6 +6,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Image;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -1868,11 +1869,18 @@ public class MainWindow extends JFrame {
 				int[] documentIds = de.getDocumentIds();
 				ArrayList<TableDocument> d = Dna.sql.getTableDocuments(documentIds);
 				if (d.size() > 0) {
-					documentTableModel.addRow(d.get(0));
+					int modelRow = documentTableModel.addRow(d.get(0));
+					
 					LogEvent l = new LogEvent(Logger.MESSAGE,
 							"[GUI] Action executed: added a new document.",
 							"Added a new document from the GUI.");
 					Dna.logger.log(l);
+					
+					// select new document in the table and open its text
+					JTable dt = documentTablePanel.getDocumentTable();
+					int viewRow = dt.convertRowIndexToView(modelRow);
+					dt.setRowSelectionInterval(viewRow, viewRow);
+					dt.scrollRectToVisible(new Rectangle(dt.getCellRect(viewRow, 0, true)));
 				}
 			}
 		}
@@ -1891,21 +1899,41 @@ public class MainWindow extends JFrame {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			int[] selectedRows = documentTablePanel.getSelectedRows();
-			String message = "Are you sure you want to delete " + selectedRows.length + " document(s) including all statements?";
+			// gather document data
+			JTable dt = documentTablePanel.getDocumentTable();
+			int[] viewRows = documentTablePanel.getSelectedRows();
+			int[] modelRows = new int[viewRows.length];
+			int[] documentIds = new int[viewRows.length];
+			for (int i = 0; i < viewRows.length; i++) {
+				modelRows[i] = dt.convertRowIndexToModel(viewRows[i]);
+				documentIds[i] = documentTableModel.getRow(modelRows[i]).getId();
+			}
+			ArrayList<Integer> documentIdArrayList = new ArrayList<Integer>();
+			for (int i = 0; i < documentIds.length; i++) {
+				documentIdArrayList.add(documentIds[i]);
+			}
+			
+			// confirmation dialog, then delete documents from database and table
+			String message = "Are you sure you want to delete " + viewRows.length + " document(s) including all statements?";
 			int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 			if (dialog == 0) {
-				for (int i = 0; i < selectedRows.length; i++) {
-					selectedRows[i] = documentTablePanel.convertRowIndexToModel(selectedRows[i]);
+				// delete documents and everything dependent on it (e.g., statements) in database
+				boolean deleted = Dna.sql.deleteDocuments(documentIds);
+				if (deleted) {
+					// if successful, delete statements from statement table in GUI
+					statementTableModel.removeStatementsByDocuments(documentIdArrayList);
+					
+					// remove table documents from document table after unselecting them
+					dt.clearSelection();
+					documentTableModel.removeDocuments(modelRows);
+					
+					// log document removal
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI] Action executed: removed document(s).",
+							"Deleted one or more documents in the database from the GUI.");
+					Dna.logger.log(l);
 				}
-				documentTableModel.removeDocuments(selectedRows);
 			}
-	    	refreshDocumentTable();
-			refreshStatementTable();
-			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[GUI] Action executed: removed document(s).",
-					"Deleted one or more documents in the database from the GUI.");
-			Dna.logger.log(l);
 		}
 	}
 	
