@@ -736,10 +736,10 @@ public class Sql {
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (3, 'Notes');");
 		// NPF Story Element
 		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (2, 'NPF Story Element', 100, 200, 190);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(5, 'actor', 'short text', 2);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(5, 'narrator', 'short text', 2);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(6, 'victim', 'short text', 2);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(7, 'villain', 'short text', 2);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(8, 'plot', 'integer', 2);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(8, 'plot', 'short text', 2);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(9, 'hero', 'short text', 2);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType, StatementTypeId) VALUES(10, 'policy solution', 'short text', 2);");
 		// Annotation
