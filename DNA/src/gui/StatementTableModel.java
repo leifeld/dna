@@ -190,19 +190,22 @@ class StatementTableModel extends AbstractTableModel {
 	 * @param s  The statement to insert.
 	 */
 	void addRow(Statement s) {
-		boolean inserted = false;
-		for (int i = 0; i < rows.size(); i++) {
-			if (s.compareTo(rows.get(i)) == -1) {
-				rows.add(i, s);
-				fireTableRowsInserted(i, i);
-				inserted = true;
-				break;
+		int newRowIndex = -1;
+		if (rows.size() > 0) {
+			for (int i = 0; i < rows.size(); i++) {
+				if (s.compareTo(rows.get(i)) == -1) {
+					newRowIndex = i;
+					break;
+				}
 			}
+		} else {
+			newRowIndex = 0;
 		}
-		if (!inserted && s.compareTo(rows.get(rows.size() - 1)) == 1) {
-			rows.add(s);
-			fireTableRowsInserted(rows.size() - 1, rows.size() - 1);
+		if (newRowIndex == -1) { // there were other statements, but the new statement is more recent than all of them
+			newRowIndex = rows.size();
 		}
+		rows.add(newRowIndex, s);
+		fireTableRowsInserted(newRowIndex, newRowIndex);
 	}
 	
 	/**

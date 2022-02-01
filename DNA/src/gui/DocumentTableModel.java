@@ -251,21 +251,21 @@ class DocumentTableModel extends AbstractTableModel {
 	 */
 	int addRow(TableDocument d) {
 		int newRowIndex = -1;
-		boolean inserted = false;
-		for (int i = 0; i < rows.size(); i++) {
-			if (d.compareTo(rows.get(i)) == -1) {
-				rows.add(i, d);
-				fireTableRowsInserted(i, i);
-				newRowIndex = i;
-				inserted = true;
-				break;
+		if (rows.size() > 0) {
+			for (int i = 0; i < rows.size(); i++) {
+				if (d.compareTo(rows.get(i)) == -1) {
+					newRowIndex = i;
+					break;
+				}
 			}
+		} else {
+			newRowIndex = 0;
 		}
-		if (!inserted && d.compareTo(rows.get(rows.size() - 1)) == 1) {
-			rows.add(d);
-			fireTableRowsInserted(rows.size() - 1, rows.size() - 1);
-			newRowIndex = rows.size() - 1;
+		if (newRowIndex == -1) { // there were other documents, but the new document is more recent than all of them
+			newRowIndex = rows.size();
 		}
+		rows.add(newRowIndex, d);
+		fireTableRowsInserted(newRowIndex, newRowIndex);
 		return newRowIndex;
 	}
 	
