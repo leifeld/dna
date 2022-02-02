@@ -733,13 +733,31 @@ public class MainWindow extends JFrame {
 	 * @param coder       The active coder.
 	 */
 	private void newPopup(double x, double y, Statement s, Point location) {
-		Popup popup = new Popup(x, y, s, location, Dna.sql.getActiveCoder());
+		
+		// determine coders for the coder combo box in the popup window
+		ArrayList<Coder> eligibleCoders = null;
+		if (Dna.sql.getActiveCoder().isPermissionEditStatements() &&
+				Dna.sql.getActiveCoder().isPermissionEditOthersStatements() &&
+				(Dna.sql.getActiveCoder().isPermissionEditOthersStatements(s.getCoderId()) || Dna.sql.getActiveCoder().getId() == s.getCoderId())) {
+			eligibleCoders = Dna.sql.getCoders();
+			for (int i = eligibleCoders.size() - 1; i >= 0; i--) {
+				if (Dna.sql.getActiveCoder().getId() != eligibleCoders.get(i).getId() &&
+						s.getCoderId() != eligibleCoders.get(i).getId() &&
+						!Dna.sql.getActiveCoder().isPermissionEditOthersStatements(eligibleCoders.get(i).getId())) {
+					eligibleCoders.remove(i);
+				}
+			}
+		}
+		
+		// create popup window
+		Popup popup = new Popup(x, y, s, location, Dna.sql.getActiveCoder(), eligibleCoders);
 		
 		// duplicate button action listener
 		JButton duplicate = popup.getDuplicateButton();
 		duplicate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (Dna.sql.getActiveCoder().isPermissionAddStatements() == true) {
+					// save popup changes
 					if (popup.isEditable() == true && popup.hasWindowDecoration() == true) {
 						String message = "Save any changes in Statement " + s.getId() + " before creating copy?";
 						int dialog = JOptionPane.showConfirmDialog(popup, message, "Confirmation", JOptionPane.YES_NO_OPTION);
@@ -749,16 +767,31 @@ public class MainWindow extends JFrame {
 					} else if (popup.isEditable() && popup.hasWindowDecoration() == false) {
 						popup.saveContents(false);
 					}
+					
+					// update statement table with changes to old statement that was saved
 					statusBar.statementRefreshStart();
+					Statement updatedOldStatement = popup.getStatementCopy();
+					int modelRow = statementTableModel.getModelRowById(updatedOldStatement.getId());
+					statementTableModel.getRow(modelRow).setCoderName(updatedOldStatement.getCoderName());
+					statementTableModel.getRow(modelRow).setCoderColor(updatedOldStatement.getCoderColor());
+					statementTableModel.fireTableRowsUpdated(modelRow, modelRow);
+					
+					// clone the statement
 					int newStatementId = Dna.sql.cloneStatement(s.getId(), Dna.sql.getActiveCoder().getId());
-					if (newStatementId > 0) {
-						documentTableModel.increaseFrequency(s.getDocumentId());
+					
+					// repaint statements in text if old statement was changed or new statement successfully created
+					if (newStatementId > 0 || (popup.isCoderChanged() && Dna.sql.getActiveCoder().isColorByCoder())) {
 						textPanel.paintStatements();
-						
-						// clone the statement in memory as well and insert into statement table
-						Statement statement = new Statement(s);
-						statement.setId(newStatementId);
-						statementTableModel.addRow(statement);
+					}
+					
+					// put a cloned statement into the statement table and update view, then select statement
+					if (newStatementId > 0) {
+						documentTableModel.increaseFrequency(updatedOldStatement.getDocumentId());
+						updatedOldStatement.setId(newStatementId);
+						updatedOldStatement.setCoderId(Dna.sql.getActiveCoder().getId());
+						updatedOldStatement.setCoderName(Dna.sql.getActiveCoder().getName());
+						updatedOldStatement.setCoderColor(Dna.sql.getActiveCoder().getColor());
+						statementTableModel.addRow(updatedOldStatement);
 						statementPanel.setSelectedStatementId(newStatementId);
 					}
 					popup.dispose();
@@ -799,32 +832,67 @@ public class MainWindow extends JFrame {
 		
 		// save and close window or focus listener
 		if (popup.hasWindowDecoration() == true) {
-			popup.addWindowListener(new WindowAdapter() {
+			popup.addWindowListener(new WindowAdapter() { // listener for the X button in the window decoration
 				public void windowClosing(WindowEvent e) {
 					if (popup.isEditable() == true) {
 						if (popup.saveContents(true) == true) { // check first if there are any changes; ask to save only if necessary
 							String message = "Save changes in Statement " + s.getId() + "?";
 							int dialog = JOptionPane.showConfirmDialog(popup, message, "Confirmation", JOptionPane.YES_NO_OPTION);
 							if (dialog == 0) {
-								popup.saveContents(false);
+								popupSave(popup);
 							}
 						}
 					}
-					statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
 					popup.dispose();
+					statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
+				}
+			});
+			popup.getCancelButton().addActionListener(new ActionListener() { // cancel button action listener
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					popup.dispose();
+					statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
+				}
+			});
+			popup.getSaveButton().addActionListener(new ActionListener() { // save button action listener
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					popupSave(popup);
+					popup.dispose();
+					statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
 				}
 			});
 			popup.setModal(true); // set modal after adding controls because otherwise controls can't be added anymore while modal
-		} else {
+		} else { // no window decoration: focus lost listener
 			popup.addWindowFocusListener(new WindowAdapter() {
 				public void windowLostFocus(WindowEvent e) {
-					popup.saveContents(false);
+					popupSave(popup);
+					popup.dispose();
 					statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
-	                popup.dispose();
 				}
 			});
 		}
 		popup.setVisible(true); // needs to be called after setting modal; hence here instead of in the Popup class
+	}
+	
+	/**
+	 * Save the contents of a popup window and repaint statements in the text
+	 * and statement table if the coder has changed.
+	 * 
+	 * @param popup  The popup window.
+	 */
+	private void popupSave(Popup popup) {
+		popup.saveContents(false);
+		if (popup.isCoderChanged()) {
+			if (Dna.sql.getActiveCoder().isColorByCoder()) {
+				textPanel.paintStatements();
+			}
+			Statement s = popup.getStatementCopy();
+			int modelRow = statementTableModel.getModelRowById(s.getId());
+			statementTableModel.getRow(modelRow).setCoderName(s.getCoderName());
+			statementTableModel.getRow(modelRow).setCoderColor(s.getCoderColor());
+			statementTableModel.fireTableRowsUpdated(modelRow, modelRow);
+		}
 	}
 
 	/**

@@ -219,38 +219,6 @@ public class Sql {
 	}
 
 	/**
-	 * Set a new active coder.
-	 * 
-	 * @param coderId  ID of the new active coder.
-	 * 
-	 * @category setup
-	 */
-	public void changeActiveCoder2(int coderId) {
-		if (coderId > -1) {
-			getConnectionProfile().setCoder(coderId);
-			this.activeCoder = getCoder(coderId);
-		} else {
-			setConnectionProfile(null, false); // not a connection test, so false
-			this.activeCoder = null;
-		}
-		// fireCoderChange();
-	}
-
-	/**
-	 * Reload settings and permissions of active coder.
-	 * 
-	 * @category setup
-	 */
-	public void updateActiveCoder2() {
-		if (getConnectionProfile() == null) {
-			this.activeCoder = null;
-		} else {
-			this.activeCoder = getCoder(cp.getCoderId());
-		}
-		// fireCoderChange();
-	}
-
-	/**
 	 * An interface that rolls back failed execution attempts of SQL connections
 	 * in {@literal try}-with-resources headers. Use this as the last code line
 	 * in any {@literal try}-with-resources header that uses SQL transactions.
@@ -2397,7 +2365,7 @@ public class Sql {
 	 * 
 	 * @category statement
 	 */
-	public void updateStatement(int statementId, ArrayList<Value> values) {
+	public void updateStatement(int statementId, ArrayList<Value> values, int coderId) {
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
 				PreparedStatement s2 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
@@ -2408,6 +2376,7 @@ public class Sql {
 				PreparedStatement s7 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
 				PreparedStatement s8 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
 				PreparedStatement s9 = conn.prepareStatement("SELECT COUNT(ID) FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
+				PreparedStatement s10 = conn.prepareStatement("UPDATE STATEMENTS SET Coder = ? WHERE ID = ?;");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent e1 = new LogEvent(Logger.MESSAGE,
@@ -2523,6 +2492,9 @@ public class Sql {
 					Dna.logger.log(e2);
 				}
 			}
+			s10.setInt(1, coderId);
+			s10.setInt(2, statementId);
+			s10.executeUpdate();
 			conn.commit();
 			LogEvent e2 = new LogEvent(Logger.MESSAGE,
 					"[SQL]  └─ Completed SQL transaction to update Statement " + statementId + ".",

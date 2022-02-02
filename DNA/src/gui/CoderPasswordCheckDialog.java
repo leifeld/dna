@@ -5,10 +5,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.util.ArrayList;
-import java.util.Vector;
-
-import javax.swing.AbstractListModel;
-import javax.swing.ComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -18,7 +14,6 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.ListCellRenderer;
 import javax.swing.UIDefaults;
-import javax.swing.event.ListDataListener;
 
 import dna.Dna;
 import logger.LogEvent;
@@ -195,7 +190,7 @@ public class CoderPasswordCheckDialog {
 	public String getPassword() {
 		return this.password;
 	}
-
+	
 	private class CoderComboBoxRenderer implements ListCellRenderer<Object> {
 		
 		@Override
@@ -212,56 +207,6 @@ public class CoderPasswordCheckDialog {
 				}
 				return cbp;
 			}
-		}
-	}
-
-	/**
-	 * A model for holding coders in a combo box.
-	 */
-	public class CoderComboBoxModel extends AbstractListModel<Coder> implements ComboBoxModel<Coder> {
-		private static final long serialVersionUID = 8412600030500406168L;
-		private Object selectedItem;
-		Vector<ListDataListener> listeners = new Vector<ListDataListener>();
-		ArrayList<Coder> coders;
-		
-		public CoderComboBoxModel(ArrayList<Coder> coders) {
-			this.coders = coders;
-		}
-		
-		@Override
-		public int getSize() {
-			return coders.size();
-		}
-		
-		@Override
-		public Coder getElementAt(int index) {
-			return coders.get(index);
-		}
-
-		@Override
-		public void addListDataListener(ListDataListener l) {
-			listeners.add(l);
-			
-		}
-
-		@Override
-		public void removeListDataListener(ListDataListener l) {
-			listeners.remove(l);
-		}
-		
-		@Override
-		public void setSelectedItem(Object anItem) {
-			selectedItem = anItem;
-		}
-		
-		@Override
-		public Object getSelectedItem() {
-			return selectedItem;
-		}
-		
-		public void clear() {
-			selectedItem = null;
-			fireContentsChanged(this, 0, 0);
 		}
 	}
 }

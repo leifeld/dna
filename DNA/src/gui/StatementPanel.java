@@ -122,7 +122,7 @@ class StatementPanel extends JPanel {
 		popupMenu.add(menuItemStart);
 		JMenuItem menuItemEnd = new JMenuItem("End position", uncheckedIcon);
 		popupMenu.add(menuItemEnd);
-		JMenuItem menuItemCoder = new JMenuItem("Coder", uncheckedIcon);
+		JMenuItem menuItemCoder = new JMenuItem("Coder", checkedIcon);
 		popupMenu.add(menuItemCoder);
 		JMenuItem menuItemText = new JMenuItem("Statement text", checkedIcon);
 		popupMenu.add(menuItemText);

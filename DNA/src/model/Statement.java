@@ -253,7 +253,7 @@ public class Statement implements Comparable<Statement> {
 	 * 
 	 * @param coderId The new coder ID for the statement.
 	 */
-	void setCoderId(int coderId) {
+	public void setCoderId(int coderId) {
 		this.coderId = coderId;
 	}
 	
@@ -338,7 +338,7 @@ public class Statement implements Comparable<Statement> {
 	 *   corresponding to the variables specified in the corresponding statement
 	 *   type.
 	 */
-	void setValues(ArrayList<Value> values) {
+	public void setValues(ArrayList<Value> values) {
 		this.values = values;
 	}
 

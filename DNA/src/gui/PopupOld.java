@@ -11,6 +11,8 @@ import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.util.ArrayList;
@@ -32,7 +34,6 @@ import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
-import javax.swing.UIDefaults;
 import javax.swing.border.LineBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -49,7 +50,7 @@ import model.Value;
 /**
  * Show a small popup window to display and/or edit the variables of a statement.
  */
-class Popup extends JDialog {
+class PopupOld extends JDialog {
 	private static final long serialVersionUID = -4955213646188753456L;
 	private Container c;
 	private Statement statement;
@@ -60,9 +61,6 @@ class Popup extends JDialog {
 	private int textFieldWidth;
 	private ArrayList<Value> variables;
 	private JButton duplicate, remove;
-	private Coder coder;
-	private JComboBox<Coder> coderComboBox;
-	private JButton cancelButton, saveButton;
 	
 	/**
 	 * Popup dialog window to display the contents of a statements. The user can
@@ -75,10 +73,9 @@ class Popup extends JDialog {
 	 * @param coder     The current coder who is viewing the statement.
 	 * @param statementPanel A reference to the statement panel.
 	 */
-	Popup(double X, double Y, Statement statement, Point location, Coder coder, ArrayList<Coder> eligibleCoders) {
+	PopupOld(double X, double Y, Statement statement, Point location, Coder coder) {
 		this.statement = statement;
 		this.variables = statement.getValues();
-		this.coder = new Coder(statement.getCoderId(), statement.getCoderName(), statement.getCoderColor());
 		int statementId = statement.getId();
 		this.los = location;
 		this.textFieldWidth = coder.getPopupWidth();
@@ -120,15 +117,15 @@ class Popup extends JDialog {
 		gridBagPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
 		
-		JLabel sPosLabel = new JLabel("start");
+		JLabel sPosLabel = new JLabel(" start:");
 		JTextField startPos = new JTextField(Integer.toString(statement.getStart()));
 		startPos.setEditable(false);
 		
-		JLabel ePosLabel = new JLabel("end");
+		JLabel ePosLabel = new JLabel(" end:");
 		JTextField endPos = new JTextField(Integer.toString(statement.getStop()));
 		endPos.setEditable(false);
 
-		JLabel idLabel = new JLabel(" ID");
+		JLabel idLabel = new JLabel(" ID:");
 		JTextField idField = new JTextField(Integer.toString(statementId));
 		idField.setEditable(false);
 
@@ -173,26 +170,7 @@ class Popup extends JDialog {
 		idAndPositionPanel.add(startPos);
 		idAndPositionPanel.add(ePosLabel);
 		idAndPositionPanel.add(endPos);
-
-		if (eligibleCoders == null || eligibleCoders.size() == 1) {
-			CoderBadgePanel cbp = new CoderBadgePanel(this.coder);
-			idAndPositionPanel.add(cbp);
-		} else {
-			int selectedIndex = -1;
-			for (int i = 0; i < eligibleCoders.size(); i++) {
-				if (eligibleCoders.get(i).getId() == this.coder.getId()) {
-					selectedIndex = i;
-				}
-			}
-			coderComboBox = new JComboBox<Coder>();
-			CoderComboBoxModel comboBoxModel = new CoderComboBoxModel(eligibleCoders);
-			coderComboBox.setModel(comboBoxModel);
-			coderComboBox.setRenderer(new CoderComboBoxRendererSmall());
-			coderComboBox.setSelectedIndex(selectedIndex);
-			coderComboBox.setPreferredSize(new Dimension(coderComboBox.getPreferredSize().width, idField.getPreferredSize().height));
-			idAndPositionPanel.add(coderComboBox);
-		}
-		
+		idAndPositionPanel.add(new JLabel("  "));
 		idAndPositionPanel.add(duplicate);
 		idAndPositionPanel.add(remove);
 		
@@ -386,12 +364,25 @@ class Popup extends JDialog {
 		if (windowDecoration == true) {
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 			ImageIcon cancelIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
-			cancelButton = new JButton("Cancel", cancelIcon);
+			JButton cancelButton = new JButton("Cancel", cancelIcon);
 			cancelButton.setToolTipText("close this window without making any changes");
+			cancelButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					dispose();
+				}
+			});
 			buttonPanel.add(cancelButton);
 			ImageIcon saveIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
-			saveButton = new JButton("Save", saveIcon);
+			JButton saveButton = new JButton("Save", saveIcon);
 			saveButton.setToolTipText("save each variable into the database and close this window");
+			saveButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					saveContents(false);
+					dispose();
+				}
+			});
 			buttonPanel.add(saveButton);
 			if (editable == false) {
 				saveButton.setEnabled(false);
@@ -443,51 +434,6 @@ class Popup extends JDialog {
 	 */
 	boolean hasWindowDecoration() {
 		return this.windowDecoration;
-	}
-
-	/**
-	 * Get a reference to the cancel button.
-	 * 
-	 * @return The save button.
-	 */
-	JButton getCancelButton() {
-		return this.cancelButton;
-	}
-	
-	/**
-	 * Get a reference to the save button.
-	 * 
-	 * @return The save button.
-	 */
-	JButton getSaveButton() {
-		return this.saveButton;
-	}
-	
-	/**
-	 * Check if the coder ID has been changed.
-	 * 
-	 * @return Indicator of statement coder ID change.
-	 */
-	boolean isCoderChanged() {
-		if (this.coder.getId() != this.statement.getCoderId()) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-	
-	/**
-	 * Get an updated copy of the statement.
-	 * 
-	 * @return The statement.
-	 */
-	Statement getStatementCopy() {
-		Statement s = new Statement(this.statement);
-		s.setCoderColor(this.coder.getColor());
-		s.setCoderName(this.coder.getName());
-		s.setCoderId(this.coder.getId());
-		s.setValues(this.variables);
-		return s;
 	}
 	
 	/**
@@ -588,19 +534,8 @@ class Popup extends JDialog {
 					}
 				}
 			}
-			//if (changed) {
-			//	statement.setValues(this.variables);
-			//}
-			if (this.coderComboBox != null && this.coder.getId() != ((Coder) coderComboBox.getSelectedItem()).getId()) {
-				if (simulate == false) {
-					this.coder = (Coder) coderComboBox.getSelectedItem();
-					//this.statement.setCoderColor(this.coder.getColor());
-					//this.statement.setCoderName(this.coder.getName());
-				}
-				changed = true;
-			}
 			if (changed == true && simulate == false) {
-				Dna.sql.updateStatement(this.statement.getId(), this.variables, this.coder.getId()); // write changes into the database
+				//Dna.sql.updateStatement(this.statement.getId(), this.variables); // write changes into the database
 			}
 		} catch (Exception e) {
 			LogEvent l = new LogEvent(Logger.ERROR,
@@ -711,25 +646,6 @@ class Popup extends JDialog {
 			label.setOpaque(true);
 			
 			return label;
-		}
-	}
-	
-	private class CoderComboBoxRendererSmall implements ListCellRenderer<Object> {
-		
-		@Override
-		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-			if (value == null) {
-				return new JLabel("select coder...");
-			} else {
-				Coder coder = (Coder) value;
-				CoderBadgePanel cbp = new CoderBadgePanel(coder, 9, 0, 22);
-				if (isSelected) {
-					UIDefaults defaults = javax.swing.UIManager.getDefaults();
-					Color bg = defaults.getColor("List.selectionBackground");
-					cbp.setBackground(bg);
-				}
-				return cbp;
-			}
 		}
 	}
 }

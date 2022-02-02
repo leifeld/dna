@@ -188,8 +188,9 @@ class StatementTableModel extends AbstractTableModel {
 	 * and fire table update.
 	 * 
 	 * @param s  The statement to insert.
+	 * @return   New row index of the added statement.
 	 */
-	void addRow(Statement s) {
+	int addRow(Statement s) {
 		int newRowIndex = -1;
 		if (rows.size() > 0) {
 			for (int i = 0; i < rows.size(); i++) {
@@ -206,6 +207,7 @@ class StatementTableModel extends AbstractTableModel {
 		}
 		rows.add(newRowIndex, s);
 		fireTableRowsInserted(newRowIndex, newRowIndex);
+		return newRowIndex;
 	}
 	
 	/**
