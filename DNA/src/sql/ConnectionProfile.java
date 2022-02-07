@@ -57,6 +57,21 @@ public class ConnectionProfile {
 		this.databaseName = databaseName;
 		this.port = port;
 	}
+
+	/**
+	 * Copy constructor. Creates a deep copy of a connection profile.
+	 * 
+	 * @param cp  An existing connection profile to be duplicated.
+	 */
+	public ConnectionProfile(ConnectionProfile cp) {
+		this.type = cp.getType();
+		this.url = cp.getUrl();
+		this.user = cp.getUser();
+		this.password = cp.getPassword();
+		this.databaseName = cp.getDatabaseName();
+		this.port = cp.getPort();
+		this.coderId = cp.getCoderId();
+	}
 	
 	public int getCoderId() {
 		return coderId;

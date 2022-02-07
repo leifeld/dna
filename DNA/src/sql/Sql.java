@@ -1633,7 +1633,7 @@ public class Sql {
 	 */
 	public boolean authenticate(int coderId, String clearPassword) {
 		String encryptedHash = null;
-		try (Connection conn = this.ds.getConnection();
+		try (Connection conn = getDataSource().getConnection();
 				PreparedStatement s = conn.prepareStatement("SELECT Password FROM CODERS WHERE ID = ?;")) {
 			if (coderId > 0) {
 				s.setInt(1, coderId);

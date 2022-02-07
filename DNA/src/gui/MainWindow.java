@@ -1762,7 +1762,7 @@ public class MainWindow extends JFrame {
 						boolean authenticated = Dna.sql.authenticate(-1, key);
 						if (authenticated == true) {
 							// write the connection profile to disk, with an encrypted version of the password
-							writeConnectionProfile(filename, Dna.sql.getConnectionProfile(), key);
+							writeConnectionProfile(filename, new ConnectionProfile(Dna.sql.getConnectionProfile()), key);
 							validPasswordInput = true; // quit the while-loop after successful export
 							JOptionPane.showMessageDialog(null,
 									"The profile was saved as:\n" + new File(filename).getAbsolutePath(),
