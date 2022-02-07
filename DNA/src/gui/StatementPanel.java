@@ -49,6 +49,7 @@ import gui.MainWindow.ActionRemoveStatements;
 import logger.LogEvent;
 import logger.Logger;
 import model.Coder;
+import model.Entity;
 import model.Statement;
 import model.StatementType;
 import model.Value;
@@ -376,7 +377,13 @@ class StatementPanel extends JPanel {
 				// check variables for a non-match 
 				for (int i = 0; i < variables.size(); i++) {
 					pattern = Pattern.compile((String) variables.get(i).getValue());
-					m = pattern.matcher((String) s.getValues().get(i).getValue());
+					if (s.getValues().get(i).getValue().getClass().toString().endsWith("Entity")) {
+						m = pattern.matcher(((Entity) s.getValues().get(i).getValue()).getValue());
+					} else if (s.getValues().get(i).getValue().getClass().toString().endsWith("Integer")) {
+						m = pattern.matcher(String.valueOf((int) s.getValues().get(i).getValue()));
+					} else {
+						m = pattern.matcher((String) s.getValues().get(i).getValue());
+					}
 					if (!m.find()) {
 						return false;
 					}

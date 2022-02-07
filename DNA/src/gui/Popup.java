@@ -588,14 +588,9 @@ class Popup extends JDialog {
 					}
 				}
 			}
-			//if (changed) {
-			//	statement.setValues(this.variables);
-			//}
 			if (this.coderComboBox != null && this.coder.getId() != ((Coder) coderComboBox.getSelectedItem()).getId()) {
 				if (simulate == false) {
 					this.coder = (Coder) coderComboBox.getSelectedItem();
-					//this.statement.setCoderColor(this.coder.getColor());
-					//this.statement.setCoderName(this.coder.getName());
 				}
 				changed = true;
 			}
