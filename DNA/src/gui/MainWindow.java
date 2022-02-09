@@ -509,6 +509,13 @@ public class MainWindow extends JFrame {
 								statement.setDateTime(documentTableModel.getRow(documentModelRow).getDateTime());
 								statement.setText(textWindow.getText().substring(selectionStart, selectionEnd));
 								statementTableModel.addRow(statement);
+								
+								// open statement popup
+								Statement s = Dna.sql.getStatement(statementId);
+								Point location = textWindow.getLocationOnScreen();
+								textWindow.setSelectionStart(statement.getStart());
+								textWindow.setSelectionEnd(statement.getStop());
+								newPopup(x, y, s, location);
 							}
 							statusBar.statementRefreshEnd();
 						}
