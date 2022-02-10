@@ -6,6 +6,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -19,6 +21,7 @@ import javax.swing.text.StyleContext;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
+import model.Regex;
 import model.Statement;
 
 /**
@@ -120,7 +123,7 @@ class TextPanel extends JPanel {
 	}
 
 	/**
-	 * Highlight statements in the text by adding background color.
+	 * Highlight statements and regex in the text by adding color.
 	 */
 	void paintStatements() {
 		if (documentId > -1) {
@@ -148,6 +151,21 @@ class TextPanel extends JPanel {
 					}
 				}
 				doc.setCharacterAttributes(start, statements.get(i).getStop() - start, bgStyle, false);
+			}
+			
+			// color regex
+			ArrayList<Regex> regex = Dna.sql.getRegexes();
+			for (i = 0; i < regex.size(); i++) {
+				String label = regex.get(i).getLabel();
+				Color color = regex.get(i).getColor();
+				Pattern p = Pattern.compile(label, Pattern.CASE_INSENSITIVE);
+				Matcher m = p.matcher(textWindow.getText());
+				while(m.find()) {
+					start = m.start();
+					Style fgStyle = sc.addStyle("ConstantWidth", null);
+					StyleConstants.setForeground(fgStyle, color);
+					doc.setCharacterAttributes(start, m.end() - start, fgStyle, false);
+				}
 			}
 		}
 	}

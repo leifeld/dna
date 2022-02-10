@@ -70,7 +70,7 @@ class StatusBar extends JPanel implements LogListener {
 		statementProgressBar.setVisible(false);
 	    rightPanel.add(statementProgressBar);
 		
-		ImageIcon messageIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon messageIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-bug.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		messageIconButton = new JButton(messageIcon);
 		messageIconButton.setContentAreaFilled(false);
 		messageIconButton.setBorderPainted(false);

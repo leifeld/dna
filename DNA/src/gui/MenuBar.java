@@ -30,6 +30,7 @@ import gui.MainWindow.ActionOpenDatabase;
 import gui.MainWindow.ActionOpenProfile;
 import gui.MainWindow.ActionQuit;
 import gui.MainWindow.ActionRefresh;
+import gui.MainWindow.ActionRegexEditor;
 import gui.MainWindow.ActionRemoveDocuments;
 import gui.MainWindow.ActionRemoveStatements;
 import gui.MainWindow.ActionSaveProfile;
@@ -55,6 +56,7 @@ public class MenuBar extends JMenuBar {
 	 * @param actionCreateDatabase        Action for creating a new database.
 	 * @param actionOpenProfile           Action for opening connection profile.
 	 * @param actionSaveProfile           Action for saving connection profile.
+	 * @param actionRegexEditor           Action for opening regex editor.
 	 * @param actionCoderManager          Action for opening coder manager.
 	 * @param actionQuit                  Action for quitting DNA.
 	 * @param actionAddDocument           Action for adding a document.
@@ -75,6 +77,7 @@ public class MenuBar extends JMenuBar {
 			ActionCreateDatabase actionCreateDatabase,
 			ActionOpenProfile actionOpenProfile,
 			ActionSaveProfile actionSaveProfile,
+			ActionRegexEditor actionRegexEditor,
 			ActionCoderManager actionCoderManager,
 			ActionQuit actionQuit,
 			ActionAddDocument actionAddDocument,
@@ -113,6 +116,10 @@ public class MenuBar extends JMenuBar {
 		// database menu: save a connection profile
 		JMenuItem saveProfileItem = new JMenuItem(actionSaveProfile);
 		databaseMenu.add(saveProfileItem);
+
+		// database menu: open regex editor
+		JMenuItem regexEditorItem = new JMenuItem(actionRegexEditor);
+		databaseMenu.add(regexEditorItem);
 
 		// database menu: open coder manager
 		JMenuItem coderManagerItem = new JMenuItem(actionCoderManager);

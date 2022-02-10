@@ -25,6 +25,7 @@ import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import model.Entity;
+import model.Regex;
 import model.Coder;
 import model.CoderRelation;
 import model.Document;
@@ -3409,6 +3410,83 @@ public class Sql {
 		return success;
 	}
 
+	/**
+	 * Add a regex to the REGEXES table in the database.
+	 * 
+	 * @param label  The regex pattern.
+	 * @param red    The red component of the RGB color (0-255).
+	 * @param green  The green component of the RGB color (0-255).
+	 * @param blue   The blue component of the RGB color (0-255).
+	 * @return       Was the regex successfully added to the database?
+	 */
+	public boolean addRegex(String label, int red, int green, int blue) {
+		boolean added = false;
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("INSERT INTO REGEXES (Label, Red, Green, Blue) VALUES (?, ?, ?, ?);")) {
+			s.setString(1, label);
+			s.setInt(2, red);
+			s.setInt(3, green);
+			s.setInt(4, blue);
+			s.executeUpdate();
+			added = true;
+		} catch (SQLException e) {
+			added = false;
+			LogEvent le = new LogEvent(Logger.ERROR,
+					"[SQL] Could not add regex \"" + label + "\" to the database.",
+					"Tried to add regex \"" + label + "\" to the database, but there was a problem.",
+					e);
+			Dna.logger.log(le);
+		}
+		return added;
+	}
+
+	/**
+	 * Get all regexes from the REGEXES table in the database.
+	 * 
+	 * @return An array list of all regex terms.
+	 */
+	public ArrayList<Regex> getRegexes() {
+		ArrayList<Regex> regexList = new ArrayList<Regex>();
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("SELECT * FROM REGEXES;")) {
+			ResultSet r = s.executeQuery();
+			while (r.next()) {
+				regexList.add(new Regex(r.getString("Label"), new Color(r.getInt("Red"), r.getInt("Green"), r.getInt("Blue"))));
+			}
+		} catch (SQLException e) {
+			LogEvent le = new LogEvent(Logger.ERROR,
+					"[SQL] Could not retrieve regex entries from the database.",
+					"Tried to load regular expressions for highlighting in the text from the database, but there was a problem.",
+					e);
+			Dna.logger.log(le);
+		}
+		return regexList;
+	}
+	
+	/**
+	 * Remove a regex from the REGEXES table in the database.
+	 * 
+	 * @param label  The regex pattern to be deleted.
+	 * @return       Was the regex successfully removed from the database?
+	 */
+	public boolean deleteRegex(String label) {
+		boolean deleted = false;
+		try (Connection conn = getDataSource().getConnection();
+				PreparedStatement s = conn.prepareStatement("DELETE FROM REGEXES WHERE Label = ?;")) {
+			s.setString(1, label);
+			s.executeUpdate();
+			deleted = true;
+		} catch (SQLException e) {
+			deleted = false;
+			LogEvent le = new LogEvent(Logger.ERROR,
+					"[SQL] Could not delete regex \"" + label + "\" from the database.",
+					"Tried to delete regex \"" + label + "\" from the database, but there was a problem.",
+					e);
+			Dna.logger.log(le);
+		}
+		return deleted;
+	}
+	
 	/**
 	 * Query the database for the version saved in the SETTINGS table.
 	 * 

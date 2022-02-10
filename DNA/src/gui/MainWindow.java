@@ -108,6 +108,7 @@ public class MainWindow extends JFrame {
 	private ActionCreateDatabase actionCreateDatabase;
 	private ActionOpenProfile actionOpenProfile; 
 	private ActionSaveProfile actionSaveProfile;
+	private ActionRegexEditor actionRegexEditor;
 	private ActionCoderManager actionCoderManager;
 	private ActionQuit actionQuit;
 	private ActionCloseDatabase actionCloseDatabase;
@@ -211,6 +212,10 @@ public class MainWindow extends JFrame {
 		actionSaveProfile = new ActionSaveProfile("Save connection profile", saveProfileIcon, "Save a connection profile, which acts as a bookmark to a database", KeyEvent.VK_S);
 		actionSaveProfile.setEnabled(false);
 
+		ImageIcon regexEditorIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-prescription.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		actionRegexEditor = new ActionRegexEditor("Open regex editor", regexEditorIcon, "Open the regular expression editor to add or delete regex search terms for in-text highlighting", KeyEvent.VK_R);
+		actionRegexEditor.setEnabled(false);
+		
 		ImageIcon coderManagerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-users.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionCoderManager = new ActionCoderManager("Open coder manager", coderManagerIcon, "Open the coder manager to edit coders and their permissions.", KeyEvent.VK_M);
 		actionCoderManager.setEnabled(false);
@@ -258,7 +263,7 @@ public class MainWindow extends JFrame {
 		actionCoderRelationsEditor = new ActionCoderRelationsEditor("Edit coder relations", coderRelationsEditorIcon, "Open the coder relations editor define whose documents and statements you can view and edit.", KeyEvent.VK_R);
 		actionCoderRelationsEditor.setEnabled(false);
 		
-		ImageIcon loggerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-report.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon loggerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-bug.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionLoggerDialog = new ActionLoggerDialog("Display message log", loggerIcon, "Display a log of messages, warnings, and errors in a dialog window", KeyEvent.VK_L);
 		
 		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
@@ -284,6 +289,7 @@ public class MainWindow extends JFrame {
 				actionCreateDatabase,
 				actionOpenProfile,
 				actionSaveProfile,
+				actionRegexEditor,
 				actionCoderManager,
 				actionQuit,
 				actionAddDocument,
@@ -1398,6 +1404,11 @@ public class MainWindow extends JFrame {
 		actionCreateDatabase.setEnabled(true);
 		actionOpenProfile.setEnabled(true);
 		actionSaveProfile.setEnabled(true);
+		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditRegex() == true) {
+			actionRegexEditor.setEnabled(true);
+		} else {
+			actionRegexEditor.setEnabled(false);
+		}
 		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
 			actionCoderManager.setEnabled(true);
 		} else {
@@ -1492,6 +1503,7 @@ public class MainWindow extends JFrame {
 			actionCreateDatabase.setEnabled(true);
 			actionOpenProfile.setEnabled(true);
 			actionSaveProfile.setEnabled(false);
+			actionRegexEditor.setEnabled(false);
 			actionCoderManager.setEnabled(false);
 			actionAddDocument.setEnabled(false);
 			actionRemoveDocuments.setEnabled(false);
@@ -1825,6 +1837,31 @@ public class MainWindow extends JFrame {
 		}
 	}
 
+	/**
+	 * An action to open the regex editor.
+	 */
+	class ActionRegexEditor extends AbstractAction {
+		private static final long serialVersionUID = -3249565772295389092L;
+
+		public ActionRegexEditor(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: opened regex editor.",
+					"Opened the regex editor from the DNA main window menu.");
+			Dna.logger.log(l);
+			RegexEditor re = new RegexEditor();
+			if (re.isChanged()) {
+				getTextPanel().paintStatements();
+			}
+			re.dispose();
+		}
+	}
+	
 	/**
 	 * An action to display a coder manager dialog window.
 	 */

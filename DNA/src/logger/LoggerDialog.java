@@ -72,6 +72,8 @@ public class LoggerDialog extends JDialog {
 	public LoggerDialog() {
 		this.setModal(true);
 		this.setTitle("Log entries");
+		ImageIcon loggerDialogIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-bug.png"));
+		this.setIconImage(loggerDialogIcon.getImage());
 		JPanel mainPanel = new JPanel(new BorderLayout());
 		
 		// store coders to avoid re-accessing SQL in the table cell renderer

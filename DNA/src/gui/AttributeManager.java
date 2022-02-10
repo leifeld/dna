@@ -120,6 +120,8 @@ public class AttributeManager extends JDialog {
 	public AttributeManager() {
 		this.setModal(true);
 		this.setTitle("Attribute manager");
+		ImageIcon attributeManagerIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-list.png"));
+		this.setIconImage(attributeManagerIcon.getImage());
 		this.setLayout(new BorderLayout());
 		
 		// create empty table panel, which will be overwritten after setting the other components
