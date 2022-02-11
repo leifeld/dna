@@ -70,6 +70,7 @@ public class DocumentBatchImporter extends JDialog {
 	 * Create an instance of the document batch importer dialog window.
 	 */
 	public DocumentBatchImporter() {
+		this.setModal(true);
 		this.setTitle("Import text files...");
 		ImageIcon tableAddIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-file-import.png"));
         this.setIconImage(tableAddIcon.getImage());
@@ -96,7 +97,7 @@ public class DocumentBatchImporter extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fc = new JFileChooser();
 				fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-				int returnVal = fc.showOpenDialog(null);
+				int returnVal = fc.showOpenDialog(DocumentBatchImporter.this);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					folder = fc.getSelectedFile();
 				}
@@ -855,9 +856,9 @@ public class DocumentBatchImporter extends JDialog {
 					"There were " + numDocumentsBefore + " document(s) before the batch import, and there are " + numDocumentsAfter + " document(s) after completing the import.");
 			Dna.logger.log(l);
 			if (numDocumentsAfter > numDocumentsBefore) {
-				JOptionPane.showMessageDialog(null, good + " documents were imported, " + bad + " skipped.");
+				JOptionPane.showMessageDialog(dialog, good + " documents were imported, " + bad + " skipped.");
 			} else {
-				JOptionPane.showMessageDialog(null, "No new documents were imported.");
+				JOptionPane.showMessageDialog(dialog, "No new documents were imported.");
 			}
 			l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Closing import document thread: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",

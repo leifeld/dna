@@ -122,14 +122,18 @@ class Popup extends JDialog {
 		
 		JLabel sPosLabel = new JLabel("start");
 		JTextField startPos = new JTextField(Integer.toString(statement.getStart()));
+		int h = 20; // getting the text field height does not work properly on MacOS, so need to hard-code
+		startPos.setPreferredSize(new Dimension(startPos.getPreferredSize().width, h));
 		startPos.setEditable(false);
 		
 		JLabel ePosLabel = new JLabel("end");
 		JTextField endPos = new JTextField(Integer.toString(statement.getStop()));
+		endPos.setPreferredSize(new Dimension(endPos.getPreferredSize().width, h));
 		endPos.setEditable(false);
 
 		JLabel idLabel = new JLabel(" ID");
 		JTextField idField = new JTextField(Integer.toString(statementId));
+		idField.setPreferredSize(new Dimension(idField.getPreferredSize().width, h));
 		idField.setEditable(false);
 
 		String type = statement.getStatementTypeLabel();
@@ -141,7 +145,6 @@ class Popup extends JDialog {
 		colorPanel.setBackground(color);
 		colorPanel.setPreferredSize(new Dimension(4, 4));
 		
-		int h = endPos.getPreferredSize().height;
 		ImageIcon duplicateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-copy.png")).getImage().getScaledInstance(h, h, Image.SCALE_SMOOTH));
 		duplicate = new JButton(duplicateIcon);
 		duplicate.setToolTipText("create a copy of this statement at the same location");
@@ -189,7 +192,7 @@ class Popup extends JDialog {
 			coderComboBox.setModel(comboBoxModel);
 			coderComboBox.setRenderer(new CoderComboBoxRendererSmall());
 			coderComboBox.setSelectedIndex(selectedIndex);
-			coderComboBox.setPreferredSize(new Dimension(coderComboBox.getPreferredSize().width, idField.getPreferredSize().height));
+			coderComboBox.setPreferredSize(new Dimension(coderComboBox.getPreferredSize().width, h)); // need to hard-code height because of MacOS
 			idAndPositionPanel.add(coderComboBox);
 		}
 		

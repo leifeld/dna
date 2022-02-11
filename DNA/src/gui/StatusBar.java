@@ -134,18 +134,25 @@ class StatusBar extends JPanel implements LogListener {
 	 */
 	public void updateLog(int warnings, int errors) {
 		this.numWarnings = warnings;
-		warningButton.setText(this.numWarnings + " warnings");
-		if (warnings == 0) {
+		if (this.numWarnings == 0) {
 			warningButton.setVisible(false);
+		} else if (this.numWarnings == 1) {
+			warningButton.setVisible(true);
+			warningButton.setText(this.numWarnings + " warning");
 		} else {
 			warningButton.setVisible(true);
+			warningButton.setText(this.numWarnings + " warnings");
 		}
+		
 		this.numErrors = errors;
-		errorButton.setText(this.numErrors + " errors");
-		if (errors == 0) {
+		if (this.numErrors == 0) {
 			errorButton.setVisible(false);
+		} else if (this.numErrors == 1) {
+			errorButton.setVisible(true);
+			errorButton.setText(this.numErrors + " error");
 		} else {
 			errorButton.setVisible(true);
+			errorButton.setText(this.numErrors + " errors");
 		}
 	}
 

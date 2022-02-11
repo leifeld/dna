@@ -65,6 +65,7 @@ class RegexEditor extends JDialog {
 		regexList.setLayoutOrientation(JList.VERTICAL);
 		regexList.setVisibleRowCount(20);
 		regexList.setCellRenderer(new RegexListRenderer());
+		regexList.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		regexList.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
 				if (regexList.getModel().getSize() == 0 || regexList.isSelectionEmpty() 
@@ -84,6 +85,7 @@ class RegexEditor extends JDialog {
 		JPanel entryPanel = new JPanel(new BorderLayout(5, 0));
 		entryPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
 		ColorButton colorButton = new ColorButton();
+		colorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		colorButton.setColor(Color.RED);
 		colorButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -98,6 +100,7 @@ class RegexEditor extends JDialog {
 		
 		// entry panel: text field
 		textField = new JXTextField("enter new regex entry here");
+		textField.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		textField.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
 			public void changedUpdate(DocumentEvent e) {
@@ -145,6 +148,7 @@ class RegexEditor extends JDialog {
 			}
 		});
 		entryPanel.add(textField, BorderLayout.CENTER);
+		colorButton.setPreferredSize(new Dimension(colorButton.getPreferredSize().width, textField.getPreferredSize().height));
 		
 		// button panel: add button
 		JPanel buttonPanel = new JPanel();

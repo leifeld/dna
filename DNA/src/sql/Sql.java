@@ -149,6 +149,10 @@ public class Sql {
 			}
 			try {
 				ds = new HikariDataSource(config);
+		        LogEvent l = new LogEvent(Logger.MESSAGE,
+		        		"[SQL] A " + cp.getType() + " DNA database has been opened as a data source.",
+		        		"A " + cp.getType() + " DNA database has been opened as a data source.");
+		        Dna.logger.log(l);
 			} catch (PoolInitializationException e) {
 				LogEvent l = new LogEvent(Logger.ERROR,
 		        		"[SQL] Database access denied. Failed to initialize connection pool.",
@@ -157,10 +161,6 @@ public class Sql {
 		        Dna.logger.log(l);
 			}
 			
-	        LogEvent l = new LogEvent(Logger.MESSAGE,
-	        		"[SQL] A " + cp.getType() + " DNA database has been opened as a data source.",
-	        		"A " + cp.getType() + " DNA database has been opened as a data source.");
-	        Dna.logger.log(l);
 		} else {
 			LogEvent l = new LogEvent(Logger.ERROR,
 	        		"[SQL] Failed to regognize database format.",

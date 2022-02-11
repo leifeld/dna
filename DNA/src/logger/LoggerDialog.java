@@ -120,16 +120,23 @@ public class LoggerDialog extends JDialog {
 		JCheckBox errorCheckBox = new JCheckBox("Errors", true);
 		errorCheckBox.setToolTipText("Display log events with priority 3 (errors)?");
 		errorCheckBox.setBackground(new Color(255, 130, 130));
+		errorCheckBox.setOpaque(true);
+		errorCheckBox.setBorderPainted(false);
 		JCheckBox warningCheckBox = new JCheckBox("Warnings", true);
 		warningCheckBox.setToolTipText("Display log events with priority 2 (warnings)?");
 		warningCheckBox.setBackground(new Color(255, 255, 130));
+		warningCheckBox.setOpaque(true);
+		warningCheckBox.setBorderPainted(false);
 		JCheckBox messageCheckBox = new JCheckBox("Messages", true);
 		messageCheckBox.setToolTipText("Display log events with priority 1 (messages)?");
 		messageCheckBox.setBackground(new Color(130, 255, 130));
+		messageCheckBox.setOpaque(true);
+		messageCheckBox.setBorderPainted(false);
 		JCheckBox updateCheckBox = new JCheckBox("Database updates", true);
 		updateCheckBox.setToolTipText("Display log events with priority 0 (database updates)?");
-		updateCheckBox.setBackground(Color.BLACK);
-		updateCheckBox.setForeground(Color.WHITE);
+		updateCheckBox.setBackground(new Color(207, 207, 207));
+		updateCheckBox.setOpaque(true);
+		updateCheckBox.setBorderPainted(false);
 		
 		ActionListener al = new ActionListener() {
 			@Override
@@ -220,7 +227,7 @@ public class LoggerDialog extends JDialog {
 							return format.toUpperCase() + " log file (*." + format + ")";
 						}
 					});
-					int returnVal = fc.showOpenDialog(null);
+					int returnVal = fc.showSaveDialog(LoggerDialog.this);
 					
 					if (returnVal == JFileChooser.APPROVE_OPTION) {
 						file = fc.getSelectedFile();
@@ -232,7 +239,7 @@ public class LoggerDialog extends JDialog {
 						if (!file.exists()) {
 							validFileInput = true; // file approved
 						} else {
-							int dialog = JOptionPane.showConfirmDialog(null, "Overwrite existing file?", "Confirmation required", JOptionPane.YES_NO_OPTION);
+							int dialog = JOptionPane.showConfirmDialog(LoggerDialog.this, "Overwrite existing file?", "Confirmation required", JOptionPane.YES_NO_OPTION);
 							if (dialog == 0) {
 								validFileInput = true;
 								LogEvent l = new LogEvent(Logger.MESSAGE,
@@ -278,7 +285,7 @@ public class LoggerDialog extends JDialog {
 								"Log in " + format.toUpperCase() + " format was saved to disk.",
 								"Log in " + format.toUpperCase() + " format was saved to file: " + file.getAbsolutePath() + ".");
 						Dna.logger.log(l);
-						JOptionPane.showMessageDialog(null,
+						JOptionPane.showMessageDialog(LoggerDialog.this,
 								"The log was saved as:\n" + new File(filename).getAbsolutePath(),
 								"Success",
 							    JOptionPane.PLAIN_MESSAGE);
@@ -511,7 +518,9 @@ public class LoggerDialog extends JDialog {
 	        
 			Color priorityColor = javax.swing.UIManager.getColor("Table.background");
 	        Color selectedColor = javax.swing.UIManager.getColor("Table.selectionBackground");
-	        if (logEntry.getPriority() == 1) {
+	        if (logEntry.getPriority() == 0) {
+	        	priorityColor = new Color(207, 207, 207);
+	        } else if (logEntry.getPriority() == 1) {
 	        	priorityColor = new Color(130, 255, 130);
 	        } else if (logEntry.getPriority() == 2) {
 	        	priorityColor = new Color(255, 255, 130);

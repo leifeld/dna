@@ -410,7 +410,7 @@ public class DocumentEditor extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					String message = "Are you sure you want to recode " + documentIds.length + " documents and save the changes to the database?";
-					int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+					int dialog = JOptionPane.showConfirmDialog(DocumentEditor.this, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
 						Dna.sql.updateDocuments(documentIds, titleField.getText(), textArea.getText(), (String) authorBox.getSelectedItem(), (String) sourceBox.getSelectedItem(), (String) sectionBox.getSelectedItem(), (String) typeBox.getSelectedItem(), notesArea.getText(), dateTimePicker.getDateTimeStrict());
 						changesApplied = true;

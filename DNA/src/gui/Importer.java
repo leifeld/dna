@@ -3,6 +3,7 @@ package gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -34,12 +35,14 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.ProgressMonitor;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -82,7 +85,8 @@ class Importer extends JDialog {
 	 * Constructor of the Importer class. Creates a new instance of the dialog
 	 * window and creates the GUI with all action listeners.
 	 */
-	public Importer() {
+	public Importer(Frame parent) {
+		super(parent, "Import", true);
 		ImageIcon importerIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-database-import.png"));
 		this.setIconImage(importerIcon.getImage());
 		this.setModal(true);
@@ -316,7 +320,8 @@ class Importer extends JDialog {
 		dbButton = new JButton("Select database...", dbIcon);
 		dbButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				NewDatabaseDialog n = new NewDatabaseDialog(true);
+				JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(Importer.this);
+				NewDatabaseDialog n = new NewDatabaseDialog(frame, true);
 				ConnectionProfile cp = n.getConnectionProfile();
 				if (cp == null) {
 					LogEvent l = new LogEvent(Logger.MESSAGE,

@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
@@ -528,6 +529,8 @@ public class MainWindow extends JFrame {
 					});
 					
 					// disable menu items if the coder does not have the permission to add statements or edit other coders' documents (if the document belongs to another coder)
+					// TODO: convert 5 to model column
+					//System.out.println(documentTable.getValueAt(0, 5));
 					int documentCoderId = ((Coder) documentTable.getValueAt(documentTable.getSelectedRow(), 5)).getId();
 					if (Dna.sql.getActiveCoder().isPermissionAddStatements() == false ||
 							(documentCoderId != Dna.sql.getActiveCoder().getId() && !Dna.sql.getActiveCoder().isPermissionEditOthersDocuments()) ||
@@ -592,6 +595,7 @@ public class MainWindow extends JFrame {
 
 		// toolbar document filter field listener
 		JTextField documentFilterField = toolbar.getDocumentFilterField();
+		documentFilterField.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		documentFilterField.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
 			public void changedUpdate(DocumentEvent arg0) {
@@ -671,7 +675,7 @@ public class MainWindow extends JFrame {
 					coderIdToSelect = Dna.sql.getActiveCoder().getId();
 				}
 				while (!authenticated) {
-					CoderPasswordCheckDialog dialog = new CoderPasswordCheckDialog(Dna.sql, true, coderIdToSelect, 3);
+					CoderPasswordCheckDialog dialog = new CoderPasswordCheckDialog(MainWindow.this, Dna.sql, true, coderIdToSelect, 3);
 					Coder coder = dialog.getCoder();
 					String clearPassword = dialog.getPassword();
 					if (coder != null && clearPassword != null) {
@@ -699,7 +703,7 @@ public class MainWindow extends JFrame {
     								"Authentication failed. Check your password.",
     								"Tried to select coder, but a wrong password was entered for Coder " + coder.getId() + ".");
     						Dna.logger.log(l);
-		    				JOptionPane.showMessageDialog(null,
+		    				JOptionPane.showMessageDialog(dialog,
 		    						"Authentication failed. Check your password.",
 		    					    "Check failed",
 		    					    JOptionPane.ERROR_MESSAGE);
@@ -817,7 +821,7 @@ public class MainWindow extends JFrame {
 		JButton remove = popup.getRemoveButton();
 		remove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int question = JOptionPane.showConfirmDialog(null, 
+				int question = JOptionPane.showConfirmDialog(popup, 
 						"Are you sure you want to remove this statement?", 
 						"Remove?", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
@@ -1451,7 +1455,7 @@ public class MainWindow extends JFrame {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			NewDatabaseDialog n = new NewDatabaseDialog(true);
+			NewDatabaseDialog n = new NewDatabaseDialog(MainWindow.this, true);
 			ConnectionProfile cp = n.getConnectionProfile();
 			if (cp != null) {
 				Dna.sql.setConnectionProfile(cp, false);
@@ -1546,7 +1550,7 @@ public class MainWindow extends JFrame {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			NewDatabaseDialog n = new NewDatabaseDialog(false);
+			NewDatabaseDialog n = new NewDatabaseDialog(MainWindow.this, false);
 			ConnectionProfile cp = n.getConnectionProfile();
 			
 			if (cp != null) {
@@ -1603,7 +1607,7 @@ public class MainWindow extends JFrame {
 						return "DNA connection profile (*.dnc)";
 					}
 				});
-				int returnVal = fc.showOpenDialog(null);
+				int returnVal = fc.showOpenDialog(MainWindow.this);
 				
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
@@ -1614,7 +1618,7 @@ public class MainWindow extends JFrame {
 						}
 						validFileInput = true; // file choice accepted
 					} else {
-						JOptionPane.showMessageDialog(null, "The file name you entered does not exist. Please choose a new file.");
+						JOptionPane.showMessageDialog(fc, "The file name you entered does not exist. Please choose a new file.");
 					}
 				} else { // cancel button; mark as valid file input, but reset file name
 					filename = null;
@@ -1626,7 +1630,7 @@ public class MainWindow extends JFrame {
 				boolean validPasswordInput = false;
 				while (!validPasswordInput) {
 					// ask user for password (for the user in the connection profile) to decrypt the profile
-					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog();
+					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog(MainWindow.this);
 					String key = d.getPassword();
 					
 					// decrypt connection profile, create SQL connection, and set as default SQL connection
@@ -1642,34 +1646,46 @@ public class MainWindow extends JFrame {
 							}
 							if (cp != null) {
 								Sql sqlTemp = new Sql(cp, true); // just for authentication purposes, so a test
-								boolean authenticated = sqlTemp.authenticate(-1, key);
-								if (authenticated == true) {
-									validPasswordInput = true; // authenticated; quit the while-loop
-									Dna.sql.setConnectionProfile(cp, false); // use the connection profile, so no test
-									refreshDocumentTable();
-									refreshStatementTable();
-									adjustToCoderSelection();
-									
-									// changes in other classes
-									statusBar.updateUrl();
-									toolbar.adjustToChangedConnection();
-									textPanel.setContents(-1, "");
-									statementPanel.adjustToChangedConnection();
-									menuBar.adjustToChangedCoder();
-									coderSelectionPanel.changeCoderBadge();
+								if (sqlTemp.getDataSource() == null) {
+									LogEvent l = new LogEvent(Logger.ERROR,
+											"[GUI] No data source available in the database connection.",
+											"Tried to open database, but the coder could not be authenticated because there is no data source available. This may be due to a failed connection to the database. Look out for other error messages.");
+									Dna.logger.log(l);
+									JOptionPane.showMessageDialog(MainWindow.this,
+						        			"The connection to the database failed or was denied.",
+										    "Connection failed",
+										    JOptionPane.ERROR_MESSAGE);
 								} else {
-									cp = null;
+									boolean authenticated = sqlTemp.authenticate(-1, key);
+									if (authenticated == true) {
+										validPasswordInput = true; // authenticated; quit the while-loop
+										Dna.sql.setConnectionProfile(cp, false); // use the connection profile, so no test
+										refreshDocumentTable();
+										refreshStatementTable();
+										adjustToCoderSelection();
+										
+										// changes in other classes
+										statusBar.updateUrl();
+										toolbar.adjustToChangedConnection();
+										textPanel.setContents(-1, "");
+										statementPanel.adjustToChangedConnection();
+										menuBar.adjustToChangedCoder();
+										coderSelectionPanel.changeCoderBadge();
+									} else {
+										cp = null;
+									}
 								}
+								
 							}
 							if (cp == null) {
-								JOptionPane.showMessageDialog(null,
+								JOptionPane.showMessageDialog(MainWindow.this,
 					        			"Database credentials could not be decrypted.\n"
 					        					+ "Did you enter the right password?",
 									    "Check failed",
 									    JOptionPane.ERROR_MESSAGE);
 							}
 						} else {
-							JOptionPane.showMessageDialog(null,
+							JOptionPane.showMessageDialog(MainWindow.this,
 				        			"Password check failed. Zero-length passwords are not permitted.",
 								    "Check failed",
 								    JOptionPane.ERROR_MESSAGE);
@@ -1750,7 +1766,7 @@ public class MainWindow extends JFrame {
 						return "DNA connection profile (*.dnc)";
 					}
 				});
-				int returnVal = fc.showOpenDialog(null);
+				int returnVal = fc.showSaveDialog(MainWindow.this);
 				
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					file = fc.getSelectedFile();
@@ -1763,7 +1779,7 @@ public class MainWindow extends JFrame {
 						validFileInput = true; // file approved
 					} else {
 						file = null;
-						JOptionPane.showMessageDialog(null, "The file name you entered already exists. Please choose a new file.");
+						JOptionPane.showMessageDialog(fc, "The file name you entered already exists. Please choose a new file.");
 					}
 				} else {
 					validFileInput = true; // user must have clicked cancel in file chooser
@@ -1773,7 +1789,7 @@ public class MainWindow extends JFrame {
 			if (file != null) {
 				boolean validPasswordInput = false;
 				while (!validPasswordInput) {
-					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog(Dna.sql, false, -1, 3);
+					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog(MainWindow.this, Dna.sql, false, -1, 3);
 					String key = d.getPassword();
 					if (key == null) { // user must have pressed cancel
 						validPasswordInput = true;
@@ -1783,12 +1799,12 @@ public class MainWindow extends JFrame {
 							// write the connection profile to disk, with an encrypted version of the password
 							writeConnectionProfile(filename, new ConnectionProfile(Dna.sql.getConnectionProfile()), key);
 							validPasswordInput = true; // quit the while-loop after successful export
-							JOptionPane.showMessageDialog(null,
+							JOptionPane.showMessageDialog(MainWindow.this,
 									"The profile was saved as:\n" + new File(filename).getAbsolutePath(),
 									"Success",
 								    JOptionPane.PLAIN_MESSAGE);
 						} else {
-				        	JOptionPane.showMessageDialog(null,
+				        	JOptionPane.showMessageDialog(MainWindow.this,
 				        			"Coder password could not be verified. Try again.",
 								    "Check failed",
 								    JOptionPane.ERROR_MESSAGE);
@@ -2030,7 +2046,7 @@ public class MainWindow extends JFrame {
 			
 			// confirmation dialog, then delete documents from database and table
 			String message = "Are you sure you want to delete " + viewRows.length + " document(s) including all statements?";
-			int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+			int dialog = JOptionPane.showConfirmDialog(MainWindow.this, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 			if (dialog == 0) {
 				// delete documents and everything dependent on it (e.g., statements) in database
 				boolean deleted = Dna.sql.deleteDocuments(documentIds);
@@ -2161,7 +2177,7 @@ public class MainWindow extends JFrame {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			new Importer();
+			new Importer(MainWindow.this);
 	    	refreshDocumentTable();
 			refreshStatementTable();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
@@ -2216,7 +2232,7 @@ public class MainWindow extends JFrame {
 			
 			// confirmation dialog, then delete statements from database and table
 			String message = "Are you sure you want to delete " + selectedRows.length + " statements?";
-			int dialog = JOptionPane.showConfirmDialog(null, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
+			int dialog = JOptionPane.showConfirmDialog(MainWindow.this, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 			if (dialog == 0) {
 				statusBar.statementRefreshStart();
 				boolean deleted = Dna.sql.deleteStatements(statementIds);

@@ -39,6 +39,7 @@ class TextPanel extends JPanel {
 	
 	/**
 	 * Create a new text panel.
+	 * @throws Exception 
 	 */
 	TextPanel() {
 		this.setLayout(new BorderLayout());
@@ -52,7 +53,7 @@ class TextPanel extends JPanel {
 	    StyleConstants.setLeftIndent(mainStyle, 16);
 	    StyleConstants.setRightIndent(mainStyle, 16);
 	    StyleConstants.setFirstLineIndent(mainStyle, 16);
-	    StyleConstants.setFontFamily(mainStyle, "serif");
+	    StyleConstants.setFontFamily(mainStyle, "Serif");
 	    StyleConstants.setFontSize(mainStyle, 12);
 	    
 	    Font font = new Font("Monospaced", Font.PLAIN, 14);

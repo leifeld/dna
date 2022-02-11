@@ -239,7 +239,7 @@ public class AttributeManager extends JDialog {
 				for (int i = 0; i < selectedRows.length; i++) {
 					selectedRows[i] = model.getRow(attributeTable.convertRowIndexToModel(selectedRows[i])).getId();
 				}
-				int dialog = JOptionPane.showConfirmDialog(null, "Delete " + selectedRows.length + " unused entities from the attribute manager?", "Confirmation", JOptionPane.YES_NO_OPTION);
+				int dialog = JOptionPane.showConfirmDialog(AttributeManager.this, "Delete " + selectedRows.length + " unused entities from the attribute manager?", "Confirmation", JOptionPane.YES_NO_OPTION);
 				if (dialog == 0) {
 					Dna.sql.deleteEntities(selectedRows);
 					refreshTable(((Value) variableBox.getSelectedItem()).getVariableId());
@@ -268,7 +268,7 @@ public class AttributeManager extends JDialog {
 					for (int i = 0; i < entityIds.size(); i++) {
 						ids[i] = entityIds.get(i);
 					}
-					int dialog = JOptionPane.showConfirmDialog(null, "Delete " + ids.length + " unused entities from the attribute manager?", "Confirmation", JOptionPane.YES_NO_OPTION);
+					int dialog = JOptionPane.showConfirmDialog(AttributeManager.this, "Delete " + ids.length + " unused entities from the attribute manager?", "Confirmation", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
 						Dna.sql.deleteEntities(ids);
 						refreshTable(((Value) variableBox.getSelectedItem()).getVariableId());

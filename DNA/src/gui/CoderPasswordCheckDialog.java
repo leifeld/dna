@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.util.ArrayList;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -24,7 +25,8 @@ import sql.Sql;
 /**
  * Class for creating a coder password dialog and returning the password.
  */
-public class CoderPasswordCheckDialog {
+public class CoderPasswordCheckDialog extends JDialog {
+	private static final long serialVersionUID = 554198527675093498L;
 	Coder coder = null;
 	String password = null;
 
@@ -71,7 +73,9 @@ public class CoderPasswordCheckDialog {
 	 * encrypted and the coder details could not be read yet before getting the
 	 * password from here).
 	 */
-	public CoderPasswordCheckDialog() {
+	public CoderPasswordCheckDialog(Frame parent) {
+		super(parent, "Password check", true);
+		this.setModal(true);
 		JPanel panel = new JPanel(new BorderLayout());
 		JLabel pwLabel = new JLabel("Please enter the password for the coder in the connection profile.");
 		panel.add(pwLabel, BorderLayout.NORTH);
@@ -113,7 +117,9 @@ public class CoderPasswordCheckDialog {
 	 *   DNA version. If {@code 2}, no password will be requested, and a
 	 *   different function is called to retrieve coders from the database.
 	 */
-	public CoderPasswordCheckDialog(Sql sql, boolean chooseCoder, int selectId, int version) {
+	public CoderPasswordCheckDialog(Frame parent, Sql sql, boolean chooseCoder, int selectId, int version) {
+		super(parent, "Password check", true);
+		this.setModal(true);
 		JPanel panel = new JPanel(new BorderLayout());
 		
 		JPanel questionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));

@@ -3,6 +3,7 @@ package gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -32,6 +33,7 @@ import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.ProgressMonitor;
+import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -73,7 +75,8 @@ public class NewDatabaseDialog extends JDialog {
 	/**
 	 * Constructor that shows the dialog window.
 	 */
-	public NewDatabaseDialog(boolean openExistingDatabase) {
+	public NewDatabaseDialog(Frame parent, boolean openExistingDatabase) {
+		super(parent, "DNA database", true);
 		this.openExistingDatabase = openExistingDatabase;
 
 		this.setModal(true);
@@ -329,7 +332,8 @@ public class NewDatabaseDialog extends JDialog {
 							v = 2;
 						}
 						while (!validInput) {
-							CoderPasswordCheckDialog cpcd = new CoderPasswordCheckDialog(testConnection, true, coderIdToSelect, v);
+							JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(NewDatabaseDialog.this);
+						    CoderPasswordCheckDialog cpcd = new CoderPasswordCheckDialog(frame, testConnection, true, coderIdToSelect, v);
 							Coder coder = cpcd.getCoder();
 							if (coder == null) { // user must have pressed cancel
 								validInput = true;
@@ -352,7 +356,7 @@ public class NewDatabaseDialog extends JDialog {
 			    								"Authentication failed. Check your password.",
 			    								"Tried to open database, but a wrong password was entered for Coder " + coder.getId() + ".");
 			    						Dna.logger.log(l);
-					    				JOptionPane.showMessageDialog(null,
+					    				JOptionPane.showMessageDialog(NewDatabaseDialog.this,
 					    						"Authentication failed. Check your password.",
 					    					    "Check failed",
 					    					    JOptionPane.ERROR_MESSAGE);
@@ -374,7 +378,7 @@ public class NewDatabaseDialog extends JDialog {
 						cancelButton.setEnabled(false);
 						saveButton.setEnabled(false);
 						
-						Thread createTablesThread = new Thread( new CreateTablesThread(type, testConnection, encryptedPassword), "Create tables" );
+						Thread createTablesThread = new Thread(new CreateTablesThread(type, testConnection, encryptedPassword), "Create tables");
 						createTablesThread.start();
 					}
 				}
@@ -421,7 +425,7 @@ public class NewDatabaseDialog extends JDialog {
     								"[SQL] Connection test failed with a simple database query.",
     								"Connection test failed with a simple database query while trying to create data structure in new DNA database.");
     						Dna.logger.log(l);
-		    				JOptionPane.showMessageDialog(null,
+		    				JOptionPane.showMessageDialog(NewDatabaseDialog.this,
 		    					    "Connection test failed. Please check your database.",
 		    					    "Check failed",
 		    					    JOptionPane.ERROR_MESSAGE);
@@ -434,7 +438,7 @@ public class NewDatabaseDialog extends JDialog {
 							"Could not establish connection to remote database. Please check URL, login, and password.",
 							e1);
 					Dna.logger.log(l);
-    				JOptionPane.showMessageDialog(null,
+    				JOptionPane.showMessageDialog(NewDatabaseDialog.this,
     					    "Could not establish connection to remote database.\nPlease check URL, login, and password.",
     					    "Check failed",
     					    JOptionPane.ERROR_MESSAGE);
@@ -452,7 +456,7 @@ public class NewDatabaseDialog extends JDialog {
 								"[SQL] Failed to create tables in the database.",
 								"Failed to create tables in the database.");
 						Dna.logger.log(l);
-	    				JOptionPane.showMessageDialog(null,
+	    				JOptionPane.showMessageDialog(NewDatabaseDialog.this,
 	    					    "Failed to create tables in the database.",
 	    					    "Operation failed",
 	    					    JOptionPane.ERROR_MESSAGE);
@@ -467,7 +471,7 @@ public class NewDatabaseDialog extends JDialog {
 							"[SQL] Failed to create tables in the database.",
 							"Failed to create tables in the database.");
 					Dna.logger.log(l);
-    				JOptionPane.showMessageDialog(null,
+    				JOptionPane.showMessageDialog(NewDatabaseDialog.this,
     					    "Could not create tables in the database.",
     					    "Operation failed",
     					    JOptionPane.ERROR_MESSAGE);
@@ -487,7 +491,7 @@ public class NewDatabaseDialog extends JDialog {
 						"[GUI] Data structures were set up in SQLite database.",
 						"Data structures were set up in: " + new File(connectionDetailsPanel.getUrl()).getAbsolutePath());
 				Dna.logger.log(l);
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(NewDatabaseDialog.this,
 					    "Data structures were set up in:\n" + new File(connectionDetailsPanel.getUrl()).getAbsolutePath(),
 					    "Success",
 					    JOptionPane.PLAIN_MESSAGE);
@@ -582,7 +586,7 @@ public class NewDatabaseDialog extends JDialog {
 							return "DNA SQLite database (*.dna)";
 						}
 					});
-					int returnVal = fc.showOpenDialog(null);
+					int returnVal = fc.showOpenDialog(NewDatabaseDialog.this);
 					
 					// extract chosen file name and check its validity
 					if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -596,12 +600,12 @@ public class NewDatabaseDialog extends JDialog {
 						} else {
 							urlField.setText("");
 							if (openExistingDatabase) {
-								JOptionPane.showMessageDialog(null,
+								JOptionPane.showMessageDialog(fc,
 									    "The file does not exist. Please choose a new file.",
 									    "Error",
 									    JOptionPane.ERROR_MESSAGE);
 							} else {
-								JOptionPane.showMessageDialog(null,
+								JOptionPane.showMessageDialog(fc,
 									    "The file already exists and will not be overwritten.\nPlease choose a new file.",
 									    "Error",
 									    JOptionPane.ERROR_MESSAGE);

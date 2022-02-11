@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -20,6 +21,7 @@ import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -29,6 +31,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -272,7 +275,8 @@ public class StatementTypeEditor extends JDialog {
 		addVariableButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				VariableDialog vd = new VariableDialog(null, null);
+				JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(StatementTypeEditor.this);
+				VariableDialog vd = new VariableDialog(frame, null, null);
 				if (!vd.canceled) {
 					String name = vd.getVariableName();
 					String type = vd.getDataType();
@@ -325,7 +329,8 @@ public class StatementTypeEditor extends JDialog {
 				int vid = (int) variableTable.getValueAt(variableTable.getSelectedRow(), 0);
 				String oldName = (String) variableTable.getValueAt(variableTable.getSelectedRow(), 1);
 				String oldType = (String) variableTable.getValueAt(variableTable.getSelectedRow(), 2);
-				VariableDialog vd = new VariableDialog(oldName, oldType);
+				JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(StatementTypeEditor.this);
+				VariableDialog vd = new VariableDialog(frame, oldName, oldType);
 				if (!vd.canceled()) {
 					String name = vd.getVariableName();
 					int sid = statementTypeList.getSelectedValue().getId();
@@ -629,7 +634,8 @@ public class StatementTypeEditor extends JDialog {
 		/**
 		 * Create a new instance of a variable dialog.
 		 */
-		VariableDialog(String name, String type) {
+		VariableDialog(Frame parent, String name, String type) {
+			super(parent, "Variable", true);
 			this.setModal(true);
 			if (name == null || type == null) {
 				this.setTitle("Add new variable");

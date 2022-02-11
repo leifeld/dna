@@ -3,6 +3,7 @@ package gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -19,6 +20,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -28,6 +30,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -458,7 +461,8 @@ class CoderManager extends JDialog {
 		addButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				AddCoderDialog addCoderDialog = new AddCoderDialog();
+				JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(CoderManager.this);
+				AddCoderDialog addCoderDialog = new AddCoderDialog(frame);
 				String coderName = addCoderDialog.getCoderName();
 				String coderPasswordHash = addCoderDialog.getCoderPasswordHash();
 				Color coderColor = addCoderDialog.getCoderColor();
@@ -839,7 +843,8 @@ class CoderManager extends JDialog {
 		/**
 		 * Create a new instance of an add coder dialog.
 		 */
-		AddCoderDialog() {
+		AddCoderDialog(Frame parent) {
+			super(parent, "Add coder", true);
 			this.setModal(true);
 			this.setTitle("Add new coder");
 			this.setLayout(new BorderLayout());
