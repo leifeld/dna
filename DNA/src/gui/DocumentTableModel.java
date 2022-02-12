@@ -142,11 +142,7 @@ class DocumentTableModel extends AbstractTableModel {
 	 * @return boolean indicating if the cell can be edited.
 	 */
 	public boolean isCellEditable(int rowIndex, int columnIndex) {
-		if (rowIndex < 0 || rowIndex > rows.size() - 1 || columnIndex == 0) {
-			return false;
-		} else {
-			return true;
-		}
+		return false;
 	}
 
 	/**

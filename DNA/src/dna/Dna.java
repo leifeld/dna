@@ -14,13 +14,12 @@ public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2022-02-11";
+	public static final String date = "2022-02-12";
 	public static final String version = "3.0.2";
 	MainWindow mainWindow;
 	
 	/**
 	 * Create a new instance of DNA including the GUI.
-	 * @throws Exception 
 	 */
 	public Dna() {
 		logger = new Logger();

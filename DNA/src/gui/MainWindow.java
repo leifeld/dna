@@ -489,7 +489,6 @@ public class MainWindow extends JFrame {
 					menuItem.addActionListener(new ActionListener() {
 						@Override
 						public void actionPerformed(ActionEvent e) {
-							statusBar.statementRefreshStart();
 							int documentId = documentTablePanel.getSelectedDocumentId();
 							int documentModelRow = documentTableModel.getModelRowById(documentId);
 							int selectionStart = textWindow.getSelectionStart();
@@ -524,14 +523,11 @@ public class MainWindow extends JFrame {
 								textWindow.setSelectionEnd(statement.getStop());
 								newPopup(x, y, s, location);
 							}
-							statusBar.statementRefreshEnd();
 						}
 					});
 					
 					// disable menu items if the coder does not have the permission to add statements or edit other coders' documents (if the document belongs to another coder)
-					// TODO: convert 5 to model column
-					//System.out.println(documentTable.getValueAt(0, 5));
-					int documentCoderId = ((Coder) documentTable.getValueAt(documentTable.getSelectedRow(), 5)).getId();
+					int documentCoderId = documentTableModel.getRow(documentTable.convertRowIndexToModel(documentTable.getSelectedRow())).getCoder().getId();
 					if (Dna.sql.getActiveCoder().isPermissionAddStatements() == false ||
 							(documentCoderId != Dna.sql.getActiveCoder().getId() && !Dna.sql.getActiveCoder().isPermissionEditOthersDocuments()) ||
 							(documentCoderId != Dna.sql.getActiveCoder().getId() &&	!Dna.sql.getActiveCoder().isPermissionEditOthersDocuments(documentCoderId))) {
@@ -821,7 +817,7 @@ public class MainWindow extends JFrame {
 		JButton remove = popup.getRemoveButton();
 		remove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int question = JOptionPane.showConfirmDialog(popup, 
+				int question = JOptionPane.showConfirmDialog(MainWindow.this, 
 						"Are you sure you want to remove this statement?", 
 						"Remove?", JOptionPane.YES_NO_OPTION);
 				if (question == 0) {
