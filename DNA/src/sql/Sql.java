@@ -5,7 +5,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -1972,21 +1974,24 @@ public class Sql {
 	 * 
 	 * @param documentIds An array of document IDs for which the contents should
 	 *   be replaced in the database.
-	 * @param title       A new title.
-	 * @param text        A new text.
-	 * @param author      A new author.
-	 * @param source      A new source.
-	 * @param section     A new section.
-	 * @param type        A new type.
-	 * @param notes       A new notes String.
-	 * @param dateTime    A new date-time stamp (as a {@link
-	 *   java.time.LocalDateTime LocalDateTime} object).
+	 * @param coder    A new coder ID ({@code -1} for keeping existing IDs)
+	 * @param title    A new title.
+	 * @param text     A new text.
+	 * @param author   A new author.
+	 * @param source   A new source.
+	 * @param section  A new section.
+	 * @param type     A new type.
+	 * @param notes    A new notes String.
+	 * @param date     A new date stamp (as a {@link java.time.LocalDate
+	 *   LocalDate} object).
+	 * @param time     A new time stamp (as a {@link java.time.LocalTime
+	 *   LocalTime} object).
 	 * 
 	 * @category document
 	 */
-	public void updateDocuments(int[] documentIds, String title, String text, String author, String source, String section, String type, String notes, LocalDateTime dateTime) {
-		String sel = "SELECT Title, Text, Author, Source, Section, Type, Notes, Date FROM DOCUMENTS WHERE ID = ?;";
-		String upd = "UPDATE DOCUMENTS SET Title = ?, Text = ?, Author = ?, Source = ?, Section = ?, Type = ?, Notes = ?, Date = ? WHERE ID = ?;";
+	public void updateDocuments(int[] documentIds, int coder, String title, String text, String author, String source, String section, String type, String notes, LocalDate date, LocalTime time) {
+		String sel = "SELECT Title, Text, Author, Source, Section, Type, Notes, Date, Coder FROM DOCUMENTS WHERE ID = ?;";
+		String upd = "UPDATE DOCUMENTS SET Title = ?, Text = ?, Author = ?, Source = ?, Section = ?, Type = ?, Notes = ?, Date = ?, Coder = ? WHERE ID = ?;";
 		String titleTemp1 = "", titleTemp2, textTemp1 = "", textTemp2, authorTemp1 = "", authorTemp2, sourceTemp1 = "", sourceTemp2, sectionTemp1 = "", sectionTemp2, typeTemp1 = "", typeTemp2, notesTemp1 = "", notesTemp2, day = "", month = "", year = "", hour = "", minute = "";
 		long dateTimeTemp = 0;
 		LocalDateTime ldt = null;
@@ -2001,6 +2006,7 @@ public class Sql {
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			ResultSet r;
+			int existingCoder = -1;
 			for (int i = 0; i < documentIds.length; i++) {
 				s.setInt(1, documentIds[i]);
 				r = s.executeQuery();
@@ -2019,6 +2025,7 @@ public class Sql {
 					year = ldt.format(yearFormatter);
 					hour = ldt.format(hourFormatter);
 					minute = ldt.format(minuteFormatter);
+					existingCoder = r.getInt("Coder");
 				}
 				titleTemp2 = title.replaceAll("%title", titleTemp1);
 				titleTemp2 = titleTemp2.replaceAll("%text", textTemp1);
@@ -2111,12 +2118,27 @@ public class Sql {
 				notesTemp2 = notesTemp2.replaceAll("%hour", hour);
 				notesTemp2 = notesTemp2.replaceAll("%minute", minute);
 				u.setString(7, notesTemp2);
-				if (dateTime != null) {
-					u.setLong(8, dateTime.toEpochSecond(ZoneOffset.UTC));
+				
+				// date and time
+				LocalDate ldtDate = ldt.toLocalDate();
+				LocalTime ldtTime = ldt.toLocalTime();
+				if (time == null && date == null) {
+					// keep ldt as is
+				} else if (time == null) {
+					ldt = LocalDateTime.of(date, ldtTime);
+				} else if (date == null) {
+					ldt = LocalDateTime.of(ldtDate, time);
 				} else {
-					u.setLong(8, dateTimeTemp);
+					ldt = LocalDateTime.of(date, time);
 				}
-				u.setInt(9, documentIds[i]);
+				u.setLong(8, ldt.toEpochSecond(ZoneOffset.UTC));
+				
+				if (coder < 1) {
+					u.setInt(9, existingCoder);
+				} else {
+					u.setInt(9, coder);
+				}
+				u.setInt(10, documentIds[i]);
 				u.executeUpdate();
 			}
 			conn.commit();

@@ -2098,35 +2098,44 @@ public class MainWindow extends JFrame {
 				// update changed table cells
 				ArrayList<TableDocument> updatedDocuments = Dna.sql.getTableDocuments(selectedDocumentIds);
 				for (int i = 0; i < updatedDocuments.size(); i++) {
-					if (!t.getValueAt(selectedRows[i], 1).equals(updatedDocuments.get(i).getTitle())) {
-						t.setValueAt(updatedDocuments.get(i).getTitle(), selectedRows[i], 1);
+					int modelRow = documentTableModel.getModelRowById(updatedDocuments.get(i).getId());
+					int viewRow = t.convertRowIndexToView(modelRow);
+					if (!documentTableModel.getRow(modelRow).getTitle().equals(updatedDocuments.get(i).getTitle())) {
+						documentTableModel.getRow(modelRow).setTitle(updatedDocuments.get(i).getTitle());
+						documentTableModel.fireTableCellUpdated(viewRow, t.convertColumnIndexToView(1));
 					}
-					if ((int) t.getValueAt(selectedRows[i], 2) != updatedDocuments.get(i).getFrequency()) {
-						t.setValueAt(updatedDocuments.get(i).getFrequency(), selectedRows[i], 2);
+					if (documentTableModel.getRow(modelRow).getFrequency() != updatedDocuments.get(i).getFrequency()) {
+						documentTableModel.getRow(modelRow).setFrequency(updatedDocuments.get(i).getFrequency());
+						documentTableModel.fireTableCellUpdated(viewRow, t.convertColumnIndexToView(2));
 					}
-					if (!t.getValueAt(selectedRows[i], 3).equals(updatedDocuments.get(i).getDateTime())) {
-						t.setValueAt(updatedDocuments.get(i).getDateTime(), selectedRows[i], 3);
+					if (!documentTableModel.getRow(modelRow).getDateTime().equals(updatedDocuments.get(i).getDateTime())) {
+						documentTableModel.getRow(modelRow).setDateTime(updatedDocuments.get(i).getDateTime());
+						documentTableModel.fireTableCellUpdated(viewRow, t.convertColumnIndexToView(3));
+						documentTableModel.fireTableCellUpdated(viewRow, t.convertColumnIndexToView(4));
 					}
-					if (!t.getValueAt(selectedRows[i], 4).equals(updatedDocuments.get(i).getDateTime())) {
-						t.setValueAt(updatedDocuments.get(i).getDateTime(), selectedRows[i], 4);
+					if (documentTableModel.getRow(modelRow).getCoder().getId() != updatedDocuments.get(i).getCoder().getId()) {
+						documentTableModel.getRow(modelRow).setCoder(updatedDocuments.get(i).getCoder());
+						documentTableModel.fireTableCellUpdated(viewRow, t.convertColumnIndexToView(5));
 					}
-					if (((Coder) t.getValueAt(selectedRows[i], 5)).getId() != updatedDocuments.get(i).getCoder().getId()) {
-						t.setValueAt(updatedDocuments.get(i).getCoder(), selectedRows[i], 5);
+					if (!documentTableModel.getRow(modelRow).getAuthor().equals(updatedDocuments.get(i).getAuthor())) {
+						documentTableModel.getRow(modelRow).setAuthor(updatedDocuments.get(i).getAuthor());
+						documentTableModel.fireTableCellUpdated(viewRow, t.convertColumnIndexToView(6));
 					}
-					if (!t.getValueAt(selectedRows[i], 6).equals(updatedDocuments.get(i).getAuthor())) {
-						t.setValueAt(updatedDocuments.get(i).getAuthor(), selectedRows[i], 6);
+					if (!documentTableModel.getRow(modelRow).getSource().equals(updatedDocuments.get(i).getSource())) {
+						documentTableModel.getRow(modelRow).setSource(updatedDocuments.get(i).getSource());
+						documentTableModel.fireTableCellUpdated(viewRow, t.convertColumnIndexToView(7));
 					}
-					if (!t.getValueAt(selectedRows[i], 7).equals(updatedDocuments.get(i).getSource())) {
-						t.setValueAt(updatedDocuments.get(i).getSource(), selectedRows[i], 7);
+					if (!documentTableModel.getRow(modelRow).getSection().equals(updatedDocuments.get(i).getSection())) {
+						documentTableModel.getRow(modelRow).setSection(updatedDocuments.get(i).getSection());
+						documentTableModel.fireTableCellUpdated(viewRow, t.convertColumnIndexToView(8));
 					}
-					if (!t.getValueAt(selectedRows[i], 8).equals(updatedDocuments.get(i).getSection())) {
-						t.setValueAt(updatedDocuments.get(i).getSection(), selectedRows[i], 8);
+					if (!documentTableModel.getRow(modelRow).getType().equals(updatedDocuments.get(i).getType())) {
+						documentTableModel.getRow(modelRow).setType(updatedDocuments.get(i).getType());
+						documentTableModel.fireTableCellUpdated(viewRow, t.convertColumnIndexToView(9));
 					}
-					if (!t.getValueAt(selectedRows[i], 9).equals(updatedDocuments.get(i).getType())) {
-						t.setValueAt(updatedDocuments.get(i).getType(), selectedRows[i], 9);
-					}
-					if (!t.getValueAt(selectedRows[i], 10).equals(updatedDocuments.get(i).getNotes())) {
-						t.setValueAt(updatedDocuments.get(i).getNotes(), selectedRows[i], 10);
+					if (!documentTableModel.getRow(modelRow).getNotes().equals(updatedDocuments.get(i).getNotes())) {
+						documentTableModel.getRow(modelRow).setNotes(updatedDocuments.get(i).getNotes());
+						documentTableModel.fireTableCellUpdated(viewRow, t.convertColumnIndexToView(10));
 					}
 				}
 				

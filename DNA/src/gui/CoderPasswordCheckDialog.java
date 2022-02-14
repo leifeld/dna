@@ -1,21 +1,15 @@
 package gui;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.util.ArrayList;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
-import javax.swing.ListCellRenderer;
-import javax.swing.UIDefaults;
-
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
@@ -143,7 +137,7 @@ public class CoderPasswordCheckDialog extends JDialog {
 			}
 			CoderComboBoxModel comboBoxModel = new CoderComboBoxModel(coders);
 			comboBox.setModel(comboBoxModel);
-			comboBox.setRenderer(new CoderComboBoxRenderer());
+			comboBox.setRenderer(new CoderComboBoxRenderer(18, 0, 22));
 			if (coders.size() > 0) {
 				if (selectIndex > -1) {
 					comboBox.setSelectedIndex(selectIndex);
@@ -195,24 +189,5 @@ public class CoderPasswordCheckDialog extends JDialog {
 	
 	public String getPassword() {
 		return this.password;
-	}
-	
-	private class CoderComboBoxRenderer implements ListCellRenderer<Object> {
-		
-		@Override
-		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-			if (value == null) {
-				return new JLabel("select coder...");
-			} else {
-				Coder coder = (Coder) value;
-				CoderBadgePanel cbp = new CoderBadgePanel(coder);
-				if (isSelected) {
-					UIDefaults defaults = javax.swing.UIManager.getDefaults();
-					Color bg = defaults.getColor("List.selectionBackground");
-					cbp.setBackground(bg);
-				}
-				return cbp;
-			}
-		}
 	}
 }

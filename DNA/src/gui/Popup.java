@@ -32,7 +32,6 @@ import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
-import javax.swing.UIDefaults;
 import javax.swing.border.LineBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -190,7 +189,7 @@ class Popup extends JDialog {
 			coderComboBox = new JComboBox<Coder>();
 			CoderComboBoxModel comboBoxModel = new CoderComboBoxModel(eligibleCoders);
 			coderComboBox.setModel(comboBoxModel);
-			coderComboBox.setRenderer(new CoderComboBoxRendererSmall());
+			coderComboBox.setRenderer(new CoderComboBoxRenderer(9, 0, 22));
 			coderComboBox.setSelectedIndex(selectedIndex);
 			coderComboBox.setPreferredSize(new Dimension(coderComboBox.getPreferredSize().width, h)); // need to hard-code height because of MacOS
 			idAndPositionPanel.add(coderComboBox);
@@ -709,25 +708,6 @@ class Popup extends JDialog {
 			label.setOpaque(true);
 			
 			return label;
-		}
-	}
-	
-	private class CoderComboBoxRendererSmall implements ListCellRenderer<Object> {
-		
-		@Override
-		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-			if (value == null) {
-				return new JLabel("select coder...");
-			} else {
-				Coder coder = (Coder) value;
-				CoderBadgePanel cbp = new CoderBadgePanel(coder, 9, 0, 22);
-				if (isSelected) {
-					UIDefaults defaults = javax.swing.UIManager.getDefaults();
-					Color bg = defaults.getColor("List.selectionBackground");
-					cbp.setBackground(bg);
-				}
-				return cbp;
-			}
 		}
 	}
 }

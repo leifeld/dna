@@ -98,6 +98,7 @@ class DocumentTablePanel extends JPanel {
 					Matcher matcherNotes = pattern.matcher(d.getTitle());
 					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MM yyyy HH:mm");
 					Matcher matcherDateTime = pattern.matcher(d.getDateTime().format(formatter));
+					Matcher matcherCoderName = pattern.matcher(d.getCoder().getName());
 					if (documentFilterPattern.equals("")) {
 						return true;
 					} else if (matcherTitle.find()) {
@@ -113,6 +114,8 @@ class DocumentTablePanel extends JPanel {
 					} else if (matcherNotes.find()) {
 						return true;
 					} else if (matcherDateTime.find()) {
+						return true;
+					} else if (matcherCoderName.find()) {
 						return true;
 					} else {
 						return false;

@@ -6,7 +6,7 @@ import java.util.HashMap;
 /**
  * Represents a coder, including all permissions and coder-specific settings.
  */
-public class Coder {
+public class Coder implements Comparable<Coder> {
 	private int id, popupWidth, refresh, fontSize;
 	private String name;
 	private Color color;
@@ -893,6 +893,15 @@ public class Coder {
 			return true;
 		} else {
 			return false;
+		}
+	}
+
+	@Override
+	public int compareTo(Coder otherCoder) {
+		if (this.getId() < otherCoder.getId()) {
+			return -1;
+		} else {
+			return 1;
 		}
 	}
 }

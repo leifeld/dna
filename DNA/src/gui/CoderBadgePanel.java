@@ -19,7 +19,8 @@ import model.Coder;
  */
 public class CoderBadgePanel extends JPanel {
 	private static final long serialVersionUID = 2559090800466724235L;
-	JLabel coderName;
+	private Coder coder;
+	private JLabel coderName;
 
 	/**
 	 * Constructor for CoderBadgePanel
@@ -27,7 +28,8 @@ public class CoderBadgePanel extends JPanel {
 	 * @param coder  A Coder object, which contains ID, name, and color.
 	 */
 	public CoderBadgePanel(Coder coder) {
-		createLayout(coder, 18, 0, 22);
+		this.coder = coder;
+		createLayout(18, 0, 22);
 	}
 
 	/**
@@ -39,21 +41,21 @@ public class CoderBadgePanel extends JPanel {
 	 * @param maxNameLength  Maximal character length of the name.
 	 */
 	public CoderBadgePanel(Coder coder, int buttonSize, int border, int maxNameLength) {
-		createLayout(coder, buttonSize, border, maxNameLength);
+		this.coder = coder;
+		createLayout(buttonSize, border, maxNameLength);
 	}
 
 	/**
 	 * Constructor for CoderBadgePanel which looks up the active coder
 	 */
 	public CoderBadgePanel() {
-		Coder coder;
 		if (Dna.sql.getConnectionProfile() == null || Dna.sql.getActiveCoder() == null) {
-			coder = new Coder(-1, "(no coder)", Color.BLACK);
+			this.coder = new Coder(-1, "(no coder)", Color.BLACK);
 		} else {
-			coder = Dna.sql.getActiveCoder();
+			this.coder = Dna.sql.getActiveCoder();
 		}
 		
-		createLayout(coder, 18, 1, 22);
+		createLayout(18, 1, 22);
 	}
 	
 	/**
@@ -65,20 +67,20 @@ public class CoderBadgePanel extends JPanel {
 	 * @param border         Border margin. Can be 0.
 	 * @param maxNameLength  Maximal character length of the name.
 	 */
-	private void createLayout(Coder coder, int buttonSize, int border, int maxNameLength) {
+	private void createLayout(int buttonSize, int border, int maxNameLength) {
 		this.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
 		JButton colorButton = (new JButton() {
 			private static final long serialVersionUID = -7254611710375602710L;
 			public void paintComponent(Graphics g) {
 				super.paintComponent(g);
-				g.setColor(coder.getColor());
+				g.setColor(CoderBadgePanel.this.coder.getColor());
 				g.fillRect(0, 0, buttonSize, buttonSize);
 			}
 		});
 		colorButton.setPreferredSize(new Dimension(buttonSize, buttonSize));
 		colorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		colorButton.setEnabled(false);
-		String name = coder.getName();
+		String name = CoderBadgePanel.this.coder.getName();
 
 		int nameLength = name.length();
 		if (nameLength > maxNameLength) {
@@ -87,10 +89,10 @@ public class CoderBadgePanel extends JPanel {
 			name = name + "...";
 		}
 
-		coderName = new JLabel(name);
-		coderName.setLabelFor(colorButton);
+		CoderBadgePanel.this.coderName = new JLabel(name);
+		CoderBadgePanel.this.coderName.setLabelFor(colorButton);
 		this.add(colorButton);
-		this.add(coderName);
+		this.add(CoderBadgePanel.this.coderName);
 		if (border > 0) {
 			this.setBorder(new EmptyBorder(border, 0, border, 0));
 		}
@@ -102,6 +104,15 @@ public class CoderBadgePanel extends JPanel {
 	 * @param color The new color for the name.
 	 */
 	void setCoderNameColor(Color color) {
-		coderName.setForeground(color);
+		this.coderName.setForeground(color);
+	}
+	
+	/**
+	 * Get the coder.
+	 * 
+	 * @return The coder.
+	 */
+	public Coder getCoder() {
+		return this.coder;
 	}
 }

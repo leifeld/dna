@@ -15,13 +15,16 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -29,9 +32,7 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
 import javax.swing.ListCellRenderer;
-import javax.swing.SpinnerDateModel;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
@@ -53,23 +54,21 @@ import model.Coder;
 import model.Document;
 import model.Statement;
 
-@SuppressWarnings("serial")
-public class DocumentEditor extends JDialog {
+class DocumentEditor extends JDialog {
+	private static final long serialVersionUID = 8937997814159804095L;
+	private JScrollPane textScroller;
+	private JButton okButton;
+	private JPanel newArticlePanel;
+	private JXTextField titleField;
+	private JXTextArea textArea, notesArea;
+	private JXComboBox authorBox, sourceBox, sectionBox, typeBox;
+	private DateTimePicker dateTimePicker;
+	private int[] documentIds;
+	private ArrayList<Document> documents;
+	private boolean changesApplied = false;
+	private JComboBox<Coder> coderComboBox = null;
+	private CoderBadgePanel cbp = null;
 	
-	String dbfile;
-	SpinnerDateModel dateModel;
-	JSpinner dateSpinner;
-	JScrollPane textScroller;
-	JButton okButton;
-	JPanel newArticlePanel;
-	JXTextField titleField;
-	JXTextArea textArea, notesArea;
-	JXComboBox authorBox, sourceBox, sectionBox, typeBox;
-	DateTimePicker dateTimePicker;
-	int[] documentIds;
-	ArrayList<Document> documents;
-	boolean changesApplied = false;
-
 	public DocumentEditor(int[] documentIds) {
 		this.documentIds = documentIds;
 		documents = Dna.sql.getDocuments(documentIds);
@@ -105,9 +104,10 @@ public class DocumentEditor extends JDialog {
 				+ "</dl>"
 				+ "<p width=\"500\">For example, you can combine title and date like this: "
 				+ "%title (%day.%month.%year).</p>"
-				+ "<p width=\"500\">Note that the date/time field may show as empty when multiple "
-				+ "documents are edited simultaneously. This just means the original date will be "
-				+ "kept when saving unless edited.</p></html>";
+				+ "<p width=\"500\">Note that the date or time fields may show as empty when multiple "
+				+ "documents are edited simultaneously. This just means the original date or time will be "
+				+ "kept when saving unless edited. It is possible to edit only the date or only the time "
+				+ "if necessary while keeping the other field empty.</p></html>";
 		
 		this.setModal(true);
 		if (numDocuments == 0) {
@@ -285,9 +285,50 @@ public class DocumentEditor extends JDialog {
 		gbc.gridy = 2;
 		gbc.gridx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
-		JPanel coderPanel = new CoderBadgePanel();
-		fieldsPanel.add(coderPanel, gbc);
-
+		if (Dna.sql.getActiveCoder().isPermissionEditOthersDocuments()) {
+			// create list of eligible coders
+			List<Coder> eligibleCoders = Dna.sql.getCoders()
+					.stream()
+					.filter(e -> e.getId() == Dna.sql.getActiveCoder().getId() || (e.getId() != Dna.sql.getActiveCoder().getId() && Dna.sql.getActiveCoder().isPermissionEditOthersDocuments(e.getId())))
+					.sorted()
+					.collect(Collectors.toList());
+			if (eligibleCoders.size() == 1) { // only one eligible coder (must be the active coder); create coder badge panel instead of combo box
+				this.cbp = new CoderBadgePanel(eligibleCoders.get(0));
+				fieldsPanel.add(this.cbp, gbc);
+			} else {
+				// check if there is only a single coder across the documents and add a fake coder for multiple coders coder varies across documents
+				boolean oneCoder = (numDocuments == 0 || documents
+						.stream()
+						.mapToInt(Document::getCoder)
+						.distinct()
+						.limit(2)
+						.count() <= 1);
+				if (!oneCoder) {
+					eligibleCoders.add(0, new Coder(-1, "(keep multiple coders)", Color.BLACK));
+				}
+				
+				// create and populate combo box with coders
+				ArrayList<Coder> coderArrayList = new ArrayList<Coder>(eligibleCoders);
+				this.coderComboBox = new JComboBox<Coder>();
+				CoderComboBoxModel comboBoxModel = new CoderComboBoxModel(coderArrayList);
+				this.coderComboBox.setModel(comboBoxModel);
+				this.coderComboBox.setRenderer(new CoderComboBoxRenderer(18, 0, 97));
+				
+				// select the right coder and add combo box to panel
+				if (numDocuments == 0) {
+					this.coderComboBox.setSelectedIndex(IntStream.range(0, eligibleCoders.size()).filter(i -> Dna.sql.getActiveCoder().getId() == eligibleCoders.get(i).getId()).findFirst().getAsInt());
+				} else if (oneCoder) {
+					this.coderComboBox.setSelectedIndex(IntStream.range(0, eligibleCoders.size()).filter(i -> documents.get(0).getCoder() == eligibleCoders.get(i).getId()).findFirst().getAsInt());
+				} else {
+					this.coderComboBox.setSelectedIndex(0);
+				}
+				fieldsPanel.add(this.coderComboBox, gbc);
+			}
+		} else { // no permission to add other coders' documents; create coder badge panel
+			this.cbp = new CoderBadgePanel(Dna.sql.getActiveCoder());
+			fieldsPanel.add(this.cbp, gbc);
+		}
+		
 		gbc.gridy = 3;
 		gbc.gridx = 1;
 		authorBox = new JXComboBox();
@@ -381,6 +422,12 @@ public class DocumentEditor extends JDialog {
 			okButton.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
+					int coder = 1;
+					if (DocumentEditor.this.cbp != null) {
+						coder = cbp.getCoder().getId();
+					} else {
+						coder = ((Coder) coderComboBox.getSelectedItem()).getId();
+					}
 					String text = textArea.getText();
 					String title = titleField.getText().substring(0, Math.min(190, titleField.getText().length()));
 					LocalDateTime dateTime = dateTimePicker.getDateTimeStrict();
@@ -391,7 +438,7 @@ public class DocumentEditor extends JDialog {
 					String type = ((String) typeBox.getModel().getSelectedItem()).substring(0, Math.min(190, ((String) typeBox.getModel().getSelectedItem()).length()));
 					
 					ArrayList<Document> al = new ArrayList<Document>();
-					Document d = new Document(-1, Dna.sql.getConnectionProfile().getCoderId(), title, text, author, source, section, type, notes, dateTime, new ArrayList<Statement>());
+					Document d = new Document(-1, coder, title, text, author, source, section, type, notes, dateTime, new ArrayList<Statement>());
 					al.add(d);
 					documents = al;
 					documentIds = Dna.sql.addDocuments(documents);
@@ -409,10 +456,18 @@ public class DocumentEditor extends JDialog {
 			okButton.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
+					int coder = 1;
+					if (DocumentEditor.this.cbp != null) {
+						coder = cbp.getCoder().getId();
+					} else {
+						coder = ((Coder) coderComboBox.getSelectedItem()).getId(); // can be -1 for keeping existing coders; needs to be taken care of in the Sql.updateDocuments method
+					}
 					String message = "Are you sure you want to recode " + documentIds.length + " documents and save the changes to the database?";
 					int dialog = JOptionPane.showConfirmDialog(DocumentEditor.this, message, "Confirmation required", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
-						Dna.sql.updateDocuments(documentIds, titleField.getText(), textArea.getText(), (String) authorBox.getSelectedItem(), (String) sourceBox.getSelectedItem(), (String) sectionBox.getSelectedItem(), (String) typeBox.getSelectedItem(), notesArea.getText(), dateTimePicker.getDateTimeStrict());
+						LocalDate ld = dateTimePicker.getDatePicker().getDate();
+						LocalTime lt = dateTimePicker.getTimePicker().getTime();
+						Dna.sql.updateDocuments(documentIds, coder, titleField.getText(), textArea.getText(), (String) authorBox.getSelectedItem(), (String) sourceBox.getSelectedItem(), (String) sectionBox.getSelectedItem(), (String) typeBox.getSelectedItem(), notesArea.getText(), ld, lt);
 						changesApplied = true;
 						LogEvent l = new LogEvent(Logger.MESSAGE,
 								"[GUI] " + documentIds.length + " documents were updated in the database.",
@@ -502,20 +557,6 @@ public class DocumentEditor extends JDialog {
 				for (int i = 0; i < documents.size(); i++) {
 					if (!documents.get(i).getType().equals(contentType)) {
 						typeBox.setSelectedItem("%type");
-						break;
-					}
-				}
-			}
-			int contentCoder = documents.get(0).getCoder();
-			if (Dna.sql.getConnectionProfile().getCoderId() == contentCoder) {
-				coderPanel = new CoderBadgePanel(Dna.sql.getActiveCoder());
-			} else {
-				coderPanel = new CoderBadgePanel(Dna.sql.getCoder(contentCoder));
-			}
-			if (numDocuments > 1) {
-				for (int i = 0; i < documents.size(); i++) {
-					if (documents.get(i).getCoder() != contentCoder) {
-						coderPanel = new CoderBadgePanel(new Coder(-1, "(multiple coders)", new Color(0, 0, 0, 0)));
 						break;
 					}
 				}
