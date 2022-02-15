@@ -1888,7 +1888,7 @@ public class MainWindow extends JFrame {
 		
 		public void actionPerformed(ActionEvent e) {
 			if (Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
-				new CoderManager(MainWindow.this);
+				CoderManager cm = new CoderManager(MainWindow.this);
 				if (Dna.sql.getActiveCoder().getId() != 1) {
 					Coder coderCopy = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
 					
@@ -1944,6 +1944,14 @@ public class MainWindow extends JFrame {
 						actionCoderRelationsEditor.setEnabled(false);
 					}
 				}
+				
+				if (cm.isDeletedCoder()) {
+					refreshDocumentTable();
+					refreshStatementTable();
+				}
+				cm.dispose();
+				Dna.sql.selectCoder(Dna.sql.getActiveCoder().getId()); // refresh permissions in case they were updated
+				
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: opened coder manager.",
 						"Opened a coder manager window from the GUI.");

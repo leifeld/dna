@@ -67,6 +67,7 @@ class CoderManager extends JDialog {
 	Coder selectedCoderCopy;
 	
 	private JButton reloadButton, addButton, deleteButton, applyButton;
+	private boolean deletedCoder;
 
 	/**
 	 * Constructor: create a new coder manager dialog.
@@ -80,6 +81,7 @@ class CoderManager extends JDialog {
 		this.setLayout(new BorderLayout());
 		
 		// get coders from database
+		deletedCoder = false;
 		coderArrayList = Dna.sql.getCoders();
 		Coder[] coders = new Coder[coderArrayList.size()];
 		coders = coderArrayList.toArray(coders);
@@ -443,6 +445,7 @@ class CoderManager extends JDialog {
 					if (dialog == 0) {
 						boolean success = Dna.sql.deleteCoder(coderId);
 						if (success) {
+							CoderManager.this.deletedCoder = true;
 							coderList.clearSelection();
 							repopulateCoderListFromDatabase(-1); // -1 means select no coder after loading coders
 							JOptionPane.showMessageDialog(CoderManager.this, "Coder " + coderId + " was successfully deleted.");
@@ -788,7 +791,7 @@ class CoderManager extends JDialog {
 				deleteButton.setEnabled(true);
 			}
 		}
-		if (coderList.getSelectedValue() != null && coderList.getSelectedValue().getId() == 1) {
+		if (coderList.getSelectedValue() != null && (coderList.getSelectedValue().getId() == 1 || coderList.getSelectedValue().getId() == Dna.sql.getActiveCoder().getId())) {
 			valid = false;
 			deleteButton.setEnabled(false);
 		}
@@ -826,6 +829,15 @@ class CoderManager extends JDialog {
 		} else {
 			applyButton.setEnabled(false);
 		}
+	}
+	
+	/**
+	 * Has a coder been deleted?
+	 * 
+	 * @return Indicator of whether a coder has been deleted.
+	 */
+	boolean isDeletedCoder() {
+		return CoderManager.this.deletedCoder;
 	}
 	
 	/**
