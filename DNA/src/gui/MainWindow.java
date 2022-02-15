@@ -3,6 +3,7 @@ package gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.ComponentOrientation;
 import java.awt.Container;
 import java.awt.Image;
 import java.awt.Point;
@@ -14,6 +15,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.font.TextAttribute;
 import java.awt.geom.Rectangle2D;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -630,6 +632,24 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
+		/*
+		JCheckBoxMenuItem rightToLeftItem = menuBar.getRightToLeftItem();
+		rightToLeftItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (textPanel.getTextWindow().getComponentOrientation() == ComponentOrientation.LEFT_TO_RIGHT &&
+						textPanel.getTextScrollPane().getComponentOrientation() == ComponentOrientation.LEFT_TO_RIGHT) {
+					textPanel.getTextWindow().setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+					textPanel.getTextScrollPane().setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+					textPanel.getTextWindow().getDocument().putProperty(TextAttribute.RUN_DIRECTION, TextAttribute.RUN_DIRECTION_RTL);
+				} else {
+					textPanel.getTextWindow().setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+					textPanel.getTextScrollPane().setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+					textPanel.getTextWindow().getDocument().putProperty(TextAttribute.RUN_DIRECTION, TextAttribute.RUN_DIRECTION_LTR);
+				}
+			}
+		});
+		*/
 		JCheckBoxMenuItem popupAutoCompleteItem = menuBar.getPopupAutoCompleteItem();
 		popupAutoCompleteItem.addActionListener(new ActionListener() {
 			@Override
@@ -1436,6 +1456,11 @@ public class MainWindow extends JFrame {
 		} else {
 			actionCoderRelationsEditor.setEnabled(false);
 		}
+		/*
+		textPanel.getTextWindow().setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+		textPanel.getTextScrollPane().setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+		textPanel.getTextWindow().getDocument().putProperty(TextAttribute.RUN_DIRECTION, TextAttribute.RUN_DIRECTION_LTR);
+		*/
 	}
 	
 	/**

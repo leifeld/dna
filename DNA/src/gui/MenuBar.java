@@ -43,7 +43,7 @@ public class MenuBar extends JMenuBar {
 	private static final long serialVersionUID = 6631392079690346097L;
 	private JLabel popupWidthIconLabel, popupWidthDescriptionLabel;
 	private JSpinner popupWidthSpinner;
-	private JCheckBoxMenuItem popupAutoCompleteItem, popupDecorationItem, colorByCoderItem;
+	private JCheckBoxMenuItem rightToLeftItem, popupAutoCompleteItem, popupDecorationItem, colorByCoderItem;
 	private JLabel fontSizeIconLabel, fontSizeDescriptionLabel;
 	private JSpinner fontSizeSpinner;
 	private SpinnerNumberModel fontSizeModel;
@@ -220,7 +220,16 @@ public class MenuBar extends JMenuBar {
 		spinnerPanel.add(popupWidthDescriptionLabel);
 		spinnerPanel.add(popupWidthSpinner);
 		settingsMenu.add(spinnerPanel);
-
+		
+		/*
+		// settings menu: right to left text orientation
+		ImageIcon rightToLeftIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-text-direction-rtl.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		rightToLeftItem = new JCheckBoxMenuItem("Right to left text     ", rightToLeftIcon, false);
+		rightToLeftItem.setToolTipText("If the menu item is selected, the document text will be displayed from right to left.");
+		rightToLeftItem.setEnabled(false);
+		settingsMenu.add(rightToLeftItem);
+		*/
+		
 		// settings menu: popup auto-completion toggle button
 		ImageIcon popupAutoCompleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-forms.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		popupAutoCompleteItem = new JCheckBoxMenuItem("Popup field auto-completion     ", popupAutoCompleteIcon, false);
@@ -274,6 +283,15 @@ public class MenuBar extends JMenuBar {
 	}
 
 	/**
+	 * Get a reference to the right to left item from the Settings menu.
+	 * 
+	 * @return  The right to left menu item.
+	 */
+	JCheckBoxMenuItem getRightToLeftItem() {
+		return rightToLeftItem;
+	}
+
+	/**
 	 * Get a reference to the popup autocomplete item from the Settings menu.
 	 * 
 	 * @return  The popup autocomplete menu item.
@@ -309,6 +327,11 @@ public class MenuBar extends JMenuBar {
 			popupWidthIconLabel.setEnabled(false);
 			popupWidthDescriptionLabel.setEnabled(false);
 			popupWidthSpinner.setEnabled(false);
+
+			/*
+			rightToLeftItem.setEnabled(false);
+			rightToLeftItem.setSelected(false);
+			*/
 			
 			popupAutoCompleteItem.setEnabled(false);
 			popupAutoCompleteItem.setSelected(false);
@@ -327,6 +350,11 @@ public class MenuBar extends JMenuBar {
 			popupWidthDescriptionLabel.setEnabled(true);
 			popupWidthSpinner.setEnabled(true);
 			popupWidthSpinner.setValue(Dna.sql.getActiveCoder().getPopupWidth());
+
+			/*
+			rightToLeftItem.setEnabled(true);
+			rightToLeftItem.setSelected(false);
+			*/
 			
 			popupAutoCompleteItem.setEnabled(true);
 			if (Dna.sql.getActiveCoder().isPopupAutoComplete() == true) {
