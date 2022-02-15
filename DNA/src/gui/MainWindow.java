@@ -875,7 +875,7 @@ public class MainWindow extends JFrame {
 					statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
 				}
 			});
-			popup.setModal(true); // set modal after adding controls because otherwise controls can't be added anymore while modal
+			// popup.setModal(true); // disabled for now: set modal after adding controls because otherwise controls can't be added anymore while modal
 		} else { // no window decoration: focus lost listener
 			popup.addWindowFocusListener(new WindowAdapter() {
 				public void windowLostFocus(WindowEvent e) {
