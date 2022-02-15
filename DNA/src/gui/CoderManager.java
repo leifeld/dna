@@ -71,7 +71,8 @@ class CoderManager extends JDialog {
 	/**
 	 * Constructor: create a new coder manager dialog.
 	 */
-	CoderManager() {
+	CoderManager(Frame parent) {
+		super(parent, "Coder manager", true);
 		this.setModal(true);
 		this.setTitle("Coder manager");
 		ImageIcon coderIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-users.png"));

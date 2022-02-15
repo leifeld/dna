@@ -1888,7 +1888,7 @@ public class MainWindow extends JFrame {
 		
 		public void actionPerformed(ActionEvent e) {
 			if (Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
-				new CoderManager();
+				new CoderManager(MainWindow.this);
 				if (Dna.sql.getActiveCoder().getId() != 1) {
 					Coder coderCopy = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
 					
@@ -2274,7 +2274,7 @@ public class MainWindow extends JFrame {
 		
 		public void actionPerformed(ActionEvent e) {
 			if (Dna.sql.getActiveCoder().isPermissionEditStatementTypes()) {
-				new StatementTypeEditor();
+				new StatementTypeEditor(MainWindow.this);
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: opened statement type editor.",
 						"Opened a statement type editor window from the GUI.");
