@@ -73,7 +73,7 @@ import sql.Sql.SQLCloseable;
 class Importer extends JDialog {
 	private static final long serialVersionUID = -5295303422543731461L;
 	private JButton dbButton, filterButton, selectAll, cancelButton, importButton;
-	private DocumentTableModel dtm;
+	private ImportDocumentTableModel idtm;
 	private CoderTableModel coderTableModel;
 	private ArrayList<Coder> domesticCoders;
 	private JTable documentTable;
@@ -281,8 +281,8 @@ class Importer extends JDialog {
 		panel.add(northPanel, BorderLayout.NORTH);
 		
 		// document table panel
-		dtm = new DocumentTableModel();
-		documentTable = new JTable(dtm);
+		idtm = new ImportDocumentTableModel();
+		documentTable = new JTable(idtm);
 		documentTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         documentTable.setDefaultRenderer(Coder.class, new CoderTableCellRenderer());
 		
@@ -294,7 +294,7 @@ class Importer extends JDialog {
 		documentTable.getTableHeader().setReorderingAllowed(false);
 		
 		// allow rows to be sorted by column by pressing on column header
-		TableRowSorter<DocumentTableModel> sorter = new TableRowSorter<DocumentTableModel>(dtm);
+		TableRowSorter<ImportDocumentTableModel> sorter = new TableRowSorter<ImportDocumentTableModel>(idtm);
 		documentTable.setRowSorter(sorter);
 
 		JScrollPane tableScrollPane = new JScrollPane(documentTable);
@@ -373,14 +373,14 @@ class Importer extends JDialog {
 	                    null,
 	                    "");
 				if ((s != null) && (s.length() > 0)) {
-					for (int i = 0; i < dtm.getRowCount(); i++) {
+					for (int i = 0; i < idtm.getRowCount(); i++) {
 						Pattern p = Pattern.compile(s);
-	    				Matcher m = p.matcher(dtm.getValueAt(i, 1).toString());
+	    				Matcher m = p.matcher(idtm.getValueAt(i, 1).toString());
 	    				boolean b = m.find();
 	    				if (b == true) {
-	    					dtm.setValueAt(true, i, 0);
+	    					idtm.setValueAt(true, i, 0);
 	    				} else {
-	    					dtm.setValueAt(false, i, 0);
+	    					idtm.setValueAt(false, i, 0);
 	    				}
 					}
 				}
@@ -393,13 +393,13 @@ class Importer extends JDialog {
 		selectAll = new JButton("(Un)select all", selectIcon);
 		selectAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if ((Boolean) dtm.getValueAt(0, 0) == false) {
-					for (int i = 0; i < dtm.getRowCount(); i++) {
-						dtm.setValueAt(true, i, 0);
+				if ((Boolean) idtm.getValueAt(0, 0) == false) {
+					for (int i = 0; i < idtm.getRowCount(); i++) {
+						idtm.setValueAt(true, i, 0);
 					}
 				} else {
-					for (int i = 0; i < dtm.getRowCount(); i++) {
-						dtm.setValueAt(false, i, 0);
+					for (int i = 0; i < idtm.getRowCount(); i++) {
+						idtm.setValueAt(false, i, 0);
 					}
 				}
 				
@@ -593,7 +593,7 @@ class Importer extends JDialog {
 	 * does not save the text of the documents. For this purpose, it uses the
 	 * {@link model.TableDocument TableDocument} class.
 	 */
-	private class DocumentTableModel extends AbstractTableModel {
+	private class ImportDocumentTableModel extends AbstractTableModel {
 		private static final long serialVersionUID = 7098098353712215778L;
 		
 		/**
@@ -685,7 +685,7 @@ class Importer extends JDialog {
 				return documents.get(rowIndex).getCoder();
 			} else if (columnIndex == 4) {
 				LocalDateTime d = documents.get(rowIndex).getDateTime();
-				DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd MM yyyy, HH:mm:ss");
+				DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd, HH:mm:ss");
 				String dateString = d.format(dateTimeFormatter);
 				return dateString;
 			} else {
@@ -703,7 +703,7 @@ class Importer extends JDialog {
 			switch( columnIndex ){
 				case 0: return Boolean.class;
 				case 1: return String.class;
-				case 2: return int.class;
+				case 2: return Integer.class;
 				case 3: return Coder.class;
 				case 4: return String.class;
 				default: return null;
@@ -783,7 +783,7 @@ class Importer extends JDialog {
 			filterButton.setEnabled(false);
 			selectAll.setEnabled(false);
 			importButton.setEnabled(false);
-			dtm.clear();
+			idtm.clear();
 		}
 		
 		@Override
@@ -831,13 +831,13 @@ class Importer extends JDialog {
 	    
 	    @Override
 	    protected void process(List<TableDocument> chunks) {
-	    	dtm.addDocuments(chunks);
+	    	idtm.addDocuments(chunks);
 	    }
 
 	    @Override
 	    protected void done() {
 			dbButton.setEnabled(true);
-			if (dtm.getRowCount() > 0) {
+			if (idtm.getRowCount() > 0) {
 				filterButton.setEnabled(true);
 				selectAll.setEnabled(true);
 				importButton.setEnabled(true);
@@ -879,11 +879,11 @@ class Importer extends JDialog {
 
 			// some preprocessing: compile list of document IDs to import after skipping unselected/empty/full/unmapped documents
 			docIds = new ArrayList<Integer>();
-			for (int i = 0; i < dtm.getRowCount(); i++) {
+			for (int i = 0; i < idtm.getRowCount(); i++) {
 				if (Importer.this.sql.getActiveCoder().isPermissionImportDocuments() && 
 						Dna.sql.getActiveCoder().isPermissionImportDocuments() &&
-						dtm.isSelected(i)) {
-					TableDocument td = dtm.getTableDocument(i);
+						idtm.isSelected(i)) {
+					TableDocument td = idtm.getTableDocument(i);
 					if (!(td.getFrequency() == 0 && skipEmptyBox.isSelected()) &&
 							!(td.getFrequency() > 0 && skipFullBox.isSelected()) &&
 							!(coderDocumentBox.isSelected() && coderMap.get(td.getCoder().getId()) != Dna.sql.getActiveCoder().getId())) {

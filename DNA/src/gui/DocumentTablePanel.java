@@ -375,7 +375,7 @@ class DocumentTablePanel extends JPanel {
 					formatter = DateTimeFormatter.ofPattern("dd MM yyyy");
 					setText(d.format(formatter));
 				} else if (column == 4) {
-					formatter = DateTimeFormatter.ofPattern("HH:mm");
+					formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 					setText(d.format(formatter));
 				} else {
 					setText(d.toString());

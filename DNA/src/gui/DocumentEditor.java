@@ -262,8 +262,8 @@ class DocumentEditor extends JDialog {
         dateSettings.setFormatForDatesCommonEra("dd MM yyyy");
         dateSettings.setFormatForDatesBeforeCommonEra("dd MM uuuu");
         TimePickerSettings timeSettings = new TimePickerSettings();
-        timeSettings.setFormatForDisplayTime("HH:mm");
-        timeSettings.setFormatForMenuTimes("HH:mm");
+        timeSettings.setFormatForDisplayTime("HH:mm:ss");
+        timeSettings.setFormatForMenuTimes("HH:mm:ss");
         dateTimePicker = new DateTimePicker(dateSettings, timeSettings);
         dateTimePicker.getDatePicker().setDateToToday();
         dateTimePicker.getTimePicker().setTime(LocalTime.MIDNIGHT);
