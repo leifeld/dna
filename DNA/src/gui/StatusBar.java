@@ -36,7 +36,7 @@ class StatusBar extends JPanel implements LogListener {
 		JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		ImageIcon openDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JButton databaseButton = new JButton(openDatabaseIcon);
-		
+
 		databaseButton.setContentAreaFilled(false);
 		databaseButton.setBorderPainted(false);
 		databaseButton.setBorder(null);

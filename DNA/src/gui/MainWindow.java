@@ -3,7 +3,6 @@ package gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.ComponentOrientation;
 import java.awt.Container;
 import java.awt.Image;
 import java.awt.Point;
@@ -15,7 +14,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.font.TextAttribute;
 import java.awt.geom.Rectangle2D;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -492,7 +490,6 @@ public class MainWindow extends JFrame {
 						@Override
 						public void actionPerformed(ActionEvent e) {
 							int documentId = documentTablePanel.getSelectedDocumentId();
-							int documentModelRow = documentTableModel.getModelRowById(documentId);
 							int selectionStart = textWindow.getSelectionStart();
 							int selectionEnd = textWindow.getSelectionEnd();
 							Statement statement = new Statement(selectionStart,
@@ -506,20 +503,9 @@ public class MainWindow extends JFrame {
 								textPanel.paintStatements();
 								textWindow.setCaretPosition(selectionEnd);
 								
-								// add statement to statement table in GUI
-								statement.setId(statementId);
-								statement.getValues().clear();
-								statement.setStatementTypeLabel(statementType.getLabel());
-								statement.setStatementTypeColor(statementType.getColor());
-								statement.setCoderName(Dna.sql.getActiveCoder().getName());
-								statement.setCoderColor(Dna.sql.getActiveCoder().getColor());
-								statement.setDocumentId(documentId);
-								statement.setDateTime(documentTableModel.getRow(documentModelRow).getDateTime());
-								statement.setText(textWindow.getText().substring(selectionStart, selectionEnd));
-								statementTableModel.addRow(statement);
-								
-								// open statement popup
+								// retrieve added statement, add to statement table, and open popup
 								Statement s = Dna.sql.getStatement(statementId);
+								statementTableModel.addRow(s);
 								Point location = textWindow.getLocationOnScreen();
 								textWindow.setSelectionStart(statement.getStart());
 								textWindow.setSelectionEnd(statement.getStop());
@@ -632,24 +618,6 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
-		/*
-		JCheckBoxMenuItem rightToLeftItem = menuBar.getRightToLeftItem();
-		rightToLeftItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				if (textPanel.getTextWindow().getComponentOrientation() == ComponentOrientation.LEFT_TO_RIGHT &&
-						textPanel.getTextScrollPane().getComponentOrientation() == ComponentOrientation.LEFT_TO_RIGHT) {
-					textPanel.getTextWindow().setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-					textPanel.getTextScrollPane().setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-					textPanel.getTextWindow().getDocument().putProperty(TextAttribute.RUN_DIRECTION, TextAttribute.RUN_DIRECTION_RTL);
-				} else {
-					textPanel.getTextWindow().setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-					textPanel.getTextScrollPane().setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-					textPanel.getTextWindow().getDocument().putProperty(TextAttribute.RUN_DIRECTION, TextAttribute.RUN_DIRECTION_LTR);
-				}
-			}
-		});
-		*/
 		JCheckBoxMenuItem popupAutoCompleteItem = menuBar.getPopupAutoCompleteItem();
 		popupAutoCompleteItem.addActionListener(new ActionListener() {
 			@Override
@@ -1456,11 +1424,6 @@ public class MainWindow extends JFrame {
 		} else {
 			actionCoderRelationsEditor.setEnabled(false);
 		}
-		/*
-		textPanel.getTextWindow().setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-		textPanel.getTextScrollPane().setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-		textPanel.getTextWindow().getDocument().putProperty(TextAttribute.RUN_DIRECTION, TextAttribute.RUN_DIRECTION_LTR);
-		*/
 	}
 	
 	/**
