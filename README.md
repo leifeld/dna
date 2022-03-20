@@ -1,4 +1,4 @@
-![](./DNA/src/icons/dna128.png)
+![](./DNA/src/icons/dna256.png)
 
 ## Discourse Network Analyzer (DNA)
 
