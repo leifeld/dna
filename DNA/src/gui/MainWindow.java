@@ -175,8 +175,15 @@ public class MainWindow extends JFrame {
 		c = getContentPane();
 		this.setTitle("Discourse Network Analyzer");
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		ImageIcon dna32Icon = new ImageIcon(getClass().getResource("/icons/dna32.png"));
-		this.setIconImage(dna32Icon.getImage());
+		
+		List<Image> dnaIcons = new ArrayList<Image>();
+		dnaIcons.add(new ImageIcon(getClass().getResource("/icons/dna512.png")).getImage());
+		dnaIcons.add(new ImageIcon(getClass().getResource("/icons/dna256.png")).getImage());
+		dnaIcons.add(new ImageIcon(getClass().getResource("/icons/dna128.png")).getImage());
+		dnaIcons.add(new ImageIcon(getClass().getResource("/icons/dna64.png")).getImage());
+		dnaIcons.add(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage());
+		dnaIcons.add(new ImageIcon(getClass().getResource("/icons/dna16.png")).getImage());
+		this.setIconImages(dnaIcons);
 		
 		// close SQL connection before exit
 		this.addWindowListener(new WindowAdapter() {

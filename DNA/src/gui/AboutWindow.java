@@ -37,7 +37,7 @@ public class AboutWindow extends JDialog {
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		aboutContents = new JPanel(new BorderLayout());
 
-		Icon dnaTextIcon = new ImageIcon(getClass().getResource("/icons/dna32text.png"));
+		Icon dnaTextIcon = new ImageIcon(getClass().getResource("/icons/dna128.png"));
 		JLabel dnaIcon = new JLabel(dnaTextIcon);
 		JPanel dnaIconPanel = new JPanel(new FlowLayout());
 		dnaIconPanel.add(dnaIcon);
