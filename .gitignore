@@ -17,3 +17,9 @@ manual/dna-manual.pdf
 manual/sample.TXT
 DNA/bin
 output
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
