@@ -10,6 +10,8 @@ The Java software Discourse Network Analyzer (DNA) is a qualitative content anal
 
 - If you have questions or want to report bugs, please create an issue in the [issue tracker](https://github.com/leifeld/dna/issues).
 
+[![Gradle build](https://github.com/leifeld/dna/actions/workflows/gradle.yml/badge.svg)](https://github.com/leifeld/dna/actions/workflows/gradle.yml)
+
 ## rDNA: Connect DNA to the statistical programming environment R
 
 This is the companion package to DNA. It integrates the Java software with the statistical computing environment `R`.
