@@ -25,4 +25,5 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v3
       with:
-        path: dna/build/libs/*.jar
+        name: DNA jar
+        path: dna/build/libs
