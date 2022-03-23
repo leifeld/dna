@@ -21,3 +21,9 @@ jobs:
     
     - name: Execute Gradle build
       run: ./gradlew build
+    
+    - name: Store artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: DNA jar
+        path: build/libs
