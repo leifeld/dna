@@ -1,13 +1,14 @@
 // Java plugin
 plugins {
     id 'java'
+    id 'eclipse'
 }
 
 // create jar file, not just .class files
 jar {
     // point the manifest to the right class
     manifest {
-        attributes 'Main-Class': 'dna/Dna'
+        attributes 'Main-Class': 'dna.Dna'
     }
     
     // make a fat jar
@@ -25,6 +26,9 @@ jar {
             archiveVersion = matches[0]
         }
     }
+    
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
 }
 
 // set up Maven repository for the jar dependencies
