@@ -125,6 +125,7 @@ public class MainWindow extends JFrame {
 	private ActionCoderRelationsEditor actionCoderRelationsEditor;
 	private ActionLoggerDialog actionLoggerDialog;
 	private ActionAboutWindow actionAboutWindow;
+	private Popup popup = null;
 
 	/**
 	 * A document table swing worker thread.
@@ -351,7 +352,7 @@ public class MainWindow extends JFrame {
 				int rowCount = statementTable.getSelectedRowCount();
 				if (rowCount == 0) {
 					actionRemoveStatements.setEnabled(false);
-				} else if (rowCount == 1) {
+				} else if (rowCount == 1 && (popup == null || !popup.isValid())) {
 					int selectedRow = statementTable.getSelectedRow();
 					int selectedModelIndex = statementTable.convertRowIndexToModel(selectedRow);
 					int statementId = statementTableModel.getRow(selectedModelIndex).getId();
@@ -410,7 +411,7 @@ public class MainWindow extends JFrame {
 							});
 						}
 					}
-				} else if (rowCount > 1) {
+				} else if (rowCount > 1 && (popup == null || !popup.isValid())) {
 					int[] rows = statementTable.getSelectedRows();
 					boolean allOwned = true;
 					boolean allOthersEditPermitted = true;
@@ -454,25 +455,31 @@ public class MainWindow extends JFrame {
 		JTextPane textWindow = textPanel.getTextWindow();
 		textWindow.addMouseListener(new MouseAdapter() {
 			public void mouseReleased(MouseEvent me) {
-				try {
-					mouseListenPopup(me);
-				} catch (ArrayIndexOutOfBoundsException ex) {
-					//no documents available
+				if (popup == null || !popup.isValid()) {
+					try {
+						mouseListenPopup(me);
+					} catch (ArrayIndexOutOfBoundsException ex) {
+						//no documents available
+					}
 				}
 			}
 			public void mousePressed(MouseEvent me) {
-				try {
-					mouseListenPopup(me);
-				} catch (ArrayIndexOutOfBoundsException ex) {
-					//no documents available
+				if (popup == null || !popup.isValid()) {
+					try {
+						mouseListenPopup(me);
+					} catch (ArrayIndexOutOfBoundsException ex) {
+						//no documents available
+					}
 				}
 			}
 
 			public void mouseClicked(MouseEvent me) {
-				try {
-					mouseListenSelect(me);
-				} catch (ArrayIndexOutOfBoundsException ex) {
-					//no documents available
+				if (popup == null || !popup.isValid()) {
+					try {
+						mouseListenSelect(me);
+					} catch (ArrayIndexOutOfBoundsException ex) {
+						//no documents available
+					}
 				}
 			}
 
@@ -758,7 +765,7 @@ public class MainWindow extends JFrame {
 		}
 		
 		// create popup window
-		Popup popup = new Popup(x, y, s, location, Dna.sql.getActiveCoder(), eligibleCoders);
+		this.popup = new Popup(x, y, s, location, Dna.sql.getActiveCoder(), eligibleCoders);
 		
 		// duplicate button action listener
 		JButton duplicate = popup.getDuplicateButton();
