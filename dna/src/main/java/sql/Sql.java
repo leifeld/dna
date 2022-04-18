@@ -11,6 +11,8 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 
@@ -2531,6 +2533,163 @@ public class Sql {
 			Dna.logger.log(e2);
 		}
 	}
+
+	/**
+	 * Update the variable contents of multiple statements using new values.
+	 * 
+	 * @param statementIds  The IDs of the statements to be updated.
+	 * @param values        An ArrayList of ArrayLists of {@link model.Value
+	 *   Value} objects. They are used to update each variable value in each
+	 *   statement. The outer ArrayList is for the statements, and the inner
+	 *   ArrayList is for the variables in the given statement.
+	 * 
+	 * @category statement
+	 */
+	public void updateStatements(ArrayList<Integer> statementIds, ArrayList<ArrayList<Value>> values, ArrayList<Integer> coderIds) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
+				PreparedStatement s2 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("UPDATE DATALONGTEXT SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
+				PreparedStatement s4 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Entity = ? WHERE StatementId = ? AND VariableId = ?;");
+				PreparedStatement s5 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
+				PreparedStatement s6 = conn.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
+				PreparedStatement s7 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
+				PreparedStatement s8 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
+				PreparedStatement s9 = conn.prepareStatement("SELECT COUNT(ID) FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
+				PreparedStatement s10 = conn.prepareStatement("UPDATE STATEMENTS SET Coder = ? WHERE ID = ?;");
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			LogEvent e1 = new LogEvent(Logger.MESSAGE,
+					"[SQL] Started SQL transaction to update " + statementIds.size() + " statements.",
+					"Started a new SQL transaction to update the variables in a set of " + statementIds.size() + " statements. The contents will not be written into the database until the transaction is committed.");
+			Dna.logger.log(e1);
+			Entity entity;
+			int entityId, variableId, attributeVariableId;
+			ResultSet r, r2;
+			for (int i = 0; i < values.size(); i++) {
+				for (int j = 0; j < values.get(i).size(); j++) {
+					variableId = values.get(i).get(j).getVariableId();
+					if (values.get(i).get(j).getDataType().equals("boolean")) {
+						s1.setInt(1, (int) values.get(i).get(j).getValue());
+						s1.setInt(2, statementIds.get(i));
+						s1.setInt(3, variableId);
+						s1.executeUpdate();
+						LogEvent e2 = new LogEvent(Logger.MESSAGE,
+								"[SQL]  ├─ Variable " + variableId + " in Statement " + statementIds.get(i) + " was updated in the transaction.",
+								"Variable " + variableId + " (boolean) in Statement " + statementIds.get(i) + " was updated in the SQL transaction with value: " + (int) values.get(i).get(j).getValue() + ".");
+						Dna.logger.log(e2);
+					} else if (values.get(i).get(j).getDataType().equals("integer")) {
+						s2.setInt(1, (int) values.get(i).get(j).getValue());
+						s2.setInt(2, statementIds.get(i));
+						s2.setInt(3, variableId);
+						s2.executeUpdate();
+						LogEvent e2 = new LogEvent(Logger.MESSAGE,
+								"[SQL]  ├─ Variable " + variableId + " in Statement " + statementIds.get(i) + " was updated in the transaction.",
+								"Variable " + variableId + " (integer) in Statement " + statementIds.get(i) + " was updated in the SQL transaction with value: " + (int) values.get(i).get(j).getValue() + ".");
+						Dna.logger.log(e2);
+					} else if (values.get(i).get(j).getDataType().equals("long text")) {
+						s3.setString(1, (String) values.get(i).get(j).getValue());
+						s3.setInt(2, statementIds.get(i));
+						s3.setInt(3, variableId);
+						s3.executeUpdate();
+						LogEvent e2 = new LogEvent(Logger.MESSAGE,
+								"[SQL]  ├─ Variable " + variableId + " in Statement " + statementIds.get(i) + " was updated in the transaction.",
+								"Variable " + variableId + " (long text) in Statement " + statementIds.get(i) + " was updated in the SQL transaction.");
+						Dna.logger.log(e2);
+					} else if (values.get(i).get(j).getDataType().equals("short text")) {
+						// try to recognise entity ID from database; should be more reliable (e.g., with empty Strings)
+						entity = (Entity) values.get(i).get(j).getValue();
+						entityId = -1;
+						s6.setInt(1, variableId);
+						s6.setString(2, entity.getValue());
+						r = s6.executeQuery();
+						while (r.next()) {
+							entityId = r.getInt("ID");
+						}
+						
+						if (entityId == -1) {
+							// if the attribute does not exist, insert new attribute with given String value
+							s5.setInt(1, variableId);
+							s5.setString(2, entity.getValue());
+							s5.setInt(3, entity.getColor().getRed());
+							s5.setInt(4, entity.getColor().getGreen());
+							s5.setInt(5, entity.getColor().getBlue());
+							s5.executeUpdate();
+							
+							// new attribute has been created; now we have to get its ID
+							s6.setInt(1, variableId);
+							s6.setString(2, entity.getValue());
+							r = s6.executeQuery();
+							while (r.next()) {
+								entityId = r.getInt(1);
+							}
+							LogEvent e2 = new LogEvent(Logger.MESSAGE,
+									"[SQL]  ├─ Entity with ID " + entityId + " added to the transaction.",
+									"An entity with ID " + entityId + " and value \"" + entity.getValue() + "\" was created for variable ID " + variableId + " and added to the SQL transaction.");
+							Dna.logger.log(e2);
+							
+							// since the attribute did not exist, we also need to add attributes;
+							// first get the IDs of the attribute variables, then add the attribute values
+							s7.setInt(1, variableId); // set variable ID to find all attribute variables by ID corresponding to the variable
+							r = s7.executeQuery();
+							while (r.next()) {
+								try {
+									attributeVariableId = r.getInt("ID");
+									s9.setInt(1, entityId);
+									s9.setInt(2, attributeVariableId);
+									r2 = s9.executeQuery();
+									while (r2.next()) {
+										if (r2.getInt(1) > 0) {
+											// attribute value already exists in the ATTRIBUTEVALUES table; don't do anything
+										} else {
+											s8.setInt(1, entityId); // entity ID
+											s8.setInt(2, attributeVariableId); // attribute variable ID
+											s8.setString(3, ""); // put an empty value into the attribute variable field initially
+											s8.executeUpdate();
+											LogEvent l = new LogEvent(Logger.MESSAGE,
+													"[SQL]  ├─ Transaction: Added value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
+													"Added attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table during the transaction.");
+											Dna.logger.log(l);
+										}
+									}
+								} catch (Exception e3) {
+									LogEvent l = new LogEvent(Logger.WARNING,
+											"[SQL]  ├─ Failed to add a new value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
+											"Failed to add a new value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
+											e3);
+									Dna.logger.log(l);
+								}
+							}
+						}
+
+						// write the attribute ID as the value in the DATASHORTTEXT table
+						s4.setInt(1, entityId);
+						s4.setInt(2, statementIds.get(i));
+						s4.setInt(3, variableId);
+						s4.executeUpdate();
+						LogEvent e2 = new LogEvent(Logger.MESSAGE,
+								"[SQL]  ├─ Variable " + variableId + " in Statement " + statementIds.get(i) + " was updated in the transaction.",
+								"Variable " + variableId + " (short text) in Statement " + statementIds.get(i) + " was updated in the SQL transaction with Entity " + entityId + ".");
+						Dna.logger.log(e2);
+					}
+				}
+				s10.setInt(1, coderIds.get(i));
+				s10.setInt(2, statementIds.get(i));
+				s10.executeUpdate();
+			}
+			conn.commit();
+			LogEvent e2 = new LogEvent(Logger.MESSAGE,
+					"[SQL]  └─ Completed SQL transaction to update " + statementIds.size() + " statements.",
+					"Completed SQL transaction to update the variables in " + statementIds.size() + " statements. The contents have been written into the database.");
+			Dna.logger.log(e2);
+		} catch (SQLException e) {
+			LogEvent e2 = new LogEvent(Logger.ERROR,
+					"[SQL]  └─ Statements could not be updated in the database.",
+					"When the statement recoder tried to update statement details in the database, something went wrong. Maybe another coder concurrently removed the statements you were working on, or maybe there was a connection issue. See exception below.",
+					e);
+			Dna.logger.log(e2);
+		}
+	}
 	
 	/**
 	 * Create a copy of a statement in the database.
@@ -2766,6 +2925,156 @@ public class Sql {
 		return statement;
 	}
 
+	/**
+	 * Get statements corresponding to an array of statement IDs.
+	 * 
+	 * @param statementIds Array of statement IDs to retrieve.
+	 * @return Array list of statements with all details.
+	 */
+	public ArrayList<Statement> getStatements(int[] statementIds) {
+		String ids = "";
+		for (int i = 0; i < statementIds.length; i++) {
+			ids = ids + statementIds[i];
+			if (i < statementIds.length - 1) {
+				ids = ids + ", ";
+			}
+		}
+		
+		String subString = "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text ";
+		if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
+			subString = "SUBSTRING(DOCUMENTS.Text, CAST(Start + 1 AS INT4), CAST(Stop - Start AS INT4)) AS Text ";
+		}
+		String q1 = "SELECT STATEMENTS.ID AS StatementId, "
+				+ "StatementTypeId, "
+				+ "STATEMENTTYPES.Label AS StatementTypeLabel, "
+				+ "STATEMENTTYPES.Red AS StatementTypeRed, "
+				+ "STATEMENTTYPES.Green AS StatementTypeGreen, "
+				+ "STATEMENTTYPES.Blue AS StatementTypeBlue, "
+				+ "Start, "
+				+ "Stop, "
+				+ "STATEMENTS.Coder AS CoderId, "
+				+ "CODERS.Name AS CoderName, "
+				+ "CODERS.Red AS CoderRed, "
+				+ "CODERS.Green AS CoderGreen, "
+				+ "CODERS.Blue AS CoderBlue, "
+				+ "DocumentId, "
+				+ "DOCUMENTS.Date AS Date, "
+				+ subString
+				+ "FROM STATEMENTS "
+				+ "INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID "
+				+ "INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID "
+				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
+				+ "WHERE StatementId IN (" + ids + ") "
+				+ "ORDER BY DOCUMENTS.DATE ASC;";
+
+		String q2 = "SELECT ID FROM STATEMENTTYPES;";
+		
+		String q3 = "SELECT ID, Variable, DataType FROM VARIABLES;";
+		
+		String q4castBoolean = "DATABOOLEAN.Value";
+		String q4castInteger = "DATAINTEGER.Value";
+		if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
+			q4castBoolean = "CAST(DATABOOLEAN.Value AS TEXT)";
+			q4castInteger = "CAST(DATAINTEGER.Value AS TEXT)";
+		}
+		String q4 = "SELECT DATASHORTTEXT.StatementId, VARIABLES.ID AS VariableId, ENTITIES.Value AS Value FROM DATASHORTTEXT "
+				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId "
+				+ "INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity "
+				+ "WHERE VARIABLES.StatementTypeId = ? AND DATASHORTTEXT.StatementId IN (" + ids + ") "
+				+ "UNION "
+				+ "SELECT DATALONGTEXT.StatementId, VARIABLES.ID AS VariableId, DATALONGTEXT.Value FROM DATALONGTEXT "
+				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId "
+				+ "WHERE VARIABLES.StatementTypeId = ? AND DATALONGTEXT.StatementId IN (" + ids + ") "
+				+ "UNION "
+				+ "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, " + q4castBoolean + " FROM DATABOOLEAN "
+				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId "
+				+ "WHERE VARIABLES.StatementTypeId = ? AND DATABOOLEAN.StatementId IN (" + ids + ") "
+				+ "UNION "
+				+ "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, " + q4castInteger + " FROM DATAINTEGER "
+				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId "
+				+ "WHERE VARIABLES.StatementTypeId = ? AND DATAINTEGER.StatementId IN (" + ids + ");"
+				+ "ORDER BY 1, 2 ASC;";
+		
+		ArrayList<Statement> listOfStatements = null;
+		int statementTypeId, statementId, variableId;
+		Color sColor, cColor;
+		HashMap<Integer, String> variableNameMap = new HashMap<Integer, String>(); // variable ID to variable name
+		HashMap<Integer, String> variableDataTypeMap = new HashMap<Integer, String>(); // variable ID to data type
+		HashMap<Integer, Statement> statementMap = new HashMap<Integer, Statement>(); // statement ID to Statement
+		ResultSet r3, r4;
+		try (Connection conn = Dna.sql.getDataSource().getConnection();
+				PreparedStatement s1 = conn.prepareStatement(q1);
+				PreparedStatement s2 = conn.prepareStatement(q2);
+				PreparedStatement s3 = conn.prepareStatement(q3);
+				PreparedStatement s4 = conn.prepareStatement(q4);) {
+			
+			// assemble statements without values for now and save them in a hash map
+			ResultSet r1 = s1.executeQuery();
+			while (r1.next()) {
+				statementId = r1.getInt("StatementId");
+			    statementTypeId = r1.getInt("StatementTypeId");
+			    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
+			    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
+			    Statement statement = new Statement(statementId,
+			    		r1.getInt("Start"),
+			    		r1.getInt("Stop"),
+			    		statementTypeId,
+			    		r1.getString("StatementTypeLabel"),
+			    		sColor,
+			    		r1.getInt("CoderId"),
+			    		r1.getString("CoderName"),
+			    		cColor,
+			    		new ArrayList<Value>(),
+			    		r1.getInt("DocumentId"),
+			    		r1.getString("Text"),
+			    		LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC));
+			    statementMap.put(statementId, statement);
+			}
+			
+			// get variables
+			r3 = s3.executeQuery();
+			while (r3.next()) {
+				variableNameMap.put(r3.getInt("ID"), r3.getString("Variable"));
+				variableDataTypeMap.put(r3.getInt("ID"), r3.getString("DataType"));
+			}
+			
+			// get statement types
+			ResultSet r2 = s2.executeQuery();
+			while (r2.next()) {
+				statementTypeId = r2.getInt("ID");
+				
+				// get values and put them into the statements
+				s4.setInt(1, statementTypeId);
+				s4.setInt(2, statementTypeId);
+				s4.setInt(3, statementTypeId);
+				s4.setInt(4, statementTypeId);
+				r4 = s4.executeQuery();
+				while (r4.next()) {
+					variableId = r4.getInt("VariableId");
+					Object value = null;
+					if (variableDataTypeMap.get(variableId).equals("boolean") || variableDataTypeMap.get(variableId).equals("integer")) {
+						value = Integer.parseInt(r4.getString("Value"));
+					} else {
+						value = r4.getString("Value");
+					}
+					statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
+				}
+			}
+			
+			// assemble and sort all statements
+			Collection<Statement> s = statementMap.values();
+	        listOfStatements = new ArrayList<Statement>(s);
+			Collections.sort(listOfStatements);
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve statements.",
+					"Attempted to retrieve a set of " + statementIds.length + " statements from the database, but something went wrong.",
+					e);
+			Dna.logger.log(l);
+		}
+		return listOfStatements;
+	}
+	
 	/**
 	 * Get a shallow representation of all statements in a specific document for
 	 * the purpose of painting the statements in the text. For this purpose,

@@ -1,6 +1,7 @@
 package gui;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Vector;
 
 import javax.swing.AbstractListModel;
@@ -17,9 +18,13 @@ class CoderComboBoxModel extends AbstractListModel<Coder> implements ComboBoxMod
 	private Object selectedItem;
 	Vector<ListDataListener> listeners = new Vector<ListDataListener>();
 	ArrayList<Coder> coders;
+	HashMap<Integer, Integer> indexMap = new HashMap<Integer, Integer>();
 	
 	public CoderComboBoxModel(ArrayList<Coder> coders) {
 		this.coders = coders;
+		for (int i = 0; i < coders.size(); i++) {
+			indexMap.put(coders.get(i).getId(), i);
+		}
 	}
 	
 	@Override
@@ -56,5 +61,15 @@ class CoderComboBoxModel extends AbstractListModel<Coder> implements ComboBoxMod
 	public void clear() {
 		selectedItem = null;
 		fireContentsChanged(this, 0, 0);
+	}
+	
+	/**
+	 * Get the model index for a specific coder ID.
+	 * 
+	 * @param coderId  The coder ID.
+	 * @return The index.
+	 */
+	public int getIndexByCoderId(int coderId) {
+		return(indexMap.get(coderId));
 	}
 }

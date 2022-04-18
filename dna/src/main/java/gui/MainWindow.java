@@ -119,6 +119,7 @@ public class MainWindow extends JFrame {
 	private ActionRefresh actionRefresh;
 	private ActionBatchImportDocuments actionBatchImportDocuments;
 	private ActionImporter actionImporter;
+	private ActionRecodeStatements actionRecodeStatements;
 	private ActionRemoveStatements actionRemoveStatements;
 	private ActionStatementTypeEditor actionStatementTypeEditor;
 	private ActionAttributeManager actionAttributeManager;
@@ -256,6 +257,10 @@ public class MainWindow extends JFrame {
 		actionImporter = new ActionImporter("Import from DNA database", importerIcon, "Import documents, statements, entities, attributes, and regexes from another DNA database", KeyEvent.VK_D);
 		actionImporter.setEnabled(false);
 
+		ImageIcon recodeStatementsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-pencil.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		actionRecodeStatements = new ActionRecodeStatements("Recode statement(s)", recodeStatementsIcon, "Recode the statements currently selected in the statement table", KeyEvent.VK_R);
+		actionRecodeStatements.setEnabled(false);
+
 		ImageIcon removeStatementsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-square-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionRemoveStatements = new ActionRemoveStatements("Remove statement(s)", removeStatementsIcon, "Remove the statement(s) currently selected in the statement table", KeyEvent.VK_D);
 		actionRemoveStatements.setEnabled(false);
@@ -314,7 +319,7 @@ public class MainWindow extends JFrame {
 				actionLoggerDialog,
 				actionAboutWindow);
 		statusBar = new StatusBar();
-		statementPanel = new StatementPanel(statementTableModel, actionRemoveStatements);
+		statementPanel = new StatementPanel(statementTableModel, actionRecodeStatements, actionRemoveStatements);
 		textPanel = new TextPanel();
 		coderSelectionPanel = new CoderSelectionPanel();
 		
@@ -351,8 +356,10 @@ public class MainWindow extends JFrame {
 				}
 				int rowCount = statementTable.getSelectedRowCount();
 				if (rowCount == 0) {
-					actionRemoveStatements.setEnabled(false);
+					MainWindow.this.actionRecodeStatements.setEnabled(false);
+					MainWindow.this.actionRemoveStatements.setEnabled(false);
 				} else if (rowCount == 1 && (popup == null || !popup.isValid())) {
+					MainWindow.this.actionRecodeStatements.setEnabled(false);
 					int selectedRow = statementTable.getSelectedRow();
 					int selectedModelIndex = statementTable.convertRowIndexToModel(selectedRow);
 					int statementId = statementTableModel.getRow(selectedModelIndex).getId();
@@ -363,9 +370,9 @@ public class MainWindow extends JFrame {
 							Dna.sql.getActiveCoder().getId() == s.getCoderId()) &&
 							(Dna.sql.getActiveCoder().getId() == s.getCoderId() ||
 							Dna.sql.getActiveCoder().isPermissionEditOthersStatements(s.getCoderId()) == true)) {
-						actionRemoveStatements.setEnabled(true);
+						MainWindow.this.actionRemoveStatements.setEnabled(true);
 					} else {
-						actionRemoveStatements.setEnabled(false);
+						MainWindow.this.actionRemoveStatements.setEnabled(false);
 					}
 					if (Dna.sql.getActiveCoder().getId() == s.getCoderId() ||
 							(Dna.sql.getActiveCoder().isPermissionViewOthersStatements() == true &&
@@ -412,29 +419,44 @@ public class MainWindow extends JFrame {
 						}
 					}
 				} else if (rowCount > 1 && (popup == null || !popup.isValid())) {
-					int[] rows = statementTable.getSelectedRows();
 					boolean allOwned = true;
 					boolean allOthersEditPermitted = true;
-					for (int i = 0; i < rows.length; i++) {
-						int modelRow = statementTable.convertRowIndexToModel(rows[i]);
-						int coderId = statementTableModel.getRow(modelRow).getCoderId();
-						if (coderId != Dna.sql.getActiveCoder().getId()) {
+					boolean permitRecode = Dna.sql.getActiveCoder().isPermissionEditStatements();
+					int[] selectedRows = statementTable.getSelectedRows();
+					int[] modelRows = new int[selectedRows.length];
+					int[] coderIds = new int[selectedRows.length];
+					int statementTypeId = statementTableModel.getRow(statementTable.convertRowIndexToModel(selectedRows[0])).getStatementTypeId();
+					for (int i = 0; i < selectedRows.length; i++) {
+						modelRows[i] = statementTable.convertRowIndexToModel(selectedRows[i]);
+						coderIds[i] = statementTableModel.getRow(modelRows[i]).getCoderId();
+						if (coderIds[i] != Dna.sql.getActiveCoder().getId()) {
 							allOwned = false;
 						}
-						if (Dna.sql.getActiveCoder().isPermissionEditOthersStatements(coderId) == false) {
+						if (Dna.sql.getActiveCoder().isPermissionEditOthersStatements(coderIds[i]) == false) {
 							allOthersEditPermitted = false;
+						}
+						if (!Dna.sql.getActiveCoder().isPermissionEditOthersStatements(coderIds[i]) && Dna.sql.getActiveCoder().getId() != coderIds[i]) {
+							permitRecode = false;
+						}
+						if (!Dna.sql.getActiveCoder().isPermissionEditOthersStatements() && Dna.sql.getActiveCoder().getId() != coderIds[i]) {
+							permitRecode = false;
+						}
+						if (statementTypeId != statementTableModel.getRow(modelRows[i]).getStatementTypeId()) {
+							permitRecode = false;
 						}
 					}
 					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true &&
 							(allOwned == true ||
 							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true &&	allOthersEditPermitted == true))) {
-						actionRemoveStatements.setEnabled(true);
+						MainWindow.this.actionRemoveStatements.setEnabled(true);
 					} else {
-						actionRemoveStatements.setEnabled(false);
+						MainWindow.this.actionRemoveStatements.setEnabled(false);
 					}
+					MainWindow.this.actionRecodeStatements.setEnabled(permitRecode);
 					// no particular statement to select because multiple statements highlighted in table
 				} else {
-					actionRemoveStatements.setEnabled(false);
+					MainWindow.this.actionRecodeStatements.setEnabled(false);
+					MainWindow.this.actionRemoveStatements.setEnabled(false);
 				}
 			}
 		});
@@ -1418,11 +1440,8 @@ public class MainWindow extends JFrame {
 		}
 		changedDocumentTableSelection();
 		actionRefresh.setEnabled(true);
-		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true) {
-			actionRemoveStatements.setEnabled(true);
-		} else {
-			actionRemoveStatements.setEnabled(false);
-		}
+		actionRecodeStatements.setEnabled(false);
+		actionRemoveStatements.setEnabled(false);
 		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditStatementTypes() == true) {
 			actionStatementTypeEditor.setEnabled(true);
 		} else {
@@ -2217,6 +2236,54 @@ public class MainWindow extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 	    	refreshDocumentTable();
 			refreshStatementTable();
+		}
+	}
+
+	/**
+	 * An action to recode the selected statements.
+	 */
+	class ActionRecodeStatements extends AbstractAction {
+		private static final long serialVersionUID = 3844766484800761404L;
+
+		public ActionRecodeStatements(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			// gather data: row view indices, row model indices, statement IDs, statement type, coder IDs, and permission
+			JTable statementTable = getStatementPanel().getStatementTable();
+			int[] selectedRows = statementTable.getSelectedRows();
+			int[] modelRows = new int[selectedRows.length];
+			int[] statementIds = new int[selectedRows.length];
+			int[] coderIds = new int[selectedRows.length];
+			boolean permissions = Dna.sql.getActiveCoder().isPermissionEditStatements();
+			int statementTypeId = statementTableModel.getRow(statementTable.convertRowIndexToModel(selectedRows[0])).getStatementTypeId();
+			for (int i = 0; i < selectedRows.length; i++) {
+				modelRows[i] = statementTable.convertRowIndexToModel(selectedRows[i]);
+				statementIds[i] = statementTableModel.getRow(modelRows[i]).getId();
+				coderIds[i] = statementTableModel.getRow(modelRows[i]).getCoderId();
+				if (!Dna.sql.getActiveCoder().isPermissionEditOthersStatements(coderIds[i]) && Dna.sql.getActiveCoder().getId() != coderIds[i]) {
+					permissions = false;
+				}
+				if (!Dna.sql.getActiveCoder().isPermissionEditOthersStatements() && Dna.sql.getActiveCoder().getId() != coderIds[i]) {
+					permissions = false;
+				}
+				if (statementTypeId != statementTableModel.getRow(modelRows[i]).getStatementTypeId()) {
+					permissions = false;
+				}
+			}
+			
+			// get statement type and initialize statement recoder dialog
+			if (permissions) {
+				StatementType statementType = Dna.sql.getStatementTypes()
+						.stream()
+						.filter(s -> s.getId() == statementTypeId)
+						.findFirst()
+						.orElse(null);
+				new StatementRecoder(MainWindow.this, statementIds, statementType);
+			}
 		}
 	}
 

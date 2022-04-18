@@ -45,6 +45,7 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
 import dna.Dna;
+import gui.MainWindow.ActionRecodeStatements;
 import gui.MainWindow.ActionRemoveStatements;
 import logger.LogEvent;
 import logger.Logger;
@@ -74,7 +75,11 @@ class StatementPanel extends JPanel {
 	 * @param statementTableModel     Statement table model for the statements.
 	 * @param actionRemoveStatements  An action that deletes statements.
 	 */
-	StatementPanel(StatementTableModel statementTableModel, ActionRemoveStatements actionRemoveStatements) {
+	StatementPanel(
+			StatementTableModel statementTableModel,
+			ActionRecodeStatements actionRecodeStatements,
+			ActionRemoveStatements actionRemoveStatements
+			) {
 		this.setLayout(new BorderLayout());
 		this.statementTableModel = statementTableModel;
 		statementTable = new JTable(statementTableModel);
@@ -109,6 +114,8 @@ class StatementPanel extends JPanel {
 
 	    // right-click menu for statement table
 		JPopupMenu popupMenu = new JPopupMenu();
+		JMenuItem menuItemRecode = new JMenuItem(actionRecodeStatements);
+		popupMenu.add(menuItemRecode);
 		JMenuItem menuItemDelete = new JMenuItem(actionRemoveStatements);
 		popupMenu.add(menuItemDelete);
 		JSeparator sep = new JSeparator();

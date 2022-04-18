@@ -16,22 +16,18 @@ import java.awt.event.FocusListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
 import javax.swing.border.LineBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -607,107 +603,5 @@ class Popup extends JDialog {
 			Dna.logger.log(l);
 		}
 		return changed;
-	}
-	
-	/**
-	 * A panel with a yes and a no radio button to represent boolean variables
-	 * in statement popup windows.
-	 */
-	private class BooleanButtonPanel extends JPanel {
-		private static final long serialVersionUID = 2614141772546080638L;
-		private JRadioButton yes, no;
-		
-		BooleanButtonPanel() {
-			FlowLayout fl = new FlowLayout(FlowLayout.LEFT);
-			fl.setVgap(0);
-			this.setLayout(fl);
-			yes = new JRadioButton("yes");
-			no = new JRadioButton("no");
-			ButtonGroup group = new ButtonGroup();
-			group.add(yes);
-			group.add(no);
-			this.add(yes);
-			this.add(no);
-			yes.setSelected(true);
-		}
-		
-		/**
-		 * Select the "yes" or "no" button
-		 * 
-		 * @param b  {@code true} if "yes" should be selected; {@code false} if
-		 *   "no" should be selected.
-		 */
-		void setYes(boolean b) {
-			if (b == true) {
-				this.yes.setSelected(true);
-			} else if (b == false) {
-				this.no.setSelected(true);
-			}
-		}
-		
-		/**
-		 * Is the "yes" button selected?
-		 * 
-		 * @return boolean yes selected?
-		 */
-		boolean isYes() {
-			if (yes.isSelected()) {
-				return true;
-			} else {
-				return false;
-			}
-		}
-		
-		/**
-		 * Enable or disable the buttons.
-		 * 
-		 * @param enabled  Enable the buttons if {@code true} and disabled them
-		 *   otherwise.
-		 */
-		public void setEnabled(boolean enabled) {
-			if (enabled == true) {
-				yes.setEnabled(true);
-				no.setEnabled(true);
-			} else {
-				yes.setEnabled(false);
-				no.setEnabled(false);
-			}
-		}
-	}
-	
-	/**
-	 * A renderer for JComboBox items that represent {@link model.Entity
-	 * Entity} objects. The value is shown as text. The color is shown as the
-	 * foreground color. If the attribute is not present in the database, it
-	 * gets a red background color. The renderer is used to display combo boxes
-	 * for short text variables in popup windows. The renderer only displays the
-	 * list items, not the contents of the text editor at the top of the list.
-	 */
-	private class AttributeComboBoxRenderer implements ListCellRenderer<Object> {
-		@Override
-		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-			Entity a = (Entity) value;
-			JLabel label = new JLabel(a.getValue());
-			label.setForeground(a.getColor());
-			
-			// list background
-			Color selectedColor = javax.swing.UIManager.getColor("List.selectionBackground");
-			Color notInDatabaseColor = new Color(255, 102, 102);
-			// selected entry that is not in database: average of the previous two colors
-			Color selectedAndNotInDatabaseColor = new Color((selectedColor.getRed() + notInDatabaseColor.getRed()) / 2, (selectedColor.getGreen() + notInDatabaseColor.getGreen()) / 2, (selectedColor.getBlue() + notInDatabaseColor.getBlue()) / 2);
-			Color defaultColor = javax.swing.UIManager.getColor("List.background");
-			if (isSelected == true && a.isInDatabase() == true) {
-				label.setBackground(selectedColor);
-			} else if (isSelected == true && a.isInDatabase() == false) {
-				label.setBackground(selectedAndNotInDatabaseColor);
-			} else if (isSelected == false && a.isInDatabase() == false) {
-				label.setBackground(notInDatabaseColor);
-			} else if (isSelected == false && a.isInDatabase() == true) {
-				label.setBackground(defaultColor);
-			}
-			label.setOpaque(true);
-			
-			return label;
-		}
 	}
 }
