@@ -70,4 +70,22 @@ class BooleanButtonPanel extends JPanel {
 			no.setEnabled(false);
 		}
 	}
+	
+	/**
+	 * Get a reference to the "yes" radio button, for example to add a listener.
+	 * 
+	 * @return The "yes" radio button.
+	 */
+	public JRadioButton getYesButton() {
+		return yes;
+	}
+
+	/**
+	 * Get a reference to the "no" radio button, for example to add a listener.
+	 * 
+	 * @return The "no" radio button.
+	 */
+	public JRadioButton getNoButton() {
+		return no;
+	}
 }

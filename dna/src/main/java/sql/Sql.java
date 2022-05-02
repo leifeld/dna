@@ -2971,42 +2971,40 @@ public class Sql {
 		
 		String q3 = "SELECT ID, Variable, DataType FROM VARIABLES;";
 		
-		String q4castBoolean = "DATABOOLEAN.Value";
-		String q4castInteger = "DATAINTEGER.Value";
-		if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
-			q4castBoolean = "CAST(DATABOOLEAN.Value AS TEXT)";
-			q4castInteger = "CAST(DATAINTEGER.Value AS TEXT)";
-		}
-		String q4 = "SELECT DATASHORTTEXT.StatementId, VARIABLES.ID AS VariableId, ENTITIES.Value AS Value FROM DATASHORTTEXT "
+		String q4a = "SELECT DATASHORTTEXT.StatementId, VARIABLES.ID AS VariableId, ENTITIES.ID AS EntityId, ENTITIES.Value AS Value, ENTITIES.Red AS Red, ENTITIES.Green AS Green, ENTITIES.Blue AS Blue, ENTITIES.ChildOf AS ChildOf FROM DATASHORTTEXT "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId "
 				+ "INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity "
-				+ "WHERE VARIABLES.StatementTypeId = ? AND DATASHORTTEXT.StatementId IN (" + ids + ") "
-				+ "UNION "
-				+ "SELECT DATALONGTEXT.StatementId, VARIABLES.ID AS VariableId, DATALONGTEXT.Value FROM DATALONGTEXT "
+				+ "WHERE VARIABLES.StatementTypeId = ? AND DATASHORTTEXT.StatementId IN (" + ids + ") ORDER BY 1, 2 ASC;";
+		String q4b = "SELECT DATALONGTEXT.StatementId, VARIABLES.ID AS VariableId, DATALONGTEXT.Value FROM DATALONGTEXT "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId "
-				+ "WHERE VARIABLES.StatementTypeId = ? AND DATALONGTEXT.StatementId IN (" + ids + ") "
-				+ "UNION "
-				+ "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, " + q4castBoolean + " FROM DATABOOLEAN "
+				+ "WHERE VARIABLES.StatementTypeId = ? AND DATALONGTEXT.StatementId IN (" + ids + ") ORDER BY 1, 2 ASC;";
+		String q4c = "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, DATABOOLEAN.Value FROM DATABOOLEAN "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId "
-				+ "WHERE VARIABLES.StatementTypeId = ? AND DATABOOLEAN.StatementId IN (" + ids + ") "
-				+ "UNION "
-				+ "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, " + q4castInteger + " FROM DATAINTEGER "
+				+ "WHERE VARIABLES.StatementTypeId = ? AND DATABOOLEAN.StatementId IN (" + ids + ") ORDER BY 1, 2 ASC;";
+		String q4d = "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, DATAINTEGER.Value FROM DATAINTEGER "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId "
-				+ "WHERE VARIABLES.StatementTypeId = ? AND DATAINTEGER.StatementId IN (" + ids + ");"
-				+ "ORDER BY 1, 2 ASC;";
+				+ "WHERE VARIABLES.StatementTypeId = ? AND DATAINTEGER.StatementId IN (" + ids + ") ORDER BY 1, 2 ASC;";
+		
+		String q5 = "SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES "
+				+ "INNER JOIN ATTRIBUTEVARIABLES ON ATTRIBUTEVARIABLES.ID = AttributeVariableId "
+				+ "WHERE EntityId = ?;";
 		
 		ArrayList<Statement> listOfStatements = null;
-		int statementTypeId, statementId, variableId;
+		int statementTypeId, statementId, variableId, entityId;
 		Color sColor, cColor;
 		HashMap<Integer, String> variableNameMap = new HashMap<Integer, String>(); // variable ID to variable name
 		HashMap<Integer, String> variableDataTypeMap = new HashMap<Integer, String>(); // variable ID to data type
 		HashMap<Integer, Statement> statementMap = new HashMap<Integer, Statement>(); // statement ID to Statement
-		ResultSet r3, r4;
+		ResultSet r3, r4, r5;
 		try (Connection conn = Dna.sql.getDataSource().getConnection();
 				PreparedStatement s1 = conn.prepareStatement(q1);
 				PreparedStatement s2 = conn.prepareStatement(q2);
 				PreparedStatement s3 = conn.prepareStatement(q3);
-				PreparedStatement s4 = conn.prepareStatement(q4);) {
+				PreparedStatement s4a = conn.prepareStatement(q4a);
+				PreparedStatement s4b = conn.prepareStatement(q4b);
+				PreparedStatement s4c = conn.prepareStatement(q4c);
+				PreparedStatement s4d = conn.prepareStatement(q4d);
+				PreparedStatement s5 = conn.prepareStatement(q5);) {
 			
 			// assemble statements without values for now and save them in a hash map
 			ResultSet r1 = s1.executeQuery();
@@ -3037,26 +3035,52 @@ public class Sql {
 				variableNameMap.put(r3.getInt("ID"), r3.getString("Variable"));
 				variableDataTypeMap.put(r3.getInt("ID"), r3.getString("DataType"));
 			}
-			
+
 			// get statement types
 			ResultSet r2 = s2.executeQuery();
 			while (r2.next()) {
 				statementTypeId = r2.getInt("ID");
 				
 				// get values and put them into the statements
-				s4.setInt(1, statementTypeId);
-				s4.setInt(2, statementTypeId);
-				s4.setInt(3, statementTypeId);
-				s4.setInt(4, statementTypeId);
-				r4 = s4.executeQuery();
+				s4a.setInt(1, statementTypeId);
+				r4 = s4a.executeQuery();
 				while (r4.next()) {
 					variableId = r4.getInt("VariableId");
-					Object value = null;
-					if (variableDataTypeMap.get(variableId).equals("boolean") || variableDataTypeMap.get(variableId).equals("integer")) {
-						value = Integer.parseInt(r4.getString("Value"));
-					} else {
-						value = r4.getString("Value");
+					entityId = r4.getInt("EntityId");
+					HashMap<String, String> map = new HashMap<String, String>();
+					s5.setInt(1, entityId);
+					r5 = s5.executeQuery();
+					while (r5.next()) {
+						map.put(r5.getString("AttributeVariable"), r5.getString("AttributeValue"));
 					}
+					Entity e = new Entity(entityId,
+							variableId,
+							r4.getString("Value"),
+							new Color(r4.getInt("Red"), r4.getInt("Green"), r4.getInt("Blue")),
+							r4.getInt("ChildOf"),
+							true,
+							map);
+					statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), e));
+				}
+				s4b.setInt(1, statementTypeId);
+				r4 = s4b.executeQuery();
+				while (r4.next()) {
+					variableId = r4.getInt("VariableId");
+					String value = r4.getString("Value");
+					statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
+				}
+				s4c.setInt(1, statementTypeId);
+				r4 = s4c.executeQuery();
+				while (r4.next()) {
+					variableId = r4.getInt("VariableId");
+					int value = r4.getInt("Value");
+					statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
+				}
+				s4d.setInt(1, statementTypeId);
+				r4 = s4d.executeQuery();
+				while (r4.next()) {
+					variableId = r4.getInt("VariableId");
+					int value = r4.getInt("Value");
 					statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
 				}
 			}
