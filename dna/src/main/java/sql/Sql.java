@@ -371,7 +371,6 @@ public class Sql {
 					+ "Blue INTEGER CHECK (Blue BETWEEN 0 AND 255), "
 					+ "ChildOf INTEGER CHECK(ChildOf > 0), "
 					+ "UNIQUE (VariableId, Value), "
-					+ "CHECK (ChildOf != ID), "
 					+ "FOREIGN KEY(ChildOf) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS DATASHORTTEXT("
@@ -535,7 +534,6 @@ public class Sql {
 					+ "FOREIGN KEY(VariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(ChildOf) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE KEY (VariableId, Value), "
-					+ "CONSTRAINT ck_childof CHECK (ChildOf != ID), "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS DATASHORTTEXT("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
@@ -674,7 +672,6 @@ public class Sql {
 					+ "Green SMALLINT NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
 					+ "ChildOf INT CHECK(ChildOf > 0) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
-					+ "CONSTRAINT ck_childof CHECK (ChildOf != ID), "
 					+ "UNIQUE (VariableId, Value));");
 			s.add("CREATE TABLE IF NOT EXISTS DATASHORTTEXT("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
