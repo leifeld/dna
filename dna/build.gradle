@@ -4,12 +4,6 @@ plugins {
     id 'eclipse'
 }
 
-java {
-  toolchain {
-    languageVersion.set(JavaLanguageVersion.of(8))
-  }
-}
-
 // create jar file, not just .class files
 jar {
     // point the manifest to the right class
