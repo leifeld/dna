@@ -29,6 +29,7 @@ import gui.MainWindow.ActionLoggerDialog;
 import gui.MainWindow.ActionOpenDatabase;
 import gui.MainWindow.ActionOpenProfile;
 import gui.MainWindow.ActionQuit;
+import gui.MainWindow.ActionRecodeStatements;
 import gui.MainWindow.ActionRefresh;
 import gui.MainWindow.ActionRegexEditor;
 import gui.MainWindow.ActionRemoveDocuments;
@@ -65,6 +66,7 @@ public class MenuBar extends JMenuBar {
 	 * @param actionBatchImportDocuments  Action for batch-importing documents.
 	 * @param actionImporter              Action for importing from database.
 	 * @param actionRefresh               Action for reloading data.
+	 * @param actionRecodeStatements      Action for recoding statements.
 	 * @param actionRemoveStatements      Action for removing statements.
 	 * @param actionStatementTypeEditor   Action for editing statement types.
 	 * @param actionAttributeManager      Action for opening attribute manager.
@@ -86,6 +88,7 @@ public class MenuBar extends JMenuBar {
 			ActionBatchImportDocuments actionBatchImportDocuments,
 			ActionImporter actionImporter,
 			ActionRefresh actionRefresh,
+			ActionRecodeStatements actionRecodeStatements,
 			ActionRemoveStatements actionRemoveStatements,
 			ActionStatementTypeEditor actionStatementTypeEditor,
 			ActionAttributeManager actionAttributeManager,
@@ -160,7 +163,11 @@ public class MenuBar extends JMenuBar {
 		// statements menu
 		JMenu statementsMenu = new JMenu("Statements");
 		this.add(statementsMenu);
-		
+
+		// statements menu: recode statements
+		JMenuItem recodeStatementsItem = new JMenuItem(actionRecodeStatements);
+		statementsMenu.add(recodeStatementsItem);
+
 		// statements menu: remove statements
 		JMenuItem removeStatementsItem = new JMenuItem(actionRemoveStatements);
 		statementsMenu.add(removeStatementsItem);

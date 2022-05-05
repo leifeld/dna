@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -258,7 +259,7 @@ public class MainWindow extends JFrame {
 		actionImporter.setEnabled(false);
 
 		ImageIcon recodeStatementsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-pencil.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
-		actionRecodeStatements = new ActionRecodeStatements("Recode statement(s)", recodeStatementsIcon, "Recode the statements currently selected in the statement table", KeyEvent.VK_R);
+		actionRecodeStatements = new ActionRecodeStatements("Edit multiple statements...", recodeStatementsIcon, "Recode the statements currently selected in the statement table", KeyEvent.VK_R);
 		actionRecodeStatements.setEnabled(false);
 
 		ImageIcon removeStatementsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-square-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
@@ -312,6 +313,7 @@ public class MainWindow extends JFrame {
 				actionBatchImportDocuments,
 				actionImporter,
 				actionRefresh,
+				actionRecodeStatements,
 				actionRemoveStatements,
 				actionStatementTypeEditor,
 				actionAttributeManager,
@@ -347,7 +349,7 @@ public class MainWindow extends JFrame {
 		mainPanel.add(rightSplitPane, BorderLayout.CENTER);
 		mainPanel.add(statusBar, BorderLayout.SOUTH);
 		
-		// selection listener for the statement table; select statement or enable remove statements action
+		// selection listener for the statement table; select statement or enable recode and remove statements actions
 		JTable statementTable = getStatementPanel().getStatementTable();
 		statementTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
@@ -355,6 +357,13 @@ public class MainWindow extends JFrame {
 					return;
 				}
 				int rowCount = statementTable.getSelectedRowCount();
+				getStatementPanel().setMenuItemStatementsSelected(rowCount + " statements selected");
+				long statementTypeCount = IntStream.of(statementTable.getSelectedRows())
+					.map(r -> statementTable.convertRowIndexToModel(r))
+					.map(i -> statementTableModel.getRow(i).getStatementTypeId())
+					.distinct()
+					.count();
+				getStatementPanel().setMenuItemStatementTypesSelected("of " + statementTypeCount + " statement type(s)");
 				if (rowCount == 0) {
 					MainWindow.this.actionRecodeStatements.setEnabled(false);
 					MainWindow.this.actionRemoveStatements.setEnabled(false);
@@ -952,8 +961,11 @@ public class MainWindow extends JFrame {
 	 * Refresh the statement table using a Swing worker in the background and
 	 * select the previously selected statement again (if applicable and
 	 * available).
+	 * 
+	 * @param statementIds  An array of the statement IDs to refresh. Can be
+	 *   of length zero to refresh all statements.
 	 */
-	private void refreshStatementTable() {
+	private void refreshStatementTable(int[] statementIds) {
 		if (Dna.sql.getConnectionProfile() == null) {
 			statementTableModel.clear();
 		} else {
@@ -961,7 +973,7 @@ public class MainWindow extends JFrame {
 				statementTableWorker.cancel(true);
 				statusBar.statementRefreshEnd();
 			}
-	        statementTableWorker = new StatementTableRefreshWorker(LocalTime.now().toString());
+	        statementTableWorker = new StatementTableRefreshWorker(LocalTime.now().toString(), statementIds);
 	        statementTableWorker.execute();
 		}
 	}
@@ -1124,6 +1136,12 @@ public class MainWindow extends JFrame {
 		private String name;
 
 		/**
+		 * The statement IDs to refresh. Can be of length zero to reload all
+		 * statements.
+		 */
+		private int[] statementIds;
+		
+		/**
 		 * ID of the selected statement in the statement table, to restore it
 		 * later and scroll back to the same position in the table after update.
 		 */
@@ -1134,8 +1152,9 @@ public class MainWindow extends JFrame {
 		 * stores them in the table model for displaying them in the statement
 		 * table. Selects the previously selected statement when done.
 		 */
-		private StatementTableRefreshWorker(String name) {
+		private StatementTableRefreshWorker(String name, int[] statementIds) {
 			this.name = name;
+			this.statementIds = statementIds;
 			selectedId = getStatementPanel().getSelectedStatementId();
 			initialiseRefreshWorker();
 		}
@@ -1148,8 +1167,9 @@ public class MainWindow extends JFrame {
 		 * @param statementIdToSelect The ID of the statement that should be
 		 *   selected when done refreshing.
 		 */
-		private StatementTableRefreshWorker(String name, int statementIdToSelect) {
+		private StatementTableRefreshWorker(String name, int[] statementIds, int statementIdToSelect) {
 			this.name = name;
+			this.statementIds = statementIds;
 			selectedId = statementIdToSelect;
 			initialiseRefreshWorker();
 		}
@@ -1162,7 +1182,9 @@ public class MainWindow extends JFrame {
 			actionRefresh.setEnabled(false);
     		time = System.nanoTime(); // take the time to compute later how long the updating took
     		statusBar.statementRefreshStart();
-    		statementTableModel.clear(); // remove all documents from the table model before re-populating the table
+    		if (this.statementIds.length == 0) {
+    			statementTableModel.clear(); // remove all documents from the table model before re-populating the table
+    		}
 			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI] Initializing thread to populate statement table: " + this.getName() + ".",
 					"A new swing worker thread has been started to populate the statement table with statements from the database in the background: " + this.getName() + ".");
@@ -1174,6 +1196,15 @@ public class MainWindow extends JFrame {
 			String subString = "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text ";
 			if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
 				subString = "SUBSTRING(DOCUMENTS.Text, CAST(Start + 1 AS INT4), CAST(Stop - Start AS INT4)) AS Text ";
+			}
+			String stid = "";
+			if (statementIds.length > 0) {
+				stid = "WHERE StatementId IN ("
+						+ IntStream.of(statementIds)
+						.mapToObj(i -> ((Integer) i).toString()) // i is an int, not an Integer
+						.collect(Collectors.joining(", "))
+						.toString()
+						+ ") ";
 			}
 			String q1 = "SELECT STATEMENTS.ID AS StatementId, "
 					+ "StatementTypeId, "
@@ -1194,7 +1225,9 @@ public class MainWindow extends JFrame {
 					+ "FROM STATEMENTS "
 					+ "INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID "
 					+ "INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID "
-					+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId ORDER BY DOCUMENTS.DATE ASC;";
+					+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
+					+ stid
+					+ "ORDER BY DOCUMENTS.DATE ASC;";
 			
 			String q2 = "SELECT ID FROM STATEMENTTYPES;";
 			
@@ -1206,18 +1239,31 @@ public class MainWindow extends JFrame {
 				q4castBoolean = "CAST(DATABOOLEAN.Value AS TEXT)";
 				q4castInteger = "CAST(DATAINTEGER.Value AS TEXT)";
 			}
+			
+			if (statementIds.length > 0) {
+				stid = "AND StatementId IN ("
+						+ IntStream.of(statementIds)
+						.mapToObj(i -> ((Integer) i).toString()) // i is an int, not an Integer
+						.collect(Collectors.joining(", "))
+						.toString()
+						+ ") ";
+			}
 			String q4 = "SELECT DATASHORTTEXT.StatementId, VARIABLES.ID AS VariableId, ENTITIES.Value AS Value FROM DATASHORTTEXT "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId "
 					+ "INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity WHERE VARIABLES.StatementTypeId = ? "
+					+ stid
 					+ "UNION "
 					+ "SELECT DATALONGTEXT.StatementId, VARIABLES.ID AS VariableId, DATALONGTEXT.Value FROM DATALONGTEXT "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId WHERE VARIABLES.StatementTypeId = ? "
+					+ stid
 					+ "UNION "
 					+ "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, " + q4castBoolean + " FROM DATABOOLEAN "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId WHERE VARIABLES.StatementTypeId = ? "
+					+ stid
 					+ "UNION "
 					+ "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, " + q4castInteger + " FROM DATAINTEGER "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId WHERE VARIABLES.StatementTypeId = ? "
+					+ stid
 					+ "ORDER BY 1, 2 ASC;";
 			
 			int statementTypeId, statementId, variableId;
@@ -1306,23 +1352,37 @@ public class MainWindow extends JFrame {
         
         @Override
         protected void process(List<Statement> chunks) {
-        	statementTableModel.addRows(chunks); // transfer a batch of rows to the statement table model
-			getStatementPanel().setSelectedStatementId(selectedId); // select the statement from before; skipped if the statement not found in this batch
+        	if (statementIds.length == 0) {
+        		statementTableModel.addRows(chunks); // transfer a batch of rows to the statement table model
+    			getStatementPanel().setSelectedStatementId(selectedId); // select the statement from before; skipped if the statement not found in this batch
+        	} else {
+        		statementTableModel.updateStatements(chunks); // transfer a batch of statements to update
+        	}
         }
 
         @Override
         protected void done() {
-        	statementTableModel.sort();
+        	if (statementIds.length == 0) {
+            	statementTableModel.sort();
+        		statementTableModel.fireTableDataChanged(); // update the statement filter
+    			getStatementPanel().setSelectedStatementId(selectedId);
+        		long elapsed = System.nanoTime(); // measure time again for calculating difference
+    			LogEvent le = new LogEvent(Logger.MESSAGE,
+        				"[GUI]  ├─ (Re)loaded all " + statementTableModel.getRowCount() + " statements in " + (elapsed - time) / 1000000 + " milliseconds.",
+        				"The statement table swing worker loaded the " + statementTableModel.getRowCount() + " statements from the DNA database in the "
+        				+ "background and stored them in the statement table. This took " + (elapsed - time) / 1000000 + " milliseconds.");
+        		Dna.logger.log(le);
+    		} else {
+        		long elapsed = System.nanoTime(); // measure time again for calculating difference
+    			LogEvent le = new LogEvent(Logger.MESSAGE,
+    					"[GUI]  ├─ Refreshed " + statementIds.length + " statement(s) in " + (elapsed - time) / 1000000 + " milliseconds.",
+        				"The statement table swing worker loaded the " + statementIds.length + " statement(s) from the DNA database in the "
+        				+ "background and updated them in the statement table. This took " + (elapsed - time) / 1000000 + " milliseconds.");
+        		Dna.logger.log(le);
+    		}
         	statusBar.statementRefreshEnd(); // stop displaying the update message in the status bar
-			statementTableModel.fireTableDataChanged(); // update the statement filter
-			getStatementPanel().setSelectedStatementId(selectedId);
-    		long elapsed = System.nanoTime(); // measure time again for calculating difference
-    		LogEvent le = new LogEvent(Logger.MESSAGE,
-    				"[GUI]  ├─ (Re)loaded all " + statementTableModel.getRowCount() + " statements in " + (elapsed - time) / 1000000 + " milliseconds.",
-    				"The statement table swing worker loaded the " + statementTableModel.getRowCount() + " statements from the DNA database in the "
-    				+ "background and stored them in the statement table. This took " + (elapsed - time) / 1000000 + " milliseconds.");
-    		Dna.logger.log(le);
-			le = new LogEvent(Logger.MESSAGE,
+    		
+			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI]  └─ Closing thread to populate statement table: " + this.getName() + ".",
 					"The statement table has been populated with statements from the database. Closing thread: " + this.getName() + ".");
 			Dna.logger.log(le);
@@ -1477,7 +1537,7 @@ public class MainWindow extends JFrame {
 			if (cp != null) {
 				Dna.sql.setConnectionProfile(cp, false);
 				refreshDocumentTable();
-				refreshStatementTable();
+				refreshStatementTable(new int[0]);
 				adjustToCoderSelection();
 				
 				// changes in other classes
@@ -1573,7 +1633,7 @@ public class MainWindow extends JFrame {
 			if (cp != null) {
 				Dna.sql.setConnectionProfile(cp, false); // this is after creating data structures, so no test (= false)
 				refreshDocumentTable();
-				refreshStatementTable();
+				refreshStatementTable(new int[0]);
 				adjustToCoderSelection();
 				
 				// changes in other classes
@@ -1678,7 +1738,7 @@ public class MainWindow extends JFrame {
 										validPasswordInput = true; // authenticated; quit the while-loop
 										Dna.sql.setConnectionProfile(cp, false); // use the connection profile, so no test
 										refreshDocumentTable();
-										refreshStatementTable();
+										refreshStatementTable(new int[0]);
 										adjustToCoderSelection();
 										
 										// changes in other classes
@@ -1968,7 +2028,7 @@ public class MainWindow extends JFrame {
 				
 				if (cm.isDeletedCoder()) {
 					refreshDocumentTable();
-					refreshStatementTable();
+					refreshStatementTable(new int[0]);
 				}
 				cm.dispose();
 				Dna.sql.selectCoder(Dna.sql.getActiveCoder().getId()); // refresh permissions in case they were updated
@@ -2213,7 +2273,7 @@ public class MainWindow extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 			new Importer(MainWindow.this);
 	    	refreshDocumentTable();
-			refreshStatementTable();
+			refreshStatementTable(new int[0]);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: used DNA database import dialog.",
 					"Imported from another database into the current DNA database.");
@@ -2235,7 +2295,7 @@ public class MainWindow extends JFrame {
 		
 		public void actionPerformed(ActionEvent e) {
 	    	refreshDocumentTable();
-			refreshStatementTable();
+			refreshStatementTable(new int[0]);
 		}
 	}
 
@@ -2282,7 +2342,16 @@ public class MainWindow extends JFrame {
 						.filter(s -> s.getId() == statementTypeId)
 						.findFirst()
 						.orElse(null);
-				new StatementRecoder(MainWindow.this, statementIds, statementType);
+				StatementRecoder sr = new StatementRecoder(MainWindow.this, statementIds, statementType);
+				if (sr.isChangesApplied()) {
+					ArrayList<Statement> changedStatements = sr.getChangedStatements();
+					int[] changedIds = changedStatements
+							.stream()
+							.map(s -> s.getId())
+							.mapToInt(x -> x)
+							.toArray();
+					refreshStatementTable(changedIds);
+				}
 			}
 		}
 	}

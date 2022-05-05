@@ -2551,6 +2551,7 @@ public class Sql {
 	 *   Value} objects. They are used to update each variable value in each
 	 *   statement. The outer ArrayList is for the statements, and the inner
 	 *   ArrayList is for the variables in the given statement.
+	 * @param coderIds      An ArrayList of new coder IDs for the statements.
 	 * 
 	 * @category statement
 	 */

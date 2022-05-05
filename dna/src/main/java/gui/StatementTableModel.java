@@ -225,6 +225,24 @@ class StatementTableModel extends AbstractTableModel {
         fireTableRowsInserted(n, n + chunks.size() - 1); // subtract one because we don't need the cursor to be at the next position; it should refer to the last position
 	}
 	
+	/**
+	 * Take a list of statements and replace any existing statements with the
+	 * same IDs by these statements.
+	 * 
+	 * @param chunks
+	 */
+	void updateStatements(List<Statement> chunks) {
+		for (int i = 0; i < chunks.size(); i++) {
+			for (int j = 0; j < rows.size(); j++) {
+				if (rows.get(j).getId() == chunks.get(i).getId()) {
+					rows.set(j, chunks.get(i));
+					this.fireTableRowsUpdated(j, j);
+					break;
+				}
+			}
+		}
+	}
+	
 	void sort() {
 		Collections.sort(rows);
 		fireTableDataChanged();

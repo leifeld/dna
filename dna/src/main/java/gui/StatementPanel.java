@@ -68,6 +68,7 @@ class StatementPanel extends JPanel {
 	private JComboBox<StatementType> statementTypeBox;
 	private int documentId; // needed for the filter to check if a statement is in the current document; updated by listener
 	private TableRowSorter<StatementTableModel> sorter;
+	private JMenuItem menuItemStatementsSelected, menuItemStatementTypesSelected, menuItemToggleSelection;
 
 	/**
 	 * Create a new statement panel.
@@ -114,12 +115,35 @@ class StatementPanel extends JPanel {
 
 	    // right-click menu for statement table
 		JPopupMenu popupMenu = new JPopupMenu();
+		ImageIcon statementsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-messages.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		menuItemStatementsSelected = new JMenuItem("0 statements selected", statementsIcon);
+		menuItemStatementsSelected.setEnabled(false);
+		popupMenu.add(menuItemStatementsSelected);
+		menuItemStatementTypesSelected = new JMenuItem("of 0 statement type(s)");
+		menuItemStatementTypesSelected.setEnabled(false);
+		popupMenu.add(menuItemStatementTypesSelected);
+		ImageIcon selectionIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-tallymarks.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		menuItemToggleSelection = new JMenuItem("Select all / none", selectionIcon);
+		menuItemToggleSelection.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (statementTable.getSelectedRowCount() == statementTable.getRowCount()) {
+					statementTable.clearSelection();
+				} else {
+					statementTable.selectAll();
+				}
+			}
+		});
+		menuItemToggleSelection.setEnabled(false);
+		popupMenu.add(menuItemToggleSelection);
+		JSeparator sep1 = new JSeparator();
+		popupMenu.add(sep1);
 		JMenuItem menuItemRecode = new JMenuItem(actionRecodeStatements);
 		popupMenu.add(menuItemRecode);
 		JMenuItem menuItemDelete = new JMenuItem(actionRemoveStatements);
 		popupMenu.add(menuItemDelete);
-		JSeparator sep = new JSeparator();
-		popupMenu.add(sep);
+		JSeparator sep2 = new JSeparator();
+		popupMenu.add(sep2);
 		ImageIcon checkedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-checkbox.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		ImageIcon uncheckedIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-square.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		JMenuItem menuItemStatementId = new JMenuItem("ID", checkedIcon);
@@ -290,6 +314,24 @@ class StatementPanel extends JPanel {
 		}
 	}
 
+	/**
+	 * Set the number of selected statements for the context menu.
+	 * 
+	 * @param message Menu item message.
+	 */
+	void setMenuItemStatementsSelected(String message) {
+		this.menuItemStatementsSelected.setText(message);
+	}
+	
+	/**
+	 * Set the number of selected statement types for the context menu.
+	 * 
+	 * @param message Menu item message.
+	 */
+	void setMenuItemStatementTypesSelected(String message) {
+		this.menuItemStatementTypesSelected.setText(message);
+	}
+	
 	/**
 	 * Table cell renderer for the statement table
 	 */
@@ -627,11 +669,13 @@ class StatementPanel extends JPanel {
 	 */
 	public void adjustToChangedConnection() {
 		if (Dna.sql == null) {
+			menuItemToggleSelection.setEnabled(false);
 			allButton.setSelected(true);
 			allButton.setEnabled(false);
 			docButton.setEnabled(false);
 			filterButton.setEnabled(false);
 		} else {
+			menuItemToggleSelection.setEnabled(true);
 			allButton.setSelected(true);
 			allButton.doClick();
 			allButton.setEnabled(false);
