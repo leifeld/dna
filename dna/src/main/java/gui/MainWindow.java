@@ -441,7 +441,7 @@ public class MainWindow extends JFrame {
 						if (coderIds[i] != Dna.sql.getActiveCoder().getId()) {
 							allOwned = false;
 						}
-						if (Dna.sql.getActiveCoder().isPermissionEditOthersStatements(coderIds[i]) == false) {
+						if (Dna.sql.getActiveCoder().isPermissionEditOthersStatements(coderIds[i]) == false && Dna.sql.getActiveCoder().getId() != coderIds[i]) {
 							allOthersEditPermitted = false;
 						}
 						if (!Dna.sql.getActiveCoder().isPermissionEditOthersStatements(coderIds[i]) && Dna.sql.getActiveCoder().getId() != coderIds[i]) {
