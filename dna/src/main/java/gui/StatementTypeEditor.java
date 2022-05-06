@@ -815,7 +815,7 @@ public class StatementTypeEditor extends JDialog {
 	 */
 	private class AttributeDialog extends JDialog {
 		private static final long serialVersionUID = 7380782015282865541L;
-		JButton attributeDeleteButton, attributeAddButton, closeButton;
+		JButton attributeAddButton, attributeRenameButton, attributeDeleteButton, closeButton;
 		
 		/**
 		 * Create a new instance of an attribute dialog.
@@ -824,7 +824,6 @@ public class StatementTypeEditor extends JDialog {
 			super(parent, "Attributes", true);
 			this.setModal(true);
 			this.setTitle("Edit attributes");
-			//this.setLayout(new BorderLayout());
 			JPanel contentsPanel = new JPanel(new BorderLayout());
 
 			// list of attributes
@@ -832,7 +831,7 @@ public class StatementTypeEditor extends JDialog {
 			DefaultListModel<String> attributeListModel = new DefaultListModel<String>();
 			attributeListModel.addAll(attributeVariables);
 			JList<String> attributeList = new JList<String>(attributeListModel);
-			attributeList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+			attributeList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			JScrollPane listScroller = new JScrollPane(attributeList);
 			listScroller.setPreferredSize(new Dimension(100, 100));
 			attributeList.addListSelectionListener(new ListSelectionListener() {
@@ -840,8 +839,10 @@ public class StatementTypeEditor extends JDialog {
 				public void valueChanged(ListSelectionEvent e) {
 					if (e.getValueIsAdjusting() == false) {
 						if (attributeList.getSelectedIndices().length == 0) {
+							attributeRenameButton.setEnabled(false);
 							attributeDeleteButton.setEnabled(false);
 						} else {
+							attributeRenameButton.setEnabled(true);
 							attributeDeleteButton.setEnabled(true);
 						}
 					}
@@ -851,13 +852,13 @@ public class StatementTypeEditor extends JDialog {
 			
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 			JXTextField newField = new JXTextField("New attribute variable...");
-			newField.setColumns(20);
+			newField.setColumns(15);
 			newField.setPreferredSize(new Dimension(newField.getPreferredSize().width, newField.getPreferredSize().height + 4));
 			buttonPanel.add(newField);
 			
 			// add entity button
 			ImageIcon attributeAddIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-plus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
-			attributeAddButton = new JButton("Add attribute", attributeAddIcon);
+			attributeAddButton = new JButton("Add", attributeAddIcon);
 			attributeAddButton.setToolTipText("Add a new attribute variable.");
 			attributeAddButton.setPreferredSize(new Dimension(attributeAddButton.getPreferredSize().width, newField.getPreferredSize().height));
 			attributeAddButton.setEnabled(false);
@@ -904,10 +905,39 @@ public class StatementTypeEditor extends JDialog {
 					}
 				}
 			});
+
+			// rename attribute button and action listener
+			ImageIcon attributeRenameIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-forms.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+			attributeRenameButton = new JButton("Rename...", attributeRenameIcon);
+			attributeRenameButton.setToolTipText("Rename the selected attribute variable.");
+			attributeRenameButton.setPreferredSize(new Dimension(attributeRenameButton.getPreferredSize().width, newField.getPreferredSize().height));
+			attributeRenameButton.setEnabled(false);
+			buttonPanel.add(attributeRenameButton);
 			
+			attributeRenameButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					String oldAttributeVariableName = attributeList.getSelectedValue();
+					JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(StatementTypeEditor.this);
+					VariableDialog vd = new VariableDialog(frame, oldAttributeVariableName, "rename");
+					if (!vd.canceled()) {
+						String newAttributeVariableName = vd.getVariableName();
+						boolean success = Dna.sql.updateAttributeVariableName(variableId, oldAttributeVariableName, newAttributeVariableName);
+						if (success) {
+							for (int i = 0; i < attributeList.getModel().getSize(); i++) {
+								if (attributeListModel.get(i).equals(oldAttributeVariableName)) {
+									attributeListModel.set(i, newAttributeVariableName);
+									break;
+								}
+							}
+						}
+					}
+				}
+			});
+
 			// delete attribute button and action listener
 			ImageIcon deleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
-			attributeDeleteButton = new JButton("Delete selected", deleteIcon);
+			attributeDeleteButton = new JButton("Delete", deleteIcon);
 			attributeDeleteButton.setToolTipText("Delete the selected attribute variable (including all stored values).");
 			attributeDeleteButton.setPreferredSize(new Dimension(attributeDeleteButton.getPreferredSize().width, newField.getPreferredSize().height));
 			attributeDeleteButton.setEnabled(false);

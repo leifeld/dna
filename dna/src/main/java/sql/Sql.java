@@ -3544,6 +3544,32 @@ public class Sql {
         	Dna.logger.log(e);
 		}
 	}
+
+	/**
+	 * Rename an attribute variable.
+	 * 
+	 * @param variableId                The variable ID.
+	 * @param oldAttributeVariableName  The attribute variable name to rename.
+	 * @param newAttributeVariableName  The new attribute variable name.
+	 */
+	public boolean updateAttributeVariableName(int variableId, String oldAttributeVariableName, String newAttributeVariableName) {
+		boolean success = false;
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("UPDATE ATTRIBUTEVARIABLES SET AttributeVariable = ? WHERE VariableId = ? AND AttributeVariable = ?;")) {
+			s1.setString(1, newAttributeVariableName);
+			s1.setInt(2, variableId);
+			s1.setString(3, oldAttributeVariableName);
+			s1.executeUpdate();
+			success = true;
+		} catch (SQLException e1) {
+        	LogEvent e = new LogEvent(Logger.WARNING,
+        			"[SQL] Attribute could not be renamed.",
+        			"Attribute variable \"" + oldAttributeVariableName + "\" for Variable " + variableId + " could not be renamed. Check if the database is still there and/or if the connection has been interrupted, then try again.",
+        			e1);
+        	Dna.logger.log(e);
+		}
+		return success;
+	}
 	
 	/* =========================================================================
 	 * Statement types
