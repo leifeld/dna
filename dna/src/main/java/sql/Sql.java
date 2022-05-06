@@ -3485,6 +3485,65 @@ public class Sql {
 		return attributeVariables;
 	}
 
+	/**
+	 * Add a new attribute variable to a variable.
+	 * 
+	 * @param variableId         The variable ID.
+	 * @param attributeVariable  The attribute variable name.
+	 */
+	public void addAttributeVariable(int variableId, String attributeVariable) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+				PreparedStatement s2 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, '');");
+				PreparedStatement s3 = conn.prepareStatement("SELECT DISTINCT Entity FROM DATASHORTTEXT WHERE VariableId = ?;");
+				SQLCloseable finish = conn::rollback) {
+			conn.setAutoCommit(false);
+			ResultSet r;
+			s1.setInt(1, variableId);
+			s1.setString(2, attributeVariable);
+			s1.executeUpdate();
+			ResultSet generatedKeysResultSet = s1.getGeneratedKeys();
+			int attributeVariableId = -1;
+			while (generatedKeysResultSet.next()) {
+				attributeVariableId = generatedKeysResultSet.getInt(1);
+			}
+			s3.setInt(1, variableId);
+			r = s3.executeQuery();
+			while (r.next()) {
+				s2.setInt(1, r.getInt("Entity"));
+				s2.setInt(2, attributeVariableId);
+				s2.executeUpdate();
+			}
+        	conn.commit();
+		} catch (SQLException e1) {
+        	LogEvent e = new LogEvent(Logger.WARNING,
+        			"[SQL] Attribute could not be added to Variable " + variableId + ".",
+        			"Attribute variable \"" + attributeVariable + "\" could not be added to Variable " + variableId + ". Check if the database is still there and/or if the connection has been interrupted, then try again.",
+        			e1);
+        	Dna.logger.log(e);
+		}
+	}
+
+	/**
+	 * Delete an attribute variable.
+	 * 
+	 * @param variableId         The variable ID.
+	 * @param attributeVariable  The attribute variable name.
+	 */
+	public void deleteAttributeVariable(int variableId, String attributeVariable) {
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("DELETE FROM ATTRIBUTEVARIABLES WHERE (VariableId = ? AND AttributeVariable = ?);")) {
+			s1.setInt(1, variableId);
+			s1.setString(2, attributeVariable);
+			s1.executeUpdate();
+		} catch (SQLException e1) {
+        	LogEvent e = new LogEvent(Logger.WARNING,
+        			"[SQL] Attribute could not be deleted from Variable " + variableId + ".",
+        			"Attribute variable \"" + attributeVariable + "\" could not be deleted from Variable " + variableId + ". Check if the database is still there and/or if the connection has been interrupted, then try again.",
+        			e1);
+        	Dna.logger.log(e);
+		}
+	}
 	
 	/* =========================================================================
 	 * Statement types

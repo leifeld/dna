@@ -27,6 +27,7 @@ import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -117,7 +118,8 @@ public class AttributeManager extends JDialog {
 	/**
 	 * Create a new attribute manager dialog window.
 	 */
-	public AttributeManager() {
+	public AttributeManager(JFrame parent) {
+		super(parent, "Attribute manager", true);
 		this.setModal(true);
 		this.setTitle("Attribute manager");
 		ImageIcon attributeManagerIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-list.png"));
@@ -226,7 +228,7 @@ public class AttributeManager extends JDialog {
 		
 		// delete entity button and action listener
 		ImageIcon deleteIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
-		deleteButton = new JButton("Delete entity", deleteIcon);
+		deleteButton = new JButton("Delete selected unused entities", deleteIcon);
 		deleteButton.setToolTipText("Delete the selected unused entities (the selected rows highlighted in red).");
 		deleteButton.setPreferredSize(new Dimension(deleteButton.getPreferredSize().width, newField.getPreferredSize().height));
 		deleteButton.setEnabled(false);
@@ -249,7 +251,7 @@ public class AttributeManager extends JDialog {
 
 		// clean up button and action listener
 		ImageIcon cleanUpIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-circle-0.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
-		JButton cleanUpButton = new JButton("Clean up", cleanUpIcon);
+		JButton cleanUpButton = new JButton("Delete all unused entities", cleanUpIcon);
 		cleanUpButton.setToolTipText("Delete all unused entities (the rows highlighted in red) at once.");
 		cleanUpButton.setPreferredSize(new Dimension(cleanUpButton.getPreferredSize().width, newField.getPreferredSize().height));
 		buttonPanel.add(cleanUpButton);
@@ -626,7 +628,7 @@ public class AttributeManager extends JDialog {
 					} catch (SQLException ex) {
 			        	LogEvent l = new LogEvent(Logger.ERROR,
 			        			"[SQL] Entity value could not be updated in the database.",
-			        			"The value for Entity " + this.rows.get(row).getId() + " could not be updated in the database.",
+			        			"The value for Entity " + this.rows.get(row).getId() + " could not be updated in the database. You could check if an entity with the same name already exists; duplicate entities are not permitted. If that is not the case, it could be a database connection issue.",
 			        			ex);
 			        	Dna.logger.log(l);
 					}

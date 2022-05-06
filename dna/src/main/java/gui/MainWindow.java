@@ -2448,7 +2448,7 @@ public class MainWindow extends JFrame {
 		
 		public void actionPerformed(ActionEvent e) {
 			if (Dna.sql.getActiveCoder().isPermissionEditAttributes() == true) {
-				new AttributeManager();
+				new AttributeManager(MainWindow.this);
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: opened attribute manager.",
 						"Opened an attribute manager window from the GUI.");
