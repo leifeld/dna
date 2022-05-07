@@ -2306,7 +2306,7 @@ public class MainWindow extends JFrame {
 		
 		public void actionPerformed(ActionEvent e) {
 			// create search dialog
-			SearchDialog sd = new SearchDialog(null); //MainWindow.this
+			SearchDialog sd = new SearchDialog(null); // would normally be MainWindow.this, but then the main window can't be accessed while the dialog is open
 			
 			// add selection listener to table to select documents and highlight text in the main window
 			JTable searchTable = sd.getSearchTable();
@@ -2316,7 +2316,6 @@ public class MainWindow extends JFrame {
 			    	if (!e.getValueIsAdjusting()) {
 						int viewRow = searchTable.getSelectedRow();
 						if (viewRow > -1) {
-							//int modelRow = searchTable.convertRowIndexToModel(viewRow);
 							int documentId = (int) searchTable.getValueAt(viewRow, 0);
 							int start = (int) searchTable.getValueAt(viewRow, 3);
 							int stop = (int) searchTable.getValueAt(viewRow, 4);
@@ -2324,46 +2323,11 @@ public class MainWindow extends JFrame {
 							documentTablePanel.setSelectedDocumentId(documentId);
 							textPanel.getTextWindow().grabFocus();
 							textPanel.getTextWindow().select(start, stop);
-							//SwingUtilities.invokeLater(new Runnable() {
-							//	public void run() {
-							//	}
-							//});
-							
-							/*
-							Rectangle rect = textPanel.getTextWindow().modelToView(stop);
-							textPanel.getTextWindow().scrollRectToVisible(rect);
-							
-							
-							textPanel.getTextWindow().getDocument().get
-							textPanel.getTextWindow().scrollRectToVisible(stop);
-							*/
-							
-							// TODO: open and highlight in document table and text panel
-							/*
-							// old DNA 2.0 code:
-							int acRow = tableModel.get(selectedRow).getAcRow();
-							Dna.gui.documentPanel.documentTable.changeSelection(acRow, 0, false, false);
-							Dna.gui.textPanel.textWindow.grabFocus();
-							Dna.gui.textPanel.textWindow.setSelectionStart(tableModel.get(selectedRow).getStartCoordinate());
-							Dna.gui.textPanel.textWindow.setSelectionEnd(tableModel.get(selectedRow).getEndCoordinate());
-							 */
 						}
 					}
 			    }
 			});
-			/*
-			searchTable.addMouseListener(new MouseAdapter() {
-				  public void mouseClicked(MouseEvent e) {
-				    if (e.getClickCount() == 2) {
-				      JTable target = (JTable)e.getSource();
-				      int row = target.getSelectedRow();
-				      int column = target.getSelectedColumn();
-				      System.out.println(row);
-				    }
-				  }
-				});
-			*/
-			sd.setVisible(true);
+			sd.setVisible(true); // make visible here (i.e., only after adding selection listener to make it work)
 		}
 	}
 	

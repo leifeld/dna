@@ -226,7 +226,7 @@ public class SearchDialog extends JDialog {
 		panel.add(statusLabel, BorderLayout.SOUTH);
 		
 		this.pack();
-		cancelButton.setVisible(false);
+		cancelButton.setVisible(false); // make button and progress bar invisible after packing layout to ensure right size
 		progressBar.setVisible(false);
 		this.setLocationRelativeTo(null);
 		this.setVisible(false); // initially false because list selection listener first needs to be added in main window, then the dialog is set visible
@@ -340,16 +340,16 @@ public class SearchDialog extends JDialog {
 			        while (matcher.find()) {
 			        	start = matcher.start();
 			        	stop = matcher.end();
-			        	int a = start - 30;
+			        	int a = start - 30; // include 30 characters before match in table
 			        	if (a < 0) {
 			        		a = 0;
 			        	}
-			        	int b = stop + 30;
+			        	int b = stop + 30; // include 30 characters after match in table
 			        	if (b > text.length() - 1) {
 			        		b = text.length() - 1;
 			        	}
 			        	match = text.substring(a, b);
-			        	publish(new SearchResult(documentId, title, date, start, stop, match, regex));
+			        	publish(new SearchResult(documentId, title, date, start, stop, match));
 			        }
 				}
 			} catch (SQLException e) {
@@ -508,7 +508,7 @@ public class SearchDialog extends JDialog {
 	 */
 	private class SearchResult implements Comparable<SearchResult> {
 		private int documentId, start, stop;
-		private String title, displayText, regexPattern;
+		private String title, displayText;
 		private LocalDateTime dateTime;
 
 		/**
@@ -520,63 +520,74 @@ public class SearchDialog extends JDialog {
 		 * @param start         The start coordinate of the match in the text.
 		 * @param stop          The end coordinate of the match in the text.
 		 * @param displayText   The text in the document matching the regex.
-		 * @param regexPattern  The regular expression search pattern.
 		 */
-		public SearchResult(int documentId, String title, LocalDateTime dateTime, int start, int stop, String displayText, String regexPattern) {
+		public SearchResult(int documentId, String title, LocalDateTime dateTime, int start, int stop, String displayText) {
 			this.documentId = documentId;
 			this.title = title;
 			this.dateTime = dateTime;
 			this.start = start;
 			this.stop = stop;
 			this.displayText = displayText;
-			this.regexPattern = regexPattern;
 		}
 
 		/**
-		 * @return the documentId
+		 * Get the document ID.
+		 * 
+		 * @return The document ID.
 		 */
 		int getDocumentId() {
 			return documentId;
 		}
 
 		/**
-		 * @return the start
+		 * Get the start position in the document text.
+		 * 
+		 * @return The start position.
 		 */
 		int getStart() {
 			return start;
 		}
 
 		/**
-		 * @return the stop
+		 * Get the end position in the document text.
+		 * 
+		 * @return The end position.
 		 */
 		int getStop() {
 			return stop;
 		}
 
 		/**
-		 * @return the title
+		 * Get the document title.
+		 * 
+		 * @return The title.
 		 */
 		String getTitle() {
 			return title;
 		}
 
 		/**
-		 * @return the displayText
+		 * Get the display text, composed of the match +/- 30 characters.
+		 * 
+		 * @return The display text.
 		 */
 		String getDisplayText() {
 			return displayText;
 		}
 
 		/**
-		 * @return the dateTime
+		 * Get the date/time of the document.
+		 * 
+		 * @return The local date/time.
 		 */
 		LocalDateTime getDateTime() {
 			return dateTime;
 		}
 
 		/**
-		 * Implementation of the {@link java.lang.Comparable Comparable} interface
-		 * to sort documents in the document table and possibly elsewhere.
+		 * Implementation of the {@link java.lang.Comparable Comparable}
+		 * interface to sort search results in the document table and possibly
+		 * elsewhere.
 		 */
 		@Override
 		public int compareTo(SearchResult s) {
@@ -611,7 +622,7 @@ public class SearchDialog extends JDialog {
             	renderer.setHorizontalAlignment(JLabel.RIGHT);
             	renderer.setText(String.valueOf((int) value));
             } else if (searchTableModel.getColumnName(column).equals("Match")) {
-            	renderer.setHorizontalAlignment(JLabel.CENTER);
+            	renderer.setHorizontalAlignment(JLabel.CENTER); // align matches at the center of the column
             	renderer.setText((String) value);
             } else if (colClass.equals(String.class)) {
             	renderer.setHorizontalAlignment(JLabel.LEFT);
