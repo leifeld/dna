@@ -117,6 +117,7 @@ public class MainWindow extends JFrame {
 	private ActionAddDocument actionAddDocument;
 	private ActionRemoveDocuments actionRemoveDocuments;
 	private ActionEditDocuments actionEditDocuments;
+	private ActionSearchDialog actionSearchDialog;
 	private ActionRefresh actionRefresh;
 	private ActionBatchImportDocuments actionBatchImportDocuments;
 	private ActionImporter actionImporter;
@@ -258,6 +259,10 @@ public class MainWindow extends JFrame {
 		actionImporter = new ActionImporter("Import from DNA database", importerIcon, "Import documents, statements, entities, attributes, and regexes from another DNA database", KeyEvent.VK_D);
 		actionImporter.setEnabled(false);
 
+		ImageIcon searchDialogIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-search.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		actionSearchDialog = new ActionSearchDialog("Regex text search", searchDialogIcon, "Search for regular expressions in document texts and find matches", KeyEvent.VK_F);
+		actionSearchDialog.setEnabled(false);
+
 		ImageIcon recodeStatementsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-pencil.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionRecodeStatements = new ActionRecodeStatements("Edit multiple statements...", recodeStatementsIcon, "Recode the statements currently selected in the statement table", KeyEvent.VK_R);
 		actionRecodeStatements.setEnabled(false);
@@ -312,6 +317,7 @@ public class MainWindow extends JFrame {
 				actionEditDocuments,
 				actionBatchImportDocuments,
 				actionImporter,
+				actionSearchDialog,
 				actionRefresh,
 				actionRecodeStatements,
 				actionRemoveStatements,
@@ -1517,6 +1523,11 @@ public class MainWindow extends JFrame {
 		} else {
 			actionCoderRelationsEditor.setEnabled(false);
 		}
+		if (Dna.sql.getActiveCoder() != null && Dna.sql.getConnectionProfile() != null) {
+			actionSearchDialog.setEnabled(true);
+		} else {
+			actionSearchDialog.setEnabled(false);
+		}
 	}
 	
 	/**
@@ -2278,6 +2289,81 @@ public class MainWindow extends JFrame {
 					"[GUI] Action executed: used DNA database import dialog.",
 					"Imported from another database into the current DNA database.");
 			Dna.logger.log(l);
+		}
+	}
+
+	/**
+	 * An action to start a regex search dialog.
+	 */
+	class ActionSearchDialog extends AbstractAction {
+		private static final long serialVersionUID = 3191345857213145306L;
+
+		public ActionSearchDialog(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			// create search dialog
+			SearchDialog sd = new SearchDialog(null); //MainWindow.this
+			
+			// add selection listener to table to select documents and highlight text in the main window
+			JTable searchTable = sd.getSearchTable();
+			searchTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+			    @Override
+			    public void valueChanged(ListSelectionEvent e) {
+			    	if (!e.getValueIsAdjusting()) {
+						int viewRow = searchTable.getSelectedRow();
+						if (viewRow > -1) {
+							//int modelRow = searchTable.convertRowIndexToModel(viewRow);
+							int documentId = (int) searchTable.getValueAt(viewRow, 0);
+							int start = (int) searchTable.getValueAt(viewRow, 3);
+							int stop = (int) searchTable.getValueAt(viewRow, 4);
+							
+							documentTablePanel.setSelectedDocumentId(documentId);
+							textPanel.getTextWindow().grabFocus();
+							textPanel.getTextWindow().select(start, stop);
+							//SwingUtilities.invokeLater(new Runnable() {
+							//	public void run() {
+							//	}
+							//});
+							
+							/*
+							Rectangle rect = textPanel.getTextWindow().modelToView(stop);
+							textPanel.getTextWindow().scrollRectToVisible(rect);
+							
+							
+							textPanel.getTextWindow().getDocument().get
+							textPanel.getTextWindow().scrollRectToVisible(stop);
+							*/
+							
+							// TODO: open and highlight in document table and text panel
+							/*
+							// old DNA 2.0 code:
+							int acRow = tableModel.get(selectedRow).getAcRow();
+							Dna.gui.documentPanel.documentTable.changeSelection(acRow, 0, false, false);
+							Dna.gui.textPanel.textWindow.grabFocus();
+							Dna.gui.textPanel.textWindow.setSelectionStart(tableModel.get(selectedRow).getStartCoordinate());
+							Dna.gui.textPanel.textWindow.setSelectionEnd(tableModel.get(selectedRow).getEndCoordinate());
+							 */
+						}
+					}
+			    }
+			});
+			/*
+			searchTable.addMouseListener(new MouseAdapter() {
+				  public void mouseClicked(MouseEvent e) {
+				    if (e.getClickCount() == 2) {
+				      JTable target = (JTable)e.getSource();
+				      int row = target.getSelectedRow();
+				      int column = target.getSelectedColumn();
+				      System.out.println(row);
+				    }
+				  }
+				});
+			*/
+			sd.setVisible(true);
 		}
 	}
 	

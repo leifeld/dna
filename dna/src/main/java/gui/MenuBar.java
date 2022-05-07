@@ -35,6 +35,7 @@ import gui.MainWindow.ActionRegexEditor;
 import gui.MainWindow.ActionRemoveDocuments;
 import gui.MainWindow.ActionRemoveStatements;
 import gui.MainWindow.ActionSaveProfile;
+import gui.MainWindow.ActionSearchDialog;
 import gui.MainWindow.ActionStatementTypeEditor;
 
 /**
@@ -65,6 +66,7 @@ public class MenuBar extends JMenuBar {
 	 * @param actionEditDocuments         Action for editing documents.
 	 * @param actionBatchImportDocuments  Action for batch-importing documents.
 	 * @param actionImporter              Action for importing from database.
+	 * @param actionSearchDialog          Action for regex text search.
 	 * @param actionRefresh               Action for reloading data.
 	 * @param actionRecodeStatements      Action for recoding statements.
 	 * @param actionRemoveStatements      Action for removing statements.
@@ -87,6 +89,7 @@ public class MenuBar extends JMenuBar {
 			ActionEditDocuments actionEditDocuments,
 			ActionBatchImportDocuments actionBatchImportDocuments,
 			ActionImporter actionImporter,
+			ActionSearchDialog actionSearchDialog,
 			ActionRefresh actionRefresh,
 			ActionRecodeStatements actionRecodeStatements,
 			ActionRemoveStatements actionRemoveStatements,
@@ -155,6 +158,10 @@ public class MenuBar extends JMenuBar {
 		// document menu: import from other DNA database
 		JMenuItem importerItem = new JMenuItem(actionImporter);
 		documentMenu.add(importerItem);
+
+		// document menu: regex search dialog
+		JMenuItem regexSearchItem = new JMenuItem(actionSearchDialog);
+		documentMenu.add(regexSearchItem);
 		
 		// document menu: refresh document table
 		JMenuItem refreshItem = new JMenuItem(actionRefresh);
