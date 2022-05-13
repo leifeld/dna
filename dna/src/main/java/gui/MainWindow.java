@@ -1205,7 +1205,7 @@ public class MainWindow extends JFrame {
 			}
 			String stid = "";
 			if (statementIds.length > 0) {
-				stid = "WHERE StatementId IN ("
+				stid = "WHERE STATEMENTS.ID IN ("
 						+ IntStream.of(statementIds)
 						.mapToObj(i -> ((Integer) i).toString()) // i is an int, not an Integer
 						.collect(Collectors.joining(", "))
@@ -1247,8 +1247,7 @@ public class MainWindow extends JFrame {
 			}
 			
 			if (statementIds.length > 0) {
-				stid = "AND StatementId IN ("
-						+ IntStream.of(statementIds)
+				stid = IntStream.of(statementIds)
 						.mapToObj(i -> ((Integer) i).toString()) // i is an int, not an Integer
 						.collect(Collectors.joining(", "))
 						.toString()
@@ -1257,19 +1256,19 @@ public class MainWindow extends JFrame {
 			String q4 = "SELECT DATASHORTTEXT.StatementId, VARIABLES.ID AS VariableId, ENTITIES.Value AS Value FROM DATASHORTTEXT "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId "
 					+ "INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity WHERE VARIABLES.StatementTypeId = ? "
-					+ stid
+					+ "AND DATASHORTTEXT.StatementId IN (" + stid
 					+ "UNION "
 					+ "SELECT DATALONGTEXT.StatementId, VARIABLES.ID AS VariableId, DATALONGTEXT.Value FROM DATALONGTEXT "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId WHERE VARIABLES.StatementTypeId = ? "
-					+ stid
+					+ "AND DATALONGTEXT.StatementId IN (" + stid
 					+ "UNION "
 					+ "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, " + q4castBoolean + " FROM DATABOOLEAN "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId WHERE VARIABLES.StatementTypeId = ? "
-					+ stid
+					+ "AND DATABOOLEAN.StatementId IN (" + stid
 					+ "UNION "
 					+ "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, " + q4castInteger + " FROM DATAINTEGER "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId WHERE VARIABLES.StatementTypeId = ? "
-					+ stid
+					+ "AND DATAINTEGER.StatementId IN (" + stid
 					+ "ORDER BY 1, 2 ASC;";
 			
 			int statementTypeId, statementId, variableId;
