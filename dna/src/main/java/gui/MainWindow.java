@@ -1246,29 +1246,37 @@ public class MainWindow extends JFrame {
 				q4castInteger = "CAST(DATAINTEGER.Value AS TEXT)";
 			}
 			
+			String stidShort = "";
+			String stidLong = "";
+			String stidBool = "";
+			String stidInt = "";
 			if (statementIds.length > 0) {
 				stid = IntStream.of(statementIds)
 						.mapToObj(i -> ((Integer) i).toString()) // i is an int, not an Integer
 						.collect(Collectors.joining(", "))
 						.toString()
 						+ ") ";
+				stidShort = "AND DATASHORTTEXT.StatementId IN (" + stid;
+				stidLong = "AND DATALONGTEXT.StatementId IN (" + stid;
+				stidBool = "AND DATABOOLEAN.StatementId IN (" + stid;
+				stidInt = "AND DATAINTEGER.StatementId IN (" + stid;
 			}
 			String q4 = "SELECT DATASHORTTEXT.StatementId, VARIABLES.ID AS VariableId, ENTITIES.Value AS Value FROM DATASHORTTEXT "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId "
 					+ "INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity WHERE VARIABLES.StatementTypeId = ? "
-					+ "AND DATASHORTTEXT.StatementId IN (" + stid
+					+ stidShort
 					+ "UNION "
 					+ "SELECT DATALONGTEXT.StatementId, VARIABLES.ID AS VariableId, DATALONGTEXT.Value FROM DATALONGTEXT "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId WHERE VARIABLES.StatementTypeId = ? "
-					+ "AND DATALONGTEXT.StatementId IN (" + stid
+					+ stidLong
 					+ "UNION "
 					+ "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, " + q4castBoolean + " FROM DATABOOLEAN "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId WHERE VARIABLES.StatementTypeId = ? "
-					+ "AND DATABOOLEAN.StatementId IN (" + stid
+					+ stidBool
 					+ "UNION "
 					+ "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, " + q4castInteger + " FROM DATAINTEGER "
 					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId WHERE VARIABLES.StatementTypeId = ? "
-					+ "AND DATAINTEGER.StatementId IN (" + stid
+					+ stidInt
 					+ "ORDER BY 1, 2 ASC;";
 			
 			int statementTypeId, statementId, variableId;
