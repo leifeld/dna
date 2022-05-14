@@ -128,6 +128,7 @@ public class StatementRecoder extends JDialog {
 		table.setDefaultRenderer(int.class, recoderTableCellRenderer);
 		table.setDefaultRenderer(Integer.class, recoderTableCellRenderer);
 		table.setDefaultRenderer(Entity.class, recoderTableCellRenderer);
+		table.getTableHeader().setReorderingAllowed(false);
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		table.setFocusable(false); // no focus border around selected cell
 		JScrollPane scrollPane = new JScrollPane(table, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
