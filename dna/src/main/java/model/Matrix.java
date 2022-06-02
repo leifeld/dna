@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  * used.
  *
  */
-class Matrix implements Cloneable {
+public class Matrix implements Cloneable {
 	private double[][] matrix;
 	private String[] rownames, colnames;
 	private boolean integer;

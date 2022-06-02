@@ -26,6 +26,7 @@ import gui.MainWindow.ActionCreateDatabase;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionImporter;
 import gui.MainWindow.ActionLoggerDialog;
+import gui.MainWindow.ActionNetworkExporter;
 import gui.MainWindow.ActionOpenDatabase;
 import gui.MainWindow.ActionOpenProfile;
 import gui.MainWindow.ActionQuit;
@@ -72,6 +73,7 @@ public class MenuBar extends JMenuBar {
 	 * @param actionRemoveStatements      Action for removing statements.
 	 * @param actionStatementTypeEditor   Action for editing statement types.
 	 * @param actionAttributeManager      Action for opening attribute manager.
+	 * @param actionNetworkExporter       Action for opening network exporter.
 	 * @param actionCoderRelationsEditor  Action for editing coder relations.
 	 * @param actionLoggerDialog          Action for opening logger dialog.
 	 * @param actionAboutWindow           Action for opening DNA About window.
@@ -95,6 +97,7 @@ public class MenuBar extends JMenuBar {
 			ActionRemoveStatements actionRemoveStatements,
 			ActionStatementTypeEditor actionStatementTypeEditor,
 			ActionAttributeManager actionAttributeManager,
+			ActionNetworkExporter actionNetworkExporter,
 			ActionCoderRelationsEditor actionCoderRelationsEditor,
 			ActionLoggerDialog actionLoggerDialog,
 			ActionAboutWindow actionAboutWindow) {
@@ -190,6 +193,10 @@ public class MenuBar extends JMenuBar {
 		// export menu
 		JMenu exportMenu = new JMenu("Export");
 		this.add(exportMenu);
+
+		// export menu: open network exporter
+		JMenuItem networkExporterItem = new JMenuItem(actionNetworkExporter);
+		exportMenu.add(networkExporterItem);
 		
 		// settings menu
 		JMenu settingsMenu = new JMenu("Settings");

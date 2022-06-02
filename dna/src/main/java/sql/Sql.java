@@ -15,6 +15,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
@@ -1811,10 +1814,10 @@ public class Sql {
 	 * {@link model.TableDocument TableDocument} and contain neither the
 	 * document text nor any statement statements. They do contain the full
 	 * coder and the number of statements at the time of execution of the method
-	 * as a field.
+	 * as a field. If the document ID list is empty, all documents are returned.
 	 * 
 	 * @param documentIds    An array of document IDs for which the data should
-	 *   be queried.
+	 *   be queried. Can be empty (to select all documents).
 	 * @return             An {@link java.util.ArrayList ArrayList} of
 	 *   {@link model.TableDocument TableDocument} objects, containing the
 	 *   document meta-data.
@@ -1828,15 +1831,18 @@ public class Sql {
 				+ "COALESCE(Frequency, 0) AS Frequency "
 				+ "FROM DOCUMENTS LEFT JOIN "
 				+ "(SELECT DocumentId, COUNT(DocumentId) AS Frequency FROM STATEMENTS GROUP BY DocumentId) AS C ON C.DocumentId = DOCUMENTS.ID "
-				+ "LEFT JOIN CODERS ON CODERS.ID = DOCUMENTS.Coder WHERE DOCUMENTS.ID IN(";
-		
-		for (int i = 0; i < documentIds.length; i++) {
-			sql = sql + documentIds[i];
-			if (i < documentIds.length - 1) {
-				sql = sql + ", ";
+				+ "LEFT JOIN CODERS ON CODERS.ID = DOCUMENTS.Coder";
+		if (documentIds.length > 0) {
+			sql = sql + " WHERE DOCUMENTS.ID IN(";
+			for (int i = 0; i < documentIds.length; i++) {
+				sql = sql + documentIds[i];
+				if (i < documentIds.length - 1) {
+					sql = sql + ", ";
+				}
 			}
+			sql = sql + ")";
 		}
-		sql = sql + ");";
+		sql = sql + ";";
 		try (Connection conn = getDataSource().getConnection();
 				PreparedStatement s = conn.prepareStatement(sql)) {
 			ResultSet rs = s.executeQuery();
@@ -1942,6 +1948,34 @@ public class Sql {
 			Dna.logger.log(l);
 		}
 		return text;
+	}
+	
+	/**
+	 * Retrieve the minimum and maximum document date/time from the database.
+	 * 
+	 * @return A LocalDateTime array with the minimum and maximum date/time.
+	 */
+	public LocalDateTime[] getDateTimeRange() {
+		LocalDateTime[] range = new LocalDateTime[2];
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("SELECT MIN(DATE) FROM DOCUMENTS;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT MAX(DATE) FROM DOCUMENTS;")) {
+			ResultSet r = s1.executeQuery();
+			while (r.next()) {
+			    range[0] = LocalDateTime.ofEpochSecond(r.getLong(1), 0, ZoneOffset.UTC);
+			}
+			r = s2.executeQuery();
+			while (r.next()) {
+			    range[1] = LocalDateTime.ofEpochSecond(r.getLong(1), 0, ZoneOffset.UTC);
+			}
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to retrieve date/time range.",
+					"Attempted to retrieve the minimum and maximum date/time stamp across all documents in the database.",
+					e);
+			Dna.logger.log(l);
+		}
+		return range;
 	}
 	
 	/**
@@ -2936,18 +2970,138 @@ public class Sql {
 	}
 
 	/**
-	 * Get statements corresponding to an array of statement IDs.
+	 * Get statements, potentially filtered by statement IDs, document
+	 * meta-data, date/time range, and duplicates setting.
 	 * 
-	 * @param statementIds Array of statement IDs to retrieve.
+	 * @param statementIds   Array of statement IDs to retrieve. Can be empty or
+	 *   null, in which case all statements are selected.
+	 * @param startDateTime  Date/time before which statements are discarded.
+	 * @param stopDateTime   Date/time after which statements are discarded.
+	 * @param authors        Array list of document authors to exclude. Can be
+	 *   empty or null, in which case all statements are selected.
+	 * @param authorInclude  Include authors instead of excluding them?
+	 * @param sources        Array list of document sources to exclude. Can be
+	 *   empty or null, in which case all statements are selected.
+	 * @param sourceInclude  Include sources instead of excluding them?
+	 * @param sections       Array list of document sections to exclude. Can be
+	 *   empty or null, in which case all statements are selected.
+	 * @param sectionInclude Include sections instead of excluding them?
+	 * @param types          Array list of document types to exclude. Can be
+	 *   empty or null, in which case all statements are selected.
+	 * @param typeInclude    Include types instead of excluding them?
 	 * @return Array list of statements with all details.
 	 */
-	public ArrayList<Statement> getStatements(int[] statementIds) {
-		String ids = "";
-		for (int i = 0; i < statementIds.length; i++) {
-			ids = ids + statementIds[i];
-			if (i < statementIds.length - 1) {
-				ids = ids + ", ";
+	public ArrayList<Statement> getStatements(
+			int[] statementIds,
+			LocalDateTime startDateTime,
+			LocalDateTime stopDateTime,
+			ArrayList<String> authors,
+			boolean authorInclude,
+			ArrayList<String> sources,
+			boolean sourceInclude,
+			ArrayList<String> sections,
+			boolean sectionInclude,
+			ArrayList<String> types,
+			boolean typeInclude) {
+		String whereStatements = "";
+		String whereShortText = "";
+		String whereLongText = "";
+		String whereBoolean = "";
+		String whereInteger = "";
+		if (statementIds != null && statementIds.length > 0) {
+			String ids = "";
+			for (int i = 0; i < statementIds.length; i++) {
+				ids = ids + statementIds[i];
+				if (i < statementIds.length - 1) {
+					ids = ids + ", ";
+				}
 			}
+			whereStatements = "WHERE STATEMENTS.ID IN (" + ids + ") ";
+			whereShortText = "AND DATASHORTTEXT.StatementId IN (" + ids + ") ";
+			whereLongText = "AND DATALONGTEXT.StatementId IN (" + ids + ") ";
+			whereBoolean = "AND DATABOOLEAN.StatementId IN (" + ids + ") ";
+			whereInteger = "AND DATAINTEGER.StatementId IN (" + ids + ") ";
+		}
+		if (startDateTime != null) {
+			whereStatements = whereStatements + "AND Date >= " + startDateTime.toEpochSecond(ZoneOffset.UTC) + " ";
+			whereShortText = whereShortText + "AND Date >= " + startDateTime.toEpochSecond(ZoneOffset.UTC) + " ";
+			whereLongText = whereLongText + "AND Date >= " + startDateTime.toEpochSecond(ZoneOffset.UTC) + " ";
+			whereBoolean = whereBoolean + "AND Date >= " + startDateTime.toEpochSecond(ZoneOffset.UTC) + " ";
+			whereInteger = whereInteger + "AND Date >= " + startDateTime.toEpochSecond(ZoneOffset.UTC) + " ";
+		}
+		if (stopDateTime != null) {
+			whereStatements = whereStatements + "AND Date <= " + stopDateTime.toEpochSecond(ZoneOffset.UTC) + " ";
+			whereShortText = whereShortText + "AND Date <= " + stopDateTime.toEpochSecond(ZoneOffset.UTC) + " ";
+			whereLongText = whereLongText + "AND Date <= " + stopDateTime.toEpochSecond(ZoneOffset.UTC) + " ";
+			whereBoolean = whereBoolean + "AND Date <= " + stopDateTime.toEpochSecond(ZoneOffset.UTC) + " ";
+			whereInteger = whereInteger + "AND Date <= " + stopDateTime.toEpochSecond(ZoneOffset.UTC) + " ";
+		}
+		if (authors != null && authors.size() > 0) {
+			String authorNot = "";
+			if (!authorInclude) {
+				authorNot = "NOT ";
+			}
+			String authorWhere = "AND DOCUMENTS.Author "
+					+ authorNot
+					+ "IN ("
+					+ authors.stream().collect(Collectors.joining("', '"))
+					+ ") ";
+			whereStatements = whereStatements + authorWhere;
+			whereShortText = whereShortText + authorWhere;
+			whereLongText = whereLongText + authorWhere;
+			whereBoolean = whereBoolean + authorWhere;
+			whereInteger = whereInteger + authorWhere;
+		}
+		if (sources != null && sources.size() > 0) {
+			String sourceNot = "";
+			if (!sourceInclude) {
+				sourceNot = "NOT ";
+			}
+			String sourceWhere = "AND DOCUMENTS.Source "
+					+ sourceNot
+					+ "IN ("
+					+ sources.stream().collect(Collectors.joining("', '"))
+					+ ") ";
+			whereStatements = whereStatements + sourceWhere;
+			whereShortText = whereShortText + sourceWhere;
+			whereLongText = whereLongText + sourceWhere;
+			whereBoolean = whereBoolean + sourceWhere;
+			whereInteger = whereInteger + sourceWhere;
+		}
+		if (sections != null && sections.size() > 0) {
+			String sectionNot = "";
+			if (!sectionInclude) {
+				sectionNot = "NOT ";
+			}
+			String sectionWhere = "AND DOCUMENTS.Section "
+					+ sectionNot
+					+ "IN ("
+					+ sections.stream().collect(Collectors.joining("', '"))
+					+ ") ";
+			whereStatements = whereStatements + sectionWhere;
+			whereShortText = whereShortText + sectionWhere;
+			whereLongText = whereLongText + sectionWhere;
+			whereBoolean = whereBoolean + sectionWhere;
+			whereInteger = whereInteger + sectionWhere;
+		}
+		if (types != null && types.size() > 0) {
+			String typeNot = "";
+			if (!typeInclude) {
+				typeNot = "NOT ";
+			}
+			String typeWhere = "AND DOCUMENTS.Type "
+					+ typeNot
+					+ "IN ("
+					+ types.stream().collect(Collectors.joining("', '"))
+					+ ") ";
+			whereStatements = whereStatements + typeWhere;
+			whereShortText = whereShortText + typeWhere;
+			whereLongText = whereLongText + typeWhere;
+			whereBoolean = whereBoolean + typeWhere;
+			whereInteger = whereInteger + typeWhere;
+		}
+		if (whereStatements.startsWith("AND")) { // ensure correct form if no statement ID filtering
+			whereStatements = whereStatements.replaceFirst("AND", "WHERE");
 		}
 		
 		String subString = "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text ";
@@ -2974,7 +3128,7 @@ public class Sql {
 				+ "INNER JOIN CODERS ON STATEMENTS.Coder = CODERS.ID "
 				+ "INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID "
 				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
-				+ "WHERE STATEMENTS.ID IN (" + ids + ") "
+				+ whereStatements
 				+ "ORDER BY DOCUMENTS.DATE ASC;";
 
 		String q2 = "SELECT ID FROM STATEMENTTYPES;";
@@ -2984,16 +3138,24 @@ public class Sql {
 		String q4a = "SELECT DATASHORTTEXT.StatementId, VARIABLES.ID AS VariableId, ENTITIES.ID AS EntityId, ENTITIES.Value AS Value, ENTITIES.Red AS Red, ENTITIES.Green AS Green, ENTITIES.Blue AS Blue, ENTITIES.ChildOf AS ChildOf FROM DATASHORTTEXT "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId "
 				+ "INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity "
-				+ "WHERE VARIABLES.StatementTypeId = ? AND DATASHORTTEXT.StatementId IN (" + ids + ") ORDER BY 1, 2 ASC;";
+				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATASHORTTEXT.StatementId "
+				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
+				+ "WHERE VARIABLES.StatementTypeId = ? " + whereShortText + "ORDER BY 1, 2 ASC;";
 		String q4b = "SELECT DATALONGTEXT.StatementId, VARIABLES.ID AS VariableId, DATALONGTEXT.Value FROM DATALONGTEXT "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId "
-				+ "WHERE VARIABLES.StatementTypeId = ? AND DATALONGTEXT.StatementId IN (" + ids + ") ORDER BY 1, 2 ASC;";
+				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATALONGTEXT.StatementId "
+				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
+				+ "WHERE VARIABLES.StatementTypeId = ? " + whereLongText + "ORDER BY 1, 2 ASC;";
 		String q4c = "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, DATABOOLEAN.Value FROM DATABOOLEAN "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId "
-				+ "WHERE VARIABLES.StatementTypeId = ? AND DATABOOLEAN.StatementId IN (" + ids + ") ORDER BY 1, 2 ASC;";
+				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATABOOLEAN.StatementId "
+				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
+				+ "WHERE VARIABLES.StatementTypeId = ? " + whereBoolean + "ORDER BY 1, 2 ASC;";
 		String q4d = "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, DATAINTEGER.Value FROM DATAINTEGER "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId "
-				+ "WHERE VARIABLES.StatementTypeId = ? AND DATAINTEGER.StatementId IN (" + ids + ") ORDER BY 1, 2 ASC;";
+				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATAINTEGER.StatementId "
+				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
+				+ "WHERE VARIABLES.StatementTypeId = ? " + whereInteger + "ORDER BY 1, 2 ASC;";
 		
 		String q5 = "SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES "
 				+ "INNER JOIN ATTRIBUTEVARIABLES ON ATTRIBUTEVARIABLES.ID = AttributeVariableId "
@@ -3437,6 +3599,68 @@ public class Sql {
 		}
 	}
 
+	/**
+	 * Retrieve unique values for a specific variable.
+	 * 
+	 * @param statementTypeId  Statement type ID to which the variable belongs.
+	 * @param variable         The name of the variable.
+	 * @return                 Array list of unique String values.
+	 */
+	public ArrayList<String> getUniqueValues(int statementTypeId, String variable) {
+		ArrayList<String> values = new ArrayList<String>();
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s1 = conn.prepareStatement("SELECT DISTINCT Value FROM DATAINTEGER INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId WHERE VARIABLES.Variable = ? AND VARIABLES.StatementTypeId = ?;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT DISTINCT Value FROM DATABOOLEAN INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId WHERE VARIABLES.Variable = ? AND VARIABLES.StatementTypeId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT DISTINCT Value FROM DATALONGTEXT INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId WHERE VARIABLES.Variable = ? AND VARIABLES.StatementTypeId = ?;");
+				PreparedStatement s4 = conn.prepareStatement("SELECT DISTINCT Value FROM ENTITIES INNER JOIN DATASHORTTEXT ON DATASHORTTEXT.Entity = ENTITIES.ID INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId WHERE VARIABLES.Variable = ? AND VARIABLES.StatementTypeId = ?;");
+				PreparedStatement s5 = conn.prepareStatement("SELECT DataType FROM VARIABLES WHERE Variable = ? AND StatementTypeId = ?;")) {
+			ResultSet r1, r2;
+			s5.setString(1, variable);
+			s5.setInt(2, statementTypeId);
+			r1 = s5.executeQuery();
+			while (r1.next()) {
+				String dataType = r1.getString("DataType");
+				if (dataType.equals("integer")) {
+					s1.setString(1, variable);
+					s1.setInt(2, statementTypeId);
+					r2 = s1.executeQuery();
+					while (r2.next()) {
+						values.add(String.valueOf(r2.getInt("Value")));
+					}
+				} else if (dataType.equals("boolean")) {
+					s2.setString(1, variable);
+					s2.setInt(2, statementTypeId);
+					r2 = s2.executeQuery();
+					while (r2.next()) {
+						values.add(String.valueOf(r2.getInt("Value")));
+					}
+				} else if (dataType.equals("long text")) {
+					s3.setString(1, variable);
+					s3.setInt(2, statementTypeId);
+					r2 = s3.executeQuery();
+					while (r2.next()) {
+						values.add(r2.getString("Value"));
+					}
+				} else {
+					s4.setString(1, variable);
+					s4.setInt(2, statementTypeId);
+					r2 = s4.executeQuery();
+					while (r2.next()) {
+						values.add(r2.getString("Value"));
+					}
+				}
+			}
+		} catch (SQLException e1) {
+        	LogEvent e = new LogEvent(Logger.WARNING,
+        			"[SQL] Values could not be retrieved.",
+        			"The unique values for variable \"" + variable + "\" (statement type ID " + statementTypeId + ") could not be retrieved from the database.",
+        			e1);
+        	Dna.logger.log(e);
+		}
+		Collections.sort(values);
+		return values;
+	}
+	
 	/**
 	 * Update/set an attribute value for an entity.
 	 * 

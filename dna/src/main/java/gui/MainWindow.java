@@ -125,6 +125,7 @@ public class MainWindow extends JFrame {
 	private ActionRemoveStatements actionRemoveStatements;
 	private ActionStatementTypeEditor actionStatementTypeEditor;
 	private ActionAttributeManager actionAttributeManager;
+	private ActionNetworkExporter actionNetworkExporter;
 	private ActionCoderRelationsEditor actionCoderRelationsEditor;
 	private ActionLoggerDialog actionLoggerDialog;
 	private ActionAboutWindow actionAboutWindow;
@@ -279,6 +280,10 @@ public class MainWindow extends JFrame {
 		actionAttributeManager = new ActionAttributeManager("Open attribute manager", attributeManagerIcon, "Open the attribute manager to edit entities and their attribute values.", KeyEvent.VK_A);
 		actionAttributeManager.setEnabled(false);
 
+		ImageIcon networkExporterIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-affiliate.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		actionNetworkExporter = new ActionNetworkExporter("Open network export dialog", networkExporterIcon, "Open a network export dialog window.", KeyEvent.VK_N);
+		actionNetworkExporter.setEnabled(false);
+
 		ImageIcon coderRelationsEditorIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-user-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionCoderRelationsEditor = new ActionCoderRelationsEditor("Edit coder relations", coderRelationsEditorIcon, "Open the coder relations editor define whose documents and statements you can view and edit.", KeyEvent.VK_R);
 		actionCoderRelationsEditor.setEnabled(false);
@@ -323,6 +328,7 @@ public class MainWindow extends JFrame {
 				actionRemoveStatements,
 				actionStatementTypeEditor,
 				actionAttributeManager,
+				actionNetworkExporter,
 				actionCoderRelationsEditor,
 				actionLoggerDialog,
 				actionAboutWindow);
@@ -1535,6 +1541,11 @@ public class MainWindow extends JFrame {
 		} else {
 			actionSearchDialog.setEnabled(false);
 		}
+		if (Dna.sql.getConnectionProfile() != null) {
+			actionNetworkExporter.setEnabled(true);
+		} else {
+			actionNetworkExporter.setEnabled(false);
+		}
 	}
 	
 	/**
@@ -2516,6 +2527,27 @@ public class MainWindow extends JFrame {
 						"Attempted to open an attribute manager from the GUI, but the coder did not have sufficient permissions for editing attributes. This message should never appear because the menu item for opening an attribute manager should be grayed out when the active coder has insufficient permissions. Please report the full error log to the developers through the issue tracker on GitHub.");
 				Dna.logger.log(l);
 			}
+		}
+	}
+
+	/**
+	 * An action to display a network exporter dialog window.
+	 */
+	class ActionNetworkExporter extends AbstractAction {
+		private static final long serialVersionUID = -19664358765966754L;
+
+		public ActionNetworkExporter(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			new NetworkExporter(MainWindow.this);
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: opened network export dialog window.",
+					"Opened a network export dialog window from the GUI.");
+			Dna.logger.log(l);
 		}
 	}
 

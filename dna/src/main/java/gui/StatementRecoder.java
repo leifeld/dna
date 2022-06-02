@@ -118,9 +118,9 @@ public class StatementRecoder extends JDialog {
 		 */
 		
 		// dialog panel CENTER: preview table panel
-		ArrayList<Statement> statements = Dna.sql.getStatements(statementIds);
+		ArrayList<Statement> statements = Dna.sql.getStatements(statementIds, null, null, null, false, null, false, null, false, null, false);
 		final ArrayList<Statement> statementsBackup = statements.stream().map(s -> new Statement(s)).collect(Collectors.toCollection(ArrayList::new));
-		tableModel = new StatementRecodeTableModel(Dna.sql.getStatements(statementIds), statementsBackup, statementType);
+		tableModel = new StatementRecodeTableModel(Dna.sql.getStatements(statementIds, null, null, null, false, null, false, null, false, null, false), statementsBackup, statementType);
 		JTable table = new JTable(tableModel);
 		RecoderTableCellRenderer recoderTableCellRenderer = new RecoderTableCellRenderer();
 		table.setDefaultRenderer(Coder.class, recoderTableCellRenderer);
