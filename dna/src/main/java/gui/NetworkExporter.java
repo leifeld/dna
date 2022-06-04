@@ -170,13 +170,7 @@ public class NetworkExporter extends JDialog {
 					isolatesBox.removeAllItems();
 					isolatesBox.addItem("only current nodes");
 					isolatesBox.addItem("include isolates");
-					
-					/*
-					temporalBox.removeAllItems();
-					temporalBox.addItem("across date range");
-					*/
 				} else if (selected.equals("One-mode network")) {
-					
 					String fileFormatBackup = (String) fileFormatBox.getSelectedItem();
 					fileFormatBox.removeAllItems();
 					fileFormatBox.addItem(".csv");
@@ -210,7 +204,6 @@ public class NetworkExporter extends JDialog {
 					isolatesBox.addItem("only current nodes");
 					isolatesBox.addItem("include isolates");
 				} else if (selected.equals("Event list")) {
-					
 					fileFormatBox.removeAllItems();
 					fileFormatBox.addItem(".csv");
 					
@@ -230,7 +223,10 @@ public class NetworkExporter extends JDialog {
 		gbc.gridx = 1;
 		this.statementTypes = Dna.sql.getStatementTypes()
 				.stream()
-				.filter(s -> s.getVariables().stream().filter(v -> v.getDataType().equals("short text")).count() > 1)
+				.filter(s -> s.getVariables()
+						.stream()
+						.filter(v -> v.getDataType().equals("short text"))
+						.count() > 1)
 				.sorted((s1, s2) -> Integer.valueOf(s1.getId()).compareTo(Integer.valueOf(s2.getId())))
 				.toArray(StatementType[]::new);
 		if (statementTypes.length < 1) {
@@ -239,36 +235,11 @@ public class NetworkExporter extends JDialog {
 					"The network export dialog window has tried to populate the statement type combo box with statement types, but there was not a single statement type containing at least two short text variables that could be used for network construction.");
 			Dna.logger.log(l);
 		}
-		/*
-		Value[] variables = Stream
-				.of(statementTypes)
-				.flatMap(s -> s.getVariables().stream())
-				.distinct()
-				.filter(v -> v.getDataType().equals("short text"))
-				.sorted()
-				.toArray(Value[]::new);
-		*/
 		StatementTypeComboBoxRenderer cbrenderer = new StatementTypeComboBoxRenderer();
-		//StatementTypeComboBoxModel model = new StatementTypeComboBoxModel();
 		statementTypeBox = new JComboBox<StatementType>(statementTypes);
 		statementTypeBox.setRenderer(cbrenderer);
 		statementTypeBox.setSelectedIndex(0);
 		statementTypeBox.setToolTipText(statementTypeToolTip);
-		/*
-		String[] var1Items = null, var2Items = null;
-		for (int i = 0; i < Dna.data.getStatementTypes().size(); i++) {
-			String[] vars = getVariablesList(Dna.data.getStatementTypes().get(i), false, true, false, false);
-			if (vars.length > 1) {
-				statementTypeBox.setSelectedItem(Dna.data.getStatementTypes().get(i));
-				var1Items = vars;
-				var2Items = vars;
-				break;
-			}
-		}
-		if (var1Items == null) {
-			System.err.println("No statement type with more than one short text variable found!");
-		}
-		*/
 		settingsPanel.add(statementTypeBox, gbc);
 		final int HEIGHT = (int) statementTypeBox.getPreferredSize().getHeight();
 		final int WIDTH = 200;
@@ -384,18 +355,18 @@ public class NetworkExporter extends JDialog {
 		gbc.insets = new java.awt.Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 3;
-		// var1Box = new JComboBox<>(var1Items);
-		var1Box = new JComboBox<String>();
+		String[] varItems = NetworkExporter.this.getVariablesList((StatementType) statementTypeBox.getSelectedItem(), false, true, false, false);
+		var1Box = new JComboBox<String>(varItems);
 		var1Box.setToolTipText(var1ToolTip);
+		var1Box.setSelectedIndex(0);
 		settingsPanel.add(var1Box, gbc);
 		int HEIGHT2 = (int) var1Box.getPreferredSize().getHeight();
 		var1Box.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		
 		gbc.gridx = 1;
-		// var2Box = new JComboBox<>(var2Items);
-		var2Box = new JComboBox<String>();
+		var2Box = new JComboBox<String>(varItems);
 		var2Box.setToolTipText(var2ToolTip);
-		// var2Box.setSelectedIndex(1);
+		var2Box.setSelectedIndex(1);
 		settingsPanel.add(var2Box, gbc);
 		var2Box.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		fg = var2Box.getForeground();
@@ -625,9 +596,11 @@ public class NetworkExporter extends JDialog {
 		JButton startDateButton = startPicker.getDatePicker().getComponentToggleCalendarButton();
         startDateButton.setText("");
         startDateButton.setIcon(dateIcon);
+        startDateButton.setToolTipText(dateToolTip);
 		JButton startTimeButton = startPicker.getTimePicker().getComponentToggleTimeMenuButton();
         startTimeButton.setText("");
         startTimeButton.setIcon(timeIcon);
+        startTimeButton.setToolTipText(dateToolTip);
         startPicker.setToolTipText(dateToolTip);
 		startPicker.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		settingsPanel.add(startPicker, gbc);
@@ -645,9 +618,11 @@ public class NetworkExporter extends JDialog {
 		JButton stopDateButton = stopPicker.getDatePicker().getComponentToggleCalendarButton();
         stopDateButton.setText("");
         stopDateButton.setIcon(dateIcon);
+        stopDateButton.setToolTipText(dateToolTip);
 		JButton stopTimeButton = stopPicker.getTimePicker().getComponentToggleTimeMenuButton();
         stopTimeButton.setText("");
         stopTimeButton.setIcon(timeIcon);
+        stopTimeButton.setToolTipText(dateToolTip);
         stopPicker.setToolTipText(dateToolTip);
 		stopPicker.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		settingsPanel.add(stopPicker, gbc);
@@ -819,7 +794,7 @@ public class NetworkExporter extends JDialog {
 			public void valueChanged(ListSelectionEvent e) {
 				String selectedVariable = excludeVariableList.getSelectedValue();
 				List<String> selectedValues = excludeValueList.getSelectedValuesList();
-				if (e.getValueIsAdjusting()) {
+				if (!e.getValueIsAdjusting()) {
 					if (selectedValues != null) {
 						ArrayList<String> sel = new ArrayList<String>(selectedValues);
 						if (selectedVariable.equals("type")) {
@@ -981,7 +956,7 @@ public class NetworkExporter extends JDialog {
 		toggleHelp();
 		settingsPanel.add(buttonPanel, gbc);
 		
-		this.add(settingsPanel, java.awt.BorderLayout.NORTH);
+		this.add(settingsPanel, java.awt.BorderLayout.CENTER);
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
