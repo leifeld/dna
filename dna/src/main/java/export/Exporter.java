@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 import dna.Dna;
+import model.Matrix;
 import model.Statement;
 import model.StatementType;
 import model.TableDocument;
@@ -21,62 +22,276 @@ import model.Value;
  */
 public class Exporter {
 	private StatementType statementType;
-	private String var1, var2, qualifierName, duplicateSetting;
-	private boolean var1Document, var2Document, ignoreQualifier;
+	private String networkType, variable1, variable2, qualifier, qualifierAggregation;
+	private String normalization, duplicates, timeWindow;
+	private boolean variable1Document, variable2Document, isolates;
 	private LocalDateTime startDateTime, stopDateTime;
+	private int windowSize;
 	private HashMap<String, ArrayList<String>> excludeValues;
 	private ArrayList<String> excludeAuthors, excludeSources, excludeSections, excludeTypes;
+	private boolean invertValues, invertAuthors, invertSources, invertSections, invertTypes;
+	private String fileFormat, outfile;
 	
 	private ArrayList<TableDocument> documents;
 	private HashMap<Integer, Integer> docMap;
+	private HashMap<String, String> dataTypes;
 	private ArrayList<ExportStatement> originalStatements;
 	private ArrayList<ExportStatement> filteredStatements;
 
 	/**
-	 * Create a new Exporter class instance, holding an array list of export
+	 * <p>Create a new Exporter class instance, holding an array list of export
 	 * statements (i.e., statements with added document information and a hash
 	 * map for easier access to variable values.
 	 * 
-	 * @param statements Array list of statements.
+	 * @param networkType The type of network to be exported. Valid values are:
+	 *   <ul>
+	 *     <li>{@code "twomode"} (to create a two-mode network)</li>
+	 *     <li>{@code "onemode"} (to create a one-mode network)</li>
+	 *     <li>{@code "eventlist"} (to create an event list)</li>
+	 *   </ul>
+	 * @param statementType The statement type.
+	 * @param variable1 The name of the first variable, for example {@code
+	 *   "organization"}. In addition to the variables defined in the statement
+	 *   type, the document variables {@code author}, {@code source}, {@code
+	 *   section}, {@code type}, {@code id}, and {@code title} are valid. If
+	 *   document-level variables are used, this must be declared using the
+	 *   {@code variable1Document} argument.
+	 * @param variable1Document Is the first variable defined at the document
+	 *   level, for instance the author or document ID?
+	 * @param variable2 The name of the second variable, for example {@code
+	 *   "concept"}. In addition to the variables defined in the statement type,
+	 *   the document variables {@code author}, {@code source}, {@code section},
+	 *   {@code type}, {@code id}, and {@code title} are valid. If
+	 *   document-level variables are used, this must be declared using the
+	 *   {@code variable2Document} argument.
+	 * @param variable2Document Is the second variable defined at the document
+	 *   level, for instance the author or document ID?
+	 * @param qualifierName The qualifier variable, for example {@code
+	 *  "agreement"}.
+	 * @param qualifierAggregation The way in which the qualifier variable is
+	 *   used to aggregate ties in the network.<br/>
+	 *   Valid values if the {@code networkType} argument equals {@code
+	 *   "onemode"} are:
+	 *   <ul>
+	 *     <li>{@code "ignore"} (for ignoring the qualifier variable)</li>
+	 *     <li>{@code "congruence"} (for recording a network tie only if both
+	 *       nodes have the same qualifier value in the binary case or for
+	 *       recording the similarity between the two nodes on the qualifier
+	 *       variable in the integer case)</li>
+	 *     <li>{@code "conflict"} (for recording a network tie only if both
+	 *       nodes have a different qualifier value in the binary case or for
+	 *       recording the distance between the two nodes on the qualifier
+	 *       variable in the integer case)</li>
+	 *     <li>{@code "subtract"} (for subtracting the conflict tie value from
+	 *       the congruence tie value in each dyad)</li>
+	 *   </ul>
+	 *   Valid values if the {@code networkType} argument equals {@code
+	 *   "twomode"} are:
+	 *   <ul>
+	 *     <li>{@code "ignore"} (for ignoring the qualifier variable)</li>
+	 *     <li>{@code "combine"} (for creating multiplex combinations, e.g.,
+	 *       {@code 1} for positive, {@code 2} for negative, and {@code 3} for
+	 *       mixed)</li>
+	 *     <li>{@code "subtract"} (for subtracting negative from positive
+	 *       ties)</li>
+	 *   </ul>
+	 *   The argument is ignored if {@code networkType} equals {@code
+	 *   "eventlist"}.
+	 * @param normalization Normalization of edge weights. Valid settings for
+	 *   <em>one-mode</em> networks are:
+     *   <ul>
+	 *     <li>{@code "no"} (for switching off normalization)</li>
+	 *     <li>{@code "average"} (for average activity normalization)</li>
+	 *     <li>{@code "Jaccard"} (for Jaccard coefficient normalization)</li>
+	 *     <li>{@code "cosine"} (for cosine similarity normalization)</li>
+	 *   </ul>
+	 *   Valid settings for <em>two-mode</em> networks are:
+	 *   <ul>
+	 *     <li>{@code "no"} (for switching off normalization)</li>
+	 *     <li>{@code "activity"} (for activity normalization)</li>
+	 *     <li>{@code "prominence"} (for prominence normalization)</li>
+	 *   </ul>
+	 * @param isolates Should all nodes of the respective variable be included
+	 *    in the network matrix ({@code true}), or should only those nodes be
+	 *    included that are active in the current time period and are not
+	 *    excluded ({@code false})?
+	 * @param duplicates Setting for excluding duplicate statements before
+	 *   network construction. Valid values are:
+	 *   <ul>
+	 *     <li>{@code "include"} (for including all statements in network
+	 *       construction)</li>
+	 *     <li>{@code "document"} (for counting only one identical statement per
+	 *       document)</li>
+	 *     <li>{@code "week"} (for counting only one identical statement per
+	 *       calendar week as defined in the UK locale, i.e., Monday to Sunday)
+	 *       </li>
+	 *     <li>{@code "month"} (for counting only one identical statement per
+	 *       calendar month)</li>
+	 *     <li>{@code "year"} (for counting only one identical statement per
+	 *       calendar year)</li>
+	 *     <li>{@code "acrossrange"} (for counting only one identical statement
+	 *       across the whole time range)</li>
+	 *   </ul>
+	 * @param startDateTime The start date and time for network construction.
+	 *   All statements before this specified date/time will be excluded.
+	 * @param stopDateTime The stop date and time for network construction.
+	 *   All statements after this specified date/time will be excluded.
+	 * @param timeWindow If any of the time units is selected, a moving time
+	 *    window will be imposed, and only the statements falling within the
+	 *    time period defined by the window will be used to create the network.
+	 *    The time window will then be moved forward by one time unit at a time,
+	 *    and a new network with the new time boundaries will be created. This
+	 *    is repeated until the end of the overall time span is reached. All
+	 *    time windows will be saved as separate network matrices in a list. The
+	 *    duration of each time window is defined by the {@code windowsize}
+	 *    argument. For example, this could be used to create a time window of
+	 *    six months that moves forward by one month each time, thus creating
+	 *    time windows that overlap by five months. If {@code "events"} is used
+	 *    instead of a natural time unit, the time window will comprise exactly
+	 *    as many statements as defined in the {@code windowsize} argument.
+	 *    However, if the start or end statement falls on a date and time where
+	 *    multiple events happen, those additional events that occur
+	 *    simultaneously are included because there is no other way to decide
+	 *    which of the statements should be selected. Therefore the window size
+	 *    is sometimes extended when the start or end point of a time window is
+	 *    ambiguous in event time. Valid argument values are:
+	 *   <ul>
+	 *     <li>{@code "no"} (no time window will be used)</li>
+	 *     <li>{@code "events"} (time window length = number of statements)</li>
+	 *     <li>{@code "seconds"} (number of seconds)</li>
+	 *     <li>{@code "minutes"} (number of minutes)</li>
+	 *     <li>{@code "hours"} (number of hours)</li>
+	 *     <li>{@code "days"} (number of days)</li>
+	 *     <li>{@code "weeks"} (number of calendar weeks)</li>
+	 *     <li>{@code "months"} (number of calendar months)</li>
+	 *     <li>{@code "years"} (number of calendar years)</li>
+	 *   </ul>
+	 *   @param windowSize The number of time units of which a moving time
+	 *     window is comprised. This can be the number of statement events, the
+	 *     number of days etc., as defined in the {@code timeWindow} argument.
+	 *   @param excludeValues A hash map that contains values which should be
+	 *     excluded during network construction. The hash map is indexed by
+	 *     variable name (for example, {@code "organization"} as the key, and
+	 *     the corresponding value is an array list of values to exclude, for
+	 *     example {@code "org A"} or {@code "org B"}. This is irrespective of
+	 *     whether these values appear in {@code variable1}, {@code variable2},
+	 *     or the {@code qualifier} variable. Note that only variables at the
+	 *     statement level can be used here. There are separate arguments for
+	 *     excluding statements nested in documents with certain meta-data.
+	 *   @param excludeAuthors An array of authors. If a statement is nested in
+	 *     a document where one of these authors is set in the {@code author}
+	 *     meta-data field, the statement is excluded from network construction.
+	 *   @param excludeSources An array of sources. If a statement is nested in
+	 *     a document where one of these sources is set in the {@code source}
+	 *     meta-data field, the statement is excluded from network construction.
+	 *   @param excludeSections An array of sections. If a statement is nested
+	 *     in a document where one of these sections is set in the {@code
+	 *     section} meta-data field, the statement is excluded from network
+	 *     construction.
+	 *   @param excludeTypes An array of types. If a statement is nested in a
+	 *     document where one of these types is set in the {@code type}
+	 *     meta-data field, the statement is excluded from network construction.
+	 *   @param invertValues Indicates whether the entries provided by the
+	 *     {@code excludeValues} argument should be excluded from network
+	 *     construction ({@code false}) or if they should be the only values
+	 *     that should be included during network construction ({@code true}).
+	 *   @param invertAuthors Indicates whether the values provided by the
+	 *     {@code excludeAuthors} argument should be excluded from network
+	 *     construction ({@code false}) or if they should be the only values
+	 *     that should be included during network construction ({@code true}).
+	 *   @param invertSources Indicates whether the values provided by the
+	 *     {@code excludeSources} argument should be excluded from network
+	 *     construction ({@code false}) or if they should be the only values
+	 *     that should be included during network construction ({@code true}).
+	 *   @param invertSections Indicates whether the values provided by the
+	 *     {@code excludeSections} argument should be excluded from network
+	 *     construction ({@code false}) or if they should be the only values
+	 *     that should be included during network construction ({@code true}).
+	 *   @param invertTypes Indicates whether the values provided by the
+	 *     {@code excludeTypes} argument should be excluded from network
+	 *     construction ({@code false}) or if they should be the only values
+	 *     that should be included during network construction ({@code true}).
+	 *   @param fileFormat The file format specification for saving the
+	 *     resulting network(s) to a file instead of returning an object. Valid
+	 *     values are:
+	 *     <ul>
+	 *       <li>{@code "csv"} (for network matrices or event lists)</li>
+	 *       <li>{@code "dl"} (for UCINET DL full-matrix files)</li>
+	 *       <li>{@code "graphml"} (for visone {@code .graphml} files; this
+	 *         specification is also compatible with time windows)</li>
+	 *     </ul>
+	 *   @param outfile The file name for saving the network.
 	 */
 	public Exporter(
+			String networkType,
 			StatementType statementType,
-			String var1,
-			String var2,
-			boolean var1Document,
-			boolean var2Document,
+			String variable1,
+			boolean variable1Document,
+			String variable2,
+			boolean variable2Document,
+			String qualifier,
+			String qualifierAggregation,
+			String normalization,
+			boolean isolates,
+			String duplicates,
 			LocalDateTime startDateTime,
 			LocalDateTime stopDateTime,
-			String qualifierName,
-			boolean ignoreQualifier,
-			String duplicateSetting,
+			String timeWindow,
+			int windowSize,
 			HashMap<String, ArrayList<String>> excludeValues,
 			ArrayList<String> excludeAuthors,
 			ArrayList<String> excludeSources,
 			ArrayList<String> excludeSections,
-			ArrayList<String> excludeTypes) {
+			ArrayList<String> excludeTypes,
+			boolean invertValues,
+			boolean invertAuthors,
+			boolean invertSources,
+			boolean invertSections,
+			boolean invertTypes,
+			String fileFormat,
+			String outfile) {
+		this.networkType = networkType;
 		this.statementType = statementType;
-		this.var1 = var1;
-		this.var2 = var2;
-		this.var1Document = var1Document;
-		this.var2Document = var2Document;
+		this.variable1 = variable1;
+		this.variable1Document = variable1Document;
+		this.variable2 = variable2;
+		this.variable2Document = variable2Document;
+		this.qualifier = qualifier;
+		this.qualifierAggregation = qualifierAggregation;
+		this.normalization = normalization;
+		this.isolates = isolates;
+		this.duplicates = duplicates;
 		this.startDateTime = startDateTime;
 		this.stopDateTime = stopDateTime;
-		this.qualifierName = qualifierName;
-		this.ignoreQualifier = ignoreQualifier;
-		this.duplicateSetting = duplicateSetting;
+		this.timeWindow = timeWindow;
+		this.windowSize = windowSize;
 		this.excludeValues = excludeValues;
+		this.invertValues = invertValues;
 		this.excludeAuthors = excludeAuthors;
+		this.invertAuthors = invertAuthors;
 		this.excludeSources = excludeSources;
+		this.invertSources = invertSources;
 		this.excludeSections = excludeSections;
+		this.invertSections = invertSections;
 		this.excludeTypes = excludeTypes;
+		this.invertTypes = invertTypes;
+		this.fileFormat = fileFormat;
+		this.outfile = outfile;
+
+		// put variable data types into a map for quick lookup
+		this.dataTypes = new HashMap<String, String>();
+		for (int i = 0; i < this.statementType.getVariables().size(); i++) {
+			this.dataTypes.put(this.statementType.getVariables().get(i).getKey(), this.statementType.getVariables().get(i).getDataType());
+		}
 		
+		// get documents and create document hash map for quick lookup
 		this.documents = Dna.sql.getTableDocuments(new int[0]);
 		this.docMap = new HashMap<Integer, Integer>();
 		for (int i = 0; i < documents.size(); i++) {
 			docMap.put(documents.get(i).getId(), i);
 		}
 		
+		// get statements and convert to {@link ExportStatement} objects with additional information
 		this.originalStatements = Dna.sql.getStatements(new int[0],
 				this.startDateTime,
 				this.stopDateTime,
@@ -102,49 +317,24 @@ public class Exporter {
 	}
 	
 	/**
-	 * Apply filter to statements.
-	 */
-	public void executeFilter() {
-		// create a deep copy of the original statements
-		this.filteredStatements = new ArrayList<ExportStatement>();
-		for (int i = 0; i < this.originalStatements.size(); i++) {
-			this.filteredStatements.add(new ExportStatement(filteredStatements.get(i)));
-		}
-		
-		// filter the copied statements
-		this.filteredStatements = this.filter(this.filteredStatements,
-				this.statementType,	this.var1, this.var2, this.var1Document,
-				this.var2Document, this.qualifierName, this.ignoreQualifier,
-				this.duplicateSetting, this.excludeValues);
-	}
-	
-	/**
 	 * Extract the labels for all nodes for a variable from the statements,
 	 * conditional on isolates settings.
 	 * 
-	 * @param filteredStatements  Array list of filtered statements.
-	 * @param originalStatements  Array list of unfiltered/original statements.
-	 * @param documents           Array list of documents in the database.
-	 * @param docMap              Hash map containing document indices by ID.
-	 * @param variable            String indicating the variable for which
-	 *   labels should be extracted.
-	 * @param variableDocument    Is the variable a document-level variable?
-	 * @param includeIsolates     Indicates whether all nodes should be included
-	 *   or just those after applying the statement filter.
-	 * @return                    String array containing all sorted node names.
+	 * @param variable String indicating the variable for which labels should be
+	 *   extracted, for example {@code "organization"}.
+	 * @param variableDocument Is the variable a document-level variable?
+	 * @param includeIsolates Indicates whether all nodes should be included or
+	 *   just those after applying the statement filter.
+	 * @return String array containing all sorted node names.
 	 */
-	String[] extractLabels(
-			ArrayList<ExportStatement> filteredStatements,
-			ArrayList<ExportStatement> originalStatements,
-			ArrayList<TableDocument> documents,
-			HashMap<Integer, Integer> docMap,
+	private String[] extractLabels(
 			String variable,
 			boolean variableDocument,
 			boolean includeIsolates) {
 		
 		// decide whether to use the original statements or the filtered statements
 		ArrayList<ExportStatement> finalStatements;
-		if (includeIsolates) {
+		if (this.isolates) {
 			finalStatements = originalStatements;
 		} else {
 			finalStatements = filteredStatements;
@@ -193,54 +383,23 @@ public class Exporter {
 	}
 
 	/**
-	 * Return a filtered list of {@link Statement}s based on the settings in the GUI.
-	 * 
-	 * @param statements         Array list of statements to be filtered.
-	 * @param statementType      The statement type.
-	 * @param var1               The first variable used for network
-	 *   construction, e.g., "organization".
-	 * @param var2               The second variable used for network
-	 *   construction, e.g., "concept".
-	 * @param var1Document       Indicates if the var1 variable is a
-	 *   document-level variable (as opposed to statement-level).
-	 * @param var2Document       Indicates if the var2 variable is a
-	 *   document-level variable (as opposed to statement-level).
-	 * @param qualifierName      The qualifier variable, e.g., "agreement".
-	 * @param ignoreQualifier    Indicates whether the qualifier variable should
-	 *   be ignored.
-	 * @param duplicateSetting   String indicating how to handle duplicates;
-	 *   valid settings include "include all duplicates", "ignore per document",
-	 *   "ignore per calendar week", "ignore per calendar month", "ignore per
-	 *   calendar year", or "ignore across date range".
-	 * @param excludeValues      Hash map with keys indicating the variable for
-	 *   which entries should be excluded from export and values being hash maps
-	 *   of variable entries to exclude from network export.
-	 * @return                   Array list of filtered export statements.
+	 * Filter the statements based on the {@link #originalStatements} slot of
+	 * the class and create a filtered statement list, which is saved in the
+	 * {@link #filteredStatements} slot of the class. 
 	 */
-	ArrayList<ExportStatement> filter(
-			ArrayList<ExportStatement> statements,
-			StatementType statementType,
-			String var1,
-			String var2,
-			boolean var1Document,
-			boolean var2Document,
-			String qualifierName,
-			boolean ignoreQualifier,
-			String duplicateSetting,
-			HashMap<String, ArrayList<String>> excludeValues) {
+	public void filterStatements() {
+		// create a deep copy of the original statements
+		this.filteredStatements = new ArrayList<ExportStatement>();
+		for (int i = 0; i < this.originalStatements.size(); i++) {
+			this.filteredStatements.add(new ExportStatement(filteredStatements.get(i)));
+		}
 		
 		// sort statements by date and time
-		Collections.sort(statements);
+		Collections.sort(this.filteredStatements);
 		
 		// Create arrays with variable values
-		String[] values1 = retrieveValues(statements, var1, var1Document);
-		String[] values2 = retrieveValues(statements, var2, var2Document);
-		
-		// put variable data types into a map for quick lookup
-		HashMap<String, String> dataTypes = new HashMap<String, String>();
-		for (int i = 0; i < statementType.getVariables().size(); i++) {
-			dataTypes.put(statementType.getVariables().get(i).getKey(), statementType.getVariables().get(i).getDataType());
-		}
+		String[] values1 = retrieveValues(this.filteredStatements, this.variable1, this.variable1Document);
+		String[] values2 = retrieveValues(this.filteredStatements, this.variable2, this.variable2Document);
 		
 		// process and exclude statements
 		ExportStatement s;
@@ -249,12 +408,12 @@ public class Exporter {
 	    String previousVar2 = null;
 	    LocalDateTime cal, calPrevious;
 	    int year, month, week, yearPrevious, monthPrevious, weekPrevious;
-		for (int i = 0; i < statements.size(); i++) {
+		for (int i = 0; i < this.filteredStatements.size(); i++) {
 			boolean select = true;
-			s = statements.get(i);
+			s = this.filteredStatements.get(i);
 
 			// check against excluded values
-			Iterator<String> keyIterator = excludeValues.keySet().iterator();
+			Iterator<String> keyIterator = this.excludeValues.keySet().iterator();
 			while (keyIterator.hasNext()) {
 				String key = keyIterator.next();
 				String string = "";
@@ -265,55 +424,55 @@ public class Exporter {
 				} else {
 					string = (String) s.get(key);
 				}
-				if (excludeValues.get(key).contains(string)) {
+				if (this.excludeValues.get(key).contains(string)) {
 					select = false;
 				}
 			}
 
 			// check against empty fields
-			if (select) {
-				if (values1[i].equals("") || values2[i].equals("")) {
-					select = false;
-				}
+			if (select &&
+					!this.networkType.equals("eventlist") &&
+					(values1[i].equals("") || values2[i].equals(""))) {
+				select = false;
 			}
 			
-			// step 4: check for duplicates
+			// check for duplicates
 			cal = s.getDateTime();
 		    year = cal.getYear();
 		    month = cal.getMonthValue();
 		    @SuppressWarnings("static-access")
 			WeekFields weekFields = WeekFields.of(Locale.UK.getDefault()); // use UK definition of calendar weeks
 			week = cal.get(weekFields.weekOfWeekBasedYear());
-			if (!duplicateSetting.equals("include all duplicates")) {
+			if (!this.duplicates.equals("include all duplicates")) {
 				for (int j = al.size() - 1; j >= 0; j--) {
-				    if (var1Document == false) {
-				    	previousVar1 = (String) al.get(j).get(var1);
-				    } else if (var1.equals("author")) {
+				    if (!this.variable1Document) {
+				    	previousVar1 = (String) al.get(j).get(this.variable1);
+				    } else if (this.variable1.equals("author")) {
 				    	previousVar1 = al.get(j).getAuthor();
-				    } else if (var1.equals("source")) {
+				    } else if (this.variable1.equals("source")) {
 				    	previousVar1 = al.get(j).getSource();
-				    } else if (var1.equals("section")) {
+				    } else if (this.variable1.equals("section")) {
 				    	previousVar1 = al.get(j).getSection();
-				    } else if (var1.equals("type")) {
+				    } else if (this.variable1.equals("type")) {
 				    	previousVar1 = al.get(j).getType();
-				    } else if (var1.equals("id")) {
+				    } else if (this.variable1.equals("id")) {
 				    	previousVar1 = al.get(j).getDocumentIdAsString();
-				    } else if (var1.equals("title")) {
+				    } else if (this.variable1.equals("title")) {
 				    	previousVar1 = al.get(j).getTitle();
 				    }
-				    if (var2Document == false) {
-				    	previousVar2 = (String) al.get(j).get(var2);
-				    } else if (var2.equals("author")) {
+				    if (!this.variable2Document) {
+				    	previousVar2 = (String) al.get(j).get(this.variable2);
+				    } else if (this.variable2.equals("author")) {
 				    	previousVar2 = al.get(j).getAuthor();
-				    } else if (var2.equals("source")) {
+				    } else if (this.variable2.equals("source")) {
 				    	previousVar2 = al.get(j).getSource();
-				    } else if (var2.equals("section")) {
+				    } else if (this.variable2.equals("section")) {
 				    	previousVar2 = al.get(j).getSection();
-				    } else if (var2.equals("type")) {
+				    } else if (this.variable2.equals("type")) {
 				    	previousVar2 = al.get(j).getType();
-				    } else if (var2.equals("id")) {
+				    } else if (this.variable2.equals("id")) {
 				    	previousVar2 = al.get(j).getDocumentIdAsString();
-				    } else if (var2.equals("title")) {
+				    } else if (this.variable2.equals("title")) {
 				    	previousVar2 = al.get(j).getTitle();
 				    }
 				    calPrevious = al.get(j).getDateTime();
@@ -323,26 +482,26 @@ public class Exporter {
 					WeekFields weekFieldsPrevious = WeekFields.of(Locale.UK.getDefault()); // use UK definition of calendar weeks
 					weekPrevious = calPrevious.get(weekFieldsPrevious.weekOfWeekBasedYear());
 					if ( s.getStatementTypeId() == al.get(j).getStatementTypeId()
-							&& (al.get(j).getDocumentId() == s.getDocumentId() && duplicateSetting.equals("ignore per document") 
-								|| duplicateSetting.equals("ignore across date range")
-								|| (duplicateSetting.equals("ignore per calendar year") && year == yearPrevious)
-								|| (duplicateSetting.equals("ignore per calendar month") && month == monthPrevious)
-								|| (duplicateSetting.equals("ignore per calendar week") && week == weekPrevious) )
+							&& (al.get(j).getDocumentId() == s.getDocumentId() && duplicates.equals("ignore per document") 
+								|| duplicates.equals("ignore across date range")
+								|| (duplicates.equals("ignore per calendar year") && year == yearPrevious)
+								|| (duplicates.equals("ignore per calendar month") && month == monthPrevious)
+								|| (duplicates.equals("ignore per calendar week") && week == weekPrevious) )
 							&& values1[i].equals(previousVar1)
 							&& values2[i].equals(previousVar2)
-							&& (ignoreQualifier == true || s.get(qualifierName).equals(al.get(j).get(qualifierName))) ) {
+							&& (this.qualifierAggregation.equals("ignore") || s.get(this.qualifier).equals(al.get(j).get(this.qualifier))) ) {
 						select = false;
 						break;
 					}
 				}
 			}
 			
-			// step 5: add only if the statement passed all checks
+			// add only if the statement passed all checks
 			if (select == true) {
 				al.add(s);
 			}
 		}
-		return(al);
+		this.filteredStatements = al;
 	}
 	
 	/**
@@ -353,14 +512,14 @@ public class Exporter {
 	 * array of values (e.g., the organization names or authors for all
 	 * statements provided.
 	 * 
-	 * @param statements     Original or filtered array list of statements.
-	 * @param variable       String denoting the first variable (containing the
-	 *   row values).
-	 * @param documentLevel  boolean indicating whether the first variable is a
-	 *   document-level variable.
-	 * @return               String array of values.
+	 * @param statements Original or filtered array list of statements.
+	 * @param variable String denoting the first variable (containing the row
+	 *   values).
+	 * @param documentLevel Indicates if the first variable is at the document
+	 *   level.
+	 * @return String array of values.
 	 */
-	String[] retrieveValues(ArrayList<ExportStatement> statements, String variable, boolean documentLevel) {
+	private String[] retrieveValues(ArrayList<ExportStatement> statements, String variable, boolean documentLevel) {
 		ExportStatement s;
 		String[] values = new String[statements.size()];
 		for (int i = 0; i < statements.size(); i++) {
@@ -385,6 +544,257 @@ public class Exporter {
 		}
 		return values;
 	}
+
+	/**
+	 * Count how often a value is used across the range of filtered statements.
+	 * 
+	 * @param variableValues String array of all values of a certain variable in
+	 *   a set of statements.
+	 * @param uniqueNames String array of unique values of the same variable
+	 *   across all statements.
+	 * @return {@link int} array of value frequencies for each unique value in
+	 *   same order as {@code uniqueNames}.
+	 */
+	private int[] countFrequencies(String[] variableValues, String[] uniqueNames) {
+		int[] frequencies = new int[uniqueNames.length];
+		for (int i = 0; i < uniqueNames.length; i++) {
+			for (int j = 0; j < variableValues.length; j++) {
+				if (uniqueNames[i].equals(variableValues[j])) {
+					frequencies[i] = frequencies[i] + 1;
+				}
+			}
+		}
+		return frequencies;
+	}
+
+	/**
+	 * Create a three-dimensional array (variable 1 x variable 2 x qualifier).
+	 * 
+	 * @param names1 {@link String} array containing the row labels.
+	 * @param names2 {@link String} array containing the column labels.
+	 * @return 3D double array.
+	 */
+	private double[][][] createArray(String[] names1, String[] names2) {
+		
+		int[] qualifierValues; // unique qualifier values (i.e., all of them found at least once in the dataset)
+		if (qualifier == null) {
+			qualifierValues = null;
+		} else if (this.dataTypes.get(qualifier).equals("integer")) {
+			qualifierValues = this.originalStatements
+					.stream()
+					.mapToInt(s -> (int) s.get(qualifier))
+					.distinct()
+					.sorted()
+					.toArray();
+		} else {
+			qualifierValues = new int[] {0, 1};
+		}
+
+		// Create arrays with variable values
+		String[] values1 = retrieveValues(this.filteredStatements, variable1, variable1Document);
+		String[] values2 = retrieveValues(this.filteredStatements, variable2, variable2Document);
+		
+		// create and populate array
+		double[][][] array;
+		if (qualifierValues == null) {
+			array = new double[names1.length][names2.length][1];
+		} else {
+			array = new double[names1.length][names2.length][qualifierValues.length]; // 3D array: rows x cols x qualifier value
+		}
+		for (int i = 0; i < this.filteredStatements.size(); i++) {
+			String n1 = values1[i]; // retrieve first value from statement
+			String n2 = values2[i]; // retrieve second value from statement
+			int q;
+			if (qualifier == null) {
+				q = 0;
+			} else {
+				q = (int) this.filteredStatements.get(i).get(qualifier); // retrieve qualifier value from statement
+			}
+			
+			// find out which matrix row corresponds to the first value
+			int row = -1;
+			for (int j = 0; j < names1.length; j++) {
+				if (names1[j].equals(n1)) {
+					row = j;
+					break;
+				}
+			}
+			
+			// find out which matrix column corresponds to the second value
+			int col = -1;
+			for (int j = 0; j < names2.length; j++) {
+				if (names2[j].equals(n2)) {
+					col = j;
+					break;
+				}
+			}
+			
+			// find out which qualifier level corresponds to the qualifier value
+			int qual = -1;
+			if (qualifierValues == null) {
+				qual = 0;
+			} else { // qualifier level in the array
+				for (int j = 0; j < qualifierValues.length; j++) {
+					if (qualifierValues[j] == q) {
+						qual = j;
+						break;
+					}
+				}
+			}
+			
+			// add match to matrix (note that duplicates were dealt with at the statement filter stage)
+			array[row][col][qual] = array[row][col][qual] + 1.0;
+		}
+		
+		return array;
+	}
+	
+	/**
+	 * Create a one-mode network {@link Matrix}.
+	 * 
+	 * @return {@link model.Matrix Matrix} object containing a one-mode network
+	 *   matrix.
+	 */
+	public Matrix computeOneModeMatrix() {
+		String[] names1 = this.extractLabels(this.variable1, this.variable1Document, this.isolates);
+		String[] names2 = this.extractLabels(this.variable2, this.variable2Document, this.isolates);
+		
+		if (this.filteredStatements.size() == 0) {
+			double[][] m = new double[names1.length][names1.length];
+			Matrix mt = new Matrix(m, names1, names1, true, this.startDateTime, this.stopDateTime);
+			return mt;
+		}
+		
+		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer or null?
+		if (qualifier == null || dataTypes.get(qualifier).equals("integer")) {
+			booleanQualifier = false;
+		}
+		int[] qualifierValues;  // unique qualifier values (i.e., all of them found at least once in the dataset)
+		if (qualifier == null) {
+			qualifierValues = new int[] { 0 };
+		} else if (dataTypes.get(qualifier).equals("integer")) {
+			qualifierValues = this.originalStatements
+					.stream()
+					.mapToInt(s -> (int) s.get(qualifier))
+					.distinct()
+					.sorted()
+					.toArray();
+		} else {
+			qualifierValues = new int[] {0, 1};
+		}
+		
+		double[][][] array = createArray(names1, names2);
+		
+		double[][] mat1 = new double[names1.length][names1.length];  // square matrix for "congruence" (or "ignore") results
+		double[][] mat2 = new double[names1.length][names1.length];  // square matrix for "conflict" results
+		double[][] m = new double[names1.length][names1.length];  // square matrix for final results
+		double range = Math.abs(qualifierValues[qualifierValues.length - 1] - qualifierValues[0]);
+		double i1count = 0.0;
+		double i2count = 0.0;
+		for (int i1 = 0; i1 < names1.length; i1++) {
+			for (int i2 = 0; i2 < names1.length; i2++) {
+				if (i1 != i2) {
+					for (int j = 0; j < names2.length; j++) {
+						// "ignore": sum up i1 and i2 independently over levels of k, then multiply.
+						// In the binary case, this amounts to counting how often each concept is used and then multiplying frequencies.
+						if (qualifierAggregation.equals("ignore")) {
+							i1count = 0.0;
+							i2count = 0.0;
+							for (int k = 0; k < qualifierValues.length; k++) {
+								i1count = i1count + array[i1][j][k];
+								i2count = i2count + array[i2][j][k];
+							}
+							mat1[i1][i2] = mat1[i1][i2] + i1count * i2count;
+						}
+						// "congruence": sum up proximity of i1 and i2 per level of k, weighted by joint usage.
+						// In the binary case, this reduces to the sum of weighted matches per level of k
+						if (qualifierAggregation.equals("congruence") || qualifierAggregation.equals("subtract")) {
+							for (int k1 = 0; k1 < qualifierValues.length; k1++) {
+								for (int k2 = 0; k2 < qualifierValues.length; k2++) {
+									mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * (1.0 - ((Math.abs(qualifierValues[k1] - qualifierValues[k2]) / range))));
+								}
+							}
+						}
+						// "conflict": same as congruence, but distance instead of proximity
+						if (qualifierAggregation.equals("conflict") || qualifierAggregation.equals("subtract")) {
+							for (int k1 = 0; k1 < qualifierValues.length; k1++) {
+								for (int k2 = 0; k2 < qualifierValues.length; k2++) {
+									mat2[i1][i2] = mat2[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * ((Math.abs(qualifierValues[k1] - qualifierValues[k2]) / range)));
+								}
+							}
+						}
+					}
+					
+					// normalization
+					double norm = 1.0;
+					if (normalization.equals("no")) {
+						norm = 1.0;
+					} else if (normalization.equals("average activity")) {
+						i1count = 0.0;
+						i2count = 0.0;
+						for (int j = 0; j < names2.length; j++) {
+							for (int k = 0; k < qualifierValues.length; k++) {
+								i1count = i1count + array[i1][j][k];
+								i2count = i2count + array[i2][j][k];
+							}
+						}
+						norm = (i1count + i2count) / 2;
+					} else if (normalization.equals("Jaccard")) {
+						double m10 = 0.0;
+						double m01 = 0.0;
+						double m11 = 0.0;
+						for (int j = 0; j < names2.length; j++) {
+							for (int k = 0; k < qualifierValues.length; k++) {
+								if (array[i2][j][k] == 0) {
+									m10 = m10 + array[i1][j][k];
+								}
+								if (array[i1][j][k] == 0) {
+									m01 = m01 + array[i2][j][k];
+								}
+								if (array[i1][j][k] > 0 && array[i2][j][k] > 0) {
+									m11 = m11 + (array[i1][j][k] * array[i2][j][k]);
+								}
+							}
+						}
+						norm = m01 + m10 + m11;
+					} else if (normalization.equals("cosine")) {
+						i1count = 0.0;
+						i2count = 0.0;
+						for (int j = 0; j < names2.length; j++) {
+							for (int k = 0; k < qualifierValues.length; k++) {
+								i1count = i1count + array[i1][j][k];
+								i2count = i2count + array[i2][j][k];
+							}
+						}
+						norm = Math.sqrt(i1count * i1count) * Math.sqrt(i2count * i2count);
+					}
+					mat1[i1][i2] = mat1[i1][i2] / norm;
+					mat2[i1][i2] = mat2[i1][i2] / norm;
+					
+					// "subtract": congruence minus conflict; use the appropriate matrix or matrices
+					if (qualifierAggregation.equals("ignore")) {
+						m[i1][i2] = mat1[i1][i2];
+					} else if (qualifierAggregation.equals("congruence")) {
+						m[i1][i2] = mat1[i1][i2];
+					} else if (qualifierAggregation.equals("conflict")) {
+						m[i1][i2] = mat2[i1][i2];
+					} else if (qualifierAggregation.equals("subtract")) {
+						m[i1][i2] = mat1[i1][i2] - mat2[i1][i2];
+					}
+				}
+			}
+		}
+		
+		boolean integerBoolean;
+		if (normalization.equals("no") && booleanQualifier == true) {
+			integerBoolean = true;
+		} else {
+			integerBoolean = false;
+		}
+		
+		Matrix matrix = new Matrix(m, names1, names1, integerBoolean, this.startDateTime, this.stopDateTime);
+		return matrix;
+	}
 	
 	/**
 	 * An extension of the Statement class, which also holds some document meta-
@@ -393,8 +803,18 @@ public class Exporter {
 	 */
 	private class ExportStatement extends Statement {
 		private HashMap<String, Object> map;
-		String title, author, source, section, type;
+		private String title, author, source, section, type;
 
+		/**
+		 * Create an export statement.
+		 * 
+		 * @param statement The statement to be converted.
+		 * @param title The document title.
+		 * @param author The author.
+		 * @param source The source.
+		 * @param section The section.
+		 * @param type The type.
+		 */
 		public ExportStatement(Statement statement, String title, String author,
 				String source, String section, String type) {
 			super(statement);
@@ -409,8 +829,13 @@ public class Exporter {
 			}
 		}
 		
+		/**
+		 * Copy constructor to create a deep copy of an export statement.
+		 * 
+		 * @param exportStatement An existing export statement.
+		 */
 		public ExportStatement(ExportStatement exportStatement) {
-			super(exportStatement);
+			super(exportStatement); // TODO: check if this is necessary
 			this.title = exportStatement.getTitle();
 			this.author = exportStatement.getAuthor();
 			this.source = exportStatement.getSource();

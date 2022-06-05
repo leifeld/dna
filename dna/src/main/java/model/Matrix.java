@@ -3,14 +3,11 @@ package model;
 import java.time.LocalDateTime;
 
 /**
- * @author Philip Leifeld
- *
- * A class for Matrix objects. As two-dimensional arrays do not store the row and column labels, 
- * this class stores both the two-dimensional array and its labels. Matrix objects are created 
- * by the different network algorithms. Some of the file export functions take Matrix objects as 
- * input data. A date slot holds an optional date label (useful when the time window method is 
- * used.
- *
+ * A class for Matrix objects. As two-dimensional arrays do not store the row
+ * and column labels, this class stores both the two-dimensional array and its
+ * labels. Matrix objects are created by the different network algorithms. Some
+ * of the file export functions take Matrix objects as input data. A date slot
+ * holds an optional date label (useful when the time window method is used.
  */
 public class Matrix implements Cloneable {
 	private double[][] matrix;

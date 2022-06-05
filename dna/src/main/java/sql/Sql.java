@@ -66,12 +66,6 @@ public class Sql {
 	 */
 	private Coder activeCoder;
 	
-	/**
-	 * Keep a list of classes that depend on which coder is selected and what
-	 * characteristics the coder has, for examples text panel.
-	 */
-	// private static List<SqlListener> sqlListeners = new ArrayList<SqlListener>();
-	
 	
 	/* =========================================================================
 	 * Setup
