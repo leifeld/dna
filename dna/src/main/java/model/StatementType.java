@@ -132,7 +132,7 @@ public class StatementType {
 		}
 		if (this.getId() == st.getId() &&
 				this.getLabel().equals(st.getLabel()) &&
-				this.getClass().equals(st.getColor()) &&
+				this.getClass().equals(st.getClass()) &&
 				valuesEqual) {
 			return true;
 		} else {

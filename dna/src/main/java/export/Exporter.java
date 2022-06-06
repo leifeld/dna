@@ -1,6 +1,11 @@
 package export;
 
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,6 +42,7 @@ public class Exporter {
 	private HashMap<String, String> dataTypes;
 	private ArrayList<ExportStatement> originalStatements;
 	private ArrayList<ExportStatement> filteredStatements;
+	private ArrayList<Matrix> matrixResults;
 
 	/**
 	 * <p>Create a new Exporter class instance, holding an array list of export
@@ -84,6 +90,9 @@ public class Exporter {
 	 *       variable in the integer case)</li>
 	 *     <li>{@code "subtract"} (for subtracting the conflict tie value from
 	 *       the congruence tie value in each dyad)</li>
+	 *     <li>{@code "congruence & conflict"} (only applicable to time window
+	 *       networks: add both a congruence and a conflict network to the time
+	 *       window list of networks at each time step)</li>
 	 *   </ul>
 	 *   Valid values if the {@code networkType} argument equals {@code
 	 *   "twomode"} are:
@@ -286,6 +295,7 @@ public class Exporter {
 		
 		// get documents and create document hash map for quick lookup
 		this.documents = Dna.sql.getTableDocuments(new int[0]);
+		Collections.sort(documents);
 		this.docMap = new HashMap<Integer, Integer>();
 		for (int i = 0; i < documents.size(); i++) {
 			docMap.put(documents.get(i).getId(), i);
@@ -296,13 +306,13 @@ public class Exporter {
 				this.startDateTime,
 				this.stopDateTime,
 				this.excludeAuthors,
-				false,
+				this.invertAuthors,
 				this.excludeSources,
-				false,
+				this.invertSources,
 				this.excludeSections,
-				false,
+				this.invertSections,
 				this.excludeTypes,
-				false)
+				this.invertTypes)
 		.stream()
 		.map(s -> {
 			int docIndex = docMap.get(s.getDocumentId());
@@ -320,6 +330,9 @@ public class Exporter {
 	 * Extract the labels for all nodes for a variable from the statements,
 	 * conditional on isolates settings.
 	 * 
+	 * @param processedStatements These are usually filtered statements, but
+	 *   could be more processed than just filtered, for example for
+	 *   constructing time window sequences of network matrices.
 	 * @param variable String indicating the variable for which labels should be
 	 *   extracted, for example {@code "organization"}.
 	 * @param variableDocument Is the variable a document-level variable?
@@ -328,6 +341,7 @@ public class Exporter {
 	 * @return String array containing all sorted node names.
 	 */
 	private String[] extractLabels(
+			ArrayList<ExportStatement> processedStatements,
 			String variable,
 			boolean variableDocument,
 			boolean includeIsolates) {
@@ -337,7 +351,7 @@ public class Exporter {
 		if (this.isolates) {
 			finalStatements = originalStatements;
 		} else {
-			finalStatements = filteredStatements;
+			finalStatements = processedStatements;
 		}
 		
 		// go through statements and extract names
@@ -424,7 +438,8 @@ public class Exporter {
 				} else {
 					string = (String) s.get(key);
 				}
-				if (this.excludeValues.get(key).contains(string)) {
+				if ((this.excludeValues.get(key).contains(string) && !this.invertValues) ||
+						(!this.excludeValues.get(key).contains(string) && this.invertValues)) {
 					select = false;
 				}
 			}
@@ -568,13 +583,45 @@ public class Exporter {
 	}
 
 	/**
+	 * Lexical ranking of a binary vector.
+	 * 
+	 * Examples:
+	 * 
+	 * [0, 0] -> 0
+	 * [0, 1] -> 1
+	 * [1, 0] -> 2
+	 * [1, 1] -> 3
+	 * [0, 0, 1, 0, 1, 0] -> 10
+	 * 
+	 * This bijection is used to map combinations of qualifier values into edge
+	 * weights in the resulting network matrix.
+	 * 
+	 * Source: https://cw.fel.cvut.cz/wiki/_media/courses/b4m33pal/pal06.pdf
+	 * 
+	 * @param binaryVector A binary int array of arbitrary length, indicating
+	 *   which qualifier values are used in the dataset
+	 * @return An integer
+	 */
+	private int lexRank(int[] binaryVector) {
+		int n = binaryVector.length;
+		int r = 0;
+		for (int i = 0; i < n; i++) {
+			if (binaryVector[i] > 0) {
+				r = r + (int) Math.pow(2, n - i - 1);
+			}
+		}
+		return r;
+	}
+	
+	/**
 	 * Create a three-dimensional array (variable 1 x variable 2 x qualifier).
 	 * 
 	 * @param names1 {@link String} array containing the row labels.
 	 * @param names2 {@link String} array containing the column labels.
 	 * @return 3D double array.
 	 */
-	private double[][][] createArray(String[] names1, String[] names2) {
+	private double[][][] createArray(ArrayList<ExportStatement> processedStatements,
+			String[] names1, String[] names2) {
 		
 		int[] qualifierValues; // unique qualifier values (i.e., all of them found at least once in the dataset)
 		if (qualifier == null) {
@@ -591,8 +638,8 @@ public class Exporter {
 		}
 
 		// Create arrays with variable values
-		String[] values1 = retrieveValues(this.filteredStatements, variable1, variable1Document);
-		String[] values2 = retrieveValues(this.filteredStatements, variable2, variable2Document);
+		String[] values1 = retrieveValues(processedStatements, variable1, variable1Document);
+		String[] values2 = retrieveValues(processedStatements, variable2, variable2Document);
 		
 		// create and populate array
 		double[][][] array;
@@ -601,14 +648,14 @@ public class Exporter {
 		} else {
 			array = new double[names1.length][names2.length][qualifierValues.length]; // 3D array: rows x cols x qualifier value
 		}
-		for (int i = 0; i < this.filteredStatements.size(); i++) {
+		for (int i = 0; i < processedStatements.size(); i++) {
 			String n1 = values1[i]; // retrieve first value from statement
 			String n2 = values2[i]; // retrieve second value from statement
 			int q;
 			if (qualifier == null) {
 				q = 0;
 			} else {
-				q = (int) this.filteredStatements.get(i).get(qualifier); // retrieve qualifier value from statement
+				q = (int) processedStatements.get(i).get(qualifier); // retrieve qualifier value from statement
 			}
 			
 			// find out which matrix row corresponds to the first value
@@ -650,18 +697,37 @@ public class Exporter {
 	}
 	
 	/**
+	 * Wrapper method to compute one-mode network matrix with class settings.
+	 */
+	public void computeOneModeMatrix() {
+		ArrayList<Matrix> matrices = new ArrayList<Matrix>(); 
+		matrices.add(this.computeOneModeMatrix(this.filteredStatements,
+				this.qualifierAggregation, this.startDateTime, this.stopDateTime));
+		this.matrixResults = matrices;
+	}
+	
+	/**
 	 * Create a one-mode network {@link Matrix}.
 	 * 
+	 * @param processedStatements Usually the filtered list of export
+	 *   statements, but it can be a more processed list of export statements,
+	 *   for example for use in constructing a time window sequence of networks.
+	 * @param aggregation Qualifier aggregation; usually the qualifier
+	 *   aggregation in the constructor/class field ({@link
+	 *   #qualifierAggregation}), but it can deviate from it, for example in the
+	 *   time window functionality, where multiple versions need to be created.
+	 * @param start Start date/time.
+	 * @param stop End date/time.
 	 * @return {@link model.Matrix Matrix} object containing a one-mode network
 	 *   matrix.
 	 */
-	public Matrix computeOneModeMatrix() {
-		String[] names1 = this.extractLabels(this.variable1, this.variable1Document, this.isolates);
-		String[] names2 = this.extractLabels(this.variable2, this.variable2Document, this.isolates);
+	private Matrix computeOneModeMatrix(ArrayList<ExportStatement> processedStatements, String aggregation, LocalDateTime start, LocalDateTime stop) {
+		String[] names1 = this.extractLabels(processedStatements, this.variable1, this.variable1Document, this.isolates);
+		String[] names2 = this.extractLabels(processedStatements, this.variable2, this.variable2Document, this.isolates);
 		
-		if (this.filteredStatements.size() == 0) {
+		if (processedStatements.size() == 0) {
 			double[][] m = new double[names1.length][names1.length];
-			Matrix mt = new Matrix(m, names1, names1, true, this.startDateTime, this.stopDateTime);
+			Matrix mt = new Matrix(m, names1, names1, true, start, stop);
 			return mt;
 		}
 		
@@ -683,7 +749,7 @@ public class Exporter {
 			qualifierValues = new int[] {0, 1};
 		}
 		
-		double[][][] array = createArray(names1, names2);
+		double[][][] array = createArray(processedStatements, names1, names2);
 		
 		double[][] mat1 = new double[names1.length][names1.length];  // square matrix for "congruence" (or "ignore") results
 		double[][] mat2 = new double[names1.length][names1.length];  // square matrix for "conflict" results
@@ -697,7 +763,7 @@ public class Exporter {
 					for (int j = 0; j < names2.length; j++) {
 						// "ignore": sum up i1 and i2 independently over levels of k, then multiply.
 						// In the binary case, this amounts to counting how often each concept is used and then multiplying frequencies.
-						if (qualifierAggregation.equals("ignore")) {
+						if (aggregation.equals("ignore")) {
 							i1count = 0.0;
 							i2count = 0.0;
 							for (int k = 0; k < qualifierValues.length; k++) {
@@ -708,7 +774,7 @@ public class Exporter {
 						}
 						// "congruence": sum up proximity of i1 and i2 per level of k, weighted by joint usage.
 						// In the binary case, this reduces to the sum of weighted matches per level of k
-						if (qualifierAggregation.equals("congruence") || qualifierAggregation.equals("subtract")) {
+						if (aggregation.equals("congruence") || aggregation.equals("subtract")) {
 							for (int k1 = 0; k1 < qualifierValues.length; k1++) {
 								for (int k2 = 0; k2 < qualifierValues.length; k2++) {
 									mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * (1.0 - ((Math.abs(qualifierValues[k1] - qualifierValues[k2]) / range))));
@@ -716,7 +782,7 @@ public class Exporter {
 							}
 						}
 						// "conflict": same as congruence, but distance instead of proximity
-						if (qualifierAggregation.equals("conflict") || qualifierAggregation.equals("subtract")) {
+						if (aggregation.equals("conflict") || aggregation.equals("subtract")) {
 							for (int k1 = 0; k1 < qualifierValues.length; k1++) {
 								for (int k2 = 0; k2 < qualifierValues.length; k2++) {
 									mat2[i1][i2] = mat2[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * ((Math.abs(qualifierValues[k1] - qualifierValues[k2]) / range)));
@@ -727,9 +793,9 @@ public class Exporter {
 					
 					// normalization
 					double norm = 1.0;
-					if (normalization.equals("no")) {
+					if (this.normalization.equals("no")) {
 						norm = 1.0;
-					} else if (normalization.equals("average activity")) {
+					} else if (this.normalization.equals("average activity")) {
 						i1count = 0.0;
 						i2count = 0.0;
 						for (int j = 0; j < names2.length; j++) {
@@ -739,7 +805,7 @@ public class Exporter {
 							}
 						}
 						norm = (i1count + i2count) / 2;
-					} else if (normalization.equals("Jaccard")) {
+					} else if (this.normalization.equals("Jaccard")) {
 						double m10 = 0.0;
 						double m01 = 0.0;
 						double m11 = 0.0;
@@ -757,7 +823,7 @@ public class Exporter {
 							}
 						}
 						norm = m01 + m10 + m11;
-					} else if (normalization.equals("cosine")) {
+					} else if (this.normalization.equals("cosine")) {
 						i1count = 0.0;
 						i2count = 0.0;
 						for (int j = 0; j < names2.length; j++) {
@@ -772,13 +838,13 @@ public class Exporter {
 					mat2[i1][i2] = mat2[i1][i2] / norm;
 					
 					// "subtract": congruence minus conflict; use the appropriate matrix or matrices
-					if (qualifierAggregation.equals("ignore")) {
+					if (aggregation.equals("ignore")) {
 						m[i1][i2] = mat1[i1][i2];
-					} else if (qualifierAggregation.equals("congruence")) {
+					} else if (aggregation.equals("congruence")) {
 						m[i1][i2] = mat1[i1][i2];
-					} else if (qualifierAggregation.equals("conflict")) {
+					} else if (aggregation.equals("conflict")) {
 						m[i1][i2] = mat2[i1][i2];
-					} else if (qualifierAggregation.equals("subtract")) {
+					} else if (aggregation.equals("subtract")) {
 						m[i1][i2] = mat1[i1][i2] - mat2[i1][i2];
 					}
 				}
@@ -786,16 +852,426 @@ public class Exporter {
 		}
 		
 		boolean integerBoolean;
-		if (normalization.equals("no") && booleanQualifier == true) {
+		if (this.normalization.equals("no") && booleanQualifier == true) {
 			integerBoolean = true;
 		} else {
 			integerBoolean = false;
 		}
 		
-		Matrix matrix = new Matrix(m, names1, names1, integerBoolean, this.startDateTime, this.stopDateTime);
+		Matrix matrix = new Matrix(m, names1, names1, integerBoolean, start, stop);
 		return matrix;
 	}
+
+	/**
+	 * Wrapper method to compute two-mode network matrix with class settings.
+	 */
+	public void computeTwoModeMatrix(boolean verbose) {
+		ArrayList<Matrix> matrices = new ArrayList<Matrix>(); 
+		matrices.add(this.computeTwoModeMatrix(this.filteredStatements,
+				this.startDateTime, this.stopDateTime, verbose));
+		this.matrixResults = matrices;
+	}
 	
+	/**
+	 * Create a two-mode network {@link Matrix}.
+	 * 
+	 * @param processedStatements Usually the filtered list of export
+	 *   statements, but it can be a more processed list of export statements,
+	 *   for example for use in constructing a time window sequence of networks.
+	 * @param start Start date/time.
+	 * @param stop End date/time.
+	 * @param verbose Report details?
+	 * @return {@link model.Matrix Matrix} object containing a two-mode network
+	 *   matrix.
+	 */
+	private Matrix computeTwoModeMatrix(ArrayList<ExportStatement> processedStatements,
+			LocalDateTime start, LocalDateTime stop, boolean verbose) {
+		String[] names1 = this.extractLabels(processedStatements, this.variable1, this.variable1Document, this.isolates);
+		String[] names2 = this.extractLabels(processedStatements, this.variable2, this.variable2Document, this.isolates);
+		
+		if (processedStatements.size() == 0) {
+			double[][] m = new double[names1.length][names2.length];
+			Matrix mt = new Matrix(m, names1, names2, true, start, stop);
+			return mt;
+		}
+		
+		boolean booleanQualifier = true; // is the qualifier boolean, rather than integer or null?
+		if (qualifier == null) {
+			booleanQualifier = false;
+		} else if (dataTypes.get(qualifier).equals("integer")) {
+			booleanQualifier = false;
+		}
+		int[] qualifierValues; // unique qualifier values (i.e., all of them found at least once in the dataset)
+		if (qualifier == null) {
+			qualifierValues = new int[] { 0 };
+		} else if (dataTypes.get(qualifier).equals("integer")) {
+			qualifierValues = this.originalStatements
+					.stream()
+					.mapToInt(s -> (int) s.get(qualifier))
+					.distinct()
+					.sorted()
+					.toArray();
+		} else {
+			qualifierValues = new int[] {0, 1};
+		}
+		
+		double[][][] array = createArray(processedStatements, names1, names2);
+		
+		// combine levels of the qualifier variable conditional on qualifier aggregation option
+		double[][] mat = new double[names1.length][names2.length];  // initialized with zeros
+		HashMap<Integer, ArrayList<Integer>> combinations = new HashMap<Integer, ArrayList<Integer>>();
+		for (int i = 0; i < names1.length; i++) {
+			for (int j = 0; j < names2.length; j++) {
+				if (this.qualifierAggregation.equals("combine")) { // combine
+					double[] vec = array[i][j]; // may be weighted, so create a second, binary vector vec2
+					int[] vec2 = new int[vec.length];
+					ArrayList<Integer> qualVal = new ArrayList<Integer>(); // a list of qualifier values used at mat[i][j]
+					for (int k = 0; k < vec.length; k++) {
+						if (vec[k] > 0) {
+							vec2[k] = 1;
+							qualVal.add(qualifierValues[k]);
+						}
+					}
+					mat[i][j] = lexRank(vec2); // compute lexical rank, i.e., map the combination of values to a single integer
+					combinations.put(lexRank(vec2), qualVal); // the bijection needs to be stored for later reporting
+				} else {
+					for (int k = 0; k < qualifierValues.length; k++) {
+						if (this.qualifierAggregation.equals("ignore")) { // ignore
+							mat[i][j] = mat[i][j] + array[i][j][k]; // duplicates were already filtered out in the statement filter, so just add
+						} else if (this.qualifierAggregation.equals("subtract")) { // subtract
+							if (booleanQualifier == false && qualifierValues[k] < 0) { // subtract weighted absolute value
+								mat[i][j] = mat[i][j] - (Math.abs(qualifierValues[k]) * array[i][j][k]);
+							} else if (booleanQualifier == false && qualifierValues[k] >= 0) { // add weighted absolute value
+								mat[i][j] = mat[i][j] + (Math.abs(qualifierValues[k]) * array[i][j][k]);
+							} else if (booleanQualifier == true && qualifierValues[k] == 0) { // subtract 1 at most
+								mat[i][j] = mat[i][j] - array[i][j][k];
+							} else if (booleanQualifier == true && qualifierValues[k] > 0) { // add 1 at most
+								mat[i][j] = mat[i][j] + array[i][j][k];
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		// report combinations if necessary
+		if (combinations.size() > 0) {
+			Iterator<Integer> keyIterator = combinations.keySet().iterator();
+			while (keyIterator.hasNext()){
+				Integer key = (Integer) keyIterator.next();
+				ArrayList<Integer> values = combinations.get(key);
+				if (verbose == true) {
+					System.out.print("\n       An edge weight of " + key + " maps onto integer combination: ");
+					for (int i = 0; i < values.size(); i++) {
+						System.out.print(values.get(i) + " ");
+					}
+				}
+			}
+			if (verbose == true) {
+				System.out.print("\n");
+			}
+		}
+		
+		// normalization
+		boolean integerBoolean = false;
+		if (this.normalization.equals("no")) {
+			integerBoolean = true;
+		} else if (this.normalization.equals("activity")) {
+			integerBoolean = false;
+			double currentDenominator;
+			for (int i = 0; i < names1.length; i++) {
+				currentDenominator = 0.0;
+				if (qualifierAggregation.equals("ignore")) { // iterate through columns of matrix and sum weighted values
+					for (int j = 0; j < names2.length; j++) {
+						currentDenominator = currentDenominator + mat[i][j];
+					}
+				} else if (qualifierAggregation.equals("combine")) { // iterate through columns of matrix and count how many are larger than one
+					System.err.println("Warning: Normalization and qualifier setting 'combine' yield results that cannot be interpreted.");
+					for (int j = 0; j < names2.length; j++) {
+						if (mat[i][j] > 0.0) {
+							currentDenominator = currentDenominator + 1.0;
+						}
+					}
+				} else if (qualifierAggregation.equals("subtract")) { // iterate through array and sum for different levels
+					for (int j = 0; j < names2.length; j++) {
+						for (int k = 0; k < qualifierValues.length; k++) {
+							currentDenominator = currentDenominator + array[i][j][k];
+						}
+					}
+				}
+				for (int j = 0; j < names2.length; j++) { // divide all values by current denominator
+					mat[i][j] = mat[i][j] / currentDenominator;
+				}
+			}
+		} else if (this.normalization.equals("prominence")) {
+			integerBoolean = false;
+			double currentDenominator;
+			for (int i = 0; i < names2.length; i++) {
+				currentDenominator = 0.0;
+				if (this.qualifierAggregation.equals("ignore")) { // iterate through rows of matrix and sum weighted values
+					for (int j = 0; j < names1.length; j++) {
+						currentDenominator = currentDenominator + mat[j][i];
+					}
+				} else if (this.qualifierAggregation.equals("combine")) { // iterate through rows of matrix and count how many are larger than one
+					System.err.println("Warning: Normalization and qualifier setting 'combine' yield results that cannot be interpreted.");
+					for (int j = 0; j < names1.length; j++) {
+						if (mat[i][j] > 0.0) {
+							currentDenominator = currentDenominator + 1.0;
+						}
+					}
+				} else if (this.qualifierAggregation.equals("subtract")) { // iterate through array and sum for different levels
+					for (int j = 0; j < names1.length; j++) {
+						for (int k = 0; k < qualifierValues.length; k++) {
+							currentDenominator = currentDenominator + array[j][i][k];
+						}
+					}
+				}
+				for (int j = 0; j < names1.length; j++) { // divide all values by current denominator
+					mat[j][i] = mat[j][i] / currentDenominator;
+				}
+			}
+		}
+		
+		// create Matrix object and return
+		Matrix matrix = new Matrix(mat, names1, names2, integerBoolean, start, stop); // assemble the Matrix object with labels
+		return matrix;
+	}
+
+	/**
+	 * Create a series of one-mode or two-mode networks using a moving time
+	 * window.
+	 * 
+	 * @throws Exception
+	 */
+	public void computeTimeWindowMatrices() throws Exception {
+		ArrayList<Matrix> timeWindowMatrices = new ArrayList<Matrix>();
+		Collections.sort(this.filteredStatements); // probably not necessary, but can't hurt to have it
+		ArrayList<ExportStatement> currentWindowStatements = new ArrayList<ExportStatement>(); // holds all statements in the current time window
+		ArrayList<ExportStatement> startStatements = new ArrayList<ExportStatement>(); // holds all statements corresponding to the time stamp of the first statement in the window
+		ArrayList<ExportStatement> stopStatements = new ArrayList<ExportStatement>(); // holds all statements corresponding to the time stamp of the last statement in the window
+		ArrayList<ExportStatement> beforeStatements = new ArrayList<ExportStatement>(); // holds all statements between (and excluding) the time stamp of the first statement in the window and the focal statement
+		ArrayList<ExportStatement> afterStatements = new ArrayList<ExportStatement>(); // holds all statements between (and excluding) the the focal statement and the time stamp of the last statement in the window
+		Matrix m;
+		if (this.timeWindow.equals("events")) {
+			if (this.windowSize < 2) {
+				throw new Exception("You must choose a timeUnits parameter of at least 2, otherwise it is impossible to create a time window.");
+			}
+			int iteratorStart, iteratorStop, i, j;
+			int samples;
+			for (int t = 0; t < this.filteredStatements.size(); t++) {
+				int halfDuration = (int) Math.floor(this.windowSize / 2);
+				iteratorStart = t - halfDuration;
+				iteratorStop = t + halfDuration;
+				
+				startStatements.clear();
+				stopStatements.clear();
+				beforeStatements.clear();
+				afterStatements.clear();
+				if (iteratorStart >= 0 && iteratorStop < this.filteredStatements.size()) {
+					for (i = 0; i < this.filteredStatements.size(); i++) {
+						if (this.filteredStatements.get(i).getDateTime().equals(this.filteredStatements.get(iteratorStart).getDateTime())) {
+							startStatements.add(this.filteredStatements.get(i));
+						}
+						if (this.filteredStatements.get(i).getDateTime().equals(this.filteredStatements.get(iteratorStop).getDateTime())) {
+							stopStatements.add(this.filteredStatements.get(i));
+						}
+						if (this.filteredStatements.get(i).getDateTime().isAfter(this.filteredStatements.get(iteratorStart).getDateTime()) && i < t) {
+							beforeStatements.add(this.filteredStatements.get(i));
+						}
+						if (this.filteredStatements.get(i).getDateTime().isBefore(this.filteredStatements.get(iteratorStop).getDateTime()) && i > t) {
+							afterStatements.add(this.filteredStatements.get(i));
+						}
+					}
+					if (startStatements.size() + beforeStatements.size() > halfDuration || stopStatements.size() + afterStatements.size() > halfDuration) {
+						samples = 1; // this number should be larger than the one below, for example 10 (for 10 random combinations of start and stop statements)
+					} else {
+						samples = 1;
+					}
+					
+					for (j = 0; j < samples; j++) {
+						// add statements from start, before, after, and stop set to current window
+						currentWindowStatements.clear();
+						Collections.shuffle(startStatements);
+						for (i = 0; i < halfDuration - beforeStatements.size(); i++) {
+							currentWindowStatements.add(startStatements.get(i));
+						}
+						currentWindowStatements.addAll(beforeStatements);
+						currentWindowStatements.add(this.filteredStatements.get(t));
+						currentWindowStatements.addAll(afterStatements);
+						Collections.shuffle(stopStatements);
+						for (i = 0; i < halfDuration - afterStatements.size(); i++) {
+							currentWindowStatements.add(stopStatements.get(i));
+						}
+
+						// convert time window to network and add to list
+						if (currentWindowStatements.size() > 0) {
+							int firstDocId = currentWindowStatements.get(0).getDocumentId();
+							LocalDateTime first = null;
+							for (i = 0; i < this.documents.size(); i++) {
+								if (firstDocId == this.documents.get(i).getId()) {
+									first = documents.get(i).getDateTime();
+									break;
+								}
+							}
+							int lastDocId = currentWindowStatements.get(currentWindowStatements.size() - 1).getDocumentId();
+							LocalDateTime last = null;
+							for (i = this.documents.size() - 1; i > -1; i--) {
+								if (lastDocId == this.documents.get(i).getId()) {
+									last = this.documents.get(i).getDateTime();
+									break;
+								}
+							}
+							if (this.networkType.equals("twomode")) {
+								boolean verbose = false;
+								m = computeTwoModeMatrix(currentWindowStatements, first, last, verbose);
+								m.setDateTime(this.filteredStatements.get(t).getDateTime());
+								m.setNumStatements(currentWindowStatements.size());
+								timeWindowMatrices.add(m);
+							} else {
+								if (qualifierAggregation.equals("congruence & conflict")) { // note: the networks are saved in alternating order and need to be disentangled
+									m = computeOneModeMatrix(currentWindowStatements, "congruence", first, last);
+									m.setDateTime(this.filteredStatements.get(t).getDateTime());
+									m.setNumStatements(currentWindowStatements.size());
+									timeWindowMatrices.add(m);
+									m = computeOneModeMatrix(currentWindowStatements, "conflict", first, last);
+									m.setDateTime(this.filteredStatements.get(t).getDateTime());
+									m.setNumStatements(currentWindowStatements.size());
+									timeWindowMatrices.add(m);
+								} else {
+									m = computeOneModeMatrix(currentWindowStatements, this.qualifierAggregation, first, last);
+									m.setDateTime(this.filteredStatements.get(t).getDateTime());
+									m.setNumStatements(currentWindowStatements.size());
+									timeWindowMatrices.add(m);
+								}
+								
+							}
+						}
+					}
+				}
+			}
+		} else {
+			LocalDateTime startCalendar = this.startDateTime; // start of statement list
+			LocalDateTime stopCalendar = this.stopDateTime; // end of statement list
+			LocalDateTime currentTime = this.startDateTime; // current time while progressing through list of statements
+			LocalDateTime windowStart = this.startDateTime; // start of the time window
+			LocalDateTime windowStop = this.startDateTime; // end of the time window
+			LocalDateTime iTime; // time of the statement to be potentially added to the time slice
+			int addition = 0;
+			while (!currentTime.isAfter(stopCalendar)) {
+				LocalDateTime matrixTime = currentTime;
+				windowStart = matrixTime;
+				windowStop = matrixTime;
+				currentWindowStatements.clear();
+				addition = (int) Math.round(((double) windowSize - 1) / 2);
+				if (timeWindow.equals("seconds")) {
+					windowStart.minusSeconds(addition);
+					windowStop.plusSeconds(addition);
+					currentTime.plusSeconds(1);
+				} else if (timeWindow.equals("minutes")) {
+					windowStart.minusMinutes(addition);
+					windowStop.plusMinutes(addition);
+					currentTime.plusMinutes(1);
+				} else if (timeWindow.equals("hours")) {
+					windowStart.minusHours(addition);
+					windowStop.plusHours(addition);
+					currentTime.plusHours(1);
+				} else if (timeWindow.equals("days")) {
+					windowStart.minusDays(addition);
+					windowStop.plusDays(addition);
+					currentTime.plusDays(1);
+				} else if (timeWindow.equals("weeks")) {
+					windowStart.minusWeeks(addition);
+					windowStop.plusWeeks(addition);
+					currentTime.plusWeeks(1);
+				} else if (timeWindow.equals("months")) {
+					windowStart.minusMonths(addition);
+					windowStop.plusMonths(addition);
+					currentTime.plusMonths(1);
+				} else if (timeWindow.equals("years")) {
+					windowStart.minusYears(addition);
+					windowStop.plusYears(addition);
+					currentTime.plusYears(1);
+				}
+				if (!windowStart.isBefore(startCalendar) && !windowStop.isAfter(stopCalendar)) {
+					for (int i = 0; i < this.filteredStatements.size(); i++) {
+						iTime = this.filteredStatements.get(i).getDateTime();
+						if (!iTime.isBefore(windowStart) && !iTime.isAfter(windowStop)) {
+							currentWindowStatements.add(this.filteredStatements.get(i));
+						}
+					}
+					if (currentWindowStatements.size() > 0) {
+						if (this.networkType.equals("twomode")) {
+							boolean verbose = false;
+							m = computeTwoModeMatrix(currentWindowStatements, windowStart, windowStop, verbose);
+						} else {
+							m = computeOneModeMatrix(currentWindowStatements, this.qualifierAggregation, windowStart, windowStop);
+						}
+						m.setDateTime(matrixTime);
+						m.setNumStatements(currentWindowStatements.size());
+						timeWindowMatrices.add(m);
+					}
+				}
+			}
+		}
+		this.matrixResults = timeWindowMatrices;
+	}
+	
+	/**
+	 * Get the computed network matrix results.
+	 * 
+	 * @return An array list of {@link model.Matrix Matrix} objects. If time
+	 *   window functionality was used, there are multiple matrices in the list,
+	 *   otherwise just one.
+	 */
+	public ArrayList<Matrix> getMatrixResults() {
+		return matrixResults;
+	}
+
+	/**
+	 * Write an event list to a CSV file. The event list contains all filtered
+	 * statements including their IDs, date/time stamps, variable values, text,
+	 * and document meta-data. There is one statement per row. The event list
+	 * can be used for estimating relational event models.
+	 */
+	public void eventCSV() {
+		String key;
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+		try {
+			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.outfile), "UTF-8"));
+			out.write("\"statement ID\";\"time\";\"document ID\";\"document title\";\"author\";\"source\";\"section\";\"type\";\"text\"");
+			for (int i = 0; i < statementType.getVariables().size(); i++) {
+				out.write(";\"" + statementType.getVariables().get(i).getKey() + "\"");
+			}
+			ExportStatement s;
+			for (int i = 0; i < this.filteredStatements.size(); i++) {
+				s = this.filteredStatements.get(i);
+				out.newLine();
+				String stringId = Integer.valueOf(s.getId()).toString();
+				out.write(stringId);
+				out.write(";" + s.getDateTime().format(formatter));
+				out.write(";" + s.getDocumentIdAsString());
+				out.write(";\"" + s.getTitle().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + s.getAuthor().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + s.getSource().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + s.getSection().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + s.getType().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				out.write(";\"" + s.getText().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+				for (int j = 0; j < statementType.getVariables().size(); j++) {
+					key = statementType.getVariables().get(j).getKey();
+					if (this.dataTypes.get(key).equals("short text") || this.dataTypes.get(key).equals("long text")) {
+						out.write(";\"" + ((String) s.get(key)).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+					} else {
+						out.write(";" + s.get(key));
+					}
+				}
+			}
+			out.close();
+			System.out.println("Event list has been exported to \"" + this.outfile + "\".");
+		} catch (IOException e) {
+			System.err.println("Error while saving CSV file: " + e);
+		}
+	}
+
 	/**
 	 * An extension of the Statement class, which also holds some document meta-
 	 * data and a hash map of the values (in addition to the array list of
@@ -834,8 +1310,8 @@ public class Exporter {
 		 * 
 		 * @param exportStatement An existing export statement.
 		 */
-		public ExportStatement(ExportStatement exportStatement) {
-			super(exportStatement); // TODO: check if this is necessary
+		private ExportStatement(ExportStatement exportStatement) {
+			super(exportStatement);
 			this.title = exportStatement.getTitle();
 			this.author = exportStatement.getAuthor();
 			this.source = exportStatement.getSource();

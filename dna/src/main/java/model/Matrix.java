@@ -13,7 +13,7 @@ public class Matrix implements Cloneable {
 	private double[][] matrix;
 	private String[] rownames, colnames;
 	private boolean integer;
-	private LocalDateTime date;
+	private LocalDateTime dateTime;
 	private LocalDateTime start;
 	private LocalDateTime stop;
 	private int numStatements;
@@ -104,15 +104,15 @@ public class Matrix implements Cloneable {
 	/**
 	 * @return a boolean value indicating whether the values can be cast to integer
 	 */
-	public LocalDateTime getDate() {
-		return date;
+	public LocalDateTime getDateTime() {
+		return dateTime;
 	}
 
 	/**
 	 * @param integer   the integer boolean indicator to be set
 	 */
-	public void setDate(LocalDateTime date) {
-		this.date = date;
+	public void setDateTime(LocalDateTime date) {
+		this.dateTime = dateTime;
 	}
 
 	/**
