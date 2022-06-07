@@ -41,23 +41,17 @@ import model.Value;
 /**
  * This class contains information on the database connection, the data source
  * for establishing connections, and methods for interacting with the database.
- * 
- * @category setup
  */
 public class Sql {
 	
 	/**
 	 * The {@link sql.ConnectionProfile ConnectionProfile} to be used for
 	 * connecting to a database.
-	 * 
-	 * @category setup
 	 */
 	private ConnectionProfile cp;
 	
 	/**
 	 * The {@link javax.sql.DataSource DataSource} to be used for connections.
-	 * 
-	 * @category setup
 	 */
 	private DataSource ds;
 	
@@ -81,8 +75,6 @@ public class Sql {
 	 * @param test  Boolean indicating whether this is just a connection test.
 	 *   In that event, it is assumed that no data structures/tables are present
 	 *   yet, and no coder will be selected.
-	 *   
-	 * @category setup
 	 */
 	public Sql(ConnectionProfile cp, boolean test) {
 		this.setConnectionProfile(cp, test);
@@ -90,8 +82,6 @@ public class Sql {
 
 	/**
 	 * Create an instance of the Sql class without an initial connection.
-	 *   
-	 * @category setup
 	 */
 	public Sql() {
 		this.setConnectionProfile(null, false);
@@ -101,8 +91,6 @@ public class Sql {
 	 * Get the connection profile.
 	 * 
 	 * @return A {@link sql.ConnectionProfile connectionProfile} object.
-	 * 
-	 * @category setup
 	 */
 	public ConnectionProfile getConnectionProfile() {
 		return this.cp;
@@ -115,8 +103,6 @@ public class Sql {
 	 * @param test  Boolean indicating whether this is just a connection test.
 	 *   In that event, it is assumed that no data structures/tables are present
 	 *   yet, and no coder will be selected.
-	 * 
-	 * @category setup
 	 */
 	public void setConnectionProfile(ConnectionProfile cp, boolean test) {
 		this.cp = cp;
@@ -174,8 +160,6 @@ public class Sql {
 	 * Get the active coder.
 	 * 
 	 * @return A {@link model.Coder Coder} object with all permissions.
-	 * 
-	 * @category setup
 	 */
 	public Coder getActiveCoder() {
 		return activeCoder;
@@ -185,8 +169,6 @@ public class Sql {
 	 * Get the data source stored in the {@link sql.Sql Sql} object.
 	 * 
 	 * @return A {@link javax.sql.DataSource DataSource} object.
-	 * 
-	 * @category setup
 	 */
 	public DataSource getDataSource() {
 		return ds;
@@ -221,14 +203,10 @@ public class Sql {
 	 * An interface that rolls back failed execution attempts of SQL connections
 	 * in {@literal try}-with-resources headers. Use this as the last code line
 	 * in any {@literal try}-with-resources header that uses SQL transactions.
-	 * 
-	 * @category setup
 	 */
 	public interface SQLCloseable extends AutoCloseable {
 	    /**
 	     * Close the object, which rolls back any initiated transactions.
-	     * 
-	     * @category setup
 	     */
 	    @Override public void close() throws SQLException;
 	}
@@ -242,8 +220,6 @@ public class Sql {
 	 *   
 	 * @return A {@link boolean} indicator of whether the data structures were
 	 *   successfully created ({@code true}) or rolled back ({@code false}).
-	 * 
-	 * @category setup
 	 */
 	public boolean createTables(String encryptedAdminPassword) {
 		boolean success = true;
@@ -756,8 +732,6 @@ public class Sql {
 	 * @param coderId  The ID of the coder to be retrieved from the database.
 	 * @return         The coder to be retrieved, as a {@link model.Coder
 	 *   Coder} object.
-	 * 
-	 * @category coder
 	 */
 	public Coder getCoder(int coderId) {
 		Coder c = null;
@@ -998,8 +972,6 @@ public class Sql {
 	 * 
 	 * @return An {@link java.util.ArrayList ArrayList} of {@link model.Coder
 	 *   Coder} objects.
-	 * 
-	 * @category coder
 	 */
 	public ArrayList<Coder> getCoders() {
 		ArrayList<Coder> coders = new ArrayList<Coder>();
@@ -1636,8 +1608,6 @@ public class Sql {
 	 * @param clearPassword Clear-text password provided by the coder.
 	 * @return              boolean value: {@code true} if the password matches,
 	 *   {@code false} if not.
-	 * 
-	 * @category coder
 	 */
 	public boolean authenticate(int coderId, String clearPassword) {
 		String encryptedHash = null;
@@ -1693,8 +1663,6 @@ public class Sql {
 	 *   {@link model.Document Document} objects, containing the documents to
 	 *   be added to the database.
 	 * @return          Array of generated document IDs.
-	 * 
-	 * @category document
 	 */
 	public int[] addDocuments(ArrayList<Document> documents) {
 		int[] documentIds = new int[documents.size()];
@@ -1741,8 +1709,6 @@ public class Sql {
 	 * in the {@code DOCUMENTS} table of the database.
 	 * 
 	 * @return The number of documents.
-	 * 
-	 * @category document
 	 */
 	public int countDocuments() {
 		int count = 0;
@@ -1769,8 +1735,6 @@ public class Sql {
 	 * 
 	 * @param documentIds  An array of document IDs.
 	 * @return             boolean value indicating the presence of statements.
-	 * 
-	 * @category document
 	 */
 	public boolean documentsContainStatements(int[] documentIds) {
 		boolean contains = true;
@@ -1812,8 +1776,6 @@ public class Sql {
 	 * @return             An {@link java.util.ArrayList ArrayList} of
 	 *   {@link model.TableDocument TableDocument} objects, containing the
 	 *   document meta-data.
-	 * 
-	 * @category document
 	 */
 	public ArrayList<TableDocument> getTableDocuments(int[] documentIds) {
 		ArrayList<TableDocument> documents = new ArrayList<TableDocument>();
@@ -1873,8 +1835,6 @@ public class Sql {
 	 * @return             An {@link java.util.ArrayList ArrayList} of
 	 *   {@link model.Document Document} objects, containing the documents and
 	 *   their meta-data.
-	 * 
-	 * @category document
 	 */
 	public ArrayList<Document> getDocuments(int[] documentIds) {
 		ArrayList<Document> documents = new ArrayList<Document>();
@@ -1919,8 +1879,6 @@ public class Sql {
 	 * 
 	 * @param documentId  The ID of a document.
 	 * @return            A String representing the document text.
-	 * 
-	 * @category document
 	 */
 	public String getDocumentText(int documentId) {
 		String text = null;
@@ -2022,8 +1980,6 @@ public class Sql {
 	 *   LocalDate} object).
 	 * @param time     A new time stamp (as a {@link java.time.LocalTime
 	 *   LocalTime} object).
-	 * 
-	 * @category document
 	 */
 	public void updateDocuments(int[] documentIds, int coder, String title, String text, String author, String source, String section, String type, String notes, LocalDate date, LocalTime time) {
 		String sel = "SELECT Title, Text, Author, Source, Section, Type, Notes, Date, Coder FROM DOCUMENTS WHERE ID = ?;";
@@ -2196,8 +2152,6 @@ public class Sql {
 	 * 
 	 * @param documentIds  An array of document IDs to be deleted.
 	 * @return             Were the documents successfully deleted?
-	 * 
-	 * @category document
 	 */
 	public boolean deleteDocuments(int[] documentIds) {
 		boolean success = false;
@@ -2238,8 +2192,6 @@ public class Sql {
 	 * @param documentId  The ID of the document in which the statement is
 	 *   nested.
 	 * @return            The generated statement ID of the new statement.
-	 * 
-	 * @category statement
 	 */
 	public int addStatement(Statement statement, int documentId) {
 		long statementId = -1, entityId = -1, attributeVariableId = -1;
@@ -2421,8 +2373,6 @@ public class Sql {
 	 * @param statementId  The ID of the statement to be updated.
 	 * @param values       An ArrayList of {@link model.Value Value} objects. They
 	 *   are used to update each variable value in the statement.
-	 * 
-	 * @category statement
 	 */
 	public void updateStatement(int statementId, ArrayList<Value> values, int coderId) {
 		try (Connection conn = ds.getConnection();
@@ -2577,8 +2527,6 @@ public class Sql {
 	 *   statement. The outer ArrayList is for the statements, and the inner
 	 *   ArrayList is for the variables in the given statement.
 	 * @param coderIds      An ArrayList of new coder IDs for the statements.
-	 * 
-	 * @category statement
 	 */
 	public void updateStatements(ArrayList<Integer> statementIds, ArrayList<ArrayList<Value>> values, ArrayList<Integer> coderIds) {
 		try (Connection conn = ds.getConnection();
@@ -2732,8 +2680,6 @@ public class Sql {
 	 * @param statementId  The ID of the statement to be cloned.
 	 * @param newCoderId   The ID of the coder who will own the statement copy.
 	 * @return             The ID of the new (cloned) statement.
-	 * 
-	 * @category statement
 	 */
 	public int cloneStatement(int statementId, int newCoderId) {
 		int id = statementId;
@@ -2826,8 +2772,6 @@ public class Sql {
 	 * @param statementId  The statement ID of the statement to be retrieved.
 	 * @return             A {@link model.Statement Statement} with all relevant
 	 *   values for the different variables.
-	 * 
-	 * @category statement
 	 */
 	public Statement getStatement(int statementId) {
 		Statement statement = null;
@@ -3320,8 +3264,6 @@ public class Sql {
 	 * 
 	 * @param statementIds  An array of statement IDs to be deleted.
 	 * @return              Were the statements successfully deleted?
-	 * 
-	 * @category statement
 	 */
 	public boolean deleteStatements(int[] statementIds) {
 		boolean committed = false;
@@ -3438,15 +3380,13 @@ public class Sql {
 	 * is an array list with nested array lists of entities for each variable
 	 * ID.
 	 *  
-	 * @param variableIds     The IDs of the variables for which all entities will
+	 * @param variableIds The IDs of the variables for which all entities will
 	 *   be retrieved, supplied as an array list of integers.
-	 * @param withAttributes  Include attributes and indicator of whether the
+	 * @param withAttributes Include attributes and indicator of whether the
 	 *   entity has been used in the database in each {@link model.Entity
 	 *   Entity}? Doing so takes much longer for large databases.
-	 * @return                An array list of array lists of {@link dna.Entity
-	 *   Entity} objects.
-	 * 
-	 * @category entity
+	 * @return An array list of array lists of {@link dna.Entity Entity}
+	 *   objects.
 	 */
 	public ArrayList<ArrayList<Entity>> getEntities(ArrayList<Integer> variableIds, boolean withAttributes) {
 		ArrayList<ArrayList<Entity>> entities = new ArrayList<ArrayList<Entity>>();
@@ -3796,8 +3736,6 @@ public class Sql {
 	 * objects containing the variable ID, variable name, and data type.
 	 * 
 	 * @return An ArrayList of {@link model.StatementType StatementType} objects.
-	 * 
-	 * @category statementtype
 	 */
 	public ArrayList<StatementType> getStatementTypes() {
 		ArrayList<StatementType> statementTypes = new ArrayList<StatementType>();

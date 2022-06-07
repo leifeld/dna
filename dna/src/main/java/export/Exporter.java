@@ -1,6 +1,8 @@
 package export;
 
+import java.awt.Color;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -8,13 +10,24 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import org.jdom.Attribute;
+import org.jdom.Comment;
+import org.jdom.Element;
+import org.jdom.Namespace;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
 
 import dna.Dna;
+import model.Entity;
 import model.Matrix;
 import model.Statement;
 import model.StatementType;
@@ -111,7 +124,7 @@ public class Exporter {
      *   <ul>
 	 *     <li>{@code "no"} (for switching off normalization)</li>
 	 *     <li>{@code "average"} (for average activity normalization)</li>
-	 *     <li>{@code "Jaccard"} (for Jaccard coefficient normalization)</li>
+	 *     <li>{@code "jaccard"} (for Jaccard coefficient normalization)</li>
 	 *     <li>{@code "cosine"} (for cosine similarity normalization)</li>
 	 *   </ul>
 	 *   Valid settings for <em>two-mode</em> networks are:
@@ -286,7 +299,12 @@ public class Exporter {
 		this.invertTypes = invertTypes;
 		this.fileFormat = fileFormat;
 		this.outfile = outfile;
-
+	}
+	
+	/**
+	 * Load statements and documents from the database and pre-process them.
+	 */
+	public void loadData() {
 		// put variable data types into a map for quick lookup
 		this.dataTypes = new HashMap<String, String>();
 		for (int i = 0; i < this.statementType.getVariables().size(); i++) {
@@ -405,7 +423,7 @@ public class Exporter {
 		// create a deep copy of the original statements
 		this.filteredStatements = new ArrayList<ExportStatement>();
 		for (int i = 0; i < this.originalStatements.size(); i++) {
-			this.filteredStatements.add(new ExportStatement(filteredStatements.get(i)));
+			this.filteredStatements.add(new ExportStatement(originalStatements.get(i)));
 		}
 		
 		// sort statements by date and time
@@ -554,7 +572,9 @@ public class Exporter {
 					values[i] = s.getTitle();
 				}
 			} else {
-				values[i] = (String) s.get(variable);
+				// TODO: null pointer exception!
+				// System.out.println(((Entity) s.get(variable)).getValue());
+				values[i] = (String) ((Entity) s.get(variable)).getValue();
 			}
 		}
 		return values;
@@ -697,9 +717,24 @@ public class Exporter {
 	}
 	
 	/**
+	 * Compute the results. Choose the right method based on the settings.
+	 * 
+	 * @throws Exception
+	 */
+	public void computeResults() throws Exception {
+		if (networkType.equals("onemode") && timeWindow.equals("no")) {
+			computeOneModeMatrix();
+		} else if (networkType.equals("twomode") && timeWindow.equals("no")) {
+			computeTwoModeMatrix(true);
+		} else if (!networkType.equals("eventlist") && !timeWindow.equals("no")) {
+			computeTimeWindowMatrices();
+		}
+	}
+	
+	/**
 	 * Wrapper method to compute one-mode network matrix with class settings.
 	 */
-	public void computeOneModeMatrix() {
+	private void computeOneModeMatrix() {
 		ArrayList<Matrix> matrices = new ArrayList<Matrix>(); 
 		matrices.add(this.computeOneModeMatrix(this.filteredStatements,
 				this.qualifierAggregation, this.startDateTime, this.stopDateTime));
@@ -805,7 +840,7 @@ public class Exporter {
 							}
 						}
 						norm = (i1count + i2count) / 2;
-					} else if (this.normalization.equals("Jaccard")) {
+					} else if (this.normalization.equals("jaccard")) {
 						double m10 = 0.0;
 						double m01 = 0.0;
 						double m11 = 0.0;
@@ -1226,6 +1261,21 @@ public class Exporter {
 	public ArrayList<Matrix> getMatrixResults() {
 		return matrixResults;
 	}
+	
+	/**
+	 * Write results to file.
+	 */
+	public void exportToFile() {
+		if (networkType.equals("eventlist") && fileFormat.equals("csv")) {
+			eventCSV();
+		} else if (fileFormat.equals("csv")) {
+			exportCSV();
+		} else if (fileFormat.equals("dl")) {
+			exportDL();
+		} else if (fileFormat.equals("graphml")) {
+			exportGraphml();
+		}
+	}
 
 	/**
 	 * Write an event list to a CSV file. The event list contains all filtered
@@ -1233,7 +1283,7 @@ public class Exporter {
 	 * and document meta-data. There is one statement per row. The event list
 	 * can be used for estimating relational event models.
 	 */
-	public void eventCSV() {
+	private void eventCSV() {
 		String key;
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 		try {
@@ -1269,6 +1319,517 @@ public class Exporter {
 			System.out.println("Event list has been exported to \"" + this.outfile + "\".");
 		} catch (IOException e) {
 			System.err.println("Error while saving CSV file: " + e);
+		}
+	}
+
+	/**
+	 * Export {@link model.Matrix Matrix} to a CSV matrix file.
+	 * 
+	 * @param matrix   The input {@link Matrix} object.
+	 * @param outfile  The path and file name of the target CSV file.
+	 */
+	private void exportCSV () {
+		String filename2;
+		String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
+		String filename3 = this.outfile.substring(this.outfile.length() - 4, this.outfile.length());
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+		for (int k = 0; k < this.matrixResults.size(); k++) {
+			// assemble file name for time window networks if necessary
+			String filename = this.outfile;
+			if (this.matrixResults.size() > 1) {
+				filename2 = " " + String.format("%0" + String.valueOf(this.matrixResults.size()).length() + "d", k + 1) + " " + this.matrixResults.get(k).getDateTime().format(formatter);
+				filename = filename1 + filename2 + filename3;
+			}
+			
+			// get current data
+			String[] rn = this.matrixResults.get(k).getRownames();
+			String[] cn = this.matrixResults.get(k).getColnames();
+			int nr = rn.length;
+			int nc = cn.length;
+			double[][] mat = this.matrixResults.get(k).getMatrix();
+			
+			// export
+			try {
+				BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), "UTF8"));
+				out.write("\"\"");
+				for (int i = 0; i < nc; i++) {
+					out.write(";\"" + cn[i].replaceAll("\"", "'") + "\"");
+				}
+				for (int i = 0; i < nr; i++) {
+					out.newLine();
+					out.write("\"" + rn[i].replaceAll("\"", "'") + "\"");
+					for (int j = 0; j < nc; j++) {
+						if (this.matrixResults.get(k).getInteger()) {
+							out.write(";" + (int) mat[i][j]);
+						} else {
+							out.write(";" + String.format(new Locale("en"), "%.6f", mat[i][j])); // six decimal places
+						}
+					}
+				}
+				out.close();
+			} catch (IOException e) {
+				System.err.println("Error while saving CSV matrix file.");
+			}
+		}
+	}
+
+	/**
+	 * Export network to a DL fullmatrix file for the software UCINET.
+	 */
+	private void exportDL () {
+		String filename2;
+		String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
+		String filename3 = this.outfile.substring(this.outfile.length() - 4, this.outfile.length());
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+		for (int k = 0; k < this.matrixResults.size(); k++) {
+			// assemble file name for time window networks if necessary
+			String filename = this.outfile;
+			if (this.matrixResults.size() > 1) {
+				filename2 = " " + String.format("%0" + String.valueOf(this.matrixResults.size()).length() + "d", k + 1) + " " + this.matrixResults.get(k).getDateTime().format(formatter);
+				filename = filename1 + filename2 + filename3;
+			}
+			
+			// get current data
+			String[] rn = this.matrixResults.get(k).getRownames();
+			String[] cn = this.matrixResults.get(k).getColnames();
+			int nr = rn.length;
+			int nc = cn.length;
+			double[][] mat = this.matrixResults.get(k).getMatrix();
+			
+			// export
+			try {
+				BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), "UTF8"));
+				out.write("dl ");
+				if (this.networkType.equals("onemode")) {
+					out.write("n = " + nr);
+				} else if (this.networkType.equals("twomode")) {
+					out.write("nr = " + nr + ", nc = " + nc);
+				}
+				out.write(", format = fullmatrix");
+				out.newLine();
+				if (this.networkType.equals("twomode")) {
+					out.write("row labels:");
+				} else {
+					out.write("labels:");
+				}
+				for (int i = 0; i < nr; i++) {
+					out.newLine();
+					out.write("\"" + rn[i].replaceAll("\"", "'").replaceAll("'", "") + "\"");
+				}
+				if (this.networkType.equals("twomode")) {
+					out.newLine();
+					out.write("col labels:");
+					for (int i = 0; i < nc; i++) {
+						out.newLine();
+						out.write("\"" + cn[i].replaceAll("\"", "'").replaceAll("'", "") + "\"");
+					}
+				}
+				out.newLine();
+				out.write("data:");
+				for (int i = 0; i < nr; i++) {
+					out.newLine();
+					for (int j = 0; j < nc; j++) {
+						if (this.matrixResults.get(k).getInteger()) {
+							out.write(" " + (int) mat[i][j]);
+						} else {
+							out.write(" " + String.format(new Locale("en"), "%.6f", mat[i][j]));
+						}
+					}
+				}
+				out.close();
+			} catch (IOException e) {
+				System.err.println("Error while saving DL fullmatrix file.");
+			}
+		}
+	}
+
+	/**
+	 * Export filter for graphML files.
+	 */
+	private void exportGraphml() {
+		// set up file name components for time window (in case this will be required later)
+		String filename2;
+		String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
+		String filename3 = this.outfile.substring(this.outfile.length() - 4, this.outfile.length());
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+		
+		// get variable IDs for variable 1 and variable 2
+		int variable1Id = this.statementType.getVariables()
+				.stream()
+				.filter(v -> v.getKey().equals(this.variable1))
+				.mapToInt(v -> v.getVariableId())
+				.findFirst()
+				.getAsInt();
+		int variable2Id = this.statementType.getVariables()
+				.stream()
+				.filter(v -> v.getKey().equals(this.variable2))
+				.mapToInt(v -> v.getVariableId())
+				.findFirst()
+				.getAsInt();
+		
+		// get attribute variable names for variable 1 and variable 2
+		ArrayList<String> attributeVariables1 = Dna.sql.getAttributeVariables(variable1Id);
+		ArrayList<String> attributeVariables2 = Dna.sql.getAttributeVariables(variable2Id);
+		
+		// get entities with attribute values for variable 1 and variable 2 and save in hash maps
+		ArrayList<Integer> variableIds = new ArrayList<Integer>();
+		variableIds.add(variable1Id);
+		variableIds.add(variable2Id);
+		ArrayList<ArrayList<Entity>> entities = Dna.sql.getEntities(variableIds, true);
+		HashMap<String, Entity> entityMap1 = new HashMap<String, Entity>();
+		HashMap<String, Entity> entityMap2 = new HashMap<String, Entity>();
+		entities.get(0).stream().forEach(entity -> entityMap1.put(entity.getValue(), entity));
+		entities.get(1).stream().forEach(entity -> entityMap2.put(entity.getValue(), entity));
+		
+		Matrix m;
+		for (int k = 0; k < this.matrixResults.size(); k++) {
+			m = this.matrixResults.get(k);
+			
+			// assemble file name for time window networks if necessary
+			String filename = this.outfile;
+			if (this.matrixResults.size() > 1) {
+				filename2 = " " + String.format("%0" + String.valueOf(this.matrixResults.size()).length() + "d", k + 1) + " " + m.getDateTime().format(formatter);
+				filename = filename1 + filename2 + filename3;
+			}
+			
+			// frequencies
+			String[] values1 = this.retrieveValues(this.filteredStatements, this.variable1, this.variable1Document);
+			String[] values2 = this.retrieveValues(this.filteredStatements, this.variable2, this.variable2Document);
+			int[] frequencies1 = this.countFrequencies(values1, m.getRownames());
+			int[] frequencies2 = this.countFrequencies(values2, m.getColnames());
+			
+			// join names, frequencies, and variable names into long arrays for both modes
+			String[] rn = this.matrixResults.get(k).getRownames();
+			String[] cn = this.matrixResults.get(k).getColnames();
+			String[] names;
+			String[] variables;
+			int[] frequencies;
+			if (this.networkType.equals("twomode")) {
+				names = new String[rn.length + cn.length];
+				variables = new String[names.length];
+				frequencies = new int[names.length];
+			} else {
+				names = new String[rn.length];
+				variables = new String[rn.length];
+				frequencies = new int[rn.length];
+			}
+			for (int i = 0; i < rn.length; i++) {
+				names[i] = rn[i];
+				variables[i] = this.variable1;
+				frequencies[i] = frequencies1[i];
+			}
+			if (this.networkType.equals("twomode")) {
+				for (int i = 0; i < cn.length; i++) {
+					names[i + rn.length] = cn[i];
+					variables[i + rn.length] = this.variable2;
+					frequencies[i + rn.length] = frequencies2[i];
+				}
+			}
+			
+			// get id and color arrays
+			int[] id = Arrays.stream(rn).mapToInt(s -> entityMap1.get(s).getId()).toArray();
+			String[] color = Arrays.stream(rn).map(s -> {
+				Color col = entityMap1.get(s).getColor();
+				return String.format("#%02X%02X%02X", col.getRed(), col.getGreen(), col.getBlue());
+			}).toArray(String[]::new);
+			if (networkType.equals("twomode")) {
+				id = IntStream.concat(IntStream.of(id), Arrays.stream(cn).mapToInt(s -> entityMap2.get(s).getId())).toArray();
+				color = Stream.concat(Stream.of(color), Arrays.stream(cn).map(s -> {
+					Color col = entityMap2.get(s).getColor();
+					return String.format("#%02X%02X%02X", col.getRed(), col.getGreen(), col.getBlue());
+				})).toArray(String[]::new);
+			}
+			
+			// set up graph structure
+			Namespace xmlns = Namespace.getNamespace("http://graphml.graphdrawing.org/xmlns");
+			Element graphml = new Element("graphml", xmlns);
+			Namespace visone = Namespace.getNamespace("visone", "http://visone.info/xmlns");
+			graphml.addNamespaceDeclaration(visone);
+			Namespace xsi = Namespace.getNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
+			graphml.addNamespaceDeclaration(xsi);
+			Namespace yNs = Namespace.getNamespace("y", "http://www.yworks.com/xml/graphml");
+			graphml.addNamespaceDeclaration(yNs);
+			Attribute attSchema = new Attribute("schemaLocation", "http://graphml.graphdrawing.org/xmlns/graphml http://www.yworks.com/xml/schema/graphml/1.0/ygraphml.xsd ", xsi);
+			graphml.setAttribute(attSchema);
+			org.jdom.Document document = new org.jdom.Document(graphml);
+			
+			Comment dataSchema = new Comment(" data schema ");
+			graphml.addContent(dataSchema);
+			
+			Element keyVisoneNode = new Element("key", xmlns);
+			keyVisoneNode.setAttribute(new Attribute("for", "node"));
+			keyVisoneNode.setAttribute(new Attribute("id", "d0"));
+			keyVisoneNode.setAttribute(new Attribute("yfiles.type", "nodegraphics"));
+			graphml.addContent(keyVisoneNode);
+
+			Element keyVisoneEdge = new Element("key", xmlns);
+			keyVisoneEdge.setAttribute(new Attribute("for", "edge"));
+			keyVisoneEdge.setAttribute(new Attribute("id", "e0"));
+			keyVisoneEdge.setAttribute(new Attribute("yfiles.type", "edgegraphics"));
+			graphml.addContent(keyVisoneEdge);
+
+			Element keyVisoneGraph = new Element("key", xmlns);
+			keyVisoneGraph.setAttribute(new Attribute("for", "graph"));
+			keyVisoneGraph.setAttribute(new Attribute("id", "prop"));
+			keyVisoneGraph.setAttribute(new Attribute("visone.type", "properties"));
+			graphml.addContent(keyVisoneGraph);
+			
+			Element keyId = new Element("key", xmlns);
+			keyId.setAttribute(new Attribute("id", "id"));
+			keyId.setAttribute(new Attribute("for", "node"));
+			keyId.setAttribute(new Attribute("attr.name", "id"));
+			keyId.setAttribute(new Attribute("attr.type", "string"));
+			graphml.addContent(keyId);
+
+			Element keyName = new Element("key", xmlns);
+			keyName.setAttribute(new Attribute("id", "name"));
+			keyName.setAttribute(new Attribute("for", "node"));
+			keyName.setAttribute(new Attribute("attr.name", "name"));
+			keyName.setAttribute(new Attribute("attr.type", "string"));
+			graphml.addContent(keyName);
+			
+			ArrayList<String> addedAttributes = new ArrayList<String>();
+			attributeVariables1.stream().forEach(v -> {
+				Element keyAttribute = new Element("key", xmlns);
+				keyAttribute.setAttribute(new Attribute("id", v));
+				keyAttribute.setAttribute(new Attribute("for", "node"));
+				keyAttribute.setAttribute(new Attribute("attr.name", v));
+				keyAttribute.setAttribute(new Attribute("attr.type", "string"));
+				graphml.addContent(keyAttribute);
+				addedAttributes.add(v);
+			});
+			if (this.networkType.equals("twomode")) {
+				attributeVariables2.stream().forEach(v -> {
+					if (!addedAttributes.contains(v)) {
+						Element keyAttribute = new Element("key", xmlns);
+						keyAttribute.setAttribute(new Attribute("id", v));
+						keyAttribute.setAttribute(new Attribute("for", "node"));
+						keyAttribute.setAttribute(new Attribute("attr.name", v));
+						keyAttribute.setAttribute(new Attribute("attr.type", "string"));
+						graphml.addContent(keyAttribute);
+						addedAttributes.add(v);
+					}
+				});
+			}
+			
+			Element keyVariable = new Element("key", xmlns);
+			keyVariable.setAttribute(new Attribute("id", "variable"));
+			keyVariable.setAttribute(new Attribute("for", "node"));
+			keyVariable.setAttribute(new Attribute("attr.name", "variable"));
+			keyVariable.setAttribute(new Attribute("attr.type", "string"));
+			graphml.addContent(keyVariable);
+
+			Element keyFrequency = new Element("key", xmlns);
+			keyFrequency.setAttribute(new Attribute("id", "frequency"));
+			keyFrequency.setAttribute(new Attribute("for", "node"));
+			keyFrequency.setAttribute(new Attribute("attr.name", "frequency"));
+			keyFrequency.setAttribute(new Attribute("attr.type", "int"));
+			graphml.addContent(keyFrequency);
+
+			Element keyWeight = new Element("key", xmlns);
+			keyWeight.setAttribute(new Attribute("id", "weight"));
+			keyWeight.setAttribute(new Attribute("for", "edge"));
+			keyWeight.setAttribute(new Attribute("attr.name", "weight"));
+			keyWeight.setAttribute(new Attribute("attr.type", "double"));
+			graphml.addContent(keyWeight);
+			
+			Element graphElement = new Element("graph", xmlns);
+			graphElement.setAttribute(new Attribute("edgedefault", "undirected"));
+			
+			graphElement.setAttribute(new Attribute("id", "DNA"));
+			int numEdges = rn.length * cn.length;
+			if (this.networkType.equals("onemode")) {
+				// TODO: check if correct
+				// numEdges = (numEdges / 2) - rn.length;
+				numEdges = (numEdges - rn.length) / 2;
+			}
+			int numNodes = rn.length;
+			if (this.networkType.equals("twomode")) {
+				numNodes = numNodes + cn.length;
+			}
+			graphElement.setAttribute(new Attribute("parse.edges", String.valueOf(numEdges)));
+			graphElement.setAttribute(new Attribute("parse.nodes", String.valueOf(numNodes)));
+			graphElement.setAttribute(new Attribute("parse.order", "free"));
+			Element properties = new Element("data", xmlns);
+			properties.setAttribute(new Attribute("key", "prop"));
+			Element labelAttribute = new Element("labelAttribute", visone);
+			labelAttribute.setAttribute("edgeLabel", "weight");
+			labelAttribute.setAttribute("nodeLabel", "name");
+			properties.addContent(labelAttribute);
+			graphElement.addContent(properties);
+			
+			// add nodes
+			Comment nodes = new Comment(" nodes ");
+			graphElement.addContent(nodes);
+			
+			for (int i = 0; i < names.length; i++) {
+				Element node = new Element("node", xmlns);
+				node.setAttribute(new Attribute("id", "n" + id[i]));
+				
+				Element idElement = new Element("data", xmlns);
+				idElement.setAttribute(new Attribute("key", "id"));
+				idElement.setText(String.valueOf(id[i]));
+				node.addContent(idElement);
+				
+				Element nameElement = new Element("data", xmlns);
+				nameElement.setAttribute(new Attribute("key", "name"));
+				nameElement.setText(names[i]);
+				node.addContent(nameElement);
+				
+				String currentName = names[i];
+				attributeVariables1.stream().forEach(v -> {
+					Element element = new Element("data", xmlns);
+					element.setAttribute(new Attribute("key", v));
+					element.setText(entityMap1.get(currentName).getAttributeValues().get(v));
+					node.addContent(element);
+				});
+				if (this.networkType.equals("twomode")) {
+					attributeVariables2.stream().forEach(v -> {
+						Element element = new Element("data", xmlns);
+						element.setAttribute(new Attribute("key", v));
+						element.setText(entityMap2.get(currentName).getAttributeValues().get(v));
+						node.addContent(element);
+					});
+				}
+				
+				Element variableElement = new Element("data", xmlns);
+				variableElement.setAttribute(new Attribute("key", "variable"));
+				variableElement.setText(variables[i]);
+				node.addContent(variableElement);
+				
+				Element frequency = new Element("data", xmlns);
+				frequency.setAttribute(new Attribute("key", "frequency"));
+				frequency.setText(String.valueOf(frequencies[i]));
+				node.addContent(frequency);
+				
+				Element vis = new Element("data", xmlns);
+				vis.setAttribute(new Attribute("key", "d0"));
+				Element visoneShapeNode = new Element("shapeNode", visone);
+				Element yShapeNode = new Element("ShapeNode", yNs);
+				Element geometry = new Element("Geometry", yNs);
+				geometry.setAttribute(new Attribute("height", "20.0"));
+				geometry.setAttribute(new Attribute("width", "20.0"));
+				geometry.setAttribute(new Attribute("x", String.valueOf(Math.random() * 800)));
+				geometry.setAttribute(new Attribute("y", String.valueOf(Math.random() * 600)));
+				yShapeNode.addContent(geometry);
+				Element fill = new Element("Fill", yNs);
+				fill.setAttribute(new Attribute("color", color[i]));
+
+				fill.setAttribute(new Attribute("transparent", "false"));
+				yShapeNode.addContent(fill);
+				Element borderStyle = new Element("BorderStyle", yNs);
+				borderStyle.setAttribute(new Attribute("color", "#000000"));
+				borderStyle.setAttribute(new Attribute("type", "line"));
+				borderStyle.setAttribute(new Attribute("width", "1.0"));
+				yShapeNode.addContent(borderStyle);
+
+				Element nodeLabel = new Element("NodeLabel", yNs);
+				nodeLabel.setAttribute(new Attribute("alignment", "center"));
+				nodeLabel.setAttribute(new Attribute("autoSizePolicy", "content"));
+				nodeLabel.setAttribute(new Attribute("backgroundColor", "#FFFFFF"));
+				nodeLabel.setAttribute(new Attribute("fontFamily", "Dialog"));
+				nodeLabel.setAttribute(new Attribute("fontSize", "12"));
+				nodeLabel.setAttribute(new Attribute("fontStyle", "plain"));
+				nodeLabel.setAttribute(new Attribute("hasLineColor", "false"));
+				nodeLabel.setAttribute(new Attribute("height", "19.0"));
+				nodeLabel.setAttribute(new Attribute("modelName", "eight_pos"));
+				nodeLabel.setAttribute(new Attribute("modelPosition", "n"));
+				nodeLabel.setAttribute(new Attribute("textColor", "#000000"));
+				nodeLabel.setAttribute(new Attribute("visible", "true"));
+				nodeLabel.setText(names[i]);
+				yShapeNode.addContent(nodeLabel);
+				
+				Element shape = new Element("Shape", yNs);
+				if (i < rn.length) {
+					shape.setAttribute(new Attribute("type", "ellipse"));
+				} else {
+					shape.setAttribute(new Attribute("type", "roundrectangle"));
+				}
+				yShapeNode.addContent(shape);
+				visoneShapeNode.addContent(yShapeNode);
+				vis.addContent(visoneShapeNode);
+				node.addContent(vis);
+				
+				graphElement.addContent(node);
+			}
+			
+			// add edges
+			Comment edges = new Comment(" edges ");
+			graphElement.addContent(edges);
+			for (int i = 0; i < rn.length; i++) {
+				for (int j = 0; j < cn.length; j++) {
+					if (m.getMatrix()[i][j] != 0.0 && (this.networkType.equals("twomode") || (this.networkType.equals("onemode") && i < j))) {  // only lower triangle is used for one-mode networks
+						Element edge = new Element("edge", xmlns);
+						
+						int currentId = id[i];
+						edge.setAttribute(new Attribute("source", "n" + String.valueOf(currentId)));
+						if (this.networkType.equals("twomode")) {
+							currentId = id[j + rn.length];
+						} else {
+							currentId = id[j];
+						}
+						edge.setAttribute(new Attribute("target", "n" + String.valueOf(currentId)));
+						
+						Element weight = new Element("data", xmlns);
+						weight.setAttribute(new Attribute("key", "weight"));
+						weight.setText(String.valueOf(m.getMatrix()[i][j]));
+						edge.addContent(weight);
+
+						Element visEdge = new Element("data", xmlns);
+						visEdge.setAttribute("key", "e0");
+						Element visPolyLineEdge = new Element("polyLineEdge", visone);
+						Element yPolyLineEdge = new Element("PolyLineEdge", yNs);
+
+						Element yLineStyle = new Element("LineStyle", yNs);
+						if (qualifierAggregation.equals("combine") && dataTypes.get(qualifier).equals("boolean")) {
+							if (m.getMatrix()[i][j] == 1.0) {
+								yLineStyle.setAttribute("color", "#00ff00");
+							} else if (m.getMatrix()[i][j] == 2.0) {
+								yLineStyle.setAttribute("color", "#ff0000");
+							} else if (m.getMatrix()[i][j] == 3.0) {
+								yLineStyle.setAttribute("color", "#0000ff");
+							}
+						} else if (qualifierAggregation.equals("subtract")) {
+							if (m.getMatrix()[i][j] < 0) {
+								yLineStyle.setAttribute("color", "#ff0000");
+							} else if (m.getMatrix()[i][j] > 0) {
+								yLineStyle.setAttribute("color", "#00ff00");
+							}
+						} else if (qualifierAggregation.equals("conflict")) {
+							yLineStyle.setAttribute("color", "#ff0000");
+						} else if (qualifierAggregation.equals("congruence")) {
+							yLineStyle.setAttribute("color", "#00ff00");
+						} else {
+							yLineStyle.setAttribute("color", "#000000");
+						}
+						yLineStyle.setAttribute(new Attribute("type", "line"));
+						yLineStyle.setAttribute(new Attribute("width", "2.0"));
+						yPolyLineEdge.addContent(yLineStyle);
+						visPolyLineEdge.addContent(yPolyLineEdge);
+						visEdge.addContent(visPolyLineEdge);
+						edge.addContent(visEdge);
+						
+						graphElement.addContent(edge);
+					}
+				}
+			}
+			
+			graphml.addContent(graphElement);
+			
+			// write to file
+			File dnaFile = new File(filename);
+			try {
+				FileOutputStream outStream = new FileOutputStream(dnaFile);
+				XMLOutputter outToFile = new XMLOutputter();
+				Format format = Format.getPrettyFormat();
+				format.setEncoding("utf-8");
+				outToFile.setFormat(format);
+				outToFile.output(document, outStream);
+				outStream.flush();
+				outStream.close();
+			} catch (IOException e) {
+				System.err.println("Cannot save \"" + dnaFile + "\":" + e.getMessage());
+			}
 		}
 	}
 

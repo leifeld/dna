@@ -9,9 +9,7 @@ import java.awt.Graphics;
 import java.awt.Image;
 import java.io.File;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -47,14 +45,11 @@ import com.github.lgooddatepicker.components.DateTimePicker;
 import com.github.lgooddatepicker.components.TimePickerSettings;
 
 import dna.Dna;
+import export.Exporter;
 import logger.LogEvent;
 import logger.Logger;
-import model.Statement;
 import model.StatementType;
 import model.TableDocument;
-import model.Value;
-import model.Matrix;
-import sql.Sql;
 
 /**
  * GUI for network export. Allows the user to set up options for exporting
@@ -74,7 +69,6 @@ public class NetworkExporter extends JDialog {
 	private HashMap<String, ArrayList<String>> excludeValues;
 	private ArrayList<String> excludeAuthor, excludeSource, excludeSection, excludeType;
 	private JTextArea excludePreviewArea;
-	private java.awt.Color fg;
 
 	/**
 	 * Constructor for GUI. Opens an Exporter window, which displays the GUI for exporting network data.
@@ -86,9 +80,6 @@ public class NetworkExporter extends JDialog {
 		ImageIcon networkIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-affiliate.png"));
 		this.setIconImage(networkIcon.getImage());
 		this.setLayout(new java.awt.BorderLayout());
-		
-		// TODO
-		//this.exportHelper = new ExportHelper();
 		
 		JPanel settingsPanel = new JPanel();
 		java.awt.GridBagLayout g = new java.awt.GridBagLayout();
@@ -144,9 +135,9 @@ public class NetworkExporter extends JDialog {
 					
 					String fileFormatBackup = (String) fileFormatBox.getSelectedItem();
 					fileFormatBox.removeAllItems();
-					fileFormatBox.addItem(".csv");
-					fileFormatBox.addItem(".dl");
-					fileFormatBox.addItem(".graphml");
+					fileFormatBox.addItem("csv");
+					fileFormatBox.addItem("dl");
+					fileFormatBox.addItem("graphml");
 					fileFormatBox.setSelectedItem(fileFormatBackup);
 					
 					String aggregationBackup = (String) aggregationBox.getSelectedItem();
@@ -173,9 +164,9 @@ public class NetworkExporter extends JDialog {
 				} else if (selected.equals("One-mode network")) {
 					String fileFormatBackup = (String) fileFormatBox.getSelectedItem();
 					fileFormatBox.removeAllItems();
-					fileFormatBox.addItem(".csv");
-					fileFormatBox.addItem(".dl");
-					fileFormatBox.addItem(".graphml");
+					fileFormatBox.addItem("csv");
+					fileFormatBox.addItem("dl");
+					fileFormatBox.addItem("graphml");
 					fileFormatBox.setSelectedItem(fileFormatBackup);
 
 					String aggregationBackup = (String) aggregationBox.getSelectedItem();
@@ -196,8 +187,8 @@ public class NetworkExporter extends JDialog {
 					
 					normalizationBox.removeAllItems();
 					normalizationBox.addItem("no");
-					normalizationBox.addItem("average activity");
-					normalizationBox.addItem("Jaccard");
+					normalizationBox.addItem("average");
+					normalizationBox.addItem("jaccard");
 					normalizationBox.addItem("cosine");
 					
 					isolatesBox.removeAllItems();
@@ -205,7 +196,7 @@ public class NetworkExporter extends JDialog {
 					isolatesBox.addItem("include isolates");
 				} else if (selected.equals("Event list")) {
 					fileFormatBox.removeAllItems();
-					fileFormatBox.addItem(".csv");
+					fileFormatBox.addItem("csv");
 					
 					aggregationBox.removeAllItems();
 					aggregationBox.addItem("ignore");
@@ -271,7 +262,7 @@ public class NetworkExporter extends JDialog {
 		});
 		
 		gbc.gridx = 2;
-		String[] fileFormatItems = new String[] {".csv", ".dl", ".graphml"};
+		String[] fileFormatItems = new String[] {"csv", "dl", "graphml"};
 		fileFormatBox = new JComboBox<>(fileFormatItems);
 		fileFormatBox.setToolTipText(fileFormatToolTip);
 		settingsPanel.add(fileFormatBox, gbc);
@@ -369,7 +360,6 @@ public class NetworkExporter extends JDialog {
 		var2Box.setSelectedIndex(1);
 		settingsPanel.add(var2Box, gbc);
 		var2Box.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
-		fg = var2Box.getForeground();
 		java.awt.event.ActionListener varActionListener = new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent e) {
 				if (var1Box.getItemCount() < 1 || var2Box.getItemCount() < 1) {
@@ -437,8 +427,8 @@ public class NetworkExporter extends JDialog {
 						} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
 							normalizationBox.removeAllItems();
 							normalizationBox.addItem("no");
-							normalizationBox.addItem("average activity");
-							normalizationBox.addItem("Jaccard");
+							normalizationBox.addItem("average");
+							normalizationBox.addItem("jaccard");
 							normalizationBox.addItem("cosine");
 						} else if (networkModesBox.getSelectedItem().equals("Event list")) {
 							normalizationBox.removeAllItems();
@@ -946,9 +936,82 @@ public class NetworkExporter extends JDialog {
 					if (!fileName.endsWith((String) fileFormatBox.getSelectedItem())) {
 						fileName = fileName + (String) fileFormatBox.getSelectedItem();
 					}
-					// TODO: start export
-					// Thread exportThread = new Thread( new GuiExportThread(fileName), "Export network" );
-					// exportThread.start();
+					
+					// read settings from GUI elements and translate into values for Exporter class
+					String networkType = (String) networkModesBox.getSelectedItem();
+					if (networkType.equals("Two-mode network")) {
+						networkType = "twomode";
+					} else if (networkType.equals("One-mode network")) {
+						networkType = "onemode";
+					} else if (networkType.equals("Event list")) {
+						networkType = "eventlist";
+					}
+					StatementType statementType = (StatementType) statementTypeBox.getSelectedItem();
+					String variable1Name = (String) var1Box.getSelectedItem();
+					boolean variable1Document = false;
+					if (var1Box.getSelectedIndex() > var1Box.getItemCount() - 7) {
+						variable1Document = true;
+					}
+					String variable2Name = (String) var2Box.getSelectedItem();
+					boolean variable2Document = false;
+					if (var2Box.getSelectedIndex() > var2Box.getItemCount() - 7) {
+						variable2Document = true;
+					}
+					String qualifier = (String) qualifierBox.getSelectedItem();
+					String qualifierAggregation = (String) aggregationBox.getSelectedItem();
+					String normalization = (String) normalizationBox.getSelectedItem();
+					boolean isolates = false;
+					if (isolatesBox.getSelectedItem().equals("include isolates")) {
+						isolates = true;
+					}
+					String duplicates = (String) duplicatesBox.getSelectedItem();
+					if (duplicates.equals("include all duplicates")) {
+						duplicates = "include";
+					} else if (duplicates.equals("ignore per document")) {
+						duplicates = "document";
+					} else if (duplicates.equals("ignore per calendar week")) {
+						duplicates = "week";
+					} else if (duplicates.equals("ignore per calendar month")) {
+						duplicates = "month";
+					} else if (duplicates.equals("ignore per calendar year")) {
+						duplicates = "year";
+					} else if (duplicates.equals("ignore across date range")) {
+						duplicates = "acrossrange";
+					}
+					LocalDateTime startDateTime = startPicker.getDateTimeStrict();
+					LocalDateTime stopDateTime = stopPicker.getDateTimeStrict();
+					String timeWindow = (String) timeWindowBox.getSelectedItem();
+					if (timeWindow.equals("no time window")) {
+						timeWindow = "no";
+					} else if (timeWindow.equals("using events")) {
+						timeWindow = "events";
+					} else if (timeWindow.equals("using seconds")) {
+						timeWindow = "seconds";
+					} else if (timeWindow.equals("using minutes")) {
+						timeWindow = "minutes";
+					} else if (timeWindow.equals("using hours")) {
+						timeWindow = "hours";
+					} else if (timeWindow.equals("using days")) {
+						timeWindow = "days";
+					} else if (timeWindow.equals("using weeks")) {
+						timeWindow = "weeks";
+					} else if (timeWindow.equals("using months")) {
+						timeWindow = "months";
+					} else if (timeWindow.equals("using years")) {
+						timeWindow = "years";
+					}
+					int windowSize = (int) timeWindowSpinner.getModel().getValue();
+					String fileFormat = (String) fileFormatBox.getSelectedItem();
+					
+					// start export thread
+					Thread exportThread = new Thread( new GuiExportThread(networkType, statementType, variable1Name,
+							variable1Document, variable2Name, variable2Document, qualifier, qualifierAggregation,
+							normalization, isolates, duplicates, startDateTime, stopDateTime, timeWindow, windowSize,
+							NetworkExporter.this.excludeValues, NetworkExporter.this.excludeAuthor,
+							NetworkExporter.this.excludeSource, NetworkExporter.this.excludeSection,
+							NetworkExporter.this.excludeType, false, false, false, false, false, fileFormat, fileName),
+							"Export network" );
+					exportThread.start();
 				}
 			}
 		});
@@ -960,36 +1023,6 @@ public class NetworkExporter extends JDialog {
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
-	}
-	
-	/**
-	 * Indicates whether the first variable is a document-level variable (i.e., "author", "source", "section", "type", "id", or "title").
-	 * 
-	 * @return boolean indicating if variable 1 as selected in the Exporter GUI is a document-level variable
-	 */
-	public boolean var1Document() {
-		int lastIndex = var1Box.getItemCount() - 1;
-		int selected = var1Box.getSelectedIndex();
-		if (selected > lastIndex - 6) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-	
-	/**
-	 * Indicates whether the second variable is a document-level variable (i.e., "author", "source", "section", "type", "id", or "title").
-	 * 
-	 * @return boolean indicating if variable 2 as selected in the Exporter GUI is a document-level variable
-	 */
-	public boolean var2Document() {
-		int lastIndex = var2Box.getItemCount() - 1;
-		int selected = var2Box.getSelectedIndex();
-		if (selected > lastIndex - 6) {
-			return true;
-		} else {
-			return false;
-		}
 	}
 	
 	/**
@@ -1058,26 +1091,80 @@ public class NetworkExporter extends JDialog {
 	}
 	
 	/**
-	 * @author Philip Leifeld
-	 *
-	 * GUI export thread. This is where the computations are executed and the data are written to a file. 
+	 * GUI export thread. This is where the computations are executed and the
+	 * data are written to a file. 
 	 */
-	// TODO: implement export thread
-	/*
-	class GuiExportThread implements Runnable {
+	private class GuiExportThread implements Runnable {
 		
-		String filename;
-		ArrayList<Statement> statements;
-		ArrayList<Document> documents;
-		String[] names1, names2;
-		ProgressMonitor progressMonitor;
+		// String filename;
+		// ArrayList<Statement> statements;
+		// ArrayList<Document> documents;
+		// String[] names1, names2;
+		private Exporter exporter;
+		private String fileName;
+		private ProgressMonitor progressMonitor;
 		
-		public GuiExportThread(String filename) {
-			this.filename = filename;
+		public GuiExportThread(
+				String networkType,
+				StatementType statementType,
+				String variable1,
+				boolean variable1Document,
+				String variable2,
+				boolean variable2Document,
+				String qualifier,
+				String qualifierAggregation,
+				String normalization,
+				boolean isolates,
+				String duplicates,
+				LocalDateTime startDateTime,
+				LocalDateTime stopDateTime,
+				String timeWindow,
+				int windowSize,
+				HashMap<String, ArrayList<String>> excludeValues,
+				ArrayList<String> excludeAuthors,
+				ArrayList<String> excludeSources,
+				ArrayList<String> excludeSections,
+				ArrayList<String> excludeTypes,
+				boolean invertValues,
+				boolean invertAuthors,
+				boolean invertSources,
+				boolean invertSections,
+				boolean invertTypes,
+				String fileFormat,
+				String outfile) {
+			this.fileName = outfile;
+			this.exporter = new Exporter(
+					networkType,
+					statementType,
+					variable1,
+					variable1Document,
+					variable2,
+					variable2Document,
+					qualifier,
+					qualifierAggregation,
+					normalization,
+					isolates,
+					duplicates,
+					startDateTime,
+					stopDateTime,
+					timeWindow,
+					windowSize,
+					excludeValues,
+					excludeAuthors,
+					excludeSources,
+					excludeSections,
+					excludeTypes,
+					invertValues,
+					invertAuthors,
+					invertSources,
+					invertSections,
+					invertTypes,
+					fileFormat,
+					outfile);
 		}
 		
 		public void run() {
-			progressMonitor = new ProgressMonitor(ExporterGUI.this, "Exporting network data.", "(1/4) Filtering statements...", 0, 4);
+			progressMonitor = new ProgressMonitor(NetworkExporter.this, "Exporting network data.", "(1/4) Filtering statements...", 0, 4);
 			progressMonitor.setMillisToDecideToPopup(1);
 			// delay the process by a second to make sure the progress monitor shows up
 			// see here: https://coderanch.com/t/631127/java/progress-monitor-showing
@@ -1088,153 +1175,36 @@ public class NetworkExporter extends JDialog {
 			}
 			progressMonitor.setProgress(0);
 			
-			// step 1: filter statements by date, statement type, empty variable entries, qualifier, and excluded values
-			progressMonitor.setNote("(1/4) Filtering statements...");
-			LocalDateTime startDateTime = startPicker.getDateTimeStrict();
-			LocalDateTime stopDateTime = stopPicker.getDateTimeStrict();
-			StatementType statementType = (StatementType) statementTypeBox.getSelectedItem();
-			String var1Name = (String) var1Box.getSelectedItem();
-			String var2Name = (String) var2Box.getSelectedItem();
-			String qualifierName = (String) qualifierBox.getSelectedItem();
-			boolean ignoreQualifier = aggregationBox.getSelectedItem().equals("ignore");
-			String duplicateSetting = (String) duplicatesBox.getSelectedItem();
-			statements = Dna.data.getStatements();
-			documents = Dna.data.getDocuments();
-			boolean filterEmptyFields = true;
-			if (networkModesBox.getSelectedItem().equals("Event list")) {
-				filterEmptyFields = false;
-			}
-			
-			statements = exportHelper.filter(statements, documents, startDate, stopDate, statementType, var1Name, var2Name, 
-					var1Document(), var2Document(), qualifierName, ignoreQualifier, duplicateSetting, 
-					excludeAuthor, excludeSource, excludeSection, excludeType, excludeValues, filterEmptyFields, true);
-			System.out.println("Export was launched: " + statements.size() + " out of " + Dna.data.getStatements().size() 
-					+ " statements retained after filtering.");
+			// step 1: load and pre-process data
+			progressMonitor.setNote("(1/4) Loading and processing data...");
+			exporter.loadData();
+			// System.out.println("Export was launched: " + statements.size() + " out of " + Dna.data.getStatements().size() 
+			// 		+ " statements retained after filtering.");
 			progressMonitor.setProgress(1);
 			
-			// step 2: compile the node labels (and thereby dimensions) for the first and second mode
-			progressMonitor.setNote("(2/4) Compiling node labels...");
-			boolean includeIsolates = false;
-			if (!networkModesBox.getSelectedItem().equals("Event list")) {  // labels are only needed for one-mode or two-mode networks
-				if (isolatesBox.getSelectedItem().equals("include isolates")) {
-					includeIsolates = true;
-				}
-				int statementTypeId = statementType.getId();
-				ArrayList<Statement> originalStatements = Dna.data.getStatements();
-				names1 = exportHelper.extractLabels(statements, originalStatements, documents, var1Name, var1Document(), statementTypeId, includeIsolates);
-				names2 = exportHelper.extractLabels(statements, originalStatements, documents, var2Name, var2Document(), statementTypeId, includeIsolates);
-				System.out.println("Node labels have been extracted.");
-			}
+			// step 2: filter statements
+			progressMonitor.setNote("(2/4) Filtering statements...");
+			exporter.filterStatements();
 			progressMonitor.setProgress(2);
 			
 			// step 3: create network data structure
 			progressMonitor.setNote("(3/4) Computing network...");
-			Matrix matrix = null;
-			String qualifier = (String) qualifierBox.getSelectedItem();
-			String qualifierAggregation = (String) aggregationBox.getSelectedItem();
-			String normalization = (String) normalizationBox.getSelectedItem();
-			if (networkModesBox.getSelectedItem().equals("Event list")) {
-				// no network preparation needed
-			} else if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
-				if (timeWindowBox.getSelectedItem().equals("no time window")) {
-					boolean verbose;
-					verbose = true;
-					matrix = exportHelper.computeTwoModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
-							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, startDate, stopDate, verbose);
-				} else {
-					String timeWindowUnit = (String) timeWindowBox.getSelectedItem();
-					int timeWindowDuration = (int) timeWindowSpinner.getModel().getValue();
-					try {
-						timeWindowMatrices = exportHelper.computeTimeWindowMatrices(statements, documents, statementType, var1Name, var2Name, var1Document(), 
-								var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, true, startDate, stopDate, 
-								timeWindowUnit, timeWindowDuration, includeIsolates);
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
-				if (timeWindowBox.getSelectedItem().equals("no time window")) {
-					matrix = exportHelper.computeOneModeMatrix(statements, documents, statementType, var1Name, var2Name, var1Document(), 
-							var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, startDate, stopDate);
-				} else {
-					String timeWindowUnit = (String) timeWindowBox.getSelectedItem();
-					int timeWindowDuration = (int) timeWindowSpinner.getModel().getValue();
-					try {
-						timeWindowMatrices = exportHelper.computeTimeWindowMatrices(statements, documents, statementType, var1Name, var2Name, var1Document(), 
-								var2Document(), names1, names2, qualifier, qualifierAggregation, normalization, false, startDate, stopDate, 
-								timeWindowUnit, timeWindowDuration, includeIsolates);
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+			try {
+				exporter.computeResults();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			System.out.println("Network has been created.");
+			// System.out.println("Network has been created.");
 			progressMonitor.setProgress(3);
 			
 			// step 4: write to file
 			progressMonitor.setNote("(4/4) Writing to file...");
-			String fileFormat = (String) fileFormatBox.getSelectedItem();
-			if (networkModesBox.getSelectedItem().equals("Event list")) {
-				exportHelper.eventCSV(statements, documents, statementType, filename);
-			} else {
-				boolean twoMode = false;
-				if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
-					twoMode = true;
-				}
-				if (fileFormat.equals(".csv")) {
-					if (timeWindowBox.getSelectedItem().equals("no time window")) {
-						exportHelper.exportCSV(matrix, filename);
-					} else {
-						String filename1 = filename.substring(0, filename.length() - 4);
-						String filename3 = filename.substring(filename.length() - 4, filename.length());
-						for (int i = 0; i < timeWindowMatrices.size(); i++) {
-							String filename2 = "-" + String.format("%0" + String.valueOf(timeWindowMatrices.size()).length() + "d", i + 1);
-							exportHelper.exportCSV(timeWindowMatrices.get(i), filename1 + filename2 + filename3);
-						}
-					}
-				} else if (fileFormat.equals(".dl")) {
-					if (timeWindowBox.getSelectedItem().equals("no time window")) {
-						exportHelper.exportDL(matrix, filename, twoMode);
-					} else {
-						String filename1 = filename.substring(0, filename.length() - 3);
-						String filename3 = filename.substring(filename.length() - 3, filename.length());
-						for (int i = 0; i < timeWindowMatrices.size(); i++) {
-							String filename2 = "-" + String.format("%0" + String.valueOf(timeWindowMatrices.size()).length() + "d", i + 1);
-							exportHelper.exportDL(timeWindowMatrices.get(i), filename1 + filename2 + filename3, twoMode);
-						}
-					}
-				} else if (fileFormat.equals(".graphml")) {
-					String[] values1 = exportHelper.retrieveValues(statements, documents, var1Name, var1Document());
-					String[] values2 = exportHelper.retrieveValues(statements, documents, var2Name, var2Document());
-					int[] frequencies1 = exportHelper.countFrequencies(values1, names1);
-					int[] frequencies2 = exportHelper.countFrequencies(values2, names2);
-					ArrayList<AttributeVector> attributes = Dna.data.getAttributes();
-					boolean qualifierBinary = false;
-					if (statementType.getVariables().get(qualifierName).equals("boolean")) {
-						qualifierBinary = true;
-					}
-					if (timeWindowBox.getSelectedItem().equals("no time window")) {
-						exportHelper.exportGraphml(matrix, twoMode, statementType, filename, var1Name, var2Name, frequencies1, frequencies2, 
-								attributes, qualifierAggregation, qualifierBinary, var1Document(), var2Document());
-					} else {
-						String filename1 = filename.substring(0, filename.length() - 8);
-						String filename3 = filename.substring(filename.length() - 8, filename.length());
-						for (int i = 0; i < timeWindowMatrices.size(); i++) {
-							String filename2 = "-" + String.format("%0" + String.valueOf(timeWindowMatrices.size()).length() + "d", i + 1);
-							exportHelper.exportGraphml(timeWindowMatrices.get(i), twoMode, statementType, filename1 + filename2 + filename3, 
-									var1Name, var2Name, frequencies1, frequencies2, attributes, qualifierAggregation, qualifierBinary, 
-									var1Document(), var2Document());
-						}
-					}
-				}
-			}
+			exporter.exportToFile();
 			progressMonitor.setProgress(4);
-			JOptionPane.showMessageDialog(NetworkExporter.this, "Data were exported to \"" + filename + "\".");
+			JOptionPane.showMessageDialog(NetworkExporter.this, "Data were exported to \"" + fileName + "\".");
 		}
 	}
-	*/
 	
 	/**
 	 * Combo box renderer for statement types.

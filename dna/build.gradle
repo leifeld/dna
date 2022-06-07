@@ -70,4 +70,6 @@ dependencies {
     implementation group: 'org.ogce', name: 'xpp3', version: '1.1.6'
     // https://mvnrepository.com/artifact/com.thoughtworks.xstream/xstream
     implementation group: 'com.thoughtworks.xstream', name: 'xstream', version: '1.4.19'
+    // https://mvnrepository.com/artifact/org.jdom/jdom
+	implementation group: 'org.jdom', name: 'jdom', version: '1.1.3'
 }

@@ -220,7 +220,7 @@ public class Entity implements Comparable<Entity> {
 	 * @param attributeValues A hash map containing attribute variable names as
 	 *   keys and their corresponding attribute values as values.
 	 */
-	public void setMetaValues(HashMap<String, String> attributeValues) {
+	public void setAttributeValues(HashMap<String, String> attributeValues) {
 		this.attributeValues = attributeValues;
 	}
 
