@@ -16,6 +16,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import javax.sql.DataSource;
 
 import org.jasypt.util.password.StrongPasswordEncryptor;
@@ -2905,29 +2907,33 @@ public class Sql {
 	}
 
 	/**
-	 * Get statements, potentially filtered by statement IDs, document
-	 * meta-data, date/time range, and duplicates setting.
+	 * Get statements, potentially filtered by statement IDs, statement type
+	 * IDs, document meta-data, date/time range, and duplicates setting.
 	 * 
-	 * @param statementIds   Array of statement IDs to retrieve. Can be empty or
-	 *   null, in which case all statements are selected.
-	 * @param startDateTime  Date/time before which statements are discarded.
-	 * @param stopDateTime   Date/time after which statements are discarded.
-	 * @param authors        Array list of document authors to exclude. Can be
-	 *   empty or null, in which case all statements are selected.
-	 * @param authorInclude  Include authors instead of excluding them?
-	 * @param sources        Array list of document sources to exclude. Can be
-	 *   empty or null, in which case all statements are selected.
-	 * @param sourceInclude  Include sources instead of excluding them?
-	 * @param sections       Array list of document sections to exclude. Can be
-	 *   empty or null, in which case all statements are selected.
+	 * @param statementIds Array of statement IDs to retrieve. Can be empty or
+	 *   {@code null}, in which case all statements are selected.
+	 * @param statementTypeIds Array list of statement type IDs to include. Can
+	 *   be empty or {@code null}, in which case all statement types are
+	 *   selected.
+	 * @param startDateTime Date/time before which statements are discarded.
+	 * @param stopDateTime Date/time after which statements are discarded.
+	 * @param authors Array list of document authors to exclude. Can be empty or
+	 *   {@code null}, in which case all statements are selected.
+	 * @param authorInclude Include authors instead of excluding them?
+	 * @param sources Array list of document sources to exclude. Can be empty or
+	 *   {@code null}, in which case all statements are selected.
+	 * @param sourceInclude Include sources instead of excluding them?
+	 * @param sections Array list of document sections to exclude. Can be empty
+	 *   or {@code null}, in which case all statements are selected.
 	 * @param sectionInclude Include sections instead of excluding them?
-	 * @param types          Array list of document types to exclude. Can be
-	 *   empty or null, in which case all statements are selected.
-	 * @param typeInclude    Include types instead of excluding them?
+	 * @param types Array list of document types to exclude. Can be empty or
+	 *   {@code null}, in which case all statements are selected.
+	 * @param typeInclude Include types instead of excluding them?
 	 * @return Array list of statements with all details.
 	 */
 	public ArrayList<Statement> getStatements(
 			int[] statementIds,
+			int[] statementTypeIds,
 			LocalDateTime startDateTime,
 			LocalDateTime stopDateTime,
 			ArrayList<String> authors,
@@ -3035,8 +3041,32 @@ public class Sql {
 			whereBoolean = whereBoolean + typeWhere;
 			whereInteger = whereInteger + typeWhere;
 		}
+		if (statementTypeIds != null && statementTypeIds.length > 0) {
+			String typeWhere = "AND STATEMENTS.StatementTypeId IN ("
+					+ IntStream.of(statementTypeIds)
+					.mapToObj(i -> ((Integer) i).toString()) // i is an int, not an Integer
+					.collect(Collectors.joining(", "))
+					.toString()
+					+ ") ";
+			whereStatements = whereStatements + typeWhere;
+			whereShortText = whereShortText + typeWhere;
+			whereLongText = whereLongText + typeWhere;
+			whereBoolean = whereBoolean + typeWhere;
+			whereInteger = whereInteger + typeWhere;
+		}
 		if (whereStatements.startsWith("AND")) { // ensure correct form if no statement ID filtering
 			whereStatements = whereStatements.replaceFirst("AND", "WHERE");
+		}
+		
+		// restrict statement type IDs for query 2
+		String whereStatementType = "";
+		if (statementTypeIds != null && statementTypeIds.length > 0) {
+			whereStatementType = " WHERE ID IN ("
+					+ IntStream.of(statementTypeIds)
+					.mapToObj(i -> ((Integer) i).toString()) // i is an int, not an Integer
+					.collect(Collectors.joining(", "))
+					.toString()
+					+ ")";
 		}
 		
 		String subString = "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text ";
@@ -3066,7 +3096,7 @@ public class Sql {
 				+ whereStatements
 				+ "ORDER BY DOCUMENTS.DATE ASC;";
 
-		String q2 = "SELECT ID FROM STATEMENTTYPES;";
+		String q2 = "SELECT ID FROM STATEMENTTYPES" + whereStatementType + ";";
 		
 		String q3 = "SELECT ID, Variable, DataType FROM VARIABLES;";
 		
@@ -3091,10 +3121,16 @@ public class Sql {
 				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATAINTEGER.StatementId "
 				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
 				+ "WHERE VARIABLES.StatementTypeId = ? " + whereInteger + "ORDER BY 1, 2 ASC;";
-		
-		String q5 = "SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES "
+
+		String q5 = "SELECT ATTRIBUTEVALUES.EntityId, AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES "
 				+ "INNER JOIN ATTRIBUTEVARIABLES ON ATTRIBUTEVARIABLES.ID = AttributeVariableId "
-				+ "WHERE EntityId = ?;";
+				+ "INNER JOIN VARIABLES ON VARIABLES.ID = ATTRIBUTEVARIABLES.VariableId "
+				+ "WHERE VARIABLES.StatementTypeId IN ("
+				+ IntStream.of(statementTypeIds)
+				.mapToObj(i -> ((Integer) i).toString())
+				.collect(Collectors.joining(", "))
+				.toString()
+				+ ");";
 		
 		ArrayList<Statement> listOfStatements = null;
 		int statementTypeId, statementId, variableId, entityId;
@@ -3143,6 +3179,21 @@ public class Sql {
 				variableDataTypeMap.put(r3.getInt("ID"), r3.getString("DataType"));
 			}
 
+			// attributes
+			r5 = s5.executeQuery();
+			HashMap<Integer, HashMap<String, String>> attributeMap = new HashMap<Integer, HashMap<String, String>>();
+			String attributeKey;
+			String attributeValue;
+			while (r5.next()) {
+				entityId = r5.getInt("EntityId");
+				attributeKey = r5.getString("AttributeVariable");
+				attributeValue = r5.getString("AttributeValue");
+				if (!attributeMap.containsKey(entityId)) {
+					attributeMap.put(entityId, new HashMap<String, String>());
+				}
+				attributeMap.get(entityId).put(attributeKey, attributeValue);
+			}
+			
 			// get statement types
 			ResultSet r2 = s2.executeQuery();
 			while (r2.next()) {
@@ -3154,19 +3205,13 @@ public class Sql {
 				while (r4.next()) {
 					variableId = r4.getInt("VariableId");
 					entityId = r4.getInt("EntityId");
-					HashMap<String, String> map = new HashMap<String, String>();
-					s5.setInt(1, entityId);
-					r5 = s5.executeQuery();
-					while (r5.next()) {
-						map.put(r5.getString("AttributeVariable"), r5.getString("AttributeValue"));
-					}
 					Entity e = new Entity(entityId,
 							variableId,
 							r4.getString("Value"),
 							new Color(r4.getInt("Red"), r4.getInt("Green"), r4.getInt("Blue")),
 							r4.getInt("ChildOf"),
 							true,
-							map);
+							attributeMap.get(entityId));
 					statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), e));
 				}
 				s4b.setInt(1, statementTypeId);

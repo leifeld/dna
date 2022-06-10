@@ -135,9 +135,9 @@ public class NetworkExporter extends JDialog {
 					
 					String fileFormatBackup = (String) fileFormatBox.getSelectedItem();
 					fileFormatBox.removeAllItems();
-					fileFormatBox.addItem("csv");
-					fileFormatBox.addItem("dl");
-					fileFormatBox.addItem("graphml");
+					fileFormatBox.addItem(".csv");
+					fileFormatBox.addItem(".dl");
+					fileFormatBox.addItem(".graphml");
 					fileFormatBox.setSelectedItem(fileFormatBackup);
 					
 					String aggregationBackup = (String) aggregationBox.getSelectedItem();
@@ -164,9 +164,9 @@ public class NetworkExporter extends JDialog {
 				} else if (selected.equals("One-mode network")) {
 					String fileFormatBackup = (String) fileFormatBox.getSelectedItem();
 					fileFormatBox.removeAllItems();
-					fileFormatBox.addItem("csv");
-					fileFormatBox.addItem("dl");
-					fileFormatBox.addItem("graphml");
+					fileFormatBox.addItem(".csv");
+					fileFormatBox.addItem(".dl");
+					fileFormatBox.addItem(".graphml");
 					fileFormatBox.setSelectedItem(fileFormatBackup);
 
 					String aggregationBackup = (String) aggregationBox.getSelectedItem();
@@ -196,7 +196,7 @@ public class NetworkExporter extends JDialog {
 					isolatesBox.addItem("include isolates");
 				} else if (selected.equals("Event list")) {
 					fileFormatBox.removeAllItems();
-					fileFormatBox.addItem("csv");
+					fileFormatBox.addItem(".csv");
 					
 					aggregationBox.removeAllItems();
 					aggregationBox.addItem("ignore");
@@ -262,7 +262,7 @@ public class NetworkExporter extends JDialog {
 		});
 		
 		gbc.gridx = 2;
-		String[] fileFormatItems = new String[] {"csv", "dl", "graphml"};
+		String[] fileFormatItems = new String[] {".csv", ".dl", ".graphml"};
 		fileFormatBox = new JComboBox<>(fileFormatItems);
 		fileFormatBox.setToolTipText(fileFormatToolTip);
 		settingsPanel.add(fileFormatBox, gbc);
@@ -1002,6 +1002,13 @@ public class NetworkExporter extends JDialog {
 					}
 					int windowSize = (int) timeWindowSpinner.getModel().getValue();
 					String fileFormat = (String) fileFormatBox.getSelectedItem();
+					if (fileFormat.equals(".csv")) {
+						fileFormat = "csv";
+					} else if (fileFormat.equals(".dl")) {
+						fileFormat = "dl";
+					} else if (fileFormat.equals(".graphml")) {
+						fileFormat = "graphml";
+					}
 					
 					// start export thread
 					Thread exportThread = new Thread( new GuiExportThread(networkType, statementType, variable1Name,

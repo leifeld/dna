@@ -310,7 +310,7 @@ public class Exporter {
 		for (int i = 0; i < this.statementType.getVariables().size(); i++) {
 			this.dataTypes.put(this.statementType.getVariables().get(i).getKey(), this.statementType.getVariables().get(i).getDataType());
 		}
-		
+
 		// get documents and create document hash map for quick lookup
 		this.documents = Dna.sql.getTableDocuments(new int[0]);
 		Collections.sort(documents);
@@ -318,9 +318,10 @@ public class Exporter {
 		for (int i = 0; i < documents.size(); i++) {
 			docMap.put(documents.get(i).getId(), i);
 		}
-		
+
 		// get statements and convert to {@link ExportStatement} objects with additional information
 		this.originalStatements = Dna.sql.getStatements(new int[0],
+				new int[] {this.statementType.getId()},
 				this.startDateTime,
 				this.stopDateTime,
 				this.excludeAuthors,
@@ -453,7 +454,9 @@ public class Exporter {
 					throw new NullPointerException("'" + key + "' is not a statement-level variable and cannot be excluded.");
 				} else if (dataTypes.get(key).equals("boolean") || dataTypes.get(key).equals("integer")) {
 					string = String.valueOf(s.get(key));
-				} else {
+				} else if (dataTypes.get(key).equals("short text")) {
+					string = ((Entity) s.get(key)).getValue();
+				} else if (dataTypes.get(key).equals("long text")) {
 					string = (String) s.get(key);
 				}
 				if ((this.excludeValues.get(key).contains(string) && !this.invertValues) ||
@@ -479,7 +482,7 @@ public class Exporter {
 			if (!this.duplicates.equals("include all duplicates")) {
 				for (int j = al.size() - 1; j >= 0; j--) {
 				    if (!this.variable1Document) {
-				    	previousVar1 = (String) al.get(j).get(this.variable1);
+				    	previousVar1 = ((Entity) al.get(j).get(this.variable1)).getValue();
 				    } else if (this.variable1.equals("author")) {
 				    	previousVar1 = al.get(j).getAuthor();
 				    } else if (this.variable1.equals("source")) {
@@ -494,7 +497,7 @@ public class Exporter {
 				    	previousVar1 = al.get(j).getTitle();
 				    }
 				    if (!this.variable2Document) {
-				    	previousVar2 = (String) al.get(j).get(this.variable2);
+				    	previousVar2 = ((Entity) al.get(j).get(this.variable2)).getValue();
 				    } else if (this.variable2.equals("author")) {
 				    	previousVar2 = al.get(j).getAuthor();
 				    } else if (this.variable2.equals("source")) {
@@ -572,8 +575,6 @@ public class Exporter {
 					values[i] = s.getTitle();
 				}
 			} else {
-				// TODO: null pointer exception!
-				// System.out.println(((Entity) s.get(variable)).getValue());
 				values[i] = (String) ((Entity) s.get(variable)).getValue();
 			}
 		}
@@ -830,7 +831,7 @@ public class Exporter {
 					double norm = 1.0;
 					if (this.normalization.equals("no")) {
 						norm = 1.0;
-					} else if (this.normalization.equals("average activity")) {
+					} else if (this.normalization.equals("average")) {
 						i1count = 0.0;
 						i2count = 0.0;
 						for (int j = 0; j < names2.length; j++) {
@@ -1308,7 +1309,9 @@ public class Exporter {
 				out.write(";\"" + s.getText().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
 				for (int j = 0; j < statementType.getVariables().size(); j++) {
 					key = statementType.getVariables().get(j).getKey();
-					if (this.dataTypes.get(key).equals("short text") || this.dataTypes.get(key).equals("long text")) {
+					if (this.dataTypes.get(key).equals("short text")) {
+						out.write(";\"" + (((Entity) s.get(key)).getValue()).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+					} else if (this.dataTypes.get(key).equals("long text")) {
 						out.write(";\"" + ((String) s.get(key)).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
 					} else {
 						out.write(";" + s.get(key));
@@ -1639,8 +1642,6 @@ public class Exporter {
 			graphElement.setAttribute(new Attribute("id", "DNA"));
 			int numEdges = rn.length * cn.length;
 			if (this.networkType.equals("onemode")) {
-				// TODO: check if correct
-				// numEdges = (numEdges / 2) - rn.length;
 				numEdges = (numEdges - rn.length) / 2;
 			}
 			int numNodes = rn.length;
@@ -1676,20 +1677,23 @@ public class Exporter {
 				nameElement.setText(names[i]);
 				node.addContent(nameElement);
 				
-				String currentName = names[i];
-				attributeVariables1.stream().forEach(v -> {
-					Element element = new Element("data", xmlns);
-					element.setAttribute(new Attribute("key", v));
-					element.setText(entityMap1.get(currentName).getAttributeValues().get(v));
-					node.addContent(element);
-				});
-				if (this.networkType.equals("twomode")) {
-					attributeVariables2.stream().forEach(v -> {
+				for (int j = 0; j < attributeVariables1.size(); j++) {
+					if (i < rn.length) { // first mode: rows
 						Element element = new Element("data", xmlns);
-						element.setAttribute(new Attribute("key", v));
-						element.setText(entityMap2.get(currentName).getAttributeValues().get(v));
+						element.setAttribute(new Attribute("key", attributeVariables1.get(j)));
+						element.setText(entityMap1.get(names[i]).getAttributeValues().get(attributeVariables1.get(j)));
 						node.addContent(element);
-					});
+					}
+				}
+				if (this.networkType.equals("twomode")) {
+					for (int j = 0; j < attributeVariables2.size(); j++) {
+						if (i >= rn.length) { // second mode: columns
+							Element element = new Element("data", xmlns);
+							element.setAttribute(new Attribute("key", attributeVariables2.get(j)));
+							element.setText(entityMap2.get(names[i]).getAttributeValues().get(attributeVariables2.get(j)));
+							node.addContent(element);
+						}
+					}
 				}
 				
 				Element variableElement = new Element("data", xmlns);
