@@ -1210,6 +1210,38 @@ public class Sql {
 	}
 
 	/**
+	 * Retrieve a list of coders in the database, just with the names, IDs, and
+	 * colors, without any further information. This serves to allow R users to
+	 * see what the IDs are that correspond to coders.
+	 * 
+	 * @return An {@link java.util.ArrayList ArrayList} of {@link model.Coder
+	 *   Coder} objects with only the ID, coder name, and color as useful
+	 *   information.
+	 */
+	public ArrayList<Coder> queryCoders() {
+		ArrayList<Coder> coders = new ArrayList<Coder>();
+		try (Connection conn = ds.getConnection();
+				PreparedStatement s = conn.prepareStatement("SELECT ID, Name, Red, Green, Blue FROM CODERS;")) {
+			ResultSet r = s.executeQuery();
+        	while (r.next()) {
+        		Coder c = new Coder(r.getInt("ID"),
+        				r.getString("Name"),
+        				new Color(r.getInt("Red"),
+        						r.getInt("Green"),
+        						r.getInt("Blue")));
+        		coders.add(c);
+        	}
+		} catch (SQLException e) {
+        	LogEvent l = new LogEvent(Logger.ERROR,
+        			"[SQL] Failed to query coders from the database.",
+        			"Attempted to query which coders are available in the database. Check your connection.",
+        			e);
+        	Dna.logger.log(l);
+		}
+		return coders;
+	}
+
+	/**
 	 * Create a new coder with default permissions and coder relations.
 	 * 
 	 * @param coderName     Name of the new coder.
@@ -3339,14 +3371,18 @@ public class Sql {
 	/**
 	 * Count how many statements of a certain statement type exist.
 	 * 
-	 * @param statementTypeId  The ID of the statement type.
+	 * @param statementTypeId  The ID of the statement type. Can be {@code -1}
+	 *   to count all statement types.
 	 * @return                 An integer count of the statement frequency.
 	 */
 	public int countStatements(int statementTypeId) {
 		int result = -1;
+		String where = "";
+		if (statementTypeId != -1) {
+			where = " WHERE StatementTypeId = " + statementTypeId;
+		}
 		try (Connection conn = getDataSource().getConnection();
-				PreparedStatement s = conn.prepareStatement("SELECT COUNT(ID) FROM STATEMENTS WHERE StatementTypeId = ?;")) {
-			s.setInt(1, statementTypeId);
+				PreparedStatement s = conn.prepareStatement("SELECT COUNT(ID) FROM STATEMENTS" + where + ";")) {
 			ResultSet r = s.executeQuery();
 			while (r.next()) {
 				result = r.getInt(1);

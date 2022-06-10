@@ -1,8 +1,23 @@
 package dna;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
+import org.jasypt.util.text.AES256TextEncryptor;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
+
 import gui.MainWindow;
 import logger.LogEvent;
 import logger.Logger;
+import sql.ConnectionProfile;
 import sql.Sql;
 
 /**
@@ -16,12 +31,13 @@ public class Dna {
 	public static Sql sql;
 	public static final String date = "2022-06-10";
 	public static final String version = "3.0.7";
-	MainWindow mainWindow;
+	public MainWindow mainWindow;
+	public HeadlessDna headlessDna;
 	
 	/**
 	 * Create a new instance of DNA including the GUI.
 	 */
-	public Dna() {
+	public Dna(String[] args) {
 		logger = new Logger();
 
 		sql = new Sql();
@@ -31,7 +47,12 @@ public class Dna {
 				"DNA started. Version " + version + " (" + date + ").");
 		Dna.logger.log(l);
 
-		mainWindow = new MainWindow();
+		if (args != null && args.length > 0 && args[0].equals("headless")) {
+			headlessDna = new HeadlessDna();
+		} else {
+			mainWindow = new MainWindow();
+			mainWindow.setVisible(true);
+		}
 		
 		// TODO: remove this placeholder and add database update log events throughout the code
 		LogEvent l2 = new LogEvent(Logger.UPDATE,
@@ -48,7 +69,7 @@ public class Dna {
 	 */
 	public static void main(String[] args) {
 		Thread.setDefaultUncaughtExceptionHandler(new DefaultExceptionHandler());
-		dna = new Dna();
+		dna = new Dna(args);
 	}
 
 	/**
@@ -65,4 +86,70 @@ public class Dna {
             logger.log(le);
         }
     }
+
+	/**
+	 * Read in a saved connection profile from a JSON file, decrypt the
+	 * credentials, and return the connection profile.
+	 * 
+	 * @param file  The file name including path of the JSON connection profile
+	 * @param key   The key/password of the coder to decrypt the credentials
+	 * @return      Decrypted connection profile
+	 */
+	public ConnectionProfile readConnectionProfile(String file, String key) throws EncryptionOperationNotPossibleException {
+		// read connection profile JSON file in, in String format but with encrypted credentials
+		ConnectionProfile cp = null;
+		Gson gson = new Gson();
+		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+			cp = gson.fromJson(br, ConnectionProfile.class);
+		} catch (JsonSyntaxException | JsonIOException | IOException e) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"Failed to read connection profile.",
+					"Tried to read a connection profile from a JSON file and failed. File: " + file + ".",
+					e);
+			Dna.logger.log(l);
+		}
+		
+		// decrypt the URL, user name, and SQL connection password inside the profile
+		AES256TextEncryptor textEncryptor = new AES256TextEncryptor();
+		textEncryptor.setPassword(key);
+		cp.setUrl(textEncryptor.decrypt(cp.getUrl()));
+		cp.setUser(textEncryptor.decrypt(cp.getUser()));
+		cp.setPassword(textEncryptor.decrypt(cp.getPassword()));
+		
+		return cp;
+	}
+
+	/**
+	 * Take a decrypted connection profile, encrypt the credentials, and write
+	 * it to a JSON file on disk.
+	 * 
+	 * @param file  The file name including full path as a String
+	 * @param cp    The connection profile to be encrypted and saved
+	 * @param key   The key/password of the coder to encrypt the credentials
+	 */
+	public void writeConnectionProfile(String file, ConnectionProfile cp, String key) {
+		// encrypt URL, user, and password using Jasypt
+		AES256TextEncryptor textEncryptor = new AES256TextEncryptor();
+		textEncryptor.setPassword(key);
+		cp.setUrl(textEncryptor.encrypt(cp.getUrl()));
+		cp.setUser(textEncryptor.encrypt(cp.getUser()));
+		cp.setPassword(textEncryptor.encrypt(cp.getPassword()));
+		
+		// serialize Connection object to JSON file and save to disk
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+			Gson prettyGson = new GsonBuilder()
+		            .setPrettyPrinting()
+		            .serializeNulls()
+		            .disableHtmlEscaping()
+		            .create();
+			String g = prettyGson.toJson(cp);
+			writer.write(g);
+		} catch (IOException e) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"Failed to write connection profile.",
+					"Tried to write a connection profile to a JSON file and failed. File: " + file + ".",
+					e);
+			Dna.logger.log(l);
+		}
+	}
 }

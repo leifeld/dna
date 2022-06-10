@@ -15,12 +15,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -68,13 +63,6 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.text.BadLocationException;
 
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
-import org.jasypt.util.text.AES256TextEncryptor;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
-
 import gui.DocumentTablePanel;
 import dna.Dna;
 import logger.LogEvent;
@@ -759,7 +747,7 @@ public class MainWindow extends JFrame {
 		c.add(mainPanel);
 		this.pack();
 		this.setLocationRelativeTo(null);
-		this.setVisible(true);
+		//this.setVisible(true);
 	}
 	
 	/**
@@ -1746,7 +1734,7 @@ public class MainWindow extends JFrame {
 						if (!key.equals("")) {
 							ConnectionProfile cp = null;
 							try {
-								cp = readConnectionProfile(filename, key);
+								cp = Dna.dna.readConnectionProfile(filename, key);
 							} catch (EncryptionOperationNotPossibleException e2) {
 								cp = null;
 							}
@@ -1803,39 +1791,6 @@ public class MainWindow extends JFrame {
 					"[GUI] Action executed: opened connection profile.",
 					"Opened a connection profile from the GUI.");
 			Dna.logger.log(l);
-		}
-
-		/**
-		 * Read in a saved connection profile from a JSON file, decrypt the
-		 * credentials, and return the connection profile.
-		 * 
-		 * @param file  The file name including path of the JSON connection profile
-		 * @param key   The key/password of the coder to decrypt the credentials
-		 * @return      Decrypted connection profile
-		 */
-		private ConnectionProfile readConnectionProfile(String file, String key) throws EncryptionOperationNotPossibleException {
-
-			// read connection profile JSON file in, in String format but with encrypted credentials
-			ConnectionProfile cp = null;
-			Gson gson = new Gson();
-			try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-				cp = gson.fromJson(br, ConnectionProfile.class);
-			} catch (JsonSyntaxException | JsonIOException | IOException e) {
-				LogEvent l = new LogEvent(Logger.ERROR,
-						"[GUI] Failed to read connection profile.",
-						"Tried to read a connection profile from a JSON file and failed.",
-						e);
-				Dna.logger.log(l);
-			}
-			
-			// decrypt the URL, user name, and SQL connection password inside the profile
-			AES256TextEncryptor textEncryptor = new AES256TextEncryptor();
-			textEncryptor.setPassword(key);
-			cp.setUrl(textEncryptor.decrypt(cp.getUrl()));
-			cp.setUser(textEncryptor.decrypt(cp.getUser()));
-			cp.setPassword(textEncryptor.decrypt(cp.getPassword()));
-			
-			return cp;
 		}
 	}
 
@@ -1901,9 +1856,9 @@ public class MainWindow extends JFrame {
 						validPasswordInput = true;
 					} else {
 						boolean authenticated = Dna.sql.authenticate(-1, key);
-						if (authenticated == true) {
+						if (authenticated) {
 							// write the connection profile to disk, with an encrypted version of the password
-							writeConnectionProfile(filename, new ConnectionProfile(Dna.sql.getConnectionProfile()), key);
+							Dna.dna.writeConnectionProfile(filename, new ConnectionProfile(Dna.sql.getConnectionProfile()), key);
 							validPasswordInput = true; // quit the while-loop after successful export
 							JOptionPane.showMessageDialog(MainWindow.this,
 									"The profile was saved as:\n" + new File(filename).getAbsolutePath(),
@@ -1922,40 +1877,6 @@ public class MainWindow extends JFrame {
 					"[GUI] Action executed: saved connection profile.",
 					"Saved a connection profile from the GUI.");
 			Dna.logger.log(l);
-		}
-
-		/**
-		 * Take a decrypted connection profile, encrypt the credentials, and write
-		 * it to a JSON file on disk.
-		 * 
-		 * @param file  The file name including full path as a String
-		 * @param cp    The connection profile to be encrypted and saved
-		 * @param key   The key/password of the coder to encrypt the credentials
-		 */
-		private void writeConnectionProfile(String file, ConnectionProfile cp, String key) {
-			// encrypt URL, user, and password using Jasypt
-			AES256TextEncryptor textEncryptor = new AES256TextEncryptor();
-			textEncryptor.setPassword(key);
-			cp.setUrl(textEncryptor.encrypt(cp.getUrl()));
-			cp.setUser(textEncryptor.encrypt(cp.getUser()));
-			cp.setPassword(textEncryptor.encrypt(cp.getPassword()));
-			
-			// serialize Connection object to JSON file and save to disk
-			try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-				Gson prettyGson = new GsonBuilder()
-			            .setPrettyPrinting()
-			            .serializeNulls()
-			            .disableHtmlEscaping()
-			            .create();
-				String g = prettyGson.toJson(cp);
-				writer.write(g);
-			} catch (IOException e) {
-				LogEvent l = new LogEvent(Logger.ERROR,
-						"[GUI] Failed to write connection profile.",
-						"Tried to write a connection profile to a JSON file and failed.",
-						e);
-				Dna.logger.log(l);
-			}
 		}
 	}
 
