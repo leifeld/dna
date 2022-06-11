@@ -21,11 +21,23 @@ jobs:
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
     
-    - name: Execute Gradle build
+    - name: Execute Gradle build for DNA
       run: ./gradlew build
+    
+    - name: Execute Gradle build for rDNA
+      run: ./gradlew packageBuild
     
     - name: Store artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: DNA jar
-        path: dna/build/libs
+        name: DNA
+        path: |
+          dna/build/libs
+          sample/sample.dna
+          *.tar.gz
+
+    - name: Execute Gradle rDNA check
+      run: ./gradlew packageCheck
+      
+    - name: Execute Gradle rDNA test
+      run: ./gradlew test
