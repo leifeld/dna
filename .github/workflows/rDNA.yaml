@@ -38,7 +38,7 @@ jobs:
       - name: Query dependencies
         run: |
           install.packages(c("devtools", "covr"))
-          saveRDS(remotes::dev_package_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
+          saveRDS(remotes::dev_package_deps(pkgdir = "rDNA", dependencies = TRUE), ".github/depends.Rds", version = 2)
           writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
         shell: Rscript {0}
 
@@ -61,13 +61,13 @@ jobs:
       - name: Install dependencies
         run: |
           remotes::install_cran("rcmdcheck")
-          devtools::install_deps(dependencies = TRUE)
+          devtools::install_deps(pkgdir = "rDNA", dependencies = TRUE)
         shell: Rscript {0}
 
       - name: Check
         env:
           _R_CHECK_CRAN_INCOMING_REMOTE_: false
-        run: rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran", "--ignore-vignettes"), error_on = "error", check_dir = "check", build_args = c("--no-manual", "--no-build-vignettes"))
+        run: rcmdcheck::rcmdcheck(path = "rDNA", args = c("--no-manual", "--as-cran", "--ignore-vignettes"), error_on = "error", check_dir = "check", build_args = c("--no-manual", "--no-build-vignettes"))
         shell: Rscript {0}
 
       - name: Upload check results
