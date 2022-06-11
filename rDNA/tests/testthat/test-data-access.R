@@ -10,7 +10,7 @@ test_that("DNA can use databases and profiles", {
   expect_equal(dim(dna_queryCoders("sample.dna")), c(4, 3))
   expect_output(dna_openDatabase(coderId = 12, coderPassword = "sample", db_url = s), "Failed to authenticate coder 12")
   expect_output(dna_openDatabase(coderId = 2, coderPassword = "test", db_url = s), "Failed to authenticate coder 2")
-  expect_output(dna_openDatabase(coderId = 2, coderPassword = "sample", db_url = "test.dna"), "Failed to authenticate coder 2")
+  expect_error(dna_openDatabase(coderId = 2, coderPassword = "sample", db_url = "test.dna"), "Database file not found")
   expect_output(dna_openDatabase(coderId = 2, coderPassword = "sample", db_url = s), "DNA database: ")
   expect_output(dna_printDetails(), "DNA database: ")
   expect_output(dna_printDetails(), "41 statements in 7 documents")

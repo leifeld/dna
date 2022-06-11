@@ -373,6 +373,13 @@ dna_openDatabase <- function(coderId = 1,
   } else {
     db_port <- as.integer(db_port)
   }
+  if (db_type == "sqlite") {
+    if (file.exists(db_url)) {
+      db_url <- normalizePath(db_url)
+    } else {
+      stop("Database file not found.")
+    }
+  }
   if (is.null(coderId) || !is.numeric(coderId) || coderId < 1) {
     if (!requireNamespace("askpass", quietly = TRUE)) {
       coderId <- as.integer(readline("Coder ID: "))
@@ -399,7 +406,7 @@ dna_openDatabase <- function(coderId = 1,
               as.integer(coderId),
               coderPassword,
               db_type,
-              ifelse(db_type == "sqlite", normalizePath(db_url), db_url),
+              db_url,
               db_name,
               db_port,
               db_login,
@@ -497,9 +504,6 @@ dna_closeDatabase <- function() {
 dna_saveConnectionProfile <- function(file, coderPassword = "") {
   if (is.null(file) || !is.character(file) || length(file) != 1) {
     stop("Please provide a file name for the connection profile.")
-  }
-  if (!file.exists(file)) {
-    stop("File does not exist.")
   }
   if (is.null(coderPassword) || !is.character(coderPassword) || coderPassword == "") {
     if (!requireNamespace("askpass", quietly = TRUE)) {
