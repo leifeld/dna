@@ -33,50 +33,47 @@ public class HeadlessDna {
 
 	/**
 	 * A function for generating a brief report with details about the database.
-	 * 
-	 * @return A string with details about the database.
 	 */
-	public String printDatabaseDetails() {
+	public void printDatabaseDetails() {
+		String s = "";
 		if (Dna.sql == null || Dna.sql.getConnectionProfile() == null || Dna.sql.getActiveCoder() == null) {
-			LogEvent l = new LogEvent(Logger.WARNING,
-					"Database details could not be aggregated.",
-					"Failed to aggregate and show database details because there was no active connection or coder. Try opening a database first.");
-			Dna.logger.log(l);
-			System.err.println("Database details could not be aggregated.");
-			return "";
-		}
-		int documents = Dna.sql.countDocuments();
-		int statements = Dna.sql.countStatements(-1);
-		int[] coderItems = Dna.sql.countCoderItems(Dna.sql.getActiveCoder().getId());
-		ArrayList<StatementType> statementTypes = Dna.sql.getStatementTypes();
-		String statementString = " statements in ";
-		if (statements == 1) {
-			statementString = " statement in ";
-		}
-		String documentString = " documents.";
-		if (documents == 1) {
-			documentString = " document";
-		}
-		String s = "DNA database: " + Dna.sql.getConnectionProfile().getUrl() + "\n" + statements + statementString + documents + documentString + "\nStatement types: ";
-		for (int i = 0; i < statementTypes.size(); i++) {
-			s = s + statementTypes.get(i).getLabel() + " (" + Dna.sql.countStatements(statementTypes.get(i).getId()) + ")";
-			if (i < statementTypes.size() - 1) {
-				s = s + ", ";
+			s = "No active database.";
+		} else {
+			int documents = Dna.sql.countDocuments();
+			int statements = Dna.sql.countStatements(-1);
+			int[] coderItems = Dna.sql.countCoderItems(Dna.sql.getActiveCoder().getId());
+			ArrayList<StatementType> statementTypes = Dna.sql.getStatementTypes();
+			String statementString = " statements in ";
+			if (statements == 1) {
+				statementString = " statement in ";
 			}
+			String documentString = " documents.";
+			if (documents == 1) {
+				documentString = " document";
+			}
+			s = "DNA database: " + Dna.sql.getConnectionProfile().getUrl() + "\n" + statements + statementString + documents + documentString + "\nStatement types: ";
+			for (int i = 0; i < statementTypes.size(); i++) {
+				s = s + statementTypes.get(i).getLabel() + " (" + Dna.sql.countStatements(statementTypes.get(i).getId()) + ")";
+				if (i < statementTypes.size() - 1) {
+					s = s + ", ";
+				}
+			}
+			s = s + ".\nActive coder '" + Dna.sql.getActiveCoder().getName() + "' (ID: " + Dna.sql.getActiveCoder().getId() + ") owns " + coderItems[0] + " documents and " + coderItems[1] + " statements.";
 		}
-		s = s + ".\nActive coder '" + Dna.sql.getActiveCoder().getName() + "' (ID: " + Dna.sql.getActiveCoder().getId() + ") owns " + coderItems[0] + " documents and " + coderItems[1] + " statements.";
+		System.out.println(s);
 		LogEvent l = new LogEvent(Logger.MESSAGE,
-				"Database details were aggregated for printing.",
-				"The active coder successfully queried the database for the number of documents and statements and similar statistics.");
+				"Database details were aggregated and printed.",
+				"The active coder queried the database for the number of documents and statements and similar statistics and printed the output to the console.");
 		Dna.logger.log(l);
-		return s;
 	}
 	
 	/**
 	 * Open a database connection and authenticate the coder.
 	 * 
-	 * @param coderId The coder ID.
-	 * @param coderPassword The coder password.
+	 * @param coderId The coder ID. If smaller than {@code 1}, a coder password
+	 *   check dialog is shown.
+	 * @param coderPassword The coder password. If {@code null}, a coder
+	 *   password check dialog is shown.
 	 * @param type The database type. Can be {@code "sqlite"}, {@code "mysql"},
 	 *   or {@code "postgresql"}.
 	 * @param databaseUrl The database URL (for MySQL/MariaDB or PostgreSQL) or
@@ -92,6 +89,14 @@ public class HeadlessDna {
 	 * @return Indicator of successful coder authentication.
 	 */
 	public boolean openDatabase(int coderId, String coderPassword, String type, String databaseUrl, String databaseName, int databasePort, String databaseUser, String databasePassword) {
+		if (coderId < 1) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"Failed to authenticate coder " + coderId + ".",
+					"Coder " + coderId + " could not be authenticated. Check the coder ID and password. You can query the available coders using the 'queryCoders' function.");
+			Dna.logger.log(l);
+			System.out.println("Failed to authenticate coder " + coderId + ".");
+			return false;
+		}
 		ConnectionProfile cp = new ConnectionProfile(type, databaseUrl, databaseName, databasePort, databaseUser, databasePassword);
 		Sql testSql = new Sql(cp, true);
 		boolean success = testSql.authenticate(coderId, coderPassword);
@@ -101,6 +106,7 @@ public class HeadlessDna {
 					"Coder " + Dna.sql.getActiveCoder().getId() + " (" + Dna.sql.getActiveCoder().getName() + ") successfully authenticated.",
 					"Coder " + Dna.sql.getActiveCoder().getId() + " (" + Dna.sql.getActiveCoder().getName() + ") successfully authenticated. You can now use the functions available to this user.");
 			Dna.logger.log(l);
+			printDatabaseDetails();
 		} else {
 			LogEvent l = new LogEvent(Logger.ERROR,
 					"Failed to authenticate coder " + coderId + ".",
@@ -123,7 +129,7 @@ public class HeadlessDna {
 	public boolean openConnectionProfile(String fileName, String clearCoderPassword) {
 		ConnectionProfile cp = null;
 		try {
-			cp = Dna.dna.readConnectionProfile(fileName, clearCoderPassword);
+			cp = Dna.readConnectionProfile(fileName, clearCoderPassword);
 		} catch (EncryptionOperationNotPossibleException e2) {
 			cp = null;
 			LogEvent l = new LogEvent(Logger.ERROR,
@@ -149,6 +155,7 @@ public class HeadlessDna {
 							"Connection profile opened and coder authenticated.",
 							"A connection profile was opened, and coder " + Dna.sql.getActiveCoder().getId() + " (" + Dna.sql.getActiveCoder().getName() + ") was successfully authenticated. You can now use the functions available to this user.");
 					Dna.logger.log(l);
+					printDatabaseDetails();
 					return true;
 				}
 			}
@@ -164,6 +171,14 @@ public class HeadlessDna {
 	 * @return Indicator of success.
 	 */
 	public boolean saveConnectionProfile(String fileName, String clearCoderPassword) {
+		if (Dna.sql == null || Dna.sql.getConnectionProfile() == null || Dna.sql.getActiveCoder() == null) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"No database open. Could not save connection profile.",
+					"Tried to save a connection profile, but no database connection was open or no coder was active.");
+			Dna.logger.log(l);
+			System.err.println("No database open. Could not save connection profile.");
+			return false;
+		}
 		if (fileName == null || !fileName.toLowerCase().endsWith(".dnc")) {
 			LogEvent l = new LogEvent(Logger.ERROR,
 					"File name must end with '.dnc'.",
@@ -184,11 +199,12 @@ public class HeadlessDna {
 		boolean authenticated = Dna.sql.authenticate(-1, clearCoderPassword);
 		if (authenticated) {
 			// write the connection profile to disk, with an encrypted version of the password
-			Dna.dna.writeConnectionProfile(fileName, new ConnectionProfile(Dna.sql.getConnectionProfile()), clearCoderPassword);
+			Dna.writeConnectionProfile(fileName, new ConnectionProfile(Dna.sql.getConnectionProfile()), clearCoderPassword);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"Connection profile saved to file.",
 					"A connection profile was successfully saved to the following file: " + fileName + ".");
 			Dna.logger.log(l);
+			System.out.println("Connection profile saved to file.");
 			return true;
 		} else {
 			LogEvent l = new LogEvent(Logger.ERROR,
@@ -204,11 +220,22 @@ public class HeadlessDna {
 	 * Close the current database.
 	 */
 	public void closeDatabase() {
-		Dna.sql.setConnectionProfile(null, false);
-		LogEvent l = new LogEvent(Logger.MESSAGE,
-				"Database was closed.",
-				"Closed database connection.");
-		Dna.logger.log(l);
+		if (Dna.sql == null || Dna.sql.getConnectionProfile() == null || Dna.sql.getActiveCoder() == null) {
+			Dna.sql.setConnectionProfile(null, false);
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"Tried to close database, but none was open.",
+					"Tried to close database, but none was open. Set the current connection profile to null anyway.");
+			Dna.logger.log(l);
+			System.out.println("Tried to close database, but none was open.");
+		} else {
+			Dna.sql.setConnectionProfile(null, false);
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"Database was closed.",
+					"Closed database connection.");
+			Dna.logger.log(l);
+			System.out.println("Database was closed.");
+		}
+		
 	}
 	
 	/**

@@ -1734,7 +1734,7 @@ public class MainWindow extends JFrame {
 						if (!key.equals("")) {
 							ConnectionProfile cp = null;
 							try {
-								cp = Dna.dna.readConnectionProfile(filename, key);
+								cp = Dna.readConnectionProfile(filename, key);
 							} catch (EncryptionOperationNotPossibleException e2) {
 								cp = null;
 							}
@@ -1858,7 +1858,7 @@ public class MainWindow extends JFrame {
 						boolean authenticated = Dna.sql.authenticate(-1, key);
 						if (authenticated) {
 							// write the connection profile to disk, with an encrypted version of the password
-							Dna.dna.writeConnectionProfile(filename, new ConnectionProfile(Dna.sql.getConnectionProfile()), key);
+							Dna.writeConnectionProfile(filename, new ConnectionProfile(Dna.sql.getConnectionProfile()), key);
 							validPasswordInput = true; // quit the while-loop after successful export
 							JOptionPane.showMessageDialog(MainWindow.this,
 									"The profile was saved as:\n" + new File(filename).getAbsolutePath(),

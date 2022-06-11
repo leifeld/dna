@@ -27,7 +27,6 @@ public class CoderPasswordCheckDialog extends JDialog {
 	/**
 	 * Constructor with a specified coder.
 	 */
-	/*
 	public CoderPasswordCheckDialog(Coder coder) {
 		this.coder = coder;
 		JPanel panel = new JPanel(new BorderLayout());
@@ -60,7 +59,6 @@ public class CoderPasswordCheckDialog extends JDialog {
 			this.password = new String(pw.getPassword());
 		}
 	}
-	*/
 	
 	/**
 	 * Constructor with unknown coder (because the connection profile was

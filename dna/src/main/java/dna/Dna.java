@@ -48,6 +48,7 @@ public class Dna {
 		Dna.logger.log(l);
 
 		if (args != null && args.length > 0 && args[0].equals("headless")) {
+			mainWindow = new MainWindow();
 			headlessDna = new HeadlessDna();
 		} else {
 			mainWindow = new MainWindow();
@@ -95,7 +96,7 @@ public class Dna {
 	 * @param key   The key/password of the coder to decrypt the credentials
 	 * @return      Decrypted connection profile
 	 */
-	public ConnectionProfile readConnectionProfile(String file, String key) throws EncryptionOperationNotPossibleException {
+	public static ConnectionProfile readConnectionProfile(String file, String key) throws EncryptionOperationNotPossibleException {
 		// read connection profile JSON file in, in String format but with encrypted credentials
 		ConnectionProfile cp = null;
 		Gson gson = new Gson();
@@ -127,7 +128,7 @@ public class Dna {
 	 * @param cp    The connection profile to be encrypted and saved
 	 * @param key   The key/password of the coder to encrypt the credentials
 	 */
-	public void writeConnectionProfile(String file, ConnectionProfile cp, String key) {
+	public static void writeConnectionProfile(String file, ConnectionProfile cp, String key) {
 		// encrypt URL, user, and password using Jasypt
 		AES256TextEncryptor textEncryptor = new AES256TextEncryptor();
 		textEncryptor.setPassword(key);
