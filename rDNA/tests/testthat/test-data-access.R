@@ -1,9 +1,8 @@
 context("data access")
 
-suppressPackageStartupMessages(library("rDNA"))
-jar <- dna_jar()
-
 test_that("DNA can use databases and profiles", {
+  testthat::skip_on_cran()
+  jar <- dna_jar()
   expect_message(dna_jar(), "Jar file found")
   expect_message(dna_init(), "DNA connection established")
   s <- dna_sample()

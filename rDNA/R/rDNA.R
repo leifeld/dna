@@ -2,14 +2,9 @@
 
 dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 
-#' Display version number and date when the package is attached
-#' 
-#' Display version number and date when the package is attached.
-#'
-#' @param libname The library name.
-#' @param pkgname The package name.
-#' 
+#' Display version number and date when the package is loaded.
 #' @importFrom utils packageDescription
+#' @noRd
 .onAttach <- function(libname, pkgname) {
   desc <- packageDescription(pkgname, libname)
   packageStartupMessage(
@@ -170,7 +165,7 @@ dna_jar <- function() {
     Sys.chmod(gradle, mode = "0777", use_umask = TRUE)
     oldwd <- getwd()
     setwd(paste0(td, "/dna-master/"))
-    system(paste0(gradle, " build"))
+    system(paste0(gradle, " build"), ignore.stdout = TRUE, ignore.stderr = TRUE)
     setwd(oldwd)
     builtjar <- paste0(td, "/dna-master/dna/build/libs/dna-", v, ".jar")
     if (file.exists(builtjar)) {
