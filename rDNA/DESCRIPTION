@@ -1,0 +1,28 @@
+Package: rDNA
+Version: 3.0.7
+Date: 2022-06-11
+Title: Discourse Network Analysis in R
+Authors@R: 
+    person("Philip",
+           "Leifeld",
+           email = "Philip.Leifeld@essex.ac.uk", 
+           role = c("aut", "cre", "cph"))
+Maintainer: Philip Leifeld <Philip.Leifeld@essex.ac.uk>
+Description: Qualitative content analysis and discourse network analysis 
+    using the Java software Discourse Network Analyzer (DNA).
+Depends:
+    R (>= 3.6.0)
+Imports:
+    rJava (>= 0.5-0)
+Suggests: 
+    covr,
+    testthat,
+    askpass (>= 1.1)
+SystemRequirements: Java (>= 11)
+License: GPL-2
+LazyData: true
+URL: https://github.com/leifeld/dna
+BugReports: https://github.com/leifeld/dna/issues
+Encoding: UTF-8
+Language: en-US
+RoxygenNote: 7.1.1
