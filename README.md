@@ -28,7 +28,7 @@ Note that the package relies on `rJava`, which needs to be installed first.
 
 ## Upcoming release of DNA 3.0
 
-_Update on 23 March 2022:_
+_Update on 12 June 2022:_
 
 All work on DNA 2.0 and its companion rDNA version was ceased in early 2021. Work on a complete rewrite -- DNA 3.0 -- began in spring 2021 and is ongoing. It is possible to import old DNA 2.0 data into new DNA 3.0 databases.
 
