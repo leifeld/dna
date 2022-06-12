@@ -74,3 +74,5 @@ jobs:
       - name: Test coverage
         run: covr::codecov(quiet = FALSE)
         shell: Rscript {0}
+        with:
+          working-directory: rDNA
