@@ -1,4 +1,4 @@
-name: Gradle build
+name: DNA build
 
 on:
   push:
@@ -70,3 +70,11 @@ jobs:
         with:
           working-directory: rDNA
           upload-snapshots: true
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: DNA
+          path: |
+            *.tar.gz
+            rDNA/*.tar.gz
