@@ -62,17 +62,11 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck, any::covr
-          needs: check, coverage
+          extra-packages: any::rcmdcheck
+          needs: check
           working-directory: rDNA
 
       - uses: r-lib/actions/check-r-package@v2
         with:
           working-directory: rDNA
           upload-snapshots: true
-
-      - name: Test coverage
-        run: covr::codecov(quiet = FALSE)
-        shell: Rscript {0}
-        with:
-          working-directory: rDNA
