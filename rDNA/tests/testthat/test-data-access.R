@@ -2,6 +2,7 @@ context("data access")
 
 test_that("DNA can use databases and profiles", {
   testthat::skip_on_cran()
+  testthat::skip_on_ci()
   jar <- dna_jar()
   expect_message(dna_jar(), "Jar file found")
   expect_message(dna_init(), "DNA connection established")
