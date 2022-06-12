@@ -169,7 +169,7 @@ dna_jar <- function() {
     setwd(oldwd)
     builtjar <- paste0(td, "/dna-master/dna/build/libs/dna-", v, ".jar")
     if (file.exists(builtjar)) {
-      message("DNA source code downloaded and Jar file successfully built.")
+      message("DNA source code downloaded and jar file built successfully.")
     }
   }, error = function(e) {success <- FALSE})
   
@@ -499,6 +499,8 @@ dna_closeDatabase <- function() {
 dna_saveConnectionProfile <- function(file, coderPassword = "") {
   if (is.null(file) || !is.character(file) || length(file) != 1) {
     stop("Please provide a file name for the connection profile.")
+  } else {
+    file <- normalizePath(file)
   }
   if (is.null(coderPassword) || !is.character(coderPassword) || coderPassword == "") {
     if (!requireNamespace("askpass", quietly = TRUE)) {
@@ -562,6 +564,8 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
   }
   if (!file.exists(file)) {
     stop("File does not exist.")
+  } else {
+    file <- normalizePath(file)
   }
   if (is.null(coderPassword) || !is.character(coderPassword) || coderPassword == "") {
     if (!requireNamespace("askpass", quietly = TRUE)) {
