@@ -11,11 +11,10 @@ Maintainer: Philip Leifeld <Philip.Leifeld@essex.ac.uk>
 Description: Qualitative content analysis and discourse network analysis 
     using the Java software Discourse Network Analyzer (DNA).
 Depends:
-    R (>= 3.6.0)
+    R (>= 4.0.0)
 Imports:
-    rJava (>= 0.5-0)
+    rJava (>= 0.9-12)
 Suggests: 
-    covr,
     testthat,
     askpass (>= 1.1)
 SystemRequirements: Java (>= 11)
