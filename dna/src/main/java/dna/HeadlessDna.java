@@ -102,6 +102,7 @@ public class HeadlessDna {
 		boolean success = testSql.authenticate(coderId, coderPassword);
 		if (success) {
 			Dna.sql.setConnectionProfile(cp, false);
+			Dna.sql.selectCoder(coderId);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"Coder " + Dna.sql.getActiveCoder().getId() + " (" + Dna.sql.getActiveCoder().getName() + ") successfully authenticated.",
 					"Coder " + Dna.sql.getActiveCoder().getId() + " (" + Dna.sql.getActiveCoder().getName() + ") successfully authenticated. You can now use the functions available to this user.");

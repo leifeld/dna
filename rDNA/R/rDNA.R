@@ -499,8 +499,6 @@ dna_closeDatabase <- function() {
 dna_saveConnectionProfile <- function(file, coderPassword = "") {
   if (is.null(file) || !is.character(file) || length(file) != 1) {
     stop("Please provide a file name for the connection profile.")
-  } else {
-    file <- normalizePath(file)
   }
   if (is.null(coderPassword) || !is.character(coderPassword) || coderPassword == "") {
     if (!requireNamespace("askpass", quietly = TRUE)) {
