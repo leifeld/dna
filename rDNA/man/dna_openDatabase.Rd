@@ -5,9 +5,9 @@
 \title{Open a database}
 \usage{
 dna_openDatabase(
+  db_url,
   coderId = 1,
   coderPassword = "",
-  db_url,
   db_type = "sqlite",
   db_name = "",
   db_port = -1,
@@ -16,6 +16,9 @@ dna_openDatabase(
 )
 }
 \arguments{
+\item{db_url}{The URL for accessing the database (for remote databases) or
+the path of the SQLite database file, including file extension.}
+
 \item{coderId}{The coder ID of the coder who is opening the database. If an
 invalid coder ID is supplied (i.e., \code{-1} or similar), the coder ID is
 queried interactively from the user.}
@@ -23,9 +26,6 @@ queried interactively from the user.}
 \item{coderPassword}{The coder password of the coder who is opening the
 database. If an empty password is provided (e.g., \code{""}), the password
 is queried interactively from the user.}
-
-\item{db_url}{The URL for accessing the database (for remote databases) or
-the path of the SQLite database file, including file extension.}
 
 \item{db_type}{The type of database. Valid values are \code{"sqlite"},
 \code{postgresql}, and \code{postgresql}.}

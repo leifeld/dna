@@ -102,7 +102,8 @@ dna_jar <- function() {
   
   # try to locate jar file in library path and return jar file path
   tryCatch({
-    jar <- paste0(find.package("rDNA"), "/inst/java/dna-", v, ".jar")
+    rdna_dir <- dirname(system.file(".", package = "rDNA"))
+    jar <- paste0(rdna_dir, "/inst/java/dna-", v, ".jar")
     if (file.exists(jar)) {
       message("Jar file found in library path.")
       return(jar)
@@ -120,9 +121,10 @@ dna_jar <- function() {
   
   # try to download from GitHub release directory to library path
   tryCatch({
-    f <- paste0("https://github.com/leifeld/dna/releases/download/", v, "/dna-", v, ".jar")
-    dest <- paste0(find.package("rDNA"), "/inst/java/dna-", v, ".jar")
-    targetdir <- paste0(find.package("rDNA"), "/", "inst/java/")
+    rdna_dir <- dirname(system.file(".", package = "rDNA"))
+    f <- paste0("https://github.com/leifeld/dna/releases/download/v", v, "/dna-", v, ".jar")
+    dest <- paste0(rdna_dir, "/inst/java/dna-", v, ".jar")
+    targetdir <- paste0(rdna_dir, "/", "inst/java/")
     dir.create(targetdir, showWarnings = FALSE)
     suppressWarnings(download.file(url = f,
                                    destfile = dest,
@@ -137,7 +139,8 @@ dna_jar <- function() {
   
   # try to download from GitHub release directory to working directory
   tryCatch({
-    f <- paste0("https://github.com/leifeld/dna/releases/download/", v, "/dna-", v, ".jar")
+    rdna_dir <- dirname(system.file(".", package = "rDNA"))
+    f <- paste0("https://github.com/leifeld/dna/releases/download/v", v, "/dna-", v, ".jar")
     dest <- paste0(getwd(), "/dna-", v, ".jar")
     suppressWarnings(download.file(url = f,
                                    destfile = dest,
@@ -186,7 +189,7 @@ dna_jar <- function() {
     }
   }, error = function(e) {success <- FALSE})
   
-  # try to copy built jar to library path
+  # try to copy built jar to working directory
   tryCatch({
     dest <- paste0(getwd(), "/dna-", v, ".jar")
     file.copy(from = builtjar, to = dest)
@@ -200,7 +203,7 @@ dna_jar <- function() {
   stop("DNA jar file could not be identified or downloaded. Please download ",
        "the DNA jar file matching the version number of rDNA and store it in ",
        "the inst/java/ directory of your rDNA library installation path or in ",
-       "your working directory.")
+       "your working directory. Your current rDNA version is ", v, ".")
 }
 
 #' Provides a small sample database
@@ -349,14 +352,14 @@ dna_queryCoders <- function(db_url,
 #'
 #' @export
 #' @importFrom rJava .jcall
-dna_openDatabase <- function(coderId = 1,
-                         coderPassword = "",
-                         db_url,
-                         db_type = "sqlite",
-                         db_name = "",
-                         db_port = -1,
-                         db_login = "",
-                         db_password = "") {
+dna_openDatabase <- function(db_url,
+                             coderId = 1,
+                             coderPassword = "",
+                             db_type = "sqlite",
+                             db_name = "",
+                             db_port = -1,
+                             db_login = "",
+                             db_password = "") {
   if (is.null(db_port) && !is.null(db_type)) {
     if (db_type == "sqlite") {
       db_port <- as.integer(-1)
