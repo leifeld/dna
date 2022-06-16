@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import javax.sql.DataSource;
 
@@ -2965,7 +2964,7 @@ public class Sql {
 	 */
 	public ArrayList<Statement> getStatements(
 			int[] statementIds,
-			int[] statementTypeIds,
+			int statementTypeId,
 			LocalDateTime startDateTime,
 			LocalDateTime stopDateTime,
 			ArrayList<String> authors,
@@ -3073,32 +3072,8 @@ public class Sql {
 			whereBoolean = whereBoolean + typeWhere;
 			whereInteger = whereInteger + typeWhere;
 		}
-		if (statementTypeIds != null && statementTypeIds.length > 0) {
-			String typeWhere = "AND STATEMENTS.StatementTypeId IN ("
-					+ IntStream.of(statementTypeIds)
-					.mapToObj(i -> ((Integer) i).toString()) // i is an int, not an Integer
-					.collect(Collectors.joining(", "))
-					.toString()
-					+ ") ";
-			whereStatements = whereStatements + typeWhere;
-			whereShortText = whereShortText + typeWhere;
-			whereLongText = whereLongText + typeWhere;
-			whereBoolean = whereBoolean + typeWhere;
-			whereInteger = whereInteger + typeWhere;
-		}
 		if (whereStatements.startsWith("AND")) { // ensure correct form if no statement ID filtering
 			whereStatements = whereStatements.replaceFirst("AND", "WHERE");
-		}
-		
-		// restrict statement type IDs for query 2
-		String whereStatementType = "";
-		if (statementTypeIds != null && statementTypeIds.length > 0) {
-			whereStatementType = " WHERE ID IN ("
-					+ IntStream.of(statementTypeIds)
-					.mapToObj(i -> ((Integer) i).toString()) // i is an int, not an Integer
-					.collect(Collectors.joining(", "))
-					.toString()
-					+ ")";
 		}
 		
 		String subString = "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text ";
@@ -3126,46 +3101,40 @@ public class Sql {
 				+ "INNER JOIN STATEMENTTYPES ON STATEMENTS.StatementTypeId = STATEMENTTYPES.ID "
 				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
 				+ whereStatements
+				+ "AND STATEMENTTYPES.ID = " + statementTypeId + " "
 				+ "ORDER BY DOCUMENTS.DATE ASC;";
 
-		String q2 = "SELECT ID FROM STATEMENTTYPES" + whereStatementType + ";";
-		
-		String q3 = "SELECT ID, Variable, DataType FROM VARIABLES;";
+		String q3 = "SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + ";";
 		
 		String q4a = "SELECT DATASHORTTEXT.StatementId, VARIABLES.ID AS VariableId, ENTITIES.ID AS EntityId, ENTITIES.Value AS Value, ENTITIES.Red AS Red, ENTITIES.Green AS Green, ENTITIES.Blue AS Blue, ENTITIES.ChildOf AS ChildOf FROM DATASHORTTEXT "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId "
 				+ "INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity "
 				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATASHORTTEXT.StatementId "
 				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
-				+ "WHERE VARIABLES.StatementTypeId = ? " + whereShortText + "ORDER BY 1, 2 ASC;";
+				+ "WHERE VARIABLES.StatementTypeId = " + statementTypeId + " " + whereShortText + "ORDER BY 1, 2 ASC;";
 		String q4b = "SELECT DATALONGTEXT.StatementId, VARIABLES.ID AS VariableId, DATALONGTEXT.Value FROM DATALONGTEXT "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId "
 				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATALONGTEXT.StatementId "
 				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
-				+ "WHERE VARIABLES.StatementTypeId = ? " + whereLongText + "ORDER BY 1, 2 ASC;";
+				+ "WHERE VARIABLES.StatementTypeId = " + statementTypeId + " " + whereLongText + "ORDER BY 1, 2 ASC;";
 		String q4c = "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, DATABOOLEAN.Value FROM DATABOOLEAN "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId "
 				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATABOOLEAN.StatementId "
 				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
-				+ "WHERE VARIABLES.StatementTypeId = ? " + whereBoolean + "ORDER BY 1, 2 ASC;";
+				+ "WHERE VARIABLES.StatementTypeId = " + statementTypeId + " " + whereBoolean + "ORDER BY 1, 2 ASC;";
 		String q4d = "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, DATAINTEGER.Value FROM DATAINTEGER "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId "
 				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATAINTEGER.StatementId "
 				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
-				+ "WHERE VARIABLES.StatementTypeId = ? " + whereInteger + "ORDER BY 1, 2 ASC;";
+				+ "WHERE VARIABLES.StatementTypeId = " + statementTypeId + " " + whereInteger + "ORDER BY 1, 2 ASC;";
 
 		String q5 = "SELECT ATTRIBUTEVALUES.EntityId, AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES "
 				+ "INNER JOIN ATTRIBUTEVARIABLES ON ATTRIBUTEVARIABLES.ID = AttributeVariableId "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = ATTRIBUTEVARIABLES.VariableId "
-				+ "WHERE VARIABLES.StatementTypeId IN ("
-				+ IntStream.of(statementTypeIds)
-				.mapToObj(i -> ((Integer) i).toString())
-				.collect(Collectors.joining(", "))
-				.toString()
-				+ ");";
+				+ "WHERE VARIABLES.StatementTypeId = " + statementTypeId + ";";
 		
 		ArrayList<Statement> listOfStatements = null;
-		int statementTypeId, statementId, variableId, entityId;
+		int statementId, variableId, entityId;
 		Color sColor, cColor;
 		HashMap<Integer, String> variableNameMap = new HashMap<Integer, String>(); // variable ID to variable name
 		HashMap<Integer, String> variableDataTypeMap = new HashMap<Integer, String>(); // variable ID to data type
@@ -3173,7 +3142,6 @@ public class Sql {
 		ResultSet r3, r4, r5;
 		try (Connection conn = Dna.sql.getDataSource().getConnection();
 				PreparedStatement s1 = conn.prepareStatement(q1);
-				PreparedStatement s2 = conn.prepareStatement(q2);
 				PreparedStatement s3 = conn.prepareStatement(q3);
 				PreparedStatement s4a = conn.prepareStatement(q4a);
 				PreparedStatement s4b = conn.prepareStatement(q4b);
@@ -3226,47 +3194,37 @@ public class Sql {
 				attributeMap.get(entityId).put(attributeKey, attributeValue);
 			}
 			
-			// get statement types
-			ResultSet r2 = s2.executeQuery();
-			while (r2.next()) {
-				statementTypeId = r2.getInt("ID");
-				
-				// get values and put them into the statements
-				s4a.setInt(1, statementTypeId);
-				r4 = s4a.executeQuery();
-				while (r4.next()) {
-					variableId = r4.getInt("VariableId");
-					entityId = r4.getInt("EntityId");
-					Entity e = new Entity(entityId,
-							variableId,
-							r4.getString("Value"),
-							new Color(r4.getInt("Red"), r4.getInt("Green"), r4.getInt("Blue")),
-							r4.getInt("ChildOf"),
-							true,
-							attributeMap.get(entityId));
-					statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), e));
-				}
-				s4b.setInt(1, statementTypeId);
-				r4 = s4b.executeQuery();
-				while (r4.next()) {
-					variableId = r4.getInt("VariableId");
-					String value = r4.getString("Value");
-					statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
-				}
-				s4c.setInt(1, statementTypeId);
-				r4 = s4c.executeQuery();
-				while (r4.next()) {
-					variableId = r4.getInt("VariableId");
-					int value = r4.getInt("Value");
-					statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
-				}
-				s4d.setInt(1, statementTypeId);
-				r4 = s4d.executeQuery();
-				while (r4.next()) {
-					variableId = r4.getInt("VariableId");
-					int value = r4.getInt("Value");
-					statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
-				}
+			// get values and put them into the statements
+			r4 = s4a.executeQuery();
+			while (r4.next()) {
+				variableId = r4.getInt("VariableId");
+				entityId = r4.getInt("EntityId");
+				Entity e = new Entity(entityId,
+						variableId,
+						r4.getString("Value"),
+						new Color(r4.getInt("Red"), r4.getInt("Green"), r4.getInt("Blue")),
+						r4.getInt("ChildOf"),
+						true,
+						attributeMap.get(entityId));
+				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), e));
+			}
+			r4 = s4b.executeQuery();
+			while (r4.next()) {
+				variableId = r4.getInt("VariableId");
+				String value = r4.getString("Value");
+				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
+			}
+			r4 = s4c.executeQuery();
+			while (r4.next()) {
+				variableId = r4.getInt("VariableId");
+				int value = r4.getInt("Value");
+				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
+			}
+			r4 = s4d.executeQuery();
+			while (r4.next()) {
+				variableId = r4.getInt("VariableId");
+				int value = r4.getInt("Value");
+				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
 			}
 			
 			// assemble and sort all statements

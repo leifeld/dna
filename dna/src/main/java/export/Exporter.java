@@ -321,7 +321,7 @@ public class Exporter {
 
 		// get statements and convert to {@link ExportStatement} objects with additional information
 		this.originalStatements = Dna.sql.getStatements(new int[0],
-				new int[] {this.statementType.getId()},
+				this.statementType.getId(),
 				this.startDateTime,
 				this.stopDateTime,
 				this.excludeAuthors,
