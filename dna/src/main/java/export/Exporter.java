@@ -1,24 +1,14 @@
 package export;
 
-import java.awt.Color;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.WeekFields;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
+import Jama.EigenvalueDecomposition;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.thoughtworks.xstream.XStream;
+import dna.Dna;
+import logger.LogEvent;
+import logger.Logger;
+import me.tongfei.progressbar.ProgressBar;
+import model.*;
 import org.jdom.Attribute;
 import org.jdom.Comment;
 import org.jdom.Element;
@@ -26,13 +16,17 @@ import org.jdom.Namespace;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
-import dna.Dna;
-import model.Entity;
-import model.Matrix;
-import model.Statement;
-import model.StatementType;
-import model.TableDocument;
-import model.Value;
+import java.awt.*;
+import java.io.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.WeekFields;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Exporter class. This class contains functions for filtering statement array
@@ -56,6 +50,7 @@ public class Exporter {
 	private ArrayList<ExportStatement> originalStatements;
 	private ArrayList<ExportStatement> filteredStatements;
 	private ArrayList<Matrix> matrixResults;
+	private BackboneResult backboneResult = null;
 
 	/**
 	 * <p>Create a new Exporter class instance, holding an array list of export
@@ -85,7 +80,7 @@ public class Exporter {
 	 *   {@code variable2Document} argument.
 	 * @param variable2Document Is the second variable defined at the document
 	 *   level, for instance the author or document ID?
-	 * @param qualifierName The qualifier variable, for example {@code
+	 * @param qualifier The qualifier variable, for example {@code
 	 *  "agreement"}.
 	 * @param qualifierAggregation The way in which the qualifier variable is
 	 *   used to aggregate ties in the network.<br/>
@@ -355,15 +350,12 @@ public class Exporter {
 	 * @param variable String indicating the variable for which labels should be
 	 *   extracted, for example {@code "organization"}.
 	 * @param variableDocument Is the variable a document-level variable?
-	 * @param includeIsolates Indicates whether all nodes should be included or
-	 *   just those after applying the statement filter.
 	 * @return String array containing all sorted node names.
 	 */
-	private String[] extractLabels(
+	String[] extractLabels(
 			ArrayList<ExportStatement> processedStatements,
 			String variable,
-			boolean variableDocument,
-			boolean includeIsolates) {
+			boolean variableDocument) {
 		
 		// decide whether to use the original statements or the filtered statements
 		ArrayList<ExportStatement> finalStatements;
@@ -539,7 +531,7 @@ public class Exporter {
 		}
 		this.filteredStatements = al;
 	}
-	
+
 	/**
 	 * Retrieve the values across statements/documents given the name of the
 	 * variable. E.g., provide a variable name and information on whether the
@@ -733,7 +725,7 @@ public class Exporter {
 	}
 	
 	/**
-	 * Wrapper method to compute one-mode network matrix with class settings.
+	 * Wrapper method to compute one-mode network matrix with class settings and save within class.
 	 */
 	private void computeOneModeMatrix() {
 		ArrayList<Matrix> matrices = new ArrayList<Matrix>(); 
@@ -741,7 +733,7 @@ public class Exporter {
 				this.qualifierAggregation, this.startDateTime, this.stopDateTime));
 		this.matrixResults = matrices;
 	}
-	
+
 	/**
 	 * Create a one-mode network {@link Matrix}.
 	 * 
@@ -757,9 +749,9 @@ public class Exporter {
 	 * @return {@link model.Matrix Matrix} object containing a one-mode network
 	 *   matrix.
 	 */
-	private Matrix computeOneModeMatrix(ArrayList<ExportStatement> processedStatements, String aggregation, LocalDateTime start, LocalDateTime stop) {
-		String[] names1 = this.extractLabels(processedStatements, this.variable1, this.variable1Document, this.isolates);
-		String[] names2 = this.extractLabels(processedStatements, this.variable2, this.variable2Document, this.isolates);
+	Matrix computeOneModeMatrix(ArrayList<ExportStatement> processedStatements, String aggregation, LocalDateTime start, LocalDateTime stop) {
+		String[] names1 = this.extractLabels(processedStatements, this.variable1, this.variable1Document);
+		String[] names2 = this.extractLabels(processedStatements, this.variable2, this.variable2Document);
 		
 		if (processedStatements.size() == 0) {
 			double[][] m = new double[names1.length][names1.length];
@@ -870,8 +862,13 @@ public class Exporter {
 						}
 						norm = Math.sqrt(i1count * i1count) * Math.sqrt(i2count * i2count);
 					}
-					mat1[i1][i2] = mat1[i1][i2] / norm;
-					mat2[i1][i2] = mat2[i1][i2] / norm;
+					if (norm == 0) {
+						mat1[i1][i2] = 0;
+						mat2[i1][i2] = 0;
+					} else {
+						mat1[i1][i2] = mat1[i1][i2] / norm;
+						mat2[i1][i2] = mat2[i1][i2] / norm;
+					}
 					
 					// "subtract": congruence minus conflict; use the appropriate matrix or matrices
 					if (aggregation.equals("ignore")) {
@@ -922,8 +919,8 @@ public class Exporter {
 	 */
 	private Matrix computeTwoModeMatrix(ArrayList<ExportStatement> processedStatements,
 			LocalDateTime start, LocalDateTime stop, boolean verbose) {
-		String[] names1 = this.extractLabels(processedStatements, this.variable1, this.variable1Document, this.isolates);
-		String[] names2 = this.extractLabels(processedStatements, this.variable2, this.variable2Document, this.isolates);
+		String[] names1 = this.extractLabels(processedStatements, this.variable1, this.variable1Document);
+		String[] names2 = this.extractLabels(processedStatements, this.variable2, this.variable2Document);
 		
 		if (processedStatements.size() == 0) {
 			double[][] m = new double[names1.length][names2.length];
@@ -1036,7 +1033,11 @@ public class Exporter {
 					}
 				}
 				for (int j = 0; j < names2.length; j++) { // divide all values by current denominator
-					mat[i][j] = mat[i][j] / currentDenominator;
+					if (currentDenominator == 0) {
+						mat[i][j] = 0;
+					} else {
+						mat[i][j] = mat[i][j] / currentDenominator;
+					}
 				}
 			}
 		} else if (this.normalization.equals("prominence")) {
@@ -1063,7 +1064,11 @@ public class Exporter {
 					}
 				}
 				for (int j = 0; j < names1.length; j++) { // divide all values by current denominator
-					mat[j][i] = mat[j][i] / currentDenominator;
+					if (currentDenominator == 0) {
+						mat[j][i] = 0;
+					} else {
+						mat[j][i] = mat[j][i] / currentDenominator;
+					}
 				}
 			}
 		}
@@ -1327,9 +1332,6 @@ public class Exporter {
 
 	/**
 	 * Export {@link model.Matrix Matrix} to a CSV matrix file.
-	 * 
-	 * @param matrix   The input {@link Matrix} object.
-	 * @param outfile  The path and file name of the target CSV file.
 	 */
 	private void exportCSV () {
 		String filename2;
@@ -1838,82 +1840,516 @@ public class Exporter {
 	}
 
 	/**
-	 * An extension of the Statement class, which also holds some document meta-
-	 * data and a hash map of the values (in addition to the array list of
-	 * values).
+	 * Partition the discourse network into a backbone and redundant set of second-mode entities using penalised
+	 * spectral distances and simulated annealing.
+	 *
+	 * @param p Penalty parameter.
+	 * @param T Number of iterations.
 	 */
-	private class ExportStatement extends Statement {
-		private HashMap<String, Object> map;
-		private String title, author, source, section, type;
+	public void backbone(double p, int T) {
 
-		/**
-		 * Create an export statement.
-		 * 
-		 * @param statement The statement to be converted.
-		 * @param title The document title.
-		 * @param author The author.
-		 * @param source The source.
-		 * @param section The section.
-		 * @param type The type.
-		 */
-		public ExportStatement(Statement statement, String title, String author,
-				String source, String section, String type) {
-			super(statement);
-			this.title = title;
-			this.author = author;
-			this.source = source;
-			this.section = section;
-			this.type = type;
-			this.map = new HashMap<String, Object>();
-			for (Value value : ExportStatement.this.getValues()) {
-				map.put(value.getKey(), value.getValue());
+		// initial values before iterations start
+		this.loadData();
+		this.filterStatements();
+		this.originalStatements = this.filteredStatements; // to ensure not all isolates are included later
+
+		// full set of concepts C
+		String[] fullConcepts = this.extractLabels(this.filteredStatements, this.variable2, this.variable2Document);
+
+		// full network matrix Y against which we compare in every iteration
+		Matrix fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+
+		// pick a random concept c_j from C and save its index
+		int randomConceptIndex = ThreadLocalRandom.current().nextInt(0, fullConcepts.length);
+
+		// final backbone list B, which contains only one random concept initially but will contain the final backbone set in the end
+		ArrayList<String> finalBackboneList = new ArrayList<String>();
+
+		// add the one uniformly sampled concept c_j to the backbone as the initial solution at t = 0: B <- {c_j}
+		finalBackboneList.add(fullConcepts[randomConceptIndex]);
+
+		// final redundant set R, which is initially C without c_j
+		ArrayList<String> finalRedundantList = Arrays
+				.stream(fullConcepts)
+				.filter(c -> !c.equals(fullConcepts[randomConceptIndex]))
+				.collect(Collectors.toCollection(ArrayList::new));
+
+		// final statement list: filter the statement list by only retaining those statements that are in the final backbone set B
+		ArrayList<ExportStatement> finalStatementList = this.filteredStatements
+				.stream()
+				.filter(s -> finalBackboneList.contains(((Entity) s.get(this.variable2)).getValue()))
+				.collect(Collectors.toCollection(ArrayList::new));
+
+		// final matrix based on the initial final backbone set, Y^B, which is initially identical to the previous matrix
+		Matrix finalMatrix = this.computeOneModeMatrix(finalStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+
+		// create an initial current backbone set B_0, also with the one c_j concept like in B: B_0 <- {c_j}
+		ArrayList<String> currentBackboneList = new ArrayList<String>();
+		currentBackboneList.add(fullConcepts[randomConceptIndex]);
+
+		// create an initial current redundant set R_t, which is C without c_j
+		ArrayList<String> currentRedundantList = Arrays
+				.stream(fullConcepts)
+				.filter(c -> !c.equals(fullConcepts[randomConceptIndex]))
+				.collect(Collectors.toCollection(ArrayList::new));
+
+		// filter the statement list by only retaining those statements that are in the initial current backbone set B_0
+		ArrayList<ExportStatement> currentStatementList = this.filteredStatements
+				.stream()
+				.filter(s -> currentBackboneList.contains(((Entity) s.get(this.variable2)).getValue()))
+				.collect(Collectors.toCollection(ArrayList::new));
+
+		// create initial current matrix at t = 0
+		Matrix currentMatrix = this.computeOneModeMatrix(currentStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+
+		// initialise (empty) action set S
+		ArrayList<String> actionList = new ArrayList<String>();
+
+		// initialise selected action s
+		String selectedAction = "";
+
+		// initialise the candidate backbone set at t, B^*_t
+		ArrayList<String> candidateBackboneList = new ArrayList<String>();
+
+		// initialise the candidate redundant set at t, R^*_t
+		ArrayList<String> candidateRedundantList = new ArrayList<String>();
+
+		// declare candidate statement list at t
+		ArrayList<ExportStatement> candidateStatementList;
+
+		// initialise the candidate matrix at the respective t, Y^{B^*_t}
+		Matrix candidateMatrix;
+
+		// declare loss comparison result variables
+		double oldLoss = 0.0, newLoss = 0.0, finalLoss = 0.0;
+		boolean accept = false;
+		double temperature, acceptance, r;
+
+		// reporting
+		ArrayList<Double> temperatureLog = new ArrayList<Double>();
+		ArrayList<Double> acceptanceProbabilityLog = new ArrayList<Double>();
+		ArrayList<Integer> acceptedLog = new ArrayList<Integer>();
+		ArrayList<Double> penalisedBackboneLossLog = new ArrayList<Double>();
+		ArrayList<Integer> proposedBackboneSizeLog = new ArrayList<Integer>();
+		ArrayList<Integer> acceptedBackboneSizeLog = new ArrayList<Integer>();
+		ArrayList<Integer> finalBackboneSizeLog = new ArrayList<Integer>();
+		ArrayList<Double> acceptanceRatioLastHundredIterationsLog = new ArrayList<Double>();
+		double log;
+
+		// set to first iteration and start simulated annealing
+		int t = 1;
+		try (ProgressBar pb = new ProgressBar("Simulated annealing", T)) {
+			while (t <= T) { // run up to upper bound of iterations T, provided by the user
+				pb.stepTo(t); // adjust progress bar
+
+				// first step: make a random move by adding, removing, or swapping a concept and computing a new candidate
+				actionList.clear(); // clear the set of possible actions and repopulate, depending on solution size
+				if (currentBackboneList.size() < 2) { // if there is only one concept, don't remove it because empty backbones do not work
+					actionList.add("add");
+					actionList.add("swap");
+				} else if (currentBackboneList.size() > fullConcepts.length - 2) { // do not create a backbone with all concepts because it would be useless
+					actionList.add("remove");
+					actionList.add("swap");
+				} else { // everything in between one and |C| - 1 concepts: add all three possible moves to the action set
+					actionList.add("add");
+					actionList.add("remove");
+					actionList.add("swap");
+				}
+				Collections.shuffle(actionList); // randomly re-order the action set...
+				selectedAction = actionList.get(0); // and draw the first action (i.e., pick a random action)
+				candidateBackboneList.clear(); // create a candidate copy of the current backbone list, to be modified
+				candidateBackboneList.addAll(currentBackboneList);
+				candidateRedundantList.clear(); // create a candidate copy of the current redundant list, to be modified
+				candidateRedundantList.addAll(currentRedundantList);
+				if (selectedAction.equals("add")) { // if we add a concept...
+					Collections.shuffle(candidateRedundantList); // randomly re-order the current redundant list...
+					candidateBackboneList.add(candidateRedundantList.get(0)); // add the first concept from the redundant list to the backbone...
+					candidateRedundantList.remove(0); // and delete it in turn from the redundant list
+				} else if (selectedAction.equals("remove")) { // if we remove a concept...
+					Collections.shuffle(candidateBackboneList); // randomly re-order the backbone list to pick a random concept for removal as the first element...
+					candidateRedundantList.add(candidateBackboneList.get(0)); // add the selected concept to the redundant list...
+					candidateBackboneList.remove(0); // and remove it from the backbone list
+				} else if (selectedAction.equals("swap")) { //if we swap out a concept...
+					Collections.shuffle(candidateBackboneList); // re-order the backbone list...
+					Collections.shuffle(candidateRedundantList); // re-order the redundant list...
+					candidateBackboneList.add(candidateRedundantList.get(0)); // add the first (random) redundant concept to the backbone list...
+					candidateRedundantList.remove(0); // then remove it from the redundant list...
+					candidateRedundantList.add(candidateBackboneList.get(0)); // add the first (random) backbone concept to the redundant list...
+					candidateBackboneList.remove(0); // then remove it from the backbone list
+				}
+				proposedBackboneSizeLog.add(candidateBackboneList.size()); // log number of concepts in candidate backbone in the current iteration
+				// after executing the action, filter the statement list based on the candidate backbone set B^*_t in order to create the candidate matrix
+				candidateStatementList = this.filteredStatements
+						.stream()
+						.filter(s -> candidateBackboneList.contains(((Entity) s.get(this.variable2)).getValue()))
+						.collect(Collectors.toCollection(ArrayList::new));
+				// create candidate matrix after filtering the statements based on the action that was executed
+				candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+
+				// second step: compare loss between full and previous matrix to loss between full and candidate matrix and accept or reject candidate
+				temperature = 1 - (1 / (1 + Math.exp(-(-5 + (12.0 / T) * t)))); // temperature
+				temperatureLog.add(temperature);
+				oldLoss = loss(fullMatrix, currentMatrix, p, currentBackboneList.size(), fullConcepts.length); // spectral distance between full and previous matrix
+				newLoss = loss(fullMatrix, candidateMatrix, p, candidateBackboneList.size(), fullConcepts.length); // spectral distance between full and candidate matrix
+				penalisedBackboneLossLog.add(newLoss); // log the penalised spectral distance between full and candidate solution
+				accept = false;
+				if (newLoss < oldLoss) { // if candidate is better than previous matrix, adopt it as current solution
+					accept = true; // flag this solution for acceptance
+					acceptanceProbabilityLog.add(1.0); // log the acceptance probability as 1.0 because the solution was better than before
+					finalLoss = loss(fullMatrix, finalMatrix, p, finalBackboneList.size(), fullConcepts.length); // test if also better than global optimum so far
+					if (newLoss <= finalLoss) { // if better than the best solution, adopt candidate as new final backbone solution
+						finalBackboneList.clear(); // clear the best solution list
+						finalBackboneList.addAll(candidateBackboneList); // and populate it with the concepts from the candidate solution instead
+						finalRedundantList.clear(); // same with the redundant list
+						finalRedundantList.addAll(candidateRedundantList);
+						finalStatementList.clear(); // same with the final list of statements
+						finalStatementList.addAll(candidateStatementList);
+						finalMatrix = new Matrix(candidateMatrix); // save the candidate matrix as best solution matrix
+					}
+				} else { // if the solution is worse than the previous one, apply Hastings ratio and temperature and compare with random number
+					r = Math.random(); // random double between 0 and 1
+					acceptance = Math.exp((-(newLoss - oldLoss))) * temperature; // 1 - acceptance probability
+					acceptanceProbabilityLog.add(1.0 - acceptance); // log the acceptance probability
+					if (acceptance <= r) { // apply probability rule
+						accept = true;
+					}
+				}
+				if (accept) { // if candidate is better than previous matrix...
+					currentBackboneList.clear(); // create candidate copy and save as new current matrix
+					currentBackboneList.addAll(candidateBackboneList);
+					currentRedundantList.clear(); // also save the redundant candidate as new current redundant list
+					currentRedundantList.addAll(candidateRedundantList);
+					currentStatementList.clear(); // save candidate statement list as new current statement list
+					currentStatementList.addAll(candidateStatementList);
+					currentMatrix = new Matrix(candidateMatrix); // save candidate matrix as new current matrix
+					acceptedLog.add(1); // log the acceptance of the proposed candidate
+				} else {
+					acceptedLog.add(0); // log the non-acceptance of the proposed candidate
+				}
+				acceptedBackboneSizeLog.add(currentBackboneList.size()); // log how many concepts are in the current iteration after the decision
+				finalBackboneSizeLog.add(finalBackboneList.size()); // log how many concepts are in the final backbone solution in the current iteration
+				log = 0.0; // compute ratio of acceptances in last up to 100 iterations
+				for (int i = t - 1; i >= t - Math.min(100, t); i--) {
+					log = log + acceptedLog.get(i);
+				}
+				acceptanceRatioLastHundredIterationsLog.add(log / Math.min(100, t)); // log ratio of accepted candidates in the last 100 iterations
+				t = t + 1; // go to next iteration
 			}
 		}
-		
-		/**
-		 * Copy constructor to create a deep copy of an export statement.
-		 * 
-		 * @param exportStatement An existing export statement.
-		 */
-		private ExportStatement(ExportStatement exportStatement) {
-			super(exportStatement);
-			this.title = exportStatement.getTitle();
-			this.author = exportStatement.getAuthor();
-			this.source = exportStatement.getSource();
-			this.section = exportStatement.getSection();
-			this.type = exportStatement.getType();
-			this.map = new HashMap<String, Object>();
-			for (Value value : exportStatement.getValues()) {
-				map.put(value.getKey(), value.getValue());
+
+		Collections.sort(finalBackboneList);
+		Collections.sort(finalRedundantList);
+
+		// create redundant matrix
+		ArrayList<ExportStatement> redundantStatementList = this.filteredStatements
+				.stream()
+				.filter(s -> currentRedundantList.contains(((Entity) s.get(this.variable2)).getValue()))
+				.collect(Collectors.toCollection(ArrayList::new));
+		Matrix redundantMatrix = this.computeOneModeMatrix(redundantStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+
+		this.backboneResult = new BackboneResult(finalBackboneList,
+				finalRedundantList,
+				this.loss(fullMatrix, currentMatrix, 0, currentBackboneList.size(), fullConcepts.length),
+				this.loss(fullMatrix, redundantMatrix, 0, currentBackboneList.size(), fullConcepts.length),
+				p,
+				T,
+				temperatureLog,
+				acceptanceProbabilityLog,
+				acceptedLog,
+				penalisedBackboneLossLog,
+				proposedBackboneSizeLog,
+				acceptedBackboneSizeLog,
+				finalBackboneSizeLog,
+				acceptanceRatioLastHundredIterationsLog,
+				fullMatrix,
+				currentMatrix,
+				redundantMatrix);
+	}
+
+	/**
+	 * A function for computing penalised Euclidean spectral distances between two network matrices.
+	 *
+	 * @param mat1 The first network {@link Matrix}.
+	 * @param mat2 The second network {@link Matrix}.
+	 * @param p The penality parameter. The larger the penalty, the smaller the backbone set. Typical values could be
+	 *          {@code 5.5}, {@code 7.5}, or {@code 12}.
+	 * @param candidateBackboneSize The number of elements in the candidate backbone set.
+	 * @param numEntitiesTotal The number of elements in the full set of second-mode entities.
+	 * @return Penalised Euclidean spectral distance of the two matrices.
+	 */
+	private double loss(Matrix mat1, Matrix mat2, double p, double candidateBackboneSize, double numEntitiesTotal) {
+		// compute the row sums for the two matrices
+		double[][] m1 = mat1.getMatrix();
+		double[][] m2 = mat2.getMatrix();
+		double[] rowSums1 = new double[m1.length];
+		double[] rowSums2 = new double[m2.length];
+		for (int i = 0; i < m1.length; i++) {
+			for (int j = 0; j < m1[0].length; j++) {
+				rowSums1[i] = rowSums1[i] + m1[i][j];
+				rowSums2[i] = rowSums2[i] + m2[i][j];
 			}
 		}
-		
-		public Object get(String key) {
-			return this.map.get(key);
+		/*
+		double[] rowSums1 = Arrays.stream(mat1.getMatrix()) // source
+				.mapToDouble(arr -> DoubleStream.of(arr).sum()) // sum inner array
+				.toArray(); // back to double[]
+		double[] rowSums2 = Arrays.stream(mat2.getMatrix()) // source
+				.mapToDouble(arr -> DoubleStream.of(arr).sum()) // sum inner array
+				.toArray(); // back to double[]
+		*/
+
+		// compute the Laplacian matrices by subtracting the network matrix from a diagonal degree matrix
+		double[][] laplacianMatrix1 = new double[m1.length][m1[0].length];
+		double[][] laplacianMatrix2 = new double[m2.length][m2[0].length];
+		for (int i = 0; i < laplacianMatrix1.length; i++) {
+			for (int j = 0; j < laplacianMatrix1[0].length; j++) {
+				if (i == j) {
+					laplacianMatrix1[i][j] = rowSums1[i] - m1[i][j];
+					laplacianMatrix2[i][j] = rowSums2[i] - m2[i][j];
+				} else {
+					laplacianMatrix1[i][j] = 0.0 - m1[i][j];
+					laplacianMatrix2[i][j] = 0.0 - m2[i][j];
+				}
+			}
 		}
-		
-		public String getTitle() {
-			return this.title;
+
+		// use the Apache commons.math3 library to compute eigenvalues of the Laplacian matrices
+		Jama.Matrix lm1 = new Jama.Matrix(laplacianMatrix1);
+		EigenvalueDecomposition evd1 = new EigenvalueDecomposition(lm1);
+		double[] eigenvalues1 = evd1.getRealEigenvalues();
+		Jama.Matrix lm2 = new Jama.Matrix(laplacianMatrix2);
+		EigenvalueDecomposition evd2 = new EigenvalueDecomposition(lm2);
+		double[] eigenvalues2 = evd2.getRealEigenvalues();
+
+		// normalise eigenvalues by scaling them to 1.0
+		double eigenSum1 = Arrays.stream(eigenvalues1).sum();
+		double eigenSum2 = Arrays.stream(eigenvalues2).sum();
+		eigenvalues1 = DoubleStream.of(eigenvalues1).map(v -> v / eigenSum1).toArray();
+		eigenvalues2 = DoubleStream.of(eigenvalues2).map(v -> v / eigenSum2).toArray();
+
+		// compute Euclidean spectral distance
+		double distance = 0.0;
+		for (int i = 0; i < eigenvalues1.length; i++) {
+			distance = distance + Math.sqrt((eigenvalues1[i] - eigenvalues2[i]) * (eigenvalues1[i] - eigenvalues2[i]));
 		}
-		
-		public String getAuthor() {
-			return this.author;
+
+		// compute penalty factor and return penalised distance
+		double penalty = Math.exp((-p) * (candidateBackboneSize / numEntitiesTotal));
+		return distance * penalty;
+	}
+
+	/**
+	 * Write the backbone results to a JSON or XML file
+	 *
+	 * @param filename File name with absolute path as a string.
+	 * @throws IOException
+	 */
+	public void writeBackboneToFile(String filename) throws IOException {
+		File file = new File(filename);
+		String s = "";
+		if (filename.toLowerCase().endsWith("xml")) {
+			XStream xstream = new XStream();
+			s = xstream.toXML(this.backboneResult);
+		} else if (filename.toLowerCase().endsWith("json")) {
+			Gson prettyGson = new GsonBuilder()
+					.setPrettyPrinting()
+					.serializeNulls()
+					.disableHtmlEscaping()
+					.create();
+			s = prettyGson.toJson(this.backboneResult);
 		}
-		
-		public String getSource() {
-			return this.source;
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+			writer.write(s);
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"Backbone result was saved to disk.",
+					"Backbone result was saved to file: " + filename + ".");
+			Dna.logger.log(l);
+		} catch (IOException exception) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"Backbone result could not be saved to disk.",
+					"Attempted to save backbone results to file: " + filename + ". The file saving operation did not work, possibly because the file could not be written to disk or because the results could not be converted to the final data format.",
+					exception);
+			Dna.logger.log(l);
+			throw exception;
 		}
-		
-		public String getSection() {
-			return this.section;
+	}
+
+	/**
+	 * Class representing backbone results.
+	 */
+	public class BackboneResult {
+		private ArrayList<String> backboneEntities;
+		private ArrayList<String> redundantEntities;
+		private double unpenalisedBackboneLoss;
+		private double unpenalisedRedundantLoss;
+		private double penalty;
+		private int iterations;
+		private ArrayList<Double> temperature;
+		private ArrayList<Double> acceptanceProbability;
+		private ArrayList<Integer> acceptance;
+		private ArrayList<Double> penalisedBackboneLoss;
+		private ArrayList<Integer> penalisedCandidateLoss;
+		private ArrayList<Integer> penalisedCurrentLoss;
+		private ArrayList<Integer> optimalBackboneSize;
+		private ArrayList<Double> acceptanceRatioMovingAverage;
+		private Matrix fullNetwork;
+		private Matrix backboneNetwork;
+		private Matrix redundantNetwork;
+
+		public BackboneResult(ArrayList<String> backboneEntities, ArrayList<String> redundantEntities, double unpenalisedBackboneLoss, double unpenalisedRedundantLoss, double penalty, int iterations, ArrayList<Double> temperature, ArrayList<Double> acceptanceProbability, ArrayList<Integer> acceptance, ArrayList<Double> penalisedBackboneLoss, ArrayList<Integer> penalisedCandidateLoss, ArrayList<Integer> penalisedCurrentLoss, ArrayList<Integer> optimalBackboneSize, ArrayList<Double> acceptanceRatioMovingAverage, Matrix fullNetwork, Matrix backboneNetwork, Matrix redundantNetwork) {
+			this.backboneEntities = backboneEntities;
+			this.redundantEntities = redundantEntities;
+			this.unpenalisedBackboneLoss = unpenalisedBackboneLoss;
+			this.unpenalisedRedundantLoss = unpenalisedRedundantLoss;
+			this.penalty = penalty;
+			this.iterations = iterations;
+			this.temperature = temperature;
+			this.acceptanceProbability = acceptanceProbability;
+			this.acceptance = acceptance;
+			this.penalisedBackboneLoss = penalisedBackboneLoss;
+			this.penalisedCandidateLoss = penalisedCandidateLoss;
+			this.penalisedCurrentLoss = penalisedCurrentLoss;
+			this.optimalBackboneSize = optimalBackboneSize;
+			this.acceptanceRatioMovingAverage = acceptanceRatioMovingAverage;
+			this.fullNetwork = fullNetwork;
+			this.backboneNetwork = backboneNetwork;
+			this.redundantNetwork = redundantNetwork;
 		}
-		
-		public String getType() {
-			return this.type;
+
+		public ArrayList<String> getBackboneEntities() {
+			return backboneEntities;
 		}
-		
-		public String getDocumentIdAsString() {
-			return String.valueOf(this.getDocumentId());
+
+		public void setBackboneEntities(ArrayList<String> backboneEntities) {
+			this.backboneEntities = backboneEntities;
+		}
+
+		public ArrayList<String> getRedundantEntities() {
+			return redundantEntities;
+		}
+
+		public void setRedundantEntities(ArrayList<String> redundantEntities) {
+			this.redundantEntities = redundantEntities;
+		}
+
+		public double getUnpenalisedBackboneLoss() {
+			return unpenalisedBackboneLoss;
+		}
+
+		public void setUnpenalisedBackboneLoss(double unpenalisedBackboneLoss) {
+			this.unpenalisedBackboneLoss = unpenalisedBackboneLoss;
+		}
+
+		public double getUnpenalisedRedundantLoss() {
+			return unpenalisedRedundantLoss;
+		}
+
+		public void setUnpenalisedRedundantLoss(double unpenalisedRedundantLoss) {
+			this.unpenalisedRedundantLoss = unpenalisedRedundantLoss;
+		}
+
+		public double getPenalty() {
+			return penalty;
+		}
+
+		public void setPenalty(double penalty) {
+			this.penalty = penalty;
+		}
+
+		public int getIterations() {
+			return iterations;
+		}
+
+		public void setIterations(int iterations) {
+			this.iterations = iterations;
+		}
+
+		public ArrayList<Double> getTemperature() {
+			return temperature;
+		}
+
+		public void setTemperature(ArrayList<Double> temperature) {
+			this.temperature = temperature;
+		}
+
+		public ArrayList<Double> getAcceptanceProbability() {
+			return acceptanceProbability;
+		}
+
+		public void setAcceptanceProbability(ArrayList<Double> acceptanceProbability) {
+			this.acceptanceProbability = acceptanceProbability;
+		}
+
+		public ArrayList<Integer> getAcceptance() {
+			return acceptance;
+		}
+
+		public void setAcceptance(ArrayList<Integer> acceptance) {
+			this.acceptance = acceptance;
+		}
+
+		public ArrayList<Double> getPenalisedBackboneLoss() {
+			return penalisedBackboneLoss;
+		}
+
+		public void setPenalisedBackboneLoss(ArrayList<Double> penalisedBackboneLoss) {
+			this.penalisedBackboneLoss = penalisedBackboneLoss;
+		}
+
+		public ArrayList<Integer> getPenalisedCandidateLoss() {
+			return penalisedCandidateLoss;
+		}
+
+		public void setPenalisedCandidateLoss(ArrayList<Integer> penalisedCandidateLoss) {
+			this.penalisedCandidateLoss = penalisedCandidateLoss;
+		}
+
+		public ArrayList<Integer> getPenalisedCurrentLoss() {
+			return penalisedCurrentLoss;
+		}
+
+		public void setPenalisedCurrentLoss(ArrayList<Integer> penalisedCurrentLoss) {
+			this.penalisedCurrentLoss = penalisedCurrentLoss;
+		}
+
+		public ArrayList<Integer> getOptimalBackboneSize() {
+			return optimalBackboneSize;
+		}
+
+		public void setOptimalBackboneSize(ArrayList<Integer> optimalBackboneSize) {
+			this.optimalBackboneSize = optimalBackboneSize;
+		}
+
+		public ArrayList<Double> getAcceptanceRatioMovingAverage() {
+			return acceptanceRatioMovingAverage;
+		}
+
+		public void setAcceptanceRatioMovingAverage(ArrayList<Double> acceptanceRatioMovingAverage) {
+			this.acceptanceRatioMovingAverage = acceptanceRatioMovingAverage;
+		}
+
+		public Matrix getFullNetwork() {
+			return fullNetwork;
+		}
+
+		public void setFullNetwork(Matrix fullNetwork) {
+			this.fullNetwork = fullNetwork;
+		}
+
+		public Matrix getBackboneNetwork() {
+			return backboneNetwork;
+		}
+
+		public void setBackboneNetwork(Matrix backboneNetwork) {
+			this.backboneNetwork = backboneNetwork;
+		}
+
+		public Matrix getRedundantNetwork() {
+			return redundantNetwork;
+		}
+
+		public void setRedundantNetwork(Matrix redundantNetwork) {
+			this.redundantNetwork = redundantNetwork;
 		}
 	}
 }

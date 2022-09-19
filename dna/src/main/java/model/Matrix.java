@@ -27,6 +27,18 @@ public class Matrix implements Cloneable {
 		this.stop = stop;
 	}
 
+	/**
+	 * Copy constructor.
+	 */
+	public Matrix(Matrix matrix) {
+		this.matrix = matrix.getMatrix();
+		this.rownames = matrix.getRownames();
+		this.colnames = matrix.getColnames();
+		this.integer = matrix.getInteger();
+		this.start = matrix.getStart();
+		this.stop = matrix.getStop();
+	}
+
 	protected Object clone() throws CloneNotSupportedException {
         return super.clone();
     }
@@ -109,7 +121,7 @@ public class Matrix implements Cloneable {
 	}
 
 	/**
-	 * @param integer   the integer boolean indicator to be set
+	 * @param date the date to set
 	 */
 	public void setDateTime(LocalDateTime date) {
 		this.dateTime = dateTime;

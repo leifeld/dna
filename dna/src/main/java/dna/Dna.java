@@ -29,8 +29,8 @@ public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2022-06-16";
-	public static final String version = "3.0.8";
+	public static final String date = "2022-07-21";
+	public static final String version = "3.0.9";
 	public MainWindow mainWindow;
 	public HeadlessDna headlessDna;
 	
@@ -66,7 +66,6 @@ public class Dna {
 	 * Start DNA.
 	 * 
 	 * @param args Any arguments from the terminal/command line/shell.
-	 * @throws Exception 
 	 */
 	public static void main(String[] args) {
 		Thread.setDefaultUncaughtExceptionHandler(new DefaultExceptionHandler());

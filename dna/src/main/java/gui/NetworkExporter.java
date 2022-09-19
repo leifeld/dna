@@ -1,13 +1,10 @@
 package gui;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Frame;
-import java.awt.Graphics;
-import java.awt.Image;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,30 +12,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
-import javax.swing.BorderFactory;
-import javax.swing.DefaultListModel;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
-import javax.swing.JTextArea;
-import javax.swing.ListCellRenderer;
-import javax.swing.ListSelectionModel;
-import javax.swing.ProgressMonitor;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.UIDefaults;
+import javax.swing.*;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.github.lgooddatepicker.components.DatePickerSettings;
 import com.github.lgooddatepicker.components.DateTimePicker;
@@ -60,7 +41,7 @@ public class NetworkExporter extends JDialog {
 	private LocalDateTime[] dateTimeRange = Dna.sql.getDateTimeRange();
 	private DateTimePicker startPicker, stopPicker;
 	private JCheckBox helpBox;
-	private JButton exportButton;
+	private JButton backboneButton, exportButton;
 	private JComboBox<String> networkModesBox, fileFormatBox, var1Box, var2Box, qualifierBox, aggregationBox, normalizationBox,	isolatesBox, duplicatesBox, timeWindowBox;
 	private StatementType[] statementTypes;
 	private JComboBox<StatementType> statementTypeBox;
@@ -208,7 +189,6 @@ public class NetworkExporter extends JDialog {
 					isolatesBox.addItem("only current nodes");
 				}
 			}
-			
 		});
 
 		gbc.gridx = 1;
@@ -515,6 +495,13 @@ public class NetworkExporter extends JDialog {
 		isolatesBox.setToolTipText(isolatesToolTip);
 		settingsPanel.add(isolatesBox, gbc);
 		isolatesBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
+		isolatesBox.addItemListener(il -> {
+			if (isolatesBox.getSelectedItem() != null && ((String) isolatesBox.getSelectedItem()).equals("include isolates") && ((String) networkModesBox.getSelectedItem()).equals("One-mode network") && ((String) timeWindowBox.getSelectedItem()).equals("no time window")) {
+				backboneButton.setEnabled(true);
+			} else {
+				backboneButton.setEnabled(false);
+			}
+		});
 
 		gbc.gridx = 2;
 		String[] duplicatesItems = new String[] {"include all duplicates", "ignore per document", "ignore per calendar week", 
@@ -624,6 +611,13 @@ public class NetworkExporter extends JDialog {
 		timeWindowBox.setToolTipText(timeWindowToolTip);
 		settingsPanel.add(timeWindowBox, gbc);
 		timeWindowBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
+		timeWindowBox.addItemListener(il -> {
+			if (((String) isolatesBox.getSelectedItem()).equals("include isolates") && ((String) networkModesBox.getSelectedItem()).equals("One-mode network") && ((String) timeWindowBox.getSelectedItem()).equals("no time window")) {
+				backboneButton.setEnabled(true);
+			} else {
+				backboneButton.setEnabled(false);
+			}
+		});
 		
 		gbc.gridx = 3;
 		timeWindowSpinner = new JSpinner(new SpinnerNumberModel(100, 0, 100000, 1));
@@ -847,10 +841,10 @@ public class NetworkExporter extends JDialog {
 		excludePreviewScroller.setPreferredSize(excludeValueScroller.getPreferredSize());
 		
 		// sixth row: buttons
-		gbc.gridwidth = 2;
+		gbc.gridwidth = 1;
 		gbc.gridx = 0;
 		gbc.gridy = 10;
-		helpBox = new JCheckBox("Display tooltips with instructions");
+		helpBox = new JCheckBox("Display instructions");
 		helpBox.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent e) {
 				toggleHelp();
@@ -858,8 +852,9 @@ public class NetworkExporter extends JDialog {
 			
 		});
 		settingsPanel.add(helpBox, gbc);
-		
-		gbc.gridx = 2;
+
+		gbc.gridwidth = 3;
+		gbc.gridx = 1;
 		gbc.anchor = java.awt.GridBagConstraints.EAST;
 		JPanel buttonPanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
 		JButton revertButton = new JButton("Revert", new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH)));
@@ -905,6 +900,7 @@ public class NetworkExporter extends JDialog {
 				helpBox.setSelected(false);
 			}
 		});
+
 		JButton cancelButton = new JButton("Cancel", new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH)));
 		String cancelToolTip = "<html><p>Reset and close this window.</p></html>";
 		cancelButton.setToolTipText(cancelToolTip);
@@ -914,7 +910,32 @@ public class NetworkExporter extends JDialog {
 				dispose();
 			}
 		});
-		exportButton = new JButton("Export...", new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH)));
+
+		backboneButton = new JButton("Find backbone...", new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-arrows-split.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH)));
+		String backboneToolTip = "<html><p width=\"500\">Find the backbone and redundant set of second-mode entities. " +
+				"This functionality is only available with <b>one-mode networks, no isolates, and no time window</b>. " +
+				"Variable 2 constitutes the second mode in an two-mode network and feeds into the edge weights of a " +
+				"one-mode network, such as a normalized actor congruence or subtract network. The <b>backbone set</b> is the " +
+				"subset of entities/values of Variable 2 (e.g., concepts) that can reproduce the cluster structure of " +
+				"the one-mode network almost perfectly, i.e., with little loss. The <b>redundant set</b> is the complementary " +
+				"subset of entities/values of Variable 2 that do not contribute much additional value in structuring " +
+				"the one-mode network into clusters. A custom <b>simulated annealing</b> algorithm is employed to find the " +
+				"backbone and redundant sets by minimizing penalized Euclidean spectral distances between the backbone " +
+				"network and the full network. You can supply two parameters: The <b>penalty (p)</b> determines how large the " +
+				"backbone set is, with larger penalties penalizing larger backbones more strongly, hence leading to " +
+				"smaller backbones and larger redundant sets. Typical values could be 5.5, 7.5, or 12. The number of " +
+				"<b>iterations (T)</b> determines how long the algorithm should run. We have had good results with T = 50,000 " +
+				"iterations for a network of about 200 actors and about 60 concepts, though fewer iterations might have " +
+				"been acceptable. The quality of the solution increases with larger T and reaches the global optimum " +
+				"asymptotically. How many iterations are required for a good solution depends on the number of entities " +
+				"on the second-mode variable. The results can be saved to <b>JSON or XML</b> files and can inform how to recode " +
+				"entities or which entities to include or exclude during network export.</p></html>";
+		backboneButton.setToolTipText(backboneToolTip);
+		buttonPanel.add(backboneButton);
+		backboneButton.addActionListener(e -> new BackboneDialog());
+		backboneButton.setEnabled(false);
+
+		exportButton = new JButton("Network export...", new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH)));
 		String exportToolTip = "<html><p>Select a file name and save the network using the current settings.</p></html>";
 		exportButton.setToolTipText(exportToolTip);
 		exportButton.addActionListener(new java.awt.event.ActionListener() {
@@ -1102,11 +1123,7 @@ public class NetworkExporter extends JDialog {
 	 * data are written to a file. 
 	 */
 	private class GuiExportThread implements Runnable {
-		
-		// String filename;
-		// ArrayList<Statement> statements;
-		// ArrayList<Document> documents;
-		// String[] names1, names2;
+
 		private Exporter exporter;
 		private String fileName;
 		private ProgressMonitor progressMonitor;
@@ -1202,7 +1219,6 @@ public class NetworkExporter extends JDialog {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			// System.out.println("Network has been created.");
 			progressMonitor.setProgress(3);
 			
 			// step 4: write to file
@@ -1249,6 +1265,227 @@ public class NetworkExporter extends JDialog {
 				}
 				
 				return panel;
+			}
+		}
+	}
+
+	/**
+	 * Backbone dialog for setting penalty and iterations parameters, starting backbone computations, and saving results
+	 * to a file.
+	 */
+	class BackboneDialog extends JDialog {
+		public BackboneDialog() {
+			this.setModal(true);
+			this.setTitle("Backbone");
+			ImageIcon backboneIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-arrows-split.png"));
+			this.setIconImage(backboneIcon.getImage());
+
+			JPanel dialogPanel = new JPanel(new BorderLayout());
+			CompoundBorder border = BorderFactory.createCompoundBorder(new EmptyBorder(10, 10, 10, 10), new TitledBorder("Find backbone"));
+			dialogPanel.setBorder(border);
+			this.add(dialogPanel);
+
+			SpinnerNumberModel penaltyModel = new SpinnerNumberModel(7.50, 0.00, 1000.00, 0.01);
+			JSpinner penaltySpinner = new JSpinner(penaltyModel);
+			((JSpinner.DefaultEditor) penaltySpinner.getEditor()).getTextField().setColumns(4);
+			JLabel penaltyLabel = new JLabel("Penalty parameter (p)");
+			penaltyLabel.setLabelFor(penaltySpinner);
+			String penaltyTooltipText = "<html><p width=\"500\">The penalty (p) determines how large the " +
+					"backbone set is, with larger penalties penalizing larger backbones more strongly, hence leading to " +
+					"smaller backbones and larger redundant sets. Typical values could be 5.5, 7.5, or 12.</p></html>";
+			penaltySpinner.setToolTipText(penaltyTooltipText);
+			penaltyLabel.setToolTipText(penaltyTooltipText);
+
+			SpinnerNumberModel iterationsModel = new SpinnerNumberModel(50000, 100, 1000000, 100);
+			JSpinner iterationsSpinner = new JSpinner(iterationsModel);
+			((JSpinner.DefaultEditor) iterationsSpinner.getEditor()).getTextField().setColumns(7);
+			JLabel iterationsLabel = new JLabel("Iterations (T)");
+			iterationsLabel.setLabelFor(iterationsSpinner);
+			String iterationsTooltipText = "<html><p width=\"500\">The number of iterations (T) determines how long the " +
+					"algorithm should run. We have had good results with T = 50,000 iterations for a network of about " +
+					"200 actors and about 60 concepts, though fewer iterations might have been acceptable. The quality " +
+					"of the solution increases with larger T and reaches the global optimum asymptotically. How many " +
+					"iterations are required for a good solution depends on the number of entities on the second-mode " +
+					"variable.</p></html>";
+			iterationsSpinner.setToolTipText(iterationsTooltipText);
+			iterationsLabel.setToolTipText(iterationsTooltipText);
+
+			JButton saveBackboneButton = new JButton("Optimize backbone", new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-arrows-split.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH)));
+			saveBackboneButton.setToolTipText("<html><p width=\"500\">Find the backbone and redundant set. A custom " +
+					"simulated annealing algorithm is employed to find the backbone and redundant sets by minimizing " +
+					"penalized Euclidean spectral distances between the backbone network and the full network. The " +
+					"results can be saved to JSON or XML files and can inform how to recode entities or which " +
+					"entities to include or exclude during network export.</p></html>");
+			saveBackboneButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent actionEvent) {
+					JFileChooser fc = new JFileChooser();
+					fc.removeChoosableFileFilter(fc.getFileFilter());
+					fc.addChoosableFileFilter(new FileNameExtensionFilter("JSON and XMl files (*.json, *.xml)", "json","xml"));
+					int returnVal = fc.showSaveDialog(getParent());
+					if (returnVal == JFileChooser.APPROVE_OPTION) {
+						File file = fc.getSelectedFile();
+						String fileName = file.getAbsolutePath();
+						if (!(fileName.toLowerCase().endsWith(".xml") && !fileName.toLowerCase().endsWith(".json"))) {
+							fileName = fileName + ".json";
+						}
+
+						// read settings from GUI elements and translate into values for Exporter class
+						double penalty = (double) penaltySpinner.getValue();
+						int iterations = (int) iterationsSpinner.getValue();
+						StatementType statementType = (StatementType) statementTypeBox.getSelectedItem();
+						String variable1Name = (String) var1Box.getSelectedItem();
+						boolean variable1Document = false;
+						if (var1Box.getSelectedIndex() > var1Box.getItemCount() - 7) {
+							variable1Document = true;
+						}
+						String variable2Name = (String) var2Box.getSelectedItem();
+						boolean variable2Document = false;
+						if (var2Box.getSelectedIndex() > var2Box.getItemCount() - 7) {
+							variable2Document = true;
+						}
+						String qualifier = (String) qualifierBox.getSelectedItem();
+						String qualifierAggregation = (String) aggregationBox.getSelectedItem();
+						String normalization = (String) normalizationBox.getSelectedItem();
+						String duplicates = (String) duplicatesBox.getSelectedItem();
+						if (duplicates.equals("include all duplicates")) {
+							duplicates = "include";
+						} else if (duplicates.equals("ignore per document")) {
+							duplicates = "document";
+						} else if (duplicates.equals("ignore per calendar week")) {
+							duplicates = "week";
+						} else if (duplicates.equals("ignore per calendar month")) {
+							duplicates = "month";
+						} else if (duplicates.equals("ignore per calendar year")) {
+							duplicates = "year";
+						} else if (duplicates.equals("ignore across date range")) {
+							duplicates = "acrossrange";
+						}
+						LocalDateTime startDateTime = startPicker.getDateTimeStrict();
+						LocalDateTime stopDateTime = stopPicker.getDateTimeStrict();
+
+						// start backbone thread
+						Thread backboneThread = new Thread(new GuiBackboneThread(penalty, iterations, statementType, variable1Name,
+								variable1Document, variable2Name, variable2Document, qualifier, qualifierAggregation,
+								normalization, duplicates, startDateTime, stopDateTime,
+								NetworkExporter.this.excludeValues, NetworkExporter.this.excludeAuthor,
+								NetworkExporter.this.excludeSource, NetworkExporter.this.excludeSection,
+								NetworkExporter.this.excludeType, false, false, false,
+								false, false, fileName),
+								"Compute and export backbone");
+						backboneThread.start();
+					}
+				}
+			});
+
+			GridBagLayout gbl = new GridBagLayout();
+			GridBagConstraints gbc = new GridBagConstraints();
+			dialogPanel.setLayout(gbl);
+			gbc.anchor = java.awt.GridBagConstraints.WEST;
+			gbc.insets = new java.awt.Insets(10, 10, 10, 10);
+			gbc.fill = java.awt.GridBagConstraints.HORIZONTAL;
+			gbc.gridx = 0;
+			gbc.gridy = 0;
+			dialogPanel.add(penaltyLabel, gbc);
+			gbc.gridx = 1;
+			dialogPanel.add(penaltySpinner, gbc);
+			gbc.insets = new java.awt.Insets(3, 10, 10, 10);
+			gbc.gridx = 0;
+			gbc.gridy = 1;
+			dialogPanel.add(iterationsLabel, gbc);
+			gbc.gridx = 1;
+			dialogPanel.add(iterationsSpinner, gbc);
+			gbc.gridx = 0;
+			gbc.gridwidth = 2;
+			gbc.gridy = 2;
+			dialogPanel.add(saveBackboneButton, gbc);
+
+			this.pack();
+			this.setLocationRelativeTo(null);
+			this.setVisible(true);
+		}
+	}
+
+	/**
+	 * GUI backbone thread. This is where the computations are executed and the
+	 * data are written to a file.
+	 */
+	private class GuiBackboneThread implements Runnable {
+
+		private Exporter exporter;
+		private String fileName;
+		private double p;
+		private int T;
+
+		public GuiBackboneThread(
+				double p,
+				int T,
+				StatementType statementType,
+				String variable1,
+				boolean variable1Document,
+				String variable2,
+				boolean variable2Document,
+				String qualifier,
+				String qualifierAggregation,
+				String normalization,
+				String duplicates,
+				LocalDateTime startDateTime,
+				LocalDateTime stopDateTime,
+				HashMap<String, ArrayList<String>> excludeValues,
+				ArrayList<String> excludeAuthors,
+				ArrayList<String> excludeSources,
+				ArrayList<String> excludeSections,
+				ArrayList<String> excludeTypes,
+				boolean invertValues,
+				boolean invertAuthors,
+				boolean invertSources,
+				boolean invertSections,
+				boolean invertTypes,
+				String outfile) {
+			this.p = p;
+			this.T = T;
+			this.fileName = outfile;
+			this.exporter = new Exporter(
+					"onemode",
+					statementType,
+					variable1,
+					variable1Document,
+					variable2,
+					variable2Document,
+					qualifier,
+					qualifierAggregation,
+					normalization,
+					true,
+					duplicates,
+					startDateTime,
+					stopDateTime,
+					"no",
+					1,
+					excludeValues,
+					excludeAuthors,
+					excludeSources,
+					excludeSections,
+					excludeTypes,
+					invertValues,
+					invertAuthors,
+					invertSources,
+					invertSections,
+					invertTypes,
+					"",
+					"");
+		}
+
+		public void run() {
+			this.exporter.backbone(p, T);
+			try {
+				this.exporter.writeBackboneToFile(fileName);
+				JOptionPane.showMessageDialog(NetworkExporter.this, "Data were exported to \"" + fileName + "\".");
+			} catch (IOException e) {
+				LogEvent l = new LogEvent(Logger.ERROR,
+						"Backbone results could not be saved.",
+						"Tried to save backbone results to a file, but an error occurred.",
+						e);
+				Dna.logger.log(l);
 			}
 		}
 	}
