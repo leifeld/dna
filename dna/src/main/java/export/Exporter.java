@@ -1,6 +1,5 @@
 package export;
 
-import Jama.EigenvalueDecomposition;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.thoughtworks.xstream.XStream;
@@ -15,6 +14,15 @@ import org.jdom.Element;
 import org.jdom.Namespace;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
+import org.ojalgo.array.Array1D;
+import org.ojalgo.array.DenseArray;
+import org.ojalgo.array.Primitive64Array;
+import org.ojalgo.function.aggregator.Aggregator;
+import org.ojalgo.matrix.Primitive64Matrix;
+import org.ojalgo.matrix.decomposition.Eigenvalue;
+import org.ojalgo.matrix.store.Primitive64Store;
+import org.ojalgo.structure.Access1D;
+import org.ojalgo.structure.Mutate1D;
 
 import java.awt.*;
 import java.io.*;
@@ -2079,6 +2087,7 @@ public class Exporter {
 	 */
 	private double loss(Matrix mat1, Matrix mat2, double p, double candidateBackboneSize, double numEntitiesTotal) {
 		// compute the row sums for the two matrices
+		/*
 		double[][] m1 = mat1.getMatrix();
 		double[][] m2 = mat2.getMatrix();
 		double[] rowSums1 = new double[m1.length];
@@ -2089,6 +2098,8 @@ public class Exporter {
 				rowSums2[i] = rowSums2[i] + m2[i][j];
 			}
 		}
+		*/
+
 		/*
 		double[] rowSums1 = Arrays.stream(mat1.getMatrix()) // source
 				.mapToDouble(arr -> DoubleStream.of(arr).sum()) // sum inner array
@@ -2099,6 +2110,7 @@ public class Exporter {
 		*/
 
 		// compute the Laplacian matrices by subtracting the network matrix from a diagonal degree matrix
+		/*
 		double[][] laplacianMatrix1 = new double[m1.length][m1[0].length];
 		double[][] laplacianMatrix2 = new double[m2.length][m2[0].length];
 		for (int i = 0; i < laplacianMatrix1.length; i++) {
@@ -2112,14 +2124,59 @@ public class Exporter {
 				}
 			}
 		}
+		*/
 
-		// use the Apache commons.math3 library to compute eigenvalues of the Laplacian matrices
+		// matrix 1
+		Primitive64Matrix m1sparse = Primitive64Matrix.FACTORY.rows(mat1.getMatrix()); // create matrix 1
+		DenseArray<Double> r1 = Primitive64Array.FACTORY.make(mat1.getMatrix().length); // container for row sums
+		m1sparse.reduceRows(Aggregator.SUM, r1); // populate row sums into r1
+
+		Primitive64Matrix.SparseReceiver sparseReceiver1 = Primitive64Matrix.FACTORY.makeSparse(mat1.getMatrix().length, mat1.getMatrix()[0].length); // container for degree matrix
+		sparseReceiver1.fillDiagonal(r1); // put row sums onto diagonal
+		Primitive64Matrix L1 = sparseReceiver1.get(); // put row sum container into a new degree matrix (the future Laplacian matrix)
+
+		L1.subtract(m1sparse); // subtract adjacency matrix from degree matrix to create Laplacian matrix
+
+		Eigenvalue<Double> eig1 = Eigenvalue.PRIMITIVE.make(L1); // eigenvalues
+		eig1.decompose(L1); // decomposition
+		double[] eigenvalues1 = eig1.getEigenvalues().toRawCopy1D(); // extract eigenvalues and convert to double[]
+
+		// matrix 2
+		Primitive64Matrix m2sparse = Primitive64Matrix.FACTORY.rows(mat2.getMatrix()); // create matrix 2
+		DenseArray<Double> r2 = Primitive64Array.FACTORY.make(mat2.getMatrix().length); // container for row sums
+		m2sparse.reduceRows(Aggregator.SUM, r2); // populate row sums into r2
+
+		Primitive64Matrix.SparseReceiver sparseReceiver2 = Primitive64Matrix.FACTORY.makeSparse(mat2.getMatrix().length, mat2.getMatrix()[0].length); // container for degree matrix
+		sparseReceiver2.fillDiagonal(r2); // put row sums onto diagonal
+		Primitive64Matrix L2 = sparseReceiver2.get(); // put row sum container into a new degree matrix (the future Laplacian matrix)
+
+		L2.subtract(m2sparse); // subtract adjacency matrix from degree matrix to create Laplacian matrix
+
+		Eigenvalue<Double> eig2 = Eigenvalue.PRIMITIVE.make(L2); // eigenvalues
+		eig2.decompose(L2); // decomposition
+		double[] eigenvalues2 = eig2.getEigenvalues().toRawCopy1D(); // extract eigenvalues and convert to double[]
+
+		// ojalgo eigenvalues (old attempt)
+		/*
+		Primitive64Store lp1 = Primitive64Store.FACTORY.rows(laplacianMatrix1);
+		Eigenvalue<Double> eig1 = Eigenvalue.PRIMITIVE.make(lp1);
+		eig1.decompose(lp1);
+		double[] eigenvalues1 = eig1.getEigenvalues().toRawCopy1D();
+		Primitive64Store lp2 = Primitive64Store.FACTORY.rows(laplacianMatrix2);
+		Eigenvalue<Double> eig2 = Eigenvalue.PRIMITIVE.make(lp2);
+		eig2.decompose(lp2);
+		double[] eigenvalues2 = eig2.getEigenvalues().toRawCopy1D();
+		*/
+
+		// Jama library to compute eigenvalues of the Laplacian matrices (seems to compute something but is slow)
+		/*
 		Jama.Matrix lm1 = new Jama.Matrix(laplacianMatrix1);
 		EigenvalueDecomposition evd1 = new EigenvalueDecomposition(lm1);
 		double[] eigenvalues1 = evd1.getRealEigenvalues();
 		Jama.Matrix lm2 = new Jama.Matrix(laplacianMatrix2);
 		EigenvalueDecomposition evd2 = new EigenvalueDecomposition(lm2);
 		double[] eigenvalues2 = evd2.getRealEigenvalues();
+		*/
 
 		// normalise eigenvalues by scaling them to 1.0
 		double eigenSum1 = Arrays.stream(eigenvalues1).sum();
