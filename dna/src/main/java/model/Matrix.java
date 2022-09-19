@@ -37,6 +37,8 @@ public class Matrix implements Cloneable {
 		this.integer = matrix.getInteger();
 		this.start = matrix.getStart();
 		this.stop = matrix.getStop();
+		this.dateTime = matrix.getDateTime();
+		this.numStatements = matrix.getNumStatements();
 	}
 
 	protected Object clone() throws CloneNotSupportedException {
@@ -121,9 +123,9 @@ public class Matrix implements Cloneable {
 	}
 
 	/**
-	 * @param date the date to set
+	 * @param dateTime the date and time to set
 	 */
-	public void setDateTime(LocalDateTime date) {
+	public void setDateTime(LocalDateTime dateTime) {
 		this.dateTime = dateTime;
 	}
 

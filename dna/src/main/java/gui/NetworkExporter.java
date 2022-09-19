@@ -1321,12 +1321,12 @@ public class NetworkExporter extends JDialog {
 				public void actionPerformed(ActionEvent actionEvent) {
 					JFileChooser fc = new JFileChooser();
 					fc.removeChoosableFileFilter(fc.getFileFilter());
-					fc.addChoosableFileFilter(new FileNameExtensionFilter("JSON and XMl files (*.json, *.xml)", "json","xml"));
+					fc.addChoosableFileFilter(new FileNameExtensionFilter("JSON and XMl files (*.json, *.xml)", "json", "xml"));
 					int returnVal = fc.showSaveDialog(getParent());
 					if (returnVal == JFileChooser.APPROVE_OPTION) {
 						File file = fc.getSelectedFile();
 						String fileName = file.getAbsolutePath();
-						if (!(fileName.toLowerCase().endsWith(".xml") && !fileName.toLowerCase().endsWith(".json"))) {
+						if (!fileName.toLowerCase().endsWith(".xml") && !fileName.toLowerCase().endsWith(".json")) {
 							fileName = fileName + ".json";
 						}
 

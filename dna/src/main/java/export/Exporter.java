@@ -3,6 +3,8 @@ package export;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.PrettyPrintWriter;
+import com.thoughtworks.xstream.io.xml.StaxDriver;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
@@ -1867,6 +1869,9 @@ public class Exporter {
 		// full network matrix Y against which we compare in every iteration
 		Matrix fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 
+		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
+		double[] eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
+
 		// pick a random concept c_j from C and save its index
 		int randomConceptIndex = ThreadLocalRandom.current().nextInt(0, fullConcepts.length);
 
@@ -1944,6 +1949,9 @@ public class Exporter {
 		ArrayList<Double> acceptanceRatioLastHundredIterationsLog = new ArrayList<Double>();
 		double log;
 
+		// matrix algebra declarations
+		double[] eigenvaluesCurrent = new double[0], eigenvaluesCandidate, eigenvaluesFinal;
+
 		// set to first iteration and start simulated annealing
 		int t = 1;
 		try (ProgressBar pb = new ProgressBar("Simulated annealing", T)) {
@@ -1997,14 +2005,17 @@ public class Exporter {
 				// second step: compare loss between full and previous matrix to loss between full and candidate matrix and accept or reject candidate
 				temperature = 1 - (1 / (1 + Math.exp(-(-5 + (12.0 / T) * t)))); // temperature
 				temperatureLog.add(temperature);
-				oldLoss = loss(fullMatrix, currentMatrix, p, currentBackboneList.size(), fullConcepts.length); // spectral distance between full and previous matrix
-				newLoss = loss(fullMatrix, candidateMatrix, p, candidateBackboneList.size(), fullConcepts.length); // spectral distance between full and candidate matrix
+				eigenvaluesCurrent = computeNormalizedEigenvalues(currentMatrix.getMatrix()); // normalised eigenvalues for the current matrix
+				eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+				oldLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCurrent, p, currentBackboneList.size(), fullConcepts.length); // spectral distance between full and previous matrix
+				newLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, candidateBackboneList.size(), fullConcepts.length); // spectral distance between full and candidate matrix
 				penalisedBackboneLossLog.add(newLoss); // log the penalised spectral distance between full and candidate solution
 				accept = false;
 				if (newLoss < oldLoss) { // if candidate is better than previous matrix, adopt it as current solution
 					accept = true; // flag this solution for acceptance
 					acceptanceProbabilityLog.add(1.0); // log the acceptance probability as 1.0 because the solution was better than before
-					finalLoss = loss(fullMatrix, finalMatrix, p, finalBackboneList.size(), fullConcepts.length); // test if also better than global optimum so far
+					eigenvaluesFinal = computeNormalizedEigenvalues(currentMatrix.getMatrix()); // normalised eigenvalues for the current matrix
+					finalLoss = penalizedLoss(eigenvaluesFull, eigenvaluesFinal, p, finalBackboneList.size(), fullConcepts.length); // test if also better than global optimum so far
 					if (newLoss <= finalLoss) { // if better than the best solution, adopt candidate as new final backbone solution
 						finalBackboneList.clear(); // clear the best solution list
 						finalBackboneList.addAll(candidateBackboneList); // and populate it with the concepts from the candidate solution instead
@@ -2057,8 +2068,8 @@ public class Exporter {
 
 		this.backboneResult = new BackboneResult(finalBackboneList,
 				finalRedundantList,
-				this.loss(fullMatrix, currentMatrix, 0, currentBackboneList.size(), fullConcepts.length),
-				this.loss(fullMatrix, redundantMatrix, 0, currentBackboneList.size(), fullConcepts.length),
+				penalizedLoss(eigenvaluesFull, eigenvaluesCurrent, 0, currentBackboneList.size(), fullConcepts.length),
+				penalizedLoss(eigenvaluesFull, computeNormalizedEigenvalues(redundantMatrix.getMatrix()), 0, currentBackboneList.size(), fullConcepts.length),
 				p,
 				T,
 				temperatureLog,
@@ -2075,124 +2086,56 @@ public class Exporter {
 	}
 
 	/**
-	 * A function for computing penalised Euclidean spectral distances between two network matrices.
-	 *
-	 * @param mat1 The first network {@link Matrix}.
-	 * @param mat2 The second network {@link Matrix}.
-	 * @param p The penality parameter. The larger the penalty, the smaller the backbone set. Typical values could be
-	 *          {@code 5.5}, {@code 7.5}, or {@code 12}.
-	 * @param candidateBackboneSize The number of elements in the candidate backbone set.
-	 * @param numEntitiesTotal The number of elements in the full set of second-mode entities.
-	 * @return Penalised Euclidean spectral distance of the two matrices.
+	 * TODO:
+	 * - fix inflection problem with GSON export
+	 * - fix outer-class issue with xstream XML export
+	 * - increasing acceptances should be decreasing
+	 * - move GUI to separate class with its own combo boxes
+	 * - create R headless functions for network export and backbone
+	 * - clean up gradle imports
+	 * - display graphical progress bar
+	 * - add javadoc where necessary
 	 */
-	private double loss(Matrix mat1, Matrix mat2, double p, double candidateBackboneSize, double numEntitiesTotal) {
-		// compute the row sums for the two matrices
-		/*
-		double[][] m1 = mat1.getMatrix();
-		double[][] m2 = mat2.getMatrix();
-		double[] rowSums1 = new double[m1.length];
-		double[] rowSums2 = new double[m2.length];
-		for (int i = 0; i < m1.length; i++) {
-			for (int j = 0; j < m1[0].length; j++) {
-				rowSums1[i] = rowSums1[i] + m1[i][j];
-				rowSums2[i] = rowSums2[i] + m2[i][j];
-			}
-		}
-		*/
 
-		/*
-		double[] rowSums1 = Arrays.stream(mat1.getMatrix()) // source
-				.mapToDouble(arr -> DoubleStream.of(arr).sum()) // sum inner array
-				.toArray(); // back to double[]
-		double[] rowSums2 = Arrays.stream(mat2.getMatrix()) // source
-				.mapToDouble(arr -> DoubleStream.of(arr).sum()) // sum inner array
-				.toArray(); // back to double[]
-		*/
+	/**
+	 * Use tools from the {@code ojalgo} library to compute eigenvalues of a symmetric matrix.
+	 *
+	 * @param matrix The matrix as a two-dimensional double array.
+	 * @return One-dimensional double array of eigenvalues.
+	 */
+	private double[] computeNormalizedEigenvalues(double[][] matrix) {
+		Primitive64Matrix matrixPrimitive = Primitive64Matrix.FACTORY.rows(matrix); // create matrix
+		DenseArray<Double> rowSums = Primitive64Array.FACTORY.make(matrix.length); // container for row sums
+		matrixPrimitive.reduceRows(Aggregator.SUM, rowSums); // populate row sums into rowSums
+		Primitive64Matrix.SparseReceiver sr = Primitive64Matrix.FACTORY.makeSparse(matrix.length, matrix.length); // container for degree matrix
+		sr.fillDiagonal(rowSums); // put row sums onto diagonal
+		Primitive64Matrix laplacian = sr.get(); // put row sum container into a new degree matrix (the future Laplacian matrix)
+		laplacian.subtract(matrixPrimitive); // subtract adjacency matrix from degree matrix to create Laplacian matrix
+		Eigenvalue<Double> eig = Eigenvalue.PRIMITIVE.make(laplacian); // eigenvalues
+		eig.decompose(laplacian); // decomposition
+		double[] eigenvalues = eig.getEigenvalues().toRawCopy1D(); // extract eigenvalues and convert to double[]
+		double eigenvaluesSum = Arrays.stream(eigenvalues).sum(); // compute sum of eigenvalues
+		eigenvalues = DoubleStream.of(eigenvalues).map(v -> v / eigenvaluesSum).toArray(); // normalise/scale to one
+		return eigenvalues;
+	}
 
-		// compute the Laplacian matrices by subtracting the network matrix from a diagonal degree matrix
-		/*
-		double[][] laplacianMatrix1 = new double[m1.length][m1[0].length];
-		double[][] laplacianMatrix2 = new double[m2.length][m2[0].length];
-		for (int i = 0; i < laplacianMatrix1.length; i++) {
-			for (int j = 0; j < laplacianMatrix1[0].length; j++) {
-				if (i == j) {
-					laplacianMatrix1[i][j] = rowSums1[i] - m1[i][j];
-					laplacianMatrix2[i][j] = rowSums2[i] - m2[i][j];
-				} else {
-					laplacianMatrix1[i][j] = 0.0 - m1[i][j];
-					laplacianMatrix2[i][j] = 0.0 - m2[i][j];
-				}
-			}
-		}
-		*/
-
-		// matrix 1
-		Primitive64Matrix m1sparse = Primitive64Matrix.FACTORY.rows(mat1.getMatrix()); // create matrix 1
-		DenseArray<Double> r1 = Primitive64Array.FACTORY.make(mat1.getMatrix().length); // container for row sums
-		m1sparse.reduceRows(Aggregator.SUM, r1); // populate row sums into r1
-
-		Primitive64Matrix.SparseReceiver sparseReceiver1 = Primitive64Matrix.FACTORY.makeSparse(mat1.getMatrix().length, mat1.getMatrix()[0].length); // container for degree matrix
-		sparseReceiver1.fillDiagonal(r1); // put row sums onto diagonal
-		Primitive64Matrix L1 = sparseReceiver1.get(); // put row sum container into a new degree matrix (the future Laplacian matrix)
-
-		L1.subtract(m1sparse); // subtract adjacency matrix from degree matrix to create Laplacian matrix
-
-		Eigenvalue<Double> eig1 = Eigenvalue.PRIMITIVE.make(L1); // eigenvalues
-		eig1.decompose(L1); // decomposition
-		double[] eigenvalues1 = eig1.getEigenvalues().toRawCopy1D(); // extract eigenvalues and convert to double[]
-
-		// matrix 2
-		Primitive64Matrix m2sparse = Primitive64Matrix.FACTORY.rows(mat2.getMatrix()); // create matrix 2
-		DenseArray<Double> r2 = Primitive64Array.FACTORY.make(mat2.getMatrix().length); // container for row sums
-		m2sparse.reduceRows(Aggregator.SUM, r2); // populate row sums into r2
-
-		Primitive64Matrix.SparseReceiver sparseReceiver2 = Primitive64Matrix.FACTORY.makeSparse(mat2.getMatrix().length, mat2.getMatrix()[0].length); // container for degree matrix
-		sparseReceiver2.fillDiagonal(r2); // put row sums onto diagonal
-		Primitive64Matrix L2 = sparseReceiver2.get(); // put row sum container into a new degree matrix (the future Laplacian matrix)
-
-		L2.subtract(m2sparse); // subtract adjacency matrix from degree matrix to create Laplacian matrix
-
-		Eigenvalue<Double> eig2 = Eigenvalue.PRIMITIVE.make(L2); // eigenvalues
-		eig2.decompose(L2); // decomposition
-		double[] eigenvalues2 = eig2.getEigenvalues().toRawCopy1D(); // extract eigenvalues and convert to double[]
-
-		// ojalgo eigenvalues (old attempt)
-		/*
-		Primitive64Store lp1 = Primitive64Store.FACTORY.rows(laplacianMatrix1);
-		Eigenvalue<Double> eig1 = Eigenvalue.PRIMITIVE.make(lp1);
-		eig1.decompose(lp1);
-		double[] eigenvalues1 = eig1.getEigenvalues().toRawCopy1D();
-		Primitive64Store lp2 = Primitive64Store.FACTORY.rows(laplacianMatrix2);
-		Eigenvalue<Double> eig2 = Eigenvalue.PRIMITIVE.make(lp2);
-		eig2.decompose(lp2);
-		double[] eigenvalues2 = eig2.getEigenvalues().toRawCopy1D();
-		*/
-
-		// Jama library to compute eigenvalues of the Laplacian matrices (seems to compute something but is slow)
-		/*
-		Jama.Matrix lm1 = new Jama.Matrix(laplacianMatrix1);
-		EigenvalueDecomposition evd1 = new EigenvalueDecomposition(lm1);
-		double[] eigenvalues1 = evd1.getRealEigenvalues();
-		Jama.Matrix lm2 = new Jama.Matrix(laplacianMatrix2);
-		EigenvalueDecomposition evd2 = new EigenvalueDecomposition(lm2);
-		double[] eigenvalues2 = evd2.getRealEigenvalues();
-		*/
-
-		// normalise eigenvalues by scaling them to 1.0
-		double eigenSum1 = Arrays.stream(eigenvalues1).sum();
-		double eigenSum2 = Arrays.stream(eigenvalues2).sum();
-		eigenvalues1 = DoubleStream.of(eigenvalues1).map(v -> v / eigenSum1).toArray();
-		eigenvalues2 = DoubleStream.of(eigenvalues2).map(v -> v / eigenSum2).toArray();
-
-		// compute Euclidean spectral distance
-		double distance = 0.0;
+	/**
+	 * Compute penalized Euclidean spectral distance.
+	 *
+	 * @param eigenvalues1 Normalised eigenvalues of the full matrix.
+	 * @param eigenvalues2 Normalised eigenvalues of the current or candidate matrix.
+	 * @param p The penalty parameter. Typical values could be {@code 5.5}, {@code 7.5}, or {@code 12}, for example.
+	 * @param candidateBackboneSize The number of entities in the current or candidate backbone.
+	 * @param numEntitiesTotal The number of second-mode entities (e.g., concepts) in total.
+	 * @return Penalized loss.
+	 */
+	private double penalizedLoss(double[] eigenvalues1, double[] eigenvalues2, double p, int candidateBackboneSize, int numEntitiesTotal) {
+		double distance = 0.0; // Euclidean spectral distance
 		for (int i = 0; i < eigenvalues1.length; i++) {
 			distance = distance + Math.sqrt((eigenvalues1[i] - eigenvalues2[i]) * (eigenvalues1[i] - eigenvalues2[i]));
 		}
-
-		// compute penalty factor and return penalised distance
-		double penalty = Math.exp((-p) * (candidateBackboneSize / numEntitiesTotal));
-		return distance * penalty;
+		double penalty = Math.exp((-p) * (candidateBackboneSize / numEntitiesTotal)); // compute penalty factor
+		return distance * penalty; // return penalised distance
 	}
 
 	/**
@@ -2204,10 +2147,15 @@ public class Exporter {
 	public void writeBackboneToFile(String filename) throws IOException {
 		File file = new File(filename);
 		String s = "";
-		if (filename.toLowerCase().endsWith("xml")) {
-			XStream xstream = new XStream();
-			s = xstream.toXML(this.backboneResult);
-		} else if (filename.toLowerCase().endsWith("json")) {
+		if (filename.toLowerCase().endsWith(".xml")) {
+			XStream xstream = new XStream(new StaxDriver());
+			xstream.processAnnotations(BackboneResult.class);
+			StringWriter stringWriter = new StringWriter();
+			xstream.marshal(this.backboneResult, new PrettyPrintWriter(stringWriter));
+			s = stringWriter.toString();
+			//XStream xstream = new XStream();
+			//s = xstream.toXML(this.backboneResult);
+		} else if (filename.toLowerCase().endsWith(".json")) {
 			Gson prettyGson = new GsonBuilder()
 					.setPrettyPrinting()
 					.serializeNulls()
@@ -2234,7 +2182,8 @@ public class Exporter {
 	/**
 	 * Class representing backbone results.
 	 */
-	public class BackboneResult {
+	public static class BackboneResult implements Serializable {
+		private static final long serialVersionUID = -2275971337294798275L;
 		private ArrayList<String> backboneEntities;
 		private ArrayList<String> redundantEntities;
 		private double unpenalisedBackboneLoss;
@@ -2245,15 +2194,31 @@ public class Exporter {
 		private ArrayList<Double> acceptanceProbability;
 		private ArrayList<Integer> acceptance;
 		private ArrayList<Double> penalisedBackboneLoss;
-		private ArrayList<Integer> penalisedCandidateLoss;
-		private ArrayList<Integer> penalisedCurrentLoss;
+		private ArrayList<Integer> proposedBackboneSize;
+		private ArrayList<Integer> currentBackboneSize;
 		private ArrayList<Integer> optimalBackboneSize;
 		private ArrayList<Double> acceptanceRatioMovingAverage;
 		private Matrix fullNetwork;
 		private Matrix backboneNetwork;
 		private Matrix redundantNetwork;
 
-		public BackboneResult(ArrayList<String> backboneEntities, ArrayList<String> redundantEntities, double unpenalisedBackboneLoss, double unpenalisedRedundantLoss, double penalty, int iterations, ArrayList<Double> temperature, ArrayList<Double> acceptanceProbability, ArrayList<Integer> acceptance, ArrayList<Double> penalisedBackboneLoss, ArrayList<Integer> penalisedCandidateLoss, ArrayList<Integer> penalisedCurrentLoss, ArrayList<Integer> optimalBackboneSize, ArrayList<Double> acceptanceRatioMovingAverage, Matrix fullNetwork, Matrix backboneNetwork, Matrix redundantNetwork) {
+		public BackboneResult(ArrayList<String> backboneEntities,
+							  ArrayList<String> redundantEntities,
+							  double unpenalisedBackboneLoss,
+							  double unpenalisedRedundantLoss,
+							  double penalty,
+							  int iterations,
+							  ArrayList<Double> temperature,
+							  ArrayList<Double> acceptanceProbability,
+							  ArrayList<Integer> acceptance,
+							  ArrayList<Double> penalisedBackboneLoss,
+							  ArrayList<Integer> proposedBackboneSize,
+							  ArrayList<Integer> currentBackboneSize,
+							  ArrayList<Integer> optimalBackboneSize,
+							  ArrayList<Double> acceptanceRatioMovingAverage,
+							  Matrix fullNetwork,
+							  Matrix backboneNetwork,
+							  Matrix redundantNetwork) {
 			this.backboneEntities = backboneEntities;
 			this.redundantEntities = redundantEntities;
 			this.unpenalisedBackboneLoss = unpenalisedBackboneLoss;
@@ -2264,8 +2229,8 @@ public class Exporter {
 			this.acceptanceProbability = acceptanceProbability;
 			this.acceptance = acceptance;
 			this.penalisedBackboneLoss = penalisedBackboneLoss;
-			this.penalisedCandidateLoss = penalisedCandidateLoss;
-			this.penalisedCurrentLoss = penalisedCurrentLoss;
+			this.proposedBackboneSize = proposedBackboneSize;
+			this.currentBackboneSize = currentBackboneSize;
 			this.optimalBackboneSize = optimalBackboneSize;
 			this.acceptanceRatioMovingAverage = acceptanceRatioMovingAverage;
 			this.fullNetwork = fullNetwork;
@@ -2353,20 +2318,20 @@ public class Exporter {
 			this.penalisedBackboneLoss = penalisedBackboneLoss;
 		}
 
-		public ArrayList<Integer> getPenalisedCandidateLoss() {
-			return penalisedCandidateLoss;
+		public ArrayList<Integer> getProposedBackboneSize() {
+			return proposedBackboneSize;
 		}
 
-		public void setPenalisedCandidateLoss(ArrayList<Integer> penalisedCandidateLoss) {
-			this.penalisedCandidateLoss = penalisedCandidateLoss;
+		public void setProposedBackboneSize(ArrayList<Integer> proposedBackboneSize) {
+			this.proposedBackboneSize = proposedBackboneSize;
 		}
 
-		public ArrayList<Integer> getPenalisedCurrentLoss() {
-			return penalisedCurrentLoss;
+		public ArrayList<Integer> getCurrentBackboneSize() {
+			return currentBackboneSize;
 		}
 
-		public void setPenalisedCurrentLoss(ArrayList<Integer> penalisedCurrentLoss) {
-			this.penalisedCurrentLoss = penalisedCurrentLoss;
+		public void setCurrentBackboneSize(ArrayList<Integer> currentBackboneSize) {
+			this.currentBackboneSize = currentBackboneSize;
 		}
 
 		public ArrayList<Integer> getOptimalBackboneSize() {
