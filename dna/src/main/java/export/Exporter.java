@@ -1942,7 +1942,7 @@ public class Exporter {
 		ArrayList<Double> temperatureLog = new ArrayList<Double>();
 		ArrayList<Double> acceptanceProbabilityLog = new ArrayList<Double>();
 		ArrayList<Integer> acceptedLog = new ArrayList<Integer>();
-		ArrayList<Double> penalisedBackboneLossLog = new ArrayList<Double>();
+		ArrayList<Double> penalizedBackboneLossLog = new ArrayList<Double>();
 		ArrayList<Integer> proposedBackboneSizeLog = new ArrayList<Integer>();
 		ArrayList<Integer> acceptedBackboneSizeLog = new ArrayList<Integer>();
 		ArrayList<Integer> finalBackboneSizeLog = new ArrayList<Integer>();
@@ -2009,7 +2009,7 @@ public class Exporter {
 				eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
 				oldLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCurrent, p, currentBackboneList.size(), fullConcepts.length); // spectral distance between full and previous matrix
 				newLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, candidateBackboneList.size(), fullConcepts.length); // spectral distance between full and candidate matrix
-				penalisedBackboneLossLog.add(newLoss); // log the penalised spectral distance between full and candidate solution
+				penalizedBackboneLossLog.add(newLoss); // log the penalised spectral distance between full and candidate solution
 				accept = false;
 				if (newLoss < oldLoss) { // if candidate is better than previous matrix, adopt it as current solution
 					accept = true; // flag this solution for acceptance
@@ -2075,26 +2075,23 @@ public class Exporter {
 				temperatureLog,
 				acceptanceProbabilityLog,
 				acceptedLog,
-				penalisedBackboneLossLog,
+				penalizedBackboneLossLog,
 				proposedBackboneSizeLog,
 				acceptedBackboneSizeLog,
 				finalBackboneSizeLog,
 				acceptanceRatioLastHundredIterationsLog,
-				fullMatrix,
-				currentMatrix,
-				redundantMatrix);
+				fullMatrix.getMatrix(),
+				currentMatrix.getMatrix(),
+				redundantMatrix.getMatrix(),
+				fullMatrix.getRownames());
 	}
 
 	/**
 	 * TODO:
-	 * - fix inflection problem with GSON export
-	 * - fix outer-class issue with xstream XML export
 	 * - increasing acceptances should be decreasing
 	 * - move GUI to separate class with its own combo boxes
 	 * - create R headless functions for network export and backbone
-	 * - clean up gradle imports
 	 * - display graphical progress bar
-	 * - add javadoc where necessary
 	 */
 
 	/**
@@ -2115,15 +2112,17 @@ public class Exporter {
 		eig.decompose(laplacian); // decomposition
 		double[] eigenvalues = eig.getEigenvalues().toRawCopy1D(); // extract eigenvalues and convert to double[]
 		double eigenvaluesSum = Arrays.stream(eigenvalues).sum(); // compute sum of eigenvalues
-		eigenvalues = DoubleStream.of(eigenvalues).map(v -> v / eigenvaluesSum).toArray(); // normalise/scale to one
+		if (eigenvaluesSum > 0.0) {
+			eigenvalues = DoubleStream.of(eigenvalues).map(v -> v / eigenvaluesSum).toArray(); // normalise/scale to one
+		}
 		return eigenvalues;
 	}
 
 	/**
 	 * Compute penalized Euclidean spectral distance.
 	 *
-	 * @param eigenvalues1 Normalised eigenvalues of the full matrix.
-	 * @param eigenvalues2 Normalised eigenvalues of the current or candidate matrix.
+	 * @param eigenvalues1 Normalized eigenvalues of the full matrix.
+	 * @param eigenvalues2 Normalized eigenvalues of the current or candidate matrix.
 	 * @param p The penalty parameter. Typical values could be {@code 5.5}, {@code 7.5}, or {@code 12}, for example.
 	 * @param candidateBackboneSize The number of entities in the current or candidate backbone.
 	 * @param numEntitiesTotal The number of second-mode entities (e.g., concepts) in total.
@@ -2147,14 +2146,29 @@ public class Exporter {
 	public void writeBackboneToFile(String filename) throws IOException {
 		File file = new File(filename);
 		String s = "";
+
+		/*
+		for (int i = 0; i < this.backboneResult.getFullNetwork().length; i++) {
+			for (int j = 0; j < this.backboneResult.getFullNetwork().length; j++) {
+				if (this.backboneResult.getFullNetwork()[i][j] != this.backboneResult.getFullNetwork()[i][j]) {
+					System.out.println("NaN in full network: " + i + " " + j + ".");
+				}
+				if (this.backboneResult.getBackboneNetwork()[i][j] != this.backboneResult.getBackboneNetwork()[i][j]) {
+					System.out.println("NaN in backbone network: " + i + " " + j + ".");
+				}
+				if (this.backboneResult.getRedundantNetwork()[i][j] != this.backboneResult.getRedundantNetwork()[i][j]) {
+					System.out.println("NaN in redundant network: " + i + " " + j + ".");
+				}
+			}
+		}
+		*/
+
 		if (filename.toLowerCase().endsWith(".xml")) {
 			XStream xstream = new XStream(new StaxDriver());
 			xstream.processAnnotations(BackboneResult.class);
 			StringWriter stringWriter = new StringWriter();
 			xstream.marshal(this.backboneResult, new PrettyPrintWriter(stringWriter));
 			s = stringWriter.toString();
-			//XStream xstream = new XStream();
-			//s = xstream.toXML(this.backboneResult);
 		} else if (filename.toLowerCase().endsWith(".json")) {
 			Gson prettyGson = new GsonBuilder()
 					.setPrettyPrinting()
@@ -2176,202 +2190,6 @@ public class Exporter {
 					exception);
 			Dna.logger.log(l);
 			throw exception;
-		}
-	}
-
-	/**
-	 * Class representing backbone results.
-	 */
-	public static class BackboneResult implements Serializable {
-		private static final long serialVersionUID = -2275971337294798275L;
-		private ArrayList<String> backboneEntities;
-		private ArrayList<String> redundantEntities;
-		private double unpenalisedBackboneLoss;
-		private double unpenalisedRedundantLoss;
-		private double penalty;
-		private int iterations;
-		private ArrayList<Double> temperature;
-		private ArrayList<Double> acceptanceProbability;
-		private ArrayList<Integer> acceptance;
-		private ArrayList<Double> penalisedBackboneLoss;
-		private ArrayList<Integer> proposedBackboneSize;
-		private ArrayList<Integer> currentBackboneSize;
-		private ArrayList<Integer> optimalBackboneSize;
-		private ArrayList<Double> acceptanceRatioMovingAverage;
-		private Matrix fullNetwork;
-		private Matrix backboneNetwork;
-		private Matrix redundantNetwork;
-
-		public BackboneResult(ArrayList<String> backboneEntities,
-							  ArrayList<String> redundantEntities,
-							  double unpenalisedBackboneLoss,
-							  double unpenalisedRedundantLoss,
-							  double penalty,
-							  int iterations,
-							  ArrayList<Double> temperature,
-							  ArrayList<Double> acceptanceProbability,
-							  ArrayList<Integer> acceptance,
-							  ArrayList<Double> penalisedBackboneLoss,
-							  ArrayList<Integer> proposedBackboneSize,
-							  ArrayList<Integer> currentBackboneSize,
-							  ArrayList<Integer> optimalBackboneSize,
-							  ArrayList<Double> acceptanceRatioMovingAverage,
-							  Matrix fullNetwork,
-							  Matrix backboneNetwork,
-							  Matrix redundantNetwork) {
-			this.backboneEntities = backboneEntities;
-			this.redundantEntities = redundantEntities;
-			this.unpenalisedBackboneLoss = unpenalisedBackboneLoss;
-			this.unpenalisedRedundantLoss = unpenalisedRedundantLoss;
-			this.penalty = penalty;
-			this.iterations = iterations;
-			this.temperature = temperature;
-			this.acceptanceProbability = acceptanceProbability;
-			this.acceptance = acceptance;
-			this.penalisedBackboneLoss = penalisedBackboneLoss;
-			this.proposedBackboneSize = proposedBackboneSize;
-			this.currentBackboneSize = currentBackboneSize;
-			this.optimalBackboneSize = optimalBackboneSize;
-			this.acceptanceRatioMovingAverage = acceptanceRatioMovingAverage;
-			this.fullNetwork = fullNetwork;
-			this.backboneNetwork = backboneNetwork;
-			this.redundantNetwork = redundantNetwork;
-		}
-
-		public ArrayList<String> getBackboneEntities() {
-			return backboneEntities;
-		}
-
-		public void setBackboneEntities(ArrayList<String> backboneEntities) {
-			this.backboneEntities = backboneEntities;
-		}
-
-		public ArrayList<String> getRedundantEntities() {
-			return redundantEntities;
-		}
-
-		public void setRedundantEntities(ArrayList<String> redundantEntities) {
-			this.redundantEntities = redundantEntities;
-		}
-
-		public double getUnpenalisedBackboneLoss() {
-			return unpenalisedBackboneLoss;
-		}
-
-		public void setUnpenalisedBackboneLoss(double unpenalisedBackboneLoss) {
-			this.unpenalisedBackboneLoss = unpenalisedBackboneLoss;
-		}
-
-		public double getUnpenalisedRedundantLoss() {
-			return unpenalisedRedundantLoss;
-		}
-
-		public void setUnpenalisedRedundantLoss(double unpenalisedRedundantLoss) {
-			this.unpenalisedRedundantLoss = unpenalisedRedundantLoss;
-		}
-
-		public double getPenalty() {
-			return penalty;
-		}
-
-		public void setPenalty(double penalty) {
-			this.penalty = penalty;
-		}
-
-		public int getIterations() {
-			return iterations;
-		}
-
-		public void setIterations(int iterations) {
-			this.iterations = iterations;
-		}
-
-		public ArrayList<Double> getTemperature() {
-			return temperature;
-		}
-
-		public void setTemperature(ArrayList<Double> temperature) {
-			this.temperature = temperature;
-		}
-
-		public ArrayList<Double> getAcceptanceProbability() {
-			return acceptanceProbability;
-		}
-
-		public void setAcceptanceProbability(ArrayList<Double> acceptanceProbability) {
-			this.acceptanceProbability = acceptanceProbability;
-		}
-
-		public ArrayList<Integer> getAcceptance() {
-			return acceptance;
-		}
-
-		public void setAcceptance(ArrayList<Integer> acceptance) {
-			this.acceptance = acceptance;
-		}
-
-		public ArrayList<Double> getPenalisedBackboneLoss() {
-			return penalisedBackboneLoss;
-		}
-
-		public void setPenalisedBackboneLoss(ArrayList<Double> penalisedBackboneLoss) {
-			this.penalisedBackboneLoss = penalisedBackboneLoss;
-		}
-
-		public ArrayList<Integer> getProposedBackboneSize() {
-			return proposedBackboneSize;
-		}
-
-		public void setProposedBackboneSize(ArrayList<Integer> proposedBackboneSize) {
-			this.proposedBackboneSize = proposedBackboneSize;
-		}
-
-		public ArrayList<Integer> getCurrentBackboneSize() {
-			return currentBackboneSize;
-		}
-
-		public void setCurrentBackboneSize(ArrayList<Integer> currentBackboneSize) {
-			this.currentBackboneSize = currentBackboneSize;
-		}
-
-		public ArrayList<Integer> getOptimalBackboneSize() {
-			return optimalBackboneSize;
-		}
-
-		public void setOptimalBackboneSize(ArrayList<Integer> optimalBackboneSize) {
-			this.optimalBackboneSize = optimalBackboneSize;
-		}
-
-		public ArrayList<Double> getAcceptanceRatioMovingAverage() {
-			return acceptanceRatioMovingAverage;
-		}
-
-		public void setAcceptanceRatioMovingAverage(ArrayList<Double> acceptanceRatioMovingAverage) {
-			this.acceptanceRatioMovingAverage = acceptanceRatioMovingAverage;
-		}
-
-		public Matrix getFullNetwork() {
-			return fullNetwork;
-		}
-
-		public void setFullNetwork(Matrix fullNetwork) {
-			this.fullNetwork = fullNetwork;
-		}
-
-		public Matrix getBackboneNetwork() {
-			return backboneNetwork;
-		}
-
-		public void setBackboneNetwork(Matrix backboneNetwork) {
-			this.backboneNetwork = backboneNetwork;
-		}
-
-		public Matrix getRedundantNetwork() {
-			return redundantNetwork;
-		}
-
-		public void setRedundantNetwork(Matrix redundantNetwork) {
-			this.redundantNetwork = redundantNetwork;
 		}
 	}
 }
