@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Stream;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -219,8 +218,8 @@ public class NetworkExporter extends JDialog {
 		statementTypeBox.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent e) {
 				StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
-				String[] varItems = NetworkExporter.this.getVariablesList(selected, false, true, false, false);
-				String[] qualifierItems = NetworkExporter.this.getVariablesList(selected, false, false, true, true);
+				String[] varItems = selected.getVariablesList(false, true, false, false);
+				String[] qualifierItems = selected.getVariablesList(false, false, true, true);
 				var1Box.removeAllItems();
 				var2Box.removeAllItems();
 				qualifierBox.removeAllItems();
@@ -326,7 +325,7 @@ public class NetworkExporter extends JDialog {
 		gbc.insets = new java.awt.Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 3;
-		String[] varItems = NetworkExporter.this.getVariablesList((StatementType) statementTypeBox.getSelectedItem(), false, true, false, false);
+		String[] varItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, true, false, false);
 		var1Box = new JComboBox<String>(varItems);
 		var1Box.setToolTipText(var1ToolTip);
 		var1Box.setSelectedIndex(0);
@@ -358,7 +357,7 @@ public class NetworkExporter extends JDialog {
 		var2Box.addActionListener(varActionListener);
 		
 		gbc.gridx = 2;
-		String[] qualifierItems = getVariablesList((StatementType) statementTypeBox.getSelectedItem(), false, false, true, true);
+		String[] qualifierItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, false, true, true);
 		qualifierBox = new JComboBox<>(qualifierItems);
 		qualifierBox.setToolTipText(qualifierToolTip);
 		settingsPanel.add(qualifierBox, gbc);
@@ -867,7 +866,7 @@ public class NetworkExporter extends JDialog {
 				networkModesBox.setSelectedIndex(0);
 				int statementTypeIndex = -1;
 				for (int i = 0; i < NetworkExporter.this.statementTypes.length; i++) {
-					String[] vars = NetworkExporter.this.getVariablesList(NetworkExporter.this.statementTypes[i], false, true, false, false);
+					String[] vars = NetworkExporter.this.statementTypes[i].getVariablesList(false, true, false, false);
 					if (vars.length > 1) {
 						statementTypeIndex = i;
 						break;
@@ -1059,7 +1058,7 @@ public class NetworkExporter extends JDialog {
 	public void populateExcludeVariableList() {
 		excludeValues.clear();
 		StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
-		String[] excludeVariableItems = getVariablesList(selected, true, true, true, true);
+		String[] excludeVariableItems = selected.getVariablesList(true, true, true, true);
 		DefaultListModel<String> excludeVariableModel = new DefaultListModel<String>();
 		for (int i = 0; i < excludeVariableItems.length - 6; i++) {
 			excludeVariableModel.addElement(excludeVariableItems[i]);
@@ -1085,39 +1084,7 @@ public class NetworkExporter extends JDialog {
 			javax.swing.ToolTipManager.sharedInstance().setDismissDelay(0);
 		}
 	}
-	
-	/**
-	 * Returns a String array with the variables of the {@link StatementType} selected to fill a {@link JComboBox}.
-	 * 
-	 * @param longtext	boolean indicating whether long text variables should be included.
-	 * @param shorttext	boolean indicating whether short text variables should be included.
-	 * @param integer	boolean indicating whether integer variables should be included.
-	 * @param bool		boolean indicating whether boolean variables should be included.
-	 * @return			{@link String[]} with variables of the statementType selected.
-	 */
-	String[] getVariablesList(StatementType statementType, boolean longtext, boolean shorttext, boolean integer, boolean bool) {
-		ArrayList<String> documentVariables = new ArrayList<String>();
-		if (shorttext) {
-			documentVariables.add("author");
-			documentVariables.add("source");
-			documentVariables.add("section");
-			documentVariables.add("type");
-			documentVariables.add("id");
-			documentVariables.add("title");
-		}
-		String[] variables = Stream.concat(
-				statementType.getVariables()
-				.stream()
-				.filter(v -> (shorttext && v.getDataType().equals("short text")) ||
-						(longtext && v.getDataType().equals("short text")) ||
-						(integer && v.getDataType().equals("integer")) ||
-						(bool && v.getDataType().equals("boolean")))
-				.map(v -> v.getKey()),
-				documentVariables.stream())
-				.toArray(String[]::new);
-		return variables;
-	}
-	
+
 	/**
 	 * GUI export thread. This is where the computations are executed and the
 	 * data are written to a file. 
@@ -1226,46 +1193,6 @@ public class NetworkExporter extends JDialog {
 			exporter.exportToFile();
 			progressMonitor.setProgress(4);
 			JOptionPane.showMessageDialog(NetworkExporter.this, "Data were exported to \"" + fileName + "\".");
-		}
-	}
-	
-	/**
-	 * Combo box renderer for statement types.
-	 */
-	private class StatementTypeComboBoxRenderer implements ListCellRenderer<Object> {
-		@Override
-		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-			if (value == null) {
-				JPanel panel = new JPanel();
-				JLabel label = new JLabel("");
-				panel.add(label);
-				return panel;
-			} else {
-				StatementType statementType = (StatementType) value;
-				@SuppressWarnings("serial")
-				JButton colorRectangle = (new JButton() {
-					public void paintComponent(Graphics g) {
-						super.paintComponent(g);
-						g.setColor(statementType.getColor());
-						g.fillRect(2, 2, 14, 14);
-					}
-				});
-				colorRectangle.setPreferredSize(new Dimension(14, 14));
-				colorRectangle.setEnabled(false);
-				
-				JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-				panel.add(colorRectangle);
-				JLabel statementTypeLabel = new JLabel(statementType.getLabel());
-				panel.add(statementTypeLabel);
-				
-				if (isSelected) {
-					UIDefaults defaults = javax.swing.UIManager.getDefaults();
-					Color bg = defaults.getColor("List.selectionBackground");
-					panel.setBackground(bg);
-				}
-				
-				return panel;
-			}
 		}
 	}
 

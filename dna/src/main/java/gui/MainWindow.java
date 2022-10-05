@@ -16,6 +16,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -114,6 +115,7 @@ public class MainWindow extends JFrame {
 	private ActionStatementTypeEditor actionStatementTypeEditor;
 	private ActionAttributeManager actionAttributeManager;
 	private ActionNetworkExporter actionNetworkExporter;
+	private ActionBackboneExporter actionBackboneExporter;
 	private ActionCoderRelationsEditor actionCoderRelationsEditor;
 	private ActionLoggerDialog actionLoggerDialog;
 	private ActionAboutWindow actionAboutWindow;
@@ -272,6 +274,10 @@ public class MainWindow extends JFrame {
 		actionNetworkExporter = new ActionNetworkExporter("Open network export dialog", networkExporterIcon, "Open a network export dialog window.", KeyEvent.VK_N);
 		actionNetworkExporter.setEnabled(false);
 
+		ImageIcon backboneExporterIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-arrows-split.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		actionBackboneExporter = new ActionBackboneExporter("Backbone and redundant concepts", backboneExporterIcon, "Open a backbone and redundant set export dialog window.", KeyEvent.VK_B);
+		actionBackboneExporter.setEnabled(false);
+
 		ImageIcon coderRelationsEditorIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-user-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionCoderRelationsEditor = new ActionCoderRelationsEditor("Edit coder relations", coderRelationsEditorIcon, "Open the coder relations editor define whose documents and statements you can view and edit.", KeyEvent.VK_R);
 		actionCoderRelationsEditor.setEnabled(false);
@@ -317,6 +323,7 @@ public class MainWindow extends JFrame {
 				actionStatementTypeEditor,
 				actionAttributeManager,
 				actionNetworkExporter,
+				actionBackboneExporter,
 				actionCoderRelationsEditor,
 				actionLoggerDialog,
 				actionAboutWindow);
@@ -774,9 +781,7 @@ public class MainWindow extends JFrame {
 	 * @param x           X location on the screen.
 	 * @param y           Y location on the screen.
 	 * @param s           The statement to show.
-	 * @param documentId  The document ID for the statement.
 	 * @param location    The location of the popup window.
-	 * @param coder       The active coder.
 	 */
 	private void newPopup(double x, double y, Statement s, Point location) {
 		
@@ -1488,7 +1493,7 @@ public class MainWindow extends JFrame {
 	}
 	
 	/**
-	 * React to changes in the active coder in the {@link dna.Sql Sql} class.
+	 * React to changes in the active coder in the {@link Sql} class.
 	 */
 	public void adjustToCoderSelection() {
 		actionCloseDatabase.setEnabled(true);
@@ -1531,8 +1536,10 @@ public class MainWindow extends JFrame {
 		}
 		if (Dna.sql.getConnectionProfile() != null) {
 			actionNetworkExporter.setEnabled(true);
+			actionBackboneExporter.setEnabled(true);
 		} else {
 			actionNetworkExporter.setEnabled(false);
+			actionBackboneExporter.setEnabled(false);
 		}
 	}
 	
@@ -2468,6 +2475,27 @@ public class MainWindow extends JFrame {
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: opened network export dialog window.",
 					"Opened a network export dialog window from the GUI.");
+			Dna.logger.log(l);
+		}
+	}
+
+	/**
+	 * An action to display a backbone exporter dialog window.
+	 */
+	class ActionBackboneExporter extends AbstractAction {
+		private static final long serialVersionUID = -19624358765966754L;
+
+		public ActionBackboneExporter(String text, ImageIcon icon, String desc, Integer mnemonic) {
+			super(text, icon);
+			putValue(SHORT_DESCRIPTION, desc);
+			putValue(MNEMONIC_KEY, mnemonic);
+		}
+
+		public void actionPerformed(ActionEvent e) {
+			new BackboneExporter(MainWindow.this);
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[GUI] Action executed: opened backbone dialog window.",
+					"Opened a backbone dialog window from the GUI.");
 			Dna.logger.log(l);
 		}
 	}

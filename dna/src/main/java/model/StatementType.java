@@ -1,7 +1,9 @@
 package model;
 
+import javax.swing.*;
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.stream.Stream;
 
 /**
  * Represents a statement type.
@@ -111,7 +113,40 @@ public class StatementType {
 	public ArrayList<Value> getVariables() {
 		return variables;
 	}
-	
+
+	/**
+	 * Returns a String array with the variable names corresponding to specific data types, including document-level
+	 * variables not specified directly in the statement type.
+	 *
+	 * @param longtext	boolean indicating whether long text variables should be included.
+	 * @param shorttext	boolean indicating whether short text variables should be included.
+	 * @param integer	boolean indicating whether integer variables should be included.
+	 * @param bool		boolean indicating whether boolean variables should be included.
+	 * @return			{@link String[]} with variables of the statement type.
+	 */
+	public String[] getVariablesList(boolean longtext, boolean shorttext, boolean integer, boolean bool) {
+		ArrayList<String> documentVariables = new ArrayList<String>();
+		if (shorttext) {
+			documentVariables.add("author");
+			documentVariables.add("source");
+			documentVariables.add("section");
+			documentVariables.add("type");
+			documentVariables.add("id");
+			documentVariables.add("title");
+		}
+		String[] variables = Stream.concat(
+						this.getVariables()
+								.stream()
+								.filter(v -> (shorttext && v.getDataType().equals("short text")) ||
+										(longtext && v.getDataType().equals("short text")) ||
+										(integer && v.getDataType().equals("integer")) ||
+										(bool && v.getDataType().equals("boolean")))
+								.map(v -> v.getKey()),
+						documentVariables.stream())
+				.toArray(String[]::new);
+		return variables;
+	}
+
 	/**
 	 * Is this statement type equal to another statement type?
 	 * 

@@ -18,6 +18,7 @@ import dna.Dna;
 import gui.MainWindow.ActionAboutWindow;
 import gui.MainWindow.ActionAddDocument;
 import gui.MainWindow.ActionAttributeManager;
+import gui.MainWindow.ActionBackboneExporter;
 import gui.MainWindow.ActionBatchImportDocuments;
 import gui.MainWindow.ActionCloseDatabase;
 import gui.MainWindow.ActionCoderManager;
@@ -74,6 +75,7 @@ public class MenuBar extends JMenuBar {
 	 * @param actionStatementTypeEditor   Action for editing statement types.
 	 * @param actionAttributeManager      Action for opening attribute manager.
 	 * @param actionNetworkExporter       Action for opening network exporter.
+	 * @param actionBackboneExporter      Action for opening backbone exporter.
 	 * @param actionCoderRelationsEditor  Action for editing coder relations.
 	 * @param actionLoggerDialog          Action for opening logger dialog.
 	 * @param actionAboutWindow           Action for opening DNA About window.
@@ -98,6 +100,7 @@ public class MenuBar extends JMenuBar {
 			ActionStatementTypeEditor actionStatementTypeEditor,
 			ActionAttributeManager actionAttributeManager,
 			ActionNetworkExporter actionNetworkExporter,
+			ActionBackboneExporter actionBackboneExporter,
 			ActionCoderRelationsEditor actionCoderRelationsEditor,
 			ActionLoggerDialog actionLoggerDialog,
 			ActionAboutWindow actionAboutWindow) {
@@ -197,7 +200,11 @@ public class MenuBar extends JMenuBar {
 		// export menu: open network exporter
 		JMenuItem networkExporterItem = new JMenuItem(actionNetworkExporter);
 		exportMenu.add(networkExporterItem);
-		
+
+		// export menu: open backbone exporter
+		JMenuItem backboneExporterItem = new JMenuItem(actionBackboneExporter);
+		exportMenu.add(backboneExporterItem);
+
 		// settings menu
 		JMenu settingsMenu = new JMenu("Settings");
 		this.add(settingsMenu);

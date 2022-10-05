@@ -8,7 +8,6 @@ import com.thoughtworks.xstream.io.xml.StaxDriver;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
-import me.tongfei.progressbar.ProgressBar;
 import model.*;
 import org.jdom.Attribute;
 import org.jdom.Comment;
@@ -16,15 +15,13 @@ import org.jdom.Element;
 import org.jdom.Namespace;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
-import org.ojalgo.array.Array1D;
 import org.ojalgo.array.DenseArray;
 import org.ojalgo.array.Primitive64Array;
+import org.ojalgo.function.UnaryFunction;
 import org.ojalgo.function.aggregator.Aggregator;
+import org.ojalgo.function.constant.PrimitiveMath;
 import org.ojalgo.matrix.Primitive64Matrix;
 import org.ojalgo.matrix.decomposition.Eigenvalue;
-import org.ojalgo.matrix.store.Primitive64Store;
-import org.ojalgo.structure.Access1D;
-import org.ojalgo.structure.Mutate1D;
 
 import java.awt.*;
 import java.io.*;
@@ -61,6 +58,19 @@ public class Exporter {
 	private ArrayList<ExportStatement> filteredStatements;
 	private ArrayList<Matrix> matrixResults;
 	private BackboneResult backboneResult = null;
+
+	// objects for backbone algorithm
+	ArrayList<Double> temperatureLog, acceptanceProbabilityLog, penalizedBackboneLossLog, acceptanceRatioLastHundredIterationsLog;
+	ArrayList<Integer> acceptedLog, proposedBackboneSizeLog, acceptedBackboneSizeLog, finalBackboneSizeLog;
+	String[] fullConcepts;
+	String selectedAction;
+	ArrayList<String> actionList, currentBackboneList, currentRedundantList, candidateBackboneList, candidateRedundantList, finalBackboneList, finalRedundantList;
+	ArrayList<ExportStatement> currentStatementList, candidateStatementList, finalStatementList; // declare candidate statement list at t
+	Matrix fullMatrix, currentMatrix, candidateMatrix, finalMatrix; // candidate matrix at the respective t, Y^{B^*_t}
+	boolean accept;
+	double p, temperature, acceptance, r, oldLoss, newLoss, finalLoss, log;
+	double[] eigenvaluesFull, eigenvaluesCurrent, eigenvaluesCandidate, eigenvaluesFinal;
+	int T, t;
 
 	/**
 	 * <p>Create a new Exporter class instance, holding an array list of export
@@ -1850,212 +1860,238 @@ public class Exporter {
 	}
 
 	/**
+	 * Return filtered statements.
+	 *
+	 * @return Filtered statements.
+	 */
+	public ArrayList<ExportStatement> getFilteredStatements() {
+		return this.filteredStatements;
+	}
+
+	/**
 	 * Partition the discourse network into a backbone and redundant set of second-mode entities using penalised
-	 * spectral distances and simulated annealing.
+	 * spectral distances and simulated annealing. This method prepares the data before the algorithm starts.
 	 *
 	 * @param p Penalty parameter.
 	 * @param T Number of iterations.
 	 */
 	public void backbone(double p, int T) {
+		this.p = p;
+		this.T = T;
 
 		// initial values before iterations start
-		this.loadData();
-		this.filterStatements();
 		this.originalStatements = this.filteredStatements; // to ensure not all isolates are included later
 
 		// full set of concepts C
-		String[] fullConcepts = this.extractLabels(this.filteredStatements, this.variable2, this.variable2Document);
+		fullConcepts = this.extractLabels(this.filteredStatements, this.variable2, this.variable2Document);
 
 		// full network matrix Y against which we compare in every iteration
-		Matrix fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 
 		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
-		double[] eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
+		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
 
 		// pick a random concept c_j from C and save its index
 		int randomConceptIndex = ThreadLocalRandom.current().nextInt(0, fullConcepts.length);
 
 		// final backbone list B, which contains only one random concept initially but will contain the final backbone set in the end
-		ArrayList<String> finalBackboneList = new ArrayList<String>();
+		finalBackboneList = new ArrayList<String>();
 
 		// add the one uniformly sampled concept c_j to the backbone as the initial solution at t = 0: B <- {c_j}
 		finalBackboneList.add(fullConcepts[randomConceptIndex]);
 
 		// final redundant set R, which is initially C without c_j
-		ArrayList<String> finalRedundantList = Arrays
+		finalRedundantList = Arrays
 				.stream(fullConcepts)
 				.filter(c -> !c.equals(fullConcepts[randomConceptIndex]))
 				.collect(Collectors.toCollection(ArrayList::new));
 
 		// final statement list: filter the statement list by only retaining those statements that are in the final backbone set B
-		ArrayList<ExportStatement> finalStatementList = this.filteredStatements
+		finalStatementList = this.filteredStatements
 				.stream()
 				.filter(s -> finalBackboneList.contains(((Entity) s.get(this.variable2)).getValue()))
 				.collect(Collectors.toCollection(ArrayList::new));
 
 		// final matrix based on the initial final backbone set, Y^B, which is initially identical to the previous matrix
-		Matrix finalMatrix = this.computeOneModeMatrix(finalStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		finalMatrix = this.computeOneModeMatrix(finalStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 
 		// create an initial current backbone set B_0, also with the one c_j concept like in B: B_0 <- {c_j}
-		ArrayList<String> currentBackboneList = new ArrayList<String>();
+		currentBackboneList = new ArrayList<String>();
 		currentBackboneList.add(fullConcepts[randomConceptIndex]);
 
 		// create an initial current redundant set R_t, which is C without c_j
-		ArrayList<String> currentRedundantList = Arrays
+		currentRedundantList = Arrays
 				.stream(fullConcepts)
 				.filter(c -> !c.equals(fullConcepts[randomConceptIndex]))
 				.collect(Collectors.toCollection(ArrayList::new));
 
 		// filter the statement list by only retaining those statements that are in the initial current backbone set B_0
-		ArrayList<ExportStatement> currentStatementList = this.filteredStatements
+		currentStatementList = this.filteredStatements
 				.stream()
 				.filter(s -> currentBackboneList.contains(((Entity) s.get(this.variable2)).getValue()))
 				.collect(Collectors.toCollection(ArrayList::new));
 
 		// create initial current matrix at t = 0
-		Matrix currentMatrix = this.computeOneModeMatrix(currentStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		currentMatrix = this.computeOneModeMatrix(currentStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 
 		// initialise (empty) action set S
-		ArrayList<String> actionList = new ArrayList<String>();
+		this.actionList = new ArrayList<String>();
 
 		// initialise selected action s
-		String selectedAction = "";
+		selectedAction = "";
 
 		// initialise the candidate backbone set at t, B^*_t
-		ArrayList<String> candidateBackboneList = new ArrayList<String>();
+		candidateBackboneList = new ArrayList<String>();
 
 		// initialise the candidate redundant set at t, R^*_t
-		ArrayList<String> candidateRedundantList = new ArrayList<String>();
-
-		// declare candidate statement list at t
-		ArrayList<ExportStatement> candidateStatementList;
-
-		// initialise the candidate matrix at the respective t, Y^{B^*_t}
-		Matrix candidateMatrix;
+		candidateRedundantList = new ArrayList<String>();
 
 		// declare loss comparison result variables
-		double oldLoss = 0.0, newLoss = 0.0, finalLoss = 0.0;
-		boolean accept = false;
-		double temperature, acceptance, r;
+		oldLoss = 0.0;
+		newLoss = 0.0;
+		finalLoss = 0.0;
+		accept = false;
 
 		// reporting
-		ArrayList<Double> temperatureLog = new ArrayList<Double>();
-		ArrayList<Double> acceptanceProbabilityLog = new ArrayList<Double>();
-		ArrayList<Integer> acceptedLog = new ArrayList<Integer>();
-		ArrayList<Double> penalizedBackboneLossLog = new ArrayList<Double>();
-		ArrayList<Integer> proposedBackboneSizeLog = new ArrayList<Integer>();
-		ArrayList<Integer> acceptedBackboneSizeLog = new ArrayList<Integer>();
-		ArrayList<Integer> finalBackboneSizeLog = new ArrayList<Integer>();
-		ArrayList<Double> acceptanceRatioLastHundredIterationsLog = new ArrayList<Double>();
-		double log;
+		temperatureLog = new ArrayList<Double>();
+		acceptanceProbabilityLog = new ArrayList<Double>();
+		acceptedLog = new ArrayList<Integer>();
+		penalizedBackboneLossLog = new ArrayList<Double>();
+		proposedBackboneSizeLog = new ArrayList<Integer>();
+		acceptedBackboneSizeLog = new ArrayList<Integer>();
+		finalBackboneSizeLog = new ArrayList<Integer>();
+		acceptanceRatioLastHundredIterationsLog = new ArrayList<Double>();
 
 		// matrix algebra declarations
-		double[] eigenvaluesCurrent = new double[0], eigenvaluesCandidate, eigenvaluesFinal;
+		eigenvaluesCurrent = new double[0];
 
 		// set to first iteration and start simulated annealing
-		int t = 1;
-		try (ProgressBar pb = new ProgressBar("Simulated annealing", T)) {
-			while (t <= T) { // run up to upper bound of iterations T, provided by the user
-				pb.stepTo(t); // adjust progress bar
+		t = 1;
+	}
 
-				// first step: make a random move by adding, removing, or swapping a concept and computing a new candidate
-				actionList.clear(); // clear the set of possible actions and repopulate, depending on solution size
-				if (currentBackboneList.size() < 2) { // if there is only one concept, don't remove it because empty backbones do not work
-					actionList.add("add");
-					actionList.add("swap");
-				} else if (currentBackboneList.size() > fullConcepts.length - 2) { // do not create a backbone with all concepts because it would be useless
-					actionList.add("remove");
-					actionList.add("swap");
-				} else { // everything in between one and |C| - 1 concepts: add all three possible moves to the action set
-					actionList.add("add");
-					actionList.add("remove");
-					actionList.add("swap");
-				}
-				Collections.shuffle(actionList); // randomly re-order the action set...
-				selectedAction = actionList.get(0); // and draw the first action (i.e., pick a random action)
-				candidateBackboneList.clear(); // create a candidate copy of the current backbone list, to be modified
-				candidateBackboneList.addAll(currentBackboneList);
-				candidateRedundantList.clear(); // create a candidate copy of the current redundant list, to be modified
-				candidateRedundantList.addAll(currentRedundantList);
-				if (selectedAction.equals("add")) { // if we add a concept...
-					Collections.shuffle(candidateRedundantList); // randomly re-order the current redundant list...
-					candidateBackboneList.add(candidateRedundantList.get(0)); // add the first concept from the redundant list to the backbone...
-					candidateRedundantList.remove(0); // and delete it in turn from the redundant list
-				} else if (selectedAction.equals("remove")) { // if we remove a concept...
-					Collections.shuffle(candidateBackboneList); // randomly re-order the backbone list to pick a random concept for removal as the first element...
-					candidateRedundantList.add(candidateBackboneList.get(0)); // add the selected concept to the redundant list...
-					candidateBackboneList.remove(0); // and remove it from the backbone list
-				} else if (selectedAction.equals("swap")) { //if we swap out a concept...
-					Collections.shuffle(candidateBackboneList); // re-order the backbone list...
-					Collections.shuffle(candidateRedundantList); // re-order the redundant list...
-					candidateBackboneList.add(candidateRedundantList.get(0)); // add the first (random) redundant concept to the backbone list...
-					candidateRedundantList.remove(0); // then remove it from the redundant list...
-					candidateRedundantList.add(candidateBackboneList.get(0)); // add the first (random) backbone concept to the redundant list...
-					candidateBackboneList.remove(0); // then remove it from the backbone list
-				}
-				proposedBackboneSizeLog.add(candidateBackboneList.size()); // log number of concepts in candidate backbone in the current iteration
-				// after executing the action, filter the statement list based on the candidate backbone set B^*_t in order to create the candidate matrix
-				candidateStatementList = this.filteredStatements
-						.stream()
-						.filter(s -> candidateBackboneList.contains(((Entity) s.get(this.variable2)).getValue()))
-						.collect(Collectors.toCollection(ArrayList::new));
-				// create candidate matrix after filtering the statements based on the action that was executed
-				candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+	/**
+	 * Get the current iteration {@code t} of the simulated annealing algorithm.
+	 *
+	 * @return Current iteration {@code t}.
+	 */
+	public int getCurrentT() {
+		return this.t;
+	}
 
-				// second step: compare loss between full and previous matrix to loss between full and candidate matrix and accept or reject candidate
-				temperature = 1 - (1 / (1 + Math.exp(-(-5 + (12.0 / T) * t)))); // temperature
-				temperatureLog.add(temperature);
-				eigenvaluesCurrent = computeNormalizedEigenvalues(currentMatrix.getMatrix()); // normalised eigenvalues for the current matrix
-				eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
-				oldLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCurrent, p, currentBackboneList.size(), fullConcepts.length); // spectral distance between full and previous matrix
-				newLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, candidateBackboneList.size(), fullConcepts.length); // spectral distance between full and candidate matrix
-				penalizedBackboneLossLog.add(newLoss); // log the penalised spectral distance between full and candidate solution
-				accept = false;
-				if (newLoss < oldLoss) { // if candidate is better than previous matrix, adopt it as current solution
-					accept = true; // flag this solution for acceptance
-					acceptanceProbabilityLog.add(1.0); // log the acceptance probability as 1.0 because the solution was better than before
-					eigenvaluesFinal = computeNormalizedEigenvalues(currentMatrix.getMatrix()); // normalised eigenvalues for the current matrix
-					finalLoss = penalizedLoss(eigenvaluesFull, eigenvaluesFinal, p, finalBackboneList.size(), fullConcepts.length); // test if also better than global optimum so far
-					if (newLoss <= finalLoss) { // if better than the best solution, adopt candidate as new final backbone solution
-						finalBackboneList.clear(); // clear the best solution list
-						finalBackboneList.addAll(candidateBackboneList); // and populate it with the concepts from the candidate solution instead
-						finalRedundantList.clear(); // same with the redundant list
-						finalRedundantList.addAll(candidateRedundantList);
-						finalStatementList.clear(); // same with the final list of statements
-						finalStatementList.addAll(candidateStatementList);
-						finalMatrix = new Matrix(candidateMatrix); // save the candidate matrix as best solution matrix
-					}
-				} else { // if the solution is worse than the previous one, apply Hastings ratio and temperature and compare with random number
-					r = Math.random(); // random double between 0 and 1
-					acceptance = Math.exp((-(newLoss - oldLoss))) * temperature; // 1 - acceptance probability
-					acceptanceProbabilityLog.add(1.0 - acceptance); // log the acceptance probability
-					if (acceptance <= r) { // apply probability rule
-						accept = true;
-					}
-				}
-				if (accept) { // if candidate is better than previous matrix...
-					currentBackboneList.clear(); // create candidate copy and save as new current matrix
-					currentBackboneList.addAll(candidateBackboneList);
-					currentRedundantList.clear(); // also save the redundant candidate as new current redundant list
-					currentRedundantList.addAll(candidateRedundantList);
-					currentStatementList.clear(); // save candidate statement list as new current statement list
-					currentStatementList.addAll(candidateStatementList);
-					currentMatrix = new Matrix(candidateMatrix); // save candidate matrix as new current matrix
-					acceptedLog.add(1); // log the acceptance of the proposed candidate
-				} else {
-					acceptedLog.add(0); // log the non-acceptance of the proposed candidate
-				}
-				acceptedBackboneSizeLog.add(currentBackboneList.size()); // log how many concepts are in the current iteration after the decision
-				finalBackboneSizeLog.add(finalBackboneList.size()); // log how many concepts are in the final backbone solution in the current iteration
-				log = 0.0; // compute ratio of acceptances in last up to 100 iterations
-				for (int i = t - 1; i >= t - Math.min(100, t); i--) {
-					log = log + acceptedLog.get(i);
-				}
-				acceptanceRatioLastHundredIterationsLog.add(log / Math.min(100, t)); // log ratio of accepted candidates in the last 100 iterations
-				t = t + 1; // go to next iteration
+	/**
+	 * Set the current iteration {@code t} of the simulated annealing algorithm.
+	 *
+	 * @return Current iteration {@code t}.
+	 */
+	public void setCurrentT(int t) {
+		this.t = t;
+	}
+
+	/**
+	 * Execute the next iteration of the simulated annealing backbone algorithm.
+	 */
+	public void iterateBackbone() {
+		// first step: make a random move by adding, removing, or swapping a concept and computing a new candidate
+		actionList.clear(); // clear the set of possible actions and repopulate, depending on solution size
+		if (currentBackboneList.size() < 2) { // if there is only one concept, don't remove it because empty backbones do not work
+			actionList.add("add");
+			actionList.add("swap");
+		} else if (currentBackboneList.size() > fullConcepts.length - 2) { // do not create a backbone with all concepts because it would be useless
+			actionList.add("remove");
+			actionList.add("swap");
+		} else { // everything in between one and |C| - 1 concepts: add all three possible moves to the action set
+			actionList.add("add");
+			actionList.add("remove");
+			actionList.add("swap");
+		}
+		Collections.shuffle(actionList); // randomly re-order the action set...
+		selectedAction = actionList.get(0); // and draw the first action (i.e., pick a random action)
+		candidateBackboneList.clear(); // create a candidate copy of the current backbone list, to be modified
+		candidateBackboneList.addAll(currentBackboneList);
+		candidateRedundantList.clear(); // create a candidate copy of the current redundant list, to be modified
+		candidateRedundantList.addAll(currentRedundantList);
+		if (selectedAction.equals("add")) { // if we add a concept...
+			Collections.shuffle(candidateRedundantList); // randomly re-order the current redundant list...
+			candidateBackboneList.add(candidateRedundantList.get(0)); // add the first concept from the redundant list to the backbone...
+			candidateRedundantList.remove(0); // and delete it in turn from the redundant list
+		} else if (selectedAction.equals("remove")) { // if we remove a concept...
+			Collections.shuffle(candidateBackboneList); // randomly re-order the backbone list to pick a random concept for removal as the first element...
+			candidateRedundantList.add(candidateBackboneList.get(0)); // add the selected concept to the redundant list...
+			candidateBackboneList.remove(0); // and remove it from the backbone list
+		} else if (selectedAction.equals("swap")) { //if we swap out a concept...
+			Collections.shuffle(candidateBackboneList); // re-order the backbone list...
+			Collections.shuffle(candidateRedundantList); // re-order the redundant list...
+			candidateBackboneList.add(candidateRedundantList.get(0)); // add the first (random) redundant concept to the backbone list...
+			candidateRedundantList.remove(0); // then remove it from the redundant list...
+			candidateRedundantList.add(candidateBackboneList.get(0)); // add the first (random) backbone concept to the redundant list...
+			candidateBackboneList.remove(0); // then remove it from the backbone list
+		}
+		proposedBackboneSizeLog.add(candidateBackboneList.size()); // log number of concepts in candidate backbone in the current iteration
+		// after executing the action, filter the statement list based on the candidate backbone set B^*_t in order to create the candidate matrix
+		candidateStatementList = this.filteredStatements
+				.stream()
+				.filter(s -> candidateBackboneList.contains(((Entity) s.get(this.variable2)).getValue()))
+				.collect(Collectors.toCollection(ArrayList::new));
+		// create candidate matrix after filtering the statements based on the action that was executed
+		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+
+		// second step: compare loss between full and previous matrix to loss between full and candidate matrix and accept or reject candidate
+		temperature = 1 - (1 / (1 + Math.exp(-(-5 + (12.0 / T) * t)))); // temperature
+		temperatureLog.add(temperature);
+		eigenvaluesCurrent = computeNormalizedEigenvalues(currentMatrix.getMatrix()); // normalised eigenvalues for the current matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+		oldLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCurrent, p, currentBackboneList.size(), fullConcepts.length); // spectral distance between full and previous matrix
+		newLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, candidateBackboneList.size(), fullConcepts.length); // spectral distance between full and candidate matrix
+		penalizedBackboneLossLog.add(newLoss); // log the penalised spectral distance between full and candidate solution
+		accept = false;
+		if (newLoss < oldLoss) { // if candidate is better than previous matrix, adopt it as current solution
+			accept = true; // flag this solution for acceptance
+			acceptanceProbabilityLog.add(1.0); // log the acceptance probability as 1.0 because the solution was better than before
+			eigenvaluesFinal = computeNormalizedEigenvalues(currentMatrix.getMatrix()); // normalised eigenvalues for the current matrix
+			finalLoss = penalizedLoss(eigenvaluesFull, eigenvaluesFinal, p, finalBackboneList.size(), fullConcepts.length); // test if also better than global optimum so far
+			if (newLoss <= finalLoss) { // if better than the best solution, adopt candidate as new final backbone solution
+				finalBackboneList.clear(); // clear the best solution list
+				finalBackboneList.addAll(candidateBackboneList); // and populate it with the concepts from the candidate solution instead
+				finalRedundantList.clear(); // same with the redundant list
+				finalRedundantList.addAll(candidateRedundantList);
+				finalStatementList.clear(); // same with the final list of statements
+				finalStatementList.addAll(candidateStatementList);
+				finalMatrix = new Matrix(candidateMatrix); // save the candidate matrix as best solution matrix
+			}
+		} else { // if the solution is worse than the previous one, apply Hastings ratio and temperature and compare with random number
+			r = Math.random(); // random double between 0 and 1
+			acceptance = Math.exp(-(newLoss - oldLoss)) * temperature; // acceptance probability
+			acceptanceProbabilityLog.add(acceptance); // log the acceptance probability
+			if (r < acceptance) { // apply probability rule
+				accept = true;
 			}
 		}
+		if (accept) { // if candidate is better than previous matrix...
+			currentBackboneList.clear(); // create candidate copy and save as new current matrix
+			currentBackboneList.addAll(candidateBackboneList);
+			currentRedundantList.clear(); // also save the redundant candidate as new current redundant list
+			currentRedundantList.addAll(candidateRedundantList);
+			currentStatementList.clear(); // save candidate statement list as new current statement list
+			currentStatementList.addAll(candidateStatementList);
+			currentMatrix = new Matrix(candidateMatrix); // save candidate matrix as new current matrix
+			acceptedLog.add(1); // log the acceptance of the proposed candidate
+		} else {
+			acceptedLog.add(0); // log the non-acceptance of the proposed candidate
+		}
+		acceptedBackboneSizeLog.add(currentBackboneList.size()); // log how many concepts are in the current iteration after the decision
+		finalBackboneSizeLog.add(finalBackboneList.size()); // log how many concepts are in the final backbone solution in the current iteration
+		log = 0.0; // compute ratio of acceptances in last up to 100 iterations
+		for (int i = t - 1; i >= t - Math.min(100, t); i--) {
+			log = log + acceptedLog.get(i);
+		}
+		acceptanceRatioLastHundredIterationsLog.add(log / Math.min(100, t)); // log ratio of accepted candidates in the last 100 iterations
+		t = t + 1; // go to next iteration
+	}
 
+	/**
+	 * Compute matrix after final backbone iteration, collect results, and save in class.
+	 */
+	public void saveBackboneResult() {
 		Collections.sort(finalBackboneList);
 		Collections.sort(finalRedundantList);
 
@@ -2087,20 +2123,19 @@ public class Exporter {
 	}
 
 	/**
-	 * TODO:
-	 * - increasing acceptances should be decreasing
-	 * - move GUI to separate class with its own combo boxes
-	 * - create R headless functions for network export and backbone
-	 * - display graphical progress bar
-	 */
-
-	/**
 	 * Use tools from the {@code ojalgo} library to compute eigenvalues of a symmetric matrix.
 	 *
 	 * @param matrix The matrix as a two-dimensional double array.
 	 * @return One-dimensional double array of eigenvalues.
 	 */
 	private double[] computeNormalizedEigenvalues(double[][] matrix) {
+		for (int i = 0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[0].length; j++) {
+				if (matrix[i][j] < 0) {
+					matrix[i][j] = 0.0;
+				}
+			}
+		}
 		Primitive64Matrix matrixPrimitive = Primitive64Matrix.FACTORY.rows(matrix); // create matrix
 		DenseArray<Double> rowSums = Primitive64Array.FACTORY.make(matrix.length); // container for row sums
 		matrixPrimitive.reduceRows(Aggregator.SUM, rowSums); // populate row sums into rowSums
@@ -2146,22 +2181,6 @@ public class Exporter {
 	public void writeBackboneToFile(String filename) throws IOException {
 		File file = new File(filename);
 		String s = "";
-
-		/*
-		for (int i = 0; i < this.backboneResult.getFullNetwork().length; i++) {
-			for (int j = 0; j < this.backboneResult.getFullNetwork().length; j++) {
-				if (this.backboneResult.getFullNetwork()[i][j] != this.backboneResult.getFullNetwork()[i][j]) {
-					System.out.println("NaN in full network: " + i + " " + j + ".");
-				}
-				if (this.backboneResult.getBackboneNetwork()[i][j] != this.backboneResult.getBackboneNetwork()[i][j]) {
-					System.out.println("NaN in backbone network: " + i + " " + j + ".");
-				}
-				if (this.backboneResult.getRedundantNetwork()[i][j] != this.backboneResult.getRedundantNetwork()[i][j]) {
-					System.out.println("NaN in redundant network: " + i + " " + j + ".");
-				}
-			}
-		}
-		*/
 
 		if (filename.toLowerCase().endsWith(".xml")) {
 			XStream xstream = new XStream(new StaxDriver());
