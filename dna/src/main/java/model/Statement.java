@@ -343,6 +343,37 @@ public class Statement implements Comparable<Statement> {
 	}
 
 	/**
+	 * Get a value from the array list of values by reference to its variable name.
+	 *
+	 * @param key Name of the variable for which to retrieve the {@link Value} object.
+	 * @return The value.
+	 */
+	public Value getValueByKey(String key) {
+		return this.values.stream().filter(v -> v.getKey().equals(key)).findFirst().get();
+	}
+
+	/**
+	 * Get a value from the array list of values by reference to its variable ID.
+	 *
+	 * @param variableId ID of the variable for which to retrieve the {@link Value} object.
+	 * @return The value.
+	 */
+	public Value getValueByVariableId(int variableId) {
+		return this.values.stream().filter(v -> v.getVariableId() == variableId).findFirst().get();
+	}
+
+	/**
+	 * Set the value of a {@link Value} object contained in the values array list. The correct item in the list is
+	 * identified by matching the variable ID. The value slot stored in the new value is used to replace the value in
+	 * the object stored in the list.
+	 *
+	 * @param value The value to replace.
+	 */
+	public void setValue(Value value) {
+		this.values.stream().filter(v -> v.getVariableId() == value.getVariableId()).findFirst().get().setValue(value.getValue());
+	}
+
+	/**
 	 * Implementation of the {@link java.lang.Comparable Comparable} interface
 	 * to sort statements in the statement table and possibly elsewhere.
 	 */

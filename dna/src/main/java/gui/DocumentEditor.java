@@ -54,7 +54,7 @@ import model.Coder;
 import model.Document;
 import model.Statement;
 
-class DocumentEditor extends JDialog {
+public class DocumentEditor extends JDialog {
 	private static final long serialVersionUID = 8937997814159804095L;
 	private JScrollPane textScroller;
 	private JButton okButton;

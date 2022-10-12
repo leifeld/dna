@@ -238,4 +238,48 @@ public class Entity implements Comparable<Entity> {
 	public int compareTo(Entity a) {
 		return this.getValue().compareTo(a.getValue());
 	}
+
+	/**
+	 * Is this entity equal to another object?
+	 *
+	 * @param o An object for comparison.
+	 * @return  A boolean indicator of whether the other entry is identical.
+	 */
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null) return false;
+		if (getClass() != o.getClass())	return false;
+		Entity e = (Entity) o;
+		if (this.id != e.getId()) {
+			return false;
+		}
+		if (this.variableId != e.getVariableId()) {
+			return false;
+		}
+		if (this.childOf != e.getChildOf()) {
+			return false;
+		}
+		if ((this.value == null) != (e.getValue() == null)) {
+			return false;
+		}
+		if (this.value != null && e.getValue() != null && !this.value.equals(e.getValue())) {
+			return false;
+		}
+		if ((this.color == null) != (e.getColor() == null)) {
+			return false;
+		}
+		if (this.color != null && e.getColor() != null && !this.color.equals(e.getColor())) {
+			return false;
+		}
+		if (this.inDatabase != e.isInDatabase()) {
+			return false;
+		}
+		if ((this.attributeValues == null) != (e.getAttributeValues() == null)) {
+			return false;
+		}
+		if (this.attributeValues != null && e.getAttributeValues() != null && !this.attributeValues.equals(e.getAttributeValues())) {
+			return false;
+		}
+		return true;
+	}
 }

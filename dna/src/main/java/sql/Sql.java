@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import gui.DocumentEditor;
 import org.jasypt.util.password.StrongPasswordEncryptor;
 import org.sqlite.SQLiteDataSource;
 
@@ -1763,7 +1764,7 @@ public class Sql {
 
 	/**
 	 * Check for an array of documents whether any of them contains a statement.
-	 * Used to determine in the {@link gui.DocumentEditor DocumentEditor}
+	 * Used to determine in the {@link DocumentEditor}
 	 * dialog whether the text field should be editable.
 	 * 
 	 * @param documentIds  An array of document IDs.
@@ -2943,7 +2944,7 @@ public class Sql {
 	 * 
 	 * @param statementIds Array of statement IDs to retrieve. Can be empty or
 	 *   {@code null}, in which case all statements are selected.
-	 * @param statementTypeIds Array list of statement type IDs to include. Can
+	 * @param statementTypeId Array list of statement type IDs to include. Can
 	 *   be empty or {@code null}, in which case all statement types are
 	 *   selected.
 	 * @param startDateTime Date/time before which statements are discarded.
@@ -3424,7 +3425,7 @@ public class Sql {
 	 * @param withAttributes Include attributes and indicator of whether the
 	 *   entity has been used in the database in each {@link model.Entity
 	 *   Entity}? Doing so takes much longer for large databases.
-	 * @return An array list of array lists of {@link dna.Entity Entity}
+	 * @return An array list of array lists of {@link Entity}
 	 *   objects.
 	 */
 	public ArrayList<ArrayList<Entity>> getEntities(ArrayList<Integer> variableIds, boolean withAttributes) {
@@ -3923,7 +3924,7 @@ public class Sql {
 		int variableId = -1;
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("INSERT INTO VARIABLES (Variable, DataType, StatementTypeId) VALUES (?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
-				PreparedStatement s2 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value) VALUES (?, '');", PreparedStatement.RETURN_GENERATED_KEYS);
+				PreparedStatement s2 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, '', 0, 0, 0);", PreparedStatement.RETURN_GENERATED_KEYS);
 				PreparedStatement s3 = conn.prepareStatement("SELECT ID FROM STATEMENTS WHERE StatementTypeId = ?;");
 				PreparedStatement s4 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Entity) VALUES (?, ?, ?);");
 				PreparedStatement s5 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, '');");

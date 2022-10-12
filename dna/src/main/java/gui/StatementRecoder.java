@@ -92,7 +92,7 @@ public class StatementRecoder extends JDialog {
 	public StatementRecoder(Frame parent, int[] statementIds, StatementType statementType) {
 		super(parent, "StatementRecorder", true);
 		this.statementType = statementType;
-		
+
 		this.setTitle("Edit/recode multiple statements");
 		this.setModal(true);
 		ImageIcon statementIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-pencil.png"));
@@ -353,10 +353,22 @@ public class StatementRecoder extends JDialog {
 
 		// create boxes with values
 		for (int i = 0; i < statementType.getVariables().size(); i++) {
-			final int k = i;
 			String key = statementType.getVariables().get(i).getKey();
 			String dataType = statementType.getVariables().get(i).getDataType();
 			JLabel label = new JLabel(key, JLabel.TRAILING);
+
+			// The table model may store the variables in a different order; look up the index in the variables
+			int tableModelIndex = -1;
+			for (int v = 0; v < tableModel.getRow(currentIndex).getValues().size(); v++) {
+				if (key.equals(tableModel.getRow(currentIndex).getValues().get(v).getKey())) {
+					tableModelIndex = v;
+				}
+			}
+			if (tableModelIndex == -1) {
+				tableModelIndex = i;
+			}
+			final int k = tableModelIndex;
+
 			if (dataType.equals("short text")) {
 				Entity[] entitiesArray = new Entity[entities.get(indexMap.get(i)).size()];
 				entitiesArray = entities.get(indexMap.get(i)).toArray(entitiesArray);
@@ -419,7 +431,7 @@ public class StatementRecoder extends JDialog {
 					AutoCompleteDecorator.decorate(box); // auto-complete short text values; part of SwingX
 				}
     			box.setPreferredSize(new Dimension(Dna.sql.getActiveCoder().getPopupWidth(), 20));
-    			box.setSelectedItem((Entity) tableModel.getRow(currentIndex).getValues().get(i).getValue());
+    			box.setSelectedItem((Entity) tableModel.getRow(currentIndex).getValues().get(k).getValue());
     			
     			// need to add a focus listener to save the contents; otherwise without auto-completion the last edited box will not be saved
     			box.getEditor().getEditorComponent().addFocusListener(new FocusListener() {
@@ -491,7 +503,7 @@ public class StatementRecoder extends JDialog {
 				gbc.gridx = 0;
 				gbc.gridy++;
 			} else if (dataType.equals("long text")) {
-				String entry = (String) tableModel.getRow(currentIndex).getValues().get(i).getValue();
+				String entry = (String) tableModel.getRow(currentIndex).getValues().get(k).getValue();
     			JTextArea box = new JTextArea();
     			box.setEditable(true);
     			box.setWrapStyleWord(true);
@@ -586,7 +598,7 @@ public class StatementRecoder extends JDialog {
 				gbc.gridx = 0;
 				gbc.gridy++;
 			} else if (dataType.equals("boolean")) {
-				int entry = (Integer) tableModel.getRow(currentIndex).getValues().get(i).getValue();
+				int entry = (Integer) tableModel.getRow(currentIndex).getValues().get(k).getValue();
 				boolean val;
 				if (entry == 0) {
 					val = false;
@@ -673,7 +685,7 @@ public class StatementRecoder extends JDialog {
 				gbc.gridx = 0;
 				gbc.gridy++;
 			} else if (dataType.equals("integer")) {
-				int entry = (Integer) tableModel.getRow(currentIndex).getValues().get(i).getValue();
+				int entry = (Integer) tableModel.getRow(currentIndex).getValues().get(k).getValue();
 				JSpinner jsp = new JSpinner();
 				jsp.setValue(entry);
     			jsp.setPreferredSize(new Dimension(70, 20));
@@ -783,17 +795,31 @@ public class StatementRecoder extends JDialog {
 			ArrayList<ArrayList<Entity>> entities = Dna.sql.getEntities(variableIds, false); // switch to true to color unused entities in red; but it takes much longer with large databases
 			for (int i = 0; i < statementType.getVariables().size(); i++) {
 				String dataType = statementType.getVariables().get(i).getDataType();
+				String key = statementType.getVariables().get(i).getKey();
+
+				// The table model may store the variables in a different order; look up the index in the variables
+				int tableModelIndex = -1;
+				for (int v = 0; v < tableModel.getRow(currentIndex).getValues().size(); v++) {
+					if (key.equals(tableModel.getRow(currentIndex).getValues().get(v).getKey())) {
+						tableModelIndex = v;
+					}
+				}
+				if (tableModelIndex == -1) {
+					tableModelIndex = i;
+				}
+				final int k = tableModelIndex;
+
 				if (dataType.equals("short text")) {
 					// load value
 					Entity[] entitiesArray = new Entity[entities.get(indexMap.get(i)).size()];
 					entitiesArray = entities.get(indexMap.get(i)).toArray(entitiesArray);
 					ComboBoxModel<Entity> model = new DefaultComboBoxModel<Entity>(entitiesArray);
 					((JComboBox<Entity>) components.get(i)).setModel(model);
-					Entity value = (Entity) tableModel.getRow(currentIndex).getValues().get(i).getValue();
+					Entity value = (Entity) tableModel.getRow(currentIndex).getValues().get(tableModelIndex).getValue();
 					((JComboBox<Entity>) components.get(i)).getModel().setSelectedItem(value);
 					
 					// toggle revert button
-					Entity backupEntity = (Entity) tableModel.getBackupRow(currentIndex).getValues().get(i).getValue();
+					Entity backupEntity = (Entity) tableModel.getBackupRow(currentIndex).getValues().get(tableModelIndex).getValue();
 					if (value.getValue().equals(backupEntity.getValue())) {
 						revertButtons.get(i).setEnabled(false);
 					} else {
@@ -801,11 +827,11 @@ public class StatementRecoder extends JDialog {
 					}
 				} else if (dataType.equals("long text")) {
 					// load value
-					String value = (String) tableModel.getRow(currentIndex).getValues().get(i).getValue();
+					String value = (String) tableModel.getRow(currentIndex).getValues().get(tableModelIndex).getValue();
 					((JTextArea) components.get(i)).setText(value);
 
 					// toggle revert button
-					String backupText = (String) tableModel.getBackupRow(currentIndex).getValues().get(i).getValue();
+					String backupText = (String) tableModel.getBackupRow(currentIndex).getValues().get(tableModelIndex).getValue();
 					if (value.equals(backupText)) {
 						revertButtons.get(i).setEnabled(false);
 					} else {
@@ -813,10 +839,10 @@ public class StatementRecoder extends JDialog {
 					}
 				} else if (dataType.equals("boolean")) {
 					// load value
-					((BooleanButtonPanel) components.get(i)).setYes((Integer) tableModel.getRow(currentIndex).getValues().get(i).getValue() != 0);
+					((BooleanButtonPanel) components.get(i)).setYes((Integer) tableModel.getRow(currentIndex).getValues().get(tableModelIndex).getValue() != 0);
 
 					// toggle revert button
-					boolean b = ((int) tableModel.getBackupRow(currentIndex).getValues().get(i).getValue()) == 1;
+					boolean b = ((int) tableModel.getBackupRow(currentIndex).getValues().get(tableModelIndex).getValue()) == 1;
 					if (((BooleanButtonPanel) components.get(i)).isYes() == b) {
 						revertButtons.get(i).setEnabled(false);
 					} else {
@@ -824,11 +850,11 @@ public class StatementRecoder extends JDialog {
 					}
 				} else if (dataType.equals("integer")) {
 					// load value
-					int value = (int) tableModel.getRow(currentIndex).getValues().get(i).getValue();
+					int value = (int) tableModel.getRow(currentIndex).getValues().get(tableModelIndex).getValue();
 					((JSpinner) components.get(i)).setValue(value);
 
 					// toggle revert button
-					int b = (int) tableModel.getBackupRow(currentIndex).getValues().get(i).getValue();
+					int b = (int) tableModel.getBackupRow(currentIndex).getValues().get(tableModelIndex).getValue();
 					if (value == b) {
 						revertButtons.get(i).setEnabled(false);
 					} else {
@@ -861,7 +887,7 @@ public class StatementRecoder extends JDialog {
 	 * Table model for the statement recode table.
 	 */
 	private class StatementRecodeTableModel extends AbstractTableModel {
-		private static final long serialVersionUID = -5971964746106990839L;
+		private static final long serialVersionUID = -2971964746106990839L;
 		private ArrayList<Statement> statements;
 		private final ArrayList<Statement> statementBackup;
 		private StatementType statementType;
@@ -894,21 +920,22 @@ public class StatementRecoder extends JDialog {
 						this.statements.get(row).getCoderColor());
 				return coder;
 			} else if (col > 0 && col < this.statements.get(row).getValues().size() + 1) {
-				if (this.statements.get(row).getValues().get(col - 1).getDataType().equals("short text")) {
-					return (Entity) this.statements.get(row).getValues().get(col - 1).getValue();
-				} else if (this.statements.get(row).getValues().get(col - 1).getDataType().equals("long text")) {
-					return (String) this.statements.get(row).getValues().get(col - 1).getValue();
-				} else if (this.statements.get(row).getValues().get(col - 1).getDataType().equals("boolean")) {
-					if ((int) this.statements.get(row).getValues().get(col - 1).getValue() == 1) {
-						return "yes";
-					} else {
-						return "no";
-					}
-				} else if (this.statements.get(row).getValues().get(col - 1).getDataType().equals("integer")) {
-					return (int) this.statements.get(row).getValues().get(col - 1).getValue();
-				} else {
-					return null;
-				}
+				return this.statements.get(row).getValues()
+						.stream()
+						.filter(v -> v.getVariableId() == statementType.getVariables().get(col - 1).getVariableId())
+						.map(v -> {
+							if (v.getDataType().equals("boolean")) {
+								if (((int) v.getValue()) == 1) {
+									return "yes";
+								} else {
+									return "no";
+								}
+							} else {
+								return v.getValue();
+							}
+						})
+						.findFirst()
+						.get();
 			} else {
 				return null;
 			}
@@ -1080,27 +1107,13 @@ public class StatementRecoder extends JDialog {
 					return false;
 				}
 			} else {
-				String dataType = statements.get(row).getValues().get(column - 1).getDataType();
-				if (dataType.equals("short text")) {
-					Entity newEntity = (Entity) statements.get(row).getValues().get(column - 1).getValue();
-					Entity oldEntity = (Entity) statementBackup.get(row).getValues().get(column - 1).getValue();
-					if (newEntity.getValue().equals(oldEntity.getValue())) {
-						return false;
-					} else {
-						return true;
-					}
-				} else if (dataType.equals("long text")) {
-					if (((String) statements.get(row).getValues().get(column - 1).getValue()).equals((String) statementBackup.get(row).getValues().get(column - 1).getValue())) {
-						return false;
-					} else {
-						return true;
-					}
+				int columnVariableId = statementType.getVariables().get(column - 1).getVariableId();
+				Value v1 = this.statements.get(row).getValueByVariableId(columnVariableId);
+				Value v2 = this.statementBackup.get(row).getValueByVariableId(columnVariableId);
+				if (v1.equals(v2)) {
+					return false;
 				} else {
-					if ((int) statements.get(row).getValues().get(column - 1).getValue() == (int) statementBackup.get(row).getValues().get(column - 1).getValue()) {
-						return false;
-					} else {
-						return true;
-					}
+					return true;
 				}
 			}
 		}
@@ -1154,6 +1167,8 @@ public class StatementRecoder extends JDialog {
 
 		@Override
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+			int modelRow = table.convertRowIndexToModel(row);
+			int modelColumn = table.convertColumnIndexToModel(column);
 			Class<?> colClass = tableModel.getColumnClass(column);
 			Color updatedColor = new Color(255, 102, 102);
 			UIDefaults defaults = javax.swing.UIManager.getDefaults();
@@ -1181,32 +1196,25 @@ public class StatementRecoder extends JDialog {
 				}
 				return cbp;
 			} else {
-				if (column == 0) {
+				if (colClass.equals(Integer.class)) {
 					renderer.setHorizontalAlignment(JLabel.RIGHT);
+				} else {
+					renderer.setHorizontalAlignment(JLabel.LEFT);
+				}
+				if (column == 0) {
 					if (isSelected) {
 						renderer.setBackground(selectedColor);
 					} else {
 						renderer.setBackground(defaultColor);
 					}
-				} else if (tableModel.isCellChanged(row, column) && isSelected) {
+				} else if (tableModel.isCellChanged(modelRow, modelColumn) && isSelected) {
 					renderer.setBackground(selectedUpdatedColor);
-				} else if (tableModel.isCellChanged(row, column)) {
+				} else if (tableModel.isCellChanged(modelRow, modelColumn)) {
 					renderer.setBackground(updatedColor);
 				} else if (isSelected) {
 					renderer.setBackground(selectedColor);
 				} else {
 					renderer.setBackground(defaultColor);
-				}
-				if (colClass.equals(int.class)) {
-					renderer.setHorizontalAlignment(JLabel.RIGHT);
-					renderer.setText(String.valueOf((int) value));
-				} else if (colClass.equals(String.class)) {
-					renderer.setHorizontalAlignment(JLabel.LEFT);
-					renderer.setText((String) value);
-				} else if (colClass.equals(Entity.class)) {
-					renderer.setHorizontalAlignment(JLabel.LEFT);
-					Entity e = (Entity) value;
-					renderer.setText(e.getValue());
 				}
 				return renderer;
 			}

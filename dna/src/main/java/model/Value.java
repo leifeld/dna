@@ -133,19 +133,43 @@ public class Value {
 	}
 	
 	/**
-	 * Is this value equal to another value?
+	 * Is this value equal to another object?
 	 * 
-	 * @param v A value for comparison.
+	 * @param o An object for comparison.
 	 * @return  A boolean indicator of whether the other value is identical.
 	 */
-	public boolean equals(Value v) {
-		if (this.variableId == v.getVariableId() &&
-				this.getKey().equals(v.getKey()) &&
-				((this.getValue() == null && v.getValue() == null) || this.getValue().equals(v.getValue())) &&
-				this.getDataType().equals(v.getDataType())) {
-			return true;
-		} else {
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null) return false;
+		if (getClass() != o.getClass())	return false;
+		Value v = (Value) o;
+		if ((this.dataType == null) != (v.getDataType() == null)) {
 			return false;
 		}
+		if (!this.dataType.equals(v.getDataType())) {
+			return false;
+		}
+		if (this.variableId != v.getVariableId()) {
+			return false;
+		}
+		if ((this.key == null) != (v.getKey() == null)) {
+			return false;
+		}
+		if (!this.key.equals(v.getKey())) {
+			return false;
+		}
+		if ((this.value == null) != (v.getValue() == null)) {
+			return false;
+		}
+		if (this.dataType != null && v.getDataType() != null && this.value != null && v.getValue() != null && this.dataType.equals("long text") && !(((String) v.getValue()).equals((String) this.value))) {
+			return false;
+		}
+		if (this.dataType != null && v.getDataType() != null && this.value != null && v.getValue() != null && (this.dataType.equals("integer") || this.dataType.equals("boolean")) && !(((int) v.getValue()) == ((int) this.value))) {
+			return false;
+		}
+		if (this.dataType != null && v.getDataType() != null && this.value != null && v.getValue() != null && this.dataType.equals("short text") && !(((Entity) v.getValue()).equals((Entity) this.value))) {
+			return false;
+		}
+		return true;
 	}
 }
