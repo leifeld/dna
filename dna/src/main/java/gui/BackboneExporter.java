@@ -123,7 +123,7 @@ public class BackboneExporter extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
 				String[] varItems = selected.getVariablesList(false, true, false, false);
-				String[] qualifierItems = selected.getVariablesList(false, false, true, true);
+				String[] qualifierItems = selected.getVariablesList(false, true, true, true);
 				var1Box.removeAllItems();
 				var2Box.removeAllItems();
 				qualifierBox.removeAllItems();
@@ -270,7 +270,7 @@ public class BackboneExporter extends JDialog {
 		var2Box.addActionListener(varActionListener);
 		
 		gbc.gridx = 2;
-		String[] qualifierItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, false, true, true);
+		String[] qualifierItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, true, true, true);
 		qualifierBox = new JComboBox<>(qualifierItems);
 		qualifierBox.setToolTipText(qualifierToolTip);
 		settingsPanel.add(qualifierBox, gbc);
@@ -749,6 +749,7 @@ public class BackboneExporter extends JDialog {
 			String variable2Name = (String) var2Box.getSelectedItem();
 			boolean variable2Document = var2Box.getSelectedIndex() > var2Box.getItemCount() - 7;
 			String qualifier = (String) qualifierBox.getSelectedItem();
+			boolean qualifierDocument = qualifierBox.getSelectedIndex() > qualifierBox.getItemCount() - 7;
 			String qualifierAggregation = (String) aggregationBox.getSelectedItem();
 			String normalization = (String) normalizationBox.getSelectedItem();
 
@@ -771,8 +772,8 @@ public class BackboneExporter extends JDialog {
 
 			// start backbone thread
 			Thread backboneThread = new Thread(new GuiBackboneThread(penalty, iterations, statementType, variable1Name,
-					variable1Document, variable2Name, variable2Document, qualifier, qualifierAggregation,
-					normalization, duplicates, startDateTime, stopDateTime,
+					variable1Document, variable2Name, variable2Document, qualifier, qualifierDocument,
+					qualifierAggregation, normalization, duplicates, startDateTime, stopDateTime,
 					BackboneExporter.this.excludeValues, BackboneExporter.this.excludeAuthor,
 					BackboneExporter.this.excludeSource, BackboneExporter.this.excludeSection,
 					BackboneExporter.this.excludeType, false, false, false,
@@ -924,7 +925,7 @@ public class BackboneExporter extends JDialog {
 		private int T;
 		private String variable1, variable2, qualifier, qualifierAggregation, normalization, duplicates;
 		private StatementType statementType;
-		private boolean variable1Document, variable2Document, invertValues, invertAuthors, invertSources, invertSections, invertTypes;
+		private boolean variable1Document, variable2Document, qualifierDocument, invertValues, invertAuthors, invertSources, invertSections, invertTypes;
 		private LocalDateTime startDateTime, stopDateTime;
 		private HashMap<String, ArrayList<String>> excludeValues;
 		private ArrayList<String> excludeAuthors, excludeSources, excludeSections, excludeTypes;
@@ -939,6 +940,7 @@ public class BackboneExporter extends JDialog {
 				String variable2,
 				boolean variable2Document,
 				String qualifier,
+				boolean qualifierDocument,
 				String qualifierAggregation,
 				String normalization,
 				String duplicates,
@@ -962,6 +964,7 @@ public class BackboneExporter extends JDialog {
 			this.variable2 = variable2;
 			this.variable2Document = variable2Document;
 			this.qualifier = qualifier;
+			this.qualifierDocument = qualifierDocument;
 			this.qualifierAggregation = qualifierAggregation;
 			this.normalization = normalization;
 			this.duplicates = duplicates;
@@ -1004,6 +1007,7 @@ public class BackboneExporter extends JDialog {
 					this.variable2,
 					this.variable2Document,
 					this.qualifier,
+					this.qualifierDocument,
 					this.qualifierAggregation,
 					this.normalization,
 					true,

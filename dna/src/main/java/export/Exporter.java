@@ -43,34 +43,55 @@ public class Exporter {
 	private StatementType statementType;
 	private String networkType, variable1, variable2, qualifier, qualifierAggregation;
 	private String normalization, duplicates, timeWindow;
-	private boolean variable1Document, variable2Document, isolates;
+	private boolean variable1Document, variable2Document, qualifierDocument, isolates;
 	private LocalDateTime startDateTime, stopDateTime;
 	private int windowSize;
 	private HashMap<String, ArrayList<String>> excludeValues;
 	private ArrayList<String> excludeAuthors, excludeSources, excludeSections, excludeTypes;
 	private boolean invertValues, invertAuthors, invertSources, invertSections, invertTypes;
 	private String fileFormat, outfile;
-	
+
+	/**
+	 * Holds all documents.
+	 */
 	private ArrayList<TableDocument> documents;
+	/**
+	 * Holds a mapping of document IDs to indices in the {@link #documents} array list.
+	 */
 	private HashMap<Integer, Integer> docMap;
+	/**
+	 * Holds a mapping of statement type variable names to data types for quick lookup.
+	 */
 	private HashMap<String, String> dataTypes;
+	/**
+	 * Holds all statements.
+	 */
 	private ArrayList<ExportStatement> originalStatements;
+	/**
+	 * Holds the statements that remain after filtering by date, exclude filter, duplicates etc.
+	 */
 	private ArrayList<ExportStatement> filteredStatements;
+	/**
+	 * Holds the resulting matrices. Can have size 1.
+	 */
 	private ArrayList<Matrix> matrixResults;
+	/**
+	 * Holds the resulting backbone result.
+	 */
 	private BackboneResult backboneResult = null;
 
 	// objects for backbone algorithm
-	ArrayList<Double> temperatureLog, acceptanceProbabilityLog, penalizedBackboneLossLog, acceptanceRatioLastHundredIterationsLog;
-	ArrayList<Integer> acceptedLog, proposedBackboneSizeLog, acceptedBackboneSizeLog, finalBackboneSizeLog;
-	String[] fullConcepts;
-	String selectedAction;
-	ArrayList<String> actionList, currentBackboneList, currentRedundantList, candidateBackboneList, candidateRedundantList, finalBackboneList, finalRedundantList;
-	ArrayList<ExportStatement> currentStatementList, candidateStatementList, finalStatementList; // declare candidate statement list at t
-	Matrix fullMatrix, currentMatrix, candidateMatrix, finalMatrix; // candidate matrix at the respective t, Y^{B^*_t}
-	boolean accept;
-	double p, temperature, acceptance, r, oldLoss, newLoss, finalLoss, log;
-	double[] eigenvaluesFull, eigenvaluesCurrent, eigenvaluesCandidate, eigenvaluesFinal;
-	int T, t;
+	private ArrayList<Double> temperatureLog, acceptanceProbabilityLog, penalizedBackboneLossLog, acceptanceRatioLastHundredIterationsLog;
+	private ArrayList<Integer> acceptedLog, proposedBackboneSizeLog, acceptedBackboneSizeLog, finalBackboneSizeLog;
+	private String[] fullConcepts;
+	private String selectedAction;
+	private ArrayList<String> actionList, currentBackboneList, currentRedundantList, candidateBackboneList, candidateRedundantList, finalBackboneList, finalRedundantList;
+	private ArrayList<ExportStatement> currentStatementList, candidateStatementList, finalStatementList; // declare candidate statement list at t
+	private Matrix fullMatrix, currentMatrix, candidateMatrix, finalMatrix; // candidate matrix at the respective t, Y^{B^*_t}
+	private boolean accept;
+	private double p, temperature, acceptance, r, oldLoss, newLoss, finalLoss, log;
+	private double[] eigenvaluesFull, eigenvaluesCurrent, eigenvaluesCandidate, eigenvaluesFinal;
+	private int T, t;
 
 	/**
 	 * <p>Create a new Exporter class instance, holding an array list of export
@@ -102,6 +123,8 @@ public class Exporter {
 	 *   level, for instance the author or document ID?
 	 * @param qualifier The qualifier variable, for example {@code
 	 *  "agreement"}.
+	 * @param qualifierDocument Is the qualifier variable defined at the
+	 *   document level, for instance the author or document ID?
 	 * @param qualifierAggregation The way in which the qualifier variable is
 	 *   used to aggregate ties in the network.<br/>
 	 *   Valid values if the {@code networkType} argument equals {@code
@@ -267,6 +290,7 @@ public class Exporter {
 			String variable2,
 			boolean variable2Document,
 			String qualifier,
+			boolean qualifierDocument,
 			String qualifierAggregation,
 			String normalization,
 			boolean isolates,
@@ -294,6 +318,7 @@ public class Exporter {
 		this.variable2 = variable2;
 		this.variable2Document = variable2Document;
 		this.qualifier = qualifier;
+		this.qualifierDocument = qualifierDocument;
 		this.qualifierAggregation = qualifierAggregation;
 		this.normalization = normalization;
 		this.isolates = isolates;
@@ -445,12 +470,17 @@ public class Exporter {
 		// Create arrays with variable values
 		String[] values1 = retrieveValues(this.filteredStatements, this.variable1, this.variable1Document);
 		String[] values2 = retrieveValues(this.filteredStatements, this.variable2, this.variable2Document);
+		String[] qualifierValues = new String[0];
+		if (this.qualifierDocument || (!this.qualifierDocument && dataTypes.get(qualifier).equals("short text"))) {
+			qualifierValues = retrieveValues(this.filteredStatements, this.qualifier, this.qualifierDocument);
+		}
 		
 		// process and exclude statements
 		ExportStatement s;
 		ArrayList<ExportStatement> al = new ArrayList<ExportStatement>();
 	    String previousVar1 = null;
 	    String previousVar2 = null;
+		String previousQualifier = null;
 	    LocalDateTime cal, calPrevious;
 	    int year, month, week, yearPrevious, monthPrevious, weekPrevious;
 		for (int i = 0; i < this.filteredStatements.size(); i++) {
@@ -480,7 +510,7 @@ public class Exporter {
 			// check against empty fields
 			if (select &&
 					!this.networkType.equals("eventlist") &&
-					(values1[i].equals("") || values2[i].equals(""))) {
+					(values1[i].equals("") || values2[i].equals("") || ((qualifierDocument || dataTypes.get(qualifier).equals("short text")) && qualifierValues[i].equals("")))) {
 				select = false;
 			}
 			
@@ -523,6 +553,23 @@ public class Exporter {
 				    } else if (this.variable2.equals("title")) {
 				    	previousVar2 = al.get(j).getTitle();
 				    }
+					if (qualifierDocument || dataTypes.get(this.qualifier).equals("short text")) {
+						if (!this.qualifierDocument) {
+							previousQualifier = ((Entity) al.get(j).get(this.qualifier)).getValue();
+						} else if (qualifierDocument && this.qualifier.equals("author")) {
+							previousQualifier = al.get(j).getAuthor();
+						} else if (qualifierDocument && this.qualifier.equals("source")) {
+							previousQualifier = al.get(j).getSource();
+						} else if (qualifierDocument && this.qualifier.equals("section")) {
+							previousQualifier = al.get(j).getSection();
+						} else if (qualifierDocument && this.qualifier.equals("type")) {
+							previousQualifier = al.get(j).getType();
+						} else if (qualifierDocument && this.qualifier.equals("id")) {
+							previousQualifier = al.get(j).getDocumentIdAsString();
+						} else if (qualifierDocument && this.qualifier.equals("title")) {
+							previousQualifier = al.get(j).getTitle();
+						}
+					}
 				    calPrevious = al.get(j).getDateTime();
 				    yearPrevious = calPrevious.getYear();
 				    monthPrevious = calPrevious.getMonthValue();
@@ -537,7 +584,7 @@ public class Exporter {
 								|| (duplicates.equals("ignore per calendar week") && week == weekPrevious) )
 							&& values1[i].equals(previousVar1)
 							&& values2[i].equals(previousVar2)
-							&& (this.qualifierAggregation.equals("ignore") || s.get(this.qualifier).equals(al.get(j).get(this.qualifier))) ) {
+							&& (this.qualifierAggregation.equals("ignore") || (dataTypes.get(this.qualifier).equals("short text") && qualifierValues[i].equals(previousQualifier)))) {
 						select = false;
 						break;
 					}
@@ -545,7 +592,7 @@ public class Exporter {
 			}
 			
 			// add only if the statement passed all checks
-			if (select == true) {
+			if (select) {
 				al.add(s);
 			}
 		}
@@ -653,21 +700,37 @@ public class Exporter {
 	 * @param names2 {@link String} array containing the column labels.
 	 * @return 3D double array.
 	 */
-	private double[][][] createArray(ArrayList<ExportStatement> processedStatements,
-			String[] names1, String[] names2) {
-		
-		int[] qualifierValues; // unique qualifier values (i.e., all of them found at least once in the dataset)
-		if (qualifier == null) {
-			qualifierValues = null;
-		} else if (this.dataTypes.get(qualifier).equals("integer")) {
-			qualifierValues = this.originalStatements
+	private double[][][] createArray(ArrayList<ExportStatement> processedStatements, String[] names1, String[] names2) {
+
+		// unique qualifier values (i.e., all of them found at least once in the dataset)
+		String[] qualifierString = null;
+		int[] qualifierInteger = new int[] { 0 };
+		int qualifierLength = 1;
+		if (!qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
+			qualifierInteger = new int[] {0, 1};
+			qualifierLength = 2;
+		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("integer")) {
+			qualifierInteger = this.originalStatements
 					.stream()
 					.mapToInt(s -> (int) s.get(qualifier))
 					.distinct()
 					.sorted()
 					.toArray();
-		} else {
-			qualifierValues = new int[] {0, 1};
+			qualifierLength = qualifierInteger.length;
+		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("short text")) {
+			qualifierString = this.originalStatements
+					.stream()
+					.map(s -> (String) ((Entity) s.get(qualifier)).getValue())
+					.distinct()
+					.sorted()
+					.toArray(String[]::new);
+			qualifierLength = qualifierString.length;
+		} else if (qualifierDocument) {
+			qualifierString = Arrays.stream(retrieveValues(processedStatements, this.qualifier, this.qualifierDocument))
+					.distinct()
+					.sorted()
+					.toArray(String[]::new);
+			qualifierLength = qualifierString.length;
 		}
 
 		// Create arrays with variable values
@@ -675,20 +738,36 @@ public class Exporter {
 		String[] values2 = retrieveValues(processedStatements, variable2, variable2Document);
 		
 		// create and populate array
-		double[][][] array;
-		if (qualifierValues == null) {
-			array = new double[names1.length][names2.length][1];
-		} else {
-			array = new double[names1.length][names2.length][qualifierValues.length]; // 3D array: rows x cols x qualifier value
-		}
+		double[][][] array = new double[names1.length][names2.length][qualifierLength]; // 3D array: rows x cols x qualifier value
 		for (int i = 0; i < processedStatements.size(); i++) {
 			String n1 = values1[i]; // retrieve first value from statement
 			String n2 = values2[i]; // retrieve second value from statement
-			int q;
-			if (qualifier == null) {
-				q = 0;
-			} else {
-				q = (int) processedStatements.get(i).get(qualifier); // retrieve qualifier value from statement
+			String qString = null;
+			int qInteger = -1;
+			if (qualifier != null) {
+				if (this.qualifierDocument) {
+					TableDocument d = documents.get(docMap.get(processedStatements.get(i).getDocumentId()));
+					if (qualifier.equals("id")) {
+						qString = String.valueOf(d.getId());
+					} else if (qualifier.equals("title")) {
+						qString = d.getTitle();
+					} else if (qualifier.equals("author")) {
+						qString = d.getAuthor();
+					} else if (qualifier.equals("source")) {
+						qString = d.getSource();
+					} else if (qualifier.equals("section")) {
+						qString = d.getSection();
+					} else if (qualifier.equals("type")) {
+						qString = d.getType();
+					}
+					qInteger = -1;
+				} else if (dataTypes.get(qualifier).equals("short text")) {
+					qString = (String) ((Entity) processedStatements.get(i).get(qualifier)).getValue(); // retrieve short text qualifier value from statement (via Entity)
+					qInteger = -1;
+				} else {
+					qInteger = (int) processedStatements.get(i).get(qualifier); // retrieve integer or boolean qualifier value from statement
+					qString = null;
+				}
 			}
 			
 			// find out which matrix row corresponds to the first value
@@ -711,14 +790,12 @@ public class Exporter {
 			
 			// find out which qualifier level corresponds to the qualifier value
 			int qual = -1;
-			if (qualifierValues == null) {
-				qual = 0;
-			} else { // qualifier level in the array
-				for (int j = 0; j < qualifierValues.length; j++) {
-					if (qualifierValues[j] == q) {
-						qual = j;
-						break;
-					}
+			for (int j = 0; j < qualifierLength; j++) {
+				if (qualifierDocument && qualifierString[j].equals(qString) ||
+						(dataTypes.containsKey(qualifier) && dataTypes.get(qualifier).equals("short text") && qualifierString[j].equals(qString)) ||
+						(!qualifierDocument && !dataTypes.get(qualifier).equals("short text") && qualifierInteger[j] == qInteger)) {
+					qual = j;
+					break;
 				}
 			}
 			
@@ -756,7 +833,7 @@ public class Exporter {
 
 	/**
 	 * Create a one-mode network {@link Matrix}.
-	 * 
+	 *
 	 * @param processedStatements Usually the filtered list of export
 	 *   statements, but it can be a more processed list of export statements,
 	 *   for example for use in constructing a time window sequence of networks.
@@ -772,37 +849,47 @@ public class Exporter {
 	Matrix computeOneModeMatrix(ArrayList<ExportStatement> processedStatements, String aggregation, LocalDateTime start, LocalDateTime stop) {
 		String[] names1 = this.extractLabels(processedStatements, this.variable1, this.variable1Document);
 		String[] names2 = this.extractLabels(processedStatements, this.variable2, this.variable2Document);
-		
+
 		if (processedStatements.size() == 0) {
 			double[][] m = new double[names1.length][names1.length];
 			Matrix mt = new Matrix(m, names1, names1, true, start, stop);
 			return mt;
 		}
-		
-		boolean booleanQualifier = true;  // is the qualifier boolean, rather than integer or null?
-		if (qualifier == null || dataTypes.get(qualifier).equals("integer")) {
-			booleanQualifier = false;
-		}
-		int[] qualifierValues;  // unique qualifier values (i.e., all of them found at least once in the dataset)
-		if (qualifier == null) {
-			qualifierValues = new int[] { 0 };
-		} else if (dataTypes.get(qualifier).equals("integer")) {
-			qualifierValues = this.originalStatements
+
+		String[] qualifierString;
+		int[] qualifierInteger = new int[] { 0 };
+		int qualifierLength = 1;
+		if (!qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
+			qualifierInteger = new int[] {0, 1};
+			qualifierLength = 2;
+		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("integer")) {
+			qualifierInteger = this.originalStatements
 					.stream()
 					.mapToInt(s -> (int) s.get(qualifier))
 					.distinct()
 					.sorted()
 					.toArray();
-		} else {
-			qualifierValues = new int[] {0, 1};
+			qualifierLength = qualifierInteger.length;
+		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("short text")) {
+			qualifierString = this.originalStatements
+					.stream()
+					.map(s -> (String) ((Entity) s.get(qualifier)).getValue())
+					.distinct()
+					.sorted()
+					.toArray(String[]::new);
+			qualifierLength = qualifierString.length;
+		} else if (qualifierDocument) {
+			qualifierString = Arrays.stream(retrieveValues(processedStatements, this.qualifier, this.qualifierDocument))
+					.distinct()
+					.sorted()
+					.toArray(String[]::new);
+			qualifierLength = qualifierString.length;
 		}
-		
+
 		double[][][] array = createArray(processedStatements, names1, names2);
-		
-		double[][] mat1 = new double[names1.length][names1.length];  // square matrix for "congruence" (or "ignore") results
-		double[][] mat2 = new double[names1.length][names1.length];  // square matrix for "conflict" results
-		double[][] m = new double[names1.length][names1.length];  // square matrix for final results
-		double range = Math.abs(qualifierValues[qualifierValues.length - 1] - qualifierValues[0]);
+		double[][] mat1 = new double[names1.length][names1.length];  // square matrix for results
+		double range = Math.abs(qualifierInteger[qualifierInteger.length - 1] - qualifierInteger[0]);
+
 		double i1count = 0.0;
 		double i2count = 0.0;
 		for (int i1 = 0; i1 < names1.length; i1++) {
@@ -814,31 +901,52 @@ public class Exporter {
 						if (aggregation.equals("ignore")) {
 							i1count = 0.0;
 							i2count = 0.0;
-							for (int k = 0; k < qualifierValues.length; k++) {
+							for (int k = 0; k < qualifierLength; k++) {
 								i1count = i1count + array[i1][j][k];
 								i2count = i2count + array[i2][j][k];
 							}
 							mat1[i1][i2] = mat1[i1][i2] + i1count * i2count;
-						}
-						// "congruence": sum up proximity of i1 and i2 per level of k, weighted by joint usage.
-						// In the binary case, this reduces to the sum of weighted matches per level of k
-						if (aggregation.equals("congruence") || aggregation.equals("subtract")) {
-							for (int k1 = 0; k1 < qualifierValues.length; k1++) {
-								for (int k2 = 0; k2 < qualifierValues.length; k2++) {
-									mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * (1.0 - ((Math.abs(qualifierValues[k1] - qualifierValues[k2]) / range))));
+						} else {
+							if (qualifierDocument || dataTypes.get(qualifier).equals("short text")) {
+								for (int k = 0; k < qualifierLength; k++) {
+									if (aggregation.equals("congruence")) {
+										mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k] * array[i2][j][k]); // multiply matches on the qualifier and add
+									} else if (aggregation.equals("conflict")) {
+										if (array[i1][j][k] > 0 && array[i2][j][k] == 0) {
+											mat1[i1][i2] = mat1[i1][i2] + array[i1][j][k]; // add counts where only i1 is active
+										} else if (array[i1][j][k] == 0 && array[i2][j][k] > 0) {
+											mat1[i1][i2] = mat1[i1][i2] + array[i2][j][k]; // add counts where only i2 is active
+										}
+									} else if (aggregation.equals("subtract")) {
+										mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k] * array[i2][j][k]); // multiply matches on the qualifier and add
+										if (array[i1][j][k] > 0 && array[i2][j][k] == 0) {
+											mat1[i1][i2] = mat1[i1][i2] - array[i1][j][k]; // subtract counts where only i1 is active
+										} else if (array[i1][j][k] == 0 && array[i2][j][k] > 0) {
+											mat1[i1][i2] = mat1[i1][i2] - array[i2][j][k]; // subtract counts where only i2 is active
+										}
+									}
 								}
-							}
-						}
-						// "conflict": same as congruence, but distance instead of proximity
-						if (aggregation.equals("conflict") || aggregation.equals("subtract")) {
-							for (int k1 = 0; k1 < qualifierValues.length; k1++) {
-								for (int k2 = 0; k2 < qualifierValues.length; k2++) {
-									mat2[i1][i2] = mat2[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * ((Math.abs(qualifierValues[k1] - qualifierValues[k2]) / range)));
+							} else if (dataTypes.get(qualifier).equals("boolean") || dataTypes.get(qualifier).equals("integer")) {
+								for (int k1 = 0; k1 < qualifierLength; k1++) {
+									for (int k2 = 0; k2 < qualifierLength; k2++) {
+										if (aggregation.equals("congruence")) {
+											// "congruence": sum up proximity of i1 and i2 per level of k, weighted by joint usage.
+											// In the binary case, this reduces to the sum of weighted matches per level of k
+											mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * (1.0 - ((Math.abs(qualifierInteger[k1] - qualifierInteger[k2]) / range))));
+										} else if (aggregation.equals("conflict")) {
+											// "conflict": same as congruence, but distance instead of proximity
+											mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * ((Math.abs(qualifierInteger[k1] - qualifierInteger[k2]) / range)));
+										} else if (aggregation.equals("subtract")) {
+											// "subtract": congruence - conflict
+											mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * (1.0 - ((Math.abs(qualifierInteger[k1] - qualifierInteger[k2]) / range))));
+											mat1[i1][i2] = mat1[i1][i2] - (array[i1][j][k1] * array[i2][j][k2] * ((Math.abs(qualifierInteger[k1] - qualifierInteger[k2]) / range)));
+										}
+									}
 								}
 							}
 						}
 					}
-					
+
 					// normalization
 					double norm = 1.0;
 					if (this.normalization.equals("no")) {
@@ -847,7 +955,7 @@ public class Exporter {
 						i1count = 0.0;
 						i2count = 0.0;
 						for (int j = 0; j < names2.length; j++) {
-							for (int k = 0; k < qualifierValues.length; k++) {
+							for (int k = 0; k < qualifierLength; k++) {
 								i1count = i1count + array[i1][j][k];
 								i2count = i2count + array[i2][j][k];
 							}
@@ -858,7 +966,7 @@ public class Exporter {
 						double m01 = 0.0;
 						double m11 = 0.0;
 						for (int j = 0; j < names2.length; j++) {
-							for (int k = 0; k < qualifierValues.length; k++) {
+							for (int k = 0; k < qualifierLength; k++) {
 								if (array[i2][j][k] == 0) {
 									m10 = m10 + array[i1][j][k];
 								}
@@ -875,7 +983,7 @@ public class Exporter {
 						i1count = 0.0;
 						i2count = 0.0;
 						for (int j = 0; j < names2.length; j++) {
-							for (int k = 0; k < qualifierValues.length; k++) {
+							for (int k = 0; k < qualifierLength; k++) {
 								i1count = i1count + array[i1][j][k];
 								i2count = i2count + array[i2][j][k];
 							}
@@ -884,34 +992,22 @@ public class Exporter {
 					}
 					if (norm == 0) {
 						mat1[i1][i2] = 0;
-						mat2[i1][i2] = 0;
 					} else {
 						mat1[i1][i2] = mat1[i1][i2] / norm;
-						mat2[i1][i2] = mat2[i1][i2] / norm;
-					}
-					
-					// "subtract": congruence minus conflict; use the appropriate matrix or matrices
-					if (aggregation.equals("ignore")) {
-						m[i1][i2] = mat1[i1][i2];
-					} else if (aggregation.equals("congruence")) {
-						m[i1][i2] = mat1[i1][i2];
-					} else if (aggregation.equals("conflict")) {
-						m[i1][i2] = mat2[i1][i2];
-					} else if (aggregation.equals("subtract")) {
-						m[i1][i2] = mat1[i1][i2] - mat2[i1][i2];
 					}
 				}
 			}
 		}
-		
+
+		// does the matrix contain only integer values? (i.e., no normalization and boolean or short text qualifier
 		boolean integerBoolean;
-		if (this.normalization.equals("no") && booleanQualifier == true) {
+		if (this.normalization.equals("no") && (qualifierDocument || dataTypes.get(qualifier).equals("boolean") || dataTypes.get(qualifier).equals("short text"))) {
 			integerBoolean = true;
 		} else {
 			integerBoolean = false;
 		}
-		
-		Matrix matrix = new Matrix(m, names1, names1, integerBoolean, start, stop);
+
+		Matrix matrix = new Matrix(mat1, names1, names1, integerBoolean, start, stop);
 		return matrix;
 	}
 
@@ -924,10 +1020,10 @@ public class Exporter {
 				this.startDateTime, this.stopDateTime, verbose));
 		this.matrixResults = matrices;
 	}
-	
+
 	/**
 	 * Create a two-mode network {@link Matrix}.
-	 * 
+	 *
 	 * @param processedStatements Usually the filtered list of export
 	 *   statements, but it can be a more processed list of export statements,
 	 *   for example for use in constructing a time window sequence of networks.
@@ -937,76 +1033,105 @@ public class Exporter {
 	 * @return {@link model.Matrix Matrix} object containing a two-mode network
 	 *   matrix.
 	 */
-	private Matrix computeTwoModeMatrix(ArrayList<ExportStatement> processedStatements,
-			LocalDateTime start, LocalDateTime stop, boolean verbose) {
+	private Matrix computeTwoModeMatrix(ArrayList<ExportStatement> processedStatements, LocalDateTime start, LocalDateTime stop, boolean verbose) {
 		String[] names1 = this.extractLabels(processedStatements, this.variable1, this.variable1Document);
 		String[] names2 = this.extractLabels(processedStatements, this.variable2, this.variable2Document);
-		
+
 		if (processedStatements.size() == 0) {
 			double[][] m = new double[names1.length][names2.length];
 			Matrix mt = new Matrix(m, names1, names2, true, start, stop);
 			return mt;
 		}
-		
-		boolean booleanQualifier = true; // is the qualifier boolean, rather than integer or null?
-		if (qualifier == null) {
-			booleanQualifier = false;
-		} else if (dataTypes.get(qualifier).equals("integer")) {
-			booleanQualifier = false;
-		}
-		int[] qualifierValues; // unique qualifier values (i.e., all of them found at least once in the dataset)
-		if (qualifier == null) {
-			qualifierValues = new int[] { 0 };
-		} else if (dataTypes.get(qualifier).equals("integer")) {
-			qualifierValues = this.originalStatements
+
+		String[] qualifierString = null;
+		int[] qualifierInteger = new int[] { 0 };
+		int qualifierLength = 1;
+		if (!qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
+			qualifierInteger = new int[] {0, 1};
+			qualifierLength = 2;
+		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("integer")) {
+			qualifierInteger = this.originalStatements
 					.stream()
 					.mapToInt(s -> (int) s.get(qualifier))
 					.distinct()
 					.sorted()
 					.toArray();
-		} else {
-			qualifierValues = new int[] {0, 1};
+			qualifierLength = qualifierInteger.length;
+		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("short text")) {
+			qualifierString = this.originalStatements
+					.stream()
+					.map(s -> (String) ((Entity) s.get(qualifier)).getValue())
+					.distinct()
+					.sorted()
+					.toArray(String[]::new);
+			qualifierLength = qualifierString.length;
+		} else if (qualifierDocument) {
+			qualifierString = Arrays.stream(retrieveValues(processedStatements, this.qualifier, this.qualifierDocument))
+					.distinct()
+					.sorted()
+					.toArray(String[]::new);
+			qualifierLength = qualifierString.length;
 		}
-		
+
 		double[][][] array = createArray(processedStatements, names1, names2);
-		
+
 		// combine levels of the qualifier variable conditional on qualifier aggregation option
 		double[][] mat = new double[names1.length][names2.length];  // initialized with zeros
-		HashMap<Integer, ArrayList<Integer>> combinations = new HashMap<Integer, ArrayList<Integer>>();
+		HashMap<Integer, ArrayList> combinations = new HashMap<Integer, ArrayList>();
 		for (int i = 0; i < names1.length; i++) {
 			for (int j = 0; j < names2.length; j++) {
 				if (this.qualifierAggregation.equals("combine")) { // combine
 					double[] vec = array[i][j]; // may be weighted, so create a second, binary vector vec2
 					int[] vec2 = new int[vec.length];
-					ArrayList<Integer> qualVal = new ArrayList<Integer>(); // a list of qualifier values used at mat[i][j]
-					for (int k = 0; k < vec.length; k++) {
-						if (vec[k] > 0) {
-							vec2[k] = 1;
-							qualVal.add(qualifierValues[k]);
+					ArrayList qualVal;
+					if (qualifierDocument || dataTypes.get(qualifier).equals("short text")) {
+						qualVal = new ArrayList<String>();
+						for (int k = 0; k < vec.length; k++) {
+							if (vec[k] > 0) {
+								vec2[k] = 1;
+							}
+							assert qualifierString != null;
+							qualVal.add(qualifierString[k]);
+						}
+					} else {
+						qualVal = new ArrayList<Integer>();
+						for (int k = 0; k < vec.length; k++) {
+							if (vec[k] > 0) {
+								vec2[k] = 1;
+							}
+							qualVal.add(qualifierInteger[k]);
 						}
 					}
-					mat[i][j] = lexRank(vec2); // compute lexical rank, i.e., map the combination of values to a single integer
-					combinations.put(lexRank(vec2), qualVal); // the bijection needs to be stored for later reporting
+					int lr = lexRank(vec2);
+					System.out.println(lr);
+					mat[i][j] = lr; // compute lexical rank, i.e., map the combination of values to a single integer
+					combinations.put(lr, qualVal); // the bijection needs to be stored for later reporting
 				} else {
-					for (int k = 0; k < qualifierValues.length; k++) {
+					for (int k = 0; k < qualifierLength; k++) {
 						if (this.qualifierAggregation.equals("ignore")) { // ignore
 							mat[i][j] = mat[i][j] + array[i][j][k]; // duplicates were already filtered out in the statement filter, so just add
 						} else if (this.qualifierAggregation.equals("subtract")) { // subtract
-							if (booleanQualifier == false && qualifierValues[k] < 0) { // subtract weighted absolute value
-								mat[i][j] = mat[i][j] - (Math.abs(qualifierValues[k]) * array[i][j][k]);
-							} else if (booleanQualifier == false && qualifierValues[k] >= 0) { // add weighted absolute value
-								mat[i][j] = mat[i][j] + (Math.abs(qualifierValues[k]) * array[i][j][k]);
-							} else if (booleanQualifier == true && qualifierValues[k] == 0) { // subtract 1 at most
-								mat[i][j] = mat[i][j] - array[i][j][k];
-							} else if (booleanQualifier == true && qualifierValues[k] > 0) { // add 1 at most
-								mat[i][j] = mat[i][j] + array[i][j][k];
+							if (!qualifierDocument && dataTypes.get(qualifier).equals("integer")) {
+								if (qualifierInteger[k] < 0) { // subtract weighted absolute value
+									mat[i][j] = mat[i][j] - (Math.abs(qualifierInteger[k]) * array[i][j][k]);
+								} else if (qualifierInteger[k] >= 0) { // add weighted absolute value
+									mat[i][j] = mat[i][j] + (Math.abs(qualifierInteger[k]) * array[i][j][k]);
+								}
+							} else if (!qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
+								if (qualifierInteger[k] == 0) { // zero category: subtract number of times this happens from edge weight
+									mat[i][j] = mat[i][j] - array[i][j][k];
+								} else if (qualifierInteger[k] > 0) { // one category: add number of times this happens to edge weight
+									mat[i][j] = mat[i][j] + array[i][j][k];
+								}
+							} else if (qualifierDocument || dataTypes.get(qualifier).equals("short text")) {
+								mat[i][j] = mat[i][j] + array[i][j][k]; // nothing to subtract because there is no negative mention with short text variables
 							}
 						}
 					}
 				}
 			}
 		}
-		
+
 		// report combinations if necessary
 		if (combinations.size() > 0) {
 			Iterator<Integer> keyIterator = combinations.keySet().iterator();
@@ -1014,7 +1139,7 @@ public class Exporter {
 				Integer key = (Integer) keyIterator.next();
 				ArrayList<Integer> values = combinations.get(key);
 				if (verbose == true) {
-					System.out.print("\n       An edge weight of " + key + " maps onto integer combination: ");
+					System.out.print("\n       An edge weight of " + key + " maps onto combination: ");
 					for (int i = 0; i < values.size(); i++) {
 						System.out.print(values.get(i) + " ");
 					}
@@ -1024,7 +1149,7 @@ public class Exporter {
 				System.out.print("\n");
 			}
 		}
-		
+
 		// normalization
 		boolean integerBoolean = false;
 		if (this.normalization.equals("no")) {
@@ -1047,7 +1172,7 @@ public class Exporter {
 					}
 				} else if (qualifierAggregation.equals("subtract")) { // iterate through array and sum for different levels
 					for (int j = 0; j < names2.length; j++) {
-						for (int k = 0; k < qualifierValues.length; k++) {
+						for (int k = 0; k < qualifierLength; k++) {
 							currentDenominator = currentDenominator + array[i][j][k];
 						}
 					}
@@ -1078,7 +1203,7 @@ public class Exporter {
 					}
 				} else if (this.qualifierAggregation.equals("subtract")) { // iterate through array and sum for different levels
 					for (int j = 0; j < names1.length; j++) {
-						for (int k = 0; k < qualifierValues.length; k++) {
+						for (int k = 0; k < qualifierLength; k++) {
 							currentDenominator = currentDenominator + array[j][i][k];
 						}
 					}
@@ -1092,7 +1217,7 @@ public class Exporter {
 				}
 			}
 		}
-		
+
 		// create Matrix object and return
 		Matrix matrix = new Matrix(mat, names1, names2, integerBoolean, start, stop); // assemble the Matrix object with labels
 		return matrix;
@@ -1353,7 +1478,7 @@ public class Exporter {
 	/**
 	 * Export {@link model.Matrix Matrix} to a CSV matrix file.
 	 */
-	private void exportCSV () {
+	private void exportCSV() {
 		String filename2;
 		String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
 		String filename3 = this.outfile.substring(this.outfile.length() - 4, this.outfile.length());
@@ -1401,7 +1526,7 @@ public class Exporter {
 	/**
 	 * Export network to a DL fullmatrix file for the software UCINET.
 	 */
-	private void exportDL () {
+	private void exportDL() {
 		String filename2;
 		String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
 		String filename3 = this.outfile.substring(this.outfile.length() - 4, this.outfile.length());
