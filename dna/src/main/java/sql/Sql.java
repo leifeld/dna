@@ -3771,6 +3771,90 @@ public class Sql {
 	 * ====================================================================== */
 
 	/**
+	 * Get a statement type from the database. The variable definitions are saved as an array list of
+	 * {@link model.Value Value} objects containing the variable ID, variable name, and data type.
+	 *
+	 * @return A {@link model.StatementType StatementType} object.
+	 */
+	public StatementType getStatementType(int statementTypeId) {
+		StatementType st = null;
+		String statementTypeLabel = "";
+		try (Connection conn = ds.getConnection();
+			 PreparedStatement s1 = conn.prepareStatement("SELECT * FROM STATEMENTTYPES WHERE ID = ?;");
+			 PreparedStatement s2 = conn.prepareStatement("SELECT * FROM VARIABLES WHERE StatementTypeId = ?;")) {
+			ArrayList<Value> variables;
+			s1.setInt(1, statementTypeId);
+			ResultSet r1 = s1.executeQuery();
+			ResultSet r2;
+			Color color;
+			while (r1.next()) {
+				variables = new ArrayList<Value>();
+				statementTypeLabel = r1.getString("Label");
+				color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
+				s2.setInt(1, statementTypeId);
+				r2 = s2.executeQuery();
+				while (r2.next()) {
+					variables.add(new Value(r2.getInt("ID"), r2.getString("Variable"), r2.getString("DataType")));
+				}
+				st = new StatementType(statementTypeId, statementTypeLabel, color, variables);
+			}
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Retrieved statement type '" + statementTypeLabel + "' (ID: " + statementTypeId + ") from the database.",
+					"Retrieved statement type '" + statementTypeLabel + "' (ID: " + statementTypeId + ") from the database.");
+			Dna.logger.log(l);
+		} catch (SQLException e1) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to retrieve statement type from the database.",
+					"Failed to retrieve statement type '" + statementTypeLabel + "' from the database. Check database connection and consistency of the STATEMENTTYPES and VARIABLES tables in the database.",
+					e1);
+			Dna.logger.log(l);
+		}
+		return st;
+	}
+
+	/**
+	 * Get a statement type from the database. The variable definitions are saved as an array list of
+	 * {@link model.Value Value} objects containing the variable ID, variable name, and data type.
+	 *
+	 * @return A {@link model.StatementType StatementType} object.
+	 */
+	public StatementType getStatementType(String statementTypeLabel) {
+		StatementType st = null;
+		try (Connection conn = ds.getConnection();
+			 PreparedStatement s1 = conn.prepareStatement("SELECT * FROM STATEMENTTYPES WHERE Label = ?;");
+			 PreparedStatement s2 = conn.prepareStatement("SELECT * FROM VARIABLES WHERE StatementTypeId = ?;")) {
+			ArrayList<Value> variables;
+			int statementTypeId = -1;
+			s1.setString(1, statementTypeLabel);
+			ResultSet r1 = s1.executeQuery();
+			ResultSet r2;
+			Color color;
+			while (r1.next()) {
+				variables = new ArrayList<Value>();
+				statementTypeId = r1.getInt("ID");
+				color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
+				s2.setInt(1, statementTypeId);
+				r2 = s2.executeQuery();
+				while (r2.next()) {
+					variables.add(new Value(r2.getInt("ID"), r2.getString("Variable"), r2.getString("DataType")));
+				}
+				st = new StatementType(r1.getInt("ID"), r1.getString("Label"), color, variables);
+			}
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Retrieved statement type '" + statementTypeLabel + "' (ID: " + statementTypeId + ") from the database.",
+					"Retrieved statement type '" + statementTypeLabel + "' (ID: " + statementTypeId + ") from the database.");
+			Dna.logger.log(l);
+		} catch (SQLException e1) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to retrieve statement type from the database.",
+					"Failed to retrieve statement type '" + statementTypeLabel + "' from the database. Check database connection and consistency of the STATEMENTTYPES and VARIABLES tables in the database.",
+					e1);
+			Dna.logger.log(l);
+		}
+		return st;
+	}
+
+	/**
 	 * Get an array list of all statement types in the database. The variable
 	 * definitions are saved as an array list of {@link model.Value Value}
 	 * objects containing the variable ID, variable name, and data type.

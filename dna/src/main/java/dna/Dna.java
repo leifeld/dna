@@ -29,7 +29,7 @@ public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2022-10-15";
+	public static final String date = "2022-10-23";
 	public static final String version = "3.0.9";
 	public MainWindow mainWindow;
 	public HeadlessDna headlessDna;
@@ -50,16 +50,16 @@ public class Dna {
 		if (args != null && args.length > 0 && args[0].equals("headless")) {
 			mainWindow = new MainWindow();
 			headlessDna = new HeadlessDna();
+			Dna.logger.addListener(headlessDna);
+
+			LogEvent l2 = new LogEvent(Logger.MESSAGE,
+					"DNA started in headless mode.",
+					"DNA started in headless mode to work with rDNA.");
+			Dna.logger.log(l2);
 		} else {
 			mainWindow = new MainWindow();
 			mainWindow.setVisible(true);
 		}
-		
-		// TODO: remove this placeholder and add database update log events throughout the code
-		LogEvent l2 = new LogEvent(Logger.UPDATE,
-				"Testing log events for database updates.",
-				"Please ignore this message. It is just a placeholder to test if database updates can be logged. It will be removed in the future when DNA is able to show database updates in the log.");
-		Dna.logger.log(l2);
 	}
 
 	/**

@@ -1,6 +1,7 @@
 package model;
 
 
+import java.time.ZoneOffset;
 import java.util.HashMap;
 
 /**
@@ -80,5 +81,16 @@ public class ExportStatement extends Statement {
 
     public String getDocumentIdAsString() {
         return String.valueOf(this.getDocumentId());
+    }
+
+    /**
+     * Get the date/time of the document in which the statement is located as seconds since 1 January 1970. Used in the
+     * {@code dna_network} function in the rDNA R package because {@link java.time.LocalDateTime} objects cannot be
+     * transferred directly to R using the rJava package.
+     *
+     * @return Date/time in seconds since 1 January 1970.
+     */
+    public long getDateTimeLong() {
+        return this.getDateTime().toEpochSecond(ZoneOffset.UTC);
     }
 }

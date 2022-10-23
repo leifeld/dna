@@ -1141,8 +1141,11 @@ public class NetworkExporter extends JDialog {
 			try {
 				exporter.computeResults();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				LogEvent le = new LogEvent(Logger.ERROR,
+						"Error while exporting network.",
+						"An unexpected error occurred while exporting a network. See the stack trace for details. Consider reporting this error.",
+						e);
+				Dna.logger.log(le);
 			}
 			progressMonitor.setProgress(3);
 			

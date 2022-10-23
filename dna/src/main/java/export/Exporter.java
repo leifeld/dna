@@ -8,6 +8,7 @@ import com.thoughtworks.xstream.io.xml.StaxDriver;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
+import me.tongfei.progressbar.ProgressBar;
 import model.*;
 import org.jdom.Attribute;
 import org.jdom.Comment;
@@ -17,15 +18,14 @@ import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 import org.ojalgo.array.DenseArray;
 import org.ojalgo.array.Primitive64Array;
-import org.ojalgo.function.UnaryFunction;
 import org.ojalgo.function.aggregator.Aggregator;
-import org.ojalgo.function.constant.PrimitiveMath;
 import org.ojalgo.matrix.Primitive64Matrix;
 import org.ojalgo.matrix.decomposition.Eigenvalue;
 
 import java.awt.*;
 import java.io.*;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
 import java.util.*;
@@ -311,22 +311,260 @@ public class Exporter {
 			boolean invertTypes,
 			String fileFormat,
 			String outfile) {
+
+		// create a list of document variables for easier if-condition checking below
+		ArrayList<String> documentVariables = new ArrayList<String>();
+		documentVariables.add("author");
+		documentVariables.add("source");
+		documentVariables.add("section");
+		documentVariables.add("type");
+		documentVariables.add("id");
+		documentVariables.add("title");
+
+		// check network type
+		// valid input: 'eventlist', 'twomode', or 'onemode'
 		this.networkType = networkType;
+		this.networkType = this.networkType.toLowerCase();
+		if (!this.networkType.equals("eventlist") && !this.networkType.equals("twomode") && !this.networkType.equals("onemode")) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Network type setting invalid.",
+					"When exporting a network, the network type was set to be \"" + networkType + "\", but the only valid options are \"onemode\", \"twomode\", and \"eventlist\". Using the default value \"twomode\" in this case.");
+			Dna.logger.log(le);
+			this.networkType = "twomode";
+		}
+
+		// check statement type
 		this.statementType = statementType;
-		this.variable1 = variable1;
+		ArrayList<String> shortTextVariables = Stream.of(this.statementType.getVariablesList(false, true, false, false)).collect(Collectors.toCollection(ArrayList::new));
+		if (shortTextVariables.size() < 2) {
+			LogEvent le = new LogEvent(Logger.ERROR,
+					"Exporter: Statement type contains fewer than two short text variables.",
+					"When exporting a network, the statement type \"" + this.statementType.getLabel() + "\" (ID: " + this.statementType.getId() + ") was selected, but this statement type contains fewer than two short text variables. At least two short text variables are required for network construction.");
+			Dna.logger.log(le);
+		}
+
+		// check variable1, variable1Document, variable2, and variable2Document
 		this.variable1Document = variable1Document;
-		this.variable2 = variable2;
+		if (this.variable1Document && !documentVariables.contains(variable1)) {
+			this.variable1Document = false;
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Variable 1 is not a document-level variable.",
+					"When exporting a network, Variable 1 was set to be a document-level variable, but \"" + variable1 + "\" does not exist as a document-level variable. Trying to interpret it as a statement-level variable instead.");
+			Dna.logger.log(le);
+		}
+
 		this.variable2Document = variable2Document;
-		this.qualifier = qualifier;
+		if (this.variable2Document && !documentVariables.contains(variable2)) {
+			this.variable2Document = false;
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Variable 2 is not a document-level variable.",
+					"When exporting a network, Variable 2 was set to be a document-level variable, but \"" + variable2 + "\" does not exist as a document-level variable. Trying to interpret it as a statement-level variable instead.");
+			Dna.logger.log(le);
+		}
+
+		this.variable1 = variable1;
+		this.variable2 = variable2;
+		if (!variable1Document && !shortTextVariables.contains(this.variable1)) {
+			String var1 = this.variable1;
+			int counter = 0;
+			while (var1.equals(this.variable1) || var1.equals(this.variable2)) {
+				var1 = shortTextVariables.get(counter);
+				counter++;
+			}
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Variable 1 does not exist in statement type.",
+					"When exporting a network, Variable 1 was set to be \"" + this.variable1 + "\", but this variable is undefined in the statement type \"" + this.statementType + "\" or is not a short text variable. Using variable \"" + var1 + "\" instead.");
+			Dna.logger.log(le);
+			this.variable1 = var1;
+		}
+		if (!variable2Document && !shortTextVariables.contains(this.variable2)) {
+			String var2 = this.variable2;
+			int counter = 0;
+			while (var2.equals(this.variable1) || var2.equals(this.variable2)) {
+				var2 = shortTextVariables.get(counter);
+				counter++;
+			}
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Variable 2 does not exist in statement type.",
+					"When exporting a network, Variable 2 was set to be \"" + this.variable2 + "\", but this variable is undefined in the statement type \"" + this.statementType + "\" or is not a short text variable. Using variable \"" + var2 + "\" instead.");
+			Dna.logger.log(le);
+			this.variable2 = var2;
+		}
+		if (this.variable1.equals(this.variable2)) {
+			String var2 = this.variable2;
+			int counter = 0;
+			while (var2.equals(this.variable1)) {
+				var2 = shortTextVariables.get(counter);
+				counter++;
+			}
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Variables 1 and 2 are identical.",
+					"When exporting a network, Variable 1 and Variable 2 were identical (\"" + this.variable1 + "\"). Changing Variable 2 to \"" + var2 + "\" instead.");
+			Dna.logger.log(le);
+			this.variable2 = var2;
+		}
+
+		// check qualifier, qualifierDocument, and qualifierAggregation
 		this.qualifierDocument = qualifierDocument;
-		this.qualifierAggregation = qualifierAggregation;
-		this.normalization = normalization;
+		if (qualifier == null && this.qualifierDocument) {
+			this.qualifierDocument = false;
+		} else if (qualifier != null && this.qualifierDocument && !documentVariables.contains(qualifier)) {
+			this.qualifierDocument = false;
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Qualifier variable is not a document-level variable.",
+					"When exporting a network, the qualifier variable was set to be a document-level variable, but \"" + qualifier + "\" does not exist as a document-level variable. Trying to interpret it as a statement-level variable instead.");
+			Dna.logger.log(le);
+		}
+
+		this.qualifierAggregation = qualifierAggregation.toLowerCase();
+		this.qualifier = qualifier;
+		ArrayList<String> variables = Stream.of(this.statementType.getVariablesList(false, true, true, true)).collect(Collectors.toCollection(ArrayList::new));
+		if (this.qualifier != null && this.qualifierDocument == false && (!variables.contains(this.qualifier) || this.qualifier.equals(this.variable1) || this.qualifier.equals(this.variable2))) {
+			this.qualifier = null;
+			if (!this.qualifierAggregation.equals("ignore")) {
+				this.qualifierAggregation = "ignore";
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"Exporter: Qualifier variable undefined or invalid.",
+						"When exporting a network, the qualifier variable was either not defined as a variable in the statement type \"" + this.statementType.getLabel() + "\" or was set to be identical to Variable 1 or Variable 2. Hence, no qualifier is used.");
+				Dna.logger.log(le);
+			}
+		}
+
+		if (!this.qualifierAggregation.equals("ignore") &&
+				!this.qualifierAggregation.equals("subtract") &&
+				!this.qualifierAggregation.equals("combine") &&
+				!this.qualifierAggregation.equals("congruence") &&
+				!this.qualifierAggregation.equals("conflict") &&
+				!(this.qualifierAggregation.equals("congruence & conflict") && timeWindow.equals("events"))) {
+			this.qualifierAggregation = "ignore";
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Qualifier aggregation setting invalid.",
+					"When exporting a network, the qualifier aggregation setting was \"" + qualifierAggregation + "\". The only valid settings are \"ignore\", \"combine\", \"congruence\", and \"conflict\", depending on other settings. Using \"ignore\" now.");
+			Dna.logger.log(le);
+		}
+		if (this.qualifierAggregation.equals("combine") && !this.networkType.equals("twomode")) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Qualifier aggregation incompatible with network type.",
+					"When exporting a network, the qualifier aggregation setting was \"combine\", but this setting is only compatible with two-mode networks. Using \"ignore\" now.");
+			Dna.logger.log(le);
+			this.qualifierAggregation = "ignore";
+		}
+		if ((this.qualifierAggregation.equals("congruence") || this.qualifierAggregation.equals("conflict")) && !this.networkType.equals("onemode")) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Qualifier aggregation incompatible with network type.",
+					"When exporting a network, the qualifier aggregation setting was \"" + this.qualifierAggregation + "\", but this setting is only compatible with one-mode networks. Using \"ignore\" now.");
+			Dna.logger.log(le);
+			this.qualifierAggregation = "ignore";
+		}
+		if (this.qualifier == null && !this.qualifierAggregation.equals("ignore")) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Qualifier aggregation incompatible with qualifier variable.",
+					"When exporting a network, the qualifier aggregation setting was \"" + this.qualifierAggregation + "\", but no qualifier variable was selected. Using \"ignore\" now.");
+			Dna.logger.log(le);
+			this.qualifierAggregation = "ignore";
+		}
+
+		// check normalization (valid values: 'no', 'activity', 'prominence', 'average', 'jaccard', or 'cosine')
+		this.normalization = normalization.toLowerCase();
+		if (!this.normalization.equals("no") &&
+				!this.normalization.equals("activity") &&
+				!this.normalization.equals("prominence") &&
+				!this.normalization.equals("average") &&
+				!this.normalization.equals("jaccard") &&
+				!this.normalization.equals("cosine")) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Normalization setting invalid.",
+					"When exporting a network, normalization was set to \"" + normalization + "\", which is invalid. The only valid values are \"no\", \"activity\", \"prominence\", \"average\", \"jaccard\", and \"cosine\". Using the default value \"no\" in this case.");
+			Dna.logger.log(le);
+			this.normalization = "no";
+		}
+		if ((this.normalization.equals("activity") || this.normalization.equals("prominence")) && !this.networkType.equals("twomode")) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Normalization setting invalid.",
+					"When exporting a network, normalization was set to \"" + normalization + "\", which is only possible with two-mode networks. Using the default value \"no\" in this case.");
+			Dna.logger.log(le);
+			this.normalization = "no";
+		}
+		if ((this.normalization.equals("average") || this.normalization.equals("jaccard") || this.normalization.equals("cosine")) && !this.networkType.equals("onemode")) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Normalization setting invalid.",
+					"When exporting a network, normalization was set to \"" + normalization + "\", which is only possible with one-mode networks. Using the default value \"no\" in this case.");
+			Dna.logger.log(le);
+			this.normalization = "no";
+		}
+
+		// isolates setting
 		this.isolates = isolates;
-		this.duplicates = duplicates;
+
+		// check duplicates setting (valid settings: 'include', 'document', 'week', 'month', 'year', or 'acrossrange')
+		this.duplicates = duplicates.toLowerCase();
+		if (!this.duplicates.equals("include") &&
+				!this.duplicates.equals("document") &&
+				!this.duplicates.equals("week") &&
+				!this.duplicates.equals("month") &&
+				!this.duplicates.equals("year") &&
+				!this.duplicates.equals("acrossrange")) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Duplicates setting invalid.",
+					"When exporting a network, the duplicates setting was \"" + duplicates + "\", which is invalid. The only valid values are \"include\", \"document\", \"week\", \"month\", \"year\", and \"acrossrange\". Using the default value \"include\" in this case.");
+			Dna.logger.log(le);
+			this.duplicates = "include";
+		}
+
+		// check time window arguments
+		this.timeWindow = timeWindow;
+		if (this.timeWindow == null) {
+			this.timeWindow = "no";
+		} else if (!this.timeWindow.equals("no") &&
+				!this.timeWindow.equals("seconds") &&
+				!this.timeWindow.equals("minutes") &&
+				!this.timeWindow.equals("hours") &&
+				!this.timeWindow.equals("days") &&
+				!this.timeWindow.equals("weeks") &&
+				!this.timeWindow.equals("months") &&
+				!this.timeWindow.equals("years") &&
+				!this.timeWindow.equals("events")) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Time window setting invalid.",
+					"When exporting a network, the time window setting was \"" + this.timeWindow + "\", which is invalid. The only valid values are \"no\", \"seconds\", \"minutes\", \"hours\", \"days\", \"weeks\", \"months\", \"years\", and \"events\". Using the default value \"no\" in this case.");
+			Dna.logger.log(le);
+			this.timeWindow = "no";
+		}
+		this.windowSize = windowSize;
+		if (this.windowSize < 1 && !this.timeWindow.equals("no")) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Time window size invalid.",
+					"When exporting a network, the time window size was " + this.windowSize + ", which is invalid in combination with a time window setting other than \"no\". Using the minimum value of 1 in this case.");
+			Dna.logger.log(le);
+			this.windowSize = 1;
+		}
+
+		// check file export format and file name arguments
+
+		if (fileFormat != null) {
+			this.fileFormat = fileFormat.toLowerCase();
+			if (!this.fileFormat.equals("csv") && !this.fileFormat.equals("dl") && !this.fileFormat.equals("graphml")) {
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"Exporter: File format invalid.",
+						"When exporting a network, the file format setting was " + this.fileFormat + ", but \"csv\", \"dl\", and \"graphml\" are the only valid settings. Using \"graphml\" in this case.");
+				Dna.logger.log(le);
+				this.fileFormat = "graphml";
+			}
+		}
+		this.outfile = outfile;
+		if (this.outfile != null) {
+			if (this.fileFormat.equals("graphml") && !this.outfile.toLowerCase().endsWith(".graphml")) {
+				this.outfile = this.outfile + ".graphml";
+			} else if (this.fileFormat.equals("csv") && !this.outfile.toLowerCase().endsWith(".csv")) {
+				this.outfile = this.outfile + ".csv";
+			} else if (this.fileFormat.equals("dl") && !this.outfile.toLowerCase().endsWith(".dl")) {
+				this.outfile = this.outfile + ".dl";
+			}
+		}
+
+		// remaining arguments
 		this.startDateTime = startDateTime;
 		this.stopDateTime = stopDateTime;
-		this.timeWindow = timeWindow;
-		this.windowSize = windowSize;
 		this.excludeValues = excludeValues;
 		this.invertValues = invertValues;
 		this.excludeAuthors = excludeAuthors;
@@ -337,8 +575,6 @@ public class Exporter {
 		this.invertSections = invertSections;
 		this.excludeTypes = excludeTypes;
 		this.invertTypes = invertTypes;
-		this.fileFormat = fileFormat;
-		this.outfile = outfile;
 	}
 	
 	/**
@@ -383,6 +619,13 @@ public class Exporter {
 					documents.get(docIndex).getType());
 		})
 		.collect(Collectors.toCollection(ArrayList::new));
+		if (this.originalStatements.size() == 0) {
+			Dna.logger.log(
+					new LogEvent(Logger.WARNING,
+							"No statements found.",
+							"When exporting a network, no statements were found in the database in the time period under scrutiny and given any document-level exclusion filters.")
+			);
+		}
 	}
 	
 	/**
@@ -458,145 +701,152 @@ public class Exporter {
 	 * {@link #filteredStatements} slot of the class. 
 	 */
 	public void filterStatements() {
-		// create a deep copy of the original statements
-		this.filteredStatements = new ArrayList<ExportStatement>();
-		for (int i = 0; i < this.originalStatements.size(); i++) {
-			this.filteredStatements.add(new ExportStatement(originalStatements.get(i)));
-		}
-		
-		// sort statements by date and time
-		Collections.sort(this.filteredStatements);
-		
-		// Create arrays with variable values
-		String[] values1 = retrieveValues(this.filteredStatements, this.variable1, this.variable1Document);
-		String[] values2 = retrieveValues(this.filteredStatements, this.variable2, this.variable2Document);
-		String[] qualifierValues = new String[0];
-		if (this.qualifierDocument || (!this.qualifierDocument && dataTypes.get(qualifier).equals("short text"))) {
-			qualifierValues = retrieveValues(this.filteredStatements, this.qualifier, this.qualifierDocument);
-		}
-		
-		// process and exclude statements
-		ExportStatement s;
-		ArrayList<ExportStatement> al = new ArrayList<ExportStatement>();
-	    String previousVar1 = null;
-	    String previousVar2 = null;
-		String previousQualifier = null;
-	    LocalDateTime cal, calPrevious;
-	    int year, month, week, yearPrevious, monthPrevious, weekPrevious;
-		for (int i = 0; i < this.filteredStatements.size(); i++) {
-			boolean select = true;
-			s = this.filteredStatements.get(i);
+		try (ProgressBar pb = new ProgressBar("Filtering statements...", this.originalStatements.size())) {
+			pb.stepTo(0);
 
-			// check against excluded values
-			Iterator<String> keyIterator = this.excludeValues.keySet().iterator();
-			while (keyIterator.hasNext()) {
-				String key = keyIterator.next();
-				String string = "";
-				if (dataTypes.get(key) == null) {
-					throw new NullPointerException("'" + key + "' is not a statement-level variable and cannot be excluded.");
-				} else if (dataTypes.get(key).equals("boolean") || dataTypes.get(key).equals("integer")) {
-					string = String.valueOf(s.get(key));
-				} else if (dataTypes.get(key).equals("short text")) {
-					string = ((Entity) s.get(key)).getValue();
-				} else if (dataTypes.get(key).equals("long text")) {
-					string = (String) s.get(key);
+			// create a deep copy of the original statements
+			this.filteredStatements = new ArrayList<ExportStatement>();
+			for (int i = 0; i < this.originalStatements.size(); i++) {
+				this.filteredStatements.add(new ExportStatement(this.originalStatements.get(i)));
+			}
+
+			// sort statements by date and time
+			Collections.sort(this.filteredStatements);
+
+			// Create arrays with variable values
+			String[] values1 = retrieveValues(this.filteredStatements, this.variable1, this.variable1Document);
+			String[] values2 = retrieveValues(this.filteredStatements, this.variable2, this.variable2Document);
+			String[] qualifierValues = new String[0];
+			if (this.qualifierDocument || (!this.qualifierAggregation.equals("ignore") && dataTypes.get(qualifier).equals("short text"))) {
+				qualifierValues = retrieveValues(this.filteredStatements, this.qualifier, this.qualifierDocument);
+			}
+
+			// process and exclude statements
+			ExportStatement s;
+			ArrayList<ExportStatement> al = new ArrayList<ExportStatement>();
+			String previousVar1 = null;
+			String previousVar2 = null;
+			String previousQualifier = null;
+			LocalDateTime cal, calPrevious;
+			int year, month, week, yearPrevious, monthPrevious, weekPrevious;
+			for (int i = 0; i < this.filteredStatements.size(); i++) {
+				boolean select = true;
+				s = this.filteredStatements.get(i);
+
+				// check against excluded values
+				Iterator<String> keyIterator = this.excludeValues.keySet().iterator();
+				while (keyIterator.hasNext()) {
+					String key = keyIterator.next();
+					String string = "";
+					if (dataTypes.get(key) == null) {
+						throw new NullPointerException("'" + key + "' is not a statement-level variable and cannot be excluded.");
+					} else if (dataTypes.get(key).equals("boolean") || dataTypes.get(key).equals("integer")) {
+						string = String.valueOf(s.get(key));
+					} else if (dataTypes.get(key).equals("short text")) {
+						string = ((Entity) s.get(key)).getValue();
+					} else if (dataTypes.get(key).equals("long text")) {
+						string = (String) s.get(key);
+					}
+					if ((this.excludeValues.get(key).contains(string) && !this.invertValues) ||
+							(!this.excludeValues.get(key).contains(string) && this.invertValues)) {
+						select = false;
+					}
 				}
-				if ((this.excludeValues.get(key).contains(string) && !this.invertValues) ||
-						(!this.excludeValues.get(key).contains(string) && this.invertValues)) {
+
+				// check against empty fields
+				if (select &&
+						!this.networkType.equals("eventlist") &&
+						(values1[i].equals("") || values2[i].equals("") || (!this.qualifierAggregation.equals("ignore") && (qualifierDocument || dataTypes.get(qualifier).equals("short text")) && qualifierValues[i].equals("")))) {
 					select = false;
 				}
-			}
 
-			// check against empty fields
-			if (select &&
-					!this.networkType.equals("eventlist") &&
-					(values1[i].equals("") || values2[i].equals("") || ((qualifierDocument || dataTypes.get(qualifier).equals("short text")) && qualifierValues[i].equals("")))) {
-				select = false;
-			}
-			
-			// check for duplicates
-			cal = s.getDateTime();
-		    year = cal.getYear();
-		    month = cal.getMonthValue();
-		    @SuppressWarnings("static-access")
-			WeekFields weekFields = WeekFields.of(Locale.UK.getDefault()); // use UK definition of calendar weeks
-			week = cal.get(weekFields.weekOfWeekBasedYear());
-			if (!this.duplicates.equals("include all duplicates")) {
-				for (int j = al.size() - 1; j >= 0; j--) {
-				    if (!this.variable1Document) {
-				    	previousVar1 = ((Entity) al.get(j).get(this.variable1)).getValue();
-				    } else if (this.variable1.equals("author")) {
-				    	previousVar1 = al.get(j).getAuthor();
-				    } else if (this.variable1.equals("source")) {
-				    	previousVar1 = al.get(j).getSource();
-				    } else if (this.variable1.equals("section")) {
-				    	previousVar1 = al.get(j).getSection();
-				    } else if (this.variable1.equals("type")) {
-				    	previousVar1 = al.get(j).getType();
-				    } else if (this.variable1.equals("id")) {
-				    	previousVar1 = al.get(j).getDocumentIdAsString();
-				    } else if (this.variable1.equals("title")) {
-				    	previousVar1 = al.get(j).getTitle();
-				    }
-				    if (!this.variable2Document) {
-				    	previousVar2 = ((Entity) al.get(j).get(this.variable2)).getValue();
-				    } else if (this.variable2.equals("author")) {
-				    	previousVar2 = al.get(j).getAuthor();
-				    } else if (this.variable2.equals("source")) {
-				    	previousVar2 = al.get(j).getSource();
-				    } else if (this.variable2.equals("section")) {
-				    	previousVar2 = al.get(j).getSection();
-				    } else if (this.variable2.equals("type")) {
-				    	previousVar2 = al.get(j).getType();
-				    } else if (this.variable2.equals("id")) {
-				    	previousVar2 = al.get(j).getDocumentIdAsString();
-				    } else if (this.variable2.equals("title")) {
-				    	previousVar2 = al.get(j).getTitle();
-				    }
-					if (qualifierDocument || dataTypes.get(this.qualifier).equals("short text")) {
-						if (!this.qualifierDocument) {
-							previousQualifier = ((Entity) al.get(j).get(this.qualifier)).getValue();
-						} else if (qualifierDocument && this.qualifier.equals("author")) {
-							previousQualifier = al.get(j).getAuthor();
-						} else if (qualifierDocument && this.qualifier.equals("source")) {
-							previousQualifier = al.get(j).getSource();
-						} else if (qualifierDocument && this.qualifier.equals("section")) {
-							previousQualifier = al.get(j).getSection();
-						} else if (qualifierDocument && this.qualifier.equals("type")) {
-							previousQualifier = al.get(j).getType();
-						} else if (qualifierDocument && this.qualifier.equals("id")) {
-							previousQualifier = al.get(j).getDocumentIdAsString();
-						} else if (qualifierDocument && this.qualifier.equals("title")) {
-							previousQualifier = al.get(j).getTitle();
+				// check for duplicates
+				cal = s.getDateTime();
+				year = cal.getYear();
+				month = cal.getMonthValue();
+				@SuppressWarnings("static-access")
+				WeekFields weekFields = WeekFields.of(Locale.UK.getDefault()); // use UK definition of calendar weeks
+				week = cal.get(weekFields.weekOfWeekBasedYear());
+				if (!this.duplicates.equals("include")) {
+					for (int j = al.size() - 1; j >= 0; j--) {
+						if (!this.variable1Document) {
+							previousVar1 = ((Entity) al.get(j).get(this.variable1)).getValue();
+						} else if (this.variable1.equals("author")) {
+							previousVar1 = al.get(j).getAuthor();
+						} else if (this.variable1.equals("source")) {
+							previousVar1 = al.get(j).getSource();
+						} else if (this.variable1.equals("section")) {
+							previousVar1 = al.get(j).getSection();
+						} else if (this.variable1.equals("type")) {
+							previousVar1 = al.get(j).getType();
+						} else if (this.variable1.equals("id")) {
+							previousVar1 = al.get(j).getDocumentIdAsString();
+						} else if (this.variable1.equals("title")) {
+							previousVar1 = al.get(j).getTitle();
+						}
+						if (!this.variable2Document) {
+							previousVar2 = ((Entity) al.get(j).get(this.variable2)).getValue();
+						} else if (this.variable2.equals("author")) {
+							previousVar2 = al.get(j).getAuthor();
+						} else if (this.variable2.equals("source")) {
+							previousVar2 = al.get(j).getSource();
+						} else if (this.variable2.equals("section")) {
+							previousVar2 = al.get(j).getSection();
+						} else if (this.variable2.equals("type")) {
+							previousVar2 = al.get(j).getType();
+						} else if (this.variable2.equals("id")) {
+							previousVar2 = al.get(j).getDocumentIdAsString();
+						} else if (this.variable2.equals("title")) {
+							previousVar2 = al.get(j).getTitle();
+						}
+						if (!this.qualifierAggregation.equals("ignore") && (qualifierDocument || dataTypes.get(this.qualifier).equals("short text"))) {
+							if (!this.qualifierDocument) {
+								previousQualifier = ((Entity) al.get(j).get(this.qualifier)).getValue();
+							} else if (this.qualifier.equals("author")) {
+								previousQualifier = al.get(j).getAuthor();
+							} else if (this.qualifier.equals("source")) {
+								previousQualifier = al.get(j).getSource();
+							} else if (this.qualifier.equals("section")) {
+								previousQualifier = al.get(j).getSection();
+							} else if (this.qualifier.equals("type")) {
+								previousQualifier = al.get(j).getType();
+							} else if (this.qualifier.equals("id")) {
+								previousQualifier = al.get(j).getDocumentIdAsString();
+							} else if (this.qualifier.equals("title")) {
+								previousQualifier = al.get(j).getTitle();
+							}
+						}
+						calPrevious = al.get(j).getDateTime();
+						yearPrevious = calPrevious.getYear();
+						monthPrevious = calPrevious.getMonthValue();
+						@SuppressWarnings("static-access")
+						WeekFields weekFieldsPrevious = WeekFields.of(Locale.UK.getDefault()); // use UK definition of calendar weeks
+						weekPrevious = calPrevious.get(weekFieldsPrevious.weekOfWeekBasedYear());
+						if ( s.getStatementTypeId() == al.get(j).getStatementTypeId()
+								&& ( (al.get(j).getDocumentId() == s.getDocumentId() && duplicates.equals("document"))
+								|| duplicates.equals("acrossrange")
+								|| (duplicates.equals("year") && year == yearPrevious)
+								|| (duplicates.equals("month") && month == monthPrevious)
+								|| (duplicates.equals("week") && week == weekPrevious) )
+								&& values1[i].equals(previousVar1)
+								&& values2[i].equals(previousVar2)
+								&& (this.qualifierAggregation.equals("ignore") || (dataTypes.get(this.qualifier).equals("short text") && qualifierValues[i].equals(previousQualifier)))) {
+							select = false;
+							break;
 						}
 					}
-				    calPrevious = al.get(j).getDateTime();
-				    yearPrevious = calPrevious.getYear();
-				    monthPrevious = calPrevious.getMonthValue();
-				    @SuppressWarnings("static-access")
-					WeekFields weekFieldsPrevious = WeekFields.of(Locale.UK.getDefault()); // use UK definition of calendar weeks
-					weekPrevious = calPrevious.get(weekFieldsPrevious.weekOfWeekBasedYear());
-					if ( s.getStatementTypeId() == al.get(j).getStatementTypeId()
-							&& (al.get(j).getDocumentId() == s.getDocumentId() && duplicates.equals("ignore per document") 
-								|| duplicates.equals("ignore across date range")
-								|| (duplicates.equals("ignore per calendar year") && year == yearPrevious)
-								|| (duplicates.equals("ignore per calendar month") && month == monthPrevious)
-								|| (duplicates.equals("ignore per calendar week") && week == weekPrevious) )
-							&& values1[i].equals(previousVar1)
-							&& values2[i].equals(previousVar2)
-							&& (this.qualifierAggregation.equals("ignore") || (dataTypes.get(this.qualifier).equals("short text") && qualifierValues[i].equals(previousQualifier)))) {
-						select = false;
-						break;
-					}
 				}
+
+				// add only if the statement passed all checks
+				if (select) {
+					al.add(s);
+				}
+
+				pb.stepTo(i + 1);
 			}
-			
-			// add only if the statement passed all checks
-			if (select) {
-				al.add(s);
-			}
+			this.filteredStatements = al;
+			pb.stepTo(this.originalStatements.size());
 		}
-		this.filteredStatements = al;
 	}
 
 	/**
@@ -634,7 +884,7 @@ public class Exporter {
 					values[i] = s.getTitle();
 				}
 			} else {
-				values[i] = (String) ((Entity) s.get(variable)).getValue();
+				values[i] = ((Entity) s.get(variable)).getValue();
 			}
 		}
 		return values;
@@ -664,20 +914,20 @@ public class Exporter {
 
 	/**
 	 * Lexical ranking of a binary vector.
-	 * 
+	 *
 	 * Examples:
-	 * 
+	 *
 	 * [0, 0] -> 0
 	 * [0, 1] -> 1
 	 * [1, 0] -> 2
 	 * [1, 1] -> 3
 	 * [0, 0, 1, 0, 1, 0] -> 10
-	 * 
+	 *
 	 * This bijection is used to map combinations of qualifier values into edge
 	 * weights in the resulting network matrix.
-	 * 
-	 * Source: https://cw.fel.cvut.cz/wiki/_media/courses/b4m33pal/pal06.pdf
-	 * 
+	 *
+	 * Source: <a href="https://cw.fel.cvut.cz/wiki/_media/courses/b4m33pal/pal06.pdf">https://cw.fel.cvut.cz/wiki/_media/courses/b4m33pal/pal06.pdf</a>.
+	 *
 	 * @param binaryVector A binary int array of arbitrary length, indicating
 	 *   which qualifier values are used in the dataset
 	 * @return An integer
@@ -706,7 +956,9 @@ public class Exporter {
 		String[] qualifierString = null;
 		int[] qualifierInteger = new int[] { 0 };
 		int qualifierLength = 1;
-		if (!qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
+		if (qualifier == null) {
+			// do nothing; go with qualifierLength = 1
+		} else if (!this.qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
 			qualifierInteger = new int[] {0, 1};
 			qualifierLength = 2;
 		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("integer")) {
@@ -762,7 +1014,7 @@ public class Exporter {
 					}
 					qInteger = -1;
 				} else if (dataTypes.get(qualifier).equals("short text")) {
-					qString = (String) ((Entity) processedStatements.get(i).get(qualifier)).getValue(); // retrieve short text qualifier value from statement (via Entity)
+					qString = ((Entity) processedStatements.get(i).get(qualifier)).getValue(); // retrieve short text qualifier value from statement (via Entity)
 					qInteger = -1;
 				} else {
 					qInteger = (int) processedStatements.get(i).get(qualifier); // retrieve integer or boolean qualifier value from statement
@@ -789,16 +1041,18 @@ public class Exporter {
 			}
 			
 			// find out which qualifier level corresponds to the qualifier value
-			int qual = -1;
-			for (int j = 0; j < qualifierLength; j++) {
-				if (qualifierDocument && qualifierString[j].equals(qString) ||
-						(dataTypes.containsKey(qualifier) && dataTypes.get(qualifier).equals("short text") && qualifierString[j].equals(qString)) ||
-						(!qualifierDocument && !dataTypes.get(qualifier).equals("short text") && qualifierInteger[j] == qInteger)) {
-					qual = j;
-					break;
+			int qual = 0;
+			if (qualifierLength > 1) {
+				for (int j = 0; j < qualifierLength; j++) {
+					if (qualifierDocument && qualifierString[j].equals(qString) ||
+							(dataTypes.containsKey(qualifier) && dataTypes.get(qualifier).equals("short text") && qualifierString[j].equals(qString)) ||
+							(!qualifierDocument && !dataTypes.get(qualifier).equals("short text") && qualifierInteger[j] == qInteger)) {
+						qual = j;
+						break;
+					}
 				}
 			}
-			
+
 			// add match to matrix (note that duplicates were dealt with at the statement filter stage)
 			array[row][col][qual] = array[row][col][qual] + 1.0;
 		}
@@ -808,14 +1062,12 @@ public class Exporter {
 	
 	/**
 	 * Compute the results. Choose the right method based on the settings.
-	 * 
-	 * @throws Exception
 	 */
-	public void computeResults() throws Exception {
+	public void computeResults() {
 		if (networkType.equals("onemode") && timeWindow.equals("no")) {
 			computeOneModeMatrix();
 		} else if (networkType.equals("twomode") && timeWindow.equals("no")) {
-			computeTwoModeMatrix(true);
+			computeTwoModeMatrix();
 		} else if (!networkType.equals("eventlist") && !timeWindow.equals("no")) {
 			computeTimeWindowMatrices();
 		}
@@ -859,7 +1111,9 @@ public class Exporter {
 		String[] qualifierString;
 		int[] qualifierInteger = new int[] { 0 };
 		int qualifierLength = 1;
-		if (!qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
+		if (qualifier == null) {
+			// do nothing, go with qualifierLength = 1
+		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
 			qualifierInteger = new int[] {0, 1};
 			qualifierLength = 2;
 		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("integer")) {
@@ -999,25 +1253,25 @@ public class Exporter {
 			}
 		}
 
-		// does the matrix contain only integer values? (i.e., no normalization and boolean or short text qualifier
+		// does the matrix contain only integer values? (i.e., no normalization and boolean or short text qualifier)
 		boolean integerBoolean;
-		if (this.normalization.equals("no") && (qualifierDocument || dataTypes.get(qualifier).equals("boolean") || dataTypes.get(qualifier).equals("short text"))) {
+		if (this.normalization.equals("no") && (aggregation.equals("ignore") || qualifierDocument || dataTypes.get(qualifier).equals("boolean") || dataTypes.get(qualifier).equals("short text"))) {
 			integerBoolean = true;
 		} else {
 			integerBoolean = false;
 		}
 
 		Matrix matrix = new Matrix(mat1, names1, names1, integerBoolean, start, stop);
+		matrix.setNumStatements(this.filteredStatements.size());
 		return matrix;
 	}
 
 	/**
 	 * Wrapper method to compute two-mode network matrix with class settings.
 	 */
-	public void computeTwoModeMatrix(boolean verbose) {
+	public void computeTwoModeMatrix() {
 		ArrayList<Matrix> matrices = new ArrayList<Matrix>(); 
-		matrices.add(this.computeTwoModeMatrix(this.filteredStatements,
-				this.startDateTime, this.stopDateTime, verbose));
+		matrices.add(this.computeTwoModeMatrix(this.filteredStatements,	this.startDateTime, this.stopDateTime));
 		this.matrixResults = matrices;
 	}
 
@@ -1029,11 +1283,9 @@ public class Exporter {
 	 *   for example for use in constructing a time window sequence of networks.
 	 * @param start Start date/time.
 	 * @param stop End date/time.
-	 * @param verbose Report details?
-	 * @return {@link model.Matrix Matrix} object containing a two-mode network
-	 *   matrix.
+	 * @return {@link model.Matrix Matrix} object containing a two-mode network matrix.
 	 */
-	private Matrix computeTwoModeMatrix(ArrayList<ExportStatement> processedStatements, LocalDateTime start, LocalDateTime stop, boolean verbose) {
+	private Matrix computeTwoModeMatrix(ArrayList<ExportStatement> processedStatements, LocalDateTime start, LocalDateTime stop) {
 		String[] names1 = this.extractLabels(processedStatements, this.variable1, this.variable1Document);
 		String[] names2 = this.extractLabels(processedStatements, this.variable2, this.variable2Document);
 
@@ -1046,7 +1298,9 @@ public class Exporter {
 		String[] qualifierString = null;
 		int[] qualifierInteger = new int[] { 0 };
 		int qualifierLength = 1;
-		if (!qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
+		if (qualifier == null) {
+			// do nothing, go with qualifierLength = 1
+		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
 			qualifierInteger = new int[] {0, 1};
 			qualifierLength = 2;
 		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("integer")) {
@@ -1103,7 +1357,6 @@ public class Exporter {
 						}
 					}
 					int lr = lexRank(vec2);
-					System.out.println(lr);
 					mat[i][j] = lr; // compute lexical rank, i.e., map the combination of values to a single integer
 					combinations.put(lr, qualVal); // the bijection needs to be stored for later reporting
 				} else {
@@ -1134,20 +1387,21 @@ public class Exporter {
 
 		// report combinations if necessary
 		if (combinations.size() > 0) {
+			String s = "";
 			Iterator<Integer> keyIterator = combinations.keySet().iterator();
 			while (keyIterator.hasNext()){
 				Integer key = (Integer) keyIterator.next();
 				ArrayList<Integer> values = combinations.get(key);
-				if (verbose == true) {
-					System.out.print("\n       An edge weight of " + key + " maps onto combination: ");
-					for (int i = 0; i < values.size(); i++) {
-						System.out.print(values.get(i) + " ");
-					}
+				s = "An edge weight of " + key + " maps onto combination: ";
+				for (int i = 0; i < values.size(); i++) {
+					s = s + values.get(i) + " ";
 				}
+				s = s + "\n";
 			}
-			if (verbose == true) {
-				System.out.print("\n");
-			}
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"Qualifier \"combine\" option combinatorial mapping established.",
+					s);
+			Dna.logger.log(l);
 		}
 
 		// normalization
@@ -1164,7 +1418,10 @@ public class Exporter {
 						currentDenominator = currentDenominator + mat[i][j];
 					}
 				} else if (qualifierAggregation.equals("combine")) { // iterate through columns of matrix and count how many are larger than one
-					System.err.println("Warning: Normalization and qualifier setting 'combine' yield results that cannot be interpreted.");
+					LogEvent l = new LogEvent(Logger.WARNING,
+							"Normalization and \"combine\" yield uninterpretable results.",
+							"When exporting a network, the use of normalization and the qualifier setting \"combine\" were used together. These settings together yield results that cannot be interpreted in a meaningful way.");
+					Dna.logger.log(l);
 					for (int j = 0; j < names2.length; j++) {
 						if (mat[i][j] > 0.0) {
 							currentDenominator = currentDenominator + 1.0;
@@ -1195,7 +1452,10 @@ public class Exporter {
 						currentDenominator = currentDenominator + mat[j][i];
 					}
 				} else if (this.qualifierAggregation.equals("combine")) { // iterate through rows of matrix and count how many are larger than one
-					System.err.println("Warning: Normalization and qualifier setting 'combine' yield results that cannot be interpreted.");
+					LogEvent l = new LogEvent(Logger.WARNING,
+							"Normalization and \"combine\" yield uninterpretable results.",
+							"When exporting a network, the use of normalization and the qualifier setting \"combine\" were used together. These settings together yield results that cannot be interpreted in a meaningful way.");
+					Dna.logger.log(l);
 					for (int j = 0; j < names1.length; j++) {
 						if (mat[i][j] > 0.0) {
 							currentDenominator = currentDenominator + 1.0;
@@ -1220,182 +1480,191 @@ public class Exporter {
 
 		// create Matrix object and return
 		Matrix matrix = new Matrix(mat, names1, names2, integerBoolean, start, stop); // assemble the Matrix object with labels
+		matrix.setNumStatements(this.filteredStatements.size());
 		return matrix;
 	}
 
 	/**
-	 * Create a series of one-mode or two-mode networks using a moving time
-	 * window.
-	 * 
-	 * @throws Exception
+	 * Create a series of one-mode or two-mode networks using a moving time window.
 	 */
-	public void computeTimeWindowMatrices() throws Exception {
+	public void computeTimeWindowMatrices() {
 		ArrayList<Matrix> timeWindowMatrices = new ArrayList<Matrix>();
 		Collections.sort(this.filteredStatements); // probably not necessary, but can't hurt to have it
 		ArrayList<ExportStatement> currentWindowStatements = new ArrayList<ExportStatement>(); // holds all statements in the current time window
 		ArrayList<ExportStatement> startStatements = new ArrayList<ExportStatement>(); // holds all statements corresponding to the time stamp of the first statement in the window
 		ArrayList<ExportStatement> stopStatements = new ArrayList<ExportStatement>(); // holds all statements corresponding to the time stamp of the last statement in the window
 		ArrayList<ExportStatement> beforeStatements = new ArrayList<ExportStatement>(); // holds all statements between (and excluding) the time stamp of the first statement in the window and the focal statement
-		ArrayList<ExportStatement> afterStatements = new ArrayList<ExportStatement>(); // holds all statements between (and excluding) the the focal statement and the time stamp of the last statement in the window
+		ArrayList<ExportStatement> afterStatements = new ArrayList<ExportStatement>(); // holds all statements between (and excluding) the focal statement and the time stamp of the last statement in the window
 		Matrix m;
 		if (this.timeWindow.equals("events")) {
-			if (this.windowSize < 2) {
-				throw new Exception("You must choose a timeUnits parameter of at least 2, otherwise it is impossible to create a time window.");
-			}
-			int iteratorStart, iteratorStop, i, j;
-			int samples;
-			for (int t = 0; t < this.filteredStatements.size(); t++) {
-				int halfDuration = (int) Math.floor(this.windowSize / 2);
-				iteratorStart = t - halfDuration;
-				iteratorStop = t + halfDuration;
-				
-				startStatements.clear();
-				stopStatements.clear();
-				beforeStatements.clear();
-				afterStatements.clear();
-				if (iteratorStart >= 0 && iteratorStop < this.filteredStatements.size()) {
-					for (i = 0; i < this.filteredStatements.size(); i++) {
-						if (this.filteredStatements.get(i).getDateTime().equals(this.filteredStatements.get(iteratorStart).getDateTime())) {
-							startStatements.add(this.filteredStatements.get(i));
+			try (ProgressBar pb = new ProgressBar("Time window matrices...", this.filteredStatements.size())) {
+				pb.stepTo(0);
+				if (this.windowSize < 2) {
+					LogEvent l = new LogEvent(Logger.WARNING,
+							"Time window size < 2 was chosen.",
+							"When exporting a network, the time window size must be at least two events. With one statement event, there can be no ties in the network.");
+					Dna.logger.log(l);
+				}
+				int iteratorStart, iteratorStop, i, j;
+				int samples;
+				for (int t = 0; t < this.filteredStatements.size(); t++) {
+					int halfDuration = (int) Math.floor(this.windowSize / 2);
+					iteratorStart = t - halfDuration;
+					iteratorStop = t + halfDuration;
+
+					startStatements.clear();
+					stopStatements.clear();
+					beforeStatements.clear();
+					afterStatements.clear();
+					if (iteratorStart >= 0 && iteratorStop < this.filteredStatements.size()) {
+						for (i = 0; i < this.filteredStatements.size(); i++) {
+							if (this.filteredStatements.get(i).getDateTime().equals(this.filteredStatements.get(iteratorStart).getDateTime())) {
+								startStatements.add(this.filteredStatements.get(i));
+							}
+							if (this.filteredStatements.get(i).getDateTime().equals(this.filteredStatements.get(iteratorStop).getDateTime())) {
+								stopStatements.add(this.filteredStatements.get(i));
+							}
+							if (this.filteredStatements.get(i).getDateTime().isAfter(this.filteredStatements.get(iteratorStart).getDateTime()) && i < t) {
+								beforeStatements.add(this.filteredStatements.get(i));
+							}
+							if (this.filteredStatements.get(i).getDateTime().isBefore(this.filteredStatements.get(iteratorStop).getDateTime()) && i > t) {
+								afterStatements.add(this.filteredStatements.get(i));
+							}
 						}
-						if (this.filteredStatements.get(i).getDateTime().equals(this.filteredStatements.get(iteratorStop).getDateTime())) {
-							stopStatements.add(this.filteredStatements.get(i));
-						}
-						if (this.filteredStatements.get(i).getDateTime().isAfter(this.filteredStatements.get(iteratorStart).getDateTime()) && i < t) {
-							beforeStatements.add(this.filteredStatements.get(i));
-						}
-						if (this.filteredStatements.get(i).getDateTime().isBefore(this.filteredStatements.get(iteratorStop).getDateTime()) && i > t) {
-							afterStatements.add(this.filteredStatements.get(i));
-						}
-					}
-					if (startStatements.size() + beforeStatements.size() > halfDuration || stopStatements.size() + afterStatements.size() > halfDuration) {
-						samples = 1; // this number should be larger than the one below, for example 10 (for 10 random combinations of start and stop statements)
-					} else {
-						samples = 1;
-					}
-					
-					for (j = 0; j < samples; j++) {
-						// add statements from start, before, after, and stop set to current window
-						currentWindowStatements.clear();
-						Collections.shuffle(startStatements);
-						for (i = 0; i < halfDuration - beforeStatements.size(); i++) {
-							currentWindowStatements.add(startStatements.get(i));
-						}
-						currentWindowStatements.addAll(beforeStatements);
-						currentWindowStatements.add(this.filteredStatements.get(t));
-						currentWindowStatements.addAll(afterStatements);
-						Collections.shuffle(stopStatements);
-						for (i = 0; i < halfDuration - afterStatements.size(); i++) {
-							currentWindowStatements.add(stopStatements.get(i));
+						if (startStatements.size() + beforeStatements.size() > halfDuration || stopStatements.size() + afterStatements.size() > halfDuration) {
+							samples = 1; // this number should be larger than the one below, for example 10 (for 10 random combinations of start and stop statements)
+						} else {
+							samples = 1;
 						}
 
-						// convert time window to network and add to list
-						if (currentWindowStatements.size() > 0) {
-							int firstDocId = currentWindowStatements.get(0).getDocumentId();
-							LocalDateTime first = null;
-							for (i = 0; i < this.documents.size(); i++) {
-								if (firstDocId == this.documents.get(i).getId()) {
-									first = documents.get(i).getDateTime();
-									break;
-								}
+						for (j = 0; j < samples; j++) {
+							// add statements from start, before, after, and stop set to current window
+							currentWindowStatements.clear();
+							Collections.shuffle(startStatements);
+							for (i = 0; i < halfDuration - beforeStatements.size(); i++) {
+								currentWindowStatements.add(startStatements.get(i));
 							}
-							int lastDocId = currentWindowStatements.get(currentWindowStatements.size() - 1).getDocumentId();
-							LocalDateTime last = null;
-							for (i = this.documents.size() - 1; i > -1; i--) {
-								if (lastDocId == this.documents.get(i).getId()) {
-									last = this.documents.get(i).getDateTime();
-									break;
-								}
+							currentWindowStatements.addAll(beforeStatements);
+							currentWindowStatements.add(this.filteredStatements.get(t));
+							currentWindowStatements.addAll(afterStatements);
+							Collections.shuffle(stopStatements);
+							for (i = 0; i < halfDuration - afterStatements.size(); i++) {
+								currentWindowStatements.add(stopStatements.get(i));
 							}
-							if (this.networkType.equals("twomode")) {
-								boolean verbose = false;
-								m = computeTwoModeMatrix(currentWindowStatements, first, last, verbose);
-								m.setDateTime(this.filteredStatements.get(t).getDateTime());
-								m.setNumStatements(currentWindowStatements.size());
-								timeWindowMatrices.add(m);
-							} else {
-								if (qualifierAggregation.equals("congruence & conflict")) { // note: the networks are saved in alternating order and need to be disentangled
-									m = computeOneModeMatrix(currentWindowStatements, "congruence", first, last);
-									m.setDateTime(this.filteredStatements.get(t).getDateTime());
-									m.setNumStatements(currentWindowStatements.size());
-									timeWindowMatrices.add(m);
-									m = computeOneModeMatrix(currentWindowStatements, "conflict", first, last);
+
+							// convert time window to network and add to list
+							if (currentWindowStatements.size() > 0) {
+								int firstDocId = currentWindowStatements.get(0).getDocumentId();
+								LocalDateTime first = null;
+								for (i = 0; i < this.documents.size(); i++) {
+									if (firstDocId == this.documents.get(i).getId()) {
+										first = documents.get(i).getDateTime();
+										break;
+									}
+								}
+								int lastDocId = currentWindowStatements.get(currentWindowStatements.size() - 1).getDocumentId();
+								LocalDateTime last = null;
+								for (i = this.documents.size() - 1; i > -1; i--) {
+									if (lastDocId == this.documents.get(i).getId()) {
+										last = this.documents.get(i).getDateTime();
+										break;
+									}
+								}
+								if (this.networkType.equals("twomode")) {
+									m = computeTwoModeMatrix(currentWindowStatements, first, last);
 									m.setDateTime(this.filteredStatements.get(t).getDateTime());
 									m.setNumStatements(currentWindowStatements.size());
 									timeWindowMatrices.add(m);
 								} else {
-									m = computeOneModeMatrix(currentWindowStatements, this.qualifierAggregation, first, last);
-									m.setDateTime(this.filteredStatements.get(t).getDateTime());
-									m.setNumStatements(currentWindowStatements.size());
-									timeWindowMatrices.add(m);
+									if (qualifierAggregation.equals("congruence & conflict")) { // note: the networks are saved in alternating order and need to be disentangled
+										m = computeOneModeMatrix(currentWindowStatements, "congruence", first, last);
+										m.setDateTime(this.filteredStatements.get(t).getDateTime());
+										m.setNumStatements(currentWindowStatements.size());
+										timeWindowMatrices.add(m);
+										m = computeOneModeMatrix(currentWindowStatements, "conflict", first, last);
+										m.setDateTime(this.filteredStatements.get(t).getDateTime());
+										m.setNumStatements(currentWindowStatements.size());
+										timeWindowMatrices.add(m);
+									} else {
+										m = computeOneModeMatrix(currentWindowStatements, this.qualifierAggregation, first, last);
+										m.setDateTime(this.filteredStatements.get(t).getDateTime());
+										m.setNumStatements(currentWindowStatements.size());
+										timeWindowMatrices.add(m);
+									}
+
 								}
-								
 							}
 						}
 					}
+					pb.stepTo(t + 1);
 				}
 			}
 		} else {
-			LocalDateTime startCalendar = this.startDateTime; // start of statement list
-			LocalDateTime stopCalendar = this.stopDateTime; // end of statement list
-			LocalDateTime currentTime = this.startDateTime; // current time while progressing through list of statements
-			LocalDateTime windowStart = this.startDateTime; // start of the time window
-			LocalDateTime windowStop = this.startDateTime; // end of the time window
-			LocalDateTime iTime; // time of the statement to be potentially added to the time slice
-			int addition = 0;
-			while (!currentTime.isAfter(stopCalendar)) {
-				LocalDateTime matrixTime = currentTime;
-				windowStart = matrixTime;
-				windowStop = matrixTime;
-				currentWindowStatements.clear();
-				addition = (int) Math.round(((double) windowSize - 1) / 2);
-				if (timeWindow.equals("seconds")) {
-					windowStart.minusSeconds(addition);
-					windowStop.plusSeconds(addition);
-					currentTime.plusSeconds(1);
-				} else if (timeWindow.equals("minutes")) {
-					windowStart.minusMinutes(addition);
-					windowStop.plusMinutes(addition);
-					currentTime.plusMinutes(1);
-				} else if (timeWindow.equals("hours")) {
-					windowStart.minusHours(addition);
-					windowStop.plusHours(addition);
-					currentTime.plusHours(1);
-				} else if (timeWindow.equals("days")) {
-					windowStart.minusDays(addition);
-					windowStop.plusDays(addition);
-					currentTime.plusDays(1);
-				} else if (timeWindow.equals("weeks")) {
-					windowStart.minusWeeks(addition);
-					windowStop.plusWeeks(addition);
-					currentTime.plusWeeks(1);
-				} else if (timeWindow.equals("months")) {
-					windowStart.minusMonths(addition);
-					windowStop.plusMonths(addition);
-					currentTime.plusMonths(1);
-				} else if (timeWindow.equals("years")) {
-					windowStart.minusYears(addition);
-					windowStop.plusYears(addition);
-					currentTime.plusYears(1);
-				}
-				if (!windowStart.isBefore(startCalendar) && !windowStop.isAfter(stopCalendar)) {
-					for (int i = 0; i < this.filteredStatements.size(); i++) {
-						iTime = this.filteredStatements.get(i).getDateTime();
-						if (!iTime.isBefore(windowStart) && !iTime.isAfter(windowStop)) {
-							currentWindowStatements.add(this.filteredStatements.get(i));
+			try (ProgressBar pb = new ProgressBar("Time window matrices...", 100)) {
+				long percent = 0;
+				pb.stepTo(percent);
+				LocalDateTime startCalendar = this.startDateTime; // start of statement list
+				LocalDateTime stopCalendar = this.stopDateTime; // end of statement list
+				LocalDateTime currentTime = this.startDateTime; // current time while progressing through list of statements
+				LocalDateTime windowStart; // start of the time window
+				LocalDateTime windowStop; // end of the time window
+				LocalDateTime iTime; // time of the statement to be potentially added to the time slice
+				int addition = 0;
+				while (!currentTime.isAfter(stopCalendar)) {
+					LocalDateTime matrixTime = currentTime;
+					windowStart = matrixTime;
+					windowStop = matrixTime;
+					currentWindowStatements.clear();
+					addition = (int) Math.round(((double) windowSize - 1) / 2);
+					if (timeWindow.equals("seconds")) {
+						windowStart = windowStart.minusSeconds(addition);
+						windowStop = windowStop.plusSeconds(addition);
+						currentTime = currentTime.plusSeconds(1);
+					} else if (timeWindow.equals("minutes")) {
+						windowStart = windowStart.minusMinutes(addition);
+						windowStop = windowStop.plusMinutes(addition);
+						currentTime = currentTime.plusMinutes(1);
+					} else if (timeWindow.equals("hours")) {
+						windowStart = windowStart.minusHours(addition);
+						windowStop = windowStop.plusHours(addition);
+						currentTime = currentTime.plusHours(1);
+					} else if (timeWindow.equals("days")) {
+						windowStart = windowStart.minusDays(addition);
+						windowStop = windowStop.plusDays(addition);
+						currentTime = currentTime.plusDays(1);
+					} else if (timeWindow.equals("weeks")) {
+						windowStart = windowStart.minusWeeks(addition);
+						windowStop = windowStop.plusWeeks(addition);
+						currentTime = currentTime.plusWeeks(1);
+					} else if (timeWindow.equals("months")) {
+						windowStart = windowStart.minusMonths(addition);
+						windowStop = windowStop.plusMonths(addition);
+						currentTime = currentTime.plusMonths(1);
+					} else if (timeWindow.equals("years")) {
+						windowStart = windowStart.minusYears(addition);
+						windowStop = windowStop.plusYears(addition);
+						currentTime = currentTime.plusYears(1);
+					}
+					if (!windowStart.isBefore(startCalendar) && !windowStop.isAfter(stopCalendar)) {
+						for (int i = 0; i < this.filteredStatements.size(); i++) {
+							iTime = this.filteredStatements.get(i).getDateTime();
+							if (!iTime.isBefore(windowStart) && !iTime.isAfter(windowStop)) {
+								currentWindowStatements.add(this.filteredStatements.get(i));
+							}
+						}
+						if (currentWindowStatements.size() > 0) {
+							if (this.networkType.equals("twomode")) {
+								m = computeTwoModeMatrix(currentWindowStatements, windowStart, windowStop);
+							} else {
+								m = computeOneModeMatrix(currentWindowStatements, this.qualifierAggregation, windowStart, windowStop);
+							}
+							m.setDateTime(matrixTime);
+							m.setNumStatements(currentWindowStatements.size());
+							timeWindowMatrices.add(m);
 						}
 					}
-					if (currentWindowStatements.size() > 0) {
-						if (this.networkType.equals("twomode")) {
-							boolean verbose = false;
-							m = computeTwoModeMatrix(currentWindowStatements, windowStart, windowStop, verbose);
-						} else {
-							m = computeOneModeMatrix(currentWindowStatements, this.qualifierAggregation, windowStart, windowStop);
-						}
-						m.setDateTime(matrixTime);
-						m.setNumStatements(currentWindowStatements.size());
-						timeWindowMatrices.add(m);
-					}
+					percent = 100 * (currentTime.toEpochSecond(ZoneOffset.UTC) - startCalendar.toEpochSecond(ZoneOffset.UTC)) / (stopCalendar.toEpochSecond(ZoneOffset.UTC) - startCalendar.toEpochSecond(ZoneOffset.UTC));
+					pb.stepTo(percent);
 				}
 			}
 		}
@@ -1403,16 +1672,37 @@ public class Exporter {
 	}
 	
 	/**
-	 * Get the computed network matrix results.
+	 * Get the computed network matrix results as an array list.
 	 * 
-	 * @return An array list of {@link model.Matrix Matrix} objects. If time
-	 *   window functionality was used, there are multiple matrices in the list,
-	 *   otherwise just one.
+	 * @return An array list of {@link model.Matrix Matrix} objects. If time window functionality was used, there are
+	 * multiple matrices in the list, otherwise just one.
 	 */
 	public ArrayList<Matrix> getMatrixResults() {
-		return matrixResults;
+		if (this.matrixResults == null) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"Results have not been computed and could not be returned.",
+					"The network matrix results were not computed and cannot be returned. A null object will be returned instead.");
+			Dna.logger.log(l);
+		}
+		return this.matrixResults;
 	}
-	
+
+	/**
+	 * Get the computed network matrix results as an array.
+	 *
+	 * @return An array of {@link model.Matrix Matrix} objects. If time window functionality was used, there are
+	 * multiple matrices in the list, otherwise just one.
+	 */
+	public Matrix[] getMatrixResultsArray() {
+		if (this.matrixResults == null) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"Results have not been computed and could not be returned.",
+					"The network matrix results were not computed and cannot be returned. A null object will be returned instead.");
+			Dna.logger.log(l);
+		}
+		return this.matrixResults.stream().toArray(model.Matrix[]::new);
+	}
+
 	/**
 	 * Write results to file.
 	 */
@@ -1435,43 +1725,58 @@ public class Exporter {
 	 * can be used for estimating relational event models.
 	 */
 	private void eventCSV() {
-		String key;
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-		try {
-			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.outfile), "UTF-8"));
-			out.write("\"statement ID\";\"time\";\"document ID\";\"document title\";\"author\";\"source\";\"section\";\"type\";\"text\"");
-			for (int i = 0; i < statementType.getVariables().size(); i++) {
-				out.write(";\"" + statementType.getVariables().get(i).getKey() + "\"");
-			}
-			ExportStatement s;
-			for (int i = 0; i < this.filteredStatements.size(); i++) {
-				s = this.filteredStatements.get(i);
-				out.newLine();
-				String stringId = Integer.valueOf(s.getId()).toString();
-				out.write(stringId);
-				out.write(";" + s.getDateTime().format(formatter));
-				out.write(";" + s.getDocumentIdAsString());
-				out.write(";\"" + s.getTitle().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				out.write(";\"" + s.getAuthor().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				out.write(";\"" + s.getSource().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				out.write(";\"" + s.getSection().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				out.write(";\"" + s.getType().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				out.write(";\"" + s.getText().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-				for (int j = 0; j < statementType.getVariables().size(); j++) {
-					key = statementType.getVariables().get(j).getKey();
-					if (this.dataTypes.get(key).equals("short text")) {
-						out.write(";\"" + (((Entity) s.get(key)).getValue()).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-					} else if (this.dataTypes.get(key).equals("long text")) {
-						out.write(";\"" + ((String) s.get(key)).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-					} else {
-						out.write(";" + s.get(key));
-					}
+		try (ProgressBar pb = new ProgressBar("Exporting events...", this.filteredStatements.size())) {
+			pb.stepTo(0);
+			String key;
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+			try {
+				BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.outfile), "UTF-8"));
+				out.write("\"statement_id\";\"time\"");
+				for (int i = 0; i < statementType.getVariables().size(); i++) {
+					out.write(";\"" + statementType.getVariables().get(i).getKey() + "\"");
 				}
+				out.write(";\"start_position\";\"stop_position\";\"text\";\"coder\";\"document_id\";\"document_title\";\"document_author\";\"document_source\";\"document_section\";\"document_type\"");
+				ExportStatement s;
+				for (int i = 0; i < this.filteredStatements.size(); i++) {
+					s = this.filteredStatements.get(i);
+					out.newLine();
+					out.write(Integer.valueOf(s.getId()).toString()); // statement ID as a string
+					out.write(";" + s.getDateTime().format(formatter));
+					for (int j = 0; j < statementType.getVariables().size(); j++) {
+						key = statementType.getVariables().get(j).getKey();
+						if (this.dataTypes.get(key).equals("short text")) {
+							out.write(";\"" + (((Entity) s.get(key)).getValue()).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+						} else if (this.dataTypes.get(key).equals("long text")) {
+							out.write(";\"" + ((String) s.get(key)).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+						} else {
+							out.write(";" + s.get(key));
+						}
+					}
+					out.write(";" + Integer.valueOf(s.getStart()).toString());
+					out.write(";" + Integer.valueOf(s.getStop()).toString());
+					out.write(";\"" + s.getText().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+					out.write(";" + Integer.valueOf(s.getCoderId()).toString());
+					out.write(";" + s.getDocumentIdAsString());
+					out.write(";\"" + s.getTitle().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+					out.write(";\"" + s.getAuthor().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+					out.write(";\"" + s.getSource().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+					out.write(";\"" + s.getSection().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+					out.write(";\"" + s.getType().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
+					pb.stepTo(i + 1);
+				}
+				out.close();
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"Event list has been exported.",
+						"Event list has been exported to \"" + this.outfile + "\".");
+				Dna.logger.log(l);
+			} catch (IOException e) {
+				LogEvent l = new LogEvent(Logger.ERROR,
+						"Error while saving event list as CSV file.",
+						"Tried to save an event list to CSV file \"" + this.outfile + "\", but an error occurred. See stack trace.",
+						e);
+				Dna.logger.log(l);
 			}
-			out.close();
-			System.out.println("Event list has been exported to \"" + this.outfile + "\".");
-		} catch (IOException e) {
-			System.err.println("Error while saving CSV file: " + e);
+			pb.stepTo(this.filteredStatements.size());
 		}
 	}
 
@@ -1479,47 +1784,56 @@ public class Exporter {
 	 * Export {@link model.Matrix Matrix} to a CSV matrix file.
 	 */
 	private void exportCSV() {
-		String filename2;
-		String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
-		String filename3 = this.outfile.substring(this.outfile.length() - 4, this.outfile.length());
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-		for (int k = 0; k < this.matrixResults.size(); k++) {
-			// assemble file name for time window networks if necessary
-			String filename = this.outfile;
-			if (this.matrixResults.size() > 1) {
-				filename2 = " " + String.format("%0" + String.valueOf(this.matrixResults.size()).length() + "d", k + 1) + " " + this.matrixResults.get(k).getDateTime().format(formatter);
-				filename = filename1 + filename2 + filename3;
-			}
-			
-			// get current data
-			String[] rn = this.matrixResults.get(k).getRownames();
-			String[] cn = this.matrixResults.get(k).getColnames();
-			int nr = rn.length;
-			int nc = cn.length;
-			double[][] mat = this.matrixResults.get(k).getMatrix();
-			
-			// export
-			try {
-				BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), "UTF8"));
-				out.write("\"\"");
-				for (int i = 0; i < nc; i++) {
-					out.write(";\"" + cn[i].replaceAll("\"", "'") + "\"");
+		try (ProgressBar pb = new ProgressBar("Exporting networks...", this.matrixResults.size())) {
+			pb.stepTo(0);
+			String filename2;
+			String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
+			String filename3 = this.outfile.substring(this.outfile.length() - 4, this.outfile.length());
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+			for (int k = 0; k < this.matrixResults.size(); k++) {
+				// assemble file name for time window networks if necessary
+				String filename = this.outfile;
+				if (this.matrixResults.size() > 1) {
+					filename2 = " " + String.format("%0" + String.valueOf(this.matrixResults.size()).length() + "d", k + 1) + " " + this.matrixResults.get(k).getDateTime().format(formatter);
+					filename = filename1 + filename2 + filename3;
 				}
-				for (int i = 0; i < nr; i++) {
-					out.newLine();
-					out.write("\"" + rn[i].replaceAll("\"", "'") + "\"");
-					for (int j = 0; j < nc; j++) {
-						if (this.matrixResults.get(k).getInteger()) {
-							out.write(";" + (int) mat[i][j]);
-						} else {
-							out.write(";" + String.format(new Locale("en"), "%.6f", mat[i][j])); // six decimal places
+
+				// get current data
+				String[] rn = this.matrixResults.get(k).getRowNames();
+				String[] cn = this.matrixResults.get(k).getColumnNames();
+				int nr = rn.length;
+				int nc = cn.length;
+				double[][] mat = this.matrixResults.get(k).getMatrix();
+
+				// export
+				try {
+					BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), "UTF8"));
+					out.write("\"\"");
+					for (int i = 0; i < nc; i++) {
+						out.write(";\"" + cn[i].replaceAll("\"", "'") + "\"");
+					}
+					for (int i = 0; i < nr; i++) {
+						out.newLine();
+						out.write("\"" + rn[i].replaceAll("\"", "'") + "\"");
+						for (int j = 0; j < nc; j++) {
+							if (this.matrixResults.get(k).getInteger()) {
+								out.write(";" + (int) mat[i][j]);
+							} else {
+								out.write(";" + String.format(new Locale("en"), "%.6f", mat[i][j])); // six decimal places
+							}
 						}
 					}
+					out.close();
+				} catch (IOException e) {
+					LogEvent l = new LogEvent(Logger.ERROR,
+							"Error while saving matrix as CSV file.",
+							"Tried to save a matrix to CSV file \"" + this.outfile + "\", but an error occurred. See stack trace.",
+							e);
+					Dna.logger.log(l);
 				}
-				out.close();
-			} catch (IOException e) {
-				System.err.println("Error while saving CSV matrix file.");
+				pb.stepTo(k + 1);
 			}
+			pb.stepTo(this.matrixResults.size());
 		}
 	}
 
@@ -1527,69 +1841,78 @@ public class Exporter {
 	 * Export network to a DL fullmatrix file for the software UCINET.
 	 */
 	private void exportDL() {
-		String filename2;
-		String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
-		String filename3 = this.outfile.substring(this.outfile.length() - 4, this.outfile.length());
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-		for (int k = 0; k < this.matrixResults.size(); k++) {
-			// assemble file name for time window networks if necessary
-			String filename = this.outfile;
-			if (this.matrixResults.size() > 1) {
-				filename2 = " " + String.format("%0" + String.valueOf(this.matrixResults.size()).length() + "d", k + 1) + " " + this.matrixResults.get(k).getDateTime().format(formatter);
-				filename = filename1 + filename2 + filename3;
-			}
-			
-			// get current data
-			String[] rn = this.matrixResults.get(k).getRownames();
-			String[] cn = this.matrixResults.get(k).getColnames();
-			int nr = rn.length;
-			int nc = cn.length;
-			double[][] mat = this.matrixResults.get(k).getMatrix();
-			
-			// export
-			try {
-				BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), "UTF8"));
-				out.write("dl ");
-				if (this.networkType.equals("onemode")) {
-					out.write("n = " + nr);
-				} else if (this.networkType.equals("twomode")) {
-					out.write("nr = " + nr + ", nc = " + nc);
+		try (ProgressBar pb = new ProgressBar("Exporting networks...", this.matrixResults.size())) {
+			pb.stepTo(0);
+			String filename2;
+			String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
+			String filename3 = this.outfile.substring(this.outfile.length() - 4, this.outfile.length());
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+			for (int k = 0; k < this.matrixResults.size(); k++) {
+				// assemble file name for time window networks if necessary
+				String filename = this.outfile;
+				if (this.matrixResults.size() > 1) {
+					filename2 = " " + String.format("%0" + String.valueOf(this.matrixResults.size()).length() + "d", k + 1) + " " + this.matrixResults.get(k).getDateTime().format(formatter);
+					filename = filename1 + filename2 + filename3;
 				}
-				out.write(", format = fullmatrix");
-				out.newLine();
-				if (this.networkType.equals("twomode")) {
-					out.write("row labels:");
-				} else {
-					out.write("labels:");
-				}
-				for (int i = 0; i < nr; i++) {
-					out.newLine();
-					out.write("\"" + rn[i].replaceAll("\"", "'").replaceAll("'", "") + "\"");
-				}
-				if (this.networkType.equals("twomode")) {
-					out.newLine();
-					out.write("col labels:");
-					for (int i = 0; i < nc; i++) {
-						out.newLine();
-						out.write("\"" + cn[i].replaceAll("\"", "'").replaceAll("'", "") + "\"");
+
+				// get current data
+				String[] rn = this.matrixResults.get(k).getRowNames();
+				String[] cn = this.matrixResults.get(k).getColumnNames();
+				int nr = rn.length;
+				int nc = cn.length;
+				double[][] mat = this.matrixResults.get(k).getMatrix();
+
+				// export
+				try {
+					BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), "UTF8"));
+					out.write("dl ");
+					if (this.networkType.equals("onemode")) {
+						out.write("n = " + nr);
+					} else if (this.networkType.equals("twomode")) {
+						out.write("nr = " + nr + ", nc = " + nc);
 					}
-				}
-				out.newLine();
-				out.write("data:");
-				for (int i = 0; i < nr; i++) {
+					out.write(", format = fullmatrix");
 					out.newLine();
-					for (int j = 0; j < nc; j++) {
-						if (this.matrixResults.get(k).getInteger()) {
-							out.write(" " + (int) mat[i][j]);
-						} else {
-							out.write(" " + String.format(new Locale("en"), "%.6f", mat[i][j]));
+					if (this.networkType.equals("twomode")) {
+						out.write("row labels:");
+					} else {
+						out.write("labels:");
+					}
+					for (int i = 0; i < nr; i++) {
+						out.newLine();
+						out.write("\"" + rn[i].replaceAll("\"", "'").replaceAll("'", "") + "\"");
+					}
+					if (this.networkType.equals("twomode")) {
+						out.newLine();
+						out.write("col labels:");
+						for (int i = 0; i < nc; i++) {
+							out.newLine();
+							out.write("\"" + cn[i].replaceAll("\"", "'").replaceAll("'", "") + "\"");
 						}
 					}
+					out.newLine();
+					out.write("data:");
+					for (int i = 0; i < nr; i++) {
+						out.newLine();
+						for (int j = 0; j < nc; j++) {
+							if (this.matrixResults.get(k).getInteger()) {
+								out.write(" " + (int) mat[i][j]);
+							} else {
+								out.write(" " + String.format(new Locale("en"), "%.6f", mat[i][j]));
+							}
+						}
+					}
+					out.close();
+				} catch (IOException e) {
+					LogEvent l = new LogEvent(Logger.ERROR,
+							"Error while saving DL fullmatrix file.",
+							"Tried to save a matrix to DL fullmatrix file \"" + this.outfile + "\", but an error occurred. See stack trace.",
+							e);
+					Dna.logger.log(l);
 				}
-				out.close();
-			} catch (IOException e) {
-				System.err.println("Error while saving DL fullmatrix file.");
+				pb.stepTo(k + 1);
 			}
+			pb.stepTo(this.matrixResults.size());
 		}
 	}
 
@@ -1597,391 +1920,410 @@ public class Exporter {
 	 * Export filter for graphML files.
 	 */
 	private void exportGraphml() {
-		// set up file name components for time window (in case this will be required later)
-		String filename2;
-		String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
-		String filename3 = this.outfile.substring(this.outfile.length() - 4, this.outfile.length());
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-		
-		// get variable IDs for variable 1 and variable 2
-		int variable1Id = this.statementType.getVariables()
-				.stream()
-				.filter(v -> v.getKey().equals(this.variable1))
-				.mapToInt(v -> v.getVariableId())
-				.findFirst()
-				.getAsInt();
-		int variable2Id = this.statementType.getVariables()
-				.stream()
-				.filter(v -> v.getKey().equals(this.variable2))
-				.mapToInt(v -> v.getVariableId())
-				.findFirst()
-				.getAsInt();
-		
-		// get attribute variable names for variable 1 and variable 2
-		ArrayList<String> attributeVariables1 = Dna.sql.getAttributeVariables(variable1Id);
-		ArrayList<String> attributeVariables2 = Dna.sql.getAttributeVariables(variable2Id);
-		
-		// get entities with attribute values for variable 1 and variable 2 and save in hash maps
-		ArrayList<Integer> variableIds = new ArrayList<Integer>();
-		variableIds.add(variable1Id);
-		variableIds.add(variable2Id);
-		ArrayList<ArrayList<Entity>> entities = Dna.sql.getEntities(variableIds, true);
-		HashMap<String, Entity> entityMap1 = new HashMap<String, Entity>();
-		HashMap<String, Entity> entityMap2 = new HashMap<String, Entity>();
-		entities.get(0).stream().forEach(entity -> entityMap1.put(entity.getValue(), entity));
-		entities.get(1).stream().forEach(entity -> entityMap2.put(entity.getValue(), entity));
-		
-		Matrix m;
-		for (int k = 0; k < this.matrixResults.size(); k++) {
-			m = this.matrixResults.get(k);
-			
-			// assemble file name for time window networks if necessary
-			String filename = this.outfile;
-			if (this.matrixResults.size() > 1) {
-				filename2 = " " + String.format("%0" + String.valueOf(this.matrixResults.size()).length() + "d", k + 1) + " " + m.getDateTime().format(formatter);
-				filename = filename1 + filename2 + filename3;
-			}
-			
-			// frequencies
-			String[] values1 = this.retrieveValues(this.filteredStatements, this.variable1, this.variable1Document);
-			String[] values2 = this.retrieveValues(this.filteredStatements, this.variable2, this.variable2Document);
-			int[] frequencies1 = this.countFrequencies(values1, m.getRownames());
-			int[] frequencies2 = this.countFrequencies(values2, m.getColnames());
-			
-			// join names, frequencies, and variable names into long arrays for both modes
-			String[] rn = this.matrixResults.get(k).getRownames();
-			String[] cn = this.matrixResults.get(k).getColnames();
-			String[] names;
-			String[] variables;
-			int[] frequencies;
-			if (this.networkType.equals("twomode")) {
-				names = new String[rn.length + cn.length];
-				variables = new String[names.length];
-				frequencies = new int[names.length];
-			} else {
-				names = new String[rn.length];
-				variables = new String[rn.length];
-				frequencies = new int[rn.length];
-			}
-			for (int i = 0; i < rn.length; i++) {
-				names[i] = rn[i];
-				variables[i] = this.variable1;
-				frequencies[i] = frequencies1[i];
-			}
-			if (this.networkType.equals("twomode")) {
-				for (int i = 0; i < cn.length; i++) {
-					names[i + rn.length] = cn[i];
-					variables[i + rn.length] = this.variable2;
-					frequencies[i + rn.length] = frequencies2[i];
+		try (ProgressBar pb = new ProgressBar("Exporting networks...", this.matrixResults.size())) {
+			pb.stepTo(0);
+
+			// set up file name components for time window (in case this will be required later)
+			String filename2;
+			String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
+			String filename3 = this.outfile.substring(this.outfile.length() - 4, this.outfile.length());
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+			// get variable IDs for variable 1 and variable 2
+			int variable1Id = this.statementType.getVariables()
+					.stream()
+					.filter(v -> v.getKey().equals(this.variable1))
+					.mapToInt(v -> v.getVariableId())
+					.findFirst()
+					.getAsInt();
+			int variable2Id = this.statementType.getVariables()
+					.stream()
+					.filter(v -> v.getKey().equals(this.variable2))
+					.mapToInt(v -> v.getVariableId())
+					.findFirst()
+					.getAsInt();
+
+			// get attribute variable names for variable 1 and variable 2
+			ArrayList<String> attributeVariables1 = Dna.sql.getAttributeVariables(variable1Id);
+			ArrayList<String> attributeVariables2 = Dna.sql.getAttributeVariables(variable2Id);
+
+			// get entities with attribute values for variable 1 and variable 2 and save in hash maps
+			ArrayList<Integer> variableIds = new ArrayList<Integer>();
+			variableIds.add(variable1Id);
+			variableIds.add(variable2Id);
+			ArrayList<ArrayList<Entity>> entities = Dna.sql.getEntities(variableIds, true);
+			HashMap<String, Entity> entityMap1 = new HashMap<String, Entity>();
+			HashMap<String, Entity> entityMap2 = new HashMap<String, Entity>();
+			entities.get(0).stream().forEach(entity -> entityMap1.put(entity.getValue(), entity));
+			entities.get(1).stream().forEach(entity -> entityMap2.put(entity.getValue(), entity));
+
+			Matrix m;
+			for (int k = 0; k < this.matrixResults.size(); k++) {
+				m = this.matrixResults.get(k);
+
+				// assemble file name for time window networks if necessary
+				String filename = this.outfile;
+				if (this.matrixResults.size() > 1) {
+					filename2 = " " + String.format("%0" + String.valueOf(this.matrixResults.size()).length() + "d", k + 1) + " " + m.getDateTime().format(formatter);
+					filename = filename1 + filename2 + filename3;
 				}
-			}
-			
-			// get id and color arrays
-			int[] id = Arrays.stream(rn).mapToInt(s -> entityMap1.get(s).getId()).toArray();
-			String[] color = Arrays.stream(rn).map(s -> {
-				Color col = entityMap1.get(s).getColor();
-				return String.format("#%02X%02X%02X", col.getRed(), col.getGreen(), col.getBlue());
-			}).toArray(String[]::new);
-			if (networkType.equals("twomode")) {
-				id = IntStream.concat(IntStream.of(id), Arrays.stream(cn).mapToInt(s -> entityMap2.get(s).getId())).toArray();
-				color = Stream.concat(Stream.of(color), Arrays.stream(cn).map(s -> {
-					Color col = entityMap2.get(s).getColor();
-					return String.format("#%02X%02X%02X", col.getRed(), col.getGreen(), col.getBlue());
-				})).toArray(String[]::new);
-			}
-			
-			// set up graph structure
-			Namespace xmlns = Namespace.getNamespace("http://graphml.graphdrawing.org/xmlns");
-			Element graphml = new Element("graphml", xmlns);
-			Namespace visone = Namespace.getNamespace("visone", "http://visone.info/xmlns");
-			graphml.addNamespaceDeclaration(visone);
-			Namespace xsi = Namespace.getNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
-			graphml.addNamespaceDeclaration(xsi);
-			Namespace yNs = Namespace.getNamespace("y", "http://www.yworks.com/xml/graphml");
-			graphml.addNamespaceDeclaration(yNs);
-			Attribute attSchema = new Attribute("schemaLocation", "http://graphml.graphdrawing.org/xmlns/graphml http://www.yworks.com/xml/schema/graphml/1.0/ygraphml.xsd ", xsi);
-			graphml.setAttribute(attSchema);
-			org.jdom.Document document = new org.jdom.Document(graphml);
-			
-			Comment dataSchema = new Comment(" data schema ");
-			graphml.addContent(dataSchema);
-			
-			Element keyVisoneNode = new Element("key", xmlns);
-			keyVisoneNode.setAttribute(new Attribute("for", "node"));
-			keyVisoneNode.setAttribute(new Attribute("id", "d0"));
-			keyVisoneNode.setAttribute(new Attribute("yfiles.type", "nodegraphics"));
-			graphml.addContent(keyVisoneNode);
 
-			Element keyVisoneEdge = new Element("key", xmlns);
-			keyVisoneEdge.setAttribute(new Attribute("for", "edge"));
-			keyVisoneEdge.setAttribute(new Attribute("id", "e0"));
-			keyVisoneEdge.setAttribute(new Attribute("yfiles.type", "edgegraphics"));
-			graphml.addContent(keyVisoneEdge);
+				// frequencies
+				String[] values1 = this.retrieveValues(this.filteredStatements, this.variable1, this.variable1Document);
+				String[] values2 = this.retrieveValues(this.filteredStatements, this.variable2, this.variable2Document);
+				int[] frequencies1 = this.countFrequencies(values1, m.getRowNames());
+				int[] frequencies2 = this.countFrequencies(values2, m.getColumnNames());
 
-			Element keyVisoneGraph = new Element("key", xmlns);
-			keyVisoneGraph.setAttribute(new Attribute("for", "graph"));
-			keyVisoneGraph.setAttribute(new Attribute("id", "prop"));
-			keyVisoneGraph.setAttribute(new Attribute("visone.type", "properties"));
-			graphml.addContent(keyVisoneGraph);
-			
-			Element keyId = new Element("key", xmlns);
-			keyId.setAttribute(new Attribute("id", "id"));
-			keyId.setAttribute(new Attribute("for", "node"));
-			keyId.setAttribute(new Attribute("attr.name", "id"));
-			keyId.setAttribute(new Attribute("attr.type", "string"));
-			graphml.addContent(keyId);
-
-			Element keyName = new Element("key", xmlns);
-			keyName.setAttribute(new Attribute("id", "name"));
-			keyName.setAttribute(new Attribute("for", "node"));
-			keyName.setAttribute(new Attribute("attr.name", "name"));
-			keyName.setAttribute(new Attribute("attr.type", "string"));
-			graphml.addContent(keyName);
-			
-			ArrayList<String> addedAttributes = new ArrayList<String>();
-			attributeVariables1.stream().forEach(v -> {
-				Element keyAttribute = new Element("key", xmlns);
-				keyAttribute.setAttribute(new Attribute("id", v));
-				keyAttribute.setAttribute(new Attribute("for", "node"));
-				keyAttribute.setAttribute(new Attribute("attr.name", v));
-				keyAttribute.setAttribute(new Attribute("attr.type", "string"));
-				graphml.addContent(keyAttribute);
-				addedAttributes.add(v);
-			});
-			if (this.networkType.equals("twomode")) {
-				attributeVariables2.stream().forEach(v -> {
-					if (!addedAttributes.contains(v)) {
-						Element keyAttribute = new Element("key", xmlns);
-						keyAttribute.setAttribute(new Attribute("id", v));
-						keyAttribute.setAttribute(new Attribute("for", "node"));
-						keyAttribute.setAttribute(new Attribute("attr.name", v));
-						keyAttribute.setAttribute(new Attribute("attr.type", "string"));
-						graphml.addContent(keyAttribute);
-						addedAttributes.add(v);
-					}
-				});
-			}
-			
-			Element keyVariable = new Element("key", xmlns);
-			keyVariable.setAttribute(new Attribute("id", "variable"));
-			keyVariable.setAttribute(new Attribute("for", "node"));
-			keyVariable.setAttribute(new Attribute("attr.name", "variable"));
-			keyVariable.setAttribute(new Attribute("attr.type", "string"));
-			graphml.addContent(keyVariable);
-
-			Element keyFrequency = new Element("key", xmlns);
-			keyFrequency.setAttribute(new Attribute("id", "frequency"));
-			keyFrequency.setAttribute(new Attribute("for", "node"));
-			keyFrequency.setAttribute(new Attribute("attr.name", "frequency"));
-			keyFrequency.setAttribute(new Attribute("attr.type", "int"));
-			graphml.addContent(keyFrequency);
-
-			Element keyWeight = new Element("key", xmlns);
-			keyWeight.setAttribute(new Attribute("id", "weight"));
-			keyWeight.setAttribute(new Attribute("for", "edge"));
-			keyWeight.setAttribute(new Attribute("attr.name", "weight"));
-			keyWeight.setAttribute(new Attribute("attr.type", "double"));
-			graphml.addContent(keyWeight);
-			
-			Element graphElement = new Element("graph", xmlns);
-			graphElement.setAttribute(new Attribute("edgedefault", "undirected"));
-			
-			graphElement.setAttribute(new Attribute("id", "DNA"));
-			int numEdges = rn.length * cn.length;
-			if (this.networkType.equals("onemode")) {
-				numEdges = (numEdges - rn.length) / 2;
-			}
-			int numNodes = rn.length;
-			if (this.networkType.equals("twomode")) {
-				numNodes = numNodes + cn.length;
-			}
-			graphElement.setAttribute(new Attribute("parse.edges", String.valueOf(numEdges)));
-			graphElement.setAttribute(new Attribute("parse.nodes", String.valueOf(numNodes)));
-			graphElement.setAttribute(new Attribute("parse.order", "free"));
-			Element properties = new Element("data", xmlns);
-			properties.setAttribute(new Attribute("key", "prop"));
-			Element labelAttribute = new Element("labelAttribute", visone);
-			labelAttribute.setAttribute("edgeLabel", "weight");
-			labelAttribute.setAttribute("nodeLabel", "name");
-			properties.addContent(labelAttribute);
-			graphElement.addContent(properties);
-			
-			// add nodes
-			Comment nodes = new Comment(" nodes ");
-			graphElement.addContent(nodes);
-			
-			for (int i = 0; i < names.length; i++) {
-				Element node = new Element("node", xmlns);
-				node.setAttribute(new Attribute("id", "n" + id[i]));
-				
-				Element idElement = new Element("data", xmlns);
-				idElement.setAttribute(new Attribute("key", "id"));
-				idElement.setText(String.valueOf(id[i]));
-				node.addContent(idElement);
-				
-				Element nameElement = new Element("data", xmlns);
-				nameElement.setAttribute(new Attribute("key", "name"));
-				nameElement.setText(names[i]);
-				node.addContent(nameElement);
-				
-				for (int j = 0; j < attributeVariables1.size(); j++) {
-					if (i < rn.length) { // first mode: rows
-						Element element = new Element("data", xmlns);
-						element.setAttribute(new Attribute("key", attributeVariables1.get(j)));
-						element.setText(entityMap1.get(names[i]).getAttributeValues().get(attributeVariables1.get(j)));
-						node.addContent(element);
-					}
+				// join names, frequencies, and variable names into long arrays for both modes
+				String[] rn = this.matrixResults.get(k).getRowNames();
+				String[] cn = this.matrixResults.get(k).getColumnNames();
+				String[] names;
+				String[] variables;
+				int[] frequencies;
+				if (this.networkType.equals("twomode")) {
+					names = new String[rn.length + cn.length];
+					variables = new String[names.length];
+					frequencies = new int[names.length];
+				} else {
+					names = new String[rn.length];
+					variables = new String[rn.length];
+					frequencies = new int[rn.length];
+				}
+				for (int i = 0; i < rn.length; i++) {
+					names[i] = rn[i];
+					variables[i] = this.variable1;
+					frequencies[i] = frequencies1[i];
 				}
 				if (this.networkType.equals("twomode")) {
-					for (int j = 0; j < attributeVariables2.size(); j++) {
-						if (i >= rn.length) { // second mode: columns
+					for (int i = 0; i < cn.length; i++) {
+						names[i + rn.length] = cn[i];
+						variables[i + rn.length] = this.variable2;
+						frequencies[i + rn.length] = frequencies2[i];
+					}
+				}
+
+				// get id and color arrays
+				int[] id = Arrays.stream(rn).mapToInt(s -> entityMap1.get(s).getId()).toArray();
+				String[] color = Arrays.stream(rn).map(s -> {
+					Color col = entityMap1.get(s).getColor();
+					return String.format("#%02X%02X%02X", col.getRed(), col.getGreen(), col.getBlue());
+				}).toArray(String[]::new);
+				if (networkType.equals("twomode")) {
+					id = IntStream.concat(IntStream.of(id), Arrays.stream(cn).mapToInt(s -> entityMap2.get(s).getId())).toArray();
+					color = Stream.concat(Stream.of(color), Arrays.stream(cn).map(s -> {
+						Color col = entityMap2.get(s).getColor();
+						return String.format("#%02X%02X%02X", col.getRed(), col.getGreen(), col.getBlue());
+					})).toArray(String[]::new);
+				}
+
+				// set up graph structure
+				Namespace xmlns = Namespace.getNamespace("http://graphml.graphdrawing.org/xmlns");
+				Element graphml = new Element("graphml", xmlns);
+				Namespace visone = Namespace.getNamespace("visone", "http://visone.info/xmlns");
+				graphml.addNamespaceDeclaration(visone);
+				Namespace xsi = Namespace.getNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
+				graphml.addNamespaceDeclaration(xsi);
+				Namespace yNs = Namespace.getNamespace("y", "http://www.yworks.com/xml/graphml");
+				graphml.addNamespaceDeclaration(yNs);
+				Attribute attSchema = new Attribute("schemaLocation", "http://graphml.graphdrawing.org/xmlns/graphml http://www.yworks.com/xml/schema/graphml/1.0/ygraphml.xsd ", xsi);
+				graphml.setAttribute(attSchema);
+				org.jdom.Document document = new org.jdom.Document(graphml);
+
+				Comment dataSchema = new Comment(" data schema ");
+				graphml.addContent(dataSchema);
+
+				Element keyVisoneNode = new Element("key", xmlns);
+				keyVisoneNode.setAttribute(new Attribute("for", "node"));
+				keyVisoneNode.setAttribute(new Attribute("id", "d0"));
+				keyVisoneNode.setAttribute(new Attribute("yfiles.type", "nodegraphics"));
+				graphml.addContent(keyVisoneNode);
+
+				Element keyVisoneEdge = new Element("key", xmlns);
+				keyVisoneEdge.setAttribute(new Attribute("for", "edge"));
+				keyVisoneEdge.setAttribute(new Attribute("id", "e0"));
+				keyVisoneEdge.setAttribute(new Attribute("yfiles.type", "edgegraphics"));
+				graphml.addContent(keyVisoneEdge);
+
+				Element keyVisoneGraph = new Element("key", xmlns);
+				keyVisoneGraph.setAttribute(new Attribute("for", "graph"));
+				keyVisoneGraph.setAttribute(new Attribute("id", "prop"));
+				keyVisoneGraph.setAttribute(new Attribute("visone.type", "properties"));
+				graphml.addContent(keyVisoneGraph);
+
+				Element keyId = new Element("key", xmlns);
+				keyId.setAttribute(new Attribute("id", "id"));
+				keyId.setAttribute(new Attribute("for", "node"));
+				keyId.setAttribute(new Attribute("attr.name", "id"));
+				keyId.setAttribute(new Attribute("attr.type", "string"));
+				graphml.addContent(keyId);
+
+				Element keyName = new Element("key", xmlns);
+				keyName.setAttribute(new Attribute("id", "name"));
+				keyName.setAttribute(new Attribute("for", "node"));
+				keyName.setAttribute(new Attribute("attr.name", "name"));
+				keyName.setAttribute(new Attribute("attr.type", "string"));
+				graphml.addContent(keyName);
+
+				ArrayList<String> addedAttributes = new ArrayList<String>();
+				attributeVariables1.stream().forEach(v -> {
+					Element keyAttribute = new Element("key", xmlns);
+					keyAttribute.setAttribute(new Attribute("id", v));
+					keyAttribute.setAttribute(new Attribute("for", "node"));
+					keyAttribute.setAttribute(new Attribute("attr.name", v));
+					keyAttribute.setAttribute(new Attribute("attr.type", "string"));
+					graphml.addContent(keyAttribute);
+					addedAttributes.add(v);
+				});
+				if (this.networkType.equals("twomode")) {
+					attributeVariables2.stream().forEach(v -> {
+						if (!addedAttributes.contains(v)) {
+							Element keyAttribute = new Element("key", xmlns);
+							keyAttribute.setAttribute(new Attribute("id", v));
+							keyAttribute.setAttribute(new Attribute("for", "node"));
+							keyAttribute.setAttribute(new Attribute("attr.name", v));
+							keyAttribute.setAttribute(new Attribute("attr.type", "string"));
+							graphml.addContent(keyAttribute);
+							addedAttributes.add(v);
+						}
+					});
+				}
+
+				Element keyVariable = new Element("key", xmlns);
+				keyVariable.setAttribute(new Attribute("id", "variable"));
+				keyVariable.setAttribute(new Attribute("for", "node"));
+				keyVariable.setAttribute(new Attribute("attr.name", "variable"));
+				keyVariable.setAttribute(new Attribute("attr.type", "string"));
+				graphml.addContent(keyVariable);
+
+				Element keyFrequency = new Element("key", xmlns);
+				keyFrequency.setAttribute(new Attribute("id", "frequency"));
+				keyFrequency.setAttribute(new Attribute("for", "node"));
+				keyFrequency.setAttribute(new Attribute("attr.name", "frequency"));
+				keyFrequency.setAttribute(new Attribute("attr.type", "int"));
+				graphml.addContent(keyFrequency);
+
+				Element keyWeight = new Element("key", xmlns);
+				keyWeight.setAttribute(new Attribute("id", "weight"));
+				keyWeight.setAttribute(new Attribute("for", "edge"));
+				keyWeight.setAttribute(new Attribute("attr.name", "weight"));
+				keyWeight.setAttribute(new Attribute("attr.type", "double"));
+				graphml.addContent(keyWeight);
+
+				Element graphElement = new Element("graph", xmlns);
+				graphElement.setAttribute(new Attribute("edgedefault", "undirected"));
+
+				graphElement.setAttribute(new Attribute("id", "DNA"));
+				int numEdges = rn.length * cn.length;
+				if (this.networkType.equals("onemode")) {
+					numEdges = (numEdges - rn.length) / 2;
+				}
+				int numNodes = rn.length;
+				if (this.networkType.equals("twomode")) {
+					numNodes = numNodes + cn.length;
+				}
+				graphElement.setAttribute(new Attribute("parse.edges", String.valueOf(numEdges)));
+				graphElement.setAttribute(new Attribute("parse.nodes", String.valueOf(numNodes)));
+				graphElement.setAttribute(new Attribute("parse.order", "free"));
+				Element properties = new Element("data", xmlns);
+				properties.setAttribute(new Attribute("key", "prop"));
+				Element labelAttribute = new Element("labelAttribute", visone);
+				labelAttribute.setAttribute("edgeLabel", "weight");
+				labelAttribute.setAttribute("nodeLabel", "name");
+				properties.addContent(labelAttribute);
+				graphElement.addContent(properties);
+
+				// add nodes
+				Comment nodes = new Comment(" nodes ");
+				graphElement.addContent(nodes);
+
+				for (int i = 0; i < names.length; i++) {
+					Element node = new Element("node", xmlns);
+					node.setAttribute(new Attribute("id", "n" + id[i]));
+
+					Element idElement = new Element("data", xmlns);
+					idElement.setAttribute(new Attribute("key", "id"));
+					idElement.setText(String.valueOf(id[i]));
+					node.addContent(idElement);
+
+					Element nameElement = new Element("data", xmlns);
+					nameElement.setAttribute(new Attribute("key", "name"));
+					nameElement.setText(names[i]);
+					node.addContent(nameElement);
+
+					for (int j = 0; j < attributeVariables1.size(); j++) {
+						if (i < rn.length) { // first mode: rows
 							Element element = new Element("data", xmlns);
-							element.setAttribute(new Attribute("key", attributeVariables2.get(j)));
-							element.setText(entityMap2.get(names[i]).getAttributeValues().get(attributeVariables2.get(j)));
+							element.setAttribute(new Attribute("key", attributeVariables1.get(j)));
+							element.setText(entityMap1.get(names[i]).getAttributeValues().get(attributeVariables1.get(j)));
 							node.addContent(element);
 						}
 					}
-				}
-				
-				Element variableElement = new Element("data", xmlns);
-				variableElement.setAttribute(new Attribute("key", "variable"));
-				variableElement.setText(variables[i]);
-				node.addContent(variableElement);
-				
-				Element frequency = new Element("data", xmlns);
-				frequency.setAttribute(new Attribute("key", "frequency"));
-				frequency.setText(String.valueOf(frequencies[i]));
-				node.addContent(frequency);
-				
-				Element vis = new Element("data", xmlns);
-				vis.setAttribute(new Attribute("key", "d0"));
-				Element visoneShapeNode = new Element("shapeNode", visone);
-				Element yShapeNode = new Element("ShapeNode", yNs);
-				Element geometry = new Element("Geometry", yNs);
-				geometry.setAttribute(new Attribute("height", "20.0"));
-				geometry.setAttribute(new Attribute("width", "20.0"));
-				geometry.setAttribute(new Attribute("x", String.valueOf(Math.random() * 800)));
-				geometry.setAttribute(new Attribute("y", String.valueOf(Math.random() * 600)));
-				yShapeNode.addContent(geometry);
-				Element fill = new Element("Fill", yNs);
-				fill.setAttribute(new Attribute("color", color[i]));
-
-				fill.setAttribute(new Attribute("transparent", "false"));
-				yShapeNode.addContent(fill);
-				Element borderStyle = new Element("BorderStyle", yNs);
-				borderStyle.setAttribute(new Attribute("color", "#000000"));
-				borderStyle.setAttribute(new Attribute("type", "line"));
-				borderStyle.setAttribute(new Attribute("width", "1.0"));
-				yShapeNode.addContent(borderStyle);
-
-				Element nodeLabel = new Element("NodeLabel", yNs);
-				nodeLabel.setAttribute(new Attribute("alignment", "center"));
-				nodeLabel.setAttribute(new Attribute("autoSizePolicy", "content"));
-				nodeLabel.setAttribute(new Attribute("backgroundColor", "#FFFFFF"));
-				nodeLabel.setAttribute(new Attribute("fontFamily", "Dialog"));
-				nodeLabel.setAttribute(new Attribute("fontSize", "12"));
-				nodeLabel.setAttribute(new Attribute("fontStyle", "plain"));
-				nodeLabel.setAttribute(new Attribute("hasLineColor", "false"));
-				nodeLabel.setAttribute(new Attribute("height", "19.0"));
-				nodeLabel.setAttribute(new Attribute("modelName", "eight_pos"));
-				nodeLabel.setAttribute(new Attribute("modelPosition", "n"));
-				nodeLabel.setAttribute(new Attribute("textColor", "#000000"));
-				nodeLabel.setAttribute(new Attribute("visible", "true"));
-				nodeLabel.setText(names[i]);
-				yShapeNode.addContent(nodeLabel);
-				
-				Element shape = new Element("Shape", yNs);
-				if (i < rn.length) {
-					shape.setAttribute(new Attribute("type", "ellipse"));
-				} else {
-					shape.setAttribute(new Attribute("type", "roundrectangle"));
-				}
-				yShapeNode.addContent(shape);
-				visoneShapeNode.addContent(yShapeNode);
-				vis.addContent(visoneShapeNode);
-				node.addContent(vis);
-				
-				graphElement.addContent(node);
-			}
-			
-			// add edges
-			Comment edges = new Comment(" edges ");
-			graphElement.addContent(edges);
-			for (int i = 0; i < rn.length; i++) {
-				for (int j = 0; j < cn.length; j++) {
-					if (m.getMatrix()[i][j] != 0.0 && (this.networkType.equals("twomode") || (this.networkType.equals("onemode") && i < j))) {  // only lower triangle is used for one-mode networks
-						Element edge = new Element("edge", xmlns);
-						
-						int currentId = id[i];
-						edge.setAttribute(new Attribute("source", "n" + String.valueOf(currentId)));
-						if (this.networkType.equals("twomode")) {
-							currentId = id[j + rn.length];
-						} else {
-							currentId = id[j];
-						}
-						edge.setAttribute(new Attribute("target", "n" + String.valueOf(currentId)));
-						
-						Element weight = new Element("data", xmlns);
-						weight.setAttribute(new Attribute("key", "weight"));
-						weight.setText(String.valueOf(m.getMatrix()[i][j]));
-						edge.addContent(weight);
-
-						Element visEdge = new Element("data", xmlns);
-						visEdge.setAttribute("key", "e0");
-						Element visPolyLineEdge = new Element("polyLineEdge", visone);
-						Element yPolyLineEdge = new Element("PolyLineEdge", yNs);
-
-						Element yLineStyle = new Element("LineStyle", yNs);
-						if (qualifierAggregation.equals("combine") && dataTypes.get(qualifier).equals("boolean")) {
-							if (m.getMatrix()[i][j] == 1.0) {
-								yLineStyle.setAttribute("color", "#00ff00");
-							} else if (m.getMatrix()[i][j] == 2.0) {
-								yLineStyle.setAttribute("color", "#ff0000");
-							} else if (m.getMatrix()[i][j] == 3.0) {
-								yLineStyle.setAttribute("color", "#0000ff");
+					if (this.networkType.equals("twomode")) {
+						for (int j = 0; j < attributeVariables2.size(); j++) {
+							if (i >= rn.length) { // second mode: columns
+								Element element = new Element("data", xmlns);
+								element.setAttribute(new Attribute("key", attributeVariables2.get(j)));
+								element.setText(entityMap2.get(names[i]).getAttributeValues().get(attributeVariables2.get(j)));
+								node.addContent(element);
 							}
-						} else if (qualifierAggregation.equals("subtract")) {
-							if (m.getMatrix()[i][j] < 0) {
-								yLineStyle.setAttribute("color", "#ff0000");
-							} else if (m.getMatrix()[i][j] > 0) {
-								yLineStyle.setAttribute("color", "#00ff00");
-							}
-						} else if (qualifierAggregation.equals("conflict")) {
-							yLineStyle.setAttribute("color", "#ff0000");
-						} else if (qualifierAggregation.equals("congruence")) {
-							yLineStyle.setAttribute("color", "#00ff00");
-						} else {
-							yLineStyle.setAttribute("color", "#000000");
 						}
-						yLineStyle.setAttribute(new Attribute("type", "line"));
-						yLineStyle.setAttribute(new Attribute("width", "2.0"));
-						yPolyLineEdge.addContent(yLineStyle);
-						visPolyLineEdge.addContent(yPolyLineEdge);
-						visEdge.addContent(visPolyLineEdge);
-						edge.addContent(visEdge);
-						
-						graphElement.addContent(edge);
+					}
+
+					Element variableElement = new Element("data", xmlns);
+					variableElement.setAttribute(new Attribute("key", "variable"));
+					variableElement.setText(variables[i]);
+					node.addContent(variableElement);
+
+					Element frequency = new Element("data", xmlns);
+					frequency.setAttribute(new Attribute("key", "frequency"));
+					frequency.setText(String.valueOf(frequencies[i]));
+					node.addContent(frequency);
+
+					Element vis = new Element("data", xmlns);
+					vis.setAttribute(new Attribute("key", "d0"));
+					Element visoneShapeNode = new Element("shapeNode", visone);
+					Element yShapeNode = new Element("ShapeNode", yNs);
+					Element geometry = new Element("Geometry", yNs);
+					geometry.setAttribute(new Attribute("height", "20.0"));
+					geometry.setAttribute(new Attribute("width", "20.0"));
+					geometry.setAttribute(new Attribute("x", String.valueOf(Math.random() * 800)));
+					geometry.setAttribute(new Attribute("y", String.valueOf(Math.random() * 600)));
+					yShapeNode.addContent(geometry);
+					Element fill = new Element("Fill", yNs);
+					fill.setAttribute(new Attribute("color", color[i]));
+
+					fill.setAttribute(new Attribute("transparent", "false"));
+					yShapeNode.addContent(fill);
+					Element borderStyle = new Element("BorderStyle", yNs);
+					borderStyle.setAttribute(new Attribute("color", "#000000"));
+					borderStyle.setAttribute(new Attribute("type", "line"));
+					borderStyle.setAttribute(new Attribute("width", "1.0"));
+					yShapeNode.addContent(borderStyle);
+
+					Element nodeLabel = new Element("NodeLabel", yNs);
+					nodeLabel.setAttribute(new Attribute("alignment", "center"));
+					nodeLabel.setAttribute(new Attribute("autoSizePolicy", "content"));
+					nodeLabel.setAttribute(new Attribute("backgroundColor", "#FFFFFF"));
+					nodeLabel.setAttribute(new Attribute("fontFamily", "Dialog"));
+					nodeLabel.setAttribute(new Attribute("fontSize", "12"));
+					nodeLabel.setAttribute(new Attribute("fontStyle", "plain"));
+					nodeLabel.setAttribute(new Attribute("hasLineColor", "false"));
+					nodeLabel.setAttribute(new Attribute("height", "19.0"));
+					nodeLabel.setAttribute(new Attribute("modelName", "eight_pos"));
+					nodeLabel.setAttribute(new Attribute("modelPosition", "n"));
+					nodeLabel.setAttribute(new Attribute("textColor", "#000000"));
+					nodeLabel.setAttribute(new Attribute("visible", "true"));
+					nodeLabel.setText(names[i]);
+					yShapeNode.addContent(nodeLabel);
+
+					Element shape = new Element("Shape", yNs);
+					if (i < rn.length) {
+						shape.setAttribute(new Attribute("type", "ellipse"));
+					} else {
+						shape.setAttribute(new Attribute("type", "roundrectangle"));
+					}
+					yShapeNode.addContent(shape);
+					visoneShapeNode.addContent(yShapeNode);
+					vis.addContent(visoneShapeNode);
+					node.addContent(vis);
+
+					graphElement.addContent(node);
+				}
+
+				// add edges
+				Comment edges = new Comment(" edges ");
+				graphElement.addContent(edges);
+				for (int i = 0; i < rn.length; i++) {
+					for (int j = 0; j < cn.length; j++) {
+						if (m.getMatrix()[i][j] != 0.0 && (this.networkType.equals("twomode") || (this.networkType.equals("onemode") && i < j))) {  // only lower triangle is used for one-mode networks
+							Element edge = new Element("edge", xmlns);
+
+							int currentId = id[i];
+							edge.setAttribute(new Attribute("source", "n" + String.valueOf(currentId)));
+							if (this.networkType.equals("twomode")) {
+								currentId = id[j + rn.length];
+							} else {
+								currentId = id[j];
+							}
+							edge.setAttribute(new Attribute("target", "n" + String.valueOf(currentId)));
+
+							Element weight = new Element("data", xmlns);
+							weight.setAttribute(new Attribute("key", "weight"));
+							weight.setText(String.valueOf(m.getMatrix()[i][j]));
+							edge.addContent(weight);
+
+							Element visEdge = new Element("data", xmlns);
+							visEdge.setAttribute("key", "e0");
+							Element visPolyLineEdge = new Element("polyLineEdge", visone);
+							Element yPolyLineEdge = new Element("PolyLineEdge", yNs);
+
+							Element yLineStyle = new Element("LineStyle", yNs);
+							if (qualifierAggregation.equals("combine") && dataTypes.get(qualifier).equals("boolean")) {
+								if (m.getMatrix()[i][j] == 1.0) {
+									yLineStyle.setAttribute("color", "#00ff00");
+								} else if (m.getMatrix()[i][j] == 2.0) {
+									yLineStyle.setAttribute("color", "#ff0000");
+								} else if (m.getMatrix()[i][j] == 3.0) {
+									yLineStyle.setAttribute("color", "#0000ff");
+								}
+							} else if (qualifierAggregation.equals("subtract")) {
+								if (m.getMatrix()[i][j] < 0) {
+									yLineStyle.setAttribute("color", "#ff0000");
+								} else if (m.getMatrix()[i][j] > 0) {
+									yLineStyle.setAttribute("color", "#00ff00");
+								}
+							} else if (qualifierAggregation.equals("conflict")) {
+								yLineStyle.setAttribute("color", "#ff0000");
+							} else if (qualifierAggregation.equals("congruence")) {
+								yLineStyle.setAttribute("color", "#00ff00");
+							} else {
+								yLineStyle.setAttribute("color", "#000000");
+							}
+							yLineStyle.setAttribute(new Attribute("type", "line"));
+							yLineStyle.setAttribute(new Attribute("width", "2.0"));
+							yPolyLineEdge.addContent(yLineStyle);
+							visPolyLineEdge.addContent(yPolyLineEdge);
+							visEdge.addContent(visPolyLineEdge);
+							edge.addContent(visEdge);
+
+							graphElement.addContent(edge);
+						}
 					}
 				}
+
+				graphml.addContent(graphElement);
+
+				// write to file
+				File dnaFile = new File(filename);
+				try {
+					FileOutputStream outStream = new FileOutputStream(dnaFile);
+					XMLOutputter outToFile = new XMLOutputter();
+					Format format = Format.getPrettyFormat();
+					format.setEncoding("utf-8");
+					outToFile.setFormat(format);
+					outToFile.output(document, outStream);
+					outStream.flush();
+					outStream.close();
+				} catch (IOException e) {
+					LogEvent l = new LogEvent(Logger.ERROR,
+							"Error while saving visone graphml file.",
+							"Tried to save a matrix to graphml file \"" + dnaFile + "\", but an error occurred. See stack trace.",
+							e);
+					Dna.logger.log(l);
+				}
+				pb.stepTo(k + 1);
 			}
-			
-			graphml.addContent(graphElement);
-			
-			// write to file
-			File dnaFile = new File(filename);
-			try {
-				FileOutputStream outStream = new FileOutputStream(dnaFile);
-				XMLOutputter outToFile = new XMLOutputter();
-				Format format = Format.getPrettyFormat();
-				format.setEncoding("utf-8");
-				outToFile.setFormat(format);
-				outToFile.output(document, outStream);
-				outStream.flush();
-				outStream.close();
-			} catch (IOException e) {
-				System.err.println("Cannot save \"" + dnaFile + "\":" + e.getMessage());
-			}
+			pb.stepTo(this.matrixResults.size());
 		}
+	}
+
+	/**
+	 * Return original (unfiltered) statements.
+	 *
+	 * @return Original (unfiltered) statements.
+	 */
+	public ArrayList<ExportStatement> getOriginalStatements() {
+		return this.originalStatements;
 	}
 
 	/**
@@ -2244,7 +2586,7 @@ public class Exporter {
 				fullMatrix.getMatrix(),
 				currentMatrix.getMatrix(),
 				redundantMatrix.getMatrix(),
-				fullMatrix.getRownames());
+				fullMatrix.getRowNames());
 	}
 
 	/**
@@ -2301,9 +2643,8 @@ public class Exporter {
 	 * Write the backbone results to a JSON or XML file
 	 *
 	 * @param filename File name with absolute path as a string.
-	 * @throws IOException
 	 */
-	public void writeBackboneToFile(String filename) throws IOException {
+	public void writeBackboneToFile(String filename) {
 		File file = new File(filename);
 		String s = "";
 
@@ -2330,10 +2671,9 @@ public class Exporter {
 		} catch (IOException exception) {
 			LogEvent l = new LogEvent(Logger.ERROR,
 					"Backbone result could not be saved to disk.",
-					"Attempted to save backbone results to file: " + filename + ". The file saving operation did not work, possibly because the file could not be written to disk or because the results could not be converted to the final data format.",
+					"Attempted to save backbone results to file: \"" + filename + "\". The file saving operation did not work, possibly because the file could not be written to disk or because the results could not be converted to the final data format.",
 					exception);
 			Dna.logger.log(l);
-			throw exception;
 		}
 	}
 }

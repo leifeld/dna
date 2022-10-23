@@ -2,8 +2,16 @@ package dna;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import export.Exporter;
+import model.Matrix;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.rosuda.JRI.RConsoleOutputStream;
 import org.rosuda.JRI.Rengine;
@@ -18,7 +26,8 @@ import sql.Sql;
 /**
  * A class with public functions for accessing DNA without a GUI.
  */
-public class HeadlessDna {
+public class HeadlessDna implements Logger.LogListener {
+	private Exporter exporter;
 
 	/**
 	 * Constructor for creating an instance of the headless DNA class.
@@ -26,9 +35,10 @@ public class HeadlessDna {
 	public HeadlessDna() {
 		// divert stdout to R console
 		Rengine r = new Rengine();
-		RConsoleOutputStream rs = new RConsoleOutputStream(r, 0);
-		System.setOut(new PrintStream(rs));
-		System.setErr(new PrintStream(rs));
+		RConsoleOutputStream rsRegular = new RConsoleOutputStream(r, 0);
+		System.setOut(new PrintStream(rsRegular));
+		RConsoleOutputStream rsWarningError = new RConsoleOutputStream(r, 1);
+		System.setErr(new PrintStream(rsWarningError));
 	}
 
 	/**
@@ -94,7 +104,6 @@ public class HeadlessDna {
 					"Failed to authenticate coder " + coderId + ".",
 					"Coder " + coderId + " could not be authenticated. Check the coder ID and password. You can query the available coders using the 'queryCoders' function.");
 			Dna.logger.log(l);
-			System.out.println("Failed to authenticate coder " + coderId + ".");
 			return false;
 		}
 		ConnectionProfile cp = new ConnectionProfile(type, databaseUrl, databaseName, databasePort, databaseUser, databasePassword);
@@ -113,7 +122,6 @@ public class HeadlessDna {
 					"Failed to authenticate coder " + coderId + ".",
 					"Coder " + coderId + " could not be authenticated. Check the coder ID and password. You can query the available coders using the 'queryCoders' function.");
 			Dna.logger.log(l);
-			System.err.println("Failed to authenticate coder " + coderId + ".");
 		}
 		return success;
 	}
@@ -138,7 +146,6 @@ public class HeadlessDna {
 					"Tried to decrypt a connection profile, but the decryption failed. Make sure the password corresponds to the coder who saved the connection profile.",
 					e2);
 			Dna.logger.log(l);
-			System.err.println("Connection profile could not be decrypted.");
 		}
 		if (cp != null) {
 			Sql sqlTemp = new Sql(cp, true); // just for authentication purposes, so a test
@@ -147,7 +154,6 @@ public class HeadlessDna {
 						"No data source available in the database connection.",
 						"Tried to a connection profile, but the coder could not be authenticated because there is no data source available. This may be due to a failed connection to the database. Look out for other error messages.");
 				Dna.logger.log(l);
-				System.err.println("No data source available in the database connection.");
 			} else {
 				boolean authenticated = sqlTemp.authenticate(-1, clearCoderPassword);
 				if (authenticated) {
@@ -177,24 +183,21 @@ public class HeadlessDna {
 					"No database open. Could not save connection profile.",
 					"Tried to save a connection profile, but no database connection was open or no coder was active.");
 			Dna.logger.log(l);
-			System.err.println("No database open. Could not save connection profile.");
 			return false;
 		}
 		if (fileName == null || !fileName.toLowerCase().endsWith(".dnc")) {
 			LogEvent l = new LogEvent(Logger.ERROR,
 					"File name must end with '.dnc'.",
-					"Tried to save a connection profile with the following file name, but the file name does not end with '.dnc' as required: " + fileName + ".");
+					"Tried to save a connection profile with the following file name, but the file name does not end with '.dnc' as required: \"" + fileName + "\".");
 			Dna.logger.log(l);
-			System.err.println("File name must end with '.dnc'.");
 			return false;
 		}
 		File file = new File(fileName);
 		if (file.exists()) {
 			LogEvent l = new LogEvent(Logger.ERROR,
 					"File already exists and will not be overwritten.",
-					"Tried to save a connection profile with the following file name, but the file already exists and will not be overwritten: " + fileName + ".");
+					"Tried to save a connection profile with the following file name, but the file already exists and will not be overwritten: \"" + fileName + "\".");
 			Dna.logger.log(l);
-			System.err.println("File already exists and will not be overwritten.");
 			return false;
 		}
 		boolean authenticated = Dna.sql.authenticate(-1, clearCoderPassword);
@@ -203,16 +206,14 @@ public class HeadlessDna {
 			Dna.writeConnectionProfile(fileName, new ConnectionProfile(Dna.sql.getConnectionProfile()), clearCoderPassword);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"Connection profile saved to file.",
-					"A connection profile was successfully saved to the following file: " + fileName + ".");
+					"A connection profile was successfully saved to the following file: \"" + fileName + "\".");
 			Dna.logger.log(l);
-			System.out.println("Connection profile saved to file.");
 			return true;
 		} else {
 			LogEvent l = new LogEvent(Logger.ERROR,
 					"Coder password could not be verified. Try again.",
 					"Tried to save a connection profile, but the coder could not be authenticated. Please try again.");
 			Dna.logger.log(l);
-			System.err.println("Coder password could not be verified. Try again.");
 			return false;
 		}
 	}
@@ -278,5 +279,176 @@ public class HeadlessDna {
 				"The coders for the following database were queried successfully: " + databaseUrl);
 		Dna.logger.log(l);
 		return objects;
+	}
+
+	/**
+	 * Compute one-mode or two-mode network matrix based on R arguments.
+	 *
+	 * @param networkType            The network type as provided by rDNA (can be {@code "eventlist"}, {@code "twomode"}, or {@code "onemode"}).
+	 * @param statementType          Statement type as a {@link String}.
+	 * @param variable1              First variable for export, provided as a {@link String}.
+	 * @param variable1Document      boolean indicating if the first variable is at the document level.
+	 * @param variable2              Second variable for export, provided as a {@link String}.
+	 * @param variable2Document      boolean indicating if the second variable is at the document level.
+	 * @param qualifier              Qualifier variable as a {@link String}.
+	 * @param qualifierDocument      boolean indicating if the qualifier variable is at the document level.
+	 * @param qualifierAggregation   Aggregation rule for the qualifier variable (can be {@code "ignore"}, {@code "combine"}, {@code "subtract"}, {@code "congruence"}, or {@code "conflict"}).
+	 * @param normalization          Normalization setting as a {@link String}, as provided by rDNA (can be {@code "no"}, {@code "activity"}, {@code "prominence"}, {@code "average"}, {@code "jaccard"}, or {@code "cosine"}).
+	 * @param includeIsolates        boolean indicating whether nodes not currently present should still be inserted into the network matrix.
+	 * @param duplicates             An input {@link String} from rDNA that can be {@code "include"}, {@code "document"}, {@code "week"}, {@code "month"}, {@code "year"}, or {@code "acrossrange"}.
+	 * @param startDate              Start date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param stopDate               Stop date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param startTime              Start time for the export, provided as a {@link String} with format {@code "HH:mm:ss"}.
+	 * @param stopTime               Stop time for the export, provided as a {@link String} with format {@code "HH:mm:ss"}.
+	 * @param timeWindow             A {@link String} indicating the time window setting. Valid options are {@code "no"}, {@code "events"}, {@code "seconds"}, {@code "minutes"}, {@code "hours"}, {@code "days"}, {@code "weeks"}, {@code "months"}, and {@code "years"}.
+	 * @param windowSize             Duration of the time window in the units specified in the {@code timeWindow} argument.
+	 * @param excludeVariables       A {@link String} array with n elements, indicating the variable of the n'th value.
+	 * @param excludeValues          A {@link String} array with n elements, indicating the value pertaining to the n'th variable {@link String}.
+	 * @param excludeAuthors         A {@link String} array of values to exclude in the {@code author} variable at the document level.
+	 * @param excludeSources         A {@link String} array of values to exclude in the {@code source} variable at the document level.
+	 * @param excludeSections        A {@link String} array of values to exclude in the {@code section} variable at the document level.
+	 * @param excludeTypes           A {@link String} array of values to exclude in the {@code "type"} variable at the document level.
+	 * @param invertValues           boolean indicating whether the statement-level exclude values should be included (= {@code true}) rather than excluded.
+	 * @param invertAuthors          boolean indicating whether the document-level author values should be included (= {@code true}) rather than excluded.
+	 * @param invertSources          boolean indicating whether the document-level source values should be included (= {@code true}) rather than excluded.
+	 * @param invertSections         boolean indicating whether the document-level section values should be included (= {@code true}) rather than excluded.
+	 * @param invertTypes            boolean indicating whether the document-level type values should be included (= {@code true}) rather than excluded.
+	 * @param outfile                {@link String} with a file name under which the resulting network should be saved.
+	 * @param fileFormat             {@link String} with the file format. Valid values are {@code "csv"}, {@code "dl"}, {@code "graphml"}, and {@code null} (for no file export).
+	 * @return                       A {@link Matrix} object containing the resulting one-mode or two-mode network.
+	 */
+	public void rNetwork(String networkType, String statementType, String variable1, boolean variable1Document, String variable2,
+						 boolean variable2Document, String qualifier, boolean qualifierDocument, String qualifierAggregation, String normalization, boolean includeIsolates,
+						 String duplicates, String startDate, String stopDate, String startTime, String stopTime, String timeWindow, int windowSize,
+						 String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources, String[] excludeSections,
+						 String[] excludeTypes, boolean invertValues, boolean invertAuthors, boolean invertSources, boolean invertSections,
+						 boolean invertTypes, String outfile, String fileFormat) {
+
+		// step 1: preprocess arguments
+		StatementType st = Dna.sql.getStatementType(statementType); // format statement type
+
+		// format dates and times with input formats "dd.MM.yyyy" and "HH:mm:ss"
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+		LocalDateTime ldtStart, ldtStop;
+		LocalDateTime[] dateRange = Dna.sql.getDateTimeRange();
+		if (startTime == null || startTime.equals("")) {
+			startTime = "00:00:00";
+		}
+		if (startDate == null || startDate.equals("") || startDate.equals("01.01.1900")) {
+			ldtStart = dateRange[0];
+		} else {
+			String startString = startDate + " " + startTime;
+			ldtStart = LocalDateTime.parse(startString, dtf);
+			if (!startString.equals(dtf.format(ldtStart))) {
+				ldtStart = dateRange[0];
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"Start date or time is invalid.",
+						"When exporting a network, the start date or time (" + startString + ") did not conform to the format dd.MM.yyyy HH:mm:ss and could not be interpreted. Assuming earliest date and time in the dataset: " + ldtStart.format(dtf) + ".");
+				Dna.logger.log(le);
+			}
+		}
+		if (stopTime == null || stopTime.equals("")) {
+			stopTime = "23:59:59";
+		}
+		if (stopDate == null || stopDate.equals("") || stopDate.equals("31.12.2099")) {
+			ldtStop = dateRange[1];
+		} else {
+			String stopString = stopDate + " " + stopTime;
+			ldtStop = LocalDateTime.parse(stopString, dtf);
+			if (!stopString.equals(dtf.format(ldtStop))) {
+				ldtStop = dateRange[1];
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"End date or time is invalid.",
+						"When exporting a network, the end date or time (" + stopString + ") did not conform to the format dd.MM.yyyy HH:mm:ss and could not be interpreted. Assuming latest date and time in the dataset: " + ldtStop.format(dtf) + ".");
+				Dna.logger.log(le);
+			}
+		}
+
+		// process exclude variables: create HashMap with variable:value pairs
+		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
+		if (excludeVariables.length > 0) {
+			for (int i = 0; i < excludeVariables.length; i++) {
+				ArrayList<String> values = map.get(excludeVariables[i]);
+				if (values == null) {
+					values = new ArrayList<String>();
+				}
+				if (!values.contains(excludeValues[i])) {
+					values.add(excludeValues[i]);
+				}
+				Collections.sort(values);
+				map.put(excludeVariables[i], values);
+			}
+		}
+
+		// initialize Exporter class
+		this.exporter = new Exporter(
+				networkType,
+				st,
+				variable1,
+				variable1Document,
+				variable2,
+				variable2Document,
+				qualifier,
+				qualifierDocument,
+				qualifierAggregation,
+				normalization,
+				includeIsolates,
+				duplicates,
+				ldtStart,
+				ldtStop,
+				timeWindow,
+				windowSize,
+				map,
+				Stream.of(excludeAuthors).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeSources).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeSections).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeTypes).collect(Collectors.toCollection(ArrayList::new)),
+				invertValues,
+				invertAuthors,
+				invertSources,
+				invertSections,
+				invertTypes,
+				fileFormat,
+				outfile);
+
+		// step 2: filter
+		this.exporter.loadData();
+		this.exporter.filterStatements();
+
+		// step 3: compute results
+		if (networkType.equals("eventlist")) {
+		} else {
+			try {
+				this.exporter.computeResults();
+			} catch (Exception e) {
+				LogEvent le = new LogEvent(Logger.ERROR,
+						"Error while exporting network.",
+						"An unexpected error occurred while exporting a network. See the stack trace for details. Consider reporting this error.",
+						e);
+				Dna.logger.log(le);
+			}
+		}
+
+		// step 4: save to file
+		if (fileFormat != null && !fileFormat.equals("") && outfile != null && !outfile.equals("")) {
+			this.exporter.exportToFile();
+		}
+	}
+
+	/**
+	 * Get the {@link Exporter} object that contains the results.
+	 *
+	 * @return {@link Exporter} object with results.
+	 */
+	public Exporter getExporter() {
+		return this.exporter;
+	}
+
+	@Override
+	public void processLogEvents() {
+		LogEvent l = Dna.logger.getRow(Dna.logger.getRowCount() - 1);
+		if (l.getPriority() == 2 || l.getPriority() == 3) {
+			l.print();
+		}
 	}
 }

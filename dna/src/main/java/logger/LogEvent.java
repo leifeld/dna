@@ -22,9 +22,8 @@ public class LogEvent extends Throwable {
 	/**
 	 * Create a new log event with empty exception stack trace string.
 	 * 
-	 * @param priority Priority of the event, which can be 0
-	 *   ({@link Logger.UPDATE}), 1 ({@link Logger.MESSAGE}), 2
-	 *   ({@link Logger.WARNING}), or 3 ({@link Logger.ERROR}).
+	 * @param priority Priority of the event, which can be 0 ({@code Logger.UPDATE}), 1 ({@code Logger.MESSAGE}),
+	 *                   2 ({@code Logger.WARNING}), or 3 ({@code Logger.ERROR}).
 	 * @param summary The title or short version of the event.
 	 * @param details A more detailed description of the event.
 	 */
@@ -45,13 +44,11 @@ public class LogEvent extends Throwable {
 	/**
 	 * Create a new log event with an exception whose stack trace is saved.
 	 * 
-	 * @param priority Priority of the event, which can be 0
-	 *   ({@link Logger.UPDATE}), 1 ({@link Logger.MESSAGE}), 2
-	 *   ({@link Logger.WARNING}), or 3 ({@link Logger.ERROR}).
-	 * @param summary    The title or short version of the event.
-	 * @param details    A more detailed description of the event.
-	 * @param exception  The Throwable object from which the exception should be
-	 *   parsed.
+	 * @param priority Priority of the event, which can be 0 ({@code Logger.UPDATE}), 1 ({@code Logger.MESSAGE}),
+	 *                   2 ({@code Logger.WARNING}), or 3 ({@code Logger.ERROR}).
+	 * @param summary The title or short version of the event.
+	 * @param details A more detailed description of the event.
+	 * @param exception The Throwable object from which the exception should be parsed.
 	 */
 	public LogEvent(int priority, String summary, String details, Throwable exception) {
 		this.priority = priority;
@@ -81,6 +78,21 @@ public class LogEvent extends Throwable {
 		String s = sw.toString();
 		pw.close();
 		return s;
+	}
+
+	/**
+	 * Print the log detail to the screen.
+	 */
+	public void print() {
+		if (this.priority == 0) {
+			System.out.println("Update: " + this.details);
+		} else if (this.priority == 1) {
+			System.out.println("Message: " + this.details);
+		} else if (this.priority == 2) {
+			System.err.println("Warning: " + this.details);
+		} else if (this.priority == 3) {
+			System.err.println("Error: " + this.details);
+		}
 	}
 
 	public String getExceptionStackTraceString() {

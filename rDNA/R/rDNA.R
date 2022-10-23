@@ -584,3 +584,454 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
               file,
               coderPassword)
 }
+
+#' Compute and retrieve a network
+#'
+#' Compute and retrieve a network from DNA.
+#'
+#' This function serves to compute a one-mode or two-mode network or an event
+#' list in DNA and retrieve it as a matrix or data frame, respectively. The
+#' arguments resemble the export options in DNA. It is also possible to compute
+#' a temporal sequence of networks using the moving time window approach, in
+#' which case the networks are retrieved as a list of matrices.
+#'
+#' @param connection A \code{dna_connection} object created by the
+#'   \code{dna_connection} function.
+#' @param networkType The kind of network to be computed. Can be
+#'   \code{"twomode"}, \code{"onemode"}, or \code{"eventlist"}.
+#' @param statementType The name of the statement type in which the variable
+#'   of interest is nested. For example, \code{"DNA Statement"}.
+#' @param variable1 The first variable for network construction. In a one-mode
+#'   network, this is the variable for both the rows and columns. In a
+#'   two-mode network, this is the variable for the rows only. In an event
+#'   list, this variable is only used to check for duplicates (depending on
+#'   the setting of the \code{duplicate} argument).
+#' @param variable1Document A boolean value indicating whether the first
+#'   variable is at the document level (i.e., \code{"author"},
+#'   \code{"source"}, \code{"section"}, \code{"type"}, \code{"id"}, or
+#'   \code{"title"}).
+#' @param variable2 The second variable for network construction. In a one-mode
+#'   network, this is the variable over which the ties are created. For
+#'   example, if an organization x organization network is created, and ties
+#'   in this network indicate co-reference to a concept, then the second
+#'   variable is the \code{"concept"}. In a two-mode network, this is the
+#'   variable used for the columns of the network matrix. In an event list,
+#'   this variable is only used to check for duplicates (depending on the
+#'   setting of the \code{duplicate} argument).
+#' @param variable2Document A boolean value indicating whether the second
+#'   variable is at the document level (i.e., \code{"author"},
+#'   \code{"source"}, \code{"section"}, \code{"type"}, \code{"id"}, or
+#'   \code{"title"}
+#' @param qualifier The qualifier variable. In a one-mode network, this
+#'   variable can be used to count only congruence or conflict ties. For
+#'   example, in an organization x organization network via common concepts,
+#'   a binary \code{"agreement"} qualifier could be used to record only ties
+#'   where both organizations have a positive stance on the concept or where
+#'   both organizations have a negative stance on the concept. With an
+#'   integer qualifier, the tie weight between the organizations would be
+#'   proportional to the similarity or distance between the two organizations
+#'   on the scale of the integer variable.
+#'
+#'   In a two-mode network, the qualifier variable can be used to retain only
+#'   positive or only negative statements or subtract negative from positive
+#'   mentions. All of this depends on the setting of the
+#'   \code{qualifierAggregation} argument. For event lists, the qualifier
+#'   variable is only used for filtering out duplicates (depending on the
+#'   setting of the \code{duplicate} argument.
+#'
+#'   The qualifier can also be \code{NULL}, in which case it is ignored, meaning
+#'   that values in \code{variable1} and \code{variable2} are unconditionally
+#'   associated with each other in the network when they co-occur. This is
+#'   identical to selecting a qualifier variable and setting
+#'   \code{qualifierAggregation = "ignore"}.
+#' @param qualifierDocument A boolean value indicating whether the qualifier
+#'   variable is at the document level (i.e., \code{"author"},
+#'   \code{"source"}, \code{"section"}, \code{"type"}, \code{"id"}, or
+#'   \code{"title"}
+#' @param qualifierAggregation The aggregation rule for the \code{qualifier}
+#'   variable. In one-mode networks, this must be \code{"ignore"} (for
+#'   ignoring the qualifier variable), \code{"congruence"} (for recording a
+#'   network tie only if both nodes have the same qualifier value in the
+#'   binary case or for recording the similarity between the two nodes on the
+#'   qualifier variable in the integer case), \code{"conflict"} (for
+#'   recording a network tie only if both nodes have a different qualifier
+#'   value in the binary case or for recording the distance between the two
+#'   nodes on the qualifier variable in the integer case), or
+#' \code{"subtract"} (for subtracting the conflict tie value from the
+#'   congruence tie value in each dyad). In two-mode networks, this must be
+#' \code{"ignore"}, \code{"combine"} (for creating multiplex combinations,
+#'   e.g., 1 for positive, 2 for negative, and 3 for mixed), or
+#' \code{subtract} (for subtracting negative from positive ties). In event
+#'   lists, this setting is ignored.
+#' @param normalization Normalization of edge weights. Valid settings for
+#'   one-mode networks are \code{"no"} (for switching off normalization),
+#'   \code{"average"} (for average activity normalization), \code{"Jaccard"}
+#'   (for Jaccard coefficient normalization), and \code{"cosine"} (for
+#'   cosine similarity normalization). Valid settings for two-mode networks
+#'   are \code{"no"}, \code{"activity"} (for activity normalization), and
+#'   \code{"prominence"} (for prominence normalization).
+#' @param isolates Should all nodes of the respective variable be included in
+#'   the network matrix (\code{isolates = TRUE}), or should only those nodes
+#'   be included that are active in the current time period and are not
+#'   excluded (\code{isolates = FALSE})?
+#' @param duplicates Setting for excluding duplicate statements before network
+#'   construction. Valid settings are \code{"include"} (for including all
+#'   statements in network construction), \code{"document"} (for counting
+#'   only one identical statement per document), \code{"week"} (for counting
+#'   only one identical statement per calendar week), \code{"month"} (for
+#'   counting only one identical statement per calendar month), \code{"year"}
+#'   (for counting only one identical statement per calendar year), and
+#'   \code{"acrossrange"} (for counting only one identical statement across
+#'   the whole time range).
+#' @param start.date The start date for network construction in the format
+#'   "dd.mm.yyyy". All statements before this date will be excluded.
+#' @param start.time The start time for network construction on the specified
+#'   \code{start.date}. All statements before this time on the specified date
+#'   will be excluded.
+#' @param stop.date The stop date for network construction in the format
+#'   "dd.mm.yyyy". All statements after this date will be excluded.
+#' @param stop.time The stop time for network construction on the specified
+#'   \code{stop.date}. All statements after this time on the specified date
+#'   will be excluded.
+#' @param timewindow Possible values are \code{"no"}, \code{"events"},
+#'   \code{"seconds"}, \code{"minutes"}, \code{"hours"}, \code{"days"},
+#'   \code{"weeks"}, \code{"months"}, and \code{"years"}. If \code{"no"} is
+#'   selected (= the default setting), no time window will be used. If any of
+#'   the time units is selected, a moving time window will be imposed, and
+#'   only the statements falling within the time period defined by the window
+#'   will be used to create the network. The time window will then be moved
+#'   forward by one time unit at a time, and a new network with the new time
+#'   boundaries will be created. This is repeated until the end of the overall
+#'   time span is reached. All time windows will be saved as separate
+#'   networks in a list. The duration of each time window is defined by the
+#'   \code{windowsize} argument. For example, this could be used to create a
+#'   time window of 6 months which moves forward by one month each time, thus
+#'   creating time windows that overlap by five months. If \code{"events"} is
+#'   used instead of a natural time unit, the time window will comprise
+#'   exactly as many statements as defined in the \code{windowsize} argument.
+#'   However, if the start or end statement falls on a date and time where
+#'   multiple events happen, those additional events that occur simultaneously
+#'   are included because there is no other way to decide which of the
+#'   statements should be selected. Therefore the window size is sometimes
+#'   extended when the start or end point of a time window is ambiguous in
+#'   event time.
+#' @param windowsize The number of time units of which a moving time window is
+#'   comprised. This can be the number of statement events, the number of days
+#'   etc., as defined in the \code{"timewindow"} argument.
+#' @param excludeValues A list of named character vectors that contains entries
+#'   which should be excluded during network construction. For example,
+#'   \code{list(concept = c("A", "B"), organization = c("org A", "org B"))}
+#'   would exclude all statements containing concepts "A" or "B" or
+#'   organizations "org A" or "org B" when the network is constructed. This
+#'   is irrespective of whether these values appear in \code{variable1},
+#'   \code{variable2}, or the \code{qualifier}. Note that only variables at
+#'   the statement level can be used here. There are separate arguments for
+#'   excluding statements nested in documents with certain meta-data.
+#' @param excludeAuthors A character vector of authors. If a statement is
+#'   nested in a document where one of these authors is set in the "Author"
+#'   meta-data field, the statement is excluded from network construction.
+#' @param excludeSources A character vector of sources. If a statement is
+#'   nested in a document where one of these sources is set in the "Source"
+#'   meta-data field, the statement is excluded from network construction.
+#' @param excludeSections A character vector of sections. If a statement is
+#'   nested in a document where one of these sections is set in the "Section"
+#'   meta-data field, the statement is excluded from network construction.
+#' @param excludeTypes A character vector of types. If a statement is
+#'   nested in a document where one of these types is set in the "Type"
+#'   meta-data field, the statement is excluded from network construction.
+#' @param invertValues A boolean value indicating whether the entries provided
+#'   by the \code{excludeValues} argument should be excluded from network
+#'   construction (\code{invertValues = FALSE}) or if they should be the only
+#'   values that should be included during network construction
+#'   (\code{invertValues = TRUE}).
+#' @param invertAuthors A boolean value indicating whether the entries provided
+#'   by the \code{excludeAuthors} argument should be excluded from network
+#'   construction (\code{invertAuthors = FALSE}) or if they should be the
+#'   only values that should be included during network construction
+#'   (\code{invertAuthors = TRUE}).
+#' @param invertSources A boolean value indicating whether the entries provided
+#'   by the \code{excludeSources} argument should be excluded from network
+#'   construction (\code{invertSources = FALSE}) or if they should be the
+#'   only values that should be included during network construction
+#'   (\code{invertSources = TRUE}).
+#' @param invertSections A boolean value indicating whether the entries
+#'   provided by the \code{excludeSections} argument should be excluded from
+#'   network construction (\code{invertSections = FALSE}) or if they should
+#'   be the only values that should be included during network construction
+#'   (\code{invertSections = TRUE}).
+#' @param invertTypes A boolean value indicating whether the entries provided
+#'   by the \code{excludeTypes} argument should be excluded from network
+#'   construction (\code{invertTypes = FALSE}) or if they should be the
+#'   only values that should be included during network construction
+#'   (\code{invertTypes = TRUE}).
+#' @param fileFormat An optional file format specification for saving the
+#'   resulting network(s) to a file instead of returning an object. Valid values
+#'   are \code{"csv"} (for network matrices or event lists), \code{"dl"} (for
+#'   UCINET DL full-matrix files), and \code{"graphml"} (for visone .graphml
+#'   files). The \code{"graphml"} specification is compatible with time windows.
+#' @param outfile An optional output file name for saving the resulting
+#'   network(s) to a file instead of returning an object.
+#' @param verbose A boolean value indicating whether details of network
+#'   construction should be printed to the R console.
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' conn <- dna_connection(dna_sample())
+#' nw <- dna_network(conn,
+#'   networkType = "onemode",
+#'   variable1 = "organization",
+#'   variable2 = "concept",
+#'   qualifier = "agreement",
+#'   qualifierAggregation = "congruence",
+#'   normalization = "average",
+#'   excludeValues = list("concept" =
+#'   c("There should be legislation to regulate emissions.")))
+#'
+#' # plot network
+#' dna_plotNetwork(nw)
+#' dna_plotHive(nw)
+#' }
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
+#' @importFrom rJava .jevalArray
+#' @importFrom rJava .jnull
+#' @export
+dna_network <- function(connection,
+                        networkType = "twomode",
+                        statementType = "DNA Statement",
+                        variable1 = "organization",
+                        variable1Document = FALSE,
+                        variable2 = "concept",
+                        variable2Document = FALSE,
+                        qualifier = "agreement",
+                        qualifierDocument = FALSE,
+                        qualifierAggregation = "ignore",
+                        normalization = "no",
+                        isolates = FALSE,
+                        duplicates = "include",
+                        start.date = "01.01.1900",
+                        stop.date = "31.12.2099",
+                        start.time = "00:00:00",
+                        stop.time = "23:59:59",
+                        timewindow = "no",
+                        windowsize = 100,
+                        excludeValues = list(),
+                        excludeAuthors = character(),
+                        excludeSources = character(),
+                        excludeSections = character(),
+                        excludeTypes = character(),
+                        invertValues = FALSE,
+                        invertAuthors = FALSE,
+                        invertSources = FALSE,
+                        invertSections = FALSE,
+                        invertTypes = FALSE,
+                        fileFormat = NULL,
+                        outfile = NULL,
+                        verbose = TRUE) {
+  
+  # check time window arguments
+  if (is.null(timewindow) ||
+      is.na(timewindow) ||
+      !is.character(timewindow) ||
+      length(timewindow) != 1 ||
+      !timewindow %in% c("no", "events", "seconds", "minutes", "hours", "days", "weeks", "months", "years")) {
+    timewindow <- "no"
+    warning("'timewindow' argument not recognized. Using 'timewindow = \"no\"'.")
+  }
+  if (is.null(windowsize) ||
+      is.na(windowsize) ||
+      !is.numeric(windowsize) ||
+      length(windowsize) != 1 ||
+      windowsize < 0 ||
+      (windowsize == 0 && timewindow != "no")) {
+    windowsize <- 100
+    warning("'windowsize' argument not recognized. Using 'windowsize = 100'.")
+  }
+  
+  # check and convert exclude arguments
+  if (!is.character(excludeAuthors)) {
+    stop("'excludeAuthors' must be a character object.")
+  }
+  if (!is.character(excludeSources)) {
+    stop("'excludeSources' must be a character object.")
+  }
+  if (!is.character(excludeSections)) {
+    stop("'excludeSections' must be a character object.")
+  }
+  if (!is.character(excludeTypes)) {
+    stop("'excludeTypes' must be a character object.")
+  }
+  if (!is.list(excludeValues) || (length(excludeValues) > 0 && is.null(names(excludeValues)))) {
+    stop("'excludeValues' must be a named list.")
+  }
+  excludeAuthors <- .jarray(excludeAuthors)
+  excludeSources <- .jarray(excludeSources)
+  excludeSections <- .jarray(excludeSections)
+  excludeTypes <- .jarray(excludeTypes)
+  
+  # compile exclude variables and values vectors
+  dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
+  count <- 0
+  if (length(excludeValues) > 0) {
+    for (i in 1:length(excludeValues)) {
+      if (length(excludeValues[[i]]) > 0) {
+        for (j in 1:length(excludeValues[[i]])) {
+          count <- count + 1
+          dat[count, 1] <- names(excludeValues)[i]
+          dat[count, 2] <- excludeValues[[i]][j]
+        }
+      }
+    }
+    var <- dat[, 1]
+    val <- dat[, 2]
+  } else {
+    var <- character()
+    val <- character()
+  }
+  var <- .jarray(var)
+  val <- .jarray(val)
+  
+  if (is.null(variable1) || is.na(variable1) || length(variable1) != 1 || !is.character(variable1)) {
+    stop("'variable1' must be a character object of length 1.")
+  }
+  if (is.null(variable2) || is.na(variable2) || length(variable2) != 1 || !is.character(variable2)) {
+    stop("'variable2' must be a character object of length 1.")
+  }
+  if (is.null(qualifier) || is.na(qualifier)) {
+    qualifier <- .jnull(class = "java/lang/String")
+  } else if (length(qualifier) != 1 || !is.character(qualifier)) {
+    stop("'qualifier' must be NULL or a character object of length 1.")
+  }
+  if (is.null(variable1Document) || is.na(variable1Document) || length(variable1Document) != 1 || !is.logical(variable1Document)) {
+    stop("'variable1Document' must be TRUE or FALSE.")
+  }
+  if (is.null(variable2Document) || is.na(variable2Document) || length(variable2Document) != 1 || !is.logical(variable2Document)) {
+    stop("'variable2Document' must be TRUE or FALSE.")
+  }
+  if (is.null(normalization) || is.na(normalization) || length(normalization) != 1 || !is.character(normalization)
+      || !normalization %in% c("no", "activity", "prominence", "average", "Jaccard", "jaccard", "cosine")) {
+    stop("'normalization' must be 'no', 'activity', 'prominence', 'average', 'Jaccard', or 'cosine'.")
+  }
+  if (normalization %in% c("activity", "prominence") && networkType == "onemode") {
+    stop("'normalization' must be 'no', 'average', 'Jaccard', or 'cosine' when networkType = 'onemode'.")
+  }
+  if (normalization %in% c("average", "Jaccard", "jaccard", "cosine") && networkType == "twomode") {
+    stop("'normalization' must be 'no', 'activity', or 'prominence' when networkType = 'twomode'.")
+  }
+  
+  if (!is.null(fileFormat) && !fileFormat %in% c("csv", "dl", "graphml")) {
+    stop("'fileFormat' must be 'csv', 'dl', or 'graphml'.")
+  }
+  if (!is.null(fileFormat) && networkType == "eventlist" && fileFormat %in% c("dl", "graphml")) {
+    stop("Only .csv files are currently compatible with event lists.")
+  }
+  if (is.null(outfile) || is.null(fileFormat)) {
+    fileExport <- TRUE
+  } else {
+    fileExport <- FALSE
+  }
+  if (is.null(fileFormat)) {
+    fileFormat <- .jnull(class = "java/lang/String")
+  }
+  if (is.null(outfile)) {
+    outfile <- .jnull(class = "java/lang/String")
+  }
+  
+  # call Java function to create network
+  .jcall(connection$dna_connection,
+         "V",
+         "rNetwork",
+         networkType,
+         statementType,
+         variable1,
+         variable1Document,
+         variable2,
+         variable2Document,
+         qualifier,
+         qualifierDocument,
+         qualifierAggregation,
+         normalization,
+         isolates,
+         duplicates,
+         start.date,
+         stop.date,
+         start.time,
+         stop.time,
+         timewindow,
+         as.integer(windowsize),
+         var,
+         val,
+         excludeAuthors,
+         excludeSources,
+         excludeSections,
+         excludeTypes,
+         invertValues,
+         invertAuthors,
+         invertSources,
+         invertSections,
+         invertTypes,
+         outfile,
+         fileFormat,
+         verbose
+  )
+  
+  if (isTRUE(fileExport)) {
+    if (networkType == "eventlist") {
+      objects <- .jcall(connection$dna_connection, "[Ljava/lang/Object;", "getEventListColumnsR", simplify = TRUE)
+      columnNames <- .jcall(connection$dna_connection, "[S", "getEventListColumnsRNames", simplify = TRUE)
+      dta <- data.frame(id = .jevalArray(objects[[1]]))
+      dta$time <- as.POSIXct(.jevalArray(objects[[2]]), origin = "1970-01-01")
+      dta$docId <- .jevalArray(objects[[3]])
+      dta$docTitle <- .jevalArray(objects[[4]])
+      dta$docAuthor <- .jevalArray(objects[[5]])
+      dta$docSource <- .jevalArray(objects[[6]])
+      dta$docSection <- .jevalArray(objects[[7]])
+      dta$docType <- .jevalArray(objects[[8]])
+      for (i in 1:length(columnNames)) {
+        dta[[columnNames[i]]] <- .jevalArray(objects[[i + 8]])
+      }
+      attributes(dta)$call <- match.call()
+      class(dta) <- c("dna_eventlist", class(dta))
+      return(dta)
+    } else if (timewindow == "no") {
+      mat <- .jcall(connection$dna_connection, "[[D", "getMatrix", simplify = TRUE)
+      rownames(mat) <- .jcall(connection$dna_connection, "[S", "getRowNames", simplify = TRUE)
+      colnames(mat) <- .jcall(connection$dna_connection, "[S", "getColumnNames", simplify = TRUE)
+      attributes(mat)$start <- as.POSIXct(.jcall(connection$dna_connection, "J", "getTime", "start", simplify = TRUE), origin = "1970-01-01")
+      attributes(mat)$stop <- as.POSIXct(.jcall(connection$dna_connection, "J", "getTime", "stop", simplify = TRUE), origin = "1970-01-01")
+      attributes(mat)$call <- match.call()
+      class(mat) <- c(paste0("dna_network_", networkType), class(mat))
+      return(mat)
+    } else {
+      timeLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", "middle", simplify = TRUE)
+      timeLabels <- as.POSIXct(timeLabels, origin = "1970-01-01")
+      startLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", "start", simplify = TRUE)
+      startLabels <- as.POSIXct(startLabels, origin = "1970-01-01")
+      stopLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", "stop", simplify = TRUE)
+      stopLabels <- as.POSIXct(stopLabels, origin = "1970-01-01")
+      numStatements <- .jcall(connection$dna_connection, "[I", "getTimeWindowNumStatements", simplify = TRUE)
+      mat <- list()
+      for (t in 1:length(timeLabels)) {
+        m <- .jcall(connection$dna_connection, "[[D", "getTimeWindowNetwork", as.integer(t - 1), simplify = TRUE)
+        rownames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowRowNames", as.integer(t - 1), simplify = TRUE)
+        colnames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowColumnNames", as.integer(t - 1), simplify = TRUE)
+        attributes(m)$call <- match.call()
+        class(m) <- c(paste0("dna_network_", networkType), class(m))
+        mat[[t]] <- m
+      }
+      dta <- list()
+      dta$networks <- mat
+      dta$start <- startLabels
+      dta$time <- timeLabels
+      dta$stop <- stopLabels
+      dta$numStatements <- numStatements
+      attributes(dta)$call <- match.call()
+      class(dta) <- c(paste0("dna_network_", networkType, "_timewindows"), class(dta))
+      return(dta)
+    }
+  }
+}

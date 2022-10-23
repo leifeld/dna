@@ -797,16 +797,8 @@ public class BackboneExporter extends JDialog {
 					if (!fileName.toLowerCase().endsWith(".xml")) {
 						fileName = fileName + ".xml";
 					}
-					try {
-						BackboneExporter.this.exporter.writeBackboneToFile(fileName);
-						JOptionPane.showMessageDialog(BackboneExporter.this, "Data were exported to \"" + fileName + "\".");
-					} catch (IOException ioe) {
-						LogEvent l = new LogEvent(Logger.ERROR,
-								"Backbone results could not be saved.",
-								"Tried to save backbone results to an XML file, but an error occurred.",
-								ioe);
-						Dna.logger.log(l);
-					}
+					BackboneExporter.this.exporter.writeBackboneToFile(fileName);
+					JOptionPane.showMessageDialog(BackboneExporter.this, "Data were exported to \"" + fileName + "\".");
 				}
 			}
 		});
@@ -828,16 +820,8 @@ public class BackboneExporter extends JDialog {
 					if (!fileName.toLowerCase().endsWith(".json")) {
 						fileName = fileName + ".json";
 					}
-					try {
-						BackboneExporter.this.exporter.writeBackboneToFile(fileName);
-						JOptionPane.showMessageDialog(BackboneExporter.this, "Data were exported to \"" + fileName + "\".");
-					} catch (IOException ioe) {
-						LogEvent l = new LogEvent(Logger.ERROR,
-								"Backbone results could not be saved.",
-								"Tried to save backbone results to a JSON file, but an error occurred.",
-								ioe);
-						Dna.logger.log(l);
-					}
+					BackboneExporter.this.exporter.writeBackboneToFile(fileName);
+					JOptionPane.showMessageDialog(BackboneExporter.this, "Data were exported to \"" + fileName + "\".");
 				}
 			}
 		});

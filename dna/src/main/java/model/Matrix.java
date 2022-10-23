@@ -1,6 +1,7 @@
 package model;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 /**
  * A class for Matrix objects. As two-dimensional arrays do not store the row
@@ -11,17 +12,17 @@ import java.time.LocalDateTime;
  */
 public class Matrix implements Cloneable {
 	private double[][] matrix;
-	private String[] rownames, colnames;
+	private String[] rowNames, columnNames;
 	private boolean integer;
 	private LocalDateTime dateTime;
 	private LocalDateTime start;
 	private LocalDateTime stop;
 	private int numStatements;
 	
-	public Matrix(double[][] matrix, String[] rownames, String[] colnames, boolean integer, LocalDateTime start, LocalDateTime stop) {
+	public Matrix(double[][] matrix, String[] rowNames, String[] columnNames, boolean integer, LocalDateTime start, LocalDateTime stop) {
 		this.matrix = matrix;
-		this.rownames = rownames;
-		this.colnames = colnames;
+		this.rowNames = rowNames;
+		this.columnNames = columnNames;
 		this.integer = integer;
 		this.start = start;
 		this.stop = stop;
@@ -32,8 +33,8 @@ public class Matrix implements Cloneable {
 	 */
 	public Matrix(Matrix matrix) {
 		this.matrix = matrix.getMatrix();
-		this.rownames = matrix.getRownames();
-		this.colnames = matrix.getColnames();
+		this.rowNames = matrix.getRowNames();
+		this.columnNames = matrix.getColumnNames();
 		this.integer = matrix.getInteger();
 		this.start = matrix.getStart();
 		this.stop = matrix.getStop();
@@ -74,31 +75,31 @@ public class Matrix implements Cloneable {
 	}
 
 	/**
-	 * @return the rownames
+	 * @return the row names
 	 */
-	public String[] getRownames() {
-		return rownames;
+	public String[] getRowNames() {
+		return rowNames;
 	}
 
 	/**
-	 * @param rownames the rownames to set
+	 * @param rowNames the row names to set
 	 */
-	public void setRownames(String[] rownames) {
-		this.rownames = rownames;
+	public void setRowNames(String[] rowNames) {
+		this.rowNames = rowNames;
 	}
 
 	/**
-	 * @return the colnames
+	 * @return the column names
 	 */
-	public String[] getColnames() {
-		return colnames;
+	public String[] getColumnNames() {
+		return columnNames;
 	}
 
 	/**
-	 * @param colnames the colnames to set
+	 * @param columnNames the column names to set
 	 */
-	public void setColnames(String[] colnames) {
-		this.colnames = colnames;
+	public void setColumnNames(String[] columnNames) {
+		this.columnNames = columnNames;
 	}
 
 	/**
@@ -123,6 +124,13 @@ public class Matrix implements Cloneable {
 	}
 
 	/**
+	 * @return Date and time in milliseconds since 1 January 1970
+	 */
+	public long getDateTimeLong() {
+		return dateTime.toEpochSecond(ZoneOffset.UTC);
+	}
+
+	/**
 	 * @param dateTime the date and time to set
 	 */
 	public void setDateTime(LocalDateTime dateTime) {
@@ -137,6 +145,13 @@ public class Matrix implements Cloneable {
 	}
 
 	/**
+	 * @return Start date/time in milliseconds since 1 January 1970
+	 */
+	public long getStartLong() {
+		return start.toEpochSecond(ZoneOffset.UTC);
+	}
+
+	/**
 	 * @param start the start to set
 	 */
 	public void setStart(LocalDateTime start) {
@@ -148,6 +163,13 @@ public class Matrix implements Cloneable {
 	 */
 	public LocalDateTime getStop() {
 		return stop;
+	}
+
+	/**
+	 * @return Stop date/time in milliseconds since 1 January 1970
+	 */
+	public long getStopLong() {
+		return stop.toEpochSecond(ZoneOffset.UTC);
 	}
 
 	/**

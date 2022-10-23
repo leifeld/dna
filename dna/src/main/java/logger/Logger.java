@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 
 /**
@@ -55,7 +56,7 @@ public class Logger extends AbstractTableModel {
 	/**
 	 * Which type of object (i.e., class) shall be shown in the columns?
 	 * 
-	 * @param column The column index of the table for which the class type should be returned, starting at 0.
+	 * @param columnIndex The column index of the table for which the class type should be returned, starting at 0.
 	 */
 	public Class<?> getColumnClass(int columnIndex) {
 		switch( columnIndex ){
@@ -112,7 +113,7 @@ public class Logger extends AbstractTableModel {
 	/**
 	 * Add a {@link LogEvent} object to the array list and notify listeners.
 	 * 
-	 * @param logEntry The {@link LogEvent} object to be added.
+	 * @param l The {@link LogEvent} object to be added.
 	 */
 	public void log(LogEvent l) {
 		this.rows.add(l);
