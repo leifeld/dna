@@ -5,7 +5,6 @@
 \title{Compute and retrieve a network}
 \usage{
 dna_network(
-  connection,
   networkType = "twomode",
   statementType = "DNA Statement",
   variable1 = "organization",
@@ -22,8 +21,8 @@ dna_network(
   stop.date = "31.12.2099",
   start.time = "00:00:00",
   stop.time = "23:59:59",
-  timewindow = "no",
-  windowsize = 100,
+  timeWindow = "no",
+  windowSize = 100,
   excludeValues = list(),
   excludeAuthors = character(),
   excludeSources = character(),
@@ -35,14 +34,10 @@ dna_network(
   invertSections = FALSE,
   invertTypes = FALSE,
   fileFormat = NULL,
-  outfile = NULL,
-  verbose = TRUE
+  outfile = NULL
 )
 }
 \arguments{
-\item{connection}{A \code{dna_connection} object created by the
-\code{dna_connection} function.}
-
 \item{networkType}{The kind of network to be computed. Can be
 \code{"twomode"}, \code{"onemode"}, or \code{"eventlist"}.}
 
@@ -53,7 +48,7 @@ of interest is nested. For example, \code{"DNA Statement"}.}
 network, this is the variable for both the rows and columns. In a
 two-mode network, this is the variable for the rows only. In an event
 list, this variable is only used to check for duplicates (depending on
-the setting of the \code{duplicate} argument).}
+the setting of the \code{duplicates} argument).}
 
 \item{variable1Document}{A boolean value indicating whether the first
 variable is at the document level (i.e., \code{"author"},
@@ -67,7 +62,7 @@ in this network indicate co-reference to a concept, then the second
 variable is the \code{"concept"}. In a two-mode network, this is the
 variable used for the columns of the network matrix. In an event list,
 this variable is only used to check for duplicates (depending on the
-setting of the \code{duplicate} argument).}
+setting of the \code{duplicates} argument).}
 
 \item{variable2Document}{A boolean value indicating whether the second
 variable is at the document level (i.e., \code{"author"},
@@ -82,14 +77,18 @@ variable is at the document level (i.e., \code{"author"},
   both organizations have a negative stance on the concept. With an
   integer qualifier, the tie weight between the organizations would be
   proportional to the similarity or distance between the two organizations
-  on the scale of the integer variable.
+  on the scale of the integer variable. With a short text variable as a
+  qualifier, agreement on common categorical values of the qualifier is
+  required, for example a tie is established (or a tie weight increased) if
+  two actors both refer to the same value on the second variable AND match on
+  the categorical qualifier, for example the type of referral.
 
   In a two-mode network, the qualifier variable can be used to retain only
   positive or only negative statements or subtract negative from positive
   mentions. All of this depends on the setting of the
   \code{qualifierAggregation} argument. For event lists, the qualifier
   variable is only used for filtering out duplicates (depending on the
-  setting of the \code{duplicate} argument.
+  setting of the \code{duplicates} argument.
 
   The qualifier can also be \code{NULL}, in which case it is ignored, meaning
   that values in \code{variable1} and \code{variable2} are unconditionally
@@ -120,7 +119,7 @@ variable is at the document level (i.e., \code{"author"},
 
 \item{normalization}{Normalization of edge weights. Valid settings for
 one-mode networks are \code{"no"} (for switching off normalization),
-\code{"average"} (for average activity normalization), \code{"Jaccard"}
+\code{"average"} (for average activity normalization), \code{"jaccard"}
 (for Jaccard coefficient normalization), and \code{"cosine"} (for
 cosine similarity normalization). Valid settings for two-mode networks
 are \code{"no"}, \code{"activity"} (for activity normalization), and
@@ -142,10 +141,10 @@ counting only one identical statement per calendar month), \code{"year"}
 the whole time range).}
 
 \item{start.date}{The start date for network construction in the format
-"dd.mm.yyyy". All statements before this date will be excluded.}
+\code{"dd.mm.yyyy"}. All statements before this date will be excluded.}
 
 \item{stop.date}{The stop date for network construction in the format
-"dd.mm.yyyy". All statements after this date will be excluded.}
+\code{"dd.mm.yyyy"}. All statements after this date will be excluded.}
 
 \item{start.time}{The start time for network construction on the specified
 \code{start.date}. All statements before this time on the specified date
@@ -155,7 +154,7 @@ will be excluded.}
 \code{stop.date}. All statements after this time on the specified date
 will be excluded.}
 
-\item{timewindow}{Possible values are \code{"no"}, \code{"events"},
+\item{timeWindow}{Possible values are \code{"no"}, \code{"events"},
 \code{"seconds"}, \code{"minutes"}, \code{"hours"}, \code{"days"},
 \code{"weeks"}, \code{"months"}, and \code{"years"}. If \code{"no"} is
 selected (= the default setting), no time window will be used. If any of
@@ -166,11 +165,11 @@ forward by one time unit at a time, and a new network with the new time
 boundaries will be created. This is repeated until the end of the overall
 time span is reached. All time windows will be saved as separate
 networks in a list. The duration of each time window is defined by the
-\code{windowsize} argument. For example, this could be used to create a
+\code{windowSize} argument. For example, this could be used to create a
 time window of 6 months which moves forward by one month each time, thus
 creating time windows that overlap by five months. If \code{"events"} is
 used instead of a natural time unit, the time window will comprise
-exactly as many statements as defined in the \code{windowsize} argument.
+exactly as many statements as defined in the \code{windowSize} argument.
 However, if the start or end statement falls on a date and time where
 multiple events happen, those additional events that occur simultaneously
 are included because there is no other way to decide which of the
@@ -178,9 +177,9 @@ statements should be selected. Therefore the window size is sometimes
 extended when the start or end point of a time window is ambiguous in
 event time.}
 
-\item{windowsize}{The number of time units of which a moving time window is
+\item{windowSize}{The number of time units of which a moving time window is
 comprised. This can be the number of statement events, the number of days
-etc., as defined in the \code{"timewindow"} argument.}
+etc., as defined in the \code{"timeWindow"} argument.}
 
 \item{excludeValues}{A list of named character vectors that contains entries
 which should be excluded during network construction. For example,
@@ -242,13 +241,10 @@ only values that should be included during network construction
 resulting network(s) to a file instead of returning an object. Valid values
 are \code{"csv"} (for network matrices or event lists), \code{"dl"} (for
 UCINET DL full-matrix files), and \code{"graphml"} (for visone .graphml
-files). The \code{"graphml"} specification is compatible with time windows.}
+files).}
 
 \item{outfile}{An optional output file name for saving the resulting
 network(s) to a file instead of returning an object.}
-
-\item{verbose}{A boolean value indicating whether details of network
-construction should be printed to the R console.}
 }
 \description{
 Compute and retrieve a network from DNA.
@@ -264,19 +260,14 @@ which case the networks are retrieved as a list of matrices.
 \dontrun{
 dna_init()
 conn <- dna_connection(dna_sample())
-nw <- dna_network(conn,
-  networkType = "onemode",
+nw <- dna_network(networkType = "onemode",
   variable1 = "organization",
   variable2 = "concept",
   qualifier = "agreement",
   qualifierAggregation = "congruence",
   normalization = "average",
   excludeValues = list("concept" =
-  c("There should be legislation to regulate emissions.")))
-
-# plot network
-dna_plotNetwork(nw)
-dna_plotHive(nw)
+    c("There should be legislation to regulate emissions.")))
 }
 
 }

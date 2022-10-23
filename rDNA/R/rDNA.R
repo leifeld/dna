@@ -595,8 +595,6 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #' a temporal sequence of networks using the moving time window approach, in
 #' which case the networks are retrieved as a list of matrices.
 #'
-#' @param connection A \code{dna_connection} object created by the
-#'   \code{dna_connection} function.
 #' @param networkType The kind of network to be computed. Can be
 #'   \code{"twomode"}, \code{"onemode"}, or \code{"eventlist"}.
 #' @param statementType The name of the statement type in which the variable
@@ -605,7 +603,7 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #'   network, this is the variable for both the rows and columns. In a
 #'   two-mode network, this is the variable for the rows only. In an event
 #'   list, this variable is only used to check for duplicates (depending on
-#'   the setting of the \code{duplicate} argument).
+#'   the setting of the \code{duplicates} argument).
 #' @param variable1Document A boolean value indicating whether the first
 #'   variable is at the document level (i.e., \code{"author"},
 #'   \code{"source"}, \code{"section"}, \code{"type"}, \code{"id"}, or
@@ -617,7 +615,7 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #'   variable is the \code{"concept"}. In a two-mode network, this is the
 #'   variable used for the columns of the network matrix. In an event list,
 #'   this variable is only used to check for duplicates (depending on the
-#'   setting of the \code{duplicate} argument).
+#'   setting of the \code{duplicates} argument).
 #' @param variable2Document A boolean value indicating whether the second
 #'   variable is at the document level (i.e., \code{"author"},
 #'   \code{"source"}, \code{"section"}, \code{"type"}, \code{"id"}, or
@@ -630,14 +628,18 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #'   both organizations have a negative stance on the concept. With an
 #'   integer qualifier, the tie weight between the organizations would be
 #'   proportional to the similarity or distance between the two organizations
-#'   on the scale of the integer variable.
+#'   on the scale of the integer variable. With a short text variable as a
+#'   qualifier, agreement on common categorical values of the qualifier is
+#'   required, for example a tie is established (or a tie weight increased) if
+#'   two actors both refer to the same value on the second variable AND match on
+#'   the categorical qualifier, for example the type of referral.
 #'
 #'   In a two-mode network, the qualifier variable can be used to retain only
 #'   positive or only negative statements or subtract negative from positive
 #'   mentions. All of this depends on the setting of the
 #'   \code{qualifierAggregation} argument. For event lists, the qualifier
 #'   variable is only used for filtering out duplicates (depending on the
-#'   setting of the \code{duplicate} argument.
+#'   setting of the \code{duplicates} argument.
 #'
 #'   The qualifier can also be \code{NULL}, in which case it is ignored, meaning
 #'   that values in \code{variable1} and \code{variable2} are unconditionally
@@ -665,7 +667,7 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #'   lists, this setting is ignored.
 #' @param normalization Normalization of edge weights. Valid settings for
 #'   one-mode networks are \code{"no"} (for switching off normalization),
-#'   \code{"average"} (for average activity normalization), \code{"Jaccard"}
+#'   \code{"average"} (for average activity normalization), \code{"jaccard"}
 #'   (for Jaccard coefficient normalization), and \code{"cosine"} (for
 #'   cosine similarity normalization). Valid settings for two-mode networks
 #'   are \code{"no"}, \code{"activity"} (for activity normalization), and
@@ -684,16 +686,16 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #'   \code{"acrossrange"} (for counting only one identical statement across
 #'   the whole time range).
 #' @param start.date The start date for network construction in the format
-#'   "dd.mm.yyyy". All statements before this date will be excluded.
+#'   \code{"dd.mm.yyyy"}. All statements before this date will be excluded.
 #' @param start.time The start time for network construction on the specified
 #'   \code{start.date}. All statements before this time on the specified date
 #'   will be excluded.
 #' @param stop.date The stop date for network construction in the format
-#'   "dd.mm.yyyy". All statements after this date will be excluded.
+#'   \code{"dd.mm.yyyy"}. All statements after this date will be excluded.
 #' @param stop.time The stop time for network construction on the specified
 #'   \code{stop.date}. All statements after this time on the specified date
 #'   will be excluded.
-#' @param timewindow Possible values are \code{"no"}, \code{"events"},
+#' @param timeWindow Possible values are \code{"no"}, \code{"events"},
 #'   \code{"seconds"}, \code{"minutes"}, \code{"hours"}, \code{"days"},
 #'   \code{"weeks"}, \code{"months"}, and \code{"years"}. If \code{"no"} is
 #'   selected (= the default setting), no time window will be used. If any of
@@ -704,20 +706,20 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #'   boundaries will be created. This is repeated until the end of the overall
 #'   time span is reached. All time windows will be saved as separate
 #'   networks in a list. The duration of each time window is defined by the
-#'   \code{windowsize} argument. For example, this could be used to create a
+#'   \code{windowSize} argument. For example, this could be used to create a
 #'   time window of 6 months which moves forward by one month each time, thus
 #'   creating time windows that overlap by five months. If \code{"events"} is
 #'   used instead of a natural time unit, the time window will comprise
-#'   exactly as many statements as defined in the \code{windowsize} argument.
+#'   exactly as many statements as defined in the \code{windowSize} argument.
 #'   However, if the start or end statement falls on a date and time where
 #'   multiple events happen, those additional events that occur simultaneously
 #'   are included because there is no other way to decide which of the
 #'   statements should be selected. Therefore the window size is sometimes
 #'   extended when the start or end point of a time window is ambiguous in
 #'   event time.
-#' @param windowsize The number of time units of which a moving time window is
+#' @param windowSize The number of time units of which a moving time window is
 #'   comprised. This can be the number of statement events, the number of days
-#'   etc., as defined in the \code{"timewindow"} argument.
+#'   etc., as defined in the \code{"timeWindow"} argument.
 #' @param excludeValues A list of named character vectors that contains entries
 #'   which should be excluded during network construction. For example,
 #'   \code{list(concept = c("A", "B"), organization = c("org A", "org B"))}
@@ -768,40 +770,31 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #'   resulting network(s) to a file instead of returning an object. Valid values
 #'   are \code{"csv"} (for network matrices or event lists), \code{"dl"} (for
 #'   UCINET DL full-matrix files), and \code{"graphml"} (for visone .graphml
-#'   files). The \code{"graphml"} specification is compatible with time windows.
+#'   files).
 #' @param outfile An optional output file name for saving the resulting
 #'   network(s) to a file instead of returning an object.
-#' @param verbose A boolean value indicating whether details of network
-#'   construction should be printed to the R console.
 #'
 #' @examples
 #' \dontrun{
 #' dna_init()
 #' conn <- dna_connection(dna_sample())
-#' nw <- dna_network(conn,
-#'   networkType = "onemode",
+#' nw <- dna_network(networkType = "onemode",
 #'   variable1 = "organization",
 #'   variable2 = "concept",
 #'   qualifier = "agreement",
 #'   qualifierAggregation = "congruence",
 #'   normalization = "average",
 #'   excludeValues = list("concept" =
-#'   c("There should be legislation to regulate emissions.")))
-#'
-#' # plot network
-#' dna_plotNetwork(nw)
-#' dna_plotHive(nw)
+#'     c("There should be legislation to regulate emissions.")))
 #' }
 #'
 #' @author Philip Leifeld
 #'
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
-#' @importFrom rJava .jevalArray
 #' @importFrom rJava .jnull
 #' @export
-dna_network <- function(connection,
-                        networkType = "twomode",
+dna_network <- function(networkType = "twomode",
                         statementType = "DNA Statement",
                         variable1 = "organization",
                         variable1Document = FALSE,
@@ -817,8 +810,8 @@ dna_network <- function(connection,
                         stop.date = "31.12.2099",
                         start.time = "00:00:00",
                         stop.time = "23:59:59",
-                        timewindow = "no",
-                        windowsize = 100,
+                        timeWindow = "no",
+                        windowSize = 100,
                         excludeValues = list(),
                         excludeAuthors = character(),
                         excludeSources = character(),
@@ -830,44 +823,9 @@ dna_network <- function(connection,
                         invertSections = FALSE,
                         invertTypes = FALSE,
                         fileFormat = NULL,
-                        outfile = NULL,
-                        verbose = TRUE) {
+                        outfile = NULL) {
   
-  # check time window arguments
-  if (is.null(timewindow) ||
-      is.na(timewindow) ||
-      !is.character(timewindow) ||
-      length(timewindow) != 1 ||
-      !timewindow %in% c("no", "events", "seconds", "minutes", "hours", "days", "weeks", "months", "years")) {
-    timewindow <- "no"
-    warning("'timewindow' argument not recognized. Using 'timewindow = \"no\"'.")
-  }
-  if (is.null(windowsize) ||
-      is.na(windowsize) ||
-      !is.numeric(windowsize) ||
-      length(windowsize) != 1 ||
-      windowsize < 0 ||
-      (windowsize == 0 && timewindow != "no")) {
-    windowsize <- 100
-    warning("'windowsize' argument not recognized. Using 'windowsize = 100'.")
-  }
-  
-  # check and convert exclude arguments
-  if (!is.character(excludeAuthors)) {
-    stop("'excludeAuthors' must be a character object.")
-  }
-  if (!is.character(excludeSources)) {
-    stop("'excludeSources' must be a character object.")
-  }
-  if (!is.character(excludeSections)) {
-    stop("'excludeSections' must be a character object.")
-  }
-  if (!is.character(excludeTypes)) {
-    stop("'excludeTypes' must be a character object.")
-  }
-  if (!is.list(excludeValues) || (length(excludeValues) > 0 && is.null(names(excludeValues)))) {
-    stop("'excludeValues' must be a named list.")
-  }
+  # wrap the vectors of exclude values for document variables into Java arrays
   excludeAuthors <- .jarray(excludeAuthors)
   excludeSources <- .jarray(excludeSources)
   excludeSections <- .jarray(excludeSections)
@@ -892,47 +850,12 @@ dna_network <- function(connection,
     var <- character()
     val <- character()
   }
-  var <- .jarray(var)
-  val <- .jarray(val)
+  var <- .jarray(var) # array of variable names of each excluded value
+  val <- .jarray(val) # array of values to be excluded
   
-  if (is.null(variable1) || is.na(variable1) || length(variable1) != 1 || !is.character(variable1)) {
-    stop("'variable1' must be a character object of length 1.")
-  }
-  if (is.null(variable2) || is.na(variable2) || length(variable2) != 1 || !is.character(variable2)) {
-    stop("'variable2' must be a character object of length 1.")
-  }
+  # encode R NULL as Java null value if necessary
   if (is.null(qualifier) || is.na(qualifier)) {
     qualifier <- .jnull(class = "java/lang/String")
-  } else if (length(qualifier) != 1 || !is.character(qualifier)) {
-    stop("'qualifier' must be NULL or a character object of length 1.")
-  }
-  if (is.null(variable1Document) || is.na(variable1Document) || length(variable1Document) != 1 || !is.logical(variable1Document)) {
-    stop("'variable1Document' must be TRUE or FALSE.")
-  }
-  if (is.null(variable2Document) || is.na(variable2Document) || length(variable2Document) != 1 || !is.logical(variable2Document)) {
-    stop("'variable2Document' must be TRUE or FALSE.")
-  }
-  if (is.null(normalization) || is.na(normalization) || length(normalization) != 1 || !is.character(normalization)
-      || !normalization %in% c("no", "activity", "prominence", "average", "Jaccard", "jaccard", "cosine")) {
-    stop("'normalization' must be 'no', 'activity', 'prominence', 'average', 'Jaccard', or 'cosine'.")
-  }
-  if (normalization %in% c("activity", "prominence") && networkType == "onemode") {
-    stop("'normalization' must be 'no', 'average', 'Jaccard', or 'cosine' when networkType = 'onemode'.")
-  }
-  if (normalization %in% c("average", "Jaccard", "jaccard", "cosine") && networkType == "twomode") {
-    stop("'normalization' must be 'no', 'activity', or 'prominence' when networkType = 'twomode'.")
-  }
-  
-  if (!is.null(fileFormat) && !fileFormat %in% c("csv", "dl", "graphml")) {
-    stop("'fileFormat' must be 'csv', 'dl', or 'graphml'.")
-  }
-  if (!is.null(fileFormat) && networkType == "eventlist" && fileFormat %in% c("dl", "graphml")) {
-    stop("Only .csv files are currently compatible with event lists.")
-  }
-  if (is.null(outfile) || is.null(fileFormat)) {
-    fileExport <- TRUE
-  } else {
-    fileExport <- FALSE
   }
   if (is.null(fileFormat)) {
     fileFormat <- .jnull(class = "java/lang/String")
@@ -941,8 +864,8 @@ dna_network <- function(connection,
     outfile <- .jnull(class = "java/lang/String")
   }
   
-  # call Java function to create network
-  .jcall(connection$dna_connection,
+  # call rNetwork function to compute results
+  .jcall(dnaEnvironment[["dna"]]$headlessDna,
          "V",
          "rNetwork",
          networkType,
@@ -961,8 +884,8 @@ dna_network <- function(connection,
          stop.date,
          start.time,
          stop.time,
-         timewindow,
-         as.integer(windowsize),
+         timeWindow,
+         as.integer(windowSize),
          var,
          val,
          excludeAuthors,
@@ -975,63 +898,69 @@ dna_network <- function(connection,
          invertSections,
          invertTypes,
          outfile,
-         fileFormat,
-         verbose
+         fileFormat
   )
   
-  if (isTRUE(fileExport)) {
-    if (networkType == "eventlist") {
-      objects <- .jcall(connection$dna_connection, "[Ljava/lang/Object;", "getEventListColumnsR", simplify = TRUE)
-      columnNames <- .jcall(connection$dna_connection, "[S", "getEventListColumnsRNames", simplify = TRUE)
-      dta <- data.frame(id = .jevalArray(objects[[1]]))
-      dta$time <- as.POSIXct(.jevalArray(objects[[2]]), origin = "1970-01-01")
-      dta$docId <- .jevalArray(objects[[3]])
-      dta$docTitle <- .jevalArray(objects[[4]])
-      dta$docAuthor <- .jevalArray(objects[[5]])
-      dta$docSource <- .jevalArray(objects[[6]])
-      dta$docSection <- .jevalArray(objects[[7]])
-      dta$docType <- .jevalArray(objects[[8]])
-      for (i in 1:length(columnNames)) {
-        dta[[columnNames[i]]] <- .jevalArray(objects[[i + 8]])
+  exporter <- .jcall(dnaEnvironment[["dna"]]$headlessDna, "Lexport/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
+  
+  if (networkType == "eventlist") { # assemble an event list in the form of a data frame of filtered statements
+    f <- J(exporter, "getFilteredStatements", simplify = TRUE) # array list of filtered export statements; use J because array list return type not recognized using .jcall
+    l <- list() # create a list for filtered statements, later to be converted to data frame, with one row per statement
+    for (i in seq(.jcall(f, "I", "size")) - 1) { # loop through filtered statements, starting at 0
+      fi <- f$get(as.integer(i)) # retrieve filtered statement i
+      row <- list() # each filtered export statement is represented by a list, with multiple slots for the variables etc.
+      row$statement_id <- .jcall(fi, "I", "getId") # store the statement ID
+      row$time <- .jcall(fi, "J", "getDateTimeLong") # store the date/time in seconds since 1 January 1970; will be converted to POSIXct later because the conversion to data frame otherwise converts it back to long anyway
+      values <- J(fi, "getValues") # array list of variables with values; use J instead of .jcall because array list return type not recognized using .jcall
+      for (j in seq(.jcall(values, "I", "size")) - 1) { # loop through the variables
+        vi <- values$get(as.integer(j)) # save variable/value j temporarily to access its contents
+        dataType <- .jcall(vi, "S", "getDataType") # the data type of value j
+        if (dataType == "long text") {
+          row[[.jcall(vi, "S", "getKey")]] <- .jcall(vi, "S", "getValue") # store as character object under variable name if long text
+        } else if (dataType == "short text") {
+          row[[.jcall(vi, "S", "getKey")]] <- vi$getValue()$getValue() # extract character object from Entity object and store under variable name if short text
+        } else {
+          row[[.jcall(vi, "S", "getKey")]] <- vi$getValue() # store as integer under variable name if boolean or integer data type
+        }
       }
-      attributes(dta)$call <- match.call()
-      class(dta) <- c("dna_eventlist", class(dta))
-      return(dta)
-    } else if (timewindow == "no") {
-      mat <- .jcall(connection$dna_connection, "[[D", "getMatrix", simplify = TRUE)
-      rownames(mat) <- .jcall(connection$dna_connection, "[S", "getRowNames", simplify = TRUE)
-      colnames(mat) <- .jcall(connection$dna_connection, "[S", "getColumnNames", simplify = TRUE)
-      attributes(mat)$start <- as.POSIXct(.jcall(connection$dna_connection, "J", "getTime", "start", simplify = TRUE), origin = "1970-01-01")
-      attributes(mat)$stop <- as.POSIXct(.jcall(connection$dna_connection, "J", "getTime", "stop", simplify = TRUE), origin = "1970-01-01")
-      attributes(mat)$call <- match.call()
-      class(mat) <- c(paste0("dna_network_", networkType), class(mat))
-      return(mat)
+      row$start_position <- .jcall(fi, "I", "getStart") # store start caret in document text
+      row$stop_position <- .jcall(fi, "I", "getStop") # store end caret in document text
+      row$text <- .jcall(fi, "S", "getText") # text of the statement between start and end caret
+      row$coder <- .jcall(fi, "I", "getCoderId") # store coder ID; the user can merge this with other coder details like name and color later if needed
+      row$document_id <- .jcall(fi, "I", "getDocumentId") # store the document ID of the document the statement is contained in
+      row$document_title <- .jcall(fi, "S", "getTitle") # store the document title
+      row$document_author <- .jcall(fi, "S", "getAuthor") # store the document author
+      row$document_source <- .jcall(fi, "S", "getSource") # store the document source
+      row$document_section <- .jcall(fi, "S", "getSection") # store the document section
+      row$document_type <- .jcall(fi, "S", "getType") # store the document type
+      l[[i + 1]] <- row # add the row to the list
+    }
+    d <- do.call(rbind.data.frame, l) # convert the list of lists to data frame
+    d$time <- as.POSIXct(d$time, origin = "1970-01-01 00:00:00") # convert long date/time to POSIXct
+    return(d)
+  } else { # assemble a one-mode or two-mode matrix with attributes or a list of matrices (if time window)
+    m <- .jcall(exporter, "[Lmodel/Matrix;", "getMatrixResultsArray") # get list of Matrix objects from Exporter object
+    l <- list() # create a list in which each result is stored; can be of length 1 if no time window is used
+    for (t in 1:length(m)) { # loop through the matrices
+      mat <- .jcall(m[[1]], "[[D", "getMatrix", simplify = TRUE) # get the resulting matrix at step t as a double[][] object and save as matrix
+      rownames(mat) <- .jcall(m[[1]], "[S", "getRowNames", simplify = TRUE) # add the row names to the matrix
+      colnames(mat) <- .jcall(m[[1]], "[S", "getColumnNames", simplify = TRUE) # add the column names to the matrix
+      attributes(mat)$start <- as.POSIXct(.jcall(m[[1]], "J", "getStartLong"), origin = "1970-01-01") # add the start date/time of the result as an attribute to the matrix
+      attributes(mat)$stop <- as.POSIXct(.jcall(m[[1]], "J", "getStopLong"), origin = "1970-01-01") # add the end date/time of the result as an attribute to the matrix
+      if (length(m) > 1) {
+        attributes(mat)$middle <- as.POSIXct(.jcall(m[[1]], "J", "getDateTimeLong"), origin = "1970-01-01") # add the mid-point date/time around which the time window is centered if the time window algorithm was used
+      }
+      attributes(mat)$numStatements <- .jcall(m[[1]], "I", "getNumStatements") # add the number of filtered statements the matrix is based on as an attribute to the matrix
+      attributes(mat)$call <- match.call() # add the arguments of the call as an attribute to the matrix
+      class(mat) <- c(paste0("dna_network_", networkType), class(mat)) # add "dna_network_onemode" or "dna_network_twomode" as a class label in addition to "matrix"
+      l[[t]] <- mat # add the matrix to the list
+    }
+    if (length(m) == 1) {
+      return(l[[1]]) # return the first matrix in the list if no time window was used
     } else {
-      timeLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", "middle", simplify = TRUE)
-      timeLabels <- as.POSIXct(timeLabels, origin = "1970-01-01")
-      startLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", "start", simplify = TRUE)
-      startLabels <- as.POSIXct(startLabels, origin = "1970-01-01")
-      stopLabels <- .jcall(connection$dna_connection, "[J", "getTimeWindowTimes", "stop", simplify = TRUE)
-      stopLabels <- as.POSIXct(stopLabels, origin = "1970-01-01")
-      numStatements <- .jcall(connection$dna_connection, "[I", "getTimeWindowNumStatements", simplify = TRUE)
-      mat <- list()
-      for (t in 1:length(timeLabels)) {
-        m <- .jcall(connection$dna_connection, "[[D", "getTimeWindowNetwork", as.integer(t - 1), simplify = TRUE)
-        rownames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowRowNames", as.integer(t - 1), simplify = TRUE)
-        colnames(m) <- .jcall(connection$dna_connection, "[S", "getTimeWindowColumnNames", as.integer(t - 1), simplify = TRUE)
-        attributes(m)$call <- match.call()
-        class(m) <- c(paste0("dna_network_", networkType), class(m))
-        mat[[t]] <- m
-      }
-      dta <- list()
-      dta$networks <- mat
-      dta$start <- startLabels
-      dta$time <- timeLabels
-      dta$stop <- stopLabels
-      dta$numStatements <- numStatements
-      attributes(dta)$call <- match.call()
-      class(dta) <- c(paste0("dna_network_", networkType, "_timewindows"), class(dta))
-      return(dta)
+      attributes(l)$call <- match.call() # add arguments of the call as an attribute also to the list, not just each network matrix
+      class(l) <- c(paste0("dna_network_", networkType, "_timewindows"), class(l)) # add "dna_network_onemode_timewindows" or "dna_network_twomode_timewindows" to class label
+      return(l) # return the list of network matrices
     }
   }
 }
