@@ -964,3 +964,72 @@ dna_network <- function(networkType = "twomode",
     }
   }
 }
+
+#' Print a \code{dna_network_onemode} object
+#'
+#' Show details of a \code{dna_network_onemode} object.
+#'
+#' Print a one-mode network matrix and its attributes.
+#'
+#' @param x A \code{dna_network_onemode} object, as returned by the
+#'   \code{\link{dna_network}} function.
+#' @param trim Number of maximum characters to display in row and column labels
+#'   of the matrix. Labels with more characters are truncated, and the last
+#'   character is replaced by an asterisk (\code{*}).
+#' @param attr Display attributes, such as the start and stop date and time, the
+#'   number of statements on which the matrix is based, the function call and
+#'   arguments on which the network matrix is based, and the full labels without
+#'   truncation.
+#'
+#' @author Philip Leifeld
+#'
+#' @seealso \link{as.matrix.dna_network_onemode}, \link{dna_network}
+#' @export
+print.dna_network_onemode <- function(x, trim = 5, attr = TRUE) {
+  rn <- rownames(x)
+  rownames(x) <- sapply(rownames(x), function(r) if (nchar(r) > trim) paste0(substr(r, 1, trim - 1), "*") else r)
+  colnames(x) <- sapply(colnames(x), function(r) if (nchar(r) > trim) paste0(substr(r, 1, trim - 1), "*") else r)
+  x <- round(x, 2)
+  class(x) <- class(x)[class(x) != "dna_network_onemode"]
+  start <- attr(x, "start")
+  attr(x, "start") <- NULL
+  stop <- attr(x, "stop")
+  attr(x, "stop") <- NULL
+  ns <- attr(x, "numStatements")
+  attr(x, "numStatements") <- NULL
+  cl <- deparse(attr(x, "call"))
+  attr(x, "call") <- NULL
+  attr(x, "class") <- NULL
+  print(x)
+  if (attr) {
+    cat("\nStart:", as.character(start))
+    cat("\nStop: ", as.character(stop))
+    cat("\nStatements:", ns)
+    cat("\nCall:", trimws(cl))
+    cat("\nLabels:\n")
+    cat(paste(1:length(rn), rn), sep = "\n")
+  }
+}
+
+#' Convert a \code{dna_network_onemode} object to a matrix
+#' 
+#' Convert a \code{dna_network_onemode} object to a matrix.
+#' 
+#' Remove the attributes and \code{"dna_network_onemode"} class label from a
+#' \code{dna_network_onemode} object and return it as a numeric matrix.
+#' 
+#' @param x The \code{dna_network_onemode} object, as returned by the
+#'   \code{\link{dna_network}} function.
+#'
+#' @author Philip Leifeld
+#'
+#' @seealso \link{print.dna_network_onemode}, \link{dna_network}
+#' @export
+as.matrix.dna_network_onemode <- function(x) {
+  attr(x, "start") <- NULL
+  attr(x, "stop") <- NULL
+  attr(x, "numStatements") <- NULL
+  attr(x, "call") <- NULL
+  attr(x, "class") <- NULL
+  return(x)
+}
