@@ -793,6 +793,7 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
 #' @importFrom rJava .jnull
+#' @importFrom rJava J
 #' @export
 dna_network <- function(networkType = "twomode",
                         statementType = "DNA Statement",
@@ -980,17 +981,26 @@ dna_network <- function(networkType = "twomode",
 #'   number of statements on which the matrix is based, the function call and
 #'   arguments on which the network matrix is based, and the full labels without
 #'   truncation.
+#' @param ... Additional arguments. Currently not in use.
 #'
 #' @author Philip Leifeld
 #'
-#' @seealso \link{as.matrix.dna_network_onemode}, \link{dna_network}
+#' @seealso \link{as.matrix.dna_network_onemode}, \link{dna_network},
+#'   \link{print.dna_network_onemode}
 #' @export
-print.dna_network_onemode <- function(x, trim = 5, attr = TRUE) {
+print.dna_network_onemode <- function(x, trim = 5, attr = TRUE, ...) {
   rn <- rownames(x)
+  cn <- colnames(x)
   rownames(x) <- sapply(rownames(x), function(r) if (nchar(r) > trim) paste0(substr(r, 1, trim - 1), "*") else r)
   colnames(x) <- sapply(colnames(x), function(r) if (nchar(r) > trim) paste0(substr(r, 1, trim - 1), "*") else r)
   x <- round(x, 2)
-  class(x) <- class(x)[class(x) != "dna_network_onemode"]
+  if ("dna_network_onemode" %in% class(x)) {
+    onemode <- TRUE
+    class(x) <- class(x)[class(x) != "dna_network_onemode"]
+  } else {
+    onemode <- FALSE
+    class(x) <- class(x)[class(x) != "dna_network_twomode"]
+  }
   start <- attr(x, "start")
   attr(x, "start") <- NULL
   stop <- attr(x, "stop")
@@ -1006,10 +1016,32 @@ print.dna_network_onemode <- function(x, trim = 5, attr = TRUE) {
     cat("\nStop: ", as.character(stop))
     cat("\nStatements:", ns)
     cat("\nCall:", trimws(cl))
-    cat("\nLabels:\n")
-    cat(paste(1:length(rn), rn), sep = "\n")
+    if (onemode) {
+      cat("\n\nLabels:\n")
+      cat(paste(1:length(rn), rn), sep = "\n")
+    } else {
+      cat("\n\nRow labels:\n")
+      cat(paste(1:length(rn), rn), sep = "\n")
+      cat("\nColumn labels:\n")
+      cat(paste(1:length(cn), cn), sep = "\n")
+    }
   }
 }
+
+#' Print a \code{dna_network_twomode} object
+#'
+#' Show details of a \code{dna_network_twomode} object.
+#'
+#' Print a two-mode network matrix and its attributes.
+#'
+#' @inheritParams print.dna_network_onemode
+#'
+#' @author Philip Leifeld
+#'
+#' @seealso \link{as.matrix.dna_network_twomode}, \link{dna_network},
+#'   \link{print.dna_network_onemode}
+#' @export
+print.dna_network_twomode <- print.dna_network_onemode
 
 #' Convert a \code{dna_network_onemode} object to a matrix
 #' 
@@ -1020,12 +1052,14 @@ print.dna_network_onemode <- function(x, trim = 5, attr = TRUE) {
 #' 
 #' @param x The \code{dna_network_onemode} object, as returned by the
 #'   \code{\link{dna_network}} function.
+#' @param ... Additional arguments. Currently not in use.
 #'
 #' @author Philip Leifeld
 #'
-#' @seealso \link{print.dna_network_onemode}, \link{dna_network}
+#' @seealso \link{print.dna_network_onemode}, \link{dna_network},
+#'   \link{as.matrix.dna_network_twomode}
 #' @export
-as.matrix.dna_network_onemode <- function(x) {
+as.matrix.dna_network_onemode <- function(x, ...) {
   attr(x, "start") <- NULL
   attr(x, "stop") <- NULL
   attr(x, "numStatements") <- NULL
@@ -1033,3 +1067,21 @@ as.matrix.dna_network_onemode <- function(x) {
   attr(x, "class") <- NULL
   return(x)
 }
+
+#' Convert a \code{dna_network_twomode} object to a matrix
+#' 
+#' Convert a \code{dna_network_twomode} object to a matrix.
+#' 
+#' Remove the attributes and \code{"dna_network_twomode"} class label from a
+#' \code{dna_network_twomode} object and return it as a numeric matrix.
+#' 
+#' @param x The \code{dna_network_twomode} object, as returned by the
+#'   \code{\link{dna_network}} function.
+#' @param ... Additional arguments. Currently not in use.
+#'
+#' @author Philip Leifeld
+#'
+#' @seealso \link{print.dna_network_twomode}, \link{dna_network},
+#'   \link{as.matrix.dna_network_onemode}
+#' @export
+as.matrix.dna_network_twomode <- as.matrix.dna_network_onemode

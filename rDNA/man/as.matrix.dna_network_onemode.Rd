@@ -4,11 +4,13 @@
 \alias{as.matrix.dna_network_onemode}
 \title{Convert a \code{dna_network_onemode} object to a matrix}
 \usage{
-\method{as.matrix}{dna_network_onemode}(x)
+\method{as.matrix}{dna_network_onemode}(x, ...)
 }
 \arguments{
 \item{x}{The \code{dna_network_onemode} object, as returned by the
 \code{\link{dna_network}} function.}
+
+\item{...}{Additional arguments. Currently not in use.}
 }
 \description{
 Convert a \code{dna_network_onemode} object to a matrix.
@@ -18,7 +20,8 @@ Remove the attributes and \code{"dna_network_onemode"} class label from a
 \code{dna_network_onemode} object and return it as a numeric matrix.
 }
 \seealso{
-\link{print.dna_network_onemode}, \link{dna_network}
+\link{print.dna_network_onemode}, \link{dna_network},
+  \link{as.matrix.dna_network_twomode}
 }
 \author{
 Philip Leifeld
