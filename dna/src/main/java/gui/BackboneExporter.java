@@ -1010,8 +1010,8 @@ public class BackboneExporter extends JDialog {
 					this.invertSources,
 					this.invertSections,
 					this.invertTypes,
-					"",
-					"");
+					null,
+					null);
 			if (progressMonitor.isCanceled()) {
 				proceed = false;
 				progressMonitor.setProgress(2);

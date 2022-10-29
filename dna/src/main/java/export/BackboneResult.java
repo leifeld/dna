@@ -1,6 +1,7 @@
 package export;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 /**
@@ -10,14 +11,14 @@ public class BackboneResult implements Serializable {
     private static final long serialVersionUID = -2275971337294798275L;
 
     /**
-     * The entities found to be in the backbone set, as an array list of strings.
+     * The entities found to be in the backbone set, as an array of strings.
      */
-    private ArrayList<String> backboneEntities;
+    private String[] backboneEntities;
 
     /**
-     * The entities found to be in the redundant set, as an array list of strings.
+     * The entities found to be in the redundant set, as an array of strings.
      */
-    private ArrayList<String> redundantEntities;
+    private String[] redundantEntities;
 
     /**
      * Euclidean spectral distance between the full network and the backbone network, without penalty factor for
@@ -44,46 +45,46 @@ public class BackboneResult implements Serializable {
     /**
      * The temperature according to the cooling schedule, for each iteration.
      */
-    private ArrayList<Double> temperature;
+    private double[] temperature;
 
     /**
      * The probability of accepting the proposed backbone solution (the candidate) in each iteration. {@code 1.0} if
      * the candidate is better than the current solution.
      */
-    private ArrayList<Double> acceptanceProbability;
+    private double[] acceptanceProbability;
 
     /**
      * A boolean/dummy variable indicating if the proposed solution (the candidate) was accepted as the new current
      * solution, for each iteration.
      */
-    private ArrayList<Integer> acceptance;
+    private int[] acceptance;
 
     /**
      * Euclidean spectral distance between the full network and the backbone network, penalized by a function of the
      * number of entities in the set, for the current solution adopted or kept in each iteration.
      */
-    private ArrayList<Double> penalizedBackboneLoss;
+    private double[] penalizedBackboneLoss;
 
     /**
      * Number of entities in the proposed (candidate) backbone set in each iteration.
      */
-    private ArrayList<Integer> proposedBackboneSize;
+    private int[] proposedBackboneSize;
 
     /**
      * Number of entities in the current backbone set at the end of each iteration.
      */
-    private ArrayList<Integer> currentBackboneSize;
+    private int[] currentBackboneSize;
 
     /**
      * Number of entities in the most optimal backbone set that has been identified so far.
      */
-    private ArrayList<Integer> optimalBackboneSize;
+    private int[] optimalBackboneSize;
 
     /**
      * The share of iterations among the last 100 iterations (or fewer if 100 iterations have not been reached yet)
      * in which a proposed backbone candidate was accepted. This can serve as a convergence criterion.
      */
-    private ArrayList<Double> acceptanceRatioMovingAverage;
+    private double[] acceptanceRatioMovingAverage;
 
     /**
      * The full network matrix.
@@ -106,10 +107,25 @@ public class BackboneResult implements Serializable {
     private String[] labels;
 
     /**
+     * Start date/time of the network in seconds since 1 January 1970.
+     */
+    private long start;
+
+    /**
+     * End date/time of the network in seconds since 1 January 1970.
+     */
+    private long stop;
+
+    /**
+     * Number of statements used to create the network.
+     */
+    private int numStatements;
+
+    /**
      * Create a new backbone result.
      *
-     * @param backboneEntities The entities found to be in the backbone set, as an array list of strings.
-     * @param redundantEntities The entities found to be in the redundant set, as an array list of strings.
+     * @param backboneEntities The entities found to be in the backbone set, as an array of strings.
+     * @param redundantEntities The entities found to be in the redundant set, as an array of strings.
      * @param unpenalizedBackboneLoss Euclidean spectral distance between the full network and the backbone network
      *                                      without penalty factor for the number of entities in the set, after
      *                                      optimization (i.e., for the final solution).
@@ -140,24 +156,27 @@ public class BackboneResult implements Serializable {
      * @param redundantNetwork The network matrix based only on the redundant concepts, after optimization as a 2D
      *                        double array.
      */
-    public BackboneResult(ArrayList<String> backboneEntities,
-                          ArrayList<String> redundantEntities,
+    public BackboneResult(String[] backboneEntities,
+                          String[] redundantEntities,
                           double unpenalizedBackboneLoss,
                           double unpenalizedRedundantLoss,
                           double penalty,
                           int iterations,
-                          ArrayList<Double> temperature,
-                          ArrayList<Double> acceptanceProbability,
-                          ArrayList<Integer> acceptance,
-                          ArrayList<Double> penalizedBackboneLoss,
-                          ArrayList<Integer> proposedBackboneSize,
-                          ArrayList<Integer> currentBackboneSize,
-                          ArrayList<Integer> optimalBackboneSize,
-                          ArrayList<Double> acceptanceRatioMovingAverage,
+                          double[] temperature,
+                          double[] acceptanceProbability,
+                          int[] acceptance,
+                          double[] penalizedBackboneLoss,
+                          int[] proposedBackboneSize,
+                          int[] currentBackboneSize,
+                          int[] optimalBackboneSize,
+                          double[] acceptanceRatioMovingAverage,
                           double[][] fullNetwork,
                           double[][] backboneNetwork,
                           double[][] redundantNetwork,
-                          String[] labels) {
+                          String[] labels,
+                          long start,
+                          long stop,
+                          int numStatements) {
         this.backboneEntities = backboneEntities;
         this.redundantEntities = redundantEntities;
         this.unpenalizedBackboneLoss = unpenalizedBackboneLoss;
@@ -176,21 +195,24 @@ public class BackboneResult implements Serializable {
         this.backboneNetwork = backboneNetwork;
         this.redundantNetwork = redundantNetwork;
         this.labels = labels;
+        this.start = start;
+        this.stop = stop;
+        this.numStatements = numStatements;
     }
 
-    public ArrayList<String> getBackboneEntities() {
+    public String[] getBackboneEntities() {
         return backboneEntities;
     }
 
-    public void setBackboneEntities(ArrayList<String> backboneEntities) {
+    public void setBackboneEntities(String[] backboneEntities) {
         this.backboneEntities = backboneEntities;
     }
 
-    public ArrayList<String> getRedundantEntities() {
+    public String[] getRedundantEntities() {
         return redundantEntities;
     }
 
-    public void setRedundantEntities(ArrayList<String> redundantEntities) {
+    public void setRedundantEntities(String[] redundantEntities) {
         this.redundantEntities = redundantEntities;
     }
 
@@ -226,67 +248,67 @@ public class BackboneResult implements Serializable {
         this.iterations = iterations;
     }
 
-    public ArrayList<Double> getTemperature() {
+    public double[] getTemperature() {
         return temperature;
     }
 
-    public void setTemperature(ArrayList<Double> temperature) {
+    public void setTemperature(double[] temperature) {
         this.temperature = temperature;
     }
 
-    public ArrayList<Double> getAcceptanceProbability() {
+    public double[] getAcceptanceProbability() {
         return acceptanceProbability;
     }
 
-    public void setAcceptanceProbability(ArrayList<Double> acceptanceProbability) {
+    public void setAcceptanceProbability(double[] acceptanceProbability) {
         this.acceptanceProbability = acceptanceProbability;
     }
 
-    public ArrayList<Integer> getAcceptance() {
+    public int[] getAcceptance() {
         return acceptance;
     }
 
-    public void setAcceptance(ArrayList<Integer> acceptance) {
+    public void setAcceptance(int[] acceptance) {
         this.acceptance = acceptance;
     }
 
-    public ArrayList<Double> getPenalizedBackboneLoss() {
+    public double[] getPenalizedBackboneLoss() {
         return penalizedBackboneLoss;
     }
 
-    public void setPenalizedBackboneLoss(ArrayList<Double> penalisedBackboneLoss) {
+    public void setPenalizedBackboneLoss(double[] penalisedBackboneLoss) {
         this.penalizedBackboneLoss = penalisedBackboneLoss;
     }
 
-    public ArrayList<Integer> getProposedBackboneSize() {
+    public int[] getProposedBackboneSize() {
         return proposedBackboneSize;
     }
 
-    public void setProposedBackboneSize(ArrayList<Integer> proposedBackboneSize) {
+    public void setProposedBackboneSize(int[] proposedBackboneSize) {
         this.proposedBackboneSize = proposedBackboneSize;
     }
 
-    public ArrayList<Integer> getCurrentBackboneSize() {
+    public int[] getCurrentBackboneSize() {
         return currentBackboneSize;
     }
 
-    public void setCurrentBackboneSize(ArrayList<Integer> currentBackboneSize) {
+    public void setCurrentBackboneSize(int[] currentBackboneSize) {
         this.currentBackboneSize = currentBackboneSize;
     }
 
-    public ArrayList<Integer> getOptimalBackboneSize() {
+    public int[] getOptimalBackboneSize() {
         return optimalBackboneSize;
     }
 
-    public void setOptimalBackboneSize(ArrayList<Integer> optimalBackboneSize) {
+    public void setOptimalBackboneSize(int[] optimalBackboneSize) {
         this.optimalBackboneSize = optimalBackboneSize;
     }
 
-    public ArrayList<Double> getAcceptanceRatioMovingAverage() {
+    public double[] getAcceptanceRatioMovingAverage() {
         return acceptanceRatioMovingAverage;
     }
 
-    public void setAcceptanceRatioMovingAverage(ArrayList<Double> acceptanceRatioMovingAverage) {
+    public void setAcceptanceRatioMovingAverage(double[] acceptanceRatioMovingAverage) {
         this.acceptanceRatioMovingAverage = acceptanceRatioMovingAverage;
     }
 
@@ -321,4 +343,29 @@ public class BackboneResult implements Serializable {
     public void setLabels(String[] labels) {
         this.labels = labels;
     }
+
+    public long getStart() {
+        return start;
+    }
+
+    public void setStart(long start) {
+        this.start = start;
+    }
+
+    public long getStop() {
+        return stop;
+    }
+
+    public void setStop(long stop) {
+        this.stop = stop;
+    }
+
+    public int getNumStatements() {
+        return numStatements;
+    }
+
+    public void setNumStatements(int numStatements) {
+        this.numStatements = numStatements;
+    }
+
 }

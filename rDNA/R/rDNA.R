@@ -777,7 +777,8 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #' @examples
 #' \dontrun{
 #' dna_init()
-#' conn <- dna_connection(dna_sample())
+#' dna_sample()
+#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
 #' nw <- dna_network(networkType = "onemode",
 #'   variable1 = "organization",
 #'   variable2 = "concept",
@@ -1085,3 +1086,398 @@ as.matrix.dna_network_onemode <- function(x, ...) {
 #'   \link{as.matrix.dna_network_onemode}
 #' @export
 as.matrix.dna_network_twomode <- as.matrix.dna_network_onemode
+
+
+#' Compute and retrieve the backbone and redundant set
+#'
+#' Compute and retrieve the backbone and redundant set of a discourse network.
+#'
+#' This function applies a simulated annealing algorithm to the discourse
+#' network to partition the set of second-mode entities (e.g., concepts) into a
+#' backbone set and a complementary redundant set.
+#'
+#' @param penalty The penalty parameter for large backbone sets. The larger the
+#'   value, the more strongly larger backbone sets are punished and the smaller
+#'   the resulting backbone is. Try out different values to find the right size
+#'   of the backbone set. Reasonable values could be \code{5}, \code{7.5}, or
+#'   \code{12}, for example.
+#' @param iterations The number of iterations of the simulated annealing
+#'   algorithm. More iterations take more time but may lead to better
+#'   optimization results.
+#' @param qualifierAggregation The aggregation rule for the \code{qualifier}
+#'   variable. This must be \code{"ignore"} (for ignoring the qualifier
+#'   variable), \code{"congruence"} (for recording a network tie only if both
+#'   nodes have the same qualifier value in the binary case or for recording the
+#'   similarity between the two nodes on the qualifier variable in the integer
+#'   case), \code{"conflict"} (for recording a network tie only if both nodes
+#'   have a different qualifier value in the binary case or for recording the
+#'   distance between the two nodes on the qualifier variable in the integer
+#'   case), or \code{"subtract"} (for subtracting the conflict tie value from
+#'   the congruence tie value in each dyad; note that negative values will be
+#'   replaced by \code{0} in the backbone calculation).
+#' @param normalization Normalization of edge weights. Valid settings are
+#'   \code{"no"} (for switching off normalization), \code{"average"} (for
+#'   average activity normalization), \code{"jaccard"} (for Jaccard coefficient
+#'   normalization), and \code{"cosine"} (for cosine similarity normalization).
+#' @param fileFormat An optional file format specification for saving the
+#'   backbone results to a file instead of returning an object. Valid values
+#'   are \code{"json"}, \code{"xml"}, and \code{NULL} (for returning the results
+#'   instead of writing them to a file).
+#' @inheritParams dna_network
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
+#'
+#' # compute backbone and redundant set
+#' backbone <- dna_backbone(penalty = 6,
+#'                          iterations = 1000,
+#'                          networkType = "onemode",
+#'                          variable1 = "organization",
+#'                          variable2 = "concept",
+#'                          qualifier = "agreement",
+#'                          qualifierAggregation = "subtract",
+#'                          normalization = "average")
+#'
+#' b$backbone # show the set of backbone concepts
+#' b$redundant # show the set of redundant concepts
+#' print(b$backbone_network, attr = FALSE) # show the backbone network
+#' print(b$redundant_network, attr = FALSE) # show the redundant network
+#' print(b$full_network, attr = FALSE) # show the full network
+#'
+#' ## plot diagnostics (using base R)
+#'
+#' # arrange plots in a 2 x 2 grid
+#' par(mfrow = c(2, 2))
+#'
+#' # temperature and acceptance probability
+#' plot(x = b$diagnostics$iteration,
+#'      y = b$diagnostics$temperature,
+#'      col = "#a50f15",
+#'      type = "l",
+#'      lwd = 3,
+#'      xlab = "Iteration",
+#'      ylab = "Acceptance probability",
+#'      main = "Temperature and acceptance probability")
+#' lines(x = b$diagnostics$iteration[b$diagnostics$acceptance_prob >= 0],
+#'       y = b$diagnostics$acceptance_prob[b$diagnostics$acceptance_prob >= 0])
+#'
+#' # spectral distance between full network and backbone network per iteration
+#' plot(x = b$diagnostics$iteration,
+#'      y = b$diagnostics$penalized_backbone_loss, # wrap in log() if necessary
+#'      type = "l",
+#'      xlab = "Iteration",
+#'      ylab = "Penalized backbone loss",
+#'      main = "Penalized spectral distance between full and reduced network")
+#'
+#' # number of concepts in the backbone solution per iteration
+#' plot(x = b$diagnostics$iteration,
+#'      y = b$diagnostics$proposed_backbone_size,
+#'      type = "l",
+#'      col = "blue",
+#'      xlab = "Iteration",
+#'      ylab = "Number of elements",
+#'      main = "Number of elements")
+#' lines(x = b$diagnostics$iteration,
+#'       y = b$diagnostics$current_backbone_size,
+#'       col = "green")
+#' lines(x = b$diagnostics$iteration,
+#'       y = b$diagnostics$optimal_backbone_size,
+#'       col = "red")
+#'
+#' # ratio of recent acceptances
+#' plot(x = b$diagnostics$iteration,
+#'      y = b$diagnostics$acceptance_ratio_ma,
+#'      type = "l",
+#'      xlab = "Iteration",
+#'      ylab = "Ratio of acceptances in the last 100 iterations",
+#'      main = "Ratio of acceptances in the last 100 iterations")
+#'
+#' ## plot diagnostics using ggplot2
+#' require("ggplot2")
+#' require("gridExtra")
+#'
+#' # temperature and acceptance probability
+#' g_accept <- ggplot(b$diagnostics, aes(y = temperature, x = iteration)) +
+#'   geom_line(color = "#a50f15") +
+#'   geom_line(data = b$diagnostics[b$diagnostics$acceptance_prob >= 0, ],
+#'             aes(y = acceptance_prob, x = iteration)) +
+#'   ylab("Acceptance probability") +
+#'   xlab("Iteration") +
+#'   ggtitle("Temperature and acceptance probability") +
+#'   theme_bw()
+#'
+#' # spectral distance between full network and backbone network per iteration
+#' g_loss <- ggplot(b$diagnostics,
+#'                  aes(y = penalized_backbone_loss, x = iteration)) +
+#'   #coord_trans(y = "log") + # use if necessary
+#'   geom_line() +
+#'   ylab("Penalized backbone loss") +
+#'   xlab("Iteration") +
+#'   ggtitle("Penalized spectral distance between full and reduced network") +
+#'   theme_bw()
+#'
+#' # number of concepts in the backbone solution per iteration
+#' d <- data.frame(iteration = rep(b$diagnostics$iteration, 3),
+#'                 size = c(b$diagnostics$proposed_backbone_size,
+#'                          b$diagnostics$current_backbone_size,
+#'                          b$diagnostics$optimal_backbone_size),
+#'                 Criterion = c(rep("Proposed", nrow(b$diagnostics)),
+#'                               rep("Current iteration", nrow(b$diagnostics)),
+#'                               rep("Best solution", nrow(b$diagnostics))))
+#' g_size <- ggplot(d, aes(y = size, x = iteration, color = Criterion)) +
+#'   geom_line() +
+#'   ylab("Number of elements") +
+#'   xlab("Iteration") +
+#'   ggtitle("Number of elements") +
+#'   theme_bw() +
+#'   theme(legend.position = "bottom")
+#'
+#' # ratio of recent acceptances
+#' g_ma <- ggplot(b$diagnostics, aes(y = acceptance_ratio_ma, x = iteration)) +
+#'   geom_line() +
+#'   ylab("Ratio of acceptances in the last 100 iterations") +
+#'   xlab("Iteration") +
+#'   ggtitle("Ratio of acceptances in the last 100 iterations") +
+#'   theme_bw()
+#'
+#' # arrange in a 2 x 2 grid and save
+#' x <- grid.arrange(g_accept, g_loss, g_size, g_ma, ncol = 2)
+#' ggsave(x, file = "diagnostics.pdf", width = 15, height = 10)
+#' }
+#'
+#' @author Philip Leifeld, Tim Henrichsen
+#'
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
+#' @importFrom rJava .jnull
+#' @importFrom rJava J
+#' @export
+dna_backbone <- function(penalty = 7.5,
+                         iterations = 10000,
+                         statementType = "DNA Statement",
+                         variable1 = "organization",
+                         variable1Document = FALSE,
+                         variable2 = "concept",
+                         variable2Document = FALSE,
+                         qualifier = "agreement",
+                         qualifierDocument = FALSE,
+                         qualifierAggregation = "subtract",
+                         normalization = "average",
+                         duplicates = "document",
+                         start.date = "01.01.1900",
+                         stop.date = "31.12.2099",
+                         start.time = "00:00:00",
+                         stop.time = "23:59:59",
+                         excludeValues = list(),
+                         excludeAuthors = character(),
+                         excludeSources = character(),
+                         excludeSections = character(),
+                         excludeTypes = character(),
+                         invertValues = FALSE,
+                         invertAuthors = FALSE,
+                         invertSources = FALSE,
+                         invertSections = FALSE,
+                         invertTypes = FALSE,
+                         fileFormat = NULL,
+                         outfile = NULL) {
+  
+  # wrap the vectors of exclude values for document variables into Java arrays
+  excludeAuthors <- .jarray(excludeAuthors)
+  excludeSources <- .jarray(excludeSources)
+  excludeSections <- .jarray(excludeSections)
+  excludeTypes <- .jarray(excludeTypes)
+  
+  # compile exclude variables and values vectors
+  dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
+  count <- 0
+  if (length(excludeValues) > 0) {
+    for (i in 1:length(excludeValues)) {
+      if (length(excludeValues[[i]]) > 0) {
+        for (j in 1:length(excludeValues[[i]])) {
+          count <- count + 1
+          dat[count, 1] <- names(excludeValues)[i]
+          dat[count, 2] <- excludeValues[[i]][j]
+        }
+      }
+    }
+    var <- dat[, 1]
+    val <- dat[, 2]
+  } else {
+    var <- character()
+    val <- character()
+  }
+  var <- .jarray(var) # array of variable names of each excluded value
+  val <- .jarray(val) # array of values to be excluded
+  
+  # encode R NULL as Java null value if necessary
+  if (is.null(qualifier) || is.na(qualifier)) {
+    qualifier <- .jnull(class = "java/lang/String")
+  }
+  if (is.null(fileFormat)) {
+    fileFormat <- .jnull(class = "java/lang/String")
+  }
+  if (is.null(outfile)) {
+    outfile <- .jnull(class = "java/lang/String")
+  }
+  
+  # call rBackbone function to compute results
+  .jcall(dnaEnvironment[["dna"]]$headlessDna,
+         "V",
+         "rBackbone",
+         as.double(penalty),
+         as.integer(iterations),
+         statementType,
+         variable1,
+         variable1Document,
+         variable2,
+         variable2Document,
+         qualifier,
+         qualifierDocument,
+         qualifierAggregation,
+         normalization,
+         duplicates,
+         start.date,
+         stop.date,
+         start.time,
+         stop.time,
+         var,
+         val,
+         excludeAuthors,
+         excludeSources,
+         excludeSections,
+         excludeTypes,
+         invertValues,
+         invertAuthors,
+         invertSources,
+         invertSections,
+         invertTypes,
+         outfile,
+         fileFormat
+  )
+  
+  exporter <- .jcall(dnaEnvironment[["dna"]]$headlessDna, "Lexport/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
+  result <- .jcall(exporter, "Lexport/BackboneResult;", "getBackboneResult", simplify = TRUE)
+  if (!is.null(outfile) && !is.null(fileFormat) && is.character(outfile) && is.character(fileFormat) && fileFormat %in% c("json", "xml")) {
+    message("File exported.")
+  } else {
+    # create a list with various results
+    l <- list()
+    l$penalty <- .jcall(result, "D", "getPenalty")
+    l$iterations <- .jcall(result, "I", "getIterations")
+    l$backbone <- .jcall(result, "[S", "getBackboneEntities")
+    l$redundant <- .jcall(result, "[S", "getRedundantEntities")
+    l$unpenalized_backbone_loss <- .jcall(result, "D", "getUnpenalizedBackboneLoss")
+    l$unpenalized_redundant_loss <- .jcall(result, "D", "getUnpenalizedRedundantLoss")
+    rn <- .jcall(result, "[S", "getLabels")
+    
+    # store the three matrices in the result list
+    fullmat <- .jcall(result, "[[D", "getFullNetwork", simplify = TRUE)
+    rownames(fullmat) <- rn
+    colnames(fullmat) <- rn
+    l$full_network <- fullmat
+    backbonemat <- .jcall(result, "[[D", "getBackboneNetwork", simplify = TRUE)
+    rownames(backbonemat) <- rn
+    colnames(backbonemat) <- rn
+    l$backbone_network <- backbonemat
+    redundantmat <- .jcall(result, "[[D", "getRedundantNetwork", simplify = TRUE)
+    rownames(redundantmat) <- rn
+    colnames(redundantmat) <- rn
+    l$redundant_network <- redundantmat
+    
+    # store diagnostics per iteration as a data frame
+    d <- data.frame(iteration = 1:.jcall(result, "I", "getIterations"),
+                    temperature = .jcall(result, "[D", "getTemperature"),
+                    acceptance_prob = .jcall(result, "[D", "getAcceptanceProbability"),
+                    acceptance = .jcall(result, "[I", "getAcceptance"),
+                    penalized_backbone_loss = .jcall(result, "[D", "getPenalizedBackboneLoss"),
+                    proposed_backbone_size = .jcall(result, "[I", "getProposedBackboneSize"),
+                    current_backbone_size = .jcall(result, "[I", "getCurrentBackboneSize"),
+                    optimal_backbone_size = .jcall(result, "[I", "getOptimalBackboneSize"),
+                    acceptance_ratio_ma = .jcall(result, "[D", "getAcceptanceRatioMovingAverage"))
+    
+    l$diagnostics <- d
+    
+    # store start date/time, end date/time, number of statements, call, and class label in each network matrix
+    start <- as.POSIXct(.jcall(result, "J", "getStart"), origin = "1970-01-01") # add the start date/time of the result as an attribute to the matrices
+    attributes(l$full_network)$start <- start
+    attributes(l$backbone_network)$start <- start
+    attributes(l$redundant_network)$start <- start
+    stop <- as.POSIXct(.jcall(result, "J", "getStop"), origin = "1970-01-01") # add the end date/time of the result as an attribute to the matrices
+    attributes(l$full_network)$stop <- stop
+    attributes(l$backbone_network)$stop <- stop
+    attributes(l$redundant_network)$stop <- stop
+    attributes(l$full_network)$numStatements <- .jcall(result, "I", "getNumStatements") # add the number of filtered statements the matrix is based on as an attribute to the matrix
+    attributes(l$full_network)$call <- match.call()
+    attributes(l$backbone_network)$call <- match.call()
+    attributes(l$redundant_network)$call <- match.call()
+    class(l$full_network) <- c("dna_network_onemode", class(l$full_network))
+    class(l$backbone_network) <- c("dna_network_onemode", class(l$backbone_network))
+    class(l$redundant_network) <- c("dna_network_onemode", class(l$redundant_network))
+    
+    class(l) <- c("dna_backbone", class(l))
+    return(l)
+  }
+}
+
+#' Plot diagnostics for \code{dna_backbone} objects
+#'
+#' Plot diagnostics for \code{dna_backbone} objects.
+#'
+#' The \link{dna_backbone} function creates \code{dna_backbone} objects by
+#' using a simulated annealing algorithm. This plot method shows visual
+#' diagnostics for the iterations of the algorithm.
+#'
+#' @param x A \code{dna_backbone} object.
+#' @param ... Further arguments to be passed along. Currently not in use.
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom graphics lines
+#' @export
+plot.dna_backbone <- function(x, ...) {
+  # temperature and acceptance probability
+  plot(x = x$diagnostics$iteration,
+       y = x$diagnostics$temperature,
+       col = "#a50f15",
+       type = "l",
+       lwd = 3,
+       xlab = "Iteration",
+       ylab = "Acceptance probability",
+       main = "Temperature and acceptance probability")
+  lines(x = x$diagnostics$iteration[x$diagnostics$acceptance_prob >= 0],
+        y = x$diagnostics$acceptance_prob[x$diagnostics$acceptance_prob >= 0])
+  
+  # spectral distance between full network and backbone network per iteration
+  plot(x = x$diagnostics$iteration,
+       y = x$diagnostics$penalized_backbone_loss, # wrap in log() if necessary
+       type = "l",
+       xlab = "Iteration",
+       ylab = "Penalized backbone loss",
+       main = "Penalized spectral distance between full and reduced network")
+  
+  # number of concepts in the backbone solution per iteration
+  plot(x = x$diagnostics$iteration,
+       y = x$diagnostics$proposed_backbone_size,
+       type = "l",
+       col = "blue",
+       xlab = "Iteration",
+       ylab = "Number of elements",
+       main = "Number of elements")
+  lines(x = x$diagnostics$iteration,
+        y = x$diagnostics$current_backbone_size,
+        col = "green")
+  lines(x = x$diagnostics$iteration,
+        y = x$diagnostics$optimal_backbone_size,
+        col = "red")
+  
+  # ratio of recent acceptances
+  plot(x = x$diagnostics$iteration,
+       y = x$diagnostics$acceptance_ratio_ma,
+       type = "l",
+       xlab = "Iteration",
+       ylab = "Ratio of acceptances in the last 100 iterations",
+       main = "Ratio of acceptances in the last 100 iterations")
+}

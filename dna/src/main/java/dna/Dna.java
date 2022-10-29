@@ -29,7 +29,7 @@ public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2022-10-23";
+	public static final String date = "2022-10-29";
 	public static final String version = "3.0.9";
 	public MainWindow mainWindow;
 	public HeadlessDna headlessDna;

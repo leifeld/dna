@@ -550,6 +550,8 @@ public class Exporter {
 				Dna.logger.log(le);
 				this.fileFormat = "graphml";
 			}
+		} else {
+			this.fileFormat = null;
 		}
 		this.outfile = outfile;
 		if (this.outfile != null) {
@@ -2345,6 +2347,7 @@ public class Exporter {
 	public void backbone(double p, int T) {
 		this.p = p;
 		this.T = T;
+		this.isolates = false; // no isolates initially for full matrix; will be set to true after full matrix has been computed
 
 		// initial values before iterations start
 		this.originalStatements = this.filteredStatements; // to ensure not all isolates are included later
@@ -2354,6 +2357,7 @@ public class Exporter {
 
 		// full network matrix Y against which we compare in every iteration
 		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		this.isolates = true; // include isolates in the iterations; will be adjusted to full matrix without isolates manually each time
 
 		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
 		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
@@ -2501,6 +2505,7 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 		// create candidate matrix after filtering the statements based on the action that was executed
 		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
 
 		// second step: compare loss between full and previous matrix to loss between full and candidate matrix and accept or reject candidate
 		temperature = 1 - (1 / (1 + Math.exp(-(-5 + (12.0 / T) * t)))); // temperature
@@ -2513,7 +2518,7 @@ public class Exporter {
 		accept = false;
 		if (newLoss < oldLoss) { // if candidate is better than previous matrix, adopt it as current solution
 			accept = true; // flag this solution for acceptance
-			acceptanceProbabilityLog.add(1.0); // log the acceptance probability as 1.0 because the solution was better than before
+			acceptanceProbabilityLog.add(-1.0); // log the acceptance probability as -1.0; technically it should be 1.0 because the solution was better and hence accepted, but it would be useless for plotting the acceptance probabilities as a diagnostic tool
 			eigenvaluesFinal = computeNormalizedEigenvalues(currentMatrix.getMatrix()); // normalised eigenvalues for the current matrix
 			finalLoss = penalizedLoss(eigenvaluesFull, eigenvaluesFinal, p, finalBackboneList.size(), fullConcepts.length); // test if also better than global optimum so far
 			if (newLoss <= finalLoss) { // if better than the best solution, adopt candidate as new final backbone solution
@@ -2556,6 +2561,35 @@ public class Exporter {
 	}
 
 	/**
+	 * Reduce the dimensions of a candidate matrix with all isolate nodes to the dimensions of the full matrix, which
+	 * does not contain isolate nodes.
+	 *
+	 * @param candidateMatrix The candidate matrix with isolates (to be reduced to smaller dimensions).
+	 * @param fullLabels The node labels of the full matrix without isolates.
+	 * @return A reduced candidate matrix with the same dimensions as the full matrix and the same node order.
+	 */
+	private Matrix reduceCandidateMatrix(Matrix candidateMatrix, String[] fullLabels) {
+		HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+		for (int i = 0; i < fullLabels.length; i++) {
+			for (int j = 0; j < candidateMatrix.getRowNames().length; j++) {
+				if (fullLabels[i].equals(candidateMatrix.getRowNames()[j])) {
+					map.put(i, j);
+				}
+			}
+		}
+		double[][] mat = new double[fullLabels.length][fullLabels.length];
+		for (int i = 0; i < fullLabels.length; i++) {
+			for (int j = 0; j < fullLabels.length; j++) {
+				mat[i][j] = candidateMatrix.getMatrix()[map.get(i)][map.get(j)];
+			}
+		}
+		candidateMatrix.setMatrix(mat);
+		candidateMatrix.setRowNames(fullLabels);
+		candidateMatrix.setColumnNames(fullLabels);
+		return candidateMatrix;
+	}
+
+	/**
 	 * Compute matrix after final backbone iteration, collect results, and save in class.
 	 */
 	public void saveBackboneResult() {
@@ -2569,24 +2603,36 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 		Matrix redundantMatrix = this.computeOneModeMatrix(redundantStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 
-		this.backboneResult = new BackboneResult(finalBackboneList,
-				finalRedundantList,
+		this.backboneResult = new BackboneResult(finalBackboneList.toArray(String[]::new),
+				finalRedundantList.toArray(String[]::new),
 				penalizedLoss(eigenvaluesFull, eigenvaluesCurrent, 0, currentBackboneList.size(), fullConcepts.length),
 				penalizedLoss(eigenvaluesFull, computeNormalizedEigenvalues(redundantMatrix.getMatrix()), 0, currentBackboneList.size(), fullConcepts.length),
 				p,
 				T,
-				temperatureLog,
-				acceptanceProbabilityLog,
-				acceptedLog,
-				penalizedBackboneLossLog,
-				proposedBackboneSizeLog,
-				acceptedBackboneSizeLog,
-				finalBackboneSizeLog,
-				acceptanceRatioLastHundredIterationsLog,
+				temperatureLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
+				acceptanceProbabilityLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
+				acceptedLog.stream().mapToInt(v -> v.intValue()).toArray(),
+				penalizedBackboneLossLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
+				proposedBackboneSizeLog.stream().mapToInt(v -> v.intValue()).toArray(),
+				acceptedBackboneSizeLog.stream().mapToInt(v -> v.intValue()).toArray(),
+				finalBackboneSizeLog.stream().mapToInt(v -> v.intValue()).toArray(),
+				acceptanceRatioLastHundredIterationsLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
 				fullMatrix.getMatrix(),
 				currentMatrix.getMatrix(),
 				redundantMatrix.getMatrix(),
-				fullMatrix.getRowNames());
+				fullMatrix.getRowNames(),
+				fullMatrix.getStart().toEpochSecond(ZoneOffset.UTC),
+				fullMatrix.getStop().toEpochSecond(ZoneOffset.UTC),
+				fullMatrix.getNumStatements());
+	}
+
+	/**
+	 * Get the backbone result that is saved in the class.
+	 *
+	 * @return The backbone result (can be null if backbone function has not been executed).
+	 */
+	public BackboneResult getBackboneResult() {
+		return this.backboneResult;
 	}
 
 	/**
@@ -2635,7 +2681,12 @@ public class Exporter {
 		for (int i = 0; i < eigenvalues1.length; i++) {
 			distance = distance + Math.sqrt((eigenvalues1[i] - eigenvalues2[i]) * (eigenvalues1[i] - eigenvalues2[i]));
 		}
-		double penalty = Math.exp((-p) * (candidateBackboneSize / numEntitiesTotal)); // compute penalty factor
+		//double penalty = Math.exp((-p) * (candidateBackboneSize / numEntitiesTotal)); // compute penalty factor
+		//return distance * penalty; // return penalised distance
+		//double penalty = (p * (Math.exp(-(p * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal)))))); // compute penalty factor
+		//return distance / penalty; // return penalised distance
+		double penalty = p * Math.exp(-(p * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal)))); // compute penalty factor
+		//double penalty = Math.exp((-p) * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal))); // compute penalty factor
 		return distance * penalty; // return penalised distance
 	}
 
