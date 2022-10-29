@@ -2685,8 +2685,8 @@ public class Exporter {
 		//return distance * penalty; // return penalised distance
 		//double penalty = (p * (Math.exp(-(p * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal)))))); // compute penalty factor
 		//return distance / penalty; // return penalised distance
-		double penalty = p * Math.exp(-(p * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal)))); // compute penalty factor
-		//double penalty = Math.exp((-p) * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal))); // compute penalty factor
+		//double penalty = p * Math.exp(-(p * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal)))); // compute penalty factor
+		double penalty = Math.exp(-p * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal))); // compute penalty factor
 		return distance * penalty; // return penalised distance
 	}
 
