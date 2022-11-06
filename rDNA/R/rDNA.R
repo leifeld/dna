@@ -1144,115 +1144,43 @@ as.matrix.dna_network_twomode <- as.matrix.dna_network_onemode
 #'                   qualifierAggregation = "subtract",
 #'                   normalization = "average")
 #'
+#' b # display main results
+#' 
+#' # extract results from the object
 #' b$backbone # show the set of backbone concepts
 #' b$redundant # show the set of redundant concepts
-#' print(b$backbone_network, attr = FALSE) # show the backbone network
-#' print(b$redundant_network, attr = FALSE) # show the redundant network
-#' print(b$full_network, attr = FALSE) # show the full network
+#' b$unpenalized_backbone_loss # spectral loss between full and backbone network
+#' b$unpenalized_redundant_loss # spectral loss of redundant network
+#' b$backbone_network # show the backbone network
+#' b$redundant_network # show the redundant network
+#' b$full_network # show the full network
 #'
-#' ## plot diagnostics (using base R)
-#'
-#' # arrange plots in a 2 x 2 grid
+#' # plot diagnostics with base R
+#' plot(b, ma = 500)
+#' 
+#' # arrange plots in a 2 x 2 view
 #' par(mfrow = c(2, 2))
+#' plot(b)
+#' 
+#' # plot diagnostics with ggplot2
+#' p <- autoplot(b)
+#' p
 #'
-#' # temperature and acceptance probability
-#' plot(x = b$diagnostics$iteration,
-#'      y = b$diagnostics$temperature,
-#'      col = "#a50f15",
-#'      type = "l",
-#'      lwd = 3,
-#'      xlab = "Iteration",
-#'      ylab = "Acceptance probability",
-#'      main = "Temperature and acceptance probability")
-#' lines(x = b$diagnostics$iteration[b$diagnostics$acceptance_prob >= 0],
-#'       y = b$diagnostics$acceptance_prob[b$diagnostics$acceptance_prob >= 0])
+#' # pick a specific diagnostic
+#' p[[3]]
 #'
-#' # spectral distance between full network and backbone network per iteration
-#' plot(x = b$diagnostics$iteration,
-#'      y = b$diagnostics$penalized_backbone_loss, # wrap in log() if necessary
-#'      type = "l",
-#'      xlab = "Iteration",
-#'      ylab = "Penalized backbone loss",
-#'      main = "Penalized spectral distance between full and reduced network")
+#' # use the patchwork package to arrange the diagnostics in a single plot
+#' library("patchwork")
+#' new_plot <- p[[1]] + p[[2]] + p[[3]] + p[[4]]
+#' new_plot & theme_grey() + theme(legend.position = "bottom")
 #'
-#' # number of concepts in the backbone solution per iteration
-#' plot(x = b$diagnostics$iteration,
-#'      y = b$diagnostics$proposed_backbone_size,
-#'      type = "l",
-#'      col = "blue",
-#'      xlab = "Iteration",
-#'      ylab = "Number of elements",
-#'      main = "Number of elements")
-#' lines(x = b$diagnostics$iteration,
-#'       y = b$diagnostics$current_backbone_size,
-#'       col = "green")
-#' lines(x = b$diagnostics$iteration,
-#'       y = b$diagnostics$optimal_backbone_size,
-#'       col = "red")
-#'
-#' # ratio of recent acceptances
-#' plot(x = b$diagnostics$iteration,
-#'      y = b$diagnostics$acceptance_ratio_ma,
-#'      type = "l",
-#'      xlab = "Iteration",
-#'      ylab = "Ratio of acceptances in the last 100 iterations",
-#'      main = "Ratio of acceptances in the last 100 iterations")
-#'
-#' ## plot diagnostics using ggplot2
-#' require("ggplot2")
-#' require("gridExtra")
-#'
-#' # temperature and acceptance probability
-#' g_accept <- ggplot(b$diagnostics, aes(y = temperature, x = iteration)) +
-#'   geom_line(color = "#a50f15") +
-#'   geom_line(data = b$diagnostics[b$diagnostics$acceptance_prob >= 0, ],
-#'             aes(y = acceptance_prob, x = iteration)) +
-#'   ylab("Acceptance probability") +
-#'   xlab("Iteration") +
-#'   ggtitle("Temperature and acceptance probability") +
-#'   theme_bw()
-#'
-#' # spectral distance between full network and backbone network per iteration
-#' g_loss <- ggplot(b$diagnostics,
-#'                  aes(y = penalized_backbone_loss, x = iteration)) +
-#'   #coord_trans(y = "log") + # use if necessary
-#'   geom_line() +
-#'   ylab("Penalized backbone loss") +
-#'   xlab("Iteration") +
-#'   ggtitle("Penalized spectral distance between full and reduced network") +
-#'   theme_bw()
-#'
-#' # number of concepts in the backbone solution per iteration
-#' d <- data.frame(iteration = rep(b$diagnostics$iteration, 3),
-#'                 size = c(b$diagnostics$proposed_backbone_size,
-#'                          b$diagnostics$current_backbone_size,
-#'                          b$diagnostics$optimal_backbone_size),
-#'                 Criterion = c(rep("Proposed", nrow(b$diagnostics)),
-#'                               rep("Current iteration", nrow(b$diagnostics)),
-#'                               rep("Best solution", nrow(b$diagnostics))))
-#' g_size <- ggplot(d, aes(y = size, x = iteration, color = Criterion)) +
-#'   geom_line() +
-#'   ylab("Number of elements") +
-#'   xlab("Iteration") +
-#'   ggtitle("Number of elements") +
-#'   theme_bw() +
-#'   theme(legend.position = "bottom")
-#'
-#' # ratio of recent acceptances
-#' g_ma <- ggplot(b$diagnostics, aes(y = acceptance_ratio_ma, x = iteration)) +
-#'   geom_line() +
-#'   ylab("Ratio of acceptances in the last 100 iterations") +
-#'   xlab("Iteration") +
-#'   ggtitle("Ratio of acceptances in the last 100 iterations") +
-#'   theme_bw()
-#'
-#' # arrange in a 2 x 2 grid and save
-#' x <- grid.arrange(g_accept, g_loss, g_size, g_ma, ncol = 2)
-#' ggsave(x, file = "diagnostics.pdf", width = 15, height = 10)
+#' # use the gridExtra package to arrange the diagnostics in a single plot
+#' library("gridExtra")
+#' grid.arrange(p[[1]], p[[2]], p[[3]], p[[4]])
 #' }
 #'
 #' @author Philip Leifeld, Tim Henrichsen
-#'
+#' 
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
 #' @importFrom rJava .jnull
@@ -1425,62 +1353,136 @@ dna_backbone <- function(penalty = 3.5,
   }
 }
 
-#' Plot diagnostics for \code{dna_backbone} objects
-#'
-#' Plot diagnostics for \code{dna_backbone} objects.
-#'
-#' The \link{dna_backbone} function creates \code{dna_backbone} objects by
-#' using a simulated annealing algorithm. This plot method shows visual
-#' diagnostics for the iterations of the algorithm.
-#'
-#' @param x A \code{dna_backbone} object.
-#' @param ... Further arguments to be passed along. Currently not in use.
-#'
-#' @author Philip Leifeld
-#'
+#' @param ma Number of iterations to compute moving average.
+#' @rdname dna_backbone
 #' @importFrom graphics lines
+#' @importFrom stats filter
 #' @export
-plot.dna_backbone <- function(x, ...) {
+plot.dna_backbone <- function(x, ma = 500, ...) {
   # temperature and acceptance probability
   plot(x = x$diagnostics$iteration,
        y = x$diagnostics$temperature,
-       col = "#a50f15",
+       col = "red",
        type = "l",
        lwd = 3,
        xlab = "Iteration",
        ylab = "Acceptance probability",
        main = "Temperature and acceptance probability")
+  # note that better solutions are coded as -1 and need to be skipped:
   lines(x = x$diagnostics$iteration[x$diagnostics$acceptance_prob >= 0],
         y = x$diagnostics$acceptance_prob[x$diagnostics$acceptance_prob >= 0])
   
   # spectral distance between full network and backbone network per iteration
+  bb_loss <- stats::filter(x$diagnostics$penalized_backbone_loss,
+                           rep(1 / ma, ma),
+                           sides = 1)
   plot(x = x$diagnostics$iteration,
-       y = x$diagnostics$penalized_backbone_loss, # wrap in log() if necessary
+       y = bb_loss,
        type = "l",
        xlab = "Iteration",
        ylab = "Penalized backbone loss",
-       main = "Penalized spectral distance between full and reduced network")
+       main = "Penalized spectral backbone distance")
   
   # number of concepts in the backbone solution per iteration
+  current_size_ma <- stats::filter(x$diagnostics$current_backbone_size,
+                                   rep(1 / ma, ma),
+                                   sides = 1)
+  optimal_size_ma <- stats::filter(x$diagnostics$optimal_backbone_size,
+                                   rep(1 / ma, ma),
+                                   sides = 1)
   plot(x = x$diagnostics$iteration,
-       y = x$diagnostics$proposed_backbone_size,
+       y = current_size_ma,
+       ylim = c(min(c(current_size_ma, optimal_size_ma), na.rm = TRUE),
+                max(c(current_size_ma, optimal_size_ma), na.rm = TRUE)),
        type = "l",
-       col = "blue",
        xlab = "Iteration",
-       ylab = "Number of elements",
-       main = "Number of elements")
-  lines(x = x$diagnostics$iteration,
-        y = x$diagnostics$current_backbone_size,
-        col = "green")
-  lines(x = x$diagnostics$iteration,
-        y = x$diagnostics$optimal_backbone_size,
-        col = "red")
+       ylab = paste0("Number of elements (MA, last ", ma, ")"),
+       main = "Backbone size (red = best)")
+  lines(x = x$diagnostics$iteration, y = optimal_size_ma, col = "red")
   
   # ratio of recent acceptances
+  accept_ratio <- stats::filter(x$diagnostics$acceptance,
+                                rep(1 / ma, ma),
+                                sides = 1)
   plot(x = x$diagnostics$iteration,
-       y = x$diagnostics$acceptance_ratio_ma,
+       y = accept_ratio,
        type = "l",
        xlab = "Iteration",
-       ylab = "Ratio of acceptances in the last 100 iterations",
-       main = "Ratio of acceptances in the last 100 iterations")
+       ylab = paste("Acceptance ratio in the last", ma, "iterations"),
+       main = "Acceptance ratio")
+}
+
+#' @rdname dna_backbone
+#' @param x A \code{"dna_backbone"} object.
+#' @export
+print.dna_backbone <- function(x, ...) {
+  cat(paste0("Penalty: ", x$penalty, ". Iterations: ", x$iterations, ".\n\n"))
+  cat(paste0("Backbone set (loss: ", round(x$unpenalized_backbone_loss, 4), "):\n"))
+  cat(paste(1:length(x$backbone), x$backbone), sep = "\n")
+  cat(paste0("\nRedundant set (loss: ", round(x$unpenalized_redundant_loss, 4), "):\n"))
+  cat(paste(1:length(x$redundant), x$redundant), sep = "\n")
+}
+
+#' @rdname dna_backbone
+#' @param object A \code{"dna_backbone"} object.
+#' @param ... Additional arguments.
+#' @importFrom ggplot2 autoplot
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 aes_string
+#' @importFrom ggplot2 geom_line
+#' @importFrom ggplot2 ylab
+#' @importFrom ggplot2 xlab
+#' @importFrom ggplot2 ggtitle
+#' @importFrom ggplot2 theme_bw
+#' @importFrom ggplot2 theme
+#' @export
+autoplot.dna_backbone <- function(object, ..., ma = 500) {
+  bd <- object$diagnostics
+  bd$bb_loss <- stats::filter(bd$penalized_backbone_loss, rep(1 / ma, ma), sides = 1)
+  bd$current_size_ma <- stats::filter(bd$current_backbone_size, rep(1 / ma, ma), sides = 1)
+  bd$optimal_size_ma <- stats::filter(bd$optimal_backbone_size, rep(1 / ma, ma), sides = 1)
+  bd$accept_ratio <- stats::filter(bd$acceptance, rep(1 / ma, ma), sides = 1)
+  
+  # temperature and acceptance probability
+  g_accept <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "temperature", x = "iteration")) +
+    ggplot2::geom_line(color = "#a50f15") +
+    ggplot2::geom_line(data = bd[bd$acceptance_prob >= 0, ],
+                       ggplot2::aes_string(y = "acceptance_prob", x = "iteration")) +
+    ggplot2::ylab("Acceptance probability") +
+    ggplot2::xlab("Iteration") +
+    ggplot2::ggtitle("Temperature and acceptance probability") +
+    ggplot2::theme_bw()
+  
+  # spectral distance between full network and backbone network per iteration
+  g_loss <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "bb_loss", x = "iteration")) +
+    ggplot2::geom_line() +
+    ggplot2::ylab("Penalized backbone loss") +
+    ggplot2::xlab("Iteration") +
+    ggplot2::ggtitle("Penalized spectral backbone distance") +
+    ggplot2::theme_bw()
+  
+  # number of concepts in the backbone solution per iteration
+  d <- data.frame(iteration = rep(bd$iteration, 2),
+                  size = c(bd$current_size_ma, bd$optimal_size_ma),
+                  Criterion = c(rep("Current iteration", nrow(bd)),
+                                rep("Best solution", nrow(bd))))
+  g_size <- ggplot2::ggplot(d, ggplot2::aes_string(y = "size", x = "iteration", color = "Criterion")) +
+    ggplot2::geom_line() +
+    ggplot2::ylab(paste0("Number of elements (MA, last ", ma, ")")) +
+    ggplot2::xlab("Iteration") +
+    ggplot2::ggtitle("Backbone size") +
+    ggplot2::theme_bw() +
+    ggplot2::theme(legend.position = "bottom")
+  
+  # ratio of recent acceptances
+  g_ar <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "accept_ratio", x = "iteration")) +
+    ggplot2::geom_line() +
+    ggplot2::ylab(paste("Acceptance ratio in the last", ma, "iterations")) +
+    ggplot2::xlab("Iteration") +
+    ggplot2::ggtitle("Acceptance ratio") +
+    ggplot2::theme_bw()
+  
+  # wrap in list
+  plots <- list(g_accept, g_loss, g_size, g_ar)
+  return(plots)
 }

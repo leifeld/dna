@@ -2,6 +2,9 @@
 % Please edit documentation in R/rDNA.R
 \name{dna_backbone}
 \alias{dna_backbone}
+\alias{plot.dna_backbone}
+\alias{print.dna_backbone}
+\alias{autoplot.dna_backbone}
 \title{Compute and retrieve the backbone and redundant set}
 \usage{
 dna_backbone(
@@ -34,6 +37,12 @@ dna_backbone(
   fileFormat = NULL,
   outfile = NULL
 )
+
+\method{plot}{dna_backbone}(x, ma = 500, ...)
+
+\method{print}{dna_backbone}(x, ...)
+
+\method{autoplot}{dna_backbone}(object, ..., ma = 500)
 }
 \arguments{
 \item{penalty}{The penalty parameter for large backbone sets. The larger the
@@ -214,6 +223,14 @@ instead of writing them to a file).}
 
 \item{outfile}{An optional output file name for saving the resulting
 network(s) to a file instead of returning an object.}
+
+\item{x}{A \code{"dna_backbone"} object.}
+
+\item{ma}{Number of iterations to compute moving average.}
+
+\item{...}{Additional arguments.}
+
+\item{object}{A \code{"dna_backbone"} object.}
 }
 \description{
 Compute and retrieve the backbone and redundant set of a discourse network.
@@ -238,111 +255,39 @@ b <- dna_backbone(penalty = 3.5,
                   qualifierAggregation = "subtract",
                   normalization = "average")
 
+b # display main results
+
+# extract results from the object
 b$backbone # show the set of backbone concepts
 b$redundant # show the set of redundant concepts
-print(b$backbone_network, attr = FALSE) # show the backbone network
-print(b$redundant_network, attr = FALSE) # show the redundant network
-print(b$full_network, attr = FALSE) # show the full network
+b$unpenalized_backbone_loss # spectral loss between full and backbone network
+b$unpenalized_redundant_loss # spectral loss of redundant network
+b$backbone_network # show the backbone network
+b$redundant_network # show the redundant network
+b$full_network # show the full network
 
-## plot diagnostics (using base R)
+# plot diagnostics with base R
+plot(b, ma = 500)
 
-# arrange plots in a 2 x 2 grid
+# arrange plots in a 2 x 2 view
 par(mfrow = c(2, 2))
+plot(b)
 
-# temperature and acceptance probability
-plot(x = b$diagnostics$iteration,
-     y = b$diagnostics$temperature,
-     col = "#a50f15",
-     type = "l",
-     lwd = 3,
-     xlab = "Iteration",
-     ylab = "Acceptance probability",
-     main = "Temperature and acceptance probability")
-lines(x = b$diagnostics$iteration[b$diagnostics$acceptance_prob >= 0],
-      y = b$diagnostics$acceptance_prob[b$diagnostics$acceptance_prob >= 0])
+# plot diagnostics with ggplot2
+p <- autoplot(b)
+p
 
-# spectral distance between full network and backbone network per iteration
-plot(x = b$diagnostics$iteration,
-     y = b$diagnostics$penalized_backbone_loss, # wrap in log() if necessary
-     type = "l",
-     xlab = "Iteration",
-     ylab = "Penalized backbone loss",
-     main = "Penalized spectral distance between full and reduced network")
+# pick a specific diagnostic
+p[[3]]
 
-# number of concepts in the backbone solution per iteration
-plot(x = b$diagnostics$iteration,
-     y = b$diagnostics$proposed_backbone_size,
-     type = "l",
-     col = "blue",
-     xlab = "Iteration",
-     ylab = "Number of elements",
-     main = "Number of elements")
-lines(x = b$diagnostics$iteration,
-      y = b$diagnostics$current_backbone_size,
-      col = "green")
-lines(x = b$diagnostics$iteration,
-      y = b$diagnostics$optimal_backbone_size,
-      col = "red")
+# use the patchwork package to arrange the diagnostics in a single plot
+library("patchwork")
+new_plot <- p[[1]] + p[[2]] + p[[3]] + p[[4]]
+new_plot & theme_grey() + theme(legend.position = "bottom")
 
-# ratio of recent acceptances
-plot(x = b$diagnostics$iteration,
-     y = b$diagnostics$acceptance_ratio_ma,
-     type = "l",
-     xlab = "Iteration",
-     ylab = "Ratio of acceptances in the last 100 iterations",
-     main = "Ratio of acceptances in the last 100 iterations")
-
-## plot diagnostics using ggplot2
-require("ggplot2")
-require("gridExtra")
-
-# temperature and acceptance probability
-g_accept <- ggplot(b$diagnostics, aes(y = temperature, x = iteration)) +
-  geom_line(color = "#a50f15") +
-  geom_line(data = b$diagnostics[b$diagnostics$acceptance_prob >= 0, ],
-            aes(y = acceptance_prob, x = iteration)) +
-  ylab("Acceptance probability") +
-  xlab("Iteration") +
-  ggtitle("Temperature and acceptance probability") +
-  theme_bw()
-
-# spectral distance between full network and backbone network per iteration
-g_loss <- ggplot(b$diagnostics,
-                 aes(y = penalized_backbone_loss, x = iteration)) +
-  #coord_trans(y = "log") + # use if necessary
-  geom_line() +
-  ylab("Penalized backbone loss") +
-  xlab("Iteration") +
-  ggtitle("Penalized spectral distance between full and reduced network") +
-  theme_bw()
-
-# number of concepts in the backbone solution per iteration
-d <- data.frame(iteration = rep(b$diagnostics$iteration, 3),
-                size = c(b$diagnostics$proposed_backbone_size,
-                         b$diagnostics$current_backbone_size,
-                         b$diagnostics$optimal_backbone_size),
-                Criterion = c(rep("Proposed", nrow(b$diagnostics)),
-                              rep("Current iteration", nrow(b$diagnostics)),
-                              rep("Best solution", nrow(b$diagnostics))))
-g_size <- ggplot(d, aes(y = size, x = iteration, color = Criterion)) +
-  geom_line() +
-  ylab("Number of elements") +
-  xlab("Iteration") +
-  ggtitle("Number of elements") +
-  theme_bw() +
-  theme(legend.position = "bottom")
-
-# ratio of recent acceptances
-g_ma <- ggplot(b$diagnostics, aes(y = acceptance_ratio_ma, x = iteration)) +
-  geom_line() +
-  ylab("Ratio of acceptances in the last 100 iterations") +
-  xlab("Iteration") +
-  ggtitle("Ratio of acceptances in the last 100 iterations") +
-  theme_bw()
-
-# arrange in a 2 x 2 grid and save
-x <- grid.arrange(g_accept, g_loss, g_size, g_ma, ncol = 2)
-ggsave(x, file = "diagnostics.pdf", width = 15, height = 10)
+# use the gridExtra package to arrange the diagnostics in a single plot
+library("gridExtra")
+grid.arrange(p[[1]], p[[2]], p[[3]], p[[4]])
 }
 
 }

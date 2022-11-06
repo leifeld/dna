@@ -1,6 +1,6 @@
 Package: rDNA
 Version: 3.0.9
-Date: 2022-10-29
+Date: 2022-11-06
 Title: Discourse Network Analysis in R
 Authors@R: 
     person("Philip",
@@ -13,7 +13,8 @@ Description: Qualitative content analysis and discourse network analysis
 Depends:
     R (>= 4.0.0)
 Imports:
-    rJava (>= 0.9-12)
+    rJava (>= 0.9-12),
+    ggplot2 (>= 3.3.6)
 Suggests: 
     testthat,
     askpass (>= 1.1)
