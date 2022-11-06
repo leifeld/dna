@@ -2663,6 +2663,7 @@ public class Exporter {
 		if (eigenvaluesSum > 0.0) {
 			eigenvalues = DoubleStream.of(eigenvalues).map(v -> v / eigenvaluesSum).toArray(); // normalise/scale to one
 		}
+
 		return eigenvalues;
 	}
 
@@ -2681,11 +2682,6 @@ public class Exporter {
 		for (int i = 0; i < eigenvalues1.length; i++) {
 			distance = distance + Math.sqrt((eigenvalues1[i] - eigenvalues2[i]) * (eigenvalues1[i] - eigenvalues2[i]));
 		}
-		//double penalty = Math.exp((-p) * (candidateBackboneSize / numEntitiesTotal)); // compute penalty factor
-		//return distance * penalty; // return penalised distance
-		//double penalty = (p * (Math.exp(-(p * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal)))))); // compute penalty factor
-		//return distance / penalty; // return penalised distance
-		//double penalty = p * Math.exp(-(p * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal)))); // compute penalty factor
 		double penalty = Math.exp(-p * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal))); // compute penalty factor
 		return distance * penalty; // return penalised distance
 	}

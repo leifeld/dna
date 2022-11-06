@@ -19,7 +19,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -137,6 +136,19 @@ public class BackboneExporter extends JDialog {
 					for (int i = 0; i < qualifierItems.length; i++) {
 						qualifierBox.addItem(qualifierItems[i]);
 					}
+					String[] nonTextItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, false, true, true);
+					if (nonTextItems.length > 0) {
+						qualifierBox.setSelectedItem(nonTextItems[0]);
+					} else {
+						int newIndex = 0;
+						for (int i = 0; i < qualifierItems.length; i++) {
+							if (!qualifierItems[i].equals(((String) var1Box.getSelectedItem())) && !qualifierItems[i].equals(((String) var2Box.getSelectedItem()))) {
+								newIndex = i;
+								break;
+							}
+						}
+						qualifierBox.setSelectedIndex(newIndex);
+					}
 				}
 				populateExcludeVariableList();
 				excludeVariableList.setSelectedIndex(0);
@@ -146,7 +158,7 @@ public class BackboneExporter extends JDialog {
 
 
 		gbc.gridx = 1;
-		SpinnerNumberModel penaltyModel = new SpinnerNumberModel(7.50, 0.00, 1000.00, 0.01);
+		SpinnerNumberModel penaltyModel = new SpinnerNumberModel(3.50, 0.00, 1000.00, 0.10);
 		JSpinner penaltySpinner = new JSpinner(penaltyModel);
 		penaltyLabel.setLabelFor(penaltySpinner);
 		((JSpinner.DefaultEditor) penaltySpinner.getEditor()).getTextField().setColumns(4);
@@ -154,7 +166,7 @@ public class BackboneExporter extends JDialog {
 		settingsPanel.add(penaltySpinner, gbc);
 
 		gbc.gridx = 2;
-		SpinnerNumberModel iterationsModel = new SpinnerNumberModel(50000, 100, 1000000, 100);
+		SpinnerNumberModel iterationsModel = new SpinnerNumberModel(10000, 0, 1000000, 1000);
 		JSpinner iterationsSpinner = new JSpinner(iterationsModel);
 		((JSpinner.DefaultEditor) iterationsSpinner.getEditor()).getTextField().setColumns(7);
 		iterationsLabel.setLabelFor(iterationsSpinner);
@@ -272,6 +284,21 @@ public class BackboneExporter extends JDialog {
 		gbc.gridx = 2;
 		String[] qualifierItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, true, true, true);
 		qualifierBox = new JComboBox<>(qualifierItems);
+		if (qualifierItems.length > 0) {
+			String[] nonTextItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, false, true, true);
+			if (nonTextItems.length > 0) {
+				qualifierBox.setSelectedItem(nonTextItems[0]);
+			} else {
+				int newIndex = 0;
+				for (int i = 0; i < qualifierItems.length; i++) {
+					if (!qualifierItems[i].equals(((String) var1Box.getSelectedItem())) && !qualifierItems[i].equals(((String) var2Box.getSelectedItem()))) {
+						newIndex = i;
+						break;
+					}
+				}
+				qualifierBox.setSelectedIndex(newIndex);
+			}
+		}
 		qualifierBox.setToolTipText(qualifierToolTip);
 		settingsPanel.add(qualifierBox, gbc);
 		qualifierBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
@@ -286,6 +313,7 @@ public class BackboneExporter extends JDialog {
 					aggregationBox.addItem("congruence");
 					aggregationBox.addItem("conflict");
 					aggregationBox.addItem("subtract");
+					aggregationBox.setSelectedItem("subtract");
 				}
 			}
 		});
@@ -293,6 +321,7 @@ public class BackboneExporter extends JDialog {
 		gbc.gridx = 3;
 		String[] aggregationItems = new String[] {"ignore", "congruence", "conflict", "subtract"};
 		aggregationBox = new JComboBox<>(aggregationItems);
+		aggregationBox.setSelectedItem("subtract");
 		aggregationBox.setToolTipText(aggregationToolTip);
 		settingsPanel.add(aggregationBox, gbc);
 		aggregationBox.setPreferredSize(new Dimension(WIDTH, HEIGHT2));
@@ -695,10 +724,22 @@ public class BackboneExporter extends JDialog {
 					}
 				}
 				if (qualifierBox.getItemCount() > 0) {
-					qualifierBox.setSelectedIndex(0);
+					String[] nonTextItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, false, true, true);
+					if (nonTextItems.length > 0) {
+						qualifierBox.setSelectedItem(nonTextItems[0]);
+					} else {
+						int newIndex = 0;
+						for (int i = 0; i < qualifierItems.length; i++) {
+							if (!qualifierItems[i].equals(((String) var1Box.getSelectedItem())) && !qualifierItems[i].equals(((String) var2Box.getSelectedItem()))) {
+								newIndex = i;
+								break;
+							}
+						}
+						qualifierBox.setSelectedIndex(newIndex);
+					}
 				}
 				if (aggregationBox.getItemCount() == 4) {
-					aggregationBox.setSelectedIndex(3);
+					aggregationBox.setSelectedIndex(3); // "subtract"
 				} else {
 					aggregationBox.setSelectedIndex(0);
 				}
@@ -850,10 +891,22 @@ public class BackboneExporter extends JDialog {
 			}
 		}
 		if (qualifierBox.getItemCount() > 0) {
-			qualifierBox.setSelectedIndex(0);
+			String[] nonTextItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, false, true, true);
+			if (nonTextItems.length > 0) {
+				qualifierBox.setSelectedItem(nonTextItems[0]);
+			} else {
+				int newIndex = 0;
+				for (int i = 0; i < qualifierItems.length; i++) {
+					if (!qualifierItems[i].equals(((String) var1Box.getSelectedItem())) && !qualifierItems[i].equals(((String) var2Box.getSelectedItem()))) {
+						newIndex = i;
+						break;
+					}
+				}
+				qualifierBox.setSelectedIndex(newIndex);
+			}
 		}
 		if (aggregationBox.getItemCount() == 4) {
-			aggregationBox.setSelectedIndex(3);
+			aggregationBox.setSelectedIndex(3); // "subtract"
 		} else {
 			aggregationBox.setSelectedIndex(0);
 		}

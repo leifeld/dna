@@ -27,7 +27,7 @@ import java.util.List;
  * various kinds of networks.
  */
 public class NetworkExporter extends JDialog {
-	private static final long serialVersionUID = 373799108570299454L;
+	private static final long serialVersionUID = 373799108570299434L;
 	private LocalDateTime[] dateTimeRange = Dna.sql.getDateTimeRange();
 	private DateTimePicker startPicker, stopPicker;
 	private JCheckBox helpBox;
@@ -97,18 +97,18 @@ public class NetworkExporter extends JDialog {
 		gbc.gridy = 1;
 		String[] networkModesItems = new String[] {"Two-mode network", "One-mode network", "Event list"};
 		networkModesBox = new JComboBox<>(networkModesItems);
+		networkModesBox.setSelectedIndex(1);
 		networkModesBox.setToolTipText(networkModesToolTip);
 		settingsPanel.add(networkModesBox, gbc);
 		networkModesBox.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent e) {
 				String selected = (String) networkModesBox.getSelectedItem();
 				if (selected.equals("Two-mode network")) {
-					String fileFormatBackup = (String) fileFormatBox.getSelectedItem();
 					fileFormatBox.removeAllItems();
 					fileFormatBox.addItem(".csv");
 					fileFormatBox.addItem(".dl");
 					fileFormatBox.addItem(".graphml");
-					fileFormatBox.setSelectedItem(fileFormatBackup);
+					fileFormatBox.setSelectedIndex(2); // ".graphml"
 					
 					String aggregationBackup = (String) aggregationBox.getSelectedItem();
 					aggregationBox.removeAllItems();
@@ -132,12 +132,11 @@ public class NetworkExporter extends JDialog {
 					isolatesBox.addItem("only current nodes");
 					isolatesBox.addItem("include isolates");
 				} else if (selected.equals("One-mode network")) {
-					String fileFormatBackup = (String) fileFormatBox.getSelectedItem();
 					fileFormatBox.removeAllItems();
 					fileFormatBox.addItem(".csv");
 					fileFormatBox.addItem(".dl");
 					fileFormatBox.addItem(".graphml");
-					fileFormatBox.setSelectedItem(fileFormatBackup);
+					fileFormatBox.setSelectedIndex(2); // ".graphml"
 
 					String aggregationBackup = (String) aggregationBox.getSelectedItem();
 					aggregationBox.removeAllItems();
@@ -218,10 +217,39 @@ public class NetworkExporter extends JDialog {
 						var1Box.addItem(varItems[i]);
 						var2Box.addItem(varItems[i]);
 					}
+					int varIndex = ((DefaultComboBoxModel) var1Box.getModel()).getIndexOf("organization");
+					if (varIndex > -1) {
+						var1Box.setSelectedIndex(varIndex);
+					} else {
+						var1Box.setSelectedIndex(0);
+					}
+					varIndex = ((DefaultComboBoxModel) var2Box.getModel()).getIndexOf("concept");
+					if (varIndex > -1) {
+						var2Box.setSelectedIndex(varIndex);
+					} else {
+						var2Box.setSelectedIndex(1);
+					}
+					if (var1Box.getSelectedIndex() == var2Box.getSelectedIndex()) {
+						var1Box.setSelectedIndex(0);
+						var2Box.setSelectedIndex(1);
+					}
 				}
 				if (qualifierItems.length > 0) {
 					for (int i = 0; i < qualifierItems.length; i++) {
 						qualifierBox.addItem(qualifierItems[i]);
+					}
+					String[] nonTextItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, false, true, true);
+					if (nonTextItems.length > 0) {
+						qualifierBox.setSelectedItem(nonTextItems[0]);
+					} else {
+						int newIndex = 0;
+						for (int i = 0; i < qualifierItems.length; i++) {
+							if (!qualifierItems[i].equals(((String) var1Box.getSelectedItem())) && !qualifierItems[i].equals(((String) var2Box.getSelectedItem()))) {
+								newIndex = i;
+								break;
+							}
+						}
+						qualifierBox.setSelectedIndex(newIndex);
 					}
 				}
 				populateExcludeVariableList();
@@ -233,6 +261,7 @@ public class NetworkExporter extends JDialog {
 		gbc.gridx = 2;
 		String[] fileFormatItems = new String[] {".csv", ".dl", ".graphml"};
 		fileFormatBox = new JComboBox<>(fileFormatItems);
+		fileFormatBox.setSelectedIndex(2); // ".graphml"
 		fileFormatBox.setToolTipText(fileFormatToolTip);
 		settingsPanel.add(fileFormatBox, gbc);
 		fileFormatBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT));
@@ -328,6 +357,24 @@ public class NetworkExporter extends JDialog {
 		var2Box.setToolTipText(var2ToolTip);
 		var2Box.setSelectedIndex(1);
 		settingsPanel.add(var2Box, gbc);
+		if (var1Box.getItemCount() > 1) {
+			int varIndex = ((DefaultComboBoxModel) var1Box.getModel()).getIndexOf("organization");
+			if (varIndex > -1) {
+				var1Box.setSelectedIndex(varIndex);
+			} else {
+				var1Box.setSelectedIndex(0);
+			}
+			varIndex = ((DefaultComboBoxModel) var2Box.getModel()).getIndexOf("concept");
+			if (varIndex > -1) {
+				var2Box.setSelectedIndex(varIndex);
+			} else {
+				var2Box.setSelectedIndex(1);
+			}
+			if (var1Box.getSelectedIndex() == var2Box.getSelectedIndex()) {
+				var1Box.setSelectedIndex(0);
+				var2Box.setSelectedIndex(1);
+			}
+		}
 		var2Box.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
 		java.awt.event.ActionListener varActionListener = new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent e) {
@@ -349,6 +396,21 @@ public class NetworkExporter extends JDialog {
 		gbc.gridx = 2;
 		String[] qualifierItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, true, true, true);
 		qualifierBox = new JComboBox<>(qualifierItems);
+		if (qualifierItems.length > 0) {
+			String[] nonTextItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, false, true, true);
+			if (nonTextItems.length > 0) {
+				qualifierBox.setSelectedItem(nonTextItems[0]);
+			} else {
+				int newIndex = 0;
+				for (int i = 0; i < qualifierItems.length; i++) {
+					if (!qualifierItems[i].equals(((String) var1Box.getSelectedItem())) && !qualifierItems[i].equals(((String) var2Box.getSelectedItem()))) {
+						newIndex = i;
+						break;
+					}
+				}
+				qualifierBox.setSelectedIndex(newIndex);
+			}
+		}
 		qualifierBox.setToolTipText(qualifierToolTip);
 		settingsPanel.add(qualifierBox, gbc);
 		qualifierBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
@@ -362,12 +424,14 @@ public class NetworkExporter extends JDialog {
 					aggregationBox.addItem("ignore");
 					aggregationBox.addItem("combine");
 					aggregationBox.addItem("subtract");
+					aggregationBox.setSelectedItem("subtract");
 				} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
 					aggregationBox.removeAllItems();
 					aggregationBox.addItem("ignore");
 					aggregationBox.addItem("congruence");
 					aggregationBox.addItem("conflict");
 					aggregationBox.addItem("subtract");
+					aggregationBox.setSelectedItem("subtract");
 				} else if (networkModesBox.getSelectedItem().equals("Event list")) {
 					aggregationBox.removeAllItems();
 					aggregationBox.addItem("ignore");
@@ -376,8 +440,9 @@ public class NetworkExporter extends JDialog {
 		});
 
 		gbc.gridx = 3;
-		String[] aggregationItems = new String[] {"ignore", "combine", "subtract"};
+		String[] aggregationItems = new String[] {"ignore", "congruence", "conflict", "subtract"};
 		aggregationBox = new JComboBox<>(aggregationItems);
+		aggregationBox.setSelectedItem("subtract");
 		aggregationBox.setToolTipText(aggregationToolTip);
 		settingsPanel.add(aggregationBox, gbc);
 		aggregationBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
@@ -472,8 +537,9 @@ public class NetworkExporter extends JDialog {
 		gbc.insets = new java.awt.Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 5;
-		String[] normalizationItems = new String[] {"no", "activity", "prominence"};
+		String[] normalizationItems = new String[] {"no", "average", "jaccard", "cosine"};
 		normalizationBox = new JComboBox<>(normalizationItems);
+		normalizationBox.setSelectedIndex(1);
 		normalizationBox.setToolTipText(normalizationToolTip);
 		settingsPanel.add(normalizationBox, gbc);
 		normalizationBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
@@ -489,6 +555,7 @@ public class NetworkExporter extends JDialog {
 		String[] duplicatesItems = new String[] {"include all duplicates", "ignore per document", "ignore per calendar week", 
 				"ignore per calendar month", "ignore per calendar year", "ignore across date range"};
 		duplicatesBox = new JComboBox<>(duplicatesItems);
+		duplicatesBox.setSelectedIndex(1);
 		duplicatesBox.setToolTipText(duplicatesToolTip);
 		settingsPanel.add(duplicatesBox, gbc);
 		duplicatesBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
@@ -839,7 +906,8 @@ public class NetworkExporter extends JDialog {
 		buttonPanel.add(revertButton);
 		revertButton.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent e) {
-				networkModesBox.setSelectedIndex(0);
+				networkModesBox.setSelectedIndex(1);
+				fileFormatBox.setSelectedIndex(2); // ".graphml"
 				int statementTypeIndex = -1;
 				for (int i = 0; i < NetworkExporter.this.statementTypes.length; i++) {
 					String[] vars = NetworkExporter.this.statementTypes[i].getVariablesList(false, true, false, false);
@@ -856,16 +924,42 @@ public class NetworkExporter extends JDialog {
 				}
 				statementTypeBox.updateUI();
 				if (var1Box.getItemCount() > 1) {
-					var1Box.setSelectedIndex(0);
-					var2Box.setSelectedIndex(1);
+					int varIndex = ((DefaultComboBoxModel) var1Box.getModel()).getIndexOf("organization");
+					if (varIndex > -1) {
+						var1Box.setSelectedIndex(varIndex);
+					} else {
+						var1Box.setSelectedIndex(0);
+					}
+					varIndex = ((DefaultComboBoxModel) var2Box.getModel()).getIndexOf("concept");
+					if (varIndex > -1) {
+						var2Box.setSelectedIndex(varIndex);
+					} else {
+						var2Box.setSelectedIndex(1);
+					}
+					if (var1Box.getSelectedIndex() == var2Box.getSelectedIndex()) {
+						var1Box.setSelectedIndex(0);
+						var2Box.setSelectedIndex(1);
+					}
 				}
 				if (qualifierBox.getItemCount() > 0) {
-					qualifierBox.setSelectedIndex(0);
+					String[] nonTextItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, false, true, true);
+					if (nonTextItems.length > 0) {
+						qualifierBox.setSelectedItem(nonTextItems[0]);
+					} else {
+						int newIndex = 0;
+						for (int i = 0; i < qualifierItems.length; i++) {
+							if (!qualifierItems[i].equals(((String) var1Box.getSelectedItem())) && !qualifierItems[i].equals(((String) var2Box.getSelectedItem()))) {
+								newIndex = i;
+								break;
+							}
+						}
+						qualifierBox.setSelectedIndex(newIndex);
+					}
 				}
-				aggregationBox.setSelectedIndex(0);
-				normalizationBox.setSelectedIndex(0);
+				aggregationBox.setSelectedItem("subtract");
+				normalizationBox.setSelectedIndex(1);
 				isolatesBox.setSelectedIndex(0);
-				duplicatesBox.setSelectedIndex(0);
+				duplicatesBox.setSelectedIndex(1);
 		        startPicker.setDateTimeStrict(NetworkExporter.this.dateTimeRange[0]);
 		        stopPicker.setDateTimeStrict(NetworkExporter.this.dateTimeRange[1]);
 				timeWindowBox.setSelectedIndex(0);

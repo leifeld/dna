@@ -5,7 +5,7 @@
 \title{Compute and retrieve the backbone and redundant set}
 \usage{
 dna_backbone(
-  penalty = 7.5,
+  penalty = 3.5,
   iterations = 10000,
   statementType = "DNA Statement",
   variable1 = "organization",
@@ -39,8 +39,12 @@ dna_backbone(
 \item{penalty}{The penalty parameter for large backbone sets. The larger the
 value, the more strongly larger backbone sets are punished and the smaller
 the resulting backbone is. Try out different values to find the right size
-of the backbone set. Reasonable values could be \code{5}, \code{7.5}, or
-\code{12}, for example.}
+of the backbone set. Reasonable values could be \code{2.5}, \code{5},
+\code{7.5}, or \code{12}, for example. The minimum is \code{0.0}, which
+imposes no penalty on the size of the backbone set and produces a redundant
+set with only one element. Start with \code{0.0} if you want to weed out a
+single concept and subsequently increase the penalty to include more items
+in the redundant set and shrink the backbone further.}
 
 \item{iterations}{The number of iterations of the simulated annealing
 algorithm. More iterations take more time but may lead to better
@@ -226,14 +230,13 @@ dna_sample()
 dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
 
 # compute backbone and redundant set
-backbone <- dna_backbone(penalty = 6,
-                         iterations = 1000,
-                         networkType = "onemode",
-                         variable1 = "organization",
-                         variable2 = "concept",
-                         qualifier = "agreement",
-                         qualifierAggregation = "subtract",
-                         normalization = "average")
+b <- dna_backbone(penalty = 3.5,
+                  iterations = 10000,
+                  variable1 = "organization",
+                  variable2 = "concept",
+                  qualifier = "agreement",
+                  qualifierAggregation = "subtract",
+                  normalization = "average")
 
 b$backbone # show the set of backbone concepts
 b$redundant # show the set of redundant concepts
