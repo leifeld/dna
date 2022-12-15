@@ -3016,9 +3016,9 @@ public class Sql {
 			}
 			String authorWhere = "AND DOCUMENTS.Author "
 					+ authorNot
-					+ "IN ("
+					+ "IN ('"
 					+ authors.stream().collect(Collectors.joining("', '"))
-					+ ") ";
+					+ "') ";
 			whereStatements = whereStatements + authorWhere;
 			whereShortText = whereShortText + authorWhere;
 			whereLongText = whereLongText + authorWhere;
@@ -3032,9 +3032,9 @@ public class Sql {
 			}
 			String sourceWhere = "AND DOCUMENTS.Source "
 					+ sourceNot
-					+ "IN ("
+					+ "IN ('"
 					+ sources.stream().collect(Collectors.joining("', '"))
-					+ ") ";
+					+ "') ";
 			whereStatements = whereStatements + sourceWhere;
 			whereShortText = whereShortText + sourceWhere;
 			whereLongText = whereLongText + sourceWhere;
@@ -3048,9 +3048,9 @@ public class Sql {
 			}
 			String sectionWhere = "AND DOCUMENTS.Section "
 					+ sectionNot
-					+ "IN ("
+					+ "IN ('"
 					+ sections.stream().collect(Collectors.joining("', '"))
-					+ ") ";
+					+ "') ";
 			whereStatements = whereStatements + sectionWhere;
 			whereShortText = whereShortText + sectionWhere;
 			whereLongText = whereLongText + sectionWhere;
@@ -3064,9 +3064,9 @@ public class Sql {
 			}
 			String typeWhere = "AND DOCUMENTS.Type "
 					+ typeNot
-					+ "IN ("
+					+ "IN ('"
 					+ types.stream().collect(Collectors.joining("', '"))
-					+ ") ";
+					+ "') ";
 			whereStatements = whereStatements + typeWhere;
 			whereShortText = whereShortText + typeWhere;
 			whereLongText = whereLongText + typeWhere;
