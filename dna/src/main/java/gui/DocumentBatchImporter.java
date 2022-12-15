@@ -15,7 +15,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -44,6 +46,7 @@ import javax.swing.SwingWorker;
 import javax.swing.ToolTipManager;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.text.DateFormatter;
 
 import dna.Dna;
 import logger.LogEvent;
@@ -109,6 +112,9 @@ public class DocumentBatchImporter extends JDialog {
 						listModel.addElement(fileNames[i]);
 					}
 					fileList.updateUI();
+					if (files.length > 0) {
+						fileList.setSelectedIndex(0);
+					}
 				}
 			}
 		});
@@ -327,7 +333,9 @@ public class DocumentBatchImporter extends JDialog {
 		String ttTitle = "Title of the document. Either enter a regular expression "
 				+ "to parse the title from the file name, or enter the title directly "
 				+ "into the field (though this would create many duplicate document "
-				+ "titles).";
+				+ "titles). The default regex parses a title starting and ending with "
+				+ "a letter (\"[a-zA-Z].+[a-zA-Z]\") that is followed by a date (optional) "
+				+ "and a file extension, such as \".txt\".";
         titleLabel.setToolTipText(ttTitle);
 		patternPanel.add(titleLabel, gbc);
 
@@ -380,38 +388,38 @@ public class DocumentBatchImporter extends JDialog {
 		gbc.gridx = 1;
 		gbc.gridy = 1;
 		gbc.anchor = GridBagConstraints.WEST;
-		titlePatternField = new JTextField(".+(?=\\.txt)");
-		titlePatternField.setColumns(25);
+		titlePatternField = new JTextField("[a-zA-Z].+[a-zA-Z](?=\\s*[0-9]{2}\\.[0-9]{2}\\.[0-9]{4}\\s*\\.[^\\.\\s]+$)");
+		titlePatternField.setColumns(35);
         titlePatternField.setToolTipText(ttTitle);
 		patternPanel.add(titlePatternField, gbc);
 		
 		gbc.gridy = 2;
 		authorPatternField = new JTextField("");
-		authorPatternField.setColumns(25);
+		authorPatternField.setColumns(35);
         authorPatternField.setToolTipText(ttAuthor);
 		patternPanel.add(authorPatternField, gbc);
 
 		gbc.gridy = 3;
 		sourcePatternField = new JTextField("");
-		sourcePatternField.setColumns(25);
+		sourcePatternField.setColumns(35);
         sourcePatternField.setToolTipText(ttSource);
 		patternPanel.add(sourcePatternField, gbc);
 
 		gbc.gridy = 4;
 		sectionPatternField = new JTextField("");
-		sectionPatternField.setColumns(25);
+		sectionPatternField.setColumns(35);
         sectionPatternField.setToolTipText(ttSection);
 		patternPanel.add(sectionPatternField, gbc);
 
 		gbc.gridy = 5;
 		typePatternField = new JTextField("");
-		typePatternField.setColumns(25);
+		typePatternField.setColumns(35);
         typePatternField.setToolTipText(ttType);
 		patternPanel.add(typePatternField, gbc);
 
 		gbc.gridy = 6;
 		notesPatternField = new JTextField("");
-		notesPatternField.setColumns(25);
+		notesPatternField.setColumns(35);
         notesPatternField.setToolTipText(ttNotes);
 		patternPanel.add(notesPatternField, gbc);
 
@@ -469,7 +477,8 @@ public class DocumentBatchImporter extends JDialog {
         		+ "<it>2021-07-25 14:39</it> because this was parsed using the "
         		+ "date/time regex pattern <it>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-1][0-9]:[0-5][0-9]</it>, "
         		+ "then the format string <it>yyyy-MM-dd HH:mm</it> could tell DNA "
-        		+ "how to interpret this date properly.</p></html>";
+        		+ "how to interpret this date properly. You can leave out the time in the format pattern "
+				+ "but not the date.</p></html>";
         dateCheckBox.setToolTipText(ttDate);
 		patternPanel.add(dateCheckBox, gbc);
 
@@ -526,7 +535,7 @@ public class DocumentBatchImporter extends JDialog {
         
         gbc.gridx = 1;
         datePatternField = new JTextField("[0-9]{2}\\.[0-9]{2}\\.[0-9]{4}");
-		datePatternField.setColumns(25);
+		datePatternField.setColumns(35);
         datePatternField.setToolTipText(ttDate);
         patternPanel.add(datePatternField, gbc);
         
@@ -545,7 +554,7 @@ public class DocumentBatchImporter extends JDialog {
         
         gbc.gridx = 1;
         dateFormatField = new JTextField("dd.MM.yyyy");
-		dateFormatField.setColumns(25);
+		dateFormatField.setColumns(35);
         dateFormatField.setToolTipText(ttDate);
         patternPanel.add(dateFormatField, gbc);
 		
@@ -652,18 +661,28 @@ public class DocumentBatchImporter extends JDialog {
 	 * @return                The converted local date-time object.
 	 */
 	private static LocalDateTime stringToDateTime(String text, String dateTimeFormat) {
-		LocalDateTime dateTime = null;
 		if (text.equals("")) {
-			dateTime = LocalDateTime.now();
+			return LocalDateTime.now();
 		} else {
+			DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat);
 			try {
-				DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat);
-				dateTime = LocalDateTime.parse(text, dateTimeFormatter);
+				LocalDateTime dateTime = LocalDateTime.parse(text, dateTimeFormatter);
+				return dateTime;
 			} catch (DateTimeParseException e) {
-				dateTime = LocalDateTime.now();
+				try {
+					LocalDate date = LocalDate.parse(text, dateTimeFormatter);
+					LocalDateTime dateTime = date.atStartOfDay();
+					return dateTime;
+				} catch (DateTimeParseException e2) {
+					LogEvent l = new LogEvent(Logger.WARNING,
+							"Date/time could not be parsed.",
+							"The date/time \"" + text + "\" could not be parsed with the pattern \"" + dateTimeFormat + "\". Using current date and time instead.",
+							e);
+					Dna.logger.log(l);
+					return LocalDateTime.now();
+				}
 			}
 		}
-		return dateTime;
 	}
 	
 	/**
