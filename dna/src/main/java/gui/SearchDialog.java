@@ -24,19 +24,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingWorker;
+import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -44,7 +36,9 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableRowSorter;
 
+import model.TableDocument;
 import org.jdesktop.swingx.JXTextField;
 
 import dna.Dna;
@@ -54,26 +48,29 @@ import logger.Logger;
 /**
  * Search dialog for performing a regex search on all document texts.
  */
-public class SearchDialog extends JDialog {
+public class SearchDialog extends JDialog implements DocumentTablePanel.DocumentTableListener {
 	private static final long serialVersionUID = -8328539384212006063L;
 	private SearchSwingWorker searchSwingWorker;
 	private JProgressBar progressBar;
 	private JXTextField textField;
 	private KeyAdapter enter;
 	private JButton searchButton, revertButton, cancelButton;
+	private JCheckBox documentCheckBox;
 	private SearchTableModel searchTableModel;
 	private JTable searchTable;
 	private JScrollPane searchTableScrollPane;
 	private JLabel statusLabel;
 	private static final int H = 20;
+	private int[] selectedDocumentIds;
 	
 	/**
 	 * Constructor to create a new search dialog.
 	 * 
 	 * @param parent The parent frame.
 	 */
-	public SearchDialog(Frame parent) {
+	public SearchDialog(Frame parent, int[] selectedDocumentIds) {
 		super(parent, "SearchDialog", true);
+		this.selectedDocumentIds = selectedDocumentIds;
 		this.setTitle("Regex search across document texts");
 		ImageIcon statementIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-search.png"));
 		this.setIconImage(statementIcon.getImage());
@@ -195,9 +192,21 @@ public class SearchDialog extends JDialog {
 				textField.setEnabled(true);
 				textField.setText("");
 				statusLabel.setText("");
+				documentCheckBox.setSelected(false);
 			}
 		});
 		buttonPanel.add(revertButton);
+
+		documentCheckBox = new JCheckBox("Only in document(s) selected in main window");
+		documentCheckBox.setToolTipText("Constrain the search to documents currently selected in the document table of the main window.");
+		documentCheckBox.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent actionEvent) {
+				SearchDialog.this.searchTableModel.fireTableDataChanged();
+				statusLabel.setText(searchTable.getRowCount() + " regex matches found.");
+			}
+		});
+		buttonPanel.add(documentCheckBox);
 		
 		controlPanel.add(buttonPanel, BorderLayout.WEST);
 		panel.add(controlPanel, BorderLayout.NORTH);
@@ -220,6 +229,23 @@ public class SearchDialog extends JDialog {
 		searchTable.setDefaultRenderer(LocalDateTime.class, searchTableCellRenderer);
 		searchTable.getTableHeader().setReorderingAllowed(false);
 		panel.add(searchTableScrollPane, BorderLayout.CENTER);
+
+		// row filter
+		TableRowSorter<SearchTableModel> sorter = new TableRowSorter<SearchTableModel>(searchTableModel);
+		searchTable.setRowSorter(sorter);
+		RowFilter<SearchTableModel, Integer> documentFilter = new RowFilter<SearchTableModel, Integer>() {
+			public boolean include(Entry<? extends SearchTableModel, ? extends Integer> entry) {
+				if (!SearchDialog.this.documentCheckBox.isSelected()) return true;
+				if (SearchDialog.this.selectedDocumentIds.length == 0) return false;
+				int documentId = (int) searchTableModel.getValueAt(entry.getIdentifier(), 0);
+				if (IntStream.of(SearchDialog.this.selectedDocumentIds).anyMatch(i -> i == documentId)) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+		};
+		sorter.setRowFilter(documentFilter);
 
 		// status message
 		statusLabel = new JLabel("");
@@ -260,7 +286,14 @@ public class SearchDialog extends JDialog {
 				revertButton);
 		searchSwingWorker.execute();
 	}
-	
+
+	@Override
+	public void documentSelected(int[] documentIds) {
+		this.selectedDocumentIds = documentIds;
+		this.searchTableModel.fireTableDataChanged();
+		statusLabel.setText(searchTable.getRowCount() + " regex matches found.");
+	}
+
 	/**
 	 * Swing worker class for loading documents containing search results (after
 	 * pre-filtering) from the database and creating search results.
@@ -382,7 +415,7 @@ public class SearchDialog extends JDialog {
 	    	revertButton.setEnabled(true);
 	    	searchButton.setEnabled(true);
 	    	textField.setEnabled(true);
-	    	statusLabel.setText(searchTableModel.getRowCount() + " regex matches found.");
+	    	statusLabel.setText(searchTable.getRowCount() + " regex matches found.");
 			long elapsed = System.nanoTime(); // measure time again for calculating difference
 			LogEvent le = new LogEvent(Logger.MESSAGE,
 					"[GUI]  ├─ Retrieved all " + searchTableModel.getRowCount() + " search results in " + (elapsed - time) / 1000000 + " milliseconds.",

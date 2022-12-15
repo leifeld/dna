@@ -9,9 +9,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.IntStream;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -31,6 +34,7 @@ import dna.Dna;
 import gui.MainWindow.ActionAddDocument;
 import gui.MainWindow.ActionEditDocuments;
 import gui.MainWindow.ActionRemoveDocuments;
+import logger.Logger;
 import model.Coder;
 import model.TableDocument;
 
@@ -39,6 +43,7 @@ class DocumentTablePanel extends JPanel {
 	private JTable documentTable;
 	private DocumentTableModel documentTableModel;
 	private String documentFilterPattern = "";
+	private List<DocumentTableListener> listeners = new ArrayList<DocumentTableListener>();
 
 	DocumentTablePanel(DocumentTableModel documentTableModel,
 			ActionAddDocument actionAddDocument,
@@ -320,6 +325,15 @@ class DocumentTablePanel extends JPanel {
 	}
 
 	/**
+	 * Retrieve the IDs of the documents that are currently selected in the table.
+	 *
+	 * @return  The document IDs.
+	 */
+	int[] getSelectedDocumentIds() {
+		return IntStream.of(this.documentTable.getSelectedRows()).map(r -> this.documentTableModel.getIdByModelRow(this.convertRowIndexToModel(r))).toArray();
+	}
+
+	/**
 	 * Select a document in the table based on its ID.
 	 * 
 	 * @param documentId  ID of the document to be selected in the table.
@@ -392,5 +406,35 @@ class DocumentTablePanel extends JPanel {
 				return this;
 			}
 		}
+	}
+
+	/**
+	 * Add a log listener. This can be an object that implements the
+	 * {@link DocumentTablePanel.DocumentTableListener} interface.
+	 *
+	 * @param listener An object implementing the {@link DocumentTablePanel.DocumentTableListener} interface.
+	 */
+	public void addListener(DocumentTablePanel.DocumentTableListener listener) {
+		listeners.add(listener);
+	}
+
+	/**
+	 * Return the list of document table listeners, for example for use in the main window.
+	 *
+	 * @return The listeners.
+	 */
+	List<DocumentTableListener> getListeners() {
+		return this.listeners;
+	}
+
+	/**
+	 * An interface for listeners for document table row selection events. For
+	 * example, a regex text search window should be able to react to a click
+	 * on a table row by constraining the search results to the selected document(s).
+	 * The search window thus needs to be registered as a listener to the table panel.
+	 * The function is supposed to receive the selected document IDs.
+	 */
+	public interface DocumentTableListener {
+		void documentSelected(int[] documentIds);
 	}
 }

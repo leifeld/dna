@@ -7,13 +7,7 @@ import java.awt.Container;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.Serializable;
@@ -24,35 +18,11 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import javax.swing.AbstractAction;
-import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
-import javax.swing.JSplitPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.JTextPane;
-import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -253,6 +223,8 @@ public class MainWindow extends JFrame {
 		ImageIcon searchDialogIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-search.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionSearchDialog = new ActionSearchDialog("Regex text search", searchDialogIcon, "Search for regular expressions in document texts and find matches", KeyEvent.VK_F);
 		actionSearchDialog.setEnabled(false);
+		this.getRootPane().getInputMap(JRootPane.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control F"),	"open search dialog");
+		this.getRootPane().getActionMap().put("open search dialog", actionSearchDialog);
 
 		ImageIcon recodeStatementsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-pencil.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionRecodeStatements = new ActionRecodeStatements("Edit multiple statements...", recodeStatementsIcon, "Recode the statements currently selected in the statement table", KeyEvent.VK_R);
@@ -287,7 +259,7 @@ public class MainWindow extends JFrame {
 		
 		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionAboutWindow = new ActionAboutWindow("About DNA", aboutIcon, "Display information about DNA", KeyEvent.VK_B);
-		
+
 		// define models
 		documentTableModel = new DocumentTableModel();
 		statementTableModel = new StatementTableModel();
@@ -1426,6 +1398,7 @@ public class MainWindow extends JFrame {
 		boolean allOwned = true;
 		boolean allOthersEditPermitted = true;
 		int[] rows = documentTable.getSelectedRows();
+		int[] documentIds = new int[rowCount];
 		if (rowCount > 0) {
 			for (int i = 0; i < rows.length; i++) {
 				int modelRow = documentTable.convertRowIndexToModel(rows[i]);
@@ -1436,8 +1409,15 @@ public class MainWindow extends JFrame {
 						allOthersEditPermitted = false;
 					}
 				}
+				documentIds[i] = documentTableModel.getRow(modelRow).getId();
 			}
 		}
+
+		// notify listeners (e.g., regex text search dialog windows)
+		for (DocumentTablePanel.DocumentTableListener l : this.documentTablePanel.getListeners()) {
+			l.documentSelected(documentIds);
+		}
+
 		// enable or disable action for deleting documents depending on selection and user rights
 		if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionDeleteDocuments() == true &&
 				(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
@@ -2252,8 +2232,9 @@ public class MainWindow extends JFrame {
 		
 		public void actionPerformed(ActionEvent e) {
 			// create search dialog
-			SearchDialog sd = new SearchDialog(null); // would normally be MainWindow.this, but then the main window can't be accessed while the dialog is open
-			
+			SearchDialog sd = new SearchDialog(null, documentTablePanel.getSelectedDocumentIds()); // would normally be MainWindow.this, but then the main window can't be accessed while the dialog is open
+			documentTablePanel.addListener(sd);
+
 			// add selection listener to table to select documents and highlight text in the main window
 			JTable searchTable = sd.getSearchTable();
 			searchTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
