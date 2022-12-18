@@ -12,8 +12,8 @@ import java.util.stream.Stream;
 
 import export.BackboneResult;
 import export.Exporter;
-import gui.BackboneExporter;
 import me.tongfei.progressbar.ProgressBar;
+import export.BarplotResult;
 import model.Matrix;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.rosuda.JRI.RConsoleOutputStream;
@@ -285,6 +285,58 @@ public class HeadlessDna implements Logger.LogListener {
 	}
 
 	/**
+	 * Convert start and stop date and time strings into {@link LocalDateTime} objects.
+	 *
+	 * @param startDate The start date. If {@code "dd.MM.yyyy"}, {@code ""}, or {@code null}, the earliest date in the
+	 *                  database will be queried instead.
+	 * @param startTime The start time. If {@code "00:00:00"}, {@code ""}, or {@code null}, {@code "00:00:00"} will be
+	 *                  used.
+	 * @param stopDate The end date. If {@code "dd.MM.yyyy"}, {@code ""}, or {@code null}, the last date in the
+	 * 	               database will be queried instead.
+	 * @param stopTime The end time. If {@code "00:00:00"}, {@code ""}, or {@code null}, {@code "00:00:00"} will be
+	 * 	               used.
+	 * @return A {@link LocalDateTime} array with two elements for the start and end date/time.
+	 */
+	private LocalDateTime[] formatDateTime(String startDate, String startTime, String stopDate, String stopTime) {
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+		LocalDateTime ldtStart, ldtStop;
+		LocalDateTime[] dateRange = Dna.sql.getDateTimeRange();
+		if (startTime == null || startTime.equals("")) {
+			startTime = "00:00:00";
+		}
+		if (startDate == null || startDate.equals("") || startDate.equals("01.01.1900")) {
+			ldtStart = dateRange[0];
+		} else {
+			String startString = startDate + " " + startTime;
+			ldtStart = LocalDateTime.parse(startString, dtf);
+			if (!startString.equals(dtf.format(ldtStart))) {
+				ldtStart = dateRange[0];
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"Start date or time is invalid.",
+						"When initializing computations, the start date or time (" + startString + ") did not conform to the format dd.MM.yyyy HH:mm:ss and could not be interpreted. Assuming earliest date and time in the dataset: " + ldtStart.format(dtf) + ".");
+				Dna.logger.log(le);
+			}
+		}
+		if (stopTime == null || stopTime.equals("")) {
+			stopTime = "23:59:59";
+		}
+		if (stopDate == null || stopDate.equals("") || stopDate.equals("31.12.2099")) {
+			ldtStop = dateRange[1];
+		} else {
+			String stopString = stopDate + " " + stopTime;
+			ldtStop = LocalDateTime.parse(stopString, dtf);
+			if (!stopString.equals(dtf.format(ldtStop))) {
+				ldtStop = dateRange[1];
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"End date or time is invalid.",
+						"When initializing computations, the end date or time (" + stopString + ") did not conform to the format dd.MM.yyyy HH:mm:ss and could not be interpreted. Assuming latest date and time in the dataset: " + ldtStop.format(dtf) + ".");
+				Dna.logger.log(le);
+			}
+		}
+		return new LocalDateTime[] { ldtStart, ldtStop };
+	}
+
+	/**
 	 * Compute one-mode or two-mode network matrix based on R arguments.
 	 *
 	 * @param networkType            The network type as provided by rDNA (can be {@code "eventlist"}, {@code "twomode"}, or {@code "onemode"}).
@@ -331,41 +383,10 @@ public class HeadlessDna implements Logger.LogListener {
 		StatementType st = Dna.sql.getStatementType(statementType); // format statement type
 
 		// format dates and times with input formats "dd.MM.yyyy" and "HH:mm:ss"
-		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
 		LocalDateTime ldtStart, ldtStop;
-		LocalDateTime[] dateRange = Dna.sql.getDateTimeRange();
-		if (startTime == null || startTime.equals("")) {
-			startTime = "00:00:00";
-		}
-		if (startDate == null || startDate.equals("") || startDate.equals("01.01.1900")) {
-			ldtStart = dateRange[0];
-		} else {
-			String startString = startDate + " " + startTime;
-			ldtStart = LocalDateTime.parse(startString, dtf);
-			if (!startString.equals(dtf.format(ldtStart))) {
-				ldtStart = dateRange[0];
-				LogEvent le = new LogEvent(Logger.WARNING,
-						"Start date or time is invalid.",
-						"When exporting a network, the start date or time (" + startString + ") did not conform to the format dd.MM.yyyy HH:mm:ss and could not be interpreted. Assuming earliest date and time in the dataset: " + ldtStart.format(dtf) + ".");
-				Dna.logger.log(le);
-			}
-		}
-		if (stopTime == null || stopTime.equals("")) {
-			stopTime = "23:59:59";
-		}
-		if (stopDate == null || stopDate.equals("") || stopDate.equals("31.12.2099")) {
-			ldtStop = dateRange[1];
-		} else {
-			String stopString = stopDate + " " + stopTime;
-			ldtStop = LocalDateTime.parse(stopString, dtf);
-			if (!stopString.equals(dtf.format(ldtStop))) {
-				ldtStop = dateRange[1];
-				LogEvent le = new LogEvent(Logger.WARNING,
-						"End date or time is invalid.",
-						"When exporting a network, the end date or time (" + stopString + ") did not conform to the format dd.MM.yyyy HH:mm:ss and could not be interpreted. Assuming latest date and time in the dataset: " + ldtStop.format(dtf) + ".");
-				Dna.logger.log(le);
-			}
-		}
+		LocalDateTime[] dateRange = formatDateTime(startDate, startTime, stopDate, stopTime);
+		ldtStart = dateRange[0];
+		ldtStop = dateRange[1];
 
 		// process exclude variables: create HashMap with variable:value pairs
 		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
@@ -436,6 +457,90 @@ public class HeadlessDna implements Logger.LogListener {
 		if (fileFormat != null && !fileFormat.equals("") && outfile != null && !outfile.equals("")) {
 			this.exporter.exportToFile();
 		}
+	}
+
+	/**
+	 * Generate data to construct a barplot.
+	 *
+	 * @param statementType     Statement type as a {@link String}.
+	 * @param variable          First variable for export, provided as a {@link String}.
+	 * @param qualifier         Qualifier variable as a {@link String}.
+	 * @param duplicates        An input {@link String} from rDNA that can be {@code "include"}, {@code "document"}, {@code "week"}, {@code "month"}, {@code "year"}, or {@code "acrossrange"}.
+	 * @param startDate         Start date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param stopDate          Stop date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param startTime         Start time for the export, provided as a {@link String} with format {@code "HH:mm:ss"}.
+	 * @param stopTime          Stop time for the export, provided as a {@link String} with format {@code "HH:mm:ss"}.
+	 * @param excludeVariables  A {@link String} array with n elements, indicating the variable of the n'th value.
+	 * @param excludeValues     A {@link String} array with n elements, indicating the value pertaining to the n'th variable {@link String}.
+	 * @param excludeAuthors    A {@link String} array of values to exclude in the {@code author} variable at the document level.
+	 * @param excludeSources    A {@link String} array of values to exclude in the {@code source} variable at the document level.
+	 * @param excludeSections   A {@link String} array of values to exclude in the {@code section} variable at the document level.
+	 * @param excludeTypes      A {@link String} array of values to exclude in the {@code "type"} variable at the document level.
+	 * @param invertValues      boolean indicating whether the statement-level exclude values should be included (= {@code true}) rather than excluded.
+	 * @param invertAuthors     boolean indicating whether the document-level author values should be included (= {@code true}) rather than excluded.
+	 * @param invertSources     boolean indicating whether the document-level source values should be included (= {@code true}) rather than excluded.
+	 * @param invertSections    boolean indicating whether the document-level section values should be included (= {@code true}) rather than excluded.
+	 * @param invertTypes       boolean indicating whether the document-level type values should be included (= {@code true}) rather than excluded.
+	 * @return                  A {@link BarplotResult} object.
+	 */
+	public BarplotResult rBarplotData(String statementType, String variable, String qualifier, String duplicates,
+									  String startDate, String stopDate, String startTime, String stopTime,
+									  String[] excludeVariables, String[] excludeValues, String[] excludeAuthors,
+									  String[] excludeSources, String[] excludeSections, String[] excludeTypes,
+									  boolean invertValues, boolean invertAuthors, boolean invertSources, boolean invertSections,
+									  boolean invertTypes) {
+
+		// step 1: preprocess arguments
+		StatementType st = Dna.sql.getStatementType(statementType); // format statement type
+
+		// format dates and times with input formats "dd.MM.yyyy" and "HH:mm:ss"
+		LocalDateTime ldtStart, ldtStop;
+		LocalDateTime[] dateRange = formatDateTime(startDate, startTime, stopDate, stopTime);
+		ldtStart = dateRange[0];
+		ldtStop = dateRange[1];
+
+		// process exclude variables: create HashMap with variable:value pairs
+		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
+		if (excludeVariables.length > 0) {
+			for (int i = 0; i < excludeVariables.length; i++) {
+				ArrayList<String> values = map.get(excludeVariables[i]);
+				if (values == null) {
+					values = new ArrayList<String>();
+				}
+				if (!values.contains(excludeValues[i])) {
+					values.add(excludeValues[i]);
+				}
+				Collections.sort(values);
+				map.put(excludeVariables[i], values);
+			}
+		}
+
+		// initialize Exporter class for barplot data
+		this.exporter = new Exporter(
+				st,
+				variable,
+				qualifier,
+				duplicates,
+				ldtStart,
+				ldtStop,
+				map,
+				Stream.of(excludeAuthors).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeSources).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeSections).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeTypes).collect(Collectors.toCollection(ArrayList::new)),
+				invertValues,
+				invertAuthors,
+				invertSources,
+				invertSections,
+				invertTypes);
+
+		// step 2: filter
+		this.exporter.loadData();
+		this.exporter.filterStatements();
+
+		// step 3: compute results
+		BarplotResult barplotResult = this.exporter.generateBarplotData();
+		return barplotResult;
 	}
 
 	/**

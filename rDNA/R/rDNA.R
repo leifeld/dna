@@ -1486,3 +1486,184 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
   plots <- list(g_accept, g_loss, g_size, g_ar)
   return(plots)
 }
+
+#' Generate the data necessary for creating a barplot for a variable
+#'
+#' Generate the data necessary for creating a barplot for a variable.
+#'
+#' Create a \code{dna_barplot} object, which contains a data frame with
+#' entity value frequencies grouped by the levels of a qualifier variable.
+#' The qualifier variable is optional.
+#'
+#' @param variable The variable for which the barplot will be generated. There
+#'   will be one bar per entity label of this variable.
+#' @param qualifier A boolean (binary) or integer variable to group the value
+#'   frequencies by. Can be \code{NULL} to skip the grouping.
+#' @inheritParams dna_network
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
+#'
+#' # compute barplot data
+#' b <- dna_barplot(statementType = "DNA Statement",
+#'                  variable = "concept",
+#'                  qualifier = "agreement")
+#' b
+#' }
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
+#' @importFrom rJava .jevalArray
+#' @importFrom rJava .jnull
+#' @importFrom rJava is.jnull
+#' @export
+dna_barplot <- function(statementType = "DNA Statement",
+                        variable = "concept",
+                        qualifier = "agreement",
+                        duplicates = "document",
+                        start.date = "01.01.1900",
+                        stop.date = "31.12.2099",
+                        start.time = "00:00:00",
+                        stop.time = "23:59:59",
+                        excludeValues = list(),
+                        excludeAuthors = character(),
+                        excludeSources = character(),
+                        excludeSections = character(),
+                        excludeTypes = character(),
+                        invertValues = FALSE,
+                        invertAuthors = FALSE,
+                        invertSources = FALSE,
+                        invertSections = FALSE,
+                        invertTypes = FALSE) {
+  
+  # wrap the vectors of exclude values for document variables into Java arrays
+  excludeAuthors <- .jarray(excludeAuthors)
+  excludeSources <- .jarray(excludeSources)
+  excludeSections <- .jarray(excludeSections)
+  excludeTypes <- .jarray(excludeTypes)
+  
+  # compile exclude variables and values vectors
+  dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
+  count <- 0
+  if (length(excludeValues) > 0) {
+    for (i in 1:length(excludeValues)) {
+      if (length(excludeValues[[i]]) > 0) {
+        for (j in 1:length(excludeValues[[i]])) {
+          count <- count + 1
+          dat[count, 1] <- names(excludeValues)[i]
+          dat[count, 2] <- excludeValues[[i]][j]
+        }
+      }
+    }
+    var <- dat[, 1]
+    val <- dat[, 2]
+  } else {
+    var <- character()
+    val <- character()
+  }
+  var <- .jarray(var) # array of variable names of each excluded value
+  val <- .jarray(val) # array of values to be excluded
+  
+  # encode R NULL as Java null value if necessary
+  if (is.null(qualifier) || is.na(qualifier)) {
+    qualifier <- .jnull(class = "java/lang/String")
+  }
+  
+  # call rBarplotData function to compute results
+  b <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+              "Lexport/BarplotResult;",
+              "rBarplotData",
+              statementType,
+              variable,
+              qualifier,
+              duplicates,
+              start.date,
+              stop.date,
+              start.time,
+              stop.time,
+              var,
+              val,
+              excludeAuthors,
+              excludeSources,
+              excludeSections,
+              excludeTypes,
+              invertValues,
+              invertAuthors,
+              invertSources,
+              invertSections,
+              invertTypes,
+              simplify = TRUE)
+  
+  at <- .jcall(b, "[[Ljava/lang/String;", "getAttributes")
+  at <- t(sapply(at, FUN = .jevalArray))
+  
+  counts <- .jcall(b, "[[I", "getCounts")
+  counts <- t(sapply(counts, FUN = .jevalArray))
+  if (nrow(counts) < nrow(at)) {
+    counts <- t(counts)
+  }
+  
+  results <- data.frame(.jcall(b, "[S", "getValues"),
+                        counts,
+                        at)
+  
+  intValues <- .jcall(b, "[I", "getIntValues")
+  intColNames <- intValues
+  if (is.jnull(qualifier)) {
+    intValues <- integer(0)
+    intColNames <- "Frequency"
+  }
+  
+  atVar <- .jcall(b, "[S", "getAttributeVariables")
+  
+  colnames(results) <- c("Entity", intColNames, atVar)
+  
+  attributes(results)$variable <- .jcall(b, "S", "getVariable")
+  attributes(results)$intValues <- intValues
+  attributes(results)$attributeVariables <- atVar
+  
+  class(results) <- c("dna_barplot", class(results))
+  
+  return(results)
+}
+
+#' Print a \code{dna_barplot} object
+#'
+#' Show details of a \code{dna_barplot} object.
+#'
+#' Print the data frame returned by the \code{\link{dna_barplot}} function.
+#'
+#' @param x A \code{dna_barplot} object, as returned by the
+#'   \code{\link{dna_barplot}} function.
+#' @param trim Number of maximum characters to display in entity labels.
+#'   Entities with more characters are truncated, and the last character is
+#'   replaced by an asterisk (\code{*}).
+#' @param attr Display attributes, such as the name of the variable and the
+#'   levels of the qualifier variable if available.
+#' @param ... Additional arguments. Currently not in use.
+#'
+#' @author Philip Leifeld
+#'
+#' @seealso \link{dna_barplot}
+#' @export
+print.dna_barplot <- function(x, trim = 30, attr = TRUE, ...) {
+  x2 <- x
+  if (isTRUE(attr)) {
+    cat("Variable:", attr(x2, "variable"))
+    intVal <- attr(x2, "intValues")
+    if (length(intVal) > 0) {
+      cat(".\nQualifier levels:", paste(intVal, collapse = ", "))
+    } else {
+      cat(".\nNo qualifier variable")
+    }
+    cat(".\n")
+  }
+  x2$Entity <- sapply(x2$Entity, function(e) if (nchar(e) > trim) paste0(substr(e, 1, trim - 1), "*") else e)
+  class(x2) <- "data.frame"
+  print(x2)
+}

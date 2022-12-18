@@ -3414,7 +3414,7 @@ public class Sql {
 		}
 		return entityId;
 	}
-	
+
 	/**
 	 * Retrieve the full set of entities for a set of variable IDs. The result
 	 * is an array list with nested array lists of entities for each variable
