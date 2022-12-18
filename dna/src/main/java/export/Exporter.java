@@ -540,7 +540,6 @@ public class Exporter {
 		}
 
 		// check file export format and file name arguments
-
 		if (fileFormat != null) {
 			this.fileFormat = fileFormat.toLowerCase();
 			if (!this.fileFormat.equals("csv") && !this.fileFormat.equals("dl") && !this.fileFormat.equals("graphml")) {
@@ -578,7 +577,169 @@ public class Exporter {
 		this.excludeTypes = excludeTypes;
 		this.invertTypes = invertTypes;
 	}
-	
+
+	/**
+	 * Constructor with reduced information for generating barplot data. A variable is specified for which frequency
+	 * counts by qualifier level are computed.
+	 *
+	 * @param statementType The statement type.
+	 * @param variable1 The name of the first variable, for example {@code
+	 *   "organization"}. In addition to the variables defined in the statement
+	 *   type, the document variables {@code author}, {@code source}, {@code
+	 *   section}, {@code type}, {@code id}, and {@code title} are valid. If
+	 *   document-level variables are used, this must be declared using the
+	 *   {@code variable1Document} argument.
+	 * @param qualifier The qualifier variable, for example {@code
+	 *  "agreement"}.
+	 * @param duplicates Setting for excluding duplicate statements before
+	 *   network construction. Valid values are:
+	 *   <ul>
+	 *     <li>{@code "include"} (for including all statements in network
+	 *       construction)</li>
+	 *     <li>{@code "document"} (for counting only one identical statement per
+	 *       document)</li>
+	 *     <li>{@code "week"} (for counting only one identical statement per
+	 *       calendar week as defined in the UK locale, i.e., Monday to Sunday)
+	 *       </li>
+	 *     <li>{@code "month"} (for counting only one identical statement per
+	 *       calendar month)</li>
+	 *     <li>{@code "year"} (for counting only one identical statement per
+	 *       calendar year)</li>
+	 *     <li>{@code "acrossrange"} (for counting only one identical statement
+	 *       across the whole time range)</li>
+	 *   </ul>
+	 * @param startDateTime The start date and time for network construction.
+	 *   All statements before this specified date/time will be excluded.
+	 * @param stopDateTime The stop date and time for network construction.
+	 *   All statements after this specified date/time will be excluded.
+	 * @param excludeValues A hash map that contains values which should be
+	 *   excluded during network construction. The hash map is indexed by
+	 *   variable name (for example, {@code "organization"} as the key, and
+	 *   the corresponding value is an array list of values to exclude, for
+	 *   example {@code "org A"} or {@code "org B"}. This is irrespective of
+	 *   whether these values appear in {@code variable1}, {@code variable2},
+	 *   or the {@code qualifier} variable. Note that only variables at the
+	 *   statement level can be used here. There are separate arguments for
+	 *   excluding statements nested in documents with certain meta-data.
+	 * @param excludeAuthors An array of authors. If a statement is nested in
+	 *   a document where one of these authors is set in the {@code author}
+	 *   meta-data field, the statement is excluded from network construction.
+	 * @param excludeSources An array of sources. If a statement is nested in
+	 *   a document where one of these sources is set in the {@code source}
+	 *   meta-data field, the statement is excluded from network construction.
+	 * @param excludeSections An array of sections. If a statement is nested
+	 *   in a document where one of these sections is set in the {@code
+	 *   section} meta-data field, the statement is excluded from network
+	 *   construction.
+	 * @param excludeTypes An array of types. If a statement is nested in a
+	 *   document where one of these types is set in the {@code type}
+	 *   meta-data field, the statement is excluded from network construction.
+	 * @param invertValues Indicates whether the entries provided by the
+	 *   {@code excludeValues} argument should be excluded from network
+	 *   construction ({@code false}) or if they should be the only values
+	 *   that should be included during network construction ({@code true}).
+	 * @param invertAuthors Indicates whether the values provided by the
+	 *   {@code excludeAuthors} argument should be excluded from network
+	 *   construction ({@code false}) or if they should be the only values
+	 *   that should be included during network construction ({@code true}).
+	 * @param invertSources Indicates whether the values provided by the
+	 *   {@code excludeSources} argument should be excluded from network
+	 *   construction ({@code false}) or if they should be the only values
+	 *   that should be included during network construction ({@code true}).
+	 * @param invertSections Indicates whether the values provided by the
+	 *   {@code excludeSections} argument should be excluded from network
+	 *   construction ({@code false}) or if they should be the only values
+	 *   that should be included during network construction ({@code true}).
+	 * @param invertTypes Indicates whether the values provided by the
+	 *   {@code excludeTypes} argument should be excluded from network
+	 *   construction ({@code false}) or if they should be the only values
+	 *   that should be included during network construction ({@code true}).
+	 */
+	public Exporter(
+			StatementType statementType,
+			String variable1,
+			String qualifier,
+			String duplicates,
+			LocalDateTime startDateTime,
+			LocalDateTime stopDateTime,
+			HashMap<String, ArrayList<String>> excludeValues,
+			ArrayList<String> excludeAuthors,
+			ArrayList<String> excludeSources,
+			ArrayList<String> excludeSections,
+			ArrayList<String> excludeTypes,
+			boolean invertValues,
+			boolean invertAuthors,
+			boolean invertSources,
+			boolean invertSections,
+			boolean invertTypes) {
+
+		this.statementType = statementType;
+		ArrayList<String> shortTextVariables = Stream.of(this.statementType.getVariablesList(false, true, false, false)).collect(Collectors.toCollection(ArrayList::new));
+
+		// check variable1, variable1Document, variable2, and variable2Document
+		this.variable1 = variable1;
+		this.variable1Document = false;
+		if (!shortTextVariables.contains(this.variable1)) {
+			String var1 = this.variable1;
+			int counter = 0;
+			while (var1.equals(this.variable1)) {
+				var1 = shortTextVariables.get(counter);
+				counter++;
+			}
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Variable does not exist in statement type.",
+					"When generating barplot data, the variable was set to be \"" + this.variable1 + "\", but this variable is undefined in the statement type \"" + this.statementType + "\" or is not a short text variable. Using variable \"" + var1 + "\" instead.");
+			Dna.logger.log(le);
+			this.variable1 = var1;
+		}
+
+		// check qualifier, qualifierDocument, and qualifierAggregation
+		this.qualifierDocument = false;
+		this.qualifierAggregation = "ignore";
+		if (qualifier != null) {
+			this.qualifier = qualifier;
+			this.qualifierAggregation = "combine";
+		}
+		ArrayList<String> variables = Stream.of(this.statementType.getVariablesList(false, true, true, true)).collect(Collectors.toCollection(ArrayList::new));
+		if (this.qualifier != null && (!variables.contains(this.qualifier) || this.qualifier.equals(this.variable1))) {
+			this.qualifier = null;
+			this.qualifierAggregation = "ignore";
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Qualifier variable undefined or invalid.",
+					"When generating barplot data, the qualifier variable was either not defined as a variable in the statement type \"" + this.statementType.getLabel() + "\" or was set to be identical to the barplot variable. Hence, no qualifier is used.");
+			Dna.logger.log(le);
+		}
+
+		// check duplicates setting (valid settings: 'include', 'document', 'week', 'month', 'year', or 'acrossrange')
+		this.duplicates = duplicates.toLowerCase();
+		if (!this.duplicates.equals("include") &&
+				!this.duplicates.equals("document") &&
+				!this.duplicates.equals("week") &&
+				!this.duplicates.equals("month") &&
+				!this.duplicates.equals("year") &&
+				!this.duplicates.equals("acrossrange")) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Duplicates setting invalid.",
+					"When generating barplot data, the duplicates setting was \"" + duplicates + "\", which is invalid. The only valid values are \"include\", \"document\", \"week\", \"month\", \"year\", and \"acrossrange\". Using the default value \"include\" in this case.");
+			Dna.logger.log(le);
+			this.duplicates = "include";
+		}
+
+		// remaining arguments
+		this.startDateTime = startDateTime;
+		this.stopDateTime = stopDateTime;
+		this.excludeValues = excludeValues;
+		this.invertValues = invertValues;
+		this.excludeAuthors = excludeAuthors;
+		this.invertAuthors = invertAuthors;
+		this.excludeSources = excludeSources;
+		this.invertSources = invertSources;
+		this.excludeSections = excludeSections;
+		this.invertSections = invertSections;
+		this.excludeTypes = excludeTypes;
+		this.invertTypes = invertTypes;
+	}
+
 	/**
 	 * Load statements and documents from the database and pre-process them.
 	 */
@@ -625,7 +786,7 @@ public class Exporter {
 			Dna.logger.log(
 					new LogEvent(Logger.WARNING,
 							"No statements found.",
-							"When exporting a network, no statements were found in the database in the time period under scrutiny and given any document-level exclusion filters.")
+							"When processing data for export, no statements were found in the database in the time period under scrutiny and given any document-level exclusion filters.")
 			);
 		}
 	}
@@ -717,9 +878,12 @@ public class Exporter {
 
 			// Create arrays with variable values
 			String[] values1 = retrieveValues(this.filteredStatements, this.variable1, this.variable1Document);
-			String[] values2 = retrieveValues(this.filteredStatements, this.variable2, this.variable2Document);
+			String[] values2 = new String[0];
+			if (this.variable2 != null) {
+				values2 = retrieveValues(this.filteredStatements, this.variable2, this.variable2Document);
+			}
 			String[] qualifierValues = new String[0];
-			if (this.qualifierDocument || (!this.qualifierAggregation.equals("ignore") && dataTypes.get(qualifier).equals("short text"))) {
+			if (this.qualifierDocument || (!this.qualifierAggregation.equals("ignore") && dataTypes.get(this.qualifier).equals("short text"))) {
 				qualifierValues = retrieveValues(this.filteredStatements, this.qualifier, this.qualifierDocument);
 			}
 
@@ -757,8 +921,11 @@ public class Exporter {
 
 				// check against empty fields
 				if (select &&
+						this.networkType != null &&
 						!this.networkType.equals("eventlist") &&
 						(values1[i].equals("") || values2[i].equals("") || (!this.qualifierAggregation.equals("ignore") && (qualifierDocument || dataTypes.get(qualifier).equals("short text")) && qualifierValues[i].equals("")))) {
+					select = false;
+				} else if (select && this.networkType == null && values1[i].equals("")) { // barplot data because no network type defined
 					select = false;
 				}
 
@@ -786,20 +953,22 @@ public class Exporter {
 						} else if (this.variable1.equals("title")) {
 							previousVar1 = al.get(j).getTitle();
 						}
-						if (!this.variable2Document) {
-							previousVar2 = ((Entity) al.get(j).get(this.variable2)).getValue();
-						} else if (this.variable2.equals("author")) {
-							previousVar2 = al.get(j).getAuthor();
-						} else if (this.variable2.equals("source")) {
-							previousVar2 = al.get(j).getSource();
-						} else if (this.variable2.equals("section")) {
-							previousVar2 = al.get(j).getSection();
-						} else if (this.variable2.equals("type")) {
-							previousVar2 = al.get(j).getType();
-						} else if (this.variable2.equals("id")) {
-							previousVar2 = al.get(j).getDocumentIdAsString();
-						} else if (this.variable2.equals("title")) {
-							previousVar2 = al.get(j).getTitle();
+						if (this.variable2 != null) {
+							if (!this.variable2Document) {
+								previousVar2 = ((Entity) al.get(j).get(this.variable2)).getValue();
+							} else if (this.variable2.equals("author")) {
+								previousVar2 = al.get(j).getAuthor();
+							} else if (this.variable2.equals("source")) {
+								previousVar2 = al.get(j).getSource();
+							} else if (this.variable2.equals("section")) {
+								previousVar2 = al.get(j).getSection();
+							} else if (this.variable2.equals("type")) {
+								previousVar2 = al.get(j).getType();
+							} else if (this.variable2.equals("id")) {
+								previousVar2 = al.get(j).getDocumentIdAsString();
+							} else if (this.variable2.equals("title")) {
+								previousVar2 = al.get(j).getTitle();
+							}
 						}
 						if (!this.qualifierAggregation.equals("ignore") && (qualifierDocument || dataTypes.get(this.qualifier).equals("short text"))) {
 							if (!this.qualifierDocument) {
@@ -824,15 +993,17 @@ public class Exporter {
 						@SuppressWarnings("static-access")
 						WeekFields weekFieldsPrevious = WeekFields.of(Locale.UK.getDefault()); // use UK definition of calendar weeks
 						weekPrevious = calPrevious.get(weekFieldsPrevious.weekOfWeekBasedYear());
-						if ( s.getStatementTypeId() == al.get(j).getStatementTypeId()
+						if (s.getStatementTypeId() == al.get(j).getStatementTypeId()
 								&& ( (al.get(j).getDocumentId() == s.getDocumentId() && duplicates.equals("document"))
 								|| duplicates.equals("acrossrange")
 								|| (duplicates.equals("year") && year == yearPrevious)
 								|| (duplicates.equals("month") && month == monthPrevious)
 								|| (duplicates.equals("week") && week == weekPrevious) )
 								&& values1[i].equals(previousVar1)
-								&& values2[i].equals(previousVar2)
-								&& (this.qualifierAggregation.equals("ignore") || (dataTypes.get(this.qualifier).equals("short text") && qualifierValues[i].equals(previousQualifier)))) {
+								&& (values2.length == 0 /* for barplot data */ || values2[i].equals(previousVar2))
+								&& (this.qualifierAggregation.equals("ignore")
+									|| (dataTypes.get(this.qualifier).equals("short text") && qualifierValues[i].equals(previousQualifier))
+									|| (!dataTypes.get(this.qualifier).equals("short text") && this.filteredStatements.get(i).get("qualifier") == al.get(j).get("qualifier")))) {
 							select = false;
 							break;
 						}
@@ -2335,6 +2506,87 @@ public class Exporter {
 	 */
 	public ArrayList<ExportStatement> getFilteredStatements() {
 		return this.filteredStatements;
+	}
+
+	/**
+	 * Compute data for creating a barplot with value frequencies by qualifier value.
+	 *
+	 * @return Barplot data for the filtered statements.
+	 */
+	public BarplotResult generateBarplotData() {
+		// what variable ID corresponds to variable 1?
+		int variableId = this.statementType.getVariables()
+				.stream()
+				.filter(v -> v.getKey().equals(this.variable1))
+				.mapToInt(v -> v.getVariableId())
+				.findFirst()
+				.getAsInt();
+
+		// what attribute variables exist for this variable?
+		String[] attributeVariables = Stream.concat(Stream.of("Color"), Dna.sql.getAttributeVariables(variableId).stream()).toArray(String[]::new); // include "color" as first element
+
+		// extract distinct entities from filtered statements
+		Set<Integer> nameSet = new HashSet<>();
+		ArrayList<Entity> entities = this.filteredStatements
+				.stream()
+				.map(s -> (Entity) s.get(this.variable1))
+				.filter(e -> nameSet.add(e.getId())) // .distinct() has a bug, so add to a name set instead
+				.sorted()
+				.collect(Collectors.toCollection(ArrayList::new));
+		String[] values = entities
+				.stream()
+				.map(e -> e.getValue())
+				.toArray(String[]::new);
+
+		// create attribute 2D String array (entity label x (color + attribute variable))
+		String[][] attributes = new String[entities.size()][attributeVariables.length]; // attribute variables including "color" as first element
+		String[] colors = entities
+				.stream()
+				.map(e -> String.format("#%02X%02X%02X", e.getColor().getRed(), e.getColor().getGreen(), e.getColor().getBlue()))
+				.toArray(String[]::new);
+		for (int i = 0; i < entities.size(); i ++) {
+			attributes[i][0] = colors[i];
+			for (int j = 1; j < attributeVariables.length; j++) {
+				attributes[i][j] = entities.get(i).getAttributeValues().get(attributeVariables[j]);
+			}
+		}
+
+		// create an int array of all distinct qualifier values that occur in at least one statement
+		int[] intScale = new int[] {1};
+		if (this.qualifier != null) {
+			intScale = new int[] {0, 1};
+			boolean integer = this.statementType.getVariables()
+					.stream()
+					.filter(v -> v.getKey().equals(this.qualifier))
+					.map(v -> v.getDataType().equals("integer"))
+					.findFirst()
+					.get();
+			if (integer) {
+				intScale = this.filteredStatements
+						.stream()
+						.mapToInt(s -> (int) s.get(this.qualifier))
+						.distinct()
+						.sorted()
+						.toArray();
+			}
+		}
+
+
+		// count qualifier occurrences per value
+		int[][] counts = new int[entities.size()][intScale.length];
+		for (int i = 0; i < entities.size(); i++) {
+			for (int j = 0; j < intScale.length; j++) {
+				final int entityId = entities.get(i).getId();
+				final int q = intScale[j];
+				counts[i][j] = (int) this.filteredStatements
+						.stream()
+						.filter(s -> ((Entity) s.get(this.variable1)).getId() == entityId && (this.qualifier == null || (int) s.get(this.qualifier) == q))
+						.count();
+			}
+		}
+
+		// assemble and return data
+		return new BarplotResult(this.variable1, values, counts, attributes, intScale, attributeVariables);
 	}
 
 	/**
