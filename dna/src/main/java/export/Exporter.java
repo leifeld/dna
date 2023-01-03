@@ -1268,7 +1268,7 @@ public class Exporter {
 	 *   time window functionality, where multiple versions need to be created.
 	 * @param start Start date/time.
 	 * @param stop End date/time.
-	 * @return {@link model.Matrix Matrix} object containing a one-mode network
+	 * @return {@link Matrix Matrix} object containing a one-mode network
 	 *   matrix.
 	 */
 	Matrix computeOneModeMatrix(ArrayList<ExportStatement> processedStatements, String aggregation, LocalDateTime start, LocalDateTime stop) {
@@ -1456,7 +1456,7 @@ public class Exporter {
 	 *   for example for use in constructing a time window sequence of networks.
 	 * @param start Start date/time.
 	 * @param stop End date/time.
-	 * @return {@link model.Matrix Matrix} object containing a two-mode network matrix.
+	 * @return {@link Matrix Matrix} object containing a two-mode network matrix.
 	 */
 	private Matrix computeTwoModeMatrix(ArrayList<ExportStatement> processedStatements, LocalDateTime start, LocalDateTime stop) {
 		String[] names1 = this.extractLabels(processedStatements, this.variable1, this.variable1Document);
@@ -1847,7 +1847,7 @@ public class Exporter {
 	/**
 	 * Get the computed network matrix results as an array list.
 	 * 
-	 * @return An array list of {@link model.Matrix Matrix} objects. If time window functionality was used, there are
+	 * @return An array list of {@link Matrix Matrix} objects. If time window functionality was used, there are
 	 * multiple matrices in the list, otherwise just one.
 	 */
 	public ArrayList<Matrix> getMatrixResults() {
@@ -1863,7 +1863,7 @@ public class Exporter {
 	/**
 	 * Get the computed network matrix results as an array.
 	 *
-	 * @return An array of {@link model.Matrix Matrix} objects. If time window functionality was used, there are
+	 * @return An array of {@link Matrix Matrix} objects. If time window functionality was used, there are
 	 * multiple matrices in the list, otherwise just one.
 	 */
 	public Matrix[] getMatrixResultsArray() {
@@ -1873,7 +1873,7 @@ public class Exporter {
 					"The network matrix results were not computed and cannot be returned. A null object will be returned instead.");
 			Dna.logger.log(l);
 		}
-		return this.matrixResults.stream().toArray(model.Matrix[]::new);
+		return this.matrixResults.stream().toArray(Matrix[]::new);
 	}
 
 	/**
@@ -1954,7 +1954,7 @@ public class Exporter {
 	}
 
 	/**
-	 * Export {@link model.Matrix Matrix} to a CSV matrix file.
+	 * Export {@link Matrix Matrix} to a CSV matrix file.
 	 */
 	private void exportCSV() {
 		try (ProgressBar pb = new ProgressBar("Exporting networks...", this.matrixResults.size())) {

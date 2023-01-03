@@ -10,11 +10,8 @@ import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import export.BackboneResult;
-import export.Exporter;
+import export.*;
 import me.tongfei.progressbar.ProgressBar;
-import export.BarplotResult;
-import model.Matrix;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.rosuda.JRI.RConsoleOutputStream;
 import org.rosuda.JRI.Rengine;
@@ -719,6 +716,44 @@ public class HeadlessDna implements Logger.LogListener {
 
 			pb.stepTo(T);
 		}
+	}
+
+	/* =================================================================================================================
+	 * Functions for managing attributes
+	 * =================================================================================================================
+	 */
+
+	/**
+	 * Retrieve entities with attributes for a specific variable.
+	 *
+	 * @param variableId ID of the variable to query for entities and their attributes.
+	 * @return Data frame with entities and attributes, as defined in {@link sql.DataExchange#getAttributes(int)}.
+	 */
+	public DataFrame getAttributes(int variableId) {
+		DataFrame df = sql.DataExchange.getAttributes(variableId);
+
+		LogEvent l = new LogEvent(Logger.MESSAGE,
+				"Attributes have been queried.",
+				"The attributes for Variable " + variableId + " have been successfully retrieved from the database.");
+		Dna.logger.log(l);
+
+		return df;
+	}
+
+	/**
+	 * Set entities and attributes for a specific variable.
+	 *
+	 * @param variableId ID of the variable to modify the entities and their attributes for.
+	 * @param df A data frame with entities and attributes, as defined in {@link sql.DataExchange#getAttributes(int)}.
+	 * @param simulate If {@code true}, the changes are rolled back. If {@code false}, the changes are committed to the database.
+	 */
+	public void setAttributes(int variableId, DataFrame df, boolean simulate) {
+		sql.DataExchange.getAttributes(variableId);
+
+		LogEvent l = new LogEvent(Logger.MESSAGE,
+				"Attributes and entities have been set.",
+				"The entities (with attributes) for Variable " + variableId + " have been successfully updated.");
+		Dna.logger.log(l);
 	}
 
 	/**

@@ -16,10 +16,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
+import export.DataFrame;
 import gui.DocumentEditor;
+import me.tongfei.progressbar.ProgressBar;
 import org.jasypt.util.password.StrongPasswordEncryptor;
 import org.sqlite.SQLiteDataSource;
 
@@ -3631,7 +3634,7 @@ public class Sql {
 		Collections.sort(values);
 		return values;
 	}
-	
+
 	/**
 	 * Update/set an attribute value for an entity.
 	 * 
