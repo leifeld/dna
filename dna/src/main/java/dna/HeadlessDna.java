@@ -724,7 +724,7 @@ public class HeadlessDna implements Logger.LogListener {
 	 */
 
 	/**
-	 * Retrieve entities with attributes for a specific variable.
+	 * Retrieve entities with attributes for a specific variable with a given variable ID.
 	 *
 	 * @param variableId ID of the variable to query for entities and their attributes.
 	 * @return Data frame with entities and attributes, as defined in {@link sql.DataExchange#getAttributes(int)}.
@@ -735,6 +735,42 @@ public class HeadlessDna implements Logger.LogListener {
 		LogEvent l = new LogEvent(Logger.MESSAGE,
 				"Attributes have been queried.",
 				"The attributes for Variable " + variableId + " have been successfully retrieved from the database.");
+		Dna.logger.log(l);
+
+		return df;
+	}
+
+	/**
+	 * Retrieve entities with attributes for a specific variable with a given variable name and statement type ID.
+	 *
+	 * @param statementTypeId The statement type ID in which the variable is defined.
+	 * @param variable The name of the variable.
+	 * @return Data frame with entities and attributes, as defined in {@link sql.DataExchange#getAttributes(int)}.
+	 */
+	public DataFrame getAttributes(int statementTypeId, String variable) {
+		DataFrame df = sql.DataExchange.getAttributes(statementTypeId, variable);
+
+		LogEvent l = new LogEvent(Logger.MESSAGE,
+				"Attributes have been queried.",
+				"The attributes for Variable \"" + variable + "\" have been successfully retrieved from the database.");
+		Dna.logger.log(l);
+
+		return df;
+	}
+
+	/**
+	 * Retrieve entities with attributes for a specific variable with a given variable name and statement type name.
+	 *
+	 * @param statementType The statement type in which the variable is defined.
+	 * @param variable The name of the variable.
+	 * @return Data frame with entities and attributes, as defined in {@link sql.DataExchange#getAttributes(int)}.
+	 */
+	public DataFrame getAttributes(String statementType, String variable) {
+		DataFrame df = sql.DataExchange.getAttributes(statementType, variable);
+
+		LogEvent l = new LogEvent(Logger.MESSAGE,
+				"Attributes have been queried.",
+				"The attributes for Variable \"" + variable + "\" have been successfully retrieved from the database.");
 		Dna.logger.log(l);
 
 		return df;

@@ -11,6 +11,7 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
     'Version:      ', desc$Version, '\n',
     'Date:         ', desc$Date, '\n',
     'Author:       Philip Leifeld (University of Essex)\n',
+    'Contributor:  Tim Henrichsen (University of Warwick)\n',
     'Project home: github.com/leifeld/dna'
   )
 }
@@ -583,6 +584,145 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
               "openConnectionProfile",
               file,
               coderPassword)
+}
+
+#' Get the entities and attributes for a variable
+#'
+#' Retrieve the entities and their attributes for a variable in DNA
+#'
+#' This function retrieves the entities and their attributes for a given
+#' variable from the DNA database as a \code{dna_attributes} object. Such an
+#' object is an extension of a data frame and can be treated as such.
+#'
+#' There are three ways to use this function: by specifying only the variable
+#' ID; by specifying the variable name and its statement type ID; and by
+#' specifying the variable name and its statement type name.
+#'
+#' @param statementType The name of the statement type in which the variable is
+#'   defined for which entities and values should be retrieved. Only required if
+#'   \code{variableId} is not supplied. Either \code{statementType} or
+#'   \code{statementTypeId} must be specified in this case.
+#' @param variable The name of the variable for which the entities and
+#'   attributes should be returned. In addition to this argument, either the
+#'   statement type name or statement type ID must be supplied to identify the
+#'   variable correctly. If the \code{variableId} a specified, the
+#'   \code{variable} argument is unnecessary and the statement type need not be
+#'   supplied.
+#' @param statementTypeId The ID of the statement type in which the variable is
+#'   defined for which entities and values should be retrieved. Only required if
+#'   \code{variableId} is not supplied. Either \code{statementType} or
+#'   \code{statementTypeId} must be specified in this case.
+#' @param variableId The ID of the variable for which the entities and
+#'   attributes should be returned. If this argument is supplied, the other
+#'   three arguments are unnecessary.
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
+#'
+#' dna_getAttributes(variableId = 1)
+#' dna_getAttributes(statementTypeId = 1, variable = "organization")
+#' dna_getAttributes(statementType = "DNA Statement", variable = "concept")
+#' }
+#'
+#' @author Philip Leifeld
+#'
+#' @importFrom rJava .jcall
+#' @importFrom rJava J
+#' @export
+dna_getAttributes <- function(statementType = NULL,
+                              variable = NULL,
+                              statementTypeId = NULL,
+                              variableId = NULL) {
+  
+  # check if the arguments are valid
+  statementTypeValid <- TRUE
+  if (is.null(statementType) || !is.character(statementType) || length(statementType) != 1 || is.na(statementType) || statementType == "") {
+    statementTypeValid <- FALSE
+  }
+  
+  statementTypeIdValid <- TRUE
+  if (is.null(statementTypeId) || !is.numeric(statementTypeId) || length(statementTypeId) != 1 || is.na(statementTypeId) || statementTypeId %% 1 != 0) {
+    statementTypeIdValid <- FALSE
+  }
+  
+  variableValid <- TRUE
+  if (is.null(variable) || !is.character(variable) || length(variable) != 1 || is.na(variable) || variable == "") {
+    variableValid <- FALSE
+  }
+  
+  variableIdValid <- TRUE
+  if (is.null(variableId) || !is.numeric(variableId) || length(variableId) != 1 || is.na(variableId) || variableId %% 1 != 0) {
+    variableIdValid <- FALSE
+  }
+  
+  errorString <- "Please supply 1) a variable ID or 2) a statement type name and a variable name or 3) a statement type ID and a variable name."
+  if ((!variableValid && !variableIdValid) || (!statementTypeIdValid && !statementTypeValid && !variableIdValid)) {
+    stop(errorString)
+  }
+  
+  if (variableIdValid && variableValid) {
+    variable <- NULL
+    variableValid <- FALSE
+    warning("Both a variable ID and a variable name were supplied. Ignoring the 'variable' argument.")
+  }
+  
+  if (statementTypeIdValid && statementTypeValid && !variableIdValid && variableValid) {
+    statementType <- NULL
+    statementTypeValid <- FALSE
+    warning("Both a statement type ID and a statement type name were supplied. Ignoring the 'statementType' argument.")
+  }
+  
+  if (variableIdValid && (statementTypeIdValid || statementTypeValid)) {
+    statementTypeId <- NULL
+    statementTypeIdValid <- FALSE
+    statementType <- NULL
+    statementTypeValid <- FALSE
+    warning("If a variable ID is provided, a statement type is not necessary. Ignoring the 'statementType' and 'statementTypeId' arguments.")
+  }
+  
+  # get the data from the DNA database using rJava
+  if (variableIdValid) {
+    a <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+                "Lexport/DataFrame;",
+                "getAttributes",
+                as.integer(variableId))
+  } else if (variableValid && statementTypeIdValid) {
+    a <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+                "Lexport/DataFrame;",
+                "getAttributes",
+                as.integer(statementTypeId),
+                variable)
+  } else if (variableValid && statementTypeValid) {
+    a <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+                "Lexport/DataFrame;",
+                "getAttributes",
+                statementType,
+                variable)
+  } else {
+    stop(errorString)
+  }
+  
+  # extract the relevant information from the Java reference
+  varNames <- .jcall(a, "[S", "getVariableNames")
+  nr <- .jcall(a, "I", "nrow")
+  nc <- .jcall(a, "I", "ncol")
+  
+  # create an empty data frame with the first (integer) column for IDs
+  dat <- cbind(data.frame(ID = integer(nr)),
+               matrix(character(nr), nrow = nr, ncol = nc - 1))
+  # populate the data frame
+  for (i in 0:(nr - 1)) {
+    for (j in 0:(nc - 1)) {
+      dat[i + 1, j + 1] <- J(a, "getValue", as.integer(i), as.integer(j))
+    }
+  }
+  rownames(dat) <- NULL
+  colnames(dat) <- varNames
+  class(dat) <- c("dna_attributes", class(dat))
+  return(dat)
 }
 
 #' Compute and retrieve a network

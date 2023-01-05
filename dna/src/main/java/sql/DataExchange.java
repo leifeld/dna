@@ -29,7 +29,7 @@ public class DataExchange {
      *   available for the variable being queried.
      */
     static public DataFrame getAttributes(int variableId) {
-        Object[][] data = new Object[0][3];
+        Object[][] data = null;
         ArrayList<String> attributeVariableNames = new ArrayList<String>();
         try (Connection conn = Dna.sql.getDataSource().getConnection();
              PreparedStatement s1 = conn.prepareStatement("SELECT AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ? ORDER BY ATTRIBUTEVARIABLES.ID ASC;");
@@ -59,7 +59,7 @@ public class DataExchange {
             ResultSet r2;
             int entityId;
             int rowCounter = 0;
-            int columnCounter = 0;
+            int columnCounter;
             while(r1.next()) {
                 entityId = r1.getInt("ID");
                 data[rowCounter][0] = entityId; // entity ID
@@ -67,11 +67,12 @@ public class DataExchange {
                 data[rowCounter][2] = String.format("#%02X%02X%02X", r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue")); // entity color as hex RGB value with leading hashtag
 
                 // go through attribute values in inner loop
+                columnCounter = 0;
                 s4.setInt(1, variableId);
                 s4.setInt(2, entityId);
                 r2 = s4.executeQuery();
                 while (r2.next()) {
-                    data[rowCounter][columnCounter + 3] = r2.getString(attributeVariableNames.get(columnCounter));
+                    data[rowCounter][columnCounter + 3] = r2.getString("AttributeValue");
                     columnCounter++;
                 }
                 rowCounter++;
@@ -98,6 +99,62 @@ public class DataExchange {
         }
         DataFrame df = new DataFrame(data, variableNames, dataTypes);
         return df;
+    }
+
+    /**
+     * A wrapper for {@link #getAttributes(int)} that first retrieves the variable ID based on statement type ID and
+     * variable name.
+     *
+     * @param statementTypeId The statement type ID in which the variable is defined.
+     * @param variable The name of the variable.
+     * @return A data frame as returned by {@link #getAttributes(int)}.
+     */
+    static public DataFrame getAttributes(int statementTypeId, String variable) {
+        int variableId = -1;
+        try (Connection conn = Dna.sql.getDataSource().getConnection();
+             PreparedStatement s = conn.prepareStatement("SELECT ID FROM VARIABLES WHERE Variable = ? AND StatementTypeId = ?;")) {
+            s.setString(1, variable);
+            s.setInt(2, statementTypeId);
+            ResultSet r = s.executeQuery();
+            while (r.next()) {
+                variableId = r.getInt(1);
+            }
+        } catch (SQLException ex) {
+            LogEvent l = new LogEvent(Logger.ERROR,
+                    "Could not retrieve variable ID for variable \"" + variable + ".",
+                    "Could not retrieve the variable ID for variable \"" + variable + " (statement type ID: " + statementTypeId + ") while trying to retrieve entities and attributes. Check if the statement type ID and variable are valid.",
+                    ex);
+            Dna.logger.log(l);
+        }
+        return getAttributes(variableId);
+    }
+
+    /**
+     * A wrapper for {@link #getAttributes(int)} that first retrieves the variable ID based on statement type and
+     * variable names.
+     *
+     * @param statementType The statement type in which the variable is defined.
+     * @param variable The name of the variable.
+     * @return A data frame as returned by {@link #getAttributes(int)}.
+     */
+    static public DataFrame getAttributes(String statementType, String variable) {
+        int variableId = -1;
+        try (Connection conn = Dna.sql.getDataSource().getConnection();
+             PreparedStatement s = conn.prepareStatement("SELECT ID FROM VARIABLES WHERE Variable = ? AND StatementTypeId = (SELECT ID FROM STATEMENTTYPES WHERE Label = ?);")) {
+            s.setString(1, variable);
+            s.setString(2, statementType);
+            ResultSet r = s.executeQuery();
+            while (r.next()) {
+                variableId = r.getInt(1);
+            }
+        } catch (SQLException ex) {
+            LogEvent l = new LogEvent(Logger.ERROR,
+                    "Could not retrieve variable ID for variable \"" + variable + ".",
+                    "Could not retrieve the variable ID for variable \"" + variable + " (statement type: \"" + statementType + "\") while trying to retrieve entities and attributes. Check if the statement type and variable are valid.",
+                    ex);
+            Dna.logger.log(l);
+        }
+        return getAttributes(variableId);
     }
 
     /**
