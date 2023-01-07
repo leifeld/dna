@@ -1081,7 +1081,7 @@ dna_network <- function(networkType = "twomode",
     d$time <- as.POSIXct(d$time, origin = "1970-01-01 00:00:00") # convert long date/time to POSIXct
     return(d)
   } else { # assemble a one-mode or two-mode matrix with attributes or a list of matrices (if time window)
-    m <- .jcall(exporter, "[Lmodel/Matrix;", "getMatrixResultsArray") # get list of Matrix objects from Exporter object
+    m <- .jcall(exporter, "[Lexport/Matrix;", "getMatrixResultsArray") # get list of Matrix objects from Exporter object
     l <- list() # create a list in which each result is stored; can be of length 1 if no time window is used
     for (t in 1:length(m)) { # loop through the matrices
       mat <- .jcall(m[[1]], "[[D", "getMatrix", simplify = TRUE) # get the resulting matrix at step t as a double[][] object and save as matrix
