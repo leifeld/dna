@@ -1327,7 +1327,7 @@ as.matrix.dna_network_twomode <- as.matrix.dna_network_onemode
 #' @importFrom rJava .jcall
 #' @importFrom rJava .jnull
 #' @importFrom rJava J
-#' @export
+#' @noRd
 dna_backbone <- function(penalty = 3.5,
                          iterations = 10000,
                          statementType = "DNA Statement",
@@ -1499,7 +1499,7 @@ dna_backbone <- function(penalty = 3.5,
 #' @rdname dna_backbone
 #' @importFrom graphics lines
 #' @importFrom stats filter
-#' @export
+#' @noRd
 plot.dna_backbone <- function(x, ma = 500, ...) {
   # temperature and acceptance probability
   plot(x = x$diagnostics$iteration,
@@ -1556,7 +1556,7 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
 
 #' @rdname dna_backbone
 #' @param x A \code{"dna_backbone"} object.
-#' @export
+#' @noRd
 print.dna_backbone <- function(x, ...) {
   cat(paste0("Penalty: ", x$penalty, ". Iterations: ", x$iterations, ".\n\n"))
   cat(paste0("Backbone set (loss: ", round(x$unpenalized_backbone_loss, 4), "):\n"))
@@ -1577,7 +1577,7 @@ print.dna_backbone <- function(x, ...) {
 #' @importFrom ggplot2 ggtitle
 #' @importFrom ggplot2 theme_bw
 #' @importFrom ggplot2 theme
-#' @export
+#' @noRd
 autoplot.dna_backbone <- function(object, ..., ma = 500) {
   bd <- object$diagnostics
   bd$bb_loss <- stats::filter(bd$penalized_backbone_loss, rep(1 / ma, ma), sides = 1)
