@@ -10,6 +10,10 @@ Authors@R:
     person(given = "Tim",
            family = "Henrichsen",
            email = "Tim.Henrichsen@warwick.ac.uk",
+           role = "ctb"),
+    person(given = "Johannes B.",
+           family = "Gruber",
+           email = "j.b.gruber@vu.nl",
            role = "ctb"))
 Maintainer: Philip Leifeld <Philip.Leifeld@essex.ac.uk>
 Description: Qualitative content analysis and discourse network analysis 
