@@ -24,7 +24,7 @@ The Java software Discourse Network Analyzer (DNA) is a qualitative content anal
 
 [DNA 3.0](https://github.com/leifeld/dna/releases) was first released on 12 June 2022. It constitutes a major rewrite from the previous version DNA 2.0 beta 25. DNA 3 comes with many new features and improvements. The [release](https://github.com/leifeld/dna/releases) page contains all the details (scroll to version 3.0.7 for the first DNA 3 release).
 
-Please use the old DNA 2.0 beta 25 for now if you require R functionality from the rDNA package for now. The new rDNA has rudimentary functionality and will be improved in future versions. It is possible to import DNA 2 data into DNA 3 at any point.
+Please note that the R package rDNA does not have the full functionality of the old 2.0 version yet. It can create networks, but please use the old DNA 2.0 beta 25 for now if you require more complex data management and analysis functionality in R. It is possible to import DNA 2 data into DNA 3 at any point. New R functions will be added in the future.
 
 To install the new rDNA 3 directly from GitHub, try the following code in R:
 
@@ -35,6 +35,8 @@ remotes::install_github("leifeld/dna/rDNA@*release",
 ```
 
 Note that the package relies on `rJava`, which needs to be installed first.
+
+If you require the latest (non-release) version of the DNA jar file from GitHub, you can clone the git repository to your computer and execute `./gradlew build` on your terminal or command line. This will build the jar file and store it in the directory `dna/build/libs/` of the cloned repository. Alternatively, you can try to download the latest artifact from the build process under [GitHub Actions](https://github.com/leifeld/dna/actions) by clicking on the latest build and scrolling down to "Artifacts". However, it is usually recommended to use the most recent [release](https://github.com/leifeld/dna/releases/) version.
 
 ## Support the project
 
