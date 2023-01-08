@@ -10,8 +10,9 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
   packageStartupMessage(
     'Version:      ', desc$Version, '\n',
     'Date:         ', desc$Date, '\n',
-    'Author:       Philip Leifeld (University of Essex)\n',
-    'Contributor:  Tim Henrichsen (University of Warwick)\n',
+    'Author:        Philip Leifeld (University of Essex)\n',
+    'Contributors:  Tim Henrichsen (University of Warwick)\n',
+    '               Johannes B. Gruber (Vrije Universiteit Amsterdam),\n',
     'Project home: github.com/leifeld/dna'
   )
 }
@@ -1806,4 +1807,289 @@ print.dna_barplot <- function(x, trim = 30, attr = TRUE, ...) {
   x2$Entity <- sapply(x2$Entity, function(e) if (nchar(e) > trim) paste0(substr(e, 1, trim - 1), "*") else e)
   class(x2) <- "data.frame"
   print(x2)
+}
+
+#' Plot dna_barplot object.
+#'
+#' Plot barplots generated from dna_barplot.
+#'
+#' This function plots agreement and disagreement towards DNA Statements for
+#' different entities such as, e.g., "concept", "organization" or "person".
+#' 
+#' @param object A dna_barplot object.
+#' @param lab.pos,lab.neg Names for (dis-)agreement labels.
+#' @param lab Should (dis-)agreement labels and title be displayed?
+#' @param colors If \code{TRUE}, attribute colors will be used to fill the
+#'   bars.
+#' @param fontSize Text size in pts.
+#' @param barWidth Thickness of the bars. Bars will touch when set to \code{1}.
+#'   When set to \code{0.5}, space between two bars is the same as thickness of
+#'   bars.
+#' @param axisWidth Thickness of the x-axis which separates agreement from
+#'   disagreement.
+#' @param truncate Sets the number of characters to which axis labels should be truncated.
+#' @param exclude.min Reduces the plot to entities with a minimum frequency of statements.
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#'
+#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
+#' 
+#' # compute barplot data
+#' b <- dna_barplot(statementType = "DNA Statement",
+#'                  variable = "concept",
+#'                  qualifier = "agreement")
+#' 
+#' # plot barplot with ggplot2                
+#' autoplot(b)
+#' }
+#'
+#' @author Johannes B. Gruber, Tim Henrichsen
+#'
+#' @seealso \link{dna_barplot}
+#' 
+#' @importFrom ggplot2 autoplot
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 aes_string
+#' @importFrom ggplot2 geom_line
+#' @importFrom ggplot2 theme_minimal
+#' @importFrom ggplot2 theme
+#' @importFrom ggplot2 geom_bar
+#' @importFrom ggplot2 position_stack
+#' @importFrom ggplot2 coord_flip
+#' @importFrom ggplot2 element_blank
+#' @importFrom ggplot2 element_text
+#' @importFrom ggplot2 scale_color_identity
+#' @importFrom ggplot2 scale_fill_identity
+#' @importFrom ggplot2 geom_text
+#' @importFrom ggplot2 .pt
+#' @importFrom ggplot2 annotate
+#' @importFrom ggplot2 scale_x_discrete
+#' @export
+autoplot.dna_barplot <- function(object, 
+                                 lab.pos = "Agreement",
+                                 lab.neg = "Disagreement",
+                                 lab = TRUE,
+                                 colors = FALSE,
+                                 fontSize = 12,
+                                 barWidth = 0.6,
+                                 axisWidth = 1.5,
+                                 truncate = 40,
+                                 exclude.min = NULL) {
+  
+  # Get qualifier values
+  w <- attr(object, "intValues")
+  
+  # Check if qualifier is binary
+  binary <- all(w %in% c(0, 1))
+  
+  # Compute total values per entity
+  object$sum <- rowSums(object[, colnames(object) %in% w])
+  
+  # Exclude minimum number of statements per entity
+  if (!is.null(exclude.min)) {
+    object <- object[object$sum >= exclude.min,]
+  }
+  
+  # Stack agreement and disagreement
+  object2 <- cbind(object$Entity, utils::stack(object, select = colnames(object) %in% w))
+  colnames(object2) <- c("entity", "frequency", "agreement")
+  
+  object <- object[order(object$sum, decreasing = TRUE),]
+  
+  object2$entity <- factor(object2$entity, levels = rev(object$Entity))
+  
+  # Get colors
+  if (colors) {
+    object2$color <- object$Color[match(object2$entity, object$Entity)]
+    object2$text_color <- "black"
+      object2$text_color[sum(grDevices::col2rgb(object2$color) * c(299, 587, 114)) / 1000 < 123] <- "white"
+  } else {
+    object2$color <- "white"
+      object2$text_color <- "black"
+  }
+  
+  if (binary) {
+    # setting disagreement as -1 instead 0
+    object2$agreement <- ifelse(object2$agreement == 0, -1, 1)
+    # recode frequency in positive and negative
+    object2$frequency <- object2$frequency * as.integer(object2$agreement)
+    
+    # generate position of bar labels
+    offset <- (max(object2$frequency) + abs(min(object2$frequency))) * 0.05
+    offset <- ifelse(offset < 0.5, 0.5, offset) # offset should be at least 0.5
+    if (offset > abs(min(object2$frequency))) {
+      offset <- abs(min(object2$frequency))
+    }
+    if (offset > max(object2$frequency)) {
+      offset <- abs(min(object2$frequency))
+    }
+    object2$pos <- ifelse(object2$frequency > 0,
+                          object2$frequency + offset,
+                          object2$frequency - offset)
+    
+    # move 0 labels where necessary
+    object2$pos[object2$frequency == 0] <- ifelse(object2$agreement[object2$frequency == 0] == 1,
+                                                  object2$pos[object2$frequency == 0] * -1,
+                                                  object2$pos[object2$frequency == 0])
+    object2$label <- as.factor(abs(object2$frequency))
+  } else {
+    object2$count <- object2$frequency
+    object2$frequency <- ifelse(as.numeric(as.character(object2$agreement)) >= 0, object2$frequency,
+                                object2$frequency * -1)
+    object2 <- object2[object2$frequency != 0, ]
+    object2$pos <- ifelse(object2$frequency > 0,
+                          1.1,
+                          -0.1)
+    object2$label <- paste(object2$count, object2$agreement, sep = " x ")
+  }
+  
+  offset <- (max(object2$frequency) + abs(min(object2$frequency))) * 0.05
+  offset <- ifelse(offset < 0.5, 0.5, offset)
+  yintercepts <- data.frame(x = c(0.5, length(unique(object2$entity)) + 0.5),
+                            y = c(0, 0))
+  high <- yintercepts$x[2] + 0.25
+  
+  object2 <- object2[order(as.numeric(as.character(object2$agreement)),
+                           decreasing = FALSE), ]
+  object2$agreement <- factor(object2$agreement, levels = w)
+  
+  # Plot
+  g <- ggplot2::ggplot(object2,
+                       ggplot2::aes_string(x = "entity",
+                                           y = "frequency",
+                                           fill = "agreement",
+                                           group = "agreement",
+                                           label = "label"))
+  if (binary) { # Bars for the binary case
+    g <- g + ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
+                                                   color = "text_color"),
+                               stat = "identity",
+                               width = barWidth,
+                               show.legend = FALSE)
+    # For the integer case with positive and negative values
+  } else if (max(w) > 0 & min(w) < 0) {
+    g <- g + ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
+                                                   color = "text_color"),
+                               stat = "identity",
+                               width = barWidth,
+                               show.legend = FALSE,
+                               data = object2[as.numeric(as.character(object2$agreement)) >= 0,],
+                               position = ggplot2::position_stack(reverse = TRUE)) +
+      ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
+                                            color = "text_color"),
+                        stat = "identity",
+                        width = barWidth,
+                        show.legend = FALSE,
+                        data = object2[as.numeric(as.character(object2$agreement)) < 0,])
+    # For the integer case with positive values only
+  } else if (min(w) >= 0) {
+    g <- g + ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
+                                                   color = "text_color"),
+                               stat = "identity",
+                               width = barWidth,
+                               show.legend = FALSE,
+                               position = ggplot2::position_stack(reverse = TRUE))
+    # For the integer case with negative values only
+  } else {
+    g <- g + ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
+                                                   color = "text_color"),
+                               stat = "identity",
+                               width = barWidth,
+                               show.legend = FALSE)
+  }
+  g <- g + ggplot2::coord_flip() +
+    ggplot2::theme_minimal() +
+    ggplot2::geom_line(ggplot2::aes_string(x = "x", y = "y"),
+                       data = yintercepts,
+                       linewidth = axisWidth,
+                       inherit.aes = FALSE) +
+    ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
+                   panel.grid.minor = ggplot2::element_blank(),
+                   axis.title.x = ggplot2::element_blank(),
+                   axis.title.y = ggplot2::element_blank(),
+                   axis.text.x = ggplot2::element_blank(),
+                   axis.ticks.y = ggplot2::element_blank(),
+                   axis.text.y = ggplot2::element_text(size = fontSize),
+                   plot.title = ggplot2::element_text(hjust = ifelse(max(nchar(as.character(object2$entity))) > 10, -0.15, 0))) +
+    ggplot2::scale_fill_identity() +
+    ggplot2::scale_color_identity()
+  if (binary) {
+    g <- g +
+      ggplot2::geom_text(ggplot2::aes_string(x = "entity",
+                                             y = "pos",
+                                             label = "label"),
+                         size = (fontSize / ggplot2::.pt),
+                         inherit.aes = FALSE,
+                         data = object2)
+  } else if (max(w) > 0 & min(w) < 0) {
+    g <- g +
+      ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
+                         size = (fontSize / ggplot2::.pt),
+                         position = ggplot2::position_stack(vjust = 0.5, reverse = TRUE),
+                         inherit.aes = TRUE,
+                         data = object2[object2$frequency >= 0,]) +
+      ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
+                         size = (fontSize / ggplot2::.pt),
+                         position = ggplot2::position_stack(vjust = 0.5),
+                         inherit.aes = TRUE,
+                         data = object2[object2$frequency < 0,])
+  } else if (min(w) >= 0) {
+    g <- g +
+      ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
+                         size = (fontSize / ggplot2::.pt),
+                         position = ggplot2::position_stack(vjust = 0.5, reverse = TRUE),
+                         inherit.aes = TRUE)
+  } else {
+    g <- g +
+      ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
+                         size = (fontSize / ggplot2::.pt),
+                         position = ggplot2::position_stack(vjust = 0.5),
+                         inherit.aes = TRUE)
+  }
+  if (lab) {
+    g <- g +
+      ggplot2::annotate("text",
+                        x = high,
+                        y = offset * 2,
+                        hjust = 0,
+                        label = lab.pos,
+                        size = (fontSize / ggplot2::.pt)) +
+      ggplot2::annotate("text",
+                        x = high,
+                        y = 0 - offset * 2,
+                        hjust = 1,
+                        label = lab.neg,
+                        size = (fontSize / ggplot2::.pt)) +
+      ggplot2::scale_x_discrete(labels = function(x) trim(x, n = truncate),
+                                expand = c(0, 2, 0, 2),
+                                limits = levels(object2$entity))
+  } else {
+    g <- g +
+      ggplot2::scale_x_discrete(labels = function(x) trim(x, n = truncate),
+                                limits = levels(object2$entity))
+  }
+  return(g)
+}
+
+#' Truncate labels
+#'
+#' Internal function, used to truncate labels.
+#'
+#' @param x A character string
+#' @param n Max number of characters to truncate to. Value \code{Inf} turns off
+#'   truncation.
+#' @param e String added at the end of x to signal it was truncated.
+#'
+#' @noRd
+#'
+#' @author Johannes B. Gruber
+trim <- function(x, n, e = "...") {
+  ifelse(nchar(x) > n,
+         paste0(gsub("\\s+$", "",
+                     strtrim(x, width = n)),
+                e),
+         x)
 }
