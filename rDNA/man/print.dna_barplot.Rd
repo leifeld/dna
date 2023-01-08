@@ -26,7 +26,7 @@ Show details of a \code{dna_barplot} object.
 Print the data frame returned by the \code{\link{dna_barplot}} function.
 }
 \seealso{
-\link{dna_barplot}
+\link{dna_barplot}, \link{autoplot.dna_barplot}
 }
 \author{
 Philip Leifeld

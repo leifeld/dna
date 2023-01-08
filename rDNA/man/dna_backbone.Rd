@@ -274,6 +274,7 @@ par(mfrow = c(2, 2))
 plot(b)
 
 # plot diagnostics with ggplot2
+library("ggplot2")
 p <- autoplot(b)
 p
 

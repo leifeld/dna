@@ -137,6 +137,9 @@ b
 }
 
 }
+\seealso{
+\link{print.dna_barplot}, \link{autoplot.dna_barplot}
+}
 \author{
 Philip Leifeld
 }
