@@ -127,7 +127,7 @@ dna_jar <- function() {
     f <- paste0("https://github.com/leifeld/dna/releases/download/v", v, "/dna-", v, ".jar")
     dest <- paste0(rdna_dir, "/inst/java/dna-", v, ".jar")
     targetdir <- paste0(rdna_dir, "/", "inst/java/")
-    dir.create(targetdir, showWarnings = FALSE)
+    dir.create(targetdir, recursive = TRUE, showWarnings = FALSE)
     suppressWarnings(download.file(url = f,
                                    destfile = dest,
                                    mode = "wb",
