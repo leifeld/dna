@@ -20,6 +20,8 @@ sorting order, fields, capitalization, and other characteristics of the
 BibTeX entries under `references/references.bib` before contributing any
 citation entries.
 
+------------------------------------------------------------------------
+
 <div id="refs" class="references csl-bib-body hanging-indent"
 line-spacing="2">
 
