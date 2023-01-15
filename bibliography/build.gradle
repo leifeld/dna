@@ -1,0 +1,16 @@
+task bibliographyMarkdown {
+    def outputDir = file("$buildDir/")
+    outputs.dir outputDir
+
+    doLast {
+        exec {
+            workingDir '.'
+            commandLine 'pandoc', "-t", "gfm", "-s", "--csl", "apa.csl", "--citeproc", "-o", "$buildDir//bibliography.md", "bibliography.tex"
+        }
+    }
+}
+
+task build {
+   dependsOn bibliographyMarkdown
+   doLast {}
+}
