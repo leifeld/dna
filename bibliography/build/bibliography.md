@@ -3,7 +3,7 @@ author:
 - Philip Leifeld
 bibliography:
 - bibliography.bib
-csl: apa.csl
+csl: apa-numeric-superscript-brackets.csl
 date: 2023-01-15
 title: "Discourse Network Analysis: Bibliography"
 ---
@@ -27,7 +27,7 @@ line-spacing="2">
 
 <div id="ref-fergie2019mapping" class="csl-entry">
 
-Fergie, G., Leifeld, P., Hawkins, B., & Hilton, S. (2019). Mapping
+1\. Fergie, G., Leifeld, P., Hawkins, B., & Hilton, S. (2019). Mapping
 discourse coalitions in the minimum unit pricing for alcohol debate: A
 discourse network analysis of UK newspaper coverage. *Addiction*,
 *114*(4), 741–753. <https://doi.org/10.1111/add.14514>
@@ -36,7 +36,7 @@ discourse network analysis of UK newspaper coverage. *Addiction*,
 
 <div id="ref-leifeld2013reconceptualizing" class="csl-entry">
 
-Leifeld, P. (2013). Reconceptualizing major policy change in the
+2\. Leifeld, P. (2013). Reconceptualizing major policy change in the
 advocacy coalition framework: A discourse network analysis of German
 pension politics. *Policy Studies Journal*, *41*(1), 169–198.
 <https://doi.org/10.1111/psj.12007>
@@ -45,8 +45,8 @@ pension politics. *Policy Studies Journal*, *41*(1), 169–198.
 
 <div id="ref-leifeld2016policy" class="csl-entry">
 
-Leifeld, P. (2016). *Policy debates as dynamic networks: German pension
-politics and privatization discourse*. Campus.
+3\. Leifeld, P. (2016). *Policy debates as dynamic networks: German
+pension politics and privatization discourse*. Campus.
 <http://press.uchicago.edu/ucp/books/book/distributed/P/bo24978289.html>
 
 </div>
