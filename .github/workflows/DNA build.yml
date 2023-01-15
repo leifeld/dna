@@ -67,7 +67,26 @@ jobs:
         name: DNA
         path: build/*.jar
 
-  rDNA:
+  rDNA-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: r-lib/actions/setup-r@v2
+    - uses: gradle/wrapper-validation-action@master
+
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
+
+    - name: Execute Gradle build for rDNA
+      run: ./gradlew :rDNA:build
+
+    - name: Store artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: rDNA
+        path: build/*.tar.gz
+
+  rDNA-check:
     runs-on: ${{ matrix.config.os }}
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
@@ -101,21 +120,9 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
-          working-directory: rDNA
+          working-directory: rDNA/rDNA
 
       - uses: r-lib/actions/check-r-package@v2
         with:
-          working-directory: rDNA
+          working-directory: rDNA/rDNA
           upload-snapshots: true
-
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-
-      - name: Execute Gradle build for rDNA
-        run: ./gradlew :rDNA:build
-
-      - name: Store artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: rDNA
-          path: build/*.tar.gz
