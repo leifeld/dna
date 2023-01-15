@@ -14,7 +14,7 @@ The Java software Discourse Network Analyzer (DNA) is a qualitative content anal
 
 - The previous version of DNA and rDNA came with a detailed [manual](https://github.com/leifeld/dna/releases/download/v2.0-beta.25/dna-manual.pdf) of more than 100 pages. It is outdated, but perhaps still useful.
 
-- See these [publications](https://www.philipleifeld.com/publications) to learn more. The introductory chapter in the Oxford Handbook of Political Networks is recommended.
+- See the [bibliography](./bibliography/bibliography.md) for published research using discourse network analysis or the DNA software. The introductory chapter (Leifeld 2017) in the Oxford Handbook of Political Networks is recommended as a primer.
 
 - If you have questions or want to report bugs, please create an issue in the [issue tracker](https://github.com/leifeld/dna/issues).
 
