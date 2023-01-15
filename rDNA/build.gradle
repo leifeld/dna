@@ -1,0 +1,63 @@
+task rDNADocument {
+    doLast {
+        exec {
+            workingDir 'rDNA'
+            commandLine 'R', "-e", "devtools::document()"
+        }
+    }
+}
+
+task rDNABuild {
+    dependsOn rDNADocument
+    doLast {
+        exec {
+            workingDir '.'
+            commandLine 'mkdir', "-p", "$rootDir/build"
+        }
+        exec {
+            workingDir "$rootDir/build/"
+            commandLine 'R', "CMD", "build", "../rDNA/rDNA"
+        }
+    }
+    def outputDir = file("$rootDir/build/")
+    outputs.dir outputDir
+}
+
+task rDNACheck {
+    doLast {
+        exec {
+            workingDir '.'
+            commandLine 'mkdir', "-p", "$rootDir/build"
+        }
+        exec {
+            workingDir "rDNA"
+            commandLine 'R', "-e", "devtools::check(manual = TRUE, check_dir = '../../build/')"
+        }
+    }
+    def outputDir = file("$rootDir/build/")
+    outputs.dir outputDir
+}
+
+task rDNATest {
+    doLast {
+        exec {
+            workingDir '.'
+            commandLine 'mkdir', "-p", "$rootDir/build"
+        }
+        exec {
+            workingDir "rDNA"
+            commandLine 'R', "-e", "devtools::test()"
+        }
+        exec {
+            workingDir "rDNA"
+            commandLine 'R', "-e", "withr::with_envvar(c('NOT_CRAN' = 'true'), covr::codecov(quiet = FALSE))"
+        }
+    }
+}
+
+task build {
+    dependsOn rDNABuild
+    def outputDir = file("$rootDir/build/")
+    outputs.dir outputDir
+    doLast {}
+}

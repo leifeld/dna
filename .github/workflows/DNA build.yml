@@ -3,7 +3,7 @@ name: build
 on: [push, pull_request]
 
 jobs:
-  bibliography:
+  Bibliography:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -42,9 +42,9 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: Bibliography
-        path: bibliography/build
+        path: build/bibliography.*
 
-  DNA:
+  DNA jar:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -65,7 +65,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: DNA
-        path: dna/build/libs
+        path: build/*.jar
 
   rDNA:
     runs-on: ${{ matrix.config.os }}
@@ -107,3 +107,15 @@ jobs:
         with:
           working-directory: rDNA
           upload-snapshots: true
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Execute Gradle build for rDNA
+        run: ./gradlew :rDNA:build
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: rDNA
+          path: build/*.tar.gz

@@ -1,7 +1,6 @@
 // Java plugin
 plugins {
     id 'java'
-    id 'eclipse'
 }
 
 // create jar file, not just .class files
@@ -29,6 +28,8 @@ jar {
     
     sourceCompatibility = '11'
     targetCompatibility = '11'
+
+    destinationDirectory.set(file("$rootDir/build/"))
 }
 
 // set up Maven repository for the jar dependencies
