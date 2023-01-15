@@ -9,12 +9,6 @@
 *.blg
 *.directory
 *.Rhistory
-manual/dna-manual.tex
-manual/figure/
-manual/sample.dna
-manual/dna-2.0-beta20.jar
-manual/dna-manual.pdf
-manual/sample.TXT
 DNA/bin
 output
 .idea
@@ -24,3 +18,4 @@ output
 
 # Ignore Gradle build output directory
 dna/build
+bibliography/build/bibliography.pdf

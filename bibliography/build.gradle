@@ -1,16 +1,72 @@
 task bibliographyMarkdown {
-    def outputDir = file("$buildDir/")
-    outputs.dir outputDir
+    doLast {
+        exec {
+            workingDir '.'
+            commandLine 'mkdir', "-p", "build"
+        }
+        exec {
+            workingDir '.'
+            commandLine 'pandoc', "-t", "gfm", "-s", "--csl", "apa-numeric-superscript-brackets.csl", "--citeproc", "-o", "build/bibliography.md", "bibliography.tex"
+        }
+    }
+}
+
+task bibliographyPdflatex {
+    doLast{
+        exec {
+            workingDir '.'
+            commandLine 'mkdir', "-p", "temp"
+        }
+        exec {
+            workingDir '.'
+            commandLine 'mkdir', "-p", "build"
+        }
+        exec {
+            workingDir '.'
+            commandLine 'cp', "bibliography.tex", "temp/"
+        }
+        exec {
+            workingDir '.'
+            commandLine 'cp', "bibliography.bib", "temp/"
+        }
+    }
+
+    doLast {
+        exec {
+            workingDir 'temp'
+            commandLine 'pdflatex', "bibliography.tex"
+        }
+        exec {
+            workingDir 'temp'
+            commandLine 'bibtex', "bibliography"
+        }
+        exec {
+            workingDir 'temp'
+            commandLine 'pdflatex', "bibliography.tex"
+        }
+        exec {
+            workingDir 'temp'
+            commandLine 'pdflatex', "bibliography.tex"
+        }
+    }
 
     doLast {
         exec {
             workingDir '.'
-            commandLine 'pandoc', "-t", "gfm", "-s", "--csl", "apa-numeric-superscript-brackets.csl", "--citeproc", "-o", "$buildDir//bibliography.md", "bibliography.tex"
+            commandLine 'mv', "temp/bibliography.pdf", "build/"
+        }
+        exec {
+            workingDir '.'
+            commandLine 'rm', "-r", "temp"
         }
     }
 }
 
 task build {
-   dependsOn bibliographyMarkdown
-   doLast {}
+    dependsOn bibliographyMarkdown
+    dependsOn bibliographyPdflatex
+    def outputDir = file('build')
+    outputs.dir outputDir
+
+    doLast {}
 }
