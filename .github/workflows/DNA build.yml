@@ -44,7 +44,7 @@ jobs:
         name: Bibliography
         path: build/bibliography.*
 
-  DNA jar:
+  DNA-jar:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
