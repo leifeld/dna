@@ -2,7 +2,7 @@ task rDNADocument {
     doLast {
         exec {
             workingDir 'rDNA'
-            commandLine 'R', "-e", "devtools::document()"
+            commandLine 'R', "-e", "roxygen2::roxygenize()"
         }
     }
 }
