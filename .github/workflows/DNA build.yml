@@ -9,10 +9,22 @@ jobs:
     - uses: actions/checkout@v3
     - uses: gradle/wrapper-validation-action@master
 
-    - name: Install dependencies for bibliography
-      run: |
-        wget https://github.com/jgm/pandoc/releases/download/2.19.2/pandoc-2.19.2-1-amd64.deb
-        sudo dpkg -i pandoc-2.19.2-1-amd64.deb
+    - name: Load from cache
+        id: pandoc
+        uses: actions/cache@v3
+        with:
+          path: pandoc-2.19.2-1
+          key: pandoc-2.19.2-1
+      - name: Download pandoc-2.19.2-1-amd64.deb
+        if: steps.pandoc.outputs.cache-hit != 'true'
+        run: |
+          mkdir pandoc-2.19.2-1
+          cd pandoc-2.19.2-1
+          wget https://github.com/jgm/pandoc/releases/download/2.19.2/pandoc-2.19.2-1-amd64.deb
+      - name: Install protobuf
+        run: |
+          cd pandoc-2.19.2-1
+          sudo dpkg -i pandoc-2.19.2-1-amd64.deb
 
     - name: Check pandoc version
       run: pandoc --version
