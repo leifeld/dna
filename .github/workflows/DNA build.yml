@@ -8,13 +8,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: gradle/wrapper-validation-action@master
-
-    - name: Load from cache
-        id: pandoc
-        uses: actions/cache@v1
-        with:
-          path: pandoc-2.19.2-1
-          key: pandoc-2.19.2-1
+    - uses: actions/cache@v3
+      id: pandoc
+      with:
+        path: pandoc-2.19.2-1
+        key: pandoc-2.19.2-1
     - name: Download pandoc-2.19.2-1-amd64.deb
       if: steps.pandoc.outputs.cache-hit != 'true'
       run: |
