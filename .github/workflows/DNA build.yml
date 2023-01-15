@@ -15,7 +15,7 @@ jobs:
         cache: gradle
         
     - name: Install dependencies for bibliography
-      run: sudo apt-get install -y ghc-citeproc pandoc
+      run: sudo apt-get install -y pandoc-citeproc pandoc
 
     - name: Check pandoc version
       run: pandoc --version
