@@ -19,7 +19,7 @@ jobs:
         mkdir pandoc-2.19.2-1
         cd pandoc-2.19.2-1
         wget https://github.com/jgm/pandoc/releases/download/2.19.2/pandoc-2.19.2-1-amd64.deb
-    - name: Install protobuf
+    - name: Install pandoc
       run: |
         cd pandoc-2.19.2-1
         sudo dpkg -i pandoc-2.19.2-1-amd64.deb
