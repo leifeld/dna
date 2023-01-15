@@ -18,4 +18,7 @@ output
 
 # Ignore Gradle build output directory
 dna/build
+build/*.jar
+build/*.tar.gz
+build/*.pdf
 bibliography/build/bibliography.pdf
