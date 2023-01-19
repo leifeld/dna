@@ -22,3 +22,5 @@ build/*.jar
 build/*.tar.gz
 build/*.pdf
 bibliography/build/bibliography.pdf
+bibliography/bibliography.bbl
+bibliography/bibliography.pdf
