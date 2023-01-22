@@ -681,6 +681,118 @@ public class HeadlessDna implements Logger.LogListener {
 	}
 
 	/**
+	 * @param codedDocumentIds       The document IDs denoting the documents that have been coded and should be used for the training set.
+	 * @param numSamples             The number of temporal permutations (i.e., resampled sequences) of the coded documents.
+	 * @param maxNumDocuments        The maximum number of documents to be included in the training set for saturation prediction. Must be at least two and at most the number of coded document IDs.
+	 * @param networkType            The network type as provided by rDNA (can be {@code "eventlist"}, {@code "twomode"}, or {@code "onemode"}).
+	 * @param statementType          Statement type as a {@link String}.
+	 * @param variable1              First variable for export, provided as a {@link String}.
+	 * @param variable1Document      boolean indicating if the first variable is at the document level.
+	 * @param variable2              Second variable for export, provided as a {@link String}.
+	 * @param variable2Document      boolean indicating if the second variable is at the document level.
+	 * @param qualifier              Qualifier variable as a {@link String}.
+	 * @param qualifierDocument      boolean indicating if the qualifier variable is at the document level.
+	 * @param qualifierAggregation   Aggregation rule for the qualifier variable (can be {@code "ignore"}, {@code "combine"}, {@code "subtract"}, {@code "congruence"}, or {@code "conflict"}).
+	 * @param normalization          Normalization setting as a {@link String}, as provided by rDNA (can be {@code "no"}, {@code "activity"}, {@code "prominence"}, {@code "average"}, {@code "jaccard"}, or {@code "cosine"}).
+	 * @param duplicates             An input {@link String} from rDNA that can be {@code "include"}, {@code "document"}, {@code "week"}, {@code "month"}, {@code "year"}, or {@code "acrossrange"}.
+	 * @param startDate              Start date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param stopDate               Stop date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param startTime              Start time for the export, provided as a {@link String} with format {@code "HH:mm:ss"}.
+	 * @param stopTime               Stop time for the export, provided as a {@link String} with format {@code "HH:mm:ss"}.
+	 * @param excludeVariables       A {@link String} array with n elements, indicating the variable of the n'th value.
+	 * @param excludeValues          A {@link String} array with n elements, indicating the value pertaining to the n'th variable {@link String}.
+	 * @param excludeAuthors         A {@link String} array of values to exclude in the {@code author} variable at the document level.
+	 * @param excludeSources         A {@link String} array of values to exclude in the {@code source} variable at the document level.
+	 * @param excludeSections        A {@link String} array of values to exclude in the {@code section} variable at the document level.
+	 * @param excludeTypes           A {@link String} array of values to exclude in the {@code "type"} variable at the document level.
+	 * @param invertValues           boolean indicating whether the statement-level exclude values should be included (= {@code true}) rather than excluded.
+	 * @param invertAuthors          boolean indicating whether the document-level author values should be included (= {@code true}) rather than excluded.
+	 * @param invertSources          boolean indicating whether the document-level source values should be included (= {@code true}) rather than excluded.
+	 * @param invertSections         boolean indicating whether the document-level section values should be included (= {@code true}) rather than excluded.
+	 * @param invertTypes            boolean indicating whether the document-level type values should be included (= {@code true}) rather than excluded.
+	 * @return                       A {@link Matrix} object containing the resulting one-mode or two-mode network.
+	 */
+	public double[][] rSaturation(int[] codedDocumentIds, int numSamples, int maxNumDocuments, String networkType,
+							String statementType, String variable1, boolean variable1Document, String variable2,
+							boolean variable2Document, String qualifier, boolean qualifierDocument,
+							String qualifierAggregation, String normalization, String duplicates, String startDate,
+							String stopDate, String startTime, String stopTime, String[] excludeVariables,
+							String[] excludeValues, String[] excludeAuthors, String[] excludeSources,
+							String[] excludeSections, String[] excludeTypes, boolean invertValues,
+							boolean invertAuthors, boolean invertSources, boolean invertSections, boolean invertTypes) {
+
+		// set irrelevant arguments
+		boolean includeIsolates = true;
+		String timeWindow = "no";
+		int windowSize = 0;
+		String outfile = "saturation.csv"; // never used
+		String fileFormat = "csv";
+
+		// step 1: preprocess arguments
+		StatementType st = Dna.sql.getStatementType(statementType); // format statement type
+
+		// format dates and times with input formats "dd.MM.yyyy" and "HH:mm:ss"
+		LocalDateTime ldtStart, ldtStop;
+		LocalDateTime[] dateRange = formatDateTime(startDate, startTime, stopDate, stopTime);
+		ldtStart = dateRange[0];
+		ldtStop = dateRange[1];
+
+		// process exclude variables: create HashMap with variable:value pairs
+		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
+		if (excludeVariables.length > 0) {
+			for (int i = 0; i < excludeVariables.length; i++) {
+				ArrayList<String> values = map.get(excludeVariables[i]);
+				if (values == null) {
+					values = new ArrayList<String>();
+				}
+				if (!values.contains(excludeValues[i])) {
+					values.add(excludeValues[i]);
+				}
+				Collections.sort(values);
+				map.put(excludeVariables[i], values);
+			}
+		}
+
+		// initialize Exporter class
+		this.exporter = new Exporter(
+				networkType,
+				st,
+				variable1,
+				variable1Document,
+				variable2,
+				variable2Document,
+				qualifier,
+				qualifierDocument,
+				qualifierAggregation,
+				normalization,
+				includeIsolates,
+				duplicates,
+				ldtStart,
+				ldtStop,
+				timeWindow,
+				windowSize,
+				map,
+				Stream.of(excludeAuthors).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeSources).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeSections).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeTypes).collect(Collectors.toCollection(ArrayList::new)),
+				invertValues,
+				invertAuthors,
+				invertSources,
+				invertSections,
+				invertTypes,
+				fileFormat,
+				outfile);
+
+		// step 2: filter
+		this.exporter.loadData();
+		this.exporter.filterStatements();
+
+		// step 3: saturation
+		return this.exporter.saturation(codedDocumentIds, numSamples, maxNumDocuments);
+	}
+
+	/**
 	 * Compute backbone and set of redundant entities on the second mode in a discourse network.
 	 *
 	 * @param method                 Backbone algorithm (can be {@code "nested"}, {@code "fixed"}, or {@code "penalty"}).

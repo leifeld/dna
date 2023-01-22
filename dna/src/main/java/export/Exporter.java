@@ -3106,6 +3106,168 @@ public class Exporter {
 	}
 
 	/**
+	 * For a vector of document IDs (the already coded set of documents), generate a number of sequences of cumulative
+	 * additions to the network according to normalized Euclidean network distances between consecutively sampled
+	 * documents from the document ID vector.
+	 *
+	 * @param codedDocumentIds Vector of document IDs that have been coded and are eligible for training.
+	 * @param numSamples The number of randomly resampled document sequences to return.
+	 * @param maxNumDocuments The calculations stop at this maximum number of documents, usually the number of document
+	 *                        IDs provided.
+	 * @return A two-dimensional array containing the different sequences in the first dimension and the cumulative
+	 *         number of documents in the second dimension.
+	 */
+	public double[][] saturation(int[] codedDocumentIds, int numSamples, int maxNumDocuments) {
+		// drop document IDs that are not among the filtered documents
+		Set<Integer> filteredDocumentIds = new HashSet<>();
+		this.filteredStatements.stream().mapToInt(s -> s.getDocumentId()).forEach(filteredDocumentIds::add);
+		ArrayList<Integer> docIds = IntStream.of(codedDocumentIds)
+				.peek(id -> {
+					if (!filteredDocumentIds.contains(id)) {
+						LogEvent l = new LogEvent(Logger.WARNING,
+								"Document ID " + id + " skipped when predicting saturation.",
+								"Document ID " + id + " skipped. The document ID was not found in the set of filtered statements as per the network export options. It could hence not be used as a coded document to predict saturation and was skipped. If this was not intended, please check the network export arguments and change them as needed.");
+						Dna.logger.log(l);
+					}
+				})
+				.filter(id -> filteredDocumentIds.contains(id))
+				.boxed()
+				.collect(Collectors.toCollection(ArrayList::new));
+
+		// check if the arguments are valid
+		if (numSamples < 1) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"Invalid number of resamples for saturation prediction.",
+					"'numSamples' changed from " + numSamples + " to 1. At least one sequence must be computed to predict saturation, preferably multiple sequences. Less than one sequence was requested. The parameter was changed to one sequence.");
+			numSamples = 1;
+			Dna.logger.log(l);
+		}
+		if (numSamples > docIds.size()) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"Invalid number of resamples for saturation prediction.",
+					"'numSamples' changed from " + numSamples + " to " + docIds.size() + ". At most as many sequences must be computed to predict saturation as there are coded documents in order to avoid multiple counting of sequences. The parameter was changed to " + docIds.size() + " sequences, which corresponds to the number of coded documents that were provided as a training set.");
+			numSamples = docIds.size();
+			Dna.logger.log(l);
+		}
+		if (maxNumDocuments < 2) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"Invalid maximum number of documents to compute saturation.",
+					"'maxNumDocuments' changed from " + maxNumDocuments + " to " + docIds.size() + ". At least two sampled documents are needed to predict saturation, ideally as many as were coded. Setting the number of resampled documents (i.e., the sequence length) to " + docIds.size() + " instead of " + maxNumDocuments + ".");
+			maxNumDocuments = docIds.size();
+			Dna.logger.log(l);
+		}
+		if (maxNumDocuments > docIds.size()) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"Invalid maximum number of documents to compute saturation.",
+					"'maxNumDocuments' changed from " + maxNumDocuments + " to " + docIds.size() + ". At most as many documents must be sampled for predicting saturation as there are coded documents in order to avoid multiple counting of coded documents. The parameter was changed to a maximum of " + docIds.size() + " coded documents (i.e., sequence length), which corresponds to the number of coded documents that were provided as a training set.");
+			maxNumDocuments = docIds.size();
+			Dna.logger.log(l);
+		}
+		if (!this.timeWindow.equals("no")) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"Time windows not supported by saturation prediction.",
+					"Attempted to use time windows with saturation prediction, but this is not supported. Switched off the time window option.");
+			this.timeWindow = "no";
+			Dna.logger.log(l);
+		}
+		if (!this.networkType.equals("onemode") && !this.networkType.equals("twomode")) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"Network type not recognized by saturation prediction.",
+					"Attempted to use network type \"" + this.networkType + "\" with saturation prediction, but only \"onemode\" and \"twomode\" are permitted. Using \"onemode\".");
+			this.networkType = "onemode";
+			Dna.logger.log(l);
+		}
+		if (!this.isolates) {
+			this.isolates = true;
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"Isolates switched on for saturation prediction.",
+					"Isolates were switched off for saturation prediction although isolates are required. Switched isolates on.");
+			Dna.logger.log(l);
+		}
+
+		// resample documents in a random sequence and save sequence of cumulative networks
+		double[][] results = new double[numSamples][maxNumDocuments];
+		ArrayList<Matrix> networks = new ArrayList<>();
+		ArrayList<ExportStatement> cumulativeStatements = new ArrayList<>();
+		double cumulativeEucDist = 0.0;
+		for (int i = 0; i < numSamples; i++) {
+			networks.clear();
+			cumulativeStatements.clear();
+			Collections.shuffle(docIds);
+			for (int j = 0; j < maxNumDocuments; j++) {
+				final int jFinal = j;
+				cumulativeStatements.addAll(this.filteredStatements.stream().filter(s -> s.getDocumentId() == docIds.get(jFinal)).collect(Collectors.toCollection(ArrayList::new)));
+				if (networkType.equals("onemode")) {
+					networks.add(this.computeOneModeMatrix(cumulativeStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime));
+				} else {
+					networks.add(this.computeTwoModeMatrix(cumulativeStatements, this.startDateTime, this.stopDateTime));
+				}
+				if (j == 0) {
+					double[][] zeroMat = new double[networks.get(j).getMatrix().length][networks.get(j).getMatrix()[0].length];
+					results[i][j] = normalizedEuclideanNetworkDistance(zeroMat, networks.get(j).getMatrix());
+				} else {
+					// TODO: may need to stop adding the previous result for easier non-linear modeling...
+					results[i][j] = normalizedEuclideanNetworkDistance(networks.get(j - 1).getMatrix(), networks.get(j).getMatrix()) + results[i][j - 1];
+				}
+			}
+		}
+		return results;
+	}
+
+	/**
+	 * Compute the Euclidean distance between two normalized network matrices. The normalization ensures that the two
+	 * matrices have compatible magnitudes and differ only in structure (i.e., redundant information is discounted).
+	 *
+	 * @param matrix1 The first matrix.
+	 * @param matrix2 The second matrix. Must have the same dimensions as the first matrix.
+	 * @return The Euclidean distance of the two normalized matrices.
+	 */
+	private double normalizedEuclideanNetworkDistance(double[][] matrix1, double[][] matrix2) {
+		// check compatibility of dimensions
+		if (matrix1.length != matrix2.length || matrix1[0].length != matrix2[0].length) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"Incompatible matrix dimensions during saturation prediction.",
+					"Two consecutive network matrices did not have identical dimensions when trying to predict saturation. Giving up.");
+		}
+
+		// compute standardization factor to normalize matrices, separately in the positive and negative range
+		double positiveSum1 = 0.0, negativeSum1 = 0.0, positiveSum2 = 0.0, negativeSum2 = 0.0;
+		for (int i = 0; i < matrix1.length; i++) {
+			for (int j = 0; j < matrix1[i].length; j++) {
+				if (matrix1[i][j] > 0) {
+					positiveSum1 = positiveSum1 + matrix1[i][j];
+				} else {
+					negativeSum1 = negativeSum1 - matrix1[i][j];
+				}
+				if (matrix2[i][j] > 0) {
+					positiveSum2 = positiveSum2 + matrix2[i][j];
+				} else {
+					negativeSum2 = negativeSum2 - matrix2[i][j];
+				}
+			}
+		}
+
+		// normalize and compute Euclidean distance
+		double eucDist = 0.0;
+		for (int i = 0; i < matrix1.length; i++) {
+			for (int j = 0; j < matrix1[i].length; j++) {
+				if (matrix1[i][j] > 0 && positiveSum1 > 0) {
+					matrix1[i][j] = matrix1[i][j] / positiveSum1;
+				} else if (matrix1[i][j] < 0 && negativeSum1 > 0){
+					matrix1[i][j] = matrix1[i][j] / negativeSum1;
+				}
+				if (matrix2[i][j] > 0 && positiveSum2 > 0) {
+					matrix2[i][j] = matrix2[i][j] / positiveSum2;
+				} else if (matrix2[i][j] < 0 && negativeSum2 > 0){
+					matrix2[i][j] = matrix2[i][j] / negativeSum2;
+				}
+				eucDist = eucDist + Math.sqrt((matrix1[i][j] - matrix2[i][j]) * (matrix1[i][j] - matrix2[i][j]));
+			}
+		}
+		return eucDist;
+	}
+
+	/**
 	 * Get the current iteration {@code t} of the simulated annealing algorithm.
 	 *
 	 * @return Current iteration {@code t}.
@@ -3258,7 +3420,7 @@ public class Exporter {
 	 *
 	 * @param eigenvalues1 Normalized eigenvalues of the full matrix.
 	 * @param eigenvalues2 Normalized eigenvalues of the current or candidate matrix.
-	 * @param p The penalty parameter. Typical values could be {@code 5.5}, {@code 7.5}, or {@code 12}, for example.
+	 * @param p The penalty parameter. Typical values could be {@code 5.5}, {@code 7.5}, or {@code 12}, for example. Use {@code 0} to switch off penalty.
 	 * @param candidateBackboneSize The number of entities in the current or candidate backbone.
 	 * @param numEntitiesTotal The number of second-mode entities (e.g., concepts) in total.
 	 * @return Penalized loss.
