@@ -4,7 +4,7 @@ author:
 bibliography:
 - bibliography.bib
 csl: apa-numeric-superscript-brackets.csl
-date: 2023-01-20
+date: 2023-01-22
 title: "Discourse Network Analysis: Bibliography"
 ---
 
@@ -803,9 +803,19 @@ Governance*, *14*(4), 653–673. <https://doi.org/10.1111/rego.12238>
 
 </div>
 
+<div id="ref-rone2018dont" class="csl-entry">
+
+87\. Rone, J. (2018). *“Don’t worry, we are from the internet.” The
+diffusion of protest against the anti-counterfeiting trade agreement in
+the age of austerity* \[PhD Thesis, European University Institute,
+Department of Political; Social Sciences\].
+<https://doi.org/10.2870/722302>
+
+</div>
+
 <div id="ref-schaub2021public" class="csl-entry">
 
-87\. Schaub, S. (2021). Public contestation over agricultural pollution:
+88\. Schaub, S. (2021). Public contestation over agricultural pollution:
 A discourse network analysis on narrative strategies in the policy
 process. *Policy Sciences*, *54*(4), 783–821.
 <https://doi.org/10.1007/s11077-021-09439-x>
@@ -814,7 +824,7 @@ process. *Policy Sciences*, *54*(4), 783–821.
 
 <div id="ref-schaub2020transition" class="csl-entry">
 
-88\. Schaub, S., & Braunbeck, T. (2020). Transition towards sustainable
+89\. Schaub, S., & Braunbeck, T. (2020). Transition towards sustainable
 pharmacy? The influence of public debates on policy responses to
 pharmaceutical contaminants in water. *Environmental Sciences Europe*,
 *32*(1), 1–19. <https://doi.org/10.1186/s12302-020-00423-5>
@@ -823,7 +833,7 @@ pharmaceutical contaminants in water. *Environmental Sciences Europe*,
 
 <div id="ref-schaub2020comparing" class="csl-entry">
 
-89\. Schaub, S., & Metz, F. A. (2020). Comparing discourse and policy
+90\. Schaub, S., & Metz, F. A. (2020). Comparing discourse and policy
 network approaches: Evidence from water policy on micropollutants.
 *Politics and Governance*, *8*(2), 184–199.
 <https://doi.org/10.17645/pag.v8i2.2597>
@@ -832,7 +842,7 @@ network approaches: Evidence from water policy on micropollutants.
 
 <div id="ref-schmid2020explaining" class="csl-entry">
 
-90\. Schmid, N., Sewerin, S., & Schmidt, T. S. (2020). Explaining
+91\. Schmid, N., Sewerin, S., & Schmidt, T. S. (2020). Explaining
 advocacy coalition change with policy feedback. *Policy Studies
 Journal*, *48*(4), 1109–1134. <https://doi.org/10.1111/psj.12365>
 
@@ -840,7 +850,7 @@ Journal*, *48*(4), 1109–1134. <https://doi.org/10.1111/psj.12365>
 
 <div id="ref-schmidt2019policy" class="csl-entry">
 
-91\. Schmidt, T. S., Schmid, N., & Sewerin, S. (2019). Policy goals,
+92\. Schmidt, T. S., Schmid, N., & Sewerin, S. (2019). Policy goals,
 partisanship and paradigmatic change in energy policy – analyzing
 parliamentary discourse in Germany over 30 years. *Climate Policy*,
 *19*(6), 771–786. <https://doi.org/10.1080/14693062.2019.1594667>
@@ -849,7 +859,7 @@ parliamentary discourse in Germany over 30 years. *Climate Policy*,
 
 <div id="ref-schneider2013punctuations" class="csl-entry">
 
-92\. Schneider, V., & Ollmann, J. K. (2013). Punctuations and
+93\. Schneider, V., & Ollmann, J. K. (2013). Punctuations and
 displacements in policy discourse: The climate change issue in Germany
 2007–2010. In S. Silvern & S. Young (Eds.), *Environmental change and
 sustainability* (pp. 157–184). Intech. <https://doi.org/10.5772/54302>
@@ -858,7 +868,7 @@ sustainability* (pp. 157–184). Intech. <https://doi.org/10.5772/54302>
 
 <div id="ref-schulz2020forest" class="csl-entry">
 
-93\. Schulz, C. (2020). Forest conservation through markets? A discourse
+94\. Schulz, C. (2020). Forest conservation through markets? A discourse
 network analysis of the debate on funding mechanisms for REDD+ in
 Brazil. *Environmental Communication*, *14*(2), 202–218.
 <https://doi.org/10.1080/17524032.2019.1631869>
@@ -867,7 +877,7 @@ Brazil. *Environmental Communication*, *14*(2), 202–218.
 
 <div id="ref-seidl2022politics" class="csl-entry">
 
-94\. Seidl, T. (2022). The politics of platform capitalism: A case study
+95\. Seidl, T. (2022). The politics of platform capitalism: A case study
 on the regulation of Uber in New York. *Regulation & Governance*,
 *16*(2), 357–374. <https://doi.org/10.1111/rego.12353>
 
@@ -875,7 +885,7 @@ on the regulation of Uber in New York. *Regulation & Governance*,
 
 <div id="ref-shukla2022energyjustice" class="csl-entry">
 
-95\. Shukla, R., & Swarnakar, P. (2022). Energy justice in post-Paris
+96\. Shukla, R., & Swarnakar, P. (2022). Energy justice in post-Paris
 India: Unpacking consensus and conflict through storylines and discourse
 coalitions. *Energy Research & Social Science*, *91*, 102687.
 <https://doi.org/10.1016/j.erss.2022.102687>
@@ -884,7 +894,7 @@ coalitions. *Energy Research & Social Science*, *91*, 102687.
 
 <div id="ref-shukla2022energytransition" class="csl-entry">
 
-96\. Shukla, R., & Swarnakar, P. (2022). Energy transition and
+97\. Shukla, R., & Swarnakar, P. (2022). Energy transition and
 dialectics: Tracing discursive resistance to coal through discourse
 coalition in India. *Globalizations*.
 <https://doi.org/10.1080/14747731.2022.2086735>
@@ -893,7 +903,7 @@ coalition in India. *Globalizations*.
 
 <div id="ref-siagian2020mencari" class="csl-entry">
 
-97\. Siagian, T. H. (2020). Mencari kelompok berisiko tinggi terinfeksi
+98\. Siagian, T. H. (2020). Mencari kelompok berisiko tinggi terinfeksi
 virus corona dengan discourse network analysis. *Jurnal Kebijakan
 Kesehatan Indonesia: JKKI*, *9*(2), 98–106.
 <https://journal.ugm.ac.id/jkki/article/view/55475/27989>
@@ -902,7 +912,7 @@ Kesehatan Indonesia: JKKI*, *9*(2), 98–106.
 
 <div id="ref-steinfeld2016f" class="csl-entry">
 
-98\. Steinfeld, N. (2016). The F-campaign: A discourse network analysis
+99\. Steinfeld, N. (2016). The F-campaign: A discourse network analysis
 of party leaders’ campaign statements on Facebook. *Israel Affairs*,
 *22*(3–4), 743–759. <https://doi.org/10.1080/13537121.2016.1174385>
 
@@ -910,7 +920,7 @@ of party leaders’ campaign statements on Facebook. *Israel Affairs*,
 
 <div id="ref-stoddart2016nature" class="csl-entry">
 
-99\. Stoddart, M. C. J., & Nezhadhossein, E. (2016). Is nature-oriented
+100\. Stoddart, M. C. J., & Nezhadhossein, E. (2016). Is nature-oriented
 tourism a pro-environmental practice? Examining tourism–environmentalism
 alignments through discourse networks and intersectoral relationships.
 *The Sociological Quarterly*, *57*(3), 544–568.
@@ -920,7 +930,7 @@ alignments through discourse networks and intersectoral relationships.
 
 <div id="ref-stoddart2016endangered" class="csl-entry">
 
-100\. Stoddart, M. C. J., & Smith, J. (2016). The endangered arctic, the
+101\. Stoddart, M. C. J., & Smith, J. (2016). The endangered arctic, the
 arctic as resource frontier: Canadian news media narratives of climate
 change and the north. *Canadian Review of Sociology/Revue Canadienne de
 Sociologie*, *53*(3), 316–336. <https://doi.org/10.1111/cars.12111>
@@ -929,7 +939,7 @@ Sociologie*, *53*(3), 316–336. <https://doi.org/10.1111/cars.12111>
 
 <div id="ref-stoddart2015canadian" class="csl-entry">
 
-101\. Stoddart, M. C. J., & Tindall, D. B. (2015). Canadian news media
+102\. Stoddart, M. C. J., & Tindall, D. B. (2015). Canadian news media
 and the cultural dynamics of multilevel climate governance.
 *Environmental Politics*, *24*(3), 401–422.
 <https://doi.org/10.1080/09644016.2015.1008249>
@@ -938,7 +948,7 @@ and the cultural dynamics of multilevel climate governance.
 
 <div id="ref-stoddart2017media" class="csl-entry">
 
-102\. Stoddart, M. C. J., Tindall, D. B., Smith, J., & Haluza-Delay, R.
+103\. Stoddart, M. C. J., Tindall, D. B., Smith, J., & Haluza-Delay, R.
 (2017). Media access and political efficacy in the eco-politics of
 climate change: Canadian national news and mediated policy networks.
 *Environmental Communication*, *11*(3), 386–400.
@@ -948,7 +958,7 @@ climate change: Canadian national news and mediated policy networks.
 
 <div id="ref-swarnakar2022beliefs" class="csl-entry">
 
-103\. Swarnakar, P., Shukla, R., & Broadbent, J. (2022). Beliefs and
+104\. Swarnakar, P., Shukla, R., & Broadbent, J. (2022). Beliefs and
 networks: Mapping the Indian climate policy discourse surrounding the
 Paris climate change conference in 2015. *Environmental Communication*,
 *16*(2), 145–162. <https://doi.org/10.1080/17524032.2021.1973528>
@@ -957,7 +967,7 @@ Paris climate change conference in 2015. *Environmental Communication*,
 
 <div id="ref-swinkels2021role" class="csl-entry">
 
-104\. Swinkels, E. M. (2021). *The role of EU leaders and ideas in
+105\. Swinkels, E. M. (2021). *The role of EU leaders and ideas in
 managing the Eurozone crisis: Navigating uncharted territory* \[PhD
 Thesis, Utrecht University\]. <https://doi.org/10.33540/563>
 
@@ -965,7 +975,7 @@ Thesis, Utrecht University\]. <https://doi.org/10.33540/563>
 
 <div id="ref-swinkels2022deciding" class="csl-entry">
 
-105\. Swinkels, M., & Esch, F. van. (2022). Deciding upon the banking
+106\. Swinkels, M., & Esch, F. van. (2022). Deciding upon the banking
 union: How a joint belief shift instigated deep institutional change in
 Eurozone governance. *European Policy Analysis*, *8*(1), 9–32.
 <https://doi.org/10.1002/epa2.1137>
@@ -974,7 +984,7 @@ Eurozone governance. *European Policy Analysis*, *8*(1), 9–32.
 
 <div id="ref-tobin2018mapping" class="csl-entry">
 
-106\. Tobin, P., Schmidt, N. M., Tosun, J., & Burns, C. (2018). Mapping
+107\. Tobin, P., Schmidt, N. M., Tosun, J., & Burns, C. (2018). Mapping
 states’ Paris climate pledges: Analysing targets and groups at COP 21.
 *Global Environmental Change*, *48*, 11–21.
 <https://doi.org/10.1016/j.gloenvcha.2017.11.002>
@@ -983,7 +993,7 @@ states’ Paris climate pledges: Analysing targets and groups at COP 21.
 
 <div id="ref-tolstukha2022stalemate" class="csl-entry">
 
-107\. Tolstukha, E. (2022). *Stalemate in the democratic reform debate
+108\. Tolstukha, E. (2022). *Stalemate in the democratic reform debate
 of the European Union? A dynamic discourse network analysis of actors
 and their commitment to reform options* \[PhD Thesis, University of
 Glasgow, School of Social; Political Sciences\].
@@ -993,7 +1003,7 @@ Glasgow, School of Social; Political Sciences\].
 
 <div id="ref-tosun2016politics" class="csl-entry">
 
-108\. Tosun, J., & Lang, A. (2016). The politics of hydraulic fracturing
+109\. Tosun, J., & Lang, A. (2016). The politics of hydraulic fracturing
 in Germany: Party competition at different levels of government. In C.
 M. Weible, T. Heikkila, K. Ingold, & M. Fischer (Eds.), *Policy debates
 on hydraulic fracturing. Comparing coalition politics in north america
@@ -1004,7 +1014,7 @@ and europe* (pp. 177–200). Palgrave Macmillan.
 
 <div id="ref-tosun2017mobilization" class="csl-entry">
 
-109\. Tosun, J., & Schaub, S. (2017). Mobilization in the European
+110\. Tosun, J., & Schaub, S. (2017). Mobilization in the European
 public sphere: The struggle over genetically modified organisms. *Review
 of Policy Research*, *34*(3), 310–330.
 <https://doi.org/10.1111/ropr.12235>
@@ -1013,7 +1023,7 @@ of Policy Research*, *34*(3), 310–330.
 
 <div id="ref-vesa2020quiet" class="csl-entry">
 
-110\. Vesa, J., Gronow, A., & Ylä-Anttila, T. (2020). The quiet
+111\. Vesa, J., Gronow, A., & Ylä-Anttila, T. (2020). The quiet
 opposition: How the pro-economy lobby influences climate policy. *Global
 Environmental Change*, *63*, 102117.
 <https://doi.org/10.1016/j.gloenvcha.2020.102117>
@@ -1022,7 +1032,7 @@ Environmental Change*, *63*, 102117.
 
 <div id="ref-vogeler2021shifting" class="csl-entry">
 
-111\. Vogeler, C. S., Möck, M., & Bandelow, N. C. (2021). Shifting
+112\. Vogeler, C. S., Möck, M., & Bandelow, N. C. (2021). Shifting
 governance cooperatively – coordination by public discourses in the
 German water–food nexus. *Journal of Environmental Management*, *286*,
 112266. <https://doi.org/10.1016/j.jenvman.2021.112266>
@@ -1031,7 +1041,7 @@ German water–food nexus. *Journal of Environmental Management*, *286*,
 
 <div id="ref-vogeler2021agri" class="csl-entry">
 
-112\. Vogeler, C. S., Schwindenhammer, S., Gonglach, D., & Bandelow, N.
+113\. Vogeler, C. S., Schwindenhammer, S., Gonglach, D., & Bandelow, N.
 C. (2021). Agri-food technology politics: Exploring policy narratives in
 the European Parliament. *European Policy Analysis*, *7*, 324–343.
 <https://doi.org/10.1002/epa2.1114>
@@ -1040,7 +1050,7 @@ the European Parliament. *European Policy Analysis*, *7*, 324–343.
 
 <div id="ref-wagner2017trends" class="csl-entry">
 
-113\. Wagner, P., & Payne, D. (2017). Trends, frames and discourse
+114\. Wagner, P., & Payne, D. (2017). Trends, frames and discourse
 networks: Analysing the coverage of climate change in Irish newspapers.
 *Irish Journal of Sociology*, *25*(1), 5–28.
 <https://doi.org/10.7227/IJS.0011>
@@ -1049,7 +1059,7 @@ networks: Analysing the coverage of climate change in Irish newspapers.
 
 <div id="ref-wallaschek2019discursive" class="csl-entry">
 
-114\. Wallaschek, S. (2019). The discursive appeal to solidarity and
+115\. Wallaschek, S. (2019). The discursive appeal to solidarity and
 partisan journalism in Europe’s migration crisis. *Social Inclusion*,
 *7*(2), 187–197. <https://doi.org/10.17645/si.v7i2.1963>
 
@@ -1057,7 +1067,7 @@ partisan journalism in Europe’s migration crisis. *Social Inclusion*,
 
 <div id="ref-wallaschek2020analyzing" class="csl-entry">
 
-115\. Wallaschek, S. (2020). Analyzing the European parliamentary
+116\. Wallaschek, S. (2020). Analyzing the European parliamentary
 elections in 2019: Actor visibility and issue-framing in transnational
 media. In M. Kaeding, M. Müller, & J. Schmälter (Eds.), *Die Europwahl
 2019. Ringen um die Zukunft Europas* (pp. 219–230). Springer VS.
@@ -1067,7 +1077,7 @@ media. In M. Kaeding, M. Müller, & J. Schmälter (Eds.), *Die Europwahl
 
 <div id="ref-wallaschek2020contested" class="csl-entry">
 
-116\. Wallaschek, S. (2020). Contested solidarity in the Euro crisis and
+117\. Wallaschek, S. (2020). Contested solidarity in the Euro crisis and
 Europe’s migration crisis: A discourse network analysis. *Journal of
 European Public Policy*, *27*(7), 1034–1053.
 <https://doi.org/10.1080/13501763.2019.1659844>
@@ -1076,7 +1086,7 @@ European Public Policy*, *27*(7), 1034–1053.
 
 <div id="ref-wallaschek2020framing" class="csl-entry">
 
-117\. Wallaschek, S. (2020). Framing solidarity in the Euro crisis: A
+118\. Wallaschek, S. (2020). Framing solidarity in the Euro crisis: A
 comparison of the German and Irish media discourse. *New Political
 Economy*, *25*(2), 231–247.
 <https://doi.org/10.1080/13563467.2019.1586864>
@@ -1085,7 +1095,7 @@ Economy*, *25*(2), 231–247.
 
 <div id="ref-wallaschek2020discursive" class="csl-entry">
 
-118\. Wallaschek, S. (2020). The discursive construction of solidarity:
+119\. Wallaschek, S. (2020). The discursive construction of solidarity:
 Analysing public claims in Europe’s migration crisis. *Political
 Studies*, *68*(1), 74–92. <https://doi.org/10.1177/0032321719831585>
 
@@ -1093,7 +1103,7 @@ Studies*, *68*(1), 74–92. <https://doi.org/10.1177/0032321719831585>
 
 <div id="ref-wallaschek2020solidarity" class="csl-entry">
 
-119\. Wallaschek, S., Starke, C., & Brüning, C. (2020). Solidarity in
+120\. Wallaschek, S., Starke, C., & Brüning, C. (2020). Solidarity in
 the public sphere: A discourse network analysis of German newspapers
 (2008–2017). *Politics and Governance*, *8*(2).
 <https://doi.org/10.17645/pag.v8i2.2609>
@@ -1102,7 +1112,7 @@ the public sphere: A discourse network analysis of German newspapers
 
 <div id="ref-wang2018dynamic" class="csl-entry">
 
-120\. Wang, S. (2018). *Dynamic constructed climate change discourses
+121\. Wang, S. (2018). *Dynamic constructed climate change discourses
 and discourse networks across newspapers in China around three critical
 policy moments: A comparative study of People’s Daily, China Daily, and
 Southern Weekend* \[PhD Thesis, University of Exeter, Department of
@@ -1112,7 +1122,7 @@ Politics\]. <http://hdl.handle.net/10871/33375>
 
 <div id="ref-wang2017unfolding" class="csl-entry">
 
-121\. Wang, C., & Wang, L. (2017). Unfolding policies for innovation
+122\. Wang, C., & Wang, L. (2017). Unfolding policies for innovation
 intermediaries in China: A discourse network analysis. *Science and
 Public Policy*, *44*(3), 354–368.
 <https://doi.org/10.1093/scipol/scw068>
@@ -1121,7 +1131,7 @@ Public Policy*, *44*(3), 354–368.
 
 <div id="ref-wang2017social" class="csl-entry">
 
-122\. Wang, Y. (2017). The social networks and paradoxes of the opt-out
+123\. Wang, Y. (2017). The social networks and paradoxes of the opt-out
 movement amid the common core state standards implementation. *Education
 Policy Analysis Archives*, *25*(34), 1–27.
 <https://doi.org/10.14507/epaa.25.2757>
@@ -1130,16 +1140,24 @@ Policy Analysis Archives*, *25*(34), 1–27.
 
 <div id="ref-wang2020understanding" class="csl-entry">
 
-123\. Wang, Y. (2020). Understanding Congressional coalitions: A
+124\. Wang, Y. (2020). Understanding Congressional coalitions: A
 discourse network analysis of Congressional hearings for the Every
 Student Succeeds act. *Education Policy Analysis Archives*, *28*(119),
 1–30. <https://doi.org/10.14507/epaa.28.4451>
 
 </div>
 
+<div id="ref-yan2023college" class="csl-entry">
+
+125\. Yan, K., Wu, H., Bu, K., & Wu, L. (2023). The college admission
+policy evolution from 2003 to 2020 in China – a social network analysis.
+*Higher Education Policy*. <https://doi.org/10.1057/s41307-022-00300-1>
+
+</div>
+
 <div id="ref-you2021exploring" class="csl-entry">
 
-124\. You, J., Weible, C. M., & Heikkila, T. (2021). Exploring
+126\. You, J., Weible, C. M., & Heikkila, T. (2021). Exploring
 instigator and defender policy scenarios in the siting of energy
 infrastructure. *Politics & Policy*, *50*(1), 8–32.
 <https://doi.org/10.1111/polp.12442>
@@ -1148,7 +1166,7 @@ infrastructure. *Politics & Policy*, *50*(1), 8–32.
 
 <div id="ref-yordy2019framing" class="csl-entry">
 
-125\. Yordy, J., You, J., Park, K., Weible, C. M., & Heikkila, T.
+127\. Yordy, J., You, J., Park, K., Weible, C. M., & Heikkila, T.
 (2019). Framing contests and policy conflicts over gas pipelines.
 *Review of Policy Research*, *36*(6), 736–756.
 <https://doi.org/10.1111/ropr.12364>
@@ -1157,7 +1175,7 @@ infrastructure. *Politics & Policy*, *50*(1), 8–32.
 
 <div id="ref-you2020policy" class="csl-entry">
 
-126\. You, J., Yordy, J., Park, K., Heikkila, T., & Weible, C. M.
+128\. You, J., Yordy, J., Park, K., Heikkila, T., & Weible, C. M.
 (2020). Policy conflicts in the siting of natural gas pipelines.
 *Journal of Environmental Policy & Planning*, *22*(4), 501–517.
 <https://doi.org/10.1080/1523908X.2020.1778457>
@@ -1166,7 +1184,7 @@ infrastructure. *Politics & Policy*, *50*(1), 8–32.
 
 <div id="ref-you2021comparing" class="csl-entry">
 
-127\. You, J., Yordy, J., Weible, C. M., Park, K., Heikkila, T., &
+129\. You, J., Yordy, J., Weible, C. M., Park, K., Heikkila, T., &
 Gilchrist, D. (2021). Comparing policy conflict on electricity
 transmission line sitings. *Public Policy and Administration*, *38*(1),
 107--129. <https://doi.org/10.1177/09520767211036800>
