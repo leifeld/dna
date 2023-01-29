@@ -4,7 +4,7 @@ author:
 bibliography:
 - bibliography.bib
 csl: apa-numeric-superscript-brackets.csl
-date: 2024-08-19
+date: 2024-08-29
 title: "Discourse Network Analysis: Bibliography"
 ---
 
