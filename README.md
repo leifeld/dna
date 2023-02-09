@@ -110,7 +110,7 @@ download.file(url = u, destfile = dest, mode = "wb")
   
   [![DNA tutorial](https://img.youtube.com/vi/u3hc86Tcs9A/0.jpg)](https://www.youtube.com/watch?v=u3hc86Tcs9A)
 
-- See the **bibliography** ([Markdown format](./build/bibliography.md); [PDF format](./build/bibliography.pdf)) for several hundred publications and theses using discourse network analysis or the DNA software.
+- See the [bibliography](./build/bibliography.md) for several hundred publications and theses using discourse network analysis or the DNA software.
 
 - The **introductory chapter** (Leifeld 2017) in the *Oxford Handbook of Political Networks* is recommended as a primer ([chapter](https://doi.org/10.1093/oxfordhb/9780190228217.013.25); [preprint](http://eprints.gla.ac.uk/121525/)).
 
