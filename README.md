@@ -12,14 +12,6 @@ The Java software Discourse Network Analyzer (DNA) is a qualitative content anal
 
 - The software comes with an R package called rDNA for remote controlling DNA and for further ways of analyzing the networks.
 
-- See the bibliography ([Markdown format](./build/bibliography.md); [PDF format](./build/bibliography.pdf)) for published research using discourse network analysis or the DNA software.
-
-- The introductory chapter (Leifeld 2017) in the *Oxford Handbook of Political Networks* is recommended as a primer ([chapter](https://doi.org/10.1093/oxfordhb/9780190228217.013.25); [preprint](http://eprints.gla.ac.uk/121525/)).
-
-- The previous version of DNA and rDNA came with a detailed [manual](https://github.com/leifeld/dna/releases/download/v2.0-beta.25/dna-manual.pdf) of more than 100 pages. It is outdated, but perhaps still useful.
-
-- If you have questions or want to report bugs, please create an issue in the [issue tracker](https://github.com/leifeld/dna/issues).
-
 [![DNA/rDNA build](https://github.com/leifeld/dna/actions/workflows/DNA%20build.yml/badge.svg)](https://github.com/leifeld/dna/actions/workflows/DNA%20build.yml)
 
 ## DNA 3.0: current development status
@@ -40,12 +32,20 @@ Note that the package relies on `rJava`, which needs to be installed first.
 
 If you require the latest (non-release) version of the DNA jar file from GitHub, you can clone the git repository to your computer and execute `./gradlew build` on your terminal or command line. This will build the jar file and store it in the directory `dna/build/libs/` of the cloned repository. Alternatively, you can try to download the latest artifact from the build process under [GitHub Actions](https://github.com/leifeld/dna/actions) by clicking on the latest build and scrolling down to "Artifacts". However, it is usually recommended to use the most recent [release](https://github.com/leifeld/dna/releases/) version.
 
+## Documentation
+
+- This **tutorial on YouTube** describes installation of DNA, basic data coding, network export, and network analysis using visone. The video clip is 18 minutes long.
+  
+  [![DNA tutorial](https://img.youtube.com/vi/u3hc86Tcs9A/0.jpg)](https://www.youtube.com/watch?v=u3hc86Tcs9A)
+
+- See the **bibliography** ([Markdown format](./build/bibliography.md); [PDF format](./build/bibliography.pdf)) for several hundred publications and theses using discourse network analysis or the DNA software.
+
+- The **introductory chapter** (Leifeld 2017) in the *Oxford Handbook of Political Networks* is recommended as a primer ([chapter](https://doi.org/10.1093/oxfordhb/9780190228217.013.25); [preprint](http://eprints.gla.ac.uk/121525/)).
+
+- The previous version of DNA and rDNA came with a detailed [manual](https://github.com/leifeld/dna/releases/download/v2.0-beta.25/dna-manual.pdf) of more than 100 pages. It is outdated, but perhaps still useful.
+
+- If you have questions or want to report bugs, please create an issue in the [issue tracker](https://github.com/leifeld/dna/issues).
+
 ## Support the project
 
 Please consider contributing to the project by telling other people about the software, citing our underlying [research](https://www.philipleifeld.com/publications) in your publications, reporting or fixing [issues](https://github.com/leifeld/issues), or starting pull requests.
-
-## Video tutorial
-
-This tutorial on YouTube describes installation of DNA, basic data coding, network export, and network analysis using visone. The video is 18 minutes long.
-
-[![DNA tutorial](https://img.youtube.com/vi/u3hc86Tcs9A/0.jpg)](https://www.youtube.com/watch?v=u3hc86Tcs9A)
