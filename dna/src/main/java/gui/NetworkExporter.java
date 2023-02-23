@@ -13,7 +13,6 @@ import model.TableDocument;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.io.File;
 import java.time.LocalDateTime;
@@ -985,24 +984,14 @@ public class NetworkExporter extends JDialog {
 		exportButton.setToolTipText(exportToolTip);
 		exportButton.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent e) {
-				JFileChooser fc = new JFileChooser();
-				fc.setFileFilter(new FileFilter() {
-					public boolean accept(File f) {
-						return f.getName().toLowerCase().endsWith((String) fileFormatBox.getSelectedItem()) || f.isDirectory();
-					}
-					public String getDescription() {
-						return "Network File (*" + (String) fileFormatBox.getSelectedItem() + ")";
-					}
-				});
-				
-				int returnVal = fc.showSaveDialog(getParent());
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = fc.getSelectedFile();
+				FileChooser fc = new FileChooser(NetworkExporter.this, "Export", true, (String) fileFormatBox.getSelectedItem(), "Network File (*" + (String) fileFormatBox.getSelectedItem() + ")", false);
+				if (fc.getFiles() != null && fc.getFiles().length > 0) {
+					File file = fc.getFiles()[0];
 					String fileName = file.getPath();
 					if (!fileName.endsWith((String) fileFormatBox.getSelectedItem())) {
 						fileName = fileName + (String) fileFormatBox.getSelectedItem();
 					}
-					
+
 					// read settings from GUI elements and translate into values for Exporter class
 					String networkType = (String) networkModesBox.getSelectedItem();
 					if (networkType.equals("Two-mode network")) {
@@ -1079,7 +1068,7 @@ public class NetworkExporter extends JDialog {
 					} else if (fileFormat.equals(".graphml")) {
 						fileFormat = "graphml";
 					}
-					
+
 					// start export thread
 					Thread exportThread = new Thread( new GuiExportThread(networkType, statementType, variable1Name,
 							variable1Document, variable2Name, variable2Document, qualifier, qualifierDocument,

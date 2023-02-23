@@ -21,6 +21,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -95,22 +96,17 @@ public class DocumentBatchImporter extends JDialog {
         cancelButton.setToolTipText("<html><p width=\"500\">Close this window and abort batch-import.</p></html>");
 
 		ImageIcon folderIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-folder.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
-		JButton browseButton = new JButton("Select folder", folderIcon);
+		JButton browseButton = new JButton("Select text files", folderIcon);
         browseButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser fc = new JFileChooser();
-				fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-				int returnVal = fc.showOpenDialog(DocumentBatchImporter.this);
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					folder = fc.getSelectedFile();
-				}
-				if (folder != null) {
-					files = folder.listFiles();
-					String[] fileNames = new String[files.length];
-					for (int i = 0; i < files.length; i++) {
-						fileNames[i] = files[i].getName();
-						listModel.addElement(fileNames[i]);
-					}
+				FileChooser fc = new FileChooser(DocumentBatchImporter.this, "Select directory", false, "", "Import directory", true);
+				if (fc.getFiles() != null) {
+					files = fc.getFiles();
+					listModel.clear();
+					Arrays.stream(fc.getFiles())
+							.filter(f -> f.isFile())
+							.map(f -> f.getName())
+							.forEachOrdered(f -> listModel.addElement(f));
 					fileList.updateUI();
 					if (files.length > 0) {
 						fileList.setSelectedIndex(0);
@@ -118,7 +114,7 @@ public class DocumentBatchImporter extends JDialog {
 				}
 			}
 		});
-        browseButton.setToolTipText("<html><p width=\"500\">Select a directory with text files to import into the current database. Each file should contain one document. Metadata can be parsed from the file names.</p></html>");
+        browseButton.setToolTipText("<html><p width=\"500\">Select multiple text files to import into the current database. Each file should contain one document. Metadata can be parsed from the file names.</p></html>");
 
 		ImageIcon updateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-refresh.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
         JButton updateButton = new JButton("Refresh preview", updateIcon);
@@ -281,7 +277,7 @@ public class DocumentBatchImporter extends JDialog {
 		tb3.setTitleJustification(TitledBorder.CENTER);
 		filePanel.setBorder(tb3);
         filePanel.add(fileListScroller, BorderLayout.CENTER);
-        filePanel.setToolTipText("<html><p width=\"500\">This list shows all files in the currently selected directory (as selected using the button at the bottom). Click on a file and then update the preview to see the contents.</p></html>");
+        filePanel.setToolTipText("<html><p width=\"500\">This list shows all files selected for import. Click on a file and then update the preview to see the contents.</p></html>");
         this.add(filePanel, BorderLayout.NORTH);
         
 		JPanel patternPanel = new JPanel(new GridBagLayout());

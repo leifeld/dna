@@ -828,12 +828,9 @@ public class BackboneExporter extends JDialog {
 		exportXmlButton.setEnabled(false);
 		exportXmlButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser fc = new JFileChooser();
-				fc.removeChoosableFileFilter(fc.getFileFilter());
-				fc.addChoosableFileFilter(new FileNameExtensionFilter("XMl files (*.xml)", "xml"));
-				int returnVal = fc.showSaveDialog(getParent());
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = fc.getSelectedFile();
+				FileChooser fc = new FileChooser(BackboneExporter.this, "Export backbone", true, ".xml", "XMl files (*.xml)", false);
+				if (fc.getFiles() != null && fc.getFiles().length > 0) {
+					File file = fc.getFiles()[0];
 					String fileName = file.getAbsolutePath();
 					if (!fileName.toLowerCase().endsWith(".xml")) {
 						fileName = fileName + ".xml";
@@ -851,12 +848,9 @@ public class BackboneExporter extends JDialog {
 		exportJsonButton.setEnabled(false);
 		exportJsonButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser fc = new JFileChooser();
-				fc.removeChoosableFileFilter(fc.getFileFilter());
-				fc.addChoosableFileFilter(new FileNameExtensionFilter("JSON files (*.json)", "json"));
-				int returnVal = fc.showSaveDialog(getParent());
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = fc.getSelectedFile();
+				FileChooser fc = new FileChooser(BackboneExporter.this, "Export backbone", true, ".json", "JSON files (*.json)", false);
+				if (fc.getFiles() != null && fc.getFiles().length > 0) {
+					File file = fc.getFiles()[0];
 					String fileName = file.getAbsolutePath();
 					if (!fileName.toLowerCase().endsWith(".json")) {
 						fileName = fileName + ".json";

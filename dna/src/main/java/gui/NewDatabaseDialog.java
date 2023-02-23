@@ -1,17 +1,12 @@
 package gui;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.FlowLayout;
-import java.awt.Frame;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Image;
-import java.awt.Insets;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -570,46 +565,34 @@ public class NewDatabaseDialog extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					String filename = null;
-					JFileChooser fc = new JFileChooser();
-					fc.setApproveButtonText("OK");
-					if (openExistingDatabase == true) {
-						fc.setDialogTitle("Select database...");
-					} else {
-						fc.setDialogTitle("New database...");
+					String title = "New database...";
+					boolean save = true;
+					if (openExistingDatabase) {
+						title = "Select database...";
+						save = false;
 					}
-					fc.setFileFilter(new FileFilter() {
-						public boolean accept(File f) {
-							return f.getName().toLowerCase().endsWith(".dna") || f.isDirectory();
+					FileChooser fc = new FileChooser(NewDatabaseDialog.this, title, save, ".dna", "DNA SQLite database (*.dna)", false);
+
+					if (fc.getFiles() != null && fc.getFiles().length > 0 && fc.getFiles()[0] != null && ((openExistingDatabase && fc.getFiles()[0].exists()) || (!openExistingDatabase && !fc.getFiles()[0].exists()))) {
+						String filename = new String(fc.getFiles()[0].getPath());
+						if (!filename.endsWith(".dna")) {
+							filename = filename + ".dna";
 						}
-						public String getDescription() {
-							return "DNA SQLite database (*.dna)";
-						}
-					});
-					int returnVal = fc.showOpenDialog(NewDatabaseDialog.this);
-					
-					// extract chosen file name and check its validity
-					if (returnVal == JFileChooser.APPROVE_OPTION) {
-						File file = fc.getSelectedFile();
-						if ((!openExistingDatabase && !file.exists()) || (openExistingDatabase && file.exists())) {
-							filename = new String(file.getPath());
-							if (!filename.endsWith(".dna")) {
-								filename = filename + ".dna";
-							}
-							urlField.setText(filename);
+						urlField.setText(filename);
+					} else {
+						urlField.setText("");
+						if (fc.getFiles() == null || fc.getFiles().length == 0 || fc.getFiles()[0] == null) {
+							// do nothing because operation was cancelled
+						} else if (openExistingDatabase) {
+							JOptionPane.showMessageDialog(NewDatabaseDialog.this,
+									"The file does not exist. Please choose a new file.",
+									"Error",
+									JOptionPane.ERROR_MESSAGE);
 						} else {
-							urlField.setText("");
-							if (openExistingDatabase) {
-								JOptionPane.showMessageDialog(fc,
-									    "The file does not exist. Please choose a new file.",
-									    "Error",
-									    JOptionPane.ERROR_MESSAGE);
-							} else {
-								JOptionPane.showMessageDialog(fc,
-									    "The file already exists and will not be overwritten.\nPlease choose a new file.",
-									    "Error",
-									    JOptionPane.ERROR_MESSAGE);
-							}
+							JOptionPane.showMessageDialog(NewDatabaseDialog.this,
+									"The file already exists and will not be overwritten.\nPlease choose a new file.",
+									"Error",
+									JOptionPane.ERROR_MESSAGE);
 						}
 					}
 				}

@@ -27,7 +27,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -41,11 +40,12 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 
+import gui.FileChooser;
+import gui.NewDatabaseDialog;
 import org.jdesktop.swingx.JXTextArea;
 
 import com.google.gson.Gson;
@@ -207,51 +207,39 @@ public class LoggerDialog extends JDialog {
 							"Tried to save the message log to a file, but the file type is unknown.");
 					Dna.logger.log(l);
 				}
-				String filename = null;
 				File file = null;
 				boolean validFileInput = false;
+				FileChooser fc;
 				while (!validFileInput) {
-					JFileChooser fc;
-					if (file == null) {
-						fc = new JFileChooser();
+					String extension, description;
+					if (format.equals("")) {
+						extension = "";
+						description = "Text file (*.*)";
 					} else {
-						fc = new JFileChooser(file);
+						extension = "." + format;
+						description = format.toUpperCase() + " log file (*." + format + ")";
 					}
-					fc.setDialogTitle("Save log as " + format.toUpperCase() + " file...");
-					fc.setApproveButtonText("Save");
-					fc.setFileFilter(new FileFilter() {
-						public boolean accept(File f) {
-							return f.getName().toLowerCase().endsWith("." + format) || f.isDirectory();
-						}
-						public String getDescription() {
-							return format.toUpperCase() + " log file (*." + format + ")";
-						}
-					});
-					int returnVal = fc.showSaveDialog(LoggerDialog.this);
-					
-					if (returnVal == JFileChooser.APPROVE_OPTION) {
-						file = fc.getSelectedFile();
-						filename = new String(file.getPath());
-						if (!filename.endsWith("." + format)) {
-							filename = filename + "." + format;
-						}
-						file = new File(filename);
-						if (!file.exists()) {
-							validFileInput = true; // file approved
-						} else {
+					fc = new FileChooser(LoggerDialog.this, "Save log as " + format.toUpperCase() + " file...", true, extension, description, false);
+					if (fc.getFiles() != null && fc.getFiles().length > 0) {
+						if (fc.getFiles()[0].exists()) {
 							int dialog = JOptionPane.showConfirmDialog(LoggerDialog.this, "Overwrite existing file?", "Confirmation required", JOptionPane.YES_NO_OPTION);
 							if (dialog == 0) {
+								file = fc.getFiles()[0];
 								validFileInput = true;
 								LogEvent l = new LogEvent(Logger.MESSAGE,
 										"Overwriting existing " + format + " file.",
 										"Overwriting existing file: " + file.getAbsolutePath() + ".");
 								Dna.logger.log(l);
 							} else {
-								validFileInput = false;
 								file = null;
+								validFileInput = false;
 							}
+						} else {
+							file = fc.getFiles()[0];
+							validFileInput = true;
 						}
 					} else {
+						file = null;
 						validFileInput = true; // user must have clicked cancel in file chooser
 						LogEvent l = new LogEvent(Logger.MESSAGE,
 								"Saving the event log to a file was canceled.",
@@ -264,7 +252,7 @@ public class LoggerDialog extends JDialog {
 					for (int row = 0; row < table.getRowCount(); row++) {
 						events[row] = new OutputLogEvent(Dna.logger.getRow(table.convertRowIndexToModel(row)));
 					}
-					OutputLog log = new OutputLog(Dna.version, Dna.date, events);
+					OutputLog log = new OutputLog(Dna.version, Dna.date, Dna.operatingSystem, events);
 					String s = "";
 					if (format.equals("xml")) {
 						XStream xstream = new XStream();
@@ -286,7 +274,7 @@ public class LoggerDialog extends JDialog {
 								"Log in " + format.toUpperCase() + " format was saved to file: " + file.getAbsolutePath() + ".");
 						Dna.logger.log(l);
 						JOptionPane.showMessageDialog(LoggerDialog.this,
-								"The log was saved as:\n" + new File(filename).getAbsolutePath(),
+								"The log was saved as:\n" + file.getAbsolutePath(),
 								"Success",
 							    JOptionPane.PLAIN_MESSAGE);
 					} catch (IOException exception) {

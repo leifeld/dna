@@ -1,11 +1,9 @@
 package dna;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.net.URISyntaxException;
 
+import gui.NewDatabaseDialog;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.jasypt.util.text.AES256TextEncryptor;
 
@@ -29,8 +27,10 @@ public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2023-01-08";
-	public static final String version = "3.0.9";
+	public static final String date = "2023-02-23";
+	public static final String version = "3.0.10.e1";
+	public static final String operatingSystem = System.getProperty("os.name");
+	public static File workingDirectory = null;
 	public MainWindow mainWindow;
 	public HeadlessDna headlessDna;
 	
@@ -44,9 +44,23 @@ public class Dna {
 
 		LogEvent l = new LogEvent(Logger.MESSAGE,
 				"DNA started. Version " + version + " (" + date + ").",
-				"DNA started. Version " + version + " (" + date + ").");
+				"DNA started. Version " + version + " (" + date + "). Operating system: " + operatingSystem + ".");
 		Dna.logger.log(l);
 
+		// determine JAR working directory as starting directory for file dialogs
+		String currentDir = "~/";
+		try {
+			currentDir = new File(NewDatabaseDialog.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath();
+		} catch (URISyntaxException ex) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Current JAR working directory cannot be detected.",
+					"Tried to detect the current JAR working directory, but the path could not be detected. Will use the home user directory instead.",
+					ex);
+			logger.log(le);
+		}
+		this.workingDirectory = new File(currentDir);
+
+		// start GUI or headless DNA
 		if (args != null && args.length > 0 && args[0].equals("headless")) {
 			mainWindow = new MainWindow();
 			headlessDna = new HeadlessDna();

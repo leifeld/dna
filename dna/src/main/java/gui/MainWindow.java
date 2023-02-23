@@ -9,8 +9,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
-import java.io.File;
-import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,11 +28,9 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.text.BadLocationException;
 
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
-import gui.DocumentTablePanel;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
@@ -1667,7 +1663,7 @@ public class MainWindow extends JFrame {
 	 * An action to display a file chooser and open a connection profile.
 	 */
 	class ActionOpenProfile extends AbstractAction {
-		private static final long serialVersionUID = -1985734783855268915L;
+		private static final long serialVersionUID = -1945734783855268915L;
 		
 		public ActionOpenProfile(String text, ImageIcon icon, String desc, Integer mnemonic) {
 			super(text, icon);
@@ -1676,44 +1672,15 @@ public class MainWindow extends JFrame {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			String filename = null;
-			boolean validFileInput = false;
-			while (!validFileInput) {
-				JFileChooser fc = new JFileChooser();
-				fc.setFileFilter(new FileFilter() {
-					public boolean accept(File f) {
-						return f.getName().toLowerCase().endsWith(".dnc") || f.isDirectory();
-					}
-					public String getDescription() {
-						return "DNA connection profile (*.dnc)";
-					}
-				});
-				int returnVal = fc.showOpenDialog(MainWindow.this);
-				
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = fc.getSelectedFile();
-					if (file.exists()) {
-						filename = new String(file.getPath());
-						if (!filename.endsWith(".dnc")) {
-							filename = filename + ".dnc";
-						}
-						validFileInput = true; // file choice accepted
-					} else {
-						JOptionPane.showMessageDialog(fc, "The file name you entered does not exist. Please choose a new file.");
-					}
-				} else { // cancel button; mark as valid file input, but reset file name
-					filename = null;
-					validFileInput = true;
-				}
-			}
-			
-			if (filename != null) { // if file has been chosen successfully, go on with authentication
+			FileChooser fc = new FileChooser(MainWindow.this, "Open profile", false, ".dnc", "DNA connection profile (*.dnc)", false);
+			if (fc.getFiles() != null && fc.getFiles().length > 0 && fc.getFiles()[0] != null && fc.getFiles()[0].exists()) {
+				String filename = new String(fc.getFiles()[0].getPath());
 				boolean validPasswordInput = false;
 				while (!validPasswordInput) {
 					// ask user for password (for the user in the connection profile) to decrypt the profile
 					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog(MainWindow.this);
 					String key = d.getPassword();
-					
+
 					// decrypt connection profile, create SQL connection, and set as default SQL connection
 					if (key == null) {
 						validPasswordInput = true; // user must have pressed cancel; quit the while-loop
@@ -1733,9 +1700,9 @@ public class MainWindow extends JFrame {
 											"Tried to open database, but the coder could not be authenticated because there is no data source available. This may be due to a failed connection to the database. Look out for other error messages.");
 									Dna.logger.log(l);
 									JOptionPane.showMessageDialog(MainWindow.this,
-						        			"The connection to the database failed or was denied.",
-										    "Connection failed",
-										    JOptionPane.ERROR_MESSAGE);
+											"The connection to the database failed or was denied.",
+											"Connection failed",
+											JOptionPane.ERROR_MESSAGE);
 								} else {
 									boolean authenticated = sqlTemp.authenticate(-1, key);
 									if (authenticated == true) {
@@ -1744,7 +1711,7 @@ public class MainWindow extends JFrame {
 										refreshDocumentTable();
 										refreshStatementTable(new int[0]);
 										adjustToCoderSelection();
-										
+
 										// changes in other classes
 										statusBar.updateUrl();
 										toolbar.adjustToChangedConnection();
@@ -1756,24 +1723,27 @@ public class MainWindow extends JFrame {
 										cp = null;
 									}
 								}
-								
+
 							}
 							if (cp == null) {
 								JOptionPane.showMessageDialog(MainWindow.this,
-					        			"Database credentials could not be decrypted.\n"
-					        					+ "Did you enter the right password?",
-									    "Check failed",
-									    JOptionPane.ERROR_MESSAGE);
+										"Database credentials could not be decrypted.\n"
+												+ "Did you enter the right password?",
+										"Check failed",
+										JOptionPane.ERROR_MESSAGE);
 							}
 						} else {
 							JOptionPane.showMessageDialog(MainWindow.this,
-				        			"Password check failed. Zero-length passwords are not permitted.",
-								    "Check failed",
-								    JOptionPane.ERROR_MESSAGE);
+									"Password check failed. Zero-length passwords are not permitted.",
+									"Check failed",
+									JOptionPane.ERROR_MESSAGE);
 						}
 					}
 				}
+			} else {
+				JOptionPane.showMessageDialog(MainWindow.this, "The file name you entered does not exist. Please choose a new file.");
 			}
+
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: opened connection profile.",
 					"Opened a connection profile from the GUI.");
@@ -1794,76 +1764,47 @@ public class MainWindow extends JFrame {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			String filename = null;
-			File file = null;
-			boolean validFileInput = false;
-			while (!validFileInput) {
-				JFileChooser fc;
-				if (file == null) {
-					fc = new JFileChooser();
-				} else {
-					fc = new JFileChooser(file);
-				}
-				fc.setDialogTitle("Save connection profile...");
-				fc.setApproveButtonText("Save");
-				fc.setFileFilter(new FileFilter() {
-					public boolean accept(File f) {
-						return f.getName().toLowerCase().endsWith(".dnc") || f.isDirectory();
-					}
-					public String getDescription() {
-						return "DNA connection profile (*.dnc)";
-					}
-				});
-				int returnVal = fc.showSaveDialog(MainWindow.this);
-				
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					file = fc.getSelectedFile();
-					filename = new String(file.getPath());
-					if (!filename.endsWith(".dnc")) {
-						filename = filename + ".dnc";
-					}
-					file = new File(filename);
-					if (!file.exists()) {
-						validFileInput = true; // file approved
-					} else {
-						file = null;
-						JOptionPane.showMessageDialog(fc, "The file name you entered already exists. Please choose a new file.");
-					}
-				} else {
-					validFileInput = true; // user must have clicked cancel in file chooser
-				}
-			}
-			// after getting a valid file, authenticate coder and write to file
-			if (file != null) {
-				boolean validPasswordInput = false;
-				while (!validPasswordInput) {
-					CoderPasswordCheckDialog d = new CoderPasswordCheckDialog(MainWindow.this, Dna.sql, false, -1, 3);
-					String key = d.getPassword();
-					if (key == null) { // user must have pressed cancel
-						validPasswordInput = true;
-					} else {
-						boolean authenticated = Dna.sql.authenticate(-1, key);
-						if (authenticated) {
-							// write the connection profile to disk, with an encrypted version of the password
-							Dna.writeConnectionProfile(filename, new ConnectionProfile(Dna.sql.getConnectionProfile()), key);
-							validPasswordInput = true; // quit the while-loop after successful export
-							JOptionPane.showMessageDialog(MainWindow.this,
-									"The profile was saved as:\n" + new File(filename).getAbsolutePath(),
-									"Success",
-								    JOptionPane.PLAIN_MESSAGE);
-						} else {
-				        	JOptionPane.showMessageDialog(MainWindow.this,
-				        			"Coder password could not be verified. Try again.",
-								    "Check failed",
-								    JOptionPane.ERROR_MESSAGE);
+			boolean fileAlreadyExists = true;
+			while (fileAlreadyExists) {
+				FileChooser fc = new FileChooser(MainWindow.this, "Save profile", true, ".dnc", "DNA connection profile (*.dnc)", false);
+				if (fc.getFiles() != null && fc.getFiles().length > 0 && fc.getFiles()[0] != null) {
+					if (!fc.getFiles()[0].exists() || Dna.operatingSystem.contains("mac")) {
+						fileAlreadyExists = false;
+						boolean validPasswordInput = false;
+						while (!validPasswordInput) {
+							CoderPasswordCheckDialog d = new CoderPasswordCheckDialog(MainWindow.this, Dna.sql, false, -1, 3);
+							String key = d.getPassword();
+							if (key == null) { // user must have pressed cancel
+								validPasswordInput = true;
+							} else {
+								boolean authenticated = Dna.sql.authenticate(-1, key);
+								if (authenticated) {
+									// write the connection profile to disk, with an encrypted version of the password
+									Dna.writeConnectionProfile(fc.getFiles()[0].getPath(), new ConnectionProfile(Dna.sql.getConnectionProfile()), key);
+									validPasswordInput = true; // quit the while-loop after successful export
+									JOptionPane.showMessageDialog(MainWindow.this,
+											"The profile was saved as:\n" + fc.getFiles()[0].getAbsolutePath(),
+											"Success",
+											JOptionPane.PLAIN_MESSAGE);
+								} else {
+									JOptionPane.showMessageDialog(MainWindow.this,
+											"Coder password could not be verified. Try again.",
+											"Check failed",
+											JOptionPane.ERROR_MESSAGE);
+								}
+							}
 						}
+						LogEvent l = new LogEvent(Logger.MESSAGE,
+								"[GUI] Action executed: saved connection profile.",
+								"Saved a connection profile from the GUI.");
+						Dna.logger.log(l);
+					} else {
+						JOptionPane.showMessageDialog(MainWindow.this, "The file name you entered already exists. Please choose a new file.");
 					}
+				} else {
+					fileAlreadyExists = false; // leave the while loop if file chooser cancelled
 				}
 			}
-			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[GUI] Action executed: saved connection profile.",
-					"Saved a connection profile from the GUI.");
-			Dna.logger.log(l);
 		}
 	}
 
