@@ -316,53 +316,61 @@ public class NewDatabaseDialog extends JDialog {
 					sql.Sql testConnection = new sql.Sql(tempConnectionProfile, true); // connection test, so true
 					
 					if (openExistingDatabase == true) { // existing database: select and authenticate user, then open connection as main database in DNA
-						boolean validInput = false;
-						int coderIdToSelect = -1;
-						if (Dna.sql.getActiveCoder() != null) {
-							coderIdToSelect = Dna.sql.getActiveCoder().getId();
-						}
-						String version = testConnection.getVersion();
-						int v = 3;
-						if (version.startsWith("2")) {
-							v = 2;
-						}
-						while (!validInput) {
-							JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(NewDatabaseDialog.this);
-						    CoderPasswordCheckDialog cpcd = new CoderPasswordCheckDialog(frame, testConnection, true, coderIdToSelect, v);
-							Coder coder = cpcd.getCoder();
-							if (coder == null) { // user must have pressed cancel
-								validInput = true;
-							} else {
-								tempConnectionProfile.setCoder(coder.getId());
-								testConnection.getConnectionProfile().setCoder(coder.getId());
-								String password = cpcd.getPassword();
-								if (coder != null && password != null) {
-									coderIdToSelect = coder.getId();
-									boolean authenticated = false;
-									if (v == 2 || testConnection.authenticate(-1, password)) {
-										authenticated = true;
-									}
-									if (authenticated == true) {
-										validInput = true; // password check passed; quit while-loop
-										cp = tempConnectionProfile;
-										dispose();
-									} else {
-			    						LogEvent l = new LogEvent(Logger.WARNING,
-			    								"Authentication failed. Check your password.",
-			    								"Tried to open database, but a wrong password was entered for Coder " + coder.getId() + ".");
-			    						Dna.logger.log(l);
-					    				JOptionPane.showMessageDialog(NewDatabaseDialog.this,
-					    						"Authentication failed. Check your password.",
-					    					    "Check failed",
-					    					    JOptionPane.ERROR_MESSAGE);
+						if (testConnection.hasDataSource()) {
+							boolean validInput = false;
+							int coderIdToSelect = -1;
+							if (Dna.sql.getActiveCoder() != null) {
+								coderIdToSelect = Dna.sql.getActiveCoder().getId();
+							}
+							String version = testConnection.getVersion();
+							int v = 3;
+							if (version.startsWith("2")) {
+								v = 2;
+							}
+
+							while (!validInput) {
+								JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(NewDatabaseDialog.this);
+								CoderPasswordCheckDialog cpcd = new CoderPasswordCheckDialog(frame, testConnection, true, coderIdToSelect, v);
+								Coder coder = cpcd.getCoder();
+								if (coder == null) { // user must have pressed cancel
+									validInput = true;
+								} else {
+									tempConnectionProfile.setCoder(coder.getId());
+									testConnection.getConnectionProfile().setCoder(coder.getId());
+									String password = cpcd.getPassword();
+									if (coder != null && password != null) {
+										coderIdToSelect = coder.getId();
+										boolean authenticated = false;
+										if (v == 2 || testConnection.authenticate(-1, password)) {
+											authenticated = true;
+										}
+										if (authenticated == true) {
+											validInput = true; // password check passed; quit while-loop
+											cp = tempConnectionProfile;
+											dispose();
+										} else {
+											LogEvent l = new LogEvent(Logger.WARNING,
+													"Authentication failed. Check your password.",
+													"Tried to open database, but a wrong password was entered for Coder " + coder.getId() + ".");
+											Dna.logger.log(l);
+											JOptionPane.showMessageDialog(NewDatabaseDialog.this,
+													"Authentication failed. Check your password.",
+													"Check failed",
+													JOptionPane.ERROR_MESSAGE);
+										}
 									}
 								}
 							}
+							LogEvent l = new LogEvent(Logger.MESSAGE,
+									"[GUI] Opened database using a dialog window.",
+									"Opened a database from the GUI using a dialog window.");
+							Dna.logger.log(l);
+						} else {
+							JOptionPane.showMessageDialog(NewDatabaseDialog.this,
+									"Failed to open the database. One common reason is that the database version \nmay be incompatible with the current DNA version. See the error log for details.",
+									"Failed to open the database",
+									JOptionPane.ERROR_MESSAGE);
 						}
-						LogEvent l = new LogEvent(Logger.MESSAGE,
-								"[GUI] Opened database using a dialog window.",
-								"Opened a database from the GUI using a dialog window.");
-						Dna.logger.log(l);
 					} else { // new database: digest password, test database, and create data structures
 						// generate hash from password
 						String plainPassword = new String(pw1Field.getPassword()); // this must be the coder password, not the database password!
