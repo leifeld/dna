@@ -68,7 +68,7 @@ public class FileChooser {
      * Create the file chooser dialog with the values provided.
      */
     private void createDialog() {
-        if (Dna.operatingSystem.contains("mac")) { // if on MacOS, use the native file dialog because JFileChooser does not display any files on MacOS due to excessive user rights restrictions
+        if (Dna.operatingSystem.toLowerCase().contains("mac")) { // if on MacOS, use the native file dialog because JFileChooser does not display any files on MacOS due to excessive user rights restrictions
             int load = FileDialog.LOAD;
             if (save) {
                 load = FileDialog.SAVE;

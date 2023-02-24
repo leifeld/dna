@@ -1768,7 +1768,7 @@ public class MainWindow extends JFrame {
 			while (fileAlreadyExists) {
 				FileChooser fc = new FileChooser(MainWindow.this, "Save profile", true, ".dnc", "DNA connection profile (*.dnc)", false);
 				if (fc.getFiles() != null && fc.getFiles().length > 0 && fc.getFiles()[0] != null) {
-					if (!fc.getFiles()[0].exists() || Dna.operatingSystem.contains("mac")) {
+					if (!fc.getFiles()[0].exists() || Dna.operatingSystem.toLowerCase().contains("mac")) {
 						fileAlreadyExists = false;
 						boolean validPasswordInput = false;
 						while (!validPasswordInput) {
