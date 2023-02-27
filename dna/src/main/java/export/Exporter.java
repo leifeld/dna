@@ -1003,7 +1003,7 @@ public class Exporter {
 								&& (values2.length == 0 /* for barplot data */ || values2[i].equals(previousVar2))
 								&& (this.qualifierAggregation.equals("ignore")
 									|| (dataTypes.get(this.qualifier).equals("short text") && qualifierValues[i].equals(previousQualifier))
-									|| (!dataTypes.get(this.qualifier).equals("short text") && this.filteredStatements.get(i).get("qualifier") == al.get(j).get("qualifier")))) {
+									|| (!dataTypes.get(this.qualifier).equals("short text") && (Integer) s.get(this.qualifier) == (Integer) al.get(j).get(this.qualifier)))) {
 							select = false;
 							break;
 						}
@@ -1018,6 +1018,7 @@ public class Exporter {
 				pb.stepTo(i + 1);
 			}
 			this.filteredStatements = al;
+			System.out.println("Filtered statements in new version: " + this.filteredStatements.size());
 			pb.stepTo(this.originalStatements.size());
 		}
 	}

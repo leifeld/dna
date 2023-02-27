@@ -9,7 +9,7 @@ import java.io.Serializable;
 @SuppressWarnings("unused")
 class OutputLog implements Serializable {
 	private static final long serialVersionUID = -8540969879291371358L;
-	private String version, date;
+	private String version, date, os;
 	private OutputLogEvent[] events;
 	
 	/**
@@ -17,12 +17,14 @@ class OutputLog implements Serializable {
 	 * 
 	 * @param version  DNA version as a String.
 	 * @param date     Date the DNA version was released, as a String.
+	 * @param os       Operating system.
 	 * @param events   An array of {@link logger.OutputLogEvent OutputLogEvent}
 	 *   objects.
 	 */
-	OutputLog(String version, String date, OutputLogEvent[] events) {
+	OutputLog(String version, String date, String os, OutputLogEvent[] events) {
 		this.version = version;
 		this.date = date;
+		this.os = os;
 		this.events = events;
 	}
 }

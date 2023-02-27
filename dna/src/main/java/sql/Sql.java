@@ -108,8 +108,10 @@ public class Sql {
 	 * @param test  Boolean indicating whether this is just a connection test.
 	 *   In that event, it is assumed that no data structures/tables are present
 	 *   yet, and no coder will be selected.
+	 * @return Was the connection profile successfully set and the data source created?
 	 */
-	public void setConnectionProfile(ConnectionProfile cp, boolean test) {
+	public boolean setConnectionProfile(ConnectionProfile cp, boolean test) {
+		boolean success = false;
 		this.cp = cp;
 		if (cp == null) { // null connection
 			ds = null;
@@ -119,11 +121,14 @@ public class Sql {
 			SQLiteDataSource sqds = new SQLiteDataSource();
 			sqds.setUrl("jdbc:sqlite:" + cp.getUrl());
 			sqds.setEnforceForeignKeys(true); // if this is not set, ON DELETE CASCADE won't work
-			ds = sqds;
-	        LogEvent l = new LogEvent(Logger.MESSAGE,
-	        		"[SQL] An SQLite DNA database has been opened as a data source.",
-	        		"An SQLite DNA database has been opened as a data source.");
-	        Dna.logger.log(l);
+			if (checkDatabaseVersion(sqds)) {
+				ds = sqds;
+				success = true;
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[SQL] An SQLite DNA database has been opened as a data source.",
+						"An SQLite DNA database has been opened as a data source.");
+				Dna.logger.log(l);
+			}
 		} else if (cp.getType().equals("mysql") || cp.getType().equals("postgresql")) {
 			HikariConfig config = new HikariConfig();
 			config.setMaximumPoolSize(30);
@@ -137,11 +142,15 @@ public class Sql {
 				config.setDriverClassName("org.postgresql.Driver");
 			}
 			try {
-				ds = new HikariDataSource(config);
-		        LogEvent l = new LogEvent(Logger.MESSAGE,
-		        		"[SQL] A " + cp.getType() + " DNA database has been opened as a data source.",
-		        		"A " + cp.getType() + " DNA database has been opened as a data source.");
-		        Dna.logger.log(l);
+				HikariDataSource dsTest = new HikariDataSource(config);
+				if (checkDatabaseVersion(dsTest)) {
+					ds = dsTest;
+					success = true;
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[SQL] A " + cp.getType() + " DNA database has been opened as a data source.",
+							"A " + cp.getType() + " DNA database has been opened as a data source.");
+					Dna.logger.log(l);
+				}
 			} catch (PoolInitializationException e) {
 				LogEvent l = new LogEvent(Logger.ERROR,
 		        		"[SQL] Database access denied. Failed to initialize connection pool.",
@@ -159,8 +168,64 @@ public class Sql {
 		if (test == false && cp != null) {
 			selectCoder(cp.getCoderId());
 		}
+		return success;
 	}
-	
+
+	/**
+	 * Check if a data source has been successfully set when instantiating the class. If not, this may indicate that the
+	 * database version check failed.
+	 *
+	 * @return True if a data source has been set and false otherwise.
+	 */
+	public boolean hasDataSource() {
+		return this.ds != null;
+	}
+
+	/**
+	 * Check if a data source is compatible with the current DNA version by inspecting the version number saved in the
+	 * SETTINGS table.
+	 *
+	 * @param dataSource The data source to be used and checked for compatibility.
+	 * @return True if the database version is compatible with the current DNA version. False if it needs to be updated.
+	 */
+	private boolean checkDatabaseVersion(DataSource dataSource) {
+		boolean compatible = true;
+		try (Connection conn = dataSource.getConnection();
+			 PreparedStatement s1 = conn.prepareStatement("SELECT * FROM SETTINGS WHERE Property IN ('version', 'date');")) {
+			ResultSet rs = s1.executeQuery();
+			String property, version = "", date = "";
+			while (rs.next()) {
+				property = rs.getString("Property");
+				if (property.equals("version")) {
+					version = rs.getString("Value");
+				} else if (property.equals("date")) {
+					date = rs.getString("Value");
+				}
+			}
+			if (version.startsWith("1") || version.startsWith("2")) {
+				compatible = false;
+				String msg = "";
+				if (version.startsWith("1")) {
+					msg = "Contents from databases that were created with DNA 1 can only be imported into the old DNA 2. See the release page online for old DNA 2 versions.";
+
+				} else if (version.startsWith("2")) {
+					msg = "Contents from databases that were created with DNA 2 can be imported into the current DNA version. To do so, create a new database, create coders that correspond to the coders in the old database (if required), and use the \"Import from DNA database\" dialog in the \"Documents\" menu.";
+				}
+				LogEvent l = new LogEvent(Logger.ERROR,
+						"[SQL] Wrong database version.",
+						"You tried to open a database that was created with version " + version + " of DNA (release date: " + date + "). You are currently using DNA " + Dna.version + " (release date: " + Dna.date + "). The database version is incompatible with the DNA version. " + msg);
+				Dna.logger.log(l);
+			}
+		} catch (SQLException e) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"[SQL] Failed to determine database version.",
+					"Attempted to check if the database version is compatible with the DNA version, but failed to do so. If you do not see any other warnings or errors, you can probably ignore this message. If it happens often, consider filing an issue on GitHub.",
+					e);
+			Dna.logger.log(l);
+		}
+		return compatible;
+	}
+
 	/**
 	 * Get the active coder.
 	 * 

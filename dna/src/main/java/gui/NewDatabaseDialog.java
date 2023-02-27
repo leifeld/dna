@@ -1,17 +1,12 @@
 package gui;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.FlowLayout;
-import java.awt.Frame;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Image;
-import java.awt.Insets;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -321,53 +316,61 @@ public class NewDatabaseDialog extends JDialog {
 					sql.Sql testConnection = new sql.Sql(tempConnectionProfile, true); // connection test, so true
 					
 					if (openExistingDatabase == true) { // existing database: select and authenticate user, then open connection as main database in DNA
-						boolean validInput = false;
-						int coderIdToSelect = -1;
-						if (Dna.sql.getActiveCoder() != null) {
-							coderIdToSelect = Dna.sql.getActiveCoder().getId();
-						}
-						String version = testConnection.getVersion();
-						int v = 3;
-						if (version.startsWith("2")) {
-							v = 2;
-						}
-						while (!validInput) {
-							JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(NewDatabaseDialog.this);
-						    CoderPasswordCheckDialog cpcd = new CoderPasswordCheckDialog(frame, testConnection, true, coderIdToSelect, v);
-							Coder coder = cpcd.getCoder();
-							if (coder == null) { // user must have pressed cancel
-								validInput = true;
-							} else {
-								tempConnectionProfile.setCoder(coder.getId());
-								testConnection.getConnectionProfile().setCoder(coder.getId());
-								String password = cpcd.getPassword();
-								if (coder != null && password != null) {
-									coderIdToSelect = coder.getId();
-									boolean authenticated = false;
-									if (v == 2 || testConnection.authenticate(-1, password)) {
-										authenticated = true;
-									}
-									if (authenticated == true) {
-										validInput = true; // password check passed; quit while-loop
-										cp = tempConnectionProfile;
-										dispose();
-									} else {
-			    						LogEvent l = new LogEvent(Logger.WARNING,
-			    								"Authentication failed. Check your password.",
-			    								"Tried to open database, but a wrong password was entered for Coder " + coder.getId() + ".");
-			    						Dna.logger.log(l);
-					    				JOptionPane.showMessageDialog(NewDatabaseDialog.this,
-					    						"Authentication failed. Check your password.",
-					    					    "Check failed",
-					    					    JOptionPane.ERROR_MESSAGE);
+						if (testConnection.hasDataSource()) {
+							boolean validInput = false;
+							int coderIdToSelect = -1;
+							if (Dna.sql.getActiveCoder() != null) {
+								coderIdToSelect = Dna.sql.getActiveCoder().getId();
+							}
+							String version = testConnection.getVersion();
+							int v = 3;
+							if (version.startsWith("2")) {
+								v = 2;
+							}
+
+							while (!validInput) {
+								JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(NewDatabaseDialog.this);
+								CoderPasswordCheckDialog cpcd = new CoderPasswordCheckDialog(frame, testConnection, true, coderIdToSelect, v);
+								Coder coder = cpcd.getCoder();
+								if (coder == null) { // user must have pressed cancel
+									validInput = true;
+								} else {
+									tempConnectionProfile.setCoder(coder.getId());
+									testConnection.getConnectionProfile().setCoder(coder.getId());
+									String password = cpcd.getPassword();
+									if (coder != null && password != null) {
+										coderIdToSelect = coder.getId();
+										boolean authenticated = false;
+										if (v == 2 || testConnection.authenticate(-1, password)) {
+											authenticated = true;
+										}
+										if (authenticated == true) {
+											validInput = true; // password check passed; quit while-loop
+											cp = tempConnectionProfile;
+											dispose();
+										} else {
+											LogEvent l = new LogEvent(Logger.WARNING,
+													"Authentication failed. Check your password.",
+													"Tried to open database, but a wrong password was entered for Coder " + coder.getId() + ".");
+											Dna.logger.log(l);
+											JOptionPane.showMessageDialog(NewDatabaseDialog.this,
+													"Authentication failed. Check your password.",
+													"Check failed",
+													JOptionPane.ERROR_MESSAGE);
+										}
 									}
 								}
 							}
+							LogEvent l = new LogEvent(Logger.MESSAGE,
+									"[GUI] Opened database using a dialog window.",
+									"Opened a database from the GUI using a dialog window.");
+							Dna.logger.log(l);
+						} else {
+							JOptionPane.showMessageDialog(NewDatabaseDialog.this,
+									"Failed to open the database. One common reason is that the database version \nmay be incompatible with the current DNA version. See the error log for details.",
+									"Failed to open the database",
+									JOptionPane.ERROR_MESSAGE);
 						}
-						LogEvent l = new LogEvent(Logger.MESSAGE,
-								"[GUI] Opened database using a dialog window.",
-								"Opened a database from the GUI using a dialog window.");
-						Dna.logger.log(l);
 					} else { // new database: digest password, test database, and create data structures
 						// generate hash from password
 						String plainPassword = new String(pw1Field.getPassword()); // this must be the coder password, not the database password!
@@ -570,46 +573,34 @@ public class NewDatabaseDialog extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					String filename = null;
-					JFileChooser fc = new JFileChooser();
-					fc.setApproveButtonText("OK");
-					if (openExistingDatabase == true) {
-						fc.setDialogTitle("Select database...");
-					} else {
-						fc.setDialogTitle("New database...");
+					String title = "New database...";
+					boolean save = true;
+					if (openExistingDatabase) {
+						title = "Select database...";
+						save = false;
 					}
-					fc.setFileFilter(new FileFilter() {
-						public boolean accept(File f) {
-							return f.getName().toLowerCase().endsWith(".dna") || f.isDirectory();
+					FileChooser fc = new FileChooser(NewDatabaseDialog.this, title, save, ".dna", "DNA SQLite database (*.dna)", false);
+
+					if (fc.getFiles() != null && fc.getFiles().length > 0 && fc.getFiles()[0] != null && ((openExistingDatabase && fc.getFiles()[0].exists()) || (!openExistingDatabase && !fc.getFiles()[0].exists()))) {
+						String filename = new String(fc.getFiles()[0].getPath());
+						if (!filename.endsWith(".dna")) {
+							filename = filename + ".dna";
 						}
-						public String getDescription() {
-							return "DNA SQLite database (*.dna)";
-						}
-					});
-					int returnVal = fc.showOpenDialog(NewDatabaseDialog.this);
-					
-					// extract chosen file name and check its validity
-					if (returnVal == JFileChooser.APPROVE_OPTION) {
-						File file = fc.getSelectedFile();
-						if ((!openExistingDatabase && !file.exists()) || (openExistingDatabase && file.exists())) {
-							filename = new String(file.getPath());
-							if (!filename.endsWith(".dna")) {
-								filename = filename + ".dna";
-							}
-							urlField.setText(filename);
+						urlField.setText(filename);
+					} else {
+						urlField.setText("");
+						if (fc.getFiles() == null || fc.getFiles().length == 0 || fc.getFiles()[0] == null) {
+							// do nothing because operation was cancelled
+						} else if (openExistingDatabase) {
+							JOptionPane.showMessageDialog(NewDatabaseDialog.this,
+									"The file does not exist. Please choose a new file.",
+									"Error",
+									JOptionPane.ERROR_MESSAGE);
 						} else {
-							urlField.setText("");
-							if (openExistingDatabase) {
-								JOptionPane.showMessageDialog(fc,
-									    "The file does not exist. Please choose a new file.",
-									    "Error",
-									    JOptionPane.ERROR_MESSAGE);
-							} else {
-								JOptionPane.showMessageDialog(fc,
-									    "The file already exists and will not be overwritten.\nPlease choose a new file.",
-									    "Error",
-									    JOptionPane.ERROR_MESSAGE);
-							}
+							JOptionPane.showMessageDialog(NewDatabaseDialog.this,
+									"The file already exists and will not be overwritten.\nPlease choose a new file.",
+									"Error",
+									JOptionPane.ERROR_MESSAGE);
 						}
 					}
 				}
