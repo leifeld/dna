@@ -329,7 +329,7 @@ class Importer extends JDialog {
 							"Started opening a database connection from the GUI for document import, but the connection was not established.");
 					dna.Dna.logger.log(l);
 				} else {
-					Sql s = new Sql(cp, false);
+					Sql s = new Sql(cp, false, true);
 					
 					String v = s.getVersion();
 					if (v.startsWith("3")) {

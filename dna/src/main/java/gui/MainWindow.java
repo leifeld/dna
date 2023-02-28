@@ -1535,7 +1535,7 @@ public class MainWindow extends JFrame {
 			NewDatabaseDialog n = new NewDatabaseDialog(MainWindow.this, true);
 			ConnectionProfile cp = n.getConnectionProfile();
 			if (cp != null) {
-				Dna.sql.setConnectionProfile(cp, false);
+				Dna.sql.setConnectionProfile(cp, false, true);
 				refreshDocumentTable();
 				refreshStatementTable(new int[0]);
 				adjustToCoderSelection();
@@ -1555,7 +1555,7 @@ public class MainWindow extends JFrame {
 						"Started opening a database connection from the GUI, but the connection was not established.");
 				Dna.logger.log(l);
 			} else {
-				Dna.sql.setConnectionProfile(cp, false); // not a connection test, so false
+				Dna.sql.setConnectionProfile(cp, false, true); // not a connection test, so false
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: opened database.",
 						"Opened a database connection from the GUI.");
@@ -1631,7 +1631,7 @@ public class MainWindow extends JFrame {
 			ConnectionProfile cp = n.getConnectionProfile();
 			
 			if (cp != null) {
-				Dna.sql.setConnectionProfile(cp, false); // this is after creating data structures, so no test (= false)
+				Dna.sql.setConnectionProfile(cp, false, true); // this is after creating data structures, so no test (= false)
 				refreshDocumentTable();
 				refreshStatementTable(new int[0]);
 				adjustToCoderSelection();
@@ -1693,7 +1693,7 @@ public class MainWindow extends JFrame {
 								cp = null;
 							}
 							if (cp != null) {
-								Sql sqlTemp = new Sql(cp, true); // just for authentication purposes, so a test
+								Sql sqlTemp = new Sql(cp, true, true); // just for authentication purposes, so a test
 								if (sqlTemp.getDataSource() == null) {
 									LogEvent l = new LogEvent(Logger.ERROR,
 											"[GUI] No data source available in the database connection.",
@@ -1707,7 +1707,7 @@ public class MainWindow extends JFrame {
 									boolean authenticated = sqlTemp.authenticate(-1, key);
 									if (authenticated == true) {
 										validPasswordInput = true; // authenticated; quit the while-loop
-										Dna.sql.setConnectionProfile(cp, false); // use the connection profile, so no test
+										Dna.sql.setConnectionProfile(cp, false, true); // use the connection profile, so no test
 										refreshDocumentTable();
 										refreshStatementTable(new int[0]);
 										adjustToCoderSelection();

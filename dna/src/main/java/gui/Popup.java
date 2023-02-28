@@ -63,12 +63,12 @@ class Popup extends JDialog {
 	 * Popup dialog window to display the contents of a statements. The user can
 	 * edit the values of each variable.
 	 * 
-	 * @param X         Horizontal coordinate for the window.
-	 * @param Y         Vertical coordinate for the window.
+	 * @param X Horizontal coordinate for the window.
+	 * @param Y Vertical coordinate for the window.
 	 * @param statement The {@link Statement} to be edited.
-	 * @param location  Location of the DNA text panel on screen.
-	 * @param coder     The current coder who is viewing the statement.
-	 * @param statementPanel A reference to the statement panel.
+	 * @param location Location of the DNA text panel on screen.
+	 * @param coder The current coder who is viewing the statement.
+	 * @param eligibleCoders A list of coders who are allowed to own the statement.
 	 */
 	Popup(double X, double Y, Statement statement, Point location, Coder coder, ArrayList<Coder> eligibleCoders) {
 		this.statement = statement;

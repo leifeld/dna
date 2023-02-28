@@ -313,9 +313,9 @@ public class NewDatabaseDialog extends JDialog {
 							connectionDetailsPanel.getPort(),
 							connectionDetailsPanel.getLogin(),
 							connectionDetailsPanel.getPassword());
-					sql.Sql testConnection = new sql.Sql(tempConnectionProfile, true); // connection test, so true
 					
-					if (openExistingDatabase == true) { // existing database: select and authenticate user, then open connection as main database in DNA
+					if (openExistingDatabase) { // existing database: select and authenticate user, then open connection as main database in DNA
+						sql.Sql testConnection = new sql.Sql(tempConnectionProfile, true, true); // connection test, so true
 						if (testConnection.hasDataSource()) {
 							boolean validInput = false;
 							int coderIdToSelect = -1;
@@ -372,6 +372,8 @@ public class NewDatabaseDialog extends JDialog {
 									JOptionPane.ERROR_MESSAGE);
 						}
 					} else { // new database: digest password, test database, and create data structures
+						sql.Sql testConnection = new sql.Sql(tempConnectionProfile, true, false); // connection test, so true
+
 						// generate hash from password
 						String plainPassword = new String(pw1Field.getPassword()); // this must be the coder password, not the database password!
 						StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();

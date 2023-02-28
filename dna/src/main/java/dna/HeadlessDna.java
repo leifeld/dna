@@ -107,10 +107,10 @@ public class HeadlessDna implements Logger.LogListener {
 			return false;
 		}
 		ConnectionProfile cp = new ConnectionProfile(type, databaseUrl, databaseName, databasePort, databaseUser, databasePassword);
-		Sql testSql = new Sql(cp, true);
+		Sql testSql = new Sql(cp, true, true);
 		boolean success = testSql.authenticate(coderId, coderPassword);
 		if (success) {
-			Dna.sql.setConnectionProfile(cp, false);
+			Dna.sql.setConnectionProfile(cp, false, true);
 			Dna.sql.selectCoder(coderId);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"Coder " + Dna.sql.getActiveCoder().getId() + " (" + Dna.sql.getActiveCoder().getName() + ") successfully authenticated.",
@@ -148,7 +148,7 @@ public class HeadlessDna implements Logger.LogListener {
 			Dna.logger.log(l);
 		}
 		if (cp != null) {
-			Sql sqlTemp = new Sql(cp, true); // just for authentication purposes, so a test
+			Sql sqlTemp = new Sql(cp, true, true); // just for authentication purposes, so a test
 			if (sqlTemp.getDataSource() == null) {
 				LogEvent l = new LogEvent(Logger.ERROR,
 						"No data source available in the database connection.",
@@ -157,7 +157,7 @@ public class HeadlessDna implements Logger.LogListener {
 			} else {
 				boolean authenticated = sqlTemp.authenticate(-1, clearCoderPassword);
 				if (authenticated) {
-					Dna.sql.setConnectionProfile(sqlTemp.getConnectionProfile(), false);
+					Dna.sql.setConnectionProfile(sqlTemp.getConnectionProfile(), false, true);
 					LogEvent l = new LogEvent(Logger.MESSAGE,
 							"Connection profile opened and coder authenticated.",
 							"A connection profile was opened, and coder " + Dna.sql.getActiveCoder().getId() + " (" + Dna.sql.getActiveCoder().getName() + ") was successfully authenticated. You can now use the functions available to this user.");
@@ -223,14 +223,14 @@ public class HeadlessDna implements Logger.LogListener {
 	 */
 	public void closeDatabase() {
 		if (Dna.sql == null || Dna.sql.getConnectionProfile() == null || Dna.sql.getActiveCoder() == null) {
-			Dna.sql.setConnectionProfile(null, false);
+			Dna.sql.setConnectionProfile(null, false, false);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"Tried to close database, but none was open.",
 					"Tried to close database, but none was open. Set the current connection profile to null anyway.");
 			Dna.logger.log(l);
 			System.out.println("Tried to close database, but none was open.");
 		} else {
-			Dna.sql.setConnectionProfile(null, false);
+			Dna.sql.setConnectionProfile(null, false, false);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"Database was closed.",
 					"Closed database connection.");
@@ -261,7 +261,7 @@ public class HeadlessDna implements Logger.LogListener {
 	 */
 	public Object[] queryCoders(String type, String databaseUrl, String databaseName, int databasePort, String databaseUser, String databasePassword) {
 		ConnectionProfile testCp = new ConnectionProfile(type, databaseUrl, databaseName, databasePort, databaseUser, databasePassword);
-		Sql testSql = new Sql(testCp, true);
+		Sql testSql = new Sql(testCp, true, true);
 		ArrayList<Coder> coders = testSql.queryCoders();
 		Object[] objects = new Object[3];
 		objects[0] = coders.stream().mapToInt(c -> c.getId()).toArray();
