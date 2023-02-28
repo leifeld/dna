@@ -6,44 +6,44 @@ package model;
  * in the statement type that corresponds to the statement. 
  */
 public class Value {
-	private int variableId;
-	private String key, dataType;
+	private int variableId, roleId;
+	private String key, dataType, roleName;
 	private Object value;
 	
 	/**
 	 * Creates a value.
 	 * 
-	 * @param variableId  The ID of the variable of which the value is an
-	 *   instance.
+	 * @param variableId  The ID of the variable of which the value is an instance.
 	 * @param key         The variable name.
-	 * @param dataType    The data type of the value. Can be {@code
-	 *   "short text"}, {@code "long text"}, {@code "integer"}, or {@code
-	 *   "boolean"}.
-	 * @param value       The actual value saved for the variable. The value is
-	 *   saved as an Object and must be cast into String or Integer, depending
-	 *   on the data type.
+	 * @param dataType    The data type of the value. Can be {@code "short text"}, {@code "long text"}, {@code "integer"}, or {@code "boolean"}.
+	 * @param value       The actual value saved for the variable. The value is saved as an Object and must be cast into String or Integer, depending on the data type.
+	 * @param roleId      The role ID of the value.
+	 * @param roleName    The role name of the value.
 	 */
-	public Value(int variableId, String key, String dataType, Object value) {
+	public Value(int variableId, String key, String dataType, Object value, int roleId, String roleName) {
 		this.variableId = variableId;
 		this.key = key;
 		this.dataType = dataType;
 		this.value = value;
+		this.roleId = roleId;
+		this.roleName = roleName;
 	}
 
 	/**
 	 * Creates a value, but initially an empty one.
 	 * 
-	 * @param variableId  The ID of the variable of which the value is an
-	 *   instance.
+	 * @param variableId  The ID of the variable of which the value is an instance.
 	 * @param key         The variable name.
-	 * @param dataType    The data type of the value. Can be {@code
-	 *   "short text"}, {@code "long text"}, {@code "integer"}, or {@code
-	 *   "boolean"}.
+	 * @param dataType    The data type of the value. Can be {@code "short text"}, {@code "long text"}, {@code "integer"}, or {@code "boolean"}.
+	 * @param roleId      The role ID of the value.
+	 * @param roleName    The role name of the value.
 	 */
-	public Value(int variableId, String key, String dataType) {
+	public Value(int variableId, String key, String dataType, int roleId, String roleName) {
 		this.variableId = variableId;
 		this.key = key;
 		this.dataType = dataType;
+		this.roleId = roleId;
+		this.roleName = roleName;
 		if (dataType.equals("short text")) {
 			this.value = null;
 		} else if (dataType.equals("long text")) {
@@ -65,6 +65,8 @@ public class Value {
 		this.key = value.getKey();
 		this.dataType = value.getDataType();
 		this.value = value.getValue();
+		this.roleId = value.getRoleId();
+		this.roleName = value.getRoleName();
 	}
 
 	/**
@@ -131,7 +133,43 @@ public class Value {
 	public void setValue(Object value) {
 		this.value = value;
 	}
-	
+
+	/**
+	 * Get the role name.
+	 *
+	 * @return The role name.
+	 */
+	public String getRoleName() {
+		return this.roleName;
+	}
+
+	/**
+	 * Set the role name.
+	 *
+	 * @param roleName The role name.
+	 */
+	public void setRoleName(String roleName) {
+		this.roleName = roleName;
+	}
+
+	/**
+	 * Get the role ID.
+	 *
+	 * @return The role ID.
+	 */
+	public int getRoleId() {
+		return this.roleId;
+	}
+
+	/**
+	 * Set the role ID.
+	 *
+	 * @param roleId The role ID.
+	 */
+	public void setRoleId(int roleId) {
+		this.roleId = roleId;
+	}
+
 	/**
 	 * Is this value equal to another object?
 	 * 

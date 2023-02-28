@@ -1,6 +1,5 @@
 package model;
 
-
 import java.awt.Color;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -343,34 +342,36 @@ public class Statement implements Comparable<Statement> {
 	}
 
 	/**
-	 * Get a value from the array list of values by reference to its variable name.
+	 * Get a value from the array list of values by reference to its variable name and role name.
 	 *
-	 * @param key Name of the variable for which to retrieve the {@link Value} object.
+	 * @param variableName Name of the variable for which to retrieve the {@link Value} object.
+	 * @param roleName     Name of the role for which to retrieve the object.
 	 * @return The value.
 	 */
-	public Value getValueByKey(String key) {
-		return this.values.stream().filter(v -> v.getKey().equals(key)).findFirst().get();
+	public Value getValueByName(String variableName, String roleName) {
+		return this.values.stream().filter(v -> v.getKey().equals(variableName) && v.getKey().equals(roleName)).findFirst().get();
 	}
 
 	/**
-	 * Get a value from the array list of values by reference to its variable ID.
+	 * Get a value from the array list of values by reference to its variable ID and role ID.
 	 *
 	 * @param variableId ID of the variable for which to retrieve the {@link Value} object.
+	 * @param roleId     ID of the role for which to retrieve the {@link Value} object.
 	 * @return The value.
 	 */
-	public Value getValueByVariableId(int variableId) {
-		return this.values.stream().filter(v -> v.getVariableId() == variableId).findFirst().get();
+	public Value getValueById(int variableId, int roleId) {
+		return this.values.stream().filter(v -> v.getVariableId() == variableId && v.getRoleId() == roleId).findFirst().get();
 	}
 
 	/**
 	 * Set the value of a {@link Value} object contained in the values array list. The correct item in the list is
-	 * identified by matching the variable ID. The value slot stored in the new value is used to replace the value in
-	 * the object stored in the list.
+	 * identified by matching the variable ID and role ID. The value slot stored in the new value is used to replace the
+	 * value in the object stored in the list.
 	 *
 	 * @param value The value to replace.
 	 */
 	public void setValue(Value value) {
-		this.values.stream().filter(v -> v.getVariableId() == value.getVariableId()).findFirst().get().setValue(value.getValue());
+		this.values.stream().filter(v -> v.getVariableId() == value.getVariableId() && v.getRoleId() == value.getRoleId()).findFirst().get().setValue(value.getValue());
 	}
 
 	/**

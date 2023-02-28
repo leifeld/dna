@@ -36,10 +36,7 @@ public class StatementType {
 	 * @param id         The statement type ID.
 	 * @param label      The label or name of the statement type.
 	 * @param color      The color of the statement type.
-	 * @param variables  An array list of values representing the variables. Can
-	 *   be empty values (using the {@link model.Value#Value(int, String,
-	 *   String) simplified constructor} for the {@link model.Value Value}
-	 *   class.
+	 * @param variables  An array list of values representing the variables. Can be empty values (using the {@link model.Value#Value(int, String, String, int, String) simplified constructor} for the {@link model.Value Value} class.
 	 */
 	public StatementType(int id, String label, Color color, ArrayList<Value> variables) {
 		this.id = id;

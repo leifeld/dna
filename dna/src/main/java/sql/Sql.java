@@ -2374,16 +2374,17 @@ public class Sql {
 		long statementId = -1, entityId = -1, attributeVariableId = -1;
 		try (Connection conn = ds.getConnection();
 			 PreparedStatement s1 = conn.prepareStatement("INSERT INTO STATEMENTS (StatementTypeId, DocumentId, Start, Stop, Coder) VALUES (?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
-			 PreparedStatement s2 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Entity) VALUES (?, ?, ?);");
-			 PreparedStatement s3 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
-			 PreparedStatement s4 = conn.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
-			 PreparedStatement s5 = conn.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+			 PreparedStatement s2 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, RoleVariableLinkId, Entity) VALUES (?, ?, ?);");
+			 PreparedStatement s3 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
+			 PreparedStatement s4 = conn.prepareStatement("INSERT INTO DATAINTEGER (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
+			 PreparedStatement s5 = conn.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
 			 PreparedStatement s6 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
 			 PreparedStatement s7 = conn.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
 			 PreparedStatement s8 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
 			 PreparedStatement s9 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
 			 PreparedStatement s10 = conn.prepareStatement("SELECT COUNT(ID) FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
 			 PreparedStatement s11 = conn.prepareStatement("SELECT COUNT(ID) FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
+			 PreparedStatement s12 = conn.prepareStatement("SELECT ID FROM ROLEVARIABLELINKS WHERE RoleId = ? AND VariableId = ?;");
 			 SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
@@ -2406,14 +2407,29 @@ public class Sql {
 					"Added a row to the STATEMENTS table during the transaction. The new statement has ID " + statementId + ".");
 			Dna.logger.log(l);
 			for (int i = 0; i < statement.getValues().size(); i++) {
-				if (statement.getValues().get(i).getDataType().equals("short text")) {
+				// find ID in ROLEVARIABLELINKS table
+				int variableId = statement.getValues().get(i).getVariableId();
+				int roleId = statement.getValues().get(i).getRoleId();
+				int roleVariableId = -1;
+				s12.setInt(1, roleId);
+				s12.setInt(2, variableId);
+				r = s12.executeQuery();
+				while (r.next()) {
+					roleVariableId = r.getInt(1);
+				}
+				if (roleVariableId < 0) {
+					l = new LogEvent(Logger.ERROR,
+							"[SQL]  ├─ Failed to find role-variable ID for statement.",
+							"Statement " + statementId + ": could not find role-variable ID (role ID " + roleId + "; variable ID: " + variableId + ").");
+					Dna.logger.log(l);
+					throw new SQLException();
+				}
 
+				// add to DATA... tables (and ENTITIES table if short text)
+				if (statement.getValues().get(i).getDataType().equals("short text")) {
 					// first, try to create an entity if it does not exist yet
-					int variableId = statement.getValues().get(i).getVariableId();
 					String value = "";
-					if (statement.getValues().get(i).getValue() == null) {
-						value = "";
-					} else {
+					if (statement.getValues().get(i).getValue() != null) {
 						value = ((Entity) statement.getValues().get(i).getValue()).getValue(); // not sure if this case ever occurs
 					}
 
@@ -2493,39 +2509,39 @@ public class Sql {
 
 					// finally, write into the DATASHORTTEXT table
 					s2.setLong(1, statementId);
-					s2.setInt(2, statement.getValues().get(i).getVariableId());
+					s2.setInt(2, roleVariableId);
 					s2.setLong(3, entityId);
 					s2.executeUpdate();
 					l = new LogEvent(Logger.MESSAGE,
-							"[SQL]  ├─ Transaction: Added an entity to the DATASHORTTEXT table for Variable " + statement.getValues().get(i).getVariableId() + ".",
-							"Added a row with entity ID " + entityId + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATASHORTTEXT table during the transaction.");
+							"[SQL]  ├─ Transaction: Added an entity to the DATASHORTTEXT table.",
+							"Added a row with entity ID " + entityId + " for Variable \"" + statement.getValues().get(i).getKey() + "\" (ID " + variableId + ") and Role \"" + statement.getValues().get(i).getRoleName() + "\" (ID " + roleId + " to the DATASHORTTEXT table during the transaction.");
 					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("long text")) {
 					s3.setLong(1, statementId);
-					s3.setInt(2, statement.getValues().get(i).getVariableId());
+					s3.setInt(2, roleVariableId);
 					s3.setString(3, (String) statement.getValues().get(i).getValue());
 					s3.executeUpdate();
 					l = new LogEvent(Logger.MESSAGE,
-							"[SQL]  ├─ Transaction: Added a value to the DATALONGTEXT table for Variable " + statement.getValues().get(i).getVariableId() + ".",
-							"Added a row for Variable " + statement.getValues().get(i).getVariableId() + " to the DATALONGTEXT table during the transaction.");
+							"[SQL]  ├─ Transaction: Added a value to the DATALONGTEXT table.",
+							"Added a row for Variable \"" + statement.getValues().get(i).getKey() + "\" (ID " + variableId + ") and Role \"" + statement.getValues().get(i).getRoleName() + "\" (ID " + roleId + ") to the DATALONGTEXT table during the transaction.");
 					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("integer")) {
 					s4.setLong(1, statementId);
-					s4.setInt(2, statement.getValues().get(i).getVariableId());
+					s4.setInt(2, roleVariableId);
 					s4.setInt(3, (int) statement.getValues().get(i).getValue());
 					s4.executeUpdate();
 					l = new LogEvent(Logger.MESSAGE,
-							"[SQL]  ├─ Transaction: Added a value to the DATAINTEGER table for Variable " + statement.getValues().get(i).getVariableId() + ".",
-							"Added a row with Value " + (int) statement.getValues().get(i).getValue() + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATAINTEGER table during the transaction.");
+							"[SQL]  ├─ Transaction: Added a value to the DATAINTEGER table.",
+							"Added a row with Value " + (int) statement.getValues().get(i).getValue() + " for Variable \"" + statement.getValues().get(i).getKey() + "\" (ID " + variableId + ") and Role \"" + statement.getValues().get(i).getRoleName() + "\" (ID " + roleId + ") to the DATAINTEGER table during the transaction.");
 					Dna.logger.log(l);
 				} else if (statement.getValues().get(i).getDataType().equals("boolean")) {
 					s5.setLong(1, statementId);
-					s5.setInt(2, statement.getValues().get(i).getVariableId());
+					s5.setInt(2, roleVariableId);
 					s5.setInt(3, (int) statement.getValues().get(i).getValue());
 					s5.executeUpdate();
 					l = new LogEvent(Logger.MESSAGE,
-							"[SQL]  ├─ Transaction: Added a value to the DATABOOLEAN table for Variable " + statement.getValues().get(i).getVariableId() + ".",
-							"Added a row with Value " + (int) statement.getValues().get(i).getValue() + " for Variable " + statement.getValues().get(i).getVariableId() + " to the DATABOOLEAN table during the transaction.");
+							"[SQL]  ├─ Transaction: Added a value to the DATABOOLEAN table.",
+							"Added a row with Value " + (int) statement.getValues().get(i).getValue() + " for Variable \"" + statement.getValues().get(i).getKey() + "\" (ID " + variableId + ") and Role \"" + statement.getValues().get(i).getRoleName() + "\" (ID " + roleId + ") to the DATABOOLEAN table during the transaction.");
 					Dna.logger.log(l);
 				}
 			}
@@ -2553,16 +2569,17 @@ public class Sql {
 	 */
 	public void updateStatement(int statementId, ArrayList<Value> values, int coderId) {
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
-				PreparedStatement s2 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("UPDATE DATALONGTEXT SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
-				PreparedStatement s4 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Entity = ? WHERE StatementId = ? AND VariableId = ?;");
+				PreparedStatement s1 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
+				PreparedStatement s2 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("UPDATE DATALONGTEXT SET Value = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
+				PreparedStatement s4 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Entity = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
 				PreparedStatement s5 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
 				PreparedStatement s6 = conn.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
 				PreparedStatement s7 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
 				PreparedStatement s8 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
 				PreparedStatement s9 = conn.prepareStatement("SELECT COUNT(ID) FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
 				PreparedStatement s10 = conn.prepareStatement("UPDATE STATEMENTS SET Coder = ? WHERE ID = ?;");
+			 	PreparedStatement s11 = conn.prepareStatement("SELECT ID FROM ROLEVARIABLELINKS WHERE RoleId = ? AND VariableId = ?;");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent e1 = new LogEvent(Logger.MESSAGE,
@@ -2570,36 +2587,54 @@ public class Sql {
 					"Started a new SQL transaction to update the variables in the statement with ID " + statementId + ". The contents will not be written into the database until the transaction is committed.");
 			Dna.logger.log(e1);
 			Entity entity;
-			int entityId, variableId, attributeVariableId;
+			int entityId, variableId, roleId, roleVariableId, attributeVariableId;
 			ResultSet r, r2;
 			for (int i = 0; i < values.size(); i++) {
+				// find ID in ROLEVARIABLELINKS table
 				variableId = values.get(i).getVariableId();
+				roleId = values.get(i).getRoleId();
+				roleVariableId = -1;
+				s11.setInt(1, roleId);
+				s11.setInt(2, variableId);
+				r = s11.executeQuery();
+				while (r.next()) {
+					roleVariableId = r.getInt(1);
+				}
+				if (roleVariableId < 0) {
+					LogEvent l = new LogEvent(Logger.ERROR,
+							"[SQL]  ├─ Failed to find role-variable ID for statement.",
+							"Statement " + statementId + ": could not find role-variable ID (role ID " + roleId + "; variable ID: " + variableId + ").");
+					Dna.logger.log(l);
+					throw new SQLException();
+				}
+
+				// update DATA... tables
 				if (values.get(i).getDataType().equals("boolean")) {
 					s1.setInt(1, (int) values.get(i).getValue());
 					s1.setInt(2, statementId);
-					s1.setInt(3, variableId);
+					s1.setInt(3, roleVariableId);
 					s1.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
 							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
-							"Variable " + variableId + " (boolean) in Statement " + statementId + " was updated in the SQL transaction with value: " + (int) values.get(i).getValue() + ".");
+							"Boolean variable \"" + values.get(i).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementId + " were updated in the SQL transaction with value: " + (int) values.get(i).getValue() + ".");
 					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("integer")) {
 					s2.setInt(1, (int) values.get(i).getValue());
 					s2.setInt(2, statementId);
-					s2.setInt(3, variableId);
+					s2.setInt(3, roleVariableId);
 					s2.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
 							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
-							"Variable " + variableId + " (integer) in Statement " + statementId + " was updated in the SQL transaction with value: " + (int) values.get(i).getValue() + ".");
+							"Integer variable \"" + values.get(i).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementId + " were updated in the SQL transaction with value: " + (int) values.get(i).getValue() + ".");
 					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("long text")) {
 					s3.setString(1, (String) values.get(i).getValue());
 					s3.setInt(2, statementId);
-					s3.setInt(3, variableId);
+					s3.setInt(3, roleVariableId);
 					s3.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
 							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
-							"Variable " + variableId + " (long text) in Statement " + statementId + " was updated in the SQL transaction.");
+							"Long text variable \"" + values.get(i).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementId + " were updated in the SQL transaction.");
 					Dna.logger.log(e2);
 				} else if (values.get(i).getDataType().equals("short text")) {
 					// try to recognise entity ID from database; should be more reliable (e.g., with empty Strings)
@@ -2670,11 +2705,11 @@ public class Sql {
 					// write the attribute ID as the value in the DATASHORTTEXT table
 					s4.setInt(1, entityId);
 					s4.setInt(2, statementId);
-					s4.setInt(3, variableId);
+					s4.setInt(3, roleVariableId);
 					s4.executeUpdate();
 					LogEvent e2 = new LogEvent(Logger.MESSAGE,
 							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
-							"Variable " + variableId + " (short text) in Statement " + statementId + " was updated in the SQL transaction with Entity " + entityId + ".");
+							"Short text variable \"" + values.get(i).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementId + " were updated in the SQL transaction with Entity " + entityId + ".");
 					Dna.logger.log(e2);
 				}
 			}
@@ -2707,16 +2742,17 @@ public class Sql {
 	 */
 	public void updateStatements(ArrayList<Integer> statementIds, ArrayList<ArrayList<Value>> values, ArrayList<Integer> coderIds) {
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
-				PreparedStatement s2 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("UPDATE DATALONGTEXT SET Value = ? WHERE StatementId = ? AND VariableId = ?;");
-				PreparedStatement s4 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Entity = ? WHERE StatementId = ? AND VariableId = ?;");
+				PreparedStatement s1 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
+				PreparedStatement s2 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("UPDATE DATALONGTEXT SET Value = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
+				PreparedStatement s4 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Entity = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
 				PreparedStatement s5 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
 				PreparedStatement s6 = conn.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
 				PreparedStatement s7 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
 				PreparedStatement s8 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
 				PreparedStatement s9 = conn.prepareStatement("SELECT COUNT(ID) FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
 				PreparedStatement s10 = conn.prepareStatement("UPDATE STATEMENTS SET Coder = ? WHERE ID = ?;");
+			 	PreparedStatement s11 = conn.prepareStatement("SELECT ID FROM ROLEVARIABLELINKS WHERE RoleId = ? AND VariableId = ?;");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent e1 = new LogEvent(Logger.MESSAGE,
@@ -2724,37 +2760,54 @@ public class Sql {
 					"Started a new SQL transaction to update the variables in a set of " + statementIds.size() + " statements. The contents will not be written into the database until the transaction is committed.");
 			Dna.logger.log(e1);
 			Entity entity;
-			int entityId, variableId, attributeVariableId;
+			int entityId, variableId, roleId, roleVariableId, attributeVariableId;
 			ResultSet r, r2;
 			for (int i = 0; i < values.size(); i++) {
 				for (int j = 0; j < values.get(i).size(); j++) {
+					// find ID in ROLEVARIABLELINKS table
 					variableId = values.get(i).get(j).getVariableId();
+					roleId = values.get(i).get(j).getRoleId();
+					roleVariableId = -1;
+					s11.setInt(1, roleId);
+					s11.setInt(2, variableId);
+					r = s11.executeQuery();
+					while (r.next()) {
+						roleVariableId = r.getInt(1);
+					}
+					if (roleVariableId < 0) {
+						LogEvent l = new LogEvent(Logger.ERROR,
+								"[SQL]  ├─ Failed to find role-variable ID for statement.",
+								"Statement " + statementIds.get(i) + ": could not find role-variable ID (role ID " + roleId + "; variable ID: " + variableId + ").");
+						Dna.logger.log(l);
+						throw new SQLException();
+					}
+
 					if (values.get(i).get(j).getDataType().equals("boolean")) {
 						s1.setInt(1, (int) values.get(i).get(j).getValue());
 						s1.setInt(2, statementIds.get(i));
-						s1.setInt(3, variableId);
+						s1.setInt(3, roleVariableId);
 						s1.executeUpdate();
 						LogEvent e2 = new LogEvent(Logger.MESSAGE,
 								"[SQL]  ├─ Variable " + variableId + " in Statement " + statementIds.get(i) + " was updated in the transaction.",
-								"Variable " + variableId + " (boolean) in Statement " + statementIds.get(i) + " was updated in the SQL transaction with value: " + (int) values.get(i).get(j).getValue() + ".");
+								"Boolean variable \"" + values.get(i).get(j).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).get(j).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementIds.get(i) + " were updated in the SQL transaction with value: " + (int) values.get(i).get(j).getValue() + ".");
 						Dna.logger.log(e2);
 					} else if (values.get(i).get(j).getDataType().equals("integer")) {
 						s2.setInt(1, (int) values.get(i).get(j).getValue());
 						s2.setInt(2, statementIds.get(i));
-						s2.setInt(3, variableId);
+						s2.setInt(3, roleVariableId);
 						s2.executeUpdate();
 						LogEvent e2 = new LogEvent(Logger.MESSAGE,
 								"[SQL]  ├─ Variable " + variableId + " in Statement " + statementIds.get(i) + " was updated in the transaction.",
-								"Variable " + variableId + " (integer) in Statement " + statementIds.get(i) + " was updated in the SQL transaction with value: " + (int) values.get(i).get(j).getValue() + ".");
+								"Integer variable \"" + values.get(i).get(j).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).get(j).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementIds.get(i) + " were updated in the SQL transaction with value: " + (int) values.get(i).get(j).getValue() + ".");
 						Dna.logger.log(e2);
 					} else if (values.get(i).get(j).getDataType().equals("long text")) {
 						s3.setString(1, (String) values.get(i).get(j).getValue());
 						s3.setInt(2, statementIds.get(i));
-						s3.setInt(3, variableId);
+						s3.setInt(3, roleVariableId);
 						s3.executeUpdate();
 						LogEvent e2 = new LogEvent(Logger.MESSAGE,
 								"[SQL]  ├─ Variable " + variableId + " in Statement " + statementIds.get(i) + " was updated in the transaction.",
-								"Variable " + variableId + " (long text) in Statement " + statementIds.get(i) + " was updated in the SQL transaction.");
+								"Long text variable \"" + values.get(i).get(j).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).get(j).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementIds.get(i) + " were updated in the SQL transaction.");
 						Dna.logger.log(e2);
 					} else if (values.get(i).get(j).getDataType().equals("short text")) {
 						// try to recognise entity ID from database; should be more reliable (e.g., with empty Strings)
@@ -2825,11 +2878,11 @@ public class Sql {
 						// write the attribute ID as the value in the DATASHORTTEXT table
 						s4.setInt(1, entityId);
 						s4.setInt(2, statementIds.get(i));
-						s4.setInt(3, variableId);
+						s4.setInt(3, roleVariableId);
 						s4.executeUpdate();
 						LogEvent e2 = new LogEvent(Logger.MESSAGE,
 								"[SQL]  ├─ Variable " + variableId + " in Statement " + statementIds.get(i) + " was updated in the transaction.",
-								"Variable " + variableId + " (short text) in Statement " + statementIds.get(i) + " was updated in the SQL transaction with Entity " + entityId + ".");
+								"Short text variable \"" + values.get(i).get(j).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).get(j).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementIds.get(i) + " were updated in the SQL transaction with Entity " + entityId + ".");
 						Dna.logger.log(e2);
 					}
 				}
@@ -2863,14 +2916,14 @@ public class Sql {
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("INSERT INTO STATEMENTS (StatementTypeId, DocumentId, Start, Stop, Coder) SELECT StatementTypeId, DocumentId, Start, Stop, Coder FROM STATEMENTS WHERE ID = ?;", PreparedStatement.RETURN_GENERATED_KEYS);
 				PreparedStatement s2 = conn.prepareStatement("UPDATE STATEMENTS SET Coder = ? WHERE ID = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT VariableId, Value FROM DATABOOLEAN WHERE StatementId = ?;");
-				PreparedStatement s4 = conn.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, ?);");
-				PreparedStatement s5 = conn.prepareStatement("SELECT VariableId, Value FROM DATAINTEGER WHERE StatementId = ?;");
-				PreparedStatement s6 = conn.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
-				PreparedStatement s7 = conn.prepareStatement("SELECT VariableId, Entity FROM DATASHORTTEXT WHERE StatementId = ?;");
-				PreparedStatement s8 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Entity) VALUES (?, ?, ?);");
-				PreparedStatement s9 = conn.prepareStatement("SELECT VariableId, Value FROM DATALONGTEXT WHERE StatementId = ?;");
-				PreparedStatement s10 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+				PreparedStatement s3 = conn.prepareStatement("SELECT RoleVariableLinkId, Value FROM DATABOOLEAN WHERE StatementId = ?;");
+				PreparedStatement s4 = conn.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
+				PreparedStatement s5 = conn.prepareStatement("SELECT RoleVariableLinkId, Value FROM DATAINTEGER WHERE StatementId = ?;");
+				PreparedStatement s6 = conn.prepareStatement("INSERT INTO DATAINTEGER (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
+				PreparedStatement s7 = conn.prepareStatement("SELECT RoleVariableLinkId, Entity FROM DATASHORTTEXT WHERE StatementId = ?;");
+				PreparedStatement s8 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, RoleVariableLinkId, Entity) VALUES (?, ?, ?);");
+				PreparedStatement s9 = conn.prepareStatement("SELECT RoleVariableLinkId, Value FROM DATALONGTEXT WHERE StatementId = ?;");
+				PreparedStatement s10 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
 				SQLCloseable finish = conn::rollback) {
 			ResultSet r;
 			conn.setAutoCommit(false);
@@ -2893,7 +2946,7 @@ public class Sql {
 			r = s3.executeQuery();
 			while (r.next()) {
 				s4.setInt(1, id);
-				s4.setInt(2, r.getInt("VariableId"));
+				s4.setInt(2, r.getInt("RoleVariableLinkId"));
 				s4.setInt(3, r.getInt("Value"));
 				s4.executeUpdate();
 			}
@@ -2903,7 +2956,7 @@ public class Sql {
 			r = s5.executeQuery();
 			while (r.next()) {
 				s6.setInt(1, id);
-				s6.setInt(2, r.getInt("VariableId"));
+				s6.setInt(2, r.getInt("RoleVariableLinkId"));
 				s6.setInt(3, r.getInt("Value"));
 				s6.executeUpdate();
 			}
@@ -2913,7 +2966,7 @@ public class Sql {
 			r = s7.executeQuery();
 			while (r.next()) {
 				s8.setInt(1, id);
-				s8.setInt(2, r.getInt("VariableId"));
+				s8.setInt(2, r.getInt("RoleVariableLinkId"));
 				s8.setInt(3, r.getInt("Entity"));
 				s8.executeUpdate();
 			}
@@ -2923,7 +2976,7 @@ public class Sql {
 			r = s9.executeQuery();
 			while (r.next()) {
 				s10.setInt(1, id);
-				s10.setInt(2, r.getInt("VariableId"));
+				s10.setInt(2, r.getInt("RoleVariableLinkId"));
 				s10.setString(3, r.getString("Value"));
 				s10.executeUpdate();
 			}
@@ -2946,15 +2999,14 @@ public class Sql {
 	/**
 	 * Get a statement from the database based on its ID.
 	 * 
-	 * @param statementId  The statement ID of the statement to be retrieved.
-	 * @return             A {@link model.Statement Statement} with all relevant
-	 *   values for the different variables.
+	 * @param statementId The statement ID of the statement to be retrieved.
+	 * @return A {@link model.Statement Statement} with all relevant values for the different variables.
 	 */
 	public Statement getStatement(int statementId) {
 		Statement statement = null;
 		ArrayList<Value> values;
-		int statementTypeId, variableId, entityId;
-		String variable, dataType;
+		int statementTypeId, variableId, roleId, roleVariableLinkId, entityId;
+		String variableName, roleName, dataType;
 		Color aColor, sColor, cColor;
 		HashMap<String, String> map;
 		String subString = "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text ";
@@ -2984,12 +3036,13 @@ public class Sql {
 				+ "WHERE STATEMENTS.ID = ?;";
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement(s1Query);
-				PreparedStatement s2 = conn.prepareStatement("SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT E.ID AS EntityId, StatementId, E.VariableId, DST.ID AS DataId, E.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ENTITIES AS E ON E.ID = DST.Entity AND E.VariableId = DST.VariableId WHERE DST.StatementId = ? AND DST.VariableId = ?;");
-				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE VariableId = ? AND StatementId = ?;");
-				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE VariableId = ? AND StatementId = ?;");
-				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE VariableId = ? AND StatementId = ?;");
-				PreparedStatement s7 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
+				PreparedStatement s2 = conn.prepareStatement("SELECT ROLEVARIABLELINKS.ID AS RoleVariableLinkId, ROLES.ID AS RoleId, RoleName, VariableId, Variable AS VariableName, DataType FROM ROLES INNER JOIN ROLEVARIABLELINKS INNER JOIN VARIABLES WHERE ROLES.ID = ROLEVARIABLELINKS.RoleId AND VariableId = VARIABLES.ID AND StatementTypeId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT E.ID AS EntityId, StatementId, E.VariableId, DST.RoleVariableLinkId, DST.ID AS DataId, E.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ENTITIES AS E ON E.ID = DST.Entity WHERE DST.StatementId = ? AND DST.RoleVariableLinkId = ?;");
+				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE RoleVariableLinkId = ? AND StatementId = ?;");
+				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE RoleVariableLinkId = ? AND StatementId = ?;");
+				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE RoleVariableLinkId = ? AND StatementId = ?;");
+				PreparedStatement s7 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;");
+				PreparedStatement s8 = conn.prepareStatement("SELECT ID FROM ROLEVARIABLELINKS WHERE RoleId = ? AND VariableId = ?;")) {
 			ResultSet r1, r2, r3, r4;
 			
 			// first, get the statement information, including coder and statement type info
@@ -3000,19 +3053,22 @@ public class Sql {
 			    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
 			    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
 			    
-			    // second, get the variables associated with the statement type
-			    s2.setInt(1, statementTypeId);
-			    r2 = s2.executeQuery();
-			    values = new ArrayList<Value>();
-			    while (r2.next()) {
-			    	variableId = r2.getInt("ID");
-			    	variable = r2.getString("Variable");
-			    	dataType = r2.getString("DataType");
-			    	
-			    	// third, get the values from DATABOOLEAN, DATAINTEGER, DATALONGTEXT, and DATASHORTTEXT
+			    // second, get the role-variable combinations associated with the statement type
+				values = new ArrayList<Value>();
+				s2.setInt(1, statementTypeId);
+				r2 = s2.executeQuery();
+				while (r2.next()) {
+					roleVariableLinkId = r2.getInt("RoleVariableLinkId");
+					roleId = r2.getInt("RoleId");
+					roleName = r2.getString("RoleName");
+					variableId = r2.getInt("VariableId");
+					variableName = r2.getString("VariableName");
+					dataType = r2.getString("DataType");
+
+					// third, get the values from DATABOOLEAN, DATAINTEGER, DATALONGTEXT, and DATASHORTTEXT
 			    	if (dataType.equals("short text")) {
 				    	s3.setInt(1, statementId);
-			    		s3.setInt(2, variableId);
+			    		s3.setInt(2, roleVariableLinkId);
 				    	r3 = s3.executeQuery();
 				    	while (r3.next()) {
 				    		entityId = r3.getInt("EntityId");
@@ -3026,28 +3082,28 @@ public class Sql {
 			            		map.put(r4.getString("AttributeVariable"), r4.getString("AttributeValue"));
 			            	}
 			            	Entity entity = new Entity(entityId, variableId, r3.getString("Value"), aColor, r3.getInt("ChildOf"), true, map);
-				    		values.add(new Value(variableId, variable, dataType, entity));
+				    		values.add(new Value(variableId, variableName, dataType, entity, roleId, roleName));
 				    	}
 			    	} else if (dataType.equals("long text")) {
-				    	s4.setInt(1, variableId);
+				    	s4.setInt(1, roleVariableLinkId);
 				    	s4.setInt(2, statementId);
 				    	r3 = s4.executeQuery();
 				    	while (r3.next()) {
-				    		values.add(new Value(variableId, variable, dataType, r3.getString("Value")));
+				    		values.add(new Value(variableId, variableName, dataType, r3.getString("Value"), roleId, roleName));
 				    	}
 			    	} else if (dataType.equals("integer")) {
-				    	s5.setInt(1, variableId);
+				    	s5.setInt(1, roleVariableLinkId);
 				    	s5.setInt(2, statementId);
 				    	r3 = s5.executeQuery();
 				    	while (r3.next()) {
-				    		values.add(new Value(variableId, variable, dataType, r3.getInt("Value")));
+				    		values.add(new Value(variableId, variableName, dataType, r3.getInt("Value"), roleId, roleName));
 				    	}
 			    	} else if (dataType.equals("boolean")) {
-				    	s6.setInt(1, variableId);
+				    	s6.setInt(1, roleVariableLinkId);
 				    	s6.setInt(2, statementId);
 				    	r3 = s6.executeQuery();
 				    	while (r3.next()) {
-				    		values.add(new Value(variableId, variable, dataType, r3.getInt("Value")));
+				    		values.add(new Value(variableId, variableName, dataType, r3.getInt("Value"), roleId, roleName));
 				    	}
 			    	}
 			    }
@@ -3248,45 +3304,51 @@ public class Sql {
 				+ "AND STATEMENTTYPES.ID = " + statementTypeId + " "
 				+ "ORDER BY DOCUMENTS.DATE ASC;";
 
-		String q3 = "SELECT ID, Variable, DataType FROM VARIABLES WHERE StatementTypeId = " + statementTypeId + ";";
-		
-		String q4a = "SELECT DATASHORTTEXT.StatementId, VARIABLES.ID AS VariableId, ENTITIES.ID AS EntityId, ENTITIES.Value AS Value, ENTITIES.Red AS Red, ENTITIES.Green AS Green, ENTITIES.Blue AS Blue, ENTITIES.ChildOf AS ChildOf FROM DATASHORTTEXT "
-				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId "
-				+ "INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity "
-				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATASHORTTEXT.StatementId "
-				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
-				+ "WHERE VARIABLES.StatementTypeId = " + statementTypeId + " " + whereShortText + "ORDER BY 1, 2 ASC;";
-		String q4b = "SELECT DATALONGTEXT.StatementId, VARIABLES.ID AS VariableId, DATALONGTEXT.Value FROM DATALONGTEXT "
-				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId "
-				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATALONGTEXT.StatementId "
-				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
-				+ "WHERE VARIABLES.StatementTypeId = " + statementTypeId + " " + whereLongText + "ORDER BY 1, 2 ASC;";
-		String q4c = "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, DATABOOLEAN.Value FROM DATABOOLEAN "
-				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId "
-				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATABOOLEAN.StatementId "
-				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
-				+ "WHERE VARIABLES.StatementTypeId = " + statementTypeId + " " + whereBoolean + "ORDER BY 1, 2 ASC;";
-		String q4d = "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, DATAINTEGER.Value FROM DATAINTEGER "
-				+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId "
-				+ "INNER JOIN STATEMENTS ON STATEMENTS.ID = DATAINTEGER.StatementId "
-				+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
-				+ "WHERE VARIABLES.StatementTypeId = " + statementTypeId + " " + whereInteger + "ORDER BY 1, 2 ASC;";
+		String q4a = "SELECT DATASHORTTEXT.StatementId, ROLEVARIABLELINKS.RoleId, ROLES.RoleName, ROLEVARIABLELINKS.VariableId, Variable AS VariableName, ENTITIES.ID AS EntityId, ENTITIES.Value AS Value, ENTITIES.Red AS Red, ENTITIES.Green AS Green, ENTITIES.Blue AS Blue, ENTITIES.ChildOf AS ChildOf FROM DATASHORTTEXT " +
+				"INNER JOIN ROLEVARIABLELINKS ON DATASHORTTEXT.RoleVariableLinkId = ROLEVARIABLELINKS.ID " +
+				"INNER JOIN ROLES ON ROLEVARIABLELINKS.RoleId = ROLES.ID " +
+				"INNER JOIN VARIABLES ON ROLEVARIABLELINKS.VariableId = VARIABLES.ID " +
+				"INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity " +
+				"INNER JOIN STATEMENTS ON STATEMENTS.ID = DATASHORTTEXT.StatementId " +
+				"INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId " +
+				"WHERE ROLES.StatementTypeId = " + statementTypeId + " " + whereShortText + "ORDER BY 1, 2, 4 ASC;";
+		String q4b = "SELECT DATALONGTEXT.StatementId, ROLEVARIABLELINKS.RoleId, ROLES.RoleName, ROLEVARIABLELINKS.VariableId, Variable AS VariableName, DATALONGTEXT.Value FROM DATALONGTEXT " +
+				"INNER JOIN ROLEVARIABLELINKS ON DATALONGTEXT.RoleVariableLinkId = ROLEVARIABLELINKS.ID " +
+				"INNER JOIN ROLES ON ROLEVARIABLELINKS.RoleId = ROLES.ID " +
+				"INNER JOIN VARIABLES ON ROLEVARIABLELINKS.VariableId = VARIABLES.ID " +
+				"INNER JOIN STATEMENTS ON STATEMENTS.ID = DATALONGTEXT.StatementId " +
+				"INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId " +
+				"WHERE ROLES.StatementTypeId = " + statementTypeId + " " + whereLongText + "ORDER BY 1, 2, 4 ASC;";
+		String q4c = "SELECT DATABOOLEAN.StatementId, ROLEVARIABLELINKS.RoleId, ROLES.RoleName, ROLEVARIABLELINKS.VariableId, Variable AS VariableName, DATABOOLEAN.Value FROM DATABOOLEAN " +
+				"INNER JOIN ROLEVARIABLELINKS ON DATABOOLEAN.RoleVariableLinkId = ROLEVARIABLELINKS.ID " +
+				"INNER JOIN ROLES ON ROLEVARIABLELINKS.RoleId = ROLES.ID " +
+				"INNER JOIN VARIABLES ON ROLEVARIABLELINKS.VariableId = VARIABLES.ID " +
+				"INNER JOIN STATEMENTS ON STATEMENTS.ID = DATABOOLEAN.StatementId " +
+				"INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId " +
+				"WHERE ROLES.StatementTypeId = " + statementTypeId + " " + whereBoolean + "ORDER BY 1, 2, 4 ASC;";
+		String q4d = "SELECT DATAINTEGER.StatementId, ROLEVARIABLELINKS.RoleId, ROLES.RoleName, ROLEVARIABLELINKS.VariableId, Variable AS VariableName, DATAINTEGER.Value FROM DATAINTEGER " +
+				"INNER JOIN ROLEVARIABLELINKS ON DATAINTEGER.RoleVariableLinkId = ROLEVARIABLELINKS.ID " +
+				"INNER JOIN ROLES ON ROLEVARIABLELINKS.RoleId = ROLES.ID " +
+				"INNER JOIN VARIABLES ON ROLEVARIABLELINKS.VariableId = VARIABLES.ID " +
+				"INNER JOIN STATEMENTS ON STATEMENTS.ID = DATAINTEGER.StatementId " +
+				"INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId " +
+				"WHERE ROLES.StatementTypeId = " + statementTypeId + " " + whereInteger + "ORDER BY 1, 2, 4 ASC;";
 
 		String q5 = "SELECT ATTRIBUTEVALUES.EntityId, AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES "
 				+ "INNER JOIN ATTRIBUTEVARIABLES ON ATTRIBUTEVARIABLES.ID = AttributeVariableId "
 				+ "INNER JOIN VARIABLES ON VARIABLES.ID = ATTRIBUTEVARIABLES.VariableId "
-				+ "WHERE VARIABLES.StatementTypeId = " + statementTypeId + ";";
+				+ "INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.VariableId = VARIABLES.ID "
+				+ "INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId "
+				+ "WHERE ROLES.StatementTypeId = " + statementTypeId + ";";
 		
 		ArrayList<Statement> listOfStatements = null;
-		int statementId, variableId, entityId;
+		int statementId, variableId, roleId, entityId;
+		String variableName, roleName;
 		Color sColor, cColor;
-		HashMap<Integer, String> variableNameMap = new HashMap<Integer, String>(); // variable ID to variable name
-		HashMap<Integer, String> variableDataTypeMap = new HashMap<Integer, String>(); // variable ID to data type
 		HashMap<Integer, Statement> statementMap = new HashMap<Integer, Statement>(); // statement ID to Statement
-		ResultSet r3, r4, r5;
+		ResultSet r4, r5;
 		try (Connection conn = Dna.sql.getDataSource().getConnection();
 				PreparedStatement s1 = conn.prepareStatement(q1);
-				PreparedStatement s3 = conn.prepareStatement(q3);
 				PreparedStatement s4a = conn.prepareStatement(q4a);
 				PreparedStatement s4b = conn.prepareStatement(q4b);
 				PreparedStatement s4c = conn.prepareStatement(q4c);
@@ -3315,13 +3377,6 @@ public class Sql {
 			    		LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC));
 			    statementMap.put(statementId, statement);
 			}
-			
-			// get variables
-			r3 = s3.executeQuery();
-			while (r3.next()) {
-				variableNameMap.put(r3.getInt("ID"), r3.getString("Variable"));
-				variableDataTypeMap.put(r3.getInt("ID"), r3.getString("DataType"));
-			}
 
 			// attributes
 			r5 = s5.executeQuery();
@@ -3342,6 +3397,9 @@ public class Sql {
 			r4 = s4a.executeQuery();
 			while (r4.next()) {
 				variableId = r4.getInt("VariableId");
+				variableName = r4.getString("VariableName");
+				roleId = r4.getInt("RoleId");
+				roleName = r4.getString("RoleName");
 				entityId = r4.getInt("EntityId");
 				Entity e = new Entity(entityId,
 						variableId,
@@ -3350,25 +3408,34 @@ public class Sql {
 						r4.getInt("ChildOf"),
 						true,
 						attributeMap.get(entityId));
-				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), e));
+				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableName, "short text", e, roleId, roleName));
 			}
 			r4 = s4b.executeQuery();
 			while (r4.next()) {
 				variableId = r4.getInt("VariableId");
+				variableName = r4.getString("VariableName");
+				roleId = r4.getInt("RoleId");
+				roleName = r4.getString("RoleName");
 				String value = r4.getString("Value");
-				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
+				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableName, "long text", value, roleId, roleName));
 			}
 			r4 = s4c.executeQuery();
 			while (r4.next()) {
 				variableId = r4.getInt("VariableId");
+				variableName = r4.getString("VariableName");
+				roleId = r4.getInt("RoleId");
+				roleName = r4.getString("RoleName");
 				int value = r4.getInt("Value");
-				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
+				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableName, "boolean", value, roleId, roleName));
 			}
 			r4 = s4d.executeQuery();
 			while (r4.next()) {
 				variableId = r4.getInt("VariableId");
+				variableName = r4.getString("VariableName");
+				roleId = r4.getInt("RoleId");
+				roleName = r4.getString("RoleName");
 				int value = r4.getInt("Value");
-				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), value));
+				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableName, "integer", value, roleId, roleName));
 			}
 			
 			// assemble and sort all statements
@@ -3384,7 +3451,7 @@ public class Sql {
 		}
 		return listOfStatements;
 	}
-	
+
 	/**
 	 * Get a shallow representation of all statements in a specific document for
 	 * the purpose of painting the statements in the text. For this purpose,
@@ -3557,6 +3624,8 @@ public class Sql {
 		}
 		return entityId;
 	}
+
+	// TODO: adjusted to 3.1 data structure until here
 
 	/**
 	 * Retrieve the full set of entities for a set of variable IDs. The result
