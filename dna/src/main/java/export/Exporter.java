@@ -1018,7 +1018,6 @@ public class Exporter {
 				pb.stepTo(i + 1);
 			}
 			this.filteredStatements = al;
-			System.out.println("Filtered statements in new version: " + this.filteredStatements.size());
 			pb.stepTo(this.originalStatements.size());
 		}
 	}
@@ -1669,7 +1668,6 @@ public class Exporter {
 		ArrayList<ExportStatement> stopStatements = new ArrayList<ExportStatement>(); // holds all statements corresponding to the time stamp of the last statement in the window
 		ArrayList<ExportStatement> beforeStatements = new ArrayList<ExportStatement>(); // holds all statements between (and excluding) the time stamp of the first statement in the window and the focal statement
 		ArrayList<ExportStatement> afterStatements = new ArrayList<ExportStatement>(); // holds all statements between (and excluding) the focal statement and the time stamp of the last statement in the window
-		Matrix m;
 		if (this.timeWindow.equals("events")) {
 			try (ProgressBar pb = new ProgressBar("Time window matrices...", this.filteredStatements.size())) {
 				pb.stepTo(0);
@@ -1744,6 +1742,7 @@ public class Exporter {
 										break;
 									}
 								}
+								Matrix m;
 								if (this.networkType.equals("twomode")) {
 									m = computeTwoModeMatrix(currentWindowStatements, first, last);
 									m.setDateTime(this.filteredStatements.get(t).getDateTime());
@@ -1827,6 +1826,7 @@ public class Exporter {
 							}
 						}
 						if (currentWindowStatements.size() > 0) {
+							Matrix m;
 							if (this.networkType.equals("twomode")) {
 								m = computeTwoModeMatrix(currentWindowStatements, windowStart, windowStop);
 							} else {
