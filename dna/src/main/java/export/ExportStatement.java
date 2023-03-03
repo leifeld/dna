@@ -2,7 +2,7 @@ package export;
 
 
 import model.Statement;
-import model.Value;
+import model.Variable;
 
 import java.time.ZoneOffset;
 import java.util.HashMap;
@@ -35,8 +35,8 @@ public class ExportStatement extends Statement {
         this.section = section;
         this.type = type;
         this.map = new HashMap<String, Object>();
-        for (Value value : ExportStatement.this.getValues()) {
-            map.put(value.getKey(), value.getValue());
+        for (Variable value : ExportStatement.this.getVariables()) {
+            map.put(value.getVariableName(), value.getValue());
         }
     }
 
@@ -53,8 +53,8 @@ public class ExportStatement extends Statement {
         this.section = exportStatement.getSection();
         this.type = exportStatement.getType();
         this.map = new HashMap<String, Object>();
-        for (Value value : exportStatement.getValues()) {
-            map.put(value.getKey(), value.getValue());
+        for (Variable value : exportStatement.getVariables()) {
+            map.put(value.getVariableName(), value.getValue());
         }
     }
 

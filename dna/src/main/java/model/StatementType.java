@@ -1,9 +1,9 @@
 package model;
 
-import javax.swing.*;
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.stream.Stream;
+// import java.util.HashMap;
+// import java.util.stream.Stream;
 
 /**
  * Represents a statement type.
@@ -25,24 +25,23 @@ public class StatementType {
 	private Color color;
 	
 	/**
-	 * An array list of (usually empty) values that represent the data structure
-	 * of variables that are contained in the statement type. 
+	 * An array list of role variable links.
 	 */
-	private ArrayList<Value> variables;
+	// private ArrayList<RoleVariableLink> roleVariableLinks;
 
 	/**
 	 * Create a statement type.
 	 * 
-	 * @param id         The statement type ID.
-	 * @param label      The label or name of the statement type.
-	 * @param color      The color of the statement type.
-	 * @param variables  An array list of values representing the variables. Can be empty values (using the {@link model.Value#Value(int, String, String, int, String) simplified constructor} for the {@link model.Value Value} class.
+	 * @param id The statement type ID.
+	 * @param label The label or name of the statement type.
+	 * @param color The color of the statement type.
+	 * @param roleVariableLinks An array list of role variable links.
 	 */
-	public StatementType(int id, String label, Color color, ArrayList<Value> variables) {
+	public StatementType(int id, String label, Color color, ArrayList<RoleVariableLink> roleVariableLinks) {
 		this.id = id;
 		this.label = label;
 		this.color = color;
-		this.variables = variables;
+		// this.roleVariableLinks = roleVariableLinks;
 	}
 
 	/**
@@ -54,10 +53,12 @@ public class StatementType {
 		this.id = st.getId();
 		this.label = st.getLabel();
 		this.color = st.getColor();
-		this.variables = new ArrayList<Value>();
-		for (int i = 0; i < st.getVariables().size(); i++) {
-			this.variables.add(new Value(st.getVariables().get(i)));
+		/*
+		this.roleVariableLinks = new ArrayList<RoleVariableLink>();
+		for (int i = 0; i < st.getRowVariableLinks().size(); i++) {
+			this.roleVariableLinks.add(new RoleVariableLink(st.getRoleVariableLinks().get(i)));
 		}
+		*/
 	}
 	
 	/**
@@ -102,16 +103,6 @@ public class StatementType {
 	}
 
 	/**
-	 * An array list of (possibly empty) values that represents the variables
-	 * and their data types associated with the statement type.
-	 * 
-	 * @return The array list of values stored in the statement type.
-	 */
-	public ArrayList<Value> getVariables() {
-		return variables;
-	}
-
-	/**
 	 * Returns a String array with the variable names corresponding to specific data types, including document-level
 	 * variables not specified directly in the statement type.
 	 *
@@ -121,6 +112,7 @@ public class StatementType {
 	 * @param bool		boolean indicating whether boolean variables should be included.
 	 * @return			{@link String[]} with variables of the statement type.
 	 */
+	/*
 	public String[] getVariablesList(boolean longtext, boolean shorttext, boolean integer, boolean bool) {
 		ArrayList<String> documentVariables = new ArrayList<String>();
 		if (shorttext) {
@@ -143,6 +135,7 @@ public class StatementType {
 				.toArray(String[]::new);
 		return variables;
 	}
+	*/
 
 	/**
 	 * Is this statement type equal to another statement type?
@@ -150,6 +143,14 @@ public class StatementType {
 	 * @param st  The other statement type for comparison.
 	 * @return    Boolean indicator: Is the other statement type identical?
 	 */
+	public boolean equals(StatementType st) {
+		if (this.getId() == st.getId() && this.getLabel().equals(st.getLabel()) && this.getColor().equals(st.getColor()) && this.getClass().equals(st.getClass())) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	/*
 	public boolean equals(StatementType st) {
 		boolean valuesEqual = true;
 		if (this.getVariables().size() == st.getVariables().size()) {
@@ -171,4 +172,5 @@ public class StatementType {
 			return false;
 		}
 	}
+	*/
 }

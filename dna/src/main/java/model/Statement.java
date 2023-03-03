@@ -14,14 +14,8 @@ public class Statement implements Comparable<Statement> {
 	private int id;
 	private int start, stop;
 	private int statementTypeId;
-	private String statementTypeLabel;
-	private Color statementTypeColor;
 	private int coderId;
-	private String coderName;
-	private Color coderColor;
-	private ArrayList<Value> values;
 	private int documentId;
-	private String text;
 	private LocalDateTime dateTime;
 	
 	/**
@@ -31,41 +25,23 @@ public class Statement implements Comparable<Statement> {
 	 * @param start               Start position in the text.
 	 * @param stop                End position in the text.
 	 * @param statementTypeId     Statement type ID.
-	 * @param statementTypeLabel  State type label.
-	 * @param statementTypeColor  Statement type color.
 	 * @param coderId             ID of the coder.
-	 * @param coderName           Name of the coder.
-	 * @param coderColor          Color of the coder.
-	 * @param values              An array list with variable contents.
 	 * @param documentId          The document ID.
-	 * @param text                The selected text.
 	 * @param dateTime            The date and time of the statement.
 	 */
 	public Statement(int id,
 			int start,
 			int stop,
 			int statementTypeId,
-			String statementTypeLabel,
-			Color statementTypeColor,
 			int coderId,
-			String coderName,
-			Color coderColor,
-			ArrayList<Value> values,
 			int documentId,
-			String text,
 			LocalDateTime dateTime) {
 		this.id = id;
 		this.start = start;
 		this.stop = stop;
 		this.statementTypeId = statementTypeId;
-		this.statementTypeLabel = statementTypeLabel;
-		this.statementTypeColor = statementTypeColor;
 		this.coderId = coderId;
-		this.coderName = coderName;
-		this.coderColor = coderColor;
-		this.values = values;
 		this.documentId = documentId;
-		this.text = text;
 		this.dateTime = dateTime;
 	}
 
@@ -77,14 +53,12 @@ public class Statement implements Comparable<Statement> {
 	 * @param stop             End position in the text.
 	 * @param statementTypeId  Statement type ID.
 	 * @param coderId          The ID of the coder who owns the statement.
-	 * @param values           An array list with variable contents.
 	 */
-	public Statement(int start, int stop, int statementTypeId, int coderId, ArrayList<Value> values) {
+	public Statement(int start, int stop, int statementTypeId, int coderId) {
 		this.start = start;
 		this.stop = stop;
 		this.statementTypeId = statementTypeId;
 		this.coderId = coderId;
-		this.values = values;
 	}
 	
 	/**
@@ -97,54 +71,9 @@ public class Statement implements Comparable<Statement> {
 		this.start = statement.getStart();
 		this.stop = statement.getStop();
 		this.statementTypeId = statement.getStatementTypeId();
-		this.statementTypeLabel = statement.getStatementTypeLabel();
-		this.statementTypeColor = statement.getStatementTypeColor();
 		this.coderId = statement.getCoderId();
-		this.coderName = statement.getCoderName();
-		this.coderColor = statement.getCoderColor();
-		this.values = new ArrayList<Value>();
-		for (int i = 0; i < statement.getValues().size(); i++) {
-			values.add(new Value(statement.getValues().get(i))); // use copy constructor of Value class
-		}
 		this.documentId = statement.getDocumentId();
-		this.text = statement.getText();
 		this.dateTime = statement.getDateTime();
-	}
-
-	/**
-	 * Get the coder name.
-	 * 
-	 * @return The coder name.
-	 */
-	public String getCoderName() {
-		return coderName;
-	}
-
-	/**
-	 * Set the coder name.
-	 * 
-	 * @param coderName The coder name to set.
-	 */
-	public void setCoderName(String coderName) {
-		this.coderName = coderName;
-	}
-
-	/**
-	 * Get the coder color.
-	 * 
-	 * @return The coder color.
-	 */
-	public Color getCoderColor() {
-		return coderColor;
-	}
-
-	/**
-	 * Set the coder color.
-	 * 
-	 * @param coderColor The coder color to set.
-	 */
-	public void setCoderColor(Color coderColor) {
-		this.coderColor = coderColor;
 	}
 
 	/**
@@ -163,61 +92,6 @@ public class Statement implements Comparable<Statement> {
 	 */
 	public void setDocumentId(int documentId) {
 		this.documentId = documentId;
-	}
-
-	/**
-	 * Get the document text portion highlighted by the statement.
-	 * 
-	 * @return A text portion from the document as a String.
-	 */
-	public String getText() {
-		return text;
-	}
-
-	/**
-	 * Set the statement text.
-	 * 
-	 * @param text The text to set.
-	 */
-	public void setText(String text) {
-		this.text = text;
-	}
-
-	/**
-	 * Get the statement type label.
-	 * 
-	 * @return The name or label of the statement type associated with the
-	 *   statement.
-	 */
-	public String getStatementTypeLabel() {
-		return statementTypeLabel;
-	}
-
-	/**
-	 * Set the statement type label.
-	 * 
-	 * @param statementTypeLabel The statement type label to set.
-	 */
-	public void setStatementTypeLabel(String statementTypeLabel) {
-		this.statementTypeLabel = statementTypeLabel;
-	}
-
-	/**
-	 * Get the color of the statement type associated with the statement.
-	 * 
-	 * @return The statement type color of the statement.
-	 */
-	public Color getStatementTypeColor() {
-		return statementTypeColor;
-	}
-
-	/**
-	 * Set the statement type color.
-	 * 
-	 * @param statementTypeColor The statement type color to set.
-	 */
-	public void setStatementTypeColor(Color statementTypeColor) {
-		this.statementTypeColor = statementTypeColor;
 	}
 
 	/**
@@ -317,61 +191,6 @@ public class Statement implements Comparable<Statement> {
 	 */
 	public void setDateTime(LocalDateTime dateTime) {
 		this.dateTime = dateTime;
-	}
-	
-	/**
-	 * Get the values of the variables stored in the statement.
-	 * 
-	 * @return An array list of {@link model.Value Value} objects
-	 *   corresponding to the variables specified in the corresponding statement
-	 *   type.
-	 */
-	public ArrayList<Value> getValues() {
-		return values;
-	}
-	
-	/**
-	 * Set the values of the variables stored in the statement.
-	 * 
-	 * @param values An array list of {@link model.Value Value} objects
-	 *   corresponding to the variables specified in the corresponding statement
-	 *   type.
-	 */
-	public void setValues(ArrayList<Value> values) {
-		this.values = values;
-	}
-
-	/**
-	 * Get a value from the array list of values by reference to its variable name and role name.
-	 *
-	 * @param variableName Name of the variable for which to retrieve the {@link Value} object.
-	 * @param roleName     Name of the role for which to retrieve the object.
-	 * @return The value.
-	 */
-	public Value getValueByName(String variableName, String roleName) {
-		return this.values.stream().filter(v -> v.getKey().equals(variableName) && v.getKey().equals(roleName)).findFirst().get();
-	}
-
-	/**
-	 * Get a value from the array list of values by reference to its variable ID and role ID.
-	 *
-	 * @param variableId ID of the variable for which to retrieve the {@link Value} object.
-	 * @param roleId     ID of the role for which to retrieve the {@link Value} object.
-	 * @return The value.
-	 */
-	public Value getValueById(int variableId, int roleId) {
-		return this.values.stream().filter(v -> v.getVariableId() == variableId && v.getRoleId() == roleId).findFirst().get();
-	}
-
-	/**
-	 * Set the value of a {@link Value} object contained in the values array list. The correct item in the list is
-	 * identified by matching the variable ID and role ID. The value slot stored in the new value is used to replace the
-	 * value in the object stored in the list.
-	 *
-	 * @param value The value to replace.
-	 */
-	public void setValue(Value value) {
-		this.values.stream().filter(v -> v.getVariableId() == value.getVariableId() && v.getRoleId() == value.getRoleId()).findFirst().get().setValue(value.getValue());
 	}
 
 	/**

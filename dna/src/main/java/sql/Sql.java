@@ -2384,7 +2384,7 @@ public class Sql {
 			 PreparedStatement s9 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
 			 PreparedStatement s10 = conn.prepareStatement("SELECT COUNT(ID) FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
 			 PreparedStatement s11 = conn.prepareStatement("SELECT COUNT(ID) FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
-			 PreparedStatement s12 = conn.prepareStatement("SELECT ID FROM ROLEVARIABLELINKS WHERE RoleId = ? AND VariableId = ?;");
+			 PreparedStatement s12 = conn.prepareStatement("SELECT ROLEVARIABLELINKS.ID, ROLEVARIABLELINKS.RoleId, ROLEVARIABLELINKS.VariableId, ROLES.StatementTypeId FROM ROLEVARIABLELINKS INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleID WHERE ROLES.StatementTypeId = ?;");
 			 SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
@@ -2408,16 +2408,17 @@ public class Sql {
 			Dna.logger.log(l);
 			for (int i = 0; i < statement.getValues().size(); i++) {
 				// find ID in ROLEVARIABLELINKS table
-				int variableId = statement.getValues().get(i).getVariableId();
-				int roleId = statement.getValues().get(i).getRoleId();
+				int variableId = -1;
+				int roleId = -1;
 				int roleVariableId = -1;
-				s12.setInt(1, roleId);
-				s12.setInt(2, variableId);
+				s12.setInt(1, statement.getStatementTypeId());
 				r = s12.executeQuery();
 				while (r.next()) {
-					roleVariableId = r.getInt(1);
+					roleVariableId = r.getInt("ID");
+					roleId = r.getInt("RoleId");
+					variableId = r.getInt("VariableId");
 				}
-				if (roleVariableId < 0) {
+				if (roleVariableId < 0 || roleId < 0 || variableId < 0) {
 					l = new LogEvent(Logger.ERROR,
 							"[SQL]  ├─ Failed to find role-variable ID for statement.",
 							"Statement " + statementId + ": could not find role-variable ID (role ID " + roleId + "; variable ID: " + variableId + ").");
@@ -3625,8 +3626,6 @@ public class Sql {
 		return entityId;
 	}
 
-	// TODO: adjusted to 3.1 data structure until here
-
 	/**
 	 * Retrieve the full set of entities for a set of variable IDs. The result
 	 * is an array list with nested array lists of entities for each variable
@@ -3644,11 +3643,11 @@ public class Sql {
 		ArrayList<ArrayList<Entity>> entities = new ArrayList<ArrayList<Entity>>();
 		String sqlString = "SELECT ID, Value, Red, Green, Blue FROM ENTITIES WHERE VariableId = ?;";
 		if (withAttributes) {
-			sqlString = "SELECT ID, Value, Red, Green, Blue, ChildOf, (SELECT COUNT(ID) FROM DATASHORTTEXT WHERE DATASHORTTEXT.VariableId = ENTITIES.VariableId AND Entity = ENTITIES.ID) AS Count FROM ENTITIES WHERE VariableId = ?;";
+			sqlString = "SELECT ID, Value, Red, Green, Blue, ChildOf, (SELECT COUNT(ID) FROM DATASHORTTEXT WHERE Entity = ENTITIES.ID) AS Count FROM ENTITIES WHERE VariableId = ?;";
 		}
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement(sqlString);
-				PreparedStatement s2 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
+			 PreparedStatement s1 = conn.prepareStatement(sqlString);
+			 PreparedStatement s2 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
 			ResultSet r1, r2;
 			HashMap<String, String> map;
 			ArrayList<Entity> entitiesList;
@@ -3656,42 +3655,42 @@ public class Sql {
 				entitiesList = new ArrayList<Entity>();
 				s1.setInt(1, variableIds.get(i));
 				r1 = s1.executeQuery();
-	        	while (r1.next()) {
-	        		if (withAttributes) {
-	        			map = new HashMap<String, String>();
-		            	s2.setInt(1, r1.getInt("ID"));
-		            	r2 = s2.executeQuery();
-		            	while (r2.next()) {
-		            		map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
-		            	}
-	        			entitiesList.add(
-		            			new Entity(r1.getInt("ID"),
-		            					variableIds.get(i),
-		            					r1.getString("Value"),
-		            					new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue")),
-		            					r1.getInt("ChildOf"),
-		            					r1.getInt("Count") > 0,
-		            					map));
-	        		} else {
-	        			entitiesList.add(
-		            			new Entity(r1.getInt("ID"),
-		            					variableIds.get(i),
-		            					r1.getString("Value"),
-		            					new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"))));
-	        		}
-	        	}
-            	entities.add(entitiesList);
+				while (r1.next()) {
+					if (withAttributes) {
+						map = new HashMap<String, String>();
+						s2.setInt(1, r1.getInt("ID"));
+						r2 = s2.executeQuery();
+						while (r2.next()) {
+							map.put(r2.getString("AttributeVariable"), r2.getString("AttributeValue"));
+						}
+						entitiesList.add(
+								new Entity(r1.getInt("ID"),
+										variableIds.get(i),
+										r1.getString("Value"),
+										new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue")),
+										r1.getInt("ChildOf"),
+										r1.getInt("Count") > 0,
+										map));
+					} else {
+						entitiesList.add(
+								new Entity(r1.getInt("ID"),
+										variableIds.get(i),
+										r1.getString("Value"),
+										new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"))));
+					}
+				}
+				entities.add(entitiesList);
 			}
-        	LogEvent e = new LogEvent(Logger.MESSAGE,
-        			"[SQL] Retrieved entities for " + variableIds.size() + " variables.",
-        			"Retrieved entities for " + variableIds.size() + " variables.");
-        	Dna.logger.log(e);
+			LogEvent e = new LogEvent(Logger.MESSAGE,
+					"[SQL] Retrieved entities for " + variableIds.size() + " variables.",
+					"Retrieved entities for " + variableIds.size() + " variables.");
+			Dna.logger.log(e);
 		} catch (SQLException e1) {
-        	LogEvent e = new LogEvent(Logger.WARNING,
-        			"[SQL] Entities could not be retrieved.",
-        			"Entities for " + variableIds.size() + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again.",
-        			e1);
-        	Dna.logger.log(e);
+			LogEvent e = new LogEvent(Logger.WARNING,
+					"[SQL] Entities could not be retrieved.",
+					"Entities for " + variableIds.size() + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again.",
+					e1);
+			Dna.logger.log(e);
 		}
 		return entities;
 	}
@@ -3789,14 +3788,16 @@ public class Sql {
 	 * @param variable         The name of the variable.
 	 * @return                 Array list of unique String values.
 	 */
+	/*
 	public ArrayList<String> getUniqueValues(int statementTypeId, String variable) {
 		ArrayList<String> values = new ArrayList<String>();
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("SELECT DISTINCT Value FROM DATAINTEGER INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId WHERE VARIABLES.Variable = ? AND VARIABLES.StatementTypeId = ?;");
-				PreparedStatement s2 = conn.prepareStatement("SELECT DISTINCT Value FROM DATABOOLEAN INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId WHERE VARIABLES.Variable = ? AND VARIABLES.StatementTypeId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT DISTINCT Value FROM DATALONGTEXT INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId WHERE VARIABLES.Variable = ? AND VARIABLES.StatementTypeId = ?;");
-				PreparedStatement s4 = conn.prepareStatement("SELECT DISTINCT Value FROM ENTITIES INNER JOIN DATASHORTTEXT ON DATASHORTTEXT.Entity = ENTITIES.ID INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId WHERE VARIABLES.Variable = ? AND VARIABLES.StatementTypeId = ?;");
-				PreparedStatement s5 = conn.prepareStatement("SELECT DataType FROM VARIABLES WHERE Variable = ? AND StatementTypeId = ?;")) {
+				//PreparedStatement s1 = conn.prepareStatement("SELECT DISTINCT Value FROM DATAINTEGER INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId WHERE VARIABLES.Variable = ? AND VARIABLES.StatementTypeId = ?;");
+			 	PreparedStatement s1 = conn.prepareStatement("SELECT DISTINCT Value FROM DATAINTEGER INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATAINTEGER.RoleVariableLinkId WHERE ROLEVARIABLELINKS.VariableId = ?;");
+				PreparedStatement s2 = conn.prepareStatement("SELECT DISTINCT Value FROM DATABOOLEAN INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATABOOLEAN.RoleVariableLinkId WHERE ROLEVARIABLELINKS.VariableId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT DISTINCT Value FROM DATALONGTEXT INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATALONGTEXT.RoleVariableLinkId WHERE ROLEVARIABLELINKS.VariableId = ?;");
+			 	PreparedStatement s4 = conn.prepareStatement("SELECT DISTINCT Value FROM ENTITIES INNER JOIN DATASHORTTEXT ON DATASHORTTEXT.Entity = ENTITIES.ID INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATASHORTTEXT.RoleVariableLinkId WHERE ROLEVARIABLELINKS.VariableId = ?;");
+				PreparedStatement s5 = conn.prepareStatement("SELECT DataType FROM VARIABLES WHERE Variable = ?;")) { // TODO: input used to be a variable label, not ID; merge with VARIABLES table each time to get it? Or do we actually need this for roles, not variables?
 			ResultSet r1, r2;
 			s5.setString(1, variable);
 			s5.setInt(2, statementTypeId);
@@ -3843,6 +3844,7 @@ public class Sql {
 		Collections.sort(values);
 		return values;
 	}
+	*/
 
 	/**
 	 * Update/set an attribute value for an entity.
@@ -3902,7 +3904,7 @@ public class Sql {
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
 				PreparedStatement s2 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, '');");
-				PreparedStatement s3 = conn.prepareStatement("SELECT DISTINCT Entity FROM DATASHORTTEXT WHERE VariableId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT DISTINCT Entity FROM DATASHORTTEXT INNER JOIN ROLEVARIABLELINKS ON DATASHORTTEXT.RoleVariableLinkId = ROLEVARIABLELINKS.ID WHERE ROLEVARIABLELINKS.VariableId = ?;");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			ResultSet r;
@@ -3988,6 +3990,7 @@ public class Sql {
 	 *
 	 * @return A {@link model.StatementType StatementType} object.
 	 */
+	/*
 	public StatementType getStatementType(int statementTypeId) {
 		StatementType st = null;
 		String statementTypeLabel = "";
@@ -4023,6 +4026,7 @@ public class Sql {
 		}
 		return st;
 	}
+	*/
 
 	/**
 	 * Get a statement type from the database. The variable definitions are saved as an array list of
@@ -4065,6 +4069,43 @@ public class Sql {
 		}
 		return st;
 	}
+	/*
+	public StatementType getStatementType(String statementTypeLabel) {
+		StatementType st = null;
+		try (Connection conn = ds.getConnection();
+			 PreparedStatement s1 = conn.prepareStatement("SELECT * FROM STATEMENTTYPES WHERE Label = ?;");
+			 PreparedStatement s2 = conn.prepareStatement("SELECT * FROM VARIABLES WHERE StatementTypeId = ?;")) {
+			ArrayList<Value> variables;
+			int statementTypeId = -1;
+			s1.setString(1, statementTypeLabel);
+			ResultSet r1 = s1.executeQuery();
+			ResultSet r2;
+			Color color;
+			while (r1.next()) {
+				variables = new ArrayList<Value>();
+				statementTypeId = r1.getInt("ID");
+				color = new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"));
+				s2.setInt(1, statementTypeId);
+				r2 = s2.executeQuery();
+				while (r2.next()) {
+					variables.add(new Value(r2.getInt("ID"), r2.getString("Variable"), r2.getString("DataType")));
+				}
+				st = new StatementType(r1.getInt("ID"), r1.getString("Label"), color, variables);
+			}
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] Retrieved statement type '" + statementTypeLabel + "' (ID: " + statementTypeId + ") from the database.",
+					"Retrieved statement type '" + statementTypeLabel + "' (ID: " + statementTypeId + ") from the database.");
+			Dna.logger.log(l);
+		} catch (SQLException e1) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"[SQL] Failed to retrieve statement type from the database.",
+					"Failed to retrieve statement type '" + statementTypeLabel + "' from the database. Check database connection and consistency of the STATEMENTTYPES and VARIABLES tables in the database.",
+					e1);
+			Dna.logger.log(l);
+		}
+		return st;
+	}
+	*/
 
 	/**
 	 * Get an array list of all statement types in the database. The variable
