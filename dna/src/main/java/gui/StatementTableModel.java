@@ -8,19 +8,20 @@ import javax.swing.table.AbstractTableModel;
 
 import model.Coder;
 import model.Statement;
+import model.TableStatement;
 
 /**
  * A table model for the statements shown in the statement panel.
  */
 class StatementTableModel extends AbstractTableModel {
-	private static final long serialVersionUID = 3231569380143470667L;
-	private ArrayList<Statement> rows;
+	private static final long serialVersionUID = 3231562380143470667L;
+	private ArrayList<TableStatement> rows;
 	
 	/**
 	 * Create a new statement table model.
 	 */
 	StatementTableModel() {
-		rows = new ArrayList<Statement>();
+		rows = new ArrayList<TableStatement>();
 	}
 
 	@Override
@@ -131,10 +132,9 @@ class StatementTableModel extends AbstractTableModel {
 	 * useful for filtering the table in the GUI and rendering contents.
 	 * 
 	 * @param modelRowIndex The index of the statement in the model.
-	 * @return              A {@link model.TableStatement TableStatement}
-	 *   object.
+	 * @return              A {@link model.TableStatement TableStatement} object.
 	 */
-	public Statement getRow(int modelRowIndex) {
+	public TableStatement getRow(int modelRowIndex) {
 		return rows.get(modelRowIndex);
 	}
 
@@ -143,14 +143,14 @@ class StatementTableModel extends AbstractTableModel {
 	 * 
 	 * @return An array list of all statements.
 	 */
-	public ArrayList<Statement> getRows() {
+	public ArrayList<TableStatement> getRows() {
 		return rows;
 	}
 	
 	/**
 	 * Remove an array of statement indices from the model and notify the table.
 	 * 
-	 * @param rows  The model rows of the statements.
+	 * @param modelRowIndices The model rows of the statements to be removed.
 	 */
 	public void removeStatements(int[] modelRowIndices) {
 		for (int i = modelRowIndices.length - 1; i >= 0; i--) {
@@ -160,8 +160,7 @@ class StatementTableModel extends AbstractTableModel {
 	}
 
 	/**
-	 * Remove statements from a set of documents from the model and notify the
-	 * table.
+	 * Remove statements from a set of documents from the model and notify the table.
 	 * 
 	 * @param documentIds  An array list of document IDs.
 	 */
@@ -184,13 +183,12 @@ class StatementTableModel extends AbstractTableModel {
 	}
 	
 	/**
-	 * Insert a statement into the array list of statements at the right index
-	 * and fire table update.
+	 * Insert a table statement into the array list of statements at the right index and fire table update.
 	 * 
-	 * @param s  The statement to insert.
+	 * @param s  The table statement to insert.
 	 * @return   New row index of the added statement.
 	 */
-	int addRow(Statement s) {
+	int addRow(TableStatement s) {
 		int newRowIndex = -1;
 		if (rows.size() > 0) {
 			for (int i = 0; i < rows.size(); i++) {
@@ -211,15 +209,14 @@ class StatementTableModel extends AbstractTableModel {
 	}
 	
 	/**
-	 * Add a list of {@link model.TableStatement TableStatement} objects to
-	 * the table model and notify the listeners.
+	 * Add a list of {@link model.TableStatement TableStatement} objects to the table model and notify the listeners.
 	 * 
 	 * @param chunks A list of {@link model.TableStatement TableStatement}
 	 *   objects.
 	 */
-	void addRows(List<Statement> chunks) {
+	void addRows(List<TableStatement> chunks) {
     	int n = this.rows.size();
-        for (Statement row : chunks) {
+        for (TableStatement row : chunks) {
             rows.add(row);
         }
         fireTableRowsInserted(n, n + chunks.size() - 1); // subtract one because we don't need the cursor to be at the next position; it should refer to the last position
@@ -231,7 +228,7 @@ class StatementTableModel extends AbstractTableModel {
 	 * 
 	 * @param chunks
 	 */
-	void updateStatements(List<Statement> chunks) {
+	void updateStatements(List<TableStatement> chunks) {
 		for (int i = 0; i < chunks.size(); i++) {
 			for (int j = 0; j < rows.size(); j++) {
 				if (rows.get(j).getId() == chunks.get(i).getId()) {

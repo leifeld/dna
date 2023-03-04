@@ -49,20 +49,16 @@ import gui.MainWindow.ActionRecodeStatements;
 import gui.MainWindow.ActionRemoveStatements;
 import logger.LogEvent;
 import logger.Logger;
-import model.Coder;
-import model.Entity;
-import model.Statement;
-import model.StatementType;
-import model.Value;
+import model.*;
 
 /**
  * Statement panel on the right side of the screen.
  */
 class StatementPanel extends JPanel {
-	private static final long serialVersionUID = 1044070479152247253L;
+	private static final long serialVersionUID = 1048070479152247253L;
 	private JTable statementTable;
 	private StatementTableModel statementTableModel;
-	private ArrayList<Value> variables;
+	private ArrayList<Variable> variables;
 	private String idFieldPattern = "";
 	private JRadioButton allButton, docButton, filterButton;
 	private JComboBox<StatementType> statementTypeBox;
@@ -245,8 +241,9 @@ class StatementPanel extends JPanel {
 		// row filter
 		RowFilter<StatementTableModel, Integer> statementFilter = new RowFilter<StatementTableModel, Integer>() {
 			public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
-				Statement s = statementTableModel.getRow(entry.getIdentifier());
-				return filter(s, documentId);
+				TableStatement s = statementTableModel.getRow(entry.getIdentifier());
+				ArrayList<Variable> values = Dna.sql.getValues(s.getId());
+				return filter(s, documentId, values);
 			}
 		};
 		sorter.setRowFilter(statementFilter);
@@ -343,7 +340,7 @@ class StatementPanel extends JPanel {
 			DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
         	Component c = renderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         	StatementTableModel model = (StatementTableModel) table.getModel();
-        	Statement s = model.getRow(table.convertRowIndexToModel(row));
+        	TableStatement s = model.getRow(table.convertRowIndexToModel(row));
         	if (value.getClass().toString().endsWith("Coder")) {
         		Coder coder = (Coder) value;
 				CoderBadgePanel cbp = new CoderBadgePanel(coder, 13, 1, 22);
@@ -379,20 +376,19 @@ class StatementPanel extends JPanel {
 	 * fields, which always keep the {@code variables} list up-to-date with the
 	 * current filter contents, using a document filter.
 	 * 
-	 * @param s           The statement that should be assessed on whether it
-	 *   should be displayed.
-	 * @param documentId  The ID of the document that is currently being
-	 *   displayed.
-	 * @return            Whether the statement should be shown or not.
+	 * @param s The statement that should be assessed on whether it should be displayed.
+	 * @param documentId The ID of the document that is currently being displayed.
+	 * @param values The variables including values for the statement.
+	 * @return Whether the statement should be shown or not.
 	 */
-	private boolean filter(Statement s, int documentId) {
+	private boolean filter(Statement s, int documentId, ArrayList<Variable> values) {
 		if (Dna.sql.getActiveCoder() == null || Dna.sql.getConnectionProfile() == null) {
 			return false;
 		}
 		if (s.getCoderId() != Dna.sql.getActiveCoder().getId()) {
-			if (Dna.sql.getActiveCoder().isPermissionViewOthersStatements() == false) {
+			if (!Dna.sql.getActiveCoder().isPermissionViewOthersStatements()) {
 				return false;
-			} else if (Dna.sql.getActiveCoder().isPermissionViewOthersStatements(s.getCoderId()) == false) {
+			} else if (!Dna.sql.getActiveCoder().isPermissionViewOthersStatements(s.getCoderId())) {
 				return false;
 			}
 		}
@@ -423,15 +419,16 @@ class StatementPanel extends JPanel {
 				if (!m.find()) {
 					return false;
 				}
-				// check variables for a non-match 
+				// check variables for a non-match
+				// TODO: use roles instead of variables in filter (and also in the GUI for the filter)!
 				for (int i = 0; i < variables.size(); i++) {
 					pattern = Pattern.compile((String) variables.get(i).getValue());
-					if (s.getValues().get(i).getValue().getClass().toString().endsWith("Entity")) {
-						m = pattern.matcher(((Entity) s.getValues().get(i).getValue()).getValue());
-					} else if (s.getValues().get(i).getValue().getClass().toString().endsWith("Integer")) {
-						m = pattern.matcher(String.valueOf((int) s.getValues().get(i).getValue()));
+					if (values.get(i).getValue().getClass().toString().endsWith("Entity")) {
+						m = pattern.matcher(((Entity) values.get(i).getValue()).getValue());
+					} else if (values.get(i).getValue().getClass().toString().endsWith("Integer")) {
+						m = pattern.matcher(String.valueOf((int) values.get(i).getValue()));
 					} else {
-						m = pattern.matcher((String) s.getValues().get(i).getValue());
+						m = pattern.matcher((String) values.get(i).getValue());
 					}
 					if (!m.find()) {
 						return false;

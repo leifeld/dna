@@ -61,8 +61,7 @@ public class CoderBadgePanel extends JPanel {
 	/**
 	 * Creates the layout of the coder badge panel. For internal use in the
 	 * class.
-	 * 
-	 * @param coder          The coder.
+	 *
 	 * @param buttonSize     Height/width of the color button.
 	 * @param border         Border margin. Can be 0.
 	 * @param maxNameLength  Maximal character length of the name.

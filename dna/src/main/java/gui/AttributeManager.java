@@ -49,21 +49,20 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 
+import model.Variable;
 import org.jdesktop.swingx.JXTextField;
 
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import model.Entity;
-import model.StatementType;
-import model.Value;
 
 /**
  * Represents an attribute manager dialog window to create and delete entities
  * and edit attribute values.
  */
 public class AttributeManager extends JDialog {
-	private static final long serialVersionUID = 6180793159551336995L;
+	private static final long serialVersionUID = 6180795159551336995L;
 
 	/**
 	 * A table that shows the entities and their attributes. A new table is
@@ -90,19 +89,12 @@ public class AttributeManager extends JDialog {
 	 * A panel holding the table.
 	 */
 	private JPanel tablePanel;
-	
-	/**
-	 * A combo box showing the statement types in the database. When selecting
-	 * a statement type, the variable combo box is populated with variables.
-	 * The boxes serve to select which entities to show in the table.
-	 */
-	private JComboBox<StatementType> statementTypeBox;
-	
+
 	/**
 	 * A combo box showing the variables. Used to select the variable for which
 	 * the entities will be shown in the table.
 	 */
-	private JComboBox<Value> variableBox;
+	private JComboBox<Variable> variableBox;
 	
 	/**
 	 * A swing worker thread reference to make sure the thread is terminated
@@ -132,44 +124,20 @@ public class AttributeManager extends JDialog {
 		this.tablePanel.add(attributeTable);
 		this.add(tablePanel, BorderLayout.CENTER);
 		
-		// combo boxes
-		variableBox = new JComboBox<Value>();
-		ArrayList<StatementType> statementTypes = Dna.sql.getStatementTypes();
-		statementTypeBox = new JComboBox<StatementType>();
-		for (int i = 0; i < statementTypes.size(); i++) {
-			ArrayList<Value> values = statementTypes.get(i).getVariables();
-			for (int j = 0; j < values.size(); j++) {
-				if (values.get(j).getDataType().equals("short text")) {
-					statementTypeBox.addItem(statementTypes.get(i));
-					break;
-				}
-			}
-		}
-		statementTypeBox.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent e) {
-				if (e.getStateChange() == ItemEvent.SELECTED) {
-					updateVariableBox();
-				}
-			}
-		});
-		StatementTypeComboBoxRenderer statementTypeRenderer = new StatementTypeComboBoxRenderer();
-		statementTypeBox.setRenderer(statementTypeRenderer);
+		// variable combo box
+		variableBox = new JComboBox<Variable>();
 		variableBox.addItemListener(new ItemListener() {
 		    public void itemStateChanged(ItemEvent e) {
 		    	if (e.getStateChange() == ItemEvent.SELECTED && variableBox.getItemCount() > 0) {
-					int variableId = ((Value) variableBox.getSelectedItem()).getVariableId();
+					int variableId = ((Variable) variableBox.getSelectedItem()).getId();
 					createNewTable(variableId);
 				}
 		    }
 		});
 		VariableComboBoxRenderer variableRenderer = new VariableComboBoxRenderer();
 		variableBox.setRenderer(variableRenderer);
-		JPanel boxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		boxPanel.add(statementTypeBox);
-		boxPanel.add(variableBox);
 		JPanel upperPanel = new JPanel(new BorderLayout());
-		upperPanel.add(boxPanel, BorderLayout.WEST);
+		upperPanel.add(variableBox, BorderLayout.WEST);
 		
 		// button panel at the bottom
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -218,7 +186,7 @@ public class AttributeManager extends JDialog {
 				for (int i = 0; i < model.getAttributeVariables().size(); i++) {
 					map.put(model.getAttributeVariables().get(i), "");
 				}
-				int variableId = ((Value) variableBox.getSelectedItem()).getVariableId();
+				int variableId = ((Variable) variableBox.getSelectedItem()).getId();
 				Entity entity = new Entity(-1, variableId, newField.getText(), Color.BLACK, -1, false, map);
 				Dna.sql.addEntity(entity);
 				refreshTable(variableId);
@@ -244,7 +212,7 @@ public class AttributeManager extends JDialog {
 				int dialog = JOptionPane.showConfirmDialog(AttributeManager.this, "Delete " + selectedRows.length + " unused entities from the attribute manager?", "Confirmation", JOptionPane.YES_NO_OPTION);
 				if (dialog == 0) {
 					Dna.sql.deleteEntities(selectedRows);
-					refreshTable(((Value) variableBox.getSelectedItem()).getVariableId());
+					refreshTable(((Variable) variableBox.getSelectedItem()).getId());
 				}
 			}
 		});
@@ -273,7 +241,7 @@ public class AttributeManager extends JDialog {
 					int dialog = JOptionPane.showConfirmDialog(AttributeManager.this, "Delete " + ids.length + " unused entities from the attribute manager?", "Confirmation", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
 						Dna.sql.deleteEntities(ids);
-						refreshTable(((Value) variableBox.getSelectedItem()).getVariableId());
+						refreshTable(((Variable) variableBox.getSelectedItem()).getId());
 					}
 				}
 			}
@@ -308,18 +276,15 @@ public class AttributeManager extends JDialog {
 	}
 	
 	/**
-	 * Populate the variable combo box with variables after a statement type has
-	 * been selected in the statement type combo box.
+	 * Populate the variable combo box with variables from the database.
 	 */
 	private void updateVariableBox() {
-		StatementType st = (StatementType) statementTypeBox.getSelectedItem();
-		ArrayList<Value> values = st.getVariables();
 		variableBox.removeAllItems();
-		for (int i = 0; i < values.size(); i++) {
-			if (values.get(i).getDataType().equals("short text")) {
-				variableBox.addItem(values.get(i));
-			}
-		}
+		Dna.sql.getVariables()
+				.stream()
+				.filter(v -> v.getDataType().equals("short text"))
+				.sorted()
+				.forEach(v -> variableBox.addItem(v));
 	}
 	
 	/**
@@ -447,7 +412,7 @@ public class AttributeManager extends JDialog {
 		protected List<Entity> doInBackground() {
 			// all entities with a given variable ID and an additional variable that checks if the entity was used in a statement, i.e., exists in DATASHORTTEXT
 			String q1 = "SELECT E.ID, E.VariableId, E.Value, E.Red, E.Green, E.Blue, E.ChildOf, " + 
-					"CASE WHEN EXISTS (SELECT ID from DATASHORTTEXT D WHERE D.Entity = E.ID AND D.VariableId = E.VariableId) " + 
+					"CASE WHEN EXISTS (SELECT ID from DATASHORTTEXT D WHERE D.Entity = E.ID) " +
 					"THEN 1 " + 
 					"ELSE 0 " + 
 					"END AS InDatabase " + 
@@ -926,25 +891,6 @@ public class AttributeManager extends JDialog {
 			return panel;
 		}
 	}
-	
-	/**
-	 * A combo box renderer for statement types. Used to display the name of the
-	 * statement type in the combo box in the upper left corner of the attribute
-	 * manager.
-	 */
-	private class StatementTypeComboBoxRenderer implements ListCellRenderer<StatementType> {
-		@Override
-		public Component getListCellRendererComponent(JList<? extends StatementType> list, StatementType statementType, int index, boolean isSelected, boolean cellHasFocus) {
-			JLabel label = new JLabel(statementType.getLabel());
-			label.setPreferredSize(new Dimension(300, label.getPreferredSize().height));
-			JPanel panel = new JPanel(new BorderLayout());
-			panel.add(label, BorderLayout.NORTH);
-			if (isSelected) {
-				panel.setBackground(UIManager.getColor("List.selectionBackground"));
-			}
-			return panel;
-		}
-	}
 
 	/**
 	 * A combo box renderer for variables in a statement type. Used to display
@@ -952,10 +898,10 @@ public class AttributeManager extends JDialog {
 	 * manager, where the user selects what types of entities to display in the
 	 * table.
 	 */
-	private class VariableComboBoxRenderer implements ListCellRenderer<Value> {
+	private class VariableComboBoxRenderer implements ListCellRenderer<Variable> {
 		@Override
-		public Component getListCellRendererComponent(JList<? extends Value> list, Value value, int index, boolean isSelected, boolean cellHasFocus) {
-			JLabel label = new JLabel(value.getKey());
+		public Component getListCellRendererComponent(JList<? extends Variable> list, Variable value, int index, boolean isSelected, boolean cellHasFocus) {
+			JLabel label = new JLabel(value.getVariableName());
 			label.setPreferredSize(new Dimension(300, label.getPreferredSize().height));
 			JPanel panel = new JPanel(new BorderLayout());
 			panel.add(label, BorderLayout.NORTH);

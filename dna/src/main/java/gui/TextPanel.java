@@ -22,7 +22,7 @@ import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import model.Regex;
-import model.Statement;
+import model.TextStatement;
 
 /**
  * Text panel, which displays the text of the selected document and paints the
@@ -30,7 +30,7 @@ import model.Statement;
  * document ID on record to paint only the statements in the current document.
  */
 class TextPanel extends JPanel {
-	private static final long serialVersionUID = -8094978928012991210L;
+	private static final long serialVersionUID = -8094973928012991210L;
 	private JTextPane textWindow;
 	private JScrollPane textScrollPane;
 	private DefaultStyledDocument doc;
@@ -137,21 +137,21 @@ class TextPanel extends JPanel {
 			doc.setCharacterAttributes(initialStart, initialEnd - initialStart, blackStyle, false);
 
 			// color statements
-			ArrayList<Statement> statements = Dna.sql.getShallowStatements(documentId);
+			ArrayList<TextStatement> textStatements = Dna.sql.getTextStatements(documentId);
 			int i, start;
-			for (i = 0; i < statements.size(); i++) {
-				start = statements.get(i).getStart();
+			for (i = 0; i < textStatements.size(); i++) {
+				start = textStatements.get(i).getStart();
 				Style bgStyle = sc.addStyle("ConstantWidth", null);
 				if (Dna.sql.getActiveCoder() != null &&
-						(statements.get(i).getCoderId() == Dna.sql.getActiveCoder().getId() || Dna.sql.getActiveCoder().isPermissionViewOthersStatements()) &&
-						(statements.get(i).getCoderId() == Dna.sql.getActiveCoder().getId() || Dna.sql.getActiveCoder().getCoderRelations().get(statements.get(i).getCoderId()).isViewStatements())) {
+						(textStatements.get(i).getCoderId() == Dna.sql.getActiveCoder().getId() || Dna.sql.getActiveCoder().isPermissionViewOthersStatements()) &&
+						(textStatements.get(i).getCoderId() == Dna.sql.getActiveCoder().getId() || Dna.sql.getActiveCoder().getCoderRelations().get(textStatements.get(i).getCoderId()).isViewStatements())) {
 					if (Dna.sql.getActiveCoder().isColorByCoder() == true) {
-						StyleConstants.setBackground(bgStyle, statements.get(i).getCoderColor());
+						StyleConstants.setBackground(bgStyle, textStatements.get(i).getCoderColor());
 					} else {
-						StyleConstants.setBackground(bgStyle, statements.get(i).getStatementTypeColor());
+						StyleConstants.setBackground(bgStyle, textStatements.get(i).getStatementTypeColor());
 					}
 				}
-				doc.setCharacterAttributes(start, statements.get(i).getStop() - start, bgStyle, false);
+				doc.setCharacterAttributes(start, textStatements.get(i).getStop() - start, bgStyle, false);
 			}
 			
 			// color regex
@@ -172,8 +172,7 @@ class TextPanel extends JPanel {
 	}
 	
 	/**
-	 * Repaint statements and update font size after a new coder has been
-	 * selected.
+	 * Repaint statements and update font size after a new coder has been selected.
 	 */
 	void adjustToChangedCoder() {
 		if (Dna.sql.getConnectionProfile() == null) {

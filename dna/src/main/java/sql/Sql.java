@@ -23,6 +23,7 @@ import javax.sql.DataSource;
 import export.DataFrame;
 import gui.DocumentEditor;
 import me.tongfei.progressbar.ProgressBar;
+import model.*;
 import org.jasypt.util.password.StrongPasswordEncryptor;
 import org.sqlite.SQLiteDataSource;
 
@@ -33,14 +34,6 @@ import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
-import model.Entity;
-import model.Regex;
-import model.Coder;
-import model.CoderRelation;
-import model.Document;
-import model.Statement;
-import model.StatementType;
-import model.TableDocument;
 import model.Value;
 
 /**
@@ -3458,11 +3451,11 @@ public class Sql {
 	 * the purpose of painting the statements in the text. For this purpose,
 	 * variable contents, date, coder name etc. are unnecessary. This speeds up
 	 * the retrieval.
-	 * 
+	 *
 	 * @param documentId  ID of the document for which statements are retrieved.
 	 * @return Array list of statements.
 	 */
-	public ArrayList<Statement> getShallowStatements(int documentId) {
+	public ArrayList<TextStatement> getTextStatements(int documentId) {
 		String query = "SELECT S.ID, S.Start, S.Stop, S.StatementTypeId, "
 				+ "T.Label AS StatementTypeLabel, T.Red AS StatementTypeRed, "
 				+ "T.Green AS StatementTypeGreen, T.Blue AS StatementTypeBlue, "
@@ -3470,31 +3463,27 @@ public class Sql {
 				+ "FROM STATEMENTS S LEFT JOIN CODERS C ON C.ID = S.Coder "
 				+ "LEFT JOIN STATEMENTTYPES T ON T.ID = S.StatementTypeId "
 				+ "WHERE S.DocumentId = ? ORDER BY Start ASC;";
-		ArrayList<Statement> statements = new ArrayList<Statement>();
+		ArrayList<TextStatement> textStatements = new ArrayList<TextStatement>();
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s = conn.prepareStatement(query)) {
+			 PreparedStatement s = conn.prepareStatement(query)) {
 			ResultSet r;
 			s.setInt(1, documentId);
 			r = s.executeQuery();
 			while (r.next()) {
-				Statement statement = new Statement(r.getInt("ID"),
+				TextStatement textStatement = new TextStatement(r.getInt("ID"),
 						r.getInt("Start"),
 						r.getInt("Stop"),
 						r.getInt("StatementTypeId"),
-						r.getString("StatementTypeLabel"),
-						new Color(r.getInt("StatementTypeRed"), r.getInt("StatementTypeGreen"), r.getInt("StatementTypeBlue")),
 						r.getInt("Coder"),
-						"",
-						new Color(r.getInt("CoderRed"), r.getInt("CoderGreen"), r.getInt("CoderBlue")),
-						new ArrayList<Value>(),
 						documentId,
 						null,
-						null);
-				statements.add(statement);
+						new Color(r.getInt("CoderRed"), r.getInt("CoderGreen"), r.getInt("CoderBlue")),
+						new Color(r.getInt("StatementTypeRed"), r.getInt("StatementTypeGreen"), r.getInt("StatementTypeBlue")));
+				textStatements.add(textStatement);
 			}
 			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"[SQL] " + statements.size() + " statement(s) have been retrieved for Document " + documentId + ".",
-					statements.size() + " statement(s) have been retrieved for for Document " + documentId + ".");
+					"[SQL] " + textStatements.size() + " statement(s) have been retrieved for Document " + documentId + ".",
+					textStatements.size() + " statement(s) have been retrieved for for Document " + documentId + ".");
 			Dna.logger.log(l);
 		} catch (SQLException e) {
 			LogEvent l = new LogEvent(Logger.WARNING,
@@ -3503,7 +3492,7 @@ public class Sql {
 					e);
 			Dna.logger.log(l);
 		}
-		return statements;
+		return textStatements;
 	}
 
 	/**
@@ -4488,5 +4477,86 @@ public class Sql {
 			Dna.logger.log(le);
 		}
 		return version;
+	}
+
+
+
+
+
+
+	// NEW FUNCTIONS FOR DNA 3.1
+
+	public ArrayList<Variable> getVariables() {
+		ArrayList<Variable> variables = new ArrayList<Variable>();
+		try (Connection conn = getDataSource().getConnection();
+			 PreparedStatement s = conn.prepareStatement("SELECT * FROM VARIABLES;")) {
+			ResultSet r = s.executeQuery();
+			while (r.next()) {
+				variables.add(new Variable(r.getInt("ID"), r.getString("Variable"), r.getString("DataType")));
+			}
+		} catch (SQLException e) {
+			LogEvent le = new LogEvent(Logger.ERROR,
+					"[SQL] Could not retrieve variables from database.",
+					"Tried to load variables from the database, but there was a problem retrieving the variables.",
+					e);
+			Dna.logger.log(le);
+		}
+		return variables;
+	}
+
+	public ArrayList<Variable> getValues(int statementId) {
+		ArrayList<Variable> values = new ArrayList<Variable>();
+		try (Connection conn = getDataSource().getConnection();
+			 PreparedStatement s1 = conn.prepareStatement("SELECT VARIABLES.ID, VARIABLES.Variable, VARIABLES.DataType FROM STATEMENTS LEFT JOIN ROLES ON ROLES.StatementTypeId = STATEMENTS.StatementTypeId LEFT JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.RoleId = ROLES.ID LEFT JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId WHERE STATEMENTS.ID = ?;");
+			 PreparedStatement s2 = conn.prepareStatement("SELECT ENTITIES.ID, Value, ENTITIES.Red, ENTITIES.Green, ENTITIES.Blue, ENTITIES.ChildOf FROM ENTITIES LEFT JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.VariableId = ENTITIES.VariableId LEFT JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId LEFT JOIN STATEMENTS ON STATEMENTS.StatementTypeId = ROLES.StatementTypeId WHERE STATEMENTS.ID = ? AND ENTITIES.VariableId = ?;")) {
+			 PreparedStatement s3 = conn.prepareStatement("SELECT DATALONGTEXT.Value LEFT JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATALONGTEXT.RoleVariableLinkId WHERE DATALONGTEXT.StatementId = ? AND ROLEVARIABLELINKS.VariableId = ?";);
+			 PreparedStatement s4 = conn.prepareStatement("SELECT DATAINTEGER.Value LEFT JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATAINTEGER.RoleVariableLinkId WHERE DATAINTEGER.StatementId = ? AND ROLEVARIABLELINKS.VariableId = ?";);
+			 PreparedStatement s5 = conn.prepareStatement("SELECT DATABOOLEAN.Value LEFT JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATABOOLEAN.RoleVariableLinkId WHERE DATABOOLEAN.StatementId = ? AND ROLEVARIABLELINKS.VariableId = ?";);
+			ResultSet r2;
+			s1.setInt(1, statementId);
+			ResultSet r1 = s1.executeQuery();
+			String dataType, variableName;
+			int variableId;
+			Entity e;
+			while (r1.next()) {
+				dataType = r1.getString("DataType");
+				variableId = r1.getInt("ID");
+				variableName = r1.getString("Variable");
+				if (dataType.equals("short text")) {
+					s2.setInt(1, statementId);
+					s2.setInt(2, variableId);
+					r2 = s2.executeQuery();
+					while (r2.next()) {
+						e = new Entity(r2.getInt("ID"), variableId, variableName, new Color(r2.getInt("Red"), r2.getInt("Green"), r2.getInt("Blue")));
+						e.setChildOf(r2.getInt("ChildOf"));
+						values.add(new Variable(variableId, variableName, dataType, e));
+					}
+				} else {
+					if (dataType.equals("long text")) {
+						s3.setInt(1, statementId);
+						s3.setInt(2, variableId);
+						r2 = s3.executeQuery();
+					} else if (dataType.equals("integer")) {
+						s4.setInt(1, statementId);
+						s4.setInt(2, variableId);
+						r2 = s4.executeQuery();
+					} else if (dataType.equals("boolean")) {
+						s5.setInt(1, statementId);
+						s5.setInt(2, variableId);
+						r2 = s5.executeQuery();
+					}
+					while (r2.next()) {
+						values.add(new Variable(variableId, variableName, dataType, r2.getString("Value")));
+					}
+				}
+			}
+		} catch (SQLException e) {
+			LogEvent le = new LogEvent(Logger.ERROR,
+					"[SQL] Could not retrieve variables from database.",
+					"Tried to load variables from the database, but there was a problem retrieving the variables.",
+					e);
+			Dna.logger.log(le);
+		}
+		return values;
 	}
 }

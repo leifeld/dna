@@ -15,8 +15,7 @@ public class Entity implements Comparable<Entity> {
 	private int id;
 	
 	/**
-	 * The ID of another entity of which this current entity is a child. This
-	 * field is currently not in use.
+	 * The ID of another entity of which this current entity is a child.
 	 */
 	private int childOf;
 	

@@ -6,9 +6,9 @@ import java.time.LocalDateTime;
 public class TableStatement extends Statement {
     private String text;
     private String coderName;
-    private Color coderColor;
+    private Color coderColor, statementTypeColor;
 
-    public TableStatement(int id, int start, int stop, int statementTypeId, int coderId, int documentId, LocalDateTime dateTime, String text, String coderName, Color coderColor) {
+    public TableStatement(int id, int start, int stop, int statementTypeId, int coderId, int documentId, LocalDateTime dateTime, String text, String coderName, Color coderColor, Color statementTypeColor) {
         super(id, start, stop, statementTypeId, coderId, documentId, dateTime);
         this.text = text;
         this.coderName = coderName;
@@ -18,6 +18,9 @@ public class TableStatement extends Statement {
     public TableStatement(TableStatement tableStatement) {
         super(tableStatement);
         this.text = tableStatement.getText();
+        this.coderName = tableStatement.getCoderName();
+        this.coderColor = tableStatement.getCoderColor();
+        this.statementTypeColor = tableStatement.getStatementTypeColor();
     }
 
     public String getText() {
@@ -42,5 +45,13 @@ public class TableStatement extends Statement {
 
     public void setCoderColor(Color coderColor) {
         this.coderColor = coderColor;
+    }
+
+    public Color getStatementTypeColor() {
+        return this.statementTypeColor;
+    }
+
+    public void setStatementTypeColor(Color statementTypeColor) {
+        this.statementTypeColor = statementTypeColor;
     }
 }
