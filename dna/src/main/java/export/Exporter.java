@@ -312,6 +312,7 @@ public class Exporter {
 			String fileFormat,
 			String outfile) {
 
+		/*
 		// create a list of document variables for easier if-condition checking below
 		ArrayList<String> documentVariables = new ArrayList<String>();
 		documentVariables.add("author");
@@ -576,6 +577,8 @@ public class Exporter {
 		this.invertSections = invertSections;
 		this.excludeTypes = excludeTypes;
 		this.invertTypes = invertTypes;
+
+		*/
 	}
 
 	/**
@@ -673,6 +676,7 @@ public class Exporter {
 			boolean invertSections,
 			boolean invertTypes) {
 
+		/*
 		this.statementType = statementType;
 		ArrayList<String> shortTextVariables = Stream.of(this.statementType.getVariablesList(false, true, false, false)).collect(Collectors.toCollection(ArrayList::new));
 
@@ -738,11 +742,14 @@ public class Exporter {
 		this.invertSections = invertSections;
 		this.excludeTypes = excludeTypes;
 		this.invertTypes = invertTypes;
+
+		*/
 	}
 
 	/**
 	 * Load statements and documents from the database and pre-process them.
 	 */
+	/*
 	public void loadData() {
 		// put variable data types into a map for quick lookup
 		this.dataTypes = new HashMap<String, String>();
@@ -790,6 +797,7 @@ public class Exporter {
 			);
 		}
 	}
+	*/
 	
 	/**
 	 * Extract the labels for all nodes for a variable from the statements,
@@ -858,6 +866,39 @@ public class Exporter {
 		return nameArray;
 	}
 
+	public class ExportStatementComparator implements Comparator<ExportStatement> {
+		@Override
+		public int compare(ExportStatement firstExportStatement, ExportStatement secondExportStatement) {
+			if (firstExportStatement.getDateTime() != null && secondExportStatement.getDateTime() != null) {
+				if (firstExportStatement.getDateTime().isBefore(secondExportStatement.getDateTime())) {
+					return -1;
+				} else if (firstExportStatement.getDateTime().isAfter(secondExportStatement.getDateTime())) {
+					return 1;
+				}
+			}
+			if (firstExportStatement.getDocumentId() < secondExportStatement.getDocumentId()) {
+				return -1;
+			} else if (firstExportStatement.getDocumentId() > secondExportStatement.getDocumentId()) {
+				return 1;
+			}
+			if (firstExportStatement.getStart() < secondExportStatement.getStart()) {
+				return -1;
+			} else if (firstExportStatement.getStart() > secondExportStatement.getStart()) {
+				return 1;
+			}
+			if (firstExportStatement.getStop() < secondExportStatement.getStop()) {
+				return -1;
+			} else if (firstExportStatement.getStop() > secondExportStatement.getStop()) {
+				return 1;
+			}
+			if (firstExportStatement.getId() < secondExportStatement.getId()) {
+				return -1;
+			} else {
+				return 1;
+			}
+		}
+	}
+
 	/**
 	 * Filter the statements based on the {@link #originalStatements} slot of
 	 * the class and create a filtered statement list, which is saved in the
@@ -874,7 +915,8 @@ public class Exporter {
 			}
 
 			// sort statements by date and time
-			Collections.sort(this.filteredStatements);
+
+			Collections.sort(this.filteredStatements, new ExportStatementComparator());
 
 			// Create arrays with variable values
 			String[] values1 = retrieveValues(this.filteredStatements, this.variable1, this.variable1Document);
@@ -1662,7 +1704,7 @@ public class Exporter {
 	 */
 	public void computeTimeWindowMatrices() {
 		ArrayList<Matrix> timeWindowMatrices = new ArrayList<Matrix>();
-		Collections.sort(this.filteredStatements); // probably not necessary, but can't hurt to have it
+		Collections.sort(this.filteredStatements, new ExportStatementComparator()); // probably not necessary, but can't hurt to have it
 		ArrayList<ExportStatement> currentWindowStatements = new ArrayList<ExportStatement>(); // holds all statements in the current time window
 		ArrayList<ExportStatement> startStatements = new ArrayList<ExportStatement>(); // holds all statements corresponding to the time stamp of the first statement in the window
 		ArrayList<ExportStatement> stopStatements = new ArrayList<ExportStatement>(); // holds all statements corresponding to the time stamp of the last statement in the window
@@ -1880,6 +1922,7 @@ public class Exporter {
 	/**
 	 * Write results to file.
 	 */
+	/*
 	public void exportToFile() {
 		if (networkType.equals("eventlist") && fileFormat.equals("csv")) {
 			eventCSV();
@@ -1891,6 +1934,7 @@ public class Exporter {
 			exportGraphml();
 		}
 	}
+	*/
 
 	/**
 	 * Write an event list to a CSV file. The event list contains all filtered
@@ -1898,6 +1942,7 @@ public class Exporter {
 	 * and document meta-data. There is one statement per row. The event list
 	 * can be used for estimating relational event models.
 	 */
+	/*
 	private void eventCSV() {
 		try (ProgressBar pb = new ProgressBar("Exporting events...", this.filteredStatements.size())) {
 			pb.stepTo(0);
@@ -1953,6 +1998,7 @@ public class Exporter {
 			pb.stepTo(this.filteredStatements.size());
 		}
 	}
+	*/
 
 	/**
 	 * Export {@link Matrix Matrix} to a CSV matrix file.
@@ -2093,6 +2139,7 @@ public class Exporter {
 	/**
 	 * Export filter for graphML files.
 	 */
+	/*
 	private void exportGraphml() {
 		try (ProgressBar pb = new ProgressBar("Exporting networks...", this.matrixResults.size())) {
 			pb.stepTo(0);
@@ -2490,6 +2537,7 @@ public class Exporter {
 			pb.stepTo(this.matrixResults.size());
 		}
 	}
+	*/
 
 	/**
 	 * Return original (unfiltered) statements.
@@ -2514,6 +2562,7 @@ public class Exporter {
 	 *
 	 * @return Barplot data for the filtered statements.
 	 */
+	/*
 	public BarplotResult generateBarplotData() {
 		// what variable ID corresponds to variable 1?
 		int variableId = this.statementType.getVariables()
@@ -2589,6 +2638,7 @@ public class Exporter {
 		// assemble and return data
 		return new BarplotResult(this.variable1, values, counts, attributes, intScale, attributeVariables);
 	}
+	*/
 
 	/**
 	 * Partition the discourse network into a backbone and redundant set of second-mode entities using penalised

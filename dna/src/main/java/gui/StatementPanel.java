@@ -6,14 +6,9 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.Image;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,14 +27,11 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.UIDefaults;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
@@ -55,7 +47,7 @@ import model.*;
  * Statement panel on the right side of the screen.
  */
 class StatementPanel extends JPanel {
-	private static final long serialVersionUID = 1048070479152247253L;
+	private static final long serialVersionUID = 1048170479152247253L;
 	private JTable statementTable;
 	private StatementTableModel statementTableModel;
 	private ArrayList<Variable> variables;
@@ -239,6 +231,8 @@ class StatementPanel extends JPanel {
 		menuItemText.addActionListener(al);
 
 		// row filter
+		// TODO: add row filter back in
+		/*
 		RowFilter<StatementTableModel, Integer> statementFilter = new RowFilter<StatementTableModel, Integer>() {
 			public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
 				TableStatement s = statementTableModel.getRow(entry.getIdentifier());
@@ -247,6 +241,7 @@ class StatementPanel extends JPanel {
 			}
 		};
 		sorter.setRowFilter(statementFilter);
+		*/
 		
 		// statement filter panel at the bottom
 		StatementFilterPanel sfp = new StatementFilterPanel();
@@ -421,6 +416,7 @@ class StatementPanel extends JPanel {
 				}
 				// check variables for a non-match
 				// TODO: use roles instead of variables in filter (and also in the GUI for the filter)!
+				/*
 				for (int i = 0; i < variables.size(); i++) {
 					pattern = Pattern.compile((String) variables.get(i).getValue());
 					if (values.get(i).getValue().getClass().toString().endsWith("Entity")) {
@@ -434,6 +430,7 @@ class StatementPanel extends JPanel {
 						return false;
 					}
 				}
+				*/
 			}
 		}
 		return true;
@@ -470,6 +467,8 @@ class StatementPanel extends JPanel {
 			radioButtonPanel.add(filterButton);
 			
 			// react to changes in the selected statement type and rebuild the panel with the filter fields
+			// TODO: reactivate the filter and combine statement types, roles, and variables in complex ways
+			/*
 			ItemListener aListener = new ItemListener() {
 				@Override
 				public void itemStateChanged(ItemEvent arg0) {
@@ -589,6 +588,7 @@ class StatementPanel extends JPanel {
 			allButton.addActionListener(al);
 			docButton.addActionListener(al);
 			filterButton.addActionListener(al);
+			*/
 			this.add(radioButtonPanel, BorderLayout.NORTH);
 			
 			// statement type combo box panel is empty for now

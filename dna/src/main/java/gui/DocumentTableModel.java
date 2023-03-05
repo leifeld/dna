@@ -222,7 +222,7 @@ class DocumentTableModel extends AbstractTableModel {
 	/**
 	 * Remove an array of document indices from the model and notify the table.
 	 * 
-	 * @param rows  The model rows of the documents.
+	 * @param modelRowIndices The model rows of the documents.
 	 */
 	public void removeDocuments(int[] modelRowIndices) {
 		for (int i = modelRowIndices.length - 1; i >= 0; i--) {

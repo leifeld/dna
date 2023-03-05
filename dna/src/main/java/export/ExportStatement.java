@@ -2,8 +2,8 @@ package export;
 
 
 import model.Statement;
-import model.Variable;
 
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 
@@ -15,6 +15,7 @@ import java.util.HashMap;
 public class ExportStatement extends Statement {
     private HashMap<String, Object> map;
     private String title, author, source, section, type;
+    private LocalDateTime dateTime;
 
     /**
      * Create an export statement.
@@ -25,19 +26,25 @@ public class ExportStatement extends Statement {
      * @param source The source.
      * @param section The section.
      * @param type The type.
+     * @param dateTime The date and time of the statement.
      */
     public ExportStatement(Statement statement, String title, String author,
-                           String source, String section, String type) {
+                           String source, String section, String type,
+                           LocalDateTime dateTime) {
         super(statement);
         this.title = title;
         this.author = author;
         this.source = source;
         this.section = section;
         this.type = type;
+        this.dateTime = dateTime;
         this.map = new HashMap<String, Object>();
+        // TODO: re-implement this
+        /*
         for (Variable value : ExportStatement.this.getVariables()) {
             map.put(value.getVariableName(), value.getValue());
         }
+        */
     }
 
     /**
@@ -52,10 +59,14 @@ public class ExportStatement extends Statement {
         this.source = exportStatement.getSource();
         this.section = exportStatement.getSection();
         this.type = exportStatement.getType();
+        this.dateTime = exportStatement.getDateTime();
         this.map = new HashMap<String, Object>();
+        // TODO: re-implement this
+        /*
         for (Variable value : exportStatement.getVariables()) {
             map.put(value.getVariableName(), value.getValue());
         }
+        */
     }
 
     public Object get(String key) {
@@ -82,8 +93,13 @@ public class ExportStatement extends Statement {
         return this.type;
     }
 
-    public String getDocumentIdAsString() {
-        return String.valueOf(this.getDocumentId());
+    /**
+     * Get the date/time stored in the statement.
+     *
+     * @return The date/time as a {@link LocalDateTime} object.
+     */
+    public LocalDateTime getDateTime() {
+        return dateTime;
     }
 
     /**
@@ -95,5 +111,18 @@ public class ExportStatement extends Statement {
      */
     public long getDateTimeLong() {
         return this.getDateTime().toEpochSecond(ZoneOffset.UTC);
+    }
+
+    /**
+     * Set the date/time of the corresponding document.
+     *
+     * @param dateTime The new date/time to set.
+     */
+    public void setDateTime(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
+    }
+
+    public String getDocumentIdAsString() {
+        return String.valueOf(this.getDocumentId());
     }
 }

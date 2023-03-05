@@ -50,7 +50,9 @@ public class NetworkExporter extends JDialog {
 		ImageIcon networkIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-affiliate.png"));
 		this.setIconImage(networkIcon.getImage());
 		this.setLayout(new java.awt.BorderLayout());
-		
+
+		/*
+
 		JPanel settingsPanel = new JPanel();
 		java.awt.GridBagLayout g = new java.awt.GridBagLayout();
 		settingsPanel.setLayout(g);
@@ -1084,8 +1086,10 @@ public class NetworkExporter extends JDialog {
 		buttonPanel.add(exportButton);
 		toggleHelp();
 		settingsPanel.add(buttonPanel, gbc);
-		
+
 		this.add(settingsPanel, java.awt.BorderLayout.CENTER);
+
+		*/
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
@@ -1094,6 +1098,7 @@ public class NetworkExporter extends JDialog {
 	/**
 	 * Sets a new {@link DefaultListModel} in the excludeVariableList and adds variables conditional on the statement type selected
 	 */
+	/*
 	public void populateExcludeVariableList() {
 		excludeValues.clear();
 		StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
@@ -1109,7 +1114,8 @@ public class NetworkExporter extends JDialog {
 		excludeVariableModel.addElement("type");
 		excludeVariableList.setModel(excludeVariableModel);
 	}
-	
+	*/
+
 	/**
 	 * Show or hide tool tips with instructions depending on whether helpBox is checked
 	 */
@@ -1209,7 +1215,8 @@ public class NetworkExporter extends JDialog {
 			
 			// step 1: load and pre-process data
 			progressMonitor.setNote("(1/4) Loading and processing data...");
-			exporter.loadData();
+			// TODO: add back in
+			// exporter.loadData();
 			// System.out.println("Export was launched: " + statements.size() + " out of " + Dna.data.getStatements().size() 
 			// 		+ " statements retained after filtering.");
 			progressMonitor.setProgress(1);
@@ -1234,7 +1241,8 @@ public class NetworkExporter extends JDialog {
 			
 			// step 4: write to file
 			progressMonitor.setNote("(4/4) Writing to file...");
-			exporter.exportToFile();
+			// TODO: add back in
+			// exporter.exportToFile();
 			progressMonitor.setProgress(4);
 			JOptionPane.showMessageDialog(NetworkExporter.this, "Data were exported to \"" + fileName + "\".");
 		}

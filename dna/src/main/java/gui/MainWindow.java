@@ -30,16 +30,12 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.text.BadLocationException;
 
+import model.*;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import logger.LoggerDialog;
-import model.Coder;
-import model.Statement;
-import model.StatementType;
-import model.TableDocument;
-import model.Value;
 import sql.ConnectionProfile;
 import sql.Sql;
 
@@ -347,7 +343,7 @@ public class MainWindow extends JFrame {
 					int selectedRow = statementTable.getSelectedRow();
 					int selectedModelIndex = statementTable.convertRowIndexToModel(selectedRow);
 					int statementId = statementTableModel.getRow(selectedModelIndex).getId();
-					Statement s = Dna.sql.getStatement(statementId);
+					TableStatement s = Dna.sql.getTableStatement(statementId);
 					documentTablePanel.setSelectedDocumentId(s.getDocumentId());
 					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true &&
 							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true ||
@@ -505,35 +501,32 @@ public class MainWindow extends JFrame {
 					menuItem.setOpaque(true);
 					menuItem.setBackground(statementType.getColor());
 					popmen.add(menuItem);
-					
+
 					menuItem.addActionListener(new ActionListener() {
 						@Override
 						public void actionPerformed(ActionEvent e) {
 							int documentId = documentTablePanel.getSelectedDocumentId();
 							int selectionStart = textWindow.getSelectionStart();
 							int selectionEnd = textWindow.getSelectionEnd();
-							Statement statement = new Statement(selectionStart,
-									selectionEnd,
-									statementType.getId(),
-									Dna.sql.getActiveCoder().getId(),
-									statementType.getVariables());
-							int statementId = Dna.sql.addStatement(statement, documentId);
+							Statement statement = new Statement(selectionStart,	selectionEnd, statementType.getId(), Dna.sql.getActiveCoder().getId(), documentId);
+							int statementId = Dna.sql.addNewStatement(statement);
 							if (statementId > 0) {
 								documentTableModel.increaseFrequency(documentId);
 								textPanel.paintStatements();
 								textWindow.setCaretPosition(selectionEnd);
-								
+
 								// retrieve added statement, add to statement table, and open popup
-								Statement s = Dna.sql.getStatement(statementId);
+								TableStatement s = Dna.sql.getTableStatement(statementId);
 								statementTableModel.addRow(s);
 								Point location = textWindow.getLocationOnScreen();
 								textWindow.setSelectionStart(statement.getStart());
 								textWindow.setSelectionEnd(statement.getStop());
-								newPopup(x, y, s, location);
+								// TODO: re-activate popups
+								// newPopup(x, y, s, location);
 							}
 						}
 					});
-					
+
 					// disable menu items if the coder does not have the permission to add statements or edit other coders' documents (if the document belongs to another coder)
 					int documentCoderId = documentTableModel.getRow(documentTable.convertRowIndexToModel(documentTable.getSelectedRow())).getCoder().getId();
 					if (Dna.sql.getActiveCoder().isPermissionAddStatements() == false ||
@@ -587,7 +580,7 @@ public class MainWindow extends JFrame {
 					
 					// if the text selection contains a statement, get it from the database and display it
 					if (currentStatements.size() > 0 && Dna.sql.getActiveCoder() != null) {
-						Statement s = Dna.sql.getStatement(currentStatements.get(0).getId());
+						TableStatement s = Dna.sql.getTableStatement(currentStatements.get(0).getId());
 						Point location = textWindow.getLocationOnScreen();
 						textWindow.setSelectionStart(s.getStart());
 						textWindow.setSelectionEnd(s.getStop());
@@ -769,9 +762,12 @@ public class MainWindow extends JFrame {
 		}
 		
 		// create popup window
-		this.popup = new Popup(x, y, s, location, Dna.sql.getActiveCoder(), eligibleCoders);
+		// TODO: add back in
+		// this.popup = new Popup(x, y, s, location, Dna.sql.getActiveCoder(), eligibleCoders);
 		
 		// duplicate button action listener
+		// TODO: add popup control back in
+		/*
 		JButton duplicate = popup.getDuplicateButton();
 		duplicate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -818,6 +814,7 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
+		*/
 		
 		// remove button action listener
 		JButton remove = popup.getRemoveButton();
@@ -901,6 +898,8 @@ public class MainWindow extends JFrame {
 	 * @param popup  The popup window.
 	 */
 	private void popupSave(Popup popup) {
+		// TODO: add popup save functionality back in
+		/*
 		popup.saveContents(false);
 		if (popup.isCoderChanged()) {
 			if (Dna.sql.getActiveCoder().isColorByCoder()) {
@@ -912,6 +911,7 @@ public class MainWindow extends JFrame {
 			statementTableModel.getRow(modelRow).setCoderColor(s.getCoderColor());
 			statementTableModel.fireTableRowsUpdated(modelRow, modelRow);
 		}
+		*/
 	}
 
 	/**
@@ -1096,7 +1096,7 @@ public class MainWindow extends JFrame {
 	 * Sql} class because it contains nested {@code publish} calls that need
 	 * to be in the SQL code but also need to remain in the Swing worker class. 
 	 */
-	private class StatementTableRefreshWorker extends SwingWorker<List<Statement>, Statement> {
+	private class StatementTableRefreshWorker extends SwingWorker<List<TableStatement>, TableStatement> {
 		/**
 		 * Time stamp to measure the duration it takes to update the table. The
 		 * duration is logged when the table has been updated.
@@ -1165,7 +1165,7 @@ public class MainWindow extends JFrame {
 		}
 		
 		@Override
-		protected List<Statement> doInBackground() {
+		protected List<TableStatement> doInBackground() {
 			String subString = "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text ";
 			if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
 				subString = "SUBSTRING(DOCUMENTS.Text, CAST(Start + 1 AS INT4), CAST(Stop - Start AS INT4)) AS Text ";
@@ -1201,113 +1201,67 @@ public class MainWindow extends JFrame {
 					+ "INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId "
 					+ stid
 					+ "ORDER BY DOCUMENTS.DATE ASC;";
-			
-			String q2 = "SELECT ID FROM STATEMENTTYPES;";
-			
-			String q3 = "SELECT ID, Variable, DataType FROM VARIABLES;";
-			
+
 			String q4castBoolean = "DATABOOLEAN.Value";
 			String q4castInteger = "DATAINTEGER.Value";
 			if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
 				q4castBoolean = "CAST(DATABOOLEAN.Value AS TEXT)";
 				q4castInteger = "CAST(DATAINTEGER.Value AS TEXT)";
 			}
-			
-			String stidShort = "";
-			String stidLong = "";
-			String stidBool = "";
-			String stidInt = "";
 			if (statementIds.length > 0) {
 				stid = IntStream.of(statementIds)
 						.mapToObj(i -> ((Integer) i).toString()) // i is an int, not an Integer
 						.collect(Collectors.joining(", "))
-						.toString()
-						+ ") ";
-				stidShort = "AND DATASHORTTEXT.StatementId IN (" + stid;
-				stidLong = "AND DATALONGTEXT.StatementId IN (" + stid;
-				stidBool = "AND DATABOOLEAN.StatementId IN (" + stid;
-				stidInt = "AND DATAINTEGER.StatementId IN (" + stid;
+						.toString();
 			}
-			String q4 = "SELECT DATASHORTTEXT.StatementId, VARIABLES.ID AS VariableId, ENTITIES.Value AS Value FROM DATASHORTTEXT "
-					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATASHORTTEXT.VariableId "
-					+ "INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity WHERE VARIABLES.StatementTypeId = ? "
-					+ stidShort
-					+ "UNION "
-					+ "SELECT DATALONGTEXT.StatementId, VARIABLES.ID AS VariableId, DATALONGTEXT.Value FROM DATALONGTEXT "
-					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATALONGTEXT.VariableId WHERE VARIABLES.StatementTypeId = ? "
-					+ stidLong
-					+ "UNION "
-					+ "SELECT DATABOOLEAN.StatementId, VARIABLES.ID AS VariableId, " + q4castBoolean + " FROM DATABOOLEAN "
-					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATABOOLEAN.VariableId WHERE VARIABLES.StatementTypeId = ? "
-					+ stidBool
-					+ "UNION "
-					+ "SELECT DATAINTEGER.StatementId, VARIABLES.ID AS VariableId, " + q4castInteger + " FROM DATAINTEGER "
-					+ "INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId WHERE VARIABLES.StatementTypeId = ? "
-					+ stidInt
-					+ "ORDER BY 1, 2 ASC;";
-			
+			String q4 = "SELECT DATASHORTTEXT.ID, DATASHORTTEXT.StatementId, DATASHORTTEXT.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, Value, ROLES.StatementTypeId FROM DATASHORTTEXT INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATASHORTTEXT.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE DATASHORTTEXT.StatementId IN (" + stid + ") " +
+					"UNION " +
+					"SELECT DATALONGTEXT.ID, DATALONGTEXT.StatementId, DATALONGTEXT.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, Value, ROLES.StatementTypeId FROM DATALONGTEXT INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATALONGTEXT.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE DATALONGTEXT.StatementId IN (" + stid + ") " +
+					"UNION " +
+					"SELECT DATAINTEGER.ID, DATAINTEGER.StatementId, DATAINTEGER.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, " + q4castInteger + ", ROLES.StatementTypeId FROM DATAINTEGER INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATAINTEGER.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE DATAINTEGER.StatementId IN (" + stid + ") " +
+					"UNION " +
+					"SELECT DATABOOLEAN.ID, DATABOOLEAN.StatementId, DATABOOLEAN.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, " + q4castBoolean + ", ROLES.StatementTypeId FROM DATABOOLEAN INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATABOOLEAN.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE DATABOOLEAN.StatementId IN (" + stid + ");";
+
 			int statementTypeId, statementId, variableId;
 			Color sColor, cColor;
-			HashMap<Integer, String> variableNameMap = new HashMap<Integer, String>(); // variable ID to variable name
-			HashMap<Integer, String> variableDataTypeMap = new HashMap<Integer, String>(); // variable ID to data type
-			HashMap<Integer, Statement> statementMap = new HashMap<Integer, Statement>(); // statement ID to Statement
-			ResultSet r3, r4;
+			HashMap<Integer, TableStatement> statementMap = new HashMap<Integer, TableStatement>(); // statement ID to Statement
+			ResultSet r4;
 			try (Connection conn = Dna.sql.getDataSource().getConnection();
 					PreparedStatement s1 = conn.prepareStatement(q1);
-					PreparedStatement s2 = conn.prepareStatement(q2);
-					PreparedStatement s3 = conn.prepareStatement(q3);
-					PreparedStatement s4 = conn.prepareStatement(q4);) {
+					PreparedStatement s4 = conn.prepareStatement(q4)) {
 				
-				// assemble statements without values for now and save them in a hash map
+				// assemble table statements and save them in a hash map
 				ResultSet r1 = s1.executeQuery();
 				while (r1.next()) {
 					statementId = r1.getInt("StatementId");
 				    statementTypeId = r1.getInt("StatementTypeId");
 				    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
 				    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
-				    Statement statement = new Statement(statementId,
-				    		r1.getInt("Start"),
-				    		r1.getInt("Stop"),
-				    		statementTypeId,
-				    		r1.getString("StatementTypeLabel"),
-				    		sColor,
-				    		r1.getInt("CoderId"),
-				    		r1.getString("CoderName"),
-				    		cColor,
-				    		new ArrayList<Value>(),
-				    		r1.getInt("DocumentId"),
-				    		r1.getString("Text"),
-				    		LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC));
-				    statementMap.put(statementId, statement);
+
+					TableStatement tableStatement = new TableStatement(statementId,
+							r1.getInt("Start"),
+							r1.getInt("Stop"),
+							statementTypeId,
+							r1.getInt("CoderId"),
+							r1.getInt("DocumentId"),
+							LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC),
+							r1.getString("Text"),
+							r1.getString("CoderName"),
+							cColor,
+							r1.getString("StatementTypeLabel"),
+							sColor,
+							new ArrayList<RoleValue>());
+				    statementMap.put(statementId, tableStatement);
 				}
-				
-				// get variables
-				r3 = s3.executeQuery();
-				while (r3.next()) {
-					variableNameMap.put(r3.getInt("ID"), r3.getString("Variable"));
-					variableDataTypeMap.put(r3.getInt("ID"), r3.getString("DataType"));
-				}
-				
-				// get statement types
-				ResultSet r2 = s2.executeQuery();
-				while (r2.next()) {
-					statementTypeId = r2.getInt("ID");
-					
-					// get values and put them into the statements
-					s4.setInt(1, statementTypeId);
-					s4.setInt(2, statementTypeId);
-					s4.setInt(3, statementTypeId);
-					s4.setInt(4, statementTypeId);
-					r4 = s4.executeQuery();
-					while (r4.next()) {
-						variableId = r4.getInt("VariableId");
-						statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableNameMap.get(variableId), variableDataTypeMap.get(variableId), r4.getString("Value")));
-					}
+
+				r4 = s4.executeQuery();
+				while (r4.next()) {
+					statementMap.get(r4.getInt("StatementId")).getRoleValues().add(new RoleValue(r4.getInt("VariableId"), r4.getString("VariableName"), r4.getString("DataType"), r4.getString("Value"), r4.getInt("RoleVariableLinkId"), r4.getInt("ID"), r4.getInt("RoleId"), r4.getString("RoleName"), r4.getInt("StatementTypeId")));
 				}
 				
 				// publish all statements
-				Collection<Statement> s = statementMap.values();
-		        ArrayList<Statement> listOfStatements = new ArrayList<Statement>(s);
+				Collection<TableStatement> s = statementMap.values();
+		        ArrayList<TableStatement> listOfStatements = new ArrayList<TableStatement>(s);
 				Collections.sort(listOfStatements);
 		        for (int i = 0; i < listOfStatements.size(); i++) {
 		        	publish(listOfStatements.get(i));
@@ -1331,7 +1285,7 @@ public class MainWindow extends JFrame {
 		}
         
         @Override
-        protected void process(List<Statement> chunks) {
+        protected void process(List<TableStatement> chunks) {
         	if (statementIds.length == 0) {
         		statementTableModel.addRows(chunks); // transfer a batch of rows to the statement table model
     			getStatementPanel().setSelectedStatementId(selectedId); // select the statement from before; skipped if the statement not found in this batch
@@ -2255,6 +2209,8 @@ public class MainWindow extends JFrame {
 			
 			// get statement type and initialize statement recoder dialog
 			if (permissions) {
+				// TODO: reactivate statement multi-recoder
+				/*
 				StatementType statementType = Dna.sql.getStatementTypes()
 						.stream()
 						.filter(s -> s.getId() == statementTypeId)
@@ -2270,6 +2226,7 @@ public class MainWindow extends JFrame {
 							.toArray();
 					refreshStatementTable(changedIds);
 				}
+				*/
 			}
 		}
 	}
@@ -2338,7 +2295,8 @@ public class MainWindow extends JFrame {
 		
 		public void actionPerformed(ActionEvent e) {
 			if (Dna.sql.getActiveCoder().isPermissionEditStatementTypes()) {
-				new StatementTypeEditor(MainWindow.this);
+				// TODO: reactivate statement type editor
+				// new StatementTypeEditor(MainWindow.this);
 				LogEvent l = new LogEvent(Logger.MESSAGE,
 						"[GUI] Action executed: opened statement type editor.",
 						"Opened a statement type editor window from the GUI.");

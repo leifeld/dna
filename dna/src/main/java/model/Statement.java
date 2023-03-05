@@ -1,8 +1,6 @@
 package model;
 
-import java.awt.Color;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 
 /**
  * Represents a statement. There are two constructors: one for a basic statement
@@ -16,7 +14,6 @@ public class Statement implements Comparable<Statement> {
 	private int statementTypeId;
 	private int coderId;
 	private int documentId;
-	private LocalDateTime dateTime;
 	
 	/**
 	 * Create a statement. Full constructor with all fields.
@@ -27,38 +24,36 @@ public class Statement implements Comparable<Statement> {
 	 * @param statementTypeId     Statement type ID.
 	 * @param coderId             ID of the coder.
 	 * @param documentId          The document ID.
-	 * @param dateTime            The date and time of the statement.
 	 */
 	public Statement(int id,
 			int start,
 			int stop,
 			int statementTypeId,
 			int coderId,
-			int documentId,
-			LocalDateTime dateTime) {
+			int documentId) {
 		this.id = id;
 		this.start = start;
 		this.stop = stop;
 		this.statementTypeId = statementTypeId;
 		this.coderId = coderId;
 		this.documentId = documentId;
-		this.dateTime = dateTime;
 	}
 
 	/**
-	 * Create a new statement. Light version for inserting an empty statement
-	 * into the database.
+	 * Create a new statement. Version without ID for inserting an empty statement into the database.
 	 * 
 	 * @param start            Start position in the text.
 	 * @param stop             End position in the text.
 	 * @param statementTypeId  Statement type ID.
 	 * @param coderId          The ID of the coder who owns the statement.
+	 * @param documentId       The document ID.
 	 */
-	public Statement(int start, int stop, int statementTypeId, int coderId) {
+	public Statement(int start, int stop, int statementTypeId, int coderId, int documentId) {
 		this.start = start;
 		this.stop = stop;
 		this.statementTypeId = statementTypeId;
 		this.coderId = coderId;
+		this.documentId = documentId;
 	}
 	
 	/**
@@ -73,7 +68,6 @@ public class Statement implements Comparable<Statement> {
 		this.statementTypeId = statement.getStatementTypeId();
 		this.coderId = statement.getCoderId();
 		this.documentId = statement.getDocumentId();
-		this.dateTime = statement.getDateTime();
 	}
 
 	/**
@@ -174,24 +168,6 @@ public class Statement implements Comparable<Statement> {
 	public int getStatementTypeId() {
 		return statementTypeId;
 	}
-	
-	/**
-	 * Get the date/time stored in the statement.
-	 * 
-	 * @return The date/time as a {@link LocalDateTime} object.
-	 */
-	public LocalDateTime getDateTime() {
-		return dateTime;
-	}
-
-	/**
-	 * Set the date/time of the corresponding document.
-	 * 
-	 * @param dateTime The new date/time to set.
-	 */
-	public void setDateTime(LocalDateTime dateTime) {
-		this.dateTime = dateTime;
-	}
 
 	/**
 	 * Implementation of the {@link java.lang.Comparable Comparable} interface
@@ -199,13 +175,6 @@ public class Statement implements Comparable<Statement> {
 	 */
 	@Override
 	public int compareTo(Statement s) {
-		if (this.dateTime != null) {
-			if (this.getDateTime().isBefore(s.getDateTime())) {
-				return -1;
-			} else if (this.getDateTime().isAfter(s.getDateTime())) {
-				return 1;
-			}
-		}
 		if (this.getDocumentId() < s.getDocumentId()) {
 			return -1;
 		} else if (this.getDocumentId() > s.getDocumentId()) {

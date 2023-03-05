@@ -1,9 +1,6 @@
 package model;
 
 import java.awt.Color;
-import java.util.ArrayList;
-// import java.util.HashMap;
-// import java.util.stream.Stream;
 
 /**
  * Represents a statement type.
@@ -12,7 +9,7 @@ public class StatementType {
 	/**
 	 * The statement type ID.
 	 */
-	private int id;
+	private final int id;
 	
 	/**
 	 * The label or name of the statement type.
@@ -23,11 +20,6 @@ public class StatementType {
 	 * The color associated with the statement type.
 	 */
 	private Color color;
-	
-	/**
-	 * An array list of role variable links.
-	 */
-	// private ArrayList<RoleVariableLink> roleVariableLinks;
 
 	/**
 	 * Create a statement type.
@@ -35,13 +27,11 @@ public class StatementType {
 	 * @param id The statement type ID.
 	 * @param label The label or name of the statement type.
 	 * @param color The color of the statement type.
-	 * @param roleVariableLinks An array list of role variable links.
 	 */
-	public StatementType(int id, String label, Color color, ArrayList<RoleVariableLink> roleVariableLinks) {
+	public StatementType(int id, String label, Color color) {
 		this.id = id;
 		this.label = label;
 		this.color = color;
-		// this.roleVariableLinks = roleVariableLinks;
 	}
 
 	/**
@@ -53,12 +43,6 @@ public class StatementType {
 		this.id = st.getId();
 		this.label = st.getLabel();
 		this.color = st.getColor();
-		/*
-		this.roleVariableLinks = new ArrayList<RoleVariableLink>();
-		for (int i = 0; i < st.getRowVariableLinks().size(); i++) {
-			this.roleVariableLinks.add(new RoleVariableLink(st.getRoleVariableLinks().get(i)));
-		}
-		*/
 	}
 	
 	/**
@@ -103,74 +87,12 @@ public class StatementType {
 	}
 
 	/**
-	 * Returns a String array with the variable names corresponding to specific data types, including document-level
-	 * variables not specified directly in the statement type.
-	 *
-	 * @param longtext	boolean indicating whether long text variables should be included.
-	 * @param shorttext	boolean indicating whether short text variables should be included.
-	 * @param integer	boolean indicating whether integer variables should be included.
-	 * @param bool		boolean indicating whether boolean variables should be included.
-	 * @return			{@link String[]} with variables of the statement type.
-	 */
-	/*
-	public String[] getVariablesList(boolean longtext, boolean shorttext, boolean integer, boolean bool) {
-		ArrayList<String> documentVariables = new ArrayList<String>();
-		if (shorttext) {
-			documentVariables.add("author");
-			documentVariables.add("source");
-			documentVariables.add("section");
-			documentVariables.add("type");
-			documentVariables.add("id");
-			documentVariables.add("title");
-		}
-		String[] variables = Stream.concat(
-						this.getVariables()
-								.stream()
-								.filter(v -> (shorttext && v.getDataType().equals("short text")) ||
-										(longtext && v.getDataType().equals("short text")) ||
-										(integer && v.getDataType().equals("integer")) ||
-										(bool && v.getDataType().equals("boolean")))
-								.map(v -> v.getKey()),
-						documentVariables.stream())
-				.toArray(String[]::new);
-		return variables;
-	}
-	*/
-
-	/**
 	 * Is this statement type equal to another statement type?
 	 * 
 	 * @param st  The other statement type for comparison.
 	 * @return    Boolean indicator: Is the other statement type identical?
 	 */
 	public boolean equals(StatementType st) {
-		if (this.getId() == st.getId() && this.getLabel().equals(st.getLabel()) && this.getColor().equals(st.getColor()) && this.getClass().equals(st.getClass())) {
-			return true;
-		} else {
-			return false;
-		}
+		return this.getId() == st.getId() && this.getLabel().equals(st.getLabel()) && this.getColor().equals(st.getColor()) && this.getClass().equals(st.getClass());
 	}
-	/*
-	public boolean equals(StatementType st) {
-		boolean valuesEqual = true;
-		if (this.getVariables().size() == st.getVariables().size()) {
-			for (int i = 0; i < this.getVariables().size(); i++) {
-				if (!this.getVariables().get(i).equals(st.getVariables().get(i))) {
-					valuesEqual = false;
-					break;
-				}
-			}
-		} else {
-			valuesEqual = false;
-		}
-		if (this.getId() == st.getId() &&
-				this.getLabel().equals(st.getLabel()) &&
-				this.getClass().equals(st.getClass()) &&
-				valuesEqual) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-	*/
 }

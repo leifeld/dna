@@ -129,7 +129,7 @@ public class AttributeManager extends JDialog {
 		variableBox.addItemListener(new ItemListener() {
 		    public void itemStateChanged(ItemEvent e) {
 		    	if (e.getStateChange() == ItemEvent.SELECTED && variableBox.getItemCount() > 0) {
-					int variableId = ((Variable) variableBox.getSelectedItem()).getId();
+					int variableId = ((Variable) variableBox.getSelectedItem()).getVariableId();
 					createNewTable(variableId);
 				}
 		    }
@@ -186,7 +186,7 @@ public class AttributeManager extends JDialog {
 				for (int i = 0; i < model.getAttributeVariables().size(); i++) {
 					map.put(model.getAttributeVariables().get(i), "");
 				}
-				int variableId = ((Variable) variableBox.getSelectedItem()).getId();
+				int variableId = ((Variable) variableBox.getSelectedItem()).getVariableId();
 				Entity entity = new Entity(-1, variableId, newField.getText(), Color.BLACK, -1, false, map);
 				Dna.sql.addEntity(entity);
 				refreshTable(variableId);
@@ -212,7 +212,7 @@ public class AttributeManager extends JDialog {
 				int dialog = JOptionPane.showConfirmDialog(AttributeManager.this, "Delete " + selectedRows.length + " unused entities from the attribute manager?", "Confirmation", JOptionPane.YES_NO_OPTION);
 				if (dialog == 0) {
 					Dna.sql.deleteEntities(selectedRows);
-					refreshTable(((Variable) variableBox.getSelectedItem()).getId());
+					refreshTable(((Variable) variableBox.getSelectedItem()).getVariableId());
 				}
 			}
 		});
@@ -241,7 +241,7 @@ public class AttributeManager extends JDialog {
 					int dialog = JOptionPane.showConfirmDialog(AttributeManager.this, "Delete " + ids.length + " unused entities from the attribute manager?", "Confirmation", JOptionPane.YES_NO_OPTION);
 					if (dialog == 0) {
 						Dna.sql.deleteEntities(ids);
-						refreshTable(((Variable) variableBox.getSelectedItem()).getId());
+						refreshTable(((Variable) variableBox.getSelectedItem()).getVariableId());
 					}
 				}
 			}

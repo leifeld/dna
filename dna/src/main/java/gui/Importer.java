@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -55,9 +54,7 @@ import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import model.Coder;
-import model.StatementType;
 import model.TableDocument;
-import model.Value;
 import sql.ConnectionProfile;
 import sql.Sql;
 import sql.Sql.SQLCloseable;
@@ -953,6 +950,8 @@ class Importer extends JDialog {
 					PreparedStatement d22 = connDomestic.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE EntityId = ? AND AttributeVariableId = ?;");
 					PreparedStatement d23 = connDomestic.prepareStatement("SELECT AttributeValue FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
 					SQLCloseable finish = connDomestic::rollback;) {
+				// TODO: update with roles
+				/*
 
 				LogEvent le1 = new LogEvent(Logger.MESSAGE,
 						"[SQL] Initializing thread to import data: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
@@ -1771,6 +1770,7 @@ class Importer extends JDialog {
 						" statements because they had an unknown statement type or wrong coder. It took " + (elapsed - time) / 1000000 +
 						" milliseconds.");
 				dna.Dna.logger.log(le6);
+				*/
 				dispose(); // close the importer when done
 			} catch (Exception e) {
 				LogEvent le7 = new LogEvent(Logger.ERROR,

@@ -5,33 +5,18 @@ package model;
  * in the statement type that corresponds to the statement.
  */
 public class Variable {
-    private int id;
+    private int variableId;
     private String variableName, dataType;
-    private Object value;
 
     /**
      * Creates a value.
      *
-     * @param id The ID of the variable of which the value is an instance.
+     * @param variableId The ID of the variable of which the value is an instance.
      * @param variableName The variable name.
      * @param dataType The data type of the value. Can be {@code "short text"}, {@code "long text"}, {@code "integer"}, or {@code "boolean"}.
      */
-    public Variable(int id, String variableName, String dataType, Object value) {
-        this.id = id;
-        this.variableName = variableName;
-        this.dataType = dataType;
-        this.value = value;
-    }
-
-    /**
-     * Creates a value, but initially an empty one, without value.
-     *
-     * @param id The ID of the variable of which the value is an instance.
-     * @param variableName The variable name.
-     * @param dataType The data type of the value. Can be {@code "short text"}, {@code "long text"}, {@code "integer"}, or {@code "boolean"}.
-     */
-    public Variable(int id, String variableName, String dataType) {
-        this.id = id;
+    public Variable(int variableId, String variableName, String dataType) {
+        this.variableId = variableId;
         this.variableName = variableName;
         this.dataType = dataType;
     }
@@ -42,10 +27,9 @@ public class Variable {
      * @param variable A variable.
      */
     public Variable(Variable variable) {
-        this.id = variable.getId();
+        this.variableId = variable.getVariableId();
         this.variableName = variable.getVariableName();
         this.dataType = variable.getDataType();
-        this.value = variable.getValue();
     }
 
     /**
@@ -53,8 +37,8 @@ public class Variable {
      *
      * @return The variable ID.
      */
-    public int getId() {
-        return this.id;
+    public int getVariableId() {
+        return this.variableId;
     }
 
     /**
@@ -94,24 +78,6 @@ public class Variable {
     }
 
     /**
-     * Get the value as an object (needs to be cast into String or Integer).
-     *
-     * @return The value (as an Object that needs to be cast).
-     */
-    public Object getValue() {
-        return this.value;
-    }
-
-    /**
-     * Set the actual value of the value.
-     *
-     * @param value The value to set.
-     */
-    public void setValue(Object value) {
-        this.value = value;
-    }
-
-    /**
      * Is this variable equal to another object?
      *
      * @param o An object for comparison.
@@ -128,7 +94,7 @@ public class Variable {
         if (!this.dataType.equals(v.getDataType())) {
             return false;
         }
-        if (this.id != v.getId()) {
+        if (this.variableId != v.getVariableId()) {
             return false;
         }
         if ((this.variableName == null) != (v.getVariableName() == null)) {
@@ -137,18 +103,18 @@ public class Variable {
         if (!this.variableName.equals(v.getVariableName())) {
             return false;
         }
-        if ((this.value == null) != (v.getValue() == null)) {
-            return false;
-        }
-        if (this.dataType != null && v.getDataType() != null && this.value != null && v.getValue() != null && this.dataType.equals("long text") && !(((String) v.getValue()).equals((String) this.value))) {
-            return false;
-        }
-        if (this.dataType != null && v.getDataType() != null && this.value != null && v.getValue() != null && (this.dataType.equals("integer") || this.dataType.equals("boolean")) && !(((int) v.getValue()) == ((int) this.value))) {
-            return false;
-        }
-        if (this.dataType != null && v.getDataType() != null && this.value != null && v.getValue() != null && this.dataType.equals("short text") && !(((Entity) v.getValue()).equals((Entity) this.value))) {
-            return false;
-        }
+        //if ((this.value == null) != (v.getValue() == null)) {
+        //    return false;
+        //}
+        //if (this.dataType != null && v.getDataType() != null && this.value != null && v.getValue() != null && this.dataType.equals("long text") && !(((String) v.getValue()).equals((String) this.value))) {
+        //    return false;
+        //}
+        //if (this.dataType != null && v.getDataType() != null && this.value != null && v.getValue() != null && (this.dataType.equals("integer") || this.dataType.equals("boolean")) && !(((int) v.getValue()) == ((int) this.value))) {
+        //    return false;
+        //}
+        //if (this.dataType != null && v.getDataType() != null && this.value != null && v.getValue() != null && this.dataType.equals("short text") && !(((Entity) v.getValue()).equals((Entity) this.value))) {
+        //    return false;
+        //}
         return true;
     }
 }

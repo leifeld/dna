@@ -39,7 +39,6 @@ import logger.Logger;
 import model.Entity;
 import model.Coder;
 import model.Statement;
-import model.Value;
 
 /**
  * Show a small popup window to display and/or edit the variables of a statement.
@@ -53,7 +52,7 @@ class Popup extends JDialog {
 	private boolean windowDecoration, editable;
 	private JPanel gridBagPanel;
 	private int textFieldWidth;
-	private ArrayList<Value> variables;
+	// private ArrayList<Value> variables;
 	private JButton duplicate, remove;
 	private Coder coder;
 	private JComboBox<Coder> coderComboBox;
@@ -70,6 +69,8 @@ class Popup extends JDialog {
 	 * @param coder The current coder who is viewing the statement.
 	 * @param eligibleCoders A list of coders who are allowed to own the statement.
 	 */
+
+	/*
 	Popup(double X, double Y, Statement statement, Point location, Coder coder, ArrayList<Coder> eligibleCoders) {
 		this.statement = statement;
 		this.variables = statement.getValues();
@@ -406,6 +407,7 @@ class Popup extends JDialog {
 		int y = (int) yDouble + 13;
 		this.setLocation(x, y);
 	}
+	*/
 	
 	/**
 	 * Get a reference to the duplicate button.
@@ -480,12 +482,15 @@ class Popup extends JDialog {
 	 * @return The statement.
 	 */
 	Statement getStatementCopy() {
+		/*
 		Statement s = new Statement(this.statement);
 		s.setCoderColor(this.coder.getColor());
 		s.setCoderName(this.coder.getName());
 		s.setCoderId(this.coder.getId());
 		s.setValues(this.variables);
 		return s;
+		*/
+		return new Statement(this.statement);
 	}
 	
 	/**
@@ -497,6 +502,7 @@ class Popup extends JDialog {
 	 */
 	boolean saveContents(boolean simulate) {
 		boolean changed = false;
+		/*
 		Component[] com = this.gridBagPanel.getComponents();
 		int i, j;
 		try {
@@ -602,6 +608,7 @@ class Popup extends JDialog {
 					e);
 			Dna.logger.log(l);
 		}
+		*/
 		return changed;
 	}
 }

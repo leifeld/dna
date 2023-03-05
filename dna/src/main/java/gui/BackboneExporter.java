@@ -54,7 +54,8 @@ public class BackboneExporter extends JDialog {
 		ImageIcon backboneIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-arrows-split.png"));
 		this.setIconImage(backboneIcon.getImage());
 		this.setLayout(new BorderLayout());
-		
+
+		/*
 		JPanel settingsPanel = new JPanel();
 		GridBagLayout g = new GridBagLayout();
 		settingsPanel.setLayout(g);
@@ -908,6 +909,8 @@ public class BackboneExporter extends JDialog {
 		duplicatesBox.setSelectedIndex(1);
 		
 		this.add(settingsPanel, BorderLayout.CENTER);
+
+		*/
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
@@ -916,6 +919,7 @@ public class BackboneExporter extends JDialog {
 	/**
 	 * Sets a new {@link DefaultListModel} in the excludeVariableList and adds variables conditional on the statement type selected
 	 */
+	/*
 	public void populateExcludeVariableList() {
 		excludeValues.clear();
 		StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
@@ -931,7 +935,8 @@ public class BackboneExporter extends JDialog {
 		excludeVariableModel.addElement("type");
 		excludeVariableList.setModel(excludeVariableModel);
 	}
-	
+	*/
+
 	/**
 	 * Show or hide tool tips with instructions depending on whether helpBox is checked
 	 */
@@ -1014,6 +1019,7 @@ public class BackboneExporter extends JDialog {
 		}
 
 		public void run() {
+			/*
 			backboneButton.setEnabled(false);
 			exportJsonButton.setEnabled(false);
 			exportXmlButton.setEnabled(false);
@@ -1124,6 +1130,7 @@ public class BackboneExporter extends JDialog {
 			}
 			progressMonitor.close();
 			backboneButton.setEnabled(true);
+			*/
 		}
 	}
 }

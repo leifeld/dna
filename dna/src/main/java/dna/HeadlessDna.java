@@ -44,6 +44,7 @@ public class HeadlessDna implements Logger.LogListener {
 	/**
 	 * A function for generating a brief report with details about the database.
 	 */
+	/*
 	public void printDatabaseDetails() {
 		String s = "";
 		if (Dna.sql == null || Dna.sql.getConnectionProfile() == null || Dna.sql.getActiveCoder() == null) {
@@ -76,6 +77,7 @@ public class HeadlessDna implements Logger.LogListener {
 				"The active coder queried the database for the number of documents and statements and similar statistics and printed the output to the console.");
 		Dna.logger.log(l);
 	}
+	*/
 	
 	/**
 	 * Open a database connection and authenticate the coder.
@@ -98,6 +100,7 @@ public class HeadlessDna implements Logger.LogListener {
 	 *   an empty string ({@code ""}) for SQLite.
 	 * @return Indicator of successful coder authentication.
 	 */
+	/*
 	public boolean openDatabase(int coderId, String coderPassword, String type, String databaseUrl, String databaseName, int databasePort, String databaseUser, String databasePassword) {
 		if (coderId < 1) {
 			LogEvent l = new LogEvent(Logger.ERROR,
@@ -125,6 +128,7 @@ public class HeadlessDna implements Logger.LogListener {
 		}
 		return success;
 	}
+	*/
 	
 	/**
 	 * Open a connection profile and authenticate its coder.
@@ -135,6 +139,7 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @return Indicator of whether the database was opened and the coder was
 	 *   successfully authenticated.
 	 */
+	/*
 	public boolean openConnectionProfile(String fileName, String clearCoderPassword) {
 		ConnectionProfile cp = null;
 		try {
@@ -169,6 +174,7 @@ public class HeadlessDna implements Logger.LogListener {
 		}
 		return false;
 	}
+	*/
 	
 	/**
 	 * Save connection profile to a file.
@@ -369,6 +375,7 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param fileFormat             {@link String} with the file format. Valid values are {@code "csv"}, {@code "dl"}, {@code "graphml"}, and {@code null} (for no file export).
 	 * @return                       A {@link Matrix} object containing the resulting one-mode or two-mode network.
 	 */
+	/*
 	public void rNetwork(String networkType, String statementType, String variable1, boolean variable1Document, String variable2,
 						 boolean variable2Document, String qualifier, boolean qualifierDocument, String qualifierAggregation, String normalization, boolean includeIsolates,
 						 String duplicates, String startDate, String stopDate, String startTime, String stopTime, String timeWindow, int windowSize,
@@ -433,7 +440,8 @@ public class HeadlessDna implements Logger.LogListener {
 				outfile);
 
 		// step 2: filter
-		this.exporter.loadData();
+		// TODO: add back in
+		// this.exporter.loadData();
 		this.exporter.filterStatements();
 
 		// step 3: compute results
@@ -452,9 +460,11 @@ public class HeadlessDna implements Logger.LogListener {
 
 		// step 4: save to file
 		if (fileFormat != null && !fileFormat.equals("") && outfile != null && !outfile.equals("")) {
-			this.exporter.exportToFile();
+			// TODO: add back in
+			// this.exporter.exportToFile();
 		}
 	}
+	*/
 
 	/**
 	 * Generate data to construct a barplot.
@@ -480,6 +490,7 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param invertTypes       boolean indicating whether the document-level type values should be included (= {@code true}) rather than excluded.
 	 * @return                  A {@link BarplotResult} object.
 	 */
+	/*
 	public BarplotResult rBarplotData(String statementType, String variable, String qualifier, String duplicates,
 									  String startDate, String stopDate, String startTime, String stopTime,
 									  String[] excludeVariables, String[] excludeValues, String[] excludeAuthors,
@@ -532,13 +543,16 @@ public class HeadlessDna implements Logger.LogListener {
 				invertTypes);
 
 		// step 2: filter
-		this.exporter.loadData();
+		// TODO: add back in
+		// this.exporter.loadData();
 		this.exporter.filterStatements();
 
 		// step 3: compute results
-		BarplotResult barplotResult = this.exporter.generateBarplotData();
+		// TODO: add back in
+		BarplotResult barplotResult = null; // = this.exporter.generateBarplotData();
 		return barplotResult;
 	}
+	*/
 
 	/**
 	 * Compute backbone and set of redundant entities on the second mode in a discourse network.
@@ -574,6 +588,7 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param fileFormat             {@link String} with the file format. Valid values are {@code "xml"}, {@code "json"}, and {@code null} (for no file export).
 	 * @return                       A {@link BackboneResult} object containing the results.
 	 */
+	/*
 	public void rBackbone(double p, int T, String statementType, String variable1, boolean variable1Document, String variable2,
 						  boolean variable2Document, String qualifier, boolean qualifierDocument, String qualifierAggregation, String normalization,
 						  String duplicates, String startDate, String stopDate, String startTime, String stopTime,
@@ -669,7 +684,8 @@ public class HeadlessDna implements Logger.LogListener {
 				null);
 
 		// step 2: filter
-		this.exporter.loadData();
+		// TODO: add back in
+		// this.exporter.loadData();
 		this.exporter.filterStatements();
 		if (exporter.getFilteredStatements().size() == 0) {
 			LogEvent le = new LogEvent(Logger.ERROR,
@@ -717,6 +733,7 @@ public class HeadlessDna implements Logger.LogListener {
 			pb.stepTo(T);
 		}
 	}
+	*/
 
 	/* =================================================================================================================
 	 * Functions for managing attributes
