@@ -229,7 +229,7 @@ class Popup extends JDialog {
 				Entity[] entitiesArray = new Entity[entities.get(indexMap.get(i)).size()];
 				entitiesArray = entities.get(indexMap.get(i)).toArray(entitiesArray);
 				JComboBox<Entity> box = new JComboBox<Entity>(entitiesArray);
-				box.setRenderer(new AttributeComboBoxRenderer());
+				box.setRenderer(new EntityComboBoxRenderer());
 				box.setEditable(true);
 				
 				// paint the selected value in the attribute color

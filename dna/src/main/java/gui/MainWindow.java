@@ -81,7 +81,7 @@ public class MainWindow extends JFrame {
 	private ActionCoderRelationsEditor actionCoderRelationsEditor;
 	private ActionLoggerDialog actionLoggerDialog;
 	private ActionAboutWindow actionAboutWindow;
-	private Popup popup = null;
+	private PopupMulti popup = null;
 
 	/**
 	 * A document table swing worker thread.
@@ -134,12 +134,12 @@ public class MainWindow extends JFrame {
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		
 		List<Image> dnaIcons = new ArrayList<Image>();
-		dnaIcons.add(new ImageIcon(getClass().getResource("/icons/dna512.png")).getImage());
-		dnaIcons.add(new ImageIcon(getClass().getResource("/icons/dna256.png")).getImage());
-		dnaIcons.add(new ImageIcon(getClass().getResource("/icons/dna128.png")).getImage());
-		dnaIcons.add(new ImageIcon(getClass().getResource("/icons/dna64.png")).getImage());
-		dnaIcons.add(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage());
-		dnaIcons.add(new ImageIcon(getClass().getResource("/icons/dna16.png")).getImage());
+		dnaIcons.add(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna512.png"))).getImage());
+		dnaIcons.add(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna256.png"))).getImage());
+		dnaIcons.add(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna128.png"))).getImage());
+		dnaIcons.add(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna64.png"))).getImage());
+		dnaIcons.add(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna32.png"))).getImage());
+		dnaIcons.add(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna16.png"))).getImage());
 		this.setIconImages(dnaIcons);
 		
 		// close SQL connection before exit
@@ -160,96 +160,96 @@ public class MainWindow extends JFrame {
 		});
 		
 		// initialize actions
-		ImageIcon openDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon openDatabaseIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-database.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionOpenDatabase = new ActionOpenDatabase("Open DNA database", openDatabaseIcon, "Open a dialog window to establish a connection to a remote or file-based database", KeyEvent.VK_O);
 
-		ImageIcon closeDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon closeDatabaseIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-x.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionCloseDatabase = new ActionCloseDatabase("Close database", closeDatabaseIcon, "Close the connection to the current database and reset graphical user interface", KeyEvent.VK_X);
 		actionCloseDatabase.setEnabled(false);
 		
-		ImageIcon createDatabaseIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-plus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon createDatabaseIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-plus.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionCreateDatabase = new ActionCreateDatabase("Create new DNA database", createDatabaseIcon, "Open a dialog window to create a new remote or file-based database", KeyEvent.VK_C);
 		
-		ImageIcon openProfileIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-link.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon openProfileIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-link.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionOpenProfile = new ActionOpenProfile("Open connection profile", openProfileIcon, "Open a connection profile, which acts as a bookmark to a database", KeyEvent.VK_P);
 		
-		ImageIcon saveProfileIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-download.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon saveProfileIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-download.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionSaveProfile = new ActionSaveProfile("Save connection profile", saveProfileIcon, "Save a connection profile, which acts as a bookmark to a database", KeyEvent.VK_S);
 		actionSaveProfile.setEnabled(false);
 
-		ImageIcon regexEditorIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-prescription.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon regexEditorIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-prescription.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionRegexEditor = new ActionRegexEditor("Open regex editor", regexEditorIcon, "Open the regular expression editor to add or delete regex search terms for in-text highlighting", KeyEvent.VK_R);
 		actionRegexEditor.setEnabled(false);
 		
-		ImageIcon coderManagerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-users.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon coderManagerIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-users.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionCoderManager = new ActionCoderManager("Open coder manager", coderManagerIcon, "Open the coder manager to edit coders and their permissions.", KeyEvent.VK_M);
 		actionCoderManager.setEnabled(false);
 		
-		ImageIcon quitIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-logout.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon quitIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-logout.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionQuit = new ActionQuit("Exit / quit", quitIcon, "Close the Discourse Network Analyzer", KeyEvent.VK_Q);
 		
-		ImageIcon addDocumentIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-plus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon addDocumentIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-file-plus.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionAddDocument = new ActionAddDocument("Add document", addDocumentIcon, "Open a dialog window to enter details of a new document", KeyEvent.VK_A);
 		actionAddDocument.setEnabled(false);
 		
-		ImageIcon removeDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon removeDocumentsIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-file-minus.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionRemoveDocuments = new ActionRemoveDocuments("Remove document(s)", removeDocumentsIcon, "Remove the document(s) currently selected in the document table", KeyEvent.VK_R);
 		actionRemoveDocuments.setEnabled(false);
 		
-		ImageIcon editDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-edit.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon editDocumentsIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-edit.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionEditDocuments = new ActionEditDocuments("Edit document(s)", editDocumentsIcon, "Edit the document(s) currently selected in the document table", KeyEvent.VK_E);
 		actionEditDocuments.setEnabled(false);
 		
-		ImageIcon documentTableRefreshIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-refresh.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon documentTableRefreshIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-refresh.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionRefresh = new ActionRefresh("Refresh document table", documentTableRefreshIcon, "Fetch new documents from the database and insert them into the document table and remove deleted rows from the table", KeyEvent.VK_F);
 		actionRefresh.setEnabled(false);
 
-		ImageIcon batchImportDocumentsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-file-import.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon batchImportDocumentsIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-file-import.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionBatchImportDocuments = new ActionBatchImportDocuments("Import from directory", batchImportDocumentsIcon, "Batch-import all text files from a folder as new documents", KeyEvent.VK_I);
 		actionBatchImportDocuments.setEnabled(false);
 
-		ImageIcon importerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-database-import.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon importerIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-database-import.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionImporter = new ActionImporter("Import from DNA database", importerIcon, "Import documents, statements, entities, attributes, and regexes from another DNA database", KeyEvent.VK_D);
 		actionImporter.setEnabled(false);
 
-		ImageIcon searchDialogIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-search.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon searchDialogIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-search.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionSearchDialog = new ActionSearchDialog("Regex text search", searchDialogIcon, "Search for regular expressions in document texts and find matches", KeyEvent.VK_F);
 		actionSearchDialog.setEnabled(false);
 		this.getRootPane().getInputMap(JRootPane.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control F"),	"open search dialog");
 		this.getRootPane().getActionMap().put("open search dialog", actionSearchDialog);
 
-		ImageIcon recodeStatementsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-pencil.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon recodeStatementsIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-pencil.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionRecodeStatements = new ActionRecodeStatements("Edit multiple statements...", recodeStatementsIcon, "Recode the statements currently selected in the statement table", KeyEvent.VK_R);
 		actionRecodeStatements.setEnabled(false);
 
-		ImageIcon removeStatementsIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-square-minus.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon removeStatementsIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-square-minus.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionRemoveStatements = new ActionRemoveStatements("Remove statement(s)", removeStatementsIcon, "Remove the statement(s) currently selected in the statement table", KeyEvent.VK_D);
 		actionRemoveStatements.setEnabled(false);
 
-		ImageIcon statementTypeEditorIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-message-2.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon statementTypeEditorIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-message-2.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionStatementTypeEditor = new ActionStatementTypeEditor("Edit statement types", statementTypeEditorIcon, "Open the statement type editor to edit statement types and their variables.", KeyEvent.VK_T);
 		actionStatementTypeEditor.setEnabled(false);
 
-		ImageIcon attributeManagerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-list.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon attributeManagerIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-list.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionAttributeManager = new ActionAttributeManager("Open attribute manager", attributeManagerIcon, "Open the attribute manager to edit entities and their attribute values.", KeyEvent.VK_A);
 		actionAttributeManager.setEnabled(false);
 
-		ImageIcon networkExporterIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-affiliate.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon networkExporterIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-affiliate.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionNetworkExporter = new ActionNetworkExporter("Open network export dialog", networkExporterIcon, "Open a network export dialog window.", KeyEvent.VK_N);
 		actionNetworkExporter.setEnabled(false);
 
-		ImageIcon backboneExporterIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-arrows-split.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon backboneExporterIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-arrows-split.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionBackboneExporter = new ActionBackboneExporter("Backbone and redundant concepts", backboneExporterIcon, "Open a backbone and redundant set export dialog window.", KeyEvent.VK_B);
 		actionBackboneExporter.setEnabled(false);
 
-		ImageIcon coderRelationsEditorIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-user-check.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon coderRelationsEditorIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-user-check.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionCoderRelationsEditor = new ActionCoderRelationsEditor("Edit coder relations", coderRelationsEditorIcon, "Open the coder relations editor define whose documents and statements you can view and edit.", KeyEvent.VK_R);
 		actionCoderRelationsEditor.setEnabled(false);
 		
-		ImageIcon loggerIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-bug.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon loggerIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-bug.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionLoggerDialog = new ActionLoggerDialog("Display message log", loggerIcon, "Display a log of messages, warnings, and errors in a dialog window", KeyEvent.VK_L);
 		
-		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/dna32.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna32.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionAboutWindow = new ActionAboutWindow("About DNA", aboutIcon, "Display information about DNA", KeyEvent.VK_B);
 
 		// define models
@@ -330,7 +330,7 @@ public class MainWindow extends JFrame {
 				int rowCount = statementTable.getSelectedRowCount();
 				getStatementPanel().setMenuItemStatementsSelected(rowCount + " statements selected");
 				long statementTypeCount = IntStream.of(statementTable.getSelectedRows())
-					.map(r -> statementTable.convertRowIndexToModel(r))
+					.map(statementTable::convertRowIndexToModel)
 					.map(i -> statementTableModel.getRow(i).getStatementTypeId())
 					.distinct()
 					.count();
@@ -345,21 +345,21 @@ public class MainWindow extends JFrame {
 					int statementId = statementTableModel.getRow(selectedModelIndex).getId();
 					TableStatement s = Dna.sql.getTableStatement(statementId);
 					documentTablePanel.setSelectedDocumentId(s.getDocumentId());
-					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true &&
-							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true ||
+					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() &&
+							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() ||
 							Dna.sql.getActiveCoder().getId() == s.getCoderId()) &&
 							(Dna.sql.getActiveCoder().getId() == s.getCoderId() ||
-							Dna.sql.getActiveCoder().isPermissionEditOthersStatements(s.getCoderId()) == true)) {
+							Dna.sql.getActiveCoder().isPermissionEditOthersStatements(s.getCoderId()))) {
 						MainWindow.this.actionRemoveStatements.setEnabled(true);
 					} else {
 						MainWindow.this.actionRemoveStatements.setEnabled(false);
 					}
 					if (Dna.sql.getActiveCoder().getId() == s.getCoderId() ||
-							(Dna.sql.getActiveCoder().isPermissionViewOthersStatements() == true &&
-									Dna.sql.getActiveCoder().isPermissionViewOthersStatements(s.getCoderId()) == true)) {
+							(Dna.sql.getActiveCoder().isPermissionViewOthersStatements() &&
+									Dna.sql.getActiveCoder().isPermissionViewOthersStatements(s.getCoderId()))) {
 						int documentCoderId = documentTableModel.getRow(documentTableModel.getModelRowById(s.getDocumentId())).getCoder().getId();
 						if (Dna.sql.getActiveCoder().getId() != documentCoderId &&
-								(Dna.sql.getActiveCoder().isPermissionViewOthersDocuments() == false ||
+								(!Dna.sql.getActiveCoder().isPermissionViewOthersDocuments() ||
 								!Dna.sql.getActiveCoder().isPermissionViewOthersDocuments(documentCoderId))) {
 							LogEvent l = new LogEvent(Logger.MESSAGE,
 									"[GUI] Statement " + s.getId() + ": Cannot open statement popup due to lack of permissions.",
@@ -412,7 +412,7 @@ public class MainWindow extends JFrame {
 						if (coderIds[i] != Dna.sql.getActiveCoder().getId()) {
 							allOwned = false;
 						}
-						if (Dna.sql.getActiveCoder().isPermissionEditOthersStatements(coderIds[i]) == false && Dna.sql.getActiveCoder().getId() != coderIds[i]) {
+						if (!Dna.sql.getActiveCoder().isPermissionEditOthersStatements(coderIds[i]) && Dna.sql.getActiveCoder().getId() != coderIds[i]) {
 							allOthersEditPermitted = false;
 						}
 						if (!Dna.sql.getActiveCoder().isPermissionEditOthersStatements(coderIds[i]) && Dna.sql.getActiveCoder().getId() != coderIds[i]) {
@@ -425,9 +425,9 @@ public class MainWindow extends JFrame {
 							permitRecode = false;
 						}
 					}
-					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true &&
-							(allOwned == true ||
-							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() == true &&	allOthersEditPermitted == true))) {
+					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() &&
+							(allOwned ||
+							(Dna.sql.getActiveCoder().isPermissionEditOthersStatements() &&	allOthersEditPermitted))) {
 						MainWindow.this.actionRemoveStatements.setEnabled(true);
 					} else {
 						MainWindow.this.actionRemoveStatements.setEnabled(false);
@@ -495,8 +495,7 @@ public class MainWindow extends JFrame {
 			private void popupMenu(Component comp, int x, int y) {
 				JPopupMenu popmen = new JPopupMenu();
 				ArrayList<StatementType> statementTypes = Dna.sql.getStatementTypes();
-				for (int i = 0; i < statementTypes.size(); i++) {
-					StatementType statementType = statementTypes.get(i);
+				for (StatementType statementType : statementTypes) {
 					JMenuItem menuItem = new JMenuItem("Format as " + statementType.getLabel());
 					menuItem.setOpaque(true);
 					menuItem.setBackground(statementType.getColor());
@@ -508,7 +507,7 @@ public class MainWindow extends JFrame {
 							int documentId = documentTablePanel.getSelectedDocumentId();
 							int selectionStart = textWindow.getSelectionStart();
 							int selectionEnd = textWindow.getSelectionEnd();
-							Statement statement = new Statement(selectionStart,	selectionEnd, statementType.getId(), Dna.sql.getActiveCoder().getId(), documentId);
+							Statement statement = new Statement(selectionStart, selectionEnd, statementType.getId(), Dna.sql.getActiveCoder().getId(), documentId);
 							int statementId = Dna.sql.addNewStatement(statement);
 							if (statementId > 0) {
 								documentTableModel.increaseFrequency(documentId);
@@ -521,17 +520,16 @@ public class MainWindow extends JFrame {
 								Point location = textWindow.getLocationOnScreen();
 								textWindow.setSelectionStart(statement.getStart());
 								textWindow.setSelectionEnd(statement.getStop());
-								// TODO: re-activate popups
-								// newPopup(x, y, s, location);
+								newPopup(x, y, s, location);
 							}
 						}
 					});
 
 					// disable menu items if the coder does not have the permission to add statements or edit other coders' documents (if the document belongs to another coder)
 					int documentCoderId = documentTableModel.getRow(documentTable.convertRowIndexToModel(documentTable.getSelectedRow())).getCoder().getId();
-					if (Dna.sql.getActiveCoder().isPermissionAddStatements() == false ||
+					if (!Dna.sql.getActiveCoder().isPermissionAddStatements() ||
 							(documentCoderId != Dna.sql.getActiveCoder().getId() && !Dna.sql.getActiveCoder().isPermissionEditOthersDocuments()) ||
-							(documentCoderId != Dna.sql.getActiveCoder().getId() &&	!Dna.sql.getActiveCoder().isPermissionEditOthersDocuments(documentCoderId))) {
+							(documentCoderId != Dna.sql.getActiveCoder().getId() && !Dna.sql.getActiveCoder().isPermissionEditOthersDocuments(documentCoderId))) {
 						menuItem.setEnabled(false);
 					}
 				}
@@ -547,7 +545,7 @@ public class MainWindow extends JFrame {
 			 */
 			private void mouseListenPopup(MouseEvent me) throws ArrayIndexOutOfBoundsException {
 				if (me.isPopupTrigger()) {
-					if (!(textWindow.getSelectedText() == null) && Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionAddStatements() == true) {
+					if (!(textWindow.getSelectedText() == null) && Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionAddStatements()) {
 						popupMenu(me.getComponent(), me.getX(), me.getY());
 					}
 				}
@@ -715,7 +713,7 @@ public class MainWindow extends JFrame {
 		c.add(mainPanel);
 		this.pack();
 		this.setLocationRelativeTo(null);
-		//this.setVisible(true);
+		this.setVisible(true);
 	}
 	
 	/**
@@ -744,7 +742,7 @@ public class MainWindow extends JFrame {
 	 * @param s           The statement to show.
 	 * @param location    The location of the popup window.
 	 */
-	private void newPopup(double x, double y, Statement s, Point location) {
+	private void newPopup(double x, double y, TableStatement s, Point location) {
 		
 		// determine coders for the coder combo box in the popup window
 		ArrayList<Coder> eligibleCoders = null;
@@ -762,8 +760,7 @@ public class MainWindow extends JFrame {
 		}
 		
 		// create popup window
-		// TODO: add back in
-		// this.popup = new Popup(x, y, s, location, Dna.sql.getActiveCoder(), eligibleCoders);
+		this.popup = new PopupMulti(x, y, s, location, Dna.sql.getActiveCoder(), eligibleCoders);
 		
 		// duplicate button action listener
 		// TODO: add popup control back in
@@ -814,7 +811,6 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
-		*/
 		
 		// remove button action listener
 		JButton remove = popup.getRemoveButton();
@@ -845,13 +841,14 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
+		*/
 		
 		// save and close window or focus listener
-		if (popup.hasWindowDecoration() == true) {
+		if (popup.hasWindowDecoration()) {
 			popup.addWindowListener(new WindowAdapter() { // listener for the X button in the window decoration
 				public void windowClosing(WindowEvent e) {
-					if (popup.isEditable() == true) {
-						if (popup.saveContents(true) == true) { // check first if there are any changes; ask to save only if necessary
+					if (popup.isEditable()) {
+						if (popup.saveContents(true)) { // check first if there are any changes; ask to save only if necessary
 							String message = "Save changes in Statement " + s.getId() + "?";
 							int dialog = JOptionPane.showConfirmDialog(popup, message, "Confirmation", JOptionPane.YES_NO_OPTION);
 							if (dialog == 0) {
@@ -897,21 +894,18 @@ public class MainWindow extends JFrame {
 	 * 
 	 * @param popup  The popup window.
 	 */
-	private void popupSave(Popup popup) {
-		// TODO: add popup save functionality back in
-		/*
+	private void popupSave(PopupMulti popup) {
 		popup.saveContents(false);
 		if (popup.isCoderChanged()) {
 			if (Dna.sql.getActiveCoder().isColorByCoder()) {
 				textPanel.paintStatements();
 			}
-			Statement s = popup.getStatementCopy();
+			TableStatement s = popup.getTableStatementCopy();
 			int modelRow = statementTableModel.getModelRowById(s.getId());
 			statementTableModel.getRow(modelRow).setCoderName(s.getCoderName());
 			statementTableModel.getRow(modelRow).setCoderColor(s.getCoderColor());
 			statementTableModel.fireTableRowsUpdated(modelRow, modelRow);
 		}
-		*/
 	}
 
 	/**
@@ -1355,7 +1349,7 @@ public class MainWindow extends JFrame {
 				int coderId = documentTableModel.getRow(modelRow).getCoder().getId();
 				if (coderId != Dna.sql.getActiveCoder().getId()) {
 					allOwned = false; // does the active coder own all selected documents?
-					if (Dna.sql.getActiveCoder().isPermissionEditOthersDocuments(coderId) == false) {
+					if (!Dna.sql.getActiveCoder().isPermissionEditOthersDocuments(coderId)) {
 						allOthersEditPermitted = false;
 					}
 				}
@@ -1369,17 +1363,17 @@ public class MainWindow extends JFrame {
 		}
 
 		// enable or disable action for deleting documents depending on selection and user rights
-		if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionDeleteDocuments() == true &&
-				(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
-				allOthersEditPermitted == true) {
+		if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionDeleteDocuments() &&
+				(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() || allOwned) &&
+				allOthersEditPermitted) {
 			actionRemoveDocuments.setEnabled(true);
 		} else {
 			actionRemoveDocuments.setEnabled(false);
 		}
 		// enable or disable action for editing documents depending on selection and user rights
-		if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionEditDocuments() == true &&
-				(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() == true || allOwned == true) &&
-				allOthersEditPermitted == true) {
+		if (rowCount > 0 && Dna.sql.getActiveCoder().isPermissionEditDocuments() &&
+				(Dna.sql.getActiveCoder().isPermissionEditOthersDocuments() || allOwned) &&
+				allOthersEditPermitted) {
 			actionEditDocuments.setEnabled(true);
 		} else {
 			actionEditDocuments.setEnabled(false);
@@ -1388,18 +1382,13 @@ public class MainWindow extends JFrame {
 			textPanel.setContents(-1, "");
 			getStatementPanel().setDocumentId(-1);
 			statementTableModel.fireTableDataChanged();
-		} else if (rowCount == 1) {
+		} else {
 			int selectedRow = documentTable.getSelectedRow();
 			int selectedModelIndex = documentTable.convertRowIndexToModel(selectedRow);
 			int id = documentTableModel.getIdByModelRow(selectedModelIndex);
 			textPanel.setContents(id, Dna.sql.getDocumentText(id));
 			getStatementPanel().setDocumentId(id);
 			statementTableModel.fireTableDataChanged();
-		} else {
-			LogEvent l = new LogEvent(Logger.WARNING,
-					"[GUI] Negative number of rows in the document table!",
-					"When a document is selected in the document table in the DNA coding window, the text of the document is displayed in the text panel. When checking which row in the table was selected, it was found that the table contained negative numbers of documents. This is obviously an error. Please report it by submitting a bug report along with the saved log.");
-			Dna.logger.log(l);
 		}
 		
 		// enable or disable actions for adding and importing documents
@@ -1407,14 +1396,14 @@ public class MainWindow extends JFrame {
 			actionAddDocument.setEnabled(false);
 			actionBatchImportDocuments.setEnabled(false);
 		} else {
-			if (Dna.sql.getActiveCoder().isPermissionAddDocuments() == true) {
+			if (Dna.sql.getActiveCoder().isPermissionAddDocuments()) {
 				actionAddDocument.setEnabled(true);
 				actionBatchImportDocuments.setEnabled(true);
 			} else {
 				actionAddDocument.setEnabled(false);
 				actionBatchImportDocuments.setEnabled(false);
 			}
-			if (Dna.sql.getActiveCoder().isPermissionImportDocuments() == true) {
+			if (Dna.sql.getActiveCoder().isPermissionImportDocuments()) {
 				actionImporter.setEnabled(true);
 			} else {
 				actionImporter.setEnabled(false);
@@ -1430,12 +1419,12 @@ public class MainWindow extends JFrame {
 		actionCreateDatabase.setEnabled(true);
 		actionOpenProfile.setEnabled(true);
 		actionSaveProfile.setEnabled(true);
-		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditRegex() == true) {
+		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditRegex()) {
 			actionRegexEditor.setEnabled(true);
 		} else {
 			actionRegexEditor.setEnabled(false);
 		}
-		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
+		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditCoders()) {
 			actionCoderManager.setEnabled(true);
 		} else {
 			actionCoderManager.setEnabled(false);
@@ -1444,17 +1433,17 @@ public class MainWindow extends JFrame {
 		actionRefresh.setEnabled(true);
 		actionRecodeStatements.setEnabled(false);
 		actionRemoveStatements.setEnabled(false);
-		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditStatementTypes() == true) {
+		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditStatementTypes()) {
 			actionStatementTypeEditor.setEnabled(true);
 		} else {
 			actionStatementTypeEditor.setEnabled(false);
 		}
-		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditAttributes() == true) {
+		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditAttributes()) {
 			actionAttributeManager.setEnabled(true);
 		} else {
 			actionAttributeManager.setEnabled(false);
 		}
-		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditCoderRelations() == true && Dna.sql.getActiveCoder().getId() != 1) {
+		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditCoderRelations() && Dna.sql.getActiveCoder().getId() != 1) {
 			actionCoderRelationsEditor.setEnabled(true);
 		} else {
 			actionCoderRelationsEditor.setEnabled(false);
@@ -1800,7 +1789,7 @@ public class MainWindow extends JFrame {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			if (Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
+			if (Dna.sql.getActiveCoder().isPermissionEditCoders()) {
 				CoderManager cm = new CoderManager(MainWindow.this);
 				if (Dna.sql.getActiveCoder().getId() != 1) {
 					Coder coderCopy = Dna.sql.getCoder(Dna.sql.getConnectionProfile().getCoderId());
@@ -1830,28 +1819,28 @@ public class MainWindow extends JFrame {
 					}
 					
 					// enable or disable actions as necessary after update
-					if (Dna.sql.getActiveCoder().isPermissionEditCoders() == true) {
+					if (Dna.sql.getActiveCoder().isPermissionEditCoders()) {
 						actionCoderManager.setEnabled(true);
 					} else {
 						actionCoderManager.setEnabled(false);
 					}
 					changedDocumentTableSelection();
-					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements() == true) {
+					if (Dna.sql.getActiveCoder().isPermissionDeleteStatements()) {
 						actionRemoveStatements.setEnabled(true);
 					} else {
 						actionRemoveStatements.setEnabled(false);
 					}
-					if (Dna.sql.getActiveCoder().isPermissionEditStatementTypes() == true) {
+					if (Dna.sql.getActiveCoder().isPermissionEditStatementTypes()) {
 						actionStatementTypeEditor.setEnabled(true);
 					} else {
 						actionStatementTypeEditor.setEnabled(false);
 					}
-					if (Dna.sql.getActiveCoder().isPermissionEditAttributes() == true) {
+					if (Dna.sql.getActiveCoder().isPermissionEditAttributes()) {
 						actionAttributeManager.setEnabled(true);
 					} else {
 						actionAttributeManager.setEnabled(false);
 					}
-					if (Dna.sql.getActiveCoder().isPermissionEditCoderRelations() == true) {
+					if (Dna.sql.getActiveCoder().isPermissionEditCoderRelations()) {
 						actionCoderRelationsEditor.setEnabled(true);
 					} else {
 						actionCoderRelationsEditor.setEnabled(false);

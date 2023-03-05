@@ -3634,6 +3634,7 @@ public class Sql {
 	 * @return An array list of array lists of {@link Entity}
 	 *   objects.
 	 */
+	/*
 	public ArrayList<ArrayList<Entity>> getEntities(ArrayList<Integer> variableIds, boolean withAttributes) {
 		ArrayList<ArrayList<Entity>> entities = new ArrayList<ArrayList<Entity>>();
 		String sqlString = "SELECT ID, Value, Red, Green, Blue FROM ENTITIES WHERE VariableId = ?;";
@@ -3689,6 +3690,7 @@ public class Sql {
 		}
 		return entities;
 	}
+	*/
 
 	/**
 	 * Delete all entities corresponding to certain entity IDs. Check if the
@@ -4755,5 +4757,96 @@ public class Sql {
 			Dna.logger.log(l);
 		}
 		return (int) statementId;
+	}
+
+	public ArrayList<Entity> getEntities(int statementTypeId) {
+		ArrayList<Entity> entities = new ArrayList<>();
+		String q1 = "SELECT DISTINCT VariableId FROM VARIABLES " +
+				"INNER JOIN ROLEVARIABLELINKS ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId " +
+				"INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId " +
+				"WHERE StatementTypeId = ? ORDER BY 1 ASC;";
+		String q2a = "SELECT E.ID, E.VariableId, E.Value, E.Red, E.Green, E.Blue, E.ChildOf, " +
+				"CASE WHEN EXISTS (SELECT ID from DATASHORTTEXT D WHERE D.Entity = E.ID) THEN 1 ELSE 0 END AS InDatabase " +
+				"FROM ENTITIES E WHERE E.VariableId IN ("; // to be completed with variable listing, such as "1, 4, 6);"
+		// Alternative query string; not sure which one is faster:
+		// String q2b = "SELECT ID, VariableId, Value, Red, Green, Blue, ChildOf, " +
+		// 		"(SELECT COUNT(ID) FROM DATASHORTTEXT WHERE Entity = ENTITIES.ID) AS Count " +
+		// 		"FROM ENTITIES WHERE VariableId IN ("; // to be completed with variable listing, such as "1, 4, 6);"
+		String q3 = "SELECT EntityId, AttributeVariable, AttributeValue "
+				+ "FROM ATTRIBUTEVALUES AS AVAL "
+				+ "INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID "
+				+ "WHERE VariableId = ?;";
+		try (Connection conn = ds.getConnection();
+			 PreparedStatement s1 = conn.prepareStatement(q1);
+			 PreparedStatement s3 = conn.prepareStatement(q3)) {
+			HashMap<Integer, Integer> indexMap = new HashMap<Integer, Integer>(); // entity ID to index
+			ResultSet r;
+			int entityId;
+
+			// get variable IDs corresponding to the provided statement type
+			s1.setInt(1, statementTypeId);
+			r = s1.executeQuery();
+			ArrayList<Integer> variableIdList = new ArrayList<>();
+			while (r.next()) {
+				variableIdList.add(r.getInt("VariableId"));
+			}
+			String variableIdString = variableIdList
+					.stream()
+					.map(v -> "" + v)
+					.collect(Collectors.joining(", "));
+
+			// get all entities for all variables related to the statement type
+			PreparedStatement s2 = conn.prepareStatement(q2a + variableIdString + ");");
+			r = s2.executeQuery();
+			while (r.next()) {
+				entityId = r.getInt("ID");
+				indexMap.put(entityId, entities.size());
+				entities.add(new Entity(entityId,
+						r.getInt("VariableId"),
+						r.getString("Value"),
+						new Color(r.getInt("Red"),
+								r.getInt("Green"),
+								r.getInt("Blue")),
+						r.getInt("ChildOf"),
+						r.getInt("InDatabase") == 1,
+						new HashMap<String, String>()));
+			}
+
+			// add attributes to the list elements via map
+			for (Integer variableId : variableIdList) {
+				s3.setInt(1, variableId);
+				r = s3.executeQuery();
+				while (r.next()) {
+					entities.get(indexMap.get(r.getInt("EntityId"))).getAttributeValues().put(r.getString("AttributeVariable"), r.getString("AttributeValue"));
+				}
+			}
+		} catch (SQLException e1) {
+			LogEvent e = new LogEvent(Logger.WARNING,
+					"[SQL] Entities could not be retrieved.",
+					"Entities for statement type " + statementTypeId + " could not be retrieved. Check if the database is still there and/or if the connection has been interrupted, then try again.",
+					e1);
+			Dna.logger.log(e);
+		}
+		return entities;
+	}
+
+	public ArrayList<RoleVariableLink> getRoleVariableLinks(int statementTypeId) {
+		ArrayList<RoleVariableLink> roleVariableLinks = new ArrayList<>();
+		try (Connection conn = ds.getConnection();
+			 PreparedStatement s1 = conn.prepareStatement("SELECT ROLEVARIABLELINKS.ID, RoleId, VariableId FROM ROLEVARIABLELINKS INNER JOIN ROLES ON ROLEVARIABLELINKS.RoleId = ROLES.ID WHERE ROLES.StatementTypeId = ?;");) {
+			ResultSet r;
+			s1.setInt(1, statementTypeId);
+			r = s1.executeQuery();
+			while (r.next()) {
+				roleVariableLinks.add(new RoleVariableLink(r.getInt("ID"), r.getInt("RoleId"), r.getInt("VariableId")));
+			}
+		} catch (SQLException e1) {
+			LogEvent e = new LogEvent(Logger.WARNING,
+					"[SQL] Role-value links could not be retrieved.",
+					"Role-value links could not be retrieved from the database. Check if the database is still there and/or if the connection has been interrupted, then try again.",
+					e1);
+			Dna.logger.log(e);
+		}
+		return roleVariableLinks;
 	}
 }
