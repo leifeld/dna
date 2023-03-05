@@ -605,10 +605,11 @@ public class Sql {
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
 					+ "StatementId MEDIUMINT UNSIGNED NOT NULL, "
 					+ "RoleVariableLinkId SMALLINT UNSIGNED NOT NULL, "
-					+ "Entity INT NOT NULL REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
+					+ "Entity MEDIUMINT UNSIGNED NOT NULL, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(RoleVariableLinkId) REFERENCES ROLEVARIABLELINK(ID) ON DELETE CASCADE, "
-					+ "UNIQUE KEY (StatementId, RoleVariableLinkId), "
+					+ "FOREIGN KEY(Entity) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
+					+ "UNIQUE KEY (StatementId, VariableId), "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
@@ -2902,7 +2903,7 @@ public class Sql {
 		}
 	}
 	*/
-	
+
 	/**
 	 * Create a copy of a statement in the database.
 	 * 
@@ -4109,7 +4110,7 @@ public class Sql {
 
 	/**
 	 * Get an array list of all statement types in the database.
-	 * 
+	 *
 	 * @return An ArrayList of {@link model.StatementType StatementType} objects.
 	 */
 	public ArrayList<StatementType> getStatementTypes() {
