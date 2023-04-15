@@ -1,18 +1,31 @@
 package model;
 
 public class RoleValue extends Variable {
-    private int roleVariableLinkId, dataId, roleId, statementTypeId;
+    private int roleVariableLinkId, roleId, statementTypeId;
     private String roleName;
     private Object value;
 
-    public RoleValue(int variableId, String variableName, String dataType, Object value, int roleVariableLinkId, int dataId, int roleId, String roleName, int statementTypeId) {
+    public RoleValue(int variableId, String variableName, String dataType, Object value, int roleVariableLinkId, int roleId, String roleName, int statementTypeId) {
         super(variableId, variableName, dataType);
         this.value = value;
         this.roleVariableLinkId = roleVariableLinkId;
-        this.dataId = dataId;
         this.roleId = roleId;
         this.roleName = roleName;
         this.statementTypeId = statementTypeId;
+    }
+
+    /**
+     * Copy constructor. Creates a deep copy of an existing role value object.
+     *
+     * @param roleValue An existing role value object that needs to be duplicated.
+     */
+    public RoleValue(RoleValue roleValue) {
+        super(roleValue.getVariableId(), roleValue.getVariableName(), roleValue.getDataType());
+        this.value = roleValue.getValue();
+        this.roleVariableLinkId = roleValue.getRoleVariableLinkId();
+        this.roleId = roleValue.getRoleId();
+        this.roleName = roleValue.getRoleName();
+        this.statementTypeId = roleValue.getStatementTypeId();
     }
 
     public int getRoleVariableLinkId() {
@@ -21,14 +34,6 @@ public class RoleValue extends Variable {
 
     public void setRoleVariableLinkId(int roleVariableLinkId) {
         this.roleVariableLinkId = roleVariableLinkId;
-    }
-
-    public int getDataId() {
-        return dataId;
-    }
-
-    public void setDataId(int dataId) {
-        this.dataId = dataId;
     }
 
     public int getRoleId() {

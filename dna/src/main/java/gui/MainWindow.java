@@ -1208,13 +1208,13 @@ public class MainWindow extends JFrame {
 						.collect(Collectors.joining(", "))
 						.toString();
 			}
-			String q4 = "SELECT DATASHORTTEXT.ID, DATASHORTTEXT.StatementId, DATASHORTTEXT.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, Value, ROLES.StatementTypeId FROM DATASHORTTEXT INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATASHORTTEXT.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE DATASHORTTEXT.StatementId IN (" + stid + ") " +
+			String q4 = "SELECT DATASHORTTEXT.StatementId, DATASHORTTEXT.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, Value, ROLES.StatementTypeId FROM DATASHORTTEXT INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATASHORTTEXT.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ENTITIES ON ENTITIES.VariableId = VARIABLES.ID AND ENTITIES.ID = DATASHORTTEXT.Entity INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE DATASHORTTEXT.StatementId IN (" + stid + ") " +
 					"UNION " +
-					"SELECT DATALONGTEXT.ID, DATALONGTEXT.StatementId, DATALONGTEXT.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, Value, ROLES.StatementTypeId FROM DATALONGTEXT INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATALONGTEXT.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE DATALONGTEXT.StatementId IN (" + stid + ") " +
+					"SELECT DATALONGTEXT.StatementId, DATALONGTEXT.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, Value, ROLES.StatementTypeId FROM DATALONGTEXT INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATALONGTEXT.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE DATALONGTEXT.StatementId IN (" + stid + ") " +
 					"UNION " +
-					"SELECT DATAINTEGER.ID, DATAINTEGER.StatementId, DATAINTEGER.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, " + q4castInteger + ", ROLES.StatementTypeId FROM DATAINTEGER INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATAINTEGER.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE DATAINTEGER.StatementId IN (" + stid + ") " +
+					"SELECT DATAINTEGER.StatementId, DATAINTEGER.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, " + q4castInteger + ", ROLES.StatementTypeId FROM DATAINTEGER INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATAINTEGER.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE DATAINTEGER.StatementId IN (" + stid + ") " +
 					"UNION " +
-					"SELECT DATABOOLEAN.ID, DATABOOLEAN.StatementId, DATABOOLEAN.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, " + q4castBoolean + ", ROLES.StatementTypeId FROM DATABOOLEAN INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATABOOLEAN.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE DATABOOLEAN.StatementId IN (" + stid + ");";
+					"SELECT DATABOOLEAN.StatementId, DATABOOLEAN.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, " + q4castBoolean + ", ROLES.StatementTypeId FROM DATABOOLEAN INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATABOOLEAN.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE DATABOOLEAN.StatementId IN (" + stid + ");";
 
 			int statementTypeId, statementId, variableId;
 			Color sColor, cColor;
@@ -1250,7 +1250,7 @@ public class MainWindow extends JFrame {
 
 				r4 = s4.executeQuery();
 				while (r4.next()) {
-					statementMap.get(r4.getInt("StatementId")).getRoleValues().add(new RoleValue(r4.getInt("VariableId"), r4.getString("VariableName"), r4.getString("DataType"), r4.getString("Value"), r4.getInt("RoleVariableLinkId"), r4.getInt("ID"), r4.getInt("RoleId"), r4.getString("RoleName"), r4.getInt("StatementTypeId")));
+					statementMap.get(r4.getInt("StatementId")).getRoleValues().add(new RoleValue(r4.getInt("VariableId"), r4.getString("VariableName"), r4.getString("Value"), r4.getInt("RoleVariableLinkId"), r4.getInt("ID"), r4.getInt("RoleId"), r4.getString("RoleName"), r4.getInt("StatementTypeId")));
 				}
 				
 				// publish all statements

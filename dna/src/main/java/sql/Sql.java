@@ -3037,10 +3037,10 @@ public class Sql {
 		try (Connection conn = ds.getConnection();
 				PreparedStatement s1 = conn.prepareStatement(s1Query);
 				PreparedStatement s2 = conn.prepareStatement("SELECT ROLEVARIABLELINKS.ID AS RoleVariableLinkId, ROLES.ID AS RoleId, RoleName, VariableId, Variable AS VariableName, DataType FROM ROLES INNER JOIN ROLEVARIABLELINKS INNER JOIN VARIABLES WHERE ROLES.ID = ROLEVARIABLELINKS.RoleId AND VariableId = VARIABLES.ID AND StatementTypeId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT E.ID AS EntityId, StatementId, E.VariableId, DST.RoleVariableLinkId, DST.ID AS DataId, E.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ENTITIES AS E ON E.ID = DST.Entity WHERE DST.StatementId = ? AND DST.RoleVariableLinkId = ?;");
-				PreparedStatement s4 = conn.prepareStatement("SELECT DATALONGTEXT.ID AS DataId, Value FROM DATALONGTEXT WHERE RoleVariableLinkId = ? AND StatementId = ?;");
-				PreparedStatement s5 = conn.prepareStatement("SELECT DATAINTEGER.ID AS DataId, Value FROM DATAINTEGER WHERE RoleVariableLinkId = ? AND StatementId = ?;");
-				PreparedStatement s6 = conn.prepareStatement("SELECT DATABOOLEAN.ID AS DataId, Value FROM DATABOOLEAN WHERE RoleVariableLinkId = ? AND StatementId = ?;");
+				PreparedStatement s3 = conn.prepareStatement("SELECT E.ID AS EntityId, StatementId, E.VariableId, DST.RoleVariableLinkId, E.Value, Red, Green, Blue, ChildOf FROM DATASHORTTEXT AS DST LEFT JOIN ENTITIES AS E ON E.ID = DST.Entity WHERE DST.StatementId = ? AND DST.RoleVariableLinkId = ?;");
+				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE RoleVariableLinkId = ? AND StatementId = ?;");
+				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE RoleVariableLinkId = ? AND StatementId = ?;");
+				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE RoleVariableLinkId = ? AND StatementId = ?;");
 				PreparedStatement s7 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
 			ResultSet r1, r2, r3, r4;
 			
@@ -3081,28 +3081,28 @@ public class Sql {
 			            		map.put(r4.getString("AttributeVariable"), r4.getString("AttributeValue"));
 			            	}
 			            	Entity entity = new Entity(entityId, variableId, r3.getString("Value"), aColor, r3.getInt("ChildOf"), true, map);
-							roleValues.add(new RoleValue(variableId, variableName, dataType, entity, roleVariableLinkId, r3.getInt("DataId"), roleId, roleName, statementTypeId));
+							roleValues.add(new RoleValue(variableId, variableName, dataType, entity, roleVariableLinkId, roleId, roleName, statementTypeId));
 				    	}
 			    	} else if (dataType.equals("long text")) {
 				    	s4.setInt(1, roleVariableLinkId);
 				    	s4.setInt(2, statementId);
 				    	r3 = s4.executeQuery();
 				    	while (r3.next()) {
-							roleValues.add(new RoleValue(variableId, variableName, dataType, r3.getString("Value"), roleVariableLinkId, r3.getInt("DataId"), roleId, roleName, statementTypeId));
+							roleValues.add(new RoleValue(variableId, variableName, dataType, r3.getString("Value"), roleVariableLinkId, roleId, roleName, statementTypeId));
 				    	}
 			    	} else if (dataType.equals("integer")) {
 				    	s5.setInt(1, roleVariableLinkId);
 				    	s5.setInt(2, statementId);
 				    	r3 = s5.executeQuery();
 				    	while (r3.next()) {
-							roleValues.add(new RoleValue(variableId, variableName, dataType, r3.getInt("Value"), roleVariableLinkId, r3.getInt("DataId"), roleId, roleName, statementTypeId));
+							roleValues.add(new RoleValue(variableId, variableName, dataType, r3.getInt("Value"), roleVariableLinkId, roleId, roleName, statementTypeId));
 				    	}
 			    	} else if (dataType.equals("boolean")) {
 				    	s6.setInt(1, roleVariableLinkId);
 				    	s6.setInt(2, statementId);
 				    	r3 = s6.executeQuery();
 				    	while (r3.next()) {
-							roleValues.add(new RoleValue(variableId, variableName, dataType, r3.getInt("Value"), roleVariableLinkId, r3.getInt("DataId"), roleId, roleName, statementTypeId));
+							roleValues.add(new RoleValue(variableId, variableName, dataType, r3.getInt("Value"), roleVariableLinkId, roleId, roleName, statementTypeId));
 				    	}
 			    	}
 			    }
@@ -4502,6 +4502,31 @@ public class Sql {
 			Dna.logger.log(le);
 		}
 		return variables;
+	}
+
+	public ArrayList<Role> getRoles() {
+		ArrayList<Role> roles = new ArrayList<Role>();
+		try (Connection conn = getDataSource().getConnection();
+			 PreparedStatement s = conn.prepareStatement("SELECT * FROM ROLES;")) {
+			ResultSet r = s.executeQuery();
+			while (r.next()) {
+				roles.add(new Role(r.getInt("ID"),
+						r.getString("RoleName"),
+						new Color(r.getInt("Red"), r.getInt("Green"), r.getInt("Blue")),
+						r.getInt("StatementTypeId"),
+						r.getInt("Position"),
+						r.getInt("NumMin"),
+						r.getInt("NumMax"),
+						r.getInt("NumDefault")));
+			}
+		} catch (SQLException e) {
+			LogEvent le = new LogEvent(Logger.ERROR,
+					"[SQL] Could not retrieve roles from database.",
+					"Tried to load roles from the database, but there was a problem retrieving the roles.",
+					e);
+			Dna.logger.log(le);
+		}
+		return roles;
 	}
 
 	/*

@@ -4,6 +4,8 @@ import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class TableStatement extends Statement {
     private String text, coderName, statementTypeLabel;
