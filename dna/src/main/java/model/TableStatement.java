@@ -4,8 +4,7 @@ import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.Objects;
 
 public class TableStatement extends Statement {
     private String text, coderName, statementTypeLabel;
@@ -110,5 +109,34 @@ public class TableStatement extends Statement {
 
     public void setRoleValues(ArrayList<RoleValue> roleValues) {
         this.roleValues = roleValues;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        // self check
+        if (this == o)
+            return true;
+        // null check
+        if (o == null)
+            return false;
+        // type check and cast
+        if (getClass() != o.getClass())
+            return false;
+        TableStatement s = (TableStatement) o;
+        // field comparison
+        return Objects.equals(this.getCoderColor(), s.getCoderColor())
+                && Objects.equals(this.getCoderName(), s.getCoderName())
+                && Objects.equals(this.getCoderId(), s.getCoderId())
+                && Objects.equals(this.getId(), s.getId())
+                && Objects.equals(this.getStart(), s.getStart())
+                && Objects.equals(this.getStop(), s.getStop())
+                && Objects.equals(this.getDateTime(), s.getDateTime())
+                && Objects.equals(this.getStatementTypeColor(), s.getStatementTypeColor())
+                && Objects.equals(this.getStatementTypeLabel(), s.getStatementTypeLabel())
+                && Objects.equals(this.getStatementTypeId(), s.getStatementTypeId())
+                && Objects.equals(this.getDocumentId(), s.getDocumentId())
+                && Objects.equals(this.getText(), s.getText())
+                && this.getRoleValues().size() == s.getRoleValues().size()
+                && Objects.equals(this.getRoleValues(), s.getRoleValues());
     }
 }

@@ -10,10 +10,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,24 +37,24 @@ import logger.Logger;
  * for establishing connections, and methods for interacting with the database.
  */
 public class Sql {
-	
+
 	/**
 	 * The {@link sql.ConnectionProfile ConnectionProfile} to be used for
 	 * connecting to a database.
 	 */
 	private ConnectionProfile cp;
-	
+
 	/**
 	 * The {@link javax.sql.DataSource DataSource} to be used for connections.
 	 */
 	private DataSource ds;
-	
+
 	/**
 	 * The active {@link model.Coder Coder} including permissions.
 	 */
 	private Coder activeCoder;
-	
-	
+
+
 	/* =========================================================================
 	 * Setup
 	 * ====================================================================== */
@@ -66,7 +63,7 @@ public class Sql {
 	 * Create an instance of the Sql class and create a data source based on a
 	 * {@link sql.ConnectionProfile connectionProfile} object for SQLite,
 	 * MySQL, or PostgreSQL.
-	 * 
+	 *
 	 * @param cp    A {@link sql.ConnectionProfile connectionProfile} object,
 	 *   which contains connection details for a DNA database.
 	 * @param test  Boolean indicating whether this is just a connection test.
@@ -87,7 +84,7 @@ public class Sql {
 
 	/**
 	 * Get the connection profile.
-	 * 
+	 *
 	 * @return A {@link sql.ConnectionProfile connectionProfile} object.
 	 */
 	public ConnectionProfile getConnectionProfile() {
@@ -96,7 +93,7 @@ public class Sql {
 
 	/**
 	 * Set the connection profile and save the current coder with permissions.
-	 * 
+	 *
 	 * @param cp    A {@link sql.ConnectionProfile connectionProfile} object.
 	 * @param test  Boolean indicating whether this is just a connection test.
 	 *   In that event, it is assumed that no data structures/tables are present
@@ -151,7 +148,7 @@ public class Sql {
 		        		e);
 		        Dna.logger.log(l);
 			}
-			
+
 		} else {
 			LogEvent l = new LogEvent(Logger.ERROR,
 	        		"[SQL] Failed to regognize database format.",
@@ -223,7 +220,7 @@ public class Sql {
 
 	/**
 	 * Get the active coder.
-	 * 
+	 *
 	 * @return A {@link model.Coder Coder} object with all permissions.
 	 */
 	public Coder getActiveCoder() {
@@ -232,7 +229,7 @@ public class Sql {
 
 	/**
 	 * Get the data source stored in the {@link sql.Sql Sql} object.
-	 * 
+	 *
 	 * @return A {@link javax.sql.DataSource DataSource} object.
 	 */
 	public DataSource getDataSource() {
@@ -241,7 +238,7 @@ public class Sql {
 
 	/**
 	 * Retrieve a coder from the database and set it as the active coder.
-	 * 
+	 *
 	 * @param coderId  The ID of the coder to be selected.
 	 */
 	public void selectCoder(int coderId) {
@@ -256,7 +253,7 @@ public class Sql {
 
 	/**
 	 * Select a specified coder as the active coder.
-	 * 
+	 *
 	 * @param coder  The coder to be selected.
 	 */
 	public void selectCoder(Coder coder) {
@@ -278,11 +275,11 @@ public class Sql {
 
 	/**
 	 * Create data structures (tables and basic contents) in a new DNA database.
-	 * 
+	 *
 	 * @param encryptedAdminPassword  The encrypted/hashed password of the
 	 *   {@code Admin} coder for storage in the {@code CODERS} table of the
 	 *   database.
-	 *   
+	 *
 	 * @return A {@link boolean} indicator of whether the data structures were
 	 *   successfully created ({@code true}) or rolled back ({@code false}).
 	 */
@@ -356,10 +353,12 @@ public class Sql {
 					+ "Red INTEGER NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green INTEGER NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue INTEGER NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
+					+ "DefaultVariableId INTEGER, "
 					+ "CHECK (NumMax >= NumMin), "
 					+ "CHECK (NumDefault >= NumMin), "
 					+ "CHECK (NumMax >= NumDefault), "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(DefaultVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "UNIQUE (RoleName, StatementTypeId), "
 					+ "UNIQUE (StatementTypeId, Position));");
 			s.add("CREATE TABLE IF NOT EXISTS ROLEVARIABLELINKS("
@@ -526,7 +525,9 @@ public class Sql {
 					+ "Red SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
+					+ "DefaultVariableId SMALLINT UNSIGNED NOT NULL, "
 					+ "FOREIGN KEY(StatementTypeId) REFERENCES STATEMENTTYPES(ID) ON DELETE CASCADE, "
+					+ "FOREIGN KEY(DefaultVariableId) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "CONSTRAINT ck_min_max CHECK (NumMax >= NumMin), "
 					+ "CONSTRAINT ck_min_default CHECK (NumDefault >= NumMin), "
 					+ "CONSTRAINT ck_max_default CHECK (NumMax >= NumDefault), "
@@ -702,6 +703,7 @@ public class Sql {
 					+ "Red SMALLINT NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green SMALLINT NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue SMALLINT NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
+					+ "DefaultVariableId INT NOT NULL CHECK(DefaultVariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
 					+ "CONSTRAINT ck_min_max CHECK (NumMax >= NumMin), "
 					+ "CONSTRAINT ck_min_default CHECK (NumDefault >= NumMin), "
 					+ "CONSTRAINT ck_max_default CHECK (NumMax >= NumDefault), "
@@ -859,14 +861,14 @@ public class Sql {
 		return success;
 	}
 
-	
+
 	/* =========================================================================
 	 * Coders
 	 * ====================================================================== */
 
 	/**
 	 * Retrieve a coder based on its ID. Works with DNA 2 and 3.
-	 * 
+	 *
 	 * @param coderId  The ID of the coder to be retrieved from the database.
 	 * @return         The coder to be retrieved, as a {@link model.Coder
 	 *   Coder} object.
@@ -879,7 +881,7 @@ public class Sql {
 				PreparedStatement s3 = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;");
 				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM SETTINGS WHERE Property = 'version';")) {
 			ResultSet rs1, rs2, rs3;
-			
+
 			// get DNA version
 			int v = 3;
 			rs1 = s4.executeQuery();
@@ -894,7 +896,7 @@ public class Sql {
 			if (v == 2) {
 				s5V2 = conn.prepareStatement("SELECT Type, Permission FROM CODERPERMISSIONS WHERE Coder = ?;");
 			}
-			
+
 			// get coder
         	int sourceCoderId, targetCoderId;
         	String targetCoderName = null;
@@ -903,13 +905,13 @@ public class Sql {
 			rs1 = s1.executeQuery();
 			while (rs1.next()) {
         		sourceCoderId = rs1.getInt("ID");
-        		
+
         		// get coder relations
         		s2.setInt(1, sourceCoderId);
 				rs2 = s2.executeQuery();
 				HashMap<Integer, CoderRelation> map = new HashMap<Integer, CoderRelation>();
 				while (rs2.next()) {
-					
+
 					// get details from other coder and create coder relations map
 					targetCoderId = rs2.getInt("OtherCoder");
 					s3.setInt(1, targetCoderId);
@@ -928,7 +930,7 @@ public class Sql {
 									rs2.getInt("viewStatements") == 1,
 									rs2.getInt("editStatements") == 1));
 				}
-				
+
 				// create coder
 				if (v == 2) { // DNA 2.0
 					s5V2.setInt(1, sourceCoderId);
@@ -1107,7 +1109,7 @@ public class Sql {
 
 	/**
 	 * Retrieve a list of coders in the database. Works with DNA 2 and 3.
-	 * 
+	 *
 	 * @return An {@link java.util.ArrayList ArrayList} of {@link model.Coder
 	 *   Coder} objects.
 	 */
@@ -1119,7 +1121,7 @@ public class Sql {
 				PreparedStatement s3 = conn.prepareStatement("SELECT Name, Red, Green, Blue FROM CODERS WHERE ID = ?;");
 				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM SETTINGS WHERE Property = 'version';")) {
 			ResultSet rs1, rs2, rs3;
-			
+
 			// get DNA version
 			int v = 3;
 			rs1 = s4.executeQuery();
@@ -1129,12 +1131,12 @@ public class Sql {
 				}
 			}
 			rs1.close();
-			
+
 			PreparedStatement s5V2 = null;
 			if (v == 2) {
 				s5V2 = conn.prepareStatement("SELECT Type, Permission FROM CODERPERMISSIONS WHERE Coder = ?;");
 			}
-			
+
 			// get coders
         	rs1 = s1.executeQuery();
         	int sourceCoderId, targetCoderId;
@@ -1142,13 +1144,13 @@ public class Sql {
         	Color targetCoderColor = null;
         	while (rs1.next()) {
         		sourceCoderId = rs1.getInt("ID");
-        		
+
         		// get coder relations
         		s2.setInt(1, sourceCoderId);
 				rs2 = s2.executeQuery();
 				HashMap<Integer, CoderRelation> map = new HashMap<Integer, CoderRelation>();
 				while (rs2.next()) {
-					
+
 					// get details from other coder and create coder relations map
 					targetCoderId = rs2.getInt("OtherCoder");
 					s3.setInt(1, targetCoderId);
@@ -1168,7 +1170,7 @@ public class Sql {
 									rs2.getInt("editStatements") == 1));
 				}
 				rs2.close();
-				
+
 				// create coder and add to list
 				if (v == 2) { // DNA 2.0
 					s5V2.setInt(1, sourceCoderId);
@@ -1349,7 +1351,7 @@ public class Sql {
 	 * Retrieve a list of coders in the database, just with the names, IDs, and
 	 * colors, without any further information. This serves to allow R users to
 	 * see what the IDs are that correspond to coders.
-	 * 
+	 *
 	 * @return An {@link java.util.ArrayList ArrayList} of {@link model.Coder
 	 *   Coder} objects with only the ID, coder name, and color as useful
 	 *   information.
@@ -1379,7 +1381,7 @@ public class Sql {
 
 	/**
 	 * Create a new coder with default permissions and coder relations.
-	 * 
+	 *
 	 * @param coderName     Name of the new coder.
 	 * @param coderColor    Color of the new coder.
 	 * @param passwordHash  Encrypted password hash for the new coder.
@@ -1396,7 +1398,7 @@ public class Sql {
 				PreparedStatement s3 = conn.prepareStatement(sql3);
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
-			
+
 			// add new coder
 			s1.setString(1, coderName);
 			s1.setInt(2, coderColor.getRed());
@@ -1404,13 +1406,13 @@ public class Sql {
 			s1.setInt(4, coderColor.getBlue());
 			s1.setString(5, passwordHash);
 			s1.executeUpdate();
-			
+
 			// find ID of the new coder
 			ResultSet generatedKeysResultSet = s1.getGeneratedKeys();
 			while (generatedKeysResultSet.next()) {
 				coderId = generatedKeysResultSet.getInt(1);
 			}
-			
+
 			// identify other coders
 			s3.setInt(1, coderId);
 			ResultSet r = s3.executeQuery();
@@ -1419,13 +1421,13 @@ public class Sql {
 				s2.setInt(1, coderId);
 				s2.setInt(2, r.getInt(1));
 				s2.executeUpdate();
-				
+
 				// coder relations from other coders to current coder
 				s2.setInt(1, r.getInt(1));
 				s2.setInt(2, coderId);
 				s2.executeUpdate();
 			}
-			
+
         	conn.commit();
         	LogEvent l = new LogEvent(Logger.MESSAGE,
         			"[SQL] New Coder " + coderId + " successfully created.",
@@ -1440,10 +1442,10 @@ public class Sql {
 		}
 		return coderId;
 	}
-	
+
 	/**
 	 * Set a new font size for a coder.
-	 * 
+	 *
 	 * @param coderId   ID of the coder in the database.
 	 * @param fontSize  New font size, between 1 and 99.
 	 */
@@ -1468,7 +1470,7 @@ public class Sql {
 	 * whether the statements in the text should be painted according to the
 	 * color of the respective coder (= 1) or the color of the respective
 	 * statement type (= 0).
-	 * 
+	 *
 	 * @param coderId       ID of the coder in the database.
 	 * @param colorByCoder  Color statements in the text by coder color?
 	 */
@@ -1494,7 +1496,7 @@ public class Sql {
 
 	/**
 	 * Set a new popup window width for a coder.
-	 * 
+	 *
 	 * @param coderId     ID of the coder in the database.
 	 * @param popupWidth  New popup window width, between 100 and 9999.
 	 */
@@ -1516,7 +1518,7 @@ public class Sql {
 
 	/**
 	 * Update window decoration setting for a coder.
-	 * 
+	 *
 	 * @param coderId     ID of the coder in the database.
 	 * @param decoration  boolean value indicating whether popup windows should
 	 *   have buttons and a dialog frame for the user.
@@ -1543,7 +1545,7 @@ public class Sql {
 
 	/**
 	 * Update popup autocomplete setting for a coder.
-	 * 
+	 *
 	 * @param coderId       ID of the coder in the database.
 	 * @param autoComplete  boolean value indicating whether autocomplete should
 	 *   be set as active for the coder.
@@ -1567,10 +1569,10 @@ public class Sql {
         	Dna.logger.log(l);
 		}
 	}
-	
+
 	/**
 	 * Update an existing coder in the database.
-	 * 
+	 *
 	 * @param coder            The coder with all details, permissions, and
 	 *   coder relations.
 	 * @param newPasswordHash  The new password hash String. Can be {@code ""}
@@ -1614,7 +1616,7 @@ public class Sql {
 				+ "(Coder, OtherCoder, viewDocuments, editDocuments, viewStatements, editStatements) "
 				+ "VALUES (?, ?, ?, ?, ?, ?);";
 		String sql5 = "SELECT Password FROM CODERS WHERE ID = ?;";
-		
+
 		try (Connection conn = getDataSource().getConnection();
 				PreparedStatement s1 = conn.prepareStatement(sql1);
 				PreparedStatement s2 = conn.prepareStatement(sql2);
@@ -1624,7 +1626,7 @@ public class Sql {
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			ResultSet r;
-			
+
 			// determine if the new password is the same as the old one
 			String password = null;
 			if (newPasswordHash != null && !newPasswordHash.equals("")) {
@@ -1636,7 +1638,7 @@ public class Sql {
 					password = r.getString("Password");
 				}
 			}
-			
+
 			// update coder permissions and details
 			s1.setString(1, coder.getName());
 			s1.setInt(2, coder.getColor().getRed());
@@ -1661,7 +1663,7 @@ public class Sql {
 			s1.setInt(21, coder.isPermissionEditOthersStatements() ? 1 : 0);
 			s1.setInt(22, coderId);
         	s1.executeUpdate();
-        	
+
         	// go through coder relations and update or insert
         	for (HashMap.Entry<Integer, CoderRelation> entry : coder.getCoderRelations().entrySet()) {
         		s3.setInt(1, coderId);
@@ -1689,7 +1691,7 @@ public class Sql {
         			}
         		}
         	}
-        	
+
         	conn.commit();
         	success = true;
         	LogEvent l = new LogEvent(Logger.MESSAGE,
@@ -1706,11 +1708,11 @@ public class Sql {
 		}
 		return success;
 	}
-	
+
 	/**
 	 * Delete a coder from the database. Note that this will also delete all
 	 * documents, statements etc. created by the coder.
-	 * 
+	 *
 	 * @param coderId The ID of the coder to be deleted.
 	 * @return        An indicator of whether the deletion was successful.
 	 */
@@ -1735,10 +1737,10 @@ public class Sql {
 		}
 		return success;
 	}
-	
+
 	/**
 	 * Count how many documents and statements a coder owns.
-	 * 
+	 *
 	 * @param coderId  The ID of the coder.
 	 * @return         An int[] array with frequency counts of documents and
 	 *   statements.
@@ -1767,12 +1769,12 @@ public class Sql {
 		}
 		return results;
 	}
-	
+
 	/**
 	 * Authenticate a coder. Check if a user-provided clear-text password for
 	 * the current coder or a provided coder ID matches the hash of the password
 	 * stored for the coder in the database.
-	 * 
+	 *
 	 * @param coderId       ID of the coder to authenticate. Can be {@code -1}
 	 *   if the currently active coder is supposed to be authenticated.
 	 * @param clearPassword Clear-text password provided by the coder.
@@ -1799,7 +1801,7 @@ public class Sql {
 					e);
 			Dna.logger.log(l);
 		}
-		
+
 		// check if the provided clear-text password corresponds to the hashed password in the database
 		if (encryptedHash == null) {
 			return false;
@@ -1821,14 +1823,14 @@ public class Sql {
 		}
 	}
 
-	
+
 	/* =========================================================================
 	 * Documents
 	 * ====================================================================== */
 
 	/**
 	 * Add a batch of documents to the database.
-	 * 
+	 *
 	 * @param documents An {@link java.util.ArrayList ArrayList} of
 	 *   {@link model.Document Document} objects, containing the documents to
 	 *   be added to the database.
@@ -1852,7 +1854,7 @@ public class Sql {
 				stmt.setString(8, documents.get(i).getType());
 				stmt.setLong(9, documents.get(i).getDateTime().toEpochSecond(ZoneOffset.UTC)); // convert date-time to seconds since 01/01/1970 at 00:00:00 in UTC time zone
 				stmt.executeUpdate();
-				
+
 				// get generated document ID and save in array
 				generatedKeysResultSet = stmt.getGeneratedKeys();
 				while (generatedKeysResultSet.next()) {
@@ -1873,11 +1875,11 @@ public class Sql {
 		}
 		return documentIds;
 	}
-	
+
 	/**
 	 * Count the number of documents. Use an SQL query to get the number of rows
 	 * in the {@code DOCUMENTS} table of the database.
-	 * 
+	 *
 	 * @return The number of documents.
 	 */
 	public int countDocuments() {
@@ -1902,7 +1904,7 @@ public class Sql {
 	 * Check for an array of documents whether any of them contains a statement.
 	 * Used to determine in the {@link DocumentEditor}
 	 * dialog whether the text field should be editable.
-	 * 
+	 *
 	 * @param documentIds  An array of document IDs.
 	 * @return             boolean value indicating the presence of statements.
 	 */
@@ -1933,14 +1935,14 @@ public class Sql {
 		}
 		return contains;
 	}
-	
+
 	/**
 	 * Get documents for a batch of document IDs. The documents are of class
 	 * {@link model.TableDocument TableDocument} and contain neither the
 	 * document text nor any statement statements. They do contain the full
 	 * coder and the number of statements at the time of execution of the method
 	 * as a field. If the document ID list is empty, all documents are returned.
-	 * 
+	 *
 	 * @param documentIds    An array of document IDs for which the data should
 	 *   be queried. Can be empty (to select all documents).
 	 * @return             An {@link java.util.ArrayList ArrayList} of
@@ -1999,7 +2001,7 @@ public class Sql {
 	 * Get documents for a batch of document IDs. The data can be displayed and
 	 * edited in a {@link gui.DocumentEditor DocumentEditor} dialog. The
 	 * documents do not contain any statements.
-	 * 
+	 *
 	 * @param documentIds    An array of document IDs for which the data should
 	 *   be queried.
 	 * @return             An {@link java.util.ArrayList ArrayList} of
@@ -2046,7 +2048,7 @@ public class Sql {
 
 	/**
 	 * Get the document text for a specified document ID.
-	 * 
+	 *
 	 * @param documentId  The ID of a document.
 	 * @return            A String representing the document text.
 	 */
@@ -2068,10 +2070,10 @@ public class Sql {
 		}
 		return text;
 	}
-	
+
 	/**
 	 * Retrieve the minimum and maximum document date/time from the database.
-	 * 
+	 *
 	 * @return A LocalDateTime array with the minimum and maximum date/time.
 	 */
 	public LocalDateTime[] getDateTimeRange() {
@@ -2096,7 +2098,7 @@ public class Sql {
 		}
 		return range;
 	}
-	
+
 	/**
 	 * <p>Update a batch of documents at once. The text and meta-data for the
 	 * document IDs are provided as arguments. The information from the
@@ -2135,7 +2137,7 @@ public class Sql {
 	 *   <dt>{@code %minute}</dt>
 	 *   <dd>The minute from the date-time field of the document.</dd>
 	 * </dl>
-	 * 
+	 *
 	 * @param documentIds An array of document IDs for which the contents should
 	 *   be replaced in the database.
 	 * @param coder    A new coder ID ({@code -1} for keeping existing IDs)
@@ -2280,7 +2282,7 @@ public class Sql {
 				notesTemp2 = notesTemp2.replaceAll("%hour", hour);
 				notesTemp2 = notesTemp2.replaceAll("%minute", minute);
 				u.setString(7, notesTemp2);
-				
+
 				// date and time
 				LocalDate ldtDate = ldt.toLocalDate();
 				LocalTime ldtTime = ldt.toLocalTime();
@@ -2294,7 +2296,7 @@ public class Sql {
 					ldt = LocalDateTime.of(date, time);
 				}
 				u.setLong(8, ldt.toEpochSecond(ZoneOffset.UTC));
-				
+
 				if (coder < 1) {
 					u.setInt(9, existingCoder);
 				} else {
@@ -2319,7 +2321,7 @@ public class Sql {
 
 	/**
 	 * Delete documents from the database, given an array of document IDs.
-	 * 
+	 *
 	 * @param documentIds  An array of document IDs to be deleted.
 	 * @return             Were the documents successfully deleted?
 	 */
@@ -2349,14 +2351,14 @@ public class Sql {
 		return success;
 	}
 
-	
+
 	/* =========================================================================
 	 * Statements
 	 * ====================================================================== */
 
 	/**
 	 * Add a statement (with variable values) to the database.
-	 * 
+	 *
 	 * @param statement   A {@link model.Statement Statement} object, including
 	 *   the values for the different variables.
 	 * @param documentId  The ID of the document in which the statement is
@@ -2558,7 +2560,7 @@ public class Sql {
 
 	/**
 	 * Update the variable contents of a statement using new values.
-	 * 
+	 *
 	 * @param statementId  The ID of the statement to be updated.
 	 * @param values       An ArrayList of {@link model.Value Value} objects. They
 	 *   are used to update each variable value in the statement.
@@ -2643,7 +2645,7 @@ public class Sql {
 					while (r.next()) {
 						entityId = r.getInt("ID");
 					}
-					
+
 					if (entityId == -1) {
 						// if the attribute does not exist, insert new attribute with given String value
 						s5.setInt(1, variableId);
@@ -2652,7 +2654,7 @@ public class Sql {
 						s5.setInt(4, entity.getColor().getGreen());
 						s5.setInt(5, entity.getColor().getBlue());
 						s5.executeUpdate();
-						
+
 						// new attribute has been created; now we have to get its ID
 						s6.setInt(1, variableId);
 						s6.setString(2, entity.getValue());
@@ -2664,7 +2666,7 @@ public class Sql {
 								"[SQL]  ├─ Entity with ID " + entityId + " added to the transaction.",
 								"An entity with ID " + entityId + " and value \"" + entity.getValue() + "\" was created for variable ID " + variableId + " and added to the SQL transaction.");
 						Dna.logger.log(e2);
-						
+
 						// since the attribute did not exist, we also need to add attributes;
 						// first get the IDs of the attribute variables, then add the attribute values
 						s7.setInt(1, variableId); // set variable ID to find all attribute variables by ID corresponding to the variable
@@ -2729,184 +2731,264 @@ public class Sql {
 	*/
 
 	/**
-	 * Update the variable contents of multiple statements using new values.
-	 * 
-	 * @param statementIds  The IDs of the statements to be updated.
-	 * @param values        An ArrayList of ArrayLists of {@link model.Value
-	 *   Value} objects. They are used to update each variable value in each
-	 *   statement. The outer ArrayList is for the statements, and the inner
-	 *   ArrayList is for the variables in the given statement.
-	 * @param coderIds      An ArrayList of new coder IDs for the statements.
+	 * Update the coder ID and variable contents (with entities, but without their attributes) of multiple statements
+	 * using new contents.
+	 *
+	 * @param tableStatements An array list of table statements to be updated in the database. (Attributes are ignored.)
+	 * @return Were the statements successfully updated in the database?
 	 */
-	/*
-	public void updateStatements(ArrayList<Integer> statementIds, ArrayList<ArrayList<Value>> values, ArrayList<Integer> coderIds) {
+	public boolean updateTableStatements(ArrayList<TableStatement> tableStatements) {
+		boolean success = false;
 		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
-				PreparedStatement s2 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("UPDATE DATALONGTEXT SET Value = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
-				PreparedStatement s4 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Entity = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
-				PreparedStatement s5 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
-				PreparedStatement s6 = conn.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
-				PreparedStatement s7 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
-				PreparedStatement s8 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
-				PreparedStatement s9 = conn.prepareStatement("SELECT COUNT(ID) FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
-				PreparedStatement s10 = conn.prepareStatement("UPDATE STATEMENTS SET Coder = ? WHERE ID = ?;");
-			 	PreparedStatement s11 = conn.prepareStatement("SELECT ID FROM ROLEVARIABLELINKS WHERE RoleId = ? AND VariableId = ?;");
-				SQLCloseable finish = conn::rollback) {
+			 PreparedStatement s1 = conn.prepareStatement("SELECT ID, RoleVariableLinkId, Value FROM DATABOOLEAN WHERE StatementId = ?;");
+			 PreparedStatement s2 = conn.prepareStatement("SELECT ID, RoleVariableLinkId, Value FROM DATAINTEGER WHERE StatementId = ?;");
+			 PreparedStatement s3 = conn.prepareStatement("SELECT ID, RoleVariableLinkId, Value FROM DATALONGTEXT WHERE StatementId = ?;");
+			 PreparedStatement s4 = conn.prepareStatement("SELECT ID, RoleVariableLinkId, Entity FROM DATASHORTTEXT WHERE StatementId = ?;");
+			 PreparedStatement s5 = conn.prepareStatement("SELECT ENTITIES.ID, ENTITIES.VariableId, ENTITIES.Value, ENTITIES.Red, ENTITIES.Green, ENTITIES.Blue FROM ENTITIES INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.VariableId = ENTITIES.VariableId INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE ROLES.StatementTypeId = ?;");
+			 PreparedStatement s6 = conn.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
+			 PreparedStatement s7 = conn.prepareStatement("INSERT INTO DATAINTEGER (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
+			 PreparedStatement s8 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
+			 PreparedStatement s9 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, RoleVariableLinkId, Entity) VALUES (?, ?, ?);");
+			 PreparedStatement s10 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value) VALUES (?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+			 PreparedStatement s11 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE ID = ?;");
+			 PreparedStatement s12 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE ID = ?;");
+			 PreparedStatement s13 = conn.prepareStatement("UPDATE DATALONGTEXT SET Value = ? WHERE ID = ?;");
+			 PreparedStatement s14 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Entity = ? WHERE ID = ?;");
+			 PreparedStatement s15 = conn.prepareStatement("DELETE FROM DATABOOLEAN WHERE ID = ?;");
+			 PreparedStatement s16 = conn.prepareStatement("DELETE FROM DATAINTEGER WHERE ID = ?;");
+			 PreparedStatement s17 = conn.prepareStatement("DELETE FROM DATALONGTEXT WHERE ID = ?;");
+			 PreparedStatement s18 = conn.prepareStatement("DELETE FROM DATASHORTTEXT WHERE ID = ?;");
+			 PreparedStatement s19 = conn.prepareStatement("UPDATE STATEMENTS SET Coder = ? WHERE ID = ?;");
+			 SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
 			LogEvent e1 = new LogEvent(Logger.MESSAGE,
-					"[SQL] Started SQL transaction to update " + statementIds.size() + " statements.",
-					"Started a new SQL transaction to update the variables in a set of " + statementIds.size() + " statements. The contents will not be written into the database until the transaction is committed.");
+					"[SQL] Started SQL transaction to update " + tableStatements.size() + " statements.",
+					"Started a new SQL transaction to update the variables in a set of " + tableStatements.size() + " statements. The contents will not be written into the database until the transaction is committed.");
 			Dna.logger.log(e1);
-			Entity entity;
-			int entityId, variableId, roleId, roleVariableId, attributeVariableId;
-			ResultSet r, r2;
-			for (int i = 0; i < values.size(); i++) {
-				for (int j = 0; j < values.get(i).size(); j++) {
-					// find ID in ROLEVARIABLELINKS table
-					variableId = values.get(i).get(j).getVariableId();
-					roleId = values.get(i).get(j).getRoleId();
-					roleVariableId = -1;
-					s11.setInt(1, roleId);
-					s11.setInt(2, variableId);
-					r = s11.executeQuery();
-					while (r.next()) {
-						roleVariableId = r.getInt(1);
-					}
-					if (roleVariableId < 0) {
-						LogEvent l = new LogEvent(Logger.ERROR,
-								"[SQL]  ├─ Failed to find role-variable ID for statement.",
-								"Statement " + statementIds.get(i) + ": could not find role-variable ID (role ID " + roleId + "; variable ID: " + variableId + ").");
-						Dna.logger.log(l);
-						throw new SQLException();
-					}
 
-					if (values.get(i).get(j).getDataType().equals("boolean")) {
-						s1.setInt(1, (int) values.get(i).get(j).getValue());
-						s1.setInt(2, statementIds.get(i));
-						s1.setInt(3, roleVariableId);
-						s1.executeUpdate();
-						LogEvent e2 = new LogEvent(Logger.MESSAGE,
-								"[SQL]  ├─ Variable " + variableId + " in Statement " + statementIds.get(i) + " was updated in the transaction.",
-								"Boolean variable \"" + values.get(i).get(j).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).get(j).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementIds.get(i) + " were updated in the SQL transaction with value: " + (int) values.get(i).get(j).getValue() + ".");
-						Dna.logger.log(e2);
-					} else if (values.get(i).get(j).getDataType().equals("integer")) {
-						s2.setInt(1, (int) values.get(i).get(j).getValue());
-						s2.setInt(2, statementIds.get(i));
-						s2.setInt(3, roleVariableId);
-						s2.executeUpdate();
-						LogEvent e2 = new LogEvent(Logger.MESSAGE,
-								"[SQL]  ├─ Variable " + variableId + " in Statement " + statementIds.get(i) + " was updated in the transaction.",
-								"Integer variable \"" + values.get(i).get(j).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).get(j).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementIds.get(i) + " were updated in the SQL transaction with value: " + (int) values.get(i).get(j).getValue() + ".");
-						Dna.logger.log(e2);
-					} else if (values.get(i).get(j).getDataType().equals("long text")) {
-						s3.setString(1, (String) values.get(i).get(j).getValue());
-						s3.setInt(2, statementIds.get(i));
-						s3.setInt(3, roleVariableId);
-						s3.executeUpdate();
-						LogEvent e2 = new LogEvent(Logger.MESSAGE,
-								"[SQL]  ├─ Variable " + variableId + " in Statement " + statementIds.get(i) + " was updated in the transaction.",
-								"Long text variable \"" + values.get(i).get(j).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).get(j).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementIds.get(i) + " were updated in the SQL transaction.");
-						Dna.logger.log(e2);
-					} else if (values.get(i).get(j).getDataType().equals("short text")) {
-						// try to recognise entity ID from database; should be more reliable (e.g., with empty Strings)
-						entity = (Entity) values.get(i).get(j).getValue();
-						entityId = -1;
-						s6.setInt(1, variableId);
-						s6.setString(2, entity.getValue());
-						r = s6.executeQuery();
-						while (r.next()) {
-							entityId = r.getInt("ID");
-						}
-						
-						if (entityId == -1) {
-							// if the attribute does not exist, insert new attribute with given String value
-							s5.setInt(1, variableId);
-							s5.setString(2, entity.getValue());
-							s5.setInt(3, entity.getColor().getRed());
-							s5.setInt(4, entity.getColor().getGreen());
-							s5.setInt(5, entity.getColor().getBlue());
-							s5.executeUpdate();
-							
-							// new attribute has been created; now we have to get its ID
-							s6.setInt(1, variableId);
-							s6.setString(2, entity.getValue());
-							r = s6.executeQuery();
-							while (r.next()) {
-								entityId = r.getInt(1);
-							}
-							LogEvent e2 = new LogEvent(Logger.MESSAGE,
-									"[SQL]  ├─ Entity with ID " + entityId + " added to the transaction.",
-									"An entity with ID " + entityId + " and value \"" + entity.getValue() + "\" was created for variable ID " + variableId + " and added to the SQL transaction.");
-							Dna.logger.log(e2);
-							
-							// since the attribute did not exist, we also need to add attributes;
-							// first get the IDs of the attribute variables, then add the attribute values
-							s7.setInt(1, variableId); // set variable ID to find all attribute variables by ID corresponding to the variable
-							r = s7.executeQuery();
-							while (r.next()) {
-								try {
-									attributeVariableId = r.getInt("ID");
-									s9.setInt(1, entityId);
-									s9.setInt(2, attributeVariableId);
-									r2 = s9.executeQuery();
-									while (r2.next()) {
-										if (r2.getInt(1) > 0) {
-											// attribute value already exists in the ATTRIBUTEVALUES table; don't do anything
-										} else {
-											s8.setInt(1, entityId); // entity ID
-											s8.setInt(2, attributeVariableId); // attribute variable ID
-											s8.setString(3, ""); // put an empty value into the attribute variable field initially
-											s8.executeUpdate();
-											LogEvent l = new LogEvent(Logger.MESSAGE,
-													"[SQL]  ├─ Transaction: Added value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
-													"Added attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table during the transaction.");
-											Dna.logger.log(l);
-										}
-									}
-								} catch (Exception e3) {
-									LogEvent l = new LogEvent(Logger.WARNING,
-											"[SQL]  ├─ Failed to add a new value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
-											"Failed to add a new value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
-											e3);
-									Dna.logger.log(l);
-								}
+			class DataResult {
+				int id, roleVariableLinkId, valueInt;
+				String valueString, dataType;
+			}
+
+			ResultSet r1;
+			ArrayList<DataResult> data;
+			ArrayList<Entity> entities;
+			List<RoleValue> insertionPile;
+			List<DataResult> deletionPile;
+			for (TableStatement s : tableStatements) {
+				data = new ArrayList<>();
+				entities = new ArrayList<>();
+
+				// get boolean data entries from database corresponding to current statement
+				s1.setInt(1, s.getId());
+				r1 = s1.executeQuery();
+				while (r1.next()) {
+					DataResult dr = new DataResult();
+					dr.id = r1.getInt("ID");
+					dr.roleVariableLinkId = r1.getInt("RoleVariableLinkId");
+					dr.valueInt = r1.getInt("Value");
+					dr.dataType = "boolean";
+					data.add(dr);
+				}
+
+				// get integer data entries from database corresponding to current statement
+				s2.setInt(1, s.getId());
+				r1 = s2.executeQuery();
+				while (r1.next()) {
+					DataResult dr = new DataResult();
+					dr.id = r1.getInt("ID");
+					dr.roleVariableLinkId = r1.getInt("RoleVariableLinkId");
+					dr.valueInt = r1.getInt("Value");
+					dr.dataType = "integer";
+					data.add(dr);
+				}
+
+				// get long text data entries from database corresponding to current statement
+				s3.setInt(1, s.getId());
+				r1 = s3.executeQuery();
+				while (r1.next()) {
+					DataResult dr = new DataResult();
+					dr.id = r1.getInt("ID");
+					dr.roleVariableLinkId = r1.getInt("RoleVariableLinkId");
+					dr.valueString = r1.getString("Value");
+					dr.dataType = "long text";
+					data.add(dr);
+				}
+
+				// get short text data entries from database corresponding to current statement
+				s4.setInt(1, s.getId());
+				r1 = s4.executeQuery();
+				while (r1.next()) {
+					DataResult dr = new DataResult();
+					dr.id = r1.getInt("ID");
+					dr.roleVariableLinkId = r1.getInt("RoleVariableLinkId");
+					dr.valueInt = r1.getInt("Entity");
+					dr.dataType = "short text";
+					data.add(dr);
+				}
+
+				// get entities corresponding to the current statement type belonging to current statement
+				s5.setInt(1, s.getStatementTypeId());
+				r1 = s5.executeQuery();
+				while (r1.next()) {
+					entities.add(new Entity(r1.getInt("ID"),
+							r1.getInt("VariableId"),
+							r1.getString("Value"),
+							new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"))));
+				}
+
+				// go through valueRoles in statement and put those that don't exist in DATA* onto a pile for database insertion
+				List<DataResult> finalData = data;
+				insertionPile = s.getRoleValues()
+						.stream()
+						.filter(v -> finalData
+								.stream().noneMatch(d -> d.dataType.equals(v.getDataType()) &&
+										d.roleVariableLinkId == v.getRoleVariableLinkId() &&
+										((d.dataType.equals("long text") && d.valueString.equals((String) v.getValue())) ||
+												(!d.dataType.equals("long text") && d.valueInt == (int) v.getValue()))))
+						.collect(Collectors.toList());
+
+				// create a set of data entries to remove from database because they don't exist anymore in the statement
+				deletionPile = data
+						.stream()
+						.filter(d -> s.getRoleValues()
+								.stream()
+								.noneMatch(v -> v.getDataType().equals(d.dataType) &&
+										v.getRoleVariableLinkId() == d.roleVariableLinkId &&
+										((v.getDataType().equals("long text") && v.getValue().equals(d.valueString)) ||
+												(!v.getDataType().equals("long text") && (int) v.getValue() == d.valueInt))))
+						.collect(Collectors.toList());
+
+				// insert missing entities into the database first, then insert data entries
+				for (int j = 0; j < insertionPile.size(); j++) {
+					if (insertionPile.get(j).getDataType().equals("short text")) {
+						boolean match = false;
+						for (int k = 0; k < entities.size(); k++) {
+							if (entities.get(k).getValue().equals(((Entity) insertionPile.get(j).getValue()).getValue()) && entities.get(k).getVariableId() == insertionPile.get(j).getVariableId()) {
+								match = true;
 							}
 						}
-
-						// write the attribute ID as the value in the DATASHORTTEXT table
-						s4.setInt(1, entityId);
-						s4.setInt(2, statementIds.get(i));
-						s4.setInt(3, roleVariableId);
-						s4.executeUpdate();
-						LogEvent e2 = new LogEvent(Logger.MESSAGE,
-								"[SQL]  ├─ Variable " + variableId + " in Statement " + statementIds.get(i) + " was updated in the transaction.",
-								"Short text variable \"" + values.get(i).get(j).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).get(j).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementIds.get(i) + " were updated in the SQL transaction with Entity " + entityId + ".");
-						Dna.logger.log(e2);
+						if (!match) {
+							s10.setInt(1, insertionPile.get(j).getVariableId());
+							s10.setString(2, ((Entity) insertionPile.get(j).getValue()).getValue());
+							s10.executeUpdate();
+						}
+						// get generated primary key and save in entity in insertion pile as entity ID
+						r1 = s10.getGeneratedKeys();
+						while (r1.next()) {
+							((Entity) insertionPile.get(j).getValue()).setId(r1.getInt(1));
+						}
 					}
 				}
-				s10.setInt(1, coderIds.get(i));
-				s10.setInt(2, statementIds.get(i));
-				s10.executeUpdate();
+
+				// go through deletion pile and insertion pile together and look for commonalities, then rename those in database and remove from piles
+				for (int j = deletionPile.size() - 1; j >= 0; j--) {
+					for (int k = insertionPile.size() - 1; k >= 0; k--) {
+						if (deletionPile.get(j).roleVariableLinkId == insertionPile.get(k).getRoleVariableLinkId()) {
+							if (deletionPile.get(j).dataType.equals("long text") &&
+									insertionPile.get(k).getDataType().equals("long text") &&
+									!deletionPile.get(j).valueString.equals(insertionPile.get(k).getValue())) {
+								s13.setString(1, (String) insertionPile.get(k).getValue());
+								s13.setInt(2, deletionPile.get(j).id);
+								s13.executeUpdate();
+								deletionPile.remove(j);
+								insertionPile.remove(k);
+								break;
+							} else if (deletionPile.get(j).valueInt != (int) insertionPile.get(k).getValue() &&
+									deletionPile.get(j).dataType.equals(insertionPile.get(k).getDataType())) {
+								if (deletionPile.get(j).dataType.equals("boolean")) {
+									s11.setInt(1, (int) insertionPile.get(k).getValue());
+									s11.setInt(2, deletionPile.get(j).id);
+									s11.executeUpdate();
+								} else if (deletionPile.get(j).dataType.equals("integer")) {
+									s12.setInt(1, (int) insertionPile.get(k).getValue());
+									s12.setInt(2, deletionPile.get(j).id);
+									s12.executeUpdate();
+								} else {
+									s14.setInt(1, ((Entity) insertionPile.get(k).getValue()).getId());
+									s14.setInt(2, deletionPile.get(j).id);
+									s14.executeUpdate();
+								}
+								deletionPile.remove(j);
+								insertionPile.remove(k);
+								break;
+							}
+						}
+					}
+				}
+
+				// delete entries
+				for (int j = 0; j < deletionPile.size(); j++) {
+					if (deletionPile.get(j).dataType.equals("boolean")) {
+						s15.setInt(1, deletionPile.get(j).id);
+						s15.executeUpdate();
+					} else if (deletionPile.get(j).dataType.equals("integer")) {
+						s16.setInt(1, deletionPile.get(j).id);
+						s16.executeUpdate();
+					} else if (deletionPile.get(j).dataType.equals("long text")) {
+						s17.setInt(1, deletionPile.get(j).id);
+						s17.executeUpdate();
+					} else if (deletionPile.get(j).dataType.equals("short text")) {
+						s18.setInt(1, deletionPile.get(j).id);
+						s18.executeUpdate();
+					}
+				}
+
+				// insert entries
+				for (int j = 0; j < insertionPile.size(); j++) {
+					if (insertionPile.get(j).getDataType().equals("boolean")) {
+						s6.setInt(1, s.getId());
+						s6.setInt(2, insertionPile.get(j).getRoleVariableLinkId());
+						s6.setInt(3, (int) insertionPile.get(j).getValue());
+						s6.executeUpdate();
+					} else if (insertionPile.get(j).getDataType().equals("integer")) {
+						s7.setInt(1, s.getId());
+						s7.setInt(2, insertionPile.get(j).getRoleVariableLinkId());
+						s7.setInt(3, (int) insertionPile.get(j).getValue());
+						s7.executeUpdate();
+					} else if (insertionPile.get(j).getDataType().equals("long text")) {
+						s8.setInt(1, s.getId());
+						s8.setInt(2, insertionPile.get(j).getRoleVariableLinkId());
+						s8.setString(3, (String) insertionPile.get(j).getValue());
+						s8.executeUpdate();
+					} else if (insertionPile.get(j).getDataType().equals("short text")) {
+						s9.setInt(1, s.getId());
+						s9.setInt(2, insertionPile.get(j).getRoleVariableLinkId());
+						s9.setInt(3, ((Entity) insertionPile.get(j).getValue()).getId());
+						s9.executeUpdate();
+					}
+				}
+
+				// update coder
+				s19.setInt(1, s.getCoderId());
+				s19.setInt(2, s.getId());
+
+				LogEvent e2 = new LogEvent(Logger.MESSAGE,
+						"[SQL]  ├─ Updated Statement " + s.getId() + " in the transaction.",
+						"Statement " + s.getId() + " was updated in the SQL transaction. The transaction is ongoing and has not been committed to the database yet.");
+				Dna.logger.log(e2);
 			}
+
 			conn.commit();
+			success = true;
 			LogEvent e2 = new LogEvent(Logger.MESSAGE,
-					"[SQL]  └─ Completed SQL transaction to update " + statementIds.size() + " statements.",
-					"Completed SQL transaction to update the variables in " + statementIds.size() + " statements. The contents have been written into the database.");
+					"[SQL]  └─ Completed SQL transaction to update " + tableStatements.size() + " statement(s).",
+					"Completed SQL transaction to update the variables in " + tableStatements.size() + " statement(s). The contents have been written into the database.");
 			Dna.logger.log(e2);
 		} catch (SQLException e) {
 			LogEvent e2 = new LogEvent(Logger.ERROR,
 					"[SQL]  └─ Statements could not be updated in the database.",
-					"When the statement recoder tried to update statement details in the database, something went wrong. Maybe another coder concurrently removed the statements you were working on, or maybe there was a connection issue. See exception below.",
+					"When trying to update statement details in the database, something went wrong. Maybe another coder concurrently removed the statements you were working on, or maybe there was a connection issue. See exception below.",
 					e);
 			Dna.logger.log(e2);
 		}
+		return success;
 	}
-	*/
 
 	/**
 	 * Create a copy of a statement in the database.
-	 * 
+	 *
 	 * @param statementId  The ID of the statement to be cloned.
 	 * @param newCoderId   The ID of the coder who will own the statement copy.
 	 * @return             The ID of the new (cloned) statement.
@@ -2927,7 +3009,7 @@ public class Sql {
 				SQLCloseable finish = conn::rollback) {
 			ResultSet r;
 			conn.setAutoCommit(false);
-			
+
 			// copy the statement in the STATEMENTS table
 			s1.setInt(1, statementId);
 			s1.executeUpdate();
@@ -2935,12 +3017,12 @@ public class Sql {
 			while (generatedKeysResultSet.next()) {
 				id = generatedKeysResultSet.getInt(1);
 			}
-			
+
 			// set new coder
 			s2.setInt(1, newCoderId);
 			s2.setInt(2, id);
 			s2.executeUpdate();
-			
+
 			// clone relevant entries in the DATABOOLEAN table
 			s3.setInt(1, statementId);
 			r = s3.executeQuery();
@@ -2950,7 +3032,7 @@ public class Sql {
 				s4.setInt(3, r.getInt("Value"));
 				s4.executeUpdate();
 			}
-			
+
 			// clone relevant entries in the DATAINTEGER table
 			s5.setInt(1, statementId);
 			r = s5.executeQuery();
@@ -2980,7 +3062,7 @@ public class Sql {
 				s10.setString(3, r.getString("Value"));
 				s10.executeUpdate();
 			}
-			
+
 			conn.commit();
 			LogEvent e = new LogEvent(Logger.MESSAGE,
 					"[SQL] Cloned Statement " + statementId + " --> " + id + ".",
@@ -2998,7 +3080,7 @@ public class Sql {
 
 	/**
 	 * Get a statement from the database based on its ID.
-	 * 
+	 *
 	 * @param statementId The statement ID of the statement to be retrieved.
 	 * @return A {@link model.TableStatement Statement} with all relevant values for the different roles and variables.
 	 */
@@ -3043,7 +3125,7 @@ public class Sql {
 				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE RoleVariableLinkId = ? AND StatementId = ?;");
 				PreparedStatement s7 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
 			ResultSet r1, r2, r3, r4;
-			
+
 			// first, get the statement information, including coder and statement type info
 			s1.setInt(1, statementId);
 			r1 = s1.executeQuery();
@@ -3051,7 +3133,7 @@ public class Sql {
 			    statementTypeId = r1.getInt("StatementTypeId");
 			    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
 			    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
-			    
+
 			    // second, get the role-variable combinations associated with the statement type and their values
 				roleValues = new ArrayList<RoleValue>();
 				s2.setInt(1, statementTypeId);
@@ -3072,7 +3154,7 @@ public class Sql {
 				    	while (r3.next()) {
 				    		entityId = r3.getInt("EntityId");
 			            	aColor = new Color(r3.getInt("Red"), r3.getInt("Green"), r3.getInt("Blue"));
-			            	
+
 			            	// fourth, in the case of short text, also look up information in ENTITIES table
 			            	s7.setInt(1, entityId);
 			            	r4 = s7.executeQuery();
@@ -3106,7 +3188,7 @@ public class Sql {
 				    	}
 			    	}
 			    }
-			    
+
 			    // assemble the table statement with all the information from the previous steps
 			    tableStatement = new TableStatement(statementId,
 			    		r1.getInt("Start"),
@@ -3139,7 +3221,7 @@ public class Sql {
 	/**
 	 * Get statements, potentially filtered by statement IDs, statement type
 	 * IDs, document meta-data, date/time range, and duplicates setting.
-	 * 
+	 *
 	 * @param statementIds Array of statement IDs to retrieve. Can be empty or
 	 *   {@code null}, in which case all statements are selected.
 	 * @param statementTypeId Array list of statement type IDs to include. Can
@@ -3275,7 +3357,7 @@ public class Sql {
 		if (whereStatements.startsWith("AND")) { // ensure correct form if no statement ID filtering
 			whereStatements = whereStatements.replaceFirst("AND", "WHERE");
 		}
-		
+
 		String subString = "SUBSTRING(DOCUMENTS.Text, Start + 1, Stop - Start) AS Text ";
 		if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
 			subString = "SUBSTRING(DOCUMENTS.Text, CAST(Start + 1 AS INT4), CAST(Stop - Start AS INT4)) AS Text ";
@@ -3340,7 +3422,7 @@ public class Sql {
 				+ "INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.VariableId = VARIABLES.ID "
 				+ "INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId "
 				+ "WHERE ROLES.StatementTypeId = " + statementTypeId + ";";
-		
+
 		ArrayList<Statement> listOfStatements = null;
 		int statementId, variableId, roleId, entityId;
 		String variableName, roleName;
@@ -3354,7 +3436,7 @@ public class Sql {
 				PreparedStatement s4c = conn.prepareStatement(q4c);
 				PreparedStatement s4d = conn.prepareStatement(q4d);
 				PreparedStatement s5 = conn.prepareStatement(q5);) {
-			
+
 			// assemble statements without values for now and save them in a hash map
 			ResultSet r1 = s1.executeQuery();
 			while (r1.next()) {
@@ -3392,7 +3474,7 @@ public class Sql {
 				}
 				attributeMap.get(entityId).put(attributeKey, attributeValue);
 			}
-			
+
 			// get values and put them into the statements
 			r4 = s4a.executeQuery();
 			while (r4.next()) {
@@ -3437,7 +3519,7 @@ public class Sql {
 				int value = r4.getInt("Value");
 				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableName, "integer", value, roleId, roleName));
 			}
-			
+
 			// assemble and sort all statements
 			Collection<Statement> s = statementMap.values();
 	        listOfStatements = new ArrayList<Statement>(s);
@@ -3504,7 +3586,7 @@ public class Sql {
 
 	/**
 	 * Delete statements from the database, given an array of statement IDs.
-	 * 
+	 *
 	 * @param statementIds  An array of statement IDs to be deleted.
 	 * @return              Were the statements successfully deleted?
 	 */
@@ -3536,7 +3618,7 @@ public class Sql {
 
 	/**
 	 * Count how many statements of a certain statement type exist.
-	 * 
+	 *
 	 * @param statementTypeId  The ID of the statement type. Can be {@code -1}
 	 *   to count all statement types.
 	 * @return                 An integer count of the statement frequency.
@@ -3562,8 +3644,8 @@ public class Sql {
 		}
 		return result;
 	}
-	
-	
+
+
 	/* =========================================================================
 	 * Entities and attributes
 	 * ====================================================================== */
@@ -3572,7 +3654,7 @@ public class Sql {
 	 * Add an entity to the ENTITIES table of the database and save the
 	 * attribute values contained in the entity into the ATTRIBUTEVALUES table
 	 * of the database, in a transaction. Return the ID of the new entity.
-	 * 
+	 *
 	 * @param entity  An entity.
 	 * @return        The ID of the newly saved entity.
 	 */
@@ -3584,7 +3666,7 @@ public class Sql {
 				PreparedStatement s3 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
-			
+
 			// insert entity into ENTITIES table
 			s1.setInt(1, entity.getVariableId());
 			s1.setString(2, entity.getValue());
@@ -3596,7 +3678,7 @@ public class Sql {
 			while (generatedKeysResultSet.next()) {
 				entityId = generatedKeysResultSet.getInt(1);
 			}
-			
+
 			// get the attribute variable IDs from the ATTRIBUTEVARIABLES table
 			s3.setInt(1, entity.getVariableId());
 			ResultSet r = s3.executeQuery();
@@ -3626,7 +3708,7 @@ public class Sql {
 	 * Retrieve the full set of entities for a set of variable IDs. The result
 	 * is an array list with nested array lists of entities for each variable
 	 * ID.
-	 *  
+	 *
 	 * @param variableIds The IDs of the variables for which all entities will
 	 *   be retrieved, supplied as an array list of integers.
 	 * @param withAttributes Include attributes and indicator of whether the
@@ -3697,7 +3779,7 @@ public class Sql {
 	 * Delete all entities corresponding to certain entity IDs. Check if the
 	 * entities can be deleted safely and log a warning instead of deleting the
 	 * entities if deleting them would also delete existing statements.
-	 * 
+	 *
 	 * @param entityIds  An int array of entity IDs to be deleted.
 	 */
 	public void deleteEntities(int[] entityIds) {
@@ -3740,10 +3822,10 @@ public class Sql {
         	Dna.logger.log(e);
 		}
 	}
-	
+
 	/**
 	 * Update/set the value of an entity.
-	 * 
+	 *
 	 * @param entityId       ID of the entity.
 	 * @param newValue       The new value to be set in the entity.
 	 * @throws SQLException
@@ -3761,7 +3843,7 @@ public class Sql {
 
 	/**
 	 * Update/set the color of an entity.
-	 * 
+	 *
 	 * @param entityId       ID of the entity.
 	 * @param newColor       The new color to be set in the entity.
 	 * @throws SQLException
@@ -3781,7 +3863,7 @@ public class Sql {
 
 	/**
 	 * Retrieve unique values for a specific variable.
-	 * 
+	 *
 	 * @param statementTypeId  Statement type ID to which the variable belongs.
 	 * @param variable         The name of the variable.
 	 * @return                 Array list of unique String values.
@@ -3846,7 +3928,7 @@ public class Sql {
 
 	/**
 	 * Update/set an attribute value for an entity.
-	 * 
+	 *
 	 * @param entityId          ID of the entity.
 	 * @param variableId        The variable ID to which the entity belongs.
 	 * @param attributeVariable The name of the attribute variable to update.
@@ -3869,7 +3951,7 @@ public class Sql {
 	/**
 	 * Retrieve a list of attribute variable names for a given variable from the
 	 * database.
-	 * 
+	 *
 	 * @param variableId  ID of the variable.
 	 * @return            ArrayList of attribute variable names.
 	 */
@@ -3894,7 +3976,7 @@ public class Sql {
 
 	/**
 	 * Add a new attribute variable to a variable.
-	 * 
+	 *
 	 * @param variableId         The variable ID.
 	 * @param attributeVariable  The attribute variable name.
 	 */
@@ -3933,7 +4015,7 @@ public class Sql {
 
 	/**
 	 * Delete an attribute variable.
-	 * 
+	 *
 	 * @param variableId         The variable ID.
 	 * @param attributeVariable  The attribute variable name.
 	 */
@@ -3954,7 +4036,7 @@ public class Sql {
 
 	/**
 	 * Rename an attribute variable.
-	 * 
+	 *
 	 * @param variableId                The variable ID.
 	 * @param oldAttributeVariableName  The attribute variable name to rename.
 	 * @param newAttributeVariableName  The new attribute variable name.
@@ -3977,7 +4059,7 @@ public class Sql {
 		}
 		return success;
 	}
-	
+
 	/* =========================================================================
 	 * Statement types
 	 * ====================================================================== */
@@ -4140,7 +4222,7 @@ public class Sql {
 
 	/**
 	 * Add a statement type (without any variables) to the database.
-	 * 
+	 *
 	 * @param label  Label, or name, of the statement type.
 	 * @param color  Color of the statement type.
 	 * @return       The ID of the new statement type.
@@ -4176,7 +4258,7 @@ public class Sql {
 	 * Delete a statement type from the database. Note that this will also
 	 * delete all statements and entities/attributes corresponding to this
 	 * statement type.
-	 * 
+	 *
 	 * @param statementTypeId The ID of the statement type to be deleted.
 	 * @return                Was the deletion successful?
 	 */
@@ -4201,11 +4283,11 @@ public class Sql {
 		}
 		return success;
 	}
-	
+
 	/**
 	 * Update the label and color of a statement type in the STATEMENTTYPES
 	 * table.
-	 * 
+	 *
 	 * @param statementTypeId  ID of the statement type to update.
 	 * @param label            The new label or name of the statement type.
 	 * @param color            The new color of the statement type.
@@ -4235,10 +4317,10 @@ public class Sql {
 		}
 		return success;
 	}
-	
+
 	/**
 	 * Add a variable to the VARIABLES table.
-	 * 
+	 *
 	 * @param statementTypeId ID of the statement type.
 	 * @param variableName    Name of the new variable.
 	 * @param dataType        The data type of the variable. Must be one of the
@@ -4258,7 +4340,7 @@ public class Sql {
 				PreparedStatement s7 = conn.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, 0);");
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
-			
+
 			// add variable to VARIABLES table
         	s1.setString(1, variableName);
         	s1.setString(2, dataType);
@@ -4268,7 +4350,7 @@ public class Sql {
 			while (generatedKeysResultSet.next()) {
 				variableId = generatedKeysResultSet.getInt(1);
 			}
-			
+
 			// create an entity in the ENTITIES table if short text
 			int entityId = -1;
 			if (dataType.equals("short text")) {
@@ -4279,7 +4361,7 @@ public class Sql {
 					entityId = generatedKeysResultSet.getInt(1);
 				}
 			}
-			
+
 			// get statement IDs to update
 			s3.setInt(1, statementTypeId);
 			ResultSet r3 = s3.executeQuery();
@@ -4305,7 +4387,7 @@ public class Sql {
 					s7.executeUpdate();
 				}
 			}
-			
+
 			conn.commit();
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[SQL] Variable added to the database.",
@@ -4324,7 +4406,7 @@ public class Sql {
 	/**
 	 * Delete a variable from the database. Note that this will also delete all
 	 * corresponding entities and their attributes if applicable.
-	 * 
+	 *
 	 * @param variableId The ID of the statement type to be deleted.
 	 * @return           Was the deletion successful?
 	 */
@@ -4352,7 +4434,7 @@ public class Sql {
 
 	/**
 	 * Update the name of a variable in the VARIABLES table.
-	 * 
+	 *
 	 * @param variableId  ID of the variable to update.
 	 * @param name        The new name of the variable.
 	 * @return            Was the update successful?
@@ -4381,7 +4463,7 @@ public class Sql {
 
 	/**
 	 * Add a regex to the REGEXES table in the database.
-	 * 
+	 *
 	 * @param label  The regex pattern.
 	 * @param red    The red component of the RGB color (0-255).
 	 * @param green  The green component of the RGB color (0-255).
@@ -4411,7 +4493,7 @@ public class Sql {
 
 	/**
 	 * Get all regexes from the REGEXES table in the database.
-	 * 
+	 *
 	 * @return An array list of all regex terms.
 	 */
 	public ArrayList<Regex> getRegexes() {
@@ -4431,10 +4513,10 @@ public class Sql {
 		}
 		return regexList;
 	}
-	
+
 	/**
 	 * Remove a regex from the REGEXES table in the database.
-	 * 
+	 *
 	 * @param label  The regex pattern to be deleted.
 	 * @return       Was the regex successfully removed from the database?
 	 */
@@ -4455,10 +4537,10 @@ public class Sql {
 		}
 		return deleted;
 	}
-	
+
 	/**
 	 * Query the database for the version saved in the SETTINGS table.
-	 * 
+	 *
 	 * @return The DNA version the database was created with.
 	 */
 	public String getVersion() {

@@ -1,5 +1,7 @@
 package model;
 
+import java.util.Objects;
+
 public class RoleValue extends Variable {
     private int roleVariableLinkId, roleId, statementTypeId;
     private String roleName;
@@ -66,5 +68,28 @@ public class RoleValue extends Variable {
 
     public void setValue(Object value) {
         this.value = value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        // self check
+        if (this == o)
+            return true;
+        // null check
+        if (o == null)
+            return false;
+        // type check and cast
+        if (getClass() != o.getClass())
+            return false;
+        RoleValue v = (RoleValue) o;
+        // field comparison
+        return Objects.equals(this.getVariableId(), v.getVariableId())
+                && Objects.equals(this.getVariableName(), v.getVariableName())
+                && Objects.equals(this.getDataType(), v.getDataType())
+                && Objects.equals(this.getValue(), v.getValue())
+                && Objects.equals(this.getRoleVariableLinkId(), v.getRoleVariableLinkId())
+                && Objects.equals(this.getRoleId(), v.getRoleId())
+                && Objects.equals(this.getRoleName(), v.getRoleName())
+                && Objects.equals(this.getStatementTypeId(), v.getStatementTypeId());
     }
 }

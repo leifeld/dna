@@ -26,6 +26,10 @@ public class PopupMulti extends JDialog {
     private int textFieldWidth;
     TableStatement tableStatement;
     /**
+     * A list of coders that are eligible to edit the statement. Supplied by the constructor.
+     */
+    private ArrayList<Coder> eligibleCoders;
+    /**
      * A hash map referencing all roles in the database by their ID (e.g., for finding the position of a role)
      */
     private HashMap<Integer, Role> roleMap;
@@ -49,12 +53,21 @@ public class PopupMulti extends JDialog {
      * @param coder The current coder who is viewing the statement.
      * @param eligibleCoders A list of coders who are allowed to own the statement.
      */
-
     PopupMulti(double X, double Y, TableStatement tableStatement, Point location, Coder coder, ArrayList<Coder> eligibleCoders) {
+
+        // TODO:
+        //  don't show save button if window decoration deactivated;
+        //  debug revert and save buttons;
+        //  add amber color to save and revert buttons if any changes have been made; write listeners for statement content changes
+        //  debug #Sql.updateTableStatements() function;
+        //  take care of permissions and check nothing is done that isn't permitted
+        //  clean up the code and write javadoc annotations
+
         this.tableStatement = tableStatement;
         this.los = location;
         this.textFieldWidth = coder.getPopupWidth();
         this.color = tableStatement.getStatementTypeColor();
+        this.eligibleCoders = eligibleCoders;
         this.coder = new Coder(tableStatement.getCoderId(), tableStatement.getCoderName(), tableStatement.getCoderColor());
         if (coder.isPopupDecoration()) {
             this.windowDecoration = true;
@@ -92,7 +105,6 @@ public class PopupMulti extends JDialog {
         contentsPanel.setBorder(new LineBorder(Color.BLACK));
         JPanel titleDecorationPanel = new JPanel(new BorderLayout());
         JPanel idAndPositionPanel = new JPanel();
-        idAndPositionPanel.setBorder( BorderFactory.createEmptyBorder(0, 0, 0, -1) ); // right-align with remove buttons in role value panel
 
         JLabel sPosLabel = new JLabel("start");
         JTextField startPos = new JTextField(Integer.toString(tableStatement.getStart()));
@@ -119,7 +131,7 @@ public class PopupMulti extends JDialog {
         colorPanel.setBackground(color);
         colorPanel.setPreferredSize(new Dimension(4, 4));
 
-        ImageIcon addRoleIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-row-insert-bottom.png"))).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
+        ImageIcon addRoleIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-row-insert-bottom.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
         addRole = new JButton(addRoleIcon);
         addRole.setToolTipText("add an additional role to this statement...");
         addRole.setMargin(new Insets(0, 0, 0, 0));
@@ -165,38 +177,65 @@ public class PopupMulti extends JDialog {
                 addMenu.show(e.getComponent(), e.getX(), e.getY());
             }
 
-            public void mousePressed(MouseEvent e) {
+            public void mouseClicked(MouseEvent e) {
                 showMenu(e);
             }
         });
 
-        ImageIcon duplicateIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-copy.png"))).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
+        ImageIcon duplicateIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-copy.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
         duplicate = new JButton(duplicateIcon);
         duplicate.setToolTipText("create a copy of this statement at the same location");
         duplicate.setMargin(new Insets(0, 0, 0, 0));
         duplicate.setContentAreaFilled(false);
         duplicate.setEnabled(coder.isPermissionAddStatements());
 
-        // TODO: add save and cancel buttons, then get rid of buttons at bottom and window decoration;
-        //  don't show save and cancel buttons if window decoration deactivated;
-        //  add action listeners to these buttons from the outside (main window) because updating remaining GUI from popup is bad practice;
-        //  update the statement upon save; write SQL code for this (try existing function);
-        //  add some visual element to indicate whether the statement has been updated or not at any point
-        //  take care of permissions and check nothing is done that isn't permitted
-
-        ImageIcon removeIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-trash.png"))).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
+        ImageIcon removeIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-trash.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
         remove = new JButton(removeIcon);
         remove.setToolTipText("completely remove the whole statement (but keep the text)");
         remove.setMargin(new Insets(0, 0, 0, 0));
         remove.setContentAreaFilled(false);
         remove.setEnabled(coder.isPermissionDeleteStatements());
+
+        ImageIcon revertIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-rotate-clockwise.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
+        JButton revertButton = new JButton(revertIcon);
+        revertButton.setToolTipText("revert any changes to the state when the statement was opened");
+        revertButton.setMargin(new Insets(0, 0, 0, 0));
+        revertButton.setContentAreaFilled(false);
+        revertButton.addActionListener(actionEvent -> {
+            if (PopupMulti.this.isStatementModified()) {
+                PopupMulti.this.rvp.ts = new TableStatement(PopupMulti.this.tableStatement);
+                if (PopupMulti.this.eligibleCoders != null && PopupMulti.this.eligibleCoders.size() > 1) {
+                    int coderIndex = -1;
+                    for (int i = 0; i < PopupMulti.this.eligibleCoders.size(); i++) {
+                        if (PopupMulti.this.eligibleCoders.get(i).getId() == PopupMulti.this.rvp.ts.getCoderId()) {
+                            coderIndex = i;
+                        }
+                    }
+                    PopupMulti.this.coderComboBox.setSelectedIndex(coderIndex);
+                    PopupMulti.this.coderComboBox.repaint(); // TODO: not sure if necessary
+                }
+                PopupMulti.this.rvp.rebuildLayout();
+            }
+        });
+
+        ImageIcon saveIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/google_round_save_black_48dp.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
+        // ImageIcon saveIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-device-floppy.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
+        saveButton = new JButton(saveIcon);
+        saveButton.setToolTipText("save the contents of the statement into the database");
+        saveButton.setMargin(new Insets(0, 0, 0, 0));
+        saveButton.setContentAreaFilled(false);
+        saveButton.addActionListener(actionEvent -> {
+            boolean saved = PopupMulti.this.saveContents();
+        });
         if (this.tableStatement.getCoderId() != coder.getId() && !Dna.sql.getActiveCoder().isPermissionEditOthersStatements()) {
             addRole.setEnabled(false);
             remove.setEnabled(false);
+            saveButton.setEnabled(false);
         }
         if (this.tableStatement.getCoderId() != coder.getId() && !coder.isPermissionEditOthersStatements(tableStatement.getCoderId())) {
             addRole.setEnabled(false);
             remove.setEnabled(false);
+            saveButton.setEnabled(false);
         }
 
         idAndPositionPanel.add(idLabel);
@@ -228,6 +267,8 @@ public class PopupMulti extends JDialog {
         idAndPositionPanel.add(addRole);
         idAndPositionPanel.add(duplicate);
         idAndPositionPanel.add(remove);
+        idAndPositionPanel.add(revertButton);
+        idAndPositionPanel.add(saveButton);
 
         titleDecorationPanel.add(idAndPositionPanel, BorderLayout.EAST);
         titleDecorationPanel.add(typeLabel, BorderLayout.CENTER);
@@ -240,14 +281,15 @@ public class PopupMulti extends JDialog {
         contentsPanel.add(rvp, BorderLayout.CENTER);
 
         // add buttons if window decoration is true
+        /*
         if (this.windowDecoration) {
             JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
             ImageIcon cancelIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-x.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
             cancelButton = new JButton("Cancel", cancelIcon);
             cancelButton.setToolTipText("close this window without making any changes");
             buttonPanel.add(cancelButton);
-            ImageIcon saveIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-check.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
-            saveButton = new JButton("Save", saveIcon);
+            ImageIcon floppyIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-device-floppy.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+            saveButton = new JButton("Save", floppyIcon);
             saveButton.setToolTipText("save each variable into the database and close this window");
             buttonPanel.add(saveButton);
             if (!editable) {
@@ -255,6 +297,7 @@ public class PopupMulti extends JDialog {
             }
             contentsPanel.add(buttonPanel, BorderLayout.SOUTH);
         }
+        */
 
         c.add(contentsPanel);
 
@@ -303,6 +346,24 @@ public class PopupMulti extends JDialog {
     }
 
     /**
+     * Get a reference to the duplicate button.
+     *
+     * @return The duplicate button.
+     */
+    JButton getDuplicateButton() {
+        return duplicate;
+    }
+
+    /**
+     * Get a reference to the remove button.
+     *
+     * @return The remove button.
+     */
+    JButton getRemoveButton() {
+        return remove;
+    }
+
+    /**
      * Check if the coder ID has been changed.
      *
      * @return Indicator of statement coder ID change.
@@ -316,29 +377,38 @@ public class PopupMulti extends JDialog {
     }
 
     /**
-     * Get an updated copy of the table statement.
+     * Get the table statement.
      *
      * @return The table statement.
      */
-    TableStatement getTableStatementCopy() {
-        TableStatement s = new TableStatement(this.tableStatement);
-        s.setCoderColor(this.coder.getColor());
-        s.setCoderName(this.coder.getName());
-        s.setCoderId(this.coder.getId());
-        return s;
+    TableStatement getTableStatement() {
+        return this.tableStatement;
+    }
+
+    boolean isStatementModified() {
+        return this.rvp.getModifiedTableStatement().equals(this.tableStatement);
     }
 
     /**
-     * In a statement popup window, read the contents from all combo boxes and
-     * save them into the database.
+     * Save the modified statement from the role value panel into the database and into the statement.
      *
-     * @param simulate  If true, do not actually write the changes.
-     * @return          True if at least one of the values has changed.
+     * @return True if successful or if saving was not necessary because the statement was unchanged.
      */
-    boolean saveContents(boolean simulate) {
-        boolean changed = false;
-        // TODO: save contents of popup
-        return changed;
+    boolean saveContents() {
+        if (this.isStatementModified()) {
+            TableStatement statementCopy = new TableStatement(this.rvp.getModifiedTableStatement());
+            ArrayList<TableStatement> tableStatementList = new ArrayList();
+            tableStatementList.add(statementCopy);
+            boolean changed = Dna.sql.updateTableStatements(tableStatementList);
+            if (changed) {
+                this.tableStatement = statementCopy;
+            }
+            saveButton.setEnabled(!changed);
+            return changed;
+        } else {
+            saveButton.setEnabled(false);
+            return true;
+        }
     }
 
     private class RoleValueTableModel extends AbstractTableModel {
@@ -420,13 +490,13 @@ public class PopupMulti extends JDialog {
             this.setLayout(gbl);
             GridBagConstraints gbc = new GridBagConstraints();
 
-            gbc.insets = new Insets(3, 3, 3, 3);
             gbc.fill = GridBagConstraints.HORIZONTAL;
             gbc.anchor = GridBagConstraints.EAST;
             gbc.gridx = 0;
             gbc.gridy = -1;
 
             for (int i = 0; i < this.ts.getRoleValues().size(); i++) {
+                gbc.insets = new Insets(3, 3, 3, 3);
                 gbc.gridy++;
                 gbc.gridx = 0;
                 final RoleValue roleValue = this.ts.getRoleValues().get(i);
@@ -488,8 +558,10 @@ public class PopupMulti extends JDialog {
                     gbc.anchor = GridBagConstraints.EAST;
                     this.add(new JLabel(roleValue.getRoleName(), JLabel.TRAILING), gbc);
                     gbc.gridx++;
+                    gbc.weightx = 1.0;
                     gbc.anchor = GridBagConstraints.WEST;
                     this.add(box, gbc);
+                    gbc.weightx = 0;
                 } else if (roleValue.getDataType().equals("long text")) {
                     String entry = (String) roleValue.getValue();
                     JTextArea box = new JTextArea();
@@ -506,7 +578,9 @@ public class PopupMulti extends JDialog {
                     this.add(new JLabel(roleValue.getRoleName(), JLabel.TRAILING), gbc);
                     gbc.anchor = GridBagConstraints.WEST;
                     gbc.gridx++;
+                    gbc.weightx = 1.0;
                     this.add(boxScroller, gbc);
+                    gbc.weightx = 0;
                 } else if (roleValue.getDataType().equals("boolean")) {
                     int entry = (Integer) roleValue.getValue();
                     boolean val = entry != 0;
@@ -545,23 +619,9 @@ public class PopupMulti extends JDialog {
                 long num = this.ts.getRoleValues().stream().filter(r -> r.getRoleId() == this.ts.getRoleValues().get(finalI).getRoleId()).count();
 
                 // column 3: remove the roleValue row
+                gbc.insets = new Insets(3, 2, 3, 5);
                 gbc.gridx++;
-                ImageIcon removeIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-trash-x-filled.png"))).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
-                JButton removeButton = new JButton(removeIcon);
-                removeButton.setMargin(new Insets(0, 0, 0, 0));
-                removeButton.setContentAreaFilled(false);
-                removeButton.addActionListener(actionEvent -> {
-                    removeRoleValue(finalI);
-                });
-                int min = PopupMulti.this.roleMap.get(this.ts.getRoleValues().get(i).getRoleId()).getNumMin();
-                removeButton.setEnabled(min < num);
-                removeButton.setVisible(min < num);
-                removeButton.setToolTipText("remove this entity from the statement");
-                this.add(removeButton, gbc);
-
-                // column 4: add a duplicate
-                gbc.gridx++;
-                ImageIcon addIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-arrows-split-2.png"))).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
+                ImageIcon addIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-arrows-split-2.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
                 JButton addButton = new JButton(addIcon);
                 addButton.setMargin(new Insets(0, 0, 0, 0));
                 addButton.setContentAreaFilled(false);
@@ -580,6 +640,22 @@ public class PopupMulti extends JDialog {
                 addButton.setVisible(max > num);
                 addButton.setToolTipText("add another " + this.ts.getRoleValues().get(i).getRoleName() + " to the statement");
                 this.add(addButton, gbc);
+
+                // column 4: add a duplicate
+                gbc.insets = new Insets(3, 0, 3, 5);
+                gbc.gridx++;
+                ImageIcon removeIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-trash-x-filled.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
+                JButton removeButton = new JButton(removeIcon);
+                removeButton.setMargin(new Insets(0, 0, 0, 0));
+                removeButton.setContentAreaFilled(false);
+                removeButton.addActionListener(actionEvent -> {
+                    removeRoleValue(finalI);
+                });
+                int min = PopupMulti.this.roleMap.get(this.ts.getRoleValues().get(i).getRoleId()).getNumMin();
+                removeButton.setEnabled(min < num);
+                removeButton.setVisible(min < num);
+                removeButton.setToolTipText("remove this entity from the statement");
+                this.add(removeButton, gbc);
             }
 
             this.repaint();
