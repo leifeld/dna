@@ -840,25 +840,6 @@ public class MainWindow extends JFrame {
 			}
 		});
 
-		// save and close window
-		/*
-		popup.getCancelButton().addActionListener(new ActionListener() { // cancel button action listener
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				popup.dispose();
-				statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
-			}
-		});
-		popup.getSaveButton().addActionListener(new ActionListener() { // save button action listener
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				popupSave(popup);
-				popup.dispose();
-				statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
-			}
-		});
-		*/
-
 		// no window decoration: focus lost listener
 		if (!popup.hasWindowDecoration()) {
 			popup.addWindowFocusListener(new WindowAdapter() {

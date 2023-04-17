@@ -42,6 +42,15 @@ public class Variable {
     }
 
     /**
+     * Set the variable ID.
+     *
+     * @param variableId The variable ID.
+     */
+    public void setVariableId(int variableId) {
+        this.variableId = variableId;
+    }
+
+    /**
      * Get the variable name.
      *
      * @return The variable name.
@@ -103,18 +112,6 @@ public class Variable {
         if (!this.variableName.equals(v.getVariableName())) {
             return false;
         }
-        //if ((this.value == null) != (v.getValue() == null)) {
-        //    return false;
-        //}
-        //if (this.dataType != null && v.getDataType() != null && this.value != null && v.getValue() != null && this.dataType.equals("long text") && !(((String) v.getValue()).equals((String) this.value))) {
-        //    return false;
-        //}
-        //if (this.dataType != null && v.getDataType() != null && this.value != null && v.getValue() != null && (this.dataType.equals("integer") || this.dataType.equals("boolean")) && !(((int) v.getValue()) == ((int) this.value))) {
-        //    return false;
-        //}
-        //if (this.dataType != null && v.getDataType() != null && this.value != null && v.getValue() != null && this.dataType.equals("short text") && !(((Entity) v.getValue()).equals((Entity) this.value))) {
-        //    return false;
-        //}
         return true;
     }
 }

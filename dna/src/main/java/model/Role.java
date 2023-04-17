@@ -3,11 +3,11 @@ package model;
 import java.awt.*;
 
 public class Role {
-    private int id, statementTypeId, position, numMin, numMax, numDefault;
+    private int id, statementTypeId, position, numMin, numMax, numDefault, defaultVariableId;
     private String roleName;
     private Color color;
 
-    public Role(int id, String roleName, Color color, int statementTypeId, int position, int numMin, int numMax, int numDefault) {
+    public Role(int id, String roleName, Color color, int statementTypeId, int position, int numMin, int numMax, int numDefault, int defaultVariableId) {
         this.id = id;
         this.roleName = roleName;
         this.color = color;
@@ -16,6 +16,7 @@ public class Role {
         this.numMin = numMin;
         this.numMax = numMax;
         this.numDefault = numDefault;
+        this.defaultVariableId = defaultVariableId;
     }
 
     public Role(int id, String roleName) {
@@ -81,6 +82,14 @@ public class Role {
 
     public void setColor(Color color) {
         this.color = color;
+    }
+
+    public int getDefaultVariableId() {
+        return defaultVariableId;
+    }
+
+    public void setDefaultVariableId(int defaultVariableId) {
+        this.defaultVariableId = defaultVariableId;
     }
 
     /**

@@ -2559,178 +2559,6 @@ public class Sql {
 	*/
 
 	/**
-	 * Update the variable contents of a statement using new values.
-	 *
-	 * @param statementId  The ID of the statement to be updated.
-	 * @param values       An ArrayList of {@link model.Value Value} objects. They
-	 *   are used to update each variable value in the statement.
-	 */
-	/*
-	public void updateStatement(int statementId, ArrayList<Value> values, int coderId) {
-		try (Connection conn = ds.getConnection();
-				PreparedStatement s1 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
-				PreparedStatement s2 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("UPDATE DATALONGTEXT SET Value = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
-				PreparedStatement s4 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Entity = ? WHERE StatementId = ? AND RoleVariableLinkId = ?;");
-				PreparedStatement s5 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);");
-				PreparedStatement s6 = conn.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
-				PreparedStatement s7 = conn.prepareStatement("SELECT ID, AttributeVariable FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
-				PreparedStatement s8 = conn.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
-				PreparedStatement s9 = conn.prepareStatement("SELECT COUNT(ID) FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
-				PreparedStatement s10 = conn.prepareStatement("UPDATE STATEMENTS SET Coder = ? WHERE ID = ?;");
-			 	PreparedStatement s11 = conn.prepareStatement("SELECT ID FROM ROLEVARIABLELINKS WHERE RoleId = ? AND VariableId = ?;");
-				SQLCloseable finish = conn::rollback) {
-			conn.setAutoCommit(false);
-			LogEvent e1 = new LogEvent(Logger.MESSAGE,
-					"[SQL] Started SQL transaction to update Statement " + statementId + ".",
-					"Started a new SQL transaction to update the variables in the statement with ID " + statementId + ". The contents will not be written into the database until the transaction is committed.");
-			Dna.logger.log(e1);
-			Entity entity;
-			int entityId, variableId, roleId, roleVariableId, attributeVariableId;
-			ResultSet r, r2;
-			for (int i = 0; i < values.size(); i++) {
-				// find ID in ROLEVARIABLELINKS table
-				variableId = values.get(i).getVariableId();
-				roleId = values.get(i).getRoleId();
-				roleVariableId = -1;
-				s11.setInt(1, roleId);
-				s11.setInt(2, variableId);
-				r = s11.executeQuery();
-				while (r.next()) {
-					roleVariableId = r.getInt(1);
-				}
-				if (roleVariableId < 0) {
-					LogEvent l = new LogEvent(Logger.ERROR,
-							"[SQL]  ├─ Failed to find role-variable ID for statement.",
-							"Statement " + statementId + ": could not find role-variable ID (role ID " + roleId + "; variable ID: " + variableId + ").");
-					Dna.logger.log(l);
-					throw new SQLException();
-				}
-
-				// update DATA... tables
-				if (values.get(i).getDataType().equals("boolean")) {
-					s1.setInt(1, (int) values.get(i).getValue());
-					s1.setInt(2, statementId);
-					s1.setInt(3, roleVariableId);
-					s1.executeUpdate();
-					LogEvent e2 = new LogEvent(Logger.MESSAGE,
-							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
-							"Boolean variable \"" + values.get(i).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementId + " were updated in the SQL transaction with value: " + (int) values.get(i).getValue() + ".");
-					Dna.logger.log(e2);
-				} else if (values.get(i).getDataType().equals("integer")) {
-					s2.setInt(1, (int) values.get(i).getValue());
-					s2.setInt(2, statementId);
-					s2.setInt(3, roleVariableId);
-					s2.executeUpdate();
-					LogEvent e2 = new LogEvent(Logger.MESSAGE,
-							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
-							"Integer variable \"" + values.get(i).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementId + " were updated in the SQL transaction with value: " + (int) values.get(i).getValue() + ".");
-					Dna.logger.log(e2);
-				} else if (values.get(i).getDataType().equals("long text")) {
-					s3.setString(1, (String) values.get(i).getValue());
-					s3.setInt(2, statementId);
-					s3.setInt(3, roleVariableId);
-					s3.executeUpdate();
-					LogEvent e2 = new LogEvent(Logger.MESSAGE,
-							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
-							"Long text variable \"" + values.get(i).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementId + " were updated in the SQL transaction.");
-					Dna.logger.log(e2);
-				} else if (values.get(i).getDataType().equals("short text")) {
-					// try to recognise entity ID from database; should be more reliable (e.g., with empty Strings)
-					entity = (Entity) values.get(i).getValue();
-					entityId = -1;
-					s6.setInt(1, variableId);
-					s6.setString(2, entity.getValue());
-					r = s6.executeQuery();
-					while (r.next()) {
-						entityId = r.getInt("ID");
-					}
-
-					if (entityId == -1) {
-						// if the attribute does not exist, insert new attribute with given String value
-						s5.setInt(1, variableId);
-						s5.setString(2, entity.getValue());
-						s5.setInt(3, entity.getColor().getRed());
-						s5.setInt(4, entity.getColor().getGreen());
-						s5.setInt(5, entity.getColor().getBlue());
-						s5.executeUpdate();
-
-						// new attribute has been created; now we have to get its ID
-						s6.setInt(1, variableId);
-						s6.setString(2, entity.getValue());
-						r = s6.executeQuery();
-						while (r.next()) {
-							entityId = r.getInt(1);
-						}
-						LogEvent e2 = new LogEvent(Logger.MESSAGE,
-								"[SQL]  ├─ Entity with ID " + entityId + " added to the transaction.",
-								"An entity with ID " + entityId + " and value \"" + entity.getValue() + "\" was created for variable ID " + variableId + " and added to the SQL transaction.");
-						Dna.logger.log(e2);
-
-						// since the attribute did not exist, we also need to add attributes;
-						// first get the IDs of the attribute variables, then add the attribute values
-						s7.setInt(1, variableId); // set variable ID to find all attribute variables by ID corresponding to the variable
-						r = s7.executeQuery();
-						while (r.next()) {
-							try {
-								attributeVariableId = r.getInt("ID");
-								s9.setInt(1, entityId);
-								s9.setInt(2, attributeVariableId);
-								r2 = s9.executeQuery();
-								while (r2.next()) {
-									if (r2.getInt(1) > 0) {
-										// attribute value already exists in the ATTRIBUTEVALUES table; don't do anything
-									} else {
-										s8.setInt(1, entityId); // entity ID
-										s8.setInt(2, attributeVariableId); // attribute variable ID
-										s8.setString(3, ""); // put an empty value into the attribute variable field initially
-										s8.executeUpdate();
-										LogEvent l = new LogEvent(Logger.MESSAGE,
-												"[SQL]  ├─ Transaction: Added value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
-												"Added attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table during the transaction.");
-										Dna.logger.log(l);
-									}
-								}
-							} catch (Exception e3) {
-								LogEvent l = new LogEvent(Logger.WARNING,
-										"[SQL]  ├─ Failed to add a new value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table.",
-										"Failed to add a new value for attribute \"" + r.getString("AttributeVariable") + "\" for Entity " + entityId + " to the ATTRIBUTEVALUES table. The next step will check if the attribute is already there. If so, no problem. If not, there will be another log event with an error message.",
-										e3);
-								Dna.logger.log(l);
-							}
-						}
-					}
-
-					// write the attribute ID as the value in the DATASHORTTEXT table
-					s4.setInt(1, entityId);
-					s4.setInt(2, statementId);
-					s4.setInt(3, roleVariableId);
-					s4.executeUpdate();
-					LogEvent e2 = new LogEvent(Logger.MESSAGE,
-							"[SQL]  ├─ Variable " + variableId + " in Statement " + statementId + " was updated in the transaction.",
-							"Short text variable \"" + values.get(i).getKey() + "\" (ID " + variableId + ") and Role \"" + values.get(i).getRoleName() + "\" (ID " + roleId + ") in Statement " + statementId + " were updated in the SQL transaction with Entity " + entityId + ".");
-					Dna.logger.log(e2);
-				}
-			}
-			s10.setInt(1, coderId);
-			s10.setInt(2, statementId);
-			s10.executeUpdate();
-			conn.commit();
-			LogEvent e2 = new LogEvent(Logger.MESSAGE,
-					"[SQL]  └─ Completed SQL transaction to update Statement " + statementId + ".",
-					"Completed SQL transaction to update the variables in the statement with ID " + statementId + ". The contents have been written into the database.");
-			Dna.logger.log(e2);
-		} catch (SQLException e) {
-			LogEvent e2 = new LogEvent(Logger.ERROR,
-					"[SQL]  └─ Statement " + statementId + " could not be updated in the database.",
-					"When the statement popup window for Statement " + statementId + " was closed, the contents for the different variables could not be saved into the database. The database still contains the old values before the contents were edited. Please double-check to make sure that the statement contains the right values for all variables. Check whether the database may be locked and close all programs other than DNA that are currently accessing the database before trying again.",
-					e);
-			Dna.logger.log(e2);
-		}
-	}
-	*/
-
-	/**
 	 * Update the coder ID and variable contents (with entities, but without their attributes) of multiple statements
 	 * using new contents.
 	 *
@@ -2846,7 +2674,8 @@ public class Sql {
 								.stream().noneMatch(d -> d.dataType.equals(v.getDataType()) &&
 										d.roleVariableLinkId == v.getRoleVariableLinkId() &&
 										((d.dataType.equals("long text") && d.valueString.equals((String) v.getValue())) ||
-												(!d.dataType.equals("long text") && d.valueInt == (int) v.getValue()))))
+												(d.dataType.equals("short text") && d.valueInt == ((Entity) v.getValue()).getId()) ||
+												((d.dataType.equals("boolean") || d.dataType.equals("integer")) && d.valueInt == (int) v.getValue()))))
 						.collect(Collectors.toList());
 
 				// create a set of data entries to remove from database because they don't exist anymore in the statement
@@ -2857,7 +2686,8 @@ public class Sql {
 								.noneMatch(v -> v.getDataType().equals(d.dataType) &&
 										v.getRoleVariableLinkId() == d.roleVariableLinkId &&
 										((v.getDataType().equals("long text") && v.getValue().equals(d.valueString)) ||
-												(!v.getDataType().equals("long text") && (int) v.getValue() == d.valueInt))))
+												(v.getDataType().equals("short text") && d.valueInt == ((Entity) v.getValue()).getId()) ||
+												((v.getDataType().equals("boolean") || v.getDataType().equals("integer")) && (int) v.getValue() == d.valueInt))))
 						.collect(Collectors.toList());
 
 				// insert missing entities into the database first, then insert data entries
@@ -2895,6 +2725,13 @@ public class Sql {
 								deletionPile.remove(j);
 								insertionPile.remove(k);
 								break;
+							} else if (deletionPile.get(j).dataType.equals("short text") &&
+									insertionPile.get(k).getDataType().equals("short text") &&
+									deletionPile.get(j).valueInt != ((Entity) insertionPile.get(k).getValue()).getId()) {
+								s14.setInt(1, ((Entity) insertionPile.get(k).getValue()).getId());
+								s14.setInt(2, deletionPile.get(j).id);
+								s14.executeUpdate(); // TODO: There is a bug somewhere in here because the foreign key constraint is not always met!
+								break;
 							} else if (deletionPile.get(j).valueInt != (int) insertionPile.get(k).getValue() &&
 									deletionPile.get(j).dataType.equals(insertionPile.get(k).getDataType())) {
 								if (deletionPile.get(j).dataType.equals("boolean")) {
@@ -2905,10 +2742,6 @@ public class Sql {
 									s12.setInt(1, (int) insertionPile.get(k).getValue());
 									s12.setInt(2, deletionPile.get(j).id);
 									s12.executeUpdate();
-								} else {
-									s14.setInt(1, ((Entity) insertionPile.get(k).getValue()).getId());
-									s14.setInt(2, deletionPile.get(j).id);
-									s14.executeUpdate();
 								}
 								deletionPile.remove(j);
 								insertionPile.remove(k);
@@ -4599,7 +4432,8 @@ public class Sql {
 						r.getInt("Position"),
 						r.getInt("NumMin"),
 						r.getInt("NumMax"),
-						r.getInt("NumDefault")));
+						r.getInt("NumDefault"),
+						r.getInt("DefaultVariableId")));
 			}
 		} catch (SQLException e) {
 			LogEvent le = new LogEvent(Logger.ERROR,
@@ -4717,6 +4551,7 @@ public class Sql {
 			String dataType = "", variableName = "", roleName = "";
 			s12.setInt(1, statement.getStatementTypeId());
 			r1 = s12.executeQuery();
+			ArrayList<Integer> addedRoles = new ArrayList<Integer>();
 			while (r1.next()) {
 				roleVariableLinkId = r1.getInt("ID");
 				roleId = r1.getInt("RoleId");
@@ -4733,7 +4568,8 @@ public class Sql {
 					throw new SQLException();
 				}
 
-				if (dataType.equals("short text")) {
+				int finalRoleId = roleId;
+				if (dataType.equals("short text") && addedRoles.stream().filter(r -> r == finalRoleId).count() < numDefault) { // don't add multiple variables for the same role
 					// look up if an entry exists in ENTITIES and create zero-length entity if not
 					s10.setInt(1, variableId);
 					s10.setString(2, "");
@@ -4815,6 +4651,7 @@ public class Sql {
 						s2.setInt(2, roleVariableLinkId);
 						s2.setLong(3, entityId);
 						s2.executeUpdate();
+						addedRoles.add(roleId);
 						l = new LogEvent(Logger.MESSAGE,
 								"[SQL]  ├─ Transaction: Added an entity to the DATASHORTTEXT table.",
 								"Added a row with entity ID " + entityId + " for Variable \"" + variableName + "\" (ID " + variableId + ") and Role \"" + roleName + "\" (ID " + roleId + ") to the DATASHORTTEXT table during the transaction.");
