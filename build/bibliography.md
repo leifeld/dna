@@ -4,7 +4,7 @@ author:
 bibliography:
 - bibliography.bib
 csl: apa-numeric-superscript-brackets.csl
-date: 2023-03-01
+date: 2023-05-04
 title: "Discourse Network Analysis: Bibliography"
 ---
 
@@ -1988,9 +1988,9 @@ Paris climate change conference in 2015. *Environmental Communication*,
 
 <div id="ref-swedenmark2018vi" class="csl-entry">
 
-215\. Swedenmark, S. Ö. (2018). *“Vi ska sträcka oss lite längre <span
-class="nocase">ä</span>n vi behöver.” En fallstudie om diskursen kring
-mellanorganisatorisk samverkan inom Stockholmsregionen*
+215\. Swedenmark, S. Ö. (2018). *“Vi ska sträcka oss lite längre
+<span class="nocase">ä</span>n vi behöver.” En fallstudie om diskursen
+kring mellanorganisatorisk samverkan inom Stockholmsregionen*
 \[Magisteruppsats i statsvetenskap, Mittuniversitetet\].
 <https://www.diva-portal.org/smash/get/diva2:1239608/FULLTEXT01.pdf>
 

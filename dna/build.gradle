@@ -77,4 +77,7 @@ dependencies {
     implementation group: 'me.tongfei', name: 'progressbar', version: '0.9.4'
     // https://mvnrepository.com/artifact/org.ojalgo/ojalgo
     implementation group: 'org.ojalgo', name: 'ojalgo', version: '51.4.1'
+    // https://mvnrepository.com/artifact/org.apache.xmlgraphics/batik-transcoder
+    implementation group: 'org.apache.xmlgraphics', name: 'batik-transcoder', version: '1.16'
+
 }

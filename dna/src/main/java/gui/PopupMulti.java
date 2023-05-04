@@ -7,9 +7,9 @@ import javax.swing.*;
 import javax.swing.border.LineBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -130,7 +130,7 @@ public class PopupMulti extends JDialog {
         colorPanel.setBackground(color);
         colorPanel.setPreferredSize(new Dimension(4, 4));
 
-        ImageIcon addRoleIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-row-insert-bottom.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
+        ImageIcon addRoleIcon = new SvgIcon("/icons/tabler_text_plus.svg", 14).getImageIcon();
         addRole = new JButton(addRoleIcon);
         addRole.setToolTipText("add an additional role to this statement...");
         addRole.setMargin(new Insets(0, 0, 0, 0));
@@ -182,14 +182,14 @@ public class PopupMulti extends JDialog {
         });
         addRole.setEnabled(this.editable);
 
-        ImageIcon duplicateIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-copy.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
+        ImageIcon duplicateIcon = new SvgIcon("/icons/tabler_copy.svg", 14).getImageIcon();
         duplicate = new JButton(duplicateIcon);
         duplicate.setToolTipText("create a copy of this statement at the same location");
         duplicate.setMargin(new Insets(0, 0, 0, 0));
         duplicate.setContentAreaFilled(false);
         duplicate.setEnabled(this.coder.isPermissionAddStatements());
 
-        ImageIcon removeIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-trash.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
+        ImageIcon removeIcon = new SvgIcon("/icons/tabler_trash.svg", 14).getImageIcon();
         remove = new JButton(removeIcon);
         remove.setToolTipText("completely remove the whole statement (but keep the text)");
         remove.setMargin(new Insets(0, 0, 0, 0));
@@ -197,7 +197,7 @@ public class PopupMulti extends JDialog {
         remove.setEnabled((this.tableStatement.getCoderId() == this.coder.getId() && this.coder.isPermissionDeleteStatements()) ||
                 (this.tableStatement.getCoderId() != this.coder.getId() && this.editable));
 
-        ImageIcon revertIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-rotate-clockwise.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
+        ImageIcon revertIcon = new SvgIcon("/icons/google_device_reset.svg", 14).getImageIcon();
         JButton revertButton = new JButton(revertIcon);
         revertButton.setToolTipText("revert any changes to the state when the statement was opened");
         revertButton.setMargin(new Insets(0, 0, 0, 0));
@@ -219,8 +219,7 @@ public class PopupMulti extends JDialog {
             }
         });
 
-        ImageIcon saveIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/google_round_save_black_48dp.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
-        // ImageIcon saveIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-device-floppy.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
+        ImageIcon saveIcon = new SvgIcon("/icons/tabler_device_floppy.svg", 14).getImageIcon();
         saveButton = new JButton(saveIcon);
         saveButton.setToolTipText("save the contents of the statement into the database");
         saveButton.setMargin(new Insets(0, 0, 0, 0));
@@ -616,7 +615,7 @@ public class PopupMulti extends JDialog {
                 // column 3: remove the roleValue row
                 gbc.insets = new Insets(3, 2, 3, 5);
                 gbc.gridx++;
-                ImageIcon addIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-arrows-split-2.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
+                ImageIcon addIcon = new SvgIcon("/icons/tabler_plus.svg", 14).getImageIcon();
                 JButton addButton = new JButton(addIcon);
                 addButton.setMargin(new Insets(0, 0, 0, 0));
                 addButton.setContentAreaFilled(false);
@@ -639,7 +638,7 @@ public class PopupMulti extends JDialog {
                 // column 4: add a duplicate
                 gbc.insets = new Insets(3, 0, 3, 5);
                 gbc.gridx++;
-                ImageIcon removeIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-trash-x-filled.png"))).getImage().getScaledInstance(14, 14, Image.SCALE_SMOOTH));
+                ImageIcon removeIcon = new SvgIcon("/icons/tabler_minus.svg", 14).getImageIcon();
                 JButton removeButton = new JButton(removeIcon);
                 removeButton.setMargin(new Insets(0, 0, 0, 0));
                 removeButton.setContentAreaFilled(false);
