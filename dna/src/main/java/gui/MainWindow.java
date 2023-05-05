@@ -9,6 +9,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BaseMultiResolutionImage;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -132,15 +133,9 @@ public class MainWindow extends JFrame {
 		c = getContentPane();
 		this.setTitle("Discourse Network Analyzer");
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		
-		List<Image> dnaIcons = new ArrayList<Image>();
-		dnaIcons.add(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna512.png"))).getImage());
-		dnaIcons.add(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna256.png"))).getImage());
-		dnaIcons.add(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna128.png"))).getImage());
-		dnaIcons.add(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna64.png"))).getImage());
-		dnaIcons.add(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna32.png"))).getImage());
-		dnaIcons.add(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna16.png"))).getImage());
-		this.setIconImages(dnaIcons);
+
+		BaseMultiResolutionImage dnaIcon = new SvgIcon("/icons/dna.svg", 16).getImage();
+		this.setIconImage(dnaIcon);
 		
 		// close SQL connection before exit
 		this.addWindowListener(new WindowAdapter() {
@@ -249,7 +244,8 @@ public class MainWindow extends JFrame {
 		ImageIcon loggerIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-bug.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
 		actionLoggerDialog = new ActionLoggerDialog("Display message log", loggerIcon, "Display a log of messages, warnings, and errors in a dialog window", KeyEvent.VK_L);
 		
-		ImageIcon aboutIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna32.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		// ImageIcon aboutIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/dna32.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon aboutIcon = new SvgIcon("/icons/dna.svg", 18).getImageIcon();
 		actionAboutWindow = new ActionAboutWindow("About DNA", aboutIcon, "Display information about DNA", KeyEvent.VK_B);
 
 		// define models

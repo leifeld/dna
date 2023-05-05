@@ -27,6 +27,10 @@ public class SvgIcon {
         return new ImageIcon(this.b);
     }
 
+    public BaseMultiResolutionImage getImage() {
+        return b;
+    }
+
     private BaseMultiResolutionImage createMultiImage(String svgPath, int baselineSize) {
         double[] zoomFactors = {1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0};
         List<BufferedImage> images = new ArrayList<>();
