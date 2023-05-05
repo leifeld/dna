@@ -1,4 +1,4 @@
-![](./dna/src/main/resources/icons/dna128.png)
+![](./dna/src/main/resources/icons/dna_horizontal.svg)
 
 ## Discourse Network Analyzer (DNA)
 
