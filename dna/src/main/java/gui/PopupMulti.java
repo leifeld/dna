@@ -2,14 +2,16 @@ package gui;
 
 import dna.Dna;
 import model.*;
+import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,7 +37,7 @@ public class PopupMulti extends JDialog {
     private Coder coder;
     private JComboBox<Coder> coderComboBox;
     private JButton addRole, duplicate, remove;
-    private JButton saveButton;
+    private JButton revertButton, saveButton;
     private ArrayList<RoleVariableLink> roleVariableLinks;
     private ArrayList<Entity> entities;
     private ArrayList<Variable> variables;
@@ -55,9 +57,6 @@ public class PopupMulti extends JDialog {
     PopupMulti(double X, double Y, TableStatement tableStatement, Point location, Coder coder, ArrayList<Coder> eligibleCoders) {
 
         // TODO:
-        //  transfer the contents from int spinners and boolean radio buttons to modified statement in role value panel using listeners, then test saving and updating statements
-        //  debug revert and save buttons;
-        //  add amber color to save and revert buttons if any changes have been made; write listeners for statement content changes
         //  debug #Sql.updateTableStatements() function;
         //  take care of permissions and check nothing is done that isn't permitted
         //  clean up the code and write javadoc annotations
@@ -169,6 +168,7 @@ public class PopupMulti extends JDialog {
                                             .findFirst()
                                             .getAsInt();
                                     PopupMulti.this.rvp.addRoleValue(new RoleValue(variableId, variable.getVariableName(), variable.getDataType(), blankEntity, roleVariableLinkId, r.getId(), r.getRoleName(), r.getStatementTypeId()));
+                                    toggleButtons();
                                 });
                                 addMenu.add(menuItem);
                             }
@@ -198,7 +198,7 @@ public class PopupMulti extends JDialog {
                 (this.tableStatement.getCoderId() != this.coder.getId() && this.editable));
 
         ImageIcon revertIcon = new SvgIcon("/icons/google_device_reset.svg", 14).getImageIcon();
-        JButton revertButton = new JButton(revertIcon);
+        revertButton = new JButton(revertIcon);
         revertButton.setToolTipText("revert any changes to the state when the statement was opened");
         revertButton.setMargin(new Insets(0, 0, 0, 0));
         revertButton.setContentAreaFilled(false);
@@ -214,10 +214,11 @@ public class PopupMulti extends JDialog {
                         }
                     }
                     PopupMulti.this.coderComboBox.setSelectedIndex(coderIndex);
-                    PopupMulti.this.coderComboBox.repaint(); // TODO: not sure if necessary
                 }
+                toggleButtons();
             }
         });
+        revertButton.setEnabled(false);
 
         ImageIcon saveIcon = new SvgIcon("/icons/tabler_device_floppy.svg", 14).getImageIcon();
         saveButton = new JButton(saveIcon);
@@ -227,7 +228,7 @@ public class PopupMulti extends JDialog {
         saveButton.addActionListener(actionEvent -> {
             PopupMulti.this.saveContents();
         });
-        saveButton.setEnabled(this.editable);
+        saveButton.setEnabled(false);
         if (!this.hasWindowDecoration()) {
             saveButton.setVisible(false);
         }
@@ -277,7 +278,7 @@ public class PopupMulti extends JDialog {
         titleDecorationPanel.add(colorPanel, BorderLayout.WEST);
         contentsPanel.add(titleDecorationPanel, BorderLayout.NORTH);
 
-        rvp = new RoleValuePanel(this.tableStatement);
+        rvp = new RoleValuePanel(new TableStatement(this.tableStatement));
         rvp.rebuildLayout();
         contentsPanel.add(rvp, BorderLayout.CENTER);
 
@@ -350,7 +351,7 @@ public class PopupMulti extends JDialog {
     }
 
     boolean isStatementModified() {
-        return this.rvp.getModifiedTableStatement().equals(this.tableStatement);
+        return !this.rvp.getModifiedTableStatement().equals(this.tableStatement);
     }
 
     /**
@@ -409,11 +410,25 @@ public class PopupMulti extends JDialog {
         }
     }
 
+    private void toggleButtons() {
+        if (PopupMulti.this.isStatementModified()) {
+            revertButton.setIcon(new SvgIcon("/icons/google_device_reset.svg", 14, Color.ORANGE).getImageIcon());
+            revertButton.setEnabled(true);
+            saveButton.setIcon(new SvgIcon("/icons/tabler_device_floppy.svg", 14, Color.ORANGE).getImageIcon());
+            saveButton.setEnabled(true);
+        } else {
+            revertButton.setIcon(new SvgIcon("/icons/google_device_reset.svg", 14).getImageIcon());
+            revertButton.setEnabled(false);
+            saveButton.setIcon(new SvgIcon("/icons/tabler_device_floppy.svg", 14).getImageIcon());
+            saveButton.setEnabled(false);
+        }
+    }
+
     class RoleValuePanel extends JPanel {
         TableStatement ts;
 
         public RoleValuePanel(TableStatement ts) {
-            this.ts = new TableStatement(ts);
+            this.ts = ts;
         }
 
         TableStatement getModifiedTableStatement() {
@@ -465,7 +480,7 @@ public class PopupMulti extends JDialog {
                         }
                     }
                     ((JTextField) box.getEditor().getEditorComponent()).setSelectedTextColor(fg);
-                    ((JTextField) box.getEditor().getEditorComponent()).setForeground(fg);
+                    box.getEditor().getEditorComponent().setForeground(fg);
 
                     // add a document listener to the combobox to paint the selected value in the attribute color, despite being highlighted
                     ((JTextField) box.getEditor().getEditorComponent()).getDocument().addDocumentListener(new DocumentListener() {
@@ -483,39 +498,44 @@ public class PopupMulti extends JDialog {
                         }
                         private void formatEntry() {
                             Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
+                            String currentText = ((JTextField) box.getEditor().getEditorComponent()).getText();
                             for (int i = 0; i < box.getModel().getSize(); i++) {
-                                if (((JTextField) box.getEditor().getEditorComponent()).getText().equals(box.getModel().getElementAt(i).getValue())) {
+                                if (box.getModel().getElementAt(i).getValue().equals(currentText)) {
+                                    box.setSelectedIndex(i);
                                     fg = box.getModel().getElementAt(i).getColor();
                                 }
                             }
                             ((JTextField) box.getEditor().getEditorComponent()).setSelectedTextColor(fg);
-                            ((JTextField) box.getEditor().getEditorComponent()).setForeground(fg);
-                        }
-                    });
+                            box.getEditor().getEditorComponent().setForeground(fg);
 
-                    // listener to save changes in modified statement
-                    box.addItemListener(itemEvent -> {
-                        if (!((String) box.getSelectedItem().toString()).equals(box.getEditor().getItem().toString())) {
-                            box.setSelectedItem(box.getEditor().getItem()); // make sure combo box edits are saved even if the editor has not lost its focus yet
-                        }
-                        Object object = box.getSelectedItem();
-                        Entity entity;
-                        if (object.getClass().getName().endsWith("String")) { // if not an existing entity, the editor returns a String
-                            String s1 = (String) object;
-                            if (s1.length() > 0 && s1.matches("^\\s+$")) { // replace a (multiple) whitespace string by an empty string
-                                s1 = "";
+                            Object object = box.getSelectedItem();
+                            if (object.getClass().getName().endsWith("String")) { // if not an existing entity, the editor returns a String
+                                String s1 = (String) object;
+                                if (s1.length() > 0 && s1.matches("^\\s+$")) { // replace a (multiple) whitespace string by an empty string
+                                    s1 = "";
+                                }
+                                s1 = s1.substring(0, Math.min(190, s1.length()));
+                                Entity entity = new Entity(s1); // the new entity has an ID of -1; the SQL class needs to take care of this when writing into the database
+                                int defaultVariableId = PopupMulti.this.roleMap.get(roleValue.getRoleId()).getDefaultVariableId();
+                                String defaultVariableName = PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == defaultVariableId).findFirst().get().getVariableName();
+                                int defaultRoleVariableId = PopupMulti.this.roleVariableLinks.stream().filter(r -> r.getVariableId() == defaultVariableId && r.getRoleId() == roleValue.getRoleId()).findFirst().get().getId();
+                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableId(defaultVariableId);
+                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableName(defaultVariableName);
+                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setRoleVariableLinkId(defaultRoleVariableId);
+                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(entity);
+                            } else {
+                                Entity entity = (Entity) box.getSelectedItem();
+                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableId(entity.getVariableId());
+                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableName(PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == entity.getVariableId()).findFirst().get().getVariableName());
+                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setRoleVariableLinkId(PopupMulti.this.roleVariableLinks.stream().filter(l -> l.getVariableId() == entity.getVariableId()).findFirst().get().getId());
+                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(entity);
                             }
-                            s1 = s1.substring(0, Math.min(190, s1.length()));
-                            entity = new Entity(s1); // the new entity has an ID of -1; the SQL class needs to take care of this when writing into the database
-                            RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableId(PopupMulti.this.roleMap.get(roleValue.getRoleId()).getDefaultVariableId());
-                        } else {
-                            entity = (Entity) box.getSelectedItem();
-                            RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableId(entity.getVariableId());
+                            toggleButtons();
                         }
-                        RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableName(PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == entity.getVariableId()).findFirst().get().getVariableName());
-                        RoleValuePanel.this.ts.getRoleValues().get(finalI1).setRoleVariableLinkId(PopupMulti.this.roleVariableLinks.stream().filter(l -> l.getVariableId() == entity.getVariableId()).findFirst().get().getId());
-                        RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(entity);
                     });
+                    if (coder.isPopupAutoComplete()) {
+                        AutoCompleteDecorator.decorate(box); // auto-complete short text values; part of SwingX
+                    }
 
                     gbc.anchor = GridBagConstraints.EAST;
                     this.add(new JLabel(roleValue.getRoleName(), JLabel.TRAILING), gbc);
@@ -559,6 +579,7 @@ public class PopupMulti extends JDialog {
                                 content = "";
                             }
                             RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(content);
+                            toggleButtons();
                         }
                     });
 
@@ -576,8 +597,19 @@ public class PopupMulti extends JDialog {
                     buttons.setYes(val);
                     buttons.setEnabled(PopupMulti.this.editable);
 
-                    // save contents
-                    // TODO: add a listener and update contents of modified statement in role value panel
+                    ChangeListener cl = new ChangeListener() {
+                        @Override
+                        public void stateChanged(ChangeEvent changeEvent) {
+                            if (buttons.isYes()) {
+                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(1);
+                            } else {
+                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(0);
+                            }
+                            toggleButtons();
+                        }
+                    };
+                    buttons.getYesButton().addChangeListener(cl);
+                    buttons.getNoButton().addChangeListener(cl);
 
                     gbc.anchor = GridBagConstraints.EAST;
                     gbc.insets = new Insets(3,3,3,2);
@@ -597,8 +629,10 @@ public class PopupMulti extends JDialog {
                     jp.add(jsp);
                     jsp.setEnabled(PopupMulti.this.editable);
 
-                    // save contents
-                    // TODO: add a listener and update contents of modified statement in role value panel
+                    jsp.addChangeListener(cl -> {
+                        RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(jsp.getValue());
+                        toggleButtons();
+                    });
 
                     gbc.anchor = GridBagConstraints.EAST;
                     this.add(new JLabel(roleValue.getRoleName(), JLabel.TRAILING), gbc);
@@ -628,6 +662,7 @@ public class PopupMulti extends JDialog {
                             .findFirst()
                             .get());
                     this.addRoleValue(duplicate);
+                    toggleButtons();
                 });
                 int max = PopupMulti.this.roleMap.get(this.ts.getRoleValues().get(i).getRoleId()).getNumMax();
                 addButton.setEnabled(max > num);
@@ -644,6 +679,7 @@ public class PopupMulti extends JDialog {
                 removeButton.setContentAreaFilled(false);
                 removeButton.addActionListener(actionEvent -> {
                     removeRoleValue(finalI);
+                    toggleButtons();
                 });
                 int min = PopupMulti.this.roleMap.get(this.ts.getRoleValues().get(i).getRoleId()).getNumMin();
                 removeButton.setEnabled(min < num);
@@ -670,58 +706,4 @@ public class PopupMulti extends JDialog {
             this.rebuildLayout();
         }
     }
-
-    class EntityComboBoxPanel extends JPanel {
-        JComboBox<Entity> box;
-
-        public EntityComboBoxPanel(RoleValue roleValue) {
-            super();
-            // find variable IDs from which current role is sourced, to populate the combo box
-            java.util.List<Integer> roleVariableIds = PopupMulti.this.roleVariableLinks
-                    .stream()
-                    .filter(r -> r.getRoleId() == roleValue.getRoleId())
-                    .map(r -> r.getVariableId())
-                    .collect(Collectors.toList());
-            // retain the subset of entities corresponding to the selected variable IDs, to put them in the combo box
-            Entity[] entitySubset = PopupMulti.this.entities
-                    .stream()
-                    .filter(e -> roleVariableIds.contains(e.getVariableId()))
-                    .toArray(Entity[]::new);
-            box = new JComboBox<>(entitySubset);
-            box.setRenderer(new EntityComboBoxRenderer());
-            box.setEditable(true);
-            box.getModel().setSelectedItem(roleValue.getValue());
-            box.setPreferredSize(new Dimension(textFieldWidth, 16));
-
-            this.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
-            //JLabel roleLabel = new JLabel(roleValue.getRoleName());
-            //roleLabel.setPreferredSize(new Dimension(200, 16));
-            //this.add(roleLabel);
-            this.add(box);
-        }
-    }
-
-    /*
-    public class RoleValueCellRenderer extends DefaultTableCellRenderer {
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-
-            Component cellComponent = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-            if (value instanceof RoleValue) {
-                RoleValue roleValue = (RoleValue) value;
-                if (column == 1) {
-                    EntityComboBoxPanel p = new EntityComboBoxPanel(roleValue);
-                    return p;
-                } else if (column == 0) {
-                    ((JLabel) cellComponent).setText(roleValue.getRoleName());
-                    ((JLabel) cellComponent).setHorizontalAlignment(SwingConstants.RIGHT);
-                } else {
-                    return new JLabel("Text");
-                }
-            }
-            return cellComponent;
-        }
-    }
-    */
 }

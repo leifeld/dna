@@ -23,7 +23,11 @@ public class RoleValue extends Variable {
      */
     public RoleValue(RoleValue roleValue) {
         super(roleValue.getVariableId(), roleValue.getVariableName(), roleValue.getDataType());
-        this.value = roleValue.getValue();
+        if (roleValue.getDataType().equals("short text")) {
+            this.value = new Entity((Entity) roleValue.getValue());
+        } else {
+            this.value = roleValue.getValue();
+        }
         this.roleVariableLinkId = roleValue.getRoleVariableLinkId();
         this.roleId = roleValue.getRoleId();
         this.roleName = roleValue.getRoleName();
@@ -83,13 +87,28 @@ public class RoleValue extends Variable {
             return false;
         RoleValue v = (RoleValue) o;
         // field comparison
-        return Objects.equals(this.getVariableId(), v.getVariableId())
-                && Objects.equals(this.getVariableName(), v.getVariableName())
-                && Objects.equals(this.getDataType(), v.getDataType())
-                && Objects.equals(this.getValue(), v.getValue())
-                && Objects.equals(this.getRoleVariableLinkId(), v.getRoleVariableLinkId())
-                && Objects.equals(this.getRoleId(), v.getRoleId())
-                && Objects.equals(this.getRoleName(), v.getRoleName())
-                && Objects.equals(this.getStatementTypeId(), v.getStatementTypeId());
+        if (!Objects.equals(this.getVariableId(), v.getVariableId())
+                || !Objects.equals(this.getVariableName(), v.getVariableName())
+                || !Objects.equals(this.getDataType(), v.getDataType())
+                || !Objects.equals(this.getRoleVariableLinkId(), v.getRoleVariableLinkId())
+                || !Objects.equals(this.getRoleId(), v.getRoleId())
+                || !Objects.equals(this.getRoleName(), v.getRoleName())
+                || !Objects.equals(this.getStatementTypeId(), v.getStatementTypeId())) {
+            return false;
+        }
+        // value comparison
+        if (this.getDataType().equals("boolean") && ((int) this.getValue()) != (int) v.getValue()) {
+            return false;
+        }
+        if (this.getDataType().equals("integer") && ((int) this.getValue()) != (int) v.getValue()) {
+            return false;
+        }
+        if (this.getDataType().equals("long text") && !((String) this.getValue()).equals((String) v.getValue())) {
+            return false;
+        }
+        if (this.getDataType().equals("short text") && !((Entity) this.getValue()).equals((Entity) v.getValue())) {
+            return false;
+        }
+        return true;
     }
 }

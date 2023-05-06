@@ -96,6 +96,21 @@ public class Entity implements Comparable<Entity> {
 	}
 
 	/**
+	 * A copy constructor for cloning an entity.
+	 *
+	 * @param entity An entity that should be cloned by creating a new entity.
+	 */
+	public Entity(Entity entity) {
+		this.value = entity.getValue();
+		this.id = entity.getId();
+		this.variableId = entity.getVariableId();
+		this.color = entity.getColor();
+		this.inDatabase = entity.isInDatabase();
+		this.attributeValues = new HashMap<String, String>();
+		this.attributeValues.putAll(entity.getAttributeValues());
+	}
+
+	/**
 	 * Is the entity in use in at least one statement in the database?
 	 * 
 	 * @return  A boolean indicating if the entity is in use in the database.

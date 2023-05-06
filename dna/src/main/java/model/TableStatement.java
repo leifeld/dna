@@ -31,7 +31,10 @@ public class TableStatement extends Statement {
         this.coderColor = tableStatement.getCoderColor();
         this.statementTypeColor = tableStatement.getStatementTypeColor();
         this.statementTypeLabel = tableStatement.getStatementTypeLabel();
-        this.roleValues = tableStatement.getRoleValues();
+        this.roleValues = new ArrayList<RoleValue>();
+        for (int i = 0; i < tableStatement.getRoleValues().size(); i++) {
+            this.roleValues.add(new RoleValue(tableStatement.getRoleValues().get(i)));
+        }
     }
 
     public String getText() {
@@ -124,19 +127,28 @@ public class TableStatement extends Statement {
             return false;
         TableStatement s = (TableStatement) o;
         // field comparison
-        return Objects.equals(this.getCoderColor(), s.getCoderColor())
-                && Objects.equals(this.getCoderName(), s.getCoderName())
-                && Objects.equals(this.getCoderId(), s.getCoderId())
-                && Objects.equals(this.getId(), s.getId())
-                && Objects.equals(this.getStart(), s.getStart())
-                && Objects.equals(this.getStop(), s.getStop())
-                && Objects.equals(this.getDateTime(), s.getDateTime())
-                && Objects.equals(this.getStatementTypeColor(), s.getStatementTypeColor())
-                && Objects.equals(this.getStatementTypeLabel(), s.getStatementTypeLabel())
-                && Objects.equals(this.getStatementTypeId(), s.getStatementTypeId())
-                && Objects.equals(this.getDocumentId(), s.getDocumentId())
-                && Objects.equals(this.getText(), s.getText())
-                && this.getRoleValues().size() == s.getRoleValues().size()
-                && Objects.equals(this.getRoleValues(), s.getRoleValues());
+        if (!Objects.equals(this.getCoderColor(), s.getCoderColor())
+                || !Objects.equals(this.getCoderName(), s.getCoderName())
+                || !Objects.equals(this.getCoderId(), s.getCoderId())
+                || !Objects.equals(this.getId(), s.getId())
+                || !Objects.equals(this.getStart(), s.getStart())
+                || !Objects.equals(this.getStop(), s.getStop())
+                || !Objects.equals(this.getDateTime(), s.getDateTime())
+                || !Objects.equals(this.getStatementTypeColor(), s.getStatementTypeColor())
+                || !Objects.equals(this.getStatementTypeLabel(), s.getStatementTypeLabel())
+                || !Objects.equals(this.getStatementTypeId(), s.getStatementTypeId())
+                || !Objects.equals(this.getDocumentId(), s.getDocumentId())
+                || !Objects.equals(this.getText(), s.getText())
+                || this.getRoleValues().size() != s.getRoleValues().size()) {
+            return false;
+        }
+        // role-values comparison
+        for (int i = 0; i < this.getRoleValues().size(); i++) {
+            if (!this.getRoleValues().get(i).equals(s.getRoleValues().get(i))) {
+                return false;
+            } else {
+            }
+        }
+        return true;
     }
 }
