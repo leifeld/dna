@@ -756,7 +756,7 @@ public class MainWindow extends JFrame {
 		}
 		
 		// create popup window
-		this.popup = new PopupMulti(x, y, s, location, Dna.sql.getActiveCoder(), eligibleCoders);
+		this.popup = new PopupMulti(MainWindow.this, x, y, s, location, Dna.sql.getActiveCoder(), eligibleCoders);
 		
 		// duplicate button action listener
 		JButton duplicate = popup.getDuplicateButton();
@@ -764,44 +764,49 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (Dna.sql.getActiveCoder().isPermissionAddStatements()) {
 					// save popup changes
-					if (popup.isEditable() && popup.hasWindowDecoration()) {
+					boolean canceled = false;
+					if (popup.isEditable() && popup.hasWindowDecoration() && popup.isStatementModified()) {
 						String message = "Save any changes in Statement " + s.getId() + " before creating copy?";
-						int dialog = JOptionPane.showConfirmDialog(popup, message, "Confirmation", JOptionPane.YES_NO_OPTION);
+						int dialog = JOptionPane.showConfirmDialog(popup, message, "Confirmation", JOptionPane.YES_NO_CANCEL_OPTION);
 						if (dialog == 0) {
 							popup.saveContents();
+						} else if (dialog == 2) {
+							canceled = true;
 						}
-					} else if (popup.isEditable() && !popup.hasWindowDecoration()) {
+					} else if (popup.isEditable() && !popup.hasWindowDecoration() && popup.isStatementModified()) {
 						popup.saveContents();
 					}
-					
-					// update statement table with changes to old statement that was saved
-					statusBar.statementRefreshStart();
-					TableStatement updatedTableStatement = popup.getTableStatement();
-					int modelRow = statementTableModel.getModelRowById(updatedTableStatement.getId());
-					statementTableModel.getRow(modelRow).setCoderName(updatedTableStatement.getCoderName());
-					statementTableModel.getRow(modelRow).setCoderColor(updatedTableStatement.getCoderColor());
-					statementTableModel.fireTableRowsUpdated(modelRow, modelRow);
-					
-					// clone the statement
-					int newStatementId = Dna.sql.cloneStatement(s.getId(), Dna.sql.getActiveCoder().getId());
-					
-					// repaint statements in text if old statement was changed or new statement successfully created
-					if (newStatementId > 0 || (popup.isCoderChanged() && Dna.sql.getActiveCoder().isColorByCoder())) {
-						textPanel.paintStatements();
+
+					if (!canceled) {
+						// update statement table with changes to old statement that was saved
+						statusBar.statementRefreshStart();
+						TableStatement updatedTableStatement = popup.getTableStatement();
+						int modelRow = statementTableModel.getModelRowById(updatedTableStatement.getId());
+						statementTableModel.getRow(modelRow).setCoderName(updatedTableStatement.getCoderName());
+						statementTableModel.getRow(modelRow).setCoderColor(updatedTableStatement.getCoderColor());
+						statementTableModel.fireTableRowsUpdated(modelRow, modelRow);
+
+						// clone the statement
+						int newStatementId = Dna.sql.cloneStatement(s.getId(), Dna.sql.getActiveCoder().getId());
+
+						// repaint statements in text if old statement was changed or new statement successfully created
+						if (newStatementId > 0 || (popup.isCoderChanged() && Dna.sql.getActiveCoder().isColorByCoder())) {
+							textPanel.paintStatements();
+						}
+
+						// put a cloned statement into the statement table and update view, then select statement
+						if (newStatementId > 0) {
+							documentTableModel.increaseFrequency(updatedTableStatement.getDocumentId());
+							updatedTableStatement.setId(newStatementId);
+							updatedTableStatement.setCoderId(Dna.sql.getActiveCoder().getId());
+							updatedTableStatement.setCoderName(Dna.sql.getActiveCoder().getName());
+							updatedTableStatement.setCoderColor(Dna.sql.getActiveCoder().getColor());
+							statementTableModel.addRow(updatedTableStatement);
+							statementPanel.setSelectedStatementId(newStatementId);
+						}
+						popup.dispose();
+						statusBar.statementRefreshEnd();
 					}
-					
-					// put a cloned statement into the statement table and update view, then select statement
-					if (newStatementId > 0) {
-						documentTableModel.increaseFrequency(updatedTableStatement.getDocumentId());
-						updatedTableStatement.setId(newStatementId);
-						// updatedTableStatement.setCoderId(Dna.sql.getActiveCoder().getId()); // TODO: redundant because already done in the popup?
-						// updatedTableStatement.setCoderName(Dna.sql.getActiveCoder().getName()); // TODO: redundant because already done in the popup?
-						// updatedTableStatement.setCoderColor(Dna.sql.getActiveCoder().getColor()); // TODO: redundant because already done in the popup?
-						statementTableModel.addRow(updatedTableStatement);
-						statementPanel.setSelectedStatementId(newStatementId);
-					}
-					popup.dispose();
-					statusBar.statementRefreshEnd();
 				}
 			}
 		});
@@ -840,9 +845,15 @@ public class MainWindow extends JFrame {
 		if (!popup.hasWindowDecoration()) {
 			popup.addWindowFocusListener(new WindowAdapter() {
 				public void windowLostFocus(WindowEvent e) {
-					popupSave(popup);
+					popup.saveContents();
 					popup.dispose();
 					statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
+					if (Dna.sql.getActiveCoder().isColorByCoder()) {
+						textPanel.paintStatements();
+					}
+					TableStatement s = popup.getTableStatement();
+					int modelRow = statementTableModel.getModelRowById(s.getId());
+					statementTableModel.updateCoderInRow(modelRow, s.getCoderId(), s.getCoderName(), s.getCoderColor());
 				}
 			});
 		}
@@ -851,42 +862,33 @@ public class MainWindow extends JFrame {
 		if (popup.hasWindowDecoration()) {
 			popup.addWindowListener(new WindowAdapter() { // listener for the X button in the window decoration
 				public void windowClosing(WindowEvent e) {
+					boolean canceled = false;
 					if (popup.isEditable()) {
 						if (popup.isStatementModified()) { // check first if there are any changes; ask to save only if necessary
 							String message = "Save changes in Statement " + s.getId() + "?";
-							int dialog = JOptionPane.showConfirmDialog(popup, message, "Confirmation", JOptionPane.YES_NO_OPTION);
+							int dialog = JOptionPane.showConfirmDialog(popup, message, "Confirmation", JOptionPane.YES_NO_CANCEL_OPTION);
 							if (dialog == 0) {
-								popupSave(popup);
+								popup.saveContents();
+							} else if (dialog == 2) {
+								canceled = true;
 							}
 						}
 					}
-					popup.dispose();
-					statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
+					if (!canceled) {
+						popup.dispose();
+						statementPanel.getStatementTable().clearSelection(); // clear statement table selection when popup window closed
+						if (Dna.sql.getActiveCoder().isColorByCoder()) {
+							textPanel.paintStatements();
+						}
+						TableStatement s = popup.getTableStatement();
+						int modelRow = statementTableModel.getModelRowById(s.getId());
+						statementTableModel.updateCoderInRow(modelRow, s.getCoderId(), s.getCoderName(), s.getCoderColor());
+					}
 				}
 			});
-			// popup.setModal(true); // disabled for now: set modal after adding controls because otherwise controls can't be added anymore while modal
+			popup.setModal(true); // set modal after adding controls because otherwise controls can't be added anymore while modal (needs to be modal because otherwise users can open a second popup window and lose the ability to close the first popup)
 		}
 		popup.setVisible(true); // needs to be called after setting modal; hence here instead of in the Popup class
-	}
-	
-	/**
-	 * Save the contents of a popup window and repaint statements in the text
-	 * and statement table if the coder has changed.
-	 * 
-	 * @param popup  The popup window.
-	 */
-	private void popupSave(PopupMulti popup) {
-		popup.saveContents();
-		if (popup.isCoderChanged()) {
-			if (Dna.sql.getActiveCoder().isColorByCoder()) {
-				textPanel.paintStatements();
-			}
-			TableStatement s = popup.getTableStatement();
-			int modelRow = statementTableModel.getModelRowById(s.getId());
-			statementTableModel.getRow(modelRow).setCoderName(s.getCoderName());
-			statementTableModel.getRow(modelRow).setCoderColor(s.getCoderColor());
-			statementTableModel.fireTableRowsUpdated(modelRow, modelRow);
-		}
 	}
 
 	/**

@@ -18,29 +18,88 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * {@link JDialog} extension that displays the content of a statement in the GUI, allowing the user to add (or remove)
+ * multiple instances of roles.
+ */
 public class PopupMulti extends JDialog {
-    private static final long serialVersionUID = 6731530941239032349L;
+    private static final long serialVersionUID = 6731530941239131349L;
     private Container c;
+    /**
+     * The location of the popup window on screen. Supplied by the parent class through the constructor.
+     */
     private Point los;
+    /**
+     * The color of the statement type associated with the statement displayed in the popup window.
+     */
     private Color color;
-    private boolean windowDecoration, editable;
+    /**
+     * Is the window decoration shown (i.e., the bar with minimization, maximization, and close buttons)?
+     */
+    private boolean windowDecoration;
+    /**
+     * Can the current user edit the contents of the statement, or are the contents disabled?
+     */
+    private boolean editable;
+    /**
+     * The width of the text fields.
+     */
     private int textFieldWidth;
-    TableStatement tableStatement;
+    /**
+     * The statement to be edited.
+     */
+    private TableStatement tableStatement;
     /**
      * A list of coders that are eligible to edit the statement. Supplied by the constructor.
      */
     private ArrayList<Coder> eligibleCoders;
     /**
-     * A hash map referencing all roles in the database by their ID (e.g., for finding the position of a role)
+     * A hash map referencing all roles in the database by their ID (e.g., for finding the position of a role).
      */
     private HashMap<Integer, Role> roleMap;
+    /**
+     * The coder for whom the statement should be opened, usually the active coder. Supplied by the parent class.
+     */
     private Coder coder;
+    /**
+     * A combo box for eligible coders. Can be used to alter the coder associated with the statement.
+     */
     private JComboBox<Coder> coderComboBox;
-    private JButton addRole, duplicate, remove;
-    private JButton revertButton, saveButton;
+    /**
+     * A button for adding new role instances to the statement.
+     */
+    private JButton addRole;
+    /**
+     * A button for creating a duplicate of the statement.
+     */
+    private JButton duplicate;
+    /**
+     * A button to delete the current statement from the database.
+     */
+    private JButton remove;
+    /**
+     * A button to revert the statement to its original version.
+     */
+    private JButton revertButton;
+    /**
+     * A button to save all changes made since the statement was loaded.
+     */
+    private JButton saveButton;
+    /**
+     * All role-variable links in the database that are relevant to the statement type of the current statement.
+     */
     private ArrayList<RoleVariableLink> roleVariableLinks;
+    /**
+     * All entities in the database that are relevant to the statement.
+     */
     private ArrayList<Entity> entities;
+    /**
+     * All variables in the database that are relevant to the statement type of the current statement.
+     */
     private ArrayList<Variable> variables;
+    /**
+     * The role value panel, which displays the contents of the statement, i.e., the roles and variable values/entities.
+     */
     private RoleValuePanel rvp;
 
     /**
@@ -54,12 +113,8 @@ public class PopupMulti extends JDialog {
      * @param coder The current coder who is viewing the statement.
      * @param eligibleCoders A list of coders who are allowed to own the statement.
      */
-    PopupMulti(double X, double Y, TableStatement tableStatement, Point location, Coder coder, ArrayList<Coder> eligibleCoders) {
-
-        // TODO:
-        //  take care of permissions and check nothing is done that isn't permitted
-        //  clean up the code and write javadoc annotations
-
+    PopupMulti(Frame parent, double X, double Y, TableStatement tableStatement, Point location, Coder coder, ArrayList<Coder> eligibleCoders) {
+        super(parent, "Statement details", false);
         this.tableStatement = tableStatement;
         this.los = location;
         this.textFieldWidth = coder.getPopupWidth();
@@ -105,7 +160,7 @@ public class PopupMulti extends JDialog {
 
         JLabel sPosLabel = new JLabel("start");
         JTextField startPos = new JTextField(Integer.toString(tableStatement.getStart()));
-        int h = 20; // getting the text field height does not work properly on MacOS, so need to hard-code
+        int h = 22; // getting the text field height does not work properly on MacOS, so need to hard-code
         startPos.setPreferredSize(new Dimension(startPos.getPreferredSize().width, h));
         startPos.setEditable(false);
 
@@ -128,67 +183,71 @@ public class PopupMulti extends JDialog {
         colorPanel.setBackground(color);
         colorPanel.setPreferredSize(new Dimension(4, 4));
 
-        ImageIcon addRoleIcon = new SvgIcon("/icons/tabler_text_plus.svg", 14).getImageIcon();
+        // create a button for adding new role instances
+        ImageIcon addRoleIcon = new SvgIcon("/icons/tabler_text_plus.svg", 16).getImageIcon();
         addRole = new JButton(addRoleIcon);
         addRole.setToolTipText("add an additional role to this statement...");
         addRole.setMargin(new Insets(0, 0, 0, 0));
         addRole.setContentAreaFilled(false);
-        addRole.setEnabled(coder.isPermissionAddStatements());
-        addRole.addMouseListener(new MouseAdapter() {
-            public void showMenu(MouseEvent e) {
-                JPopupMenu addMenu = new JPopupMenu();
-                PopupMulti.this.roleMap.values()
-                        .stream()
-                        .filter(r -> r.getStatementTypeId() == PopupMulti.this.tableStatement.getStatementTypeId())
-                        .forEach(r -> {
-                            if (r.getNumMax() > PopupMulti.this.rvp.getModifiedTableStatement().getRoleValues()
-                                    .stream()
-                                    .filter(m -> m.getRoleId() == r.getId())
-                                    .count()) {
-                                JMenuItem menuItem = new JMenuItem("Add " + r.getRoleName(), addRoleIcon);
-                                menuItem.addActionListener(actionEvent -> {
-                                    // create a blank entity; figure out the existing blank entity for one of the variables corresponding to the role
-                                    int variableId = PopupMulti.this.roleVariableLinks
-                                            .stream()
-                                            .filter(rv -> rv.getRoleId() == r.getId())
-                                            .mapToInt(rv -> rv.getVariableId())
-                                            .findFirst()
-                                            .getAsInt();
-                                    Entity blankEntity = PopupMulti.this.entities
-                                            .stream()
-                                            .filter(entity -> entity.getValue().equals("") && entity.getVariableId() == variableId)
-                                            .findFirst()
-                                            .get();
-                                    Variable variable = PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == variableId).findFirst().get();
-                                    int roleVariableLinkId = roleVariableLinks
-                                            .stream()
-                                            .filter(rvl -> rvl.getVariableId() == variableId && rvl.getRoleId() == r.getId())
-                                            .mapToInt(rvl -> rvl.getId())
-                                            .findFirst()
-                                            .getAsInt();
-                                    PopupMulti.this.rvp.addRoleValue(new RoleValue(variableId, variable.getVariableName(), variable.getDataType(), blankEntity, roleVariableLinkId, r.getId(), r.getRoleName(), r.getStatementTypeId()));
-                                    toggleButtons();
-                                });
-                                addMenu.add(menuItem);
-                            }
-                        });
-                addMenu.show(e.getComponent(), e.getX(), e.getY());
-            }
+        addRole.setEnabled(PopupMulti.this.isEditable());
+        if (PopupMulti.this.isEditable()) {
+            addRole.addMouseListener(new MouseAdapter() {
+                public void showMenu(MouseEvent e) {
+                    JPopupMenu addMenu = new JPopupMenu();
+                    PopupMulti.this.roleMap.values()
+                            .stream()
+                            .filter(r -> r.getStatementTypeId() == PopupMulti.this.tableStatement.getStatementTypeId())
+                            .forEach(r -> {
+                                if (r.getNumMax() > PopupMulti.this.rvp.getModifiedTableStatement().getRoleValues()
+                                        .stream()
+                                        .filter(m -> m.getRoleId() == r.getId())
+                                        .count()) {
+                                    JMenuItem menuItem = new JMenuItem("Add " + r.getRoleName(), addRoleIcon);
+                                    menuItem.addActionListener(actionEvent -> {
+                                        // create a blank entity; figure out the existing blank entity for one of the variables corresponding to the role
+                                        int variableId = PopupMulti.this.roleVariableLinks
+                                                .stream()
+                                                .filter(rv -> rv.getRoleId() == r.getId())
+                                                .mapToInt(rv -> rv.getVariableId())
+                                                .findFirst()
+                                                .getAsInt();
+                                        Entity blankEntity = PopupMulti.this.entities
+                                                .stream()
+                                                .filter(entity -> entity.getValue().equals("") && entity.getVariableId() == variableId)
+                                                .findFirst()
+                                                .get();
+                                        Variable variable = PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == variableId).findFirst().get();
+                                        int roleVariableLinkId = roleVariableLinks
+                                                .stream()
+                                                .filter(rvl -> rvl.getVariableId() == variableId && rvl.getRoleId() == r.getId())
+                                                .mapToInt(rvl -> rvl.getId())
+                                                .findFirst()
+                                                .getAsInt();
+                                        PopupMulti.this.rvp.addRoleValue(new RoleValue(variableId, variable.getVariableName(), variable.getDataType(), blankEntity, roleVariableLinkId, r.getId(), r.getRoleName(), r.getStatementTypeId()));
+                                        toggleButtons();
+                                    });
+                                    addMenu.add(menuItem);
+                                }
+                            });
+                    addMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
 
-            public void mouseClicked(MouseEvent e) {
-                showMenu(e);
-            }
-        });
-        addRole.setEnabled(this.editable);
+                public void mouseClicked(MouseEvent e) {
+                    showMenu(e);
+                }
+            });
+        }
 
-        ImageIcon duplicateIcon = new SvgIcon("/icons/tabler_copy.svg", 14).getImageIcon();
+        // create a button for creating a statement duplicate (action listener is added in the parent class)
+        ImageIcon duplicateIcon = new SvgIcon("/icons/tabler_copy.svg", 16).getImageIcon();
         duplicate = new JButton(duplicateIcon);
         duplicate.setToolTipText("create a copy of this statement at the same location");
         duplicate.setMargin(new Insets(0, 0, 0, 0));
         duplicate.setContentAreaFilled(false);
         duplicate.setEnabled(this.coder.isPermissionAddStatements());
 
-        ImageIcon removeIcon = new SvgIcon("/icons/tabler_trash.svg", 14).getImageIcon();
+        // create a button for deleting the statement from the database (action listener is added in the parent class)
+        ImageIcon removeIcon = new SvgIcon("/icons/tabler_trash.svg", 16).getImageIcon();
         remove = new JButton(removeIcon);
         remove.setToolTipText("completely remove the whole statement (but keep the text)");
         remove.setMargin(new Insets(0, 0, 0, 0));
@@ -196,7 +255,8 @@ public class PopupMulti extends JDialog {
         remove.setEnabled((this.tableStatement.getCoderId() == this.coder.getId() && this.coder.isPermissionDeleteStatements()) ||
                 (this.tableStatement.getCoderId() != this.coder.getId() && this.editable));
 
-        ImageIcon revertIcon = new SvgIcon("/icons/google_device_reset.svg", 14).getImageIcon();
+        // create a button for reverting all statement changes to the original state when the statement was loaded
+        ImageIcon revertIcon = new SvgIcon("/icons/google_device_reset.svg", 16).getImageIcon();
         revertButton = new JButton(revertIcon);
         revertButton.setToolTipText("revert any changes to the state when the statement was opened");
         revertButton.setMargin(new Insets(0, 0, 0, 0));
@@ -208,18 +268,20 @@ public class PopupMulti extends JDialog {
                 if (PopupMulti.this.eligibleCoders != null && PopupMulti.this.eligibleCoders.size() > 1) {
                     int coderIndex = -1;
                     for (int i = 0; i < PopupMulti.this.eligibleCoders.size(); i++) {
-                        if (PopupMulti.this.eligibleCoders.get(i).getId() == PopupMulti.this.rvp.ts.getCoderId()) {
+                        if (PopupMulti.this.eligibleCoders.get(i).getId() == PopupMulti.this.tableStatement.getCoderId()) {
                             coderIndex = i;
                         }
                     }
                     PopupMulti.this.coderComboBox.setSelectedIndex(coderIndex);
+                    PopupMulti.this.coderComboBox.repaint();
                 }
                 toggleButtons();
             }
         });
         revertButton.setEnabled(false);
 
-        ImageIcon saveIcon = new SvgIcon("/icons/tabler_device_floppy.svg", 14).getImageIcon();
+        // create a button for saving all changes to the database
+        ImageIcon saveIcon = new SvgIcon("/icons/tabler_device_floppy.svg", 16).getImageIcon();
         saveButton = new JButton(saveIcon);
         saveButton.setToolTipText("save the contents of the statement into the database");
         saveButton.setMargin(new Insets(0, 0, 0, 0));
@@ -239,6 +301,7 @@ public class PopupMulti extends JDialog {
         idAndPositionPanel.add(ePosLabel);
         idAndPositionPanel.add(endPos);
 
+        // create coder combo box with statement coder selected in eligible coders in the combo box model; display only a coder badge if no other coder is eligible
         Coder statementCoder = new Coder(this.tableStatement.getCoderId(), this.tableStatement.getCoderName(), this.tableStatement.getCoderColor());
         if (eligibleCoders == null || eligibleCoders.size() == 1) {
             CoderBadgePanel cbp = new CoderBadgePanel(statementCoder);
@@ -261,6 +324,7 @@ public class PopupMulti extends JDialog {
                 PopupMulti.this.rvp.getModifiedTableStatement().setCoderId(selectedCoder.getId());
                 PopupMulti.this.rvp.getModifiedTableStatement().setCoderName(selectedCoder.getName());
                 PopupMulti.this.rvp.getModifiedTableStatement().setCoderColor(selectedCoder.getColor());
+                toggleButtons();
             });
             idAndPositionPanel.add(coderComboBox);
         }
@@ -277,6 +341,7 @@ public class PopupMulti extends JDialog {
         titleDecorationPanel.add(colorPanel, BorderLayout.WEST);
         contentsPanel.add(titleDecorationPanel, BorderLayout.NORTH);
 
+        // role-value panel for displaying and editing the actual statement contents; supply a deep copy of the statement to be able to track changes
         rvp = new RoleValuePanel(new TableStatement(this.tableStatement));
         rvp.rebuildLayout();
         contentsPanel.add(rvp, BorderLayout.CENTER);
@@ -349,6 +414,12 @@ public class PopupMulti extends JDialog {
         return this.tableStatement;
     }
 
+    /**
+     * Have any of the contents (e.g., the coder or any of the values) been changed since the statement was opened or
+     * last saved?
+     *
+     * @return Was the statement modified?
+     */
     boolean isStatementModified() {
         return !this.rvp.getModifiedTableStatement().equals(this.tableStatement);
     }
@@ -367,11 +438,9 @@ public class PopupMulti extends JDialog {
             if (changed) {
                 this.tableStatement = statementCopy;
             }
-            // saveButton.setEnabled(!changed);
             toggleButtons();
             return changed;
         } else {
-            // saveButton.setEnabled(false);
             toggleButtons();
             return true;
         }
@@ -411,31 +480,56 @@ public class PopupMulti extends JDialog {
         }
     }
 
+    /**
+     * Enabled/disable and color the revert and save button depending on whether the statement has been changed.
+     */
     private void toggleButtons() {
         if (PopupMulti.this.isStatementModified()) {
-            revertButton.setIcon(new SvgIcon("/icons/google_device_reset.svg", 14, Color.ORANGE).getImageIcon());
+            revertButton.setIcon(new SvgIcon("/icons/google_device_reset.svg", 16, Color.ORANGE).getImageIcon());
             revertButton.setEnabled(true);
-            saveButton.setIcon(new SvgIcon("/icons/tabler_device_floppy.svg", 14, Color.ORANGE).getImageIcon());
+            saveButton.setIcon(new SvgIcon("/icons/tabler_device_floppy.svg", 16, Color.ORANGE).getImageIcon());
             saveButton.setEnabled(true);
         } else {
-            revertButton.setIcon(new SvgIcon("/icons/google_device_reset.svg", 14).getImageIcon());
+            revertButton.setIcon(new SvgIcon("/icons/google_device_reset.svg", 16).getImageIcon());
             revertButton.setEnabled(false);
-            saveButton.setIcon(new SvgIcon("/icons/tabler_device_floppy.svg", 14).getImageIcon());
+            saveButton.setIcon(new SvgIcon("/icons/tabler_device_floppy.svg", 16).getImageIcon());
             saveButton.setEnabled(false);
         }
     }
 
+    /**
+     * A panel with role labels, corresponding variable values (in combo boxes, spinners, or radio buttons), and buttons
+     * for removing and adding roles.
+     */
     class RoleValuePanel extends JPanel {
+        /**
+         * A copy of the table statement in the popup window. Any changes to the contents, including values and coder,
+         * are saved in this local copy and only transferred to the outer popup statement once the save button is
+         * pressed.
+         */
         TableStatement ts;
 
+        /**
+         * Constructor. Accepts a copy (i.e., not reference) of the outer statement from the popup window.
+         *
+         * @param ts A copy of the popup statement.
+         */
         public RoleValuePanel(TableStatement ts) {
             this.ts = ts;
         }
 
+        /**
+         * Get the statement from this panel, possibly including any changes.
+         *
+         * @return The table statement.
+         */
         TableStatement getModifiedTableStatement() {
             return this.ts;
         }
 
+        /**
+         * Create rows for the roles, boxes, and buttons in the layout and repaint.
+         */
         private void rebuildLayout() {
             this.removeAll();
             this.revalidate();
@@ -468,9 +562,10 @@ public class PopupMulti extends JDialog {
                             .toArray(Entity[]::new);
                     JComboBox<Entity> box = new JComboBox<>(entitySubset);
                     box.setRenderer(new EntityComboBoxRenderer());
-                    box.setEditable(true);
+                    box.setEditable(PopupMulti.this.isEditable());
+                    box.setEnabled(PopupMulti.this.isEditable());
                     box.getModel().setSelectedItem(roleValue.getValue());
-                    box.setPreferredSize(new Dimension(PopupMulti.this.textFieldWidth, 20));
+                    box.setPreferredSize(new Dimension(PopupMulti.this.textFieldWidth, 22));
 
                     // paint the selected value in the attribute color
                     String s = ((JTextField) box.getEditor().getEditorComponent()).getText();
@@ -483,7 +578,7 @@ public class PopupMulti extends JDialog {
                     ((JTextField) box.getEditor().getEditorComponent()).setSelectedTextColor(fg);
                     box.getEditor().getEditorComponent().setForeground(fg);
 
-                    // add a document listener to the combobox to paint the selected value in the attribute color, despite being highlighted
+                    // add a document listener to the combo box to paint the selected value in the attribute color, despite being highlighted
                     ((JTextField) box.getEditor().getEditorComponent()).getDocument().addDocumentListener(new DocumentListener() {
                         @Override
                         public void changedUpdate(DocumentEvent arg0) {
@@ -539,7 +634,9 @@ public class PopupMulti extends JDialog {
                     }
 
                     gbc.anchor = GridBagConstraints.EAST;
-                    this.add(new JLabel(roleValue.getRoleName(), JLabel.TRAILING), gbc);
+                    JLabel label = new JLabel(roleValue.getRoleName(), JLabel.TRAILING);
+                    label.setEnabled(PopupMulti.this.isEditable());
+                    this.add(label, gbc);
                     gbc.gridx++;
                     gbc.weightx = 1.0;
                     gbc.anchor = GridBagConstraints.WEST;
@@ -548,8 +645,8 @@ public class PopupMulti extends JDialog {
                 } else if (roleValue.getDataType().equals("long text")) {
                     String entry = (String) roleValue.getValue();
                     JTextArea box = new JTextArea();
-                    box.setEditable(true);
-                    box.setEnabled(PopupMulti.this.editable);
+                    box.setEditable(PopupMulti.this.isEditable());
+                    box.setEnabled(PopupMulti.this.isEditable());
                     box.setWrapStyleWord(true);
                     box.setLineWrap(true);
                     box.setText(entry);
@@ -585,7 +682,9 @@ public class PopupMulti extends JDialog {
                     });
 
                     gbc.anchor = GridBagConstraints.NORTHEAST;
-                    this.add(new JLabel(roleValue.getRoleName(), JLabel.TRAILING), gbc);
+                    JLabel label = new JLabel(roleValue.getRoleName(), JLabel.TRAILING);
+                    label.setEnabled(PopupMulti.this.isEditable());
+                    this.add(label, gbc);
                     gbc.anchor = GridBagConstraints.WEST;
                     gbc.gridx++;
                     gbc.weightx = 1.0;
@@ -596,7 +695,7 @@ public class PopupMulti extends JDialog {
                     boolean val = entry != 0;
                     BooleanButtonPanel buttons = new BooleanButtonPanel();
                     buttons.setYes(val);
-                    buttons.setEnabled(PopupMulti.this.editable);
+                    buttons.setEnabled(PopupMulti.this.isEditable());
 
                     ChangeListener cl = new ChangeListener() {
                         @Override
@@ -614,7 +713,9 @@ public class PopupMulti extends JDialog {
 
                     gbc.anchor = GridBagConstraints.EAST;
                     gbc.insets = new Insets(3,3,3,2);
-                    this.add(new JLabel(roleValue.getRoleName(), JLabel.TRAILING), gbc);
+                    JLabel label = new JLabel(roleValue.getRoleName(), JLabel.TRAILING);
+                    label.setEnabled(PopupMulti.this.isEditable());
+                    this.add(label, gbc);
                     gbc.anchor = GridBagConstraints.WEST;
                     gbc.insets = new Insets(0,0,0,0);
                     gbc.gridx++;
@@ -628,7 +729,7 @@ public class PopupMulti extends JDialog {
                     jsp.setEnabled(true);
                     JPanel jp = new JPanel(new FlowLayout(FlowLayout.LEFT));
                     jp.add(jsp);
-                    jsp.setEnabled(PopupMulti.this.editable);
+                    jsp.setEnabled(PopupMulti.this.isEditable());
 
                     jsp.addChangeListener(cl -> {
                         RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(jsp.getValue());
@@ -636,7 +737,9 @@ public class PopupMulti extends JDialog {
                     });
 
                     gbc.anchor = GridBagConstraints.EAST;
-                    this.add(new JLabel(roleValue.getRoleName(), JLabel.TRAILING), gbc);
+                    JLabel label = new JLabel(roleValue.getRoleName(), JLabel.TRAILING);
+                    label.setEnabled(PopupMulti.this.isEditable());
+                    this.add(label, gbc);
                     gbc.insets = new Insets(0, 0, 0, 0);
                     gbc.anchor = GridBagConstraints.WEST;
                     gbc.gridx++;
@@ -650,7 +753,7 @@ public class PopupMulti extends JDialog {
                 // column 3: remove the roleValue row
                 gbc.insets = new Insets(3, 2, 3, 5);
                 gbc.gridx++;
-                ImageIcon addIcon = new SvgIcon("/icons/tabler_plus.svg", 14).getImageIcon();
+                ImageIcon addIcon = new SvgIcon("/icons/tabler_plus.svg", 16).getImageIcon();
                 JButton addButton = new JButton(addIcon);
                 addButton.setMargin(new Insets(0, 0, 0, 0));
                 addButton.setContentAreaFilled(false);
@@ -666,7 +769,7 @@ public class PopupMulti extends JDialog {
                     toggleButtons();
                 });
                 int max = PopupMulti.this.roleMap.get(this.ts.getRoleValues().get(i).getRoleId()).getNumMax();
-                addButton.setEnabled(max > num);
+                addButton.setEnabled(max > num && PopupMulti.this.isEditable());
                 addButton.setVisible(max > num);
                 addButton.setToolTipText("add another " + this.ts.getRoleValues().get(i).getRoleName() + " to the statement");
                 this.add(addButton, gbc);
@@ -674,7 +777,7 @@ public class PopupMulti extends JDialog {
                 // column 4: add a duplicate
                 gbc.insets = new Insets(3, 0, 3, 5);
                 gbc.gridx++;
-                ImageIcon removeIcon = new SvgIcon("/icons/tabler_minus.svg", 14).getImageIcon();
+                ImageIcon removeIcon = new SvgIcon("/icons/tabler_minus.svg", 16).getImageIcon();
                 JButton removeButton = new JButton(removeIcon);
                 removeButton.setMargin(new Insets(0, 0, 0, 0));
                 removeButton.setContentAreaFilled(false);
@@ -683,7 +786,7 @@ public class PopupMulti extends JDialog {
                     toggleButtons();
                 });
                 int min = PopupMulti.this.roleMap.get(this.ts.getRoleValues().get(i).getRoleId()).getNumMin();
-                removeButton.setEnabled(min < num);
+                removeButton.setEnabled(min < num && PopupMulti.this.isEditable());
                 removeButton.setVisible(min < num);
                 removeButton.setToolTipText("remove this entity from the statement");
                 this.add(removeButton, gbc);
@@ -693,6 +796,11 @@ public class PopupMulti extends JDialog {
             PopupMulti.this.pack();
         }
 
+        /**
+         * Add a role/value to the statement and layout.
+         *
+         * @param added An added role-value object.
+         */
         void addRoleValue(RoleValue added) {
             this.ts.getRoleValues().add(added);
             this.ts.setRoleValues(this.ts.getRoleValues()
@@ -702,6 +810,11 @@ public class PopupMulti extends JDialog {
             this.rebuildLayout();
         }
 
+        /**
+         * Remove a role/value from the statement and layout.
+         *
+         * @param index The index among the {@link RoleValue} objects in the statement.
+         */
         void removeRoleValue(int index) {
             this.ts.getRoleValues().remove(index);
             this.rebuildLayout();

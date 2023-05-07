@@ -1,5 +1,6 @@
 package gui;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,7 +8,6 @@ import java.util.List;
 import javax.swing.table.AbstractTableModel;
 
 import model.Coder;
-import model.Statement;
 import model.TableStatement;
 
 /**
@@ -238,6 +238,21 @@ class StatementTableModel extends AbstractTableModel {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Update the coder in a statement/row.
+	 *
+	 * @param row The model row.
+	 * @param coderId The new coder ID.
+	 * @param coderName The new coder name.
+	 * @param coderColor The new coder color.
+	 */
+	void updateCoderInRow(int row, int coderId, String coderName, Color coderColor) {
+		this.rows.get(row).setCoderId(coderId);
+		this.rows.get(row).setCoderName(coderName);
+		this.rows.get(row).setCoderColor(coderColor);
+		this.fireTableCellUpdated(row, 4);
 	}
 	
 	void sort() {

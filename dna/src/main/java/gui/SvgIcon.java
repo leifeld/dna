@@ -55,10 +55,20 @@ public class SvgIcon {
         this.b = this.createMultiImage(svgPath, baselineSize, backgroundColor);
     }
 
+    /**
+     * Get an image icon version of the multi-resolution image.
+     *
+     * @return An {@link ImageIcon} object with multiple resolutions.
+     */
     public ImageIcon getImageIcon() {
         return new ImageIcon(this.b);
     }
 
+    /**
+     * Get the multi-resolution image.
+     *
+     * @return A {@link BaseMultiResolutionImage} object with multiple resolutions.
+     */
     public BaseMultiResolutionImage getImage() {
         return b;
     }

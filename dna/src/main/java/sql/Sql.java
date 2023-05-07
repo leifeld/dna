@@ -2805,6 +2805,7 @@ public class Sql {
 				// update coder
 				s19.setInt(1, s.getCoderId());
 				s19.setInt(2, s.getId());
+				s19.executeUpdate();
 
 				LogEvent e2 = new LogEvent(Logger.MESSAGE,
 						"[SQL]  ├─ Updated Statement " + s.getId() + " in the transaction.",
