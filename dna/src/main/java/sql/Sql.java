@@ -327,6 +327,7 @@ public class Sql {
 					+ "Notes TEXT NOT NULL DEFAULT '', "
 					+ "Type TEXT NOT NULL DEFAULT '' CHECK (LENGTH(Type) < 191), "
 					+ "Date INTEGER NOT NULL, "
+					+ "Complete INTEGER NOT NULL DEFAULT 0 CHECK (Complete BETWEEN 0 AND 1), "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
 					+ "ID INTEGER NOT NULL PRIMARY KEY, "
@@ -350,7 +351,7 @@ public class Sql {
 					+ "Red INTEGER NOT NULL DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
 					+ "Green INTEGER NOT NULL DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
 					+ "Blue INTEGER NOT NULL DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
-					+ "DefaultVariableId INTEGER, "
+					+ "DefaultVariableId INTEGER NOT NULL, "
 					+ "CHECK (NumMax >= NumMin), "
 					+ "CHECK (NumDefault >= NumMin), "
 					+ "CHECK (NumMax >= NumDefault), "
@@ -398,16 +399,14 @@ public class Sql {
 					+ "RoleVariableLinkId INTEGER NOT NULL, "
 					+ "Value INTEGER NOT NULL DEFAULT 1, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
-					+ "FOREIGN KEY(RoleVariableLinkId) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE, "
-					+ "UNIQUE (StatementId, RoleVariableLinkId));");
+					+ "FOREIGN KEY(RoleVariableLinkId) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS DATAINTEGER("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "StatementId INTEGER NOT NULL, "
 					+ "RoleVariableLinkId INTEGER NOT NULL, "
 					+ "Value INTEGER NOT NULL DEFAULT 0, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
-					+ "FOREIGN KEY(RoleVariableLinkId) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE, "
-					+ "UNIQUE (StatementId, RoleVariableLinkId));");
+					+ "FOREIGN KEY(RoleVariableLinkId) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS ENTITIES("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
@@ -426,16 +425,14 @@ public class Sql {
 					+ "Entity INTEGER NOT NULL, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(RoleVariableLinkId) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE, "
-					+ "FOREIGN KEY(Entity) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
-					+ "UNIQUE (StatementId, RoleVariableLinkId));");
+					+ "FOREIGN KEY(Entity) REFERENCES ENTITIES(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "StatementId INTEGER NOT NULL, "
 					+ "RoleVariableLinkId INTEGER NOT NULL, "
 					+ "Value TEXT DEFAULT '', "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
-					+ "FOREIGN KEY(RoleVariableLinkId) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE, "
-					+ "UNIQUE (StatementId, RoleVariableLinkId));");
+					+ "FOREIGN KEY(RoleVariableLinkId) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
@@ -450,6 +447,18 @@ public class Sql {
 					+ "UNIQUE (EntityId, AttributeVariableId), "
 					+ "FOREIGN KEY(EntityId) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(AttributeVariableId) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE);");
+			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTTAGS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, "
+					+ "Tag TEXT NOT NULL DEFAULT '' CHECK (LENGTH(Tag) < 191), "
+					+ "DocumentId INTEGER, "
+					+ "UNIQUE (Tag, DocumentId), "
+					+ "FOREIGN KEY(DocumentId) REFERENCES DOCUMENTS(ID) ON DELETE CASCADE);");
+			s.add("CREATE TABLE IF NOT EXISTS ENTITYTAGS("
+					+ "ID INTEGER NOT NULL PRIMARY KEY, "
+					+ "Tag TEXT NOT NULL DEFAULT '' CHECK (LENGTH(Tag) < 191), "
+					+ "EntityId INTEGER, "
+					+ "UNIQUE (Tag, EntityId), "
+					+ "FOREIGN KEY(EntityId) REFERENCES ENTITIES(ID) ON DELETE CASCADE);");
 		} else if (cp.getType().equals("mysql")) {
 			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
 					+ "Property VARCHAR(190), "
@@ -496,6 +505,7 @@ public class Sql {
 					+ "Notes TEXT NOT NULL, "
 					+ "Type VARCHAR(190) NOT NULL DEFAULT '', "
 					+ "Date BIGINT NOT NULL, "
+					+ "Complete SMALLINT UNSIGNED NOT NULL DEFAULT 0 CHECK (Complete BETWEEN 0 AND 1), "
 					+ "FOREIGN KEY(Coder) REFERENCES CODERS(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
@@ -576,7 +586,6 @@ public class Sql {
 					+ "Value SMALLINT UNSIGNED NOT NULL DEFAULT 1, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(RoleVariableLinkId) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE, "
-					+ "UNIQUE KEY (StatementId, RoleVariableLinkId), "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS DATAINTEGER("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
@@ -585,7 +594,6 @@ public class Sql {
 					+ "Value MEDIUMINT NOT NULL DEFAULT 0, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(RoleVariableLinkId) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE, "
-					+ "UNIQUE KEY (StatementId, RoleVariableLinkId), "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS ENTITIES("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
@@ -607,7 +615,6 @@ public class Sql {
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(RoleVariableLinkId) REFERENCES ROLEVARIABLELINK(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(Entity) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
-					+ "UNIQUE KEY (StatementId, VariableId), "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
@@ -616,7 +623,6 @@ public class Sql {
 					+ "Value TEXT NOT NULL, "
 					+ "FOREIGN KEY(StatementId) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(RoleVariableLinkId) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE, "
-					+ "UNIQUE KEY (StatementId, RoleVariableLinkId), "
 					+ "PRIMARY KEY(ID));");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
 					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
@@ -633,6 +639,20 @@ public class Sql {
 					+ "UNIQUE KEY (EntityId, AttributeVariableId), "
 					+ "FOREIGN KEY(EntityId) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "FOREIGN KEY(AttributeVariableId) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE, "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTTAGS("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "Tag VARCHAR(190) NOT NULL DEFAULT '', "
+					+ "DocumentId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "UNIQUE KEY (Tag, DocumentId), "
+					+ "FOREIGN KEY(DocumentId) REFERENCES DOCUMENTS(ID) ON DELETE CASCADE, "
+					+ "PRIMARY KEY(ID));");
+			s.add("CREATE TABLE IF NOT EXISTS ENTITYTAGS("
+					+ "ID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+					+ "Tag VARCHAR(190) NOT NULL DEFAULT '', "
+					+ "EntityId MEDIUMINT UNSIGNED NOT NULL, "
+					+ "UNIQUE KEY (Tag, EntityId), "
+					+ "FOREIGN KEY(EntityId) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
 					+ "PRIMARY KEY(ID));");
 		} else if (cp.getType().equals("postgresql")) {
 			s.add("CREATE TABLE IF NOT EXISTS SETTINGS("
@@ -677,7 +697,8 @@ public class Sql {
 					+ "Section VARCHAR(190) NOT NULL DEFAULT '', "
 					+ "Notes TEXT NOT NULL DEFAULT '', "
 					+ "Type VARCHAR(190) NOT NULL DEFAULT '', "
-					+ "Date BIGINT NOT NULL);");
+					+ "Date BIGINT NOT NULL, "
+					+ "Complete SMALLINT NOT NULL DEFAULT 0 CHECK (Complete BETWEEN 0 AND 1));");
 			s.add("CREATE TABLE IF NOT EXISTS STATEMENTTYPES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "Label VARCHAR(190) NOT NULL, "
@@ -737,14 +758,12 @@ public class Sql {
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "RoleVariableLinkId INT NOT NULL CHECK(RoleVariableLinkId > 0) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE, "
-					+ "Value INT NOT NULL DEFAULT 1 CHECK(Value BETWEEN 0 AND 1), "
-					+ "UNIQUE (StatementId, RoleVariableLinkId));");
+					+ "Value INT NOT NULL DEFAULT 1 CHECK(Value BETWEEN 0 AND 1));");
 			s.add("CREATE TABLE IF NOT EXISTS DATAINTEGER("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "RoleVariableLinkId INT NOT NULL CHECK(RoleVariableLinkId > 0) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE, "
-					+ "Value INT NOT NULL DEFAULT 0, "
-					+ "UNIQUE (StatementId, RoleVariableLinkId));");
+					+ "Value INT NOT NULL DEFAULT 0);");
 			s.add("CREATE TABLE IF NOT EXISTS ENTITIES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
@@ -758,14 +777,12 @@ public class Sql {
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "RoleVariableLinkId INT NOT NULL CHECK(RoleVariableLinkId > 0) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE, "
-					+ "Entity INT NOT NULL CHECK(Entity > 0) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
-					+ "UNIQUE (StatementId, RoleVariableLinkId));");
+					+ "Entity INT NOT NULL CHECK(Entity > 0) REFERENCES ENTITIES(ID) ON DELETE CASCADE);");
 			s.add("CREATE TABLE IF NOT EXISTS DATALONGTEXT("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "StatementId INT NOT NULL CHECK(StatementId > 0) REFERENCES STATEMENTS(ID) ON DELETE CASCADE, "
 					+ "RoleVariableLinkId INT NOT NULL CHECK(RoleVariableLinkId > 0) REFERENCES ROLEVARIABLELINKS(ID) ON DELETE CASCADE, "
-					+ "Value TEXT NOT NULL, "
-					+ "UNIQUE (StatementId, RoleVariableLinkId));");
+					+ "Value TEXT NOT NULL);");
 			s.add("CREATE TABLE IF NOT EXISTS ATTRIBUTEVARIABLES("
 					+ "ID SERIAL NOT NULL PRIMARY KEY, "
 					+ "VariableId INT NOT NULL CHECK(VariableId > 0) REFERENCES VARIABLES(ID) ON DELETE CASCADE, "
@@ -777,6 +794,16 @@ public class Sql {
 					+ "AttributeVariableId INT NOT NULL CHECK(AttributeVariableId > 0) REFERENCES ATTRIBUTEVARIABLES(ID) ON DELETE CASCADE, "
 					+ "AttributeValue VARCHAR(190) NOT NULL DEFAULT '', "
 					+ "UNIQUE (EntityId, AttributeVariableId));");
+			s.add("CREATE TABLE IF NOT EXISTS DOCUMENTTAGS("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "Tag VARCHAR(190) NOT NULL DEFAULT '', "
+					+ "DocumentId INT NOT NULL REFERENCES DOCUMENTS(ID) ON DELETE CASCADE, "
+					+ "UNIQUE (Tag, DocumentId));");
+			s.add("CREATE TABLE IF NOT EXISTS ENTITYTAGS("
+					+ "ID SERIAL NOT NULL PRIMARY KEY, "
+					+ "Tag VARCHAR(190) NOT NULL DEFAULT '', "
+					+ "EntityId INT NOT NULL REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
+					+ "UNIQUE (Tag, EntityId));");
 		}
 		// fill default data into the tables (Admin coder, settings, statement types)
 		s.add("INSERT INTO CODERS (ID, Name, Red, Green, Blue, Password, PermissionEditStatementTypes, PermissionEditCoders, PermissionEditOthersDocuments, PermissionEditOthersStatements) VALUES (1, 'Admin', 255, 255, 0, '" + encryptedAdminPassword + "', 1, 1, 1, 1);");
@@ -784,14 +811,14 @@ public class Sql {
 		s.add("INSERT INTO SETTINGS (Property, Value) VALUES ('date', '" + Dna.date + "');");
 		// DNA Statement
 		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (1, 'DNA Statement', 239, 208, 51);");
-		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue) VALUES (1, 'person', 1, 1, 0, 10, 1, 0, 0, 0);");
-		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue) VALUES (2, 'organisation', 1, 2, 0, 10, 1, 0, 0, 0);");
-		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue) VALUES (3, 'concept', 1, 3, 1, 10, 1, 0, 0, 0);");
-		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue) VALUES (4, 'agreement', 1, 4, 1, 1, 1, 0, 0, 0);");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType) VALUES(1, 'person', 'short text');");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType) VALUES(2, 'organization', 'short text');");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType) VALUES(3, 'concept', 'short text');");
 		s.add("INSERT INTO VARIABLES (ID, Variable, DataType) VALUES(4, 'agreement', 'boolean');");
+		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES (1, 'person', 1, 1, 0, 10, 1, 0, 0, 0, 1);");
+		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES (2, 'organization', 1, 2, 0, 10, 1, 0, 0, 0, 2);");
+		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES (3, 'concept', 1, 3, 1, 10, 1, 0, 0, 0, 3);");
+		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES (4, 'agreement', 1, 4, 1, 1, 1, 0, 0, 0, 4);");
 		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (1, 1, 1);");
 		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (2, 2, 2);");
 		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (3, 3, 3);");
@@ -805,35 +832,56 @@ public class Sql {
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (1, 'Notes');");
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (2, 'Notes');");
 		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (3, 'Notes');");
+		s.add("INSERT INTO ENTITIES (VariableId) VALUES(1);");
+		s.add("INSERT INTO ENTITIES (VariableId) VALUES(2);");
+		s.add("INSERT INTO ENTITIES (VariableId) VALUES(3);");
+		s.add("INSERT INTO ENTITIES (VariableId) VALUES(4);");
 		// NPF Story Element
 		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (2, 'NPF Story Element', 100, 200, 190);");
-		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue) VALUES (5, 'narrator', 2, 1, 1, 10, 1, 0, 0, 0);");
-		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue) VALUES (6, 'victim', 2, 2, 0, 10, 0, 0, 0, 0);");
-		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue) VALUES (7, 'villain', 2, 3, 0, 10, 0, 0, 0, 0);");
-		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue) VALUES (8, 'plot', 2, 4, 0, 5, 0, 0, 0, 0);");
-		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue) VALUES (9, 'hero', 2, 5, 0, 10, 0, 0, 0, 0);");
-		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue) VALUES (10, 'policy solution', 2, 6, 0, 10, 0, 0, 0, 0);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType) VALUES(5, 'plot', 'short text');");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType) VALUES(5, 'group', 'short text');");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType) VALUES(6, 'plot', 'short text');");
+		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES (5, 'narrator', 2, 1, 0, 10, 0, 0, 0, 0, 1);");
+		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES (6, 'victim', 2, 2, 0, 10, 0, 0, 0, 0, 5);");
+		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES (7, 'villain', 2, 3, 0, 10, 0, 0, 0, 0, 5);");
+		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES (8, 'plot', 2, 4, 0, 5, 0, 0, 0, 0, 6);");
+		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES (9, 'hero', 2, 5, 0, 10, 0, 0, 0, 0, 5);");
+		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES (10, 'policy solution', 2, 6, 0, 10, 0, 0, 0, 0, 3);");
 		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (5, 5, 1);");
 		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (6, 5, 2);");
 		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (7, 6, 1);");
 		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (8, 6, 2);");
-		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (9, 7, 1);");
-		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (10, 7, 2);");
-		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (11, 8, 5);");
-		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (12, 9, 1);");
-		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (13, 9, 2);");
-		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (14, 10, 3);");
+		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (9, 6, 5);");
+		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (10, 7, 1);");
+		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (11, 7, 2);");
+		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (12, 7, 5);");
+		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (13, 8, 6);");
+		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (14, 9, 1);");
+		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (15, 9, 2);");
+		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (16, 9, 5);");
+		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (17, 10, 3);");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (5, 'Type');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (6, 'Type');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (5, 'Alias');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (6, 'Alias');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (5, 'Notes');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (6, 'Notes');");
+		s.add("INSERT INTO ENTITIES (VariableId) VALUES(5);");
+		s.add("INSERT INTO ENTITIES (VariableId) VALUES(6);");
 		// Annotation
 		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (3, 'Annotation', 211, 211, 211);");
-		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue) VALUES (11, 'note', 3, 1, 1, 1, 1, 0, 0, 0);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType) VALUES(6, 'note', 'long text');");
-		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (15, 11, 6);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType) VALUES(7, 'note', 'long text');");
+		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES (11, 'note', 3, 1, 1, 1, 1, 0, 0, 0, 7);");
+		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (18, 11, 7);");
+		s.add("INSERT INTO ENTITIES (VariableId) VALUES(7);");
 		// Theme
 		s.add("INSERT INTO STATEMENTTYPES (ID, Label, Red, Green, Blue) VALUES (4, 'Theme', 252, 3, 119);");
-		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue) VALUES (12, 'theme', 4, 1, 1, 20, 1, 0, 0, 0);");
-		s.add("INSERT INTO VARIABLES (ID, Variable, DataType) VALUES(7, 'theme', 'short text');");
-		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (16, 12, 7);");
+		s.add("INSERT INTO VARIABLES (ID, Variable, DataType) VALUES(8, 'theme', 'short text');");
+		s.add("INSERT INTO ROLES (ID, RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES (12, 'theme', 4, 1, 1, 20, 1, 0, 0, 0, 8);");
+		s.add("INSERT INTO ROLEVARIABLELINKS (ID, RoleId, VariableId) VALUES (19, 12, 8);");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (8, 'Type');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (8, 'Alias');");
+		s.add("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (8, 'Notes');");
+		s.add("INSERT INTO ENTITIES (VariableId) VALUES(8);");
 		try (Connection conn = ds.getConnection();
 				SQLCloseable finish = conn::rollback) {
 			conn.setAutoCommit(false);
