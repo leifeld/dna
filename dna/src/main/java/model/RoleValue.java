@@ -16,6 +16,16 @@ public class RoleValue extends Variable {
         this.statementTypeId = statementTypeId;
     }
 
+    public String toString() {
+        if (this.getDataType().equals("short text")) {
+            return ((Entity) this.getValue()).getValue();
+        } else if (this.getDataType().equals("long text")) {
+            return ((String) this.getValue());
+        } else {
+            return String.valueOf((int) this.getValue());
+        }
+    }
+
     /**
      * Copy constructor. Creates a deep copy of an existing role value object.
      *

@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class TableStatement extends Statement {
     private String text, coderName, statementTypeLabel;
@@ -112,6 +113,14 @@ public class TableStatement extends Statement {
 
     public void setRoleValues(ArrayList<RoleValue> roleValues) {
         this.roleValues = roleValues;
+    }
+
+    public String toString() {
+        String values = this.getRoleValues()
+                .stream()
+                .map(v -> v.getRoleName() + ": " + v.getValue().toString())
+                .collect(Collectors.joining("; "));
+        return "[ID: " + this.getId() + "; Coder: " + this.getCoderId() + "; Doc: " + this.getDocumentId() + "; " + values + "]";
     }
 
     @Override

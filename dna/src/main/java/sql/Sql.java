@@ -13,13 +13,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
-import export.DataFrame;
 import gui.DocumentEditor;
-import me.tongfei.progressbar.ProgressBar;
 import model.*;
 import org.jasypt.util.password.StrongPasswordEncryptor;
 import org.sqlite.SQLiteDataSource;
@@ -415,9 +412,9 @@ public class Sql {
 					+ "ID INTEGER PRIMARY KEY NOT NULL, "
 					+ "VariableId INTEGER NOT NULL, "
 					+ "Value TEXT NOT NULL DEFAULT '' CHECK (LENGTH(Value) < 191), "
-					+ "Red INTEGER CHECK (Red BETWEEN 0 AND 255), "
-					+ "Green INTEGER CHECK (Green BETWEEN 0 AND 255), "
-					+ "Blue INTEGER CHECK (Blue BETWEEN 0 AND 255), "
+					+ "Red INTEGER DEFAULT 0 CHECK (Red BETWEEN 0 AND 255), "
+					+ "Green INTEGER DEFAULT 0 CHECK (Green BETWEEN 0 AND 255), "
+					+ "Blue INTEGER DEFAULT 0 CHECK (Blue BETWEEN 0 AND 255), "
 					+ "ChildOf INTEGER CHECK(ChildOf > 0), "
 					+ "UNIQUE (VariableId, Value), "
 					+ "FOREIGN KEY(ChildOf) REFERENCES ENTITIES(ID) ON DELETE CASCADE, "
@@ -2597,6 +2594,14 @@ public class Sql {
 			class DataResult {
 				int id, roleVariableLinkId, valueInt;
 				String valueString, dataType;
+
+				public String toString() {
+					if (this.dataType.equals("short text") || this.dataType.equals("long text")) {
+						return this.valueString;
+					} else {
+						return "" + this.valueInt;
+					}
+				}
 			}
 
 			ResultSet r1;
@@ -2671,7 +2676,8 @@ public class Sql {
 				insertionPile = s.getRoleValues()
 						.stream()
 						.filter(v -> finalData
-								.stream().noneMatch(d -> d.dataType.equals(v.getDataType()) &&
+								.stream()
+								.noneMatch(d -> d.dataType.equals(v.getDataType()) &&
 										d.roleVariableLinkId == v.getRoleVariableLinkId() &&
 										((d.dataType.equals("long text") && d.valueString.equals((String) v.getValue())) ||
 												(d.dataType.equals("short text") && d.valueInt == ((Entity) v.getValue()).getId()) ||
@@ -2703,11 +2709,12 @@ public class Sql {
 							s10.setInt(1, insertionPile.get(j).getVariableId());
 							s10.setString(2, ((Entity) insertionPile.get(j).getValue()).getValue());
 							s10.executeUpdate();
-						}
-						// get generated primary key and save in entity in insertion pile as entity ID
-						r1 = s10.getGeneratedKeys();
-						while (r1.next()) {
-							((Entity) insertionPile.get(j).getValue()).setId(r1.getInt(1));
+
+							// get generated primary key and save in entity in insertion pile as entity ID
+							r1 = s10.getGeneratedKeys();
+							while (r1.next()) {
+								((Entity) insertionPile.get(j).getValue()).setId(r1.getInt(1));
+							}
 						}
 					}
 				}
@@ -2730,7 +2737,9 @@ public class Sql {
 									deletionPile.get(j).valueInt != ((Entity) insertionPile.get(k).getValue()).getId()) {
 								s14.setInt(1, ((Entity) insertionPile.get(k).getValue()).getId());
 								s14.setInt(2, deletionPile.get(j).id);
-								s14.executeUpdate(); // TODO: There is a bug somewhere in here because the foreign key constraint is not always met!
+								s14.executeUpdate();
+								deletionPile.remove(j);
+								insertionPile.remove(k);
 								break;
 							} else if (deletionPile.get(j).valueInt != (int) insertionPile.get(k).getValue() &&
 									deletionPile.get(j).dataType.equals(insertionPile.get(k).getDataType())) {

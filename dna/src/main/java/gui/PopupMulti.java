@@ -57,7 +57,6 @@ public class PopupMulti extends JDialog {
     PopupMulti(double X, double Y, TableStatement tableStatement, Point location, Coder coder, ArrayList<Coder> eligibleCoders) {
 
         // TODO:
-        //  debug #Sql.updateTableStatements() function;
         //  take care of permissions and check nothing is done that isn't permitted
         //  clean up the code and write javadoc annotations
 
@@ -368,10 +367,12 @@ public class PopupMulti extends JDialog {
             if (changed) {
                 this.tableStatement = statementCopy;
             }
-            saveButton.setEnabled(!changed);
+            // saveButton.setEnabled(!changed);
+            toggleButtons();
             return changed;
         } else {
-            saveButton.setEnabled(false);
+            // saveButton.setEnabled(false);
+            toggleButtons();
             return true;
         }
     }
@@ -499,23 +500,23 @@ public class PopupMulti extends JDialog {
                         private void formatEntry() {
                             Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
                             String currentText = ((JTextField) box.getEditor().getEditorComponent()).getText();
+                            boolean foundEntity = false;
                             for (int i = 0; i < box.getModel().getSize(); i++) {
                                 if (box.getModel().getElementAt(i).getValue().equals(currentText)) {
                                     box.setSelectedIndex(i);
                                     fg = box.getModel().getElementAt(i).getColor();
+                                    foundEntity = true;
                                 }
                             }
                             ((JTextField) box.getEditor().getEditorComponent()).setSelectedTextColor(fg);
                             box.getEditor().getEditorComponent().setForeground(fg);
 
-                            Object object = box.getSelectedItem();
-                            if (object.getClass().getName().endsWith("String")) { // if not an existing entity, the editor returns a String
-                                String s1 = (String) object;
-                                if (s1.length() > 0 && s1.matches("^\\s+$")) { // replace a (multiple) whitespace string by an empty string
-                                    s1 = "";
+                            if (!foundEntity) { // if not an existing entity, the editor returns a String
+                                if (currentText.length() > 0 && currentText.matches("^\\s+$")) { // replace a (multiple) whitespace string by an empty string
+                                    currentText = "";
                                 }
-                                s1 = s1.substring(0, Math.min(190, s1.length()));
-                                Entity entity = new Entity(s1); // the new entity has an ID of -1; the SQL class needs to take care of this when writing into the database
+                                currentText = currentText.substring(0, Math.min(190, currentText.length()));
+                                Entity entity = new Entity(currentText); // the new entity has an ID of -1; the SQL class needs to take care of this when writing into the database
                                 int defaultVariableId = PopupMulti.this.roleMap.get(roleValue.getRoleId()).getDefaultVariableId();
                                 String defaultVariableName = PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == defaultVariableId).findFirst().get().getVariableName();
                                 int defaultRoleVariableId = PopupMulti.this.roleVariableLinks.stream().filter(r -> r.getVariableId() == defaultVariableId && r.getRoleId() == roleValue.getRoleId()).findFirst().get().getId();

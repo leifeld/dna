@@ -107,7 +107,9 @@ public class Entity implements Comparable<Entity> {
 		this.color = entity.getColor();
 		this.inDatabase = entity.isInDatabase();
 		this.attributeValues = new HashMap<String, String>();
-		this.attributeValues.putAll(entity.getAttributeValues());
+		if (entity.getAttributeValues() != null) {
+			this.attributeValues.putAll(entity.getAttributeValues());
+		}
 	}
 
 	/**
