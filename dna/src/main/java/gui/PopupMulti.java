@@ -610,7 +610,7 @@ public class PopupMulti extends JDialog {
                                 if (currentText.length() > 0 && currentText.matches("^\\s+$")) { // replace a (multiple) whitespace string by an empty string
                                     currentText = "";
                                 }
-                                currentText = currentText.substring(0, Math.min(190, currentText.length()));
+                                currentText = currentText.substring(0, Math.min(189, currentText.length()));
                                 Entity entity = new Entity(currentText); // the new entity has an ID of -1; the SQL class needs to take care of this when writing into the database
                                 int defaultVariableId = PopupMulti.this.roleMap.get(roleValue.getRoleId()).getDefaultVariableId();
                                 String defaultVariableName = PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == defaultVariableId).findFirst().get().getVariableName();
@@ -619,6 +619,7 @@ public class PopupMulti extends JDialog {
                                 RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableName(defaultVariableName);
                                 RoleValuePanel.this.ts.getRoleValues().get(finalI1).setRoleVariableLinkId(defaultRoleVariableId);
                                 RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(entity);
+                                box.setSelectedItem(entity);
                             } else {
                                 Entity entity = (Entity) box.getSelectedItem();
                                 RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableId(entity.getVariableId());
@@ -629,6 +630,7 @@ public class PopupMulti extends JDialog {
                             toggleButtons();
                         }
                     });
+
                     if (coder.isPopupAutoComplete()) {
                         AutoCompleteDecorator.decorate(box); // auto-complete short text values; part of SwingX
                     }

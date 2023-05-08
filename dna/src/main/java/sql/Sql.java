@@ -2623,10 +2623,10 @@ public class Sql {
 			 PreparedStatement s8 = conn.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
 			 PreparedStatement s9 = conn.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, RoleVariableLinkId, Entity) VALUES (?, ?, ?);");
 			 PreparedStatement s10 = conn.prepareStatement("INSERT INTO ENTITIES (VariableId, Value) VALUES (?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
-			 PreparedStatement s11 = conn.prepareStatement("UPDATE DATABOOLEAN SET Value = ? WHERE ID = ?;");
-			 PreparedStatement s12 = conn.prepareStatement("UPDATE DATAINTEGER SET Value = ? WHERE ID = ?;");
-			 PreparedStatement s13 = conn.prepareStatement("UPDATE DATALONGTEXT SET Value = ? WHERE ID = ?;");
-			 PreparedStatement s14 = conn.prepareStatement("UPDATE DATASHORTTEXT SET Entity = ? WHERE ID = ?;");
+			 PreparedStatement s11 = conn.prepareStatement("UPDATE DATABOOLEAN SET RoleVariableLinkId = ?, Value = ? WHERE ID = ?;");
+			 PreparedStatement s12 = conn.prepareStatement("UPDATE DATAINTEGER SET RoleVariableLinkId = ?, Value = ? WHERE ID = ?;");
+			 PreparedStatement s13 = conn.prepareStatement("UPDATE DATALONGTEXT SET RoleVariableLinkId = ?, Value = ? WHERE ID = ?;");
+			 PreparedStatement s14 = conn.prepareStatement("UPDATE DATASHORTTEXT SET RoleVariableLinkId = ?, Entity = ? WHERE ID = ?;");
 			 PreparedStatement s15 = conn.prepareStatement("DELETE FROM DATABOOLEAN WHERE ID = ?;");
 			 PreparedStatement s16 = conn.prepareStatement("DELETE FROM DATAINTEGER WHERE ID = ?;");
 			 PreparedStatement s17 = conn.prepareStatement("DELETE FROM DATALONGTEXT WHERE ID = ?;");
@@ -2748,11 +2748,22 @@ public class Sql {
 				for (int j = 0; j < insertionPile.size(); j++) {
 					if (insertionPile.get(j).getDataType().equals("short text")) {
 						boolean match = false;
+						// does the entity exist already with an identical ID? then nothing needs to be changed
 						for (int k = 0; k < entities.size(); k++) {
-							if (entities.get(k).getValue().equals(((Entity) insertionPile.get(j).getValue()).getValue()) && entities.get(k).getVariableId() == insertionPile.get(j).getVariableId()) {
+							if (entities.get(k).getValue().equals(((Entity) insertionPile.get(j).getValue()).getValue()) && entities.get(k).getId() == ((Entity) insertionPile.get(j).getValue()).getId() && entities.get(k).getVariableId() == insertionPile.get(j).getVariableId()) {
+								match = true;
+								break;
+							}
+						}
+						// does the entity with the same value exist but under a different ID? then change the ID in the insertion pile
+						for (int k = 0; k < entities.size(); k++) {
+							if (!match && entities.get(k).getValue().equals(((Entity) insertionPile.get(j).getValue()).getValue()) && entities.get(k).getId() != ((Entity) insertionPile.get(j).getValue()).getId() && entities.get(k).getVariableId() == insertionPile.get(j).getVariableId()) {
+								((Entity) insertionPile.get(j).getValue()).setId(entities.get(k).getId());
 								match = true;
 							}
 						}
+
+						// if it can't be found, create a new entity in the database and set its ID in the insertion pile
 						if (!match) {
 							s10.setInt(1, insertionPile.get(j).getVariableId());
 							s10.setString(2, ((Entity) insertionPile.get(j).getValue()).getValue());
@@ -2762,6 +2773,7 @@ public class Sql {
 							r1 = s10.getGeneratedKeys();
 							while (r1.next()) {
 								((Entity) insertionPile.get(j).getValue()).setId(r1.getInt(1));
+								entities.add((Entity) insertionPile.get(j).getValue()); // add the new entity to the entities list in case another role value has the same value (which, theoretically, shouldn't happen, though)
 							}
 						}
 					}
@@ -2774,8 +2786,9 @@ public class Sql {
 							if (deletionPile.get(j).dataType.equals("long text") &&
 									insertionPile.get(k).getDataType().equals("long text") &&
 									!deletionPile.get(j).valueString.equals(insertionPile.get(k).getValue())) {
-								s13.setString(1, (String) insertionPile.get(k).getValue());
-								s13.setInt(2, deletionPile.get(j).id);
+								s13.setInt(1, insertionPile.get(k).getRoleVariableLinkId());
+								s13.setString(2, (String) insertionPile.get(k).getValue());
+								s13.setInt(3, deletionPile.get(j).id);
 								s13.executeUpdate();
 								deletionPile.remove(j);
 								insertionPile.remove(k);
@@ -2783,8 +2796,9 @@ public class Sql {
 							} else if (deletionPile.get(j).dataType.equals("short text") &&
 									insertionPile.get(k).getDataType().equals("short text") &&
 									deletionPile.get(j).valueInt != ((Entity) insertionPile.get(k).getValue()).getId()) {
-								s14.setInt(1, ((Entity) insertionPile.get(k).getValue()).getId());
-								s14.setInt(2, deletionPile.get(j).id);
+								s14.setInt(1, insertionPile.get(k).getRoleVariableLinkId());
+								s14.setInt(2, ((Entity) insertionPile.get(k).getValue()).getId());
+								s14.setInt(3, deletionPile.get(j).id);
 								s14.executeUpdate();
 								deletionPile.remove(j);
 								insertionPile.remove(k);
@@ -2792,12 +2806,14 @@ public class Sql {
 							} else if (deletionPile.get(j).valueInt != (int) insertionPile.get(k).getValue() &&
 									deletionPile.get(j).dataType.equals(insertionPile.get(k).getDataType())) {
 								if (deletionPile.get(j).dataType.equals("boolean")) {
-									s11.setInt(1, (int) insertionPile.get(k).getValue());
-									s11.setInt(2, deletionPile.get(j).id);
+									s11.setInt(1, insertionPile.get(k).getRoleVariableLinkId());
+									s11.setInt(2, (int) insertionPile.get(k).getValue());
+									s11.setInt(3, deletionPile.get(j).id);
 									s11.executeUpdate();
 								} else if (deletionPile.get(j).dataType.equals("integer")) {
-									s12.setInt(1, (int) insertionPile.get(k).getValue());
-									s12.setInt(2, deletionPile.get(j).id);
+									s12.setInt(1, insertionPile.get(k).getRoleVariableLinkId());
+									s12.setInt(2, (int) insertionPile.get(k).getValue());
+									s12.setInt(3, deletionPile.get(j).id);
 									s12.executeUpdate();
 								}
 								deletionPile.remove(j);

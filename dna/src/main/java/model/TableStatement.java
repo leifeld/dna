@@ -4,6 +4,7 @@ import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -21,7 +22,15 @@ public class TableStatement extends Statement {
         this.coderColor = coderColor;
         this.statementTypeColor = statementTypeColor;
         this.statementTypeLabel = statementTypeLabel;
-        this.roleValues = roleValues;
+
+        // make sure the role values are sorted by role name, then role ID, then value, to make sure different sorting orders from SQL do not matter for comparison
+        this.roleValues = roleValues
+                .stream()
+                .sorted(Comparator.comparing((RoleValue rv) -> rv.getRoleName())
+                        .thenComparing((RoleValue rv) -> rv.getRoleId())
+                        .thenComparing((RoleValue rv) -> rv.getValue().toString()))
+                .collect(Collectors.toCollection(ArrayList::new));
+
     }
 
     public TableStatement(TableStatement tableStatement) {
