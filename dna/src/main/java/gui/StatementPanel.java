@@ -1,36 +1,16 @@
 package gui;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Graphics;
-import java.awt.Image;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
-import javax.swing.JTable;
-import javax.swing.ListCellRenderer;
-import javax.swing.ListSelectionModel;
-import javax.swing.RowFilter;
-import javax.swing.UIDefaults;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -57,6 +37,7 @@ class StatementPanel extends JPanel {
 	private int documentId; // needed for the filter to check if a statement is in the current document; updated by listener
 	private TableRowSorter<StatementTableModel> sorter;
 	private JMenuItem menuItemStatementsSelected, menuItemStatementTypesSelected, menuItemToggleSelection;
+	private StatementFilterPanel sfp;
 
 	/**
 	 * Create a new statement panel.
@@ -244,7 +225,8 @@ class StatementPanel extends JPanel {
 		*/
 		
 		// statement filter panel at the bottom
-		StatementFilterPanel sfp = new StatementFilterPanel();
+		sfp = new StatementFilterPanel();
+		sfp.setVisible(false); // TODO: make visible once done
 		this.add(sfp, BorderLayout.SOUTH);
 	}
 	
@@ -436,229 +418,213 @@ class StatementPanel extends JPanel {
 		return true;
 	}
 
-	/**
-	 * The panel at the bottom of the filter panel, which takes care of
-	 * filtering statements. The panel can dynamically rebuild the required
-	 * filter fields depending on what is selected.
-	 */
-	private class StatementFilterPanel extends JPanel {
-		private static final long serialVersionUID = -5543257765293355702L;
-		JPanel statementTypePanel, variablePanel;
-		
-		/**
-		 * Create a new statement filter panel.
-		 */
-		StatementFilterPanel() {
-			this.setLayout(new BorderLayout());
-			allButton = new JRadioButton("All");
-			docButton = new JRadioButton("Current");
-			filterButton = new JRadioButton("Filter");
-			ButtonGroup group = new ButtonGroup();
-			group.add(allButton);
-			group.add(docButton);
-			group.add(filterButton);
-			allButton.setSelected(true);
-			allButton.setEnabled(false);
-			docButton.setEnabled(false);
-			filterButton.setEnabled(false);
-			JPanel radioButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			radioButtonPanel.add(allButton);
-			radioButtonPanel.add(docButton);
-			radioButtonPanel.add(filterButton);
-			
-			// react to changes in the selected statement type and rebuild the panel with the filter fields
-			// TODO: reactivate the filter and combine statement types, roles, and variables in complex ways
-			/*
-			ItemListener aListener = new ItemListener() {
-				@Override
-				public void itemStateChanged(ItemEvent arg0) {
-					removeVariablePanel();
-					StatementType st = (StatementType) statementTypeBox.getSelectedItem();
-					variables = st.getVariables();
-					JPanel varPanel = new JPanel(new GridBagLayout());
-					GridBagConstraints gbc = new GridBagConstraints();
-					gbc.gridx = 0;
-					gbc.gridy = 0;
-					gbc.insets = new Insets(5, 10, 2, 8);
-					gbc.anchor = GridBagConstraints.WEST;
-					gbc.fill = GridBagConstraints.HORIZONTAL;
-					gbc.weightx = 1.0;
-					
-					// first, create a filter field for statement ID
-					JLabel idLabel = new JLabel("statement ID");
-					varPanel.add(idLabel, gbc);
-					gbc.gridx++;
-					JTextField idFilterField = new JTextField(5);
-					varPanel.add(idFilterField, gbc);
-					idFilterField.getDocument().addDocumentListener(new DocumentListener() {
-						@Override
-						public void changedUpdate(DocumentEvent arg0) {
-							updatePatterns();
-						}
-						@Override
-						public void insertUpdate(DocumentEvent arg0) {
-							updatePatterns();
-						}
-						@Override
-						public void removeUpdate(DocumentEvent arg0) {
-							updatePatterns();
-						}
-						private void updatePatterns() {
-							idFieldPattern = idFilterField.getText();
-							statementTableModel.fireTableDataChanged();
-						}
-					});
-					gbc.gridx--;
-					gbc.gridy++;
-					
-					// second, go through variables and create more filter fields
-					for (int i = 0; i < variables.size(); i++) {
-						final int VARINDEX = i;
-						variables.get(i).setValue("");
-						JLabel keyLabel = new JLabel(variables.get(i).getKey(), JLabel.LEFT);
-						varPanel.add(keyLabel, gbc);
-						gbc.gridx++;
-						JTextField filterField = new JTextField(5);
-						varPanel.add(filterField, gbc);
-						gbc.gridx--;
-						gbc.gridy++;
-						filterField.getDocument().addDocumentListener(new DocumentListener() {
-							@Override
-							public void changedUpdate(DocumentEvent arg0) {
-								updatePatterns();
-							}
-							@Override
-							public void insertUpdate(DocumentEvent arg0) {
-								updatePatterns();
-							}
-							@Override
-							public void removeUpdate(DocumentEvent arg0) {
-								updatePatterns();
-							}
-							private void updatePatterns() {
-								variables.get(VARINDEX).setValue((String) filterField.getText());
-								statementTableModel.fireTableDataChanged();
-							}
-						});
-					}
-					variablePanel = varPanel;
-					variablePanel.setVisible(true);
-					addVariablePanel();
-					statementTableModel.fireTableDataChanged();
-				}
-			};
-			
-			// action listener for the three filter buttons to reload the filter elements below
-			ActionListener al = new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					if (e.getSource() == allButton) {
-						allButton.setEnabled(false);
-						docButton.setEnabled(true);
-						filterButton.setEnabled(true);
-						removeVariablePanel();
-						statementTypeBox.removeItemListener(aListener);
-						statementTypeBox.removeAllItems();
-						statementTypeBox.setVisible(false);
-					} else if (e.getSource() == docButton) {
-						allButton.setEnabled(true);
-						docButton.setEnabled(false);
-						filterButton.setEnabled(true);
-						removeVariablePanel();
-						statementTypeBox.removeItemListener(aListener);
-						statementTypeBox.removeAllItems();
-						statementTypeBox.setVisible(false);
-					} else if (e.getSource() == filterButton) {
-						allButton.setEnabled(true);
-						docButton.setEnabled(true);
-						filterButton.setEnabled(false);
-						removeVariablePanel();
-						statementTypeBox.removeItemListener(aListener);
-						statementTypeBox.removeAllItems();
-						statementTypeBox.addItemListener(aListener);
-						ArrayList<StatementType> statementTypeArrayList = Dna.sql.getStatementTypes();
-						for (int i = 0; i < statementTypeArrayList.size(); i++) {
-							statementTypeBox.addItem(statementTypeArrayList.get(i));
-						}
-						statementTypeBox.setVisible(true);
-					}
-					statementTableModel.fireTableDataChanged(); // update the filter even if no new statement type has been selected yet
-				}
-			};
-			allButton.addActionListener(al);
-			docButton.addActionListener(al);
-			filterButton.addActionListener(al);
-			*/
-			this.add(radioButtonPanel, BorderLayout.NORTH);
-			
-			// statement type combo box panel is empty for now
-			statementTypePanel = new JPanel(new BorderLayout());
-			statementTypeBox = new JComboBox<StatementType>();
-			statementTypeBox.setRenderer(new StatementTypeComboBoxRenderer());
-			statementTypeBox.setVisible(false);
-			statementTypeBox.setBorder(new EmptyBorder(0, 10, 0, 10));
-			statementTypePanel.add(statementTypeBox, BorderLayout.CENTER);
-			this.add(statementTypePanel, BorderLayout.CENTER);
-			
-			// placeholder for the filter field panel at the bottom
-			variablePanel = new JPanel();
-			variablePanel.setVisible(false);
-			this.add(variablePanel, BorderLayout.SOUTH);
+	public class StatementFilter extends JPanel {
+
+		private String label;
+		private String source;
+		private String value;
+		private boolean negate;
+		private JButton button;
+
+		public StatementFilter(String label, String source, String value, boolean negate) {
+			this.label = label;
+			this.source = source;
+			this.value = value;
+			this.negate = negate;
+
+			setLayout(new BorderLayout());
+			setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createEmptyBorder(2, 2, 2, 2),
+					BorderFactory.createLineBorder(Color.GRAY)));
+
+			String lab;
+			if (source.equals("text")) {
+				lab = "text";
+			} else if (source.equals("id")) {
+				lab = "id";
+			} else {
+				lab = this.label;
+			}
+			lab = lab + ": " + this.value;
+			if (this.negate) lab = lab + " (negated)";
+			JLabel displayLabel = new JLabel(lab);
+			add(displayLabel, BorderLayout.WEST);
+
+			ImageIcon filterRemoveIcon = new SvgIcon("/icons/tabler_trash.svg", 16).getImageIcon();
+			button = new JButton(filterRemoveIcon);
+			button.setToolTipText("add filter");
+			button.setMargin(new Insets(0, 0, 0, 0));
+			button.setContentAreaFilled(false);
+			button.setBorder(new EmptyBorder(0, 0, 0, 0));
+			add(button, BorderLayout.EAST);
 		}
 
-		/**
-		 * Remove the panel with regex filter fields from the statement filter
-		 * panel and update the user interface.
-		 */
-		private void removeVariablePanel() {
-			this.remove(variablePanel);
-			this.revalidate();
+		public String getLabel() {
+			return label;
 		}
-		
-		/**
-		 * Add a panel with regex filter fields to the statement filter panel.
-		 */
-		private void addVariablePanel() {
-			this.add(variablePanel, BorderLayout.SOUTH);
-			this.revalidate();
+
+		public void setLabel(String label) {
+			this.label = label;
 		}
-		
-		/**
-		 * A combo box renderer for statement types.
-		 */
-		private class StatementTypeComboBoxRenderer implements ListCellRenderer<Object> {
-			@Override
-			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-				if (value == null) {
-					return new JLabel();
-				} else {
-					StatementType s = (StatementType) value;
-					JButton colorRectangle = (new JButton() {
-						private static final long serialVersionUID = 435490918616472975L;
-						public void paintComponent(Graphics g) {
-							super.paintComponent(g);
-							g.setColor(s.getColor());
-							g.fillRect(2, 2, 14, 14);
+
+		public String getSource() {
+			return source;
+		}
+
+		public void setSource(String source) {
+			this.source = source;
+		}
+
+		public String getValue() {
+			return value;
+		}
+
+		public void setValue(String value) {
+			this.value = value;
+		}
+
+		public boolean isNegate() {
+			return negate;
+		}
+
+		public void setNegate(boolean negate) {
+			this.negate = negate;
+		}
+
+		public JButton getButton() {
+			return this.button;
+		}
+	}
+
+	public class StatementFilterPanel extends JPanel {
+
+		private JButton addButton;
+		private JComboBox<String> sourceBox;
+		private JComboBox<String> labelBox;
+		private JTextField valueField;
+		private JCheckBox negateCheckBox;
+		private JPanel filterPanel;
+		private JScrollPane scrollPane;
+
+		public StatementFilterPanel() {
+			setLayout(new BorderLayout());
+
+			filterPanel = new JPanel();
+			filterPanel.setLayout(new BoxLayout(filterPanel, BoxLayout.Y_AXIS));
+			scrollPane = new JScrollPane(filterPanel);
+			add(scrollPane, BorderLayout.CENTER);
+
+			JPanel addFilterPanel = new JPanel(new BorderLayout());
+
+			ImageIcon filterAddIcon = new SvgIcon("/icons/tabler_filter_plus.svg", 16).getImageIcon();
+			addButton = new JButton(filterAddIcon);
+			addButton.setToolTipText("add filter");
+			addButton.setMargin(new Insets(0, 0, 0, 0));
+			addButton.setContentAreaFilled(false);
+			addButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					StatementFilter newFilter = new StatementFilter(
+							(String) labelBox.getSelectedItem(),
+							(String) sourceBox.getSelectedItem(),
+							valueField.getText(),
+							negateCheckBox.isSelected()
+					);
+					newFilter.getButton().addActionListener(new ActionListener() {
+						@Override
+						public void actionPerformed(ActionEvent e) {
+							filterPanel.remove(newFilter);
+							updateFilterPanelSize();
 						}
 					});
-					colorRectangle.setPreferredSize(new Dimension(14, 14));
-					colorRectangle.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-					colorRectangle.setEnabled(false);
-					
-					JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-					panel.add(colorRectangle);
-					JLabel statementTypeLabel = new JLabel(s.getLabel());
-					panel.add(statementTypeLabel);
-					
-					if (isSelected) {
-						UIDefaults defaults = javax.swing.UIManager.getDefaults();
-						Color bg = defaults.getColor("List.selectionBackground");
-						panel.setBackground(bg);
-					}
-					return panel;
+					filterPanel.add(newFilter);
+					updateFilterPanelSize();
 				}
+			});
+			addButton.setEnabled(false);
+			addFilterPanel.add(addButton, BorderLayout.WEST);
+
+			negateCheckBox = new JCheckBox("negate");
+			negateCheckBox.setSelected(false);
+			negateCheckBox.setEnabled(false);
+			addFilterPanel.add(negateCheckBox, BorderLayout.EAST);
+
+			JPanel comboBoxPanel = new JPanel(new BorderLayout());
+
+			sourceBox = new JComboBox<>(new String[]{"role", "variable", "document", "id", "text"});
+			sourceBox.setPreferredSize(new Dimension(80, 18));
+			sourceBox.setEnabled(false);
+			sourceBox.addItemListener(e -> {
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					resetLabelBox((String) e.getItem());
+				}
+			});
+			comboBoxPanel.add(sourceBox, BorderLayout.WEST);
+
+			labelBox = new JComboBox<>();
+			labelBox.setPreferredSize(new Dimension(80, 18));
+			labelBox.setEnabled(false);
+			comboBoxPanel.add(labelBox, BorderLayout.CENTER);
+
+			valueField = new JTextField(12);
+			valueField.setEnabled(false);
+			comboBoxPanel.add(valueField, BorderLayout.EAST);
+
+			addFilterPanel.add(comboBoxPanel, BorderLayout.CENTER);
+
+			add(addFilterPanel, BorderLayout.SOUTH);
+		}
+
+		private void resetLabelBox(String source) {
+			labelBox.setVisible(!(source.equals("text") || source.equals("id")));
+			labelBox.removeAllItems();
+			if (source.equals("document")) {
+				labelBox.addItem("author");
+				labelBox.addItem("source");
+				labelBox.addItem("section");
+				labelBox.addItem("type");
+				labelBox.addItem("notes");
+			} else if (source.equals("role")) {
+				Dna.sql.getRoles().stream().forEach(r -> labelBox.addItem(r.getRoleName()));
+			} else if (source.equals("variable")) {
+				Dna.sql.getVariables().stream().forEach(v -> labelBox.addItem(v.getVariableName()));
 			}
 		}
+
+		private void updateFilterPanelSize() {
+			int panelHeight = 0;
+			if (filterPanel.getComponentCount() > 0) {
+				panelHeight = Math.min(312, 4 + 22 * filterPanel.getComponentCount());
+			}
+			Dimension newSize = new Dimension(0, panelHeight);
+			scrollPane.setPreferredSize(newSize);
+			repaintStatementPanel();
+		}
+
+		public void setEnabled(boolean enabled) {
+			addButton.setEnabled(enabled);
+			sourceBox.setEnabled(enabled);
+			labelBox.setEnabled(enabled);
+			valueField.setEnabled(enabled);
+			negateCheckBox.setEnabled(enabled);
+		}
+
+		private class StatementFilterRenderer extends JPanel implements ListCellRenderer<StatementFilter> {
+
+			@Override
+			public Component getListCellRendererComponent(JList<? extends StatementFilter> list, StatementFilter value, int index, boolean isSelected, boolean cellHasFocus) {
+				return value;
+			}
+		}
+	}
+
+	/**
+	 * Revalidate and repaint the statement panel to update the vertical size of the filter panel. Called from within
+	 * the statement filter panel when a filter is added or removed.
+	 */
+	private void repaintStatementPanel() {
+		revalidate();
+		repaint();
 	}
 
 	/**
@@ -667,17 +633,19 @@ class StatementPanel extends JPanel {
 	public void adjustToChangedConnection() {
 		if (Dna.sql == null) {
 			menuItemToggleSelection.setEnabled(false);
-			allButton.setSelected(true);
-			allButton.setEnabled(false);
-			docButton.setEnabled(false);
-			filterButton.setEnabled(false);
+			//allButton.setSelected(true);
+			//allButton.setEnabled(false);
+			//docButton.setEnabled(false);
+			//filterButton.setEnabled(false);
+			sfp.setEnabled(false);
 		} else {
 			menuItemToggleSelection.setEnabled(true);
-			allButton.setSelected(true);
-			allButton.doClick();
-			allButton.setEnabled(false);
-			docButton.setEnabled(true);
-			filterButton.setEnabled(true);
+			//allButton.setSelected(true);
+			//allButton.doClick();
+			//allButton.setEnabled(false);
+			//docButton.setEnabled(true);
+			//filterButton.setEnabled(true);
+			sfp.setEnabled(true);
 		}
 	}
 }

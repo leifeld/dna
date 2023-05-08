@@ -221,7 +221,7 @@ public class MainWindow extends JFrame {
 		actionRemoveStatements = new ActionRemoveStatements("Remove statement(s)", removeStatementsIcon, "Remove the statement(s) currently selected in the statement table", KeyEvent.VK_D);
 		actionRemoveStatements.setEnabled(false);
 
-		ImageIcon statementTypeEditorIcon = new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-message-2.png"))).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH));
+		ImageIcon statementTypeEditorIcon = new SvgIcon("/icons/tabler_message_2.svg", 18).getImageIcon();
 		actionStatementTypeEditor = new ActionStatementTypeEditor("Edit statement types", statementTypeEditorIcon, "Open the statement type editor to edit statement types and their variables.", KeyEvent.VK_T);
 		actionStatementTypeEditor.setEnabled(false);
 

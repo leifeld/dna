@@ -159,10 +159,12 @@ public class MenuBar extends JMenuBar {
 
 		// document menu: batch import documents
 		JMenuItem batchImportDocumentsItem = new JMenuItem(actionBatchImportDocuments);
+		batchImportDocumentsItem.setVisible(false); // TODO: make visible once finalized
 		documentMenu.add(batchImportDocumentsItem);
 
 		// document menu: import from other DNA database
 		JMenuItem importerItem = new JMenuItem(actionImporter);
+		importerItem.setVisible(false); // TODO: make visible once finalized
 		documentMenu.add(importerItem);
 
 		// document menu: regex search dialog
@@ -179,6 +181,7 @@ public class MenuBar extends JMenuBar {
 
 		// statements menu: recode statements
 		JMenuItem recodeStatementsItem = new JMenuItem(actionRecodeStatements);
+		recodeStatementsItem.setVisible(false); // TODO: make visible once finalized
 		statementsMenu.add(recodeStatementsItem);
 
 		// statements menu: remove statements
@@ -187,10 +190,12 @@ public class MenuBar extends JMenuBar {
 
 		// statements menu: open statement type editor
 		JMenuItem statementTypeEditorItem = new JMenuItem(actionStatementTypeEditor);
+		statementTypeEditorItem.setVisible(false); // TODO: make visible once finalized
 		statementsMenu.add(statementTypeEditorItem);
 		
 		// statements menu: open attribute manager
 		JMenuItem attributeManagerItem = new JMenuItem(actionAttributeManager);
+		attributeManagerItem.setVisible(false); // TODO: make visible once finalized
 		statementsMenu.add(attributeManagerItem);
 		
 		// export menu
@@ -199,6 +204,7 @@ public class MenuBar extends JMenuBar {
 
 		// export menu: open network exporter
 		JMenuItem networkExporterItem = new JMenuItem(actionNetworkExporter);
+		networkExporterItem.setVisible(false); // TODO: make visible once finalized
 		exportMenu.add(networkExporterItem);
 
 		// export menu: open backbone exporter

@@ -12,6 +12,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BaseMultiResolutionImage;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -148,8 +149,8 @@ public class PopupMulti extends JDialog {
         this.setAlwaysOnTop(true);
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
-        ImageIcon statementIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/tabler-icon-message-2.png")));
-        this.setIconImage(statementIcon.getImage());
+        BaseMultiResolutionImage statementImage = new SvgIcon("/icons/dna.svg", 16).getImage();
+        this.setIconImage(statementImage);
 
         c = getContentPane();
 
