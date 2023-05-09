@@ -226,7 +226,6 @@ class StatementPanel extends JPanel {
 		
 		// statement filter panel at the bottom
 		sfp = new StatementFilterPanel();
-		sfp.setVisible(false); // TODO: make visible once done
 		this.add(sfp, BorderLayout.SOUTH);
 	}
 	
@@ -551,7 +550,7 @@ class StatementPanel extends JPanel {
 
 			JPanel comboBoxPanel = new JPanel(new BorderLayout());
 
-			sourceBox = new JComboBox<>(new String[]{"role", "variable", "document", "id", "text"});
+			sourceBox = new JComboBox<>(new String[]{"role", "variable", "statement", "document"});
 			sourceBox.setPreferredSize(new Dimension(80, 18));
 			sourceBox.setEnabled(false);
 			sourceBox.addItemListener(e -> {
@@ -576,18 +575,26 @@ class StatementPanel extends JPanel {
 		}
 
 		private void resetLabelBox(String source) {
-			labelBox.setVisible(!(source.equals("text") || source.equals("id")));
 			labelBox.removeAllItems();
 			if (source.equals("document")) {
+				labelBox.addItem("(only current)");
 				labelBox.addItem("author");
 				labelBox.addItem("source");
 				labelBox.addItem("section");
 				labelBox.addItem("type");
 				labelBox.addItem("notes");
+				valueField.setVisible(true);
 			} else if (source.equals("role")) {
 				Dna.sql.getRoles().stream().forEach(r -> labelBox.addItem(r.getRoleName()));
+				valueField.setVisible(true);
 			} else if (source.equals("variable")) {
 				Dna.sql.getVariables().stream().forEach(v -> labelBox.addItem(v.getVariableName()));
+				valueField.setVisible(true);
+			} else if (source.equals("statement")) {
+				labelBox.addItem("id");
+				labelBox.addItem("text");
+				valueField.setText("");
+				valueField.setVisible(false);
 			}
 		}
 
@@ -607,14 +614,6 @@ class StatementPanel extends JPanel {
 			labelBox.setEnabled(enabled);
 			valueField.setEnabled(enabled);
 			negateCheckBox.setEnabled(enabled);
-		}
-
-		private class StatementFilterRenderer extends JPanel implements ListCellRenderer<StatementFilter> {
-
-			@Override
-			public Component getListCellRendererComponent(JList<? extends StatementFilter> list, StatementFilter value, int index, boolean isSelected, boolean cellHasFocus) {
-				return value;
-			}
 		}
 	}
 
@@ -637,6 +636,11 @@ class StatementPanel extends JPanel {
 			//allButton.setEnabled(false);
 			//docButton.setEnabled(false);
 			//filterButton.setEnabled(false);
+			sfp.sourceBox.setSelectedItem("role");
+			sfp.resetLabelBox("role");
+			sfp.valueField.setText("");
+			sfp.valueField.setVisible(true);
+			sfp.negateCheckBox.setSelected(false);
 			sfp.setEnabled(false);
 		} else {
 			menuItemToggleSelection.setEnabled(true);
@@ -645,6 +649,11 @@ class StatementPanel extends JPanel {
 			//allButton.setEnabled(false);
 			//docButton.setEnabled(true);
 			//filterButton.setEnabled(true);
+			sfp.sourceBox.setSelectedItem("role");
+			sfp.resetLabelBox("role");
+			sfp.valueField.setText("");
+			sfp.valueField.setVisible(true);
+			sfp.negateCheckBox.setSelected(false);
 			sfp.setEnabled(true);
 		}
 	}
