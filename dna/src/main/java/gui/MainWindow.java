@@ -854,6 +854,7 @@ public class MainWindow extends JFrame {
 					TableStatement s = popup.getTableStatement();
 					int modelRow = statementTableModel.getModelRowById(s.getId());
 					statementTableModel.updateCoderInRow(modelRow, s.getCoderId(), s.getCoderName(), s.getCoderColor());
+					statementTableModel.getRow(modelRow).setRoleValues(s.getRoleValues());
 				}
 			});
 		}
@@ -883,6 +884,7 @@ public class MainWindow extends JFrame {
 						TableStatement s = popup.getTableStatement();
 						int modelRow = statementTableModel.getModelRowById(s.getId());
 						statementTableModel.updateCoderInRow(modelRow, s.getCoderId(), s.getCoderName(), s.getCoderColor());
+						statementTableModel.getRow(modelRow).setRoleValues(s.getRoleValues());
 					}
 				}
 			});
