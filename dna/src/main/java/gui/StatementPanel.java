@@ -4,11 +4,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -27,13 +22,9 @@ import model.*;
  * Statement panel on the right side of the screen.
  */
 class StatementPanel extends JPanel {
-	private static final long serialVersionUID = 1048170479152247253L;
+	private static final long serialVersionUID = 1048180479152247253L;
 	private JTable statementTable;
 	private StatementTableModel statementTableModel;
-	private ArrayList<Variable> variables;
-	private String idFieldPattern = "";
-	private JRadioButton allButton, docButton, filterButton;
-	private JComboBox<StatementType> statementTypeBox;
 	private int documentId; // needed for the filter to check if a statement is in the current document; updated by listener
 	private TableRowSorter<StatementTableModel> sorter;
 	private JMenuItem menuItemStatementsSelected, menuItemStatementTypesSelected, menuItemToggleSelection;
@@ -59,7 +50,7 @@ class StatementPanel extends JPanel {
 		statementTable.setRowSorter(sorter);
 
 		// set column visibility
-		TableColumn column[] = new TableColumn[6];
+		TableColumn[] column = new TableColumn[6];
 	    for (int i = 0; i < column.length; i++) {
 	        column[i] = statementTable.getColumnModel().getColumn(i);
 	    }
@@ -135,7 +126,7 @@ class StatementPanel extends JPanel {
 			statementTable.getColumnModel().removeColumn(statementTable.getColumnModel().getColumn(0));
 		}
 		for (int i = 0; i < columnsVisible.length; i++) {
-			if (columnsVisible[i] == true) {
+			if (columnsVisible[i]) {
 				statementTable.getColumnModel().addColumn(column[i]);
 			}
 		}
@@ -144,7 +135,7 @@ class StatementPanel extends JPanel {
 		ActionListener al = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (e.getSource() == menuItemStatementId) {
-					if (columnsVisible[0] == false) {
+					if (!columnsVisible[0]) {
 						columnsVisible[0] = true;
 						menuItemStatementId.setIcon(checkedIcon);
 					} else {
@@ -152,7 +143,7 @@ class StatementPanel extends JPanel {
 						menuItemStatementId.setIcon(uncheckedIcon);
 					}
 				} else if (e.getSource() == menuItemDocumentId) {
-					if (columnsVisible[1] == false) {
+					if (!columnsVisible[1]) {
 						columnsVisible[1] = true;
 						menuItemDocumentId.setIcon(checkedIcon);
 					} else {
@@ -212,21 +203,20 @@ class StatementPanel extends JPanel {
 		menuItemText.addActionListener(al);
 
 		// row filter
-		// TODO: add row filter back in
-		/*
-		RowFilter<StatementTableModel, Integer> statementFilter = new RowFilter<StatementTableModel, Integer>() {
-			public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
-				TableStatement s = statementTableModel.getRow(entry.getIdentifier());
-				ArrayList<Variable> values = Dna.sql.getValues(s.getId());
-				return filter(s, documentId, values);
-			}
-		};
-		sorter.setRowFilter(statementFilter);
-		*/
+		setRowFilter();
 		
 		// statement filter panel at the bottom
 		sfp = new StatementFilterPanel();
 		this.add(sfp, BorderLayout.SOUTH);
+	}
+
+	private void setRowFilter() {
+		RowFilter<StatementTableModel, Integer> statementFilter = new RowFilter<StatementTableModel, Integer>() {
+			public boolean include(Entry<? extends StatementTableModel, ? extends Integer> entry) {
+				return filter(statementTableModel.getRow(entry.getIdentifier()));
+			}
+		};
+		sorter.setRowFilter(statementFilter);
 	}
 	
 	/**
@@ -344,23 +334,20 @@ class StatementPanel extends JPanel {
         	}
 		}
 	}
-	
+
 	/**
-	 * Filter statements. Return {@code true} if the statement should be listed
-	 * in the table and {@code false} otherwise. This depends on the document
-	 * that is currently being displayed and on the settings of the filter
-	 * fields, which always keep the {@code variables} list up-to-date with the
-	 * current filter contents, using a document filter.
-	 * 
-	 * @param s The statement that should be assessed on whether it should be displayed.
-	 * @param documentId The ID of the document that is currently being displayed.
-	 * @param values The variables including values for the statement.
-	 * @return Whether the statement should be shown or not.
+	 * Filter statement contents. Returns false if the statement should not be shown, true otherwise.
+	 *
+	 * @param s The table statement.
+	 * @return True if the statement should be shown, false otherwise.
 	 */
-	private boolean filter(Statement s, int documentId, ArrayList<Variable> values) {
+	private boolean filter(TableStatement s) {
+		// do not show statement if no active coder
 		if (Dna.sql.getActiveCoder() == null || Dna.sql.getConnectionProfile() == null) {
 			return false;
 		}
+
+		// do not show statement if coder does not have the permission
 		if (s.getCoderId() != Dna.sql.getActiveCoder().getId()) {
 			if (!Dna.sql.getActiveCoder().isPermissionViewOthersStatements()) {
 				return false;
@@ -368,90 +355,160 @@ class StatementPanel extends JPanel {
 				return false;
 			}
 		}
-		if (allButton.isSelected()) {
-			return true; // show all statements
-		} else if (docButton.isSelected()) {
-			if (s.getDocumentId() == documentId) {
-				return true; // show statement if it's in the right document
-			} else {
-				return false;
-			}
-		} else if (variables == null || variables.size() == 0) {
-			if (statementTypeBox.getSelectedItem() == null) {
-				return true; // no statement type -> something went wrong; show the statement
-			} else if (s.getStatementTypeId() == ((StatementType) statementTypeBox.getSelectedItem()).getId()) {
-				return true; // statement type matches, variables cannot be found; show the statement
-			} else {
-				return false; // statement type does not match and there are no variables; don't show the statement
-			}
-		} else {
-			// check statement type from statement type box for a non-match
-			if (s.getStatementTypeId() != ((StatementType) statementTypeBox.getSelectedItem()).getId()) {
-				return false;
-			} else {
-				// check ID field for a non-match
-				Pattern pattern = Pattern.compile(idFieldPattern);
-				Matcher m = pattern.matcher(String.valueOf((int) s.getId()));
-				if (!m.find()) {
-					return false;
-				}
-				// check variables for a non-match
-				// TODO: use roles instead of variables in filter (and also in the GUI for the filter)!
-				/*
-				for (int i = 0; i < variables.size(); i++) {
-					pattern = Pattern.compile((String) variables.get(i).getValue());
-					if (values.get(i).getValue().getClass().toString().endsWith("Entity")) {
-						m = pattern.matcher(((Entity) values.get(i).getValue()).getValue());
-					} else if (values.get(i).getValue().getClass().toString().endsWith("Integer")) {
-						m = pattern.matcher(String.valueOf((int) values.get(i).getValue()));
-					} else {
-						m = pattern.matcher((String) values.get(i).getValue());
+
+		// go through the different statement filters and decide if statement should be shown
+		for (int i = 0; i < sfp.getFilterPanel().getComponents().length; i++) {
+			StatementFilter f = (StatementFilter) sfp.getFilterPanel().getComponents()[i];
+
+			// documents
+			if (f.getSource().equals("document")) {
+				if (f.getLabel().equals("(current)")) {
+					if (StatementPanel.this.documentId == s.getDocumentId() && f.isNegate()) {
+						return false;
 					}
-					if (!m.find()) {
+					if (StatementPanel.this.documentId != s.getDocumentId() && !f.isNegate()) {
+						return false;
+					}
+				} else if (f.getLabel().equals("id")) {
+					if (String.valueOf(s.getDocumentId()).matches(f.getValue()) && f.isNegate()) {
+						return false;
+					}
+					if (!String.valueOf(s.getDocumentId()).matches(f.getValue()) && !f.isNegate()) {
 						return false;
 					}
 				}
-				*/
+			}
+
+			// roles
+			if (f.getSource().equals("role")) {
+				boolean matched = s.getRoleValues()
+						.stream()
+						.filter(rv -> rv.getRoleName().equals(f.getLabel()) && rv.getValue().toString().matches(f.getValue()))
+						.count() > 0;
+				if (matched && f.isNegate() || !matched && !f.isNegate()) {
+					return false;
+				}
+			}
+
+			// variables
+			if (f.getSource().equals("variable")) {
+				boolean matched = s.getRoleValues()
+						.stream()
+						.filter(rv -> rv.getVariableName().equals(f.getLabel()) && rv.getValue().toString().matches(f.getValue()))
+						.count() > 0;
+				if (matched && f.isNegate() || !matched && !f.isNegate()) {
+					return false;
+				}
+			}
+
+			// coder
+			if (f.getSource().equals("coder")) {
+				if (f.getLabel().equals("id")) {
+					if (String.valueOf(s.getCoderId()).matches(f.getValue()) && f.isNegate()) {
+						return false;
+					}
+					if (!String.valueOf(s.getCoderId()).matches(f.getValue()) && !f.isNegate()) {
+						return false;
+					}
+				}
+				if (f.getLabel().equals("name")) {
+					if (s.getCoderName().matches(f.getValue()) && f.isNegate()) {
+						return false;
+					}
+					if (!s.getCoderName().matches(f.getValue()) && !f.isNegate()) {
+						return false;
+					}
+				}
+			}
+
+			// statement
+			if (f.getSource().equals("statement")) {
+				if (f.getLabel().equals("id")) {
+					if (String.valueOf(s.getId()).matches(f.getValue()) && f.isNegate()) {
+						return false;
+					}
+					if (!String.valueOf(s.getId()).matches(f.getValue()) && !f.isNegate()) {
+						return false;
+					}
+				}
+				if (f.getLabel().equals("text")) {
+					if (s.getText().matches(f.getValue()) && f.isNegate()) {
+						return false;
+					}
+					if (!s.getText().matches(f.getValue()) && !f.isNegate()) {
+						return false;
+					}
+				}
 			}
 		}
 		return true;
 	}
 
+	/**
+	 * Represents a statement filter. The row filter subjects each row in the table to each statement filter object
+	 * saved in the filter panel. A statement filter is a panel but contains relevant settings for filtering.
+	 */
 	public class StatementFilter extends JPanel {
-
-		private String label;
+		/**
+		 * The type of filter. E.g., should we filter by role, variable etc.? Valid values are {@code "role"},
+		 * {@code "variable"}, {@code "statement"}, {@code "document"}, and {@code "coder"}.
+		 */
 		private String source;
+		/**
+		 * The specific unit by which we want to filter, for example a specific role, variable etc.
+		 */
+		private String label;
+		/**
+		 * A regular expression to be matched against the statement contents.
+		 */
 		private String value;
+		/**
+		 * If negated, all non-matches will be retained. If not negated, all matches will be retained.
+		 */
 		private boolean negate;
+		/**
+		 * A delete button for removing the filter from the filter panel.
+		 */
 		private JButton button;
 
+		/**
+		 * Constructor for creating a new statement filter.
+		 *
+		 * @param label The label.
+		 * @param source The source.
+		 * @param value The value.
+		 * @param negate The negate setting.
+		 */
 		public StatementFilter(String label, String source, String value, boolean negate) {
 			this.label = label;
 			this.source = source;
 			this.value = value;
 			this.negate = negate;
 
+			setToolTipText("This statement filter can be deleted by clicking on the trash can.");
 			setLayout(new BorderLayout());
 			setBorder(BorderFactory.createCompoundBorder(
 					BorderFactory.createEmptyBorder(2, 2, 2, 2),
 					BorderFactory.createLineBorder(Color.GRAY)));
+			if (negate) {
+				setBackground(new Color(242, 187, 201));
+			} else {
+				setBackground(new Color(187, 242, 201));
+			}
 
 			String lab;
-			if (source.equals("text")) {
-				lab = "text";
-			} else if (source.equals("id")) {
-				lab = "id";
+			if (source.equals("document") && label.equals("(current)")) {
+				lab = "[document] (current)";
 			} else {
-				lab = this.label;
+				lab = "[" + this.source + "] " + this.label + ": " + this.value;
 			}
-			lab = lab + ": " + this.value;
 			if (this.negate) lab = lab + " (negated)";
 			JLabel displayLabel = new JLabel(lab);
 			add(displayLabel, BorderLayout.WEST);
 
 			ImageIcon filterRemoveIcon = new SvgIcon("/icons/tabler_trash.svg", 16).getImageIcon();
 			button = new JButton(filterRemoveIcon);
-			button.setToolTipText("add filter");
+			button.setToolTipText("Delete this statement filter.");
 			button.setMargin(new Insets(0, 0, 0, 0));
 			button.setContentAreaFilled(false);
 			button.setBorder(new EmptyBorder(0, 0, 0, 0));
@@ -495,109 +552,172 @@ class StatementPanel extends JPanel {
 		}
 	}
 
+	/**
+	 * The statement filter panel is a GUI panel for adding and removing statement filters below the statement table.
+	 */
 	public class StatementFilterPanel extends JPanel {
-
-		private JButton addButton;
+		private JPanel filterPanel;
+		private JScrollPane scrollPane;
+		private JCheckBox negateCheckBox;
 		private JComboBox<String> sourceBox;
 		private JComboBox<String> labelBox;
 		private JTextField valueField;
-		private JCheckBox negateCheckBox;
-		private JPanel filterPanel;
-		private JScrollPane scrollPane;
+		private JButton addButton;
 
+		/**
+		 * Create a new statement filter panel.
+		 */
 		public StatementFilterPanel() {
 			setLayout(new BorderLayout());
 
+			// filter panel contains the statement filters; located in the CENTER of the BorderLayout
 			filterPanel = new JPanel();
 			filterPanel.setLayout(new BoxLayout(filterPanel, BoxLayout.Y_AXIS));
 			scrollPane = new JScrollPane(filterPanel);
 			add(scrollPane, BorderLayout.CENTER);
 
-			JPanel addFilterPanel = new JPanel(new BorderLayout());
+			// contains the two combo boxes and the value text field; GridLayout ensures equal width of the three components
+			JPanel boxPanel = new JPanel(new GridLayout(1, 3));
 
-			ImageIcon filterAddIcon = new SvgIcon("/icons/tabler_filter_plus.svg", 16).getImageIcon();
-			addButton = new JButton(filterAddIcon);
-			addButton.setToolTipText("add filter");
-			addButton.setMargin(new Insets(0, 0, 0, 0));
-			addButton.setContentAreaFilled(false);
-			addButton.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					StatementFilter newFilter = new StatementFilter(
-							(String) labelBox.getSelectedItem(),
-							(String) sourceBox.getSelectedItem(),
-							valueField.getText(),
-							negateCheckBox.isSelected()
-					);
-					newFilter.getButton().addActionListener(new ActionListener() {
-						@Override
-						public void actionPerformed(ActionEvent e) {
-							filterPanel.remove(newFilter);
-							updateFilterPanelSize();
-						}
-					});
-					filterPanel.add(newFilter);
-					updateFilterPanelSize();
-				}
-			});
-			addButton.setEnabled(false);
-			addFilterPanel.add(addButton, BorderLayout.WEST);
-
-			negateCheckBox = new JCheckBox("negate");
-			negateCheckBox.setSelected(false);
-			negateCheckBox.setEnabled(false);
-			addFilterPanel.add(negateCheckBox, BorderLayout.EAST);
-
-			JPanel comboBoxPanel = new JPanel(new BorderLayout());
-
-			sourceBox = new JComboBox<>(new String[]{"role", "variable", "statement", "document"});
-			sourceBox.setPreferredSize(new Dimension(80, 18));
+			// source combo box, e.g., "role", "variable" etc.
+			sourceBox = new JComboBox<>(new String[]{"role", "variable", "statement", "document", "coder"});
+			sourceBox.setPreferredSize(new Dimension(0, 16));
 			sourceBox.setEnabled(false);
 			sourceBox.addItemListener(e -> {
 				if (e.getStateChange() == ItemEvent.SELECTED) {
 					resetLabelBox((String) e.getItem());
 				}
 			});
-			comboBoxPanel.add(sourceBox, BorderLayout.WEST);
+			sourceBox.setToolTipText("Select what type of source to put a statement filter on.");
+			boxPanel.add(sourceBox);
 
+			// label combo box, e.g., "person", "agreement" etc.
 			labelBox = new JComboBox<>();
-			labelBox.setPreferredSize(new Dimension(80, 18));
+			labelBox.setPreferredSize(new Dimension(0, 16));
+			labelBox.addItemListener(e -> {
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					resetValueField((String) e.getItem());
+				}
+			});
 			labelBox.setEnabled(false);
-			comboBoxPanel.add(labelBox, BorderLayout.CENTER);
+			labelBox.setToolTipText("Select the criterion, role, or variable to filter on.");
+			boxPanel.add(labelBox);
 
-			valueField = new JTextField(12);
+			// value text field, containing the regular expression
+			valueField = new JTextField();
+			valueField.setPreferredSize(new Dimension(0, 16));
 			valueField.setEnabled(false);
-			comboBoxPanel.add(valueField, BorderLayout.EAST);
+			String valueFieldToolTip = "<html><p width=\"500\">Enter a regular expression (regex) with which statements are " +
+					"matched. A regex is a search pattern. Regexes are a powerful way to filter statements, but they are " +
+					"not trivial to use. Consult a website like <a href=\"https://regex101.com/\">https://regex101.com/</a> " +
+					"to try out your regex pattern before using it here. The <a " +
+					"href=\"https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html\">Oracle " +
+					"Java Pattern website</a> contains a useful overview of regex elements. Note that a regex does not merely " +
+					"match sub-units of text. To achieve this, try the following regex: <em>.*some text.*</em>, where the " +
+					"dot denotes an arbitrary character, the asterisk denotes zero or more times, and \"some text\" is the " +
+					"pattern to be matched in between.</p></html>";
+			valueField.setToolTipText(valueFieldToolTip);
+			boxPanel.add(valueField);
 
-			addFilterPanel.add(comboBoxPanel, BorderLayout.CENTER);
+			// contains the negate button (WEST), add button (EAST), and a panel with the combo boxes and text field (CENTER)
+			JPanel addFilterPanel = new JPanel(new BorderLayout());
+			addFilterPanel.add(boxPanel, BorderLayout.CENTER);
+
+			// the negate checkbox on the left
+			negateCheckBox = new JCheckBox("negate");
+			negateCheckBox.setSelected(false);
+			negateCheckBox.setEnabled(false);
+			negateCheckBox.setToolTipText("If negated, statements matching the filter will NOT be shown (i.e., excluded).");
+			addFilterPanel.add(negateCheckBox, BorderLayout.WEST);
+
+			// button on the right; to add a new filter to the list
+			ImageIcon filterAddIcon = new SvgIcon("/icons/tabler_filter_plus.svg", 16).getImageIcon();
+			addButton = new JButton(filterAddIcon);
+			addButton.setMargin(new Insets(0, 0, 0, 0));
+			addButton.setContentAreaFilled(false);
+			addButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					if (!valueField.getText().equals("") || (sourceBox.getSelectedItem().equals("document") && labelBox.getSelectedItem().equals("(current)"))) {
+
+						// create new filter
+						StatementFilter newFilter = new StatementFilter(
+								(String) labelBox.getSelectedItem(),
+								(String) sourceBox.getSelectedItem(),
+								valueField.getText(),
+								negateCheckBox.isSelected()
+						);
+						// add trash/delete button on the right of the filter
+						newFilter.getButton().addActionListener(new ActionListener() {
+							@Override
+							public void actionPerformed(ActionEvent e) {
+								filterPanel.remove(newFilter);
+								updateFilterPanelSize();
+								setRowFilter(); // update the row filter after removing
+							}
+						});
+						filterPanel.add(newFilter);
+						updateFilterPanelSize();
+						setRowFilter(); // update the row filter after adding
+					}
+				}
+			});
+			addButton.setEnabled(false);
+			addButton.setToolTipText("Add statement filter with the settings that were entered on the left.");
+			addFilterPanel.add(addButton, BorderLayout.EAST);
 
 			add(addFilterPanel, BorderLayout.SOUTH);
 		}
 
+		/**
+		 * Reset the values available in the label combo box depending on the selection in the source combo box.
+		 *
+		 * @param source The selected value in the source combo box.
+		 */
 		private void resetLabelBox(String source) {
 			labelBox.removeAllItems();
 			if (source.equals("document")) {
-				labelBox.addItem("(only current)");
-				labelBox.addItem("author");
-				labelBox.addItem("source");
-				labelBox.addItem("section");
-				labelBox.addItem("type");
-				labelBox.addItem("notes");
-				valueField.setVisible(true);
+				labelBox.addItem("(current)");
+				labelBox.addItem("id");
+				valueField.setVisible(false);
 			} else if (source.equals("role")) {
-				Dna.sql.getRoles().stream().forEach(r -> labelBox.addItem(r.getRoleName()));
+				if (Dna.sql.getDataSource() != null) {
+					Dna.sql.getRoles().stream().forEach(r -> labelBox.addItem(r.getRoleName()));
+				}
 				valueField.setVisible(true);
 			} else if (source.equals("variable")) {
-				Dna.sql.getVariables().stream().forEach(v -> labelBox.addItem(v.getVariableName()));
+				if (Dna.sql.getDataSource() != null) {
+					Dna.sql.getVariables().stream().forEach(v -> labelBox.addItem(v.getVariableName()));
+				}
 				valueField.setVisible(true);
 			} else if (source.equals("statement")) {
 				labelBox.addItem("id");
 				labelBox.addItem("text");
-				valueField.setText("");
-				valueField.setVisible(false);
+				valueField.setVisible(true);
+			} else if (source.equals("coder")) {
+				labelBox.addItem("id");
+				labelBox.addItem("name");
 			}
 		}
 
+		/**
+		 * Reset the value text field when a current document filter is selected.
+		 *
+		 * @param label The label from the label combo box to determine if a current document filter is selected.
+		 */
+		private void resetValueField(String label) {
+			if (label.equals("(current)") && ((String) sourceBox.getSelectedItem()).equals("document")) {
+				valueField.setText("");
+				valueField.setVisible(false);
+			} else if (((String) sourceBox.getSelectedItem()).equals("document")) {
+				valueField.setVisible(true);
+			}
+		}
+
+		/**
+		 * Increase or decrease the size of the statement filter panel vertically, to make space for more filters or
+		 * display fewer filters when they are added or removed.
+		 */
 		private void updateFilterPanelSize() {
 			int panelHeight = 0;
 			if (filterPanel.getComponentCount() > 0) {
@@ -608,12 +728,32 @@ class StatementPanel extends JPanel {
 			repaintStatementPanel();
 		}
 
-		public void setEnabled(boolean enabled) {
+		/**
+		 * Allow adding new filters? If true, enable the different input fields. If false, disable them, and remove all
+		 * existing filters.
+		 *
+		 * @param enabled Allow adding new filters, i.e., enable the controls for adding new filters?
+		 */
+		public void allowAddingFilter(boolean enabled) {
 			addButton.setEnabled(enabled);
 			sourceBox.setEnabled(enabled);
 			labelBox.setEnabled(enabled);
 			valueField.setEnabled(enabled);
 			negateCheckBox.setEnabled(enabled);
+			if (!enabled) {
+				filterPanel.removeAll();
+				updateFilterPanelSize();
+			}
+			setRowFilter();
+		}
+
+		/**
+		 * Get the filter panel, for access from outside the class, to access the statement filters for filtering.
+		 *
+		 * @return A reference to the filter panel.
+		 */
+		public JPanel getFilterPanel() {
+			return this.filterPanel;
 		}
 	}
 
@@ -630,31 +770,22 @@ class StatementPanel extends JPanel {
 	 * Adjust the filter buttons when a database has been opened or closed.
 	 */
 	public void adjustToChangedConnection() {
-		if (Dna.sql == null) {
+		if (Dna.sql == null || Dna.sql.getActiveCoder() == null) {
 			menuItemToggleSelection.setEnabled(false);
-			//allButton.setSelected(true);
-			//allButton.setEnabled(false);
-			//docButton.setEnabled(false);
-			//filterButton.setEnabled(false);
 			sfp.sourceBox.setSelectedItem("role");
 			sfp.resetLabelBox("role");
 			sfp.valueField.setText("");
 			sfp.valueField.setVisible(true);
 			sfp.negateCheckBox.setSelected(false);
-			sfp.setEnabled(false);
+			sfp.allowAddingFilter(false);
 		} else {
 			menuItemToggleSelection.setEnabled(true);
-			//allButton.setSelected(true);
-			//allButton.doClick();
-			//allButton.setEnabled(false);
-			//docButton.setEnabled(true);
-			//filterButton.setEnabled(true);
 			sfp.sourceBox.setSelectedItem("role");
 			sfp.resetLabelBox("role");
 			sfp.valueField.setText("");
 			sfp.valueField.setVisible(true);
 			sfp.negateCheckBox.setSelected(false);
-			sfp.setEnabled(true);
+			sfp.allowAddingFilter(true);
 		}
 	}
 }
