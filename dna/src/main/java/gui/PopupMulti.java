@@ -16,8 +16,9 @@ import java.awt.image.BaseMultiResolutionImage;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Objects;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * {@link JDialog} extension that displays the content of a statement in the GUI, allowing the user to add (or remove)
@@ -58,6 +59,10 @@ public class PopupMulti extends JDialog {
      * A hash map referencing all roles in the database by their ID (e.g., for finding the position of a role).
      */
     private HashMap<Integer, Role> roleMap;
+    /**
+     * An array list holding all roles in the database.
+     */
+    private ArrayList<Role> roles;
     /**
      * The coder for whom the statement should be opened, usually the active coder. Supplied by the parent class.
      */
@@ -131,7 +136,8 @@ public class PopupMulti extends JDialog {
 
         // get roles, put in hash map for easy access, and sort the values in the statement by their role position defined in the statement type
         this.roleMap = new HashMap();
-        Dna.sql.getRoles().stream().forEach(role -> roleMap.put(role.getId(), role));
+        this.roles = Dna.sql.getRoles();
+        this.roles.stream().forEach(role -> roleMap.put(role.getId(), role));
         this.tableStatement.setRoleValues(this.tableStatement.getRoleValues()
                 .stream()
                 .sorted(Comparator.comparing(v -> roleMap.get(v.getRoleId()).getPosition()))
@@ -548,6 +554,8 @@ public class PopupMulti extends JDialog {
                 gbc.gridy++;
                 gbc.gridx = 0;
                 final RoleValue roleValue = this.ts.getRoleValues().get(i);
+                int defaultVariableId = PopupMulti.this.roleMap.get(roleValue.getRoleId()).getDefaultVariableId();
+                Variable defaultVariable = PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == defaultVariableId).findFirst().get();
                 int finalI1 = i;
                 if (roleValue.getDataType().equals("short text")) {
                     // find variable IDs from which current role is sourced, to populate the combo box
@@ -568,12 +576,46 @@ public class PopupMulti extends JDialog {
                     box.getModel().setSelectedItem(roleValue.getValue());
                     box.setPreferredSize(new Dimension(PopupMulti.this.textFieldWidth, 22));
 
+                    // variable selection box
+                    JComboBox<Variable> variableBox = new JComboBox<Variable>();
+                    formatEntry(box, variableBox, roleVariableIds, defaultVariableId, roleValue, defaultVariable, finalI1);
+
+                    variableBox.addItemListener(new ItemListener() {
+                        @Override
+                        public void itemStateChanged(ItemEvent itemEvent) {
+                            Variable v = (Variable) ((JComboBox) itemEvent.getSource()).getSelectedItem();
+                            if (v != null && itemEvent.getStateChange() == ItemEvent.SELECTED) {
+                                Object selectedObject = box.getModel().getSelectedItem();
+                                Entity entity = null;
+                                if (selectedObject.getClass().getName().endsWith("Entity")) {
+                                    entity = (Entity) selectedObject;
+                                    int vid = v.getVariableId();
+                                    entity.setVariableId(vid);
+                                    box.setSelectedItem(entity);
+                                } else {
+                                    int roleVariableLinkId = PopupMulti.this.roleVariableLinks
+                                            .stream()
+                                            .filter(rvl -> rvl.getVariableId() == v.getVariableId() &&
+                                                    rvl.getRoleId() == RoleValuePanel.this.ts.getRoleValues().get(finalI1).getRoleId())
+                                            .findFirst()
+                                            .get()
+                                            .getId();
+                                    RoleValuePanel.this.ts.getRoleValues().get(finalI1).setRoleVariableLinkId(roleVariableLinkId);
+                                    RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableId(v.getVariableId());
+                                    RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableName(v.getVariableName());
+                                    System.out.println("Was null: " + selectedObject);
+                                }
+                            }
+                        }
+                    });
+
                     // paint the selected value in the attribute color
                     String s = ((JTextField) box.getEditor().getEditorComponent()).getText();
                     Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
                     for (int j = 0; j < box.getModel().getSize(); j++) {
                         if (s.equals(box.getModel().getElementAt(j).getValue())) {
                             fg = box.getModel().getElementAt(j).getColor();
+                            break;
                         }
                     }
                     ((JTextField) box.getEditor().getEditorComponent()).setSelectedTextColor(fg);
@@ -583,52 +625,15 @@ public class PopupMulti extends JDialog {
                     ((JTextField) box.getEditor().getEditorComponent()).getDocument().addDocumentListener(new DocumentListener() {
                         @Override
                         public void changedUpdate(DocumentEvent arg0) {
-                            formatEntry();
+                            formatEntry(box, variableBox, roleVariableIds, defaultVariableId, roleValue, defaultVariable, finalI1);
                         }
                         @Override
                         public void insertUpdate(DocumentEvent arg0) {
-                            formatEntry();
+                            formatEntry(box, variableBox, roleVariableIds, defaultVariableId, roleValue, defaultVariable, finalI1);
                         }
                         @Override
                         public void removeUpdate(DocumentEvent arg0) {
-                            formatEntry();
-                        }
-                        private void formatEntry() {
-                            Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
-                            String currentText = ((JTextField) box.getEditor().getEditorComponent()).getText();
-                            boolean foundEntity = false;
-                            for (int i = 0; i < box.getModel().getSize(); i++) {
-                                if (box.getModel().getElementAt(i).getValue().equals(currentText)) {
-                                    box.setSelectedIndex(i);
-                                    fg = box.getModel().getElementAt(i).getColor();
-                                    foundEntity = true;
-                                }
-                            }
-                            ((JTextField) box.getEditor().getEditorComponent()).setSelectedTextColor(fg);
-                            box.getEditor().getEditorComponent().setForeground(fg);
-
-                            if (!foundEntity) { // if not an existing entity, the editor returns a String
-                                if (currentText.length() > 0 && currentText.matches("^\\s+$")) { // replace a (multiple) whitespace string by an empty string
-                                    currentText = "";
-                                }
-                                currentText = currentText.substring(0, Math.min(189, currentText.length()));
-                                Entity entity = new Entity(currentText); // the new entity has an ID of -1; the SQL class needs to take care of this when writing into the database
-                                int defaultVariableId = PopupMulti.this.roleMap.get(roleValue.getRoleId()).getDefaultVariableId();
-                                String defaultVariableName = PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == defaultVariableId).findFirst().get().getVariableName();
-                                int defaultRoleVariableId = PopupMulti.this.roleVariableLinks.stream().filter(r -> r.getVariableId() == defaultVariableId && r.getRoleId() == roleValue.getRoleId()).findFirst().get().getId();
-                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableId(defaultVariableId);
-                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableName(defaultVariableName);
-                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setRoleVariableLinkId(defaultRoleVariableId);
-                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(entity);
-                                box.setSelectedItem(entity);
-                            } else {
-                                Entity entity = (Entity) box.getSelectedItem();
-                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableId(entity.getVariableId());
-                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableName(PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == entity.getVariableId()).findFirst().get().getVariableName());
-                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setRoleVariableLinkId(PopupMulti.this.roleVariableLinks.stream().filter(l -> l.getVariableId() == entity.getVariableId()).findFirst().get().getId());
-                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(entity);
-                            }
-                            toggleButtons();
+                            formatEntry(box, variableBox, roleVariableIds, defaultVariableId, roleValue, defaultVariable, finalI1);
                         }
                     });
 
@@ -644,6 +649,10 @@ public class PopupMulti extends JDialog {
                     gbc.weightx = 1.0;
                     gbc.anchor = GridBagConstraints.WEST;
                     this.add(box, gbc);
+
+                    // variable box
+                    gbc.gridx++;
+                    this.add(variableBox, gbc);
                     gbc.weightx = 0;
                 } else if (roleValue.getDataType().equals("long text")) {
                     String entry = (String) roleValue.getValue();
@@ -753,21 +762,30 @@ public class PopupMulti extends JDialog {
                 int finalI = i;
                 long num = this.ts.getRoleValues().stream().filter(r -> r.getRoleId() == this.ts.getRoleValues().get(finalI).getRoleId()).count();
 
-                // column 3: remove the roleValue row
+                // column 4: add a new row
                 gbc.insets = new Insets(3, 2, 3, 5);
-                gbc.gridx++;
+                gbc.gridx = 3;
                 ImageIcon addIcon = new SvgIcon("/icons/tabler_plus.svg", 16).getImageIcon();
                 JButton addButton = new JButton(addIcon);
                 addButton.setMargin(new Insets(0, 0, 0, 0));
                 addButton.setContentAreaFilled(false);
                 addButton.addActionListener(actionEvent -> {
                     RoleValue duplicate = new RoleValue(this.ts.getRoleValues().get(finalI));
-                    // replace value by the entity corresponding to an empty string
-                    duplicate.setValue(PopupMulti.this.entities
-                            .stream()
-                            .filter(e -> (e.getVariableId() == duplicate.getVariableId() && e.getValue().equals("")))
-                            .findFirst()
-                            .get());
+                    // replace value in duplicate by default value
+                    if (this.ts.getRoleValues().get(finalI).getDataType().equals("short text")) {
+                        // replace value by the entity corresponding to an empty string
+                        duplicate.setValue(PopupMulti.this.entities
+                                .stream()
+                                .filter(e -> (e.getVariableId() == defaultVariableId && e.getValue().equals("")))
+                                .findFirst()
+                                .get());
+                    } else if (this.ts.getRoleValues().get(finalI).getDataType().equals("long text")) {
+                        duplicate.setValue("");
+                    } else if (this.ts.getRoleValues().get(finalI).getDataType().equals("boolean")) {
+                        duplicate.setValue(1);
+                    } else if (this.ts.getRoleValues().get(finalI).getDataType().equals("integer")) {
+                        duplicate.setValue(0);
+                    }
                     this.addRoleValue(duplicate);
                     toggleButtons();
                 });
@@ -777,9 +795,9 @@ public class PopupMulti extends JDialog {
                 addButton.setToolTipText("add another " + this.ts.getRoleValues().get(i).getRoleName() + " to the statement");
                 this.add(addButton, gbc);
 
-                // column 4: add a duplicate
+                // column 5: remove the roleValue row
                 gbc.insets = new Insets(3, 0, 3, 5);
-                gbc.gridx++;
+                gbc.gridx = 4;
                 ImageIcon removeIcon = new SvgIcon("/icons/tabler_minus.svg", 16).getImageIcon();
                 JButton removeButton = new JButton(removeIcon);
                 removeButton.setMargin(new Insets(0, 0, 0, 0));
@@ -797,6 +815,101 @@ public class PopupMulti extends JDialog {
 
             this.repaint();
             PopupMulti.this.pack();
+        }
+
+
+        private void formatEntry(JComboBox<Entity> box, JComboBox<Variable> variableBox, java.util.List<Integer> roleVariableIds, int defaultVariableId, RoleValue roleValue, Variable defaultVariable, int i) {
+            Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
+            String currentText = ((JTextField) box.getEditor().getEditorComponent()).getText();
+            if (currentText.length() > 0 && currentText.matches("^\\s+$")) { // replace a (multiple) whitespace string by an empty string
+                currentText = "";
+            }
+            if (currentText.length() > 190) {
+                currentText = currentText.substring(0, 189);
+            }
+            final String currentTextFinal = currentText;
+
+            // which existing entities in the combo box match the current editor text?
+            Entity[] entityCandidates = PopupMulti.this.entities
+                    .stream()
+                    .filter(e -> roleVariableIds.contains(e.getVariableId()) && e.getValue().equals(currentTextFinal))
+                    .toArray(Entity[]::new);
+
+            Entity chosenEntity = null;
+            try {
+                chosenEntity = Stream
+                        .of(entityCandidates)
+                        .filter(e -> e.getVariableId() == defaultVariableId)
+                        .findFirst()
+                        .get();
+                // set contents of variable box
+                final Entity chosenEntityFinal = chosenEntity;
+                variableBox.removeAllItems();
+                variableBox.addItem(PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == chosenEntityFinal.getVariableId()).findFirst().get());
+                variableBox.setSelectedIndex(0);
+                variableBox.setEnabled(variableBox.getItemCount() > 1);
+            } catch (NoSuchElementException e) {
+                if (entityCandidates.length > 0) {
+                    chosenEntity = entityCandidates[0];
+                    // set contents of variable box
+                    final Entity chosenEntityFinal = chosenEntity;
+                    variableBox.removeAllItems();
+                    variableBox.addItem(PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == chosenEntityFinal.getVariableId()).findFirst().get());
+                    variableBox.setSelectedIndex(0);
+                    variableBox.setEnabled(variableBox.getItemCount() > 1);
+                } else {
+                    // if the editor text does not match any existing entity, create a new one to be selected and then inserted into the role value of the table statement
+                    chosenEntity = new Entity(-1, defaultVariableId, currentTextFinal, Color.BLACK);
+                    // set contents of variable box
+                    variableBox.removeAllItems();
+                    PopupMulti.this.variables
+                            .stream()
+                            .filter(v -> PopupMulti.this.roleVariableLinks
+                                    .stream()
+                                    .filter(rvl -> rvl.getVariableId() == v.getVariableId() && rvl.getRoleId() == roleValue.getRoleId())
+                                    .count() > 0)
+                            .forEachOrdered(variableBox::addItem);
+                    variableBox.setSelectedItem(defaultVariable);
+                    variableBox.setEnabled(variableBox.getItemCount() > 1);
+
+
+                    /*
+                    TODO:
+                     - The variable box must determine which entities are loaded into the entity box.
+                     - When a statement is opened and a role entry has an entity already, then set the variable box to the variable corresponding to the entity and put the values only for this variable into the entity box.
+                     - When a statement is opened and a role entry is empty, then multiple variables may be eligible. But in this case, the default variable was already selected upon statement creation, so the case is like above.
+                     - When the user selects a different existing entity, nothing needs changing because the correct variable is already selected.
+                     - Changes when populating the two boxes initially:
+                        i) populate each field with only the current role AND variable entities
+                        ii) select the entity from the database initially when statement is opened
+                        iii) populate variable box with all variables that are compatible with the role
+                        iv) select the variable that belongs to the selected entity
+                        v) disabled the variable box if there is only one eligible variable for a role, otherwise always enable
+                        vi) set variable box invisible if coder setting requires this; otherwise always visible
+                     - Changes in entity box listener:
+                        i) when entity is selected, update it in the role-value entry of the table statement and nothing else
+                        ii) if a new value is entered, create a new entity and put the current variable into the new entity, then update in table statement role value
+                     - Changes in variable box listener:
+                        i) when variable is selected and the current entity does not exist in the outer class environment of the popup, change the variable in the current entity and table statement to the newly selected variable
+                        ii) when variable is selected and the current value in the entity box is a String (does this case ever happen?), convert to entity and set variable to newly selected variable, also change in table statement
+                        iii) when variable is selected and the entity already exists in the list, reset entity field to the empty value/entity for the newly selected variable
+                     - Changes in the revert button:
+                        i) also revert the variable box (before resetting the entity box to the original value)
+                     */
+
+
+
+
+                }
+            }
+
+            int variableId = chosenEntity.getVariableId();
+            RoleValuePanel.this.ts.getRoleValues().get(i).setVariableId(variableId);
+            Variable currentVariable = PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == variableId).findFirst().get();
+            RoleValuePanel.this.ts.getRoleValues().get(i).setVariableName(currentVariable.getVariableName());
+            RoleValuePanel.this.ts.getRoleValues().get(i).setRoleVariableLinkId(PopupMulti.this.roleVariableLinks.stream().filter(l -> l.getVariableId() == variableId).findFirst().get().getId());
+            RoleValuePanel.this.ts.getRoleValues().get(i).setValue(new Entity(chosenEntity));
+            toggleButtons();
         }
 
         /**

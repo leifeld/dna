@@ -87,6 +87,15 @@ public class Variable {
     }
 
     /**
+     * Get a String representation of the variable.
+     *
+     * @return The variable name as a String representation of the variable.
+     */
+    public String toString() {
+        return this.getVariableName();
+    }
+
+    /**
      * Is this variable equal to another object?
      *
      * @param o An object for comparison.
