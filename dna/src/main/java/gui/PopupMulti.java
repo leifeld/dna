@@ -136,10 +136,10 @@ public class PopupMulti extends JDialog {
         this.roleMap = new HashMap();
         this.roles = Dna.sql.getRoles();
         this.roles.stream().forEach(role -> roleMap.put(role.getId(), role));
-        this.tableStatement.setRoleValues(this.tableStatement.getRoleValues()
-                .stream()
-                .sorted(Comparator.comparing(v -> roleMap.get(v.getRoleId()).getPosition()))
-                .collect(Collectors.toCollection(ArrayList::new)));
+        // this.tableStatement.setRoleValues(this.tableStatement.getRoleValues()
+        //         .stream()
+        //         .sorted(Comparator.comparing(v -> roleMap.get(v.getRoleId()).getPosition()))
+        //         .collect(Collectors.toCollection(ArrayList::new)));
 
         // get additional data from database for creating combo boxes and adding roles
         this.entities = Dna.sql.getEntities(this.tableStatement.getStatementTypeId());
@@ -203,7 +203,7 @@ public class PopupMulti extends JDialog {
                             .stream()
                             .filter(r -> r.getStatementTypeId() == PopupMulti.this.tableStatement.getStatementTypeId())
                             .forEach(r -> {
-                                if (r.getNumMax() > PopupMulti.this.rvp.getModifiedTableStatement().getRoleValues()
+                                if (r.getNumMax() > PopupMulti.this.rvp.getTableStatement().getRoleValues()
                                         .stream()
                                         .filter(m -> m.getRoleId() == r.getId())
                                         .count()) {
@@ -216,11 +216,6 @@ public class PopupMulti extends JDialog {
                                                 .mapToInt(rv -> rv.getVariableId())
                                                 .findFirst()
                                                 .getAsInt();
-                                        Entity blankEntity = PopupMulti.this.entities
-                                                .stream()
-                                                .filter(entity -> entity.getValue().equals("") && entity.getVariableId() == variableId)
-                                                .findFirst()
-                                                .get();
                                         Variable variable = PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == variableId).findFirst().get();
                                         int roleVariableLinkId = roleVariableLinks
                                                 .stream()
@@ -228,7 +223,22 @@ public class PopupMulti extends JDialog {
                                                 .mapToInt(rvl -> rvl.getId())
                                                 .findFirst()
                                                 .getAsInt();
-                                        PopupMulti.this.rvp.addRoleValue(new RoleValue(variableId, variable.getVariableName(), variable.getDataType(), blankEntity, roleVariableLinkId, r.getId(), r.getRoleName(), r.getStatementTypeId()));
+                                        Object blankValue = null;
+                                        if (variable.getDataType().equals("short text")) {
+                                            blankValue = PopupMulti.this.entities
+                                                    .stream()
+                                                    .filter(entity -> entity.getValue().equals("") && entity.getVariableId() == variableId)
+                                                    .findFirst()
+                                                    .get();
+
+                                        } else if (variable.getDataType().equals("long text")) {
+                                            blankValue = "";
+                                        } else if (variable.getDataType().equals("boolean")) {
+                                            blankValue = 1;
+                                        } else if (variable.getDataType().equals("integer")) {
+                                            blankValue = 0;
+                                        }
+                                        PopupMulti.this.rvp.addRoleValue(new RoleValue(variableId, variable.getVariableName(), variable.getDataType(), blankValue, roleVariableLinkId, r.getId(), r.getRoleName(), r.getStatementTypeId()));
                                         toggleButtons();
                                     });
                                     addMenu.add(menuItem);
@@ -326,9 +336,9 @@ public class PopupMulti extends JDialog {
             coderComboBox.setPreferredSize(new Dimension(coderComboBox.getPreferredSize().width, h)); // need to hard-code height because of MacOS
             coderComboBox.addItemListener(itemEvent -> {
                 Coder selectedCoder = (Coder) coderComboBox.getSelectedItem();
-                PopupMulti.this.rvp.getModifiedTableStatement().setCoderId(selectedCoder.getId());
-                PopupMulti.this.rvp.getModifiedTableStatement().setCoderName(selectedCoder.getName());
-                PopupMulti.this.rvp.getModifiedTableStatement().setCoderColor(selectedCoder.getColor());
+                PopupMulti.this.rvp.getTableStatement().setCoderId(selectedCoder.getId());
+                PopupMulti.this.rvp.getTableStatement().setCoderName(selectedCoder.getName());
+                PopupMulti.this.rvp.getTableStatement().setCoderColor(selectedCoder.getColor());
                 toggleButtons();
             });
             idAndPositionPanel.add(coderComboBox);
@@ -426,7 +436,7 @@ public class PopupMulti extends JDialog {
      * @return Was the statement modified?
      */
     boolean isStatementModified() {
-        return !this.rvp.getModifiedTableStatement().equals(this.tableStatement);
+        return !this.rvp.getTableStatement().equals(this.tableStatement);
     }
 
     /**
@@ -436,12 +446,13 @@ public class PopupMulti extends JDialog {
      */
     boolean saveContents() {
         if (this.isStatementModified()) {
-            TableStatement statementCopy = new TableStatement(this.rvp.getModifiedTableStatement());
+            TableStatement statementCopy = new TableStatement(this.rvp.getTableStatement());
             ArrayList<TableStatement> tableStatementList = new ArrayList();
             tableStatementList.add(statementCopy);
             boolean changed = Dna.sql.updateTableStatements(tableStatementList);
             if (changed) {
-                this.tableStatement = statementCopy;
+                this.tableStatement = Dna.sql.getTableStatement(statementCopy.getId());
+                PopupMulti.this.rvp.setTableStatement(new TableStatement(this.tableStatement));
             }
             toggleButtons();
             return changed;
@@ -528,8 +539,18 @@ public class PopupMulti extends JDialog {
          *
          * @return The table statement.
          */
-        TableStatement getModifiedTableStatement() {
+        TableStatement getTableStatement() {
             return this.ts;
+        }
+
+        /**
+         * Set a new table statement, then rebuild the layout.
+         *
+         * @param tableStatement A new table statement to display.
+         */
+        public void setTableStatement(TableStatement tableStatement) {
+            this.ts = tableStatement;
+            this.rebuildLayout();
         }
 
         /**
@@ -553,7 +574,6 @@ public class PopupMulti extends JDialog {
                 gbc.gridx = 0;
                 final RoleValue roleValue = this.ts.getRoleValues().get(i);
                 int defaultVariableId = PopupMulti.this.roleMap.get(roleValue.getRoleId()).getDefaultVariableId();
-                Variable defaultVariable = PopupMulti.this.variables.stream().filter(v -> v.getVariableId() == defaultVariableId).findFirst().get();
                 int finalI1 = i;
                 if (roleValue.getDataType().equals("short text")) {
                     // find variable IDs from which current role is sourced, to populate the combo box
@@ -689,7 +709,7 @@ public class PopupMulti extends JDialog {
                         }
                     });
 
-                    // use autocomplete decoration (depending on coder setting)
+                    // use auto-complete decoration (depending on coder setting)
                     if (coder.isPopupAutoComplete()) {
                         AutoCompleteDecorator.decorate(box); // auto-complete short text values; part of SwingX
                     }

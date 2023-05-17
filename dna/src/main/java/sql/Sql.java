@@ -3030,7 +3030,8 @@ public class Sql {
 				PreparedStatement s4 = conn.prepareStatement("SELECT Value FROM DATALONGTEXT WHERE RoleVariableLinkId = ? AND StatementId = ?;");
 				PreparedStatement s5 = conn.prepareStatement("SELECT Value FROM DATAINTEGER WHERE RoleVariableLinkId = ? AND StatementId = ?;");
 				PreparedStatement s6 = conn.prepareStatement("SELECT Value FROM DATABOOLEAN WHERE RoleVariableLinkId = ? AND StatementId = ?;");
-				PreparedStatement s7 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;")) {
+				PreparedStatement s7 = conn.prepareStatement("SELECT AttributeVariable, AttributeValue FROM ATTRIBUTEVALUES AS AVAL INNER JOIN ATTRIBUTEVARIABLES AS AVAR ON AVAL.AttributeVariableId = AVAR.ID WHERE EntityId = ?;");
+				PreparedStatement s8 = conn.prepareStatement("SELECT ID, Position FROM ROLES WHERE StatementTypeId = ?;")) {
 			ResultSet r1, r2, r3, r4;
 
 			// first, get the statement information, including coder and statement type info
@@ -3110,7 +3111,22 @@ public class Sql {
 						r1.getString("StatementTypeLabel"),
 						sColor,
 			    		roleValues);
-			    LogEvent l = new LogEvent(Logger.MESSAGE,
+
+				// reorder the role values by position
+				HashMap<Integer, Integer> rolePositions = new HashMap<Integer, Integer>();
+				s8.setInt(1, statementTypeId);
+				r3 = s8.executeQuery();
+				while (r3.next()) {
+					rolePositions.put(r3.getInt("ID"), r3.getInt("Position"));
+				}
+				tableStatement.setRoleValues(roleValues
+						.stream()
+						.sorted(Comparator
+								.comparing((RoleValue v) -> rolePositions.get(v.getRoleId()))
+								.thenComparing((RoleValue v) -> v.toString()))
+						.collect(Collectors.toCollection(ArrayList::new)));
+
+				LogEvent l = new LogEvent(Logger.MESSAGE,
 			    		"[SQL] Statement " + statementId + " was retrieved from the database.",
 			    		"Statement " + statementId + " was retrieved from the database.");
 			    Dna.logger.log(l);
