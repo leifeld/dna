@@ -1305,9 +1305,9 @@ print.dna_network_twomode <- print.dna_network_onemode
 #' @param edge_alpha Takes numeric values to control the alpha-transparency of
 #'   edges. Possible values range from \code{0} (fully transparent) to \code{1}
 #'   (fully visible).
-#' @param node_size Takes positive numeric values to control the size of nodes
-#'   (defaults to \code{7}). Also accepts numeric values matching an attribute
-#'   of the \code{atts} object (see examples).
+#' @param node_size Takes positive numeric values to control the size of nodes.
+#'   Also accepts numeric values matching an attribute of the \code{atts} object
+#'   (see examples).
 #' @param node_colors Provide the name of a color or use an attribute from the
 #'   \code{atts} object for node colors (see examples). Defaults to
 #'   \code{"black"}.
@@ -1338,13 +1338,23 @@ print.dna_network_twomode <- print.dna_network_onemode
 #'
 #' ## one-mode network examples
 #'
-#' # compute network matrix
+#' # compute network matrix (subtract + normalization)
 #' nw <- dna_network(networkType = "onemode",
 #'                   qualifierAggregation = "subtract",
 #'                   normalization = "average")
 #'
 #' # plot network
 #' library("ggplot2")
+#' autoplot(nw)
+#'
+#' # plot only positively weighted edges
+#' autoplot(nw, threshold = 0)
+#'
+#' # congruence network
+#' nw <- dna_network(networkType = "onemode",
+#'                   qualifierAggregation = "congruence",
+#'                   excludeValues = list("concept" =
+#'                     c("There should be legislation to regulate emissions.")))
 #' autoplot(nw)
 #'
 #' # use entity colors (here: colors of organizations) from attributes
@@ -1361,7 +1371,7 @@ print.dna_network_twomode <- print.dna_network_onemode
 #'
 #' # plot node sizes according to the number of statements of entities;
 #' # first, compute additional matrix to calculate the number of statements
-#' nw_freq <- dna_network(networkType = "onemode",
+#' nw_freq <- dna_network(networkType = "twomode",
 #'                        qualifierAggregation = "ignore",
 #'                        normalization = "no")
 #' # then add frequency of statements as an attribute
@@ -1496,7 +1506,6 @@ print.dna_network_twomode <- print.dna_network_onemode
 #'
 #' @importFrom ggplot2 autoplot
 #' @importFrom ggplot2 aes
-#' @importFrom ggplot2 aes_string
 #' @importFrom ggplot2 scale_color_identity
 #' @name autoplot.dna_network
 NULL
@@ -1510,7 +1519,7 @@ autoplot.dna_network_onemode <- function(object,
                                          edge_size_range = c(0.2, 2),
                                          edge_color = NULL,
                                          edge_alpha = 1,
-                                         node_size = 7,
+                                         node_size = 3,
                                          node_colors = "black",
                                          node_label = TRUE,
                                          font_size = 6,
@@ -1674,11 +1683,11 @@ autoplot.dna_network_onemode <- function(object,
 
   # Start network plot
   g <- ggraph::ggraph(graph, layout = layout) +
-    ggraph::geom_edge_link(ggplot2::aes_string(width = "weight", color = "color"),
+    suppressWarnings(ggraph::geom_edge_link(ggplot2::aes(edge_width = igraph::E(graph)$weight, edge_colour = igraph::E(graph)$color),
                            alpha = edge_alpha,
-                           show.legend = FALSE) + # add edges
+                           show.legend = FALSE)) + # add edges
     ggraph::scale_edge_width(range = edge_size_range) + # add edge scale
-    ggraph::geom_node_point(ggplot2::aes_string(color = "color"), # add nodes
+    ggraph::geom_node_point(ggplot2::aes(colour = igraph::V(graph)$color), # add nodes
                             size = igraph::V(graph)$size,
                             shape = igraph::V(graph)$shape,
                             show.legend = NA)

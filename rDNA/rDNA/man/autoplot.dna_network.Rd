@@ -14,7 +14,7 @@
   edge_size_range = c(0.2, 2),
   edge_color = NULL,
   edge_alpha = 1,
-  node_size = 7,
+  node_size = 3,
   node_colors = "black",
   node_label = TRUE,
   font_size = 6,
@@ -34,7 +34,7 @@
   edge_size_range = c(0.2, 2),
   edge_color = NULL,
   edge_alpha = 1,
-  node_size = 7,
+  node_size = 3,
   node_colors = "black",
   node_label = TRUE,
   font_size = 6,
@@ -88,9 +88,9 @@ to scale edge widths.}
 edges. Possible values range from \code{0} (fully transparent) to \code{1}
 (fully visible).}
 
-\item{node_size}{Takes positive numeric values to control the size of nodes
-(defaults to \code{7}). Also accepts numeric values matching an attribute
-of the \code{atts} object (see examples).}
+\item{node_size}{Takes positive numeric values to control the size of nodes.
+Also accepts numeric values matching an attribute of the \code{atts} object
+(see examples).}
 
 \item{node_colors}{Provide the name of a color or use an attribute from the
 \code{atts} object for node colors (see examples). Defaults to
@@ -140,13 +140,23 @@ dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
 
 ## one-mode network examples
 
-# compute network matrix
+# compute network matrix (subtract + normalization)
 nw <- dna_network(networkType = "onemode",
                   qualifierAggregation = "subtract",
                   normalization = "average")
 
 # plot network
 library("ggplot2")
+autoplot(nw)
+
+# plot only positively weighted edges
+autoplot(nw, threshold = 0)
+
+# congruence network
+nw <- dna_network(networkType = "onemode",
+                  qualifierAggregation = "congruence",
+                  excludeValues = list("concept" =
+                    c("There should be legislation to regulate emissions.")))
 autoplot(nw)
 
 # use entity colors (here: colors of organizations) from attributes
@@ -163,7 +173,7 @@ autoplot(nw, atts = atts, node_label = "Type")
 
 # plot node sizes according to the number of statements of entities;
 # first, compute additional matrix to calculate the number of statements
-nw_freq <- dna_network(networkType = "onemode",
+nw_freq <- dna_network(networkType = "twomode",
                        qualifierAggregation = "ignore",
                        normalization = "no")
 # then add frequency of statements as an attribute
